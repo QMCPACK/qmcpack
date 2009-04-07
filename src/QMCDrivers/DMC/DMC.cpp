@@ -71,7 +71,7 @@ namespace qmcplusplus {
         Mover->setMultiplicity(W.begin(),W.end());
         branchEngine->branch(CurrentStep,W); 
         if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
-          branchEngine->storeConfigsForForwardWalking(W);
+          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
           W.resetWalkerParents();
         }
       } 

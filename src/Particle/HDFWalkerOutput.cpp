@@ -87,7 +87,7 @@ namespace qmcplusplus
    */
   HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,Communicate* c): 
     appended_blocks(0), number_of_walkers(0), currentConfigNumber(0),
-  number_of_backups(0), max_number_of_backups(4),
+  number_of_backups(0), max_number_of_backups(4), 
   h_file(-1), h_plist(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), h_state(-1), myComm(c), c_file(-1), c_state(-1)
   {
     FileName=myComm->getName()+hdf::config_ext;
@@ -99,7 +99,9 @@ namespace qmcplusplus
 
       HDFVersion cur_version;
       cur_version.write(c_file,hdf::version);
-      c_state = H5Gcreate(c_file,hdf::main_state,0);
+      int nel = W[0]->R.size();
+      HDFAttribIO<int> nwo(nel);
+      nwo.write(c_file,"NumberElectrons");
       H5Gclose(c_state);
       H5Fclose(c_file);
     }
@@ -158,10 +160,10 @@ namespace qmcplusplus
       if(RemoteData.empty())
       {//add two buffers
         RemoteData.push_back(new BufferType);
-        RemoteData.push_back(new BufferType);
-        ///Add three buffers here for the forward walking configurations
-        RemoteFWData.push_back(new FWBufferType);
-        RemoteFWData.push_back(new FWBufferType);
+        RemoteData.push_back(new BufferType);  
+        FWData.push_back(new  FWBufferType);  
+        FWData.push_back(new  FWBufferType);  
+        FWCountData.resize(myComm->size());
       }
       //myRequest.resize(myComm->size()-1);
       //if(myComm->rank())
@@ -348,7 +350,7 @@ namespace qmcplusplus
     return true;
   }
 
-  bool  HDFWalkerOutput::dumpCollect(MCWalkerConfiguration& W) 
+  bool  HDFWalkerOutput::dumpCollect(MCWalkerConfiguration& W)
   {
 #if defined(HAVE_MPI)
     int wb=OHMMS_DIM*W.getTotalNum();
@@ -421,27 +423,160 @@ namespace qmcplusplus
     h_state = H5Gopen(h_file,hdf::main_state);
   }
 
-  bool HDFWalkerOutput::dump(WalkerControlBase& wcb)
+  bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
   {
-
-    cerr<<myComm->size()<<" "<<myComm->rank()<<endl;
-    if(myComm->size()==1)
+    if(myComm->size()>1)
     {
-      int Nblocks = wcb.ForwardWalkingHistory.size(), totWalkers(0);
+#if defined(HAVE_MPI)
+    int NN(myComm->size());
+    int RN(myComm->rank());
+    vector<int> myWalkerLayout;
+    FWO.layoutOfConfigsForForwardWalking(myWalkerLayout);
+    
+    int Nblocks = myWalkerLayout.size();
+    vector<int> walkerCounts(NN,Nblocks);
+    vector<int> walkerOffsets(NN,0);
+    
+    for (int i=0;i<NN;i++) walkerOffsets[i]=Nblocks*i;
+    vector<int> TFWCountData(Nblocks*NN,0);
+    myComm->gatherv( myWalkerLayout, TFWCountData , walkerCounts , walkerOffsets); 
+    
+    
+    vector<vector<int> > OFFSETS(NN,vector<int>(Nblocks,0)), COUNTS(NN,vector<int>(Nblocks,0)), POSCOUNTS(NN,vector<int>(Nblocks,0)), POSOFFSETS(NN,vector<int>(Nblocks,0));
+    int Nstored = FWO.ForwardWalkingHistory.size(); 
+    int nelecs = FWO.ForwardWalkingHistory[0][0].Pos.size();
+    int nFloatsPerConfig = OHMMS_DIM*nelecs;
+    
+    
+//     if(myComm->rank()==0)
+//     {
+      for(int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) COUNTS[j][i]=TFWCountData[i*Nblocks+j];  
+      for(int i=0;i<Nblocks;i++) for (int j=0;j<(NN-1);j++) OFFSETS[i][j+1] = COUNTS[i][j] + OFFSETS[i][j];
+      for(int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSOFFSETS[i][j] = nFloatsPerConfig*OFFSETS[i][j];
+      for(int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSCOUNTS[i][j] = nFloatsPerConfig*COUNTS[i][j];
+//     }
+    for (int i=0;i<Nblocks;i++)
+    {
+      myComm->bcast(OFFSETS[i]);  /*cerr<<"OFFSET"<<endl;*/
+      myComm->bcast(POSOFFSETS[i]); /*cerr<<"POSOFFSETS"<<endl;*/
+      myComm->bcast(COUNTS[i]);  /*cerr<<"COUNTS"<<endl;*/
+      myComm->bcast(POSCOUNTS[i]); /*cerr<<"POSCOUNTS"<<endl;*/
+    }      
+//     if(myComm->rank()==0) for(int i=0;i<TFWCountData.size();i++) cout<<TFWCountData[i]<<" ";
+//     cout<<endl;
+//     if(myComm->rank()==0) for(int i=0;i<myWalkerLayout.size();i++) cout<<myWalkerLayout[i]<<" ";
+//     cout<<endl;
+//     if(myComm->rank()==0)
+//     {
+//       for(int i=0;i<NN;i++) for (int j=1;j<Nblocks;j++) cerr<<COUNTS[j][i]<<" ";
+//       cerr<<endl;
+//       for(int i=0;i<NN;i++) for (int j=1;j<Nblocks;j++) cerr<<OFFSETS[j][i]<<" ";
+//       cerr<<endl;
+//       for(int i=0;i<NN;i++) for (int j=1;j<Nblocks;j++) cerr<<POSCOUNTS[j][i]<<" ";
+//       cerr<<endl;
+//       for(int i=0;i<NN;i++) for (int j=1;j<Nblocks;j++) cerr<<POSOFFSETS[j][i]<<" ";
+//       cerr<<endl;
+//     }
+//     cerr<<endl;
+    
+
+//     cerr<<Nstored<<" "<<nelecs<<endl;
+    for (int i=0;i<Nstored;i++)
+    {
+      int globalNPositions = POSCOUNTS[i][POSCOUNTS[i].size()-1] + POSOFFSETS[i][POSOFFSETS[i].size()-1];
+      int globalNIDs = COUNTS[i][COUNTS[i].size()-1] + OFFSETS[i][OFFSETS[i].size()-1];
+      vector<float> myPositions(POSCOUNTS[i][RN],0),globalPositions(globalNPositions,0);
+      vector<long> myIDs(COUNTS[i][RN],0),globalIDs(globalNIDs,0);
+      vector<long> myParentIDs(COUNTS[i][RN],0),globalParentIDs(globalNIDs,0);
+     myComm->gatherv( myIDs, globalIDs , COUNTS[i] , OFFSETS[i]);
+     myComm->gatherv( myParentIDs, globalParentIDs , COUNTS[i] , OFFSETS[i]);
+     myComm->gatherv( myPositions, globalPositions , POSCOUNTS[i] , POSOFFSETS[i]);
+    //Now I have gathered all the positions and IDs to the head node. I just need to write them. 
+    if(myComm->rank()==0)
+    {
+      ++currentConfigNumber;
+      c_file = H5Fopen(ConfigFileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      if (true)
+      {
+          std::stringstream sstr("");
+          sstr<<"Block_"<<currentConfigNumber;
+          hid_t d_file = H5Gcreate(c_file,sstr.str().c_str(),0);
+          sstr.str("WalkerID"); 
+          string groupName = sstr.str();  
+          const int IDrank = 1;
+          hsize_t IDdims[IDrank], IDmaxdims[IDrank];
+          IDdims[0] = globalNIDs;
+          IDmaxdims[0] = H5S_UNLIMITED;
+
+          hid_t dataspace  = H5Screate_simple(IDrank, IDdims, IDmaxdims);
+          hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+          H5Pset_chunk(p,IDrank,IDdims);
+          hid_t dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_LONG, dataspace, p);
+          hid_t memspace = H5Screate_simple(IDrank, IDdims, NULL);
+          herr_t ret = H5Dwrite(dataset, H5T_NATIVE_LONG, memspace, dataspace, H5P_DEFAULT,&(globalIDs[0]));
+//           H5Sclose(memspace);
+//           H5Sclose(dataspace);
+//           H5Dclose(dataset);
+
+          sstr.str("Positions"); 
+          groupName = sstr.str();
+          
+          const int rank = 1;
+          hsize_t dims[rank], maxdims[rank];
+          dims[0] = globalNPositions; /*dims[1] = nelecs; dims[2] = OHMMS_DIM;*/
+          maxdims[0] = H5S_UNLIMITED; /*maxdims[1] = globalNIDs; maxdims[2] = nelecs;*/
+
+          dataspace  = H5Screate_simple(rank, dims, maxdims);
+          p = H5Pcreate (H5P_DATASET_CREATE);
+          H5Pset_chunk(p,rank,dims);
+          dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_FLOAT, dataspace, p);
+          memspace = H5Screate_simple(rank, dims, NULL);
+          ret = H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT,&(globalPositions[0]));
+          
+          
+
+          sstr.str("ParentID"); 
+          groupName = sstr.str();
+
+          dataspace  = H5Screate_simple(IDrank, IDdims, IDmaxdims);
+          p = H5Pcreate (H5P_DATASET_CREATE);
+          H5Pset_chunk(p,IDrank,IDdims);
+          dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_LONG, dataspace, p);
+          memspace = H5Screate_simple(IDrank, IDdims, NULL);
+          ret = H5Dwrite(dataset, H5T_NATIVE_LONG, memspace, dataspace, H5P_DEFAULT,&(globalParentIDs[0]));
+          
+          HDFAttribIO<int> nwo(globalNIDs);
+          nwo.write(d_file,hdf::num_walkers);
+          
+          H5Sclose(memspace);
+          H5Sclose(dataspace);
+          H5Dclose(dataset);
+          H5Fclose(d_file);
+        }
+      H5Fclose(c_file); 
+    }
+    
+    }
+
+#endif 
+    }
+    else if(myComm->size()==1)
+    {
+      int Nblocks = FWO.ForwardWalkingHistory.size(), totWalkers(0);
       ///Nblocks is the number of records we collected since the last configuration dump.
       vector<int> NWalkersInBlock(Nblocks,0);
       ///NWalkersInBlock is the number of Walkers we saved for a single record
       for (int i=0;i<Nblocks;i++) {
-        totWalkers+=wcb.ForwardWalkingHistory[i].size();
-        NWalkersInBlock[i] = wcb.ForwardWalkingHistory[i].size();
+        totWalkers+=FWO.ForwardWalkingHistory[i].size();
+        NWalkersInBlock[i] = FWO.ForwardWalkingHistory[i].size();
       }
       ///nelecs is the number of R vectors we are going to have to write
-      int nelecs = wcb.ForwardWalkingHistory[0][0].Pos.size();
+      int nelecs = FWO.ForwardWalkingHistory[0][0].Pos.size();
       c_file = H5Fopen(ConfigFileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       
-      int Gsize= (2*sizeof(long)+sizeof(float)*nelecs*WalkerControlBase::DIM)*totWalkers;
+      int Gsize= (2*sizeof(long)+sizeof(float)*nelecs*OHMMS_DIM)*totWalkers;
       
-      typedef WalkerControlBase::ForwardWalkingData::StoredPosType StoredPosType;
+      typedef ForwardWalkingData::StoredPosType StoredPosType;
       for (int i=0; i<Nblocks; i++, ++currentConfigNumber)
         {
           std::stringstream sstr("");
@@ -449,22 +584,35 @@ namespace qmcplusplus
           hid_t d_file = H5Gcreate(c_file,sstr.str().c_str(),Gsize);
           sstr.str("Positions"); 
           string groupName = sstr.str();
-          Matrix<StoredPosType> tp(NWalkersInBlock[i],nelecs);
+//           Matrix<StoredPosType> tp(NWalkersInBlock[i],nelecs);
+//           for (int j=0;j<NWalkersInBlock[i];j++)
+//             for (int k=0;k<nelecs;k++)
+//               tp[j][k] = FWO.ForwardWalkingHistory[i][j].Pos[k];
+          
+          vector<float> posVecs;
           for (int j=0;j<NWalkersInBlock[i];j++)
-            for (int k=0;k<nelecs;k++)
-              tp[j][k] = wcb.ForwardWalkingHistory[i][j].Pos[k];
+          {
+            vector<float> tposVec;
+            (FWO.ForwardWalkingHistory[i][j]).toFloat(tposVec);
+            posVecs.insert(posVecs.end(),tposVec.begin(),tposVec.end());
+          }
 
-          const int rank = 3;
+//           const int rank = 3;
+//           hsize_t dims[rank], maxdims[rank];
+//           dims[0] = NWalkersInBlock[i]; dims[1] = nelecs; dims[2] = StoredPosType::Size;
+//           maxdims[0] = H5S_UNLIMITED; maxdims[1] = tp.cols(); maxdims[2] = StoredPosType::Size;
+
+          const int rank = 1;
           hsize_t dims[rank], maxdims[rank];
-          dims[0] = NWalkersInBlock[i]; dims[1] = nelecs; dims[2] = StoredPosType::Size;
-          maxdims[0] = H5S_UNLIMITED; maxdims[1] = tp.cols(); maxdims[2] = StoredPosType::Size;
+          dims[0] = posVecs.size(); /*dims[1] = nelecs; dims[2] = StoredPosType::Size;*/
+          maxdims[0] = H5S_UNLIMITED; /*maxdims[1] = tp.cols(); maxdims[2] = StoredPosType::Size;*/
 
           hid_t dataspace  = H5Screate_simple(rank, dims, maxdims);
           hid_t p = H5Pcreate (H5P_DATASET_CREATE);
           H5Pset_chunk(p,rank,dims);
           hid_t dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_FLOAT, dataspace, p);
           hid_t memspace = H5Screate_simple(rank, dims, NULL);
-          herr_t ret = H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT,tp.data());
+          herr_t ret = H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT,&(posVecs[0]));
 //           H5Sclose(memspace);
 //           H5Sclose(dataspace);
 //           H5Dclose(dataset);
@@ -472,7 +620,7 @@ namespace qmcplusplus
           sstr.str("WalkerID"); 
           groupName = sstr.str();
           vector<long> IDs(NWalkersInBlock[i]);
-          for (int j=0;j<NWalkersInBlock[i];j++)  IDs[j]=wcb.ForwardWalkingHistory[i][j].ID;
+          for (int j=0;j<NWalkersInBlock[i];j++)  IDs[j]=FWO.ForwardWalkingHistory[i][j].ID;
 
           const int IDrank = 1;
           hsize_t IDdims[IDrank], IDmaxdims[IDrank];
@@ -492,7 +640,7 @@ namespace qmcplusplus
           sstr.str("ParentID"); 
           groupName = sstr.str();
           vector<long> ParentIDs(NWalkersInBlock[i]);
-          for (int j=0;j<NWalkersInBlock[i];j++)  ParentIDs[j]=wcb.ForwardWalkingHistory[i][j].ParentID;
+          for (int j=0;j<NWalkersInBlock[i];j++)  ParentIDs[j]=FWO.ForwardWalkingHistory[i][j].ParentID;
 
           dataspace  = H5Screate_simple(IDrank, IDdims, IDmaxdims);
           p = H5Pcreate (H5P_DATASET_CREATE);
@@ -507,39 +655,7 @@ namespace qmcplusplus
         }
       H5Fclose(c_file); 
     }
-    else
-    {
-    #if defined(HAVE_MPI)
-//         int wb=OHMMS_DIM*W.getTotalNum();
-//         RemoteFWData[0]->resize(wb*W.getActiveWalkers());
-//         W.putConfigurations(RemoteData[0]->begin());
-//         vector<int> displ(myComm->size()), counts(myComm->size());
-//         for(int i=0; i<myComm->size(); ++i)
-//         {
-//           counts[i]=wb*(W.WalkerOffsets[i+1]-W.WalkerOffsets[i]);
-//           displ[i]=wb*W.WalkerOffsets[i];
-//         }
-//         RemoteData[1]->resize(wb*W.WalkerOffsets[myComm->size()]);
-//         myComm->gatherv(*RemoteData[0],*RemoteData[1],counts, displ);
-//         number_of_walkers=W.WalkerOffsets[myComm->size()];
-//         if(myComm->rank()==0)
-//         {
-//           hid_t d1= H5Fcreate(FileName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-//           HDFVersion cur_version;
-//           cur_version.write(d1,hdf::version);
-//           hid_t d2 = H5Gcreate(d1,hdf::main_state,0); 
-//           vector<int> inds(3); inds[0]=number_of_walkers; inds[1]=W.getTotalNum(); inds[2]=OHMMS_DIM;
-//           //HDFAttribIO<BufferType> po(b,inds);
-//           HDFAttribIO<BufferType> po(*RemoteData[1],inds);
-//           po.write(d2,hdf::walkers);
-//           HDFAttribIO<int> nwo(number_of_walkers);
-//           nwo.write(d2,hdf::num_walkers);
-//           H5Gclose(d2);
-//           if(H5Fclose(d1) > -1) d1 = -1;
-//        } 
-    #endif
-    }
-    wcb.clearConfigsForForwardWalking();
+    FWO.clearConfigsForForwardWalking();
   return true;
   }
 

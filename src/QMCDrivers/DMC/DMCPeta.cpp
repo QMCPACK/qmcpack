@@ -170,7 +170,7 @@ namespace qmcplusplus {
         //time to branch: see SimpleFixedNodeBranch::branch
         branchEngine->branch(CurrentStep,W);        
         if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
-          branchEngine->storeConfigsForForwardWalking(W);
+          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
           W.resetWalkerParents();
         }
       }//steps

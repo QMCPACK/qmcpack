@@ -541,7 +541,46 @@ Communicate::gatherv(std::vector<float>& l, std::vector<float>& g,
 #endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_FLOAT, 
       &g[0], &counts[0], &displ[0], MPI_FLOAT, dest, myMPI);
-}
+} 
+
+template<>
+inline void 
+Communicate::gatherv(std::vector<int>& l, std::vector<int>& g, 
+    std::vector<int>& counts, std::vector<int>& displ, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(int)<cray_short_msg_size) this->barrier();
+#endif
+  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_INT, 
+      &g[0], &counts[0], &displ[0], MPI_INT, dest, myMPI);
+} 
+
+template<>
+inline void 
+Communicate::allgatherv(std::vector<int>& l, std::vector<int>& g, 
+    std::vector<int>& counts, std::vector<int>& displ) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(int)<cray_short_msg_size) this->barrier();
+#endif
+  int ierr = MPI_Allgatherv(&l[0], l.size(), MPI_INT, 
+      &g[0], &counts[0], &displ[0], MPI_INT, myMPI);
+} 
+
+template<>
+inline void 
+Communicate::gatherv(std::vector<long>& l, std::vector<long>& g, 
+    std::vector<int>& counts, std::vector<int>& displ, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(long)<cray_short_msg_size) this->barrier();
+#endif
+  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_LONG, 
+      &g[0], &counts[0], &displ[0], MPI_LONG, dest, myMPI);
+} 
 
 template<>
 inline void 

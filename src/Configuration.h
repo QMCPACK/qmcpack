@@ -137,6 +137,7 @@ namespace qmcplusplus
   {
     return OhmmsInfo::Debug->getStream();
   }
+
 }
 
 #endif

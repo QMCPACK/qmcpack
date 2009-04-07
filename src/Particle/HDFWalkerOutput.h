@@ -19,7 +19,7 @@
 
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/ForwardWalkingStructure.h"
 #include <utility>
 
 namespace qmcplusplus {
@@ -69,7 +69,7 @@ namespace qmcplusplus {
      * @param w walkers
      */
     bool dump(MCWalkerConfiguration& w);
-    bool dump(WalkerControlBase& wcb);
+    bool dump(ForwardWalkingHistoryObject& FWO);
 
     /** append configurations
      * @param w walkers
@@ -115,8 +115,9 @@ namespace qmcplusplus {
     vector<BufferType*> RemoteData;
     
     //define some types for the FW collection
-    typedef vector<vector<WalkerControlBase::ForwardWalkingData> > FWBufferType;
-    vector<FWBufferType*> RemoteFWData;
+    typedef vector<ForwardWalkingData> FWBufferType;
+    vector<FWBufferType*> FWData;
+    vector<vector<int> > FWCountData;
   };
 
 }

@@ -203,7 +203,7 @@ namespace qmcplusplus {
 
         branchEngine->branch(CurrentStep,W, branchClones);
         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-          branchEngine->storeConfigsForForwardWalking(W);
+          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
           W.resetWalkerParents();
         }
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);

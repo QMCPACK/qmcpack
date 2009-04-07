@@ -122,6 +122,7 @@ public:
   template<typename T> void send(int dest, int tag, T&);
   template<typename T> void gather(T& sb, T& rb, int dest=0);
   template<typename T, typename IT> void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest=0);
+  template<typename T, typename IT> void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
   template<typename T> void scatter(T& sb, T& rb, int dest=0);
   template<typename T, typename IT> void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source=0);
   template<typename T> request irecv(int source, int tag, T&);
@@ -145,6 +146,7 @@ namespace OHMMS {
    */
   extern Communicate* Controller;
 }
+
 
 #endif // OHMMS_COMMUNICATE_H
 /***************************************************************************

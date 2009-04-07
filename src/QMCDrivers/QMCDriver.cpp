@@ -62,6 +62,7 @@ namespace qmcplusplus {
 
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     //H.add2WalkerProperty(W);
+    if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   }
 
   QMCDriver::~QMCDriver() 
@@ -193,7 +194,7 @@ namespace qmcplusplus {
       branchEngine->write(wOut->FileName,false); //save energy_history
       if (storeConfigs)
       {
-        wOut->dump( *(branchEngine->getWalkerController()) );
+        wOut->dump( ForwardWalkingHistory);
       }
     }
 

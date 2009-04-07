@@ -21,6 +21,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/ForwardWalkingStructure.h"
 
 //#include <boost/archive/binary_oarchive.hpp>
 
@@ -177,63 +178,109 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
     
-    struct ForwardWalkingData
-    { 
-      typedef TinyVector<float,DIM>       StoredPosType;
-      typedef ParticleAttrib<StoredPosType>       StoredPosVector;
-      long ID;
-      long ParentID;
-      StoredPosVector Pos;
-      
-      inline ForwardWalkingData(const Walker_t& a)
-      {
-        Pos.resize(a.R.size()); 
-        Pos = a.R;
-        ID = a.ID;
-        ParentID = a.ParentID; 
-      }
-      
-      inline ForwardWalkingData& operator=(const Walker_t& a) {
-        Pos = a.R;
-        ID = a.ID;
-        ParentID = a.ParentID;
-        return *this;
-      } 
-      
-      inline int SizeOf()
-      {
-        return sizeof(long)*2 + Pos.size()*DIM*sizeof(float);
-      }
-    };
+   
     
-    vector<vector<ForwardWalkingData> > ForwardWalkingHistory; 
-    inline void storeConfigsForForwardWalking(MCWalkerConfiguration& W)
-    { 
-      vector<ForwardWalkingData> ForwardWalkingHere;
-      
-      for(std::vector<Walker_t*>::iterator Wit(W.begin()); Wit != W.end(); Wit++ )
-      {
-        ForwardWalkingData fwhere( *(*Wit) );
-        ForwardWalkingHere.push_back(fwhere);
-      }
-      
-      ForwardWalkingHistory.push_back(ForwardWalkingHere);
-    }
+//     struct ForwardWalkingData
+//     { 
+//       typedef TinyVector<float,DIM>       StoredPosType;
+//       typedef ParticleAttrib<StoredPosType>       StoredPosVector;
+//       long ID;
+//       long ParentID;
+//       StoredPosVector Pos;
+//       
+//       inline ForwardWalkingData()
+//       {
+//       }
+//       
+//       inline ForwardWalkingData(const Walker_t& a)
+//       {
+//         Pos.resize(a.R.size()); 
+//         Pos = a.R;
+//         ID = a.ID;
+//         ParentID = a.ParentID; 
+//       }
+//        
+//       inline ForwardWalkingData(const ForwardWalkingData& a)
+//       {
+//         Pos.resize(a.Pos.size()); 
+//         Pos = a.Pos;
+//         ID = a.ID;
+//         ParentID = a.ParentID; 
+//       }
+//       
+//       inline ForwardWalkingData(const int a)
+//       {
+//         Pos.resize(a); 
+//       }
+//       
+//       inline ForwardWalkingData& operator=(const Walker_t& a) {
+//         Pos.resize(a.R.size()); 
+//         Pos = a.R;
+//         ID = a.ID;
+//         ParentID = a.ParentID;
+//         return *this;
+//       } 
+//        
+//       inline ForwardWalkingData& operator=(const ForwardWalkingData& a)
+//       {
+//         Pos.resize(a.Pos.size()); 
+//         Pos = a.Pos;
+//         ID = a.ID;
+//         ParentID = a.ParentID; 
+//         return *this;
+//       }
+//       
+//       inline int SizeOf()
+//       {
+//         return sizeof(long)*2 + Pos.size()*DIM*sizeof(float);
+//       }
+//       
+//     };
     
-    inline void clearConfigsForForwardWalking()
-    {
-      ForwardWalkingHistory.clear();
-    }
     
-    inline int sizeOfConfigsForForwardWalking()
-    {
-      int szeFW(0);
-      int singleSize = ForwardWalkingHistory[0][0].SizeOf();
-      for(int i=0;i<ForwardWalkingHistory.size();i++) szeFW += ForwardWalkingHistory[i].size() * singleSize;
-      return szeFW;
-    }
-
+    
+//     typedef vector<ForwardWalkingData> ForwardWalkingConfiguration;
+//     vector<ForwardWalkingConfiguration> ForwardWalkingHistory;
+//     inline void storeConfigsForForwardWalking(MCWalkerConfiguration& W)
+//     { 
+//       vector<ForwardWalkingData> ForwardWalkingHere;
+//       
+//       for(std::vector<Walker_t*>::iterator Wit(W.begin()); Wit != W.end(); Wit++ )
+//       {
+//         ForwardWalkingData fwhere( *(*Wit) );
+//         ForwardWalkingHere.push_back(fwhere);
+//       }
+//       
+//       ForwardWalkingHistory.push_back(ForwardWalkingHere);
+//     }
+//     
+//     inline void clearConfigsForForwardWalking()
+//     {
+//       ForwardWalkingHistory.clear();
+//     }
+//     
+//     inline int sizeOfConfigsForForwardWalking()
+//     {
+//       int szeFW(0);
+//       int singleSize = ForwardWalkingHistory[0][0].SizeOf();
+//       for(int i=0;i<ForwardWalkingHistory.size();i++) szeFW += ForwardWalkingHistory[i].size() * singleSize;
+//       return szeFW;
+//     }
+//     
+//     inline void layoutOfConfigsForForwardWalking(vector<int>& returnVal)
+//     {
+//       returnVal.resize(ForwardWalkingHistory.size()+1,0);
+//       returnVal[0]=0;
+//       for(int i=0;i<ForwardWalkingHistory.size();i++) returnVal[i+1]=ForwardWalkingHistory[i].size();
+//     }
+    
+    
+    
   };
+  
+ 
+;
+
 
 }
 #endif
