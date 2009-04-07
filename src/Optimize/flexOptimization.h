@@ -143,9 +143,25 @@ class FlexOptimization: public MinimizerBase<T>
 
     bool put(xmlNodePtr cur)
     {
+      //generally safe defaults
+      a_linmin_maxits=5;
+      a_lastx_default=1e-4;
+      a_verbose=1;
+      deltaG=1e-2;
+      GradTol=1e-2;
+      CostTol=1e-2;
+      xycleanup=6;
+      Gfactor=3;
+      xybisect=1;
+      a_rich=1;
+      CG_ortho=1;
+      Displacement=0;
+      a_itmax=12;
+      
       ParameterSet p;
       p.add(a_itmax,"max_steps","none");
       p.add(a_itmax,"maxSteps","none");
+      p.add(a_itmax,"maxsteps","none");
       p.add(Displacement,"epsilon","none");
       p.add(CG_ortho,"length_CG","none");
       p.add(a_rich,"rich","none");
@@ -162,6 +178,7 @@ class FlexOptimization: public MinimizerBase<T>
       p.add(a_lastx_default,"stepSize","none");
       p.add(a_linmin_maxits,"max_linemin","none");
       p.add(a_linmin_maxits,"maxLinemin","none");
+      p.add(a_linmin_maxits,"maxlinemin","none");
       p.put(cur);
 
       a_lastx=a_lastx_default;

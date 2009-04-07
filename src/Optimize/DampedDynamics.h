@@ -191,20 +191,21 @@ bool DampedDynamics<T>::optimize() {
 template<class T>
 void 
 DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad) {
-  
-  if (Displacement==0)  TargetFunc->GradCost(grad, Y, Displacement);
-  else
-  {
-    Return_t dh=1.0/(2.0*Displacement);
-    for(int i=0; i<TargetFunc->NumParams() ; i++) {
-      for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
-      TargetFunc->Params(i) = Y[i]+ Displacement;
-      Return_t CostPlus = TargetFunc->Cost();
-      TargetFunc->Params(i) = Y[i]- Displacement;
-      Return_t CostMinus = TargetFunc->Cost();
-      grad[i]=(CostMinus-CostPlus)*dh;
-    }
-  }
+  TargetFunc->GradCost(grad, Y, Displacement);
+  for(int i=0;i<grad.size();i++) grad[i] *=-1.0;
+//   if (Displacement==0)  TargetFunc->GradCost(grad, Y, Displacement);
+//   else
+//   {
+//     Return_t dh=1.0/(2.0*Displacement);
+//     for(int i=0; i<TargetFunc->NumParams() ; i++) {
+//       for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
+//       TargetFunc->Params(i) = Y[i]+ Displacement;
+//       Return_t CostPlus = TargetFunc->Cost();
+//       TargetFunc->Params(i) = Y[i]- Displacement;
+//       Return_t CostMinus = TargetFunc->Cost();
+//       grad[i]=(CostMinus-CostPlus)*dh;
+//     }
+//   }
 }
 
 //template<class T>
