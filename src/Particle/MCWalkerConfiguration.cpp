@@ -287,8 +287,7 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 }
 void MCWalkerConfiguration::loadEnsemble()
 {
-  //if(SampleStack.empty()) return;
-  if(!MaxSamples) return;
+  if(SampleStack.empty()) return;
 
   Walker_t::PropertyContainer_t prop(1,PropertyList.size());
   //int nsamples=SampleStack.size();
@@ -314,8 +313,8 @@ void MCWalkerConfiguration::loadEnsemble()
 
 void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
 {
-  //if(SampleStack.empty()) return;
-  if(!MaxSamples) return;
+  if(SampleStack.empty()) return;
+  //if(!MaxSamples) return;
   Walker_t::PropertyContainer_t prop(1,PropertyList.size());
   //int nsamples=SampleStack.size();
   //for(int i=0; i<nsamples; ++i)
