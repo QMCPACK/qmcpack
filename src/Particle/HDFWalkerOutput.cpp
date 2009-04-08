@@ -91,7 +91,7 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
         h_file(-1), h_plist(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), h_state(-1), myComm(c), c_file(-1), c_state(-1)
 {
     FileName=myComm->getName()+hdf::config_ext;
-    ConfigFileName=myComm->getName()+".stored"+hdf::config_ext;
+    ConfigFileName=myComm->getName()+".storeConfig.h5";
 
     if (myComm->rank()==0)
     {
@@ -457,8 +457,8 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //     {
         for (int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) COUNTS[j][i]=TFWCountData[i*Nblocks+j];
         for (int i=0;i<Nblocks;i++) for (int j=0;j<(NN-1);j++) OFFSETS[i][j+1] = COUNTS[i][j] + OFFSETS[i][j];
-        for (int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSOFFSETS[i][j] = nFloatsPerConfig*OFFSETS[i][j];
-        for (int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSCOUNTS[i][j] = nFloatsPerConfig*COUNTS[i][j];
+        for (int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSOFFSETS[j][i] = nFloatsPerConfig*OFFSETS[j][i];
+        for (int i=0;i<NN;i++) for (int j=0;j<Nblocks;j++) POSCOUNTS[j][i] = nFloatsPerConfig*COUNTS[j][i];
 //     }
 //     for (int i=0;i<Nblocks;i++)
 //     {
