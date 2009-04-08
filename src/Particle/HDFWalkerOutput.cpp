@@ -102,6 +102,9 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
         int nel = W[0]->R.size();
         HDFAttribIO<int> nwo(nel);
         nwo.write(c_file,"NumberElectrons");
+        int dim=OHMMS_DIM;
+        HDFAttribIO<int> ndo(dim);
+        ndo.write(c_file,"DIM");
         H5Gclose(c_state);
         H5Fclose(c_file);
     }
