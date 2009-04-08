@@ -486,6 +486,8 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
                 herr_t ret = H5Dwrite(dataset, H5T_NATIVE_LONG, memspace, dataspace, H5P_DEFAULT,&(globalIDs[0]));
                 groupName = sstr.str();
 
+                sstr.str("Positions");
+                groupName = sstr.str();
                 const int rank = 1;
                 hsize_t dims[rank], maxdims[rank];
                 dims[0] = globalNPositions; /*dims[1] = nelecs; dims[2] = OHMMS_DIM;*/
