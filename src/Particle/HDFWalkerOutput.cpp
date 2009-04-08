@@ -105,7 +105,6 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
         int dim=OHMMS_DIM;
         HDFAttribIO<int> ndo(dim);
         ndo.write(c_file,"DIM");
-        H5Gclose(c_state);
         H5Fclose(c_file);
     }
 
