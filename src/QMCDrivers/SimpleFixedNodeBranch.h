@@ -143,6 +143,8 @@ namespace qmcplusplus {
     EstimatorManager*  MyEstimator;
     ///a simple accumulator for energy
     accumulator_set<RealType> EnergyHist;
+    ///a simple accumulator for variance
+    accumulator_set<RealType> VarianceHist;
     ///a simple accumulator for energy
     accumulator_set<RealType> R2Accepted;
     ///a simple accumulator for energy
