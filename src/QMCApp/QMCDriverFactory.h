@@ -44,7 +44,8 @@ namespace qmcplusplus {
       RMC_PBYP_RUN, /**< RMC type: rmc, rmc-ptcl */
       OPTIMIZE_RUN,/*!< Optimization */
       VMC_OPT_RUN, /*!< Optimization with vmc blocks */
-      WFMC_RUN
+      WFMC_RUN,
+      FW_RUN
     };
 
     /*! enum to set the bit to determine the QMC mode */
@@ -52,14 +53,15 @@ namespace qmcplusplus {
     {
       UPDATE_MODE,  /**< bit for move: walker or pbyp */
       MULTIPLE_MODE, /**< bit for multple configuration */
-      SPACEWARP_MODE /**< bit for space-warping */
+      SPACEWARP_MODE, /**< bit for space-warping */
+      ALTERNATE_MODE /**< bit for performing various analysis and weird qmc methods */
     };
 
     ///current QMC mode determined by curQmcModeBits
     unsigned long curQmcMode;
 
-    ///3-bit (SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
-    std::bitset<3> curQmcModeBits;
+    ///4-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
+    std::bitset<4> curQmcModeBits;
 
     ///type of qmcdriver
     QMCRunType curRunType;

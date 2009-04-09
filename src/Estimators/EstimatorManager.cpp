@@ -24,6 +24,7 @@
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/WFMCOnlyEstimator.h"
 #include "Estimators/LocalEnergyEstimatorHDF.h"
+#include "Estimators/FWEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "Utilities/IteratorUtility.h"
@@ -480,14 +481,20 @@ namespace qmcplusplus {
             add(new LocalEnergyEstimator(H),MainEstimatorName);
           }
         }
-	else if (est_name=="WFMConly")
-	{
-	  max4ascii=H.sizeOfObservables()+10;
-	  app_log() << "  Using WFMConly for the MainEstimator " << endl;
-	  add(new WFMCOnlyEstimator(H),MainEstimatorName);
-	  est_name=MainEstimatorName;
-	}
-        else 
+        else if (est_name=="WFMConly")
+        {
+          max4ascii=H.sizeOfObservables()+10;
+          app_log() << "  Using WFMConly for the MainEstimator " << endl;
+          add(new WFMCOnlyEstimator(H),MainEstimatorName);
+          est_name=MainEstimatorName;
+        }
+        else if (est_name=="forwardwalking")
+        {
+          max4ascii=H.sizeOfObservables()+10;
+          app_log() << "  Doing forwardwalking on hdf5 " << endl;
+          add(new ForwardWalkingEstimator(),MainEstimatorName);
+          est_name=MainEstimatorName;
+        }        else 
           extra.push_back(est_name);
       } 
       cur = cur->next;

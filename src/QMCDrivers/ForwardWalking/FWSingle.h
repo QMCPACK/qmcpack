@@ -1,0 +1,63 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Jeongnim Kim
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//   Department of Physics, Ohio State University
+//   Ohio Supercomputer Center
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#ifndef QMCPLUSPLUS_FW_ANALYSIS_H
+#define QMCPLUSPLUS_FW_ANALYSIS_H
+#include "QMCDrivers/QMCDriver.h" 
+namespace qmcplusplus {
+
+  class QMCUpdateBase;
+
+  /** @ingroup QMCDrivers  PbyP
+   *@brief Implements the VMC algorithm using particle-by-particle move. 
+   */
+  class FWSingle: public QMCDriver {
+  public:
+    /// Constructor.
+    FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    bool run();
+    bool put(xmlNodePtr cur);
+ 
+  private:
+    FWSingle(const FWSingle& a): QMCDriver(a) { }
+    /// Copy operator (disabled).
+    FWSingle& operator=(const FWSingle&) { return *this;}
+    
+    void calculateWeights();
+    void readInLong(int step, string IDstring, vector<long>& data_out);
+    void readInFloat(int step, vector<float>& data_out);
+    
+    
+    string xmlrootName;
+    stringstream fname;
+    int weightFreq, weightLength, numSteps;
+    vector<int> pointsToCalculate;
+    vector<int> Weights;
+    hid_t c_file;
+    string WID,PID;
+    int verbose;
+  };
+}
+
+#endif
+/***************************************************************************
+ * $RCSfile: VMCSingle.h,v $   $Author: jnkim $
+ * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
+ * $Id: VMCSingle.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $ 
+ ***************************************************************************/

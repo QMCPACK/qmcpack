@@ -15,6 +15,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCSingle.cpp
+  ForwardWalking/FWSingle.cpp
   VMC/VMCFactory.cpp
   WFMC/WFMCUpdateAll.cpp
   DMC/DMCOMP.cpp

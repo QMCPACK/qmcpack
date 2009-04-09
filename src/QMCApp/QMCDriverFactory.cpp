@@ -24,6 +24,7 @@
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
+#include "QMCDrivers/ForwardWalking/FWSingle.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
@@ -102,7 +103,7 @@ namespace qmcplusplus {
     aAttrib.put(cur);
 
     bool append_run =(append_tag == "yes"); 
-    bitset<3>  WhatToDo;
+    bitset<4>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
     WhatToDo[MULTIPLE_MODE]= (multi_tag == "yes");
     WhatToDo[UPDATE_MODE]= (update_mode == "pbyp");
@@ -124,12 +125,21 @@ namespace qmcplusplus {
       {
         newRunType=DMC_RUN;
       }
-      else if(qmc_mode.find("wfqmc")<nchars)
+      else if(qmc_mode.find("fw")<nchars) //number 9
+      {
+        newRunType=FW_RUN;
+          WhatToDo[UPDATE_MODE]=1;
+  WhatToDo[MULTIPLE_MODE]=0;
+  WhatToDo[SPACEWARP_MODE]=0;
+  WhatToDo[ALTERNATE_MODE]=1;
+      }
+      else if(qmc_mode.find("wfqmc")<nchars) //number 8
       {
         newRunType=WFMC_RUN;
 	WhatToDo[UPDATE_MODE]=0;
 	WhatToDo[MULTIPLE_MODE]=0;
-	WhatToDo[SPACEWARP_MODE]=0;
+  WhatToDo[SPACEWARP_MODE]=0;
+  WhatToDo[ALTERNATE_MODE]=1;
       }
       else if (qmc_mode.find("rmcPbyP")<nchars)
 	{
@@ -272,7 +282,7 @@ namespace qmcplusplus {
     else if(curRunType == WFMC_RUN) 
     {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      VMCFactory fac(8,cur);
+      VMCFactory fac(curQmcModeBits.to_ulong(),cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
       //TESTING CLONE
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
@@ -306,6 +316,10 @@ namespace qmcplusplus {
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
+    } 
+    else if(curRunType == FW_RUN)
+    {
+      qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
     } 
     else 
     {
