@@ -36,30 +36,29 @@ namespace qmcplusplus {
   bool FWSingle::run() {
     Estimators->start(weightLength,1);
     fillIDMatrix();
-    vector<vector<vector<int> > > WeightHistory(weightLength);
     //we do this once because we only want to link parents to parents if we need to
 //     if (verbose>1) app_log()<<" getting weights for generation "<<gensTransferred<<endl;
-    this->FWOneStep();
-    WeightHistory.push_back(Weights);
-    for(int ill=1;ill<weightLength;ill++)
+    for(int ill=0;ill<weightLength;ill++)
     {
       Estimators->startBlock(1);
 //       if (verbose>1) app_log()<<endl<<" getting weights for generation "<<gensTransferred<<" "<<ill<<endl<<endl;
-      this->transferParentsOneGeneration();
-      this->FWOneStep();
-      WeightHistory.push_back(Weights);
+      if (ill>0) {
+        this->transferParentsOneGeneration();
+        this->FWOneStep();
+      }
       //now the weights are correct. Next we need to load the coordinates into the configurations, evaluate the Hamiltonian,
       //weight them according to each entry in weighthistory, and accumulate statistics.
 //       Estimators->startBlock(numSteps-ill);
       Estimators->setNumberOfBlocks(this->getNumberOfSamples(ill));
+      int perBlock(0);
       for(int step=startStep;step<(numSteps-ill);step++)
       {
         this->fillWalkerPositionsandWeights(step);
+        W.resetCollectables();//do I need to do this?
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
         {
           if ((*W[wstep]).Weight>0)//if not weighted, why calculate it?
           {
-            W.resetCollectables();//do I need to do this?
             W.R = W[wstep]->R;
             W.update();
             RealType logpsi(Psi.evaluateLog(W));
@@ -70,8 +69,9 @@ namespace qmcplusplus {
           }
         }
         Estimators->accumulate(W);
+        perBlock +=walkersPerBlock[step];
       }
-      Estimators->stopBlock(1);
+      Estimators->stopBlock(perBlock);
     }
 
     
@@ -211,7 +211,8 @@ namespace qmcplusplus {
       walkersPerBlock.push_back( (*stepIDIterator).size() );
       stepIDIterator++; stepPIDIterator++; st++;
     } while (st<numSteps);
-    this->resetWeights();
+    Weights.resize( IDs.size());
+    for(int i=0;i<IDs.size();i++) Weights[i].resize(IDs[i].size(),1);
     realPIDs = PIDs;
   }
   
@@ -363,8 +364,9 @@ namespace qmcplusplus {
     int numberDataPoints = weightLength/weightFreq;
     pointsToCalculate.resize(numberDataPoints);
     for(int i=0;i<numberDataPoints;i++) pointsToCalculate[i]=i*weightFreq;
-    app_log()<<"  Observables will be calculated each "<<weightFreq<<" steps. At: ";
-    for(int i=0;i<numberDataPoints;i++) app_log()<<pointsToCalculate[i]<<" ";
+    app_log()<<"  Observables will be calculated each "<<weightFreq<<endl;
+    app_log()<<"  Config Generations skipped for thermalization: "<<startStep<<endl;//<<" steps. At: ";
+//     for(int i=0;i<numberDataPoints;i++) app_log()<<pointsToCalculate[i]<<" ";
     app_log()<<endl;
     H5Fclose(c_file);
     

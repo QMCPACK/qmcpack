@@ -457,13 +457,31 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
         {
             int globalNPositions = POSCOUNTS[i][POSCOUNTS[i].size()-1] + POSOFFSETS[i][POSOFFSETS[i].size()-1];
             int globalNIDs = COUNTS[i][COUNTS[i].size()-1] + OFFSETS[i][OFFSETS[i].size()-1];
-            vector<float> myPositions(POSCOUNTS[i][RN],0),globalPositions(globalNPositions,0);
-            vector<long> myIDs(COUNTS[i][RN],0),globalIDs(globalNIDs,0);
-            vector<long> myParentIDs(COUNTS[i][RN],0),globalParentIDs(globalNIDs,0);
+//             vector<float> myPositions(POSCOUNTS[i][RN],0),globalPositions(globalNPositions,0);
+//             vector<long> myIDs(COUNTS[i][RN],0),globalIDs(globalNIDs,0);
+//             vector<long> myParentIDs(COUNTS[i][RN],0),globalParentIDs(globalNIDs,0);
+
+            vector<float> myPositions ,globalPositions(globalNPositions,0);
+            vector<long> myIDs(COUNTS[i][RN],0) ,globalIDs(globalNIDs,0);
+            vector<long> myParentIDs(COUNTS[i][RN],0) ,globalParentIDs(globalNIDs,0);
+            //Stick things into the arrays before moving them around
+//             vector<float> posVecs;
+            for (int j=0;j<myWalkerLayout[i];j++)
+            {
+                vector<float> tposVec;
+                (FWO.ForwardWalkingHistory[i][j]).toFloat(tposVec);
+                myPositions.insert(myPositions.end(),tposVec.begin(),tposVec.end());
+            }
+            assert(myPositions.size() == POSCOUNTS[i][RN]);
+
+            for (int j=0;j<myWalkerLayout[i];j++)  myIDs[j]=FWO.ForwardWalkingHistory[i][j].ID;
+            for (int j=0;j<myWalkerLayout[i];j++)  myParentIDs[j]=FWO.ForwardWalkingHistory[i][j].ParentID;
+
+
+            //Now gather to the head node
             myComm->gatherv( myIDs, globalIDs , COUNTS[i] , OFFSETS[i]);
             myComm->gatherv( myParentIDs, globalParentIDs , COUNTS[i] , OFFSETS[i]);
             myComm->gatherv( myPositions, globalPositions , POSCOUNTS[i] , POSOFFSETS[i]);
-            //Now I have gathered all the positions and IDs to the head node. I just need to write them.
             if (myComm->rank()==0)
             {
                 ++currentConfigNumber;
@@ -484,6 +502,11 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
                 hid_t dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_LONG, dataspace, p);
                 hid_t memspace = H5Screate_simple(IDrank, IDdims, NULL);
                 herr_t ret = H5Dwrite(dataset, H5T_NATIVE_LONG, memspace, dataspace, H5P_DEFAULT,&(globalIDs[0]));
+                
+                H5Sclose(memspace);
+                H5Sclose(dataspace);
+                H5Dclose(dataset);
+
                 groupName = sstr.str();
 
                 sstr.str("Positions");
@@ -499,6 +522,10 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
                 dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_FLOAT, dataspace, p);
                 memspace = H5Screate_simple(rank, dims, NULL);
                 ret = H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT,&(globalPositions[0]));
+
+                H5Sclose(memspace);
+                H5Sclose(dataspace);
+                H5Dclose(dataset);
 
                 sstr.str("ParentID");
                 groupName = sstr.str();
@@ -516,10 +543,10 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
                 H5Sclose(memspace);
                 H5Sclose(dataspace);
                 H5Dclose(dataset);
-                H5Fclose(d_file);
-                H5Fclose(c_file);
+                if (H5Gclose(d_file) > -1) d_file = -1;
+                if (H5Fclose(c_file) > -1) c_file = -1;
             }
-            myComm->barrier();
+            myComm->barrier(); //Do I really need to wait here?
         }
 #endif
     }
@@ -576,9 +603,9 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
             hid_t dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_FLOAT, dataspace, p);
             hid_t memspace = H5Screate_simple(rank, dims, NULL);
             herr_t ret = H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT,&(posVecs[0]));
-//           H5Sclose(memspace);
-//           H5Sclose(dataspace);
-//           H5Dclose(dataset);
+          H5Sclose(memspace);
+          H5Sclose(dataspace);
+          H5Dclose(dataset);
 
             sstr.str("WalkerID");
             groupName = sstr.str();
@@ -596,9 +623,9 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
             dataset =  H5Dcreate(d_file, groupName.c_str(), H5T_NATIVE_LONG, dataspace, p);
             memspace = H5Screate_simple(IDrank, IDdims, NULL);
             ret = H5Dwrite(dataset, H5T_NATIVE_LONG, memspace, dataspace, H5P_DEFAULT,&(IDs[0]));
-//           H5Sclose(memspace);
-//           H5Sclose(dataspace);
-//           H5Dclose(dataset);
+          H5Sclose(memspace);
+          H5Sclose(dataspace);
+          H5Dclose(dataset);
 
             sstr.str("ParentID");
             groupName = sstr.str();
@@ -614,9 +641,9 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
             H5Sclose(memspace);
             H5Sclose(dataspace);
             H5Dclose(dataset);
-            H5Fclose(d_file);
+            if (H5Gclose(d_file) > -1) d_file = -1;
         }
-        H5Fclose(c_file);
+        if (H5Fclose(c_file) > -1) c_file = -1;
     }
     FWO.clearConfigsForForwardWalking();
     return true;

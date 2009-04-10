@@ -54,7 +54,7 @@ namespace qmcplusplus
         for (int i=0;i<nObservables;i++)
           {
             int lastindex = tWalker->PHindex[Pindices[i]]-1;
-            if (lastindex<0) lastindex +=walkerLengths[i][2];
+            if (lastindex<0) lastindex +=walkerLengths[i][2];//tWalker->PropertyHistory[Pindices[i]].size();
             tWalker->addPropertyHistoryPoint(Pindices[i],  tWalker->PropertyHistory[Pindices[i]][lastindex]  );
           }
 

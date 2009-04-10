@@ -89,7 +89,7 @@ namespace qmcplusplus {
           for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
           app_log()<<endl;
           walkerLengths.push_back(Parameters);
-          int maxWsize=Parameters.back();
+          int maxWsize=Parameters.back()+1;
           int pindx = P.addPropertyHistory(maxWsize);
           Pindices.push_back(pindx);
 
@@ -173,9 +173,9 @@ namespace qmcplusplus {
       for(int j=0;j<walkerLengths[i].size();++j,++nc)
       {
         std::stringstream sstr;
-        sstr << "FW_" << Names[i] << "_" << walkerLengths[i][j];
+        sstr << "FWE_" << Names[i] << "_" << walkerLengths[i][j];
         int id=plist.add(sstr.str());
-        myIndex=std::min(myIndex,id);
+//         myIndex=std::min(myIndex,id);
         //app_log() <<" Observables named "<<sstr.str() << " at " << id <<endl;
       }
     app_log()<<"ForwardWalking::Observables [" << myIndex << ", " << myIndex+nc << ")" << endl;
