@@ -51,6 +51,7 @@ namespace qmcplusplus {
       //now the weights are correct. Next we need to load the coordinates into the configurations, evaluate the Hamiltonian,
       //weight them according to each entry in weighthistory, and accumulate statistics.
 //       Estimators->startBlock(numSteps-ill);
+      Estimators->setNumberOfBlocks(this->getNumberOfSamples(ill));
       for(int step=startStep;step<(numSteps-ill);step++)
       {
         fillWalkerPositionsandWeights(step);
@@ -73,6 +74,13 @@ namespace qmcplusplus {
     
     Estimators->stop();
     return true;
+  }
+  
+  int FWSingle::getNumberOfSamples(int omittedSteps)
+  {
+    int returnValue(0);
+    for(int i=startStep;i<(numSteps-omittedSteps);i++) returnValue +=walkersPerBlock[i];
+    return returnValue;
   }
   
   void FWSingle::readInLong(int step, string IDstring, vector<long>& data_out)
@@ -188,6 +196,7 @@ namespace qmcplusplus {
   
   void FWSingle::fillIDMatrix()
   {
+    if (verbose>1) app_log()<<" There are "<<numSteps<<" steps"<<endl;
     IDs.resize(numSteps); PIDs.resize(numSteps); Weights.resize(numSteps);
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(PIDs.begin());

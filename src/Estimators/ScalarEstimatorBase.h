@@ -50,8 +50,9 @@ namespace qmcplusplus {
     vector<accumulator_type> scalars; 
     ///scalars saved
     vector<accumulator_type> scalars_saved;
+    RealType NSTEPS;
 
-    inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
+    inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0),NSTEPS(0) {}
 
     virtual ~ScalarEstimatorBase(){}
 
@@ -126,6 +127,11 @@ namespace qmcplusplus {
 
     ///clone the object
     virtual ScalarEstimatorBase* clone()=0;
+    
+    inline void setNumberOfBlocks(int nsamples)
+    {
+      NSTEPS=1.0/ static_cast<RealType>(nsamples);
+    }
   };
 }
 

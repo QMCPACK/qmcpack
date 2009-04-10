@@ -49,6 +49,7 @@ namespace qmcplusplus {
     void readInLong(int step, string IDstring, vector<long>& data_out);
     void readInFloat(int step, vector<float>& data_out);
     void resetWeights();
+    int getNumberOfSamples(int omittedSteps);
 //debugging functions
     void printIDs(vector<long> vi);
     void printInts(vector<int> vi);

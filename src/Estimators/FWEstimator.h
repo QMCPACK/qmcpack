@@ -51,17 +51,18 @@ namespace qmcplusplus {
     {
       const RealType* restrict ePtr = awalker.getPropertyBase();
       RealType wwght= wgt* awalker.Weight;
-      RealType wwght2= wwght*wwght;
+      RealType wwght2= wwght*wwght;//I forget, for variance, should I also square the weight? I don't think so.
       scalars[0](ePtr[LOCALENERGY],wwght);
-      scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght2);
+      scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght);
       scalars[2](ePtr[LOCALPOTENTIAL],wwght);
-      scalars[3](ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL],wwght2);
+      scalars[3](ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL],wwght);
       for(int target=4, source=FirstHamiltonian; target<scalars.size(); target+=2, ++source)
       {
         scalars[target](ePtr[source],wwght);
-        scalars[target+1](ePtr[source]*ePtr[source],wwght2);
+        scalars[target+1](ePtr[source]*ePtr[source],wwght);
       }
     }
+
 
     /*@{*/
     inline void accumulate(const MCWalkerConfiguration& W

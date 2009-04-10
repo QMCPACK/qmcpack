@@ -176,7 +176,13 @@ namespace qmcplusplus {
      * @param steps number of steps in a block
      */
     void startBlock(int steps);
-
+    
+    void setNumberOfBlocks(int blocks)
+     {
+     for(int i=0; i<Estimators.size(); i++) 
+        Estimators[i]->setNumberOfBlocks(blocks);
+     }
+     
     /** stop a block
      * @param accept acceptance rate of this block
      */
