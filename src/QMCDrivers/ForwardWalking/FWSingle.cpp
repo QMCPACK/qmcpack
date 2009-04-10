@@ -58,7 +58,7 @@ namespace qmcplusplus {
           W.resetCollectables();//do I need to do this?
           W.R = W[wstep]->R;
           W.update();
-          return_t eloc=H.evaluate( W );
+          RealType eloc=H.evaluate( W );
           (*W[wstep]).resetProperty(1,1,eloc);
           H.auxHevaluate(W,*(W[wstep]));
           H.saveProperty((*W[wstep]).getPropertyBase());
