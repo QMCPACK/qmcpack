@@ -38,13 +38,13 @@ namespace qmcplusplus {
     fillIDMatrix();
     vector<vector<vector<int> > > WeightHistory(weightLength);
     //we do this once because we only want to link parents to parents if we need to
-    if (verbose>1) app_log()<<" getting weights for generation "<<gensTransferred<<endl;
+//     if (verbose>1) app_log()<<" getting weights for generation "<<gensTransferred<<endl;
     this->FWOneStep();
     WeightHistory.push_back(Weights);
     for(int ill=1;ill<weightLength;ill++)
     {
       Estimators->startBlock(1);
-      if (verbose>1) app_log()<<endl<<" getting weights for generation "<<gensTransferred<<" "<<ill<<endl<<endl;
+//       if (verbose>1) app_log()<<endl<<" getting weights for generation "<<gensTransferred<<" "<<ill<<endl<<endl;
       this->transferParentsOneGeneration();
       this->FWOneStep();
       WeightHistory.push_back(Weights);
@@ -54,17 +54,20 @@ namespace qmcplusplus {
       Estimators->setNumberOfBlocks(this->getNumberOfSamples(ill));
       for(int step=startStep;step<(numSteps-ill);step++)
       {
-        fillWalkerPositionsandWeights(step);
+        this->fillWalkerPositionsandWeights(step);
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
         {
-          W.resetCollectables();//do I need to do this?
-          W.R = W[wstep]->R;
-          W.update();
-          RealType logpsi(Psi.evaluateLog(W));
-          RealType eloc=H.evaluate( W );
-          (*W[wstep]).resetProperty(logpsi,1,eloc);
-          H.auxHevaluate(W,*(W[wstep]));
-          H.saveProperty((*W[wstep]).getPropertyBase());
+          if ((*W[wstep]).Weight>0)//if not weighted, why calculate it?
+          {
+            W.resetCollectables();//do I need to do this?
+            W.R = W[wstep]->R;
+            W.update();
+            RealType logpsi(Psi.evaluateLog(W));
+            RealType eloc=H.evaluate( W );
+            (*W[wstep]).resetProperty(logpsi,1,eloc);
+            H.auxHevaluate(W,*(W[wstep]));
+            H.saveProperty((*W[wstep]).getPropertyBase());
+          }
         }
         Estimators->accumulate(W);
       }
@@ -112,23 +115,23 @@ namespace qmcplusplus {
     filespace = H5Dget_space(dataset); 
     rank = H5Sget_simple_extent_ndims(filespace);
     status_n  = H5Sget_simple_extent_dims(filespace, dims, NULL);
-    if (verbose>1) printf("dataset ",IDstring.c_str(),"rank %d, dimensions %lu x %lu\n", rank, (unsigned long)(dims[0]), (unsigned long)(dims[1]));
+//     if (verbose>1) printf("dataset ",IDstring.c_str(),"rank %d, dimensions %lu x %lu\n", rank, (unsigned long)(dims[0]), (unsigned long)(dims[1]));
     data_out.resize(dims[0]);
     cparms = H5Dget_create_plist(dataset);
     if (H5D_CHUNKED == H5Pget_layout(cparms))  {
       rank_chunk = H5Pget_chunk(cparms, 2, chunk_dims);
-      if (verbose>1) printf("chunk rank %d, dimensions %lu \n", rank_chunk, (unsigned long)(chunk_dims[0]) );
+//       if (verbose>1) printf("chunk rank %d, dimensions %lu \n", rank_chunk, (unsigned long)(chunk_dims[0]) );
     }
     memspace = H5Screate_simple(RANK,dims,NULL);
     
     status = H5Dread(dataset, H5T_NATIVE_LONG, memspace, filespace, H5P_DEFAULT, &(data_out[0]));
-    if(verbose>2)
-    {
-      printf("\n");
-      app_log()<<IDstring.c_str()<<" Dataset: \n"<<endl;
-      for (int j = 0; j < dims[0]; j++) app_log()<<data_out[j]<<" ";
-      app_log()<<endl;
-    }
+//     if(verbose>2)
+//     {
+//       printf("\n");
+//       app_log()<<IDstring.c_str()<<" Dataset: \n"<<endl;
+//       for (int j = 0; j < dims[0]; j++) app_log()<<data_out[j]<<" ";
+//       app_log()<<endl;
+//     }
     H5Pclose(cparms);
     H5Dclose(dataset);
     H5Sclose(filespace);
@@ -167,12 +170,12 @@ namespace qmcplusplus {
     filespace = H5Dget_space(dataset); 
     rank = H5Sget_simple_extent_ndims(filespace);
     status_n  = H5Sget_simple_extent_dims(filespace, dims, NULL);
-    if (verbose>1) printf("dataset rank %d, dimensions %lu x %lu\n", rank, (unsigned long)(dims[0]), (unsigned long)(dims[1]));
+//     if (verbose>1) printf("dataset rank %d, dimensions %lu x %lu\n", rank, (unsigned long)(dims[0]), (unsigned long)(dims[1]));
     data_out.resize(dims[0]);
     cparms = H5Dget_create_plist(dataset);
     if (H5D_CHUNKED == H5Pget_layout(cparms))  {
       rank_chunk = H5Pget_chunk(cparms, 2, chunk_dims);
-      if (verbose>1) printf("chunk rank %d, dimensions %lu \n", rank_chunk, (unsigned long)(chunk_dims[0]) );
+//       if (verbose>1) printf("chunk rank %d, dimensions %lu \n", rank_chunk, (unsigned long)(chunk_dims[0]) );
     }
     memspace = H5Screate_simple(RANK,dims,NULL);
     
@@ -196,7 +199,7 @@ namespace qmcplusplus {
   
   void FWSingle::fillIDMatrix()
   {
-    if (verbose>1) app_log()<<" There are "<<numSteps<<" steps"<<endl;
+//     if (verbose>0) app_log()<<" There are "<<numSteps<<" steps"<<endl;
     IDs.resize(numSteps); PIDs.resize(numSteps); Weights.resize(numSteps);
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(PIDs.begin());
@@ -234,7 +237,7 @@ namespace qmcplusplus {
   
   void FWSingle::resetWeights()
   {
-    if (verbose>2) app_log()<<" Resetting Weights"<<endl;
+//     if (verbose>2) app_log()<<" Resetting Weights"<<endl;
     Weights.resize( IDs.size());
     for(int i=0;i<IDs.size();i++) Weights[i].resize(IDs[i].size(),0);
   }
@@ -250,7 +253,7 @@ namespace qmcplusplus {
       it++;
     } while(it<orderedPIDs.end());
     
-    if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
+//     if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
     this->resetWeights();
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred), last_stepPIDIterator(orderedPIDs.end());
@@ -259,13 +262,13 @@ namespace qmcplusplus {
     int i=0;
     do
     {
-      if (verbose>2) app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<<endl;
-      if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIterator).size()<<endl;
+//       if (verbose>2) app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<<endl;
+//       if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIterator).size()<<endl;
       
       vector<long>::iterator IDit( (*stepIDIterator).begin()     ), last_IDit( (*stepIDIterator).end());
       vector<long>::iterator PIDit( (*stepPIDIterator).begin()   ), last_PIDit( (*stepPIDIterator).end());
       vector<int>::iterator  Wit( (*stepWeightsIterator).begin() );
-      if (verbose>2) app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<<endl;
+//       if (verbose>2) app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<<endl;
       
       do
       {
@@ -280,8 +283,8 @@ namespace qmcplusplus {
           Wit++;
         }
       }while(PIDit<last_PIDit);
-      if (verbose>2) { printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
-      if (verbose>2) printInts((*stepWeightsIterator));
+//       if (verbose>2) { printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
+//       if (verbose>2) printInts((*stepWeightsIterator));
       stepIDIterator++; stepPIDIterator++; stepWeightsIterator++; i++;
       
     }while(stepPIDIterator<orderedPIDs.end());
@@ -318,11 +321,11 @@ namespace qmcplusplus {
     int i(0);
     do
     {
-      if (verbose>2) {printIDs((*nextStepPIDIterator));printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
+//       if (verbose>2) {printIDs((*nextStepPIDIterator));printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
       vector<long>::iterator hereID( (*stepIDIterator).begin() ) ;
       vector<long>::iterator nextStepPID( (*nextStepPIDIterator).begin() );
       vector<long>::iterator herePID( (*stepPIDIterator).begin() );
-      if (verbose>2) app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()<<endl;
+//       if (verbose>2) app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()<<endl;
       do
       {
         if ((*herePID)==(*hereID)) 
