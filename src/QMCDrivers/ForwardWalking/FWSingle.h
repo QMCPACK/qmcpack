@@ -39,19 +39,32 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     FWSingle& operator=(const FWSingle&) { return *this;}
     
-    void calculateWeights();
+//main drivers
+    void FWOneStep();
+    void transferParentsOneGeneration();
+
+//helper functions
+    void fillIDMatrix();
+    void fillWalkerPositionsandWeights(int nstep);
     void readInLong(int step, string IDstring, vector<long>& data_out);
     void readInFloat(int step, vector<float>& data_out);
-    
+    void resetWeights();
+//debugging functions
+    void printIDs(vector<long> vi);
+    void printInts(vector<int> vi);
     
     string xmlrootName;
     stringstream fname;
     int weightFreq, weightLength, numSteps;
+    
+    vector<int> walkersPerBlock;
     vector<int> pointsToCalculate;
-    vector<int> Weights;
+    vector<vector<int> > Weights;
+    vector<vector<long> > IDs, PIDs, realPIDs;
     hid_t c_file;
     string WID,PID;
     int verbose;
+    int gensTransferred;
   };
 }
 
