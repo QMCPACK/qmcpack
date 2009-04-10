@@ -27,6 +27,7 @@ SET(QMCDRIVERS
   DMC/WalkerReconfiguration.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
+  ../Estimators/FWEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp

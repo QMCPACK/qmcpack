@@ -17,51 +17,67 @@
 #ifndef QMCPLUSPLUS_FORWARDWALKING_ESTIMATOR_H
 #define QMCPLUSPLUS_FORWARDWALKING_ESTIMATOR_H
 #include "Estimators/ScalarEstimatorBase.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
+
 namespace qmcplusplus {
 
-  /** Estimator for local energy only
+  /** Class to accumulate the local energy and components
+   *
+   * Use Walker::Properties to accumulate Hamiltonian-related quantities.
    */
-  struct ForwardWalkingEstimator: public ScalarEstimatorBase {
+  class ForwardWalkingEstimator: public ScalarEstimatorBase 
+  {
 
-    inline ForwardWalkingEstimator() 
-    {
-      scalars.resize(2);
-      scalars_saved.resize(2);
-    }
+    enum {ENERGY_INDEX, POTENTIAL_INDEX, LE_MAX};
 
-    inline void accumulate(const MCWalkerConfiguration& W
-        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    int FirstHamiltonian;
+    int SizeOfHamiltonians;
+    const QMCHamiltonian& refH;
+
+  public:
+
+    /** constructor
+     * @param h QMCHamiltonian to define the components
+     */
+    ForwardWalkingEstimator(QMCHamiltonian& h);
+
+    /** accumulation per walker
+     * @param awalker current walker
+     * @param wgt weight
+     * 
+     * Weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
+     */
+    inline void accumulate(const Walker_t& awalker, RealType wgt) 
     {
-      for(; first != last; ++first)
+      const RealType* restrict ePtr = awalker.getPropertyBase();
+      RealType wwght= wgt* awalker.Weight;
+      RealType wwght2= wwght*wwght;
+      scalars[0](ePtr[LOCALENERGY],wwght);
+      scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght2);
+      scalars[2](ePtr[LOCALPOTENTIAL],wwght);
+      scalars[3](ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL],wwght2);
+      for(int target=4, source=FirstHamiltonian; target<scalars.size(); target+=2, ++source)
       {
-        scalars[0]((*first)->Properties(LOCALENERGY),wgt);
-        scalars[1]((*first)->Properties(LOCALPOTENTIAL),wgt);
+        scalars[target](ePtr[source],wwght);
+        scalars[target+1](ePtr[source]*ePtr[source],wwght2);
       }
     }
 
-    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
-    {}
-    /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
-     * @param record storage of scalar records (name,value)
-     */
-    inline void add2Record(RecordListType& record) {
-      FirstIndex = record.add("LocalEnergy");
-      int s1=record.add("LocalPotential");
-      LastIndex = FirstIndex+2;
-      // int s2=record.add("KineticEnergy");
-      //LastIndex = FirstIndex+3;
-      clear();
-    }
-    ScalarEstimatorBase* clone()
+    /*@{*/
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
     {
-      return new ForwardWalkingEstimator();
+      for(; first != last; ++first) accumulate(**first,wgt);
     }
-
+    void add2Record(RecordListType& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) {}
+    ScalarEstimatorBase* clone();
+    /*@}*/
   };
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 3503 $   $Date: 2009-02-02 11:24:37 -0600 (Mon, 02 Feb 2009) $
- * $Id: LocalEnergyOnlyEstimator.h 3503 2009-02-02 17:24:37Z jnkim $ 
+ * $Id: ForwardWalkingEstimator.h 3503 2009-02-02 17:24:37Z jnkim $ 
  ***************************************************************************/

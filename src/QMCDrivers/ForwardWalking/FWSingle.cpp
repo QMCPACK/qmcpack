@@ -21,7 +21,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   FWSingle::FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), weightFreq(1), weightLength(5), fname(""), verbose(0), WID("WalkerID"), PID("ParentID"),gensTransferred(1)
+    QMCDriver(w,psi,h), weightFreq(1), weightLength(5), fname(""), verbose(0), WID("WalkerID"), PID("ParentID"),gensTransferred(1),startStep(2)
   { 
     RootName = "FW";
     QMCType ="FWSingle";
@@ -30,6 +30,7 @@ namespace qmcplusplus {
     m_param.add(weightLength,"numbersteps","int");
     m_param.add(weightFreq,"skipsteps","int");
     m_param.add(verbose,"verbose","int");
+    m_param.add(startStep,"ignore","int");
   }
   
   bool FWSingle::run() {
@@ -50,7 +51,7 @@ namespace qmcplusplus {
       //now the weights are correct. Next we need to load the coordinates into the configurations, evaluate the Hamiltonian,
       //weight them according to each entry in weighthistory, and accumulate statistics.
 //       Estimators->startBlock(numSteps-ill);
-      for(int step=0;step<(numSteps-ill);step++)
+      for(int step=startStep;step<(numSteps-ill);step++)
       {
         fillWalkerPositionsandWeights(step);
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
@@ -58,15 +59,15 @@ namespace qmcplusplus {
           W.resetCollectables();//do I need to do this?
           W.R = W[wstep]->R;
           W.update();
+          RealType logpsi(Psi.evaluateLog(W));
           RealType eloc=H.evaluate( W );
-          (*W[wstep]).resetProperty(1,1,eloc);
+          (*W[wstep]).resetProperty(logpsi,1,eloc);
           H.auxHevaluate(W,*(W[wstep]));
           H.saveProperty((*W[wstep]).getPropertyBase());
         }
         Estimators->accumulate(W);
       }
       Estimators->stopBlock(1);
-//       recordBlock(ill);
     }
 
     

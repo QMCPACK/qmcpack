@@ -490,9 +490,9 @@ namespace qmcplusplus {
         }
         else if (est_name=="forwardwalking")
         {
-          max4ascii=H.sizeOfObservables()+10;
+          max4ascii=2*H.sizeOfObservables()+4;
           app_log() << "  Doing forwardwalking on hdf5 " << endl;
-          add(new ForwardWalkingEstimator(),MainEstimatorName);
+          add(new ForwardWalkingEstimator(H),MainEstimatorName);
           est_name=MainEstimatorName;
         }        else 
           extra.push_back(est_name);

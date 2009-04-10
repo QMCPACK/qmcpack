@@ -63,7 +63,7 @@ namespace qmcplusplus {
     vector<vector<long> > IDs, PIDs, realPIDs;
     hid_t c_file;
     string WID,PID;
-    int verbose;
+    int verbose,startStep;
     int gensTransferred;
   };
 }
