@@ -89,7 +89,7 @@ namespace qmcplusplus {
       
       inline void fromFloat(vector<float>& pout)
       {
-        Pos.resize(pout.size()%OHMMS_DIM);
+        Pos.resize(pout.size()/OHMMS_DIM);
         vector<float>::iterator pit=pout.begin() ;
         for (int i=0;i<Pos.size();i++) for (int j=0;j<OHMMS_DIM;j++,pit++) Pos[i][j] = (*pit);
       }
