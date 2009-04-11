@@ -484,7 +484,6 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
             myComm->gatherv( myPositions, globalPositions , POSCOUNTS[i] , POSOFFSETS[i]);
             if (myComm->rank()==0)
             {
-                ++currentConfigNumber;
                 hid_t c_file = H5Fopen(ConfigFileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
                 std::stringstream sstr("");
                 sstr<<"Block_"<<currentConfigNumber;
@@ -545,6 +544,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
                 H5Dclose(dataset);
                 if (H5Gclose(d_file) > -1) d_file = -1;
                 if (H5Fclose(c_file) > -1) c_file = -1;
+                ++currentConfigNumber;
             }
             myComm->barrier(); //Do I really need to wait here?
         }
@@ -564,15 +564,15 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
         int nelecs = FWO.ForwardWalkingHistory[0][0].Pos.size();
         c_file = H5Fopen(ConfigFileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
 
-        int Gsize= (2*sizeof(long)+sizeof(float)*nelecs*OHMMS_DIM)*totWalkers;
+//         int Gsize= (2*sizeof(long)+sizeof(float)*nelecs*OHMMS_DIM)*totWalkers;
 
         typedef ForwardWalkingData::StoredPosType StoredPosType;
         for (int i=0; i<Nblocks; i++ )
         {
-            ++currentConfigNumber;
+            
             std::stringstream sstr("");
             sstr<<"Block_"<<currentConfigNumber;
-            hid_t d_file = H5Gcreate(c_file,sstr.str().c_str(),Gsize);
+            hid_t d_file = H5Gcreate(c_file,sstr.str().c_str(),0);
             sstr.str("Positions");
             string groupName = sstr.str();
 //           Matrix<StoredPosType> tp(NWalkersInBlock[i],nelecs);
@@ -610,7 +610,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 
             sstr.str("WalkerID");
             groupName = sstr.str();
-            vector<long> IDs(NWalkersInBlock[i]);
+            vector<long> IDs(NWalkersInBlock[i],0);
             for (int j=0;j<NWalkersInBlock[i];j++)  IDs[j]=FWO.ForwardWalkingHistory[i][j].ID;
 
             const int IDrank = 1;
@@ -630,7 +630,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 
             sstr.str("ParentID");
             groupName = sstr.str();
-            vector<long> ParentIDs(NWalkersInBlock[i]);
+            vector<long> ParentIDs(NWalkersInBlock[i],0);
             for (int j=0;j<NWalkersInBlock[i];j++)  ParentIDs[j]=FWO.ForwardWalkingHistory[i][j].ParentID;
 
             dataspace  = H5Screate_simple(IDrank, IDdims, IDmaxdims);
@@ -642,7 +642,11 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
             H5Sclose(memspace);
             H5Sclose(dataspace);
             H5Dclose(dataset);
+
+            HDFAttribIO<int> nwo(NWalkersInBlock[i]);
+            nwo.write(d_file,hdf::num_walkers);
             if (H5Gclose(d_file) > -1) d_file = -1;
+            ++currentConfigNumber;
         }
         if (H5Fclose(c_file) > -1) c_file = -1;
     }

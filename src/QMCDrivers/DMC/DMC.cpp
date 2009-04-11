@@ -62,6 +62,10 @@ namespace qmcplusplus {
       Mover->startBlock(nSteps);
       for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
       {
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
+          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+          W.resetWalkerParents();
+        }
         for(IndexType interval=0; interval<BranchInterval-1; ++interval)
           Mover->advanceWalkers(W.begin(),W.end(), false);
 
@@ -70,10 +74,6 @@ namespace qmcplusplus {
 
         Mover->setMultiplicity(W.begin(),W.end());
         branchEngine->branch(CurrentStep,W); 
-        if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
-          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-          W.resetWalkerParents();
-        }
       } 
 
       block++;

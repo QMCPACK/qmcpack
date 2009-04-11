@@ -61,9 +61,9 @@ namespace qmcplusplus {
     vector<int> walkersPerBlock;
     vector<int> pointsToCalculate;
     vector<vector<int> > Weights;
-    vector<vector<long> > IDs, PIDs, realPIDs;
+    vector<vector<long> > IDs, PIDs, realPIDs, realIDs;
     hid_t c_file;
-    string WID,PID;
+    string WIDstring,PIDstring;
     int verbose,startStep;
     int gensTransferred;
   };

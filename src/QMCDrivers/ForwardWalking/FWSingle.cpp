@@ -21,7 +21,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   FWSingle::FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), weightFreq(1), weightLength(5), fname(""), verbose(0), WID("WalkerID"), PID("ParentID"),gensTransferred(1),startStep(0)
+    QMCDriver(w,psi,h), weightFreq(1), weightLength(5), fname(""), verbose(0), WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0)
   { 
     RootName = "FW";
     QMCType ="FWSingle";
@@ -42,16 +42,16 @@ namespace qmcplusplus {
     WeightHistory.push_back(Weights);
     for(int ill=1;ill<weightLength;ill++)
     {
-        this->transferParentsOneGeneration();
-        this->FWOneStep();
+        transferParentsOneGeneration();
+        FWOneStep();
         WeightHistory.push_back(Weights);
     }
-    
+    if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
 //      W.destroyWalkers(W.getActiveWalkers());
      MCWalkerConfiguration* savedW = new MCWalkerConfiguration(W);
      for(int step=0;step<numSteps;step++)
       {
-        this->fillWalkerPositionsandWeights(step);
+        fillWalkerPositionsandWeights(step);
         W.resetCollectables();//do I need to do this?
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
         {
@@ -68,7 +68,7 @@ namespace qmcplusplus {
         }
       }
 //      W.destroyWalkers(W.getActiveWalkers());
-    app_log()<<"TOTAL NUMBER of SAVED "<<savedW->getActiveWalkers()<<endl;
+    if (verbose>0)  app_log()<<" Saved Configurations in use:"<<savedW->getActiveWalkers()<<endl;
     
     for(int ill=0;ill<weightLength;ill++)
     {
@@ -76,6 +76,7 @@ namespace qmcplusplus {
       vector<int> savedWeights;
       for(int i=0;i<WeightHistory[ill].size();i++) for(int j=0;j<WeightHistory[ill][i].size();j++) savedWeights.push_back(WeightHistory[ill][i][j]);
       vector<int>::iterator swit(savedWeights.begin());
+      assert(savedWeights.size() == savedW->getActiveWalkers());
       for(MCWalkerConfiguration::iterator wit(savedW->begin());wit!=savedW->end();wit++,swit++) (*wit)->Weight = (*swit);
       
       Estimators->accumulate( *savedW);
@@ -101,11 +102,8 @@ namespace qmcplusplus {
     hid_t       filespace;                   
     hid_t       memspace;                  
     hid_t       cparms;                   
-    hsize_t     dims[2];                     /* dataset and chunk dimensions*/ 
+    hsize_t     dims[1];                     /* dataset and chunk dimensions*/ 
     hsize_t     chunk_dims[1];
-    hsize_t     col_dims[1];
-    hsize_t     count[2];
-    hsize_t     offset[2];
 
     herr_t      status, status_n;                             
 
@@ -206,21 +204,22 @@ namespace qmcplusplus {
   
   void FWSingle::fillIDMatrix()
   {
-//     if (verbose>0) app_log()<<" There are "<<numSteps<<" steps"<<endl;
+    if (verbose>0) app_log()<<" There are "<<numSteps<<" steps"<<endl;
     IDs.resize(numSteps); PIDs.resize(numSteps); Weights.resize(numSteps);
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(PIDs.begin());
-    int st(1);
+    int st(0);
     do
     {
-      this->readInLong(st ,WID ,*(stepIDIterator));
-      this->readInLong(st ,PID ,*(stepPIDIterator));
+      readInLong(st ,WIDstring ,*(stepIDIterator));
+      readInLong(st ,PIDstring ,*(stepPIDIterator));
       walkersPerBlock.push_back( (*stepIDIterator).size() );
       stepIDIterator++; stepPIDIterator++; st++;
     } while (st<numSteps);
-    Weights.resize( IDs.size());
-    for(int i=0;i<IDs.size();i++) Weights[i].resize(IDs[i].size(),1);
+//     Weights.resize( IDs.size());
+    for(int i=0;i<numSteps;i++) Weights[i].resize(IDs[i].size(),1);
     realPIDs = PIDs;
+    realIDs = IDs;
   }
   
   void FWSingle::fillWalkerPositionsandWeights(int nstep)
@@ -229,7 +228,7 @@ namespace qmcplusplus {
     if (needed>0) W.createWalkers(needed);
     else if (needed<0) W.destroyWalkers(-1*needed-1);
     vector<float> ALLcoordinates;
-    this->readInFloat(nstep,ALLcoordinates);
+    readInFloat(nstep,ALLcoordinates);
     int nelectrons = W[0]->R.size();
     int nfloats=OHMMS_DIM*nelectrons;
     vector<float> SINGLEcoordinate(nfloats);
@@ -249,8 +248,9 @@ namespace qmcplusplus {
   void FWSingle::resetWeights()
   {
 //     if (verbose>2) app_log()<<" Resetting Weights"<<endl;
-    Weights.resize( IDs.size());
-    for(int i=0;i<IDs.size();i++) Weights[i].resize(IDs[i].size(),0);
+    Weights.clear();
+    Weights.resize(numSteps);
+    for(int i=0;i<numSteps;i++) Weights[i].resize(IDs[i].size(),0);
   }
 
   void FWSingle::FWOneStep()
@@ -265,7 +265,7 @@ namespace qmcplusplus {
     } while(it<orderedPIDs.end());
     
 //     if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
-    this->resetWeights();
+    resetWeights();
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred), last_stepPIDIterator(orderedPIDs.end());
     vector<vector<int> >::iterator stepWeightsIterator(Weights.begin());
@@ -315,17 +315,19 @@ namespace qmcplusplus {
   
   void FWSingle::transferParentsOneGeneration( )
   {
-
-    vector<vector<long> >::reverse_iterator stepIDIterator(IDs.rbegin()+gensTransferred);
-    vector<vector<long> >::reverse_iterator stepPIDIterator(PIDs.rbegin()), nextStepPIDIterator(realPIDs.rbegin()+gensTransferred);
+    
+    vector<vector<long> >::reverse_iterator stepIDIterator(IDs.rbegin());
+    vector<vector<long> >::reverse_iterator stepPIDIterator(PIDs.rbegin()), nextStepPIDIterator(realPIDs.rbegin());
+    stepIDIterator+=gensTransferred;
+    nextStepPIDIterator+=gensTransferred;
     int i(0);
     do
     {
-//       if (verbose>2) {printIDs((*nextStepPIDIterator));printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
       vector<long>::iterator hereID( (*stepIDIterator).begin() ) ;
       vector<long>::iterator nextStepPID( (*nextStepPIDIterator).begin() );
       vector<long>::iterator herePID( (*stepPIDIterator).begin() );
-//       if (verbose>2) app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()<<endl;
+      if (verbose>2) app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()-gensTransferred<<endl;
+      if (verbose>2) {printIDs((*nextStepPIDIterator));printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
       do
       {
         if ((*herePID)==(*hereID)) 
@@ -358,16 +360,16 @@ namespace qmcplusplus {
     hsize_t numGrps = 0;
     H5Gget_num_objs(c_file, &numGrps);
     numSteps = static_cast<int> (numGrps)-3;
-    app_log()<<"Total number of steps in input file "<<numSteps<<endl;
+    app_log()<<"  Total number of steps in input file "<<numSteps<<endl;
     if (weightFreq<1) weightFreq=1;
     int numberDataPoints = weightLength/weightFreq;
-    pointsToCalculate.resize(numberDataPoints);
-    for(int i=0;i<numberDataPoints;i++) pointsToCalculate[i]=i*weightFreq;
-    app_log()<<"  Observables will be calculated each "<<weightFreq<<endl;
+//     pointsToCalculate.resize(numberDataPoints);
+//     for(int i=0;i<numberDataPoints;i++) pointsToCalculate[i]=i*weightFreq;
+    app_log()<<"  "<<numberDataPoints<<" observables will be calculated each "<<weightFreq<<" steps"<<endl;
     app_log()<<"  Config Generations skipped for thermalization: "<<startStep<<endl;//<<" steps. At: ";
 //     for(int i=0;i<numberDataPoints;i++) app_log()<<pointsToCalculate[i]<<" ";
     app_log()<<endl;
-    H5Fclose(c_file);
+    if (H5Fclose(c_file)>-1) c_file=-1;
     
     return true;
   }

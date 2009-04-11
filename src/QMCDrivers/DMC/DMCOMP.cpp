@@ -184,6 +184,10 @@ namespace qmcplusplus {
 
       for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
       {
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+          W.resetWalkerParents();
+        }
 #pragma omp parallel for
         for(int ip=0; ip<NumThreads; ++ip)
         {
@@ -202,10 +206,10 @@ namespace qmcplusplus {
         }//#pragma omp parallel
 
         branchEngine->branch(CurrentStep,W, branchClones);
-        if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-          W.resetWalkerParents();
-        }
+//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+//           W.resetWalkerParents();
+//         }
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       } 
 //       branchEngine->debugFWconfig();
