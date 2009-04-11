@@ -215,6 +215,7 @@ namespace qmcplusplus {
       readInLong(st ,PIDstring ,*(stepPIDIterator));
       walkersPerBlock.push_back( (*stepIDIterator).size() );
       stepIDIterator++; stepPIDIterator++; st++;
+      if (verbose>1) app_log()<<"step:"<<st<<endl;
     } while (st<numSteps);
 //     Weights.resize( IDs.size());
     for(int i=0;i<numSteps;i++) Weights[i].resize(IDs[i].size(),1);
@@ -247,7 +248,7 @@ namespace qmcplusplus {
   
   void FWSingle::resetWeights()
   {
-//     if (verbose>2) app_log()<<" Resetting Weights"<<endl;
+    if (verbose>2) app_log()<<" Resetting Weights"<<endl;
     Weights.clear();
     Weights.resize(numSteps);
     for(int i=0;i<numSteps;i++) Weights[i].resize(IDs[i].size(),0);
@@ -264,22 +265,22 @@ namespace qmcplusplus {
       it++;
     } while(it<orderedPIDs.end());
     
-//     if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
+    if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
     resetWeights();
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
-    vector<vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred), last_stepPIDIterator(orderedPIDs.end());
+    vector<vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred);
     vector<vector<int> >::iterator stepWeightsIterator(Weights.begin());
     //we start comparing the next generations ParentIDs with the current generations IDs
     int i=0;
     do
     {
-//       if (verbose>2) app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<<endl;
-//       if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIterator).size()<<endl;
+      if (verbose>2) app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<<endl;
+//       if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIteratoetWeights).size()<<endl;
       
       vector<long>::iterator IDit( (*stepIDIterator).begin()     );
       vector<long>::iterator PIDit( (*stepPIDIterator).begin()   );
       vector<int>::iterator  Wit( (*stepWeightsIterator).begin() );
-//       if (verbose>2) app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<<endl;
+      if (verbose>2) app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<<endl;
       
       do
       {
@@ -292,6 +293,11 @@ namespace qmcplusplus {
         {
           IDit++;
           Wit++;
+          if (IDit==(*stepIDIterator).end())
+          {
+            IDit=(*stepIDIterator).begin();
+            Wit=(*stepWeightsIterator).begin();
+          }
         }
       }while(PIDit<(*stepPIDIterator).end());
 //       if (verbose>2) { printIDs((*stepIDIterator));printIDs((*stepPIDIterator));}
@@ -349,6 +355,7 @@ namespace qmcplusplus {
       stepIDIterator++;nextStepPIDIterator++;stepPIDIterator++;i++;
     }while(stepIDIterator<IDs.rend());
     gensTransferred++; //number of gens backward to compare parents
+    if (verbose>2) app_log()<<"  Finished generation block"<<endl;
   }
 
 
