@@ -80,20 +80,11 @@ namespace qmcplusplus {
         Hindices.push_back( Hindex);
         app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
 
-        //vector<int> Parameters;
-        //if(blockSeries==0) putContent(Parameters,tcur);
-        //else{
-        //  for( int pl=blockFreq-1;pl<blockSeries;pl+=blockFreq) Parameters.push_back(pl);
-        //}
-
         int numT=blockSeries/blockFreq ;
         nObservables+=1;
         nValues+=numT;
 
         app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
-  //      app_log()<<"      ";
-//        for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
-      //  app_log()<<endl;
         vector<int> pms(3);
         pms[0]=blockFreq;
         pms[1]=numT;

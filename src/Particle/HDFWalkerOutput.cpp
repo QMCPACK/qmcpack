@@ -567,8 +567,9 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
         int Gsize= (2*sizeof(long)+sizeof(float)*nelecs*OHMMS_DIM)*totWalkers;
 
         typedef ForwardWalkingData::StoredPosType StoredPosType;
-        for (int i=0; i<Nblocks; i++, ++currentConfigNumber)
+        for (int i=0; i<Nblocks; i++ )
         {
+            ++currentConfigNumber;
             std::stringstream sstr("");
             sstr<<"Block_"<<currentConfigNumber;
             hid_t d_file = H5Gcreate(c_file,sstr.str().c_str(),Gsize);

@@ -73,25 +73,23 @@ namespace qmcplusplus {
           Hindices.push_back( Hindex);
           app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
 
-          vector<int> Parameters;
-          if(blockSeries==0) putContent(Parameters,tcur);
-          else{
-            
-            for( int pl=blockFreq-1;pl<blockSeries;pl+=blockFreq) Parameters.push_back(pl);
-          }
+        int numT=blockSeries/blockFreq ;
+        nObservables+=1;
+        nValues+=numT;
+          
+        app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
+        vector<int> pms(3);
+        pms[0]=blockFreq;
+        pms[1]=numT;
+        pms[2]=blockSeries+2;
+        walkerLengths.push_back(pms);
 
-          int numT=Parameters.size();
-          nObservables+=1;
-          nValues+=numT;
+        int maxWsize=blockSeries+2;
+        int pindx = P.addPropertyHistory(maxWsize);
+        // summed values.
+//         P.addPropertyHistory(numT);
 
-          app_log()<<"   "<<numT<<" values will be calculated at block numbers:"<<endl;
-          app_log()<<"      ";
-          for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
-          app_log()<<endl;
-          walkerLengths.push_back(Parameters);
-          int maxWsize=Parameters.back()+1;
-          int pindx = P.addPropertyHistory(maxWsize);
-          Pindices.push_back(pindx);
+        Pindices.push_back(pindx);
 
         }
         else
@@ -107,27 +105,30 @@ namespace qmcplusplus {
             string Hname = h.getObservableName(j);
             if (Hname.find(tagName) != string::npos)
             {
-              vector<int> Parameters;
-              if(blockSeries==0) 
-                putContent(Parameters,tcur);
-              else
-                for( int pl=blockFreq;pl<=blockSeries;pl+=blockFreq) Parameters.push_back(pl);
+//               vector<int> Parameters;
+//               if(blockSeries==0) 
+//                 putContent(Parameters,tcur);
+//               else
+//                 for( int pl=blockFreq;pl<=blockSeries;pl+=blockFreq) Parameters.push_back(pl);
               FOUNDH=true;
               app_log()<<" Hamiltonian Element "<<Hname<<" was found at "<< j<<endl;
               Names.push_back(Hname);
               Hindex = j+NUMPROPERTIES;
               Hindices.push_back( Hindex);
+        int numT=blockSeries/blockFreq ;
+        nObservables+=1;
+        nValues+=numT;
+          
+        app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
+        vector<int> pms(3);
+        pms[0]=blockFreq;
+        pms[1]=numT;
+        pms[2]=blockSeries+2;
+        walkerLengths.push_back(pms);
 
-              walkerLengths.push_back(Parameters);
-              int maxWsize=Parameters.size();
-              int pindx = P.addPropertyHistory(maxWsize);
-              Pindices.push_back(pindx);
-
-              nValues+=Parameters.size();
-              app_log()<<"   "<<maxWsize<<" values will be calculated at block numbers:"<<endl;
-              app_log()<<"      ";
-              for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
-              app_log()<<endl;
+        int maxWsize=blockSeries+2;
+        int pindx = P.addPropertyHistory(maxWsize);
+        Pindices.push_back(pindx);
             }
           }
 
@@ -170,10 +171,10 @@ namespace qmcplusplus {
     myIndex=plist.size();
     int nc=0;
     for(int i=0;i<nObservables;++i)
-      for(int j=0;j<walkerLengths[i].size();++j,++nc)
+      for(int j=0;j<walkerLengths[i][1];++j,++nc)
       {
         std::stringstream sstr;
-        sstr << "FWE_" << Names[i] << "_" << walkerLengths[i][j];
+        sstr << "FWE_" << Names[i] << "_" << j*walkerLengths[i][0];
         int id=plist.add(sstr.str());
 //         myIndex=std::min(myIndex,id);
         //app_log() <<" Observables named "<<sstr.str() << " at " << id <<endl;

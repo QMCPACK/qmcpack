@@ -55,76 +55,37 @@ namespace qmcplusplus {
             if (lastindex<0) lastindex +=walkerLengths[i][2];
             tWalker->addPropertyHistoryPoint(Pindices[i],  tWalker->PropertyHistory[Pindices[i]][lastindex]  );
           }
-        
+      calculate(P);
+      return 0.0;
+    }
+    
+    inline Return_t calculate(ParticleSet& P) 
+    {
       vector<Return_t>::iterator Vit=Values.begin();
       
       for(int i=0;i<nObservables;i++){
         int j=0; 
         int FWindex = tWalker->PHindex[Pindices[i]]-1; 
-        while (j<walkerLengths[i].size())
+        while (j<walkerLengths[i][1])
         {
-          int Cindex = FWindex - walkerLengths[i][j];
-          if (Cindex< 0) Cindex += tWalker->PropertyHistory[Pindices[i]].size();
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][Cindex];
+          FWindex -= walkerLengths[i][0];
+          if (FWindex< 0) FWindex += walkerLengths[i][2];
+          (*Vit) = tWalker->PropertyHistory[Pindices[i]][FWindex];
           j++;
           Vit++;
         }
       }
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-//       cerr<<"REJECTEDMOVE"<<endl;
-//       Vit=Values.begin();
-//       while(Vit!=Values.end())
-//       {
-//         cerr<<(*Vit)<<"  ";
-//         Vit++;
-//       }
-//       cerr<<endl;
-//       cerr<<"REJECTEDMOVE ARRAY"<<endl;
-//       for(int dindex=0;dindex<tWalker->PropertyHistory.size();dindex++)
-//       {
-//         for(int f=0;f<20;f++) cerr<<tWalker->PropertyHistory[dindex][f]<<"  ";
-//         cerr<<endl; 
-//       }
-//       cout<<tWalker->PropertyHistory[dindex].front()<<endl; 
-      return 0.0;
     }
+    
+    
 
     inline Return_t evaluate(ParticleSet& P) 
     {
       for(int i=0;i<nObservables;i++)
         tWalker->addPropertyHistoryPoint(Pindices[i],  P.PropertyList[Hindices[i]]);
-
-      vector<double>::iterator Vit=Values.begin();
-//       for(int i=0;i<nObservables;i++)
-//         for(int j=0;j<walkerLengths[i].size();j++,Vit++)
-//           (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j] ];
-      for(int i=0;i<nObservables;i++){
-        int j=0;
-        int FWindex = tWalker->PHindex[Pindices[i]]-1;
-        while (j<walkerLengths[i].size())
-        {
-          int Cindex = FWindex - walkerLengths[i][j];
-          if (Cindex< 0) Cindex += tWalker->PropertyHistory[Pindices[i]].size();
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][Cindex];
-          j++;
-          Vit++;
-        }
-      }
-      std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-//       cerr<<"ACCEPTED VALUES"<<endl;
-//       Vit=Values.begin();
-//       while(Vit!=Values.end())
-//       {
-//         cerr<<(*Vit)<<"  ";
-//         Vit++;
-//       }
-//       cerr<<endl;
-//       cerr<<"ACCEPTED ARRAY"<<endl;
-//       for(int dindex=0;dindex<tWalker->PropertyHistory.size();dindex++)
-//       {
-//         for(int f=0;f<20;f++) cerr<<tWalker->PropertyHistory[dindex][f]<<"  ";
-//         cerr<<endl; 
-//       }
+      
+      calculate(P);
       return 0.0;
     }
 

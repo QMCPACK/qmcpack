@@ -63,7 +63,7 @@ namespace qmcplusplus {
             H.auxHevaluate(W,*(W[wstep]));
             H.saveProperty((*W[wstep]).getPropertyBase());
             MCWalkerConfiguration::Walker_t* tempw = new MCWalkerConfiguration::Walker_t();
-            *tempw = (*W[wstep]);
+            (*tempw).makeCopy(*W[wstep]);
             savedW->push_back(tempw);
         }
       }
@@ -210,7 +210,7 @@ namespace qmcplusplus {
     IDs.resize(numSteps); PIDs.resize(numSteps); Weights.resize(numSteps);
     vector<vector<long> >::iterator stepIDIterator(IDs.begin());
     vector<vector<long> >::iterator stepPIDIterator(PIDs.begin());
-    int st(0);
+    int st(1);
     do
     {
       this->readInLong(st ,WID ,*(stepIDIterator));
@@ -227,7 +227,7 @@ namespace qmcplusplus {
   {
     int needed = walkersPerBlock[nstep] - W.getActiveWalkers();
     if (needed>0) W.createWalkers(needed);
-    else if (needed<0) W.destroyWalkers(-1*needed);
+    else if (needed<0) W.destroyWalkers(-1*needed-1);
     vector<float> ALLcoordinates;
     this->readInFloat(nstep,ALLcoordinates);
     int nelectrons = W[0]->R.size();
