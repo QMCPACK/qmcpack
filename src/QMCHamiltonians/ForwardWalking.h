@@ -76,6 +76,7 @@ namespace qmcplusplus {
         }
       }
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+      return 0.0;
     }
     
     

@@ -22,10 +22,6 @@ SET(HAMSRCS
 
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
-      LennardJones_smoothed.cpp
-      HFDHE2_Moroni1995.cpp
-#      HFDBHE_smoothed.cpp
-      HeSAPT_smoothed.cpp
       LocalCorePolPotential.cpp
       LocalECPotential.cpp
       NonLocalECPComponent.cpp
@@ -35,6 +31,16 @@ IF(OHMMS_DIM MATCHES 3)
       ECPComponentBuilder.1.cpp
       ECPComponentBuilder.2.cpp
      )
+
+  # Add research-related sources here
+  IF(QMC_BUILD_COMPLETE)
+    SET(HAMSRCS ${HAMSRCS}
+      LennardJones_smoothed.cpp
+      HFDHE2_Moroni1995.cpp
+#      HFDBHE_smoothed.cpp
+      HeSAPT_smoothed.cpp
+     )
+  ENDIF(QMC_BUILD_COMPLETE)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 #IF(HAVE_LIBFFTW)

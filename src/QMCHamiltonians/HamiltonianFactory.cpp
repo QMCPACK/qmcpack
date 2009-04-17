@@ -39,20 +39,22 @@
 #include "QMCHamiltonians/PsiValue.h"
 #include "QMCHamiltonians/DMCPsiValue.h"
 #include "QMCHamiltonians/PsiOverlap.h"
-#include "QMCHamiltonians/HePressure.h"
-#include "QMCHamiltonians/HFDHE2Potential.h"
-#include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/ForceBase.h"
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
-//#include "QMCHamiltonians/HFDHE2Potential_tail.h"
+#if defined(QMC_BUILD_COMPLETE)
+#include "QMCHamiltonians/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/HePressure.h"
+#include "QMCHamiltonians/HFDHE2Potential.h"
+#include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
 #include "QMCHamiltonians/LennardJones_smoothed.h"
 #include "QMCHamiltonians/HFDHE2_Moroni1995.h"
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
+#endif
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
@@ -168,6 +170,7 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         } 
+#if defined(QMC_BUILD_COMPLETE)
 	else if (potType == "LJP_smoothed") {
 	  LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
 	  targetH->addOperator(LJP,"LJP",true);
@@ -183,40 +186,6 @@ namespace qmcplusplus {
 	  targetH->addOperator(HFD,"HFD-HE2",true);
 	  HFD->addCorrection(*targetH);
 	}
-	/*
-	else if (potType == "HFDBHE_smoothed") {
-	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-B(He)",true);
-	  HFD->addCorrection(*targetH);
-	}
-	*/
-	else if (potType == "MPC" || potType == "mpc")
-	  addMPCPotential(cur);
-        else if(potType == "HFDHE2") 
-        {
-          HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
-          targetH->addOperator(HFD,"HFDHE2",true);
-          //HFD->addCorrection(*targetPtcl,*targetH);
-          targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-          app_log() << "  Adding HFDHE2Potential(Au) " << endl;
-        }
-        else if(potType == "pseudo") 
-        {
-          addPseudoPotential(cur);
-        } 
-        else if(potType == "cpp") 
-        {
-          addCorePolPotential(cur);
-        }
-        else if(potType.find("num") < potType.size())
-        {
-          if(sourceInp == targetInp)//only accept the pair-potential for now
-          {
-            NumericalRadialPotential* apot=new NumericalRadialPotential(*targetPtcl);
-            apot->put(cur);
-            targetH->addOperator(apot,potName);
-          }
-        }
 	else if(potType == "eHe")
 	{
 	  string SourceName = "e";
@@ -236,6 +205,41 @@ namespace qmcplusplus {
 // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
 	  
 	}
+        else if(potType == "HFDHE2") 
+        {
+          HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
+          targetH->addOperator(HFD,"HFDHE2",true);
+          //HFD->addCorrection(*targetPtcl,*targetH);
+          targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
+          app_log() << "  Adding HFDHE2Potential(Au) " << endl;
+        }
+#endif
+	/*
+	else if (potType == "HFDBHE_smoothed") {
+	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
+	  targetH->addOperator(HFD,"HFD-B(He)",true);
+	  HFD->addCorrection(*targetH);
+	}
+	*/
+	else if (potType == "MPC" || potType == "mpc")
+	  addMPCPotential(cur);
+        else if(potType == "pseudo") 
+        {
+          addPseudoPotential(cur);
+        } 
+        else if(potType == "cpp") 
+        {
+          addCorePolPotential(cur);
+        }
+        else if(potType.find("num") < potType.size())
+        {
+          if(sourceInp == targetInp)//only accept the pair-potential for now
+          {
+            NumericalRadialPotential* apot=new NumericalRadialPotential(*targetPtcl);
+            apot->put(cur);
+            targetH->addOperator(apot,potName);
+          }
+        }
       } 
       else if(cname == "constant") 
       { //ugly!!!
@@ -316,6 +320,7 @@ namespace qmcplusplus {
             //             targetH->addOperator(DMCP,"PressureSum",false);
 
           } 
+#if defined(QMC_BUILD_COMPLETE)
 	  else if (estType=="HFDHE2")
 	  {
             HePressure* BP = new HePressure(*targetPtcl);
@@ -360,6 +365,7 @@ namespace qmcplusplus {
 //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
 //             targetH->addOperator(DMCP,"PressureSum",false);
           }
+#endif
         }
 	else if(potType=="psi")
 	{
