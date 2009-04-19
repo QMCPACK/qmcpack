@@ -25,6 +25,9 @@ set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
 
   set(CMAKE_FIND_ROOT_PATH
       /opt/fftw/3.2.0
+      /opt/cray/hdf5/1.8.2/hdf5-gnu
+      /nics/b/home/jnkim2/svnwork/boost_1_38_0
+      /nics/b/home/jnkim2/gnu
      )
 
 SET(CMAKE_SHARED_LIBRARY_C_FLAGS "")            # -pic 
@@ -45,7 +48,7 @@ SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 SET(CMAKE_CXX_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
-SET(CMAKE_C_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+SET(CMAKE_C_FLAGS "-std=c99 -O3 -march=amdfam10 -msse3 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math ")
 
 INCLUDE(Platform/UnixPaths)
 
