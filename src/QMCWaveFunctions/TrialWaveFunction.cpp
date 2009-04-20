@@ -6,7 +6,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,6 +19,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
+#include "Utilities/profiler.h"
 
 namespace qmcplusplus {
 
@@ -89,6 +89,7 @@ namespace qmcplusplus {
    */
   TrialWaveFunction::RealType
   TrialWaveFunction::evaluateLog(ParticleSet& P) {
+    TAU_PROFILE("TrialWaveFunction::evaluateLog","ParticleSet& P", TAU_USER);
     P.G = 0.0;
     P.L = 0.0;
 
@@ -112,6 +113,7 @@ namespace qmcplusplus {
    */
   TrialWaveFunction::RealType
   TrialWaveFunction::evaluateLogOnly(ParticleSet& P) {
+    TAU_PROFILE("TrialWaveFunction::evaluateLogOnly","ParticleSet& P", TAU_USER);
     tempP->R=P.R;
     tempP->L=0.0;
     tempP->G=0.0;
@@ -190,6 +192,7 @@ namespace qmcplusplus {
       RealType& logpsi_opt_r,
       ParticleSet::ParticleGradient_t& fixedG,
       ParticleSet::ParticleLaplacian_t& fixedL) {
+    TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
     P.G = 0.0;
     P.L = 0.0;
     fixedG = 0.0;
@@ -221,6 +224,7 @@ namespace qmcplusplus {
   */
   TrialWaveFunction::ValueType 
   TrialWaveFunction::evaluate(ParticleSet& P) {
+    TAU_PROFILE("TrialWaveFunction::evaluate","ParticleSet& P", TAU_USER);
     P.G = 0.0;
     P.L = 0.0;
     ValueType psi(1.0);
@@ -235,6 +239,7 @@ namespace qmcplusplus {
   
   TrialWaveFunction::RealType
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {
+    TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
     ValueType r(1.0);
     for(int i=0,ii=0; i<Z.size(); ++i,ii+=2) 
     {
@@ -255,6 +260,7 @@ namespace qmcplusplus {
   TrialWaveFunction::GradType
   TrialWaveFunction::evalGrad(ParticleSet& P,int iat) 
   {
+    TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
     GradType grad_iat;
     for(int i=0; i<Z.size(); ++i) grad_iat += Z[i]->evalGrad(P,iat);
     return grad_iat;
@@ -297,6 +303,7 @@ namespace qmcplusplus {
   TrialWaveFunction::RealType
   TrialWaveFunction::ratioGrad(ParticleSet& P,int iat, GradType& grad_iat) 
   {
+    TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
     grad_iat=0.0;
     ValueType r(1.0);
     for(int i=0,ii=1; i<Z.size(); ++i,ii+=2) 
@@ -340,6 +347,7 @@ namespace qmcplusplus {
 			   ParticleSet::ParticleGradient_t& dG,
 			   ParticleSet::ParticleLaplacian_t& dL) 
   {
+    TAU_PROFILE("TrialWaveFunction::ratio","(P,iat,dG,dL)", TAU_USER);
     dG = 0.0;
     dL = 0.0;
     ValueType r(1.0);
@@ -409,6 +417,7 @@ namespace qmcplusplus {
 
   TrialWaveFunction::RealType
   TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+    TAU_PROFILE("TrialWaveFunction::registerData","(P,..)", TAU_USER);
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
 
@@ -444,6 +453,7 @@ namespace qmcplusplus {
   TrialWaveFunction::RealType
   TrialWaveFunction::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch) {
+    TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
     P.G = 0.0;
     P.L = 0.0;
 
@@ -467,6 +477,7 @@ namespace qmcplusplus {
 
   void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
+    TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
     for(int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);
 
     //get the gradients and laplacians from the buffer
@@ -516,6 +527,7 @@ namespace qmcplusplus {
   TrialWaveFunction::RealType
   TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
+    TAU_PROFILE("TrialWaveFunction::evaluateLog","(P,buffer)", TAU_USER);
     LogValue=0.0;
     PhaseValue=0.0;
     for(int i=0; i<Z.size(); i++) 
