@@ -1386,21 +1386,20 @@ class SingleSlaterOrbital: public OrbitalBase
       cur=cur->children;
       while(cur != NULL)
       {
-        string pname="0";
-        string pid="H_A_dflt";
+        string pname="H_A_dflt";
+        string pid="0";
         OhmmsAttributeSet aa;
         aa.add(pname,"name");
         aa.add(pid,"id");
         aa.put(cur);
-        if(pname[0]=='A')
+        if(pid=="A")
         {
           putContent(pA,cur);
-          nameA=pid;
+          nameA=pname;
         }
         cur=cur->next;
       }
       reset(pA);
-      
       
       myVars.insert(nameA,pA, nameA !="H_A_dflt");
       reportStatus(app_log());

@@ -1,4 +1,4 @@
-#ifndef QMCPLUSPLUS_HEE2POTENTIAL_H
+#ifndef QMCPLUSPLUS_HEEPOTENTIAL_H
 #define QMCPLUSPLUS_HEEPOTENTIAL_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -69,6 +69,11 @@ namespace qmcplusplus {
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
+        string tagName("HeePot");
+        OhmmsAttributeSet Tattrib;
+        Tattrib.add(tagName,"name");
+        Tattrib.put(cur);
+      if (tagName != "HeePot") myName=tagName;
       return true;
     }
 
@@ -79,12 +84,14 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      return new HeePotential(qp,IRef);
+      HeePotential* HPclone = new HeePotential(qp,IRef);
+      HPclone->myName = myName;
+      return HPclone;
     }
     
     void addObservables(PropertySetType& plist)
     {
-      myIndex=plist.add("HeePot");
+      myIndex=plist.add(myName);
     }
 
     void setObservables(PropertySetType& plist)
