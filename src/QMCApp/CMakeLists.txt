@@ -79,3 +79,10 @@ ENDIF(HAVE_EINSPLINE)
 IF(NOT MAC_VECLIB)
   TARGET_LINK_LIBRARIES(qmcapp ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
 ENDIF(NOT MAC_VECLIB)
+
+####################################
+# link built-in tau library 
+####################################
+if(ENABLE_TAU_PROFILE)
+  TARGET_LINK_LIBRARIES(qmcapp tau)
+endif(ENABLE_TAU_PROFILE)

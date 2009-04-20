@@ -37,13 +37,15 @@ namespace qmcplusplus {
     QMCDriver* qmc=0;
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
-#if defined(ENABLE_OPENMP)
-      if(np>1)
-        qmc = new VMCSingleOMP(w,psi,h,hpool);
-      else
-#endif
-        qmc = new VMCSingle(w,psi,h);
+      qmc = new VMCSingleOMP(w,psi,h,hpool);
     } 
+//#if defined(ENABLE_OPENMP)
+//      if(np>1)
+//        qmc = new VMCSingleOMP(w,psi,h,hpool);
+//      else
+//#endif
+//        qmc = new VMCSingle(w,psi,h);
+//    } 
 #if defined(QMC_BUILD_COMPLETE)
     //else if(VMCMode == 2) //(0,1,0)
     //{

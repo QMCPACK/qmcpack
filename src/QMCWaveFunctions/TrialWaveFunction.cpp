@@ -19,7 +19,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
-#include "Utilities/profiler.h"
+#include "tau/profiler.h"
 
 namespace qmcplusplus {
 

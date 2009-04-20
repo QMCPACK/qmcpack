@@ -1,54 +1,33 @@
 include_directories(${TAUDIR}/include)
 
-ADD_DEFINITIONS (-DPROFILING_ON
-  -DTAU_STDCXXLIB
-  -DTAU_DOT_H_LESS_HEADERS
-  -DTAU_MPI
-  -DTAU_MPI_THREADED
-  -DTAU_CALLPATH
-  -DTAU_MPIGREQUEST
-  -DTAU_MPIDATAREP
-  -DTAU_MPIERRHANDLER
-  -DTAU_MPIATTRFUNCTION
-  -DTAU_MPITYPEEX
-  -DTAU_MPIADDERROR
-  -DTAU_LARGEFILE64_SOURCE
-  -DTAU_BFD
-  )
-
-IF(ENABLE_OPENMP)
-  ADD_DEFINITIONS (-DTAU_OPENMP)
-IF(ENABLE_OPENMP)
-
 ADD_DEFINITIONS (-DTAU_LIBRARY_SOURCE)
 
 #-DTAU_MPIFILE
 SET(tausrcs
-  ${TAUDIR}/src/Profile/Profiler.cpp
-  ${TAUDIR}/src/Profile/TulipTimers.cpp
-  ${TAUDIR}/src/Profile/UserEvent.cpp
-  ${TAUDIR}/src/Profile/FunctionInfo.cpp
-  ${TAUDIR}/src/Profile/RtsLayer.cpp
-  ${TAUDIR}/src/Profile/RtsThread.cpp
-  ${TAUDIR}/src/Profile/TauCAPI.cpp
-  ${TAUDIR}/src/Profile/TauFAPI.cpp
-  ${TAUDIR}/src/Profile/TauMapping.cpp
-  ${TAUDIR}/src/Profile/TauHooks.cpp
-  ${TAUDIR}/src/Profile/TauHandler.cpp
-  ${TAUDIR}/src/Profile/TauMemory.cpp
-  ${TAUDIR}/src/Profile/MetaData.cpp
-  ${TAUDIR}/src/Profile/TauEnv.cpp
-  ${TAUDIR}/src/Profile/TauInit.cpp
-  ${TAUDIR}/src/Profile/TauCallPath.cpp
-  ${TAUDIR}/src/Profile/OpenMPLayer.cpp
-  ${TAUDIR}/src/Profile/TauKojakOpariDisable.cpp
-  ${TAUDIR}/src/Profile/Comp_intel9.cpp
+  ${TAU_HOME}/src/Profile/Profiler.cpp
+  ${TAU_HOME}/src/Profile/TulipTimers.cpp
+  ${TAU_HOME}/src/Profile/UserEvent.cpp
+  ${TAU_HOME}/src/Profile/FunctionInfo.cpp
+  ${TAU_HOME}/src/Profile/RtsLayer.cpp
+  ${TAU_HOME}/src/Profile/RtsThread.cpp
+  ${TAU_HOME}/src/Profile/TauCAPI.cpp
+  ${TAU_HOME}/src/Profile/TauFAPI.cpp
+  ${TAU_HOME}/src/Profile/TauMapping.cpp
+  ${TAU_HOME}/src/Profile/TauHooks.cpp
+  ${TAU_HOME}/src/Profile/TauHandler.cpp
+  ${TAU_HOME}/src/Profile/TauMemory.cpp
+  ${TAU_HOME}/src/Profile/MetaData.cpp
+  ${TAU_HOME}/src/Profile/TauEnv.cpp
+  ${TAU_HOME}/src/Profile/TauInit.cpp
+  ${TAU_HOME}/src/Profile/TauCallPath.cpp
+  ${TAU_HOME}/src/Profile/OpenMPLayer.cpp
+  ${TAU_HOME}/src/Profile/TauKojakOpariDisable.cpp
+  ${TAU_HOME}/src/Profile/Comp_gnu.cpp
  )
-# /home/jnkim/src/tau-2.18.1p1/src/Profile/Tracer.cpp
+#  ${TAU_HOME}/src/Profile/Comp_pgi.cpp
+#  ${TAU_HOME}/src/Profile/Comp_xl.cpp
+#  ${TAU_HOME}/src/Profile/Comp_intel9.cpp
 
-# /home/jnkim/src/tau-2.18.1p1/src/Comp_pgi.cpp
-# /home/jnkim/src/tau-2.18.1p1/src/Comp_xl.cpp
-# /home/jnkim/src/tau-2.18.1p1/src/Comp_gnu.cpp
 ADD_LIBRARY(tau ${tausrcs})
 
 # TauMpi.c

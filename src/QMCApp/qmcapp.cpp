@@ -22,7 +22,7 @@
 #include "Platforms/sysutil.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
-#include "Utilities/profiler.h"
+#include "tau/profiler.h"
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation. 
