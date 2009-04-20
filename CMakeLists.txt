@@ -143,6 +143,9 @@ SET(HAVE_EINSPLINE_EXT 0)
 SET(HAVE_MKL 0)
 SET(HAVE_ACML 0)
 
+set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
+SET(TAU_HOME $ENV{TAU_HOME})
+
 ######################################################
 # Directory where customize cmake files reside
 ######################################################
@@ -251,22 +254,69 @@ INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
+if(ENABLE_TAU_PROFILE)
+INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
+endif(ENABLE_TAU_PROFILE)
+
+
+######################################################
+# Add optional macros
+######################################################
+IF(FOUND_TAU)
+  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
+  ADD_DEFINITIONS (-DPROFILING_ON
+      -DTAU_STDCXXLIB
+      -DTAU_DOT_H_LESS_HEADERS
+      -DTAU_CALLPATH
+      -DTAU_LARGEFILE64_SOURCE
+      -DTAU_BFD
+      )
+  if(ENABLE_OPENMP)
+    ADD_DEFINITIONS(-DTAU_OPENMP)
+  endif(ENABLE_OPENMP)
+ENDIF(FOUND_TAU)
 
 IF(QMC_MPI)
-  IF(MPIP_PROFILE)
-    LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
-    LINK_LIBRARIES("/usr/lib/libbfd.a")
-    LINK_LIBRARIES("/usr/lib/libiberty.a")
-  ENDIF(MPIP_PROFILE)
+
+  #IF(MPIP_PROFILE)
+  #  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
+  #  LINK_LIBRARIES("/usr/lib/libbfd.a")
+  #  LINK_LIBRARIES("/usr/lib/libiberty.a")
+  #ENDIF(MPIP_PROFILE)
 
   include(FindMPI)
-  #INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
+
   IF(MPI_FOUND)
     SET(HAVE_MPI 1)
     SET(HAVE_OOMPI 1)
     LINK_LIBRARIES(${MPI_LIBRARY})
   ENDIF(MPI_FOUND)
+
 ENDIF(QMC_MPI)
+
+
+if(HAVE_MPI)
+    #do not use mpi c++ binding
+    ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+
+    #add tau stuff
+    IF(FOUND_TAU)
+      ADD_DEFINITIONS(
+        -DTAU_MPI
+        -DTAU_MPI_THREADED
+        -DTAU_MPIGREQUEST
+        -DTAU_MPIDATAREP
+        -DTAU_MPIERRHANDLER
+        -DTAU_MPIATTRFUNCTION
+        -DTAU_MPITYPEEX
+        -DTAU_MPIADDERROR
+      )
+      #build libtau
+      subdirs(src/tau)
+      LINK_LIBRARIES(tau)
+    ENDIF(FOUND_TAU)
+endif(HAVE_MPI)
+
 
 IF(FOUND_LIBXML2)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
@@ -385,7 +435,6 @@ INCLUDE_DIRECTORIES(
   ${qmcpack_BINARY_DIR}/src
   )
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
-ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 IF(BUILD_QMCTOOLS)
