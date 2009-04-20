@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,6 +19,18 @@
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 #include <iostream>
+
+#ifdef __linux__
+#include "sys/sysinfo.h"
+
+size_t freemem()
+{
+  struct sysinfo si;
+  sysinfo(&si);
+  return si.freeram + si.bufferram;
+}
+#endif
+
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -89,6 +100,18 @@ void Communicate::initialize(int argc, char **argv)
   myMPI = myComm.Get_mpi();
   d_mycontext = OOMPI_COMM_WORLD.Rank();
   d_ncontexts = OOMPI_COMM_WORLD.Size();
+
+#ifdef __linux__
+  for (int proc=0; proc<OHMMS::Controller->size(); proc++) {
+    if (OHMMS::Controller->rank() == proc) {
+      fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n",
+	       proc, freemem()>>20);
+    }
+    barrier();
+  }
+  barrier();
+#endif
+
 }
 
 void Communicate::finalize() 
