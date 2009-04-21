@@ -22,7 +22,7 @@
 #include "Platforms/sysutil.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
-#include "tau/profiler.h"
+//#include "tau/profiler.h"
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation. 
@@ -36,8 +36,8 @@
 int main(int argc, char **argv) {
   ///done with the option
 
-  TAU_PROFILE("int main(int, char **)", " ", TAU_DEFAULT);
-  TAU_INIT(&argc, &argv);
+  //TAU_PROFILE("int main(int, char **)", " ", TAU_DEFAULT);
+  //TAU_INIT(&argc, &argv);
 
   OHMMS::Controller->initialize(argc,argv);
   // Write out free memory on each node on Linux.
