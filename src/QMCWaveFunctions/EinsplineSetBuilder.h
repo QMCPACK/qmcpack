@@ -207,6 +207,12 @@ namespace qmcplusplus {
     std::vector<int> MT_APW_num_radial_points;
     std::vector<PosType> MT_centers;
 
+    ////////////////////////////////
+    // Atomic orbital information //
+    ////////////////////////////////
+    std::vector<AtomicOrbital<complex<double> > > AtomicOrbitals;
+
+
     // This returns the path in the HDF5 file to the group for orbital
     // with twist ti and band bi
     string OrbitalPath   (int ti, int bi);

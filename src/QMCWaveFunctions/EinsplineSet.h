@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
+#include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
 #include <einspline/multi_bspline_structs.h>
@@ -185,6 +186,12 @@ namespace qmcplusplus {
     /// Orbital storage object //
     /////////////////////////////
     SplineType *MultiSpline;
+
+    //////////////////////////////////////
+    // Radial/Ylm orbitals around atoms //
+    //////////////////////////////////////
+    vector<AtomicOrbital<complex<double> > > AtomicOrbitals;
+
 
     // First-order derivative w.r.t. the ion positions
     vector<TinyVector<SplineType*,OHMMS_DIM> > FirstOrderSplines;

@@ -352,16 +352,25 @@ namespace qmcplusplus {
       }
     }
 
+    // Check atomic orbitals
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+      inAtom = AtomicOrbitals[jat].evaluate (r, StorageValueVector);
+      if (inAtom) break;
+    }
+      
     StorageValueVector_t &valVec = 
       need2blend ? BlendValueVector : StorageValueVector;
 
     if (!inTin || need2blend) {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-      for (int i=0; i<OHMMS_DIM; i++)
-	ru[i] -= std::floor (ru[i]);
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, valVec);
-      EinsplineTimer.stop();
+      if (!inAtom) {
+	PosType ru(PrimLattice.toUnit(P.R[iat]));
+	for (int i=0; i<OHMMS_DIM; i++)
+	  ru[i] -= std::floor (ru[i]);
+	EinsplineTimer.start();
+	EinsplineMultiEval (MultiSpline, ru, valVec);
+	EinsplineTimer.stop();
+      }
       // Add e^ikr phase to B-spline orbitals
       for (int j=0; j<NumValenceOrbs; j++) {
 	PosType k = kPoints[j];
@@ -443,19 +452,30 @@ namespace qmcplusplus {
   {
     ValueTimer.start();
     PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    int sign=0;
-    for (int i=0; i<OHMMS_DIM; i++) {
-      RealType img = std::floor(ru[i]);
-      ru[i] -= img;
-      sign += HalfG[i] * (int)img;
+
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+      inAtom = AtomicOrbitals[jat].evaluate (r, psi);
+      if (inAtom) 
+	break;
     }
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, psi);
-    EinsplineTimer.stop();
-    if (sign & 1) 
-      for (int j=0; j<psi.size(); j++)
-	psi[j] *= -1.0;
+
+    if (!inAtom) {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      int sign=0;
+      for (int i=0; i<OHMMS_DIM; i++) {
+	RealType img = std::floor(ru[i]);
+	ru[i] -= img;
+	sign += HalfG[i] * (int)img;
+      }
+      // Check atomic orbitals
+      EinsplineTimer.start();
+      EinsplineMultiEval (MultiSpline, ru, psi);
+      EinsplineTimer.stop();
+      if (sign & 1) 
+	for (int j=0; j<psi.size(); j++)
+	  psi[j] *= -1.0;
+    }
     ValueTimer.stop();
   }
 
@@ -512,6 +532,14 @@ namespace qmcplusplus {
       }
     }
 
+
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+      inAtom = AtomicOrbitals[jat].evaluate 
+	(r, StorageValueVector, StorageGradVector, StorageLaplVector);
+      if (inAtom) break;
+    }
+
     StorageValueVector_t &valVec =  
       need2blend ? BlendValueVector : StorageValueVector;
     StorageGradVector_t &gradVec =  
@@ -521,15 +549,17 @@ namespace qmcplusplus {
 
     // Otherwise, evaluate the B-splines
     if (!inTin || need2blend) {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-      for (int i=0; i<OHMMS_DIM; i++)
-	ru[i] -= std::floor (ru[i]);
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
-      EinsplineTimer.stop();
-      for (int j=0; j<NumValenceOrbs; j++) {
-	gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-	laplVec[j] = trace (StorageHessVector[j], GGt);
+      if (!inAtom) {
+	PosType ru(PrimLattice.toUnit(P.R[iat]));
+	for (int i=0; i<OHMMS_DIM; i++)
+	  ru[i] -= std::floor (ru[i]);
+	EinsplineTimer.start();
+	EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
+	EinsplineTimer.stop();
+	for (int j=0; j<NumValenceOrbs; j++) {
+	  gradVec[j] = dot (PrimLattice.G, gradVec[j]);
+	  laplVec[j] = trace (StorageHessVector[j], GGt);
+	}
       }
       // Add e^-ikr phase to B-spline orbitals
       for (int j=0; j<NumValenceOrbs; j++) {
@@ -681,28 +711,37 @@ namespace qmcplusplus {
   {
     VGLTimer.start();
     PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
- 
-    int sign=0;
-    for (int i=0; i<OHMMS_DIM; i++) {
-      RealType img = std::floor(ru[i]);
-      ru[i] -= img;
-      sign += HalfG[i] * (int)img;
-    }
 
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector, 
-			StorageHessVector);
-    EinsplineTimer.stop();
-    if (sign & 1) 
-      for (int j=0; j<psi.size(); j++) {
-	psi[j] *= -1.0;
-	StorageGradVector[j] *= -1.0;
-	StorageHessVector[j] *= -1.0;
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+      inAtom = AtomicOrbitals[jat].evaluate (r, psi, dpsi, d2psi);
+      if (inAtom) 
+	break;
+    }
+    if (!inAtom) {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      
+      int sign=0;
+      for (int i=0; i<OHMMS_DIM; i++) {
+	RealType img = std::floor(ru[i]);
+	ru[i] -= img;
+	sign += HalfG[i] * (int)img;
       }
-    for (int i=0; i<psi.size(); i++) {
-      dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
-      d2psi[i] = trace(StorageHessVector[i], GGt);
+      
+      EinsplineTimer.start();
+      EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector, 
+			  StorageHessVector);
+      EinsplineTimer.stop();
+      if (sign & 1) 
+	for (int j=0; j<psi.size(); j++) {
+	  psi[j] *= -1.0;
+	  StorageGradVector[j] *= -1.0;
+	  StorageHessVector[j] *= -1.0;
+	}
+      for (int i=0; i<psi.size(); i++) {
+	dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
+	d2psi[i] = trace(StorageHessVector[i], GGt);
+      }
     }
     VGLTimer.stop();
   }
@@ -760,6 +799,12 @@ namespace qmcplusplus {
 	  break;
 	}
       }
+      bool inAtom = false;
+      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+	inAtom = AtomicOrbitals[jat].evaluate 
+	  (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+	if (inAtom) break;
+      }
       
       StorageValueVector_t &valVec =  
 	need2blend ? BlendValueVector : StorageValueVector;
@@ -770,15 +815,17 @@ namespace qmcplusplus {
       
       // Otherwise, evaluate the B-splines
       if (!inTin || need2blend) {
-	PosType ru(PrimLattice.toUnit(P.R[iat]));
-	for (int i=0; i<OHMMS_DIM; i++)
-	  ru[i] -= std::floor (ru[i]);
-	EinsplineTimer.start();
-	EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
-	EinsplineTimer.stop();
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-	  laplVec[j] = trace (StorageHessVector[j], GGt);
+	if (!inAtom) {
+	  PosType ru(PrimLattice.toUnit(P.R[iat]));
+	  for (int i=0; i<OHMMS_DIM; i++)
+	    ru[i] -= std::floor (ru[i]);
+	  EinsplineTimer.start();
+	  EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
+	  EinsplineTimer.stop();
+	  for (int j=0; j<NumValenceOrbs; j++) {
+	    gradVec[j] = dot (PrimLattice.G, gradVec[j]);
+	    laplVec[j] = trace (StorageHessVector[j], GGt);
+	  }
 	}
 	// Add e^-ikr phase to B-spline orbitals
 	for (int j=0; j<NumValenceOrbs; j++) {
@@ -1143,29 +1190,45 @@ namespace qmcplusplus {
     VGLMatTimer.start();
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-      int sign=0;
-      for (int n=0; n<OHMMS_DIM; n++) {
-	RealType img = std::floor(ru[n]);
+
+      bool inAtom = false;
+      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
+	inAtom = AtomicOrbitals[jat].evaluate 
+	  (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+	if (inAtom) {
+	  for (int j=0; j<OrbitalSetSize; j++) {
+	    psi(j,i)   = StorageValueVector[j];
+	    dpsi(i,j)  = StorageGradVector[j];
+	    d2psi(i,j) = StorageLaplVector[j];
+	  }  
+	  break;
+	}
+      }
+      if (!inAtom) {
+	PosType ru(PrimLattice.toUnit(P.R[iat]));
+	int sign=0;
+	for (int n=0; n<OHMMS_DIM; n++) {
+	  RealType img = std::floor(ru[n]);
 	ru[n] -= img;
 	sign += HalfG[n] * (int)img;
-      }
-      for (int n=0; n<OHMMS_DIM; n++)
-	ru[n] -= std::floor (ru[n]);
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-			  StorageGradVector, StorageHessVector);
-      EinsplineTimer.stop();
-      if (sign & 1) 
-	for (int j=0; j<OrbitalSetSize; j++) {
-	  StorageValueVector[j] *= -1.0;
-	  StorageGradVector[j]  *= -1.0;
-	  StorageHessVector[j]  *= -1.0;
 	}
-      for (int j=0; j<OrbitalSetSize; j++) {
-        psi(j,i)   = StorageValueVector[j];
-	dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
-	d2psi(i,j) = trace(StorageHessVector[j], GGt);
+	for (int n=0; n<OHMMS_DIM; n++)
+	  ru[n] -= std::floor (ru[n]);
+	EinsplineTimer.start();
+	EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+			    StorageGradVector, StorageHessVector);
+	EinsplineTimer.stop();
+	if (sign & 1) 
+	  for (int j=0; j<OrbitalSetSize; j++) {
+	    StorageValueVector[j] *= -1.0;
+	    StorageGradVector[j]  *= -1.0;
+	    StorageHessVector[j]  *= -1.0;
+	  }
+	for (int j=0; j<OrbitalSetSize; j++) {
+	  psi(j,i)   = StorageValueVector[j];
+	  dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
+	  d2psi(i,j) = trace(StorageHessVector[j], GGt);
+	}
       }
     }
     VGLMatTimer.stop();
@@ -1213,6 +1276,8 @@ namespace qmcplusplus {
     EinsplineSetExtended<StorageType> *clone = 
       new EinsplineSetExtended<StorageType> (*this);
     clone->registerTimers();
+    for (int iat=0; iat<clone->AtomicOrbitals.size(); iat++)
+      clone->AtomicOrbitals[iat].registerTimers();
     return clone;
   }
 

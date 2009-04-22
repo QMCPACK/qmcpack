@@ -102,10 +102,13 @@ namespace qmcplusplus {
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
 
     int have_dpsi = 0;
+    int NumAtomicOrbitals = 0;
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
       h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
-      h_NumMuffinTins(NumMuffinTins), h_have_dpsi(have_dpsi);
-    NumCoreStates = NumMuffinTins = 0;
+      h_NumMuffinTins(NumMuffinTins), h_have_dpsi(have_dpsi), 
+      h_NumAtomicOrbitals(NumAtomicOrbitals);
+    NumCoreStates = NumMuffinTins;
+
     h_NumBands.read      (H5FileID, "/electrons/kpoint_0/spin_0/number_of_states");
     h_NumCore.read       (H5FileID, "/electrons/kpoint_0/spin_0/number_of_core_states");
     h_NumElectrons.read  (H5FileID, "/electrons/number_of_electrons");
@@ -113,10 +116,12 @@ namespace qmcplusplus {
     h_NumTwists.read     (H5FileID, "/electrons/number_of_kpoints");
     h_NumMuffinTins.read (H5FileID, "/muffin_tins/number_of_tins");
     h_have_dpsi.read     (H5FileID, "/electrons/have_dpsi");
+    h_NumAtomicOrbitals.read (H5FileID, "/electrons/number_of_atomic_orbitals");
     HaveOrbDerivs = have_dpsi;
     app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons 
 	      << ", spins=" << NumSpins << ", twists=" << NumTwists 
 	      << ", muffin tins=" << NumMuffinTins << endl;
+    app_log() << "atomic orbital=" << NumAtomicOrbitals << endl;
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
       cerr << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
 	   << "x" << TileFactor[2] << " tiling factor.\n";
@@ -145,6 +150,39 @@ namespace qmcplusplus {
     h_IonPos.read   (H5FileID, "/atoms/positions");
     for (int i=0; i<IonTypes.size(); i++)
       app_log() << "Atom type(" << i << ") = " << IonTypes(i) << endl;
+
+    /////////////////////////////////////
+    // Read atomic orbital information //
+    /////////////////////////////////////
+    AtomicOrbitals.resize(NumAtomicOrbitals);
+    for (int iat=0; iat<NumAtomicOrbitals; iat++) {
+      AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+      int lmax, polynomial_order, spline_points;
+      RealType cutoff_radius, polynomial_radius, spline_radius;
+      PosType position;
+      HDFAttribIO<int> h_lmax(lmax), h_polynomial_order(polynomial_order),
+	h_spline_points(spline_points);
+      HDFAttribIO<RealType> h_cutoff_radius(cutoff_radius), 
+	h_polynomial_radius(polynomial_radius),
+	h_spline_radius(spline_radius);
+      HDFAttribIO<PosType> h_position(position);
+      ostringstream groupstream;
+      groupstream << "/electrons/atomic_orbital_" << iat << "/";
+      string groupname = groupstream.str();
+      h_lmax.read              (H5FileID, (groupname + "lmax"             ).c_str());
+      h_polynomial_order.read  (H5FileID, (groupname + "polynomial_order" ).c_str());
+      h_spline_points.read     (H5FileID, (groupname + "spline_points"    ).c_str());
+      h_cutoff_radius.read     (H5FileID, (groupname + "cutoff_radius"    ).c_str());
+      h_polynomial_radius.read (H5FileID, (groupname + "polynomial_radius").c_str());
+      h_spline_radius.read     (H5FileID, (groupname + "spline_radius"    ).c_str());
+      h_position.read          (H5FileID, (groupname + "position"         ).c_str());
+      orb.set_pos (position);
+      orb.set_lmax (lmax);
+      orb.set_cutoff (cutoff_radius);
+      orb.set_spline (spline_radius, spline_points);
+      orb.set_polynomial (polynomial_radius, polynomial_order);
+    }
+      
 
     ///////////////////////////
     // Read the twist angles //
@@ -425,6 +463,7 @@ namespace qmcplusplus {
     if(myComm->size() == 1) return;
 
     int numIons = IonTypes.size();
+    int numAtomicOrbitals = AtomicOrbitals.size();
     int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
     PooledData<RealType> abuffer;
     PooledData<int>       aibuffer;
@@ -440,6 +479,7 @@ namespace qmcplusplus {
     aibuffer.add(NumTwists); //myComm->bcast(NumTwists);
     aibuffer.add(numIons); //myComm->bcast(numIons);
     aibuffer.add(NumMuffinTins);
+    aibuffer.add(numAtomicOrbitals);
     aibuffer.add(numDensityGvecs);
     aibuffer.add((int)HaveOrbDerivs);
 
@@ -462,6 +502,7 @@ namespace qmcplusplus {
       aibuffer.get(NumTwists);
       aibuffer.get(numIons);
       aibuffer.get(NumMuffinTins);
+      aibuffer.get(numAtomicOrbitals);
       aibuffer.get(numDensityGvecs);
       aibuffer.get(HaveOrbDerivs);
       MT_APW_radii.resize(NumMuffinTins);
@@ -471,6 +512,7 @@ namespace qmcplusplus {
       MT_centers.resize(NumMuffinTins);
       TargetPtcl.DensityReducedGvecs.resize(numDensityGvecs);
       TargetPtcl.Density_G.resize(numDensityGvecs);
+      AtomicOrbitals.resize(numAtomicOrbitals);
     }
 
     vector<int> rgrids_sizes(NumMuffinTins);
@@ -508,6 +550,8 @@ namespace qmcplusplus {
     bibuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
     bibuffer.add(MT_APW_num_radial_points.begin(), 
 		 MT_APW_num_radial_points.end());
+      
+
     bbuffer.add(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
     for (int i=0; i<NumMuffinTins; i++) 
       bbuffer.add(MT_APW_rgrids[i].begin(), MT_APW_rgrids[i].end());
@@ -515,6 +559,18 @@ namespace qmcplusplus {
 		&(TargetPtcl.DensityReducedGvecs[0][0])+numDensityGvecs*OHMMS_DIM);
     bbuffer.add(&(TargetPtcl.Density_G[0]),
 		&(TargetPtcl.Density_G[0]) + numDensityGvecs);
+    for (int iat=0; iat<numAtomicOrbitals; iat++) {
+      AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+      bibuffer.add (orb.SplinePoints);
+      bibuffer.add (orb.PolyOrder);
+      bibuffer.add (orb.lMax);
+      bibuffer.add (orb.Numlm);
+      bbuffer.add  (&orb.Pos[0], &orb.Pos[0]+OHMMS_DIM);
+      bbuffer.add  (orb.CutoffRadius);
+      bbuffer.add  (orb.SplineRadius);
+      bbuffer.add  (orb.PolyRadius);
+    }
+
     myComm->bcast(bbuffer);
     myComm->bcast(bibuffer);
 
@@ -539,6 +595,18 @@ namespace qmcplusplus {
 		   numDensityGvecs*OHMMS_DIM);
       bbuffer.get(&(TargetPtcl.Density_G[0]),
 		  &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+      for (int iat=0; iat<numAtomicOrbitals; iat++) {
+	AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	bibuffer.get (orb.SplinePoints);
+	bibuffer.get (orb.PolyOrder);
+	bibuffer.get (orb.lMax);
+	bibuffer.get (orb.Numlm);
+	bbuffer.get  (&orb.Pos[0], &orb.Pos[0]+OHMMS_DIM);
+	bbuffer.get  (orb.CutoffRadius);
+	bbuffer.get  (orb.SplineRadius);
+	bbuffer.get  (orb.PolyRadius);
+      }
+
     }
   }
 
@@ -638,6 +706,8 @@ namespace qmcplusplus {
     ///////////////////////////////////////////////////////////////////
     PrimCell.set(Lattice);
     SuperCell.set(SuperLattice);
+    for (int iat=0; iat<AtomicOrbitals.size(); iat++)
+      AtomicOrbitals[iat].Lattice = Lattice;
 
     // Copy supercell into the ParticleSets
 //     app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
@@ -1782,6 +1852,11 @@ namespace qmcplusplus {
 	(MT_APW_rgrids[tin], MT_APW_lmax[tin], 
 	 NumValenceOrbs);
     }
+    for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
+      AtomicOrbitals[iat].set_num_bands(NumValenceOrbs);
+      AtomicOrbitals[iat].allocate();
+    }
+      
            
     int iorb  = 0;
     int icore = 0;
@@ -1835,7 +1910,33 @@ namespace qmcplusplus {
 	set_multi_UBspline_3d_z 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
       
-	
+	// Read atomic orbital information
+	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
+	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
+	  Array<complex<double>,2> radial_spline, poly_coefs;
+	  if (root) { 
+	    int ti   = SortBands[iorb].TwistIndex;
+	    int bi   = SortBands[iorb].BandIndex;
+	    ostringstream path;
+	    path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+	    AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	    ostringstream spline_path, poly_path;
+	    spline_path << path.str() << "radial_spline_" << iat;
+	    poly_path   << path.str() << "poly_coefs_"    << iat;
+	    HDFAttribIO<Array<complex<double>,2> > h_radial_spline(radial_spline);
+	    HDFAttribIO<Array<complex<double>,2> > h_poly_coefs(poly_coefs);
+	    h_radial_spline.read(H5FileID, spline_path.str().c_str());
+	    h_poly_coefs.read   (H5FileID, poly_path.str().c_str());
+	    // cerr << "radial_spline.size = (" << radial_spline.size(0) 
+	    // 	 << ", " << radial_spline.size(1) << ")\n";
+	    // cerr << "poly_coefs.size = (" << poly_coefs.size(0) 
+	    // 	 << ", " << poly_coefs.size(1) << ")\n";
+	  }
+	  myComm->bcast(radial_spline);
+	  myComm->bcast(poly_coefs);
+	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs);
+	}
+
 	// Now read muffin tin data
 	for (int tin=0; tin<NumMuffinTins; tin++) {
 	  // app_log() << "Reading data for muffin tin " << tin << endl;
@@ -1867,6 +1968,10 @@ namespace qmcplusplus {
       } // valence state
       iorb++;
     }
+    orbitalSet->AtomicOrbitals = AtomicOrbitals;
+    for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
+      orbitalSet->AtomicOrbitals[i].registerTimers();
+
     ExtendedMap_z[set] = orbitalSet->MultiSpline;
   }
 
@@ -1980,6 +2085,11 @@ namespace qmcplusplus {
 	(MT_APW_rgrids[tin], MT_APW_lmax[tin], 
 	 NumValenceOrbs);
     }
+
+    for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
+      AtomicOrbitals[iat].set_num_bands(NumValenceOrbs);
+      AtomicOrbitals[iat].allocate();
+    }
            
     int iorb  = 0;
     int icore = 0;
@@ -2057,6 +2167,30 @@ namespace qmcplusplus {
 	myComm->bcast(splineData);
 	set_multi_UBspline_3d_d 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
+
+	// Read atomic orbital information
+	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
+	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
+	  Array<complex<double>,2> radial_spline, poly_coefs;
+	  if (root) { 
+	    int ti   = SortBands[iorb].TwistIndex;
+	    int bi   = SortBands[iorb].BandIndex;
+	    ostringstream path;
+	    path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+	    AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	    ostringstream spline_path, poly_path;
+	    spline_path << path.str() << "radial_spline_" << iat;
+	    poly_path   << path.str() << "poly_coefs_"    << iat;
+	    HDFAttribIO<Array<complex<double>,2> > h_radial_spline(radial_spline);
+	    HDFAttribIO<Array<complex<double>,2> > h_poly_coefs(poly_coefs);
+	    h_radial_spline.read(H5FileID, spline_path.str().c_str());
+	    h_poly_coefs.read   (H5FileID, poly_path.str().c_str());
+	  }
+	  myComm->bcast(radial_spline);
+	  myComm->bcast(poly_coefs);
+	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs);
+	}
+
       
 	// Now read orbital derivatives if we have them
 	if (HaveOrbDerivs) {
@@ -2151,6 +2285,10 @@ namespace qmcplusplus {
       } // valence state
       iorb++;
     }
+    orbitalSet->AtomicOrbitals = AtomicOrbitals;
+    for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
+      orbitalSet->AtomicOrbitals[i].registerTimers();
+
     ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
 
