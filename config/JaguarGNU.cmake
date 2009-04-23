@@ -52,8 +52,6 @@ SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 SET(CMAKE_CXX_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 SET(CMAKE_C_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 
-INCLUDE(Platform/UnixPaths)
-
 SET(CMAKE_CXX_LINK_SHARED_LIBRARY)
 SET(CMAKE_CXX_LINK_MODULE_LIBRARY)
 SET(CMAKE_C_LINK_SHARED_LIBRARY)
