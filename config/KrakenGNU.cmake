@@ -26,15 +26,15 @@ set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
   set(CMAKE_FIND_ROOT_PATH
       /opt/fftw/3.2.0
       /opt/cray/hdf5/1.8.2/hdf5-gnu
-      /nics/b/home/jnkim2/svnwork/boost_1_38_0
-      /nics/b/home/jnkim2/gnu/einspline
+      /nics/a/proj/qmc/boost_1_38_0
+      /nics/a/proj/qmc
      )
 
-SET(CMAKE_SHARED_LIBRARY_C_FLAGS "")            # -pic 
-SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "")       # -shared
-SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")         # +s, flag for exe link to use shared lib
-SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "")       # -rpath
-SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG_SEP "")   # : or empty
+SET(CMAKE_SHARED_LIBRARY_C_FLAGS " ")            # -pic 
+SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS " ")       # -shared
+SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS " ")         # +s, flag for exe link to use shared lib
+SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG " ")       # -rpath
+SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG_SEP " ")   # : or empty
 
 SET(CMAKE_LINK_LIBRARY_SUFFIX "")
 SET(CMAKE_STATIC_LIBRARY_PREFIX "lib")
@@ -49,8 +49,6 @@ SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 SET(CMAKE_CXX_FLAGS "-g -O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 SET(CMAKE_C_FLAGS "-g -std=c99 -O3 -march=amdfam10 -msse3 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math ")
-
-INCLUDE(Platform/UnixPaths)
 
 SET(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS " ")    # -shared
 SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS " ")  # +s, flag for exe link to use shared lib
