@@ -15,15 +15,15 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
-#if OHMMS_DIM==3
-  #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-  #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-  #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-  #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-  #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-  #ifdef HAVE_EINSPLINE
-  #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-  #endif
+#if OHMMS_DIM == 3
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
+#if defined(HAVE_EINSPLINE)
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#endif
 #endif
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -48,7 +48,8 @@ namespace qmcplusplus {
     delete_iter(basisBuilder.begin(),basisBuilder.end());
   }
 
-  bool BasisSetFactory::put(xmlNodePtr cur) {
+  bool BasisSetFactory::put(xmlNodePtr cur) 
+  {
     return true;
   }
 
@@ -70,7 +71,7 @@ namespace qmcplusplus {
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
     {
-#ifdef HAVE_EINSPLINE
+#if defined(HAVE_EINSPLINE)
       PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #else
@@ -78,6 +79,7 @@ namespace qmcplusplus {
       bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #endif
     }
+#if defined(QMC_BUILD_COMPLETE)
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
       ParticleSet* ions=0;
@@ -100,6 +102,7 @@ namespace qmcplusplus {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
       }
     }
+#endif
 
     PRE.flush();
 
@@ -117,7 +120,8 @@ namespace qmcplusplus {
     }
   }
 
-  SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) {
+  SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) 
+  {
     if(basisBuilder.size()) 
     {
       return basisBuilder.back()->createSPOSet(cur);
