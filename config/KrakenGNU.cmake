@@ -25,7 +25,6 @@ set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
 
   set(CMAKE_FIND_ROOT_PATH
       /opt/fftw/3.2.0
-      /opt/cray/hdf5/1.8.2/hdf5-gnu
       /nics/a/proj/qmc/boost_1_38_0
       /nics/a/proj/qmc
      )
@@ -36,6 +35,7 @@ SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS " ")         # +s, flag for exe link to us
 SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG " ")       # -rpath
 SET(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG_SEP " ")   # : or empty
 
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 SET(CMAKE_LINK_LIBRARY_SUFFIX "")
 SET(CMAKE_STATIC_LIBRARY_PREFIX "lib")
 SET(CMAKE_STATIC_LIBRARY_SUFFIX ".a")
