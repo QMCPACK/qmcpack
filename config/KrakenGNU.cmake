@@ -47,8 +47,8 @@ SET(CMAKE_DL_LIBS "" )
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
-SET(CMAKE_CXX_FLAGS "-g -O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
-SET(CMAKE_C_FLAGS "-g -std=c99 -O3 -march=amdfam10 -msse3 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math ")
+SET(CMAKE_CXX_FLAGS "-g -O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -Wno-deprecated ")
+SET(CMAKE_C_FLAGS "-g -std=c99 -O3 -march=amdfam10 -msse3 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 ")
 
 SET(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS " ")    # -shared
 SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS " ")  # +s, flag for exe link to use shared lib
