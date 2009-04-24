@@ -1913,7 +1913,9 @@ namespace qmcplusplus {
 	// Read atomic orbital information
 	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
 	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
-	  Array<complex<double>,2> radial_spline, poly_coefs;
+	  AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
+	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
 	  if (root) { 
 	    int ti   = SortBands[iorb].TwistIndex;
 	    int bi   = SortBands[iorb].BandIndex;
@@ -2171,7 +2173,9 @@ namespace qmcplusplus {
 	// Read atomic orbital information
 	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
 	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
-	  Array<complex<double>,2> radial_spline, poly_coefs;
+	  AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
+	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
 	  if (root) { 
 	    int ti   = SortBands[iorb].TwistIndex;
 	    int bi   = SortBands[iorb].BandIndex;
