@@ -134,6 +134,8 @@ namespace qmcplusplus {
       if (rmag > PolyRadius)
 	eval_multi_UBspline_1d_z (RadialSpline, rmag, &(ulmVec[0])); 
       else {
+	for (int index=0; index<ulmVec.size(); index++) 
+	  ulmVec[index]  = complex<double>();
 	double r2n = 1.0;
 	for (int n=0; n <= PolyOrder; n++) {
 	  int index = 0;
