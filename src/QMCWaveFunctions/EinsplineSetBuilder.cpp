@@ -123,8 +123,8 @@ namespace qmcplusplus {
 	      << ", muffin tins=" << NumMuffinTins << endl;
     app_log() << "atomic orbital=" << NumAtomicOrbitals << endl;
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
-      cerr << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
-	   << "x" << TileFactor[2] << " tiling factor.\n";
+      app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
+		<< "x" << TileFactor[2] << " tiling factor.\n";
 
     //////////////////////////////////
     // Read ion types and locations //
@@ -348,8 +348,8 @@ namespace qmcplusplus {
     // fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
     // 	     NumBands, NumElectrons, NumSpins, NumTwists);
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
-      cerr << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
-	   << "x" << TileFactor[2] << " tiling factor.\n";
+      app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
+		<< "x" << TileFactor[2] << " tiling factor.\n";
 
     /////////////////////////////////
     // Read muffin tin information //
@@ -1912,7 +1912,7 @@ namespace qmcplusplus {
       
 	// Read atomic orbital information
 	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
-	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
+	  app_log() << "Reading orbital " << iat << " for band " << ival << endl;
 	  AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
 	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
 	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
@@ -2172,7 +2172,7 @@ namespace qmcplusplus {
 
 	// Read atomic orbital information
 	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
-	  cerr << "Reading orbital " << iat << " for band " << ival << endl;
+	  app_log() << "Reading orbital " << iat << " for band " << ival << endl;
 	  AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
 	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
 	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
