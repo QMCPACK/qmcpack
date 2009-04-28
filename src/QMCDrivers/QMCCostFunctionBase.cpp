@@ -98,7 +98,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
   //if(checkParameters()) {
  
  //reset the wave function
- resetPsi();
+ resetPsi(true);
  
  //evaluate new local energies
  NumWalkersEff=correlatedSampling();
@@ -920,6 +920,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
       //return false;
       return true;
     }    
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

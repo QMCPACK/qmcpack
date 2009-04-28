@@ -43,6 +43,7 @@ namespace qmcplusplus {
     void getConfigurations(const string& aroot);
     void checkConfigurations();
     void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0);
+    Return_t fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap);
   protected:
     vector<QMCHamiltonian*> H_KE_Node;
     vector<Matrix<Return_t>*> RecordsOnNode;

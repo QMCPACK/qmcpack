@@ -98,8 +98,10 @@ namespace qmcplusplus {
      * If successful, any optimization object updates the parameters by x0 + dl*gr
      * and proceeds with a new step.
      */
-    bool lineoptimization(const vector<double>& x0, const vector<double>& gr, Return_t val0, 
+    bool lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0, 
         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
+        
+    virtual Return_t fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap )=0;
 
     virtual void getConfigurations(const string& aroot)=0;
 
