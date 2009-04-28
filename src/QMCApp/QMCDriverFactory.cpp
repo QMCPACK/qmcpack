@@ -26,6 +26,7 @@
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingle.h"
 #include "QMCDrivers/QMCOptimize.h"
+#include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
@@ -111,7 +112,11 @@ namespace qmcplusplus {
     QMCRunType newRunType = DUMMY_RUN;
     if(curName != "qmc") qmc_mode=curName;
     int nchars=qmc_mode.size();
-    if(qmc_mode.find("opt") < nchars)
+    if(qmc_mode.find("linearopt") < nchars)
+    {
+      newRunType=LINEAR_OPTIMIZE_RUN;
+    }
+    else if(qmc_mode.find("opt") < nchars)
     {
       newRunType=OPTIMIZE_RUN;
     }
@@ -313,6 +318,13 @@ namespace qmcplusplus {
     else if(curRunType == OPTIMIZE_RUN)
     {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+      qmcDriver=opt;
+    } 
+    else if(curRunType == LINEAR_OPTIMIZE_RUN)
+    {
+      QMCLinearOptimize *opt = new QMCLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;

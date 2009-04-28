@@ -231,6 +231,7 @@ namespace qmcplusplus {
       } 
       else if (optmethod == "BFGS") 
       {
+        app_log() << " This method is not implemented correctly yet. "<< endl;
         app_log() << "Approximate Hessian optimization using BFGSOptimization"<<endl;
         optSolver = new BFGSOptimization<RealType>;
       } 

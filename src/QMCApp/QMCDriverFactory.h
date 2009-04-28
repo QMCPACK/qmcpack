@@ -45,7 +45,8 @@ namespace qmcplusplus {
       OPTIMIZE_RUN,/*!< Optimization */
       VMC_OPT_RUN, /*!< Optimization with vmc blocks */
       WFMC_RUN,
-      FW_RUN
+      FW_RUN,
+      LINEAR_OPTIMIZE_RUN
     };
 
     /*! enum to set the bit to determine the QMC mode */

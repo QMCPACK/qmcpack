@@ -1811,12 +1811,13 @@ class NewCompactHeliumOne: public OrbitalBase
       
       cur=cur->children;
       while(cur != NULL)
-      {
-	string pname="0";
+      { 
+  string pid="0";
 	OhmmsAttributeSet aa;
-	aa.add(pname,"name");
+	aa.add(nameA,"name");
+  aa.add(pid,"id");
 	aa.put(cur);
-	if(pname[0]=='A') putContent(pA,cur);
+	if(pid[0]=='A') putContent(pA,cur);
 // 	if(pname[0]=='B') putContent(pB,cur);
 // 	if(pname[0]=='C') putContent(pC,cur);
 // 	if(pname[0]=='D') putContent(pD,cur);
@@ -1825,7 +1826,7 @@ class NewCompactHeliumOne: public OrbitalBase
       reset(pA );   
       
       
-      myVars.insert(nameA,pA,true);
+      myVars.insert(nameA,pA,nameA!="HE_A");
 //       myVars.insert(nameB,pB,true);
 //       myVars.insert(nameC,pC,true);
 //       myVars.insert(nameD,pD,true);
