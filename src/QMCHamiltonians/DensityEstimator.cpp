@@ -15,14 +15,23 @@
 // -*- C++ -*-
 #include <QMCHamiltonians/DensityEstimator.h>
 #include <OhmmsData/AttributeSet.h>
+#include "LongRange/LRCoulombSingleton.h"
+#include "Particle/DistanceTable.h"
+#include "Particle/DistanceTableData.h"
+
 namespace qmcplusplus 
 {
+  
+  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  typedef LRCoulombSingleton::GridType       GridType;
+  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
-  DensityEstimator::DensityEstimator(ParticleSet& elns)
+  DensityEstimator::DensityEstimator(ParticleSet& elns) : rVs(0)
   {
     UpdateMode.set(COLLECTABLE,1);
     for(int i=0; i<OHMMS_DIM; ++i)
       Bounds[i]=1.0/elns.Lattice.Length[i];
+    InitPotential(elns);
   }
 
   void DensityEstimator::resetTargetParticleSet(ParticleSet& P)
@@ -40,6 +49,8 @@ namespace qmcplusplus
 	int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
 	int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
 	P.Collectables[getGridIndex(i,j,k)]+=1.0;
+	//	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
+	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
       else {
 	for (int dim=0;dim<OHMMS_DIM;dim++){
@@ -51,11 +62,98 @@ namespace qmcplusplus
 	  int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
 	  int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
 	  P.Collectables[getGridIndex(i,j,k)]+=1.0;
+	  //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
+	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
 	}
       } 
     }
     return 0.0;
   }
+
+  RealType 
+  DensityEstimator::evalLR(ParticleSet &P,int iat)
+  {
+    RealType LR=0.0;
+    const StructFact& PtclRhoK(*(P.SK));
+    //    for(int spec1=0; spec1<NumSpecies; spec1++) {
+    //      RealType Z1 = Zspec[spec1];
+      for(int spec2=0; spec2<NumSpecies; spec2++) {
+	RealType Z2 = Zspec[spec2];
+	//RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+	RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, iat, PtclRhoK.rhok[spec2],P);
+	int spec1=spec2; ///BUG: REALLY NEED TO FIGURE OUT HOW TO GET SPEC OF IAT!
+	RealType Z1 = Zspec[spec1];
+	if(spec2==spec1)
+	  LR += 0.5*Z1*Z2*temp;    
+	else
+	  LR += Z1*Z2*temp;
+      } //spec2
+      //    }//spec1
+    //LR*=0.5;
+    return LR;
+  }
+
+  void 
+  DensityEstimator::InitPotential(ParticleSet &P)
+  {
+    SpeciesSet& tspecies(P.getSpeciesSet());
+    int ChargeAttribIndx = tspecies.addAttribute("charge");
+    int MemberAttribIndx = tspecies.addAttribute("membersize");
+    NumCenters = P.getTotalNum();
+    NumSpecies = tspecies.TotalNum;
+    Zat.resize(NumCenters);
+    Zspec.resize(NumSpecies);
+
+    for(int spec=0; spec<NumSpecies; spec++) {
+      Zspec[spec] = tspecies(ChargeAttribIndx,spec);
+      //      NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx,spec));
+    }
+    
+    for(int iat=0; iat<NumCenters; iat++)
+    {
+      //      SpeciesID[iat]=P.GroupID[iat];
+      Zat[iat] = Zspec[P.GroupID[iat]];
+    }
+
+
+
+
+
+    GridType* myGrid(0);
+
+    RealType myRcut;
+    AA = LRCoulombSingleton::getHandler(P);
+    //AA->initBreakup(*PtclRef);
+     myRcut=AA->Basis.get_rc();
+     if(rVs==0) {
+       rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
+     }
+
+
+
+
+  }
+
+
+  RealType
+  DensityEstimator::evalSR(ParticleSet& P,int ipart) {
+     const DistanceTableData *d_aa = P.DistTables[0];
+     RealType SR=0.0;
+     //     for(int ipart=0; ipart<NumCenters; ipart++)
+     
+       {
+	 RealType esum = 0.0;
+	 for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
+	   esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
+	 }
+	 //Accumulate pair sums...species charge for atom i.
+	 SR += Zat[ipart]*esum;
+     }
+     return SR;
+
+    }
+
+  
 
   void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
@@ -63,6 +161,10 @@ namespace qmcplusplus
     myIndex=collectables.current();
     vector<RealType> tmp(NumGrids[OHMMS_DIM]);
     collectables.add(tmp.begin(),tmp.end());
+    potentialIndex=collectables.current();
+    vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
+    collectables.add(tmp2.begin(),tmp2.end());
+
   }
 
   void DensityEstimator::registerCollectables(vector<observable_helper*>& h5desc
@@ -75,6 +177,13 @@ namespace qmcplusplus
     h5o->set_dimensions(ng,myIndex);
     h5o->open(gid);
     h5desc.push_back(h5o);
+
+
+    h5o=new observable_helper("Potential");
+    h5o->set_dimensions(ng,potentialIndex);
+    h5o->open(gid);
+    h5desc.push_back(h5o);
+
   }
 
   void DensityEstimator::setObservables(PropertySetType& plist)
@@ -139,6 +248,7 @@ namespace qmcplusplus
 
   void  DensityEstimator::resize()
   {
+
     for(int i=0; i<OHMMS_DIM; ++i)
     {
       DeltaInv[i]=1.0/Delta[i];
@@ -150,7 +260,9 @@ namespace qmcplusplus
     }
     app_log() << " DensityEstimator bin_size= " <<NumGrids << " delta = " << Delta << endl;
     NumGrids[OHMMS_DIM]=NumGrids[0]*NumGrids[1]*NumGrids[2];
+
   }
+
 }
 
 /***************************************************************************

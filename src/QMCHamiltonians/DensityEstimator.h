@@ -17,17 +17,32 @@
 #define QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include <OhmmsPETE/OhmmsArray.h>
-
+#include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus 
 {
+  
+  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  typedef LRCoulombSingleton::GridType       GridType;
+  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
   class DensityEstimator: public QMCHamiltonianBase
   {
     public:
 
     DensityEstimator(ParticleSet& elns);
-
+    int potentialIndex;
     void resetTargetParticleSet(ParticleSet& P);
+
+    ///For Potential
+    RealType evalSR(ParticleSet& P,int ipart);
+    RealType evalLR(ParticleSet& P,int iat);
+    void InitPotential(ParticleSet &P);
+    vector<RealType> Zat,Zspec; 
+    RadFunctorType* rVs;    
+    int NumSpecies;
+    int NumCenters;
+    LRHandlerType* AA;
+    ///done for potential
 
     Return_t evaluate(ParticleSet& P);
 
@@ -49,6 +64,12 @@ namespace qmcplusplus
     {
       return myIndex+k+NumGrids[2]*(j+NumGrids[1]*i);
     }
+
+    inline int getGridIndexPotential(int i, int j, int k) const
+    {
+      return potentialIndex+k+NumGrids[2]*(j+NumGrids[1]*i);
+    }
+
 
     private:
     TinyVector<double, OHMMS_DIM> density_min;
