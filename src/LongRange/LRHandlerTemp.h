@@ -140,6 +140,7 @@ namespace qmcplusplus {
 	for(;ki<kshell[ks+1]; ki++,rk1++,rk2++)
 	  u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
         vk += Fk_symm[ks]*u;
+
       }
       //for(int ki=0; ki<Fk.size(); ki++) {
       //  //vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
@@ -148,6 +149,21 @@ namespace qmcplusplus {
       return vk;
     }
     
+     inline RealType evaluate(const vector<int>& kshell, 
+ 			     int iat, const ComplexType* restrict rk2,
+			      ParticleSet &P) 
+    {
+       RealType vk=0.0;
+       for(int ks=0,ki=0; ks<MaxKshell; ks++) {
+	 RealType u=0;
+	 for(;ki<kshell[ks+1]; ki++,rk2++){
+	   ComplexType eikr=P.SK->eikr(iat,ki);
+	   u += eikr.real()*(*rk2).real()+eikr.imag()*(*rk2).imag();
+	 }
+	 vk += Fk_symm[ks]*u;
+       }
+    }
+
     /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
      * and \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
      * @param kshell degeneracies of the vectors
