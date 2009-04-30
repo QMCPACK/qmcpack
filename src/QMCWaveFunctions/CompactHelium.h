@@ -782,8 +782,8 @@ public:
     ParticleSet& CenterRef,els;
     DistanceTableData* Ie_table;
     DistanceTableData* ee_table;
-    ValueType pA, pB, pC, pD;
-    string nameA,nameB,nameC,nameD;
+    ValueType pA;
+    string nameA;
 //     DiffOrbitalBase* dPsi;
 //     DSimpleCompactHelium Dp;
 
@@ -845,7 +845,7 @@ public:
     {
         Ie_table = DistanceTable::add(CenterRef,P);
         ee_table = DistanceTable::add(P);
-        dPsi->resetTargetParticleSet(P);
+//         dPsi->resetTargetParticleSet(P);
     }
 
     void checkInVariables(opt_variables_type& active)

@@ -443,7 +443,7 @@ namespace qmcplusplus
     QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap )
     {
 
-        resetPsi(true); 
+        resetPsi(); 
         Return_t NWE = NumWalkersEff=correlatedSampling(); 
         curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
         vector<Return_t> D_avg(NumParams(),0);
@@ -461,7 +461,8 @@ namespace qmcplusplus
             }
           }
         }
-
+        myComm->allreduce(D_avg);
+        ///zero out matrices before we start
         for (int pm=0; pm<NumParams()+1;pm++)
         {
           for (int pm2=0; pm2<NumParams()+1;pm2++)
@@ -470,8 +471,7 @@ namespace qmcplusplus
             Hamiltonian(pm,pm2)=0;
           }
         }
-        Hamiltonian(0,0) = curAvg_w ;
-        Overlap(0,0) = 1;
+        
         
         for (int ip=0, wn=0; ip<NumThreads; ip++)
         {
@@ -482,7 +482,8 @@ namespace qmcplusplus
             Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
             Return_t eloc_new=saved[ENERGY_NEW];
             vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-            vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];            
+            vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw]; 
+            
             for (int pm=0; pm<NumParams();pm++)
             {
               Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
@@ -496,6 +497,12 @@ namespace qmcplusplus
             }
           }
         }
+        myComm->allreduce(Hamiltonian);
+        myComm->allreduce(Overlap);
+        
+
+        Overlap(0,0) = 1;
+        Hamiltonian(0,0) = curAvg_w ;
         return NWE;
     }
 

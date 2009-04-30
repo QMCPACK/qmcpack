@@ -112,7 +112,7 @@ namespace qmcplusplus {
     QMCRunType newRunType = DUMMY_RUN;
     if(curName != "qmc") qmc_mode=curName;
     int nchars=qmc_mode.size();
-    if(qmc_mode.find("linearopt") < nchars)
+    if(qmc_mode.find("linear") < nchars)
     {
       newRunType=LINEAR_OPTIMIZE_RUN;
     }

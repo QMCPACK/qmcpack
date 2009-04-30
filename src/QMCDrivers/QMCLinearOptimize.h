@@ -68,6 +68,7 @@ namespace qmcplusplus {
     int NumOfVMCWalkers;
     ///Number of its maximum before generating new configurations.
     int Max_iterations;
+    int tries, exp0;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
     ///need to know HamiltonianPool to use OMP

@@ -36,7 +36,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -48,6 +48,8 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(WarmupBlocks,"warmupBlocks","int");
     m_param.add(SkipSampleGeneration,"skipVMC","string");
     m_param.add(Max_iterations,"max_its","int");
+    m_param.add(tries,"tries","int");
+    m_param.add(exp0,"exp0","int");
 }
 
 /** Clean up the vector */
@@ -134,7 +136,7 @@ bool QMCLinearOptimize::run()
 //         }
 //         app_log()<<endl;
 
-        int tries(6);
+//int tries(6);
         vector<RealType> dP(N,0.0);
         vector<vector<RealType> > keepdP;
         vector<RealType> keepP(N,0);
@@ -150,7 +152,8 @@ bool QMCLinearOptimize::run()
                     HamT(i,j)= (Ham)(j,i);
                     ST(i,j)= (S)(j,i);
                 }
-            Xs[it]= 0.0001*std::pow(10.0,it);
+            Xs[it]=0;
+            if (it>0) Xs[it]= std::pow(10.0,-exp0-1+it);
             for (int i=1;i<N;i++) HamT(i,i) += Xs[it];
 
             char jl('N');
@@ -242,11 +245,11 @@ bool QMCLinearOptimize::run()
         }
         else
         {
-          app_log()<<" Linear method failed, using a line m,inimization along steepest descent direction"<<endl;
+//           app_log()<<" Linear method failed, using a line m,inimization along steepest descent direction"<<endl;
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
         }
-        for (int i=0;i<(N-1); i++) app_log()<<optTarget->Params(i)<<" ";
-        app_log()<<Costs[minCostindex]<<endl;
+//         for (int i=0;i<(N-1); i++) app_log()<<optTarget->Params(i)<<" ";
+//         app_log()<<Costs[minCostindex]<<endl;
 //         optTarget->Cost();
         MyCounter++;
         Valid =  ( (optTarget->IsValid) & (LastCost>Costs[minCostindex]) );
