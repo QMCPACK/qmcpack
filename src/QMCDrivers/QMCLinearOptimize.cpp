@@ -153,7 +153,7 @@ bool QMCLinearOptimize::run()
                     ST(i,j)= (S)(j,i);
                 }
             Xs[it]=0;
-            if (it>0) Xs[it]= std::pow(10.0,-exp0-1+it);
+            if (it>0) Xs[it]= std::pow(10.0,exp0+it-1);
             for (int i=1;i<N;i++) HamT(i,i) += Xs[it];
 
             char jl('N');
