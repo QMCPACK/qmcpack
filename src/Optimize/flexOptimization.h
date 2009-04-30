@@ -63,7 +63,7 @@ class FlexOptimization: public MinimizerBase<T>
     int a_restart ;
     bool Failed_Last;
     int xybisect;
-    Return_t Gfactor;
+    Return_t Cfactor;
     vector< vector<Return_t> > Past_a_xi, Past_Parms, Past_a_h;
     vector< vector<Return_t> > PastGradients;
     vector< vector<Return_t> > PastGradientsParameterPoints;
@@ -72,7 +72,7 @@ class FlexOptimization: public MinimizerBase<T>
         Displacement(0),xybisect(0), Failed_Last(false),
         CostTol(1.e-3),GradTol(1.e-2), CG_ortho(1), a_linmin_maxits(5),
         a_lastx(1e-2), a_lastx_default(1e-2), a_linmin_g1(2), a_linmin_g2(1.0),
-        a_linmin_g3(0.5), a_restart(0), xycleanup(4), Gfactor(3), deltaG(1e-5)
+        a_linmin_g3(0.5), a_restart(0), xycleanup(4), Cfactor(3), deltaG(1e-5)
     {
       if (atarget) setTarget(atarget);
     }
@@ -131,7 +131,7 @@ class FlexOptimization: public MinimizerBase<T>
      * @param CG_ortho number of previous search directions we want to maintain orthogonality to.
      * @param a_rich 0=used approximate gradient at new location, 1=calculate new gradient at line minimum
      * @param xybisect Number of times to use bisection before linear interpolation for line minimization minimum finding routine.
-     * @param Gfactor max allowed increase in Cost function gradient. Avoids falling in holes.
+     * @param Cfactor max allowed increase in Cost function gradient. Avoids falling in holes.
      * @param xycleanup max steps to tighten the line search
      * @param GradTol gradient to quit line minimization
      * @param a_verbose 0=quiet, 1=normal, 2=chatty, 3+=various degrees of debug (loud!)
@@ -151,7 +151,7 @@ class FlexOptimization: public MinimizerBase<T>
       GradTol=1e-2;
       CostTol=1e-2;
       xycleanup=6;
-      Gfactor=3;
+      Cfactor=1.0;
       xybisect=1;
       a_rich=1;
       CG_ortho=1;
@@ -166,7 +166,7 @@ class FlexOptimization: public MinimizerBase<T>
       p.add(CG_ortho,"length_CG","none");
       p.add(a_rich,"rich","none");
       p.add(xybisect,"xybisect","none");
-      p.add(Gfactor,"Gfactor","none");
+      p.add(Cfactor,"Cfactor","none");
       p.add(xycleanup,"xypolish","none");
       p.add(CostTol,"tolerance","none");
       p.add(GradTol,"tolerance_g","none");
@@ -246,6 +246,8 @@ class FlexOptimization: public MinimizerBase<T>
       restart(1);
       Past_a_h.push_back(a_h);
 
+      Return_t LastCost=TargetFunc->Cost();
+      
       gg = 0.0;
       for (int j = 0 ; j < NumParams ; j ++)  gg += a_xi[j]*a_xi[j];
       a_gtyp = sqrt(gg / (1.0*NumParams));
@@ -259,25 +261,28 @@ class FlexOptimization: public MinimizerBase<T>
 
           Return_t GGnew = 0.0;
           for (int j = 0 ; j < NumParams ; j ++) GGnew += a_xi[j]*a_xi[j];
-          if ((GGnew>Gfactor*gg) || (!TargetFunc->IsValid) || (step<0.0) )
-            {
-              if ((a_verbose>1)&(GGnew>Gfactor*gg))
-                {
-                  cout<<"G grew too much "<<GGnew<<" > "<<Gfactor<<"*"<<gg<<endl;
-                  printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
-                  if (a_verbose>3)
-                    {
-                      int PastLines = Past_a_h.size()-1;
-                      cout<<PastLines<<endl;
-                      for (int ih=PastLines; ((ih>-1) & (ih>(PastLines-CG_ortho))) ;ih--)
-                        {
-                          cout<<"Past_a_h ["<<ih<<"] ";
-                          for (int j = 0 ; j < NumParams ; j ++) cout<<Past_a_h[ih][j]<<" ";
-                          cout<<endl;
-                        }
-                    }
-                }
-              else if ((a_verbose>1)&(!TargetFunc->IsValid)) cout<<"TargetFunc is not valid"<<endl;
+//           if ((GGnew>Cfactor*gg) || (!TargetFunc->IsValid) || (step<0.0) )
+//             {
+//               if ((a_verbose>1)&(GGnew>Cfactor*gg))
+//                 {
+//                   cout<<"G grew too much "<<GGnew<<" > "<<Cfactor<<"*"<<gg<<endl;
+//                   printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
+//                   if (a_verbose>3)
+//                     {
+//                       int PastLines = Past_a_h.size()-1;
+//                       cout<<PastLines<<endl;
+//                       for (int ih=PastLines; ((ih>-1) & (ih>(PastLines-CG_ortho))) ;ih--)
+//                         {
+//                           cout<<"Past_a_h ["<<ih<<"] ";
+//                           for (int j = 0 ; j < NumParams ; j ++) cout<<Past_a_h[ih][j]<<" ";
+//                           cout<<endl;
+//                         }
+//                     }
+//                 }
+              Return_t NewCost=TargetFunc->Cost();
+              if ((NewCost>Cfactor*LastCost) || (NewCost!=NewCost) || (step<0.) || (!TargetFunc->IsValid))
+              {
+              if ((a_verbose>1)&(!TargetFunc->IsValid)) cout<<"TargetFunc is not valid"<<endl;
               else if ((a_verbose>1)&(step<0.)) cout<<"step<0."<<endl;
               Past_Parms.pop_back();
               Past_a_xi.pop_back();
@@ -292,9 +297,6 @@ class FlexOptimization: public MinimizerBase<T>
                   a_h = a_xi;
                   for (int j = 0 ; j < NumParams ; j ++) a_h[j] *= -1.0;
                   Past_a_h.push_back(a_h);
-//                   Past_Parms.push_back(Parms);
-//                   Past_a_xi.push_back(a_xi);
-                  
                 }
               else return false;
               //dfunc( Parms , a_xi  ) ;
@@ -306,15 +308,6 @@ class FlexOptimization: public MinimizerBase<T>
             }
           else
             {
-              //here we increase the CG away from steepest descent.
-//               if (deltaG > std::fabs(gg-GGnew))
-//                 {
-//                   ++CG_ortho;
-//                   if (a_verbose>3)
-//                     {
-//                       cout<<"Increasing CG steps to remain conjugate"<<endl;
-//                     }
-//                 }
               Failed_Last=false;
               gg=GGnew;
             }
@@ -375,6 +368,8 @@ class FlexOptimization: public MinimizerBase<T>
                     }
                 }
             }
+          Return_t gg = 0.0;
+          for (int j = 0 ; j < NumParams ; j ++) gg += a_xi[j]*a_xi[j];
         }
       if (a_verbose > 0) printf("FINAL : gg = %6.3g tol = %6.3g: \n", gg , CostTol) ;
 
@@ -520,7 +515,7 @@ class FlexOptimization: public MinimizerBase<T>
                 }
               xyit++;
             }
-          while (  (std::fabs(s-t)>GradTol) & (xyit<xycleanup)) ;
+          while (  ((std::fabs(s)>GradTol)&(std::fabs(t)>GradTol)) & (xyit<xycleanup)) ;
         }
       else if ((s*t>0.0) )
         {
