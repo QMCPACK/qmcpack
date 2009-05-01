@@ -69,6 +69,7 @@ namespace qmcplusplus {
     ///Number of its maximum before generating new configurations.
     int Max_iterations;
     int tries, exp0;
+    RealType alpha;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
     ///need to know HamiltonianPool to use OMP
@@ -92,7 +93,7 @@ namespace qmcplusplus {
     QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
     ///Copy operator (disabled).
     QMCLinearOptimize& operator=(const QMCLinearOptimize&) { return *this;}
-
+    RealType LineMinimization(vector<RealType> &optP);
     void generateSamples();
   };
 }

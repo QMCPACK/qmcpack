@@ -36,7 +36,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -50,6 +50,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(Max_iterations,"max_its","int");
     m_param.add(tries,"tries","int");
     m_param.add(exp0,"exp0","int");
+    m_param.add(alpha,"alpha","double");
 }
 
 /** Clean up the vector */
@@ -106,6 +107,7 @@ bool QMCLinearOptimize::run()
     bool Valid(true);
     int Total_iterations(0);
     RealType LastCost(optTarget->Cost());
+    bool stalled(true);
     while ( (Valid)&(Max_iterations>Total_iterations) )
     {
         Total_iterations+=1;
@@ -141,7 +143,7 @@ bool QMCLinearOptimize::run()
         vector<vector<RealType> > keepdP;
         vector<RealType> keepP(N,0);
         for (int i=0;i<(N-1); i++) keepP[i] = optTarget->Params(i);
-        vector<RealType> Costs(tries);
+        vector<RealType> Costs(tries); 
         vector<RealType> Xs(tries);
         for (int it=0;it<tries;it++)
         {
@@ -195,8 +197,8 @@ bool QMCLinearOptimize::run()
             {
                 N_i[i] += xi*D*S(0,i+1);
                 M_i[i] += xi*D;
-                double tsumN(S(0,i+1));
-                double tsumM(1);
+                RealType tsumN(S(0,i+1));
+                RealType tsumM(1);
                 for (int j=0;j<N-1;j++)
                 {
                     tsumN += S(i+1,j+1)*dP[j+1];
@@ -233,7 +235,7 @@ bool QMCLinearOptimize::run()
             Costs[it] = optTarget->Cost();
         }
         app_log()<<"Costs: ";
-        for (int t=0;t<tries;t++) app_log()<<Costs[t]<<" ";
+        for (int t=0;t<(tries);t++) app_log()<<Costs[t]-LastCost<<" ";
         app_log()<<endl;
         int minCostindex(0);
         //make sure the cost function is a number here.
@@ -242,17 +244,28 @@ bool QMCLinearOptimize::run()
         if (LastCost>Costs[minCostindex])
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
+          stalled=false;
         }
-        else
+        else if (stalled)
         {
 //           app_log()<<" Linear method failed, using a line m,inimization along steepest descent direction"<<endl;
-          for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
+          vector<RealType> sdP(N-1,0);
+          LineMinimization(sdP);
+          for (int i=0;i<(N-1); i++) optTarget->Params(i) = sdP[i];
+          RealType sdCost = optTarget->Cost();
+          app_log()<<" Taking SD move. oldCost:"<< LastCost <<" newCost: "<<sdCost<<endl;
+          if (sdCost>LastCost)
+          {
+            for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
+          }
+          else LastCost=sdCost;
         }
+        else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
 //         for (int i=0;i<(N-1); i++) app_log()<<optTarget->Params(i)<<" ";
 //         app_log()<<Costs[minCostindex]<<endl;
 //         optTarget->Cost();
         MyCounter++;
-        Valid =  ( (optTarget->IsValid) & (LastCost>Costs[minCostindex]) );
+        Valid =  ( (optTarget->IsValid) & (LastCost>Costs[minCostindex]) & (!stalled));
         LastCost=Costs[minCostindex];
     }
     app_log() << "  Execution time = " << t1.elapsed() << endl;
@@ -262,6 +275,122 @@ bool QMCLinearOptimize::run()
     app_log() << "</optimization-report>" << endl;
     return (optTarget->getReportCounter() > 0);
 }
+
+QMCLinearOptimize::RealType QMCLinearOptimize::LineMinimization(vector<RealType> &optP)
+    {
+      int N=optTarget->NumParams();
+      RealType y(0.01), x(0.0);
+      RealType s(0),t(0);
+      
+      vector<RealType> P0(N),parmsy(N),parmsx(N), tempP(N);
+      vector<RealType> G0(N), grady(N),gradx(N), tempG(N);
+      for (int i=0;i<N; i++) parmsx[i]=optTarget->Params(i);
+      P0=parmsx;
+      optTarget->GradCost(gradx, parmsx,0);
+      G0=gradx;
+      for (int i=0;i<N; i++) parmsy[i]=P0[i]+y*G0[i];
+      optTarget->GradCost(gradx, parmsx,0);
+      
+
+      for (int i=0;i<N; i++) s+=gradx[i]*G0[i];
+      for (int i=0;i<N; i++) t+=grady[i]*G0[i];
+      
+      if (t*s > 0 )
+      {
+        int its(0);
+        do
+          {
+            s=t;
+            x = y;
+            parmsx=parmsy;
+            gradx = grady;
+            
+            y = y * 2 ;
+            for (int i=0;i<N; i++) parmsy[i]=P0[i]+y*G0[i];
+            optTarget->GradCost(grady, parmsy,0);
+            t=0;
+            for (int i=0;i<N; i++) t+=grady[i]*G0[i];
+            if (t*s <= 0.0) break;
+            if (t!=t)
+              { 
+                y=x;
+                t=s;
+                parmsy=parmsx;
+                grady = gradx;                
+                its = Max_iterations; 
+              }
+            its ++ ;
+          }
+        while (its <= Max_iterations);
+      }
+
+
+      RealType u(0.0);
+      RealType m(0.5*(x+y));
+      RealType GradTol(1e-5);
+      int xyit(0);
+      int xycleanup(6);
+      if (s*t<0)
+        {
+          int XYBisectCounter=2;
+          do
+            {
+              if (XYBisectCounter)
+                { 
+                  m = 0.5*(x+y) ;
+                  XYBisectCounter--;
+                }
+              else
+                {
+                  RealType ms(std::fabs(s)), mt(std::fabs(t));
+                  m= (ms*y + mt*x)/(ms+mt);
+                }
+
+              for (int i=0;i<N; i++) tempP[i]=P0[i]+m*G0[i];
+              optTarget->GradCost(tempG, tempP,0);
+              u=0;
+              for (int i=0;i<N; i++) u+=tempG[i]*G0[i];
+
+              if (u==u)
+                {
+                  if (u*s <= 0.0 )
+                    {
+                      y=m;
+                      t=u;
+                      parmsy = tempP;
+                      grady = tempG;
+                    }
+                  else
+                    {
+                      x=m;
+                      s=u;
+                      parmsx = tempP;
+                      gradx = tempG ;
+                    }
+                }
+              else if (std::fabs(t)>std::fabs(s))
+                {
+                  t=s;
+                  y=x;
+                  xyit=xycleanup;
+                }
+              else
+                {
+                  s=t;
+                  x=y;
+                  xyit=xycleanup;
+                }
+              xyit++;
+            } while ( (std::abs(s)>GradTol)&(std::abs(t)>GradTol)&(xyit<xycleanup) ) ;
+        }
+      else return -1;
+      
+      RealType ms(std::abs(s)), mt(std::abs(t));
+      RealType n= (ms*y + mt*x)/(ms+mt);  
+      for (int i=0;i<N; i++) optP[i]=P0[i] + alpha*n*G0[i];
+ 
+      return n;
+    }
 
 
 
