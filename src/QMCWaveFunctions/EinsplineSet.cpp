@@ -370,15 +370,16 @@ namespace qmcplusplus {
 	EinsplineTimer.start();
 	EinsplineMultiEval (MultiSpline, ru, valVec);
 	EinsplineTimer.stop();
-      }
-      // Add e^ikr phase to B-spline orbitals
-      for (int j=0; j<NumValenceOrbs; j++) {
-	PosType k = kPoints[j];
-	double s,c;
-	double phase = -dot(r, k);
-	sincos (phase, &s, &c);
-	complex<double> e_mikr (c,s);
-	valVec[j] *= e_mikr;
+      
+	// Add e^ikr phase to B-spline orbitals
+	for (int j=0; j<NumValenceOrbs; j++) {
+	  PosType k = kPoints[j];
+	  double s,c;
+	  double phase = -dot(r, k);
+	  sincos (phase, &s, &c);
+	  complex<double> e_mikr (c,s);
+	  valVec[j] *= e_mikr;
+	}
       }
     }
     int N = StorageValueVector.size();
@@ -561,22 +562,23 @@ namespace qmcplusplus {
 	  gradVec[j] = dot (PrimLattice.G, gradVec[j]);
 	  laplVec[j] = trace (StorageHessVector[j], GGt);
 	}
-      }
-      // Add e^-ikr phase to B-spline orbitals
-      for (int j=0; j<NumValenceOrbs; j++) {
-	complex<double> u = valVec[j];
-	TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
-	complex<double> laplu = laplVec[j];
-	PosType k = kPoints[j];
-	TinyVector<complex<double>,OHMMS_DIM> ck;
-	for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-	double s,c;
-	double phase = -dot(r, k);
-	sincos (phase, &s, &c);
-	complex<double> e_mikr (c,s);
-	valVec[j]   = e_mikr*u;
-	gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
-	laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+      
+	// Add e^-ikr phase to B-spline orbitals
+	for (int j=0; j<NumValenceOrbs; j++) {
+	  complex<double> u = valVec[j];
+	  TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+	  complex<double> laplu = laplVec[j];
+	  PosType k = kPoints[j];
+	  TinyVector<complex<double>,OHMMS_DIM> ck;
+	  for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
+	  double s,c;
+	  double phase = -dot(r, k);
+	  sincos (phase, &s, &c);
+	  complex<double> e_mikr (c,s);
+	  valVec[j]   = e_mikr*u;
+	  gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+	  laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+	}
       }
     }
 
@@ -828,22 +830,23 @@ namespace qmcplusplus {
 	    gradVec[j] = dot (PrimLattice.G, gradVec[j]);
 	    laplVec[j] = trace (StorageHessVector[j], GGt);
 	  }
-	}
-	// Add e^-ikr phase to B-spline orbitals
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  complex<double> u = valVec[j];
-	  TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
-	  complex<double> laplu = laplVec[j];
-	  PosType k = kPoints[j];
-	  TinyVector<complex<double>,OHMMS_DIM> ck;
-	  for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-	  double s,c;
-	  double phase = -dot(r, k);
-	  sincos (phase, &s, &c);
-	  complex<double> e_mikr (c,s);
-	  valVec[j]   = e_mikr*u;
-	  gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
-	  laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+	  
+	  // Add e^-ikr phase to B-spline orbitals
+	  for (int j=0; j<NumValenceOrbs; j++) {
+	    complex<double> u = valVec[j];
+	    TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+	    complex<double> laplu = laplVec[j];
+	    PosType k = kPoints[j];
+	    TinyVector<complex<double>,OHMMS_DIM> ck;
+	    for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
+	    double s,c;
+	    double phase = -dot(r, k);
+	    sincos (phase, &s, &c);
+	    complex<double> e_mikr (c,s);
+	    valVec[j]   = e_mikr*u;
+	    gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+	    laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+	  }
 	}
       }
       

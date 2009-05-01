@@ -428,6 +428,13 @@ namespace qmcplusplus {
       lapl[i] = 0.0;
       int lm=0;
       complex<double> grad_rhat, grad_thetahat, grad_phihat;
+
+      // Compute e^{-i k.L} phase factor
+      double phase = -2.0*M_PI*dot(TwistAngles[i],img);
+      double s,c;
+      sincos(phase,&s,&c);
+      complex<double> e2mikr(c,s);
+
       for (int l=0; l<= lMax; l++)
 	for (int m=-l; m<=l; m++,lm++,index++) {
 	  complex<double> im(0.0,(double)m);
@@ -440,9 +447,12 @@ namespace qmcplusplus {
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
 	     + d2ulmVec[index] + 2.0*rInv *dulmVec[index]);
 	}
-      for (int j=0; j<OHMMS_DIM; j++)
-	grads[i][j] = grad_rhat*rhat[j] + grad_thetahat*thetahat[j] 
-	  + grad_phihat * phihat[j];
+      for (int j=0; j<OHMMS_DIM; j++) {
+	vals[i] *= e2mikr;
+	lapl[i] *= e2mikr;
+	grads[i][j] = e2mikr*(grad_rhat*rhat[j] + grad_thetahat*thetahat[j] 
+			      + grad_phihat * phihat[j]);
+      }
     }
     SumTimer.stop();
     rmagLast = rmag;
