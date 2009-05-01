@@ -30,6 +30,7 @@ namespace qmcplusplus {
     Array<complex<double>,3> PolyCoefs;
     NewTimer YlmTimer, SplineTimer, SumTimer;
     RealType rmagLast;
+    vector<PosType> TwistAngles;
   public:
     PosType Pos;
     RealType CutoffRadius, SplineRadius, PolyRadius;
@@ -65,7 +66,6 @@ namespace qmcplusplus {
       ulmVec.resize  (Numlm*NumBands);  
       dulmVec.resize (Numlm*NumBands); 
       d2ulmVec.resize(Numlm*NumBands);
-      cerr << "NumBands = " << NumBands << endl;
       PolyCoefs.resize(PolyOrder+1, NumBands, Numlm);
       BCtype_z bc;
       bc.lCode = NATURAL;  bc.rCode = NATURAL;
@@ -74,10 +74,12 @@ namespace qmcplusplus {
 //       if (RadialSpline)
 //       	destroy_Bspline (RadialSpline);
       RadialSpline = create_multi_UBspline_1d_z (grid, bc, Numlm*NumBands);
+      TwistAngles.resize(NumBands);
     }
 
     void SetBand (int band, Array<complex<double>,2> &spline_data,
-		  Array<complex<double>,2> &poly_coefs)
+		  Array<complex<double>,2> &poly_coefs,
+		  PosType twist)
     {
       vector<complex<double> > one_spline(SplinePoints);
       for (int lm=0; lm<Numlm; lm++) {
@@ -88,6 +90,7 @@ namespace qmcplusplus {
 	for (int n=0; n<=PolyOrder; n++)
 	  PolyCoefs(n,band,lm) = poly_coefs (n,lm);
       }
+      TwistAngles[band] = twist;
     }
     
     inline bool evaluate (PosType r, ComplexValueVector_t &vals);
@@ -116,8 +119,11 @@ namespace qmcplusplus {
   {
     PosType dr = r - Pos;
     PosType u = Lattice.toUnit(dr);
-    for (int i=0; i<OHMMS_DIM; i++)
-      u[i] -= round(u[i]);
+    PosType img;
+    for (int i=0; i<OHMMS_DIM; i++) {
+      img[i] = round(u[i]);
+      u[i] -= img[i];
+    }
     dr = Lattice.toCart(u);
     double r2 = dot(dr,dr);
     if (r2 > CutoffRadius*CutoffRadius)
@@ -153,6 +159,10 @@ namespace qmcplusplus {
       vals[i] = complex<double>();
       for (int lm=0; lm < Numlm; lm++)
 	vals[i] += ulmVec[index++] * YlmVec[lm];
+      double phase = -2.0*M_PI*dot(TwistAngles[i],img);
+      double s,c;
+      sincos(phase,&s,&c);
+      vals[i] *= complex<double>(c,s);
     }
     SumTimer.stop();
     return true;
@@ -174,8 +184,11 @@ namespace qmcplusplus {
 
     PosType dr = r - Pos;
     PosType u = Lattice.toUnit(dr);
-    for (int i=0; i<OHMMS_DIM; i++)
-      u[i] -= round(u[i]);
+    PosType img;
+    for (int i=0; i<OHMMS_DIM; i++) {
+      img[i] = round(u[i]);
+      u[i] -= img[i];
+    }
     dr = Lattice.toCart(u);
     double r2 = dot(dr,dr);
     if (r2 > CutoffRadius*CutoffRadius)
@@ -212,10 +225,17 @@ namespace qmcplusplus {
     int index = 0;
     for (int i=0; i<vals.size(); i++) {
       vals[i] = 0.0;
+      complex<double> tmp = 0.0;
       for (int lm=0; lm < Numlm; lm++, index++)
-    	//vals[i] += real(ulmVec[index++] * YlmVec[lm]);
-    	vals[i] += (ulmVec[index].real() * YlmVec[lm].real() -
-		    ulmVec[index].imag() * YlmVec[lm].imag());
+	tmp += ulmVec[index] * YlmVec[lm];
+        //vals[i] += real(ulmVec[index++] * YlmVec[lm]);
+        // vals[i] += (ulmVec[index].real() * YlmVec[lm].real() -
+	// 	    ulmVec[index].imag() * YlmVec[lm].imag());
+      double phase = -2.0*M_PI*dot(TwistAngles[i],img);
+      double s,c;
+      sincos(phase,&s,&c);
+      vals[i] = real(complex<double>(c,s) * tmp);
+
     }
     SumTimer.stop();
     return true;
@@ -223,14 +243,18 @@ namespace qmcplusplus {
 
 
   template<typename StorageType> bool
-  AtomicOrbital<StorageType>::evaluate (PosType r, RealValueVector_t &vals,
-					RealGradVector_t &grads,
+  AtomicOrbital<StorageType>::evaluate (PosType r, 
+					RealValueVector_t &vals,
+					RealGradVector_t  &grads,
 					RealValueVector_t &lapl)
   {
     PosType dr = r - Pos;
     PosType u = Lattice.toUnit(dr);
-    for (int i=0; i<OHMMS_DIM; i++)
-      u[i] -= round(u[i]);
+    PosType img;
+    for (int i=0; i<OHMMS_DIM; i++) {
+      img[i] = round(u[i]);
+      u[i] -= img[i];
+    }
     dr = Lattice.toCart(u);
     double r2 = dot(dr,dr);
     if (r2 > CutoffRadius*CutoffRadius)
@@ -292,28 +316,35 @@ namespace qmcplusplus {
       vals[i] = 0.0;
       for (int j=0; j<OHMMS_DIM; j++) grads[i][j] = 0.0;
       lapl[i] = 0.0;
+
+      // Compute e^{-i k.L} phase factor
+      double phase = -2.0*M_PI*dot(TwistAngles[i],img);
+      double s,c;
+      sincos(phase,&s,&c);
+      complex<double> e2mikr(c,s);
+
+      complex<double> tmp_val, tmp_lapl,
+	grad_rhat, grad_thetahat, grad_phihat;
+
       int lm=0;
-      double grad_rhat=0.0, grad_thetahat=0.0, grad_phihat=0.0;
       for (int l=0; l<= lMax; l++)
 	for (int m=-l; m<=l; m++,lm++,index++) {
 	  complex<double> im(0.0,(double)m);
 
-	  vals[i]  += real(ulmVec[index] * YlmVec[lm]);
-	  grad_rhat     += real(dulmVec[index] * YlmVec[lm]);
-	  grad_thetahat += real(ulmVec[index] * rInv * dYlmVec[lm]);
-	  grad_phihat   += real(ulmVec[index] * im *YlmVec[lm])/(rmag*sintheta);
-
-// 	  grads[i] += real
-// 	    (dulmVec[index]                *     YlmVec[lm] * rhat     +
-// 	     ulmVec[index]*rInv            *    dYlmVec[lm] * thetahat +
-// 	     ulmVec[index]/(rmag*sintheta) * im *YlmVec[lm] * phihat);
+	  tmp_val       += ulmVec[index] * YlmVec[lm];
+	  grad_rhat     += dulmVec[index] * YlmVec[lm];
+	  grad_thetahat += ulmVec[index] * rInv * dYlmVec[lm];
+	  grad_phihat   += (ulmVec[index] * im *YlmVec[lm])/(rmag*sintheta);
 	  
-	  lapl[i] += real(YlmVec[lm] * 
+	  tmp_lapl += YlmVec[lm] * 
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
-	     + d2ulmVec[index] + 2.0*rInv *dulmVec[index]));
+	     + d2ulmVec[index] + 2.0*rInv *dulmVec[index]);
 	}
-      grads[i] = (grad_rhat * rhat + grad_thetahat * thetahat +
-		  grad_phihat * phihat);
+      vals[i]  = real(e2mikr*tmp_val);
+      lapl[i]  = real(e2mikr*tmp_lapl);
+      grads[i] = (real(e2mikr*grad_rhat    ) * rhat     + 
+		  real(e2mikr*grad_thetahat) * thetahat +
+		  real(e2mikr*grad_phihat  ) * phihat);
     }
     SumTimer.stop();
     rmagLast = rmag;
@@ -329,8 +360,11 @@ namespace qmcplusplus {
   {
     PosType dr = r - Pos;
     PosType u = Lattice.toUnit(dr);
-    for (int i=0; i<OHMMS_DIM; i++)
-      u[i] -= round(u[i]);
+    PosType img;
+    for (int i=0; i<OHMMS_DIM; i++) {
+      img[i] = round(u[i]);
+      u[i] -= img[i];
+    }
     dr = Lattice.toCart(u);
     double r2 = dot(dr,dr);
     if (r2 > CutoffRadius*CutoffRadius)

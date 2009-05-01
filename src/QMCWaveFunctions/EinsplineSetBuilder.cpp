@@ -1882,11 +1882,12 @@ namespace qmcplusplus {
 	abort();
       }
       else {
+	PosType twist;
 	if (root) {
 	  int ti   = SortBands[iorb].TwistIndex;
 	  int bi   = SortBands[iorb].BandIndex;
 	  double e = SortBands[iorb].Energy;
-	  PosType twist, k;
+	  PosType k;
 	  twist = TwistAngles[ti];
 	  k = orbitalSet->PrimLattice.k_cart(twist);
 	  fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
@@ -1907,6 +1908,7 @@ namespace qmcplusplus {
 	  }
 	}
 	myComm->bcast(splineData);
+	myComm->bcast(twist);
 	set_multi_UBspline_3d_z 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
       
@@ -1936,7 +1938,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(radial_spline);
 	  myComm->bcast(poly_coefs);
-	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs);
+	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs, twist);
 	}
 
 	// Now read muffin tin data
@@ -2113,11 +2115,12 @@ namespace qmcplusplus {
 	abort();
       }
       else {
+	PosType twist;
 	if (root) {
 	  int ti   = SortBands[iorb].TwistIndex;
 	  int bi   = SortBands[iorb].BandIndex;
 	  double e = SortBands[iorb].Energy;
-	  PosType twist, k;
+	  PosType k;
 	  twist = TwistAngles[ti];
 	  k = orbitalSet->PrimLattice.k_cart(twist);
 	  fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
@@ -2166,6 +2169,7 @@ namespace qmcplusplus {
 	    }
 	  }
 	}
+	myComm->bcast(twist);
 	myComm->bcast(splineData);
 	set_multi_UBspline_3d_d 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
@@ -2192,7 +2196,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(radial_spline);
 	  myComm->bcast(poly_coefs);
-	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs);
+	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs, twist);
 	}
 
       

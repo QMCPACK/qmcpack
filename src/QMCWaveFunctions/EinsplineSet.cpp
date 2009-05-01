@@ -472,6 +472,7 @@ namespace qmcplusplus {
       EinsplineTimer.start();
       EinsplineMultiEval (MultiSpline, ru, psi);
       EinsplineTimer.stop();
+    
       if (sign & 1) 
 	for (int j=0; j<psi.size(); j++)
 	  psi[j] *= -1.0;
@@ -732,6 +733,7 @@ namespace qmcplusplus {
       EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector, 
 			  StorageHessVector);
       EinsplineTimer.stop();
+    
       if (sign & 1) 
 	for (int j=0; j<psi.size(); j++) {
 	  psi[j] *= -1.0;
@@ -1218,6 +1220,7 @@ namespace qmcplusplus {
 	EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			    StorageGradVector, StorageHessVector);
 	EinsplineTimer.stop();
+	
 	if (sign & 1) 
 	  for (int j=0; j<OrbitalSetSize; j++) {
 	    StorageValueVector[j] *= -1.0;
@@ -1231,6 +1234,7 @@ namespace qmcplusplus {
 	}
       }
     }
+    
     VGLMatTimer.stop();
   }
   
