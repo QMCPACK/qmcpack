@@ -11,6 +11,32 @@
 
 namespace qmcplusplus {
 
+  ////////////////////////////////////////////////////////////////////
+  // This is just a template trick to avoid template specialization //
+  // in AtomicOrbital.                                              //
+  ////////////////////////////////////////////////////////////////////
+  template<typename StorageType>  struct AtomicOrbitalTraits{};
+  template<> struct AtomicOrbitalTraits<double>
+  {  typedef multi_UBspline_1d_d SplineType;  };
+  template<> struct AtomicOrbitalTraits<complex<double> >
+  {  typedef multi_UBspline_1d_z SplineType;  };
+
+
+  inline void EinsplineMultiEval (multi_UBspline_1d_d *spline, 
+				  double x, double *val)
+  {    eval_multi_UBspline_1d_d (spline, x, val);                 }
+  inline void EinsplineMultiEval (multi_UBspline_1d_z *spline, 
+				  double x, complex<double> *val)
+  {    eval_multi_UBspline_1d_z (spline, x, val);                 }
+  inline void EinsplineMultiEval (multi_UBspline_1d_d *spline, double x, 
+				  double *val, double *grad, double *lapl)
+  {    eval_multi_UBspline_1d_d_vgl (spline, x, val, grad, lapl); }
+  inline void EinsplineMultiEval (multi_UBspline_1d_z *spline, double x, 
+				  complex<double> *val, complex<double> *grad,
+				  complex<double> *lapl)
+  {    eval_multi_UBspline_1d_z_vgl (spline, x, val, grad, lapl); }
+
+
   template<typename StorageType>
   class AtomicOrbital
   {
@@ -21,13 +47,21 @@ namespace qmcplusplus {
     typedef Vector<TinyVector<double,OHMMS_DIM> > RealGradVector_t;
     typedef Vector<complex<double> >              ComplexValueVector_t;
     typedef Vector<TinyVector<complex<double>,OHMMS_DIM> > ComplexGradVector_t;
+    typedef typename AtomicOrbitalTraits<StorageType>::SplineType SplineType;
+
     // Store in order 
     // Index = l*(l+1) + m.  There are (lMax+1)^2 Ylm's
-    vector<complex<double> > YlmVec, dYlmVec, ulmVec, dulmVec, d2ulmVec;
-    inline void CalcYlm(PosType rhat);
-    multi_UBspline_1d_z *RadialSpline;
+    vector<StorageType> YlmVec, dYlmVec, ulmVec, dulmVec, d2ulmVec;
+    inline void CalcYlm(PosType rhat, 
+			vector<complex<double> > &Ylm,
+			vector<complex<double> > &dYlm);
+
+    inline void CalcYlm(PosType rhat, 
+			vector<double> &Ylm, vector<double> &dYlm);
+
+    SplineType *RadialSpline;
     // The first index is n in r^n, the second is lm = l*(l+1)+m
-    Array<complex<double>,3> PolyCoefs;
+    Array<StorageType,3> PolyCoefs;
     NewTimer YlmTimer, SplineTimer, SumTimer;
     RealType rmagLast;
     vector<PosType> TwistAngles;
@@ -71,27 +105,26 @@ namespace qmcplusplus {
       bc.lCode = NATURAL;  bc.rCode = NATURAL;
       Ugrid grid;
       grid.start = 0.0;  grid.end = SplineRadius;  grid.num = SplinePoints;
-//       if (RadialSpline)
-//       	destroy_Bspline (RadialSpline);
+      // if (RadialSpline) destroy_Bspline (RadialSpline);
       RadialSpline = create_multi_UBspline_1d_z (grid, bc, Numlm*NumBands);
       TwistAngles.resize(NumBands);
     }
 
     void SetBand (int band, Array<complex<double>,2> &spline_data,
 		  Array<complex<double>,2> &poly_coefs,
-		  PosType twist)
-    {
-      vector<complex<double> > one_spline(SplinePoints);
-      for (int lm=0; lm<Numlm; lm++) {
-	int index = band*Numlm + lm;
-	for (int i=0; i<SplinePoints; i++)
-	  one_spline[i] = spline_data(i, lm);
-	set_multi_UBspline_1d_z (RadialSpline, index, &one_spline[0]);
-	for (int n=0; n<=PolyOrder; n++)
-	  PolyCoefs(n,band,lm) = poly_coefs (n,lm);
-      }
-      TwistAngles[band] = twist;
-    }
+		  PosType twist);
+    // {
+    //   vector<complex<double> > one_spline(SplinePoints);
+    //   for (int lm=0; lm<Numlm; lm++) {
+    // 	int index = band*Numlm + lm;
+    // 	for (int i=0; i<SplinePoints; i++)
+    // 	  one_spline[i] = spline_data(i, lm);
+    // 	set_multi_UBspline_1d_z (RadialSpline, index, &one_spline[0]);
+    // 	for (int n=0; n<=PolyOrder; n++)
+    // 	  PolyCoefs(n,band,lm) = poly_coefs (n,lm);
+    //   }
+    //   TwistAngles[band] = twist;
+    // }
     
     inline bool evaluate (PosType r, ComplexValueVector_t &vals);
     inline bool evaluate (PosType r, ComplexValueVector_t &val,
@@ -114,7 +147,7 @@ namespace qmcplusplus {
   };
 
   
-  template<typename StorageType> bool
+  template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals)
   {
     PosType dr = r - Pos;
@@ -133,12 +166,12 @@ namespace qmcplusplus {
     PosType rhat = (1.0/rmag)*dr;
     
     // Evaluate Ylm's
-    CalcYlm (rhat);
+    CalcYlm (rhat, YlmVec, dYlmVec);
 
     if (std::fabs(rmag - rmagLast) > 1.0e-6) {
       // Evaluate radial functions
       if (rmag > PolyRadius)
-	eval_multi_UBspline_1d_z (RadialSpline, rmag, &(ulmVec[0])); 
+	EinsplineMultiEval (RadialSpline, rmag, &(ulmVec[0])); 
       else {
 	for (int index=0; index<ulmVec.size(); index++) 
 	  ulmVec[index]  = complex<double>();
@@ -169,19 +202,9 @@ namespace qmcplusplus {
   }
 
 
-  template<typename StorageType> bool
+  template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, RealValueVector_t &vals)
   {
-    // FILE *fout = fopen ("radial_splines.dat", "w");
-    // for (double rmag=0.0; rmag<1.3; rmag+=0.001) {
-    //   eval_multi_UBspline_1d_z (RadialSpline, rmag, &(ulmVec[0]));
-    //   for (int i=0; i<Numlm*NumBands; i++)
-    // 	fprintf (fout, "%1.8e ", ulmVec[i].real());
-    //   fprintf (fout, "\n");
-    // }
-    // fclose(fout);
-    // abort();
-
     PosType dr = r - Pos;
     PosType u = Lattice.toUnit(dr);
     PosType img;
@@ -198,13 +221,13 @@ namespace qmcplusplus {
     PosType rhat = (1.0/rmag)*dr;
     
     // Evaluate Ylm's
-    CalcYlm (rhat);
+    CalcYlm (rhat, YlmVec, dYlmVec);
 
     if (std::fabs(rmag - rmagLast) > 1.0e-6) {
       // Evaluate radial functions
       if (rmag > PolyRadius) {
 	SplineTimer.start();
-	eval_multi_UBspline_1d_z (RadialSpline, rmag, &(ulmVec[0])); 
+	EinsplineMultiEval (RadialSpline, rmag, &(ulmVec[0])); 
 	SplineTimer.stop();
       }
       else {
@@ -242,7 +265,7 @@ namespace qmcplusplus {
   }
 
 
-  template<typename StorageType> bool
+  template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, 
 					RealValueVector_t &vals,
 					RealGradVector_t  &grads,
@@ -274,20 +297,20 @@ namespace qmcplusplus {
 
     
     // Evaluate Ylm's
-    CalcYlm (rhat);
+    CalcYlm (rhat, YlmVec, dYlmVec);
 
     // Evaluate radial functions
     if (rmag > PolyRadius) {
       SplineTimer.start();
-      eval_multi_UBspline_1d_z_vgl 
+      EinsplineMultiEval
 	(RadialSpline, rmag, &(ulmVec[0]), &(dulmVec[0]), &(d2ulmVec[0])); 
       SplineTimer.stop();
     }
     else {
       for (int index=0; index<ulmVec.size(); index++) {
-      	ulmVec[index]  = complex<double>();
-	dulmVec[index]  = complex<double>();
-	d2ulmVec[index] = complex<double>();
+      	ulmVec[index]   = StorageType();
+	dulmVec[index]  = StorageType();
+	d2ulmVec[index] = StorageType();
       }
 
       double r2n = 1.0, r2nm1=0.0, r2nm2=0.0;
@@ -297,7 +320,7 @@ namespace qmcplusplus {
       	int index = 0;
       	for (int i=0; i<vals.size(); i++)
       	  for (int lm=0; lm<Numlm; lm++,index++) {
-	    complex<double> c = PolyCoefs(n,i,lm);
+	    StorageType c = PolyCoefs(n,i,lm);
       	    ulmVec[index]   += r2n*c;
 	    dulmVec[index]  += dn * r2nm1 * c;
 	    d2ulmVec[index] += dn*dnm1 * r2nm2 * c;
@@ -323,7 +346,7 @@ namespace qmcplusplus {
       sincos(phase,&s,&c);
       complex<double> e2mikr(c,s);
 
-      complex<double> tmp_val, tmp_lapl,
+      StorageType tmp_val, tmp_lapl,
 	grad_rhat, grad_thetahat, grad_phihat;
 
       int lm=0;
@@ -353,7 +376,7 @@ namespace qmcplusplus {
 
 
 
-  template<typename StorageType> bool
+  template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals,
 					ComplexGradVector_t &grads,
 					ComplexValueVector_t &lapl)
@@ -384,12 +407,12 @@ namespace qmcplusplus {
 
     
     // Evaluate Ylm's
-    CalcYlm (rhat);
+    CalcYlm (rhat, YlmVec, dYlmVec);
 
     // Evaluate radial functions
     if (rmag > PolyRadius) {
       SplineTimer.start();
-      eval_multi_UBspline_1d_z_vgl 
+      EinsplineMultiEval
 	(RadialSpline, rmag, &(ulmVec[0]), &(dulmVec[0]), &(d2ulmVec[0])); 
       SplineTimer.stop();
     }
@@ -465,8 +488,10 @@ namespace qmcplusplus {
 
   // Fast implementation
   // See Geophys. J. Int. (1998) 135,pp.307-309
-  template<typename StorageType> void
-  AtomicOrbital<StorageType>::CalcYlm (PosType rhat)
+  template<typename StorageType> inline void
+  AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
+				       vector<complex<double> > &Ylm,
+				       vector<complex<double> > &dYlm)
   {
     YlmTimer.start();
     const double fourPiInv = 0.0795774715459477;
@@ -512,13 +537,13 @@ namespace qmcplusplus {
 	dXlmVec[l+m] *= norm;
       }
       
-      // Multiply by azimuthal phase and store in YlmVec
+      // Multiply by azimuthal phase and store in Ylm
       complex<double> e2imphi (1.0, 0.0);
       for (int m=0; m<=l; m++) {
-	YlmVec[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
-	YlmVec[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
-	dYlmVec[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-	dYlmVec[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
+	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
+	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
+	dYlm[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
+	dYlm[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
 	e2imphi *= e2iphi;
       } 
       
@@ -527,6 +552,74 @@ namespace qmcplusplus {
     }
     YlmTimer.stop();
   }
+
+  // Fast implementation
+  // See Geophys. J. Int. (1998) 135,pp.307-309
+  template<typename StorageType> inline void
+  AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
+				       vector<double> &Ylm,
+				       vector<double> &dYlm)
+  {
+    YlmTimer.start();
+    const double fourPiInv = 0.0795774715459477;
+    
+    double costheta = rhat[2];
+    double sintheta = std::sqrt(1.0-costheta*costheta);
+    double cottheta = costheta/sintheta;
+    
+    double cosphi, sinphi;
+    cosphi=rhat[0]/sintheta;
+    sinphi=rhat[1]/sintheta;
+    
+    complex<double> e2iphi(cosphi, sinphi);
+    
+    
+    double lsign = 1.0;
+    double dl = 0.0;
+    double XlmVec[2*lMax+1], dXlmVec[2*lMax+1];
+    for (int l=0; l<=lMax; l++) {
+      XlmVec[2*l]  = lsign;  
+      dXlmVec[2*l] = dl * cottheta * XlmVec[2*l];
+      XlmVec[0]    = lsign*XlmVec[2*l];
+      dXlmVec[0]   = lsign*dXlmVec[2*l];
+      double dm = dl;
+      double msign = lsign;
+      for (int m=l; m>0; m--) {
+	double tmp = std::sqrt((dl+dm)*(dl-dm+1.0));
+	XlmVec[l+m-1]  = -(dXlmVec[l+m] + dm*cottheta*XlmVec[l+m])/ tmp;
+	dXlmVec[l+m-1] = (dm-1.0)*cottheta*XlmVec[l+m-1] + XlmVec[l+m]*tmp;
+	// Copy to negative m
+	XlmVec[l-(m-1)]  = -msign* XlmVec[l+m-1];
+	dXlmVec[l-(m-1)] = -msign*dXlmVec[l+m-1];
+	msign *= -1.0;
+	dm -= 1.0;
+      }
+      double sum = 0.0;
+      for (int m=-l; m<=l; m++) 
+	sum += XlmVec[l+m]*XlmVec[l+m];
+      // Now, renormalize the Ylms for this l
+      double norm = std::sqrt((2.0*dl+1.0)*fourPiInv / sum);
+      for (int m=-l; m<=l; m++) {
+	XlmVec[l+m]  *= norm;
+	dXlmVec[l+m] *= norm;
+      }
+      
+      // Multiply by azimuthal phase and store in Ylm
+      complex<double> e2imphi (1.0, 0.0);
+      for (int m=0; m<=l; m++) {
+	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi.real();
+	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*e2imphi.imag();
+	dYlm[l*(l+1)+m] = dXlmVec[l+m]*e2imphi.real();
+	dYlm[l*(l+1)-m] = dXlmVec[l-m]*e2imphi.imag();
+	e2imphi *= e2iphi;
+      } 
+      
+      dl += 1.0;
+      lsign *= -1.0;
+    }
+    YlmTimer.stop();
+  }
+
 
 
 
