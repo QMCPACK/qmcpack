@@ -1,0 +1,38 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\author{Kenneth P. Esler, Jr.}
+\title{Hybrid orbital representation}
+\date{\today}
+
+\begin{document}
+\newcommand{\vr}{\mathbf{r}}
+\maketitle
+\begin{equation}
+\phi(\vr) = \sum_{\ell=0}^{\ell_\text{max}} \sum_{m=-\ell}^\ell Y_\ell^m (\hat{\Omega})
+u_{\ell m}(r),
+\end{equation}
+where $u_{lm}(r)$ are complex radial functions represented in some
+radial basis (e.g. splines).
+
+\section{Real Spherical Harmonics}
+If $\phi(\vr)$ can be written as purely real, we can change the
+representation so that
+\begin{equation}
+\phi(\vr) = \sum_{l=0}^{l_\text{max}} \sum_{m=-\ell}^\ell Y_{\ell m}(\hat{\Omega})
+\bar{u}_{lm}(r),
+\end{equation}
+where $\bar{Y}_\ell^m$ are the {\em real} spherical harmonics defined by
+\begin{equation}
+Y_{\ell m} = \begin{cases}
+Y_\ell^0 & \mbox{if } m=0\\
+{1\over\sqrt2}\left(Y_\ell^m+(-1)^m \, Y_\ell^{-m}\right) = \sqrt{2} N_{(\ell,m)} P_\ell^m(\cos \theta) \cos m\varphi 
+& \mbox{if } m>0 \\
+{1\over i\sqrt2}\left(Y_\ell^{-m}-(-1)^{m}\, Y_\ell^{m}\right) = \sqrt{2} N_{(\ell,m)} P_\ell^{-m}(\cos \theta) \sin m\varphi 
+&\mbox{if } m<0.
+\end{cases}
+\end{equation}
+We need then to relate $\bar{u}_{\ell m}$ to $u_{\ell m}$.
+
+
+\end{document}
