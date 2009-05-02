@@ -36,7 +36,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),gradTol(1e-3)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -51,6 +51,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(tries,"tries","int");
     m_param.add(exp0,"exp0","int");
     m_param.add(alpha,"alpha","double");
+    m_param.add(gradTol,"gradtol","double");
 }
 
 /** Clean up the vector */
@@ -265,7 +266,7 @@ bool QMCLinearOptimize::run()
 //         app_log()<<Costs[minCostindex]<<endl;
 //         optTarget->Cost();
         MyCounter++;
-        Valid =  ( (optTarget->IsValid) & (LastCost>Costs[minCostindex]) & (!stalled));
+        Valid =  ( (optTarget->IsValid) & (LastCost-Costs[minCostindex]>gradTol) & (!stalled));
         LastCost=Costs[minCostindex];
     }
     app_log() << "  Execution time = " << t1.elapsed() << endl;

@@ -68,7 +68,7 @@ namespace qmcplusplus {
     int NumOfVMCWalkers;
     ///Number of its maximum before generating new configurations.
     int Max_iterations;
-    int tries, exp0;
+    int tries, exp0, gradTol;
     RealType alpha;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
