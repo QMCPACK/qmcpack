@@ -1993,6 +1993,7 @@ namespace qmcplusplus {
       realOrbs[iat].set_cutoff (corb.CutoffRadius);
       realOrbs[iat].set_spline (corb.SplineRadius, corb.SplinePoints);
       realOrbs[iat].set_polynomial (corb.PolyRadius, corb.PolyOrder);
+      realOrbs[iat].Lattice = corb.Lattice;
     }
 
     bool root = myComm->rank()==0;
@@ -2188,6 +2189,7 @@ namespace qmcplusplus {
 	for (int iat=0; iat<realOrbs.size(); iat++) {
 	  app_log() << "Reading orbital " << iat << " for band " << ival << endl;
 	  AtomicOrbital<double> &orb = realOrbs[iat];
+	  //AtomicOrbital<complex<double> > &orb = realOrbs[iat];
 	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
 	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
 	  if (root) { 

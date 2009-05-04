@@ -110,32 +110,32 @@ namespace qmcplusplus {
     }
     TwistAngles[band] = twist;
   
-    AtomicOrbital<complex<double> > zorb;
+    // AtomicOrbital<complex<double> > zorb;
   
-    zorb.set_pos (Pos);
-    zorb.set_lmax(lMax);
-    zorb.set_cutoff(CutoffRadius);
-    zorb.set_spline(SplineRadius, SplinePoints);
-    zorb.set_polynomial (PolyRadius, PolyOrder);
-    zorb.set_num_bands(NumBands);
-    zorb.allocate();
-    zorb.set_band(band, spline_data, poly_coefs, twist);
+    // zorb.set_pos (Pos);
+    // zorb.set_lmax(lMax);
+    // zorb.set_cutoff(CutoffRadius);
+    // zorb.set_spline(SplineRadius, SplinePoints);
+    // zorb.set_polynomial (PolyRadius, PolyOrder);
+    // zorb.set_num_bands(NumBands);
+    // zorb.allocate();
+    // zorb.set_band(band, spline_data, poly_coefs, twist);
     
-    PosType dir(0.324, -0.8, 1.3);
-    dir = (1.0/std::sqrt(dot(dir,dir)))*dir;
-    ostringstream fname;
-    fname << "TestAtomic_" << band << ".dat";
-    FILE *fout = fopen (fname.str().c_str(), "w");
-    Vector<double> zval(NumBands), val(NumBands);
-    Vector<double> zlapl(NumBands), lapl(NumBands);
-    Vector<PosType> zgrad(NumBands), grad(NumBands);
-    for (double u=-1.00001; u<=1.0; u+= 0.001) {
-      PosType r = u*CutoffRadius * dir + Pos;
-      zorb.evaluate(r, zval, zgrad, zlapl);
-      evaluate(r, val, grad, lapl);
-      fprintf (fout, "%12.8f %12.8f %12.8f  %14.8e %14.8e\n", 
-	       r[0], r[1], r[2], grad[band][0], zgrad[band][0]);
-    }
-    fclose (fout);
+    // PosType dir(0.324, -0.8, 1.3);
+    // dir = (1.0/std::sqrt(dot(dir,dir)))*dir;
+    // ostringstream fname;
+    // fname << "TestAtomic_" << band << ".dat";
+    // FILE *fout = fopen (fname.str().c_str(), "w");
+    // Vector<double> zval(NumBands), val(NumBands);
+    // Vector<double> zlapl(NumBands), lapl(NumBands);
+    // Vector<PosType> zgrad(NumBands), grad(NumBands);
+    // for (double u=-1.00001; u<=1.0; u+= 0.001) {
+    //   PosType r = u*CutoffRadius * dir + Pos;
+    //   zorb.evaluate(r, zval, zgrad, zlapl);
+    //   evaluate(r, val, grad, lapl);
+    //   fprintf (fout, "%12.8f %12.8f %12.8f  %14.8e %14.8e\n", 
+    // 	       r[0], r[1], r[2], lapl[band], lapl[band]);
+    // }
+    // fclose (fout);
   }
 }

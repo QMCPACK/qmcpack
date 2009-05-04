@@ -336,7 +336,7 @@ namespace qmcplusplus {
 	  grad_rhat     += dulmVec[index] * YlmVec[lm];
 	  grad_thetahat += ulmVec[index]  * rInv * dYlm_dthetaVec[lm];
 	  grad_phihat   += (ulmVec[index] * dYlm_dphiVec[lm])/(rmag*sintheta);
-	  
+	  //grad_phihat += (ulmVec[index] * im *YlmVec[lm])/(rmag*sintheta);
 	  tmp_lapl += YlmVec[lm] * 
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
 	     + d2ulmVec[index] + 2.0*rInv *dulmVec[index]);
