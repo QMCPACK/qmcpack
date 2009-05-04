@@ -21,7 +21,6 @@ namespace qmcplusplus {
   template<> struct AtomicOrbitalTraits<complex<double> >
   {  typedef multi_UBspline_1d_z SplineType;  };
 
-
   inline void EinsplineMultiEval (multi_UBspline_1d_d *spline, 
 				  double x, double *val)
   {    eval_multi_UBspline_1d_d (spline, x, val);                 }
@@ -51,13 +50,16 @@ namespace qmcplusplus {
 
     // Store in order 
     // Index = l*(l+1) + m.  There are (lMax+1)^2 Ylm's
-    vector<StorageType> YlmVec, dYlmVec, ulmVec, dulmVec, d2ulmVec;
+    vector<StorageType> YlmVec, dYlm_dthetaVec, dYlm_dphiVec, ulmVec, dulmVec, d2ulmVec;
     inline void CalcYlm(PosType rhat, 
 			vector<complex<double> > &Ylm,
-			vector<complex<double> > &dYlm);
+			vector<complex<double> > &dYlm_dtheta,
+			vector<complex<double> > &dYlm_dphi);
 
     inline void CalcYlm(PosType rhat, 
-			vector<double> &Ylm, vector<double> &dYlm);
+			vector<double> &Ylm, 
+			vector<double> &dYlm_dtheta,
+			vector<double> &dYlm_dphi);
 
     SplineType *RadialSpline;
     // The first index is n in r^n, the second is lm = l*(l+1)+m
@@ -93,38 +95,11 @@ namespace qmcplusplus {
       TimerManager.addTimer (&SumTimer);
     }
 
-    void allocate()
-    {
-      Numlm = (lMax+1)*(lMax+1);
-      YlmVec.resize(Numlm);  dYlmVec.resize(Numlm);
-      ulmVec.resize  (Numlm*NumBands);  
-      dulmVec.resize (Numlm*NumBands); 
-      d2ulmVec.resize(Numlm*NumBands);
-      PolyCoefs.resize(PolyOrder+1, NumBands, Numlm);
-      BCtype_z bc;
-      bc.lCode = NATURAL;  bc.rCode = NATURAL;
-      Ugrid grid;
-      grid.start = 0.0;  grid.end = SplineRadius;  grid.num = SplinePoints;
-      // if (RadialSpline) destroy_Bspline (RadialSpline);
-      RadialSpline = create_multi_UBspline_1d_z (grid, bc, Numlm*NumBands);
-      TwistAngles.resize(NumBands);
-    }
+    void allocate();
 
     void SetBand (int band, Array<complex<double>,2> &spline_data,
 		  Array<complex<double>,2> &poly_coefs,
 		  PosType twist);
-    // {
-    //   vector<complex<double> > one_spline(SplinePoints);
-    //   for (int lm=0; lm<Numlm; lm++) {
-    // 	int index = band*Numlm + lm;
-    // 	for (int i=0; i<SplinePoints; i++)
-    // 	  one_spline[i] = spline_data(i, lm);
-    // 	set_multi_UBspline_1d_z (RadialSpline, index, &one_spline[0]);
-    // 	for (int n=0; n<=PolyOrder; n++)
-    // 	  PolyCoefs(n,band,lm) = poly_coefs (n,lm);
-    //   }
-    //   TwistAngles[band] = twist;
-    // }
     
     inline bool evaluate (PosType r, ComplexValueVector_t &vals);
     inline bool evaluate (PosType r, ComplexValueVector_t &val,
@@ -166,7 +141,7 @@ namespace qmcplusplus {
     PosType rhat = (1.0/rmag)*dr;
     
     // Evaluate Ylm's
-    CalcYlm (rhat, YlmVec, dYlmVec);
+    CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
 
     if (std::fabs(rmag - rmagLast) > 1.0e-6) {
       // Evaluate radial functions
@@ -221,7 +196,7 @@ namespace qmcplusplus {
     PosType rhat = (1.0/rmag)*dr;
     
     // Evaluate Ylm's
-    CalcYlm (rhat, YlmVec, dYlmVec);
+    CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
 
     if (std::fabs(rmag - rmagLast) > 1.0e-6) {
       // Evaluate radial functions
@@ -297,7 +272,7 @@ namespace qmcplusplus {
 
     
     // Evaluate Ylm's
-    CalcYlm (rhat, YlmVec, dYlmVec);
+    CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
 
     // Evaluate radial functions
     if (rmag > PolyRadius) {
@@ -354,10 +329,10 @@ namespace qmcplusplus {
 	for (int m=-l; m<=l; m++,lm++,index++) {
 	  complex<double> im(0.0,(double)m);
 
-	  tmp_val       += ulmVec[index] * YlmVec[lm];
+	  tmp_val       += ulmVec[index]  * YlmVec[lm];
 	  grad_rhat     += dulmVec[index] * YlmVec[lm];
-	  grad_thetahat += ulmVec[index] * rInv * dYlmVec[lm];
-	  grad_phihat   += (ulmVec[index] * im *YlmVec[lm])/(rmag*sintheta);
+	  grad_thetahat += ulmVec[index]  * rInv * dYlm_dthetaVec[lm];
+	  grad_phihat   += (ulmVec[index] * dYlm_dphiVec[lm])/(rmag*sintheta);
 	  
 	  tmp_lapl += YlmVec[lm] * 
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
@@ -407,7 +382,7 @@ namespace qmcplusplus {
 
     
     // Evaluate Ylm's
-    CalcYlm (rhat, YlmVec, dYlmVec);
+    CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
 
     // Evaluate radial functions
     if (rmag > PolyRadius) {
@@ -464,7 +439,7 @@ namespace qmcplusplus {
 
 	  vals[i]  += ulmVec[index] * YlmVec[lm];
 	  grad_rhat     += dulmVec[index] * YlmVec[lm];
-	  grad_thetahat += ulmVec[index] * rInv * dYlmVec[lm];
+	  grad_thetahat += ulmVec[index] * rInv * dYlm_dthetaVec[lm];
 	  grad_phihat   += (ulmVec[index] * im*YlmVec[lm])/(rmag*sintheta);
 	  lapl[i] += YlmVec[lm] * 
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
@@ -491,7 +466,8 @@ namespace qmcplusplus {
   template<typename StorageType> inline void
   AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
 				       vector<complex<double> > &Ylm,
-				       vector<complex<double> > &dYlm)
+				       vector<complex<double> > &dYlm_dtheta,
+				       vector<complex<double> > &dYlm_dphi)
   {
     YlmTimer.start();
     const double fourPiInv = 0.0795774715459477;
@@ -539,11 +515,14 @@ namespace qmcplusplus {
       
       // Multiply by azimuthal phase and store in Ylm
       complex<double> e2imphi (1.0, 0.0);
+      complex<double> eye(0.0, 1.0);
       for (int m=0; m<=l; m++) {
 	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
 	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
-	dYlm[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-	dYlm[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
+	dYlm_dphi[l*(l+1)+m ]  =  (double)m * eye *XlmVec[l+m]*e2imphi;
+	dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l+m]*conj(e2imphi);
+	dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
+	dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
 	e2imphi *= e2iphi;
       } 
       
@@ -558,7 +537,8 @@ namespace qmcplusplus {
   template<typename StorageType> inline void
   AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
 				       vector<double> &Ylm,
-				       vector<double> &dYlm)
+				       vector<double> &dYlm_dtheta,
+				       vector<double> &dYlm_dphi)
   {
     YlmTimer.start();
     const double fourPiInv = 0.0795774715459477;
@@ -609,8 +589,10 @@ namespace qmcplusplus {
       for (int m=0; m<=l; m++) {
 	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi.real();
 	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*e2imphi.imag();
-	dYlm[l*(l+1)+m] = dXlmVec[l+m]*e2imphi.real();
-	dYlm[l*(l+1)-m] = dXlmVec[l-m]*e2imphi.imag();
+	dYlm_dphi[l*(l+1)+m ]  = -(double)m * XlmVec[l+m] *e2imphi.imag();
+	dYlm_dphi[l*(l+1)-m ]  =  (double)m * XlmVec[l+m] *e2imphi.real();
+	dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi.real();
+	dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*e2imphi.imag();
 	e2imphi *= e2iphi;
       } 
       

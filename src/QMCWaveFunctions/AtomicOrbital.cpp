@@ -3,6 +3,47 @@
 namespace qmcplusplus {
 
   template<> void   
+  AtomicOrbital<complex<double> >::allocate()
+  {
+    Numlm = (lMax+1)*(lMax+1);
+    YlmVec.resize(Numlm);  
+    dYlm_dthetaVec.resize(Numlm);
+    dYlm_dphiVec.resize(Numlm);
+    ulmVec.resize  (Numlm*NumBands);  
+    dulmVec.resize (Numlm*NumBands); 
+    d2ulmVec.resize(Numlm*NumBands);
+    PolyCoefs.resize(PolyOrder+1, NumBands, Numlm);
+    BCtype_z bc;
+    bc.lCode = NATURAL;  bc.rCode = NATURAL;
+    Ugrid grid;
+    grid.start = 0.0;  grid.end = SplineRadius;  grid.num = SplinePoints;
+    // if (RadialSpline) destroy_Bspline (RadialSpline);
+    RadialSpline = create_multi_UBspline_1d_z (grid, bc, Numlm*NumBands);
+    TwistAngles.resize(NumBands);
+  }
+
+  template<> void   
+  AtomicOrbital<double>::allocate()
+  {
+    Numlm = (lMax+1)*(lMax+1);
+    YlmVec.resize(Numlm);  
+    dYlm_dthetaVec.resize(Numlm);
+    dYlm_dphiVec.resize(Numlm);
+    ulmVec.resize  (Numlm*NumBands);  
+    dulmVec.resize (Numlm*NumBands); 
+    d2ulmVec.resize(Numlm*NumBands);
+    PolyCoefs.resize(PolyOrder+1, NumBands, Numlm);
+    BCtype_d bc;
+    bc.lCode = NATURAL;  bc.rCode = NATURAL;
+    Ugrid grid;
+    grid.start = 0.0;  grid.end = SplineRadius;  grid.num = SplinePoints;
+    RadialSpline = create_multi_UBspline_1d_d (grid, bc, Numlm*NumBands);
+    TwistAngles.resize(NumBands);
+  }
+
+
+
+  template<> void   
   AtomicOrbital<complex<double> >::SetBand (int band, Array<complex<double>,2> &spline_data,
 					    Array<complex<double>,2> &poly_coefs,
 					    PosType twist)

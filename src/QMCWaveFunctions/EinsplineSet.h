@@ -190,7 +190,7 @@ namespace qmcplusplus {
     //////////////////////////////////////
     // Radial/Ylm orbitals around atoms //
     //////////////////////////////////////
-    vector<AtomicOrbital<complex<double> > > AtomicOrbitals;
+    vector<AtomicOrbital<StorageType> > AtomicOrbitals;
 
 
     // First-order derivative w.r.t. the ion positions

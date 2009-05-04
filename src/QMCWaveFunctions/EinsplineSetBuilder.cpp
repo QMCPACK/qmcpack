@@ -1985,6 +1985,16 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands_ESHDF
   (int spin, EinsplineSetExtended<double>* orbitalSet)
   {
+    vector<AtomicOrbital<double> > realOrbs(AtomicOrbitals.size());
+    for (int iat=0; iat<realOrbs.size(); iat++) {
+      AtomicOrbital<complex<double> > &corb (AtomicOrbitals[iat]);
+      realOrbs[iat].set_pos  (corb.Pos);
+      realOrbs[iat].set_lmax (corb.lMax);
+      realOrbs[iat].set_cutoff (corb.CutoffRadius);
+      realOrbs[iat].set_spline (corb.SplineRadius, corb.SplinePoints);
+      realOrbs[iat].set_polynomial (corb.PolyRadius, corb.PolyOrder);
+    }
+
     bool root = myComm->rank()==0;
     // bcast other stuff
     myComm->bcast (NumDistinctOrbitals);
@@ -2090,9 +2100,9 @@ namespace qmcplusplus {
 	 NumValenceOrbs);
     }
 
-    for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
-      AtomicOrbitals[iat].set_num_bands(NumValenceOrbs);
-      AtomicOrbitals[iat].allocate();
+    for (int iat=0; iat<realOrbs.size(); iat++) {
+      realOrbs[iat].set_num_bands(NumValenceOrbs);
+      realOrbs[iat].allocate();
     }
            
     int iorb  = 0;
@@ -2175,9 +2185,9 @@ namespace qmcplusplus {
 	  (orbitalSet->MultiSpline, ival, splineData.data());
 
 	// Read atomic orbital information
-	for (int iat=0; iat<AtomicOrbitals.size(); iat++) {
+	for (int iat=0; iat<realOrbs.size(); iat++) {
 	  app_log() << "Reading orbital " << iat << " for band " << ival << endl;
-	  AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+	  AtomicOrbital<double> &orb = realOrbs[iat];
 	  Array<complex<double>,2> radial_spline(orb.SplinePoints,orb.Numlm), 
 	    poly_coefs(orb.PolyOrder+1,orb.Numlm);
 	  if (root) { 
@@ -2185,7 +2195,6 @@ namespace qmcplusplus {
 	    int bi   = SortBands[iorb].BandIndex;
 	    ostringstream path;
 	    path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-	    AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
 	    ostringstream spline_path, poly_path;
 	    spline_path << path.str() << "radial_spline_" << iat;
 	    poly_path   << path.str() << "poly_coefs_"    << iat;
@@ -2196,7 +2205,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(radial_spline);
 	  myComm->bcast(poly_coefs);
-	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs, twist);
+	  realOrbs[iat].SetBand (ival, radial_spline, poly_coefs, twist);
 	}
 
       
@@ -2293,7 +2302,7 @@ namespace qmcplusplus {
       } // valence state
       iorb++;
     }
-    orbitalSet->AtomicOrbitals = AtomicOrbitals;
+    orbitalSet->AtomicOrbitals = realOrbs;
     for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
       orbitalSet->AtomicOrbitals[i].registerTimers();
 
