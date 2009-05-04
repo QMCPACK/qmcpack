@@ -39,7 +39,7 @@ namespace qmcplusplus {
       
       // Set poly ofr m=0
       for (int n=0; n<=PolyOrder; n++) 
-	PolyCoefs(n,band,lmp) = poly_coefs (n,l*(l+1)).real();
+	PolyCoefs(n,band,l*(l+1)) = poly_coefs (n,l*(l+1)).real();
       
       // Set spline and poly for |m| > 0
       for (int m=1; m<=l; m++) {
