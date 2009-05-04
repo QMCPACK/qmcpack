@@ -30,13 +30,25 @@ namespace qmcplusplus {
     
     for (int l=0; l<=lMax; l++) {
       double minus_1_to_m = 1.0;
-      for (int m=0; m<=l; m++) {
+
+      // Set spline for m=0
+      for (int i=0; i<SplinePoints; i++)
+	one_spline[i] = spline_data(i, l*(l+1)).real();
+      int index = band*Numlm + l*(l+1);
+      set_multi_UBspline_1d_d (RadialSpline, index, &one_spline[0]);
+      
+      // Set poly ofr m=0
+      for (int n=0; n<=PolyOrder; n++) 
+	PolyCoefs(n,band,lmp) = poly_coefs (n,l*(l+1)).real();
+      
+      // Set spline and poly for |m| > 0
+      for (int m=1; m<=l; m++) {
 	int lmp = l*(l+1) + m;
 	int lmm = l*(l+1) - m;
-	int index = band*Numlm + lmp;
+	index = band*Numlm + lmp;
 	for (int i=0; i<SplinePoints; i++)
-	  one_spline[i] = 0.5*(spline_data(i, lmp).real() + 
-			       minus_1_to_m * spline_data(i, lmm).real());
+	  one_spline[i] = (spline_data(i, lmp).real() + 
+			   minus_1_to_m * spline_data(i, lmm).real());
 	set_multi_UBspline_1d_d (RadialSpline, index, &one_spline[0]);
 
 	index = band*Numlm + lmm;
@@ -47,10 +59,10 @@ namespace qmcplusplus {
 	
 
 	for (int n=0; n<=PolyOrder; n++) {
-	  PolyCoefs(n,band,lmp) = 0.5*(poly_coefs (n,lmp).real() +
-				       minus_1_to_m * poly_coefs(n,lmm).real());
-	  PolyCoefs(n,band,lmm) = 0.5*(-poly_coefs (n,lmp).imag() +
-				       minus_1_to_m * poly_coefs(n,lmm).imag());
+	  PolyCoefs(n,band,lmp) = (poly_coefs (n,lmp).real() +
+				   minus_1_to_m * poly_coefs(n,lmm).real());
+	  PolyCoefs(n,band,lmm) = (-poly_coefs (n,lmp).imag() +
+				   minus_1_to_m * poly_coefs(n,lmm).imag());
 	}
 	minus_1_to_m *= -1.0;
       }
