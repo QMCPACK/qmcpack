@@ -174,7 +174,7 @@ namespace qmcplusplus {
 	EinsplineMultiEval (RadialSpline, rmag, &(ulmVec[0])); 
       else {
 	for (int index=0; index<ulmVec.size(); index++) 
-	  ulmVec[index]  = complex<double>();
+	  ulmVec[index]  = StorageType();
 	double r2n = 1.0;
 	for (int n=0; n <= PolyOrder; n++) {
 	  int index = 0;
@@ -232,7 +232,7 @@ namespace qmcplusplus {
       }
       else {
 	for (int index=0; index<ulmVec.size(); index++)
-	  ulmVec[index] = complex<double>();
+	  ulmVec[index] = StorageType();
 	double r2n = 1.0;
 	for (int n=0; n <= PolyOrder; n++) {
 	  int index = 0;
@@ -248,7 +248,7 @@ namespace qmcplusplus {
     int index = 0;
     for (int i=0; i<vals.size(); i++) {
       vals[i] = 0.0;
-      complex<double> tmp = 0.0;
+      StorageType tmp = 0.0;
       for (int lm=0; lm < Numlm; lm++, index++)
 	tmp += ulmVec[index] * YlmVec[lm];
         //vals[i] += real(ulmVec[index++] * YlmVec[lm]);
@@ -418,9 +418,9 @@ namespace qmcplusplus {
     }
     else {
       for (int index=0; index<ulmVec.size(); index++) {
-      	ulmVec[index]  = complex<double>();
-	dulmVec[index]  = complex<double>();
-	d2ulmVec[index] = complex<double>();
+      	ulmVec[index]   = StorageType();
+	dulmVec[index]  = StorageType();
+	d2ulmVec[index] = StorageType();
       }
 
       double r2n = 1.0, r2nm1=0.0, r2nm2=0.0;
@@ -430,7 +430,7 @@ namespace qmcplusplus {
       	int index = 0;
       	for (int i=0; i<vals.size(); i++)
       	  for (int lm=0; lm<Numlm; lm++,index++) {
-	    complex<double> c = PolyCoefs(n,i,lm);
+	    StorageType   c = PolyCoefs(n,i,lm);
       	    ulmVec[index]   += r2n*c;
 	    dulmVec[index]  += dn * r2nm1 * c;
 	    d2ulmVec[index] += dn*dnm1 * r2nm2 * c;
@@ -450,7 +450,7 @@ namespace qmcplusplus {
       for (int j=0; j<OHMMS_DIM; j++) grads[i][j] = 0.0;
       lapl[i] = 0.0;
       int lm=0;
-      complex<double> grad_rhat, grad_thetahat, grad_phihat;
+      StorageType grad_rhat, grad_thetahat, grad_phihat;
 
       // Compute e^{-i k.L} phase factor
       double phase = -2.0*M_PI*dot(TwistAngles[i],img);
