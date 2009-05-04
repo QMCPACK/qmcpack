@@ -91,7 +91,8 @@ namespace qmcplusplus {
     const DistanceTableData& d_ab = *P.DistTables[myTableIndex];
     for (int ion=0; ion < Nnuc; ion++) {
       GradLogPsi[ion] = Psi.evalGradSource(P, Ions, ion);
-      RealType E = tWalker->Properties(0,LOCALENERGY);
+      //      RealType E = tWalker->Properties(0,LOCALENERGY);
+      RealType E = P.PropertyList[LOCALENERGY];
       EGradLogPsi[ion] = E * GradLogPsi[ion];
     }
     

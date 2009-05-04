@@ -27,7 +27,7 @@
  */
 #ifndef OHMMS_RANDOMGENERATOR
 #define OHMMS_RANDOMGENERATOR
-#include <math.h>
+#include <cmath>
 #include <vector>
 using std::vector;
 #include "config.h"

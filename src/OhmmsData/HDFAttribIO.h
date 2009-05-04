@@ -29,6 +29,9 @@ typedef std::size_t hsize_t;
 const int H5P_DEFAULT=0;
 #endif
 
+#include <string>
+
+
 namespace qmcplusplus {
 /*\class HDFParticleAttribBase
  *\brief Base class to write/read ParticleAttrib using hdf5
@@ -60,7 +63,6 @@ struct HDFAttribIOBase {
   //\param groupid hid_t, group id
   //\param name cosnt char*, name of the attribute
   virtual void read(hid_t, const char*) = 0;
-
 };
 
 
@@ -70,7 +72,6 @@ struct HDFAttribIO: public HDFAttribIOBase {
 
   void write(hid_t, const char*) { }
   void read(hid_t, const char*) { }
-  
 };
 
 }

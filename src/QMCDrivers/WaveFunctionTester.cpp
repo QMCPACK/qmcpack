@@ -78,8 +78,10 @@ WaveFunctionTester::run() {
   }
   else if (checkClone == "yes") 
     runCloneTest();
-  else if (sourceName.size() != 0)
+  else if (sourceName.size() != 0) {
     runGradSourceTest();
+    runZeroVarianceTest();
+  }
   else if (checkRatio =="deriv")
     runDerivTest();
   else
@@ -676,6 +678,92 @@ void WaveFunctionTester::runGradSourceTest() {
       }
     }
   }
+} 
+
+
+void WaveFunctionTester::runZeroVarianceTest() {
+  ParticleSetPool::PoolType::iterator p;
+  for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
+    app_log() << "ParticelSet = " << p->first << endl;
+
+  // Find source ParticleSet
+  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  app_log() << pit->first << endl;
+  // if(pit == PtclPool.getPool().end()) 
+  //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
+  
+  ParticleSet& source = *((*pit).second);
+
+  int nat = W.getTotalNum();
+
+  ParticleSet::ParticlePos_t deltaR(nat);
+  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //pick the first walker
+  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+
+  //copy the properties of the working walker
+  Properties = awalker->Properties;
+  
+  //sample a new walker configuration and copy to ParticleSet::R
+  //makeGaussRandom(deltaR);
+ 
+  W.R = awalker->R;
+
+  //W.R += deltaR;
+
+  W.update();
+  //ValueType psi = Psi.evaluate(W);
+  ValueType logpsi = Psi.evaluateLog(W);
+  RealType eloc=H.evaluate(W);
+
+  //RealType psi = Psi.evaluateLog(W);
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  G = W.G;
+  L = W.L;
+
+  PosType r1(5.0, 2.62, 2.55);
+  W.R[1] = PosType (4.313, 5.989, 4.699);
+  W.R[2] = PosType (5.813, 4.321, 4.893);
+  W.R[3] = PosType (4.002, 5.502, 5.381);
+  W.R[4] = PosType (5.901, 5.121, 5.311);
+  W.R[5] = PosType (5.808, 4.083, 5.021);
+  W.R[6] = PosType (4.750, 5.810, 4.732);
+  W.R[7] = PosType (4.690, 5.901, 4.989);
+  for (int i=1; i<8; i++)
+    W.R[i] -= PosType(2.5, 2.5, 2.5);
+
+
+  FILE *fout = fopen("ZVtest.dat", "w");
+
+  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
+  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad;
+  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_FD;
+  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_FD;
+  for (int dim=0; dim<OHMMS_DIM; dim++) {
+    grad_grad[dim].resize(nat);    lapl_grad[dim].resize(nat);
+    grad_grad_FD[dim].resize(nat); lapl_grad_FD[dim].resize(nat);
+  }
+
+  for (r1[0]=0.0; r1[0]<5.0; r1[0]+=1.0e-4) {
+    W.R[0] = r1;
+    fprintf (fout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
+    ValueType log = Psi.evaluateLog(W);
+    ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+    double E = H.evaluate(W);
+    //double KE = E - W.PropertyList[LOCALPOTENTIAL];
+    double KE = -0.5*(Sum(W.L) + Dot(W.G,W.G));
+    fprintf (fout, "%16.12e %16.12f ", psi, KE);
+    for (int isrc=0; isrc < source.getTotalNum(); isrc++) {
+      GradType grad_log = Psi.evalGradSource (W, source, isrc, grad_grad, lapl_grad);
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	double ZV = 0.5*Sum(lapl_grad[dim]) + Dot(grad_grad[dim], W.G);
+	fprintf (fout, "%16.12e %16.12e ", ZV, grad_log[dim]);
+      }
+    }
+    fprintf(fout, "\n");
+  }
+  fclose(fout);
 } 
 
 

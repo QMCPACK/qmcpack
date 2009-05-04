@@ -16,8 +16,13 @@ Consider
 \begin{eqnarray}
 \nabla^2\partial_\alpha \ln(\psi_T) & = & \nabla\cdot \left[
 \frac{\nabla \psi^\alpha_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \frac{\nabla \psi_T}{\psi_T} \right] \\
-& = & \frac{\nabla^2 \psi^\alpha_T}{\psi_T} - 2\frac{\nabla \psi^{\alpha}_T}{\psi_T} \cdot \frac{\nabla \psi_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \left[\frac{\nabla^2\psi_T}{\psi_T} - 2\left(\frac{\nabla\psi_T}{\psi_T}\right)^2\right]
+& = & \frac{\nabla^2 \psi^\alpha_T}{\psi_T} - 2\frac{\nabla \psi^{\alpha}_T}{\psi_T} \cdot \frac{\nabla \psi_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \left[\frac{\nabla^2\psi_T}{\psi_T} - 2\left(\frac{\nabla\psi_T}{\psi_T}\right)^2\right] \\
+& = & \frac{\nabla^2 \psi_T^\alpha}{\psi_T} - 2\left[\frac{\nabla \psi_T^\alpha}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T}\frac{\nabla\psi_T}{\psi_T}\right]\cdot \frac{\nabla \psi_T}{\psi_T} - \frac{\psi^\alpha}{\psi} \frac{\nabla \psi_T}{\psi_T} 
 \end{eqnarray}
+Then
+\begin{equation}
+ \nabla^2 \partial_\alpha \ln(\psi_T) + 2 \left[\nabla \partial_\alpha \ln(\psi_T)\right]\cdot \left[\nabla \ln{\psi_T}\right]  =  \frac{\nabla^2 \psi_T^\alpha}{\psi_T} - \frac{\psi^\alpha}{\psi} \frac{\nabla^2 \psi_T}{\psi_T}
+\end{equation}
 
 
 The kinetic contribution will involve the term,

@@ -87,7 +87,7 @@ namespace qmcplusplus
     ///name of the density data
     string prefix;
     ///density
-    Array<RealType,OHMMS_DIM> density;
+    Array<RealType,OHMMS_DIM> density, Vavg;
     /** resize the internal data
      *
      * The argument list is not completed

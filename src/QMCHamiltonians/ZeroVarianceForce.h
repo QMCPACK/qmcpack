@@ -26,7 +26,7 @@ namespace qmcplusplus {
     ParticleSet& Electrons;
     TrialWaveFunction& Psi;
 
-    ParticleSet::ParticlePos_t F_ZV;
+    ParticleSet::ParticlePos_t F_ZV1, F_ZV2;
     TinyVector<ParticleSet::ParticleGradient_t,OHMMS_DIM>  grad_grad_psi;
     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_psi;
     

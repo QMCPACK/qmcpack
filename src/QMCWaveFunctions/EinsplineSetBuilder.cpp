@@ -1938,7 +1938,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(radial_spline);
 	  myComm->bcast(poly_coefs);
-	  AtomicOrbitals[iat].SetBand (ival, radial_spline, poly_coefs, twist);
+	  AtomicOrbitals[iat].set_band (ival, radial_spline, poly_coefs, twist);
 	}
 
 	// Now read muffin tin data
@@ -2205,7 +2205,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(radial_spline);
 	  myComm->bcast(poly_coefs);
-	  realOrbs[iat].SetBand (ival, radial_spline, poly_coefs, twist);
+	  realOrbs[iat].set_band (ival, radial_spline, poly_coefs, twist);
 	}
 
       

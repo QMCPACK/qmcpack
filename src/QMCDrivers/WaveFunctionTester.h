@@ -52,6 +52,7 @@ namespace qmcplusplus {
     void runCloneTest();
     void runDerivTest();
     void runGradSourceTest();
+    void runZeroVarianceTest();
   };
 }
 #endif

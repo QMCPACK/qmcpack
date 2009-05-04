@@ -205,8 +205,10 @@ namespace qmcplusplus
   {
     Delta=0.1;
     string debug("no");
+    string potential("no");
     OhmmsAttributeSet attrib;
     attrib.add(debug,"debug");
+    attrib.add(potential,"potential");
     double x_min=0.0;
     double y_min=0.0;
     double z_min=0.0;

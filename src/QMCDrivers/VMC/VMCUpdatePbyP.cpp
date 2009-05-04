@@ -159,6 +159,7 @@ namespace qmcplusplus {
 
         //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
         RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
+	// app_log() << "sc = " << sc << endl;
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
         //reject illegal moves
@@ -279,6 +280,7 @@ namespace qmcplusplus {
       {
         GradType grad_now=Psi.evalGrad(W,iat), grad_new;
         RealType sc=getDriftScale(m_tauovermass,grad_now);
+	//	app_log() << "sc = " << sc << endl;
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
 
         if(!W.makeMoveAndCheck(iat,dr)) continue;

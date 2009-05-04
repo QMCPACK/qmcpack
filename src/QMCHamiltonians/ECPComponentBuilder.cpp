@@ -208,7 +208,7 @@ namespace qmcplusplus {
       C = 27.0 / 840.0;
       break;
     case 7:
-      nk = 50;  symmetry = OCTA;   lexact = 1;
+      nk = 50;  symmetry = OCTA;   lexact = 11;
       A = 4.0/315.0;
       B = 64.0/2835.0;
       C = 27.0/1280.0;

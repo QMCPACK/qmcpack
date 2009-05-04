@@ -44,7 +44,7 @@ namespace qmcplusplus {
 
 
   template<> void   
-  AtomicOrbital<complex<double> >::SetBand (int band, Array<complex<double>,2> &spline_data,
+  AtomicOrbital<complex<double> >::set_band(int band, Array<complex<double>,2> &spline_data,
 					    Array<complex<double>,2> &poly_coefs,
 					    PosType twist)
   {
@@ -63,15 +63,14 @@ namespace qmcplusplus {
 
   // Here, we convert the complex Ylm representation to the real Ylm representation
   template<> void   
-  AtomicOrbital<double>::SetBand (int band, Array<complex<double>,2> &spline_data,
-				  Array<complex<double>,2> &poly_coefs,
-				  PosType twist)
+  AtomicOrbital<double>::set_band (int band, Array<complex<double>,2> &spline_data,
+				   Array<complex<double>,2> &poly_coefs,
+				   PosType twist)
   {
     vector<double> one_spline(SplinePoints);
     
     for (int l=0; l<=lMax; l++) {
-      double minus_1_to_m = 1.0;
-
+      
       // Set spline for m=0
       for (int i=0; i<SplinePoints; i++)
 	one_spline[i] = spline_data(i, l*(l+1)).real();
@@ -83,6 +82,7 @@ namespace qmcplusplus {
 	PolyCoefs(n,band,l*(l+1)) = poly_coefs (n,l*(l+1)).real();
       
       // Set spline and poly for |m| > 0
+      double minus_1_to_m = -1.0;
       for (int m=1; m<=l; m++) {
 	int lmp = l*(l+1) + m;
 	int lmm = l*(l+1) - m;
@@ -91,11 +91,11 @@ namespace qmcplusplus {
 	  one_spline[i] = (spline_data(i, lmp).real() + 
 			   minus_1_to_m * spline_data(i, lmm).real());
 	set_multi_UBspline_1d_d (RadialSpline, index, &one_spline[0]);
-
+	
 	index = band*Numlm + lmm;
 	for (int i=0; i<SplinePoints; i++)
-	  one_spline[i] = 0.5*(-spline_data(i, lmp).imag() + 
-			       minus_1_to_m * spline_data(i, lmm).imag());
+	  one_spline[i] = (-spline_data(i, lmp).imag() + 
+			   minus_1_to_m * spline_data(i, lmm).imag());
 	set_multi_UBspline_1d_d (RadialSpline, index, &one_spline[0]);
 	
 
@@ -109,7 +109,31 @@ namespace qmcplusplus {
       }
     }
     TwistAngles[band] = twist;
+  
+    AtomicOrbital<complex<double> > zorb;
+  
+    zorb.set_pos (Pos);
+    zorb.set_lmax(lMax);
+    zorb.set_cutoff(CutoffRadius);
+    zorb.set_spline(SplineRadius, SplinePoints);
+    zorb.set_polynomial (PolyRadius, PolyOrder);
+    zorb.set_num_bands(NumBands);
+    zorb.allocate();
+    zorb.set_band(band, spline_data, poly_coefs, twist);
+    
+    PosType dir(0.324, -0.8, 1.3);
+    dir = (1.0/std::sqrt(dot(dir,dir)))*dir;
+    ostringstream fname;
+    fname << "TestAtomic_" << band << ".dat";
+    FILE *fout = fopen (fname.str().c_str(), "w");
+    Vector<double> zval(NumBands), val(NumBands);
+    for (double u=-1.00000001; u<=1.0; u+= 0.001) {
+      PosType r = u*CutoffRadius * dir + Pos;
+      zorb.evaluate(r, zval);
+      evaluate(r, val);
+      fprintf (fout, "%12.8f %12.8f %12.8f  %14.8e %14.8e\n", 
+	       r[0], r[1], r[2], val[band], zval[band]);
+    }
+    fclose (fout);
   }
-
-
 }

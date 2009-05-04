@@ -219,9 +219,9 @@ namespace qmcplusplus {
     }
 
     RealType totQ=0.0;
-    for(int iat=0; iat<NptclA; iat++)
+    for(int iat=0; iat<NptclA; iat++) 
       totQ+=Zat[iat] = Zspec[PtclA.GroupID[iat]];
-    for(int iat=0; iat<NptclB; iat++)
+    for(int iat=0; iat<NptclB; iat++) 
       totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
 
     if(totQ>numeric_limits<RealType>::epsilon()) {

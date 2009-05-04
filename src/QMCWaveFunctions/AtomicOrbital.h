@@ -97,9 +97,9 @@ namespace qmcplusplus {
 
     void allocate();
 
-    void SetBand (int band, Array<complex<double>,2> &spline_data,
-		  Array<complex<double>,2> &poly_coefs,
-		  PosType twist);
+    void set_band (int band, Array<complex<double>,2> &spline_data,
+		   Array<complex<double>,2> &poly_coefs,
+		   PosType twist);
     
     inline bool evaluate (PosType r, ComplexValueVector_t &vals);
     inline bool evaluate (PosType r, ComplexValueVector_t &val,
@@ -585,14 +585,17 @@ namespace qmcplusplus {
       }
       
       // Multiply by azimuthal phase and store in Ylm
-      complex<double> e2imphi (1.0, 0.0);
-      for (int m=0; m<=l; m++) {
-	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi.real();
-	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*e2imphi.imag();
+      Ylm[l*(l+1)]         =  XlmVec[l];
+      dYlm_dphi[l*(l+1) ]  = 0.0;
+      dYlm_dtheta[l*(l+1)] = dXlmVec[l];
+      complex<double> e2imphi = e2iphi;
+      for (int m=1; m<=l; m++) {
+	Ylm[l*(l+1)+m]         =  XlmVec[l+m]*e2imphi.real();
+	Ylm[l*(l+1)-m]         =  XlmVec[l+m]*e2imphi.imag();
 	dYlm_dphi[l*(l+1)+m ]  = -(double)m * XlmVec[l+m] *e2imphi.imag();
 	dYlm_dphi[l*(l+1)-m ]  =  (double)m * XlmVec[l+m] *e2imphi.real();
 	dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi.real();
-	dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*e2imphi.imag();
+	dYlm_dtheta[l*(l+1)-m] = dXlmVec[l+m]*e2imphi.imag();
 	e2imphi *= e2iphi;
       } 
       
