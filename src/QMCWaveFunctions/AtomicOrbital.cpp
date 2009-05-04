@@ -127,12 +127,14 @@ namespace qmcplusplus {
     fname << "TestAtomic_" << band << ".dat";
     FILE *fout = fopen (fname.str().c_str(), "w");
     Vector<double> zval(NumBands), val(NumBands);
-    for (double u=-1.00000001; u<=1.0; u+= 0.001) {
+    Vector<double> zlapl(NumBands), lapl(NumBands);
+    Vector<PosType> zgrad(NumBands), grad(NumBands);
+    for (double u=-1.00001; u<=1.0; u+= 0.001) {
       PosType r = u*CutoffRadius * dir + Pos;
-      zorb.evaluate(r, zval);
-      evaluate(r, val);
+      zorb.evaluate(r, zval, zgrad, zlapl);
+      evaluate(r, val, grad, lapl);
       fprintf (fout, "%12.8f %12.8f %12.8f  %14.8e %14.8e\n", 
-	       r[0], r[1], r[2], val[band], zval[band]);
+	       r[0], r[1], r[2], grad[band][0], zgrad[band][0]);
     }
     fclose (fout);
   }

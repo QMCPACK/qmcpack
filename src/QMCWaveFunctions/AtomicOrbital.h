@@ -324,6 +324,9 @@ namespace qmcplusplus {
       StorageType tmp_val, tmp_lapl,
 	grad_rhat, grad_thetahat, grad_phihat;
 
+      tmp_val = tmp_lapl = grad_rhat = grad_thetahat = grad_phihat = 
+	StorageType();
+
       int lm=0;
       for (int l=0; l<= lMax; l++)
 	for (int m=-l; m<=l; m++,lm++,index++) {
@@ -520,7 +523,7 @@ namespace qmcplusplus {
 	Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
 	Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
 	dYlm_dphi[l*(l+1)+m ]  =  (double)m * eye *XlmVec[l+m]*e2imphi;
-	dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l+m]*conj(e2imphi);
+	dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l-m]*conj(e2imphi);
 	dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
 	dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
 	e2imphi *= e2iphi;
