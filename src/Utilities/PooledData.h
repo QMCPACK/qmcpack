@@ -264,7 +264,7 @@ struct PooledData {
   inline void add(std::complex<T>* first,std::complex<T>* last) {
     int dn=2*(last-first);
     //TEMPORARY FIX FOR SGI-IA64 
-#if defined(SGI_IA64)
+#if defined(SGI_IA64)  || defined(PROFILING_ON)
     for(;first != last; ++first)
     {
       myData.push_back((*first).real()); 
