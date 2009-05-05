@@ -1,11 +1,10 @@
 SET(WFBASE_SRCS
-    TrialWaveFunction.cpp
     OrbitalBase.cpp
     DiffOrbitalBase.cpp
     OrbitalBuilderBase.cpp
-    WaveFunctionFactory.cpp
     ProductOrbital.cpp
     OrbitalConstraintsBase.cpp
+    SPOSetBase.cpp
    )
 
 ########################
@@ -44,15 +43,7 @@ ENDIF(QMC_BUILD_COMPLETE)
 
 # common ferminoic wavefunctions
 SET(FERMION_SRCS
-  SPOSetBase.cpp
-  BasisSetFactory.cpp
   Fermion/DiracDeterminantBase.cpp
-  Fermion/DiracDeterminantIterative.cpp
-  Fermion/DiracDeterminantTruncation.cpp
-  Fermion/MultiDiracDeterminantBase.cpp
-  Fermion/ILUGMRESInterface.c
-  Fermion/SlaterDet.cpp
-  Fermion/SlaterDetBuilder.cpp
 )
 
 # wavefunctions only availbale to 3-dim problems
@@ -64,6 +55,8 @@ IF(OHMMS_DIM MATCHES 3)
       TricubicBsplineSetBuilder.cpp
       TricubicBsplineSetBuilder.1.cpp
       TricubicBsplineSetBuilder.2.cpp
+      PlaneWave/PWBasis.cpp
+      PlaneWave/PWParameterSet.cpp
       MolecularOrbitals/STOBuilder.cpp
       MolecularOrbitals/GTOBuilder.cpp
       MolecularOrbitals/NGOBuilder.cpp
@@ -71,8 +64,7 @@ IF(OHMMS_DIM MATCHES 3)
       AtomicOrbital.cpp
      )
   IF(HAVE_EINSPLINE)
-    SET(FERMION_SRCS 
-      ${FERMION_SRCS}
+    SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSet.cpp
       EinsplineSetBuilder.cpp
       EinsplineWrapper.cpp
@@ -84,9 +76,11 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 IF(QMC_BUILD_COMPLETE)
   SET(FERMION_SRCS ${FERMION_SRCS}
-    PlaneWave/PWBasis.cpp
-    PlaneWave/PWParameterSet.cpp
     PlaneWave/PWOrbitalBuilder.cpp
+    Fermion/DiracDeterminantTruncation.cpp
+    Fermion/MultiDiracDeterminantBase.cpp
+    Fermion/DiracDeterminantIterative.cpp
+    Fermion/ILUGMRESInterface.c
     )
   IF(QMC_COMPLEX)
     SET(FERMION_SRCS ${FERMION_SRCS}
@@ -102,10 +96,18 @@ IF(QMC_BUILD_COMPLETE)
   ENDIF(QMC_COMPLEX)
 ENDIF(QMC_BUILD_COMPLETE)
 
+SET(FERMION_SRCS ${FERMION_SRCS}
+  Fermion/SlaterDet.cpp
+  Fermion/SlaterDetBuilder.cpp
+  BasisSetFactory.cpp
+  TrialWaveFunction.cpp
+  WaveFunctionFactory.cpp
+  )
+
 ####################################
 # create libqmcwfs
 ####################################
-ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ADD_LIBRARY(qmcwfs ${FERMION_SRCS} ${JASTROW_SRCS} ${WFBASE_SRCS})
 
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
