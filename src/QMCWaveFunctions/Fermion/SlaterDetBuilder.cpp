@@ -7,19 +7,20 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
+#if defined(QMC_BUILD_COMPLETE)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantIterative.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#endif
 namespace qmcplusplus {
 
   SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
@@ -148,7 +149,8 @@ namespace qmcplusplus {
     map<string,SPOSetBasePtr>::iterator lit(SPOSet.find(detname));
     Det_t* adet=0;
     SPOSetBasePtr psi;
-    if(lit == SPOSet.end()) {
+    if(lit == SPOSet.end()) 
+    {
 #if defined(ENABLE_SMARTPOINTER)
       psi.reset(myBasisSetFactory->createSPOSet(cur)); 
 #else
@@ -163,13 +165,17 @@ namespace qmcplusplus {
       psi = (*lit).second;
     }
 
-    if(psi->getOrbitalSetSize()) {
+    if(psi->getOrbitalSetSize()) 
+    {
       map<string,Det_t*>::iterator dit(DetSet.find(detname));
-      if(dit == DetSet.end()) {
+      if(dit == DetSet.end()) 
+      {
+#if defined(QMC_BUILD_COMPLETE)
         app_log() << "  Creating a Dirac Determinant " << detname << " First Index = " 
           << firstIndex << endl;
 	app_log() <<"My det method is "<<detMethod<<endl;
-	if (detMethod=="Iterative"){
+	if (detMethod=="Iterative")
+        {
 	  //	  string s_cutoff("0.0");
 	  //	  aAttrib.add(s_cutoff,"Cutoff");
 	  app_log()<<"My cutoff is "<<s_cutoff<<endl;
@@ -196,12 +202,19 @@ namespace qmcplusplus {
 	  ((MultiDiracDeterminantBase*)(adet)) -> set_Multi(firstIndex,detSize,psi->getOrbitalSetSize());
 	  firstIndex+=detSize-psi->getOrbitalSetSize(); //designed to get firstIndex correct after adding back in ...
 	}
-	else {
+	else 
+        {
 	  adet = new Det_t(psi,firstIndex);
 	  adet->set(firstIndex,psi->getOrbitalSetSize());
 	}
+#else
+        adet = new Det_t(psi,firstIndex);
+        adet->set(firstIndex,psi->getOrbitalSetSize());
+#endif
         DetSet[detname]=adet;
-      } else {
+      } 
+      else 
+      {
         app_log() << "  Reusing a Dirac Determinant " << detname << " First Index = " 
           << firstIndex << endl;
         adet = (*dit).second;
