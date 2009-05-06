@@ -456,7 +456,7 @@ namespace qmcplusplus {
 	      re -= 1.0;
 	    if ((std::fabs(im) > 1.0e-14) || (std::fabs(re) > 1.0e-14)) {
 	      app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << endl;
-              OHMMS::Controller->abort();
+              APP_ABORT("Give up");
 	    }
 // 	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
