@@ -32,8 +32,9 @@ namespace qmcplusplus
   void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
       , hid_t gid)  const
   {
+    bool collect=UpdateMode.test(COLLECTABLE);
     //exclude collectables
-    if(!UpdateMode[COLLECTABLE])
+    if(!collect)
     {
       int loc=h5desc.size();
       h5desc.push_back(new observable_helper(myName));
