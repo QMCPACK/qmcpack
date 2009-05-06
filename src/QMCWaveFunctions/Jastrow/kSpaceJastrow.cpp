@@ -481,17 +481,27 @@ namespace qmcplusplus {
       for (int jat=0; jat<NumElecs; jat++) {
 	PosType rj_new = P.R[jat];
 	PosType rj_old = rj_new;
-	if (iat == jat) 
-	  rj_old = P.getOldPos();
+	if (iat == jat) rj_old = P.getOldPos();
 	PosType Gvec(TwoBodyGvecs[i]);
-	ComplexType zold, znew;
-	sincos (dot(Gvec,rj_old), &(zold.imag()), &(zold.real()));
-	sincos (dot(Gvec,rj_new), &(znew.imag()), &(znew.real()));
-	dG[jat] += -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
-	dG[jat] -= -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
+        RealType o_r,o_i,n_r,n_i;
+	sincos (dot(Gvec,rj_old), &(o_i), &(o_r));
+	sincos (dot(Gvec,rj_new), &(n_i), &(n_r));
+        RealType x= Prefactor*2.0*TwoBodyCoefs[i];
+	dG[jat] -= x*(rhoG_new.real()*n_i-rhoG_new.imag()*n_r)*Gvec;
+	dG[jat] += x*(rhoG_old.real()*o_i-rhoG_old.imag()*o_r)*Gvec;
 
-	dL[jat] += Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
-	dL[jat] -= Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
+        x *= dot(Gvec,Gvec);
+	dL[jat] += x*((n_i*rhoG_new.imag()-n_r*rhoG_new.real()) + 1.0);
+	dL[jat] -= x*((o_i*rhoG_old.imag()-o_r*rhoG_old.real()) + 1.0);
+        //
+	//ComplexType zold, znew;
+	//sincos (dot(Gvec,rj_old), &(zold.imag()), &(zold.real()));
+	//sincos (dot(Gvec,rj_new), &(znew.imag()), &(znew.real()));
+	//dG[jat] += -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
+	//dG[jat] -= -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
+
+	//dL[jat] += Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
+	//dL[jat] -= Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
       }
 
     }
