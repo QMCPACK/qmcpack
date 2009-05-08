@@ -24,6 +24,7 @@
 #include "QMCDrivers/QMCCostFunctionSingle.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
+// #include "QMCDrivers/DMC/DMCOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #endif
 #include "QMCApp/HamiltonianPool.h"
@@ -36,7 +37,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),gradTol(1e-3)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),gradTol(1e-3), xi(0.5)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -52,6 +53,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(exp0,"exp0","int");
     m_param.add(alpha,"alpha","double");
     m_param.add(gradTol,"gradtol","double");
+    m_param.add(xi,"xi","double"); 
 }
 
 /** Clean up the vector */
@@ -191,7 +193,7 @@ bool QMCLinearOptimize::run()
             D = std::sqrt(std::abs(D));
 
             ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
-            RealType xi(0.5);
+//             RealType xi(0.5);
             vector<RealType> N_i(N-1,0);
             vector<RealType> M_i(N-1,0);
             for (int i=0;i<N-1;i++)
@@ -266,7 +268,7 @@ bool QMCLinearOptimize::run()
 //         app_log()<<Costs[minCostindex]<<endl;
 //         optTarget->Cost();
         MyCounter++;
-        Valid =  ( (optTarget->IsValid) & (LastCost-Costs[minCostindex]>gradTol) & (!stalled));
+        Valid =  ( (optTarget->IsValid) & ((LastCost-Costs[minCostindex])>gradTol) & (!stalled));
         LastCost=Costs[minCostindex];
     }
     app_log() << "  Execution time = " << t1.elapsed() << endl;
@@ -482,6 +484,7 @@ QMCLinearOptimize::put(xmlNodePtr q) {
     {
 #if defined(ENABLE_OPENMP)
         if (omp_get_max_threads()>1)
+//             vmcEngine = new DMCOMP(W,Psi,H,hamPool);
             vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
         else
 #endif

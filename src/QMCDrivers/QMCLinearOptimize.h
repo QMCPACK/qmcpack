@@ -69,7 +69,7 @@ namespace qmcplusplus {
     ///Number of its maximum before generating new configurations.
     int Max_iterations;
     int tries, exp0, gradTol;
-    RealType alpha;
+    RealType alpha,xi;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
     ///need to know HamiltonianPool to use OMP

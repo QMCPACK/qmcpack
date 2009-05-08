@@ -154,7 +154,7 @@ namespace qmcplusplus {
     ///maximum weight beyond which the weight is set to 1
     Return_t MaxWeight;
     Return_t MinWeight;
-    Return_t MinKE;
+    Return_t MinKE,OneOverM;
 
     ///current Average
     Return_t curAvg;

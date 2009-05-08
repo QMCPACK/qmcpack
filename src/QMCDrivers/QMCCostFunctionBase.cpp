@@ -30,9 +30,10 @@ namespace qmcplusplus {
     MPIObjectBase(0),
     W(w),H(h),Psi(psi),  Write2OneXml(true),
     PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-    w_en(0.0), w_var(0.0), w_abs(0.0), MinKE(-100.0),samplePsi2(true),
+    w_en(0.0), w_var(0.0), w_abs(0.0), MinKE(-100.0),samplePsi2(true),OneOverM(1.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
+    
 
     //paramList.resize(10); 
     //costList.resize(10,0.0); 

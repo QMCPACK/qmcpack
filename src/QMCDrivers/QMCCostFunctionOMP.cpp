@@ -31,6 +31,11 @@ QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
 {
     CSWeight=(1.0);
     cout<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<<endl;
+    
+    SpeciesSet tspecies(w.getSpeciesSet());
+    int massind=tspecies.addAttribute("mass");
+    RealType mass = tspecies(massind,0);
+    OneOverM = 1.0/mass;
 }
 
 
@@ -494,7 +499,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrix(Ma
         }
     }
 
-
     for (int ip=0, wn=0; ip<NumThreads; ip++)
     {
         int nw=wClones[ip]->getActiveWalkers();
@@ -503,17 +507,18 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrix(Ma
             const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
             Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
             Return_t eloc_new=saved[ENERGY_NEW];
+            Return_t ke_new=saved[ENERGY_NEW] - saved[ENERGY_FIXED];
             vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
             vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
 
             for (int pm=0; pm<NumParams();pm++)
             {
                 Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-                Hamiltonian(0,pm+1) += weight*(HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w));
+                Hamiltonian(0,pm+1) += weight*(OneOverM*HDsaved[pm] + Dsaved[pm]*(ke_new-curAvg_w));
                 Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);
                 for (int pm2=0; pm2<NumParams();pm2++)
                 {
-                    Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2] + Dsaved[pm2]*(eloc_new-curAvg_w) );
+                    Hamiltonian(pm+1,pm2+1) += wfd*(OneOverM*HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w) );
                     Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
                 }
             }

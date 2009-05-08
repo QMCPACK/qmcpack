@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include <cstdio>
-#include <string>
+#include <cstring>
 
 
 #include "Utilities/SimpleParser.h"
