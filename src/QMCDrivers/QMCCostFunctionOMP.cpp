@@ -104,7 +104,8 @@ void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, vector<Return_t> 
           myComm->allreduce(WFD_avg);
           myComm->allreduce(HD_avg);
           for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
-          for (int ip=0, wn=0; ip<NumThreads; ip++)
+          
+        for (int ip=0, wn=0; ip<NumThreads; ip++)
         {
             int nw=wClones[ip]->getActiveWalkers();
             for (int iw=0; iw<nw;iw++,wn++)
@@ -514,7 +515,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrix(Ma
             for (int pm=0; pm<NumParams();pm++)
             {
                 Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-                Hamiltonian(0,pm+1) += weight*(OneOverM*HDsaved[pm] + Dsaved[pm]*(ke_new-curAvg_w));
+                Hamiltonian(0,pm+1) += weight*(OneOverM*HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w));
                 Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);
                 for (int pm2=0; pm2<NumParams();pm2++)
                 {
