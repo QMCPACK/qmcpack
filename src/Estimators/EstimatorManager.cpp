@@ -392,6 +392,14 @@ namespace qmcplusplus {
       Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
   }
 
+  void EstimatorManager::accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights, int nwalkers)
+  {
+    BlockWeight = nwalkers;
+    for(int i=0; i< Estimators.size(); i++) 
+      Estimators[i]->accumulate(values,weights);
+  }
+
+
   void EstimatorManager::accumulate(MCWalkerConfiguration& W 
      , MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end)
   {

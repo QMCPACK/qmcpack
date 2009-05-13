@@ -63,7 +63,10 @@ namespace qmcplusplus {
     ///retrun mean and variance
     inline pair<RealType,RealType> operator[](int i) const
     { return scalars[i].mean_and_variance();}
-
+    
+    ///for passing forward walking data
+    virtual void accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights) {}
+    
     ///clear the scalars to collect
     inline void clear() 
     {

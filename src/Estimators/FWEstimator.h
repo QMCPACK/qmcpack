@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_FORWARDWALKING_ESTIMATOR_H
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include <cassert>
 
 namespace qmcplusplus {
 
@@ -61,6 +62,42 @@ namespace qmcplusplus {
         scalars[target](ePtr[source],wwght);
         scalars[target+1](ePtr[source]*ePtr[source],wwght);
       }
+    }
+
+    inline void accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights) 
+    {
+//       clear();
+//       cout<<"Calling accumulate"<<endl;
+      int maxV = values.size();
+      int maxW = weights.size();
+      assert (maxV==maxW);
+      int nobs = values[0][0].size();
+      for(int i=0;i<maxV;i++)
+      {
+        int nwalks = values[i].size();
+        int nweights = weights[i].size();
+        assert (nweights==nwalks);
+        for(int j=0;j<nwalks;j++) 
+          for(int k=0;k<nobs;k++)
+          {
+            scalars[2*k](values[i][j][k], weights[i][j]);
+            scalars[2*k+1](values[i][j][k]*values[i][j][k], weights[i][j]);
+            assert(values[i][j][k]==values[i][j][k]);
+            assert(weights[i][j]==weights[i][j]);
+          }
+      }
+//       const RealType* restrict ePtr = awalker.getPropertyBase();
+//       RealType wwght= wgt* awalker.Weight;
+//       RealType wwght2= wwght*wwght;//I forget, for variance, should I also square the weight? I don't think so.
+//       scalars[0](ePtr[LOCALENERGY],wwght);
+//       scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght);
+//       scalars[2](ePtr[LOCALPOTENTIAL],wwght);
+//       scalars[3](ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL],wwght);
+//       for(int target=4, source=FirstHamiltonian; target<scalars.size(); target+=2, ++source)
+//       {
+//         scalars[target](ePtr[source],wwght);
+//         scalars[target+1](ePtr[source]*ePtr[source],wwght);
+//       }
     }
 
 

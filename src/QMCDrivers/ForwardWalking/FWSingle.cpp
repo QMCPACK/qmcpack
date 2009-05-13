@@ -47,12 +47,16 @@ namespace qmcplusplus {
         WeightHistory.push_back(Weights);
     }
     if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
-//      W.destroyWalkers(W.getActiveWalkers());
-     MCWalkerConfiguration* savedW = new MCWalkerConfiguration(W);
+    
+     int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
+     int FirstHamiltonian = H.startIndex();
+     vector<vector<vector<RealType> > > savedValues;
+//      MCWalkerConfiguration* savedW = new MCWalkerConfiguration(W);
      for(int step=0;step<numSteps;step++)
       {
         fillWalkerPositionsandWeights(step);
         W.resetCollectables();//do I need to do this?
+        vector<vector<RealType> > stepObservables;
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
         {
             W.R = W[wstep]->R;
@@ -62,25 +66,21 @@ namespace qmcplusplus {
             (*W[wstep]).resetProperty(logpsi,1,eloc);
             H.auxHevaluate(W,*(W[wstep]));
             H.saveProperty((*W[wstep]).getPropertyBase());
-            MCWalkerConfiguration::Walker_t* tempw = new MCWalkerConfiguration::Walker_t();
-            (*tempw).makeCopy(*W[wstep]);
-            savedW->push_back(tempw);
+            vector<RealType> walkerObservables(nprops+2,0);
+            walkerObservables[0]= eloc;
+            walkerObservables[1]= H.getLocalPotential();
+            const RealType* restrict ePtr = (*W[wstep]).getPropertyBase();
+            for(int i=0;i<nprops;i++) walkerObservables[i+2] = ePtr[FirstHamiltonian+i] ;
+            stepObservables.push_back(walkerObservables);
         }
+        savedValues.push_back(stepObservables);
       }
-//      W.destroyWalkers(W.getActiveWalkers());
-    if (verbose>0)  app_log()<<" Saved Configurations in use:"<<savedW->getActiveWalkers()<<endl;
     
     for(int ill=0;ill<weightLength;ill++)
     {
       Estimators->startBlock(1);
-      vector<int> savedWeights;
-      for(int i=0;i<WeightHistory[ill].size();i++) for(int j=0;j<WeightHistory[ill][i].size();j++) savedWeights.push_back(WeightHistory[ill][i][j]);
-      vector<int>::iterator swit(savedWeights.begin());
-      assert(savedWeights.size() == savedW->getActiveWalkers());
-      for(MCWalkerConfiguration::iterator wit(savedW->begin());wit!=savedW->end();wit++,swit++) (*wit)->Weight = (*swit);
-      
-      Estimators->accumulate( *savedW);
-      Estimators->stopBlock(getNumberOfSamples(ill) );
+      Estimators->accumulate(savedValues,WeightHistory[ill],getNumberOfSamples(ill));
+      Estimators->stopBlock(getNumberOfSamples(ill));
     }
 
     Estimators->stop();
@@ -233,13 +233,14 @@ namespace qmcplusplus {
     int nelectrons = W[0]->R.size();
     int nfloats=OHMMS_DIM*nelectrons;
     vector<float> SINGLEcoordinate(nfloats);
-    ForwardWalkingData* fwer = new ForwardWalkingData(nelectrons);
+    ForwardWalkingData fwer;
+    fwer.resize(nelectrons);
     vector<float>::iterator fgg(ALLcoordinates.begin()), fgg2(ALLcoordinates.begin()+nfloats);
     for(int nw=0;nw<W.getActiveWalkers();nw++)
     {
       std::copy( fgg,fgg2,SINGLEcoordinate.begin());
-      fwer->fromFloat(SINGLEcoordinate);
-      W[nw]->R=fwer->Pos;
+      fwer.fromFloat(SINGLEcoordinate);
+      W[nw]->R=fwer.Pos;
       W[nw]->Weight = 1.0;
       fgg+=nfloats;
       fgg2+=nfloats;

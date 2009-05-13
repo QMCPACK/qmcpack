@@ -43,10 +43,10 @@ namespace qmcplusplus {
   void ForwardWalkingEstimator::add2Record(RecordListType& record) 
   {
     FirstIndex = record.size();
-    int dumy=record.add("LocalEnergy");
-    dumy=record.add("LocalEnergy_sq");
-    dumy=record.add("LocalPotential");
-    dumy=record.add("LocalPotential_sq");
+    record.add("LocalEnergy");
+    record.add("LocalEnergy_sq");
+    record.add("LocalPotential");
+    record.add("LocalPotential_sq");
     for(int i=0; i<SizeOfHamiltonians; ++i) 
     {
       record.add(refH.getObservableName(i));

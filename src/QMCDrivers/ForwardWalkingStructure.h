@@ -75,6 +75,11 @@ namespace qmcplusplus {
         return *this;
       }
       
+      inline void resize(const int a)
+      {
+        Pos.resize(a); 
+      }
+      
       inline int SizeOf()
       {
         return sizeof(long)*2 + Pos.size()*OHMMS_DIM*sizeof(float);

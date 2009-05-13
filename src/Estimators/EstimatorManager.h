@@ -198,7 +198,7 @@ namespace qmcplusplus {
     /** accumulate the measurements
      */
     void accumulate(MCWalkerConfiguration& W);
-
+    void accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights, int nwalkers);
     ///** set the cummulative energy and weight
     // */
     void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
