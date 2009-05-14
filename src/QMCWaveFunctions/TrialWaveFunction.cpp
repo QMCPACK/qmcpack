@@ -13,9 +13,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "OhmmsData/OhmmsElementBase.h"
-#include "Particle/Walker.h"
-#include "Particle/WalkerSetRef.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
