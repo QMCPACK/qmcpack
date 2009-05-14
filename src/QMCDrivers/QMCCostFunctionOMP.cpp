@@ -438,6 +438,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()
         }
     }
     //app_log()<<"After Purge"<<wgt_tot*wgt_tot/new_wgt_tot2<<endl;
+    myComm->allreduce(wgt_tot);
 
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
     CSWeight=wgt_tot=1.0/wgt_tot;
