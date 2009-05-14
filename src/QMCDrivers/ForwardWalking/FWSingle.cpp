@@ -51,25 +51,37 @@ namespace qmcplusplus {
      int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
      int FirstHamiltonian = H.startIndex();
      vector<vector<vector<RealType> > > savedValues;
+            
+    int nelectrons = W[0]->R.size();
+    int nfloats=OHMMS_DIM*nelectrons;
+    ForwardWalkingData fwer;
+    fwer.resize(nelectrons);
 //      MCWalkerConfiguration* savedW = new MCWalkerConfiguration(W);
      for(int step=0;step<numSteps;step++)
       {
-        fillWalkerPositionsandWeights(step);
-        W.resetCollectables();//do I need to do this?
+        vector<float> ALLcoordinates;
+        readInFloat(step,ALLcoordinates);
+        vector<float> SINGLEcoordinate(nfloats);
+        vector<float>::iterator fgg(ALLcoordinates.begin()), fgg2(ALLcoordinates.begin()+nfloats);
+        W.resetCollectables();
         vector<vector<RealType> > stepObservables;
         for(int wstep=0;wstep<walkersPerBlock[step];wstep++)
         {
-            W.R = W[wstep]->R;
+            std::copy( fgg,fgg2,SINGLEcoordinate.begin());
+            fwer.fromFloat(SINGLEcoordinate);
+            W.R=fwer.Pos;
+            fgg+=nfloats;
+            fgg2+=nfloats;
             W.update();
             RealType logpsi(Psi.evaluateLog(W));
             RealType eloc=H.evaluate( W );
-            (*W[wstep]).resetProperty(logpsi,1,eloc);
-            H.auxHevaluate(W,*(W[wstep]));
-            H.saveProperty((*W[wstep]).getPropertyBase());
+//             (*W[0]).resetProperty(logpsi,1,eloc);
+            H.auxHevaluate(W);
+            H.saveProperty(W.getPropertyBase());
             vector<RealType> walkerObservables(nprops+2,0);
             walkerObservables[0]= eloc;
             walkerObservables[1]= H.getLocalPotential();
-            const RealType* restrict ePtr = (*W[wstep]).getPropertyBase();
+            const RealType* restrict ePtr = W.getPropertyBase();
             for(int i=0;i<nprops;i++) walkerObservables[i+2] = ePtr[FirstHamiltonian+i] ;
             stepObservables.push_back(walkerObservables);
         }
@@ -225,9 +237,9 @@ namespace qmcplusplus {
   
   void FWSingle::fillWalkerPositionsandWeights(int nstep)
   {
-    int needed = walkersPerBlock[nstep] - W.getActiveWalkers();
-    if (needed>0) W.createWalkers(needed);
-    else if (needed<0) W.destroyWalkers(-1*needed-1);
+//     int needed = walkersPerBlock[nstep] - W.getActiveWalkers();
+//     if (needed>0) W.createWalkers(needed);
+//     else if (needed<0) W.destroyWalkers(-1*needed-1);
     vector<float> ALLcoordinates;
     readInFloat(nstep,ALLcoordinates);
     int nelectrons = W[0]->R.size();
