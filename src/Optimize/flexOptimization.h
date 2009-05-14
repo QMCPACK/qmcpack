@@ -370,7 +370,8 @@ class FlexOptimization: public MinimizerBase<T>
             }
           Return_t gg = 0.0;
           for (int j = 0 ; j < NumParams ; j ++) gg += a_xi[j]*a_xi[j];
-        }
+         TargetFunc->Report();
+         }
       if (a_verbose > 0) printf("FINAL : gg = %6.3g tol = %6.3g: \n", gg , CostTol) ;
 
       return ((TargetFunc->IsValid) & (gg <= CostTol));

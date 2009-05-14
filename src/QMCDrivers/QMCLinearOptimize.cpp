@@ -270,6 +270,7 @@ bool QMCLinearOptimize::run()
         MyCounter++;
         Valid =  ( (optTarget->IsValid) & ((LastCost-Costs[minCostindex])<gradTol) & (!stalled));
         LastCost=Costs[minCostindex];
+        optTarget->Report();
     }
     app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "  </log>" << endl;
