@@ -37,7 +37,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),gradTol(1e-3), xi(0.5)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),costgradtol(1e-4), xi(0.5)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -52,7 +52,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(tries,"tries","int");
     m_param.add(exp0,"exp0","int");
     m_param.add(alpha,"alpha","double");
-    m_param.add(gradTol,"gradtol","double");
+    m_param.add(costgradtol,"gradtol","double");
     m_param.add(xi,"xi","double"); 
 }
 
@@ -110,8 +110,8 @@ bool QMCLinearOptimize::run()
     bool Valid(true);
     int Total_iterations(0);
     RealType LastCost(optTarget->Cost());
-    bool stalled(true);
-    while ( (Valid)&(Max_iterations>Total_iterations) )
+    RealType deltaCost(1);
+    while ( (deltaCost>costgradtol)&(Max_iterations>Total_iterations) )
     {
         Total_iterations+=1;
         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
@@ -244,32 +244,15 @@ bool QMCLinearOptimize::run()
         //make sure the cost function is a number here.
         for (int t=0;t<tries;t++) if (Costs[t]==Costs[t]) minCostindex=t;
         for (int t=0;t<tries;t++) if (Costs[t]<Costs[minCostindex]) minCostindex=t;
+	costgradtol=Costs[minCostindex]-LastCost;
         if (LastCost>Costs[minCostindex])
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
-          stalled=false;
-        }
-        else if (stalled)
-        {
-//           app_log()<<" Linear method failed, using a line m,inimization along steepest descent direction"<<endl;
-          vector<RealType> sdP(N-1,0);
-          LineMinimization(sdP);
-          for (int i=0;i<(N-1); i++) optTarget->Params(i) = sdP[i];
-          RealType sdCost = optTarget->Cost();
-          app_log()<<" Taking SD move. oldCost:"<< LastCost <<" newCost: "<<sdCost<<endl;
-          if (sdCost>LastCost)
-          {
-            for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
-          }
-          else LastCost=sdCost;
         }
         else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
-//         for (int i=0;i<(N-1); i++) app_log()<<optTarget->Params(i)<<" ";
-//         app_log()<<Costs[minCostindex]<<endl;
-//         optTarget->Cost();
         MyCounter++;
-        Valid =  ( (optTarget->IsValid) & ((LastCost-Costs[minCostindex])<gradTol) & (!stalled));
-        LastCost=Costs[minCostindex];
+	deltaCost = LastCost - Costs[minCostindex];
+        LastCost= Costs[minCostindex];
         optTarget->Report();
     }
     app_log() << "  Execution time = " << t1.elapsed() << endl;
