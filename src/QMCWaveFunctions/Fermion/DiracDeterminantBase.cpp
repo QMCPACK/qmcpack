@@ -136,8 +136,13 @@ namespace qmcplusplus {
 	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
 
       if(NumPtcls==1) {
-        ValueType y=1.0/psiM_temp(0,0);
-        psiM(0,0)=y;
+        // ValueType y=1.0/psiM_temp(0,0);
+        // psiM(0,0)=y;
+        // GradType rv = y*dpsiM(0,0);
+        // myG(FirstIndex) += rv;
+        // myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+
+        ValueType y=psiM(0,0);
         GradType rv = y*dpsiM(0,0);
         myG(FirstIndex) += rv;
         myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
@@ -258,7 +263,7 @@ namespace qmcplusplus {
   }
 
   DiracDeterminantBase::GradType
-  DiracDeterminantBase::evalGradSource
+  DiracDeterminantBase::evalGradSourcep
   (ParticleSet& P, ParticleSet& source,int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -350,7 +355,7 @@ namespace qmcplusplus {
 
 
   DiracDeterminantBase::GradType
-  DiracDeterminantBase::evalGradSourcep
+  DiracDeterminantBase::evalGradSource
   (ParticleSet& P, ParticleSet& source,int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
