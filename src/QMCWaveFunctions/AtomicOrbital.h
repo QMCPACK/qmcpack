@@ -1,13 +1,13 @@
 #ifndef ATOMIC_ORBITAL_H
 #define ATOMIC_ORBITAL_H
 
-#include <vector>
+#include <config/stdlib/math.h>
 #include <einspline/bspline.h>
 #include <einspline/multi_bspline.h>
-#include "QMCWaveFunctions/SPOSetBase.h"
-#include "Lattice/CrystalLattice.h"
-#include "Configuration.h"
-#include "Utilities/NewTimer.h"
+#include <QMCWaveFunctions/SPOSetBase.h>
+#include <Lattice/CrystalLattice.h>
+#include <Configuration.h>
+#include <Utilities/NewTimer.h>
 
 namespace qmcplusplus {
 
