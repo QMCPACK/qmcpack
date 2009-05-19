@@ -61,7 +61,6 @@ IF(OHMMS_DIM MATCHES 3)
       MolecularOrbitals/GTOBuilder.cpp
       MolecularOrbitals/NGOBuilder.cpp
       MolecularOrbitals/BsplineAOBuilder.cpp
-      AtomicOrbital.cpp
      )
   IF(HAVE_EINSPLINE)
     SET(FERMION_SRCS ${FERMION_SRCS}
@@ -69,6 +68,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder.cpp
       EinsplineWrapper.cpp
       MuffinTin.cpp
+      AtomicOrbital.cpp
      )
   ENDIF(HAVE_EINSPLINE)
     
