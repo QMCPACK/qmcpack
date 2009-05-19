@@ -26,6 +26,9 @@ SET(QMCDRIVERS
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  VMC/VMCSingleOMP.cpp
+  WFMC/WFMCSingleOMP.cpp
+  QMCCostFunctionOMP.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/FWEstimator.cpp
@@ -35,13 +38,6 @@ SET(QMCDRIVERS
   ../Estimators/CollectablesEstimator.cpp
 )
 
-IF(ENABLE_OPENMP) 
-  SET(QMCDRIVERS ${QMCDRIVERS} 
-      VMC/VMCSingleOMP.cpp
-      WFMC/WFMCSingleOMP.cpp
-      QMCCostFunctionOMP.cpp
-     )
-ENDIF(ENABLE_OPENMP) 
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
