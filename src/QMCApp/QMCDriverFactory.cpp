@@ -24,7 +24,7 @@
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
-#include "QMCDrivers/ForwardWalking/FWSingle.h"
+#include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
 #include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCLinearOptimize.h"
