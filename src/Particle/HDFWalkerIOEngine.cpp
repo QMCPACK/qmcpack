@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file HDFWalkerIOEngine.cpp
- * @breif definition  of HDFWalkerIOEngine
+ * @brief definition  of HDFWalkerIOEngine
  */
 #include "Particle/HDFWalkerIOEngine.h"
 #include "Particle/MCWalkerConfiguration.h"
