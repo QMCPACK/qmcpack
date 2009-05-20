@@ -32,7 +32,8 @@ namespace qmcplusplus {
    * This object handles \<particleset\> elements and
    * functions as a builder class for ParticleSet objects.
    */
-  class ParticleSetPool : public MPIObjectBase, public OhmmsElementBase {
+  class ParticleSetPool : public MPIObjectBase
+  {
 
   public:
 
@@ -43,10 +44,8 @@ namespace qmcplusplus {
      */
     ParticleSetPool(Communicate* c, const char* aname = "particleset");
 
-    //implements virtual functions of OhmmsElementBase
-    bool get(std::ostream& os) const;
-    bool put(std::istream& is);
     bool put(xmlNodePtr cur);
+    bool get(ostream& os) const;
     void reset();
 
     /** initialize the supercell shared by all the particle sets 

@@ -26,9 +26,12 @@
 
 namespace qmcplusplus {
   
-  ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname): 
-    MPIObjectBase(c), OhmmsElementBase(aname), SimulationCell(0)
-  { }
+  ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), SimulationCell(0)
+  { 
+    ClassName="ParticleSetPool";
+    myName=aname;
+  }
 
   ParticleSet* ParticleSetPool::getParticleSet(const string& pname) 
   {
@@ -138,11 +141,6 @@ namespace qmcplusplus {
     return true;
   }
 
-  bool ParticleSetPool::put(std::istream& is) 
-  {
-    return true;
-  }
-
   bool ParticleSetPool::get(std::ostream& os) const 
   {
     os << "ParticleSetPool has: " << endl;
@@ -157,19 +155,14 @@ namespace qmcplusplus {
 
   /** reset is used to initialize and evaluate the distance tables 
    */
-  void ParticleSetPool::reset() {
+  void ParticleSetPool::reset() 
+  {
     PoolType::iterator it(myPool.begin()), it_end(myPool.end());
     while(it != it_end) {
       ParticleSet* pt((*it).second);
       pt->update();
       ++it;
     }
-    //DistanceTable::create(1);
-    //PoolType::iterator it(myPool.begin()), it_end(myPool.end());
-    //while(it != it_end) {
-    //  DistanceTable::update(*((*it).second));
-    //  ++it;
-    //}
   }
 
 // Experimental implementation of cloning ParticleSet*

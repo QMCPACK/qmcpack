@@ -103,19 +103,6 @@ namespace qmcplusplus {
       return (*it).second->myNode;
     }
   }
-
-  bool WaveFunctionPool::put(std::istream& is) {
-    return true;
-  }
-
-  bool WaveFunctionPool::get(std::ostream& os) const {
-    return true;
-  }
-
-  void WaveFunctionPool::reset() {
- 
-  }
-
 }
 /***************************************************************************
  * $RCSfile$   $Author$
