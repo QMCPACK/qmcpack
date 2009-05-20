@@ -25,6 +25,7 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingle.h"
+#include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
@@ -331,7 +332,8 @@ namespace qmcplusplus {
     } 
     else if(curRunType == FW_RUN)
     {
-      qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
+//       qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
+      qmcDriver = new FWSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
     else 
     {

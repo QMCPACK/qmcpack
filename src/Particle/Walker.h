@@ -189,7 +189,7 @@ namespace qmcplusplus {
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
       
-      PropertyHistory.resize(a.PropertyHistory.size());
+      if(PropertyHistory.size()!=a.PropertyHistory.size()) PropertyHistory.resize(a.PropertyHistory.size());
       for(int i=0;i<PropertyHistory.size();i++) PropertyHistory[i]=a.PropertyHistory[i];
       PHindex=a.PHindex;
     }

@@ -392,11 +392,10 @@ namespace qmcplusplus {
       Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
   }
 
-  void EstimatorManager::accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights, int nwalkers)
+  void EstimatorManager::accumulate( HDF5_FW_observables OBS, HDF5_FW_weights WGTS, vector<int> Dims )
   {
-    BlockWeight = nwalkers;
     for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate(values,weights);
+      Estimators[i]->accumulate(OBS,WGTS,Dims);
   }
 
 

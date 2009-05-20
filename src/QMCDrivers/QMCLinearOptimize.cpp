@@ -37,7 +37,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.5),costgradtol(1e-4), xi(0.5)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.0),costgradtol(1e-4), xi(0.5)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -184,39 +184,39 @@ bool QMCLinearOptimize::run()
             for (int i=0;i<N;i++) dP[i] = eigenT(MinE,i)/eigenT(MinE,0);
 
             ///In this rescaling we assume all parameters are NONLINEAR
-            RealType D(1.0);
-            for (int i=0;i<N-1;i++)
-            {
-                D += 2.0*S(0,i+1)*dP[i+1];
-                for (int j=0;j<N-1;j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
-            }
-            D = std::sqrt(std::abs(D));
-
-            ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
-//             RealType xi(0.5);
-            vector<RealType> N_i(N-1,0);
-            vector<RealType> M_i(N-1,0);
-            for (int i=0;i<N-1;i++)
-            {
-                N_i[i] += xi*D*S(0,i+1);
-                M_i[i] += xi*D;
-                RealType tsumN(S(0,i+1));
-                RealType tsumM(1);
-                for (int j=0;j<N-1;j++)
-                {
-                    tsumN += S(i+1,j+1)*dP[j+1];
-                    tsumM += S(0,j+1)*dP[j+1];
-                }
-                N_i[i] += (1-xi)*tsumN;
-                M_i[i] += (1-xi)*tsumM;
-                N_i[i] *= -1.0/M_i[i];
-            }
-
-            RealType rescale(1);
-            for (int j=0;j<N-1;j++) rescale -= N_i[j]*dP[j+1];
-            rescale = 1.0/rescale;
-//             app_log()<<"Rescaled: "<<rescale<<endl;
-            for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
+//             RealType D(1.0);
+//             for (int i=0;i<N-1;i++)
+//             {
+//                 D += 2.0*S(0,i+1)*dP[i+1];
+//                 for (int j=0;j<N-1;j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
+//             }
+//             D = std::sqrt(std::abs(D));
+// 
+//             ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
+// //             RealType xi(0.5);
+//             vector<RealType> N_i(N-1,0);
+//             vector<RealType> M_i(N-1,0);
+//             for (int i=0;i<N-1;i++)
+//             {
+//                 N_i[i] = xi*D*S(0,i+1);
+//                 M_i[i] = xi*D;
+//                 RealType tsumN(S(0,i+1));
+//                 RealType tsumM(1);
+//                 for (int j=0;j<N-1;j++)
+//                 {
+//                     tsumN += S(i+1,j+1)*dP[j+1];
+//                     tsumM += S(0,j+1)*dP[j+1];
+//                 }
+//                 N_i[i] += (1-xi)*tsumN;
+//                 M_i[i] += (1-xi)*tsumM;
+//                 N_i[i] *= -1.0/M_i[i];
+//             }
+// 
+//             RealType rescale(1);
+//             for (int j=0;j<N-1;j++) rescale -= N_i[j]*dP[j+1];
+//             rescale = 1.0/rescale;
+// //             app_log()<<"Rescaled: "<<rescale<<endl;
+//             if ((rescale==rescale)&(rescale!=0)) for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
             for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + dP[i+1];
 //         optTarget->GradCost(PGradient,parms);
             keepdP.push_back(dP);
@@ -244,7 +244,7 @@ bool QMCLinearOptimize::run()
         //make sure the cost function is a number here.
         for (int t=0;t<tries;t++) if (Costs[t]==Costs[t]) minCostindex=t;
         for (int t=0;t<tries;t++) if (Costs[t]<Costs[minCostindex]) minCostindex=t;
-	costgradtol=Costs[minCostindex]-LastCost;
+	deltaCost=Costs[minCostindex]-LastCost;
         if (LastCost>Costs[minCostindex])
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];

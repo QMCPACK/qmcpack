@@ -64,26 +64,26 @@ namespace qmcplusplus {
       }
     }
 
-    inline void accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights) 
+    inline void accumulate( HDF5_FW_observables OBS, HDF5_FW_weights WGTS, vector<int> Dims ) 
     {
 //       clear();
 //       cout<<"Calling accumulate"<<endl;
-      int maxV = values.size();
-      int maxW = weights.size();
-      assert (maxV==maxW);
-      int nobs = values[0][0].size();
-      for(int i=0;i<maxV;i++)
+//       int maxV = OBS.getLength();
+//       int maxW = WGTS.getLength(step);
+//       assert (maxV==maxW);
+      for(int i=0;i<Dims[2];i++)
       {
-        int nwalks = values[i].size();
-        int nweights = weights[i].size();
-        assert (nweights==nwalks);
-        for(int j=0;j<nwalks;j++) 
-          for(int k=0;k<nobs;k++)
-          {
-            scalars[2*k](values[i][j][k], weights[i][j]);
-            scalars[2*k+1](values[i][j][k]*values[i][j][k], weights[i][j]);
-            assert(values[i][j][k]==values[i][j][k]);
-            assert(weights[i][j]==weights[i][j]);
+        vector<int> weights;
+        vector<double> values;
+        OBS.readStep(i,values);
+        WGTS.readStep(Dims[0],i,weights);
+        
+        vector<double>::iterator vit(values.begin());
+        for(vector<int>::iterator wit(weights.begin());wit!=weights.end();wit++)
+          for(int k=0;k<Dims[1];k++,vit++)
+          { 
+            scalars[2*k]((*vit), (*wit));
+            scalars[2*k+1]((*vit)*(*vit), (*wit));
           }
       }
 //       const RealType* restrict ePtr = awalker.getPropertyBase();

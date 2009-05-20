@@ -27,6 +27,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include "QMCDrivers/ForwardWalking/HDF5_FW.h" 
 #include <bitset>
 
 namespace qmcplusplus {
@@ -197,7 +198,7 @@ namespace qmcplusplus {
     /** accumulate the measurements
      */
     void accumulate(MCWalkerConfiguration& W);
-    void accumulate(vector<vector<vector<RealType> > > values, vector<vector<int> > weights, int nwalkers);
+    void accumulate( HDF5_FW_observables OBS, HDF5_FW_weights WGTS, vector<int> Dims);
     ///** set the cummulative energy and weight
     // */
     void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
