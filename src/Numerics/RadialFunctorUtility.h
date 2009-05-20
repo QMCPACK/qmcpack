@@ -7,7 +7,6 @@
 #endif
 /**@file RadialFunctorUtility.h
    @brief Utility functions for atomic Hartree-fock solutions
-   @authors Jeongnim Kim, Jordan Vincent
    @note  The original Prim was written in F90 by Tim Wilkens.
  */
 
