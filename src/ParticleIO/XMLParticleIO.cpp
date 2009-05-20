@@ -28,7 +28,7 @@ using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/HDFParticleIO.h"
+//#include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 using namespace qmcplusplus;
@@ -81,15 +81,15 @@ bool XMLParticleParser::put(const string& fname_in,
 
     if(pformat.empty())
       putSpecial(cur);
-    else
-    {
-      if(pformat == "h5") {
-	HDFParticleParser ahandle(ref_);
-	ahandle.put(cur);
-      } else {
-	app_error() << "  Unknown file extension " << pformat << endl;
-      }
-    } 
+    //else
+    //{
+    //  if(pformat == "h5") {
+    //    HDFParticleParser ahandle(ref_);
+    //    ahandle.put(cur);
+    //  } else {
+    //    app_error() << "  Unknown file extension " << pformat << endl;
+    //  }
+    //} 
   }
 
   //free local objects
