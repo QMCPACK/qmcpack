@@ -42,10 +42,7 @@ namespace APPNAMESPACE
   void MPIObjectBase::setReportLevel(int level)
   {
     //demote the level if not the head node
-    if(myComm->rank()) 
-      ReportLevel=0;
-    else 
-      ReportLevel=level;
+    ReportLevel=(myComm->rank())?0:level;
     //if(ReportLevel)
     //{//inherit the global info streams
     //  LogBuffer.set(*OhmmsInfo::Log,ClassName);
