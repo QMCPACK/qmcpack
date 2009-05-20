@@ -16,7 +16,6 @@
 // -*- C++ -*-
 /** @file EstimatorManager.h
  * @brief Manager class of scalar estimators
- * @authors J. Kim and J. Vincent
  */
 #ifndef QMCPLUSPLUS_ESTIMATORMANAGER_H
 #define QMCPLUSPLUS_ESTIMATORMANAGER_H

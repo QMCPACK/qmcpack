@@ -1,9 +1,26 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003-  by Jeongnim Kim and Jordan Vincent
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file OneDimIntegration.h
+ * @brief Inline functions to perform 1-D integration
+ */
 #ifndef QMCPLUSPLUS_ONEDIMINTEGRATION_H
 #define QMCPLUSPLUS_ONEDIMINTEGRATION_H
 
 /**@file OneDimIntegration.h
    @brief Functions to perform integration in one-dimension
-   @authors Jeongnim Kim, Jordan Vincent
    @note  The original Prim was written in F90 by Tim Wilkens.
 */
 
