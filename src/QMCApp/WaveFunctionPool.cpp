@@ -29,9 +29,12 @@ using namespace std;
 namespace qmcplusplus {
   
 
-  WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname):
-    MPIObjectBase(c), OhmmsElementBase(aname)
-    { }
+  WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c)
+  { 
+    ClassName="WaveFunctionPool";
+    myName=aname;
+  }
 
   WaveFunctionPool::~WaveFunctionPool()
   {

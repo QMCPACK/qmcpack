@@ -38,11 +38,12 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
 
-  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c):
-    MPIObjectBase(c), OhmmsElementBase("psi0"),
-  targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL) 
+  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c)
+    : MPIObjectBase(c)
+      , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL) 
   {
     ClassName="WaveFunctionFactory";
+    myName="psi0";
   }
 
   void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
@@ -319,15 +320,6 @@ namespace qmcplusplus {
   {
     DEBUG_MEMORY("WaveFunctionFactory::~WaveFunctionFactory");
     delete_iter(psiBuilder.begin(),psiBuilder.end());
-  }
-
-  bool WaveFunctionFactory::get(std::ostream& ) const 
-  {
-    return true;
-  }
-
-  bool WaveFunctionFactory::put(std::istream& ) {
-    return true;
   }
 
   bool WaveFunctionFactory::put(xmlNodePtr cur) {

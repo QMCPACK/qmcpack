@@ -258,6 +258,7 @@ namespace qmcplusplus {
 
     //preserve the input order
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
+
     while(cur != NULL) {
       string cname((const char*)cur->name);
       bool inputnode=true;

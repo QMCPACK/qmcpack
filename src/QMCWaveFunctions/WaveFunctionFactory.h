@@ -26,7 +26,7 @@ namespace qmcplusplus {
 
   /** Factory class to build a many-body wavefunction 
    */
-  struct WaveFunctionFactory: public MPIObjectBase, public OhmmsElementBase 
+  struct WaveFunctionFactory: public MPIObjectBase
   {
 
     typedef map<string,ParticleSet*> PtclPoolType;
@@ -51,12 +51,6 @@ namespace qmcplusplus {
     ~WaveFunctionFactory();
 
     void setPsi(TrialWaveFunction* psi);
-
-    ///write to ostream
-    bool get(std::ostream& ) const;
-
-    ///read from istream
-    bool put(std::istream& );
 
     ///read from xmlNode
     bool put(xmlNodePtr cur);

@@ -18,7 +18,7 @@
 /**@file QMCInterface.cpp
  * @brief Implments QMCInterface operators.
  */
-#include "QMCInterface.h"
+#include "QMCApp/QMCInterface.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"

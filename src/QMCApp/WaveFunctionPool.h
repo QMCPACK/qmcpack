@@ -40,7 +40,7 @@ namespace qmcplusplus {
    * This object handles \<wavefunction\> elements and
    * functions as a builder class for TrialWaveFunction objects.
    */
-  class WaveFunctionPool : public MPIObjectBase, public OhmmsElementBase
+  class WaveFunctionPool : public MPIObjectBase
   {
 
   public:

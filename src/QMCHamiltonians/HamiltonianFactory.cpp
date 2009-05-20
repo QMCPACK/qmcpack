@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -68,13 +67,15 @@
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
-    PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c): 
-    MPIObjectBase(c),
-    targetPtcl(qp), targetH(0), 
-  ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
+      PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c)
+    : MPIObjectBase(c), targetPtcl(qp), targetH(0)
+      , ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
   {
     //PBCType is zero or 1 but should be generalized 
     PBCType=targetPtcl->Lattice.SuperCellEnum;
+
+    ClassName="HamiltonianFactory";
+    myName="psi0";
   }
 
   /** main hamiltonian build function
@@ -842,17 +843,8 @@ namespace qmcplusplus {
     aCopy->renameProperty(psiName,psi->getName());
     aCopy->build(myNode,false);
     myClones[ip]=aCopy;
-    aCopy->get(app_log());
+    //aCopy->get(app_log());
     return aCopy;
-  }
-
-  bool HamiltonianFactory::get(std::ostream& os) const {
-    targetH->get(os);
-    return true;
-  }
-
-  bool HamiltonianFactory::put(std::istream& ) {
-    return true;
   }
 
   bool HamiltonianFactory::put(xmlNodePtr cur) {

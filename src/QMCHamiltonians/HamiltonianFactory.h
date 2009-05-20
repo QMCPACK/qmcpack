@@ -20,15 +20,14 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 #define QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Message/MPIObjectBase.h"
+#include <QMCHamiltonians/QMCHamiltonian.h>
+#include <QMCWaveFunctions/WaveFunctionFactory.h>
 namespace qmcplusplus {
 
   /** Factory class to build a many-body wavefunction 
    */
-  struct HamiltonianFactory: public MPIObjectBase, public OhmmsElementBase {
-
+  struct HamiltonianFactory: public MPIObjectBase
+  {
     typedef map<string,ParticleSet*> PtclPoolType;
     typedef map<string,WaveFunctionFactory*> OrbitalPoolType;
 
@@ -57,12 +56,6 @@ namespace qmcplusplus {
 
     ///destructor
     ~HamiltonianFactory();
-
-    ///write to ostream
-    bool get(std::ostream& ) const;
-
-    ///read from istream
-    bool put(std::istream& );
 
     ///read from xmlNode
     bool put(xmlNodePtr cur);

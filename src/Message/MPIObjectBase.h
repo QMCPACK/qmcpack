@@ -72,6 +72,13 @@ namespace APPNAMESPACE
        */
       void setReportLevel(int level=1);
 
+      ///return the name
+      inline const std::string& getName() const 
+      { return myName;}
+
+      inline void setName(const std::string& aname) 
+      { myName = aname;} 
+
     protected:
       ///level of report
       int ReportLevel;
@@ -82,6 +89,8 @@ namespace APPNAMESPACE
       /** class Name
        */
       std::string ClassName;
+      /** name of the object */
+      std::string myName;
 
     //private:
     //  //disable copy constructor for now

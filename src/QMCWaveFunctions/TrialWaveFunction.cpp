@@ -20,15 +20,20 @@
 
 namespace qmcplusplus {
 
-  TrialWaveFunction::TrialWaveFunction(Communicate* c): MPIObjectBase(c), OhmmsElementBase("psi0"), 
-  Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0) 
+  TrialWaveFunction::TrialWaveFunction(Communicate* c)
+    : MPIObjectBase(c)
+      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0) 
   {
+    ClassName="TrialWaveFunction";
+    myName="psi0";
   }
 
   ///private and cannot be used
-  TrialWaveFunction::TrialWaveFunction(): MPIObjectBase(0),OhmmsElementBase("psi0"),
-    PhaseValue(0.0),LogValue(0.0) 
+  TrialWaveFunction::TrialWaveFunction()
+    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) 
   {
+    ClassName="TrialWaveFunction";
+    myName="psi0";
   }
 
   /** Destructor
@@ -574,15 +579,8 @@ namespace qmcplusplus {
   //  //SPOSet.push_back(spo);
   //}
 
-  bool TrialWaveFunction::get(std::ostream& ) const {
-    return true;
-  }
-
-  bool TrialWaveFunction::put(std::istream& ) {
-    return true;
-  }
-
-  bool TrialWaveFunction::put(xmlNodePtr cur) {
+  bool TrialWaveFunction::put(xmlNodePtr cur) 
+  {
     return true;
   }
 

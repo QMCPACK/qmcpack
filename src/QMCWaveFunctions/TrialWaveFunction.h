@@ -42,7 +42,7 @@ namespace qmcplusplus {
    *Each OrbitalBase should provide proper evaluate functions
    *for the value, gradient and laplacian values.
    */
-  class TrialWaveFunction: public MPIObjectBase, public OhmmsElementBase 
+  class TrialWaveFunction: public MPIObjectBase
   {
 
   public:
@@ -69,12 +69,6 @@ namespace qmcplusplus {
     ///Add an OrbitalBase 
     //void addOrbital(OrbitalBase* aterm);
     void addOrbital(OrbitalBase* aterm, const string& aname);
-
-    ///write to ostream
-    bool get(std::ostream& ) const;
-
-    ///read from istream
-    bool put(std::istream& );
 
     ///read from xmlNode
     bool put(xmlNodePtr cur);
