@@ -333,7 +333,12 @@ namespace qmcplusplus {
     else if(curRunType == FW_RUN)
     {
 //       qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
+
+#if defined(HAVE_MPI)
+      qmcDriver = new FWSingleMPI(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+#else
       qmcDriver = new FWSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+#endif
     } 
     else 
     {
