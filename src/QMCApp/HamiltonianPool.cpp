@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file HamiltonianPool.cpp
@@ -31,9 +28,12 @@ using namespace std;
 
 namespace qmcplusplus {
 
-  HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname): MPIObjectBase(c), OhmmsElementBase(aname), 
-  curH(0), ptclPool(0), psiPool(0), curDoc(0)
-  { }
+  HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), curH(0), ptclPool(0), psiPool(0), curDoc(0)
+  { 
+    ClassName="HamiltonianPool";
+    myName=aname;
+  }
 
   bool HamiltonianPool::put(xmlNodePtr cur) 
   {
@@ -194,10 +194,6 @@ namespace qmcplusplus {
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();
 
-  }
-
-  bool HamiltonianPool::put(std::istream& is) {
-    return true;
   }
 
   bool HamiltonianPool::get(std::ostream& os) const {
