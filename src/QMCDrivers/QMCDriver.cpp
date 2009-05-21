@@ -50,16 +50,15 @@ namespace qmcplusplus {
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
     m_param.add(CurrentStep,"current","int");
-    m_param.add(Tau,"timeStep","AU");
-    m_param.add(Tau,"Tau","AU");
-    m_param.add(Tau,"timestep","AU");
+    m_param.add(Tau,"timeStep","AU"); m_param.add(Tau,"timestep","AU"); m_param.add(Tau,"time_step","AU");
+    m_param.add(Tau,"Tau","AU"); m_param.add(Tau,"tau","AU");
     m_param.add(RollBackBlocks,"rewind","int");
-    m_param.add(Period4WalkerDump,"recordWalkers","int");
-    m_param.add(Period4ConfigDump,"recordConfigs","int");
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
     m_param.add(nTargetSamples,"samples","int");
-    m_param.add(Period4CheckProperties,"checkProperties","int");
-    m_param.add( storeConfigs,"storeConfigs","int");
+    m_param.add(Period4WalkerDump,"recordWalkers","int"); m_param.add(Period4WalkerDump,"record_walkers","int"); m_param.add(Period4WalkerDump,"recordwalkers","int");
+    m_param.add(Period4ConfigDump,"recordConfigs","int"); m_param.add(Period4ConfigDump,"recordconfigs","int"); m_param.add(Period4ConfigDump,"record_configs","int");
+    m_param.add(Period4CheckProperties,"checkProperties","int"); m_param.add(Period4CheckProperties,"checkproperties","int"); m_param.add(Period4CheckProperties,"check_properties","int");
+    m_param.add(storeConfigs,"storeConfigs","int"); m_param.add( storeConfigs,"storeconfigs","int"); m_param.add( storeConfigs,"store_configs","int");
 
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     //H.add2WalkerProperty(W);
