@@ -25,7 +25,8 @@
 
 namespace qmcplusplus {
 
-  ESHDFElectronsParser::ESHDFElectronsParser(ParticleSet& aptcl, hid_t h, Communicate* c)
+  ESHDFElectronsParser::ESHDFElectronsParser(ParticleSet& aptcl
+      ,hid_t h, Communicate* c)
     :ref_(aptcl),hfile_id(h),myComm(c) { }
 
   bool ESHDFElectronsParser::put(xmlNodePtr cur) 
@@ -91,9 +92,10 @@ namespace qmcplusplus {
     pbuffer.add(ref_.GroupID.begin(),ref_.GroupID.end());
     myComm->bcast(pbuffer);
 
+
+    ref_.R.InUnit=PosUnit::CartesianUnit;
     if(myComm->rank())
     {
-      ref_.R.InUnit=PosUnit::CartesianUnit;
       pbuffer.rewind();
       for(int i=0; i<tspecies.numAttributes();++i)
         pbuffer.get(tspecies.d_attrib[i]->begin(),tspecies.d_attrib[i]->end());
@@ -236,8 +238,6 @@ namespace qmcplusplus {
               }
       }
     }
-
-    
 
     ref_.createSK();
 
