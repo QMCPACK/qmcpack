@@ -22,10 +22,9 @@ SET (BOOST_LIBS $ENV{BOOST_HOME}/libs)
 
 set(SOURCES
     ${BOOST_LIBS}/serialization/src/basic_archive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_archive_impl.cpp
     ${BOOST_LIBS}/serialization/src/basic_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_oarchive.cpp
     ${BOOST_LIBS}/serialization/src/basic_iserializer.cpp
+    ${BOOST_LIBS}/serialization/src/basic_oarchive.cpp
     ${BOOST_LIBS}/serialization/src/basic_oserializer.cpp
     ${BOOST_LIBS}/serialization/src/basic_pointer_iserializer.cpp
     ${BOOST_LIBS}/serialization/src/basic_pointer_oserializer.cpp
@@ -36,8 +35,8 @@ set(SOURCES
     ${BOOST_LIBS}/serialization/src/binary_iarchive.cpp
     ${BOOST_LIBS}/serialization/src/binary_oarchive.cpp
     ${BOOST_LIBS}/serialization/src/extended_type_info.cpp
-    ${BOOST_LIBS}/serialization/src/extended_type_info_no_rtti.cpp
     ${BOOST_LIBS}/serialization/src/extended_type_info_typeid.cpp
+    ${BOOST_LIBS}/serialization/src/extended_type_info_no_rtti.cpp
     ${BOOST_LIBS}/serialization/src/polymorphic_iarchive.cpp
     ${BOOST_LIBS}/serialization/src/polymorphic_oarchive.cpp
     ${BOOST_LIBS}/serialization/src/stl_port.cpp
@@ -50,31 +49,32 @@ set(SOURCES
     )
     
 set(WSOURCES
-    ${BOOST_LIBS}/serialization/src/codecvt_null.cpp
-    ${BOOST_LIBS}/serialization/src/utf8_codecvt_facet.cpp
     ${BOOST_LIBS}/serialization/src/basic_text_wiprimitive.cpp
     ${BOOST_LIBS}/serialization/src/basic_text_woprimitive.cpp
-    ${BOOST_LIBS}/serialization/src/binary_wiarchive.cpp
-    ${BOOST_LIBS}/serialization/src/binary_woarchive.cpp
     ${BOOST_LIBS}/serialization/src/text_wiarchive.cpp
     ${BOOST_LIBS}/serialization/src/text_woarchive.cpp
+    ${BOOST_LIBS}/serialization/src/utf8_codecvt_facet.cpp
     ${BOOST_LIBS}/serialization/src/xml_wgrammar.cpp
     ${BOOST_LIBS}/serialization/src/xml_wiarchive.cpp
     ${BOOST_LIBS}/serialization/src/xml_woarchive.cpp
+    ${BOOST_LIBS}/serialization/src/codecvt_null.cpp
     )
 
 set(POSRCS
-    ${BOOST_LIBS}/program_options/src/winmain.cpp
+    ${BOOST_LIBS}/program_options/src/cmdline.cpp
+    ${BOOST_LIBS}/program_options/src/config_file.cpp
+    ${BOOST_LIBS}/program_options/src/options_description.cpp
+    ${BOOST_LIBS}/program_options/src/parsers.cpp
     ${BOOST_LIBS}/program_options/src/variables_map.cpp
     ${BOOST_LIBS}/program_options/src/value_semantic.cpp
-    ${BOOST_LIBS}/program_options/src/utf8_codecvt_facet.cpp
     ${BOOST_LIBS}/program_options/src/positional_options.cpp
-    ${BOOST_LIBS}/program_options/src/parsers.cpp
-    ${BOOST_LIBS}/program_options/src/options_description.cpp
+    ${BOOST_LIBS}/program_options/src/utf8_codecvt_facet.cpp
     ${BOOST_LIBS}/program_options/src/convert.cpp
-    ${BOOST_LIBS}/program_options/src/config_file.cpp
-    ${BOOST_LIBS}/program_options/src/cmdline.cpp
+    ${BOOST_LIBS}/program_options/src/winmain.cpp
 )
+    #    ${BOOST_LIBS}/date_time/src/gregorian/greg_month.cpp 
+    #    ${BOOST_LIBS}/date_time/src/gregorian/greg_weekday.cpp
+    #    ${BOOST_LIBS}/date_time/src/gregorian/date_generators.cpp 
 
 ADD_LIBRARY(boost ${SOURCES} ${WSOURCES} ${POSRCS})
 #SUBDIRS(serialization)
