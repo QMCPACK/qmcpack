@@ -129,7 +129,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet() {
   if(IonSystem.getTotalNum()>1) {
     m.initMolecule(&IonSystem,&els);
   } else {
-    m.initAtom(&els);
+    m.initAtom(&IonSystem,&els);
   }
 
   XMLSaveParticle o(els);
