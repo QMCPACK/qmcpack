@@ -17,12 +17,16 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
+//#include "Particle/DistanceTable.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "Particle/DistanceTable.h"
-#include "OhmmsData/AttributeSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/ESHDFParticleParser.h"
+#include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "OhmmsData/AttributeSet.h"
+#include "QMCApp/InitMolecularSystem.h"
 
 namespace qmcplusplus {
   
@@ -165,6 +169,151 @@ namespace qmcplusplus {
     }
   }
 
+  ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& target)
+  {
+    TinyVector<int,OHMMS_DIM> TileFactor;
+    Tensor<int,OHMMS_DIM> TileMatrix;
+    double lr_cut=10;
+    string h5name;
+    string source("i");
+    string bc("p p p");
+
+    OhmmsAttributeSet attribs;
+    attribs.add(h5name, "href");
+    attribs.add(TileFactor, "tile");
+    attribs.add(TileMatrix, "tilematrix");
+    attribs.add(source, "source");
+    attribs.add(bc, "bconds");
+    attribs.add(lr_cut, "LR_dim_cutoff");
+    attribs.put(cur);
+
+    ParticleSet* ions=getParticleSet(source);
+    if(ions==0)
+    {
+      ions=new MCWalkerConfiguration;
+      ions->setName(source);
+    }
+
+    //set the boundary condition
+    ions->Lattice.LR_dim_cutoff=lr_cut;
+    std::istringstream  is(bc);
+    char c;
+    int idim=0;
+    while(!is.eof() && idim<OHMMS_DIM) 
+    { 
+      if(is>>c) ions->Lattice.BoxBConds[idim++]=(c=='p');
+    }
+    
+    //initialize ions from hdf5
+    hid_t h5=-1;
+    if(myComm->rank()==0)
+      h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+    ESHDFIonsParser ap(*ions,h5,myComm);
+    ap.put(cur);
+    ap.expand(TileMatrix);
+    if(h5>-1) H5Fclose(h5);
+
+    //failed to initialize the ions
+    if(ions->getTotalNum() == 0) return 0;
+
+    typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
+    vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
+    ions->Lattice.reset();
+    ions->Lattice.makeGrid(grid);
+
+    if(SimulationCell==0)
+    {
+      SimulationCell = new ParticleSet::ParticleLayout_t(ions->Lattice);
+    }
+
+    //create the electrons
+    MCWalkerConfiguration* qp = new MCWalkerConfiguration;
+    qp->setName(target);
+    qp->Lattice.copy(ions->Lattice);
+
+    //qp->Lattice.reset();
+    //qp->Lattice.makeGrid(grid);
+
+    app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << endl;
+    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << endl;
+    SimulationCell->print(app_log());
+
+    myPool[target]=qp;
+    myPool[source]=ions;
+    //addParticleSet(qp);
+    //addParticleSet(ions);
+
+    {//get the number of electrons per spin
+      vector<int> num_spin;
+      xmlNodePtr cur1=cur->children;
+      while(cur1!=NULL)
+      {
+        string cname1((const char*)cur1->name);
+        if(cname1 == OrbitalBuilderBase::sd_tag)
+        {
+          num_spin.clear();
+          xmlNodePtr cur2=cur1->children;
+          while(cur2!=NULL)
+          {
+            string cname2((const char*)cur2->name);
+            if(cname2 == OrbitalBuilderBase::det_tag)
+            {
+              int n=0;
+              OhmmsAttributeSet a;
+              a.add(n,"size");
+              a.put(cur2);
+              if(num_spin.size()<2) num_spin.push_back(n);
+            }
+            cur2=cur2->next;
+          }
+        }
+        cur1=cur1->next;
+      }
+      //create species
+      SpeciesSet& species=qp->getSpeciesSet();
+      //add up and down
+      species.addSpecies("u");
+      if(num_spin.size()>1) species.addSpecies("d");
+      int chid=species.addAttribute("charge");
+      for(int i=0; i<num_spin.size(); ++i) species(chid,i)=-1.0;
+      int mid=species.addAttribute("membersize");
+      for(int i=0; i<num_spin.size(); ++i) species(mid,i)=num_spin[i];
+      mid=species.addAttribute("mass");
+      for(int i=0; i<num_spin.size(); ++i) species(mid,i)=1.0;
+      qp->create(num_spin);
+    }
+    //name it with the target
+    qp->setName(target);
+
+    //assign non-trivial positions for the quanmtum particles
+    if(qp->Lattice.SuperCellEnum)
+    {
+      makeUniformRandom(qp->R);
+      qp->R.setUnit(PosUnit::LatticeUnit);
+      qp->convert2Cart(qp->R);
+      qp->createSK();
+    }
+    else
+    {
+      InitMolecularSystem mole(this);
+      if(ions->getTotalNum()>1)
+        mole.initMolecule(ions,qp);
+      else
+        mole.initAtom(ions,qp);
+    }
+
+    //for(int i=0; i<qp->getTotalNum(); ++i)
+    //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
+
+    if(qp->getTotalNum() == 0 || ions->getTotalNum() == 0)
+    {
+      delete qp;
+      delete ions;
+      APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
+      return 0;
+    }
+    return qp;
+  }
 // Experimental implementation of cloning ParticleSet*
 // All taken care by HamiltonianPool
 //  std::vector<ParticleSet*>

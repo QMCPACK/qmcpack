@@ -76,6 +76,14 @@ namespace qmcplusplus {
      */
     inline PoolType& getPool() { return myPool;}
 
+    /** create a target particleset and other associated particlesets 
+     * @param cur xml node
+     * @return A ParticleSet
+     *
+     * Introduced to avoid conflicting definitions of the particlesets
+     */
+    ParticleSet* createESParticleSet(xmlNodePtr cur, const string& target);
+
     /** clone the ParticleSet with the name
      * @param pname ParticleSet name which is cloned
      * @param np number of copies
@@ -85,7 +93,7 @@ namespace qmcplusplus {
      * ParticleSet to be cloned.
      * When OpenMP is enabled, each thread creates the ParticleSet
      * @todo use vector<shared_ptr<ParticleSet> >
-    vector<ParticleSet*> clone(const string& pname, int np);
+     vector<ParticleSet*> clone(const string& pname, int np);
      */
   private:
     ParticleSet::ParticleLayout_t* SimulationCell;

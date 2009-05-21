@@ -57,9 +57,23 @@ namespace qmcplusplus {
     pAttrib.put(cur);
 
     ParticleSet *qp = ptclPool->getParticleSet(target);
-    if(qp == 0) {
-      ERRORMSG("Wavefunction cannot be created because of missing particle set " << target)
-      return false;
+    if(qp == 0) //hdf5
+    {
+      xmlNodePtr tcur=cur->children;
+      while(qp==0 && tcur != NULL)
+      {
+        string cname((const char*)tcur->name);
+        if(cname == OrbitalBuilderBase::detset_tag)
+        {
+          qp=ptclPool->createESParticleSet(tcur,target);
+        }
+        tcur=tcur->next;
+      }
+    }
+
+    if(qp==0)
+    {
+      APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
     }
 
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(id));
