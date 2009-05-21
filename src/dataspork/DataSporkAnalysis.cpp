@@ -9,7 +9,8 @@
 #include <fstream>
 #include <iterator>
 #include <boost/tokenizer.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <Platforms/sysutil.h>
+//#include <boost/date_time/posix_time/posix_time.hpp>
 using namespace std;
 
 // A helper function to simplify the main part.
@@ -191,10 +192,11 @@ void DataSporkAnalysis::execute() {
   }
 
   /* create the local_time to report*/
-  using namespace boost::posix_time;
-  ptime now=second_clock::local_time();
-  time_facet* facet(new time_facet("%Y-%m-%d %T"));
-  out.imbue(std::locale(out.getloc(), facet));
+  //using namespace boost::posix_time;
+  //ptime now=second_clock::local_time();
+  //time_facet* facet(new time_facet("%Y-%m-%d %T"));
+  //out.imbue(std::locale(out.getloc(), facet));
+  string now=getDateAndTime("%Y-%m-%d %T");
 
   out << "<?xml version=\"1.0\"?>\n"
     << "<?xml-stylesheet type=\"text/xsl\" href=\"dataspork.xsl\"?>\n"

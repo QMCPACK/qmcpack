@@ -7,4 +7,4 @@ DataSporkAnalysis.cpp
 )
 
 ADD_EXECUTABLE(datasporkpp ${SRCS} datasporkpp.cpp)
-TARGET_LINK_LIBRARIES(datasporkpp boost)
+TARGET_LINK_LIBRARIES(datasporkpp boost qmcutil)
