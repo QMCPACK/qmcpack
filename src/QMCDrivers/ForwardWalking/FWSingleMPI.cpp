@@ -43,6 +43,7 @@ namespace qmcplusplus {
     {
         Estimators->start(weightLength,1); 
         fillIDMatrix();
+        if (verbose>1) app_log()<<" Filled ID Matrix"<<endl;
         hdf_WGT_data.makeFile();
         hdf_WGT_data.openFile();
         hdf_WGT_data.addFW(0);
@@ -51,6 +52,7 @@ namespace qmcplusplus {
         hdf_WGT_data.closeFile();
       for(int ill=1;ill<weightLength;ill++)
       {
+        if (verbose>1) app_log()<<" FW step "<<ill<<endl;
         transferParentsOneGeneration();
         FWOneStep();
   //       WeightHistory.push_back(Weights);
@@ -62,6 +64,16 @@ namespace qmcplusplus {
       }
       if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
     }
+//     std::vector<int> wpbsize(1);
+//     if (myComm->rank()==0)  wpbsize[0] = walkersPerBlock.size();
+//     myComm->bcast( wpbsize);
+    if (myComm->rank()!=0) walkersPerBlock.resize(numSteps);
+    myComm->bcast(walkersPerBlock);
+    
+    
+    myComm->barrier();
+    
+    
     int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
     int FirstHamiltonian = H.startIndex(); 
 
@@ -74,19 +86,37 @@ namespace qmcplusplus {
     
     hdf_OBS_data.setFileName(xmlrootName);
     if (myComm->rank()==0) hdf_OBS_data.makeFile();
-    hdf_float_data.openFile(fname.str());
-
+    myComm->barrier();
+    if ((verbose>0)&(myComm->rank()==0)) app_log()<<" Done Making OBS file."<<endl;
+    
     int MPIoffset = myComm->rank();
-    for(int step=MPIoffset;step<numSteps;step+=myComm->size())
+    int MPIsize = myComm->size();
+    for(int mp=0;mp<MPIsize;mp++)
     {
-      hdf_float_data.setStep(step);
-        
+      if (MPIoffset==mp) hdf_float_data.openFile(fname.str());
+      myComm->barrier();
+    }
+    if ((verbose>0)&(myComm->rank()==0)) app_log()<<" Done Opening OBS file."<<endl;
+
+    for(int step=MPIoffset;step<numSteps;step+=MPIsize)
+    {
+      for(int mp=0;mp<MPIsize;mp++)
+      {
+        if (MPIoffset==mp) hdf_float_data.setStep(step);
+        myComm->barrier();
+      }
       
       vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
       for(int wstep=0; wstep<walkersPerBlock[step];)
       {
         vector<float> ThreadsCoordinate(NumThreads*nfloats);
-        int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
+        int nwalkthread(0);
+        for(int mp=0;mp<MPIsize;mp++)
+        {
+          if (MPIoffset==mp) nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
+          myComm->barrier();
+        }
+        
 //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
 //         cout<<endl;
 #pragma omp parallel for
@@ -110,21 +140,28 @@ namespace qmcplusplus {
         wstep+=nwalkthread;
       for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
       }
-      hdf_OBS_data.openFile();
-      hdf_OBS_data.addStep(step, stepObservables);
-      hdf_OBS_data.closeFile();
-//       savedValues.push_back(stepObservables);
-      hdf_float_data.endStep();
-      if (verbose >1) cout<<"Done with step: "<<step<<endl;
+      for(int mp=0;mp<MPIsize;mp++)
+      {
+        if (MPIoffset==mp)
+        {
+          hdf_OBS_data.openFile();
+          hdf_OBS_data.addStep(step, stepObservables);
+          hdf_OBS_data.closeFile(); 
+          hdf_float_data.endStep();
+        }
+        myComm->barrier();
+      }
+
+      if ((myComm->rank()==0) & (verbose >1)) cout<<"Done with step: "<<step<<endl;
     }
     if (myComm->rank()==0) 
     {
       vector<int> Dimensions(3);
-      
+      if (verbose >1) cout<<"  Writing scalar.dat file"<<endl;
       hdf_WGT_data.openFile();
       hdf_OBS_data.openFile();
       for(int ill=0;ill<weightLength;ill++)
-      {    
+      {
         Dimensions[0]=ill;
         Dimensions[1]=(nprops+2);
         Dimensions[2]=numSteps;
@@ -286,7 +323,7 @@ namespace qmcplusplus {
 
 
   bool 
-    FWSingleMPI::put(xmlNodePtr q){
+    FWSingleMPI::put(xmlNodePtr q){ 
 
       fname<<xmlrootName<<".storeConfig.h5";
       c_file = H5Fopen(fname.str().c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);

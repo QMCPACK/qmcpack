@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_FWOMP_ANALYSIS_H
-#define QMCPLUSPLUS_FWOMP_ANALYSIS_H
+#ifndef QMCPLUSPLUS_FWMPI_ANALYSIS_H
+#define QMCPLUSPLUS_FWMPI_ANALYSIS_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "QMCDrivers/CloneManager.h" 
 #include "QMCDrivers/ForwardWalking/HDF5_FW.h" 
@@ -57,7 +57,7 @@ namespace qmcplusplus {
       stringstream fname;
       int weightFreq, weightLength, numSteps;
 
-      vector<int> walkersPerBlock;
+      std::vector<int> walkersPerBlock;
       vector<int> pointsToCalculate;
       vector<vector<int> > Weights;
       vector<vector<long> > IDs, PIDs, realPIDs, realIDs;

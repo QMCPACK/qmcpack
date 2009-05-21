@@ -223,8 +223,6 @@ namespace qmcplusplus {
         hid_t d1= H5Fcreate(filename.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
         HDFVersion cur_version;
         cur_version.write(d1,hdf::version);
-        hid_t d2 = H5Gcreate(d1,hdf::main_state,0);
-        H5Gclose(d2);
         if (H5Fclose(d1) > -1) d1 = -1;
       }
       
