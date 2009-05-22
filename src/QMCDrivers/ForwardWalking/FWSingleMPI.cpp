@@ -16,6 +16,8 @@
 // -*- C++ -*-
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
 #include "QMCDrivers/ForwardWalkingStructure.h"
+#include "Message/CommOperators.h"
+
 
 namespace qmcplusplus { 
 
@@ -41,7 +43,6 @@ namespace qmcplusplus {
     hdf_WGT_data.setFileName(xmlrootName); 
     if (myComm->rank()==0) 
     {
-        Estimators->start(weightLength,1); 
         fillIDMatrix();
         if (verbose>1) app_log()<<" Filled ID Matrix"<<endl;
         hdf_WGT_data.makeFile();
@@ -67,11 +68,10 @@ namespace qmcplusplus {
 //     std::vector<int> wpbsize(1);
 //     if (myComm->rank()==0)  wpbsize[0] = walkersPerBlock.size();
 //     myComm->bcast( wpbsize);
-    if (myComm->rank()!=0) walkersPerBlock.resize(numSteps);
-    myComm->bcast(walkersPerBlock);
-    
-    
     myComm->barrier();
+    
+    if (myComm->rank()!=0) walkersPerBlock.resize(numSteps);
+    myComm->bcast( walkersPerBlock );
     
     
     int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
@@ -97,52 +97,64 @@ namespace qmcplusplus {
       myComm->barrier();
     }
     if ((verbose>0)&(myComm->rank()==0)) app_log()<<" Done Opening OBS file."<<endl;
-
-    for(int step=MPIoffset;step<numSteps;step+=MPIsize)
+    if ((verbose>1)&(myComm->rank()==0)) app_log()<<" MPIsize "<<MPIsize<<endl;
+    if (verbose>1)  app_log()<<" MPIoffset "<<MPIoffset<<endl;
+    
+    int nblocksreq = numSteps/MPIsize +1;
+    for(int step=MPIoffset,blk=0;blk<nblocksreq;step+=MPIsize,blk++)
     {
       for(int mp=0;mp<MPIsize;mp++)
       {
-        if (MPIoffset==mp) hdf_float_data.setStep(step);
+        if ((MPIoffset==mp)&(step<numSteps)) hdf_float_data.setStep(step);
         myComm->barrier();
       }
-      
-      vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
-      for(int wstep=0; wstep<walkersPerBlock[step];)
-      {
-        vector<float> ThreadsCoordinate(NumThreads*nfloats);
-        int nwalkthread(0);
-        for(int mp=0;mp<MPIsize;mp++)
+      vector<RealType> stepObservables;
+      if (step<numSteps)
+      { 
+        stepObservables.resize(walkersPerBlock[step]*(nprops+2), 0);
+        for(int wstep=0; wstep<walkersPerBlock[step];)
         {
-          if (MPIoffset==mp) nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
-          myComm->barrier();
-        }
-        
-//         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
-//         cout<<endl;
-#pragma omp parallel for
-        for(int ip=0; ip<nwalkthread; ip++) 
-        {
-          vector<float> SINGLEcoordinate(0);
-          vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
+          vector<float> ThreadsCoordinate(NumThreads*nfloats);
+//           int nwalkthread(0);
+//           for(int mp=0;mp<MPIsize;mp++)
+//           {
+//             if (MPIoffset==mp) nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
+//             myComm->barrier();
+//           }
+          int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
+  //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
+  //         cout<<endl;
+//           if (nwalkthread>0)
+//           {
+  #pragma omp parallel for
+            for(int ip=0; ip<nwalkthread; ip++) 
+            {
+              vector<float> SINGLEcoordinate(0);
+              vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
+              
+              SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
+              FWvector[ip]->fromFloat(SINGLEcoordinate);
+              wClones[ip]->R=FWvector[ip]->Pos;
+              wClones[ip]->update();
+              RealType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
+              RealType eloc=hClones[ip]->evaluate( *wClones[ip] );
+              hClones[ip]->auxHevaluate(*wClones[ip]);
+              int indx=(wstep+ip)*(nprops+2);
+              stepObservables[indx]= eloc;
+              stepObservables[indx+1]= hClones[ip]->getLocalPotential();
+              for(int i=0;i<nprops;i++) stepObservables[indx+i+2] = hClones[ip]->getObservable(i) ;
+            }
+            wstep+=nwalkthread;
+//           }
+//           else wstep=walkersPerBlock[step];
           
-          SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
-          FWvector[ip]->fromFloat(SINGLEcoordinate);
-          wClones[ip]->R=FWvector[ip]->Pos;
-          wClones[ip]->update();
-          RealType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
-          RealType eloc=hClones[ip]->evaluate( *wClones[ip] );
-          hClones[ip]->auxHevaluate(*wClones[ip]);
-          int indx=(wstep+ip)*(nprops+2);
-          stepObservables[indx]= eloc;
-          stepObservables[indx+1]= hClones[ip]->getLocalPotential();
-          for(int i=0;i<nprops;i++) stepObservables[indx+i+2] = hClones[ip]->getObservable(i) ;
+          for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
         }
-        wstep+=nwalkthread;
-      for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
       }
+      myComm->barrier();
       for(int mp=0;mp<MPIsize;mp++)
       {
-        if (MPIoffset==mp)
+        if ((MPIoffset==mp)&(step<numSteps))
         {
           hdf_OBS_data.openFile();
           hdf_OBS_data.addStep(step, stepObservables);
@@ -152,27 +164,33 @@ namespace qmcplusplus {
         myComm->barrier();
       }
 
-      if ((myComm->rank()==0) & (verbose >1)) cout<<"Done with step: "<<step<<endl;
+      if (verbose >1) cout<<"Done with step: "<<step<<endl;
     }
-    if (myComm->rank()==0) 
-    {
+    myComm->barrier();
+    
+//     if (myComm->rank()==0) 
+//     {
       vector<int> Dimensions(3);
+      Dimensions[1]=(nprops+2);
+      Dimensions[2]=numSteps;
       if (verbose >1) cout<<"  Writing scalar.dat file"<<endl;
-      hdf_WGT_data.openFile();
-      hdf_OBS_data.openFile();
+      if (myComm->rank()==0) hdf_WGT_data.openFile();
+      if (myComm->rank()==0) hdf_OBS_data.openFile();
+      Estimators->start(weightLength,1); 
       for(int ill=0;ill<weightLength;ill++)
       {
         Dimensions[0]=ill;
-        Dimensions[1]=(nprops+2);
-        Dimensions[2]=numSteps;
         Estimators->startBlock(1);
-        Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
-        Estimators->stopBlock(getNumberOfSamples(ill));
+        if (myComm->rank()==0) Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
+        myComm->barrier();
+        Estimators->stopBlock(1);
       }
-      hdf_OBS_data.closeFile();
-      hdf_WGT_data.closeFile();
+      if (verbose >1) cout<<"  Closing files"<<endl;
+      if (myComm->rank()==0) hdf_OBS_data.closeFile();
+      if (myComm->rank()==0) hdf_WGT_data.closeFile();
       Estimators->stop();
-    }
+//     }
+    myComm->barrier();
     return true;
   }
 

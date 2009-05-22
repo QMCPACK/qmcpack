@@ -74,12 +74,12 @@ namespace qmcplusplus {
       for(int i=0;i<Dims[2];i++)
       {
         vector<int> weights;
-        vector<double> values;
-        OBS.readStep(i,values);
+        vector<double> values; 
+        OBS.readStep(i,values); 
         WGTS.readStep(Dims[0],i,weights);
         
         vector<double>::iterator vit(values.begin());
-        for(vector<int>::iterator wit(weights.begin());wit!=weights.end();wit++)
+        for(vector<int>::iterator wit(weights.begin());((wit!=weights.end())&(vit!=values.end()));wit++)
           for(int k=0;k<Dims[1];k++,vit++)
           { 
             scalars[2*k]((*vit), (*wit));

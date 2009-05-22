@@ -37,6 +37,7 @@ namespace qmcplusplus {
       
       int getFloat(int first, int last, vector<float>& data_out)
       {
+        if (dims[0]< first) return 0;
         if (dims[0]< last) data_out.resize(dims[0]-first);
         offset[1] = 0;
         offset[0] = first;
@@ -208,7 +209,7 @@ namespace qmcplusplus {
   class HDF5_FW_observables
   {
     public:
-      HDF5_FW_observables():Steps(0) {}
+      HDF5_FW_observables() {}
       ~HDF5_FW_observables(){}
       
       void setFileName(string fn)
@@ -236,11 +237,8 @@ namespace qmcplusplus {
         if (H5Fclose(c_file)>-1) c_file=-1;
       }
       
-      int getLength(){return Steps;}
-      
       void addStep(int step, vector<double>& Observables)
       {
-        Steps++;
         std::stringstream sstr("");
         sstr<<"Block_"<<step;
 //         d_file = H5Gcreate(c_file,sstr.str().c_str(),0);
@@ -268,7 +266,6 @@ namespace qmcplusplus {
       void readStep(int step, vector<double>& data_out)
       {
         stringstream gname("");
-
         gname<<"Block_"<< step;
 //         d_file = H5Gopen(c_file,gname.str().c_str());
 //         gname.str("OBS");
@@ -314,13 +311,12 @@ namespace qmcplusplus {
     hid_t c_file;
     hid_t d_file;
     string filename;
-    int Steps;
   };
   
   class HDF5_FW_weights
   {
     public:
-      HDF5_FW_weights():Steps(0) {}
+      HDF5_FW_weights() {}
       ~HDF5_FW_weights(){}
       
       void setFileName(string fn)
@@ -335,8 +331,6 @@ namespace qmcplusplus {
         hid_t d1= H5Fcreate(filename.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
         HDFVersion cur_version;
         cur_version.write(d1,hdf::version);
-//         hid_t d2 = H5Gcreate(d1,hdf::main_state,0);
-//         H5Gclose(d2);
         if (H5Fclose(d1) > -1) d1 = -1;
       }
       
@@ -350,12 +344,8 @@ namespace qmcplusplus {
         if (H5Fclose(c_file)>-1) c_file=-1;
       }
       
-      int getLength(){return Steps.size();}
-      int getLength(int i){return Steps[i];}
-      
       void addFW(int gap)
       {
-        Steps.push_back(0);
         std::stringstream sstr("");
         sstr<<"Age_"<<gap;
         d_file = H5Gcreate(c_file,sstr.str().c_str(),0);
@@ -376,7 +366,7 @@ namespace qmcplusplus {
         H5Pset_chunk(p,rank,dims);
  
         stringstream gname("");
-        gname<<"Block_"<<Steps[Steps.size()-1]; 
+        gname<<"Block_"<<step; 
         dataset =  H5Dcreate(d_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
         memspace = H5Screate_simple( rank, dims, NULL);
         status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(Observables[0]));
@@ -384,13 +374,11 @@ namespace qmcplusplus {
         H5Sclose(memspace);
         H5Dclose(dataset);
         H5Sclose(dataspace);
-        Steps[Steps.size()-1]++;
       }
       
       void readStep(int age, int step, vector<int>& data_out)
       {
-        stringstream gname("");
-
+        stringstream gname(""); 
         gname<<"Age_"<<age<<"/Block_"<< step;
 //         hid_t d_file = H5Dopen(c_file,gname.str().c_str());
 //         gname.str("OBS");
@@ -437,7 +425,6 @@ namespace qmcplusplus {
     hid_t c_file;
     hid_t d_file;
     string filename;
-    vector<int> Steps; 
   };
 } 
 #endif
