@@ -16,8 +16,7 @@
 // -*- C++ -*-
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
 #include "QMCDrivers/ForwardWalkingStructure.h"
-#include "Message/CommOperators.h"
-
+#include "Message/CommOperators.h" 
 
 namespace qmcplusplus { 
 
@@ -168,28 +167,28 @@ namespace qmcplusplus {
     }
     myComm->barrier();
     
-//     if (myComm->rank()==0) 
-//     {
+    if (myComm->rank()==0) 
+    {
       vector<int> Dimensions(3);
       Dimensions[1]=(nprops+2);
       Dimensions[2]=numSteps;
       if (verbose >1) cout<<"  Writing scalar.dat file"<<endl;
-      if (myComm->rank()==0) hdf_WGT_data.openFile();
-      if (myComm->rank()==0) hdf_OBS_data.openFile();
+      hdf_WGT_data.openFile();
+      hdf_OBS_data.openFile();
+      Estimators->setCollectionMode(false);
       Estimators->start(weightLength,1); 
       for(int ill=0;ill<weightLength;ill++)
       {
         Dimensions[0]=ill;
         Estimators->startBlock(1);
-        if (myComm->rank()==0) Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
-        myComm->barrier();
-        Estimators->stopBlock(1);
+        Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
+        Estimators->stopBlock(getNumberOfSamples(ill));
       }
       if (verbose >1) cout<<"  Closing files"<<endl;
-      if (myComm->rank()==0) hdf_OBS_data.closeFile();
-      if (myComm->rank()==0) hdf_WGT_data.closeFile();
+      hdf_OBS_data.closeFile();
+      hdf_WGT_data.closeFile();
       Estimators->stop();
-//     }
+    }
     myComm->barrier();
     return true;
   }
