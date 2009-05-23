@@ -66,10 +66,13 @@ namespace qmcplusplus {
     int WarmupBlocks;
     ///total number of Warmup Blocks
     int NumOfVMCWalkers;
-    ///Number of its maximum before generating new configurations.
+    ///Number of iterations maximum before generating new configurations.
     int Max_iterations;
+    ///number of tries adding to Ham diagonal, exp0 is exponent of added factor
     int tries,exp0;
+    ///stop optimizing if cost function decrease is less than this
     RealType costgradtol;
+    ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
     RealType alpha,xi;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
@@ -78,8 +81,9 @@ namespace qmcplusplus {
     ///target cost function to optimize
     //QMCCostFunction* optTarget;
     QMCCostFunctionBase* optTarget;
-    ///solver
-//     MinimizerBase<RealType>* optSolver;
+    ///rescale parameters? use parameters from generalized eigenvalue as a direction to minimize cost function?
+    ///use gradient or ggev to line minimize
+    bool rescaleparams, linemin, usegrad;
     ///vmc engine
     QMCDriver* vmcEngine;
     ///xml node to be dumped
@@ -94,7 +98,7 @@ namespace qmcplusplus {
     QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
     ///Copy operator (disabled).
     QMCLinearOptimize& operator=(const QMCLinearOptimize&) { return *this;}
-    RealType LineMinimization(vector<RealType> &optP);
+    void LineMinimization(vector<RealType>& ggevdir, vector<RealType>& curP, RealType firstcost);
     void generateSamples();
   };
 }

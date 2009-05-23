@@ -271,83 +271,84 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, vector<Return_
         Return_t curAvg2_w = curAvg_w*curAvg_w;
         curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
         vector<Return_t> EDtotals(NumOptimizables,0.0);
-        vector<Return_t> E2Dtotals(NumOptimizables,0.0);
         vector<Return_t> EDtotals_w(NumOptimizables,0.0);
         vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
         vector<Return_t> URV(NumOptimizables,0.0);
         vector<Return_t> HD_avg(NumOptimizables,0.0);
-        Return_t e2(0.0);
 
-
-
+        Return_t wgtinv = 1.0/SumValue[SUM_WGT];
+        Return_t delE_bar;
         int nw=W.getActiveWalkers();
         for (int iw=0; iw<nw;iw++)
         {
             Return_t*  saved=Records[iw];
-            Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
-            Return_t eloc_new=saved[ENERGY_NEW];
-            e2 += eloc_new*eloc_new*weight;
-            Return_t delta_eloc_new=eloc_new-curAvg_w;
+            Return_t weight=saved[REWEIGHT]*wgtinv;
+                Return_t eloc_new=saved[ENERGY_NEW]; 
+                delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
             vector<Return_t>  Dsaved= (TempDerivRecords[iw]);
             vector<Return_t>  HDsaved= (TempHDerivRecords[iw]);
             for (int pm=0; pm<NumOptimizables;pm++)
             {
-                HD_avg[pm]+= HDsaved[pm];
-                Return_t val;
-                if (samplePsi2) val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
-                else val = (HDsaved[pm] + (eloc_new - curAvg_w)*Dsaved[pm]);
-                EDtotals[pm] +=  val;
-                EDtotals_w[pm] += weight*val;
+                  HD_avg[pm]+= HDsaved[pm];
             }
         }
-        myComm->allreduce(EDtotals);
-        myComm->allreduce(EDtotals_w);
-        myComm->allreduce(HD_avg);
-
-        Return_t wgtinv=1.0/SumValue[SUM_WGT];
+          myComm->allreduce(HD_avg);
+          myComm->allreduce(delE_bar);
+          
+          for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
+ 
         for (int iw=0; iw<nw;iw++)
         {
             Return_t*  saved=Records[iw];
-            Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
+            Return_t weight=saved[REWEIGHT]*wgtinv;
             Return_t eloc_new=saved[ENERGY_NEW];
+                Return_t delta_l = (eloc_new-curAvg_w);
+                bool ltz(true);
+                if (eloc_new-EtargetEff<0) ltz=false;
+                Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+                Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
             vector<Return_t> Dsaved= TempDerivRecords[iw];
             vector<Return_t> HDsaved= TempHDerivRecords[iw];
             for (int pm=0; pm<NumOptimizables;pm++)
             {
-//                 URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
-//                 Return_t val;
-//                 if (samplePsi2) val=  2.0*(eloc_new*eloc_new - e2)*Dsaved[pm]
-//                                           + 2.0*eloc_new*(HDsaved[pm])
-//                                           - 2.0*curAvg_w*EDtotals_w[pm];
-//                 else val = (eloc_new*eloc_new - e2)*Dsaved[pm]
-//                                + 2.0*eloc_new*(HDsaved[pm])
-//                                - 2.0*curAvg_w*EDtotals_w[pm];
-//                 E2Dtotals[pm] += val ;
-//                 E2Dtotals_w[pm] += val * weight;
-                URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
-                Return_t val;
-                if (samplePsi2) val=  2.0*((eloc_new-curAvg_w)*(eloc_new-curAvg_w)-curVar_w)*Dsaved[pm]
-                                          + 2.0*(eloc_new-curAvg_w)*(HDsaved[pm] - EDtotals_w[pm]);
-//                                     - 2.0*curAvg_w*EDtotals_w[pm];
-                else val = (eloc_new*eloc_new - e2)*Dsaved[pm]
-                               + 2.0*eloc_new*(HDsaved[pm])
-                               - 2.0*curAvg_w*EDtotals_w[pm];
-                E2Dtotals[pm] += val ;
-                E2Dtotals_w[pm] += val * weight;
+                    EDtotals_w[pm] += weight*( HDsaved[pm] + 2.0*Dsaved[pm]*delta_l ); 
+                    URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
+                    if (ltz) EDtotals[pm]+= weight*( 2.0*Dsaved[pm]*(delE-delE_bar) + ddelE*HDsaved[pm]);
+                    else EDtotals[pm] += weight*( 2.0*Dsaved[pm]*(delE-delE_bar) - ddelE*HDsaved[pm]);
             }
         }
 
-        myComm->allreduce(E2Dtotals);
-        myComm->allreduce(E2Dtotals_w);
+        myComm->allreduce(EDtotals_w); 
+        myComm->allreduce(EDtotals);
         myComm->allreduce(URV);
-
-        for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=wgtinv;
+        Return_t smpinv=1.0/static_cast<Return_t>(NumSamples);
+        
+        for (int iw=0; iw<nw;iw++)
+        {
+            Return_t*  saved=Records[iw];
+                Return_t weight=saved[REWEIGHT]*wgtinv;
+                Return_t eloc_new=saved[ENERGY_NEW]; 
+                Return_t delta_l = (eloc_new-curAvg_w);
+                Return_t sigma_l = delta_l*delta_l;
+            vector<Return_t> Dsaved= TempDerivRecords[iw];
+            vector<Return_t> HDsaved= TempHDerivRecords[iw];
+                for (int pm=0; pm<NumOptimizables;pm++)
+                { 
+                    E2Dtotals_w[pm] += weight*2.0*( Dsaved[pm]*(sigma_l-curVar_w) + delta_l*(HDsaved[pm]-EDtotals_w[pm]) ); 
+                }
+            } 
+        myComm->allreduce(E2Dtotals_w); 
+        
+        
+        
+        for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=smpinv;
         // app_log() << "Gradient:\n";
         for (int j=0; j<NumOptimizables; j++) {
             PGradient[j] = 0.0;
             if (std::fabs(w_var) > 1.0e-10)   PGradient[j] += w_var*E2Dtotals_w[j];
             if (std::fabs(w_en)  > 1.0e-10)   PGradient[j] += w_en*EDtotals_w[j];
             if (std::fabs(w_w)   > 1.0e-10)   PGradient[j] += w_w*URV[j];
+            if (std::fabs(w_abs) > 1.0e-10)   PGradient[j] += w_abs*EDtotals[j];
         }
             IsValid=true;
 
@@ -373,9 +374,7 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, vector<Return_
         {
             Return_t*  saved=Records[iw];
             Return_t weight=saved[REWEIGHT]*wgtinv;
-            Return_t eloc_new=saved[ENERGY_NEW];
             vector<Return_t> Dsaved= TempDerivRecords[iw];
-            vector<Return_t> HDsaved= TempHDerivRecords[iw];
             for (int pm=0; pm<NumParams();pm++)
             {
                 D_avg[pm]+= Dsaved[pm]*weight;

@@ -74,37 +74,13 @@ void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, vector<Return_t> 
         Return_t curAvg2_w = curAvg_w*curAvg_w;
         curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
         vector<Return_t> EDtotals(NumOptimizables,0.0);
-        vector<Return_t> E2Dtotals(NumOptimizables,0.0);
         vector<Return_t> EDtotals_w(NumOptimizables,0.0);
         vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
         vector<Return_t> URV(NumOptimizables,0.0);
         vector<Return_t> HD_avg(NumOptimizables,0.0);
-        Return_t e2(0.0);
 
-
-        vector<Return_t> WFD_avg(NumOptimizables,0.0);
         Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-        for (int ip=0, wn=0; ip<NumThreads; ip++)
-        {
-            int nw=wClones[ip]->getActiveWalkers();
-            for (int iw=0; iw<nw;iw++,wn++)
-            {
-                const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-                Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
-                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
-                for (int pm=0; pm<NumOptimizables;pm++)
-                {
-                  WFD_avg[pm]+= WFD_avg[pm]*weight;
-                  HD_avg[pm]+= HDsaved[pm];
-                }
-              }
-          }
-
-          myComm->allreduce(WFD_avg);
-          myComm->allreduce(HD_avg);
-          for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
-          
+        Return_t delE_bar;
         for (int ip=0, wn=0; ip<NumThreads; ip++)
         {
             int nw=wClones[ip]->getActiveWalkers();
@@ -112,70 +88,76 @@ void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, vector<Return_t> 
             {
                 const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
                 Return_t weight=saved[REWEIGHT]*wgtinv;
-                Return_t eloc_new=saved[ENERGY_NEW];
-                e2 += eloc_new*eloc_new*weight;
+                Return_t eloc_new=saved[ENERGY_NEW]; 
+                delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
                 vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
                 vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
                 for (int pm=0; pm<NumOptimizables;pm++)
                 {
-                    EDtotals_w[pm] += weight*( HDsaved[pm] + 2.0*(Dsaved[pm]-WFD_avg[pm])*(eloc_new-curAvg_w) );
-                    E2Dtotals_w[pm] += weight*(-2.0*(eloc_new-curAvg_w)*(eloc_new-curAvg_w)*Dsaved[pm] );
-//                     URV[pm] += (-2.0*(eloc_new-curAvg_w)*(eloc_new-curAvg_w)*Dsaved[pm] );
+                  HD_avg[pm]+= HDsaved[pm];
+                }
+              }
+          }
+          myComm->allreduce(HD_avg);
+          myComm->allreduce(delE_bar);
+        for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
+        
+        for (int ip=0, wn=0; ip<NumThreads; ip++)
+        {
+            int nw=wClones[ip]->getActiveWalkers();
+            for (int iw=0; iw<nw;iw++,wn++)
+            {
+                const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+                Return_t weight=saved[REWEIGHT]*wgtinv;
+                Return_t eloc_new=saved[ENERGY_NEW]; 
+                Return_t delta_l = (eloc_new-curAvg_w);
+                bool ltz(true);
+                if (eloc_new-EtargetEff<0) ltz=false;
+                Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+                Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
+                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
+                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+                for (int pm=0; pm<NumOptimizables;pm++)
+                {
+                    EDtotals_w[pm] += weight*( HDsaved[pm] + 2.0*Dsaved[pm]*delta_l ); 
                     URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
+                    if (ltz) EDtotals[pm]+= weight*( 2.0*Dsaved[pm]*(delE-delE_bar) + ddelE*HDsaved[pm]);
+                    else EDtotals[pm] += weight*( 2.0*Dsaved[pm]*(delE-delE_bar) - ddelE*HDsaved[pm]);
                 }
             }
-        }
-//         myComm->allreduce(EDtotals);
-        myComm->allreduce(EDtotals_w);
-//         myComm->allreduce(HD_avg);        
-//         myComm->allreduce(E2Dtotals);
-        myComm->allreduce(E2Dtotals_w);
+        } 
+        myComm->allreduce(EDtotals); 
+        myComm->allreduce(EDtotals_w); 
         myComm->allreduce(URV);
         Return_t smpinv=1.0/static_cast<Return_t>(NumSamples);
         
-//         Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
-//         curAvg = SumValue[SUM_E_BARE]*wgtinv;
-//         for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *=wgtinv;
-//         Return_t weightFrac(0.0);
-//         for (int ip=0, wn=0; ip<NumThreads; ip++)
-//           {
-//             int nw=wClones[ip]->getActiveWalkers();
-//             for (int iw=0; iw<nw;iw++,wn++)
-//               {
-//                 const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-//                 Return_t weight=saved[REWEIGHT]*CSWeight;
-//                 Return_t eloc_new=saved[ENERGY_NEW];
-//                 vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-//                 vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
-//                 for (int pm=0; pm<NumOptimizables;pm++)
-//                   {
-//                     URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
-//                     Return_t val;
-//                     if (samplePsi2) val=  2.0*((eloc_new-curAvg_w)*(eloc_new-curAvg_w)-curVar_w)*Dsaved[pm]
-//                                     + 2.0*(eloc_new-curAvg_w)*(HDsaved[pm] - EDtotals_w[pm]);
-// //                                     - 2.0*curAvg_w*EDtotals_w[pm];
-//                     else val = (eloc_new*eloc_new - e2)*Dsaved[pm]
-//                                     + 2.0*eloc_new*(HDsaved[pm])
-//                                     - 2.0*curAvg_w*EDtotals_w[pm];
-//                     E2Dtotals[pm] += val ;
-//                     E2Dtotals_w[pm] += val * weight;
-//                   }
-//               }
-//           }
-
-
-        for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=smpinv;
-        // app_log() << "Gradient:\n";
+        for (int ip=0, wn=0; ip<NumThreads; ip++)
+        {
+            int nw=wClones[ip]->getActiveWalkers();
+            for (int iw=0; iw<nw;iw++,wn++)
+            {
+                const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+                Return_t weight=saved[REWEIGHT]*wgtinv;
+                Return_t eloc_new=saved[ENERGY_NEW]; 
+                Return_t delta_l = (eloc_new-curAvg_w);
+                Return_t sigma_l = delta_l*delta_l;
+                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
+                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+                for (int pm=0; pm<NumOptimizables;pm++)
+                { 
+                    E2Dtotals_w[pm] += weight*2.0*( Dsaved[pm]*(sigma_l-curVar_w) + delta_l*(HDsaved[pm]-EDtotals_w[pm]) ); 
+                }
+            }
+        }
+        myComm->allreduce(E2Dtotals_w); 
+        
+        for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=smpinv; 
         for (int j=0; j<NumOptimizables; j++) {
             PGradient[j] = 0.0;
             if (std::fabs(w_var) > 1.0e-10)   PGradient[j] += w_var*E2Dtotals_w[j];
             if (std::fabs(w_en)  > 1.0e-10)   PGradient[j] += w_en*EDtotals_w[j];
             if (std::fabs(w_w)   > 1.0e-10)   PGradient[j] += w_w*URV[j];
-
-            //	  PGradient[j] = (w_var*E2Dtotals_w[j] + w_en*EDtotals_w[j] + w_w*URV[j]) ;
-            // char buff[200];
-            // snprintf (buff, 200, "%10.5e\n", PGradient[j]);
-            // app_log() << buff;
+            if (std::fabs(w_abs) > 1.0e-10)   PGradient[j] += w_abs*EDtotals[j];
         }
 
         IsValid=true;
@@ -425,7 +407,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()
 
     Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
     wgt_tot=0.0;
-    Return_t new_wgt_tot2=0.0;
     for (int ip=0; ip<NumThreads; ip++)
     {
         int nw=wClones[ip]->getActiveWalkers();
@@ -434,7 +415,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()
             Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
             saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
             wgt_tot+= saved[REWEIGHT];
-            new_wgt_tot2 += saved[REWEIGHT]*saved[REWEIGHT];
         }
     }
     //app_log()<<"After Purge"<<wgt_tot*wgt_tot/new_wgt_tot2<<endl;
@@ -509,7 +489,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrix(Ma
             const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
             Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
             Return_t eloc_new=saved[ENERGY_NEW];
-            Return_t ke_new=saved[ENERGY_NEW] - saved[ENERGY_FIXED];
+//             Return_t ke_new=saved[ENERGY_NEW] - saved[ENERGY_FIXED];
             vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
             vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
 

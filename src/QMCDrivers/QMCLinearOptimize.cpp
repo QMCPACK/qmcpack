@@ -20,13 +20,13 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/VMC/VMCSingle.h"
-#include "QMCDrivers/QMCCostFunctionSingle.h"
+#include "Optimize/LinearLineMin.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
-// #include "QMCDrivers/DMC/DMCOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #endif
+#include "QMCDrivers/VMC/VMCSingle.h"
+#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include <cassert>
@@ -37,23 +37,17 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(0.0),costgradtol(1e-4), xi(0.5)
+        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(1e-4),
+        costgradtol(1e-4), xi(0.5), rescaleparams(false),linemin(false),usegrad(false)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
     RootName = "pot";
-    QMCType ="QMCLinearOptimize";
-    //default method is cg
+    QMCType ="QMCLinearOptimize"; 
     optmethod = "Linear";
     m_param.add(WarmupBlocks,"warmupBlocks","int");
     m_param.add(SkipSampleGeneration,"skipVMC","string");
-    m_param.add(Max_iterations,"max_its","int");
-    m_param.add(tries,"tries","int");
-    m_param.add(exp0,"exp0","int");
-    m_param.add(alpha,"alpha","double");
-    m_param.add(costgradtol,"gradtol","double");
-    m_param.add(xi,"xi","double"); 
 }
 
 /** Clean up the vector */
@@ -183,40 +177,40 @@ bool QMCLinearOptimize::run()
 
             for (int i=0;i<N;i++) dP[i] = eigenT(MinE,i)/eigenT(MinE,0);
 
-            ///In this rescaling we assume all parameters are NONLINEAR
-//             RealType D(1.0);
-//             for (int i=0;i<N-1;i++)
-//             {
-//                 D += 2.0*S(0,i+1)*dP[i+1];
-//                 for (int j=0;j<N-1;j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
-//             }
-//             D = std::sqrt(std::abs(D));
-// 
-//             ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
-// //             RealType xi(0.5);
-//             vector<RealType> N_i(N-1,0);
-//             vector<RealType> M_i(N-1,0);
-//             for (int i=0;i<N-1;i++)
-//             {
-//                 N_i[i] = xi*D*S(0,i+1);
-//                 M_i[i] = xi*D;
-//                 RealType tsumN(S(0,i+1));
-//                 RealType tsumM(1);
-//                 for (int j=0;j<N-1;j++)
-//                 {
-//                     tsumN += S(i+1,j+1)*dP[j+1];
-//                     tsumM += S(0,j+1)*dP[j+1];
-//                 }
-//                 N_i[i] += (1-xi)*tsumN;
-//                 M_i[i] += (1-xi)*tsumM;
-//                 N_i[i] *= -1.0/M_i[i];
-//             }
-// 
-//             RealType rescale(1);
-//             for (int j=0;j<N-1;j++) rescale -= N_i[j]*dP[j+1];
-//             rescale = 1.0/rescale;
-// //             app_log()<<"Rescaled: "<<rescale<<endl;
-//             if ((rescale==rescale)&(rescale!=0)) for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
+            if (rescaleparams)
+            {
+              RealType D(1.0);
+              for (int i=0;i<N-1;i++)
+              {
+                  D += 2.0*S(0,i+1)*dP[i+1];
+                  for (int j=0;j<N-1;j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
+              }
+              D = std::sqrt(std::abs(D));
+
+              vector<RealType> N_i(N-1,0);
+              vector<RealType> M_i(N-1,0);
+              for (int i=0;i<N-1;i++)
+              {
+                  N_i[i] = xi*D*S(0,i+1);
+                  M_i[i] = xi*D;
+                  RealType tsumN(S(0,i+1));
+                  RealType tsumM(1);
+                  for (int j=0;j<N-1;j++)
+                  {
+                      tsumN += S(i+1,j+1)*dP[j+1];
+                      tsumM += S(0,j+1)*dP[j+1];
+                  }
+                  N_i[i] += (1-xi)*tsumN;
+                  M_i[i] += (1-xi)*tsumM;
+                  N_i[i] *= -1.0/M_i[i];
+              }
+
+              RealType rescale(1);
+              for (int j=0;j<N-1;j++) rescale -= N_i[j]*dP[j+1];
+              rescale = 1.0/rescale; 
+              if ((rescale==rescale)&(rescale!=0)) for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
+            }
+            
             for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + dP[i+1];
 //         optTarget->GradCost(PGradient,parms);
             keepdP.push_back(dP);
@@ -244,14 +238,28 @@ bool QMCLinearOptimize::run()
         //make sure the cost function is a number here.
         for (int t=0;t<tries;t++) if (Costs[t]==Costs[t]) minCostindex=t;
         for (int t=0;t<tries;t++) if (Costs[t]<Costs[minCostindex]) minCostindex=t;
-	deltaCost=Costs[minCostindex]-LastCost;
         if (LastCost>Costs[minCostindex])
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
         }
+        else if (linemin)
+        {
+          vector<RealType> optdir(N-1);
+          if (usegrad) 
+          {
+            //steepest descent direction
+            optTarget->GradCost(optdir, keepP,0);
+            for (int i=0;i<(N-1); i++) optdir[i] *= -1;
+          }
+          else for (int i=0;i<(N-1); i++) optdir[i] = keepdP[minCostindex][i+1];
+          LinearLineMin<RealType>* minimizer = new LinearLineMin<RealType>();
+          minimizer->setFunc(optTarget, optdir, keepP);
+          if (minimizer->lineoptimization()) for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + minimizer->Lambda * optdir[i]; 
+          else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
+        }
         else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
         MyCounter++;
-	deltaCost = LastCost - Costs[minCostindex];
+        deltaCost = LastCost - Costs[minCostindex];
         LastCost= Costs[minCostindex];
         optTarget->Report();
     }
@@ -263,121 +271,10 @@ bool QMCLinearOptimize::run()
     return (optTarget->getReportCounter() > 0);
 }
 
-QMCLinearOptimize::RealType QMCLinearOptimize::LineMinimization(vector<RealType> &optP)
-    {
-      int N=optTarget->NumParams();
-      RealType y(0.01), x(0.0);
-      RealType s(0),t(0);
-      
-      vector<RealType> P0(N),parmsy(N),parmsx(N), tempP(N);
-      vector<RealType> G0(N), grady(N),gradx(N), tempG(N);
-      for (int i=0;i<N; i++) parmsx[i]=optTarget->Params(i);
-      P0=parmsx;
-      optTarget->GradCost(gradx, parmsx,0);
-      G0=gradx;
-      for (int i=0;i<N; i++) parmsy[i]=P0[i]+y*G0[i];
-      optTarget->GradCost(gradx, parmsx,0);
-      
-
-      for (int i=0;i<N; i++) s+=gradx[i]*G0[i];
-      for (int i=0;i<N; i++) t+=grady[i]*G0[i];
-      
-      if (t*s > 0 )
-      {
-        int its(0);
-        do
-          {
-            s=t;
-            x = y;
-            parmsx=parmsy;
-            gradx = grady;
-            
-            y = y * 2 ;
-            for (int i=0;i<N; i++) parmsy[i]=P0[i]+y*G0[i];
-            optTarget->GradCost(grady, parmsy,0);
-            t=0;
-            for (int i=0;i<N; i++) t+=grady[i]*G0[i];
-            if (t*s <= 0.0) break;
-            if (t!=t)
-              { 
-                y=x;
-                t=s;
-                parmsy=parmsx;
-                grady = gradx;                
-                its = Max_iterations; 
-              }
-            its ++ ;
-          }
-        while (its <= Max_iterations);
-      }
-
-
-      RealType u(0.0);
-      RealType m(0.5*(x+y));
-      RealType GradTol(1e-5);
-      int xyit(0);
-      int xycleanup(6);
-      if (s*t<0)
-        {
-          int XYBisectCounter=2;
-          do
-            {
-              if (XYBisectCounter)
-                { 
-                  m = 0.5*(x+y) ;
-                  XYBisectCounter--;
-                }
-              else
-                {
-                  RealType ms(std::fabs(s)), mt(std::fabs(t));
-                  m= (ms*y + mt*x)/(ms+mt);
-                }
-
-              for (int i=0;i<N; i++) tempP[i]=P0[i]+m*G0[i];
-              optTarget->GradCost(tempG, tempP,0);
-              u=0;
-              for (int i=0;i<N; i++) u+=tempG[i]*G0[i];
-
-              if (u==u)
-                {
-                  if (u*s <= 0.0 )
-                    {
-                      y=m;
-                      t=u;
-                      parmsy = tempP;
-                      grady = tempG;
-                    }
-                  else
-                    {
-                      x=m;
-                      s=u;
-                      parmsx = tempP;
-                      gradx = tempG ;
-                    }
-                }
-              else if (std::fabs(t)>std::fabs(s))
-                {
-                  t=s;
-                  y=x;
-                  xyit=xycleanup;
-                }
-              else
-                {
-                  s=t;
-                  x=y;
-                  xyit=xycleanup;
-                }
-              xyit++;
-            } while ( (std::abs(s)>GradTol)&(std::abs(t)>GradTol)&(xyit<xycleanup) ) ;
-        }
-      else return -1;
-      
-      RealType ms(std::abs(s)), mt(std::abs(t));
-      RealType n= (ms*y + mt*x)/(ms+mt);  
-      for (int i=0;i<N; i++) optP[i]=P0[i] + alpha*n*G0[i];
- 
-      return n;
-    }
+void QMCLinearOptimize::LineMinimization(vector<RealType>& ggevdir, vector<RealType>& curP, RealType firstcost)
+{
+  
+}
 
 
 
@@ -438,6 +335,27 @@ QMCLinearOptimize::put(xmlNodePtr q) {
 
     xmlNodePtr qsave=q;
     xmlNodePtr cur=qsave->children;
+    
+    string lm("no");
+    string rp("no");
+    string ug("no");
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(Max_iterations,"max_its" );
+    pAttrib.add(tries,"tries" );
+    pAttrib.add(exp0,"exp0" );
+    pAttrib.add(alpha,"alpha" );
+    pAttrib.add(costgradtol,"gradtol" );
+    pAttrib.add(xi,"xi" ); 
+    pAttrib.add(lm,"linemin" ); 
+    pAttrib.add(rp,"rescale" ); 
+    pAttrib.add(ug,"usegrad" ); 
+    pAttrib.put(cur);
+    if ((rp=="yes")|(rp=="true")) rescaleparams=true;
+    if ((lm=="yes")|(lm=="true")) linemin=true;
+    if ((ug=="yes")|(ug=="true")) usegrad=true;
+    
+    
+    
     int pid=OHMMS::Controller->rank();
     while (cur != NULL) {
         string cname((const char*)(cur->name));
@@ -470,9 +388,9 @@ QMCLinearOptimize::put(xmlNodePtr q) {
         if (omp_get_max_threads()>1)
 //             vmcEngine = new DMCOMP(W,Psi,H,hamPool);
             vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
-        else
+        else   
 #endif
-            vmcEngine = new VMCSingle(W,Psi,H);
+        vmcEngine = new VMCSingle(W,Psi,H); 
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
     }
@@ -490,8 +408,7 @@ QMCLinearOptimize::put(xmlNodePtr q) {
         }
         else
 #endif
-            optTarget = new QMCCostFunctionSingle(W,Psi,H);
-
+        optTarget = new QMCCostFunctionSingle(W,Psi,H);
         optTarget->setStream(&app_log());
         success=optTarget->put(q);
     }
