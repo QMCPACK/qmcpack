@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   TrialWaveFunction::TrialWaveFunction(Communicate* c)
     : MPIObjectBase(c)
-      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0) 
+      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0),OneOverM(1.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   ///private and cannot be used
   TrialWaveFunction::TrialWaveFunction()
-    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) 
+    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -605,6 +605,7 @@ namespace qmcplusplus {
     }
     for(int i=0; i<myTimers.size(); i++)
       myclone->myTimers[i]->set_name(myTimers[i]->get_name());
+    myclone->OneOverM=OneOverM;
     return myclone;
 
   }
@@ -619,6 +620,8 @@ namespace qmcplusplus {
 	  	if (Z[i]->dPsi) (Z[i]->dPsi)->evaluateDerivatives( P, ke0, optvars, dlogpsi, dhpsioverpsi); 
     else Z[i]->evaluateDerivatives( P, ke0, optvars, dlogpsi, dhpsioverpsi);
 	  }
+    //orbitals do not know about mass of particle.
+    for(int i=0;i<dhpsioverpsi.size();i++) dhpsioverpsi[i]*=OneOverM;
 	}
 
   TrialWaveFunction::RealType

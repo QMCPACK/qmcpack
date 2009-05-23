@@ -171,6 +171,14 @@ namespace qmcplusplus {
     };
 
     TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+    
+    void setMassTerm(ParticleSet& P)
+    {
+        SpeciesSet tspecies(P.getSpeciesSet());
+        int massind=tspecies.addAttribute("mass");
+        RealType mass = tspecies(massind,0);
+        OneOverM = 1.0/mass;
+    }
 
   private:
 
@@ -190,6 +198,9 @@ namespace qmcplusplus {
 
     ///log of the trial wave function
     RealType LogValue;
+    
+    ///One over mass of target particleset, needed for Local Energy Derivatives
+    RealType OneOverM;
 
     ///a list of OrbitalBases constituting many-body wave functions
     vector<OrbitalBase*> Z;

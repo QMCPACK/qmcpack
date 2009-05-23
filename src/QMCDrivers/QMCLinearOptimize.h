@@ -84,6 +84,7 @@ namespace qmcplusplus {
     ///rescale parameters? use parameters from generalized eigenvalue as a direction to minimize cost function?
     ///use gradient or ggev to line minimize
     bool rescaleparams, linemin, usegrad;
+    string lm, rp, ug;
     ///vmc engine
     QMCDriver* vmcEngine;
     ///xml node to be dumped

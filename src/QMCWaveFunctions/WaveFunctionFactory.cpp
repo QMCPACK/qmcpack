@@ -71,6 +71,7 @@ namespace qmcplusplus {
     {
       targetPsi  = new TrialWaveFunction(myComm);
       targetPsi->setName(myName);
+      targetPsi->setMassTerm(*targetPtcl);
     }
 
     cur = cur->children;
