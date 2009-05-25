@@ -21,7 +21,9 @@
  * \section Major changes
  *
  * \htmlonly
-  <ul> 2008-07-22
+ * <h2>2009-05-xx</h2>
+ * <h2>2008-07-22</h2>
+  <ul> 
   <li>Numerous bug fixes.
   <li>Support TrialWaveFunction cloning for multi-threaded applications
   <li>EinsplineOrbitalSet uses Einspline library 
