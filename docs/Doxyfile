@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 PROJECT_NAME           = QMCPACK
 PROJECT_NUMBER         = 0.4
-OUTPUT_DIRECTORY       = /Library/WebServer/apache2/htdocs/qmcdev/docs
+OUTPUT_DIRECTORY       = /Library/WebServer/apache2/htdocs/qmcpack/docs
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
@@ -18,13 +18,13 @@ BRIEF_MEMBER_DESC      = YES
 REPEAT_BRIEF           = YES
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
-FULL_PATH_NAMES        = NO
-STRIP_FROM_PATH        = 
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        = /Users/jnkim/qmcpack-trunk/src /Users/jnkim/qmcpack-trunk/docs
 INTERNAL_DOCS          = NO
 STRIP_CODE_COMMENTS    = NO
 CASE_SENSE_NAMES       = YES
 SHORT_NAMES            = NO
-HIDE_SCOPE_NAMES       = NO
+HIDE_SCOPE_NAMES       = YES
 VERBATIM_HEADERS       = NO
 SHOW_INCLUDE_FILES     = NO
 JAVADOC_AUTOBRIEF      = YES
@@ -66,6 +66,7 @@ config.h \
 ../src/Lattice \
 ../src/ParticleBase \
 ../src/Particle \
+../src/ParticleIO \
 ../src/OhmmsData \
 ../src/OhmmsPETE \
 ../src/OhmmsApp \
@@ -152,7 +153,7 @@ REFERENCES_RELATION    = YES
 # configuration options related to the alphabetical class index
 #---------------------------------------------------------------------------
 ALPHABETICAL_INDEX     = YES
-COLS_IN_ALPHA_INDEX    = 5
+COLS_IN_ALPHA_INDEX    = 1
 IGNORE_PREFIX          = 
 #---------------------------------------------------------------------------
 # configuration options related to the HTML output
@@ -169,10 +170,10 @@ CHM_FILE               =
 HHC_LOCATION           = 
 GENERATE_CHI           = NO
 BINARY_TOC             = NO
-TOC_EXPAND             = NO
+TOC_EXPAND             = YES
 DISABLE_INDEX          = NO
 ENUM_VALUES_PER_LINE   = 1
-GENERATE_TREEVIEW      = NO
+GENERATE_TREEVIEW      = YES
 TREEVIEW_WIDTH         = 250
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output
@@ -246,6 +247,7 @@ TEMPLATE_RELATIONS     = YES
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
 GRAPHICAL_HIERARCHY    = YES
+UML_LOOK               = NO
 DOT_IMAGE_FORMAT       = png
 DOT_PATH               = 
 DOTFILE_DIRS           = 
