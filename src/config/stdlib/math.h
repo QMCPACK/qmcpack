@@ -29,6 +29,7 @@ template<typename T> inline T round(T x)
 #endif
 
 #if !defined(HAVE_SINCOS)
+#include <cmath>
 template<typename T> 
 inline void sincos(T a, T* restrict s, T*  restrict c)
 {
