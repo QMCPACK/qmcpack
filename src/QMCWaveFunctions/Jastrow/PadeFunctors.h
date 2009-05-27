@@ -377,6 +377,212 @@ namespace qmcplusplus {
       }
     };
 
+     /** Pade function of \f[ u(r) = \frac{a*r+b*r^2}{1+c*r+d*r^2} \f]
+   *
+   * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
+   */
+  template<class T>
+    struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase {
+
+      ///coefficients
+      real_type A, B, C, D;
+      ///id for A
+      std::string ID_A;
+      ///id for B
+      std::string ID_B;
+      ///id for C
+      std::string ID_C;
+      ///id for D
+      std::string ID_D;
+      
+      ///constructor
+      PadeTwo2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0, real_type d=1.0): A(a),B(b),C(c),D(d)
+      {
+        reset();
+      }
+
+      OptimizableFunctorBase* makeClone() const
+      {
+        return new PadeTwo2ndOrderFunctor(*this);
+      }
+
+      /** reset the internal variables.
+       */
+      void reset() {
+       // A = a; B=b; C = c;  
+      }
+
+      inline real_type evaluate(real_type r) {
+        real_type br(B*r);
+        real_type dr(D*r);
+        return (A+br)*r/(1.0+(C+dr)*r);
+      }
+
+      /** evaluate the value at r
+       * @param r the distance
+       @param dudr return value 
+       @param d2udr2 return value 
+       */
+      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) 
+      {
+        real_type ar(A*r);
+        real_type br(B*r);
+        real_type cr(C*r);
+        real_type dr(D*r);
+        real_type bttm( 1.0/(1+r*(C+dr)) );
+//         real_type f_r( (A+br)*r*bttm );
+//         real_type f_r_p( (A-ar*dr+br*(2+cr)))*bttm*bttm );
+//         real_type f_r_p2( 2*(B*(-1+dr*r*(3+cr)) + A*(C+dr*(3-dr*r)))*bttm*bttm*bttm);
+        dudr = (A-ar*dr+br*(2+cr))*bttm*bttm;
+        d2udr2 = -2*(B*(-1+dr*r*(3+cr)) + A*(C+dr*(3-dr*r)))*bttm*bttm*bttm;
+        return (A+br)*r*bttm;
+      }
+
+    inline real_type evaluate(real_type r, real_type& dudr, 
+            real_type& d2udr2, real_type& d3udr3) {
+        real_type ar(A*r);
+        real_type br(B*r);
+        real_type cr(C*r);
+        real_type dr(D*r);
+        real_type bttm(1.0/(1+r*(C+dr)));
+//         real_type f_r( (A+br)*r*bttm );
+//         real_type f_r_p( (A-ar*dr+br*(2+cr)))*bttm*bttm );
+//         real_type f_r_p2( 2*(B*(-1+dr*r*(3+cr)) + A*(C+dr*(3-dr*r)))*bttm*bttm*bttm);
+        dudr = (A-ar*dr+br*(2+cr))*bttm*bttm;
+        d2udr2 = 2*(B*(-1+dr*r*(3+cr)) + A*(C+dr*(3-dr*r)))*bttm*bttm*bttm;
+        d3udr3 = 6*(B*(-1 + dr*r)*(C + 4*dr + cr*dr) +  A (C*C + 4*C*dr - D*(1-6*dr*r + dr*dr*r*r)))*bttm*bttm*bttm*bttm;
+        return (A+br)*r*bttm;
+      }
+
+
+      real_type f(real_type r) {
+        return evaluate(r);
+      }
+
+      real_type df(real_type r) {
+        real_type dudr,d2udr2;
+        real_type res=evaluate(r,dudr,d2udr2);
+        return dudr;
+      }
+    
+    inline bool evaluateDerivatives (real_type r, std::vector<TinyVector<real_type,3> >& derivs)
+    {
+      real_type ar(A*r);
+      real_type br(B*r);
+      real_type cr(C*r);
+      real_type dr(D*r);
+      real_type bttm(1.0/(1+r*(C+dr)));
+      real_type tp( (A+br)*r );
+      
+      real_type r2(r*r);
+      real_type dr2(D*r*r);
+      real_type c2r2(C*C*r*r);
+      real_type d2r4(dr2*dr2);
+      real_type bttm2(bttm*bttm);
+      real_type bttm3(bttm*bttm*bttm);
+      real_type bttm4(bttm2*bttm2);
+      
+        
+      derivs[0][0]= r*bttm;
+      derivs[1][0]= r2*bttm;
+      derivs[2][0]= -tp*bttm2*r;
+      derivs[3][0]= -tp*bttm2*r2;
+      
+      derivs[0][1]= (1-dr2)*bttm2;
+      derivs[1][1]= r*(2+cr)*bttm2;
+      derivs[2][1]= r*(2*A*(-1 + dr2) + br*(-3 - cr + dr2))*bttm3;
+      derivs[3][1]= r2*(-2*br*(2 + cr) + A*(-3 - cr + dr2))*bttm3;
+      
+      derivs[0][2]= -2*(C+dr*(3-dr2))*bttm3;
+      derivs[1][2]= (2 - 2*dr2*(3 + cr))*bttm3;
+      derivs[2][2]= (2*(A*(-1 + 2*cr + 8*dr2 - 3*d2r4) + br* (-3 - d2r4 + 2*dr2 *(4 + cr))))*bttm4;
+      derivs[3][2]= -(2*r*(br* (6 + 4* cr + c2r2 - 6*dr2 - 2 *cr*dr2) + A*(3 + d2r4 - 2 *dr2 *(4 + cr))))*bttm4;
+      return true; 
+    }
+      
+      
+      
+
+      /** process input xml node
+       * @param cur current xmlNode from which the data members are reset
+       *
+       * T1 is the type of VarRegistry, typically double.  
+       * Read in the Pade parameters from the xml input file.
+       */
+      bool put(xmlNodePtr cur){
+        real_type Atemp,Btemp, Ctemp, Dtemp;
+        ID_A="pade2A";
+        ID_B="pade2B";
+        ID_C="pade2C";
+        ID_D="pade2D";
+        //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
+        xmlNodePtr tcur = cur->xmlChildrenNode;
+        bool renewed=false;
+        while(tcur != NULL) {
+          std::string cname((const char*)(tcur->name));
+          if(cname == "parameter" || cname == "Var") 
+          {
+            std::string id_in("0");
+            std::string p_name("B");
+            OhmmsAttributeSet rAttrib;
+            rAttrib.add(id_in, "id");
+            rAttrib.add(p_name, "name"); 
+            rAttrib.put(tcur);
+            if(p_name=="A")
+            {
+              if (id_in!="0") ID_A = id_in;
+              putContent(Atemp,tcur);
+              renewed=true;
+            } else if(p_name == "B"){
+              if (id_in!="0") ID_B = id_in;
+              putContent(Btemp,tcur);
+              renewed=true;
+            } else if(p_name == "C"){
+              if (id_in!="0") ID_C = id_in;
+              putContent(Ctemp,tcur);
+              renewed=true;
+            } else if(p_name == "D"){
+              if (id_in!="0") ID_D = id_in;
+              putContent(Dtemp,tcur);
+              renewed=true;
+            }
+          }
+
+          tcur = tcur->next;
+        }
+        if (renewed)
+        {
+        A=Atemp; B=Btemp; C=Ctemp;  D=Dtemp;
+        reset();
+        //these are always active 
+        myVars.clear();
+        myVars.insert(ID_A,A,ID_A!="pade2A");
+        myVars.insert(ID_B,B,ID_B!="pade2B");
+        myVars.insert(ID_C,C,ID_C!="pade2C");
+        myVars.insert(ID_D,D,ID_D!="pade2D");
+        }
+        //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
+        return true;
+      }
+
+      void checkInVariables(opt_variables_type& active)
+      {
+        active.insertFrom(myVars);
+      }
+
+      void checkOutVariables(const opt_variables_type& active)
+      {
+        myVars.getIndex(active);
+      }
+      void resetParameters(const opt_variables_type& active) 
+      {
+        if (ID_A!="0") {int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];}
+        if (ID_B!="0") {int ib=myVars.where(1); if(ib>-1) B=myVars[1]=active[ib];}
+        if (ID_C!="0") {int ic=myVars.where(2); if(ic>-1) C=myVars[2]=active[ic];}
+        if (ID_D!="0") {int id=myVars.where(3); if(id>-1) D=myVars[3]=active[id];} 
+      }
+    };
+    
   /** Pade functional of \f[ u(r) = \frac{a*f(r)}{1+b*f(r)} \f] with a scale function f(r)
    *
    * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow

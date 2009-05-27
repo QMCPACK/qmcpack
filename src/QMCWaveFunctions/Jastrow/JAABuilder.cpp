@@ -18,6 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
+#include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/McMillanJ2Functor.h"
 #include "QMCWaveFunctions/Jastrow/McMillanJ2GFunctor.h"
 #include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
@@ -180,7 +181,13 @@ namespace qmcplusplus
         IgnoreSpin=true;
         newJ = createJAA<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
       }
-    //} else if(jastfunction == "rpa") {
+    else if (jastfunction == "PadeTwo2ndOrderFunctor")
+      {
+        app_log() << "  PadeTwo2ndOrderFunctor Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
+//         IgnoreSpin=true;
+        newJ = createJAA<PadeTwo2ndOrderFunctor<RealType> >(cur,jastfunction);
+      }
+//} else if(jastfunction == "rpa") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
     //  RPAJastrow<RealType> *dummy = 0;
     //  success = createJAA(cur,dummy);
