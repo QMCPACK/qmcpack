@@ -37,6 +37,7 @@ QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
 /** Clean up the vector */
 QMCCostFunctionOMP::~QMCCostFunctionOMP()
 {
+  delete_iter(H_KE_Node.begin(),H_KE_Node.end());
 }
 
 

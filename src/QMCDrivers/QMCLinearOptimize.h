@@ -99,7 +99,6 @@ namespace qmcplusplus {
     QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
     ///Copy operator (disabled).
     QMCLinearOptimize& operator=(const QMCLinearOptimize&) { return *this;}
-    void LineMinimization(vector<RealType>& ggevdir, vector<RealType>& curP, RealType firstcost);
     void generateSamples();
   };
 }

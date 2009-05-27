@@ -157,26 +157,27 @@ bool QMCLinearOptimize::run()
         vector<RealType> Xs(tries);
         for (int it=0;it<tries;it++)
         {
-            Matrix<double> HamT(N,N), ST(N,N);
+            Matrix<RealType> HamT(N,N), ST(N,N);
             for (int i=0;i<N;i++)
                 for (int j=0;j<N;j++)
                 {
                     HamT(i,j)= (Ham)(j,i);
                     ST(i,j)= (S)(j,i);
                 }
-            Xs[it]=0;
-            if (it>0) Xs[it]= std::pow(10.0,exp0+it-1);
+            Xs[it]= std::pow(10.0,exp0+it);
             for (int i=1;i<N;i++) HamT(i,i) += Xs[it];
 
             char jl('N');
             char jr('V');
-            vector<double> alphar(N),alphai(N),beta(N);
-            Matrix<double> eigenT(N,N);
+            vector<RealType> alphar(N),alphai(N),beta(N);
+            Matrix<RealType> eigenT(N,N);
             int info;
             int lwork(70*N);
-            vector<double> work(lwork);
-            double tt(0);
+            vector<RealType> work(lwork);
+            RealType tt(0);
             int t(1);
+            
+            ///RealType==double to use this one, ned to write case where RealType==float
             dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
             assert(info==0);
 //             Matrix<double> eigen(N,N);
@@ -251,7 +252,7 @@ bool QMCLinearOptimize::run()
         //make sure the cost function is a number here.
         for (int t=0;t<tries;t++) if (Costs[t]==Costs[t]) minCostindex=t;
         for (int t=0;t<tries;t++) if (Costs[t]<Costs[minCostindex]) minCostindex=t;
-        if (LastCost>Costs[minCostindex])
+        if (LastCost-Costs[minCostindex]>costgradtol)
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
         }
@@ -266,14 +267,18 @@ bool QMCLinearOptimize::run()
 //             for (int i=0;i<(N-1); i++) optdir[i] *= -1;
           }
           else for (int i=0;i<(N-1); i++) optdir[i] = keepdP[minCostindex][i+1];
-          LinearLineMin<RealType>* minimizer = new LinearLineMin<RealType>();
-          minimizer->setFunc(optTarget, optdir, keepP);
-          minimizer->lineoptimization2();
+          LinearLineMin<RealType> minimizer;
+          minimizer.setFunc(optTarget, optdir, keepP);
+          minimizer.lineoptimization2();
           
-          for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + minimizer->Lambda * optdir[i];
+          for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + minimizer.Lambda * optdir[i];
           RealType newCost = optTarget->Cost();
-          if (newCost>LastCost) for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i]; 
-          else  Costs[minCostindex]=newCost; 
+          if ((newCost<LastCost)&(optTarget->IsValid)) Costs[minCostindex]=newCost; 
+          else 
+          {
+            for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i]; 
+            Costs[minCostindex]=optTarget->Cost();
+          }
         }
         else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
         MyCounter++;
@@ -289,13 +294,6 @@ bool QMCLinearOptimize::run()
     app_log() << "</optimization-report>" << endl;
     return (optTarget->getReportCounter() > 0);
 }
-
-void QMCLinearOptimize::LineMinimization(vector<RealType>& ggevdir, vector<RealType>& curP, RealType firstcost)
-{
-  
-}
-
-
 
 void QMCLinearOptimize::generateSamples()
 {
