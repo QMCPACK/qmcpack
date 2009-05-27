@@ -482,21 +482,21 @@ namespace qmcplusplus {
       real_type bttm3(bttm*bttm*bttm);
       real_type bttm4(bttm2*bttm2);
       
-        
-      derivs[0][0]= r*bttm;
-      derivs[1][0]= r2*bttm;
-      derivs[2][0]= -tp*bttm2*r;
-      derivs[3][0]= -tp*bttm2*r2;
+      //derivs[3][0]= r*bttm;
+      derivs[0][0]= r2*bttm;
+      derivs[1][0]= -tp*bttm2*r;
+      derivs[2][0]= -tp*bttm2*r2;
       
-      derivs[0][1]= (1-dr2)*bttm2;
-      derivs[1][1]= r*(2+cr)*bttm2;
-      derivs[2][1]= r*(2*A*(-1 + dr2) + br*(-3 - cr + dr2))*bttm3;
-      derivs[3][1]= r2*(-2*br*(2 + cr) + A*(-3 - cr + dr2))*bttm3;
+      //derivs[3][1]= (1-dr2)*bttm2;
+      derivs[0][1]= r*(2+cr)*bttm2;
+      derivs[1][1]= r*(2*A*(-1 + dr2) + br*(-3 - cr + dr2))*bttm3;
+      derivs[2][1]= r2*(-2*br*(2 + cr) + A*(-3 - cr + dr2))*bttm3;
       
-      derivs[0][2]= -2*(C+dr*(3-dr2))*bttm3;
-      derivs[1][2]= (2 - 2*dr2*(3 + cr))*bttm3;
-      derivs[2][2]= (2*(A*(-1 + 2*cr + 8*dr2 - 3*d2r4) + br* (-3 - d2r4 + 2*dr2 *(4 + cr))))*bttm4;
-      derivs[3][2]= -(2*r*(br* (6 + 4* cr + c2r2 - 6*dr2 - 2 *cr*dr2) + A*(3 + d2r4 - 2 *dr2 *(4 + cr))))*bttm4;
+      
+      //derivs[3][2]= -2*(C+dr*(3-dr2))*bttm3;
+      derivs[0][2]= (2 - 2*dr2*(3 + cr))*bttm3;
+      derivs[1][2]= (2*(A*(-1 + 2*cr + 8*dr2 - 3*d2r4) + br* (-3 - d2r4 + 2*dr2 *(4 + cr))))*bttm4;
+      derivs[2][2]= -(2*r*(br* (6 + 4* cr + c2r2 - 6*dr2 - 2 *cr*dr2) + A*(3 + d2r4 - 2 *dr2 *(4 + cr))))*bttm4;
       return true; 
     }
       
@@ -510,6 +510,14 @@ namespace qmcplusplus {
        * Read in the Pade parameters from the xml input file.
        */
       bool put(xmlNodePtr cur){
+        std::string fcup("yes");
+        OhmmsAttributeSet p;
+        p.add(fcup,"fixcusp");
+        p.put(cur);
+        if (fcup=="true") fcup="yes";
+        if (fcup=="yes") app_log()<<" fixing cusp conditions"<<endl;
+
+
         real_type Atemp,Btemp, Ctemp, Dtemp;
         ID_A="pade2A";
         ID_B="pade2B";
@@ -556,10 +564,11 @@ namespace qmcplusplus {
         reset();
         //these are always active 
         myVars.clear();
-        myVars.insert(ID_A,A,ID_A!="pade2A");
+        
         myVars.insert(ID_B,B,ID_B!="pade2B");
         myVars.insert(ID_C,C,ID_C!="pade2C");
         myVars.insert(ID_D,D,ID_D!="pade2D");
+        //myVars.insert(ID_A,A,fcup!="yes");
         }
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
         return true;
@@ -576,10 +585,10 @@ namespace qmcplusplus {
       }
       void resetParameters(const opt_variables_type& active) 
       {
-        if (ID_A!="0") {int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];}
-        if (ID_B!="0") {int ib=myVars.where(1); if(ib>-1) B=myVars[1]=active[ib];}
-        if (ID_C!="0") {int ic=myVars.where(2); if(ic>-1) C=myVars[2]=active[ic];}
-        if (ID_D!="0") {int id=myVars.where(3); if(id>-1) D=myVars[3]=active[id];} 
+        int ib=myVars.where(0); if(ib>-1) B=myVars[0]=active[ib];
+        int ic=myVars.where(1); if(ic>-1) C=myVars[1]=active[ic];
+        int id=myVars.where(2); if(id>-1) D=myVars[2]=active[id]; 
+        //int ia=myVars.where(3); if(ia>-1) A=myVars[3]=active[ia];
       }
     };
     

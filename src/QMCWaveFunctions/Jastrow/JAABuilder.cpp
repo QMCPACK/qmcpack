@@ -184,7 +184,7 @@ namespace qmcplusplus
     else if (jastfunction == "PadeTwo2ndOrderFunctor")
       {
         app_log() << "  PadeTwo2ndOrderFunctor Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
-        IgnoreSpin=true;
+        //IgnoreSpin=true;
         newJ = createJAA<PadeTwo2ndOrderFunctor<RealType> >(cur,jastfunction);
       }
 //} else if(jastfunction == "rpa") {
