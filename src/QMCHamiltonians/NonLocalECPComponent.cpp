@@ -285,14 +285,28 @@ namespace qmcplusplus {
         W.makeMove(iel,deltar) ;
 	RealType ratio1 = psiratio[j] = psi.ratio(W,iel)*sgridweight_m[j];
         RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+
+	W.acceptMove (iel);
+	psi.acceptMove(W,iel);
  	if (std::fabs(ratio2 - ratio1) > 1.0e-8)
  	  fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n", 
 		   ratio1, ratio2);
 	psigrad[j] *= psiratio[j];
 	psigrad_source[j] = psiratio[j] * (psi.evalGradSource(W, ions, iat) - psi_alpha);
+	//psigrad_source[j] = (psi.evalGradSource(W, ions, iat) - psiratio[j] * psi_alpha);
 					   
-        W.rejectMove(iel);
-        psi.rejectMove(iel);
+        W.makeMove(iel,-1.0*deltar) ;
+	psi.ratio(W,iel);
+	GradType junk;
+	psi.ratioGrad(W,iel,junk);
+
+
+	W.acceptMove (iel);
+	psi.acceptMove(W,iel);
+
+
+        // W.rejectMove(iel);
+        // psi.rejectMove(iel);
       }
       // Compute radial potential
       for(int ip=0;ip< nchannel; ip++){
