@@ -28,10 +28,8 @@ namespace qmcplusplus {
     typedef real_type value_type;
     int NumParams;
     std::vector<real_type> Parameters;
-//     std::string elementType, pairType;
     real_type R_B,R_Binv;
     real_type C_0,C_0inv;
-    real_type Y, dY, d2Y;
 
     ///constructor
     BesselZero():R_B(1.0)
@@ -62,28 +60,30 @@ namespace qmcplusplus {
       real_type AXinv(Ainv*Xinv);
       for(int i=0;i<NumParams;i++)
       {
-//         real_type cosiAX = std:cos((1+i)*AX);
-        real_type siniAX = std::sin((1+i)*AX);
-        real_type iinv(1.0/(1+i));
+        real_type j(i+1);
+        real_type siniAX = std::sin(j*AX);
+        real_type iinv(1.0/j);
         
         u += Parameters[i]*AXinv*iinv*siniAX;
       }
       return u;
     }
+
     inline real_type evaluate(real_type r, real_type rinv) 
     {
-      return Y=evaluate(r,dY,d2Y);
+      return evaluate(r);
     }
 
     inline void evaluateAll(real_type r, real_type rinv) 
     {
-      Y=evaluate(r,dY,d2Y);
+      real_type du(0),d2u(0);
+      evaluate(r,du,d2u);
     }
 
     inline real_type 
     evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
       real_type u(0);
-      sumB(C_0,C_0inv,r,u,dudr,d2udr2);
+      sumB(r,u,dudr,d2udr2);
       return u;
     }
 
@@ -91,13 +91,15 @@ namespace qmcplusplus {
     inline real_type 
     evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type &d3udr3) {
       real_type u(0);
-      sumB(C_0,C_0inv,r,u,dudr,d2udr2);
+      sumB(r,u,dudr,d2udr2);
       return u;
     }
 
-    inline void sumB(real_type A, real_type Ainv, real_type X, real_type& u, real_type& du, real_type& d2u)
+    inline void sumB(real_type X, real_type& u, real_type& du, real_type& d2u)
     {
       u=0; du=0; d2u=0;
+      real_type A(C_0);
+      real_type Ainv(C_0inv);
       real_type AX(A*X);
       real_type AX2(AX*AX);
       real_type Xinv(1.0/X);
@@ -106,13 +108,14 @@ namespace qmcplusplus {
       real_type AX3inv(Ainv*Xinv*Xinv*Xinv);
       for(int i=0;i<NumParams;i++)
       {
-        real_type cosiAX = std::cos((1+i)*AX);
-        real_type siniAX = std::sin((1+i)*AX);
-        real_type iinv(1.0/(1+i));
+        real_type j(i+1.0);
+        real_type cosjAX = std::cos(j*AX);
+        real_type sinjAX = std::sin(j*AX);
+        real_type jinv(1.0/j);
         
-        u += Parameters[i]*AXinv*iinv*siniAX;
-        du += Parameters[i]*(i*AX*cosiAX - siniAX)*AX2inv*iinv;
-        d2u += Parameters[i]*(-2*i*AX*cosiAX + (2-i*i*AX2)*siniAX)*AX3inv*iinv;
+        u += Parameters[i]*AXinv*jinv*sinjAX;
+        du += Parameters[i]*(j*AX*cosjAX - sinjAX)*AX2inv*jinv;
+        d2u += Parameters[i]*(-2.0*j*AX*cosjAX + (2.0-j*j*AX2)*sinjAX)*AX3inv*jinv;
       }
     }
 
@@ -131,20 +134,23 @@ namespace qmcplusplus {
       real_type AX3inv(Ainv*Xinv*Xinv*Xinv);
       for(int i=0;i<NumParams;i++)
       {
-        real_type cosiAX = std::cos((1+i)*AX);
-        real_type siniAX = std::sin((1+i)*AX);
-        real_type iinv(1.0/(1+i));
+        real_type j(i+1.0);
+        real_type cosjAX = std::cos(j*AX);
+        real_type sinjAX = std::sin(j*AX);
+        real_type jinv(1.0/j);
         
-        derivs[i][0] += AXinv*iinv*siniAX;
-        derivs[i][1] += (i*AX*cosiAX - siniAX)*AX2inv*iinv;
-        derivs[i][2] += (-2*i*AX*cosiAX + (2-i*i*AX2)*siniAX)*AX3inv*iinv;
+        derivs[i][0] += AXinv*jinv*sinjAX;
+        derivs[i][1] += (j*AX*cosjAX - sinjAX)*AX2inv*jinv;
+        derivs[i][2] += (-2.0*j*AX*cosjAX + (2-j*j*AX2)*sinjAX)*AX3inv*jinv;
       }
       return true;
     }
 
     inline real_type f(real_type r) {
-      
+            real_type du, d2u;
+            return evaluate (r, du, d2u);
     }
+    
     inline real_type df(real_type r) {
       real_type du, d2u;
       evaluate (r, du, d2u);
@@ -158,8 +164,9 @@ namespace qmcplusplus {
       NumParams = 0;
       OhmmsAttributeSet rAttrib;
       rAttrib.add(NumParams,   "size");
-      rAttrib.add(R_B,   "R_B");
+      rAttrib.add(R_B,   "RB");
       rAttrib.put(cur);
+      app_log()<<" R_B is set to: "<<R_B<<endl;
       
       R_Binv = 1.0/R_B;
       C_0 = 3.1415926535897932384626433832795028841968*R_Binv;

@@ -256,30 +256,6 @@ bool QMCLinearOptimize::run()
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
         }
-        else if (linemin)
-        {
-          app_log()<<" Taking steepest descent step"<<endl;
-          vector<RealType> optdir(N-1);
-          if (usegrad) 
-          {
-            //steepest descent direction
-            optTarget->GradCost(optdir, keepP,0);
-//             for (int i=0;i<(N-1); i++) optdir[i] *= -1;
-          }
-          else for (int i=0;i<(N-1); i++) optdir[i] = keepdP[minCostindex][i+1];
-          LinearLineMin<RealType> minimizer;
-          minimizer.setFunc(optTarget, optdir, keepP);
-          minimizer.lineoptimization2();
-          
-          for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + minimizer.Lambda * optdir[i];
-          RealType newCost = optTarget->Cost();
-          if ((newCost<LastCost)&(optTarget->IsValid)) Costs[minCostindex]=newCost; 
-          else 
-          {
-            for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i]; 
-            Costs[minCostindex]=optTarget->Cost();
-          }
-        }
         else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
         MyCounter++;
         deltaCost = LastCost - Costs[minCostindex];
