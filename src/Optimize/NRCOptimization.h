@@ -196,7 +196,7 @@ struct NRCOptimization {
 
   bool lineoptimization2() {
     Return_t ax = 0;
-    Return_t bx, fa, fx, fb;
+    Return_t bx(0), fa, fx, fb;
     Return_t xx = LambdaMax;
 
     // HACK HACK HACK

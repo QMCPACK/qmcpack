@@ -415,7 +415,7 @@ namespace qmcplusplus {
       inline real_type evaluate(real_type r) {
         real_type br(B*r);
         real_type dr(D*r);
-        return (A*r+br*br)/(1.0+C*r+dr*dr);
+        return (A*r+br*r)/(1.0+C*C*r+dr*dr);
       }
 
       /** evaluate the value at r
@@ -429,23 +429,16 @@ namespace qmcplusplus {
         real_type br(B*r);
         real_type cr(C*r);
         real_type dr(D*r);
-        real_type bttm( 1.0/(1.0+C*r+dr*dr) );
-        dudr = (A - A*dr*dr + br*B*(2.0 + cr))*bttm*bttm;
-        d2udr2 = -2.0*(A*(C + 3*dr*D - dr*dr*dr*D) + B*B*(-1.0 + dr*dr*(3.0 + cr)))*bttm*bttm*bttm;
-        return (A*r+br*br)*bttm;
+        real_type bttm( 1.0/(1.0+C*cr+dr*dr) );
+        dudr = (A - A*dr*dr + br*(2.0 + C*cr))*bttm*bttm;
+        d2udr2 = -2.0*(A*(C*C + 3.0*dr*D - dr*dr*dr*D) + B*(-1.0 + dr*dr*(3.0 + C*cr)))*bttm*bttm*bttm;
+        return (A*r+br*r)*bttm;
       }
 
     inline real_type evaluate(real_type r, real_type& dudr, 
             real_type& d2udr2, real_type& d3udr3) {
-        real_type ar(A*r);
-        real_type br(B*r);
-        real_type cr(C*r);
-        real_type dr(D*r);
-        real_type bttm( 1.0/(1.0+C*r+dr*dr) );
-        dudr = (A - A*dr*dr + br*b*(2.0 + cr))*bttm*bttm;
-        d2udr2 = -2.0*(A*(C + 3*dr*D - dr*dr*dr*D) + B*B*(-1.0 + dr*dr*(3.0 + cr)))*bttm*bttm*bttm;
         d3udr3 = 0;
-        return (A*r+br*br)*bttm;
+        return evaluate(r,dudr,d2udr2);
       }
 
 
@@ -465,32 +458,31 @@ namespace qmcplusplus {
       real_type br(B*r);
       real_type cr(C*r);
       real_type dr(D*r);
-      real_type bttm(1.0/(1+cr+dr*dr));
-      real_type tp( A*r+br*br );
-      
       real_type r2(r*r);
-      real_type dr2(D*r*r);
-      real_type c2r2(C*C*r*r);
-      real_type d2r4(dr2*dr2);
+      real_type dr2(D*r2);
+      real_type d2r2(dr*dr);
+      real_type c2(C*C);
+      real_type c2r(c2*r);
+      real_type bttm(1.0/(1.0+c2r+d2r2));
+      real_type tp( A*r+br*r );
+      
+      real_type c2r2(cr*cr);
+      real_type d4r4(d2r2*d2r2);
       real_type bttm2(bttm*bttm);
-      real_type bttm3(bttm*bttm*bttm);
+      real_type bttm3(bttm*bttm2);
       real_type bttm4(bttm2*bttm2);
       
-      //derivs[3][0]= r*bttm;
-      derivs[0][0]= 2*br*r*bttm;
-      derivs[1][0]= -r*tp*bttm2;
+      derivs[0][0]= r2*bttm;
+      derivs[1][0]= -2.0*cr*tp*bttm2;
       derivs[2][0]= -2.0*dr2*tp*bttm2;
 
-      //derivs[3][1]= (1-dr2)*bttm2;
-      derivs[0][1]= 2.0*br*(2+cr)*bttm2;
-      derivs[1][1]= (2*ar*(-1 + dr*dr) + br*br*(-3 - cr + D*dr2))*bttm3;
-      derivs[2][1]= -2*dr2*(2*B*br*(2 + cr) + A*(3 + cr - dr*dr))*bttm3;
+      derivs[0][1]= r*(2.0+c2r)*bttm2;
+      derivs[1][1]= -2*cr*(A*(2.0 - 2.0*d2r2) + br*(3.0 + c2r - d2r2))*bttm3;
+      derivs[2][1]= -2.0*dr2*(2.0*br*(2.0 + c2r) + A*(3.0 + c2r - d2r2))*bttm3;
       
-      
-      //derivs[3][2]= -2*(C+dr*(3-dr2))*bttm3;
-      derivs[0][2]= -4.0*B*(-1 + dr*dr*(3.0+cr))*bttm3;
-      derivs[1][2]= (2*(A*(-1 + 2*cr + 8*dr*dr - 3*dr*dr*dr*dr) + B*br* (-3 - d2r4*D*D + 2*dr*dr *(4 + cr))))*bttm4;
-      derivs[2][2]= -4*dr*(br*B* (6 + 4* cr + c2r2 - 6*dr*dr - 2*D*cr*dr2) + A*(3 + D*D*d2r4 - 2 *dr*dr *(4 + cr))) *bttm4;
+      derivs[0][2]= (2.0 - 2.0*d2r2*(3.0+c2r))*bttm3;
+      derivs[1][2]= 4.0*C*(A*(-1.0 + 2.0*c2r + 8.0*d2r2 - 3.0*d4r4) + br*(-3.0 - d4r4 + 2.0*d2r2 *(4.0 + c2r)))*bttm4;
+      derivs[2][2]= -4.0*dr*(br*(6.0 + 4.0* c2r + c2*c2r2 - 6.0*d2r2 - 2.0*c2r*d2r2) + A*(3.0 + d4r4 - 2.0 *d2r2 *(4.0 + c2r))) *bttm4;
       return true; 
     }
       

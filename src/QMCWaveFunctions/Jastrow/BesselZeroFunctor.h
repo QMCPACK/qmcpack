@@ -30,6 +30,7 @@ namespace qmcplusplus {
     std::vector<real_type> Parameters;
     real_type R_B,R_Binv;
     real_type C_0,C_0inv;
+    string pr;
 
     ///constructor
     BesselZero():R_B(1.0)
@@ -49,6 +50,7 @@ namespace qmcplusplus {
     
     void reset() 
     {
+      if (pr=="yes") print();
     }
 
     inline real_type evaluate(real_type r) {
@@ -141,7 +143,7 @@ namespace qmcplusplus {
         
         derivs[i][0] += AXinv*jinv*sinjAX;
         derivs[i][1] += (j*AX*cosjAX - sinjAX)*AX2inv*jinv;
-        derivs[i][2] += (-2.0*j*AX*cosjAX + (2-j*j*AX2)*sinjAX)*AX3inv*jinv;
+        derivs[i][2] += (-2.0*j*AX*cosjAX + (2.0-j*j*AX2)*sinjAX)*AX3inv*jinv;
       }
       return true;
     }
@@ -162,12 +164,14 @@ namespace qmcplusplus {
       ReportEngine PRE("BesselZero","put(xmlNodePtr)");
       //CuspValue = -1.0e10;
       NumParams = 0;
+      pr = "no";
       OhmmsAttributeSet rAttrib;
       rAttrib.add(NumParams,   "size");
       rAttrib.add(R_B,   "RB");
+      rAttrib.add(pr,   "print");
       rAttrib.put(cur);
       app_log()<<" R_B is set to: "<<R_B<<endl;
-      
+
       R_Binv = 1.0/R_B;
       C_0 = 3.1415926535897932384626433832795028841968*R_Binv;
       C_0inv = 1.0/C_0;
@@ -216,6 +220,7 @@ namespace qmcplusplus {
         xmlCoefs = xmlCoefs->next;
       }
       reset();
+
       return true;
     }
     
@@ -243,12 +248,12 @@ namespace qmcplusplus {
     void print()
     {
 //       string fname = (elementType != "") ? elementType : pairType;
-//       fname = fname + ".dat";
+       string fname = "BesselZero.dat";
 //       //cerr << "Writing " << fname << " file.\n";
-//       FILE *fout = fopen (fname.c_str(), "w");
-//       for (double r=0.0; r<cutoff_radius; r+=0.001)
-// 	fprintf (fout, "%8.3f %16.10f\n", r, evaluate(r));
-//       fclose(fout);
+       FILE *fout = fopen (fname.c_str(), "w");
+       for (double r=0.0; r<R_B*4; r+=0.01)
+ 	fprintf (fout, "%8.3f %16.10f\n", r, evaluate(r));
+       fclose(fout);
     }
     
 

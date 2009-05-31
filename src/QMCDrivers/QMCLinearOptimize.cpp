@@ -20,7 +20,6 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "Optimize/LinearLineMin.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
@@ -65,6 +64,14 @@ QMCLinearOptimize::~QMCLinearOptimize()
 {
     delete vmcEngine;
     delete optTarget;
+}
+
+
+QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
+{ 
+//   for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i]+dl*optdir[i];
+//   return optTarget->Cost();
+return 0;
 }
 
 /** Add configuration files for the optimization
@@ -117,8 +124,8 @@ bool QMCLinearOptimize::run()
     bool Valid(true);
     int Total_iterations(0);
     RealType LastCost(optTarget->Cost());
-    RealType deltaCost(1);
-    while ( (deltaCost>costgradtol)&(Max_iterations>Total_iterations) )
+    RealType deltaCost(1e6);
+    while ( (deltaCost>costgradtol)&&(Max_iterations>Total_iterations) )
     {
         Total_iterations+=1;
         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
@@ -151,7 +158,7 @@ bool QMCLinearOptimize::run()
 //int tries(6);
         vector<RealType> dP(N,0.0);
         vector<vector<RealType> > keepdP;
-        vector<RealType> keepP(N,0);
+        vector<RealType> keepP(N-1,0);
         for (int i=0;i<(N-1); i++) keepP[i] = optTarget->Params(i);
         vector<RealType> Costs(tries); 
         vector<RealType> Xs(tries);
@@ -222,7 +229,7 @@ bool QMCLinearOptimize::run()
               RealType rescale(1);
               for (int j=0;j<N-1;j++) rescale -= N_i[j]*dP[j+1];
               rescale = 1.0/rescale; 
-              if ((rescale==rescale)&(rescale!=0)) for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
+              if ((rescale==rescale)&&(rescale!=0)) for (int i=0;i<(N-1); i++) dP[i+1]*=rescale;
             }
             
             for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + dP[i+1];
@@ -255,6 +262,38 @@ bool QMCLinearOptimize::run()
         if (LastCost-Costs[minCostindex]>costgradtol)
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
+        }
+        else if (linemin)
+        {
+          app_log()<<" Taking steepest descent step"<<endl;
+          optdir.resize(N-1,0);
+          optparm=keepP;
+          if (usegrad) 
+          {
+            //steepest descent direction
+            optTarget->GradCost(optdir, optparm,0);
+//             for (int i=0;i<(N-1); i++) optdir[i] *= -1;
+          }
+          else for (int i=0;i<(N-1); i++) optdir[i] = keepdP[minCostindex][i+1];
+
+          lineoptimization2();
+          RealType newCost(LastCost);
+          if (Lambda==Lambda)
+          {
+            for (int i=0;i<(N-1); i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            newCost = optTarget->Cost();
+            if ((newCost>LastCost)&&(optTarget->IsValid))
+            {
+              for (int i=0;i<(N-1); i++) optTarget->Params(i) = optparm[i]; 
+              optTarget->Cost();
+            }
+            else  Costs[minCostindex]=newCost; 
+          }
+          else
+          {
+            for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i]; 
+            optTarget->Cost();
+          }
         }
         else for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i];
         MyCounter++;

@@ -22,6 +22,7 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "Optimize/OptimizeBase.h"
+#include "Optimize/NRCOptimization.h" 
 
 namespace qmcplusplus {
 
@@ -36,7 +37,7 @@ namespace qmcplusplus {
    * generated from VMC.
    */
 
-  class QMCLinearOptimize: public QMCDriver
+  class QMCLinearOptimize: public QMCDriver, private NRCOptimization<RealType>
   {
   public:
 
@@ -53,7 +54,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     ///add a configuration file to the list of files
     void addConfiguration(const string& a);
-
+    RealType Func(Return_t dl);
     void setWaveFunctionNode(xmlNodePtr cur) { wfNode=cur; }
 
   private:
@@ -85,6 +86,7 @@ namespace qmcplusplus {
     ///use gradient or ggev to line minimize
     bool rescaleparams, linemin, usegrad;
     string lm, rp, ug;
+    vector<RealType> optdir, optparm;
     ///vmc engine
     QMCDriver* vmcEngine;
     ///xml node to be dumped
