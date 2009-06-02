@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
@@ -81,6 +82,9 @@ namespace qmcplusplus {
 
     if(typeOpt.find("Three") < typeOpt.size()) 
       return addThreeBody(cur);
+
+    if(typeOpt.find("eeI") < typeOpt.size()) 
+      return add_eeI(cur);
 
     if(typeOpt.find("kSpace") < typeOpt.size())
       return addkSpace(cur);
@@ -154,6 +158,25 @@ namespace qmcplusplus {
 
     return success;
   }
+
+  bool JastrowBuilder::add_eeI (xmlNodePtr cur)
+  {
+    ReportEngine PRE(ClassName,"add_eeI(xmlNodePtr)");
+
+    if(funcOpt == "Bspline") {
+      PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+      if(pit == ptclPool.end()) {
+	app_error() << "     JastrowBuilder::add_eeI requires a source attribute. " 
+		    << sourceOpt << " is invalid " << endl;
+	APP_ABORT("  JastrowBuilder::add_eeI");
+	return false;
+      }
+      ParticleSet& sourcePtcl= *((*pit).second);
+      eeI_JastrowBuilder jb(targetPtcl, targetPsi, sourcePtcl);
+      return jb.put (cur);
+    }
+  }
+
 
   bool JastrowBuilder::addTwoBody(xmlNodePtr cur) 
   {

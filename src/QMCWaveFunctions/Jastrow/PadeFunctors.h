@@ -501,7 +501,7 @@ namespace qmcplusplus {
         p.add(fcup,"fixcusp");
         p.put(cur);
         if (fcup=="true") fcup="yes";
-        if (fcup=="yes") app_log()<<" fixing cusp conditions"<<endl;
+        // if (fcup=="yes") app_log()<<" fixing cusp conditions"<<endl;
 
 
         real_type Atemp,Btemp, Ctemp, Dtemp;
