@@ -153,7 +153,7 @@ namespace qmcplusplus {
       inline void resetParameters(const opt_variables_type& active) 
       {
         int loc=myVars.where(0);
-        if(loc>-1) B=active[myVars[loc]];
+        if(loc>-1) B = myVars[0] = active[loc];
         Coeff=A/B;
         mAB = -A*B;
       }
