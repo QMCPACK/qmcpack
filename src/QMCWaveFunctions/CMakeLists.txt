@@ -16,6 +16,7 @@ SET(JASTROW_SRCS
   Jastrow/PadeJastrowBuilder.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/BsplineJastrowBuilder.cpp
+  Jastrow/eeI_JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
