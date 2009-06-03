@@ -25,6 +25,15 @@
 
 namespace qmcplusplus {
 
+  struct IonData
+  {
+    typedef std::vector<int> eListType;
+    double cutoff_radius;
+    eListType elecs_inside;
+    eListType::iterator current;
+  };
+
+
   /** @ingroup OrbitalComponent
    *  @brief Specialization for three-body Jastrow function using multiple functors
    *
@@ -41,29 +50,33 @@ namespace qmcplusplus {
     //flag to prevent parallel output
     bool Write_Chiesa_Correction;
     //nuber of particles
-    int N;
+    int Nelec, Nion;
     //N*N
     int NN;
     //number of groups of the target particleset
-    int NumGroups;
+    int eGroups, iGroups;
     RealType DiffVal, DiffValSum;
     ParticleAttrib<RealType> U,d2U,curLap,curVal;
     ParticleAttrib<PosType> dU,curGrad;
     ParticleAttrib<PosType> curGrad0;
     RealType *FirstAddressOfdU, *LastAddressOfdU;
-    Matrix<int> PairID;
+    // The first index is the ion, the second two are
+    // the electrons
+    Array<int,3> TripletID;
 
     std::map<std::string,FT*> J2Unique;
     ParticleSet *eRef, *IRef;
     bool FirstTime;
     RealType KEcorr;
 
+    std::vector<IonData> IonDataList;
+
   public:
 
     typedef FT FuncType;
 
     ///container for the Jastrow functions 
-    vector<FT*> F;
+    Array<FT*,3> F;
 
     eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master) 
       : Write_Chiesa_Correction(is_master), KEcorr(0.0)
@@ -80,48 +93,80 @@ namespace qmcplusplus {
 
     void init(ParticleSet& p) 
     {
-      N=p.getTotalNum();
-      NN=N*N;
-      U.resize(NN+1);
-      d2U.resize(NN);
-      dU.resize(NN);
-      curGrad.resize(N);
-      curGrad0.resize(N);
-      curLap.resize(N);
-      curVal.resize(N);
+      Nelec=p.getTotalNum();
+      NN = Nelec*Nelec;
+      Nion = IRef->getTotalNum();
+      U.resize(Nelec*Nelec+1);
+      d2U.resize(Nelec*Nelec);
+      dU.resize(Nelec*Nelec);
+      curGrad.resize(Nelec);
+      curGrad0.resize(Nelec);
+      curLap.resize(Nelec);
+      curVal.resize(Nelec);
 
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
 
-      PairID.resize(N,N);
-      int nsp=NumGroups=p.groups();
-      for(int i=0; i<N; ++i)
-	for(int j=0; j<N; ++j) 
-	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
-      F.resize(nsp*nsp,0);
+      TripletID.resize(Nion,Nelec,Nelec);
+      int nisp=iGroups=IRef->getSpeciesSet().getTotalNum();
+      int nesp=eGroups=p.groups();
+      cerr << "nisp = " << nisp << endl;
+      cerr << "nesp = " << nesp << endl;
+      for (int i=0; i<Nion; i++)
+	for(int j=0; j<Nelec; j++) 
+	  for(int k=0; k<Nelec; k++)
+	    TripletID(i,j,k) = IRef->GroupID[i]*nesp*nesp +
+	      p.GroupID[j]*nesp + p.GroupID[k];
+      F.resize(nisp,nesp,nesp);
+      F = 0;
+
+      IonDataList.resize(Nion);
     }
 
-    void addFunc(const string& aname, int ia, int ib, FT* j)
+    void addFunc(const string& aname, int iSpecies, 
+		 int eSpecies1, int eSpecies2, FT* j)
     {
-      if(ia==ib)
+      cerr << "iSpecies = " << iSpecies << "   eSpecies1 = " << eSpecies1
+	   << "   eSpecies2 = " << eSpecies2 << endl;
+      cerr << "eGroups = " << eGroups << endl;
+
+      if(eSpecies1==eSpecies2)
       {
-        if(ia==0)//first time, assign everything
-        {
-          int ij=0;
-          for(int ig=0; ig<NumGroups; ++ig) 
-            for(int jg=0; jg<NumGroups; ++jg, ++ij) 
-              if(F[ij]==0) F[ij]=j;
+        if(eSpecies1==0) { //first time, assign everything
+          int ijk = iSpecies * eGroups*eGroups;
+	  for (int eG1=0; eG1<eGroups; eG1++)
+	    for (int eG2=0; eG2<eGroups; eG2++, ijk++)
+	      if(F(iSpecies, eG1, eG2)==0) 
+		F(iSpecies, eG1, eG2) = j;
         }
       }
-      else 
-      {
-        F[ia*NumGroups+ib]=j;
-        if(ia<ib) F[ib*NumGroups+ia]=j; 
+      else {
+	F(iSpecies,eSpecies1,eSpecies2) = j;
+	//if (eSpecies1 < eSpecies2)
+	  F(iSpecies, eSpecies2, eSpecies1) = j;
+        // F[ia*NumGroups+ib]=j;
+        // if(ia<ib) F[ib*NumGroups+ia]=j; 
       }
+      
+      // Make sure cutoff radii are the same for all functors with the same
+      // iSpecies
+      double rcut = 0.5 * F(iSpecies,0,0)->cutoff_radius;
+      cerr << "rcut = " << rcut << endl;
+      for (int i=0; i<Nion; i++) 
+	if (IRef->GroupID[i] == iSpecies)
+	  IonDataList[i].cutoff_radius = rcut;
 
+      for (int eG1=0; eG1<eGroups; eG1++)
+	for (int eG2=0; eG2<eGroups; eG2++)
+	  if (0.5*F(iSpecies,eG1,eG2)->cutoff_radius != rcut) {
+	    app_error() << "eeI functors for ion species " << iSpecies
+			<< " have different radii.  Aborting.\n";
+	    abort();
+	  }
+      
       J2Unique[aname]=j;
 
-      ChiesaKEcorrection();
+      //      ChiesaKEcorrection();
       FirstTime = false;
     }
 
@@ -221,34 +266,54 @@ namespace qmcplusplus {
     RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
-      if (FirstTime) {
-	FirstTime = false;
-	ChiesaKEcorrection();
+      LogValue=0.0;
+      cerr << "Called evaluateLog.\n";
+
+      // First, create lists of electrons within the sphere of each ion
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	ion.elecs_inside.clear();
+	int iel=0;
+	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
+	  if (eI_table->r(nn) < ion.cutoff_radius)
+	    ion.elecs_inside.push_back(iel);
       }
 
-      LogValue=0.0;
-      RealType dudr, d2udr2;
-      PosType gr;
-      for(int i=0; i<ee_table->size(SourceIndex); i++) {
-	for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
-	  int j = ee_table->J[nn];
-	  //LogValue -= F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
-	  RealType uij = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
-          LogValue -= uij;
-	  U[i*N+j]=uij; U[j*N+i]=uij; //save for the ratio
-	  //multiply 1/r
-	  dudr *= ee_table->rinv(nn);
-	  gr = dudr*ee_table->dr(nn);
-	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
-	  RealType lap(d2udr2+2.0*dudr);
-
-	  //multiply -1
-	  G[i] += gr;
-	  G[j] -= gr;
-	  L[i] -= lap; 
-	  L[j] -= lap; 
+      // Now, evaluate three-body term for each ion
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	for (int j=0; j<ion.elecs_inside.size(); j++) {
+	  int jel = ion.elecs_inside[j];
+	  for (int k=0; k<j; k++) {
+	    int kel = ion.elecs_inside[k];
+	  }
 	}
       }
+
+
+
+      // RealType dudr, d2udr2;
+      // PosType gr;
+      // for(int i=0; i<ee_table->size(SourceIndex); i++) {
+      // 	for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
+      // 	  int j = ee_table->J[nn];
+      // 	  //LogValue -= F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
+      // 	  RealType uij = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
+      //     LogValue -= uij;
+      // 	  U[i*Nelec+j]=uij; U[j*Nelec+i]=uij; //save for the ratio
+      // 	  //multiply 1/r
+      // 	  dudr *= ee_table->rinv(nn);
+      // 	  gr = dudr*ee_table->dr(nn);
+      // 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
+      // 	  RealType lap(d2udr2+2.0*dudr);
+
+      // 	  //multiply -1
+      // 	  G[i] += gr;
+      // 	  G[j] -= gr;
+      // 	  L[i] -= lap; 
+      // 	  L[j] -= lap; 
+      // 	}
+      // }
       return LogValue;
     }
 
@@ -261,6 +326,17 @@ namespace qmcplusplus {
 
     ValueType ratio(ParticleSet& P, int iat) 
     {
+      //      cerr << "Called ratio.\n";
+      curVal=0.0;
+      for (int i=0; i<eI_table->size(SourceIndex); i++) {
+	double dist = eI_table->Temp[i].r1;
+	if (dist < IonDataList[i].cutoff_radius) {
+	  
+	}
+	//if (Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
+      }
+      //return std::exp(U[iat]-curVal);
+      return 1.0;
       // DiffVal=0.0;
       // const int* pairid(PairID[iat]);
       // for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
@@ -280,71 +356,74 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  
     {
-      register RealType dudr, d2udr2,u;
-      register PosType gr;
-      DiffVal = 0.0;      
-      const int* pairid = PairID[iat];
-      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) 
-      {
-	if(jat==iat) {
-	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
-	} else {
-	  curVal[jat] = F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1, dudr, d2udr2);
-	  dudr *= ee_table->Temp[jat].rinv1;
-	  curGrad[jat] = -dudr*ee_table->Temp[jat].dr1;
-	  curLap[jat] = -(d2udr2+2.0*dudr);
-	  DiffVal += (U[ij]-curVal[jat]);
-	}
-      }
-      PosType sumg,dg;
-      RealType suml=0.0,dl;
-      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
-	sumg += (dg=curGrad[jat]-dU[ij]);
-	suml += (dl=curLap[jat]-d2U[ij]);
-        dG[jat] -= dg;
-	dL[jat] += dl;
-      }
-      dG[iat] += sumg;
-      dL[iat] += suml;     
+      return 1.0;
+      // register RealType dudr, d2udr2,u;
+      // register PosType gr;
+      // DiffVal = 0.0;      
+      // const int* pairid = PairID[iat];
+      // for(int jat=0, ij=iat*Nelec; jat<Nelec; jat++,ij++) 
+      // {
+      // 	if(jat==iat) {
+      // 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
+      // 	} else {
+      // 	  curVal[jat] = F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1, dudr, d2udr2);
+      // 	  dudr *= ee_table->Temp[jat].rinv1;
+      // 	  curGrad[jat] = -dudr*ee_table->Temp[jat].dr1;
+      // 	  curLap[jat] = -(d2udr2+2.0*dudr);
+      // 	  DiffVal += (U[ij]-curVal[jat]);
+      // 	}
+      // }
+      // PosType sumg,dg;
+      // RealType suml=0.0,dl;
+      // for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
+      // 	sumg += (dg=curGrad[jat]-dU[ij]);
+      // 	suml += (dl=curLap[jat]-d2U[ij]);
+      //   dG[jat] -= dg;
+      // 	dL[jat] += dl;
+      // }
+      // dG[iat] += sumg;
+      // dL[iat] += suml;     
 
-      curGrad0=curGrad;
+      // curGrad0=curGrad;
 
-      return std::exp(DiffVal);
+      // return std::exp(DiffVal);
     }
 
     GradType evalGrad(ParticleSet& P, int iat)
     {
       GradType gr;
-      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) gr += dU[ij];
+      //for(int jat=0,ij=iat*Nelec; jat<Nelec; ++jat,++ij) gr += dU[ij];
       return gr;
     }
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      RealType dudr, d2udr2,u;
-      PosType gr;
-      const int* pairid = PairID[iat];
-      DiffVal = 0.0;      
-      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) 
-      {
-	if(jat==iat) 
-        {
-	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
-	} 
-        else 
-        {
-	  curVal[jat] = F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1, dudr, d2udr2);
-	  dudr *= ee_table->Temp[jat].rinv1;
-	  gr += curGrad[jat] = -dudr*ee_table->Temp[jat].dr1;
-	  curLap[jat] = -(d2udr2+2.0*dudr);
-	  DiffVal += (U[ij]-curVal[jat]);
-	}
-      }
-      grad_iat += gr;
-      //curGrad0-=curGrad;
-      //cout << "RATIOGRAD " << curGrad0 << endl;
+      
+      return 1.0;
+      // RealType dudr, d2udr2,u;
+      // PosType gr;
+      // const int* pairid = PairID[iat];
+      // DiffVal = 0.0;      
+      // for(int jat=0, ij=iat*Nelec; jat<Nelec; jat++,ij++) 
+      // {
+      // 	if(jat==iat) 
+      //   {
+      // 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
+      // 	} 
+      //   else 
+      //   {
+      // 	  curVal[jat] = F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1, dudr, d2udr2);
+      // 	  dudr *= ee_table->Temp[jat].rinv1;
+      // 	  gr += curGrad[jat] = -dudr*ee_table->Temp[jat].dr1;
+      // 	  curLap[jat] = -(d2udr2+2.0*dudr);
+      // 	  DiffVal += (U[ij]-curVal[jat]);
+      // 	}
+      // }
+      // grad_iat += gr;
+      // //curGrad0-=curGrad;
+      // //cout << "RATIOGRAD " << curGrad0 << endl;
 
-      return std::exp(DiffVal);
+      // return std::exp(DiffVal);
     }
 
     ///** later merge the loop */
@@ -355,7 +434,7 @@ namespace qmcplusplus {
     //  register PosType gr;
     //  DiffVal = 0.0;      
     //  const int* pairid = PairID[iat];
-    //  for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
+    //  for(int jat=0, ij=iat*Nelec; jat<Nelec; jat++,ij++) {
     //    if(jat==iat) {
     //      curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
     //    } else {
@@ -368,7 +447,7 @@ namespace qmcplusplus {
     //  }
     //  PosType sumg,dg;
     //  RealType suml=0.0,dl;
-    //  for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+    //  for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
     //    sumg += (dg=curGrad[jat]-dU[ij]);
     //    suml += (dl=curLap[jat]-d2U[ij]);
     //    dG[jat] -= dg;
@@ -383,7 +462,7 @@ namespace qmcplusplus {
 
     void acceptMove(ParticleSet& P, int iat) { 
       DiffValSum += DiffVal;
-      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+      for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
 	dU[ij]=curGrad[jat]; 
 	//dU[ji]=-1.0*curGrad[jat];
 	dU[ji]=curGrad[jat]*-1.0;
@@ -400,7 +479,7 @@ namespace qmcplusplus {
       DiffValSum += DiffVal;
       GradType sumg,dg;
       ValueType suml=0.0,dl;
-      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+      for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
 	sumg += (dg=curGrad[jat]-dU[ij]);
 	suml += (dl=curLap[jat]-d2U[ij]);
 	dU[ij]=curGrad[jat]; 
@@ -418,40 +497,78 @@ namespace qmcplusplus {
 
     inline void evaluateLogAndStore(ParticleSet& P, 
 		       ParticleSet::ParticleGradient_t& dG, 
-		       ParticleSet::ParticleLaplacian_t& dL) {
-      if (FirstTime) {
-	FirstTime = false;
-	ChiesaKEcorrection();
+		       ParticleSet::ParticleLaplacian_t& dL) 
+    {
+      LogValue=0.0;
+
+      // First, create lists of electrons within the sphere of each ion
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	ion.elecs_inside.clear();
+	int iel=0;
+	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
+	  if (eI_table->r(nn) < ion.cutoff_radius)
+	    ion.elecs_inside.push_back(iel);
+	// cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
+	//      << i << endl;
       }
 
-      RealType dudr, d2udr2,u;
-      LogValue=0.0;
-      GradType gr;
-      for(int i=0; i<ee_table->size(SourceIndex); i++) {
-	for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
-	  int j = ee_table->J[nn];
-	  u = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
-	  LogValue -= u;
-	  dudr *= ee_table->rinv(nn);
-	  gr = dudr*ee_table->dr(nn);
-	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-	  RealType lap = d2udr2+2.0*dudr;
-	  int ij = i*N+j, ji=j*N+i;
-	  U[ij]=u; U[ji]=u;
-	  //dU[ij] = gr; dU[ji] = -1.0*gr;
-	  dU[ij] = gr; dU[ji] = gr*-1.0;
-	  d2U[ij] = -lap; d2U[ji] = -lap;
-
-	  //add gradient and laplacian contribution
-	  dG[i] += gr;
-	  dG[j] -= gr;
-	  dL[i] -= lap; 
-	  dL[j] -= lap; 
+      RealType u;
+      PosType gradF;
+      Tensor<RealType,3> hessF;
+      // Now, evaluate three-body term for each ion
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	int nn0 = eI_table->M[i];
+	for (int j=0; j<ion.elecs_inside.size(); j++) {
+	  int jel = ion.elecs_inside[j];
+	  RealType r_Ij = eI_table->r(nn0+jel);
+	  int ee0 = ee_table->M[jel];
+	  for (int k=0; k<j; k++) {
+	    int kel = ion.elecs_inside[k];
+	    RealType r_Ik = eI_table->r(nn0+kel);
+	    RealType r_ee = ee_table->r(ee0+kel);
+	    FT &func = *F.data()[TripletID(i, jel, kel)];
+	    u = func.evaluate (r_ee, r_Ij, r_Ik, gradF, hessF);
+	    LogValue -= u;
+	  }
 	}
       }
+
+      // if (FirstTime) {
+      // 	FirstTime = false;
+      // 	ChiesaKEcorrection();
+      // }
+
+      // RealType dudr, d2udr2,u;
+      // LogValue=0.0;
+      // GradType gr;
+      // for(int i=0; i<ee_table->size(SourceIndex); i++) {
+      // 	for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
+      // 	  int j = ee_table->J[nn];
+      // 	  u = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
+      // 	  LogValue -= u;
+      // 	  dudr *= ee_table->rinv(nn);
+      // 	  gr = dudr*ee_table->dr(nn);
+      // 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+      // 	  RealType lap = d2udr2+2.0*dudr;
+      // 	  int ij = i*Nelec+j, ji=j*Nelec+i;
+      // 	  U[ij]=u; U[ji]=u;
+      // 	  //dU[ij] = gr; dU[ji] = -1.0*gr;
+      // 	  dU[ij] = gr; dU[ji] = gr*-1.0;
+      // 	  d2U[ij] = -lap; d2U[ji] = -lap;
+
+      // 	  //add gradient and laplacian contribution
+      // 	  dG[i] += gr;
+      // 	  dG[j] -= gr;
+      // 	  dL[i] -= lap; 
+      // 	  dL[j] -= lap; 
+      // 	}
+      // }
     }
 
     inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
+      cerr << "Called registerData.\n";
       // cerr<<"REGISTERING 2 BODY JASTROW"<<endl;
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue=0.0;
@@ -473,7 +590,7 @@ namespace qmcplusplus {
       //    gr = dudr*ee_table->dr(nn);
       //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
       //    RealType lap = d2udr2+2.0*dudr;
-      //    int ij = i*N+j, ji=j*N+i;
+      //    int ij = i*Nelec+j, ji=j*Nelec+i;
       //    U[ij]=u; U[ji]=u;
       //    //dU[ij] = gr; dU[ji] = -1.0*gr;
       //    dU[ij] = gr; dU[ji] = gr*-1.0;
@@ -546,6 +663,7 @@ namespace qmcplusplus {
     }
 
     inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+      cerr << "Called evaluateLog (P, buf).\n";
       RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
@@ -558,20 +676,19 @@ namespace qmcplusplus {
       eeI_JastrowOrbital<FT>* j2copy=new eeI_JastrowOrbital<FT>(*IRef, tqp,false);
       //      if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
       map<const FT*,FT*> fcmap;
-      for(int ig=0; ig<NumGroups; ++ig)
-        for(int jg=ig; jg<NumGroups; ++jg)
-        {
-          int ij=ig*NumGroups+jg;
-          if(F[ij]==0) continue;
-          typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
-          if(fit == fcmap.end())
-          {
-            FT* fc=new FT(*F[ij]);
-            stringstream aname;
-            aname<<ig<<jg;
-            j2copy->addFunc(aname.str(),ig,jg,fc);
-            //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
-            fcmap[F[ij]]=fc;
+      for (int iG=0; iG<iGroups; iG++)
+	for (int eG1=0; eG1<eGroups; eG1++)
+	  for (int eG2=0; eG2<eGroups; eG2++) {
+	    int ijk = iG*eGroups*eGroups + eG1*eGroups + eG2;
+	    if(F(iG,eG1,eG2)==0) continue;
+	    typename map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
+	    if(fit == fcmap.end()) {
+	      FT* fc=new FT(*F(iG,eG1,eG2));
+	      stringstream aname;
+	      aname << iG << eG1 << eG2;
+	      j2copy->addFunc(aname.str(),iG, eG1, eG2, fc);
+	      //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
+	      fcmap[F(iG,eG1,eG2)]=fc;
           }
         }
         

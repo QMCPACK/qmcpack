@@ -42,7 +42,7 @@ namespace qmcplusplus {
     std::vector<real_type> Parameters;
     Array<real_type,3> ParamArray;
     std::vector<std::string> ParameterNames;
-    std::string iSpecies, eSpecies;
+    std::string iSpecies, eSpecies1, eSpecies2;
     int ResetCount;
 
     ///constructor
@@ -172,7 +172,7 @@ namespace qmcplusplus {
       SplineCoefs(0,2,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee;      
       SplineCoefs(0,2,2) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee;
       
-      // Both
+      // More than one cusp constraint
       SplineCoefs(0,0,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
       SplineCoefs(0,1,0) = ParamArray(1,0,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
       SplineCoefs(1,0,0) = ParamArray(0,1,1) - 4.0*DeltaR_eI * CuspValue_eI;
@@ -276,6 +276,75 @@ namespace qmcplusplus {
     }
 
 
+    inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+			      TinyVector<real_type,3> &grad,
+			      Tensor<real_type,3> &hess) 
+    {
+      if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
+	  r_2I >= 0.5*cutoff_radius)
+        return 0.0;
+      
+      r_12 *= DeltaRInv_ee;
+      r_1I *= DeltaRInv_eI;
+      r_2I *= DeltaRInv_eI;
+
+      real_type ipart, t, u, v;
+      int i, j, k;
+      t = modf (r_12, &ipart);  i = (int) ipart;
+      u = modf (r_1I, &ipart);  j = (int) ipart;
+      v = modf (r_2I, &ipart);  k = (int) ipart;
+      real_type tp[4], up[4], vp[4], a[4], b[4], c[4],
+	da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+      tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
+      up[0] = u*u*u;  up[1] = u*u;  up[2] = u;  up[3] = 1.0;
+      vp[0] = v*v*v;  vp[1] = v*v;  vp[2] = v;  vp[3] = 1.0;
+
+      int index=0;
+      for (int m=0; m<4; m++) {
+	a[m]=b[m]=c[m]=da[m]=db[m]=dc[m]=d2a[m]=d2b[m]=d2c[m]=0.0;
+	for (int n=0; n<4; n++) {
+	  a[m]+=A[index]*tp[n];da[m]+=dA[index]*tp[n];d2a[m]+=d2A[index]*tp[n];
+	  b[m]+=A[index]*up[n];db[m]+=dA[index]*up[n];d2b[m]+=d2A[index]*up[n];
+	  c[m]+=A[index]*vp[n];dc[m]+=dA[index]*vp[n];d2c[m]+=d2A[index]*vp[n];
+	  index++;
+	}
+      }
+
+      real_type val = 0.0;
+      for (int ia=0; ia<4; ia++)
+	for (int ib=0; ib<4; ib++)
+	  for (int ic=0; ic<4; ic++) {
+	    real_type coef = SplineCoefs(i+ia, j+ib, k+ic);
+	    val     += coef *  a[ia] *  b[ib] *  c[ic];
+	    grad[0] += coef * da[ia] *  b[ib] *  c[ic];
+	    grad[1] += coef *  a[ia] * db[ib] *  c[ic];
+	    grad[2] += coef *  a[ia] *  b[ib] * dc[ic];
+	    hess[0] += coef *d2a[ia] *  b[ib] *  c[ic];
+	    hess[1] += coef * da[ia] * db[ib] *  c[ic];
+	    hess[2] += coef * da[ia] *  b[ib] * dc[ic];
+	    hess[4] += coef *  a[ia] *d2b[ib] *  c[ic];
+	    hess[5] += coef *  a[ia] * db[ib] * dc[ic];
+	    hess[8] += coef *  a[ia] *  b[ib] *d2c[ic];
+	  }
+      grad[0] *= DeltaRInv_ee;
+      grad[1] *= DeltaRInv_eI;
+      grad[2] *= DeltaRInv_eI;
+      
+      hess[0] *= DeltaRInv_ee * DeltaRInv_ee;
+      hess[1] *= DeltaRInv_ee * DeltaRInv_eI;
+      hess[2] *= DeltaRInv_ee * DeltaRInv_eI;
+      hess[4] *= DeltaRInv_eI * DeltaRInv_eI;
+      hess[5] *= DeltaRInv_eI * DeltaRInv_eI;
+      hess[6] *= DeltaRInv_eI * DeltaRInv_eI;
+
+      hess[3] = hess[1];
+      hess[6] = hess[2];
+      hess[7] = hess[5];
+
+      return val;
+    }
+
+
     inline real_type evaluate(real_type r, real_type rinv) 
     {
       return 0.0;
@@ -344,10 +413,12 @@ namespace qmcplusplus {
 	  putContent(params, xmlCoefs);
 	  if (params.size() == Parameters.size()) 
 	    Parameters = params;
-	  else 
+	  else {
 	    app_error() << "Expected " << Parameters.size() << " parameters,"
 			<< " but found only " << params.size()
 			<< " in BsplineFunctor3D.\n";
+	    abort();
+	  }
 	 
 	  
           // Setup parameter names

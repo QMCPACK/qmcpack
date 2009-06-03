@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage{amsmath}
+\author{Ken Esler}
+\title{Electron-electron-ion Jastrow factor}
+\date{\today}
+\begin{document}
+\maketitle
+\newcommand{\riI}{r_{iI}}
+\newcommand{\briI}{\mathbf{r}_{iI}}
+\newcommand{\rjI}{r_{jI}}
+\newcommand{\brjI}{\mathbf{r}_{jI}}
+\newcommand{\rij}{r_{ij}}
+\newcommand{\brij}{\mathbf{r}_{ij}}
+\section{Form of the Jastrow}
+The general form of the 3-body Jastrow we describe here depends on the
+three inter-particle distances, $(\rij, \riI, \rjI)$.
+\begin{equation}
+J_3 = \sum_{I\in\text{ions}} \sum_{i,j \in\text{elecs};i\neq j} U(\rij, \riI,
+\rjI)
+\end{equation}
+Note that we constrain the form of $U$ such that
+$U(\rij, \riI,\rjI) = U(\rij, \rjI,\riI)$, so as to preserve the
+particle symmetry of the wave function.  We then compute the gradient as
+\begin{equation}
+\nabla_i J_3 =  \sum_{I\in\text{ions}} \sum_{j \neq i}
+\left[\frac{\partial U(\rij, \riI,\rjI)}{\partial\rij}
+  \frac{\mathbf{r}_i - \mathbf{r}_j}{|\mathbf{r}_i - \mathbf{r}_j|} 
++ \frac{\partial U(\rij, \riI,\rjI)}{\partial\riI}
+  \frac{\mathbf{r}_i - \mathbf{I}}{|\mathbf{r}_i - \mathbf{I}|}  \right]
+\end{equation}
+To compute the laplacian, we take
+\begin{eqnarray}
+\nabla_i^2 J_3 & = & \nabla_i \cdot \left(\nabla_i J_3\right) \\
+& = & \sum_{I\in\text{ions}} \sum_{j\neq i } \left[
+\frac{\partial^2 U}{\partial \rij^2} + \frac{2}{\rij} \frac{\partial
+  U}{\partial \rij} + 2 \frac{\partial^2 U}{\partial \rij \partial
+  \riI}\frac{\brij\cdot\briI}{\rij\riI} +\frac{\partial^2 U}{\partial
+  \riI^2}
++ \frac{2}{\riI}\frac{\partial U}{\partial \riI} \nonumber
+\right]
+\end{eqnarray}
+\end{document}
