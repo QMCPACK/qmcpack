@@ -745,35 +745,32 @@ public:
                              vector<RealType>& dhpsioverpsi)
     {
 //     assert( &els == &P);
-        ValueType dLogPsi=0.0;
-        ValueType d2rdLogPsi=0.0;
-        PosType gradLogPsi;
+//        ValueType dLogPsi=0.0;
         ValueType u = ee_table->r(0);
-        ValueType expAu = std::exp(pA*u);
-        ValueType part1 = 1.0+0.5*u*expAu;
+        ValueType exp_AAu = std::exp(-pA*pA*u);
+        ValueType part1 = 1.0+0.5*u*exp_AAu;
         ValueType mpart1 = 1.0/part1;
-        dLogPsi = 0.5*u*u*mpart1*expAu;
+//        dLogPsi = 0.5*u*u*mpart1*exp_AAu;
 //       PosType R01 = P.R[0] - P.R[1];
 //       ValueType r01 = std::sqrt(R01[0]*R01[0]+ R01[1]*R01[1]+ R01[2]*R01[2]);
 //       cout<<pA<<"  "<<u<<"  "<<r01<<endl;
-        ValueType Gval = (expAu*u*(1.0 + 0.5*pA*u + 0.25*u*expAu)*mpart1*mpart1);
-        gradLogPsi = ee_table->dr(0)*ee_table->rinv(0)*Gval;
+        ValueType Gval = exp_AAu*u*(1.0 - 0.5*pA*pA*u + 0.25*u*exp_AAu)*mpart1*mpart1;
+        PosType gradLogPsi = ee_table->dr(0)*ee_table->rinv(0)*Gval;
         qmcplusplus::PtclOnLatticeTraits::ParticleGradient_t elgrads(2);
         elgrads[0]=-1.0*gradLogPsi;
         elgrads[1]=gradLogPsi;
 
-        d2rdLogPsi = expAu*(1.0+pA*u*(2.0+pA*u*(0.5-0.25*expAu*u)))*mpart1*mpart1*mpart1;
+        ValueType d2rdLogPsi = exp_AAu*(1.0-pA*pA*u*(2.0-pA*pA*u*(0.5-0.25*exp_AAu*u)))*mpart1*mpart1*mpart1;
         d2rdLogPsi += 2.0*ee_table->rinv(0)*Gval;
+
         int kk=myVars.where(0);
         if (kk>-1)
         {
 //       cout<<pA<<"  "<<dLogPsi<<endl;
-            dlogpsi[kk]= dLogPsi;
-            dhpsioverpsi[kk]= -(d2rdLogPsi + Dot(P.G,elgrads));
+            dlogpsi[kk] = -pA*u*u*mpart1*exp_AAu;
+            dhpsioverpsi[kk] = (d2rdLogPsi + Dot(P.G,elgrads))*2.0*pA;
         }
     }
-
-
 };
 
 class SimpleCompactHelium: public OrbitalBase
@@ -925,28 +922,26 @@ public:
         ValueType u = r01;
 
         ValueType expm2s = std::exp(-2*s);
-        ValueType expAu = std::exp(pA*u);
-        ValueType part1 = 1.0+0.5*u*expAu;
+        ValueType exp_AAu = std::exp(-pA*pA*u);
+        ValueType part1 = 1.0+0.5*u*exp_AAu;
         ValueType mpart1 = 1.0/part1;
 
-
 //       Gradients
-        ValueType upart = 0.5*(1+pA*u)*expAu*mpart1;
+        ValueType upart = 0.5*(1-pA*pA*u)*exp_AAu*mpart1;
 
-        ValueType F01 = (-2.0);
-        ValueType F02 = (upart);
+        ValueType F01 = -2.0;
+        ValueType F02 = upart;
         PosType J0 = Ie_table->dr(0)*F01*Ie_table->rinv(0) - ee_table->dr(0)*F02*ee_table->rinv(0);
 
-        ValueType F11 = (-2.0 );
-//       app_log()<<F11<<endl;
+        ValueType F11 = -2.0;
         PosType J1 = Ie_table->dr(1)*F11*Ie_table->rinv(1) + ee_table->dr(0)*F02*ee_table->rinv(0);
         G[0] += J0;
         G[1] += J1;
 
-        ValueType L0 = (0.5*pA*pA*u+pA)*expAu*mpart1 - upart*upart ;
+        ValueType L0 = (0.5*pA*pA*pA*pA*u-pA*pA)*exp_AAu*mpart1 - upart*upart;
         L0 += 2.0*Ie_table->rinv(0)*F01 + 2.0*ee_table->rinv(0)*F02;
 
-        ValueType L1= (0.5*pA*pA*u+pA)*expAu*mpart1 - upart*upart;
+        ValueType L1 = (0.5*pA*pA*pA*pA*u-pA*pA)*exp_AAu*mpart1 - upart*upart;
         L1 += 2.0*Ie_table->rinv(1)*F11 + 2.0*ee_table->rinv(0)*F02;
 
         L[0] += L0;
@@ -961,35 +956,32 @@ public:
                              vector<RealType>& dhpsioverpsi)
     {
 //     assert( &els == &P);
-        ValueType dLogPsi=0.0;
-        ValueType d2rdLogPsi=0.0;
-        PosType gradLogPsi;
+//        ValueType dLogPsi=0.0;
         ValueType u = ee_table->r(0);
-        ValueType expAu = std::exp(pA*u);
-        ValueType part1 = 1.0+0.5*u*expAu;
+        ValueType exp_AAu = std::exp(-pA*pA*u);
+        ValueType part1 = 1.0+0.5*u*exp_AAu;
         ValueType mpart1 = 1.0/part1;
-        dLogPsi = 0.5*u*u*mpart1*expAu;
+//        dLogPsi = 0.5*u*u*mpart1*exp_AAu;
 //       PosType R01 = P.R[0] - P.R[1];
 //       ValueType r01 = std::sqrt(R01[0]*R01[0]+ R01[1]*R01[1]+ R01[2]*R01[2]);
 //       cout<<pA<<"  "<<u<<"  "<<r01<<endl;
-        ValueType Gval = (expAu*u*(1.0 + 0.5*pA*u + 0.25*u*expAu)*mpart1*mpart1);
-        gradLogPsi = ee_table->dr(0)*ee_table->rinv(0)*Gval;
+        ValueType Gval = exp_AAu*u*(1.0 - 0.5*pA*pA*u + 0.25*u*exp_AAu)*mpart1*mpart1;
+        PosType gradLogPsi = ee_table->dr(0)*ee_table->rinv(0)*Gval;
         qmcplusplus::PtclOnLatticeTraits::ParticleGradient_t elgrads(2);
         elgrads[0]=-1.0*gradLogPsi;
         elgrads[1]=gradLogPsi;
 
-        d2rdLogPsi = expAu*(1.0+pA*u*(2.0+pA*u*(0.5-0.25*expAu*u)))*mpart1*mpart1*mpart1;
+        ValueType d2rdLogPsi = exp_AAu*(1.0-pA*pA*u*(2.0-pA*pA*u*(0.5-0.25*exp_AAu*u)))*mpart1*mpart1*mpart1;
         d2rdLogPsi += 2.0*ee_table->rinv(0)*Gval;
+
         int kk=myVars.where(0);
         if (kk>-1)
         {
 //       cout<<pA<<"  "<<dLogPsi<<endl;
-            dlogpsi[kk]= dLogPsi;
-            dhpsioverpsi[kk]= -(d2rdLogPsi + Dot(P.G,elgrads));
+            dlogpsi[kk] = -pA*u*u*mpart1*exp_AAu;
+            dhpsioverpsi[kk] = (d2rdLogPsi + Dot(P.G,elgrads))*2.0*pA;
         }
     }
-
-
 };
 
 class SimpleCompactHeliumElectronCorrelation: public OrbitalBase
