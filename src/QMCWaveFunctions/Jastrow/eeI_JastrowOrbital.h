@@ -266,8 +266,8 @@ namespace qmcplusplus {
     RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
+
       LogValue=0.0;
-      cerr << "Called evaluateLog.\n";
 
       // First, create lists of electrons within the sphere of each ion
       for (int i=0; i<Nion; i++) {
@@ -277,21 +277,42 @@ namespace qmcplusplus {
 	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
 	  if (eI_table->r(nn) < ion.cutoff_radius)
 	    ion.elecs_inside.push_back(iel);
+	cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
+	     << i << endl;
       }
 
+      RealType u;
+      PosType gradF;
+      Tensor<RealType,3> hessF;
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
+	//	cerr << "i = " << i << endl;
 	IonData &ion = IonDataList[i];
+	int nn0 = eI_table->M[i];
 	for (int j=0; j<ion.elecs_inside.size(); j++) {
 	  int jel = ion.elecs_inside[j];
-	  for (int k=0; k<j; k++) {
+	  // cerr << "jel = " << jel << " dtable j = " << eI_table->J[nn0+jel] << endl;
+	  RealType r_Ij     = eI_table->r(nn0+jel);
+	  RealType r_Ij_inv = eI_table->rinv(nn0+jel);
+	  int ee0 = ee_table->M[jel]-(j+1);
+	  for (int k=j+1; k<ion.elecs_inside.size(); k++) {
 	    int kel = ion.elecs_inside[k];
+	    // cerr << "kel = " << kel << " dtable k = " << ee_table->J[ee0+kel] << endl;
+	    // cerr << "jel,kel = " << jel << ", " << kel << endl;
+	    RealType r_Ik     = eI_table->r(nn0+kel);
+	    RealType r_Ik_inv = eI_table->rinv(nn0+kel);
+	    RealType r_jk     = ee_table->r(ee0+kel);
+	    RealType r_jk_inv = ee_table->rinv(ee0+kel);
+	    FT &func = *F.data()[TripletID(i, jel, kel)];
+	    u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
+	    LogValue -= u;
+	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	    G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
+	    G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
 	  }
 	}
       }
-
-
-
+      return LogValue;
       // RealType dudr, d2udr2;
       // PosType gr;
       // for(int i=0; i<ee_table->size(SourceIndex); i++) {
@@ -314,7 +335,6 @@ namespace qmcplusplus {
       // 	  L[j] -= lap; 
       // 	}
       // }
-      return LogValue;
     }
 
     ValueType evaluate(ParticleSet& P,
@@ -496,8 +516,8 @@ namespace qmcplusplus {
 
 
     inline void evaluateLogAndStore(ParticleSet& P, 
-		       ParticleSet::ParticleGradient_t& dG, 
-		       ParticleSet::ParticleLaplacian_t& dL) 
+		       ParticleSet::ParticleGradient_t& G, 
+		       ParticleSet::ParticleLaplacian_t& L) 
     {
       LogValue=0.0;
 
@@ -522,15 +542,21 @@ namespace qmcplusplus {
 	int nn0 = eI_table->M[i];
 	for (int j=0; j<ion.elecs_inside.size(); j++) {
 	  int jel = ion.elecs_inside[j];
-	  RealType r_Ij = eI_table->r(nn0+jel);
+	  RealType r_Ij     = eI_table->r(nn0+jel);
+	  RealType r_Ij_inv = eI_table->rinv(nn0+jel);
 	  int ee0 = ee_table->M[jel];
 	  for (int k=0; k<j; k++) {
 	    int kel = ion.elecs_inside[k];
-	    RealType r_Ik = eI_table->r(nn0+kel);
-	    RealType r_ee = ee_table->r(ee0+kel);
+	    RealType r_Ik     = eI_table->r(nn0+kel);
+	    RealType r_Ik_inv = eI_table->rinv(nn0+kel);
+	    RealType r_jk     = ee_table->r(ee0+kel);
+	    RealType r_jk_inv = ee_table->rinv(ee0+kel);
 	    FT &func = *F.data()[TripletID(i, jel, kel)];
-	    u = func.evaluate (r_ee, r_Ij, r_Ik, gradF, hessF);
+	    u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
 	    LogValue -= u;
+	    PosType gr_ee =   gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	    G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
+	    G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
 	  }
 	}
       }

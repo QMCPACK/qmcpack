@@ -283,6 +283,11 @@ namespace qmcplusplus {
       if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
 	  r_2I >= 0.5*cutoff_radius)
         return 0.0;
+
+      // double eps = 1.0e-6;
+      // grad[0] = (evaluate (r_12+eps, r_1I, r_2I) -evaluate (r_12-eps, r_1I, r_2I))/(2.0*eps);
+      // grad[1] = (evaluate (r_12, r_1I+eps, r_2I) -evaluate (r_12, r_1I-eps, r_2I))/(2.0*eps);
+      // grad[2] = (evaluate (r_12, r_1I, r_2I+eps) -evaluate (r_12, r_1I, r_2I-eps))/(2.0*eps);
       
       r_12 *= DeltaRInv_ee;
       r_1I *= DeltaRInv_eI;
@@ -311,6 +316,8 @@ namespace qmcplusplus {
       }
 
       real_type val = 0.0;
+      grad = 0.0;
+      hess = 0.0;
       for (int ia=0; ia<4; ia++)
 	for (int ib=0; ib<4; ib++)
 	  for (int ic=0; ic<4; ic++) {
@@ -483,7 +490,7 @@ namespace qmcplusplus {
 
     void print()
     {
-      const int N = 250;
+      const int N = 100;
       string fname = iSpecies + ".J3.h5";
       hid_t hid = H5Fcreate (fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
       Array<real_type,3> val (N,N,N);
