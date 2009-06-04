@@ -326,12 +326,12 @@ namespace qmcplusplus {
 	    grad[0] += coef * da[ia] *  b[ib] *  c[ic];
 	    grad[1] += coef *  a[ia] * db[ib] *  c[ic];
 	    grad[2] += coef *  a[ia] *  b[ib] * dc[ic];
-	    hess[0] += coef *d2a[ia] *  b[ib] *  c[ic];
-	    hess[1] += coef * da[ia] * db[ib] *  c[ic];
-	    hess[2] += coef * da[ia] *  b[ib] * dc[ic];
-	    hess[4] += coef *  a[ia] *d2b[ib] *  c[ic];
-	    hess[5] += coef *  a[ia] * db[ib] * dc[ic];
-	    hess[8] += coef *  a[ia] *  b[ib] *d2c[ic];
+	    hess(0,0) += coef *d2a[ia] *  b[ib] *  c[ic];
+	    hess(0,1) += coef * da[ia] * db[ib] *  c[ic];
+	    hess(0,2) += coef * da[ia] *  b[ib] * dc[ic];
+	    hess(1,1) += coef *  a[ia] *d2b[ib] *  c[ic];
+	    hess(1,2) += coef *  a[ia] * db[ib] * dc[ic];
+	    hess(2,2) += coef *  a[ia] *  b[ib] *d2c[ic];
 	  }
       grad[0] *= DeltaRInv_ee;
       grad[1] *= DeltaRInv_eI;
@@ -342,7 +342,7 @@ namespace qmcplusplus {
       hess[2] *= DeltaRInv_ee * DeltaRInv_eI;
       hess[4] *= DeltaRInv_eI * DeltaRInv_eI;
       hess[5] *= DeltaRInv_eI * DeltaRInv_eI;
-      hess[6] *= DeltaRInv_eI * DeltaRInv_eI;
+      hess[8] *= DeltaRInv_eI * DeltaRInv_eI;
 
       hess[3] = hess[1];
       hess[6] = hess[2];

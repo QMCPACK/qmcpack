@@ -309,6 +309,12 @@ namespace qmcplusplus {
 	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
 	    G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
 	    G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
+	    L[jel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+		       2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+		       + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    L[kel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+		       2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+		       + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
 	  }
 	}
       }
