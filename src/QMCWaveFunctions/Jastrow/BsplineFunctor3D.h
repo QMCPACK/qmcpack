@@ -337,16 +337,16 @@ namespace qmcplusplus {
       grad[1] *= DeltaRInv_eI;
       grad[2] *= DeltaRInv_eI;
       
-      hess[0] *= DeltaRInv_ee * DeltaRInv_ee;
-      hess[1] *= DeltaRInv_ee * DeltaRInv_eI;
-      hess[2] *= DeltaRInv_ee * DeltaRInv_eI;
-      hess[4] *= DeltaRInv_eI * DeltaRInv_eI;
-      hess[5] *= DeltaRInv_eI * DeltaRInv_eI;
-      hess[8] *= DeltaRInv_eI * DeltaRInv_eI;
+      hess(0,0) *= DeltaRInv_ee * DeltaRInv_ee;
+      hess(0,1) *= DeltaRInv_ee * DeltaRInv_eI;
+      hess(0,2) *= DeltaRInv_ee * DeltaRInv_eI;
+      hess(1,1) *= DeltaRInv_eI * DeltaRInv_eI;
+      hess(1,2) *= DeltaRInv_eI * DeltaRInv_eI;
+      hess(2,2) *= DeltaRInv_eI * DeltaRInv_eI;
 
-      hess[3] = hess[1];
-      hess[6] = hess[2];
-      hess[7] = hess[5];
+      hess(1,0) = hess(0,1);
+      hess(2,0) = hess(0,2);
+      hess(2,1) = hess(1,2);
 
       return val;
     }

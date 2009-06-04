@@ -277,8 +277,8 @@ namespace qmcplusplus {
 	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
 	  if (eI_table->r(nn) < ion.cutoff_radius)
 	    ion.elecs_inside.push_back(iel);
-	cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
-	     << i << endl;
+	// cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
+	//      << i << endl;
       }
 
       RealType u;
@@ -294,7 +294,7 @@ namespace qmcplusplus {
 	  // cerr << "jel = " << jel << " dtable j = " << eI_table->J[nn0+jel] << endl;
 	  RealType r_Ij     = eI_table->r(nn0+jel);
 	  RealType r_Ij_inv = eI_table->rinv(nn0+jel);
-	  int ee0 = ee_table->M[jel]-(j+1);
+	  int ee0 = ee_table->M[jel]-(jel+1);
 	  for (int k=j+1; k<ion.elecs_inside.size(); k++) {
 	    int kel = ion.elecs_inside[k];
 	    // cerr << "kel = " << kel << " dtable k = " << ee_table->J[ee0+kel] << endl;
