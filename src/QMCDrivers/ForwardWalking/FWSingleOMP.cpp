@@ -22,13 +22,16 @@ namespace qmcplusplus {
   /// Constructor.
   FWSingleOMP::FWSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool)
     : QMCDriver(w,psi,h), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
-      , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0)
+      , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0), doWeights(1), doObservables(1), doDat(1)
   { 
     RootName = "FW";
     QMCType ="FWSingleOMP";
     xmlrootName="";
     m_param.add(xmlrootName,"rootname","string");
     m_param.add(weightLength,"numbersteps","int");
+    m_param.add(doWeights,"weights","int");
+    m_param.add(doObservables,"observables","int");
+    m_param.add(doDat,"output","int");
     m_param.add(weightFreq,"skipsteps","int");
     m_param.add(verbose,"verbose","int");
     m_param.add(startStep,"ignore","int");
@@ -38,111 +41,122 @@ namespace qmcplusplus {
   
   bool FWSingleOMP::run() 
   {
-
-    
-    Estimators->start(weightLength,1);
-    fillIDMatrix();
-    //we do this once because we only want to link parents to parents if we need to
-    //     if (verbose>1) app_log()<<" getting weights for generation "<<gensTransferred<<endl;
-//     vector<vector<vector<int> > > WeightHistory;
-//     WeightHistory.push_back(Weights);
     hdf_WGT_data.setFileName(xmlrootName);
-//     if (myComm->rank()==0) 
-      
+    hdf_OBS_data.setFileName(xmlrootName);
+    
+    if (doWeights==1)
+    {
+      fillIDMatrix();        
       hdf_WGT_data.makeFile();
       hdf_WGT_data.openFile();
       hdf_WGT_data.addFW(0);
       for (int i=0;i<Weights.size();i++) hdf_WGT_data.addStep(i,Weights[i]);
       hdf_WGT_data.closeFW();
       hdf_WGT_data.closeFile();
-    for(int ill=1;ill<weightLength;ill++)
+      for(int ill=1;ill<weightLength;ill++)
+      {
+        transferParentsOneGeneration();
+        FWOneStep();
+  //       WeightHistory.push_back(Weights);
+        hdf_WGT_data.openFile();
+        hdf_WGT_data.addFW(ill);
+        for (int i=0;i<Weights.size();i++) hdf_WGT_data.addStep(i,Weights[i]);
+        hdf_WGT_data.closeFW();
+        hdf_WGT_data.closeFile();
+      }
+    }
+    else
     {
-      transferParentsOneGeneration();
-      FWOneStep();
-//       WeightHistory.push_back(Weights);
-      hdf_WGT_data.openFile();
-      hdf_WGT_data.addFW(ill);
-      for (int i=0;i<Weights.size();i++) hdf_WGT_data.addStep(i,Weights[i]);
-      hdf_WGT_data.closeFW();
-      hdf_WGT_data.closeFile();
+            fillIDMatrix();
     }
     if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
 
-    int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
-    int FirstHamiltonian = H.startIndex();
-//     vector<vector<vector<RealType> > > savedValues;
-
-    int nelectrons = W[0]->R.size();
-    int nfloats=OHMMS_DIM*nelectrons;
     
-
-//     W.clearEnsemble();
-    makeClones(W,Psi,H);
-    
-    vector<ForwardWalkingData* > FWvector;
-    for(int ip=0; ip<NumThreads; ip++) FWvector.push_back(new ForwardWalkingData(nelectrons));
-    
-    hdf_OBS_data.setFileName(xmlrootName);
-    if (myComm->rank()==0) hdf_OBS_data.makeFile();
-      hdf_float_data.openFile(fname.str());
-
-    for(int step=0;step<numSteps;step++)
+    if (doObservables==1)
     {
-      hdf_float_data.setStep(step);
-        
+      int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
+      int FirstHamiltonian = H.startIndex();
+  //     vector<vector<vector<RealType> > > savedValues;
+
+      int nelectrons = W[0]->R.size();
+      int nfloats=OHMMS_DIM*nelectrons;
       
-      vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
-      for(int wstep=0; wstep<walkersPerBlock[step];)
+
+  //     W.clearEnsemble();
+      makeClones(W,Psi,H);
+      
+      vector<ForwardWalkingData* > FWvector;
+      for(int ip=0; ip<NumThreads; ip++) FWvector.push_back(new ForwardWalkingData(nelectrons));
+      
+
+      if (myComm->rank()==0) hdf_OBS_data.makeFile();
+        hdf_float_data.openFile(fname.str());
+
+      for(int step=0;step<numSteps;step++)
       {
-        vector<float> ThreadsCoordinate(NumThreads*nfloats);
-        int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
-//         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
-//         cout<<endl;
-#pragma omp parallel for
-        for(int ip=0; ip<nwalkthread; ip++) 
-        {
-          vector<float> SINGLEcoordinate(0);
-          vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
+        hdf_float_data.setStep(step);
           
-          SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
-          FWvector[ip]->fromFloat(SINGLEcoordinate);
-          wClones[ip]->R=FWvector[ip]->Pos;
-          wClones[ip]->update();
-          RealType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
-          RealType eloc=hClones[ip]->evaluate( *wClones[ip] );
-          hClones[ip]->auxHevaluate(*wClones[ip]);
-          int indx=(wstep+ip)*(nprops+2);
-          stepObservables[indx]= eloc;
-          stepObservables[indx+1]= hClones[ip]->getLocalPotential();
-          for(int i=0;i<nprops;i++) stepObservables[indx+i+2] = hClones[ip]->getObservable(i) ;
+        
+        vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
+        for(int wstep=0; wstep<walkersPerBlock[step];)
+        {
+          vector<float> ThreadsCoordinate(NumThreads*nfloats);
+          int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
+  //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
+  //         cout<<endl;
+  #pragma omp parallel for
+          for(int ip=0; ip<nwalkthread; ip++) 
+          {
+            vector<float> SINGLEcoordinate(0);
+            vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
+            
+            SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
+            FWvector[ip]->fromFloat(SINGLEcoordinate);
+            wClones[ip]->R=FWvector[ip]->Pos;
+            wClones[ip]->update();
+            RealType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
+            RealType eloc=hClones[ip]->evaluate( *wClones[ip] );
+            hClones[ip]->auxHevaluate(*wClones[ip]);
+            int indx=(wstep+ip)*(nprops+2);
+            stepObservables[indx]= eloc;
+            stepObservables[indx+1]= hClones[ip]->getLocalPotential();
+            for(int i=0;i<nprops;i++) stepObservables[indx+i+2] = hClones[ip]->getObservable(i) ;
+          }
+          wstep+=nwalkthread;
+        for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
         }
-        wstep+=nwalkthread;
-      for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
+        hdf_OBS_data.openFile();
+        hdf_OBS_data.addStep(step, stepObservables);
+        hdf_OBS_data.closeFile();
+  //       savedValues.push_back(stepObservables);
+        hdf_float_data.endStep();
+        if (verbose >1) cout<<"Done with step: "<<step<<endl;
       }
+    }
+    
+    
+    if(doDat>=1)
+    {
+      vector<int> Dimensions(3);
+      hdf_WGT_data.openFile();
       hdf_OBS_data.openFile();
-      hdf_OBS_data.addStep(step, stepObservables);
+      Estimators->start(weightLength,1);
+      int nprops;
+      if (doObservables==1) nprops = H.sizeOfObservables();
+      else nprops=doDat;
+      for(int ill=0;ill<weightLength;ill++)
+      {    
+        Dimensions[0]=ill;
+        Dimensions[1]=(nprops+2);
+        Dimensions[2]=numSteps;
+        Estimators->startBlock(1);
+        Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
+        Estimators->stopBlock(getNumberOfSamples(ill));
+      }
       hdf_OBS_data.closeFile();
-//       savedValues.push_back(stepObservables);
-      hdf_float_data.endStep();
-      if (verbose >1) cout<<"Done with step: "<<step<<endl;
+      hdf_WGT_data.closeFile();
+      Estimators->stop();
     }
-    
-    vector<int> Dimensions(3);
-    
-    hdf_WGT_data.openFile();
-    hdf_OBS_data.openFile();
-    for(int ill=0;ill<weightLength;ill++)
-    {    
-      Dimensions[0]=ill;
-      Dimensions[1]=(nprops+2);
-      Dimensions[2]=numSteps;
-      Estimators->startBlock(1);
-      Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
-      Estimators->stopBlock(getNumberOfSamples(ill));
-    }
-    hdf_OBS_data.closeFile();
-    hdf_WGT_data.closeFile();
-    Estimators->stop();
     return true;
   }
 
