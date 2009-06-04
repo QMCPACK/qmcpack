@@ -31,6 +31,7 @@ namespace qmcplusplus {
     double cutoff_radius;
     eListType elecs_inside;
     eListType::iterator current;
+    IonData() : cutoff_radius(0.0), current(0) { }
   };
 
 
@@ -64,7 +65,7 @@ namespace qmcplusplus {
     // the electrons
     Array<int,3> TripletID;
 
-    std::map<std::string,FT*> J2Unique;
+    std::map<std::string,FT*> J3Unique;
     ParticleSet *eRef, *IRef;
     bool FirstTime;
     RealType KEcorr;
@@ -164,7 +165,7 @@ namespace qmcplusplus {
 	    abort();
 	  }
       
-      J2Unique[aname]=j;
+      J3Unique[aname]=j;
 
       //      ChiesaKEcorrection();
       FirstTime = false;
@@ -184,7 +185,7 @@ namespace qmcplusplus {
     void checkInVariables(opt_variables_type& active)
     {
       myVars.clear();
-      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
       while(it != it_end) 
       {
         (*it).second->checkInVariables(active);
@@ -201,7 +202,7 @@ namespace qmcplusplus {
     {
       myVars.getIndex(active);
       Optimizable=myVars.is_optimizable();
-      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
       while(it != it_end) 
       {
         (*it++).second->checkOutVariables(active);
@@ -213,7 +214,7 @@ namespace qmcplusplus {
     void resetParameters(const opt_variables_type& active)
     {
       if(!Optimizable) return;
-      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
       while(it != it_end) 
       {
         (*it++).second->resetParameters(active); 
@@ -238,7 +239,7 @@ namespace qmcplusplus {
     /** print the state, e.g., optimizables */
     void reportStatus(ostream& os)
     {
-      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
       while(it != it_end) 
       {
         (*it).second->myVars.print(os);
@@ -274,11 +275,10 @@ namespace qmcplusplus {
 	IonData &ion = IonDataList[i];
 	ion.elecs_inside.clear();
 	int iel=0;
-	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
-	  if (eI_table->r(nn) < ion.cutoff_radius)
-	    ion.elecs_inside.push_back(iel);
-	// cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
-	//      << i << endl;
+	if (ion.cutoff_radius > 0.0) 
+	  for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
+	    if (eI_table->r(nn) < ion.cutoff_radius)
+	      ion.elecs_inside.push_back(iel);
       }
 
       RealType u;
@@ -286,7 +286,6 @@ namespace qmcplusplus {
       Tensor<RealType,3> hessF;
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
-	//	cerr << "i = " << i << endl;
 	IonData &ion = IonDataList[i];
 	int nn0 = eI_table->M[i];
 	for (int j=0; j<ion.elecs_inside.size(); j++) {
@@ -306,15 +305,32 @@ namespace qmcplusplus {
 	    FT &func = *F.data()[TripletID(i, jel, kel)];
 	    u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
 	    LogValue -= u;
+
 	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
-	    G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
-	    G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
-	    L[jel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
-		       2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
-		       + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
-	    L[kel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
-		       2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
-		       + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
+	    PosType du_j, du_k;
+	    RealType d2u_j, d2u_k;
+	    du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
+	    du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
+	    d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+		     2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+		     + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+		     2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+		     + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
+	    G[jel] -= du_j;
+	    G[kel] -= du_k;
+	    L[jel] -= d2u_j;
+	    L[kel] -= d2u_k;
+
+	    // PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	    // G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
+	    // G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
+	    // L[jel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+	    // 	       2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+	    // 	       + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    // L[kel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+	    // 	       2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+	    // 	       + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
 	  }
 	}
       }
@@ -352,17 +368,35 @@ namespace qmcplusplus {
 
     ValueType ratio(ParticleSet& P, int iat) 
     {
-      //      cerr << "Called ratio.\n";
+      cerr << "Called ratio.\n";
       curVal=0.0;
-      for (int i=0; i<eI_table->size(SourceIndex); i++) {
-	double dist = eI_table->Temp[i].r1;
-	if (dist < IonDataList[i].cutoff_radius) {
-	  
+
+      int ee0 = ee_table->M[iat] - (iat+1);
+
+      RealType diff = 0.0;
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	RealType r_Ii = eI_table->Temp[iat].r1;
+	int nn0 = eI_table->M[i];
+	if (r_Ii < ion.cutoff_radius) {
+	  for (int j=0; j<ion.elecs_inside.size(); j++) {
+	    int jat = ion.elecs_inside[j];
+	    if (jat != iat) {
+	      RealType r_ij = ee_table->Temp[jat].r1;
+	      RealType r_Ij = eI_table->r(nn0+jat);
+	      FT &func = *F.data()[TripletID(i, iat, jat)];
+	      RealType u = func.evaluate(r_ij, r_Ii, r_Ij);
+	      curVal[jat] += u;
+	      diff += u; 
+	    }
+	  }
 	}
 	//if (Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
       }
+      for (int jat=0; jat<Nelec; jat++)
+	diff -= U[iat*Nelec+jat];
+      return std::exp(diff);
       //return std::exp(U[iat]-curVal);
-      return 1.0;
       // DiffVal=0.0;
       // const int* pairid(PairID[iat]);
       // for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
@@ -382,7 +416,51 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  
     {
-      return 1.0;
+      cerr << "ratio(P,iat,dG,dL) called.\n";
+      curVal=0.0;
+      curGrad = PosType();
+
+      int ee0 = ee_table->M[iat] - (iat+1);
+
+      RealType diff = 0.0;
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	RealType r_Ii     = eI_table->Temp[iat].r1;	
+	RealType r_Ii_inv = 1.0/r_Ii;
+	int nn0 = eI_table->M[i];
+	if (r_Ii < ion.cutoff_radius) {
+	  for (int j=0; j<ion.elecs_inside.size(); j++) {
+	    int jat = ion.elecs_inside[j];
+	    if (jat != iat) {
+	      RealType r_ij = ee_table->Temp[jat].r1;
+	      RealType r_ij_inv = 1.0/r_ij;
+	      RealType r_Ij = eI_table->r(nn0+jat);
+	      RealType r_Ij_inv = 1.0/r_Ij;
+	      FT &func = *F.data()[TripletID(i, iat, jat)];
+
+	      PosType gradF;
+	      Tensor<RealType,OHMMS_DIM> hessF;
+	      RealType u = func.evaluate(r_ij, r_Ii, r_Ij, gradF, hessF);
+	      PosType gr_ee =    gradF[0]*r_ij_inv * ee_table->Temp[jat].dr1;
+	      PosType du_i, du_j;
+	      RealType d2u_i, d2u_j;
+	      du_i = gradF[1]*r_Ii_inv * eI_table->Temp[iat].dr1 - gr_ee;
+	      du_j = gradF[2]*r_Ij_inv * eI_table->dr(nn0+jat) + gr_ee;
+
+	      curVal [jat] += u;
+	      curGrad[jat] += du_j;
+	      // dG += ?
+	      diff += u;
+	    }
+	  }
+	}
+      }
+      for (int jat=0; jat<Nelec; jat++) 
+	diff -= U[iat*Nelec+jat];
+
+      cerr << "diff = " << diff << endl;
+      return std::exp(diff);
+
       // register RealType dudr, d2udr2,u;
       // register PosType gr;
       // DiffVal = 0.0;      
@@ -525,6 +603,7 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L) 
     {
+      cerr << "evaluateLogAndStore called.\n";
       LogValue=0.0;
 
       // First, create lists of electrons within the sphere of each ion
@@ -532,16 +611,23 @@ namespace qmcplusplus {
 	IonData &ion = IonDataList[i];
 	ion.elecs_inside.clear();
 	int iel=0;
-	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
-	  if (eI_table->r(nn) < ion.cutoff_radius)
-	    ion.elecs_inside.push_back(iel);
-	// cerr << "There are " << ion.elecs_inside.size() << " electrons inside ion "
-	//      << i << endl;
+	if (ion.cutoff_radius > 0.0) 
+	  for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
+	    if (eI_table->r(nn) < ion.cutoff_radius)
+	      ion.elecs_inside.push_back(iel);
       }
 
       RealType u;
       PosType gradF;
       Tensor<RealType,3> hessF;
+
+      // Zero out cached data
+      for (int jk=0; jk<Nelec*Nelec; jk++) {
+	U[jk] = 0.0;
+	dU[jk] = PosType();
+	d2U[jk] = 0.0;
+      }
+
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
@@ -550,19 +636,49 @@ namespace qmcplusplus {
 	  int jel = ion.elecs_inside[j];
 	  RealType r_Ij     = eI_table->r(nn0+jel);
 	  RealType r_Ij_inv = eI_table->rinv(nn0+jel);
-	  int ee0 = ee_table->M[jel];
-	  for (int k=0; k<j; k++) {
+	  int ee0 = ee_table->M[jel]-(jel+1);
+	  for (int k=j+1; k<ion.elecs_inside.size(); k++) {
 	    int kel = ion.elecs_inside[k];
 	    RealType r_Ik     = eI_table->r(nn0+kel);
 	    RealType r_Ik_inv = eI_table->rinv(nn0+kel);
 	    RealType r_jk     = ee_table->r(ee0+kel);
 	    RealType r_jk_inv = ee_table->rinv(ee0+kel);
 	    FT &func = *F.data()[TripletID(i, jel, kel)];
+
 	    u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
 	    LogValue -= u;
-	    PosType gr_ee =   gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
-	    G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
-	    G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
+	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	    PosType du_j, du_k;
+	    RealType d2u_j, d2u_k;
+	    du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
+	    du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
+	    d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+		     2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+		     + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+		     2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+		     + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
+	    G[jel] -= du_j;
+	    G[kel] -= du_k;
+	    L[jel] -= d2u_j;
+	    L[kel] -= d2u_k;
+
+	    int jk = jel*Nelec+kel; 
+	    int kj = kel*Nelec+jel;
+	    U[jk] += u;
+	    U[kj] += u;
+	    dU[jk] += du_j;
+	    dU[kj] += du_k;
+
+	    // G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel);
+	    // G[kel] -=  gr_ee + gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel);
+	    // L[jel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+	    // 	       2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+	    // 	       + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    // L[kel] -= (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+	    // 	       2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+	    // 	       + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
+	    
 	  }
 	}
       }

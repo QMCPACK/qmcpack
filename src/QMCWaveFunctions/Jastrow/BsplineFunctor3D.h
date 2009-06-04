@@ -106,14 +106,11 @@ namespace qmcplusplus {
       DeltaRInv_eI = 1.0/DeltaR_eI;      
       DeltaRInv_ee = 1.0/DeltaR_ee;
 
-      cerr << "SplineCoefs.size() = " << SplineCoefs.size() << endl;
       // Zero out all coefficients
       for (int i=0; i<SplineCoefs.size(0); i++)
 	for (int j=0; j<SplineCoefs.size(1); j++)
 	  for (int k=0; k<SplineCoefs.size(2); k++)
 	    SplineCoefs(i,j,k) = 0.0;
-
-      cerr << "After zeroing.\n";
 
       // Set unconstrained coefficients
       for (int i=2; i<NumParams_ee; i++)
