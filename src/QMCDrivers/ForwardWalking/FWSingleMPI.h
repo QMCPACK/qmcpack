@@ -55,6 +55,7 @@ namespace qmcplusplus {
 
       string xmlrootName;
       stringstream fname;
+      int doWeights, doObservables, doDat;
       int weightFreq, weightLength, numSteps;
 
       std::vector<int> walkersPerBlock;

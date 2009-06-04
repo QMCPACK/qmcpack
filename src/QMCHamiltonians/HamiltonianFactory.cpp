@@ -46,6 +46,7 @@
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HePressure.h"
+#include "QMCHamiltonians/JelliumPotential.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
@@ -206,6 +207,25 @@ namespace qmcplusplus {
 // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
 	  
 	}
+    else if(potType == "jellium")
+  {
+    string SourceName = "e";
+    OhmmsAttributeSet hAttrib;
+    hAttrib.add(SourceName, "source");
+    hAttrib.put(cur);
+
+    PtclPoolType::iterator pit(ptclPool.find(SourceName));
+    if(pit == ptclPool.end()) 
+    {
+            APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
+    }
+    ParticleSet* source = (*pit).second;
+    
+    JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
+    targetH->addOperator(JP,potName,true);
+//    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+    
+  }
         else if(potType == "HFDHE2") 
         {
           HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
