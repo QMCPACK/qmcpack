@@ -320,7 +320,6 @@ namespace qmcplusplus {
 	    U[jel*Nelec+kel] += u;
 	    U[kel*Nelec+jel] += u;
 
-
 	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
 	    PosType du_j, du_k;
 	    RealType d2u_j, d2u_k;
@@ -415,7 +414,8 @@ namespace qmcplusplus {
 
       cerr << "newval = " << newval << "  oldval = " << oldval << endl;
 
-      return std::exp(newval - oldval);
+      DiffVal = newval - oldval;
+      return std::exp(DiffVal);
       //return std::exp(U[iat]-curVal);
       // DiffVal=0.0;
       // const int* pairid(PairID[iat]);
@@ -443,7 +443,7 @@ namespace qmcplusplus {
       
       int ee0 = ee_table->M[iat] - (iat+1);
 
-      RealType diff = 0.0;
+      DiffVal = 0.0;
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
 	RealType r_Ii     = eI_table->Temp[i].r1;	
@@ -468,34 +468,45 @@ namespace qmcplusplus {
 	      du_i = gradF[1]*r_Ii_inv * eI_table->Temp[i].dr1 - gr_ee;
 	      du_j = gradF[2]*r_Ij_inv * eI_table->dr(nn0+jat) + gr_ee;
 
+	      d2u_i = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] - 2.0*hessF(0,1) * 
+		       dot(ee_table->Temp[jat].dr1,
+			   eI_table->Temp[i].dr1)*r_ij_inv*r_Ii_inv
+		       + hessF(1,1) + 2.0*r_Ii_inv*gradF[1]);
+	      d2u_j = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] + 2.0*hessF(0,2) * 
+		       dot(ee_table->Temp[jat].dr1,
+			   eI_table->dr(nn0+jat))*r_ij_inv*r_Ij_inv
+		       + hessF(2,2) + 2.0*r_Ij_inv*gradF[2]);
+
 	      curVal   [jat] += u;
 	      curGrad_j[jat] += du_j;
 	      curLap_j [jat] += d2u_j;
 	      curGrad_i[jat] += du_i;
 	      curLap_i [jat] += d2u_i;
 
-	      diff    -= u;
-	      dG[iat] -= du_i;
+	      DiffVal -=   u;
+	      dG[iat] -=  du_i;
 	      dL[iat] -= d2u_i;
 	    }
 	  }
 	}
       }
       for (int jat=0; jat<Nelec; jat++) {
-	int ij = iat*Nelec+jat;
-	diff    += U[ij];
-	dG[iat] += dU[ij];
-	dL[iat] += d2U[ij];
+	if (iat != jat) {
+	  int ij = iat*Nelec+jat;
+	  DiffVal +=   U[ij];
+	  dG[iat] +=  dU[ij];
+	  dL[iat] += d2U[ij];
+	}
       }
 
       for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
 	if (iat != jat) {
-	  dG[jat] += dU[ji] - curGrad_j[jat];
-	  dL[jat] += curLap_j[jat]-d2U[ji];
+	  dG[jat] -= (curGrad_j[jat] -  dU[ji]);
+	  dL[jat] -= (curLap_j [jat] - d2U[ji]);
 	}
       }
 
-      return std::exp(diff);
+      return std::exp(DiffVal);
 
       // register RealType dudr, d2udr2,u;
       // register PosType gr;
