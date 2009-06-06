@@ -462,7 +462,7 @@ namespace qmcplusplus {
 	      PosType gradF;
 	      Tensor<RealType,OHMMS_DIM> hessF;
 	      RealType u = func.evaluate(r_ij, r_Ii, r_Ij, gradF, hessF);
-	      PosType gr_ee =    gradF[0]*r_ij_inv * ee_table->Temp[jat].dr1;
+	      PosType gr_ee =   -gradF[0]*r_ij_inv * ee_table->Temp[jat].dr1;
 	      PosType du_i, du_j;
 	      RealType d2u_i, d2u_j;
 	      du_i = gradF[1]*r_Ii_inv * eI_table->Temp[i].dr1 - gr_ee;
@@ -484,29 +484,39 @@ namespace qmcplusplus {
 	      curLap_i [jat] += d2u_i;
 
 	      DiffVal -=   u;
-	      dG[iat] -=  du_i;
-	      dL[iat] -= d2u_i;
+	      // dG[iat] -=  du_i;
+	      // dL[iat] -= d2u_i;
 	    }
 	  }
 	}
       }
+
       for (int jat=0; jat<Nelec; jat++) {
 	if (iat != jat) {
 	  int ij = iat*Nelec+jat;
-	  DiffVal +=   U[ij];
-	  dG[iat] +=  dU[ij];
-	  dL[iat] += d2U[ij];
-	}
-      }
+	  int ji = jat*Nelec+iat;
 
-      for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) {
-	if (iat != jat) {
+	  DiffVal +=   U[ij];
+	  // dG[iat] +=  dU[ij];
+	  // dL[iat] += d2U[ij]; 
+
+	  dG[iat] -= (curGrad_i[jat] -  dU[ij]);
+	  dL[iat] -= (curLap_i [jat] - d2U[ij]);
+
+
 	  dG[jat] -= (curGrad_j[jat] -  dU[ji]);
 	  dL[jat] -= (curLap_j [jat] - d2U[ji]);
 	}
       }
 
-      return std::exp(DiffVal);
+      // for(int jat=0; jat<Nelec; jat++) {
+      // 	if (iat != jat) {
+      // 	  dG[jat] -= (curGrad_j[jat] -  dU[ji]);
+      // 	  dL[jat] -= (curLap_j [jat] - d2U[ji]);
+      // 	}
+      // }
+      
+      	return std::exp(DiffVal);
 
       // register RealType dudr, d2udr2,u;
       // register PosType gr;
@@ -549,7 +559,7 @@ namespace qmcplusplus {
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      
+      cerr << "ratioGrad called.\n";
       return 1.0;
       // RealType dudr, d2udr2,u;
       // PosType gr;
@@ -735,6 +745,12 @@ namespace qmcplusplus {
 	}
       }
 
+      int iat = 2;
+      PosType G2 = 0.0;
+      for (int jat=0; jat<Nelec; jat++)
+	G2 -= dU[iat*Nelec+jat];
+      cerr << "G2   = " << G2   << endl;
+      cerr << "G[2] = " << G[2] << endl;
       // if (FirstTime) {
       // 	FirstTime = false;
       // 	ChiesaKEcorrection();
