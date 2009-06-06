@@ -468,11 +468,11 @@ namespace qmcplusplus {
 	      du_i = gradF[1]*r_Ii_inv * eI_table->Temp[i].dr1 - gr_ee;
 	      du_j = gradF[2]*r_Ij_inv * eI_table->dr(nn0+jat) + gr_ee;
 
-	      d2u_i = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] - 2.0*hessF(0,1) * 
+	      d2u_i = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] + 2.0*hessF(0,1) * 
 		       dot(ee_table->Temp[jat].dr1,
 			   eI_table->Temp[i].dr1)*r_ij_inv*r_Ii_inv
 		       + hessF(1,1) + 2.0*r_Ii_inv*gradF[1]);
-	      d2u_j = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] + 2.0*hessF(0,2) * 
+	      d2u_j = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] - 2.0*hessF(0,2) * 
 		       dot(ee_table->Temp[jat].dr1,
 			   eI_table->dr(nn0+jat))*r_ij_inv*r_Ij_inv
 		       + hessF(2,2) + 2.0*r_Ij_inv*gradF[2]);
@@ -497,26 +497,15 @@ namespace qmcplusplus {
 	  int ji = jat*Nelec+iat;
 
 	  DiffVal +=   U[ij];
-	  // dG[iat] +=  dU[ij];
-	  // dL[iat] += d2U[ij]; 
 
 	  dG[iat] -= (curGrad_i[jat] -  dU[ij]);
 	  dL[iat] -= (curLap_i [jat] - d2U[ij]);
 
-
 	  dG[jat] -= (curGrad_j[jat] -  dU[ji]);
 	  dL[jat] -= (curLap_j [jat] - d2U[ji]);
 	}
-      }
-
-      // for(int jat=0; jat<Nelec; jat++) {
-      // 	if (iat != jat) {
-      // 	  dG[jat] -= (curGrad_j[jat] -  dU[ji]);
-      // 	  dL[jat] -= (curLap_j [jat] - d2U[ji]);
-      // 	}
-      // }
-      
-      	return std::exp(DiffVal);
+      }      
+      return std::exp(DiffVal);
 
       // register RealType dudr, d2udr2,u;
       // register PosType gr;
