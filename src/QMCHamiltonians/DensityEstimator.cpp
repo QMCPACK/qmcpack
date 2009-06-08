@@ -31,7 +31,7 @@ namespace qmcplusplus
     UpdateMode.set(COLLECTABLE,1);
     for(int i=0; i<OHMMS_DIM; ++i)
       Bounds[i]=1.0/elns.Lattice.Length[i];
-    InitPotential(elns);
+    //    InitPotential(elns);
   }
 
   void DensityEstimator::resetTargetParticleSet(ParticleSet& P)
@@ -50,7 +50,7 @@ namespace qmcplusplus
 	int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
 	P.Collectables[getGridIndex(i,j,k)]+=1.0;
 	//	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+	//HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
       else {
 	for (int dim=0;dim<OHMMS_DIM;dim++){
@@ -63,7 +63,7 @@ namespace qmcplusplus
 	  int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
 	  P.Collectables[getGridIndex(i,j,k)]+=1.0;
 	  //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+	  //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
 	}
       } 
     }
