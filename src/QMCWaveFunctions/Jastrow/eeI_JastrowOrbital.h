@@ -79,6 +79,10 @@ namespace qmcplusplus {
     ///container for the Jastrow functions 
     Array<FT*,3> F;
 
+    RealType ChiesaKEcorrection()
+    {
+    }
+
     eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master) 
       : Write_Chiesa_Correction(is_master), KEcorr(0.0)
       {
@@ -222,12 +226,12 @@ namespace qmcplusplus {
       }
 
       //if (FirstTime) {
-      if(!IsOptimizing)
-      {
-        app_log() << "  Chiesa kinetic energy correction = " 
-          << ChiesaKEcorrection() << endl;
-        //FirstTime = false;
-      }
+      // if(!IsOptimizing)
+      // {
+      //   app_log() << "  Chiesa kinetic energy correction = " 
+      //     << ChiesaKEcorrection() << endl;
+      //   //FirstTime = false;
+      // }
 
       //      if(dPsi) dPsi->resetParameters( active );
       for(int i=0; i<myVars.size(); ++i)
@@ -269,7 +273,6 @@ namespace qmcplusplus {
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
 
-      cerr << "evaluateLog called.\n";
       // HACK HACK HACK
       // evaluateLogAndStore(P,G,L);
       // return LogValue;
@@ -382,7 +385,6 @@ namespace qmcplusplus {
 
     ValueType ratio(ParticleSet& P, int iat) 
     {
-      cerr << "Called ratio.\n";
       curVal=0.0;
 
       RealType newval = 0.0;
@@ -412,8 +414,6 @@ namespace qmcplusplus {
       for (int jat=0; jat<Nelec; jat++) 
       	oldval -= U[iat*Nelec+jat];
 
-      cerr << "newval = " << newval << "  oldval = " << oldval << endl;
-
       DiffVal = newval - oldval;
       return std::exp(DiffVal);
       //return std::exp(U[iat]-curVal);
@@ -436,7 +436,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  
     {
-      cerr << "ratio(P,iat,dG,dL) called.\n";
+      //      cerr << "ratio(P,iat,dG,dL) called.\n";
       curVal  = 0.0;
       curGrad_i = PosType();   curLap_i  = 0.0;          
       curGrad_j = PosType();   curLap_j = 0.0;
@@ -548,32 +548,64 @@ namespace qmcplusplus {
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      cerr << "ratioGrad called.\n";
-      return 1.0;
-      // RealType dudr, d2udr2,u;
-      // PosType gr;
-      // const int* pairid = PairID[iat];
-      // DiffVal = 0.0;      
-      // for(int jat=0, ij=iat*Nelec; jat<Nelec; jat++,ij++) 
-      // {
-      // 	if(jat==iat) 
-      //   {
-      // 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
-      // 	} 
-      //   else 
-      //   {
-      // 	  curVal[jat] = F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1, dudr, d2udr2);
-      // 	  dudr *= ee_table->Temp[jat].rinv1;
-      // 	  gr += curGrad[jat] = -dudr*ee_table->Temp[jat].dr1;
-      // 	  curLap[jat] = -(d2udr2+2.0*dudr);
-      // 	  DiffVal += (U[ij]-curVal[jat]);
-      // 	}
-      // }
-      // grad_iat += gr;
-      // //curGrad0-=curGrad;
-      // //cout << "RATIOGRAD " << curGrad0 << endl;
+      curVal  = 0.0;
+      curGrad_i = PosType();   curLap_i  = 0.0;          
+      curGrad_j = PosType();   curLap_j = 0.0;
+      
+      int ee0 = ee_table->M[iat] - (iat+1);
 
-      // return std::exp(DiffVal);
+      DiffVal = 0.0;
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	RealType r_Ii     = eI_table->Temp[i].r1;	
+	RealType r_Ii_inv = 1.0/r_Ii;
+	int nn0 = eI_table->M[i];
+	if (r_Ii < ion.cutoff_radius) {
+	  for (int j=0; j<ion.elecs_inside.size(); j++) {
+	    int jat = ion.elecs_inside[j];
+	    if (jat != iat) {
+	      RealType r_ij = ee_table->Temp[jat].r1;
+	      RealType r_ij_inv = 1.0/r_ij;
+	      RealType r_Ij = eI_table->r(nn0+jat);
+	      RealType r_Ij_inv = 1.0/r_Ij;
+	      FT &func = *F.data()[TripletID(i, iat, jat)];
+
+	      PosType gradF;
+	      Tensor<RealType,OHMMS_DIM> hessF;
+	      RealType u = func.evaluate(r_ij, r_Ii, r_Ij, gradF, hessF);
+	      PosType gr_ee =   -gradF[0]*r_ij_inv * ee_table->Temp[jat].dr1;
+	      PosType du_i, du_j;
+	      RealType d2u_i, d2u_j;
+	      du_i = gradF[1]*r_Ii_inv * eI_table->Temp[i].dr1 - gr_ee;
+	      du_j = gradF[2]*r_Ij_inv * eI_table->dr(nn0+jat) + gr_ee;
+
+	      d2u_i = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] + 2.0*hessF(0,1) * 
+		       dot(ee_table->Temp[jat].dr1,
+			   eI_table->Temp[i].dr1)*r_ij_inv*r_Ii_inv
+		       + hessF(1,1) + 2.0*r_Ii_inv*gradF[1]);
+	      d2u_j = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] - 2.0*hessF(0,2) * 
+		       dot(ee_table->Temp[jat].dr1,
+			   eI_table->dr(nn0+jat))*r_ij_inv*r_Ij_inv
+		       + hessF(2,2) + 2.0*r_Ij_inv*gradF[2]);
+
+	      curVal   [jat] += u;
+	      curGrad_j[jat] += du_j;
+	      curLap_j [jat] += d2u_j;
+	      curGrad_i[jat] += du_i;
+	      curLap_i [jat] += d2u_i;
+
+	      DiffVal -=   u;
+	    }
+	  }
+	}
+      }
+
+      for (int jat=0; jat<Nelec; jat++) {
+	int ij = iat*Nelec+jat;
+	DiffVal +=   U[ij];
+	grad_iat -= curGrad_i[jat];
+      }      
+      return std::exp(DiffVal);
     }
 
     ///** later merge the loop */
@@ -611,7 +643,7 @@ namespace qmcplusplus {
     inline void restore(int iat) {}
 
     void acceptMove(ParticleSet& P, int iat) { 
-      cerr << "acceptMove called.\n";
+      //      cerr << "acceptMove called.\n";
       DiffValSum += DiffVal;
       for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec) 
 	if (jat != iat) {
@@ -621,6 +653,18 @@ namespace qmcplusplus {
 	  d2U[ji] = curLap_j[jat];
 	  U[ij] =  U[ji] = curVal[jat];
 	}
+      // Now, update elecs_inside for each ion
+      for (int i=0; i < IonDataList.size(); i++) {
+	IonData &ion = IonDataList[i];
+	bool inside = eI_table->Temp[i].r1 < ion.cutoff_radius;
+	IonData::eListType::iterator iter;
+	iter = find(ion.elecs_inside.begin(),
+		    ion.elecs_inside.end(), iat);
+	if (inside && iter == ion.elecs_inside.end())
+	  ion.elecs_inside.push_back(iat);
+	else if (!inside && iter != ion.elecs_inside.end())
+	  ion.elecs_inside.erase(iter);
+      }
     }
 
 
@@ -640,11 +684,13 @@ namespace qmcplusplus {
 	d2U[ij] = curLap_i[jat];
 	d2U[ji] = curLap_j[jat];
 	U[ij]   =  U[ji] = curVal[jat];
-        dG[jat] -= dg;
-	dL[jat] += dl;
+	dG[jat] -= curGrad_j[jat] -  dU[ji];
+	dL[jat] -=  curLap_j[jat] - d2U[ji];
+        // dG[jat] -= dg;
+	// dL[jat] += dl;
       }
-      dG[iat] += sumg;
-      dL[iat] += suml;     
+      dG[iat] -= sumg;
+      dL[iat] -= suml;     
     }
 
 
@@ -652,7 +698,7 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L) 
     {
-      cerr << "evaluateLogAndStore called.\n";
+      //      cerr << "evaluateLogAndStore called.\n";
       LogValue=0.0;
 
       // First, create lists of electrons within the sphere of each ion
@@ -738,8 +784,8 @@ namespace qmcplusplus {
       PosType G2 = 0.0;
       for (int jat=0; jat<Nelec; jat++)
 	G2 -= dU[iat*Nelec+jat];
-      cerr << "G2   = " << G2   << endl;
-      cerr << "G[2] = " << G[2] << endl;
+      // cerr << "G2   = " << G2   << endl;
+      // cerr << "G[2] = " << G[2] << endl;
       // if (FirstTime) {
       // 	FirstTime = false;
       // 	ChiesaKEcorrection();
@@ -861,7 +907,7 @@ namespace qmcplusplus {
     }
     
     inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      cerr << "Called copyFromBuffer.\n";
+      //      cerr << "Called copyFromBuffer.\n";
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
@@ -869,7 +915,7 @@ namespace qmcplusplus {
     }
 
     inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
-      cerr << "Called evaluateLog (P, buf).\n";
+      //      cerr << "Called evaluateLog (P, buf).\n";
       RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
@@ -908,9 +954,6 @@ namespace qmcplusplus {
       //nothing to do
     }
 
-    RealType ChiesaKEcorrection()
-    {
-    }
 
     void
     finalizeOptimization()

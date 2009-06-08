@@ -118,6 +118,7 @@ namespace qmcplusplus {
 	  for (int k=2; k<NumParams_eI; k++)
 	    SplineCoefs(i+1,j+1,k+1) = ParamArray(i,j,k);
       
+      // j-k plane
       // Set e-I cusp parameters
       for (int j=2; j<NumParams_eI; j++)
 	for (int k=2; k<NumParams_eI; k++) {
@@ -126,6 +127,7 @@ namespace qmcplusplus {
 	  SplineCoefs(0,k+1,j+1) = ParamArray(1,j,k) - 2.0*DeltaR_ee * CuspValue_ee;
 	}
 
+      // i-j plane
       // Set e-e cusp parameters
       for (int i=2; i<NumParams_ee; i++)
 	for (int j=2; j<NumParams_eI; j++) {
@@ -134,6 +136,7 @@ namespace qmcplusplus {
 	  SplineCoefs(i+1,j+1,0) = ParamArray(i,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
 	}
 
+      // i-k plane
       // Set e-e cusp parameters
       for (int i=2; i<NumParams_ee; i++)
 	for (int k=2; k<NumParams_eI; k++) {
@@ -141,6 +144,48 @@ namespace qmcplusplus {
 	  SplineCoefs(i+1,2,k+1) = ParamArray(i,1,k);
 	  SplineCoefs(i+1,0,k+1) = ParamArray(i,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
 	}
+
+      // i edge
+      for (int i=2; i<NumParams_ee; i++) {
+	SplineCoefs(i+1,1,1) = ParamArray(i,0,0);
+	SplineCoefs(i+1,2,1) = ParamArray(i,1,0);
+	SplineCoefs(i+1,0,1) = ParamArray(i,1,0) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,1,2) = ParamArray(i,0,1);
+	SplineCoefs(i+1,2,2) = ParamArray(i,1,1);
+	SplineCoefs(i+1,0,2) = ParamArray(i,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,1,0) = ParamArray(i,0,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,2,0) = ParamArray(i,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,0,0) = ParamArray(i,1,1) - 4.0*DeltaR_eI * CuspValue_eI;
+      }
+
+      // j edge
+      for (int j=2; j<NumParams_eI; j++) {
+	SplineCoefs(1,j+1,1) = ParamArray(0,j,0);
+	SplineCoefs(2,j+1,1) = ParamArray(1,j,0);
+	SplineCoefs(0,j+1,1) = ParamArray(1,j,0) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(1,j+1,2) = ParamArray(0,j,1);
+	SplineCoefs(2,j+1,2) = ParamArray(1,j,1);
+	SplineCoefs(0,j+1,2) = ParamArray(1,j,1) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(1,j+1,0) = ParamArray(0,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(2,j+1,0) = ParamArray(1,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(0,j+1,0) = ParamArray(1,j,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
+      }
+
+      // k edge
+      for (int k=2; k<NumParams_eI; k++) {
+	SplineCoefs(1,1,k+1) = ParamArray(0,0,k);
+	SplineCoefs(2,1,k+1) = ParamArray(1,0,k);
+	SplineCoefs(0,1,k+1) = ParamArray(1,0,k) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(1,2,k+1) = ParamArray(0,1,k);
+	SplineCoefs(2,2,k+1) = ParamArray(1,1,k);
+	SplineCoefs(0,2,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(1,0,k+1) = ParamArray(0,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(2,0,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(0,0,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
+      }
+
+
+
       // Copy the 8 uniquely determined values
       SplineCoefs(1,1,1) = ParamArray(0,0,0);
       SplineCoefs(1,1,2) = ParamArray(0,0,1);

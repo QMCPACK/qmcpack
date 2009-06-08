@@ -173,12 +173,12 @@ namespace qmcplusplus {
       }
 
       //if (FirstTime) {
-      if(!IsOptimizing)
-      {
-        app_log() << "  Chiesa kinetic energy correction = " 
-          << ChiesaKEcorrection() << endl;
-        //FirstTime = false;
-      }
+      // if(!IsOptimizing)
+      // {
+      //   app_log() << "  Chiesa kinetic energy correction = " 
+      //     << ChiesaKEcorrection() << endl;
+      //   //FirstTime = false;
+      // }
 
       if(dPsi) dPsi->resetParameters( active );
       for(int i=0; i<myVars.size(); ++i)

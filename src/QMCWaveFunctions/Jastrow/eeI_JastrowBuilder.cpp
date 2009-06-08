@@ -77,6 +77,7 @@ namespace qmcplusplus {
 	kids = kids->next;
       }
       targetPsi.addOrbital(J3,"eeI_bspline");
+      J3->setOptimizable(true);
     }
     else 
       app_error() << "You must specify the \"source\" particleset for a three-body Jastrow.\n";
