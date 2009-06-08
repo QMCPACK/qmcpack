@@ -73,7 +73,7 @@ namespace qmcplusplus {
       }
       myComm->barrier();
     }
-    else if (doObservables==1)
+    else
     {
       if (myComm->rank()==0) 
       {
