@@ -63,6 +63,7 @@
 #include "QMCHamiltonians/SkEstimator.h"
 #if defined(HAVE_LIBFFTW)
   #include "QMCHamiltonians/MPC.h"
+  #include "QMCHamiltonians/VHXC.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 
@@ -244,6 +245,8 @@ namespace qmcplusplus {
 	*/
 	else if (potType == "MPC" || potType == "mpc")
 	  addMPCPotential(cur);
+	else if (potType == "VHXC" || potType == "vhxc")
+	  addVHXCPotential(cur);
         else if(potType == "pseudo") 
         {
           addPseudoPotential(cur);
@@ -498,6 +501,30 @@ namespace qmcplusplus {
     APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
 #endif // defined(HAVE_LIBFFTW)
   }
+
+  void
+  HamiltonianFactory::addVHXCPotential(xmlNodePtr cur) 
+  {
+#if defined(HAVE_LIBFFTW)
+    string a("e"), title("VHXC");
+    OhmmsAttributeSet hAttrib;
+    bool physical = true;
+    hAttrib.add(title,"id"); 
+    hAttrib.add(title,"name"); 
+    hAttrib.add(physical,"physical");
+    hAttrib.put(cur);
+
+    renameProperty(a);
+
+    VHXC *vhxc = new VHXC (*targetPtcl);
+    cerr << "physical = " << physical << endl;
+    targetH->addOperator(vhxc, "VHXC", physical);
+#else
+    APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
+#endif // defined(HAVE_LIBFFTW)
+  }
+
+
 
   void 
   HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) {

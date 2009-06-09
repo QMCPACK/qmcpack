@@ -46,6 +46,8 @@ namespace qmcplusplus {
     if(myComm->rank()==0)
     {
       fin = new ifstream(fname.c_str());
+      // if (!fin->is_open()) 
+      // 	APP_ABORT("Could not open pseudopotential file \"" + fname + "\".\n");
       fin->seekg (0, ios::end);
       length = fin->tellg();
       fin->seekg (0, ios::beg);

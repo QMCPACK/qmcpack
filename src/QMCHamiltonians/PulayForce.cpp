@@ -95,7 +95,6 @@ namespace qmcplusplus {
       RealType E = P.PropertyList[LOCALENERGY];
       EGradLogPsi[ion] = E * GradLogPsi[ion];
     }
-    
     return Value=0.0;
 
 

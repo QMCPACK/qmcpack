@@ -370,7 +370,7 @@ namespace qmcplusplus {
       Value = evalSR() + evalLR() + Vconst;
       FirstTime = false;
     }
-    return 0.0;
+    return Value;
   }
 
 #else
