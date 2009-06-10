@@ -24,6 +24,8 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
+      app_log() << "VMCUpdatePbyP::VMCUpdatePbyP" << endl;
+
       myParams.add(nSubSteps,"subSteps","int"); 
       myParams.add(nSubSteps,"substeps","int");
 
@@ -35,6 +37,7 @@ namespace qmcplusplus {
       TimerManager.addTimer(myTimers[1]);
       TimerManager.addTimer(myTimers[2]);
       TimerManager.addTimer(myTimers[3]);
+
     }
 
   VMCUpdatePbyP::~VMCUpdatePbyP()
@@ -64,31 +67,35 @@ namespace qmcplusplus {
         for(int iat=0; iat<W.getTotalNum(); ++iat) 
         {
           PosType dr = m_sqrttau*deltaR[iat];
-          //ignore illegal moves
-          if(!W.makeMoveAndCheck(iat,dr)) continue;
+          //replace makeMove by makeMoveAndCheck 
           //PosType newpos = W.makeMove(iat,dr);
-
-          RealType ratio = Psi.ratio(W,iat);
-          RealType prob = ratio*ratio;
-          //RealType prob = std::min(1.0e0,ratio*ratio);
-          if(RandomGen() < prob) 
-          { 
-            stucked=false;
-            ++nAccept;
-            W.acceptMove(iat);
-            Psi.acceptMove(W,iat);
-          } 
-          else 
+          if(W.makeMoveAndCheck(iat,dr)) 
           {
-            ++nReject; 
-            W.rejectMove(iat); 
-            Psi.rejectMove(iat);
+            RealType ratio = Psi.ratio(W,iat);
+            RealType prob = ratio*ratio;
+            //RealType prob = std::min(1.0e0,ratio*ratio);
+            if(RandomGen() < prob) 
+            { 
+              stucked=false;
+              ++nAccept;
+              W.acceptMove(iat);
+              Psi.acceptMove(W,iat);
+            } 
+            else 
+            {
+              ++nReject; 
+              W.rejectMove(iat); 
+              Psi.rejectMove(iat);
+            }
           }
+          else //reject illegal moves
+            ++nReject; 
         }
+
         if(stucked) 
         {
           ++nAllRejected;
-        H.rejectedMove(W,thisWalker); 
+          H.rejectedMove(W,thisWalker); 
         }
       }
       myTimers[1]->stop();
@@ -121,6 +128,7 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg) 
     { 
+      app_log() << "VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift" << endl;
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
@@ -163,7 +171,11 @@ namespace qmcplusplus {
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
         //reject illegal moves
-        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        if(!W.makeMoveAndCheck(iat,dr)) 
+        {
+          ++nReject;
+          continue;
+        }
         //PosType newpos=W.R[iat];
         //PosType newpos = W.makeMove(iat,dr);
        
@@ -244,6 +256,7 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg)
     { 
+      app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
@@ -283,7 +296,12 @@ namespace qmcplusplus {
 	//	app_log() << "sc = " << sc << endl;
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
 
-        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        if(!W.makeMoveAndCheck(iat,dr)) 
+        {
+          ++nReject; 
+          continue;
+        }
+
         //PosType newpos = W.makeMove(iat,dr);
         RealType ratio = Psi.ratioGrad(W,iat,grad_new);
         RealType prob = ratio*ratio;
