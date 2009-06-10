@@ -175,6 +175,7 @@ namespace qmcplusplus {
       eeI_JastrowBuilder jb(targetPtcl, targetPsi, sourcePtcl);
       return jb.put (cur);
     }
+    return true;
   }
 
 
