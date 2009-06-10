@@ -27,14 +27,16 @@ namespace qmcplusplus {
   ///object counter 
   int  ParticleSet::PtclObjectCounter = 0;
 
-  ParticleSet::ParticleSet(): SK(0), ParentTag(-1){ 
+  ParticleSet::ParticleSet()
+    : UseBoundBox(true), SK(0), ParentTag(-1)
+  { 
     initParticleSet();
 
     initPropertyList();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.getSpeciesSet()), 
-  ParentTag(p.tag())
+  ParticleSet::ParticleSet(const ParticleSet& p)
+    : UseBoundBox(p.UseBoundBox), SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
   {
     initBase();
     initParticleSet();
@@ -134,6 +136,10 @@ namespace qmcplusplus {
     return true;
   }
 
+  void ParticleSet::setBoundBox(bool open)
+  {
+    UseBoundBox=false;
+  }
   //void ParticleSet::setUpdateMode(int updatemode) { 
   //  if(DistTables.empty()) { 
   //    DistanceTable::getTables(ObjectTag,DistTables);
@@ -259,33 +265,52 @@ namespace qmcplusplus {
   ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
   {
     //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
-    activePtcl=iat;
-    if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-    activePos=R[iat]; //save the current position
-    SingleParticlePos_t newpos(activePos+displ);
-    newRedPos=Lattice.toUnit(newpos);
-    if(Lattice.isValid(newRedPos)) 
+    if(UseBoundBox)
     {
+      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+      activePos=R[iat]; //save the current position
+      SingleParticlePos_t newpos(activePos+displ);
+      newRedPos=Lattice.toUnit(newpos);
+      if(Lattice.isValid(newRedPos)) 
+      {
+        for(int i=0; i< DistTables.size(); ++i) 
+          DistTables[i]->move(*this,newpos,iat);
+        R[iat]=newpos;
+        if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+        return true;
+      }
+      //out of bound
+      return false;
+    }
+    else
+    {
+      activePtcl=iat;
+      activePos=R[iat]; //save the current position
+      R[iat]=activePos+displ;
       for(int i=0; i< DistTables.size(); ++i) 
-        DistTables[i]->move(*this,newpos,iat);
-      R[iat]=newpos;
-      if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+        DistTables[i]->move(*this,R[iat],iat);
       return true;
     }
-    //out of bound
-    return false;
   }
 
   bool ParticleSet::makeMove(const Walker_t& awalker
       , const ParticlePos_t& deltaR, RealType dt)
   {
-    for(int iat=0; iat<deltaR.size(); ++iat)
+    if(UseBoundBox)
     {
-      SingleParticlePos_t displ(dt*deltaR[iat]);
-      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-      SingleParticlePos_t newpos(awalker.R[iat]+displ);
-      if(!Lattice.isValid(Lattice.toUnit(newpos)))  return false;
-      R[iat]=newpos;
+      for(int iat=0; iat<deltaR.size(); ++iat)
+      {
+        SingleParticlePos_t displ(dt*deltaR[iat]);
+        if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+        SingleParticlePos_t newpos(awalker.R[iat]+displ);
+        if(!Lattice.isValid(Lattice.toUnit(newpos)))  return false;
+        R[iat]=newpos;
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<deltaR.size(); ++iat)
+        R[iat]=awalker.R[iat]+dt*deltaR[iat];
     }
     this->update();
     //every move is valid
@@ -295,13 +320,21 @@ namespace qmcplusplus {
   bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
       , const ParticlePos_t& deltaR, RealType dt)
   {
-    for(int iat=0; iat<deltaR.size(); ++iat)
+    if(UseBoundBox)
     {
-      SingleParticlePos_t displ(dt*deltaR[iat]+awalker.Drift[iat]);
-      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-      SingleParticlePos_t newpos(awalker.R[iat]+displ);
-      if(!Lattice.isValid(Lattice.toUnit(newpos))) return false;
-      R[iat]=newpos;
+      for(int iat=0; iat<deltaR.size(); ++iat)
+      {
+        SingleParticlePos_t displ(dt*deltaR[iat]+awalker.Drift[iat]);
+        if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+        SingleParticlePos_t newpos(awalker.R[iat]+displ);
+        if(!Lattice.isValid(Lattice.toUnit(newpos))) return false;
+        R[iat]=newpos;
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<deltaR.size(); ++iat)
+        R[iat]=awalker.R[iat]+dt*deltaR[iat]+awalker.Drift[iat];
     }
     this->update();
     //every move is valid

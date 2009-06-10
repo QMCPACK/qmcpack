@@ -88,6 +88,9 @@ namespace qmcplusplus {
       ///current position after applying PBC in the Lattice Unit
       ParticlePos_t redR;
 
+      ///true, if a physical or local bounding box is used
+      bool UseBoundBox;
+
       ///the indexp of the active particle for particle-by-particle moves
       Index_t activePtcl;
 
@@ -164,6 +167,9 @@ namespace qmcplusplus {
 
       ///initialize ParticleSet from xmlNode
       bool put(xmlNodePtr cur);
+
+      ///set UseBoundBox
+      void setBoundBox(bool open);
 
       /** set the update mode
        * @param updatemode
