@@ -83,6 +83,9 @@ namespace qmcplusplus {
     {
       ParticleSet* ions=0;
 
+      //do not use box to check the boundary conditions
+      if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN) targetPtcl.setBoundBox(false);
+
       //initialize with the source tag
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) 
