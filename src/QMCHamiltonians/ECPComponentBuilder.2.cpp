@@ -107,6 +107,12 @@ namespace qmcplusplus {
 
     if(rmax<0) rmax=1.8;
 
+    if(angList.size()==1) 
+    {
+      Llocal=Lmax;
+      app_log() << "    Only one vps is found. Set the local component=" << Lmax << endl;
+    }
+
     int npts=grid_global->size();
 
     Matrix<RealType> vnn(angList.size(),npts);
@@ -275,7 +281,7 @@ namespace qmcplusplus {
       if (Llocal == -1 && Lmax > 0) {
 	app_error() << "The local channel is not specified in the pseudopotential file.\n"
 		    << "Please add \'l-local=\"n\"\' attribute the semilocal section of the fsatom XML file.\n";
-	abort();
+	APP_ABORT("ECPComponentBuilder::doBreakUp");
 	// Llocal = Lmax;
       }
       //find the index of local 

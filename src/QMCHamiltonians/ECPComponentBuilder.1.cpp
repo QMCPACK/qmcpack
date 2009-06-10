@@ -151,16 +151,14 @@ namespace qmcplusplus {
     {
       if(grid_global == 0)
       {
-        app_error() << "  Missing grid information. " << endl;
-        abort(); //FIXABORT
+        APP_ABORT("ECPComponentBuilder::buildLocal Missing grid information. ");
       }
       grid_local=grid_global;
     }
 
     if(grid_local->GridTag == CUSTOM_1DGRID)
     {
-      app_error() << "  Custom grid is used. Need to recast to the linear grid" << endl;
-      abort(); //FIXABORT
+      APP_ABORT("ECPComponentBuilder::buildLocal Custom grid is used. Need to recast to the linear grid");
     } 
     else
     {
