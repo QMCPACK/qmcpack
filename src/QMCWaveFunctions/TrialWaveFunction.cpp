@@ -275,7 +275,7 @@ namespace qmcplusplus {
   TrialWaveFunction::evalGradSource(ParticleSet& P,
 				    ParticleSet &source, int iat) 
   {
-    GradType grad_iat;
+    GradType grad_iat = GradType();
     for(int i=0; i<Z.size(); ++i) 
       grad_iat += Z[i]->evalGradSource(P, source, iat);
     return grad_iat;

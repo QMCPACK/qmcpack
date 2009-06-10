@@ -601,9 +601,11 @@ namespace qmcplusplus {
       }
 
       for (int jat=0; jat<Nelec; jat++) {
-	int ij = iat*Nelec+jat;
-	DiffVal +=   U[ij];
-	grad_iat -= curGrad_i[jat];
+	if (iat != jat) {
+	  int ij = iat*Nelec+jat;
+	  DiffVal +=   U[ij];
+	  grad_iat -= curGrad_i[jat];
+	}
       }      
       return std::exp(DiffVal);
     }
