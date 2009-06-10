@@ -79,7 +79,7 @@ public:
    * and its derived classes.
    */
   //!< ParticleLayout
-  ParticleLayout_t  Lattice; 
+  ParticleLayout_t  Lattice, PrimitiveLattice; 
   //!< unique, persistent ID for each particle
   ParticleIndex_t   ID;  
   //!< Species ID
