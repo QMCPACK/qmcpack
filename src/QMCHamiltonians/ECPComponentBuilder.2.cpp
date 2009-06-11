@@ -355,8 +355,9 @@ namespace qmcplusplus {
         const RealType* restrict vpLoc=vnn[iLlocal];
         for(int i=0; i<ngIn; i++) newPin[i]=vfac*vpLoc[i];
 
+	double dy0 = (newPin[1] - newPin[0])/((*grid_global)[1]-(*grid_global)[0]);
         OneDimCubicSpline<RealType> infunc(grid_global,newPin);
-        infunc.spline(0,0.0,ngIn-1,0.0);
+        infunc.spline(0,dy0,ngIn-1,0.0);
 
         RealType r=d;
         for(int i=1; i<ng-1; i++)
@@ -364,11 +365,11 @@ namespace qmcplusplus {
           newP[i]=infunc.splint(r);
           r+=d;
         }
-        newP[0]=newP[1];
+        newP[0]=0.0;
         newP[ng-1]=1.0;
 
         pp_loc = new RadialPotentialType(agrid,newP);
-        pp_loc->spline();
+        pp_loc->spline(0, dy0, ng-1, 0.0);
 	// for (double r=0.0; r<3.50001; r+=0.001) 
 	//   fprintf (stderr, "%10.5f %10.5f\n", r, pp_loc->splint(r));
       }
