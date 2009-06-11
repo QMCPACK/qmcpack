@@ -271,10 +271,27 @@ namespace qmcplusplus {
     {
       app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
       //this is a new grid
-      const RealType d=1e-3;
+      RealType d=1e-3;
       LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
-      int ng=static_cast<int>(rmax/d)+1;
-      agrid->set(0,rmax,ng);
+
+      // If the global grid is already linear, do not interpolate the data
+      int ng;
+      if (grid_global->getGridTag() == LINEAR_1DGRID) {
+      	ng = (int)std::ceil(rmax/grid_global->Delta) + 1;
+       	app_log() << "  Using global grid with delta = " << grid_global->Delta << endl;
+       	rmax = grid_global->Delta * (ng-1);
+       	agrid->set(0.0,rmax,ng);
+       	// fprintf (stderr, " grid_global delta = %1.10e  agrid delta = %1.12e\n",
+       	// 	 grid_global->Delta, agrid->Delta);
+      }
+      else {
+	ng=static_cast<int>(rmax/d)+1;
+	agrid->set(0,rmax,ng);
+      }
+	
+      // This is critical!!!
+      // If d is not reset, we generate an error in the interpolated PP!
+      d = agrid->Delta;
 
       int ngIn=vnn.cols()-2;
 
