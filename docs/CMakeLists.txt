@@ -1,0 +1,3 @@
+ADD_LATEX_DOCUMENT(ug.tex 
+  INPUTS intro.tex
+  USE_INDEX DEFAULT_PDF)
