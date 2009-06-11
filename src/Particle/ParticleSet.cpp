@@ -264,6 +264,7 @@ namespace qmcplusplus {
   bool
   ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
   {
+    activePtcl=iat;
     //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
     if(UseBoundBox)
     {
@@ -284,7 +285,6 @@ namespace qmcplusplus {
     }
     else
     {
-      activePtcl=iat;
       activePos=R[iat]; //save the current position
       R[iat]=activePos+displ;
       for(int i=0; i< DistTables.size(); ++i) 
