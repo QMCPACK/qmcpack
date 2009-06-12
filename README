@@ -1,12 +1,53 @@
-Wed Sep  3 20:47:26 CDT 2003
+h1. Getting and building QMCPACK
 
-Creating app to compile the main application qmc using cmake
+h2. Prerequisite 
 
-Creating Data for input/output examples
+* C/C++ compilers
+* cmake, build utility, http://www.cmake.org
+* blas/lapack, numerical library, use platform-optimized libraries
+* libxml2, XML parser, http://xmlsoft.org/ 
+* hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
+* boost, peer-reviewed portable C++ source libraries, http://www.boost.org
+* einspline, 3D bspline library, http://einspline.sourceforge.net/
+* fftw, FFT library, http://www.fftw.org/
 
-Adding files for cmake (usage: cmake; make)
+h2. Building with environment variables
 
-CMake directory contains modules to handle libraries.
-i)   FindBlitz++.cmake
-ii)  FindHDF5.cmake
-iii) FindLibxml.cmake
+This method works with GNU, Intel, and IBM XLC compilers. When the libraries
+are installed in standard locations, e.g., /usr, /usr/local, there is no need
+to set the XYZ_HOME for XYZ package.
+
+* Set the environments (the examples below assume bash, Intel compilers and MKL library)
+
+  export CXX=icpc
+  export CC=icc
+  export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
+  export LIBXML2_HOME=/usr/local
+  export HDF5_HOME=/usr/local
+  export BOOST_HOME=/usr/local/boost
+  export EINSPLINE_HOME=/usr/local/einspline
+  export FFTW_HOME=/usr/local/fftw
+
+* Move to build directory, run cmake and make
+
+  cd build
+  cmake ..
+  make
+
+h2. Building with a toolchain file
+
+Several toolchain files used by the developers are available in config
+directory.  They are used on large-scale parallel machines where setting up all
+the neccesary packages can be tricky. 
+
+* AbeMvapich2.cmake for Abe cluster at NCSA
+* JaguarGNU.cmake for CrayXT systems at ORNL
+* KrakenGNU.cmake for CrayXT5 system at NICS
+
+Once a sutiable toolchain file is found, follow these step (example on abe.ncsa.uiuc.edu):
+* cd build
+* cmake -DCMAKE_TOOLCHAIN_FILE=../config/AbeMvapich2.cmake -DCMAKE_VERBOSE_MAKEFILE=TRUE ..
+* cmake -DCMAKE_TOOLCHAIN_FILE=../config/AbeMvapich2.cmake -DCMAKE_VERBOSE_MAKEFILE=TRUE ..
+* make
+
+For more informaton, consult QMCPACK wiki at http://www.mcc.uiuc.edu/qmcpack
