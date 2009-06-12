@@ -31,6 +31,8 @@ namespace ohmmshf {
     value_type Ntot;
     ///external background charge
     value_type Zext;
+    value_type Zgauss;
+    value_type Sgauss;
     ///density
     value_type Rs;
     ///maximum radius of the background charge
@@ -44,6 +46,8 @@ namespace ohmmshf {
 
     bool put(xmlNodePtr cur);
   };
+  
+ 
 }
 #endif
 /***************************************************************************

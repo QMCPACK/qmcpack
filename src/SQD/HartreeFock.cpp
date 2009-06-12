@@ -109,6 +109,7 @@ namespace ohmmshf {
     log_stream << "V_External = " << energy[0] << endl;
     log_stream << "V_Hartree = "  << energy[1] << endl;
     log_stream << "V_Exchange = " << energy[2] << endl;
+    log_stream << "E_tot = " << E << endl;
 
   }
 

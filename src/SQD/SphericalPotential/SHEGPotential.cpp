@@ -20,7 +20,7 @@
 
 namespace ohmmshf {
   SHEGPotential::SHEGPotential(int nel, value_type rs): 
-    Ntot(nel), Zext(nel), Rs(rs) 
+    Ntot(nel), Zext(nel), Rs(rs), Zgauss(0.0), Sgauss(1.0)
     { 
       MaxEigenValue=0.0;
     }
@@ -46,15 +46,18 @@ namespace ohmmshf {
         XMLReport("  Total background charge = " << Zext);
         XMLReport("  Rs (density)            = " << Rs);
         XMLReport("  Rmax (background)       = " << Rmax);
-
+        XMLReport("  Zgauss (gaussian depth) = " << Zgauss);
+        XMLReport("  Sgauss (gaussian width) = " << Sgauss);
+        
         Vext = new RadialOrbital_t(psi(0));
         for(int ig=0; ig < psi.m_grid->size(); ++ig)  {
           value_type r=(*psi.m_grid)(ig);
           if(r<=Rmax) 
-            (*Vext)(ig)=normin*(3.0-(r*r)*r2);
+            (*Vext)(ig)=normin*(3.0-(r*r)*r2)-Zgauss * exp(-r*r/Sgauss/Sgauss);
           else
-            (*Vext)(ig)=-Zext/r;
-          //cout << r << " " << (*Vext)(ig) << endl;
+            (*Vext)(ig)=-Zext/r-Zgauss * exp(-r*r/Sgauss/Sgauss) ;
+         
+         // cout << r << " " << (*Vext)(ig) << endl;
         }
       }
 
@@ -77,7 +80,7 @@ namespace ohmmshf {
    * @return number of nodes
    */
   int SHEGPotential::getNumOfNodes(int n, int l){
-    MinEigenValue=-Ntot*3./2./Rmax;
+    MinEigenValue=-Ntot*3./2./Rmax - Zgauss;
     //double check this
     return n;
   }
@@ -86,6 +89,9 @@ namespace ohmmshf {
     ParameterSet params;
     params.add(Rs,"rs","double");
     params.add(Zext,"Z","double");
+            params.add(Zgauss,"Zgauss","double");
+            params.add(Sgauss,"Sgauss","double");
+  
     params.put(cur);
 
     if(Zext<Ntot)
