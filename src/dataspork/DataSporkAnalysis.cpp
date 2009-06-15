@@ -95,7 +95,18 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
               options(cmdline_options).positional(p).run(), vm);
 
         ifstream ifs("dataspork.cfg");
-        store(parse_config_file(ifs, config_file_options), vm);
+        if(ifs.fail())
+        {
+          stringstream qin;
+          qin << "observable = LocalEnergy LocalPotential Kinetic ElecElec Coulomb\n";
+          qin << "collectable =  Variance Weight NumOfWalkers TrialEnergy BlockCPU AcceptRatio\n";
+          store(parse_config_file(qin, config_file_options), vm);
+        }
+        else
+        {
+         //use the configuraton file
+          store(parse_config_file(ifs, config_file_options), vm);
+        }
         notify(vm);
     
         if (vm.count("help")) {
