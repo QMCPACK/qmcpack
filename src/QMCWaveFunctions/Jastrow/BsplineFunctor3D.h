@@ -323,8 +323,11 @@ namespace qmcplusplus {
 			      Tensor<real_type,3> &hess) 
     {
       if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
-	  r_2I >= 0.5*cutoff_radius)
+	  r_2I >= 0.5*cutoff_radius) {
+	grad = 0.0;
+	hess = 0.0;
         return 0.0;
+      }
 
       // double eps = 1.0e-6;
       // grad[0] = (evaluate (r_12+eps, r_1I, r_2I) -evaluate (r_12-eps, r_1I, r_2I))/(2.0*eps);
