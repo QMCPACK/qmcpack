@@ -22,6 +22,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
+#include <cmath>
 
 namespace qmcplusplus {
 
@@ -905,6 +906,14 @@ namespace qmcplusplus {
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+      // for (int i=0; i<IonDataList.size(); i++) {
+      // 	int n = IonDataList[i].elecs_inside.size();
+      // 	buf.put ((RealType)n);
+      // 	vector<RealType> elecs_inside(n);
+      // 	for (int j=0; j<n; j++)
+      // 	  elecs_inside[j] = IonDataList[i].elecs_inside[j];
+      // 	buf.put(elecs_inside.begin(), elecs_inside.end());
+      // }
       return LogValue;
     }
     
@@ -913,6 +922,27 @@ namespace qmcplusplus {
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
+      // First, create lists of electrons within the sphere of each ion
+      for (int i=0; i<Nion; i++) {
+	IonData &ion = IonDataList[i];
+	ion.elecs_inside.clear();
+	int iel=0;
+	if (ion.cutoff_radius > 0.0) 
+	  for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
+	    if (eI_table->r(nn) < ion.cutoff_radius)
+	      ion.elecs_inside.push_back(iel);
+      }
+      // for (int i=0; i<IonDataList.size(); i++) {
+      // 	RealType nd;
+      // 	buf.get(nd);
+      // 	int n = (int)round(nd);
+      // 	cerr << "n = " << n << endl;
+      // 	vector<RealType> elecs_inside(n);
+      // 	buf.get(elecs_inside.begin(), elecs_inside.end());
+      // 	IonDataList[i].elecs_inside.resize(n);
+      // 	for (int j=0; j<n; j++)
+      // 	  IonDataList[i].elecs_inside[j] = (int)round(elecs_inside[j]);
+      // }
       DiffValSum=0.0;
     }
 
@@ -922,6 +952,14 @@ namespace qmcplusplus {
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+      // for (int i=0; i<IonDataList.size(); i++) {
+      // 	int n = IonDataList[i].elecs_inside.size();
+      // 	buf.put ((RealType)n);
+      // 	vector<RealType> elecs_inside(n);
+      // 	for (int j=0; j<n; j++)
+      // 	  elecs_inside[j] = IonDataList[i].elecs_inside[j];
+      // 	buf.put(elecs_inside.begin(), elecs_inside.end());
+      // }
       return x;
     }
 

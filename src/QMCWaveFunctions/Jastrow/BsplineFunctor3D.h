@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Jeongnim Kim
+// (c) Copyright 2009-  by Ken Esler
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//   e-mail: esler@uiuc.edu
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -31,9 +31,8 @@ namespace qmcplusplus {
     int Dummy;
     const TinyVector<real_type,16> A, dA, d2A, d3A;
     //static const real_type A[16], dA[16], d2A[16];
-    real_type DeltaR_ee, DeltaRInv_ee;
+    real_type Deltax, DeltaxInv;
     real_type DeltaR_eI, DeltaRInv_eI;
-    real_type CuspValue_ee, CuspValue_eI;
     real_type Y, dY, d2Y;
     Array<real_type,3> SplineCoefs;
     // Stores the derivatives w.r.t. SplineCoefs 
@@ -64,7 +63,7 @@ namespace qmcplusplus {
 	   0.0, 0.0,  0.0,  3.0,
 	   0.0, 0.0,  0.0, -3.0,
 	   0.0, 0.0,  0.0,  1.0),
-      CuspValue_ee(ecusp), CuspValue_eI(icusp), ResetCount(0)
+      ResetCount(0)
     {
       cutoff_radius = 0.0;
     }
@@ -91,8 +90,8 @@ namespace qmcplusplus {
       DeltaRInv_eI = 1.0/DeltaR_eI;
 
       int numKnots_ee = numCoefs_ee - 2;
-      DeltaR_ee = cutoff_radius / (real_type)(numKnots_ee - 1);
-      DeltaRInv_ee = 1.0/DeltaR_ee;
+      Deltax = 1.0 / (real_type)(numKnots_ee - 1);
+      DeltaxInv = 1.0/Deltax;
     }
     
     void reset() 
@@ -102,9 +101,9 @@ namespace qmcplusplus {
       int numCoefs_ee = NumParams_ee + 4;
       int numKnots_ee =  numCoefs_ee - 2;
       DeltaR_eI = 0.5*cutoff_radius / (real_type)(numKnots_eI - 1);
-      DeltaR_ee = 1.0*cutoff_radius / (real_type)(numKnots_ee - 1);
+      Deltax = 1.0 / (real_type)(numKnots_ee - 1);
       DeltaRInv_eI = 1.0/DeltaR_eI;      
-      DeltaRInv_ee = 1.0/DeltaR_ee;
+      DeltaxInv = 1.0/Deltax;
 
       // Zero out all coefficients
       for (int i=0; i<SplineCoefs.size(0); i++)
@@ -124,7 +123,7 @@ namespace qmcplusplus {
 	for (int k=2; k<NumParams_eI; k++) {
 	  SplineCoefs(1,j+1,k+1) = ParamArray(0,j,k);
 	  SplineCoefs(2,j+1,k+1) = ParamArray(1,j,k);
-	  SplineCoefs(0,k+1,j+1) = ParamArray(1,j,k) - 2.0*DeltaR_ee * CuspValue_ee;
+	  SplineCoefs(0,k+1,j+1) = ParamArray(1,j,k);
 	}
 
       // i-j plane
@@ -133,7 +132,7 @@ namespace qmcplusplus {
 	for (int j=2; j<NumParams_eI; j++) {
 	  SplineCoefs(i+1,j+1,1) = ParamArray(i,j,0);
 	  SplineCoefs(i+1,j+1,2) = ParamArray(i,j,1);
-	  SplineCoefs(i+1,j+1,0) = ParamArray(i,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
+	  SplineCoefs(i+1,j+1,0) = ParamArray(i,j,1);
 	}
 
       // i-k plane
@@ -142,46 +141,46 @@ namespace qmcplusplus {
 	for (int k=2; k<NumParams_eI; k++) {
 	  SplineCoefs(i+1,1,k+1) = ParamArray(i,0,k);
 	  SplineCoefs(i+1,2,k+1) = ParamArray(i,1,k);
-	  SplineCoefs(i+1,0,k+1) = ParamArray(i,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
+	  SplineCoefs(i+1,0,k+1) = ParamArray(i,1,k);
 	}
 
       // i edge
       for (int i=2; i<NumParams_ee; i++) {
 	SplineCoefs(i+1,1,1) = ParamArray(i,0,0);
 	SplineCoefs(i+1,2,1) = ParamArray(i,1,0);
-	SplineCoefs(i+1,0,1) = ParamArray(i,1,0) - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,0,1) = ParamArray(i,1,0);
 	SplineCoefs(i+1,1,2) = ParamArray(i,0,1);
 	SplineCoefs(i+1,2,2) = ParamArray(i,1,1);
-	SplineCoefs(i+1,0,2) = ParamArray(i,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(i+1,1,0) = ParamArray(i,0,1) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(i+1,2,0) = ParamArray(i,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(i+1,0,0) = ParamArray(i,1,1) - 4.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(i+1,0,2) = ParamArray(i,1,1);
+	SplineCoefs(i+1,1,0) = ParamArray(i,0,1);
+	SplineCoefs(i+1,2,0) = ParamArray(i,1,1);
+	SplineCoefs(i+1,0,0) = ParamArray(i,1,1);
       }
 
       // j edge
       for (int j=2; j<NumParams_eI; j++) {
 	SplineCoefs(1,j+1,1) = ParamArray(0,j,0);
 	SplineCoefs(2,j+1,1) = ParamArray(1,j,0);
-	SplineCoefs(0,j+1,1) = ParamArray(1,j,0) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(0,j+1,1) = ParamArray(1,j,0);
 	SplineCoefs(1,j+1,2) = ParamArray(0,j,1);
 	SplineCoefs(2,j+1,2) = ParamArray(1,j,1);
-	SplineCoefs(0,j+1,2) = ParamArray(1,j,1) - 2.0*DeltaR_ee * CuspValue_ee;
-	SplineCoefs(1,j+1,0) = ParamArray(0,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(2,j+1,0) = ParamArray(1,j,1) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(0,j+1,0) = ParamArray(1,j,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(0,j+1,2) = ParamArray(1,j,1);
+	SplineCoefs(1,j+1,0) = ParamArray(0,j,1);
+	SplineCoefs(2,j+1,0) = ParamArray(1,j,1);
+	SplineCoefs(0,j+1,0) = ParamArray(1,j,1);
       }
 
       // k edge
       for (int k=2; k<NumParams_eI; k++) {
 	SplineCoefs(1,1,k+1) = ParamArray(0,0,k);
 	SplineCoefs(2,1,k+1) = ParamArray(1,0,k);
-	SplineCoefs(0,1,k+1) = ParamArray(1,0,k) - 2.0*DeltaR_ee * CuspValue_ee;
+	SplineCoefs(0,1,k+1) = ParamArray(1,0,k);
 	SplineCoefs(1,2,k+1) = ParamArray(0,1,k);
 	SplineCoefs(2,2,k+1) = ParamArray(1,1,k);
-	SplineCoefs(0,2,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_ee * CuspValue_ee;
-	SplineCoefs(1,0,k+1) = ParamArray(0,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(2,0,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_eI * CuspValue_eI;
-	SplineCoefs(0,0,k+1) = ParamArray(1,1,k) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
+	SplineCoefs(0,2,k+1) = ParamArray(1,1,k);
+	SplineCoefs(1,0,k+1) = ParamArray(0,1,k);
+	SplineCoefs(2,0,k+1) = ParamArray(1,1,k);
+	SplineCoefs(0,0,k+1) = ParamArray(1,1,k);
       }
 
 
@@ -198,82 +197,32 @@ namespace qmcplusplus {
 
       // Now satisfy cusp constraints
       // ee
-      SplineCoefs(1,1,0) = ParamArray(0,0,1) - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(1,2,0) = ParamArray(0,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(2,1,0) = ParamArray(1,0,1) - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(2,2,0) = ParamArray(1,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
+      SplineCoefs(1,1,0) = ParamArray(0,0,1);
+      SplineCoefs(1,2,0) = ParamArray(0,1,1);
+      SplineCoefs(2,1,0) = ParamArray(1,0,1);
+      SplineCoefs(2,2,0) = ParamArray(1,1,1);
 
-      SplineCoefs(1,0,1) = ParamArray(0,1,0) - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(1,0,2) = ParamArray(0,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(2,0,1) = ParamArray(1,1,0) - 2.0*DeltaR_eI * CuspValue_eI;      
-      SplineCoefs(2,0,2) = ParamArray(1,1,1) - 2.0*DeltaR_eI * CuspValue_eI;
+      SplineCoefs(1,0,1) = ParamArray(0,1,0);
+      SplineCoefs(1,0,2) = ParamArray(0,1,1);
+      SplineCoefs(2,0,1) = ParamArray(1,1,0);
+      SplineCoefs(2,0,2) = ParamArray(1,1,1);
 
       // eI
-      SplineCoefs(0,1,1) = ParamArray(1,0,0) - 2.0*DeltaR_ee * CuspValue_ee;
-      SplineCoefs(0,1,2) = ParamArray(1,0,1) - 2.0*DeltaR_ee * CuspValue_ee;
-      SplineCoefs(0,2,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee;      
-      SplineCoefs(0,2,2) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee;
+      SplineCoefs(0,1,1) = ParamArray(1,0,0);
+      SplineCoefs(0,1,2) = ParamArray(1,0,1);
+      SplineCoefs(0,2,1) = ParamArray(1,1,0);
+      SplineCoefs(0,2,2) = ParamArray(1,1,1);
       
       // More than one cusp constraint
-      SplineCoefs(0,0,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(0,1,0) = ParamArray(1,0,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(1,0,0) = ParamArray(0,1,1) - 4.0*DeltaR_eI * CuspValue_eI;
+      SplineCoefs(0,0,1) = ParamArray(1,1,0);
+      SplineCoefs(0,1,0) = ParamArray(1,0,1);
+      SplineCoefs(1,0,0) = ParamArray(0,1,1);
       
-      SplineCoefs(0,0,2) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
-      SplineCoefs(0,2,0) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;;
-      SplineCoefs(2,0,0) = ParamArray(1,1,1) - 4.0*DeltaR_eI * CuspValue_eI;
+      SplineCoefs(0,0,2) = ParamArray(1,1,1);
+      SplineCoefs(0,2,0) = ParamArray(1,1,1);
+      SplineCoefs(2,0,0) = ParamArray(1,1,1);
 
-      SplineCoefs(0,0,0) = ParamArray(1,1,1) - 4.0*DeltaR_ee * CuspValue_ee - 2.0*DeltaR_eI * CuspValue_eI;
-
-      // // Now, fill in coefficients for the 27 elements at the corner
-      // SplineCoefs(1,1,1) = ParamArray(0,0,0);
-      // SplineCoefs(2,1,1) = ParamArray(1,0,0);
-      // SplineCoefs(0,1,1) = ParamArray(1,0,0) - 2.0*DeltaR_ee * CuspValue_ee;
-
-      // SplineCoefs(1,2,1) = ParamArray(0,1,0);
-      // SplineCoefs(2,2,1) = ParamArray(1,1,0);
-      // SplineCoefs(0,2,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee;
-
-      // SplineCoefs(1,0,1) = ParamArray(0,1,0);
-      // SplineCoefs(2,0,1) = ParamArray(1,1,0);
-      // SplineCoefs(0,0,1) = ParamArray(1,1,0) - 2.0*DeltaR_ee * CuspValue_ee  
-      // 	- 2.0*DeltaR_eI * CuspValue_eI;
-
-      // SplineCoefs(1,1,2) = ParamArray(0,0,1);
-      // SplineCoefs(2,1,2) = ParamArray(1,0,1);
-      // SplineCoefs(0,1,2) = ParamArray(1,0,1) - 2.0*DeltaR_ee * CuspValue_ee;
-		       			   
-      // SplineCoefs(1,1,0) = ParamArray(0,0,1);
-      // SplineCoefs(2,1,0) = ParamArray(1,0,1);
-      // SplineCoefs(0,1,0) = ParamArray(1,0,1) - 2.0*DeltaR_ee * CuspValue_ee  
-      // 	- 2.0*DeltaR_eI * CuspValue_eI;
-
-      // // SplineCoefs(1,2,2) = ParamArray(0,1,1);
-      // // SplineCoefs(2,2,2) = ParamArray(1,1,1);
-      // // SplineCoefs(0,2,2) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee  
-      // // 	- 2.0*DeltaR_eI * CuspValue_eI;
-
-      // // SplineCoefs(1,2,0) = ParamArray(0,1,1);
-      // // SplineCoefs(2,2,0) = ParamArray(1,1,1);
-      // // SplineCoefs(0,2,0) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee  
-      // // 	- 4.0*DeltaR_eI * CuspValue_eI;
-
-      // // SplineCoefs(1,0,2) = ParamArray(0,1,1);
-      // // SplineCoefs(2,0,2) = ParamArray(1,1,1);
-      // // SplineCoefs(0,0,2) = ParamArray(1,1,1) - 2.0*DeltaR_ee * CuspValue_ee  
-      // // 	- 4.0*DeltaR_eI * CuspValue_eI;
-
-
-
-      // SplineCoefs(1,1,1) = ParamArray(0,0,0);
-      // SplineCoefs(1,2,1) = ParamArray(0,1,0);
-      // SplineCoefs(1,0,1) = ParamArray(0,1,0) - 2.0*DeltaR_eI * CuspValue_eI;
-
-
-      // SplineCoefs(1,1,1) = ParamArray(0,0,0);
-      // SplineCoefs(1,1,2) = ParamArray(0,0,1);
-      // SplineCoefs(1,1,0) = ParamArray(0,0,1) - 2.0*DeltaR_eI * CuspValue_eI;
-
+      SplineCoefs(0,0,0) = ParamArray(1,1,1);
     }
 
     inline real_type evaluate(real_type r_12, 
@@ -284,13 +233,14 @@ namespace qmcplusplus {
 	  r_2I >= 0.5*cutoff_radius)
         return 0.0;
       
-      r_12 *= DeltaRInv_ee;
+      real_type x = r_12 / (r_1I + r_2I);
+      x    *= DeltaxInv;
       r_1I *= DeltaRInv_eI;
       r_2I *= DeltaRInv_eI;
 
       real_type ipart, t, u, v;
       int i, j, k;
-      t = modf (r_12, &ipart);  i = (int) ipart;
+      t = modf (   x, &ipart);  i = (int) ipart;
       u = modf (r_1I, &ipart);  j = (int) ipart;
       v = modf (r_2I, &ipart);  k = (int) ipart;
       real_type tp[4], up[4], vp[4], a[4], b[4], c[4];
@@ -334,13 +284,17 @@ namespace qmcplusplus {
       // grad[1] = (evaluate (r_12, r_1I+eps, r_2I) -evaluate (r_12, r_1I-eps, r_2I))/(2.0*eps);
       // grad[2] = (evaluate (r_12, r_1I, r_2I+eps) -evaluate (r_12, r_1I, r_2I-eps))/(2.0*eps);
       
-      r_12 *= DeltaRInv_ee;
+      real_type qInv = 1.0/(r_1I + r_2I);
+      real_type x = r_12 * qInv;
+      x    *= DeltaxInv;
       r_1I *= DeltaRInv_eI;
       r_2I *= DeltaRInv_eI;
 
+      
+
       real_type ipart, t, u, v;
       int i, j, k;
-      t = modf (r_12, &ipart);  i = (int) ipart;
+      t = modf (   x, &ipart);  i = (int) ipart;
       u = modf (r_1I, &ipart);  j = (int) ipart;
       v = modf (r_2I, &ipart);  k = (int) ipart;
       real_type tp[4], up[4], vp[4], a[4], b[4], c[4],
@@ -361,34 +315,46 @@ namespace qmcplusplus {
       }
 
       real_type val = 0.0;
-      grad = 0.0;
-      hess = 0.0;
+      TinyVector<real_type,3> gradF;
+      Tensor<real_type,3> hessF;
+      gradF = 0.0;
+      hessF = 0.0;
       for (int ia=0; ia<4; ia++)
 	for (int ib=0; ib<4; ib++)
 	  for (int ic=0; ic<4; ic++) {
 	    real_type coef = SplineCoefs(i+ia, j+ib, k+ic);
-	    val     += coef *  a[ia] *  b[ib] *  c[ic];
-	    grad[0] += coef * da[ia] *  b[ib] *  c[ic];
-	    grad[1] += coef *  a[ia] * db[ib] *  c[ic];
-	    grad[2] += coef *  a[ia] *  b[ib] * dc[ic];
-	    hess(0,0) += coef *d2a[ia] *  b[ib] *  c[ic];
-	    hess(0,1) += coef * da[ia] * db[ib] *  c[ic];
-	    hess(0,2) += coef * da[ia] *  b[ib] * dc[ic];
-	    hess(1,1) += coef *  a[ia] *d2b[ib] *  c[ic];
-	    hess(1,2) += coef *  a[ia] * db[ib] * dc[ic];
-	    hess(2,2) += coef *  a[ia] *  b[ib] *d2c[ic];
+	    val        += coef *  a[ia] *  b[ib] *  c[ic];
+	    gradF[0]   += coef * da[ia] *  b[ib] *  c[ic];
+	    gradF[1]   += coef *  a[ia] * db[ib] *  c[ic];
+	    gradF[2]   += coef *  a[ia] *  b[ib] * dc[ic];
+	    hessF(0,0) += coef *d2a[ia] *  b[ib] *  c[ic];
+	    hessF(0,1) += coef * da[ia] * db[ib] *  c[ic];
+	    hessF(0,2) += coef * da[ia] *  b[ib] * dc[ic];
+	    hessF(1,1) += coef *  a[ia] *d2b[ib] *  c[ic];
+	    hessF(1,2) += coef *  a[ia] * db[ib] * dc[ic];
+	    hessF(2,2) += coef *  a[ia] *  b[ib] *d2c[ic];
 	  }
-      grad[0] *= DeltaRInv_ee;
-      grad[1] *= DeltaRInv_eI;
-      grad[2] *= DeltaRInv_eI;
+      gradF[0] *= DeltaxInv;
+      gradF[1] *= DeltaRInv_eI;
+      gradF[2] *= DeltaRInv_eI;
       
-      hess(0,0) *= DeltaRInv_ee * DeltaRInv_ee;
-      hess(0,1) *= DeltaRInv_ee * DeltaRInv_eI;
-      hess(0,2) *= DeltaRInv_ee * DeltaRInv_eI;
-      hess(1,1) *= DeltaRInv_eI * DeltaRInv_eI;
-      hess(1,2) *= DeltaRInv_eI * DeltaRInv_eI;
-      hess(2,2) *= DeltaRInv_eI * DeltaRInv_eI;
+      grad[0] = qInv*gradF[0];
+      grad[1] = gradF[1] - r_12*qInv*qInv*gradF[0];
+      grad[2] = gradF[2] - r_12*qInv*qInv*gradF[0];
 
+      hessF(0,0) *= DeltaxInv * DeltaxInv;
+      hessF(0,1) *= DeltaxInv * DeltaRInv_eI;
+      hessF(0,2) *= DeltaxInv * DeltaRInv_eI;
+      hessF(1,1) *= DeltaRInv_eI * DeltaRInv_eI;
+      hessF(1,2) *= DeltaRInv_eI * DeltaRInv_eI;
+      hessF(2,2) *= DeltaRInv_eI * DeltaRInv_eI;
+
+      hess(0,0) = qInv*qInv*hessF(0,0);
+      hess(0,1) = qInv*hessF(0,1) - gradF[0]*qInv*qInv - hessF(0,0)*r_12*qInv*qInv*qInv;
+      hess(0,2) = qInv*hessF(0,2) - gradF[0]*qInv*qInv - hessF(0,0)*r_12*qInv*qInv*qInv;
+      hess(1,1) = hessF(1,1) + 2.0*gradF[0]*r_12 * qInv*qInv*qInv -         2.0*hessF(0,1) *r_12*qInv*qInv + hessF(0,0)*r_12*r_12*qInv*qInv*qInv*qInv;
+      hess(1,2) = hessF(1,2) + 2.0*gradF[0]*r_12 * qInv*qInv*qInv - (hessF(0,2)+hessF(0,1))*r_12*qInv*qInv + hessF(0,0)*r_12*r_12*qInv*qInv*qInv*qInv;
+      hess(2,2) = hessF(2,2) + 2.0*gradF[0]*r_12 * qInv*qInv*qInv -         2.0*hessF(0,2) *r_12*qInv*qInv + hessF(0,0)*r_12*r_12*qInv*qInv*qInv*qInv;
       hess(1,0) = hess(0,1);
       hess(2,0) = hess(0,2);
       hess(2,1) = hess(1,2);
@@ -434,8 +400,6 @@ namespace qmcplusplus {
 
       app_log() << " esize = " << NumParams_ee << " parameters " << endl;
       app_log() << " isize = " << NumParams_eI << " parameters " << endl;
-      app_log() << " ee cusp = " << CuspValue_ee << endl;      
-      app_log() << " eI cusp = " << CuspValue_eI << endl;
       app_log() << " rcut = " << cutoff_radius << endl;
 
       resize (NumParams_eI, NumParams_ee);
@@ -540,12 +504,12 @@ namespace qmcplusplus {
       hid_t hid = H5Fcreate (fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
       Array<real_type,3> val (N,N,N);
       for (int i=0; i<N; i++) {
-	double r_12 = (real_type)i/(real_type)(N-1) * cutoff_radius;
+	double r_12 = (real_type)i/(real_type)(N-1);
 	for (int j=0; j<N; j++) {
 	  double r_1I = (real_type)j/(real_type)(N-1) * 0.5*cutoff_radius;
 	  for (int k=0; k<N; k++) {
 	    double r_2I = (real_type)k/(real_type)(N-1) * 0.5*cutoff_radius;
-	    val(i,j,k) = evaluate (r_12, r_1I, r_2I);
+	    val(i,j,k) = evaluate (r_12*(r_1I+r_2I), r_1I, r_2I);
 	  }
 	}
       }
@@ -586,7 +550,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author: jnkim $
+ * $RCSfile$   $Author: esler $
  * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineConstraints.h 1691 2007-02-01 21:51:50Z jnkim $ 
+ * $Id: BsplineFunctor3D.h 1691 2007-02-01 21:51:50Z jnkim $ 
  ***************************************************************************/
