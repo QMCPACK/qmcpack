@@ -179,11 +179,18 @@ bool QMCLinearOptimize::run()
             vector<RealType> alphar(N),alphai(N),beta(N);
             Matrix<RealType> eigenT(N,N);
             int info;
-            int lwork(70*N);
-            vector<RealType> work(lwork);
+            int lwork(-1);
+            vector<RealType> work(1);
+
             RealType tt(0);
-            int t(1);
-            
+            int t(1); 
+            dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+            //       app_log()<<" Optimal size of work"<<work[0]<<endl;
+            lwork=work[0];
+            work.resize(lwork);
+
+
+
             ///RealType==double to use this one, ned to write case where RealType==float
             dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
             assert(info==0);

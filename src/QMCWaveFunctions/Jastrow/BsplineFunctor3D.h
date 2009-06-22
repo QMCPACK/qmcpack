@@ -429,7 +429,11 @@ namespace qmcplusplus {
 	  putContent(params, xmlCoefs);
 	  if (params.size() == Parameters.size()) 
 	    Parameters = params;
-	  else {
+	  else if (params.size() == 0)
+    {
+      app_log()<<" Initializing all parameters to zero"<<endl;
+    }    
+    else {
 	    app_error() << "Expected " << Parameters.size() << " parameters,"
 			<< " but found only " << params.size()
 			<< " in BsplineFunctor3D.\n";

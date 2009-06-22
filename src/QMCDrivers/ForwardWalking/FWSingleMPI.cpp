@@ -71,7 +71,6 @@ namespace qmcplusplus {
         }
         if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
       }
-      myComm->barrier();
     }
     else
     {
@@ -81,6 +80,8 @@ namespace qmcplusplus {
           if (verbose>1) app_log()<<" Filled ID Matrix"<<endl;
       }
     }
+    
+    myComm->barrier();
     if (myComm->rank()!=0) walkersPerBlock.resize(numSteps);
     myComm->bcast( walkersPerBlock );
     

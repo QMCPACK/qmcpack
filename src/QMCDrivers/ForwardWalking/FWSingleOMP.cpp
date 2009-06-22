@@ -67,7 +67,7 @@ namespace qmcplusplus {
     }
     else
     {
-            fillIDMatrix();
+      fillIDMatrix();
     }
     if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
 
