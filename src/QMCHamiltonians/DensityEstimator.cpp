@@ -29,8 +29,13 @@ namespace qmcplusplus
   DensityEstimator::DensityEstimator(ParticleSet& elns) : rVs(0)
   {
     UpdateMode.set(COLLECTABLE,1);
-    for(int i=0; i<OHMMS_DIM; ++i)
-      Bounds[i]=1.0/elns.Lattice.Length[i];
+    Periodic=(elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
+
+    for(int dim=0; dim<OHMMS_DIM; ++dim)
+    {
+      density_max[dim]=elns.Lattice.Length[dim];
+      ScaleFactor[dim]=1.0/elns.Lattice.Length[dim];
+    }
     //    InitPotential(elns);
   }
 
@@ -40,31 +45,39 @@ namespace qmcplusplus
 
   DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
   {
-    for(int iat=0; iat<P.getTotalNum(); ++iat) 
+    if (Periodic)
     {
-      PosType ru;
-      if (P.Lattice.SuperCellEnum==1){
-	ru=P.Lattice.toUnit(P.R[iat]);
-	int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
-	int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
-	int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-	P.Collectables[getGridIndex(i,j,k)]+=1.0;
-	//	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-	//HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+      for(int iat=0; iat<P.getTotalNum(); ++iat) 
+      {
+        PosType ru;
+        ru=P.Lattice.toUnit(P.R[iat]);
+        int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
+        int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
+        int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
+        P.Collectables[getGridIndex(i,j,k)]+=1.0;
+        //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
+        //HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
-      else {
-	for (int dim=0;dim<OHMMS_DIM;dim++){
-	  ru[dim]=(P.R[iat][dim]-density_min[dim])/(density_max[dim]-density_min[dim]);
-	}
-	if (ru[0]>0.0 && ru[1]>0.0 && ru[2]>0.0 &&
-	    ru[0]<1.0 && ru[1]<1.0 && ru[2]<1.0){
-	  int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
-	  int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
-	  int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-	  P.Collectables[getGridIndex(i,j,k)]+=1.0;
-	  //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-	  //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
-	}
+    }
+    else 
+    {
+      for(int iat=0; iat<P.getTotalNum(); ++iat) 
+      {
+        PosType ru;
+        for (int dim=0;dim<OHMMS_DIM;dim++)
+        {
+          //ru[dim]=(P.R[iat][dim]-density_min[dim])/(density_max[dim]-density_min[dim]);
+          ru[dim]=(P.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
+        }
+        if (ru[0]>0.0 && ru[1]>0.0 && ru[2]>0.0 &&
+            ru[0]<1.0 && ru[1]<1.0 && ru[2]<1.0){
+          int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
+          int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
+          int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
+          P.Collectables[getGridIndex(i,j,k)]+=1.0;
+          //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
+          //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+        }
       } 
     }
     return 0.0;
@@ -93,8 +106,7 @@ namespace qmcplusplus
     return LR;
   }
 
-  void 
-  DensityEstimator::InitPotential(ParticleSet &P)
+  void DensityEstimator::InitPotential(ParticleSet &P)
   {
     SpeciesSet& tspecies(P.getSpeciesSet());
     int ChargeAttribIndx = tspecies.addAttribute("charge");
@@ -161,10 +173,9 @@ namespace qmcplusplus
     myIndex=collectables.current();
     vector<RealType> tmp(NumGrids[OHMMS_DIM]);
     collectables.add(tmp.begin(),tmp.end());
-    potentialIndex=collectables.current();
-    vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
-    collectables.add(tmp2.begin(),tmp2.end());
-
+    //potentialIndex=collectables.current();
+    //vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
+    //collectables.add(tmp2.begin(),tmp2.end());
   }
 
   void DensityEstimator::registerCollectables(vector<observable_helper*>& h5desc
@@ -178,12 +189,10 @@ namespace qmcplusplus
     h5o->open(gid);
     h5desc.push_back(h5o);
 
-
-    h5o=new observable_helper("Potential");
-    h5o->set_dimensions(ng,potentialIndex);
-    h5o->open(gid);
-    h5desc.push_back(h5o);
-
+    //h5o=new observable_helper("Potential");
+    //h5o->set_dimensions(ng,potentialIndex);
+    //h5o->open(gid);
+    //h5desc.push_back(h5o);
   }
 
   void DensityEstimator::setObservables(PropertySetType& plist)
@@ -199,38 +208,32 @@ namespace qmcplusplus
 
   /** check xml elements
    *
-   * <estimator name="density" debug="no" delta="0.1"/>
+   * <estimator name="density" debug="no" delta="0.1 0.1 0.1"/>
    */
   bool DensityEstimator::put(xmlNodePtr cur)
   {
     Delta=0.1;
+    vector<double> delta;
     string debug("no");
     string potential("no");
     OhmmsAttributeSet attrib;
     attrib.add(debug,"debug");
     attrib.add(potential,"potential");
-    double x_min=0.0;
-    double y_min=0.0;
-    double z_min=0.0;
-    double x_max=10.0;
-    double y_max=10.0;
-    double z_max=10.0;
-    attrib.add(x_min,"x_min");
-    attrib.add(y_min,"y_min");
-    attrib.add(z_min,"z_min");
-    attrib.add(x_max,"x_max");
-    attrib.add(y_max,"y_max");
-    attrib.add(z_max,"z_max");
-    double delta;
-    attrib.add(delta,"delta");
+    attrib.add(density_min[0],"x_min");
+    attrib.add(density_min[1],"y_min");
+    attrib.add(density_min[2],"z_min");
+    attrib.add(density_max[0],"x_max");
+    attrib.add(density_max[1],"y_max");
+    attrib.add(density_max[2],"z_max");
+    attrib.add(Delta,"delta");
     attrib.put(cur);
-    Delta=delta; //Delta is an array so you need to set the whole thing
-    density_min[0]=x_min;
-    density_min[1]=y_min;
-    density_min[2]=z_min;
-    density_max[0]=x_max;
-    density_max[1]=y_max;
-    density_max[2]=z_max;
+
+    if(!Periodic)
+    {
+      for(int dim=0; dim<OHMMS_DIM; ++dim)
+        ScaleFactor[dim]=1.0/(density_max[dim]-density_min[dim]);
+    }
+
     resize();
     return true;
   }
@@ -270,5 +273,5 @@ namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $ 
+ * $Id: DensityEstimator.cpp 2945 2008-08-05 15:21:33Z jnkim $ 
  ***************************************************************************/

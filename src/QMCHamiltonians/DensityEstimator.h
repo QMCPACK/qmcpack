@@ -72,22 +72,26 @@ namespace qmcplusplus
 
 
     private:
-    TinyVector<double, OHMMS_DIM> density_min;
-    TinyVector<double, OHMMS_DIM> density_max;
-    
-    
+    ///true if any direction of a supercell is periodic
+    bool Periodic;
+    ///normalization factor
+    RealType Norm;
     ///number of grids
     TinyVector<int,OHMMS_DIM+1> NumGrids;
-    ///bounds
-    TinyVector<RealType,OHMMS_DIM> Bounds;
     ///bin size
     TinyVector<RealType,OHMMS_DIM> Delta;
     ///inverse
     TinyVector<RealType,OHMMS_DIM> DeltaInv;
+    ///scaling factor for conversion
+    TinyVector<RealType,OHMMS_DIM> ScaleFactor;
+    ///lower bound
+    TinyVector<RealType, OHMMS_DIM> density_min;
+    ///upper bound
+    TinyVector<RealType, OHMMS_DIM> density_max;
     ///name of the density data
     string prefix;
     ///density
-    Array<RealType,OHMMS_DIM> density, Vavg;
+    //Array<RealType,OHMMS_DIM> density, Vavg;
     /** resize the internal data
      *
      * The argument list is not completed
@@ -101,5 +105,5 @@ namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $ 
+ * $Id: DensityEstimator.h 2945 2008-08-05 15:21:33Z jnkim $ 
  ***************************************************************************/
