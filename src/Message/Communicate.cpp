@@ -19,18 +19,7 @@
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 #include <iostream>
-
-#ifdef __linux__
-#include "sys/sysinfo.h"
-
-size_t freemem()
-{
-  struct sysinfo si;
-  sysinfo(&si);
-  return si.freeram + si.bufferram;
-}
-#endif
-
+#include <Platforms/sysutil.h>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -104,8 +93,7 @@ void Communicate::initialize(int argc, char **argv)
 #ifdef __linux__
   for (int proc=0; proc<OHMMS::Controller->size(); proc++) {
     if (OHMMS::Controller->rank() == proc) {
-      fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n",
-	       proc, freemem()>>20);
+      fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n", proc, freemem());
     }
     barrier();
   }
@@ -130,9 +118,7 @@ void Communicate::abort()
 
 void Communicate::barrier()
 {
-  //OOMPI_COMM_WORLD.Barrier();
   myComm.Barrier();
-
 }
 
 void Communicate::abort(const char* msg)
