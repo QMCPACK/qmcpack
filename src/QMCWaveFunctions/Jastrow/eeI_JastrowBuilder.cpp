@@ -82,6 +82,7 @@ namespace qmcplusplus {
     else 
       app_error() << "You must specify the \"source\" particleset for a three-body Jastrow.\n";
     
+    return true;
     
     //   // Find the number of the source species
     //   SpeciesSet &sSet = sourcePtcl->getSpeciesSet();

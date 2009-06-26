@@ -82,6 +82,7 @@ namespace qmcplusplus {
 
     RealType ChiesaKEcorrection()
     {
+      return 0.0;
     }
 
     eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master) 
