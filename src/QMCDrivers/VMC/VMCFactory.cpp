@@ -15,7 +15,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCFactory.h" 
-#include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/WFMC/WFMCSingleOMP.h"
@@ -39,13 +38,6 @@ namespace qmcplusplus {
     {
       qmc = new VMCSingleOMP(w,psi,h,hpool);
     } 
-//#if defined(ENABLE_OPENMP)
-//      if(np>1)
-//        qmc = new VMCSingleOMP(w,psi,h,hpool);
-//      else
-//#endif
-//        qmc = new VMCSingle(w,psi,h);
-//    } 
 #if defined(QMC_BUILD_COMPLETE)
     //else if(VMCMode == 2) //(0,1,0)
     //{
