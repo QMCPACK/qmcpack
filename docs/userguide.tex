@@ -10,6 +10,7 @@
 \usepackage{amsmath}
 \usepackage{fancyhdr}
 \usepackage[small,compact]{titlesec}
+\usepackage{dbk_callout}
 %\usepackage[annot]{db2latex}
 %\usepackage[small]{caption}
 \oddsidemargin 0cm
@@ -19,7 +20,7 @@
 %\textheight 8.95in
 \topmargin 0in
 \parindent 0mm
-%\parskip 3pt
+%\parskip 6pt
 
 \setcounter{tocdepth}{5}
 \setcounter{secnumdepth}{5}
@@ -31,7 +32,9 @@
 
 %%% Add aliases
 \newcommand{\bR}{\mathbf{R}}
-\newcommand{\cmake}{\href{http://www.cmake.org}{cmake }}
+\newcommand{\cmake}{\href{http://www.cmake.org}{{\tt cmake} }}
+\newcommand{\boost}{\href{http://www.boost.org/}{{\tt boost} }} 
+\newcommand{\wiki}{\href{http://cms.mcc.uiuc.edu/qmcpack}{{\tt QMCPACK wiki} }}
 
 %%% import macros from various latex sources, dblatex
 %%% setting the variables for listings
@@ -45,15 +48,16 @@ keywordstyle=\bfseries\color{blue},
 stringstyle=\ttfamily\color{red},
 commentstyle=\itshape\color[rgb]{0.25,0.25,0.25},
 %identifierstyle=\itshape\color{red},
-basicstyle=\small\tt,
+%basicstyle=\small\tt,
+basicstyle=\tt,
 showspaces=false,
 showtabs=false,
 showstringspaces=false,
-frame=trbl,
+%frame=trbl,
 %extendedchars=true,
 numbers=none,
-aboveskip=0cm,
-belowskip=0cm,
+aboveskip=3pt,
+belowskip=3pt,
 xleftmargin=0cm,
 xrightmargin=0cm,
 %emph={simulation,parameter,group,particleset},emphstyle=\bfseries\color{darkblue},
@@ -119,6 +123,8 @@ Kim.  More information is available at \url{http://www.mcc.uiuc.edu/qmc/}.
 \newpage
 
 \input intro
+\input intro_io
+\input intro_advanced
 
 %See list_samples.tex for an example of xml and code fragments
 %\input list_samples
