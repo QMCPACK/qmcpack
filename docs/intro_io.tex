@@ -5,7 +5,6 @@ A valid input file for QMCPACK should look like
 \begin{lstlisting}[language=xml,escapeinside={<:}{:>},
 emph={simulation},emphstyle=\bfseries\color{blue}]
   <?xml version="1.0"?>
-  <!DOCTYPE simulation SYSTEM "qmcpack.dtd">
   <simulation>
     <project id="mysimulation" series="0"/><:\coref{1}{project.qr}:>
     <random parallel="1" seed="-1"/><:\coref{2}{random.qr}:>
@@ -15,25 +14,25 @@ emph={simulation},emphstyle=\bfseries\color{blue}]
     <qmc/> <:\coref{6}{qmc.qr}:>
   </simulation> 
 \end{lstlisting}
+
+\textbf{The order of the xml elements in an input file is important, e.g., {\tt
+<qmc>} cannot come before other elements.} The alllowed multiplicity of each
+xml element is given in [ ]s. 
+
 \begin{description}
 %[leftmargin=1cm,style=sameline]
 \item[{\hyperref[project.qr]{\conum{1}}}]
-This sets the title and sequence number of a simulation.  See
-\hyperref[project.sec]{project} 
+sets the title and sequence number of a simulation. [0..1]
 \item[{\hyperref[random.qr]{\conum{2}}}]
-This assigns the seed of the random number generator (using Singleton pattern).
-See \hyperref[random.sec]{random} 
+assigns the seed of the random number generator (using Singleton pattern). [0..1] 
 \item[{\hyperref[particleset.qr]{\conum{3}}}]
-This creates a set of Particles. For QMC simulations, at least one
-\hyperref[particleset.sec]{particleset} should exist for the quantum particles.
-The chapter ~\ref{ptcl.ch} shows how to define the \texttt{particleset}s. 
+creates a set of Particles. [1..*]
 \item[{\hyperref[wavefunction.qr]{\conum{4}}}]
-This creates a many-{}body wavefunction for a target particleset. See
-Chapter~\ref{wfsmain.ch} 
+creates a many-{}body wavefunction for a target particleset.  [1..*]
 \item[{\hyperref[hamiltonian.qr]{\conum{5}}}]
-This creates a many-{}body Hamiltonian for a target particleset. See chapter~\ref{qmc.ham.ch} 
+creates a many-{}body Hamiltonian for a target particleset. [1..*]
 \item[{\hyperref[qmc.qr]{\conum{6}}}]
-This forms a complete QMC section. See chapter~\ref{qmc.method.ch} 
+executes a QMC algorithm defined by the {\tt method} attribute. [1..*]
 \end{description}
 
 When the document is not well formed, e.g., it has mismatched tags, the xml
@@ -50,7 +49,7 @@ xmllint} can be used to check if your input file is well formed.
 
 QMCPACK and other related programs process the elements in this section to set
 the simulation parameters, such as the root of the output files and random
-number generators.  
+number generators. 
 
 %\subsubsection{project} \label{project.sec}
 \begin{description}
@@ -63,19 +62,20 @@ for the root name of the output files.
 Each recording engines will add a postfix. The postfix typically tells you what
 data the output contains and its format.  For example, a simulation with the
 project as
-  
 \begin{lstlisting}[language=XML,emph={project},emphstyle=\bfseries\color{blue}]
-<project id="H2.STO.mo" series="0"/>\end{lstlisting} 
-will produce
-\nolinkurl{H2.STO.mos000.scalar.dat} and several file names. Any file whose
-postfix is \nolinkurl{dat} can be plotted with any graphic package that accepts
-multiple column data, e.g., gnuplot, xmgrace and dataspork. See
-\hyperlink{output.sec}{output} for the standard output of QMCPACK. 
+  <project id="H2.STO.mo" series="0"/>
+\end{lstlisting} 
+will produce \nolinkurl{H2.STO.mos000.scalar.dat} and several file names. Any
+file whose postfix is \nolinkurl{dat} can be plotted with any graphic package
+that accepts multiple column data, e.g., gnuplot, xmgrace and dataspork. See
+\hyperlink{output.sec}{output} for the standard output of QMCPACK.  Although it
+is an optional element, specifying the \textbf{project} is strongly
+recommended.
 
-\item[\textbf{application}{}]
-This \emph{optional} element \hyperlink{application.element}{application} is
-intended to record the version of the code, related publications and other
-information that can be used for data mining. 
+%\item[\textbf{application}{}]
+%This \emph{optional} element \hyperlink{application.element}{application} is
+%intended to record the version of the code, related publications and other
+%information that can be used for data mining. 
 
 \item[\textbf{random}{}]
 This \emph{optional} element \hyperlink{random.element}{random} sets the
@@ -83,7 +83,8 @@ properties of the global random number generator using Singleton pattern. The
 default setting is
   
 \begin{lstlisting}[language=XML,emph={random},emphstyle=\bfseries\color{blue}]
-<random parallel="1" seed="-1"/>\end{lstlisting}
+  <random parallel="1" seed="-1"/>
+\end{lstlisting}
  to assign independent random seeds based on the hardware clock of the
  execution. The state of the random number generator is stored in a hdf5 for
  checkpoint and is used for the subsequent run.  Specifically, we use
@@ -146,8 +147,8 @@ particleset}  and \emph{wavefunction} should be defined before used by the
  
 \begin{lstlisting}[language=XML,emph={hamiltonian},emphstyle=\bfseries\color{blue}]
   <hamiltonian name="h0" target="e" wavefunction="psi0">
-    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
-    <pairpot name="Coulomb" type="coulomb" source="i" target="e"/>
+    <pairpot name="ElecElec" type="coulomb" source="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="i"/>
     <pairpot name="IonIon" type="coulomb" source="i" target="i"/>
   </hamiltonian> 
 \end{lstlisting}
@@ -157,7 +158,7 @@ particleset}  and \emph{wavefunction} should be defined before used by the
 
 \begin{description}
 \item[\textbf{qmc}{}]
-defines actions on a QMC system, i.e., performing one of several QMC algorithms
+defines the actions on a QMC system, i.e., performing one of several QMC algorithms
 to calculate the properties of the \emph{target particleset}.
  
 \begin{lstlisting}[language=XML,emph={qmc},emphstyle=\bfseries\color{blue}]
