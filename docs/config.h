@@ -105,40 +105,75 @@ THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS WITH THE SOFTWARE.
- *
  */
-#ifndef OHMMS_QMC_CONFIGURATION_H
-#define OHMMS_QMC_CONFIGURATION_H
+#ifndef QMCPLUSPLUS_CONFIGURATION_H
+#define QMCPLUSPLUS_CONFIGURATION_H
+
+/* define the major version */
+#define QMCPLUSPLUS_VERSION_MAJOR  0
+
+/* define the minor version */
+#define QMCPLUSPLUS_VERSION_MINOR  5
+
+/* define the patch version */
+#define QMCPLUSPLUS_VERSION_PATCH  0
+
+/* define the release version */
+/* #undef QMCPLUSPLUS_RELEASE */
+
+/* define the linearscale version */
+/* #undef QMCPLUSPLUS_LINEARSCALE */
+
+/* define the subversion branch */
+#define QMCPLUSPLUS_BRANCH  3680
+
+/* define the subversion last changed date */
+#define QMCPLUSPLUS_LAST_CHANGED_DATE  "2009-03-13 14:48:19 -0500 (Fri, 13 Mar 2009)"
+
+/* define QMC_BUILD_COMPLETE */
+#define QMC_BUILD_COMPLETE 1
+
+/* define PRINT_DEBUG */
+/* #undef PRINT_DEBUG */
 
 /* Enable OpenMP parallelization. */
-/* #undef ENABLE_OPENMP 0 */
+#define ENABLE_OPENMP 1
 
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #define HAVE_LIBHDF5 1
+
+/* Define to 1 if you want to use parallel hdf5 for frequent output */
+/* #undef ENABLE_PHDF5 */
 
 /* Define to 1 if you have the `boost' library */
 #define HAVE_LIBBOOST 1
 
 /* Define to 1 if you have the `sprng' library (-lsprng). */
-/* #undef HAVE_LIBSPRNG 0 */
+/* #undef HAVE_LIBSPRNG */
 
 /* Define to 1 if you have the `blitz' library */
-#define HAVE_LIBBLITZ 1
+/* #undef HAVE_LIBBLITZ */
 
 /* Define to 1 if you have libxml2 */
 #define HAVE_LIBXML2 1
 
+/* Define to 1 if you have fftw */
+#define HAVE_LIBFFTW 1
+
 /* Define to 1 if you have libxml++ */
-/* #undef HAVE_LIBXMLPP 0 */
+/* #undef HAVE_LIBXMLPP */
 
 /* Define to 1 if you have gsl */
-#define HAVE_LIBGSL 1
+/* #undef HAVE_LIBGSL */
 
 /* Define to 1 if you have MPI library */
-/* #undef HAVE_MPI 0 */
+/* #undef HAVE_MPI */
 
 /* Define to 1 if you have OOMPI library */
-/* #undef HAVE_OOMPI 0 */
+/* #undef HAVE_OOMPI */
+
+/* Define the base precision: float, double */
+#define APP_PRECISION double
 
 /* Define the physical dimension of appliation. */
 #define OHMMS_DIM 3
@@ -149,10 +184,108 @@ OTHER DEALINGS WITH THE SOFTWARE.
 /* Define the base precision: float, double */
 #define OHMMS_PRECISION double
 
+/* Define to 1 if complex wavefunctions are used */
+/* #undef QMC_COMPLEX */
+
+/* Define to 1 if using AYSNC comm for estimator */
+/* #undef QMC_ASYNC_COLLECT */
+
+/* Define to 1 if using recursive SK evaluation */
+/* #undef QMC_SK_USE_RECURSIVE */
+
 /* Define if the code is specialized for orthorhombic supercell */
 #define OHMMS_ORTHO 0
 
 /* Define the index of the walker iterator. NOT USED */
 #define QMC_FASTWALKER 1
 
-#endif // OHMMS_QMC_CONFIGURATION_H
+/* Define if sincos function exists */
+/* #undef HAVE_SINCOS */
+
+/* Define if std::round function exists */
+#define HAVE_STD_ROUND 1
+
+/* Define if floor function exists */
+#define HAVE_FLOOR 1
+
+/* Define if einspline lib exists */
+/* #undef HAVE_EINSPLINE */
+
+/* Define if external einspline is found */
+/* #undef HAVE_EINSPLINE_EXT */
+
+#ifndef HAVE_EINSPLINE_EXT
+
+/* Define if posix_memalign function exists */
+/* #undef HAVE_POSIX_MEMALIGN */
+
+/* Define if pow function exists */
+#define HAVE_POW 1
+
+/* Define if sqrt function exists */
+#define HAVE_SQRT 1
+
+/* Define if dlfcn.h exists */
+#define HAVE_DLFCN_H 1
+
+/* Define if inttypes.h exists */
+#define HAVE_INTTYPES_H 1
+
+/* Define if memory.h exists */
+#define HAVE_MEMORY_H 1
+
+/* Define if pmmintrin.h exists */
+#define HAVE_PMMINTRIN_H 1
+
+/* Define if emmintrin.h exists */
+#define HAVE_EMMINTRIN_H 1
+
+/* Define if sys/stat.h exists */
+#define HAVE_SYS_STAT_H 1
+
+/* Define if sys/time.h exists */
+#define HAVE_SYS_TIME_H 1
+
+/* Define if sys/types.h exists */
+#define HAVE_SYS_TYPES_H 1
+
+/* Define if unistd.h exists */
+#define HAVE_UNISTD_H 1
+
+/* Define if mmx support exists */
+/* #undef HAVE_MMX */
+
+/* Define if sse support exists */
+/* #undef HAVE_SSE */
+
+/* Define if sse2 support exists */
+/* #undef HAVE_SSE2 */
+
+/* Define if sse3 support exists */
+/* #undef HAVE_SSE3 */
+
+/* Define if ssse3 support exists */
+/* #undef HAVE_SSSE3 */
+
+/* Define if c variable array support exists */
+#define HAVE_C_VARARRAYS 1
+
+/* Prefetch loop lead distance  */
+#define PREFETCH_AHEAD 12
+
+/* Use SSE prefetch  */
+/* #undef USE_PREFETCH */
+
+#endif /* HAVE_EINSPLINE_EXT */
+
+/* Fund mkl library */
+/* #undef HAVE_MKL */
+
+/* Fund mkl/vml library */
+/* #undef HAVE_MKL_VML */
+
+/* Fund acml library */
+/* #undef HAVE_ACML */
+
+#endif // QMCPLUSPLUS_CONFIGURATION_H
+
