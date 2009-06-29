@@ -71,7 +71,7 @@ namespace qmcplusplus {
 //       int maxV = OBS.getLength();
 //       int maxW = WGTS.getLength(step);
 //       assert (maxV==maxW);
-      for(int i=0;i<(Dims[2]-Dims[0]);i++)
+      for(int i=Dims[3];i<(Dims[2]-Dims[0]);i++)
       {
         vector<int> weights;
         vector<double> values; 

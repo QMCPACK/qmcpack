@@ -68,6 +68,13 @@ namespace qmcplusplus {
     else
     {
       fillIDMatrix();
+      //           find weight length from the weight file
+          hid_t f_file = H5Fopen(hdf_WGT_data.getFileName().c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+          hsize_t numGrps = 0;
+          H5Gget_num_objs(f_file, &numGrps);
+          weightLength = static_cast<int> (numGrps)-1;
+          if (H5Fclose(f_file)>-1) f_file=-1;
+      if (verbose>0) app_log()<<" weightLength "<<weightLength<<endl;
     }
     if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
 
@@ -137,18 +144,24 @@ namespace qmcplusplus {
     
     if(doDat>=1)
     {
-      vector<int> Dimensions(3);
+      vector<int> Dimensions(4);
       hdf_WGT_data.openFile();
       hdf_OBS_data.openFile();
       Estimators->start(weightLength,1);
       int nprops;
-      if (doObservables==1) nprops = H.sizeOfObservables();
-      else nprops=doDat;
+      if (doObservables==1) nprops = H.sizeOfObservables()+2;
+      else
+      {
+        int Noo = hdf_OBS_data.numObsStep(0);
+        int Nwl = hdf_WGT_data.numWgtStep(0);
+        nprops = Noo/Nwl;
+      }
       for(int ill=0;ill<weightLength;ill++)
       {    
         Dimensions[0]=ill;
-        Dimensions[1]=(nprops+2);
+        Dimensions[1]= nprops ;
         Dimensions[2]=numSteps;
+        Dimensions[3]=startStep;
         Estimators->startBlock(1);
         Estimators->accumulate(hdf_OBS_data,hdf_WGT_data,Dimensions);
         Estimators->stopBlock(getNumberOfSamples(ill));

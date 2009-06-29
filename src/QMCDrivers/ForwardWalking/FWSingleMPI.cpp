@@ -78,6 +78,13 @@ namespace qmcplusplus {
       {
           fillIDMatrix();
           if (verbose>1) app_log()<<" Filled ID Matrix"<<endl;
+          
+//           find weight length from the weight file
+          hid_t f_file = H5Fopen(hdf_WGT_data.getFileName().c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+          hsize_t numGrps = 0;
+          H5Gget_num_objs(f_file, &numGrps);
+          weightLength = static_cast<int> (numGrps)-1;
+          if (H5Fclose(f_file)>-1) f_file=-1;
       }
     }
     
@@ -188,11 +195,17 @@ namespace qmcplusplus {
       if (myComm->rank()==0) 
       {
         int nprops;
-        if (doObservables==1) nprops = H.sizeOfObservables();
-        else nprops=doDat;
-        vector<int> Dimensions(3);
-        Dimensions[1]=(nprops+2);
+        if (doObservables==1) nprops = H.sizeOfObservables()+2;
+        else
+        {
+          int Noo = hdf_OBS_data.numObsStep(0);
+          int Nwl = hdf_WGT_data.numWgtStep(0);
+          nprops = Noo/Nwl;
+        }
+        vector<int> Dimensions(4);
+        Dimensions[1]=nprops;
         Dimensions[2]=numSteps;
+        Dimensions[3]=startStep;
         if (verbose >1) cout<<"  Writing scalar.dat file"<<endl;
         hdf_WGT_data.openFile();
         hdf_OBS_data.openFile();

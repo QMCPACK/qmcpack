@@ -219,6 +219,8 @@ namespace qmcplusplus {
         filename=sstr.str();
       }
       
+      string getFileName() {return filename;}
+      
       void makeFile()
       {
         hid_t d1= H5Fcreate(filename.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
@@ -289,6 +291,21 @@ namespace qmcplusplus {
 
 //         H5Gclose(d_file);
       }
+      
+      int numObsStep(int step)
+      {
+        stringstream gname("");
+        gname<<"Block_"<< step;
+
+        dataset = H5Dopen(c_file, gname.str().c_str());
+        dataspace = H5Dget_space(dataset); 
+        rank = H5Sget_simple_extent_ndims(dataspace);
+        status_n  = H5Sget_simple_extent_dims(dataspace, dims, NULL);
+        
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        return dims[0];
+      }
 
     private: 
 
@@ -325,6 +342,8 @@ namespace qmcplusplus {
         sstr<<fn<<".storedWeights.h5";
         filename=sstr.str();
       }
+      
+      string getFileName() {return filename;}
       
       void makeFile()
       {
@@ -403,6 +422,22 @@ namespace qmcplusplus {
 
 //         H5Gclose(d_file);
       }
+      
+      int numWgtStep(int step)
+      {
+        stringstream gname("");
+        gname<<"Age_0/Block_"<< step;
+
+        dataset = H5Dopen(c_file, gname.str().c_str());
+        dataspace = H5Dget_space(dataset); 
+        rank = H5Sget_simple_extent_ndims(dataspace);
+        status_n  = H5Sget_simple_extent_dims(dataspace, dims, NULL);
+        
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        return dims[0];
+      }
+      
 
     private: 
 
