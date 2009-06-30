@@ -214,39 +214,17 @@ namespace qmcplusplus {
       
       // Now, set dependent variables
       var = 0;
-      cerr << "NumConstraints = " << NumConstraints << endl;
+      //      cerr << "NumConstraints = " << NumConstraints << endl;
       for (int i=0; i<NumGamma; i++)
 	if (!IndepVar[i]) {
-	  fprintf (stderr, "constraintMatrix(%d,%d) = %1.10f\n",
-		   var, i, ConstraintMatrix(var,i));
+	  // fprintf (stderr, "constraintMatrix(%d,%d) = %1.10f\n",
+	  // 	   var, i, ConstraintMatrix(var,i));
 	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-10);
 	  for (int j=0; j<NumGamma; j++)
 	    if (i != j)
 	      GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
 	  var++;
 	}
-
-      // // Set constrained parameters
-      // for (int i=0; i<NumConstraints; i++) 
-      // 	for (int j=0; j<Parameters.size(); j++) 	  
-      // 	  GammaVec[i] -= ConstraintMatrix(i,j+NumConstraints)*Parameters[i];
-
-      // // Set unconstrained parameters
-      // for (int i=0; i<Parameters.size(); i++)
-      // 	GammaVec[NumConstraints+i] = Parameters[i];
-      
-      // for (int i=0; i<GammaVec.size(); i++)
-      // 	fprintf (stderr, "%3d %1.8f\n", i, GammaVec[i]);
-
-      // // Set gamma matrix
-      // fprintf (stderr, "GammaPerm = \n");
-      // for (int i=0; i<NumGamma; i++)
-      // 	fprintf (stderr, "   %2d\n", GammaPerm[i]);
-      // // Undo permutation
-      // vector<real_type> unpermuted(NumGamma);
-      // for (int i=0; i<NumGamma; i++)
-      // 	unpermuted[GammaPerm[i]] = GammaVec[i];	
-      // 	//unpermuted[i] = GammaVec[GammaPerm[i]];
 
       int num=0;
       for (int m=0; m<=N_eI; m++)
@@ -279,8 +257,8 @@ namespace qmcplusplus {
 	for (int l=0; l<=k; l++) {
 	  int m = k - l;
 	  if (m <= N_eI && l <= N_eI) {
-	    fprintf (stderr, "k = %d gamma(%d, %d, 1) = %1.8f\n", k, l, m,
-		     gamma(l,m,1));
+	    // fprintf (stderr, "k = %d gamma(%d, %d, 1) = %1.8f\n", k, l, m,
+	    // 	     gamma(l,m,1));
 	    sum += gamma(l,m,1);
 	  }
 	}
@@ -298,9 +276,9 @@ namespace qmcplusplus {
 	  int n = k - m;
 	  if (m <= N_eI && n <= N_ee) {
 	    sum += (real_type)C*gamma(0,m,n) - L*gamma(1,m,n);
-	    fprintf (stderr, 
-		     "k = %d gamma(0,%d,%d) = %1.8f  gamma(1,%d,%d)=%1.8f\n",
-		     k, m, n, gamma(0,m,n), m, n, gamma(1,m,n));
+	    // fprintf (stderr, 
+	    // 	     "k = %d gamma(0,%d,%d) = %1.8f  gamma(1,%d,%d)=%1.8f\n",
+	    // 	     k, m, n, gamma(0,m,n), m, n, gamma(1,m,n));
 	  }
 	}
 	if (std::fabs(sum) > 1.0e-10) {
@@ -320,11 +298,11 @@ namespace qmcplusplus {
 
       real_type val = 0.0;
       real_type r2l=1.0;
-      for (int l=0; l<N_eI; l++) {
+      for (int l=0; l<=N_eI; l++) {
 	real_type r2m=1.0; 
-	for (int m=0; m<N_eI; m++) {
+	for (int m=0; m<=N_eI; m++) {
 	  real_type r2n=1.0;
-	  for (int n=0; n<N_ee; n++) {
+	  for (int n=0; n<=N_ee; n++) {
 	    val += gamma(l,m,n)*r2l*r2m*r2n;
 	    r2n *= r_12;
 	  }
@@ -332,8 +310,8 @@ namespace qmcplusplus {
 	}
 	r2l *= r_1I;
       }
-      for (int i=0; i<C; i++)
-	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
+      // for (int i=0; i<C; i++)
+      // 	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
       return val;
     }
 
@@ -349,21 +327,59 @@ namespace qmcplusplus {
         return 0.0;
       }
       real_type val = 0.0;
-      real_type r2l=1.0;
+
+      // r2l[0] = r2m[0] = 1.0;
+      // for (int i=1; i<N_eI; i++) {
+      // 	r2l[i] = r2l[i-1] * r_1I;
+      // 	r2m[i] = r2l[i-1] * r_2I;
+      // }
+      // r2n[0] = 1.0;
+      // for (int i=1; i<N_ee; i++) 
+      // 	r2n[i] = r2n[i-1] * r_12;
+
+      
+
+      real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), lf(0.0);
       for (int l=0; l<N_eI; l++) {
-	real_type r2m=1.0; 
+	real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), mf(0.0);
 	for (int m=0; m<N_eI; m++) {
-	  real_type r2n=1.0;
+	  real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), nf(0.0);
 	  for (int n=0; n<N_ee; n++) {
-	    val += gamma(l,m,n)*r2l*r2m*r2n;
+	    real_type g = gamma(l,m,n);
+	    val += g*r2l*r2m*r2n;
+
+	    grad[0] += nf * g *r2l   * r2m   * r2n_1;
+	    grad[1] += lf * g *r2l_1 * r2m   * r2n  ;
+	    grad[2] += mf * g *r2l   * r2m_1 * r2n  ;
+
+	    hess(0,0) += nf*(nf-1.0) * g * r2l   * r2m   * r2n_2  ;
+	    hess(0,1) += nf*lf       * g * r2l_1 * r2m   * r2n_1  ;
+	    hess(0,2) += nf*mf       * g * r2l   * r2m_1 * r2n_1  ;
+	    hess(1,1) += lf*(lf-1.0) * g * r2l_2 * r2m   * r2n    ;
+	    hess(1,2) += lf*mf       * g * r2l_1 * r2m_1 * r2n    ;
+	    hess(2,2) += mf*(mf-1.0) * g * r2l   * r2m_2 * r2n    ;
+
+	    r2n_2 = r2n_1;
+	    r2n_1 = r2n;
 	    r2n *= r_12;
+	    nf += 1.0;
 	  }
+	  r2m_2 = r2m_1;
+	  r2m_1 = r2m;
 	  r2m *= r_2I;
+	  mf += 1.0;
 	}
+	r2l_2 = r2l_1;
+	r2l_1 = r2l;
 	r2l *= r_1I;
+	lf += 1.0;
       }
-      for (int i=0; i<C; i++)
-	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
+      hess(1,0) = hess(0,1);
+      hess(2,0) = hess(0,2);
+      hess(2,1) = hess(1,2);
+
+      // for (int i=0; i<C; i++)
+      // 	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
 
       return val;
     }
@@ -481,6 +497,12 @@ namespace qmcplusplus {
 
     void resetParameters(const opt_variables_type& active)
     {
+      for (int i=0; i<Parameters.size(); i++) {
+	int loc = myVars.where(i);
+	if (loc >= 0)
+	  Parameters[i] = myVars[i] = active[loc];
+      }
+	
       // int iparam = 0;
       // for (int i=0; i<N_ee; i++)
       // 	for (int j=0; j<N_eI; j++)
