@@ -73,7 +73,7 @@ namespace qmcplusplus {
       gamma.resize(N_eI+1, N_eI+1, N_ee+1);
       index.resize(N_eI+1, N_eI+1, N_ee+1);
       NumGamma = ((N_eI+1)*(N_eI+2)/2 * (N_ee+1));
-      NumConstraints = (2*N_eI+1);// + (N_eI+N_ee+1);
+      NumConstraints = (2*N_eI+1) + (N_eI+N_ee+1);
       int numParams = NumGamma - NumConstraints;
       Parameters.resize(numParams);
       GammaVec.resize(NumGamma);
@@ -116,19 +116,19 @@ namespace qmcplusplus {
 	}
       }
       // e-I no-cusp constraint
-      // for (int kp=0; kp<=N_eI+N_ee; kp++) {
-      // 	if (kp <= N_ee) {
-      // 	  ConstraintMatrix(k+kp,index(0,0,kp)) = (real_type) C;
-      // 	  ConstraintMatrix(k+kp,index(0,1,kp)) = -L;
-      // 	}
-      // 	for (int l=1; l<=kp; l++) {
-      // 	  int n = kp - l;
-      // 	  if (n >= 0 && n <= N_ee && l <= N_eI) {
-      // 	    ConstraintMatrix(k+kp,index(l,0,n)) = (real_type)C;
-      // 	    ConstraintMatrix(k+kp,index(l,1,n)) = -L;
-      // 	  }
-      // 	}
-      // }
+      for (int kp=0; kp<=N_eI+N_ee; kp++) {
+      	if (kp <= N_ee) {
+      	  ConstraintMatrix(k+kp,index(0,0,kp)) = (real_type) C;
+      	  ConstraintMatrix(k+kp,index(0,1,kp)) = -L;
+      	}
+      	for (int l=1; l<=kp; l++) {
+      	  int n = kp - l;
+      	  if (n >= 0 && n <= N_ee && l <= N_eI) {
+      	    ConstraintMatrix(k+kp,index(l,0,n)) = (real_type)C;
+      	    ConstraintMatrix(k+kp,index(l,1,n)) = -L;
+      	  }
+      	}
+      }
 
       fprintf (stderr, "Constraint matrix:\n");
       for (int i=0; i<NumConstraints; i++) {
@@ -140,48 +140,44 @@ namespace qmcplusplus {
       
       // Now, row-reduce constraint matrix
       GammaPerm.resize(NumGamma);
+      IndepVar.resize(NumGamma, false);
       // Set identity permutation
       for (int i=0; i<NumGamma; i++)
 	GammaPerm[i] = i;
+      int col=-1; 
       for (int row=0; row<NumConstraints; row++) {
-	int max_loc = row;
-	real_type max_abs = std::fabs(ConstraintMatrix(row,row));
-	for (int ri=row+1; ri<NumConstraints; ri++) {
-	  real_type abs_val = std::fabs(ConstraintMatrix(ri,row));
-	  if (abs_val > max_abs) {
-	    max_loc = ri;
-	    max_abs = abs_val;
-	  }
-	}
-	if (max_abs > 1.0e-6) 
-	    ConstraintMatrix.swap_rows(row,max_loc);
-	else {
-	  // Whole column is zero, need to swap columns
-	  max_abs = std::fabs(ConstraintMatrix(row,row));
+	int max_loc;
+	real_type max_abs;
+	do {
+	  col++;
 	  max_loc = row;
-	  for (int ic=row+1; ic<NumGamma; ic++) {
-	    real_type abs_val = std::fabs(ConstraintMatrix(row,ic));
+	  max_abs = std::fabs(ConstraintMatrix(row,col));
+	  for (int ri=row+1; ri<NumConstraints; ri++) {
+	    real_type abs_val = std::fabs(ConstraintMatrix(ri,col));
 	    if (abs_val > max_abs) {
-	      max_loc = ic;
+	      max_loc = ri;
 	      max_abs = abs_val;
 	    }
 	  }
-	  ConstraintMatrix.swap_cols(row,max_loc);
-	  swap(GammaPerm[row], GammaPerm[max_loc]);
-	}
-
-	real_type lead_inv = 1.0/ConstraintMatrix(row,row);
-	for (int col=0; col<NumGamma; col++)
-	    ConstraintMatrix(row,col) *= lead_inv;
+	  if (max_abs < 1.0e-6)
+	    IndepVar[col] = true;
+	} while (max_abs < 1.0e-6);
+	
+	ConstraintMatrix.swap_rows(row,max_loc);
+	real_type lead_inv = 1.0/ConstraintMatrix(row,col);
+	for (int c=0; c<NumGamma; c++)
+	  ConstraintMatrix(row,c) *= lead_inv;
 	// Now, eliminate column entries
 	for (int ri=0; ri<NumConstraints; ri++) {
 	  if (ri != row) {
-	    real_type val = ConstraintMatrix(ri,row);
-	    for (int col=0; col < NumGamma; col++)
-	      ConstraintMatrix(ri,col) -= val * ConstraintMatrix(row,col);
+	    real_type val = ConstraintMatrix(ri,col);
+	    for (int c=0; c < NumGamma; c++)
+	      ConstraintMatrix(ri,c) -= val * ConstraintMatrix(row,c);
 	  }
 	}
       }
+      for (int c=col+1; c<NumGamma; c++)
+	IndepVar[c] = true;
 
       fprintf (stderr, "Reduced Constraint matrix:\n");
       for (int i=0; i<NumConstraints; i++) {
@@ -189,6 +185,12 @@ namespace qmcplusplus {
 	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
 	fprintf(stderr, "\n");
       }
+      fprintf (stderr, "Independent vars = \n");
+      for (int i=0; i<NumGamma; i++)
+	if (IndepVar[i])
+	  fprintf (stderr, "%d ", i);
+      fprintf (stderr, "\n");
+
       // fprintf (stderr, "Inverse matrix:\n");
       // // Now, invert constraint matrix
       // Invert(ConstraintMatrix.data(), NumGamma, NumGamma);
@@ -203,33 +205,55 @@ namespace qmcplusplus {
     {
       const double L = 0.5 * cutoff_radius;
       std::fill(GammaVec.begin(), GammaVec.end(), 0.0);
-      // Set constrained parameters
-      for (int i=0; i<NumConstraints; i++) 
-	for (int j=0; j<Parameters.size(); j++) 	  
-	  GammaVec[i] -= ConstraintMatrix(i,j+NumConstraints)*Parameters[i];
 
-      // Set unconstrained parameters
-      for (int i=0; i<Parameters.size(); i++)
-	GammaVec[NumConstraints+i] = Parameters[i];
+      // First, set all independent variables
+      int var=0;
+      for (int i=0; i<NumGamma; i++)
+	if (IndepVar[i])
+	  GammaVec[i] = Parameters[var++];
       
-      for (int i=0; i<GammaVec.size(); i++)
-	fprintf (stderr, "%3d %1.8f\n", i, GammaVec[i]);
+      // Now, set dependent variables
+      var = 0;
+      cerr << "NumConstraints = " << NumConstraints << endl;
+      for (int i=0; i<NumGamma; i++)
+	if (!IndepVar[i]) {
+	  fprintf (stderr, "constraintMatrix(%d,%d) = %1.10f\n",
+		   var, i, ConstraintMatrix(var,i));
+	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-10);
+	  for (int j=0; j<NumGamma; j++)
+	    if (i != j)
+	      GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
+	  var++;
+	}
 
-      // Set gamma matrix
-      fprintf (stderr, "GammaPerm = \n");
-      for (int i=0; i<NumGamma; i++)
-	fprintf (stderr, "   %2d\n", GammaPerm[i]);
-      // Undo permutation
-      vector<real_type> unpermuted(NumGamma);
-      for (int i=0; i<NumGamma; i++)
-	unpermuted[GammaPerm[i]] = GammaVec[i];	
-	//unpermuted[i] = GammaVec[GammaPerm[i]];
+      // // Set constrained parameters
+      // for (int i=0; i<NumConstraints; i++) 
+      // 	for (int j=0; j<Parameters.size(); j++) 	  
+      // 	  GammaVec[i] -= ConstraintMatrix(i,j+NumConstraints)*Parameters[i];
+
+      // // Set unconstrained parameters
+      // for (int i=0; i<Parameters.size(); i++)
+      // 	GammaVec[NumConstraints+i] = Parameters[i];
+      
+      // for (int i=0; i<GammaVec.size(); i++)
+      // 	fprintf (stderr, "%3d %1.8f\n", i, GammaVec[i]);
+
+      // // Set gamma matrix
+      // fprintf (stderr, "GammaPerm = \n");
+      // for (int i=0; i<NumGamma; i++)
+      // 	fprintf (stderr, "   %2d\n", GammaPerm[i]);
+      // // Undo permutation
+      // vector<real_type> unpermuted(NumGamma);
+      // for (int i=0; i<NumGamma; i++)
+      // 	unpermuted[GammaPerm[i]] = GammaVec[i];	
+      // 	//unpermuted[i] = GammaVec[GammaPerm[i]];
 
       int num=0;
       for (int m=0; m<=N_eI; m++)
 	for (int l=m; l<=N_eI; l++)
 	  for (int n=0; n<=N_ee; n++) 
-	    gamma(m,l,n) = gamma(l,m,n) = unpermuted[num++];
+	    //	    gamma(m,l,n) = gamma(l,m,n) = unpermuted[num++];
+	    gamma(m,l,n) = gamma(l,m,n) = GammaVec[num++];
 
       // Now check that constraints have been satisfied
       // e-e constraints
@@ -240,9 +264,9 @@ namespace qmcplusplus {
 	  int i = index(l,m,1);
 	  if (l<=N_eI && m <=N_eI) {
 	    if (l > m) 
-	      sum += 2.0*unpermuted[i];
+	      sum += 2.0*GammaVec[i];
 	    else if (l == m)
-	      sum += unpermuted[i];
+	      sum += GammaVec[i];
 	  }
 	}
 	if (std::fabs(sum) > 1.0e-9) 
