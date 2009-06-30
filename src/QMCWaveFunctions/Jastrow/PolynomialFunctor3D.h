@@ -106,8 +106,8 @@ namespace qmcplusplus {
       for (k=0; k<=2*N_eI; k++) {
 	for (int m=0; m<=k; m++) {
 	  int l = k - m;
-	  int i = index(l,m,1);
 	  if (l<=N_eI && m <=N_eI) {
+	    int i = index(l,m,1);
 	    if (l > m)
 	      ConstraintMatrix(k,i) = 2.0;
 	    else if (l == m)
