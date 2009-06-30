@@ -166,6 +166,23 @@ public:
     return X[i*D2+j];
   }
 
+  inline void swap_rows (int r1, int r2) {
+    for (int col=0; col<D2; col++) {
+      Type_t tmp = (*this)(r1,col);
+      (*this)(r1,col) = (*this)(r2,col);
+      (*this)(r2,col) = tmp;
+    }
+  }
+
+  inline void swap_cols (int c1, int c2) {
+    for (int row=0; row<D1; row++) {
+      Type_t tmp = (*this)(row, c1);
+      (*this)(row, c1) = (*this)(row, c2);
+      (*this)(row, c2) = tmp;
+    }
+  }
+
+
   template<class IT>
     inline void replaceRow(IT first, size_type i) {
       std::copy(first,first+D2,X.begin()+i*D2);
