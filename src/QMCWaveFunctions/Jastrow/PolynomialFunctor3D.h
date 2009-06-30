@@ -203,6 +203,9 @@ namespace qmcplusplus {
     
     void reset() 
     {
+      // fprintf (stderr, "Paramters:\n");
+      // for (int i=0; i<Parameters.size(); i++)
+      // 	fprintf (stderr, " %16.10e\n", Parameters[i]);
       const double L = 0.5 * cutoff_radius;
       std::fill(GammaVec.begin(), GammaVec.end(), 0.0);
 
@@ -212,6 +215,9 @@ namespace qmcplusplus {
 	if (IndepVar[i])
 	  GammaVec[i] = Parameters[var++];
       
+      assert (var == Parameters.size());
+
+
       // Now, set dependent variables
       var = 0;
       //      cerr << "NumConstraints = " << NumConstraints << endl;
@@ -239,8 +245,8 @@ namespace qmcplusplus {
 	real_type sum = 0.0;
 	for (int m=0; m<=k; m++) {
 	  int l = k - m;
-	  int i = index(l,m,1);
 	  if (l<=N_eI && m <=N_eI) {
+	    int i = index(l,m,1);
 	    if (l > m) 
 	      sum += 2.0*GammaVec[i];
 	    else if (l == m)
@@ -337,8 +343,9 @@ namespace qmcplusplus {
       // for (int i=1; i<N_ee; i++) 
       // 	r2n[i] = r2n[i-1] * r_12;
 
+      grad = 0.0;
+      hess = 0.0;
       
-
       real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), lf(0.0);
       for (int l=0; l<N_eI; l++) {
 	real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), mf(0.0);
