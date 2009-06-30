@@ -33,6 +33,7 @@ namespace qmcplusplus {
     }
     
     bool put(xmlNodePtr cur);
+    template<typename J3type>  bool putkids (xmlNodePtr kids, J3type &J3);
   };
 
 }

@@ -23,8 +23,53 @@
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor3D.h"
+#include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 
 namespace qmcplusplus {
+
+  template<typename J3type>
+  bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3) 
+  {
+    SpeciesSet &iSet = sourcePtcl->getSpeciesSet();
+    SpeciesSet &eSet = targetPtcl.getSpeciesSet();
+    int numiSpecies = iSet.getTotalNum();
+    
+    bool success=false;
+    while (kids != NULL) {
+      std::string kidsname = (char*)kids->name;	 
+      if (kidsname == "correlation") {
+	RealType ee_cusp=0.0;
+	RealType eI_cusp=0.0;
+	string iSpecies, eSpecies1("u"), eSpecies2("u");
+	OhmmsAttributeSet rAttrib;
+	rAttrib.add(iSpecies,"ispecies");
+	rAttrib.add(eSpecies1,"especies1");
+	rAttrib.add(eSpecies2,"especies2");
+	rAttrib.add(ee_cusp,"ecusp");
+	rAttrib.add(eI_cusp,"icusp");
+	rAttrib.put(kids);
+	
+	typedef typename J3type::FuncType FT;
+	FT *functor = new FT(ee_cusp, eI_cusp);
+	
+	functor->iSpecies = iSpecies;
+	functor->eSpecies1 = eSpecies1;
+	functor->eSpecies2 = eSpecies2;
+	int iNum = iSet.findSpecies (iSpecies);
+	int eNum1 = eSet.findSpecies (eSpecies1);
+	int eNum2 = eSet.findSpecies (eSpecies2);
+	
+	functor->put (kids);
+	strstream aname;
+	aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
+	J3.addFunc(aname.str(), iNum, eNum1, eNum2, functor);
+      }
+      kids = kids->next;
+    }
+    targetPsi.addOrbital(&J3,"eeI");
+    J3.setOptimizable(true);
+    return true;
+  }
 
   bool eeI_JastrowBuilder::put(xmlNodePtr cur)
   {
@@ -35,49 +80,67 @@ namespace qmcplusplus {
     typedef BsplineFunctor3D FuncType;
 
     // Create a three-body Jastrow
-    if (sourcePtcl) 
-    {
+    if (sourcePtcl) {
       cerr << "sourcePtcl = " << sourcePtcl << endl;
-      typedef eeI_JastrowOrbital<FuncType> J3Type;
+      string ftype("Bspline");
+      OhmmsAttributeSet tAttrib;
+      tAttrib.add(ftype,"function");
+      tAttrib.put (cur);
 
-      J3Type *J3 = new J3Type(*sourcePtcl, targetPtcl, true);
-      // Find the number of the source species
       SpeciesSet &iSet = sourcePtcl->getSpeciesSet();
       SpeciesSet &eSet = targetPtcl.getSpeciesSet();
       int numiSpecies = iSet.getTotalNum();
-      bool success=false;
-      while (kids != NULL) {
-	std::string kidsname = (char*)kids->name;	 
-	cerr << "kidsname = " << kidsname << endl;
-	if (kidsname == "correlation") {
-	  RealType ee_cusp=0.0;
-	  RealType eI_cusp=0.0;
-	  string iSpecies, eSpecies1("u"), eSpecies2("u");
-	  OhmmsAttributeSet rAttrib;
-	  rAttrib.add(iSpecies,"ispecies");
-	  rAttrib.add(eSpecies1,"especies1");
-	  rAttrib.add(eSpecies2,"especies2");
-	  rAttrib.add(ee_cusp,"ecusp");
-	  rAttrib.add(eI_cusp,"icusp");
-	  rAttrib.put(kids);
-	  BsplineFunctor3D *functor = new BsplineFunctor3D(ee_cusp, eI_cusp);
-	  
-	  functor->iSpecies = iSpecies;
-	  functor->eSpecies1 = eSpecies1;
-	  functor->eSpecies2 = eSpecies2;
-	  int iNum = iSet.findSpecies (iSpecies);
-	  int eNum1 = eSet.findSpecies (eSpecies1);
-	  int eNum2 = eSet.findSpecies (eSpecies2);
-	  
-	  functor->put (kids);
-	  strstream aname;
-	  aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
-	  J3->addFunc(aname.str(), iNum, eNum1, eNum2, functor);
-	}
-	kids = kids->next;
+
+      if (ftype == "Bspline") {
+      	typedef eeI_JastrowOrbital<BsplineFunctor3D> J3Type;
+	J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+	putkids (kids, J3);
       }
-      targetPsi.addOrbital(J3,"eeI_bspline");
-      J3->setOptimizable(true);
+      else if (ftype == "polynomial") {
+      	typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
+	J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+	putkids (kids, J3);
+      }
+      else {
+	app_error() << "Unknown function \"" << ftype << "\" in"
+		    << " eeI_JastrowBuilder.  Aborting.\n";
+	abort();
+      }
+      // 	// Find the number of the source species
+      // 	bool success=false;
+      // 	while (kids != NULL) {
+      // 	  std::string kidsname = (char*)kids->name;	 
+      // 	  if (kidsname == "correlation") {
+      // 	    RealType ee_cusp=0.0;
+      // 	    RealType eI_cusp=0.0;
+      // 	    string iSpecies, eSpecies1("u"), eSpecies2("u");
+      // 	    OhmmsAttributeSet rAttrib;
+      // 	    rAttrib.add(iSpecies,"ispecies");
+      // 	    rAttrib.add(eSpecies1,"especies1");
+      // 	    rAttrib.add(eSpecies2,"especies2");
+      // 	    rAttrib.add(ee_cusp,"ecusp");
+      // 	    rAttrib.add(eI_cusp,"icusp");
+      // 	    rAttrib.put(kids);
+	    
+      // 	    BsplineFunctor3D *functor = new BsplineFunctor3D(ee_cusp, eI_cusp);
+	    
+      // 	    functor->iSpecies = iSpecies;
+      // 	    functor->eSpecies1 = eSpecies1;
+      // 	    functor->eSpecies2 = eSpecies2;
+      // 	    int iNum = iSet.findSpecies (iSpecies);
+      // 	    int eNum1 = eSet.findSpecies (eSpecies1);
+      // 	    int eNum2 = eSet.findSpecies (eSpecies2);
+	    
+      // 	    functor->put (kids);
+      // 	    strstream aname;
+      // 	    aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
+      // 	    J3->addFunc(aname.str(), iNum, eNum1, eNum2, functor);
+      // 	  }
+      // 	  kids = kids->next;
+      // 	}
+      // 	targetPsi.addOrbital(J3,"eeI_bspline");
+      // 	J3->setOptimizable(true);
+      // }
     }
     else 
       app_error() << "You must specify the \"source\" particleset for a three-body Jastrow.\n";

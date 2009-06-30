@@ -163,19 +163,16 @@ namespace qmcplusplus {
   {
     ReportEngine PRE(ClassName,"add_eeI(xmlNodePtr)");
 
-    if(funcOpt == "Bspline") {
-      PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-      if(pit == ptclPool.end()) {
-	app_error() << "     JastrowBuilder::add_eeI requires a source attribute. " 
-		    << sourceOpt << " is invalid " << endl;
-	APP_ABORT("  JastrowBuilder::add_eeI");
-	return false;
-      }
-      ParticleSet& sourcePtcl= *((*pit).second);
-      eeI_JastrowBuilder jb(targetPtcl, targetPsi, sourcePtcl);
-      return jb.put (cur);
+    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    if(pit == ptclPool.end()) {
+      app_error() << "     JastrowBuilder::add_eeI requires a source attribute. " 
+		  << sourceOpt << " is invalid " << endl;
+      APP_ABORT("  JastrowBuilder::add_eeI");
+      return false;
     }
-    return true;
+    ParticleSet& sourcePtcl= *((*pit).second);
+    eeI_JastrowBuilder jb(targetPtcl, targetPsi, sourcePtcl);
+    return jb.put (cur);
   }
 
 

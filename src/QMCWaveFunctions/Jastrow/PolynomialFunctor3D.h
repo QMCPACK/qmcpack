@@ -13,14 +13,16 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_BSPLINE3D_FUNCTOR_H
-#define QMCPLUSPLUS_BSPLINE3D_FUNCTOR_H
+#ifndef QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
+#define QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/LinearFit.h"
+#include "Numerics/DeterminantOperators.h"
 #include <cstdio>
+#include <algorithm>
 
 namespace qmcplusplus {
 
@@ -29,8 +31,13 @@ namespace qmcplusplus {
     typedef real_type value_type;
     int N_eI, N_ee;
     Array<real_type,3> gamma;
+    // Permutation vector, used when we need to pivot
+    // columns
+    vector<int> GammaPerm;
+
     Array<int,3> index;
-    vector<real_type> gamaVec;
+    vector<bool> IndepVar;
+    vector<real_type> GammaVec;
     int NumConstraints, NumGamma;
     Matrix<real_type> ConstraintMatrix;
     std::vector<real_type> Parameters;
@@ -41,10 +48,16 @@ namespace qmcplusplus {
     const int C;
 
     ///constructor
-    PolynomialFunctor3D() : 
-      NumParams_eI(0), NumParams_ee(0), ResetCount(0),
-      cutoff_radius(0.0), C(3);
-    { }
+    PolynomialFunctor3D(real_type ee_cusp=0.0, real_type eI_cusp=0.0) : 
+      N_eI(0), N_ee(0), ResetCount(0), C(3)
+    { 
+      if (std::fabs(ee_cusp) > 0.0 || std::fabs(eI_cusp) > 0.0) {
+	app_error() << "PolynomialFunctor3D does not support nonzero cusp.\n";
+	abort();
+      }
+	
+      cutoff_radius = 0.0;
+    }
 
     OptimizableFunctorBase* makeClone() const 
     {
@@ -55,86 +68,199 @@ namespace qmcplusplus {
     { 
       N_eI = neI;
       N_ee = nee;
+      const double L = 0.5 * cutoff_radius;
 
       gamma.resize(N_eI+1, N_eI+1, N_ee+1);
       index.resize(N_eI+1, N_eI+1, N_ee+1);
       NumGamma = ((N_eI+1)*(N_eI+2)/2 * (N_ee+1));
-      NumConstraints = (2*N_eI+1) + (N_eI+N_ee+1);
-      int numParams = numGamma - numConstraints;
+      NumConstraints = (2*N_eI+1);// + (N_eI+N_ee+1);
+      int numParams = NumGamma - NumConstraints;
       Parameters.resize(numParams);
-      GammaVec.resize(numGamma);
-      ConstraintMatrix.resize(numGamma, numGamma);
+      GammaVec.resize(NumGamma);
+      ConstraintMatrix.resize(NumConstraints, NumGamma);
       // Assign indices
-      int n=0;
+      int num=0;
       for (int m=0; m<=N_eI; m++)
 	for (int l=m; l<=N_eI; l++)
 	  for (int n=0; n<=N_ee; n++) 
-	    index(l,m,n) = n++;
-      assert (n == numGamma);
+	    index(l,m,n) = index(m,l,n) = num++;
+      assert (num == NumGamma);
 
+      cerr << "NumGamma = " << NumGamma << endl;
 
       // Fill up contraint matrix
+      // For 3 constraints and 2 parameters, we would have
+      // |A00 A01 A02 A03 A04|  |g0|   |0 | 
+      // |A11 A11 A12 A13 A14|  |g1|   |0 |
+      // |A22 A21 A22 A23 A24|  |g2| = |0 |
+      // | 0   0   0   1   0 |  |g3|   |p0|
+      // | 0   0   0   0   1 |  |g4|   |p1|
+
       ConstraintMatrix = 0.0;
+      // cerr << "ConstraintMatrix.size = " << ConstraintMatrix.size(0) 
+      // 	   << " by " << ConstraintMatrix.size(1) << endl;
+      // cerr << "index.size() = (" << index.size(0) << ", "
+      // 	   << index.size(1) << ", " << index.size(2) << ").\n";
       int k;
       // e-e no-cusp constraint
       for (k=0; k<=2*N_eI; k++) {
-	for (int m=0; m<=N_eI; m++) {
+	for (int m=0; m<=k; m++) {
 	  int l = k - m;
 	  int i = index(l,m,1);
-	  if (l > m)
-	    ConstraintMatrix(k,i) = 2.0;
-	  else if (l == m)
-	    ConstraintMatrix(k,i) = 1.0;
-	}
-      }
-      // e-I no-cusp constraint
-      for (int kp=0; kp<=N_eI+N_ee; kp++) {
-	ConstraintMatrix(k+kp,index(0,0,kp)) = (real_type) C;
-	ConstraintMatrix(k+kp,index(1,0,kp)) = -0.5*cutoff_radius;
-	for (int l=1; l<=NeI+N_ee; l++) {
-	  int n = kp - l;
-	  if (n > 0) {
-	    ConstraintMatrix(k+kp,index(l,0,n)) = C;
-	    ConstraintMatrix(k+dp,index(l,1,n)) = -0.5*cutoff_radius;
+	  if (l<=N_eI && m <=N_eI) {
+	    if (l > m)
+	      ConstraintMatrix(k,i) = 2.0;
+	    else if (l == m)
+	      ConstraintMatrix(k,i) = 1.0;
 	  }
 	}
       }
-      
-      for (int i=NumConstraints; i<numGamma; i++)
-	ConstraintMatrix(i,i) = 1.0;
+      // e-I no-cusp constraint
+      // for (int kp=0; kp<=N_eI+N_ee; kp++) {
+      // 	if (kp <= N_ee) {
+      // 	  ConstraintMatrix(k+kp,index(0,0,kp)) = (real_type) C;
+      // 	  ConstraintMatrix(k+kp,index(0,1,kp)) = -L;
+      // 	}
+      // 	for (int l=1; l<=kp; l++) {
+      // 	  int n = kp - l;
+      // 	  if (n >= 0 && n <= N_ee && l <= N_eI) {
+      // 	    ConstraintMatrix(k+kp,index(l,0,n)) = (real_type)C;
+      // 	    ConstraintMatrix(k+kp,index(l,1,n)) = -L;
+      // 	  }
+      // 	}
+      // }
 
-      // Now, invert constraint matrix
-      Invert(ConstraintMatrix, numGamma, numGamma);
+      fprintf (stderr, "Constraint matrix:\n");
+      for (int i=0; i<NumConstraints; i++) {
+	for (int j=0; j<NumGamma; j++)
+	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
+	fprintf(stderr, "\n");
+      }
+
+      
+      // Now, row-reduce constraint matrix
+      GammaPerm.resize(NumGamma);
+      // Set identity permutation
+      for (int i=0; i<NumGamma; i++)
+	GammaPerm[i] = i;
+      for (int row=0; row<NumConstraints; row++) {
+	int max_loc = row;
+	real_type max_abs = std::fabs(ConstraintMatrix(row,row));
+	for (int ri=row+1; ri<NumConstraints; ri++) {
+	  real_type abs_val = std::fabs(ConstraintMatrix(ri,row));
+	  if (abs_val > max_abs) {
+	    max_loc = ri;
+	    max_abs = abs_val;
+	  }
+	}
+	if (max_abs > 1.0e-6) 
+	    ConstraintMatrix.swap_rows(row,max_loc);
+	else {
+	  // Whole column is zero, need to swap columns
+	  max_abs = std::fabs(ConstraintMatrix(row,row));
+	  max_loc = row;
+	  for (int ic=row+1; ic<NumGamma; ic++) {
+	    real_type abs_val = std::fabs(ConstraintMatrix(row,ic));
+	    if (abs_val > max_abs) {
+	      max_loc = ic;
+	      max_abs = abs_val;
+	    }
+	  }
+	  ConstraintMatrix.swap_cols(row,max_loc);
+	  swap(GammaPerm[row], GammaPerm[max_loc]);
+	}
+
+	real_type lead_inv = 1.0/ConstraintMatrix(row,row);
+	for (int col=0; col<NumGamma; col++)
+	    ConstraintMatrix(row,col) *= lead_inv;
+	// Now, eliminate column entries
+	for (int ri=0; ri<NumConstraints; ri++) {
+	  if (ri != row) {
+	    real_type val = ConstraintMatrix(ri,row);
+	    for (int col=0; col < NumGamma; col++)
+	      ConstraintMatrix(ri,col) -= val * ConstraintMatrix(row,col);
+	  }
+	}
+      }
+
+      fprintf (stderr, "Reduced Constraint matrix:\n");
+      for (int i=0; i<NumConstraints; i++) {
+	for (int j=0; j<NumGamma; j++)
+	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
+	fprintf(stderr, "\n");
+      }
+      // fprintf (stderr, "Inverse matrix:\n");
+      // // Now, invert constraint matrix
+      // Invert(ConstraintMatrix.data(), NumGamma, NumGamma);
+      // for (int i=0; i<NumGamma; i++) {
+      // 	for (int j=0; j<NumGamma; j++)
+      // 	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
+      // 	fprintf(stderr, "\n");
+      // }
     }
     
     void reset() 
     {
-      gammaVec = 0.0;
+      const double L = 0.5 * cutoff_radius;
+      std::fill(GammaVec.begin(), GammaVec.end(), 0.0);
       // Set constrained parameters
-      for (int i=0; i<NumConstraints; i++)
-	for (int j=0; j<Parameters.size(); j++)
-	  gammaVec[i] += ConstraintMatrix(i,j+NumConstraints)*Parameters[i];
+      for (int i=0; i<NumConstraints; i++) 
+	for (int j=0; j<Parameters.size(); j++) 	  
+	  GammaVec[i] -= ConstraintMatrix(i,j+NumConstraints)*Parameters[i];
 
       // Set unconstrained parameters
       for (int i=0; i<Parameters.size(); i++)
-	gammaVec[NumConstraints+i] = Parameters[i];
+	GammaVec[NumConstraints+i] = Parameters[i];
+      
+      for (int i=0; i<GammaVec.size(); i++)
+	fprintf (stderr, "%3d %1.8f\n", i, GammaVec[i]);
 
       // Set gamma matrix
-      int n=0;
+      fprintf (stderr, "GammaPerm = \n");
+      for (int i=0; i<NumGamma; i++)
+	fprintf (stderr, "   %2d\n", GammaPerm[i]);
+      // Undo permutation
+      vector<real_type> unpermuted(NumGamma);
+      for (int i=0; i<NumGamma; i++)
+	unpermuted[GammaPerm[i]] = GammaVec[i];	
+	//unpermuted[i] = GammaVec[GammaPerm[i]];
+
+      int num=0;
       for (int m=0; m<=N_eI; m++)
 	for (int l=m; l<=N_eI; l++)
 	  for (int n=0; n<=N_ee; n++) 
-	    gamma(m,l,n) = gamma(l,m,n) = gammaVec[n++];
+	    gamma(m,l,n) = gamma(l,m,n) = unpermuted[num++];
 
       // Now check that constraints have been satisfied
       // e-e constraints
       for (int k=0; k<=2*N_eI; k++) {
+	real_type sum = 0.0;
+	for (int m=0; m<=k; m++) {
+	  int l = k - m;
+	  int i = index(l,m,1);
+	  if (l<=N_eI && m <=N_eI) {
+	    if (l > m) 
+	      sum += 2.0*unpermuted[i];
+	    else if (l == m)
+	      sum += unpermuted[i];
+	  }
+	}
+	if (std::fabs(sum) > 1.0e-9) 
+	  cerr << "error in k = " << k << "  sum = " << sum << endl;
+      }
+
+
+      for (int k=0; k<=2*N_eI; k++) {
 	real_type sum=0.0;
 	for (int l=0; l<=k; l++) {
 	  int m = k - l;
-	  sum += gamma(l,m,1);
+	  if (m <= N_eI && l <= N_eI) {
+	    fprintf (stderr, "k = %d gamma(%d, %d, 1) = %1.8f\n", k, l, m,
+		     gamma(l,m,1));
+	    sum += gamma(l,m,1);
+	  }
 	}
-	if (fabs(sum) > 1.0e-10) {
+	if (std::fabs(sum) > 1.0e-10) {
 	  app_error() << "e-e constraint not satisfied in PolynomialFunctor3D:  k=" 
 		      << k << "  sum=" << sum << endl;
 	  abort();
@@ -142,13 +268,18 @@ namespace qmcplusplus {
       }
 
       // e-I constraints
-      sum = 0.0;
-      for (int k=0; k<=N_ei+N_ee; k++) {
+      for (int k=0; k<=N_eI+N_ee; k++) {
+	real_type sum = 0.0;
 	for (int m=0; m<=k; m++) {
 	  int n = k - m;
-	  sum += C*gamma(0,m,n) - 0.5*cutoff_radius*gamma(1,m,n);
+	  if (m <= N_eI && n <= N_ee) {
+	    sum += (real_type)C*gamma(0,m,n) - L*gamma(1,m,n);
+	    fprintf (stderr, 
+		     "k = %d gamma(0,%d,%d) = %1.8f  gamma(1,%d,%d)=%1.8f\n",
+		     k, m, n, gamma(0,m,n), m, n, gamma(1,m,n));
+	  }
 	}
-	if (fabs(sum) > 1.0e-10) {
+	if (std::fabs(sum) > 1.0e-10) {
 	  app_error() << "e-I constraint not satisfied in PolynomialFunctor3D:  k=" 
 		      << k << "  sum=" << sum << endl;
 	  abort();
@@ -234,81 +365,84 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur) 
     {
-      // ReportEngine PRE("PolynomialFunctor3D","put(xmlNodePtr)");
+      ReportEngine PRE("PolynomialFunctor3D","put(xmlNodePtr)");
+      
       // //CuspValue = -1.0e10;
       // NumParams_eI = NumParams_ee = 0;
-      // cutoff_radius = 0.0;
-      // OhmmsAttributeSet rAttrib;
-      // rAttrib.add(NumParams_ee,   "esize");
-      // rAttrib.add(NumParams_eI,   "isize");
-      // rAttrib.add(cutoff_radius,  "rcut");
-      // rAttrib.put(cur);
+      cutoff_radius = 0.0;
+      OhmmsAttributeSet rAttrib;
+      rAttrib.add(N_ee,   "esize");
+      rAttrib.add(N_eI,   "isize");
+      rAttrib.add(cutoff_radius,  "rcut");
+      rAttrib.put(cur);
 
-      // if (NumParams_eI == 0) 
-      //   PRE.error("You must specify a positive number for \"isize\"",true);
-      // if (NumParams_ee == 0) 
-      //   PRE.error("You must specify a positive number for \"esize\"",true);
+      if (N_eI == 0) 
+        PRE.error("You must specify a positive number for \"isize\"",true);
+      if (N_ee == 0) 
+        PRE.error("You must specify a positive number for \"esize\"",true);
 
       // app_log() << " esize = " << NumParams_ee << " parameters " << endl;
       // app_log() << " isize = " << NumParams_eI << " parameters " << endl;
       // app_log() << " rcut = " << cutoff_radius << endl;
 
-      // resize (NumParams_eI, NumParams_ee);
+      resize (N_eI, N_ee);
 
+      // Now read coefficents
+      xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
+      while (xmlCoefs != NULL) 
+      {
+        string cname((const char*)xmlCoefs->name);
+        if (cname == "coefficients")  {
+          string type("0"), id("0");
+          OhmmsAttributeSet cAttrib;
+          cAttrib.add(id, "id");
+          cAttrib.add(type, "type");
+          cAttrib.put(xmlCoefs);
 
-      // // Now read coefficents
-      // xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
-      // while (xmlCoefs != NULL) 
-      // {
-      //   string cname((const char*)xmlCoefs->name);
-      //   if (cname == "coefficients") 
-      //   {
-      //     string type("0"), id("0");
-      //     OhmmsAttributeSet cAttrib;
-      //     cAttrib.add(id, "id");
-      //     cAttrib.add(type, "type");
-      //     cAttrib.put(xmlCoefs);
+          if (type != "Array") {
+            PRE.error( "Unknown correlation type " + type + 
+      		       " in PolynomialFunctor3D." + "Resetting to \"Array\"");
+            xmlNewProp (xmlCoefs, (const xmlChar*) "type", 
+			(const xmlChar*) "Array");
+          }
 
-      //     if (type != "Array") 
-      //     {
-      //       PRE.error( "Unknown correlation type " + type + 
-      // 		       " in PolynomialFunctor3D." + "Resetting to \"Array\"");
-      //       xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
-      //     }
-
-      // 	  vector<real_type> params;
-      // 	  putContent(params, xmlCoefs);
-      // 	  if (params.size() == Parameters.size()) 
-      // 	    Parameters = params;
-      // 	  else {
-      // 	    app_error() << "Expected " << Parameters.size() << " parameters,"
-      // 			<< " but found only " << params.size()
-      // 			<< " in PolynomialFunctor3D.\n";
-      // 	    abort();
-      // 	  }
-	 
+      	  vector<real_type> params;
+      	  putContent(params, xmlCoefs);
+      	  if (params.size() == Parameters.size()) 
+      	    Parameters = params;
+      	  else {
+      	    app_error() << "Expected " << Parameters.size() << " parameters,"
+      			<< " but found " << params.size()
+      			<< " in PolynomialFunctor3D.\n";
+      	    abort();
+      	  }
 	  
-      //     // Setup parameter names
-      // 	  int index=0;
-      //     for (int i=0; i< NumParams_ee; i++) 
-      // 	    for (int j=0; j < NumParams_eI; j++)
-      // 	      for (int k=0; k<=j; k++) {
-      // 		std::stringstream sstr;
-      // 		sstr << id << "_" << i << "_" << j << "_" << k;
-      // 		myVars.insert(sstr.str(),Parameters[index],true);
-      // 		ParamArray(i,j,k) = ParamArray(i,k,j) = Parameters[index];
-      // 		index++;
-      // 	      }
+	  
+          // Setup parameter names
+      	  int index=0;
+	  for (int i=0; i<Parameters.size(); i++) {
+	    std::stringstream sstr;
+	    sstr << id << "_" << i;;
+	    myVars.insert(sstr.str(),Parameters[i],true);
+	  }
+          // for (int i=0; i< N_ee; i++) 
+      	  //   for (int j=0; j < N_eI; j++)
+      	  //     for (int k=0; k<=j; k++) {
+      	  // 	std::stringstream sstr;
+      	  // 	sstr << id << "_" << i << "_" << j << "_" << k;
+      	  // 	myVars.insert(sstr.str(),Parameters[index],true);
+      	  // 	ParamArray(i,j,k) = ParamArray(i,k,j) = Parameters[index];
+      	  // 	index++;
+      	  //     }
 
-
-      // 	  app_log() << "Parameter     Name      Value\n";
-      // 	  myVars.print(app_log());
-      // 	}
-      // 	xmlCoefs = xmlCoefs->next;
-      // }
-      // reset();
-      // print();
-      // return true;
+      	  app_log() << "Parameter     Name      Value\n";
+      	  myVars.print(app_log());
+      	}
+      	xmlCoefs = xmlCoefs->next;
+      }
+      reset();
+      print();
+      return true;
     }
     
     void checkInVariables(opt_variables_type& active)
@@ -323,16 +457,16 @@ namespace qmcplusplus {
 
     void resetParameters(const opt_variables_type& active)
     {
-      int iparam = 0;
-      for (int i=0; i<NumParams_ee; i++)
-	for (int j=0; j<NumParams_eI; j++)
-	  for (int k=0; k<=j; k++) {
-	    int loc = myVars.where(iparam);
-	    if (loc >=0) Parameters[iparam] = myVars[iparam] = active[loc];
-	    ParamArray(i,j,k) = Parameters[iparam];
-	    ParamArray(i,k,j) = Parameters[iparam];
-	    iparam++;
-	  }
+      // int iparam = 0;
+      // for (int i=0; i<N_ee; i++)
+      // 	for (int j=0; j<N_eI; j++)
+      // 	  for (int k=0; k<=j; k++) {
+      // 	    int loc = myVars.where(iparam);
+      // 	    if (loc >=0) Parameters[iparam] = myVars[iparam] = active[loc];
+      // 	    ParamArray(i,j,k) = Parameters[iparam];
+      // 	    ParamArray(i,k,j) = Parameters[iparam];
+      // 	    iparam++;
+      // 	  }
       reset();
 	    
       // for(int i=0; i<Parameters.size(); ++i) {
@@ -364,13 +498,13 @@ namespace qmcplusplus {
 	  }
 	}
       }
-      HDFAttribIO<Array<real_type,3> > coefs_attrib (SplineCoefs);
-      HDFAttribIO<Array<real_type,3> > param_attrib (ParamArray);
+      // HDFAttribIO<Array<real_type,3> > coefs_attrib (SplineCoefs);
+      // HDFAttribIO<Array<real_type,3> > param_attrib (ParamArray);
       HDFAttribIO<Array<real_type,3> > val_attrib (val);      
 
       val_attrib.write (hid, "val");
-      coefs_attrib.write (hid, "coefs");
-      param_attrib.write (hid, "params");
+      // coefs_attrib.write (hid, "coefs");
+      // param_attrib.write (hid, "params");
 
       H5Fclose(hid);
 
