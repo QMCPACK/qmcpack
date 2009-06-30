@@ -310,8 +310,8 @@ namespace qmcplusplus {
 	}
 	r2l *= r_1I;
       }
-      // for (int i=0; i<C; i++)
-      // 	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
+      for (int i=0; i<C; i++)
+	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
       return val;
     }
 
@@ -374,13 +374,31 @@ namespace qmcplusplus {
 	r2l *= r_1I;
 	lf += 1.0;
       }
+      const real_type L = 0.5*cutoff_radius; 
+      for (int i=0; i<C; i++) {
+
+	hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);	
+	hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
+	hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
+	hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
+	hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
+	hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+
+	  2.0*(r_1I - L)*grad[2];
+
+	grad[0] = (r_1I - L)*(r_2I - L) 
+	  * grad[0];
+	grad[1] = (r_1I - L)*(r_2I - L)*grad[1] +
+	  (r_2I - L) * val;
+	grad[2] = (r_1I - L)*(r_2I - L)*grad[2] +
+	  + (r_1I - L) * val;
+
+       	val *= (r_1I - L)*(r_2I - L);
+      }
+
       hess(1,0) = hess(0,1);
       hess(2,0) = hess(0,2);
       hess(2,1) = hess(1,2);
-
-      // for (int i=0; i<C; i++)
-      // 	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
-
+ 
       return val;
     }
 
