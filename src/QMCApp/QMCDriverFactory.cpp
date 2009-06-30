@@ -26,6 +26,7 @@
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
 #include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
+#include "QMCDrivers/ForwardWalking/FRSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
@@ -135,6 +136,14 @@ namespace qmcplusplus {
       {
         newRunType=FW_RUN;
           WhatToDo[UPDATE_MODE]=1;
+  WhatToDo[MULTIPLE_MODE]=0;
+  WhatToDo[SPACEWARP_MODE]=0;
+  WhatToDo[ALTERNATE_MODE]=1;
+      }
+      else if(qmc_mode.find("density")<nchars) //number 8
+      {
+        newRunType=FR_RUN;
+          WhatToDo[UPDATE_MODE]=0;
   WhatToDo[MULTIPLE_MODE]=0;
   WhatToDo[SPACEWARP_MODE]=0;
   WhatToDo[ALTERNATE_MODE]=1;
@@ -329,6 +338,10 @@ namespace qmcplusplus {
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
+    } 
+    else if(curRunType == FR_RUN)
+    { 
+      qmcDriver = new FRSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool, *ptclPool);
     } 
     else if(curRunType == FW_RUN)
     {

@@ -461,5 +461,212 @@ namespace qmcplusplus {
     hid_t d_file;
     string filename;
   };
+  
+  class HDF5_FW_density
+  {
+    public:
+      HDF5_FW_density() {}
+      ~HDF5_FW_density(){}
+      
+      void setFileName(string fn)
+      {
+        std::stringstream sstr(""); 
+        sstr<<fn<<".storedDensity.h5";
+        filename=sstr.str();
+      }
+      
+      string getFileName() {return filename;}
+      
+      void makeFile()
+      {
+        hid_t d1= H5Fcreate(filename.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+        HDFVersion cur_version;
+        cur_version.write(d1,hdf::version);
+        if (H5Fclose(d1) > -1) d1 = -1;
+      }
+      
+      void openFile()
+      {
+        c_file = H5Fopen(filename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      }
+  
+      void closeFile()
+      {
+        if (H5Fclose(c_file)>-1) c_file=-1;
+      }
+      
+      void writeDensity(vector<int> info, vector<int>& Observables)
+      { 
+        rank=1;
+        dims[0]=Observables.size();
+        maxdims[0] = Observables.size(); 
+
+        int age=info[1];
+//         for (int x=0;x<DD;x++)
+//           for (int y=0;y<DD;y++)
+//             for (int z=0;z<DD;z++)
+//             {
+//               dataspace  = H5Screate_simple(rank, dims, maxdims);
+//               hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+//               H5Pset_chunk(p,rank,dims);
+//       
+//               stringstream gname("");
+//               gname<<"Block_"<<age<<"/X_"<<x<<"/Y_"<<y<<"/Z_"<<z;
+//               dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
+//               memspace = H5Screate_simple( rank, dims, NULL);
+//               status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(Observables[DD2*x+DD*y+z]));
+//       
+//               H5Sclose(memspace);
+//               H5Dclose(dataset);
+//               H5Sclose(dataspace);
+//             }
+            dataspace  = H5Screate_simple(rank, dims, maxdims);
+            hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+            H5Pset_chunk(p,rank,dims);
+    
+            stringstream gname("");
+            gname<<"Block_"<<age;
+            dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
+            memspace = H5Screate_simple( rank, dims, NULL);
+            status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(Observables[0]));
+    
+            H5Sclose(memspace);
+            H5Dclose(dataset);
+            H5Sclose(dataspace);
+            
+          dims[0]=1; 
+          maxdims[0] = 1;
+          dataspace  = H5Screate_simple(rank, dims, maxdims);
+          p = H5Pcreate (H5P_DATASET_CREATE);
+          H5Pset_chunk(p,rank,dims);
+  
+
+          gname<<"_totalWeight";
+          dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
+          memspace = H5Screate_simple( rank, dims, NULL);
+          status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(info[2]));
+  
+          H5Sclose(memspace);
+          H5Dclose(dataset);
+          H5Sclose(dataspace);
+      }
+      
+      void writeIons(vector<string> NMS, vector<RealType>& Pos, double& latticeConstant, int& nElectrons, int& ngrids)
+      { 
+        rank=1;
+        
+        int sze(-1);
+        for(int i=0;i<NMS.size();i++) sze+=NMS[i].size()+1;
+        
+        char names[sze];
+        strcpy (names,NMS[0].c_str());
+        for(int i=1;i<NMS.size();i++)
+        {
+          strncat(names,",",1);
+          strncat(names,NMS[i].c_str(),NMS[i].size());
+        }
+        sze = strlen(names);
+        dims[0]=sze;
+        maxdims[0] = sze; 
+
+        
+        dataspace  = H5Screate_simple(rank, dims, maxdims);
+        hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,dims);
+
+        stringstream gname("");
+        gname<<"Ion_Str";
+        dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_C_S1, dataspace, p);
+        memspace = H5Screate_simple( rank, dims, NULL);
+        status = H5Dwrite(dataset, H5T_C_S1, memspace, dataspace, H5P_DEFAULT,&(names[0]));
+
+        H5Sclose(memspace);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+          
+        dims[0]=Pos.size(); 
+        maxdims[0] = Pos.size();
+        dataspace  = H5Screate_simple(rank, dims, maxdims);
+        p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,dims);
+
+        stringstream pname("");
+        pname<<"Ion_Pos";
+        dataset =  H5Dcreate(c_file, pname.str().c_str(), H5T_NATIVE_DOUBLE, dataspace, p);
+        memspace = H5Screate_simple( rank, dims, NULL);
+        status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,&(Pos[0]));
+
+        H5Sclose(memspace);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        
+        dims[0]=1; 
+        maxdims[0] = 1;
+        dataspace  = H5Screate_simple(rank, dims, maxdims);
+        p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,dims);
+
+        stringstream lname("");
+        lname<<"LatticeConstant";
+        dataset =  H5Dcreate(c_file, lname.str().c_str(), H5T_NATIVE_DOUBLE, dataspace, p);
+        memspace = H5Screate_simple( rank, dims, NULL);
+        status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,&(latticeConstant));
+
+        H5Sclose(memspace);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        
+        dataspace  = H5Screate_simple(rank, dims, maxdims);
+        p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,dims);
+
+        stringstream ename("");
+        ename<<"nElectrons";
+        dataset =  H5Dcreate(c_file, ename.str().c_str(), H5T_NATIVE_INT, dataspace, p);
+        memspace = H5Screate_simple( rank, dims, NULL);
+        status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(nElectrons));
+
+        H5Sclose(memspace);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        
+        dataspace  = H5Screate_simple(rank, dims, maxdims);
+        p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,dims);
+
+        stringstream dname("");
+        dname<<"nbins";
+        dataset =  H5Dcreate(c_file, dname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
+        memspace = H5Screate_simple( rank, dims, NULL);
+        status = H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, H5P_DEFAULT,&(ngrids));
+
+        H5Sclose(memspace);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+      }
+
+    private: 
+
+    hid_t       dataset;  
+    hid_t       dataspace;                   
+    hid_t       memspace;                  
+    hid_t       cparms;                   
+    hsize_t     dims[1],maxdims[1];                     /* dataset and chunk dimensions*/ 
+    hsize_t     chunk_dims[1];
+    hsize_t     col_dims[1];
+    hsize_t     count[3],count_m[1];
+    hsize_t     offset[3],offset_m[1];
+
+    herr_t      status, status_n;                             
+
+    int         rank, rank_chunk;
+    hsize_t hi, hj;
+    
+    
+    hid_t c_file;
+    hid_t d_file;
+    string filename;
+  };
+  
 } 
 #endif
