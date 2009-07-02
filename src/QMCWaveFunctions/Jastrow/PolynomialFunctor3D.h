@@ -213,7 +213,7 @@ namespace qmcplusplus {
       int var=0;
       for (int i=0; i<NumGamma; i++)
 	if (IndepVar[i])
-	  GammaVec[i] = Parameters[var++];
+	  GammaVec[i] = 0.001*Parameters[var++];
       
       assert (var == Parameters.size());
 
@@ -225,7 +225,7 @@ namespace qmcplusplus {
 	if (!IndepVar[i]) {
 	  // fprintf (stderr, "constraintMatrix(%d,%d) = %1.10f\n",
 	  // 	   var, i, ConstraintMatrix(var,i));
-	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-10);
+	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-6);
 	  for (int j=0; j<NumGamma; j++)
 	    if (i != j)
 	      GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
@@ -268,7 +268,7 @@ namespace qmcplusplus {
 	    sum += gamma(l,m,1);
 	  }
 	}
-	if (std::fabs(sum) > 1.0e-10) {
+	if (std::fabs(sum) > 1.0e-6) {
 	  app_error() << "e-e constraint not satisfied in PolynomialFunctor3D:  k=" 
 		      << k << "  sum=" << sum << endl;
 	  abort();
@@ -287,7 +287,7 @@ namespace qmcplusplus {
 	    // 	     k, m, n, gamma(0,m,n), m, n, gamma(1,m,n));
 	  }
 	}
-	if (std::fabs(sum) > 1.0e-10) {
+	if (std::fabs(sum) > 1.0e-6) {
 	  app_error() << "e-I constraint not satisfied in PolynomialFunctor3D:  k=" 
 		      << k << "  sum=" << sum << endl;
 	  abort();
@@ -299,7 +299,9 @@ namespace qmcplusplus {
 			      real_type r_1I,
 			      real_type r_2I) 
     {
-      if (r_1I >= 0.5*cutoff_radius || r_2I >= 0.5*cutoff_radius) 
+      const real_type L = 0.5*cutoff_radius;
+      
+      if (r_1I >= L || r_2I >= L) 
         return 0.0;
 
       real_type val = 0.0;
@@ -317,7 +319,7 @@ namespace qmcplusplus {
 	r2l *= r_1I;
       }
       for (int i=0; i<C; i++)
-	val *= (r_1I - 0.5*cutoff_radius)*(r_2I - 0.5*cutoff_radius);
+	val *= (r_1I - L)*(r_2I - L);
       return val;
     }
 
@@ -326,8 +328,9 @@ namespace qmcplusplus {
 			      TinyVector<real_type,3> &grad,
 			      Tensor<real_type,3> &hess) 
     {
-      if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
-	  r_2I >= 0.5*cutoff_radius) {
+      const real_type L = 0.5*cutoff_radius; 
+
+      if (r_1I >= L || r_2I >= L) {
 	grad = 0.0;
 	hess = 0.0;
         return 0.0;
@@ -347,11 +350,11 @@ namespace qmcplusplus {
       hess = 0.0;
       
       real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), lf(0.0);
-      for (int l=0; l<N_eI; l++) {
+      for (int l=0; l<=N_eI; l++) {
 	real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), mf(0.0);
-	for (int m=0; m<N_eI; m++) {
+	for (int m=0; m<=N_eI; m++) {
 	  real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), nf(0.0);
-	  for (int n=0; n<N_ee; n++) {
+	  for (int n=0; n<=N_ee; n++) {
 	    real_type g = gamma(l,m,n);
 	    val += g*r2l*r2m*r2n;
 
@@ -381,7 +384,6 @@ namespace qmcplusplus {
 	r2l *= r_1I;
 	lf += 1.0;
       }
-      const real_type L = 0.5*cutoff_radius; 
       for (int i=0; i<C; i++) {
 
 	hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);	
@@ -389,15 +391,11 @@ namespace qmcplusplus {
 	hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
 	hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
 	hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
-	hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+
-	  2.0*(r_1I - L)*grad[2];
+	hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ 2.0*(r_1I - L)*grad[2];
 
-	grad[0] = (r_1I - L)*(r_2I - L) 
-	  * grad[0];
-	grad[1] = (r_1I - L)*(r_2I - L)*grad[1] +
-	  (r_2I - L) * val;
-	grad[2] = (r_1I - L)*(r_2I - L)*grad[2] +
-	  + (r_1I - L) * val;
+	grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
+	grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
+	grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
 
        	val *= (r_1I - L)*(r_2I - L);
       }
@@ -510,6 +508,20 @@ namespace qmcplusplus {
       return true;
     }
     
+    void resetParameters(const opt_variables_type& active)
+    {
+      for(int i=0; i<Parameters.size(); ++i)
+      {
+        int loc=myVars.where(i);
+        if(loc>=0) Parameters[i]=myVars[i]=active[loc];
+      }
+      if (ResetCount++ == 100) {
+	ResetCount = 0;
+	print();
+      }
+      reset();
+    }
+
     void checkInVariables(opt_variables_type& active)
     {
       active.insertFrom(myVars);
@@ -519,39 +531,6 @@ namespace qmcplusplus {
     {
       myVars.getIndex(active);
     }
-
-    void resetParameters(const opt_variables_type& active)
-    {
-      for (int i=0; i<Parameters.size(); i++) {
-	int loc = myVars.where(i);
-	if (loc >= 0)
-	  Parameters[i] = myVars[i] = active[loc];
-      }
-	
-      // int iparam = 0;
-      // for (int i=0; i<N_ee; i++)
-      // 	for (int j=0; j<N_eI; j++)
-      // 	  for (int k=0; k<=j; k++) {
-      // 	    int loc = myVars.where(iparam);
-      // 	    if (loc >=0) Parameters[iparam] = myVars[iparam] = active[loc];
-      // 	    ParamArray(i,j,k) = Parameters[iparam];
-      // 	    ParamArray(i,k,j) = Parameters[iparam];
-      // 	    iparam++;
-      // 	  }
-      reset();
-	    
-      // for(int i=0; i<Parameters.size(); ++i) {
-      //   int loc=myVars.where(i);
-      //   if(loc>=0) Parameters[i]=myVars[i]=active[loc];
-      // }
-      
-      if (ResetCount++ == 100) {
-	ResetCount = 0;
-	print();
-      }
-      reset();
-    }
-
 
     void print()
     {
@@ -565,7 +544,11 @@ namespace qmcplusplus {
 	  double r_1I = (real_type)j/(real_type)(N-1) * 0.5*cutoff_radius;
 	  for (int k=0; k<N; k++) {
 	    double r_2I = (real_type)k/(real_type)(N-1) * 0.5*cutoff_radius;
-	    val(i,j,k) = evaluate (r_12*(r_1I+r_2I), r_1I, r_2I);
+
+	    double rmin = std::fabs(r_1I - r_2I);
+	    double rmax = std::fabs(r_1I + r_2I);
+	    double r = rmin + r_12*(rmax-rmin);
+	    val(i,j,k) = evaluate (r, r_1I, r_2I);
 	  }
 	}
       }
