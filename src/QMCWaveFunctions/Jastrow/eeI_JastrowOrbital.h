@@ -385,17 +385,72 @@ namespace qmcplusplus {
       return std::exp(evaluateLog(P,G,L));
     }
     
+    inline GradType evalGradSourceFD(ParticleSet& P,
+				     ParticleSet& source, int isrc)
+    {
+      GradType G;
+      const RealType eps=1.0e-6;
+
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	PosType delta;
+	delta[dim] = eps;
+	source.makeMove(isrc, delta);
+	source.acceptMove(isrc);
+	P.update();
+	G[dim] = evaluateLog(P, P.G, P.L);
+	source.makeMove(isrc, -2.0*delta); 
+	source.acceptMove(isrc);
+	P.update();
+	G[dim] -= evaluateLog (P, P.G, P.L);
+	source.makeMove(isrc, delta);
+	source.acceptMove(isrc);
+	P.update();
+	evaluateLog (P, P.G, P.L);
+      }
+      G = 0.5/eps * G;
+      return G;
+    }
+
     inline GradType evalGradSource(ParticleSet& P,
 				   ParticleSet& source, int isrc)
     {
-      // IonData &ion = IonDataList[iat];
-      // ion.elecs_inside.clear();
-      // int iel=0;
-      // if (ion.cutoff_radius > 0.0) 
-      // 	for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++) 
-      // 	  if (eI_table->r(nn) < ion.cutoff_radius)
-      // 	    ion.elecs_inside.push_back(iel);
+      IonData &ion = IonDataList[isrc];
+      ion.elecs_inside.clear();
+      int iel=0;
+      if (ion.cutoff_radius > 0.0) 
+      	for (int nn=eI_table->M[isrc]; nn<eI_table->M[isrc+1]; nn++, iel++) 
+      	  if (eI_table->r(nn) < ion.cutoff_radius)
+      	    ion.elecs_inside.push_back(iel);
 
+      // cerr << "elecs_inside.size() = " << ion.elecs_inside.size() << endl;
+      GradType G;
+      int nn0 = eI_table->M[isrc];
+      RealType u;
+      PosType gradF;
+      Tensor<RealType,3> hessF;
+      for (int j=0; j<ion.elecs_inside.size(); j++) {
+      	int jel = ion.elecs_inside[j];
+      	RealType r_Ij     = eI_table->r(nn0+jel);
+	PosType dr_Ij     = eI_table->dr(nn0+jel);
+      	RealType r_Ij_inv = eI_table->rinv(nn0+jel);
+      	int ee0 = ee_table->M[jel]-(jel+1);
+      	for (int k=j+1; k<ion.elecs_inside.size(); k++) {
+      	  int kel = ion.elecs_inside[k];
+      	  RealType r_Ik     = eI_table->r(nn0+kel);
+      	  PosType dr_Ik     = eI_table->dr(nn0+kel);
+      	  RealType r_Ik_inv = eI_table->rinv(nn0+kel);
+      	  RealType r_jk     = ee_table->r(ee0+kel);
+      	  RealType r_jk_inv = ee_table->rinv(ee0+kel);
+      	  FT &func = *F.data()[TripletID(isrc, jel, kel)];
+	  u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
+	  G += (gradF[1] * r_Ij_inv * dr_Ij +
+		gradF[2] * r_Ik_inv * dr_Ik);
+	}
+      }
+      // cerr << "G   = " << G << endl;
+      // GradType GFD = evalGradSourceFD(P, source, isrc);
+      // cerr << "GFD = " << GFD << endl;
+      return G;
       // RealType u;
       // PosType gradF;
       // Tensor<RealType,3> hessF;
@@ -450,7 +505,7 @@ namespace qmcplusplus {
       // 	G += dudr*d_table->dr(nn);
       // }
       // return G;
-    }
+      }
     
     
     inline GradType 
