@@ -1,0 +1,35 @@
+%%
+%% Aperçu des notes/avertissements/astuces, etc.
+%%
+
+\newlength{\admlength}
+\newenvironment{DBKadmonition}[2] {
+  \begin{center}
+  \hspace{0mm}%\newline
+  \noindent
+  \setlength{\fboxsep}{5pt}
+  \setlength{\admlength}{\linewidth}
+  \addtolength{\admlength}{-4mm}
+  \sffamily
+  \begin{minipage}{\admlength}
+  \hrule
+  \vspace{2mm} 
+  \ifthenelse{\equal{#1}{}}{
+    \def\admgraph{false}
+  }{
+    \def\admgraph{true}
+%    \includegraphics[width=10mm]{#1}\hspace{1mm}
+    \addtolength{\admlength}{-11mm}
+    \begin{minipage}{\admlength}
+  }
+  \textbf{#2}%
+}{
+  \ifthenelse{\equal{\admgraph}{false}}{}{
+    \end{minipage}\newline
+  }
+  \vspace{3mm} 
+  \hrule
+  \end{minipage}\newline
+  \end{center}
+}
+
