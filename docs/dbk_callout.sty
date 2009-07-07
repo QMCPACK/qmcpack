@@ -1,0 +1,88 @@
+\usepackage{overpic}
+
+%********************
+%* Graphic callouts *
+%********************
+
+% Where to put the <co> in the graphic
+\newdimen\picfactorx
+\newdimen\picfactory
+\newdimen\picx
+\newdimen\picy
+
+% Evaluates the percent factors for x and y dimensions. The principle is that
+% overpic gives a 100% for the biggest length (width or height).
+% The coordonates given to \calspair being in percentage of the graphic dimension
+% itself, the picfactors translate them to overpic percentages.
+% 
+% Variables set by overpic:
+% \@tempcnta = width
+% \@tempcntb = height
+
+\def\picfactoreval{%
+  \ifnum\@tempcnta>\@tempcntb%
+    \picfactorx=1pt%
+    \picfactory=\@tempcntb pt%
+    \divide\picfactory by \@tempcnta%
+  \else%
+    \picfactory=1pt%
+    \picfactorx=\@tempcnta pt%
+    \divide\picfactorx by \@tempcntb%
+  \fi%
+}
+
+\newcommand{\calspair}[3]{
+  \sbox{\z@}{#3}%
+  \picx=#1\picfactorx%
+  \picy=#2\picfactory%
+  \put(\strip@pt\picx,\strip@pt\picy){\makebox(0,0){\usebox{\z@}}}
+}
+
+%*********************
+%* Verbatim callouts *
+%*********************
+
+% Counters for cross-referencing callouts
+\newcounter{cocnt}
+\newcounter{colref}
+
+% How to represent the <co> markup.
+% Big thanks to Jean-Côme Charpentier for his help.
+%
+\newlength{\co@width}
+\newlength{\co@height}
+\newlength{\balldiam}
+\newlength{\ballcentre}
+
+\def\conum#1{%
+  \sbox{\z@}{\color{white}\sffamily\bfseries\tiny#1}% 
+  % Box sizes for any number with two digits
+  \sbox{\@ne}{\color{white}\sffamily\bfseries\tiny00}%
+  \settowidth{\co@width}{\usebox{\@ne}}%
+  \settoheight{\co@height}{\usebox{\@ne}}%
+  % Find out the biggest length, to define the circle diameter
+  \ifnum\co@width>\co@height
+    \setlength{\balldiam}{\co@width}%
+  \else
+    \setlength{\balldiam}{\co@height}%
+  \fi
+  \balldiam=1.45\balldiam
+  \ballcentre=0.5\balldiam
+  \setlength{\unitlength}{1pt}% In the case it has been changed
+  \begin{picture}(\strip@pt\balldiam,\strip@pt\balldiam) %
+  \put(\strip@pt\ballcentre,\strip@pt\ballcentre){\circle*{\strip@pt\balldiam}}
+  \put(\strip@pt\ballcentre,\strip@pt\ballcentre){\makebox(0,0){\usebox{\z@}}}
+  \end{picture}%
+}
+
+% How to represent a <co> embedded in a listing
+\def\co#1{\refstepcounter{cocnt}\conum{#1}}
+
+% Make the <co> text and the label to link to
+\def\coref#1#2{\co{#1}\label{#2}}
+
+% Make only the <co> label to link to
+\def\colabel#1{\refstepcounter{cocnt}\label{#1}}
+
+% Make the <callout> label to link to
+\def\collabel#1{\refstepcounter{colref}\label{#1}}
