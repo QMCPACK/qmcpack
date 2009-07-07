@@ -4,7 +4,7 @@
 
 \begin{table}[h]
 \begin{center}
-\begin{tabular}{llll}\hline
+\begin{tabular*}{\textwidth}{llll}\hline
 \bfseries Name&\bfseries Category&\bfseries Environment variables&\bfseries cmake file\\
 \hline
 \hline
@@ -14,14 +14,14 @@
 & &{\tt LAPACK}& \\
 & &{\tt ATLAS} & \\
 \hline
-\href{http://www.cmake.org}{{\tt hdf5} } & I/O & {\tt HDF5\_HOME} & FindHDF5.cmake\\
+\href{http://www.cmake.org}{hdf5} & I/O & {\tt HDF5\_HOME} & FindHDF5.cmake\\
 & & {\tt HDF\_HOME} &\\
 \hline
-\href{http://xmlsoft.org/}{\tt libxml2}& I/O & {\tt LIBXML2\_HOME}& FindLibxml2.cmake\\
+\href{http://xmlsoft.org/}{libxml2}& I/O & {\tt LIBXML2\_HOME}& FindLibxml2.cmake\\
 \hline
 \boost& C++ standard libraries & {\tt BOOST\_HOME}& FindBoost.cmake\\
 \hline
-\end{tabular}
+\end{tabular*}
 \end{center}
 \caption{Required packages. For each package, a cmake file is provided in {\tt CMake} directory. }
 \label{req.packages}

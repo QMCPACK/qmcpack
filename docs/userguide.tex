@@ -18,9 +18,12 @@
 \textwidth 6.5in
 %\textheight 8.75in
 %\textheight 8.95in
-\topmargin 0in
+%\topmargin 0in
 \parindent 0mm
-%\parskip 6pt
+\parskip 6pt
+
+\renewcommand{\rmdefault}{phv} % Arial
+\renewcommand{\sfdefault}{phv} % Arial
 
 \setcounter{tocdepth}{5}
 \setcounter{secnumdepth}{5}
@@ -28,12 +31,15 @@
 \definecolor{dullmagenta}{rgb}{0.4,0,0.4}   % #660066
 \definecolor{darkblue}{rgb}{0,0,0.4}
 \definecolor{listinggray}{gray}{0.97}
-\hypersetup{linkcolor=darkblue,citecolor=darkblue,filecolor=dullmagenta,urlcolor=darkblue} % coloured links
+%\hypersetup{linkcolor=darkblue,citecolor=darkblue,filecolor=dullmagenta,urlcolor=darkblue} % coloured links
+\hypersetup{linkcolor=blue,citecolor=blue,filecolor=dullmagenta,urlcolor=darkblue} % coloured links
 
 %%% Add aliases
 \newcommand{\bR}{\mathbf{R}}
-\newcommand{\cmake}{\href{http://www.cmake.org}{{\tt cmake} }}
-\newcommand{\boost}{\href{http://www.boost.org/}{{\tt boost} }} 
+%\newcommand{\cmake}{\href{http://www.cmake.org}{{\tt cmake} }}
+%\newcommand{\boost}{\href{http://www.boost.org/}{{\tt boost} }} 
+\newcommand{\cmake}{\href{http://www.cmake.org}{cmake} }
+\newcommand{\boost}{\href{http://www.boost.org/}{boost} }
 \newcommand{\wiki}{\href{http://cms.mcc.uiuc.edu/qmcpack}{{\tt QMCPACK wiki} }}
 
 %%% import macros from various latex sources, dblatex
@@ -125,6 +131,10 @@ Kim.  More information is available at \url{http://www.mcc.uiuc.edu/qmc/}.
 \input intro
 \input intro_io
 \input intro_advanced
+
+\section{Sample Inputs}
+\input input_qmc
+\input input_opt
 
 %See list_samples.tex for an example of xml and code fragments
 %\input list_samples

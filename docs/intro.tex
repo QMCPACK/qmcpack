@@ -31,12 +31,12 @@ In order to install QMCPACK, the users have to install \cmake and several
 required packages. These packages are included in the standard Linux/cygwin
 distributions or can be downloaded by following the links. If these libraries
 are installed in standard directories, {\tt /usr}, {\tt /usr/local}, no action
-is necessary.  Alternatively, the users can set environment variables {\tt
-XYZ\_HOME} where {\tt XYZ} stands for the name of package; the build utility
+is necessary.  Alternatively, the users can set environment variables \texttt{
+XYZ\_HOME} where \texttt{XYZ} stands for the name of package; the build utility
 can locate the libraries and use them.
 
 The build utility \cmake will look for {\tt XYZ\_HOME/include} for the header
-files and {\tt XYZ\_HOME/lib} for the library files in addition to the standard
+files and \texttt{XYZ\_HOME/lib} for the library files in addition to the standard
 paths.  When multiple environment variables apply to a library, e.g., {\tt
 blas/lapack}, the search is done according to the given  order.  On many HPC
 centers, these packages are managed by utilities like \textbf{module} and
@@ -54,7 +54,7 @@ For {\tt bash} users,
 \begin{lstlisting}
   cd qmcpack/build
 \end{lstlisting}
-\item Set compilers and {\tt XYZ\_HOME} for the required external packages:
+\item Set compilers and \texttt{XYZ\_HOME} for the required external packages:
 \begin{lstlisting}
   export CXX=g++
   export CC=gcc
@@ -92,7 +92,7 @@ Customized compiler flags are provided for these compilers:
 \end{itemize}
 The OpenMP parallelization is automatically enabled with these compilers. To
 enable MPI parallelization on distributed-memory computers, set {\tt CXX} to an
-appropriate compiler, e.g. {\tt mpicxx}, {\tt mpCC\_r} (IBM AIX). 
+appropriate compiler, e.g. {\tt mpicxx}.
   
 \subsection{Running QMC}
 
