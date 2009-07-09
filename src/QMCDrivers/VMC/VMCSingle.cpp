@@ -56,6 +56,7 @@ namespace qmcplusplus {
         Estimators->accumulate(W);
         if(CurrentStep%updatePeriod==0) Mover->updateWalkers(W.begin(),W.end());
         if(CurrentStep%myPeriod4WalkerDump==0) W.saveEnsemble();
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) ForwardWalkingHistory.storeConfigsForForwardWalking(W);
       } while(step<nSteps);
 
       Mover->stopBlock();
