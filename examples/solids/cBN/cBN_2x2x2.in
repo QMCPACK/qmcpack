@@ -1,0 +1,60 @@
+# Cubic Boron Nitride : primitive 2x2x2 supercell orbitals
+#
+# Definition of the unit cell
+# BN lattice constant near experimental volume
+acell  3*6.839904
+
+# FCC lattice vectors
+rprim 0.5 0.5 0.0
+      0.0 0.5 0.5
+      0.5 0.0 0.5
+
+# Definition of the atom types
+ntypat 2          # There is only one type of atom
+znucl 5 7         # The keyword "znucl" refers to the atomic number of the 
+                  # possible type(s) of atom. The pseudopotential(s) 
+                  # mentioned in the "files" file must correspond
+                  # to the type(s) of atom. Here, the only type is Silicon.
+                         
+
+# Definition of the atoms
+natom 2           # There are two atoms
+                  # They both of type boron and nitrogen
+typat 1 2
+
+xred
+   0.0000  0.0000  0.0000  # B1
+   0.2500  0.2500  0.2500  # N1
+
+# Definition of the planewave basis set
+ecut  200.0         # Maximal kinetic energy cut-off, in Hartree
+
+# Allow non-primitive unit cell
+chkprim 0
+
+
+#Definition of the k-point grid
+##################################
+# USE THESE FOR CASINO OUTPUT!!! #
+##################################
+kptopt 3          # Manual k-points
+ngkpt 2 2 2
+nshiftk 1
+shiftk 0.5 0.5 0.5
+istwfk 8*1
+
+prtwf 1
+
+# Definition of the SCF procedure
+nstep 100          # Maximal number of SCF cycles
+toldfe 1.0d-12     # Will stop when, twice in a row, the difference 
+                   # between two consecutive evaluations of total energy 
+                   # differ by less than toldfe (in Hartree) 
+diemac 2.0         # Although this is not mandatory, it is worth to
+                   # precondition the SCF cycle. The model dielectric
+                   # function used as the standard preconditioner
+                   # is described in the "dielng" input variable section.
+                   # Here, we follow the prescription for bulk silicon.
+
+# ixc 23           # Wu-Cohen
+ixc 7             # LDA
