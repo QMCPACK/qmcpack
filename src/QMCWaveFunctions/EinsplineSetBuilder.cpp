@@ -942,18 +942,19 @@ namespace qmcplusplus {
 	    r = PrimCell.toCart(uPrim) + (double)i0*PrimCell.a(0) + 
 	      (double)i1*PrimCell.a(1) + (double)i2*PrimCell.a(2);
 	    Vec3 uSuper = SuperCell.toUnit(r);
-	    if ((uSuper[0] >= -1.0e-6) && (uSuper[0] < 0.9999) &&
-		(uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) &&
-		(uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999)) {
+	    if ((uSuper[0] >= -1.0e-4) && (uSuper[0] < 0.9999) &&
+		(uSuper[1] >= -1.0e-4) && (uSuper[1] < 0.9999) &&
+		(uSuper[2] >= -1.0e-4) && (uSuper[2] < 0.9999)) {
 	      IonPos[index]= r;
 	      IonTypes[index]= primTypes[iat];
 	      index++;
 	    }
 	  }
     if (index != primPos.size()*numCopies) {
+      
       app_error() << "The number of tiled ions, " << IonPos.size() 
 		  << ", does not match the expected number of "
-		  << primPos.size()*numCopies << ".  Aborting.\n";
+		  << primPos.size()*numCopies << " or the index "<< index <<".  Aborting.\n";
       APP_ABORT("EinsplineSetBuilder::TileIons()");
     }
     if (myComm->rank() == 0) {
