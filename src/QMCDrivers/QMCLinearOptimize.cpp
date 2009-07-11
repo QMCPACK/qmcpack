@@ -69,9 +69,9 @@ QMCLinearOptimize::~QMCLinearOptimize()
 
 QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
 { 
-//   for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i]+dl*optdir[i];
-//   return optTarget->Cost();
-return 0;
+   for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
+   return optTarget->Cost();
+// return 0;
 }
 
 /** Add configuration files for the optimization
@@ -172,6 +172,13 @@ bool QMCLinearOptimize::run()
                     ST(i,j)= (S)(j,i);
                 }
             Xs[it]= std::pow(10.0,exp0+it);
+            if ( !rescaleparams && linemin && !usegrad)
+            {
+              RealType smlst(0.0);
+              for (int i=1;i<N;i++) smlst = std::min(HamT(i,i),smlst);
+              Xs[it] -= smlst;
+              app_log()<<" Negative diagonal :"<<smlst<<endl;
+            }
             for (int i=1;i<N;i++) HamT(i,i) += Xs[it];
 
             char jl('N');
@@ -199,8 +206,8 @@ bool QMCLinearOptimize::run()
 //                 for (int j=0;j<N;j++)
 //                     eigen(i,j)=eigenT(j,i);
             int MinE(0);
-            for (int i=0;i<N;i++) if (alphar[i]/beta[i] < alphar[MinE]/beta[MinE]) MinE=i;
-            RealType Lambda = alphar[MinE]/beta[MinE];
+            for (int i=1;i<N;i++) if (alphar[i]/beta[i] < alphar[MinE]/beta[MinE]) MinE=i;
+            RealType E_lin  = alphar[MinE]/beta[MinE];
             vector<RealType> dP(N,0);
 
             for (int i=0;i<N;i++) dP[i] = eigenT(MinE,i)/eigenT(MinE,0);
@@ -266,7 +273,7 @@ bool QMCLinearOptimize::run()
         //make sure the cost function is a number here.
         for (int t=0;t<tries;t++) if (Costs[t]==Costs[t]) minCostindex=t;
         for (int t=0;t<tries;t++) if (Costs[t]<Costs[minCostindex]) minCostindex=t;
-        if (LastCost-Costs[minCostindex]>costgradtol)
+        if ((LastCost-Costs[minCostindex]>costgradtol) && (rescaleparams))
         {
           for (int i=0;i<(N-1); i++) optTarget->Params(i) = keepP[i] + keepdP[minCostindex][i+1];
         }
