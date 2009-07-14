@@ -390,22 +390,30 @@ namespace qmcplusplus {
     {
       GradType G;
       const RealType eps=1.0e-6;
+      int N = P.G.size();
+      ParticleSet::ParticleGradient_t  Gt(N);
+      ParticleSet::ParticleLaplacian_t Lt(N);
+
+      PosType itmp = source.R[isrc];
 
       for (int dim=0; dim<OHMMS_DIM; dim++) {
 	PosType delta;
-	delta[dim] = eps;
-	source.makeMove(isrc, delta);
-	source.acceptMove(isrc);
+	// delta[dim] = eps;
+	// source.makeMove(isrc, delta);
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim] + eps;
 	P.update();
-	G[dim] = evaluateLog(P, P.G, P.L);
-	source.makeMove(isrc, -2.0*delta); 
-	source.acceptMove(isrc);
+	G[dim] = evaluateLog(P, Gt, Lt);
+	// source.makeMove(isrc, -2.0*delta); 
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim] - eps;
 	P.update();
-	G[dim] -= evaluateLog (P, P.G, P.L);
-	source.makeMove(isrc, delta);
-	source.acceptMove(isrc);
+	G[dim] -= evaluateLog (P, Gt, Lt);
+	// source.makeMove(isrc, delta);
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim];
 	P.update();
-	evaluateLog (P, P.G, P.L);
+	evaluateLog (P, Gt, Lt);
       }
       G = 0.5/eps * G;
       return G;
@@ -507,12 +515,62 @@ namespace qmcplusplus {
       // return G;
       }
     
-    
+
+    inline GradType 
+    evalGradSourceFD(ParticleSet& P, ParticleSet& source, int isrc,
+		     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+		     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+    {
+      GradType G;
+      const RealType eps=1.0e-6;
+      int N = P.G.size();
+      ParticleSet::ParticleGradient_t  grad_plus(N), grad_minus(N);
+      ParticleSet::ParticleLaplacian_t lapl_plus(N), lapl_minus(N);
+      PosType itmp = source.R[isrc];
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	grad_plus  = GradType();
+	grad_minus = GradType();
+	lapl_plus  = 0.0;
+	lapl_minus = 0.0;
+	PosType delta;
+	//delta[dim] = eps;
+	// source.makeMove(isrc, delta);
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim] + eps;
+	P.update();
+	G[dim] = evaluateLog(P, grad_plus, lapl_plus);
+	// source.makeMove(isrc, -2.0*delta); 
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim] - eps;
+	P.update();
+	G[dim] -= evaluateLog (P, grad_minus, lapl_minus);
+	// source.makeMove(isrc, delta);
+	// source.acceptMove(isrc);
+	source.R[isrc][dim] = itmp[dim];
+	P.update();
+	//evaluateLog (P, P.G, P.L);
+	for (int i=0; i<N; i++) {
+	  grad_grad[dim][i] = (grad_plus[i] - grad_minus[i])/(2.0*eps);
+	  lapl_grad[dim][i] = (lapl_plus[i] - lapl_minus[i])/(2.0*eps);
+	}
+      }
+      source.R[isrc] = itmp;
+      G = 0.5/eps * G;
+      return G;
+    }
+
+
     inline GradType 
     evalGradSource(ParticleSet& P, ParticleSet& source, int isrc,
 		   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
 		   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
     {
+      return (evalGradSourceFD(P, source, isrc, grad_grad, lapl_grad));
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	grad_grad[dim] = GradType();
+	lapl_grad[dim] = RealType();
+      }
+
       IonData &ion = IonDataList[isrc];
       ion.elecs_inside.clear();
       int iel=0;
@@ -527,23 +585,36 @@ namespace qmcplusplus {
       RealType u;
       PosType gradF;
       Tensor<RealType,3> hessF;
+      TinyVector<Tensor<RealType,3>,3> d3F;
       for (int j=0; j<ion.elecs_inside.size(); j++) {
       	int jel = ion.elecs_inside[j];
       	RealType r_Ij     = eI_table->r(nn0+jel);
 	PosType dr_Ij     = eI_table->dr(nn0+jel);
       	RealType r_Ij_inv = eI_table->rinv(nn0+jel);
+	PosType dr_Ij_hat = r_Ij_inv * dr_Ij;
       	int ee0 = ee_table->M[jel]-(jel+1);
-      	for (int k=j+1; k<ion.elecs_inside.size(); k++) {
+      	for (int k=0; k<ion.elecs_inside.size(); k++) {
+	  if (j == k) continue;
       	  int kel = ion.elecs_inside[k];
       	  RealType r_Ik     = eI_table->r(nn0+kel);
       	  PosType dr_Ik     = eI_table->dr(nn0+kel);
       	  RealType r_Ik_inv = eI_table->rinv(nn0+kel);
+	  PosType dr_Ik_hat = r_Ik_inv * dr_Ik;
       	  RealType r_jk     = ee_table->r(ee0+kel);
       	  RealType r_jk_inv = ee_table->rinv(ee0+kel);
+	  PosType dr_jk_hat = r_jk_inv * ee_table->dr(ee0+kel);
       	  FT &func = *F.data()[TripletID(isrc, jel, kel)];
-	  u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
-	  G += (gradF[1] * r_Ij_inv * dr_Ij +
-		gradF[2] * r_Ik_inv * dr_Ik);
+	  u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF, d3F);
+	  if (j < k)
+	    G += (gradF[1] * r_Ij_inv * dr_Ij +
+		  gradF[2] * r_Ik_inv * dr_Ik);
+	  for (int dim_ion=0; dim_ion < OHMMS_DIM; dim_ion++) {
+	    for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++)
+	      grad_grad[dim_ion][jel][dim_el] += hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] +
+		-(r_Ij_inv *gradF[1] - hessF(1,1))*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion];
+	    grad_grad[dim_ion][jel][dim_ion] -= r_Ij_inv * gradF[1];
+	    lapl_grad[dim_ion][jel] += 0.0;
+	  }
 	}
       }
       return G;

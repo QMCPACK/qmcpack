@@ -362,6 +362,14 @@ namespace qmcplusplus {
       return val;
     }
 
+    inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+			      TinyVector<real_type,3> &grad,
+			      Tensor<real_type,3> &hess,
+			      TinyVector<Tensor<real_type,3>,3> &d3)
+    {
+
+    }
+
 
     inline real_type evaluate(real_type r, real_type rinv) 
     {

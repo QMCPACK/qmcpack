@@ -1,5 +1,8 @@
-\documentclass{article}
+\documentclass[letterpaper]{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[left=0.8cm,top=1cm,right=0.8cm,nohead,nofoot]{geometry}
+
 \author{Ken Esler}
 \title{Electron-electron-ion Jastrow factor}
 \date{\today}
@@ -39,4 +42,47 @@ To compute the laplacian, we take
 + \frac{2}{\riI}\frac{\partial U}{\partial \riI} \nonumber
 \right]
 \end{eqnarray}
+We now wish to compute the gradient of these terms w.r.t. the ion position, $I$.
+\begin{equation}
+\nabla_I J_3 = -\sum_{j\neq i} \left[ \frac{\partial U(\rij, \riI,\rjI)}{\partial\riI}
+  \frac{\mathbf{r}_i - \mathbf{I}}{|\mathbf{r}_i - \mathbf{I}|} 
++\frac{\partial U(\rij, \riI,\rjI)}{\partial\rjI}
+  \frac{\mathbf{r}_j - \mathbf{I}}{|\mathbf{r}_j - \mathbf{I}|} \right]
+\end{equation}
+For the gradient, the result is a tensor,
+\begin{eqnarray}
+\nabla_I \nabla_i J_3 & = & \nabla_I \sum_{j \neq i}
+\left[\frac{\partial U(\rij, \riI,\rjI)}{\partial\rij}
+  \frac{\mathbf{r}_i - \mathbf{r}_j}{|\mathbf{r}_i - \mathbf{r}_j|} 
++ \frac{\partial U(\rij, \riI,\rjI)}{\partial\riI}
+  \frac{\mathbf{r}_i - \mathbf{I}}{|\mathbf{r}_i - \mathbf{I}|}  \right] \\\nonumber 
+& = & \sum_{j\neq i} \left[ -\frac{\partial^2 U}{\partial \rij \partial \riI} \hat{\mathbf{r}}_{ij} \otimes \hat{\mathbf{r}}_{iI} +
+\left(-\frac{\partial^2 U}{\partial \riI^2}  + \frac{1}{\riI}\frac{\partial U}{\partial \riI} \right) 
+\hat{\mathbf{r}}_{iI} \otimes \hat{\mathbf{r}}_{iI} - \frac{1}{\riI}\frac{\partial U}{\partial \riI} \overleftrightarrow{\mathbf{1}}
+\right]
+\end{eqnarray}
+For the laplacian,
+\begin{eqnarray}
+\nabla_I \nabla_i^2 J_3 & = & \nabla_I\left[\nabla_i \cdot \left(\nabla_i J_3\right)\right] \\
+& = & \nabla_I \sum_{j\neq i } \left[
+\frac{\partial^2 U}{\partial \rij^2} + \frac{2}{\rij} \frac{\partial
+  U}{\partial \rij} + 2 \frac{\partial^2 U}{\partial \rij \partial
+  \riI}\frac{\brij\cdot\briI}{\rij\riI} +\frac{\partial^2 U}{\partial
+  \riI^2}
++ \frac{2}{\riI}\frac{\partial U}{\partial \riI} \nonumber
+\right] \\
+& = & \sum_{j\neq i } 
+\left[ \frac{\partial^3 U}{\partial r_{iI} \partial^2 r_{ij}} +
+\frac{2}{r_{ij}} \frac{\partial^2 U}{\partial r_{iI} \partial r_{ij}}
++ 2\left(\frac{\partial^3 U}{\partial \rij \partial^2 \riI} -\frac{1}{\riI} \frac{\partial^2 U}{\partial \rij \partial \riI}\right)\frac{\brij\cdot\briI}{\rij\riI} + \frac{\partial^3 U}{\partial^3 \riI} - \frac{2}{\riI^2} \frac{\partial U}{ \partial \riI} + \frac{2}{\riI} \frac{\partial^2 U}{\partial^2 \riI}
+\right] \frac{\mathbf{I} - \mathbf{r}_i}{|\mathbf{I} - \mathbf{r}_i|} + \nonumber \\\nonumber 
+ & & \sum_{j\neq i } \left[ \frac{\partial^3U}{\partial \rij^2 \partial \rjI} + \frac{2}{\rij}\frac{\partial^2 U}{\partial \rjI \partial \rij} 
++ 2\frac{\partial^3 U}{\partial \rij \partial \riI \partial \rjI}\frac{\brij\cdot\briI}{\rij\riI}
++\frac{\partial^3 U}{\partial \riI^2 \partial \rjI} + \frac{2}{\riI}\frac{\partial^2 U}{\partial \riI \partial \rjI} \right] 
+\frac{\mathbf{I} - \mathbf{r}_j}{|\mathbf{r}_j - \mathbf{I}|} + \\\nonumber 
+& & \sum_{j\neq i } \left[ -\frac{2}{\riI}\frac{\partial^2 U}{\partial \rij \partial \riI}\right] \frac{\mathbf{r}_{ij}}{r_{ij}}
+\end{eqnarray}
+
+
+
 \end{document}

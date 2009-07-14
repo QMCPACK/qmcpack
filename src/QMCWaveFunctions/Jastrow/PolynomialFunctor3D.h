@@ -408,6 +408,125 @@ namespace qmcplusplus {
     }
 
 
+    inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+			      TinyVector<real_type,3> &grad,
+			      Tensor<real_type,3> &hess,
+			      TinyVector<Tensor<real_type,3>,3> &d3)
+    {
+      grad = 0.0;
+      hess = 0.0;
+      d3 = grad;
+
+      const real_type L = 0.5*cutoff_radius; 
+      if (r_1I >= L || r_2I >= L) 
+        return 0.0;
+      real_type val = 0.0;
+
+      
+      real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), r2l_3, lf(0.0);
+      for (int l=0; l<=N_eI; l++) {
+	real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), r2m_3, mf(0.0);
+	for (int m=0; m<=N_eI; m++) {
+	  real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), r2n_3, nf(0.0);
+	  for (int n=0; n<=N_ee; n++) {
+	    real_type g = gamma(l,m,n);
+	    val += g*r2l*r2m*r2n;
+
+	    grad[0] += nf * g *r2l   * r2m   * r2n_1;
+	    grad[1] += lf * g *r2l_1 * r2m   * r2n  ;
+	    grad[2] += mf * g *r2l   * r2m_1 * r2n  ;
+
+	    hess(0,0) += nf*(nf-1.0) * g * r2l   * r2m   * r2n_2  ;
+	    hess(0,1) += nf*lf       * g * r2l_1 * r2m   * r2n_1  ;
+	    hess(0,2) += nf*mf       * g * r2l   * r2m_1 * r2n_1  ;
+	    hess(1,1) += lf*(lf-1.0) * g * r2l_2 * r2m   * r2n    ;
+	    hess(1,2) += lf*mf       * g * r2l_1 * r2m_1 * r2n    ;
+	    hess(2,2) += mf*(mf-1.0) * g * r2l   * r2m_2 * r2n    ;
+
+	    d3[0](0,0) += nf*(nf-1.0)*(nf-2.0) * g * r2l   * r2m   * r2n_3 ;
+	    d3[0](0,1) += nf*(nf-1.0)*lf       * g * r2l_1 * r2m   * r2n_2 ;
+	    d3[0](0,2) += nf*(nf-1.0)*mf       * g * r2l   * r2m_1 * r2n_2 ;
+	    d3[0](1,1) += nf*lf*(lf-1.0)       * g * r2l_2 * r2m   * r2n_1 ;
+	    d3[0](1,2) += nf*lf*mf             * g * r2l_1 * r2m_1 * r2n_1 ;
+	    d3[0](2,2) += nf*mf*(mf-1.0)       * g * r2l   * r2m_2 * r2n_1 ;
+	    d3[1](1,1) += lf*(lf-1.0)*(lf-2.0) * g * r2l_3 * r2m   * r2n   ;
+	    d3[1](1,2) += lf*(lf-1.0)*mf       * g * r2l_2 * r2m_1 * r2n   ;
+	    d3[1](2,2) += lf*mf*(mf-1.0)       * g * r2l_1 * r2m_2 * r2n   ;
+	    d3[2](2,2) += mf*(mf-1.0)*(mf-2.0) * g * r2l   * r2m_3 * r2n   ;
+
+
+	    r2n_3 = r2n_2;
+	    r2n_2 = r2n_1;
+	    r2n_1 = r2n;
+	    r2n *= r_12;
+	    nf += 1.0;
+	  }
+	  r2m_3 = r2m_2;
+	  r2m_2 = r2m_1;
+	  r2m_1 = r2m;
+	  r2m *= r_2I;
+	  mf += 1.0;
+	}
+	r2l_3 = r2l_2;
+	r2l_2 = r2l_1;
+	r2l_1 = r2l;
+	r2l *= r_1I;
+	lf += 1.0;
+      }
+      for (int i=0; i<C; i++) {
+	d3[0](0,0) = (r_1I - L)*(r_2I - L)*d3[0](0,0);
+	d3[0](0,1) = (r_1I - L)*(r_2I - L)*d3[0](0,1) + (r_2I - L)*hess(0,0);
+	d3[0](0,2) = (r_1I - L)*(r_2I - L)*d3[0](0,2) + (r_1I - L)*hess(0,0);
+	d3[0](1,1) = (r_1I - L)*(r_2I - L)*d3[0](1,1) + 2.0*(r_2I - L)*hess(0,1);
+	d3[0](1,2) = (r_1I - L)*(r_2I - L)*d3[0](1,2) + (r_1I - L)*hess(0,1) + (r_2I - L)*hess(0,2) + grad[0];
+	d3[0](2,2) = (r_1I - L)*(r_2I - L)*d3[0](2,2) + 2.0*(r_1I-L)*hess(0,2);
+	d3[1](1,1) = (r_1I - L)*(r_2I - L)*d3[1](1,1) + 3.0*(r_2I-L)*hess(1,1);
+	d3[1](1,2) = (r_1I - L)*(r_2I - L)*d3[1](1,2) + 
+	  2.0*(r_2I - L)*hess(1,2) + 2.0*grad[1] + (r_1I - L)*hess(1,1);
+	d3[1](2,2) = (r_1I - L)*(r_2I - L)*d3[1](2,2) +
+	  2.0*(r_1I - L)*hess(1,2) + 2.0*grad[2] + (r_2I - L)*hess(2,2);
+	d3[2](2,2) = (r_1I - L)*(r_2I - L)*d3[2](2,2) + 3.0*(r_1I - L)*hess(2,2);
+
+	hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);	
+	hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
+	hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
+	hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
+	hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
+	hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ 2.0*(r_1I - L)*grad[2];
+
+	grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
+	grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
+	grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
+
+       	val *= (r_1I - L)*(r_2I - L);
+      }
+
+      hess(1,0) = hess(0,1);
+      hess(2,0) = hess(0,2);
+      hess(2,1) = hess(1,2);
+
+      d3[0](1,0) = d3[0](0,1);
+      d3[0](2,0) = d3[0](0,2);
+      d3[0](2,1) = d3[0](1,2);
+      d3[1](0,0) = d3[0](1,1);
+      d3[1](0,1) = d3[0](0,1);
+      d3[1](0,2) = d3[0](1,2);
+      d3[1](1,0) = d3[0](0,1);
+      d3[1](2,0) = d3[0](1,2);
+      d3[1](2,1) = d3[1](1,2);
+      d3[2](0,0) = d3[0](0,2);
+      d3[2](0,1) = d3[0](1,2);
+      d3[2](0,2) = d3[0](2,2);
+      d3[2](1,0) = d3[0](1,2);
+      d3[2](1,1) = d3[1](1,2);
+      d3[2](1,2) = d3[1](2,2);
+      d3[2](2,0) = d3[0](2,2);
+      d3[2](2,1) = d3[1](2,2);
+ 
+      return val;
+    }
+
+
     inline real_type evaluate(real_type r, real_type rinv) 
     {
       return 0.0;
