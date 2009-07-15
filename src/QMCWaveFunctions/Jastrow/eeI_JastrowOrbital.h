@@ -631,7 +631,14 @@ namespace qmcplusplus {
 	    }
 	    grad_grad[dim_ion][jel][dim_ion] += r_Ij_inv * gradF[1];
 	    grad_grad[dim_ion][kel][dim_ion] += r_Ik_inv * gradF[2];
-	    lapl_grad[dim_ion][jel] += 0.0;
+	    lapl_grad[dim_ion][jel] += 
+	      (d3F[0](0,1) + 2.0*r_jk_inv*hessF(0,1) +
+	       -2.0*(d3F[0](1,1) - r_Ij_inv*hessF(0,1)) * dot(dr_jk_hat, dr_Ij_hat) +
+	       d3F[1](1,1) - 2.0*r_Ij_inv*r_Ij_inv*gradF[1] + 2.0*r_Ij_inv*hessF(1,1)) * dr_Ij_hat[dim_ion];
+	    lapl_grad[dim_ion][jel] += 
+	      (d3F[0](0,2) + 2.0*r_jk_inv*hessF(0,2) - 2.0 * d3F[0](1,2)*dot(dr_jk_hat, dr_Ij_hat) +
+	       d3F[1](1,2) + 2.0*r_Ij_inv*hessF(1,2))*dr_Ik_hat[dim_ion];
+	    lapl_grad[dim_ion][jel] -= 2.0*r_Ij_inv*hessF(0,1)*dr_jk_hat[dim_ion];
 	  }
 	}
       }
