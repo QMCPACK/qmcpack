@@ -639,6 +639,16 @@ namespace qmcplusplus {
 	      (d3F[0](0,2) + 2.0*r_jk_inv*hessF(0,2) - 2.0 * d3F[0](1,2)*dot(dr_jk_hat, dr_Ij_hat) +
 	       d3F[1](1,2) + 2.0*r_Ij_inv*hessF(1,2))*dr_Ik_hat[dim_ion];
 	    lapl_grad[dim_ion][jel] -= 2.0*r_Ij_inv*hessF(0,1)*dr_jk_hat[dim_ion];
+
+	    lapl_grad[dim_ion][kel] += 
+	      (d3F[0](0,2) + 2.0*r_jk_inv*hessF(0,2) +
+	       +2.0*(d3F[0](2,2) - r_Ik_inv*hessF(0,2)) * dot(dr_jk_hat, dr_Ik_hat) +
+	       d3F[2](2,2) - 2.0*r_Ik_inv*r_Ik_inv*gradF[2] + 2.0*r_Ik_inv*hessF(2,2)) * dr_Ik_hat[dim_ion];
+	    lapl_grad[dim_ion][kel] += 
+	      (d3F[0](0,1) + 2.0*r_jk_inv*hessF(0,1) + 2.0 * d3F[0](1,2)*dot(dr_jk_hat, dr_Ik_hat) +
+	       d3F[1](2,2) + 2.0*r_Ik_inv*hessF(1,2))*dr_Ij_hat[dim_ion];
+	    lapl_grad[dim_ion][kel] += 2.0*r_Ik_inv*hessF(0,2)*dr_jk_hat[dim_ion];
+
 	  }
 	}
       }
