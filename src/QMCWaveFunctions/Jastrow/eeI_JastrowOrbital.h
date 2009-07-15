@@ -565,19 +565,19 @@ namespace qmcplusplus {
 		   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
 		   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
     {
-      return (evalGradSourceFD(P, source, isrc, grad_grad, lapl_grad));
+      //return (evalGradSourceFD(P, source, isrc, grad_grad, lapl_grad));
       for (int dim=0; dim<OHMMS_DIM; dim++) {
 	grad_grad[dim] = GradType();
 	lapl_grad[dim] = RealType();
       }
 
       IonData &ion = IonDataList[isrc];
-      ion.elecs_inside.clear();
-      int iel=0;
-      if (ion.cutoff_radius > 0.0) 
-      	for (int nn=eI_table->M[isrc]; nn<eI_table->M[isrc+1]; nn++, iel++) 
-      	  if (eI_table->r(nn) < ion.cutoff_radius)
-      	    ion.elecs_inside.push_back(iel);
+      // ion.elecs_inside.clear();
+      // int iel=0;
+      // if (ion.cutoff_radius > 0.0) 
+      // 	for (int nn=eI_table->M[isrc]; nn<eI_table->M[isrc+1]; nn++, iel++) 
+      // 	  if (eI_table->r(nn) < ion.cutoff_radius)
+      // 	    ion.elecs_inside.push_back(iel);
 
       // cerr << "elecs_inside.size() = " << ion.elecs_inside.size() << endl;
       GradType G;
@@ -593,9 +593,10 @@ namespace qmcplusplus {
       	RealType r_Ij_inv = eI_table->rinv(nn0+jel);
 	PosType dr_Ij_hat = r_Ij_inv * dr_Ij;
       	int ee0 = ee_table->M[jel]-(jel+1);
-      	for (int k=0; k<ion.elecs_inside.size(); k++) {
-	  if (j == k) continue;
+      	for (int k=j+1; k<ion.elecs_inside.size(); k++) {
+	  // if (k == j) continue;
       	  int kel = ion.elecs_inside[k];
+	  cerr << "(j,k) = (" << jel << ", " << kel << ")\n";
       	  RealType r_Ik     = eI_table->r(nn0+kel);
       	  PosType dr_Ik     = eI_table->dr(nn0+kel);
       	  RealType r_Ik_inv = eI_table->rinv(nn0+kel);
@@ -609,10 +610,26 @@ namespace qmcplusplus {
 	    G += (gradF[1] * r_Ij_inv * dr_Ij +
 		  gradF[2] * r_Ik_inv * dr_Ik);
 	  for (int dim_ion=0; dim_ion < OHMMS_DIM; dim_ion++) {
-	    for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++)
-	      grad_grad[dim_ion][jel][dim_el] += hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] +
-		-(r_Ij_inv *gradF[1] - hessF(1,1))*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion];
-	    grad_grad[dim_ion][jel][dim_ion] -= r_Ij_inv * gradF[1];
+	    for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++) {
+	      // Should be 6 terms total.
+	      grad_grad[dim_ion][jel][dim_el] -= 
+		hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] -
+		(hessF(1,1) - r_Ij_inv*gradF[1])*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] +
+		hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] -
+		hessF(1,2)*dr_Ij_hat[dim_el]*dr_Ik_hat[dim_el];
+		// -r_Ij_inv * gradF[1] * dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] +
+		// -hessF(0,2) * dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion];
+	      // grad_grad[dim_ion][jel][dim_el] += 
+	      // 	hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] +
+	      // 	-(r_Ij_inv *gradF[1] - hessF(1,1))*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] + 
+	      // 	hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
+	      // 	hessF(1,2)*dr_Ij_hat[dim_el]*dr_Ik_hat[dim_ion];
+	      grad_grad[dim_ion][kel][dim_el] -=
+	      	-hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
+	      	+(r_Ik_inv *gradF[2] - hessF(2,2))*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion];
+	    }
+	    grad_grad[dim_ion][jel][dim_ion] += r_Ij_inv * gradF[1];
+	    grad_grad[dim_ion][kel][dim_ion] -= r_Ik_inv * gradF[2];
 	    lapl_grad[dim_ion][jel] += 0.0;
 	  }
 	}

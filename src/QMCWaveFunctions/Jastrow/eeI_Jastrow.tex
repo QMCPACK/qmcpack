@@ -49,7 +49,23 @@ We now wish to compute the gradient of these terms w.r.t. the ion position, $I$.
 +\frac{\partial U(\rij, \riI,\rjI)}{\partial\rjI}
   \frac{\mathbf{r}_j - \mathbf{I}}{|\mathbf{r}_j - \mathbf{I}|} \right]
 \end{equation}
-For the gradient, the result is a tensor,
+For the gradient w.r.t. $i$ of the gradient w.r.t. $I$, the result is a tensor,
+\begin{eqnarray}
+\nabla_I \nabla_i J_3 & = & \nabla_I \sum_{j \neq i}
+\left[\frac{\partial U(\rij, \riI,\rjI)}{\partial\rij}
+  \frac{\mathbf{r}_i - \mathbf{r}_j}{|\mathbf{r}_i - \mathbf{r}_j|} 
++ \frac{\partial U(\rij, \riI,\rjI)}{\partial\riI}
+  \frac{\mathbf{r}_i - \mathbf{I}}{|\mathbf{r}_i - \mathbf{I}|}  \right] \\\nonumber \\\nonumber
+& = & -\sum_{j\neq i} \left[ 
+\frac{\partial^2 U}{\partial \rij \riI} \hat{\mathbf{r}}_{ij} \otimes
+\hat{\mathbf{r}}_{iI} + \left(\frac{\partial^2 U}{\partial \riI^2} -
+\frac{1}{\riI} \frac{\partial U}{\partial \riI}\right)
+\hat{\mathbf{r}}_{iI} \otimes \hat{\mathbf{r}}_{iI} \right. + \\\nonumber
+& & \left. \qquad \ \ \  \frac{\partial^U}{\partial \rij \rjI} \hat{\mathbf{r}}_{ij} \otimes \hat{\mathbf{r}}_{jI} + \frac{\partial^2 U}{\partial \riI \partial \rjI}
+\hat{\mathbf{r}}_{iI}\otimes \hat{\mathbf{r}}_{jI}  +
+\frac{1}{\riI} \frac{\partial U}{\partial \riI} \overleftrightarrow{\mathbf{1}}\right]
+\end{eqnarray}
+
 \begin{eqnarray}
 \nabla_I \nabla_i J_3 & = & \nabla_I \sum_{j \neq i}
 \left[\frac{\partial U(\rij, \riI,\rjI)}{\partial\rij}
