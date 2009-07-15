@@ -616,20 +616,21 @@ namespace qmcplusplus {
 		hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] -
 		(hessF(1,1) - r_Ij_inv*gradF[1])*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] +
 		hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] -
-		hessF(1,2)*dr_Ij_hat[dim_el]*dr_Ik_hat[dim_el];
-		// -r_Ij_inv * gradF[1] * dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] +
-		// -hessF(0,2) * dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion];
-	      // grad_grad[dim_ion][jel][dim_el] += 
-	      // 	hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] +
-	      // 	-(r_Ij_inv *gradF[1] - hessF(1,1))*dr_Ij_hat[dim_el]*dr_Ij_hat[dim_ion] + 
-	      // 	hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
-	      // 	hessF(1,2)*dr_Ij_hat[dim_el]*dr_Ik_hat[dim_ion];
-	      grad_grad[dim_ion][kel][dim_el] -=
-	      	-hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
-	      	+(r_Ik_inv *gradF[2] - hessF(2,2))*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion];
+		hessF(1,2)*dr_Ij_hat[dim_el]*dr_Ik_hat[dim_ion];
+
+	      grad_grad[dim_ion][kel][dim_el] -= 
+		-hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] -
+		(hessF(2,2) - r_Ik_inv*gradF[2])*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion] +
+		-hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] -
+		hessF(1,2)*dr_Ik_hat[dim_el]*dr_Ij_hat[dim_ion];
+
+
+	      // grad_grad[dim_ion][kel][dim_el] -=
+	      // 	-hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
+	      // 	+(r_Ik_inv *gradF[2] - hessF(2,2))*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion];
 	    }
 	    grad_grad[dim_ion][jel][dim_ion] += r_Ij_inv * gradF[1];
-	    grad_grad[dim_ion][kel][dim_ion] -= r_Ik_inv * gradF[2];
+	    grad_grad[dim_ion][kel][dim_ion] += r_Ik_inv * gradF[2];
 	    lapl_grad[dim_ion][jel] += 0.0;
 	  }
 	}
