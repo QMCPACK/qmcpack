@@ -1,9 +1,7 @@
 h1. Getting and building QMCPACK
-
-This is testing.
-
 h2. Prerequisite 
 
+* Testing
 * C/C++ compilers
 * cmake, build utility, http://www.cmake.org
 * blas/lapack, numerical library, use platform-optimized libraries
