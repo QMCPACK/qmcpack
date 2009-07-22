@@ -2,6 +2,7 @@ h1. Getting and building QMCPACK
 h2. Prerequisite 
 
 
+* Testing # 2
 * Testing 
 * C/C++ compilers
 * cmake, build utility, http://www.cmake.org
