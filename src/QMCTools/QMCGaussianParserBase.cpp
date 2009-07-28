@@ -279,7 +279,7 @@ QMCGaussianParserBase::createDeterminantSet() {
   //create a determinant Up
   xmlNodePtr adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
-  xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)up_size.str().c_str());
+  xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)up_size.str().c_str());
 
   //occ<<"\n";
   //vector<int>::iterator it(Occ_alpha.begin()); 
@@ -320,10 +320,11 @@ QMCGaussianParserBase::createDeterminantSet() {
   xmlNodePtr cur = xmlAddChild(slaterdet,adet);
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"downdet");
-  xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)down_size.str().c_str());
-  if(SpinRestricted)
-    xmlNewProp(adet,(const xmlChar*)"ref",(const xmlChar*)"updet");
-  else {
+  xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+  //if(SpinRestricted)
+  //  xmlNewProp(adet,(const xmlChar*)"ref",(const xmlChar*)"updet");
+  //else {
+  {
     //std::ostringstream occ_beta;
     //occ_beta<<"\n";
     //it=Occ_beta.begin(); 
