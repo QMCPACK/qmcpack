@@ -430,7 +430,6 @@ namespace qmcplusplus {
       	  if (eI_table->r(nn) < ion.cutoff_radius)
       	    ion.elecs_inside.push_back(iel);
 
-      // cerr << "elecs_inside.size() = " << ion.elecs_inside.size() << endl;
       GradType G;
       int nn0 = eI_table->M[isrc];
       RealType u;
@@ -455,65 +454,8 @@ namespace qmcplusplus {
 		gradF[2] * r_Ik_inv * dr_Ik);
 	}
       }
-      // cerr << "G   = " << G << endl;
-      // GradType GFD = evalGradSourceFD(P, source, isrc);
-      // cerr << "GFD = " << GFD << endl;
       return G;
-      // RealType u;
-      // PosType gradF;
-      // Tensor<RealType,3> hessF;
-      // // Now, evaluate three-body term for each ion
-      // int nn0 = eI_table->M[i];
-      // for (int j=0; j<ion.elecs_inside.size(); j++) {
-      // 	int jel = ion.elecs_inside[j];
-      // 	RealType r_Ij     = eI_table->r(nn0+jel);
-      // 	RealType r_Ij_inv = eI_table->rinv(nn0+jel);
-      // 	int ee0 = ee_table->M[jel]-(jel+1);
-      // 	for (int k=j+1; k<ion.elecs_inside.size(); k++) {
-      // 	  int kel = ion.elecs_inside[k];
-      // 	  RealType r_Ik     = eI_table->r(nn0+kel);
-      // 	  RealType r_Ik_inv = eI_table->rinv(nn0+kel);
-      // 	  RealType r_jk     = ee_table->r(ee0+kel);
-      // 	  RealType r_jk_inv = ee_table->rinv(ee0+kel);
-      // 	  FT &func = *F.data()[TripletID(i, jel, kel)];
-      // 	  u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
-      // 	  LogValue -= u;
-	  
-      // 	  // Save for ratio
-      // 	  U[jel*Nelec+kel] += u;
-      // 	  U[kel*Nelec+jel] += u;
-	  
-      // 	  PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
-      // 	  PosType du_j, du_k;
-      // 	  RealType d2u_j, d2u_k;
-      // 	  du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
-      // 	  du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
-      // 	  d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
-      // 		   2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
-      // 		   + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
-      // 	  d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
-      // 		   2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
-      // 		   + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
-      // 	  G[jel] -= du_j;
-      // 	  G[kel] -= du_k;
-      // 	  L[jel] -= d2u_j;
-      // 	  L[kel] -= d2u_k;
-      // 	}
-      // } 
-   
-      // if (&source != &CenterRef)
-      // 	return GradType();
-      // FT* func=Fs[isrc];
-      // if (func == 0) return GradType();
-      // GradType G(0.0);
-      // RealType dudr, d2udr2;
-      // for (int nn=d_table->M[isrc]; nn<d_table->M[isrc+1]; nn++)  {
-      // 	RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
-      // 	dudr *= d_table->rinv(nn);
-      // 	G += dudr*d_table->dr(nn);
-      // }
-      // return G;
-      }
+    }
     
 
     inline GradType 
@@ -566,10 +508,10 @@ namespace qmcplusplus {
 		   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
     {
       //return (evalGradSourceFD(P, source, isrc, grad_grad, lapl_grad));
-      for (int dim=0; dim<OHMMS_DIM; dim++) {
-	grad_grad[dim] = GradType();
-	lapl_grad[dim] = RealType();
-      }
+      // for (int dim=0; dim<OHMMS_DIM; dim++) {
+      // 	grad_grad[dim] = GradType();
+      // 	lapl_grad[dim] = RealType();
+      // }
 
       IonData &ion = IonDataList[isrc];
       // ion.elecs_inside.clear();
@@ -579,7 +521,6 @@ namespace qmcplusplus {
       // 	  if (eI_table->r(nn) < ion.cutoff_radius)
       // 	    ion.elecs_inside.push_back(iel);
 
-      // cerr << "elecs_inside.size() = " << ion.elecs_inside.size() << endl;
       GradType G;
       int nn0 = eI_table->M[isrc];
       RealType u;
@@ -594,9 +535,7 @@ namespace qmcplusplus {
 	PosType dr_Ij_hat = r_Ij_inv * dr_Ij;
       	int ee0 = ee_table->M[jel]-(jel+1);
       	for (int k=j+1; k<ion.elecs_inside.size(); k++) {
-	  // if (k == j) continue;
       	  int kel = ion.elecs_inside[k];
-	  cerr << "(j,k) = (" << jel << ", " << kel << ")\n";
       	  RealType r_Ik     = eI_table->r(nn0+kel);
       	  PosType dr_Ik     = eI_table->dr(nn0+kel);
       	  RealType r_Ik_inv = eI_table->rinv(nn0+kel);
@@ -623,14 +562,11 @@ namespace qmcplusplus {
 		(hessF(2,2) - r_Ik_inv*gradF[2])*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion] +
 		-hessF(0,1)*dr_jk_hat[dim_el]*dr_Ij_hat[dim_ion] -
 		hessF(1,2)*dr_Ik_hat[dim_el]*dr_Ij_hat[dim_ion];
-
-
-	      // grad_grad[dim_ion][kel][dim_el] -=
-	      // 	-hessF(0,2)*dr_jk_hat[dim_el]*dr_Ik_hat[dim_ion] +
-	      // 	+(r_Ik_inv *gradF[2] - hessF(2,2))*dr_Ik_hat[dim_el]*dr_Ik_hat[dim_ion];
 	    }
+
 	    grad_grad[dim_ion][jel][dim_ion] += r_Ij_inv * gradF[1];
 	    grad_grad[dim_ion][kel][dim_ion] += r_Ik_inv * gradF[2];
+
 	    lapl_grad[dim_ion][jel] += 
 	      (d3F[0](0,1) + 2.0*r_jk_inv*hessF(0,1) +
 	       -2.0*(d3F[0](1,1) - r_Ij_inv*hessF(0,1)) * dot(dr_jk_hat, dr_Ij_hat) +
@@ -653,28 +589,6 @@ namespace qmcplusplus {
 	}
       }
       return G;
-
-      // if (&source != &CenterRef)
-      // 	return GradType();
-      // FT* func=Fs[isrc];
-      // if (func == 0) return GradType();
-      // GradType G(0.0);
-      // RealType dudr, d2udr2, d3udr3;
-      // for (int nn=d_table->M[isrc],iel=0; nn<d_table->M[isrc+1]; nn++,iel++) {
-      // 	RealType rinv = d_table->rinv(nn); 
-      // 	RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2, d3udr3);
-      // 	dudr *= rinv;
-      // 	d2udr2 *= rinv * rinv;
-      // 	G += dudr*d_table->dr(nn);
-      // 	for (int dim_ion=0; dim_ion < OHMMS_DIM; dim_ion++) {
-      // 	  for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++) 
-      // 	    grad_grad[dim_ion][iel][dim_el] += d2udr2 * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el]
-      // 	      - dudr * rinv * rinv * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el];
-      // 	  grad_grad[dim_ion][iel][dim_ion] += dudr;
-      // 	  lapl_grad[dim_ion][iel] += (d3udr3*rinv + 2.0*d2udr2 - 2.0*rinv*rinv*dudr)*d_table->dr(nn)[dim_ion];
-      // 	}
-      // }
-      // return G;
     }
 
     ValueType ratio(ParticleSet& P, int iat) 
