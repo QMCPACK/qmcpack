@@ -1,0 +1,67 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2009-  by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file SPOSetProxy.h
+ * @brief declare a proxy class to a SPOSetBase for multi determinants
+ */
+#ifndef QMCPLUSPLUS_SPOSETPROXY_H
+#define QMCPLUSPLUS_SPOSETPROXY_H
+#include "QMCWaveFunctions/SPOSetBase.h"
+namespace qmcplusplus {
+
+  /** proxy SPOSetBase 
+   *
+   * This class owns a SPOSetBase for all the states to be evaluated
+   * and will be owned by a DiracDeterminantBase object.
+   */
+  struct SPOSetProxy: public SPOSetBase
+  {
+    ///pointer to the SPOSet which evaluate the single-particle states
+    SPOSetBasePtr refPhi;
+    ///container for the values
+    ValueMatrix_t psiM;
+    ///container for the gradients
+    GradMatrix_t dpsiM;
+    ///container for the laplacians
+    ValueMatrix_t d2psiM;
+    ///contatiner for the values for a particle
+    ValueVector_t psiV;
+    ///contatiner for the gradients for a particle
+    GradVector_t dpsiV;
+    ///contatiner for the laplacians for a particle
+    ValueVector_t d2psiV;
+
+    /** constructor
+     * @param spos a SPOSet
+     * @param first the first particle index
+     * @param last the last particle index
+     */
+    SPOSetProxy(SPOSetBasePtr const& spos, int first, int last);
+    void resetParameters(const opt_variables_type& optVariables);
+    void resetTargetParticleSet(ParticleSet& P);
+    void setOrbitalSetSize(int norbs);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat
+        , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+  };
+}
+#endif
+/***************************************************************************
+ * $RCSfile$   $Author: kesler $
+ * $Revision: 3535 $   $Date: 2009-02-10 13:04:12 -0600 (Tue, 10 Feb 2009) $
+ * $Id: SPOSetProxy.h 3535 2009-02-10 19:04:12Z kesler $ 
+ ***************************************************************************/
