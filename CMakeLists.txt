@@ -33,11 +33,33 @@ SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
 SET(QMC_BUILD_COMPLETE 1 CACHE BOOL "Enable all the packages")
 
-SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
-SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+######################################################################
+# enable MPI and OPNEMP  if possible
+######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
+SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
+######################################################################
+# check environment variables 
+######################################################################
+IF($ENV{QMC_MPI})
+  SET(QMC_MPI $ENV{QMC_MPI}) 
+  MESSAGE("-- Found QMC_MPI=${QMC_MPI}")
+ENDIF($ENV{QMC_MPI})
+IF($ENV{QMC_OMP})
+  SET(QMC_OMP $ENV{QMC_OMP}) 
+  MESSAGE("-- Found QMC_OMP=${QMC_OMP}")
+ENDIF($ENV{QMC_OMP})
+IF($ENV{QMC_BITS})
+  SET(QMC_BITS $ENV{QMC_BITS})
+  MESSAGE("-- Found QMC_BITS=${QMC_BITS}")
+ENDIF($ENV{QMC_BITS})
+IF($ENV{QMC_COMPLEX})
+  SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
+  MESSAGE("-- Found QMC_COMPLEX=${QMC_COMPLEX}")
+ENDIF($ENV{QMC_COMPLEX})
 
 ######################################################################
 # Standard test
@@ -66,14 +88,6 @@ CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 
-SET(HAVE_SSE 0)
-SET(HAVE_SSE2 0)
-SET(HAVE_SSE3 0)
-SET(HAVE_SSSE3 0)
-SET(USE_PREFETCH 0)
-SET(PREFETCH_AHEAD 12)
-SET(HAVE_C_VARARRAYS 1)
-
 ######################################################################
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
@@ -91,25 +105,10 @@ SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 # QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
 ######################################################################
 SET(QMC_SK_USE_RECURSIVE 0)
-IF(NOT $ENV{QMC_SK_RECURSIVE} MATCHES QMC_SK_USE_RECURSIVE)
+IF($ENV{QMC_SK_RECURSIVE})
+  MESSAGE("-- SK structure factor uses a recursive algorithm.")
   SET(QMC_SK_USE_RECURSIVE $ENV{QMC_SK_RECURSIVE}) 
-ENDIF(NOT $ENV{QMC_SK_RECURSIVE} MATCHES QMC_SK_USE_RECURSIVE)
-
-######################################################################
-# Overwrite with environments if they differ from the set values
-######################################################################
-IF(NOT $ENV{QMC_MPI} MATCHES QMC_MPI)
-  SET(QMC_MPI $ENV{QMC_MPI}) 
-ENDIF(NOT $ENV{QMC_MPI} MATCHES QMC_MPI)
-IF(NOT $ENV{QMC_OMP} MATCHES QMC_OMP)
-  SET(QMC_OMP $ENV{QMC_OMP}) 
-ENDIF(NOT $ENV{QMC_OMP} MATCHES QMC_OMP)
-IF(NOT $ENV{QMC_BITS} MATCHES QMC_BITS)
-  SET(QMC_BITS $ENV{QMC_BITS})
-ENDIF(NOT $ENV{QMC_BITS} MATCHES QMC_BITS)
-IF(NOT $ENV{QMC_COMPLEX} MATCHES QMC_COMPLEX)
-  SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
-ENDIF(NOT $ENV{QMC_COMPLEX} MATCHES QMC_COMPLEX)
+ENDIF($ENV{QMC_SK_RECURSIVE})
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons
@@ -122,12 +121,9 @@ SET(OHMMS_ORTHO 0)
 
 ######################################################################
 #list of options to determine libraries. First, try to use libraries available
+#FindXYZ.cmake will set the values if successful
 ######################################################################
-SET(INTEL_COMPILER 0)
-SET(ENABLE_OPENMP 0)
 SET(ENABLE_PHDF5 0 CACHE BOOL "Enable phdf5 for output")
-SET(HAVE_MPI 0)
-SET(HAVE_OOMPI 0)
 SET(HAVE_LIBXML2 1)
 SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
@@ -135,16 +131,12 @@ SET(HAVE_LIBHDF5 0)
 SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
-SET(INTEL_COMPILER 0)
 SET(MAC_VECLIB 0)
 SET(ENABLE_GTK_GUI 0)
 SET(HAVE_EINSPLINE 0)
 SET(HAVE_EINSPLINE_EXT 0)
-SET(HAVE_MKL 0)
-SET(HAVE_ACML 0)
-
 set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
-SET(TAU_HOME $ENV{TAU_HOME})
+set(TAU_HOME $ENV{TAU_HOME})
 
 ######################################################
 # Directory where customize cmake files reside
@@ -169,85 +161,104 @@ ENDIF(Subversion_FOUND)
 #If the automatic detection does not work, comment out everything 
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
-SET(FOUND_CXXENV 0)
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 
-IF(QMC_ENV)
-  MESSAGE(STATUS "Using tested toolchain by qmcpack developers")
-  INCLUDE(${PROJECT_SOURCE_DIR}/config/${QMC_ENV}.cmake)
-ELSE(QMC_ENV)
 
 ######################################################
-# Try to identify CPU identity
+# DO NOT MODIFY BELOW
+# If you like to customize your build, create a toolchain as instructed
 ######################################################
-SET(CPU_IDENTITY "generic")
-INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
-#------------------------------------
-# On Jaguar use CrayXT.cmake
-#------------------------------------
-IF($ENV{HOST} MATCHES "jaguar")
-  MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
-  SET(CPU_IDENTITY "barcelona")
-  INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
-  SET(FOUND_CXXENV 1)
-ENDIF($ENV{HOST} MATCHES "jaguar")
+######################################################
+# now set the compiler flags and the macros in src/config.h
+######################################################
+IF(CMAKE_TOOLCHAIN_FILE)
+  MESSAGE(STATUS "-- Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
+ELSE(CMAKE_TOOLCHAIN_FILE)
+  #fun begins
+  SET(FOUND_CXXENV 0)
+  SET(ENABLE_OPENMP 0)
+  SET(HAVE_MPI 0)
+  SET(INTEL_COMPILER 0)
+  SET(HAVE_MKL 0)
+  SET(HAVE_ACML 0)
+  SET(HAVE_SSE 0)
+  SET(HAVE_SSE2 0)
+  SET(HAVE_SSE3 0)
+  SET(HAVE_SSSE3 0)
+  SET(USE_PREFETCH 0)
+  SET(PREFETCH_AHEAD 12)
+  SET(HAVE_C_VARARRAYS 1)
 
-#------------------------------------
-# Check if using IBM compilers
-#------------------------------------
-IF($ENV{CXX} MATCHES "xlC")
-  INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
-  SET(FOUND_CXXENV 1)
-ENDIF($ENV{CXX} MATCHES "xlC")
+  ######################################################
+  # Try to identify CPU identity
+  ######################################################
+  SET(CPU_IDENTITY "generic")
+  INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
+  #------------------------------------
+  # On Jaguar use CrayXT.cmake
+  #------------------------------------
+  IF($ENV{HOST} MATCHES "jaguar")
+    MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
+    SET(CPU_IDENTITY "barcelona")
+    INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
+    SET(FOUND_CXXENV 1)
+  ENDIF($ENV{HOST} MATCHES "jaguar")
 
-#------------------------------------
-# Check if using Intel compilers
-#------------------------------------
-IF($ENV{CXX} MATCHES "icpc")
-  INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-  SET(FOUND_CXXENV 1)
-ENDIF($ENV{CXX} MATCHES "icpc")
+  #------------------------------------
+  # Check if using IBM compilers
+  #------------------------------------
+  IF($ENV{CXX} MATCHES "xlC")
+    INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
+    SET(FOUND_CXXENV 1)
+  ENDIF($ENV{CXX} MATCHES "xlC")
 
-#------------------------------------
-# other compilers, e.g., mpicxx 
-# most likely *unix with gnu or intel compilers
-# using "-restrict" option to find out if intel compilers are backend.
-#------------------------------------
-IF(NOT FOUND_CXXENV)
-  IF(CMAKE_COMPILER_IS_GNUCXX)
-    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  ELSE(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
-    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
-    IF(INTEL_CXX_FLAGS)
-      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-      SET(FOUND_CXXENV 1)
-    ENDIF(INTEL_CXX_FLAGS)
-  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-ENDIF(NOT FOUND_CXXENV)
+  #------------------------------------
+  # Check if using Intel compilers
+  #------------------------------------
+  IF($ENV{CXX} MATCHES "icpc")
+    INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
+    SET(FOUND_CXXENV 1)
+  ENDIF($ENV{CXX} MATCHES "icpc")
 
-#-------------------------------------------------------------------
-#COMPIELR MANUAL SELECTION
-#If automatic detection does not work, comment out above and select one
-#of these files
-#-------------------------------------------------------------------
-#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
+  #------------------------------------
+  # other compilers, e.g., mpicxx 
+  # most likely *unix with gnu or intel compilers
+  # using "-restrict" option to find out if intel compilers are backend.
+  #------------------------------------
+  IF(NOT FOUND_CXXENV)
+    IF(CMAKE_COMPILER_IS_GNUCXX)
+      INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+    ELSE(CMAKE_COMPILER_IS_GNUCXX)
+      SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
+      CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
+      IF(INTEL_CXX_FLAGS)
+        INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
+        SET(FOUND_CXXENV 1)
+      ENDIF(INTEL_CXX_FLAGS)
+    ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+  ENDIF(NOT FOUND_CXXENV)
 
-INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+  #-------------------------------------------------------------------
+  #COMPIELR MANUAL SELECTION
+  #If automatic detection does not work, comment out above and select one
+  #of these files
+  #-------------------------------------------------------------------
+  #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+  #INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
+  #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
+  #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 
-ENDIF(QMC_ENV)
+  #-------------------------------------------------------------------
+  # check lapack/blas
+  #-------------------------------------------------------------------
+  INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 
-#
-######################################################
-# DO NOT MODIFY BELOW
-######################################################
+SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)

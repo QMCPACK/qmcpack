@@ -367,7 +367,7 @@ namespace qmcplusplus {
 			      Tensor<real_type,3> &hess,
 			      TinyVector<Tensor<real_type,3>,3> &d3)
     {
-
+      return 0.0;
     }
 
 

@@ -536,6 +536,7 @@ namespace qmcplusplus {
     inline bool
     evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)
     {
+      return false;
     }
 
     inline real_type f(real_type r) {
