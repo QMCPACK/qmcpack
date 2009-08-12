@@ -16,12 +16,16 @@
 # 12) xtpe-target-cnl                         24) hdf5/1.6.8
 
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
-SET(QMC_ENV "CrayXTEnv" CACHE STRING "Setting envirnoments for Cray XT5")
+#SET(QMC_ENV "CrayXTEnv" CACHE STRING "Setting envirnoments for Cray XT5")
 
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/CC)
+set(GNU_FLAGS "-fopenmp -O3 -ftemplate-depth-60 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
+set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
+set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60")
+set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS}")
 
 set(CMAKE_FIND_ROOT_PATH
       /opt/acml/4.1.0/gfortran64
@@ -32,6 +36,21 @@ set(CMAKE_FIND_ROOT_PATH
       /ccs/proj/mat001/cnl/boost
      )
 
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+SET(ENABLE_OPENMP 1)
+SET(HAVE_MPI 1)
+SET(HAVE_SSE 1)
+SET(HAVE_SSE2 1)
+SET(HAVE_SSE3 1)
+SET(HAVE_SSSE3 1)
+SET(USE_PREFETCH 1)
+SET(PREFETCH_AHEAD 12)
+SET(BLAS_LIBRARY -lacml)
+SET(LAPACK_LIBRARY -lacml_mv)
+
+#----------------------------------------------------------
+# disable dynamic links
+#----------------------------------------------------------
 SET(CMAKE_SHARED_LIBRARY_C_FLAGS "")            # -pic 
 SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "")       # -shared
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")         # +s, flag for exe link to use shared lib
@@ -49,10 +68,8 @@ SET(CMAKE_DL_LIBS "" )
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
-SET(CMAKE_CXX_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000  -Wno-deprecated ")
-SET(CMAKE_C_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000  -Wno-deprecated ")
-
 SET(CMAKE_CXX_LINK_SHARED_LIBRARY)
 SET(CMAKE_CXX_LINK_MODULE_LIBRARY)
 SET(CMAKE_C_LINK_SHARED_LIBRARY)
 SET(CMAKE_C_LINK_MODULE_LIBRARY)
+
