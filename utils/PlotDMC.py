@@ -70,20 +70,20 @@ Var    = s[first:c,2]*scale;
 Weight = s[first:c,3];
 Pop    = s[first:c,4];
 Etrial = s[first:c,5]*scale;
-
-
-
+step = range(first,c,1)
 
 N = len(E)
 subplots_adjust(hspace=0.0000001, wspace=0.0000001)
 ax1 = subplot(211)
 title(sys.argv[1])
-plot (E,'b');
+plot (step, E,'b');
+myformatter = matplotlib.ticker.ScalarFormatter(False)
+gca().axes.yaxis.set_major_formatter(myformatter)
 hold(True);
-plot(Etrial, 'r');
+plot(step, Etrial, 'r');
 ylabel ('Energy (Hartrees)');
 ax2 = subplot(2, 1, 2, sharex=ax1)
-plot(Pop, 'r');
+plot(step, Pop, 'r');
 ylabel ('Population (walkers)')
 yticklabels = ax2.get_yticklabels();
 ytx = yticks()[0].tolist()
