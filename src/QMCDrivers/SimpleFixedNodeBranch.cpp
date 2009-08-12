@@ -242,7 +242,7 @@ namespace qmcplusplus
         //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
         //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
         //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
-        vParam[B_ETRIAL]=(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW])+Feedback*(logN-std::log(pop_now));
+        vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])+Feedback*(logN-std::log(pop_now));
       }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
