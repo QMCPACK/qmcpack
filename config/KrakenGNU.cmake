@@ -16,8 +16,6 @@
 # 12) xtpe-target-cnl                         24) hdf5/1.6.8
 
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
-SET(QMC_ENV "CrayXTEnv" CACHE STRING "Setting envirnoments for Cray XT5")
-
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/cc)
@@ -28,6 +26,18 @@ set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
       /nics/a/proj/qmc/boost_1_38_0
       /nics/a/proj/qmc
      )
+
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+SET(ENABLE_OPENMP 1)
+SET(HAVE_MPI 1)
+SET(HAVE_SSE 1)
+SET(HAVE_SSE2 1)
+SET(HAVE_SSE3 1)
+SET(HAVE_SSSE3 1)
+SET(USE_PREFETCH 1)
+SET(PREFETCH_AHEAD 12)
+SET(BLAS_LIBRARY -lacml)
+SET(LAPACK_LIBRARY -lacml_mv)
 
 SET(CMAKE_SHARED_LIBRARY_C_FLAGS " ")            # -pic 
 SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS " ")       # -shared

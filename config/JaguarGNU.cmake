@@ -16,8 +16,6 @@
 # 12) xtpe-target-cnl                         24) hdf5/1.6.8
 
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
-#SET(QMC_ENV "CrayXTEnv" CACHE STRING "Setting envirnoments for Cray XT5")
-
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/cc)
