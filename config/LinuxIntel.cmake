@@ -1,42 +1,49 @@
-# common settings with intel compilers
-#use aggressive inlining
-ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+#--------------------------------------------------------------------------
+# toolchain for Linux Clusters
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# setting compilers, compiler options and MKL_HOME
+#--------------------------------------------------------------------------
+set(CMAKE_CXX_COMPILER mpicxx)
+set(CMAKE_C_COMPILER  icc)
+set(INTEL_OPTS "-g  -restrict -unroll  -O3 -ip -xT -openmp -Wno-deprecated")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${INTEL_OPTS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${INTEL_OPTS} -std=c99")
+set(MKL_HOME "/opt/intel/mkl/10.0.3.020" CACHE STRING "MKL HOME")
 
-FIND_PATH(MKL_INCLUDE_DIR mkl.h ${MKL_HOME}/include)
-INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIR})
-
-FIND_LIBRARY(LAPACK_LIBRARY NAMES mkl_lapack PATHS ${MKL_HOME}/lib/${MKL_EXT})
-FIND_LIBRARY(BLAS_LIBRARY NAMES mkl PATHS ${MKL_HOME}/lib/${MKL_EXT})
-
-MARK_AS_ADVANCED(
-  LAPACK_LIBRARY 
-  BLAS_LIBRARY 
+#--------------------------------------------------------------------------
+# path where the libraries are located
+# boost,hdf,szip,libxml2,fftw,essl
+#--------------------------------------------------------------------------
+set(CMAKE_FIND_ROOT_PATH
+    $ENV{EINSPLINE_HOME}
+    $ENV{BOOST_HOME}
+    $ENV{HDF5_HOME}
 )
 
-SET(HAVE_SSE 1)
-SET(HAVE_SSE2 1)
-SET(HAVE_SSE3 1)
-SET(HAVE_SSSE3 1)
+#--------------------------------------------------------------------------
+# below is common for INTEL compilers and MKL library
+#--------------------------------------------------------------------------
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+set(ENABLE_OPENMP 1)
+set(HAVE_MPI 1)
+set(HAVE_SSE 1)
+set(HAVE_SSE2 1)
+set(HAVE_SSE3 1)
+set(HAVE_SSSE3 1)
+set(USE_PREFETCH 1)
+set(PREFETCH_AHEAD 10)
+set(HAVE_MKL 1)
+set(HAVE_MKL_VML 1)
 
-SET(ENABLE_OPENMP 1)
-if(${CMAKE_CXX_FLAGS} MATCHES "icpc")
-  SET(HAVE_MPI 0)
-  SET(HAVE_OOMPI 0)
-else(${CMAKE_CXX_FLAGS} MATCHES "icpc")
-  SET(HAVE_MPI 1)
-  SET(HAVE_OOMPI 1)
-endif(${CMAKE_CXX_FLAGS} MATCHES "icpc")
+include_directories(${MKL_HOME}/include)
+set(LAPACK_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl_lapack)
+set(BLAS_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl -lguide)
 
-FIND_PATH(FFTW_INCLUDE_DIR fftw3.h)
-FIND_LIBRARY(FFTW_LIBRARY fftw3)
-IF(FFTW_INCLUDE_DIR)
-  SET(FOUND_FFTW 1 CACHE BOOL "Found fftw library")
-  SET(HAVE_LIBFFTW 1 CACHE BOOL "Found fftw library")
-ELSE(FFTW_INCLUDE_DIR)
-  SET(FOUND_FFTW 0 CACHE BOOL "Not Found fftw library")
-ENDIF(FFTW_INCLUDE_DIR)
+INCLUDE(Platform/UnixPaths)
 
-#MARK_AS_ADVANCED(
-#   FFTW_INCLUDE_DIR
-#   FOUND_FFTW
-#)
+SET(CMAKE_CXX_LINK_SHARED_LIBRARY)
+SET(CMAKE_CXX_LINK_MODULE_LIBRARY)
+SET(CMAKE_C_LINK_SHARED_LIBRARY)
+SET(CMAKE_C_LINK_MODULE_LIBRARY)
+
