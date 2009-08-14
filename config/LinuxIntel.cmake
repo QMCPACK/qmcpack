@@ -6,8 +6,9 @@
 #--------------------------------------------------------------------------
 set(CMAKE_CXX_COMPILER mpicxx)
 set(CMAKE_C_COMPILER  icc)
+set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(INTEL_OPTS "-g  -restrict -unroll  -O3 -ip -xT -openmp -Wno-deprecated")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${INTEL_OPTS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${INTEL_OPTS} ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${INTEL_OPTS} -std=c99")
 set(MKL_HOME "/opt/intel/mkl/10.0.3.020" CACHE STRING "MKL HOME")
 
@@ -24,7 +25,6 @@ set(CMAKE_FIND_ROOT_PATH
 #--------------------------------------------------------------------------
 # below is common for INTEL compilers and MKL library
 #--------------------------------------------------------------------------
-ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 set(ENABLE_OPENMP 1)
 set(HAVE_MPI 1)
 set(HAVE_SSE 1)

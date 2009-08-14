@@ -20,9 +20,10 @@ SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/CC)
+set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-fopenmp -O3 -ftemplate-depth-60 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
-set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60")
+set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS}")
 
 set(CMAKE_FIND_ROOT_PATH
@@ -34,7 +35,6 @@ set(CMAKE_FIND_ROOT_PATH
       /ccs/proj/mat001/cnl/boost
      )
 
-ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 SET(ENABLE_OPENMP 1)
 SET(HAVE_MPI 1)
 SET(HAVE_SSE 1)
