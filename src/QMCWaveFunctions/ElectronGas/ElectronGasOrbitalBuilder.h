@@ -116,6 +116,30 @@ namespace qmcplusplus {
         }
       }
     }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+    {
+      RealType coskr, sinkr;
+      for(int i=0,iat=first; iat<last; i++,iat++) {
+        logdet(0,i)=1.0;
+        dlogdet(i,0)=0.0;
+        d2logdet(i,0)=0.0;
+        for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
+          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+          //kdotr=dot(K[ik],P.R[iat]);
+          //RealType coskr=std::cos(kdotr);
+          //RealType sinkr=std::sin(kdotr);
+          int j2=j1+1;
+          logdet(i,j1)=coskr;
+          logdet(i,j2)=sinkr;
+          dlogdet(i,j1)=-sinkr*K[ik];
+          dlogdet(i,j2)= coskr*K[ik];
+          d2logdet(i,j1)=mK2[ik]*coskr;
+          d2logdet(i,j2)=mK2[ik]*sinkr;
+        }
+      }
+    }
   };
 
   /** OrbitalBuilder for Slater determinants of electron-gas 

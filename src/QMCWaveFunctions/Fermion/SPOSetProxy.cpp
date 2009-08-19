@@ -42,8 +42,8 @@ namespace qmcplusplus {
   void SPOSetProxy::setOrbitalSetSize(int norbs)
   {
     psiM.resize(norbs,OrbitalSetSize);
-    dpsiM.resize(OrbitalSetSize,norbs);
-    d2psiM.resize(OrbitalSetSize,norbs);
+    dpsiM.resize(norbs,OrbitalSetSize);
+    d2psiM.resize(norbs,OrbitalSetSize);
     psiV.resize(norbs);
     dpsiV.resize(norbs);
     d2psiV.resize(norbs);
@@ -67,11 +67,29 @@ namespace qmcplusplus {
   void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    //evaluate all
-    refPhi->evaluate(P,first,last,psiM,dpsiM,d2psiM);
+    //evaluate all using notranspose
+    refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,d2psiM);
+
+    //transpose only the ground state
+    for(int i=0; i<OrbitalSetSize; ++i)
+      for(int j=0; j<OrbitalSetSize; ++j)
+        logdet(i,j)=psiM(j,i);
 
     //copy the ground states
-    std::copy(psiM.begin(),psiM.begin()+logdet.size(),logdet.begin());
+    for(int i=0; i<OrbitalSetSize; ++i) std::copy(dpsiM[i],dpsiM[i]+OrbitalSetSize,dlogdet[i]);
+    for(int i=0; i<OrbitalSetSize; ++i) std::copy(d2psiM[i],d2psiM[i]+OrbitalSetSize,d2logdet[i]);
+  }
+
+  void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+  {
+    //evaluate all
+    refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,d2psiM);
+
+    for(int i=0; i<OrbitalSetSize; ++i)
+      for(int j=0; j<OrbitalSetSize; ++j)
+        logdet(i,j)=psiM(i,j);
+
     for(int i=0; i<OrbitalSetSize; ++i) std::copy(dpsiM[i],dpsiM[i]+OrbitalSetSize,dlogdet[i]);
     for(int i=0; i<OrbitalSetSize; ++i) std::copy(d2psiM[i],d2psiM[i]+OrbitalSetSize,d2logdet[i]);
   }
@@ -80,5 +98,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: kesler $
  * $Revision: 3535 $   $Date: 2009-02-10 13:04:12 -0600 (Tue, 10 Feb 2009) $
- * $Id: DeterminantTree.h 3535 2009-02-10 19:04:12Z kesler $ 
+ * $Id: SPOSetProxy.cpp 3535 2009-02-10 19:04:12Z kesler $ 
  ***************************************************************************/

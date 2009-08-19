@@ -101,6 +101,9 @@ namespace qmcplusplus {
       void evaluate(const ParticleSet& P, int first, int last,
           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
+      void evaluate_notranspose(const ParticleSet& P, int first, int last,
+          ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+
       /** boolean
        *
        * If true, this has to delete the BasisSet

@@ -121,6 +121,16 @@ namespace qmcplusplus {
         for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
       }
     }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+      for(int i=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateForWalkerMove(P,iat);
+        for(int j=0; j<OrbitalSetSize; j++) logdet(i,j)=myBasisSet->Phi[j];
+        for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
+        for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
+      }
+    }
   };
 
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
@@ -293,6 +303,30 @@ namespace qmcplusplus {
       //  }
       //}
       //
+    }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+#pragma ivdep
+      for(int i=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateForWalkerMove(P,iat);
+        const ValueType* restrict cptr=C.data();
+        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        for(int j=0; j<OrbitalSetSize; j++) 
+        {
+          register ValueType res=0.0, d2res=0.0;
+          register GradType dres;
+          for(int b=0; b<BasisSetSize; b++,cptr++) 
+          {
+            res += *cptr*pptr[b];
+            d2res += *cptr*d2ptr[b];
+            dres += *cptr*dptr[b];
+          }
+          logdet(i,j)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
+        }
+      }
     }
   };
 }

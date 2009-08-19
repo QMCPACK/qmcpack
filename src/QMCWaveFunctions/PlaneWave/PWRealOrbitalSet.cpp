@@ -140,4 +140,28 @@ namespace qmcplusplus {
       }
     }
   }
+
+  void 
+  PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+  {
+    for(int iat=first,i=0; iat<last; iat++,i++){
+      myBasisSet->evaluateAll(P,iat);
+      MatrixOperators::product(CC,myBasisSet->Z,Temp);
+      const ComplexType* restrict tptr=Temp.data();
+      for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX) {
+        logdet(i,j)  = tptr[PW_VALUE].real();
+        d2logdet(i,j)= tptr[PW_LAP].real();
+#if OHMMS_DIM==3
+        dlogdet(i,j) = GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real(),tptr[PW_GRADZ].real());
+#elif OHMMS_DIM==2
+        dlogdet(i,j) = GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real());
+#elif OHMMS_DIM==1
+        dlogdet(i,j) = GradType(tptr[PW_GRADX].real());
+#else
+  #error "Only physical dimensions 1/2/3 are supported."
+#endif
+      }
+    }
+  }
 }

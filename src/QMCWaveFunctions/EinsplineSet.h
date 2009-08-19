@@ -82,6 +82,9 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
+		  ValueMatrix_t& d2psi);
 
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
@@ -112,6 +115,9 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, 
 		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
+		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
+		  ValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
 
@@ -232,6 +238,9 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi, 
 		  RealGradVector_t& dpsi, RealValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
+		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
+		  RealValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
 
