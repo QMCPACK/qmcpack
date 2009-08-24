@@ -296,7 +296,7 @@ bool QMCLinearOptimize::run()
           {
             for (int i=0;i<(N-1); i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
             newCost = optTarget->Cost();
-            if ((LastCost-newCost<costgradtol) || (!optTarget->IsValid))
+            if ((LastCost-newCost<costgradtol) || (!optTarget->IsValid) || (newCost!=newCost))
             {
               for (int i=0;i<(N-1); i++) optTarget->Params(i) = optparm[i]; 
               optTarget->Cost();
