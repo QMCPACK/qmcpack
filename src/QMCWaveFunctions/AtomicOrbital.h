@@ -168,6 +168,8 @@ namespace qmcplusplus {
       for (int lm=0; lm < Numlm; lm++)
 	vals[i] += ulmVec[index++] * YlmVec[lm];
       double phase = -2.0*M_PI*dot(TwistAngles[i],img);
+      // fprintf (stderr, "phase[%d] = %1.2f pi\n", i, phase/M_PI);
+      // fprintf (stderr, "img = [%f,%f,%f]\n", img[0], img[1], img[2]);
       double s,c;
       sincos(phase,&s,&c);
       vals[i] *= complex<double>(c,s);
@@ -448,9 +450,9 @@ namespace qmcplusplus {
 	    (-(double)(l*(l+1))*rInv*rInv * ulmVec[index]
 	     + d2ulmVec[index] + 2.0*rInv *dulmVec[index]);
 	}
+      vals[i] *= e2mikr;
+      lapl[i] *= e2mikr;
       for (int j=0; j<OHMMS_DIM; j++) {
-	vals[i] *= e2mikr;
-	lapl[i] *= e2mikr;
 	grads[i][j] = e2mikr*(grad_rhat*rhat[j] + grad_thetahat*thetahat[j] 
 			      + grad_phihat * phihat[j]);
       }
