@@ -784,8 +784,10 @@ namespace qmcplusplus {
 
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
-    OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
-			transpose(OrbitalSet->PrimLattice.G));
+    OrbitalSet->GGt=dot(transpose(OrbitalSet->PrimLattice.G),
+			OrbitalSet->PrimLattice.G);
+    app_log() << "GGt = \n"
+	      << OrbitalSet->GGt << endl;
     OrbitalSet->setOrbitalSetSize (numOrbs);
     OrbitalSet->BasisSetSize   = numOrbs;
     TileIons();
