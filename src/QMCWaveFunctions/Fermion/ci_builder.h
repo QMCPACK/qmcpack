@@ -49,11 +49,17 @@ namespace qmcplusplus
         delete_iter(occupied.begin(),occupied.end());
         delete_iter(excited.begin(),excited.end());
       }
-      /** create the single excitations */
-      template<typename NODETYPE> inline void singles(vector<NODETYPE>& excitations)
+
+      /** create the single excitations 
+       *
+       * @param exciations serialized list of excitations
+       * @return the number of single generated max_vmc*max_cbm
+       */
+      template<typename NODETYPE> inline int singles(vector<NODETYPE>& excitations)
       {
         if(occupied.empty()) occupied.push_back(new iset_type);
         if(excited.empty()) excited.push_back(new iset_type);
+
 
         int level=0;
         iset_type& v_p(*occupied[level]);
@@ -74,10 +80,13 @@ namespace qmcplusplus
             excitations[0].add_child(excitations.size());
             NODETYPE anode(g.to_ulong(),e.to_ulong());
             anode.from=v; anode.to=c;
+            anode.my_id=excitations.size();
             excitations.push_back(anode);
           }
           v_offset.push_back(excitations.size());
         }
+
+        return excitations.size();
       }
 
       /** promote from level CIs
@@ -86,7 +95,7 @@ namespace qmcplusplus
        * @param level the reference level from which promotions are made
        */
       template<typename NODETYPE>
-        inline void promote(vector<NODETYPE>& excitations, int level)
+        inline int promote(vector<NODETYPE>& excitations, int level)
         {
           int dn=occupied.size()-level;
           while(dn)//allocate a new level
@@ -133,12 +142,15 @@ namespace qmcplusplus
               if(pid>=0)
               {
                 excitations[pid].add_child(excitations.size());
+                anode.my_id=excitations.size();
                 excitations.push_back(anode);//(NODETYPE(*i,*j));
               }
             }
             v_tmp.push_back(excitations.size());
           }
           v_offset=v_tmp;
+          //return the number of excitations created 
+          return excitations.size();
         }
 
       inline int changed_bit(std::bitset<CMAX>& x)
@@ -202,7 +214,7 @@ namespace qmcplusplus
           }
           anode.from=from;
           anode.to=to;
-          return anode.ref_state=j-1;
+          return anode.parent_id=j-1;
         }
     };
 }
