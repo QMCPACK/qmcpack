@@ -36,9 +36,9 @@ using namespace std;
 int main(int argc, char** argv)
 {
   const int max_states=8;
-  const int vmax=4;
+  const int vmax=2;
   const int cmax=8;
-  typedef excitation_node node_type;
+  typedef excitation_node<double> node_type;
   vector<node_type> excitations;
 
   //add zero
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 
   ci_builder<max_states> ci_maker(vmax,cmax);
 
-  int multiplet=3;
+  int multiplet=1;
   ci_maker.singles(excitations);
   for(int level=0; level<multiplet; ++level) ci_maker.promote(excitations,level);
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
   for(int i=0; i<excitations.size(); ++i) 
   {
     node_type cur(excitations[i]);
-    int pid=cur.ref_state;
+    int pid=cur.parent_id;
     node_type parent(excitations[pid]);
     bitset<cmax> valence(cur.ground);
     cout << "<node level=\"" << valence.count()
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
       << "\" e=\"" << bitset<max_states>(cur.excited)
       << "\" g_id=\"" << cur.ground
       << "\" e_id=\"" << cur.excited
-      << "\" loc=\"" << i
+      << "\" my_id=\"" << cur.my_id
       << "\" p_id=\"" << pid
       << "\" from=\"" << cur.from
       << "\" to=\"" << cur.to
