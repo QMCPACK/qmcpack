@@ -44,6 +44,7 @@ namespace qmcplusplus {
   {
     FirstIndex = record.size();
     int dumy=record.add("LocalEnergy");
+    dumy=record.add("LocalEnergy_sq");
     dumy=record.add("LocalPotential");
     for(int i=0; i<SizeOfHamiltonians; ++i) record.add(refH.getObservableName(i));
     LastIndex=record.size();
