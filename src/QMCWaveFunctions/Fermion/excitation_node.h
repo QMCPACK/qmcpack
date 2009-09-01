@@ -19,7 +19,8 @@
 #include <vector>
 #include <iostream>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include "Numerics/MatrixOperators.h"
+#include <Numerics/MatrixOperators.h>
+#include <Numerics/determinant_operators.h>
 
 namespace qmcplusplus
 {
@@ -102,11 +103,11 @@ namespace qmcplusplus
         std::cout << "<node level=\""<<level
           << "\" g=\"" << std::bitset<CMAX>(ground) 
           << "\" e=\"" << std::bitset<CMAX>(excited) 
-          << "\" gid=\"" << ground
-          << "\" eid=\"" << excited
+          << "\" g_id=\"" << ground
+          << "\" e_id=\"" << excited
           << "\" from=\"" << from 
           << "\" to=\""<< to 
-          <<"\" loc=\"" << count
+          <<"\" my_id=\"" << count
           << "\"";
         if(children.size()) std::cout << ">" << std::endl;
         else std::cout << "/>" << std::endl;
