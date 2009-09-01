@@ -482,12 +482,12 @@ namespace qmcplusplus {
         {
           if(use_hdf5 == "yes")
           {
-            max4ascii=H.size()+2;//write only physical energies
+            max4ascii=H.size()+3;//write only physical energies
             add(new LocalEnergyEstimatorHDF(H),MainEstimatorName);
           }
           else
           {//fall back to the ascii file
-            max4ascii=H.sizeOfObservables()+2;
+            max4ascii=H.sizeOfObservables()+3;
             add(new LocalEnergyEstimator(H),MainEstimatorName);
           }
         }
