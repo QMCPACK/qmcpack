@@ -29,7 +29,7 @@ ELSE($ENV{PE_ENV} MATCHES "PGI")
   FIND_LIBRARY(BLAS_LIBRARY acml $ENV{ACML_BASE_DIR}/gfortran64/lib)
   #SET(LAPACK_LIBRARY "/opt/pgi/6.2.5/linux86-64/6.2/lib/libpgc.a")
   SET(LAPACK_LIBRARY "")
-  SET(FORTRAN_LIBS "-lg2c")
+  SET(FORTRAN_LIBS "-lgfortran")
 
   #openmp is enabled
   SET(CMAKE_TRY_OPENMP_CXX_FLAGS "-fopenmp")
