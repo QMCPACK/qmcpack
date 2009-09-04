@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,6 +17,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
  
@@ -32,6 +32,9 @@ namespace qmcplusplus {
     nCenters = ions.getTotalNum();
     nParticles = els.getTotalNum();
   
+    InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
+    Centers.resize(nCenters,0);
+
     CoreCoreDipole.resize(nCenters,0.0);
     CoreElDipole.resize(nCenters,nParticles);
     CoreElDipole = 0.0;
@@ -53,14 +56,19 @@ namespace qmcplusplus {
   /** process xml node for each element
    * @param cur xmlnode <element name="string" alpha="double" rb="double"/> 
    */
-  bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur) {
-    const xmlChar* a_ptr = xmlGetProp(cur,(const xmlChar *)"alpha");
-    const xmlChar* b_ptr = xmlGetProp(cur,(const xmlChar *)"rb");
-    if(a_ptr) alpha = atof((const char*)a_ptr);
-    if(b_ptr) r_b = atof((const char*)b_ptr);
+  bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur) 
+  {
+    OhmmsAttributeSet att;
+    att.add(alpha,"alpha");
+    att.add(r_b,"rb");
+    att.put(cur);
+    //const xmlChar* a_ptr = xmlGetProp(cur,(const xmlChar *)"alpha");
+    //const xmlChar* b_ptr = xmlGetProp(cur,(const xmlChar *)"rb");
+    //if(a_ptr) alpha = atof((const char*)a_ptr);
+    //if(b_ptr) r_b = atof((const char*)b_ptr);
     C = -0.5*alpha;
     one_over_rr = 1.0/r_b/r_b;
-    LOGMSG("\talpha = " << alpha << " rb = " << r_b)
+    app_log() << "\talpha = " << alpha << " rb = " << r_b <<endl;
     return true;
   }
   
@@ -71,38 +79,44 @@ namespace qmcplusplus {
    * IonConfig::SpeciesSet. The size of InpCPP is the number of species.
    * The size of Centers is the number of ions.
    */
-  bool LocalCorePolPotential::put(xmlNodePtr cur){
-    string ename;
-
-    InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
-    cur= cur->children;
-    bool success(false);
-    while(cur != NULL){
-      string cname((const char*)cur->name);
-      if(cname == "element"){
-      	const xmlChar* e_ptr = xmlGetProp(cur,(const xmlChar*)"name");
-      	if(e_ptr){
-          int itype = IonConfig.getSpeciesSet().addSpecies((const char*)e_ptr);
-          if(InpCPP[itype]==0) InpCPP[itype] = new CPP_Param;
-          LOGMSG("CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype])
-          success &= InpCPP[itype]->put(cur);
-      	}
+  bool LocalCorePolPotential::put(xmlNodePtr cur)
+  {
+    bool success(true);
+    if(cur!= NULL)//input is provided
+    {
+      string ename;
+      cur= cur->children;
+      while(cur != NULL){
+        string cname((const char*)cur->name);
+        if(cname == "element")
+        {
+          string species_name;
+          OhmmsAttributeSet att;
+          att.add(species_name,"name");
+          att.put(cur);
+          if(species_name.size())
+          {
+            int itype = IonConfig.getSpeciesSet().addSpecies(species_name); //(const char*)e_ptr);
+            if(InpCPP[itype]==0) InpCPP[itype] = new CPP_Param;
+            app_log() << "CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype] << endl;
+            success = InpCPP[itype]->put(cur);
+          }
+        }
+        cur=cur->next;
       }
-      cur=cur->next;
     }
 
-    //resize Centers by the number of centers
-    Centers.resize(nCenters,0);
-    for(int iat=0; iat<nCenters; iat++) {
+    for(int iat=0; iat<nCenters; iat++) 
       Centers[iat]=InpCPP[IonConfig.GroupID[iat]];
-    }
+
     return success;
   }
 
   LocalCorePolPotential::Return_t
   LocalCorePolPotential::evaluate(ParticleSet& P) {
 
-    if(FirstTime) {
+    if(FirstTime) 
+    {
       //index for attribute charge
       SpeciesSet& Species(IonConfig.getSpeciesSet());
       int iz = Species.addAttribute("charge");
@@ -119,7 +133,9 @@ namespace qmcplusplus {
       }
 
       RealType corecore(0.0);
-      for(int iat=0; iat<nCenters; iat++) {
+      for(int iat=0; iat<nCenters; iat++) 
+      {
+        cout << "Checking CPP = " << Centers[iat] << endl;
         if(Centers[iat]) 
           corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
       }
@@ -130,7 +146,8 @@ namespace qmcplusplus {
     //CoreElDipole=0.0;
 
     RealType e = 0.0;
-    for(int iat=0; iat<nCenters; iat++) {
+    for(int iat=0; iat<nCenters; iat++) 
+    {
       if(Centers[iat]) {
         PosType cc(CoreCoreDipole[iat]);
         for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++){
@@ -146,14 +163,15 @@ namespace qmcplusplus {
     return Value=e;
   }
 
-
-  //LocalCorePolPotential::LocalCorePolPotential(const LocalCorePolPotential& cpp):
-  //  FirstTime(true), nCenters(cpp.nCenters), nParticles(cpp.nParticles),
-  //eCoreCore(0.0), IonConfig(cpp.IonConfig), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
-  //  CoreCoreDipole.resize(nCenters,0.0);
-  //  CoreElDipole.resize(nCenters,nParticles);
-  //  CoreElDipole = 0.0;
-  //}
+  QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    LocalCorePolPotential* myclone=new LocalCorePolPotential(IonConfig,qp);
+    //copy cpp parameters
+    for(int i=0; i<InpCPP.size(); ++i)
+      if(InpCPP[i]) myclone->InpCPP[i]=new CPP_Param(*InpCPP[i]);
+    myclone->put(NULL);
+    return myclone;
+  }
 
 }
 /***************************************************************************
