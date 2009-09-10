@@ -78,10 +78,10 @@ ENDIF(OHMMS_DIM MATCHES 3)
 IF(QMC_BUILD_COMPLETE)
   SET(FERMION_SRCS ${FERMION_SRCS}
     PlaneWave/PWOrbitalBuilder.cpp
-    Fermion/DiracDeterminantTruncation.cpp
-    Fermion/MultiDiracDeterminantBase.cpp
-    Fermion/DiracDeterminantIterative.cpp
-    Fermion/ILUGMRESInterface.c
+    #    Fermion/DiracDeterminantTruncation.cpp
+    #    Fermion/MultiDiracDeterminantBase.cpp
+    #    Fermion/DiracDeterminantIterative.cpp
+    #    Fermion/ILUGMRESInterface.c
     )
   IF(QMC_COMPLEX)
     SET(FERMION_SRCS ${FERMION_SRCS}

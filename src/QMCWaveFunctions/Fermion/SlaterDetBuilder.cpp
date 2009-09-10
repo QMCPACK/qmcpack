@@ -16,7 +16,8 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#if defined(QMC_BUILD_COMPLETE)
+//#define BRYAN_MULTIDET_TRIAL
+#if defined(BRYAN_MULTIDET_TRIAL)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantIterative.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
@@ -170,7 +171,7 @@ namespace qmcplusplus {
       map<string,Det_t*>::iterator dit(DetSet.find(detname));
       if(dit == DetSet.end()) 
       {
-#if defined(QMC_BUILD_COMPLETE)
+#if defined(BRYAN_MULTIDET_TRIAL)
         app_log() << "  Creating a Dirac Determinant " << detname << " First Index = " 
           << firstIndex << endl;
 	app_log() <<"My det method is "<<detMethod<<endl;
