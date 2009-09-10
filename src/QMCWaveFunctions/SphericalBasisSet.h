@@ -234,7 +234,8 @@ namespace qmcplusplus {
     inline void
     evaluateForPtclMove(int source, int iat,  int offset, ValueVector_t& y) {
       RealType r(myTable->Temp[source].r1);
-      RealType rinv(myTable->Temp[source].rinv1);
+      //RealType rinv(myTable->Temp[source].rinv1);
+      RealType rinv(1/r);
       PosType  dr(myTable->Temp[source].dr1);
       Ylm.evaluate(dr);
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
