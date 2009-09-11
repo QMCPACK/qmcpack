@@ -92,7 +92,7 @@ namespace qmcplusplus {
       }
       else if ((cname ==  "Molecular") || (cname =="molecular"))
       {
-      app_log()<<"  Adding Molecular term"<<endl;
+        app_log()<<"  Adding Molecular term"<<endl;
 	addMolecularTerm(cur);
       }
 #if defined(QMC_BUILD_COMPLETE) && !defined(QMC_COMPLEX) && OHMMS_DIM==3
@@ -239,10 +239,10 @@ namespace qmcplusplus {
   }
   
 
-  bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur) {
+  bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur) 
+  {
     
     ReportEngine PRE(ClassName,"addFermionTerm");
-
 
     string orbtype("MolecularOrbital");
     string nuclei("i");
@@ -253,17 +253,14 @@ namespace qmcplusplus {
     //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
 #if defined(QMC_BUILD_COMPLETE)
     OrbitalBuilderBase* detbuilder=0;
+    if(orbtype == "electron-gas") 
+    {
 #if defined(QMC_COMPLEX)
-    if(orbtype == "electron-gas") 
-    {
       detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl,*targetPsi);
-    } 
 #else
-    if(orbtype == "electron-gas") 
-    {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
-    } 
 #endif
+    } 
     else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
