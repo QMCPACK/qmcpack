@@ -126,7 +126,8 @@ namespace APPNAMESPACE
       ABC=ldesc.calcSolidAngles(Rv,OneOverLength);
       WignerSeitzRadius = ldesc.calcWignerSeitzRadius(Rv);
       SimulationCellRadius = ldesc.calcSimulationCellRadius(Rv);
-
+      CellRadiusSq=SimulationCellRadius*SimulationCellRadius;
+      if(SuperCellEnum) ldesc.makeNextCells(R,NextUnitCells);
       //SimulationCellRadius = 1.0e50;
       //// Compute simulation cell radius
       //for (int i=0; i<D; i++) {

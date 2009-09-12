@@ -90,6 +90,8 @@ struct CrystalLattice{
   Scalar_t WignerSeitzRadius;
   /// simulation cell radii
   Scalar_t SimulationCellRadius;
+  /// SimulationCellRadius*SimulationCellRadius
+  Scalar_t CellRadiusSq;
   ///Real-space unit vectors. R(i,j) i=vector and j=x,y,z
   Tensor_t R;
   ///Reciprocal unit vectors. G(j,i) i=vector and j=x,y,z
@@ -117,6 +119,8 @@ struct CrystalLattice{
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
+  //save the lattice constant of neighbor cells
+  vector<SingleParticlePos_t> NextUnitCells;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -204,6 +208,17 @@ struct CrystalLattice{
       return true;
     else 
       return CheckBoxConds<T,D>::inside(u);
+  }
+
+  inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
+  {
+    if(SuperCellEnum) 
+      return CheckBoxConds<T,D>::inside(u,ubox);
+    else 
+    {
+      ubox=u;
+      return CheckBoxConds<T,D>::inside(u);
+    }
   }
 
   inline bool outOfBound(const TinyVector<T,D>& u) const

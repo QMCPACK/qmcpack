@@ -36,13 +36,14 @@ namespace qmcplusplus
     { 
 
       typedef TinyVector<T,3> SingleParticlePos_t;
+      typedef Tensor<T,3> Tensor_t;
 
-      inline int operator()(const TinyVector<int,3>& box) 
+      inline int operator()(const SingleParticlePos_t& box) 
       {
         return box[0]+2*(box[1]+box[2]*2);
       }
 
-      inline bool isDiagonalOnly(const Tensor<T,3>& R) const
+      inline bool isDiagonalOnly(const Tensor_t& R) const
       {
         T offdiag=abs(R(0,1))+abs(R(0,2))+abs(R(1,0))+abs(R(1,2))+abs(R(2,0))+abs(R(2,1));
         return (offdiag< numeric_limits<T>::epsilon());
@@ -88,6 +89,20 @@ namespace qmcplusplus
           scr = std::min(scr, dist);
         }
         return scr;
+      }
+
+      inline void makeNextCells(const Tensor_t& lat, vector<SingleParticlePos_t>& nextcells)
+      {
+        nextcells.resize(26);
+        int ic=0;
+        for(int i=-1;i<=1;++i)
+          for(int j=-1;j<=1;++j)
+            for(int k=-1;k<=1;++k)
+            {
+              if(!(i || j || k )) continue;//exclude zero
+              SingleParticlePos_t u(i,j,k);
+              nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);    
+            }
       }
     };
 
