@@ -74,8 +74,9 @@ namespace qmcplusplus {
       PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #else
-      PRE << "TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
-      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+      PRE.error("Einspline is missing for B-spline orbitals",true);
+      //PRE << "TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
+      //bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #endif
     }
 #if defined(QMC_BUILD_COMPLETE)
@@ -89,7 +90,6 @@ namespace qmcplusplus {
       //initialize with the source tag
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) 
-        //fatal error
         PRE.error("Missing basisset/@source.",true);
       else 
         ions=(*pit).second; 
