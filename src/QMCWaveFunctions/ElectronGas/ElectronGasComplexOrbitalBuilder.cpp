@@ -60,12 +60,7 @@ namespace qmcplusplus {
     HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
     if(nc == 0) nc = egGrid.getShellIndex(nup);
 
-    //number of kpoints in a half sphere at zero twist
-    int nkpts=(nup-1)/2;
-
-    //create k-points ordered wrt the k^2
-    egGrid.createGrid(nc,nkpts);
-    //egGrid.createGrid(twistAngle);
+    egGrid.createGrid(nc,nup,twist);
 
     //create a E(lectron)G(as)O(rbital)Set
     EGOSet* psiu=new EGOSet(egGrid.kpt,egGrid.mk2); 

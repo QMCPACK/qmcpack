@@ -153,32 +153,43 @@ namespace qmcplusplus {
     }
 
 
-    void createGrid(const PosType& twistAngle) {
+    void createGrid(int nc, int nkpts, const PosType& twistAngle) 
+    {
+      std::map<int,vector<PosType>*> rs_big;
+      for(int ix1=-nc-1; ix1<=nc+1; ++ix1) 
+      {
+        for(int ix2=-nc-1; ix2<=nc+1; ++ix2) 
+        {
+          for(int ix3=-nc-1; ix3<=nc+1; ++ix3) 
+          {
+            PosType k0(ix1+twistAngle[0],ix2+twistAngle[1],ix3+twistAngle[2]);
+            int ih=static_cast<int>(1e4*Lattice.ksq(k0));
+            typename std::map<int,vector<PosType>*>::iterator it = rs_big.find(ih);
+            if(it == rs_big.end()) 
+            {
+              vector<PosType>* ns = new vector<PosType>;
+              ns->push_back(k0);
+              rs_big[ih] = ns;
+            } else {
+              (*it).second->push_back(k0);
+            }
+          }
+        }
+      }
 
-      //unfold and add gamma
-      int nkpts = 2*NumKptsHalf+1;
       kpt.resize(nkpts);
       mk2.resize(nkpts);
 
-      //add gamma
+      typename map<int, vector<PosType>*>::iterator rs_it(rs_big.begin()), rs_end(rs_big.end());
       int ikpt=0;
-      kpt[ikpt]=Lattice.k_cart(twistAngle);
-      mk2[ikpt]=-Lattice.ksq(twistAngle);
-      
-      ++ikpt;
-      typename map<int, vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
-      while(ikpt<nkpts && rs_it != rs_end) {
+      while(ikpt<nkpts && rs_it != rs_end) 
+      {
         typename vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
-        while(ikpt<nkpts && ns_it!=ns_end) {
+        while(ikpt<nkpts && ns_it!=ns_end) 
+        {
           //add twist+k
-          PosType k0(twistAngle+(*ns_it));
+          PosType k0(*ns_it);
           T ksq=Lattice.ksq(k0);
-          kpt[ikpt]=Lattice.k_cart(k0);
-          mk2[ikpt]=-ksq;
-          ++ikpt;
-          //add twist-k
-          k0=twistAngle-(*ns_it);
-          ksq=Lattice.ksq(k0);
           kpt[ikpt]=Lattice.k_cart(k0);
           mk2[ikpt]=-ksq;
           ++ikpt;
@@ -188,7 +199,8 @@ namespace qmcplusplus {
       }
 
       app_log() << "List of kpoints with twist = " << twistAngle << endl;
-      for(int ik=0; ik<kpt.size(); ik++) {
+      for(int ik=0; ik<kpt.size(); ik++) 
+      {
         app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
       }
     }
@@ -302,6 +314,9 @@ namespace qmcplusplus {
       int nkpts = 2*NumKptsHalf+1;
       kpt.resize(nkpts);
       mk2.resize(nkpts);
+
+      cout << "Check this " << NumKptsHalf << " " << nkpts << endl;
+      abort();
 
       //add gamma
       int ikpt=0;
