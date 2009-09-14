@@ -25,6 +25,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <Numerics/Blasf.h>
+#include <config/stdlib/math.h>
 
 namespace qmcplusplus {
 
@@ -108,23 +109,64 @@ namespace qmcplusplus {
     }
 
     inline double
-    InvertWithLog(std::complex<double>* restrict x, int n, int m, std::complex<double>* restrict work, 
-        int* restrict pivot, double& phase) 
+    InvertWithLog(double* restrict x, int n, int m, double& phase) 
     {
-      cerr << "  Fix InverWithLog for complex " << endl;
-      abort();
+      int pivot[m];
+      double work[m];
       double logdet(0.0);
       LUFactorization(n,m,x,n,pivot);
       int sign_det=1;
       for(int i=0; i<n; i++)
       {
-        //sign_det *= (pivot[i] == i+1)?1:-1;
-        //sign_det *= (x[i*m+i]>0)?1:-1;
-        //logdet += std::log(std::abs(x[i*m+i]));
+        sign_det *= (pivot[i] == i+1)?1:-1;
+        sign_det *= (x[i*m+i]>0)?1:-1;
+        logdet += std::log(std::abs(x[i*m+i]));
       }
       InvertLU(n, x, n, pivot, work, n);
       phase=(sign_det>0)?0.0:M_PI;
       return logdet;
+    }
+
+    inline double
+    InvertWithLog(std::complex<double>* restrict x, int n, int m
+        , std::complex<double>* restrict work, int* restrict pivot
+        , double& phase) 
+    {
+      double logdet(0.0);
+      LUFactorization(n,m,x,n,pivot);
+      phase=0.0;
+      for(int i=0; i<n; i++)
+      {
+        int ii=i*m+i;
+        phase += std::arg(x[ii]);
+        if(pivot[i]!=i+1)  phase += M_PI;
+        logdet+=std::log(x[ii].real()*x[ii].real()+x[ii].imag()*x[ii].imag());
+      }
+      InvertLU(n, x, n, pivot, work, n);
+      const double one_over_2pi=1.0/TWOPI;
+      phase -= std::floor(phase*one_over_2pi)*TWOPI;
+      return 0.5*logdet;
+    }
+
+    inline double
+    InvertWithLog(std::complex<double>* restrict x, int n, int m, double& phase) 
+    {
+      int pivot[m];
+      complex<double> work[m];
+      double logdet(0.0);
+      LUFactorization(n,m,x,n,pivot);
+      phase=0.0;
+      for(int i=0; i<n; i++)
+      {
+        int ii=i*m+i;
+        phase += std::arg(x[ii]);
+        if(pivot[i]!=i+1)  phase += M_PI;
+        logdet+=std::log(x[ii].real()*x[ii].real()+x[ii].imag()*x[ii].imag());
+      }
+      InvertLU(n, x, n, pivot, work, n);
+      const double one_over_2pi=1.0/TWOPI;
+      phase -= std::floor(phase*one_over_2pi)*TWOPI;
+      return 0.5*logdet;
     }
 
 /** invert a matrix

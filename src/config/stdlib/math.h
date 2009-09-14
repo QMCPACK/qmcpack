@@ -18,6 +18,16 @@
  */
 #ifndef QMCPLUSPLUS_STDLIB_PORT_H
 #define QMCPLUSPLUS_STDLIB_PORT_H
+#include <cmath>
+#include <cstdlib>
+
+#ifndef TWOPI
+#ifndef M_PI
+#define TWOPI 6.2831853071795862
+#else
+#define TWOPI (2*M_PI)
+#endif /* M_PI */
+#endif /* TWOPI */
 
 #if !defined(HAVE_STD_ROUND)
 template<typename T> inline T round(T x)

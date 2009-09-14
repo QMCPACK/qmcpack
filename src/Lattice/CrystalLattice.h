@@ -14,38 +14,30 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_CRYSTALLATTICE_H
-#define OHMMS_CRYSTALLATTICE_H
-#include <limits>
-#include <cmath>
-#include <cstdlib>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/Tensor.h>
-#include <Lattice/LatticeOperations.h>
-using namespace std;
-
 /**@file CrystalLattice.h
  *@brief Declaration of CrystalLattice<T,D>
  */
-#ifndef TWOPI
-#ifndef M_PI
-#define TWOPI 6.3661977236758134308E-1
-#else
-#define TWOPI 2*M_PI
-#endif /* M_PI */
-#endif /* TWOPI */
+#ifndef OHMMS_CRYSTALLATTICE_H
+#define OHMMS_CRYSTALLATTICE_H
+#include <limits>
+#include <config/stdlib/math.h>
+#include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/Tensor.h>
+#include <Lattice/LatticeOperations.h>
 
+using namespace std;
 namespace APPNAMESPACE {
-/** class to assist copy and unit conversion operations on position vectors
- */
-struct PosUnit {
 
-  /** enumeraton for the unit of position types.
-   */
-  enum {CartesianUnit=0,/*!< indicates that the values are in Cartesian units*/
-        LatticeUnit/*!< indicates that the values are in Lattice units*/
-       };
-};
+  /** class to assist copy and unit conversion operations on position vectors
+  */
+  struct PosUnit 
+  {
+    /** enumeraton for the unit of position types.
+    */
+    enum {CartesianUnit=0,/*!< indicates that the values are in Cartesian units*/
+      LatticeUnit/*!< indicates that the values are in Lattice units*/
+    };
+  };
 
 
 /** a class that defines a supercell in D-dimensional Euclean space.
