@@ -29,7 +29,7 @@ QMCCostFunctionSingle::QMCCostFunctionSingle(MCWalkerConfiguration& w, TrialWave
         QMCCostFunctionBase(w,psi,h)
 {
     CSWeight=(1.0);
-    cout<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<<endl;
+    app_log()<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<<endl;
 }
 
 /** Clean up the vector */

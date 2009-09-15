@@ -129,7 +129,11 @@ namespace qmcplusplus {
           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
-    } 
+    }
+    else
+    {
+      setTau(Tau);
+    }
 
     branchEngine->checkParameters(W);
 
@@ -162,6 +166,13 @@ namespace qmcplusplus {
     }
     app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
   }
+ 
+ 
+ void DMCOMP::setTau(RealType i) {
+   Tau=i;
+   branchEngine->setTau(i);
+   for(int ip=0; ip<NumThreads; ++ip) Movers[ip]->setTau(i);
+ }
 
   bool DMCOMP::run() {
 

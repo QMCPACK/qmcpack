@@ -199,7 +199,7 @@ namespace qmcplusplus {
         (*it).second->checkInVariables(myVars);
         ++it;
       }
-      reportStatus(cout);
+      reportStatus(app_log());
       
     }
 

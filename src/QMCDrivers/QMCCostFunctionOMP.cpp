@@ -30,7 +30,7 @@ QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
         QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
 {
     CSWeight=(1.0);
-    cout<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<<endl;
+    app_log()<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<<endl;
 }
 
 

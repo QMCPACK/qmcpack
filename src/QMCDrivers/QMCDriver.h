@@ -163,6 +163,10 @@ namespace qmcplusplus {
       return Estimators->getObservable(i);
     }
 
+    void setTau(RealType i) {
+      Tau=i;
+    }
+
     ///Observables manager
     EstimatorManager* Estimators;
 

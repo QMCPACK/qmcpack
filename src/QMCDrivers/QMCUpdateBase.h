@@ -73,6 +73,20 @@ namespace qmcplusplus {
      * Update time-step variables to move walkers
      */
     void resetRun(BranchEngineType* brancher, EstimatorManager* est);
+    
+    inline void setTau(RealType i){
+      SpeciesSet tspecies(W.getSpeciesSet());
+      int massind=tspecies.addAttribute("mass");
+      RealType mass = tspecies(massind,0);
+
+      RealType oneovermass = 1.0/mass;
+      RealType oneoversqrtmass = std::sqrt(oneovermass);
+//       Tau=brancher->getTau();
+//       assert (Tau==i);
+      m_tauovermass = i/mass;
+      m_oneover2tau = 0.5/(m_tauovermass);
+      m_sqrttau = std::sqrt(m_tauovermass);
+    }
 
     ///** start a run */
     void startRun(int blocks, bool record);

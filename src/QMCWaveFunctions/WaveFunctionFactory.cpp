@@ -21,8 +21,6 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #if defined(QMC_BUILD_COMPLETE)
-#include "QMCWaveFunctions/CompactHelium.h"
-#include "QMCWaveFunctions/Jastrow/BondOrbital.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -92,8 +90,8 @@ namespace qmcplusplus {
       }
       else if ((cname ==  "Molecular") || (cname =="molecular"))
       {
-        app_log()<<"  Adding Molecular term"<<endl;
-	addMolecularTerm(cur);
+        app_log()<<"  Removed Helium Molecular terms from qmcpack "<<endl;
+        abort();
       }
 #if defined(QMC_BUILD_COMPLETE) && !defined(QMC_COMPLEX) && OHMMS_DIM==3
       else if(cname == "agp") 
@@ -112,130 +110,6 @@ namespace qmcplusplus {
     //  targetPsi->VarList.print(app_log());
     //}
     return success;
-  }
-  bool WaveFunctionFactory::addMolecularTerm(xmlNodePtr cur) {
-    ReportEngine PRE(ClassName,"addMolecularTerm");
-#if defined(QMC_BUILD_COMPLETE)
-    string orbtype("CompactHeliumTwo");
-    string nuclei("i");
-    OhmmsAttributeSet oAttrib;
-    oAttrib.add(orbtype,"type");
-    oAttrib.add(nuclei,"source");
-    oAttrib.put(cur);
-    
-    
-    if(orbtype == "CompactHeliumTwo") 
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("CompactHeliumTwo failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      NewCuspCompactHeliumTwo* CHwf = new NewCuspCompactHeliumTwo(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    } 
-    else if (orbtype == "SimpleCompactHelium")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("SimpleCompactHelium failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      SimpleCompactHelium* CHwf = new SimpleCompactHelium(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-    else if (orbtype=="NewCompactHeliumOne")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("SimpleCompactHelium failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      NewCompactHeliumOne* CHwf = new NewCompactHeliumOne(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-    else if (orbtype=="SimpleCompactHeliumOrbital")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("SimpleCompactHeliumOrbitalPart failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      SimpleCompactHeliumOrbitalPart* CHwf = new SimpleCompactHeliumOrbitalPart(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-    else if (orbtype=="SimpleCompactHeliumElectronCorrelation")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("SimpleCompactHeliumElectronCorrelation failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      SimpleCompactHeliumElectronCorrelation* CHwf = new SimpleCompactHeliumElectronCorrelation(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-    else if (orbtype=="SingleSlaterOrbital")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
-	PRE.warning("SingleSlaterOrbital failed. "+nuclei+" does not exist.");
-	return false;
-      }
-      app_log()<<"  Adding Single Slater Orbital"<<endl;
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      SingleSlaterOrbital* CHwf = new SingleSlaterOrbital(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-    else if (orbtype=="Bond")
-    {   
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
-      if(pa_it == ptclPool.end()) 
-      {
- PRE.warning("Bond failed. "+nuclei+" does not exist.");
- return false;
-      }
-      app_log()<<"  Adding BondOrbital"<<endl;
-      bool success=false;
-      ParticleSet* sourcePtcl= (*pa_it).second;
-      BondOrbital* CHwf = new BondOrbital(*targetPtcl,*sourcePtcl);
-      CHwf->put(cur);
-      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
-    }
-         
-#else
-    {
-      APP_ABORT("QMC_BUILD_COMPLETE=0 Cannot use with He wavefunctions");
-    }
-#endif
-    return true;
   }
   
 

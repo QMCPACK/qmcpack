@@ -196,6 +196,10 @@ namespace qmcplusplus {
       else 
       { 
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
+        if(curRunType == DMC_RUN)
+        {
+          app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
+        }
       }
     }
 

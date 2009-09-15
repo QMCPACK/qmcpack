@@ -21,9 +21,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Optimize/CGOptimization.h"
-#include "Optimize/flexOptimization.h"
 #include "Optimize/testDerivOptimization.h"
-#include "Optimize/BFGSOptimization.h"
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -227,13 +225,13 @@ namespace qmcplusplus {
       else if((optmethod == "flexOpt")  |(optmethod == "flexopt")  | (optmethod == "macopt") )
       {
         app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
-        optSolver = new FlexOptimization<RealType>;
+        app_log() << " This method has been removed. "<< endl;
+        abort();
       } 
       else if (optmethod == "BFGS") 
       {
         app_log() << " This method is not implemented correctly yet. "<< endl;
-        app_log() << "Approximate Hessian optimization using BFGSOptimization"<<endl;
-        optSolver = new BFGSOptimization<RealType>;
+        abort();
       } 
       else if (optmethod == "test")
       {
