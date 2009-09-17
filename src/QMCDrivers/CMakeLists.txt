@@ -72,11 +72,11 @@ IF(QMC_BUILD_COMPLETE)
     CorrelatedSampling/CSVMCUpdateAll.cpp
     CorrelatedSampling/CSVMCUpdatePbyP.cpp
   )
-  IF(!QMC_COMPLEX)
+  IF(NOT QMC_COMPLEX)
     SET(QMCDRIVERS ${QMCDRIVERS}
     RQMCMultiplePbyP.cpp
     )
-  ENDIF(!QMC_COMPLEX)
+  ENDIF(NOT QMC_COMPLEX)
 ENDIF(QMC_BUILD_COMPLETE)
 
 

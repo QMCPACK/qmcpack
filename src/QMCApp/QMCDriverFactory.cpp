@@ -32,7 +32,8 @@
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
-#if !defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
+#else
 #include "QMCDrivers/RQMCMultiWarp.h"
 #include "QMCDrivers/RQMCMultiplePbyP.h"
 #endif
@@ -313,12 +314,6 @@ namespace qmcplusplus {
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
 #if defined(QMC_BUILD_COMPLETE)
-#if !defined(QMC_COMPLEX) 
-    else if (curRunType==RMC_PBYP_RUN)
-      {
-        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
-      }
-#endif
     else if(curRunType == RMC_RUN) 
     {
 #if defined(QMC_COMPLEX)
@@ -328,6 +323,10 @@ namespace qmcplusplus {
         qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       else 
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+     }
+     else if (curRunType==RMC_PBYP_RUN)
+     {
+        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
 #endif
     } 
 #endif
