@@ -178,7 +178,11 @@ namespace qmcplusplus {
 
     inline bool phaseChanged(RealType psi0, RealType psi1) const 
     {
+#if defined(QMC_COMPLEX)
+      return false;
+#else
       return abs(psi0-psi1) > numeric_limits<RealType>::epsilon();
+#endif
     }
 
     /** increment QMCCounter

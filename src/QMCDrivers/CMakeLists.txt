@@ -56,7 +56,6 @@ IF(QMC_BUILD_COMPLETE)
   SET(QMCDRIVERS ${QMCDRIVERS}
     PolymerEstimator.cpp
     RQMCMultiple.cpp
-    RQMCMultiplePbyP.cpp
     MultiChain.cpp
     SpaceWarp.cpp
     RQMCMultiWarp.cpp
@@ -73,7 +72,13 @@ IF(QMC_BUILD_COMPLETE)
     CorrelatedSampling/CSVMCUpdateAll.cpp
     CorrelatedSampling/CSVMCUpdatePbyP.cpp
   )
+  IF(!QMC_COMPLEX)
+    SET(QMCDRIVERS ${QMCDRIVERS}
+    RQMCMultiplePbyP.cpp
+    )
+  ENDIF(!QMC_COMPLEX)
 ENDIF(QMC_BUILD_COMPLETE)
+
 
 ####################################
 # create libqmc 

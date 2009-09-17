@@ -31,7 +31,8 @@ namespace qmcplusplus {
     for(int i=0; i<Gradients.size(); ++i)
       buf.add(get_first_address(*Gradients[i]),get_last_address(*Gradients[i]));
     for(int i=0; i<Laplacians.size(); ++i)
-      buf.add(Laplacians[i]->begin(),Laplacians[i]->end());
+      buf.add(Laplacians[i]->first_address(),Laplacians[i]->last_address()); 
+      //buf.add(Laplacians[i]->begin(),Laplacians[i]->end());
     for(int i=0; i<DriftVectors.size(); ++i)
       buf.add(get_first_address(*DriftVectors[i]),get_last_address(*DriftVectors[i]));
     buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
@@ -69,7 +70,8 @@ namespace qmcplusplus {
     for(int i=0; i<Gradients.size(); ++i)
       buf.put(get_first_address(*Gradients[i]),get_last_address(*Gradients[i]));
     for(int i=0; i<Laplacians.size(); ++i)
-      buf.put(Laplacians[i]->begin(),Laplacians[i]->end());
+      buf.add(Laplacians[i]->first_address(),Laplacians[i]->last_address()); 
+//      buf.put(Laplacians[i]->begin(),Laplacians[i]->end());
     for(int i=0; i<DriftVectors.size(); ++i)
       buf.put(get_first_address(*DriftVectors[i]),get_last_address(*DriftVectors[i]));
     buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
