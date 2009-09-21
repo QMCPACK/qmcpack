@@ -178,8 +178,8 @@ namespace qmcplusplus {
 
     if(qmcDriver) 
     {
-      if(newRunType != curRunType || newQmcMode != curQmcMode ) 
-      {
+//       if(newRunType != curRunType || newQmcMode != curQmcMode ) 
+//       {
         if(curRunType == DUMMY_RUN)
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
@@ -194,15 +194,15 @@ namespace qmcplusplus {
         //if the current qmc method is different from the previous one, append_run is set to false
         append_run = false;
       } 
-      else 
-      { 
-        app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
-        if(curRunType == DMC_RUN)
-        {
-          app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
-        }
-      }
-    }
+//       else 
+//       { 
+//         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
+//         if(curRunType == DMC_RUN)
+//         {
+//           app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
+//         }
+//       }
+//     }
 
     if(curSeries == 0) append_run = false;
 
