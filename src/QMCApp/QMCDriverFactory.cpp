@@ -32,8 +32,7 @@
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
-#if defined(QMC_COMPLEX)
-#else
+#if !defined(QMC_COMPLEX)
 #include "QMCDrivers/RQMCMultiWarp.h"
 #include "QMCDrivers/RQMCMultiplePbyP.h"
 #endif
@@ -178,8 +177,8 @@ namespace qmcplusplus {
 
     if(qmcDriver) 
     {
-//       if(newRunType != curRunType || newQmcMode != curQmcMode ) 
-//       {
+      //if(newRunType != curRunType || newQmcMode != curQmcMode ) 
+      //{
         if(curRunType == DUMMY_RUN)
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
@@ -193,16 +192,16 @@ namespace qmcplusplus {
         qmcDriver = 0;
         //if the current qmc method is different from the previous one, append_run is set to false
         append_run = false;
-      } 
-//       else 
-//       { 
-//         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
-//         if(curRunType == DMC_RUN)
-//         {
-//           app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
-//         }
-//       }
-//     }
+      //} 
+      //else 
+      //{ 
+      //  app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
+      //  if(curRunType == DMC_RUN)
+      //  {
+      //    app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
+      //  }
+      //}
+    }
 
     if(curSeries == 0) append_run = false;
 
@@ -314,6 +313,12 @@ namespace qmcplusplus {
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
 #if defined(QMC_BUILD_COMPLETE)
+#if !defined(QMC_COMPLEX) 
+    else if (curRunType==RMC_PBYP_RUN)
+      {
+        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
+      }
+#endif
     else if(curRunType == RMC_RUN) 
     {
 #if defined(QMC_COMPLEX)
@@ -323,10 +328,6 @@ namespace qmcplusplus {
         qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       else 
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-     }
-     else if (curRunType==RMC_PBYP_RUN)
-     {
-        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
 #endif
     } 
 #endif

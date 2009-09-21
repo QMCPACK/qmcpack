@@ -51,7 +51,6 @@ namespace qmcplusplus
         //W.update();
 
         RealType logpsi(Psi.evaluateLog(W));
-//         W.Properties(LOGPSI)=logpsi;
         RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
         if (RandomGen() > g)
           {

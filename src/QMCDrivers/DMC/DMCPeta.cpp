@@ -195,31 +195,6 @@ namespace qmcplusplus {
       Mover->resetRun(branchEngine,Estimators);
       Mover->initWalkersForPbyP(W.begin(),W.end());
     } 
-        else
-    {
-      setTau(Tau);
-      branchEngine->resetTau(Tau);
-#pragma omp parallel for
-      for(int ip=0; ip<NumThreads; ++ip)
-      {
-        branchClones[ip]->resetTau(Tau);
-        Movers[ip]->setTau(Tau);
-//         branchClones[ip]->initWalkerController(*wClones[ip],Tau,fixW);
-        estimatorClones[ip]->setCollectionMode(false);  
-        if(QMCDriverMode[QMC_UPDATE_MODE])
-        {
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-//           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        }
-        else
-        {
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-//           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        }
-      }
-    }
 
     app_log() << "  BranchInterval = " << BranchInterval << endl;
     app_log() << "  Steps per block = " << nSteps << endl;

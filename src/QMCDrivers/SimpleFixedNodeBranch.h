@@ -271,8 +271,6 @@ namespace qmcplusplus {
     inline RealType getEref() const { return vParam[B_EREF];}
     inline RealType getEtrial() const { return vParam[B_ETRIAL];}
     inline RealType getTau() const { return vParam[B_TAU];}
-    inline RealType getFeedback() const { return Feedback;}
-    void resetTau(RealType i);
     inline RealType getTauEff() const { return vParam[B_TAUEFF];}
 
     inline void setTrialEnergy(RealType etot, RealType wtot=1.0) 

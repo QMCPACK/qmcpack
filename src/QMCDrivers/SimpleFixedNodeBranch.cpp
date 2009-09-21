@@ -195,22 +195,6 @@ namespace qmcplusplus
     app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << endl;
     app_log() << "  QMC Status (BranchMode) = " << BranchMode << endl;
   }
-  
-   void SimpleFixedNodeBranch::resetTau(RealType i) {
-//      app_log()<<"Resetting Tau in SimpleFixedNodeBranch"<<endl;
-      vParam[B_TAU]=i;
-      vParam[B_TAUEFF]=i;
-      RealType sigma=vParam[B_SIGMA];
-      vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/i);
-      vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
-      vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
-      R2Accepted.clear();
-      R2Proposed.clear();
-      R2Accepted(1.0e-10); 
-      R2Proposed(1.0e-10);
-//       WalkerController->reset();
-//       if(BackupWalkerController) BackupWalkerController->reset();
-    }
 
   void SimpleFixedNodeBranch::flush(int counter) 
   {
