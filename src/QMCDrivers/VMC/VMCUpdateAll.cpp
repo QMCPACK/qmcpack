@@ -40,7 +40,7 @@ namespace qmcplusplus
         MCWalkerConfiguration::Walker_t& thisWalker(**it);
         makeGaussRandomWithEngine(deltaR,RandomGen);
         bool Cont(true);
-        if (!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+        if (!W.makeMove(thisWalker,deltaR, m_sqrttau)) Cont=false;
         if (!Cont)
           {
             H.rejectedMove(W,thisWalker);
@@ -51,7 +51,7 @@ namespace qmcplusplus
         //W.update();
 
         RealType logpsi(Psi.evaluateLog(W));
-        W.Properties(LOGPSI)=logpsi;
+//         W.Properties(LOGPSI)=logpsi;
         RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
         if (RandomGen() > g)
           {

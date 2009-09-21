@@ -141,6 +141,11 @@ namespace qmcplusplus {
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Mover->updateWalkers(W.begin(),W.end());
+      setTau(Tau);
+      branchEngine->resetTau(Tau);
+      Mover->setTau(Tau); 
+      Mover->put(qmcNode);
+      Mover->resetRun(branchEngine,Estimators);
     }
 
     if(fixW)

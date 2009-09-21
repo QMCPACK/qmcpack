@@ -31,6 +31,9 @@ namespace qmcplusplus {
     DMCPeta(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
     bool run();
+    void setTau(RealType i) {
+      Tau=i;
+    }
     bool put(xmlNodePtr cur);
  
   private:

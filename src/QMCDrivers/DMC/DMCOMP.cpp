@@ -133,6 +133,27 @@ namespace qmcplusplus {
     else
     {
       setTau(Tau);
+      branchEngine->resetTau(Tau);
+#pragma omp parallel for
+      for(int ip=0; ip<NumThreads; ++ip)
+      {
+        branchClones[ip]->resetTau(Tau);
+        Movers[ip]->setTau(Tau);
+//         branchClones[ip]->initWalkerController(*wClones[ip],Tau,fixW);
+        estimatorClones[ip]->setCollectionMode(false);  
+        if(QMCDriverMode[QMC_UPDATE_MODE])
+        {
+          Movers[ip]->put(qmcNode);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        }
+        else
+        {
+          Movers[ip]->put(qmcNode);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        }
+      }
     }
 
     branchEngine->checkParameters(W);
@@ -170,8 +191,6 @@ namespace qmcplusplus {
  
  void DMCOMP::setTau(RealType i) {
    Tau=i;
-   branchEngine->setTau(i);
-   for(int ip=0; ip<NumThreads; ++ip) Movers[ip]->setTau(i);
  }
 
   bool DMCOMP::run() {
