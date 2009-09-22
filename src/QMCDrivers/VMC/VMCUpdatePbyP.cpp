@@ -24,7 +24,7 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
-      app_log() << "VMCUpdatePbyP::VMCUpdatePbyP" << endl;
+      //app_log() << "VMCUpdatePbyP::VMCUpdatePbyP" << endl;
 
       myParams.add(nSubSteps,"subSteps","int"); 
       myParams.add(nSubSteps,"substeps","int");

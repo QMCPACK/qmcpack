@@ -50,7 +50,7 @@ namespace qmcplusplus {
   ///initialize the static data member
   //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
   QMCDriverFactory::QMCDriverFactory(Communicate* c): MPIObjectBase(c), 
-  qmcSystem(0), qmcDriver(0) 
+  qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
   {
     ////create ParticleSetPool
     ptclPool = new ParticleSetPool(myComm);
@@ -98,7 +98,9 @@ namespace qmcplusplus {
     string warp_tag("no");
     string append_tag("no"); 
     string new_drivers_tag("yes");
+    if (curRunType==OPTIMIZE_RUN || curRunType==LINEAR_OPTIMIZE_RUN) new_drivers_tag="no";
 
+    
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
     aAttrib.add(update_mode,"move");
@@ -108,7 +110,7 @@ namespace qmcplusplus {
     aAttrib.add(new_drivers_tag,"newdrivers"); 
     aAttrib.put(cur);
 
-    bool newObjects=(new_drivers_tag=="yes");
+    
     bool append_run =(append_tag == "yes"); 
     bitset<4>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
@@ -179,6 +181,8 @@ namespace qmcplusplus {
     //initialize to 0
     QMCDriver::BranchEngineType* branchEngine=0;
 
+//     bool newObjects=( (new_drivers_tag=="yes")&&(newRunType!=LINEAR_OPTIMIZE_RUN )&&(newRunType!=OPTIMIZE_RUN )) ;
+    bool newObjects=( new_drivers_tag=="yes" );
     if(qmcDriver) 
     {
       if( newRunType != curRunType || newQmcMode != curQmcMode  || newObjects )
@@ -186,6 +190,10 @@ namespace qmcplusplus {
         if(curRunType == DUMMY_RUN)
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
+        }
+        else if(newRunType==LINEAR_OPTIMIZE_RUN || newRunType==OPTIMIZE_RUN )
+        {
+          app_log() << " Warning: This will bomb if it is inside of a loop. Please use newdrivers=\"no\" if in a loop."<<endl;
         }
         if (newObjects)
         {
@@ -209,7 +217,11 @@ namespace qmcplusplus {
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
         if(curRunType == DMC_RUN)
         {
-          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver." ;
+          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
+        }
+        else if(newRunType==LINEAR_OPTIMIZE_RUN || newRunType==OPTIMIZE_RUN )
+        {
+          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
         }
       }
     }

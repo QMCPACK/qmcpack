@@ -148,19 +148,19 @@ namespace qmcplusplus
 
 //         if(reweight=="yes")
 //         {
-//           app_log() << "  WFMCUpdateAllWithReweight"<<endl;
+//           if (ip== 0) app_log() << "  WFMCUpdateAllWithReweight"<<endl;
 //           Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
 //         }
 //         else
             if (reweight=="psi")
               {
-                app_log() << "  Sampling Psi to increase number of walkers near nodes"<<endl;
+                if (ip== 0) app_log() << "  Sampling Psi to increase number of walkers near nodes"<<endl;
                 if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
                 else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
               }
             else if (QMCDriverMode[QMC_UPDATE_MODE])
               {
-                app_log() << "  PbyP moves"<<endl;
+                if (ip== 0) app_log() << "  PbyP moves"<<endl;
                 if (UseDrift == "yes")
                   Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
                 else
@@ -169,7 +169,7 @@ namespace qmcplusplus
               }
             else
               {
-                app_log() << "  Walker moves"<<endl;
+                if (ip== 0) app_log() << "  Walker moves"<<endl;
                 if (UseDrift == "yes")
                   Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
                 else
