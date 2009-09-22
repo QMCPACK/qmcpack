@@ -26,6 +26,7 @@ namespace qmcplusplus {
     app_log() << "Creating DMCMP for the qmc driver" << endl;
     QMCDriver*  qmc = new DMCOMP(w,psi,h,hpool);
     qmc->setUpdateMode(PbyPUpdate);
+    qmc->put(myNode);
     return qmc;
   }
 }

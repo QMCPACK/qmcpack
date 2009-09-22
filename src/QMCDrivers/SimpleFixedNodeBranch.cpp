@@ -120,7 +120,6 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW) 
   {
-
     vParam[B_TAU]=tau;
     if(!BranchMode[B_DMCSTAGE])
       vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
@@ -177,6 +176,7 @@ namespace qmcplusplus
     //vParam[B_BRANCHCUTOFF]=vParam[B_SIGMA]*WalkerController->targetSigma;
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
     vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+    vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
 
     //reset controller 
     WalkerController->reset();
