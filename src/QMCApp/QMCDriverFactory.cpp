@@ -32,7 +32,8 @@
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
-#if !defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
+#else
 #include "QMCDrivers/RQMCMultiWarp.h"
 #include "QMCDrivers/RQMCMultiplePbyP.h"
 #endif
@@ -96,6 +97,7 @@ namespace qmcplusplus {
     string multi_tag("no");
     string warp_tag("no");
     string append_tag("no"); 
+    string new_drivers_tag("yes");
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
@@ -103,8 +105,10 @@ namespace qmcplusplus {
     aAttrib.add(multi_tag,"multiple");
     aAttrib.add(warp_tag,"warp");
     aAttrib.add(append_tag,"append"); 
+    aAttrib.add(new_drivers_tag,"newdrivers"); 
     aAttrib.put(cur);
 
+    bool newObjects=(new_drivers_tag=="yes");
     bool append_run =(append_tag == "yes"); 
     bitset<4>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
@@ -177,30 +181,37 @@ namespace qmcplusplus {
 
     if(qmcDriver) 
     {
-      //if(newRunType != curRunType || newQmcMode != curQmcMode ) 
-      //{
+      if( newRunType != curRunType || newQmcMode != curQmcMode  || newObjects )
+      {
         if(curRunType == DUMMY_RUN)
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
         }
-
-        //copy the pointer of the BranchEngine 
-        branchEngine=qmcDriver->getBranchEngine();
-        //remove the qmcDriver
+        if (newObjects)
+        {
+          delete qmcDriver->getBranchEngine();
+          app_log()<< "Creating new drivers and branch engine."<<endl;
+        }
+        else
+        {
+          branchEngine=qmcDriver->getBranchEngine();
+          app_log()<< "Creating new driver, but reusing the branch engine."<<endl;
+        }
+        
         delete qmcDriver;
         //set to 0 so that a new driver is created
         qmcDriver = 0;
         //if the current qmc method is different from the previous one, append_run is set to false
         append_run = false;
-      //} 
-      //else 
-      //{ 
-      //  app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
-      //  if(curRunType == DMC_RUN)
-      //  {
-      //    app_log() << "QMCDriverFactory::setQMCDriver\n  Using same DMC driver. reset Tau." ;
-      //  }
-      //}
+      } 
+      else 
+      { 
+        app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
+        if(curRunType == DMC_RUN)
+        {
+          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver." ;
+        }
+      }
     }
 
     if(curSeries == 0) append_run = false;
@@ -313,12 +324,6 @@ namespace qmcplusplus {
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
 #if defined(QMC_BUILD_COMPLETE)
-#if !defined(QMC_COMPLEX) 
-    else if (curRunType==RMC_PBYP_RUN)
-      {
-        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
-      }
-#endif
     else if(curRunType == RMC_RUN) 
     {
 #if defined(QMC_COMPLEX)
@@ -328,6 +333,10 @@ namespace qmcplusplus {
         qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       else 
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+     }
+     else if (curRunType==RMC_PBYP_RUN)
+     {
+        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
 #endif
     } 
 #endif
