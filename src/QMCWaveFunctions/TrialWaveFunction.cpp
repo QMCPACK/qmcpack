@@ -251,12 +251,10 @@ namespace qmcplusplus {
     }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-    RealType logr=evaluateLogAndPhase(r,PhaseValue);
-    return std::exp(logr)*std::cos(PhaseValue);
+    RealType logr=evaluateLogAndPhase(r,TempPhaseValue);
+    return std::exp(logr);
 #else
-    RealType deltaPhase=evaluatePhase(r);
-    if (deltaPhase) PhaseValue +=M_PI;
-    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
+    if(real(r)<0) TempPhaseValue=M_PI;
     return real(r);
 #endif
   }
@@ -319,11 +317,9 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
     RealType logr=evaluateLogAndPhase(r,PhaseValue);
-    return std::exp(logr)*std::cos(PhaseValue);
+    return std::exp(logr);
 #else
-    RealType deltaPhase=evaluatePhase(r);
-    if (deltaPhase) PhaseValue +=M_PI;
-    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
+    if(real(r)<0) TempPhaseValue=M_PI;
     return real(r);
 #endif
   }
@@ -367,9 +363,7 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     return std::exp(evaluateLogAndPhase(r,PhaseValue));
 #else
-    RealType deltaPhase=evaluatePhase(r);
-    if (deltaPhase) PhaseValue +=M_PI;
-    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
+    if(real(r)<0) TempPhaseValue=M_PI;
     return real(r);
 #endif
   }
@@ -385,6 +379,7 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) {
       Z[i]->restore(iat);
     }
+    TempPhaseValue=0;
   }
 
   /** update the state with the new data
