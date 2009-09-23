@@ -256,7 +256,7 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg)
     { 
-      app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
+      //app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements

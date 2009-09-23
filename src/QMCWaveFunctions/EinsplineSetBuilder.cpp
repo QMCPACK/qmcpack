@@ -197,7 +197,13 @@ namespace qmcplusplus {
 	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
       app_log() << buff;
     }
-
+    
+    if(version[0]>=2)
+      if(version[1]>=1)
+        for(int ti=0;ti<NumTwists;ti++)
+        {
+          TwistAngles[ti][0]*=-1; TwistAngles[ti][1]*=-1; TwistAngles[ti][2]*=-1;
+        }
     //////////////////////////////////////////////////////////
     // If the density has not been set in TargetPtcl, and   //
     // the density is available, read it in and save it     //
