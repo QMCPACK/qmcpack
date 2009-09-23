@@ -69,7 +69,7 @@ namespace qmcplusplus {
       nonLocalOps.reset();
 
       bool accepted=false; 
-      if(Psi.getTempPhase()) 
+      if(branchEngine->phaseChanged(Psi.getTempPhase(),thisWalker.Properties(SIGN))) 
       {
         H.rejectedMove(W,thisWalker); 
         thisWalker.Age++;
@@ -198,7 +198,7 @@ namespace qmcplusplus {
         RealType ratio=Psi.ratio(W,iat,dG,dL);
 
         //node is crossed reject the move
-        if(Psi.getTempPhase()) 
+        if(branchEngine->phaseChanged(Psi.getTempPhase(),thisWalker.Properties(SIGN))) 
         {
           ++nRejectTemp;
           ++nNodeCrossing;
@@ -366,7 +366,7 @@ namespace qmcplusplus {
         bool valid_move=false;
 
         //node is crossed reject the move
-        if(Psi.getTempPhase()) 
+        if(branchEngine->phaseChanged(Psi.getTempPhase(),thisWalker.Properties(SIGN))) 
         {
           ++nRejectTemp;
           ++nNodeCrossing;

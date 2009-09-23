@@ -103,7 +103,7 @@ namespace qmcplusplus {
 
         //node is crossed reject the move
         //if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
-        if(Psi.getTempPhase()) 
+        if(branchEngine->phaseChanged(Psi.getTempPhase(),thisWalker.Properties(SIGN))) 
         {
           ++nRejectTemp;
           ++nNodeCrossing;

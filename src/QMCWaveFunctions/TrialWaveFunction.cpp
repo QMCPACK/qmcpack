@@ -361,7 +361,7 @@ namespace qmcplusplus {
     }
 
 #if defined(QMC_COMPLEX)
-    return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    return std::exp(evaluateLogAndPhase(r,TempPhaseValue));
 #else
     if(real(r)<0) TempPhaseValue=M_PI;
     return real(r);
@@ -392,6 +392,7 @@ namespace qmcplusplus {
   void   
   TrialWaveFunction::acceptMove(ParticleSet& P,int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
+    PhaseValue += TempPhaseValue;
   }
 
   //void TrialWaveFunction::resizeByWalkers(int nwalkers){

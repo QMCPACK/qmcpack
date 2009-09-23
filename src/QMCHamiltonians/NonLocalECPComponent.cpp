@@ -104,7 +104,11 @@ namespace qmcplusplus {
         PosType deltar(r*rrotsgrid_m[j]-dr);
         W.makeMoveOnSphere(iel,deltar); 
         //W.makeMove(iel,deltar); 
+#if defined(QMC_COMPLEX)
+        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getTempPhase());
+#else
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
         W.rejectMove(iel);
         //psi.rejectMove(iel);
       }
@@ -546,8 +550,12 @@ namespace qmcplusplus {
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
         W.makeMoveOnSphere(iel,deltar); 
-        //PosType newpos(W.makeMove(iel,deltar)); 
+        //PosType newpos(W.makeMove(iel,deltar));
+#if defined(QMC_COMPLEX)
+        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getTempPhase());
+#else
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
         W.rejectMove(iel);
         //psi.rejectMove(iel);
         //first, add a new NonLocalData with ratio
