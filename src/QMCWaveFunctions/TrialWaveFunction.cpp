@@ -252,9 +252,11 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
     RealType logr=evaluateLogAndPhase(r,PhaseValue);
-    return std::exp(logr);
+    return std::exp(logr)*std::cos(PhaseValue);
 #else
-    PhaseValue += evaluatePhase(r);
+    RealType deltaPhase=evaluatePhase(r);
+    if (deltaPhase) PhaseValue +=M_PI;
+    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
     return real(r);
 #endif
   }
@@ -317,9 +319,11 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
     RealType logr=evaluateLogAndPhase(r,PhaseValue);
-    return std::exp(logr);
+    return std::exp(logr)*std::cos(PhaseValue);
 #else
-    PhaseValue += evaluatePhase(r);
+    RealType deltaPhase=evaluatePhase(r);
+    if (deltaPhase) PhaseValue +=M_PI;
+    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
     return real(r);
 #endif
   }
@@ -363,7 +367,9 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     return std::exp(evaluateLogAndPhase(r,PhaseValue));
 #else
-    PhaseValue += evaluatePhase(r);
+    RealType deltaPhase=evaluatePhase(r);
+    if (deltaPhase) PhaseValue +=M_PI;
+    if (PhaseValue > 1.5*M_PI) PhaseValue=0.0;
     return real(r);
 #endif
   }
