@@ -621,7 +621,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
 
     resetPsi();
 
-    Psi.reportStatus(app_log());
+//     Psi.reportStatus(app_log());
 
     //set the cost function
     if(cset.empty())
@@ -711,7 +711,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
       xmlXPathFreeContext(acontext);
     }
 
-    Psi.reportStatus(app_log());
+//     Psi.reportStatus(app_log());
 
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while(pit != pit_end)

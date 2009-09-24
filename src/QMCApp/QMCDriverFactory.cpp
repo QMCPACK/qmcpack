@@ -217,11 +217,11 @@ namespace qmcplusplus {
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
         if(curRunType == DMC_RUN)
         {
-          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
+          app_log() << " Settings are not updated.\n Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
         }
         else if(newRunType==LINEAR_OPTIMIZE_RUN || newRunType==OPTIMIZE_RUN )
         {
-          app_log() << " Warning Settings are not updated.\n   Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
+          app_log() << " Settings are not updated.\n"<<endl ;
         }
       }
     }

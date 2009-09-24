@@ -432,7 +432,7 @@ namespace qmcplusplus {
         ++nAllRejected;
         enew=eold;//copy back old energy
         gf_acc=1.0;
-        cout << "  Failed to move any particle " << thisWalker.ID <<endl;
+        cerr << "  Failed to move any particle " << thisWalker.ID <<endl;
       }
 
       int ibar = nonLocalOps.selectMove(RandomGen());

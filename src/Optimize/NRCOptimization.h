@@ -25,6 +25,7 @@
 
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
+#include "Configuration.h"
 
 #include <math.h>
 #if (__GNUC__ == 2)
@@ -209,15 +210,13 @@ struct NRCOptimization {
     // END HACK HACK HACK
 
 
-    fprintf (stderr, "Before:  ax = %1.10f  bx=%1.10f  cx=%1.10f\n",
-	     ax, xx, bx);
+    qmcplusplus::app_log()<<"Before:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
     mnbrakNRC(ax,xx,bx,fa,fx,fb);
-    fprintf (stderr, "After:  ax = %1.10f  bx=%1.10f  cx=%1.10f\n",
-	     ax, xx, bx);
-
+    qmcplusplus::app_log()<<"After:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
+    
     Lambda = 0.0e0;
     Return_t ep = brentNRC(ax,xx,bx,Lambda);
-    fprintf (stderr, "Minimum found at lambda = %1.5e\n", Lambda);
+    qmcplusplus::app_log()<<"Minimum found at lambda = "<<Lambda<<endl;
 
     if(std::fabs(Lambda)<TINY) 
       return false;

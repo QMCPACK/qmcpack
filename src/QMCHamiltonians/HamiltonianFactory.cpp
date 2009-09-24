@@ -137,7 +137,7 @@ namespace qmcplusplus {
         int indx1 = targetPtcl->mySpecies.findSpecies(defaultKE);
         int indx2 = targetPtcl->mySpecies.addAttribute(tgt);
         mass = targetPtcl->mySpecies(indx2,indx1);
-        cout<<"  Kinetic energy operator:: Mass "<<mass<<endl;
+        app_log()<<"  Kinetic energy operator:: Mass "<<mass<<endl;
         targetH->addOperator(new BareKineticEnergy(mass),"Kinetic");
       }
     }

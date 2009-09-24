@@ -135,7 +135,7 @@ namespace qmcplusplus {
       RealType corecore(0.0);
       for(int iat=0; iat<nCenters; iat++) 
       {
-        cout << "Checking CPP = " << Centers[iat] << endl;
+        app_log() << "Checking CPP = " << Centers[iat] << endl;
         if(Centers[iat]) 
           corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
       }

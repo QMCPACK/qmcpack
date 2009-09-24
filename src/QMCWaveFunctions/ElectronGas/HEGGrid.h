@@ -315,7 +315,7 @@ namespace qmcplusplus {
       kpt.resize(nkpts);
       mk2.resize(nkpts);
 
-      cout << "Check this " << NumKptsHalf << " " << nkpts << endl;
+      app_log() << "Check this " << NumKptsHalf << " " << nkpts << endl;
       abort();
 
       //add gamma

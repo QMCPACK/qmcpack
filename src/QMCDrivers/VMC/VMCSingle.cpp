@@ -34,7 +34,6 @@ namespace qmcplusplus {
   }
   
   bool VMCSingle::run() { 
-    cout<<"IN SINGLE VMC RUN"<<endl;
     resetRun();
 
     Mover->startRun(nBlocks,true);
