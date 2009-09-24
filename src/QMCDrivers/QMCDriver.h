@@ -233,7 +233,7 @@ namespace qmcplusplus {
     IndexType nTargetSamples;
     
     ///alternate method of setting QMC run parameters
-    RealType  nSamplesPerWalker, nSamplesPerNode;
+    RealType  nSamplesPerWalker, fracDeficit;
     IndexType nWalkersPerThread, nStepsBetweenSamples;
     
     ///timestep

@@ -37,7 +37,7 @@ namespace qmcplusplus {
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
   Period4CheckProperties(100), CurrentStep(0), 
   nBlocks(100), nSteps(10), 
-  nWalkersPerThread(0), nSamplesPerWalker(0), nStepsBetweenSamples(0),  nSamplesPerNode(0),
+  nWalkersPerThread(0), nSamplesPerWalker(0), nStepsBetweenSamples(0),  fracDeficit(0),
   nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0), storeConfigs(0),
@@ -63,7 +63,7 @@ namespace qmcplusplus {
 
     m_param.add(nWalkersPerThread,"walkersperthread","int");
     m_param.add(nSamplesPerWalker,"samplesperwalker","real");
-    m_param.add(nSamplesPerNode,"samplespernode","real");
+    m_param.add(fracDeficit,"fractionaldeficit","real");
     m_param.add(nStepsBetweenSamples,"stepsbetweensamples","int");
     
     
@@ -341,7 +341,8 @@ namespace qmcplusplus {
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
     if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
-    if (nSamplesPerWalker > 0)
+
+    if ((fracDeficit>0)&&(fracDeficit<1))
     {
       if (nStepsBetweenSamples==0) nStepsBetweenSamples=10;
 //       case of fractional samples per thread
@@ -350,17 +351,19 @@ namespace qmcplusplus {
       Period4WalkerDump = nStepsBetweenSamples;
       //round down
       nTargetSamples = std::floor(nSamplesPerWalker*nTargetWalkers*Nprocs);
+//       app_log()<<"  Changing "<<nTargetSamples;
+      nTargetSamples = fracDeficit*Nthreads*Nprocs + (nTargetSamples/Nthreads*Nprocs)*Nthreads*Nprocs;
+//       app_log()<<" to "<<nTargetSamples<<" to satisfy fractional sample requirements"<<endl;
     }
-    else if (nSamplesPerNode>0)
+    else if (nSamplesPerWalker > 0)
     {
-      if (nStepsBetweenSamples==0) nStepsBetweenSamples=10; 
-      nSamplesPerWalker = nSamplesPerNode/nTargetWalkers;
+      if (nStepsBetweenSamples==0) nStepsBetweenSamples=10;
 //       case of fractional samples per thread
-      nBlocks = std::ceil(nSamplesPerWalker);      
+      nBlocks = std::ceil(nSamplesPerWalker);  
       nSteps = nStepsBetweenSamples;
       Period4WalkerDump = nStepsBetweenSamples;
       //round down
-      nTargetSamples = std::floor(nSamplesPerNode*Nprocs);
+      nTargetSamples = std::floor(nSamplesPerWalker*nTargetWalkers*Nprocs);
     }
 
 
