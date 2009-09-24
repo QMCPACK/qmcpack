@@ -112,6 +112,7 @@ namespace qmcplusplus {
         W.rejectMove(iel);
         //psi.rejectMove(iel);
       }
+      psi.resetTempPhase();
       // Compute radial potential
       //int k;
       //RealType rfrac;
@@ -561,6 +562,7 @@ namespace qmcplusplus {
         //first, add a new NonLocalData with ratio
         Txy.push_back(NonLocalData(iel,psiratio[j],deltar));
       }
+      psi.resetTempPhase();
       // Compute radial potential
       for(int ip=0;ip< nchannel; ip++){
         vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];

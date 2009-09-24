@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   TrialWaveFunction::TrialWaveFunction(Communicate* c)
     : MPIObjectBase(c)
-      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0),OneOverM(1.0)
+      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), TempPhaseValue(0.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   ///private and cannot be used
   TrialWaveFunction::TrialWaveFunction()
-    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0)
+    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), TempPhaseValue(0.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -255,6 +255,7 @@ namespace qmcplusplus {
     return std::exp(logr);
 #else
     if(real(r)<0) TempPhaseValue=M_PI;
+//     else TempPhaseValue=0.0;
     return real(r);
 #endif
   }
@@ -320,6 +321,7 @@ namespace qmcplusplus {
     return std::exp(logr);
 #else
     if(real(r)<0) TempPhaseValue=M_PI;
+//     else TempPhaseValue=0.0;
     return real(r);
 #endif
   }
@@ -364,6 +366,7 @@ namespace qmcplusplus {
     return std::exp(evaluateLogAndPhase(r,TempPhaseValue));
 #else
     if(real(r)<0) TempPhaseValue=M_PI;
+//     else TempPhaseValue=0.0;
     return real(r);
 #endif
   }
@@ -393,6 +396,7 @@ namespace qmcplusplus {
   TrialWaveFunction::acceptMove(ParticleSet& P,int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
     PhaseValue += TempPhaseValue;
+    TempPhaseValue=0.0;
   }
 
   //void TrialWaveFunction::resizeByWalkers(int nwalkers){

@@ -181,7 +181,7 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
       return false;
 #else
-      return std::abs(std::cos(psi0-psi1)) > numeric_limits<RealType>::epsilon();
+      return std::cos(psi0-psi1) < numeric_limits<RealType>::epsilon();
 #endif
     }
 
