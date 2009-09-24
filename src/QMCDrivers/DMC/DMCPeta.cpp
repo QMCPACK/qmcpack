@@ -103,7 +103,7 @@ namespace qmcplusplus {
               RealType rr=dot(dr,dr);
               rr_proposed+=rr;
 
-              if(branchEngine->phaseChanged(Psi.getTempPhase(),thisWalker.Properties(SIGN))) 
+              if(branchEngine->phaseChanged(Psi.getPhaseDiff())) 
               {//node crossing detected
                 ++nRejectTemp;
                 W.rejectMove(iat); Psi.rejectMove(iat);

@@ -176,12 +176,12 @@ namespace qmcplusplus {
     ///copy constructor
     SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
 
-    inline bool phaseChanged(RealType psi0, RealType psi1) const 
+    inline bool phaseChanged(RealType psi0) const 
     {
 #if defined(QMC_COMPLEX)
       return false;
 #else
-      return std::cos(psi0-psi1) < numeric_limits<RealType>::epsilon();
+      return std::cos(psi0) < numeric_limits<RealType>::epsilon();
 #endif
     }
 

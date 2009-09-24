@@ -80,7 +80,7 @@ namespace qmcplusplus {
       bool accepted=false; 
       RealType rr_accepted = 0.0;
       RealType nodecorr=0.0;
-      if(branchEngine->phaseChanged(Psi.getTempPhase(),0)) 
+      if(branchEngine->phaseChanged(Psi.getPhaseDiff())) 
       {
         thisWalker.Age++;
 	H.rejectedMove(W,thisWalker);
@@ -207,7 +207,7 @@ namespace qmcplusplus {
       bool accepted=false;
       RealType rr_accepted = 0.0;
       RealType nodecorr=0.0;
-      if(branchEngine->phaseChanged(Psi.getTempPhase(),0)) 
+      if(branchEngine->phaseChanged(Psi.getPhaseDiff())) 
       {
         thisWalker.Age++;
         thisWalker.willDie();

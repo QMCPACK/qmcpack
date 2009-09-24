@@ -105,14 +105,14 @@ namespace qmcplusplus {
         W.makeMoveOnSphere(iel,deltar); 
         //W.makeMove(iel,deltar); 
 #if defined(QMC_COMPLEX)
-        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getTempPhase());
+        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
 #endif
         W.rejectMove(iel);
+        psi.resetPhaseDiff();
         //psi.rejectMove(iel);
       }
-      psi.resetTempPhase();
       // Compute radial potential
       //int k;
       //RealType rfrac;
@@ -553,16 +553,16 @@ namespace qmcplusplus {
         W.makeMoveOnSphere(iel,deltar); 
         //PosType newpos(W.makeMove(iel,deltar));
 #if defined(QMC_COMPLEX)
-        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getTempPhase());
+        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
 #endif
         W.rejectMove(iel);
+        psi.resetPhaseDiff();
         //psi.rejectMove(iel);
         //first, add a new NonLocalData with ratio
         Txy.push_back(NonLocalData(iel,psiratio[j],deltar));
-      }
-      psi.resetTempPhase();
+      } 
       // Compute radial potential
       for(int ip=0;ip< nchannel; ip++){
         vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];

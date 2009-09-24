@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   TrialWaveFunction::TrialWaveFunction(Communicate* c)
     : MPIObjectBase(c)
-      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), TempPhaseValue(0.0)
+      , Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   ///private and cannot be used
   TrialWaveFunction::TrialWaveFunction()
-    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), TempPhaseValue(0.0)
+    : MPIObjectBase(0) ,PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
   {
     ClassName="TrialWaveFunction";
     myName="psi0";
@@ -251,11 +251,11 @@ namespace qmcplusplus {
     }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-    RealType logr=evaluateLogAndPhase(r,TempPhaseValue);
+    RealType logr=evaluateLogAndPhase(r,PhaseDiff);
     return std::exp(logr);
 #else
-    if(real(r)<0) TempPhaseValue=M_PI;
-//     else TempPhaseValue=0.0;
+    if(real(r)<0) PhaseDiff=M_PI;
+//     else PhaseDiff=0.0;
     return real(r);
 #endif
   }
@@ -320,8 +320,8 @@ namespace qmcplusplus {
     RealType logr=evaluateLogAndPhase(r,PhaseValue);
     return std::exp(logr);
 #else
-    if(real(r)<0) TempPhaseValue=M_PI;
-//     else TempPhaseValue=0.0;
+    if(real(r)<0) PhaseDiff=M_PI;
+//     else PhaseDiff=0.0;
     return real(r);
 #endif
   }
@@ -363,10 +363,10 @@ namespace qmcplusplus {
     }
 
 #if defined(QMC_COMPLEX)
-    return std::exp(evaluateLogAndPhase(r,TempPhaseValue));
+    return std::exp(evaluateLogAndPhase(r,PhaseDiff));
 #else
-    if(real(r)<0) TempPhaseValue=M_PI;
-//     else TempPhaseValue=0.0;
+    if(real(r)<0) PhaseDiff=M_PI;
+//     else PhaseDiff=0.0;
     return real(r);
 #endif
   }
@@ -382,7 +382,7 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) {
       Z[i]->restore(iat);
     }
-    TempPhaseValue=0;
+    PhaseDiff=0;
   }
 
   /** update the state with the new data
@@ -395,8 +395,8 @@ namespace qmcplusplus {
   void   
   TrialWaveFunction::acceptMove(ParticleSet& P,int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
-    PhaseValue += TempPhaseValue;
-    TempPhaseValue=0.0;
+    PhaseValue += PhaseDiff;
+    PhaseDiff=0.0;
   }
 
   //void TrialWaveFunction::resizeByWalkers(int nwalkers){

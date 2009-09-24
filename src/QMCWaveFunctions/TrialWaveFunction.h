@@ -64,8 +64,8 @@ namespace qmcplusplus {
 
     inline int size() const { return Z.size();}
     inline RealType getPhase() const { return PhaseValue;}
-    inline RealType getTempPhase() const { return TempPhaseValue;}
-    inline void resetTempPhase() { TempPhaseValue=0.0;}
+    inline RealType getPhaseDiff() const { return PhaseDiff;}
+    inline void resetPhaseDiff() { PhaseDiff=0.0;}
     inline RealType getLogPsi() const { return LogValue;}
 
     ///Add an OrbitalBase 
@@ -197,7 +197,9 @@ namespace qmcplusplus {
 
     ///sign of the trial wave function
     RealType PhaseValue;
-    RealType TempPhaseValue;
+    
+    ///diff of the phase of the trial wave function during ratio calls
+    RealType PhaseDiff;
 
     ///log of the trial wave function
     RealType LogValue;
