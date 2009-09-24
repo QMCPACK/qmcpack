@@ -280,7 +280,7 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 {
   //safety check
   if(MaxSamples==0) return;
-  while(first != last) 
+  while((first != last) && (CurSampleCount<MaxSamples))
   {
     (*SampleStack[CurSampleCount++])=(*first++)->R;
   }

@@ -448,6 +448,7 @@ namespace qmcplusplus {
     NumPtcls = P.getTotalNum();
     TotalDim = PosType::Size*NumPtcls;
 
+    buf.add(PhaseValue);
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
@@ -478,6 +479,7 @@ namespace qmcplusplus {
     }
 
     LogValue=real(logpsi);
+    buf.put(PhaseValue);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
     return LogValue;
@@ -489,6 +491,7 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);
 
     //get the gradients and laplacians from the buffer
+    buf.get(PhaseValue);
     buf.get(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.get(&(P.L[0]), &(P.L[0])+NumPtcls);
 
@@ -543,6 +546,7 @@ namespace qmcplusplus {
       LogValue += Z[i]->evaluateLog(P,buf);
       PhaseValue += Z[i]->PhaseValue;
     }
+    buf.put(PhaseValue);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
     return real(LogValue);

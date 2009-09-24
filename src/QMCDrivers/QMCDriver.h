@@ -231,6 +231,11 @@ namespace qmcplusplus {
     IndexType nTargetWalkers;
     ///the number of saved samples
     IndexType nTargetSamples;
+    
+    ///alternate method of setting QMC run parameters
+    RealType  nSamplesPerThread, nSamplesPerNode;
+    IndexType nWalkersPerThread, nStepsBetweenSamples;
+    
     ///timestep
     RealType Tau;
 

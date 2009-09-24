@@ -97,31 +97,40 @@ namespace qmcplusplus
 
   void VMCSingleOMP::resetRun()
   {
-
-    ///Set up a PropertyHistory for the energy to be recorded
-//     if ((reweight=="yes") & (Eindex<0))
-//     {
-//       MCWalkerConfiguration::iterator Cit(W.begin()), Cit_end(W.end());
-//       Eindex = (*Cit)->addPropertyHistory(weightLength);
-//       while(Cit!=Cit_end){
-//  (*Cit)->addPropertyHistory(weightLength);
-//  Cit++;
-//       }
-//     }
     makeClones(W,Psi,H);
 
+    std::vector<IndexType> samples_th(omp_get_max_threads(),0);
+
     //determine dump period for walkers
-    int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
-    myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+//     int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
+//     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
     //fall back to the default
-    if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
-    if (QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
-    int samples_th=nTargetSamples/myComm->size()/NumThreads;
-    app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
-    app_log() << "  Total Sample Size =" << nTargetSamples
-    << "\n  Sample size per node per thread = " << samples_th << endl;
+//     if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
+//     if (QMCDriverMode[QMC_WARMUP]) 
+//       myPeriod4WalkerDump=nBlocks*nSteps;
+
+    if (nStepsBetweenSamples) myPeriod4WalkerDump=Period4WalkerDump;
+    else 
+    {
+      int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
+      myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+      if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
+    }
+    int samples_this_node = nTargetSamples/myComm->size();
+    if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
+    int samples_each_thread = samples_this_node/omp_get_max_threads();
+    for (int ip=0; ip<omp_get_max_threads(); ++ip) samples_th[ip]=samples_each_thread; 
+    if(samples_this_node%omp_get_max_threads())
+      for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
+    
+    app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
+    app_log() << "  Total Sample Size =" << nTargetSamples << endl;  
+    app_log() << "  Nodes Sample Size =" << samples_this_node << endl;  
+    for (int ip=0; ip<NumThreads; ++ip)
+      app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
 
+    
     if (Movers.empty())
       {
         Movers.resize(NumThreads,0);
@@ -199,7 +208,7 @@ namespace qmcplusplus
 #pragma omp critical
         {
           wClones[ip]->clearEnsemble();
-          wClones[ip]->setNumSamples(samples_th);
+          wClones[ip]->setNumSamples(samples_th[ip]);
         }
       }
     myWarmupSteps=0;
