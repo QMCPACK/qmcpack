@@ -162,64 +162,61 @@ namespace qmcplusplus {
       bool moved = false;
 
       myTimers[1]->start();
-      for(int iat=0; iat<W.getTotalNum(); ++iat) 
-      {
-
-        //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
-        RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
-	// app_log() << "sc = " << sc << endl;
-        PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
-
-        //reject illegal moves
-        if(!W.makeMoveAndCheck(iat,dr)) 
-        {
-          ++nReject;
-          continue;
-        }
-        //PosType newpos=W.R[iat];
-        //PosType newpos = W.makeMove(iat,dr);
-       
-        RealType ratio = Psi.ratio(W,iat,dG,dL);
-        RealType prob = ratio*ratio;
-
-        //zero is always rejected
-        if(prob<numeric_limits<RealType>::epsilon()) 
-        {
-          ++nReject; 
-          W.rejectMove(iat); Psi.rejectMove(iat);
-          continue; 
-        }
-
-        G = W.G+dG;
-
-        //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
-        //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
-        //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
-        RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-
-        //RealType scale=getDriftScale(Tau,G);
-        RealType scale=getDriftScale(m_tauovermass,G[iat]);
-        dr = thisWalker.R[iat]-W.R[iat]-scale*real(G[iat]);
-
-        RealType logGb = -m_oneover2tau*dot(dr,dr);
-
-        //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
-        if(RandomGen() < prob*std::exp(logGb-logGf)) 
-        { 
-          moved = true;
-          ++nAccept;
-          W.acceptMove(iat);
-          Psi.acceptMove(W,iat);
-          W.G = G;
-          W.L += dL;
-
-          //do not need to update Drift
-          //assignDrift(scale,G,thisWalker.Drift);
-
-        } else {
-          ++nReject; 
-          W.rejectMove(iat); Psi.rejectMove(iat);
-        }
+      for(int iter=0; iter<nSubSteps; ++iter) {
+	for(int iat=0; iat<W.getTotalNum(); ++iat)  {
+	  //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+	  RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
+	  // app_log() << "sc = " << sc << endl;
+	  PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+	  
+	  //reject illegal moves
+	  if(!W.makeMoveAndCheck(iat,dr)) {
+	    ++nReject;
+	    continue;
+	  }
+	  //PosType newpos=W.R[iat];
+	  //PosType newpos = W.makeMove(iat,dr);
+	  
+	  RealType ratio = Psi.ratio(W,iat,dG,dL);
+	  RealType prob = ratio*ratio;
+	  
+	  //zero is always rejected
+	  if(prob<numeric_limits<RealType>::epsilon()) {
+	    ++nReject; 
+	    W.rejectMove(iat); Psi.rejectMove(iat);
+	    continue; 
+	  }
+	  
+	  G = W.G+dG;
+	  
+	  //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
+	  //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+	  //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
+	  RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+	  
+	  //RealType scale=getDriftScale(Tau,G);
+	  RealType scale=getDriftScale(m_tauovermass,G[iat]);
+	  dr = thisWalker.R[iat]-W.R[iat]-scale*real(G[iat]);
+	  
+	  RealType logGb = -m_oneover2tau*dot(dr,dr);
+	  
+	  //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
+	  if(RandomGen() < prob*std::exp(logGb-logGf)) { 
+	    moved = true;
+	    ++nAccept;
+	    W.acceptMove(iat);
+	    Psi.acceptMove(W,iat);
+	    W.G = G;
+	    W.L += dL;
+	    
+	    //do not need to update Drift
+	    //assignDrift(scale,G,thisWalker.Drift);
+	    
+	  } else {
+	    ++nReject; 
+	    W.rejectMove(iat); Psi.rejectMove(iat);
+	  }
+	}
       }
       myTimers[1]->stop();
 
@@ -253,8 +250,8 @@ namespace qmcplusplus {
 
   /// Constructor.
   VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-      QMCHamiltonian& h, RandomGenerator_t& rg):
-    QMCUpdateBase(w,psi,h,rg)
+      QMCHamiltonian& h, RandomGenerator_t& rg) :
+    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
       //app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
       myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
@@ -287,58 +284,56 @@ namespace qmcplusplus {
 
       myTimers[1]->start();
       bool moved = false;
-      //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandomWithEngine(deltaR,RandomGen);
-      for(int iat=0; iat<W.getTotalNum(); ++iat) 
-      {
-        GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-        RealType sc=getDriftScale(m_tauovermass,grad_now);
-	//	app_log() << "sc = " << sc << endl;
-        PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
-
-        if(!W.makeMoveAndCheck(iat,dr)) 
-        {
-          ++nReject; 
-          continue;
-        }
-
-        //PosType newpos = W.makeMove(iat,dr);
-        RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-        RealType prob = ratio*ratio;
-
-        //zero is always rejected
-        if(prob<numeric_limits<RealType>::epsilon()) 
-        {
-          ++nReject; 
-          W.rejectMove(iat); Psi.rejectMove(iat);
-          continue; 
-        }
-
-        //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
-        //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
-        //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
-        RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-
-        sc=getDriftScale(m_tauovermass,grad_new);
-        dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
-
-        RealType logGb = -m_oneover2tau*dot(dr,dr);
-
-        //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
-        if(RandomGen() < prob*std::exp(logGb-logGf)) 
-        { 
-          moved = true;
-          ++nAccept;
-          W.acceptMove(iat);
-          Psi.acceptMove(W,iat);
-        } 
-        else 
-        {
-          ++nReject; 
-          W.rejectMove(iat); Psi.rejectMove(iat);
-        }
+      for(int iter=0; iter<nSubSteps; ++iter) {
+	//create a 3N-Dimensional Gaussian with variance=1
+	makeGaussRandomWithEngine(deltaR,RandomGen);
+	for(int iat=0; iat<W.getTotalNum(); ++iat) {
+	  GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+	  RealType sc=getDriftScale(m_tauovermass,grad_now);
+	  //	app_log() << "sc = " << sc << endl;
+	  PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
+	  
+	  if(!W.makeMoveAndCheck(iat,dr)) {
+	    ++nReject; 
+	    continue;
+	  }
+	  
+	  //PosType newpos = W.makeMove(iat,dr);
+	  RealType ratio = Psi.ratioGrad(W,iat,grad_new);
+	  RealType prob = ratio*ratio;
+	  
+	  //zero is always rejected
+	  if(prob<numeric_limits<RealType>::epsilon()) {
+	    ++nReject; 
+	    W.rejectMove(iat); Psi.rejectMove(iat);
+	    continue; 
+	  }
+	  
+	  //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
+	  //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+	  //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
+	  RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+	  
+	  sc=getDriftScale(m_tauovermass,grad_new);
+	  dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
+	  
+	  RealType logGb = -m_oneover2tau*dot(dr,dr);
+	  
+	  //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
+	  if(RandomGen() < prob*std::exp(logGb-logGf)) { 
+	    moved = true;
+	    ++nAccept;
+	    W.acceptMove(iat);
+	    Psi.acceptMove(W,iat);
+	  } 
+	  else 
+	    {
+	      ++nReject; 
+	      W.rejectMove(iat); Psi.rejectMove(iat);
+	    }
+	}
+	myTimers[1]->stop();
       }
-      myTimers[1]->stop();
 
       if(moved) 
       {

@@ -56,6 +56,7 @@ namespace qmcplusplus {
  
   private:
     vector<NewTimer*> myTimers;
+    int nSubSteps;
   };
 
   /** @ingroup QMCDrivers  ParticleByParticle
@@ -73,6 +74,7 @@ namespace qmcplusplus {
  
   private:
     vector<NewTimer*> myTimers;
+    int nSubSteps;
   };
   
     /** @ingroup QMCDrivers  ParticleByParticle
