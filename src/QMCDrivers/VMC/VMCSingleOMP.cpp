@@ -109,17 +109,22 @@ namespace qmcplusplus
 //     if (QMCDriverMode[QMC_WARMUP]) 
 //       myPeriod4WalkerDump=nBlocks*nSteps;
 
-    if (nStepsBetweenSamples) myPeriod4WalkerDump=Period4WalkerDump;
-    else 
-    {
-      int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
-      myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
-      if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
-    }
+//     if (nStepsBetweenSamples) myPeriod4WalkerDump=Period4WalkerDump;
+//     else 
+//     {
+//       int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
+//       myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+//       if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
+//     }
+
+    myPeriod4WalkerDump=Period4WalkerDump;
+    
     int samples_this_node = nTargetSamples/myComm->size();
     if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
+    
     int samples_each_thread = samples_this_node/omp_get_max_threads();
     for (int ip=0; ip<omp_get_max_threads(); ++ip) samples_th[ip]=samples_each_thread; 
+    
     if(samples_this_node%omp_get_max_threads())
       for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
     
