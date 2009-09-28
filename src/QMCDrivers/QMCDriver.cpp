@@ -339,6 +339,9 @@ namespace qmcplusplus {
     
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
+
+    if(nStepsBetweenSamples && (nWalkersPerThread==0))  nWalkersPerThread=1;
+
     if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
     if( (fracDeficit>0 ) && nTargetSamples )
     {
@@ -350,6 +353,7 @@ namespace qmcplusplus {
     if (nStepsBetweenSamples && nTargetSamples)
     {
       int nStepsTotal = std::ceil(nTargetSamples*nStepsBetweenSamples/(nTargetWalkers*Nprocs));
+      if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
       nSteps = std::ceil(nStepsTotal/nBlocks);
       nStepsTotal = nSteps*nBlocks;
       nStepsBetweenSamples = std::floor(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples);
