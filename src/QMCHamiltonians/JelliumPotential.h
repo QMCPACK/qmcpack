@@ -123,18 +123,19 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
-      Return_t del=0.0;
-//       for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
-      for(int iat=0; iat<Centers; ++iat)
-      {
-        if (temp[iat].r1<RC[iat]) del+=RS[iat]*std::pow(temp[iat].r1,2);
-        else del +=Z[iat]*temp[iat].rinv1;
-        if (temp[iat].r0<RC[iat]) del-=RS[iat]*std::pow(temp[iat].r0,2);
-        else del -=Z[iat]*temp[iat].rinv0;
-      }
-      
-      return NewValue=Value+del;
+      APP_ABORT("JelliumPotential::evaluatePbyP should not be used");
+      return 0.0;
+      //const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
+      //Return_t del=0.0;
+      //for(int iat=0; iat<Centers; ++iat)
+      //{
+      //  if (temp[iat].r1<RC[iat]) del+=RS[iat]*std::pow(temp[iat].r1,2);
+      //  else del +=Z[iat]*temp[iat].rinv1;
+      //  if (temp[iat].r0<RC[iat]) del-=RS[iat]*std::pow(temp[iat].r0,2);
+      //  else del -=Z[iat]*temp[iat].rinv0;
+      //}
+      //
+      //return NewValue=Value+del;
     }
 
     bool put(xmlNodePtr cur) 
@@ -160,6 +161,6 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 3105 $   $Date: 2008-09-12 15:05:29 -0500 (Fri, 12 Sep 2008) $
- * $Id: CoulombPotential.h 3105 2008-09-12 20:05:29Z jnkim $ 
+ * $Id: JelliumPotential.h 3105 2008-09-12 20:05:29Z jnkim $ 
  ***************************************************************************/
 
