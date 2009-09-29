@@ -32,6 +32,8 @@ public:
 
   typedef T            Type_t;
   typedef T            value_type;
+  typedef T*           pointer;
+  typedef const T*     const_pointer;
   typedef C            Container_t;
   typedef typename C::size_type size_type;
   typedef Matrix<T,C>  This_t;
@@ -110,25 +112,25 @@ public:
 
   // Get and Set Operations for assignment operators
   // returns a pointer of i-th row 
-  inline Type_t* data() { 
+  inline pointer data() { 
     return &(X[0]);
   }
 
   // returns a pointer of i-th row 
-  inline const Type_t* data() const { 
+  inline const_pointer data() const { 
     return &(X[0]);
   }
 
-  inline Type_t* first_address() { 
+  inline pointer first_address() { 
     return &(X[0]);
   }
 
   // returns a pointer of i-th row 
-  inline const Type_t* first_address() const { 
+  inline const_pointer first_address() const { 
     return &(X[0]);
   }
 
-  inline Type_t* last_address() { 
+  inline pointer last_address() { 
     return &(X[0])+TotSize;
   }
 
