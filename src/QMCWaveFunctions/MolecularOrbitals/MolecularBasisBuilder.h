@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
@@ -64,24 +65,27 @@ namespace qmcplusplus {
       //create the basis set
       //go thru the tree
       cur = cur->xmlChildrenNode;
-      while(cur!=NULL) {
+      while(cur!=NULL) 
+      {
         string cname((const char*)(cur->name));
-        if(cname == "atomicBasisSet") {
-          const xmlChar* eptr=xmlGetProp(cur,(const xmlChar*)"elementType");
-          if(eptr == NULL) 
-          {
-            //fatal error
+        if(cname == "atomicBasisSet") 
+        {
+          string elementType;
+          OhmmsAttributeSet att;
+          att.add(elementType,"elementType");
+          att.put(cur);
+          if(elementType.empty())
             PRE.error("Missing elementType attribute of atomicBasisSet.",true);
-          }
-          string elementType((const char*)eptr);
 
           map<string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType); 
-          if(it == aoBuilders.end()) {
+          if(it == aoBuilders.end()) 
+          {
             AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
             any->setReportLevel(ReportLevel);
             any->put(cur);
             COT* aoBasis= any->createAOSet(cur);
-            if(aoBasis) { //add the new atomic basis to the basis set
+            if(aoBasis) 
+            { //add the new atomic basis to the basis set
               int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
               thisBasisSet->add(activeCenter, aoBasis);
             }
