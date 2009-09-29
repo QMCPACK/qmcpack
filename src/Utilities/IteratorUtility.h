@@ -28,16 +28,6 @@ namespace qmcplusplus {
     }
 
 
-  template<class T, unsigned D>
-    inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) {
-      return &(a[0][0]);
-    }
-
-  template<class T, unsigned D>
-    inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) {
-      return &(a[0][0])+D*a.size();
-    }
-
   template<typename IT1, typename IT2>
     inline void accumulate_elements(IT1 first, IT1 last, IT2 res)
     {

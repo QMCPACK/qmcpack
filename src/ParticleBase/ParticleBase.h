@@ -203,6 +203,18 @@ protected:
   vector<OhmmsObject*>        myAttribList;
 };
 
+template<class T, unsigned D>
+inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) 
+{
+  return &(a[0][0]);
+}
+
+template<class T, unsigned D>
+inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) 
+{
+  return &(a[0][0])+D*a.size();
+}
+
 }
 #include "ParticleBase/ParticleBase.cpp"
 #endif
