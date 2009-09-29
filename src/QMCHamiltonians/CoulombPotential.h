@@ -108,10 +108,12 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
-      Return_t del=0.0;
-      for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
-      return NewValue=Value+del;
+      APP_ABORT("CoulombPotential::evaluatePbyP");
+      return 0.0;
+      //const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
+      //Return_t del=0.0;
+      //for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
+      //return NewValue=Value+del;
     }
 
     bool put(xmlNodePtr cur) 
@@ -242,10 +244,12 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
-      Return_t del=0.0;
-      for(int iat=0; iat<Centers; ++iat) del+=(temp[iat].rinv1-temp[iat].rinv0);
-      return NewValue=Value+Q*del;
+      APP_ABORT("CoulombAA::evaluatePbyP");
+      return 0.0;
+      //const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
+      //Return_t del=0.0;
+      //for(int iat=0; iat<Centers; ++iat) del+=(temp[iat].rinv1-temp[iat].rinv0);
+      //return NewValue=Value+Q*del;
     }
 
     /** Do nothing */
