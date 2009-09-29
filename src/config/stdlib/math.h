@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_STDLIB_PORT_H
 #include <cmath>
 #include <cstdlib>
-
 #ifndef TWOPI
 #ifndef M_PI
 #define TWOPI 6.2831853071795862
@@ -46,6 +45,44 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
   *s=std::sin(a);
   *c=std::cos(a);
 }
+#endif
+
+#if defined(HAVE_MKL_VML)
+#include <mkl_vml_functions.h>
+
+inline void vec_sqrt(int n, const double* restrict in, double* restrict out)
+{
+  vdSqrt(n,in,out);
+}
+
+inline void vec_inv(int n, const double* restrict in, double* restrict out)
+{
+  vdInv(n,in,out);
+}
+
+inline void vec_inv_sqrt(int n, const double* restrict in, double* restrict out)
+{
+  vdInvSqrt(n,in,out);
+}
+
+inline void vec_sqrt(int n, const float* restrict in, float* restrict out)
+{
+  vsSqrt(n,in,out);
+}
+
+#else
+template<typename T>
+inline void vec_sqrt(int n, const T* restrict in, T* restrict out)
+{
+  for(int i=0; i<n; ++i) out[i]=sqrt(in[i]);
+}
+
+template<typename T>
+inline void vec_inv(int n, const T* restrict in, T* restrict out)
+{
+  for(int i=0; i<n; ++i) out[i]=1.0/in[i];
+}
+
 #endif
 
 #endif
