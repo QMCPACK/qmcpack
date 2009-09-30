@@ -28,15 +28,21 @@ namespace qmcplusplus {
   int  ParticleSet::PtclObjectCounter = 0;
 
   ParticleSet::ParticleSet()
-    : UseBoundBox(true), SK(0), ParentTag(-1)
+    : UseBoundBox(true), UseSphereUpdate(true),SK(0), ParentTag(-1)
   { 
     initParticleSet();
 
     initPropertyList();
+
+    myTimers.push_back(new NewTimer("ParticleSet::makeMove")); //timer for MC, ratio etc
+    myTimers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
+    TimerManager.addTimer(myTimers[0]);
+    TimerManager.addTimer(myTimers[1]);
   }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
-    : UseBoundBox(p.UseBoundBox), SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
+    : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
+      , SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
   {
     initBase();
     initParticleSet();
@@ -66,6 +72,11 @@ namespace qmcplusplus {
     {
       resizeSphere(p.Sphere.size());
     }
+
+    myTimers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
+    myTimers.push_back(new NewTimer("VMCUpdatePbyP::makeMOve")); //timer for MC, ratio etc
+    TimerManager.addTimer(myTimers[0]);
+    TimerManager.addTimer(myTimers[1]);
   }
 
 
@@ -128,7 +139,9 @@ namespace qmcplusplus {
   }
 
   ///reset member data
-  void ParticleSet::reset() { 
+  void ParticleSet::reset() 
+  { 
+    app_log() << "<<<< going to set properties >>>> " << endl;
   }
 
   ///read the particleset
@@ -138,7 +151,19 @@ namespace qmcplusplus {
 
   void ParticleSet::setBoundBox(bool open)
   {
-    UseBoundBox=false;
+    UseBoundBox=!open;
+  }
+
+  void ParticleSet::checkBoundBox(RealType rb)
+  {
+    if(UseBoundBox && rb>Lattice.SimulationCellRadius)
+    {
+      app_warning()
+        << "ParticleSet::checkBoundBox "
+        << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius 
+        << "\n Using SLOW method for the sphere update. " <<endl;
+      UseSphereUpdate=false;
+    }
   }
   //void ParticleSet::setUpdateMode(int updatemode) { 
   //  if(DistTables.empty()) { 
@@ -202,23 +227,6 @@ namespace qmcplusplus {
   }
 
   void ParticleSet::update(int iflag) {
-
-    //apply Boundary condition
-    //R.setUnit(0);
-    //double xL=Lattice.R(0,0);
-    //double yL=Lattice.R(1,1);
-    //double zL=Lattice.R(2,2);
-    //for(int iat=0; iat<LocalNum; iat++) {
-    //  if(R[iat][0]<0) R[iat][0]+=xL;
-    //  else if(R[iat][0]>xL) R[iat][0]-=xL;
-
-    //  if(R[iat][1]<0) R[iat][1]+=yL;
-    //  else if(R[iat][0]>yL) R[iat][1]-=yL;
-
-    //  if(R[iat][2]<0) R[iat][2]+=zL;
-    //  else if(R[iat][0]>zL) R[iat][2]-=zL;
-    //}
-
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
     if(SK) SK->UpdateAllPart();
   }  
@@ -264,6 +272,7 @@ namespace qmcplusplus {
   bool
   ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
   {
+    myTimers[0]->start();
     activePtcl=iat;
     //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
     if(UseBoundBox)
@@ -278,9 +287,11 @@ namespace qmcplusplus {
           DistTables[i]->move(*this,newpos,iat);
         R[iat]=newpos;
         if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+        myTimers[0]->stop();
         return true;
       }
       //out of bound
+      myTimers[0]->stop();
       return false;
     }
     else
@@ -289,6 +300,7 @@ namespace qmcplusplus {
       R[iat]=activePos+displ;
       for(int i=0; i< DistTables.size(); ++i) 
         DistTables[i]->move(*this,R[iat],iat);
+      myTimers[0]->stop();
       return true;
     }
   }
@@ -344,12 +356,23 @@ namespace qmcplusplus {
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 
   {
-    SingleParticlePos_t dum=makeMove(iat,displ);
-    //activePtcl=iat;
-    //activePos=R[iat]; //save the current position
-    //R[iat]=activePos+displ;
-    //for(int i=0; i< DistTables.size(); ++i) 
-    //  DistTables[i]->moveOnSphere(*this,displ,iat);
+    myTimers[1]->start();
+    activePtcl=iat;
+    activePos=R[iat]; //save the current position
+    R[iat]=activePos+displ;
+    if(UseSphereUpdate)
+    {
+      for(int i=0; i< DistTables.size(); ++i) 
+        DistTables[i]->moveOnSphere(*this,displ,iat);
+    }
+    else
+    {
+      for(int i=0; i< DistTables.size(); ++i) 
+        DistTables[i]->move(*this,R[iat],iat);
+    }
+    if(SK && SK->DoUpdate) SK->makeMove(iat,R[iat]);
+    //SingleParticlePos_t dum=makeMove(iat,displ);
+    myTimers[1]->stop();
   }
   
   /** update the particle attribute by the proposed move

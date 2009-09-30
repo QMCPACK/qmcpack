@@ -17,12 +17,13 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
-#include <OhmmsPETE/OhmmsArray.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
-#include <deque>
-#include <algorithm>
+#include <OhmmsPETE/OhmmsArray.h>
+#include <Utilities/NewTimer.h>
+//#include <deque>
+//#include <algorithm>
 
 namespace qmcplusplus {
 
@@ -89,6 +90,8 @@ namespace qmcplusplus {
 
     ///true, if a physical or local bounding box is used
     bool UseBoundBox;
+    ///ture if fast update for sphere moves
+    bool UseSphereUpdate;
     
     ///the indexp of the active particle for particle-by-particle moves
     Index_t activePtcl;
@@ -174,6 +177,11 @@ namespace qmcplusplus {
 
     ///set UseBoundBox
     void setBoundBox(bool open);
+
+    /** check bounding box
+     * @param rb cutoff radius to check the condition
+     */
+    void checkBoundBox(RealType rb);
     
     /** set the update mode
      * @param updatemode
@@ -352,6 +360,8 @@ namespace qmcplusplus {
      */
     map<int,int> myDistTableMap;
     void initParticleSet();
+
+    vector<NewTimer*> myTimers;
   };
 }
 #endif

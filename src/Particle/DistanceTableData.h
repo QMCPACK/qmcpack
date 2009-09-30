@@ -64,14 +64,16 @@ namespace qmcplusplus {
     T rinv1;
     ///new displacement
     TinyVector<T,N> dr1;
-    ///old distance
-    T r0;
-    ///inverse of old distance
-    T rinv0;
-    ///old displacement
-    TinyVector<T,N> dr0;
-    inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
-    inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
+    inline TempDisplacement():r1(0.0),rinv1(0.0){}
+    inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;}
+    /////old distance
+    //T r0;
+    /////inverse of old distance
+    //T rinv0;
+    /////old displacement
+    //TinyVector<T,N> dr0;
+    //inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
+    //inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
   };
 
 
@@ -96,25 +98,16 @@ namespace qmcplusplus {
     typedef TempDisplacement<RealType,DIM> TempDistType;
     typedef PooledData<RealType>         BufferType;
 
-    /** status of the distance table
-     *
-     * Status[WalkerIndex] Not used
-     * Status[SourceIndex] for the source
-     * Status[VisitorIndex] for the target
-     * Status[PairIndex]  for the pair, not used yet but could be useful
-     */
-    std::bitset<4> Status;
-
+    ///true if bound box exists
+    bool UseBoundBox;
     ///Index of the particle  with a trial move
     IndexType activePtcl;
-
     ///size of indicies
     TinyVector<IndexType,DIM> N;
-
-    /** Maximum radius */
-    RealType Rmax;
-    /** Maximum square */
-    RealType Rmax2;
+    ///** Maximum radius */
+    //RealType Rmax;
+    ///** Maximum square */
+    //RealType Rmax2;
 
     /** @brief M.size() = N[SourceIndex]+1
      *
@@ -147,11 +140,13 @@ namespace qmcplusplus {
      * If the move is rejected, nothing is done and new data will be overwritten.
      */
     std::vector<TempDistType> Temp;
+    vector<RealType> temp_r;
+    vector<PosType> temp_dr;
 
     std::string Name;
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(source), Rmax(1e6), Rmax2(1e12)
+      : Origin(source)//, Rmax(1e6), Rmax2(1e12)
     {  }
 
     ///virutal destructor
@@ -161,8 +156,8 @@ namespace qmcplusplus {
     inline string getName() const { return Name;}
     ///set the name of table
     inline void setName(const string& tname) { Name = tname;}
-    ///set the maximum radius
-    inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
+    /////set the maximum radius
+    //inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
     ///returns the reference the origin
     const ParticleSet& origin() const { return Origin;}
 
@@ -209,6 +204,9 @@ namespace qmcplusplus {
     virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
 
     ///evaluate the temporary pair relations
+    virtual void moveby(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
+
+    ///evaluate the distance tables with a sphere move
     virtual void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
 
     ///update the distance table by the pair relations
@@ -312,7 +310,10 @@ namespace qmcplusplus {
 	r_m.resize(npairs);
 	//rr_m.resize(npairs);
 	rinv_m.resize(npairs);
+
 	Temp.resize(N[SourceIndex]);
+        temp_r.resize(N[SourceIndex]);
+        temp_dr.resize(N[SourceIndex]);
       } else {
 #ifdef USE_FASTWALKER
 	dr2_m.resize(npairs,nw);

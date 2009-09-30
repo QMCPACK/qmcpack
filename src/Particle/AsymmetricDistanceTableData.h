@@ -26,14 +26,16 @@ namespace qmcplusplus {
    * The template parameter BC provides BC::apply member function
    * to evaluate Cartesian distances.
    */
-  template<class BC>
-  struct AsymmetricDTD: public DistanceTableData {
-
+  template<typename T, unsigned D, int SC>
+  struct AsymmetricDTD
+  : public DTD_BConds<T,D,SC>, public DistanceTableData
+  {
     const ParticleSet& Target;
-
     AsymmetricDTD(const ParticleSet& source, 
-		  const ParticleSet& target): DistanceTableData(source,target),
-					       Target(target){
+		  const ParticleSet& target)
+      : DTD_BConds<T,D,SC>(source.Lattice), DistanceTableData(source,target)
+        , Target(target)
+    {
       create(1);
     }
 
@@ -101,21 +103,28 @@ namespace qmcplusplus {
     //}
 
     ///not so useful inline but who knows
-    inline void evaluate(const ParticleSet& P){
-      //reset(Origin.getTotalNum(),P.getTotalNum(),1);
-      int nn=0;
-      for(int i=0; i<N[SourceIndex]; i++) {
-	PosType r0(Origin.R[i]);
-	for(int j=0; j<N[VisitorIndex]; j++,nn++) {
-	  PosType drij(P.R[j]-r0);
-	  RealType sep2(BC::apply(Origin.Lattice,drij));
-	  RealType sep(sqrt(sep2));
-	  r_m[nn]    = sep;
-	  //rr_m[nn]   = sep2;
-	  rinv_m[nn] = 1.0/sep;
-	  dr_m[nn]   = drij;
-	}
-      }
+    inline void evaluate(const ParticleSet& P)
+    {
+      for(int i=0,ij=0; i<N[SourceIndex]; i++) 
+        for(int j=0; j<N[VisitorIndex]; j++,ij++) 
+          dr_m[ij]=P.R[j]-Origin.R[i];
+      //BC::apply(Origin.Lattice,dr_m,r_m,rinv_m);
+      DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
+
+      ////reset(Origin.getTotalNum(),P.getTotalNum(),1);
+      //int nn=0;
+      //for(int i=0; i<N[SourceIndex]; i++) {
+      //  PosType r0(Origin.R[i]);
+      //  for(int j=0; j<N[VisitorIndex]; j++,nn++) {
+      //    PosType drij(P.R[j]-r0);
+      //    RealType sep2(BC::apply(Origin.Lattice,drij));
+      //    RealType sep(sqrt(sep2));
+      //    r_m[nn]    = sep;
+      //    //rr_m[nn]   = sep2;
+      //    rinv_m[nn] = 1.0/sep;
+      //    dr_m[nn]   = drij;
+      //  }
+      //}
     }
 
     ///evaluate the temporary pair relations
@@ -123,17 +132,27 @@ namespace qmcplusplus {
       activePtcl=jat;
       for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex]) {
 	PosType drij(rnew-Origin.R[iat]);
-	RealType sep2(BC::apply(Origin.Lattice,drij));
-	RealType sep(sqrt(sep2));
+	//RealType sep2(BC::apply(Origin.Lattice,drij));
+	RealType sep(sqrt(DTD_BConds<T,D,SC>::apply_bc(drij)));
 	Temp[iat].r1=sep;
-	//Temp[iat].rr1=sep2;
 	Temp[iat].rinv1=1.0/sep;
 	Temp[iat].dr1=drij;
-	Temp[iat].r0=r_m[loc];
-	Temp[iat].rinv0=rinv_m[loc];
-	Temp[iat].dr0=dr_m[loc];
+	//Temp[iat].r0=r_m[loc];
+	//Temp[iat].rinv0=rinv_m[loc];
+	//Temp[iat].dr0=dr_m[loc];
       }
     }
+
+    ///evaluate the temporary pair relations
+    inline void moveby(const ParticleSet& P, const PosType& displ, IndexType jat) 
+    {
+      activePtcl=jat;
+      for(int ic=0, loc=jat; ic<N[SourceIndex]; ic++,loc+=N[VisitorIndex]) 
+        temp_dr[ic]=displ+dr_m[loc];
+      DTD_BConds<T,D,SC>::apply_bc(temp_dr,temp_r);
+      //DTD_BConds<T,D,SC>::get_min_distanceX(P.Lattice,Temp);
+    }
+
 
     ///evaluate the temporary pair relations 
     inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) 
@@ -153,8 +172,8 @@ namespace qmcplusplus {
       for(int iat=0,loc=jat; iat<N[SourceIndex]; iat++, loc += N[VisitorIndex]) 
       {
 	r_m[loc]=Temp[iat].r1;
-	//rr_m[loc]=Temp[iat].rr1;
-	rinv_m[loc]=Temp[iat].rinv1;
+	rinv_m[loc]=1/Temp[iat].r1;
+	//rinv_m[loc]=Temp[iat].rinv1;
 	dr_m[loc]=Temp[iat].dr1;
       }
     }

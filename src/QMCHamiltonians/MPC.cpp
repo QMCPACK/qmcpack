@@ -84,6 +84,9 @@ namespace qmcplusplus {
     Array<complex<double>,3> GBox(N,N,N);
     // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
     
+    //create BC handler
+    DTD_BConds<double,3,SUPERCELL_BULK> mybc(PtclRef->Lattice);
+
     // Fill the real-space array with f(r)
     double Ninv = 1.0/(double)N;
     TinyVector<double,3> u, r;
@@ -94,8 +97,9 @@ namespace qmcplusplus {
 	for (int iz=0; iz<N; iz++) {
 	  u[2] = Ninv*iz;
 	  r = PtclRef->Lattice.toCart (u);
-	  DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->Lattice, r);
-	  double rmag = std::sqrt(dot(r,r));
+	  //DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->Lattice, r);
+	  //double rmag = std::sqrt(dot(r,r));
+	  double rmag = std::sqrt(mybc.apply_bc(r));
 	  if (rmag < L) 
 	    rBox(ix,iy,iz) = -0.5*rmag*rmag*Linv3 + 1.5*Linv;
 	  else
