@@ -176,7 +176,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     ///set UseBoundBox
-    void setBoundBox(bool open);
+    void setBoundBox(bool yes);
 
     /** check bounding box
      * @param rb cutoff radius to check the condition

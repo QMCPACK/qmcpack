@@ -149,9 +149,9 @@ namespace qmcplusplus {
     return true;
   }
 
-  void ParticleSet::setBoundBox(bool open)
+  void ParticleSet::setBoundBox(bool yes)
   {
-    UseBoundBox=!open;
+    UseBoundBox=yes;
   }
 
   void ParticleSet::checkBoundBox(RealType rb)
