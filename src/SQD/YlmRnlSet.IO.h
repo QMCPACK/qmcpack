@@ -20,7 +20,9 @@
 #define OHMMS_YLMRNLSET_ONGRID_IO_H
 
 #ifdef HAVE_LIBHDF5
-#include "Numerics/HDFNumericAttrib.h"
+#include "HDFVersion.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
 #else
 #include "OhmmsPETE/OhmmsMatrix.h"
 #endif
@@ -136,46 +138,57 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
   string HDFfname = RootName + ".h5";
   hid_t afile = H5Fcreate(HDFfname.c_str(),H5F_ACC_TRUNC,
 			  H5P_DEFAULT,H5P_DEFAULT);
- 
+
+
   int orbindex = 0;
   //main group  
   hid_t group_id = H5Gcreate(afile,"radial_basis_states",0);
+  {
+    HDFAttribIO<double> r_out(CuspParam);
+    r_out.write(group_id,"cusp");
+  }
+
+  HDFVersion res_version(0,1); //start using major=0 and minor=4
+  res_version.write(afile,"version");
+
   //output grid information
-  hid_t group_id_grid = H5Gcreate(group_id,"grid",0);
-  Vector<int> grid_type(1);
-  Vector<double> grid_params(3);
-  grid_params[0] = m_grid->rmin();
-  grid_params[1] = m_grid->rmax();
-  grid_params[2] = static_cast<double>(m_grid->size());
+  //Vector<double> grid_params(3);
+  //grid_params[0] = m_grid->rmin();
+  //grid_params[1] = m_grid->rmax();
+  //grid_params[2] = static_cast<double>(m_grid->size());
+  //HDFAttribIO<Vector<int> > GridHDFTypeOut(grid_type);
+  //GridHDFTypeOut.write(group_id_grid,"grid_type");
+  //HDFAttribIO<Vector<double> > GridHDFParamOut(grid_params);
+  //GridHDFParamOut.write(group_id_grid,"params");
 
-  if(GridType == "linear")
-    grid_type[0] = 1;
-  else if(GridType == "log")
-    grid_type[0] = 2;
-
-  HDFAttribIO<Vector<int> > GridHDFTypeOut(grid_type);
-  GridHDFTypeOut.write(group_id_grid,"grid_type");
-  HDFAttribIO<Vector<double> > GridHDFParamOut(grid_params);
-  GridHDFParamOut.write(group_id_grid,"params");
-  H5Gclose(group_id_grid);
   //output orbital information
   //output only unique radial functions
+ 
+  int rmax_safe=0;
   for(int orb=0; orb<NumUniqueOrb; orb++){
     char grpname[128];
     sprintf(grpname,"orbital%04d",orb);
     hid_t group_id_orb = H5Gcreate(group_id,grpname,0);
    
-    //output the eigenvalue
-    Vector<double> EigVal(1);
-    EigVal[0] = eigVal[orbindex];
-    HDFAttribIO<Vector<double> > EigValHDFOut(EigVal);
-    EigValHDFOut.write(group_id_orb,"eigenvalue");
+    double tt=0.0;
+    //if(!L[orbindex]) tt=-CuspParam;
+    HDFAttribIO<double> r_out(tt);
+    //r_out.write(group_id_orb,"cusp");
 
-    //for qmc code, the radial function S(r) = R(r)/r^l = u(r)/r^{l+1}
-    Vector<int> Power(1);
-    Power[0] = 1+L[orbindex];
-    HDFAttribIO<Vector<int> > PowerHDFOut(Power);
-    PowerHDFOut.write(group_id_orb,"power");
+    tt=eigVal[orbindex];
+    r_out.write(group_id_orb,"eigenvalue");
+
+    //for qmc code, the radial function u(r)/r^{l+1}
+    //Note that we are print out u(r) not  
+    //int power_raised=L[orbindex]+1;
+    //HDFAttribIO<int> i_out(power_raised);
+    //i_out.write(group_id_orb,"power");
+
+    //output the eigenvalue
+    //Vector<double> EigVal(1);
+    //EigVal[0] = eigVal[orbindex];
+    //HDFAttribIO<Vector<double> > EigValHDFOut(EigVal);
+    //EigValHDFOut.write(group_id_orb,"eigenvalue");
 
     //ouptput quantum numbers
     Vector<int> QuantumNo(3);
@@ -187,23 +200,60 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     QuantumNoHDFOut.write(group_id_orb,"quantum_numbers");
 
     //vector to store the radial orbital
-    Vector<double> rad_orb;  
     //determine the maximum radius of the orbital
-    int max_rad = m_grid->size()-1;
-    while(fabs(psi[orbindex](max_rad)) < 1e-12) max_rad--;   
-    max_rad += 2;
-    rad_orb.resize(max_rad);
- 
-    for(int i=0; i<rad_orb.size(); i++)
-      rad_orb(i) = psi[orbindex](i);
-    //output radial orbital
-    HDFAttribIO<Vector<double> > RadOrbOut(rad_orb);
-    RadOrbOut.write(group_id_orb,"radial_orbital");
-    
+    //max_rad += 2;
+    //rad_orb.resize(max_rad);
+    //
+    vector<double> uofr(m_grid->size(),0.0);  
+    HDFAttribIO<vector<double> > uofr_out(uofr);
+    for(int i=0; i<m_grid->size();++i) uofr[i] = psi[orbindex](i);
+    uofr_out.write(group_id_orb,"uofr");
+
+    //test numerical derivatives to detect the uptake
+    int max_rad = m_grid->size()-2;
+    while(abs((uofr[max_rad]-uofr[max_rad-1])/((*m_grid)[max_rad]-(*m_grid)[max_rad-1])) < 1e-4) max_rad--;   
+    rmax_safe=std::max(rmax_safe,max_rad);
+    cout << "Safe cutoff " << (*m_grid)[max_rad] << endl;
+
+    int l_plus_one= 1+L[orbindex];
+    for(int i=1;i<m_grid->size(); ++i) uofr[i] = uofr[i]/pow((*m_grid)[i],l_plus_one);
+    uofr[0]=uofr[1];
+    if(L[orbindex]==0) uofr[0] += CuspParam*((*m_grid)[1]-(*m_grid)[0]);
+
+    uofr_out.write(group_id_orb,"radial_orbital");
+
+    HDFAttribIO<int> PowerHDFOut(l_plus_one);
+    PowerHDFOut.write(group_id_orb,"power");
+
     H5Gclose(group_id_orb);   
     orbindex += IDcount[orb];  
-
   }
+
+  hid_t group_id_grid = H5Gcreate(group_id,"grid",0);
+  {
+    string gtype_copy=GridType+'\0';
+    HDFAttribIO<string> gtypestr(gtype_copy);
+    gtypestr.write(group_id_grid,"type");
+
+    double tt=m_grid->rmin();
+
+    HDFAttribIO<double> r_out(tt);
+    r_out.write(group_id_grid,"ri");
+    tt=m_grid->rmax();
+    r_out.write(group_id_grid,"rf");
+    //write out the safe cutoff
+    tt=(*m_grid)[rmax_safe];
+    r_out.write(group_id_grid,"rmax_safe");
+
+    int npts=m_grid->size();
+    HDFAttribIO<int> i_out(npts);
+    i_out.write(group_id_grid,"npts");
+
+    npts=rmax_safe;
+    i_out.write(group_id_grid,"npts_safe");
+  }
+
+  H5Gclose(group_id_grid);
 
   H5Gclose(group_id);
   H5Fclose(afile); 
@@ -324,16 +374,16 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
       xmlNewProp(p4,(const xmlChar*)"expandYlm",(const xmlChar*)"no");
       xmlNewProp(p4,(const xmlChar*)"href",(const xmlChar*)fnameHDF5.c_str());
 
-      {//grid
-        std::ostringstream s1,s2,s3; 
-        s1<<m_grid->rmin(); s2<<m_grid->rmax(); s3<< m_grid->size();
-        xmlNodePtr p5 = xmlNewNode(NULL, (const xmlChar*) "grid");
-        xmlNewProp(p5,(const xmlChar*)"type",(const xmlChar*)GridType.c_str());
-        xmlNewProp(p5,(const xmlChar*)"ri",(const xmlChar*)s1.str().c_str());
-        xmlNewProp(p5,(const xmlChar*)"rf",(const xmlChar*)s2.str().c_str());
-        xmlNewProp(p5,(const xmlChar*)"npts",(const xmlChar*)s3.str().c_str());
-        xmlAddChild(p4,p5);
-      }
+      //{//grid
+      //  std::ostringstream s1,s2,s3; 
+      //  s1<<m_grid->rmin(); s2<<m_grid->rmax(); s3<< m_grid->size();
+      //  xmlNodePtr p5 = xmlNewNode(NULL, (const xmlChar*) "grid");
+      //  xmlNewProp(p5,(const xmlChar*)"type",(const xmlChar*)GridType.c_str());
+      //  xmlNewProp(p5,(const xmlChar*)"ri",(const xmlChar*)s1.str().c_str());
+      //  xmlNewProp(p5,(const xmlChar*)"rf",(const xmlChar*)s2.str().c_str());
+      //  xmlNewProp(p5,(const xmlChar*)"npts",(const xmlChar*)s3.str().c_str());
+      //  xmlAddChild(p4,p5);
+      //}
 
       //basisGroups
       int nup = 0; int ndown = 0; int nbasis = -1;   
