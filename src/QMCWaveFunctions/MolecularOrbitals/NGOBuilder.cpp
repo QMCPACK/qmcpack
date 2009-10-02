@@ -12,7 +12,9 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
+#include <HDFVersion.h>
 #include "Utilities/OhmmsInfo.h"
+#include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/GaussianBasisSet.h"
@@ -31,53 +33,125 @@ namespace qmcplusplus {
     return myclone;
   }
 
-  NGOBuilder::NGOBuilder(xmlNodePtr cur): 
-    Normalized(true),m_rcut(-1.0), m_infunctype("Gaussian"), m_fileid(-1){
-      if(cur != NULL) {
-        putCommon(cur);
-      }
+  NGOBuilder::NGOBuilder(xmlNodePtr cur)
+    : Normalized(true),m_orbitals(0),input_grid(0)
+      ,m_rcut(-1.0), m_infunctype("Gaussian")
+      , m_fileid(-1)
+  {
+      if(cur != NULL) putCommon(cur);
   }
+
   NGOBuilder::~NGOBuilder()
   {
     if(m_fileid>-1) H5Fclose(m_fileid);
+    if(input_grid) delete input_grid;
   }
 
-  bool 
-    NGOBuilder::putCommon(xmlNodePtr cur) {
-      string normin("yes");
-      string afilename("0");
-      OhmmsAttributeSet aAttrib;
-      aAttrib.add(normin,"normalized");
-      aAttrib.add(m_infunctype,"type");
-      aAttrib.add(afilename,"href"); aAttrib.add(afilename,"src");
-      bool success=aAttrib.put(cur);
+  bool NGOBuilder::putCommon(xmlNodePtr cur) 
+  {
+    string normin("yes");
+    string afilename("0");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(normin,"normalized");
+    aAttrib.add(m_infunctype,"type");
+    aAttrib.add(afilename,"href"); aAttrib.add(afilename,"src");
+    bool success=aAttrib.put(cur);
 
-      //set the noramlization
-      Normalized=(normin=="yes");
+    //set the noramlization
+    Normalized=(normin=="yes");
 
-      if(afilename.find("h5")<afilename.size())
-        m_fileid = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      else
-        m_fileid=-1;
+    if(afilename.find("h5")<afilename.size())
+    {
+      m_fileid = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      //current version
+      HDFVersion res_version(0,1);
+      HDFVersion in_version(0,0); //start using major=0 and minor=4
+      herr_t status = H5Eset_auto(NULL, NULL);
+      in_version.read(m_fileid,hdf::version);
 
-      return success;
+      if(in_version<res_version) 
+      {
+        APP_ABORT("NGOBuilder::putCommon Old format is not supported. Please rerun SQD if the output is produced by it");
+      }
+
+      app_log() << "  " << afilename <<  " version " << in_version << endl;
     }
+    else
+      m_fileid=-1;
+
+
+    return success;
+  }
 
   void 
     NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter) { 
-    m_orbitals = oset;
-    m_species = acenter;
-  }
-
-  bool 
-    NGOBuilder::addGrid(xmlNodePtr cur) {
-    if(!m_orbitals) {
-      ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
-      return false;
+      m_orbitals = oset;
+      m_species = acenter;
     }
 
-    GridType *agrid = OneDimGridFactory::createGrid(cur);
-    m_orbitals->Grids.push_back(agrid);
+  bool NGOBuilder::addGrid(xmlNodePtr cur) 
+  {
+    if(!m_orbitals) 
+    {
+      APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
+    }
+
+    if(m_fileid<0)
+    {
+      GridType *agrid = OneDimGridFactory::createGrid(cur);
+      m_orbitals->Grids.push_back(agrid);
+    }
+    else
+    {
+      app_log() << "   Grid is created by the input paremters in h5" << endl;
+      hid_t gid = H5Gopen(m_fileid,"radial_basis_states/grid");
+      string gridtype;
+      HDFAttribIO<string> gtypestr(gridtype);
+      gtypestr.read(gid,"type");
+
+      int npts=0;
+      RealType ri=0.0,rf=10.0,rmax_safe=10,tt=0;
+      HDFAttribIO<double> ri_in(tt);
+      ri_in.read(gid,"ri");ri=tt;
+      ri_in.read(gid,"rf");rf=tt;
+      ri_in.read(gid,"rmax_safe");rmax_safe=tt;
+
+      HDFAttribIO<int> n_in(npts);
+      n_in.read(gid,"npts");
+
+      if(gridtype.empty())
+      {
+        APP_ABORT("Grid type is not specified.");
+      }
+
+      if(gridtype == "log")
+      {
+        app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << endl;
+        input_grid = new LogGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        //GridType *agrid = new LinearGrid<RealType>;
+        //agrid->set(0.0,rmax_safe,rmax_safe/0.01);
+        //m_orbitals->Grids.push_back(agrid);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
+      else if(gridtype == "linear")
+      {
+        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << endl;
+        input_grid = new LinearGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
+
+      //if(!input_grid)
+      //{
+      //  APP_ABORT("Grid is not defined.");
+      //}
+
+      //using 0.01 for the time being
+    }
+
     return true;
   }
 
@@ -186,32 +260,46 @@ namespace qmcplusplus {
     char grpname[128];
     sprintf(grpname,"radial_basis_states/%s",dsname.c_str());
     hid_t group_id_orb=H5Gopen(m_fileid,grpname);
-    int rinv_p=0;
-    HDFAttribIO<int> ir(rinv_p);
-    ir.read(group_id_orb,"power");
+
+    double cusp_cond=0.0;
+    HDFAttribIO<double> r_in(cusp_cond);
+    r_in.read(group_id_orb,"cusp");
+    //int rinv_p=0;
+    //HDFAttribIO<int> ir(rinv_p);
+    //ir.read(group_id_orb,"power");
 
     Vector<double> rad_orb;
     HDFAttribIO<Vector<double> > rin(rad_orb);
     rin.read(group_id_orb,"radial_orbital");
 
     H5Gclose(group_id_orb);
+    //if(input_grid)
+    //{
+    //  int imax = rad_orb.size()-1;
+    //  RadialOrbitalType torb(input_grid,rad_orb);
+    //  RealType yprime_i = (rad_orb[imin+1]-rad_orb[imin])/((input_grid->r(imin+1)-input_grid->r(imin)));
+    //  torb.spline(imin,yprime_i,imax,0.0);
 
-    GridType* agrid = m_orbitals->Grids[0];
-    if(rinv_p != 0)
-      for(int ig=0; ig<rad_orb.size(); ig++) 
-        rad_orb[ig] *= std::pow(agrid->r(ig),-rinv_p);
+    //  GridType* agrid = m_orbitals->Grids[0];
+    //  vector<double> orb_linear(agrid->size(),0.0);
+    //  for(int ig=0; ig<agrid->size()-2; ++ig) orb_linear[ig]=torb.f(agrid->r(ig));
+    //  RadialOrbitalType *radorb = new RadialOrbitalType(agrid,orb_linear);
+    //  radorb->spline(imin,yprime_i,agrid->size()-2,0.0);
+    //  m_orbitals->Rnl.push_back(radorb);
+    //}
+    //else
+    {
+      GridType* agrid = m_orbitals->Grids[0];
+      int imax = rad_orb.size()-1;
+      RadialOrbitalType *radorb = new RadialOrbitalType(agrid,rad_orb);
+      //calculate boundary condition, assume derivates at endpoint are 0.0
+      RealType yprime_i = (rad_orb[imin+1]-rad_orb[imin])/((agrid->r(imin+1)-agrid->r(imin)));
+      cout << "#### Checking CUSP " << yprime_i << " " << cusp_cond << endl;
+      radorb->spline(imin,yprime_i,imax,0.0);
+      //radorb->spline(imin,cusp_cond,imax,0.0);
+      m_orbitals->Rnl.push_back(radorb);
+    }
 
-    //last valid index for radial grid
-    int imax = rad_orb.size()-1;
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid,rad_orb);
-    //calculate boundary condition, assume derivates at endpoint are 0.0
-    RealType yprime_i = rad_orb[imin+1]-rad_orb[imin];
-    if(std::abs(yprime_i)<1e-10)  yprime_i = 0.0;
-    yprime_i /= (agrid->r(imin+1)-agrid->r(imin)); 
-    //set up 1D-Cubic Spline
-    radorb->spline(imin,yprime_i,imax,0.0);
-
-    m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(m_nlms);
 
     //ofstream dfile("spline.dat");

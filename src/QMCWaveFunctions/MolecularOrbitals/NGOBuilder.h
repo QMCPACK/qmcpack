@@ -96,6 +96,8 @@ namespace qmcplusplus {
     bool Normalized;
     ///the radial orbitals
     CenteredOrbitalType* m_orbitals;
+    ///input grid in case transform is needed
+    GridType *input_grid;
     ///maximum cutoff
     RealType m_rcut;
     ///the quantum number of this node
