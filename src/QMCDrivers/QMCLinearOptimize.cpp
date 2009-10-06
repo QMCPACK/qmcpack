@@ -35,9 +35,9 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h),
         PartID(0), NumParts(1), WarmupBlocks(10),
         SkipSampleGeneration("no"), hamPool(hpool),
-        optTarget(0), vmcEngine(0),Max_iterations(10),
-        wfNode(NULL), optNode(NULL), exp0(-9), tries(6),alpha(1e-4),
-        costgradtol(1e-4), xi(0.5), lm("no"), rp("no"), ug("no"), rescaleparams(false),linemin(false),usegrad(false)
+        optTarget(0), vmcEngine(0),Max_iterations(3),
+        wfNode(NULL), optNode(NULL), exp0(-5), tries(1),alpha(1e-4),
+        costgradtol(1e-4), xi(0.5), lm("yes"), rp("no"), ug("no"), rescaleparams(false),linemin(true),usegrad(false)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
