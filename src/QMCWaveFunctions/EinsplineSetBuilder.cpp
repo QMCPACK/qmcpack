@@ -964,10 +964,13 @@ namespace qmcplusplus {
       APP_ABORT("EinsplineSetBuilder::TileIons()");
     }
     if (myComm->rank() == 0) {
-      fprintf (stderr, "Supercell ion positions = \n");
-      for (int i=0; i<IonPos.size(); i++)
-	fprintf (stderr, "   [%14.12f %14.12f %14.12f]\n",
-		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+      fprintf (stderr, "Supercell reduced ion positions = \n");
+      for (int i=0; i<IonPos.size(); i++) {
+	PosType u = SuperCell.toUnit(IonPos[i]);
+	fprintf (stderr, "   %14.10f %14.10f %14.10f\n",
+		 u[0], u[1], u[2]);
+	//		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+      }
     }
   }
 

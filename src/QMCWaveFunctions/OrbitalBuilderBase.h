@@ -71,6 +71,9 @@ namespace qmcplusplus {
     static std::string basis_tag;
     /// the element name for a basis function
     static std::string basisfunc_tag;
+    /// the element name for an ion wavefunction
+    static std::string ionorb_tag;
+
     //@}
 
     /** constructor

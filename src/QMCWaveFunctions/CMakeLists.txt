@@ -21,6 +21,8 @@ SET(JASTROW_SRCS
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
   Jastrow/singleRPAJastrowBuilder.cpp
+  IonOrbital.cpp
+  IonOrbitalBuilder.cpp
 )
 
 #common jastrows for three D

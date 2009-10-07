@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+#include "QMCWaveFunctions/IonOrbitalBuilder.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
@@ -87,6 +88,12 @@ namespace qmcplusplus {
         jbuilder->setReportLevel(ReportLevel);
         success = jbuilder->put(cur);
         addNode(jbuilder,cur);
+      }
+      else if (cname == OrbitalBuilderBase::ionorb_tag) {
+	IonOrbitalBuilder *builder = new IonOrbitalBuilder 
+	  (*targetPtcl, *targetPsi, ptclPool);
+	success = builder->put(cur);
+	addNode(builder,cur);
       }
       else if ((cname ==  "Molecular") || (cname =="molecular"))
       {

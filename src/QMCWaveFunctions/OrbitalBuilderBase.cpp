@@ -48,6 +48,8 @@ namespace qmcplusplus {
 
   string OrbitalBuilderBase::basisfunc_tag="phi";
 
+  string OrbitalBuilderBase::ionorb_tag="ionwf";
+
   OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): 
     MPIObjectBase(psi.getCommunicator()),
   targetPtcl(p), targetPsi(psi), myNode(NULL)
