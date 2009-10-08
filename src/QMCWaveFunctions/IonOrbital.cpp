@@ -116,7 +116,6 @@ namespace qmcplusplus {
 		     ParticleSet::ParticleGradient_t& dG,
 		     ParticleSet::ParticleLaplacian_t& dL)
   {
-    cerr << "ratio (P, iat, dG, dL) called.\n";
     return std::exp(logRatio (P, iat, dG, dL));
   }
 
@@ -162,13 +161,10 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleGradient_t& dG,
 		       ParticleSet::ParticleLaplacian_t& dL)
   {
-    cerr << "logRatio called.\n";
     int icent = ParticleCenter[iat];
     if (icent == -1) return 0.0;
     int index = d_table->M[icent] + iat;
     RealType a = ParticleAlpha[iat];
-    RealType olddist = d_table->Temp[icent].r0;
-    PosType  olddisp = d_table->Temp[icent].dr0;
     RealType newdist = d_table->Temp[icent].r1;
     PosType  newdisp = d_table->Temp[icent].dr1;
 
