@@ -328,6 +328,8 @@ namespace qmcplusplus {
   IonOrbital::makeClone(ParticleSet& tqp) const
   {
     IonOrbital* j1copy=new IonOrbital(CenterRef,tqp);
+    j1copy->ParticleAlpha = ParticleAlpha;
+    j1copy->ParticleCenter = ParticleCenter;
     return j1copy;
   }
   
