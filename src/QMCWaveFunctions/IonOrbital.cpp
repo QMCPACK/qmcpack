@@ -95,7 +95,6 @@ namespace qmcplusplus {
     int icent = ParticleCenter[iat];
     if (icent == -1) return 1.0;
     int index = d_table->M[icent] + iat;
-    RealType olddist = d_table->Temp[icent].r0;
     RealType newdist = d_table->Temp[icent].r1;
     curVal = ParticleAlpha[iat]*(newdist*newdist);
 
