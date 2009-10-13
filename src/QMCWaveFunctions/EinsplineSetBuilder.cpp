@@ -683,6 +683,9 @@ namespace qmcplusplus {
     ///////////////////////////////////////////////
     cur = cur->children;
     int spinSet = -1;
+    vector<int> Occ_Old(0,0);
+    Occ.resize(0,0);
+    bool NewOcc(false);
     while (cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "occupation") {
@@ -691,7 +694,9 @@ namespace qmcplusplus {
         oAttrib.add(occ_mode,"mode");
         oAttrib.add(spinSet,"spindataset");
         oAttrib.put(cur);
-	if(occ_mode != "ground") {
+	if(occ_mode == "excited"){
+          putContent(Occ,cur);
+        } else if(occ_mode != "ground") {
 	  app_error() << "Only ground state occupation currently supported "
 		      << "in EinsplineSetBuilder.\n";
           APP_ABORT("EinsplineSetBuilder::createSPOSet");
@@ -699,12 +704,17 @@ namespace qmcplusplus {
       }
       cur = cur->next;
     }
+    if (Occ != Occ_Old){
+      NewOcc=true;
+      Occ_Old = Occ;
+    }
+    else NewOcc=false;
 
 
     H5OrbSet set(H5FileName, spinSet, numOrbs);
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
     iter = SPOSetMap.find (set);
-    if (iter != SPOSetMap.end()) {
+    if ((iter != SPOSetMap.end() ) && (!NewOcc)) {
       app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
 		<< "cloning EinsplineSet object.\n";
       return iter->second->makeClone();
@@ -804,7 +814,7 @@ namespace qmcplusplus {
 
 #pragma omp critical(read_einspline_orbs)
       {
-	if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead))
+	if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead) && (!NewOcc) )
 	  CopyBands(numOrbs);
 	else {
 	  // Now, figure out occupation for the bands and read them
@@ -1359,12 +1369,32 @@ namespace qmcplusplus {
 	  SortBands.push_back(band);
       }
     }
+
     // Now sort the bands by energy
     if (sortBands) {
       app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
-    
+
+    // To get the occupations right. 
+    vector<int> Removed(0,0);
+    vector<int> Added(0,0);
+    for(int ien=0;ien<Occ.size();ien++){
+      if (Occ[ien]<0) Removed.push_back(-Occ[ien]);
+      else if (Occ[ien]>0) Added.push_back(Occ[ien]);
+    }
+    if(Added.size()-Removed.size() != 0) {
+      app_log()<<"need to add and remove same number of orbitals. "<< Added.size()<<" "<<Removed.size()<<endl;
+      APP_ABORT("ChangedOccupations");
+    }
+    for(int sw=0;sw<Removed.size();sw++){
+      app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
+      BandInfo tempband(SortBands[Removed[sw]-1]);
+      SortBands[Removed[sw]-1] = SortBands[Added[sw]-1];
+      SortBands[Added[sw]-1] = tempband;
+    }
+
+
     int orbIndex = 0;
     int numOrbs = 0;
     NumValenceOrbs=0;

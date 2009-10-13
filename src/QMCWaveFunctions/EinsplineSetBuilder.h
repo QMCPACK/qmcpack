@@ -150,6 +150,7 @@ namespace qmcplusplus {
     FormatType Format;
     TinyVector<int,2> Version;
     string parameterGroup, ionsGroup, eigenstatesGroup;
+    vector<int> Occ;
     bool HaveLocalizedOrbs;
     bool ReadOrbitalInfo ();
     bool ReadOrbitalInfo_ESHDF ();
