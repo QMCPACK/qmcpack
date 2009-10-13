@@ -294,9 +294,7 @@ namespace qmcplusplus {
       RadialOrbitalType *radorb = new RadialOrbitalType(agrid,rad_orb);
       //calculate boundary condition, assume derivates at endpoint are 0.0
       RealType yprime_i = (rad_orb[imin+1]-rad_orb[imin])/((agrid->r(imin+1)-agrid->r(imin)));
-      cout << "#### Checking CUSP " << yprime_i << " " << cusp_cond << endl;
       radorb->spline(imin,yprime_i,imax,0.0);
-      //radorb->spline(imin,cusp_cond,imax,0.0);
       m_orbitals->Rnl.push_back(radorb);
     }
 
