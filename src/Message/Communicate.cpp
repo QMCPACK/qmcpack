@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cstdio>
 #include <Platforms/sysutil.h>
+#include <cstdio>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;

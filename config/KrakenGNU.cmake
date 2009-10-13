@@ -18,8 +18,8 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/3.0/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/3.3/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/3.3/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-fopenmp -O3 -ftemplate-depth-60 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
