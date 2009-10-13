@@ -20,6 +20,7 @@
  */
 #include "config.h"
 #include <cstdlib>
+#include <cstdio>
 #include "Utilities/OhmmsInfo.h"
 
 bool OhmmsInfo::Writeable = false;

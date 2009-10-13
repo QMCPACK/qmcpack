@@ -19,6 +19,7 @@
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 #include <iostream>
+#include <cstdio>
 #include <Platforms/sysutil.h>
 
 //static data of TagMaker::CurrentTag is initialized.
