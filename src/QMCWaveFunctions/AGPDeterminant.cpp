@@ -373,13 +373,15 @@ namespace qmcplusplus {
         //unpaired block Ndown x unpaired
         for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
           psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
-        curRatio=DetRatio(psiM, psiU.data(),iat);
+        //curRatio=DetRatio(psiM, psiU.data(),iat);
+        curRatio=DetRatioByRow(psiM, psiU,iat);
       } 
       else 
       {
         for(int u=0; u<Nup; u++) 
           psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
-        curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
+        //curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
+        curRatio=DetRatioByColumn(psiM, psiD,iat-Nup);
       }
       return curRatio;
     }
@@ -455,8 +457,9 @@ namespace qmcplusplus {
         //psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
       }
 
-      curRatio = DetRatio(psiM_temp, psiU.data(),iat);
-      DetUpdate(psiM_temp,psiU,workV1,workV2,iat,curRatio);
+      //curRatio = DetRatio(psiM_temp, psiU.data(),iat);
+      curRatio = DetRatioByRow(psiM_temp, psiU,iat);
+      InverseUpdateByRow(psiM_temp,psiU,workV1,workV2,iat,curRatio);
 
       std::copy(dpsiU[iat],dpsiU[iat]+Nup,dpsiUv.begin());
       std::copy(d2psiU[iat],d2psiU[iat]+Nup,d2psiUv.begin());
@@ -497,8 +500,9 @@ namespace qmcplusplus {
         //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
       }
 
-      curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
-      DetUpdateTranspose(psiM_temp,psiD,workV1,workV2,d,curRatio);
+      //curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
+      curRatio = DetRatioByColumn(psiM_temp, psiD,d);
+      InverseUpdateByColumn(psiM_temp,psiD,workV1,workV2,d,curRatio);
 
       std::copy(dpsiD[d],dpsiD[d]+Nup,dpsiDv.begin());
       std::copy(d2psiD[d],d2psiD[d]+Nup,d2psiDv.begin());
@@ -534,9 +538,9 @@ namespace qmcplusplus {
       {
         APP_ABORT("Incomplete AGPDeterminant::acceptMove Turn on useDrift " );
         if(iat<Nup)
-          DetUpdate(psiM,psiU,workV1,workV2,iat,curRatio);
+          InverseUpdateByRow(psiM,psiU,workV1,workV2,iat,curRatio);
         else
-          DetUpdateTranspose(psiM,psiD,workV1,workV2,iat-Nup,curRatio);
+          InverseUpdateByColumn(psiM,psiD,workV1,workV2,iat-Nup,curRatio);
         psiM_temp=psiM;
         //psiM = psiM_temp;
       }

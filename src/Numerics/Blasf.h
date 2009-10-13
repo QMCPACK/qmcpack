@@ -20,6 +20,7 @@
 #define OHMMS_BLAS_FUNCTIONDEFS_H
 
 #include <complex>
+#include <cstring>
 using namespace std;
 
 #ifdef ADD_
@@ -53,6 +54,8 @@ using namespace std;
 #define zgetri zgetri_
 #define dgesvd dgesvd_
 #define dggev dggev_
+#define dger dger_
+#define zgeru zgeru_
 #endif 
 
 // declaring Fortran interfaces
@@ -167,6 +170,13 @@ extern "C" {
   void dggev(char *JOBVL,char *JOBVR,int *N,double *A,int *LDA,double *B,int *LDB,double *ALPHAR,double *ALPHAI,
               double *BETA, double *VL,int *LDVL,double *VR,int *LDVR, double *WORK,int *LWORK, int *INFO );
 
+  void dger(const int* m, const int* n, const double* alpha
+      , const double* x, const int* incx, const double* y, const int* incy
+      , double* a, const int* lda);
+
+  void zgeru(const int* m, const int* n, const complex<double>* alpha
+      , const complex<double>* x, const int* incx, const complex<double>* y, const int* incy
+      , complex<double>* a, const int* lda);
 }
 #endif
 

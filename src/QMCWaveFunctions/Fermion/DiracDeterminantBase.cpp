@@ -223,21 +223,14 @@ namespace qmcplusplus {
     UpdateMode=ORB_PBYP_RATIO;
     WorkingIndex = iat-FirstIndex;
     Phi->evaluate(P, iat, psiV);
-#ifdef DIRAC_USE_BLAS
-    return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-#else
-    return curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-#endif
+    return curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
   }
 
   DiracDeterminantBase::GradType 
     DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   {
-    const ValueType* restrict yptr=psiM[iat-FirstIndex];
-    const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
-    GradType rv;
-    for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
-    return rv;
+    WorkingIndex = iat-FirstIndex;
+    return dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
   }
 
   DiracDeterminantBase::GradType 
@@ -450,19 +443,10 @@ namespace qmcplusplus {
   {
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
-
     UpdateMode=ORB_PBYP_PARTIAL;
     
-    const ValueType* restrict vptr = psiV.data();
-    const ValueType* restrict yptr = psiM[WorkingIndex];
-    const GradType* restrict dyptr = dpsiV.data();
-    
-    GradType rv;
-    curRatio = 0.0;
-    for(int j=0; j<NumOrbitals; ++j) {
-      rv       += yptr[j] * dyptr[j];
-      curRatio += yptr[j] * vptr[j];
-    }
+    curRatio=dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+    GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
     grad_iat += (1.0/curRatio) * rv;
     return curRatio;
 
@@ -511,11 +495,7 @@ namespace qmcplusplus {
     WorkingIndex = iat-FirstIndex;
 
     //psiM_temp = psiM;
-#ifdef DIRAC_USE_BLAS
-    curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
-#else
-    curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
-#endif
+    curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
 
     if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
     {
@@ -524,39 +504,16 @@ namespace qmcplusplus {
     }
 
     //update psiM_temp with the row substituted
-    DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
+    InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
 
     //update dpsiM_temp and d2psiM_temp 
-    for(int j=0; j<NumOrbitals; j++) {
-      dpsiM_temp(WorkingIndex,j)=dpsiV[j];
-      d2psiM_temp(WorkingIndex,j)=d2psiV[j];
-    }
-
-    int kat=FirstIndex;
-
-    const ValueType* restrict yptr=psiM_temp.data();
-    const ValueType* restrict d2yptr=d2psiM_temp.data();
-    const GradType* restrict dyptr=dpsiM_temp.data();
-    for(int i=0; i<NumPtcls; i++,kat++) {
-      //This mimics gemm with loop optimization
-      GradType rv;
-      ValueType lap=0.0;
-      for(int j=0; j<NumOrbitals; j++,yptr++) {
-        rv += *yptr * *dyptr++;
-        lap += *yptr * *d2yptr++;
-      }
-
+    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
+    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+    for(int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++) 
+    {
       //using inline dot functions
-      //GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-      //ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
-
-      //Old index: This is not pretty
-      //GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
-      //ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-      //for(int j=1; j<NumOrbitals; j++) {
-      //  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
-      //  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
-      //}
+      GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
+      ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
       dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
@@ -584,11 +541,11 @@ namespace qmcplusplus {
     switch(UpdateMode)
     {
       case ORB_PBYP_RATIO:
-        DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+        InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         break;
       case ORB_PBYP_PARTIAL:
         //psiM = psiM_temp;
-	DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+	InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
 
@@ -626,7 +583,7 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL,
       int iat) {
-    DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+    InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
     for(int j=0; j<NumOrbitals; j++) {
       dpsiM(WorkingIndex,j)=dpsiV[j];
       d2psiM(WorkingIndex,j)=d2psiV[j];
@@ -636,12 +593,6 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++,kat++) {
       GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
       ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
-      //GradType rv =psiM(i,0)*dpsiM(i,0);
-      //ValueType lap=psiM(i,0)*d2psiM(i,0);
-      //for(int j=1; j<NumOrbitals; j++) {
-      //  rv += psiM(i,j)*dpsiM(i,j);
-      //  lap += psiM(i,j)*d2psiM(i,j);
-      //}
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat]; myG[kat]=rv;
       dL[kat] += lap -myL[kat]; myL[kat]=lap;
@@ -679,46 +630,11 @@ namespace qmcplusplus {
   DiracDeterminantBase::ValueType
     DiracDeterminantBase::evaluate(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, 
-        ParticleSet::ParticleLaplacian_t& L){
+        ParticleSet::ParticleLaplacian_t& L)
+    {
 
-      APP_ABORT("  DiracDeterminantBase::evaluate is distabled");
-
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-
-      ValueType CurrentDet;
-      if(NumPtcls==1) {
-        CurrentDet=psiM(0,0);
-        ValueType y=1.0/CurrentDet;
-        psiM(0,0)=y;
-        GradType rv = y*dpsiM(0,0);
-        G(FirstIndex) += rv;
-        L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      } else {
-        CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
-        //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-        
-        const ValueType* restrict yptr=psiM.data();
-        const ValueType* restrict d2yptr=d2psiM.data();
-        const GradType* restrict dyptr=dpsiM.data();
-        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) {
-          GradType rv;
-          ValueType lap=0.0;
-          for(int j=0; j<NumOrbitals; j++,yptr++) {
-            rv += *yptr * *dyptr++;
-            lap += *yptr * *d2yptr++;
-          }
-          //Old index
-          //    GradType rv = psiM(i,0)*dpsiM(i,0);
-          //    ValueType lap=psiM(i,0)*d2psiM(i,0);
-          //    for(int j=1; j<NumOrbitals; j++) {
-          //      rv += psiM(i,j)*dpsiM(i,j);
-          //      lap += psiM(i,j)*d2psiM(i,j);
-          //    }
-          G(iat) += rv;
-          L(iat) += lap - dot(rv,rv);
-        }
-      }
-      return CurrentDet;
+      APP_ABORT("  DiracDeterminantBase::evaluate is disabled");
+      return ValueType();
     }
 
 
@@ -740,18 +656,14 @@ namespace qmcplusplus {
         G(FirstIndex) += rv;
         L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
         LogValue = evaluateLogAndPhase(det,PhaseValue);
-      } else {
+      } 
+      else 
+      {
         LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-        const ValueType* restrict yptr=psiM.data();
-        const ValueType* restrict d2yptr=d2psiM.data();
-        const GradType* restrict dyptr=dpsiM.data();
-        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) {
-          GradType rv;
-          ValueType lap=0.0;
-          for(int j=0; j<NumOrbitals; j++,yptr++) {
-            rv += *yptr * *dyptr++;
-            lap += *yptr * *d2yptr++;
-          }
+        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
+        {
+          GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
+          ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
           G(iat) += rv;
           L(iat) += lap - dot(rv,rv);
         }

@@ -17,78 +17,129 @@
 #define QMCPLUSPLUS_DETERMINANT_OPERATORS_FAST_H
 #include <complex>
 #include <algorithm>
+#include <cstring>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <Numerics/Blasf.h>
-#include <Numerics/DeterminantOperators.h>
-extern "C"
-{
-  void dger_(const int& m, const int& n, const double& alpha
-      , const double* x, const int& incx, const double* y, const int& incy
-      , double* a, const int& lda);
-}
+//extern "C"
+//{
+//  void dger_(const int& m, const int& n, const double& alpha
+//      , const double* x, const int& incx, const double* y, const int& incy
+//      , double* a, const int& lda);
+//}
 namespace qmcplusplus
 {
+  template<typename T> struct const_traits {};
+
+  template<>
+    struct const_traits<double>
+    {
+      typedef double value_type;
+      inline static double zero() {return 0.0;}
+      inline static double one() {return 1.0;}
+      inline static double minus_one() {return -1.0;}
+    };
+
+  template<>
+    struct const_traits<std::complex<double> >
+    {
+      typedef std::complex<double> value_type;
+      inline static std::complex<double> zero() {return value_type();}
+      inline static std::complex<double> one() {return value_type(1.0,0.0);}
+      inline static std::complex<double> minus_one() {return value_type(-1.0,0.0);}
+    };
+
+  //template<typename T>
+  //  inline void det_row_update(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, T c_ratio)
+  //  {
+  //    T ratio_inv=1.0/c_ratio;
+  //    double temp[m], rcopy[m];
+  //    BLAS::gemv('T', m, m, ratio_inv, pinv, m, tv, 1, T(), temp, 1);
+  //    int roffset=rowchanged*m;
+  //    temp[rowchanged]=1.0-ratio_inv;
+  //    std::copy(pinv+roffset,pinv+roffset+m,rcopy);
+  //    for(int i=0,ij=0;i<m;++i)
+  //    {
+  //      T t=temp[i];
+  //      for(int j=0; j<m; ++j) pinv[ij++] -= t*rcopy[j];
+  //    }
+  //  }
 
   template<typename T>
-    inline void det_row_update_ger(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, T c_ratio)
+    inline void det_row_update(T* restrict pinv, const T* restrict tv
+        , int m, int rowchanged, T c_ratio
+        , T* restrict temp, T* restrict rcopy)//pass buffer
     {
-      const T ratio_inv(1.0/c_ratio);
-      T temp[m], rcopy[m];
-      dgemv('T', m, m, ratio_inv, pinv, m, tv, 1, T(), temp, 1);
-      temp[rowchanged]=1.0-ratio_inv;
+      //const T ratio_inv(1.0/c_ratio);
+      c_ratio=1.0/c_ratio;
+      BLAS::gemv('T', m, m, c_ratio, pinv, m, tv, 1, const_traits<T>::zero(), temp, 1);
+      temp[rowchanged]=const_traits<T>::one()-c_ratio;
       memcpy(rcopy,pinv+m*rowchanged,m*sizeof(T));
-      dger_(m,m,-1.0,rcopy,1,temp,1,pinv,m);
+      BLAS::ger(m,m,const_traits<T>::minus_one(),rcopy,1,temp,1,pinv,m);
     }
 
-  template<typename T>
-    inline void det_col_update_ger(T* restrict pinv,  const T* restrict tv, int m, int colchanged, T c_ratio)
-    {
-      const T ratio_inv(1.0/c_ratio);
-      T temp[m], rcopy[m];
-      dgemv('N', m, m, ratio_inv, pinv, m, tv, 1, T(), temp, 1);
-      temp[colchanged]=1.0-ratio_inv;
-      BLAS::copy(m,pinv+colchanged,m,rcopy,1);
-      dger_(m,m,-1.0,temp,1,rcopy,1,pinv,m);
-    }
-
-
-
-  inline double const_one(double c)
-  {
-    return 1.0;
-  }
-
-  inline std::complex<double> const_one(std::complex<double>& c)
-  {
-    return std::complex<double>(1.0,0.0);
-  }
-
+  /** experimental: identical to det_row_update above but using temporary arrays
+   */
   template<typename T>
     inline void det_row_update(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, T c_ratio)
     {
-      const char transa = 'T';
-      const T zero=T();
-      T ratio_inv=1.0/c_ratio;
-      double temp[m], rcopy[m];
-      dgemv(transa, m, m, ratio_inv, pinv, m, tv, 1, zero, temp, 1);
-      int roffset=rowchanged*m;
-      temp[rowchanged]=1.0-ratio_inv;
-      std::copy(pinv+roffset,pinv+roffset+m,rcopy);
-      for(int i=0,ij=0;i<m;++i)
-      {
-        T t=temp[i];
-        for(int j=0; j<m; ++j) pinv[ij++] -= t*rcopy[j];
-      }
+      T temp[m], rcopy[m];
+      c_ratio=1.0/c_ratio;
+      BLAS::gemv('T', m, m, c_ratio, pinv, m, tv, 1, const_traits<T>::zero(), temp, 1);
+      temp[rowchanged]=const_traits<T>::one()-c_ratio;
+      memcpy(rcopy,pinv+m*rowchanged,m*sizeof(T));
+      BLAS::ger(m,m,const_traits<T>::minus_one(),rcopy,1,temp,1,pinv,m);
+    }
+
+
+  template<typename T>
+    inline void det_row_block_update
+    (const T* restrict inv0,  const T* restrict tv, const T* restrict tv_replaced
+     , T* restrict inv
+     ,int n, int m, int rowchanged, T inv_utv)
+    {
+      T temp[n];
+      BLAS::gemv('T', m, n, inv_utv, inv0, m, tv, 1, T(), temp, 1);
+      temp[rowchanged]=1.0-inv_utv;
+      BLAS::ger(m,n,-1.0,tv_replaced,1,temp,1,inv,m);
+    }
+
+  //template<typename T>
+  //  inline void det_col_update(T* pinv,  const T* tv, int m, int colchanged, T c_ratio)
+  //  {
+  //    T ratio_inv=1.0/c_ratio;
+  //    for(int i=0; i<m; ++i)
+  //    {
+  //      if(i==colchanged) continue;
+  //      T temp=T();
+  //      for(int k=0; k<m; ++k) temp += tv[k]*pinv[k*m+i];
+  //      temp *= -ratio_inv;
+  //      for(int k=0; k<m; ++k) pinv[k*m+i]+=temp*pinv[k*m+colchanged];
+  //    }
+  //    for(int k=0; k<m; ++k) pinv[k*m+colchanged] *= ratio_inv;
+  //  }
+  template<typename T>
+    inline void det_col_update(T* restrict pinv,  const T* restrict tv, int m, int colchanged, T c_ratio
+        , T* restrict temp, T* restrict rcopy)
+    {
+      c_ratio=1.0/c_ratio;
+      BLAS::gemv('N', m, m, c_ratio, pinv, m, tv, 1, T(), temp, 1);
+      temp[colchanged]=1.0-c_ratio;
+      BLAS::copy(m,pinv+colchanged,m,rcopy,1);
+      BLAS::ger(m,m,-1.0,temp,1,rcopy,1,pinv,m);
+    }
+
+  template<typename T>
+    inline void det_col_update(T* restrict pinv,  const T* restrict tv, int m, int colchanged, T c_ratio)
+    {
+      T temp[m], rcopy[m];
+      det_col_update(pinv,tv,m,colchanged,c_ratio,temp,rcopy);
     }
 
   template<typename T>
     inline void multidet_row_update(const T* restrict pinv,  const T* restrict tm, const T* ratios
         , T* restrict new_invs, int m, int rowchanged, int howmany)
     {
-      const char transa = 'T';
-      const T zero=T();
       double temp[m], rcopy[m];
       int roffset=rowchanged*m;
       int m2=m*m;
@@ -96,7 +147,7 @@ namespace qmcplusplus
       for(int r=0; r<howmany; ++r)
       {
         T ratio_inv=1.0/ratios[r];
-        dgemv(transa, m, m, ratio_inv, pinv, m, tm+r*m, 1, zero, temp, 1);
+        BLAS::gemv('T', m, m, ratio_inv, pinv, m, tm+r*m, 1, T(), temp, 1);
         temp[rowchanged]=1.0-ratio_inv;
         for(int i=0,ij=0,rtot=r*m2;i<m;++i)
         {
@@ -110,8 +161,6 @@ namespace qmcplusplus
     inline void multidet_row_update(const T* restrict pinv,  const T* restrict tm, const T* ratios
         , T* restrict new_invs, int m, int rowchanged, const INDARRAY& ind)
     {
-      const char transa = 'T';
-      const T zero=T();
       double temp[m], rcopy[m];
       int roffset=rowchanged*m;
       int m2=m*m;
@@ -120,7 +169,7 @@ namespace qmcplusplus
       {
         int r=ind[k];
         T ratio_inv=1.0/ratios[k];
-        dgemv(transa, m, m, ratio_inv, pinv, m, tm+r*m, 1, zero, temp, 1);
+        BLAS::gemv('T', m, m, ratio_inv, pinv, m, tm+r*m, 1, T(), temp, 1);
         temp[rowchanged]=1.0-ratio_inv;
         for(int i=0,ij=0,rtot=r*m2;i<m;++i)
           for(int j=0; j<m; ++j) new_invs[rtot++] = pinv[ij++] - temp[i]*rcopy[j];
@@ -131,16 +180,15 @@ namespace qmcplusplus
     inline void multidet_row_update(const MAT& pinv,  const MAT& tm, const VV& ratios
         , vector<MAT*> new_invs, int m, int rowchanged, const INDARRAY& ind)
     {
-      const char transa = 'T';
       typedef typename MAT::value_type value_type;
-      const value_type zero=value_type();
       value_type temp[m], rcopy[m];
       int roffset=rowchanged*m;
       std::copy(pinv.data()+roffset,pinv.data()+roffset+m,rcopy);
       for(int k=0; k<ind.size(); ++k)
       {
         value_type ratio_inv=1.0/ratios[k];
-        dgemv(transa, m, m, ratio_inv, pinv.data(), m, tm.data()+(ind[k]+m)*m, 1, zero, temp, 1);
+        //dgemv(transa, m, m, ratio_inv, pinv.data(), m, tm.data()+(ind[k]+m)*m, 1, zero, temp, 1);
+        BLAS::gemv('T', m, m, ratio_inv, pinv.data(), m, tm.data()+(ind[k]+m)*m, 1, value_type(), temp, 1);
         temp[rowchanged]=1.0-ratio_inv;
         value_type* restrict t=new_invs[k]->data();
         for(int i=0,ij=0;i<m;++i)
@@ -149,31 +197,11 @@ namespace qmcplusplus
     }
 
 
-
-  template<typename T>
-    inline void det_col_update(T* pinv,  const T* tv, int m, int colchanged, T c_ratio)
-    {
-      T ratio_inv=1.0/c_ratio;
-      for(int i=0; i<m; ++i)
-      {
-        if(i==colchanged) continue;
-        T temp=T();
-        for(int k=0; k<m; ++k) temp += tv[k]*pinv[k*m+i];
-        temp *= -ratio_inv;
-        for(int k=0; k<m; ++k) pinv[k*m+i]+=temp*pinv[k*m+colchanged];
-      }
-      for(int k=0; k<m; ++k) pinv[k*m+colchanged] *= ratio_inv;
-    }
-
-
   template<typename T>
     inline void getRatiosByRowSubstitution(const T* restrict tm_new, const T* restrict r_replaced, T* restrict ratios
         , int m, int howmany)
     {
-      const char transa = 'T';
-      const T one=const_one(T());
-      const T zero=T();
-      dgemv(transa, m, howmany, one, tm_new, m, r_replaced, 1, zero, ratios, 1);
+      BLAS::gemv('T', m, howmany, const_one(T()), tm_new, m, r_replaced, 1, T(), ratios, 1);
     }
 
   template<typename T, typename INDARRAY>
@@ -229,8 +257,8 @@ namespace qmcplusplus
       //save the value of refinv(r,c)
       value_type old_v=refinv(r_replaced,colchanged);
       value_type pinned=tcm[r_replaced]*old_v;
-      MAT::value_type res0=BLAS::dot(m,refinv.data()+colchanged,m,tcm.data(),1);
-      for(int i=0; i<ind.size(); ++i) ratios[i]=res0-pinned+oldrc*tcm[ind[i]+m];
+      typename MAT::value_type res0=BLAS::dot(m,refinv.data()+colchanged,m,tcm.data(),1);
+      for(int i=0; i<ind.size(); ++i) ratios[i]=res0-pinned+old_v*tcm[ind[i]+m];
       return res0;
     }
 

@@ -103,7 +103,6 @@ struct BLAS {
   //void gemv(char trans, int n, int m, const double* amat, const double* x, double* y) {
   //  dgemv(trans, n, m, done, amat, n, x, INCX, dzero, y, INCY);
   //}
-
   inline static 
   void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y) {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
@@ -116,6 +115,24 @@ struct BLAS {
       std::complex<double>* restrict y) {
     zgemv(TRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
   }
+
+  inline static 
+    void gemv(char trans_in, int n, int m
+        ,double alpha, const double* restrict amat, int lda
+        , const double* x, int incx, double beta
+        , double* y, int incy)
+    {
+      dgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+    }
+
+  inline static 
+    void gemv(char trans_in, int n, int m
+        , const complex<double>& alpha, const complex<double>* restrict amat, int lda
+        , const complex<double>* restrict x, int incx, const complex<double>& beta
+        , complex<double>* y, int incy)
+    {
+      zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+    }
 
 
 //   inline static
@@ -188,77 +205,60 @@ struct BLAS {
 //     csymv(&UPLO,&n,&cone,a,&n,x,&INCX,&czero,y,&INCY);
 //   }
 
+  template<typename T>
   inline static
-  double dot(int n, const double* restrict a, const double* restrict b) 
+  T dot(int n, const T* restrict a, const T* restrict b) 
   {
-    return ddot(n,a,INCX,b,INCY);
-  }
-
-  inline static
-  double dot(const double* restrict a, const double* restrict b, int n) 
-  {
-    return ddot(n,a,INCX,b,INCY);
-  }
-
-  inline static
-  double dot(int n, const double* restrict a, int incx, const double* restrict b, int incy) 
-  {
-    return ddot(n,a,incx,b,incy);
-  }
-
-  inline static
-  complex<double> dot(int n, const complex<double>* restrict a, const complex<double>* restrict b) 
-  {
-    complex<double> res=0.0;
-    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+    T res=0.0;
+    for(int i=0; i<n; ++i) res += a[i]*b[i];
     return res;
   }
 
+  template<typename T>
   inline static
-  complex<double> dot(const complex<double>* restrict a, const complex<double>* restrict b, int n) 
+  complex<T> dot(int n, const complex<T>* restrict a, const T* restrict b) 
   {
-    complex<double> res=0.0;
-    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+    complex<T> res=0.0;
+    for(int i=0; i<n; ++i) res += a[i]*b[i];
     return res;
   }
 
+  template<typename T>
   inline static
-  complex<double> dot(int n, const complex<double>* restrict a, const double* restrict b) {
-    complex<double> res=0.0;
-    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+  complex<T> dot(int n, const T* restrict a, const complex<T>* restrict b)
+  {
+    complex<T> res=0.0;
+    for(int i=0; i<n; ++i) res += a[i]*b[i];
     return res;
   }
 
+  template<typename T>
   inline static
-  complex<double> dot(int n, const double* restrict a, const complex<double>* restrict b) {
-    complex<double> res=0.0;
-    for(int i=0; i<n; i++) res += (*a++)*(*b++);
-    return res;
+  void copy(int n, const T* restrict a, T* restrict b) 
+  {
+    memcpy(b,a,sizeof(T)*n);
   }
 
+  template<typename T>
   inline static
-  float dot(int n, const float* restrict a, const float* restrict b) {
-    return sdot(n,a,INCX,b,INCY);
+  void copy(int n, const complex<T>* restrict a, T* restrict b) 
+  {
+    for(int i=0; i<n; ++i) b[i]=a[i].real();
   }
 
+  template<typename T>
   inline static
-  void copy(int n, const double* restrict a, double* restrict b) {
-    dcopy(n,a,INCX,b,INCY);
+  void copy(int n, const T* restrict a, complex<T>* restrict b) 
+  {
+    for(int i=0; i<n; ++i) b[i]=a[i];
   }
 
+  template<typename T>
   inline static
-  void copy(int n, const complex<double>* restrict a, double* restrict b) {
-    for(int i=0; i<n; i++) b[i]=a[i].real();
-  }
-
-  inline static
-  void copy(int n, const double* restrict a, complex<double>* restrict b) {
-    std::copy(a,a+n,b);
-  }
-
-  inline static
-  void copy(int n, const double* restrict a, int ia, double* restrict b, int ib) {
-    dcopy(n,a,ia,b,ib);
+  void copy(int n, const T* restrict x, int incx, T* restrict y, int incy) 
+  {
+    const int xmax=incx*n;
+    for(int ic=0,jc=0; ic<xmax;ic+=incx,jc+=incy) y[jc]=x[ic];
   }
 
 /*
@@ -266,10 +266,10 @@ struct BLAS {
   void copy(int n, double x, double* a) {
     dinit(n,x,a,INCX);
   }
-*/
 
   inline static
-  void copy(int n, const complex<double>* restrict a, complex<double>* restrict b) {
+  void copy(int n, const complex<double>* restrict a, complex<double>* restrict b) 
+  {
     zcopy(n,a,INCX,b,INCY);
   }
 
@@ -277,6 +277,26 @@ struct BLAS {
   void copy(int n, const complex<double>* restrict a, int ia, complex<double>* restrict b, int ib) {
     zcopy(n,a,ia,b,ib);
   }
+*/
+
+  inline static
+  void ger(int m, int n, double alpha
+      , const double* x, int incx
+      , const double* y , int incy
+      , double* a, int lda)
+  {
+    dger(&m,&n,&alpha,x,&incx,y,&incy,a,&lda);
+  }
+
+  inline static
+  void ger(int m, int n, const complex<double>& alpha
+      , const complex<double>* x
+      , int incx, const complex<double>* y, int incy
+      , complex<double>* a, int lda)
+  {
+    zgeru(&m,&n,&alpha,x,&incx,y,&incy,a,&lda);
+  }
+
 };
 #endif // OHMMS_BLAS_H
 /***************************************************************************
