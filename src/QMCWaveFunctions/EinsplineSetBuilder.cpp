@@ -1336,6 +1336,7 @@ namespace qmcplusplus {
       return;
 
     SortBands.clear();
+    int maxOrbs(0);
     for (int ti=0; ti<DistinctTwists.size(); ti++) {
       int tindex = DistinctTwists[ti];
       // First, read valence states
@@ -1354,6 +1355,8 @@ namespace qmcplusplus {
 	band.Energy = eigvals[bi];
 	if (band.Energy > -1.0e100) 
 	  SortBands.push_back(band);
+        if (MakeTwoCopies[ti]) maxOrbs+=2;
+        else maxOrbs++;
       }
       // Now, read core states
       for (int cs=0; cs<NumCoreStates; cs++) {
@@ -1367,6 +1370,8 @@ namespace qmcplusplus {
 	h_energy.read   (H5FileID, (CoreStatePath(ti,cs)+"eigenvalue").c_str());
 	if (band.Energy > -1.0e100) 
 	  SortBands.push_back(band);
+        if (MakeTwoCopies[ti]) maxOrbs+=2;
+        else maxOrbs++;
       }
     }
 
@@ -1387,12 +1392,54 @@ namespace qmcplusplus {
       app_log()<<"need to add and remove same number of orbitals. "<< Added.size()<<" "<<Removed.size()<<endl;
       APP_ABORT("ChangedOccupations");
     }
-    for(int sw=0;sw<Removed.size();sw++){
-      app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
-      BandInfo tempband(SortBands[Removed[sw]-1]);
-      SortBands[Removed[sw]-1] = SortBands[Added[sw]-1];
-      SortBands[Added[sw]-1] = tempband;
+    vector<int> DiffOcc(maxOrbs,0);
+    //Probably a cleaner way to do this.
+    for(int i=0;i<Removed.size();i++) DiffOcc[Removed[i]-1]-=1;
+    for(int i=0;i<Added.size();i++) DiffOcc[Added[i]-1]+=1;
+    vector<int> SumOrb(SortBands.size(),0);
+    int doi(0);
+    for(int i=0;i<SumOrb.size();i++){
+      if(SortBands[i].MakeTwoCopies){
+        SumOrb[i]=  2+DiffOcc[doi++];
+        SumOrb[i]+= DiffOcc[doi++];
+      }
+      else
+        SumOrb[i]=1+DiffOcc[doi++];
     }
+
+    vector<BandInfo> ReOrderedBands;
+    vector<BandInfo> RejectedBands;
+    for(int i=0;i<SumOrb.size();i++){
+      if(SumOrb[i]==2)
+      {
+        SortBands[i].MakeTwoCopies=true;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (SumOrb[i]==1)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (SumOrb[i]==0)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        RejectedBands.push_back(SortBands[i]);
+      }
+      else
+      {
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        APP_ABORT("Sorting Excitation");
+      }
+    }
+    ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
+    SortBands=ReOrderedBands;
+
+    //for(int sw=0;sw<Removed.size();sw++){
+    //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
+    //  BandInfo tempband(SortBands[Removed[sw]-1]);
+    //  SortBands[Removed[sw]-1] = SortBands[Added[sw]-1];
+    //  SortBands[Added[sw]-1] = tempband;
+    //}
 
 
     int orbIndex = 0;
