@@ -306,21 +306,21 @@ namespace qmcplusplus {
     init_f_G();
     init_spline();
 
-    FILE *fout = fopen ("MPC.dat", "w");
-    double vol = PtclRef->Lattice.Volume;
-    PosType r0 (0.0, 0.0, 0.0);
-    PosType r1 (10.26499236, 10.26499236, 10.26499236);
-    int nPoints=1001;
-    for (int i=0; i<nPoints; i++) {
-      double s = (double)i/(double)(nPoints-1);
-      PosType r = (1.0-s)*r0 + s*r1;
-      PosType u = PtclRef->Lattice.toUnit(r);
-      double V, rho(0.0);
-      eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
-      // eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
-      fprintf (fout, "%6.4f %14.10e %14.10e\n", s, V, rho);
-    }
-    fclose(fout);
+    // FILE *fout = fopen ("MPC.dat", "w");
+    // double vol = PtclRef->Lattice.Volume;
+    // PosType r0 (0.0, 0.0, 0.0);
+    // PosType r1 (10.26499236, 10.26499236, 10.26499236);
+    // int nPoints=1001;
+    // for (int i=0; i<nPoints; i++) {
+    //   double s = (double)i/(double)(nPoints-1);
+    //   PosType r = (1.0-s)*r0 + s*r1;
+    //   PosType u = PtclRef->Lattice.toUnit(r);
+    //   double V, rho(0.0);
+    //   eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
+    //   // eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
+    //   fprintf (fout, "%6.4f %14.10e %14.10e\n", s, V, rho);
+    // }
+    // fclose(fout);
 
 
     app_log() << "  === MPC interaction initialized === \n\n";
