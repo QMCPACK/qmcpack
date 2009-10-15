@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 #endif
+#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
 namespace qmcplusplus {
 
   SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
@@ -235,14 +236,16 @@ namespace qmcplusplus {
     targetPsi.addOrbital(SlaterDetSet[0],"SlaterDet");
   }
 
-  void SlaterDetBuilder::buildMultiSlaterDetermiant() {
-//    MultiSlaterDeterminant<LCOrbitalSet> *multidet= new MultiSlaterDeterminant<LCOrbitalSet>;
-//    for(int i=0; i<SlaterDetSet.size(); i++) {
-//      multidet->add(SlaterDetSet[i],sdet_coeff[i]);
-//    }
-//    multidet->setOptimizable(true);
-//    //add a MultiDeterminant to the trial wavefuntion
-//    targetPsi.addOrbital(multidet);
+  void SlaterDetBuilder::buildMultiSlaterDetermiant() 
+  {
+    MultiSlaterDeterminant *multidet= new MultiSlaterDeterminant;
+    for(int i=0; i<SlaterDetSet.size(); i++) 
+    {
+      multidet->add(SlaterDetSet[i],sdet_coeff[i]);
+    }
+    // multidet->setOptimizable(true);
+    //add a MultiDeterminant to the trial wavefuntion
+    targetPsi.addOrbital(multidet,"MultiSlateDet");
   }
 }
 /***************************************************************************
