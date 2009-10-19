@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -21,45 +21,47 @@
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization
    *
-   * Optimization by correlated sampling method with configurations 
+   * Optimization by correlated sampling method with configurations
    * generated from VMC running on a single thread.
    */
   class QMCCostFunctionOMP: public QMCCostFunctionBase, public CloneManager
-  {
-  public:
+    {
+    public:
 
-    ///Constructor.
-    QMCCostFunctionOMP( MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, HamiltonianPool& hpool);
+      ///Constructor.
+      QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                         QMCHamiltonian& h, HamiltonianPool& hpool);
 
-    ///Destructor
-    ~QMCCostFunctionOMP();
+      ///Destructor
+      ~QMCCostFunctionOMP();
 
-    void getConfigurations(const string& aroot);
-    void checkConfigurations();
-    void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0);
-    Return_t fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap);
-  protected:
-    vector<QMCHamiltonian*> H_KE_Node;
-    vector<Matrix<Return_t>*> RecordsOnNode;
-    
-     /** Temp derivative properties and Hderivative properties of all the walkers
-     */
-    vector<vector<vector<Return_t> >* > TempDerivRecords;
-    vector<vector<vector<Return_t> >* > TempHDerivRecords;
-    Return_t CSWeight;
-    void resetPsi(bool final_reset=false);
-    Return_t correlatedSampling();
-  };
+      void getConfigurations(const string& aroot);
+      void checkConfigurations();
+      void resetPsi(bool final_reset=false);
+      void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0);
+      Return_t fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap);
+    protected:
+      vector<QMCHamiltonian*> H_KE_Node;
+      vector<Matrix<Return_t>*> RecordsOnNode;
+
+      /** Temp derivative properties and Hderivative properties of all the walkers
+      */
+      vector<vector<vector<Return_t> >* > TempDerivRecords;
+      vector<vector<vector<Return_t> >* > TempHDerivRecords;
+      Return_t CSWeight;
+
+      Return_t correlatedSampling();
+    };
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1804 $   $Date: 2007-02-24 14:49:09 -0600 (Sat, 24 Feb 2007) $
- * $Id: QMCCostFunctionOMP.h 1804 2007-02-24 20:49:09Z jnkim $ 
+ * $Id: QMCCostFunctionOMP.h 1804 2007-02-24 20:49:09Z jnkim $
  ***************************************************************************/

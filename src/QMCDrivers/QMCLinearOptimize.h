@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,11 +20,12 @@
 #ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 
-#include "QMCDrivers/QMCDriver.h" 
+#include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
-#include "Optimize/NRCOptimization.h" 
+#include "Optimize/NRCOptimization.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
   ///forward declaration of a cost function
   class QMCCostFunctionBase;
@@ -33,80 +34,86 @@ namespace qmcplusplus {
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization
    *
-   * Optimization by correlated sampling method with configurations 
+   * Optimization by correlated sampling method with configurations
    * generated from VMC.
    */
 
   class QMCLinearOptimize: public QMCDriver, private NRCOptimization<RealType>
-  {
-  public:
+    {
+    public:
 
-    ///Constructor.
-    QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-	    QMCHamiltonian& h, HamiltonianPool& hpool);
-    
-    ///Destructor
-    ~QMCLinearOptimize();
+      ///Constructor.
+      QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                        QMCHamiltonian& h, HamiltonianPool& hpool);
 
-    ///Run the Optimization algorithm.
-    bool run();
-    ///process xml node
-    bool put(xmlNodePtr cur);
-    ///add a configuration file to the list of files
-    void addConfiguration(const string& a);
-    RealType Func(Return_t dl);
-    void setWaveFunctionNode(xmlNodePtr cur) { wfNode=cur; }
+      ///Destructor
+      ~QMCLinearOptimize();
 
-  private:
+      ///Run the Optimization algorithm.
+      bool run();
+      ///process xml node
+      bool put(xmlNodePtr cur);
+      ///add a configuration file to the list of files
+      void addConfiguration(const string& a);
+      RealType Func(Return_t dl);
+      void setWaveFunctionNode(xmlNodePtr cur)
+      {
+        wfNode=cur;
+      }
 
-    ///index to denote the partition id
-    int PartID;
-    ///total number of partitions that will share a set of configuratons
-    int NumParts;
-    ///total number of Warmup Blocks
-    int WarmupBlocks;
-    ///total number of Warmup Blocks
-    int NumOfVMCWalkers;
-    ///Number of iterations maximum before generating new configurations.
-    int Max_iterations;
-    ///number of tries adding to Ham diagonal, exp0 is exponent of added factor
-    int tries,exp0;
-    ///stop optimizing if cost function decrease is less than this
-    RealType costgradtol;
-    ///Here is xi of Sorella=1.0, old Umrigar=0.0, recent papers, xi=0.5
-    RealType alpha,xi;
-    ///yes/no applicable only first time
-    string SkipSampleGeneration;
-    ///need to know HamiltonianPool to use OMP
-    HamiltonianPool& hamPool;
-    ///target cost function to optimize
-    //QMCCostFunction* optTarget;
-    QMCCostFunctionBase* optTarget;
-    ///rescale parameters? use parameters from generalized eigenvalue as a direction to minimize cost function?
-    ///use gradient or ggev to line minimize
-    bool rescaleparams, linemin, usegrad;
-    string lm, rp, ug;
-    vector<RealType> optdir, optparm;
-    ///vmc engine
-    QMCDriver* vmcEngine;
-    ///xml node to be dumped
-    xmlNodePtr wfNode;
-    ///xml node for optimizer
-    xmlNodePtr optNode;
-    ///method for optimization, default conjugate gradient
-    string optmethod;
-    ///list of files storing configurations  
-    vector<string> ConfigFile;
-    ///Copy Constructor (disabled).
-    QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
-    ///Copy operator (disabled).
-    QMCLinearOptimize& operator=(const QMCLinearOptimize&) { return *this;}
-    void generateSamples();
-  };
+    private:
+
+      ///index to denote the partition id
+      int PartID;
+      ///total number of partitions that will share a set of configuratons
+      int NumParts;
+      ///total number of Warmup Blocks
+      int WarmupBlocks;
+      ///total number of Warmup Blocks
+      int NumOfVMCWalkers;
+      ///Number of iterations maximum before generating new configurations.
+      int Max_iterations;
+      ///exp0 is exponent of added factor
+      int exp0;
+      ///stop optimizing if cost function decrease is less than this
+      RealType costgradtol;
+      ///yes/no applicable only first time
+      string SkipSampleGeneration;
+      ///need to know HamiltonianPool to use OMP
+      HamiltonianPool& hamPool;
+      ///target cost function to optimize
+      //QMCCostFunction* optTarget;
+      QMCCostFunctionBase* optTarget;
+      ///allow H matrix to have negative elements along diagonal?
+      ///use parameters from generalized eigenvalue as a direction to minimize cost function?
+      ///use gradient or ggev to line minimize
+      bool conditionHamiltonian, linemin, rescaleParameters;
+      string aln, lm, rp;
+      vector<RealType> optdir, optparm;
+      RealType allowedCostIncrease, allowedCostDifference;
+      ///vmc engine
+      QMCDriver* vmcEngine;
+      ///xml node to be dumped
+      xmlNodePtr wfNode;
+      ///xml node for optimizer
+      xmlNodePtr optNode;
+      ///method for optimization, default conjugate gradient
+      string optmethod;
+      ///list of files storing configurations
+      vector<string> ConfigFile;
+      ///Copy Constructor (disabled).
+      QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
+      ///Copy operator (disabled).
+      QMCLinearOptimize& operator=(const QMCLinearOptimize&)
+      {
+        return *this;
+      }
+      void generateSamples();
+    };
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 757 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: QMCLinearOptimize.h 757 2005-10-31 16:10:28Z jnkim $ 
+ * $Id: QMCLinearOptimize.h 757 2005-10-31 16:10:28Z jnkim $
  ***************************************************************************/

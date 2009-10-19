@@ -180,7 +180,7 @@ namespace qmcplusplus {
     return 0;
   }
 
-  void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P, RealType ke0, 
+  void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P, 
       const opt_variables_type& optvars,
       vector<RealType>& dlogpsi,
       vector<RealType>& dhpsioverpsi)

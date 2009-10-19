@@ -67,6 +67,11 @@ ENDIF(INTEL_MKL)
 #TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
 #ENDIF(NOT HAVE_MPI)
 
+# Get rid of error message
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
 ####################################
