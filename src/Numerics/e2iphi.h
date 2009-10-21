@@ -59,6 +59,44 @@ eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z
   for (int i=0; i<n; i++)
     z[i] = std::complex<float>(c[i],s[i]);
 }
+#elif defined(HAVE_MASSV)
+#include <massv.h>
+inline void
+eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
+{
+  int n = phi.size();
+  double s[n],c[n];
+  vsincos(s,c,&(phi[0]),&n);
+  for (int i=0; i<n; i++) z[i] = std::complex<double>(c[i],s[i]);
+}
+
+inline void
+eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
+{
+  int n = phi.size();
+  float s[n],c[n];
+  vssincos(s,c,&(phi[0]),&n);
+  for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
+}
+
+inline void
+eval_e2iphi (const APPNAMESPACE::Vector<double> &phi, APPNAMESPACE::Vector<std::complex<double> > &z)
+{
+  int n = phi.size();
+  double s[n],c[n];
+  vsincos(s,c,&(phi[0]),&n);
+  for (int i=0; i<n; i++) z[i] = std::complex<double>(c[i],s[i]);
+}
+
+inline void
+eval_e2iphi (const APPNAMESPACE::Vector<float> &phi, APPNAMESPACE::Vector<std::complex<float> > &z)
+{
+  int n = phi.size();
+  float s[n],c[n];
+  vssincos(s,c,&(phi[0]),&n);
+  for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
+}
+
 #elif defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 inline void
