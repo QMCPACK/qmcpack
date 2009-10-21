@@ -25,7 +25,9 @@
 namespace qmcplusplus
 {
   /** a node of multideterminant tree
-  */
+   *
+   * column and row denote those of the original matrix.
+   */
   template<typename T>
   struct excitation_node
   {
@@ -40,19 +42,54 @@ namespace qmcplusplus
     T utv;
     unsigned long ground;
     unsigned long excited;
+    /** inverse matrix
+     *
+     * The size can be reduced to (vmax,m)
+     * where vmax is the occupied states for the excitations.
+     */
     matrix_type inverse;
+    /** index of the child nodes
+     */
     std::vector<int> children;
+    /** index of the rows to be updated by this node
+     */
+    std::vector<int> peers;
 
     /** default constructor
      * Invalidate the excitation
      */
     inline explicit excitation_node(unsigned long vid=0u, unsigned long cid=0u)
-      : my_id(0), parent_id(0),from(0),to(0),ratio(1.0),utv(0.0), ground(vid),excited(cid) {}
+      : my_id(0), parent_id(0),from(0),to(0),ratio(1.0),utv(0.0), ground(vid),excited(cid) 
+    { }
 
-    inline void resize(int m)
+    //inline void resize(int m)
+    //{
+    //  inverse.resize(m,m);
+    //}
+
+    /** reset from and to with respect to m ground states
+     * @param m number of ground states
+     * @param nv number of ground states that are excited
+     * @param ci CI expansion
+     */
+    void resize(int m, int nv, std::vector<excitation_node>& ci)
     {
       inverse.resize(m,m);
-      //if(children.size()) inverse.resize(m,m);
+      peers.reserve(nv);
+      for(int i=0, iv=m-1; i<nv; ++i, --iv) peers.push_back(iv);
+      for(int i=0; i<children.size(); ++i) 
+        ci[ children[i] ].resetOffset(m,peers,ci);
+    }
+
+    void resetOffset(int m, std::vector<int>& p_peers, std::vector<excitation_node>& ci)
+    {
+      inverse.resize(m,m);
+      if(children.empty()) return;
+      //build-up the rows this node has to update during recursion
+      peers.reserve(p_peers.capacity());
+      int v=m-1-from;
+      for(int i=0, iv=0; i<p_peers.size(); ++i) if(p_peers[i]!=v) peers.push_back(p_peers[i]);
+      for(int i=0; i<children.size(); ++i) ci[ children[i] ].resetOffset(m,peers,ci);
     }
 
     inline void add_child(int i)
@@ -65,63 +102,94 @@ namespace qmcplusplus
       return children.empty();
     }
 
-    inline void get_ratios_root(const matrix_type& psi_big, std::vector<excitation_node>& ci
-        , std::vector<T>& ratios, int vmin)
+    inline void getRatios(const matrix_type& psi_big, std::vector<excitation_node>& ci
+        , std::vector<T>& ratios, bool promote_row)
     {
       ratios[0]=1.0;
       const int m=inverse.rows();
-      for(int i=0; i<children.size(); ++i)
-        ci[ children[i] ].get_ratios_partial(inverse,psi_big,ci,ratios,m,vmin,1.0,1.0);
+      if(promote_row)
+        for(int i=0; i<children.size(); ++i)
+          ci[ children[i] ].getRatiosByRowPromotion(inverse,psi_big,ci,ratios,m,1.0);
+      else
+        for(int i=0; i<children.size(); ++i)
+          ci[ children[i] ].getRatiosByColPromotion(inverse,psi_big,ci,ratios,m,1.0);
     }
 
-    inline void get_ratios_partial(const matrix_type& inv0
+    inline void getRatiosByColPromotion(const matrix_type& inv0
         , const matrix_type& psi_big
         , std::vector<excitation_node>& ci
         , std::vector<T>& ratios
         , int m
-        , int vmin
         , T ratio_base
-        , T inv_utv
         )
     {
-      const int n=m-vmin;
-      T temp[n];
+      inverse=inv0;
+      int v=m-1-from;
 
-      BLAS::copy((m-vmin)*m,inv0[vmin],inverse[vmin]);
-      //update inverse matrix partially
-      //do all the blocks to be updated: this can be further optimized by bit masks
-      if(parent_id>0)
+      const T* restrict u_old=inv0[v];
+      const T* restrict u_new=psi_big[m+to];
+
+      utv=BLAS::dot(m,u_old,u_new);
+      BLAS::axpy(m,utv,u_old,inverse[v]);
+      //utv=BLAS::dot(m,inv0[v],psi_big[c]);
+      //BLAS::axpy(m,utv,inv0[v],inverse[v]);
+
+      T inv_utv=1.0/utv;
+      for(int iv=0; iv<peers.size(); ++iv)
       {
-        int pv=m-1-ci[parent_id].from;
-        int pc=m+ci[parent_id].to;
-        for(int vv=vmin,iv=0; vv<m; ++vv,++iv)
-        {
-          T  gamma=BLAS::dot(m,inv0[vv],psi_big[pc])*inv_utv;
-          for(int j=0; j<m; ++j) inverse(vv,j) -= gamma*inv0(pv,j);
-        }
+        int vv=peers[iv];
+        //T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],psi_big[c]);
+        //BLAS::axpy(m,gamma,inv0[v],inverse[vv]);
+        T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],u_new);
+        BLAS::axpy(m,gamma,u_old,inverse[vv]);
       }
 
-      int v=m-1-from;
-      int c=m+to;
-      utv=BLAS::dot(m,inverse[v],psi_big[c]);
       ratios[my_id]=ratio_base*utv;
-
       for(int i=0; i<children.size(); ++i)
-        ci[children[i]].get_ratios_partial(inverse,psi_big,ci,ratios,m,vmin,ratios[my_id],1.0/utv);
+        ci[children[i]].getRatiosByColPromotion(inverse,psi_big,ci,ratios,m,ratios[my_id]);
     }
 
-    inline void get_ratios_root_debug(const matrix_type& psi_big
+    inline void getRatiosByRowPromotion(const matrix_type& inv0
+        , const matrix_type& psi_big
         , std::vector<excitation_node>& ci
         , std::vector<T>& ratios
+        , int m
+        , T ratio_base
         )
+    {
+      inverse=inv0;
+      int v=m-1-from;
+      int c=m+to;
+      utv=BLAS::dot(m,inv0.data()+v,m,psi_big[c],1);
+      BLAS::axpy(m,utv,inv0.data()+v,m,inverse.data()+v,m);
+
+      T inv_utv=1.0/utv;
+      for(int iv=0; iv<peers.size(); ++iv)
+      {
+        int vv=peers[iv];
+        T  gamma=-inv_utv*BLAS::dot(m,inv0.data()+vv,m,psi_big[c],1);
+        BLAS::axpy(m,gamma,inv0.data()+v,m,inverse.data()+vv,m);
+      }
+
+      ratios[my_id]=ratio_base*utv;
+      for(int i=0; i<children.size(); ++i)
+        ci[children[i]].getRatiosByRowPromotion(inverse,psi_big,ci,ratios,m,ratios[my_id]);
+    }
+
+    inline void inverseUpdate(const matrix_type& psi_big, std::vector<excitation_node>& ci, std::vector<T>& ratios
+        , bool row_excitation)
     {
       const int m=inverse.rows();
       ratios[0]=1.0;
-      for(int i=0; i<children.size(); ++i)
-        ci[ children[i] ].get_ratios_debug(psi_big,ci,ratios,m,1.0);
+      if(row_excitation)
+        for(int i=0; i<children.size(); ++i)
+          ci[ children[i] ].inverseUpdateByRow(psi_big,ci,ratios,m,1.0);
+      else
+        for(int i=0; i<children.size(); ++i)
+          ci[ children[i] ].inverseUpdateByColumn(psi_big,ci,ratios,m,1.0);
     }
 
-    void get_ratios_debug(const matrix_type& psi_big , std::vector<excitation_node>& ci , std::vector<T>& ratios
+    void inverseUpdateByColumn(const matrix_type& psi_big , std::vector<excitation_node>& ci , std::vector<T>& ratios
         , int m, T ratio_base)
     {
       int v=m-1-from;
@@ -136,9 +204,119 @@ namespace qmcplusplus
 
         ratio_base *= ratio;
         for(int i=0; i<children.size(); ++i)
-          ci[ children[i] ].get_ratios_debug(psi_big,ci,ratios,m,ratio_base);
+          ci[ children[i] ].inverseUpdateByColumn(psi_big,ci,ratios,m,ratio_base);
       //}
     }
+
+    //inline void inverseUpdateByColumnExcitation(const matrix_type& psi_big
+    //    , std::vector<excitation_node>& ci
+    //    , std::vector<T>& ratios
+    //    )
+    //{
+    //  const int m=inverse.rows();
+    //  ratios[0]=1.0;
+    //  for(int i=0; i<children.size(); ++i)
+    //    ci[ children[i] ].get_ratios_cols_debug(psi_big,ci,ratios,m,1.0);
+    //}
+
+    void inverseUpdateByRow(const matrix_type& psi_big , std::vector<excitation_node>& ci , std::vector<T>& ratios 
+        , int m, T ratio_base)
+    {
+      int v=m-1-from;
+      int c=m+to;
+
+      ratio=BLAS::dot(m,ci[parent_id].inverse.data()+v,m,psi_big[c],1);
+      ratios[my_id]=ratio_base*ratio;
+
+      //if(children.size())
+      //{
+        inverse=ci[parent_id].inverse;
+        det_col_update(inverse.data(),psi_big[c],m,v,ratio);
+
+        ratio_base *= ratio;
+        for(int i=0; i<children.size(); ++i)
+          ci[ children[i] ].inverseUpdateByRow(psi_big,ci,ratios,m,ratio_base);
+      //}
+    }
+
+    /** evaluate the ratio with a new column
+     *
+     * inverse matrix is updated by inverseUpdate(...,true)
+     */
+    inline void getRatioByColSubstitution(vector<T>& u_c
+        , std::vector<excitation_node>& ci
+        , std::vector<T>& ratios
+        , int col_id
+        )
+    {
+      const int m=inverse.rows();
+      ratios[0]=ratio=BLAS::dot(m,inverse[col_id],u_c.data());
+      vector<T> temp(u_c);
+      for(int i=0; i<children.size(); ++i)
+      {
+        ci[ children[i] ].getRatioByColSubstitution(temp,ci,ratios,m,col_id);
+        //restore the original u_c
+        for(int iv=0,vv=m-1; iv<peers.size(); ++iv,--vv) temp[vv]=u_c[vv];
+      }
+    }
+
+    void getRatioByColSubstitution(vector<T>& u_c , std::vector<excitation_node>& ci
+        , std::vector<T>& ratios , int m, int col_id)
+    {
+      int v=m-1-from;
+      int c=m+to;
+      u_c[v]=u_c[c];
+      ratios[my_id]=ratio=BLAS::dot(m,inverse[col_id],u_c.data());
+      vector<T> temp(u_c);
+      for(int i=0; i<children.size(); ++i)
+      {
+        ci[ children[i] ].getRatioByColSubstitution(temp,ci,ratios,m,col_id);
+        for(int iv=0; iv<peers.size(); ++iv)
+        {
+          int vv=peers[iv];temp[vv]=u_c[vv];
+        }
+      }
+    }
+
+    /** evaluate the ratio with a new row
+     *
+     * inverse matrix is updated by inverseUpdateByColumn 
+     */
+    inline void getRatioByRowSubstitution(vector<T>& u_c
+        , std::vector<excitation_node>& ci
+        , std::vector<T>& ratios
+        , int row_id
+        )
+    {
+      const int m=inverse.rows();
+      ratios[0]=ratio=BLAS::dot(m,inverse.data()+row_id,m,u_c.data(),1);
+      vector<T> temp(u_c);
+      for(int i=0; i<children.size(); ++i)
+      {
+        ci[ children[i] ].getRatioByRowSubstitution(temp,ci,ratios,m,row_id);
+        //restore the original u_c
+        for(int iv=0,vv=m-1; iv<peers.size(); ++iv,--vv) temp[vv]=u_c[vv];
+      }
+    }
+
+    void getRatioByRowSubstitution(vector<T>& u_c , std::vector<excitation_node>& ci
+        , std::vector<T>& ratios , int m, int row_id)
+    {
+      int v=m-1-from;
+      int c=m+to;
+      u_c[v]=u_c[c];
+      ratios[my_id]=ratio=BLAS::dot(m,inverse.data()+row_id,m,u_c.data(),1);
+      vector<T> temp(u_c);
+      for(int i=0; i<children.size(); ++i)
+      {
+        ci[ children[i] ].getRatioByRowSubstitution(temp,ci,ratios,m,row_id);
+        for(int iv=0; iv<peers.size(); ++iv)
+        {
+          int vv=peers[iv];temp[vv]=u_c[vv];
+        }
+      }
+    }
+
 
     template<unsigned CMAX>
       inline void write_node(int level, int count, std::vector<excitation_node>& ci)
