@@ -341,12 +341,12 @@ namespace qmcplusplus {
     int Nprocs=myComm->size();
 
     if(nStepsBetweenSamples && (nWalkersPerThread==0))  nWalkersPerThread=1;
-
     if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
+    
     if( (fracDeficit>0 ) && nTargetSamples )
     {
 //       case of fractional samples per thread
-      nTargetSamples = std::floor(RealType(nTargetSamples/(nTargetWalkers*Nprocs)));
+      nTargetSamples = (nTargetWalkers*Nprocs)*std::floor(RealType(nTargetSamples/(nTargetWalkers*Nprocs)));
       nTargetSamples += std::floor(fracDeficit*(nTargetWalkers*Nprocs));// + (nTargetSamples/(nTargetWalkers*Nprocs))*nTargetWalkers*Nprocs;
     }
     
