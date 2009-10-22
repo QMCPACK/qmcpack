@@ -346,23 +346,23 @@ namespace qmcplusplus {
     if( (fracDeficit>0 ) && nTargetSamples )
     {
 //       case of fractional samples per thread
-      nTargetSamples = (int)std::floor(nTargetSamples/(nTargetWalkers*Nprocs));
-      nTargetSamples += (int)std::floor(fracDeficit*(nTargetWalkers*Nprocs));// + (nTargetSamples/(nTargetWalkers*Nprocs))*nTargetWalkers*Nprocs;
+      nTargetSamples = std::floor(RealType(nTargetSamples/(nTargetWalkers*Nprocs)));
+      nTargetSamples += std::floor(fracDeficit*(nTargetWalkers*Nprocs));// + (nTargetSamples/(nTargetWalkers*Nprocs))*nTargetWalkers*Nprocs;
     }
     
     if (nStepsBetweenSamples && nTargetSamples)
     {
-      int nStepsTotal = (int)std::ceil(nTargetSamples*nStepsBetweenSamples/(nTargetWalkers*Nprocs));
+      int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples/(nTargetWalkers*Nprocs)));
       if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
-      nSteps = (int)std::ceil(nStepsTotal/nBlocks);
+      nSteps = std::ceil(RealType(nStepsTotal/nBlocks));
       nStepsTotal = nSteps*nBlocks;
-      nStepsBetweenSamples = (int)std::floor(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples);
+      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
     else if(nTargetSamples)
     {
       int nStepsTotal =  nSteps*nBlocks;
-      nStepsBetweenSamples = (int)std::floor(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples);
+      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
 
