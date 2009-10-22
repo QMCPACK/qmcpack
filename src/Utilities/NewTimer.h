@@ -80,12 +80,12 @@ namespace qmcplusplus  {
     inline void start() 
     { 
       gettimeofday(&tv, NULL);
-      start_time = tv.tv_usec; 
+       start_time=(double)tv.tv_sec+(1.e-6)*tv.tv_usec;
     }
     inline void stop()  
     { 
       gettimeofday(&tv, NULL);
-      total_time += 1.0e-6*(double)(tv.tv_usec - start_time);
+      total_time += (double)tv.tv_sec+(1.e-6)*tp.tv_usec-start_time;
       num_calls++;
     }
     inline double    get_total() const 
