@@ -293,7 +293,7 @@ namespace qmcplusplus {
     //oneovermass = 1.0/mass;
 
     //set the default walker to the number of threads times 10
-    int defaultw = omp_get_max_threads()*10;
+    int defaultw = omp_get_max_threads();
     int targetw = 0;
 
     //these options are reset for each block
@@ -373,15 +373,14 @@ namespace qmcplusplus {
 
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 
-    app_log() << "  Walkers are dumped every " << Period4CheckPoint << " blocks." << endl;
+    app_log() << "  Walkers are dumped every " << Period4CheckPoint << " steps." << endl;
 
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
 
-
     //target number of walkers is less than the number of threads. Reset it.
-    if(nTargetWalkers && nTargetWalkers<omp_get_max_threads()) 
-      nTargetWalkers=omp_get_max_threads();
+    //if(nTargetWalkers && nTargetWalkers<omp_get_max_threads()) 
+    //  nTargetWalkers=omp_get_max_threads();
 
     app_log() << "  timestep = " << Tau << endl;
     app_log() << "  blocks = " << nBlocks << endl;
