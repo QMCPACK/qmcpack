@@ -27,17 +27,21 @@ namespace qmcplusplus {
   ///object counter 
   int  ParticleSet::PtclObjectCounter = 0;
 
+  void add_p_timer(vector<NewTimer*>& timers)
+  {
+    timers.push_back(new NewTimer("ParticleSet::makeMove")); //timer for MC, ratio etc
+    timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
+    TimerManager.addTimer(timers[0]);
+    TimerManager.addTimer(timers[1]);
+  }
+
   ParticleSet::ParticleSet()
     : UseBoundBox(true), UseSphereUpdate(true),SK(0), ParentTag(-1)
   { 
     initParticleSet();
-
     initPropertyList();
 
-    myTimers.push_back(new NewTimer("ParticleSet::makeMove")); //timer for MC, ratio etc
-    myTimers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
-    TimerManager.addTimer(myTimers[0]);
-    TimerManager.addTimer(myTimers[1]);
+    add_p_timer(myTimers);
   }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
@@ -73,10 +77,7 @@ namespace qmcplusplus {
       resizeSphere(p.Sphere.size());
     }
 
-    myTimers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
-    myTimers.push_back(new NewTimer("VMCUpdatePbyP::makeMOve")); //timer for MC, ratio etc
-    TimerManager.addTimer(myTimers[0]);
-    TimerManager.addTimer(myTimers[1]);
+    add_p_timer(myTimers);
   }
 
 
