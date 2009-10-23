@@ -37,7 +37,7 @@ namespace qmcplusplus {
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
   Period4CheckProperties(100), CurrentStep(0), 
   nBlocks(10), nSteps(0), 
-  nWalkersPerThread(0), nStepsBetweenSamples(0),  fracDeficit(0),
+  nWalkersPerThread(1), nStepsBetweenSamples(0),  fracDeficit(0),
   nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0), storeConfigs(0),
@@ -340,8 +340,13 @@ namespace qmcplusplus {
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
 
-    if(nStepsBetweenSamples && (nWalkersPerThread==0))  nWalkersPerThread=1;
-    if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
+    //if(nStepsBetweenSamples && (nWalkersPerThread==0))  nWalkersPerThread=1;
+    //if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
+   
+    //only overwrite it there is no walker (first time) and nTargetWalkers is not 
+    //a multiple of /nWalkersPerThread
+    if(W.getActiveWalkers() == 0 && (nTargetWalkers == 0 || nTargetWalkers%nWalkersPerThread)) 
+      nTargetWalkers=Nthreads*nWalkersPerThread;
     
     if( (fracDeficit>0 ) && nTargetSamples )
     {
