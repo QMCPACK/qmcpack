@@ -21,13 +21,11 @@
 namespace qmcplusplus
   {
 
-  VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                             QMCHamiltonian& h, RandomGenerator_t& rg):
-      QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
-  {
-    myParams.add(nSubSteps,"subSteps","int");
-    myParams.add(nSubSteps,"substeps","int");
-  }
+    VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+        QMCHamiltonian& h, RandomGenerator_t& rg)
+      : QMCUpdateBase(w,psi,h,rg)
+      {
+      }
 
   VMCUpdateAll::~VMCUpdateAll()
   {
@@ -128,10 +126,8 @@ namespace qmcplusplus
 
   VMCUpdateAllSamplePsi::VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi,
       QMCHamiltonian& h, RandomGenerator_t& rg):
-      QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+      QMCUpdateBase(w,psi,h,rg)
   {
-    myParams.add(nSubSteps,"subSteps","int");
-    myParams.add(nSubSteps,"substeps","int");
   }
 
   VMCUpdateAllSamplePsi::~VMCUpdateAllSamplePsi()

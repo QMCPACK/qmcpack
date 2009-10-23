@@ -37,8 +37,6 @@ namespace qmcplusplus
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
     private:
-      ///sub steps
-      int nSubSteps;
       /// Copy Constructor (disabled)
       VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
       /// Copy operator (disabled).
@@ -88,8 +86,6 @@ namespace qmcplusplus
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
     private:
-      ///sub steps
-      int nSubSteps;
       /// Copy Constructor (disabled)
       VMCUpdateAllSamplePsi(const VMCUpdateAllSamplePsi& a): QMCUpdateBase(a) { }
       /// Copy operator (disabled).

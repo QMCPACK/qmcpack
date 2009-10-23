@@ -146,6 +146,8 @@ namespace qmcplusplus {
     bool UseTMove;
     ///number of particles
     IndexType NumPtcl;
+    ///number of steps per measurement
+    int nSubSteps;
     ///timestep
     RealType Tau;
     ///Time-step factor \f$ 1/(2\Tau)\f$

@@ -20,24 +20,23 @@
 
 namespace qmcplusplus { 
 
+  /** add timers for VMC PbyP updates 
+   * @param timers container for the timers
+   */
+  void add_vmc_timers(vector<NewTimer*>& timers)
+  {
+    timers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
+    timers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
+    timers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
+    timers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
+    for(int i=0; i<timers.size(); ++i) TimerManager.addTimer(timers[i]);
+  }
+
   VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg):
-    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+    QMCUpdateBase(w,psi,h,rg)
     { 
-      //app_log() << "VMCUpdatePbyP::VMCUpdatePbyP" << endl;
-
-      myParams.add(nSubSteps,"subSteps","int"); 
-      myParams.add(nSubSteps,"substeps","int");
-
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
-      TimerManager.addTimer(myTimers[0]);
-      TimerManager.addTimer(myTimers[1]);
-      TimerManager.addTimer(myTimers[2]);
-      TimerManager.addTimer(myTimers[3]);
-
+      add_vmc_timers(myTimers);
     }
 
   VMCUpdatePbyP::~VMCUpdatePbyP()
@@ -129,14 +128,7 @@ namespace qmcplusplus {
     QMCUpdateBase(w,psi,h,rg) 
     { 
       app_log() << "VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift" << endl;
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
-      TimerManager.addTimer(myTimers[0]);
-      TimerManager.addTimer(myTimers[1]);
-      TimerManager.addTimer(myTimers[2]);
-      TimerManager.addTimer(myTimers[3]);
+      add_vmc_timers(myTimers);
     }
 
   VMCUpdatePbyPWithDrift::~VMCUpdatePbyPWithDrift()
@@ -251,17 +243,10 @@ namespace qmcplusplus {
   /// Constructor.
   VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg) :
-    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+    QMCUpdateBase(w,psi,h,rg)
     { 
-      //app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
-      TimerManager.addTimer(myTimers[0]);
-      TimerManager.addTimer(myTimers[1]);
-      TimerManager.addTimer(myTimers[2]);
-      TimerManager.addTimer(myTimers[3]);
+      app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
+      add_vmc_timers(myTimers);
     }
 
   VMCUpdatePbyPWithDriftFast::~VMCUpdatePbyPWithDriftFast()
@@ -364,19 +349,9 @@ namespace qmcplusplus {
   
   VMCUpdatePbyPSamplePsi::VMCUpdatePbyPSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg):
-    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+    QMCUpdateBase(w,psi,h,rg)
     { 
-      myParams.add(nSubSteps,"subSteps","int"); 
-      myParams.add(nSubSteps,"substeps","int");
-
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
-      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
-      TimerManager.addTimer(myTimers[0]);
-      TimerManager.addTimer(myTimers[1]);
-      TimerManager.addTimer(myTimers[2]);
-      TimerManager.addTimer(myTimers[3]);
+      add_vmc_timers(myTimers);
     }
 
   VMCUpdatePbyPSamplePsi::~VMCUpdatePbyPSamplePsi()

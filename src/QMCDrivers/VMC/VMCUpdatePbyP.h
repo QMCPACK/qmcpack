@@ -36,8 +36,6 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
-    ///sub steps
-    int nSubSteps;
     vector<NewTimer*> myTimers;
   };
 
@@ -56,7 +54,6 @@ namespace qmcplusplus {
  
   private:
     vector<NewTimer*> myTimers;
-    int nSubSteps;
   };
 
   /** @ingroup QMCDrivers  ParticleByParticle
@@ -74,7 +71,6 @@ namespace qmcplusplus {
  
   private:
     vector<NewTimer*> myTimers;
-    int nSubSteps;
   };
   
     /** @ingroup QMCDrivers  ParticleByParticle
@@ -91,8 +87,6 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
-    ///sub steps
-    int nSubSteps;
     vector<NewTimer*> myTimers;
   };
 }

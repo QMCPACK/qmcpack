@@ -27,10 +27,14 @@ namespace qmcplusplus {
   QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
     : W(w),Psi(psi),H(h)
     , UpdatePbyP(true), UseTMove(false)
+    , NumPtcl(0), nSubSteps(1)
     , RandomGen(rg), MaxAge(0),  m_r2max(-1)
     , branchEngine(0), Estimators(0)
   { 
     myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
+    myParams.add(nSubSteps,"subSteps","int");
+    myParams.add(nSubSteps,"substeps","int");
+    myParams.add(nSubSteps,"sub_steps","int");
   }
 
   /// destructor
