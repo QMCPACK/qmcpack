@@ -49,7 +49,7 @@ namespace qmcplusplus {
        *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
        *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
        */
-  RealType 
+  IonOrbital::RealType 
   IonOrbital::evaluateLog(ParticleSet& P,
 			  ParticleSet::ParticleGradient_t& G,
 			  ParticleSet::ParticleLaplacian_t& L)
@@ -242,7 +242,7 @@ namespace qmcplusplus {
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType 
+  IonOrbital::RealType 
   IonOrbital::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     evaluateLogAndStore(P, P.G, P.L);
@@ -253,7 +253,7 @@ namespace qmcplusplus {
     return LogValue;
   }
 
-  RealType 
+  IonOrbital::RealType 
   IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf, 
 			   bool fromscratch=false)
   {
@@ -284,7 +284,7 @@ namespace qmcplusplus {
    *@param P the ParticleSet to operate on
    *@param buf PooledData which stores the data for each walker
    */
-  RealType 
+  IonOrbital::RealType 
   IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
   {
     RealType sumu = 0.0;

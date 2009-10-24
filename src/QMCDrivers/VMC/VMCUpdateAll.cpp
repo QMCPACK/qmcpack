@@ -96,7 +96,8 @@ namespace qmcplusplus
         //W.update();
         RealType logpsi(Psi.evaluateLog(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
-        setScaledDrift(m_tauovermass,W.G,drift);
+        // setScaledDrift(m_tauovermass,W.G,drift);
+        RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
 
         //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
         deltaR = thisWalker.R - W.R - drift;

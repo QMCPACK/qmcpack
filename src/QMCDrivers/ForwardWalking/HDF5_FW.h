@@ -551,7 +551,7 @@ namespace qmcplusplus {
           H5Sclose(dataspace);
       }
       
-      void writeIons(vector<string> NMS, vector<RealType>& Pos, double& latticeConstant, int& nElectrons, int& ngrids)
+      void writeIons(vector<string> NMS, vector<double>& Pos, double& latticeConstant, int& nElectrons, int& ngrids)
       { 
         rank=1;
         

@@ -91,8 +91,8 @@ namespace qmcplusplus {
       for(int iat=0; iat<Nnuc; iat++) {
         for(int nn=d_aa->M[iat], jat=1; nn<d_aa->M[iat+1]; nn++,jat++) {
           int jid = d_aa->J[nn];
-          QMCTraits::RealType rinv=d_aa->rinv(nn);
-          QMCTraits::RealType r3zz=Zat[jid]*Zat[iat]*rinv*rinv*rinv;
+          real_type rinv=d_aa->rinv(nn);
+          real_type r3zz=Zat[jid]*Zat[iat]*rinv*rinv*rinv;
           forces_IonIon[iat] -= r3zz*d_aa->dr(nn);
           forces_IonIon[jid] += r3zz*d_aa->dr(nn);
         }
@@ -143,8 +143,8 @@ namespace qmcplusplus {
       for(int iat=0; iat<Nnuc; iat++)
       {
         for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
-          RealType rinv=d_ab->rinv(nn);
-          RealType r3zz=Qat[jat]*Zat[iat]*rinv*rinv*rinv;
+          real_type rinv=d_ab->rinv(nn);
+          real_type r3zz=Qat[jat]*Zat[iat]*rinv*rinv*rinv;
           forces[iat] -= r3zz*d_ab->dr(nn);
         }
 
@@ -155,23 +155,22 @@ namespace qmcplusplus {
 
 
   void
-  ForceBase::InitVarReduction (RealType rcut, int _m,
-			       int numFuncs)
+  ForceBase::InitVarReduction (real_type rcut, int _m, int numFuncs)
   {
     m = _m;
     Rcut = rcut;
-    vector<RealType> h(numFuncs);
-    Matrix<RealType> S(numFuncs, numFuncs);
+    vector<real_type> h(numFuncs);
+    Matrix<real_type> S(numFuncs, numFuncs);
     ck.resize(numFuncs, 0.0);
-    RealType R2jp1 = Rcut*Rcut;
-    RealType R2m = 1.0;
+    real_type R2jp1 = Rcut*Rcut;
+    real_type R2m = 1.0;
     for (int i=0; i<m; i++)
       R2m *= Rcut;
     for (int j=1; j<=numFuncs; j++) {
-      h[j-1] = R2jp1/RealType(j+1);
-      RealType R2k = Rcut;
+      h[j-1] = R2jp1/real_type(j+1);
+      real_type R2k = Rcut;
       for (int k=1; k<=numFuncs; k++) {
-	S(k-1,j-1) = R2m * R2k * R2jp1/(RealType)(m+k+j+1);
+	S(k-1,j-1) = R2m * R2k * R2jp1/(real_type)(m+k+j+1);
 	S(k-1,j-1) = std::pow(Rcut,(m+k+j+1))/(m+k+j+1.0);
 	R2k *= Rcut;
       }

@@ -83,7 +83,7 @@ namespace qmcplusplus
     return 0.0;
   }
 
-  RealType 
+  DensityEstimator::RealType 
   DensityEstimator::evalLR(ParticleSet &P,int iat)
   {
     RealType LR=0.0;
@@ -147,7 +147,7 @@ namespace qmcplusplus
   }
 
 
-  RealType
+  DensityEstimator::RealType
   DensityEstimator::evalSR(ParticleSet& P,int ipart) {
      const DistanceTableData *d_aa = P.DistTables[0];
      RealType SR=0.0;

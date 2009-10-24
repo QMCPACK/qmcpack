@@ -41,6 +41,7 @@ namespace qmcplusplus {
   {
   private:
     typedef QMCTraits::PosType                    PosType;
+    typedef QMCTraits::RealType                   RealType;
     typedef CrystalLattice<RealType,OHMMS_DIM>    UnitCellType;
     typedef Vector<double>                        RealValueVector_t;
     typedef Vector<TinyVector<double,OHMMS_DIM> > RealGradVector_t;

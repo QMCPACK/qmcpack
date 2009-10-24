@@ -62,7 +62,7 @@ namespace qmcplusplus
         W.G += *dLogPsi[iw];
         W.L += *d2LogPsi[iw];
 
-        RealType KEtemp = H_KE.evaluate(W);
+        Return_t KEtemp = H_KE.evaluate(W);
         Return_t eloc_new = KEtemp + saved[ENERGY_FIXED];
         Return_t weight;
         if (samplePsi2) weight = std::min(std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;

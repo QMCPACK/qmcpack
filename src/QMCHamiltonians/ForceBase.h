@@ -22,6 +22,9 @@ namespace qmcplusplus {
 
   struct ForceBase
   {
+    /** cheat, need to use virtual inheriance to clean up*/
+    typedef QMCTraits::RealType real_type;
+
     int FirstForceIndex;
     int myTableIndex;
     int Nnuc;
@@ -31,20 +34,20 @@ namespace qmcplusplus {
     ParticleSet& Ions;
     ParticleSet::ParticlePos_t forces;
     ParticleSet::ParticlePos_t forces_IonIon;
-    vector<QMCTraits::RealType> Zat; 
-    vector<QMCTraits::RealType> Qat;
+    vector<real_type> Zat; 
+    vector<real_type> Qat;
     string prefix;
     string pairName;
 
     // Data for variance reduction of Chiesa et al.
     // PRL 94, 036404 (2005)
-    RealType Rcut;
+    real_type Rcut;
     int m;
-    vector<RealType> ck;
-    inline RealType g(RealType r) {
+    vector<real_type> ck;
+    inline real_type g(real_type r) {
       if (r > Rcut) return 1.0;
-      RealType sum=0.0;
-      RealType r2kplusm = r;
+      real_type sum=0.0;
+      real_type r2kplusm = r;
       for (int i=0; i<m; i++)
 	r2kplusm *= r;
       for (int k=0; k<ck.size(); k++) {
@@ -55,7 +58,7 @@ namespace qmcplusplus {
     }
 	
 
-    void InitVarReduction (RealType Rcut, int m, int numFuncs);
+    void InitVarReduction (real_type Rcut, int m, int numFuncs);
 
 
     ForceBase(ParticleSet& ions, ParticleSet& elns);

@@ -38,7 +38,7 @@ namespace qmcplusplus
    * generated from VMC.
    */
 
-  class QMCLinearOptimize: public QMCDriver, private NRCOptimization<RealType>
+  class QMCLinearOptimize: public QMCDriver, private NRCOptimization<QMCTraits::RealType>
     {
     public:
 

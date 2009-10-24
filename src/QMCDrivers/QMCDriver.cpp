@@ -345,7 +345,7 @@ namespace qmcplusplus {
    
     //only overwrite it there is no walker (first time) and nTargetWalkers is not 
     //a multiple of /nWalkersPerThread
-    if(W.getActiveWalkers() == 0 && (nTargetWalkers == 0 || nTargetWalkers%nWalkersPerThread)) 
+    if(W.getActiveWalkers() == 0 && (nTargetWalkers < Nthreads || nTargetWalkers%nWalkersPerThread)) 
       nTargetWalkers=Nthreads*nWalkersPerThread;
     
     if( (fracDeficit>0 ) && nTargetSamples )
