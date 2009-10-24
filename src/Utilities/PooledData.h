@@ -27,7 +27,7 @@
 #include <limits>
 
 //#define USE_POOLED_DATA_ITERATOR 1
-typedef double RealType;
+//typedef double RealType;
 
 #if defined(USE_POOLED_DATA_ITERATOR)
 
@@ -201,27 +201,29 @@ struct PooledData {
 };
 #else
 template<class T>
-struct PooledData {
-
+struct PooledData 
+{
   typedef typename std::vector<T>::size_type size_type;
 
-  int Current;
+  size_type Current;
   std::vector<T> myData;
   
   ///default constructor
   inline PooledData(): Current(0) { }
 
   ///constructor with a size
-  explicit inline PooledData(int n):Current(0){ myData.resize(n,T());}
+  inline PooledData(size_type n):Current(0){ myData.resize(n,T());}
 
   ///return the size of the data
   inline size_type size() const { return myData.size();}
 
   //inline void clear() { std::vector<T>::clear(); Current=0;}
-  inline int current() const { return Current;}
+  inline size_type current() const { return Current;}
 
-  ///set the Current to zero
-  inline void rewind() { Current = 0;}
+  /** set the Current to a cursor
+   * @param cur locator to which Current is assigned
+   */
+  inline void rewind(size_type cur=0) { Current = cur;}
 
   ///return the starting iterator
   inline typename std::vector<T>::iterator begin() { return myData.begin();}
@@ -262,7 +264,7 @@ struct PooledData {
   }
 
   inline void add(std::complex<T>* first,std::complex<T>* last) {
-    int dn=2*(last-first);
+    size_type dn=2*(last-first);
     //TEMPORARY FIX FOR SGI-IA64 
 #if defined(SGI_IA64)  || defined(PROFILING_ON)
     for(;first != last; ++first)
@@ -290,7 +292,7 @@ struct PooledData {
 
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
-    int now=Current;
+    size_type now=Current;
     Current+=last-first;
     std::copy(myData.begin()+now,myData.begin()+Current,first);
     //while(first != last) {
@@ -356,7 +358,7 @@ bool operator==(const PooledData<T>& a, const PooledData<T>& b)
 {
   if(a.size() != b.size()) return false;
   //if(a.Current != b.Current) return false;
-  for(int i=0; i<a.size(); ++i)
+  for(typename PooledData<T>::size_type i=0; i<a.size(); ++i)
   {
     if(abs(a[i]-b[i])>numeric_limits<T>::epsilon()) return false;
   }
@@ -369,7 +371,7 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
 {
   if(a.size() != b.size()) return true;
   //if(a.Current != b.Current) return true;
-  for(int i=0; i<a.size(); ++i)
+  for(typename PooledData<T>::size_type i=0; i<a.size(); ++i)
   {
     if(abs(a[i]-b[i])>numeric_limits<T>::epsilon()) return true;
   }

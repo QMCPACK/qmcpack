@@ -66,7 +66,7 @@ namespace qmcplusplus {
   public:
 
     ///define a Walker_t
-    typedef Walker<RealType,ParticlePos_t> Walker_t;
+    typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     typedef Walker_t::Buffer_t             Buffer_t;
 

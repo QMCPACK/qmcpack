@@ -40,25 +40,34 @@ namespace qmcplusplus {
   /** A container class to represent a walker.
    *
    * A walker stores the particle configurations {R}  and a property container.
-   * The template (P)articleSet(A)ttribute is a generic container  of position types.
-   * The template (G)radient(A)ttribute is a generic container of gradients types.
+   * RealTypehe template (P)articleSet(A)ttribute is a generic container  of position types.
+   * RealTypehe template (G)radient(A)ttribute is a generic container of gradients types.
    * Data members for each walker
    * - ID : identity for a walker. default is 0. 
    * - Age : generation after a move is accepted.
    * - Weight : weight to take the ensemble averages
    * - Multiplicity : multiplicity for branching. Probably can be removed.
-   * - Properties  : 2D container. The first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
+   * - Properties  : 2D container. RealTypehe first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
    * - DataSet : anonymous container. 
    */
-  template<typename T, typename PA, typename GA=PA>
+  template<typename t_traits, typename p_traits>
   struct Walker 
   {
-    
-    enum {DIM=PA::Type_t::Size};
+    enum {DIM=t_traits::DIM};
+    /** typedef for real data type */
+    typedef typename t_traits::RealType RealType;
+    /** typedef for value data type. */
+    typedef typename t_traits::ValueType ValueType;
+    /** array of particles */
+    typedef typename p_traits::ParticlePos_t ParticlePos_t;
+    /** array of gradients */
+    typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
+    /** array of laplacians */
+    typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
 
     ///typedef for the property container, fixed size
-    typedef Matrix<T>      PropertyContainer_t;
-    typedef PooledData<T>  Buffer_t;
+    typedef Matrix<RealType>      PropertyContainer_t;
+    typedef PooledData<RealType>  Buffer_t;
 
     ///id reserved for forward walking
     long ID;
@@ -69,16 +78,16 @@ namespace qmcplusplus {
     ///Age of this walker age is incremented when a walker is not moved after a sweep
     int Age;
     ///Weight of the walker
-    T Weight;
+    RealType Weight;
     /** Number of copies for branching
      *
      * When Multiplicity = 0, this walker will be destroyed.
      */
-    T Multiplicity;
+    RealType Multiplicity;
 
     /**the configuration vector (3N-dimensional vector to store
        the positions of all the particles for a single walker)*/
-    PA R;
+    ParticlePos_t R;
 
     ///** \f$ \nabla_i d\log \Psi for the i-th particle */
     //GA Grad;
@@ -86,13 +95,13 @@ namespace qmcplusplus {
     //LA Lap;
 
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
-    GA Drift;
+    ParticlePos_t Drift;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
     
     ///Property history vector
-    vector<vector<T> >  PropertyHistory;
+    vector<vector<RealType> >  PropertyHistory;
     vector<int> PHindex;
 
     ///buffer for the data for particle-by-particle update
@@ -118,7 +127,7 @@ namespace qmcplusplus {
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      vector<T> newVecHistory=vector<T>(leng,0.0);
+      vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
       PHindex.push_back(0);
       return newL;
@@ -144,10 +153,10 @@ namespace qmcplusplus {
 //       PropertyHistory[index].pop_back();
     }
    
-    inline T getPropertyHistorySum(int index, int endN)
+    inline RealType getPropertyHistorySum(int index, int endN)
     {
-      T mean=0.0; 
-      typename vector<T>::const_iterator phStart;
+      RealType mean=0.0; 
+      typename vector<RealType>::const_iterator phStart;
       phStart=PropertyHistory[index].begin()+PHindex[index];
       for(int i=0;i<endN;phStart++,i++){
         if (phStart>=PropertyHistory[index].end()) phStart -= PropertyHistory[index].size();
@@ -195,22 +204,22 @@ namespace qmcplusplus {
     }
 
     //return the address of the values of Hamiltonian terms
-    inline T* restrict getPropertyBase() {
+    inline RealType* restrict getPropertyBase() {
       return Properties.data();
     }
 
     //return the address of the values of Hamiltonian terms
-    inline const T* restrict getPropertyBase() const {
+    inline const RealType* restrict getPropertyBase() const {
       return Properties.data();
     }
 
     ///return the address of the i-th properties
-    inline T* restrict getPropertyBase(int i) {
+    inline RealType* restrict getPropertyBase(int i) {
       return Properties[i];
     }
 
     ///return the address of the i-th properties
-    inline const T* restrict getPropertyBase(int i) const {
+    inline const RealType* restrict getPropertyBase(int i) const {
       return Properties[i];
     }
 
@@ -223,7 +232,7 @@ namespace qmcplusplus {
      *Assign the values and reset the age
      * but leave the weight and multiplicity 
      */
-    inline void resetProperty(T logpsi, T sigN, T ene) 
+    inline void resetProperty(RealType logpsi, RealType sigN, RealType ene) 
     {
       Age=0;
       //Weight=1.0;
@@ -243,7 +252,7 @@ namespace qmcplusplus {
      *Assign the values and reset the age
      * but leave the weight and multiplicity 
      */
-    inline void resetProperty(T logpsi, T sigN, T ene, T r2a, T r2p, T vq) 
+    inline void resetProperty(RealType logpsi, RealType sigN, RealType ene, RealType r2a, RealType r2p, RealType vq) 
     {
       Age=0;
       Properties(LOGPSI)=logpsi;
@@ -283,8 +292,8 @@ namespace qmcplusplus {
     {
       int numPH(0);
       for(int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
-      return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int) +(Properties.size()+DIM*2*R.size()+DataSet.size()+ numPH )*sizeof(T);
-      //return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
+      return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int) +(Properties.size()+DIM*2*R.size()+DataSet.size()+ numPH )*sizeof(RealType);
+      //return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(RealType);
     }
 
     template<class Msg>
@@ -317,8 +326,8 @@ namespace qmcplusplus {
 
   };
 
-  template<class T, class PA>
-    ostream& operator<<(ostream& out, const Walker<T,PA>& rhs)
+  template<class RealType, class PA>
+    ostream& operator<<(ostream& out, const Walker<RealType,PA>& rhs)
     {
       copy(rhs.Properties.begin(), rhs.Properties.end(), 
       	   ostream_iterator<double>(out," "));
