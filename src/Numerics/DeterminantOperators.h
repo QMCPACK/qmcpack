@@ -105,30 +105,32 @@ namespace qmcplusplus {
 
   /** LU factorization of double */
   inline void 
-    LUFactorization(const int& n, const int& m, double* restrict a, const int& n0, 
-        int* restrict piv) {
+    LUFactorization(int n, int m, double* restrict a, int n0, int* restrict piv) 
+    {
       int status;
       dgetrf(n,m,a,n0,piv,status);
     }
 
   /** LU factorization of complex<double> */
   inline void 
-    LUFactorization(const int& n, const int& m, std::complex<double>* restrict a, 
-        const int& n0, int* restrict piv) {
+    LUFactorization(int n, int m, std::complex<double>* restrict a, int n0, int* restrict piv) 
+    {
       int status;
       zgetrf(n,m,a,n0,piv,status);
     }
 
   /** Inversion of a double matrix after LU factorization*/
-  inline void InvertLU(const int& n, double* restrict a, const int& n0, 
-      int* restrict piv, double* restrict work, const int& n1){
+  inline void InvertLU(int n, double* restrict a, int n0
+      , int* restrict piv, double* restrict work, int n1)
+  {
     int status;
     dgetri(n,a,n0,piv,work,n1,status);
   }
 
   /** Inversion of a complex<double> matrix after LU factorization*/
-  inline void InvertLU(const int& n, std::complex<double>* restrict a, const int& n0, 
-      int* restrict piv, std::complex<double>* restrict work, const int& n1){
+  inline void InvertLU(int n, std::complex<double>* restrict a, int n0
+      , int* restrict piv, std::complex<double>* restrict work, int n1)
+  {
     int status;
     zgetri(n,a,n0,piv,work,n1,status);
   }
