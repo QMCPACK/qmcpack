@@ -78,9 +78,9 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
    *
    * For i=[0,n), primes_add[i]=primes[offset+i]
    */
-  inline bool get(int offset, int n, std::vector<UIntType>& primes_add)
+  inline bool get(UIntType offset, int n, std::vector<UIntType>& primes_add)
   {
-    if(offset>max_prime_offset) offset%=max_prime_offset; //roll back
+    offset=offset%max_prime_offset; //roll back
 
     //have enough prime numbers, assign them in an array
     if(n+offset+1<primes.size())
@@ -91,7 +91,7 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
 
     UIntType largest=primes.back();
     int n2add=offset+n-primes.size();
-    while(n2add && largest<max_prime) 
+    while(n2add>0 && largest<max_prime) 
     {
       largest+=2;
       bool is_prime=true;
