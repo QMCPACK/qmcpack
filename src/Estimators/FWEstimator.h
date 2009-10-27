@@ -64,7 +64,7 @@ namespace qmcplusplus {
       }
     }
 
-    inline void accumulate( HDF5_FW_observables OBS, HDF5_FW_weights WGTS, vector<int> Dims ) 
+    inline void accumulate_fw( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims ) 
     {
 //       clear();
 //       cout<<"Calling accumulate"<<endl;
