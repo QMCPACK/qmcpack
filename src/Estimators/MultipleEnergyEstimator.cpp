@@ -104,13 +104,13 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       (*it)->DataSet.rewind();
 
-      if(require_register) {
-        W.registerData(thisWalker,(*it)->DataSet);
-      } else {
+      //if(require_register) {
+      //  W.registerData(thisWalker,(*it)->DataSet);
+      //} else {
         W.R = thisWalker.R;
         W.update();
-        if(DataSetSize) W.updateBuffer((*it)->DataSet);
-      }
+      //  if(DataSetSize) W.updateBuffer((*it)->DataSet);
+      //}
 
       //evalaute the wavefunction and hamiltonian
       for(int ipsi=0; ipsi< NumCopies;ipsi++) {
@@ -145,17 +145,17 @@ namespace qmcplusplus {
 
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
+
+      APP_ABORT("DON't forget DRIFT!!!");
       //DON't forget DRIFT!!!
-      thisWalker.Drift=0.0;
-
-      for(int ipsi=0; ipsi< NumCopies; ipsi++) {
-        RealType wgt=1.0/sumratio[ipsi];
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-
-        //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,DIM>::axpy(wgt,psi[ipsi]->G,thisWalker.Drift);
-      }
-      thisWalker.Drift *= tau;
+      //thisWalker.Drift=0.0;
+      //for(int ipsi=0; ipsi< NumCopies; ipsi++) {
+      //  RealType wgt=1.0/sumratio[ipsi];
+      //  thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
+      //  //thisWalker.Drift += wgt*psi[ipsi]->G;
+      //  PAOps<RealType,DIM>::axpy(wgt,psi[ipsi]->G,thisWalker.Drift);
+      //}
+      //thisWalker.Drift *= tau;
       ++it;++iw;
     }
   }
@@ -169,6 +169,7 @@ namespace qmcplusplus {
       RealType tau,vector<RealType>& Norm,
       bool require_register) {
 
+    APP_ABORT("MultipleEnergyEstimator broken with warp");
     NumWalkers = W.getActiveWalkers();
 
     int numPtcls(W.getTotalNum());
@@ -192,13 +193,13 @@ namespace qmcplusplus {
       (*it)->DataSet.rewind();
 
       //NECESSARY SINCE THE DISTANCE TABLE OF W ARE USED TO WARP
-      if(require_register) {
-        W.registerData(thisWalker,(*it)->DataSet);
-      } else {
+      //if(require_register) {
+      //  W.registerData(thisWalker,(*it)->DataSet);
+      //} else {
         W.R = thisWalker.R;
         W.update();
-        if(DataSetSize) W.updateBuffer((*it)->DataSet);
-      }
+      //  if(DataSetSize) W.updateBuffer((*it)->DataSet);
+      //}
 
       for(int ipsi=0; ipsi<NumCopies; ipsi++) Jacobian[ipsi]=1.e0;
       for(int iptcl=0; iptcl< numPtcls; iptcl++){
@@ -215,18 +216,19 @@ namespace qmcplusplus {
       }
       
       //update distance table and bufferize it if necessary
-      if(require_register) {
-        for(int ipsi=0; ipsi<NumCopies; ipsi++){ 
-          WW[ipsi]->registerData((*it)->DataSet);
-        }
-        Warp.registerData(WW,(*it)->DataSet);
-      } else {
-        for(int ipsi=0; ipsi<NumCopies; ipsi++){
-          WW[ipsi]->update();
-          if(DataSetSize) WW[ipsi]->updateBuffer((*it)->DataSet);
-        }
-        if(DataSetSize) Warp.updateBuffer((*it)->DataSet);
-      }
+      APP_ABORT("MultipleEnergyEstimator broken with warp");
+      //if(require_register) {
+      //  for(int ipsi=0; ipsi<NumCopies; ipsi++){ 
+      //    WW[ipsi]->registerData((*it)->DataSet);
+      //  }
+      //  Warp.registerData(WW,(*it)->DataSet);
+      //} else {
+      //  for(int ipsi=0; ipsi<NumCopies; ipsi++){
+      //    WW[ipsi]->update();
+      //    if(DataSetSize) WW[ipsi]->updateBuffer((*it)->DataSet);
+      //  }
+      //  if(DataSetSize) Warp.updateBuffer((*it)->DataSet);
+      //}
 
 
 
@@ -287,12 +289,14 @@ namespace qmcplusplus {
         invsumratio[ipsi]=1.0/sumratio[ipsi];
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
       }
-      setScaledDrift(tau,psi[0]->G,drift);
-      thisWalker.Drift=invsumratio[0]*drift;
-      for(int ipsi=1; ipsi< NumCopies ;ipsi++) {               		
-        setScaledDrift(tau,psi[ipsi]->G,drift);
-        thisWalker.Drift += (invsumratio[ipsi]*drift);
-      }
+
+      APP_ABORT("DON't forget DRIFT!!!");
+      //setScaledDrift(tau,psi[0]->G,drift);
+      //thisWalker.Drift=invsumratio[0]*drift;
+      //for(int ipsi=1; ipsi< NumCopies ;ipsi++) {               		
+      //  setScaledDrift(tau,psi[ipsi]->G,drift);
+      //  thisWalker.Drift += (invsumratio[ipsi]*drift);
+      //}
       ++it;++iw;
     }
   }

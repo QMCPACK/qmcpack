@@ -22,7 +22,6 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCDrivers/SpaceWarp.h"
-
 #include "QMCDrivers/DriftOperators.h"
 #include <deque>
 namespace qmcplusplus {
@@ -34,8 +33,8 @@ namespace qmcplusplus {
     typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
     typedef MCWalkerConfiguration::ParticleLaplacian_t ParticleLaplacian_t;
 
-
-
+    //Drift is moved  from Walker
+    ParticlePos_t Drift;
     Vector<int> BeadSignWgt;    
     vector<ParticlePos_t*> Gradients;
     vector<ParticleLaplacian_t*> Laplacians;
@@ -50,7 +49,8 @@ namespace qmcplusplus {
     int stepmade,timesTouched;
     vector<int> ptclAge;
 
-    inline Bead(const Bead& a) {
+    inline Bead(const Bead& a) 
+    {
       makeCopyBead(a);
     }
 
@@ -61,25 +61,25 @@ namespace qmcplusplus {
       delete_iter(DriftVectors.begin(),DriftVectors.end());
     }
 
-    inline Bead(const Walker_t& a){
-      makeCopy(a);
-      int rows=Properties.rows();
-      Resize_Grad_and_Action(rows,R.size());
-      BeadSignWgt.resize(rows);
-      Tau_eff.resize(rows);
-      //       deltaRSquared.resize(3);
+    inline Bead(const Walker_t& a):Walker_t(a)
+    {
+      resize_bead(R.size());
     }
     
-    inline Bead(const Walker_t& a, string scaleBeadDrift){
+      //       deltaRSquared.resize(3);
+    inline Bead(const Walker_t& a, string scaleBeadDrift): Walker_t(a)
+    {
       ScaleDrift = ((scaleBeadDrift=="true")||(scaleBeadDrift=="yes"));
-      
-      makeCopy(a);
+      resize_bead(R.size());
+    }
+
+    inline void resize_bead(int n)
+    {
+      Drift.resize(R.size());
       int rows=Properties.rows();
       Resize_Grad_and_Action(rows,R.size());
       BeadSignWgt.resize(rows);
       Tau_eff.resize(rows);
-
-      //       deltaRSquared.resize(3);
     }
 
     inline Bead& operator=(const Bead& a) {
@@ -88,8 +88,8 @@ namespace qmcplusplus {
     }
 
     inline void makeCopyBead(const Bead& a){
-
       makeCopy(a);
+      Drift.resize(R.size());
       int rows=a.Gradients.size();
       Resize_Grad_and_Action(rows,a.size());
       Action=a.Action;
@@ -157,7 +157,7 @@ namespace qmcplusplus {
       //compute Drift
       RealType denom(0.e0),wgtpsi;
       Drift=0.e0;
-      ParticleAttrib<TinyVector<double,3> > TMPgrad(Drift);
+      ParticlePos_t TMPgrad(Drift);
       for(int ipsi=0; ipsi<npsi; ipsi++) {
         wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
             -Properties(0,LOGPSI)   + LogNorm[0]));

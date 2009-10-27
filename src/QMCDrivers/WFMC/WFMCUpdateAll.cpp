@@ -41,17 +41,18 @@ namespace qmcplusplus
       {
 
         Walker_t& thisWalker(**it);
+        W.loadWalker(thisWalker,false);
+
+        setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(deltaR,RandomGen);
         //reject illegal positions or big displacement
-        bool Cont(true);
-        if (!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
-        if (!Cont)
-          {
-            H.rejectedMove(W,thisWalker);
-            H.auxHevaluate(W,thisWalker);
-            continue;
-          }
+        if (!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+        {
+          H.rejectedMove(W,thisWalker);
+          H.auxHevaluate(W,thisWalker);
+          continue;
+        }
         ///W.R = m_sqrttau*deltaR + thisWalker.Drift;
         ///W.R += thisWalker.R;
         ///W.update();
@@ -81,8 +82,7 @@ namespace qmcplusplus
           {
             thisWalker.Age=0;
             accepted=true;
-            thisWalker.R = W.R;
-            thisWalker.Drift = drift;
+            W.saveWalker(thisWalker);
             //           rr_accepted = rr_proposed;
             //           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
             thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);

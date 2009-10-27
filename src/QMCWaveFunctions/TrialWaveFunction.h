@@ -212,6 +212,9 @@ namespace qmcplusplus
       ///index of the active particle
       int WorkingPtcl;
 
+      ///starting index of the buffer
+      size_t BufferCursor;
+
       ///sign of the trial wave function
       RealType PhaseValue;
 

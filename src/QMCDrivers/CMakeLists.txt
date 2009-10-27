@@ -57,14 +57,14 @@ IF(QMC_BUILD_COMPLETE)
     PolymerEstimator.cpp
     MultiChain.cpp
     RQMCMultiple.cpp
-    ../Estimators/RQMCMultipleEstimator.cpp
     ../Estimators/ComboPolymerEstimator.cpp
     ../Estimators/CSEnergyEstimator.cpp
     ../Estimators/CSPolymerEstimator.cpp
     ../Estimators/MJPolymerEstimator.cpp
     ../Estimators/HFDHE2PolymerEstimator.cpp
   )
-# REMOVE neglected/buggy
+# REMOVE broken stuff
+#    ../Estimators/RQMCMultipleEstimator.cpp
 #    SpaceWarp.cpp
 #    RQMCMultiWarp.cpp
 #    VMC/VMCMultipleWarp.cpp

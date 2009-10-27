@@ -143,14 +143,14 @@ namespace qmcplusplus
         Walker_t::Buffer_t &wbuffer(awalker->DataSet);
         wbuffer.clear();
         app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
-        W.registerData(wbuffer);
+        //W.registerData(wbuffer);
         logpsi1=Psi.registerData(W,wbuffer);
         eloc1= H.evaluate(W);
         app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
 
         wbuffer.clear();
         app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
-        w_clone->registerData(wbuffer);
+        //w_clone->registerData(wbuffer);
         logpsi2=psi_clone->registerData(W,wbuffer);
         eloc2= H.evaluate(*w_clone);
         app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
@@ -299,8 +299,7 @@ namespace qmcplusplus
         Walker_t::Buffer_t tbuffer;
         W.R = (**it).R+Tau*deltaR;
         (**it).R=W.R;
-        //W.registerData(**it,tbuffer);
-        W.registerData(tbuffer);
+        W.update();
         RealType logpsi=Psi.registerData(W,tbuffer);
         RealType ene;
         if (checkHam)
@@ -320,6 +319,7 @@ namespace qmcplusplus
       }
 
     cout << "  Update using drift " << endl;
+    bool pbyp_mode=true;
     for (int iter=0; iter<4;++iter)
       {
         int iw=0;
@@ -329,10 +329,9 @@ namespace qmcplusplus
 
             cout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
-            W.R = thisWalker.R;
+            W.loadWalker(thisWalker,pbyp_mode);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-            w_buffer.rewind();
-            W.copyFromBuffer(w_buffer);
+
             Psi.copyFromBuffer(W,w_buffer);
             H.copyFromBuffer(W,w_buffer);
 
@@ -377,10 +376,8 @@ namespace qmcplusplus
               }
 
             cout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
-            thisWalker.R=W.R;
-            w_buffer.rewind();
-            W.copyToBuffer(w_buffer);
             RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
+            W.saveWalker(thisWalker);
             RealType ene_up;
             if (checkHam)
               ene_up= H.evaluate(W,w_buffer);
@@ -425,10 +422,8 @@ namespace qmcplusplus
 
             cout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
-            W.R = thisWalker.R;
+            W.loadWalker(thisWalker,pbyp_mode);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-            w_buffer.rewind();
-            W.copyFromBuffer(w_buffer);
             Psi.copyFromBuffer(W,w_buffer);
 
             RealType eold(thisWalker.Properties(LOCALENERGY));
@@ -465,10 +460,9 @@ namespace qmcplusplus
                       }
                   }
 
-                thisWalker.R=W.R;
-                w_buffer.rewind();
-                W.updateBuffer(w_buffer);
                 RealType logpsi_up = Psi.updateBuffer(W,w_buffer,false);
+                W.saveWalker(thisWalker);
+
                 RealType ene = H.evaluate(W);
                 thisWalker.resetProperty(logpsi_up,Psi.getPhase(),ene);
               }
@@ -523,10 +517,8 @@ namespace qmcplusplus
       {
         makeGaussRandom(deltaR);
         Walker_t::Buffer_t tbuffer;
-        W.R = (**it).R+Tau*deltaR;
-        (**it).R=W.R;
-        //W.registerData(**it,tbuffer);
-        W.registerData(tbuffer);
+        (**it).R  +=  Tau*deltaR;
+        W.loadWalker(**it,true);
         RealType logpsi=Psi.registerData(W,tbuffer);
         RealType ene = H.evaluate(W);
         (*it)->DataSet=tbuffer;
@@ -549,10 +541,8 @@ namespace qmcplusplus
           {
             cout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
-            W.R = thisWalker.R;
+            W.loadWalker(thisWalker,true);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-            w_buffer.rewind();
-            W.copyFromBuffer(w_buffer);
             Psi.copyFromBuffer(W,w_buffer);
 
             RealType eold(thisWalker.Properties(LOCALENERGY));

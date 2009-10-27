@@ -51,11 +51,9 @@ namespace qmcplusplus {
     {
 
       Walker_t& thisWalker(**it);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      W.loadWalker(thisWalker,true);
 
-      W.R = thisWalker.R;
-      w_buffer.rewind();
-      W.copyFromBuffer(w_buffer);
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W,w_buffer);
 
       myTimers[1]->start();
@@ -100,11 +98,13 @@ namespace qmcplusplus {
       myTimers[1]->stop();
 
       myTimers[2]->start();
-      thisWalker.R = W.R;
-      PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-      w_buffer.rewind();
-      W.updateBuffer(w_buffer);
+      //thisWalker.R = W.R;
+      //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+      //w_buffer.rewind();
+      //W.updateBuffer(w_buffer);
+
       RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
+      W.saveWalker(thisWalker);
 
       //W.copyToBuffer(w_buffer);
       //RealType logpsi = Psi.evaluate(W,w_buffer);
@@ -141,12 +141,11 @@ namespace qmcplusplus {
     for( ;it != it_end; ++it) 
     {
       Walker_t& thisWalker(**it);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
-      W.R = thisWalker.R;
-      w_buffer.rewind();
-      W.copyFromBuffer(w_buffer);
-      Psi.copyFromBuffer(W,w_buffer);
+      W.loadWalker(thisWalker,true);
+
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Psi.copyFromBuffer(W,thisWalker.DataSet);
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -215,12 +214,14 @@ namespace qmcplusplus {
       if(moved) 
       {
         myTimers[2]->start();
-        thisWalker.R = W.R;
-        PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-        w_buffer.rewind();
-        W.copyToBuffer(w_buffer);
-        //RealType psi = Psi.evaluate(W,w_buffer);
+        //thisWalker.R = W.R;
+        //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+        //w_buffer.rewind();
+        //W.copyToBuffer(w_buffer);
+
         RealType logpsi = Psi.evaluateLog(W,w_buffer);
+        W.saveWalker(thisWalker);
+
         myTimers[2]->stop();
 
         myTimers[3]->start();
@@ -261,9 +262,10 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
-      W.R = thisWalker.R;
-      w_buffer.rewind();
-      W.copyFromBuffer(w_buffer);
+      W.loadWalker(thisWalker,true);
+      //W.R = thisWalker.R;
+      //w_buffer.rewind();
+      //W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
 
@@ -323,10 +325,11 @@ namespace qmcplusplus {
       if(moved) 
       {
         myTimers[2]->start();
-        thisWalker.R = W.R;
-        w_buffer.rewind();
-        W.updateBuffer(w_buffer);
+        //thisWalker.R = W.R;
+        //w_buffer.rewind();
+        //W.updateBuffer(w_buffer);
         RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+        W.saveWalker(thisWalker);
         myTimers[2]->stop();
 
         myTimers[3]->start();
@@ -368,9 +371,10 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
-      W.R = thisWalker.R;
-      w_buffer.rewind();
-      W.copyFromBuffer(w_buffer);
+      W.loadWalker(thisWalker,true);
+      //W.R = thisWalker.R;
+      //w_buffer.rewind();
+      //W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
       myTimers[1]->start();
@@ -411,14 +415,13 @@ namespace qmcplusplus {
       myTimers[1]->stop();
 
       myTimers[2]->start();
-      thisWalker.R = W.R;
-      PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-      w_buffer.rewind();
-      W.updateBuffer(w_buffer);
+      //thisWalker.R = W.R;
+      //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+      //w_buffer.rewind();
+      //W.updateBuffer(w_buffer);
       RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
+      W.saveWalker(thisWalker);
 
-      //W.copyToBuffer(w_buffer);
-      //RealType logpsi = Psi.evaluate(W,w_buffer);
       myTimers[2]->stop();
 
       myTimers[3]->start();

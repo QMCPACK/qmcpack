@@ -60,9 +60,10 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
-      W.R = thisWalker.R;
-      w_buffer.rewind();
-      W.copyFromBuffer(w_buffer);
+      W.loadWalker(thisWalker,true);
+      //W.R = thisWalker.R;
+      //w_buffer.rewind();
+      //W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
       //create a 3N-Dimensional Gaussian with variance=1
@@ -159,12 +160,13 @@ namespace qmcplusplus {
         thisWalker.Age=0;
         thisWalker.R = W.R;
 
-        nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
+        nodecorr=getNodeCorrection(W.G,drift);
 
-        w_buffer.rewind();
-        W.copyToBuffer(w_buffer);
-        //RealType psi = Psi.evaluate(W,w_buffer);
+        //w_buffer.rewind();
+        //W.copyToBuffer(w_buffer);
         RealType logpsi = Psi.evaluateLog(W,w_buffer);
+        W.saveWalker(thisWalker);
+
         myTimers[2]->stop();
 
         myTimers[3]->start();
@@ -205,13 +207,13 @@ namespace qmcplusplus {
           W.G += dG;
           W.L += dL;
 
-          PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+          //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
 
-          thisWalker.R[iat]=W.R[iat];
-          w_buffer.rewind();
-          W.copyToBuffer(w_buffer);
-          //RealType psi = Psi.evaluate(W,w_buffer);
+          //thisWalker.R[iat]=W.R[iat];
+          //w_buffer.rewind();
+          //W.copyToBuffer(w_buffer);
           RealType logpsi = Psi.evaluateLog(W,w_buffer);
+          W.saveWalker(thisWalker);
           ++NonLocalMoveAccepted;
           myTimers[2]->stop();
         }

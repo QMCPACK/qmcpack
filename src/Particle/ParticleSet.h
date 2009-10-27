@@ -64,7 +64,6 @@ namespace qmcplusplus {
        , public ParticleBase<PtclOnLatticeTraits>
   {
   public:
-
     ///define a Walker_t
     typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
@@ -268,7 +267,8 @@ namespace qmcplusplus {
      *
      * Otherwise, everything is the same as makeMove for a walker
      */
-    bool makeMoveWithDrift(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+    bool makeMoveWithDrift(const Walker_t& awalker
+        , const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
 
     void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
@@ -312,12 +312,23 @@ namespace qmcplusplus {
     void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
     void applyMinimumImage(ParticlePos_t& pinout);
 
-    void registerData(Buffer_t& buf);
-    void registerData(Walker_t& awalker, Buffer_t& buf);
-    void updateBuffer(Walker_t& awalker, Buffer_t& buf);
-    void updateBuffer(Buffer_t& buf);
-    void copyToBuffer(Buffer_t& buf);
-    void copyFromBuffer(Buffer_t& buf);
+    /** load a Walker_t to the current ParticleSet
+     * @param awalker the reference to the walker to be loaded
+     * @param pbyp true if it is used by PbyP update
+     *
+     * PbyP requires the distance tables and Sk with awalker.R
+     */
+    void loadWalker(Walker_t& awalker, bool pbyp);
+    /** save this to awalker
+     */
+    void saveWalker(Walker_t& awalker);
+
+    //void registerData(Buffer_t& buf);
+    //void registerData(Walker_t& awalker, Buffer_t& buf);
+    //void updateBuffer(Walker_t& awalker, Buffer_t& buf);
+    //void updateBuffer(Buffer_t& buf);
+    //void copyToBuffer(Buffer_t& buf);
+    //void copyFromBuffer(Buffer_t& buf);
 
     //return the address of the values of Hamiltonian terms
     inline RealType* restrict getPropertyBase() 

@@ -56,7 +56,6 @@ void MCWalkerConfiguration::createWalkers(int n)
     while(n) {
       Walker_t* awalker=new Walker_t(GlobalNum);
       awalker->R = R;
-      awalker->Drift = 0.0;
       WalkerList.push_back(awalker);
       --n;
     }
@@ -190,9 +189,10 @@ MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail) {
  * R + D + X
  */
 void MCWalkerConfiguration::sample(iterator it, RealType tauinv) {
-  makeGaussRandom(R);
-  R *= tauinv;
-  R += (*it)->R + (*it)->Drift;
+  APP_ABORT("MCWalkerConfiguration::sample obsolete");
+//  makeGaussRandom(R);
+//  R *= tauinv;
+//  R += (*it)->R + (*it)->Drift;
 }
 
 void MCWalkerConfiguration::reset() {
@@ -234,13 +234,6 @@ void MCWalkerConfiguration::reset() {
 //
 //  return true;
 //}
-
-void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
-  R = awalker.R;
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->evaluate(*this);
-  }
-}
 
 /** reset the Property container of all the walkers
  */
@@ -299,7 +292,7 @@ void MCWalkerConfiguration::loadEnsemble()
   {
     Walker_t* awalker=new Walker_t(GlobalNum);
     awalker->R = *(SampleStack[i]);
-    awalker->Drift = 0.0;
+    //awalker->Drift = 0.0;
     awalker->Properties.copy(prop);
     WalkerList[i]=awalker;
     delete SampleStack[i];
@@ -322,7 +315,7 @@ void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
   {
     Walker_t* awalker=new Walker_t(GlobalNum);
     awalker->R = *(SampleStack[i]);
-    awalker->Drift = 0.0;
+    //awalker->Drift = 0.0;
     awalker->Properties.copy(prop);
     other.WalkerList.push_back(awalker);
     //delete SampleStack[i];

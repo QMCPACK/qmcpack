@@ -325,19 +325,29 @@ namespace qmcplusplus {
       for(int iat=0; iat<deltaR.size(); ++iat)
         R[iat]=awalker.R[iat]+dt*deltaR[iat];
     }
-    this->update();
+
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
     //every move is valid
     return true;
   }
 
+  /** move a walker by dt*deltaR + drift
+   * @param awalker initial walker configuration
+   * @param drift drift vector
+   * @param deltaR random displacement
+   * @param dt timestep
+   * @return true, if all the particle moves are legal under the boundary conditions
+   */
   bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
-      , const ParticlePos_t& deltaR, RealType dt)
+      , const ParticlePos_t& drift , const ParticlePos_t& deltaR
+      , RealType dt)
   {
     if(UseBoundBox)
     {
       for(int iat=0; iat<deltaR.size(); ++iat)
       {
-        SingleParticlePos_t displ(dt*deltaR[iat]+awalker.Drift[iat]);
+        SingleParticlePos_t displ(dt*deltaR[iat]+drift[iat]);
         if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
         SingleParticlePos_t newpos(awalker.R[iat]+displ);
         if(!Lattice.isValid(Lattice.toUnit(newpos))) return false;
@@ -347,9 +357,12 @@ namespace qmcplusplus {
     else
     {
       for(int iat=0; iat<deltaR.size(); ++iat)
-        R[iat]=awalker.R[iat]+dt*deltaR[iat]+awalker.Drift[iat];
+        R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
     }
-    this->update();
+
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+
     //every move is valid
     return true;
   }
@@ -415,111 +428,142 @@ namespace qmcplusplus {
     }
   }
 
-  void 
-  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+  void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp) 
+  {
     R = awalker.R;
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) 
+    G = awalker.G;
+    L = awalker.L;
+    //awalker.DataSet.rewind();
+    //identical to copyFromBuffer but forbid using buffer
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
+//    if(SK) SK->copyFromBuffer(buf);
+//#else
+    if(pbyp)
     {
-      DistTables[i]->evaluate(*this);
-      DistTables[i]->registerData(buf);
+      for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+      if(SK) SK->UpdateAllPart();
     }
-    if(SK)
-    {
-      SK->UpdateAllPart();
-      SK->registerData(buf);
-    }
-#else
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
-#endif
+//#endif
   }
 
-  void 
-  ParticleSet::registerData(PooledData<RealType>& buf) {
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) 
-    {
-      DistTables[i]->evaluate(*this);
-      DistTables[i]->registerData(buf);
-    }
-    if(SK)
-    {
-      SK->UpdateAllPart();
-      SK->registerData(buf);
-    }
-#else
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+  void ParticleSet::saveWalker(Walker_t& awalker) 
+  {
+    awalker.R=R;
+    awalker.G=G;
+    awalker.L=L;
+    //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
     if(SK) SK->UpdateAllPart();
-#endif
-  }
-  
-  void 
-  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
-    R = awalker.R;
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) 
-    {
-      DistTables[i]->evaluate(*this);
-      DistTables[i]->updateBuffer(buf);
-    }
-    if(SK)
-    {
-      SK->UpdateAllPart();
-      SK->updateBuffer(buf);
-    }
-#else
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
-#endif
-  }
-    
-  void 
-  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) 
-    {
-      DistTables[i]->evaluate(*this);
-      DistTables[i]->updateBuffer(buf);
-    }
-    if(SK)
-    {
-      SK->UpdateAllPart();
-      SK->updateBuffer(buf);
-    }
-#else
-    //for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
-#endif
-  }
-    
-  void 
-  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
-    //Do not change SK: 2007-05-18
-    //if(SK) SK->copyToBuffer(buf);
-    if(SK)
-    {//need to calculate the Sk with the current position
-      if(!SK->DoUpdate) SK->UpdateAllPart();
-      SK->copyToBuffer(buf);
-    }
-#else
-    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
-#endif
-  }
-  
-  void 
-  ParticleSet::copyFromBuffer(PooledData<RealType>& buf) {
-#if defined(PACK_DISTANCETABLES)
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
-    if(SK) SK->copyFromBuffer(buf);
-#else
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
-#endif
+    //awalker.DataSet.rewind();
   }
 
+
+//  void 
+//  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+//    R = awalker.R;
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) 
+//    {
+//      DistTables[i]->evaluate(*this);
+//      DistTables[i]->registerData(buf);
+//    }
+//    if(SK)
+//    {
+//      SK->UpdateAllPart();
+//      SK->registerData(buf);
+//    }
+//#else
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+//    if(SK) SK->UpdateAllPart();
+//#endif
+//  }
+//
+//  void 
+//  ParticleSet::registerData(PooledData<RealType>& buf) {
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) 
+//    {
+//      DistTables[i]->evaluate(*this);
+//      DistTables[i]->registerData(buf);
+//    }
+//    if(SK)
+//    {
+//      SK->UpdateAllPart();
+//      SK->registerData(buf);
+//    }
+//#else
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+//    if(SK) SK->UpdateAllPart();
+//#endif
+//  }
+//  
+//  void 
+//  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
+//    R = awalker.R;
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) 
+//    {
+//      DistTables[i]->evaluate(*this);
+//      DistTables[i]->updateBuffer(buf);
+//    }
+//    if(SK)
+//    {
+//      SK->UpdateAllPart();
+//      SK->updateBuffer(buf);
+//    }
+//#else
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+//    if(SK) SK->UpdateAllPart();
+//#endif
+//  }
+//    
+//  void 
+//  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) 
+//    {
+//      DistTables[i]->evaluate(*this);
+//      DistTables[i]->updateBuffer(buf);
+//    }
+//    if(SK)
+//    {
+//      SK->UpdateAllPart();
+//      SK->updateBuffer(buf);
+//    }
+//#else
+//    //for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+//    if(SK) SK->UpdateAllPart();
+//#endif
+//  }
+//    
+//  void 
+//  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
+//    //Do not change SK: 2007-05-18
+//    //if(SK) SK->copyToBuffer(buf);
+//    if(SK)
+//    {//need to calculate the Sk with the current position
+//      if(!SK->DoUpdate) SK->UpdateAllPart();
+//      SK->copyToBuffer(buf);
+//    }
+//#else
+//    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
+//#endif
+//  }
+//  
+//  void 
+//  ParticleSet::copyFromBuffer(PooledData<RealType>& buf) 
+//  {
+//#if defined(PACK_DISTANCETABLES)
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
+//    if(SK) SK->copyFromBuffer(buf);
+//#else
+//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+//    if(SK) SK->UpdateAllPart();
+//#endif
+//  }
+//
   void ParticleSet::initPropertyList() 
   {
     PropertyList.clear();
@@ -593,6 +637,7 @@ namespace qmcplusplus {
 //     }
     
 
+  
   
 }
 

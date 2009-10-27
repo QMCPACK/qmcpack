@@ -134,7 +134,7 @@ namespace qmcplusplus {
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
       //setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
-      RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,(*it)->Drift);
+      RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
       RealType ene = H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
       H.saveProperty((*it)->getPropertyBase());
@@ -147,17 +147,19 @@ namespace qmcplusplus {
 
     for(;it != it_end; ++it)
     {
+      Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,UpdatePbyP);
+
       Walker_t::Buffer_t tbuffer;
-      W.registerData(**it,tbuffer);
       RealType logpsi=Psi.registerData(W,tbuffer);
-      (*it)->DataSet=tbuffer;
+      thisWalker.DataSet=tbuffer;
 
       //setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
-      RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,(*it)->Drift);
+      RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
       RealType ene = H.evaluate(W);
-      //(*it)->resetProperty(logpsi,Psi.getPhase(),ene);
-      (*it)->resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
-      H.saveProperty((*it)->getPropertyBase());
+
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
+      H.saveProperty(thisWalker.getPropertyBase());
     } 
   }
 
@@ -189,10 +191,13 @@ namespace qmcplusplus {
     for(;it != it_end; ++it)
     {
       Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,UpdatePbyP);
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
-      w_buffer.rewind();
-      W.updateBuffer(**it,w_buffer);
+
       RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
+
+      //needed to copy R/L/G
+      W.saveWalker(thisWalker);
 
       //thisWalker.Properties(DRIFTSCALE)=getNodeCorrection(W.G,(*it)->Drift);
       //RealType enew= H.evaluate(W);

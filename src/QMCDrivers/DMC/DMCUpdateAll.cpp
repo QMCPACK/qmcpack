@@ -51,26 +51,22 @@ namespace qmcplusplus {
     for(;it != it_end;++it) 
     {
       Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,false);
       
-      //save old local energy
-      RealType eold    = thisWalker.Properties(LOCALENERGY);
-      RealType signold = thisWalker.Properties(SIGN);
-      RealType enew  = eold;
-
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
-      bool Cont(true);
-      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
-      if (!Cont)
+      RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau)) 
       {
         H.rejectedMove(W,thisWalker); 
         continue;
       }
-      //W.R = m_sqrttau*deltaR + thisWalker.Drift;
-      //RealType rr_proposed = Dot(W.R,W.R);
-      //W.R += thisWalker.R;
-      //W.update();
+
+      //save old local energy
+      RealType eold    = thisWalker.Properties(LOCALENERGY);
+      RealType signold = thisWalker.Properties(SIGN);
+      RealType enew  = eold;
       
       //evaluate wave functior
       RealType logpsi(Psi.evaluateLog(W));
@@ -79,7 +75,7 @@ namespace qmcplusplus {
 
       bool accepted=false; 
       RealType rr_accepted = 0.0;
-      RealType nodecorr=0.0;
+      nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhaseDiff())) 
       {
         thisWalker.Age++;
@@ -117,8 +113,7 @@ namespace qmcplusplus {
         {
           accepted=true;
 	  thisWalker.Age=0;
-          thisWalker.R = W.R;
-          thisWalker.Drift = drift;          
+          W.saveWalker(thisWalker);
           rr_accepted = rr_proposed;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.auxHevaluate(W,thisWalker);
@@ -136,7 +131,7 @@ namespace qmcplusplus {
           W.R[iat] += nonLocalOps.delta(ibar);
           W.update();
           logpsi=Psi.evaluateLog(W);
-          setScaledDrift(Tau,W.G,thisWalker.Drift);
+          setScaledDrift(Tau,W.G,drift);
           thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
           thisWalker.R[iat] = W.R[iat];
           ++NonLocalMoveAccepted;
@@ -179,23 +174,21 @@ namespace qmcplusplus {
     for(;it != it_end;++it) 
     {
       Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,false);
       
-      //save old local energy
-      RealType eold = thisWalker.Properties(LOCALENERGY);
-      RealType enew = eold;
-      RealType signold = thisWalker.Properties(SIGN);
-      //RealType emixed  = eold;
-
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
-       
-      bool Cont(true);
-      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
-      if (!Cont)
+
+      RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
       {
         H.rejectedMove(W,thisWalker); 
         continue;
       }
+      //save old local energy
+      RealType eold = thisWalker.Properties(LOCALENERGY);
+      RealType enew = eold;
+      RealType signold = thisWalker.Properties(SIGN);
       //W.R = m_sqrttau*deltaR + thisWalker.Drift;
       //RealType rr_proposed = Dot(W.R,W.R);
       //W.R += thisWalker.R;
@@ -206,7 +199,7 @@ namespace qmcplusplus {
 
       bool accepted=false;
       RealType rr_accepted = 0.0;
-      RealType nodecorr=0.0;
+      nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhaseDiff())) 
       {
         thisWalker.Age++;
@@ -238,8 +231,7 @@ namespace qmcplusplus {
         {
 	  thisWalker.Age=0;
           accepted=true;  
-          thisWalker.R = W.R;
-          thisWalker.Drift = drift;
+          W.saveWalker(thisWalker);
           rr_accepted = rr_proposed;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.auxHevaluate(W,thisWalker);

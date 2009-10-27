@@ -228,13 +228,6 @@ namespace qmcplusplus {
      */
     void reset();
 
-    /**load a Walker_t to the current ParticleSet
-     *@param awalker the reference to the walker to be loaded
-     */
-    void loadWalker(Walker_t& awalker);
-    //void clearAuxDataSet();
-    //bool createAuxDataSet(int nfield=256);
-
     void resetWalkerProperty(int ncopy=1);
 
     inline bool updatePbyP() const { return ReadyForPbyP;}

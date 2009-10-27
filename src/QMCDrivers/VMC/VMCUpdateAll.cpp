@@ -37,13 +37,11 @@ namespace qmcplusplus
       {
         MCWalkerConfiguration::Walker_t& thisWalker(**it);
         makeGaussRandomWithEngine(deltaR,RandomGen);
-        bool Cont(true);
-        if (!W.makeMove(thisWalker,deltaR, m_sqrttau)) Cont=false;
-        if (!Cont)
-          {
-            H.rejectedMove(W,thisWalker);
-            continue;
-          }
+        if (!W.makeMove(thisWalker,deltaR, m_sqrttau)) 
+        {
+          H.rejectedMove(W,thisWalker);
+          continue;
+        }
 
         //W.R = m_sqrttau*deltaR + thisWalker.R;
         //W.update();
@@ -84,20 +82,22 @@ namespace qmcplusplus
     for (;it != it_end;++it)
       {
         MCWalkerConfiguration::Walker_t& thisWalker(**it);
+        W.loadWalker(thisWalker,false);
+        RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+        
         makeGaussRandomWithEngine(deltaR,RandomGen);
-        bool Cont(true);
-        if (!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
-        if (!Cont)
-          {
-            H.rejectedMove(W,thisWalker);
-            continue;
-          }
+        if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
+        {
+          H.rejectedMove(W,thisWalker);
+          continue;
+        }
+        //
         //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
         //W.update();
         RealType logpsi(Psi.evaluateLog(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         // setScaledDrift(m_tauovermass,W.G,drift);
-        RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+        nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
 
         //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
         deltaR = thisWalker.R - W.R - drift;
@@ -112,9 +112,8 @@ namespace qmcplusplus
           }
         else
           {
+            W.saveWalker(thisWalker);
             RealType eloc=H.evaluate(W);
-            thisWalker.R = W.R;
-            thisWalker.Drift = drift;
             thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
             H.auxHevaluate(W,thisWalker);
             H.saveProperty(thisWalker.getPropertyBase());

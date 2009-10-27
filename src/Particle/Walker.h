@@ -88,14 +88,12 @@ namespace qmcplusplus {
     /**the configuration vector (3N-dimensional vector to store
        the positions of all the particles for a single walker)*/
     ParticlePos_t R;
-
-    ///** \f$ \nabla_i d\log \Psi for the i-th particle */
-    //GA Grad;
-    ///** \f$ \nabla^2_i d\log \Psi for the i-th particle */
-    //LA Lap;
-
-    ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
-    ParticlePos_t Drift;
+    /** \f$ \nabla_i d\log \Psi for the i-th particle */
+    ParticleGradient_t G;
+    /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
+    ParticleLaplacian_t L;
+    /////drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
+    //ParticlePos_t Drift;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
@@ -179,8 +177,10 @@ namespace qmcplusplus {
     ///resize for n particles
     inline void resize(int nptcl) 
     {
-      //R.resize(nptcl); Grad.resize(nptcl),Lap.resize(nptcl),Drift.resize(nptcl); 
-      R.resize(nptcl); Drift.resize(nptcl); 
+      R.resize(nptcl); 
+      G.resize(nptcl);
+      L.resize(nptcl);
+      //Drift.resize(nptcl); 
     }
 
     ///copy the content of a walker
@@ -194,7 +194,9 @@ namespace qmcplusplus {
       Multiplicity=a.Multiplicity;
       if(R.size()!=a.R.size()) resize(a.R.size());
       R = a.R;
-      Drift = a.Drift;
+      G = a.G;
+      L = a.L;
+      //Drift = a.Drift;
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
       
@@ -292,19 +294,23 @@ namespace qmcplusplus {
     {
       int numPH(0);
       for(int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
-      return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int) +(Properties.size()+DIM*2*R.size()+DataSet.size()+ numPH )*sizeof(RealType);
-      //return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(RealType);
+      return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int)
+        +(Properties.size()+DataSet.size()+ numPH )*sizeof(RealType)
+        +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
+        //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
     }
 
     template<class Msg>
     inline Msg& putMessage(Msg& m) {
-      int nat=R.size();
+      const int nat=R.size();
       m << ID << ParentID << Generation << Age;
-      //m << Generation << Age;
-      for(int iat=0; iat<nat;iat++) R[iat].putMessage(m);
-      for(int iat=0; iat<nat;iat++) Drift[iat].putMessage(m);
-      Properties.putMessage(m);
-      DataSet.putMessage(m);
+      m.Pack(&(R[0][0]),nat*OHMMS_DIM);
+      m.Pack(&(G[0][0]),nat*OHMMS_DIM);
+      m.Pack(L.first_address(),nat);
+      m.Pack(Properties.data(),Properties.size());
+      m.Pack(DataSet.data(),DataSet.size());
+      //Properties.putMessage(m);
+      //DataSet.putMessage(m);
       for(int iat=0; iat<PropertyHistory.size();iat++)m.Pack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
       m.Pack(&(PHindex[0]),PHindex.size());
       return m;
@@ -312,13 +318,15 @@ namespace qmcplusplus {
 
     template<class Msg>
     inline Msg& getMessage(Msg& m) {
-      int nat=R.size();
+      const int nat=R.size();
       m>>ID >> ParentID >> Generation >> Age;
-      //m>> Generation >> Age;
-      for(int iat=0; iat<nat;iat++) R[iat].getMessage(m);
-      for(int iat=0; iat<nat;iat++) Drift[iat].getMessage(m);
-      Properties.getMessage(m);
-      DataSet.getMessage(m);
+      m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
+      m.Unpack(&(G[0][0]),nat*OHMMS_DIM);
+      m.Unpack(L.first_address(),nat);
+      m.Unpack(Properties.data(),Properties.size());
+      m.Unpack(DataSet.data(),DataSet.size());
+      //Properties.getMessage(m);
+      //DataSet.getMessage(m);
       for(int iat=0; iat<PropertyHistory.size();iat++)m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
       m.Unpack(&(PHindex[0]),PHindex.size());
       return m;

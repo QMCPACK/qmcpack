@@ -60,7 +60,9 @@ namespace qmcplusplus
         while ((Wit!=Wit_end))
           {
             (*Wit)->R=(*Kit)->R;
-            (*Wit)->Drift=(*Kit)->Drift;
+            (*Wit)->G=(*Kit)->G;
+            (*Wit)->L=(*Kit)->L;
+            //(*Wit)->Drift=(*Kit)->Drift;
             (*Wit)->reset();
             (*Wit)->resetPropertyHistory();
             ++Wit;
