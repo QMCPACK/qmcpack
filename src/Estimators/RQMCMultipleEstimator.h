@@ -145,32 +145,21 @@ namespace qmcplusplus {
     //}
 
     void initialize(MultiChain* reptileRef, int setDirect, double setTau, int setSteps);
-    /** initialize the multi-configuration data
-     *
-     * @param W MCWalkerConfiguration
-     * @param h Collection of QMCHamiltonians*
-     * @param psi Collection of TrialWaveFunctions*
-     * @param tau time step for the initial weighted drift
-     * @param require_register if true, use buffer for particle-by-particle
-     */
-    void initialize(MCWalkerConfiguration& W, 
-        vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-        RealType tau, vector<RealType>& Norm, bool require_register=false);
 
-    /** update the energy and weight for umbrella sampling
-     * @param iw walker index
-     * @param ipsi H/Psi index
-     * @param e local energy of the iw-th walker for H[ipsi]/Psi[ipsi]
-     * @param r umbrella weight
-     inline void updateSample(int iw, int ipsi, RealType e, RealType invr) {
-    //UmbrellaEnergy(iw,ipsi)=e;
-    //UmbrellaWeight(iw,ipsi)=invr;
-    }
-    */
-
-    void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
-        vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-        RealType tau, vector<RealType>& Norm, bool require_register=false);
+    ///** initialize the multi-configuration data
+    // *
+    // * @param W MCWalkerConfiguration
+    // * @param h Collection of QMCHamiltonians*
+    // * @param psi Collection of TrialWaveFunctions*
+    // * @param tau time step for the initial weighted drift
+    // * @param require_register if true, use buffer for particle-by-particle
+    // */
+    //void initialize(MCWalkerConfiguration& W, 
+    //    vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
+    //    RealType tau, vector<RealType>& Norm, bool require_register=false);
+    //void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
+    //    vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
+    //    RealType tau, vector<RealType>& Norm, bool require_register=false);
   };
 
 }

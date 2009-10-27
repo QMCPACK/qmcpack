@@ -25,7 +25,7 @@
 //#include "ParticleBase/RandomSeqGenerator.h"
 //#include "ParticleBase/ParticleAttribOps.h"
 //#include "Message/Communicate.h"
-#include "Estimators/MultipleEnergyEstimator.h"
+//#include "Estimators/MultipleEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 

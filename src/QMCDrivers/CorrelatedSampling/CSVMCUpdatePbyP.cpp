@@ -20,7 +20,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "Estimators/MultipleEnergyEstimator.h"
+//#include "Estimators/MultipleEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 

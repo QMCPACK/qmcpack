@@ -291,10 +291,11 @@ namespace qmcplusplus {
       MCWalkerConfiguration::Walker_t &thisWalker(**it);
 
       //create a 3N-Dimensional Gaussian with variance=1
+      W.loadWalker(thisWalker,false);
+      //CHEAT!!! Tau should tau/mass
+      setScaledDrift(Tau,W.G,drift);
       makeGaussRandom(deltaR);
-
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-
+      W.R = m_sqrttau*deltaR + thisWalker.R + drift;
       W.update();
 
       for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
@@ -372,8 +373,7 @@ namespace qmcplusplus {
       } else {
         thisWalker.Age=0;
         thisWalker.Multiplicity=sumratio[0];
-        thisWalker.R = W.R;
-        thisWalker.Drift = drift;
+        W.saveWalker(thisWalker);
         for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
           WW[ipsi]->L=Psi1[ipsi]->L; //NECESSARY??????? 
           WW[ipsi]->G=Psi1[ipsi]->G;

@@ -91,6 +91,8 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
 
+    APP_ABORT("VMCPbyPMultiWarp obsolete");
+
     do {  //Blocks loop
       IndexType step = 0;
       nAccept = 0; nReject=0;
@@ -105,13 +107,8 @@ namespace qmcplusplus {
           Walker_t& thisWalker(**it);
 
           Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-
-          W.R = thisWalker.R;
-          w_buffer.rewind();
-	  // Copy walker info in W
-          W.copyFromBuffer(w_buffer);
-          for(int ipsi=0; ipsi<nPsi; ipsi++)
-            WW[ipsi]->copyFromBuffer(w_buffer);
+          W.loadWalker(thisWalker,true);
+          for(int ipsi=0; ipsi<nPsi; ipsi++) WW[ipsi]->loadWalker(thisWalker);
           PtclWarp.copyFromBuffer(w_buffer);
 
           for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -130,7 +127,8 @@ namespace qmcplusplus {
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-            PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+            PosType dr = m_sqrttau*deltaR[iat]+drift[iat];
+            //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
             /*
             cout << "========================" << endl;
@@ -305,11 +303,8 @@ namespace qmcplusplus {
 	       -buffered info for each Psi1[i]
 	       Physical properties are updated */
             (*it)->Age=0;
-	    (*it)->R = W.R;
-
+            W.saveWalker(**it);
 	    w_buffer.rewind();
-            W.copyToBuffer(w_buffer);
-            for(int ipsi=0; ipsi< nPsi; ipsi++) WW[ipsi]->copyToBuffer(w_buffer);
             PtclWarp.copyToBuffer(w_buffer);
 
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
