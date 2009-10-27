@@ -32,11 +32,11 @@
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
-#if defined(QMC_COMPLEX)
-#else
-#include "QMCDrivers/RQMCMultiWarp.h"
-#include "QMCDrivers/RQMCMultiplePbyP.h"
-#endif
+//THESE ARE BROKEN
+//#if !defined(QMC_COMPLEX)
+//#include "QMCDrivers/RQMCMultiWarp.h"
+//#include "QMCDrivers/RQMCMultiplePbyP.h"
+//#endif
 #endif
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
@@ -335,23 +335,28 @@ namespace qmcplusplus {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
-#if defined(QMC_BUILD_COMPLETE)
-    else if(curRunType == RMC_RUN) 
+    else if(curRunType == RMC_RUN)
     {
-#if defined(QMC_COMPLEX)
+      app_log() << "Using RQMCMultiple: no warping, no pbyp" << endl;
       qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-#else
-      if(curQmcModeBits[SPACEWARP_MODE]) 
-        qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
-      else 
-        qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-     }
-     else if (curRunType==RMC_PBYP_RUN)
-     {
-        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
-#endif
-    } 
-#endif
+    }
+//#if defined(QMC_BUILD_COMPLETE)
+//    else if(curRunType == RMC_RUN) 
+//    {
+//#if defined(QMC_COMPLEX)
+//      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+//#else
+//      if(curQmcModeBits[SPACEWARP_MODE]) 
+//        qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
+//      else 
+//        qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+//    }
+//    else if (curRunType==RMC_PBYP_RUN)
+//    {
+//      qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
+//#endif
+//    }
+//#endif
     else if(curRunType == OPTIMIZE_RUN)
     {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);

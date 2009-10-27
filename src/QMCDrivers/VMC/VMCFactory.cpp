@@ -18,10 +18,11 @@
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/WFMC/WFMCSingleOMP.h"
-#if !defined(QMC_COMPLEX)
-#include "QMCDrivers/VMC/VMCMultipleWarp.h"
-#include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
-#endif
+//REMOVE Broken warping
+//#if !defined(QMC_COMPLEX)
+//#include "QMCDrivers/VMC/VMCMultipleWarp.h"
+//#include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
+//#endif
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #endif
 #include "Message/OpenMP.h"
@@ -47,20 +48,20 @@ namespace qmcplusplus {
     //{
     //  qmc = new VMCPbyPMultiple(w,psi,h);
     //} 
-    else if(VMCMode ==2 || VMCMode ==3)
-    {
-      qmc = new CSVMC(w,psi,h);
-    }
-#if !defined(QMC_COMPLEX)
-    else if(VMCMode == 6) //(1,1,0)
-    {
-      qmc = new VMCMultipleWarp(w,psi,h, ptclpool);
-    } 
-    else if(VMCMode == 7) //(1,1,1)
-    {
-      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
-    }
-#endif
+//    else if(VMCMode ==2 || VMCMode ==3)
+//    {
+//      qmc = new CSVMC(w,psi,h);
+//    }
+//#if !defined(QMC_COMPLEX)
+//    else if(VMCMode == 6) //(1,1,0)
+//    {
+//      qmc = new VMCMultipleWarp(w,psi,h, ptclpool);
+//    } 
+//    else if(VMCMode == 7) //(1,1,1)
+//    {
+//      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
+//    }
+//#endif
     else if(VMCMode == 8) //(only possible for WFMC run)
     {
       qmc = new WFMCSingleOMP(w,psi,h,hpool);

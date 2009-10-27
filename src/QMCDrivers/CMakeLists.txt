@@ -55,28 +55,30 @@ ENDIF(HAVE_MPI)
 IF(QMC_BUILD_COMPLETE)
   SET(QMCDRIVERS ${QMCDRIVERS}
     PolymerEstimator.cpp
-    RQMCMultiple.cpp
     MultiChain.cpp
-    SpaceWarp.cpp
-    RQMCMultiWarp.cpp
-    VMC/VMCMultipleWarp.cpp
-    VMC/VMCPbyPMultiWarp.cpp
+    RQMCMultiple.cpp
     ../Estimators/RQMCMultipleEstimator.cpp
     ../Estimators/ComboPolymerEstimator.cpp
     ../Estimators/CSEnergyEstimator.cpp
     ../Estimators/CSPolymerEstimator.cpp
     ../Estimators/MJPolymerEstimator.cpp
     ../Estimators/HFDHE2PolymerEstimator.cpp
-    CorrelatedSampling/CSUpdateBase.cpp
-    CorrelatedSampling/CSVMC.cpp
-    CorrelatedSampling/CSVMCUpdateAll.cpp
-    CorrelatedSampling/CSVMCUpdatePbyP.cpp
   )
-  IF(NOT QMC_COMPLEX)
-    SET(QMCDRIVERS ${QMCDRIVERS}
-    RQMCMultiplePbyP.cpp
-    )
-  ENDIF(NOT QMC_COMPLEX)
+# REMOVE neglected/buggy
+#    SpaceWarp.cpp
+#    RQMCMultiWarp.cpp
+#    VMC/VMCMultipleWarp.cpp
+#    VMC/VMCPbyPMultiWarp.cpp
+#    CorrelatedSampling/CSUpdateBase.cpp
+#    CorrelatedSampling/CSVMC.cpp
+#    CorrelatedSampling/CSVMCUpdateAll.cpp
+#    CorrelatedSampling/CSVMCUpdatePbyP.cpp
+#  IF(NOT QMC_COMPLEX)
+#    SET(QMCDRIVERS ${QMCDRIVERS}
+#    RQMCMultiplePbyP.cpp
+#    )
+#  ENDIF(NOT QMC_COMPLEX)
+
 ENDIF(QMC_BUILD_COMPLETE)
 
 
