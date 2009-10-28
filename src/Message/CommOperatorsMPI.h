@@ -288,6 +288,14 @@ Communicate::bcast(int& g)
 
 template<>
 inline void 
+Communicate::bcast(uint32_t& g) 
+{
+  MPI_Bcast(&g,1,MPI_UNSIGNED,0,myMPI);
+}
+
+
+template<>
+inline void 
 Communicate::bcast(double& g) 
 {
   MPI_Bcast(&g,1,MPI_DOUBLE,0,myMPI);
