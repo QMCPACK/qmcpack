@@ -8,8 +8,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 SET(QMCPLUSPLUS_VERSION_MAJOR 0)
 SET(QMCPLUSPLUS_VERSION_MINOR 6)
 SET(QMCPLUSPLUS_VERSION_PATCH 1)
-SET(QMCPLUSPLUS_RELEASE 0)
 SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.$(QMCPLUSPLUS_VERSION_PATH}")
+
+######################################################################
+# Build level
+######################################################################
+SET(QMC_BUILD_LEVEL 1 CACHE INTEGER 
+  "QMC Build Level: 1=bare, 2=developer, 3=experimental")
 
 ######################################################################
 #define the paths for library and executable for out-of-soruce compilation
@@ -31,7 +36,6 @@ SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
-SET(QMC_BUILD_COMPLETE 1 CACHE BOOL "Enable all the packages")
 
 ######################################################################
 # enable MPI and OPNEMP  if possible
