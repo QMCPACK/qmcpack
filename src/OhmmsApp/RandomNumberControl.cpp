@@ -48,7 +48,7 @@ namespace APPNAMESPACE
   ///initialize the static data members
   PrimeNumberSet<RandomGenerator_t::uint_type> RandomNumberControl::PrimeNumbers;
   std::vector<RandomGenerator_t*>  RandomNumberControl::Children;
-  int RandomNumberControl::Offset=11;
+  RandomGenerator_t::uint_type RandomNumberControl::Offset=11u;
 
   template<>
     struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
@@ -164,16 +164,17 @@ namespace APPNAMESPACE
   /// reset the generator
   void RandomNumberControl::make_seeds() 
   {
+
     int pid = OHMMS::Controller->rank();
     int nprocs = OHMMS::Controller->size();
-    int iseed=static_cast<int>(std::time(0))%4096;
+
+    uint_type iseed=static_cast<uint_type>(std::time(0)%4096);
     OHMMS::Controller->bcast(iseed);//broadcast the seed
 
     Offset=iseed;
     vector<uint_type> mySeeds;
     RandomNumberControl::PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
     Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
-
     //change children as well
     make_children();
   }

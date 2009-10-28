@@ -72,7 +72,7 @@ namespace APPNAMESPACE
 
       bool NeverBeenInitialized;
       xmlNodePtr myCur;
-      static int Offset;
+      static uint_type Offset;
   };
 }
 
