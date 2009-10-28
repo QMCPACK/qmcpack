@@ -43,7 +43,7 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
-#if defined(QMC_BUILD_COMPLETE)
+#if QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/JelliumPotential.h"
@@ -173,7 +173,7 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         } 
-#if defined(QMC_BUILD_COMPLETE)
+#if QMC_BUILD_LEVEL>2
 	else if (potType == "LJP_smoothed") {
 	  LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
 	  targetH->addOperator(LJP,"LJP",true);

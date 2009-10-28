@@ -30,7 +30,7 @@
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
-#if defined(QMC_BUILD_COMPLETE)
+#if QMC_BUILD_LEVEL>1
 #include "QMCDrivers/RQMCMultiple.h"
 //THESE ARE BROKEN
 //#if !defined(QMC_COMPLEX)
@@ -335,11 +335,13 @@ namespace qmcplusplus {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
+#if QMC_BUILD_LEVEL>1
     else if(curRunType == RMC_RUN)
     {
       app_log() << "Using RQMCMultiple: no warping, no pbyp" << endl;
       qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
     }
+#endif
 //#if defined(QMC_BUILD_COMPLETE)
 //    else if(curRunType == RMC_RUN) 
 //    {

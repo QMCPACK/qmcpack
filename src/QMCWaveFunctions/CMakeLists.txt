@@ -25,28 +25,34 @@ SET(JASTROW_SRCS
   IonOrbitalBuilder.cpp
 )
 
-#common jastrows for three D
+#specialized jastrows: extremely taxing for some compilers
+IF(QMC_BUILD_LEVEL GREATER 1)
+  SET(JASTROW_SRCS ${JASTROW_SRCS}
+    Jastrow/JAABuilder.cpp
+    Jastrow/JABBuilder.cpp
+    Jastrow/WMJastrowBuilder.cpp
+    )
+ENDIF(QMC_BUILD_LEVEL GREATER 1)
+
+# wavefunctions only availbale to 3-dim problems
 IF(OHMMS_DIM MATCHES 3)
+
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/ThreeBodyGeminal.cpp
     Jastrow/ThreeBodyBlockSparse.cpp
     Jastrow/JastrowBasisBuilder.cpp
     Jastrow/CBSOBuilder.cpp
     )
-ENDIF(OHMMS_DIM MATCHES 3)
 
-#specialized jastrows: extremely taxing for some compilers
-IF(QMC_BUILD_COMPLETE)
-  SET(JASTROW_SRCS ${JASTROW_SRCS}
-    Jastrow/JAABuilder.cpp
-    Jastrow/JABBuilder.cpp
-    Jastrow/WMJastrowBuilder.cpp
-    )
-ENDIF(QMC_BUILD_COMPLETE)
-
-# wavefunctions only availbale to 3-dim problems
-IF(OHMMS_DIM MATCHES 3)
   SET(FERMION_SRCS ${FERMION_SRCS}
+    MolecularOrbitals/STOBuilder.cpp
+    MolecularOrbitals/GTOBuilder.cpp
+    MolecularOrbitals/NGOBuilder.cpp
+    MolecularOrbitals/BsplineAOBuilder.cpp
+    )
+
+  IF(QMC_BUILD_LEVEL GREATER 1)
+    SET(FERMION_SRCS ${FERMION_SRCS}
       Bspline3DSetBase.cpp
       Bspline3DSet.cpp
       Bspline3DSetTrunc.cpp
@@ -55,11 +61,29 @@ IF(OHMMS_DIM MATCHES 3)
       TricubicBsplineSetBuilder.2.cpp
       PlaneWave/PWBasis.cpp
       PlaneWave/PWParameterSet.cpp
-      MolecularOrbitals/STOBuilder.cpp
-      MolecularOrbitals/GTOBuilder.cpp
-      MolecularOrbitals/NGOBuilder.cpp
-      MolecularOrbitals/BsplineAOBuilder.cpp
-     )
+      PlaneWave/PWOrbitalBuilder.cpp
+      )
+
+    IF(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+        PlaneWave/PWOrbitalSet.cpp
+        )
+    ELSE(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        ElectronGas/ElectronGasOrbitalBuilder.cpp
+        PlaneWave/PWRealOrbitalSet.cpp
+        )
+      #only experimental version
+      IF(QMC_BUILD_LEVEL GREATER 2)
+        SET(FERMION_SRCS ${FERMION_SRCS}
+          AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+          )
+      ENDIF(QMC_BUILD_LEVEL GREATER 2)
+    ENDIF(QMC_COMPLEX)
+
+  ENDIF(QMC_BUILD_LEVEL GREATER 1)
+
   IF(HAVE_EINSPLINE)
     SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSet.cpp
@@ -71,28 +95,6 @@ IF(OHMMS_DIM MATCHES 3)
   ENDIF(HAVE_EINSPLINE)
     
 ENDIF(OHMMS_DIM MATCHES 3)
-
-IF(QMC_BUILD_COMPLETE)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    PlaneWave/PWOrbitalBuilder.cpp
-    #    Fermion/DiracDeterminantTruncation.cpp
-    #    Fermion/MultiDiracDeterminantBase.cpp
-    #    Fermion/DiracDeterminantIterative.cpp
-    #    Fermion/ILUGMRESInterface.c
-    )
-  IF(QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-      PlaneWave/PWOrbitalSet.cpp
-      )
-  ELSE(QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasOrbitalBuilder.cpp
-      PlaneWave/PWRealOrbitalSet.cpp
-      AGPDeterminant.cpp AGPDeterminantBuilder.cpp
-      )
-  ENDIF(QMC_COMPLEX)
-ENDIF(QMC_BUILD_COMPLETE)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp

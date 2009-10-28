@@ -33,14 +33,13 @@ IF(OHMMS_DIM MATCHES 3)
      )
 
   # Add research-related sources here
-  IF(QMC_BUILD_COMPLETE)
+  IF(QMC_BUILD_LEVEL GREATER 1)
     SET(HAMSRCS ${HAMSRCS}
       LennardJones_smoothed.cpp
       HFDHE2_Moroni1995.cpp
-#      HFDBHE_smoothed.cpp
       HeSAPT_smoothed.cpp
      )
-  ENDIF(QMC_BUILD_COMPLETE)
+  ENDIF(QMC_BUILD_LEVEL GREATER 1)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 #IF(HAVE_LIBFFTW)

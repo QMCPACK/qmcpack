@@ -21,16 +21,17 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
-#if defined(QMC_BUILD_COMPLETE)
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-#if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#else
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#if QMC_BUILD_LEVEL>1
+  #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
+  #if defined(QMC_COMPLEX)
+  #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+  #else
+  #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+  #endif
 #endif
-#if OHMMS_DIM==3 && !defined(QMC_COMPLEX)
+//AGP is experimental and only valid with real
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#endif
 #endif
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -100,7 +101,7 @@ namespace qmcplusplus {
         app_log()<<"  Removed Helium Molecular terms from qmcpack "<<endl;
         abort();
       }
-#if defined(QMC_BUILD_COMPLETE) && !defined(QMC_COMPLEX) && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX) && OHMMS_DIM==3
       else if(cname == "agp") 
       {
         AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
@@ -132,8 +133,8 @@ namespace qmcplusplus {
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
     //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
-#if defined(QMC_BUILD_COMPLETE)
     OrbitalBuilderBase* detbuilder=0;
+#if QMC_BUILD_LEVEL>1
     if(orbtype == "electron-gas") 
     {
 #if defined(QMC_COMPLEX)
@@ -146,17 +147,9 @@ namespace qmcplusplus {
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
-    //else if(orbtype == "MolecularOrbital") 
-    //{
-    //  detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
-    //} 
     else 
-    {
+#endif /* QMC_BUILD_LEVEL>1 */
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
-    }
-#else
-    OrbitalBuilderBase* detbuilder= new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
-#endif
 
     if(detbuilder) 
     {//valid determinant set
