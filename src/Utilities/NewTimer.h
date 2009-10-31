@@ -85,7 +85,7 @@ namespace qmcplusplus  {
     inline void stop()  
     { 
       gettimeofday(&tv, NULL);
-      total_time += (double)tv.tv_sec+(1.e-6)*tp.tv_usec-start_time;
+      total_time += (double)tv.tv_sec+(1.e-6)*tv.tv_usec-start_time;
       num_calls++;
     }
     inline double    get_total() const 
