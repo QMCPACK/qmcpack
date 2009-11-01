@@ -40,7 +40,7 @@ namespace qmcplusplus {
     MyName="RPA_Jee";
     string useL="yes";
     string useS="yes";
-    rpafunc="RPA";
+    rpafunc="rpa";
     
     OhmmsAttributeSet a;
     a.add(MyName,"name");
