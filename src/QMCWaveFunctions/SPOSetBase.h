@@ -50,6 +50,8 @@ namespace qmcplusplus {
     IndexType ActivePtcl;
     ///counter to keep track 
     unsigned long Counter;
+    ///matrix to store temporary value before transpose
+    ValueMatrix_t t_logpsi;
     ///matrix containing the coefficients
     ValueMatrix_t C;
     ///occupation number
@@ -126,7 +128,7 @@ namespace qmcplusplus {
      * @param d2logdet laplacians
      */
     virtual void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;

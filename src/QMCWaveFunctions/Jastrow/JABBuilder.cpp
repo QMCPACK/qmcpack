@@ -127,19 +127,19 @@ namespace qmcplusplus
       {
         success = createJAB<ModPadeFunctor<RealType> >(cur,jastfunction);
       }
-    else if (jastfunction == "Gaussian")
+    else if (jastfunction == "gaussian")
       {
         success = createJAB<GaussianFunctor<RealType> >(cur,jastfunction);
       }
-    else if (jastfunction == "BesselZero")
+    else if (jastfunction == "besselzero")
       {
         success = createJAB<BesselZero<RealType> >(cur,jastfunction);
       }
-    else if (jastfunction == "shiftedGaussian")
+    else if (jastfunction == "shiftedgaussian")
       {
         success = createJAB<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
       }
-    else if (jastfunction == "Bspline")
+    else if (jastfunction == "bspline")
       {
         success = createJAB<BsplineFunctor<RealType> >(cur,jastfunction);
       }

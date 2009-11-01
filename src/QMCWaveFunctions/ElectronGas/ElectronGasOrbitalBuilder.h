@@ -66,33 +66,40 @@ namespace qmcplusplus {
         sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
         psi[j++]=coskr;
         psi[j++]=sinkr;
-        //RealType phi=dot(K[ik],P.R[iat]);
-        //psi[j++]=std::cos(kdotr);
-        //psi[j++]=std::sin(kdotr);
       }
     }
 
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+    /** generic inline function to handle a row
+     * @param r position of the particle
+     * @param psi value row
+     * @param dpsi gradient row
+     * @param d2psi laplacian row
+     */
+    inline void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi, ValueType* restrict d2psi)
     {
-        psi[0]=1.0;
-        dpsi[0]=0.0;
-        d2psi[0]=0.0;
-        RealType coskr, sinkr;
-        for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
-          int j2=j1+1;
-          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          //kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
-          psi[j1]=coskr;
-          psi[j2]=sinkr;
-          dpsi[j1]=-sinkr*K[ik];
-          dpsi[j2]= coskr*K[ik];
-          d2psi[j1]=mK2[ik]*coskr;
-          d2psi[j2]=mK2[ik]*sinkr;
-        }
-      }
+       psi[0]=1.0;
+       dpsi[0]=0.0;
+       d2psi[0]=0.0;
+       RealType coskr, sinkr;
+       for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
+       {
+         int j2=j1+1;
+         sincos(dot(K[ik],r),&sinkr,&coskr);
+         psi[j1]=coskr;
+         psi[j2]=sinkr;
+         dpsi[j1]=-sinkr*K[ik];
+         dpsi[j2]= coskr*K[ik];
+         d2psi[j1]=mK2[ik]*coskr;
+         d2psi[j2]=mK2[ik]*sinkr;
+       }
+    }
 
+    inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+    {
+      evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
+    }
+
+    /*
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {
@@ -103,9 +110,6 @@ namespace qmcplusplus {
         d2logdet(i,0)=0.0;
         for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
           sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          //kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
           int j2=j1+1;
           logdet(j1,i)=coskr;
           logdet(j2,i)=sinkr;
@@ -116,30 +120,15 @@ namespace qmcplusplus {
         }
       }
     }
+    */
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {
-      RealType coskr, sinkr;
-      for(int i=0,iat=first; iat<last; i++,iat++) {
-        logdet(0,i)=1.0;
-        dlogdet(i,0)=0.0;
-        d2logdet(i,0)=0.0;
-        for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
-          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          //kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
-          int j2=j1+1;
-          logdet(i,j1)=coskr;
-          logdet(i,j2)=sinkr;
-          dlogdet(i,j1)=-sinkr*K[ik];
-          dlogdet(i,j2)= coskr*K[ik];
-          d2logdet(i,j1)=mK2[ik]*coskr;
-          d2logdet(i,j2)=mK2[ik]*sinkr;
-        }
-      }
+      for(int i=0,iat=first; iat<last; i++,iat++)
+        evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
     }
+
   };
 
   /** OrbitalBuilder for Slater determinants of electron-gas 

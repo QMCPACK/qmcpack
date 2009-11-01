@@ -27,7 +27,8 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur);
     
-    void buildOrbital(string name, string UL, string US, string RF, RealType R, RealType K);
+    void buildOrbital(const string& name, const string& UL
+        , const string& US, const string& RF, RealType R, RealType K);
     
     void makeShortRange();
     void makeLongRange();

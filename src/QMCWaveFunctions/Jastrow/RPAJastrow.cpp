@@ -114,7 +114,8 @@ namespace qmcplusplus {
     return true;
   }
 
-  void RPAJastrow::buildOrbital(string name, string UL, string US, string RF, RealType R, RealType K)
+  void RPAJastrow::buildOrbital(const string& name, const string& UL
+      , const string& US, const string& RF, RealType R, RealType K)
   {
     
     string ID_Rs="RPA_rs";
@@ -159,13 +160,14 @@ namespace qmcplusplus {
 
     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
     
-    if (rpafunc=="Yukawa" || rpafunc=="breakup"){
+
+    if (rpafunc=="yukawa" || rpafunc=="breakup"){
       myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    } else if (rpafunc=="RPA"){
+    } else if (rpafunc=="rpa"){
       myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    } else if (rpafunc=="dYukawa"){
+    } else if (rpafunc=="dyukawa"){
       myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-    } else if (rpafunc=="dRPA"){
+    } else if (rpafunc=="drpa"){
       myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
     }
     
@@ -185,13 +187,15 @@ namespace qmcplusplus {
     }
   }
   
-  void RPAJastrow::makeLongRange(){
+  void RPAJastrow::makeLongRange()
+  {
     LongRangeRPA = new LRTwoBodyJastrow(targetPtcl);
     LongRangeRPA->resetByHandler(myHandler);
     Psi.push_back(LongRangeRPA);
   }
   
-  void RPAJastrow::makeShortRange(){
+  void RPAJastrow::makeShortRange()
+  {
 //     app_log()<< "  Adding Short Range part of RPA function"<<endl;
       //short-range uses realHandler
     Rcut = myHandler->get_rc()-0.1;
@@ -347,13 +351,13 @@ namespace qmcplusplus {
   OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const
   {
     HandlerType* tempHandler;
-    if (rpafunc=="Yukawa" || rpafunc=="breakup"){
+    if (rpafunc=="yukawa" || rpafunc=="breakup"){
       tempHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(dynamic_cast<const LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-    } else if (rpafunc=="RPA"){
+    } else if (rpafunc=="rpa"){
       tempHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(dynamic_cast<const LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-    } else if (rpafunc=="dYukawa"){
+    } else if (rpafunc=="dyukawa"){
       tempHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-    } else if (rpafunc=="dRPA"){
+    } else if (rpafunc=="drpa"){
       tempHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
     }
 

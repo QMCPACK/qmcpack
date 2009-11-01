@@ -21,13 +21,11 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
-#if QMC_BUILD_LEVEL>1
-  #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-  #if defined(QMC_COMPLEX)
-  #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-  #else
-  #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-  #endif
+#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
+#if defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#else
+#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #endif
 //AGP is experimental and only valid with real
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 && !defined(QMC_COMPLEX)
@@ -134,7 +132,6 @@ namespace qmcplusplus {
     oAttrib.put(cur);
     //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
     OrbitalBuilderBase* detbuilder=0;
-#if QMC_BUILD_LEVEL>1
     if(orbtype == "electron-gas") 
     {
 #if defined(QMC_COMPLEX)
@@ -143,12 +140,13 @@ namespace qmcplusplus {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
 #endif
     } 
+#if QMC_BUILD_LEVEL>1
     else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
-    else 
 #endif /* QMC_BUILD_LEVEL>1 */
+    else 
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
 
     if(detbuilder) 

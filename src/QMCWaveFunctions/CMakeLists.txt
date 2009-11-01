@@ -51,7 +51,31 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/BsplineAOBuilder.cpp
     )
 
+  IF(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+      PlaneWave/PWOrbitalSet.cpp
+      )
+  ELSE(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      ElectronGas/ElectronGasOrbitalBuilder.cpp
+      PlaneWave/PWRealOrbitalSet.cpp
+      )
+  ENDIF(QMC_COMPLEX)
+
+
   IF(QMC_BUILD_LEVEL GREATER 1)
+
+    IF(HAVE_EINSPLINE)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        EinsplineSet.cpp
+        EinsplineSetBuilder.cpp
+        EinsplineWrapper.cpp
+        MuffinTin.cpp
+        AtomicOrbital.cpp
+        )
+    ENDIF(HAVE_EINSPLINE)
+
     SET(FERMION_SRCS ${FERMION_SRCS}
       Bspline3DSetBase.cpp
       Bspline3DSet.cpp
@@ -63,36 +87,14 @@ IF(OHMMS_DIM MATCHES 3)
       PlaneWave/PWParameterSet.cpp
       PlaneWave/PWOrbitalBuilder.cpp
       )
-
-    IF(QMC_COMPLEX)
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-        PlaneWave/PWOrbitalSet.cpp
-        )
-    ELSE(QMC_COMPLEX)
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        ElectronGas/ElectronGasOrbitalBuilder.cpp
-        PlaneWave/PWRealOrbitalSet.cpp
-        )
-      #only experimental version
-      IF(QMC_BUILD_LEVEL GREATER 2)
-        SET(FERMION_SRCS ${FERMION_SRCS}
-          AGPDeterminant.cpp AGPDeterminantBuilder.cpp
-          )
-      ENDIF(QMC_BUILD_LEVEL GREATER 2)
-    ENDIF(QMC_COMPLEX)
-
   ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
-  IF(HAVE_EINSPLINE)
+  #only experimental version
+  IF(QMC_BUILD_LEVEL GREATER 2)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      EinsplineSet.cpp
-      EinsplineSetBuilder.cpp
-      EinsplineWrapper.cpp
-      MuffinTin.cpp
-      AtomicOrbital.cpp
-     )
-  ENDIF(HAVE_EINSPLINE)
+      AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+      )
+  ENDIF(QMC_BUILD_LEVEL GREATER 2)
     
 ENDIF(OHMMS_DIM MATCHES 3)
 

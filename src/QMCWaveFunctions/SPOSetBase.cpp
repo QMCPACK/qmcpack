@@ -24,6 +24,21 @@
 
 namespace qmcplusplus {
 
+  template<typename T>
+  inline void transpose(const T* restrict in, T* restrict out, int m)
+   {
+     for(int i=0,ii=0;i<m;++i)
+       for(int j=0,jj=i;j<m; ++j,jj+=m)
+         out[ii++]=in[jj];
+   }
+
+   void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+   {
+     evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
+     transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
+   }
+
   /** Parse the xml file for information on the Dirac determinants.
    *@param cur the current xmlNode
    */
@@ -42,6 +57,11 @@ namespace qmcplusplus {
     //}
 
     setOrbitalSetSize(norb);
+
+    //allocate a temporary array to handle transpose
+    app_log() << "  SPOSetBase::put allocating a temporary storage for psi "
+        << OrbitalSetSize << " x " << BasisSetSize << endl;
+    t_logpsi.resize(OrbitalSetSize,BasisSetSize);
 
     const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
     xmlNodePtr occ_ptr=NULL;

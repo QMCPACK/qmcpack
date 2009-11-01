@@ -129,13 +129,16 @@ namespace qmcplusplus {
     bool success=false;
     ParticleSet* sourcePtcl= (*pa_it).second;
 
-    if (funcOpt == "Bspline" ) 
+    //use lowercase, to be handled by parser later
+    tolower(funcOpt);
+
+    if (funcOpt == "bspline" )
     {
       app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << endl;
       BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
       success=jb.put(cur);
     } 
-    else if (funcOpt == "RPA" ) 
+    else if (funcOpt == "rpa" )
     {
       app_log() << "\n  Using RPA for one-body jastrow" << endl;
       singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
@@ -184,6 +187,9 @@ namespace qmcplusplus {
     bool useSpline = (targetPtcl.Lattice.BoxBConds[0] && transformOpt == "yes");
     bool ignoreSpin = (spinOpt == "no");
 
+    //convert to lowercase
+    tolower(funcOpt);
+
 //     OrbitalConstraintsBase* control=0;
     if(funcOpt == "pade") 
     {
@@ -194,7 +200,7 @@ namespace qmcplusplus {
       PadeJastrowBuilder pbuilder(targetPtcl,targetPsi,ptclPool);
       return pbuilder.put(cur);
     } 
-    else if((funcOpt == "Yukawa") || (funcOpt == "RPA")) 
+    else if((funcOpt == "yukawa") || (funcOpt == "rpa"))
     {
       if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       {
@@ -207,7 +213,7 @@ namespace qmcplusplus {
       targetPsi.addOrbital(rpajastrow,nameOpt);
       return true;
     } 
-    else if (funcOpt == "Bspline" ) 
+    else if (funcOpt == "bspline" )
     {
       BsplineJastrowBuilder bbuilder(targetPtcl,targetPsi);
       return bbuilder.put(cur);
