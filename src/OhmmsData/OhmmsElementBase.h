@@ -116,6 +116,12 @@ public:
   std::string myName;
 };
 
+//add tolower function here
+inline void tolower(std::string& s)
+{
+  std::transform(s.begin(), s.end(), s.begin(), std::tolower);
+}
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
