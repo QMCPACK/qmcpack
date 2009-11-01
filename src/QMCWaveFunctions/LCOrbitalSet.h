@@ -108,27 +108,29 @@ namespace qmcplusplus {
       for(int j=0; j<OrbitalSetSize; j++) d2psi[j]=myBasisSet->d2Phi[j];
     }
 
-    /** evaluate everything for the walker move
-     *
-     * Using gemm can improve the performance for a larger problem
-     */
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-      for(int i=0, iat=first; iat<last; i++,iat++){
-        myBasisSet->evaluateForWalkerMove(P,iat);
-        for(int j=0; j<OrbitalSetSize; j++) logdet(j,i)=myBasisSet->Phi[j];
-        for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
-        for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
-      }
-    }
+    ///** evaluate everything for the walker move
+    // *
+    // * Using gemm can improve the performance for a larger problem
+    // */
+    //void evaluate(const ParticleSet& P, int first, int last,
+    //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+    //  for(int i=0, iat=first; iat<last; i++,iat++){
+    //    myBasisSet->evaluateForWalkerMove(P,iat);
+    //    for(int j=0; j<OrbitalSetSize; j++) logdet(j,i)=myBasisSet->Phi[j];
+    //    for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
+    //    for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
+    //  }
+    //}
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-      for(int i=0, iat=first; iat<last; i++,iat++){
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
+    {
+      for(int i=0, iat=first; iat<last; i++,iat++)
+      {
         myBasisSet->evaluateForWalkerMove(P,iat);
-        for(int j=0; j<OrbitalSetSize; j++) logdet(i,j)=myBasisSet->Phi[j];
-        for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
-        for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
+        std::copy(myBasisSet->Phi.data(),myBasisSet->Phi.data()+OrbitalSetSize,logdet[i]);
+        std::copy(myBasisSet->dPhi.data(),myBasisSet->dPhi.data()+OrbitalSetSize,dlogdet[i]);
+        std::copy(myBasisSet->d2Phi.data(),myBasisSet->d2Phi.data()+OrbitalSetSize,d2logdet[i]);
       }
     }
   };
@@ -259,72 +261,46 @@ namespace qmcplusplus {
      *
      * Using gemm can improve the performance for a larger problem
      */
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-      //unroll myself: rely on the compilers
-      //optimal on xeon
-#pragma ivdep
-      for(int i=0, iat=first; iat<last; i++,iat++){
-        myBasisSet->evaluateForWalkerMove(P,iat);
-        const ValueType* restrict cptr=C.data();
-        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
-        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-        for(int j=0; j<OrbitalSetSize; j++) {
-          register ValueType res=0.0, d2res=0.0;
-          register GradType dres;
-          for(int b=0; b<BasisSetSize; b++,cptr++) {
-            res += *cptr*pptr[b];
-            d2res += *cptr*d2ptr[b];
-            dres += *cptr*dptr[b];
-          }
-          logdet(j,i)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
-        }
-      }
-      //evaluate everything first and use dot product
-      //if(first ==0) myBasisSet->evaluateForWalkerMove(P);
-      //for(int i=0, iat=first; iat<last; i++,iat++){
-      //  for(int j=0 ; j<OrbitalSetSize; j++) {
-      //    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
-      //    logdet(j,i)   = dot(C[j],myBasisSet->Y[iat],  BasisSetSize);
-      //    dlogdet(i,j)  = dot(C[j],myBasisSet->dY[iat], BasisSetSize);
-      //    d2logdet(i,j) = dot(C[j],myBasisSet->d2Y[iat],BasisSetSize);
-      //  }
-      //}
-     
-      //Dot product is less efficient of the loop-version above
-      //for(int i=0, iat=first; iat<last; i++,iat++){
-      //  myBasisSet->evaluateForWalkerMove(P,iat);
-      //  for(int j=0 ; j<OrbitalSetSize; j++) {
-      //    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
-      //    logdet(j,i)   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
-      //    dlogdet(i,j)  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
-      //    d2logdet(i,j) = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
-      //  }
-      //}
-      //
-    }
+//    void evaluate(const ParticleSet& P, int first, int last,
+//        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+//      //unroll myself: rely on the compilers
+//      //optimal on xeon
+//#pragma ivdep
+//      for(int i=0, iat=first; iat<last; i++,iat++){
+//        myBasisSet->evaluateForWalkerMove(P,iat);
+//        const ValueType* restrict cptr=C.data();
+//        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+//        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+//        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+//        for(int j=0; j<OrbitalSetSize; j++) {
+//          register ValueType res=0.0, d2res=0.0;
+//          register GradType dres;
+//          for(int b=0; b<BasisSetSize; b++,cptr++) {
+//            res += *cptr*pptr[b];
+//            d2res += *cptr*d2ptr[b];
+//            dres += *cptr*dptr[b];
+//          }
+//          logdet(j,i)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
+//        }
+//      }
+//    }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
+    {
+      const ValueType* restrict cptr=C.data();
 #pragma ivdep
-      for(int i=0, iat=first; iat<last; i++,iat++){
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
         myBasisSet->evaluateForWalkerMove(P,iat);
-        const ValueType* restrict cptr=C.data();
-        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
-        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
         const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-        for(int j=0; j<OrbitalSetSize; j++) 
+        for(int j=0,jk=0; j<OrbitalSetSize; j++) 
         {
-          register ValueType res=0.0, d2res=0.0;
           register GradType dres;
-          for(int b=0; b<BasisSetSize; b++,cptr++) 
-          {
-            res += *cptr*pptr[b];
-            d2res += *cptr*d2ptr[b];
-            dres += *cptr*dptr[b];
-          }
-          logdet(i,j)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
+          for(int b=0; b<BasisSetSize; ++b) dres +=  cptr[jk++]*dptr[b];
+          dlogdet(ij)=dres;
+          ++ij;
         }
       }
     }

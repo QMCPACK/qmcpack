@@ -41,73 +41,64 @@ namespace qmcplusplus
     inline void resetTargetParticleSet(ParticleSet& P) { }
     void setOrbitalSetSize(int norbs) { }
 
-    //inline ValueType
-    //  evaluate(const ParticleSet& P, int iat, int jorb) {
-    //    cout << "EGOSet::this should not be used" << endl;
-    //    RealType kdotr=dot(K[jorb],P.R[iat]);
-    //    return ValueType(std::cos(kdotr),std::sin(kdotr));
-    //  }
-
     inline void 
       evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) 
       {
         RealType sinkr,coskr;
         for(int ik=0; ik<KptMax; ik++) {
-          //RealType kdotr=dot(K[ik],P.R[iat]);
-          //psi[ik]=ValueType(std::cos(kdotr),std::sin(kdotr));
           sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
           psi[ik]=ValueType(coskr,sinkr);
         }
       }
+
+    /** generic inline function to handle a row
+     * @param r position of the particle
+     * @param psi value row
+     * @param dpsi gradient row
+     * @param d2psi laplacian row
+     */
+    void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi
+        , ValueType* restrict d2psi)
+    {
+      RealType sinkr,coskr;
+      for(int ik=0; ik<KptMax; ik++) 
+      {
+        sincos(dot(K[ik],r),&sinkr,&coskr);
+        psi[ik]  =ValueType(coskr,sinkr);
+        dpsi[ik] =ValueType(-sinkr,coskr)*K[ik];
+        d2psi[ik]=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
+      }
+    }
 
     inline void 
       evaluate(const ParticleSet& P, int iat, 
           ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
       {
-        RealType sinkr,coskr;
-        for(int ik=0; ik<KptMax; ik++) {
-          //RealType kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
-          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          psi[ik]=ValueType(coskr,sinkr);
-          dpsi[ik]=ValueType(-sinkr,coskr)*K[ik];
-          d2psi[ik]=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
-        }
+        evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
       }
 
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-    {
-      RealType sinkr,coskr;
-      for(int i=0,iat=first; iat<last; i++,iat++) {
-        for(int ik=0; ik<KptMax; ik++) {
-          //RealType kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
-          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          logdet(ik,i)=ValueType(coskr,sinkr);
-          dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
-          d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
-        }
-      }
-    }
+    //void evaluate(const ParticleSet& P, int first, int last,
+    //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+    //{
+    //  RealType sinkr,coskr;
+    //  for(int i=0,iat=first; iat<last; i++,iat++) {
+    //    for(int ik=0; ik<KptMax; ik++) {
+    //      //RealType kdotr=dot(K[ik],P.R[iat]);
+    //      //RealType coskr=std::cos(kdotr);
+    //      //RealType sinkr=std::sin(kdotr);
+    //      sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+    //      logdet(ik,i)=ValueType(coskr,sinkr);
+    //      dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
+    //      d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
+    //    }
+    //  }
+    //}
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {
-      RealType sinkr,coskr;
-      for(int i=0,iat=first; iat<last; i++,iat++) {
-        for(int ik=0; ik<KptMax; ik++) {
-          //RealType kdotr=dot(K[ik],P.R[iat]);
-          //RealType coskr=std::cos(kdotr);
-          //RealType sinkr=std::sin(kdotr);
-          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-          logdet(i,ik)=ValueType(coskr,sinkr);
-          dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
-          d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
-        }
-      }
+      for(int i=0,iat=first; iat<last; i++,iat++) 
+        evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
     }
   };
 
