@@ -19,12 +19,6 @@
 /**@file OhmmsElementBase.h
  *@brief Declaration of OhmmsElementBase and define xml-related macros.
  */
-#include <iostream>
-#include <sstream>
-#include <iosfwd>
-#include <string>
-#include <map>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -117,9 +111,11 @@ public:
 };
 
 //add tolower function here
+
 inline void tolower(std::string& s)
 {
-  std::transform(s.begin(), s.end(), s.begin(), std::tolower);
+  for(int i=0; i<s.size(); ++i) s[i]=tolower(s[i]);
+  //std::transform(s.begin(), s.end(), s.begin(), std::tolower);
 }
 
 #endif

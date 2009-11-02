@@ -16,15 +16,15 @@
 // -*- C++ -*-
 #ifndef ESTOOLS_OHMMS_LIBXML_DEF_H
 #define ESTOOLS_OHMMS_LIBXML_DEF_H
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
 #include <iostream>
 #include <sstream>
 #include <iosfwd>
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <libxml/xmlmemory.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
