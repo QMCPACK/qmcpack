@@ -1066,7 +1066,7 @@ namespace qmcplusplus {
       //  }
       //}
 
-      U[NN]= real(LogValue);
+      U[NN]= LogValue;
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
       buf.add(FirstAddressOfdU,LastAddressOfdU);
@@ -1110,7 +1110,7 @@ namespace qmcplusplus {
       //  }
       //}
 
-      U[NN]= real(LogValue);
+      U[NN]= LogValue;
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
