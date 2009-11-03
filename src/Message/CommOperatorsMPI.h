@@ -18,6 +18,7 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Utilities/PooledData.h"
+#include <stdint.h>
 ///dummy declarations to be specialized
 template<typename T> inline void gsum(T&, int) 
 { 
@@ -288,7 +289,7 @@ Communicate::bcast(int& g)
 
 template<>
 inline void 
-Communicate::bcast(uint32_t& g) 
+Communicate::bcast(uint32_t & g) 
 {
   MPI_Bcast(&g,1,MPI_UNSIGNED,0,myMPI);
 }
