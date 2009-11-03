@@ -63,18 +63,18 @@ IF(OHMMS_DIM MATCHES 3)
       )
   ENDIF(QMC_COMPLEX)
 
+  IF(HAVE_EINSPLINE)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      EinsplineSet.cpp
+      EinsplineSetBuilder.cpp
+      EinsplineWrapper.cpp
+      MuffinTin.cpp
+      AtomicOrbital.cpp
+      )
+  ENDIF(HAVE_EINSPLINE)
+
 
   IF(QMC_BUILD_LEVEL GREATER 1)
-
-    IF(HAVE_EINSPLINE)
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        EinsplineSet.cpp
-        EinsplineSetBuilder.cpp
-        EinsplineWrapper.cpp
-        MuffinTin.cpp
-        AtomicOrbital.cpp
-        )
-    ENDIF(HAVE_EINSPLINE)
 
     SET(FERMION_SRCS ${FERMION_SRCS}
       Bspline3DSetBase.cpp
