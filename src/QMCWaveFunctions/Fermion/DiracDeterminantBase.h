@@ -21,12 +21,15 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
+#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus {
 
   class DiracDeterminantBase: public OrbitalBase {
+  private:
+    void registerTimers();
+    NewTimer UpdateTimer, RatioTimer, InverseTimer;
   public:
-
     typedef SPOSetBase::IndexVector_t IndexVector_t;
     typedef SPOSetBase::ValueVector_t ValueVector_t;
     typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;

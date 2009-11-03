@@ -65,7 +65,10 @@ namespace qmcplusplus
 
   void TrialWaveFunction::stopOptimization()
   {
-    for (int i=0; i<Z.size(); i++) Z[i]->IsOptimizing=false;
+    for (int i=0; i<Z.size(); i++) {
+      Z[i]->finalizeOptimization();
+      Z[i]->IsOptimizing=false;
+    }
   }
 
   /** add an ObritalBase

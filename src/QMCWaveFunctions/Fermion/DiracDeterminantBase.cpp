@@ -26,10 +26,14 @@ namespace qmcplusplus {
    *@param first index of the first particle
    */
   DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first): 
-    NP(0), Phi(spos), FirstIndex(first) 
+    NP(0), Phi(spos), FirstIndex(first),
+    UpdateTimer("DiracDeterminantBase::update"),
+    RatioTimer("DiracDeterminantBase::ratio"),
+    InverseTimer("DiracDeterminantBase::inverse")
   {
     Optimizable=false;
     OrbitalName="DiracDeterminantBase";
+    registerTimers();
   }
 
   ///default destructor
@@ -124,16 +128,18 @@ namespace qmcplusplus {
   DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
       PooledData<RealType>& buf, bool fromscratch) 
   {
-
     myG=0.0;
     myL=0.0;
 
-    if(fromscratch)
+    if(fromscratch) {
       LogValue=evaluateLog(P,myG,myL);
+      UpdateTimer.start();
+    }
     else
     {
       if(UpdateMode == ORB_PBYP_RATIO) 
 	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+      UpdateTimer.start();
 
       if(NumPtcls==1) {
         // ValueType y=1.0/psiM_temp(0,0);
@@ -177,7 +183,8 @@ namespace qmcplusplus {
     buf.put(FirstAddressOfG,LastAddressOfG);
     buf.put(LogValue);
     buf.put(PhaseValue);
-
+    
+    UpdateTimer.stop();
     return LogValue;
   }
 
@@ -223,14 +230,20 @@ namespace qmcplusplus {
     UpdateMode=ORB_PBYP_RATIO;
     WorkingIndex = iat-FirstIndex;
     Phi->evaluate(P, iat, psiV);
-    return curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
+    RatioTimer.start();
+    curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
+    RatioTimer.stop();
+    return curRatio;
   }
 
   DiracDeterminantBase::GradType 
     DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   {
     WorkingIndex = iat-FirstIndex;
-    return dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+    RatioTimer.start();
+    DiracDeterminantBase::GradType g = dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+    RatioTimer.stop();
+    return g;
   }
 
   DiracDeterminantBase::GradType 
@@ -265,8 +278,10 @@ namespace qmcplusplus {
 			     grad_source_psiM, grad_grad_source_psiM, 
 			     grad_lapl_source_psiM);
     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    InverseTimer.start();
     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
     			   WorkSpace.data(),Pivot.data(),PhaseValue);
+    InverseTimer.stop();
 
     GradMatrix_t &Phi_alpha(grad_source_psiM);
     GradMatrix_t &Grad_phi(dpsiM);
@@ -442,12 +457,14 @@ namespace qmcplusplus {
       DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+    RatioTimer.start();
     WorkingIndex = iat-FirstIndex;
     UpdateMode=ORB_PBYP_PARTIAL;
     
     curRatio=dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
     GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
     grad_iat += (1.0/curRatio) * rv;
+    RatioTimer.stop();
     return curRatio;
 
     ////////////////////////////////////////
@@ -492,23 +509,26 @@ namespace qmcplusplus {
   {
     UpdateMode=ORB_PBYP_ALL;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+    RatioTimer.start();
     WorkingIndex = iat-FirstIndex;
 
     //psiM_temp = psiM;
     curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
-
+    RatioTimer.stop();
     if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
     {
       UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
       return 0.0;
     }
-
+    UpdateTimer.start();
     //update psiM_temp with the row substituted
     InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
 
     //update dpsiM_temp and d2psiM_temp 
     std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
     std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+    UpdateTimer.stop();
+    RatioTimer.start();
     for(int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++) 
     {
       //using inline dot functions
@@ -518,6 +538,7 @@ namespace qmcplusplus {
       dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
       dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
     }
+    RatioTimer.stop();
 
     return curRatio;
   }
@@ -538,6 +559,7 @@ namespace qmcplusplus {
   {
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
+    UpdateTimer.start();
     switch(UpdateMode)
     {
       case ORB_PBYP_RATIO:
@@ -548,7 +570,6 @@ namespace qmcplusplus {
 	InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-
         //////////////////////////////////////
         ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
         //myG = myG_temp;
@@ -564,6 +585,7 @@ namespace qmcplusplus {
         std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
         break;
     }
+    UpdateTimer.stop();
 
     curRatio=1.0;
   }
@@ -583,12 +605,15 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL,
       int iat) {
+    UpdateTimer.start();
     InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
     for(int j=0; j<NumOrbitals; j++) {
       dpsiM(WorkingIndex,j)=dpsiV[j];
       d2psiM(WorkingIndex,j)=d2psiV[j];
     }
+    UpdateTimer.stop();
 
+    RatioTimer.start();
     int kat=FirstIndex;
     for(int i=0; i<NumPtcls; i++,kat++) {
       GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
@@ -597,7 +622,7 @@ namespace qmcplusplus {
       dG[kat] += rv - myG[kat]; myG[kat]=rv;
       dL[kat] += lap -myL[kat]; myL[kat]=lap;
     }
-
+    RatioTimer.stop();
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
     curRatio=1.0;
@@ -659,7 +684,10 @@ namespace qmcplusplus {
       } 
       else 
       {
+	InverseTimer.start();
         LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
+	InverseTimer.stop();
+	RatioTimer.start();
         for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
         {
           GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
@@ -667,6 +695,7 @@ namespace qmcplusplus {
           G(iat) += rv;
           L(iat) += lap - dot(rv,rv);
         }
+	RatioTimer.stop();
       }
       psiM_temp = psiM;
       return LogValue;
@@ -684,14 +713,28 @@ namespace qmcplusplus {
   }
 
   DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): 
-    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex),
+    UpdateTimer("DiracDeterminantBase::update"),
+    RatioTimer("DiracDeterminantBase::ratio"),
+    InverseTimer("DiracDeterminantBase::inverse")
+    
   {
+    registerTimers();
     this->resize(s.NumPtcls,s.NumOrbitals);
   }
 
   SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
   {
     return Phi->makeClone();
+  }
+
+  void DiracDeterminantBase::registerTimers()
+  {
+    UpdateTimer.reset();
+    RatioTimer.reset();
+    TimerManager.addTimer (&UpdateTimer);
+    TimerManager.addTimer (&RatioTimer);
+    TimerManager.addTimer (&InverseTimer);
   }
 
 }

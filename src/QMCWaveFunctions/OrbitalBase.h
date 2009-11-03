@@ -339,7 +339,7 @@ namespace qmcplusplus
                                        vector<RealType>& dlogpsi,
                                        vector<RealType>& dhpsioverpsi) ;
 
-
+      virtual void finalizeOptimization() { }
 
       ///** copy data members from old
       // * @param old existing OrbitalBase from which all the data members are copied.
