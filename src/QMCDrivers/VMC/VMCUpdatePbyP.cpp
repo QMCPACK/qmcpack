@@ -155,10 +155,12 @@ namespace qmcplusplus {
       myTimers[1]->start();
       for(int iter=0; iter<nSubSteps; ++iter) {
 	for(int iat=0; iat<W.getTotalNum(); ++iat)  {
-	  //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
-	  RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
-	  // app_log() << "sc = " << sc << endl;
-	  PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+          PosType dr;
+	  ///dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+	  //RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
+	  //PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+          getScaledDrift(m_tauovermass,W.G[iat],dr);
+          dr += m_sqrttau*deltaR[iat];
 	  
 	  //reject illegal moves
 	  if(!W.makeMoveAndCheck(iat,dr)) {
@@ -185,9 +187,10 @@ namespace qmcplusplus {
 	  //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
 	  RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 	  
-	  //RealType scale=getDriftScale(Tau,G);
-	  RealType scale=getDriftScale(m_tauovermass,G[iat]);
-	  dr = thisWalker.R[iat]-W.R[iat]-scale*real(G[iat]);
+	  //RealType scale=getDriftScale(m_tauovermass,G[iat]);
+	  //dr = thisWalker.R[iat]-W.R[iat]-scale*real(G[iat]);
+          getScaledDrift(m_tauovermass,G[iat],dr);
+          dr = thisWalker.R[iat]-W.R[iat]-dr;
 	  
 	  RealType logGb = -m_oneover2tau*dot(dr,dr);
 	  
@@ -276,12 +279,14 @@ namespace qmcplusplus {
 	makeGaussRandomWithEngine(deltaR,RandomGen);
 	for(int iat=0; iat<W.getTotalNum(); ++iat) {
 	  GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-	  RealType sc=getDriftScale(m_tauovermass,grad_now);
-	  //	app_log() << "sc = " << sc << endl;
-	  PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
+          PosType dr;
+	  //RealType sc=getDriftScale(m_tauovermass,grad_now);
+	  //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
+          getScaledDrift(m_tauovermass,grad_now,dr);
+          dr += m_sqrttau*deltaR[iat];
 	  
 	  if(!W.makeMoveAndCheck(iat,dr)) {
-	    ++nReject; 
+	    ++nReject;
 	    continue;
 	  }
 	  
@@ -301,8 +306,10 @@ namespace qmcplusplus {
 	  //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
 	  RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 	  
-	  sc=getDriftScale(m_tauovermass,grad_new);
-	  dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
+	  //sc=getDriftScale(m_tauovermass,grad_new);
+	  //dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
+          getScaledDrift(m_tauovermass,grad_new,dr);
+          dr = thisWalker.R[iat]-W.R[iat]-dr;
 	  
 	  RealType logGb = -m_oneover2tau*dot(dr,dr);
 	  

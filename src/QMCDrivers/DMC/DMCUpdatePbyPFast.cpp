@@ -81,12 +81,13 @@ namespace qmcplusplus {
       myTimers[1]->start();
       for(int iat=0; iat<NumPtcl; ++iat) 
       {
-
         //get the displacement
-        //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
         GradType grad_iat=Psi.evalGrad(W,iat);
-        RealType sc=getDriftScale(m_tauovermass,grad_iat);
-        PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_iat));
+        PosType dr;
+        //RealType sc=getDriftScale(m_tauovermass,grad_iat);
+        //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_iat));
+        getScaledDrift(m_tauovermass, grad_iat, dr);
+        dr += m_sqrttau * deltaR[iat];
 
         //RealType rr=dot(dr,dr);
         RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
@@ -117,8 +118,10 @@ namespace qmcplusplus {
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
 
           //Use the force of the particle iat
-          RealType scale=getDriftScale(m_tauovermass,grad_iat);
-          dr = thisWalker.R[iat]-newpos-scale*real(grad_iat); 
+          //RealType scale=getDriftScale(m_tauovermass,grad_iat);
+          //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
+          getScaledDrift(m_tauovermass, grad_iat, dr);
+          dr = thisWalker.R[iat] - newpos - dr;
 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = ratio*ratio*std::exp(logGb-logGf);

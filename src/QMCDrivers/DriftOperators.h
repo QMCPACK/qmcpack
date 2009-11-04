@@ -49,6 +49,28 @@ namespace qmcplusplus {
     return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
 
+  /** evaluate a drift with a real force
+   * @param tau timestep
+   * @param qf quantum force
+   * @param drift
+   */
+  template<class T, unsigned D>
+  inline void getScaledDrift(T tau, const TinyVector<T,D>& qf, TinyVector<T,D>& drift)
+  {
+    T vsq=dot(qf,qf);
+    vsq= (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    drift=vsq*qf;
+  }
+
+  template<class T, unsigned D>
+  inline void getScaledDrift(T tau, const TinyVector<complex<T>,D>& qf, TinyVector<T,D>& drift)
+  {
+    T vsq=OTCDot<T,T,D>::apply(qf,qf);
+    vsq=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    for(int i=0;i<D;++i) convert(vsq*qf[i],drift[i]);
+  }
+
+
   /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
    *
    * Using eq. 34 of JCP 99, 2865 (1993)
