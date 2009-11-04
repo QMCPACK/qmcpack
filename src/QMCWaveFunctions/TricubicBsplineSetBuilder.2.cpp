@@ -172,7 +172,7 @@ namespace qmcplusplus {
             for(int kc=1; kc<bc[2]-1; kc++)
             //for(int kc=0; kc<bc[2]; kc++)
             {
-              outPtr[kc]=real(inPtr[zIndex[kc]]);
+              convert(inPtr[zIndex[kc]],outPtr[kc]);
             }
           }
         }

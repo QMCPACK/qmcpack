@@ -17,7 +17,9 @@
 #ifndef QMCPLUSPLUS_ORBITALTRAITS_H
 #define QMCPLUSPLUS_ORBITALTRAITS_H
 #include <complex>
-#include "OhmmsPETE/TinyVector.h"
+#include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/OhmmsVector.h>
+#include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus {
 
@@ -37,33 +39,79 @@ namespace qmcplusplus {
       typedef std::complex<double> complex_type;
     };
 
-  inline double real(double a) {
-    return a;
-  }
-  
-  inline TinyVector<double,3> real(const TinyVector<double,3>& a) { 
-    return a;
-  }
+  template<>
+    struct OrbitalTraits<float> {
+      typedef float          real_type;
+      typedef float          value_type;
+      typedef std::complex<float> complex_type;
+    };
 
-  inline TinyVector<double,3> real(const TinyVector<std::complex<double>,3>& a) { 
-    return TinyVector<double,3>(a[0].real(),a[1].real(),a[2].real());
-  }
+  template<>
+    struct OrbitalTraits<std::complex<float> > {
+      typedef float          real_type;
+      typedef std::complex<float> value_type;
+      typedef std::complex<float> complex_type;
+    };
 
-  inline TinyVector<double,2> real(const TinyVector<double,2>& a) { 
-    return a;
-  }
+  /** generic conversion from type T1 to type T2 using implicit conversion
+  */
+  template<typename T1, typename T2>
+    inline void convert(const T1& in, T2& out)
+    {
+      out=in;
+    }
 
-  inline TinyVector<double,2> real(const TinyVector<std::complex<double>,2>& a) { 
-    return TinyVector<double,2>(a[0].real(),a[1].real());
-  }
+  /** specialization of conversion from complex to real
+  */
+  template<typename T1, typename T2>
+    inline void convert(const std::complex<T1>& in, T2& out)
+    {
+      out=in.real();
+    }
 
-  inline TinyVector<double,1> real(const TinyVector<double,1>& a) { 
-    return a;
-  }
+  /* specialization of D-dim vectors
+   *
+   */
+  template<typename T1, typename T2, unsigned D>
+    inline void convert(const TinyVector<T1,D>& in, TinyVector<T2,D>& out)
+    {
+      for(int i=0; i<D;++i) convert(in[i],out[i]);
+    }
 
-  inline TinyVector<double,1> real(const TinyVector<std::complex<double>,1>& a) { 
-    return TinyVector<double,1>(a[0].real());
-  }
+  /** specialization for 3D */
+  template<typename T1, typename T2>
+    inline void convert(const TinyVector<T1,3>& in, TinyVector<T2,3>& out)
+    {
+      convert(in[0],out[0]);
+      convert(in[1],out[1]);
+      convert(in[2],out[2]);
+    }
+
+  /** generic function to convert arrays
+   * @param in starting address of type T1
+   * @param out starting address of type T2
+   * @param n size of in/out
+   */
+  template<typename T1, typename T2>
+    inline void convert(const T1* restrict in, T2* restrict out, std::size_t n)
+    {
+      for(int i=0; i<n;++i) convert(in[i],out[i]);
+    }
+
+  /** specialization for a vector */
+  template<typename T1, typename T2>
+    inline void convert(const Vector<T1>& in, Vector<T2>& out)
+    {
+      convert(in.data(),out.data(),in.size());
+    }
+
+  /** specialization for a vector */
+  template<typename T1, typename T2>
+    inline void convert(const Matrix<T1>& in, Matrix<T2>& out)
+    {
+      convert(in.data(),out.data(),in.size());
+    }
+
 
   template<typename T> inline double evaluatePhase(T sign_v)
   {

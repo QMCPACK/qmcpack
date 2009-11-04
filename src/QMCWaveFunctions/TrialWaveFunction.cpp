@@ -116,7 +116,9 @@ namespace qmcplusplus
         logpsi += (*it)->evaluateLog(P, P.G, P.L);
         PhaseValue += (*it)->PhaseValue;
       }
-    return LogValue=real(logpsi);
+    convert(logpsi,LogValue);
+    return LogValue;
+    //return LogValue=real(logpsi);
   }
 
   /** return log(|psi|)
@@ -142,9 +144,9 @@ namespace qmcplusplus
         logpsi += (*it)->evaluateLog(*tempP, tempP->G, tempP->L);
         PhaseValue += (*it)->PhaseValue;
       }
-
-
-    return LogValue=real(logpsi);
+    convert(logpsi,LogValue);
+    return LogValue;
+    //return LogValue=real(logpsi);
   }
 
 
@@ -181,7 +183,9 @@ namespace qmcplusplus
             PhaseValue += (*it)->PhaseValue;
           }
       }
-    return LogValue=real(logpsi);
+    convert(logpsi,LogValue);
+    return LogValue;
+    //return LogValue=real(logpsi);
   }
 
 
@@ -225,9 +229,10 @@ namespace qmcplusplus
       }
     P.G += fixedG;
     P.L += fixedL;
-
-    logpsi_fixed_r = real(logpsi_fixed);
-    logpsi_opt_r = real(logpsi_opt);
+    convert(logpsi_fixed,logpsi_fixed_r);
+    convert(logpsi_opt,logpsi_opt_r);
+    //logpsi_fixed_r = real(logpsi_fixed);
+    //logpsi_opt_r = real(logpsi_opt);
   }
 
   /** evaluate the value of a many-body wave function
@@ -267,9 +272,9 @@ namespace qmcplusplus
     RealType logr=evaluateLogAndPhase(r,PhaseDiff);
     return std::exp(logr);
 #else
-    if (real(r)<0) PhaseDiff=M_PI;
+    if (r<0) PhaseDiff=M_PI;
     //     else PhaseDiff=0.0;
-    return real(r);
+    return r;
 #endif
   }
 
@@ -331,9 +336,9 @@ namespace qmcplusplus
     RealType logr=evaluateLogAndPhase(r,PhaseValue);
     return std::exp(logr);
 #else
-    if (real(r)<0) PhaseDiff=M_PI;
+    if (r<0) PhaseDiff=M_PI;
     //     else PhaseDiff=0.0;
-    return real(r);
+    return r;
 #endif
   }
 
@@ -374,9 +379,9 @@ namespace qmcplusplus
 #if defined(QMC_COMPLEX)
     return std::exp(evaluateLogAndPhase(r,PhaseDiff));
 #else
-    if (real(r)<0) PhaseDiff=M_PI;
+    if (r<0) PhaseDiff=M_PI;
     //     else PhaseDiff=0.0;
-    return real(r);
+    return r;
 #endif
   }
 
@@ -452,8 +457,8 @@ namespace qmcplusplus
         logpsi += (*it)->registerData(P,buf);
         PhaseValue += (*it)->PhaseValue;
       }
-
-    LogValue=real(logpsi);
+    convert(logpsi,LogValue);
+    //LogValue=real(logpsi);
 
 //append current gradients and laplacians to the buffer
     NumPtcls = P.getTotalNum();
@@ -485,8 +490,8 @@ namespace qmcplusplus
         PhaseValue += (*it)->PhaseValue;
         myTimers[ii]->stop();
       }
-
-    LogValue=real(logpsi);
+    convert(logpsi,LogValue);
+    //LogValue=real(logpsi);
     buf.put(PhaseValue);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
@@ -557,7 +562,7 @@ namespace qmcplusplus
     buf.put(PhaseValue);
     //buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     //buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
-    return real(LogValue);
+    return LogValue;
   }
 
 //TrialWaveFunction::RealType

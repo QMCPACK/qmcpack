@@ -95,11 +95,7 @@ namespace qmcplusplus {
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       val *= e_mikr;
-#ifdef QMC_COMPLEX
-      psi[j] = val;
-#else
-      psi[j] = real(val);
-#endif
+      convert(val,psi[j]);
     }
   }
   
@@ -135,15 +131,18 @@ namespace qmcplusplus {
       double phase = -dot(P.R[iat], k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-#ifdef QMC_COMPLEX
-      psi[j]   = e_mikr * u;
-      dpsi[j]  = e_mikr*(-eye * ck * u + gradu);
-      d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-#else
-      psi[j]   = real(e_mikr * u);
-      dpsi[j]  = real(e_mikr*(-eye * ck * u + gradu));
-      d2psi[j] = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
-#endif
+      convert(e_mikr*u,psi[j]);
+      convert(e_mikr*(-eye * ck * u + gradu),dpsi[j]);
+      convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu),d2psi[j]);
+//#ifdef QMC_COMPLEX
+//      psi[j]   = e_mikr * u;
+//      dpsi[j]  = e_mikr*(-eye * ck * u + gradu);
+//      d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+//#else
+//      psi[j]   = real(e_mikr * u);
+//      dpsi[j]  = real(e_mikr*(-eye * ck * u + gradu));
+//      d2psi[j] = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+//#endif
 
     }
   }
@@ -180,15 +179,18 @@ namespace qmcplusplus {
 	double phase = -dot(r, k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
-#ifdef QMC_COMPLEX
-	vals(j,i)  = e_mikr * u;
-	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
-	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-#else
-	vals(j,i)  = real(e_mikr * u);
-	grads(i,j) = real(e_mikr*(-eye*u*ck + gradu));
-	lapls(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
-#endif
+	convert(e_mikr * u,vals(j,i));
+	convert(e_mikr*(-eye*u*ck + gradu),grads(i,j));
+	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu),lapls(i,j));
+//#ifdef QMC_COMPLEX
+//	vals(j,i)  = e_mikr * u;
+//	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
+//	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+//#else
+//	vals(j,i)  = real(e_mikr * u);
+//	grads(i,j) = real(e_mikr*(-eye*u*ck + gradu));
+//	lapls(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+//#endif
 
       }
     }
@@ -226,15 +228,18 @@ namespace qmcplusplus {
 	double phase = -dot(r, k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
-#ifdef QMC_COMPLEX
-	vals(i,j)  = e_mikr * u;
-	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
-	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-#else
-	vals(i,j)  = real(e_mikr * u);
-	grads(i,j) = real(e_mikr*(-eye*u*ck + gradu));
-	lapls(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
-#endif
+	convert(e_mikr * u, vals(i,j));
+	convert(e_mikr*(-eye*u*ck + gradu),grads(i,j));
+	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu),lapls(i,j));
+//#ifdef QMC_COMPLEX
+//	vals(i,j)  = e_mikr * u;
+//	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
+//	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+//#else
+//	vals(i,j)  = real(e_mikr * u);
+//	grads(i,j) = real(e_mikr*(-eye*u*ck + gradu));
+//	lapls(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+//#endif
       }
     }
   }
@@ -248,38 +253,35 @@ namespace qmcplusplus {
 
 
 
-
   ///////////////////////////////////////////
   // EinsplineSetExtended Member functions //
   ///////////////////////////////////////////
-
-  inline void
-  convert (complex<double> a, complex<double> &b)
-  { b = a;  }
-
-  inline void
-  convert (complex<double> a, double &b)
-  { b = a.real();  }
-
-  inline void
-  convert (double a, complex<double>&b)
-  { b = complex<double>(a,0.0); }
-
-  inline void
-  convert (double a, double &b)
-  { b = a; }
-
-  template<typename T1, typename T2> void
-  convertVec (TinyVector<T1,3> a, TinyVector<T2,3> &b)
-  {
-    for (int i=0; i<3; i++)
-      convert (a[i], b[i]);
-  }
-
+//  inline void
+//  convert (complex<double> a, complex<double> &b)
+//  { b = a;  }
+//
+//  inline void
+//  convert (complex<double> a, double &b)
+//  { b = a.real();  }
+//
+//  inline void
+//  convert (double a, complex<double>&b)
+//  { b = complex<double>(a,0.0); }
+//
+//  inline void
+//  convert (double a, double &b)
+//  { b = a; }
+//
+//  template<typename T1, typename T2> void
+//  convertVec (TinyVector<T1,3> a, TinyVector<T2,3> &b)
+//  {
+//    for (int i=0; i<3; i++)
+//      convert (a[i], b[i]);
+//  }
   // Real evaluation functions
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      TinyVector<double,3> r, 
+		      const TinyVector<double,3>& r,
 		      Vector<double> &psi)
   {
     eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
@@ -287,19 +289,19 @@ namespace qmcplusplus {
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      TinyVector<double,3> r,
+		      const TinyVector<double,3>& r,
 		      Vector<double> &psi,
 		      Vector<TinyVector<double,3> > &grad)
   {
     eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
-				 psi.data(), 
+				 psi.data(),
 				 (double*)grad.data());
   }
 
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      TinyVector<double,3> r,
+		      const TinyVector<double,3>& r,
 		      Vector<double> &psi,
 		      Vector<TinyVector<double,3> > &grad,
 		      Vector<Tensor<double,3> > &hess)
@@ -315,7 +317,7 @@ namespace qmcplusplus {
   //////////////////////////////////
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      TinyVector<double,3> r, 
+		      const TinyVector<double,3>& r,
 		      Vector<complex<double> > &psi)
   {
     eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
@@ -323,7 +325,7 @@ namespace qmcplusplus {
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      TinyVector<double,3> r,
+		      const TinyVector<double,3>& r,
 		      Vector<complex<double> > &psi,
 		      Vector<TinyVector<complex<double>,3> > &grad)
   {
@@ -334,7 +336,7 @@ namespace qmcplusplus {
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      TinyVector<double,3> r,
+		      const TinyVector<double,3>& r,
 		      Vector<complex<double> > &psi,
 		      Vector<TinyVector<complex<double>,3> > &grad,
 		      Vector<Tensor<complex<double>,3> > &hess)
@@ -752,7 +754,8 @@ namespace qmcplusplus {
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       convert(e_mikr * u, psi[j]);
-      convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+      convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
       convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
     VGLTimer.stop();
@@ -1419,7 +1422,8 @@ namespace qmcplusplus {
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
 	convert(e_mikr * u, psi(j,i));
-	convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+	convert(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+	//convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
 	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
       } 
     }

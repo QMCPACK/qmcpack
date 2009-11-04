@@ -711,9 +711,9 @@ namespace qmcplusplus {
     else NewOcc=false;
 
 
-    H5OrbSet set(H5FileName, spinSet, numOrbs);
+    H5OrbSet aset(H5FileName, spinSet, numOrbs);
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
-    iter = SPOSetMap.find (set);
+    iter = SPOSetMap.find (aset);
     if ((iter != SPOSetMap.end() ) && (!NewOcc)) {
       app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
 		<< "cloning EinsplineSet object.\n";
@@ -888,7 +888,7 @@ namespace qmcplusplus {
     }
 #endif
 
-    SPOSetMap[set] = OrbitalSet;
+    SPOSetMap[aset] = OrbitalSet;
     
     if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
     {
