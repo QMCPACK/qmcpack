@@ -4,8 +4,8 @@ import sys
 
 def corr(i,x,mean,var):
     N=len(x)
-    if var==0:#if the variance is 0 return an effectively infinity corr
-        return 1e100
+    if var < 1.0e-10:#if the variance is 0 return an effectively infinity corr
+        return 1
     corr=1.0/var*1.0/(N-i)*sum((x[0:N-i]-mean)*(x[i:N]-mean))
     return corr
 
@@ -66,6 +66,8 @@ file.close()
 s = loadtxt(sys.argv[1])
 c = s.shape[0]
 factor = 1.0
+if (len(sys.argv) > 4):
+    c = int(sys.argv[4])
 if (len(sys.argv) > 3):
     factor = float(sys.argv[3])
     s = s / factor
@@ -78,6 +80,12 @@ else:
 #(avg, var, error, kapp) = Stats(data)
 #print "Kappa = " + repr(kapp)
 
+Ewald = 0.0
+MPC   = 0.0
+KEcorr = 0.0
+totE = 0.0
+err = 0.0
+
 for i in range(2,len(names)):
     n = names[i];
     data = s[first:c,i-1]
@@ -85,8 +93,31 @@ for i in range(2,len(names)):
     if (n == 'AcceptRatio' or n=='BlockCPU' or n=='BlockWeight'):
         avg *= factor
         error *= factor
+    if (n == 'ElecElec'):
+        Ewald = avg
+    if (n == 'MPC'):
+        MPC = avg
+    if (n == 'KEcorr'):
+        KEcorr = avg
+    if (n == 'LocalEnergy'):
+        totE = avg
+        err = error
+    if (n == 'LocalEnergy_sq'):
+        E = s[first:c,i-2]
+        (eavg, evar, eerr, ekapp) = Stats(E)
+        variance = avg/factor - eavg*eavg
+        n = 'Variance'
+        avg = variance
+        
     print '%-20s = %s' % (n, MeanErrorString(avg,error))
-    
+
+correction = KEcorr
+if (Ewald !=0.0 and MPC != 0.0):
+    correction += MPC - Ewald
+if (abs(correction) > 1.0e-12):
+    print '-----------------------------------------------------'
+    print '%-20s = %s' % ('Corrected energy', MeanErrorString(totE+correction,err))
+
 #E = s[first:c,1];
 #Vloc  = s[first:c,2];
 #KE    = s[first:c,3];
