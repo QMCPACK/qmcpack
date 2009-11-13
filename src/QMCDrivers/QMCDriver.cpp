@@ -345,7 +345,7 @@ namespace qmcplusplus {
    
     //only overwrite it there is no walker (first time) and nTargetWalkers is not 
     //a multiple of /nWalkersPerThread
-    if(W.getActiveWalkers() == 0 && (nTargetWalkers < Nthreads || nTargetWalkers%nWalkersPerThread)) 
+    if(nTargetWalkers < Nthreads || nTargetWalkers%nWalkersPerThread) 
       nTargetWalkers=Nthreads*nWalkersPerThread;
     
     if( (fracDeficit>0 ) && nTargetSamples )
@@ -357,7 +357,8 @@ namespace qmcplusplus {
     
     if (nStepsBetweenSamples && nTargetSamples)
     {
-      int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples/(nTargetWalkers*Nprocs)));
+      app_log()<<RealType(nTargetSamples*nStepsBetweenSamples)<<" "<<RealType(nTargetWalkers*Nprocs)<<endl;
+      int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples)/RealType(nTargetWalkers*Nprocs) );
       if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
       nSteps = std::ceil(RealType(nStepsTotal/nBlocks));
       nStepsTotal = nSteps*nBlocks;
