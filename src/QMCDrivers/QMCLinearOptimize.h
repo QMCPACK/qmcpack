@@ -84,13 +84,9 @@ namespace qmcplusplus
       ///target cost function to optimize
       //QMCCostFunction* optTarget;
       QMCCostFunctionBase* optTarget;
-      ///allow H matrix to have negative elements along diagonal?
-      ///use parameters from generalized eigenvalue as a direction to minimize cost function?
-      ///use gradient or ggev to line minimize
-      bool conditionHamiltonian, linemin, rescaleParameters;
-      string aln, lm, rp;
+
       vector<RealType> optdir, optparm;
-      RealType allowedCostIncrease, allowedCostDifference;
+      RealType allowedCostDifference;
       ///vmc engine
       QMCDriver* vmcEngine;
       ///xml node to be dumped

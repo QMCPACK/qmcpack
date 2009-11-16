@@ -40,7 +40,7 @@ namespace qmcplusplus
 
   /**  Perform the correlated sampling algorthim.
    */
-  QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::correlatedSampling()
+  QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::correlatedSampling(bool needGrad)
   {
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
@@ -73,7 +73,7 @@ namespace qmcplusplus
 
         vector<Return_t>* Dsaved= &(TempDerivRecords[iw]) ;
         vector<Return_t>* HDsaved= &(TempHDerivRecords[iw]) ;
-        Psi.evaluateDerivatives(W, OptVariables,*Dsaved,*HDsaved);
+        if (needGrad) Psi.evaluateDerivatives(W, OptVariables,*Dsaved,*HDsaved);
 //    for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED] * (*Dsaved)[l];
 
 

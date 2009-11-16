@@ -35,10 +35,10 @@ namespace qmcplusplus {
   branchEngine(0), ResetRandom(false), AppendRun(false),
   MyCounter(0), RollBackBlocks(0),
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
-  Period4CheckProperties(100), CurrentStep(0), 
-  nBlocks(10), nSteps(0), 
-  nWalkersPerThread(1), nStepsBetweenSamples(0),  fracDeficit(0),
-  nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
+  Period4CheckProperties(100), 
+  nBlocks(10), nSteps(0), nTargetWalkers(0), nTargetSamples(0),
+  nStepsBetweenSamples(0), nSamplesPerThread(0),
+  nAccept(0), nReject(0),  CurrentStep(0), 
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0), storeConfigs(0),
   W(w), Psi(psi), H(h), Estimators(0)
@@ -61,8 +61,7 @@ namespace qmcplusplus {
     m_param.add(Period4CheckProperties,"checkProperties","int"); m_param.add(Period4CheckProperties,"checkproperties","int"); m_param.add(Period4CheckProperties,"check_properties","int");
     m_param.add(storeConfigs,"storeConfigs","int"); m_param.add( storeConfigs,"storeconfigs","int"); m_param.add( storeConfigs,"store_configs","int");
 
-    m_param.add(nWalkersPerThread,"walkersperthread","int");
-    m_param.add(fracDeficit,"fractionaldeficit","real");
+    m_param.add(nSamplesPerThread,"samplesperthread","real");
     m_param.add(nStepsBetweenSamples,"stepsbetweensamples","int");
     
     
@@ -340,42 +339,31 @@ namespace qmcplusplus {
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
 
-    //if(nStepsBetweenSamples && (nWalkersPerThread==0))  nWalkersPerThread=1;
-    //if (nWalkersPerThread) nTargetWalkers = Nthreads*nWalkersPerThread;
-   
-    //only overwrite it there is no walker (first time) and nTargetWalkers is not 
-    //a multiple of /nWalkersPerThread
-    if(nTargetWalkers < Nthreads || nTargetWalkers%nWalkersPerThread) 
-      nTargetWalkers=Nthreads*nWalkersPerThread;
+    //nTargetWalkers is a local quantity.
+    nTargetWalkers=std::max(Nthreads,nTargetWalkers);
+//     nTargetSamples is set to 
+    nTargetSamples=std::max(int(nTargetWalkers*Nprocs*nSamplesPerThread),nTargetSamples);
     
-    if( (fracDeficit>0 ) && nTargetSamples )
+    if(nStepsBetweenSamples)
     {
-//       case of fractional samples per thread
-      nTargetSamples = (nTargetWalkers*Nprocs)*std::floor(RealType(nTargetSamples/(nTargetWalkers*Nprocs)));
-      nTargetSamples += std::floor(fracDeficit*(nTargetWalkers*Nprocs));// + (nTargetSamples/(nTargetWalkers*Nprocs))*nTargetWalkers*Nprocs;
-    }
-    
-    if (nStepsBetweenSamples && nTargetSamples)
-    {
-      app_log()<<RealType(nTargetSamples*nStepsBetweenSamples)<<" "<<RealType(nTargetWalkers*Nprocs)<<endl;
       int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples)/RealType(nTargetWalkers*Nprocs) );
       if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
       nSteps = std::ceil(RealType(nStepsTotal/nBlocks));
       nStepsTotal = nSteps*nBlocks;
-      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples));
+      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
-    else if(nTargetSamples)
+    else
     {
       int nStepsTotal =  nSteps*nBlocks;
-      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs/nTargetSamples));
+      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
-    }
+    }      
 
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 
-    app_log() << "  Walkers are dumped every " << Period4CheckPoint << " steps." << endl;
-
+    app_log() << "  Walker Check Points are dumped every " << Period4CheckPoint << " steps." << endl;
+    if (Period4WalkerDump>0) app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
 

@@ -341,7 +341,7 @@ namespace qmcplusplus
       psiClones[i]->resetParameters(OptVariablesForPsi);
   }
 
-  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()
+  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGrad)
   {
 
     Return_t wgt_tot=0.0;
@@ -382,7 +382,7 @@ namespace qmcplusplus
 
           vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
           vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
-          psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi,*Dsaved,*HDsaved);
+          if (needGrad) psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi,*Dsaved,*HDsaved);
 
           wgt_node+=weight;
           wgt_node2+=weight*weight;

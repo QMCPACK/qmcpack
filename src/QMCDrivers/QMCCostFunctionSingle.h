@@ -47,7 +47,7 @@ namespace qmcplusplus {
     vector<vector<Return_t> > TempHDerivRecords;
     Return_t CSWeight;
     void resetPsi(bool final_reset=false);
-    Return_t correlatedSampling();
+    Return_t correlatedSampling(bool needGrad=true);
   };
 }
 #endif

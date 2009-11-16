@@ -71,7 +71,7 @@ namespace qmcplusplus
         return OptVariables.getType(i);
       }
       ///return the cost value for CGMinimization
-      Return_t Cost();
+      Return_t Cost(bool needGrad=true);
       ///return the gradient of cost value for CGMinimization
       virtual void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0) {};
       ///return the number of optimizable parameters
@@ -269,7 +269,7 @@ namespace qmcplusplus
       void updateXmlNodes();
 
 
-      virtual Return_t correlatedSampling()=0;
+      virtual Return_t correlatedSampling(bool needGrad=true)=0;
     };
 }
 #endif

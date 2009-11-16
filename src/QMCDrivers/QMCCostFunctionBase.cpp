@@ -96,7 +96,7 @@ namespace qmcplusplus
       }
   }
 
-  QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost()
+  QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost(bool needGrad)
   {
 
     NumCostCalls++;
@@ -107,7 +107,7 @@ namespace qmcplusplus
     resetPsi();
 
 //evaluate new local energies
-    NumWalkersEff=correlatedSampling();
+    NumWalkersEff=correlatedSampling(needGrad);
 
 //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];

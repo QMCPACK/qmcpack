@@ -56,7 +56,7 @@ namespace qmcplusplus
       vector<vector<vector<Return_t> >* > TempHDerivRecords;
       Return_t CSWeight;
 
-      Return_t correlatedSampling();
+      Return_t correlatedSampling(bool needGrad=true);
     };
 }
 #endif
