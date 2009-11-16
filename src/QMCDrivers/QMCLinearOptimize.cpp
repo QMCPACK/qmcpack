@@ -261,6 +261,7 @@ namespace qmcplusplus
 //                   optTarget->resetPsi(); 
                   bestStability=stability;
                   lastCost=newCost;
+                  optTarget->Report();
                 }
                 else
                 {
@@ -284,7 +285,7 @@ namespace qmcplusplus
         currentParameters=bestParameters;
         optTarget->resetPsi();
         }
-        optTarget->Report();
+//         optTarget->Report();
       }
       
       MyCounter++;
