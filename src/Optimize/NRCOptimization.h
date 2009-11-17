@@ -64,6 +64,7 @@ struct NRCOptimization {
    */
   Return_t LambdaMax;
   Return_t quadstep;
+  Return_t largeQuarticStep;
 
   int current_step;
 
@@ -78,6 +79,7 @@ struct NRCOptimization {
     LambdaMax = 0.02;
     current_step = 0;
     quadstep=0.01;
+    largeQuarticStep=2.0;
   }
 
   virtual ~NRCOptimization() { }
@@ -168,7 +170,7 @@ struct NRCOptimization {
     qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
 
     Lambda = QuarticMinimum (coefs);
-    if (fabs(Lambda) > 2.0 || isnan(Lambda))
+    if (fabs(Lambda) > largeQuarticStep || isnan(Lambda))
       return lineoptimization2();
     cost = Func(Lambda);
     if (isnan(cost) || cost > start_cost)

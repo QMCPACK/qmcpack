@@ -452,7 +452,7 @@ namespace qmcplusplus
   {
 
     resetPsi();
-    Return_t NWE = NumWalkersEff=correlatedSampling();
+    Return_t NWE = NumWalkersEff=correlatedSampling(true);
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     vector<Return_t> D_avg(NumParams(),0);
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];

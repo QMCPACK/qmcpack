@@ -124,9 +124,8 @@ namespace qmcplusplus
       TOL = allowedCostDifference;         
       //If not rescaling and linear parameters, step size and grad are the same.
       LambdaMax = 1.0;
-      RealType lastCost(optTarget->Cost(true));
+      RealType lastCost(optTarget->Cost(false));
       RealType newCost(lastCost);
-      RealType deltaCost(lastCost);
       
       int N=optTarget->NumParams() + 1;
       int numParams = optTarget->NumParams();
@@ -162,11 +161,13 @@ namespace qmcplusplus
                 ST(i,j)= (S)(j,i);
               }
               RealType Xs(0);
-              if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
-              else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
+
               RealType smlst(HamT(1,1));
               for (int i=2;i<N;i++) smlst = std::min(HamT(i,i),smlst);
-              if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;                        
+              if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;
+              
+              if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
+              else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
               for (int i=1;i<N;i++) HamT(i,i) += Xs;
               
               
@@ -197,52 +198,52 @@ namespace qmcplusplus
               std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
 
               // CG like algorithm, we try to move in maxtries directions. eigenvalues are orthogonal.
-              for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0); 
+              for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0);
               
-              //We will not rescale the direction. this keeps step size=1 for linear
-              if (false)
-              {
-                //Umrigar and Sorella suggest using 0.5 for xi.                                        
-                RealType xi=0.5;                                                                       
-                RealType D(1.0);                                                                       
-                for (int i=0;i<numParams;i++)                                                                
-                {                                                                                    
-                  if (optTarget->getType(i) != 2)                                                    
-                  {                                                                                
-                    for (int j=0;j<numParams;j++)                                                        
-                    {                                                                            
-                      if (optTarget->getType(j) != 2) D += S(j+1,i+1)*currentParameterDirections[i+1]*currentParameterDirections[j+1];           
-                    }                                                                            
-                  }                                                                                
-                }                                                                                    
-                D = std::sqrt(std::abs(D));                                                            
-                
-                vector<RealType> N_i(numParams,0);
-                for (int i=0;i<numParams;i++)     
-                {                         
-                  RealType tsumN(0);      
-                  for (int j=0;j<numParams;j++) 
-                  {                     
-                    if (optTarget->getType(j) != 2)
-                    {                            
-                      tsumN += S(i+1,j+1)*currentParameterDirections[j+1];
-                    }                             
-                  }                                 
-                  N_i[i] += (1-xi)*tsumN  / (xi*D + (1-xi));
-                }                                           
-                
-                RealType rescale(1);
-                for (int j=0;j<numParams;j++) rescale -= N_i[j]*currentParameterDirections[j+1] ;
-                rescale = 1.0/rescale;                             
-                if ((rescale==rescale)&&(rescale!=0))              
-                {                                                
-                  for (int i=0;i<numParams; i++)                     
-                  {                                            
-                    if (optTarget->getType(i) != 2) currentParameterDirections[i+1]*=rescale;
-                  }                                                  
-                }                                                      
-                
-              }
+              
+//               if (false)
+//               {
+//                 //Umrigar and Sorella suggest using 0.5 for xi.                                        
+//                 RealType xi=0.5;                                                                       
+//                 RealType D(1.0);                                                                       
+//                 for (int i=0;i<numParams;i++)                                                                
+//                 {                                                                                    
+//                   if (optTarget->getType(i) != 2)                                                    
+//                   {                                                                                
+//                     for (int j=0;j<numParams;j++)                                                        
+//                     {                                                                            
+//                       if (optTarget->getType(j) != 2) D += S(j+1,i+1)*currentParameterDirections[i+1]*currentParameterDirections[j+1];           
+//                     }                                                                            
+//                   }                                                                                
+//                 }                                                                                    
+//                 D = std::sqrt(std::abs(D));                                                            
+//                 
+//                 vector<RealType> N_i(numParams,0);
+//                 for (int i=0;i<numParams;i++)     
+//                 {                         
+//                   RealType tsumN(0);      
+//                   for (int j=0;j<numParams;j++) 
+//                   {                     
+//                     if (optTarget->getType(j) != 2)
+//                     {                            
+//                       tsumN += S(i+1,j+1)*currentParameterDirections[j+1];
+//                     }                             
+//                   }                                 
+//                   N_i[i] += (1-xi)*tsumN  / (xi*D + (1-xi));
+//                 }                                           
+//                 
+//                 RealType rescale(1);
+//                 for (int j=0;j<numParams;j++) rescale -= N_i[j]*currentParameterDirections[j+1] ;
+//                 rescale = 1.0/rescale;                             
+//                 if ((rescale==rescale)&&(rescale!=0))              
+//                 {                                                
+//                   for (int i=0;i<numParams; i++)                     
+//                   {                                            
+//                     if (optTarget->getType(i) != 2) currentParameterDirections[i+1]*=rescale;
+//                   }                                                  
+//                 }                                                      
+//                 
+//               }
               
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
@@ -253,42 +254,18 @@ namespace qmcplusplus
               if (Lambda==Lambda)        
               {
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-                newCost = optTarget->Cost();
-//                 app_log()<<tries<<" "<<stability<<" "<<newCost<<endl;
-                //newcost must be lower than lastcost, must be a number and can't have moved more than 50 down. For a huge system this might be too little
-                if ((newCost > lastCost-bigChange)&&(newCost < lastCost)&&(newCost==newCost))
+                newCost = optTarget->Cost(false);
+                if ((newCost > lastCost - bigChange)&&(newCost < lastCost)&&(newCost==newCost))
                 {
                   //Move was acceptable 
                   for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
-//                   optTarget->resetPsi(); 
-                  bestStability=stability;
-                  lastCost=newCost;
-//                  optTarget->Report();
-                }
-                else
-                {
-                  for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];                   
-//                   optTarget->resetPsi(); 
-                  newCost=lastCost;
+                  bestStability=stability; lastCost=newCost;
                 }
               }
-              else                                                                                  
-              {
-                //               Line Minimization failed
-                for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];                       
-//                 optTarget->resetPsi(); 
-                newCost=lastCost;
-              }
-              deltaCost += newCost-lastCost;
-              lastCost=newCost;
-              app_log() << "  deltaCost = " <<deltaCost<<endl;
             }
         for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
         currentParameters=bestParameters;
-        newCost = optTarget->Cost(true);
-        optTarget->resetPsi();
         }
-//         optTarget->Report();
       }
       
       MyCounter++;
