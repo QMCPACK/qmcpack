@@ -63,6 +63,7 @@ struct NRCOptimization {
    * y'=y + Lambda*cg where Lambda < LambdaMax
    */
   Return_t LambdaMax;
+  Return_t quadstep;
 
   int current_step;
 
@@ -76,6 +77,7 @@ struct NRCOptimization {
     TINY = numeric_limits<T>::epsilon();
     LambdaMax = 0.02;
     current_step = 0;
+    quadstep=0.01;
   }
 
   virtual ~NRCOptimization() { }
@@ -153,7 +155,7 @@ struct NRCOptimization {
   bool lineoptimization() {
     vector<Return_t> x(5), y(5), coefs(5), deriv(4);
     qmcplusplus::Matrix<Return_t> S(5,5);
-    x[0]=-0.02; x[1]=-0.01; x[2]=0.0; x[3]=0.01; x[4]=0.02;
+    x[0]=-2*quadstep; x[1]=-quadstep; x[2]=0.0; x[3]=quadstep; x[4]=2*quadstep;
     Return_t start_cost, cost;
     for (int i=0; i<5; i++) {
       y[i] = Func(x[i]);

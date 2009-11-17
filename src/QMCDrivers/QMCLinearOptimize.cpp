@@ -124,7 +124,7 @@ namespace qmcplusplus
       TOL = allowedCostDifference;         
       //If not rescaling and linear parameters, step size and grad are the same.
       LambdaMax = 1.0;
-      RealType lastCost(optTarget->Cost());
+      RealType lastCost(optTarget->Cost(true));
       RealType newCost(lastCost);
       RealType deltaCost(lastCost);
       
@@ -246,7 +246,9 @@ namespace qmcplusplus
               
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-              lineoptimization2();
+              if (tries==0) quadstep=0.2;
+              else quadstep=0.01;
+              lineoptimization();
               
               if (Lambda==Lambda)        
               {
@@ -261,7 +263,7 @@ namespace qmcplusplus
 //                   optTarget->resetPsi(); 
                   bestStability=stability;
                   lastCost=newCost;
-                  optTarget->Report();
+//                  optTarget->Report();
                 }
                 else
                 {
@@ -283,6 +285,7 @@ namespace qmcplusplus
             }
         for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
         currentParameters=bestParameters;
+        newCost = optTarget->Cost(true);
         optTarget->resetPsi();
         }
 //         optTarget->Report();
