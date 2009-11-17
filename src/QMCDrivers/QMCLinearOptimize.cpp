@@ -37,7 +37,8 @@ namespace qmcplusplus
     PartID(0), NumParts(1), WarmupBlocks(10),                                                                               
     SkipSampleGeneration("no"), hamPool(hpool),                                                                             
     optTarget(0), vmcEngine(0), Max_iterations(1),                                                                          
-    wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6)
+    wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6),
+    nstabilizers(3), stabilizerScale(4.0), bigChange(50)
     {                                                                                                                           
       //set the optimization flag                                                                                               
       QMCDriverMode.set(QMC_OPTIMIZE,1);                                                                                        
@@ -47,10 +48,13 @@ namespace qmcplusplus
       optmethod = "Linear";                                                                                                     
       m_param.add(WarmupBlocks,"warmupBlocks","int");                                                                           
       m_param.add(SkipSampleGeneration,"skipVMC","string");                                                                     
-      m_param.add(Max_iterations,"max_its","int");                                                                              
-      m_param.add(exp0,"exp0","int");
+      m_param.add(Max_iterations,"max_its","int"); 
       
-      m_param.add(allowedCostDifference,"alloweddifference","double");  
+      m_param.add(exp0,"exp0","int");                                                                        
+      m_param.add(nstabilizers,"nstabilizers","int");                                                                        
+      m_param.add(stabilizerScale,"stabilizerscale","double");
+      m_param.add(allowedCostDifference,"alloweddifference","double"); 
+      m_param.add(bigChange,"bigchange","double");  
       //Set parameters for line minimization:
       
     }
@@ -149,11 +153,7 @@ namespace qmcplusplus
           for (int i=0;i<numParams; i++) currentParameters[i] = optTarget->Params(i);
           vector<RealType> bestParameters(currentParameters);
           
-//           how many stabilizers we try for the first step
-          int Maxstability(3);
-//           how to scale the stabilizer each time
-          RealType stabilityScale(4.0);
-          for(int stability=0;stability<((tries==0)?Maxstability:1);stability++){
+          for(int stability=0;stability<((tries==0)?nstabilizers:1);stability++){
             Matrix<RealType> HamT(N,N), ST(N,N);
             for (int i=0;i<N;i++)
               for (int j=0;j<N;j++)
@@ -162,8 +162,8 @@ namespace qmcplusplus
                 ST(i,j)= (S)(j,i);
               }
               RealType Xs(0);
-              if (tries==0) Xs = std::pow(10.0,exp0 + stabilityScale*stability);
-              else Xs = std::pow(10.0,exp0 + stabilityScale*bestStability);
+              if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
+              else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
               RealType smlst(HamT(1,1));
               for (int i=2;i<N;i++) smlst = std::min(HamT(i,i),smlst);
               if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;                        
@@ -254,7 +254,7 @@ namespace qmcplusplus
                 newCost = optTarget->Cost();
 //                 app_log()<<tries<<" "<<stability<<" "<<newCost<<endl;
                 //newcost must be lower than lastcost, must be a number and can't have moved more than 50 down. For a huge system this might be too little
-                if ((newCost > lastCost-50)&&(newCost < lastCost)&&(newCost==newCost))
+                if ((newCost > lastCost-bigChange)&&(newCost < lastCost)&&(newCost==newCost))
                 {
                   //Move was acceptable 
                   for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);

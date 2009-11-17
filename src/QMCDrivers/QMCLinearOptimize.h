@@ -86,7 +86,8 @@ namespace qmcplusplus
       QMCCostFunctionBase* optTarget;
 
       vector<RealType> optdir, optparm;
-      RealType allowedCostDifference;
+      RealType allowedCostDifference,stabilizerScale,bigChange;
+      int nstabilizers; 
       ///vmc engine
       QMCDriver* vmcEngine;
       ///xml node to be dumped
