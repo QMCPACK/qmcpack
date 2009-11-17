@@ -162,9 +162,9 @@ namespace qmcplusplus
               }
               RealType Xs(0);
 
-              RealType smlst(HamT(1,1));
-              for (int i=2;i<N;i++) smlst = std::min(HamT(i,i),smlst);
-              if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;
+//               RealType smlst(HamT(1,1));
+//               for (int i=2;i<N;i++) smlst = std::min(HamT(i,i),smlst);
+//               if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;
               
               if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
               else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
@@ -196,6 +196,18 @@ namespace qmcplusplus
                 mappedEigenvalues[i].second=i;
               }
               std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+              
+              if(mappedEigenvalues[0].first<0)
+              {
+                for (int i=0;i<N;i++) HamT(i,i) -= mappedEigenvalues[0].first;
+                dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+                for (int i=0;i<numParams;i++)
+                {
+                  mappedEigenvalues[i].first=alphar[i]/beta[i];
+                  mappedEigenvalues[i].second=i;
+                }
+                std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+              }
 
               // CG like algorithm, we try to move in maxtries directions. eigenvalues are orthogonal.
               for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0);
@@ -247,9 +259,9 @@ namespace qmcplusplus
               
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-              if (tries==0) quadstep=0.2;
-              else quadstep=0.01;
-              lineoptimization();
+//               if (tries==0) quadstep=0.2;
+//               else quadstep=0.01;
+              lineoptimization2();
               
               if (Lambda==Lambda)        
               {
