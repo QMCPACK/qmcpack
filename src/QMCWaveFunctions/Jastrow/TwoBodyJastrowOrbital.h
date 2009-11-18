@@ -144,7 +144,7 @@ namespace qmcplusplus {
         (*it).second->checkInVariables(myVars);
         ++it;
       }
-      reportStatus(app_log());
+//      reportStatus(app_log());
       
     }
 
