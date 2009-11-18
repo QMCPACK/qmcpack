@@ -70,7 +70,7 @@ namespace qmcplusplus
     QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
     {
       for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
-      return optTarget->Cost(false);                                                           
+      return optTarget->Cost(false);
       // return 0;                                                                            
     }                                                                                     
     
@@ -122,18 +122,14 @@ namespace qmcplusplus
       int Total_iterations(0);           
       
       TOL = allowedCostDifference;         
-      //If not rescaling and linear parameters, step size and grad are the same.
-      LambdaMax = 1.0;
-      RealType lastCost(optTarget->Cost(false));
-      RealType newCost(lastCost);
-      
+
       int N=optTarget->NumParams() + 1;
       int numParams = optTarget->NumParams();
       optdir.resize(numParams,0);
 
       vector<RealType> currentParameterDirections(N,0);
       vector<RealType> currentParameters(numParams,0);
-      
+      for (int i=0;i<numParams; i++) currentParameters[i] = optTarget->Params(i);
       while (Max_iterations>Total_iterations)
       {
         Total_iterations+=1;               
@@ -145,30 +141,36 @@ namespace qmcplusplus
 //         store this for use in later tries
         int bestStability(0);
         for(int tries=0;tries<maxtries;tries++){
+          RealType lastCost(optTarget->Cost(false));
+          RealType newCost(lastCost);
+          
           Matrix<RealType> Ham(N,N);
+          Matrix<RealType> Ham2(N,N);
           Matrix<RealType> S(N,N);
+          Matrix<RealType> S2(N,N);
         
+          for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           optTarget->fillOverlapHamiltonianMatrix(Ham, S);
-          for (int i=0;i<numParams; i++) currentParameters[i] = optTarget->Params(i);
+          optTarget->fillOverlapHamiltonianSquaredMatrix(Ham2, S2);
+          
           vector<RealType> bestParameters(currentParameters);
           
           for(int stability=0;stability<((tries==0)?nstabilizers:1);stability++){
             Matrix<RealType> HamT(N,N), ST(N,N);
+            Matrix<RealType> HamT2(N,N), ST2(N,N);
             for (int i=0;i<N;i++)
               for (int j=0;j<N;j++)
               {
                 HamT(i,j)= (Ham)(j,i);        
                 ST(i,j)= (S)(j,i);
+                HamT2(i,j)= (Ham2)(j,i);        
+                ST2(i,j)= (S2)(j,i);
               }
               RealType Xs(0);
-
-//               RealType smlst(HamT(1,1));
-//               for (int i=2;i<N;i++) smlst = std::min(HamT(i,i),smlst);
-//               if (smlst<0) for (int i=1;i<N;i++) HamT(i,i) -= smlst;
-              
               if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
               else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
               for (int i=1;i<N;i++) HamT(i,i) += Xs;
+              for (int i=1;i<N;i++) HamT2(i,i) += Xs;
               
               
               char jl('N');
@@ -182,35 +184,61 @@ namespace qmcplusplus
               RealType tt(0);
               int t(1);
               dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-              
               lwork=work[0];
               work.resize(lwork);
-              ///RealType==double to use this one, ned to write case where RealType==float                                                             
-              dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-              assert(info==0);  
               
-              vector<std::pair<RealType,int> > mappedEigenvalues(numParams);
-              for (int i=0;i<numParams;i++)
+              //here is the pure energy part
+              if (false)
               {
-                mappedEigenvalues[i].first=alphar[i]/beta[i];
-                mappedEigenvalues[i].second=i;
-              }
-              std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-              
-              if(mappedEigenvalues[0].first<0)
-              {
-                for (int i=0;i<N;i++) HamT(i,i) -= mappedEigenvalues[0].first;
+                ///RealType==double to use this one, ned to write case where RealType==float                                                             
                 dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+                assert(info==0);
+                
+                vector<std::pair<RealType,int> > mappedEigenvalues(numParams);
                 for (int i=0;i<numParams;i++)
                 {
                   mappedEigenvalues[i].first=alphar[i]/beta[i];
                   mappedEigenvalues[i].second=i;
                 }
                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0);
               }
 
-              // CG like algorithm, we try to move in maxtries directions. eigenvalues are orthogonal.
-              for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0);
+              
+              //here is the mixed variance and energy part
+              if (true)
+              {
+                // CG like algorithm, we try to move in maxtries directions. eigenvalues are orthogonal.
+                vector<RealType> alphar2(N),alphai2(N),beta2(N);
+                Matrix<RealType> eigenT2(N,N);              
+                dggev(&jl, &jr, &N, HamT2.data(), &N, ST2.data(), &N, &alphar2[0], &alphai2[0], &beta2[0],&tt,&t, eigenT2.data(), &N, &work[0], &lwork, &info);
+                assert(info==0);
+                
+                vector<std::pair<RealType,int> > mappedEigenvalues2(numParams);
+                for (int i=0;i<numParams;i++)
+                {
+                  mappedEigenvalues2[i].first=alphar2[i]/beta2[i];
+                  mappedEigenvalues2[i].second=i;
+                }
+                std::sort(mappedEigenvalues2.begin(),mappedEigenvalues2.end());
+                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT2( mappedEigenvalues2[0].second,i)/eigenT2(mappedEigenvalues2[0].second,0);
+              }
+              
+              
+//               if(mappedEigenvalues[0].first<0)
+//               {
+//                 app_log()<<mappedEigenvalues[0].first<<endl;
+//                 for (int i=0;i<N;i++) HamT(i,i) -= mappedEigenvalues[0].first;
+//                 dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+//                 assert(info==0);
+//                 for (int i=0;i<numParams;i++)
+//                 {
+//                   mappedEigenvalues[i].first=alphar[i]/beta[i];
+//                   mappedEigenvalues[i].second=i;
+//                 }
+//                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+//               }
+
               
               
 //               if (false)
@@ -256,7 +284,9 @@ namespace qmcplusplus
 //                 }                                                      
 //                 
 //               }
-              
+
+ //If not rescaling and linear parameters, step size and grad are the same.
+              LambdaMax = 1.0;
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
 //               if (tries==0) quadstep=0.2;
