@@ -109,7 +109,7 @@ namespace qmcplusplus
         myVars.getIndex(active);
         NumVars=myVars.size();
 
-        myVars.print(cout);
+//        myVars.print(cout);
 
         if (NumVars && dLogPsi.size()==0)
           {

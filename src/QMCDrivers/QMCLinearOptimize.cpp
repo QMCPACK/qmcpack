@@ -221,7 +221,7 @@ namespace qmcplusplus
                   mappedEigenvalues2[i].second=i;
                 }
                 std::sort(mappedEigenvalues2.begin(),mappedEigenvalues2.end());
-                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT2( mappedEigenvalues2[0].second,i)/eigenT2(mappedEigenvalues2[0].second,0);
+                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT2( mappedEigenvalues2[tries].second,i)/eigenT2(mappedEigenvalues2[tries].second,0);
               }
               
               
@@ -297,6 +297,7 @@ namespace qmcplusplus
               {
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
                 newCost = optTarget->Cost(false);
+app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
                 if ((newCost > lastCost - bigChange)&&(newCost < lastCost)&&(newCost==newCost))
                 {
                   //Move was acceptable 

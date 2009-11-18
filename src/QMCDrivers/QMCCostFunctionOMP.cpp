@@ -581,7 +581,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianSquaredMa
       }
     myComm->allreduce(Hamiltonian);
     myComm->allreduce(Overlap);
-
+    myComm->allreduce(H0);
     
 
     Overlap(0,0) = 1.0;
