@@ -225,6 +225,11 @@ namespace qmcplusplus {
     // spin-restricted calculations.                           //
     /////////////////////////////////////////////////////////////
     int LastSpinSet, NumOrbitalsRead;
+    
+    bool makeRotations;
+    std::vector<RealType> rotationMatrix;
+    std::vector<int> rotatedOrbitals;
+    void RotateBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet);
   }; 
 }
 

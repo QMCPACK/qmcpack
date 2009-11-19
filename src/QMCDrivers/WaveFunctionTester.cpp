@@ -28,6 +28,15 @@ using namespace std;
 #include "Optimize/VarList.h"
 #include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
+#include "OhmmsData/AttributeSet.h"
+#include "OhmmsData/ParameterSet.h"
+#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Numerics/DeterminantOperators.h"
+#include "Numerics/SymmetryOperations.h"
+#include "Numerics/Blasf.h"
+
 namespace qmcplusplus
   {
 
@@ -37,12 +46,13 @@ namespace qmcplusplus
                                          QMCHamiltonian& h,
                                          ParticleSetPool &ptclPool):
       QMCDriver(w,psi,h),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
-      PtclPool(ptclPool)
+      PtclPool(ptclPool), wftricks("no")
   {
     m_param.add(checkRatio,"ratio","string");
     m_param.add(checkClone,"clone","string");
     m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
     m_param.add(sourceName,"source","string");
+    m_param.add(wftricks,"wftricks","string");
   }
 
 
@@ -87,6 +97,8 @@ namespace qmcplusplus
       }
     else if (checkRatio =="deriv")
       runDerivTest();
+    else if (wftricks !="no")
+      runwftricks();
     else
       runBasicTest();
 
@@ -801,6 +813,7 @@ namespace qmcplusplus
   bool
   WaveFunctionTester::put(xmlNodePtr q)
   {
+    myNode = q;
     return putQMCInfo(q);
   }
 
@@ -902,11 +915,233 @@ namespace qmcplusplus
 
 
 
+    void WaveFunctionTester::runwftricks()
+    {
+      vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
+      app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<<endl;
+      int SDindex(0);
+      for (int i=0;i<Orbitals.size();i++)
+        if ("SlaterDet"==Orbitals[i]->OrbitalName) SDindex=i;
+      
+      SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
+      int NumOrbitals=Phi->getBasisSetSize();
+      app_log()<<"Basis set size: "<<NumOrbitals<<endl;
+      
+      vector<int> SPONumbers(0,0);
+      vector<int> irrepRotations(0,0);
+      vector<int> Grid(0,0);
+      
+      xmlNodePtr kids=myNode->children;
+      
+      string doProj("yes");
+      string doRotate("yes");
+      string sClass("C2V");
+      
+      ParameterSet aAttrib;
+      aAttrib.add(doProj,"projection","string");
+      aAttrib.add(doRotate,"rotate","string");
+      aAttrib.add(sClass,"class","string");
+      aAttrib.put(myNode);
+     
+      while(kids != NULL) 
+      {
+        string cname((const char*)(kids->name));
+        if(cname == "orbitals") 
+        {
+          putContent(SPONumbers,kids);
+        }
+        else if(cname == "representations") 
+        {
+          putContent(irrepRotations,kids);
+        }
+        else if(cname=="grid")
+          putContent(Grid,kids);
+        
+      kids=kids->next;
+      }
+      
+      ParticleSet::ParticlePos_t R_cart(1);
+      R_cart.setUnit(PosUnit::CartesianUnit);
+      ParticleSet::ParticlePos_t R_unit(1);
+      R_unit.setUnit(PosUnit::LatticeUnit);
+      
+//       app_log()<<" My crystals basis set is:"<<endl;
+      vector<vector<RealType> > BasisMatrix(3, vector<RealType>(3,0.0));
+      
+      for (int i=0;i<3;i++)
+      {
+        R_unit[0][0]=0;
+        R_unit[0][1]=0;
+        R_unit[0][2]=0;
+        R_unit[0][i]=1;
+        W.convert2Cart(R_unit,R_cart);
+//         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
+        for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
+      }
 
+      int Nrotated(SPONumbers.size());
+      app_log()<<" Projected orbitals: ";
+      for(int i=0;i<Nrotated;i++) app_log()<< SPONumbers[i] <<" ";
+      app_log()<<endl;
+      //indexing trick
+      for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
+      
+      SymmetryBuilder SO(sClass,myNode);
+      SymmetryGroup symOp(*SO.getSymmetryGroup());
+      
+//       SO.changeBasis(InverseBasisMatrix);
+      
+      OrbitalSetTraits<ValueType>::ValueVector_t values;
+      values.resize(NumOrbitals);
+      
+      RealType overG0(1.0/Grid[0]);
+      RealType overG1(1.0/Grid[1]);
+      RealType overG2(1.0/Grid[2]);
+      RealType overNpoints=  overG0*overG1*overG2;
 
+      vector<RealType> NormPhi(Nrotated, 0.0);
+      
+      int totsymops = symOp.getSymmetriesSize();
+      Matrix<RealType> SymmetryOrbitalValues;
+      SymmetryOrbitalValues.resize(Nrotated,totsymops);
+       
+      int ctabledim = symOp.getClassesSize();
+      Matrix<double> projs(Nrotated,ctabledim);
+      Matrix<double> orthoProjs(Nrotated,Nrotated);
+      
+      vector<RealType> brokenSymmetryCharacter(totsymops);
+      for(int k=0;k<Nrotated;k++) for(int l=0;l<totsymops;l++) 
+        brokenSymmetryCharacter[l] += double(irrepRotations[k]-1)/double(ctabledim)*symOp.getsymmetryCharacter(l,irrepRotations[k]-1);
+      
+      if ((doProj=="yes")||(doRotate=="yes"))
+      {
+        //Loop over grid
+      for(int i=0;i<Grid[0];i++)
+        for(int j=0;j<Grid[1];j++)
+          for(int k=0;k<Grid[2];k++)
+          {
+            OrbitalSetTraits<ValueType>::ValueVector_t identityValues(values.size());
+            //Loop over symmetry classes and small group operators
+            for(int l=0;l<totsymops;l++)
+            {
+                R_unit[0][0]=overG0*RealType(i); R_cart[0][0]=0;
+                R_unit[0][1]=overG1*RealType(j); R_cart[0][1]=0;
+                R_unit[0][2]=overG2*RealType(k); R_cart[0][2]=0;
+                
+                for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
 
+                
+                symOp.TransformSinglePosition(R_cart,l);
+                W.R[0]=R_cart[0];
+                for(int a=0;a<values.size();a++) values=0.0;
+                //evaluate orbitals
+                Phi->evaluate(W,0,values);
+                
+                if (l==0){
+                  identityValues=values;
+                }
+                
+                //now we have phi evaluated at the rotated/inverted/whichever coordinates
+                for(int n=0;n<Nrotated;n++) 
+                {
+                  int N=SPONumbers[n];
+                  RealType phi2 = values[N]*identityValues[N];
+                  SymmetryOrbitalValues(n,l) += phi2;
+                  NormPhi[n] += values[N]*values[N];
+                }
+                
+                for(int n=0;n<Nrotated;n++) for(int p=0;p<Nrotated;p++)
+                {
+                  int N=SPONumbers[n];
+                  int P=SPONumbers[p];
+                  orthoProjs(n,p) += identityValues[N]*values[P]*brokenSymmetryCharacter[l];
+                }
+          }
+      }
+      for(int n=0;n<Nrotated;n++) for(int l=0;l<totsymops;l++) 
+        SymmetryOrbitalValues(n,l)/= NormPhi[n];
+      
+      for(int n=0;n<Nrotated;n++) for(int l=0;l<Nrotated;l++) 
+        orthoProjs(n,l) /= std::sqrt(NormPhi[n]*NormPhi[l]);
+      
+      if (true){
+        app_log()<<endl;
+        for(int n=0;n<Nrotated;n++) {
+          for(int l=0;l<totsymops;l++) app_log()<<SymmetryOrbitalValues(n,l)<<" ";
+          app_log()<<endl;
+        }
+      app_log()<<endl;
+      }
+      
 
+      
+      for(int n=0;n<Nrotated;n++)
+      {
+        if (false) app_log()<<" orbital #"<<SPONumbers[n]<<endl;
+        for(int i=0;i<ctabledim;i++)
+        {
+          double proj(0);
+          for(int j=0;j<totsymops;j++) proj+=symOp.getsymmetryCharacter(j,i)*SymmetryOrbitalValues(n,j);
+          if (false) app_log()<<"  Rep "<<i<< ": "<<proj;
+          projs(n,i)=proj<1e-4?0:proj;
+        }
+        if (false) app_log()<<endl;
+      }
+      
+      if (true){
+        app_log()<<"Printing Projection Matrix"<<endl;
+        for(int n=0;n<Nrotated;n++) {
+          for(int l=0;l<ctabledim;l++) app_log()<<projs(n,l)<<" ";
+          app_log()<<endl;
+        }
+      app_log()<<endl;
+      }
+      if (true){
+        app_log()<<"Printing Coefficient Matrix"<<endl;
+        for(int n=0;n<Nrotated;n++) {
+          for(int l=0;l<ctabledim;l++) app_log()<<std::sqrt(projs(n,l))<<" ";
+          app_log()<<endl;
+        }
+      app_log()<<endl;
+      }
+      
+      if (doRotate=="yes")
+      {
 
+        app_log()<<"Printing Broken Symmetry Projection Matrix"<<endl;
+          for(int n=0;n<Nrotated;n++) {
+            for(int l=0;l<Nrotated;l++) app_log()<<orthoProjs(n,l)<<" ";
+            app_log()<<endl;
+          } 
+        
+        char JOBU('A');
+        char JOBVT('A');
+        int vdim=Nrotated;
+        Matrix<RealType> Sigma(vdim,vdim);
+        Matrix<RealType> U(vdim,vdim);
+        Matrix<RealType> VT(vdim,vdim);
+        int lwork=8*Nrotated;
+        vector<RealType> work(lwork,0);
+        int info(0);
+        
+        dgesvd(&JOBU, &JOBVT, &vdim, &vdim,
+            orthoProjs.data(), &vdim, Sigma.data(), U.data(),
+            &vdim, VT.data(), &vdim, &(work[0]),
+            &lwork, &info);
+        
+        app_log()<<"Printing Rotation Matrix"<<endl;
+          for(int n=0;n<vdim;n++) {
+            for(int l=0;l<vdim;l++) app_log()<<-VT(l,n)<<" ";
+            app_log()<<endl;
+          }  
+          app_log()<<endl<<"Printing Eigenvalues"<<endl;
+          for(int n=0;n<vdim;n++) app_log()<<Sigma[0][n]<<" ";
+          app_log()<<endl;  
+      }      
+      }
+
+    }
+    
 }
 
 /***************************************************************************

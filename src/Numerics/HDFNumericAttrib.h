@@ -744,13 +744,26 @@ struct HDFAttribIO<Array<complex<double>,D> >: public HDFAttribIOBase
   typedef Array<complex<double>,D> ArrayType_t;
 
   ArrayType_t&  ref;
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  bool replace;
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false):ref(a), replace(reuse) { }
   inline void write(hid_t grp, const char* name) 
   {
     const int rank = D+1;
     hsize_t dim[rank];
     for(int i=0; i<D; ++i) dim[i]=ref.size(i);
     dim[D] = 2;
+    
+    if(replace)
+    {
+      hid_t dataset =  H5Dopen(grp, name);
+      herr_t status = H5Dextend(dataset,dim);
+      hid_t dataspace = H5Screate_simple(rank, dim, NULL);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, dataspace, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    else
+    { 
     hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
     hid_t dataset =  
       H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
@@ -758,6 +771,7 @@ struct HDFAttribIO<Array<complex<double>,D> >: public HDFAttribIOBase
       H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
     H5Sclose(dataspace);
     H5Dclose(dataset);
+    }
   }
 
   inline void read(hid_t grp, const char* name) 

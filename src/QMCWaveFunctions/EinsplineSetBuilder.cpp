@@ -42,7 +42,7 @@ namespace qmcplusplus {
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), 
       NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
       ParticleSets(psets), TargetPtcl(p), H5FileID(-1),
-      Format(QMCPACK)
+      Format(QMCPACK), makeRotations(false)
   {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
@@ -313,8 +313,8 @@ namespace qmcplusplus {
   bool
   EinsplineSetBuilder::ReadOrbitalInfo()
   {
-    //H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+    H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+//     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
     if (H5FileID < 0) {
       app_error() << "Could not open HDF5 file \"" << H5FileName 
 		  << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
@@ -1902,7 +1902,181 @@ namespace qmcplusplus {
     }
     ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
-
+  
+  void
+  EinsplineSetBuilder::RotateBands_ESHDF
+  (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
+  {
+    bool root = myComm->rank()==0;
+    rotationMatrix.resize(0);
+    rotatedOrbitals.resize(0);
+    
+    xmlNodePtr kids=XMLRoot->children;
+    
+    while(kids != NULL) 
+    {
+      string cname((const char*)(kids->name));
+      if(cname == "rotationmatrix")  
+        putContent(rotationMatrix,kids); 
+      else if(cname=="rotatedorbitals")
+        putContent(rotatedOrbitals,kids); 
+      kids=kids->next;
+    }
+    
+    if (rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size() && rotationMatrix.size()!=0)
+    {
+      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<<endl;
+    }
+    else
+    {
+      app_log()<<" Rotating between: ";
+      for (int i=0;i<rotatedOrbitals.size();i++) app_log()<<rotatedOrbitals[i]<<" ";
+      app_log()<<endl;
+      app_log()<<" Using the following rotation"<<endl;
+      for (int i=0;i<rotatedOrbitals.size();i++)
+      {
+        for (int j=0;j<rotatedOrbitals.size();j++)
+          app_log()<<rotationMatrix[rotatedOrbitals.size()*i+j]<<" ";
+        app_log()<<endl;
+      }
+    }
+    
+    if (rotationMatrix.size()>0 && rotatedOrbitals.size() && root)
+    {
+      
+      int N = NumDistinctOrbitals;
+      int num(0);
+      for (int iorb=0, indx=0; iorb<N; iorb++) {
+        num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
+        if (num==rotatedOrbitals[indx]){
+          rotatedOrbitals[indx]=iorb;
+          indx++;
+        }
+      }
+      
+      //simple copy file function. make backup.
+      string backupName = H5FileName+"_bkup";
+      
+      ifstream fin(H5FileName.c_str(), ios::in | ios::binary);
+      ofstream fout(backupName.c_str() , ios::in); // open with this mode to check whether file exists
+      //       ofstream fout(backupName.c_str(), ios::out | ios::binary); 
+      if (fin.fail()) {
+        // reset status flags
+        fin.clear();
+        cout << " source file does not exist, try it again"<<endl; exit( 0 );
+      }
+      
+      if (!fout.fail()) {
+        fout.close();
+        cout << " destination file already exists, backup completed"<<endl;
+      }
+      else {
+        fout.close();
+        fout.open(backupName.c_str() , ios::out | ios::binary); // change to writting mode
+        int BUFFER_SIZE = 128;
+        char buffer[BUFFER_SIZE];
+        
+        while (!fin.eof() ) {
+          fin.read( buffer, BUFFER_SIZE);
+          if (fin.bad()) {
+            cout << "Error reading data" << endl; exit( 0 );
+          }
+          else
+            fout.write(buffer, fin.gcount());
+        }
+      }
+      
+      fin.close();
+      fout.close(); 
+      
+      int nx, ny, nz, bi, ti;
+      vector<Array<complex<double>,3> > allRotatedSplines;
+      Array<complex<double>,3> splineData;
+      TinyVector<int,3> mesh;
+      
+      // Find the orbital mesh size
+      
+      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
+      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
+      h_mesh.read (H5FileID, "/electrons/mesh");
+      
+      //     myComm->bcast(mesh);
+      nx=mesh[0]; ny=mesh[1]; nz=mesh[2];
+      splineData.resize(nx,ny,nz);
+      
+      
+      for (int i=0;i<rotatedOrbitals.size();i++){
+        int iorb = rotatedOrbitals[i];
+        int ti   = SortBands[iorb].TwistIndex;
+        int bi   = SortBands[iorb].BandIndex;
+        double e = SortBands[iorb].Energy;
+        PosType k;
+        PosType twist = TwistAngles[ti];
+        k = orbitalSet->PrimLattice.k_cart(twist);
+        fprintf (stderr, "  Rotating state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d \n", 
+                  ti, bi, e, k[0], k[1], k[2], myComm->rank() );
+                  
+                  ostringstream path;
+                  path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+                  string psiName = path.str() + "psi_r";
+                  
+                  HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
+                  h_splineData.read(H5FileID, psiName.c_str());
+                  if ((splineData.size(0) != nx) ||
+                    (splineData.size(1) != ny) ||
+                    (splineData.size(2) != nz)) {
+                    fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+                  fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+                  abort();
+                  }
+                  allRotatedSplines.push_back(splineData);
+      }
+      app_log()<<endl;
+      
+      vector<Array<complex<double>,3> > allOriginalSplines(allRotatedSplines);
+      for (int i=0;i<rotatedOrbitals.size();i++) 
+        for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++) 
+          allRotatedSplines[i](ix,iy,iz)=0.0;
+        
+        for (int i=0;i<rotatedOrbitals.size();i++){
+          for(int j=0;j<rotatedOrbitals.size();j++){
+            for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++)
+              allRotatedSplines[i](ix,iy,iz) += rotationMatrix[i*rotatedOrbitals.size()+j] * allOriginalSplines[j](ix,iy,iz);
+          }
+        }
+        
+        
+     for (int i=0;i<rotatedOrbitals.size();i++){
+          int iorb = rotatedOrbitals[i];
+          int ti   = SortBands[iorb].TwistIndex;
+          int bi   = SortBands[iorb].BandIndex;
+          
+          ostringstream path;
+          path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+          string psiName = path.str() + "psi_r";
+          
+          HDFAttribIO<Array<complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
+          h_splineData.write(H5FileID, psiName.c_str());
+        }
+        
+//      for (int i=0;i<rotatedOrbitals.size();i++){
+//           int iorb = rotatedOrbitals[i];
+//           int ti   = SortBands[iorb].TwistIndex;
+//           int bi   = SortBands[iorb].BandIndex;
+//           
+//           ostringstream path;
+//           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+//           string psiName = path.str() + "psi_r";
+//           
+//           HDFAttribIO<Array<complex<double>,3> >  h_splineData(allOriginalSplines[i]);
+//           h_splineData.read(H5FileID, psiName.c_str()); 
+//         } 
+        
+        
+    }
+    else
+      app_log()<<" No rotations defined"<<endl;
+  } 
 
   void
   EinsplineSetBuilder::ReadBands_ESHDF
@@ -2004,6 +2178,9 @@ namespace qmcplusplus {
 	abort();
       }
     }
+
+    EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
+
 
     while (iorb < N) {
       bool isCore;

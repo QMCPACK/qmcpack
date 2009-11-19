@@ -61,6 +61,8 @@ namespace qmcplusplus {
      */
     SPOSetBasePtr clonePhi() const;
 
+    SPOSetBasePtr getPhi(){ return Phi;};
+    
     inline IndexType rows() const {
       return NumPtcls;
     }

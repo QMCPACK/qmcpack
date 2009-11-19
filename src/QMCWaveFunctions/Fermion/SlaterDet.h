@@ -138,6 +138,10 @@ namespace qmcplusplus {
     }
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    SPOSetBasePtr getPhi(int i=0)
+    {
+      return Dets[i]->getPhi();
+    }
 
   private:
     vector<int> M;

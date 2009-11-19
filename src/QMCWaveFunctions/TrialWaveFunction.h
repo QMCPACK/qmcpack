@@ -198,6 +198,11 @@ namespace qmcplusplus
         RealType mass = tspecies(massind,0);
         OneOverM = 1.0/mass;
       }
+      
+      vector<OrbitalBase*>& getOrbitals()
+      {
+        return Z;
+      }
 
     private:
 
