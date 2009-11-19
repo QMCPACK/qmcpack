@@ -62,7 +62,7 @@ namespace qmcplusplus
         resetPsi();
 
         //evaluate new local energies and derivatives
-        NumWalkersEff=correlatedSampling();
+        NumWalkersEff=correlatedSampling(true);
         //Estimators::accumulate has been called by correlatedSampling
 
 

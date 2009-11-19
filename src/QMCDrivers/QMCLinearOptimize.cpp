@@ -38,7 +38,7 @@ namespace qmcplusplus
     SkipSampleGeneration("no"), hamPool(hpool),                                                                             
     optTarget(0), vmcEngine(0), Max_iterations(1),                                                                          
     wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6),
-    nstabilizers(3), stabilizerScale(4.0), bigChange(50)
+    nstabilizers(3), stabilizerScale(4.0), bigChange(50), eigCG(1)
     {                                                                                                                           
       //set the optimization flag                                                                                               
       QMCDriverMode.set(QMC_OPTIMIZE,1);                                                                                        
@@ -54,7 +54,8 @@ namespace qmcplusplus
       m_param.add(nstabilizers,"nstabilizers","int");                                                                        
       m_param.add(stabilizerScale,"stabilizerscale","double");
       m_param.add(allowedCostDifference,"alloweddifference","double"); 
-      m_param.add(bigChange,"bigchange","double");  
+      m_param.add(bigChange,"bigchange","double"); 
+      m_param.add(eigCG,"eigcg","int");
       //Set parameters for line minimization:
       
     }
@@ -136,11 +137,9 @@ namespace qmcplusplus
         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
         
         
-//         how many eigenvalues we explore
-        int maxtries=2;
 //         store this for use in later tries
         int bestStability(0);
-        for(int tries=0;tries<maxtries;tries++){
+        for(int tries=0;tries<eigCG;tries++){
           RealType lastCost(optTarget->Cost(false));
           RealType newCost(lastCost);
           
@@ -297,15 +296,36 @@ namespace qmcplusplus
               {
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
                 newCost = optTarget->Cost(false);
-app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
-                if ((newCost > lastCost - bigChange)&&(newCost < lastCost)&&(newCost==newCost))
+                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
+                
+                if ((newCost > (lastCost - bigChange))&&(newCost < lastCost)&&(newCost==newCost))
                 {
                   //Move was acceptable 
                   for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
                   bestStability=stability; lastCost=newCost;
                 }
+                else if (newCost>lastCost+0.001) stability = nstabilizers;
               }
             }
+            // Let us try a single steepest descent step just in case
+//         optparm= currentParameters;
+//         LambdaMax = 0.02;
+//         optTarget->GradCost(optdir, optparm, 0);
+//         lineoptimization2();
+//         if (Lambda==Lambda)        
+//         {
+//           for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+//           newCost = optTarget->Cost(false);
+//           app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+//           if ((newCost > lastCost - bigChange)&&(newCost < lastCost)&&(newCost==newCost))
+//           {
+//             //Move was acceptable 
+//             for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
+//             lastCost=newCost;
+//           }
+//         }
+//         
         for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
         currentParameters=bestParameters;
         }

@@ -88,6 +88,7 @@ namespace qmcplusplus
       vector<RealType> optdir, optparm;
       RealType allowedCostDifference,stabilizerScale,bigChange;
       int nstabilizers; 
+      int eigCG;
       ///vmc engine
       QMCDriver* vmcEngine;
       ///xml node to be dumped
