@@ -52,7 +52,7 @@ namespace qmcplusplus
     m_param.add(checkClone,"clone","string");
     m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
     m_param.add(sourceName,"source","string");
-    m_param.add(wftricks,"wftricks","string");
+    m_param.add(wftricks,"orbitalutility","string");
   }
 
 
@@ -940,7 +940,6 @@ namespace qmcplusplus
       ParameterSet aAttrib;
       aAttrib.add(doProj,"projection","string");
       aAttrib.add(doRotate,"rotate","string");
-      aAttrib.add(sClass,"class","string");
       aAttrib.put(myNode);
      
       while(kids != NULL) 
@@ -986,7 +985,8 @@ namespace qmcplusplus
       //indexing trick
       for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
       
-      SymmetryBuilder SO(sClass,myNode);
+      SymmetryBuilder SO;
+      SO.put(myNode);
       SymmetryGroup symOp(*SO.getSymmetryGroup());
       
 //       SO.changeBasis(InverseBasisMatrix);
@@ -1011,7 +1011,7 @@ namespace qmcplusplus
       
       vector<RealType> brokenSymmetryCharacter(totsymops);
       for(int k=0;k<Nrotated;k++) for(int l=0;l<totsymops;l++) 
-        brokenSymmetryCharacter[l] += double(irrepRotations[k]-1)/double(ctabledim)*symOp.getsymmetryCharacter(l,irrepRotations[k]-1);
+        brokenSymmetryCharacter[l] += irrepRotations[k]*symOp.getsymmetryCharacter(l,irrepRotations[k]-1);
       
       if ((doProj=="yes")||(doRotate=="yes"))
       {
@@ -1030,7 +1030,6 @@ namespace qmcplusplus
                 
                 for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
 
-                
                 symOp.TransformSinglePosition(R_cart,l);
                 W.R[0]=R_cart[0];
                 for(int a=0;a<values.size();a++) values=0.0;
@@ -1039,6 +1038,7 @@ namespace qmcplusplus
                 
                 if (l==0){
                   identityValues=values;
+                  for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*values[SPONumbers[n]]*values[SPONumbers[n]];
                 }
                 
                 //now we have phi evaluated at the rotated/inverted/whichever coordinates
@@ -1047,14 +1047,13 @@ namespace qmcplusplus
                   int N=SPONumbers[n];
                   RealType phi2 = values[N]*identityValues[N];
                   SymmetryOrbitalValues(n,l) += phi2;
-                  NormPhi[n] += values[N]*values[N];
                 }
                 
                 for(int n=0;n<Nrotated;n++) for(int p=0;p<Nrotated;p++)
                 {
                   int N=SPONumbers[n];
                   int P=SPONumbers[p];
-                  orthoProjs(n,p) += identityValues[N]*values[P]*brokenSymmetryCharacter[l];
+                  orthoProjs(n,p) += 0.5*(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
                 }
           }
       }
@@ -1117,11 +1116,11 @@ namespace qmcplusplus
         char JOBU('A');
         char JOBVT('A');
         int vdim=Nrotated;
-        Matrix<RealType> Sigma(vdim,vdim);
-        Matrix<RealType> U(vdim,vdim);
-        Matrix<RealType> VT(vdim,vdim);
+        vector<double> Sigma(vdim);
+        Matrix<double> U(vdim,vdim);
+        Matrix<double> VT(vdim,vdim);
         int lwork=8*Nrotated;
-        vector<RealType> work(lwork,0);
+        vector<double> work(lwork,0);
         int info(0);
         
         dgesvd(&JOBU, &JOBVT, &vdim, &vdim,
@@ -1131,11 +1130,11 @@ namespace qmcplusplus
         
         app_log()<<"Printing Rotation Matrix"<<endl;
           for(int n=0;n<vdim;n++) {
-            for(int l=0;l<vdim;l++) app_log()<<-VT(l,n)<<" ";
+            for(int l=0;l<vdim;l++) app_log()<<VT(l,n)<<" ";
             app_log()<<endl;
           }  
           app_log()<<endl<<"Printing Eigenvalues"<<endl;
-          for(int n=0;n<vdim;n++) app_log()<<Sigma[0][n]<<" ";
+          for(int n=0;n<vdim;n++) app_log()<<Sigma[n]<<" ";
           app_log()<<endl;  
       }      
       }

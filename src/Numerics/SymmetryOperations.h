@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_SYMMETRYOPERATIONS_H
 
 #include "Particle/MCWalkerConfiguration.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
   
@@ -39,7 +40,7 @@ namespace qmcplusplus {
       {
         SymOps.push_back(op); nSymmetries++;
         Characters.push_back(characterlist);
-        Classes.push_back(cls); nClasses=std::max(nClasses,cls+1);
+        Classes.push_back(cls); nClasses=std::max(nClasses,cls);
         if (nClasses>characterlist.size())
         {
           app_log()<<" Character table size or class number is wrong."<<endl;
@@ -96,9 +97,8 @@ namespace qmcplusplus {
   public:
     /// Constructor.
     
-    SymmetryBuilder(string symclass, xmlNodePtr q): symname(symclass)
+    SymmetryBuilder()
     {
-      put(q);
     }
     
     ~SymmetryBuilder(){}; 
@@ -110,30 +110,28 @@ namespace qmcplusplus {
     
     void put(xmlNodePtr q)
     {
-//       string symgrp("invalid");
-//       
-//       ParameterSet aAttrib;
-//       aAttrib.add(symgrp,"group","string");
-//       aAttrib.put(q);
+      symname="";
+      xmlNodePtr kids = q->children;
+      while(kids != NULL) 
+      {
+        string cname((const char*)(kids->name));
+        if(cname == "symmetryclass") 
+        {
+          ParameterSet aAttrib;
+          aAttrib.add(symname,"name","string");
+          aAttrib.put(kids);
+        }
+        kids=kids->next;
+      }
       
-      //doesn't actually work yet
-//       vector<double> principleAxis(3,0);
-//       while(kids != NULL) 
-//       {
-//         string cname((const char*)(kids->name));
-//         if(cname == "axis") 
-//         {
-//           putContent(principleAxis,kids);
-//         }
-//         kids=kids->next;
-//       }
       
       if (symname=="D2H") buildD2H();
       else  if (symname=="C2V") buildC2V();
       else 
       {
-        app_log()<<"Symmetry Class "<< symname <<" not yet implemented"<<endl;
-        APP_ABORT("SymmetryClass::put");
+        buildByHand(q);
+//         app_log()<<"Symmetry Class "<< symname <<" not yet implemented"<<endl;
+//         APP_ABORT("SymmetryClass::put");
       }
     }
 
@@ -152,19 +150,19 @@ namespace qmcplusplus {
     void buildC2Vx(SymmetryGroup& C2, vector<double> ctable, int cls)
     {
       Matrix<double> matrix_c2x(3,3);
-      matrix_c2x[0][0]=1; matrix_c2x[1][1]=-1; matrix_c2x[2][2]=-1;
+      matrix_c2x[0][0]=-1; matrix_c2x[1][1]=1; matrix_c2x[2][2]=-1;
       C2.addOperator(matrix_c2x, ctable, cls);
     };
     void buildC2Vy(SymmetryGroup& C2, vector<double> ctable, int cls)
     {
       Matrix<double> matrix_c2y(3,3);
-      matrix_c2y[0][0]=1; matrix_c2y[1][2]=1; matrix_c2y[2][1]=-1;
+      matrix_c2y[0][2]=1; matrix_c2y[1][1]=1; matrix_c2y[2][0]=1;
       C2.addOperator(matrix_c2y, ctable, cls);
     };
     void buildC2Vz(SymmetryGroup& C2, vector<double> ctable, int cls)
     {
       Matrix<double> matrix_c2z(3,3);
-      matrix_c2z[0][0]=1; matrix_c2z[1][2]=-1; matrix_c2z[2][1]=1;
+      matrix_c2z[0][2]=-1; matrix_c2z[1][1]=1; matrix_c2z[2][0]=-1;
       C2.addOperator(matrix_c2z, ctable, cls);
     };
 //  D2H
@@ -272,6 +270,104 @@ namespace qmcplusplus {
       buildC2Vz(symgrp, CT[3],3);
       symgrp.putClassCharacterTable(CT);
     };
+    
+    void buildByHand(xmlNodePtr q)
+    {
+      int nClasses(0);
+      int nSymmetries(0);
+      
+      xmlNodePtr kids = q->children;
+      xmlNodePtr symclssptr(NULL);
+      while(kids != NULL)
+      {
+        string cname((const char*)(kids->name));
+        if(cname == "symmetryclass"){
+          symclssptr=kids;
+          OhmmsAttributeSet aAttrib;
+          aAttrib.add(nClasses,"classes" );
+          aAttrib.add(nSymmetries,"operators" );
+          aAttrib.add(nSymmetries,"symmetries" );
+          aAttrib.put(kids);
+        }
+        kids=kids->next;
+      }
+      
+      vector<vector<double> > CT;
+      vector<vector<double> > OPS;
+      vector<int> clCT;
+      
+      kids = symclssptr->children;
+      while(kids != NULL) 
+      {
+        string cname((const char*)(kids->name));
+        if(cname == "charactertable") 
+        {
+          xmlNodePtr kids2 = kids->children;
+          while(kids2 != NULL) 
+          {
+            string cname2((const char*)(kids2->name));
+            if(cname2 == "class")
+            {
+              string clss;
+              OhmmsAttributeSet oAttrib;
+              oAttrib.add(clss,"name");
+              oAttrib.put(kids2);
+              
+              vector<double> c;
+              putContent(c,kids2);
+              CT.push_back(c);
+            }
+            kids2=kids2->next;
+          }
+        }
+        kids=kids->next;
+      }
+      
+      kids = symclssptr->children;
+      while(kids != NULL) 
+      {
+        string cname((const char*)(kids->name));
+        if (cname=="symmetries")
+        {
+          xmlNodePtr kids2 = kids->children;
+          
+          while(kids2 != NULL) 
+          {
+            string cname2((const char*)(kids2->name));
+            if(cname2 == "operator") 
+            {
+              int clss(-1);
+              OhmmsAttributeSet oAttrib;
+              oAttrib.add(clss,"class");
+              oAttrib.put(kids2);
+              if(clss==-1)
+              {
+                app_log()<<"  Must label class of operators"<<endl;
+                APP_ABORT("SymmetryClass::put");
+              }
+              clCT.push_back(clss);
+              
+              vector<double> c;
+              putContent(c,kids2);
+              OPS.push_back(c);
+            }
+            kids2=kids2->next;
+          }
+        }
+        kids=kids->next;
+      }
+      //make operator matrices, associate them with the class and add them to the symmetry group.
+      for(int i=0; i<OPS.size();i++)
+      {
+        Matrix<double> op(3,3);
+        for(int j=0; j<3;j++) for(int k=0; k<3;k++) op(j,k)=OPS[i][j*3 + k];
+        symgrp.addOperator(op, CT[clCT[i]-1], clCT[i]);
+      }
+      symgrp.putClassCharacterTable(CT);
+//       for(int j=0; j<CT.size();j++) for(int k=0; k<CT[0].size();k++) app_log()<<CT[j][k]<<" ";
+    }
+    
+    
   };
   
   
