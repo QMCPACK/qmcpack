@@ -925,7 +925,7 @@ namespace qmcplusplus
       
       SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
       int NumOrbitals=Phi->getBasisSetSize();
-      app_log()<<"Basis set size: "<<NumOrbitals<<endl;
+//       app_log()<<"Basis set size: "<<NumOrbitals<<endl;
       
       vector<int> SPONumbers(0,0);
       vector<int> irrepRotations(0,0);
@@ -1063,14 +1063,14 @@ namespace qmcplusplus
       for(int n=0;n<Nrotated;n++) for(int l=0;l<Nrotated;l++) 
         orthoProjs(n,l) /= std::sqrt(NormPhi[n]*NormPhi[l]);
       
-      if (true){
-        app_log()<<endl;
-        for(int n=0;n<Nrotated;n++) {
-          for(int l=0;l<totsymops;l++) app_log()<<SymmetryOrbitalValues(n,l)<<" ";
-          app_log()<<endl;
-        }
-      app_log()<<endl;
-      }
+//       if (true){
+//         app_log()<<endl;
+//         for(int n=0;n<Nrotated;n++) {
+//           for(int l=0;l<totsymops;l++) app_log()<<SymmetryOrbitalValues(n,l)<<" ";
+//           app_log()<<endl;
+//         }
+//       app_log()<<endl;
+//       }
       
 
       
@@ -1107,11 +1107,11 @@ namespace qmcplusplus
       if (doRotate=="yes")
       {
 
-        app_log()<<"Printing Broken Symmetry Projection Matrix"<<endl;
-          for(int n=0;n<Nrotated;n++) {
-            for(int l=0;l<Nrotated;l++) app_log()<<orthoProjs(n,l)<<" ";
-            app_log()<<endl;
-          } 
+//         app_log()<<"Printing Broken Symmetry Projection Matrix"<<endl;
+//           for(int n=0;n<Nrotated;n++) {
+//             for(int l=0;l<Nrotated;l++) app_log()<<orthoProjs(n,l)<<" ";
+//             app_log()<<endl;
+//           } 
         
         char JOBU('A');
         char JOBVT('A');
@@ -1133,9 +1133,9 @@ namespace qmcplusplus
             for(int l=0;l<vdim;l++) app_log()<<VT(l,n)<<" ";
             app_log()<<endl;
           }  
-          app_log()<<endl<<"Printing Eigenvalues"<<endl;
-          for(int n=0;n<vdim;n++) app_log()<<Sigma[n]<<" ";
-          app_log()<<endl;  
+//           app_log()<<endl<<"Printing Eigenvalues"<<endl;
+//           for(int n=0;n<vdim;n++) app_log()<<Sigma[n]<<" ";
+//           app_log()<<endl;  
       }      
       }
 
