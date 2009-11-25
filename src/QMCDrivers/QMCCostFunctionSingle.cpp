@@ -368,12 +368,12 @@ namespace qmcplusplus
       }
   }
 
-  QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)
+  QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)
   {
 
-    resetPsi();
     Return_t NWE = NumWalkersEff=correlatedSampling();
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+    Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];
     vector<Return_t> D_avg(NumParams(),0);
     int nw=W.getActiveWalkers();
@@ -395,6 +395,7 @@ namespace qmcplusplus
           {
             Overlap(pm,pm2)=0;
             Hamiltonian(pm,pm2)=0;
+            H2(pm,pm2) = 0;
           }
       }
 
@@ -421,10 +422,11 @@ namespace qmcplusplus
       }
     myComm->allreduce(Hamiltonian);
     myComm->allreduce(Overlap);
-
+    myComm->allreduce(H2);
 
     Overlap(0,0) = 1;
     Hamiltonian(0,0) = curAvg_w ;
+    H2(0,0) = curAvg2_w;
     return NWE;
   }
 

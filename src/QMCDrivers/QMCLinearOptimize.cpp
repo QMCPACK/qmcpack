@@ -37,8 +37,8 @@ namespace qmcplusplus
     PartID(0), NumParts(1), WarmupBlocks(10),                                                                               
     SkipSampleGeneration("no"), hamPool(hpool),                                                                             
     optTarget(0), vmcEngine(0), Max_iterations(1),                                                                          
-    wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6),
-    nstabilizers(3), stabilizerScale(4.0), bigChange(50), eigCG(1)
+    wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6), 
+    nstabilizers(3), stabilizerScale(4.0), bigChange(50), eigCG(1), w_beta(1)
     {                                                                                                                           
       //set the optimization flag                                                                                               
       QMCDriverMode.set(QMC_OPTIMIZE,1);                                                                                        
@@ -56,6 +56,9 @@ namespace qmcplusplus
       m_param.add(allowedCostDifference,"alloweddifference","double"); 
       m_param.add(bigChange,"bigchange","double"); 
       m_param.add(eigCG,"eigcg","int");
+      m_param.add(w_beta,"beta","double");
+      quadstep=3.0;
+      m_param.add(quadstep,"stepsize","double");
       //Set parameters for line minimization:
       
     }
@@ -139,39 +142,37 @@ namespace qmcplusplus
         
 //         store this for use in later tries
         int bestStability(0);
+        vector<vector<RealType> > LastDirections;
         for(int tries=0;tries<eigCG;tries++){
-          RealType lastCost(optTarget->Cost(false));
-          RealType newCost(lastCost);
-          
           Matrix<RealType> Ham(N,N);
           Matrix<RealType> Ham2(N,N);
           Matrix<RealType> S(N,N);
-          Matrix<RealType> S2(N,N);
-        
+          vector<RealType> BestDirection(N,0);
+
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
-          optTarget->fillOverlapHamiltonianMatrix(Ham, S);
-          optTarget->fillOverlapHamiltonianSquaredMatrix(Ham2, S2);
+
+          RealType lastCost(optTarget->Cost(true));
+          RealType newCost(lastCost);
+          
+          optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
           
           vector<RealType> bestParameters(currentParameters);
-          
+          bool acceptedOneMove(false);
           for(int stability=0;stability<((tries==0)?nstabilizers:1);stability++){
-            Matrix<RealType> HamT(N,N), ST(N,N);
-            Matrix<RealType> HamT2(N,N), ST2(N,N);
+
+            Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
             for (int i=0;i<N;i++)
               for (int j=0;j<N;j++)
               {
                 HamT(i,j)= (Ham)(j,i);        
                 ST(i,j)= (S)(j,i);
                 HamT2(i,j)= (Ham2)(j,i);        
-                ST2(i,j)= (S2)(j,i);
               }
               RealType Xs(0);
               if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
               else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
               for (int i=1;i<N;i++) HamT(i,i) += Xs;
-              for (int i=1;i<N;i++) HamT2(i,i) += Xs;
-              
-              
+
               char jl('N');
               char jr('V');
               vector<RealType> alphar(N),alphai(N),beta(N);
@@ -185,61 +186,42 @@ namespace qmcplusplus
               dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
               lwork=work[0];
               work.resize(lwork);
-              
-              //here is the pure energy part
-              if (false)
-              {
-                ///RealType==double to use this one, ned to write case where RealType==float                                                             
-                dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-                assert(info==0);
-                
-                vector<std::pair<RealType,int> > mappedEigenvalues(numParams);
-                for (int i=0;i<numParams;i++)
+
+              Matrix<RealType> ST2(N,N);
+              RealType H2rescale=1.0/std::abs(HamT2(0,0));
+              for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
+              for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
+
+              dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+              assert(info==0);
+
+                vector<std::pair<RealType,int> > mappedEigenvalues(N);
+                for (int i=0;i<N;i++)
                 {
-                  mappedEigenvalues[i].first=alphar[i]/beta[i];
+                  RealType evi(alphar[i]/beta[i]);
+                  mappedEigenvalues[i].first=(evi-Ham(0,0))*(evi-Ham(0,0));
                   mappedEigenvalues[i].second=i;
+//                  app_log()<<evi<<" "<<(evi-Ham(0,0))*(evi-Ham(0,0))<<endl;
                 }
+                app_log()<<endl;
                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[tries].second,i)/eigenT(mappedEigenvalues[tries].second,0);
-              }
 
-              
-              //here is the mixed variance and energy part
-              if (true)
-              {
-                // CG like algorithm, we try to move in maxtries directions. eigenvalues are orthogonal.
-                vector<RealType> alphar2(N),alphai2(N),beta2(N);
-                Matrix<RealType> eigenT2(N,N);              
-                dggev(&jl, &jr, &N, HamT2.data(), &N, ST2.data(), &N, &alphar2[0], &alphai2[0], &beta2[0],&tt,&t, eigenT2.data(), &N, &work[0], &lwork, &info);
-                assert(info==0);
-                
-                vector<std::pair<RealType,int> > mappedEigenvalues2(numParams);
-                for (int i=0;i<numParams;i++)
+                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT( mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
+                //eigenCG part
+                RealType nrmold(0);
+
+                for(int ldi=0;ldi<LastDirections.size();ldi++)
                 {
-                  mappedEigenvalues2[i].first=alphar2[i]/beta2[i];
-                  mappedEigenvalues2[i].second=i;
+                  for (int i=1;i<N;i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
+                  RealType ovlpold(0), nrmnew(0);
+                  for (int i=1;i<N;i++) nrmnew +=currentParameterDirections[i]*currentParameterDirections[i];
+                  for (int i=1;i<N;i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
+                  for (int i=1;i<N;i++) currentParameterDirections[i] -= ovlpold/nrmold * LastDirections[ldi][i];
+                  nrmnew=0;
+                  for (int i=1;i<N;i++) nrmnew +=currentParameterDirections[i]*currentParameterDirections[i];
+                  //rescale to be something that worked before
+                  for (int i=1;i<N;i++) currentParameterDirections[i] *= nrmold/nrmnew;
                 }
-                std::sort(mappedEigenvalues2.begin(),mappedEigenvalues2.end());
-                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT2( mappedEigenvalues2[tries].second,i)/eigenT2(mappedEigenvalues2[tries].second,0);
-              }
-              
-              
-//               if(mappedEigenvalues[0].first<0)
-//               {
-//                 app_log()<<mappedEigenvalues[0].first<<endl;
-//                 for (int i=0;i<N;i++) HamT(i,i) -= mappedEigenvalues[0].first;
-//                 dggev(&jl, &jr, &N, HamT.data(), &N, ST.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-//                 assert(info==0);
-//                 for (int i=0;i<numParams;i++)
-//                 {
-//                   mappedEigenvalues[i].first=alphar[i]/beta[i];
-//                   mappedEigenvalues[i].second=i;
-//                 }
-//                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-//               }
-
-              
-              
 //               if (false)
 //               {
 //                 //Umrigar and Sorella suggest using 0.5 for xi.                                        
@@ -288,9 +270,7 @@ namespace qmcplusplus
               LambdaMax = 1.0;
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-//               if (tries==0) quadstep=0.2;
-//               else quadstep=0.01;
-              lineoptimization2();
+              lineoptimization();
               
               if (Lambda==Lambda)        
               {
@@ -304,11 +284,13 @@ namespace qmcplusplus
                   //Move was acceptable 
                   for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
                   bestStability=stability; lastCost=newCost;
+                  BestDirection=currentParameterDirections;
+                  acceptedOneMove=true;
                 }
-                else if (newCost>lastCost+0.001) stability = nstabilizers;
+//                else if (newCost>lastCost+0.001) stability = nstabilizers;
               }
             }
-            // Let us try a single steepest descent step just in case
+// Steepest descent step. Not useful.
 //         optparm= currentParameters;
 //         LambdaMax = 0.02;
 //         optTarget->GradCost(optdir, optparm, 0);
@@ -326,8 +308,12 @@ namespace qmcplusplus
 //           }
 //         }
 //         
-        for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
-        currentParameters=bestParameters;
+          if(acceptedOneMove)
+          {
+            for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
+            currentParameters=bestParameters;
+            LastDirections.push_back(BestDirection);
+          }
         }
       }
       

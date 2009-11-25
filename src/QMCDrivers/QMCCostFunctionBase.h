@@ -130,8 +130,7 @@ namespace qmcplusplus
       bool lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0,
                             Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
-      virtual Return_t fillOverlapHamiltonianMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)=0;
-      virtual Return_t fillOverlapHamiltonianSquaredMatrix(Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap){ return 0; };
+      virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)=0;
 
       virtual void getConfigurations(const string& aroot)=0;
 
@@ -170,7 +169,7 @@ namespace qmcplusplus
       ///counter for output
       int ReportCounter;
       ///weights for energy and variance in the cost function
-      Return_t w_en, w_var, w_abs, w_w, w_beta;
+      Return_t w_en, w_var, w_abs, w_w;
       ///value of the cost function
       Return_t CostValue;
       ///target energy

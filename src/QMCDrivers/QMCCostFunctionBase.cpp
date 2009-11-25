@@ -31,7 +31,7 @@ namespace qmcplusplus
       MPIObjectBase(0),
       W(w),H(h),Psi(psi),  Write2OneXml(true),
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-      w_en(0.0), w_var(0.0), w_abs(0.0), w_beta(0.0), samplePsi2(true),
+      w_en(0.0), w_var(0.0), w_abs(0.0), samplePsi2(true),
       CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   {
 
@@ -88,7 +88,6 @@ namespace qmcplusplus
         *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
         *msg_stream << "  Effective Target Energy = " << EtargetEff << endl;
         *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
-        *msg_stream << "  Matrix cost Function beta = "<<w_beta<<endl;
         *msg_stream << "  Optimization report = ";
         *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
         *msg_stream << "  Optimized variables = ";
@@ -656,8 +655,6 @@ namespace qmcplusplus
               putContent(w_abs,cset[i]);
             else if ((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
               putContent(w_var,cset[i]);
-            else if ( pname == "beta" )
-              putContent(w_beta,cset[i]);
           }
       }
 

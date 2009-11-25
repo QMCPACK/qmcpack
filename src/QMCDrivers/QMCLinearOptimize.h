@@ -89,6 +89,7 @@ namespace qmcplusplus
       RealType allowedCostDifference,stabilizerScale,bigChange;
       int nstabilizers; 
       int eigCG;
+      RealType w_beta;
       ///vmc engine
       QMCDriver* vmcEngine;
       ///xml node to be dumped
