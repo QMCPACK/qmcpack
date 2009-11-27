@@ -38,7 +38,7 @@ namespace qmcplusplus
       typedef TinyVector<T,3> SingleParticlePos_t;
       typedef Tensor<T,3> Tensor_t;
 
-      inline int operator()(const TinyVetor<int,3>& box) 
+      inline int operator()(const TinyVector<int,3>& box) 
       {
         return box[0]+2*(box[1]+box[2]*2);
       }
