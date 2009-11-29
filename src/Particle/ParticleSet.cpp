@@ -372,19 +372,19 @@ namespace qmcplusplus {
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 
   {
     myTimers[1]->start();
-    activePtcl=iat;
-    activePos=R[iat]; //save the current position
-    R[iat]=activePos+displ;
     if(UseSphereUpdate)
     {
-      for(int i=0; i< DistTables.size(); ++i) 
-        DistTables[i]->moveOnSphere(*this,displ,iat);
+      for(int i=0; i< DistTables.size(); ++i) DistTables[i]->moveOnSphere(*this,displ,iat);
     }
     else
     {
-      for(int i=0; i< DistTables.size(); ++i) 
-        DistTables[i]->move(*this,R[iat],iat);
-    }
+      PosType newpos=activePos+displ;
+      for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
+    } 
+    activePtcl=iat;
+    activePos=R[iat];
+    R[iat]=activePos+displ;
+
     if(SK && SK->DoUpdate) SK->makeMove(iat,R[iat]);
     //SingleParticlePos_t dum=makeMove(iat,displ);
     myTimers[1]->stop();
