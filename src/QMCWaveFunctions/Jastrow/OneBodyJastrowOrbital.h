@@ -238,7 +238,7 @@ namespace qmcplusplus
        */
       inline void get_ratios(ParticleSet& P, vector<RealType>& ratios)
       {
-        const int np=ratios.size();
+        std::fill(ratios.begin(),ratios.end(),0.0);
         for (int i=0; i<d_table->size(SourceIndex); ++i)
         {
           if (Fs[i])
@@ -249,7 +249,7 @@ namespace qmcplusplus
             //delta_u[d_table->J[nn]]+=Fs[i]->evaluate(d_table->r(nn))-u0;
           }
         }
-        for(int i=0;i<np;++i) ratios[i] = std::exp(ratios[i]);
+        for(int i=0;i<ratios.size();++i) ratios[i] = std::exp(ratios[i]);
       }
 
 

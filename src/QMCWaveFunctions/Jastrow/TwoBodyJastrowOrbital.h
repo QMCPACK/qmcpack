@@ -279,10 +279,11 @@ namespace qmcplusplus {
     {
       for (int i=0,ij=0; i<N; ++i)
       {
+        RealType res=0.0;
         for(int j=0; j<N; ++j,++ij)
-          if(i!=j) ratios[j]+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
+          if(i!=j) res+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
+        ratios[i]=std::exp(res);
       }
-      for(int i=0;i<N;++i) ratios[i] = std::exp(ratios[i]);
     }
 
 
