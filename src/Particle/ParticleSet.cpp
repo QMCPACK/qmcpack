@@ -298,9 +298,10 @@ namespace qmcplusplus {
     else
     {
       activePos=R[iat]; //save the current position
-      R[iat]=activePos+displ;
+      SingleParticlePos_t newpos(activePos+displ);
       for(int i=0; i< DistTables.size(); ++i) 
-        DistTables[i]->move(*this,R[iat],iat);
+        DistTables[i]->move(*this,newpos,iat);
+      R[iat]=newpos;
       myTimers[0]->stop();
       return true;
     }
@@ -408,6 +409,15 @@ namespace qmcplusplus {
     {
       APP_ABORT("  Illegal acceptMove ");
     }
+  }
+
+  void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& ru)
+  {
+    activePtcl=0;
+    activePos=R[0];
+    SingleParticlePos_t newpos=Lattice.toCart(ru);
+    for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,0);
+    R[0]=newpos;
   }
 
   void ParticleSet::rejectMove(Index_t iat) {

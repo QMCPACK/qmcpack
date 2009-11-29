@@ -272,6 +272,15 @@ namespace qmcplusplus {
 
     void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
+    /** Handles a virtual move for all the particles to ru.
+     * @param ru position in the reduced cordinate
+     *
+     * The data of the 0-th particle is overwritten by the new position
+     * and the rejectMove should be called for correct use. 
+     * See QMCHamiltonians::MomentumEstimator
+     */
+    void makeVirtualMoves(const SingleParticlePos_t& ru);
+
     /** accept the move
      *@param iat the index of the particle whose position and other attributes to be updated
      */
