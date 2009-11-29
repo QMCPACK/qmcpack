@@ -273,6 +273,19 @@ namespace qmcplusplus {
       return std::exp(DiffVal);
     }
 
+    /** evaluate the ratio 
+    */
+    inline void get_ratios(ParticleSet& P, vector<RealType>& ratios)
+    {
+      for (int i=0,ij=0; i<N; ++i)
+      {
+        for(int j=0; j<N; ++j,++ij)
+          if(i!=j) ratios[j]+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
+      }
+      for(int i=0;i<N;++i) ratios[i] = std::exp(ratios[i]);
+    }
+
+
     /** later merge the loop */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,

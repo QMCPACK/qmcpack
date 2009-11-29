@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus {
 
@@ -235,6 +236,13 @@ namespace qmcplusplus {
     RatioTimer.stop();
     return curRatio;
   }
+
+  void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<RealType>& ratios)
+  {
+    Phi->evaluate(P, 0, psiV);
+    MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
+  }
+
 
   DiracDeterminantBase::GradType 
     DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)

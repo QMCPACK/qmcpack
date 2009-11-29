@@ -107,6 +107,12 @@ namespace qmcplusplus
     return 0.0;
   }
 
+  void OrbitalBase::get_ratios(ParticleSet& P, vector<RealType>& ratios)
+  {
+    ostringstream o;
+    o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
+    APP_ABORT(o);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

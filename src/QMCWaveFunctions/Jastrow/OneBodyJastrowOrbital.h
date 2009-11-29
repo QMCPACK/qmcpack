@@ -229,11 +229,29 @@ namespace qmcplusplus
       {
         curVal=0.0;
         for (int i=0; i<d_table->size(SourceIndex); ++i)
-          {
-            if (Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
-          }
+          if (Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
         return std::exp(U[iat]-curVal);
       }
+
+
+      /** evaluate the ratio 
+       */
+      inline void get_ratios(ParticleSet& P, vector<RealType>& ratios)
+      {
+        const int np=ratios.size();
+        for (int i=0; i<d_table->size(SourceIndex); ++i)
+        {
+          if (Fs[i])
+          {
+            RealType up=Fs[i]->evaluate(d_table->Temp[i].r1);
+            for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
+              ratios[j]+=Fs[i]->evaluate(d_table->r(nn))-up;
+            //delta_u[d_table->J[nn]]+=Fs[i]->evaluate(d_table->r(nn))-u0;
+          }
+        }
+        for(int i=0;i<np;++i) ratios[i] = std::exp(ratios[i]);
+      }
+
 
       /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
        * @param P active particle set
