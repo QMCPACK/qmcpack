@@ -1116,7 +1116,7 @@ namespace qmcplusplus
         char JOBU('A');
         char JOBVT('A');
         int vdim=Nrotated;
-        vector<double> Sigma(vdim);
+        Vector<double> Sigma(vdim);
         Matrix<double> U(vdim,vdim);
         Matrix<double> VT(vdim,vdim);
         int lwork=8*Nrotated;
