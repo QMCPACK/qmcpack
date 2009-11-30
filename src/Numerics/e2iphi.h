@@ -19,144 +19,80 @@
 #include <config/stdlib/math.h>
 
 #if defined(HAVE_ACML)
-#include <acml.h>
-inline void
-eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
+extern "C"
 {
-  int n = phi.size();
+#include <acml_mv.h>
+}
+inline void
+eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
+{
   double c[n], s[n];
-  vrda_sincos(n, &(phi[0]), s, c);
+  vrda_sincos(n, phi, s, c);
   for (int i=0; i<n; i++)
     z[i] = std::complex<double>(c[i],s[i]);
 }
 
 inline void
-eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
+eval_e2iphi (int n, float* restrict phi, std::complex<float>* restrict z)
 {
-  int n = phi.size();
   float c[n], s[n];
-  vrsa_sincosf(n, &(phi[0]), s, c);
-  for (int i=0; i<n; i++)
-    z[i] = std::complex<float>(c[i],s[i]);
-}
-
-inline void
-eval_e2iphi (const APPNAMESPACE::Vector<double> &phi, APPNAMESPACE::Vector<std::complex<double> > &z)
-{
-  int n = phi.size();
-  double c[n], s[n];
-  vrda_sincos(n, &(phi[0]), s, c);
+  vrsa_sincosf(n, phi, s, c);
   for (int i=0; i<n; i++)
     z[i] = std::complex<double>(c[i],s[i]);
-}
-
-inline void
-eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
-{
-  int n = phi.size();
-  float c[n], s[n];
-  vrsa_sincosf(n, &(phi[0]), s, c);
-  for (int i=0; i<n; i++)
-    z[i] = std::complex<float>(c[i],s[i]);
 }
 #elif defined(HAVE_MASSV)
 #include <massv.h>
 inline void
-eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
+eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
 {
-  int n = phi.size();
   double s[n],c[n];
-  vsincos(s,c,&(phi[0]),&n);
+  vsincos(s,c,phi,&n);
   for (int i=0; i<n; i++) z[i] = std::complex<double>(c[i],s[i]);
 }
 
 inline void
-eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
+eval_e2iphi (int n, float* restrict phi, std::complex<float>* restrict z)
 {
-  int n = phi.size();
   float s[n],c[n];
-  vssincos(s,c,&(phi[0]),&n);
+  vssincos(s,c,phi,&n);
   for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
 }
-
-inline void
-eval_e2iphi (const APPNAMESPACE::Vector<double> &phi, APPNAMESPACE::Vector<std::complex<double> > &z)
-{
-  int n = phi.size();
-  double s[n],c[n];
-  vsincos(s,c,&(phi[0]),&n);
-  for (int i=0; i<n; i++) z[i] = std::complex<double>(c[i],s[i]);
-}
-
-inline void
-eval_e2iphi (const APPNAMESPACE::Vector<float> &phi, APPNAMESPACE::Vector<std::complex<float> > &z)
-{
-  int n = phi.size();
-  float s[n],c[n];
-  vssincos(s,c,&(phi[0]),&n);
-  for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
-}
-
 #elif defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 inline void
-eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
+eval_e2iphi(int n, const double* restrict phi, std::complex<double>* restrict z)
 {
-  vzCIS (phi.size(), &(phi[0]), (MKL_Complex16*) &(z[0]));
+  vzCIS (n,phi,(MKL_Complex16*)(z));
 }
 
 inline void
-eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
+eval_e2iphi (int n, const float* restrict phi, std::complex<float>* restrict z)
 {
-  vcCIS (phi.size(), &(phi[0]), (MKL_Complex8*) &(z[0]));
+  vcCIS (n,phi,(MKL_Complex8*)(z));
 }
+#else/* generic case */
+template<typename T>
 inline void
-eval_e2iphi (const APPNAMESPACE::Vector<double> &phi, APPNAMESPACE::Vector<std::complex<double> > &z)
+eval_e2iphi (int n, const T* restrict phi, std::complex<T>* restrict z)
 {
-  vzCIS (phi.size(), phi.data(),(MKL_Complex16*)z.data());
+  T s,c;
+  for (int i=0; i<n; i++) {sincos(phi[i],&s,&c); z[i]=std::complex<T>(c,s);}
 }
-
-inline void
-eval_e2iphi (const APPNAMESPACE::Vector<float> &phi, APPNAMESPACE::Vector<std::complex<float> > &z)
-{
-  vcCIS (phi.size(), phi.data(),(MKL_Complex8*)z.data());
-}
-
-#else
-inline void
-eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
-{
-  int n = phi.size();
-  for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
-}
-
-inline void
-eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
-{
-  int n = phi.size();
-#if defined(__APPLE__) && !defined(__INTEL_COMPILER)
-  for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
-#else
-  for (int i=0; i<n; i++) sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
 #endif
+
+
+template<typename T>
+inline void
+eval_e2iphi(std::vector<T>& phi, std::vector<std::complex<T> >& z)
+{
+  eval_e2iphi(phi.size(),&phi[0],&z[0]);
 }
 
+template<typename T>
 inline void
-eval_e2iphi (const APPNAMESPACE::Vector<double> &phi, APPNAMESPACE::Vector<std::complex<double> > &z)
+eval_e2iphi(APPNAMESPACE::Vector<T>& phi, APPNAMESPACE::Vector<std::complex<T> >& z)
 {
-  int n = phi.size();
-  for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
+  eval_e2iphi(phi.size(),phi.data(),z.data());
 }
 
-inline void
-eval_e2iphi (const APPNAMESPACE::Vector<float> &phi, APPNAMESPACE::Vector<std::complex<float> > &z)
-{
-  int n = phi.size();
-#if defined(__APPLE__) && !defined(__INTEL_COMPILER)
-  for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
-#else
-  for (int i=0; i<n; i++) sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
-#endif
-}
-#endif/* generic case */
 #endif
