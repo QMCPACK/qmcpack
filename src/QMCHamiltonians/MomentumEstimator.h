@@ -44,16 +44,18 @@ namespace qmcplusplus
     void setRandomGenerator(RandomGenerator_t* rng);
     //resize the internal data by input k-point list
     void resize(const vector<PosType>& kin);
+    ///normalization factor
+    RealType NormFactor;
     ///reference to the trial wavefunction for ratio evaluations
-    TrialWaveFunction& psi;
+    TrialWaveFunction& refPsi;
     ///random generator
     RandomGenerator_t myRNG;
+    ///nofK
+    Vector<RealType> kdotp;
     ///list of k-points in Cartesian Coordinates
     vector<PosType> kPoints;
     ///nofK
     Vector<RealType> nofK;
-    ///nofK
-    Vector<RealType> kdotp;
     ///phases
     Matrix<ComplexType> phases;
     ///wavefunction ratios
