@@ -43,23 +43,31 @@ namespace qmcplusplus
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
     void setRandomGenerator(RandomGenerator_t* rng);
     //resize the internal data by input k-point list
-    void resize(const vector<PosType>& kin);
-    ///normalization factor
-    RealType NormFactor;
+    void resize(const vector<PosType>& kin,const vector<RealType>& qin);
+    ///number of samples
+    int M;
+    ///normalization factor for n(k)
+    RealType norm_nofK;
+    ///normalization factor for the Compton profile
+    RealType norm_compQ;
     ///reference to the trial wavefunction for ratio evaluations
     TrialWaveFunction& refPsi;
     ///random generator
     RandomGenerator_t myRNG;
-    ///nofK
+    ///wavefunction ratios
+    vector<RealType> psi_ratios;
+    ///nofK internal
     Vector<RealType> kdotp;
+    ///phases
+    Vector<ComplexType> phases;
     ///list of k-points in Cartesian Coordinates
     vector<PosType> kPoints;
     ///nofK
     Vector<RealType> nofK;
-    ///phases
-    Matrix<ComplexType> phases;
-    ///wavefunction ratios
-    vector<RealType> psi_ratios;
+    ///list of Q for the Compton profile
+    vector<RealType> Q;
+    ///compton profile at q
+    Vector<RealType> compQ;
   };
 
 }
