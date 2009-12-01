@@ -50,7 +50,7 @@ namespace qmcplusplus
       PosType newpos;
       for(int i=0; i<OHMMS_DIM;++i) newpos[i]=myRNG();
 
-      P.makeVirtualMoves(newpos);
+      P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
       refPsi.get_ratios(P,psi_ratios);
       P.rejectMove(0); //restore P.R[0] to the orginal position
 
@@ -70,6 +70,8 @@ namespace qmcplusplus
       {
         RealType kdotp_primed=dot(kPoints[ik],newpos);
         for(int i=0; i<np; ++i) kdotp[i]=kdotp_primed-dot(kPoints[ik],P.R[i]);
+        //this is the same
+        //for(int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1);
         eval_e2iphi(np,kdotp.data(),phases.data());
         nofK[ik]+=real(BLAS::dot(np,phases.data(),psi_ratios.data()));
       }
