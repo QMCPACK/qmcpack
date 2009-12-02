@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
+#include "QMCHamiltonians/MomentumEstimator.h"
 #if OHMMS_DIM == 3
   #include "QMCHamiltonians/LocalCorePolPotential.h"
   #include "QMCHamiltonians/ECPotentialBuilder.h"
@@ -424,30 +425,19 @@ namespace qmcplusplus {
 	  app_log()<<"Adding Momentum Estimator"<<endl;
 	  
 	  string PsiName="psi0";
-	  string SourceName = "e";
 	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(PsiName,"psi"); 
-	  hAttrib.add(SourceName, "source");
+	  hAttrib.add(PsiName,"wavefunction"); 
 	  hAttrib.put(cur);
-
-	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) 
-	  {
-            APP_ABORT("Unknown source \""+SourceName+"\" for momentum.");
-	  }
-	  ParticleSet &source = *pit->second;
 
 	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
 	  if(psi_it == psiPool.end()) 
           {
             APP_ABORT("Unknown psi \""+PsiName+"\" for momentum.");
           }
-
-	  TrialWaveFunction &psi = *psi_it->second->targetPsi;
-	  MomentumEstimator* ME = new MomentumEstimator(source, psi);
-	  ME->putSpecial(cur,source);
+          TrialWaveFunction *psi=(*psi_it).second->targetPsi;
+	  MomentumEstimator* ME = new MomentumEstimator(*targetPtcl, *psi);
+	  ME->putSpecial(cur,*targetPtcl);
 	  targetH->addOperator(ME,"MomentumEstimator",false);
-	  
 	}
       } 
       else if (cname == "Kinetic")

@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 
   MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-    :M(4), refPsi(psi)
+    :M(4), refPsi(psi),Lattice(elns.Lattice)
   {
     UpdateMode.set(COLLECTABLE,1);
     psi_ratios.resize(elns.getTotalNum());
@@ -223,8 +223,8 @@ namespace qmcplusplus
     nofK.resize(kPoints.size());
     compQ.resize(Q.size());
     
-    norm_nofK=1.0/elns.Lattice.Volume;
-    norm_compQ=4.0*M_PI*M_PI/elns.Lattice.Volume;
+    norm_nofK=1.0/Lattice.Volume;
+    norm_compQ=4.0*M_PI*M_PI/Lattice.Volume;
     
     return true;
   }
