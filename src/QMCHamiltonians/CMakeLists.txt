@@ -17,6 +17,7 @@ SET(HAMSRCS
   PairCorrEstimator.cpp
   DensityEstimator.cpp
   SkEstimator.cpp
+  MomentumEstimator.cpp
 )
 #  FSAtomPseudoPot.cpp
 

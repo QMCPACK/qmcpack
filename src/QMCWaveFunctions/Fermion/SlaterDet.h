@@ -143,7 +143,7 @@ namespace qmcplusplus {
       return Dets[i]->getPhi();
     }
 
-    void get_ratios(ParticleSet& P, vector<RealType>& ratios);
+    void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
   private:
     vector<int> M;

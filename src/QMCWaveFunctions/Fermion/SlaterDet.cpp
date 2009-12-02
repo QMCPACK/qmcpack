@@ -63,7 +63,7 @@ namespace qmcplusplus {
     for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
   }
 
-  void SlaterDet::get_ratios(ParticleSet& P, vector<RealType>& ratios)
+  void SlaterDet::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
     for(int i=0; i<Dets.size(); ++i) Dets[i]->get_ratios(P,ratios);
   }

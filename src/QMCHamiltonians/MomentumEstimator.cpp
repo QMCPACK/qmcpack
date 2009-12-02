@@ -102,6 +102,8 @@ namespace qmcplusplus
   void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
     myIndex=collectables.size();
+    collectables.add(nofK.begin(),nofK.end());
+    collectables.add(compQ.begin(),compQ.end()); 
   }
 
 
@@ -116,10 +118,95 @@ namespace qmcplusplus
     //std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myDebugIndex+offset);
   }
 
-  bool MomentumEstimator::put(xmlNodePtr cur)
+  bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns)
   {
     //need to build kPoints list and normalization
     //NormFactor=1.0/static_cast<RealType>(elns.getTotalNum());
+    xmlNodePtr kids=cur->children;
+    while(kids!=NULL)
+    {
+      string cname((const char*)(kids->name));
+      if (cname=="kpoints")
+      {
+	string ctype("manual");
+	int grid(4);
+	OhmmsAttributeSet pAttrib;
+	pAttrib.add(ctype,"mode");
+	pAttrib.add(grid,"grid");
+        pAttrib.put(kids);
+	      
+	if(ctype=="manual")
+	{
+	  vector<RealType> kpt_unsorted;
+	  putContent(kpt_unsorted,kids);
+	  if(kpt_unsorted.size()%4!=0)
+	  {
+	    app_log()<<"Format for K points is \"kx ky kz wgt\". "<<endl;
+	    APP_ABORT("MomentumEstimator::put");
+	  }
+	  int nkpts=kpt_unsorted.size()/4;
+	  vector<PosType> ktmp(nkpts);
+	  vector<int> kwgt(nkpts);
+	  for(int i=0,j=0;i<nkpts;i++)
+	  {
+	    ktmp[i][0]=kpt_unsorted[j++];
+	    ktmp[i][1]=kpt_unsorted[j++];
+	    ktmp[i][2]=kpt_unsorted[j++];
+	    kwgt[i]=kpt_unsorted[j++];
+	  }
+	  kPoints=ktmp;
+	  kWeights=kwgt;
+	}
+	else if(ctype=="auto")
+	{
+	 vector<vector<RealType> > BasisMatrix(3, vector<RealType>(3,0.0));
+	 
+	 ParticleSet::ParticlePos_t R_cart(1);
+         R_cart.setUnit(PosUnit::CartesianUnit);
+         ParticleSet::ParticlePos_t R_unit(1);
+         R_unit.setUnit(PosUnit::LatticeUnit);
+      
+	 for (int i=0;i<3;i++)
+	  {
+	    R_unit[0][0]=0;
+	    R_unit[0][1]=0;
+	    R_unit[0][2]=0;
+	    R_unit[0][i]=1;
+	    elns.convert2Cart(R_unit,R_cart);
+	    for (int j=0;j<3;j++) BasisMatrix[i][j]= R_cart[0][j];
+	  }
+	  
+	  app_log()<<" Using a "<<grid<<"x"<< grid<<"x"<< grid << " cubic grid in k-space for Momentum Distribution."<<endl;
+	  for(int i=0;i<grid;i++) for(int j=0;j<grid;j++) for(int k=0;k<grid;k++)
+	  {
+	    PosType kpt;
+	    
+	    kpt[0]=RealType(i)*BasisMatrix[0][0]+RealType(j)*BasisMatrix[1][0]+RealType(k)*BasisMatrix[2][0];
+	    kpt[1]=RealType(i)*BasisMatrix[0][1]+RealType(j)*BasisMatrix[1][1]+RealType(k)*BasisMatrix[2][1];
+	    kpt[2]=RealType(i)*BasisMatrix[0][2]+RealType(j)*BasisMatrix[1][2]+RealType(k)*BasisMatrix[2][2];
+	    for(int l=0;l<3;l++) kpt[l]=(kpt[l]!=0.0 ? 2.0*M_PI/kpt[l] : 0 );
+	    kPoints.push_back(kpt);
+	    kWeights.push_back(1);
+	  }
+	}
+      }
+      else if(cname=="q")
+      {
+	vector<RealType> q_unsorted;
+	putContent(q_unsorted,kids);
+	Q=q_unsorted;
+      }
+//       else if(cname=="qpoints")
+//       {
+//       }
+      kids=kids->next;
+    }
+    nofK.resize(kPoints.size());
+    compQ.resize(Q.size());
+    
+    norm_nofK=1.0/elns.Lattice.Volume;
+    norm_compQ=4.0*M_PI*M_PI/elns.Lattice.Volume;
+    
     return true;
   }
 
@@ -132,11 +219,13 @@ namespace qmcplusplus
       , TrialWaveFunction& psi)
   {
     MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
-    myclone->resize(kPoints,Q);
+    myclone->resize(kPoints,Q,kWeights);
+    myclone->norm_nofK=norm_nofK;
+    myclone->norm_compQ=norm_compQ;
     return myclone;
   }
 
-  void MomentumEstimator::resize(const vector<PosType>& kin, const vector<RealType>& qin)
+  void MomentumEstimator::resize(const vector<PosType>& kin, const vector<RealType>& qin, const vector<int>& win)
   {
     //copy kpoints
     kPoints=kin;
@@ -145,6 +234,8 @@ namespace qmcplusplus
     //copy q
     Q=qin;
     compQ.resize(qin.size());
+    
+    kWeights=win;
   }
 
   void MomentumEstimator::setRandomGenerator(RandomGenerator_t* rng)

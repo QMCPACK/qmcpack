@@ -204,6 +204,8 @@ namespace qmcplusplus
         return Z;
       }
 
+      void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+
     private:
 
       ///control how ratio is calculated
@@ -260,4 +262,3 @@ namespace qmcplusplus
  * $Revision$   $Date$
  * $Id$
  ***************************************************************************/
-

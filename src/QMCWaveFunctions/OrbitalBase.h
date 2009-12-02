@@ -345,7 +345,7 @@ namespace qmcplusplus
        * @param P reference particleset
        * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
        */
-      virtual void get_ratios(ParticleSet& P, vector<RealType>& ratios);
+      virtual void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
       ///** copy data members from old
       // * @param old existing OrbitalBase from which all the data members are copied.

@@ -275,7 +275,7 @@ namespace qmcplusplus {
 
     /** evaluate the ratio 
     */
-    inline void get_ratios(ParticleSet& P, vector<RealType>& ratios)
+    inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
     {
       for (int i=0,ij=0; i<N; ++i)
       {

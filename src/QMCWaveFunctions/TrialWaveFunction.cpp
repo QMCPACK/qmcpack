@@ -654,6 +654,16 @@ namespace qmcplusplus
       return sum;
     }
 
+  void TrialWaveFunction::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  {
+    std::fill(ratios.begin(),ratios.end(),1.0);
+    vector<ValueType> t(ratios.size());
+    for(int i=0; i<Z.size(); ++i)
+    {
+      Z[i]->get_ratios(P,t);
+      for(int j=0; j<t.size(); ++j) ratios[j]*=t[j];
+    }
+  }
 
 }
 /***************************************************************************
@@ -661,4 +671,3 @@ namespace qmcplusplus
 * $Revision$   $Date$
 * $Id$
 ***************************************************************************/
-

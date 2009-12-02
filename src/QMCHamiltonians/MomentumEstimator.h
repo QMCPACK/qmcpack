@@ -38,12 +38,13 @@ namespace qmcplusplus
     void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
-    bool put(xmlNodePtr cur);
+    bool putSpecial(xmlNodePtr cur, ParticleSet& elns);
+    bool put(xmlNodePtr cur){ return false;};
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
     void setRandomGenerator(RandomGenerator_t* rng);
     //resize the internal data by input k-point list
-    void resize(const vector<PosType>& kin,const vector<RealType>& qin);
+    void resize(const vector<PosType>& kin,const vector<RealType>& qin,const vector<int>& win);
     ///number of samples
     int M;
     ///normalization factor for n(k)
@@ -55,13 +56,15 @@ namespace qmcplusplus
     ///random generator
     RandomGenerator_t myRNG;
     ///wavefunction ratios
-    vector<RealType> psi_ratios;
+    vector<ValueType> psi_ratios;
     ///nofK internal
     Vector<RealType> kdotp;
     ///phases
     Vector<ComplexType> phases;
     ///list of k-points in Cartesian Coordinates
     vector<PosType> kPoints;
+    ///weight of k-points (make use of symmetry)
+    vector<int> kWeights;
     ///nofK
     Vector<RealType> nofK;
     ///list of Q for the Compton profile

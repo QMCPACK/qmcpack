@@ -236,7 +236,7 @@ namespace qmcplusplus
 
       /** evaluate the ratio 
        */
-      inline void get_ratios(ParticleSet& P, vector<RealType>& ratios)
+      inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
       {
         std::fill(ratios.begin(),ratios.end(),0.0);
         for (int i=0; i<d_table->size(SourceIndex); ++i)

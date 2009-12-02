@@ -61,6 +61,7 @@
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
+#include "QMCHamiltonians/MomentumEstimator.h"
 #if defined(HAVE_LIBFFTW)
   #include "QMCHamiltonians/MPC.h"
   #include "QMCHamiltonians/VHXC.h"
@@ -417,6 +418,36 @@ namespace qmcplusplus {
 	  DMCPsiValue* PV = new DMCPsiValue( );
 	  PV->put(cur,targetPtcl,ptclPool,myComm);
 	  targetH->addOperator(PV,"DMCPsiRatio",false);
+	}
+	else if(potType=="momentum")
+	{
+	  app_log()<<"Adding Momentum Estimator"<<endl;
+	  
+	  string PsiName="psi0";
+	  string SourceName = "e";
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(PsiName,"psi"); 
+	  hAttrib.add(SourceName, "source");
+	  hAttrib.put(cur);
+
+	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
+	  if(pit == ptclPool.end()) 
+	  {
+            APP_ABORT("Unknown source \""+SourceName+"\" for momentum.");
+	  }
+	  ParticleSet &source = *pit->second;
+
+	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+	  if(psi_it == psiPool.end()) 
+          {
+            APP_ABORT("Unknown psi \""+PsiName+"\" for momentum.");
+          }
+
+	  TrialWaveFunction &psi = *psi_it->second->targetPsi;
+	  MomentumEstimator* ME = new MomentumEstimator(source, psi);
+	  ME->putSpecial(cur,source);
+	  targetH->addOperator(ME,"MomentumEstimator",false);
+	  
 	}
       } 
       else if (cname == "Kinetic")

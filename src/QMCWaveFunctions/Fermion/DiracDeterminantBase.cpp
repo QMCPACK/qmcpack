@@ -237,7 +237,7 @@ namespace qmcplusplus {
     return curRatio;
   }
 
-  void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<RealType>& ratios)
+  void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
     Phi->evaluate(P, 0, psiV);
     MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);

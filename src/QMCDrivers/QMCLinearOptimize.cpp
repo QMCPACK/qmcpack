@@ -270,6 +270,7 @@ namespace qmcplusplus
               LambdaMax = 1.0;
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
+              largeQuarticStep=20;
               lineoptimization();
               
               if (Lambda==Lambda)        
