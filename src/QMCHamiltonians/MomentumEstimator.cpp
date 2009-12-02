@@ -96,6 +96,25 @@ namespace qmcplusplus
       , hid_t gid) const
   {
 
+    //descriptor for the data, 1-D data
+    vector<int> ng(1);
+
+    //add nofk
+    ng[0]=nofK.size();
+    observable_helper* h5o=new observable_helper("nofk");
+    h5o->set_dimensions(ng,myIndex);
+    h5o->open(gid);
+    h5o->addProperty(const_cast<vector<PosType>&>(kPoints),"kpoints");
+    h5o->addProperty(const_cast<vector<int>&>(kWeights),"kweights");
+    h5list.push_back(h5o);
+
+    //add compQ
+    ng[0]=Q.size();
+    h5o=new observable_helper("compQ");
+    h5o->set_dimensions(ng,myIndex+nofK.size());
+    h5o->open(gid);
+    h5o->addProperty(const_cast<vector<RealType>&>(Q),"q");
+    h5list.push_back(h5o);
   }
 
 
@@ -103,7 +122,7 @@ namespace qmcplusplus
   {
     myIndex=collectables.size();
     collectables.add(nofK.begin(),nofK.end());
-    collectables.add(compQ.begin(),compQ.end()); 
+    collectables.add(compQ.begin(),compQ.end());
   }
 
 
