@@ -574,15 +574,15 @@ namespace qmcplusplus {
 
     //CHECK PBC and create CoulombPBC for el-el
     if(source == targetPtcl) {
-      if(source->getTotalNum()>1 || applyPBC)  {
-        if(applyPBC) {
-          //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
-          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),
-			       title,physical);
-        } else {
-          targetH->addOperator(new CoulombPotentialAA(*targetPtcl),
-			       title,physical);
-        }
+      if(applyPBC) 
+      {
+        //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
+        targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true), title,physical);
+      } 
+      else 
+      {
+        if(source->getTotalNum()>1) 
+          targetH->addOperator(new CoulombPotentialAA(*targetPtcl), title,physical);
       }
     } else {
       if(applyPBC) {
@@ -774,15 +774,15 @@ namespace qmcplusplus {
     PtclPoolType::iterator pit(ptclPool.find(nuclei));
     if(pit != ptclPool.end()) {
       ParticleSet* ion=(*pit).second;
-      if(ion->getTotalNum()>1) 
-        if(PBCType){
-          //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-          //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
-          targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
-        } else {
+      if(PBCType){
+        //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
+        //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
+        targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
+      } else {
+        if(ion->getTotalNum()>1) 
           targetH->addOperator(new IonIonPotential(*ion),hname);
-        }
-     }
+      }
+    }
   }
 
   void
