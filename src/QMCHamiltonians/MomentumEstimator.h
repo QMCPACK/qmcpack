@@ -67,12 +67,16 @@ namespace qmcplusplus
     vector<PosType> kPoints;
     ///weight of k-points (make use of symmetry)
     vector<int> kWeights;
+    ///dims of a grid for k points
+    int kgrid;
     ///nofK
     Vector<RealType> nofK;
     ///list of Q for the Compton profile
     vector<RealType> Q;
     ///compton profile at q
     Vector<RealType> compQ;
+    /// print to hdf5 or scalar.dat
+    bool hdf5_out;
   };
 
 }

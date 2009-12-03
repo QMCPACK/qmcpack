@@ -411,16 +411,15 @@ namespace qmcplusplus {
     }
   }
 
-  void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& ru)
+  void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
   {
     activePtcl=0;
     activePos=R[0];
-    SingleParticlePos_t newpos=Lattice.toCart(ru);
     for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,0);
     R[0]=newpos;
   }
 
-  void ParticleSet::rejectMove(Index_t iat) {
+void ParticleSet::rejectMove(Index_t iat) {
     //restore the position by the saved activePos
     R[iat]=activePos;
     //Do not change SK: 2007-05-18

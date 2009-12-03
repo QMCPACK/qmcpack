@@ -422,7 +422,7 @@ namespace qmcplusplus {
 	}
 	else if(potType=="momentum")
 	{
-	  app_log()<<"Adding Momentum Estimator"<<endl;
+	  app_log()<<"  Adding Momentum Estimator"<<endl;
 	  
 	  string PsiName="psi0";
 	  OhmmsAttributeSet hAttrib;

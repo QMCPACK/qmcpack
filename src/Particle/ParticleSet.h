@@ -279,7 +279,7 @@ namespace qmcplusplus {
      * and the rejectMove should be called for correct use. 
      * See QMCHamiltonians::MomentumEstimator
      */
-    void makeVirtualMoves(const SingleParticlePos_t& ru);
+    void makeVirtualMoves(const SingleParticlePos_t& newpos);
 
     /** accept the move
      *@param iat the index of the particle whose position and other attributes to be updated
