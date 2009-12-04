@@ -51,7 +51,7 @@ namespace qmcplusplus
     for (int s=0; s<M; ++s)
       {
         PosType newpos;
-        
+
         for (int i=0; i<OHMMS_DIM;++i) newpos[i]=myRNG();
         //make it cartesian
         newpos=Lattice.toCart(newpos);
@@ -64,18 +64,18 @@ namespace qmcplusplus
 //             RealType kdotp_primed=dot(kPoints[ik],newpos);
 //             for (int i=0; i<np; ++i) kdotp[i]=kdotp_primed-dot(kPoints[ik],P.R[i]);
             //this is the same
-            for(int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1);
+            for (int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1);
             eval_e2iphi(np,kdotp.data(),phases.data());
             nofK[ik]+=real(BLAS::dot(np,phases.data(),psi_ratios.data()));
 //             nofK[ik]+=real(BLAS::dot(np,phases.data(),phases.data()));
 //             nofK[ik]+= (BLAS::dot(np,psi_ratios.data(),psi_ratios.data()));
           }
-          
-         for (int iq=0; iq < Q.size(); ++iq)
-           for (int i=0; i<mappedQtoK[iq].size(); ++i)
-           {
-             compQ[iq] += nofK[mappedQtoK[iq][i]];
-           }
+
+        for (int iq=0; iq < Q.size(); ++iq)
+          for (int i=0; i<mappedQtoK[iq].size(); ++i)
+            {
+              compQ[iq] += nofK[mappedQtoK[iq][i]];
+            }
 
 
       }
@@ -129,23 +129,23 @@ namespace qmcplusplus
         myIndex=collectables.size();
         collectables.add(nofK.begin(),nofK.end());
         collectables.add(compQ.begin(),compQ.end());
-        
+
       }
     else
       {
         myIndex=plist.size();
         for (int i=0;i<nofK.size();i++)
-        {
-          std::stringstream sstr;
-          sstr << "nofk_" <<i;
-          int id=plist.add(sstr.str());
-        }
+          {
+            std::stringstream sstr;
+            sstr << "nofk_" <<i;
+            int id=plist.add(sstr.str());
+          }
         for (int i=0;i<Q.size();i++)
-        {
-          std::stringstream sstr;
-          sstr << "Q_" <<i;
-          int id=plist.add(sstr.str());
-        }
+          {
+            std::stringstream sstr;
+            sstr << "Q_" <<i;
+            int id=plist.add(sstr.str());
+          }
       }
   }
 
@@ -164,7 +164,7 @@ namespace qmcplusplus
   void MomentumEstimator::setParticlePropertyList(PropertySetType& plist
       , int offset)
   {
-      if (!hdf5_out)
+    if (!hdf5_out)
       {
         std::copy(nofK.begin(),nofK.end(),plist.begin()+myIndex+offset);
         std::copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size()+offset);
@@ -223,16 +223,16 @@ namespace qmcplusplus
             app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
             for (int i=-kgrid;i<(kgrid+1);i++) for (int j=-kgrid;j<(kgrid+1);j++) for (int k=-kgrid;k<(kgrid+1);k++)
                   {
-                    if(std::sqrt(i*i+j*j+k*k)<=kgrid)
-                    {
-                     PosType kpt;
-                     kpt[0]=RealType(i)*BasisMatrix(0,0)+RealType(j)*BasisMatrix(1,0)+RealType(k)*BasisMatrix(2,0);
-                     kpt[1]=RealType(i)*BasisMatrix(0,1)+RealType(j)*BasisMatrix(1,1)+RealType(k)*BasisMatrix(2,1);
-                     kpt[2]=RealType(i)*BasisMatrix(0,2)+RealType(j)*BasisMatrix(1,2)+RealType(k)*BasisMatrix(2,2);
-                     for (int l=0;l<3;l++) kpt[l] *= 2.0*M_PI;
-                     kPoints.push_back(kpt);
-                     kWeights.push_back(1);
-                    }
+                    if (std::sqrt(i*i+j*j+k*k)<=kgrid)
+                      {
+                        PosType kpt;
+                        kpt[0]=RealType(i)*BasisMatrix(0,0)+RealType(j)*BasisMatrix(1,0)+RealType(k)*BasisMatrix(2,0);
+                        kpt[1]=RealType(i)*BasisMatrix(0,1)+RealType(j)*BasisMatrix(1,1)+RealType(k)*BasisMatrix(2,1);
+                        kpt[2]=RealType(i)*BasisMatrix(0,2)+RealType(j)*BasisMatrix(1,2)+RealType(k)*BasisMatrix(2,2);
+                        for (int l=0;l<3;l++) kpt[l] *= 2.0*M_PI;
+                        kPoints.push_back(kpt);
+                        kWeights.push_back(1);
+                      }
                   }
 //  }
           }
@@ -247,45 +247,46 @@ namespace qmcplusplus
         mappedKpoints.push_back(kh);
       }
     std::sort(mappedKpoints.begin(),mappedKpoints.end());
-    
+
     set<float> qvalues;
     for (int i=0;i<mappedKpoints.size();i++) qvalues.insert(mappedKpoints[i].first);
     mappedQnorms.resize(qvalues.size());
-    
+
     vector<int> ktoqmap(mappedKpoints.size());
     int qindx(0);
     set<float>::iterator q_it(qvalues.begin());
     for (int i=0;i<mappedKpoints.size();i++)
-    {
-      if (mappedKpoints[i].first == *q_it )
       {
-        ktoqmap[mappedKpoints[i].second]=qindx;
-        mappedQnorms[qindx]++;
+        if (mappedKpoints[i].first == *q_it)
+          {
+            ktoqmap[mappedKpoints[i].second]=qindx;
+            mappedQnorms[qindx]++;
+          }
+        else
+          {
+            q_it++;
+            qindx++;
+            ktoqmap[mappedKpoints[i].second]=qindx;
+            mappedQnorms[qindx]++;
+          }
       }
-      else
-      {
-        q_it++;
-        qindx++;
-        ktoqmap[mappedKpoints[i].second]=qindx;
-        mappedQnorms[qindx]++;
-      }
-    }
     mappedQnorms[0]=3;
-    if (rootNode){
-    RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
-    string fname="Kpoints.dat";
-    ofstream fout(fname.c_str());
-    fout.setf(ios::scientific, ios::floatfield);
-    fout << "# kx  ky  kz  mag_k   mappedQ   koverk_f" << endl;
-    for (int i=0;i<kPoints.size();i++)
+    if (rootNode)
       {
-        float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
-        fout<<kPoints[i][0]<<" "<<kPoints[i][1]<<" "<<kPoints[i][2]<<" "
-        <<khere<<" "<<ktoqmap[i]<<" "<<khere/KF<<endl;
+        RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
+        string fname="Kpoints.dat";
+        ofstream fout(fname.c_str());
+        fout.setf(ios::scientific, ios::floatfield);
+        fout << "# kx  ky  kz  mag_k   mappedQ   koverk_f" << endl;
+        for (int i=0;i<kPoints.size();i++)
+          {
+            float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
+            fout<<kPoints[i][0]<<" "<<kPoints[i][1]<<" "<<kPoints[i][2]<<" "
+            <<khere<<" "<<ktoqmap[i]<<" "<<khere/KF<<endl;
+          }
+        fout.close();
       }
-    fout.close();
-    }
-    
+
 
     kids=cur->children;
     while (kids!=NULL)
@@ -299,53 +300,55 @@ namespace qmcplusplus
             pAttrib.put(kids);
             if (ctype=="auto")
               {
-                if (rootNode){
-                string fname="Qpoints.dat";
-                ofstream qout(fname.c_str());
-                qout.setf(ios::scientific, ios::floatfield);
-                qout << "# magQ            nKthisQ" << endl;
-                set<float>::iterator it;
-                int qindx=0;
-                for (q_it=qvalues.begin(); q_it!=qvalues.end(); q_it++)
-                  qout << *q_it << " "<< mappedQnorms[qindx++]<<endl;
-                qout.close();
-                }
+                if (rootNode)
+                  {
+                    string fname="Qpoints.dat";
+                    ofstream qout(fname.c_str());
+                    qout.setf(ios::scientific, ios::floatfield);
+                    qout << "# magQ            nKthisQ" << endl;
+                    set<float>::iterator it;
+                    int qindx=0;
+                    for (q_it=qvalues.begin(); q_it!=qvalues.end(); q_it++)
+                      qout << *q_it << " "<< mappedQnorms[qindx++]<<endl;
+                    qout.close();
+                  }
                 Q.resize(qvalues.size());
                 qindx=0;
                 for (q_it=qvalues.begin(); q_it!=qvalues.end(); q_it++) Q[qindx++] = *q_it;
-                
+
                 vector<vector<int> > allincludedk;
                 for (int i=0;i<kPoints.size();i++)
                   {
                     vector<int> includedk;
                     RealType knrm=dot(kPoints[i],kPoints[i]);
-                    if (knrm!=0) 
-                    {
-                      for (int j=0;j<kPoints.size();j++) if(dot(kPoints[i],kPoints[j])==knrm) includedk.push_back(j);
-                    }
-                    else 
-                      for(int j=0;j<kPoints.size();j++) for (int k=0;k<3;k++) if (kPoints[j][k]==0) includedk.push_back(j);
+                    if (knrm!=0)
+                      {
+                        for (int j=0;j<kPoints.size();j++) if (dot(kPoints[i],kPoints[j])==knrm) includedk.push_back(j);
+                      }
+                    else
+                      for (int j=0;j<kPoints.size();j++) for (int k=0;k<3;k++) if (kPoints[j][k]==0) includedk.push_back(j);
                     allincludedk.push_back(includedk);
                   }
-                  
+
                 mappedQtoK.resize(qvalues.size());
                 for (int i=0;i<allincludedk.size();i++) mappedQtoK[ktoqmap[i]].insert(mappedQtoK[ktoqmap[i]].end(),allincludedk[i].begin(),allincludedk[i].end());
-                
-    if (rootNode){            
-    string QKname="mappedPoints.dat";
-    ofstream dout(QKname.c_str());
-    dout.setf(ios::scientific, ios::floatfield);
-    dout << "#q  kx  ky  kz" << endl;
-    for (int i=0;i<qvalues.size();i++)
-      {
-        dout<<i<<", "<<mappedQnorms[i]<<":  ";
-        for(int j=0;j<mappedQtoK[i].size();j++) dout<<mappedQtoK[i][j]<<" ";
-        dout<<endl;
-      }
-    dout.close();
-    }
-                
-                }
+
+                if (rootNode)
+                  {
+                    string QKname="mappedPoints.dat";
+                    ofstream dout(QKname.c_str());
+                    dout.setf(ios::scientific, ios::floatfield);
+                    dout << "#q  kx  ky  kz" << endl;
+                    for (int i=0;i<qvalues.size();i++)
+                      {
+                        dout<<i<<", "<<mappedQnorms[i]<<":  ";
+                        for (int j=0;j<mappedQtoK[i].size();j++) dout<<mappedQtoK[i][j]<<" ";
+                        dout<<endl;
+                      }
+                    dout.close();
+                  }
+
+              }
           }
         kids=kids->next;
       }
@@ -354,10 +357,10 @@ namespace qmcplusplus
 
     norm_nofK=1.0;// /elns.Lattice.Volume;
     //NOTE: normalization is only correct for cubic cell!
-    norm_compQ=2.0*M_PI*M_PI*std::pow(elns.Lattice.Volume,-2.0/3.0);
-    app_log()<<"  If cell is cubic normalization is correct. Otherwise N="<<norm_compQ<<endl;
-    app_log()<<"  J(0)="<<norm_compQ*elns.R.size()<<endl;
-    
+    norm_compQ=8.0*M_PI*M_PI*M_PI/elns.Lattice.Volume;
+    app_log()<<"  If cell is cubic normalization is correct. N="<<norm_compQ<<endl;
+//     app_log()<<"  J(0)="<<norm_compQ*elns.R.size()<<endl;
+
 
     return true;
   }
@@ -379,7 +382,7 @@ namespace qmcplusplus
     myclone->mappedQtoK=mappedQtoK;
     myclone->mappedQnorms=mappedQnorms;
     myclone->M=M;
-    
+
     return myclone;
   }
 
