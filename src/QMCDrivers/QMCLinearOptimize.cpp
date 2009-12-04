@@ -274,7 +274,8 @@ namespace qmcplusplus
           }
           else
           {
-            for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
+            for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];   
+            tries=eigCG;
           }
         }
       }
