@@ -208,7 +208,7 @@ namespace qmcplusplus {
       const char transa = 'T';
       const std::complex<double> zone(1.0,0.0);
       const std::complex<double> zero(0.0,0.0);
-      zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+      zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x, 1, zero, yptr, 1);
     }
 
     /** static function to perform y=Ax for generic matrix and vector
