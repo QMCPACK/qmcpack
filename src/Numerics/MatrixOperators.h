@@ -95,11 +95,12 @@ namespace qmcplusplus {
 
 
 
-    inline static void transpose(Matrix<double>& A)
+    template<typename T>
+    inline static void transpose(Matrix<T>& A)
     {
       for (int i=0;i<A.extent(0);i++)
 	for (int j=0;j<i;j++)
-	  swap(A(i,j),A(j,i));
+	  std::swap(A(i,j),A(j,i));
     }
 
 
@@ -194,7 +195,8 @@ namespace qmcplusplus {
      */
     inline static void product(const Matrix<std::complex<double> >& A, 
         const Vector<std::complex<double> >& x, 
-        std::complex<double>* restrict yptr) {
+        std::complex<double>* restrict yptr) 
+    {
       const char transa = 'T';
       const std::complex<double> zone(1.0,0.0);
       const std::complex<double> zero(0.0,0.0);
