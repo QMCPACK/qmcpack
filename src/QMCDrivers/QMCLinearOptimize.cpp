@@ -38,7 +38,7 @@ namespace qmcplusplus
     SkipSampleGeneration("no"), hamPool(hpool),                                                                             
     optTarget(0), vmcEngine(0), Max_iterations(1),                                                                          
     wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6), 
-    nstabilizers(3), stabilizerScale(4.0), bigChange(50), eigCG(1), w_beta(1)
+    nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1)
     {                                                                                                                           
       //set the optimization flag                                                                                               
       QMCDriverMode.set(QMC_OPTIMIZE,1);                                                                                        
@@ -143,6 +143,7 @@ namespace qmcplusplus
 //         store this for use in later tries
         int bestStability(0);
         vector<vector<RealType> > LastDirections;
+        RealType deltaPrms(-1.0);
         for(int tries=0;tries<eigCG;tries++){
           Matrix<RealType> Ham(N,N);
           Matrix<RealType> Ham2(N,N);
@@ -222,98 +223,56 @@ namespace qmcplusplus
                   //rescale to be something that worked before
                   for (int i=1;i<N;i++) currentParameterDirections[i] *= nrmold/nrmnew;
                 }
-//               if (false)
-//               {
-//                 //Umrigar and Sorella suggest using 0.5 for xi.                                        
-//                 RealType xi=0.5;                                                                       
-//                 RealType D(1.0);                                                                       
-//                 for (int i=0;i<numParams;i++)                                                                
-//                 {                                                                                    
-//                   if (optTarget->getType(i) != 2)                                                    
-//                   {                                                                                
-//                     for (int j=0;j<numParams;j++)                                                        
-//                     {                                                                            
-//                       if (optTarget->getType(j) != 2) D += S(j+1,i+1)*currentParameterDirections[i+1]*currentParameterDirections[j+1];           
-//                     }                                                                            
-//                   }                                                                                
-//                 }                                                                                    
-//                 D = std::sqrt(std::abs(D));                                                            
-//                 
-//                 vector<RealType> N_i(numParams,0);
-//                 for (int i=0;i<numParams;i++)     
-//                 {                         
-//                   RealType tsumN(0);      
-//                   for (int j=0;j<numParams;j++) 
-//                   {                     
-//                     if (optTarget->getType(j) != 2)
-//                     {                            
-//                       tsumN += S(i+1,j+1)*currentParameterDirections[j+1];
-//                     }                             
-//                   }                                 
-//                   N_i[i] += (1-xi)*tsumN  / (xi*D + (1-xi));
-//                 }                                           
-//                 
-//                 RealType rescale(1);
-//                 for (int j=0;j<numParams;j++) rescale -= N_i[j]*currentParameterDirections[j+1] ;
-//                 rescale = 1.0/rescale;                             
-//                 if ((rescale==rescale)&&(rescale!=0))              
-//                 {                                                
-//                   for (int i=0;i<numParams; i++)                     
-//                   {                                            
-//                     if (optTarget->getType(i) != 2) currentParameterDirections[i+1]*=rescale;
-//                   }                                                  
-//                 }                                                      
-//                 
-//               }
-
  //If not rescaling and linear parameters, step size and grad are the same.
               LambdaMax = 1.0;
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-              largeQuarticStep=20;
+              
+              RealType dopt(0);
+              for (int i=0;i<numParams; i++) dopt += optdir[i] * optdir[i];
+              dopt =std::sqrt(dopt)/RealType(numParams);
+              
+              largeQuarticStep=1e3;
+              if (deltaPrms>0) quadstep=deltaPrms/dopt;
               lineoptimization();
               
-              if (Lambda==Lambda)        
+              dopt *= std::abs(Lambda);
+              
+              if ( (Lambda==Lambda)&&(dopt<bigChange))
               {
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
                 newCost = optTarget->Cost(false);
-                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size:"<<dopt<<endl;
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
                 
-                if ((newCost > (lastCost - bigChange))&&(newCost < lastCost)&&(newCost==newCost))
+                if ((newCost < lastCost)&&(newCost==newCost))
                 {
                   //Move was acceptable 
                   for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
                   bestStability=stability; lastCost=newCost;
                   BestDirection=currentParameterDirections;
                   acceptedOneMove=true;
+                  
+                  deltaPrms=dopt;
                 }
 //                else if (newCost>lastCost+0.001) stability = nstabilizers;
               }
+              else
+              {
+                app_log()<<"  Failed Step. RMS step Size:"<<dopt<<endl;
+              }
             }
-// Steepest descent step. Not useful.
-//         optparm= currentParameters;
-//         LambdaMax = 0.02;
-//         optTarget->GradCost(optdir, optparm, 0);
-//         lineoptimization2();
-//         if (Lambda==Lambda)        
-//         {
-//           for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-//           newCost = optTarget->Cost(false);
-//           app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
-//           if ((newCost > lastCost - bigChange)&&(newCost < lastCost)&&(newCost==newCost))
-//           {
-//             //Move was acceptable 
-//             for (int i=0;i<numParams; i++) bestParameters[i] = optTarget->Params(i);
-//             lastCost=newCost;
-//           }
-//         }
-//         
           if(acceptedOneMove)
           {
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
             currentParameters=bestParameters;
             LastDirections.push_back(BestDirection);
+            app_log()<< " Wave Function Parameters updated."<<endl;
+            optTarget->reportParameters();
+          }
+          else
+          {
+            for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           }
         }
       }
