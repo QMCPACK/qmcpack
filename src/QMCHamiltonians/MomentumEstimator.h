@@ -77,6 +77,9 @@ namespace qmcplusplus
     Vector<RealType> compQ;
     /// print to hdf5 or scalar.dat
     bool hdf5_out;
+    
+    vector<vector<int> > mappedQtoK;
+    vector<int> mappedQnorms;
   };
 
 }
