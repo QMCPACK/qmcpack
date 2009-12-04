@@ -46,7 +46,7 @@ namespace qmcplusplus {
     return psi;
   }
 
-  OrbitalBase::ValueType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
+  OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
       , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     //TO JEREMY: implement using evaluateLog for each slater determinant

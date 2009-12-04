@@ -71,7 +71,7 @@ namespace qmcplusplus
                ,ParticleSet::ParticleGradient_t& G
                ,ParticleSet::ParticleLaplacian_t& L);
 
-      ValueType
+      RealType
       evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
                   , ParticleSet::ParticleGradient_t& G
                   , ParticleSet::ParticleLaplacian_t& L);
