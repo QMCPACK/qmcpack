@@ -236,8 +236,10 @@ namespace qmcplusplus
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
               lineoptimization();
               
+              if ((dopt*std::abs(Lambda)>bigChange)&&(stability==0)&&(tries==0))
+              lineoptimization2();
               dopt *= std::abs(Lambda);
-              
+                
               if ( (Lambda==Lambda)&&(dopt<bigChange))
               {
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
@@ -267,8 +269,8 @@ namespace qmcplusplus
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
             currentParameters=bestParameters;
             LastDirections.push_back(BestDirection);
-            app_log()<< " Wave Function Parameters updated."<<endl;
-            optTarget->reportParameters();
+//             app_log()<< " Wave Function Parameters updated."<<endl;
+//             optTarget->reportParameters();
           }
           else
           {
