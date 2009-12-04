@@ -38,7 +38,7 @@ namespace qmcplusplus
     void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
-    bool putSpecial(xmlNodePtr cur, ParticleSet& elns);
+    bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);
     bool put(xmlNodePtr cur){ return false;};
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);

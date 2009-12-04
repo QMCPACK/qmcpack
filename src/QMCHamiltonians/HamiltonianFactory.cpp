@@ -436,7 +436,8 @@ namespace qmcplusplus {
           }
           TrialWaveFunction *psi=(*psi_it).second->targetPsi;
 	  MomentumEstimator* ME = new MomentumEstimator(*targetPtcl, *psi);
-	  ME->putSpecial(cur,*targetPtcl);
+    bool rt(myComm->rank()==0);
+	  ME->putSpecial(cur,*targetPtcl,rt);
 	  targetH->addOperator(ME,"MomentumEstimator",false);
 	}
       } 

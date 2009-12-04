@@ -171,7 +171,7 @@ namespace qmcplusplus
       }
   }
 
-  bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns)
+  bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode)
   {
     string ctype("scalar");
     OhmmsAttributeSet pAttrib;
@@ -271,7 +271,7 @@ namespace qmcplusplus
       }
     }
     mappedQnorms[0]=3;
-    
+    if (rootNode){
     RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
     string fname="Kpoints.dat";
     ofstream fout(fname.c_str());
@@ -284,7 +284,7 @@ namespace qmcplusplus
         <<khere<<" "<<ktoqmap[i]<<" "<<khere/KF<<endl;
       }
     fout.close();
-    
+    }
     
 
     kids=cur->children;
@@ -299,19 +299,20 @@ namespace qmcplusplus
             pAttrib.put(kids);
             if (ctype=="auto")
               {
-                fname="Qpoints.dat";
+                if (rootNode){
+                string fname="Qpoints.dat";
                 ofstream qout(fname.c_str());
                 qout.setf(ios::scientific, ios::floatfield);
                 qout << "# magQ            nKthisQ" << endl;
                 set<float>::iterator it;
-                qindx=0;
-                for (it=qvalues.begin(); it!=qvalues.end(); it++)
-                  qout << *it << " "<< mappedQnorms[qindx++]<<endl;
+                int qindx=0;
+                for (q_it=qvalues.begin(); q_it!=qvalues.end(); q_it++)
+                  qout << *q_it << " "<< mappedQnorms[qindx++]<<endl;
                 qout.close();
-                
+                }
                 Q.resize(qvalues.size());
                 qindx=0;
-                for (it=qvalues.begin(); it!=qvalues.end(); it++) Q[qindx++] = *it;
+                for (q_it=qvalues.begin(); q_it!=qvalues.end(); q_it++) Q[qindx++] = *q_it;
                 
                 vector<vector<int> > allincludedk;
                 for (int i=0;i<kPoints.size();i++)
@@ -330,7 +331,7 @@ namespace qmcplusplus
                 mappedQtoK.resize(qvalues.size());
                 for (int i=0;i<allincludedk.size();i++) mappedQtoK[ktoqmap[i]].insert(mappedQtoK[ktoqmap[i]].end(),allincludedk[i].begin(),allincludedk[i].end());
                 
-                
+    if (rootNode){            
     string QKname="mappedPoints.dat";
     ofstream dout(QKname.c_str());
     dout.setf(ios::scientific, ios::floatfield);
@@ -342,7 +343,7 @@ namespace qmcplusplus
         dout<<endl;
       }
     dout.close();
-    
+    }
                 
                 }
           }
