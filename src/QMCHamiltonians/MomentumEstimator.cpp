@@ -51,6 +51,7 @@ namespace qmcplusplus
     for (int s=0; s<M; ++s)
       {
         PosType newpos;
+        
         for (int i=0; i<OHMMS_DIM;++i) newpos[i]=myRNG();
         //make it cartesian
         newpos=Lattice.toCart(newpos);
@@ -58,32 +59,22 @@ namespace qmcplusplus
         refPsi.get_ratios(P,psi_ratios);
         P.rejectMove(0); //restore P.R[0] to the orginal position
 
-        ////debug get_ratios with ratio, use it whenever an OrbitalBase implements get_ratios
-        //vector<RealType> r_org(np);
-        //for(int i=0; i<np; ++i)
-        //{
-        //  PosType delta=newpos-P.R[i];
-        //  P.makeMove(i,delta);
-        //  r_org[i]=refPsi.ratio(P,i);
-        //  P.rejectMove(i);
-        //  cout << "ratio("<<i<<")=" << r_org[i] << " diff=" << r_org[i]-psi_ratios[i] << endl;
-        //}
-        //APP_ABORT("Done with test");
-
         for (int ik=0; ik < kPoints.size(); ++ik)
           {
-            RealType kdotp_primed=dot(kPoints[ik],newpos);
-            for (int i=0; i<np; ++i) kdotp[i]=kdotp_primed-dot(kPoints[ik],P.R[i]);
+//             RealType kdotp_primed=dot(kPoints[ik],newpos);
+//             for (int i=0; i<np; ++i) kdotp[i]=kdotp_primed-dot(kPoints[ik],P.R[i]);
             //this is the same
-            //for(int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1);
+            for(int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1);
             eval_e2iphi(np,kdotp.data(),phases.data());
             nofK[ik]+=real(BLAS::dot(np,phases.data(),psi_ratios.data()));
+//             nofK[ik]+=real(BLAS::dot(np,phases.data(),phases.data()));
+//             nofK[ik]+= (BLAS::dot(np,psi_ratios.data(),psi_ratios.data()));
           }
           
          for (int iq=0; iq < Q.size(); ++iq)
            for (int i=0; i<mappedQtoK[iq].size(); ++i)
            {
-             compQ[iq]+=nofK[mappedQtoK[iq][i]];
+             compQ[iq] += nofK[mappedQtoK[iq][i]];
            }
 
 
@@ -230,15 +221,15 @@ namespace qmcplusplus
 //               }
 
             app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
-            for (int i=-kgrid;i<kgrid+1;i++) for (int j=-kgrid;j<kgrid+1;j++) for (int k=-kgrid;k<kgrid+1;k++)
+            for (int i=-kgrid;i<(kgrid+1);i++) for (int j=-kgrid;j<(kgrid+1);j++) for (int k=-kgrid;k<(kgrid+1);k++)
                   {
-                    if(std::sqrt(i*i+j*j+k*k)<kgrid)
+                    if(std::sqrt(i*i+j*j+k*k)<=kgrid)
                     {
                      PosType kpt;
                      kpt[0]=RealType(i)*BasisMatrix(0,0)+RealType(j)*BasisMatrix(1,0)+RealType(k)*BasisMatrix(2,0);
                      kpt[1]=RealType(i)*BasisMatrix(0,1)+RealType(j)*BasisMatrix(1,1)+RealType(k)*BasisMatrix(2,1);
                      kpt[2]=RealType(i)*BasisMatrix(0,2)+RealType(j)*BasisMatrix(1,2)+RealType(k)*BasisMatrix(2,2);
-                     for (int l=0;l<3;l++) kpt[l]=2.0*M_PI*kpt[l];
+                     for (int l=0;l<3;l++) kpt[l] *= 2.0*M_PI;
                      kPoints.push_back(kpt);
                      kWeights.push_back(1);
                     }
@@ -248,30 +239,22 @@ namespace qmcplusplus
         kids=kids->next;
       }
 
-    vector<std::pair<RealType,int> > mappedKpoints;
-    RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
-    string fname="Kpoints.dat";
-    ofstream fout(fname.c_str());
-    fout.setf(ios::scientific, ios::floatfield);
-    fout << "# kx  ky  kz  mag_k   koverk_f" << endl;
+    vector<std::pair<float,int> > mappedKpoints;
     for (int i=0;i<kPoints.size();i++)
       {
-        RealType khere(std::sqrt(dot(kPoints[i],kPoints[i])));
-        fout<<kPoints[i][0]<<" "<<kPoints[i][1]<<" "<<kPoints[i][2]<<" "
-        <<khere<<" "<<khere/KF<<endl;
-        std::pair<RealType,int> kh(khere,i);
+        float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
+        std::pair<float,int> kh(khere,i);
         mappedKpoints.push_back(kh);
       }
-    fout.close();
     std::sort(mappedKpoints.begin(),mappedKpoints.end());
     
-    set<RealType> qvalues;
+    set<float> qvalues;
     for (int i=0;i<mappedKpoints.size();i++) qvalues.insert(mappedKpoints[i].first);
     mappedQnorms.resize(qvalues.size());
     
     vector<int> ktoqmap(mappedKpoints.size());
     int qindx(0);
-    set<RealType>::iterator q_it(qvalues.begin());
+    set<float>::iterator q_it(qvalues.begin());
     for (int i=0;i<mappedKpoints.size();i++)
     {
       if (mappedKpoints[i].first == *q_it )
@@ -288,6 +271,20 @@ namespace qmcplusplus
       }
     }
     mappedQnorms[0]=3;
+    
+    RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
+    string fname="Kpoints.dat";
+    ofstream fout(fname.c_str());
+    fout.setf(ios::scientific, ios::floatfield);
+    fout << "# kx  ky  kz  mag_k   mappedQ   koverk_f" << endl;
+    for (int i=0;i<kPoints.size();i++)
+      {
+        float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
+        fout<<kPoints[i][0]<<" "<<kPoints[i][1]<<" "<<kPoints[i][2]<<" "
+        <<khere<<" "<<ktoqmap[i]<<" "<<khere/KF<<endl;
+      }
+    fout.close();
+    
     
 
     kids=cur->children;
@@ -306,15 +303,15 @@ namespace qmcplusplus
                 ofstream qout(fname.c_str());
                 qout.setf(ios::scientific, ios::floatfield);
                 qout << "# magQ            nKthisQ" << endl;
-                set<RealType>::iterator it;
+                set<float>::iterator it;
                 qindx=0;
                 for (it=qvalues.begin(); it!=qvalues.end(); it++)
                   qout << *it << " "<< mappedQnorms[qindx++]<<endl;
                 qout.close();
                 
                 Q.resize(qvalues.size());
-                int iq=0;
-                for (it=qvalues.begin(); it!=qvalues.end(); it++) Q[iq++] = *it;
+                qindx=0;
+                for (it=qvalues.begin(); it!=qvalues.end(); it++) Q[qindx++] = *it;
                 
                 vector<vector<int> > allincludedk;
                 for (int i=0;i<kPoints.size();i++)
@@ -332,6 +329,21 @@ namespace qmcplusplus
                   
                 mappedQtoK.resize(qvalues.size());
                 for (int i=0;i<allincludedk.size();i++) mappedQtoK[ktoqmap[i]].insert(mappedQtoK[ktoqmap[i]].end(),allincludedk[i].begin(),allincludedk[i].end());
+                
+                
+    string QKname="mappedPoints.dat";
+    ofstream dout(QKname.c_str());
+    dout.setf(ios::scientific, ios::floatfield);
+    dout << "#q  kx  ky  kz" << endl;
+    for (int i=0;i<qvalues.size();i++)
+      {
+        dout<<i<<", "<<mappedQnorms[i]<<":  ";
+        for(int j=0;j<mappedQtoK[i].size();j++) dout<<mappedQtoK[i][j]<<" ";
+        dout<<endl;
+      }
+    dout.close();
+    
+                
                 }
           }
         kids=kids->next;
@@ -366,6 +378,7 @@ namespace qmcplusplus
     myclone->mappedQtoK=mappedQtoK;
     myclone->mappedQnorms=mappedQnorms;
     myclone->M=M;
+    
     return myclone;
   }
 

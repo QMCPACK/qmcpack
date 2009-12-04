@@ -1038,14 +1038,22 @@ namespace qmcplusplus
                 
                 if (l==0){
                   identityValues=values;
-                  for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*values[SPONumbers[n]]*values[SPONumbers[n]];
+                  #if defined(QMC_COMPLEX)
+                  for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*real(values[SPONumbers[n]]*values[SPONumbers[n]]);
+                  #else
+                  for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*(values[SPONumbers[n]]*values[SPONumbers[n]]);
+                  #endif defined(QMC_COMPLEX)
                 }
                 
                 //now we have phi evaluated at the rotated/inverted/whichever coordinates
                 for(int n=0;n<Nrotated;n++) 
                 {
                   int N=SPONumbers[n];
-                  RealType phi2 = values[N]*identityValues[N];
+                  #if defined(QMC_COMPLEX)
+                  RealType phi2 = real(values[N]*identityValues[N]);
+                  #else
+                  RealType phi2 = (values[N]*identityValues[N]);
+                  #endif defined(QMC_COMPLEX)
                   SymmetryOrbitalValues(n,l) += phi2;
                 }
                 
@@ -1053,7 +1061,11 @@ namespace qmcplusplus
                 {
                   int N=SPONumbers[n];
                   int P=SPONumbers[p];
+                  #if defined(QMC_COMPLEX)
+                  orthoProjs(n,p) += 0.5*real(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
+                  #else
                   orthoProjs(n,p) += 0.5*(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
+                  #endif defined(QMC_COMPLEX)
                 }
           }
       }
