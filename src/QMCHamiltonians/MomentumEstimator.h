@@ -44,7 +44,7 @@ namespace qmcplusplus
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
     void setRandomGenerator(RandomGenerator_t* rng);
     //resize the internal data by input k-point list
-    void resize(const vector<PosType>& kin,const vector<RealType>& qin,const vector<int>& win);
+    void resize(const vector<PosType>& kin,const vector<RealType>& qin);
     ///number of samples
     int M;
     ///normalization factor for n(k)
@@ -78,8 +78,10 @@ namespace qmcplusplus
     /// print to hdf5 or scalar.dat
     bool hdf5_out;
     
-    vector<vector<int> > mappedQtoK;
-    vector<int> mappedQnorms;
+    vector<vector<int> > mappedQtonofK;
+    vector<vector<int> > mappednofKtoK;
+    vector<RealType> mappedQnorms;
+    vector<RealType> mappedKnorms;
   };
 
 }
