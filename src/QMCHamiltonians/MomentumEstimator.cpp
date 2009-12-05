@@ -28,7 +28,7 @@ namespace qmcplusplus
   {
 
   MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-      :M(4), refPsi(psi), kgrid(4), Lattice(elns.Lattice), norm_nofK(1)
+      :M(4), refPsi(psi), kgrid(4), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
   {
     UpdateMode.set(COLLECTABLE,1);
     psi_ratios.resize(elns.getTotalNum());
@@ -447,7 +447,7 @@ namespace qmcplusplus
     for(int i=0;i<mappedQtonofK.size();i++) myclone->mappedQtonofK[i]=mappedQtonofK[i];
     myclone->mappednofKtoK.resize(mappednofKtoK.size());
     for(int i=0;i<mappednofKtoK.size();i++) myclone->mappednofKtoK[i]=mappednofKtoK[i];
-
+    myclone->hdf5_out=hdf5_out;
     myclone->mappedQnorms=mappedQnorms;
     myclone->mappedKnorms=mappedKnorms;
 
