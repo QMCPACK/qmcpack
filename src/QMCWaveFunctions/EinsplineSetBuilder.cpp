@@ -782,13 +782,18 @@ namespace qmcplusplus {
     //////////////////////////////////
     // Create the OrbitalSet object //
     //////////////////////////////////
-    if (HaveLocalizedOrbs) 
+    if (HaveLocalizedOrbs)
       OrbitalSet = new EinsplineSetLocal;
     else if (UseRealOrbitals)
-      OrbitalSet = new EinsplineSetExtended<double>;
+    {
+      app_log() << "!!!!!!! Creating EinsplineSetExtended<double>" << endl;
+      OrbitalSet = new EinsplineSetExtended<double> ;
+    }
     else
-      OrbitalSet = new EinsplineSetExtended<complex<double> >;
-
+    {
+      app_log() << "!!!!!!! Creating EinsplineSetExtended<complex<double> >" << endl;
+      OrbitalSet = new EinsplineSetExtended<complex<double> > ;
+    }
     /////////////////////////
     // Setup internal data //
     /////////////////////////
@@ -2279,8 +2284,10 @@ namespace qmcplusplus {
 	  }
 	  else {
 	    string psiGname = path.str() + "psi_g"; 
-	    Vector<complex<double> > cG;
-	    HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+            Array<complex<double>,1> cG;
+	    HDFAttribIO<Array<complex<double>,1> >  h_cG(cG);
+	    //Vector<complex<double> > cG;
+	    //HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
 	    h_cG.read (H5FileID, psiGname.c_str());
 	    assert (cG.size() == Gvecs[ti].size());
 	    FFTbox = complex<double>();
@@ -2289,7 +2296,7 @@ namespace qmcplusplus {
 	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
 	      index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
 	      index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
-	      FFTbox(index[0], index[1], index[2]) = cG[iG];
+	      FFTbox(index[0], index[1], index[2]) = cG(iG);//cG[iG];
 	    }
 	    fftw_execute (FFTplan);
 	    // Now, rotate the phase of the orbitals so that neither
