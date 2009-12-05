@@ -298,13 +298,27 @@ IF(QMC_MPI)
   #  LINK_LIBRARIES("/usr/lib/libbfd.a")
   #  LINK_LIBRARIES("/usr/lib/libiberty.a")
   #ENDIF(MPIP_PROFILE)
-
   include(FindMPI)
 
   IF(MPI_FOUND)
-    SET(HAVE_MPI 1)
-    SET(HAVE_OOMPI 1)
-    LINK_LIBRARIES(${MPI_LIBRARY})
+    MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
+    FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx 
+      "#include <mpi.h>"
+      "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
+    TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR} 
+      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
+      OUTPUT_VARIABLE OUTPUT)
+    IF(MPI_WORKS)
+      MESSAGE(STATUS "MPI is enabled")
+      SET(HAVE_MPI 1)
+      SET(HAVE_OOMPI 1)
+      LINK_LIBRARIES(${MPI_LIBRARY})
+    ELSE(MPI_WORKS)
+      MESSAGE(STATUS "MPI is disabled")
+      SET(HAVE_MPI 0)
+      SET(HAVE_OOMPI 0)
+    ENDIF(MPI_WORKS)
+
   ENDIF(MPI_FOUND)
 
 ENDIF(QMC_MPI)
