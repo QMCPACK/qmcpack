@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
+#include <fftw3.h>
 
 class Communicate;
 
@@ -154,6 +155,7 @@ namespace qmcplusplus {
     bool HaveLocalizedOrbs;
     bool ReadOrbitalInfo ();
     bool ReadOrbitalInfo_ESHDF ();
+    void ReadGvectors_ESHDF();
     void BroadcastOrbitalInfo();
 
 
@@ -161,6 +163,11 @@ namespace qmcplusplus {
     UnitCellType SuperCell, PrimCell, PrimCellInv;
     int NumBands, NumElectrons, NumSpins, NumTwists, 
       NumCoreStates;
+    RealType MeshFactor;
+    TinyVector<int,3> MeshSize;
+    vector<vector<TinyVector<int,3> > > Gvecs;
+    fftw_plan FFTplan;
+    Array<complex<double>,3> FFTbox;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
     /////////////////////////////

@@ -42,7 +42,8 @@ namespace qmcplusplus {
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), 
       NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
       ParticleSets(psets), TargetPtcl(p), H5FileID(-1),
-      Format(QMCPACK), makeRotations(false)
+      Format(QMCPACK), makeRotations(false), MeshFactor(1.0),
+      MeshSize(0,0,0)
   {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
@@ -2018,10 +2019,10 @@ namespace qmcplusplus {
                   
                   ostringstream path;
                   path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-                  string psiName = path.str() + "psi_r";
+                  string psirName = path.str() + "psi_r";
                   
                   HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
-                  h_splineData.read(H5FileID, psiName.c_str());
+                  h_splineData.read(H5FileID, psirName.c_str());
                   if ((splineData.size(0) != nx) ||
                     (splineData.size(1) != ny) ||
                     (splineData.size(2) != nz)) {
@@ -2053,10 +2054,10 @@ namespace qmcplusplus {
           
           ostringstream path;
           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-          string psiName = path.str() + "psi_r";
+          string psirName = path.str() + "psi_r";
           
           HDFAttribIO<Array<complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
-          h_splineData.write(H5FileID, psiName.c_str());
+          h_splineData.write(H5FileID, psirName.c_str());
         }
         
 //      for (int i=0;i<rotatedOrbitals.size();i++){
@@ -2066,10 +2067,10 @@ namespace qmcplusplus {
 //           
 //           ostringstream path;
 //           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-//           string psiName = path.str() + "psi_r";
+//           string psirName = path.str() + "psi_r";
 //           
 //           HDFAttribIO<Array<complex<double>,3> >  h_splineData(allOriginalSplines[i]);
-//           h_splineData.read(H5FileID, psiName.c_str()); 
+//           h_splineData.read(H5FileID, psirName.c_str()); 
 //         } 
         
         
@@ -2079,9 +2080,44 @@ namespace qmcplusplus {
   } 
 
   void
+  EinsplineSetBuilder::ReadGvectors_ESHDF()
+  {
+    int numk;
+    HDFAttribIO<int> h_numk(numk);
+    h_numk.read (H5FileID, "/electrons/number_of_kpoints");
+    //    std::set<TinyVector<int,3> > Gset;
+    // Read k-points for all G-vectors and take the union
+    TinyVector<int,3> maxIndex(0,0,0);
+    Gvecs.resize(numk);
+    for (int ik=0; ik<numk; ik++) {
+      // ostringstream numGpath;
+      // HDFAttribIO<int> h_numg(numG);
+      // int numG=0;
+      // numGpath << "/electrons/kpoint_" << ik << "/number_of_gvectors";
+
+      ostringstream Gpath;
+      Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
+      HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
+      h_Gvecs.read (H5FileID, Gpath.str().c_str());
+      for (int ig=0; ig<Gvecs[ik].size(); ig++) {
+	maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[ik][ig][0]));
+	maxIndex[1] = std::max(maxIndex[1], std::abs(Gvecs[ik][ig][1]));
+	maxIndex[2] = std::max(maxIndex[2], std::abs(Gvecs[ik][ig][2]));
+      }
+      // for (int ig=0; ig<Gvecs.size(); ig++)
+      // 	if (Gset.find(Gvecs[ig]) == Gset.end())
+      // 	  Gset.insert(Gvecs[ig]);
+    }
+    MeshSize[0] = (int)std::ceil(4.0*MeshFactor*maxIndex[0]);
+    MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
+    MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
+  }
+
+  void
   EinsplineSetBuilder::ReadBands_ESHDF
   (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
   {
+    cerr << "In ReadBandsESHDF.\n";
     bool root = myComm->rank()==0;
     // bcast other stuff
     myComm->bcast (NumDistinctOrbitals);
@@ -2099,6 +2135,7 @@ namespace qmcplusplus {
     orbitalSet->eikr.resize(N);
     orbitalSet->NumValenceOrbs = NumValenceOrbs;
     orbitalSet->NumCoreOrbs    = NumCoreOrbs;
+
     // Read in k-points
     int numOrbs = orbitalSet->getOrbitalSetSize();
     int num = 0;
@@ -2120,16 +2157,36 @@ namespace qmcplusplus {
     
     int nx, ny, nz, bi, ti;
     Array<complex<double>,3> splineData;
-    TinyVector<int,3> mesh;
-
+    MeshSize = TinyVector<int,3>(0,0,0);
     // Find the orbital mesh size
     if (root) {
-      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
+      HDFAttribIO<TinyVector<int,3> > h_mesh(MeshSize);
       h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
       h_mesh.read (H5FileID, "/electrons/mesh");
     }
-    myComm->bcast(mesh);
-    nx=mesh[0]; ny=mesh[1]; nz=mesh[2];
+    cerr << "MeshSize = (" << MeshSize[0] << ", " 
+	 << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+    // HACK HACK HACK
+    //bool havePsir = false;//MeshSize[0] != 0;
+    bool havePsir = MeshSize[0] != 0;
+    cerr << "havePsir = " << havePsir << endl;
+    myComm->bcast(havePsir);
+    if (!havePsir && root) 
+      ReadGvectors_ESHDF();
+    myComm->bcast(MeshSize);
+    if (!havePsir) {
+      FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
+      FFTplan = fftw_plan_dft_3d 
+	(MeshSize[0], MeshSize[1], MeshSize[2],
+	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
+	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
+	 +1, FFTW_MEASURE);
+    }
+
+    cerr << "MeshSize = " << MeshSize << endl;
+
+    myComm->bcast(MeshSize);
+    nx=MeshSize[0]; ny=MeshSize[1]; nz=MeshSize[2];
     splineData.resize(nx,ny,nz);
 
     Ugrid x_grid, y_grid, z_grid;
@@ -2181,6 +2238,8 @@ namespace qmcplusplus {
 
     EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
 
+    
+
 
     while (iorb < N) {
       bool isCore;
@@ -2203,18 +2262,65 @@ namespace qmcplusplus {
 		   ti, bi, e, k[0], k[1], k[2], myComm->rank());
 
 	  ostringstream path;
-	  path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-	  string psiName = path.str() + "psi_r";
-
-	  HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
-	  h_splineData.read(H5FileID, psiName.c_str());
-	  if ((splineData.size(0) != nx) ||
-	      (splineData.size(1) != ny) ||
-	      (splineData.size(2) != nz)) {
-	    fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
-	    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
-	    abort();
+	  path << "/electrons/kpoint_" << ti << "/spin_" << spin 
+	       << "/state_" << bi << "/";
+	  if (havePsir) {
+	    string psirName = path.str() + "psi_r";
+	    
+	    HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
+	    h_splineData.read(H5FileID, psirName.c_str());
+	    if ((splineData.size(0) != nx) ||
+		(splineData.size(1) != ny) ||
+		(splineData.size(2) != nz)) {
+	      fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+	      fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+	      abort();
+	    }
 	  }
+	  else {
+	    string psiGname = path.str() + "psi_g"; 
+	    Vector<complex<double> > cG;
+	    HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+	    h_cG.read (H5FileID, psiGname.c_str());
+	    assert (cG.size() == Gvecs[ti].size());
+	    FFTbox = complex<double>();
+	    for (int iG=0; iG<cG.size(); iG++) {
+	      TinyVector<int,3> index = Gvecs[ti][iG];
+	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
+	      index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
+	      index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
+	      FFTbox(index[0], index[1], index[2]) = cG[iG];
+	    }
+	    fftw_execute (FFTplan);
+	    // Now, rotate the phase of the orbitals so that neither
+	    // the real part nor the imaginary part are very near
+	    // zero.  This sometimes happens in crystals with high
+	    // symmetry at special k-points.
+	    double rNorm=0.0, iNorm=0.0;
+	    for (int ix=0; ix<nx; ix++)
+	      for (int iy=0; iy<ny; iy++)
+		for (int iz=0; iz<nz; iz++) {
+		  complex<double> z = FFTbox(ix,iy,iz);
+		  rNorm += z.real()*z.real();
+		  iNorm += z.imag()*z.imag();
+		}
+	    double arg = std::atan2(iNorm, rNorm);
+	    // cerr << "Phase = " << arg/M_PI << " pi.\n";
+	    double s,c;
+	    sincos(0.25*M_PI-arg, &s, &c);
+	    complex<double> phase(c,s);
+	    rNorm=0.0; iNorm=0.0;
+	    for (int ix=0; ix<nx; ix++)
+	      for (int iy=0; iy<ny; iy++)
+		for (int iz=0; iz<nz; iz++) {
+		  complex<double> z = 
+		    splineData(ix,iy,iz) = phase*FFTbox(ix,iy,iz);
+		  rNorm += z.real()*z.real();
+		  iNorm += z.imag()*z.imag();
+		}
+	    arg = std::atan2(iNorm, rNorm);
+	  }
+	  
 	}
 	myComm->bcast(splineData);
 	myComm->bcast(twist);
@@ -2448,11 +2554,11 @@ namespace qmcplusplus {
 
 	  ostringstream path;
 	  path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-	  string psiName = path.str() + "psi_r";
+	  string psirName = path.str() + "psi_r";
 
 	  if (isComplex) {
 	    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
-	    h_rawData.read(H5FileID, psiName.c_str());
+	    h_rawData.read(H5FileID, psirName.c_str());
 	    if ((rawData.size(0) != nx) ||
 		(rawData.size(1) != ny) ||
 		(rawData.size(2) != nz)) {
@@ -2479,7 +2585,7 @@ namespace qmcplusplus {
 	  }
 	  else {
 	    HDFAttribIO<Array<double,3> >  h_splineData(splineData);
-	    h_splineData.read(H5FileID, psiName.c_str());
+	    h_splineData.read(H5FileID, psirName.c_str());
 	    if ((splineData.size(0) != nx) ||
 		(splineData.size(1) != ny) ||
 		(splineData.size(2) != nz)) {
@@ -2534,10 +2640,10 @@ namespace qmcplusplus {
 		ostringstream path;
 		path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/"
 		     << "dpsi_" << ion << "_" << dim << "_r";
-		string psiName = path.str();
+		string psirName = path.str();
 		if (isComplex) {
 		  HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
-		  h_rawData.read(H5FileID, psiName.c_str());
+		  h_rawData.read(H5FileID, psirName.c_str());
 		  if ((rawData.size(0) != nx) ||
 		      (rawData.size(1) != ny) ||
 		      (rawData.size(2) != nz)) {
@@ -2564,7 +2670,7 @@ namespace qmcplusplus {
 		}
 		else {
 		  HDFAttribIO<Array<double,3> >  h_splineData(splineData);
-		  h_splineData.read(H5FileID, psiName.c_str());
+		  h_splineData.read(H5FileID, psirName.c_str());
 		  if ((splineData.size(0) != nx) ||
 		      (splineData.size(1) != ny) ||
 		      (splineData.size(2) != nz)) {
