@@ -5,7 +5,7 @@ echo '  To build qmcpack, cmake, lapack/blas, hdf5 and boost are required.'
 echo '  Check http://code.google.com/p/qmcpack/wiki/BuildingPackage'
 echo
 
-tcmake=`which tccmake`
+tcmake=`which cmake`
 if test $tcmake; then
   echo '  cd build; cmake ..; make'
   cd build; cmake ..; make
