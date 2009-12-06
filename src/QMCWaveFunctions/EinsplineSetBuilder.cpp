@@ -2122,7 +2122,6 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands_ESHDF
   (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
   {
-    cerr << "In ReadBandsESHDF.\n";
     bool root = myComm->rank()==0;
     // bcast other stuff
     myComm->bcast (NumDistinctOrbitals);
@@ -2169,17 +2168,12 @@ namespace qmcplusplus {
       h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
       h_mesh.read (H5FileID, "/electrons/mesh");
     }
-    cerr << "MeshSize = (" << MeshSize[0] << ", " 
-	 << MeshSize[1] << ", " << MeshSize[2] << ")\n";
     // HACK HACK HACK
     //bool havePsir = false;//MeshSize[0] != 0;
     bool havePsir = MeshSize[0] != 0;
-    cerr << "havePsir = " << havePsir << endl;
     myComm->bcast(havePsir);
-    if (!havePsir && root) 
+    if (!havePsir && root) {
       ReadGvectors_ESHDF();
-    myComm->bcast(MeshSize);
-    if (!havePsir) {
       FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
       FFTplan = fftw_plan_dft_3d 
 	(MeshSize[0], MeshSize[1], MeshSize[2],
@@ -2187,10 +2181,11 @@ namespace qmcplusplus {
 	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
 	 +1, FFTW_MEASURE);
     }
-
-    cerr << "MeshSize = " << MeshSize << endl;
-
     myComm->bcast(MeshSize);
+
+    app_log() << "MeshSize = (" << MeshSize[0] << ", " 
+	      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+
     nx=MeshSize[0]; ny=MeshSize[1]; nz=MeshSize[2];
     splineData.resize(nx,ny,nz);
 
@@ -2284,10 +2279,10 @@ namespace qmcplusplus {
 	  }
 	  else {
 	    string psiGname = path.str() + "psi_g"; 
-            Array<complex<double>,1> cG;
-	    HDFAttribIO<Array<complex<double>,1> >  h_cG(cG);
-	    //Vector<complex<double> > cG;
-	    //HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+            // Array<complex<double>,1> cG;
+	    // HDFAttribIO<Array<complex<double>,1> >  h_cG(cG);
+	    Vector<complex<double> > cG;
+	    HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
 	    h_cG.read (H5FileID, psiGname.c_str());
 	    assert (cG.size() == Gvecs[ti].size());
 	    FFTbox = complex<double>();
@@ -2296,7 +2291,7 @@ namespace qmcplusplus {
 	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
 	      index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
 	      index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
-	      FFTbox(index[0], index[1], index[2]) = cG(iG);//cG[iG];
+	      FFTbox(index[0], index[1], index[2]) = cG[iG];
 	    }
 	    fftw_execute (FFTplan);
 	    // Now, rotate the phase of the orbitals so that neither
@@ -2465,16 +2460,32 @@ namespace qmcplusplus {
     int nx, ny, nz, bi, ti;
     Array<complex<double>,3> rawData;
     Array<double,3>         splineData;
-    TinyVector<int,3> mesh;
 
     // Find the orbital mesh size
     if (root) {
-      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
-      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
-      h_mesh.read (H5FileID, "/electrons/mesh");
+      HDFAttribIO<TinyVector<int,3> > h_MeshSize(MeshSize);
+      h_MeshSize.read (H5FileID, "/electrons/psi_r_mesh");
+      h_MeshSize.read (H5FileID, "/electrons/mesh");
     }
-    myComm->bcast(mesh);
-    nx=mesh[0]; ny=mesh[1]; nz=mesh[2];
+    // HACK HACK HACK
+    //bool havePsir = MeshSize[0] != 0;
+    bool havePsir = false;
+    myComm->bcast(havePsir);
+    if (!havePsir && root) {
+      app_log() << "Reading plane-wave coefficients.\n";
+      ReadGvectors_ESHDF();
+      FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
+      FFTplan = fftw_plan_dft_3d 
+	(MeshSize[0], MeshSize[1], MeshSize[2],
+	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
+	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
+	 +1, FFTW_MEASURE);
+    }
+    myComm->bcast(MeshSize);
+    app_log() << "MeshSize = (" << MeshSize[0] << ", " 
+	      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+
+    nx=MeshSize[0]; ny=MeshSize[1]; nz=MeshSize[2];
     splineData.resize(nx,ny,nz);
 
     Ugrid x_grid, y_grid, z_grid;
@@ -2547,7 +2558,7 @@ namespace qmcplusplus {
 	app_error() << "Core states not supported by ES-HDF yet.\n";
 	abort();
       }
-      else {
+      else { // not core
 	PosType twist;
 	if (root) {
 	  int ti   = SortBands[iorb].TwistIndex;
@@ -2561,52 +2572,98 @@ namespace qmcplusplus {
 
 	  ostringstream path;
 	  path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-	  string psirName = path.str() + "psi_r";
+	  if (havePsir) {
+	    string psirName = path.str() + "psi_r";
 
-	  if (isComplex) {
-	    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
-	    h_rawData.read(H5FileID, psirName.c_str());
-	    if ((rawData.size(0) != nx) ||
-		(rawData.size(1) != ny) ||
-		(rawData.size(2) != nz)) {
-	      fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
-	      fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
-	      abort();
-	    }
-	    PosType ru;
-	    for (int ix=0; ix<nx; ix++) {
-	      ru[0] = (RealType)ix / (RealType)nx;
-	      for (int iy=0; iy<ny; iy++) {
-		ru[1] = (RealType)iy / (RealType)ny;
-		for (int iz=0; iz<nz; iz++) {
-		  ru[2] = (RealType)iz / (RealType)nz;
-		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
-		  double s, c;
-		  sincos(phi, &s, &c);
-		  complex<double> phase(c,s);
-		  complex<double> z = phase*rawData(ix,iy,iz);
-		  splineData(ix,iy,iz) = z.real();
+	    if (isComplex) {
+	      HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+	      h_rawData.read(H5FileID, psirName.c_str());
+	      if ((rawData.size(0) != nx) ||
+		  (rawData.size(1) != ny) ||
+		  (rawData.size(2) != nz)) {
+		fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+		fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+		abort();
+	      }
+	      PosType ru;
+	      for (int ix=0; ix<nx; ix++) {
+		ru[0] = (RealType)ix / (RealType)nx;
+		for (int iy=0; iy<ny; iy++) {
+		  ru[1] = (RealType)iy / (RealType)ny;
+		  for (int iz=0; iz<nz; iz++) {
+		    ru[2] = (RealType)iz / (RealType)nz;
+		    double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+		    double s, c;
+		    sincos(phi, &s, &c);
+		    complex<double> phase(c,s);
+		    complex<double> z = phase*rawData(ix,iy,iz);
+		    splineData(ix,iy,iz) = z.real();
+		  }
 		}
 	      }
 	    }
-	  }
-	  else {
-	    HDFAttribIO<Array<double,3> >  h_splineData(splineData);
-	    h_splineData.read(H5FileID, psirName.c_str());
-	    if ((splineData.size(0) != nx) ||
-		(splineData.size(1) != ny) ||
-		(splineData.size(2) != nz)) {
-	      fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
-	      fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
-	      abort();
+	    else { // Data in HDF5 file is not complex
+	      HDFAttribIO<Array<double,3> >  h_splineData(splineData);
+	      h_splineData.read(H5FileID, psirName.c_str());
+	      if ((splineData.size(0) != nx) ||
+		  (splineData.size(1) != ny) ||
+		  (splineData.size(2) != nz)) {
+		fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+		fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+		abort();
+	      }
 	    }
+	  }
+	  else {  // Don't have psi_r
+	    string psiGname = path.str() + "psi_g"; 
+	    Vector<complex<double> > cG;
+	    HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+	    h_cG.read (H5FileID, psiGname.c_str());
+	    assert (cG.size() == Gvecs[ti].size());
+	    FFTbox = complex<double>();
+	    for (int iG=0; iG<cG.size(); iG++) {
+	      TinyVector<int,3> index = Gvecs[ti][iG];
+	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
+	      index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
+	      index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
+	      FFTbox(index[0], index[1], index[2]) = cG[iG];
+	    }
+	    fftw_execute (FFTplan);
+	    // First, add the eikr phase factor.
+	    // Then, rotate the phase of the orbitals so that neither
+	    // the real part nor the imaginary part are very near
+	    // zero.  This sometimes happens in crystals with high
+	    // symmetry at special k-points.
+	    double rNorm=0.0, iNorm=0.0;
+	    PosType ru;
+	    for (int ix=0; ix<nx; ix++)
+	      for (int iy=0; iy<ny; iy++)
+		for (int iz=0; iz<nz; iz++) {
+		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+		  double s, c;
+		  sincos(phi, &s, &c);
+		  complex<double> eikr(c,s);
+		  FFTbox(ix,iy,iz) *= eikr;
+		  complex<double> z = FFTbox(ix,iy,iz);
+		  rNorm += z.real()*z.real();
+		  iNorm += z.imag()*z.imag();
+		}
+	    double arg = std::atan2(iNorm, rNorm);
+	    // cerr << "Phase = " << arg/M_PI << " pi.\n";
+	    double s,c;
+	    sincos(0.25*M_PI-arg, &s, &c);
+	    complex<double> phase(c,s);
+	    for (int ix=0; ix<nx; ix++)
+	      for (int iy=0; iy<ny; iy++)
+		for (int iz=0; iz<nz; iz++) 
+		  splineData(ix,iy,iz) = real(phase*FFTbox(ix,iy,iz));
 	  }
 	}
 	myComm->bcast(twist);
 	myComm->bcast(splineData);
 	set_multi_UBspline_3d_d 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
-
+	
 	// Read atomic orbital information
 	for (int iat=0; iat<realOrbs.size(); iat++) {
 	  app_log() << "Reading orbital " << iat << " for band " << ival << endl;
@@ -2729,7 +2786,7 @@ namespace qmcplusplus {
     orbitalSet->AtomicOrbitals = realOrbs;
     for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
       orbitalSet->AtomicOrbitals[i].registerTimers();
-
+    
     ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
 
