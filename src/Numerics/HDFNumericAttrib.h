@@ -460,6 +460,52 @@ struct HDFAttribIO<Vector<double> >: public HDFAttribIOBase {
 
 };
 
+
+template<>
+struct HDFAttribIO<Vector<std::complex<double> > >: public HDFAttribIOBase {
+
+  typedef Vector<complex<double> > ArrayType_t;
+  ArrayType_t&  ref;
+
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+
+    hsize_t dim[2];
+    dim[0] = ref.size();
+    dim[1] = 2;
+    hid_t dataspace  = H5Screate_simple(2, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t dataspace = H5Dget_space(h1);
+    hsize_t dims_out[2];
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    if (rank != 2) {
+      fprintf (stderr, "Error reading Vector<complex> in HDFNumericAttrib.h.\n");
+      abort();
+    }
+    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
+    if(ref.size() != int(dims_out[0])){
+      ref.resize(int(dims_out[0]));
+    }
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(h1);
+  }
+
+};
+
+
+
 /** Specialization for Vector<int>  */
 template<>
 struct HDFAttribIO<Vector<int> >: public HDFAttribIOBase {
