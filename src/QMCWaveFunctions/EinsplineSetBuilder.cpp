@@ -2462,14 +2462,14 @@ namespace qmcplusplus {
     Array<double,3>         splineData;
 
     // Find the orbital mesh size
+    MeshSize = TinyVector<int,3>(0,0,0);
     if (root) {
       HDFAttribIO<TinyVector<int,3> > h_MeshSize(MeshSize);
       h_MeshSize.read (H5FileID, "/electrons/psi_r_mesh");
       h_MeshSize.read (H5FileID, "/electrons/mesh");
     }
-    // HACK HACK HACK
-    //bool havePsir = MeshSize[0] != 0;
-    bool havePsir = false;
+    bool havePsir = MeshSize[0] != 0;
+    //bool havePsir = false;
     myComm->bcast(havePsir);
     if (!havePsir && root) {
       app_log() << "Reading plane-wave coefficients.\n";
