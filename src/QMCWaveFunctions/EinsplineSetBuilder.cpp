@@ -677,6 +677,7 @@ namespace qmcplusplus {
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
+    attribs.add (MeshFactor, "meshfactor");
     attribs.put (cur);
 
     ///////////////////////////////////////////////
