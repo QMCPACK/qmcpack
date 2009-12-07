@@ -16,80 +16,65 @@
 /**@file excitation.cpp
  * @brief Test code for multideterminant tree 
  */
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <algorithm>
-#include <cmath>
-#include <string>
-#include "Utilities/OhmmsInfo.h"
-#include "Utilities/RandomGenerator.h"
-#include "Utilities/Timer.h"
-#include "Message/Communicate.h"
-#include "Message/OpenMP.h"
-#include <QMCWaveFunctions/Fermion/excitation_node.h>
+#include <Utilities/OhmmsInfo.h>
+#include <Utilities/RandomGenerator.h>
+#include <Utilities/Timer.h>
+#include <Message/Communicate.h>
+#include <Message/OpenMP.h>
+#include <Numerics/MatrixOperators.h>
+#include <Numerics/DeterminantOperators.h>
+#include <QMCWaveFunctions/Fermion/ci_node.h>
 #include <QMCWaveFunctions/Fermion/ci_builder.h>
-
+#include <Utilities/IteratorUtility.h>
+#include <fstream>
 using namespace qmcplusplus;
 using namespace std;
 
 int main(int argc, char** argv)
 {
   const int max_states=8;
-  const int vmax=2;
+  const int vmax=4;
   const int cmax=8;
-  typedef excitation_node<double> node_type;
+  typedef ci_node_proxy node_type;
   vector<node_type> excitations;
 
-  //add zero
-  excitations.push_back(node_type());
-
-  ci_builder<max_states> ci_maker(vmax,cmax);
-
-  int multiplet=1;
-  ci_maker.singles(excitations);
-  for(int level=0; level<multiplet; ++level) ci_maker.promote(excitations,level);
-
+  int multiplet=2;
   int nparent=0;
   int nchildren=0;
-  for(int i=0; i<excitations.size(); ++i) 
+
+  vector<int> det_offset(multiplet+2,1);
+  //add zero
+  excitations.push_back(node_type());
   {
-    nchildren+=excitations[i].children.size();
-    if(excitations[i].closed()) continue;
-    nparent++;
+    ci_builder<max_states> ci_maker(vmax,cmax);
+    //single is treated differently
+    det_offset[1]=ci_maker.singles(excitations);
+    for(int level=0,k=1; level<multiplet; ++level,++k) 
+      det_offset[k+1]=ci_maker.promote(excitations,level);
+    for(int i=0; i<excitations.size(); ++i) 
+    {
+      nchildren+=excitations[i].children.size();
+      if(excitations[i].closed()) continue;
+      nparent++;
+    }
   }
 
-  int level=0;
+  ofstream fout("tree.xml");
+  int npeers=0;
   int count=0;
-  cout << "<ci_basis max_level=\"" << multiplet+1 << "\" size=\"" << nchildren+1 << "\">" << endl;
-  cout << "<!-- " <<endl;
-  cout << " Number of child nodes " << nchildren << "== " << excitations.size()-1 << endl;
-  cout << " Number of parent nodes " << nparent << endl;
-  cout << "-->" <<endl;
-  cout << "<ci_vector>" << endl;
-  for(int i=0; i<excitations.size(); ++i) 
-  {
-    node_type cur(excitations[i]);
-    int pid=cur.parent_id;
-    node_type parent(excitations[pid]);
-    bitset<cmax> valence(cur.ground);
-    cout << "<node level=\"" << valence.count()
-      << "\" g=\"" <<  valence
-      << "\" e=\"" << bitset<max_states>(cur.excited)
-      << "\" g_id=\"" << cur.ground
-      << "\" e_id=\"" << cur.excited
-      << "\" my_id=\"" << cur.my_id
-      << "\" p_id=\"" << pid
-      << "\" from=\"" << cur.from
-      << "\" to=\"" << cur.to
-      << "\"/>" 
-      << endl;
-  }
-  cout << "</ci_vector>" << endl;
+  excitations[0].write_node<max_states>(fout,0,count,excitations);
 
-  cout << "<ci_tree>" << endl;
-  excitations[0].write_node<max_states>(level,count,excitations);
-  cout << "</ci_tree>" << endl;
-  cout << "</ci_basis>" << endl;
+  count=0;
+  ci_node real_nodes;
+  real_nodes.build_tree(64,excitations);
+
+  ofstream fout1("tree_1.xml");
+  real_nodes.write_node(fout1);
+
+  //copy constructor
+  ci_node copied(real_nodes);
+
+  ofstream fout2("tree_2.xml");
+  copied.write_node(fout2);
   return 0;
 }
