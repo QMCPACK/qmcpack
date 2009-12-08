@@ -186,7 +186,7 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    void get_ratios(ParticleSet& P, vector<RealType>& ratios);
+    void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
     ///total number of particles
     int NP;
     ///number of single-particle orbitals which belong to this Dirac determinant
