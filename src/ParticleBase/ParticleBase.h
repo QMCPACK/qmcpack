@@ -146,6 +146,7 @@ public:
   virtual void assign(const ParticleBase<PT>& ptclin) {
     resize(ptclin.getLocalNum());
     Lattice = ptclin.Lattice;
+    PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit = ptclin.R.InUnit;
     R = ptclin.R;
     ID = ptclin.ID;
