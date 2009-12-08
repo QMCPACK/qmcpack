@@ -205,6 +205,8 @@ namespace qmcplusplus
       }
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+      void setTwist(vector<RealType> t) {myTwist=t;}
+      const vector<RealType> twist() {return myTwist;}
 
     private:
 
@@ -252,7 +254,7 @@ namespace qmcplusplus
       TrialWaveFunction();
 
       vector<NewTimer*> myTimers;
-
+      vector<RealType> myTwist;
     };
   /**@}*/
 }

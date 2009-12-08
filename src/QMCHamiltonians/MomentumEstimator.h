@@ -82,6 +82,7 @@ namespace qmcplusplus
     vector<vector<int> > mappednofKtoK;
     vector<RealType> mappedQnorms;
     vector<RealType> mappedKnorms;
+    vector<RealType> twist;
   };
 
 }

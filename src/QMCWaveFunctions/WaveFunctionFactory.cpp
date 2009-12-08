@@ -80,6 +80,33 @@ namespace qmcplusplus {
       if (cname == OrbitalBuilderBase::detset_tag) 
       {
         success = addFermionTerm(cur);
+        
+        bool foundtwist(false);
+        xmlNodePtr kcur = cur->children;
+        while(kcur != NULL) 
+        {
+          string kname((const char*)(kcur->name));
+          if (kname=="h5tag")
+          {
+            string hdfName;
+            OhmmsAttributeSet attribs;
+            attribs.add (hdfName, "name");
+            if (hdfName=="twistAngle")
+            {
+              std::vector<double> tsts(3,0);
+              putContent(tsts,kcur);
+              targetPsi->setTwist(tsts);
+              foundtwist=true;
+            }
+          }
+          kcur=kcur->next;
+        }
+        if(!foundtwist)
+        {
+          //default twist is [0 0 0]
+          std::vector<double> tsts(3,0);
+          targetPsi->setTwist(tsts);
+        }
       } 
       else if (cname ==  OrbitalBuilderBase::jastrow_tag) 
       {
