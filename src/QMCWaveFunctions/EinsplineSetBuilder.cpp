@@ -674,10 +674,10 @@ namespace qmcplusplus {
     attribs.add (TileMatrix, "tilematrix");
     attribs.add (TwistNum,   "twistnum");
     attribs.add (sourceName, "source");
+    attribs.add (MeshFactor, "meshfactor");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
-    attribs.add (MeshFactor, "meshfactor");
     attribs.put (cur);
 
     ///////////////////////////////////////////////
