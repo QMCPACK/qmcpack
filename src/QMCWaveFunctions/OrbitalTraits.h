@@ -63,8 +63,14 @@ namespace qmcplusplus {
 
   /** specialization of conversion from complex to real
   */
-  template<typename T1, typename T2>
-    inline void convert(const std::complex<T1>& in, T2& out)
+  template<typename T1>
+    inline void convert(const std::complex<T1>& in, double out)
+    {
+      out=in.real();
+    }
+
+  template<typename T1>
+    inline void convert(const std::complex<T1>& in, float out)
     {
       out=in.real();
     }
