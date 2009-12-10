@@ -49,6 +49,7 @@ namespace qmcplusplus
 
     //will use temp[i].r1 for the Compton profile
     const vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
+    Vector<RealType> tmpn_k(nofK);
     for (int s=0; s<M; ++s)
       {
         PosType newpos;
@@ -67,20 +68,19 @@ namespace qmcplusplus
             eval_e2iphi(np,kdotp.data(),phases.data());
             RealType nofk_here(std::real(BLAS::dot(np,phases.data(),psi_ratios.data())));
             nofK[ik]+= nofk_here;
+            tmpn_k[ik]=nofk_here;
           }
           
-        
-
-        for (int iq=0; iq < Q.size(); ++iq)
+        for (int iq=0; iq < compQ.size(); ++iq)
           for (int i=0; i<mappedQtonofK[iq].size(); ++i)
-              compQ[iq] += nofK[mappedQtonofK[iq][i]];
+              compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
             
        
 
 
       }
       for (int ik=0; ik<nofK.size(); ++ik) nofK[ik] *= norm_nofK;
-      for (int iq=0; iq<compQ.size(); ++iq) compQ[iq] *= norm_nofK*mappedQnorms[iq];
+      for (int iq=0; iq<compQ.size(); ++iq) compQ[iq] *= mappedQnorms[iq];
       
     if (hdf5_out)
       {
@@ -178,11 +178,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     if (ctype=="hdf5") hdf5_out=true;
     else hdf5_out=false;
     
-    mappedQtonofK.resize(kgrid+1);
-    compQ.resize(kgrid+1);
-    mappedQnorms.resize(kgrid+1,1.0/6.0);
-    mappedQnorms[0]=1.0/3.0;
-    Q.resize(kgrid+1);
+
     
     xmlNodePtr kids=cur->children;
     while (kids!=NULL)
@@ -195,65 +191,88 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
             pAttrib.add(ctype,"mode");
             pAttrib.add(kgrid,"grid");
             pAttrib.put(kids);
+            
+            int numqtwists(6*kgrid+3);
+            std::vector<int> qk(0);
+            mappedQtonofK.resize(numqtwists,qk);
+            compQ.resize(numqtwists);
+            
+            RealType qn(4.0*M_PI*M_PI*std::pow(Lattice.Volume,-2.0/3.0));
+            mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
+            mappedQnorms[kgrid]=qn/RealType(M); mappedQnorms[3*kgrid+1]=qn/RealType(M); mappedQnorms[5*kgrid+2]=qn/RealType(M);
+            
+//             app_log()<<" Jnorm="<<qn<<endl;
+            Q.resize(numqtwists);
+            for (int i=-kgrid;i<(kgrid+1);i++)
+            {
+              PosType kpt;
+              kpt[0]=i-twist[0];
+              kpt[1]=i-twist[1];
+              kpt[2]=i-twist[2];
+              kpt=Lattice.k_cart(kpt);
+              Q[i+kgrid]=abs(kpt[0]);
+              Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
+              Q[i+kgrid+(4*kgrid+2)]=abs(kpt[2]);
+            }
 
             app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
             app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<<endl;
 
-            RealType cof = -1.0;
             int indx(0);
             for (int i=-kgrid;i<(kgrid+1);i++)
             {
-              PosType kpt;
-              for (int j=-kgrid;j<(kgrid+1);j++) for (int k=-kgrid;k<(kgrid+1);k++)
+              for (int j=-kgrid;j<(kgrid+1);j++)
+              {
+                for (int k=-kgrid;k<(kgrid+1);k++)
                   {
                     if (std::sqrt(i*i+j*j+k*k)<=kgrid)
                       {
-                        kpt[0]=i+cof*twist[0];
-                        kpt[1]=j+cof*twist[1];
-                        kpt[2]=k+cof*twist[2];
+                        PosType kpt;
+                        kpt[0]=i-twist[0];
+                        kpt[1]=j-twist[1];
+                        kpt[2]=k-twist[2];
 
                         //convert to Cartesian: note that 2Pi is multiplied
                         kpt=Lattice.k_cart(kpt);
                         kPoints.push_back(kpt);
                         
-                        mappedQtonofK[abs(i)].push_back(indx);
-                        mappedQtonofK[abs(j)].push_back(indx);
-                        mappedQtonofK[abs(k)].push_back(indx);
+                        mappedQtonofK[i+kgrid].push_back(indx);
+                        mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+                        mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
                         indx++;
-                        }
-                   }
-                Q[abs(i)]=kpt[0];
+                      }
+                  }
+                }
               }
            }
           
         kids=kids->next;
       }
-if (rootNode)
-{
-    RealType KF(std::pow(3*M_PI*M_PI*elns.R.size()/elns.Lattice.Volume,1.0/3.0));
-    string fname="Kpoints.dat";
-    ofstream fout(fname.c_str());
-    fout.setf(ios::scientific, ios::floatfield);
-    fout << "# mag_k        kx           ky            kz            koverk_f" << endl;
-    for (int i=0;i<kPoints.size();i++)
+      if (rootNode)
       {
-        float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
-        fout<<khere<<"   "<<kPoints[i][0]<<"    "<<kPoints[i][1]<<" "<<kPoints[i][2] 
-        << " "<< khere/KF<<endl;
-      }
-    fout.close();
+          string fname="Kpoints.dat";
+          ofstream fout(fname.c_str());
+          fout.setf(ios::scientific, ios::floatfield);
+          fout << "# mag_k        kx           ky            kz " << endl;
+          for (int i=0;i<kPoints.size();i++)
+            {
+              float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
+              fout<<khere<<"   "<<kPoints[i][0]<<"    "<<kPoints[i][1]<<"    "<<kPoints[i][2] 
+              <<endl;
+            }
+          fout.close();
 
-    fname="Qpoints.dat";
-    ofstream qout(fname.c_str());
-    qout.setf(ios::scientific, ios::floatfield);
-    qout << "# mag_q" << endl;
-    for (int i=0;i<Q.size();i++)
-      {
-        qout<<Q[i]<<endl;
+          fname="Qpoints.dat";
+          ofstream qout(fname.c_str());
+          qout.setf(ios::scientific, ios::floatfield);
+          qout << "# mag_q" << endl;
+          for (int i=0;i<Q.size();i++)
+            {
+              qout<<Q[i]<<endl;
+            }
+          qout.close();
       }
-    qout.close();
-}
-    
+
     nofK.resize(kPoints.size());
     norm_nofK=1.0/RealType(M);
 
