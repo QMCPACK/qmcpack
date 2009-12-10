@@ -61,6 +61,7 @@ namespace qmcplusplus {
     if(nc == 0) nc = egGrid.getShellIndex(nup);
 
     egGrid.createGrid(nc,nup,twist);
+    targetPtcl.setTwist(twist);
 
     //create a E(lectron)G(as)O(rbital)Set
     EGOSet* psiu=new EGOSet(egGrid.kpt,egGrid.mk2); 

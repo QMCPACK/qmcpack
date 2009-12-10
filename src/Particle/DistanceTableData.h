@@ -64,6 +64,7 @@ namespace qmcplusplus {
     T rinv1;
     ///new displacement
     TinyVector<T,N> dr1;
+    TinyVector<T,N> dr1_nobox;
     inline TempDisplacement():r1(0.0),rinv1(0.0){}
     inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;}
     /////old distance

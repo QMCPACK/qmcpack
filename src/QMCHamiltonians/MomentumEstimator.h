@@ -79,10 +79,10 @@ namespace qmcplusplus
     bool hdf5_out;
     
     vector<vector<int> > mappedQtonofK;
-    vector<vector<int> > mappednofKtoK;
+//     vector<vector<int> > mappednofKtoK;
     vector<RealType> mappedQnorms;
     vector<RealType> mappedKnorms;
-    vector<RealType> twist;
+    PosType twist;
   };
 
 }

@@ -78,6 +78,7 @@ namespace qmcplusplus {
     }
 
     add_p_timer(myTimers);
+    myTwist=p.myTwist;
   }
 
 
@@ -114,6 +115,9 @@ namespace qmcplusplus {
     addAttribute(L);
     addAttribute(dG);
     addAttribute(dL);
+    myTwist[0]=0;
+    myTwist[1]=0;
+    myTwist[2]=0;
 
     ////this has to be in unit
     //redR.setObjName("redpos");

@@ -222,6 +222,16 @@ struct BLAS {
     for(int i=0; i<n; ++i) res += a[i]*b[i];
     return res;
   }
+  
+  template<typename T>
+  inline static
+  complex<T> dot(int n, const complex<T>* restrict a, const complex<T>* restrict b) 
+  {
+    complex<T> res=0.0;
+    for(int i=0; i<n; ++i) res += a[i]*b[i];
+    return res;
+  }
+
 
   template<typename T>
   inline static

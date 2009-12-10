@@ -362,7 +362,9 @@ namespace qmcplusplus {
     {
       return Properties[i];
     }
-
+    
+    inline void setTwist(SingleParticlePos_t t){myTwist=t;}
+    inline SingleParticlePos_t getTwist(){return myTwist;}
   protected:
     ///the number of particle objects
     static Index_t PtclObjectCounter;
@@ -382,6 +384,7 @@ namespace qmcplusplus {
     void initParticleSet();
 
     vector<NewTimer*> myTimers;
+    SingleParticlePos_t myTwist;
   };
 }
 #endif

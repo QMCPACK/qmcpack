@@ -198,10 +198,10 @@ namespace qmcplusplus {
       // k-points.  EinsplineSet uses the opposite sign convention
       // from most DFT codes.
       if (version[0] >= 2)
-	for (int dim=0; dim<OHMMS_DIM; dim++)
-	  TwistAngles[ti][dim] *= -1.0;
-      snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
-	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+        for (int dim=0; dim<OHMMS_DIM; dim++)
+          TwistAngles[ti][dim] *= -1.0;
+      snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
+                TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
       app_log() << buff;
     }
     
@@ -1093,7 +1093,7 @@ namespace qmcplusplus {
       fprintf (stderr, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]\n",
 	       TwistNum, superFracs[TwistNum][0], superFracs[TwistNum][1],
 	       superFracs[TwistNum][2]);
-    
+    TargetPtcl.setTwist(superFracs[TwistNum]);
 #ifndef QMC_COMPLEX
     // Check to see if supercell twist is okay to use with real wave
     // functions 

@@ -119,6 +119,7 @@ namespace qmcplusplus {
       for(int iat=0; iat<N[SourceIndex]; ++iat)
       {
         PosType drij(rnew - P.R[iat]);
+        Temp[iat].dr1_nobox=drij;
         RealType sep=sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
         Temp[iat].r1=sep;
         Temp[iat].rinv1=1.0/sep;
