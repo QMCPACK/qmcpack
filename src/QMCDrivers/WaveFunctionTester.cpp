@@ -793,14 +793,22 @@ namespace qmcplusplus
         double E = H.evaluate(W);
         //double KE = E - W.PropertyList[LOCALPOTENTIAL];
         double KE = -0.5*(Sum(W.L) + Dot(W.G,W.G));
-        fprintf(fout, "%16.12e %16.12f ", psi, KE);
+#if defined(QMC_COMPLEX)
+        fprintf(fout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(),KE);
+#else
+        fprintf(fout, "%16.12e %16.12e ", psi, KE);
+#endif
         for (int isrc=0; isrc < source.getTotalNum(); isrc++)
           {
             GradType grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
             for (int dim=0; dim<OHMMS_DIM; dim++)
               {
                 double ZV = 0.5*Sum(lapl_grad[dim]) + Dot(grad_grad[dim], W.G);
+#if defined(QMC_COMPLEX)
+                fprintf(fout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
+#else
                 fprintf(fout, "%16.12e %16.12e ", ZV, grad_log[dim]);
+#endif
               }
           }
         fprintf(fout, "\n");
