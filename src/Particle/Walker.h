@@ -305,8 +305,13 @@ namespace qmcplusplus {
       const int nat=R.size();
       m << ID << ParentID << Generation << Age;
       m.Pack(&(R[0][0]),nat*OHMMS_DIM);
+#if defined(QMC_COMPLEX)
+      m.Pack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
+      m.Pack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
+#else
       m.Pack(&(G[0][0]),nat*OHMMS_DIM);
       m.Pack(L.first_address(),nat);
+#endif
       m.Pack(Properties.data(),Properties.size());
       m.Pack(DataSet.data(),DataSet.size());
       //Properties.putMessage(m);
@@ -321,8 +326,13 @@ namespace qmcplusplus {
       const int nat=R.size();
       m>>ID >> ParentID >> Generation >> Age;
       m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
+#if defined(QMC_COMPLEX)
+      m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
+      m.UnPack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
+#else
       m.Unpack(&(G[0][0]),nat*OHMMS_DIM);
       m.Unpack(L.first_address(),nat);
+#endif
       m.Unpack(Properties.data(),Properties.size());
       m.Unpack(DataSet.data(),DataSet.size());
       //Properties.getMessage(m);
