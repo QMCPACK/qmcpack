@@ -328,7 +328,7 @@ namespace qmcplusplus {
       m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
 #if defined(QMC_COMPLEX)
       m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
-      m.UnPack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
+      m.Unpack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
 #else
       m.Unpack(&(G[0][0]),nat*OHMMS_DIM);
       m.Unpack(L.first_address(),nat);
