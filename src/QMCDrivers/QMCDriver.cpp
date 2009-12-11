@@ -347,8 +347,9 @@ namespace qmcplusplus {
     if(nStepsBetweenSamples)
     {
       int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples)/RealType(nTargetWalkers*Nprocs) );
+      if (nBlocks<1) nBlocks=1;
       if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
-      if (nBlocks) nSteps = std::ceil(RealType(nStepsTotal/nBlocks));
+      nSteps = std::ceil(RealType(nStepsTotal)/RealType(nBlocks));
       nStepsTotal = nSteps*nBlocks;
       nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
