@@ -200,6 +200,7 @@ namespace qmcplusplus {
 
           wClones[ip]->resetCollectables();
           Movers[ip]->advanceWalkers(wit,wit_end,false);
+          Movers[ip]->accumulate(wit,wit_end);
           Movers[ip]->setMultiplicity(wit,wit_end);
 
           if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);

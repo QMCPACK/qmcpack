@@ -53,7 +53,7 @@ namespace qmcplusplus
 
     Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
     for(int i=myIndex;iit != iit_end;++iit,++i)
-      P.Collectables[i]+=(*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag();
+      P.Collectables[i]+=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
 
     return 0.0;
   }
