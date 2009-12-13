@@ -297,7 +297,7 @@ namespace qmcplusplus
 
 
     //evaluate everything else
-//     MyEstimator->accumulate(walkers);
+    MyEstimator->accumulate(walkers);
 
   }
 
