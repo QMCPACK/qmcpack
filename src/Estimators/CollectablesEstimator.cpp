@@ -24,6 +24,7 @@ namespace qmcplusplus {
   { 
     scalars.resize(h.sizeOfCollectables());
     scalars_saved.resize(h.sizeOfCollectables());
+    Nthreads = omp_get_max_threads();
   }
 
   void CollectablesEstimator::registerObservables(vector<observable_helper*>& h5desc
@@ -63,8 +64,9 @@ namespace qmcplusplus {
   void CollectablesEstimator::accumulate(const MCWalkerConfiguration& W
       , WalkerIterator first, WalkerIterator last , RealType wgt)
   {
+    RealType oneovernw = RealType(Nthreads)/RealType(last-first);
     for(int i=0; i<refH.sizeOfCollectables(); ++i) 
-      scalars[i](W.Collectables[i],wgt);
+      scalars[i](W.Collectables[i]*oneovernw,wgt);
   }
 }
 /***************************************************************************
