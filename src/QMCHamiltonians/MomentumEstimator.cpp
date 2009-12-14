@@ -250,8 +250,12 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       }
       if (rootNode)
       {
-          string fname="Kpoints.dat";
-          ofstream fout(fname.c_str());
+          std::stringstream sstr;  
+          int t0=100*twist[0];
+          int t1=100*twist[1];
+          int t2=100*twist[2];
+          sstr<<"Kpoints."<<t0<<"_"<<t1<<"_"<<t2<<".dat";
+          ofstream fout(sstr.str().c_str());
           fout.setf(ios::scientific, ios::floatfield);
           fout << "# mag_k        kx           ky            kz " << endl;
           for (int i=0;i<kPoints.size();i++)
@@ -261,9 +265,9 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
               <<endl;
             }
           fout.close();
-
-          fname="Qpoints.dat";
-          ofstream qout(fname.c_str());
+          sstr.str("");
+          sstr<<"Qpoints."<<t0<<"_"<<t1<<"_"<<t2<<".dat";
+          ofstream qout(sstr.str().c_str());
           qout.setf(ios::scientific, ios::floatfield);
           qout << "# mag_q" << endl;
           for (int i=0;i<Q.size();i++)
