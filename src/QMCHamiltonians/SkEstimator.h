@@ -41,11 +41,11 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
-    void addObservables(PropertySetType& plist) { }
+    void addObservables(PropertySetType& plist);
     void addObservables(PropertySetType& plist, BufferType& collectables);
     void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
-    void setObservables(PropertySetType& plist) {}
-    void setParticlePropertyList(PropertySetType& plist, int offset){}
+    void setObservables(PropertySetType& plist);
+    void setParticlePropertyList(PropertySetType& plist, int offset);
     bool put(xmlNodePtr cur);
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
@@ -67,11 +67,14 @@ namespace qmcplusplus
     vector<RealType> OneOverDnk;
     /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
     Vector<ComplexType> RhokTot;
+    Vector<RealType> values;
     /** resize the internal data
      *
      * The argument list is not completed
      */
     void resize();
+    
+    bool hdf5_out;
   };
 
 }

@@ -30,6 +30,7 @@ namespace qmcplusplus
     Kshell=source.SK->KLists.kshell;
     MaxKshell=Kshell.size()-1;
     RhokTot.resize(NumK);
+    values.resize(NumK);
 
     Kmag.resize(MaxKshell);
     OneOverDnk.resize(MaxKshell);
@@ -38,6 +39,7 @@ namespace qmcplusplus
       Kmag[ks]=std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
       OneOverDnk[ks]=1.0/static_cast<RealType>(Kshell[ks+1]-Kshell[ks]);
     }
+    hdf5_out=true;
   }
 
   void SkEstimator::resetTargetParticleSet(ParticleSet& P)
@@ -51,33 +53,94 @@ namespace qmcplusplus
     for(int i=1; i<NumSpecies; ++i)
       accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
 
-    Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
-    for(int i=myIndex;iit != iit_end;++iit,++i)
-      P.Collectables[i]+=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
-
+    if(hdf5_out)
+    {
+      Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
+      for(int i=myIndex;iit != iit_end;++iit,++i)
+        P.Collectables[i]+=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
+    }
+    else
+    {
+      Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
+      for(int i=0;iit != iit_end;++iit,++i)
+        values[i]=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
+    }
+    
     return 0.0;
   }
 
   void SkEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
-    myIndex=collectables.size();
-    vector<RealType> tmp(NumK);
-    collectables.add(tmp.begin(),tmp.end());
+    if(hdf5_out)
+    {
+      myIndex=collectables.size();
+      vector<RealType> tmp(NumK);
+      collectables.add(tmp.begin(),tmp.end());
+    }
+      else
+      {
+        myIndex=plist.size();
+        for (int i=0;i<NumK;i++)
+          {
+            std::stringstream sstr;
+            sstr << "sk_" <<i;
+            int id=plist.add(sstr.str());
+          }
+      }
   }
+  
+    void SkEstimator::addObservables(PropertySetType& plist )
+  { 
+        myIndex=plist.size();
+        for (int i=0;i<NumK;i++)
+          {
+            std::stringstream sstr;
+            sstr << "sk_" <<i;
+            int id=plist.add(sstr.str());
+          } 
+  }
+  
+    void SkEstimator::setObservables(PropertySetType& plist)
+  {
+    if (!hdf5_out)
+      {
+        std::copy(values.begin(),values.end(),plist.begin()+myIndex);
+      }
+  }
+
+  void SkEstimator::setParticlePropertyList(PropertySetType& plist
+      , int offset)
+  {
+    if (!hdf5_out)
+      {
+        std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
+      }
+  }
+  
 
   void SkEstimator::registerCollectables(vector<observable_helper*>& h5desc
       , hid_t gid) const
   {
-    app_log() << " SkEstimator::registerCollectables " << endl;
-    vector<int> ndim(1,NumK);
-    observable_helper* h5o=new observable_helper(myName);
-    h5o->set_dimensions(ndim,myIndex);
-    h5o->open(gid);
-    h5desc.push_back(h5o);
+    if (hdf5_out)
+    {
+      app_log() << " SkEstimator::registerCollectables " << endl;
+      vector<int> ndim(1,NumK);
+      observable_helper* h5o=new observable_helper(myName);
+      h5o->set_dimensions(ndim,myIndex);
+      h5o->open(gid);
+      h5desc.push_back(h5o);
+    }
   }
 
   bool SkEstimator::put(xmlNodePtr cur)
   {
+    string ctype("scalar");
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(ctype,"mode"); 
+    pAttrib.put(cur);
+    if (ctype=="hdf5") hdf5_out=true;
+    else hdf5_out=false;
+    
     return true;
   }
 
@@ -89,8 +152,10 @@ namespace qmcplusplus
   QMCHamiltonianBase* SkEstimator::makeClone(ParticleSet& qp
       , TrialWaveFunction& psi)
   {
-    //default constructor is sufficient
-    return new SkEstimator(*this);
+    SkEstimator* myclone = new SkEstimator(*this);
+    myclone->hdf5_out=hdf5_out;
+    myclone->myIndex=myIndex;
+    return myclone;
   }
 }
 
