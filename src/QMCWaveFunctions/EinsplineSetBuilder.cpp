@@ -1914,7 +1914,10 @@ namespace qmcplusplus {
   EinsplineSetBuilder::RotateBands_ESHDF
   (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
   {
-    bool root = myComm->rank()==0;
+    bool root = (myComm->rank()==0);
+    
+    if (root)
+    {
     rotationMatrix.resize(0);
     rotatedOrbitals.resize(0);
     
@@ -1930,11 +1933,11 @@ namespace qmcplusplus {
       kids=kids->next;
     }
     
-    if (rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size() && rotationMatrix.size()!=0)
+    if ((rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size()) && (rotationMatrix.size()!=0))
     {
       app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<<endl;
     }
-    else
+    else if (rotationMatrix.size()>0)
     {
       app_log()<<" Rotating between: ";
       for (int i=0;i<rotatedOrbitals.size();i++) app_log()<<rotatedOrbitals[i]<<" ";
@@ -1948,7 +1951,7 @@ namespace qmcplusplus {
       }
     }
     
-    if (rotationMatrix.size()>0 && rotatedOrbitals.size() && root)
+    if ((rotationMatrix.size()>0) && (rotatedOrbitals.size()>0) )
     {
       
       int N = NumDistinctOrbitals;
@@ -2083,6 +2086,8 @@ namespace qmcplusplus {
     }
     else
       app_log()<<" No rotations defined"<<endl;
+    }
+    
   } 
 
   void
