@@ -38,12 +38,12 @@ namespace qmcplusplus {
     hdf_ID_data.setID(WIDstring);
     hdf_PID_data.setID(PIDstring);
   }
-  
+
   bool FWSingleOMP::run() 
   {
     hdf_WGT_data.setFileName(xmlrootName);
     hdf_OBS_data.setFileName(xmlrootName);
-    
+
     if (doWeights==1)
     {
       fillIDMatrix();        
@@ -57,7 +57,7 @@ namespace qmcplusplus {
       {
         transferParentsOneGeneration();
         FWOneStep();
-  //       WeightHistory.push_back(Weights);
+        //       WeightHistory.push_back(Weights);
         hdf_WGT_data.openFile();
         hdf_WGT_data.addFW(ill);
         for (int i=0;i<Weights.size();i++) hdf_WGT_data.addStep(i,Weights[i]);
@@ -69,54 +69,54 @@ namespace qmcplusplus {
     {
       fillIDMatrix();
       //           find weight length from the weight file
-          hid_t f_file = H5Fopen(hdf_WGT_data.getFileName().c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
-          hsize_t numGrps = 0;
-          H5Gget_num_objs(f_file, &numGrps);
-          weightLength = static_cast<int> (numGrps)-1;
-          if (H5Fclose(f_file)>-1) f_file=-1;
+      hid_t f_file = H5Fopen(hdf_WGT_data.getFileName().c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+      hsize_t numGrps = 0;
+      H5Gget_num_objs(f_file, &numGrps);
+      weightLength = static_cast<int> (numGrps)-1;
+      if (H5Fclose(f_file)>-1) f_file=-1;
       if (verbose>0) app_log()<<" weightLength "<<weightLength<<endl;
     }
     if (verbose>0) app_log()<<" Done Computing Weights"<<endl;
 
-    
+
     if (doObservables==1)
     {
       int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
       int FirstHamiltonian = H.startIndex();
-  //     vector<vector<vector<RealType> > > savedValues;
+      //     vector<vector<vector<RealType> > > savedValues;
 
       int nelectrons = W[0]->R.size();
       int nfloats=OHMMS_DIM*nelectrons;
-      
 
-  //     W.clearEnsemble();
+
+      //     W.clearEnsemble();
       makeClones(W,Psi,H);
-      
+
       vector<ForwardWalkingData* > FWvector;
       for(int ip=0; ip<NumThreads; ip++) FWvector.push_back(new ForwardWalkingData(nelectrons));
-      
+
 
       if (myComm->rank()==0) hdf_OBS_data.makeFile();
-        hdf_float_data.openFile(fname.str());
+      hdf_float_data.openFile(fname.str());
 
       for(int step=0;step<numSteps;step++)
       {
         hdf_float_data.setStep(step);
-          
-        
+
+
         vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
         for(int wstep=0; wstep<walkersPerBlock[step];)
         {
           vector<float> ThreadsCoordinate(NumThreads*nfloats);
           int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
-  //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
-  //         cout<<endl;
-  #pragma omp parallel for
+          //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
+          //         cout<<endl;
+#pragma omp parallel for
           for(int ip=0; ip<nwalkthread; ip++) 
           {
             vector<float> SINGLEcoordinate(0);
             vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
-            
+
             SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
             FWvector[ip]->fromFloat(SINGLEcoordinate);
             wClones[ip]->R=FWvector[ip]->Pos;
@@ -130,18 +130,18 @@ namespace qmcplusplus {
             for(int i=0;i<nprops;i++) stepObservables[indx+i+2] = hClones[ip]->getObservable(i) ;
           }
           wstep+=nwalkthread;
-        for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
+          for(int ip=0; ip<NumThreads; ip++)  wClones[ip]->resetCollectables();
         }
         hdf_OBS_data.openFile();
         hdf_OBS_data.addStep(step, stepObservables);
         hdf_OBS_data.closeFile();
-  //       savedValues.push_back(stepObservables);
+        //       savedValues.push_back(stepObservables);
         hdf_float_data.endStep();
         if (verbose >1) cout<<"Done with step: "<<step<<endl;
       }
     }
-    
-    
+
+
     if(doDat>=1)
     {
       vector<int> Dimensions(4);
