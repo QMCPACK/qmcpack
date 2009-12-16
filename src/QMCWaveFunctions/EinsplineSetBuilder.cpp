@@ -1217,6 +1217,7 @@ namespace qmcplusplus {
       DistinctTwists[i] = IncludeTwists[i];
       MakeTwoCopies[i] = false;
     }
+    UseRealOrbitals = false;
 
 #endif
   }
