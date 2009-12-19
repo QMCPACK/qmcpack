@@ -27,7 +27,6 @@ namespace qmcplusplus {
   {
     ///save the reference hamiltonian
     const QMCHamiltonian& refH;
-    int Nthreads;
 
     public:
     /** constructor

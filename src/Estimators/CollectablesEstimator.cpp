@@ -24,7 +24,6 @@ namespace qmcplusplus {
   { 
     scalars.resize(h.sizeOfCollectables());
     scalars_saved.resize(h.sizeOfCollectables());
-    Nthreads = omp_get_max_threads();
   }
 
   void CollectablesEstimator::registerObservables(vector<observable_helper*>& h5desc
@@ -46,26 +45,21 @@ namespace qmcplusplus {
   void CollectablesEstimator::add2Record(RecordListType& record) 
   {
     FirstIndex = record.size();
-    int loc=record.add("qc0");
-    if(loc == FirstIndex)//check if qc is added first time
+    for(int i=0; i<refH.sizeOfCollectables(); ++i)
     {
-      loc=record.append("qc",1,refH.sizeOfCollectables());
+      ostringstream o;
+      o<<"a"<<i;
+      int dummy=record.add(o.str());
     }
-    //for(int i=0; i<refH.sizeOfCollectables(); ++i)
-    //{
-    //  ostringstream o;
-    //  o<<"a"<<i;
-    //  int dummy=record.add(o.str());
-    //}
     LastIndex = record.size();
     clear();
   }
 
   void CollectablesEstimator::accumulate(const MCWalkerConfiguration& W
       , WalkerIterator first, WalkerIterator last , RealType wgt)
-  { 
-    for(int i=0; i<refH.sizeOfCollectables(); ++i) 
-      scalars[i](W.Collectables[i],wgt);
+  {
+    for(int i=0; i<refH.sizeOfCollectables(); ++i)
+      scalars[i](W.Collectables[i],1.0);
   }
 }
 /***************************************************************************
