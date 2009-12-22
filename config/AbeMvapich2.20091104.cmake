@@ -43,8 +43,8 @@ set(HAVE_MKL 1)
 set(HAVE_MKL_VML 1)
 
 include_directories(${MKL_HOME}/include)
-set(LAPACK_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core)
-set(BLAS_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl_solver_lp64_sequential)
+set(MKL_LIBRARIES -L${MKL_HOME}/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core  -lmkl_solver_lp64_sequential)
+link_libraries(${MKL_LIBRARIES})
 
 INCLUDE(Platform/UnixPaths)
 
