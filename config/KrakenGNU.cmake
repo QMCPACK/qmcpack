@@ -26,8 +26,9 @@ set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS}")
 
+set(ACML_HOME /opt/acml/4.2.0/gfortran64)
+
 set(CMAKE_FIND_ROOT_PATH
-      /opt/acml/4.2.0/gfortran64
       /opt/fftw/3.2.1
       /sw/xt/hdf5/1.8.3/cnl2.2_gnu4.3.2
       /sw/xt/szip/2.1/sles10.1_gnu4.3.2
@@ -43,12 +44,13 @@ SET(HAVE_SSE3 1)
 SET(HAVE_SSSE3 1)
 SET(USE_PREFETCH 1)
 SET(PREFETCH_AHEAD 12)
-SET(BLAS_LIBRARY -lacml)
-SET(LAPACK_LIBRARY -lacml_mv)
+SET(ACML_LIBRARIES ${ACML_HOME}/lib/libacml.a ${ACML_HOME}/lib/libacml_mv.a)
+link_libraries(${ACML_LIBRARIES})
 
 #----------------------------------------------------------
 # disable dynamic links
 #----------------------------------------------------------
+SET(CMAKE_SKIP_RPATH TRUE)
 SET(CMAKE_SHARED_LIBRARY_C_FLAGS "")            # -pic 
 SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "")       # -shared
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")         # +s, flag for exe link to use shared lib
