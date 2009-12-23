@@ -66,7 +66,7 @@ namespace qmcplusplus
           {
             for (int i=0; i<np; ++i) kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
             eval_e2iphi(np,kdotp.data(),phases.data());
-            RealType nofk_here(std::real(BLAS::dot(np,phases.data(),psi_ratios.data())));
+            RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
             nofK[ik]+= nofk_here;
             tmpn_k[ik]=nofk_here;
           }

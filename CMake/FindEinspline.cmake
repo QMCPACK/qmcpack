@@ -3,55 +3,41 @@
 # it will define the following values
 #
 # EINSPLINE_INCLUDE_DIR  = where einspline/config.h can be found
-# EINSPLINE_LIBRARY      = the library to link against 
-# FOUND_EINSPLINE        = set to true after finding the library
+# EINSPLINE_LIBRARIES    = the library to link against 
+# EINSPLINE_FOUND        = set to true after finding the pre-compiled library
 #
-SET(TRIAL_LIBRARY_PATHS
-    $ENV{EINSPLINE_HOME}/lib
-    /usr/apps/lib
-    /usr/lib 
-    /usr/local/lib
-    /opt/lib
-    /sw/lib
-   )
+# EINSPLINE_DIR          = directory where the source files are located
+#
+#FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${TRIAL_LIBRARY_PATHS})
+#FIND_PATH(EINSPLINE_INCLUDE_DIR einspline/bspline.h ${TRIAL_INCLUDE_PATHS} )
+FIND_LIBRARY(EINSPLINE_LIBRARIES einspline ${QMC_LIBRARY_PATHS})
+FIND_PATH(EINSPLINE_INCLUDE_DIR einspline/bspline.h ${QMC_INCLUDE_PATHS})
 
-SET(TRIAL_INCLUDE_PATHS
-    $ENV{EINSPLINE_HOME}/include
-    /usr/apps/include
-    /usr/include
-    /opt/include
-    /usr/local/include
-    /sw/include
-   )
+SET(EINSPLINE_FOUND FALSE)
 
-FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${TRIAL_LIBRARY_PATHS})
-FIND_PATH(EINSPLINE_INCLUDE_DIR einspline/bspline.h ${TRIAL_INCLUDE_PATHS} )
-
-IF(EINSPLINE_INCLUDE_DIR AND EINSPLINE_LIBRARY)
-  SET(FOUND_EINSPLINE 1 CACHE BOOL "Found einspline library")
-  SET(HAVE_EINSPLINE 1)
+IF(EINSPLINE_INCLUDE_DIR AND EINSPLINE_LIBRARIES)
+  SET(EINSPLINE_FOUND TRUE)
   SET(HAVE_EINSPLINE_EXT 1)
   MARK_AS_ADVANCED(
-      EINSPLINE_INCLUDE_DIR 
-      EINSPLINE_LIBRARY 
-      FOUND_EINSPLINE
-      )
-ELSE(EINSPLINE_INCLUDE_DIR AND EINSPLINE_LIBRARY)
+    EINSPLINE_INCLUDE_DIR 
+    EINSPLINE_LIBRARIES 
+    EINSPLINE_FOUND
+    )
+ELSE()
   MESSAGE("-- Cannot find einspline library. Try to compile with the sources")
-  FIND_PATH(EINSPLINE_SRC_DIR src/bspline.h ${EINSPLINE_HOME} )
+  FIND_PATH(EINSPLINE_SRC_DIR src/bspline.h ${EINSPLINE_HOME} $ENV{EINSPLINE_HOME})
   IF(EINSPLINE_SRC_DIR)
-    SET(FOUND_EINSPLINE 1 CACHE BOOL "Found einspline pre-buidlt library")
-    SET(HAVE_EINSPLINE 1)
+    SET(EINSPLINE_FOUND TRUE)
     SET(EINSPLINE_DIR ${EINSPLINE_SRC_DIR})
     SET(EINSPLINE_INCLUDE_DIR ${EINSPLINE_SRC_DIR})
     MARK_AS_ADVANCED(
+      EINSPLINE_INCLUDE_DIR 
       EINSPLINE_DIR 
-      FOUND_EINSPLINE
+      EINSPLINE_FOUND
      )
   ELSE(EINSPLINE_SRC_DIR)
-    SET(FOUND_EINSPLINE 0 CACHE BOOL "Cannot find einspline source or library.")
     MESSAGE("-- EINSPLINE_HOME is not found. Disable Einspline library.")
     MESSAGE("-- Download einspline library to utilize an optimized 3D-bspline library.")
   ENDIF(EINSPLINE_SRC_DIR)
-ENDIF(EINSPLINE_INCLUDE_DIR AND EINSPLINE_LIBRARY)
+ENDIF()
 

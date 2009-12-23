@@ -2,6 +2,13 @@ PROJECT(qmcpack)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 
+#####################################################
+SET(CMAKE_FALLBACK FALSE)
+if(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+  MESSAGE(WARNING ">>>> Recommend using cmake version 2.8.0 and higher. Using old cmake scripts. <<<< ")
+  SET(CMAKE_FALLBACK TRUE)
+endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+
 ######################################################################
 # Version 
 ######################################################################
@@ -21,6 +28,37 @@ SET(QMC_BUILD_LEVEL 1 CACHE INTEGER
 ######################################################################
 SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
+
+######################################################################
+# build include and library paths required for the projects
+# For XYZ library, set an environment as
+# export XYZ_HOME='root-of-the-library'
+# XYZ_HOME/include
+# XYZ_HOME/lib
+# IF XYZ library is found, XYZ_FOUND is set to true
+#
+# find_package is used with cmake 2.8 and higher
+######################################################################
+SET(QMC_INCLUDE_PATHS 
+  $ENV{HDF5_HOME}/include 
+  $ENV{HDF5_DIR}/include 
+  $ENV{FFTW_HOME}/include
+  $ENV{LIBXML2_HOME}/include
+  $ENV{EINSPLINE_HOME}/include
+  $ENV{BOOST_HOME}
+  )
+SET(QMC_LIBRARY_PATHS 
+  $ENV{HDF5_HOME}/lib 
+  $ENV{HDF5_DIR}/lib 
+  $ENV{FFTW_HOME}/lib
+  $ENV{LIBXML2_HOME}/lib
+  $ENV{EINSPLINE_HOME}/lib
+  )
+
+if(APPLE)
+  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
+  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
+endif(APPLE)
 
 ######################################################################
 # Set the compiler-time parameters
@@ -56,10 +94,10 @@ IF($ENV{QMC_OMP})
   SET(QMC_OMP $ENV{QMC_OMP}) 
   MESSAGE("-- Found QMC_OMP=${QMC_OMP}")
 ENDIF($ENV{QMC_OMP})
-IF($ENV{QMC_BITS})
-  SET(QMC_BITS $ENV{QMC_BITS})
-  MESSAGE("-- Found QMC_BITS=${QMC_BITS}")
-ENDIF($ENV{QMC_BITS})
+#IF($ENV{QMC_BITS})
+#  SET(QMC_BITS $ENV{QMC_BITS})
+#  MESSAGE("-- Found QMC_BITS=${QMC_BITS}")
+#ENDIF($ENV{QMC_BITS})
 IF($ENV{QMC_COMPLEX})
   SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
   MESSAGE("-- Found QMC_COMPLEX=${QMC_COMPLEX}")
@@ -168,7 +206,6 @@ ENDIF(Subversion_FOUND)
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 
-
 ######################################################
 # DO NOT MODIFY BELOW
 # If you like to customize your build, create a toolchain as instructed
@@ -185,6 +222,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
   SET(HAVE_MKL 0)
+  SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
   SET(HAVE_SSE 0)
   SET(HAVE_SSE2 0)
@@ -199,6 +237,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ######################################################
   SET(CPU_IDENTITY "generic")
   INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
+
   #------------------------------------
   # On Jaguar use CrayXT.cmake
   #------------------------------------
@@ -207,6 +246,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET(CPU_IDENTITY "barcelona")
     INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
     SET(FOUND_CXXENV 1)
+    SET(CMAKE_SKIP_RPATH TRUE)
   ENDIF($ENV{HOST} MATCHES "jaguar")
 
   #------------------------------------
@@ -244,19 +284,44 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF(NOT FOUND_CXXENV)
 
   #-------------------------------------------------------------------
-  #COMPIELR MANUAL SELECTION
-  #If automatic detection does not work, comment out above and select one
-  #of these files
+  #  check MPI installation
   #-------------------------------------------------------------------
-  #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  #INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-  #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
-  #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
+  IF(QMC_MPI)
+    ## mpi compilers
+    if($ENV{CXX} MATCHES "mp")
+      SET(HAVE_MPI 1)
+      SET(HAVE_OOMPI 1)
+      SET(MPI_FOUND TRUE)
+    else($ENV{CXX} MATCHES "mp")
+      include(FindMPI)
+      IF(MPI_FOUND)
+        MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
+        FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx 
+          "#include <mpi.h>"
+          "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
+        TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR} 
+          ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
+          OUTPUT_VARIABLE OUTPUT)
+        IF(MPI_WORKS)
+          MESSAGE(STATUS "MPI is enabled")
+          SET(HAVE_MPI 1)
+          SET(HAVE_OOMPI 1)
+          LINK_LIBRARIES(${MPI_LIBRARY})
+        ELSE(MPI_WORKS)
+          MESSAGE(STATUS "MPI is disabled")
+          SET(HAVE_MPI 0)
+          SET(HAVE_OOMPI 0)
+        ENDIF(MPI_WORKS)
+      ENDIF(MPI_FOUND)
+    endif($ENV{CXX} MATCHES "mp")
+  ENDIF(QMC_MPI)
 
   #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
   INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+
+
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
@@ -264,147 +329,101 @@ MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 
 SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
-if(ENABLE_TAU_PROFILE)
-INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
-endif(ENABLE_TAU_PROFILE)
 
+####################################################################
+#First check the required libraries. Abort if these are not found.
+#Changed the fall-back versions to use similar conventions to 2.8.0 and higher
+####################################################################
+if(CMAKE_FALLBACK)
+  INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
+  INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
+  INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
+  INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
+  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
+else()
+  find_package(LibXml2)
+  find_package(HDF5)
+  find_package(Boost)
+endif()
+
+IF(LIBXML2_FOUND)
+  INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
+  LINK_LIBRARIES(${LIBXML2_LIBRARIES})
+  SET(HAVE_LIBXML2 1)
+ENDIF(LIBXML2_FOUND)
+
+IF(HDF5_FOUND)
+  SET(HAVE_LIBHDF5 1)
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+  LINK_LIBRARIES(${HDF5_LIBRARIES})
+  IF(ZLIB_FOUND)
+    LINK_LIBRARIES(${ZLIB_LIBRARIES})
+  ENDIF(ZLIB_FOUND)
+  IF(SZLIB_FOUND)
+    LINK_LIBRARIES(${SZLIB_LIBRARIES})
+  ENDIF(SZLIB_FOUND)
+ELSE(HDF5_FOUND)
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
+ENDIF(HDF5_FOUND)
+
+IF(Boost_FOUND)
+  SET(HAVE_LIBBOOST 1)
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+ELSE()
+  MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
+ENDIF()
+
+#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
+##################################################################
+# TODO:use profile tools
+##################################################################
+#IF(MPIP_PROFILE)
+#  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
+#  LINK_LIBRARIES("/usr/lib/libbfd.a")
+#  LINK_LIBRARIES("/usr/lib/libiberty.a")
+#ENDIF(MPIP_PROFILE)
+#if(ENABLE_TAU_PROFILE)
+#  INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
+#endif(ENABLE_TAU_PROFILE)
+#    #add tau stuff
+#    IF(FOUND_TAU)
+#      ADD_DEFINITIONS(
+#        -DTAU_MPI
+#        -DTAU_MPI_THREADED
+#        -DTAU_MPIGREQUEST
+#        -DTAU_MPIDATAREP
+#        -DTAU_MPIERRHANDLER
+#        -DTAU_MPIATTRFUNCTION
+#        -DTAU_MPITYPEEX
+#        -DTAU_MPIADDERROR
+#      )
+#      #build libtau
+#      subdirs(src/tau)
+#      LINK_LIBRARIES(tau)
+#    ENDIF(FOUND_TAU)
+#IF(FOUND_TAU)
+#  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
+#  ADD_DEFINITIONS (-DPROFILING_ON
+#      -DTAU_STDCXXLIB
+#      -DTAU_DOT_H_LESS_HEADERS
+#      -DTAU_CALLPATH
+#      -DTAU_LARGEFILE64_SOURCE
+#      -DTAU_BFD
+#      )
+#  if(ENABLE_OPENMP)
+#    ADD_DEFINITIONS(-DTAU_OPENMP)
+#  endif(ENABLE_OPENMP)
+#ENDIF(FOUND_TAU)
 
 ######################################################
 # Add optional macros
 ######################################################
-IF(FOUND_TAU)
-  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
-  ADD_DEFINITIONS (-DPROFILING_ON
-      -DTAU_STDCXXLIB
-      -DTAU_DOT_H_LESS_HEADERS
-      -DTAU_CALLPATH
-      -DTAU_LARGEFILE64_SOURCE
-      -DTAU_BFD
-      )
-  if(ENABLE_OPENMP)
-    ADD_DEFINITIONS(-DTAU_OPENMP)
-  endif(ENABLE_OPENMP)
-ENDIF(FOUND_TAU)
-
-IF(QMC_MPI)
-
-  #IF(MPIP_PROFILE)
-  #  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
-  #  LINK_LIBRARIES("/usr/lib/libbfd.a")
-  #  LINK_LIBRARIES("/usr/lib/libiberty.a")
-  #ENDIF(MPIP_PROFILE)
-  include(FindMPI)
-
-  IF(MPI_FOUND)
-    MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
-    FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx 
-      "#include <mpi.h>"
-      "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
-    TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR} 
-      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-      OUTPUT_VARIABLE OUTPUT)
-    IF(MPI_WORKS)
-      MESSAGE(STATUS "MPI is enabled")
-      SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
-      LINK_LIBRARIES(${MPI_LIBRARY})
-    ELSE(MPI_WORKS)
-      MESSAGE(STATUS "MPI is disabled")
-      SET(HAVE_MPI 0)
-      SET(HAVE_OOMPI 0)
-    ENDIF(MPI_WORKS)
-
-  ENDIF(MPI_FOUND)
-
-ENDIF(QMC_MPI)
-
-
-if(HAVE_MPI)
-    #do not use mpi c++ binding
-    ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-
-    #add tau stuff
-    IF(FOUND_TAU)
-      ADD_DEFINITIONS(
-        -DTAU_MPI
-        -DTAU_MPI_THREADED
-        -DTAU_MPIGREQUEST
-        -DTAU_MPIDATAREP
-        -DTAU_MPIERRHANDLER
-        -DTAU_MPIATTRFUNCTION
-        -DTAU_MPITYPEEX
-        -DTAU_MPIADDERROR
-      )
-      #build libtau
-      subdirs(src/tau)
-      LINK_LIBRARIES(tau)
-    ENDIF(FOUND_TAU)
-endif(HAVE_MPI)
-
-
-IF(FOUND_LIBXML2)
-  INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
-  LINK_LIBRARIES(${LIBXML2_LIBRARY})
-  SET(HAVE_LIBXML2 1)
-ENDIF(FOUND_LIBXML2)
-
-IF(FOUND_BOOST)
-  SET(HAVE_LIBBOOST 1)
-  INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIR})
-ELSE(FOUND_BOOST)
-  MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
-ENDIF(FOUND_BOOST)
-
-IF(FOUND_FFTW)
+INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
+IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
   INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  LINK_LIBRARIES(${FFTW_LIBRARY})
-ENDIF(FOUND_FFTW)
-
-IF(FOUND_HDF5)
-  SET(HAVE_LIBHDF5 1)
-  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-  LINK_LIBRARIES(${HDF5_LIBRARY})
-  #zlib
-  INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
-  IF(ZLIB_FOUND)
-    LINK_LIBRARIES(${ZLIB_LIBRARY})
-  ENDIF(ZLIB_FOUND)
-  #szlib
-  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
-  IF(SZLIB_FOUND)
-    LINK_LIBRARIES(${SZLIB_LIBRARY})
-  ENDIF(SZLIB_FOUND)
-ELSE(FOUND_HDF5)
-  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
-ENDIF(FOUND_HDF5)
-
-######################################################################
-# Manage GTK+ and GTKMM packages for GUI
-# search headers and libraries
-#   1) -lXYZ-${XYZ_VERSION} 
-#   2) -lXYZ
-# example: -lgtk-${GTK_VERSION} | -lgtk
-######################################################################
-SET(GTK_VERSION 2.0)
-SET(PANGO_VERSION 1.0)
-
-SET(GTKMM_VERSION 2.4)
-SET(PANGOMM_VERSION 1.4)
-SET(SIGCPP_VERSION 2.0)
-IF(ENABLE_GTK_GUI)
-  INCLUDE(${PROJECT_CMAKE}/FindGTK.cmake)
-  #THIS SHOULD GO TO the directory where GUI is built
-  IF(GTKMM_FOUND)
-   INCLUDE_DIRECTORIES(${GTKMM_INCLUDE_DIR})
-   LINK_LIBRARIES(${GTKMM_LIBRARIES})
-  ENDIF(GTKMM_FOUND)
-ENDIF(ENABLE_GTK_GUI)
+  LINK_LIBRARIES(${FFTW_LIBRARIES})
+ENDIF(FFTW_FOUND)
 
 ######################################################################
 # Manage Einspline library
@@ -414,44 +433,37 @@ ENDIF(ENABLE_GTK_GUI)
 # - if everything fails, do not use it
 ######################################################################
 INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
+if(EINSPLINE_FOUND)
+  set(HAVE_EINSPLINE 1)
   IF(HAVE_EINSPLINE_EXT)
-  INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-  LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
+    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
+    LINK_LIBRARIES(${EINSPLINE_LIBRARIES})  
   ELSE(HAVE_EINSPLINE_EXT)
-  IF(HAVE_EINSPLINE)
-  SUBDIRS(src/einspline)
-  ENDIF(HAVE_EINSPLINE)
-ENDIF(HAVE_EINSPLINE_EXT)
+    SUBDIRS(src/einspline)
+  ENDIF(HAVE_EINSPLINE_EXT)
+endif()
 
-#IF ( CMAKE_PKGCONFIG_EXECUTABLE )
-#   # Find all the librtk stuff with pkg-config
-#   PKGCONFIG( "einspline >= 0.9" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
-#   CHECK_INCLUDE_FILE(${EINSPLINE_INCLUDE_DIRS}/config.h HAVE_EINSPLINE)
-#   IF(HAVE_EINSPLINE)	
-#     FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${EINSPLINE_LINK_DIRS})
-#     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIRS})
-#     ADD_DEFINITIONS (${EINSPLINE_DEFINES} -DHAVE_EINSPLINE)
-#     SET(HAVE_EINSPLINE 1)
-#     SET(HAVE_EINSPLINE_EXT 1)
-#     LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
-#     MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
-#   ELSE(HAVE_EINSPLINE)	
-#     MESSAGE("-- Checked PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
-#     MESSAGE("-- Missing pre-built Einspline library.")
-#   ENDIF(HAVE_EINSPLINE)	
-#ENDIF  ( CMAKE_PKGCONFIG_EXECUTABLE )
+#######################################################################
+## Manage GTK+ and GTKMM packages for GUI
+## search headers and libraries
+##   1) -lXYZ-${XYZ_VERSION} 
+##   2) -lXYZ
+## example: -lgtk-${GTK_VERSION} | -lgtk
+#######################################################################
+#SET(GTK_VERSION 2.0)
+#SET(PANGO_VERSION 1.0)
 #
-#IF(NOT HAVE_EINSPLINE)
-#  FIND_PATH(EINSPLINE_DIR src/bspline.h $ENV{EINSPLINE_HOME})
-#  IF(EINSPLINE_DIR)
-#    MESSAGE("-- Try to build Einspline library. Source is found at ${EINSPLINE_DIR}.")
-#    SET(HAVE_EINSPLINE 1)
-#    SUBDIRS(src/einspline)
-#  ELSE(EINSPLINE_DIR)
-#    MESSAGE("-- EINSPLINE_HOME is not found. Disable Einspline library.")
-#    MESSAGE("-- Download einspline library to utilize an optimized 3D-bspline library.")
-#  ENDIF(EINSPLINE_DIR)
-#ENDIF(NOT HAVE_EINSPLINE)
+#SET(GTKMM_VERSION 2.4)
+#SET(PANGOMM_VERSION 1.4)
+#SET(SIGCPP_VERSION 2.0)
+#IF(ENABLE_GTK_GUI)
+#  INCLUDE(${PROJECT_CMAKE}/FindGTK.cmake)
+#  #THIS SHOULD GO TO the directory where GUI is built
+#  IF(GTKMM_FOUND)
+#   INCLUDE_DIRECTORIES(${GTKMM_INCLUDE_DIR})
+#   LINK_LIBRARIES(${GTKMM_LIBRARIES})
+#  ENDIF(GTKMM_FOUND)
+#ENDIF(ENABLE_GTK_GUI)
 
 ###################################################
 # Done searching libraries. Start building qmcpack
@@ -463,11 +475,16 @@ INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src
   ${qmcpack_BINARY_DIR}/src
   )
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
-#ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
-# IF(BUILD_QMCTOOLS)
-#   SUBDIRS(boost)
-# ENDIF(BUILD_QMCTOOLS)
+####################################################################
+# add definitions
+#  -DH5_USE_16_API for HDF5
+#  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
+####################################################################
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
+if(HAVE_MPI)
+  ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+endif()
+#ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 SUBDIRS(src)

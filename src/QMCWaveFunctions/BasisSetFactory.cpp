@@ -15,15 +15,15 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #if OHMMS_DIM == 3
-#if QMC_BUILD_LEVEL>1
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-#endif
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#endif
+#if QMC_BUILD_LEVEL>1
+#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #endif
 #endif
 #include "Utilities/ProgressReportEngine.h"

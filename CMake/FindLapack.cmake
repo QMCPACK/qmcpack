@@ -1,220 +1,156 @@
 # this module look for lapack/blas and other numerical library support
 # it will define the following values
-# LAPACK_LIBRARY
-# BLAS_LIBRARY
-#
+# Since lapack and blas are essential, link_liraries are called.
 # 1) search ENV MKL 
 # 2) search MKL in usual paths
 # 3) search ENV ATLAS
 # 4) search lapack/blas
 # 5) give up
 
-SET(MKL_PATHS "/usr/local/lib /usr/lib")
+set(LAPACK_FOUND FALSE)
+set(BLAS_FOUND FALSE)
+set(MKL_FOUND FALSE)
 
-#IF(NOT QMC_BUILD_STATIC)
 IF($ENV{MKL} MATCHES "mkl")
   MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
-  #look for the path where the mkl is installed
-  STRING(REGEX MATCHALL "[-][L]([^ ;])+" MKL_PATH_WITH_PREFIX  "$ENV{MKL}")
-  STRING(REGEX REPLACE "[-][L]" "" MKL_PATHS ${MKL_PATH_WITH_PREFIX})
+  link_libraries($ENV{MKL})
+  set(LAPACK_FOUND TRUE)
+  set(BLAS_FOUND TRUE)
+  set(MKL_FOUND TRUE)
 ENDIF($ENV{MKL} MATCHES "mkl")
 
-SET(MKL_PATHS 
-  $ENV{MKL_HOME}/lib/em${QMC_BITS}t
-  $ENV{MKL_HOME}/lib/${QMC_BITS}
-  $ENV{MKL_HOME}/lib
-  ${MKL_PATHS} 
-  ) 
-MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
+if($ENV{MKL_HOME} MATCHES "mkl")
+  if(NOT MKL_FOUND)
+    #default MKL libraries 
+    set(mkl_libs "mkl_lapack;mkl;guide")
+    STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" MKL_VERSION "$ENV{MKL_HOME}")
 
-STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" MKL_VERSION "$ENV{MKL_HOME}")
-SET(LINK_LAPACK_DEFAULT 1)
-IF(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
-  SET(LINK_LAPACK_DEFAULT 0)
-ENDIF(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+      SET(MKLPATH $ENV{MKL_HOME}/lib/em64t)
+      if(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
+        set(mkl_libs "mkl_intel_lp64;mkl_sequential;mkl_core;mkl_solver_lp64_sequential")
+      endif(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
+    endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
-IF(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
-  set(LAPACK_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl_lapack -lmkl_core -lmkl_sequential -lmkl_intel_lp64)
-  set(BLAS_LIBRARY -L${MKL_HOME}/lib/em64t -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lguide)
-  SET(LINK_LAPACK_DEFAULT 2)
-ENDIF(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
+      SET(MKLPATH $ENV{MKL_HOME}/lib/32)
+    endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
 
-IF(NOT LAPACK_LIBRARY_INIT)
-  IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-    IF(LINK_LAPACK_DEFAULT MATCHES 1)
-      FIND_LIBRARY(LAPACK_LIBRARY NAMES mkl_lapack PATHS ${MKL_PATHS})
-      FIND_LIBRARY(BLAS_LIBRARY NAMES mkl PATHS ${MKL_PATHS})
-    ELSEIF(LINK_LAPACK_DEFAULT MATCHES 0)
-      FIND_LIBRARY(LAPACK_LIBRARY NAMES mkl_lapack PATHS ${MKL_PATHS})
-      FIND_LIBRARY(BLAS_LIBRARY  NAMES mkl_em64t PATHS ${MKL_PATHS})
-      MESSAGE("-- mkl 10.0.[0-2] warning for EM64T")
-      MESSAGE("-- Replace libmkl_lapack.so in CMakeCache.txt by libmkl_lapack.a")
-    ELSEIF(LINK_LAPACK_DEFAULT MATCHES 2)
-      FIND_LIBRARY(LAPACK_LIBRARY NAMES mkl_lapack PATHS ${MKL_PATHS})
-      FIND_LIBRARY(BLAS_LIBRARY  NAMES mkl_core PATHS ${MKL_PATHS})
-    ENDIF(LINK_LAPACK_DEFAULT MATCHES 1)
-  ELSE(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-    FIND_LIBRARY(LAPACK_LIBRARY 
-      NAMES mkl_lapack 
-      PATHS ${MKL_PATHS}
-      )
-    FIND_LIBRARY(BLAS_LIBRARY
-      NAMES mkl
-      PATHS ${MKL_PATHS}
-    )
-  ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
+      SET(MKLPATH $ENV{MKL_HOME}/lib/64)
+    endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
 
-  FIND_LIBRARY(INTEL_GUIDE_LIBRARY
-    NAMES guide
-    PATHS ${MKL_PATHS}
-  )
+    SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${MKLPATH}")
 
-  IF(LAPACK_LIBRARY MATCHES "mkl")
-    MESSAGE(STATUS "Found intel/mkl library")
-    SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized")
-    SET(HAVE_MKL 1) # CACHE BOOL "HAVE_MKL is set to 1")
-    SET(MKL_INC_PATHS $ENV{MKL_HOME}/include ${MKL_PATHS}) 
-    FIND_PATH(MKL_INCLUDE_DIR mkl.h ${MKL_INC_PATHS})
-    INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIR})
-  ENDIF(LAPACK_LIBRARY MATCHES "mkl")
+    if(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
+      link_libraries(${MKLPATH}/libmkl_lapack.a -lmkl -lguide)
+    else(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
+      foreach(alib ${mkl_libs})
+        link_libraries(${alib})
+      endforeach()
+    endif(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
 
-ENDIF(NOT LAPACK_LIBRARY_INIT)
+    set(LAPACK_FOUND TRUE)
+    set(BLAS_FOUND TRUE)
+    set(MKL_FOUND TRUE)
 
-IF(NOT HAVE_MKL)
-  IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    FIND_PATH(MKL_INCLUDE_DIR mkl.h $ENV{MKL_HOME}/include)
+    if(MKL_INCLUDE_DIR)
+      MESSAGE(STATUS "Header files of MKL libraries are found at " ${MKL_INCLUDE_DIR})
+      INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIR})
+      set(HAVE_MKL TRUE)
+      find_file(mkl_vml_file mkl_vml.h $ENV{MKL_HOME}/include)
+      if(mkl_vml_file)
+        set(HAVE_MKL_VML TRUE)
+      endif(mkl_vml_file)
+    endif(MKL_INCLUDE_DIR)
+  endif(NOT MKL_FOUND)
+endif($ENV{MKL_HOME} MATCHES "mkl")
+
+if(MKL_FOUND)
+  MESSAGE(STATUS "MKL libraries are found")
+  set(LAPACK_FOUND TRUE)
+  set(BLAS_FOUND TRUE)
+else(MKL_FOUND)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -framework vecLib")
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
     SET(MAC_VECLIB 1 CACHE BOOL "use Mac Framework")
-    SET(LAPACK_LIBRARY "")
-    SET(BLAS_LIBRARY "")
     MESSAGE(STATUS "Using Framework on Darwin.")
+    set(LAPACK_FOUND TRUE)
+    set(BLAS_FOUND TRUE)
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-    ## check goto library: does not work so well
-    #FIND_LIBRARY(BLAS_LIBRARY NAMES goto
-    #    PATHS 
-    #    $ENV{GOTOBLAS_HOME}
-    #    /usr/lib
-    #    /usr/local/lib
-    #    /sw/lib
-    #    )
-    SET(BLAS_LIBRARY "")
-    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
-  ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-ENDIF(NOT HAVE_MKL)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+    link_libraries(-lessl -lmass -lmassv)
+    set(BLAS_FOUND TRUE)
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 
-IF($ENV{ATLAS} MATCHES "atlas")
-  IF($ENV{ATLAS} MATCHES "lapack") 
-    SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized with ATLAS env")
-  ENDIF($ENV{ATLAS} MATCHES "lapack") 
-  SET(BLAS_LIBRARY $ENV{ATLAS})
-  SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized with ATLAS env")
-ENDIF($ENV{ATLAS} MATCHES "atlas")
+  if($ENV{LAPACK} MATCHES "lapack")
+    link_libraries($ENV{LAPACK})
+    set(LAPACK_FOUND TRUE)
+  endif($ENV{LAPACK} MATCHES "lapack")
 
-IF($ENV{LAPACK} MATCHES "lapack")
-  SET(LAPACK_LIBRARY $ENV{LAPACK})
-  SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-ENDIF($ENV{LAPACK} MATCHES "lapack")
+  IF($ENV{ATLAS} MATCHES "atlas")
+    # COULD SEARCH THESE but..... 
+    set(atlas_libs "lapack;f77blas;cblas;atlas")
+    set(LAPACK_FOUND TRUE)
+    set(BLAS_FOUND TRUE)
+    link_libraries($ENV{ATLAS})
+  endif($ENV{ATLAS} MATCHES "atlas")
 
-#IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#  SET(LAPACK_LIBRARY $ENV{LAPACK})
-#  SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-#ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif(MKL_FOUND)
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
-  SET(ELIB essl)
-  IF(ENABLE_OMP)
-    SET(ELIB esslsmp)
-  ENDIF(ENABLE_OMP)
-   
-  IF(NOT LAPACK_LIBRARY_INIT)
-    SET(LLIB lapack-SP4_${QMC_BITS} lapack)
-    FIND_LIBRARY(LAPACK_LIBRARY  
-      NAMES ${LLIB}
-      PATHS /usr/apps/math/lapack/LAPACK
-      lib
-      )
-    FIND_LIBRARY(BLAS_LIBRARY ${ELIB}
-                 /usr/lib
-                )
-  ENDIF(NOT LAPACK_LIBRARY_INIT)
+if(LAPACK_FOUND AND BLAS_FOUND)
+  MESSAGE(STATUS "LAPACK and BLAS libraries are linked to all the applications")
+else(LAPACK_FOUND AND BLAS_FOUND)
+  MESSAGE("Failed to link LAPACK, BLAS, ATLAS libraries.")
+  find_library(LAPACK_LIBRARIES lapack)
+  find_library(BLAS_LIBRARIES blas)
+  if(LAPACK_LIBRARIES AND BLAS_LIBRARIES)
+    link_libraries(${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+    set(LAPACK_FOUND TRUE)
+    set(BLAS_FOUND TRUE)
+  endif(LAPACK_LIBRARIES AND BLAS_LIBRARIES)
+endif(LAPACK_FOUND AND BLAS_FOUND)
 
-  SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-  SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas with essl is initialized")
-  MESSAGE(STATUS "Found lapack/blas on AIX system")
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
-
-IF(NOT LAPACK_LIBRARY_INIT)
-  FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_gnu
-    PATHS /usr/apps/math/lapack
-    /usr/lib
-    /opt/lib
-    /usr/local/lib
-    /sw/lib
-    )
-  IF(LAPACK_LIBRARY)
-    MESSAGE(STATUS "Found netlib lapack library")
-    SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-  ENDIF(LAPACK_LIBRARY)
-ENDIF(NOT LAPACK_LIBRARY_INIT)
-
-IF(NOT BLAS_LIBRARY_INIT)
-  FIND_LIBRARY(BLAS_LIBRARY NAMES goto blas blas_gnu
-    PATHS 
-    $ENV{GOTOBLAS_HOME}
-    /usr/apps/math/lapack
-    /usr/lib
-    /opt/lib
-    /usr/local/lib
-    /sw/lib
-    )
-  IF(BLAS_LIBRARY)
-    MESSAGE(STATUS "Found netlib blas is found")
-    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-  ENDIF(BLAS_LIBRARY)
-ENDIF(NOT BLAS_LIBRARY_INIT)
-
-### BRANDT
-### MOVED BECAUSE OF SCOPE PROBLEM
-### PROBABLY SHOULD BE FIXED
-MARK_AS_ADVANCED(
-  LAPACK_LIBRARY 
-  BLAS_LIBRARY 
-)
-
-IF(USE_SCALAPACK)
-  SET(PNPATHS 
-    ${MKL_PATHS}
-    ${BLACS_HOME}/lib
-    ${SCALAPACK_HOME}/lib
-    /usr/lib
-    /opt/lib
-    /usr/local/lib
-    /sw/lib
-    )
-
-  IF(INTEL_MKL)
-    FIND_LIBRARY(BLACSLIB mkl_blacs_${PLAT}_lp${QMC_BITS} PATHS  ${PNPATHS})
-    FIND_LIBRARY(SCALAPACKLIB mkl_scalapack PATHS  ${PNPATHS})
-  ENDIF(INTEL_MKL)
-
-  IF(NOT SCALAPACKLIB)
-    FIND_LIBRARY(BLACSLIB blacs_MPI-${PLAT}-{BLACSDBGLVL} PATHS  ${PNPATHS})
-    FIND_LIBRARY(BLACSCINIT blacsCinit_MPI-${PLAT}-{BLACSDBGLVL} PATHS  ${PNPATHS})
-    FIND_LIBRARY(SCALAPACKLIB scalapack PATHS  ${PNPATHS})
-  ENDIF(NOT SCALAPACKLIB)
-
-  IF(BLACSLIB AND SCALAPACKLIB)
-    SET(FOUND_SCALAPACK 1 CACHE BOOL "Found scalapack library")
-  ELSE(BLACSLIB AND SCALAPACKLIB)
-    SET(FOUND_SCALAPACK 0 CACHE BOOL "Mising scalapack library")
-  ENDIF(BLACSLIB AND SCALAPACKLIB)
-
-  MARK_AS_ADVANCED(
-    BLACSCINIT
-    BLACSLIB
-    SCALAPACKLIB
-    FOUND_SCALAPACK
-    )
-ENDIF(USE_SCALAPACK)
+#MARK_AS_ADVANCED(
+#  LAPACK_LIBRARIES 
+#  BLAS_LIBRARIES 
+#  )
+#IF(USE_SCALAPACK)
+#  SET(PNPATHS 
+#    ${MKL_PATHS}
+#    ${BLACS_HOME}/lib
+#    ${SCALAPACK_HOME}/lib
+#    /usr/lib
+#    /opt/lib
+#    /usr/local/lib
+#    /sw/lib
+#    )
+#
+#  IF(INTEL_MKL)
+#    FIND_LIBRARY(BLACSLIB mkl_blacs_${PLAT}_lp${QMC_BITS} PATHS  ${PNPATHS})
+#    FIND_LIBRARY(SCALAPACKLIB mkl_scalapack PATHS  ${PNPATHS})
+#  ENDIF(INTEL_MKL)
+#
+#  IF(NOT SCALAPACKLIB)
+#    FIND_LIBRARY(BLACSLIB blacs_MPI-${PLAT}-{BLACSDBGLVL} PATHS  ${PNPATHS})
+#    FIND_LIBRARY(BLACSCINIT blacsCinit_MPI-${PLAT}-{BLACSDBGLVL} PATHS  ${PNPATHS})
+#    FIND_LIBRARY(SCALAPACKLIB scalapack PATHS  ${PNPATHS})
+#  ENDIF(NOT SCALAPACKLIB)
+#
+#  IF(BLACSLIB AND SCALAPACKLIB)
+#    SET(FOUND_SCALAPACK 1 CACHE BOOL "Found scalapack library")
+#  ELSE(BLACSLIB AND SCALAPACKLIB)
+#    SET(FOUND_SCALAPACK 0 CACHE BOOL "Mising scalapack library")
+#  ENDIF(BLACSLIB AND SCALAPACKLIB)
+#
+#  MARK_AS_ADVANCED(
+#    BLACSCINIT
+#    BLACSLIB
+#    SCALAPACKLIB
+#    FOUND_SCALAPACK
+#    )
+#ENDIF(USE_SCALAPACK)
 
