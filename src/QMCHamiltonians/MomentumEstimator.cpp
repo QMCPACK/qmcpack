@@ -199,7 +199,9 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
             
             RealType qn(4.0*M_PI*M_PI*std::pow(Lattice.Volume,-2.0/3.0));
             mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
-            mappedQnorms[kgrid]=qn/RealType(M); mappedQnorms[3*kgrid+1]=qn/RealType(M); mappedQnorms[5*kgrid+2]=qn/RealType(M);
+            if (twist[0]==0) mappedQnorms[kgrid]=qn/RealType(M); 
+            if (twist[1]==0) mappedQnorms[3*kgrid+1]=qn/RealType(M);
+            if (twist[2]==0) mappedQnorms[5*kgrid+2]=qn/RealType(M);
             
 //             app_log()<<" Jnorm="<<qn<<endl;
             Q.resize(numqtwists);
