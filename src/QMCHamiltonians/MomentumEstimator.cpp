@@ -170,13 +170,12 @@ namespace qmcplusplus
 
 bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode)
   {
-    string ctype("scalar");
     OhmmsAttributeSet pAttrib;
-    pAttrib.add(ctype,"mode");
+    string hdf5_flag="yes";
+    pAttrib.add(hdf5_flag,"hdf5");
     pAttrib.add(M,"samples");
     pAttrib.put(cur);
-    if (ctype=="hdf5") hdf5_out=true;
-    else hdf5_out=false;
+    hdf5_out = (hdf5_flag=="yes");
     
 
     
@@ -253,9 +252,9 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       if (rootNode)
       {
           std::stringstream sstr;  
-          int t0=100*twist[0];
-          int t1=100*twist[1];
-          int t2=100*twist[2];
+          int t0=(int)round(100.0*twist[0]);
+          int t1=(int)round(100.0*twist[1]);
+          int t2=(int)round(100.0*twist[2]);
           sstr<<"Kpoints."<<t0<<"_"<<t1<<"_"<<t2<<".dat";
           ofstream fout(sstr.str().c_str());
           fout.setf(ios::scientific, ios::floatfield);
