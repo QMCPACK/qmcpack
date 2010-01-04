@@ -302,6 +302,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     for(int i=0;i<mappedQtonofK.size();i++) myclone->mappedQtonofK[i]=mappedQtonofK[i];
     myclone->hdf5_out=hdf5_out;
     myclone->mappedQnorms=mappedQnorms;
+    myclone->M=M;
     return myclone;
   }
 
