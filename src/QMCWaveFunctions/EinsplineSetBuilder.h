@@ -237,6 +237,7 @@ namespace qmcplusplus {
     std::vector<RealType> rotationMatrix;
     std::vector<int> rotatedOrbitals;
     void RotateBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet);
+    void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
   }; 
 }
 

@@ -973,18 +973,18 @@ namespace qmcplusplus
       R_unit.setUnit(PosUnit::LatticeUnit);
       
 //       app_log()<<" My crystals basis set is:"<<endl;
-      vector<vector<RealType> > BasisMatrix(3, vector<RealType>(3,0.0));
-      
-      for (int i=0;i<3;i++)
-      {
-        R_unit[0][0]=0;
-        R_unit[0][1]=0;
-        R_unit[0][2]=0;
-        R_unit[0][i]=1;
-        W.convert2Cart(R_unit,R_cart);
-//         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
-        for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
-      }
+//       vector<vector<RealType> > BasisMatrix(3, vector<RealType>(3,0.0));
+//       
+//       for (int i=0;i<3;i++)
+//       {
+//         R_unit[0][0]=0;
+//         R_unit[0][1]=0;
+//         R_unit[0][2]=0;
+//         R_unit[0][i]=1;
+//         W.convert2Cart(R_unit,R_cart);
+// //         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
+//         for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
+//       }
 
       int Nrotated(SPONumbers.size());
       app_log()<<" Projected orbitals: ";
@@ -1020,27 +1020,32 @@ namespace qmcplusplus
       vector<RealType> brokenSymmetryCharacter(totsymops);
       for(int k=0;k<Nrotated;k++) for(int l=0;l<totsymops;l++) 
         brokenSymmetryCharacter[l] += irrepRotations[k]*symOp.getsymmetryCharacter(l,irrepRotations[k]-1);
+//       app_log()<<"bsc: ";
+//       for(int l=0;l<totsymops;l++) app_log()<<brokenSymmetryCharacter[l]<<" ";
+//       app_log()<<endl;
+//       for(int l=0;l<totsymops;l++) brokenSymmetryCharacter[l]+=0.5;
       
       if ((doProj=="yes")||(doRotate=="yes"))
       {
+        OrbitalSetTraits<ValueType>::ValueVector_t identityValues(values.size());
         //Loop over grid
       for(int i=0;i<Grid[0];i++)
         for(int j=0;j<Grid[1];j++)
           for(int k=0;k<Grid[2];k++)
           {
-            OrbitalSetTraits<ValueType>::ValueVector_t identityValues(values.size());
             //Loop over symmetry classes and small group operators
             for(int l=0;l<totsymops;l++)
             {
-                R_unit[0][0]=overG0*RealType(i); R_cart[0][0]=0;
-                R_unit[0][1]=overG1*RealType(j); R_cart[0][1]=0;
-                R_unit[0][2]=overG2*RealType(k); R_cart[0][2]=0;
+                R_unit[0][0]=overG0*RealType(i);// R_cart[0][0]=0;
+                R_unit[0][1]=overG1*RealType(j);// R_cart[0][1]=0;
+                R_unit[0][2]=overG2*RealType(k);// R_cart[0][2]=0;
                 
-                for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
+//                 for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
+                 W.convert2Cart(R_unit,R_cart);
 
                 symOp.TransformSinglePosition(R_cart,l);
                 W.R[0]=R_cart[0];
-                for(int a=0;a<values.size();a++) values=0.0;
+                values=0.0;
                 //evaluate orbitals
                 Phi->evaluate(W,0,values);
                 
@@ -1050,7 +1055,7 @@ namespace qmcplusplus
                   for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*real(values[SPONumbers[n]]*values[SPONumbers[n]]);
                   #else
                   for(int n=0;n<Nrotated;n++) NormPhi[n] += totsymops*(values[SPONumbers[n]]*values[SPONumbers[n]]);
-                  #endif defined(QMC_COMPLEX)
+                  #endif
                 }
                 
                 //now we have phi evaluated at the rotated/inverted/whichever coordinates
@@ -1061,7 +1066,7 @@ namespace qmcplusplus
                   RealType phi2 = real(values[N]*identityValues[N]);
                   #else
                   RealType phi2 = (values[N]*identityValues[N]);
-                  #endif defined(QMC_COMPLEX)
+                  #endif
                   SymmetryOrbitalValues(n,l) += phi2;
                 }
                 
@@ -1072,8 +1077,8 @@ namespace qmcplusplus
                   #if defined(QMC_COMPLEX)
                   orthoProjs(n,p) += 0.5*real(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
                   #else
-                  orthoProjs(n,p) += 0.5*(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
-                  #endif defined(QMC_COMPLEX)
+                  orthoProjs(n,p) +=0.5*(identityValues[N]*values[P]+identityValues[P]*values[N])*brokenSymmetryCharacter[l];
+                  #endif
                 }
           }
       }
@@ -1153,9 +1158,9 @@ namespace qmcplusplus
             for(int l=0;l<vdim;l++) app_log()<<VT(l,n)<<" ";
             app_log()<<endl;
           }  
-//           app_log()<<endl<<"Printing Eigenvalues"<<endl;
-//           for(int n=0;n<vdim;n++) app_log()<<Sigma[n]<<" ";
-//           app_log()<<endl;  
+          app_log()<<endl<<"Printing Eigenvalues"<<endl;
+          for(int n=0;n<vdim;n++) app_log()<<Sigma[n]<<" ";
+          app_log()<<endl;  
       }      
       }
 
