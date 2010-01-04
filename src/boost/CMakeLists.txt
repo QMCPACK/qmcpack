@@ -17,64 +17,111 @@
 #set(BOOST_VERSION_MINOR 33)
 #set(BOOST_VERSION_SUBMINOR 0)
 #set(BOOST_VERSION "${BOOST_VERSION_MAJOR}.${BOOST_VERSION_MINOR}.${BOOST_VERSION_SUBMINOR}")
+#SET (BOOST_LIBS $ENV{BOOST_HOME}/libs)
 
-SET (BOOST_LIBS $ENV{BOOST_HOME}/libs)
+set(Boost_ROOT_DIR ${Boost_INCLUDE_DIR})
+set(BOOST_SOURCES "")
 
-set(SOURCES
-    ${BOOST_LIBS}/serialization/src/basic_archive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_iserializer.cpp
-    ${BOOST_LIBS}/serialization/src/basic_oarchive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_oserializer.cpp
-    ${BOOST_LIBS}/serialization/src/basic_pointer_iserializer.cpp
-    ${BOOST_LIBS}/serialization/src/basic_pointer_oserializer.cpp
-    ${BOOST_LIBS}/serialization/src/basic_serializer_map.cpp
-    ${BOOST_LIBS}/serialization/src/basic_text_iprimitive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_text_oprimitive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_xml_archive.cpp
-    ${BOOST_LIBS}/serialization/src/binary_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/binary_oarchive.cpp
-    ${BOOST_LIBS}/serialization/src/extended_type_info.cpp
-    ${BOOST_LIBS}/serialization/src/extended_type_info_typeid.cpp
-    ${BOOST_LIBS}/serialization/src/extended_type_info_no_rtti.cpp
-    ${BOOST_LIBS}/serialization/src/polymorphic_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/polymorphic_oarchive.cpp
-    ${BOOST_LIBS}/serialization/src/stl_port.cpp
-    ${BOOST_LIBS}/serialization/src/text_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/text_oarchive.cpp
-    ${BOOST_LIBS}/serialization/src/void_cast.cpp
-    ${BOOST_LIBS}/serialization/src/xml_grammar.cpp
-    ${BOOST_LIBS}/serialization/src/xml_iarchive.cpp
-    ${BOOST_LIBS}/serialization/src/xml_oarchive.cpp
+if(EXISTS ${Boost_ROOT_DIR}/libs/serialization/src)
+  set(BUILD_BOOST_SERIALIZATION TRUE)
+endif()
+
+if(EXISTS ${Boost_ROOT_DIR}/libs/filesystems/src)
+  set(BUILD_BOOST_FILESYSTEM TRUE)
+endif()
+
+set(BUILD_BOOST_MPI FALSE)
+if(EXISTS ${Boost_ROOT_DIR}/libs/mpi/src)
+  set(BUILD_BOOST_MPI TRUE)
+endif()
+
+if(BUILD_BOOST_SERIALIZATION)
+  set(DIRECTORY "${Boost_ROOT_DIR}/libs/serialization/src")
+  set(SOURCES archive_exception.cpp basic_archive.cpp
+    basic_iarchive.cpp basic_iserializer.cpp basic_oarchive.cpp
+    basic_oserializer.cpp basic_pointer_iserializer.cpp
+    basic_pointer_oserializer.cpp
+    basic_serializer_map.cpp
+    basic_text_iprimitive.cpp
+    basic_text_oprimitive.cpp
+    basic_text_wiprimitive.cpp
+    basic_text_woprimitive.cpp
+    basic_xml_archive.cpp
+    binary_iarchive.cpp
+    binary_oarchive.cpp
+    binary_wiarchive.cpp
+    binary_woarchive.cpp
+    codecvt_null.cpp
+    extended_type_info.cpp
+    extended_type_info_no_rtti.cpp
+    extended_type_info_typeid.cpp
+    polymorphic_iarchive.cpp
+    polymorphic_oarchive.cpp
+    shared_ptr_helper.cpp
+    stl_port.cpp
+    text_iarchive.cpp
+    text_oarchive.cpp
+    text_wiarchive.cpp
+    text_woarchive.cpp
+    utf8_codecvt_facet.cpp
+    void_cast.cpp
+    xml_archive_exception.cpp
+    xml_grammar.cpp
+    xml_iarchive.cpp
+    xml_oarchive.cpp
+    xml_wgrammar.cpp
+    xml_wiarchive.cpp
+    xml_woarchive.cpp)
+  foreach(S ${SOURCES})
+    if(EXISTS ${DIRECTORY}/${S})
+      set(BOOST_SOURCES ${BOOST_SOURCES} ${DIRECTORY}/${S})
+    endif(EXISTS ${DIRECTORY}/${S})
+  endforeach(S)
+endif(BUILD_BOOST_SERIALIZATION)
+
+# Boost.Filesystem
+if(BUILD_BOOST_FILESYSTEM)
+  set(DIRECTORY "${Boost_ROOT_DIR}/libs/filesystem/src")
+  set(SOURCES
+    operations.cpp path.cpp portability.cpp utf8_codecvt_facet.cpp)
+  foreach(S ${SOURCES})
+    if(EXISTS ${DIRECTORY}/${S})
+      set(BOOST_SOURCES ${BOOST_SOURCES} ${DIRECTORY}/${S})
+    endif(EXISTS ${DIRECTORY}/${S})
+  endforeach(S)
+endif(BUILD_BOOST_FILESYSTEM)
+
+if(BUILD_BOOST_MPI)
+  set(DIRECTORY "${Boost_ROOT_DIR}/libs/mpi/src")
+  set(SOURCES
+    boost_mpi
+    broadcast.cpp
+    communicator.cpp
+    computation_tree.cpp
+    content_oarchive.cpp
+    environment.cpp
+    exception.cpp
+    graph_communicator.cpp
+    group.cpp
+    intercommunicator.cpp
+    mpi_datatype_cache.cpp
+    mpi_datatype_oarchive.cpp
+    packed_iarchive.cpp
+    packed_oarchive.cpp
+    packed_skeleton_iarchive.cpp
+    packed_skeleton_oarchive.cpp
+    point_to_point.cpp
+    request.cpp
+    text_skeleton_oarchive.cpp
     )
-    
-set(WSOURCES
-    ${BOOST_LIBS}/serialization/src/basic_text_wiprimitive.cpp
-    ${BOOST_LIBS}/serialization/src/basic_text_woprimitive.cpp
-    ${BOOST_LIBS}/serialization/src/text_wiarchive.cpp
-    ${BOOST_LIBS}/serialization/src/text_woarchive.cpp
-    ${BOOST_LIBS}/serialization/src/utf8_codecvt_facet.cpp
-    ${BOOST_LIBS}/serialization/src/xml_wgrammar.cpp
-    ${BOOST_LIBS}/serialization/src/xml_wiarchive.cpp
-    ${BOOST_LIBS}/serialization/src/xml_woarchive.cpp
-    ${BOOST_LIBS}/serialization/src/codecvt_null.cpp
-    )
+  foreach(S ${SOURCES})
+    if(EXISTS ${DIRECTORY}/${S})
+      set(BOOST_SOURCES ${BOOST_SOURCES} ${DIRECTORY}/${S})
+    endif(EXISTS ${DIRECTORY}/${S})
+  endforeach(S)
+endif(BUILD_BOOST_MPI)
 
-set(POSRCS
-    ${BOOST_LIBS}/program_options/src/cmdline.cpp
-    ${BOOST_LIBS}/program_options/src/config_file.cpp
-    ${BOOST_LIBS}/program_options/src/options_description.cpp
-    ${BOOST_LIBS}/program_options/src/parsers.cpp
-    ${BOOST_LIBS}/program_options/src/variables_map.cpp
-    ${BOOST_LIBS}/program_options/src/value_semantic.cpp
-    ${BOOST_LIBS}/program_options/src/positional_options.cpp
-    ${BOOST_LIBS}/program_options/src/utf8_codecvt_facet.cpp
-    ${BOOST_LIBS}/program_options/src/convert.cpp
-    ${BOOST_LIBS}/program_options/src/winmain.cpp
-)
-    #    ${BOOST_LIBS}/date_time/src/gregorian/greg_month.cpp 
-    #    ${BOOST_LIBS}/date_time/src/gregorian/greg_weekday.cpp
-    #    ${BOOST_LIBS}/date_time/src/gregorian/date_generators.cpp 
+ADD_LIBRARY(boost ${BOOST_SOURCES})
+link_libraries(boost)
 
-ADD_LIBRARY(boost ${SOURCES} ${WSOURCES} ${POSRCS})
 #SUBDIRS(serialization)

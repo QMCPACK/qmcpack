@@ -334,16 +334,17 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 #First check the required libraries. Abort if these are not found.
 #Changed the fall-back versions to use similar conventions to 2.8.0 and higher
 ####################################################################
+# use customized cmake file for boost so that we can deal with multiple
+# installataions
+INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
 if(CMAKE_FALLBACK)
   INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
   INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
-  INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
   INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
   INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
 else()
   find_package(LibXml2)
   find_package(HDF5)
-  find_package(Boost)
 endif()
 
 IF(LIBXML2_FOUND)
@@ -368,6 +369,7 @@ ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
+  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 ELSE()
   MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
