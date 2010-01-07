@@ -567,7 +567,8 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
-      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
+      //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
+      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,false);
       if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
       map<const FT*,FT*> fcmap;
       for(int ig=0; ig<NumGroups; ++ig)
