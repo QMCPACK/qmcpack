@@ -692,9 +692,11 @@ namespace qmcplusplus {
       string cname((const char*)(cur->name));
       if(cname == "occupation") {
 	string occ_mode("ground");
+  occ_format="energy";
         OhmmsAttributeSet oAttrib;
         oAttrib.add(occ_mode,"mode");
         oAttrib.add(spinSet,"spindataset");
+        oAttrib.add(occ_format,"format");
         oAttrib.put(cur);
 	if(occ_mode == "excited"){
           putContent(Occ,cur);
@@ -1382,14 +1384,36 @@ namespace qmcplusplus {
         else maxOrbs++;
       }
     }
-
+    
     // Now sort the bands by energy
     if (sortBands) {
       app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
+    
+    //occupy the ground state first
+    vector<int> gsOcc(maxOrbs);
+    int N_gs_orbs=OrbitalSet->getOrbitalSetSize();
+    int nocced(0);
+    for (int ti=0; ti<SortBands.size(); ti++) {
+      if (nocced<N_gs_orbs)
+      {
+        if (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced>1))
+        {
+          nocced+=2;
+          gsOcc[ti]=2;
+        }
+        else if ( (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced==1)) || !SortBands[ti].MakeTwoCopies )
+        {
+          nocced+=1;
+          gsOcc[ti]=1;
+        }
+      }
+    }
+    
 
-    // To get the occupations right. 
+   if (occ_format=="energy"){
+   // To get the occupations right. 
     vector<int> Removed(0,0);
     vector<int> Added(0,0);
     for(int ien=0;ien<Occ.size();ien++){
@@ -1408,11 +1432,11 @@ namespace qmcplusplus {
     int doi(0);
     for(int i=0;i<SumOrb.size();i++){
       if(SortBands[i].MakeTwoCopies){
-        SumOrb[i]=  2+DiffOcc[doi++];
+        SumOrb[i]=  gsOcc[i]+DiffOcc[doi++];
         SumOrb[i]+= DiffOcc[doi++];
       }
       else
-        SumOrb[i]=1+DiffOcc[doi++];
+        SumOrb[i]=gsOcc[i]+DiffOcc[doi++];
     }
 
     vector<BandInfo> ReOrderedBands;
@@ -1441,7 +1465,7 @@ namespace qmcplusplus {
     }
     ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
     SortBands=ReOrderedBands;
-
+}
     //for(int sw=0;sw<Removed.size();sw++){
     //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
     //  BandInfo tempband(SortBands[Removed[sw]-1]);

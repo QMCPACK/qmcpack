@@ -233,6 +233,7 @@ namespace qmcplusplus {
     /////////////////////////////////////////////////////////////
     int LastSpinSet, NumOrbitalsRead;
     
+    string occ_format;
     bool makeRotations;
     std::vector<RealType> rotationMatrix;
     std::vector<int> rotatedOrbitals;
