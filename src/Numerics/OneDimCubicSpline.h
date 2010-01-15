@@ -443,8 +443,8 @@ public:
     return new OneDimCubicSpline<Td,Tg,CTd,CTg>(*this);
   }
   
-  OneDimCubicSpline<Td,Tg,CTd,CTg>(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) :
-  OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
+  OneDimCubicSpline<Td,Tg,CTd,CTg>(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) 
+    : OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
   {
     m_Y2.resize(a.m_Y2.size());
     m_Y2        = a.m_Y2;
@@ -458,17 +458,25 @@ public:
   const OneDimCubicSpline<Td,Tg,CTd,CTg>& 
     operator=(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) 
     {
-      GridManager = a.GridManager;
-      m_grid = a.m_grid;
-      m_Y = a.m_Y;
-      m_Y2=a.m_Y2;
-      ConstValue = a.ConstValue;
-      r_min = a.r_min;
-      r_max = a.r_max;
-      first_deriv = a.first_deriv;
-      last_deriv = a.last_deriv;
+      shallow_copy(a);
       return *this;
     }
+
+  void shallow_copy(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a)
+  {
+    this->GridManager = a.GridManager;
+    this->OwnGrid=false;
+    m_grid = a.m_grid;
+    m_Y.resize(a.m_Y.size());
+    m_Y2.resize(a.m_Y2.size());
+    m_Y=a.m_Y;
+    m_Y2=a.m_Y2;
+    ConstValue = a.ConstValue;
+    r_min = a.r_min;
+    r_max = a.r_max;
+    first_deriv = a.first_deriv;
+    last_deriv = a.last_deriv;
+  }
 
   //void setgrid(point_type r) {
   //  m_grid->locate(r);

@@ -36,8 +36,8 @@
 template<class T, class GF>
 inline T Phisq_x_Yk(const GF& g, const GF& a, 
 		    const GF& b, T prefactor) {
-
-  GF t(g);
+  GF t;
+  t.shallow_copy(g);
   for(int i=0; i < t.size(); i++) {
     t(i) = prefactor * g(i)*a(i)*b(i);
   }
@@ -74,8 +74,10 @@ Ykofr(GF& g, const GF& a, const GF& b, int k) {
   int n = g.size();
 
   //The integrands of each of the two integrals 	 
-  GF first_integrand(g);
-  GF second_integrand(g);
+  GF first_integrand;
+  GF second_integrand;
+  first_integrand.shallow_copy(g);
+  second_integrand.shallow_copy(g);
 
   vector<value_type> r_to_k(n);
   vector<value_type> r_to_minus_k_plus_one(n);
@@ -95,7 +97,9 @@ Ykofr(GF& g, const GF& a, const GF& b, int k) {
   //Store the value of the integral at each grid point in 
   //temporary grid objects A and B. 
 
-  GF A(g), B(g);
+  GF A, B;
+  A.shallow_copy(g);
+  B.shallow_copy(g);
   integrate_RK2_forward(first_integrand,A);
   integrate_RK2_backward(second_integrand,B);
 

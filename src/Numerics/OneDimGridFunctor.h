@@ -56,13 +56,18 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   /** constructor
    *@param gt a radial grid
    */
-  OneDimGridFunctor(grid_type* gt = 0): GridManager(true), m_grid(gt) {
+  OneDimGridFunctor(grid_type* gt = 0)
+    : GridManager(true), OwnGrid(false), m_grid(gt) 
+  {
     if(m_grid) resize(m_grid->size());
     //FirstAddress.resize(3,0);
   }
 
   /** virtual destructor */
-  inline virtual ~OneDimGridFunctor() { }
+  inline virtual ~OneDimGridFunctor() 
+  { 
+    if(OwnGrid&&m_grid) delete m_grid;
+  }
 
   /////copy constructor
   //OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
@@ -74,6 +79,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   OneDimGridFunctor<Td,Tg,CTd,CTg>(const OneDimGridFunctor<Td,Tg,CTd,CTg>& a)
   {
     GridManager = a.GridManager;
+    OwnGrid=true;
     m_grid = a.m_grid->makeClone();
     Y = a.Y;
     dY = a.dY;
@@ -87,6 +93,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   const this_type& operator=(const this_type& a) {
     //This object does not manage the grid
     GridManager=false;
+    OwnGrid=false;
     m_grid = a.m_grid;
     m_Y = a.m_Y;
     //m_Y2 = a.m_Y2;
@@ -231,7 +238,8 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
 
   ///true, if this object manages the grid
   bool GridManager;
-
+  ///true, if owns the grid to clean up
+  bool OwnGrid;
   ///pointer to the radial grid
   grid_type* m_grid;
 
