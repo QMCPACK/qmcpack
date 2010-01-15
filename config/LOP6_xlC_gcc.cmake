@@ -15,6 +15,7 @@ set(CMAKE_Fortran_COMPILER /sara/sw/modules11/wrappers/sara/xlf90)
 set(CMAKE_FIND_ROOT_PATH
     /opt/ibmcmp/xlmass/5.0/
     /opt/ibmcmp/xlf/12.1/
+    /home/jnkim/build/einspline/sles11_gnu
     /home/jnkim/build/fftw3.2/xlc64
     /home/jnkim/src/p3dfft/essl_stride1_20090928
     /sara/sw/hdf5/1.6.7

@@ -14,6 +14,7 @@ set(CMAKE_CXX_COMPILER /sara/sw/modules11/wrappers/sara/mpCC)
 set(CMAKE_FIND_ROOT_PATH
     /opt/ibmcmp/xlmass/5.0/
     /opt/ibmcmp/xlf/12.1/
+    /home/jnkim/build/einspline/sles11_xl
     /home/jnkim/build/fftw3.2/xlc64
     /sara/sw/hdf5/1.6.7
 )
