@@ -21,6 +21,12 @@
 #include "Numerics/RadialFunctorUtility.h"
 namespace ohmmshf {
 
+  RadialPotentialBase::~RadialPotentialBase()
+  {
+    if(Vext) delete Vext;
+    if(integrand) delete integrand;
+  }
+
   void RadialPotentialBase::getStorage(const BasisSetType& psi, 
       const std::string& RootFileName)
   {
@@ -104,11 +110,19 @@ namespace ohmmshf {
    *@param norb the number of orbitals
    *@brief The Constructor for the HartreePotential
    */
-  
-  HartreePotential::HartreePotential(Clebsch_Gordan* cg, int norb):
-    CG_coeff(cg) { 
+  HartreePotential::HartreePotential(Clebsch_Gordan* cg, int norb)
+    : CG_coeff(cg), Ykii_r(0), Ykjj_r(0)
+  { 
     storage.resize(norb*(norb+1)/2); 
     for(int nn=0; nn<storage.size(); nn++) storage[nn] = 0.0;
+  }
+  HartreePotential::~HartreePotential()
+  {
+    if(Ykii_r)
+    {
+      delete Ykii_r;
+      delete Ykjj_r;
+    }
   }
   
   /**
@@ -154,9 +168,17 @@ namespace ohmmshf {
     value_type coeff, ith_orb_coeff, jth_orb_coeff, energy_coeff = 0;
     value_type Ehartree=0;
   
-    RadialOrbital_t Ykii_r(psi(0));
-    RadialOrbital_t Ykjj_r(psi(0));
-    RadialOrbital_t Psisq_x_Yk(psi(0));
+    if(Ykii_r==0)
+    {
+      Ykii_r=new RadialOrbital_t(psi(0));
+      Ykjj_r=new RadialOrbital_t(psi(0));
+    }
+    RadialOrbital_t& ykii_ref(*Ykii_r);
+    RadialOrbital_t& ykjj_ref(*Ykjj_r);
+
+    //RadialOrbital_t Ykii_r(psi(0));
+    //RadialOrbital_t Ykjj_r(psi(0));
+    //RadialOrbital_t Psisq_x_Yk(psi(0));
     int npts = psi.m_grid->size();
     int nn=0;
 
@@ -189,16 +211,16 @@ namespace ohmmshf {
 	  jth_orb_coeff = psi.Occ[j] * coeff;
 	  energy_coeff = psi.Occ[j] * psi.Occ[i] * coeff;
 
-	  Ykofr(Ykii_r, psi(i), psi(i), k);
-	  Ykofr(Ykjj_r, psi(j), psi(j), k);
+	  Ykofr(*Ykii_r, psi(i), psi(i), k);
+	  Ykofr(*Ykjj_r, psi(j), psi(j), k);
 	  for(int gp=0; gp<npts; gp++){
-	    V[i](gp) += jth_orb_coeff*Ykjj_r(gp);
-	    V[j](gp) += ith_orb_coeff*Ykii_r(gp);
+	    V[i](gp) += jth_orb_coeff*ykjj_ref(gp);
+	    V[j](gp) += ith_orb_coeff*ykii_ref(gp);
 	  }
 	
 	  storage[nn] = 0.0;
-	  storage[nn] += Phisq_x_Yk(Ykjj_r, psi(i), psi(i), 0.5*energy_coeff);
-	  storage[nn] += Phisq_x_Yk(Ykii_r, psi(j), psi(j), 0.5*energy_coeff);
+	  storage[nn] += Phisq_x_Yk(ykjj_ref, psi(i), psi(i), 0.5*energy_coeff);
+	  storage[nn] += Phisq_x_Yk(ykii_ref, psi(j), psi(j), 0.5*energy_coeff);
 	  Ehartree += storage[nn];
 	}
       }
@@ -238,10 +260,16 @@ namespace ohmmshf {
    *@brief The Constructor for the ExchangePotential
    */
   
-  ExchangePotential::ExchangePotential(Clebsch_Gordan* cg, int norb):
-    CG_coeff(cg) {
+  ExchangePotential::ExchangePotential(Clebsch_Gordan* cg, int norb)
+    : CG_coeff(cg) , Ykij_r(0)
+  {
     storage.resize(norb*(norb+1)/2); 
     for(int nn=0; nn<storage.size(); nn++) storage[nn] = 0.0; 
+  }
+
+  ExchangePotential::~ExchangePotential()
+  {
+    if(Ykij_r) delete Ykij_r;
   }
   
   /**
@@ -286,7 +314,10 @@ namespace ohmmshf {
     value_type energy_coeff=0;
     value_type Eexchange=0;  
     //zero_all_orbitals(); V is reset before entering
-    RadialOrbital_t Ykij_r(psi(0));
+    if(Ykij_r==0)
+    {
+      Ykij_r = new RadialOrbital_t(psi(0));
+    }
     int nn=0;
 
     //Loop over all pairs of electrons once
@@ -320,12 +351,12 @@ namespace ohmmshf {
 	    jth_orb_coeff = psi.Occ[j] * coeff;
 	    energy_coeff = psi.Occ[j] * psi.Occ[i] * coeff;
 
-	    Ykofr(Ykij_r, psi(i), psi(j), k); // Ykofr_phi1_phi2
+	    Ykofr(*Ykij_r, psi(i), psi(j), k); // Ykofr_phi1_phi2
 
-	    Make_Loc_Pot(V[i], Ykij_r, psi(i), psi(j),jth_orb_coeff);           
-	    Make_Loc_Pot(V[j], Ykij_r, psi(j), psi(i),ith_orb_coeff);           
+	    Make_Loc_Pot(V[i], *Ykij_r, psi(i), psi(j),jth_orb_coeff);           
+	    Make_Loc_Pot(V[j], *Ykij_r, psi(j), psi(i),ith_orb_coeff);           
       
-	    storage[nn] = -1.0*Phisq_x_Yk(Ykij_r, psi(i), psi(j), energy_coeff);
+	    storage[nn] = -1.0*Phisq_x_Yk(*Ykij_r, psi(i), psi(j), energy_coeff);
 	    Eexchange += storage[nn];
 	  }
 	}

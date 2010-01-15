@@ -206,7 +206,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     //
     vector<double> uofr(m_grid->size(),0.0);  
     HDFAttribIO<vector<double> > uofr_out(uofr);
-    for(int i=0; i<m_grid->size();++i) uofr[i] = psi[orbindex](i);
+    for(int i=0; i<m_grid->size();++i) uofr[i] = (*psi[orbindex])(i);
     uofr_out.write(group_id_orb,"uofr");
 
     //test numerical derivatives to detect the uptake

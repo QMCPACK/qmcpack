@@ -111,24 +111,33 @@ struct YlmRnlSet  {
   YlmRnlSet(): m_grid(NULL), NumUniqueOrb(0), Restriction("none"),
 	       CuspParam(0.0), MinEigenValue(0.0), MaxEigenValue(0.0),
 	       Nup(0), Ndown(0) { }
+
+  ~YlmRnlSet() { }
+
   
   bool add(int n, int l, int m, int s, value_type occ);
+
+  //void initialize(const RadialOrbital_t& orb)
+  //{
+  //  m_grid=orb.m_grid;
+  //}
 
   void applyRestriction(int norb);
   
   ///normailize all the orbitals
-  void normalize(int norb){ 
-    for(int i=0; i < norb; i++) normalize_RK2(psi[i]); 
+  void normalize(int norb)
+  { 
+    for(int i=0; i < norb; i++) normalize_RK2(*psi[i]); 
   }
   
   ///assigns orbital \f$ \psi_{iorb}(r) \f$
   inline RadialOrbital_t& operator()(int iorb) { 
-    return psi[iorb];
+    return *psi[iorb];
   }
   
   ///returns a reference to orbital \f$ \psi_{iorb}(r) \f$
   inline const RadialOrbital_t& operator()(int iorb) const { 
-    return psi[iorb];
+    return *psi[iorb];
   }
 
   ///return the number of orbitals
@@ -136,27 +145,27 @@ struct YlmRnlSet  {
 
   ///return \f$ \psi_{iorb}(r_j) \f$
   inline value_type operator()(int iorb, int j) const{
-    return psi[iorb](j);
+    return psi[iorb]->operator()(j);
   }
 
   ///assigns orbital \f$ \psi_{iorb}(r_j) \f$
   inline value_type& operator()(int iorb, int j){
-    return psi[iorb](j);
+    return psi[iorb]->operator()(j);
   }
 
   ///returns the derivative at the first grid point
   inline value_type first_deriv(int iorb) const {
-    return psi[iorb].yprime0;
+    return psi[iorb]->yprime0;
   }
 
   ///returns the derivative at the last grid point
   inline value_type last_deriv(int iorb) const {
-    return psi[iorb].yprimeN;
+    return psi[iorb]->yprimeN;
   }
 
   ///reset the values of orbitals
   void reset() { 
-    for(int i=0; i < psi.size(); i++) psi[i].m_Y = 0.0;
+    for(int i=0; i < psi.size(); i++) psi[i]->m_Y = 0.0;
   }
   
   ///restriction type;
@@ -209,7 +218,7 @@ struct YlmRnlSet  {
   vector<int> IDcount;
 
   ///the radial grid orbitals
-  vector<RadialOrbital_t> psi;
+  vector<RadialOrbital_t*> psi;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os);

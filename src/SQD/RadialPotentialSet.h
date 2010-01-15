@@ -154,10 +154,11 @@ namespace ohmmshf {
 			       vector<value_type>& Energy, 
 			       int norb) {
       value_type sum = 0.0;
-      for(int i=0; i < V.size(); i++) 
-	V[i].m_Y = 0.0;
+      for(int i=0; i < V.size(); i++) V[i].m_Y = 0.0;
       for(int ip=0; ip<SCF.size(); ip++)
+      {
 	sum += (Energy[ip] = SCF[ip]->evaluate(psi,V,norb)); 
+      }
       return sum;
     }
 

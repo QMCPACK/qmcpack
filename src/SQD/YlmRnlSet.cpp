@@ -35,7 +35,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
       //increment the number of unique orbitals
       NumUniqueOrb++;
       //now add the radial grid orbital
-      psi.push_back(RadialOrbital_t(m_grid));
+      psi.push_back(new RadialOrbital_t(m_grid));
       //add the quantum numbers to the list
       N.push_back(n);
       L.push_back(l);
@@ -60,7 +60,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
 	IDmap[i] = sum;
       }
       ID.insert(ID.begin()+IDmap[(*it).second],(*it).second);
-      psi.insert(psi.begin()+IDmap[(*it).second],RadialOrbital_t(m_grid));
+      psi.insert(psi.begin()+IDmap[(*it).second],new RadialOrbital_t(m_grid));
       N.insert(N.begin()+IDmap[(*it).second],n);
       L.insert(L.begin()+IDmap[(*it).second],l);
       M.insert(M.begin()+IDmap[(*it).second],m);
@@ -78,7 +78,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
       IDcount.push_back(1);
       NLM[nlm] = NumUniqueOrb;
       NumUniqueOrb++;
-      psi.push_back(RadialOrbital_t(m_grid));
+      psi.push_back(new RadialOrbital_t(m_grid));
       N.push_back(n);
       L.push_back(l);
       M.push_back(m);
@@ -94,7 +94,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
 	IDmap[i] = sum;
       }
       ID.insert(ID.begin()+IDmap[(*it).second],(*it).second);
-      psi.insert(psi.begin()+IDmap[(*it).second],RadialOrbital_t(m_grid));
+      psi.insert(psi.begin()+IDmap[(*it).second],new RadialOrbital_t(m_grid));
       N.insert(N.begin()+IDmap[(*it).second],n);
       L.insert(L.begin()+IDmap[(*it).second],l);
       M.insert(M.begin()+IDmap[(*it).second],m);
@@ -109,7 +109,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
     ID.push_back(NumUniqueOrb);
     IDcount.push_back(1);
     NumUniqueOrb++;
-    psi.push_back(RadialOrbital_t(m_grid));
+    psi.push_back(new RadialOrbital_t(m_grid));
     N.push_back(n);
     L.push_back(l);
     M.push_back(m);
@@ -154,7 +154,7 @@ void YlmRnlSet<GT>::applyRestriction(int norb){
       for(int i=0; i < IDcount[uorb]; i++){
 	//add all the orbitals together for averaging
 	for(int ig=0; ig < m_grid->size(); ig++){
-	  sum[ig] += psi[orb](ig);
+	  sum[ig] += (*psi[orb])(ig);
 	}
 	//increment the orbital index
 	orb++;
@@ -164,7 +164,7 @@ void YlmRnlSet<GT>::applyRestriction(int norb){
       //assign the average back to the orbitals
       for(int o = o_start; o < o_end; o++){
 	for(int ig=0; ig < m_grid->size(); ig++){
-	  psi[o](ig) = sum[ig]/IDcount[uorb];
+	  (*psi[o])(ig) = sum[ig]/IDcount[uorb];
 	}
       }
       o_start = o_end;

@@ -60,12 +60,17 @@ namespace ohmmshf {
 
     ///storage for an external potential
     RadialOrbital_t* Vext;
+    ///storage for a temporary integrand
+    RadialOrbital_t* integrand;
 
     ///constructor
-    RadialPotentialBase():MinEigenValue(0.0), MaxEigenValue(0.0), Qinfty(0.0), Rcut(1.0), Vext(NULL) {}
+    RadialPotentialBase()
+      : MinEigenValue(0.0), MaxEigenValue(0.0), Qinfty(0.0), Rcut(1.0)
+      , Vext(0), integrand(0) 
+    {}
 
     ///destructor
-    virtual ~RadialPotentialBase() { }
+    virtual ~RadialPotentialBase();
 
     /**
      *@param psi the wavefunction
@@ -134,10 +139,15 @@ namespace ohmmshf {
   struct HartreePotential: public RadialPotentialBase {
     ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
+    ///aux functors
+    RadialOrbital_t *Ykii_r;
+    RadialOrbital_t *Ykjj_r;
+
     /**store the matrix elements 
        \f$\langle \psi_i \psi_j |V| \psi_i \psi_j \rangle \f$ */
     Vector<value_type> storage;
     HartreePotential(Clebsch_Gordan* cg, int norb);
+    ~HartreePotential();
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
     void getStorage(const BasisSetType& psi, 
@@ -153,10 +163,12 @@ namespace ohmmshf {
   struct ExchangePotential: public RadialPotentialBase {
     ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
+    RadialOrbital_t *Ykij_r;
     /**store the matrix elements 
        \f$\langle \psi_i \psi_j |V| \psi_j \psi_i \rangle \f$ */
     Vector<value_type> storage;
     ExchangePotential(Clebsch_Gordan* cg, int norb);
+    ~ExchangePotential();
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
     void getStorage(const BasisSetType& psi, 

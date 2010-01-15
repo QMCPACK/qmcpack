@@ -29,10 +29,10 @@ namespace ohmmshf {
     SHEGPotential::evaluate(const BasisSetType& psi, 
         RadialOrbitalSet_t& V, 
         int norb) {
-      RadialOrbital_t integrand(psi(0));
 
       //intialize the external potential
       if(!Vext) {
+        integrand=new RadialOrbital_t(psi(0));
         //evaluate Rmax from the density
         Rmax=Rs*std::pow(Ntot,1.0/3.0);
 
@@ -69,9 +69,9 @@ namespace ohmmshf {
           sum += psi(o,ig)*psi(o,ig);
           //sum += pow(psi(o,ig),2);
         }
-        integrand(ig) = t*sum;
+        (*integrand)(ig) = t*sum;
       }
-      return integrate_RK2(integrand);
+      return integrate_RK2(*integrand);
     }
 
   /** return the number of nodes for n and l

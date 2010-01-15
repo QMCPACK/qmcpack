@@ -29,9 +29,9 @@ RadialPotentialBase::value_type
 HarmonicPotential::evaluate(const BasisSetType& psi, 
 			    RadialOrbitalSet_t& V, 
 			    int norb) {
-  RadialOrbital_t integrand(psi(0));
   if(!Vext) {
     Vext = new RadialOrbital_t(psi(0));
+    integrand=new RadialOrbital_t(psi(0));
     value_type omega2=Omega*Omega*0.5;
     for(int ig=0; ig < psi.m_grid->size(); ig++)  {
       (*Vext)(ig)= omega2*psi.m_grid->r(ig)*psi.m_grid->r(ig);
@@ -44,9 +44,9 @@ HarmonicPotential::evaluate(const BasisSetType& psi,
       V[o](ig) += v;
       sum += pow(psi(o,ig),2);
     }
-    integrand(ig) = v*sum;
+    (*integrand)(ig) = v*sum;
   }
-  return integrate_RK2(integrand);
+  return integrate_RK2(*integrand);
 }
 
 int HarmonicPotential::getNumOfNodes(int n, int l) {
