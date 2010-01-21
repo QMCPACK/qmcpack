@@ -70,6 +70,7 @@ namespace qmcplusplus {
         << setw(20) << "NumOfWalkers" 
         << setw(20) << "TrialEnergy " 
         << setw(20) << "DiffEff " 
+        << setw(20) << "LivingFraction " 
         << endl;
     }
   }
@@ -100,6 +101,7 @@ namespace qmcplusplus {
     EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
     EnsembleProperty.R2Accepted=curData[R2ACCEPTED_INDEX];
     EnsembleProperty.R2Proposed=curData[R2PROPOSED_INDEX];
+    EnsembleProperty.LivingFraction=curData[LIVINGFRACTION_INDEX];
 
     if(dmcStream) 
     {
@@ -112,6 +114,7 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.NumSamples
         << setw(20) << trialEnergy 
         << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed
+        << setw(20) << EnsembleProperty.LivingFraction
         << endl;
     }
   }
@@ -276,6 +279,7 @@ namespace qmcplusplus {
     curData[EREF_INDEX]=ecum;
     curData[R2ACCEPTED_INDEX]=r2_accepted;
     curData[R2PROPOSED_INDEX]=r2_proposed;
+    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(good_w.size())/static_cast<RealType>(good_w.size()+bad.size());
     
     ////this should be move
     //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];

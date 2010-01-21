@@ -49,7 +49,7 @@ namespace qmcplusplus {
     typedef MCWalkerConfiguration::Walker_t Walker_t;
 
     enum {ENERGY_INDEX=0, ENERGY_SQ_INDEX, WALKERSIZE_INDEX, WEIGHT_INDEX, EREF_INDEX, 
-      R2ACCEPTED_INDEX, R2PROPOSED_INDEX, LE_MAX};
+      R2ACCEPTED_INDEX, R2PROPOSED_INDEX, LIVINGFRACTION_INDEX, LE_MAX};
 
     ///context id
     IndexType MyContext;

@@ -39,6 +39,7 @@ namespace qmcplusplus {
    * - Weight     total weight of a sample
    * - Energy     average energy of a sample
    * - Variance   variance
+   * - LivingFraction fraction of walkers alive each step.
    */
   template<typename T>
       struct MCDataType
@@ -49,6 +50,7 @@ namespace qmcplusplus {
     T Variance;
     T R2Accepted;
     T R2Proposed;
+    T LivingFraction;
   };
 
   /** Specialized paritlce class for atomistic simulations
