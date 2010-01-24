@@ -30,10 +30,16 @@ if(EXISTS ${Boost_ROOT_DIR}/libs/filesystems/src)
   set(BUILD_BOOST_FILESYSTEM TRUE)
 endif()
 
-set(BUILD_BOOST_MPI FALSE)
-if(EXISTS ${Boost_ROOT_DIR}/libs/mpi/src)
-  set(BUILD_BOOST_MPI TRUE)
+if(EXISTS ${Boost_ROOT_DIR}/libs/program_options/src)
+  set(BUILD_BOOST_PROGRAM_OPTIONS TRUE)
 endif()
+
+set(BUILD_BOOST_MPI FALSE)
+if(HAVE_MPI)
+  if(EXISTS ${Boost_ROOT_DIR}/libs/mpi/src)
+  set(BUILD_BOOST_MPI TRUE)
+  endif()
+endif(HAVE_MPI)
 
 if(BUILD_BOOST_SERIALIZATION)
   set(DIRECTORY "${Boost_ROOT_DIR}/libs/serialization/src")
@@ -120,6 +126,21 @@ if(BUILD_BOOST_MPI)
     endif(EXISTS ${DIRECTORY}/${S})
   endforeach(S)
 endif(BUILD_BOOST_MPI)
+
+if(BUILD_BOOST_PROGRAM_OPTIONS)
+  set(DIRECTORY "${Boost_ROOT_DIR}/libs/program_options/src")
+  set(SOURCES
+      cmdline.cpp config_file.cpp options_description.cpp parsers.cpp
+      variables_map.cpp value_semantic.cpp positional_options.cpp
+      utf8_codecvt_facet.cpp convert.cpp winmain.cpp
+      )
+  foreach(S ${SOURCES})
+    if(EXISTS ${DIRECTORY}/${S})
+      set(BOOST_SOURCES ${BOOST_SOURCES} ${DIRECTORY}/${S})
+    endif(EXISTS ${DIRECTORY}/${S})
+  endforeach(S)
+endif(BUILD_BOOST_PROGRAM_OPTIONS)
+
 
 ADD_LIBRARY(boost ${BOOST_SOURCES})
 link_libraries(boost)
