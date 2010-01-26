@@ -24,6 +24,7 @@
 
 namespace qmcplusplus
 {
+
   /** a node of multideterminant tree
    *
    * column and row denote those of the original matrix.
@@ -102,6 +103,12 @@ namespace qmcplusplus
       return children.empty();
     }
 
+    /** evaluate the determinants recursively starting from the ground state
+     * @param psi_big SPO set including the ground and excited states
+     * @param ci vector of excitation_node
+     * @param ratios ratios[i]=det(i)/det(0) 
+     * @param promote_row if true, the row index of the original matrix denotes the state index
+     */
     inline void getRatios(const matrix_type& psi_big, std::vector<excitation_node>& ci
         , std::vector<T>& ratios, bool promote_row)
     {
@@ -124,7 +131,7 @@ namespace qmcplusplus
         )
     {
       inverse=inv0;
-      int v=m-1-from;
+      const int v=m-1-from;
 
       const T* restrict u_old=inv0[v];
       const T* restrict u_new=psi_big[m+to];
@@ -137,7 +144,7 @@ namespace qmcplusplus
       T inv_utv=1.0/utv;
       for(int iv=0; iv<peers.size(); ++iv)
       {
-        int vv=peers[iv];
+        const int vv=peers[iv];
         //T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],psi_big[c]);
         //BLAS::axpy(m,gamma,inv0[v],inverse[vv]);
         T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],u_new);
@@ -158,15 +165,15 @@ namespace qmcplusplus
         )
     {
       inverse=inv0;
-      int v=m-1-from;
-      int c=m+to;
+      const int v=m-1-from;
+      const int c=m+to;
       utv=BLAS::dot(m,inv0.data()+v,m,psi_big[c],1);
       BLAS::axpy(m,utv,inv0.data()+v,m,inverse.data()+v,m);
 
       T inv_utv=1.0/utv;
       for(int iv=0; iv<peers.size(); ++iv)
       {
-        int vv=peers[iv];
+        const int vv=peers[iv];
         T  gamma=-inv_utv*BLAS::dot(m,inv0.data()+vv,m,psi_big[c],1);
         BLAS::axpy(m,gamma,inv0.data()+v,m,inverse.data()+vv,m);
       }
@@ -192,8 +199,8 @@ namespace qmcplusplus
     void inverseUpdateByColumn(const matrix_type& psi_big , std::vector<excitation_node>& ci , std::vector<T>& ratios
         , int m, T ratio_base)
     {
-      int v=m-1-from;
-      int c=m+to;
+      const int v=m-1-from;
+      const int c=m+to;
       ratio=BLAS::dot(m,ci[parent_id].inverse[v],psi_big[c]);
       ratios[my_id]=ratio_base*ratio;
 
@@ -207,17 +214,6 @@ namespace qmcplusplus
           ci[ children[i] ].inverseUpdateByColumn(psi_big,ci,ratios,m,ratio_base);
       //}
     }
-
-    //inline void inverseUpdateByColumnExcitation(const matrix_type& psi_big
-    //    , std::vector<excitation_node>& ci
-    //    , std::vector<T>& ratios
-    //    )
-    //{
-    //  const int m=inverse.rows();
-    //  ratios[0]=1.0;
-    //  for(int i=0; i<children.size(); ++i)
-    //    ci[ children[i] ].get_ratios_cols_debug(psi_big,ci,ratios,m,1.0);
-    //}
 
     void inverseUpdateByRow(const matrix_type& psi_big , std::vector<excitation_node>& ci , std::vector<T>& ratios 
         , int m, T ratio_base)
@@ -302,8 +298,8 @@ namespace qmcplusplus
     void getRatioByRowSubstitution(vector<T>& u_c , std::vector<excitation_node>& ci
         , std::vector<T>& ratios , int m, int row_id)
     {
-      int v=m-1-from;
-      int c=m+to;
+      const int v=m-1-from;
+      const int c=m+to;
       u_c[v]=u_c[c];
       ratios[my_id]=ratio=BLAS::dot(m,inverse.data()+row_id,m,u_c.data(),1);
       vector<T> temp(u_c);
@@ -319,26 +315,32 @@ namespace qmcplusplus
 
 
     template<unsigned CMAX>
-      inline void write_node(int level, int count, std::vector<excitation_node>& ci)
+      inline void write_node(ostream& os, int level, int& count, std::vector<excitation_node>& ci)
       {
+        my_id=count;
         //if(children.size()) 
-        std::cout << "<node level=\""<<level
+        os << "<node level=\""<<level
           << "\" g=\"" << std::bitset<CMAX>(ground) 
           << "\" e=\"" << std::bitset<CMAX>(excited) 
           << "\" g_id=\"" << ground
           << "\" e_id=\"" << excited
           << "\" from=\"" << from 
           << "\" to=\""<< to 
-          <<"\" my_id=\"" << count
+          <<"\" p_id=\"" << parent_id
+          <<"\" my_id=\"" << my_id //count
           << "\"";
-        if(children.size()) std::cout << ">" << std::endl;
-        else std::cout << "/>" << std::endl;
+        if(children.size()) os << ">" << std::endl;
+        else os << "/>" << std::endl;
+        count++;
         for(int i=0; i<children.size(); ++i) 
         {
           int next=level+1;
-          ci[ children[i] ].write_node<CMAX>(next,children[i],ci);
+          //ci[ children[i] ].write_node<CMAX>(os,next,children[i],ci);
+          //reassign the id
+          ci[ children[i] ].parent_id=my_id;
+          ci[ children[i] ].write_node<CMAX>(os,next,count,ci);
         }
-        if(children.size()) std::cout << "</node>"<<std::endl;
+        if(children.size()) os << "</node>"<<std::endl;
       }
   }; 
 }
