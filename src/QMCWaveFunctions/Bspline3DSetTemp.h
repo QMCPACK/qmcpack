@@ -57,14 +57,14 @@ namespace qmcplusplus {
             vals[j]=bKnots.evaluate(*P[j],grads[j],laps[j]);
         }
 
-        inline void evaluate(const ParticleSet& e, int first, int last,
+        inline void evaluate_notranspose(const ParticleSet& e, int first, int last,
             ValueMatrix_t& vals, GradMatrix_t& grads, ValueMatrix_t& laps)
         {
           for(int iat=first,i=0; iat<last; iat++,i++)
           {
             bKnots.FindAll(e.R[iat][0],e.R[iat][1],e.R[iat][2]);
             for(int j=0; j<OrbitalSetSize; j++) 
-              vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
+              vals(i,j)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
           }
         }
     };
@@ -101,7 +101,7 @@ namespace qmcplusplus {
             }
           }
 
-        inline void evaluate(const ParticleSet& e, int first, int last,
+        inline void evaluate_notranspose(const ParticleSet& e, int first, int last,
             ValueMatrix_t& vals, GradMatrix_t& grads, ValueMatrix_t& laps)
           {
             for(int iat=first,i=0; iat<last; iat++,i++)
@@ -112,7 +112,7 @@ namespace qmcplusplus {
               bKnots.FindAll(ru[0],ru[1],ru[2]);
               for(int j=0; j<OrbitalSetSize; j++)
               {
-                vals(j,i)=bKnots.evaluate(*P[j],gu,hess);
+                vals(i,j)=bKnots.evaluate(*P[j],gu,hess);
                 grads(i,j)=dot(Lattice.G,gu);
                 laps(i,j)=trace(hess,GGt);
               }
@@ -226,7 +226,7 @@ namespace qmcplusplus {
           }
         }
 
-        inline void evaluate(const ParticleSet& e, int first, int last,
+        inline void evaluate_notranspose(const ParticleSet& e, int first, int last,
             ValueMatrix_t& vals, GradMatrix_t& grads, ValueMatrix_t& laps)
         {
           for(int iat=first,i=0; iat<last; iat++,i++)
@@ -239,13 +239,13 @@ namespace qmcplusplus {
             for(int j=0; j<Centers.size(); j++) {
               if(bKnots.getSep2(r[0]-Centers[j][0],r[1]-Centers[j][1],r[2]-Centers[j][2])>Rcut2) 
               {
-                vals(j,i)=0.0; //numeric_limits<T>::epsilon();
+                vals(i,j)=0.0; //numeric_limits<T>::epsilon();
                 grads(i,j)=0.0;
                 laps(i,j)=0.0;
               }
               else
               {
-                vals(j,i)=bKnots.evaluate(*P[j],gu,hess);
+                vals(i,j)=bKnots.evaluate(*P[j],gu,hess);
                 grads(i,j)=dot(Lattice.G,gu);
                 laps(i,j)=trace(hess,GGt);
                 //vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));

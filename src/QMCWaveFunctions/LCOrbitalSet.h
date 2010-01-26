@@ -108,20 +108,6 @@ namespace qmcplusplus {
       for(int j=0; j<OrbitalSetSize; j++) d2psi[j]=myBasisSet->d2Phi[j];
     }
 
-    ///** evaluate everything for the walker move
-    // *
-    // * Using gemm can improve the performance for a larger problem
-    // */
-    //void evaluate(const ParticleSet& P, int first, int last,
-    //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-    //  for(int i=0, iat=first; iat<last; i++,iat++){
-    //    myBasisSet->evaluateForWalkerMove(P,iat);
-    //    for(int j=0; j<OrbitalSetSize; j++) logdet(j,i)=myBasisSet->Phi[j];
-    //    for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
-    //    for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
-    //  }
-    //}
-
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
     {
@@ -256,34 +242,6 @@ namespace qmcplusplus {
       //}
 
     }
-
-    /** evaluate everything for the walker move
-     *
-     * Using gemm can improve the performance for a larger problem
-     */
-//    void evaluate(const ParticleSet& P, int first, int last,
-//        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-//      //unroll myself: rely on the compilers
-//      //optimal on xeon
-//#pragma ivdep
-//      for(int i=0, iat=first; iat<last; i++,iat++){
-//        myBasisSet->evaluateForWalkerMove(P,iat);
-//        const ValueType* restrict cptr=C.data();
-//        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
-//        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-//        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-//        for(int j=0; j<OrbitalSetSize; j++) {
-//          register ValueType res=0.0, d2res=0.0;
-//          register GradType dres;
-//          for(int b=0; b<BasisSetSize; b++,cptr++) {
-//            res += *cptr*pptr[b];
-//            d2res += *cptr*d2ptr[b];
-//            dres += *cptr*dptr[b];
-//          }
-//          logdet(j,i)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
-//        }
-//      }
-//    }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 

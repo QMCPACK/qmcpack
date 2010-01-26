@@ -77,23 +77,6 @@ namespace qmcplusplus
         evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
       }
 
-    //void evaluate(const ParticleSet& P, int first, int last,
-    //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-    //{
-    //  RealType sinkr,coskr;
-    //  for(int i=0,iat=first; iat<last; i++,iat++) {
-    //    for(int ik=0; ik<KptMax; ik++) {
-    //      //RealType kdotr=dot(K[ik],P.R[iat]);
-    //      //RealType coskr=std::cos(kdotr);
-    //      //RealType sinkr=std::sin(kdotr);
-    //      sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-    //      logdet(ik,i)=ValueType(coskr,sinkr);
-    //      dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
-    //      d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
-    //    }
-    //  }
-    //}
-
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {

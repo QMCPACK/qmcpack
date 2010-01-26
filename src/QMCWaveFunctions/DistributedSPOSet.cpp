@@ -226,7 +226,7 @@ namespace qmcplusplus {
       err=MPI_Waitall(NumRemoteNodes, sendPsi,statusPsi);
     }
 
-  void DistributedSPOSet::evaluate(const ParticleSet& P, int first, int last,
+  void DistributedSPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
       CommunicatorTraits::mpi_request_type sendPos[MAX_NUM_SHARED_NODES];
@@ -254,11 +254,12 @@ namespace qmcplusplus {
       for(int i=0; i<nat; i++)
       {
         //do the local calculation
-        Phi->evaluate(pos[i],psiL,dpsiL,d2psiL);
+        Phi->evaluate_notranspose(pos[i],psiL,dpsiL,d2psiL);
         //use std::copy
         for(int jc=0,j=OrbitalOffset[myNoodeID]; jc<OrbitalCount[myNodeID]; jc++,j++) 
         {
-          logdet(j,i)=psiL[jc];
+          //logdet(j,i)=psiL[jc];
+          logdet(i,j)=psiL[jc];
           dlogdet(i,j)=dpsiL[jc];
           d2logdet(i,j)=d2psiL[jc];
         }
@@ -275,7 +276,7 @@ namespace qmcplusplus {
         SendBuffer[p]->rewind();
         for(int i=0; i<nat; i++)
         {
-          Phi->evaluate(Rnow[i],psiL,dpsiL,d2psiL);
+          Phi->evaluate_notranspose(Rnow[i],psiL,dpsiL,d2psiL);
           for(int j=0; j<OrbitalCount[target]; j++)
           {
             SendBuffer[p]->put(psiL[j]);
@@ -299,7 +300,8 @@ namespace qmcplusplus {
           {
             for(int t=OrbitalOffset[source]; t<OrbitalOffset[source+1]; t++) 
             {
-              RecvBuffer[source]->get(logdet(t,i));
+              RecvBuffer[source]->get(logdet(i,t));
+              //RecvBuffer[source]->get(logdet(t,i));
               RecvBuffer[source]->get(dlogdet(i,t).begin(),dlogdet(i,t).end());
               RecvBuffer[source]->get(d2logdet(i,t));
             }
@@ -314,5 +316,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1772 $   $Date: 2007-02-17 17:47:37 -0600 (Sat, 17 Feb 2007) $
- * $Id: DistributedSPOSet.h 1772 2007-02-17 23:47:37Z jnkim $ 
+ * $Id: DistributedSPOSet.cpp 1772 2007-02-17 23:47:37Z jnkim $ 
  ***************************************************************************/

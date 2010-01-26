@@ -38,8 +38,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     SPOSetBase* makeClone() const;
@@ -56,8 +54,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     SPOSetBase* makeClone() const;
@@ -72,8 +68,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     SPOSetBase* makeClone() const;
@@ -89,8 +83,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     SPOSetBase* makeClone() const;
@@ -105,8 +97,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
     SPOSetBase* makeClone() const;

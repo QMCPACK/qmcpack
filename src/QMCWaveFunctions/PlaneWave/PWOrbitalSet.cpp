@@ -102,22 +102,6 @@ namespace qmcplusplus {
   }
     
   void 
-  PWOrbitalSet::evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-  {
-    for(int iat=first,i=0; iat<last; iat++,i++){
-      myBasisSet->evaluateAll(P,iat);
-      MatrixOperators::product(C,myBasisSet->Z,Temp);
-      const ValueType* restrict tptr=Temp.data();
-      for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX) {
-        logdet(j,i)= tptr[PW_VALUE];
-        d2logdet(i,j)= tptr[PW_LAP];
-        dlogdet(i,j)=GradType(tptr[PW_GRADX],tptr[PW_GRADY],tptr[PW_GRADZ]);
-      }
-    }
-  }
-
-  void 
   PWOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {

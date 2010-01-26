@@ -42,6 +42,8 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
     ///true if C is an identity matrix
     bool Identity;
+    ///total number of orbitals 
+    IndexType TotalOrbitalSize;
     ///number of Single-particle orbtials
     IndexType OrbitalSetSize;
     ///number of Single-particle orbtials
@@ -49,19 +51,21 @@ namespace qmcplusplus {
     ///index of the particle
     IndexType ActivePtcl;
     ///counter to keep track 
-    unsigned long Counter;
+    //unsigned long Counter;
     ///matrix to store temporary value before transpose
     ValueMatrix_t t_logpsi;
     ///matrix containing the coefficients
     ValueMatrix_t C;
     ///occupation number
-    vector<RealType> Occ;
+    Vector<RealType> Occ;
     ///name of the basis set
     string className;
 
     /** constructor
      */
-    SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) 
+    //SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) 
+    SPOSetBase()
+      :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1)
     {
       className="invalid";
     }
@@ -126,8 +130,10 @@ namespace qmcplusplus {
      * @param logdet determinant matrix to be inverted
      * @param dlogdet gradients
      * @param d2logdet laplacians
+     *
+     * Call evaluate_notranspose to build logdet
      */
-    virtual void evaluate(const ParticleSet& P, int first, int last,
+    void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last,
@@ -135,25 +141,17 @@ namespace qmcplusplus {
 
     virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
 				     const ParticleSet &source,
-				     int iat_src, GradMatrix_t &gradphi)
-    { APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); }
+				     int iat_src, GradMatrix_t &gradphi);
 
     virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
 				     const ParticleSet &source, int iat_src, 
 				     GradMatrix_t &grad_phi,
 				     HessMatrix_t &grad_grad_phi,
-				     GradMatrix_t &grad_lapl_phi)
-    { APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); }
-
-
+				     GradMatrix_t &grad_lapl_phi);
 
     /** make a clone of itself
      */
-    virtual SPOSetBase* makeClone() const
-    {
-      APP_ABORT("Missing  SPOSetBase::makeClone for "+className);
-      return 0;
-    }
+    virtual SPOSetBase* makeClone() const;
 
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);

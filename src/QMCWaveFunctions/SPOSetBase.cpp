@@ -24,27 +24,51 @@
 
 namespace qmcplusplus {
 
-  //template<typename T>
-  //inline void transpose(const T* restrict in, T* restrict out, int m)
-  // {
-  //   for(int i=0,ii=0;i<m;++i)
-  //     for(int j=0,jj=i;j<m; ++j,jj+=m)
-  //       out[ii++]=in[jj];
-  // }
+  template<typename T>
+  inline void transpose(const T* restrict in, T* restrict out, int m)
+   {
+     for(int i=0,ii=0;i<m;++i)
+       for(int j=0,jj=i;j<m; ++j,jj+=m)
+         out[ii++]=in[jj];
+   }
 
    void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
    {
-     //evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
-     //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-     evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
-     MatrixOperators::transpose(logdet);
+     evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
+     transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
+     //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
+     //MatrixOperators::transpose(logdet);
    }
+
+   void SPOSetBase::evaluateGradSource (const ParticleSet &P
+       , int first, int last, const ParticleSet &source
+       , int iat_src, GradMatrix_t &gradphi) 
+   {
+     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
+   }
+
+   void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last, 
+       const ParticleSet &source, int iat_src, 
+       GradMatrix_t &grad_phi,
+       HessMatrix_t &grad_grad_phi,
+       GradMatrix_t &grad_lapl_phi)
+   { 
+     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
+   }
+
+   SPOSetBase* SPOSetBase::makeClone() const
+   {
+     APP_ABORT("Missing  SPOSetBase::makeClone for "+className);
+     return 0;
+   }
+
 
   /** Parse the xml file for information on the Dirac determinants.
    *@param cur the current xmlNode
    */
-  bool SPOSetBase::put(xmlNodePtr cur) {
+  bool SPOSetBase::put(xmlNodePtr cur) 
+  {
     //initialize the number of orbital by the basis set size
     int norb= BasisSetSize;
     string debugc("no");
@@ -53,18 +77,12 @@ namespace qmcplusplus {
     aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
     aAttrib.add(debugc,"debug");
     aAttrib.put(cur);
-    //const xmlChar* norb_ptr=xmlGetProp(cur, (const xmlChar *)"orbitals");
-    //if(norb_ptr != NULL) { 
-    //  norb=atoi((const char*)norb_ptr);
-    //}
 
     setOrbitalSetSize(norb);
+    TotalOrbitalSize=norb;
 
-    ////allocate a temporary array to handle transpose
-    //Using self-transpose
-    //app_log() << "  SPOSetBase::put allocating a temporary storage for psi "
-    //    << OrbitalSetSize << " x " << OrbitalSetSize << endl;
-    //t_logpsi.resize(OrbitalSetSize,OrbitalSetSize);
+    //allocate temporary t_logpsi
+    t_logpsi.resize(TotalOrbitalSize,OrbitalSetSize);
 
     const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
     xmlNodePtr occ_ptr=NULL;
@@ -112,9 +130,14 @@ namespace qmcplusplus {
   bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr) {
 
     //die??
-    if(BasisSetSize ==0) return false;
+    if(BasisSetSize ==0) 
+    {
+      APP_ABORT("SPOSetBase::putOccupation detected ZERO BasisSetSize");
+      return false;
+    }
 
-    Occ.resize(BasisSetSize,0.0);
+    Occ.resize(BasisSetSize);
+    Occ=0.0;
     for(int i=0; i<OrbitalSetSize; i++) Occ[i]=1.0;
 
     vector<int> occ_in;
