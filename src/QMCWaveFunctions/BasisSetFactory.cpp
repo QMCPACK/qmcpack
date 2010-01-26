@@ -81,7 +81,6 @@ namespace qmcplusplus {
       //bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #endif
     }
-#if QMC_BUILD_LEVEL>1
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
       ParticleSet* ions=0;
@@ -106,7 +105,6 @@ namespace qmcplusplus {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
       }
     }
-#endif
 
     PRE.flush();
 
