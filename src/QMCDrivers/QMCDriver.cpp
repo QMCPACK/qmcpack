@@ -354,12 +354,13 @@ namespace qmcplusplus {
       nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
-    else
+    else if (nTargetSamples)
     {
       int nStepsTotal =  nSteps*nBlocks;
       nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
-    }      
+    }
+    else Period4WalkerDump=(nBlocks+1)*nSteps;
 
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 

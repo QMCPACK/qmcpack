@@ -166,6 +166,9 @@ namespace qmcplusplus {
     void setTau(RealType i) {
       Tau=i;
     }
+    
+    ///resetComponents for next run if reusing a driver.
+    virtual void resetComponents(xmlNodePtr cur) {}
 
     ///Observables manager
     EstimatorManager* Estimators;

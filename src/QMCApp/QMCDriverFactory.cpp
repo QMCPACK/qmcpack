@@ -97,9 +97,6 @@ namespace qmcplusplus {
     string multi_tag("no");
     string warp_tag("no");
     string append_tag("no"); 
-    string new_drivers_tag("yes");
-    if (curRunType==OPTIMIZE_RUN || curRunType==LINEAR_OPTIMIZE_RUN) new_drivers_tag="no";
-
     
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
@@ -107,7 +104,6 @@ namespace qmcplusplus {
     aAttrib.add(multi_tag,"multiple");
     aAttrib.add(warp_tag,"warp");
     aAttrib.add(append_tag,"append"); 
-    aAttrib.add(new_drivers_tag,"newdrivers"); 
     aAttrib.put(cur);
 
     
@@ -180,30 +176,13 @@ namespace qmcplusplus {
    
     //initialize to 0
     QMCDriver::BranchEngineType* branchEngine=0;
-
-//     bool newObjects=( (new_drivers_tag=="yes")&&(newRunType!=LINEAR_OPTIMIZE_RUN )&&(newRunType!=OPTIMIZE_RUN )) ;
-    bool newObjects=( new_drivers_tag=="yes" );
     if(qmcDriver) 
     {
-      if( newRunType != curRunType || newQmcMode != curQmcMode  || newObjects )
+      if( newRunType != curRunType || newQmcMode != curQmcMode)
       {
         if(curRunType == DUMMY_RUN)
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
-        }
-        else if(newRunType==LINEAR_OPTIMIZE_RUN || newRunType==OPTIMIZE_RUN )
-        {
-          app_log() << " Warning: This will bomb if it is inside of a loop. Please use newdrivers=\"no\" if in a loop."<<endl;
-        }
-        if (newObjects)
-        {
-          delete qmcDriver->getBranchEngine();
-          app_log()<< "Creating new drivers and branch engine."<<endl;
-        }
-        else
-        {
-          branchEngine=qmcDriver->getBranchEngine();
-          app_log()<< "Creating new driver, but reusing the branch engine."<<endl;
         }
         
         delete qmcDriver;
@@ -215,14 +194,8 @@ namespace qmcplusplus {
       else 
       { 
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
-        if(curRunType == DMC_RUN)
-        {
-          app_log() << " Settings are not updated.\n Please use newdrivers=\"yes\" to generate a new DMC driver."<<endl ;
-        }
-        else if(newRunType==LINEAR_OPTIMIZE_RUN || newRunType==OPTIMIZE_RUN )
-        {
-          app_log() << " Settings are not updated.\n"<<endl ;
-        }
+//         if(curRunType == DMC_RUN) 
+          qmcDriver->resetComponents(cur); 
       }
     }
 

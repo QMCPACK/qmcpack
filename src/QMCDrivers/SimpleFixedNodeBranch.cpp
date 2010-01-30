@@ -343,6 +343,49 @@ namespace qmcplusplus
       WalkerController->start();
     }
   }
+  
+  void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
+  {
+    myNode=cur;
+    m_param.put(cur);
+    R2Accepted.clear(); 
+    R2Proposed.clear();
+    
+    R2Accepted(1.0e-10); 
+    R2Proposed(1.0e-10);
+    
+    bitset<B_MODE_MAX> bmode(BranchMode);
+    
+    //assign current Eref and a large number for variance
+    WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
+    vParam[B_TAUEFF]=vParam[B_TAU];
+
+    //reset controller 
+    WalkerController->reset();
+    if(BackupWalkerController) BackupWalkerController->reset();
+    BranchMode=bmode;
+    
+    MyEstimator->setCollectionMode(true);
+    
+    if(WalkerController)
+    {
+      BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
+
+      if(BranchMode[B_DMCSTAGE]) //
+        ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
+      else
+        ToDoSteps = iParam[B_WARMUPSTEPS];
+
+      if(BranchMode[B_POPCONTROL])
+      {
+        logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
+      }
+      else
+      {
+        vParam[B_ETRIAL]=0.0;Feedback=0.0;logN=0.0;
+      }
+    }
+  }
 
   void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w) 
   {

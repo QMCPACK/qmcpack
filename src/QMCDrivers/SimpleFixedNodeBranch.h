@@ -299,6 +299,9 @@ namespace qmcplusplus {
 
     /** reset the internal parameters */
     void reset();
+    
+    /** reset the internal parameters */
+    void resetRun(xmlNodePtr cur);
 
     bool put(xmlNodePtr cur);
 
