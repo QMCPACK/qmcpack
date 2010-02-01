@@ -61,7 +61,7 @@ struct OhmmsAttributeSet
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  INLINE_ALL void add(PDT& aparam, const std::string& aname) {
+  void add(PDT& aparam, const std::string& aname) {
     iterator it(m_param.find(aname));
     if(it == m_param.end()) {
       m_param[aname] = new OhmmsParameter<PDT>(aparam,aname.c_str(),"none");
@@ -72,7 +72,7 @@ struct OhmmsAttributeSet
    *@param cur the xml node to work on
    *@return true, if any valid parameter is processed.
    */
-  INLINE_ALL bool put(xmlNodePtr cur) {
+  bool put(xmlNodePtr cur) {
     xmlAttrPtr att = cur->properties;
     while(att != NULL) {
       std::string aname((const char*)(att->name));
