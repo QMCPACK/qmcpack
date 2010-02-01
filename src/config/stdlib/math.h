@@ -18,6 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_STDLIB_PORT_H
 #define QMCPLUSPLUS_STDLIB_PORT_H
+#include <config.h>
 #include <cmath>
 #include <cstdlib>
 #ifndef TWOPI
@@ -72,6 +73,7 @@ inline void vec_sqrt(int n, const float* restrict in, float* restrict out)
 
 #else
 #if defined(HAVE_MASSV)
+#include <mass.h>
 #include <massv.h>
 inline void vec_sqrt(int n, double* restrict in, double* restrict out)
 {
