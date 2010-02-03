@@ -49,9 +49,9 @@ namespace qmcplusplus
       BsplineFunctor(real_type cusp=0.0) :
           NumParams(0),
           A(-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
-            3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
+             3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
             -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
-            1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0),
+             1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0),
           dA(0.0, -0.5,  1.0, -0.5,
              0.0,  1.5, -2.0,  0.0,
              0.0, -1.5,  1.0,  0.5,
@@ -340,10 +340,17 @@ namespace qmcplusplus
         NumParams = 0;
         cutoff_radius = 0.0;
         OhmmsAttributeSet rAttrib;
+	real_type radius = 0.0;
         rAttrib.add(NumParams,   "size");
-        rAttrib.add(cutoff_radius,        "rcut");
+        rAttrib.add(radius,      "rcut");
         rAttrib.put(cur);
 
+      if (radius == 0.0) 
+	app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
+		  << cutoff_radius << ".\n";
+      else
+	cutoff_radius = radius;
+	  
         if (NumParams == 0)
           {
             PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
