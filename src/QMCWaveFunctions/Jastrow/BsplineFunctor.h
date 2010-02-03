@@ -338,23 +338,23 @@ namespace qmcplusplus
         ReportEngine PRE("BsplineFunctor","put(xmlNodePtr)");
         //CuspValue = -1.0e10;
         NumParams = 0;
-        cutoff_radius = 0.0;
+        //cutoff_radius = 0.0;
         OhmmsAttributeSet rAttrib;
-	real_type radius = 0.0;
+	real_type radius = -1.0;
         rAttrib.add(NumParams,   "size");
         rAttrib.add(radius,      "rcut");
         rAttrib.put(cur);
 
-      if (radius == 0.0) 
-	app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
-		  << cutoff_radius << ".\n";
-      else
-	cutoff_radius = radius;
+        if (radius < 0.0) 
+          app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
+            << cutoff_radius << ".\n";
+        else
+          cutoff_radius = radius;
 	  
         if (NumParams == 0)
-          {
-            PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
-          }
+        {
+          PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
+        }
         app_log() << " size = " << NumParams << " parameters " << endl;
         app_log() << " cusp = " << CuspValue << endl;
         app_log() << " rcut = " << cutoff_radius << endl;
