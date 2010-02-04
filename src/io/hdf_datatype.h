@@ -56,6 +56,7 @@ BOOSTSUB_H5_DATATYPE(std::complex<float>, H5T_NATIVE_FLOAT);
 
 #else
   typedef int hid_t;
+  typedef int herr_t;
   typedef std::size_t hsize_t;
   const int H5P_DEFAULT=0;
 
@@ -66,4 +67,9 @@ BOOSTSUB_H5_DATATYPE(std::complex<float>, H5T_NATIVE_FLOAT);
 #endif
 }
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author: jnkim $
+ * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
+ * $Id: hdf_datatype.h 894 2006-02-03 16:52:38Z jnkim $ 
+ ***************************************************************************/
 

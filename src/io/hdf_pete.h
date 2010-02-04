@@ -37,15 +37,13 @@ namespace qmcplusplus {
     {
       dims[0]=D;
     }
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      //probably want to check the dimension
-      //if(get_dataspace(grp,aname))
-        h5d_read(grp,aname,get_address(ref_.data()));
+      return h5d_read(grp,aname,get_address(ref_.data()),xfer_plist);
     }
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()),xfer_plist);
     }
   };
 
@@ -62,13 +60,13 @@ namespace qmcplusplus {
     {
       dims[0]=D; dims[1]=D;
     }
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_read(grp,aname,get_address(ref_.data()));
+      return h5d_read(grp,aname,get_address(ref_.data()),xfer_plist);
     }
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()),xfer_plist);
     }
   };
 
@@ -86,15 +84,15 @@ namespace qmcplusplus {
 
     inline HDFAttribIO(data_type& a): ref_(a) { dims[0]=ref_.size(); }
 
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
       if(!h5d_getspace(grp,aname,this->size(),dims)) ref_.resize(dims[0]);
-      h5d_read(grp,aname,get_address(ref_.data()));
+      return h5d_read(grp,aname,get_address(ref_.data()),xfer_plist);
     }
 
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()),xfer_plist);
     }
   };
 
@@ -111,14 +109,14 @@ namespace qmcplusplus {
       dims[0]=ref_.rows();
       dims[1]=ref_.cols();
     }
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
       if(!h5d_getspace(grp,aname,this->size(),dims)) ref_.resize(dims[0],dims[1]);
-      h5d_read(grp,aname,get_address(ref_.data()));
+      return h5d_read(grp,aname,get_address(ref_.data()),xfer_plist);
     }
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()),xfer_plist);
     }
   };
 
@@ -134,14 +132,14 @@ namespace qmcplusplus {
     {
       for(int i=0; i<D; ++i) dims[i]=ref_.size(i);
     }
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
       if(!h5d_getspace(grp,aname,this->size(),dims)) ref_.resize(dims);
-      h5d_read(grp,aname,get_address(ref_.data()));
+      return h5d_read(grp,aname,get_address(ref_.data()),xfer_plist);
     }
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.data()),xfer_plist);
     }
   };
 
@@ -158,7 +156,7 @@ namespace qmcplusplus {
     inline HDFAttribIO(data_type& a): ref_(a){dims.resize(1,a.size());}
     inline HDFAttribIO(data_type& a, const vector<hsize_t>& dims_in): ref_(a),dims(dims_in){}
 
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
       const int rank=dims.size();
       if(!h5d_getspace(grp,aname,rank,&dims[0])) 
@@ -167,12 +165,12 @@ namespace qmcplusplus {
         for(int i=1;i<rank;++i) ntot*=dims[i];
         ref_.resize(ntot);
       }
-      h5d_read(grp,aname,ref_.data());
+      return h5d_read(grp,aname,ref_.data(),xfer_plist);
     }
 
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),dims.size(),&dims[0],ref_.data());
+      return h5d_write(grp,aname.c_str(),dims.size(),&dims[0],ref_.data(),xfer_plist);
     }
   };
 
@@ -182,5 +180,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2764 $   $Date: 2008-06-26 10:21:31 -0500 (Thu, 26 Jun 2008) $
- * $Id: HDFNumericAttrib.h 2764 2008-06-26 15:21:31Z jnkim $ 
+ * $Id: hdf_pete.h 2764 2008-06-26 15:21:31Z jnkim $ 
  ***************************************************************************/

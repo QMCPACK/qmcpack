@@ -23,7 +23,6 @@
 //#include <OhmmsPETE/Tensor.h>
 
 namespace qmcplusplus {
-
   /** free function to check dimension 
    * @param grp group id
    * @param aname name of the dataspace
@@ -53,35 +52,44 @@ namespace qmcplusplus {
     return thesame;
   }
 
+  /** return true, if successful */
   template<typename T>
-    inline void h5d_read(hid_t grp, const std::string& aname, T* first)
+    inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_plist)
     {
+      std::cout << "### reading " << aname << std::endl;
       hid_t h1 = H5Dopen(grp, aname.c_str());
-      if(h1<0)
-      {
-        APP_ABORT("Missing H5 Dataset "+aname);
+      if(h1<0) 
+      { 
+        std::cout << aname << "  IS NOT FOUND " << std::endl; 
+        return false;
       }
       hid_t h5d_type_id=get_h5_datatype(*first);
-      hid_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, first);
+      herr_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
       H5Dclose(h1);
+      return ret != -1;
     }
 
   template<typename T>
-    inline void h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const hsize_t* dims, const T* first)
+    inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const hsize_t* dims, const T* first
+        , hid_t xfer_plist)
     {
+      std::cout << "### writing " << aname << std::endl;
       hid_t h5d_type_id=get_h5_datatype(*first);
       hid_t h1 = H5Dopen(grp, aname.c_str());
+      herr_t ret=-1;
       if(h1<0) //missing create one
       {
         hid_t dataspace  = H5Screate_simple(ndims, dims, NULL);
         hid_t dataset =  H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
-        hid_t ret = H5Dwrite(dataset, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT,first);
+        ret = H5Dwrite(dataset, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
         H5Sclose(dataspace);
         H5Dclose(dataset);
       }
       else
-        hid_t ret = H5Dwrite(h1, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT,first);
+        ret = H5Dwrite(h1, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT,first);
       H5Dclose(h1);
+      std::cout << "### done " << aname << std::endl;
+      return ret != -1;
     }
 
 
@@ -150,14 +158,14 @@ namespace qmcplusplus {
 
     inline HDFAttribIO(data_type& a): ref_(a) { dims[0]=1; }
 
-    inline void read(hid_t grp, const std::string& aname)
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_read(grp,aname,get_address(&ref_));
+      return h5d_read(grp,aname,get_address(&ref_),xfer_plist);
     }
 
-    inline void write(hid_t grp, const std::string& aname)
+    inline bool write(hid_t grp, const std::string& aname,hid_t xfer_plist=H5P_DEFAULT)
     {
-      h5d_write(grp,aname.c_str(),this->size(),dims,get_address(&ref_));
+      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(&ref_),xfer_plist);
     }
   };
 
@@ -166,5 +174,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2764 $   $Date: 2008-06-26 10:21:31 -0500 (Thu, 26 Jun 2008) $
- * $Id: HDFNumericAttrib.h 2764 2008-06-26 15:21:31Z jnkim $ 
+ * $Id: hdf_dataspace.h 2764 2008-06-26 15:21:31Z jnkim $ 
  ***************************************************************************/
