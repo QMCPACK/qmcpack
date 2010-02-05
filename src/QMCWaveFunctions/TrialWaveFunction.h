@@ -140,6 +140,10 @@ namespace qmcplusplus
 
       /** functions to handle particle-by-particle update */
       RealType ratio(ParticleSet& P, int iat);
+
+      /** for releasednode calculations */
+      RealType alternateRatio(ParticleSet& P);
+
       void update(ParticleSet& P, int iat);
 
       RealType ratio(ParticleSet& P, int iat,
@@ -198,15 +202,21 @@ namespace qmcplusplus
         RealType mass = tspecies(massind,0);
         OneOverM = 1.0/mass;
       }
-      
+
       vector<OrbitalBase*>& getOrbitals()
       {
         return Z;
       }
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
-      void setTwist(vector<RealType> t) {myTwist=t;}
-      const vector<RealType> twist() {return myTwist;}
+      void setTwist(vector<RealType> t)
+      {
+        myTwist=t;
+      }
+      const vector<RealType> twist()
+      {
+        return myTwist;
+      }
 
     private:
 

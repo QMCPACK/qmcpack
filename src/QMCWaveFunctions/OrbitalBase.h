@@ -271,6 +271,10 @@ namespace qmcplusplus
        */
       virtual ValueType ratio(ParticleSet& P, int iat) =0;
 
+      virtual ValueType alternateRatio(ParticleSet& P)
+      {
+        return 1.0;
+      };
       /** update the gradient and laplacian values by accepting a move
        *@param P the active ParticleSet
        *@param dG the differential gradients

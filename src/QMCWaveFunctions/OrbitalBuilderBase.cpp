@@ -22,15 +22,16 @@
   *The main input files for qmcplusplus applications should use the matching
   *tags defined here.
   */
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
   //int OrbitalBuilderBase::print_level=1;
 
-  string OrbitalBuilderBase::wfs_tag="wavefunction";  
+  string OrbitalBuilderBase::wfs_tag="wavefunction";
 
-  string OrbitalBuilderBase::param_tag="parameter";  
+  string OrbitalBuilderBase::param_tag="parameter";
 
-  string OrbitalBuilderBase::dtable_tag="distancetable";  
+  string OrbitalBuilderBase::dtable_tag="distancetable";
 
   string OrbitalBuilderBase::jastrow_tag="jastrow";
 
@@ -39,6 +40,8 @@ namespace qmcplusplus {
   string OrbitalBuilderBase::sd_tag="slaterdeterminant";
 
   string OrbitalBuilderBase::det_tag="determinant";
+
+  string OrbitalBuilderBase::rn_tag="determinant_rn";
 
   string OrbitalBuilderBase::spo_tag="psi";
 
@@ -50,10 +53,10 @@ namespace qmcplusplus {
 
   string OrbitalBuilderBase::ionorb_tag="ionwf";
 
-  OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): 
-    MPIObjectBase(psi.getCommunicator()),
-  targetPtcl(p), targetPsi(psi), myNode(NULL)
-  { 
+  OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
+      MPIObjectBase(psi.getCommunicator()),
+      targetPtcl(p), targetPsi(psi), myNode(NULL)
+  {
   }
 
   OrbitalBuilderBase::~OrbitalBuilderBase()

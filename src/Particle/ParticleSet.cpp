@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,9 +22,10 @@
 #include "Utilities/IteratorUtility.h"
 //#define PACK_DISTANCETABLES
 
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
-  ///object counter 
+  ///object counter
   int  ParticleSet::PtclObjectCounter = 0;
 
   void add_p_timer(vector<NewTimer*>& timers)
@@ -36,8 +37,8 @@ namespace qmcplusplus {
   }
 
   ParticleSet::ParticleSet()
-    : UseBoundBox(true), UseSphereUpdate(true),SK(0), ParentTag(-1)
-  { 
+      : UseBoundBox(true), UseSphereUpdate(true),SK(0), ParentTag(-1)
+  {
     initParticleSet();
     initPropertyList();
 
@@ -45,7 +46,7 @@ namespace qmcplusplus {
   }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
-    : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
+      : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
       , SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
   {
     initBase();
@@ -63,37 +64,37 @@ namespace qmcplusplus {
 
     //construct the distance tables with the same order
     //first is always for this-this paier
-    for(int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
+    for (int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
 
-    if(p.SK) 
-    {
-      R.InUnit=p.R.InUnit;
-      createSK();
-      SK->DoUpdate=p.SK->DoUpdate;
-    }
+    if (p.SK)
+      {
+        R.InUnit=p.R.InUnit;
+        createSK();
+        SK->DoUpdate=p.SK->DoUpdate;
+      }
 
-    if(p.Sphere.size())
-    {
-      resizeSphere(p.Sphere.size());
-    }
+    if (p.Sphere.size())
+      {
+        resizeSphere(p.Sphere.size());
+      }
 
     add_p_timer(myTimers);
     myTwist=p.myTwist;
   }
 
 
-  ParticleSet::~ParticleSet() 
+  ParticleSet::~ParticleSet()
   {
     DEBUG_MEMORY("ParticleSet::~ParticleSet");
     delete_iter(DistTables.begin(), DistTables.end());
-    if(SK) delete SK;
+    if (SK) delete SK;
     delete_iter(Sphere.begin(), Sphere.end());
   }
 
-  void ParticleSet::initParticleSet() 
+  void ParticleSet::initParticleSet()
   {
     ObjectTag = PtclObjectCounter;
-#pragma omp atomic 
+#pragma omp atomic
     PtclObjectCounter++;
 
 #if defined(QMC_COMPLEX)
@@ -126,31 +127,35 @@ namespace qmcplusplus {
   }
 
   ///write to a ostream
-  bool ParticleSet::get(ostream& os) const {
+  bool ParticleSet::get(ostream& os) const
+    {
 
-    os << "  ParticleSet " << getName() << " : ";
-    for(int i=0; i<SubPtcl.size(); i++) os << SubPtcl[i] << " ";
-    os <<"\n\n    " << LocalNum << "\n\n";
+      os << "  ParticleSet " << getName() << " : ";
+      for (int i=0; i<SubPtcl.size(); i++) os << SubPtcl[i] << " ";
+      os <<"\n\n    " << LocalNum << "\n\n";
 
-    for(int i=0; i<LocalNum; i++) {
-      os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
+      for (int i=0; i<LocalNum; i++)
+        {
+          os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
+        }
+      return true;
     }
-    return true;
-  }
-    
+
   ///read from istream
-  bool ParticleSet::put(istream& is) { 
+  bool ParticleSet::put(istream& is)
+  {
     return true;
   }
 
   ///reset member data
-  void ParticleSet::reset() 
-  { 
+  void ParticleSet::reset()
+  {
     app_log() << "<<<< going to set properties >>>> " << endl;
   }
 
   ///read the particleset
-  bool ParticleSet::put(xmlNodePtr cur){
+  bool ParticleSet::put(xmlNodePtr cur)
+  {
     return true;
   }
 
@@ -161,17 +166,17 @@ namespace qmcplusplus {
 
   void ParticleSet::checkBoundBox(RealType rb)
   {
-    if(UseBoundBox && rb>Lattice.SimulationCellRadius)
-    {
-      app_warning()
+    if (UseBoundBox && rb>Lattice.SimulationCellRadius)
+      {
+        app_warning()
         << "ParticleSet::checkBoundBox "
-        << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius 
+        << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius
         << "\n Using SLOW method for the sphere update. " <<endl;
-      UseSphereUpdate=false;
-    }
+        UseSphereUpdate=false;
+      }
   }
-  //void ParticleSet::setUpdateMode(int updatemode) { 
-  //  if(DistTables.empty()) { 
+  //void ParticleSet::setUpdateMode(int updatemode) {
+  //  if(DistTables.empty()) {
   //    DistanceTable::getTables(ObjectTag,DistTables);
   //    DistanceTable::create(1);
   //    LOGMSG("ParticleSet::setUpdateMode to create distance tables.")
@@ -197,50 +202,53 @@ namespace qmcplusplus {
   //}
   int ParticleSet::addTable(const ParticleSet& psrc)
   {
-    if(DistTables.empty())
-    {
-      DistTables.reserve(4);
-      DistTables.push_back(createDistanceTable(*this));
-      //add  this-this pair
-      myDistTableMap.clear();
-      myDistTableMap[ObjectTag]=0;
-      app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
-      
-      if(psrc.tag() == ObjectTag) return 0;
-    } 
-    
-    if(psrc.tag() == ObjectTag) {
-      app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
-      return 0;
-    }
+    if (DistTables.empty())
+      {
+        DistTables.reserve(4);
+        DistTables.push_back(createDistanceTable(*this));
+        //add  this-this pair
+        myDistTableMap.clear();
+        myDistTableMap[ObjectTag]=0;
+        app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
+
+        if (psrc.tag() == ObjectTag) return 0;
+      }
+
+    if (psrc.tag() == ObjectTag)
+      {
+        app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
+        return 0;
+      }
 
     int tsize=DistTables.size(),tid;
     map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
-    if(tit == myDistTableMap.end())
-    {
-      tid=DistTables.size();
-      DistTables.push_back(createDistanceTable(psrc,*this));
-      myDistTableMap[psrc.tag()]=tid;
-      app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
-    }
+    if (tit == myDistTableMap.end())
+      {
+        tid=DistTables.size();
+        DistTables.push_back(createDistanceTable(psrc,*this));
+        myDistTableMap[psrc.tag()]=tid;
+        app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
+      }
     else
-    {
-      tid = (*tit).second;
-      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
-    }
+      {
+        tid = (*tit).second;
+        app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
+      }
     return tid;
   }
 
-  void ParticleSet::update(int iflag) {
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
-  }  
+  void ParticleSet::update(int iflag)
+  {
+    for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if (SK) SK->UpdateAllPart();
+  }
 
-  void ParticleSet::update(const ParticlePos_t& pos) { 
+  void ParticleSet::update(const ParticlePos_t& pos)
+  {
     R = pos;
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
-  }  
+    for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if (SK && !SK->DoUpdate) SK->UpdateAllPart();
+  }
 
 
   /** move a particle iat
@@ -251,18 +259,18 @@ namespace qmcplusplus {
    * Update activePtcl index and activePos position for the proposed move.
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
-  ParticleSet::SingleParticlePos_t 
-  ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) 
+  ParticleSet::SingleParticlePos_t
+  ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   {
     activePtcl=iat;
     activePos=R[iat]; //save the current position
     SingleParticlePos_t newpos(activePos+displ);
-    for(int i=0; i< DistTables.size(); ++i) 
+    for (int i=0; i< DistTables.size(); ++i)
       DistTables[i]->move(*this,newpos,iat);
     R[iat]=newpos;
     //Do not change SK: 2007-05-18
     //Change SK only if DoUpdate is true: 2008-09-12
-    if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+    if (SK && SK->DoUpdate) SK->makeMove(iat,newpos);
     return newpos;
   }
 
@@ -275,64 +283,64 @@ namespace qmcplusplus {
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   bool
-  ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
+  ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
   {
     myTimers[0]->start();
     activePtcl=iat;
     //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
-    if(UseBoundBox)
-    {
-      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-      activePos=R[iat]; //save the current position
-      SingleParticlePos_t newpos(activePos+displ);
-      newRedPos=Lattice.toUnit(newpos);
-      if(Lattice.isValid(newRedPos)) 
+    if (UseBoundBox)
       {
-        for(int i=0; i< DistTables.size(); ++i) 
+        if (Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+        activePos=R[iat]; //save the current position
+        SingleParticlePos_t newpos(activePos+displ);
+        newRedPos=Lattice.toUnit(newpos);
+        if (Lattice.isValid(newRedPos))
+          {
+            for (int i=0; i< DistTables.size(); ++i)
+              DistTables[i]->move(*this,newpos,iat);
+            R[iat]=newpos;
+            if (SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+            myTimers[0]->stop();
+            return true;
+          }
+        //out of bound
+        myTimers[0]->stop();
+        return false;
+      }
+    else
+      {
+        activePos=R[iat]; //save the current position
+        SingleParticlePos_t newpos(activePos+displ);
+        for (int i=0; i< DistTables.size(); ++i)
           DistTables[i]->move(*this,newpos,iat);
         R[iat]=newpos;
-        if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
         myTimers[0]->stop();
         return true;
       }
-      //out of bound
-      myTimers[0]->stop();
-      return false;
-    }
-    else
-    {
-      activePos=R[iat]; //save the current position
-      SingleParticlePos_t newpos(activePos+displ);
-      for(int i=0; i< DistTables.size(); ++i) 
-        DistTables[i]->move(*this,newpos,iat);
-      R[iat]=newpos;
-      myTimers[0]->stop();
-      return true;
-    }
   }
 
   bool ParticleSet::makeMove(const Walker_t& awalker
-      , const ParticlePos_t& deltaR, RealType dt)
+                             , const ParticlePos_t& deltaR, RealType dt)
   {
-    if(UseBoundBox)
-    {
-      for(int iat=0; iat<deltaR.size(); ++iat)
+    if (UseBoundBox)
       {
-        SingleParticlePos_t displ(dt*deltaR[iat]);
-        if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-        SingleParticlePos_t newpos(awalker.R[iat]+displ);
-        if(!Lattice.isValid(Lattice.toUnit(newpos)))  return false;
-        R[iat]=newpos;
+        for (int iat=0; iat<deltaR.size(); ++iat)
+          {
+            SingleParticlePos_t displ(dt*deltaR[iat]);
+            if (Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+            SingleParticlePos_t newpos(awalker.R[iat]+displ);
+            if (!Lattice.isValid(Lattice.toUnit(newpos)))  return false;
+            R[iat]=newpos;
+          }
       }
-    }
     else
-    {
-      for(int iat=0; iat<deltaR.size(); ++iat)
-        R[iat]=awalker.R[iat]+dt*deltaR[iat];
-    }
+      {
+        for (int iat=0; iat<deltaR.size(); ++iat)
+          R[iat]=awalker.R[iat]+dt*deltaR[iat];
+      }
 
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
+    for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if (SK) SK->UpdateAllPart();
     //every move is valid
     return true;
   }
@@ -345,85 +353,89 @@ namespace qmcplusplus {
    * @return true, if all the particle moves are legal under the boundary conditions
    */
   bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
-      , const ParticlePos_t& drift , const ParticlePos_t& deltaR
-      , RealType dt)
+                                      , const ParticlePos_t& drift , const ParticlePos_t& deltaR
+                                      , RealType dt)
   {
-    if(UseBoundBox)
-    {
-      for(int iat=0; iat<deltaR.size(); ++iat)
+    if (UseBoundBox)
       {
-        SingleParticlePos_t displ(dt*deltaR[iat]+drift[iat]);
-        if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-        SingleParticlePos_t newpos(awalker.R[iat]+displ);
-        if(!Lattice.isValid(Lattice.toUnit(newpos))) return false;
-        R[iat]=newpos;
+        for (int iat=0; iat<deltaR.size(); ++iat)
+          {
+            SingleParticlePos_t displ(dt*deltaR[iat]+drift[iat]);
+            if (Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+            SingleParticlePos_t newpos(awalker.R[iat]+displ);
+            if (!Lattice.isValid(Lattice.toUnit(newpos))) return false;
+            R[iat]=newpos;
+          }
       }
-    }
     else
-    {
-      for(int iat=0; iat<deltaR.size(); ++iat)
-        R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
-    }
+      {
+        for (int iat=0; iat<deltaR.size(); ++iat)
+          R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
+      }
 
-    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
+    for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if (SK) SK->UpdateAllPart();
 
     //every move is valid
     return true;
   }
 
   void
-  ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 
+  ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
   {
     myTimers[1]->start();
-    if(UseSphereUpdate)
-    {
-      for(int i=0; i< DistTables.size(); ++i) DistTables[i]->moveOnSphere(*this,displ,iat);
-    }
+    if (UseSphereUpdate)
+      {
+        for (int i=0; i< DistTables.size(); ++i) DistTables[i]->moveOnSphere(*this,displ,iat);
+      }
     else
-    {
-      PosType newpos=activePos+displ;
-      for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
-    } 
+      {
+        PosType newpos=activePos+displ;
+        for (int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
+      }
     activePtcl=iat;
     activePos=R[iat];
     R[iat]=activePos+displ;
 
-    if(SK && SK->DoUpdate) SK->makeMove(iat,R[iat]);
+    if (SK && SK->DoUpdate) SK->makeMove(iat,R[iat]);
     //SingleParticlePos_t dum=makeMove(iat,displ);
     myTimers[1]->stop();
   }
-  
+
   /** update the particle attribute by the proposed move
    *@param iat the particle index
    *
    *When the activePtcl is equal to iat, overwrite the position and update the
    *content of the distance tables.
    */
-  void ParticleSet::acceptMove(Index_t iat) {
-    if(iat == activePtcl) {
-      //Update position + distance-table
-      for(int i=0; i< DistTables.size(); i++) {
-        DistTables[i]->update(iat);
+  void ParticleSet::acceptMove(Index_t iat)
+  {
+    if (iat == activePtcl)
+      {
+        //Update position + distance-table
+        for (int i=0; i< DistTables.size(); i++)
+          {
+            DistTables[i]->update(iat);
+          }
+        //Do not change SK: 2007-05-18
+        if (SK && SK->DoUpdate) SK->acceptMove(iat);
       }
-      //Do not change SK: 2007-05-18
-      if(SK && SK->DoUpdate) SK->acceptMove(iat);
-    }
     else
-    {
-      APP_ABORT("  Illegal acceptMove ");
-    }
+      {
+        APP_ABORT("  Illegal acceptMove ");
+      }
   }
 
   void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
   {
     activePtcl=0;
     activePos=R[0];
-    for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,0);
+    for (int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,0);
     R[0]=newpos;
   }
 
-void ParticleSet::rejectMove(Index_t iat) {
+  void ParticleSet::rejectMove(Index_t iat)
+  {
     //restore the position by the saved activePos
     R[iat]=activePos;
     //Do not change SK: 2007-05-18
@@ -433,15 +445,17 @@ void ParticleSet::rejectMove(Index_t iat) {
   /** resize Sphere by the LocalNum
    * @param nc number of centers to which Spherical grid will be assigned.
    */
-  void ParticleSet::resizeSphere(int nc) {
+  void ParticleSet::resizeSphere(int nc)
+  {
     int nsadd=nc-Sphere.size();
-    while(nsadd>0) {
-      Sphere.push_back(new ParticlePos_t);
-      --nsadd;
-    }
+    while (nsadd>0)
+      {
+        Sphere.push_back(new ParticlePos_t);
+        --nsadd;
+      }
   }
 
-  void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp) 
+  void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   {
     R = awalker.R;
     G = awalker.G;
@@ -452,30 +466,30 @@ void ParticleSet::rejectMove(Index_t iat) {
 //    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
 //    if(SK) SK->copyFromBuffer(buf);
 //#else
-    if(pbyp)
-    {
-      for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-      if(SK) SK->UpdateAllPart();
-    }
+    if (pbyp)
+      {
+        for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+        if (SK) SK->UpdateAllPart();
+      }
 //#endif
   }
 
-  void ParticleSet::saveWalker(Walker_t& awalker) 
+  void ParticleSet::saveWalker(Walker_t& awalker)
   {
     awalker.R=R;
     awalker.G=G;
     awalker.L=L;
     //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
-    if(SK) SK->UpdateAllPart();
+    if (SK) SK->UpdateAllPart();
     //awalker.DataSet.rewind();
   }
 
 
-//  void 
+//  void
 //  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
 //    R = awalker.R;
 //#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) 
+//    for(int i=0; i< DistTables.size(); i++)
 //    {
 //      DistTables[i]->evaluate(*this);
 //      DistTables[i]->registerData(buf);
@@ -491,10 +505,10 @@ void ParticleSet::rejectMove(Index_t iat) {
 //#endif
 //  }
 //
-//  void 
+//  void
 //  ParticleSet::registerData(PooledData<RealType>& buf) {
 //#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) 
+//    for(int i=0; i< DistTables.size(); i++)
 //    {
 //      DistTables[i]->evaluate(*this);
 //      DistTables[i]->registerData(buf);
@@ -509,12 +523,12 @@ void ParticleSet::rejectMove(Index_t iat) {
 //    if(SK) SK->UpdateAllPart();
 //#endif
 //  }
-//  
-//  void 
+//
+//  void
 //  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
 //    R = awalker.R;
 //#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) 
+//    for(int i=0; i< DistTables.size(); i++)
 //    {
 //      DistTables[i]->evaluate(*this);
 //      DistTables[i]->updateBuffer(buf);
@@ -529,11 +543,11 @@ void ParticleSet::rejectMove(Index_t iat) {
 //    if(SK) SK->UpdateAllPart();
 //#endif
 //  }
-//    
-//  void 
+//
+//  void
 //  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
 //#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) 
+//    for(int i=0; i< DistTables.size(); i++)
 //    {
 //      DistTables[i]->evaluate(*this);
 //      DistTables[i]->updateBuffer(buf);
@@ -548,8 +562,8 @@ void ParticleSet::rejectMove(Index_t iat) {
 //    if(SK) SK->UpdateAllPart();
 //#endif
 //  }
-//    
-//  void 
+//
+//  void
 //  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
 //#if defined(PACK_DISTANCETABLES)
 //    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
@@ -564,9 +578,9 @@ void ParticleSet::rejectMove(Index_t iat) {
 //    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
 //#endif
 //  }
-//  
-//  void 
-//  ParticleSet::copyFromBuffer(PooledData<RealType>& buf) 
+//
+//  void
+//  ParticleSet::copyFromBuffer(PooledData<RealType>& buf)
 //  {
 //#if defined(PACK_DISTANCETABLES)
 //    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
@@ -577,7 +591,7 @@ void ParticleSet::rejectMove(Index_t iat) {
 //#endif
 //  }
 //
-  void ParticleSet::initPropertyList() 
+  void ParticleSet::initPropertyList()
   {
     PropertyList.clear();
     //Need to add the default Properties according to the enumeration
@@ -587,18 +601,19 @@ void ParticleSet::rejectMove(Index_t iat) {
     PropertyList.add("R2Accepted");
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
+    PropertyList.add("BranchingEnergy");
     PropertyList.add("LocalEnergy");
     PropertyList.add("LocalPotential");
 
-    if(PropertyList.size() != NUMPROPERTIES)
-    {
-      app_error() << "The number of default properties for walkers  is not consistent." << endl;
-      app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << endl;
-      APP_ABORT("ParticleSet::initPropertyList");
-    }
+    if (PropertyList.size() != NUMPROPERTIES)
+      {
+        app_error() << "The number of default properties for walkers  is not consistent." << endl;
+        app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << endl;
+        APP_ABORT("ParticleSet::initPropertyList");
+      }
   }
 
-  void ParticleSet::clearDistanceTables() 
+  void ParticleSet::clearDistanceTables()
   {
     //Physically remove the tables
     delete_iter(DistTables.begin(),DistTables.end());
@@ -607,15 +622,15 @@ void ParticleSet::rejectMove(Index_t iat) {
     //DistTables.erase(DistTables.begin(),DistTables.end());
   }
 
-    int ParticleSet::addPropertyHistory(int leng)
-    {
-      int newL = PropertyHistory.size();
-      vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
-      PropertyHistory.push_back(newVecHistory);
-      PHindex.push_back(0);
-      return newL;
-    }
-    
+  int ParticleSet::addPropertyHistory(int leng)
+  {
+    int newL = PropertyHistory.size();
+    vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
+    PropertyHistory.push_back(newVecHistory);
+    PHindex.push_back(0);
+    return newL;
+  }
+
 //      void ParticleSet::resetPropertyHistory( )
 //     {
 //       for(int i=0;i<PropertyHistory.size();i++)
@@ -635,7 +650,7 @@ void ParticleSet::rejectMove(Index_t iat) {
 //       if (PHindex[index]==PropertyHistory[index].size()) PHindex[index]=0;
 // //       PropertyHistory[index].pop_back();
 //     }
-    
+
 //      void ParticleSet::rejectedMove()
 //     {
 //       for(int dindex=0;dindex<PropertyHistory.size();dindex++){
@@ -648,14 +663,14 @@ void ParticleSet::rejectMove(Index_t iat) {
 // //       PropertyHistory[dindex].pop_back();
 //       }
 //     }
-    
 
-  
-  
+
+
+
 }
 
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

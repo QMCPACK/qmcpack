@@ -23,22 +23,22 @@ namespace qmcplusplus
 
   TrialWaveFunction::TrialWaveFunction(Communicate* c)
       : MPIObjectBase(c)
-    , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
-    , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
-    {
-      ClassName="TrialWaveFunction";
-      myName="psi0";
-    }
+      , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
+      , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
+  {
+    ClassName="TrialWaveFunction";
+    myName="psi0";
+  }
 
   ///private and cannot be used
-  TrialWaveFunction::TrialWaveFunction() 
-    : MPIObjectBase(0)
-    , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
-    ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
-    {
-      ClassName="TrialWaveFunction";
-      myName="psi0";
-    }
+  TrialWaveFunction::TrialWaveFunction()
+      : MPIObjectBase(0)
+      , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
+      ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
+  {
+    ClassName="TrialWaveFunction";
+    myName="psi0";
+  }
 
   /** Destructor
   *
@@ -65,10 +65,11 @@ namespace qmcplusplus
 
   void TrialWaveFunction::stopOptimization()
   {
-    for (int i=0; i<Z.size(); i++) {
-      Z[i]->finalizeOptimization();
-      Z[i]->IsOptimizing=false;
-    }
+    for (int i=0; i<Z.size(); i++)
+      {
+        Z[i]->finalizeOptimization();
+        Z[i]->IsOptimizing=false;
+      }
   }
 
   /** add an ObritalBase
@@ -167,7 +168,7 @@ namespace qmcplusplus
    * Each OrbitalBase evaluates PhaseValue and LogValue = log(abs(psi_i))
    * Jastrow functions always have PhaseValue=1.
    */
-  TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P) 
+  TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P)
   {
     P.G = 0.0;
     P.L = 0.0;
@@ -206,8 +207,8 @@ namespace qmcplusplus
   */
   void
   TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
-      , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
-      , ParticleSet::ParticleGradient_t& fixedG, ParticleSet::ParticleLaplacian_t& fixedL) 
+                                      , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
+                                      , ParticleSet::ParticleGradient_t& fixedG, ParticleSet::ParticleLaplacian_t& fixedL)
   {
     //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
     P.G = 0.0;
@@ -241,7 +242,7 @@ namespace qmcplusplus
   *
   *Upon return, the gradient and laplacian operators are added by the components.
   */
-  TrialWaveFunction::ValueType TrialWaveFunction::evaluate(ParticleSet& P) 
+  TrialWaveFunction::ValueType TrialWaveFunction::evaluate(ParticleSet& P)
   {
     //TAU_PROFILE("TrialWaveFunction::evaluate","ParticleSet& P", TAU_USER);
     P.G = 0.0;
@@ -257,7 +258,7 @@ namespace qmcplusplus
     return psi;
   }
 
-  TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat) 
+  TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
   {
     //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
     ValueType r(1.0);
@@ -278,7 +279,27 @@ namespace qmcplusplus
 #endif
   }
 
-  TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat) 
+  TrialWaveFunction::RealType TrialWaveFunction::alternateRatio(ParticleSet& P)
+  {
+    //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
+    ValueType r(1.0);
+    for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
+      {
+        myTimers[ii]->start();
+        r *= Z[i]->alternateRatio(P);
+        myTimers[ii]->stop();
+      }
+#if defined(QMC_COMPLEX)
+    //return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    RealType logr=evaluateLogAndPhase(r,PhaseDiff);
+    return std::exp(logr);
+#else
+    if (r<0) PhaseDiff=M_PI;
+    return r;
+#endif
+  }
+
+  TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
   {
     //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
     GradType grad_iat;
@@ -290,7 +311,7 @@ namespace qmcplusplus
   // Evaluates the gradient w.r.t. to the source of the Laplacian
   // w.r.t. to the electrons of the wave function.
   TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
-      , ParticleSet &source, int iat) 
+      , ParticleSet &source, int iat)
   {
     GradType grad_iat = GradType();
     for (int i=0; i<Z.size(); ++i)
@@ -320,7 +341,7 @@ namespace qmcplusplus
 
 
   TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
-      ,int iat, GradType& grad_iat) 
+      ,int iat, GradType& grad_iat)
   {
     //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
     grad_iat=0.0;
@@ -342,7 +363,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void   TrialWaveFunction::update(ParticleSet& P,int iat) 
+  void   TrialWaveFunction::update(ParticleSet& P,int iat)
   {
     //ready to collect "changes" in the gradients and laplacians by the move
     delta_G=0.0;
@@ -363,7 +384,7 @@ namespace qmcplusplus
    * Each OrbitalBase object adds the differential gradients and lapacians.
    */
   TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
-      , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL) 
+      , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
   {
     //TAU_PROFILE("TrialWaveFunction::ratio","(P,iat,dG,dL)", TAU_USER);
     dG = 0.0;
@@ -391,11 +412,12 @@ namespace qmcplusplus
    * The proposed move of the iath particle is rejected.
    * All the temporary data should be restored to the state prior to the move.
    */
-  void TrialWaveFunction::rejectMove(int iat) 
+  void TrialWaveFunction::rejectMove(int iat)
   {
-    for(int i=0; i<Z.size(); i++) {
-      Z[i]->restore(iat);
-    }
+    for (int i=0; i<Z.size(); i++)
+      {
+        Z[i]->restore(iat);
+      }
     PhaseDiff=0;
   }
 
@@ -406,9 +428,9 @@ namespace qmcplusplus
    * The proposed move of the iath particle is accepted.
    * All the temporary data should be incorporated so that the next move is valid.
    */
-  void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat) 
+  void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
   {
-    for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
+    for (int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
     PhaseValue += PhaseDiff;
     PhaseDiff=0.0;
   }
@@ -437,7 +459,7 @@ namespace qmcplusplus
     for (int i=0; i<Z.size(); i++) Z[i]->reportStatus(os);
   }
 
-  TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) 
+  TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
@@ -471,7 +493,7 @@ namespace qmcplusplus
   }
 
   TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
-      , PooledData<RealType>& buf, bool fromscratch) 
+      , PooledData<RealType>& buf, bool fromscratch)
   {
     //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
     P.G = 0.0;
@@ -498,13 +520,13 @@ namespace qmcplusplus
     return LogValue;
   }
 
-  void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 
+  void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
 
     buf.rewind(BufferCursor);
 
     //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
-    for(int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);
+    for (int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);
 
     //get the gradients and laplacians from the buffer
     buf.get(PhaseValue);
@@ -520,7 +542,7 @@ namespace qmcplusplus
   * that are required to evaluate the ratio, even though the components
   * are invariant during the optimizations.
   */
-  void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf) 
+  void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf)
   {
     buf.rewind(BufferCursor);
     vector<OrbitalBase*>::iterator it(Z.begin());
@@ -539,7 +561,7 @@ namespace qmcplusplus
   * that are required to evaluate the ratio from the buffer.
   * Only the data registered by dumToBuffer will be available.
   */
-  void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf) 
+  void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
   {
     buf.rewind(BufferCursor);
     vector<OrbitalBase*>::iterator it(Z.begin());
@@ -620,16 +642,16 @@ namespace qmcplusplus
   }
 
   TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
-  {
-    TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
-    myclone->BufferCursor=BufferCursor;
-    for (int i=0; i<Z.size(); ++i)
-      myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
-    for (int i=0; i<myTimers.size(); i++)
-      myclone->myTimers[i]->set_name(myTimers[i]->get_name());
-    myclone->OneOverM=OneOverM;
-    return myclone;
-  }
+    {
+      TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
+      myclone->BufferCursor=BufferCursor;
+      for (int i=0; i<Z.size(); ++i)
+        myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
+      for (int i=0; i<myTimers.size(); i++)
+        myclone->myTimers[i]->set_name(myTimers[i]->get_name());
+      myclone->OneOverM=OneOverM;
+      return myclone;
+    }
 
   void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
@@ -658,11 +680,11 @@ namespace qmcplusplus
   {
     std::fill(ratios.begin(),ratios.end(),1.0);
     vector<ValueType> t(ratios.size());
-    for(int i=0; i<Z.size(); ++i)
-    {
-      Z[i]->get_ratios(P,t);
-      for(int j=0; j<t.size(); ++j) ratios[j]*=t[j];
-    }
+    for (int i=0; i<Z.size(); ++i)
+      {
+        Z[i]->get_ratios(P,t);
+        for (int j=0; j<t.size(); ++j) ratios[j]*=t[j];
+      }
   }
 
 }
