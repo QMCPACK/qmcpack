@@ -241,9 +241,10 @@ struct HDFAttribIO<TinyVector<double,D> >: public HDFAttribIOBase {
     H5Eget_auto (&func, &client_data);
     H5Eset_auto (NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
-    if(h1>-1)
+    if(h1>-1) {
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
-    H5Dclose(h1);
+      H5Dclose(h1);
+    }
     H5Eset_auto (func, client_data);
   }
 };
