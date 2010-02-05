@@ -230,7 +230,7 @@ namespace qmcplusplus
     Phi->evaluate(P, iat, psiV);
     RatioTimer.start();
     alternateCurRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
-    if (abs(alternateCurRatio)< *numeric_limits<RealType>::epsilon())
+    if (abs(alternateCurRatio)< numeric_limits<RealType>::epsilon())
       {
         app_log()<<"stepped on node: ratioGrad"<<endl;
         RatioTimer.stop();
