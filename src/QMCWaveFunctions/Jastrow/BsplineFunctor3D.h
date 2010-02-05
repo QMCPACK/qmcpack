@@ -96,6 +96,8 @@ namespace qmcplusplus
         DeltaxInv = 1.0/Deltax;
       }
 
+      inline int getNumParameters() { return Parameters.size(); }
+
       void reset()
       {
         int numCoefs_eI = NumParams_eI + 4;
