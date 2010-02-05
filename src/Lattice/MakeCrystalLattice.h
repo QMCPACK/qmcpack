@@ -22,6 +22,9 @@
  *The arguments are stored in std::vector<string>. 
  *
  */
+
+#include <cstdlib>
+
 namespace APPNAMESPACE {
 /** dummy template class to be specialized */
 template<class CL>
@@ -49,7 +52,7 @@ struct makelattice<CrystalLattice<T,1> > {
     int argc = argv.size();
     while(i<argc) {
       if(argv[i] == "a0") {
-        lat.R(0,0) = atof(argv[++i].c_str());
+        lat.R(0,0) = std::atof(argv[++i].c_str());
       }
       i++;
     }
@@ -69,18 +72,18 @@ struct makelattice<CrystalLattice<T,2> > {
     int argc = argv.size();
     while(i<argc) {
       if(argv[i] == "cubic") {
-        a0 = atof(argv[++i].c_str());
+        a0 = std::atof(argv[++i].c_str());
         lat.R.diagonal(1.0);
       } else if(argv[i] == "orthorombic") { 
         lat.R = 0.0e0;
-        lat.R(0,0) = atof(argv[++i].c_str());
-        lat.R(1,1) = atof(argv[++i].c_str());
+        lat.R(0,0) = std::atof(argv[++i].c_str());
+        lat.R(1,1) = std::atof(argv[++i].c_str());
       } else if(argv[i] == "general") {
         lat.R = 0.0e0;
-        lat.R(0,0) = atof(argv[++i].c_str());
-        lat.R(0,1) = atof(argv[++i].c_str());
-        lat.R(1,0) = atof(argv[++i].c_str());
-        lat.R(1,1) = atof(argv[++i].c_str());
+        lat.R(0,0) = std::atof(argv[++i].c_str());
+        lat.R(0,1) = std::atof(argv[++i].c_str());
+        lat.R(1,0) = std::atof(argv[++i].c_str());
+        lat.R(1,1) = std::atof(argv[++i].c_str());
       } 
       i++;
     }
@@ -111,27 +114,27 @@ struct makelattice<CrystalLattice<T,3> > {
     int argc = argv.size();
     while(i<argc) {
       if(argv[i] == "cubic") {
-        a0 = atof(argv[++i].c_str());
+        a0 = std::atof(argv[++i].c_str());
         lat.R.diagonal(1.0);
       } else if(argv[i] == "orthorombic") { 
         lat.R = 0.0e0;
-        lat.R(0,0) = atof(argv[++i].c_str());
-        lat.R(1,1) = atof(argv[++i].c_str());
-        lat.R(2,2) = atof(argv[++i].c_str());
+        lat.R(0,0) = std::atof(argv[++i].c_str());
+        lat.R(1,1) = std::atof(argv[++i].c_str());
+        lat.R(2,2) = std::atof(argv[++i].c_str());
       } else if(argv[i] == "fcc") {
-        a0 = atof(argv[++i].c_str());
+        a0 = std::atof(argv[++i].c_str());
         lat.R(0,0) = 0.0; lat.R(0,1) = 0.5; lat.R(0,2) = 0.5;
         lat.R(1,0) = 0.5; lat.R(1,1) = 0.0; lat.R(1,2) = 0.5;
         lat.R(2,0) = 0.5; lat.R(2,1) = 0.5; lat.R(2,2) = 0.0;
       } else if(argv[i] == "bcc") {
-        a0 = atof(argv[++i].c_str());
+        a0 = std::atof(argv[++i].c_str());
         lat.R(0,0) = -0.5; lat.R(0,1) =  0.5; lat.R(0,2) =  0.5;
         lat.R(1,0) =  0.5; lat.R(1,1) = -0.5; lat.R(1,2) =  0.5;
         lat.R(2,0) =  0.5; lat.R(2,1) =  0.5; lat.R(2,2) = -0.5;
       } else if(argv[i] == "hcp") {
-        a0 = atof(argv[++i].c_str());
+        a0 = std::atof(argv[++i].c_str());
         double covera = std::sqrt(8.0/3.0);
-        if(argc-i > 1) covera = atof(argv[++i].c_str());
+        if(argc-i > 1) covera = std::atof(argv[++i].c_str());
         lat.R(0,0) = 0.5*a0; lat.R(0,1) = -std::sqrt(3.0)*0.5*a0; lat.R(0,2) = 0.0;
         lat.R(1,0) = 0.5*a0; lat.R(1,1) =  std::sqrt(3.0)*0.5*a0; lat.R(1,2) = 0.0;
         lat.R(2,0) = 0.0;    lat.R(2,1) =   0.0;             lat.R(2,2) = covera*a0;
