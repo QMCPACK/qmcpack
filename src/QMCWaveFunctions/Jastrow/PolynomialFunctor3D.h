@@ -705,6 +705,9 @@ namespace qmcplusplus {
         r+=d;
       }
     }
+
+    inline int getNumParameters() { return Parameters.size(); }
+
   };
 }
 #endif
