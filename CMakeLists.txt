@@ -74,6 +74,7 @@ SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
+SET(CUDA_PRECISION float)
 
 ######################################################################
 # enable MPI and OPNEMP  if possible
@@ -82,6 +83,7 @@ SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 ######################################################################
 # check environment variables 
@@ -102,10 +104,15 @@ IF($ENV{QMC_COMPLEX})
   SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
   MESSAGE("-- Found QMC_COMPLEX=${QMC_COMPLEX}")
 ENDIF($ENV{QMC_COMPLEX})
+IF($ENV{QMC_CUDA})
+  SET(QMC_CUDA $ENV{QMC_CUDA})
+  MESSAGE("-- Found QMC_CUDA=${QMC_CUDA}")
+ENDIF($ENV{QMC_CUDA})
 
 ######################################################################
 # Standard test
 ######################################################################
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
@@ -374,6 +381,12 @@ IF(Boost_FOUND)
 ELSE()
   MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF()
+
+IF(QMC_CUDA)
+  SET(CUDA_NVCC_FLAGS "-arch;sm_13")
+  FIND_PACKAGE(CUDA REQUIRED)
+  SET(CUDA_NVCC_FLAGS "-arch;sm_13")
+ENDIF(QMC_CUDA)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
