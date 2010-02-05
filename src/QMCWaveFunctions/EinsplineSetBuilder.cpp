@@ -463,11 +463,17 @@ namespace qmcplusplus {
       for (int bi=0; bi<NumBands; bi++) {
 	double radius = 0.0;
 	ostringstream path;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
+	if ((Version[0]==0 && Version[1]==11) 
+	    || NumTwists > 1)
 	  path << eigenstatesGroup << "/twist_" << ti << "/band_"
 	       << bi << "/radius";
-	else
-	  path << eigenstatesGroup << "/twist/band_" << bi << "/radius";
+	else {
+	  if (NumBands > 1)
+	    path << eigenstatesGroup << "/twist/band_" << bi << "/radius";
+	  else
+	    path << eigenstatesGroup << "/twist/band/radius";
+	}
+	cerr << "path = " << path.str() << endl;
 	HDFAttribIO<double>  h_radius(radius);
 	h_radius.read(H5FileID, path.str().c_str());
 	HaveLocalizedOrbs = HaveLocalizedOrbs || (radius > 0.0);
