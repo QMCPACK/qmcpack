@@ -100,24 +100,7 @@ namespace qmcplusplus
     makeClones(W,Psi,H);
 
     std::vector<IndexType> samples_th(omp_get_max_threads(),0);
-
-    //determine dump period for walkers
-//     int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
-//     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
-    //fall back to the default
-//     if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
-//     if (QMCDriverMode[QMC_WARMUP]) 
-//       myPeriod4WalkerDump=nBlocks*nSteps;
-
-//     if (nStepsBetweenSamples) myPeriod4WalkerDump=Period4WalkerDump;
-//     else 
-//     {
-//       int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
-//       myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
-//       if (myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
-//     }
-
-    myPeriod4WalkerDump=Period4WalkerDump;
+    myPeriod4WalkerDump=(Period4WalkerDump>0)?Period4WalkerDump:(nBlocks+1)*nSteps;
     
     int samples_this_node = nTargetSamples/myComm->size();
     if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
