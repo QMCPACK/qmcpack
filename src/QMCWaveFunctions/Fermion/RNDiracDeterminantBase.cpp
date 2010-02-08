@@ -269,6 +269,7 @@ namespace qmcplusplus
                                          int iat)
   {
     APP_ABORT("What?! released node and forces?");
+    return GradType();
   }
 
   RNDiracDeterminantBase::GradType
@@ -278,6 +279,7 @@ namespace qmcplusplus
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
   {
     APP_ABORT("What?! released node and forces?");
+    return GradType();
   }
 
 
@@ -288,6 +290,7 @@ namespace qmcplusplus
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
   {
     APP_ABORT("What?! released node and forces?");
+    return GradType();
   }
 
   RNDiracDeterminantBase::ValueType

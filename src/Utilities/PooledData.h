@@ -203,6 +203,7 @@ struct PooledData {
 template<class T>
 struct PooledData 
 {
+  typedef T value_type;
   typedef typename std::vector<T>::size_type size_type;
 
   size_type Current;

@@ -25,6 +25,7 @@ SET(UTILITIES
   Message/Communicate.cpp 
   Message/MPIObjectBase.cpp 
   Optimize/VariableSet.cpp
+  io/hdf_archive.cpp
 )
 
 ##gsl library will be optional

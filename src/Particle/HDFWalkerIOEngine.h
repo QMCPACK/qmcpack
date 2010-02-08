@@ -20,31 +20,31 @@
 #ifndef QMCPLUSPLUS_WALKERPACKEDIO_H
 #define QMCPLUSPLUS_WALKERPACKEDIO_H
 
-#include "HDFVersion.h"
+#include <Configuration.h>
+#include <io/hdf_archive.h>
+
 class Communicate;
 namespace qmcplusplus 
 {
   class MCWalkerConfiguration;
-  /** specialized HDFAttribIOBase to read/write the positions of all the walkers.
+  /** IO engine for Walker :  read/write the positions of all the walkers.
    *
    * This class is to optimize writing walker configurations for restart and
    * for variational optimizations.
    */
-  struct HDFWalkerIOEngine: public HDFAttribIOBase {
+  struct HDFWalkerIOEngine
+  {
 
     ///reference to the walkers
     MCWalkerConfiguration& W;
     ///if true, the content is replaced
     bool replace;
+    ///transfer mode
+    hid_t xfer_plist;
 
     HDFWalkerIOEngine(MCWalkerConfiguration& a, bool reuse=false);
 
-    void write(hid_t grp, const char* name);
-
     void read(hid_t grp, const char* name);
-
-    //write collectively
-    void writeAll(hid_t grp, const char* name, Communicate* myComm);
 
     //read collectively
     void readAll(hid_t grp, const char* name, Communicate* myComm);

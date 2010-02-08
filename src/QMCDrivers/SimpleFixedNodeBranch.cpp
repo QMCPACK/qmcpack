@@ -23,7 +23,6 @@
 #include "Estimators/EstimatorManager.h"
 //#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCDrivers/BranchIO.h"
-#include "HDFVersion.h"
 
 //#include <boost/archive/text_oarchive.hpp>
 
@@ -343,7 +342,7 @@ namespace qmcplusplus
       WalkerController->start();
     }
   }
-  
+
   void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     myNode=cur;
@@ -414,24 +413,24 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w) 
   {
 
+    ostringstream o;
     if(WalkerController)
     {
-      ostringstream o;
       o << "====================================================";
       o << "\n  SimpleFixedNodeBranch::finalize after a DMC block" ;
-      o << "\n    QMC counter      = " << iParam[B_COUNTER];
-      o << "\n    time step        = " << vParam[B_TAU];
-      o << "\n    effective time step = " << vParam[B_TAUEFF];
-      o << "\n    trial energy     = " << vParam[B_ETRIAL];
-      o << "\n    reference energy = " << vParam[B_EREF];
-      o << "\n    Feedback = " << Feedback;
-      o << "\n    reference variance = " << vParam[B_SIGMA];
-      o << "\n    target walkers = " << iParam[B_TARGETWALKERS];
-      o << "\n    branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
+      o << "\n    QMC counter                   = " << iParam[B_COUNTER];
+      o << "\n    time step                     = " << vParam[B_TAU];
+      o << "\n    effective time step           = " << vParam[B_TAUEFF];
+      o << "\n    trial energy                  = " << vParam[B_ETRIAL];
+      o << "\n    reference energy              = " << vParam[B_EREF];
+      o << "\n    reference variance            = " << vParam[B_SIGMA];
+      o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
+      o << "\n    branch cutoff                 = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
       o << "\n    Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
-      o << "\n    QMC Status (BranchMode) = " << BranchMode;
+      o << "\n    Feedback                      = " << Feedback;
+      o << "\n    QMC Status (BranchMode)       = " << BranchMode;
       o << "\n====================================================";
-      app_log() << o.str() << endl;
+      
     }
     else
     {//running VMC
@@ -450,10 +449,21 @@ namespace qmcplusplus
 
       //add Eref to the DMCEnergyHistory
       DMCEnergyHist(vParam[B_EREF]);
+      o << "====================================================";
+      o << "\n  SimpleFixedNodeBranch::finalize after a VMC block" ;
+      o << "\n    QMC counter        = " << iParam[B_COUNTER];
+      o << "\n    time step          = " << vParam[B_TAU];
+      o << "\n    reference energy   = " << vParam[B_EREF];
+      o << "\n    reference variance = " << vParam[B_SIGMA];
+      o << "\n====================================================";
     }
 
+    app_log() << o.str() << endl;
+    char fname[16];
+    sprintf(fname,"test%i.log",MyEstimator->getCommunicator()->rank());
+    ofstream fout(fname);
+    fout << o.str() << endl;
 
-    //write to a file
     write(RootName,true);
   }
 
@@ -494,18 +504,13 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::read(const string& fname) 
   {
-    RootName=fname;
-    if(RootName.find(hdf::config_ext)>=RootName.size())
-    {
-      RootName.append(hdf::config_ext);
-    }
+    if(fname.empty()) return;;
 
     vParam[B_ACC_ENERGY]=EnergyHist.result();
     vParam[B_ACC_SAMPLES]=EnergyHist.count();
 
     BranchIO hh(*this,MyEstimator->getCommunicator());
-    bool success=hh.read(RootName);
-
+    bool success=hh.read(fname);
     if(success)
     {
       EnergyHist.clear();

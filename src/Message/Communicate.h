@@ -84,6 +84,10 @@ public:
   void abort(const char* msg);
   void set_world();
 
+#if defined(HAVE_MPI)
+  ///operator for implicit conversion to MPI_Comm
+  inline operator MPI_Comm() const { return myMPI; }
+#endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getMPI() const { return myMPI;}

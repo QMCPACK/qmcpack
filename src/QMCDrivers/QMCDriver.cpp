@@ -22,7 +22,6 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -123,19 +122,15 @@ namespace qmcplusplus {
     {
       Estimators = new EstimatorManager(myComm);
       branchEngine->setEstimatorManager(Estimators);
-      if(h5FileRoot.size()) branchEngine->read(h5FileRoot);
+      branchEngine->read(h5FileRoot);
     }
 
     branchEngine->put(cur);
     Estimators->put(W,H,cur);
 
-    if(wOut==0) {
-      wOut = new HDFWalkerOutput(W,RootName,myComm);
-      branchEngine->start(RootName,true);
-      branchEngine->write(wOut->FileName,false);
-    }
-    else
-      branchEngine->start(RootName,false);
+    if(wOut==0) wOut = new HDFWalkerOutput(W,RootName,myComm);
+    branchEngine->start(RootName);
+    branchEngine->write(RootName);
 
     //use new random seeds
     if(ResetRandom) {
@@ -187,21 +182,20 @@ namespace qmcplusplus {
   void QMCDriver::recordBlock(int block) {
 
     ////first dump the data for restart
-    if(wOut ==0)
-    {//this does not happen but just make sure there is no memory fault 
-      wOut = new HDFWalkerOutput(W,RootName,myComm);
-      branchEngine->start(RootName,true);
-    }
-
     if(block%Period4CheckPoint == 0)
     {
       wOut->dump(W);
-      branchEngine->write(wOut->FileName,false); //save energy_history
-      if (storeConfigs)
-      {
-        wOut->dump( ForwardWalkingHistory);
-      }
+      branchEngine->write(RootName,true); //save energy_history
+      //if (storeConfigs) wOut->dump( ForwardWalkingHistory);
     }
+
+    cout << "Storing FW data " << endl;
+    Timer c;
+    ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+    cout << "Time to store FW data " << c.elapsed() << endl;
+    c.restart();
+    wOut->dump(ForwardWalkingHistory);
+    cout << "Time to dump FW data " << c.elapsed() << endl;
 
     //save positions for optimization: this is done within VMC
     //if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
@@ -216,7 +210,7 @@ namespace qmcplusplus {
     TimerManager.reset();
     wOut->dump(W);
     branchEngine->finalize(W);
-    RandomNumberControl::write(wOut->FileName,myComm);
+    RandomNumberControl::write(RootName,myComm);
 
     delete wOut;
     wOut=0;
@@ -339,6 +333,9 @@ namespace qmcplusplus {
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
 
+    //if target is not give, use whatever it has
+    if(nTargetWalkers==0) nTargetWalkers=W.getActiveWalkers();
+
     //nTargetWalkers is a local quantity.
     nTargetWalkers=std::max(Nthreads,nTargetWalkers);
 //     nTargetSamples is set to 
@@ -354,13 +351,12 @@ namespace qmcplusplus {
       nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
-    else if (nTargetSamples)
+    else
     {
       int nStepsTotal =  nSteps*nBlocks;
       nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
-    }
-    else Period4WalkerDump=(nBlocks+1)*nSteps;
+    }      
 
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 

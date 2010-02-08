@@ -15,8 +15,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
-//#include "tau/profiler.h"
 
 namespace qmcplusplus
   {

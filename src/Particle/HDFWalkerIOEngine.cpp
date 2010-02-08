@@ -28,100 +28,6 @@ namespace qmcplusplus
   HDFWalkerIOEngine::HDFWalkerIOEngine(MCWalkerConfiguration& a, bool reuse):
     W(a), replace(reuse) { }
 
-  void HDFWalkerIOEngine::write(hid_t grp, const char* name) {
-    typedef MCWalkerConfiguration::PosType PosType;
-    Matrix<PosType> tp(W.getActiveWalkers(),W.R.size());
-    //store walkers in a temporary array and pack them
-    int item(0);
-    MCWalkerConfiguration::const_iterator it(W.begin());
-    MCWalkerConfiguration::const_iterator it_end(W.end());
-    while(it != it_end) 
-    {
-      std::copy((*it)->R.begin(),(*it)->R.end(),tp[item++]);
-      ++it; 
-    }
-
-    //now save to grp as a named object
-    const int rank = 3;
-    hsize_t dims[rank], maxdims[rank];
-    dims[0] = tp.rows(); dims[1] = tp.cols(); dims[2] = PosType::Size;
-    maxdims[0] = H5S_UNLIMITED; maxdims[1] = tp.cols(); maxdims[2] = PosType::Size;
-    if(replace)
-    {
-      hid_t dataset =  H5Dopen(grp, name);
-      //herr_t ret=H5Dextend(dataset,dims); //use dynamic resizing
-      hid_t memspace = H5Screate_simple(rank, dims, NULL);
-      herr_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT,tp.data());
-      H5Sclose(memspace);
-      H5Dclose(dataset);
-    }
-    else
-    {//
-      hid_t dataspace  = H5Screate_simple(rank, dims, maxdims);
-      hid_t p = H5Pcreate (H5P_DATASET_CREATE);
-      H5Pset_chunk(p,rank,dims);
-      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, p);
-      hid_t memspace = H5Screate_simple(rank, dims, NULL);
-      herr_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,tp.data());
-      H5Sclose(memspace);
-      H5Sclose(dataspace);
-      H5Dclose(dataset);
-      //H5Pclose(p);
-    }
-  }
-
-  void HDFWalkerIOEngine::writeAll(hid_t grp, const char* name, Communicate* myComm) 
-  {
-    int mynode=myComm->rank();
-    int nwloc=W.getActiveWalkers();
-    if(nwloc != W.WalkerOffsets[mynode+1]-W.WalkerOffsets[mynode])
-    {
-      app_error() << " Fatal Error: inconsistent number of walkers per node " << endl;
-      abort();//FIXABORT
-    }
-
-    typedef MCWalkerConfiguration::PosType PosType;
-    Matrix<PosType> tp(nwloc,W.R.size());
-    //store walkers in a temporary array and pack them
-    int item(0);
-    MCWalkerConfiguration::const_iterator it(W.begin());
-    MCWalkerConfiguration::const_iterator it_end(W.end());
-    while(it != it_end) 
-    {
-      std::copy((*it)->R.begin(),(*it)->R.end(),tp[item++]);
-      ++it; 
-    }
-
-    const int RANK = 3;
-    hsize_t offset[RANK],gcount[RANK],count[RANK],stride[]={1,1,1};
-    count[0] = nwloc; count[1] = W.getTotalNum(); count[2] = PosType::Size;
-    gcount[0] = W.getGlobalNumWalkers(); gcount[1] = W.getTotalNum(); gcount[2] = PosType::Size;
-    offset[0] = W.WalkerOffsets[mynode]; offset[1] = 0; offset[2] = 0;
-
-    hid_t dset_id;
-    if(replace)
-    {
-      dset_id=H5Dopen(grp,name);
-    }
-    else
-    { //create global dataset
-      hid_t sid1  = H5Screate_simple(RANK,gcount,NULL);
-      dset_id=H5Dcreate(grp,name,H5T_NATIVE_DOUBLE,sid1,H5P_DEFAULT);
-      H5Sclose(sid1);
-    }
-
-    hid_t memspace=H5Screate_simple(RANK,count,NULL);
-    hid_t filespace=H5Dget_space(dset_id);
-    herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,stride,count,NULL);
-
-    //transfer method is provided by the users 
-    ret = H5Dwrite(dset_id,H5T_NATIVE_DOUBLE,memspace,filespace,xfer_plist,tp.data());
-
-    H5Sclose(filespace);
-    H5Sclose(memspace);
-    H5Dclose(dset_id);
-  }
-
   void HDFWalkerIOEngine::read(hid_t grp, const char* name) 
   {
     const int RANK = 3;
@@ -198,8 +104,8 @@ namespace qmcplusplus
 #else
     xfer_plist =  H5P_DEFAULT;
 #endif
-    //status = H5Dread(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT, &(posIn[0][0]));
-    status = H5Dread(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, xfer_plist, &(posIn[0][0]));
+    hid_t type_id=get_h5_datatype(posIn[0][0]);
+    status = H5Dread(dataset, type_id, memspace, dataspace, xfer_plist, &(posIn[0][0]));
 
     H5Sclose(dataspace);
     H5Sclose(memspace);

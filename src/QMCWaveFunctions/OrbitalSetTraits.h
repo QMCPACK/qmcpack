@@ -21,10 +21,7 @@
 #define QMCPLUSPLUS_ORBITALSETTRAITS_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
-#include "OhmmsPETE/OhmmsMatrix.h"
-#include "OhmmsPETE/OhmmsVector.h"
-#include "Optimize/VarList.h"
+#include "type_traits/scalar_traits.h"
 #include "Optimize/VariableSet.h"
 
 namespace qmcplusplus {
@@ -45,11 +42,11 @@ namespace qmcplusplus {
   /** trait class to handel a set of Orbitals
    */
   template<typename T>
-  struct OrbitalSetTraits: public OrbitalTraits<T> 
+  struct OrbitalSetTraits//: public OrbitalTraits<T> 
   {
     enum {DIM=OHMMS_DIM};
-    typedef typename OrbitalTraits<T>::real_type RealType;
-    typedef typename OrbitalTraits<T>::value_type ValueType;
+    typedef typename scalar_traits <T>::real_type RealType;
+    typedef typename scalar_traits <T>::value_type ValueType;
     typedef int                            IndexType;
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
@@ -69,6 +66,50 @@ namespace qmcplusplus {
   ///typedef for a set of variables that can be varied
   typedef optimize::VariableSet::variable_map_type variable_map_type;
 
+
+  template<typename T> inline double evaluatePhase(T sign_v)
+  {
+    return (sign_v>0)?0.0:M_PI;
+  }
+
+  template<>
+  inline double evaluatePhase(const std::complex<double>& psi)
+  {
+    return std::arg(psi);
+  }
+
+  /** evaluate the log(|psi|) and phase
+   * @param psi real/complex value
+   * @param phase phase of psi
+   * @return log(|psi|)
+   */
+  template<class T>
+    inline T evaluateLogAndPhase(const T psi, T& phase) {
+      if(psi<0.0) {
+        phase= M_PI;
+        return std::log(-psi);
+      } else {
+        phase = 0.0;
+        return std::log(psi);
+      }
+    }
+
+  template<class T>
+    inline T
+    evaluateLogAndPhase(const std::complex<T>& psi, T& phase) {
+      phase = std::arg(psi);
+      if(phase<0.0) phase += 2.0*M_PI;
+      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
+      //return std::log(psi);
+    }
+
+    inline double evaluatePhase(const double psi) {
+      return (psi<numeric_limits<double>::epsilon())?M_PI:0.0;
+    }
+
+    inline double evaluatePhase(const std::complex<double>& psi) {
+      return std::arg(psi);
+    }
 
 }
 

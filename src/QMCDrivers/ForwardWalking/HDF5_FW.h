@@ -1,7 +1,8 @@
 #ifndef QMCPLUSPLUS_HDF5_FW_H
 #define QMCPLUSPLUS_HDF5_FW_H
 #include <cstring>
-#include "Particle/HDFWalkerIOEngine.h"
+#include <HDFVersion.h>
+#include <io/hdf.h>
 namespace qmcplusplus {
   class HDF5_FW_float
   {

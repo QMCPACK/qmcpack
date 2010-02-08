@@ -21,13 +21,12 @@
 #ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 #define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 
-#include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
-#include "OhmmsData/HDFAttribIO.h"
-#include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/BlockHistogram.h"
-#include "Estimators/accumulators.h"
-#include "Utilities/NewTimer.h"
+#include <Configuration.h>
+#include <OhmmsData/ParameterSet.h>
+#include <Particle/MCWalkerConfiguration.h>
+#include <Estimators/BlockHistogram.h>
+#include <Estimators/accumulators.h>
+#include <Utilities/NewTimer.h>
 #include <bitset>
 
 namespace qmcplusplus {
@@ -299,20 +298,24 @@ namespace qmcplusplus {
 
     /** reset the internal parameters */
     void reset();
-    
+
     /** reset the internal parameters */
     void resetRun(xmlNodePtr cur);
 
     bool put(xmlNodePtr cur);
 
-    void write(const string& fname, bool overwrite);
+    /** write the state 
+     * @param fname name of the configuration file
+     * @param overwrite NOT USED
+     */
+    void write(const string& fname, bool overwrite=true);
     void read(const string& fname);
 
     /** create map between the parameter name and variables */
     void registerParameters();
 
     ///start a run
-    void start(const string& froot, bool append);
+    void start(const string& froot, bool append=false);
     ///finalize the simulation
     void finalize(MCWalkerConfiguration& w);
     

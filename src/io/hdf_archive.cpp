@@ -70,7 +70,6 @@ namespace qmcplusplus
   bool hdf_archive::create(const std::string& fname, unsigned flags)
   {
     if(Mode[NOIO]) return true;
-    cout << "!!!!!!!! " << myComm->rank() << " trying to create a file " << endl;
     close();
     file_id = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,access_id);
     return file_id != is_closed;
@@ -79,7 +78,6 @@ namespace qmcplusplus
   bool hdf_archive::open(const std::string& fname,unsigned flags)
   {
     if(Mode[NOIO]) return true;
-    cout << "!!!!!!!! " << myComm->rank() << " trying to open a file " << endl;
     close();
     file_id = H5Fopen(fname.c_str(),flags,access_id);
     if(file_id==is_closed)
@@ -107,9 +105,7 @@ namespace qmcplusplus
     if(g<0 && createit) 
     {
       g= H5Gcreate(p,gname.c_str(),0);
-      cout << "Group does not exist. Create " << gname << endl;
     }
-    cout << "Pushing " << gname << " " << g << endl;
     if(g!=is_closed) group_id.push(g);
     return g;
   }

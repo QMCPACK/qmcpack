@@ -17,8 +17,9 @@
 #ifndef QMCPLUSPLUS_HDFWALKERVERSION_H
 #define QMCPLUSPLUS_HDFWALKERVERSION_H
 
-#include "config.h"
-#include "Numerics/HDFNumericAttrib.h"
+#include <config.h>
+#include <io/hdf.h>
+
 namespace qmcplusplus
 {
 
@@ -48,66 +49,23 @@ namespace qmcplusplus
     const char coord[]="coord";
   }
 
-  struct HDFVersion: public HDFAttribIOBase
+  struct HDFVersion//: public HDFAttribIOBase
   {
     //enumeration to get version value
     enum {MAJOR=0, MINOR};
     typedef TinyVector<int,2> data_type;
     data_type version;
-    hid_t h_xfer;
 
     inline HDFVersion():
-    version(QMCPLUSPLUS_VERSION_MAJOR,QMCPLUSPLUS_VERSION_MINOR), 
-    h_xfer(H5P_DEFAULT)
+    version(QMCPLUSPLUS_VERSION_MAJOR,QMCPLUSPLUS_VERSION_MINOR)
     { }
 
-    inline explicit HDFVersion(int m, int n):version(m,n), h_xfer(H5P_DEFAULT)
+    inline explicit HDFVersion(int m, int n):version(m,n)
     { }
 
-    ~HDFVersion()
-    {
-      if(h_xfer != H5P_DEFAULT) H5Pclose(h_xfer);
-    }
+    inline int operator[](int i) const { return version[i]; }
 
-    inline void write(hid_t gid, const char* name)
-    {
-      HDFAttribIO<data_type> vin(version);
-      vin.write(gid,name);
-    }
-
-    inline void read(hid_t gid, const char* name)
-    {
-      hid_t h1 = H5Dopen(gid,name);
-      if(h1>-1)
-      {
-        hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, h_xfer, version.begin());
-        H5Dclose(h1);
-      }
-    }
-
-    /** set parallel mode
-     * @param parallel true, if the file is open by parallel
-     */
-    inline void setPmode(bool parallel)
-    {
-#if defined(H5_HAVE_PARALLEL)
-      if(parallel)
-      {
-        h_xfer = H5Pcreate(H5P_DATASET_XFER);
-        H5Pset_dxpl_mpio(h_xfer,H5FD_MPIO_INDEPENDENT);
-      }
-#endif
-    }
-
-    inline int operator[](int i) const
-    {
-      return version[i];
-    }
-
-    inline int& operator[](int i) 
-    {
-      return version[i];
-    }
+    inline int& operator[](int i) { return version[i]; }
 
     //could be general to D 
     inline bool operator==(const HDFVersion &other) const 
@@ -134,6 +92,18 @@ namespace qmcplusplus
     inline bool operator<(const HDFVersion &other) const
     {
       return serialized()<other.serialized();
+    }
+
+    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+    {
+      h5data_proxy<data_type> vin(version);
+      return vin.read(grp,aname,xfer_plist);
+    }
+
+    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+    {
+      h5data_proxy<data_type> vout(version);
+      return vout.write(grp,aname,xfer_plist);
     }
   };
 

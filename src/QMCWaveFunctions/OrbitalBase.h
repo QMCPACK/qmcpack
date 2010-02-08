@@ -20,8 +20,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
-#include "Optimize/VarList.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>

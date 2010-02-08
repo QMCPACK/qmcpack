@@ -24,6 +24,7 @@
 #if defined(HAVE_LIBHDF5)
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
+#include <io/hdf_hyperslab.h>
 #endif
 #include <stack>
 #include <bitset>

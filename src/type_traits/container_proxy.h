@@ -45,16 +45,20 @@ namespace APPNAMESPACE {
   template<typename T>
     struct container_proxy<std::vector<T> >
     {
+      enum {DIM=scalar_traits<T>::DIM};
       typedef typename container_proxy<T>::pointer pointer;
       std::vector<T>& ref;
       inline container_proxy(std::vector<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
       inline pointer data() { return ref.data();}
+      template<typename I>
+      inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
 
   template<>
     struct container_proxy<std::vector<bool> >
     {
+      enum {DIM=1};
       typedef int* pointer;
       std::vector<bool>& ref;
       std::vector<int> my_copy;
@@ -87,21 +91,27 @@ namespace APPNAMESPACE {
   template<typename T>
     struct container_proxy<PooledData<T> >
     {
+      enum {DIM=1};
       typedef typename container_proxy<T>::pointer pointer;
       PooledData<T>& ref;
       inline container_proxy(PooledData<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
       inline pointer data() { return ref.data();}
+      template<typename I>
+      inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
 
   template<typename T>
     struct container_proxy<Vector<T> >
     {
+      enum {DIM=scalar_traits<T>::DIM};
       typedef typename container_proxy<T>::pointer pointer;
       Vector<T>& ref;
       inline container_proxy(Vector<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
       inline pointer data() { return ref.data();}
+      template<typename I>
+      inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
 
   template<typename T, unsigned D>

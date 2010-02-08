@@ -14,10 +14,10 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Particle/HDFWalkerInput_0_4.h"
-#include "Particle/MCWalkerConfiguration.h"
-#include "Particle/HDFWalkerIOEngine.h"
-
+#include <Particle/MCWalkerConfiguration.h>
+#include <Particle/HDFWalkerInput_0_4.h>
+#include <mpi/collectives.h>
+#include <io/hdf_archive.h>
 namespace qmcplusplus
 {
 
@@ -28,7 +28,7 @@ namespace qmcplusplus
     }
 
   HDFWalkerInput_0_4::~HDFWalkerInput_0_4() {
-    if(h_plist != H5P_DEFAULT) H5Pclose(h_plist);
+    //if(h_plist != H5P_DEFAULT) H5Pclose(h_plist);
   }
 
   void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur) 
@@ -103,19 +103,8 @@ namespace qmcplusplus
     }
 
     //use collective I/O  for parallel runs with a file 
-    i_info.parallel = ((myComm->size()>1) && i_info.collected);
-    h_plist=H5P_DEFAULT;
-
-#if defined(H5_HAVE_PARALLEL)
-    if(i_info.parallel)
-    {
-      app_log() << "   HDFWalkerInput_0_4::put in parallel mode " << endl;
-      MPI_Info info=MPI_INFO_NULL;
-      h_plist = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_fapl_mpio(h_plist,myComm->getMPI(),info);
-    }
-#endif
-
+    //i_info.parallel = ((myComm->size()>1) && i_info.collected);
+    
     while(FileStack.size())
     {
       FileName=FileStack.top();
@@ -124,43 +113,89 @@ namespace qmcplusplus
       string h5name(FileName);
       h5name.append(hdf::config_ext);
 
-      hid_t fid= H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,h_plist);
-      if(fid<0)
+      hdf_archive hin(myComm);
+      int success=hin.open(h5name,H5F_ACC_RDONLY);
+      mpi::bcast(*myComm,success);
+
+      if(!success)
       {
         app_error() << "  HDFWalkerInput_0_4::put Cannot open " << h5name << endl;
-        return false;
+        continue;
       }
 
       //check if hdf and xml versions can work together
       HDFVersion aversion;
-      aversion.setPmode(i_info.parallel);
-      aversion.read(fid,hdf::version);
+      hin.read(aversion,hdf::version);
+      mpi::bcast(*myComm,aversion.version);
+
       if(aversion < i_info.version)
       {
         app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
-        H5Fclose(fid);
-        return false;
+        continue;
       }
 
-      hid_t h1 = H5Gopen(fid,hdf::main_state);
-      if(h1<0)
+      int found_group=hin.is_group(hdf::main_state);
+      mpi::bcast(*myComm,found_group);
+      if(!found_group) continue;
+
+      typedef vector<QMCTraits::RealType>  Buffer_t;
+      Buffer_t posin;
+      hin.push(hdf::main_state);
+      int nw_in=0;
+      hin.read(nw_in,hdf::num_walkers);
+      mpi::bcast(*myComm,nw_in);
+
+      if(nw_in==0)
       {
-        app_error() << "  HDFWalkerInput_0_4::put Cannot open " << hdf::main_state << " in " << h5name << endl;
-        H5Gclose(h1);
-        H5Fclose(fid);
-        return false;
+        app_error() << "  HDFWalkerInput_0_4::put empty walkers " << endl;
+        continue;
       }
 
-      HDFWalkerIOEngine win(targetW);
-      if(i_info.parallel)
-        win.readAll(h1,hdf::walkers,myComm);
+      TinyVector<size_t,3> dims(nw_in,targetW.getTotalNum(),OHMMS_DIM);
+      if(!myComm->rank())
+      {
+        posin.resize(dims[0]*dims[1]*dims[2]);
+        hyperslab_proxy<Buffer_t,3> slab(posin,dims);
+        hin.read(slab,hdf::walkers);
+
+      }
+      app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << endl;
+
+      int nitems=targetW.getTotalNum()*OHMMS_DIM;
+      int curWalker = targetW.getActiveWalkers();
+
+      if(myComm->size()==1)
+      {
+        targetW.createWalkers(nw_in);
+        Buffer_t::iterator it(posin.begin());
+        for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
+        {
+          std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+          it += nitems;
+        }
+      }
       else
-        win.read(h1,hdf::walkers);
+      {
+        vector<int> counts(myComm->size()),woffsets(myComm->size()+1,0);
+        FairDivideLow(nw_in,myComm->size(),woffsets);
 
-      H5Gclose(h1);
-      H5Fclose(fid);
+        //reset the number of walkers
+        nw_in=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
+        for(int i=0; i<woffsets.size(); ++i) woffsets[i]*=nitems;
+        for(int i=0; i<counts.size(); ++i) counts[i]=woffsets[i+1]-woffsets[i];
+
+        Buffer_t posout(nw_in*nitems);
+        mpi::scatterv(*myComm,posin,posout,counts,woffsets);
+
+        targetW.createWalkers(nw_in);
+        Buffer_t::iterator it(posout.begin());
+        for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
+        {
+          std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+          it += nitems;
+        }
+      }
     }
-
 
     //char fname[128];
     //sprintf(fname,"%s.p%03d.xyz",FileName.c_str(),myComm->rank());

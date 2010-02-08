@@ -15,7 +15,7 @@ namespace APPNAMESPACE {
       {
         container_proxy<T> t_in(in),t_out(out);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        MPI_Allreduce(t_in.data(),t_out.data(),t_in.size(),type_id, OP, comm());
+        MPI_Allreduce(t_in.data(),t_out.data(),t_in.size(),type_id, OP, comm);
       }
 
     /** generic function to perform allreduce */
@@ -37,7 +37,7 @@ namespace APPNAMESPACE {
         container_proxy<T> t_in(in);
         container_proxy<CT> t_out(out);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        int ierr=MPI_Allgather(t_in.data(),t_in.size(),type_id,t_out.data(),t_in.size(),type_id,comm());
+        int ierr=MPI_Allgather(t_in.data(),t_in.size(),type_id,t_out.data(),t_in.size(),type_id,comm);
       }
 
     /** generic function to perform allgather
@@ -50,7 +50,7 @@ namespace APPNAMESPACE {
         container_proxy<CT> t_in(in),t_out(out);
         container_proxy<IV> t_counts(counts), t_displ(displ);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        int ierr=MPI_Allgatherv(t_in.data(),t_in.size(),type_id,t_out.data(),t_counts.data(),t_displ.data(),type_id,comm());
+        int ierr=MPI_Allgatherv(t_in.data(),t_in.size(),type_id,t_out.data(),t_counts.data(),t_displ.data(),type_id,comm);
       }
     /** generic function to perform allgather
      *
@@ -62,7 +62,7 @@ namespace APPNAMESPACE {
         container_proxy<CT> t_in(in),t_out(out);
         container_proxy<IV> t_counts(counts), t_displ(displ);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        int ierr=MPI_Gatherv(t_in.data(),t_in.size(),type_id,t_out.data(),t_counts.data(),t_displ.data(),type_id,dest,comm());
+        int ierr=MPI_Gatherv(t_in.data(),t_in.size(),type_id,t_out.data(),t_counts.data(),t_displ.data(),type_id,dest,comm);
       }
 
     /** generic function to perform allgather
@@ -76,7 +76,7 @@ namespace APPNAMESPACE {
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
         int ierr=MPI_Gather(t_in.data(),t_in.size(),type_id
             ,t_out.data(),t_in.size(),type_id
-            ,dest,comm());
+            ,dest,comm);
       }
 
     /** generic function to perform allgather
@@ -90,7 +90,7 @@ namespace APPNAMESPACE {
         container_proxy<IV> t_counts(counts), t_displ(displ);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
         int ierr=MPI_Scatterv(t_in.data(),t_counts.data(),t_displ.data(),type_id
-            ,t_out.data(),t_out.size(),type_id,dest,comm());
+            ,t_out.data(),t_out.size(),type_id,dest,comm);
       }
 
     /** generic function to perform allgather
@@ -103,7 +103,7 @@ namespace APPNAMESPACE {
         container_proxy<CT> t_in(in),t_out(out);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
         int ierr=MPI_Scatter(t_in.data(),t_out.size(),type_id
-            ,t_out.data(),t_out.size(),type_id,dest,comm());
+            ,t_out.data(),t_out.size(),type_id,dest,comm);
       }
 
     /** generic function to perform bcast
@@ -115,7 +115,7 @@ namespace APPNAMESPACE {
         if(comm.size()==1) return;
         container_proxy<CT> t_in(inout);
         MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        MPI_Bcast(t_in.data(),t_in.size(),type_id,source,comm());
+        MPI_Bcast(t_in.data(),t_in.size(),type_id,source,comm);
       }
 #else
     template<typename T, typename OP>

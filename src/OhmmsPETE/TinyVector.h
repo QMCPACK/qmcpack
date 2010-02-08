@@ -157,6 +157,8 @@ public:
     return X[i];
   }
 
+  inline Type_t* data(){ return  X; }
+  inline const Type_t* data() const { return  X; }
   inline Type_t* begin(){ return  X; }
   inline const Type_t* begin() const { return  X; }
   inline Type_t* end(){ return  X+D; }
