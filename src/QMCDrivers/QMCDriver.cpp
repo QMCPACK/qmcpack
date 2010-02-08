@@ -335,18 +335,18 @@ namespace qmcplusplus {
     
     if(nStepsBetweenSamples)
     {
-      int nStepsTotal = std::ceil(RealType(nTargetSamples*nStepsBetweenSamples)/RealType(nTargetWalkers*Nprocs) );
+      int nStepsTotal = (int)std::ceil(RealType(nTargetSamples*nStepsBetweenSamples)/RealType(nTargetWalkers*Nprocs) );
       if (nBlocks<1) nBlocks=1;
       if (nStepsTotal<nBlocks) nBlocks=nStepsTotal;
-      nSteps = std::ceil(RealType(nStepsTotal)/RealType(nBlocks));
+      nSteps = (int)std::ceil(RealType(nStepsTotal)/RealType(nBlocks));
       nStepsTotal = nSteps*nBlocks;
-      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
+      nStepsBetweenSamples = (int)std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
     else
     {
       int nStepsTotal =  nSteps*nBlocks;
-      nStepsBetweenSamples = std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
+      nStepsBetweenSamples = (int)std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }      
 
