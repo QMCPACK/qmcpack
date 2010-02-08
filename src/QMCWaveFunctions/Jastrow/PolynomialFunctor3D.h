@@ -31,6 +31,9 @@ namespace qmcplusplus {
     typedef real_type value_type;
     int N_eI, N_ee;
     Array<real_type,3> gamma;
+    Array<real_type,3> dval_dgamma;
+    Array<TinyVector<real_type,3>,3> dgrad_dgamma;
+    Array<Tensor<real_type,3>,3> dhess_dgamma;
     // Permutation vector, used when we need to pivot
     // columns
     vector<int> GammaPerm;
@@ -71,6 +74,9 @@ namespace qmcplusplus {
       const double L = 0.5 * cutoff_radius;
 
       gamma.resize(N_eI+1, N_eI+1, N_ee+1);
+      dval_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
+      dgrad_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
+      dhess_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
       index.resize(N_eI+1, N_eI+1, N_ee+1);
       NumGamma = ((N_eI+1)*(N_eI+2)/2 * (N_ee+1));
       NumConstraints = (2*N_eI+1) + (N_eI+N_ee+1);
@@ -534,8 +540,107 @@ namespace qmcplusplus {
 
 
     inline bool
-    evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)
+    evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
+			 vector<double> &d_vals,
+			 vector<TinyVector<real_type,3> >& d_grads,
+			 vector<Tensor<real_type,3> > &d_hess)
     {
+      const real_type L = 0.5*cutoff_radius; 
+      if (r_1I >= L || r_2I >= L) 
+        return 0.0;
+      real_type val = 0.0;
+      TinyVector<real_type,3> grad;
+      Tensor<real_type,3> hess;
+      
+      real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), r2l_3, lf(0.0);
+      for (int l=0; l<=N_eI; l++) {
+	real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), r2m_3, mf(0.0);
+	for (int m=0; m<=N_eI; m++) {
+	  real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), r2n_3, nf(0.0);
+	  for (int n=0; n<=N_ee; n++) {
+	    real_type g = gamma(l,m,n);
+	    
+	    val += g * r2l*r2m*r2n;
+	    grad[0] += g * nf *r2l   * r2m   * r2n_1;
+	    grad[1] += g * lf *r2l_1 * r2m   * r2n  ;
+	    grad[2] += g * mf *r2l   * r2m_1 * r2n  ;
+	    hess(0,0) += g * nf*(nf-1.0) * r2l   * r2m   * r2n_2  ;
+	    hess(0,1) += g * nf*lf       * r2l_1 * r2m   * r2n_1  ;
+	    hess(0,2) += g * nf*mf       * r2l   * r2m_1 * r2n_1  ;
+	    hess(1,1) += g * lf*(lf-1.0) * r2l_2 * r2m   * r2n    ;
+	    hess(1,2) += g * lf*mf       * r2l_1 * r2m_1 * r2n    ;
+	    hess(2,2) += g * mf*(mf-1.0) * r2l   * r2m_2 * r2n    ;
+	    
+
+	    dval_dgamma(l,m,n) = r2l*r2m*r2n;
+
+	    dgrad_dgamma(l,m,n)[0] = nf *r2l   * r2m   * r2n_1;
+	    dgrad_dgamma(l,m,n)[1] = lf *r2l_1 * r2m   * r2n  ;
+	    dgrad_dgamma(l,m,n)[2] = mf *r2l   * r2m_1 * r2n  ;
+
+	    dhess_dgamma(l,m,n)(0,0) = nf*(nf-1.0) * r2l   * r2m   * r2n_2  ;
+	    dhess_dgamma(l,m,n)(0,1) = nf*lf       * r2l_1 * r2m   * r2n_1  ;
+	    dhess_dgamma(l,m,n)(0,2) = nf*mf       * r2l   * r2m_1 * r2n_1  ;
+	    dhess_dgamma(l,m,n)(1,1) = lf*(lf-1.0) * r2l_2 * r2m   * r2n    ;
+	    dhess_dgamma(l,m,n)(1,2) = lf*mf       * r2l_1 * r2m_1 * r2n    ;
+	    dhess_dgamma(l,m,n)(2,2) = mf*(mf-1.0) * r2l   * r2m_2 * r2n    ;
+
+	    r2n_3 = r2n_2;
+	    r2n_2 = r2n_1;
+	    r2n_1 = r2n;
+	    r2n *= r_12;
+	    nf += 1.0;
+	  }
+	  r2m_3 = r2m_2;
+	  r2m_2 = r2m_1;
+	  r2m_1 = r2m;
+	  r2m *= r_2I;
+	  mf += 1.0;
+	}
+	r2l_3 = r2l_2;
+	r2l_2 = r2l_1;
+	r2l_1 = r2l;
+	r2l *= r_1I;
+	lf += 1.0;
+      }
+      for (int i=0; i<C; i++) {
+	hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);	
+	hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
+	hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
+	hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
+	hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
+	hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ 2.0*(r_1I - L)*grad[2];
+
+	grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
+	grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
+	grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
+
+       	val *= (r_1I - L)*(r_2I - L);
+
+	for (int l=0; l<=N_eI; l++) 
+	  for (int m=0; m<=N_eI; m++) 
+	    for (int n=0; n<=N_ee; n++) {
+	      dhess_dgamma(l,m,n)(0,0)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,0);	
+	      dhess_dgamma(l,m,n)(0,1)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,1)+ (r_2I - L)*dgrad_dgamma(l,m,n)[0];
+	      dhess_dgamma(l,m,n)(0,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,2)+ (r_1I - L)*dgrad_dgamma(l,m,n)[0];
+	      dhess_dgamma(l,m,n)(1,1)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(1,1)+ 2.0*(r_2I - L)*dgrad_dgamma(l,m,n)[1];
+	      dhess_dgamma(l,m,n)(1,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(1,2)+ (r_1I - L)*dgrad_dgamma(l,m,n)[1] 
+		+ (r_2I - L)*dgrad_dgamma(l,m,n)[2] +  dval_dgamma(l,m,n);
+	      dhess_dgamma(l,m,n)(2,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(2,2)+ 2.0*(r_1I - L)*dgrad_dgamma(l,m,n)[2];
+	      
+	      dgrad_dgamma(l,m,n)[0] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[0];
+	      dgrad_dgamma(l,m,n)[1] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[1] + (r_2I - L) * dval_dgamma(l,m,n);
+	      dgrad_dgamma(l,m,n)[2] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[2] + (r_1I - L) * dval_dgamma(l,m,n);
+	      
+	      dval_dgamma(l,m,n) *= (r_1I - L)*(r_2I - L);
+	    }
+
+      }
+
+      hess(1,0) = hess(0,1);
+      hess(2,0) = hess(0,2);
+      hess(2,1) = hess(1,2);
+
       return false;
     }
 

@@ -174,6 +174,8 @@ namespace qmcplusplus {
       return std::exp(logRatio(P,iat,dG,dL));
     }
 
+    // GradType evalGrad(ParticleSet& P, int iat);
+
     ValueType logRatio(ParticleSet& P, int iat,
 		       ParticleSet::ParticleGradient_t& dG,
 		       ParticleSet::ParticleLaplacian_t& dL);
