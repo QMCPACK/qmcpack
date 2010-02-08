@@ -87,7 +87,7 @@ namespace qmcplusplus {
    //       PosType a0 = W.R(iw,i);
    //       for(int j=i+1; j<visitors; j++, nn++) {
    //         PosType drij = W.R(iw,j)-a0;
-   //         RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+   //         RealType sep = std::sqrt(BC::apply(Origin.Lattice,drij));
    //#ifdef USE_FASTWALKER
    //         r2_m(nn,iw) = sep;
    //         rinv2_m(nn,iw) = 1.0/sep;
@@ -120,7 +120,7 @@ namespace qmcplusplus {
       {
         PosType drij(rnew - P.R[iat]);
         Temp[iat].dr1_nobox=drij;
-        RealType sep=sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
+        RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
         Temp[iat].r1=sep;
         Temp[iat].rinv1=1.0/sep;
         Temp[iat].dr1=drij;
@@ -130,8 +130,8 @@ namespace qmcplusplus {
       //  int loc = IJ[iat*N[SourceIndex]+jat];
       //  PosType drij(rnew - P.R[iat]);
       //  //old with static type
-      //  //RealType sep=sqrt(BC::apply(Origin.Lattice,drij));
-      //  RealType sep=sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
+      //  //RealType sep=std::sqrt(BC::apply(Origin.Lattice,drij));
+      //  RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
       //  Temp[iat].r1=sep;
       //  Temp[iat].rinv1=1.0/sep;
       //  Temp[iat].dr1=drij;
@@ -144,8 +144,8 @@ namespace qmcplusplus {
       //  int loc = IJ[iat*N[SourceIndex]+jat];
       //  PosType drij(rnew - P.R[iat]);
       //  //old with static type
-      //  //RealType sep=sqrt(BC::apply(Origin.Lattice,drij));
-      //  RealType sep=sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
+      //  //RealType sep=std::sqrt(BC::apply(Origin.Lattice,drij));
+      //  RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
       //  Temp[iat].r1=sep;
       //  Temp[iat].rinv1=1.0/sep;
       //  Temp[iat].dr1=drij;
@@ -169,14 +169,14 @@ namespace qmcplusplus {
       //for(int jat=0; jat<iat; ++jat) 
       //{
       //  Temp[jat].dr1=-1.0*(displ+dr_m[IJ[jat*N[SourceIndex]+iat]]);
-      //  Temp[jat].r1=sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
+      //  Temp[jat].r1=std::sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
       //  //Temp[jat].rinv1=1.0/Temp[jat].r1;
       //}
       //Temp[iat].reset();
       //for(int jat=iat+1; jat< N[SourceIndex]; ++jat) 
       //{
       //  Temp[jat].dr1=dr_m[IJ[jat*N[SourceIndex]+iat]]-displ;
-      //  Temp[jat].r1=sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
+      //  Temp[jat].r1=std::sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
       //  //Temp[jat].rinv1=1.0/Temp[jat].r1;
       //}
     }
@@ -187,13 +187,13 @@ namespace qmcplusplus {
       activePtcl=iat;
       for(int jat=0; jat<iat; ++jat) {
 	PosType& drij=Temp[jat].dr1=-1.0*(displ+dr_m[IJ[jat*N[SourceIndex]+iat]]);
-	Temp[jat].r1=sqrt(dot(drij,drij));
+	Temp[jat].r1=std::sqrt(dot(drij,drij));
 	//Temp[jat].rinv1=1.0/Temp[jat].r1;
       }
       Temp[iat].reset();
       for(int jat=iat+1; jat< N[SourceIndex]; ++jat) {
 	PosType& drij=Temp[jat].dr1=dr_m[IJ[jat*N[SourceIndex]+iat]]-displ;
-	Temp[jat].r1=sqrt(dot(drij,drij));
+	Temp[jat].r1=std::sqrt(dot(drij,drij));
 	//Temp[jat].rinv1=1.0/Temp[jat].r1;
       }
     }

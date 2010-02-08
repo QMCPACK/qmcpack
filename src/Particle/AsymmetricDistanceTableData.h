@@ -133,7 +133,7 @@ namespace qmcplusplus {
       for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex]) {
 	PosType drij(rnew-Origin.R[iat]);
 	//RealType sep2(BC::apply(Origin.Lattice,drij));
-	RealType sep(sqrt(DTD_BConds<T,D,SC>::apply_bc(drij)));
+	RealType sep(std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij)));
 	Temp[iat].r1=sep;
 	Temp[iat].rinv1=1.0/sep;
 	Temp[iat].dr1=drij;
@@ -161,7 +161,7 @@ namespace qmcplusplus {
       for(int iat=0, loc=jat; iat<N[SourceIndex]; ++iat,loc+=N[VisitorIndex]) 
       {
         PosType& drij=Temp[iat].dr1=dr_m[loc]+displ;
-        RealType sep(sqrt(dot(drij,drij)));
+        RealType sep(std::sqrt(dot(drij,drij)));
         Temp[iat].r1=sep;
         //Temp[iat].rinv1=1.0/sep;
       }
