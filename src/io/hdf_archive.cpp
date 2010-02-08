@@ -18,13 +18,11 @@
 namespace qmcplusplus
 {
   //const hid_t hdf_archive::is_closed;
-
   hdf_archive::hdf_archive(Communicate* c, bool use_collective)
-    : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT),myComm(c)
+    : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+      ,myComm(c)
   {
-    H5E_auto_t func;
-    void *client_data;
-    H5Eget_auto (&func, &client_data);
+    H5Eget_auto (&err_func, &client_data);
     H5Eset_auto (NULL, NULL);
     set_access_plist(use_collective);
   }
@@ -34,9 +32,19 @@ namespace qmcplusplus
     close();
     if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
     if(access_id!= H5P_DEFAULT) H5Pclose(access_id);
-    H5E_auto_t func;
-    void *client_data;
-    H5Eset_auto (func, client_data);
+    H5Eset_auto (err_func, client_data);
+  }
+
+  void hdf_archive::close()
+  {
+    while(!group_id.empty())
+    {
+      hid_t gid=group_id.top();
+      group_id.pop();
+      H5Gclose(gid);
+    }
+    if(file_id!=is_closed) H5Fclose(file_id);
+    file_id=is_closed;
   }
 
   void hdf_archive::set_access_plist(bool use_collective)
@@ -62,14 +70,16 @@ namespace qmcplusplus
   bool hdf_archive::create(const std::string& fname, unsigned flags)
   {
     if(Mode[NOIO]) return true;
+    cout << "!!!!!!!! " << myComm->rank() << " trying to create a file " << endl;
     close();
-    file_id = H5Fcreate(fname.c_str(),flags,H5P_DEFAULT,access_id);
+    file_id = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,access_id);
     return file_id != is_closed;
   }
 
   bool hdf_archive::open(const std::string& fname,unsigned flags)
   {
     if(Mode[NOIO]) return true;
+    cout << "!!!!!!!! " << myComm->rank() << " trying to open a file " << endl;
     close();
     file_id = H5Fopen(fname.c_str(),flags,access_id);
     if(file_id==is_closed)
@@ -94,7 +104,12 @@ namespace qmcplusplus
     if(Mode[NOIO]||file_id==is_closed) return is_closed;
     hid_t p=group_id.empty()? file_id:group_id.top();
     hid_t g=H5Gopen(p,gname.c_str());
-    if(g<0 && createit) g= H5Gcreate(p,gname.c_str(),0);
+    if(g<0 && createit) 
+    {
+      g= H5Gcreate(p,gname.c_str(),0);
+      cout << "Group does not exist. Create " << gname << endl;
+    }
+    cout << "Pushing " << gname << " " << g << endl;
     if(g!=is_closed) group_id.push(g);
     return g;
   }

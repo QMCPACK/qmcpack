@@ -26,14 +26,14 @@ namespace qmcplusplus {
 
   /** specialization for TinyVector<T,D>
    */
-  template<typename T, unsigned D> struct HDFAttribIO<TinyVector<T,D> >
+  template<typename T, unsigned D> struct h2data_proxy<TinyVector<T,D> >
     : public h5_space_type<T,1>
   {
     using h5_space_type<T,1>::dims;
     using h5_space_type<T,1>::get_address;
     typedef TinyVector<T,D> data_type;
     data_type& ref_;
-    inline HDFAttribIO(data_type& a): ref_(a) 
+    inline h2data_proxy(data_type& a): ref_(a) 
     {
       dims[0]=D;
     }
@@ -49,14 +49,14 @@ namespace qmcplusplus {
 
   /** specialization for Tensor<T,D>
    */
-  template<typename T, unsigned D> struct HDFAttribIO<Tensor<T,D> >
+  template<typename T, unsigned D> struct h2data_proxy<Tensor<T,D> >
     : public h5_space_type<T,2>
   {
     using h5_space_type<T,2>::dims;
     using h5_space_type<T,2>::get_address;
     typedef Tensor<T,D> data_type;
     data_type& ref_;
-    inline HDFAttribIO(data_type& a): ref_(a) 
+    inline h2data_proxy(data_type& a): ref_(a) 
     {
       dims[0]=D; dims[1]=D;
     }
@@ -75,14 +75,14 @@ namespace qmcplusplus {
    *
    * Used with any T with a proper h5_space_type, e.g., intrinsic, TinyVector<T,D>, Tensor<T,D>
    */ 
-  template<typename T> struct HDFAttribIO<Vector<T> >: public h5_space_type<T,1>
+  template<typename T> struct h2data_proxy<Vector<T> >: public h5_space_type<T,1>
   { 
     using h5_space_type<T,1>::dims;
     using h5_space_type<T,1>::get_address;
     typedef Vector<T> data_type;
     data_type& ref_;
 
-    inline HDFAttribIO(data_type& a): ref_(a) { dims[0]=ref_.size(); }
+    inline h2data_proxy(data_type& a): ref_(a) { dims[0]=ref_.size(); }
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
@@ -98,13 +98,13 @@ namespace qmcplusplus {
 
 
   template<typename T>
-    struct HDFAttribIO<Matrix<T> >: public h5_space_type<T,2>
+    struct h2data_proxy<Matrix<T> >: public h5_space_type<T,2>
   {
     using h5_space_type<T,2>::dims;
     using h5_space_type<T,2>::get_address;
     typedef Matrix<T> data_type;
     data_type& ref_;
-    inline HDFAttribIO(data_type& a): ref_(a) 
+    inline h2data_proxy(data_type& a): ref_(a) 
     {
       dims[0]=ref_.rows();
       dims[1]=ref_.cols();
@@ -122,13 +122,13 @@ namespace qmcplusplus {
 
 
   template<typename T, unsigned D> 
-    struct HDFAttribIO<Array<T,D> >: public h5_space_type<T,D>
+    struct h2data_proxy<Array<T,D> >: public h5_space_type<T,D>
   {
     using h5_space_type<T,D>::dims;
     using h5_space_type<T,D>::get_address;
     typedef Array<T,D> data_type;
     data_type& ref_;
-    inline HDFAttribIO(data_type& a): ref_(a) 
+    inline h2data_proxy(data_type& a): ref_(a) 
     {
       for(int i=0; i<D; ++i) dims[i]=ref_.size(i);
     }
@@ -147,14 +147,29 @@ namespace qmcplusplus {
    *
    * Used with any T with a proper h5_space_type, e.g., intrinsic, TinyVector<T,D>, Tensor<T,D>
    */ 
-  template<typename T> struct HDFAttribIO<PooledData<T> >
+  template<typename T> struct h2data_proxy<PooledData<T> >
   { 
-    vector<hsize_t> dims;
     typedef PooledData<T> data_type;
-    data_type& ref_;
+    std::vector<T>& ref_;
+    vector<hsize_t> dims;
 
-    inline HDFAttribIO(data_type& a): ref_(a){dims.resize(1,a.size());}
-    inline HDFAttribIO(data_type& a, const vector<hsize_t>& dims_in): ref_(a),dims(dims_in){}
+    inline h2data_proxy(data_type& a): ref_(a.myData){dims.resize(1,a.size());}
+
+    template<typename IC>
+    inline h2data_proxy(data_type& a, const IC& dims_in): ref_(a.myData)
+    {
+      dims.resize(dims_in.size());
+      for(int i=0; i<dims_in.size(); ++i) dims[i]=static_cast<hsize_t>(dims_in[i]);
+    }
+
+    template<typename IC>
+    inline h2data_proxy(std::vector<T>& a, const IC& dims_in): ref_(a)
+    {
+      dims.resize(dims_in.size());
+      for(int i=0; i<dims_in.size(); ++i) dims[i]=static_cast<hsize_t>(dims_in[i]);
+    }
+
+    inline hsize_t size(int i) const { return dims[i];}
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {

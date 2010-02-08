@@ -17,9 +17,14 @@
 #ifndef QMCPLUSPLUS_HDF5_ARCHIVE_H
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
-#include <hdf5.h>
+#include <Configuration.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
+#include <io/hdf_dataproxy.h>
+#if defined(HAVE_LIBHDF5)
+#include <io/hdf_pete.h>
+#include <io/hdf_stl.h>
+#endif
 #include <stack>
 #include <bitset>
 
@@ -44,12 +49,16 @@ namespace qmcplusplus
     hid_t access_id;
     ///transfer property
     hid_t xfer_plist;
+    ///error type
+    H5E_auto_t err_func;
+    ///error handling
+    void *client_data;
     ///communicator
     Communicate* myComm;
     ///FILO to handle H5Group
     std::stack<hid_t> group_id;
     ///constructor 
-    hdf_archive(Communicate* c=0, bool use_collective=false);
+    hdf_archive(Communicate* c, bool use_collective=false);
     ///destructor
     ~hdf_archive();
 
@@ -73,12 +82,8 @@ namespace qmcplusplus
      */
     bool open(const std::string& fname,unsigned flags=H5F_ACC_RDWR);
 
-    ///close a file
-    inline void close()
-    {
-      if(file_id!=is_closed) H5Fclose(file_id);
-      file_id=is_closed;
-    }
+    ///close all the open groups and file
+    void close();
 
     ///flush a file
     inline void flush()
@@ -117,7 +122,7 @@ namespace qmcplusplus
     {
       if(Mode[NOIO]) return true;
       hid_t p=group_id.empty()? file_id:group_id.top();
-      HDFAttribIO<T> e(data);
+      h5data_proxy<T> e(data);
       return e.write(p,aname,xfer_plist);
     }
 
@@ -125,7 +130,7 @@ namespace qmcplusplus
     {
       if(Mode[NOIO]) return true;
       hid_t p=group_id.empty()? file_id:group_id.top();
-      HDFAttribIO<T> e(data);
+      h5data_proxy<T> e(data);
       return e.read(p,aname,xfer_plist);
     }
 

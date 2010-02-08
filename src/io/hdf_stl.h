@@ -24,7 +24,7 @@ namespace qmcplusplus
    *
    * Used with any T with a proper h5_space_type, e.g., intrinsic, TinyVector<T,D>, Tensor<T,D>
    */ 
-  template<typename T> struct HDFAttribIO<vector<T> >
+  template<typename T> struct h5data_proxy<vector<T> >
     : public h5_space_type<T,1>
   { 
     using h5_space_type<T,1>::dims;
@@ -32,7 +32,7 @@ namespace qmcplusplus
     typedef vector<T> data_type;
     data_type& ref_;
 
-    inline HDFAttribIO(data_type& a): ref_(a) { dims[0]=ref_.size(); }
+    inline h5data_proxy(data_type& a): ref_(a) { dims[0]=ref_.size(); }
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
@@ -47,7 +47,7 @@ namespace qmcplusplus
   };
 
   template<std::size_t N>
-    struct HDFAttribIO<std::bitset<N> >
+    struct h5data_proxy<std::bitset<N> >
     {
       //NOTE: This specialization assumes each complex number was/will be saved
       // as a pair of doubles. This is checked.
@@ -55,21 +55,21 @@ namespace qmcplusplus
       ArrayType_t& ref;
 
       //Assumes complex stored as a pair of floats/doubles.
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a)
+      h5data_proxy<ArrayType_t>(ArrayType_t& a): ref(a)
       { 
       }
 
       inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
       {
         unsigned long c=ref.to_ulong();
-        HDFAttribIO<unsigned long> hc(c);
+        h5data_proxy<unsigned long> hc(c);
         return hc.write(grp,aname,xfer_plist);
       }
 
       inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
       {
         unsigned long c=ref.to_ulong();
-        HDFAttribIO<unsigned long> hc(c);
+        h5data_proxy<unsigned long> hc(c);
         if(hc.read(grp,aname,xfer_plist))
         {
           ref=c;
@@ -82,13 +82,13 @@ namespace qmcplusplus
 
 
   /** Specialization for string */
-  template<> struct HDFAttribIO<std::string>
+  template<> struct h5data_proxy<std::string>
     {
 
       typedef std::string ArrayType_t;
       ArrayType_t& ref;
 
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a) { }
+      h5data_proxy<ArrayType_t>(ArrayType_t& a): ref(a) { }
 
       inline bool write(hid_t grp,const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
       {
@@ -133,17 +133,17 @@ namespace qmcplusplus
     };
 
   template<>
-    struct HDFAttribIO<std::ostringstream>//: public HDFAttribIOBase 
+    struct h5data_proxy<std::ostringstream>
     {
       typedef std::ostringstream Data_t;
       Data_t& ref;
 
-      HDFAttribIO<Data_t>(Data_t& a): ref(a) { }
+      h5data_proxy<Data_t>(Data_t& a): ref(a) { }
 
       inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
       {
         std::string clone(ref.str());
-        HDFAttribIO<std::string> proxy(clone);
+        h5data_proxy<std::string> proxy(clone);
         return proxy.write(grp,aname);
       }
 

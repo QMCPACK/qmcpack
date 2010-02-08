@@ -20,9 +20,11 @@
 #include <Configuration.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
+#include <io/hdf_dataproxy.h>
+#if defined(HAVE_LIBHDF5)
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
-
+#endif
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

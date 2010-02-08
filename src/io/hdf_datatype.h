@@ -33,25 +33,17 @@ template<>                                                             \
 inline hid_t                                                           \
 get_h5_datatype< CppType >(const CppType&) { return H5DTYPE; }         
 
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(short, H5T_NATIVE_SHORT);
-
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(int, H5T_NATIVE_INT);
-
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(long, H5T_NATIVE_LONG);
-
-/// INTERNAL ONLY
+BOOSTSUB_H5_DATATYPE(unsigned char, H5T_NATIVE_UCHAR);
+BOOSTSUB_H5_DATATYPE(unsigned int, H5T_NATIVE_UINT);
+BOOSTSUB_H5_DATATYPE(unsigned long, H5T_NATIVE_ULONG);
+//BOOSTSUB_H5_DATATYPE(uint32_t, H5T_NATIVE_UINT32);
+//BOOSTSUB_H5_DATATYPE(uint64_t, H5T_NATIVE_UINT64);
 BOOSTSUB_H5_DATATYPE(float, H5T_NATIVE_FLOAT);
-
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(double, H5T_NATIVE_DOUBLE);
-
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(std::complex<double>, H5T_NATIVE_DOUBLE);
-
-/// INTERNAL ONLY
 BOOSTSUB_H5_DATATYPE(std::complex<float>, H5T_NATIVE_FLOAT);
 
 #else
@@ -64,6 +56,7 @@ BOOSTSUB_H5_DATATYPE(std::complex<float>, H5T_NATIVE_FLOAT);
   template <typename T>                              
     inline hid_t                                     
     get_h5_datatype(const T&) { return 0;}
+
 #endif
 }
 #endif
