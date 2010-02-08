@@ -40,7 +40,9 @@ namespace qmcplusplus {
 
     Array<int,3> index;
     vector<bool> IndepVar;
-    vector<real_type> GammaVec;
+    vector<real_type> GammaVec, dval_Vec;
+    vector<TinyVector<real_type,3> > dgrad_Vec;
+    vector<Tensor<real_type,3> > dhess_Vec;
     int NumConstraints, NumGamma;
     Matrix<real_type> ConstraintMatrix;
     std::vector<real_type> Parameters;
@@ -83,6 +85,9 @@ namespace qmcplusplus {
       int numParams = NumGamma - NumConstraints;
       Parameters.resize(numParams);
       GammaVec.resize(NumGamma);
+      dval_Vec.resize(NumGamma);
+      dgrad_Vec.resize(NumGamma);
+      dhess_Vec.resize(NumGamma);
       ConstraintMatrix.resize(NumConstraints, NumGamma);
       // Assign indices
       int num=0;
@@ -637,9 +642,23 @@ namespace qmcplusplus {
 
       }
 
-      hess(1,0) = hess(0,1);
-      hess(2,0) = hess(0,2);
-      hess(2,1) = hess(1,2);
+      // Now, pack into vectors
+      int num=0;
+      for (int m=0; m<=N_eI; m++)
+	for (int l=m; l<=N_eI; l++)
+	  for (int n=0; n<=N_ee; n++) {
+	    dval_Vec[num] = dval_dgamma(l,m,n) + dval_dgamma(m,l,n);
+	    for (int i=0; i<3; i++) {
+	      dgrad_Vec[num][i] = dgrad_dgamma(l,m,n)[i] + dgrad_dgamma(m,l,n)[i];
+	      for (int j=i; j<3; j++) {
+		dhess_Vec[num](i,j) = dhess_dgamma(l,m,n)(i,j) + dhess_dgamma(m,l,n)(i,j);
+		dhess_Vec[num](j,i) = dhess_dgamma(l,m,n)(i,j) + dhess_dgamma(m,l,n)(i,j);
+	      }
+	      
+	    }
+	  }
+      // Now, compensate for constraint matrix
+
 
       return false;
     }
