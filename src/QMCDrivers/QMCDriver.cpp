@@ -186,16 +186,8 @@ namespace qmcplusplus {
     {
       wOut->dump(W);
       branchEngine->write(RootName,true); //save energy_history
-      //if (storeConfigs) wOut->dump( ForwardWalkingHistory);
+      if (storeConfigs) wOut->dump( ForwardWalkingHistory);
     }
-
-    cout << "Storing FW data " << endl;
-    Timer c;
-    ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-    cout << "Time to store FW data " << c.elapsed() << endl;
-    c.restart();
-    wOut->dump(ForwardWalkingHistory);
-    cout << "Time to dump FW data " << c.elapsed() << endl;
 
     //save positions for optimization: this is done within VMC
     //if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
