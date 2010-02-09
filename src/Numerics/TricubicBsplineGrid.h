@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -22,8 +21,8 @@
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Lattice/CrystalLattice.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Numerics/GridBConds.h"
+#include "type_traits/scalar_traits.h"
 //#include <blitz/array.h>
 //#include <blitz/tinymat.h>
 //using namespace blitz;
@@ -31,10 +30,11 @@
 namespace qmcplusplus {
 
   template<typename T, int BC0=NO_GBC, int BC1=NO_GBC, int BC2=NO_GBC>
-  struct TricubicBsplineGrid: public OrbitalTraits<T> {
+  struct TricubicBsplineGrid
+  {
 
-    typedef typename OrbitalTraits<T>::real_type real_type;
-    typedef typename OrbitalTraits<T>::value_type value_type;
+    typedef typename scalar_traits<T>::real_type real_type;
+    typedef typename scalar_traits<T>::value_type value_type;
 
     bool Interpolating, Periodic;
     // The grid sizes
