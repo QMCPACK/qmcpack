@@ -459,10 +459,6 @@ namespace qmcplusplus
     }
 
     app_log() << o.str() << endl;
-    char fname[16];
-    sprintf(fname,"test%i.log",MyEstimator->getCommunicator()->rank());
-    ofstream fout(fname);
-    fout << o.str() << endl;
 
     write(RootName,true);
   }
