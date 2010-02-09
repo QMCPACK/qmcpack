@@ -10,22 +10,22 @@ namespace APPNAMESPACE {
 
 #if defined(HAVE_MPI)
     //free function for allreduce
-    template<typename T, typename OP>
-      inline void all_reduce(const Communicate& comm,T& in, T& out)
-      {
-        container_proxy<T> t_in(in),t_out(out);
-        MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
-        MPI_Allreduce(t_in.data(),t_out.data(),t_in.size(),type_id, OP, comm);
-      }
+    //   template<typename T, typename OP>
+    //   inline void all_reduce(const Communicate& comm,T& in, T& out)
+    //   {
+    //     container_proxy<T> t_in(in),t_out(out);
+    //     MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
+    //     MPI_Allreduce(t_in.data(),t_out.data(),t_in.size(),type_id, OP, comm);
+    //   }
 
-    /** generic function to perform allreduce */
-    template<typename T, typename OP>
-      inline void all_reduce(const communicator& comm, T& in)
-      {
-        T out(in);
-        allreduace<T,OP>(comm,in,out);
-        in=out;
-      }
+    // /** generic function to perform allreduce */
+    // template<typename T, typename OP>
+    //   inline void all_reduce(const communicator& comm, T& in)
+    //   {
+    //     T out(in);
+    //     all_reduce<T,OP>(comm,in,out);
+    //     in=out;
+    //   }
 
     /** generic function to perform allgather
      *
