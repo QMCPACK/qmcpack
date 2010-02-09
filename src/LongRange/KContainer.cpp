@@ -112,7 +112,7 @@ KContainer::FindApproxMMax() {
   */
   // see rmm, Electronic Structure, p. 85 for details
   for (int i = 0; i < DIM; i++) 
-    mmax[i] = static_cast<int>(floor(sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
+    mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 }
 void 
 KContainer::BuildKLists(bool useSphere) {

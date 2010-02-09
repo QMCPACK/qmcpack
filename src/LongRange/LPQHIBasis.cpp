@@ -3,8 +3,11 @@
 #include "LongRange/LPQHIBasis.h"
 #include <cassert>
 
-using namespace qmcplusplus;
+namespace qmcplusplus
+{
 
+using std::cos;
+using std::sin;
 void 
 LPQHIBasis::set_NumKnots(int n) {
   assert(n>1);
@@ -198,5 +201,6 @@ LPQHIBasis::Dminus(int i, RealType k, int n) {
   complex<RealType> Z1 = Eminus(i,k,n+1);
   complex<RealType> Z2 = Eminus(i,k,n);
   return -4.0*M_PI/(k*Lattice.Volume)*(delta* Z1.imag() + i*delta*Z2.imag());
+}
 }
 
