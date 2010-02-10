@@ -19,6 +19,9 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_IMPL_H
 #define QMCPLUSPLUS_EINSPLINE_IMPL_H
 
+#ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
+#error "einspline_impl.hpp is used only by einspline_eingine.hpp"
+#else
 namespace qmcplusplus
 {
   /** class to handle functions
@@ -224,4 +227,5 @@ namespace qmcplusplus
       { eval_multi_UBspline_3d_c_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
   };
 }
+#endif
 #endif
