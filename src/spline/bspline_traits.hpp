@@ -17,12 +17,12 @@
 #ifndef QMCPLUSPLUS_BSPLINE_TRAITS_H
 #define QMCPLUSPLUS_BSPLINE_TRAITS_H
 
+#include <complex>
 extern "C"
 {
 #include <einspline/bspline.h>
-#include <einspline/multi_bspline_structs.h>
+#include <einspline/multi_bspline.h>
 }
-
 namespace qmcplusplus
 {
   /** determine if EngT (e.g., einspline engine) handles real data or complex data
@@ -70,7 +70,7 @@ namespace qmcplusplus
    * - DIM, physical dimension
    * - real_type real data type
    * - value_type value data type
-   * - Spline_t einspline engine type
+   * - spline_type einspline engine type
    */
   template<typename EngT>
   struct bspline_engine_traits {};
@@ -84,7 +84,6 @@ namespace qmcplusplus
     enum {DIM=3};
     typedef double real_type;
     typedef double value_type;
-    typedef multi_UBspline_3d_d Spline_t;
   };
 
   ///specialization with multi_UBspline_3d_z
@@ -92,9 +91,8 @@ namespace qmcplusplus
   struct bspline_engine_traits<multi_UBspline_3d_z>
   {
     enum {DIM=3};
-    typedef double value_type;
+    typedef double real_type;
     typedef std::complex<double> value_type;
-    typedef multi_UBspline_3d_z Spline_t;
   };
 
   /** specialization with multi_UBspline_3d_d
@@ -105,7 +103,6 @@ namespace qmcplusplus
     enum {DIM=3};
     typedef float real_type;
     typedef float value_type;
-    typedef multi_UBspline_3d_s Spline_t;
   };
 
   ///specialization with multi_UBspline_3d_z
@@ -113,13 +110,12 @@ namespace qmcplusplus
   struct bspline_engine_traits<multi_UBspline_3d_c>
   {
     enum {DIM=3};
-    typedef float value_type;
+    typedef float real_type;
     typedef std::complex<float> value_type;
-    typedef multi_UBspline_3d_c Spline_t;
   };
 
 #else
-#error "DIMENSION!=3 is not implemented yet
+#error "DIMENSION!=3 is not implemented yet"
 #endif
 }
 #endif
