@@ -36,13 +36,13 @@ namespace qmcplusplus
       einspline_engine<ENGT> einspliner;
       pos_type start;
       pos_type end;
-      vector<pos_type> pos;
+      vector<pos_type> Vpos, VGLpos, VGHpos;
       Vector<value_type> psi;
       Vector<value_type> lap;
       Vector<TinyVector<value_type,3> > grad;
       Vector<Tensor<value_type,3> > hess;
 
-      einspline3d_benchmark():start(0.0),end(1.0){}
+      einspline3d_benchmark():start(0.0),end(1.0) { }
 
       einspline3d_benchmark(int nx, int ny, int nz, int num_splines)
         : start(0.0),end(1.0)
@@ -71,44 +71,48 @@ namespace qmcplusplus
        */
       void set_samples(int n)
       {
-        pos.resize(n);
+        Vpos.resize(n);
+        VGLpos.resize(n);
+        VGHpos.resize(n);
         RandomGenerator_t myrand;
-        for(int i=0; i<n; ++i) pos[i]=pos_type(myrand(),myrand(),myrand());
+        for(int i=0; i<n; ++i){
+	  Vpos[i]=pos_type(myrand(),myrand(),myrand());
+	  VGLpos[i]=pos_type(myrand(),myrand(),myrand());
+	  VGHpos[i]=pos_type(myrand(),myrand(),myrand());
+	}
 
       }
 
-      inline TinyVector<double,3> test_all(int niters)
+      inline TinyVector<double,3> test_all()
       {
         TinyVector<double,3> timers;
         Timer clock;
-        for(int i=0; i<niters; ++i)
-        {
-          clock.restart();
-          test_v();
-          timers[0]+=clock.elapsed();
-          clock.restart();
-          test_vgl();
-          timers[1]+=clock.elapsed();
-          clock.restart();
-          test_vgh();
-          timers[2]+=clock.elapsed();
-        }
+	test_v();
+	timers[0]+=clock.elapsed();
+	clock.restart();
+	test_vgl();
+	timers[1]+=clock.elapsed();
+	clock.restart();
+	test_vgh();
+	timers[2]+=clock.elapsed();
         return timers;
       }
 
       inline void test_v()
       {
-        for(int i=0; i<pos.size(); ++i) einspliner.evaluate(pos[i],psi);
+        for(int i=0; i<Vpos.size(); ++i) {
+	  einspliner.evaluate(Vpos[i],psi);
+	}
       }
 
       inline void test_vgl()
       {
-        for(int i=0; i<pos.size(); ++i) einspliner.evaluate(pos[i],psi,grad,lap);
+        for(int i=0; i<VGLpos.size(); ++i) einspliner.evaluate(VGLpos[i],psi,grad,lap);
       }
 
       inline void test_vgh()
       {
-        for(int i=0; i<pos.size(); ++i) einspliner.evaluate(pos[i],psi,grad,hess);
+        for(int i=0; i<VGHpos.size(); ++i) einspliner.evaluate(VGHpos[i],psi,grad,hess);
       }
 
     };
@@ -123,15 +127,14 @@ int main(int argc, char** argv)
   OhmmsInfo Welcome(argc,argv,mycomm->rank());
   qmcplusplus::Random.init(0,1,11);
 
-  int nx=73,ny=91,nz=29;
-  int num_splines=21;
-  int niters=100;
-  int nsamples=32;
+  int nx=48,ny=48,nz=48;
+  int num_splines=128;
+  int nsamples=3200;
 
   if(mycomm->rank()==0)
   {
     cout << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
-      << " num_splines = " << num_splines << " num_samples = " << nsamples << " niters=" << niters << endl;
+      << " num_splines = " << num_splines << " num_samples = " << nsamples << endl;
     cout << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << endl;
     cout << "#datatype                       value             vgl              vgh " << endl;
   }
@@ -144,22 +147,22 @@ int main(int argc, char** argv)
     einspline3d_benchmark<multi_UBspline_3d_d> d_bench;
     d_bench.set(nx,ny,nz,num_splines);
     d_bench.set_samples(nsamples);
-    timer_type d_timer=d_bench.test_all(niters);
+    timer_type d_timer=d_bench.test_all();
 
     einspline3d_benchmark<multi_UBspline_3d_s> s_bench;
     s_bench.set(nx,ny,nz,num_splines);
     s_bench.set_samples(nsamples);
-    timer_type s_timer=s_bench.test_all(niters);
+    timer_type s_timer=s_bench.test_all();
 
     einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
     z_bench.set(nx,ny,nz,num_splines);
     z_bench.set_samples(nsamples);
-    timer_type z_timer=z_bench.test_all(niters);
+    timer_type z_timer=z_bench.test_all();
 
     einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
     c_bench.set(nx,ny,nz,num_splines);
     c_bench.set_samples(nsamples);
-    timer_type c_timer=c_bench.test_all(niters);
+    timer_type c_timer=c_bench.test_all();
 
 #pragma omp critical
     {
@@ -170,7 +173,7 @@ int main(int argc, char** argv)
     }
   }
 
-  double nops=num_splines*nsamples*niters*omp_get_max_threads();
+  double nops=num_splines*nsamples*omp_get_max_threads();
   cout.precision(6);
   cout.setf(std::ios::scientific, std::ios::floatfield);
   cout << "einspline::double          " << nops/d_timer_t << endl;
