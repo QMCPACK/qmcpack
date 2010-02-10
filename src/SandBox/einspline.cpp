@@ -131,7 +131,8 @@ int main(int argc, char** argv)
   {
     cout << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
       << " num_splines = " << num_splines << " num_samples = " << nsamples << " niters=" << niters << endl;
-    cout << "#datatype     value      vgl      vgh " << endl;
+    cout << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << endl;
+    cout << "#datatype                       value             vgl              vgh " << endl;
   }
 
   typedef TinyVector<double,3> timer_type;
