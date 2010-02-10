@@ -16,6 +16,9 @@ TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
 TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
 
+ADD_EXECUTABLE( einspline  einspline.cpp)
+TARGET_LINK_LIBRARIES(einspline qmcbase qmcutil)
+
 #ADD_EXECUTABLE(gnubug gnubug.cpp)
 #TARGET_LINK_LIBRARIES(gnubug qmcbase qmcutil)
 

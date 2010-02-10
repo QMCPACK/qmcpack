@@ -60,6 +60,11 @@ namespace qmcplusplus
           for(int j=0; j<data.size();++j) data(j) = Random();
           einspliner.set(i,data);
         }
+	psi.resize(num_splines);
+        grad.resize(num_splines);
+        lap.resize(num_splines);
+        hess.resize(num_splines);
+
       }
 
       /** generate random positions and containers
@@ -70,10 +75,6 @@ namespace qmcplusplus
         RandomGenerator_t myrand;
         for(int i=0; i<n; ++i) pos[i]=pos_type(myrand(),myrand(),myrand());
 
-        psi.resize(n);
-        grad.resize(n);
-        lap.resize(n);
-        hess.resize(n);
       }
 
       inline TinyVector<double,3> test_all(int niters)
