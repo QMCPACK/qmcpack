@@ -50,7 +50,7 @@ namespace APPNAMESPACE {
       std::vector<T>& ref;
       inline container_proxy(std::vector<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
-      inline pointer data() { return ref.data();}
+      inline pointer data() { return &ref[0];}
       template<typename I>
       inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
@@ -72,7 +72,7 @@ namespace APPNAMESPACE {
         std::copy(my_copy.begin(),my_copy.end(),ref.begin());
       }
       inline size_t size() const {return my_copy.size();}
-      inline pointer data() { return my_copy.data();}
+      inline pointer data() { return &my_copy[0];}
     };
 
   template<typename T, unsigned D>
