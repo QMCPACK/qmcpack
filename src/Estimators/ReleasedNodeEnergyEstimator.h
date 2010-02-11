@@ -58,7 +58,7 @@ namespace qmcplusplus {
       scalars[2](ePtr[LOCALPOTENTIAL],wwght);
       scalars[3](ePtr[BRANCHINGENERGY],rnwght);
       scalars[4](awalker.ReleasedNodeWeight,wwght);
-      scalars[5](awalker.ReleasedNodeZeroWeight*walker.ReleasedNodeWeight/std::abs(awalker.ReleasedNodeWeight),wgt);
+      scalars[5](awalker.ReleasedNodeZeroWeight*awalker.ReleasedNodeWeight/std::abs(awalker.ReleasedNodeWeight),wgt);
       for(int target=6, source=FirstHamiltonian; target<scalars.size(); 
           ++target, ++source)
         scalars[target](ePtr[source],wwght);
