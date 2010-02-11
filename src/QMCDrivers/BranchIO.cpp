@@ -66,10 +66,10 @@ namespace qmcplusplus
     HDFVersion in_version(0,1);
     int n=ref.vParam.size()+ref.iParam.size();
     vector<RealType> pdata(n+3,-1);
-    prevconfig.read(in_version,hdf::version);
+    prevconfig.read(in_version.version,hdf::version);
     prevconfig.push(hdf::main_state,false);
 
-    if(in_version>= res_20080624)
+    //if(in_version>= res_20080624)
     {//need a better version control
       prevconfig.push(hdf::qmc_status,false);
       prevconfig.read(ref.vParam,"vparam");
@@ -93,7 +93,7 @@ namespace qmcplusplus
       in_version[0]=pdata[n+1];
       in_version[1]=pdata[n+2];
       //\since 2008-06-24 
-      if(in_version>=res_20080624)
+      //if(in_version>=res_20080624)
       {
         int ii=0;
         for(int i=0; i<ref.vParam.size(); ++i,++ii) ref.vParam[i]=pdata[ii];
