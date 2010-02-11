@@ -22,13 +22,17 @@ SET(QMCDRIVERS
   VMC/VMCFactory.cpp
   WFMC/WFMCUpdateAll.cpp
   DMC/DMCOMP.cpp
+  DMC/RNDMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
+  DMC/RNDMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
+  DMC/RNFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
   ../Estimators/LocalEnergyEstimator.cpp
+  ../Estimators/ReleasedNodeEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/FWEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp

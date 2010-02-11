@@ -31,10 +31,10 @@ namespace qmcplusplus {
       TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): 
     QMCUpdateBase(w,psi,h,rg)
     { 
-      myTimers.push_back(new NewTimer("DMCUpdatePbyP::advance")); //timer for the walker loop
-      myTimers.push_back(new NewTimer("DMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-      myTimers.push_back(new NewTimer("DMCUpdatePbyP::updateMBO")); //timer for measurements
-      myTimers.push_back(new NewTimer("DMCUpdatePbyP::energy")); //timer for measurements
+      myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::advance")); //timer for the walker loop
+      myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
+      myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::updateMBO")); //timer for measurements
+      myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::energy")); //timer for measurements
       TimerManager.addTimer(myTimers[0]);
       TimerManager.addTimer(myTimers[1]);
       TimerManager.addTimer(myTimers[2]);
@@ -65,6 +65,7 @@ namespace qmcplusplus {
       //w_buffer.rewind();
       //W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
+      int oldRNsign = nNodeCrossing;
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -180,12 +181,14 @@ namespace qmcplusplus {
         enew=eold;//copy back old energy
         gf_acc=1.0;
       }
-
-
-
-
-      thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
       
+      
+//       RealType sigma_last = thisWalker.ReleasedNodeWeight/std::abs(thisWalker.ReleasedNodeWeight);
+      thisWalker.Weight *= branchEngine->branchWeightBare(enew,eold);
+      ValueType altR = Psi.alternateRatio(W);
+      thisWalker.ReleasedNodeWeight = altR/std::abs(altR);
+      RealType KE_ferm_n = -0.5*(Sum(W.L)+Dot(W.G,W.G)); 
+      thisWalker.resetReleasedNodeProperty(enew,thisWalker.Properties(LOCALENERGY)+KE_ferm_n);
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
 

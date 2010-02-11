@@ -324,9 +324,8 @@ namespace qmcplusplus {
     
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
-
     //if target is not give, use whatever it has
-    if(nTargetWalkers==0) nTargetWalkers=W.getActiveWalkers();
+     if(nTargetWalkers==0) nTargetWalkers=W.getActiveWalkers();
 
     //nTargetWalkers is a local quantity.
     nTargetWalkers=std::max(Nthreads,nTargetWalkers);
@@ -343,12 +342,13 @@ namespace qmcplusplus {
       nStepsBetweenSamples = (int)std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
-    else
+    else if (nTargetSamples)
     {
       int nStepsTotal =  nSteps*nBlocks;
       nStepsBetweenSamples = (int)std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
-    }      
+    }
+    else Period4WalkerDump=(nBlocks+1)*nSteps;
 
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 

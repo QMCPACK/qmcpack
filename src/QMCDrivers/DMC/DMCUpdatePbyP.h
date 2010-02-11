@@ -76,6 +76,23 @@ namespace qmcplusplus {
     vector<NewTimer*> myTimers;
 
   };
+  
+  class RNDMCUpdatePbyPWithRejectionFast: public QMCUpdateBase {
+
+  public:
+
+    /// Constructor.
+    RNDMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+    ///destructor
+    ~RNDMCUpdatePbyPWithRejectionFast();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  private:
+    vector<NewTimer*> myTimers;
+  };
+  
 }
 
 #endif

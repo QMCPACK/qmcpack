@@ -104,8 +104,8 @@ namespace qmcplusplus
         Det_t *downdet = new RNDiracDeterminantBase(psid);
         downdet->set(nup,nup);
         downdet->setLogEpsilon(bosonic_eps);
-        sdet->add(updet);
-        sdet->add(downdet);
+        sdet->add(updet,true);
+        sdet->add(downdet,true);
 
       }
     else

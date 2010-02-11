@@ -65,24 +65,9 @@ namespace qmcplusplus {
         estimatorClones[ip]->setCollectionMode(false);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
-        if(QMCDriverMode[QMC_UPDATE_MODE])
-        {
-          if(UseFastGrad == "yes")
-            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          else
-            Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-        }
-        else
-        {
-          if(KillNodeCrossing) 
-            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          else 
-            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-        }
+        Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);        
       }
     
   }
@@ -120,20 +105,7 @@ namespace qmcplusplus {
         std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(o," "));
         o << "\n";
 
-        if(QMCDriverMode[QMC_UPDATE_MODE]) 
-          o << "  Updates by particle-by-particle moves";
-        else 
-          o << "  Updates by walker moves";
-
-        if(UseFastGrad == "yes") 
-          o << " using fast gradient version ";
-        else 
-          o << " using full-ratio version ";
-
-        if(KillNodeCrossing)  
-          o << "\n  Walkers are killed when a node crossing is detected";
-        else
-          o << "\n  DMC moves are rejected when a node crossing is detected";
+        o << "Running the released node driver."<<endl;
 
         app_log() << o.str() << endl;
       }
@@ -148,59 +120,32 @@ namespace qmcplusplus {
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
-        if(QMCDriverMode[QMC_UPDATE_MODE])
-        {
-          if(UseFastGrad == "yes")
-            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          else
-            Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);   
+        MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+          Movers[ip]->initWalkersForPbyP(wit, wit_end);
         }
-        else
-        {
-          if(KillNodeCrossing) 
-            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          else 
-            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        }
-      }
-    }
+      } 
 
-    branchEngine->checkParameters(W);
+//     branchEngine->checkParameters(W);
 
     int mxage=mover_MaxAge;
-    if(fixW) 
-    {
-      if(BranchInterval<0) BranchInterval=nSteps;
-      mxage=(mover_MaxAge<0)?0:mover_MaxAge;
-      for(int ip=0; ip<Movers.size(); ++ip) Movers[ip]->MaxAge=mxage;
-    } 
-    else 
-    {
-      if(BranchInterval<0) BranchInterval=1;
-      int miage=(QMCDriverMode[QMC_UPDATE_MODE])?1:5;
-      mxage=(mover_MaxAge<0)?miage:mover_MaxAge;
-      for(int ip=0; ip<Movers.size(); ++ip) Movers[ip]->MaxAge=mxage;
-    }
+    BranchInterval=1;
+    mxage=(mover_MaxAge<0)?4:mover_MaxAge;
+    for(int ip=0; ip<Movers.size(); ++ip) Movers[ip]->MaxAge=mxage;
+
 
     {
       ostringstream o;
-      if(fixW)
-        o << "  Fixed population using reconfiguration method\n";
-      else
-        o << "  Fluctuating population\n";
       o << "  Persisent walkers are killed after " << mxage << " MC sweeps\n";
       o << "  BranchInterval = " << BranchInterval << "\n";
       o << "  Steps per block = " << nSteps << "\n";
       o << "  Number of blocks = " << nBlocks << "\n";
-      app_log() << o.str() << endl;
+      app_log() << endl << o.str() << endl;
     }
-    app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
+        
+    app_log() << " RNDMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
   }
 
   bool RNDMCOMP::run() {
@@ -224,10 +169,6 @@ namespace qmcplusplus {
 
       for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
       {
-        if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-          W.resetWalkerParents();
-        }
 #pragma omp parallel for
         for(int ip=0; ip<NumThreads; ++ip)
         {

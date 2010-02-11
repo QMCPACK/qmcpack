@@ -35,7 +35,7 @@ namespace qmcplusplus
       ~SlaterDet();
 
       ///add a new DiracDeterminant to the list of determinants
-      void add(Determinant_t* det);
+      void add(Determinant_t* det, bool rn=false);
 
       void checkInVariables(opt_variables_type& active);
 
@@ -142,7 +142,9 @@ namespace qmcplusplus
       inline ValueType
       alternateRatio(ParticleSet& P)
       {
-        return Dets[0]->alternateRatio(P);
+        ValueType v(1.0);
+        for(int i=0; i<Dets.size(); ++i) v *= Dets[i]->alternateRatio(P);
+        return v;
       }
 
       void update(ParticleSet& P,
@@ -161,6 +163,7 @@ namespace qmcplusplus
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
+      bool releasedNode;
     private:
       vector<int> M;
       vector<int> DetID;

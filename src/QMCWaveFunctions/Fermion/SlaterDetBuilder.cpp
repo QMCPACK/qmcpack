@@ -185,6 +185,7 @@ namespace qmcplusplus
         psi = (*lit).second;
       }
 
+    bool rnc(false);
     if (psi->getOrbitalSetSize())
       {
         map<string,Det_t*>::iterator dit(DetSet.find(detname));
@@ -237,12 +238,12 @@ namespace qmcplusplus
                 double bosonicEpsilon=atof(s_smallnumber.c_str());
                 app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<<endl;
                 adet = new RNDiracDeterminantBase(psi,firstIndex);
-                adet->setLogEpsilon(bosonicEpsilon);
+                adet->setLogEpsilon(bosonicEpsilon); 
+                rnc=true;
               }
             else
               {
-                adet = new Det_t(psi,firstIndex);
-
+                adet = new Det_t(psi,firstIndex); 
               }
             adet->set(firstIndex,psi->getOrbitalSetSize());
 #endif
@@ -258,7 +259,7 @@ namespace qmcplusplus
       }
 
     //only if a determinant is not 0
-    if (adet) SlaterDetSet.back()->add(adet);
+    if (adet) SlaterDetSet.back()->add(adet,rnc);
 
     return firstIndex;
   }

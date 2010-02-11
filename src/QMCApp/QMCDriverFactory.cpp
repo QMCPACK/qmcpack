@@ -24,6 +24,7 @@
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
+#include "QMCDrivers/DMC/RNFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
 #include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
 #include "QMCDrivers/ForwardWalking/FRSingleOMP.h"
@@ -133,6 +134,10 @@ namespace qmcplusplus {
       else if(qmc_mode.find("dmc")<nchars)
       {
         newRunType=DMC_RUN;
+      }
+      else if(qmc_mode.find("rn")<nchars)
+      {
+        newRunType=RN_RUN;
       }
       else if(qmc_mode.find("fw")<nchars) //number 9
       {
@@ -303,7 +308,12 @@ namespace qmcplusplus {
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
-    else if(curRunType == DMC_RUN) 
+    else if(curRunType == RN_RUN) 
+    {
+      RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+    } 
+        else if(curRunType == DMC_RUN) 
     {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);

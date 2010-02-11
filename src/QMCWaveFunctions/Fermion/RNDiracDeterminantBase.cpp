@@ -37,10 +37,18 @@ namespace qmcplusplus
       DiracDeterminantBase(s)
   {
     setLogEpsilon(s.logepsilon);
+//     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<<endl;
   }
 
   ///default destructor
   RNDiracDeterminantBase::~RNDiracDeterminantBase() {}
+  
+  RNDiracDeterminantBase& RNDiracDeterminantBase::operator=(const RNDiracDeterminantBase& s) {
+    NP=0;
+    resize(s.NumPtcls, s.NumOrbitals);
+    setLogEpsilon(s.logepsilon);
+    return *this;
+  }
 
   void RNDiracDeterminantBase::resize(int nel, int morb)
   {
@@ -248,9 +256,13 @@ namespace qmcplusplus
   RNDiracDeterminantBase::ValueType RNDiracDeterminantBase::alternateRatio(ParticleSet& P)
   {
     //returns psi_T/psi_G
-    P.G+=myG_alternate;
-    P.L+=myL_alternate;
-    return std::exp(alternateLogValue-LogValue);
+    for (int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
+    { 
+      P.G(iat) += myG_alternate[i] - myG[i]; 
+      P.L(iat) += myL_alternate[i] - myL[i];
+    }
+    RealType sgn = std::cos(alternatePhaseValue);
+    return sgn*std::exp(alternateLogValue-LogValue);
   }
 
   RNDiracDeterminantBase::GradType
@@ -382,7 +394,7 @@ namespace qmcplusplus
 
     UpdateTimer.start();
     //update psiM_temp with the row substituted
-    InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
+    InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,alternateCurRatio);
 
     //update dpsiM_temp and d2psiM_temp
     std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
@@ -443,7 +455,6 @@ namespace qmcplusplus
     UpdateTimer.stop();
 
     curRatio=1.0;
-    alternateCurRatio=1.0;
   }
 
 
@@ -517,6 +528,7 @@ namespace qmcplusplus
         //CurrentDet=psiM(0,0);
         ValueType det=psiM(0,0);
         alternateLogValue = evaluateLogAndPhase(det,alternatePhaseValue);
+        alternatePhaseValue=0.0;
         LogValue = alternateLogValue + 0.5*std::log(1.0+std::exp(logepsilon-2.0*alternateLogValue));
         RealType cp = std::exp(logepsilon -2.0*alternateLogValue);
         RealType bp = 1.0/(1+cp);
@@ -533,6 +545,7 @@ namespace qmcplusplus
       {
         InverseTimer.start();
         alternateLogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),alternatePhaseValue);
+        alternatePhaseValue=0.0;
         LogValue = alternateLogValue + 0.5*std::log(1.0+std::exp(logepsilon-2.0*alternateLogValue));
         RealType cp = std::exp(logepsilon -2.0*alternateLogValue);
         RealType bp = 1.0/(1+cp);

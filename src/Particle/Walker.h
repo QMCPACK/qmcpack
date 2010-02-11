@@ -121,7 +121,7 @@ namespace qmcplusplus
 
       ///create a walker for n-particles
       inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
-          Weight(1.0e0),Multiplicity(1.0e0)
+          Weight(1.0e0),Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
       {
         Properties.resize(1,NUMPROPERTIES);
         resize(nptcl);
@@ -256,6 +256,12 @@ namespace qmcplusplus
         Properties(LOGPSI)=logpsi;
         Properties(SIGN)=sigN;
         Properties(LOCALENERGY) = ene;
+      }
+      
+      inline void resetReleasedNodeProperty(RealType localenergy, RealType alternateEnergy)
+      { 
+        Properties(BRANCHINGENERGY)=alternateEnergy; 
+        Properties(LOCALENERGY) = localenergy;
       }
 
       /** reset the property of a walker

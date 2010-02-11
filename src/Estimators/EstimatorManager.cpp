@@ -21,6 +21,7 @@
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
+#include "Estimators/ReleasedNodeEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/WFMCOnlyEstimator.h"
 #include "Estimators/LocalEnergyEstimatorHDF.h"
@@ -496,6 +497,13 @@ namespace qmcplusplus {
           max4ascii=H.sizeOfObservables()+10;
           app_log() << "  Using WFMConly for the MainEstimator " << endl;
           add(new WFMCOnlyEstimator(H),MainEstimatorName);
+          est_name=MainEstimatorName;
+        }
+        else if (est_name=="releasednode")
+        {
+          max4ascii=H.sizeOfObservables()+5;
+          app_log() << "  Using ReleasedNode for the MainEstimator " << endl;
+          add(new ReleasedNodeEnergyEstimator(H),MainEstimatorName);
           est_name=MainEstimatorName;
         }
         else if (est_name=="forwardwalking")
