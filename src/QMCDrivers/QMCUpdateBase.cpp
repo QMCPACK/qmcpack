@@ -164,9 +164,9 @@ namespace qmcplusplus
         thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
         H.saveProperty(thisWalker.getPropertyBase());
         
-        W.L=0.0;
-        W.G=0.0;
-        thisWalker.ReleasedNodeWeight = 1.0/Psi.alternateRatio(W);
+//         W.L=0.0;
+//         W.G=0.0;
+        thisWalker.ReleasedNodeZeroWeight = std::abs(1.0/Psi.alternateRatio(W));
       }
   }
 

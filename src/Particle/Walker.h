@@ -85,6 +85,7 @@ namespace qmcplusplus
       RealType Weight;
       ///Weight of the walker
       RealType ReleasedNodeWeight;
+      RealType ReleasedNodeZeroWeight;
       /** Number of copies for branching
        *
        * When Multiplicity = 0, this walker will be destroyed.
@@ -203,6 +204,11 @@ namespace qmcplusplus
         Age=a.Age;
         Weight=a.Weight;
         Multiplicity=a.Multiplicity;
+        
+        ReleasedNodeZeroWeight=a.ReleasedNodeZeroWeight;
+        ReleasedNodeWeight=a.ReleasedNodeWeight;
+        ReleasedNodeAge=a.ReleasedNodeAge;
+        
         if (R.size()!=a.R.size()) resize(a.R.size());
         R = a.R;
         G = a.G;

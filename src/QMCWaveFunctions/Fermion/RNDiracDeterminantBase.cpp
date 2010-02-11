@@ -65,7 +65,7 @@ namespace qmcplusplus
 
     myG_alternate.resize(nel);
     myL_alternate.resize(nel);
-
+    
     WorkSpace.resize(nel);
     Pivot.resize(nel);
     LastIndex = FirstIndex + nel;
@@ -258,8 +258,8 @@ namespace qmcplusplus
     //returns psi_T/psi_G
     for (int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
     { 
-      P.G(iat) += myG_alternate[i] - myG[i]; 
-      P.L(iat) += myL_alternate[i] - myL[i];
+      P.G(iat) += myG_alternate(iat) - myG(iat); 
+      P.L(iat) += myL_alternate(iat) - myL(iat);
     }
     RealType sgn = std::cos(alternatePhaseValue);
     return sgn*std::exp(alternateLogValue-LogValue);
@@ -328,7 +328,7 @@ namespace qmcplusplus
     bp = 1.0/bp;
 
     GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
-    grad_iat += (1.0/curRatio) *bp* rv;
+    grad_iat += (1.0/alternateCurRatio) *bp* rv;
     RatioTimer.stop();
     return curRatio;
 
@@ -453,7 +453,7 @@ namespace qmcplusplus
         break;
       }
     UpdateTimer.stop();
-
+    alternateCurRatio=1.0;
     curRatio=1.0;
   }
 
@@ -488,15 +488,16 @@ namespace qmcplusplus
         ValueType rv2 = dot(rv,rv);
 
         dG[kat] += bp*rv - myG[kat];
-        myG_alternate[kat]=rv;
+        myG_alternate[kat] =rv;
         dL[kat] += bp*(lap +(1-2.0*bp)*rv2) -myL[kat];
-        myL_alternate[kat]=lap-rv2;
+        myL_alternate[kat] =lap-rv2;
       }
     RatioTimer.stop();
     alternatePhaseValue += evaluatePhase(alternateCurRatio);
     alternateLogValue +=std::log(std::abs(alternateCurRatio));
     LogValue +=std::log(std::abs(curRatio));
     curRatio=1.0;
+    alternateCurRatio=1.0;
   }
 
   RNDiracDeterminantBase::RealType
@@ -522,6 +523,11 @@ namespace qmcplusplus
   {
     //      cerr<<"I'm calling evaluate log"<<endl;
     Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+    myG_alternate=0.0;
+    myL_alternate=0.0;
+
+//     myG=0.0;
+//     myL=0.0;
 
     if (NumPtcls==1)
       {
@@ -539,6 +545,8 @@ namespace qmcplusplus
         myL_alternate(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
         G(FirstIndex) += bp*rv;
         L(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
+//         myG(FirstIndex) += bp*rv;
+//         myL(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
 
       }
     else
@@ -549,8 +557,6 @@ namespace qmcplusplus
         LogValue = alternateLogValue + 0.5*std::log(1.0+std::exp(logepsilon-2.0*alternateLogValue));
         RealType cp = std::exp(logepsilon -2.0*alternateLogValue);
         RealType bp = 1.0/(1+cp);
-        myG_alternate=0;
-        myL_alternate=0;
         InverseTimer.stop();
         RatioTimer.start();
         for (int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)

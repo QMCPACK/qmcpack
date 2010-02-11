@@ -47,6 +47,7 @@ namespace qmcplusplus {
     dumy=record.add("LocalEnergy_sq");
     dumy=record.add("LocalPotential");
     dumy=record.add("FermionEnergy");
+    dumy=record.add("FermionWeight");
     dumy=record.add("AverageSign");
     for(int i=0; i<SizeOfHamiltonians; ++i) record.add(refH.getObservableName(i));
     LastIndex=record.size();

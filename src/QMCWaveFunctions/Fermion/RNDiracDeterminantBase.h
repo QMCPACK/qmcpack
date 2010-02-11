@@ -124,8 +124,6 @@ namespace qmcplusplus
       inline void setLogEpsilon(ValueType x)
       {
         logepsilon=x;
-        myG_alternate.resize(NP);
-        myL_alternate.resize(NP);
       }
 
     };

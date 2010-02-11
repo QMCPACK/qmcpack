@@ -185,10 +185,13 @@ namespace qmcplusplus {
       
 //       RealType sigma_last = thisWalker.ReleasedNodeWeight/std::abs(thisWalker.ReleasedNodeWeight);
       thisWalker.Weight *= branchEngine->branchWeightBare(enew,eold);
+      
       ValueType altR = Psi.alternateRatio(W);
-      thisWalker.ReleasedNodeWeight = altR/std::abs(altR);
+      thisWalker.ReleasedNodeWeight = thisWalker.ReleasedNodeZeroWeight*altR; 
+      
       RealType KE_ferm_n = -0.5*(Sum(W.L)+Dot(W.G,W.G)); 
-      thisWalker.resetReleasedNodeProperty(enew,thisWalker.Properties(LOCALENERGY)+KE_ferm_n);
+      thisWalker.resetReleasedNodeProperty(enew,thisWalker.Properties(LOCALPOTENTIAL)+KE_ferm_n);
+      
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
 

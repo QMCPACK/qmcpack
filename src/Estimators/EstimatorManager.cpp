@@ -501,7 +501,7 @@ namespace qmcplusplus {
         }
         else if (est_name=="releasednode")
         {
-          max4ascii=H.sizeOfObservables()+5;
+          max4ascii=H.sizeOfObservables()+6;
           app_log() << "  Using ReleasedNode for the MainEstimator " << endl;
           add(new ReleasedNodeEnergyEstimator(H),MainEstimatorName);
           est_name=MainEstimatorName;

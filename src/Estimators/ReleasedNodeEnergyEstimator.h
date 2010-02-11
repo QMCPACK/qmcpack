@@ -28,7 +28,7 @@ namespace qmcplusplus {
   class ReleasedNodeEnergyEstimator: public ScalarEstimatorBase 
   {
 
-    enum {ENERGY_INDEX, ENERGY2_INDEX, POTENTIAL_INDEX, RN_ENERGY, RN_SIGN, LE_MAX};
+    enum {ENERGY_INDEX, ENERGY2_INDEX, POTENTIAL_INDEX, RN_ENERGY, RN_WEIGHT, RN_SIGN, LE_MAX};
 
     int FirstHamiltonian;
     int SizeOfHamiltonians;
@@ -51,13 +51,15 @@ namespace qmcplusplus {
     {
       const RealType* restrict ePtr = awalker.getPropertyBase();
       RealType wwght= wgt* awalker.Weight;
-      RealType rnwght= wgt* awalker.Weight * awalker.ReleasedNodeWeight;
+//       RealType rnwght= wgt * awalker.ReleasedNodeWeight;
+      RealType rnwght=wwght* awalker.ReleasedNodeWeight;
       scalars[0](ePtr[LOCALENERGY],wwght);
       scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght);
       scalars[2](ePtr[LOCALPOTENTIAL],wwght);
       scalars[3](ePtr[BRANCHINGENERGY],rnwght);
-      scalars[4](awalker.ReleasedNodeWeight/std::abs(awalker.ReleasedNodeWeight),wgt);
-      for(int target=5, source=FirstHamiltonian; target<scalars.size(); 
+      scalars[4](awalker.ReleasedNodeWeight,wwght);
+      scalars[5](awalker.ReleasedNodeZeroWeight*walker.ReleasedNodeWeight/std::abs(awalker.ReleasedNodeWeight),wgt);
+      for(int target=6, source=FirstHamiltonian; target<scalars.size(); 
           ++target, ++source)
         scalars[target](ePtr[source],wwght);
     }
