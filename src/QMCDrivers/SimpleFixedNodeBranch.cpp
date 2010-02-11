@@ -500,13 +500,14 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::read(const string& fname) 
   {
-    if(fname.empty()) return;;
+    if(fname.empty()) return;
 
     vParam[B_ACC_ENERGY]=EnergyHist.result();
     vParam[B_ACC_SAMPLES]=EnergyHist.count();
 
     BranchIO hh(*this,MyEstimator->getCommunicator());
     bool success=hh.read(fname);
+    
     if(success)
     {
       EnergyHist.clear();

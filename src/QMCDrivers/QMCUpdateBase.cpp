@@ -156,15 +156,17 @@ namespace qmcplusplus
         Walker_t::Buffer_t tbuffer;
         RealType logpsi=Psi.registerData(W,tbuffer);
         thisWalker.DataSet=tbuffer;
-        W.L=0.0;
-        W.G=0.0;
-        thisWalker.ReleasedNodeWeight = 1.0/Psi.alternateRatio(W);
+
         //setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
         RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         RealType ene = H.evaluate(W);
 
         thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
         H.saveProperty(thisWalker.getPropertyBase());
+        
+        W.L=0.0;
+        W.G=0.0;
+        thisWalker.ReleasedNodeWeight = 1.0/Psi.alternateRatio(W);
       }
   }
 
