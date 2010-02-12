@@ -21,29 +21,40 @@
 namespace qmcplusplus 
 {
 
+  /** gofr estimator
+   *
+   * Compute pair correlation function for the target particle set and optionally any source particles
+   */
   class PairCorrEstimator: public QMCHamiltonianBase
   {
     public:
 
-    PairCorrEstimator(ParticleSet& elns, string& sources);
+      /** constructor
+       * @param elns target particle set
+       * @param sources list of source particle sets
+       *
+       * Use the elns.DistTables to evaluate the pair correlation functions.
+       */
+      PairCorrEstimator(ParticleSet& elns, string& sources);
 
-    void resetTargetParticleSet(ParticleSet& P);
+      void resetTargetParticleSet(ParticleSet& P);
 
-    Return_t evaluate(ParticleSet& P);
+      /* evaluate the pair correlation functions */
+      Return_t evaluate(ParticleSet& P);
 
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
-    {
-      return evaluate(P);
-    }
+      inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
+      {
+        return evaluate(P);
+      }
 
-    void addObservables(PropertySetType& plist) { }
-    void addObservables(PropertySetType& plist, BufferType& collectables);
-    void registerCollectables(vector<observable_helper*>& h5list, hid_t gid) const;
-    void setObservables(PropertySetType& plist);
-    void setParticlePropertyList(PropertySetType& plist, int offset);
-    bool put(xmlNodePtr cur);
-    bool get(std::ostream& os) const;
-    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+      void addObservables(PropertySetType& plist) { }
+      void addObservables(PropertySetType& plist, BufferType& collectables);
+      void registerCollectables(vector<observable_helper*>& h5list, hid_t gid) const;
+      void setObservables(PropertySetType& plist);
+      void setParticlePropertyList(PropertySetType& plist, int offset);
+      bool put(xmlNodePtr cur);
+      bool get(std::ostream& os) const;
+      QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     private:
     ///number of bins

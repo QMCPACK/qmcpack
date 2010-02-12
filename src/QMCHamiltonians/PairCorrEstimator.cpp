@@ -121,7 +121,7 @@ namespace qmcplusplus
         RealType r=dii.r(nn);
         if(r>=Dmax) continue;
         int loc=static_cast<int>(DeltaInv*r);
-        collectables[pair_ids[nn]*NumBins+loc] += norm_factor[loc];
+        collectables[pair_ids[nn]*NumBins+loc+myIndex] += norm_factor[loc];
       }
     }
 
@@ -138,7 +138,7 @@ namespace qmcplusplus
           RealType r=dii.r(nn);
           if(r>=Dmax) continue;
           int loc=static_cast<int>(DeltaInv*r);
-          collectables[toff+loc] += norm_factor[loc];
+          collectables[toff+loc+myIndex] += norm_factor[loc];
         }
       }
     }
@@ -151,7 +151,7 @@ namespace qmcplusplus
 
     vector<int> onedim(1,NumBins);
     int offset=myIndex;
-    for(int i=0; i<NumBins; ++i)
+    for(int i=0; i<gof_r_prefix.size(); ++i)
     {
       observable_helper* h5o=new observable_helper(gof_r_prefix[i]);
       h5o->set_dimensions(onedim,offset);
@@ -173,7 +173,8 @@ namespace qmcplusplus
   void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
     myIndex=collectables.size();
-
+    vector<RealType> g(gof_r_prefix.size()*NumBins,0);
+    collectables.add(g.begin(),g.end());
     ////only while debugging
     //if(gof_r.size())
     //{
