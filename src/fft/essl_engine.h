@@ -46,29 +46,29 @@ namespace qmcplusplus
         std::vector<T> vaux2;
         fft_plan():fft_size(0),num_ffts(0),in_displ(0),out_displ(0){}
         ~fft_plan() { }
-        void resize(int dims, int howmany,int eflag,bool r2c)
+        void resize(int* desc, int eflag)
         {
-          fft_size=dims;
-          num_ffts=howmany;
+          fft_size=desc[FFT_LENGTH];
+          num_ffts=desc[FFT_NUMBER_OF_TRANSFORMS];
           int naux1=0,naux2=0;
-          if(r2c)
+          if(desc[FFT_COMPLEX])
           {
-            if(eflag==ESSL_FFT_FORWARD)
-            {
-              in_displ=dims+2;out_displ=dims/2+1;
-            }
-            else
-            {
-              in_displ=dims/2+1;out_displ=dims+2;
-            }
-            naux1=(dims>2048)?static_cast<int>(20000.+2.28*dims)+1:20000;
-            naux2=std::max(naux1,(2*dims+256)*std::min(64,howmany));
+            in_displ=out_displ=fft_size;
+            naux1=(fft_size>4096)?static_cast<int>(20000.+1.64*fft_size)+1:25000;
+            naux2=naux1;
           }
           else
           {
-            in_displ=out_displ=fft_size;
-            naux1=(dims>4096)?static_cast<int>(20000.+1.64*dims)+1:25000;
-            naux2=naux1;
+            if(eflag==ESSL_FFT_FORWARD)
+            {
+              in_displ=desc[FFT_IN_DISTANCE];out_displ=desc[FFT_OUT_DISTANCE];
+            }
+            else
+            {
+              in_displ=desc[FFT_OUT_DISTANCE];out_displ=desc[FFT_IN_DISTANCE];
+            }
+            naux1=(fft_size>2048)?static_cast<int>(20000.+2.28*fft_size)+1:20000;
+            naux2=std::max(naux1,(2*fft_size+256)*std::min(64,num_ffts));
           }
           vaux1.resize(naux1);
           vaux2.resize(naux2);
@@ -178,12 +178,12 @@ namespace qmcplusplus
 
         /** plan for inplace/outplace, complex-to-complex  transform
          */
-        void create_plan(int dims, int howmany, complex_type* in, complex_type* out , int dir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, complex_type* out , int dir, unsigned uflag)
         {
           if(dir<0)
           {
-            forward_plan.resize(dims,howmany,ESSL_FFT_FORWARD,false);
-            backward_plan.resize(dims,howmany,ESSL_FFT_BACKWARD,false);
+            forward_plan.resize(desc,ESSL_FFT_FORWARD);
+            backward_plan.resize(desc,ESSL_FFT_BACKWARD);
             essl::create_plan(forward_plan,in,out,ESSL_FFT_FORWARD);
             essl::create_plan(backward_plan,out,in,ESSL_FFT_BACKWARD);
           }
@@ -191,28 +191,28 @@ namespace qmcplusplus
           {
             if(dir==FFTW_FORWARD)
             {
-              forward_plan.resize(dims,howmany,ESSL_FFT_FORWARD,false);
+              forward_plan.resize(desc,ESSL_FFT_FORWARD);
               essl::create_plan(forward_plan,in,out,ESSL_FFT_FORWARD);
             }
             else
             {
-              backward_plan.resize(dims,howmany,ESSL_FFT_BACKWARD,false);
+              backward_plan.resize(desc,ESSL_FFT_BACKWARD);
               essl::create_plan(backward_plan,out,in,ESSL_FFT_BACKWARD);
             }
           }
         }
 
         /** plan for outplace, real-to-complex */
-        void create_plan(int dims, int howmany, real_type* in, complex_type* out, int idir, unsigned uflag)
+        void create_plan(int* desc, real_type* in, complex_type* out, int idir, unsigned uflag)
         {
-          forward_plan.resize(dims,howmany,ESSL_FFT_FORWARD,true);
+          forward_plan.resize(desc,ESSL_FFT_FORWARD);
           essl::create_plan(forward_plan,in,out);
         }
 
         /** plan for outplace, complex-to-real */
-        void create_plan(int dims, int howmany, complex_type* in, real_type* out, int idir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, real_type* out, int idir, unsigned uflag)
         {
-          backward_plan.resize(dims,howmany,ESSL_FFT_BACKWARD,true);
+          backward_plan.resize(desc,ESSL_FFT_BACKWARD);
           essl::create_plan(backward_plan,in,out);
         }
 
