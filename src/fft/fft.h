@@ -11,8 +11,8 @@ namespace qmcplusplus
   ///enumeration to determine what FFT  engine is used
   enum {FFTW_ENG=0  /*< FFTW  */
     , FFTESSL_ENG=1 /*< FFT ESSL */
-      , FFTMKL_ENG=2  /* FFT MKL */
-      , MAX_FFT_ENG /* size of this enum */
+    , FFTMKL_ENG=2  /* FFT MKL */
+    , MAX_FFT_ENG /* size of this enum */
   };
 
 #if !defined(HAVE_LIBFFTW)
@@ -28,13 +28,11 @@ namespace qmcplusplus
 #if defined(HAVE_LIBFFTW)
 #include <fft/fftw_engine.h>
 #endif
-//#if defined(HAVE_LIBESSL)
-//#include <fft/essl_impl.h>
-//#endif
-//
+#if defined(HAVE_ESSL)
+#include <fft/essl_engine.h>
+#endif
 #if defined(HAVE_MKL)
 #include <fft/mkl_engine.h>
 #endif
-
 #include <fft/fft1d.h>
 #endif
