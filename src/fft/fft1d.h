@@ -19,46 +19,17 @@
 
 namespace qmcplusplus
 {
-  /** generic traits for fft1d engine property used by fft1d_engine
-   */
-  template<typename T1, typename T2> struct fft1d_property{};
-
-  /** specialization of fft1d_property for complex-to-complex type
-   */
-  template<typename T>
-    struct fft1d_property<T,T>
-  {
-    int num_ffts;
-    int fft_size;
-    int f_offset;
-    int b_offset;
-    inline fft1d_property(int dims=0):num_ffts(0),fft_size(dims),f_offset(dims),b_offset(dims){}
-    inline void resize(int dims, int howmany=1)
+  template<typename T1, typename T2>
+    struct is_complex2complex
     {
-      fft_size=dims;
-      b_offset=f_offset=dims;
-      num_ffts=howmany;
-    }
-  };
+      static const int value=1;
+    };
 
-  /** specialization of fft1d_property for real-to-complex type
-   */
   template<typename T>
-    struct fft1d_property<T,std::complex<T> >
-  {
-    int num_ffts;
-    int fft_size;
-    int f_offset;
-    int b_offset;
-    inline fft1d_property(int dims=0):num_ffts(0),fft_size(dims),f_offset(dims+2),b_offset(dims/2+1){}
-    inline void resize(int dims, int howmany=1)
+    struct is_complex2complex<T,std::complex<T> >
     {
-      num_ffts=howmany;
-      fft_size=dims;
-      f_offset=dims+2;
-      b_offset=dims/2+1;
-    }
-  };
+      static const int value=0;
+    };
 
   /** declaration of FFT_DFT 
    *
@@ -72,21 +43,27 @@ namespace qmcplusplus
   {
     typedef T1 space_type;
     typedef T2 spectral_type;
-    fft1d_property<T1,T2> my_property;
+    int mydesc[FFT_MAX];
     fft_engine_base<typename scalar_traits<T1>::real_type,ENG> my_engine;
 
-    /** constructor with a fft dimension
-     * @param dims size of 1dfft
-     * @param m number of ffts
+    /** default constructor
      */
-    explicit fft1d_engine(int dims=0):my_property(dims){ }
+    inline fft1d_engine()
+    { 
+      mydesc[FFT_COMPLEX]=is_complex2complex<T1,T2>::value;
+    }
+
+    /** operator to set the FFT properties */
+    int& operator()(int i) { return mydesc[i];}
+    /** operator to get the FFT properties */
+    int operator()(int i) const { return mydesc[i];}
 
     /** return the size of 1d fft */
-    inline int size() const { return my_property.fft_size;}
-    inline int howmany() const { return my_property.num_ffts;}
+    inline int size() const { return mydesc[FFT_LENGTH];}
+    inline int howmany() const { return mydesc[FFT_NUMBER_OF_TRANSFORMS];}
     inline int offset(int idir)
     {
-      return (idir==FFTW_FORWARD)?my_property.f_offset:my_property.b_offset;
+      return (idir==FFTW_FORWARD)?mydesc[FFT_IN_DISTANCE]:mydesc[FFT_OUT_DISTANCE];
     }
 
     /** create InPlace plan 
@@ -96,44 +73,75 @@ namespace qmcplusplus
      * @param idir if idir<0, create both the forward and backward plans
      * @param uflag fftw-specific plan
      */
-    void create(int dims, int m, T2* in, int idir=-1,unsigned uflag=FFTW_MEASURE)
+    template<typename T>
+    void create(int dims, int m, T* in, int idir=-1,unsigned uflag=FFTW_MEASURE)
     {
-      my_property.resize(dims,m);
-      if(idir<0)
-      {
-        my_engine.create_plan(dims,m,in,in,FFTW_FORWARD,uflag);
-        my_engine.create_plan(dims,m,in,in,FFTW_BACKWARD,uflag);
-      }
-      else
-        my_engine.create_plan(dims,m,in,in,idir,uflag);
+      set_defaults(dims,m);
+      create(in,idir,uflag);
     }
 
     /** create OutPlace plan 
      */
     void create(int dims, int m, T1* in, T2* out, int idir=-1, unsigned uflag=FFTW_MEASURE)
     {
-      my_property.resize(dims,m);
-#pragma omp critical
+      set_defaults(dims,m);
+      create(in,out,idir,uflag);
+    }
+
+    template<typename T>
+      void create(T* in, int idir=-1,unsigned uflag=FFTW_MEASURE)
       {
+        mydesc[FFT_INPLACE]=1;
         if(idir<0)
         {
-          my_engine.create_plan(dims,m,in,out,FFTW_FORWARD,uflag);
-          my_engine.create_plan(dims,m,out,in,FFTW_BACKWARD,uflag);
+          my_engine.create_plan(mydesc,in,in,FFTW_FORWARD,uflag);
+          my_engine.create_plan(mydesc,in,in,FFTW_BACKWARD,uflag);
         }
         else
-        {
-          if(idir==FFTW_FORWARD) 
-            my_engine.create_plan(dims,m,in,out,FFTW_FORWARD,uflag);
-          else
-            my_engine.create_plan(dims,m,out,in,FFTW_BACKWARD,uflag);
-        }
+          my_engine.create_plan(mydesc,in,in,idir,uflag);
+      }
+
+    /** create OutPlace plan 
+     */
+    void create(T1* in, T2* out, int idir=-1, unsigned uflag=FFTW_MEASURE)
+    {
+      mydesc[FFT_INPLACE]=0;
+      if(idir<0)
+      {
+        my_engine.create_plan(mydesc,in,out,FFTW_FORWARD,uflag);
+        my_engine.create_plan(mydesc,out,in,FFTW_BACKWARD,uflag);
+      }
+      else
+      {
+        if(idir==FFTW_FORWARD) 
+          my_engine.create_plan(mydesc,in,out,FFTW_FORWARD,uflag);
+        else
+          my_engine.create_plan(mydesc,out,in,FFTW_BACKWARD,uflag);
       }
     }
 
-    inline void fft_forward(T1* in) { my_engine.execute_fft(in); }
-    inline void fft_backward(T2* in) { my_engine.execute_ifft(in); }
+    template<typename T>
+    inline void fft_forward(T* in) { my_engine.execute_fft(in); }
+    template<typename T>
+    inline void fft_backward(T* in) { my_engine.execute_ifft(in); }
+
     inline void fft_forward(T1* in, T2* out) { my_engine.execute_fft(in,out); }
     inline void fft_backward(T2* in, T1* out) { my_engine.execute_ifft(in,out); }
+
+    inline void set_defaults(int dims, int m)
+    {
+      mydesc[FFT_COMPLEX]=is_complex2complex<T1,T2>::value;
+      mydesc[FFT_LENGTH]=dims;
+      mydesc[FFT_NUMBER_OF_TRANSFORMS]=m;
+      if(mydesc[FFT_COMPLEX])
+        mydesc[FFT_IN_DISTANCE]=mydesc[FFT_OUT_DISTANCE]=dims;
+      else
+      {
+        mydesc[FFT_IN_DISTANCE]=dims+2;
+        mydesc[FFT_OUT_DISTANCE]=dims/2+1;
+      }
+      mydesc[FFT_IN_STRIDE]=mydesc[FFT_OUT_STRIDE]=1;
+    }
   };
 }
 #endif

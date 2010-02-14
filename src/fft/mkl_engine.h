@@ -64,84 +64,104 @@ namespace qmcplusplus
 
         /** plan for inplace/outplace, complex-to-complex  transform
          */
-        void create_plan(int dims, int howmany, complex_type* in, complex_type* out , int dir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, complex_type* out , int dir, unsigned uflag)
         {
-          create_c2c_desc(dims,howmany,in!=out);
+          create_dfti_desc(desc);
         }
 
         /** plan for inplace or outplace, real-to-complex  transform
          */
-        void create_plan(int dims, int howmany, real_type* in, real_type* out , int dir, unsigned uflag)
+        void create_plan(int* desc, real_type* in, real_type* out , int dir, unsigned uflag)
         {
-          create_r2c_desc(dims,howmany,in!=out);
+          create_dfti_desc(desc);
         }
 
         /** plan for outplace, real-to-complex */
-        void create_plan(int dims, int howmany, real_type* in, complex_type* out, int idir, unsigned uflag)
+        void create_plan(int* desc, real_type* in, complex_type* out, int idir, unsigned uflag)
         {
-          create_r2c_desc(dims,howmany,true);
+          create_dfti_desc(desc);
         }
 
         /** plan for outplace, complex-to-real */
-        void create_plan(int dims, int howmany, complex_type* in, real_type* out, int idir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, real_type* out, int idir, unsigned uflag)
         {
-          create_r2c_desc(dims,howmany,true);
+          create_dfti_desc(desc);
         }
 
         inline void execute_fft(complex_type* inout)
         {
-          DftiComputeForward(my_handle,mkl_mangle(inout));
+          DftiComputeForward(my_handle,inout);
         }
 
         inline void execute_ifft(complex_type* inout)
         {
-          DftiComputeBackward(my_handle,mkl_mangle(inout));
+          DftiComputeBackward(my_handle,inout);
+        }
+
+        inline void execute_fft(real_type* inout)
+        {
+          DftiComputeForward(my_handle,inout);
+        }
+
+        inline void execute_ifft(real_type* inout)
+        {
+          DftiComputeBackward(my_handle,inout);
         }
 
         inline void execute_fft(complex_type* in, complex_type* out)
         {
-          DftiComputeForward(my_handle,mkl_mangle(in),mkl_mangle(out));
+          DftiComputeForward(my_handle,in,out);
         }
         inline void execute_ifft(complex_type* in, complex_type* out)
         {
-          DftiComputeBackward(my_handle,mkl_mangle(in),mkl_mangle(out));
+          DftiComputeBackward(my_handle,in,out);
         }
 
         inline void execute_fft(real_type* in, complex_type* out)
         {
-          DftiComputeForward(my_handle,in,mkl_mangle(out));
+          DftiComputeForward(my_handle,in,out);
         }
         inline void execute_ifft(complex_type* in, real_type* out)
         {
-          DftiComputeBackward(my_handle,mkl_mangle(in),out);
+          DftiComputeBackward(my_handle,in,out);
         }
 
       private:
         /** create DFFI_DESCRIPTOR for complex-to-complex transformations */
-        void create_c2c_desc(int dims, int howmany,bool outplace)
+        void create_dfti_desc(int* desc)
         {
           if(my_handle) return;
           //if(my_handle) DftiFreeDescriptor(&my_handle); 
           DFTI_CONFIG_VALUE my_precision=dfti_get_precision(real_type());
-          DftiCreateDescriptor(&my_handle,my_precision,DFTI_COMPLEX,1,dims);
-          if(outplace) DftiSetValue(my_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
-          DftiSetValue(my_handle,DFTI_NUMBER_OF_TRANSFORMS, howmany);
-          DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, dims);
+          if(desc[FFT_COMPLEX])
+          {
+            DftiCreateDescriptor(&my_handle,my_precision,DFTI_COMPLEX,1,desc[FFT_LENGTH]);
+            DftiSetValue(my_handle,DFTI_INPUT_DISTANCE, desc[FFT_IN_DISTANCE]);
+            DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, desc[FFT_OUT_DISTANCE]);
+          }
+          else
+          {
+            DftiCreateDescriptor(&my_handle,my_precision,DFTI_REAL,1,desc[FFT_LENGTH]);
+            DftiSetValue(my_handle,DFTI_INPUT_DISTANCE, desc[FFT_IN_DISTANCE]);
+            DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, desc[FFT_IN_DISTANCE]);//this is strange
+          }
+          if(!desc[FFT_INPLACE]) DftiSetValue(my_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+          DftiSetValue(my_handle,DFTI_NUMBER_OF_TRANSFORMS, desc[FFT_NUMBER_OF_TRANSFORMS]);
           DftiCommitDescriptor(my_handle); 
         }
 
-        /** create DFFI_DESCRIPTOR for real-to-complex/complex-to-real transformations */
-        void create_r2c_desc(int dims, int howmany, bool outplace)
-        {
-          if(my_handle) return;
-          //if(my_handle) DftiFreeDescriptor(&my_handle); 
-          DFTI_CONFIG_VALUE my_precision=dfti_get_precision(real_type());
-          DftiCreateDescriptor(&my_handle,my_precision,DFTI_REAL,1,dims);
-          if(outplace) DftiSetValue(my_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
-          if(howmany>1) DftiSetValue(my_handle,DFTI_NUMBER_OF_TRANSFORMS, howmany);
-          DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, dims+2);
-          DftiCommitDescriptor(my_handle); 
-        }
+        ///** create DFFI_DESCRIPTOR for real-to-complex/complex-to-real transformations */
+        //void create_r2c_desc(int dims, int howmany, bool outplace)
+        //{
+        //  if(my_handle) return;
+        //  //if(my_handle) DftiFreeDescriptor(&my_handle); 
+        //  DFTI_CONFIG_VALUE my_precision=dfti_get_precision(real_type());
+        //  DftiCreateDescriptor(&my_handle,my_precision,DFTI_REAL,1,dims);
+        //  if(outplace) DftiSetValue(my_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+        //  if(howmany>1) DftiSetValue(my_handle,DFTI_NUMBER_OF_TRANSFORMS, howmany);
+        //  DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, dims+2);
+        //  DftiCommitDescriptor(my_handle); 
+        //}
     };
 
 }

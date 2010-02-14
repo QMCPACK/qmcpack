@@ -21,6 +21,17 @@ namespace qmcplusplus
   const int FFTW_PATIENT=0;
 #endif
 
+  enum { FFT_INPLACE=0
+    , FFT_COMPLEX=1
+    , FFT_NUMBER_OF_TRANSFORMS=2
+    , FFT_LENGTH=3
+    , FFT_IN_DISTANCE=4
+    , FFT_OUT_DISTANCE=5
+    , FFT_IN_STRIDE=6
+    , FFT_OUT_STRIDE=7
+    , FFT_MAX
+  };
+
   /** dummy declaration of fft_engine_base */
   template<typename T, unsigned ENG> struct fft_engine_base{ };
 }
@@ -28,9 +39,9 @@ namespace qmcplusplus
 #if defined(HAVE_LIBFFTW)
 #include <fft/fftw_engine.h>
 #endif
-#if defined(HAVE_ESSL)
-#include <fft/essl_engine.h>
-#endif
+//#if defined(HAVE_ESSL)
+//#include <fft/essl_engine.h>
+//#endif
 #if defined(HAVE_MKL)
 #include <fft/mkl_engine.h>
 #endif

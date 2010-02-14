@@ -56,63 +56,72 @@ namespace qmcplusplus
 
         /** plan for outplace, complex-to-complex  transform
          */
-        void create_plan(int dims, int howmany, complex_type* in, complex_type* out , int dir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, complex_type* out 
+            , int dir, unsigned uflag)
         {
           if(dir==FFTW_FORWARD)
           { 
             if(forward_plan) fftw_destroy_plan(forward_plan);
-            forward_plan=create_plan_c2c(dims,howmany,mangle(in),mangle(out),dir,uflag);
+            forward_plan=create_plan_c2c(desc,mangle(in),mangle(out),dir,uflag);
           }
           else
           {
             if(backward_plan) fftw_destroy_plan(backward_plan);
-            backward_plan=create_plan_c2c(dims,howmany,mangle(in),mangle(out),dir,uflag);
+            backward_plan=create_plan_c2c(desc,mangle(in),mangle(out),dir,uflag);
           }
         }
 
         /** plan for inplace or outplace, real-to-complex  transform
          */
-        void create_plan(int dims, int howmany, fftw_real* in, fftw_real* out , int dir, unsigned uflag)
+        void create_plan(int* desc, fftw_real* in, fftw_real* out , int dir, unsigned uflag)
         {
           if(dir==FFTW_FORWARD)
           { 
             if(forward_plan) fftw_destroy_plan(forward_plan);
-            forward_plan=create_plan_r2c(dims,howmany,in,mangle(out),uflag);
+            forward_plan=create_plan_r2c(desc,in,mangle(out),uflag);
           }
           else
           {
             if(backward_plan) fftw_destroy_plan(backward_plan);
-            backward_plan=create_plan_c2r(dims,howmany,mangle(in),out,uflag);
+            backward_plan=create_plan_c2r(desc,mangle(in),out,uflag);
           }
         }
 
         /** plan for outplace, real-to-complex */
-        void create_plan(int dims, int howmany, fftw_real* in, complex_type* out, int idir, unsigned uflag)
+        void create_plan(int* desc, fftw_real* in, complex_type* out, int idir, unsigned uflag)
         {
           if(forward_plan) fftw_destroy_plan(forward_plan);
-          forward_plan= create_plan_r2c(dims,howmany,in,mangle(out),uflag);
+          forward_plan= create_plan_r2c(desc,in,mangle(out),uflag);
         }
 
         /** plan for outplace, complex-to-real */
-        void create_plan(int dims, int howmany, complex_type* in, fftw_real* out, int idir, unsigned uflag)
+        void create_plan(int* desc, complex_type* in, fftw_real* out, int idir, unsigned uflag)
         {
           if(backward_plan) fftw_destroy_plan(backward_plan);
-          backward_plan=create_plan_c2r(dims,howmany,mangle(in),out,uflag);
+          backward_plan=create_plan_c2r(desc,mangle(in),out,uflag);
         }
 
         inline void execute_fft(complex_type* inout)
         {
           fftw_execute_dft(forward_plan,mangle(inout),mangle(inout));
         }
+        inline void execute_ifft(complex_type* inout)
+        {
+          fftw_execute_dft(backward_plan,mangle(inout),mangle(inout));
+        }
+
+        inline void execute_fft(fftw_real* inout)
+        {
+          fftw_execute_dft(forward_plan,mangle(inout),mangle(inout));
+        }
+        inline void execute_ifft(fftw_real* inout)
+        {
+          fftw_execute_dft(backward_plan,mangle(inout),mangle(inout));
+        }
 
         inline void execute_fft(complex_type* in, complex_type* out)
         {
           fftw_execute_dft(forward_plan,mangle(in),mangle(out));
-        }
-
-        inline void execute_ifft(complex_type* inout)
-        {
-          fftw_execute_dft(backward_plan,mangle(inout),mangle(inout));
         }
 
         inline void execute_ifft(complex_type* in, complex_type* out)
@@ -131,33 +140,40 @@ namespace qmcplusplus
         }
 
       private:
-        fft_plan_type create_plan_c2c(int dims, int howmany, fftw_complex* in, fftw_complex* out, int idir, unsigned uflag)
+        fft_plan_type create_plan_c2c(int* desc, fftw_complex* in, fftw_complex* out, int idir, unsigned uflag)
         {
-          if(howmany>1)
+          fftw_iodim data_dims;
+          fftw_iodim howmany_dims;
+          if(idir==FFTW_FORWARD)
           {
-            fftw_iodim data_dims;
-            fftw_iodim howmany_dims;
-            data_dims.n=dims; data_dims.is=1; data_dims.os=1;
-            howmany_dims.n=howmany; howmany_dims.is=dims; howmany_dims.os=dims;
-            return fftw_plan_guru_dft(1,&data_dims, 1,&howmany_dims,in,out,idir,uflag);
+            data_dims.n=desc[FFT_LENGTH]; 
+            data_dims.is=desc[FFT_IN_STRIDE]; 
+            data_dims.os=desc[FFT_OUT_STRIDE];
+            howmany_dims.n=desc[FFT_NUMBER_OF_TRANSFORMS]; 
+            howmany_dims.is=desc[FFT_IN_DISTANCE]; 
+            howmany_dims.os=desc[FFT_OUT_DISTANCE];
           }
           else
           {
-            return fftw_plan_dft_1d(dims,in,out,idir,uflag);
+            data_dims.n=desc[FFT_LENGTH]; 
+            data_dims.is=desc[FFT_OUT_STRIDE]; 
+            data_dims.os=desc[FFT_IN_STRIDE];
+            howmany_dims.n=desc[FFT_NUMBER_OF_TRANSFORMS]; 
+            howmany_dims.is=desc[FFT_OUT_DISTANCE]; 
+            howmany_dims.os=desc[FFT_IN_DISTANCE];
           }
+          return fftw_plan_guru_dft(1,&data_dims, 1,&howmany_dims,in,out,idir,uflag);
         }
-        fft_plan_type create_plan_r2c(int dims, int howmany, fftw_real* in, fftw_complex* out, unsigned uflag)
+
+        fft_plan_type create_plan_r2c(int* desc, fftw_real* in, fftw_complex* out, unsigned uflag)
         {
-          if(howmany>1)
-          {
-            fftw_iodim data_dims;
-            fftw_iodim howmany_dims;
-            data_dims.n=dims; data_dims.is=1; data_dims.os=1;
-            howmany_dims.n=howmany; howmany_dims.is=dims+2; howmany_dims.os=dims/2+1;
-            return fftw_plan_guru_dft_r2c(1,&data_dims, 1,&howmany_dims, in, out,uflag);
-          }
-          else
-            return fftw_plan_dft_r2c_1d(dims,in,out,uflag);
+          fftw_iodim data_dims;
+          fftw_iodim howmany_dims;
+          data_dims.n=desc[FFT_LENGTH]; data_dims.is=desc[FFT_IN_STRIDE]; data_dims.os=desc[FFT_OUT_STRIDE];
+          howmany_dims.n=desc[FFT_NUMBER_OF_TRANSFORMS]; 
+          howmany_dims.is=desc[FFT_IN_DISTANCE]; 
+          howmany_dims.os=desc[FFT_OUT_DISTANCE];
+          return fftw_plan_guru_dft_r2c(1,&data_dims, 1,&howmany_dims, in, out,uflag);
         }
 
         /** create complex-to-real backward plan 
@@ -167,18 +183,15 @@ namespace qmcplusplus
          * @param out real output data
          * @param uflag fftw plan (measure ...)
          */
-        fft_plan_type create_plan_c2r(int dims, int howmany, fftw_complex* in, fftw_real* out, unsigned uflag)
+        fft_plan_type create_plan_c2r(int* desc, fftw_complex* in, fftw_real* out, unsigned uflag)
         {
-          if(howmany>1)
-          {
-            fftw_iodim data_dims;
-            fftw_iodim howmany_dims;
-            data_dims.n=dims; data_dims.is=1; data_dims.os=1;
-            howmany_dims.n=howmany; howmany_dims.is=dims/2+1; howmany_dims.os=dims+2;
-            return fftw_plan_guru_dft_c2r(1,&data_dims, 1,&howmany_dims,in,out,uflag);
-          }
-          else
-            return fftw_plan_dft_c2r_1d(dims,in,out,uflag);
+          fftw_iodim data_dims;
+          fftw_iodim howmany_dims;
+          data_dims.n=desc[FFT_LENGTH]; data_dims.is=desc[FFT_OUT_STRIDE]; data_dims.os=desc[FFT_IN_STRIDE];
+          howmany_dims.n=desc[FFT_NUMBER_OF_TRANSFORMS]; 
+          howmany_dims.is=desc[FFT_OUT_DISTANCE]; 
+          howmany_dims.os=desc[FFT_IN_DISTANCE];
+          return fftw_plan_guru_dft_c2r(1,&data_dims, 1,&howmany_dims,in,out,uflag);
         }
 
     };
