@@ -18,6 +18,8 @@
 #include <bitset>
 #include <vector>
 #include <iostream>
+#include <Utilities/IteratorUtility.h>
+#include <type_traits/scalar_traits.h>
 
 namespace qmcplusplus
 {
@@ -89,7 +91,8 @@ namespace qmcplusplus
       my->my_id=my_id;
       my->parent_id=parent_id;
       my->from=m-1-from;
-      my->to=m+to;
+      my->to=to;
+      //my->to=m+to;
       count++;
       if(children.size())
       {
@@ -104,34 +107,58 @@ namespace qmcplusplus
     }
   }; 
 
+  /** CI node with a recursive tree
+   *
+   * Each node handles an excitation from an occupied state to an excited state.
+   */
   template<typename T>
   struct ci_node
   {
+    typedef typename scalar_traits<T>::real_type real_type;
+    typedef typename scalar_traits<T>::value_type value_type;
     typedef Matrix<T> matrix_type;
+    typedef Vector<T> vector_type;
+    /// seiralized ID  of this node
     int my_id;
+    /**  seiralized ID of the parent
+     *
+     * This is not needed in a tree presentation
+     */
     int parent_id;
+    /** the index of the occupied state to be replaced
+     */
     int from;
+    /** the index of the unoccupied state to replace from row/column
+     */
     int to;
-    ///inverse matrix
+    /** inverse matrix
+     */
     matrix_type inverse;
+    ///the occupied states that should be updated
     std::vector<int> peers;
+    ///child nodes
     std::vector<ci_node*> children;
 
+    ///default constructor
     inline ci_node():my_id(0),parent_id(0),from(0),to(0){}
 
     ///copy constructor
     inline ci_node(const ci_node& rhs)
-      :my_id(rhs.my_id),parent_id(rhs.parent_id),from(rhs.from),to(rhs.to)
+      :my_id(rhs.my_id),parent_id(rhs.parent_id)
+       ,from(rhs.from),to(rhs.to),peers(rhs.peers)
     {
-      children.resize(rhs.children.size(),0);
-      for(int i=0; i<children.size();++i)
-        children[i]=new ci_node(*rhs.children[i]);
+      if(rhs.children.size())
+      {
+        children.resize(rhs.children.size(),0);
+        for(int i=0; i<children.size();++i)
+          children[i]=new ci_node(*rhs.children[i]);
+      }
     }
 
     ///destructor
     ~ci_node()
     {
-      for(int i=0; i<children.size(); ++i) delete children[i];
+      delete_iter(children.begin(),children.end());
     }
 
     /** set the peers for recursive updates 
@@ -153,9 +180,9 @@ namespace qmcplusplus
      */
     void set_peers(int m, const std::vector<int>& p_peers)
     {
+      inverse.resize(m,m);
       if(children.size())
       {
-        inverse.resize(m,m);
         peers.reserve(p_peers.capacity());
         for(int i=0; i<p_peers.size(); ++i) if(p_peers[i]!=from) peers.push_back(p_peers[i]);
         for(int i=0; i<children.size(); ++i) children[i]->set_peers(m,peers);
@@ -168,26 +195,35 @@ namespace qmcplusplus
       ci[0].build_tree(m,count,ci,this);
     }
 
-    void getRatios(const matrix_type& psi_big,std::vector<T>& ratios, bool replace_row)
+    /** get ratios with respect to \f$D_0\f$
+     * @param psiv container of the valence states
+     * @param psic container of the conduction states
+     * @param ratios ratios[my_id] is evaluated
+     * @param replace_row true, if rows are replaced
+     */
+    T getRatios(const matrix_type& psiv, const matrix_type& psic, std::vector<T>& ratios, bool replace_row)
     {
       const int m=inverse.rows();
+      inverse=psiv;
+      T det_0=invert_matrix(inverse,true);
       T ratio_base=ratios[0]=1.0;
       if(replace_row)
         for(int i=0; i<children.size();++i)
-          children[i]->getRatiosByRowPromotion(inverse,psi_big,m,ratios,ratio_base);
+          children[i]->getRatiosByRowPromotion(inverse,psic,m,ratios,ratio_base);
       else
         for(int i=0; i<children.size();++i)
-          children[i]->getRatiosByColPromotion(inverse,psi_big,m,ratios,ratio_base);
+          children[i]->getRatiosByColPromotion(inverse,psic,m,ratios,ratio_base);
+      return det_0;
     }
 
     inline void getRatiosByRowPromotion(const matrix_type& inv0
-        , const matrix_type& psi_big
+        , const matrix_type& psic
         , int m
         , std::vector<T>& ratios
         , T ratio_base
         )
     {
-      T utv=BLAS::dot(m,inv0.data()+from,m,psi_big[to],1);
+      T utv=BLAS::dot(m,inv0.data()+from,m,psic[to],1);
       ratios[my_id]=ratio_base*utv;
 
       if(children.size())
@@ -203,25 +239,24 @@ namespace qmcplusplus
         for(int iv=0; iv<peers.size(); ++iv)
         {
           const int vv=peers[iv];
-          T  gamma=-inv_utv*BLAS::dot(m,inv0.data()+vv,m,psi_big[to],1);
+          T  gamma=-inv_utv*BLAS::dot(m,inv0.data()+vv,m,psic[to],1);
           BLAS::axpy(m,gamma,inv0.data()+from,m,inverse.data()+vv,m);
         }
 
         for(int i=0; i<children.size(); ++i)
-          children[i]->getRatiosByRowPromotion(inverse,psi_big,m,ratios,ratio_base);
+          children[i]->getRatiosByRowPromotion(inverse,psic,m,ratios,ratio_base);
       }
     }
 
     inline void getRatiosByColPromotion(const matrix_type& inv0
-        , const matrix_type& psi_big
+        , const matrix_type& psic
         , int m
         , std::vector<T>& ratios
         , T ratio_base
         )
     {
-      T utv=BLAS::dot(m,inv0[from],psi_big[to]);
+      T utv=BLAS::dot(m,inv0[from],psic[to]);
       ratios[my_id]=ratio_base*utv;
-
       if(children.size())
       {
         ratio_base=ratios[my_id];
@@ -235,65 +270,75 @@ namespace qmcplusplus
         for(int iv=0; iv<peers.size(); ++iv)
         {
           const int vv=peers[iv];
-          T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],psi_big[to]);
+          T  gamma=-inv_utv*BLAS::dot(m,inv0[vv],psic[to]);
           BLAS::axpy(m,gamma,inv0[from],inverse[vv]);
         }
 
         for(int i=0; i<children.size(); ++i)
-          children[i]->getRatiosByColPromotion(inverse,psi_big,m,ratios,ratio_base);
+          children[i]->getRatiosByColPromotion(inverse,psic,m,ratios,ratio_base);
       }
     }
 
-    void debugRatios(const matrix_type& psi0, const matrix_type& psi_big,std::vector<T>& dets
+    void debugRatios(const matrix_type& psi0, const matrix_type& psic,std::vector<T>& dets
         , bool replace_row)
     {
       const int m=inverse.rows();
+      inverse=psi0;
+      dets[my_id]=invert_matrix(inverse,true);
       if(replace_row)
-      {
-        for(int i=0; i<children.size();++i)
-        {
-          matrix_type psi(psi0);
-          children[i]->debugRatiosByRowPromotion(psi,psi_big,m,dets);
-        }
-      }
+        for(int i=0; i<children.size();++i) children[i]->debugRatiosByRowPromotion(psi0,psic,m,dets);
       else
-      {
-        for(int i=0; i<children.size();++i)
-        {
-          matrix_type psi(psi0);
-          children[i]->debugRatiosByColPromotion(psi,psi_big,m,dets);
-        }
-      }
+        for(int i=0; i<children.size();++i) children[i]->debugRatiosByColPromotion(psi0,psic,m,dets);
     }
 
-    void debugRatiosByRowPromotion(const matrix_type& psi0, const matrix_type& psi_big,int m, std::vector<T>& dets)
+    void debugRatiosByRowPromotion(const matrix_type& psi0, const matrix_type& psic,int m, std::vector<T>& dets)
     {
-      matrix_type psi(psi0);
-      for(int j=0; j<m;++j) psi(from,j)=psi_big(to,j);
-      //save psi: inverse_matrix will destroy psi
-      matrix_type psip(psi);
-      dets[my_id]=invert_matrix(psi,true);
+      inverse=psi0;
+      for(int j=0; j<m;++j) inverse(from,j)=psic(to,j);
+      matrix_type psip(inverse);
+      dets[my_id]=invert_matrix(inverse,true);
+      for(int i=0; i<children.size();++i)
+        children[i]->debugRatiosByRowPromotion(psip,psic,m,dets);
+    }
+
+    void debugRatiosByColPromotion(const matrix_type& psi0, const matrix_type& psic,int m, std::vector<T>& dets)
+    {
+      inverse=psi0;
+      for(int j=0; j<m;++j) inverse(j,from)=psic(to,j);
+      matrix_type psip(inverse);
+      dets[my_id]=invert_matrix(inverse,true);
+      for(int i=0; i<children.size();++i)
+        children[i]->debugRatiosByColPromotion(psip,psic,m,dets);
+    }
+
+    void ratioByRowSubstitution(const vector_type& psiv_big, int irow, std::vector<T>& ratios)
+    {
+      const int m=inverse.rows();
+      ratios[my_id]=BLAS::dot(m,inverse[irow],psiv_big.data());
+
+      //split a big vector into valance and conduction vectors
+      vector_type psiv(m);
+      vector_type psic(psiv_big.size()-m);
+      BLAS::copy(psic.size(),psiv_big.data()+m,psic.data());
       for(int i=0; i<children.size();++i)
       {
-        psi=psip;
-        children[i]->debugRatiosByRowPromotion(psi,psi_big,m,dets);
+        std::copy(psiv_big.data(),psiv_big.data()+m,psiv.data());
+        children[i]->ratioByRowSubstitution(psiv, psiv_big, irow, m, ratios);
       }
     }
 
-    void debugRatiosByColPromotion(const matrix_type& psi0, const matrix_type& psi_big,int m, std::vector<T>& dets)
+    void ratioByRowSubstitution(vector_type& psiv, const vector_type& psic, int irow, int m, std::vector<T>& ratios)
     {
-      matrix_type psi(psi0);
-      for(int j=0; j<m;++j) psi(j,from)=psi_big(to,j);
-      //save psi: inverse_matrix will destroy psi
-      matrix_type psip(psi);
-      dets[my_id]=invert_matrix(psi,true);
+      psiv(from)=psic(to);
+      ratios[my_id]=BLAS::dot(m,inverse[irow],psiv.data());
+      if(children.empty()) return;
+      vector_type psiv_temp(m);
       for(int i=0; i<children.size();++i)
       {
-        psi=psip;
-        children[i]->debugRatiosByColPromotion(psi,psi_big,m,dets);
+        std::copy(psiv.begin(),psiv.end(),psiv_temp.data());
+        children[i]->ratioByRowSubstitution(psiv_temp, psic, irow, m, ratios);
       }
     }
-
 
     //this is just debug
     void write_node(ostream& os)
