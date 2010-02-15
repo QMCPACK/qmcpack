@@ -38,7 +38,7 @@ int main(int argc, char** argv)
   typedef ci_node_proxy node_type;
   vector<node_type> excitations;
 
-  int multiplet=2;
+  int multiplet=3;
   int nparent=0;
   int nchildren=0;
 
@@ -65,16 +65,17 @@ int main(int argc, char** argv)
   excitations[0].write_node<max_states>(fout,0,count,excitations);
 
   count=0;
-  ci_node real_nodes;
+  ci_node<double> real_nodes;
   real_nodes.build_tree(64,excitations);
+  real_nodes.set_peers(64,vmax);
 
   ofstream fout1("tree_1.xml");
   real_nodes.write_node(fout1);
 
   //copy constructor
-  ci_node copied(real_nodes);
-
+  ci_node<double> copied(real_nodes);
   ofstream fout2("tree_2.xml");
   copied.write_node(fout2);
+
   return 0;
 }
