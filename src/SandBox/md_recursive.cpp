@@ -26,6 +26,7 @@
 #include <QMCWaveFunctions/Fermion/excitation_node.h>
 #include <QMCWaveFunctions/Fermion/ci_builder.h>
 #include <Utilities/IteratorUtility.h>
+#include <fstream>
 using namespace qmcplusplus;
 using namespace std;
 
@@ -33,7 +34,7 @@ int main(int argc, char** argv)
 {
   const int max_states=8;
   const int vmax=4;
-  const int cmax=4;
+  const int cmax=8;
   typedef excitation_node<double> node_type;
   vector<node_type> excitations;
 
@@ -58,15 +59,20 @@ int main(int argc, char** argv)
     }
   }
 
+
+
   int M=8;
   typedef Matrix<double> mat_t;
   vector<mat_t*> dets(excitations.size());
   mat_t psi_big(M+cmax,M), psi_test(M,M);
 
+
   for(int i=0; i<psi_big.size();++i) psi_big(i)=Random();
   //allocate the inverse matrix
-  for(int i=0; i<excitations.size(); ++i) excitations[i].resize(M);
+  //for(int i=0; i<excitations.size(); ++i) excitations[i].resize(M);
   for(int i=0; i<dets.size(); ++i) dets[i]=new mat_t(M,M);
+
+  excitations[0].resize(M,vmax,excitations);
 
   mat_t uv(vmax,cmax);
   double phase0,phase1;
@@ -88,34 +94,41 @@ int main(int argc, char** argv)
   excitations[0].inverse=(*dets[0]);
 
   //using implicit method
-  excitations[0].get_ratios_root(psi_big,excitations,ratios_impl,M-vmax);
-
-  //using bebug method
-  excitations[0].get_ratios_root_debug(psi_big,excitations,ratios);
+  bool promote_row=true;
+  excitations[0].getRatios(psi_big,excitations,ratios_impl,promote_row);
+  excitations[0].inverseUpdate(psi_big,excitations,ratios,promote_row);
 
   for(int i=0; i<ratios.size(); ++i)
     cout << "Ratio " << i << " " << ratios_impl[i] << " " << ratios[i] << endl;
 
 
-  for(int i=0; i<excitations.size(); ++i) 
-  {
-    node_type cur(excitations[i]);
-    int pid=cur.parent_id;
-    node_type parent(excitations[pid]);
-    bitset<cmax> valence(cur.ground);
-    cout << "<node level=\"" << valence.count()
-      << "\" g=\"" <<  valence
-      << "\" e=\"" << bitset<max_states>(cur.excited)
-      << "\" g_id=\"" << cur.ground
-      << "\" e_id=\"" << cur.excited
-      << "\" my_id=\"" << cur.my_id
-      << "\" p_id=\"" << pid
-      << "\" from=\"" << cur.from
-      << "\" to=\"" << cur.to
-      << "\"/>" 
-      << " ratio = " << ratios[i] 
-      << endl;
-  }
+  ofstream fout("tree.xml");
+  int npeers=0;
+  int count=0;
+  excitations[0].write_node<max_states>(fout,0,count,excitations);
+
+  //for(int i=0; i<excitations.size(); ++i) 
+  //{
+  //  node_type cur(excitations[i]);
+  //  int pid=cur.parent_id;
+  //  node_type parent(excitations[pid]);
+  //  bitset<cmax> valence(cur.ground);
+  //  cout << "<node level=\"" << valence.count()
+  //    << "\" g=\"" <<  valence
+  //    << "\" e=\"" << bitset<max_states>(cur.excited)
+  //    << "\" g_id=\"" << cur.ground
+  //    << "\" e_id=\"" << cur.excited
+  //    << "\" my_id=\"" << cur.my_id
+  //    << "\" p_id=\"" << pid
+  //    << "\" from=\"" << cur.from
+  //    << "\" to=\"" << cur.to
+  //    << "\"/>" 
+  //    << " ratio = " << ratios[i] 
+  //    << endl;
+  //  npeers += excitations[i].peers.size();
+  //}
+
+  cout << "Total number of rows updated " << npeers << " " << M*excitations.size() << endl;
 
   for(int i=det_offset[0]; i<det_offset[1];++i)
   {
@@ -123,7 +136,7 @@ int main(int argc, char** argv)
     int c=M+excitations[i].to;
 
     std::copy(psi_big[0],psi_big[M],dets[i]->data());
-    for(int j=0; j<M; ++j) (*dets[i])(j,v)=psi_big(c,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v,j)=psi_big(c,j);
     //double logdet_1=InvertWithLog(dets_ref[i]->data(),M,M,phase1);
     double det_1=invert_matrix(*dets[i],true);
     psi_test=*dets[i] - excitations[i].inverse;
@@ -143,8 +156,8 @@ int main(int argc, char** argv)
     int v=M-excitations[i].from-1;
     int c=M+excitations[i].to;
     std::copy(psi_big[0],psi_big[M],dets[i]->data());
-    for(int j=0; j<M; ++j) (*dets[i])(j,v0)=psi_big(c0,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v)=psi_big(c,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v0,j)=psi_big(c0,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v ,j)=psi_big(c ,j);
     double det_1=invert_matrix(*dets[i],true);
     cout <<setw(4) <<  i << " from=" << setw(4) << v0 << " " << setw(4) << v << " to=" <<setw(4) <<  c0 <<setw(4) <<  c  << " "
       << setw(20) << ratios[i]<< setw(20) << (1.0-det_1/(det_0*ratios[i]))
@@ -164,9 +177,9 @@ int main(int argc, char** argv)
     int v=M-excitations[i].from-1;
     int c=M+excitations[i].to;
     std::copy(psi_big[0],psi_big[M],dets[i]->data());
-    for(int j=0; j<M; ++j) (*dets[i])(j,v0)=psi_big(c0,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v1)=psi_big(c1,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v)=psi_big(c,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v0,j)=psi_big(c0,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v1,j)=psi_big(c1,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v ,j)=psi_big(c ,j);
     double det_1=invert_matrix(*dets[i],true);
     cout <<setw(4) <<  i << " from=" << setw(4) << v0 << setw(4) << v1 << setw(4) << v 
       << " to=" <<setw(4) << c0 << setw(4) << c1 << setw(4) <<  c  << " "
@@ -190,10 +203,10 @@ int main(int argc, char** argv)
     int v=M-excitations[i].from-1;
     int c=M+excitations[i].to;
     std::copy(psi_big[0],psi_big[M],dets[i]->data());
-    for(int j=0; j<M; ++j) (*dets[i])(j,v0)=psi_big(c0,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v1)=psi_big(c1,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v2)=psi_big(c2,j);
-    for(int j=0; j<M; ++j) (*dets[i])(j,v)=psi_big(c,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v0,j)=psi_big(c0,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v1,j)=psi_big(c1,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v2,j)=psi_big(c2,j);
+    for(int j=0; j<M; ++j) (*dets[i])(v ,j)=psi_big(c ,j);
     double det_1=invert_matrix(*dets[i],true);
     cout <<setw(4) <<  i << " from=" << setw(4) << v0 << setw(4) << v1 << setw(4) << v2 << setw(4) << v 
       << " to=" <<setw(4) << c0 << setw(4) << c1 << setw(4) << c2 << setw(4) <<  c  << " "
