@@ -41,7 +41,6 @@ inline void check_ratios(const CT& a, const CT& b, T eps)
      cout << i << " recursive=" << a[i] << " error=" << del << endl;
 }
 
-
 int main(int argc, char** argv)
 {
   const int max_states=8;
@@ -72,7 +71,6 @@ int main(int argc, char** argv)
   }
 
   ofstream fout("tree.xml");
-  int npeers=0;
   int count=0;
   excitations[0].write_node<max_states>(fout,0,count,excitations);
 
@@ -86,32 +84,43 @@ int main(int argc, char** argv)
   CI.write_node(fout1);
 
   typedef Matrix<double> mat_t;
-  mat_t psiv(M,M), psic(cmax,M), Identity(M,M);
+  typedef Vector<double> vec_t;
+
+  mat_t psi0(M,M), psiv(M,M), psic(cmax,M), Identity(M,M);
+  vec_t psiv_big(M+cmax);
 
   //build up big  psi
   for(int i=0; i<psiv.size();++i) psiv(i)=Random();
   for(int i=0; i<psic.size();++i) psic(i)=Random();
+  psi0=psiv;//save
 
+  vector<double> dets(excitations.size()),ratios(excitations.size()), ptcl_ratios(excitations.size());
+  const bool substitute_col=false;
   const double eps=1e-12;
-  vector<double> dets(excitations.size()),ratios(excitations.size());
+  double det_0,det_inv;
 
-  {
-    double det_0=CI.getRatios(psiv,psic,ratios,true);
-    CI.debugRatios(psiv,psic,dets,true);
+  det_0=CI.getRatios(psiv,psic,ratios,substitute_col);
+  CI.debugRatios(psiv,psic,dets,substitute_col);
 
-    cout << "Checking row replacement " << endl;
-    for(int i=0; i<ratios.size(); ++i) ratios[i]*=det_0;
-    check_ratios(ratios,dets,eps);
-  }
+  for(int i=0; i<ratios.size(); ++i) ratios[i]*=det_0;
+  check_ratios(dets,ratios,eps);
 
-  {
-    double det_0=CI.getRatios(psiv,psic,ratios,false);
-    CI.debugRatios(psiv,psic,dets,false);
+  //pick a particle index
+  int iat=0;
+  CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios);
 
-    cout << "Checking column replacement " << endl;
-    for(int i=0; i<ratios.size(); ++i) ratios[i]*=det_0;
-    check_ratios(ratios,dets,eps);
-  }
+  //psi_big=psi0;
+  //for(int i=0; i<psi_big.rows(); ++i) psi_big(i,iat)=psiv_big(i);
+  //std::copy(psi_big[0],psi_big[M],psi_test.data());
+  //CI.inverse=psi_test;
+  //det_0=invert_matrix(CI.inverse,true);
+
+  //dets[0]=det_0;
+  //CI.debugRatios(psi_test,psi_big,dets,substitute_col);
+  //CI.getRatios(psi_big,ratios,substitute_col);
+  //det_inv=1.0/det_0;
+  //for(int i=0; i<ratios.size(); ++i) dets[i]*=det_inv;
+  //check_ratios(dets,ratios,eps);
 
   return 0;
 }
