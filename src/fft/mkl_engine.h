@@ -143,7 +143,7 @@ namespace qmcplusplus
           {
             DftiCreateDescriptor(&my_handle,my_precision,DFTI_REAL,1,desc[FFT_LENGTH]);
             DftiSetValue(my_handle,DFTI_INPUT_DISTANCE, desc[FFT_IN_DISTANCE]);
-            DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, desc[FFT_IN_DISTANCE]);//this is strange
+            DftiSetValue(my_handle,DFTI_OUTPUT_DISTANCE, 2*desc[FFT_OUT_DISTANCE]);//2 for complex
           }
           if(!desc[FFT_INPLACE]) DftiSetValue(my_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
           DftiSetValue(my_handle,DFTI_NUMBER_OF_TRANSFORMS, desc[FFT_NUMBER_OF_TRANSFORMS]);

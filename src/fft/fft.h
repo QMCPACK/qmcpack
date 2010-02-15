@@ -39,9 +39,9 @@ namespace qmcplusplus
 #if defined(HAVE_LIBFFTW)
 #include <fft/fftw_engine.h>
 #endif
-//#if defined(HAVE_ESSL)
-//#include <fft/essl_engine.h>
-//#endif
+#if defined(HAVE_ESSL)
+#include <fft/essl_engine.h>
+#endif
 #if defined(HAVE_MKL)
 #include <fft/mkl_engine.h>
 #endif
