@@ -1012,7 +1012,7 @@ check_inv (T1 **A, T2 **B, int N, int Astride, int Bstride)
       }
     
       double expected = (row==col) ? 1.0 : 0.0;
-      error = error || (fabs(AB[tid]-expected) > 1.0e-8);
+      error = error || (fabs(AB[tid]-expected) > 1.0e-6);
     }
   if (tid == 0) 
     A[blockIdx.x] = (T1*)(error ? 1 : 0);
