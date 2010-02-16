@@ -405,27 +405,27 @@ namespace qmcplusplus
         for (int iat=0; iat<PropertyHistory.size();iat++)m.Pack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
         m.Pack(&(PHindex[0]),PHindex.size());
 
-	#ifdef QMC_CUDA
-      // Pack GPU data
-      gpu::host_vector<CUDA_PRECISION> host_data;
-      gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-      gpu::host_vector<CUDA_PRECISION> host_lapl;
-
-      host_data = cuda_DataSet;
-      R_host = R_GPU;
-      int size = host_data.size();
-      int N = R_host.size();
-      m.Pack(size);
-      m.Pack(N);
-      m.Pack(&(host_data[0]), host_data.size());
-      m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-      R_host = Grad_GPU;
-      m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-      
-      host_lapl = Lap_GPU;
-      m.Pack(&(host_lapl[0]), host_lapl.size());
+#ifdef QMC_CUDA
+	// Pack GPU data
+	gpu::host_vector<CUDA_PRECISION> host_data;
+	gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+	gpu::host_vector<CUDA_PRECISION> host_lapl;
+	
+	host_data = cuda_DataSet;
+	R_host = R_GPU;
+	int size = host_data.size();
+	int N = R_host.size();
+	m.Pack(size);
+	m.Pack(N);
+	m.Pack(&(host_data[0]), host_data.size());
+	m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
+	R_host = Grad_GPU;
+	m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
+	
+	host_lapl = Lap_GPU;
+	m.Pack(&(host_lapl[0]), host_lapl.size());
 #endif
-
+	
         return m;
       }
 
@@ -450,28 +450,28 @@ namespace qmcplusplus
         m.Unpack(&(PHindex[0]),PHindex.size());
 
 #ifdef QMC_CUDA
-      // Pack GPU data
-      gpu::host_vector<CUDA_PRECISION> host_data;
-      gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-      gpu::host_vector<CUDA_PRECISION> host_lapl;
-
-      int size, N;
-      m.Unpack(size);
-      m.Unpack(N);
-      host_data.resize(size);
-      R_host.resize(N);
-      host_lapl.resize(N);
-
-      m.Unpack(&(host_data[0]), size);
-      cuda_DataSet = host_data;
-
-      m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
-      R_GPU = R_host;
-      m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
-      Grad_GPU = R_host;
-      
-      m.Unpack(&(host_lapl[0]), N);
-      Lap_GPU = host_lapl;
+	// Pack GPU data
+	gpu::host_vector<CUDA_PRECISION> host_data;
+	gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+	gpu::host_vector<CUDA_PRECISION> host_lapl;
+	
+	int size, N;
+	m.Unpack(size);
+	m.Unpack(N);
+	host_data.resize(size);
+	R_host.resize(N);
+	host_lapl.resize(N);
+	
+	m.Unpack(&(host_data[0]), size);
+	cuda_DataSet = host_data;
+	
+	m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
+	R_GPU = R_host;
+	m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
+	Grad_GPU = R_host;
+	
+	m.Unpack(&(host_lapl[0]), N);
+	Lap_GPU = host_lapl;
 #endif
 
         return m;
