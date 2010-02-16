@@ -343,6 +343,7 @@ namespace qmcplusplus
 	real_type radius = -1.0;
         rAttrib.add(NumParams,   "size");
         rAttrib.add(radius,      "rcut");
+        rAttrib.add(radius,      "cutoff");
         rAttrib.put(cur);
 
         if (radius < 0.0) 
