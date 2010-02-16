@@ -41,6 +41,14 @@ SET(QMCDRIVERS
   ../Estimators/CollectablesEstimator.cpp
 )
 
+IF(QMC_CUDA)
+   SET(QMCDRIVERS ${QMCDRIVERS}
+   VMC/VMC_CUDA.cpp
+   DMC/DMC_CUDA.cpp
+   QMCCostFunctionCUDA.cpp)
+ENDIF(QMC_CUDA)
+
+
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp

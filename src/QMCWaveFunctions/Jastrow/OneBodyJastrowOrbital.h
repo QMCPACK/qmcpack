@@ -74,7 +74,7 @@ namespace qmcplusplus
   template<class FT>
   class OneBodyJastrowOrbital: public OrbitalBase
     {
-
+    protected:
       const ParticleSet& CenterRef;
       const DistanceTableData* d_table;
 

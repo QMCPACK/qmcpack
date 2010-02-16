@@ -1416,11 +1416,11 @@ two_body_grad_lapl(float *R[], int e1_first, int e1_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  // if (sim_cell_radius >= rMax) 
-  // two_body_grad_lapl_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
-  //   (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
-  //    rMax, lattice, latticeInv,  gradLapl, row_stride);
-  // else
+  if (sim_cell_radius >= rMax) 
+  two_body_grad_lapl_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
+    (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
+     rMax, lattice, latticeInv,  gradLapl, row_stride);
+  else
     two_body_grad_lapl_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
        rMax, lattice, latticeInv,  gradLapl, row_stride);

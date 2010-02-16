@@ -50,6 +50,8 @@ using namespace std;
 #define dsyr2k dsyr2k_
 #define dgetrf dgetrf_
 #define dgetri dgetri_
+#define sgetrf sgetrf_
+#define sgetri sgetri_
 #define zgetrf zgetrf_
 #define zgetri zgetri_
 #define dgesvd dgesvd_
@@ -152,12 +154,17 @@ extern "C" {
   void dgetrf(const int& n, const int& m, double* a, const int& n0, 
 	      int* piv, int& st);
 
+  void sgetrf(const int& n, const int& m, float* a, const int& n0, 
+	      int* piv, int& st);
+
   void zgetrf(const int& n, const int& m, complex<double>* a, const int& n0, 
 	      int* piv, int& st);
 
   void dgetri(const int& n, double* a, const int& n0, 
 	      int* piv, double* work, const int&, int& st);
 
+  void sgetri(const int& n, float* a, const int& n0, 
+	      int* piv, float* work, const int&, int& st);
 
   void zgetri(const int& n, complex<double>* a, const int& n0, 
 	      int* piv, complex<double>* work, const int&, int& st);

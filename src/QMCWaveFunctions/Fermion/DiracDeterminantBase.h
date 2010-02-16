@@ -255,6 +255,57 @@ namespace qmcplusplus
       ParticleSet::ParticleLaplacian_t myL, myL_temp;
 //
       virtual inline void setLogEpsilon(ValueType x) { }
+
+#ifdef QMC_CUDA
+    /////////////////////////////////////////////////////
+    // Functions for vectorized evaluation and updates //
+    /////////////////////////////////////////////////////
+    virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
+      { cerr << "Need specialization of DiracDetermiantBase::recompute.\n";  abort(); }
+
+    virtual void 
+    reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+      { cerr << "Need specialization of DiracDetermiantBase::reserve.\n";  abort(); }
+
+    virtual void 
+    addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi)
+      { cerr << "Need specialization of DiracDetermiantBase::addLog.\n";  abort(); }
+
+    virtual void 
+    ratio (MCWalkerConfiguration &W, int iat,
+	   vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+	   vector<ValueType> &lapl)
+      { cerr << "Need specialization of DiracDetermiantBase::ratio.\n";  abort(); }
+
+    virtual void 
+    ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
+	   vector<PosType> &rNew, vector<ValueType> &psi_ratios, 
+	   vector<GradType>  &grad, vector<ValueType> &lapl)
+      { cerr << "Need specialization of DiracDetermiantBase::ratio.\n";  abort(); }
+
+    virtual void 
+    addGradient(MCWalkerConfiguration &W, int iat,
+    		vector<GradType> &grad)
+      { cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";  abort(); }
+
+    virtual void update (vector<Walker_t*> &walkers, int iat)
+      { cerr << "Need specialization of DiracDetermiantBase::update.\n";  abort(); }
+
+    virtual void 
+    update (const vector<Walker_t*> &walkers, 
+	    const vector<int> &iatList) 
+      { cerr << "Need specialization of DiracDetermiantBase::update.\n";  abort(); }
+    
+    void 
+    gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+	      ValueMatrix_t &lapl)
+      { cerr << "Need specialization of DiracDetermiantBase::gradLapl.\n";  abort(); }
+
+    virtual void 
+    NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
+	      vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+      { cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";  abort(); }
+#endif
     };
 
 

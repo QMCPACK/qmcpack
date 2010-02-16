@@ -27,6 +27,21 @@ namespace qmcplusplus {
   //Forward declaration
   struct MultiChain;
 
+  struct MCSample {
+    ParticleSet::ParticlePos_t R;
+    ParticleSet::ParticleGradient_t G;
+    ParticleSet::ParticleLaplacian_t L;
+    ParticleSet::RealType LogPsi, KE, PE;
+    MCSample(ParticleSet::ParticlePos_t r,
+	     ParticleSet::ParticleGradient_t g,
+	     ParticleSet::ParticleLaplacian_t l,
+	     ParticleSet::RealType logpsi, 
+	     ParticleSet::RealType ke, 
+	     ParticleSet::RealType pe) :
+      R(r), G(g), L(l), LogPsi(logpsi), KE(ke), PE(pe)
+    { }
+  };
+
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
    *As a derived class from ParticleSet, MCWalkerConfiguration interacts with
@@ -70,6 +85,33 @@ namespace qmcplusplus {
      * WalkerOffsets is added to handle parallel I/O with hdf5
      */
     vector<int> WalkerOffsets;
+
+    // Data for GPU-acceleration via CUDA
+    // These hold a list of pointers to the positions, gradients, and
+    // laplacians for each walker.  These vectors .data() is often
+    // passed to GPU kernels.
+#ifdef QMC_CUDA
+    gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
+    gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
+    gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
+    gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;    
+    gpu::device_vector<int> iatList_GPU;
+    gpu::host_vector<int> iatList_host;
+    gpu::device_vector<CUDA_PRECISION*> NLlist_GPU;
+    gpu::host_vector<CUDA_PRECISION*> NLlist_host;
+    vector<PosType>                                    Rnew;
+    gpu::device_vector<int> AcceptList_GPU;
+    gpu::host_vector<int> AcceptList_host;
+    void copyWalkersToGPU(bool copyGrad=false);
+    void updateLists_GPU();
+    int CurrentParticle;
+    void proposeMove_GPU 
+    (vector<PosType> &newPos, int iat);
+    void acceptMove_GPU(vector<bool> &toAccept);
+    void NLMove_GPU (vector<Walker_t*> &walkers, 
+		     vector<PosType> &Rnew,
+		     vector<int> &iat);
+#endif
 
     ///default constructor
     MCWalkerConfiguration();
@@ -284,6 +326,7 @@ namespace qmcplusplus {
 
     RealType LocalEnergy;
 
+  public:
     ///a collection of walkers
     WalkerList_t WalkerList;
 
@@ -294,7 +337,7 @@ namespace qmcplusplus {
      int MaxSamples;
      int CurSampleCount;
      //add samples
-     vector<ParticlePos_t*> SampleStack;
+     vector<MCSample> SampleStack;
 
     /** initialize the PropertyList
      *

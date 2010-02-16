@@ -271,7 +271,7 @@ namespace qmcplusplus {
     {
       app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
       //this is a new grid
-      RealType d=1e-3;
+      RealType d=1e-4;
       LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
 
       // If the global grid is already linear, do not interpolate the data

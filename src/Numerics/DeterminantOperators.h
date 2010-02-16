@@ -110,6 +110,14 @@ namespace qmcplusplus {
       int status;
       dgetrf(n,m,a,n0,piv,status);
     }
+  inline void 
+    LUFactorization(const int& n, const int& m, float* restrict a, const int& n0, 
+		    int* restrict piv) 
+    {
+      int status;
+      sgetrf(n,m,a,n0,piv,status);
+    }
+
 
   /** LU factorization of complex<double> */
   inline void 
@@ -126,6 +134,14 @@ namespace qmcplusplus {
     int status;
     dgetri(n,a,n0,piv,work,n1,status);
   }
+
+  inline void InvertLU(const int& n, float* restrict a, const int& n0, 
+    int* restrict piv, float* restrict work, const int& n1){
+    int status;
+    sgetri(n,a,n0,piv,work,n1,status);
+  }
+
+
 
   /** Inversion of a complex<double> matrix after LU factorization*/
   inline void InvertLU(int n, std::complex<double>* restrict a, int n0

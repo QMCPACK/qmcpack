@@ -67,6 +67,7 @@ namespace qmcplusplus {
      * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
      */
     int selectMove(RealType prob);
+    int selectMove(RealType prob, vector<NonLocalData> &txy);
   };
 
 }

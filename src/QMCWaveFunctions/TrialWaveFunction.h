@@ -53,6 +53,14 @@ namespace qmcplusplus
       typedef OrbitalBase::PosType            PosType;
       typedef OrbitalBase::GradType           GradType;
       typedef OrbitalBase::BufferType         BufferType;
+#ifdef QMC_CUDA
+      typedef OrbitalBase::CudaValueType   CudaValueType;
+      typedef OrbitalBase::CudaGradType    CudaGradType;
+      typedef OrbitalBase::CudaRealType    CudaRealType;
+      typedef OrbitalBase::ValueMatrix_t   ValueMatrix_t;
+      typedef OrbitalBase::GradMatrix_t    GradMatrix_t;
+      typedef ParticleSet::Walker_t        Walker_t;
+#endif
 
       ///differential gradients
       ParticleSet::ParticleGradient_t G;
@@ -218,6 +226,7 @@ namespace qmcplusplus
         return myTwist;
       }
 
+
     private:
 
       ///control how ratio is calculated
@@ -265,6 +274,83 @@ namespace qmcplusplus
 
       vector<NewTimer*> myTimers;
       vector<RealType> myTwist;
+
+      ///////////////////////////////////////////
+      // Vectorized version for GPU evaluation //
+      ///////////////////////////////////////////
+#ifdef QMC_CUDA
+    private:
+      gpu::device_host_vector<CudaValueType>   GPUratios;
+      gpu::device_host_vector<CudaGradType>    GPUgrads;
+      gpu::device_host_vector<CudaValueType>   GPUlapls;
+
+    public:
+      void freeGPUmem();
+      
+      void recompute (MCWalkerConfiguration &W, bool firstTime=true);
+      
+      void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool,
+		    bool onlyOptimizable=false);
+      
+      void getGradient (MCWalkerConfiguration &W, int iat,
+			vector<GradType> &grad);
+      void evaluateLog (MCWalkerConfiguration &W,
+			vector<RealType> &logPsi);
+      void ratio (MCWalkerConfiguration &W, int iat,
+		  vector<ValueType> &psi_ratios);
+      void ratio (MCWalkerConfiguration &W, int iat,
+		  vector<ValueType> &psi_ratios,
+		  vector<GradType> &newG);
+      void ratio (MCWalkerConfiguration &W, int iat,
+		  vector<ValueType> &psi_ratios,
+		  vector<GradType> &newG,
+		  vector<ValueType> &newL);
+      void ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
+		  vector<PosType> &rNew,
+		  vector<ValueType> &psi_ratios,
+		  vector<GradType> &newG,
+		  vector<ValueType> &newL);
+      void NLratios (MCWalkerConfiguration &W,
+		     gpu::device_vector<CUDA_PRECISION*> &Rlist,
+		     gpu::device_vector<int*>            &ElecList,
+		     gpu::device_vector<int>             &NumCoreElecs,
+		     gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
+		     gpu::device_vector<CUDA_PRECISION*> &RatioList,
+		     int numQuadPoints);
+      void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
+		     vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+      
+      void update (vector<Walker_t*> &walkers, int iat);
+      void update (const vector<Walker_t*> &walkers, 
+		   const vector<int> &iatList);
+      
+      void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+		     ValueMatrix_t &lapl);
+      
+      
+      void evaluateDeltaLog(MCWalkerConfiguration &W, 
+			    vector<RealType>& logpsi_opt);
+      
+      void evaluateDeltaLog(MCWalkerConfiguration &W, 
+			    vector<RealType>& logpsi_fixed,
+			    vector<RealType>& logpsi_opt,
+			    GradMatrix_t&  fixedG,
+			    ValueMatrix_t& fixedL);
+      
+      void evaluateOptimizableLog (MCWalkerConfiguration &W,  
+				   vector<RealType>& logpsi_opt,  
+				   GradMatrix_t&  optG,
+				   ValueMatrix_t& optL);
+      
+      
+      void evaluateDerivatives (MCWalkerConfiguration &W, 
+				const opt_variables_type& optvars,
+				ValueMatrix_t &dlogpsi,
+				ValueMatrix_t &dhpsioverpsi);
+
+#endif
+
+
     };
   /**@}*/
 }

@@ -20,6 +20,10 @@
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
+#ifdef QMC_CUDA
+  #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+  #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
+#endif
 
 namespace qmcplusplus {
   /** constructor
@@ -82,7 +86,13 @@ namespace qmcplusplus {
       {
 	if (doForces) 
 	  app_log() << "  Will compute forces in CoulombPBCABTemp.\n" << endl;
-        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl, doForces);
+#ifdef QMC_CUDA
+        CoulombPBCAB_CUDA* apot=
+	  new CoulombPBCAB_CUDA(IonConfig,targetPtcl, doForces);
+#else
+	CoulombPBCABTemp* apot =
+	  new CoulombPBCABTemp(IonConfig,targetPtcl, doForces);
+#endif
         for(int i=0; i<localPot.size(); i++) {
           if(localPot[i]) apot->add(i,localPot[i]);
         }
@@ -108,7 +118,14 @@ namespace qmcplusplus {
       targetPtcl.resizeSphere(IonConfig.getTotalNum());
 
       RealType rc2=0.0;
-      NonLocalECPotential* apot = new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+#ifdef QMC_CUDA   
+      NonLocalECPotential_CUDA* apot = 
+	new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi, doForces);
+#else
+      NonLocalECPotential* apot = 
+	new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+#endif
+
       for(int i=0; i<nonLocalPot.size(); i++) 
       {
         if(nonLocalPot[i]) 

@@ -103,22 +103,18 @@ evaluate3DSplineComplexToReal
 
 
 
-template<typename T>
-void CalcYlmRealCuda (T *rhats,  HybridJobType *job_type,
-		      T **Ylm_ptr, T **dYlm_dtheta_ptr, T **dYlm_dphi_ptr, 
+void CalcYlmRealCuda (float *rhats,  HybridJobType *job_type,
+		      float **Ylm_ptr, float **dYlm_dtheta_ptr, float **dYlm_dphi_ptr, 
 		      int lMax, int N);
 
-template<typename T>
-void CalcYlmComplexCuda (T *rhats,  HybridJobType *job_type,
-			 T **Ylm_ptr, T **dYlm_dtheta_ptr, T **dYlm_dphi_ptr, 
+void CalcYlmComplexCuda (float *rhats,  HybridJobType *job_type,
+			 float **Ylm_ptr, float **dYlm_dtheta_ptr, float **dYlm_dphi_ptr, 
 			 int lMax, int N);
 
-template<typename T>
-void CalcYlmRealCuda (T *rhats,  HybridJobType *job_type,
-		      T **Ylm_ptr, int lMax, int N);
+void CalcYlmRealCuda (float *rhats,  HybridJobType *job_type,
+		      float **Ylm_ptr, int lMax, int N);
 
-template<typename T>
-void CalcYlmComplexCuda (T *rhats,  HybridJobType *job_type,
-			 T **Ylm_ptr, int lMax, int N);
+void CalcYlmComplexCuda (float *rhats,  HybridJobType *job_type,
+			 float **Ylm_ptr, int lMax, int N);
 
 #endif

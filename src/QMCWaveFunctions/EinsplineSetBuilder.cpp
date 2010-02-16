@@ -27,6 +27,41 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus {
+#ifdef QMC_CUDA
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
+					     multi_UBspline_3d_s_cuda* &out)
+  { out = create_multi_UBspline_3d_s_cuda_conv (in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
+					     multi_UBspline_3d_d_cuda * &out)
+  { out = create_multi_UBspline_3d_d_cuda(in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_c_cuda* &out)
+  { out = create_multi_UBspline_3d_c_cuda_conv (in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_z_cuda * &out)
+  { out = create_multi_UBspline_3d_z_cuda(in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_d_cuda * &out)
+  { 
+    app_error() << "Attempted to convert complex CPU spline into a real "
+		<< " GPU spline.\n";
+    abort();
+  }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_s_cuda * &out)
+  { 
+    app_error() << "Attempted to convert complex CPU spline into a real "
+		<< " GPU spline.\n";
+    abort();
+  }
+#endif
+
+
   std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
   EinsplineSetBuilder::OrbitalMap;
   std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet>
@@ -674,6 +709,7 @@ namespace qmcplusplus {
     int numOrbs = 0;
     bool sortBands = true;
     string sourceName;
+    bool useGPU = false;
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
     attribs.add (sortBands,  "sort");
@@ -681,6 +717,7 @@ namespace qmcplusplus {
     attribs.add (TwistNum,   "twistnum");
     attribs.add (sourceName, "source");
     attribs.add (MeshFactor, "meshfactor");
+    attribs.add (useGPU,     "gpu");    
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
@@ -793,16 +830,21 @@ namespace qmcplusplus {
     //////////////////////////////////
     if (HaveLocalizedOrbs)
       OrbitalSet = new EinsplineSetLocal;
-    else if (UseRealOrbitals)
-    {
-      app_log() << "!!!!!!! Creating EinsplineSetExtended<double>" << endl;
-      OrbitalSet = new EinsplineSetExtended<double> ;
+#ifdef QMC_CUDA
+    else if (AtomicOrbitals.size() > 0) {
+      if (UseRealOrbitals) 
+	OrbitalSet = new EinsplineSetHybrid<double>;
+      else
+	OrbitalSet = new EinsplineSetHybrid<complex<double> >;
     }
-    else
-    {
-      app_log() << "!!!!!!! Creating EinsplineSetExtended<complex<double> >" << endl;
-      OrbitalSet = new EinsplineSetExtended<complex<double> > ;
+#endif
+    else {
+      if (UseRealOrbitals) 
+	OrbitalSet = new EinsplineSetExtended<double>;
+      else
+	OrbitalSet = new EinsplineSetExtended<complex<double> >;
     }
+
     /////////////////////////
     // Setup internal data //
     /////////////////////////
@@ -854,6 +896,27 @@ namespace qmcplusplus {
 	    ReadBands_ESHDF(spinSet,orbitalSet);
 	  else
 	    ReadBands(spinSet, orbitalSet); 
+#ifdef QMC_CUDA
+	  if (true || useGPU) {
+	    app_log() << "Copying einspline orbitals to GPU.\n";
+	    create_multi_UBspline_3d_cuda 
+	      (orbitalSet->MultiSpline, orbitalSet->CudaMultiSpline);
+	    app_log() << "Successful copy.\n";
+	    // Destroy original CPU spline
+	    // HACK HACK HACK
+	    //destroy_Bspline (orbitalSet->MultiSpline);
+	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+	    orbitalSet->Linv_cuda.resize(9);
+	    orbitalSet->L_cuda.resize(9);
+	    for (int i=0; i<3; i++)
+	      for (int j=0; j<3; j++) {
+		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
+		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
+	      }
+	    orbitalSet->L_cuda    = L_host;
+	    orbitalSet->Linv_cuda = Linv_host;
+	  }
+#endif
 	}
       }
       else {
@@ -866,6 +929,28 @@ namespace qmcplusplus {
 	    ReadBands_ESHDF(spinSet,orbitalSet);
 	  else
 	    ReadBands(spinSet, orbitalSet); 
+#ifdef QMC_CUDA
+	  if (useGPU) {
+	    app_log() << "Copying einspline orbitals to GPU.\n";
+	    create_multi_UBspline_3d_cuda (orbitalSet->MultiSpline,
+	    				   orbitalSet->CudaMultiSpline);
+	    app_log() << "Successful copy.\n";
+	    // Destroy original CPU spline
+	    // HACK HACK HACK
+	    //destroy_Bspline (orbitalSet->MultiSpline);
+
+	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+	    orbitalSet->Linv_cuda.resize(9);
+	    orbitalSet->L_cuda.resize(9);
+	    for (int i=0; i<3; i++)
+	      for (int j=0; j<3; j++) {
+		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
+		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
+	      }
+	    orbitalSet->L_cuda    = L_host;
+	    orbitalSet->Linv_cuda = Linv_host;
+	  }
+#endif
 	}
       }
     }
@@ -926,7 +1011,12 @@ namespace qmcplusplus {
 	TargetPtcl.createSK();
       }
     }
-
+#ifdef QMC_CUDA
+    if (useGPU) {
+      app_log() << "Initializing GPU data structures.\n";
+      OrbitalSet->init_cuda();
+    }
+#endif
     return OrbitalSet;
   }
   
@@ -2333,6 +2423,9 @@ void
     MeshSize[0] = (int)std::ceil(4.0*MeshFactor*maxIndex[0]);
     MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
     MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
+    app_log() << "B-spline mesh factor is " << MeshFactor << endl;
+    app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
+	      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
   }
 
   void

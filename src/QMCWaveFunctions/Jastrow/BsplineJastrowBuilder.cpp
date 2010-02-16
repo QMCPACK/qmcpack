@@ -21,6 +21,10 @@
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+#ifdef QMC_CUDA
+  #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
+  #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
+#endif
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
@@ -36,7 +40,11 @@ namespace qmcplusplus {
     // Create a one-body Jastrow
     if (sourcePtcl) 
     {
+#ifdef QMC_CUDA
+      typedef OneBodyJastrowOrbitalBspline J1Type;
+#else
       typedef OneBodyJastrowOrbital<RadFuncType> J1Type;
+#endif
       typedef DiffOneBodyJastrowOrbital<RadFuncType> dJ1Type;
 
       J1Type *J1 = new J1Type(*sourcePtcl, targetPtcl);
@@ -108,7 +116,11 @@ namespace qmcplusplus {
     // Create a two-body Jastrow
     else 
     {
+#ifdef QMC_CUDA
+      typedef TwoBodyJastrowOrbitalBspline J2Type;
+#else
       typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
+#endif
       typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
 
       J2Type *J2 = new J2Type(targetPtcl,targetPsi.is_manager());

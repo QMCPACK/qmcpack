@@ -21,6 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Particle/MCWalkerConfiguration.h"
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
@@ -30,6 +31,17 @@
  */
 namespace qmcplusplus
   {
+
+#ifdef QMC_CUDA
+    struct NLjob {
+    int walker;
+    int elec;
+    int numQuadPoints;
+    NLjob(int w, int e, int n) :
+      walker(w), elec(e), numQuadPoints(n)
+    { }
+  };
+#endif
 
   ///forward declaration of OrbitalBase
   class OrbitalBase;
@@ -79,6 +91,9 @@ namespace qmcplusplus
       typedef ParticleAttrib<ValueType> ValueVectorType;
       typedef ParticleAttrib<GradType>  GradVectorType;
       typedef PooledData<RealType>      BufferType;
+      typedef ParticleSet::Walker_t     Walker_t;
+      typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
+      typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
 
       /** flag to set the optimization mode */
       bool IsOptimizing;
@@ -355,6 +370,141 @@ namespace qmcplusplus
       // * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
       // */
       //virtual void copyFrom(const OrbitalBase& old);
+
+      /////////////////////////////////////////////////////
+      // Functions for vectorized evaluation and updates //
+      /////////////////////////////////////////////////////
+#ifdef QMC_CUDA
+      virtual void freeGPUmem() 
+      { }
+      
+      virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
+      { }
+      
+      virtual void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+      { }
+      
+      /** Evaluate the log of the WF for all walkers
+       *  @param walkers   vector of all walkers
+       *  @param logPsi    output vector of log(psi)
+       */
+      virtual void 
+      addLog (MCWalkerConfiguration &W,
+	      vector<RealType> &logPsi)
+      {
+	app_error() << "Need specialization of OrbitalBase::addLog for "
+		    << OrbitalName << ".\n";
+	abort();
+      }
+      
+      /** Evaluate the wave-function ratio w.r.t. moving particle iat
+       *  for all walkers
+       *  @param walkers     vector of all walkers
+       *  @param iat         particle which is moving
+       *  @param psi_ratios  output vector with psi_new/psi_old
+       */
+      virtual void 
+      ratio (MCWalkerConfiguration &W, int iat,
+	     vector<ValueType> &psi_ratios)
+      {
+	app_error() << "Need specialization of OrbitalBase::ratio.\n";
+	abort();
+      }
+      
+      // Returns the WF ratio and gradient w.r.t. iat for each walker
+      // in the respective vectors
+      virtual void 
+      ratio (MCWalkerConfiguration &W, int iat,
+	     vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
+      {
+	app_error() << "Need specialization of OrbitalBase::ratio.\n";
+	abort();
+      }
+      
+      virtual void 
+      ratio (MCWalkerConfiguration &W, int iat,
+	     vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+	     vector<ValueType> &lapl)
+      {
+	app_error() << "Need specialization of OrbitalBase::ratio.\n";
+	abort();
+      }
+      
+      
+      virtual void 
+      ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
+	     vector<PosType> &rNew,  vector<ValueType> &psi_ratios,	
+	     vector<GradType>  &grad,  vector<ValueType> &lapl)
+      {
+	app_error() << "Need specialization of OrbitalBase::ratio.\n";
+	abort();
+      }
+      
+      
+      virtual void 
+      addGradient(MCWalkerConfiguration &W, int iat,
+		  vector<GradType> &grad) 
+      {
+	app_error() << "Need specialization of OrbitalBase::addGradient for "
+		    << OrbitalName << ".\n";
+	abort();
+      }
+      
+      virtual void 
+      gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+		ValueMatrix_t &lapl)
+      {
+	app_error() << "Need specialization of OrbitalBase::gradLapl for "
+		    << OrbitalName << ".\n";
+	abort();
+      }
+      
+      
+      virtual void 
+      update (vector<Walker_t*> &walkers, int iat)
+      {
+	app_error() << "Need specialization of OrbitalBase::update.\n";
+	abort();
+      }
+      
+      virtual void 
+      update (const vector<Walker_t*> &walkers, 
+	      const vector<int> &iatList)
+      {
+	app_error() << "Need specialization of OrbitalBase::update.\n";
+	abort();
+      }
+      
+      
+      virtual void 
+      NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
+		vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+      {
+	app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+	abort();
+      }
+      
+      virtual void 
+      NLratios (MCWalkerConfiguration &W,  gpu::device_vector<CUDA_PRECISION*> &Rlist,
+		gpu::device_vector<int*> &ElecList, gpu::device_vector<int>             &NumCoreElecs,
+		gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
+		gpu::device_vector<CUDA_PRECISION*> &RatioList,
+		int numQuadPoints)
+      {
+	app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+	abort();
+      }
+      
+      virtual void
+      evaluateDerivatives (MCWalkerConfiguration &W, 
+			   const opt_variables_type& optvars,
+			   ValueMatrix_t &dgrad_logpsi,
+			   ValueMatrix_t &dhpsi_over_psi)
+      {
+	app_error() << "Need specialization of OrbitalBase::evaluateDerivatives.\n";
+	abort();
+      }
+#endif
     };
 }
 #endif

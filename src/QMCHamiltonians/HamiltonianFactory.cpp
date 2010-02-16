@@ -69,6 +69,12 @@
 #endif
 #include "OhmmsData/AttributeSet.h"
 
+#ifdef QMC_CUDA
+  #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
+  #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+  #include "QMCHamiltonians/MPC_CUDA.h"
+#endif
+
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
       PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c)
@@ -517,7 +523,12 @@ namespace qmcplusplus {
 
     renameProperty(a);
 
+
+#ifdef QMC_CUDA
+    MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
+#else
     MPC *mpc = new MPC (*targetPtcl, cutoff);
+#endif
     targetH->addOperator(mpc, "MPC", physical);
 #else
     APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
@@ -578,7 +589,11 @@ namespace qmcplusplus {
       if(applyPBC) 
       {
         //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
-        targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true), title,physical);
+#ifdef QMC_CUDA
+	targetH->addOperator(new CoulombPBCAA_CUDA(*targetPtcl,true),title,physical);
+#else
+	targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title,physical);
+#endif
       } 
       else 
       {
@@ -588,7 +603,11 @@ namespace qmcplusplus {
     } else {
       if(applyPBC) {
         //targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
+#ifdef QMC_CUDA
+        targetH->addOperator(new CoulombPBCAB_CUDA(*source,*targetPtcl),title);
+#else
         targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
+#endif
       } else {
         targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
       }
@@ -778,7 +797,11 @@ namespace qmcplusplus {
       if(PBCType){
         //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
         //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
-        targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
+#ifdef QMC_CUDA
+	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
+#else
+	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
+#endif
       } else {
         if(ion->getTotalNum()>1) 
           targetH->addOperator(new IonIonPotential(*ion),hname);

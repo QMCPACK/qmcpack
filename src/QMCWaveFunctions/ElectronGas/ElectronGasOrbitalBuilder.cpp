@@ -45,7 +45,6 @@ namespace qmcplusplus
 
   bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   {
-
     int nc=0;
     ValueType bosonic_eps(-999999);
     PosType twist(0.0);
@@ -55,7 +54,7 @@ namespace qmcplusplus
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
 
-    typedef DiracDeterminantBase  Det_t;
+    typedef SlaterDet::Determinant_t Det_t;
     typedef SlaterDet SlaterDeterminant_t;
 
     int nat=targetPtcl.getTotalNum();

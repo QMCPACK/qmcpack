@@ -25,6 +25,10 @@
 #include "QMCWaveFunctions/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 
+#ifdef QMC_CUDA
+  #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
+#endif
+
 namespace qmcplusplus
   {
 
@@ -243,7 +247,11 @@ namespace qmcplusplus
               }
             else
               {
-                adet = new Det_t(psi,firstIndex); 
+#ifdef QMC_CUDA
+                adet = new DiracDeterminantCUDA(psi,firstIndex);
+#else
+		adet = new Det_t(psi,firstIndex);
+#endif
               }
             adet->set(firstIndex,psi->getOrbitalSetSize());
 #endif

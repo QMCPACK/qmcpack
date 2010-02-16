@@ -104,10 +104,10 @@ IF($ENV{QMC_COMPLEX})
   SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
   MESSAGE("-- Found QMC_COMPLEX=${QMC_COMPLEX}")
 ENDIF($ENV{QMC_COMPLEX})
-IF($ENV{QMC_CUDA})
-  SET(QMC_CUDA $ENV{QMC_CUDA})
-  MESSAGE("-- Found QMC_CUDA=${QMC_CUDA}")
-ENDIF($ENV{QMC_CUDA})
+#IF($ENV{QMC_CUDA})
+#  SET(QMC_CUDA $ENV{QMC_CUDA} CACHE BOOL "Build with GPU support through CUDA")
+#  MESSAGE("-- Found QMC_CUDA=${QMC_CUDA}")
+#ENDIF($ENV{QMC_CUDA})
 
 ######################################################################
 # Standard test

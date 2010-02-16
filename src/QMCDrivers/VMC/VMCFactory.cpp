@@ -27,6 +27,10 @@
 #endif
 #include "Message/OpenMP.h"
 
+#ifdef QMC_CUDA
+  #include "QMCDrivers/VMC/VMC_CUDA.h"
+#endif
+
 namespace qmcplusplus {
 
   QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
@@ -35,6 +39,11 @@ namespace qmcplusplus {
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     QMCDriver* qmc=0;
+#ifdef QMC_CUDA
+    if (VMCMode & 16) {
+      qmc = new VMCcuda(w,psi,h);
+    } else
+#endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
       qmc = new VMCSingleOMP(w,psi,h,hpool);

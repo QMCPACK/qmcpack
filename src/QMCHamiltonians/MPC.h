@@ -31,7 +31,7 @@ namespace qmcplusplus {
    */
 
   class MPC: public QMCHamiltonianBase {
-  private:
+  protected:
     UBspline_3d_d *VlongSpline, *DensitySpline;
     double Vconst;
     void compute_g_G(double &g_0_N, vector<double> &g_G_N, int N);

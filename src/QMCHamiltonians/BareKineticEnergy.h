@@ -20,6 +20,9 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#ifdef QMC_CUDA
+  #include "Particle/MCWalkerConfiguration.h"
+#endif
 
 namespace qmcplusplus {
 
@@ -130,6 +133,27 @@ namespace qmcplusplus {
     {
       return new BareKineticEnergy(*this);
     }
+
+#ifdef QMC_CUDA
+    ////////////////////////////////
+    // Vectorized version for GPU //
+    ////////////////////////////////
+    // Nothing is done on GPU here, just copy into vector
+    void addEnergy(MCWalkerConfiguration &W, 
+		   vector<RealType> &LocalEnergy)
+    {
+      vector<Walker_t*> &walkers = W.WalkerList;
+
+      for (int iw=0; iw<walkers.size(); iw++) {
+	Walker_t &w = *(walkers[iw]);
+	double KE = 0.0;
+	for (int ptcl=0; ptcl<w.G.size(); ptcl++) 
+	  KE -= 0.5*(dot (w.G[ptcl],w.G[ptcl])  + w.L[ptcl]);
+	w.getPropertyBase()[NUMPROPERTIES+myIndex] = KE;
+	LocalEnergy[iw] += KE;
+      }
+    }
+#endif
 
     //Not used anymore
     //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {

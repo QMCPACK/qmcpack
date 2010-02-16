@@ -63,6 +63,11 @@ inline void makeGaussRandom(blitz::Array<TinyVector<T,D>, 2>& a) {
 }
 #endif
 
+template<typename T, unsigned D>
+inline void makeGaussRandom(std::vector<TinyVector<T,D> >& a) {
+  assignGaussRand(&(a[0][0]), a.size()*D, Random);
+}
+
 ///specialized functions: stick to overloading
 template<typename T, unsigned D>
 inline void makeGaussRandom(Matrix<TinyVector<T,D> >& a) {
@@ -128,6 +133,12 @@ template<typename T, unsigned D, class RG>
 inline void makeGaussRandomWithEngine(ParticleAttrib<TinyVector<T,D> >& a, RG& rng) {
   assignGaussRand(&(a[0][0]), a.size()*D, rng);
 }
+
+template<typename T, unsigned D, class RG>
+inline void makeGaussRandomWithEngine(std::vector<TinyVector<T,D> >& a, RG& rng) {
+  assignGaussRand(&(a[0][0]), a.size()*D, rng);
+}
+
 
 }
 

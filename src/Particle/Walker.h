@@ -18,6 +18,10 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
+#ifdef QMC_CUDA
+  #include "Utilities/PointerPool.h"
+  #include "CUDA/gpu_vector.h"
+#endif
 #include <assert.h>
 #include <deque>
 namespace qmcplusplus
@@ -112,17 +116,46 @@ namespace qmcplusplus
       ///buffer for the data for particle-by-particle update
       Buffer_t DataSet;
 
+      /// Data for GPU-vectorized versions
+#ifdef QMC_CUDA
+      static int cuda_DataSize;
+      typedef gpu::device_vector<CUDA_PRECISION> cuda_Buffer_t;
+      cuda_Buffer_t cuda_DataSet;
+      // Note that R_GPU has size N+1.  The last element contains the
+      // proposed position for single-particle moves.
+      gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_GPU, Grad_GPU;
+      gpu::device_vector<CUDA_PRECISION> Lap_GPU;
+      inline void resizeCuda(int size) {
+	cuda_DataSize = size;
+	cuda_DataSet.resize(size);
+	int N = R.size();
+	R_GPU.resize(N);      
+	Grad_GPU.resize(N);      
+	Lap_GPU.resize(N);
+      }
+#endif
+
+
       ///default constructor
       inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
           Weight(1.0e0),Multiplicity(1.0e0)
+#ifdef QMC_CUDA
+	  , cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
+          Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
+#endif
       {
         Properties.resize(1,NUMPROPERTIES);
         reset();
       }
 
       ///create a walker for n-particles
-      inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
-          Weight(1.0e0),Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
+      inline explicit Walker(int nptcl) : 
+	ID(0), ParentID(0), Generation(0), Age(0), Weight(1.0e0),
+	Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
+#ifdef QMC_CUDA
+	, cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
+        Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
+#endif
       {
         Properties.resize(1,NUMPROPERTIES);
         resize(nptcl);
@@ -192,6 +225,11 @@ namespace qmcplusplus
         R.resize(nptcl);
         G.resize(nptcl);
         L.resize(nptcl);
+#ifdef QMC_CUDA
+	R_GPU.resize(nptcl);
+	Grad_GPU.resize(nptcl);
+	Lap_GPU.resize(nptcl);
+#endif
         //Drift.resize(nptcl);
       }
 
@@ -220,6 +258,13 @@ namespace qmcplusplus
         if (PropertyHistory.size()!=a.PropertyHistory.size()) PropertyHistory.resize(a.PropertyHistory.size());
         for (int i=0;i<PropertyHistory.size();i++) PropertyHistory[i]=a.PropertyHistory[i];
         PHindex=a.PHindex;
+
+#ifdef QMC_CUDA
+	cuda_DataSet = a.cuda_DataSet;
+	R_GPU = a.R_GPU;
+	Grad_GPU = a.Grad_GPU;
+	Lap_GPU = a.Lap_GPU;
+#endif
       }
 
       //return the address of the values of Hamiltonian terms
@@ -324,10 +369,20 @@ namespace qmcplusplus
       {
         int numPH(0);
         for (int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
-        return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int)
+	int bsize = 
+	  2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int)
                +(Properties.size()+DataSet.size()+ numPH)*sizeof(RealType)
                +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
         //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
+#ifdef QMC_CUDA
+	bsize += 2 *sizeof (int); // size and N
+	bsize += cuda_DataSize             * sizeof(CUDA_PRECISION); // cuda_DataSet
+	bsize += R.size()      * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
+	bsize += R.size()      * OHMMS_DIM * sizeof(CUDA_PRECISION); // Grad_GPU
+	bsize += R.size()      * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
+#endif
+	return bsize;
+
       }
 
       template<class Msg>
@@ -349,6 +404,28 @@ namespace qmcplusplus
         //DataSet.putMessage(m);
         for (int iat=0; iat<PropertyHistory.size();iat++)m.Pack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
         m.Pack(&(PHindex[0]),PHindex.size());
+
+	#ifdef QMC_CUDA
+      // Pack GPU data
+      gpu::host_vector<CUDA_PRECISION> host_data;
+      gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+      gpu::host_vector<CUDA_PRECISION> host_lapl;
+
+      host_data = cuda_DataSet;
+      R_host = R_GPU;
+      int size = host_data.size();
+      int N = R_host.size();
+      m.Pack(size);
+      m.Pack(N);
+      m.Pack(&(host_data[0]), host_data.size());
+      m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
+      R_host = Grad_GPU;
+      m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
+      
+      host_lapl = Lap_GPU;
+      m.Pack(&(host_lapl[0]), host_lapl.size());
+#endif
+
         return m;
       }
 
@@ -371,6 +448,32 @@ namespace qmcplusplus
         //DataSet.getMessage(m);
         for (int iat=0; iat<PropertyHistory.size();iat++)m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
         m.Unpack(&(PHindex[0]),PHindex.size());
+
+#ifdef QMC_CUDA
+      // Pack GPU data
+      gpu::host_vector<CUDA_PRECISION> host_data;
+      gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+      gpu::host_vector<CUDA_PRECISION> host_lapl;
+
+      int size, N;
+      m.Unpack(size);
+      m.Unpack(N);
+      host_data.resize(size);
+      R_host.resize(N);
+      host_lapl.resize(N);
+
+      m.Unpack(&(host_data[0]), size);
+      cuda_DataSet = host_data;
+
+      m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
+      R_GPU = R_host;
+      m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
+      Grad_GPU = R_host;
+      
+      m.Unpack(&(host_lapl[0]), N);
+      Lap_GPU = host_lapl;
+#endif
+
         return m;
       }
 

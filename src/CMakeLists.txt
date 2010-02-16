@@ -27,13 +27,24 @@ SET(UTILITIES
   Optimize/VariableSet.cpp
   io/hdf_archive.cpp
 )
+IF(QMC_CUDA)
+   SET(UTILITIES ${UTILITIES} 
+       Numerics/CUDA/cuda_inverse.cu 
+       CUDA/gpu_vector.cpp
+       Particle/accept_kernel.cu)
+ENDIF(QMC_CUDA)
+
 
 ##gsl library will be optional
 #IF(HAVE_LIBGSL)
 #  SET(UTILITIES ${UTILITIES} Optimize/GSLMinimize.cpp)
 #ENDIF(HAVE_LIBGSL)
 
-ADD_LIBRARY(qmcutil ${UTILITIES})
+IF(QMC_CUDA)
+  CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
+ELSE(QMC_CUDA)
+  ADD_LIBRARY(qmcutil ${UTILITIES})
+ENDIF(QMC_CUDA)
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
 #ELSE(QMC_BUILD_STATIC)

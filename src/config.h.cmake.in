@@ -188,6 +188,7 @@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+#cmakedefine CUDA_PRECISION @CUDA_PRECISION@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

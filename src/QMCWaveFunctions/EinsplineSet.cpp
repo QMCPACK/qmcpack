@@ -232,6 +232,14 @@ namespace qmcplusplus {
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+		      TinyVector<double,3> r, 
+		      vector<double> &psi)
+  {
+    eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], &(psi[0]));
+  }
+
+  inline void
+  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
 		      const TinyVector<double,3>& r,
 		      Vector<double> &psi,
 		      Vector<TinyVector<double,3> > &grad)
@@ -477,6 +485,37 @@ namespace qmcplusplus {
     }
     ValueTimer.stop();
   }
+  template<> void
+  EinsplineSetExtended<double>::evaluate
+  (const ParticleSet &P, PosType r, vector<RealType> &psi)
+  {
+    ValueTimer.start();
+    PosType ru(PrimLattice.toUnit(r));
+    int image[OHMMS_DIM];
+    for (int i=0; i<OHMMS_DIM; i++) {
+      RealType img = std::floor(ru[i]);
+      ru[i] -= img;
+      image[i] = (int) img;
+    }
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, psi);
+    EinsplineTimer.stop();
+    int sign=0;
+    for (int i=0; i<OHMMS_DIM; i++) 
+      sign += HalfG[i]*image[i];
+    if (sign & 1) 
+      for (int j=0; j<psi.size(); j++)
+	psi[j] *= -1.0;
+    ValueTimer.stop();
+  }
+
+  template<> void
+  EinsplineSetExtended<complex<double> >::evaluate
+  (const ParticleSet &P, PosType r, vector<RealType> &psi)
+  {
+    cerr << "Not Implemented.\n";
+  }
+
 
   // Value, gradient, and laplacian
   template<typename StorageType> void
@@ -1289,4 +1328,79 @@ namespace qmcplusplus {
 
   template class EinsplineSetExtended<complex<double> >;
   template class EinsplineSetExtended<        double  >;
+
+
+#ifdef QMC_CUDA
+  ///////////////////////////////
+  // Real StorageType versions //
+  ///////////////////////////////
+  template<> string
+  EinsplineSetHybrid<double>::Type()
+  {
+  }
+  
+  
+  template<typename StorageType> SPOSetBase*
+  EinsplineSetHybrid<StorageType>::makeClone() const
+  {
+    EinsplineSetHybrid<StorageType> *clone = 
+      new EinsplineSetHybrid<StorageType> (*this);
+    clone->registerTimers();
+    return clone;
+  }
+  
+
+  //////////////////////////////////
+  // Complex StorageType versions //
+  //////////////////////////////////
+
+  
+  template<> string
+  EinsplineSetHybrid<complex<double> >::Type()
+  {
+  }
+  
+
+
+
+
+
+
+  template<>
+  EinsplineSetHybrid<double>::EinsplineSetHybrid() :
+    CurrentWalkers(0)
+  {
+    ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
+    VGLTimer.set_name ("EinsplineSetHybrid::VGL");
+    ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
+    EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
+    className = "EinsplineSeHybrid";
+    TimerManager.addTimer (&ValueTimer);
+    TimerManager.addTimer (&VGLTimer);
+    TimerManager.addTimer (&VGLMatTimer);
+    TimerManager.addTimer (&EinsplineTimer);
+    for (int i=0; i<OHMMS_DIM; i++)
+      HalfG[i] = 0;
+  }
+
+  template<>
+  EinsplineSetHybrid<complex<double > >::EinsplineSetHybrid() :
+    CurrentWalkers(0)
+  {
+    ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
+    VGLTimer.set_name ("EinsplineSetHybrid::VGL");
+    ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
+    EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
+    className = "EinsplineSeHybrid";
+    TimerManager.addTimer (&ValueTimer);
+    TimerManager.addTimer (&VGLTimer);
+    TimerManager.addTimer (&VGLMatTimer);
+    TimerManager.addTimer (&EinsplineTimer);
+    for (int i=0; i<OHMMS_DIM; i++)
+      HalfG[i] = 0;
+  }
+
+  template class EinsplineSetHybrid<complex<double> >;
+  template class EinsplineSetHybrid<        double  >;
+#endif
 }

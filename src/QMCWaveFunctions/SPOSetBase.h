@@ -40,6 +40,7 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
+    typedef ParticleSet::Walker_t                      Walker_t;
     ///true if C is an identity matrix
     bool Identity;
     ///total number of orbitals 
@@ -114,6 +115,15 @@ namespace qmcplusplus {
     virtual void 
     evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
+/** evaluate the values of this single-particle orbital set
+     * @param P current ParticleSet
+     * @param r is the position of the particle
+     * @param psi values of the SPO
+     */
+    virtual void
+    evaluate (const ParticleSet& P, PosType r, vector<RealType> &psi)
+    { cerr << "Not implemented.\n";  }
+
     /** evaluate the values, gradients and laplacians of this single-particle orbital set
      * @param P current ParticleSet
      * @param iat active particle
@@ -152,6 +162,61 @@ namespace qmcplusplus {
     /** make a clone of itself
      */
     virtual SPOSetBase* makeClone() const;
+
+#ifdef QMC_CUDA
+    virtual void init_cuda() 
+    {    }
+
+    //////////////////////////////////////////
+    // Walker-parallel vectorized functions //
+    //////////////////////////////////////////
+    virtual void
+    reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+    { }
+
+    virtual void
+    evaluate (vector<Walker_t*> &walkers, int iat,
+	      gpu::device_vector<CudaValueType*> &phi)
+    {
+      app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+      abort();
+    }
+
+    virtual void
+    evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos, 
+	      gpu::device_vector<CudaValueType*> &phi)
+    {
+      app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+      abort();
+    }
+
+    virtual void
+    evaluate (vector<Walker_t*> &walkers,
+	      vector<PosType> &new_pos,
+	      gpu::device_vector<CudaValueType*> &phi,
+	      gpu::device_vector<CudaValueType*> &grad_lapl_list, 
+	      int row_stride)
+    {
+      app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
+      abort();
+    }
+
+    virtual void 
+    evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
+    { 
+      app_error() << "Need specialization of vectorized evaluate "
+		  << "in SPOSetBase.\n";
+      abort();
+    }
+
+    virtual void 
+    evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
+    { 
+      app_error() << "Need specialization of vectorized evaluate "
+		  << "in SPOSetBase.\n";
+      abort();
+    }
+#endif
 
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);

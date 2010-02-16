@@ -35,6 +35,7 @@ namespace qmcplusplus {
    */ 
   template<class FT>
   class TwoBodyJastrowOrbital: public OrbitalBase {
+  protected:
 
     const DistanceTableData* d_table;
 

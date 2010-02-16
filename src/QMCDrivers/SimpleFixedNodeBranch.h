@@ -159,6 +159,10 @@ namespace qmcplusplus {
     ///string parameters
     vector<string> sParam;
 
+    // Used for the average scaling
+    RealType ScaleSum;
+    unsigned long ScaleNum;
+
     public:
 
     typedef SimpleFixedNodeBranch ThisType;
@@ -265,6 +269,25 @@ namespace qmcplusplus {
       RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
       return std::exp(vParam[B_TAUEFF]*(p*0.5*(s1-s0)+s0));
       //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
+    }
+
+    /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
+     * @param enew new energy
+     * @param eold old energy
+     * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
+     * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
+     */
+    inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold,
+				    RealType taueff) 
+    {
+      ScaleSum += scnew + scold;
+      ScaleNum +=2;
+
+      RealType scavg = (ScaleNum > 10000) ? ScaleSum/(RealType)ScaleNum : 1.0;
+
+      RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew/scavg;
+      RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold/scavg;
+      return std::exp(taueff*0.5*(s1+s0));
     }
 
     inline RealType getEref() const { return vParam[B_EREF];}

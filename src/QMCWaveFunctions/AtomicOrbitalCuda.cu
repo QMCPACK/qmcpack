@@ -89,23 +89,24 @@ MakeHybridJobList_kernel (T* elec_list, int num_elecs, T* ion_list,
       dr0 = epos[tid][0] - ipos[ion][0];
       dr1 = epos[tid][1] - ipos[ion][1];
       dr2 = epos[tid][2] - ipos[ion][2];
-      u0 = Linv_s[0][0]*dr0 + Linv_s[0][1]*dr1 + Linv_s[0][2]*dr2;
-      u1 = Linv_s[1][0]*dr0 + Linv_s[1][1]*dr1 + Linv_s[1][2]*dr2;
-      u2 = Linv_s[2][0]*dr0 + Linv_s[2][1]*dr1 + Linv_s[2][2]*dr2;
+      u0 = Linv_s[0][0]*dr0 + Linv_s[1][0]*dr1 + Linv_s[2][0]*dr2;
+      u1 = Linv_s[0][1]*dr0 + Linv_s[1][1]*dr1 + Linv_s[2][1]*dr2;
+      u2 = Linv_s[0][2]*dr0 + Linv_s[1][2]*dr1 + Linv_s[2][2]*dr2;
       img0 = rintf(u0);  img1 = rintf(u1);  img2 = rintf(u2);
       u0  -= img0;       u1  -= img1;       u2  -= img2;
-      dr0 = L_s[0][0]*u0 + L_s[0][1]*u1 + L_s[0][2]*u2;
-      dr1 = L_s[1][0]*u0 + L_s[1][1]*u1 + L_s[1][2]*u2;
-      dr2 = L_s[2][0]*u0 + L_s[2][1]*u1 + L_s[2][2]*u2;
+      dr0 = L_s[0][0]*u0 + L_s[1][0]*u1 + L_s[2][0]*u2;
+      dr1 = L_s[0][1]*u0 + L_s[1][1]*u1 + L_s[2][1]*u2;
+      dr2 = L_s[0][2]*u0 + L_s[1][2]*u1 + L_s[2][2]*u2;
       
       T dist2 = dr0*dr0 + dr1*dr1 + dr2*dr2;
       T dist = sqrtf(dist2);
       
       // Compare with radii
       if (dist < r_poly[ion]) 
-	jobs_shared[tid] =  ATOMIC_POLY_JOB;
+      	jobs_shared[tid] =  ATOMIC_POLY_JOB;
       else if (dist < r_spline[ion]) 
-	jobs_shared[tid] =  ATOMIC_SPLINE_JOB;
+      	jobs_shared[tid] =  ATOMIC_SPLINE_JOB;
+
       // Compute rhat
       if (dist < r_spline[ion]) {
 	data[tid].dist = dist;
@@ -2330,9 +2331,8 @@ CalcYlmReal (T *rhats, HybridJobType* job_type,
   }
 }
 
-template<typename T>
-void CalcYlmRealCuda (T *rhats, HybridJobType *job_type,
-		      T **Ylm_ptr, T **dYlm_dtheta_ptr, T **dYlm_dphi_ptr, 
+void CalcYlmRealCuda (float *rhats, HybridJobType *job_type,
+		      float **Ylm_ptr, float **dYlm_dtheta_ptr, float **dYlm_dphi_ptr, 
 		      int lMax, int N)
 {
   const int BS=32;
@@ -2343,21 +2343,21 @@ void CalcYlmRealCuda (T *rhats, HybridJobType *job_type,
   if (lMax == 0)
     return;
   else if (lMax == 1)
-    CalcYlmReal<T,1,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,1,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 2)
-    CalcYlmReal<T,2,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,2,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 3)
-    CalcYlmReal<T,3,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,3,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 4)
-    CalcYlmReal<T,4,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,4,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 5)
-    CalcYlmReal<T,5,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,5,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 6)
-    CalcYlmReal<T,6,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,6,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 7)
-    CalcYlmReal<T,7,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,7,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 8)
-    CalcYlmReal<T,8,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
+    CalcYlmReal<float,8,BS><<<dimGrid,dimBlock>>>(rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
 
   cudaThreadSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -2369,9 +2369,8 @@ void CalcYlmRealCuda (T *rhats, HybridJobType *job_type,
 }
 
 
-template<typename T>
-void CalcYlmComplexCuda (T *rhats, HybridJobType *job_type,
-			 T **Ylm_ptr, T **dYlm_dtheta_ptr, T **dYlm_dphi_ptr, 
+void CalcYlmComplexCuda (float *rhats, HybridJobType *job_type,
+			 float **Ylm_ptr, float **dYlm_dtheta_ptr, float **dYlm_dphi_ptr, 
 			 int lMax, int N)
 {
   const int BS=32;
@@ -2382,28 +2381,28 @@ void CalcYlmComplexCuda (T *rhats, HybridJobType *job_type,
   if (lMax == 0)
     return;
   else if (lMax == 1)
-    CalcYlmComplex<T,1,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,1,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 2)
-    CalcYlmComplex<T,2,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,2,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 3)
-    CalcYlmComplex<T,3,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,3,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 4)
-    CalcYlmComplex<T,4,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,4,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 5)
-    CalcYlmComplex<T,5,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,5,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 6)
-    CalcYlmComplex<T,6,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,6,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 7)
-    CalcYlmComplex<T,7,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,7,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
   else if (lMax == 8)
-    CalcYlmComplex<T,8,BS><<<dimGrid,dimBlock>>>
+    CalcYlmComplex<float,8,BS><<<dimGrid,dimBlock>>>
       (rhats,job_type,Ylm_ptr,dYlm_dtheta_ptr,dYlm_dphi_ptr,N);
 
   cudaThreadSynchronize();
@@ -2726,6 +2725,8 @@ void dummy_float()
   CalcYlmComplexCuda(rhats, job_types, Ylm_ptr, 1, 1);
 }
 
+
+
 // void dummy_double()
 // {
 //   double *rhats(0), **Ylm_ptr(0), **dYlm_dtheta_ptr(0), **dYlm_dphi_ptr(0);
@@ -2762,9 +2763,9 @@ evaluate3DSplineReal_kernel (HybridJobType *job_types, float *pos, float *k_redu
   int i1 = tid - 3*i0;
   if (tid < 9) {
     G[0][tid] = Linv[tid];
-    GGt[i0][i1] = (G[i0][0]*G[i1][0] + 
-		   G[i0][1]*G[i1][1] + 
-		   G[i0][2]*G[i1][2]);
+    GGt[i0][i1] = (G[0][i0]*G[0][i1] + 
+		   G[1][i0]*G[1][i1] + 
+		   G[2][i0]*G[2][i1]);
   }
   if (tid == 0) {
     myval  = vals[ir];
@@ -2778,14 +2779,14 @@ evaluate3DSplineReal_kernel (HybridJobType *job_types, float *pos, float *k_redu
   
   if (tid < 3) {
     r[tid] = pos[3*ir+tid];
-    u[tid] = G[tid][0]*r[0] + G[tid][1]*r[1] + G[tid][2]*r[2];
+    u[tid] = G[0][tid]*r[0] + G[1][tid]*r[1] + G[2][tid]*r[2];
     img[tid] = floor(u[tid]);
     u[tid] -= img[tid];
   }
   __syncthreads();
   float sign = __cosf(-(k_red[tid][0]*img[0]+
 			k_red[tid][1]*img[1]+
-			k_red[tid][2]*img[2]));
+			k_red[tid][2]*img[2])); 
   // copysign(1.0f,__sinf(-(r[0]*kp[tid][0] + 
   // 		     r[1]*kp[tid][1] + 
   // 		     r[2]*kp[tid][2])));
@@ -2965,7 +2966,7 @@ evaluate3DSplineReal_kernel (HybridJobType *job_types, float *pos, float *kpoint
   
   if (tid < 3) {
     r[tid] = pos[3*ir+tid];
-    u[tid] = G[tid][0]*r[0] + G[tid][1]*r[1] + G[tid][2]*r[2];
+    u[tid] = G[0][tid]*r[0] + G[1][tid]*r[1] + G[2][tid]*r[2];
     img[tid] = floor(u[tid]);
     u[tid] -= img[tid];
   }
@@ -2983,12 +2984,6 @@ evaluate3DSplineReal_kernel (HybridJobType *job_types, float *pos, float *kpoint
   //     kp[0][i*BS+tid] = kpoints[off];
   // }
   __syncthreads();
-
-  if (tid < 3) {
-    u[tid] = G[tid][0]*r[0] + G[tid][1]*r[1] + G[tid][2]*r[2];
-    img[tid] = floor(u[tid]);
-    u[tid] -= img[tid];
-  }
 
   int3 index;
   float3 t;
@@ -3094,9 +3089,9 @@ evaluate3DSplineComplexToReal_kernel
   int i1 = tid - 3*i0;
   if (tid < 9) {
     G[0][tid] = Linv[tid];
-    GGt[i0][i1] = (G[i0][0]*G[i1][0] + 
-		   G[i0][1]*G[i1][1] + 
-		   G[i0][2]*G[i1][2]);
+    GGt[i0][i1] = (G[0][i0]*G[0][i1] + 
+		   G[1][i0]*G[1][i1] + 
+		   G[2][i0]*G[2][i1]);
   }
   if (tid == 0) {
     myVal      =      vals[ir];
@@ -3105,7 +3100,7 @@ evaluate3DSplineComplexToReal_kernel
   
   if (tid < 3) {
     r[tid] = pos[3*ir+tid];
-    u[tid] = G[tid][0]*r[0] + G[tid][1]*r[1] + G[tid][2]*r[2];
+    u[tid] = G[0][tid]*r[0] + G[1][tid]*r[1] + G[2][tid]*r[2];
     u[tid] -= floor(u[tid]);
   }
   __syncthreads();
@@ -3423,7 +3418,7 @@ evaluate3DSplineComplexToReal_kernel
   
   if (tid < 3) {
     r[tid] = pos[3*ir+tid];
-    u[tid] = G[tid][0]*r[0] + G[tid][1]*r[1] + G[tid][2]*r[2];
+    u[tid] = G[0][tid]*r[0] + G[1][tid]*r[1] + G[2][tid]*r[2];
     u[tid] -= floor(u[tid]);
   }
   __syncthreads();

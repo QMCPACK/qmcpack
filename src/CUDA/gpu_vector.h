@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 #include <cmath>
+#include <cstdlib>
+#include <algorithm>
 
 #ifdef QMC_CUDA
 #include <cuda_runtime_api.h>
@@ -358,9 +360,46 @@ namespace gpu
   
   }
 
+  template<typename T>
+  class device_host_vector
+  {
+  public:
+    host_vector<T>   CPU;
+    device_vector<T> GPU;
 
+    device_host_vector()
+    { }
+    
+    device_host_vector(size_t size) : CPU(size), GPU(size)
+    { }
 
-      
+    inline void resize (size_t size)
+    {
+      CPU.resize(size);
+      GPU.resize(size);
+    }
+
+    inline void host_to_device()
+    { GPU = CPU; }
+
+    inline void device_to_host()
+    { CPU = GPU; }
+    
+    inline T operator[](size_t i) const
+    { return CPU[i]; }
+    
+    inline T& operator[](size_t i) 
+    { return CPU[i]; }
+
+    inline void fill (T val)
+    {
+      fill (CPU.begin(), CPU.end(), val);
+      host_to_device();
+    }
+
+    inline T* gpu_data()
+    { return GPU.data(); }
+  };
 }
 
 #endif

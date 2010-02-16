@@ -33,6 +33,17 @@ IF(OHMMS_DIM MATCHES 3)
       ECPComponentBuilder.2.cpp
      )
 
+  IF(QMC_CUDA)
+     SET(HAMSRCS ${HAMSRCS}
+         CudaCoulomb.cu 
+         NLPP.cu
+         CoulombPBCAA_CUDA.cpp
+         CoulombPBCAB_CUDA.cpp
+         MPC_CUDA.cpp
+         NonLocalECPotential_CUDA.cpp
+        )
+  ENDIF(QMC_CUDA)
+
   # Add research-related sources here
   IF(QMC_BUILD_LEVEL GREATER 1)
     SET(HAMSRCS ${HAMSRCS}
@@ -54,7 +65,13 @@ IF(HAVE_LIBFFTW)
   SET(HAMSRCS ${HAMSRCS} MPC.cpp VHXC.cpp)
 ENDIF(HAVE_LIBFFTW)
 
-ADD_LIBRARY(qmcham ${HAMSRCS})
+IF(QMC_CUDA)
+  CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})
+ELSE(QMC_CUDA)
+  ADD_LIBRARY(qmcham ${HAMSRCS})
+ENDIF(QMC_CUDA)
+
+
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcham STATIC ${HAMSRCS})
 #ELSE(QMC_BUILD_STATIC)

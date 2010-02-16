@@ -19,6 +19,10 @@
 #include "Particle/DistanceTableData.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
+#ifdef QMC_CUDA
+  #include "Particle/MCWalkerConfiguration.h"
+#endif
+
 namespace qmcplusplus
 {
 
@@ -391,7 +395,98 @@ void QMCHamiltonian::rejectMove(int active)
 {
   for(int i=0; i<H.size(); ++i) H[i]->rejectMove(active);
 }
+
+
+#ifdef QMC_CUDA
+void
+QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
+			 vector<RealType> &energyVector)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  int nw = walkers.size();
+  if (LocalEnergyVector.size() != nw) {
+    LocalEnergyVector.resize(nw);
+    KineticEnergyVector.resize(nw);
+    AuxEnergyVector.resize(nw);
+  }
+
+  if (energyVector.size() != nw)
+    energyVector.resize(nw);
+    
+    
+  for (int i=0; i<LocalEnergyVector.size(); i++)
+    LocalEnergyVector[i] = 0.0;
+
+  for(int i=0; i<H.size(); ++i)
+  {
+    myTimers[i]->start();
+    H[i]->addEnergy(W, LocalEnergyVector);
+    //H[i]->setObservables(Observables);
+    myTimers[i]->stop();
+  }
+  KineticEnergyVector=H[0]->ValueVector;
+
+  for (int iw=0; iw<walkers.size(); iw++) {
+    walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
+    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
+      LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+  }
+
+  energyVector = LocalEnergyVector;
+
+  // P.PropertyList[LOCALENERGY]=LocalEnergy;
+  // P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    auxH[i]->addEnergy(W, AuxEnergyVector);
+    //auxH[i]->setObservables(Observables);
+  }
 }
+
+
+
+void
+QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
+			 vector<RealType> &energyVector,
+			 vector<vector<NonLocalData> > &Txy)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  int nw = walkers.size();
+  if (LocalEnergyVector.size() != nw) {
+    LocalEnergyVector.resize(nw);
+    KineticEnergyVector.resize(nw);
+    AuxEnergyVector.resize(nw);
+  }
+
+  if (energyVector.size() != nw)
+    energyVector.resize(nw);
+    
+  for (int i=0; i<LocalEnergyVector.size(); i++)
+    LocalEnergyVector[i] = 0.0;
+
+  for(int i=0; i<H.size(); ++i)  {
+    myTimers[i]->start();
+    H[i]->addEnergy(W, LocalEnergyVector, Txy);
+    myTimers[i]->stop();
+  }
+  KineticEnergyVector=H[0]->ValueVector;
+
+  for (int iw=0; iw<walkers.size(); iw++) {
+    walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
+    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
+      LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+  }
+
+  energyVector = LocalEnergyVector;
+
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->addEnergy(W, AuxEnergyVector);
+}
+#endif
+
+}
+
+
 
 /***************************************************************************
  * $RCSfile$   $Author$

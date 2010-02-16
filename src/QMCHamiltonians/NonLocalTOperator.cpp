@@ -76,6 +76,33 @@ namespace qmcplusplus {
     return ibar;
   }
 
+  int NonLocalTOperator::selectMove(RealType prob,
+				    vector<NonLocalData> &txy) 
+  {
+    RealType wgt_t=1.0;
+
+    for(int i=1; i<txy.size(); i++) {
+      if(txy[i].Weight>0) {
+        wgt_t += txy[i].Weight *=plusFactor;
+      }
+      else {
+        wgt_t += txy[i].Weight *=minusFactor;
+      }
+    }
+
+    prob *= wgt_t;
+
+    RealType wsum=txy[0].Weight;
+
+    int ibar=0;;
+    while(wsum<prob) {
+      ibar++;
+      wsum += txy[ibar].Weight;
+    }
+    return ibar;
+  }
+
+
 }
 
 /***************************************************************************

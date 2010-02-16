@@ -206,7 +206,7 @@ namespace qmcplusplus
   bool PairCorrEstimator::put(xmlNodePtr cur)
   {
     //set resolution 
-    int nbins=Dmax*DeltaInv;
+    int nbins=(int)std::ceil(Dmax*DeltaInv);
     string debug("no");
     OhmmsAttributeSet attrib;
     attrib.add(nbins,"num_bin");

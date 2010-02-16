@@ -100,6 +100,7 @@ namespace qmcplusplus {
     void resize_warrays(int n,int m,int l);
 
     void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
+    template<typename T> void randomize_grid(vector<T> &sphere);
 
     RealType 
       evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);

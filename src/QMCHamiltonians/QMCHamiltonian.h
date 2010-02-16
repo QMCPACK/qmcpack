@@ -22,6 +22,8 @@
 
 namespace qmcplusplus {
 
+  class MCWalkerConfiguration;
+
   class NewTimer;
   /**  Collection of Local Energy Operators 
    *
@@ -223,6 +225,21 @@ namespace qmcplusplus {
 
     /** return a clone */
     QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi); 
+
+#ifdef QMC_CUDA
+    ////////////////////////////////////////////
+    // Vectorized evaluation routines for GPU //
+    ////////////////////////////////////////////
+    void evaluate (MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
+    void evaluate(MCWalkerConfiguration &W, vector<RealType> &energyVector,
+		  vector<vector<NonLocalData> > &Txy);
+  private:
+    /////////////////////
+    // Vectorized data //
+    /////////////////////
+    vector<Return_t> LocalEnergyVector, KineticEnergyVector,
+      AuxEnergyVector;
+#endif
 
   private:
     ///starting index

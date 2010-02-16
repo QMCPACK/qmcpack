@@ -26,6 +26,7 @@
 #include <bitset>
 
 namespace qmcplusplus {
+  class MCWalkerConfiguration;
 
   /**@defgroup hamiltonian Hamiltonian group
    * @brief QMCHamiltonian and its component, QMCHamiltonianBase
@@ -238,6 +239,27 @@ namespace qmcplusplus {
     {
       // empty
     }
+
+    ////////////////////////////////////
+    // Vectorized evaluation on GPUs  //
+    ////////////////////////////////////
+#ifdef QMC_CUDA
+    vector<RealType> ValueVector;
+    
+    virtual void addEnergy(MCWalkerConfiguration &W, 
+			   vector<RealType> &LocalEnergy)
+    { 
+      app_error() << "Need specialization for " << myName 
+		  << "::addEnergy(MCWalkerConfiguration &W).\n";
+    }
+
+    virtual void addEnergy(MCWalkerConfiguration &W, 
+			   vector<RealType> &LocalEnergy,
+			   vector<vector<NonLocalData> > &Txy) {
+      addEnergy (W, LocalEnergy);
+    }
+#endif
+
 
   };
 }

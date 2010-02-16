@@ -24,10 +24,15 @@
 
 namespace qmcplusplus {
   struct DMCFactory {
-    bool PbyPUpdate;
+    bool PbyPUpdate, GPU;
     xmlNodePtr myNode;
-    DMCFactory(bool pbyp, xmlNodePtr cur):PbyPUpdate(pbyp), myNode(cur){}
-    QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool);
+    DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) : 
+      PbyPUpdate(pbyp), myNode(cur), GPU(gpu)
+    { }
+
+    QMCDriver* create(MCWalkerConfiguration& w, 
+		      TrialWaveFunction& psi, 
+		      QMCHamiltonian& h, HamiltonianPool& hpool);
   };
 }
 
