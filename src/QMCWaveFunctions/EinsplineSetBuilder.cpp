@@ -2608,18 +2608,31 @@ void
 	    // the real part nor the imaginary part are very near
 	    // zero.  This sometimes happens in crystals with high
 	    // symmetry at special k-points.
+
 	    double rNorm=0.0, iNorm=0.0;
-	    for (int ix=0; ix<nx; ix++)
-	      for (int iy=0; iy<ny; iy++)
+	    
+	    PosType ru;
+	    for (int ix=0; ix<nx; ix++) {
+	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      for (int iy=0; iy<ny; iy++){
+		ru[1] = (RealType)iy / (RealType)(ny-1);
 		for (int iz=0; iz<nz; iz++) {
-		  complex<double> z = FFTbox(ix,iy,iz);
+		  ru[2] = (RealType)iz / (RealType)(nz-1);
+		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+		  double s, c;
+		  sincos(phi, &s, &c);
+		  complex<double> phase(c,s);
+		  complex<double> z = phase*FFTbox(ix,iy,iz);
+		  
 		  rNorm += z.real()*z.real();
 		  iNorm += z.imag()*z.imag();
 		}
+	      }
+	    }
 	    double arg = std::atan2(iNorm, rNorm);
 	    // cerr << "Phase = " << arg/M_PI << " pi.\n";
 	    double s,c;
-	    sincos(0.25*M_PI-arg, &s, &c);
+	    sincos(0.5*(0.25*M_PI-arg), &s, &c);
 	    complex<double> phase(c,s);
 	    rNorm=0.0; iNorm=0.0;
 	    for (int ix=0; ix<nx; ix++)
