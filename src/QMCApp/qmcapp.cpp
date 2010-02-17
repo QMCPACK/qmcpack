@@ -218,7 +218,12 @@ int main(int argc, char **argv) {
 
   using namespace qmcplusplus;
   stringstream logname;
-  logname<<getDateAndTime("%Y%m%dT%H%M");
+  // logname<<getDateAndTime("%Y%m%dT%H%M");
+  int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
+  string myinput = inputs[qmcComm->getGroupID()];
+  myinput = myinput.substr(0,myinput.size()-4);
+  //int pos = myinput.rfind(".xml");
+  logname << myinput;
   OhmmsInfo Welcome(logname.str(),qmcComm->rank(),qmcComm->getGroupID(),inputs.size());
 
 //#if defined(MPIRUN_EXTRA_ARGUMENTS)
