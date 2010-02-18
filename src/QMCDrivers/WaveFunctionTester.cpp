@@ -180,7 +180,7 @@ namespace qmcplusplus
   {
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 0.00001;
+    RealType delta = 1e-4;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -362,6 +362,8 @@ namespace qmcplusplus
                 PosType newpos(W.makeMove(iat,dr));
 
                 //RealType ratio=Psi.ratio(W,iat,dGp,dLp);
+                W.dG=0;
+                W.dL=0;
                 RealType ratio=Psi.ratio(W,iat,W.dG,W.dL);
                 Gp = W.G + W.dG;
                 //RealType enew = H.evaluatePbyP(W,iat);
@@ -400,7 +402,7 @@ namespace qmcplusplus
             Lp=W.L;
             W.R=thisWalker.R;
             W.update();
-            RealType newlogpsi=Psi.evaluateLog(W);
+            RealType newlogpsi=Psi.updateBuffer(W,w_buffer,false);
             RealType ene = H.evaluate(W);
             thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
             //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
@@ -436,8 +438,8 @@ namespace qmcplusplus
             Walker_t& thisWalker(**it);
             W.loadWalker(thisWalker,pbyp_mode);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+            //Psi.updateBuffer(W,w_buffer,true);
             Psi.copyFromBuffer(W,w_buffer);
-
             RealType eold(thisWalker.Properties(LOCALENERGY));
             RealType logpsi(thisWalker.Properties(LOGPSI));
             RealType emixed(eold), enew(eold);
