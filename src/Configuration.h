@@ -73,7 +73,9 @@ namespace qmcplusplus
     typedef OHMMS_PRECISION                RealType;
 #if defined(QMC_COMPLEX)
     typedef std::complex<OHMMS_PRECISION>  ValueType;
+ #ifdef QMC_CUDA
     typedef std::complex<CUDA_PRECISION>   CudaValueType;
+ #endif
 #else
     typedef OHMMS_PRECISION                ValueType;
  #ifdef QMC_CUDA
