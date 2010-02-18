@@ -71,23 +71,27 @@ namespace qmcplusplus
     enum {DIM = OHMMS_DIM};
     typedef OHMMS_INDEXTYPE                IndexType;
     typedef OHMMS_PRECISION                RealType;
-    typedef CUDA_PRECISION                 CudaRealType;
 #if defined(QMC_COMPLEX)
     typedef std::complex<OHMMS_PRECISION>  ValueType;
     typedef std::complex<CUDA_PRECISION>   CudaValueType;
 #else
     typedef OHMMS_PRECISION                ValueType;
+ #ifdef QMC_CUDA
     typedef CUDA_PRECISION                 CudaValueType;
+ #endif
 #endif
-    typedef std::complex<CUDA_PRECISION>   CudaComplexType;
     typedef std::complex<RealType>         ComplexType;
     typedef TinyVector<RealType,DIM>       PosType;
-    typedef TinyVector<CudaRealType,DIM>   CudaPosType;
     typedef TinyVector<ValueType,DIM>      GradType;
-    typedef TinyVector<CudaValueType,DIM>  CudaGradType;
     typedef Tensor<RealType,DIM>           TensorType;
     ///define PropertyList_t
     typedef RecordNamedProperty<RealType> PropertySetType;
+#ifdef QMC_CUDA
+    typedef CUDA_PRECISION                 CudaRealType;
+    typedef TinyVector<CudaValueType,DIM>  CudaGradType;
+    typedef TinyVector<CudaRealType,DIM>   CudaPosType;
+    typedef std::complex<CUDA_PRECISION>   CudaComplexType;
+#endif
   };
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
