@@ -3,6 +3,7 @@ from xml.dom.minidom import *
 import sys
 
 def check_project (proj):
+    print 'checking project section'
     return
     
 def check_random (rand):
@@ -18,7 +19,7 @@ def check_wavefunction(wf):
     return
 
 def check_hamiltonian(ham):
-    print 'checking hamiltonaina section'
+    print 'checking hamiltonian section'
     return
 
 def check_loop(loop):
