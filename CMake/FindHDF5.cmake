@@ -53,21 +53,21 @@ IF(HDF5_INCLUDE_DIR AND HDF5_LIBRARIES)
   MESSAGE(STATUS "HDF5_LIBRARIES=${HDF5_LIBRARIES}")
   SET(HDF5_FOUND TRUE)
 
-  find_file(h5settings libhdf5.settings ${QMC_LIBRARY_PATHS})
-  exec_program(grep  
-    ARGS libraries ${h5settings}
-    OUTPUT_VARIABLE HDF5_EXTRA_LIBS
-    RETURN_VALUE mycheck
-    )
-  if(HDF5_EXTRA_LIBS MATCHES "sz")
-    STRING(REGEX MATCHALL "[-][L]([^ ;])+" HDF5_EXTRA_LIBS_LINK  ${HDF5_EXTRA_LIBS})
-    STRING(REGEX REPLACE "[-][L]" "" SZLIB_PATH ${HDF5_EXTRA_LIBS_LINK})
-    find_library(SZLIB_LIBRARIES sz ${SZLIB_PATH})
-    if(SZLIB_LIBRARIES)
-      MESSAGE(STATUS "SZLIB_LIBRARIES="${SZLIB_LIBRARIES})
-      set(SZLIB_FOUND TRUE)
-    endif(SZLIB_LIBRARIES)
-  endif(HDF5_EXTRA_LIBS MATCHES "sz")
+  #  find_file(h5settings libhdf5.settings ${QMC_LIBRARY_PATHS})
+  #  exec_program(grep  
+  #    ARGS libraries ${h5settings}
+  #    OUTPUT_VARIABLE HDF5_EXTRA_LIBS
+  #    RETURN_VALUE mycheck
+  #    )
+  #  if(HDF5_EXTRA_LIBS MATCHES "sz")
+  #    STRING(REGEX MATCHALL "[-][L]([^ ;])+" HDF5_EXTRA_LIBS_LINK  ${HDF5_EXTRA_LIBS})
+  #    STRING(REGEX REPLACE "[-][L]" "" SZLIB_PATH ${HDF5_EXTRA_LIBS_LINK})
+  #    find_library(SZLIB_LIBRARIES sz ${SZLIB_PATH})
+  #    if(SZLIB_LIBRARIES)
+  #      MESSAGE(STATUS "SZLIB_LIBRARIES="${SZLIB_LIBRARIES})
+  #      set(SZLIB_FOUND TRUE)
+  #    endif(SZLIB_LIBRARIES)
+  #  endif(HDF5_EXTRA_LIBS MATCHES "sz")
 ELSE()
   SET(HDF5_FOUND FALSE)
 ENDIF()
