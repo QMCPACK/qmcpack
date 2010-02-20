@@ -14,9 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/SPOSetBase.h"
-#if defined(HAVE_LIBHDF5)
-#include "Numerics/HDFNumericAttrib.h"
-#endif
+#include <io/hdf_archive.h>
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
@@ -88,9 +86,11 @@ namespace qmcplusplus {
     xmlNodePtr occ_ptr=NULL;
     xmlNodePtr coeff_ptr=NULL;
     cur = cur->xmlChildrenNode;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       string cname((const char*)(cur->name));
-      if(cname == "occupation") {
+      if(cname == "occupation") 
+      {
         occ_ptr=cur;
       } else if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var") {
         coeff_ptr=cur;
@@ -98,18 +98,18 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-    if(coeff_ptr == NULL) {
+    if(coeff_ptr == NULL) 
+    {
       app_log() << "   Using Identity for the LCOrbitalSet " << endl;
       return setIdentity(true);
     }
 
     bool success=putOccupation(occ_ptr);
 
-    if(h == NULL) {
+    if(h == NULL) 
       success = putFromXML(coeff_ptr);
-    } else {
+     else 
       success = putFromH5((const char*)h, coeff_ptr);
-    }
 
     if(debugc=="yes")
     {
@@ -165,21 +165,24 @@ namespace qmcplusplus {
   }
 
   bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr) {
-    vector<ValueType> Ctemp;
-    int total(OrbitalSetSize);
+
     Identity=true;
-    if(coeff_ptr != NULL){
-      if(xmlHasProp(coeff_ptr, (const xmlChar*)"size")){
-        total = atoi((const char*)(xmlGetProp(coeff_ptr, (const xmlChar *)"size")));
-      } 
-      Ctemp.resize(total*BasisSetSize);
-      putContent(Ctemp,coeff_ptr);
-      Identity = false;
+    int norbs=0;
+
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(norbs,"size"); aAttrib.add(norbs,"orbitals");
+    aAttrib.put(coeff_ptr);
+
+    if(norbs < OrbitalSetSize) 
+    {
+      APP_ABORT("SPOSetBase::putFromXML missing or incorrect size");
     }
 
-    setIdentity(Identity);
-
-    if(!Identity) {
+    if(norbs)
+    {
+      Identity=false;
+      vector<ValueType> Ctemp;
+      putContent(Ctemp,coeff_ptr);
       int n=0,i=0;
       vector<ValueType>::iterator cit(Ctemp.begin());
       while(i<OrbitalSetSize){
@@ -189,7 +192,7 @@ namespace qmcplusplus {
         }
         n++;cit+=BasisSetSize;
       }
-    } 
+    }
     return true;
   }
 
@@ -205,34 +208,34 @@ namespace qmcplusplus {
       int norbs=OrbitalSetSize;
       int neigs=BasisSetSize;
 
-      string setname("invalid");
-      if(coeff_ptr) {
-         const xmlChar* d=xmlGetProp(coeff_ptr,(const xmlChar*)"dataset");  
-         if(d) setname = (const char*)d;
-         d=xmlGetProp(coeff_ptr,(const xmlChar*)"size");  
-         if(d) neigs=atoi((const char*)d);
-      }
+      string setname;
+      OhmmsAttributeSet aAttrib;
+      aAttrib.add(setname,"dataset");
+      aAttrib.add(neigs,"size"); aAttrib.add(neigs,"orbitals");
+      aAttrib.put(coeff_ptr);
 
       setIdentity(false);
-
-      if(setname != "invalid") {
-        Matrix<RealType> Ctemp(neigs,BasisSetSize);
-        hid_t h_file=  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
-        HDFAttribIO<Matrix<RealType> > h(Ctemp);
-        h.read(h_file,setname.c_str());
-        H5Fclose(h_file);
-	int n=0,i=0;
-	while(i<norbs){
-	  if(Occ[n]>numeric_limits<RealType>::epsilon()){
-            std::copy(Ctemp[n],Ctemp[n+1],C[i]);
-	    i++; 
-	  }
-	  n++;
-	}
+      if(setname.empty())
+      {
+        APP_ABORT("SPOSetBase::putFromH5 missing dataset attribute");
       }
 
+      Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+      hdf_archive hin(0);
+      hin.open(fname);
+      hin.read(Ctemp);
+
+      int n=0,i=0;
+      while(i<norbs)
+      {
+        if(Occ[n]>0.0){
+          std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+          i++; 
+        }
+        n++;
+      }
 #else
-      ERRORMSG("HDF5 is disabled. Using identity")
+      APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
 #endif
       return true;
     }
