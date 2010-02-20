@@ -1,37 +1,44 @@
 #!/bin/env python
 from xml.dom.minidom import *
 import sys
+from check_qmcsystem import *
 
-def check_project (proj):
+class simulation:
+    system = qmcsystem()
+
+
+def check_project (proj, sim):
     print 'checking project section'
     return
     
-def check_random (rand):
+def check_random (rand, sim):
     print 'checking random section'
     return
 
-def check_qmcsystem(system):
-    print 'checking qmcsystem section'
-    return
+#def check_qmcsystem(system):
+#    print 'checking qmcsystem section'
+#    return
 
-def check_wavefunction(wf):
+def check_wavefunction(wf, sim):
     print 'checking wavefunction section'
     return
 
-def check_hamiltonian(ham):
+def check_hamiltonian(ham, sim):
     print 'checking hamiltonian section'
     return
 
-def check_loop(loop):
+def check_loop(loop, sim):
     print 'checking loop section'
     return
 
-def check_qmc(qmc):
+def check_qmc(qmc, sim):
     print 'checking qmc section'
     return
 
 
-def check_simulation(sim):
+def check_simulation(sim_elem):
+    mysim = simulation()
+
     sim_dict = {'project'      : check_project     , \
                 'random'       : check_random      , \
                 'qmcsystem'    : check_qmcsystem   , \
@@ -40,11 +47,11 @@ def check_simulation(sim):
                 'loop'         : check_loop        , \
                 'qmc'          : check_qmc         }
 
-    for elem in sim.childNodes:
+    for elem in sim_elem.childNodes:
         if elem.nodeType == elem.ELEMENT_NODE:
             n = elem.localName
             if (n in sim_dict):
-                sim_dict[elem.localName](elem)
+                sim_dict[elem.localName](elem, mysim)
             else:
                 print "Error:  unrecognized subelement \"" + n + "\" in "\
                     "element \"simulation\""
