@@ -60,10 +60,12 @@ void QMCGaussianParserBase::init() {
   IonName[52] = "Te"; IonName[53] = "I"; IonName[54] = "Xe"; 
 
  
-  gShellType.resize(7);
-  gShellType[1]="s"; gShellType[2]="sp"; gShellType[3]="p"; gShellType[4]="d"; gShellType[5]="f"; gShellType[6]="g";
-  gShellID.resize(7);
-  gShellID[1]=0; gShellID[2]=0; gShellID[3]=1; gShellID[4]=2; gShellID[5]=3; gShellID[6]=4;
+  gShellType.resize(10);
+  gShellType[1]="s"; gShellType[2]="sp"; gShellType[3]="p"; gShellType[4]="d"; gShellType[5]="f"; 
+  gShellType[6]="g"; gShellType[7]="h";gShellType[8]="h1";gShellType[9]="h2";
+  gShellID.resize(10);
+  gShellID[1]=0; gShellID[2]=0; gShellID[3]=1; //gShellID[4]=2; gShellID[5]=3; gShellID[6]=4; gShellID[7]=5;
+  for(int i=4,l=2; i<gShellID.size();++i,++l) gShellID[i]=l;
 }
 
 void QMCGaussianParserBase::setOccupationNumbers() {
@@ -321,9 +323,6 @@ QMCGaussianParserBase::createDeterminantSet() {
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"downdet");
   xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
-  //if(SpinRestricted)
-  //  xmlNewProp(adet,(const xmlChar*)"ref",(const xmlChar*)"updet");
-  //else {
   {
     //std::ostringstream occ_beta;
     //occ_beta<<"\n";
@@ -354,8 +353,12 @@ QMCGaussianParserBase::createDeterminantSet() {
       eigD << setw(22) << EigVec[b++];
     }
     if(dn) eigD << endl;
-    det_data 
-      = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
+    if(SpinRestricted)
+      det_data 
+        = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
+    else
+      det_data 
+        = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
     xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
     xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"downdetC");
   }

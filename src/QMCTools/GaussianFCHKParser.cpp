@@ -36,7 +36,19 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin);//3  Number of atoms
   NumberOfAtoms = atoi(currentWords.back().c_str());
 
-  getwords(currentWords,fin); //4 Charge
+  // TDB: THIS FIX SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
+  //getwords(currentWords,fin); //4 Charge
+  bool notfound = true;
+  while(notfound) {
+    std::string aline;
+    getwords(currentWords,fin);
+    for(int i=0; i<currentWords.size(); i++){
+      if("Charge" == currentWords[i]){
+	notfound = false;
+      }
+    }
+  }
+
   getwords(currentWords,fin); //5 Multiplicity
   SpinMultiplicity=atoi(currentWords.back().c_str());
 
@@ -55,9 +67,13 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin); //9 Number of basis functions
   SizeOfBasisSet=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //10 Number of independant functions 
+
+  // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
+  streampos pivottdb = fin.tellg();
+
    ///
   int ng;
-  bool notfound = true;
+  notfound = true; // TDB: originally - bool notfound = true;
   while(notfound) {
     std::string aline;
     getwords(currentWords,fin);
@@ -68,10 +84,24 @@ void GaussianFCHKParser::parse(const std::string& fname) {
       }
     }
   }
-  getwords(currentWords,fin); //Number of contracted shells
-  getwords(currentWords,fin); //Number of contracted shells
-  getwords(currentWords,fin); //Number of contracted shells
-  int nx=atoi(currentWords.back().c_str()); //Number of exponents
+
+  // TDB: THIS FIX SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
+  // getwords(currentWords,fin); //Number of contracted shells
+  // getwords(currentWords,fin); //Number of contracted shells
+  // getwords(currentWords,fin); //Number of contracted shells
+  // int nx=atoi(currentWords.back().c_str()); //Number of exponents
+  int nx;
+  notfound = true;
+  while(notfound) {
+    std::string aline;
+    getwords(currentWords,fin);
+    for(int i=0; i<currentWords.size(); i++){
+      if("primitive" == currentWords[i]){
+        nx=atoi(currentWords.back().c_str()); //Number of exponents
+	notfound = false;
+      }
+    }
+  }
 
   //allocate everything here
   IonSystem.create(NumberOfAtoms);
@@ -83,6 +113,9 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   gExp.resize(nx); 
   gC0.resize(nx); 
   gC1.resize(nx);
+
+  // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
+  fin.seekg(pivottdb);//rewind it
 
   getGeometry(fin);
 
@@ -152,9 +185,13 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
   gsMap[0] =1; //s
   gsMap[-1]=2; //sp
   gsMap[1] =3; //p
-  gsMap[-2]=4; //d
-  gsMap[-3]=5; //f
-  gsMap[-4]=6; //g
+  gsMap[-2]=4; //l=2 d
+  gsMap[-3]=5; //l=3 f
+  gsMap[-4]=6; //l=4 g
+  gsMap[-5]=7; //l=5 h
+  gsMap[-6]=8; //l=6 h1??
+  gsMap[-7]=9; //l=7 h2??
+  gsMap[-8]=10; //l=8 h3??
 
   vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
 
