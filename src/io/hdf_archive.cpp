@@ -20,11 +20,10 @@ namespace qmcplusplus
   //const hid_t hdf_archive::is_closed;
   hdf_archive::hdf_archive(Communicate* c, bool use_collective)
     : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
-      ,myComm(c)
   {
     H5Eget_auto (&err_func, &client_data);
     H5Eset_auto (NULL, NULL);
-    set_access_plist(use_collective);
+    set_access_plist(use_collective,c);
   }
 
   hdf_archive::~hdf_archive() 
@@ -47,24 +46,32 @@ namespace qmcplusplus
     file_id=is_closed;
   }
 
-  void hdf_archive::set_access_plist(bool use_collective)
+  void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
   {
     access_id=H5P_DEFAULT;
-#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
-    if(use_collective && myComm && myComm->size()>1)
+    if(comm && comm->size()>1) //for parallel communicator
     {
-      MPI_Info info=MPI_INFO_NULL;
-      access_id = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_fapl_mpio(access_id,myComm->getMPI(),info);
-      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+      if(use_collective)
+      {
+#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
+        MPI_Info info=MPI_INFO_NULL;
+        access_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fapl_mpio(access_id,comm,info);
+        xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+        H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+#else
+        use_collective=false;//cannot use collective
+#endif
+      }
+      //true, if this task does not need to participate in I/O
+      Mode.set(IS_PARALLEL,use_collective);
+      Mode.set(NOIO,comm->rank()&&!use_collective);
     }
     else
-      use_collective=false;
-#endif
-    Mode.set(IS_PARALLEL,use_collective);
-    //true, if this task does not need to participate in I/O
-    Mode.set(NOIO,myComm->rank()&&!use_collective);
+    {
+      Mode.set(IS_PARALLEL,false);
+      Mode.set(NOIO,false);
+    }
   }
 
   bool hdf_archive::create(const std::string& fname, unsigned flags)

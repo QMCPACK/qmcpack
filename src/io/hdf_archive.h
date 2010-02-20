@@ -54,17 +54,18 @@ namespace qmcplusplus
     H5E_auto_t err_func;
     ///error handling
     void *client_data;
-    ///communicator
-    Communicate* myComm;
     ///FILO to handle H5Group
     std::stack<hid_t> group_id;
-    ///constructor 
-    hdf_archive(Communicate* c, bool use_collective=false);
+    /** constructor 
+     * @param c communicator
+     * @param use_collective turn on/off collective
+     */
+    hdf_archive(Communicate* c=0, bool use_collective=false);
     ///destructor
     ~hdf_archive();
 
     ///set the access property
-    void set_access_plist(bool use_collective);
+    void set_access_plist(bool use_collective, Communicate* comm);
 
     ///return true if collective i/o
     inline bool is_collective() const {return Mode[0];}
