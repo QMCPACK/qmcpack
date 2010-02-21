@@ -13,8 +13,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file multidet.cpp
- * @brief Test codes for multidets
+/**@file einspline_smp.cpp
+ * @brief Benchmark einspline. Shared engine among threads.
  */
 #include <SandBox/einspline_benchmark.h>
 #include <Utilities/OhmmsInfo.h>
@@ -24,7 +24,6 @@ using namespace qmcplusplus;
 
 int main(int argc, char** argv)
 {
-  using namespace qmcplusplus;
 
   OHMMS::Controller->initialize(argc,argv);
   Communicate* mycomm=OHMMS::Controller;
@@ -35,12 +34,12 @@ int main(int argc, char** argv)
   int num_splines=128;
   int nsamples=512;
   int niters=100;
-  int opt;
 
+  int opt;
   while((opt = getopt(argc, argv, "hg:x:y:z:i:s:p:")) != -1) {
     switch(opt) {
       case 'h':
-        printf("[-g grid| -x grid_x -y grid_y -z grid_z] -s states -p particles -i iterations -t [d|s|z|c] \n");
+        printf("[-g grid| -x grid_x -y grid_y -z grid_z] -s states -p particles -i iterations\n");
         return 1;
       case 'g':
         nx=ny=nz=atoi(optarg);
@@ -78,20 +77,20 @@ int main(int argc, char** argv)
   typedef TinyVector<double,3> timer_type;
   timer_type d_timer_t,s_timer_t,z_timer_t,c_timer_t;
 
-#pragma omp parallel
+  einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
+  z_bench.set(nx,ny,nz,num_splines);
+
+  einspline3d_benchmark<multi_UBspline_3d_d> d_bench;
+  d_bench.set(nx,ny,nz,num_splines);
+
+  einspline3d_benchmark<multi_UBspline_3d_s> s_bench;
+  s_bench.set(nx,ny,nz,num_splines);
+
+  einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
+  c_bench.set(nx,ny,nz,num_splines);
+
+#pragma omp parallel 
   {
-    einspline3d_benchmark<multi_UBspline_3d_d> d_bench;
-    d_bench.set(nx,ny,nz,num_splines);
-
-    einspline3d_benchmark<multi_UBspline_3d_s> s_bench;
-    s_bench.set(nx,ny,nz,num_splines);
-
-    einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
-    z_bench.set(nx,ny,nz,num_splines);
-
-    einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
-    c_bench.set(nx,ny,nz,num_splines);
-
     random_position_generator<double> d_pos(nsamples,omp_get_thread_num());
     random_position_generator<float> s_pos(nsamples,omp_get_thread_num());
     timer_type d_timer,s_timer,z_timer,c_timer;
