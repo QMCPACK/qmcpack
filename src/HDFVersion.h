@@ -119,6 +119,24 @@ namespace qmcplusplus
     return is;
   }
 
+  /** specialize h5data_proxy for HDFVersion */
+  template<> 
+    struct h5data_proxy<HDFVersion>
+    {
+      HDFVersion& ref;
+      h5data_proxy(HDFVersion& a):ref(a){}
+      inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+      {
+        h5data_proxy<HDFVersion::data_type> vin(ref.version);
+        return vin.read(grp,aname,xfer_plist);
+      }
+      inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+      {
+        h5data_proxy<HDFVersion::data_type> vout(ref.version);
+        return vout.write(grp,aname,xfer_plist);
+      }
+    };
+
 }
 #endif
 /***************************************************************************

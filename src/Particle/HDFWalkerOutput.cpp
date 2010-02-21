@@ -62,7 +62,7 @@ namespace qmcplusplus
     HDFVersion cur_version;
     int dim=OHMMS_DIM;
     fw_out.create(ConfigFileName);
-    fw_out.write(cur_version,hdf::version);
+    fw_out.write(cur_version.version,hdf::version);
     fw_out.write(number_of_particles,"NumberElectrons");
     fw_out.write(dim,"DIM");
   }
