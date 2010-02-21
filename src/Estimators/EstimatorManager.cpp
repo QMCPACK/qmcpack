@@ -520,8 +520,10 @@ namespace qmcplusplus {
 
     if(Estimators.empty()) 
     {
-      app_log() << "  Using a default LocalEnergyOnlyEstimator for the MainEstimator " << endl;
-      add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
+      app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << endl;
+      max4ascii=H.sizeOfObservables()+3;
+      add(new LocalEnergyEstimator(H),MainEstimatorName);
+      //add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
     if(H.sizeOfCollectables())
