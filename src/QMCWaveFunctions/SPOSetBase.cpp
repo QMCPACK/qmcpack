@@ -14,10 +14,10 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include <io/hdf_archive.h>
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
+#include <io/hdf_archive.h>
 #include <limits>
 
 namespace qmcplusplus {
@@ -223,7 +223,7 @@ namespace qmcplusplus {
       Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
       hdf_archive hin(0);
       hin.open(fname);
-      hin.read(Ctemp);
+      hin.read(Ctemp,setname);
 
       int n=0,i=0;
       while(i<norbs)
