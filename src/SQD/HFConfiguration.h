@@ -70,33 +70,7 @@
  *\section app_sec How to run AtomicHF code
  *
  */
-#include <iostream>
-
-//#if !defined(LOGMSG)
-//#define LOGMSG(msg) {std::cout<< "HF " << msg << std::endl;}
-//#endif
-//
-//#if !defined(WARNMSG)
-//#define WARNMSG(msg) {std::cout<< "WARNING " << msg << std::endl;}
-//#endif
-//
-//#if !defined(DEBUGMSG)
-//#if defined(PRINT_DEBUG)
-//#define DEBUGMSG(msg) {std::cout<< "DEBUG " << msg << std::endl;}
-//#else
-//#define DEBUGMSG(msg)
-//#endif
-//#endif
-//
-//#if !defined(ERRORMSG)
-//#define ERRORMSG(msg) {std::cout<< "ERROR " << msg << std::endl;}
-//#endif
-//
-//#if !defined(XMLReport)
-//#define XMLReport(msg) {std::cout<< "XML " << msg << std::endl;}
-//#endif
-//
-#include "config.h"
+#include "Configuration.h"
 #include "SQD/YlmRnlSet.h"
 /**@namespace ohmmshf
  *@brief  Define basic data types for the applications.

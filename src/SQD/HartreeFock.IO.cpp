@@ -25,6 +25,7 @@
 #include "SQD/HartreeFock.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Utilities/OhmmsInfo.h"
 
 namespace ohmmshf {
 
@@ -252,19 +253,17 @@ namespace ohmmshf {
     }
     //pass the xmlNode to Psi
     Psi.put(cur);
-
-    LOGMSG("Total number of orbitals = " << Psi.size()); 
-    LOGMSG("Total number of unique radial orbitals = " <<  Psi.NumUniqueOrb);
-
-    LOGMSG("(Orbital index, Number of Orbitals, n,l,m,s)");
+    app_log() << "Total number of orbitals = " << Psi.size() << endl;
+    app_log() << "Total number of unique radial orbitals = " <<  Psi.NumUniqueOrb << endl;
+    app_log() << "(Orbital index, Number of Orbitals, n,l,m,s)"<<endl;;
     for(int j=0; j < Psi.size(); j++){
       int id = Psi.ID[j];
-      LOGMSG("(" << id << ", " << Psi.IDcount[id] 
+      app_log()<< "(" << id << ", " << Psi.IDcount[id] 
           << ", " << Psi.N[j]
           << ", " << Psi.L[j]
           << ", " << Psi.M[j]
           << ", " << Psi.S[j]
-          << ")");
+          << ")" << endl;
     }
 
     //return false if there is no wave functions

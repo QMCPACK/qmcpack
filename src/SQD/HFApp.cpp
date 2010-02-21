@@ -23,6 +23,7 @@
 
 main(int argc, char **argv) {
 
+  OhmmsInfo Welcome("sqd");
   QApplication a( argc, argv );
 
   if(argc<2) {
@@ -54,6 +55,7 @@ main(int argc, char **argv) {
 #else
 main(int argc, char **argv) {
 
+  OhmmsInfo Welcome("sqd");
   if(argc<2) {
     std::cerr << "Usage: sqd file-name [-nox]" << std::endl;
     std::cerr << "Use -nox if you like to skip plotting the results." << std::endl;

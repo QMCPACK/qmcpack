@@ -19,13 +19,8 @@
 #ifndef OHMMS_YLMRNLSET_ONGRID_IO_H
 #define OHMMS_YLMRNLSET_ONGRID_IO_H
 
-#ifdef HAVE_LIBHDF5
-#include "HDFVersion.h"
-#include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
-#else
+#include <io/hdf_archive.h>
 #include "OhmmsPETE/OhmmsMatrix.h"
-#endif
 #include "Numerics/Transform2GridFunctor.h"
 #include <fstream>
 
@@ -136,21 +131,17 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 #ifdef HAVE_LIBHDF5
   //print to file fname
   string HDFfname = RootName + ".h5";
-  hid_t afile = H5Fcreate(HDFfname.c_str(),H5F_ACC_TRUNC,
-			  H5P_DEFAULT,H5P_DEFAULT);
 
+  hdf_archive afile;
+  afile.create(HDFfname);
+
+  TinyVector<int,2> res_version(0,1);
+  afile.write(res_version,"version");
 
   int orbindex = 0;
   //main group  
-  hid_t group_id = H5Gcreate(afile,"radial_basis_states",0);
-  {
-    HDFAttribIO<double> r_out(CuspParam);
-    r_out.write(group_id,"cusp");
-  }
-
-  HDFVersion res_version(0,1); //start using major=0 and minor=4
-  res_version.write(afile,"version");
-
+  afile.push("radial_basis_states");
+  afile.write(CuspParam,"cusp");
   //output grid information
   //Vector<double> grid_params(3);
   //grid_params[0] = m_grid->rmin();
@@ -160,23 +151,21 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
   //GridHDFTypeOut.write(group_id_grid,"grid_type");
   //HDFAttribIO<Vector<double> > GridHDFParamOut(grid_params);
   //GridHDFParamOut.write(group_id_grid,"params");
-
   //output orbital information
   //output only unique radial functions
  
   int rmax_safe=0;
-  for(int orb=0; orb<NumUniqueOrb; orb++){
+  for(int orb=0; orb<NumUniqueOrb; orb++)
+  {
     char grpname[128];
     sprintf(grpname,"orbital%04d",orb);
-    hid_t group_id_orb = H5Gcreate(group_id,grpname,0);
+    afile.push(grpname);
    
-    double tt=0.0;
+    //double tt=0.0;
+    //afile.write(tt,"cusp");
     //if(!L[orbindex]) tt=-CuspParam;
-    HDFAttribIO<double> r_out(tt);
-    //r_out.write(group_id_orb,"cusp");
 
-    tt=eigVal[orbindex];
-    r_out.write(group_id_orb,"eigenvalue");
+    afile.write(eigVal[orbindex],"eigenvalue");
 
     //for qmc code, the radial function u(r)/r^{l+1}
     //Note that we are print out u(r) not  
@@ -191,13 +180,8 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     //EigValHDFOut.write(group_id_orb,"eigenvalue");
 
     //ouptput quantum numbers
-    Vector<int> QuantumNo(3);
-    QuantumNo[0] = N[orbindex];
-    QuantumNo[1] = L[orbindex];
-    //only single-zeta basis
-    QuantumNo[2] = 1;
-    HDFAttribIO<Vector<int> > QuantumNoHDFOut(QuantumNo);
-    QuantumNoHDFOut.write(group_id_orb,"quantum_numbers");
+    TinyVector<int,3> QuantumNo(N[orbindex],L[orbindex],1);
+    afile.write(QuantumNo,"quantum_numbers");
 
     //vector to store the radial orbital
     //determine the maximum radius of the orbital
@@ -205,9 +189,8 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     //rad_orb.resize(max_rad);
     //
     vector<double> uofr(m_grid->size(),0.0);  
-    HDFAttribIO<vector<double> > uofr_out(uofr);
     for(int i=0; i<m_grid->size();++i) uofr[i] = (*psi[orbindex])(i);
-    uofr_out.write(group_id_orb,"uofr");
+    afile.write(uofr,"uofr");
 
     //test numerical derivatives to detect the uptake
     int max_rad = m_grid->size()-2;
@@ -220,43 +203,36 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     uofr[0]=uofr[1];
     if(L[orbindex]==0) uofr[0] += CuspParam*((*m_grid)[1]-(*m_grid)[0]);
 
-    uofr_out.write(group_id_orb,"radial_orbital");
+    afile.write(uofr,"radial_orbital");
+    afile.write(l_plus_one,"power");
 
-    HDFAttribIO<int> PowerHDFOut(l_plus_one);
-    PowerHDFOut.write(group_id_orb,"power");
-
-    H5Gclose(group_id_orb);   
+    afile.pop();
     orbindex += IDcount[orb];  
   }
 
-  hid_t group_id_grid = H5Gcreate(group_id,"grid",0);
+  afile.push("grid");
   {
     string gtype_copy=GridType+'\0';
-    HDFAttribIO<string> gtypestr(gtype_copy);
-    gtypestr.write(group_id_grid,"type");
+    afile.write(gtype_copy,"type");
 
     double tt=m_grid->rmin();
-
-    HDFAttribIO<double> r_out(tt);
-    r_out.write(group_id_grid,"ri");
+    afile.write(tt,"ri");
     tt=m_grid->rmax();
-    r_out.write(group_id_grid,"rf");
+    afile.write(tt,"rf");
     //write out the safe cutoff
     tt=(*m_grid)[rmax_safe];
-    r_out.write(group_id_grid,"rmax_safe");
+    afile.write(tt,"rmax_safe");
 
     int npts=m_grid->size();
-    HDFAttribIO<int> i_out(npts);
-    i_out.write(group_id_grid,"npts");
+    afile.write(npts,"npts");
 
-    npts=rmax_safe;
-    i_out.write(group_id_grid,"npts_safe");
+    m_grid->locate(rmax_safe);
+    npts=m_grid->Loc+1;
+    afile.write(npts,"npts_safe");
   }
-
-  H5Gclose(group_id_grid);
-
-  H5Gclose(group_id);
-  H5Fclose(afile); 
+  afile.pop();
+  afile.pop();
+  afile.close();
 #endif
   return true;
 
