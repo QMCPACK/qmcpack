@@ -115,7 +115,7 @@ namespace qmcplusplus
 
       /** initialize Walker buffers for PbyP update
        */
-      void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+      virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
       /** initalize Walker for walker update
        */
@@ -131,7 +131,7 @@ namespace qmcplusplus
 
       /**  process options
        */
-      bool put(xmlNodePtr cur);
+      virtual bool put(xmlNodePtr cur);
 
       inline void accumulate(WalkerIter_t it, WalkerIter_t it_end)
       {

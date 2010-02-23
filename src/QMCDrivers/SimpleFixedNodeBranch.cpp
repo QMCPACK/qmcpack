@@ -41,7 +41,7 @@ namespace qmcplusplus
     BranchMode.set(B_POPCONTROL,1); //use standard DMC
     BranchMode.set(B_USETAUEFF,1); //use taueff
     BranchMode.set(B_CLEARHISTORY,0); //clear history and start with the current average
-
+    BranchMode.set(B_KILLNODES,0); //when killing walkers at nodes etrial is updated differently
     vParam[B_TAU]=tau;
     vParam[B_TAUEFF]=tau;
     Feedback=1.0;
@@ -117,7 +117,7 @@ namespace qmcplusplus
     MyEstimator->reset();
   }
 
-  void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW) 
+void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW, bool killwalker) 
   {
     vParam[B_TAU]=tau;
     if(!BranchMode[B_DMCSTAGE])
@@ -141,6 +141,7 @@ namespace qmcplusplus
 
       BranchMode.set(B_DMC,1);//set DMC
       BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0 
+      BranchMode.set(B_KILLNODES,killwalker);
       WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
       iParam[B_MAXWALKERS]=WalkerController->Nmax;
       iParam[B_MINWALKERS]=WalkerController->Nmin;
@@ -205,6 +206,7 @@ namespace qmcplusplus
     //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
     //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
     RealType pop_now;
+    
     if(BranchMode[B_DMCSTAGE]||iter)
       pop_now= WalkerController->branch(iter,walkers,0.1);
     else
@@ -213,7 +215,10 @@ namespace qmcplusplus
 
     //current energy
     vParam[B_ENOW]=WalkerController->EnsembleProperty.Energy;
-    EnergyHist(vParam[B_ENOW]);
+    if(BranchMode[B_KILLNODES]) 
+      EnergyHist(vParam[B_ENOW]-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAU]);
+    else 
+      EnergyHist(vParam[B_ENOW]);
     VarianceHist(WalkerController->EnsembleProperty.Variance);
     R2Accepted(WalkerController->EnsembleProperty.R2Accepted);
     R2Proposed(WalkerController->EnsembleProperty.R2Proposed);
@@ -228,7 +233,7 @@ namespace qmcplusplus
           --ToDoSteps;
         else
         {
-          vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now)); 
+          vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
           ToDoSteps=iParam[B_ENERGYUPDATEINTERVAL]-1;
         }
       }
@@ -241,7 +246,8 @@ namespace qmcplusplus
         //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
         //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
         //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
-        vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])+Feedback*(logN-std::log(pop_now));
+        vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])
+             +Feedback*(logN-std::log(pop_now))-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAU];
       }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
@@ -271,7 +277,6 @@ namespace qmcplusplus
 
         ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
         BranchMode.set(B_DMCSTAGE,1); //set BranchModex to main stage
-
         //reset the histogram
         EnergyHist.clear();
         EnergyHist(vParam[B_EREF]);
@@ -309,6 +314,7 @@ namespace qmcplusplus
     branch(iter,walkers);
     //synchronize it
     for(int i=0; i<clones.size(); i++) clones[i]->vParam=vParam;
+    if((BranchMode[B_DMCSTAGE])&&(ToDoSteps==0)) for(int i=0; i<clones.size(); i++) clones[i]->BranchMode=BranchMode;
   }
 
   void SimpleFixedNodeBranch::reset()

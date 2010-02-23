@@ -163,10 +163,8 @@ namespace qmcplusplus
 
         thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
         H.saveProperty(thisWalker.getPropertyBase());
-        
-//         W.L=0.0;
-//         W.G=0.0;
-        thisWalker.ReleasedNodeZeroWeight = std::abs(1.0/Psi.alternateRatio(W));
+        thisWalker.ReleasedNodeAge=0;
+        thisWalker.ReleasedNodeWeight=0;
       }
   }
 
@@ -229,7 +227,7 @@ namespace qmcplusplus
   {
     for (;it != it_end; ++it)
       {
-        RealType M=(*it)->Weight;
+        RealType M=std::abs((*it)->Weight);
         (*it)->Multiplicity = std::floor(M + RandomGen());
       }
   }

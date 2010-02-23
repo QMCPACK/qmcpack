@@ -64,13 +64,15 @@ namespace qmcplusplus {
       dmcStream->setf(ios::scientific, ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << setw(10) << "# Index "
-        << setw(14) << "LocalEnergy"
+        << setw(20) << "LocalEnergy"
         << setw(20) << "Variance" 
-        << setw(22) << "Weight "
+        << setw(20) << "Weight"
         << setw(20) << "NumOfWalkers" 
-        << setw(20) << "TrialEnergy " 
-        << setw(20) << "DiffEff " 
-        << setw(20) << "LivingFraction " 
+        << setw(20) << "RNWalkers" 
+        << setw(20) << "AlternateEnergy"
+        << setw(20) << "TrialEnergy" 
+        << setw(20) << "DiffEff" 
+        << setw(20) << "LivingFraction" 
         << endl;
     }
   }
@@ -102,6 +104,8 @@ namespace qmcplusplus {
     EnsembleProperty.R2Accepted=curData[R2ACCEPTED_INDEX];
     EnsembleProperty.R2Proposed=curData[R2PROPOSED_INDEX];
     EnsembleProperty.LivingFraction=curData[LIVINGFRACTION_INDEX];
+    EnsembleProperty.AlternateEnergy=curData[B_ENERGY_INDEX]/curData[B_WGT_INDEX];
+    EnsembleProperty.RNSamples=curData[RNSIZE_INDEX];
 
     if(dmcStream) 
     {
@@ -112,6 +116,8 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.Variance
         << setw(20) << EnsembleProperty.Weight
         << setw(20) << EnsembleProperty.NumSamples
+        << setw(20) << EnsembleProperty.RNSamples
+        << setw(20) << EnsembleProperty.AlternateEnergy
         << setw(20) << trialEnergy 
         << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed
         << setw(20) << EnsembleProperty.LivingFraction
@@ -128,20 +134,42 @@ namespace qmcplusplus {
   {
     MCWalkerConfiguration::iterator it(W.begin());
     MCWalkerConfiguration::iterator it_end(W.end());
-    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0;
+    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
     RealType r2_accepted=0.0,r2_proposed=0.0;
+    int nrn(0),ncr(0),nfn(0),ngoodfn(0);
     for(; it!=it_end;++it)
     {
+      bool inFN=(((*it)->ReleasedNodeAge)==0);
+      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+      
+      if ((*it)->ReleasedNodeAge==1) ncr+=1;
+      else if ((*it)->ReleasedNodeAge==0) 
+      {
+        nfn+=1;
+        ngoodfn+=nc;
+      }
+      
       r2_accepted+=(*it)->Properties(R2ACCEPTED);
       r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
-      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      RealType wgt((*it)->Weight);
+      RealType bfe((*it)->Properties(ALTERNATEENERGY));
+      RealType rnwgt(0.0);
+      if (inFN)
+        rnwgt=((*it)->Properties(SIGN));
+      else
+        nrn+=nc;
+      //       RealType wgt((*it)->Weight);
+      RealType wgt(0.0);
+      if (inFN)
+        wgt=((*it)->Weight); 
+      
       esum += wgt*e;
       e2sum += wgt*e*e;
       wsum += wgt;
       w2sum += wgt*wgt;
       ecum += e;
+      besum += bfe*rnwgt*wgt;
+      bwgtsum += rnwgt*wgt;
     }
 
     //temp is an array to perform reduction operations
@@ -154,6 +182,10 @@ namespace qmcplusplus {
     curData[EREF_INDEX]=ecum;
     curData[R2ACCEPTED_INDEX]=r2_accepted;
     curData[R2PROPOSED_INDEX]=r2_proposed;
+    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(nfn)/static_cast<RealType>(nfn+ncr);
+    curData[RNSIZE_INDEX]=nrn;
+    curData[B_ENERGY_INDEX]=besum;
+    curData[B_WGT_INDEX]=bwgtsum;
 
     myComm->allreduce(curData);
 
@@ -162,12 +194,13 @@ namespace qmcplusplus {
     W.EnsembleProperty=EnsembleProperty;
 
     //return the current data
-    return W.getGlobalNumWalkers();
+//     app_log()<<"FN,RN: "<<ngoodfn<<" "<<nrn<<endl;
+    return ngoodfn;
   }
 
   int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
-    sortWalkers(W);
+    int prefill_numwalkers = sortWalkers(W);
 
     measureProperties(iter);
     W.EnsembleProperty=EnsembleProperty;
@@ -194,7 +227,7 @@ namespace qmcplusplus {
     //set the global number of walkers
     W.setGlobalNumWalkers(nw_tot);
 
-    return nw_tot;
+    return prefill_numwalkers;
   }
 
   void Write2XYZ(MCWalkerConfiguration& W)
@@ -216,37 +249,60 @@ namespace qmcplusplus {
 
   /** evaluate curData and mark the bad/good walkers
    */
-  void WalkerControlBase::sortWalkers(MCWalkerConfiguration& W) {
+  int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W) {
 
     MCWalkerConfiguration::iterator it(W.begin());
 
-    vector<Walker_t*> bad;
+    vector<Walker_t*> bad,good_rn;
+    vector<int> ncopy_rn;
     NumWalkers=0;
     MCWalkerConfiguration::iterator it_end(W.end());
-    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0;
+    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
     RealType r2_accepted=0.0,r2_proposed=0.0;
+    int nrn(0),ncr(0);
     //RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
     //RealType ebar= targetAvg;
     while(it != it_end) 
     {
+      bool inFN=(((*it)->ReleasedNodeAge)==0);
+      if ((*it)->ReleasedNodeAge==1) ncr+=1;
+      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       r2_accepted+=(*it)->Properties(R2ACCEPTED);
       r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
-      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      RealType wgt((*it)->Weight);
-// If we are using branching then it seems we should have weight=1 here?
+      RealType bfe((*it)->Properties(ALTERNATEENERGY));
+      RealType rnwgt(0.0);
+      if (inFN)
+        rnwgt=((*it)->Properties(SIGN));
+      else
+        nrn+=nc;
+      
+//       RealType wgt((*it)->Weight);
+      RealType wgt(0.0);
+      if (inFN)
+        wgt=((*it)->Weight); 
+      
       esum += wgt*e;
       e2sum += wgt*e*e;
       wsum += wgt;
       w2sum += wgt*wgt;
       ecum += e;
+      besum += bfe*rnwgt*wgt;
+      bwgtsum += rnwgt*wgt;
 
-      if(nc) 
+      if((nc) && (inFN))
       {
         NumWalkers += nc;
         good_w.push_back(*it);
         ncopy_w.push_back(nc-1);
-      } else {
+      } 
+      else if (nc)
+      {
+        good_rn.push_back(*it);
+        ncopy_rn.push_back(nc-1);
+      }
+      else
+      {
         bad.push_back(*it);
       }
       ++it;
@@ -279,7 +335,10 @@ namespace qmcplusplus {
     curData[EREF_INDEX]=ecum;
     curData[R2ACCEPTED_INDEX]=r2_accepted;
     curData[R2PROPOSED_INDEX]=r2_proposed;
-    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(good_w.size())/static_cast<RealType>(good_w.size()+bad.size());
+    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(good_w.size())/static_cast<RealType>(good_w.size()+ncr);//bad.size());
+    curData[RNSIZE_INDEX]=nrn;
+    curData[B_ENERGY_INDEX]=besum;
+    curData[B_WGT_INDEX]=bwgtsum;
     
     ////this should be move
     //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
@@ -307,7 +366,7 @@ namespace qmcplusplus {
         if(ncopy_w[i]) {ncopy_w[i]--; nsub++;}
         ++i;
       }
-      NumWalkers -= nsub;
+//       NumWalkers -= nsub;
     } else  if(NumWalkers < Nmin) {
       int nadd=0;
       int nadd_target = static_cast<int>(Nmin*1.1)-NumWalkers;
@@ -319,8 +378,18 @@ namespace qmcplusplus {
       while(i< sizeofgood && nadd<nadd_target) {
         ncopy_w[i]++; ++nadd;++i;
       }
-      NumWalkers +=  nadd;
+//       NumWalkers +=  nadd;
     }
+    it=good_rn.begin(); it_end=good_rn.end();
+    int indy(0);
+    while(it!=it_end) {
+      good_w.push_back(*it);
+      ncopy_w.push_back(ncopy_rn[indy]);
+      it++,indy++;
+    }
+    
+//     app_log()<<"FN,RN: "<<NumWalkers<<" "<<nrn<<endl;
+    return NumWalkers;
   }
 
   int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W) {

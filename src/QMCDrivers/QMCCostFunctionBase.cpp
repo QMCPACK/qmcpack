@@ -483,11 +483,11 @@ namespace qmcplusplus
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
-    m_param.add(useWeightStr,"reweight","string");
+//     m_param.add(useWeightStr,"reweight","string");
     m_param.put(q);
 
-    samplePsi2 = (useWeightStr != "psi");
-    app_log()<<"  samplePsi2 is "<<samplePsi2<<endl;
+//     samplePsi2 = (useWeightStr != "psi");
+//     app_log()<<"  samplePsi2 is "<<samplePsi2<<endl;
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -732,6 +732,7 @@ namespace qmcplusplus
       {
         Return_t v=OptVariablesForPsi[(*pit).first];
         getContent(v,(*pit).second);
+        app_log()<<(*pit).second<<endl;
         ++pit;
       }
     map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
@@ -739,7 +740,7 @@ namespace qmcplusplus
       {
         std::ostringstream vout;
         vout.setf(ios::scientific, ios::floatfield);
-        vout.precision(8);
+        vout.precision(16);
         vout << OptVariablesForPsi[(*ait).first];
         xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
         ++ait;
@@ -798,7 +799,7 @@ namespace qmcplusplus
                       {
                         std::ostringstream vout;
                         vout.setf(ios::scientific, ios::floatfield);
-                        vout.precision(8);
+                        vout.precision(16);
                         vout << (*vTarget).second;
                         xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
                       }

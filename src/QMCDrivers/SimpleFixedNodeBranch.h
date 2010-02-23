@@ -60,7 +60,7 @@ namespace qmcplusplus {
     enum  
     {
       B_DMC=0, B_DMCSTAGE=1, B_POPCONTROL=2, B_USETAUEFF=3, 
-      B_CLEARHISTORY=4, 
+      B_CLEARHISTORY=4, B_KILLNODES=5,
       B_MODE_MAX=8
     };
 
@@ -213,7 +213,7 @@ namespace qmcplusplus {
      * @param tau timestep
      * @param fixW true, if reconfiguration with the fixed number of walkers is used
      */
-    void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false);
+    void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
 
     /** determine trial and reference energies
      */
@@ -226,6 +226,13 @@ namespace qmcplusplus {
     inline RealType branchWeightBare(RealType enew, RealType eold) const 
     { 
       return std::exp(vParam[B_TAUEFF]*(vParam[B_ETRIAL]-0.5*(enew+eold)));
+    }
+    
+    inline RealType branchWeightReleasedNode(RealType enew, RealType eold, RealType eref) const 
+    { 
+      if(BranchMode[B_DMCSTAGE]) return std::exp(vParam[B_TAU]*(eref-0.5*(enew+eold)));
+      else 
+        return 0.0;
     }
 
     /** return the bare branch weight with a filtering using an energy window
