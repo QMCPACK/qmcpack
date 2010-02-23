@@ -39,7 +39,7 @@
 //  a = b; b= c; c = d;
 //}
 //double sign(double a, double b) {
-//  return (b > 0.0)? fabs(a): -fabs(a); 
+//  return (b > 0.0)? abs(a): -abs(a); 
 //}
 
 template<class T>
@@ -47,7 +47,7 @@ struct sign2 { };
 
 template<>
 struct sign2<double> {
-   inline static double apply(double a, double b) { return (b > 0.0)? fabs(a): -fabs(a); }
+   inline static double apply(double a, double b) { return (b > 0.0)? abs(a): -abs(a); }
 };
 
 template<class T>
@@ -170,7 +170,7 @@ struct NRCOptimization {
     qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
 
     Lambda = QuarticMinimum (coefs);
-    if (fabs(Lambda) > largeQuarticStep || isnan(Lambda))
+    if (abs(Lambda) > largeQuarticStep || isnan(Lambda))
       return lineoptimization2();
     cost = Func(Lambda);
     if (isnan(cost) || cost > start_cost)
@@ -222,7 +222,7 @@ struct NRCOptimization {
     Return_t ep = brentNRC(ax,xx,bx,Lambda);
     qmcplusplus::app_log()<<"Minimum found at lambda = "<<Lambda<<endl;
 
-    if(std::fabs(Lambda)<TINY) 
+    if(std::abs(Lambda)<TINY) 
       return false;
     else 
       return true;
@@ -254,21 +254,21 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
 
   for(int iter=1;iter<=ITMAX;iter++) {
     xm=0.5*(a+b);
-    tol2=2.0*(tol1=TOL*fabs(x)+ZEPS);
-    if (fabs(x-xm) <= (tol2-0.5*(b-a))) {
+    tol2=2.0*(tol1=TOL*abs(x)+ZEPS);
+    if (abs(x-xm) <= (tol2-0.5*(b-a))) {
       xmin=x;
       return fx;
     }
-    if (fabs(e) > tol1) {
+    if (abs(e) > tol1) {
       r=(x-w)*(fx-fv);
       q=(x-v)*(fx-fw);
       p=(x-v)*q-(x-w)*r;
       q=2.0*(q-r);
       if (q > 0.0) p = -p;
-      q=fabs(q);
+      q=abs(q);
       etemp=e;
       e=d;
-      if (fabs(p) >= fabs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
+      if (abs(p) >= abs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
         d=CGOLD*(e=(x >= xm ? a-x : b-x));
       else {
 	d=p/q;
@@ -279,8 +279,8 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
     } else {
       d=CGOLD*(e=(x >= xm ? a-x : b-x));
     }
-    //u=(fabs(d) >= tol1 ? x+d : x+sign(tol1,d));
-    u=(fabs(d) >= tol1 ? x+d : x+sign2<T>::apply(tol1,d));
+    //u=(abs(d) >= tol1 ? x+d : x+sign(tol1,d));
+    u=(abs(d) >= tol1 ? x+d : x+sign2<T>::apply(tol1,d));
       fu = Func(u); // fu=(*f)(u);
       if (fu <= fx) {
         if (u >= x) a=x; else b=x;
@@ -324,8 +324,8 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
   while (fb > fc) {
     r=(bx-ax)*(fb-fc);
     q=(bx-cx)*(fb-fa);
-    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(max(fabs(q-r),TINY),q-r));
-    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(max(fabs(q-r),TINY),q-r));
+    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(max(abs(q-r),TINY),q-r));
+    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(max(abs(q-r),TINY),q-r));
     ulim=(bx)+GLIMIT*(cx-bx);
     if ((bx-u)*(u-cx) > 0.0) {
       fu = Func(u); // fu=(*func)(u);

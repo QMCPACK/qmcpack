@@ -162,7 +162,7 @@ bool CGOptimization<T>::optimize() {
     bool success=TargetFunc->lineoptimization(Y,cgY,curCost,lambda_a,val_proj,lambda_max);
     if(success)
     {
-      if(std::fabs(lambda_a)>0.0)
+      if(std::abs(lambda_a)>0.0)
       {
         this->Lambda=lambda_a;
         curCost=val_proj;
@@ -174,7 +174,7 @@ bool CGOptimization<T>::optimize() {
     else
     {
       success = this->lineoptimization();
-      success &= (TargetFunc->IsValid && std::fabs(this->Lambda)>0.0);
+      success &= (TargetFunc->IsValid && std::abs(this->Lambda)>0.0);
       if(success) curCost= Func(this->Lambda);
     }
 
@@ -190,7 +190,7 @@ bool CGOptimization<T>::optimize() {
     }
 
     evaluateGradients(gY);
-    Return_t fx= fabs(*(std::max_element(gY.begin(), gY.end())));
+    Return_t fx= abs(*(std::max_element(gY.begin(), gY.end())));
     gdotg0=gdotg;
     gdotg=dotProduct(gY,gY);
     //Do not check the component yet
@@ -209,7 +209,7 @@ bool CGOptimization<T>::optimize() {
     gamma = (gdotg-gdoth)/gdotg0;
     gY0=gY; //save the current gradient 
 
-    if(fabs(gamma) < GammaTol){
+    if(abs(gamma) < GammaTol){
       if(msg_stream) 
       *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << endl;
       return false; 
@@ -221,7 +221,7 @@ bool CGOptimization<T>::optimize() {
       RestartCG = true;
     }
 
-    Return_t dx=fabs((curCost-prevCost)/curCost);
+    Return_t dx=abs((curCost-prevCost)/curCost);
     if(dx <= CostTol) {
       if(msg_stream) 
       *msg_stream << " CGOptimization::Converged cost with " << dx << endl;

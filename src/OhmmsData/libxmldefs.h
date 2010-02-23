@@ -91,7 +91,7 @@ template<class T>
 bool getContent(const T& a, xmlNodePtr cur) {
   std::stringstream s;
   s.setf(std::ios::scientific, std::ios::floatfield);
-  s.precision(8);
+  s.precision(16);
   s << a;
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;
@@ -131,7 +131,7 @@ template<class T>
 inline bool 
 getContent(const std::vector<T>& a, xmlNodePtr cur) {
   std::stringstream s;
-  for(int i=0; i<a.size(); i++) s << ' ' << a[i];
+  for(int i=0; i<a.size(); i++) s << ' ' << setprecision(10) << a[i];
   //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;

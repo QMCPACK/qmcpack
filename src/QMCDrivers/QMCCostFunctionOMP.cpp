@@ -374,8 +374,9 @@ namespace qmcplusplus
           Return_t weight;
 //           if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
 //           else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
-          if (samplePsi2) weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
-          else weight = std::exp(logpsi-saved[LOGPSI_FREE]) ;
+//           if (samplePsi2) weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+//           else 
+            weight = std::exp(logpsi-saved[LOGPSI_FREE]) ;
           //  Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
           saved[ENERGY_NEW]=eloc_new;
           saved[REWEIGHT]=weight;
