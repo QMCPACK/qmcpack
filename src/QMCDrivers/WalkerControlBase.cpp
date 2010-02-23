@@ -260,8 +260,6 @@ namespace qmcplusplus {
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
     RealType r2_accepted=0.0,r2_proposed=0.0;
     int nrn(0),ncr(0);
-    //RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
-    //RealType ebar= targetAvg;
     while(it != it_end) 
     {
       bool inFN=(((*it)->ReleasedNodeAge)==0);
@@ -295,9 +293,10 @@ namespace qmcplusplus {
         NumWalkers += nc;
         good_w.push_back(*it);
         ncopy_w.push_back(nc-1);
-      } 
+      }
       else if (nc)
       {
+        NumWalkers += nc;
         good_rn.push_back(*it);
         ncopy_rn.push_back(nc-1);
       }
@@ -310,22 +309,6 @@ namespace qmcplusplus {
 
     //temp is an array to perform reduction operations
     std::fill(curData.begin(),curData.end(),0);
-
-    //evaluate variance of this block
-    //curVar=(e2sum-esum*esum/wsum)/wsum;
-    //THIS IS NOT USED ANYMORE:BELOW
-    //if(curVar>sigma) {
-    //  app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
-    //  Write2XYZ(W);
-    //  //Does not work some reason
-    //  //OHMMS::Controller->abort();
-    //#if defined(HAVE_MPI)
-    //      OOMPI_COMM_WORLD.Abort();
-    //#else
-    //      abort();
-    //#endif
-    //    }
-    //THIS IS NOT USED ANYMORE:ABOVE
 
     //update curData
     curData[ENERGY_INDEX]=esum;
@@ -356,20 +339,19 @@ namespace qmcplusplus {
     }
 
     int sizeofgood = good_w.size();
-
     //check if the projected number of walkers is too small or too large
-    if(NumWalkers>Nmax) {
+    if((NumWalkers-nrn)>Nmax) {
       int nsub=0;
-      int nsub_target=NumWalkers-static_cast<int>(0.9*Nmax);
+      int nsub_target=(NumWalkers-nrn)-static_cast<int>(0.9*Nmax);
       int i=0;
       while(i< sizeofgood && nsub<nsub_target) {
         if(ncopy_w[i]) {ncopy_w[i]--; nsub++;}
         ++i;
       }
-//       NumWalkers -= nsub;
-    } else  if(NumWalkers < Nmin) {
+      NumWalkers -= nsub;
+    } else  if((NumWalkers-nrn) < Nmin) {
       int nadd=0;
-      int nadd_target = static_cast<int>(Nmin*1.1)-NumWalkers;
+      int nadd_target = static_cast<int>(Nmin*1.1)-(NumWalkers-nrn);
       if(nadd_target> sizeofgood) {
         app_warning() << "The number of walkers is running low. Requested walkers " 
           << nadd_target << " good walkers = " << sizeofgood << endl;
@@ -378,7 +360,7 @@ namespace qmcplusplus {
       while(i< sizeofgood && nadd<nadd_target) {
         ncopy_w[i]++; ++nadd;++i;
       }
-//       NumWalkers +=  nadd;
+      NumWalkers +=  nadd;
     }
     it=good_rn.begin(); it_end=good_rn.end();
     int indy(0);
@@ -388,7 +370,6 @@ namespace qmcplusplus {
       it++,indy++;
     }
     
-//     app_log()<<"FN,RN: "<<NumWalkers<<" "<<nrn<<endl;
     return NumWalkers;
   }
 

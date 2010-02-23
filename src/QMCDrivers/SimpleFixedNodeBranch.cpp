@@ -210,8 +210,9 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
     if(BranchMode[B_DMCSTAGE]||iter)
       pop_now= WalkerController->branch(iter,walkers,0.1);
     else
-      pop_now= WalkerController->doNotBranch(iter,walkers);//do not branch for the first step of a warmup
-//     cout<<pop_now<<"  "<<ToDoSteps<<endl;
+      pop_now = WalkerController->doNotBranch(iter,walkers);//do not branch for the first step of a warmup
+    //population for trial energy modification should not include any released node walkers.  
+    pop_now -= WalkerController->EnsembleProperty.RNSamples;
 
     //current energy
     vParam[B_ENOW]=WalkerController->EnsembleProperty.Energy;
@@ -246,8 +247,10 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
         //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
         //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
         //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
-        vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])
+        if(BranchMode[B_KILLNODES]) vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])
              +Feedback*(logN-std::log(pop_now))-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAU];
+        else
+          vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])+Feedback*(logN-std::log(pop_now));
       }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
