@@ -106,7 +106,9 @@ namespace qmcplusplus {
     aAttrib.add(multi_tag,"multiple");
     aAttrib.add(warp_tag,"warp");
     aAttrib.add(append_tag,"append"); 
+#if defined(QMC_CUDA)
     aAttrib.add(gpu_tag,"gpu");
+#endif
     aAttrib.put(cur);
 
     
