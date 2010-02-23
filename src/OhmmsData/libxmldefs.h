@@ -21,6 +21,7 @@
 #include <libxml/xpath.h>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -92,7 +93,7 @@ template<class T>
 bool getContent(const T& a, xmlNodePtr cur) {
   std::stringstream s;
   s.setf(std::ios::scientific, std::ios::floatfield);
-  s.precision(16);
+  s.precision(10);
   s << a;
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;
@@ -133,6 +134,7 @@ inline bool
 getContent(const std::vector<T>& a, xmlNodePtr cur) {
   std::stringstream s;
   for(int i=0; i<a.size(); i++) s << ' ' << std::setprecision(10) << a[i];
+  //for(int i=0; i<a.size(); i++) s << ' ' << a[i];
   //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;
