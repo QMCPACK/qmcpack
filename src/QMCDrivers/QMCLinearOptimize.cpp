@@ -189,9 +189,9 @@ namespace qmcplusplus
               work.resize(lwork);
 
               Matrix<RealType> ST2(N,N);
-              RealType H2rescale=1.0/std::abs(HamT2(0,0));
+              RealType H2rescale=1.0/std::sqrt(std::abs(HamT2(0,0)));
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
-              for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
+              for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
 
               dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
               assert(info==0);
@@ -236,8 +236,8 @@ namespace qmcplusplus
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
               lineoptimization();
               
-              if ((dopt*std::abs(Lambda)>bigChange)&&(stability==0)&&(tries==0))
-              lineoptimization2();
+              if (dopt*std::abs(Lambda)>bigChange)
+                lineoptimization2();
               dopt *= std::abs(Lambda);
                 
               if ( (Lambda==Lambda)&&(dopt<bigChange))
