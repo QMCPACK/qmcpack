@@ -103,7 +103,7 @@ namespace qmcplusplus {
     EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
     EnsembleProperty.R2Accepted=curData[R2ACCEPTED_INDEX];
     EnsembleProperty.R2Proposed=curData[R2PROPOSED_INDEX];
-    EnsembleProperty.LivingFraction= curData[LIVINGFRACTION_INDEX]/(myComm->size()+1.0);
+    EnsembleProperty.LivingFraction= curData[LIVINGFRACTION_INDEX]/static_cast<RealType>(myComm->size());
     EnsembleProperty.AlternateEnergy=curData[B_ENERGY_INDEX]/curData[B_WGT_INDEX];
     EnsembleProperty.RNSamples=curData[RNSIZE_INDEX];
 
