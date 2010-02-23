@@ -103,7 +103,7 @@ namespace qmcplusplus {
     EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
     EnsembleProperty.R2Accepted=curData[R2ACCEPTED_INDEX];
     EnsembleProperty.R2Proposed=curData[R2PROPOSED_INDEX];
-    EnsembleProperty.LivingFraction= curData[LIVINGFRACTION_INDEX]/static_cast<RealType>(myComm->size());
+    EnsembleProperty.LivingFraction= static_cast<RealType>(curData[FNSIZE_INDEX]) / static_cast<RealType>(curData[FNSIZE_INDEX]+curData[RNONESIZE_INDEX]);
     EnsembleProperty.AlternateEnergy=curData[B_ENERGY_INDEX]/curData[B_WGT_INDEX];
     EnsembleProperty.RNSamples=curData[RNSIZE_INDEX];
 
@@ -182,7 +182,8 @@ namespace qmcplusplus {
     curData[EREF_INDEX]=ecum;
     curData[R2ACCEPTED_INDEX]=r2_accepted;
     curData[R2PROPOSED_INDEX]=r2_proposed;
-    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(nfn)/static_cast<RealType>(nfn+ncr);
+    curData[FNSIZE_INDEX]=static_cast<RealType>(nfn);
+    curData[RNONESIZE_INDEX]=static_cast<RealType>(ncr);
     curData[RNSIZE_INDEX]=nrn;
     curData[B_ENERGY_INDEX]=besum;
     curData[B_WGT_INDEX]=bwgtsum;
@@ -317,7 +318,8 @@ namespace qmcplusplus {
     curData[EREF_INDEX]=ecum;
     curData[R2ACCEPTED_INDEX]=r2_accepted;
     curData[R2PROPOSED_INDEX]=r2_proposed;
-    curData[LIVINGFRACTION_INDEX]=static_cast<RealType>(good_w.size())/static_cast<RealType>(good_w.size()+ncr);
+    curData[FNSIZE_INDEX]=static_cast<RealType>(good_w.size());
+    curData[RNONESIZE_INDEX]=static_cast<RealType>(ncr);
     curData[RNSIZE_INDEX]=nrn;
     curData[B_ENERGY_INDEX]=besum;
     curData[B_WGT_INDEX]=bwgtsum;
