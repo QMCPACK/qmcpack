@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
@@ -131,7 +132,7 @@ template<class T>
 inline bool 
 getContent(const std::vector<T>& a, xmlNodePtr cur) {
   std::stringstream s;
-  for(int i=0; i<a.size(); i++) s << ' ' << setprecision(10) << a[i];
+  for(int i=0; i<a.size(); i++) s << ' ' << std::setprecision(10) << a[i];
   //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;

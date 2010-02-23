@@ -252,11 +252,14 @@ T min_dist2 (T& x, T& y, T& z,
 }
 
 
+__device__  float  recipSqrt (float x)  { return rsqrtf(x); }
+__device__  double recipSqrt (double x) { return rsqrt(x); }
+
 
 template<typename T, int BS>
 __global__ void
-coulomb_AA_kernel(T **R, int N, T rMax, int Ntex,
-		  int textureNum, T *lattice, T *latticeInv, T *sum)
+coulomb_AA_PBC_kernel(T **R, int N, T rMax, int Ntex,
+		      int textureNum, T *lattice, T *latticeInv, T *sum)
 {
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -343,6 +346,83 @@ coulomb_AA_kernel(T **R, int N, T rMax, int Ntex,
     sum[blockIdx.x] = shared_sum[0];
 }
 
+template<typename T, int BS>
+__global__ void
+coulomb_AA_kernel(T **R, int N, T *sum)
+{
+  int tid = threadIdx.x;
+  __shared__ T *myR;
+
+  if (tid == 0) 
+    myR = R[blockIdx.x];
+
+  __syncthreads();
+
+  __shared__ T r1[BS][3], r2[BS][3];
+  int NB = N/BS + ((N%BS) ? 1 : 0);
+
+  T mysum = (T)0.0; 
+
+  // Do diagonal blocks first
+  for (int b=0; b<NB; b++) {
+    for (int i=0; i<3; i++)
+      if ((3*b+i)*BS + tid < 3*N)
+	r1[0][i*BS+tid] = myR[(3*b+i)*BS + tid];
+    int ptcl1 = b*BS + tid;
+    if (ptcl1 < N) {
+      int end = (b+1)*BS < N ? BS : N-b*BS;
+      for (int p2=0; p2<end; p2++) {
+	int ptcl2 = b*BS + p2;
+	T dx, dy, dz;
+	dx = r1[p2][0] - r1[tid][0];
+	dy = r1[p2][1] - r1[tid][1];
+	dz = r1[p2][2] - r1[tid][2];
+	T distInv =recipSqrt(dx*dx + dy*dy + dz*dz);
+	if (ptcl1 != ptcl2) 
+	  mysum += distInv;
+	//	  mysum += dist;
+      }
+    }
+  }
+  // Avoid double-counting on the diagonal blocks
+  mysum *= 0.5;
+
+  // Now do off-diagonal blocks
+  for (int b1=0; b1<NB; b1++) {
+    for (int i=0; i<3; i++)
+      if ((3*b1+i)*BS + tid < 3*N)
+	r1[0][i*BS+tid] = myR[(3*b1+i)*BS + tid];
+    int ptcl1 = b1*BS + tid;
+    if (ptcl1 < N) {
+      for (int b2=b1+1; b2<NB; b2++) {
+	for (int i=0; i<3; i++)
+	  if ((3*b2+i)*BS + tid < 3*N)
+	    r2[0][i*BS+tid] = myR[(3*b2+i)*BS + tid];
+	int end = ((b2+1)*BS < N) ? BS : (N-b2*BS);
+	for (int j=0; j<end; j++) {
+	  T dx, dy, dz;
+	  dx = r2[j][0] - r1[tid][0];
+	  dy = r2[j][1] - r1[tid][1];
+	  dz = r2[j][2] - r1[tid][2];
+	  T distInv =recipSqrt(dx*dx + dy*dy + dz*dz);
+	  mysum += distInv;
+	}
+      }
+    }
+  }
+  __shared__ T shared_sum[BS];
+  shared_sum[tid] = mysum;
+  __syncthreads();
+  for (int s=BS>>1; s>0; s >>=1) {
+    if (tid < s)
+      shared_sum[tid] += shared_sum[tid+s];
+    __syncthreads();
+  }
+  if (tid==0)
+    sum[blockIdx.x] = shared_sum[0];
+}
+
+
 
 void
 CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex,
@@ -353,7 +433,7 @@ CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  coulomb_AA_kernel<float,BS><<<dimGrid,dimBlock>>>
+  coulomb_AA_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
 }
 
@@ -367,14 +447,9 @@ CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  coulomb_AA_kernel<double,BS><<<dimGrid,dimBlock>>>
+  coulomb_AA_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
 }
-
-
-__device__  float  recipSqrt (float x)  { return rsqrtf(x); }
-__device__  double recipSqrt (double x) { return rsqrt(x); }
-
 
 
 template<typename T, int BS>
@@ -623,7 +698,7 @@ MPC_LR_Sum(double *R[], int N, UBspline_3d_d_cuda *spline,
 
 template<typename T, int BS>
 __global__ void
-coulomb_AB_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast, 
+coulomb_AB_PBC_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast, 
 		  T rMax, int Ntex, int textureNum, 
 		  T *lattice, T *latticeInv, T *sum)
 {
@@ -701,7 +776,7 @@ CoulombAB_SR_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  coulomb_AB_kernel<float,BS><<<dimGrid,dimBlock>>>
+  coulomb_AB_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, 
      lattice, latticeInv, sum);
 }
@@ -717,10 +792,101 @@ CoulombAB_SR_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  coulomb_AB_kernel<double,BS><<<dimGrid,dimBlock>>>
+  coulomb_AB_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, 
      lattice, latticeInv, sum);
 }
+
+
+
+template<typename T, int BS>
+__global__ void
+coulomb_AB_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast, 
+		  T *Zion, T *sum)
+{
+  int tid = threadIdx.x;
+  __shared__ T *myR;
+
+  int Nion = Ilast - Ifirst + 1;
+
+  if (tid == 0) 
+    myR = R[blockIdx.x];
+
+  __syncthreads();
+
+  __shared__ T r[BS][3], i[BS][3], z[BS];
+  int NeBlocks = Nelec/BS + ((Nelec%BS) ? 1 : 0);
+  int NiBlocks = Nion/BS +  ((Nion %BS) ? 1 : 0);
+
+  T mysum = (T)0.0; 
+
+  // Now do off-diagonal blocks
+  for (int iBlock=0; iBlock<NiBlocks; iBlock++) {
+    for (int j=0; j<3; j++)
+      if ((3*iBlock+j)*BS + tid < 3*Nion)
+	i[0][j*BS+tid] = I[3*Ifirst+(3*iBlock+j)*BS + tid];
+    if (tid < Nion)
+      z[tid] = Zion[tid];
+    __syncthreads();
+    int ion = iBlock*BS + tid;
+    for (int eBlock=0; eBlock<NeBlocks; eBlock++) {
+      for (int j=0; j<3; j++)
+	if ((3*eBlock+j)*BS + tid < 3*Nelec)
+	  r[0][j*BS+tid] = myR[(3*eBlock+j)*BS + tid];
+      __syncthreads();
+      int end = ((eBlock+1)*BS < Nelec) ? BS : (Nelec-eBlock*BS);
+      if (ion < Nion) {
+	for (int j=0; j<end; j++) {
+	  T dx, dy, dz;
+	  dx = r[j][0] - i[tid][0];
+	  dy = r[j][1] - i[tid][1];
+	  dz = r[j][2] - i[tid][2];
+	  T distInv = recipSqrt(dx*dx + dy*dy + dz*dz);
+	  mysum -= z[tid]*distInv;
+	}
+      }
+      __syncthreads();
+    }
+  }
+  __shared__ T shared_sum[BS];
+  shared_sum[tid] = mysum;
+  __syncthreads();
+  for (int s=BS>>1; s>0; s >>=1) {
+    if (tid < s)
+      shared_sum[tid] += shared_sum[tid+s];
+    __syncthreads();
+  }
+  if (tid==0)
+    sum[blockIdx.x] = shared_sum[0];
+}
+
+
+
+void
+CoulombAB_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
+	      float Zion[], float sum[], int numWalkers)
+{
+  const int BS=64;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  coulomb_AB_kernel<float,BS><<<dimGrid,dimBlock>>>
+    (R, Nelec, I, Ifirst, Ilast, Zion, sum);
+}
+
+
+void
+CoulombAB_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
+	      double Zion[], double sum[], int numWalkers)
+{
+  const int BS=64;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  coulomb_AB_kernel<double,BS><<<dimGrid,dimBlock>>>
+    (R, Nelec, I, Ifirst, Ilast, Zion, sum);
+}
+
 
 
 

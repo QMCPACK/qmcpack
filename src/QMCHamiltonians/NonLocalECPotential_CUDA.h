@@ -24,6 +24,7 @@ namespace qmcplusplus {
     //////////////////////////////////
     // Vectorized evaluation on GPU //
     //////////////////////////////////
+    bool UsePBC;
     int NumIonGroups;
     vector<int> IonFirst, IonLast;
     gpu::device_vector<CUDA_PRECISION> Ions_GPU, L, Linv;
@@ -62,7 +63,8 @@ namespace qmcplusplus {
 
   public:
     NonLocalECPotential_CUDA(ParticleSet& ions, ParticleSet& els, 
-			     TrialWaveFunction& psi, bool doForces=false);
+			     TrialWaveFunction& psi, bool usePBC,
+			     bool doForces=false);
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

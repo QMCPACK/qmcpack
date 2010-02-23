@@ -20,8 +20,9 @@ namespace qmcplusplus {
 
   NonLocalECPotential_CUDA::NonLocalECPotential_CUDA
   (ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
-   bool doForces) : 
+   bool usePBC, bool doForces) : 
     NonLocalECPotential(ions, els, psi, doForces),
+    UsePBC(usePBC),
     CurrentNumWalkers(0),
     Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"), 
     L("NonLocalECPotential_CUDA::L"), 
@@ -44,7 +45,7 @@ namespace qmcplusplus {
   (ParticleSet& qp, TrialWaveFunction& psi)
   {
     NonLocalECPotential_CUDA* myclone = 
-      new NonLocalECPotential_CUDA(IonConfig,qp,psi);
+      new NonLocalECPotential_CUDA(IonConfig,qp,psi,UsePBC);
 
     for(int ig=0; ig<PPset.size(); ++ig)
     {
@@ -65,15 +66,17 @@ namespace qmcplusplus {
   {
     SpeciesSet &sSet = IonConfig.getSpeciesSet();
     NumIonGroups = sSet.getTotalNum();
-    gpu::host_vector<CUDA_PRECISION> LHost(OHMMS_DIM*OHMMS_DIM), 
-      LinvHost(OHMMS_DIM*OHMMS_DIM);
-    for (int i=0; i<OHMMS_DIM; i++)
-      for (int j=0; j<OHMMS_DIM; j++) {
-	LHost[OHMMS_DIM*i+j]    = (CUDA_PRECISION)elecs.Lattice.a(j)[i];
-	LinvHost[OHMMS_DIM*i+j] = (CUDA_PRECISION)elecs.Lattice.b(i)[j];
-      }
-    L = LHost;
-    Linv = LinvHost;
+    if (UsePBC) {
+      gpu::host_vector<CUDA_PRECISION> LHost(OHMMS_DIM*OHMMS_DIM), 
+	LinvHost(OHMMS_DIM*OHMMS_DIM);
+      for (int i=0; i<OHMMS_DIM; i++)
+	for (int j=0; j<OHMMS_DIM; j++) {
+	  LHost[OHMMS_DIM*i+j]    = (CUDA_PRECISION)elecs.Lattice.a(j)[i];
+	  LinvHost[OHMMS_DIM*i+j] = (CUDA_PRECISION)elecs.Lattice.b(i)[j];
+	}
+      L = LHost;
+      Linv = LinvHost;
+    }
     NumElecs = elecs.getTotalNum();
     
     // Copy ion positions to GPU, sorting by GroupID
@@ -165,14 +168,26 @@ namespace qmcplusplus {
 	QuadPoints_GPU[sp] = QuadPoints_host[sp];
 
 	// First, we need to determine which ratios need to be updated
-	find_core_electrons 
-	  (W.RList_GPU.data(), NumElecs, 
-	   Ions_GPU.data(), IonFirst[sp], IonLast[sp],
-	   (CUDA_PRECISION)PPset[sp]->Rmax, L.data(), Linv.data(), 
-	   QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
-	   Eleclist_GPU.data(), RatioPoslist_GPU.data(),
-	   Distlist_GPU.data(), CosThetalist_GPU.data(),
-	   NumPairs_GPU.data(), walkers.size());
+	if (UsePBC) {
+	  find_core_electrons_PBC
+	    (W.RList_GPU.data(), NumElecs, 
+	     Ions_GPU.data(), IonFirst[sp], IonLast[sp],
+	     (CUDA_PRECISION)PPset[sp]->Rmax, L.data(), Linv.data(), 
+	     QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
+	     Eleclist_GPU.data(), RatioPoslist_GPU.data(),
+	     Distlist_GPU.data(), CosThetalist_GPU.data(),
+	     NumPairs_GPU.data(), walkers.size());
+	}
+	else {
+	  find_core_electrons
+	    (W.RList_GPU.data(), NumElecs, 
+	     Ions_GPU.data(), IonFirst[sp], IonLast[sp],
+	     (CUDA_PRECISION)PPset[sp]->Rmax,
+	     QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
+	     Eleclist_GPU.data(), RatioPoslist_GPU.data(),
+	     Distlist_GPU.data(), CosThetalist_GPU.data(),
+	     NumPairs_GPU.data(), walkers.size());
+	}
 
 	// Concatenate work into job list
 	RatioPos_host = RatioPos_GPU;
@@ -328,14 +343,26 @@ namespace qmcplusplus {
 	QuadPoints_GPU[sp] = QuadPoints_host[sp];
 
 	// First, we need to determine which ratios need to be updated
-	find_core_electrons 
-	  (W.RList_GPU.data(), NumElecs, 
-	   Ions_GPU.data(), IonFirst[sp], IonLast[sp],
-	   (CUDA_PRECISION)PPset[sp]->Rmax, L.data(), Linv.data(), 
-	   QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
-	   Eleclist_GPU.data(), RatioPoslist_GPU.data(),
-	   Distlist_GPU.data(), CosThetalist_GPU.data(),
-	   NumPairs_GPU.data(), walkers.size());
+	if (UsePBC) {
+	  find_core_electrons_PBC
+	    (W.RList_GPU.data(), NumElecs, 
+	     Ions_GPU.data(), IonFirst[sp], IonLast[sp],
+	     (CUDA_PRECISION)PPset[sp]->Rmax, L.data(), Linv.data(), 
+	     QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
+	     Eleclist_GPU.data(), RatioPoslist_GPU.data(),
+	     Distlist_GPU.data(), CosThetalist_GPU.data(),
+	     NumPairs_GPU.data(), walkers.size());
+	}
+	else {
+	  find_core_electrons
+	    (W.RList_GPU.data(), NumElecs, 
+	     Ions_GPU.data(), IonFirst[sp], IonLast[sp],
+	     (CUDA_PRECISION)PPset[sp]->Rmax, 
+	     QuadPoints_GPU[sp].data(), PPset[sp]->nknot,
+	     Eleclist_GPU.data(), RatioPoslist_GPU.data(),
+	     Distlist_GPU.data(), CosThetalist_GPU.data(),
+	     NumPairs_GPU.data(), walkers.size());
+	}
 
 	// Concatenate work into job list
 	RatioPos_host = RatioPos_GPU;

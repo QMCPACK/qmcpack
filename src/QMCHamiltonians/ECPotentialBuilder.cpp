@@ -116,11 +116,11 @@ namespace qmcplusplus {
     if(hasNonLocalPot) {
       //resize the sphere
       targetPtcl.resizeSphere(IonConfig.getTotalNum());
-
+      bool usePBC = (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN);
       RealType rc2=0.0;
 #ifdef QMC_CUDA   
       NonLocalECPotential_CUDA* apot = 
-	new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi, doForces);
+	new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
       NonLocalECPotential* apot = 
 	new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
