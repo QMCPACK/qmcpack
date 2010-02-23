@@ -373,8 +373,8 @@ namespace qmcplusplus
         int numPH(0);
         for (int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
 	int bsize = 
-	  2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int)
-               +(Properties.size()+DataSet.size()+ numPH + 2)*sizeof(RealType)
+	  2*sizeof(long)+3*sizeof(int)+ PHindex.size()*sizeof(int)
+               +(Properties.size()+DataSet.size()+ numPH + 1)*sizeof(RealType)
                +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
         //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
 #ifdef QMC_CUDA
