@@ -42,6 +42,10 @@ class accumulator_set
     inline void operator()(value_type x, value_type w) { 
       val+=x*w; valsq+=w*x*x;weight+=w; 
     }
+    
+    inline void add(value_type x) {
+      val+=x; weight=1;
+    }
 
     /** return the sum */
     inline return_type result() const { return val;}
@@ -59,9 +63,19 @@ class accumulator_set
       value_type avg=val*norm;
       return pair<return_type,return_type>(avg,norm*valsq-avg*avg);
     }
-
     ///return the mean
-    inline return_type mean() const { return val/weight; }
+    inline return_type mean() const
+    { 
+        return val/weight; 
+    }
+    
+    ///return the mean
+    inline return_type mean() 
+    { 
+      if (weight!=0)
+        return val/weight; 
+      else return 0.0;
+    }
 
     ///return the mean of squared values
     inline return_type mean2() const { return valsq/weight; }

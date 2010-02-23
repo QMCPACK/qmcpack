@@ -22,6 +22,7 @@
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/ReleasedNodeEnergyEstimator.h"
+#include "Estimators/AlternateReleasedNodeEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/WFMCOnlyEstimator.h"
 #include "Estimators/LocalEnergyEstimatorHDF.h"
@@ -500,10 +501,18 @@ namespace qmcplusplus {
           est_name=MainEstimatorName;
         }
         else if (est_name=="releasednode")
-        {
-          max4ascii=H.sizeOfObservables()+6;
-          app_log() << "  Using ReleasedNode for the MainEstimator " << endl;
-          add(new ReleasedNodeEnergyEstimator(H),MainEstimatorName);
+        { 
+          int Smax(100);
+          int primary(1);
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(Smax, "Smax");
+          hAttrib.add(primary, "primary");
+          hAttrib.put(cur);
+        
+          max4ascii=H.sizeOfObservables()+ 4 + 3*(Smax+1);
+          app_log() << "  Using ReleasedNode for the MainEstimator with Smax="<<Smax<<" and max4ascii="<<max4ascii << endl;
+          if (primary==2) add(new ReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
+          else add(new AlternateReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
           est_name=MainEstimatorName;
         }
         else if (est_name=="forwardwalking")

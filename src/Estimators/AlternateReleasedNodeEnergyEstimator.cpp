@@ -14,11 +14,11 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Estimators/ReleasedNodeEnergyEstimator.h"
+#include "Estimators/AlternateReleasedNodeEnergyEstimator.h"
 
 namespace qmcplusplus {
 
-  ReleasedNodeEnergyEstimator::ReleasedNodeEnergyEstimator(QMCHamiltonian& h, int Sm)
+  AlternateReleasedNodeEnergyEstimator::AlternateReleasedNodeEnergyEstimator(QMCHamiltonian& h, int Sm)
     :refH(h), Smax(Sm)
   { 
     N_rn = Smax+1;
@@ -28,16 +28,16 @@ namespace qmcplusplus {
     scalars_saved.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
   }
 
-  ScalarEstimatorBase* ReleasedNodeEnergyEstimator::clone()
+  ScalarEstimatorBase* AlternateReleasedNodeEnergyEstimator::clone()
   {
-    ReleasedNodeEnergyEstimator* myClone = new ReleasedNodeEnergyEstimator(*this);
+    AlternateReleasedNodeEnergyEstimator* myClone = new AlternateReleasedNodeEnergyEstimator(*this);
     return myClone;
   }
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)
    */
-  void ReleasedNodeEnergyEstimator::add2Record(RecordListType& record) 
+  void AlternateReleasedNodeEnergyEstimator::add2Record(RecordListType& record) 
   {
     FirstIndex = record.size();
     int dumy=record.add("LocalEnergy");
@@ -65,5 +65,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jmcminis $
  * $Revision: 4163 $   $Date: 2009-08-31 05:47:46 -0500 (Mon, 31 Aug 2009) $
- * $Id: ReleasedNodeEnergyEstimator.cpp 4163 2009-08-31 10:47:46Z jmcminis $ 
+ * $Id: AlternateReleasedNodeEnergyEstimator.cpp 4163 2009-08-31 10:47:46Z jmcminis $ 
  ***************************************************************************/

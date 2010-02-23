@@ -15,8 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/DMC/RNDMCOMP.h"
-#include "QMCDrivers/DMC/DMCUpdatePbyP.h"
-//#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
+#include "QMCDrivers/DMC/DMCUpdatePbyP.h" 
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -29,8 +28,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool)
-    : QMCDriver(w,psi,h), CloneManager(hpool)
-    , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no"), UseFastGrad("yes")
+    : QMCDriver(w,psi,h), CloneManager(hpool), useAlternate("no")
     , BranchInterval(-1),mover_MaxAge(-1)
     {
       RootName = "dmc";
@@ -39,13 +37,9 @@ namespace qmcplusplus {
       QMCDriverMode.set(QMC_UPDATE_MODE,1);
 
       m_param.add(KillWalker,"killnode","string");
-      m_param.add(BenchMarkRun,"benchmark","string");
-      m_param.add(Reconfiguration,"reconfiguration","string");
       m_param.add(BranchInterval,"branchInterval","string");
-      m_param.add(NonLocalMove,"nonlocalmove","string");
-      m_param.add(NonLocalMove,"nonlocalmoves","string");
       m_param.add(mover_MaxAge,"MaxAge","double");
-      m_param.add(UseFastGrad,"fastgrad", "string");
+      m_param.add(useAlternate,"alternate", "string");
     }
     
   void RNDMCOMP::resetComponents(xmlNodePtr cur)
@@ -55,6 +49,7 @@ namespace qmcplusplus {
     
     Estimators->reset();
     branchEngine->resetRun(cur);
+    bool klw=(KillWalker=="yes");
     
     
 #pragma omp parallel for
@@ -65,7 +60,10 @@ namespace qmcplusplus {
         estimatorClones[ip]->setCollectionMode(false);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
-        Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        if (useAlternate=="yes")
+          Movers[ip] = new RNDMCUpdatePbyPAlternate(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        else
+          Movers[ip] = new RNDMCUpdatePbyPCeperley(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);        
       }
@@ -77,9 +75,7 @@ namespace qmcplusplus {
   {
 
     ReportEngine PRE("RNDMCOMP","resetUpdateEngines");
-
-    bool fixW = (Reconfiguration == "yes");
-    
+ 
     Timer init_timer;
 
     makeClones(W,Psi,H);
@@ -90,7 +86,10 @@ namespace qmcplusplus {
       W.loadEnsemble();
       for(int ip=1;ip<NumThreads;++ip) wClones[ip]->loadEnsemble(W);
 
-      branchEngine->initWalkerController(W,Tau,fixW);
+      if (useAlternate=="yes")
+        branchEngine->initWalkerController(W,Tau,false,false);
+      else
+        branchEngine->initWalkerController(W,Tau,false,true);
 
       //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
       Movers.resize(NumThreads,0);
@@ -98,17 +97,38 @@ namespace qmcplusplus {
       Rng.resize(NumThreads,0);
       estimatorClones.resize(NumThreads,0);
       FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+      bool klw=(KillWalker=="yes");
 
       {//log file
         ostringstream o;
         o << "  Initial partition of walkers on a node: ";
         std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(o," "));
         o << "\n";
+        o << "Killing Walkers at nodes " << (useAlternate!="yes") <<endl;
 
         o << "Running the released node driver."<<endl;
 
-        app_log() << o.str() << endl;
+        app_log() << o.str();
       }
+      
+//       if (Eindex<0)
+//       {
+//         MCWalkerConfiguration::iterator Cit(W.begin()), Cit_end(W.end());
+//         Eindex = (*Cit)->addPropertyHistory(nSteps);
+//         (*Cit)->addPropertyHistory(nSteps);
+//         Cit++;
+//         while (Cit!=Cit_end)
+//           {
+//             (*Cit)->addPropertyHistory(nSteps);
+//             (*Cit)->addPropertyHistory(nSteps);
+//             Cit++;
+//           }
+//       }
+//       else
+//       {
+//         //Clear Energy Histories
+//         APP_ABORT("RNDMCOMP::Not reusable yet");
+//       }
 
 #pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
@@ -120,25 +140,24 @@ namespace qmcplusplus {
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
-        Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+//         Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        
+        if (useAlternate=="yes")
+          Movers[ip] = new RNDMCUpdatePbyPAlternate(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);  
+        else
+          Movers[ip] = new RNDMCUpdatePbyPCeperley(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);   
         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
           Movers[ip]->initWalkersForPbyP(wit, wit_end);
         }
       } 
-
 //     branchEngine->checkParameters(W);
-
-    int mxage=mover_MaxAge;
-    BranchInterval=1;
-    mxage=(mover_MaxAge<0)?4:mover_MaxAge;
-    for(int ip=0; ip<Movers.size(); ++ip) Movers[ip]->MaxAge=mxage;
-
-
+    if(BranchInterval<0) BranchInterval=1;
     {
       ostringstream o;
-      o << "  Persisent walkers are killed after " << mxage << " MC sweeps\n";
+      if (useAlternate=="yes") o << "  Using Alternate Mover"<<endl;
+      else o << "  Using Ceperley Mover"<<endl;
       o << "  BranchInterval = " << BranchInterval << "\n";
       o << "  Steps per block = " << nSteps << "\n";
       o << "  Number of blocks = " << nBlocks << "\n";
@@ -150,7 +169,6 @@ namespace qmcplusplus {
 
   bool RNDMCOMP::run() {
 
-    bool variablePop = (Reconfiguration == "no");
     resetUpdateEngines();
     //estimator does not need to collect data
     Estimators->setCollectionMode(true);
@@ -194,15 +212,16 @@ namespace qmcplusplus {
         } 
         
         branchEngine->branch(CurrentStep,W, branchClones);
-//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-//           W.resetWalkerParents();
-//         }
-        if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-      } 
-//       branchEngine->debugFWconfig();
+        FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+      }
       
-
+//       #pragma omp parallel for
+//       for(int ip=0; ip<NumThreads; ++ip)
+//       {
+//         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+//         Movers[ip]->resetbuffers(wit, wit_end);
+//       }
+      
       Estimators->stopBlock(acceptRatio());
       block++;
       recordBlock(block);
@@ -216,39 +235,6 @@ namespace qmcplusplus {
     Estimators->stop();
     return finalize(block);
   }
-
-  void RNDMCOMP::benchMark() { 
-    
-    //set the collection mode for the estimator
-    Estimators->setCollectionMode(true);
-
-    IndexType PopIndex = Estimators->addProperty("Population");
-    IndexType EtrialIndex = Estimators->addProperty("Etrial");
-    //Estimators->reportHeader(AppendRun);
-    //Estimators->reset();
-
-    IndexType block = 0;
-    RealType Eest = branchEngine->getEref();
-
-    //resetRun();
-
-    for(int ip=0; ip<NumThreads; ip++) {
-      char fname[16];
-      sprintf(fname,"test.%i",ip);
-      ofstream fout(fname);
-    }
-
-    for(int istep=0; istep<nSteps; istep++) {
-
-      FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-#pragma omp parallel  
-      {
-        int ip = omp_get_thread_num();
-        Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-      }
-    }
-  }
-  
   bool 
   RNDMCOMP::put(xmlNodePtr q)
   { 

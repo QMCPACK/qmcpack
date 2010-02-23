@@ -22,7 +22,7 @@
 #ifndef QMCPLUSPLUS_RNDMC_PARTICLEBYPARTICLE_OPNEMP_H
 #define QMCPLUSPLUS_RNDMC_PARTICLEBYPARTICLE_OPNEMP_H
 #include "QMCDrivers/QMCDriver.h" 
-#include "QMCDrivers/CloneManager.h" 
+#include "QMCDrivers/CloneManager.h"  
 namespace qmcplusplus {
 
   /** @ingroup QMCDrivers 
@@ -31,7 +31,7 @@ namespace qmcplusplus {
    * This is the main DMC driver with MPI/OpenMP loops over the walkers.
    */
   class RNDMCOMP: public QMCDriver, public CloneManager {
-  public:
+  public: 
 
     /// Constructor.
     RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -43,8 +43,7 @@ namespace qmcplusplus {
     void resetComponents(xmlNodePtr cur);
  
   private:
-    ///Index to determine what to do when node crossing is detected
-    IndexType KillNodeCrossing;
+    
     ///Interval between branching
     IndexType BranchInterval;
     ///hdf5 file name for Branch conditions
@@ -53,24 +52,22 @@ namespace qmcplusplus {
     string KillWalker;
     ///input string to determine swap walkers among mpi processors
     string SwapWalkers;
-    ///input string to determine to use reconfiguration
-    string Reconfiguration;
     ///input string to determine to use nonlocal move
     string NonLocalMove;
-    ///input string to benchmark OMP performance
-    string BenchMarkRun;
-    ///input string to use fast gradient
-    string UseFastGrad;
+    ///input string to use Alternate mover
+    string useAlternate;
     ///input to control maximum age allowed for walkers.
     IndexType mover_MaxAge;
 
 
-    void resetUpdateEngines();
-    void benchMark();
+    void resetUpdateEngines(); 
     /// Copy Constructor (disabled)
     RNDMCOMP(const RNDMCOMP& a): QMCDriver(a), CloneManager(a) { }
     /// Copy operator (disabled).
     RNDMCOMP& operator=(const RNDMCOMP&) { return *this;}
+    
+//     //parameters for released node calculation.
+//     int Eindex, nSteps;
   };
 }
 

@@ -77,22 +77,46 @@ namespace qmcplusplus {
 
   };
   
-  class RNDMCUpdatePbyPWithRejectionFast: public QMCUpdateBase {
+  class RNDMCUpdatePbyPAlternate: public QMCUpdateBase {
 
   public:
 
     /// Constructor.
-    RNDMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
+    RNDMCUpdatePbyPAlternate(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+                             QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
-    ~RNDMCUpdatePbyPWithRejectionFast();
+    ~RNDMCUpdatePbyPAlternate();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+    void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
   private:
     vector<NewTimer*> myTimers;
+    int maxS;
+    RealType efn;
+    int estimateCrossings, maxcopy;
   };
   
+  
+  class RNDMCUpdatePbyPCeperley: public QMCUpdateBase {
+    
+    public:
+      
+      /// Constructor.
+      RNDMCUpdatePbyPCeperley(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+                              QMCHamiltonian& h, RandomGenerator_t& rg);
+                                       ///destructor
+      ~RNDMCUpdatePbyPCeperley();
+                                       
+      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+      void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+      
+    private:
+      vector<NewTimer*> myTimers;
+      int maxS;
+      RealType efn;
+      int estimateCrossings;
+  };  
 }
 
 #endif
