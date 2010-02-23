@@ -40,8 +40,8 @@ set(HAVE_MKL 0)
 set(HAVE_MKL_VML 0)
 
 #include_directories(${MKL_HOME}/include)
-set(LAPACK_LIBRARY -L${HOME}/lib/ -llapack -lblas)
-set(BLAS_LIBRARY   -L${HOME}/lib -lblas)
+set(LAPACK_LIBRARY -L/home/00504/tg457645/lib -llapack -lblas -lgfortran)
+set(BLAS_LIBRARY   -L/home/00504/tg457645/lib -lblas)
 
 INCLUDE(Platform/UnixPaths)
 
