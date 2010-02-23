@@ -72,6 +72,7 @@
 #ifdef QMC_CUDA
   #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
   #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+  #include "QMCHamiltonians/CoulombPotential_CUDA.h"
   #include "QMCHamiltonians/MPC_CUDA.h"
 #endif
 
@@ -598,7 +599,12 @@ namespace qmcplusplus {
       else 
       {
         if(source->getTotalNum()>1) 
+#ifdef QMC_CUDA
+          targetH->addOperator(new CoulombPotentialAA_CUDA(*targetPtcl), title,physical);
+#else
           targetH->addOperator(new CoulombPotentialAA(*targetPtcl), title,physical);
+#endif
+
       }
     } else {
       if(applyPBC) {

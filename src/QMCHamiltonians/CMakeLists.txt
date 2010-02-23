@@ -41,6 +41,7 @@ IF(OHMMS_DIM MATCHES 3)
          CoulombPBCAB_CUDA.cpp
          MPC_CUDA.cpp
          NonLocalECPotential_CUDA.cpp
+	 CoulombPotential_CUDA.cpp
         )
   ENDIF(QMC_CUDA)
 

@@ -11,23 +11,24 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
-#define QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
+#ifndef QMCPLUSPLUS_COULOMB_POTENTIAL_CUDA_H
+#define QMCPLUSPLUS_COULOMB_POTENTIAL_CUDA_H
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 
 class MCWalkerConfiguration;
 
 namespace qmcplusplus {
-  struct CoulombAA_CUDA : public CoulombPotentialAA
+  struct CoulombPotentialAA_CUDA : public CoulombPotentialAA
   {
+    int NumElecs;
     //////////////////////////////////
     // Vectorized evaluation on GPU //
     //////////////////////////////////
-    CoulombAA_CUDA(ParticleSet& ref);
+    CoulombPotentialAA_CUDA(ParticleSet& ref);
 
     ParticleSet &PtclRef;
-    gpu::device_vector<CUDA_PRECISION>  SumGPU;
+    gpu::device_vector<CUDA_PRECISION> SumGPU;
     gpu::host_vector<CUDA_PRECISION>  SumHost;
     void addEnergy(MCWalkerConfiguration &W, 
 		   vector<RealType> &LocalEnergy);
@@ -35,17 +36,23 @@ namespace qmcplusplus {
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   };
 
-  struct CoulombAB_CUDA : public CoulombPotentialAB
+  struct CoulombPotentialAB_CUDA : public CoulombPotentialAB
   {
     ParticleSet &PtclRef;
+    int NumElecs, NumIons, NumIonSpecies;
+    vector<int> IonFirst, IonLast;
+    vector<PosType> SortedIons;
+
     //////////////////////////////////
     // Vectorized evaluation on GPU //
     //////////////////////////////////
-    CoulombAB_CUDA(ParticleSet& ref, ParticleSet &ions);
+    CoulombPotentialAB_CUDA(ParticleSet& ref, ParticleSet &ions);
 
+    gpu::host_vector<CUDA_PRECISION>   SumHost;
     gpu::device_vector<CUDA_PRECISION>  SumGPU;
-    gpu::host_vector<CUDA_PRECISION>  SumHost;
     gpu::device_vector<CUDA_PRECISION> ZionGPU;
+    gpu::device_vector<CUDA_PRECISION>    IGPU;
+
     void addEnergy(MCWalkerConfiguration &W, 
 		   vector<RealType> &LocalEnergy);
 

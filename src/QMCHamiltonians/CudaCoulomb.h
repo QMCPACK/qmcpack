@@ -27,12 +27,12 @@ CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex, int texNum,
 		 int numWalkers);
 
 void
-CoulombAB_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
-	      float Zion[], float sum[], int numWalkers);
+CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
+	      float sum[], int numWalkers);
 
 void
-CoulombAB_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
-	      double Zion[], double sum[], int numWalkers);
+CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
+	      double sum[], int numWalkers);
 
 void
 CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,

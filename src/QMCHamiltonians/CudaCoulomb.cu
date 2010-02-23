@@ -452,6 +452,32 @@ CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex,
 }
 
 
+void
+CoulombAA_Sum(float *R[], int N, float sum[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  coulomb_AA_kernel<float,BS><<<dimGrid,dimBlock>>>
+    (R, N, sum);
+}
+
+
+void
+CoulombAA_Sum(double *R[], int N, double sum[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  coulomb_AA_kernel<double,BS><<<dimGrid,dimBlock>>>
+    (R, N, sum);
+}
+
+
+
+
 template<typename T, int BS>
 __global__ void
 MPC_SR_kernel(T **R, int N,
@@ -801,13 +827,10 @@ CoulombAB_SR_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
 
 template<typename T, int BS>
 __global__ void
-coulomb_AB_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast, 
-		  T *Zion, T *sum)
+coulomb_AB_kernel(T **R, int Nelec, T *I, T *Zion, int Nion, T *sum)
 {
   int tid = threadIdx.x;
   __shared__ T *myR;
-
-  int Nion = Ilast - Ifirst + 1;
 
   if (tid == 0) 
     myR = R[blockIdx.x];
@@ -824,7 +847,7 @@ coulomb_AB_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast,
   for (int iBlock=0; iBlock<NiBlocks; iBlock++) {
     for (int j=0; j<3; j++)
       if ((3*iBlock+j)*BS + tid < 3*Nion)
-	i[0][j*BS+tid] = I[3*Ifirst+(3*iBlock+j)*BS + tid];
+	i[0][j*BS+tid] = I[(3*iBlock+j)*BS + tid];
     if (tid < Nion)
       z[tid] = Zion[tid];
     __syncthreads();
@@ -863,28 +886,28 @@ coulomb_AB_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast,
 
 
 void
-CoulombAB_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
-	      float Zion[], float sum[], int numWalkers)
+CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
+	      float sum[], int numWalkers)
 {
   const int BS=64;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   coulomb_AB_kernel<float,BS><<<dimGrid,dimBlock>>>
-    (R, Nelec, I, Ifirst, Ilast, Zion, sum);
+    (R, Nelec, I, Zion, Nion, sum);
 }
 
 
 void
-CoulombAB_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
-	      double Zion[], double sum[], int numWalkers)
+CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
+	      double sum[], int numWalkers)
 {
   const int BS=64;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   coulomb_AB_kernel<double,BS><<<dimGrid,dimBlock>>>
-    (R, Nelec, I, Ifirst, Ilast, Zion, sum);
+    (R, Nelec, I, Zion, Nion, sum);
 }
 
 
