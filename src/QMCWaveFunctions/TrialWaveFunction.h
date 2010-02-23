@@ -79,7 +79,30 @@ namespace qmcplusplus
         {
           return PhaseValue;
         }
-      inline RealType getPhaseDiff() const
+        inline RealType getAlternatePhaseDiff()
+        {
+          RealType apd=0.0;
+          for (int i=0; i<Z.size(); i++)
+          {
+            apd += Z[i]->getAlternatePhaseDiff();
+          }
+          return apd;
+        }
+        inline RealType getAlternatePhaseDiff(int iat)
+        {
+          RealType apd=0.0;
+          for (int i=0; i<Z.size(); i++)
+          {
+            apd += Z[i]->getAlternatePhaseDiff(iat);
+          }
+          return apd;
+        }
+        inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
+        {
+          for (int i=0; i<Z.size(); i++) Z[i]->alternateGrad(G);
+        }
+        
+        inline RealType getPhaseDiff() const
         {
           return PhaseDiff;
         }
@@ -148,8 +171,6 @@ namespace qmcplusplus
 
       /** functions to handle particle-by-particle update */
       RealType ratio(ParticleSet& P, int iat);
-
-      /** for releasednode calculations */
       RealType alternateRatio(ParticleSet& P);
 
       void update(ParticleSet& P, int iat);
@@ -158,7 +179,6 @@ namespace qmcplusplus
                      ParticleSet::ParticleGradient_t& dG,
                      ParticleSet::ParticleLaplacian_t& dL);
 
-      GradType evalGrad(ParticleSet& P, int iat);
       /** Returns the logarithmic gradient of the trial wave function
        *  with respect to the iat^th atom of the source ParticleSet. */
       GradType evalGradSource(ParticleSet& P, ParticleSet &source, int iat);
@@ -171,8 +191,11 @@ namespace qmcplusplus
        TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
       RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+      RealType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-
+      GradType evalGrad(ParticleSet& P, int iat);
+      GradType alternateEvalGrad(ParticleSet& P, int iat);
+      
       void rejectMove(int iat);
       void acceptMove(ParticleSet& P, int iat);
 

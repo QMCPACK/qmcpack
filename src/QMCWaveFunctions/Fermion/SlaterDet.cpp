@@ -15,6 +15,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 
@@ -22,7 +23,7 @@ namespace qmcplusplus {
 
   SlaterDet::SlaterDet() 
   {
-    releasedNode=false;
+    releasedNode=0;
     Optimizable=false;
     OrbitalName="SlaterDet";
     M.resize(3,0);
@@ -31,7 +32,7 @@ namespace qmcplusplus {
   SlaterDet::~SlaterDet() { }
 
   ///add a new DiracDeterminant to the list of determinants
-  void SlaterDet::add(Determinant_t* det, bool rn) 
+  void SlaterDet::add(Determinant_t* det, int rn) 
   { 
     int last=Dets.size();
     Dets.push_back(det);
@@ -183,9 +184,26 @@ namespace qmcplusplus {
     for(int i=0; i<Dets.size(); i++) 
     {
       map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
-      if (releasedNode)
+      if (releasedNode==1)
       {
         RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(dynamic_cast<RNDiracDeterminantBase&>(*Dets[i]));
+        adet->NP=0;
+        if(it == spomap.end())
+        {
+          SPOSetBase* newspo=Dets[i]->clonePhi();
+          spomap[Dets[i]->Phi]=newspo;
+          adet->Phi=newspo;//assign a new SPOSet
+        }
+        else
+        {
+          adet->Phi=(*it).second;//safe to transfer
+        }
+        adet->resetTargetParticleSet(tqp);
+        myclone->Dets[i]=adet;
+      }
+      else if (releasedNode==2)
+      {
+        RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(dynamic_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
         adet->NP=0;
         if(it == spomap.end())
         {

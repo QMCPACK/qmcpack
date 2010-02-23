@@ -84,6 +84,8 @@ namespace qmcplusplus
        *@param nel number of particles in the determinant
        */
       virtual void set(int first, int nel);
+      virtual RealType getAlternatePhaseDiff(){return 0.0;}
+      virtual RealType getAlternatePhaseDiff(int iat){return 0.0;}
 
       ///optimizations  are disabled
       inline void checkInVariables(opt_variables_type& active)
@@ -175,7 +177,7 @@ namespace qmcplusplus
 
       /** move was rejected. copy the real container to the temporary to move on
        */
-      void restore(int iat);
+      virtual void restore(int iat);
 
       virtual void update(ParticleSet& P,
                           ParticleSet::ParticleGradient_t& dG,

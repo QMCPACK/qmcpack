@@ -321,6 +321,13 @@ namespace qmcplusplus
     return grad_iat;
   }
 
+TrialWaveFunction::GradType TrialWaveFunction::alternateEvalGrad(ParticleSet& P,int iat)
+{
+  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
+  GradType grad_iat;
+  for (int i=0; i<Z.size(); ++i) grad_iat += Z[i]->alternateEvalGrad(P,iat);
+  return grad_iat;
+}
 
   // Evaluates the gradient w.r.t. to the source of the Laplacian
   // w.r.t. to the electrons of the wave function.
@@ -355,7 +362,7 @@ namespace qmcplusplus
 
 
   TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
-      ,int iat, GradType& grad_iat)
+      ,int iat, GradType& grad_iat )
   {
     //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
     grad_iat=0.0;
@@ -363,7 +370,7 @@ namespace qmcplusplus
     for (int i=0,ii=1; i<Z.size(); ++i,ii+=2)
       {
         myTimers[ii]->start();
-        r *= Z[i]->ratioGrad(P,iat,grad_iat);
+        r *= Z[i]->ratioGrad(P,iat,grad_iat );
         myTimers[ii]->stop();
       }
 #if defined(QMC_COMPLEX)
@@ -376,6 +383,29 @@ namespace qmcplusplus
     return r;
 #endif
   }
+
+TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
+,int iat, GradType& grad_iat )
+{
+  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
+  grad_iat=0.0;
+  ValueType r(1.0);
+  for (int i=0,ii=1; i<Z.size(); ++i,ii+=2)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->alternateRatioGrad(P,iat,grad_iat);
+    myTimers[ii]->stop();
+  }
+  #if defined(QMC_COMPLEX)
+  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
+  RealType logr=evaluateLogAndPhase(r,PhaseValue);
+  return std::exp(logr);
+  #else
+  if (r<0) PhaseDiff=M_PI;
+  //     else PhaseDiff=0.0;
+  return r;
+  #endif
+}
 
   void   TrialWaveFunction::update(ParticleSet& P,int iat)
   {

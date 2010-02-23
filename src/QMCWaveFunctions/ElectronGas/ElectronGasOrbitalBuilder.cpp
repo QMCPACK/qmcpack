@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -47,10 +48,12 @@ namespace qmcplusplus
   {
     int nc=0;
     ValueType bosonic_eps(-999999);
+    ValueType rntype(0);
     PosType twist(0.0);
     OhmmsAttributeSet aAttrib;
     aAttrib.add(nc,"shell");
     aAttrib.add(bosonic_eps,"eps");
+    aAttrib.add(rntype,"primary");
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
 
@@ -91,20 +94,29 @@ namespace qmcplusplus
     //create a Slater determinant
     SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
 
-    if (bosonic_eps!=-999999)
+    if (rntype>0)
       {
-        app_log()<<" Using determinant with eps="<<bosonic_eps<<endl;
+        if (rntype==1) app_log()<<" Using determinant with eps="<<bosonic_eps<<endl;
+        else app_log()<<" Using alternate determinant with eps="<<bosonic_eps<<endl;
         //create up determinant
-        Det_t *updet = new RNDiracDeterminantBase(psiu);
+        Det_t *updet;
+        if (rntype==1)
+          updet = new RNDiracDeterminantBase(psiu);
+        else
+          updet = new RNDiracDeterminantBaseAlternate(psiu);
         updet->setLogEpsilon(bosonic_eps);
         updet->set(0,nup);
 
         //create down determinant
-        Det_t *downdet = new RNDiracDeterminantBase(psid);
+        Det_t *downdet;
+        if (rntype==1)
+          downdet = new RNDiracDeterminantBase(psiu);
+        else
+          downdet = new RNDiracDeterminantBaseAlternate(psiu);
         downdet->set(nup,nup);
         downdet->setLogEpsilon(bosonic_eps);
-        sdet->add(updet,true);
-        sdet->add(downdet,true);
+        sdet->add(updet,rntype);
+        sdet->add(downdet,rntype);
 
       }
     else

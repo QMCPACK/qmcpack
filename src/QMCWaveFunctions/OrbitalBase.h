@@ -141,6 +141,9 @@ namespace qmcplusplus
       {
         Optimizable = optimizeit;
       }
+      
+      virtual RealType getAlternatePhaseDiff(){return 0.0;}
+      virtual RealType getAlternatePhaseDiff(int iat){return 0.0;}
 
       ///assign a differential orbital
       virtual void setDiffOrbital(DiffOrbitalBasePtr d);
@@ -205,6 +208,10 @@ namespace qmcplusplus
         return GradType();
       }
 
+virtual GradType alternateEvalGrad(ParticleSet& P, int iat)
+{
+  return GradType();
+}
 
       /** return the logarithmic gradient for the iat-th particle
        * of the source particleset
@@ -251,6 +258,13 @@ namespace qmcplusplus
         return ValueType();
       }
 
+virtual ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  return 1.0;
+}
+
+virtual inline void alternateGrad(ParticleSet::ParticleGradient_t& G){}
+
       /** evaluate the ratio of the new to old orbital value
        *@param P the active ParticleSet
        *@param iat the index of a particle
@@ -288,6 +302,7 @@ namespace qmcplusplus
       {
         return 1.0;
       };
+      
       /** update the gradient and laplacian values by accepting a move
        *@param P the active ParticleSet
        *@param dG the differential gradients

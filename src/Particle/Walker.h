@@ -37,7 +37,7 @@ namespace qmcplusplus
         R2ACCEPTED,     /*!< r^2 for accepted moves */
         R2PROPOSED,     /*!< r^2 for proposed moves */
         DRIFTSCALE,     /*!< scaling value for the drift */
-        BRANCHINGENERGY,    /*!< local energy, the sum of all the components */
+        ALTERNATEENERGY,    /*!< local energy, the sum of all the components */
         LOCALENERGY,    /*!< local energy, the sum of all the components */
         LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
         NUMPROPERTIES   /*!< the number of properties */
@@ -89,7 +89,6 @@ namespace qmcplusplus
       RealType Weight;
       ///Weight of the walker
       RealType ReleasedNodeWeight;
-      RealType ReleasedNodeZeroWeight;
       /** Number of copies for branching
        *
        * When Multiplicity = 0, this walker will be destroyed.
@@ -148,14 +147,14 @@ namespace qmcplusplus
         reset();
       }
 
-      ///create a walker for n-particles
+      ///create a walker for n-particles 
       inline explicit Walker(int nptcl) : 
 	ID(0), ParentID(0), Generation(0), Age(0), Weight(1.0e0),
 	Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
 #ifdef QMC_CUDA
 	, cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
         Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
-#endif
+#endif 
       {
         Properties.resize(1,NUMPROPERTIES);
         resize(nptcl);
@@ -243,7 +242,6 @@ namespace qmcplusplus
         Weight=a.Weight;
         Multiplicity=a.Multiplicity;
         
-        ReleasedNodeZeroWeight=a.ReleasedNodeZeroWeight;
         ReleasedNodeWeight=a.ReleasedNodeWeight;
         ReleasedNodeAge=a.ReleasedNodeAge;
         
@@ -309,12 +307,17 @@ namespace qmcplusplus
         Properties(LOCALENERGY) = ene;
       }
       
+      inline void resetReleasedNodeProperty(RealType localenergy, RealType alternateEnergy, RealType altR)
+      { 
+        Properties(ALTERNATEENERGY)=alternateEnergy; 
+        Properties(LOCALENERGY) = localenergy;
+        Properties(SIGN) = altR;
+      }
       inline void resetReleasedNodeProperty(RealType localenergy, RealType alternateEnergy)
       { 
-        Properties(BRANCHINGENERGY)=alternateEnergy; 
+        Properties(ALTERNATEENERGY)=alternateEnergy; 
         Properties(LOCALENERGY) = localenergy;
       }
-
       /** reset the property of a walker
        * @param logpsi \f$\log |\Psi|\f$
        * @param sigN  sign of the trial wavefunction
@@ -371,7 +374,7 @@ namespace qmcplusplus
         for (int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
 	int bsize = 
 	  2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int)
-               +(Properties.size()+DataSet.size()+ numPH)*sizeof(RealType)
+               +(Properties.size()+DataSet.size()+ numPH + 2)*sizeof(RealType)
                +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
         //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
 #ifdef QMC_CUDA
@@ -389,7 +392,7 @@ namespace qmcplusplus
       inline Msg& putMessage(Msg& m)
       {
         const int nat=R.size();
-        m << ID << ParentID << Generation << Age;
+        m << ID << ParentID << Generation << Age << ReleasedNodeWeight << ReleasedNodeAge;
         m.Pack(&(R[0][0]),nat*OHMMS_DIM);
 #if defined(QMC_COMPLEX)
         m.Pack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
@@ -433,7 +436,7 @@ namespace qmcplusplus
       inline Msg& getMessage(Msg& m)
       {
         const int nat=R.size();
-        m>>ID >> ParentID >> Generation >> Age;
+        m>>ID >> ParentID >> Generation >> Age >> ReleasedNodeWeight >> ReleasedNodeAge;
         m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
 #if defined(QMC_COMPLEX)
         m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);

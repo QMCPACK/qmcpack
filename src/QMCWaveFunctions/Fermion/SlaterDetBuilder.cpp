@@ -24,6 +24,7 @@
 #endif
 #include "QMCWaveFunctions/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
@@ -136,10 +137,12 @@ namespace qmcplusplus
     aAttrib.add(s_detSize,"DetSize");
     string s_cutoff("0.0");
     string s_radius("0.0");
-    string s_smallnumber("-999999");
+    int s_smallnumber(-999999);
+    int rntype(0);
     aAttrib.add(s_cutoff,"Cutoff");
     aAttrib.add(s_radius,"Radius");
     aAttrib.add(s_smallnumber,"smallnumber");
+    aAttrib.add(rntype,"primary");
 
     //    cerr<<"Det method is "<<detMethod<<endl;
     //    if (detMethod=="Iterative"){
@@ -189,7 +192,7 @@ namespace qmcplusplus
         psi = (*lit).second;
       }
 
-    bool rnc(false);
+    int rnc(0);
     if (psi->getOrbitalSetSize())
       {
         map<string,Det_t*>::iterator dit(DetSet.find(detname));
@@ -239,11 +242,19 @@ namespace qmcplusplus
             getNodeName(dname,cur);
             if (rn_tag == dname)
               {
-                double bosonicEpsilon=atof(s_smallnumber.c_str());
+                double bosonicEpsilon=s_smallnumber;
                 app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<<endl;
-                adet = new RNDiracDeterminantBase(psi,firstIndex);
-                adet->setLogEpsilon(bosonicEpsilon); 
-                rnc=true;
+                if (rntype==0)
+                {
+                  rnc=1;
+                  adet = new RNDiracDeterminantBase(psi,firstIndex);
+                }
+                else
+                {
+                  adet = new RNDiracDeterminantBaseAlternate(psi,firstIndex);
+                  rnc=2;
+                }
+                adet->setLogEpsilon(bosonicEpsilon);  
               }
             else
               {

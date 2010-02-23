@@ -42,7 +42,7 @@ namespace qmcplusplus
       ~SlaterDet();
 
       ///add a new DiracDeterminant to the list of determinants
-      void add(Determinant_t* det, bool rn=false);
+      void add(Determinant_t* det, int rn=0);
 
       void checkInVariables(opt_variables_type& active);
 
@@ -96,10 +96,20 @@ namespace qmcplusplus
         return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
       }
 
+inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  return Dets[DetID[iat]]->alternateRatioGrad(P,iat,grad_iat);
+}
+
       GradType evalGrad(ParticleSet& P, int iat)
       {
         return Dets[DetID[iat]]->evalGrad(P,iat);
       }
+
+GradType alternateEvalGrad(ParticleSet& P, int iat)
+{
+  return Dets[DetID[iat]]->alternateEvalGrad(P,iat);
+}
 
       GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
       {
@@ -134,6 +144,16 @@ namespace qmcplusplus
       {
         return Dets[DetID[iat]]->restore(iat);
       }
+      
+      RealType getAlternatePhaseDiff(){
+        RealType ap(0.0);
+        for (int iz=0; iz < size(); iz++) ap += Dets[iz]->getAlternatePhaseDiff();
+        return ap;
+      }
+
+RealType getAlternatePhaseDiff(int iat){
+  return Dets[DetID[iat]]->getAlternatePhaseDiff();
+}
 
       inline void acceptMove(ParticleSet& P, int iat)
       {
@@ -154,6 +174,12 @@ namespace qmcplusplus
         return v;
       }
 
+inline void
+alternateGrad(ParticleSet::ParticleGradient_t& G)
+{
+  for(int i=0; i<Dets.size(); ++i) Dets[i]->alternateGrad(G);
+}
+
       void update(ParticleSet& P,
                   ParticleSet::ParticleGradient_t& dG,
                   ParticleSet::ParticleLaplacian_t& dL,
@@ -169,7 +195,8 @@ namespace qmcplusplus
       }
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
-
+ 
+      int releasedNode; 
 #ifdef QMC_CUDA
     /////////////////////////////////////////////////////
     // Functions for vectorized evaluation and updates //
@@ -297,10 +324,7 @@ namespace qmcplusplus
       for (int id=0; id<Dets.size(); id++) 
 	Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);
     }
-#endif
-
-
-      bool releasedNode;
+#endif  
 
     private:
       vector<int> M;
