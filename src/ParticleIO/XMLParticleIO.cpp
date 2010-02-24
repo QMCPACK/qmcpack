@@ -137,8 +137,10 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
   string randomizeR("no");
+  string randomsrc("");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(randomizeR,"random");
+  pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(nat,"size");
   pAttrib.add(pname,"name");
   pAttrib.put(cur);
@@ -298,14 +300,19 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     //ref_.Lattice.print(cout);
   }
   
+  ref_.RandomSource=randomsrc;
+
   if(randomizeR == "yes") {
     if(ref_.Lattice.SuperCellEnum)
     { 
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
-    }  else {
-      ERRORMSG("Not know how to randomize R of an open system")
+    }  
+    else if (randomsrc == "") {
+      ERRORMSG("Not know how to randomize R of an open system.\n"
+	       "Use randomsrc=\"ion\" instead.\n");
+      abort();
     }
   }
 

@@ -157,6 +157,16 @@ namespace qmcplusplus {
     vector<vector<RealType> >  PropertyHistory;
     vector<int> PHindex;
 
+    /** Name of ParticleSet around which to initialize
+     * Used to initialize an electron ParticleSet by an ion ParticleSet 
+     */
+    string RandomSource;
+    
+    /** Initialize particles around another ParticleSet
+     * Used to initialize an electron ParticleSet by an ion ParticleSet 
+     */
+    void randomizeFromSource (ParticleSet &src);
+
     ///default constructor
     ParticleSet();
 
