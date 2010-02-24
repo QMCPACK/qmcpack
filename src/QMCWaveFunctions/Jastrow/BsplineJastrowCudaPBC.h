@@ -1,5 +1,5 @@
-#ifndef BSPLINE_JASTROW_CUDA_H
-#define BSPLINE_JASTROW_CUDA_H
+#ifndef BSPLINE_JASTROW_CUDA_PBC_H
+#define BSPLINE_JASTROW_CUDA_PBC_H
 
 template <typename S>
 struct NLjobGPU
