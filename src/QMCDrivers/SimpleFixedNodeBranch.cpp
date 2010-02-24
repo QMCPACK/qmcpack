@@ -140,6 +140,7 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
 
 
       BranchMode.set(B_DMC,1);//set DMC
+      BranchMode.set(B_DMCSTAGE,0);//set warmup
       BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0 
       BranchMode.set(B_KILLNODES,killwalker);
       WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);

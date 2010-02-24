@@ -110,25 +110,6 @@ namespace qmcplusplus {
 
         app_log() << o.str();
       }
-      
-//       if (Eindex<0)
-//       {
-//         MCWalkerConfiguration::iterator Cit(W.begin()), Cit_end(W.end());
-//         Eindex = (*Cit)->addPropertyHistory(nSteps);
-//         (*Cit)->addPropertyHistory(nSteps);
-//         Cit++;
-//         while (Cit!=Cit_end)
-//           {
-//             (*Cit)->addPropertyHistory(nSteps);
-//             (*Cit)->addPropertyHistory(nSteps);
-//             Cit++;
-//           }
-//       }
-//       else
-//       {
-//         //Clear Energy Histories
-//         APP_ABORT("RNDMCOMP::Not reusable yet");
-//       }
 
 #pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
