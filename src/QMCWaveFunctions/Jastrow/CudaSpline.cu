@@ -279,10 +279,10 @@ eval_1d_spline_vgl(T dist, T rmax, T drInv, T A[12][4], T coefs[],
 #define MAX_COEFS 32
 template<typename T, int BS >
 __global__ void
-two_body_sum_kernel(T **R, int e1_first, int e1_last, 
-		    int e2_first, int e2_last,
-		    T *spline_coefs, int numCoefs, T rMax,  
-		    T *lattice, T* latticeInv, T* sum)
+two_body_sum_PBC_kernel(T **R, int e1_first, int e1_last, 
+			int e2_first, int e2_last,
+			T *spline_coefs, int numCoefs, T rMax,  
+			T *lattice, T* latticeInv, T* sum)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -364,9 +364,9 @@ two_body_sum_kernel(T **R, int e1_first, int e1_last,
 }
 
 void
-two_body_sum (float *R[], int e1_first, int e1_last, int e2_first, int e2_last,
-	      float spline_coefs[], int numCoefs, float rMax,  
-	      float lattice[], float latticeInv[], float sum[], int numWalkers)
+two_body_sum_PBC (float *R[], int e1_first, int e1_last, int e2_first, int e2_last,
+		  float spline_coefs[], int numCoefs, float rMax,  
+		  float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -376,7 +376,7 @@ two_body_sum (float *R[], int e1_first, int e1_last, int e2_first, int e2_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_sum_kernel<float,BS><<<dimGrid,dimBlock>>>
+  two_body_sum_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, 
      spline_coefs, numCoefs, rMax, lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -391,9 +391,9 @@ two_body_sum (float *R[], int e1_first, int e1_last, int e2_first, int e2_last,
 
 
 void
-two_body_sum (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
-	      double spline_coefs[], int numCoefs, double rMax,  
-	      double lattice[], double latticeInv[], double sum[], int numWalkers)
+two_body_sum_PBC (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
+		  double spline_coefs[], int numCoefs, double rMax,  
+		  double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -403,7 +403,7 @@ two_body_sum (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_sum_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_sum_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, 
      spline_coefs, numCoefs, rMax, lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -421,10 +421,10 @@ two_body_sum (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
 
 template<typename T, int BS>
 __global__ void
-two_body_ratio_kernel(T **R, int first, int last,
-		      T *Rnew, int inew,
-		      T *spline_coefs, int numCoefs, T rMax,  
-		      T *lattice, T* latticeInv, T* sum)
+two_body_ratio_PBC_kernel(T **R, int first, int last,
+			  T *Rnew, int inew,
+			  T *spline_coefs, int numCoefs, T rMax,  
+			  T *lattice, T* latticeInv, T* sum)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -508,10 +508,10 @@ two_body_ratio_kernel(T **R, int first, int last,
 
 
 void
-two_body_ratio (float *R[], int first, int last,
-		float Rnew[], int inew,
-		float spline_coefs[], int numCoefs, float rMax,  
-		float lattice[], float latticeInv[], float sum[], int numWalkers)
+two_body_ratio_PBC (float *R[], int first, int last,
+		    float Rnew[], int inew,
+		    float spline_coefs[], int numCoefs, float rMax,  
+		    float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -521,7 +521,7 @@ two_body_ratio (float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_ratio_kernel<float,BS><<<dimGrid,dimBlock>>>
+  two_body_ratio_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
      lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -536,10 +536,10 @@ two_body_ratio (float *R[], int first, int last,
 
 
 void
-two_body_ratio (double *R[], int first, int last,
-		double Rnew[], int inew,
-		double spline_coefs[], int numCoefs, double rMax,  
-		double lattice[], double latticeInv[], double sum[], int numWalkers)
+two_body_ratio_PBC (double *R[], int first, int last,
+		    double Rnew[], int inew,
+		    double spline_coefs[], int numCoefs, double rMax,  
+		    double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -547,7 +547,7 @@ two_body_ratio (double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
 
-  two_body_ratio_kernel<double,128><<<dimGrid,dimBlock>>>
+  two_body_ratio_PBC_kernel<double,128><<<dimGrid,dimBlock>>>
     (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
      lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -563,11 +563,11 @@ two_body_ratio (double *R[], int first, int last,
 
 template<typename T, int BS>
 __global__ void
-two_body_ratio_grad_kernel(T **R, int first, int last,
-			   T *Rnew, int inew,
-			   T *spline_coefs, int numCoefs, T rMax,  
-			   T *lattice, T* latticeInv, 
-			   bool zero, T *ratio_grad)
+two_body_ratio_grad_PBC_kernel(T **R, int first, int last,
+				T *Rnew, int inew,
+				T *spline_coefs, int numCoefs, T rMax,  
+				T *lattice, T* latticeInv, 
+				bool zero, T *ratio_grad)
 {
   int tid = threadIdx.x;
   T dr = rMax/(T)(numCoefs-3);
@@ -689,7 +689,7 @@ two_body_ratio_grad_kernel(T **R, int first, int last,
 
 template<typename T, int BS>
 __global__ void
-two_body_ratio_grad_kernel_fast (T **R, int first, int last,
+two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
 				 T *Rnew, int inew,
 				 T *spline_coefs, int numCoefs, T rMax,  
 				 T *lattice, T* latticeInv, 
@@ -806,12 +806,12 @@ two_body_ratio_grad_kernel_fast (T **R, int first, int last,
 // use_fast_image indicates that Rmax < simulation cell radius.  In
 // this case, we don't have to search over 27 images.
 void
-two_body_ratio_grad(float *R[], int first, int last,
-		    float  Rnew[], int inew,
-		    float spline_coefs[], int numCoefs, float rMax,  
-		    float lattice[], float latticeInv[], bool zero,
-		    float ratio_grad[], int numWalkers,
-		    bool use_fast_image)
+two_body_ratio_grad_PBC(float *R[], int first, int last,
+			float  Rnew[], int inew,
+			float spline_coefs[], int numCoefs, float rMax,  
+			float lattice[], float latticeInv[], bool zero,
+			float ratio_grad[], int numWalkers,
+			bool use_fast_image)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -825,11 +825,11 @@ two_body_ratio_grad(float *R[], int first, int last,
   // fprintf(stderr, "inew  = %d\n", inew);
   // fprintf(stderr, "rMax = %1.3f\n", rMax);
   if (use_fast_image) 
-    two_body_ratio_grad_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
+    two_body_ratio_grad_PBC_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
       (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
        lattice, latticeInv, zero, ratio_grad);
   else
-    two_body_ratio_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_ratio_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
        lattice, latticeInv, zero, ratio_grad);
   cudaThreadSynchronize();
@@ -844,11 +844,11 @@ two_body_ratio_grad(float *R[], int first, int last,
 
 
 void
-two_body_ratio_grad(double *R[], int first, int last,
-		    double  Rnew[], int inew,
-		    double spline_coefs[], int numCoefs, double rMax,  
-		    double lattice[], double latticeInv[], bool zero,
-		    double ratio_grad[], int numWalkers)
+two_body_ratio_grad_PBC(double *R[], int first, int last,
+			double  Rnew[], int inew,
+			double spline_coefs[], int numCoefs, double rMax,  
+			double lattice[], double latticeInv[], bool zero,
+			double ratio_grad[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -857,7 +857,7 @@ two_body_ratio_grad(double *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   
-  two_body_ratio_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   cudaThreadSynchronize();
@@ -875,7 +875,7 @@ two_body_ratio_grad(double *R[], int first, int last,
 
 template<int BS>
 __global__ void
-two_body_NLratio_kernel(NLjobGPU<float> *jobs, int first, int last,
+two_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, int first, int last,
 			float** spline_coefs, int *numCoefs, float *rMaxList, 
 			float* lattice, float* latticeInv, 
 			float sim_cell_radius)
@@ -1002,7 +1002,7 @@ two_body_NLratio_kernel(NLjobGPU<float> *jobs, int first, int last,
 
 template<int BS>
 __global__ void
-two_body_NLratio_kernel(NLjobGPU<double> *jobs, int first, int last,
+two_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, int first, int last,
 			double **spline_coefs, int *numCoefs, 
 			double *rMaxList, 
 			double *lattice, double *latticeInv, 
@@ -1099,10 +1099,10 @@ two_body_NLratio_kernel(NLjobGPU<double> *jobs, int first, int last,
 
 
 void
-two_body_NLratios(NLjobGPU<float> jobs[], int first, int last,
-		  float* spline_coefs[], int numCoefs[], float rMax[], 
-		  float lattice[], float latticeInv[], float sim_cell_radius,
-		  int numjobs)
+two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
+		      float* spline_coefs[], int numCoefs[], float rMax[], 
+		      float lattice[], float latticeInv[], float sim_cell_radius,
+		      int numjobs)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -1112,14 +1112,14 @@ two_body_NLratios(NLjobGPU<float> jobs[], int first, int last,
 
   while (numjobs > 65535) {
     dim3 dimGrid(65535);
-    two_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+    two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
       (jobs, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv, sim_cell_radius);
     jobs += 65535;
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
-  two_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+  two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
     (jobs, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, sim_cell_radius);
   
@@ -1135,10 +1135,10 @@ two_body_NLratios(NLjobGPU<float> jobs[], int first, int last,
 
 
 void
-two_body_NLratios(NLjobGPU<double> jobs[], int first, int last,
-		  double* spline_coefs[], int numCoefs[], double rMax[], 
-		  double lattice[], double latticeInv[], 
-		  double sim_cell_radius, int numjobs)
+two_body_NLratios_PBC(NLjobGPU<double> jobs[], int first, int last,
+		      double* spline_coefs[], int numCoefs[], double rMax[], 
+		      double lattice[], double latticeInv[], 
+		      double sim_cell_radius, int numjobs)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -1149,14 +1149,14 @@ two_body_NLratios(NLjobGPU<double> jobs[], int first, int last,
 
   while (numjobs > 65535) {
     dim3 dimGrid(65535);
-    two_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+    two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
       (jobs, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv, sim_cell_radius);
     jobs += 65535;
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
-  two_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+  two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
     (jobs, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, sim_cell_radius);
 
@@ -1174,7 +1174,7 @@ two_body_NLratios(NLjobGPU<double> jobs[], int first, int last,
 
 template<typename T>
 __global__ void
-two_body_update_kernel (T **R, int N, int iat)
+two_body_update_PBC_kernel (T **R, int N, int iat)
 {
   __shared__ T* myR;
   if (threadIdx.x == 0)
@@ -1187,12 +1187,12 @@ two_body_update_kernel (T **R, int N, int iat)
 
 
 void
-two_body_update(float *R[], int N, int iat, int numWalkers)
+two_body_update_PBC(float *R[], int N, int iat, int numWalkers)
 {
   dim3 dimBlock(32);
   dim3 dimGrid(numWalkers);
 
-  two_body_update_kernel<float><<<dimGrid, dimBlock>>> (R, N, iat);
+  two_body_update_PBC_kernel<float><<<dimGrid, dimBlock>>> (R, N, iat);
 
   cudaThreadSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1204,12 +1204,12 @@ two_body_update(float *R[], int N, int iat, int numWalkers)
 }
 
 void
-two_body_update(double *R[], int N, int iat, int numWalkers)
+two_body_update_PBC(double *R[], int N, int iat, int numWalkers)
 {
   dim3 dimBlock(3);
   dim3 dimGrid(numWalkers);
 
-  two_body_update_kernel<double><<<dimGrid, dimBlock>>> (R, N, iat);
+  two_body_update_PBC_kernel<double><<<dimGrid, dimBlock>>> (R, N, iat);
   cudaThreadSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
@@ -1227,11 +1227,11 @@ two_body_update(double *R[], int N, int iat, int numWalkers)
 
 template<typename T, int BS>
 __global__ void
-two_body_grad_lapl_kernel(T **R, int e1_first, int e1_last, 
-			  int e2_first, int e2_last,
-			  T *spline_coefs, int numCoefs, T rMax,  
-			  T *lattice, T *latticeInv, 
-			  T *gradLapl, int row_stride)
+two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last, 
+			      int e2_first, int e2_last,
+			      T *spline_coefs, int numCoefs, T rMax,  
+			      T *lattice, T *latticeInv, 
+			      T *gradLapl, int row_stride)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -1316,11 +1316,11 @@ two_body_grad_lapl_kernel(T **R, int e1_first, int e1_last,
 
 template<typename T, int BS>
 __global__ void
-two_body_grad_lapl_kernel_fast(T **R, int e1_first, int e1_last, 
-			       int e2_first, int e2_last,
-			       T *spline_coefs, int numCoefs, T rMax,  
-			       T *lattice, T *latticeInv, 
-			       T *gradLapl, int row_stride)
+two_body_grad_lapl_PBC_kernel_fast(T **R, int e1_first, int e1_last, 
+				   int e2_first, int e2_last,
+				   T *spline_coefs, int numCoefs, T rMax,  
+				   T *lattice, T *latticeInv, 
+				   T *gradLapl, int row_stride)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -1406,22 +1406,22 @@ two_body_grad_lapl_kernel_fast(T **R, int e1_first, int e1_last,
 
 
 void
-two_body_grad_lapl(float *R[], int e1_first, int e1_last, 
-		   int e2_first, int e2_last,
-		   float spline_coefs[], int numCoefs, float rMax,  
-		   float lattice[], float latticeInv[], float sim_cell_radius,
-		   float gradLapl[], int row_stride, int numWalkers)
+two_body_grad_lapl_PBC(float *R[], int e1_first, int e1_last, 
+		       int e2_first, int e2_last,
+		       float spline_coefs[], int numCoefs, float rMax,  
+		       float lattice[], float latticeInv[], float sim_cell_radius,
+		       float gradLapl[], int row_stride, int numWalkers)
 {
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-  two_body_grad_lapl_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
+  two_body_grad_lapl_PBC_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
      rMax, lattice, latticeInv,  gradLapl, row_stride);
   else
-    two_body_grad_lapl_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_grad_lapl_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
        rMax, lattice, latticeInv,  gradLapl, row_stride);
 
@@ -1436,11 +1436,11 @@ two_body_grad_lapl(float *R[], int e1_first, int e1_last,
 
 
 void
-two_body_grad_lapl(double *R[], int e1_first, int e1_last, 
-		   int e2_first, int e2_last,
-		   double spline_coefs[], int numCoefs, double rMax,  
-		   double lattice[], double latticeInv[], 
-		   double gradLapl[], int row_stride, int numWalkers)
+two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last, 
+		       int e2_first, int e2_last,
+		       double spline_coefs[], int numCoefs, double rMax,  
+		       double lattice[], double latticeInv[], 
+		       double gradLapl[], int row_stride, int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -1448,7 +1448,7 @@ two_body_grad_lapl(double *R[], int e1_first, int e1_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_grad_lapl_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_grad_lapl_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
      rMax, lattice, latticeInv,  gradLapl, row_stride);
 
@@ -1465,9 +1465,9 @@ two_body_grad_lapl(double *R[], int e1_first, int e1_last,
 
 template<typename T, int BS>
 __global__ void
-two_body_grad_kernel(T **R, int first, int last, int iat,
-		     T *spline_coefs, int numCoefs, T rMax,  
-		     T *lattice, T *latticeInv, bool zeroOut, T *grad)
+two_body_grad_PBC_kernel(T **R, int first, int last, int iat,
+			 T *spline_coefs, int numCoefs, T rMax,  
+			 T *lattice, T *latticeInv, bool zeroOut, T *grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -1560,9 +1560,9 @@ two_body_grad_kernel(T **R, int first, int last, int iat,
 
 template<typename T, int BS>
 __global__ void
-two_body_grad_kernel_fast(T **R, int first, int last, int iat,
-			  T *spline_coefs, int numCoefs, T rMax,  
-			  T *lattice, T *latticeInv, bool zeroOut, T *grad)
+two_body_grad_PBC_kernel_fast(T **R, int first, int last, int iat,
+			      T *spline_coefs, int numCoefs, T rMax,  
+			      T *lattice, T *latticeInv, bool zeroOut, T *grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -1645,11 +1645,11 @@ two_body_grad_kernel_fast(T **R, int first, int last, int iat,
 
 
 void
-two_body_gradient (float *R[], int first, int last, int iat, 
-		   float spline_coefs[], int numCoefs, float rMax,
-		   float lattice[], float latticeInv[], float sim_cell_radius,
-		   bool zeroOut,
-		   float grad[], int numWalkers)
+two_body_gradient_PBC (float *R[], int first, int last, int iat, 
+		       float spline_coefs[], int numCoefs, float rMax,
+		       float lattice[], float latticeInv[], float sim_cell_radius,
+		       bool zeroOut,
+		       float grad[], int numWalkers)
 {
   const int BS = 32;
 
@@ -1657,11 +1657,11 @@ two_body_gradient (float *R[], int first, int last, int iat,
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-  two_body_grad_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
+  two_body_grad_PBC_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
     (R, first, last, iat, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  zeroOut, grad);
   else
-    two_body_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, first, last, iat, spline_coefs, numCoefs,
        rMax, lattice, latticeInv,  zeroOut, grad);
 
@@ -1676,10 +1676,10 @@ two_body_gradient (float *R[], int first, int last, int iat,
 
 
 void
-two_body_gradient (double *R[], int first, int last, int iat, 
-		   double spline_coefs[], int numCoefs, double rMax,
-		   double lattice[], double latticeInv[], bool zeroOut,
-		   double grad[], int numWalkers)
+two_body_gradient_PBC (double *R[], int first, int last, int iat, 
+		       double spline_coefs[], int numCoefs, double rMax,
+		       double lattice[], double latticeInv[], bool zeroOut,
+		       double grad[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -1689,7 +1689,7 @@ two_body_gradient (double *R[], int first, int last, int iat,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, first, last, iat, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  zeroOut, grad);
 
@@ -1707,12 +1707,12 @@ two_body_gradient (double *R[], int first, int last, int iat,
 
 template<typename T, int BS>
 __global__ void
-two_body_derivs_kernel(T **R, T **gradLogPsi,
-		       int e1_first, int e1_last, 
-		       int e2_first, int e2_last,
-		       int numCoefs, T rMax,  
-		       T *lattice, T *latticeInv, 
-		       T **derivs)
+two_body_derivs_PBC_kernel(T **R, T **gradLogPsi,
+			   int e1_first, int e1_last, 
+			   int e2_first, int e2_last,
+			   int numCoefs, T rMax,  
+			   T *lattice, T *latticeInv, 
+			   T **derivs)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0f/dr;
@@ -1852,7 +1852,7 @@ two_body_derivs_kernel(T **R, T **gradLogPsi,
 
 
 void
-two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last, 
+two_body_derivs_PBC(float *R[], float *gradLogPsi[], int e1_first, int e1_last, 
 		int e2_first, int e2_last,
 		int numCoefs, float rMax,  
 		float lattice[], float latticeInv[], float sim_cell_radius,
@@ -1863,11 +1863,11 @@ two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-    two_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs, 
        rMax, lattice, latticeInv, derivs);
   else
-    two_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs, 
        rMax, lattice, latticeInv, derivs);
 
@@ -1881,22 +1881,22 @@ two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
 }
 
 void
-two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last, 
-		int e2_first, int e2_last,
-		int numCoefs, double rMax,  
-		double lattice[], double latticeInv[], double sim_cell_radius,
-		double *derivs[], int numWalkers)
+two_body_derivs_PBC(double *R[], double *gradLogPsi[], int e1_first, int e1_last, 
+		    int e2_first, int e2_last,
+		    int numCoefs, double rMax,  
+		    double lattice[], double latticeInv[], double sim_cell_radius,
+		    double *derivs[], int numWalkers)
 {
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-    two_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
       (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs, 
        rMax, lattice, latticeInv, derivs);
   else
-    two_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
       (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs, 
        rMax, lattice, latticeInv, derivs);
 
@@ -1917,10 +1917,10 @@ two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last,
 
 template<typename T, int BS >
 __global__ void
-one_body_sum_kernel(T *C, T **R, int cfirst, int clast, 
-		    int efirst, int elast,
-		    T *spline_coefs, int numCoefs, T rMax,  
-		    T *lattice, T *latticeInv, T *sum)
+one_body_sum_PBC_kernel(T *C, T **R, int cfirst, int clast, 
+			int efirst, int elast,
+			T *spline_coefs, int numCoefs, T rMax,  
+			T *lattice, T *latticeInv, T *sum)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -1999,9 +1999,9 @@ one_body_sum_kernel(T *C, T **R, int cfirst, int clast,
 }
 
 void
-one_body_sum (float C[], float *R[], int cfirst, int clast, int efirst, int elast,
-	      float spline_coefs[], int numCoefs, float rMax,  
-	      float lattice[], float latticeInv[], float sum[], int numWalkers)
+one_body_sum_PBC (float C[], float *R[], int cfirst, int clast, int efirst, int elast,
+		  float spline_coefs[], int numCoefs, float rMax,  
+		  float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2011,7 +2011,7 @@ one_body_sum (float C[], float *R[], int cfirst, int clast, int efirst, int elas
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_sum_kernel<float,BS><<<dimGrid,dimBlock>>>
+  one_body_sum_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (C, R, cfirst, clast, efirst, elast, 
      spline_coefs, numCoefs, rMax, lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -2025,9 +2025,9 @@ one_body_sum (float C[], float *R[], int cfirst, int clast, int efirst, int elas
 
 
 void
-one_body_sum (double C[], double *R[], int cfirst, int clast, int efirst, int elast,
-	      double spline_coefs[], int numCoefs, double rMax,  
-	      double lattice[], double latticeInv[], double sum[], int numWalkers)
+one_body_sum_PBC (double C[], double *R[], int cfirst, int clast, int efirst, int elast,
+		  double spline_coefs[], int numCoefs, double rMax,  
+		  double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2037,7 +2037,7 @@ one_body_sum (double C[], double *R[], int cfirst, int clast, int efirst, int el
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_sum_kernel<double,BS><<<dimGrid,dimBlock>>>
+  one_body_sum_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (C, R, cfirst, clast, efirst, elast, 
      spline_coefs, numCoefs, rMax, lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -2053,10 +2053,10 @@ one_body_sum (double C[], double *R[], int cfirst, int clast, int efirst, int el
 
 template<typename T, int BS>
 __global__ void
-one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
-		      T *Rnew, int inew,
-		      T *spline_coefs, int numCoefs, T rMax,  
-		      T *lattice, T *latticeInv, T *sum)
+one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
+			  T *Rnew, int inew,
+			  T *spline_coefs, int numCoefs, T rMax,  
+			  T *lattice, T *latticeInv, T *sum)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -2139,10 +2139,10 @@ one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
 
 
 void
-one_body_ratio (float C[], float *R[], int first, int last,
-		float Rnew[], int inew,
-		float spline_coefs[], int numCoefs, float rMax,  
-		float lattice[], float latticeInv[], float sum[], int numWalkers)
+one_body_ratio_PBC (float C[], float *R[], int first, int last,
+		    float Rnew[], int inew,
+		    float spline_coefs[], int numCoefs, float rMax,  
+		    float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2152,7 +2152,7 @@ one_body_ratio (float C[], float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_ratio_kernel<float,BS><<<dimGrid,dimBlock>>>
+  one_body_ratio_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
      lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -2167,10 +2167,10 @@ one_body_ratio (float C[], float *R[], int first, int last,
 
 
 void
-one_body_ratio (double C[], double *R[], int first, int last,
-		double Rnew[], int inew,
-		double spline_coefs[], int numCoefs, double rMax,  
-		double lattice[], double latticeInv[], double sum[], int numWalkers)
+one_body_ratio_PBC (double C[], double *R[], int first, int last,
+		    double Rnew[], int inew,
+		    double spline_coefs[], int numCoefs, double rMax,  
+		    double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2178,7 +2178,7 @@ one_body_ratio (double C[], double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
 
-  one_body_ratio_kernel<double,128><<<dimGrid,dimBlock>>>
+  one_body_ratio_PBC_kernel<double,128><<<dimGrid,dimBlock>>>
     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
      lattice, latticeInv, sum);
   cudaThreadSynchronize();
@@ -2193,11 +2193,11 @@ one_body_ratio (double C[], double *R[], int first, int last,
 
 template<typename T, int BS>
 __global__ void
-one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
-			   T *Rnew, int inew,
-			   T *spline_coefs, int numCoefs, T rMax,  
-			   T *lattice, T* latticeInv, bool zero,
-			   T *ratio_grad)
+one_body_ratio_grad_PBC_kernel(T *C, T **R, int cfirst, int clast,
+			       T *Rnew, int inew,
+			       T *spline_coefs, int numCoefs, T rMax,  
+			       T *lattice, T* latticeInv, bool zero,
+			       T *ratio_grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -2318,11 +2318,11 @@ one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
 
 template<typename T, int BS>
 __global__ void
-one_body_ratio_grad_kernel_fast(T *C, T **R, int cfirst, int clast,
-				T *Rnew, int inew,
-				T *spline_coefs, int numCoefs, T rMax,  
-				T *lattice, T *latticeInv, bool zero,
-				T *ratio_grad)
+one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
+				    T *Rnew, int inew,
+				    T *spline_coefs, int numCoefs, T rMax,  
+				    T *lattice, T *latticeInv, bool zero,
+				    T *ratio_grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -2431,12 +2431,12 @@ one_body_ratio_grad_kernel_fast(T *C, T **R, int cfirst, int clast,
 
 
 void
-one_body_ratio_grad (float C[], float *R[], int first, int last,
-		     float Rnew[], int inew,
-		     float spline_coefs[], int numCoefs, float rMax,  
-		     float lattice[], float latticeInv[], bool zero,
-		     float ratio_grad[], int numWalkers, 
-		     bool use_fast_image)
+one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
+			 float Rnew[], int inew,
+			 float spline_coefs[], int numCoefs, float rMax,  
+			 float lattice[], float latticeInv[], bool zero,
+			 float ratio_grad[], int numWalkers, 
+			 bool use_fast_image)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2451,7 +2451,7 @@ one_body_ratio_grad (float C[], float *R[], int first, int last,
   //     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
   //      lattice, latticeInv, zero, ratio_grad);
   // else
-    one_body_ratio_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_ratio_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
        lattice, latticeInv, zero, ratio_grad);
   cudaThreadSynchronize();
@@ -2465,11 +2465,11 @@ one_body_ratio_grad (float C[], float *R[], int first, int last,
 
 
 void
-one_body_ratio_grad (double C[], double *R[], int first, int last,
-		     double Rnew[], int inew,
-		     double spline_coefs[], int numCoefs, double rMax,  
-		     double lattice[], double latticeInv[], bool zero,
-		     double ratio_grad[], int numWalkers, bool use_fast_image)
+one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
+			 double Rnew[], int inew,
+			 double spline_coefs[], int numCoefs, double rMax,  
+			 double lattice[], double latticeInv[], bool zero,
+			 double ratio_grad[], int numWalkers, bool use_fast_image)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2484,7 +2484,7 @@ one_body_ratio_grad (double C[], double *R[], int first, int last,
   //     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
   //      lattice, latticeInv, zero, ratio_grad);
   // else
-    one_body_ratio_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
+    one_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
       (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, 
        lattice, latticeInv, zero, ratio_grad);
 
@@ -2560,7 +2560,7 @@ one_body_update(double *R[], int N, int iat, int numWalkers)
 
 template<typename T, int BS>
 __global__ void
-one_body_grad_lapl_kernel(T *C, T **R, int cfirst, int clast, 
+one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast, 
 			  int efirst, int elast,
 			  T *spline_coefs, int numCoefs, T rMax,  
 			  T *lattice, T* latticeInv, 
@@ -2661,17 +2661,17 @@ one_body_grad_lapl_kernel(T *C, T **R, int cfirst, int clast,
 
 
 void
-one_body_grad_lapl(float C[], float *R[], int e1_first, int e1_last, 
-		   int e2_first, int e2_last,
-		   float spline_coefs[], int numCoefs, float rMax,  
-		   float lattice[], float latticeInv[], 
-		   float gradLapl[], int row_stride, int numWalkers)
+one_body_grad_lapl_PBC(float C[], float *R[], int e1_first, int e1_last, 
+		       int e2_first, int e2_last,
+		       float spline_coefs[], int numCoefs, float rMax,  
+		       float lattice[], float latticeInv[], 
+		       float gradLapl[], int row_stride, int numWalkers)
 {
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_grad_lapl_kernel<float,BS><<<dimGrid,dimBlock>>>
+  one_body_grad_lapl_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (C, R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
      rMax, lattice, latticeInv,  gradLapl, row_stride);
 
@@ -2686,11 +2686,11 @@ one_body_grad_lapl(float C[], float *R[], int e1_first, int e1_last,
 
 
 void
-one_body_grad_lapl(double C[], double *R[], int e1_first, int e1_last, 
-		   int e2_first, int e2_last,
-		   double spline_coefs[], int numCoefs, double rMax,  
-		   double lattice[], double latticeInv[], 
-		   double gradLapl[], int row_stride, int numWalkers)
+one_body_grad_lapl_PBC(double C[], double *R[], int e1_first, int e1_last, 
+		       int e2_first, int e2_last,
+		       double spline_coefs[], int numCoefs, double rMax,  
+		       double lattice[], double latticeInv[], 
+		       double gradLapl[], int row_stride, int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -2699,7 +2699,7 @@ one_body_grad_lapl(double C[], double *R[], int e1_first, int e1_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_grad_lapl_kernel<double,BS><<<dimGrid,dimBlock>>>
+  one_body_grad_lapl_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (C, R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs, 
      rMax, lattice, latticeInv,  gradLapl, row_stride);
 
@@ -2715,9 +2715,9 @@ one_body_grad_lapl(double C[], double *R[], int e1_first, int e1_last,
 
 template<int BS>
 __global__ void
-one_body_NLratio_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
-			float *spline_coefs, int numCoefs, float rMax, 
-			float *lattice, float *latticeInv)
+one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
+			    float *spline_coefs, int numCoefs, float rMax, 
+			    float *lattice, float *latticeInv)
 {
   const int MAX_RATIOS = 18;
   int tid = threadIdx.x;
@@ -2820,9 +2820,9 @@ one_body_NLratio_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
 
 template<int BS>
 __global__ void
-one_body_NLratio_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int last,
-			     float *spline_coefs, int numCoefs, float rMax, 
-			     float *lattice, float *latticeInv)
+one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int last,
+				 float *spline_coefs, int numCoefs, float rMax, 
+				 float *lattice, float *latticeInv)
 {
   const int MAX_RATIOS = 18;
   int tid = threadIdx.x;
@@ -2913,9 +2913,9 @@ one_body_NLratio_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int las
 
 template<int BS>
 __global__ void
-one_body_NLratio_kernel(NLjobGPU<double> *jobs, double *C, int first, int last,
-			double *spline_coefs, int numCoefs, double rMax, 
-			double *lattice, double *latticeInv)
+one_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, double *C, int first, int last,
+			    double *spline_coefs, int numCoefs, double rMax, 
+			    double *lattice, double *latticeInv)
 {
   const int MAX_RATIOS = 18;
   int tid = threadIdx.x;
@@ -3014,10 +3014,10 @@ one_body_NLratio_kernel(NLjobGPU<double> *jobs, double *C, int first, int last,
 
 
 void
-one_body_NLratios(NLjobGPU<float> jobs[], float C[], int first, int last,
-		  float spline_coefs[], int numCoefs, float rMax, 
-		  float lattice[], float latticeInv[], float sim_cell_radius,
-		  int numjobs)
+one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
+		      float spline_coefs[], int numCoefs, float rMax, 
+		      float lattice[], float latticeInv[], float sim_cell_radius,
+		      int numjobs)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -3029,11 +3029,11 @@ one_body_NLratios(NLjobGPU<float> jobs[], float C[], int first, int last,
   while (numjobs > 65535) {
     dim3 dimGrid(65535);
     if (rMax <= sim_cell_radius)
-      one_body_NLratio_kernel_fast<BS><<<dimGrid,dimBlock>>>
+      one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
 	(jobs, C, first, last, spline_coefs, numCoefs, rMax,
 	 lattice, latticeInv);
     else
-      one_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+      one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
 	(jobs, C, first, last, spline_coefs, numCoefs, rMax,
 	 lattice, latticeInv);
     numjobs -= 65535;
@@ -3042,11 +3042,11 @@ one_body_NLratios(NLjobGPU<float> jobs[], float C[], int first, int last,
 
   dim3 dimGrid(numjobs);
   if (rMax <= sim_cell_radius)
-    one_body_NLratio_kernel_fast<BS><<<dimGrid,dimBlock>>>
+    one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv);
   else
-    one_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+    one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv);
   
@@ -3061,9 +3061,9 @@ one_body_NLratios(NLjobGPU<float> jobs[], float C[], int first, int last,
 
 
 void
-one_body_NLratios(NLjobGPU<double> jobs[], double C[], int first, int last,
-		 double spline_coefs[], int numCoefs, double rMax, 
-		 double lattice[], double latticeInv[], int numjobs)
+one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
+		      double spline_coefs[], int numCoefs, double rMax, 
+		      double lattice[], double latticeInv[], int numjobs)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -3074,7 +3074,7 @@ one_body_NLratios(NLjobGPU<double> jobs[], double C[], int first, int last,
   int blocky = numjobs / 65535 + 1;
   dim3 dimGrid(blockx, blocky);
 
-  one_body_NLratio_kernel<BS><<<dimGrid,dimBlock>>>
+  one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
     (jobs, C, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv);
   cudaThreadSynchronize();
@@ -3090,9 +3090,9 @@ one_body_NLratios(NLjobGPU<double> jobs[], double C[], int first, int last,
 
 template<typename T, int BS>
 __global__ void
-one_body_grad_kernel(T **R, int iat, T *C, int first, int last,
-		     T *spline_coefs, int numCoefs, T rMax,  
-		     T *lattice, T *latticeInv, bool zeroOut, T* grad)
+one_body_grad_PBC_kernel(T **R, int iat, T *C, int first, int last,
+			 T *spline_coefs, int numCoefs, T rMax,  
+			 T *lattice, T *latticeInv, bool zeroOut, T* grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -3184,9 +3184,9 @@ one_body_grad_kernel(T **R, int iat, T *C, int first, int last,
 
 template<typename T, int BS>
 __global__ void
-one_body_grad_kernel_fast(T **R, int iat, T *C, int first, int last,
-			  T *spline_coefs, int numCoefs, T rMax,  
-			  T *lattice, T *latticeInv, bool zeroOut, T *grad)
+one_body_grad_PBC_kernel_fast(T **R, int iat, T *C, int first, int last,
+			      T *spline_coefs, int numCoefs, T rMax,  
+			      T *lattice, T *latticeInv, bool zeroOut, T *grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -3267,10 +3267,10 @@ one_body_grad_kernel_fast(T **R, int iat, T *C, int first, int last,
 
 
 void
-one_body_gradient (float *Rlist[], int iat, float C[], int first, int last,
-		   float spline_coefs[], int num_coefs, float rMax,
-		   float L[], float Linv[], float sim_cell_radius,
-		   bool zeroSum, float grad[], int numWalkers)
+one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
+		       float spline_coefs[], int num_coefs, float rMax,
+		       float L[], float Linv[], float sim_cell_radius,
+		       bool zeroSum, float grad[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -3284,7 +3284,7 @@ one_body_gradient (float *Rlist[], int iat, float C[], int first, int last,
   //     (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
   //      L, Linv, zeroSum, grad);
   // else
-    one_body_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
        L, Linv, zeroSum, grad);
 
@@ -3300,10 +3300,10 @@ one_body_gradient (float *Rlist[], int iat, float C[], int first, int last,
 		   
 
 void
-one_body_gradient (double *Rlist[], int iat, double C[], int first, int last,
-		   double spline_coefs[], int num_coefs, double rMax,
-		   double L[], double Linv[], bool zeroSum,
-		   double grad[], int numWalkers)
+one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last,
+		       double spline_coefs[], int num_coefs, double rMax,
+		       double L[], double Linv[], bool zeroSum,
+		       double grad[], int numWalkers)
 {
   if (!AisInitialized)
     cuda_spline_init();
@@ -3312,7 +3312,7 @@ one_body_gradient (double *Rlist[], int iat, double C[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
+  one_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
      L, Linv, zeroSum, grad);
   cudaThreadSynchronize();
@@ -3328,12 +3328,12 @@ one_body_gradient (double *Rlist[], int iat, double C[], int first, int last,
 
 template<typename T, int BS>
 __global__ void
-one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
-		       int cfirst, int clast, 
-		       int efirst, int elast,
-		       int numCoefs, T rMax,  
-		       T *lattice, T *latticeInv, 
-		       T **derivs)
+one_body_derivs_PBC_kernel(T* C, T **R, T **gradLogPsi,
+			   int cfirst, int clast, 
+			   int efirst, int elast,
+			   int numCoefs, T rMax,  
+			   T *lattice, T *latticeInv, 
+			   T **derivs)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
@@ -3460,23 +3460,23 @@ one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
 
 
 void
-one_body_derivs(float C[], float *R[], float *gradLogPsi[], 
-		int cfirst, int clast, 
-		int efirst, int elast,
-		int numCoefs, float rMax,  
-		float lattice[], float latticeInv[], float sim_cell_radius,
-		float *derivs[], int numWalkers)
+one_body_derivs_PBC(float C[], float *R[], float *gradLogPsi[], 
+		    int cfirst, int clast, 
+		    int efirst, int elast,
+		    int numCoefs, float rMax,  
+		    float lattice[], float latticeInv[], float sim_cell_radius,
+		    float *derivs[], int numWalkers)
 {
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-    one_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs, 
        rMax, lattice, latticeInv, derivs);
   else
-    one_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
       (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs, 
        rMax, lattice, latticeInv, derivs);
 
@@ -3492,23 +3492,23 @@ one_body_derivs(float C[], float *R[], float *gradLogPsi[],
 
 
 void
-one_body_derivs(double C[], double *R[], double *gradLogPsi[], 
-		int cfirst, int clast, 
-		int efirst, int elast,
-		int numCoefs, double rMax,  
-		double lattice[], double latticeInv[], double sim_cell_radius,
-		double *derivs[], int numWalkers)
+one_body_derivs_PBC(double C[], double *R[], double *gradLogPsi[], 
+		    int cfirst, int clast, 
+		    int efirst, int elast,
+		    int numCoefs, double rMax,  
+		    double lattice[], double latticeInv[], double sim_cell_radius,
+		    double *derivs[], int numWalkers)
 {
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
   if (sim_cell_radius >= rMax) 
-    one_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
       (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs, 
        rMax, lattice, latticeInv, derivs);
   else
-    one_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
       (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs, 
        rMax, lattice, latticeInv, derivs);
 
@@ -3535,8 +3535,8 @@ void test()
   float dr = 0.1;
   float sum[1000];
 
-  two_body_sum_kernel<float,32><<<dimGrid,dimBlock>>>(R, 0, 100, 0, 100, spline_coefs, 10, dr,
-						      L, Linv, sum);
+  two_body_sum_PBC_kernel<float,32><<<dimGrid,dimBlock>>>(R, 0, 100, 0, 100, spline_coefs, 10, dr,
+							  L, Linv, sum);
 
 
 

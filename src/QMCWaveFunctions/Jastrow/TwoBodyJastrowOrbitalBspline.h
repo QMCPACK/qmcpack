@@ -15,6 +15,7 @@ namespace qmcplusplus {
     public TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > 
   {
   private:
+    bool UsePBC;
     typedef CUDA_PRECISION CudaReal;
     //typedef double CudaReal;
 
@@ -100,43 +101,44 @@ namespace qmcplusplus {
       NL_QuadPointsGPU     ("TwoBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
       NL_RatiosGPU         ("TwoBodyJastrowOrbitalBspline::NL_RatiosGPU")
     {
+      UsePBC = pset.Lattice.SuperCellEnum;
       int nsp = NumGroups = pset.groups();
       GPUSplines.resize(nsp*nsp,0);
-      gpu::host_vector<CudaReal> LHost(OHMMS_DIM*OHMMS_DIM), 
-	LinvHost(OHMMS_DIM*OHMMS_DIM);
-      for (int i=0; i<OHMMS_DIM; i++)
-	for (int j=0; j<OHMMS_DIM; j++) {
-	  LHost[OHMMS_DIM*i+j]    = (CudaReal)pset.Lattice.a(i)[j];
-	  LinvHost[OHMMS_DIM*i+j] = (CudaReal)pset.Lattice.b(j)[i];
-	}
-      // for (int i=0; i<OHMMS_DIM; i++)
-      // 	for (int j=0; j<OHMMS_DIM; j++) {
-      // 	  double sum = 0.0;
-      // 	  for (int k=0; k<OHMMS_DIM; k++)
-      // 	    sum += LHost[OHMMS_DIM*i+k]*LinvHost[OHMMS_DIM*k+j];
-	  
-      // 	  if (i == j) sum -= 1.0;
-      // 	  if (std::fabs(sum) > 1.0e-5) {
-      // 	    app_error() << "sum = " << sum << endl;
-      // 	    app_error() << "Linv * L != identity.\n";
-      // 	    abort();
-      // 	  }
-      // 	}
-
-//       fprintf (stderr, "Identity should follow:\n");
-//       for (int i=0; i<3; i++){
-// 	for (int j=0; j<3; j++) {
-// 	  CudaReal val = 0.0f;
-// 	  for (int k=0; k<3; k++)
-// 	    val += LinvHost[3*i+k]*LHost[3*k+j];
-// 	  fprintf (stderr, "  %8.3f", val);
-// 	}
-// 	fprintf (stderr, "\n");
-//       }
-
-
-      L = LHost;
-      Linv = LinvHost;
+      if (UsePBC) {
+	gpu::host_vector<CudaReal> LHost(OHMMS_DIM*OHMMS_DIM), 
+	  LinvHost(OHMMS_DIM*OHMMS_DIM);
+	for (int i=0; i<OHMMS_DIM; i++)
+	  for (int j=0; j<OHMMS_DIM; j++) {
+	    LHost[OHMMS_DIM*i+j]    = (CudaReal)pset.Lattice.a(i)[j];
+	    LinvHost[OHMMS_DIM*i+j] = (CudaReal)pset.Lattice.b(j)[i];
+	  }
+	// for (int i=0; i<OHMMS_DIM; i++)
+	// 	for (int j=0; j<OHMMS_DIM; j++) {
+	// 	  double sum = 0.0;
+	// 	  for (int k=0; k<OHMMS_DIM; k++)
+	// 	    sum += LHost[OHMMS_DIM*i+k]*LinvHost[OHMMS_DIM*k+j];
+	
+	// 	  if (i == j) sum -= 1.0;
+	// 	  if (std::fabs(sum) > 1.0e-5) {
+	// 	    app_error() << "sum = " << sum << endl;
+	// 	    app_error() << "Linv * L != identity.\n";
+	// 	    abort();
+	// 	  }
+	// 	}
+	
+	//       fprintf (stderr, "Identity should follow:\n");
+	//       for (int i=0; i<3; i++){
+	// 	for (int j=0; j<3; j++) {
+	// 	  CudaReal val = 0.0f;
+	// 	  for (int k=0; k<3; k++)
+	// 	    val += LinvHost[3*i+k]*LHost[3*k+j];
+	// 	  fprintf (stderr, "  %8.3f", val);
+	// 	}
+	// 	fprintf (stderr, "\n");
+	//       }
+	L = LHost;
+	Linv = LinvHost;
+      }
     }
   };
 }

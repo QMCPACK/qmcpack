@@ -15,6 +15,7 @@ namespace qmcplusplus {
     public OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > 
   {
   private:
+    bool UsePBC;
     typedef CUDA_PRECISION CudaReal;
     //typedef double CudaReal;
 
@@ -99,21 +100,24 @@ namespace qmcplusplus {
       NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
       NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
     {
+      UsePBC = elecs.Lattice.SuperCellEnum;
       NumElecGroups = elecs.groups();
       SpeciesSet &sSet = centers.getSpeciesSet();
       NumCenterGroups = sSet.getTotalNum();
       //      NumCenterGroups = centers.groups();
       // cerr << "NumCenterGroups = " << NumCenterGroups << endl;
       GPUSplines.resize(NumCenterGroups,0);
-      gpu::host_vector<CudaReal> LHost(OHMMS_DIM*OHMMS_DIM), 
-	LinvHost(OHMMS_DIM*OHMMS_DIM);
-      for (int i=0; i<OHMMS_DIM; i++)
-	for (int j=0; j<OHMMS_DIM; j++) {
-	  LHost[OHMMS_DIM*i+j]    = (CudaReal)elecs.Lattice.a(i)[j];
-	  LinvHost[OHMMS_DIM*i+j] = (CudaReal)elecs.Lattice.b(j)[i];
-	}
-      L = LHost;
-      Linv = LinvHost;
+      if (UsePBC) {
+	gpu::host_vector<CudaReal> LHost(OHMMS_DIM*OHMMS_DIM), 
+	  LinvHost(OHMMS_DIM*OHMMS_DIM);
+	for (int i=0; i<OHMMS_DIM; i++)
+	  for (int j=0; j<OHMMS_DIM; j++) {
+	    LHost[OHMMS_DIM*i+j]    = (CudaReal)elecs.Lattice.a(i)[j];
+	    LinvHost[OHMMS_DIM*i+j] = (CudaReal)elecs.Lattice.b(j)[i];
+	  }
+	L = LHost;
+	Linv = LinvHost;
+      }
       N = elecs.getTotalNum();
 
       // Copy center positions to GPU, sorting by GroupID
