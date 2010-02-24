@@ -22,6 +22,7 @@
 #include "Numerics/OneDimNumGridFunctor.h"
 #ifdef QMC_CUDA
   #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+  #include "QMCHamiltonians/LocalECPotential_CUDA.h"
   #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
 #endif
 
@@ -76,7 +77,12 @@ namespace qmcplusplus {
     if(hasLocalPot) {
       if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no") 
       {
+#ifdef QMC_CUDA
+        LocalECPotential_CUDA* apot = 
+	  new LocalECPotential_CUDA(IonConfig,targetPtcl);
+#else
         LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
+#endif
         for(int i=0; i<localPot.size(); i++) {
           if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
         }

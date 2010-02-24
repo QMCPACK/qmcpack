@@ -26,6 +26,10 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
+#ifdef QMC_CUDA
+class MCWalkerConfiguration;
+#endif
+
 namespace qmcplusplus {
 
   /** @ingroup hamiltonian
@@ -108,6 +112,17 @@ namespace qmcplusplus {
     Return_t evaluatePbyP(ParticleSet& P, int active) { return Value; }
     void acceptMove(int active) { }
     void rejectMove(int active) { }
+
+#ifdef QMC_CUDA
+    void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
+    {
+      vector<Walker_t*> &walkers = W.WalkerList;
+      for (int iw=0; iw<walkers.size(); iw++) {
+	walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = Value;
+	LocalEnergy[iw] += Value;
+      }
+    }
+#endif
     /*@}*/
   };
 }

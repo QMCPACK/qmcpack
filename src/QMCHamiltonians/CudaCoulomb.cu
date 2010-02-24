@@ -163,6 +163,11 @@ TextureSpline::set(double data[], int numPoints,
 
 }
 
+__device__ float dist (float dx, float dy, float dz)
+{ return rsqrtf(dx*dx + dy*dy + dz*dz); }
+
+__device__ double dist (double dx, double dy, double dz)
+{ return rsqrt(dx*dx + dy*dy + dz*dz); }
 
 template<typename T>
 __device__
@@ -435,6 +440,14 @@ CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex,
 
   coulomb_AA_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAA_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -449,6 +462,14 @@ CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex,
 
   coulomb_AA_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAA_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -461,6 +482,14 @@ CoulombAA_Sum(float *R[], int N, float sum[], int numWalkers)
 
   coulomb_AA_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, N, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAA_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -473,6 +502,14 @@ CoulombAA_Sum(double *R[], int N, double sum[], int numWalkers)
 
   coulomb_AA_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, N, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAA_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -571,6 +608,14 @@ MPC_SR_Sum(float *R[], int N, float lattice[], float latticeInv[],
 
   MPC_SR_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, N, lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in MPC_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -584,6 +629,14 @@ MPC_SR_Sum(double *R[], int N, double lattice[], double latticeInv[],
 
   MPC_SR_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, N, lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in MPC_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 template<typename T> struct Three{};
@@ -699,6 +752,14 @@ MPC_LR_Sum(float *R[], int N, UBspline_3d_s_cuda *spline,
   MPC_LR_kernel<float,BS><<<dimGrid,dimBlock>>>\
     (R, N, spline->coefs, spline->gridInv, spline->dim,
      spline->stride, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in MPC_LR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 void
@@ -712,6 +773,14 @@ MPC_LR_Sum(double *R[], int N, UBspline_3d_d_cuda *spline,
   MPC_LR_kernel<double,BS><<<dimGrid,dimBlock>>>\
     (R, N, spline->coefs, spline->gridInv, spline->dim,
      spline->stride, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in MPC_LR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -792,6 +861,10 @@ coulomb_AB_PBC_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast,
 }
 
 
+
+
+
+
 void
 CoulombAB_SR_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
 		 float rMax, int Ntex, int textureNum, 
@@ -805,6 +878,14 @@ CoulombAB_SR_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
   coulomb_AB_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, 
      lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAB_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -821,6 +902,124 @@ CoulombAB_SR_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
   coulomb_AB_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, 
      lattice, latticeInv, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAB_SR_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
+}
+
+
+
+template<typename T, int BS>
+__global__ void
+local_ecp_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast, 
+		  T rMax, int Ntex, int textureNum, T *sum)
+{
+  int tid = threadIdx.x;
+  __shared__ T *myR;
+
+  int Nion = Ilast - Ifirst + 1;
+
+  if (tid == 0) 
+    myR = R[blockIdx.x];
+
+  __syncthreads();
+
+  T nrm = (T)(Ntex-1)/rMax;
+  __shared__ T r[BS][3], i[BS][3];
+  int NeBlocks = Nelec/BS + ((Nelec%BS) ? 1 : 0);
+  int NiBlocks = Nion/BS +  ((Nion %BS) ? 1 : 0);
+
+  T mysum = (T)0.0; 
+
+  // Now do off-diagonal blocks
+  for (int iBlock=0; iBlock<NiBlocks; iBlock++) {
+    for (int j=0; j<3; j++)
+      if ((3*iBlock+j)*BS + tid < 3*Nion)
+	i[0][j*BS+tid] = I[3*Ifirst+(3*iBlock+j)*BS + tid];
+    __syncthreads();
+    int ion = iBlock*BS + tid;
+    for (int eBlock=0; eBlock<NeBlocks; eBlock++) {
+      for (int j=0; j<3; j++)
+	if ((3*eBlock+j)*BS + tid < 3*Nelec)
+	  r[0][j*BS+tid] = myR[(3*eBlock+j)*BS + tid];
+      __syncthreads();
+      int end = ((eBlock+1)*BS < Nelec) ? BS : (Nelec-eBlock*BS);
+      if (ion < Nion) {
+	for (int j=0; j<end; j++) {
+	  T dx, dy, dz;
+	  dx = r[j][0] - i[tid][0];
+	  dy = r[j][1] - i[tid][1];
+	  dz = r[j][2] - i[tid][2];
+	  T d = dist(dx, dy, dz);
+	  float tval;
+	  arraytexFetch(nrm*d+0.5, textureNum, tval);
+	  mysum += tval / d;
+	}
+      }
+      __syncthreads();
+    }
+  }
+  __shared__ T shared_sum[BS];
+  shared_sum[tid] = mysum;
+  __syncthreads();
+  for (int s=BS>>1; s>0; s >>=1) {
+    if (tid < s)
+      shared_sum[tid] += shared_sum[tid+s];
+    __syncthreads();
+  }
+  if (tid==0)
+    sum[blockIdx.x] = shared_sum[0];
+}
+
+
+
+void
+local_ecp_sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
+	      float rMax, int Ntex, int textureNum, 
+	      float sum[], int numWalkers)
+{
+  const int BS=64;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  local_ecp_kernel<float,BS><<<dimGrid,dimBlock>>>
+    (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in local_ecp_sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
+}
+
+
+
+void
+local_ecp_sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
+	      double rMax, int Ntex, int textureNum, 
+	      double sum[], int numWalkers)
+{
+  const int BS=64;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  local_ecp_kernel<double,BS><<<dimGrid,dimBlock>>>
+    (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in local_ecp_sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -895,6 +1094,14 @@ CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
 
   coulomb_AB_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Zion, Nion, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAB_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -908,6 +1115,14 @@ CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
 
   coulomb_AB_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, Nelec, I, Zion, Nion, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in CoulombAB_Sum:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1024,6 +1239,14 @@ eval_rhok_cuda(float *R[], int numr, float kpoints[],
 
   eval_rhok_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, numr, kpoints, numk, rhok);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_rhok_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 void
@@ -1037,6 +1260,14 @@ eval_rhok_cuda(double *R[], int numr, double kpoints[],
 
   eval_rhok_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, numr, kpoints, numk, rhok);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_rhok_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1051,6 +1282,14 @@ eval_rhok_cuda(float *R[], int first, int last, float kpoints[],
 
   eval_rhok_kernel<float,BS><<<dimGrid,dimBlock>>>
     (R, first, last, kpoints, numk, rhok);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_rhok_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 void
@@ -1064,6 +1303,14 @@ eval_rhok_cuda(double *R[], int first, int last, double kpoints[],
 
   eval_rhok_kernel<double,BS><<<dimGrid,dimBlock>>>
     (R, first, last, kpoints, numk, rhok);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_rhok_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1175,6 +1422,14 @@ eval_vk_sum_cuda (float *rhok[], float vk[], int numk, float sum[],
 
   vk_sum_kernel<float,BS><<<dimGrid,dimBlock>>>
     (rhok, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 void
@@ -1188,6 +1443,14 @@ eval_vk_sum_cuda (double *rhok[], double vk[], int numk, double sum[],
 
   vk_sum_kernel<double,BS><<<dimGrid,dimBlock>>>
     (rhok, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1204,6 +1467,14 @@ eval_vk_sum_cuda (float *rhok1[], float *rhok2[],
 
   vk_sum_kernel2<float,BS><<<dimGrid,dimBlock>>>
     (rhok1, rhok2, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1219,6 +1490,14 @@ eval_vk_sum_cuda (double *rhok1[], double *rhok2[],
 
   vk_sum_kernel2<double,BS><<<dimGrid,dimBlock>>>
     (rhok1, rhok2, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 
@@ -1279,6 +1558,14 @@ eval_vk_sum_cuda (float *rhok1[], float rhok2[],
 
   vk_sum_kernel2<float,BS><<<dimGrid,dimBlock>>>
     (rhok1, rhok2, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 void
@@ -1293,6 +1580,14 @@ eval_vk_sum_cuda (double *rhok1[], double rhok2[],
 
   vk_sum_kernel2<double,BS><<<dimGrid,dimBlock>>>
     (rhok1, rhok2, vk, numk, sum);
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in eval_vk_sum_cuda:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
 }
 
 

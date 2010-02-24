@@ -40,6 +40,7 @@ IF(OHMMS_DIM MATCHES 3)
          CoulombPBCAA_CUDA.cpp
          CoulombPBCAB_CUDA.cpp
          MPC_CUDA.cpp
+         LocalECPotential_CUDA.cpp
          NonLocalECPotential_CUDA.cpp
 	 CoulombPotential_CUDA.cpp
         )

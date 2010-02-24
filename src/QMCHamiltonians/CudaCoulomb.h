@@ -116,4 +116,13 @@ MPC_LR_Sum(double *R[], int N, UBspline_3d_d_cuda *spline,
 	   double latticeInv[], double sum[], int numWalkers);
 void init_Acuda();
 
+
+void
+local_ecp_sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
+	      float rMax, int Ntex, int textureNum, 
+	      float sum[], int numWalkers);
+void
+local_ecp_sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
+	      double rMax, int Ntex, int textureNum, 
+	      double sum[], int numWalkers);
 #endif

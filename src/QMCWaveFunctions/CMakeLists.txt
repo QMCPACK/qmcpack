@@ -70,7 +70,8 @@ IF(QMC_CUDA)
        TrialWaveFunction_CUDA.cpp
       )
    SET(JASTROW_SRCS ${JASTROW_SRCS}
-       Jastrow/CudaSpline.cu
+       Jastrow/BsplineJastrowCuda.cu
+       Jastrow/BsplineJastrowCudaPBC.cu
        Jastrow/OneBodyJastrowOrbitalBspline.cpp
        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
       )
