@@ -181,12 +181,13 @@ namespace qmcplusplus {
   {
     map<SPOSetBase*,SPOSetBase*> spomap;
     SlaterDet* myclone= new SlaterDet(*this);
+    myclone->releasedNode=releasedNode;
     for(int i=0; i<Dets.size(); i++) 
     {
       map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
       if (releasedNode==1)
       {
-        RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(dynamic_cast<RNDiracDeterminantBase&>(*Dets[i]));
+        RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(static_cast<RNDiracDeterminantBase&>(*Dets[i]));
         adet->NP=0;
         if(it == spomap.end())
         {
@@ -203,7 +204,7 @@ namespace qmcplusplus {
       }
       else if (releasedNode==2)
       {
-        RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(dynamic_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
+        RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(static_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
         adet->NP=0;
         if(it == spomap.end())
         {

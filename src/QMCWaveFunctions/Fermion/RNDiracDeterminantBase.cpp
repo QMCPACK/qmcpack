@@ -34,8 +34,9 @@ namespace qmcplusplus
   }
 
   RNDiracDeterminantBase::RNDiracDeterminantBase(const RNDiracDeterminantBase& s):
-      DiracDeterminantBase(s)
+  DiracDeterminantBase(s), logepsilon(0.0)
   {
+    this->resize(s.NumPtcls,s.NumOrbitals);
     setLogEpsilon(s.logepsilon);
 //     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<<endl;
   }
