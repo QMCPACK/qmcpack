@@ -1372,6 +1372,9 @@ cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
 	      cudaMemcpyDeviceToHost);
   for (int mat=0; mat<num_mats; mat++)
     if (bad_inverse[mat]) {
+      char name[1000];
+      gethostname(name, 1000);
+      fprintf (stderr, "Offending hostname = %s\n", name);
       std::cerr << "bad inverse for matrix " << mat << std::endl;
       std::vector<float>  Amat(N*row_stride);
       cudaMemcpy (&(Amat[0]), Alist_h[mat], N*row_stride*sizeof(float), cudaMemcpyDeviceToHost);
