@@ -102,8 +102,8 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        W.makeMoveOnSphere(iel,deltar); 
-        //W.makeMove(iel,deltar); 
+	//        W.makeMoveOnSphere(iel,deltar); 
+        W.makeMove(iel,deltar); 
 #if defined(QMC_COMPLEX)
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
@@ -550,8 +550,8 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        W.makeMoveOnSphere(iel,deltar); 
-        //PosType newpos(W.makeMove(iel,deltar));
+        //W.makeMoveOnSphere(iel,deltar); 
+        PosType newpos(W.makeMove(iel,deltar));
 #if defined(QMC_COMPLEX)
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
@@ -618,8 +618,8 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        W.makeMoveOnSphere(iel,deltar); 
-        //PosType newpos(W.makeMove(iel,deltar)); 
+        //W.makeMoveOnSphere(iel,deltar); 
+        PosType newpos(W.makeMove(iel,deltar)); 
         //psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
 	psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
 	psigrad[j] *= psiratio[j];

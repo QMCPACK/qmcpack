@@ -122,7 +122,7 @@ namespace qmcplusplus {
     if(hasNonLocalPot) {
       //resize the sphere
       targetPtcl.resizeSphere(IonConfig.getTotalNum());
-      bool usePBC = (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN);
+      bool usePBC = (IonConfig.Lattice.SuperCellEnum != SUPERCELL_OPEN);
       RealType rc2=0.0;
 #ifdef QMC_CUDA   
       NonLocalECPotential_CUDA* apot = 
