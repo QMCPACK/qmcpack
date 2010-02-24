@@ -1,6 +1,6 @@
 #define MAX_SPLINES 100
 #include <stdio.h>
-#include "BsplineJastrowCuda.h"
+#include "BsplineJastrowCudaPBC.h"
 
 bool AisInitialized = false;
 
