@@ -6,6 +6,7 @@
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
+#include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
 #include "Configuration.h"
 

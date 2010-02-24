@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "BsplineJastrowCudaPBC.h"
 
-bool AisInitialized = false;
+bool AisInitializedPBC = false;
 
 
 // void
@@ -175,7 +175,7 @@ __constant__ float AcudaSpline[48];
 __constant__ double AcudaSpline_double[48];
 
 void
-cuda_spline_init()
+cuda_spline_init_PBC()
 {
   float A_h[48] = { -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
 		     3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
@@ -209,7 +209,7 @@ cuda_spline_init()
   cudaMemcpyToSymbol(AcudaSpline_double, A_d, 48*sizeof(double), 0, 
 		     cudaMemcpyHostToDevice);
 
-  AisInitialized = true;
+  AisInitializedPBC = true;
 }
 
 
@@ -368,8 +368,8 @@ two_body_sum_PBC (float *R[], int e1_first, int e1_last, int e2_first, int e2_la
 		  float spline_coefs[], int numCoefs, float rMax,  
 		  float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 128;
 
@@ -395,8 +395,8 @@ two_body_sum_PBC (double *R[], int e1_first, int e1_last, int e2_first, int e2_l
 		  double spline_coefs[], int numCoefs, double rMax,  
 		  double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 128;
 
@@ -513,8 +513,8 @@ two_body_ratio_PBC (float *R[], int first, int last,
 		    float spline_coefs[], int numCoefs, float rMax,  
 		    float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 128;
 
@@ -541,8 +541,8 @@ two_body_ratio_PBC (double *R[], int first, int last,
 		    double spline_coefs[], int numCoefs, double rMax,  
 		    double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
@@ -813,8 +813,8 @@ two_body_ratio_grad_PBC(float *R[], int first, int last,
 			float ratio_grad[], int numWalkers,
 			bool use_fast_image)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
   dim3 dimBlock(BS);
@@ -850,8 +850,8 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
 			double lattice[], double latticeInv[], bool zero,
 			double ratio_grad[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
   dim3 dimBlock(BS);
@@ -1104,8 +1104,8 @@ two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
 		      float lattice[], float latticeInv[], float sim_cell_radius,
 		      int numjobs)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
   const int BS=32;
 
   dim3 dimBlock(BS);
@@ -1140,8 +1140,8 @@ two_body_NLratios_PBC(NLjobGPU<double> jobs[], int first, int last,
 		      double lattice[], double latticeInv[], 
 		      double sim_cell_radius, int numjobs)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
 
@@ -1442,8 +1442,8 @@ two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last,
 		       double lattice[], double latticeInv[], 
 		       double gradLapl[], int row_stride, int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
@@ -1681,8 +1681,8 @@ two_body_gradient_PBC (double *R[], int first, int last, int iat,
 		       double lattice[], double latticeInv[], bool zeroOut,
 		       double grad[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 32;
 
@@ -2003,8 +2003,8 @@ one_body_sum_PBC (float C[], float *R[], int cfirst, int clast, int efirst, int 
 		  float spline_coefs[], int numCoefs, float rMax,  
 		  float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 32;
 
@@ -2029,8 +2029,8 @@ one_body_sum_PBC (double C[], double *R[], int cfirst, int clast, int efirst, in
 		  double spline_coefs[], int numCoefs, double rMax,  
 		  double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 128;
 
@@ -2144,8 +2144,8 @@ one_body_ratio_PBC (float C[], float *R[], int first, int last,
 		    float spline_coefs[], int numCoefs, float rMax,  
 		    float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 32;
 
@@ -2172,8 +2172,8 @@ one_body_ratio_PBC (double C[], double *R[], int first, int last,
 		    double spline_coefs[], int numCoefs, double rMax,  
 		    double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
@@ -2438,8 +2438,8 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
 			 float ratio_grad[], int numWalkers, 
 			 bool use_fast_image)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 32;
 
@@ -2471,8 +2471,8 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
 			 double lattice[], double latticeInv[], bool zero,
 			 double ratio_grad[], int numWalkers, bool use_fast_image)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS = 32;
 
@@ -2518,8 +2518,8 @@ one_body_update_kernel (T **R, int N, int iat)
 void
 one_body_update(float *R[], int N, int iat, int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   dim3 dimBlock(32);
   dim3 dimGrid(numWalkers);
@@ -2538,8 +2538,8 @@ one_body_update(float *R[], int N, int iat, int numWalkers)
 void
 one_body_update(double *R[], int N, int iat, int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   dim3 dimBlock(3);
   dim3 dimGrid(numWalkers);
@@ -2692,8 +2692,8 @@ one_body_grad_lapl_PBC(double C[], double *R[], int e1_first, int e1_last,
 		       double lattice[], double latticeInv[], 
 		       double gradLapl[], int row_stride, int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
   dim3 dimBlock(BS);
@@ -3019,8 +3019,8 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
 		      float lattice[], float latticeInv[], float sim_cell_radius,
 		      int numjobs)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
 
@@ -3065,8 +3065,8 @@ one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
 		      double spline_coefs[], int numCoefs, double rMax, 
 		      double lattice[], double latticeInv[], int numjobs)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
   const int BS=32;
 
   dim3 dimBlock(BS);
@@ -3272,8 +3272,8 @@ one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
 		       float L[], float Linv[], float sim_cell_radius,
 		       bool zeroSum, float grad[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
   dim3 dimBlock(BS);
@@ -3305,8 +3305,8 @@ one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last
 		       double L[], double Linv[], bool zeroSum,
 		       double grad[], int numWalkers)
 {
-  if (!AisInitialized)
-    cuda_spline_init();
+  if (!AisInitializedPBC)
+    cuda_spline_init_PBC();
 
   const int BS=32;
   dim3 dimBlock(BS);
@@ -3524,7 +3524,7 @@ one_body_derivs_PBC(double C[], double *R[], double *gradLogPsi[],
 
 
 
-void test()
+void testPBC()
 {
   dim3 dimBlock(32);
   dim3 dimGrid(1000);

@@ -1,12 +1,7 @@
 #ifndef BSPLINE_JASTROW_CUDA_PBC_H
 #define BSPLINE_JASTROW_CUDA_PBC_H
 
-template <typename S>
-struct NLjobGPU
-{
-  int Elec, NumQuadPoints;
-  S *R, *QuadPoints, *Ratios;
-};
+#include "NLjobGPU.h"
 
 ///////////////////////
 // Two-Body routines //

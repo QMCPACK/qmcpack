@@ -1,12 +1,7 @@
 #ifndef BSPLINE_JASTROW_CUDA_H
 #define BSPLINE_JASTROW_CUDA_H
 
-template <typename S>
-struct NLjobGPU
-{
-  int Elec, NumQuadPoints;
-  S *R, *QuadPoints, *Ratios;
-};
+#include "NLjobGPU.h"
 
 ///////////////////////
 // Two-Body routines //
@@ -38,8 +33,7 @@ void
 two_body_ratio_grad(float *R[], int first, int last,
 		    float  Rnew[], int inew,
 		    float spline_coefs[], int numCoefs, float rMax,  
-		    bool zero,
-		    float ratio_grad[], int numWalkers, bool use_fast_image);
+		    bool zero, float ratio_grad[], int numWalkers);
 
 void
 two_body_ratio_grad(double *R[], int first, int last,
@@ -51,13 +45,12 @@ two_body_ratio_grad(double *R[], int first, int last,
 void
 two_body_NLratios(NLjobGPU<float> jobs[], int first, int last,
 		  float* spline_coefs[], int numCoefs[], float rMax[], 
-		  float sim_cell_radius,
 		  int numjobs);
 
 void
 two_body_NLratios(NLjobGPU<double> jobs[], int first, int last,
 		  double* spline_coefs[], int numCoefs[], double rMax[], 
-		  double sim_cell_radius, int numjobs);
+		  int numjobs);
 
 
 void

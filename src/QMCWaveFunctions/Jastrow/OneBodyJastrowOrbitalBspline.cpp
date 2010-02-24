@@ -73,11 +73,17 @@ namespace qmcplusplus {
       
       CudaSpline<CudaReal> &spline = *(GPUSplines[cgroup]);
       if (GPUSplines[cgroup]) {
-	one_body_sum_PBC (C.data(), W.RList_GPU.data(), 
-			  cfirst, clast, efirst, elast, 
-			  spline.coefs.data(), spline.coefs.size(),
-			  spline.rMax, L.data(), Linv.data(),
-			  SumGPU.data(), walkers.size());
+	if (UsePBC)
+	  one_body_sum_PBC (C.data(), W.RList_GPU.data(), 
+			    cfirst, clast, efirst, elast, 
+			    spline.coefs.data(), spline.coefs.size(),
+			    spline.rMax, L.data(), Linv.data(),
+			    SumGPU.data(), walkers.size());
+	else
+	  one_body_sum (C.data(), W.RList_GPU.data(), 
+			cfirst, clast, efirst, elast, 
+			spline.coefs.data(), spline.coefs.size(),
+			spline.rMax, SumGPU.data(), walkers.size());
       }
       // Copy data back to CPU memory
     }
@@ -135,13 +141,19 @@ namespace qmcplusplus {
 // 			    spline.coefs.data(), spline.coefs.size(),
 // 			    spline.rMax, L.data(), Linv.data(),
 // 			    SumGPU.data(), walkers.size());
-	bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
-      
-	one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last, 
-				 (CudaReal*)W.Rnew_GPU.data(), iat, 
-				 spline.coefs.data(), spline.coefs.size(),
-				 spline.rMax, L.data(), Linv.data(), zero,
-				 SumGPU.data(), walkers.size(), use_fast_image);
+	if (UsePBC) {
+	  bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+	  one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last, 
+				   (CudaReal*)W.Rnew_GPU.data(), iat, 
+				   spline.coefs.data(), spline.coefs.size(),
+				   spline.rMax, L.data(), Linv.data(), zero,
+				   SumGPU.data(), walkers.size(), use_fast_image);
+	}
+	else
+	  one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last, 
+			       (CudaReal*)W.Rnew_GPU.data(), iat, 
+			       spline.coefs.data(), spline.coefs.size(),
+			       spline.rMax, zero, SumGPU.data(), walkers.size());
 	zero = false;
       }
     }
@@ -228,10 +240,15 @@ namespace qmcplusplus {
       int last  = CenterLast[group];
       if (GPUSplines[group]) {
 	CudaSpline<CudaReal> &spline = *(GPUSplines[group]);
-	one_body_NLratios_PBC(NL_JobListGPU.data(), C.data(), first, last,
-			      spline.coefs.data(), spline.coefs.size(),
-			      spline.rMax, L.data(), Linv.data(), sim_cell_radius,
-			      njobs);
+	if (UsePBC) 
+	  one_body_NLratios_PBC(NL_JobListGPU.data(), C.data(), first, last,
+				spline.coefs.data(), spline.coefs.size(),
+				spline.rMax, L.data(), Linv.data(), sim_cell_radius,
+				njobs);
+	else
+	  one_body_NLratios(NL_JobListGPU.data(), C.data(), first, last,
+			    spline.coefs.data(), spline.coefs.size(),
+			    spline.rMax, njobs);
       }
     }
     NL_RatiosHost = NL_RatiosGPU;
@@ -257,10 +274,16 @@ namespace qmcplusplus {
       int last  = CenterLast[group];
       if (GPUSplines[group]) {
 	CudaSpline<CudaReal> &spline = *(GPUSplines[group]);
-	one_body_gradient_PBC (W.RList_GPU.data(), iat, C.data(), first, last, 
-			       spline.coefs.data(), spline.coefs.size(),
-			       spline.rMax, L.data(), Linv.data(), sim_cell_radius, 
-			       zero, OneGradGPU.data(), walkers.size());
+	if (UsePBC) 
+	  one_body_gradient_PBC (W.RList_GPU.data(), iat, C.data(), first, last, 
+				 spline.coefs.data(), spline.coefs.size(),
+				 spline.rMax, L.data(), Linv.data(), sim_cell_radius, 
+				 zero, OneGradGPU.data(), walkers.size());
+	else
+	  one_body_gradient (W.RList_GPU.data(), iat, C.data(), first, last, 
+			     spline.coefs.data(), spline.coefs.size(),
+			     spline.rMax, zero, OneGradGPU.data(), walkers.size());
+
 	zero = false;
       }
     }
@@ -324,11 +347,19 @@ namespace qmcplusplus {
       int elast  = N-1;
       if (GPUSplines[cgroup]) {
 	CudaSpline<CudaReal> &spline = *(GPUSplines[cgroup]);
-	one_body_grad_lapl_PBC (C.data(), W.RList_GPU.data(), 
-				cfirst, clast, efirst, elast, 
-				spline.coefs.data(), spline.coefs.size(),
-				spline.rMax, L.data(), Linv.data(),
-				GradLaplGPU.data(), 4*N, walkers.size());
+	if (UsePBC) 
+	  one_body_grad_lapl_PBC (C.data(), W.RList_GPU.data(), 
+				  cfirst, clast, efirst, elast, 
+				  spline.coefs.data(), spline.coefs.size(),
+				  spline.rMax, L.data(), Linv.data(),
+				  GradLaplGPU.data(), 4*N, walkers.size());
+	else
+	  one_body_grad_lapl (C.data(), W.RList_GPU.data(), 
+			      cfirst, clast, efirst, elast, 
+			      spline.coefs.data(), spline.coefs.size(),
+			      spline.rMax, GradLaplGPU.data(), 
+			      4*N, walkers.size());
+
       }
     }
     // Copy data back to CPU memory
@@ -397,10 +428,16 @@ namespace qmcplusplus {
 //       cerr << "cfirst = " << cfirst << "  clast = " << clast << endl;
 //       cerr << "spline.coefs.size() = " << spline.coefs.size() << endl;
 //       cerr << "spline.rMax = " << spline.rMax << endl;
-      one_body_derivs_PBC (C.data(), W.RList_GPU.data(), W.GradList_GPU.data(),
-			   cfirst, clast, efirst, elast, 
-			   spline.coefs.size(), spline.rMax, L.data(), 
-			   Linv.data(), sim_cell_radius, DerivListGPU.data(),nw);
+      if (UsePBC) 
+	one_body_derivs_PBC (C.data(), W.RList_GPU.data(), W.GradList_GPU.data(),
+			     cfirst, clast, efirst, elast, 
+			     spline.coefs.size(), spline.rMax, L.data(), 
+			     Linv.data(), sim_cell_radius, DerivListGPU.data(),nw);
+      else
+	one_body_derivs (C.data(), W.RList_GPU.data(), W.GradList_GPU.data(),
+			 cfirst, clast, efirst, elast, 
+			 spline.coefs.size(), spline.rMax, DerivListGPU.data(),nw);
+
       // Copy data back to CPU memory
       SplineDerivsHost = SplineDerivsGPU;
 //       cerr << "SplineDerivsHost = " << endl;
