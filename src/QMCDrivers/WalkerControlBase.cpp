@@ -196,7 +196,7 @@ namespace qmcplusplus {
 
     //return the current data
 //     app_log()<<"FN,RN: "<<ngoodfn<<" "<<nrn<<endl;
-    return ngoodfn;
+    return W.getActiveWalkers();
   }
 
   int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {

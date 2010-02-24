@@ -137,7 +137,7 @@ namespace qmcplusplus
 
       ///default constructor
       inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
-          Weight(1.0e0),Multiplicity(1.0e0)
+          Weight(1.0e0),Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
 #ifdef QMC_CUDA
 	  , cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
           Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
@@ -392,7 +392,7 @@ namespace qmcplusplus
       inline Msg& putMessage(Msg& m)
       {
         const int nat=R.size();
-        m << ID << ParentID << Generation << Age << ReleasedNodeWeight << ReleasedNodeAge;
+        m << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
         m.Pack(&(R[0][0]),nat*OHMMS_DIM);
 #if defined(QMC_COMPLEX)
         m.Pack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
@@ -436,7 +436,7 @@ namespace qmcplusplus
       inline Msg& getMessage(Msg& m)
       {
         const int nat=R.size();
-        m>>ID >> ParentID >> Generation >> Age >> ReleasedNodeWeight >> ReleasedNodeAge;
+        m>>ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
         m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
 #if defined(QMC_COMPLEX)
         m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);

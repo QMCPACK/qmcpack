@@ -63,10 +63,10 @@ namespace qmcplusplus {
         thisWalker.DataSet=tbuffer;
 
         //setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
-        RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+//         RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         RealType bene = H.evaluate(W);
 
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),bene, 0.0,0.0, nodecorr);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),bene, 0.0,0.0, 1.0);
         H.saveProperty(thisWalker.getPropertyBase());
         
         ValueType altR = Psi.alternateRatio(W);
@@ -81,7 +81,7 @@ namespace qmcplusplus {
         }
         RealType fene  = -0.5*(Sum(W.L)+Dot(W.G,W.G)) + thisWalker.Properties(LOCALPOTENTIAL); 
         thisWalker.resetReleasedNodeProperty(bene,fene,altR);
-        thisWalker.ReleasedNodeAge=0;
+        thisWalker.ReleasedNodeAge=0; thisWalker.ReleasedNodeWeight=0.0;
       }
   }
   
