@@ -56,6 +56,10 @@ namespace qmcplusplus {
 			       HTimer("DMCcuda::Hamiltonian")
 
     { }
+    
+    bool checkBounds (const PosType &newpos);
+    void checkBounds (vector<PosType> &newpos, vector<bool> &valid);
+
     /// Copy operator (disabled).
     DMCcuda& operator=(const DMCcuda&) { return *this;}
     ///hide initialization from the main function

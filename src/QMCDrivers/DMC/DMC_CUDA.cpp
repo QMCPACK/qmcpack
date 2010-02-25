@@ -50,6 +50,23 @@ namespace qmcplusplus {
     TimerManager.addTimer (&HTimer);
   }
   
+  bool DMCcuda::checkBounds (const PosType &newpos)
+  {
+    if (!W.UseBoundBox)
+      return true;
+    PosType red = W.Lattice.toUnit(newpos);
+    return W.Lattice.isValid(red);
+  }
+
+  void DMCcuda::checkBounds (vector<PosType> &newpos,
+			     vector<bool> &valid)
+  {
+    for (int iw=0; iw<newpos.size(); iw++) {
+      PosType red = W.Lattice.toUnit(newpos[iw]);
+      valid[iw] = W.Lattice.isValid(red);
+    }
+  }
+
 
   bool DMCcuda::run() 
   { 
@@ -138,7 +155,10 @@ namespace qmcplusplus {
           Psi.ratio(W,iat,ratios,newG, newL);
 	  	  
           accepted.clear();
-	  vector<bool> acc(nw, false);
+	  vector<bool> acc(nw, true);
+	  if (W.UseBoundBox)
+	    checkBounds (newpos, acc);
+
           for(int iw=0; iw<nw; ++iw) {
 	    PosType drOld = 
 	      newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
@@ -150,7 +170,7 @@ namespace qmcplusplus {
 	    RealType x = logGb - logGf;
 	    RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
 	    
-            if(Random() < prob && ratios[iw] > 0.0) {
+            if(acc[iw] && Random() < prob && ratios[iw] > 0.0) {
               accepted.push_back(W[iw]);
 	      nAccept++;
 	      W[iw]->R[iat] = newpos[iw];
@@ -161,6 +181,7 @@ namespace qmcplusplus {
 	      V2bar[iw] +=  newScale[iw] *  newScale[iw] * dot(newG[iw],newG[iw]);
 	    }
 	    else {
+	      acc[iw] = false;
 	      nReject++;
 	      V2[iw]    += m_tauovermass * m_tauovermass * dot(oldG[iw],oldG[iw]);
 	      V2bar[iw] +=  oldScale[iw] *  oldScale[iw] * dot(oldG[iw],oldG[iw]);
@@ -215,10 +236,13 @@ namespace qmcplusplus {
 	    int ibar = NLop.selectMove(Random(), Txy[iw]);
 		    
 	    if (ibar) {
-	      accepted.push_back(W[iw]);
 	      int iat = Txy[iw][ibar].PID;
-	      iatList.push_back(iat);
-	      accPos.push_back(W[iw]->R[iat] + Txy[iw][ibar].Delta);
+	      PosType newpos(W[iw]->R[iat] + Txy[iw][ibar].Delta);
+	      if (checkBounds(newpos)) {
+		accepted.push_back(W[iw]);
+		iatList.push_back(iat);
+		accPos.push_back(newpos);
+	      }
 	    }
 	  }
 	  if (accepted.size()) {
