@@ -123,7 +123,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      //os << "CoulombPBCAB potential: " << PtclA->getName() << "-" << PtclB->getName();
+      os << "CoulombPBCAB potential source: " << PtclA.getName() ;
       return true;
     }
 

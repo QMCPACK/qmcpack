@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <iomanip>
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {

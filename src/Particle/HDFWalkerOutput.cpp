@@ -87,7 +87,7 @@ namespace qmcplusplus
     dump_file.create(FileName);
     HDFVersion cur_version;
     //version
-    dump_file.write(cur_version,hdf::version);
+    dump_file.write(cur_version.version,hdf::version);
     //state
     dump_file.push(hdf::main_state);
     //walkers

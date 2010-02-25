@@ -142,6 +142,7 @@ namespace qmcplusplus
     aAttrib.add(s_cutoff,"Cutoff");
     aAttrib.add(s_radius,"Radius");
     aAttrib.add(s_smallnumber,"smallnumber");
+    aAttrib.add(s_smallnumber,"eps");
     aAttrib.add(rntype,"primary");
 
     //    cerr<<"Det method is "<<detMethod<<endl;

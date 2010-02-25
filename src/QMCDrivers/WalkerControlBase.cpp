@@ -69,8 +69,10 @@ namespace qmcplusplus {
 		   << setw(20) << "Weight"
 		   << setw(20) << "NumOfWalkers"; 
       if (WriteRN) 
+        {
 	(*dmcStream) << setw(20) << "RNWalkers" 
 		     << setw(20) << "AlternateEnergy";
+        }
       (*dmcStream)   << setw(20) << "TrialEnergy" 
 		     << setw(20) << "DiffEff";
       if (WriteRN) (*dmcStream)  
@@ -117,10 +119,12 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.Energy
         << setw(20) << EnsembleProperty.Variance
         << setw(20) << EnsembleProperty.Weight
-		   << setw(20) << EnsembleProperty.NumSamples;
-      if (WriteRN) (*dmcStream)
-        << setw(20) << EnsembleProperty.RNSamples
-        << setw(20) << EnsembleProperty.AlternateEnergy;
+	<< setw(20) << EnsembleProperty.NumSamples;
+      if (WriteRN) 
+        {
+          (*dmcStream) << setw(20) << EnsembleProperty.RNSamples
+          << setw(20) << EnsembleProperty.AlternateEnergy;
+        }
       (*dmcStream)
         << setw(20) << trialEnergy 
         << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed;
@@ -199,8 +203,6 @@ namespace qmcplusplus {
     trialEnergy=EnsembleProperty.Energy;
     W.EnsembleProperty=EnsembleProperty;
 
-    //return the current data
-//     app_log()<<"FN,RN: "<<ngoodfn<<" "<<nrn<<endl;
     return W.getActiveWalkers();
   }
 
@@ -338,15 +340,16 @@ namespace qmcplusplus {
 
     //remove bad walkers empty the container
     for(int i=0; i<bad.size(); i++) delete bad[i];
-
-    if(good_w.empty()) {
+    if (!WriteRN)
+    {
+     if(good_w.empty()) {
       app_error() << "All the walkers have died. Abort. " << endl;
       APP_ABORT("WalkerControlBase::sortWalkers");
-    }
+     }
 
-    int sizeofgood = good_w.size();
-    //check if the projected number of walkers is too small or too large
-    if((NumWalkers-nrn)>Nmax) {
+     int sizeofgood = good_w.size();
+     //check if the projected number of walkers is too small or too large
+     if(NumWalkers>Nmax) {
       int nsub=0;
       int nsub_target=(NumWalkers-nrn)-static_cast<int>(0.9*Nmax);
       int i=0;
@@ -355,7 +358,7 @@ namespace qmcplusplus {
         ++i;
       }
       NumWalkers -= nsub;
-    } else  if((NumWalkers-nrn) < Nmin) {
+     } else  if(NumWalkers < Nmin) {
       int nadd=0;
       int nadd_target = static_cast<int>(Nmin*1.1)-(NumWalkers-nrn);
       if(nadd_target> sizeofgood) {
@@ -367,7 +370,10 @@ namespace qmcplusplus {
         ncopy_w[i]++; ++nadd;++i;
       }
       NumWalkers +=  nadd;
+     }
     }
+    else
+    {
     it=good_rn.begin(); it_end=good_rn.end();
     int indy(0);
     while(it!=it_end) {
@@ -375,7 +381,7 @@ namespace qmcplusplus {
       ncopy_w.push_back(ncopy_rn[indy]);
       it++,indy++;
     }
-    
+    }
     return NumWalkers;
   }
 
