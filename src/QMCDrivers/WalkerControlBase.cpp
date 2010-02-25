@@ -20,10 +20,10 @@
 
 namespace qmcplusplus {
 
-  WalkerControlBase::WalkerControlBase(Communicate* c):
+  WalkerControlBase::WalkerControlBase(Communicate* c, bool rn):
     MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10),
     MaxCopy(5), NumWalkersCreated(0),targetEnergyBound(10), targetVar(2),
-    targetSigma(10), dmcStream(0) 
+    targetSigma(10), dmcStream(0), WriteRN(rn) 
   {
     NumContexts=myComm->size(); MyContext=myComm->rank();
     curData.resize(LE_MAX+NumContexts);
@@ -64,16 +64,18 @@ namespace qmcplusplus {
       dmcStream->setf(ios::scientific, ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << setw(10) << "# Index "
-        << setw(20) << "LocalEnergy"
-        << setw(20) << "Variance" 
-        << setw(20) << "Weight"
-        << setw(20) << "NumOfWalkers" 
-        << setw(20) << "RNWalkers" 
-        << setw(20) << "AlternateEnergy"
-        << setw(20) << "TrialEnergy" 
-        << setw(20) << "DiffEff" 
-        << setw(20) << "LivingFraction" 
-        << endl;
+		   << setw(20) << "LocalEnergy"
+		   << setw(20) << "Variance" 
+		   << setw(20) << "Weight"
+		   << setw(20) << "NumOfWalkers"; 
+      if (WriteRN) 
+	(*dmcStream) << setw(20) << "RNWalkers" 
+		     << setw(20) << "AlternateEnergy";
+      (*dmcStream)   << setw(20) << "TrialEnergy" 
+		     << setw(20) << "DiffEff";
+      if (WriteRN) (*dmcStream)  
+        << setw(20) << "LivingFraction";
+      (*dmcStream) << endl;
     }
   }
 
@@ -115,13 +117,16 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.Energy
         << setw(20) << EnsembleProperty.Variance
         << setw(20) << EnsembleProperty.Weight
-        << setw(20) << EnsembleProperty.NumSamples
+		   << setw(20) << EnsembleProperty.NumSamples;
+      if (WriteRN) (*dmcStream)
         << setw(20) << EnsembleProperty.RNSamples
-        << setw(20) << EnsembleProperty.AlternateEnergy
+        << setw(20) << EnsembleProperty.AlternateEnergy;
+      (*dmcStream)
         << setw(20) << trialEnergy 
-        << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed
-        << setw(20) << EnsembleProperty.LivingFraction
-        << endl;
+        << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed;
+      if (WriteRN) (*dmcStream)
+        << setw(20) << EnsembleProperty.LivingFraction;
+      (*dmcStream)  << endl;
     }
   }
 

@@ -353,6 +353,10 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
     }
   }
 
+  void SimpleFixedNodeBranch::setRN (bool rn)
+  { WalkerController->WriteRN = rn; }
+
+
   void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     myNode=cur;

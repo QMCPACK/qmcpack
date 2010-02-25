@@ -90,6 +90,7 @@ namespace qmcplusplus {
         branchEngine->initWalkerController(W,Tau,false,false);
       else
         branchEngine->initWalkerController(W,Tau,false,true);
+      branchEngine->setRN(true);
 
       //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
       Movers.resize(NumThreads,0);

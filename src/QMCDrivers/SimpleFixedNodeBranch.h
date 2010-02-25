@@ -348,6 +348,9 @@ namespace qmcplusplus {
     void start(const string& froot, bool append=false);
     ///finalize the simulation
     void finalize(MCWalkerConfiguration& w);
+
+    void setRN (bool rn);
+
     
 //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
 //     void clearConfigsForForwardWalking( );

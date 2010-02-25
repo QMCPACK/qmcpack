@@ -104,12 +104,14 @@ namespace qmcplusplus {
     vector<Walker_t*> good_w;
     ///temporary storage for copy counters
     vector<int> ncopy_w;
+    ///Add released-node fields to .dmc.dat file
+    bool WriteRN;
 
     /** default constructor
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
-    WalkerControlBase(Communicate* c);
+    WalkerControlBase(Communicate* c, bool rn=false);
 
     /** empty destructor to clean up the derived classes */
     virtual ~WalkerControlBase();
