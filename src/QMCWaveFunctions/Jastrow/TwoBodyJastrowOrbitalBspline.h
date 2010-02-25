@@ -102,6 +102,7 @@ namespace qmcplusplus {
       NL_RatiosGPU         ("TwoBodyJastrowOrbitalBspline::NL_RatiosGPU")
     {
       UsePBC = pset.Lattice.SuperCellEnum;
+      app_log() << "UsePBC = " << UsePBC << endl;
       int nsp = NumGroups = pset.groups();
       GPUSplines.resize(nsp*nsp,0);
       if (UsePBC) {

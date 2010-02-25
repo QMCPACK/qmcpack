@@ -74,8 +74,8 @@ namespace qmcplusplus {
     } 
 
     ///create LocalECPotential
-    bool usePBC = !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN 
-		    || pbc =="no");
+    bool usePBC = 
+      !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
     if(hasLocalPot) {
       if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no") 
       {

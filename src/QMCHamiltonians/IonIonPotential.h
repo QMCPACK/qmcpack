@@ -116,6 +116,8 @@ namespace qmcplusplus {
 #ifdef QMC_CUDA
     void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
     {
+      if (FirstTime)
+	evaluate(PtclRef);
       vector<Walker_t*> &walkers = W.WalkerList;
       for (int iw=0; iw<walkers.size(); iw++) {
 	walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = Value;

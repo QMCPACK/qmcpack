@@ -46,6 +46,8 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     VMCcuda& operator=(const VMCcuda&) { return *this;}
     ///hide initialization from the main function
+    bool checkBounds (vector<PosType> &newpos, vector<bool> &valid);
+
     void resetRun();
   };
 }

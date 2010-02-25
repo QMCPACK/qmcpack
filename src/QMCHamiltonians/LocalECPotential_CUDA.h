@@ -37,7 +37,6 @@ namespace qmcplusplus {
     gpu::host_vector<CUDA_PRECISION>    SumHost;
     gpu::device_vector<CUDA_PRECISION>  IGPU;
     gpu::device_vector<CUDA_PRECISION>  ZionGPU;
-    vector<RadialPotentialType*> Vspec;
 
     vector<PosType> SortedIons;
     void add(int groupID, RadialPotentialType* ppot, RealType zion);

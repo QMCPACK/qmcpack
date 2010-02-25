@@ -164,10 +164,10 @@ TextureSpline::set(double data[], int numPoints,
 }
 
 __device__ float dist (float dx, float dy, float dz)
-{ return rsqrtf(dx*dx + dy*dy + dz*dz); }
+{ return sqrtf(dx*dx + dy*dy + dz*dz); }
 
 __device__ double dist (double dx, double dy, double dz)
-{ return rsqrt(dx*dx + dy*dy + dz*dz); }
+{ return sqrt(dx*dx + dy*dy + dz*dz); }
 
 template<typename T>
 __device__
@@ -364,7 +364,7 @@ coulomb_AA_kernel(T **R, int N, T *sum)
   __syncthreads();
 
   __shared__ T r1[BS][3], r2[BS][3];
-  int NB = N/BS + ((N%BS) ? 1 : 0);
+  int NB = (N+BS-1)/BS;
 
   T mysum = (T)0.0; 
 

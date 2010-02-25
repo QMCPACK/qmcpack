@@ -11,10 +11,10 @@ __device__  float  recipSqrt (float x)  { return rsqrtf(x); }
 __device__  double recipSqrt (double x) { return rsqrt(x); }
 
 __device__ float dist (float dx, float dy, float dz)
-{ return rsqrtf(dx*dx + dy*dy + dz*dz); }
+{ return sqrtf(dx*dx + dy*dy + dz*dz); }
 
 __device__ double dist (double dx, double dy, double dz)
-{ return rsqrt(dx*dx + dy*dy + dz*dz); }
+{ return sqrt(dx*dx + dy*dy + dz*dz); }
 
 
 void

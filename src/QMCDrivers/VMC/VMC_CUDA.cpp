@@ -41,6 +41,15 @@ namespace qmcplusplus {
     m_param.add(nSubSteps, "subSteps", "int");
   }
   
+  bool VMCcuda::checkBounds (vector<PosType> &newpos,
+			     vector<bool> &valid)
+  {
+    for (int iw=0; iw<newpos.size(); iw++) {
+      PosType red = W.Lattice.toUnit(newpos[iw]);
+      valid[iw] = W.Lattice.isValid(red);
+    }
+  }
+
   bool VMCcuda::run() { 
     if (UseDrift == "yes")
       return runWithDrift();
@@ -82,16 +91,22 @@ namespace qmcplusplus {
 	Psi.ratio(W,iat,ratios,newG, newL);
 	    
 	accepted.clear();
-	vector<bool> acc(nw, false);
+
+	vector<bool> acc(nw, true);
+	if (W.UseBoundBox)
+	  checkBounds (newpos, acc);
+
 	for(int iw=0; iw<nw; ++iw) {
-	  if(ratios[iw]*ratios[iw] > Random()) {
+	  if(acc[iw] && ratios[iw]*ratios[iw] > Random()) {
 	    accepted.push_back(W[iw]);
 	    nAccept++;
 	    W[iw]->R[iat] = newpos[iw];
 	    acc[iw] = true;
 	  }
-	  else 
+	  else {
+	    acc[iw] = false;
 	    nReject++;
+	  }
 	}
 	W.acceptMove_GPU(acc);
 	if (accepted.size())
@@ -121,16 +136,22 @@ namespace qmcplusplus {
 	    Psi.ratio(W,iat,ratios,newG, newL);
 	    
 	    accepted.clear();
-	    vector<bool> acc(nw, false);
+
+	    vector<bool> acc(nw, true);
+	    if (W.UseBoundBox)
+	      checkBounds (newpos, acc);
+
 	    for(int iw=0; iw<nw; ++iw) {
-	      if(ratios[iw]*ratios[iw] > Random()) {
+	      if(acc[iw] && ratios[iw]*ratios[iw] > Random()) {
 		accepted.push_back(W[iw]);
 		nAccept++;
 		W[iw]->R[iat] = newpos[iw];
 		acc[iw] = true;
 	      }
-	      else 
+	      else {
+		acc[iw]=false;
 		nReject++;
+	      }
 	    }
 	    W.acceptMove_GPU(acc);
 	    if (accepted.size())
@@ -203,7 +224,10 @@ namespace qmcplusplus {
 	Psi.ratio(W,iat,ratios,newG, newL);
 	    
 	accepted.clear();
-	vector<bool> acc(nw, false);
+	vector<bool> acc(nw, true);
+	if (W.UseBoundBox)
+	  checkBounds (newpos, acc);
+
 	for(int iw=0; iw<nw; ++iw) {
 	  PosType drOld = 
 	    newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
@@ -215,15 +239,17 @@ namespace qmcplusplus {
 	  RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
 	  RealType x = logGb - logGf;
 	  RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-	      
-	  if(Random() < prob) {
+
+	  if(acc[iw] && Random() < prob) {
 	    accepted.push_back(W[iw]);
 	    nAccept++;
 	    W[iw]->R[iat] = newpos[iw];
 	    acc[iw] = true;
 	  }
-	  else 
+	  else {
+	    acc[iw] = false;
 	    nReject++;
+	  }
 	}
 	W.acceptMove_GPU(acc);
 	if (accepted.size())
@@ -256,7 +282,11 @@ namespace qmcplusplus {
 	    Psi.ratio(W,iat,ratios,newG, newL);
 	    
 	    accepted.clear();
-	    vector<bool> acc(nw, false);
+
+	    vector<bool> acc(nw, true);
+	    if (W.UseBoundBox)
+	      checkBounds (newpos, acc);
+
 	    for(int iw=0; iw<nw; ++iw) {
 	      PosType drOld = 
 		newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
@@ -272,14 +302,16 @@ namespace qmcplusplus {
 	      RealType x = logGb - logGf;
 	      RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
 	      
-	      if(Random() < prob) {
+	      if(acc[iw] && Random() < prob) {
 		accepted.push_back(W[iw]);
 		nAccept++;
 		W[iw]->R[iat] = newpos[iw];
 		acc[iw] = true;
 	      }
-	      else 
+	      else {
+		acc[iw] = false;
 		nReject++;
+	      }
 	    }
 	    W.acceptMove_GPU(acc);
 	    if (accepted.size())

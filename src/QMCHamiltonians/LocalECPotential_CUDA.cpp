@@ -52,25 +52,39 @@ namespace qmcplusplus {
   void 
   LocalECPotential_CUDA::add(int groupID, RadialPotentialType* ppot, RealType z)
   {
-    RadialPotentialType* savefunc = Vspec[groupID];
+    RadialPotentialType* savefunc = PPset[groupID];
     LocalECPotential::add(groupID, ppot, z);
-    RadialPotentialType* rfunc = Vspec[groupID];
+    RadialPotentialType* rfunc = PPset[groupID];
     if (rfunc != savefunc) {
       // Setup CUDA spline
       SRSplines[groupID] = new TextureSpline();
+      //      int np = 10001;
+      //       RealType rmax(20.0);
+      //       char fname[100];
+      //       snprintf (fname, 100, "local_ecp_%d.dat", groupID);
+      //       FILE *fout = fopen (fname, "w");
       int np = rfunc->size();
       vector<RealType> scaledData(np);
-      for (int ir=0; ir<np; ir++)
+
+      for (int ir=0; ir<np; ir++) {
+	// double r = ((RealType)ir / (RealType)(np-1)) * rmax ;
+	// 	scaledData[ir] = -z* rfunc->splint(r);
+	//	fprintf (stderr, "V(%1.5f) = %1.8f\n", r, scaledData[ir]);
+	//	fprintf (fout, "%16.10f %18.10e\n", r,
+	// 	scaledData[ir]);
 	scaledData[ir] = -z * (*rfunc)(ir);
-      SRSplines[groupID]->set
-	(&scaledData[0], np, rfunc->grid().rmin(), rfunc->grid().rmax());
+      }
+      // fclose(fout);
+      //SRSplines[groupID]->set(&(scaledData[0]), np, 0.0, rmax);
+      SRSplines[groupID]->set(&(scaledData[0]), rfunc->size(), 
+			      rfunc->grid().rmin(), rfunc->grid().rmax());
     }
   }
   
 
   void 
   LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W, 
-			       vector<RealType> &LocalEnergy)
+				   vector<RealType> &LocalEnergy)
   {
     vector<Walker_t*> &walkers = W.WalkerList;
     
@@ -101,8 +115,7 @@ namespace qmcplusplus {
     SumHost = SumGPU;
     for (int iw=0; iw<walkers.size(); iw++) {
       // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-      walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = 
-	esum[iw];
+      walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = esum[iw];
       LocalEnergy[iw] += esum[iw];
     }
   }
