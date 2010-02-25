@@ -58,7 +58,8 @@ namespace qmcplusplus {
     {
       if(dmcStream) delete dmcStream;
       string hname(myComm->getName());
-      hname.append(".dmc.dat");
+      if (WriteRN) hname.append(".rn.dat");
+      else hname.append(".dmc.dat");
       dmcStream= new ofstream(hname.c_str());
       //oa = new boost::archive::binary_oarchive (*dmcStream);
       dmcStream->setf(ios::scientific, ios::floatfield);

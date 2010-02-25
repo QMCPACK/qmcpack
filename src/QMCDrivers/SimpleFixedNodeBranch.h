@@ -172,6 +172,9 @@ namespace qmcplusplus {
     RealType LogJacobRef;
     ///LogNorm
     vector<RealType> LogNorm;
+    
+    ///Releasednode
+    bool RN;
 
     ///Constructor
     SimpleFixedNodeBranch(RealType tau, int nideal);

@@ -217,16 +217,18 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
 
     //current energy
     vParam[B_ENOW]=WalkerController->EnsembleProperty.Energy;
-    if(BranchMode[B_KILLNODES]) 
-      EnergyHist(vParam[B_ENOW]-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAU]);
-    else 
-      EnergyHist(vParam[B_ENOW]);
     VarianceHist(WalkerController->EnsembleProperty.Variance);
     R2Accepted(WalkerController->EnsembleProperty.R2Accepted);
     R2Proposed(WalkerController->EnsembleProperty.R2Proposed);
     //PopHist(pop_now);
     vParam[B_EREF]=EnergyHist.mean();//current mean
+    if(BranchMode[B_USETAUEFF]) vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
 
+    if(BranchMode[B_KILLNODES]) 
+      EnergyHist(vParam[B_ENOW]-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAUEFF]);
+    else 
+      EnergyHist(vParam[B_ENOW]);
+    
     if(BranchMode[B_DMCSTAGE]) // main stage
     { 
       if(BranchMode[B_POPCONTROL])
@@ -288,12 +290,12 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
         if(sParam[MIXDMCOPT]=="yes")
         {
           app_log() << "Switching to DMC with fluctuating populations" << endl;
-          BranchMode.set(B_POPCONTROL,1); //use standard DMC
+          BranchMode.set(B_POPCONTROL,1); //use standard DMC 
           delete WalkerController;
           WalkerController=BackupWalkerController;
           BackupWalkerController=0;
           vParam[B_ETRIAL]=vParam[B_EREF];
-          app_log()  << "  Etrial     = " << vParam[B_ETRIAL] << endl;
+          app_log()  << "  Etrial     = " << vParam[B_ETRIAL] << endl; 
           WalkerController->start();
         }
         //This is not necessary
@@ -354,7 +356,11 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
   }
 
   void SimpleFixedNodeBranch::setRN (bool rn)
-  { WalkerController->WriteRN = rn; }
+  { 
+    RN=rn;
+    WalkerController->WriteRN = rn; 
+    WalkerController->start();
+  }
 
 
   void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)

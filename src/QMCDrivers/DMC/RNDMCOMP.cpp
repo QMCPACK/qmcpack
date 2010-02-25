@@ -44,12 +44,13 @@ namespace qmcplusplus {
     
   void RNDMCOMP::resetComponents(xmlNodePtr cur)
   {
+    bool klw=(KillWalker=="yes");
+    
     m_param.put(cur);
     put(cur);
-    
-    Estimators->reset();
+    branchEngine->setRN(true);
     branchEngine->resetRun(cur);
-    bool klw=(KillWalker=="yes");
+    Estimators->reset();
     
     
 #pragma omp parallel for
