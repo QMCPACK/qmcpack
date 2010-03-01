@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROWSPIN_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
@@ -67,25 +67,26 @@ namespace qmcplusplus
        */
       vector<int> t_offset;
     public:
-
       typedef FT FuncType;
+      bool SpinPolarized;
 
       ///constructor
       OneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-          : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0)
+          : CenterRef(centers), d_table(0),FirstAddressOfdU(0), LastAddressOfdU(0), SpinPolarized(false)
       {
         U.resize(els.getTotalNum());
         d_table = DistanceTable::add(CenterRef,els);
         //allocate vector of proper size  and set them to 0
-        F.resize(CenterRef.getSpeciesSet().getTotalNum(), els.getSpeciesSet().getTotalNum());
-        for(int i=0; i<F.size(); ++i) F[i]=0;
+        //F.resize(CenterRef.getSpeciesSet().getTotalNum(), els.getSpeciesSet().getTotalNum());
+        F.resize(CenterRef.groups(), els.groups());
+        for(int i=0; i<F.size(); ++i) F(i)=0;
 
         //initialize mask to handle cloning and variable updates
-        Fmask.resize(CenterRef.getSpeciesSet().getTotalNum(), els.getSpeciesSet().getTotalNum());
+        Fmask.resize(CenterRef.groups(), els.groups());
         Fmask=-1;
 
-        s_offset.resize(F.rows()+1,0);
-        t_offset.resize(F.cols()+1,0);
+        s_offset.resize(CenterRef.groups()+1,0);
+        t_offset.resize(els.groups()+1,0);
         for(int s=0;s<F.rows(); ++s) s_offset[s+1]=centers.last(s);
         for(int t=0;t<F.cols(); ++t) t_offset[t+1]=els.last(t);
       }
@@ -106,21 +107,25 @@ namespace qmcplusplus
        *
        * When target_g is negative,  F(source_g,*)=afunc.
        */
-      void addFunc(int source_g, int target_g, FT* afunc)
+      void addFunc(int source_g, FT* afunc, int target_g=-1)
       {
         if(target_g<0)
         {
+          SpinPolarized=false;
           int pid=source_g*F.cols();
           for(int ig=0; ig<F.cols(); ++ig)
           {
             F(source_g,ig)=afunc;
             Fmask(source_g,ig)=pid;
           }
+          app_log() << " Adding functor of type "  << source_g << " for all the target. " << endl;
         }
         else
         {
+          SpinPolarized=true;
           F(source_g,target_g)=afunc;
           Fmask(source_g,target_g)=source_g*F.cols()+target_g;
+          app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << endl;
         }
       }
 
@@ -131,7 +136,7 @@ namespace qmcplusplus
       {
         myVars.clear();
         for(int i=0; i<F.size(); ++i)
-          if(Fmask(i) == i) 
+          if(Fmask(i)==i) 
           { 
             F(i)->checkInVariables(active);
             F(i)->checkInVariables(myVars);
@@ -281,14 +286,14 @@ namespace qmcplusplus
 
       inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
       {
-        int n=d_table->size(VisitorIndex);
+        int tg=P.GroupID[iat];//pick the target group
         curVal=0.0;
         curGrad = 0.0;
         RealType dudr, d2udr2;
         for(int sg=0; sg<F.rows(); ++sg)
         {
           FT* func=F(sg,tg);
-          for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s,nn+=n)
+          for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s)
           {
             curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
             dudr *= d_table->Temp[s].rinv1;
@@ -303,14 +308,16 @@ namespace qmcplusplus
                                 ParticleSet::ParticleGradient_t& dG,
                                 ParticleSet::ParticleLaplacian_t& dL)
       {
+        int tg=P.GroupID[iat];//pick the target group
         curVal=0.0;
         curLap=0.0;
         curGrad = 0.0;
         RealType dudr, d2udr2;
+
         for(int sg=0; sg<F.rows(); ++sg)
         {
           FT* func=F(sg,tg);
-          for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s,nn+=n)
+          for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
           {
             curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
             dudr *= d_table->Temp[s].rinv1;
@@ -382,9 +389,6 @@ namespace qmcplusplus
       /** equivalent to evalaute with additional data management */
       RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
       {
-	// cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
-	// cerr<<d_table->size(VisitorIndex)<<endl;
-        //U.resize(d_table->size(VisitorIndex));
         d2U.resize(d_table->size(VisitorIndex));
         dU.resize(d_table->size(VisitorIndex));
         FirstAddressOfdU = &(dU[0][0]);
@@ -441,22 +445,21 @@ namespace qmcplusplus
       OrbitalBasePtr makeClone(ParticleSet& tqp) const
       {
         OneBodySpinJastrowOrbital<FT>* j1copy=new OneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
-        for(int sg=0; sg<F.rows(); ++sg)
+        j1copy->SpinPolarized=SpinPolarized;
+
+        if(SpinPolarized)//full matrix
         {
-          bool nosharing=true;
-          for(int tg=1; tg<F.cols(); ++tg) nosharing=(Fmask(sg,tg)==sg*F.cols()+tg);
-          if(nosharing)
-          {
+          for(int sg=0; sg<F.rows(); ++sg)
             for(int tg=0; tg<F.cols(); ++tg)
-              j1copy->addFunc(sg,tg,new FT(*F(sg,tg)));
-          }
-          else
-            j1copy->addFunc(sg,-1,new FT(*F(sg,0)));
+              j1copy->addFunc(sg,new FT(*F(sg,tg)),tg);
         }
-        if (dPsi)
+        else//only F(*,0) is created and shared F(*,1..*)
         {
-          j1copy->dPsi =  dPsi->makeClone(tqp);
+          for(int sg=0; sg<F.rows(); ++sg)
+            j1copy->addFunc(sg,new FT(*F(sg,0)),-1);
         }
+
+        if(dPsi) j1copy->dPsi =  dPsi->makeClone(tqp);
 
         return j1copy;
       }
