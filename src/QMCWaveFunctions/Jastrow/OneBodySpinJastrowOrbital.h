@@ -77,7 +77,6 @@ namespace qmcplusplus
         U.resize(els.getTotalNum());
         d_table = DistanceTable::add(CenterRef,els);
         //allocate vector of proper size  and set them to 0
-        //F.resize(CenterRef.getSpeciesSet().getTotalNum(), els.getSpeciesSet().getTotalNum());
         F.resize(CenterRef.groups(), els.groups());
         for(int i=0; i<F.size(); ++i) F(i)=0;
 
@@ -190,23 +189,26 @@ namespace qmcplusplus
         LogValue=0.0;
         U=0.0;
         RealType dudr, d2udr2;
-        for(int ig=0; ig<F.rows(); ++ig)
+        for(int sg=0; sg<F.rows(); ++sg)
         {
-          for(int iat=s_offset[ig]; iat< s_offset[ig+1]; ++iat)
+          for(int iat=s_offset[sg]; iat< s_offset[sg+1]; ++iat)
           {
             int nn=d_table->M[iat];//starting nn for the iat-th source
-            for(int jg=0; jg<F.cols(); ++jg)
+            for(int tg=0; tg<F.cols(); ++tg)
             {
-              FT* func=F(ig,jg);
-              for(int jat=t_offset[jg]; jat< t_offset[jg+1]; ++jat,++nn)
-              {
-                RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
-                LogValue -= uij;
-                U[jat] += uij;
-                dudr *= d_table->rinv(nn);
-                G[jat] -= dudr*d_table->dr(nn);
-                L[jat] -= d2udr2+2.0*dudr;
-              }
+              FT* func=F(sg,tg);
+              if(func)
+                for(int jat=t_offset[tg]; jat< t_offset[tg+1]; ++jat,++nn)
+                {
+                  RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
+                  LogValue -= uij;
+                  U[jat] += uij;
+                  dudr *= d_table->rinv(nn);
+                  G[jat] -= dudr*d_table->dr(nn);
+                  L[jat] -= d2udr2+2.0*dudr;
+                }
+              else
+                nn+=t_offset[tg+1]-t_offset[tg];//move forward by the number of particles in the group tg
             }
           }
         }
@@ -258,12 +260,15 @@ namespace qmcplusplus
         for(int sg=0; sg<F.rows(); ++sg)
         {
           FT* func=F(sg,tg);
-          for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s,nn+=n)
-          {
-            ur=func->evaluate(d_table->r(nn),dudr,d2udr2);
-            dudr *= d_table->rinv(nn);
-            curGrad -= dudr*d_table->dr(nn);
-          }
+          if(func)
+            for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s,nn+=n)
+            {
+              ur=func->evaluate(d_table->r(nn),dudr,d2udr2);
+              dudr *= d_table->rinv(nn);
+              curGrad -= dudr*d_table->dr(nn);
+            }
+          else
+            nn += n*(s_offset[sg+1]-s_offset[sg]);
         }
         return curGrad;
       }
@@ -293,12 +298,13 @@ namespace qmcplusplus
         for(int sg=0; sg<F.rows(); ++sg)
         {
           FT* func=F(sg,tg);
-          for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s)
-          {
-            curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
-            dudr *= d_table->Temp[s].rinv1;
-            curGrad -= dudr*d_table->Temp[s].dr1;
-          }
+          if(func)
+            for(int s=s_offset[sg]; s< s_offset[sg+1]; ++s)
+            {
+              curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
+              dudr *= d_table->Temp[s].rinv1;
+              curGrad -= dudr*d_table->Temp[s].dr1;
+            }
         }
         grad_iat += curGrad;
         return std::exp(U[iat]-curVal);
@@ -317,13 +323,14 @@ namespace qmcplusplus
         for(int sg=0; sg<F.rows(); ++sg)
         {
           FT* func=F(sg,tg);
-          for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
-          {
-            curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
-            dudr *= d_table->Temp[s].rinv1;
-            curGrad -= dudr*d_table->Temp[s].dr1;
-            curLap  -= d2udr2+2.0*dudr;
-          }
+          if(func)
+            for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
+            {
+              curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
+              dudr *= d_table->Temp[s].rinv1;
+              curGrad -= dudr*d_table->Temp[s].dr1;
+              curLap  -= d2udr2+2.0*dudr;
+            }
         }
         dG[iat] += curGrad-dU[iat];
         dL[iat] += curLap-d2U[iat];
@@ -369,18 +376,21 @@ namespace qmcplusplus
             for(int jg=0; jg<F.cols(); ++jg)
             {
               FT* func=F(ig,jg);
-              for(int jat=t_offset[jg]; jat<t_offset[jg+1]; ++jat,++nn)
-              {
-                uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
-                LogValue-=uij;
-                U[jat]+=uij;
-                dudr *= d_table->rinv(nn);
-                dU[jat] -= dudr*d_table->dr(nn);
-                d2U[jat] -= d2udr2+2.0*dudr;
+              if(func)
+                for(int jat=t_offset[jg]; jat<t_offset[jg+1]; ++jat,++nn)
+                {
+                  uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+                  LogValue-=uij;
+                  U[jat]+=uij;
+                  dudr *= d_table->rinv(nn);
+                  dU[jat] -= dudr*d_table->dr(nn);
+                  d2U[jat] -= d2udr2+2.0*dudr;
 
-                dG[jat] -= dudr*d_table->dr(nn);
-                dL[jat] -= d2udr2+2.0*dudr;
-              }
+                  dG[jat] -= dudr*d_table->dr(nn);
+                  dL[jat] -= d2udr2+2.0*dudr;
+                }
+              else
+                nn += t_offset[jg+1]-t_offset[jg];
             }
           }
         }
