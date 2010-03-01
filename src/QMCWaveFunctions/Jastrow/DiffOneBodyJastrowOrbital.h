@@ -109,8 +109,6 @@ namespace qmcplusplus
         myVars.getIndex(active);
         NumVars=myVars.size();
 
-//        myVars.print(cout);
-
         if (NumVars && dLogPsi.size()==0)
           {
             dLogPsi.resize(NumVars);
@@ -203,34 +201,32 @@ namespace qmcplusplus
           }
       }
 
-      DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
+      inline void setVars(const opt_variables_type& vars)
+      {
+        NumVars=vars.size();
+        if(NumVars==0) return;
+        myVars=vars;
+        dLogPsi.resize(NumVars);
+        gradLogPsi.resize(NumVars,0);
+        lapLogPsi.resize(NumVars,0);
+        for (int i=0; i<NumVars; ++i)
         {
-          DiffOneBodyJastrowOrbital<FT>* j1copy=new DiffOneBodyJastrowOrbital<FT>(CenterRef,tqp);
-          for (int i=0; i<Funique.size(); ++i)
-            {
-              if (Funique[i])
-                {
-                  j1copy->addFunc(i,new FT(*Funique[i]));
-                }
-            }
-          //j1copy->OrbitalName=OrbitalName+"_clone";
-          j1copy->myVars.clear();
-          j1copy->myVars.insertFrom(myVars);
-          j1copy->NumVars=NumVars;
-          j1copy->NumPtcls=NumPtcls;
-          j1copy->dLogPsi.resize(NumVars);
-          j1copy->gradLogPsi.resize(NumVars,0);
-          j1copy->lapLogPsi.resize(NumVars,0);
-          for (int i=0; i<NumVars; ++i)
-            {
-              j1copy->gradLogPsi[i]=new GradVectorType(NumPtcls);
-              j1copy->lapLogPsi[i]=new ValueVectorType(NumPtcls);
-            }
-          j1copy->OffSet=OffSet;
-
-          return j1copy;
+          gradLogPsi[i]=new GradVectorType(NumPtcls);
+          lapLogPsi[i]=new ValueVectorType(NumPtcls);
         }
+      }
 
+      DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
+      {
+        DiffOneBodyJastrowOrbital<FT>* j1copy=new DiffOneBodyJastrowOrbital<FT>(CenterRef,tqp);
+        for (int i=0; i<Funique.size(); ++i)
+        {
+          if (Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));
+        }
+        j1copy->setVars(myVars);
+        j1copy->OffSet=OffSet;
+        return j1copy;
+      }
 
     };
 }
