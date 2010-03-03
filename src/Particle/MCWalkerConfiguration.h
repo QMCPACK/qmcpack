@@ -91,8 +91,9 @@ namespace qmcplusplus {
     // laplacians for each walker.  These vectors .data() is often
     // passed to GPU kernels.
 #ifdef QMC_CUDA
-    gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU,
-      RhokList_GPU;
+    gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
+    // First index is the species.  The second index is the walker
+    vector<gpu::device_vector<CUDA_PRECISION*> > RhokLists_GPU;
     gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
     gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
     gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;    

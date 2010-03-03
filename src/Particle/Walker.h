@@ -124,16 +124,24 @@ namespace qmcplusplus
       // proposed position for single-particle moves.
       gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_GPU, Grad_GPU;
       gpu::device_vector<CUDA_PRECISION> Lap_GPU, Rhok_GPU;
-      inline void resizeCuda(int size, int rhosize) {
+      int k_species_stride;
+      inline void resizeCuda(int size, int num_species, int num_k) {
 	cuda_DataSize = size;
 	cuda_DataSet.resize(size);
 	int N = R.size();
 	R_GPU.resize(N);      
 	Grad_GPU.resize(N);      
 	Lap_GPU.resize(N);
-	if (rhosize)
-	  Rhok_GPU.resize (rhosize);
+	// For GPU coallescing
+	k_species_stride = ((2*num_k + 15)/16) * 16;
+	if (num_k) 
+	  Rhok_GPU.resize (num_species * k_species_stride);
       }
+      inline CUDA_PRECISION* get_rhok_ptr ()
+      { return Rhok_GPU.data(); }
+      inline CUDA_PRECISION* get_rhok_ptr (int isp)
+      { return Rhok_GPU.data() + k_species_stride * isp; }
+	
 #endif
 
 
@@ -156,7 +164,8 @@ namespace qmcplusplus
 	Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
 #ifdef QMC_CUDA
 	, cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
-        Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
+        Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
+        Rhok_GPU("Walker::Rhok_GPU")
 #endif 
       {
         Properties.resize(1,NUMPROPERTIES);

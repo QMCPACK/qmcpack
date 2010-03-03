@@ -114,7 +114,8 @@ namespace qmcplusplus {
     }
     for (int iw=0; iw<nw; iw++) {
       for (int sp=0; sp<NumSpecies; sp++) 
-	RhoklistsHost[sp][iw] = &(RhokGPU.data()[2*nw*Numk*sp + 2*Numk*iw]);
+	//RhoklistsHost[sp][iw] = &(RhokGPU.data()[2*nw*Numk*sp + 2*Numk*iw]);
+	RhoklistsHost[sp][iw] = W.WalkerList[iw]->get_rhok_ptr(sp);
     }
     for (int sp=0; sp<NumSpecies; sp++)
       RhoklistsGPU[sp] = RhoklistsHost[sp];
@@ -130,7 +131,7 @@ namespace qmcplusplus {
       int last  = PtclRef.last(sp)-1;
       eval_rhok_cuda(W.RList_GPU.data(), first, last, 
     		     kpointsGPU.data(), Numk, 
-    		     RhoklistsGPU[sp].data(), walkers.size());
+    		     W.RhokLists_GPU[sp].data(), walkers.size());
     }
 
 #ifdef DEBUG_CUDA_RHOK
@@ -157,7 +158,7 @@ namespace qmcplusplus {
     
     for (int sp1=0; sp1<NumSpecies; sp1++)
       for (int sp2=sp1; sp2<NumSpecies; sp2++) 
-    	eval_vk_sum_cuda(RhoklistsGPU[sp1].data(), RhoklistsGPU[sp2].data(),
+    	eval_vk_sum_cuda(W.RhokLists_GPU[sp1].data(), W.RhokLists_GPU[sp2].data(),
     			 FkGPU.data(), Numk, SumGPU.data(), nw);
 
     SumHost = SumGPU;

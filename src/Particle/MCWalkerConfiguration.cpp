@@ -389,10 +389,14 @@ void MCWalkerConfiguration::clearEnsemble()
 void MCWalkerConfiguration::updateLists_GPU()
 {
   int nw = WalkerList.size();
+  int NumSpecies = getSpeciesSet().TotalNum;
+
 
   if (Rnew_GPU.size() != nw) {
     Rnew_GPU.resize(nw);
-    RhokList_GPU.resize(nw);
+    RhokLists_GPU.resize(NumSpecies);
+    for (int isp=0; isp<NumSpecies; isp++)
+      RhokLists_GPU[isp].resize(nw);
     Rnew_host.resize(nw);
     Rnew.resize(nw);
     AcceptList_GPU.resize(nw);
@@ -429,9 +433,11 @@ void MCWalkerConfiguration::updateLists_GPU()
     hostlist[iw] = WalkerList[iw]->cuda_DataSet.data();
   DataList_GPU = hostlist;
 
-  for (int iw=0; iw<nw; iw++) 
-    hostlist[iw] = WalkerList[iw]->Rhok_GPU.data();
-  RhokList_GPU = hostlist;
+  for (int isp=0; isp<NumSpecies; isp++) {
+    for (int iw=0; iw<nw; iw++) 
+      hostlist[iw] = WalkerList[iw]->get_rhok_ptr(isp);
+    RhokLists_GPU[isp] = hostlist;
+  }
 }
 
 void
@@ -441,12 +447,11 @@ MCWalkerConfiguration::allocateGPU(size_t buffersize)
   int Numk = 0;
   if (SK)  Numk = SK->KLists.numk;
 
-  SpeciesSet& tspecies(getSpeciesSet());
-  int NumSpecies = tspecies.TotalNum;
+  int NumSpecies = getSpeciesSet().TotalNum;
 
   for (int iw=0; iw<WalkerList.size(); iw++) {
     Walker_t &walker = *(WalkerList[iw]);
-    walker.resizeCuda(buffersize, 2*Numk*NumSpecies);
+    walker.resizeCuda(buffersize, NumSpecies, Numk);
   }
 }
 
