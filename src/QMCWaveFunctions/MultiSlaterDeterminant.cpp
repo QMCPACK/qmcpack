@@ -91,7 +91,7 @@ namespace qmcplusplus {
     int n = P.getTotalNum();
     ParticleSet::ParticleGradient_t g(n), gt(n);
     ParticleSet::ParticleLaplacian_t l(n), lt(n);
-    ValueType psiN = 0.0;
+    ValueType psiN = 0.0, psiNinv;
     for(int i=0; i<SDets.size(); i++){ 
       g=0;
       l=0;
@@ -101,8 +101,9 @@ namespace qmcplusplus {
       lt += C[i]*detValues[i]*tempDetRatios[i]*l;
     }
     ValueType psiinv = std::cos(PhaseValue)*std::exp(-1.0*LogValue);
-    dG += gt/psiN;
-    dL += lt/psiN;
+    psiNinv = 1.0/psiN;
+    dG += psiNinv*gt;
+    dL += psiNinv*lt;
     return psiN*psiinv;
 //     APP_ABORT("IMPLEMENT MultiSlaterDeterminant::ratio");
 //     return 1.0;
@@ -173,7 +174,7 @@ namespace qmcplusplus {
     C.push_back(c);
     detValues.push_back(0.0);
     tempDetRatios.push_back(0.0);
-    myVars.insert(id,c,true,LINEAR_P);
+    myVars.insert(id,c,true,optimize::LINEAR_P);
   }
 
   void MultiSlaterDeterminant::checkInVariables(opt_variables_type& active)
