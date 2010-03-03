@@ -666,8 +666,10 @@ namespace qmcplusplus {
         ParticleSet::ParticleLaplacian_t& L)
     {
 
-      APP_ABORT("  DiracDeterminantBase::evaluate is disabled");
-      return ValueType();
+//       APP_ABORT("  DiracDeterminantBase::evaluate is disabled");
+
+      ValueType logval = evaluateLog(P, G, L);
+      return std::cos(PhaseValue)*std::exp(logval);
     }
 
 

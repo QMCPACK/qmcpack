@@ -26,19 +26,20 @@ namespace qmcplusplus {
 
   OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
       , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-
+  { 
     int n = P.getTotalNum();
     ParticleSet::ParticleGradient_t g(n), gt(n);
     ParticleSet::ParticleLaplacian_t l(n), lt(n);
     ValueType psi = 0.0;
     for(int i=0; i<SDets.size(); i++){
-      ValueType cdet = C[i]*SDets[i]->evaluate(P,g,l);
+      g=0.0;
+      l=0.0;
+      ValueType cdet = SDets[i]->evaluate(P,g,l);
+      detValues[i] = cdet;
+      cdet *= C[i];
       psi += cdet;
       gt += cdet*g;
       lt += cdet*l;
-      g=0.0;
-      l=0.0;
     }
     ValueType psiinv = 1.0/psi;
     G += gt*psiinv;
@@ -56,22 +57,55 @@ namespace qmcplusplus {
 
   OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("IMPLEMENT MultiSlaterDeterminant::evalGrad");
-    return GradType();
+    DiracDeterminantBase::GradType g;
+    for(int i=0; i<SDets.size(); i++){
+      g += C[i]*detValues[i]*SDets[i]->evalGrad(P,iat);
+    }
+    ValueType psiinv = std::cos(PhaseValue)*std::exp(-1.0*LogValue);
+    return g*psiinv;
+//     APP_ABORT("IMPLEMENT MultiSlaterDeterminant::evalGrad");
+//     return GradType();
   }
 
   OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
       , int iat, GradType& grad_iat)
   {
-    APP_ABORT("IMPLEMENT MultiSlaterDeterminant::ratioGrad");
-    return 1.0;
+    DiracDeterminantBase::GradType g,gt;
+    ValueType psiN = 0.0;
+    for(int i=0; i<SDets.size(); i++){
+      g=0;
+      tempDetRatios[i] = SDets[i]->ratioGrad(P,iat,g);
+      psiN += C[i]*detValues[i]*tempDetRatios[i];
+      gt += C[i]*g*detValues[i]*tempDetRatios[i];
+    }
+    ValueType psiinv = std::cos(PhaseValue)*std::exp(-1.0*LogValue);
+    grad_iat += gt/psiN;
+    return psiN*psiinv;
+//     APP_ABORT("IMPLEMENT MultiSlaterDeterminant::ratioGrad");
+//     return 1.0;
   }
 
   OrbitalBase::ValueType  MultiSlaterDeterminant::ratio(ParticleSet& P, int iat
      , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
   {
-    APP_ABORT("IMPLEMENT MultiSlaterDeterminant::ratio");
-    return 1.0;
+    int n = P.getTotalNum();
+    ParticleSet::ParticleGradient_t g(n), gt(n);
+    ParticleSet::ParticleLaplacian_t l(n), lt(n);
+    ValueType psiN = 0.0;
+    for(int i=0; i<SDets.size(); i++){ 
+      g=0;
+      l=0;
+      tempDetRatios[i] = SDets[i]->ratio(P,iat,g,l);
+      psiN += C[i]*detValues[i]*tempDetRatios[i];
+      gt += C[i]*detValues[i]*tempDetRatios[i]*g;
+      lt += C[i]*detValues[i]*tempDetRatios[i]*l;
+    }
+    ValueType psiinv = std::cos(PhaseValue)*std::exp(-1.0*LogValue);
+    dG += gt/psiN;
+    dL += lt/psiN;
+    return psiN*psiinv;
+//     APP_ABORT("IMPLEMENT MultiSlaterDeterminant::ratio");
+//     return 1.0;
   }
 
   OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
@@ -129,13 +163,17 @@ namespace qmcplusplus {
   {
     SDets.push_back(sdet);
     C.push_back(c);
+    detValues.push_back(0.0);
+    tempDetRatios.push_back(0.0);
   }
 
   void MultiSlaterDeterminant::add(DeterminantSet_t* sdet, RealType c, const string& id)
   {
     SDets.push_back(sdet);
     C.push_back(c);
-    myVars.insert(id,c,true);
+    detValues.push_back(0.0);
+    tempDetRatios.push_back(0.0);
+    myVars.insert(id,c,true,LINEAR_P);
   }
 
   void MultiSlaterDeterminant::checkInVariables(opt_variables_type& active)

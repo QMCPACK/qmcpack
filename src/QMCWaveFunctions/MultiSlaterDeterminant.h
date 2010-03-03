@@ -109,6 +109,8 @@ namespace qmcplusplus
 
       vector<DeterminantSet_t*> SDets;
       vector<RealType> C;
+      vector<ValueType> detValues;
+      vector<ValueType> tempDetRatios;
       opt_variables_type myVars;
     };
 
