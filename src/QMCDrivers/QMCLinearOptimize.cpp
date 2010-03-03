@@ -1,7 +1,7 @@
-//////////////////////////////////////////////////////////////////                    
+//////////////////////////////////////////////////////////////////
 // (c) Copyright 2005- by Jeongnim Kim                                                
-//////////////////////////////////////////////////////////////////                    
-//////////////////////////////////////////////////////////////////                    
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 //   Jeongnim Kim                                                                     
 //   National Center for Supercomputing Applications &                                
 //   Materials Computation Center                                                     
@@ -28,20 +28,26 @@
 #include "QMCDrivers/QMCCostFunctionSingle.h"                                         
 #include "QMCApp/HamiltonianPool.h"                                                   
 #include "Numerics/Blasf.h"                                                           
-#include <cassert>                                                                    
+#include <cassert>   
+#if defined(QMC_CUDA)
+  #include "QMCDrivers/VMC/VMC_CUDA.h"
+  #include "QMCDrivers/QMCCostFunctionCUDA.h"
+#endif
+
+                                                                 
 namespace qmcplusplus                                                                 
 {
   
   QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h),
-    PartID(0), NumParts(1), WarmupBlocks(10),                                                                               
-    SkipSampleGeneration("no"), hamPool(hpool),                                                                             
-    optTarget(0), vmcEngine(0), Max_iterations(1),                                                                          
+    PartID(0), NumParts(1), WarmupBlocks(10), 
+    SkipSampleGeneration("no"), hamPool(hpool),
+    optTarget(0), vmcEngine(0), Max_iterations(1),
     wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6), 
     nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1)
-    {                                                                                                                           
-      //set the optimization flag                                                                                               
-      QMCDriverMode.set(QMC_OPTIMIZE,1);                                                                                        
+    {
+      //set the optimization flag
+      QMCDriverMode.set(QMC_OPTIMIZE,1);
       //read to use vmc output (just in case)                                                                                   
       RootName = "pot";                                                                                                         
       QMCType ="QMCLinearOptimize";                                                                                             
@@ -339,9 +345,10 @@ namespace qmcplusplus
     bool                                                                                      
     QMCLinearOptimize::put(xmlNodePtr q)                                                      
     {                                                                                         
-      
+      string useGPU("no");
       string vmcMove("pbyp");
       OhmmsAttributeSet oAttrib;
+      oAttrib.add(useGPU,"gpu");
       oAttrib.add(vmcMove,"move");
       oAttrib.put(q);             
       
@@ -382,33 +389,40 @@ namespace qmcplusplus
       NumOfVMCWalkers=W.getActiveWalkers();
       
       //create VMC engine
-      if (vmcEngine ==0)
-      {
-        #if defined(ENABLE_OPENMP)
-        if (omp_get_max_threads()>1)
-          //             vmcEngine = new DMCOMP(W,Psi,H,hamPool);
-        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+      if(vmcEngine ==0) {
+#if defined (QMC_CUDA)
+        if (useGPU == "yes")
+	  vmcEngine = new VMCcuda(W,Psi,H);
         else
-          #endif
+#endif
+#if defined(ENABLE_OPENMP)
+        if(omp_get_max_threads()>1)
+          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+        else
+#endif
           vmcEngine = new VMCSingle(W,Psi,H);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
       }
-      
       vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
       vmcEngine->process(qsave);
       
       bool success=true;
-      if (optTarget == 0)
-      {
-        #if defined(ENABLE_OPENMP)
-        if (omp_get_max_threads()>1)
-        {
+
+      if(optTarget == 0) {
+#if defined (QMC_CUDA)
+        if (useGPU == "yes") 
+  	  optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+        else
+#endif
+#if defined(ENABLE_OPENMP)
+        if(omp_get_max_threads()>1) {
           optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
         }
         else
-          #endif
+#endif
           optTarget = new QMCCostFunctionSingle(W,Psi,H);
+
         optTarget->setStream(&app_log());
         success=optTarget->put(q);
       }
