@@ -31,6 +31,44 @@ namespace qmcplusplus {
    */
   void ParticleSet::createSK() 
   {
+   
+    if(!sorted_ids && !reordered_ids)
+    {
+      //save ID and GroupID
+      orgID=ID;
+      orgGroupID=GroupID;
+
+      if(groups()<1)
+      {
+        int nspecies=mySpecies.getTotalNum();
+        vector<int> ppg(nspecies,0);
+        for(int iat=0; iat<GroupID.size(); ++iat) ppg[GroupID[iat]]+=1;
+        SubPtcl.resize(nspecies+1);
+        SubPtcl[0]=0;
+        for(int i=0; i<nspecies; ++i) SubPtcl[i+1]=SubPtcl[i]+ppg[i];
+        int new_id=0;
+        for(int i=0; i<nspecies; ++i)
+          for(int iat=0; iat<GroupID.size(); ++iat) if(GroupID[iat]==i) orgID[new_id++]=ID[iat];
+        bool grouped=true;
+        for(int iat=0; iat<ID.size(); ++iat) grouped &= (orgID[iat]==ID[iat]);
+
+        if(grouped)
+        {
+          app_log() << "  ParticleSet is grouped. No need to reorder." << endl;
+        }
+        else
+        {
+          app_log() << "  Need to reorder. Only R is swapped." << endl;
+          ParticlePos_t oldR(R);
+          for(int iat=0; iat<R.size(); ++iat) R[iat]=oldR[orgID[iat]];
+          for(int i=0; i<groups(); ++i)
+            for(int iat=first(i); iat<last(i); ++iat) GroupID[iat]=i;
+          reordered_ids=true;
+        }
+      }//once group is set, nothing to be done
+      sorted_ids=true;
+    }
+
     convert2Cart(R); //make sure that R is in Cartesian coordinates
     //if(Lattice.BoxBConds[0] && SK == 0)
     if(Lattice.SuperCellEnum != SUPERCELL_OPEN)

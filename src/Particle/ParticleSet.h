@@ -91,10 +91,19 @@ namespace qmcplusplus {
     ///current position after applying PBC in the Lattice Unit
     ParticlePos_t redR;
 
+    ///orginal ID before grouping
+    ParticleIndex_t orgID;
+    ///orginal GroupID before grouping
+    ParticleIndex_t orgGroupID;
+
     ///true, if a physical or local bounding box is used
     bool UseBoundBox;
-    ///ture if fast update for sphere moves
+    ///true if fast update for sphere moves
     bool UseSphereUpdate;
+    ///true if the particles are grouped
+    bool sorted_ids;
+    ///true if the particles are reordered
+    bool reordered_ids;
     
     ///the indexp of the active particle for particle-by-particle moves
     Index_t activePtcl;
@@ -196,19 +205,6 @@ namespace qmcplusplus {
      */
     void checkBoundBox(RealType rb);
     
-    /** set the update mode
-     * @param updatemode
-     */
-    //void setUpdateMode(int updatenode);
-
-    /** set the update mode
-     * @param updatemode
-     */
-    //void setUpdateMode(int updatenode);
-
-    ///** add a distance table */
-    //void addTable(DistanceTableData* d_table);
-
     /**  add a distance table
      * @param psrc source particle set
      *

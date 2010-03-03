@@ -44,16 +44,18 @@ namespace qmcplusplus
   }
 
   ParticleSet::ParticleSet()
-      : UseBoundBox(true), UseSphereUpdate(true),SK(0), ParentTag(-1)
-  {
-    initParticleSet();
-    initPropertyList();
+    : UseBoundBox(true), UseSphereUpdate(true), sorted_ids(false), reordered_ids(false)
+      , SK(0), ParentTag(-1)
+    {
+      initParticleSet();
+      initPropertyList();
 
-    add_p_timer(myTimers);
-  }
+      add_p_timer(myTimers);
+    }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
       : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
+        ,sorted_ids(p.sorted_ids), reordered_ids(p.reordered_ids)
       , SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
   {
     initBase();
@@ -63,7 +65,8 @@ namespace qmcplusplus
     ostringstream o;
     o<<p.getName()<<ObjectTag;
     this->setName(o.str());
-    app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << endl;
+    app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << endl;
+
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
 
@@ -73,17 +76,14 @@ namespace qmcplusplus
     //first is always for this-this paier
     for (int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
 
-    if (p.SK)
-      {
-        R.InUnit=p.R.InUnit;
-        createSK();
-        SK->DoUpdate=p.SK->DoUpdate;
-      }
+    if(p.SK)
+    {
+      R.InUnit=p.R.InUnit;
+      createSK();
+      SK->DoUpdate=p.SK->DoUpdate;
+    }
 
-    if (p.Sphere.size())
-      {
-        resizeSphere(p.Sphere.size());
-      }
+    if (p.Sphere.size()) resizeSphere(p.Sphere.size());
 
     add_p_timer(myTimers);
     myTwist=p.myTwist;
@@ -115,6 +115,7 @@ namespace qmcplusplus
     dG.setTypeName(ParticleTags::postype_tag);
     dL.setTypeName(ParticleTags::scalartype_tag);
 #endif
+
     G.setObjName("grad");
     L.setObjName("lap");
     dG.setObjName("dgrad");
@@ -123,9 +124,16 @@ namespace qmcplusplus
     addAttribute(L);
     addAttribute(dG);
     addAttribute(dL);
-    myTwist[0]=0;
-    myTwist[1]=0;
-    myTwist[2]=0;
+
+    orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+    orgID.setObjName("id0"); 
+    addAttribute(orgID);
+    
+    orgGroupID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+    orgGroupID.setObjName("gid0"); 
+    addAttribute(orgGroupID);
+
+    myTwist=0.0;
 
     ////this has to be in unit
     //redR.setObjName("redpos");
@@ -512,9 +520,11 @@ namespace qmcplusplus
         if (SK && SK->DoUpdate) SK->acceptMove(iat);
       }
     else
-      {
-        APP_ABORT("  Illegal acceptMove ");
-      }
+    {
+      ostringstream o;
+      o << "  Illegal acceptMove " << iat << " != " << activePtcl;
+      APP_ABORT(o.str());
+    }
   }
 
   void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
