@@ -61,7 +61,15 @@ We first need to compute
 
 \begin{equation}
 \frac{d \Aopt_{nm}}{d_{c_{ij}}} =
--\left[A^{-1}\right]_{ni}\left[\varphi_j(\vr_m)A^{-1}\right]_m -
-\text{denom. part}
+-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_m 
+%-\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_i
 \end{equation}
+Now, we can compute
+\begin{multline}
+\frac{d}{dc_{ij}} \left[\frac{\nabla_n
+    \det(\Aopt)}{\det(\Aopt)}\right] = \\ -\sum_m \left\{\rule{0cm}{0.6cm}
+\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_m
+\nabla \phi_m(\vr_n) +
+\left(\Aopt^{-1}\right)_{nm} \nabla \varphi_j(\vr_n) \right\}
+\end{multline}
 \end{document}
