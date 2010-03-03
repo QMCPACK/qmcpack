@@ -9,17 +9,17 @@
 \section{Statement of problem}
 We would like to optimize the occupied single-particle orbitals,
 $\left\{\phi_i(\vr)\right\}$ in a determinant in the basis of the
-single-particle excited states, $\left\{\bar{\phi}_j(\vr)\right\}$.
+single-particle excited states, $\left\{\varphi_j(\vr)\right\}$.
 That is, we write the optimized orbitals,
 $\left\{\tilde{\phi}_i(\vr)\right\}$, as
 \begin{equation}
-\tilde{\phi}_i(\vr) = \phi_i(\vr) + \sum_j c_{ij} \bar{\phi}_j(\vr).
+\tilde{\phi}_i(\vr) = \phi_i(\vr) + \sum_j c_{ij} \varphi_j(\vr).
 \end{equation}
 
 In this set of notes, we derive the required algebra for computing the
 derivatives of the determinants w.r.t. $c_{ij}$.  First, let
 \begin{equation}
-A_{mn} \equiv \phi_m(\vr_n),\qquad \Aopt_{mn} \equiv \tilde{phi}_m(\vr_n)
+A_{mn} \equiv \phi_m(\vr_n),\qquad \Aopt_{mn} \equiv \tilde{\phi}_m(\vr_n)
 \end{equation}
 If we let $\vr_n \rightarrow \vr'_n$, we can compute the ratio of the
 new determinant to the old as
@@ -32,15 +32,36 @@ Similarly,
 \end{equation}
 Analogously, 
 \begin{equation}
-\frac{d\log\left[\det(\Aopt)\right]}{d c_{ij}} = \sum_n
-\left(A^{-1}\right)_{ni} \bar{\phi}_j(\vr_n).
+\frac{d}{d c_{ij}} \log\left[\det(\Aopt)\right] = \sum_n
+\left(A^{-1}\right)_{ni} \varphi_j(\vr_n).
 \end{equation}
 We need to also compute the derivative of the local kinetic energy
-with respect to $c_{ij}$.  These terms are more complicated.  We first
-need to compute
+with respect to $c_{ij}$.  These terms are more complicated.  
+
+
+We first need to compute
 \begin{equation}
 \frac{d}{d_{c_{ij}}} \left(\Aopt^{-1}\right)_{nm} = 
 \end{equation}
 
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1} = A^{-1} - \frac{A^{-1}e_k\delta^T
+  A^{-1}}{1 + \delta^T A^{-1}e_k},
+\end{equation}
 
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1}_{nm} = \left[A^{-1}\right]_{nm} - \frac{\left[A^{-1}e_k\right]_n\left[\delta^T
+  A^{-1}\right]_m}{1 + \delta^T A^{-1}e_k},
+\end{equation}
+
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1}_{nm} = \left[A^{-1}\right]_{nm} - \frac{\left[A^{-1}\right]_{nk}\left[\delta^T
+  A^{-1}\right]_m}{1 + \delta^T A^{-1}e_k},
+\end{equation}
+
+\begin{equation}
+\frac{d \Aopt_{nm}}{d_{c_{ij}}} =
+-\left[A^{-1}\right]_{ni}\left[\varphi_j(\vr_m)A^{-1}\right]_m -
+\text{denom. part}
+\end{equation}
 \end{document}
