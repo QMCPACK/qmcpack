@@ -21,6 +21,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Utilities/IteratorUtility.h"
+#include "LongRange/StructFact.h"
 #include <map>
 
 #ifdef QMC_CUDA
@@ -391,6 +392,7 @@ void MCWalkerConfiguration::updateLists_GPU()
 
   if (Rnew_GPU.size() != nw) {
     Rnew_GPU.resize(nw);
+    RhokList_GPU.resize(nw);
     Rnew_host.resize(nw);
     Rnew.resize(nw);
     AcceptList_GPU.resize(nw);
@@ -426,7 +428,29 @@ void MCWalkerConfiguration::updateLists_GPU()
   for (int iw=0; iw<nw; iw++) 
     hostlist[iw] = WalkerList[iw]->cuda_DataSet.data();
   DataList_GPU = hostlist;
+
+  for (int iw=0; iw<nw; iw++) 
+    hostlist[iw] = WalkerList[iw]->Rhok_GPU.data();
+  RhokList_GPU = hostlist;
 }
+
+void
+MCWalkerConfiguration::allocateGPU(size_t buffersize)
+{
+  int N = WalkerList[0]->R.size();
+  int Numk = 0;
+  if (SK)  Numk = SK->KLists.numk;
+
+  SpeciesSet& tspecies(getSpeciesSet());
+  int NumSpecies = tspecies.TotalNum;
+
+  for (int iw=0; iw<WalkerList.size(); iw++) {
+    Walker_t &walker = *(WalkerList[iw]);
+    walker.resizeCuda(buffersize, 2*Numk*NumSpecies);
+  }
+}
+
+
 
 void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 {

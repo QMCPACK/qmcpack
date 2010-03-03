@@ -91,7 +91,8 @@ namespace qmcplusplus {
     // laplacians for each walker.  These vectors .data() is often
     // passed to GPU kernels.
 #ifdef QMC_CUDA
-    gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
+    gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU,
+      RhokList_GPU;
     gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
     gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
     gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;    
@@ -102,6 +103,7 @@ namespace qmcplusplus {
     vector<PosType>                                    Rnew;
     gpu::device_vector<int> AcceptList_GPU;
     gpu::host_vector<int> AcceptList_host;
+    void allocateGPU(size_t buffersize);
     void copyWalkersToGPU(bool copyGrad=false);
     void updateLists_GPU();
     int CurrentParticle;

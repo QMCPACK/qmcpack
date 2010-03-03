@@ -527,11 +527,12 @@ namespace qmcplusplus {
 
     // Now allocate memory on the GPU card for each walker
     int cudaSize = pool.getTotalSize();
-    for (int iw=0; iw<W.WalkerList.size(); iw++) {
-      Walker_t &walker = *(W.WalkerList[iw]);
-      walker.resizeCuda(cudaSize);
-      //pool.allocate(walker.cuda_DataSet);
-    }
+    // for (int iw=0; iw<W.WalkerList.size(); iw++) {
+    //   Walker_t &walker = *(W.WalkerList[iw]);
+    //   walker.resizeCuda(cudaSize);
+    //   //pool.allocate(walker.cuda_DataSet);
+    // }
+    W.allocateGPU(pool.getTotalSize());
     app_log() << "Successfully allocated walkers.\n";
     W.copyWalkersToGPU();
     W.updateLists_GPU();

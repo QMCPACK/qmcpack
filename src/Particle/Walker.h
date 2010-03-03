@@ -123,14 +123,16 @@ namespace qmcplusplus
       // Note that R_GPU has size N+1.  The last element contains the
       // proposed position for single-particle moves.
       gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_GPU, Grad_GPU;
-      gpu::device_vector<CUDA_PRECISION> Lap_GPU;
-      inline void resizeCuda(int size) {
+      gpu::device_vector<CUDA_PRECISION> Lap_GPU, Rhok_GPU;
+      inline void resizeCuda(int size, int rhosize) {
 	cuda_DataSize = size;
 	cuda_DataSet.resize(size);
 	int N = R.size();
 	R_GPU.resize(N);      
 	Grad_GPU.resize(N);      
 	Lap_GPU.resize(N);
+	if (rhosize)
+	  Rhok_GPU.resize (rhosize);
       }
 #endif
 
@@ -140,7 +142,8 @@ namespace qmcplusplus
           Weight(1.0e0),Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
 #ifdef QMC_CUDA
 	  , cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
-          Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU")
+	  Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
+	  Rhok_GPU("Walker::Rhok_GPU")
 #endif
       {
         Properties.resize(1,NUMPROPERTIES);
@@ -378,11 +381,12 @@ namespace qmcplusplus
                +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
         //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
 #ifdef QMC_CUDA
-	bsize += 2 *sizeof (int); // size and N
-	bsize += cuda_DataSize             * sizeof(CUDA_PRECISION); // cuda_DataSet
-	bsize += R.size()      * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
-	bsize += R.size()      * OHMMS_DIM * sizeof(CUDA_PRECISION); // Grad_GPU
-	bsize += R.size()      * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
+	bsize += 3 *sizeof (int); // size and N and M
+	bsize += cuda_DataSize               * sizeof(CUDA_PRECISION); // cuda_DataSet
+	bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
+	bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // Grad_GPU
+	bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
+	bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION); // Lap_GPU
 #endif
 	return bsize;
 
@@ -410,7 +414,7 @@ namespace qmcplusplus
 
 #ifdef QMC_CUDA
 	// Pack GPU data
-	gpu::host_vector<CUDA_PRECISION> host_data;
+	gpu::host_vector<CUDA_PRECISION> host_data, host_rhok;
 	gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
 	gpu::host_vector<CUDA_PRECISION> host_lapl;
 	
@@ -427,6 +431,10 @@ namespace qmcplusplus
 	
 	host_lapl = Lap_GPU;
 	m.Pack(&(host_lapl[0]), host_lapl.size());
+	host_rhok = Rhok_GPU;
+	int M = host_rhok.size();
+	m.Pack(M);
+	m.Pack(&(host_rhok[0]), host_rhok.size());
 #endif
 	
         return m;
@@ -454,7 +462,7 @@ namespace qmcplusplus
 
 #ifdef QMC_CUDA
 	// Pack GPU data
-	gpu::host_vector<CUDA_PRECISION> host_data;
+	gpu::host_vector<CUDA_PRECISION> host_data, host_rhok;
 	gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
 	gpu::host_vector<CUDA_PRECISION> host_lapl;
 	
@@ -475,6 +483,13 @@ namespace qmcplusplus
 	
 	m.Unpack(&(host_lapl[0]), N);
 	Lap_GPU = host_lapl;
+
+	int M;
+	m.Unpack(M);
+	host_rhok.resize(M);
+	m.Unpack(&(host_rhok[0]), M);
+	Rhok_GPU = host_rhok;
+	
 #endif
 
         return m;

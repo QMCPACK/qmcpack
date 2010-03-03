@@ -179,11 +179,12 @@ namespace qmcplusplus {
     Psi.reserve (pool, true);
     app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
 	      << " bytes in GPU memory.\n";
-    for (int iw=0; iw<W.WalkerList.size(); iw++) {
-      Walker_t &walker = *(W.WalkerList[iw]);
-      walker.resizeCuda(pool.getTotalSize());
-      //pool.allocate(walker.cuda_DataSet);
-    }
+    // for (int iw=0; iw<W.WalkerList.size(); iw++) {
+    //   Walker_t &walker = *(W.WalkerList[iw]);
+    //   walker.resizeCuda(pool.getTotalSize());
+    //   //pool.allocate(walker.cuda_DataSet);
+    // }
+    W.allocateGPU(pool.getTotalSize());
     W.copyWalkersToGPU();
     W.updateLists_GPU();
     app_log() << "Successfully allocated walkers.\n";
