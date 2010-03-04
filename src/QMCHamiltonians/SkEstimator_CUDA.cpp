@@ -24,6 +24,7 @@ namespace qmcplusplus {
     gpu::host_vector<CUDA_PRECISION> rhok_host;
     int stride = (int)(W.WalkerList[0]->get_rhok_ptr(1) - 
 		       W.WalkerList[0]->get_rhok_ptr(0));
+    RealType OneOverNW = 1.0/(RealType)nw;
 
     vector<CUDA_PRECISION> rhok_total(2*NumK, 0.0);
     for (int iw=0; iw<nw; iw++) {
@@ -35,7 +36,7 @@ namespace qmcplusplus {
 	  rhok_total[ik] += rhok_host[ik+isp*stride];
       if(hdf5_out) {
 	for (int ik=0; ik<NumK; ik++)
-	  W.Collectables[myIndex+ik] += OneOverN*
+	  W.Collectables[myIndex+ik] += OneOverN*OneOverNW*
 	    (rhok_total[2*ik+0]*rhok_total[2*ik+0] +
 	     rhok_total[2*ik+1]*rhok_total[2*ik+1]);
       }
