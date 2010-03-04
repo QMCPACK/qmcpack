@@ -45,6 +45,8 @@ namespace qmcplusplus
     ///done for potential
 
     Return_t evaluate(ParticleSet& P);
+    void addEnergy(MCWalkerConfiguration &W, 
+		   vector<RealType> &LocalEnergy);
 
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
     {

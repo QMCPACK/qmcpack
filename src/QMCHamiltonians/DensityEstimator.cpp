@@ -18,6 +18,7 @@
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus 
 {
@@ -69,6 +70,7 @@ namespace qmcplusplus
           //ru[dim]=(P.R[iat][dim]-density_min[dim])/(density_max[dim]-density_min[dim]);
           ru[dim]=(P.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
         }
+	
         if (ru[0]>0.0 && ru[1]>0.0 && ru[2]>0.0 &&
             ru[0]<1.0 && ru[1]<1.0 && ru[2]<1.0){
           int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
@@ -81,6 +83,29 @@ namespace qmcplusplus
       } 
     }
     return 0.0;
+  }
+
+  void
+  DensityEstimator::addEnergy(MCWalkerConfiguration &W, 
+			      vector<RealType> &LocalEnergy)
+  {
+    int nw = W.WalkerList.size();
+    int N = W.getTotalNum();
+    if (Periodic) {
+      for (int iw=0; iw<nw; iw++) {
+	Walker_t &w = *W.WalkerList[iw];
+	for (int iat=0; iat<N; iat++) {
+	  PosType ru;
+	  for (int dim=0;dim<OHMMS_DIM;dim++) {
+	    ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
+	  }
+	  int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
+	  int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
+	  int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
+	  W.Collectables[getGridIndex(i,j,k)]+=1.0;
+	}
+      }
+    }
   }
 
   DensityEstimator::RealType 
