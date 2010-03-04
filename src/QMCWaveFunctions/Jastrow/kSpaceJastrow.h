@@ -205,10 +205,17 @@ namespace qmcplusplus {
     // crystal symmetry
     bool operator()(PosType G1, PosType G2);
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    
+    void evaluateDerivatives(ParticleSet& P,
+                                            const opt_variables_type& active,
+                                            vector<RealType>& dlogpsi,
+                                            vector<RealType>& dhpsioverpsi);
 
   private:
     void copyFrom(const kSpaceJastrow& old);
     kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
+    vector<int> TwoBodyVarMap;
+    vector<int> OneBodyVarMap;
   };
 }
 #endif

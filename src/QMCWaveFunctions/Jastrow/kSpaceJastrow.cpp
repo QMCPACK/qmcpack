@@ -627,6 +627,28 @@ namespace qmcplusplus {
   void kSpaceJastrow::checkInVariables(opt_variables_type& active)
   {
     active.insertFrom(myVars);
+    
+    int nOne = OneBodyGvecs.size();
+    OneBodyVarMap.resize(nOne);
+    int obi=0;
+    for (int i=0; i<nOne; i++) 
+    {
+      //two coeffs for each of these points, imaginary coefficients.
+      OneBodyVarMap[i]=obi;
+      if (i==OneBodySymmCoefs[obi].lastIndex) obi+=2;
+    }
+    obi+=2;
+    int nTwo = TwoBodyGvecs.size();
+    TwoBodyVarMap.resize(nTwo);
+    int tbi=0;
+    for (int i=0; i<nTwo; i++) 
+    {
+      //one coeff for each of these points, real coefficients.
+      for (int tbi=0; tbi<TwoBodySymmCoefs.size(); tbi++) 
+        if ((TwoBodySymmCoefs[tbi].firstIndex<=i)&&(i<=TwoBodySymmCoefs[tbi].lastIndex)) 
+          TwoBodyVarMap[i]=obi+tbi;
+    }
+    
   }
 
   void kSpaceJastrow::checkOutVariables(const opt_variables_type& active)
@@ -732,6 +754,9 @@ namespace qmcplusplus {
     //copy the variable map
     myVars=old.myVars;
     Optimizable=true;
+    TwoBodyVarMap=old.TwoBodyVarMap;
+    OneBodyVarMap=old.OneBodyVarMap;
+    
 
     //for (int i=0; i<OneBodySymmCoefs.size(); i++) {
     //  stringstream name_real, name_imag;
@@ -746,5 +771,89 @@ namespace qmcplusplus {
     //  VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
     //}
   }
+  
+  void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& active,
+                           vector<RealType>& dlogpsi,
+                           vector<RealType>& dhpsioverpsi)
+      {
+        bool recalculate(false);
+        for (int k=0; k<myVars.size(); ++k)
+        {
+          int kk=myVars.where(k);
+          if (kk<0) continue;
+          if (active.recompute(kk)) recalculate=true;
+        }
+        
+        if (recalculate)
+        {
+          int N = P.getTotalNum();
+          ComplexType eye(0.0, 1.0);
+          int nOne = OneBodyGvecs.size();
+           
+        for (int iat=0; iat<N; iat++) {
+          PosType r(P.R[iat]);
+          for (int i=0; i<nOne; i++) 
+            OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
+          eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+          
+          for (int i=0; i<nOne; i++) {
+            ComplexType z =  conj(OneBody_e2iGr[i]);
+            
+            int kk=myVars.where(OneBodyVarMap[i]);
+            if (kk>=0)
+            {
+              //real part of coeff
+              dlogpsi[kk] += Prefactor*real(z);
+              dhpsioverpsi[kk] +=  0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z)
+              + Prefactor*real(z*eye)*dot(OneBodyGvecs[i],P.G[iat]);
+              //imaginary part of coeff,
+              dlogpsi[kk+1] += Prefactor*real(eye*z);
+              //mius here due to i*i term
+              dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*dot(OneBodyGvecs[i],P.G[iat]);
+            }
+          }
+        }
+        
+        // Do two-body part
+        int nTwo = TwoBodyGvecs.size();
+        for (int i=0; i<nTwo; i++)
+          TwoBody_rhoG[i] = ComplexType();
+        for (int iat=0; iat<N; iat++) {
+          PosType r(P.R[iat]);
+          for (int iG=0; iG<nTwo; iG++) 
+            TwoBodyPhase[iG] = dot(TwoBodyGvecs[iG], r);
+          eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+          for (int iG=0; iG<nTwo; iG++)
+            TwoBody_rhoG[iG] += TwoBody_e2iGr_new[iG];
+        }
+        
+        for (int i=0; i<nTwo; i++) 
+        { 
+          int kk=myVars.where(TwoBodyVarMap[i]);
+          if (kk>=0)
+          {
+            dlogpsi[kk] += Prefactor*norm(TwoBody_rhoG[i]);
+          }
+        }
+        
+        for (int iat=0; iat<N; iat++) {
+          PosType r(P.R[iat]);
+          for (int i=0; i<nTwo; i++) 
+            TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+          eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+          for (int i=0; i<nTwo; i++) {
+            PosType Gvec(TwoBodyGvecs[i]);
+            ComplexType z = TwoBody_e2iGr_new[i];
+            int kk=myVars.where(TwoBodyVarMap[i]);
+            if (kk>0)
+            {
+              dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*dot(P.G[iat],Gvec)*imag(conj(TwoBody_rhoG[i])*z);
+            }
+          }
+        }
+        }
+      }
+                             
 }
 
