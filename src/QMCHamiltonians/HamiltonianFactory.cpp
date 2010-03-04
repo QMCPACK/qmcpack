@@ -74,6 +74,7 @@
   #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
   #include "QMCHamiltonians/CoulombPotential_CUDA.h"
   #include "QMCHamiltonians/MPC_CUDA.h"
+  #include "QMCHamiltonians/SkEstimator_CUDA.h"
 #endif
 
 namespace qmcplusplus {
@@ -307,7 +308,11 @@ namespace qmcplusplus {
         {
           if(PBCType)//only if perioidic 
           {
+#ifdef QMC_CUDA
+            SkEstimator_CUDA* apot=new SkEstimator_CUDA(*targetPtcl);
+#else
             SkEstimator* apot=new SkEstimator(*targetPtcl);
+#endif
             apot->put(cur);
             targetH->addOperator(apot,potName,false);
           }

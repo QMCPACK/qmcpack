@@ -50,7 +50,7 @@ namespace qmcplusplus
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-    private:
+    protected:
     /** number of species */
     int NumSpecies;
     /** number of kpoints */
