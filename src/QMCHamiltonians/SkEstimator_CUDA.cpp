@@ -41,7 +41,7 @@ namespace qmcplusplus {
       }
       else {
 	for (int ik=0; ik<NumK; ik++)
-	  W.WalkerList[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = 
+	  W.WalkerList[iw]->getPropertyBase()[NUMPROPERTIES+myIndex+ik] = 
 	    OneOverN * (rhok_total[2*ik+0]*rhok_total[2*ik+0] +
 			rhok_total[2*ik+1]*rhok_total[2*ik+1]);
 	
