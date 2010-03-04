@@ -383,6 +383,116 @@ namespace qmcplusplus {
   }
   
   
+  kSpaceJastrow::GradType kSpaceJastrow::evalGrad(ParticleSet& P, int iat) 
+  {
+//     RealType J1(0.0), J2(0.0);
+    kSpaceJastrow::GradType G;
+    int N = P.getTotalNum();
+    ComplexType eye(0.0, 1.0);
+    int nOne = OneBodyGvecs.size();
+    
+//     for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      for (int i=0; i<nOne; i++) 
+   OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
+      eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+      
+      for (int i=0; i<nOne; i++) {
+   ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
+//    J1 += Prefactor*real(z);
+   G += -Prefactor*real(z*eye)*OneBodyGvecs[i];
+//    L[iat] += -Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+      }
+//     }
+
+    // Do two-body part
+    int nTwo = TwoBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)
+      TwoBody_rhoG[i] = ComplexType();
+    for (int iat2=0; iat2<N; iat2++) {
+      PosType rp(P.R[iat2]);
+      for (int iG=0; iG<nTwo; iG++) 
+   TwoBodyPhase[iG] = dot(TwoBodyGvecs[iG], rp);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int iG=0; iG<nTwo; iG++)
+   TwoBody_rhoG[iG] += TwoBody_e2iGr_new[iG];
+    }
+
+//     cerr << "TwoBody_rhoG = ";
+//     for (int i=0; i<nTwo; i++)
+//       cerr << TwoBody_rhoG[i]  << "  ";
+//     cerr << endl;
+
+//     for (int i=0; i<nTwo; i++) 
+//       J2 += Prefactor*TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
+    
+//     for (int iat=0; iat<N; iat++) {
+//       PosType r(P.R[iat]);
+      for (int i=0; i<nTwo; i++) 
+   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int i=0; i<nTwo; i++) {
+   PosType Gvec(TwoBodyGvecs[i]);
+   ComplexType z = TwoBody_e2iGr_new[i];
+   G += -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*z);
+//    L[iat] += Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0);
+      }
+//     }
+    
+    return G;
+  }
+  
+  kSpaceJastrow::ValueType 
+  kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    ComplexType eye(0.0, 1.0);
+    RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
+    PosType rnew(P.R[iat]), rold(P.getOldPos());
+    // Compute one-body contribution
+    int nOne = OneBodyGvecs.size();
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rnew);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+    
+    for (int i=0; i<nOne; i++) 
+    {
+      ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
+      J1new += Prefactor*real(z);
+      grad_iat += -Prefactor*real(z*eye)*OneBodyGvecs[i];
+    }
+    
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+    
+    for (int i=0; i<nOne; i++) 
+      J1old += Prefactor*real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
+    
+    // Now, do two-body part
+    int nTwo = TwoBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rold);
+    eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_old);
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rnew);
+    eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+    
+    for (int i=0; i<nTwo; i++) {
+      ComplexType rho_G = TwoBody_rhoG[i];
+      J2old += Prefactor*TwoBodyCoefs[i]*std::norm(rho_G);
+    }
+    for (int i=0; i<nTwo; i++) {
+      ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+      J2new += Prefactor*TwoBodyCoefs[i]*std::norm(rho_G);
+    }
+    
+    for (int i=0; i<nTwo; i++) {
+      PosType Gvec(TwoBodyGvecs[i]);
+      ComplexType z = TwoBody_e2iGr_new[i];
+      grad_iat += -Prefactor*2.0*TwoBodyGvecs[i]*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*TwoBody_e2iGr_new[i]);
+    }
+    
+    return std::exp(J1new+J2new - (J1old + J2old));
+  }
+  
   /* evaluate the ratio with P.R[iat]
    *
    */
