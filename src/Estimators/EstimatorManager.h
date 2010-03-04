@@ -34,6 +34,7 @@ namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;
+  class CollectablesEstimator;
 
   /**Class to manage a set of ScalarEstimators */
   class EstimatorManager: public QMCTraits
@@ -190,7 +191,10 @@ namespace qmcplusplus {
     /** stop a block
      * @param m list of estimator which has been collecting data independently
      */
-    void stopBlock(const vector<EstimatorManager*> m);
+    void stopBlock(const vector<EstimatorManager*>& m);
+
+    /** accumulate collectables */
+    void accumulateCollectables(const vector<MCWalkerConfiguration*>& wclones, int nsteps);
 
     void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it,
         MCWalkerConfiguration::iterator it_end);
@@ -235,10 +239,13 @@ namespace qmcplusplus {
     ///communicator to handle communication
     Communicate* myComm;
     /** pointer to the primary ScalarEstimatorBase
-     *
-     * To be removed 
      */
     ScalarEstimatorBase* MainEstimator;
+    /** pointer to the CollectablesEstimator
+     *
+     * Do not need to clone: owned by the master thread
+     */
+    CollectablesEstimator* Collectables;
     /** accumulator for the energy
      *
      * @todo expand it for all the scalar observables to report the final results

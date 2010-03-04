@@ -52,7 +52,7 @@ namespace qmcplusplus {
   EstimatorManager::EstimatorManager(Communicate* c)
     : RecordCount(0),h_file(-1), FieldWidth(20)
       , MainEstimatorName("LocalEnergy"), Archive(0), DebugArchive(0)
-      , myComm(0), MainEstimator(0)
+      , myComm(0), MainEstimator(0), Collectables(0)
       , max4ascii(8), pendingRequests(0)
   { 
     setCommunicator(c);
@@ -61,7 +61,7 @@ namespace qmcplusplus {
   EstimatorManager::EstimatorManager(EstimatorManager& em)
     : RecordCount(0),h_file(-1), FieldWidth(20)
       , MainEstimatorName(em.MainEstimatorName), Options(em.Options), Archive(0), DebugArchive(0)
-      , myComm(0), MainEstimator(0) 
+      , myComm(0), MainEstimator(0), Collectables(0) 
       , EstimatorMap(em.EstimatorMap), max4ascii(em.max4ascii), pendingRequests(0)
   {
     //inherit communicator
@@ -294,7 +294,7 @@ namespace qmcplusplus {
     if(collectall) collectBlockAverages();
   }
 
-  void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
+  void EstimatorManager::stopBlock(const vector<EstimatorManager*>& est)
   {
     //normalized it by the thread
     int num_threads=est.size();
@@ -320,6 +320,7 @@ namespace qmcplusplus {
 
     collectBlockAverages(num_threads);
   }
+
 
   void EstimatorManager::collectBlockAverages(int num_threads)
   {
@@ -393,6 +394,15 @@ namespace qmcplusplus {
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
   }
+
+  void EstimatorManager::accumulateCollectables(const vector<MCWalkerConfiguration*>& wclones, int nsteps)
+  {
+    if(Collectables==0) return;
+    RealType wgt=static_cast<RealType>(nsteps)/static_cast<RealType>(wclones[0]->getGlobalNumWalkers());
+    for(int ip=0;ip<wclones.size(); ++ip)
+      Collectables->accumulate_all(wclones[ip]->Collectables,wgt);
+  }
+
 
   void EstimatorManager::accumulate( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
   {
@@ -535,10 +545,11 @@ namespace qmcplusplus {
       //add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
-    if(H.sizeOfCollectables())
+    if(Collectables == 0 && H.sizeOfCollectables())
     {
       app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << endl;
-      add(new CollectablesEstimator(H),"collectables");
+      Collectables=new CollectablesEstimator(H);
+      add(Collectables,"collectables");
     }
     return true;
   }

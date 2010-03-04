@@ -41,9 +41,16 @@ namespace qmcplusplus {
 
     void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
     void add2Record(RecordListType& record);
+    /** do nothing with accumulate */
     void accumulate(const MCWalkerConfiguration& W
-        , WalkerIterator first, WalkerIterator last , RealType wgt);
-
+        , WalkerIterator first, WalkerIterator last , RealType wgt)
+    { }
+    /** accumulate the collectables */
+    inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data
+        , RealType wgt)
+    {
+      for(int i=0; i<data.size(); ++i) scalars[i](data[i],wgt);
+    }
   };
 }
 #endif
