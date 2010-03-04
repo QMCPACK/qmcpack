@@ -264,6 +264,7 @@ namespace qmcplusplus {
   kSpaceJastrow::setCoefficients(std::vector<RealType> &oneBodyCoefs,
 				 std::vector<RealType> &twoBodyCoefs)
   {
+    int kk(0);
     for (int i=0; i<oneBodyCoefs.size(); i++) 
       cerr << "oneBodyCoefs[" << i << "] = " << oneBodyCoefs[i] << endl;
     if (oneBodyCoefs.size() != 2*OneBodySymmCoefs.size()) {
@@ -273,13 +274,16 @@ namespace qmcplusplus {
 		    << 2*OneBodySymmCoefs.size() << endl;
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	OneBodySymmCoefs[i].cG = ComplexType();
+   myVars[kk++]=0.0;
+   myVars[kk++]=0.0;
 	OneBodySymmCoefs[i].set (OneBodyCoefs);
       }
     }
     else {
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
-	OneBodySymmCoefs[i].cG = ComplexType (oneBodyCoefs[2*i+0],
-					      oneBodyCoefs[2*i+1]);
+	OneBodySymmCoefs[i].cG = ComplexType (oneBodyCoefs[2*i+0],oneBodyCoefs[2*i+1]);
+   myVars[kk++]=oneBodyCoefs[2*i+0];
+   myVars[kk++]=oneBodyCoefs[2*i+1];
 	OneBodySymmCoefs[i].set (OneBodyCoefs);
       }
     }
@@ -291,12 +295,14 @@ namespace qmcplusplus {
 		    << TwoBodySymmCoefs.size() << endl;
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	TwoBodySymmCoefs[i].cG = 0.0;
+   myVars[kk++]=0.0;
 	TwoBodySymmCoefs[i].set (TwoBodyCoefs);
       }
     }
     else {
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	TwoBodySymmCoefs[i].cG = twoBodyCoefs[i];
+   myVars[kk++]=twoBodyCoefs[i];
 	TwoBodySymmCoefs[i].set (TwoBodyCoefs);
       }
     }
