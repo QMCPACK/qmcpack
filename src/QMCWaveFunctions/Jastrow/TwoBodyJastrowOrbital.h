@@ -81,13 +81,13 @@ namespace qmcplusplus {
     {
       N=p.getTotalNum();
       NN=N*N;
-      U.resize(NN+1);
-      d2U.resize(NN);
-      dU.resize(NN);
-      curGrad.resize(N);
-      curGrad0.resize(N);
-      curLap.resize(N);
-      curVal.resize(N);
+      U.resize(NN+1); U=0.0;
+      d2U.resize(NN); d2U=0.0;
+      dU.resize(NN); dU=0.0;
+      curGrad.resize(N); curGrad=0.0;
+      curGrad0.resize(N); curGrad0=0.0;
+      curLap.resize(N); curLap=0.0;
+      curVal.resize(N); curVal=0.0;
 
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
@@ -310,6 +310,7 @@ namespace qmcplusplus {
 	}
       }
       PosType sumg,dg;
+      sumg=0.0;
       RealType suml=0.0,dl;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
 	sumg += (dg=curGrad[jat]-dU[ij]);
@@ -328,7 +329,8 @@ namespace qmcplusplus {
     GradType evalGrad(ParticleSet& P, int iat)
     {
       GradType gr;
-      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) if (jat!=iat) gr += dU[ij];
+      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) gr += dU[ij];
+      gr -= dU[iat*N+iat];
       return gr;
     }
 
