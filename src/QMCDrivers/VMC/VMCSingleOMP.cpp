@@ -63,9 +63,10 @@ namespace qmcplusplus
 
             Movers[ip]->startBlock(nSteps);
             int now_loc=CurrentStep;
+            //rest the collectables and keep adding
+            wClones[ip]->resetCollectables();
             for (int step=0; step<nSteps;++step)
               {
-                wClones[ip]->resetCollectables();
                 Movers[ip]->advanceWalkers(wit,wit_end,false);
                 Movers[ip]->accumulate(wit,wit_end);
                 ++now_loc;
@@ -78,6 +79,8 @@ namespace qmcplusplus
               }
             Movers[ip]->stopBlock(false);
           }//end-of-parallel for
+
+        Estimators->accumulateCollectables(wClones,nSteps);
 
         CurrentStep+=nSteps;
         Estimators->stopBlock(estimatorClones);
