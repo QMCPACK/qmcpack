@@ -51,6 +51,7 @@ namespace qmcplusplus
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     protected:
+    ParticleSet *sourcePtcl;
     /** number of species */
     int NumSpecies;
     /** number of kpoints */
