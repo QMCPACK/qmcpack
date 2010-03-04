@@ -328,7 +328,7 @@ namespace qmcplusplus {
     GradType evalGrad(ParticleSet& P, int iat)
     {
       GradType gr;
-      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) gr += dU[ij];
+      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) if (jat!=iat) gr += dU[ij];
       return gr;
     }
 

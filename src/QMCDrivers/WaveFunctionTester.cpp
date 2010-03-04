@@ -562,6 +562,8 @@ namespace qmcplusplus
             RealType eold(thisWalker.Properties(LOCALENERGY));
             RealType logpsi(thisWalker.Properties(LOGPSI));
             RealType emixed(eold), enew(eold);
+            Psi.evaluateLog(W);
+            ParticleSet::ParticleGradient_t realGrad(W.G);
 
             makeGaussRandom(deltaR);
 
@@ -570,6 +572,8 @@ namespace qmcplusplus
             for (int iat=0; iat<nat; iat++)
               {
                 GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+                for(int sds=0;sds<3;sds++) cout<< realGrad[iat][sds]-grad_now[sds]<<" ";
+                
                 PosType dr(Tau*deltaR[iat]);
                 PosType newpos(W.makeMove(iat,dr));
 
@@ -580,8 +584,9 @@ namespace qmcplusplus
                 newpos=W.makeMove(iat,dr);
                 RealType ratio1 = Psi.ratio(W,iat);
                 W.rejectMove(iat);
-                cout << " ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
+                cout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
               }
+              
           }
       }
 
