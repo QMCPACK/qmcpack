@@ -100,6 +100,17 @@ namespace qmcplusplus {
 
     ///reset
     virtual void resetParameters(const opt_variables_type& optVariables)=0;
+
+    virtual void checkInVariables(opt_variables_type& active) {}
+    virtual void checkOutVariables(const opt_variables_type& active) {}
+
+    // Evaluate the derivative of the optimized orbitals with
+    // respect to the parameters
+    virtual void evaluateDerivatives
+    (ParticleSet& P, const opt_variables_type& active,
+     vector<RealType>& d_phi, vector<RealType>& d_lapl_phi) {}
+  
+
     ///reset the target particleset
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
     /** set the OrbitalSetSize

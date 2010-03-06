@@ -711,6 +711,17 @@ namespace qmcplusplus {
       return LogValue;
     }
 
+
+  void 
+  DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
+					    const opt_variables_type& active,
+					    vector<RealType>& dlogpsi,
+					    vector<RealType>& dhpsioverpsi) 
+  {
+
+  }
+
+
   OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
   {
     APP_ABORT(" Cannot use DiracDeterminantBase::makeClone");

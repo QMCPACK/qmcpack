@@ -5,6 +5,7 @@ SET(WFBASE_SRCS
     ProductOrbital.cpp
     OrbitalConstraintsBase.cpp
     SPOSetBase.cpp
+    OptimizableSPOSet.cpp
    )
 
 ########################
@@ -122,6 +123,7 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminantOpt.cpp
   Fermion/RNDiracDeterminantBase.cpp
   Fermion/RNDiracDeterminantBaseAlternate.cpp
   Fermion/SlaterDet.cpp

@@ -90,25 +90,23 @@ namespace qmcplusplus
       ///optimizations  are disabled
       inline void checkInVariables(opt_variables_type& active)
       {
-        //Phi->checkInVariables(active);
+        Phi->checkInVariables(active);
       }
 
       inline void checkOutVariables(const opt_variables_type& active)
       {
-        //Phi->checkOutVariables(active);
+        Phi->checkOutVariables(active);
       }
 
       virtual void resetParameters(const opt_variables_type& active)
       {
-        //Phi->resetParameters(active);
+        Phi->resetParameters(active);
       }
 
       virtual void evaluateDerivatives(ParticleSet& P,
 				       const opt_variables_type& active,
 				       vector<RealType>& dlogpsi,
-				       vector<RealType>& dhpsioverpsi) 
-      {
-      }
+				       vector<RealType>& dhpsioverpsi);
 
       inline void reportStatus(ostream& os)
       {
