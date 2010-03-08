@@ -208,10 +208,10 @@ namespace qmcplusplus
         return GradType();
       }
 
-virtual GradType alternateEvalGrad(ParticleSet& P, int iat)
-{
-  return GradType();
-}
+      virtual GradType alternateEvalGrad(ParticleSet& P, int iat)
+      {
+        return GradType();
+      }
 
       /** return the logarithmic gradient for the iat-th particle
        * of the source particleset
@@ -258,12 +258,12 @@ virtual GradType alternateEvalGrad(ParticleSet& P, int iat)
         return ValueType();
       }
 
-virtual ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-{
-  return 1.0;
-}
+      virtual ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+      {
+        return 1.0;
+      }
 
-virtual inline void alternateGrad(ParticleSet::ParticleGradient_t& G){}
+      virtual void alternateGrad(ParticleSet::ParticleGradient_t& G){}
 
       /** evaluate the ratio of the new to old orbital value
        *@param P the active ParticleSet

@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -29,6 +28,7 @@
 namespace qmcplusplus {
 
   class PWParameterSet;
+  class SlaterDet;
 
   /** OrbitalBuilder for Slater determinants in PW basis
   */
@@ -57,9 +57,8 @@ namespace qmcplusplus {
     PWParameterSet* myParam;
     //will do something for twist
     PWBasisPtr myBasisSet;
-    //Storage for the orbitals and basis is created in PWOSet.
-    std::map<std::string,SPOSetBasePtr> PWOSet;
-
+    ////Storage for the orbitals and basis is created in PWOSet.
+    //std::map<std::string,SPOSetBasePtr> PWOSet;
   public:
 
     ///constructor

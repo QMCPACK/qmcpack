@@ -92,7 +92,11 @@ namespace qmcplusplus
 
 
     //create a Slater determinant
-    SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
+    SlaterDeterminant_t *sdet  = new SlaterDeterminant_t(targetPtcl);
+
+    //add SPOSets
+    sdet->add(psiu,"u");
+    sdet->add(psid,"d");
 
     if (rntype>0)
       {
@@ -115,9 +119,8 @@ namespace qmcplusplus
           downdet = new RNDiracDeterminantBaseAlternate(psiu);
         downdet->set(nup,nup);
         downdet->setLogEpsilon(bosonic_eps);
-        sdet->add(updet,rntype);
-        sdet->add(downdet,rntype);
-
+        sdet->add(updet,0);
+        sdet->add(downdet,1);
       }
     else
       {
@@ -129,8 +132,8 @@ namespace qmcplusplus
         Det_t *downdet = new Det_t(psid);
         downdet->set(nup,nup);
 
-        sdet->add(updet);
-        sdet->add(downdet);
+        sdet->add(updet,0);
+        sdet->add(downdet,1);
       }
 
 

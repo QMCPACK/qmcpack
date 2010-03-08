@@ -30,10 +30,10 @@
 
 namespace qmcplusplus {
 
-  PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
-    OrbitalBuilderBase(els,psi),hfileID(-1), rootNode(NULL)
+  PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
+    : OrbitalBuilderBase(els,psi),hfileID(-1), rootNode(NULL)
 #if !defined(EANBLE_SMARTPOINTER)
-    ,myBasisSet(0)
+      ,myBasisSet(0)
 #endif
   { 
     myParam=new PWParameterSet;
@@ -104,10 +104,10 @@ namespace qmcplusplus {
     typedef SlaterDet SlaterDeterminant_t;
     typedef DiracDeterminantBase Det_t;
 
-    SlaterDeterminant_t* sdet(new SlaterDeterminant_t);
+    SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
+    map<string,SPOSetBasePtr>& spo_ref(sdet->mySPOSet);
 
-    int sid=0;
-    int firstIndex=0;
+    int spin_group=0;
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
@@ -122,47 +122,42 @@ namespace qmcplusplus {
 
         if(ref == "0") ref=id;
 
-        map<string,SPOSetBasePtr>::iterator lit(PWOSet.find(ref));
+        int firstIndex=targetPtcl.first(spin_group);
+        map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(ref));
         Det_t* adet=0;
-        int nstates=0;
-        if(lit == PWOSet.end())
+        int spin_group=0;
+        if(lit == spo_ref.end())
         {
           app_log() << "  Create a PWOrbitalSet" << endl;;
-          SPOSetBasePtr psi(createPW(cur,sid));
-          PWOSet[id]=psi;
+          SPOSetBasePtr psi(createPW(cur,spin_group));
+          sdet->add(psi,ref);
           adet= new Det_t(psi,firstIndex);
-          nstates=psi->getOrbitalSetSize();
         }
         else
         {
           app_log() << "  Reuse a PWOrbitalSet" << endl;
           adet= new Det_t((*lit).second,firstIndex);
-          nstates=(*lit).second->getOrbitalSetSize();
         }
 
-        app_log()<< "    spin=" << sid  << " id=" << id << " ref=" << ref << endl; 
+        app_log()<< "    spin=" << spin_group  << " id=" << id << " ref=" << ref << endl; 
 
         if(adet) 
         {
-          adet->set(firstIndex,nstates);
-          sdet->add(adet);
+          adet->set(firstIndex,targetPtcl.last(spin_group)-firstIndex);
+          sdet->add(adet,spin_group);
         }
-
-        firstIndex += nstates;
-        ++sid;
+        spin_group++;
       }
       cur = cur->next;
     }
 
-
-    if(sid)
+    if(spin_group)
     {
       targetPsi.addOrbital(sdet,"SlaterDet");
     }
     else
     {
-      app_error() << "  Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet " << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
     }
 
     return true;
