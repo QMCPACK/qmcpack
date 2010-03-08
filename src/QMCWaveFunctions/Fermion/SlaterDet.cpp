@@ -21,24 +21,51 @@
 
 namespace qmcplusplus {
 
-  SlaterDet::SlaterDet() 
+  SlaterDet::SlaterDet(ParticleSet& targetPtcl)
   {
-    releasedNode=0;
     Optimizable=false;
     OrbitalName="SlaterDet";
-    M.resize(3,0);
+    M.resize(targetPtcl.groups()+1,0);
+    for(int i=0; i<M.size(); ++i) M[i]=targetPtcl.first(i);
+    DetID.resize(targetPtcl.getTotalNum());
+    for(int i=0; i<targetPtcl.groups(); ++i)
+      for(int j=targetPtcl.first(i); j<targetPtcl.last(i); ++j) DetID[j]=i;
+    Dets.resize(targetPtcl.groups(),0);
   }
+
   ///destructor
-  SlaterDet::~SlaterDet() { }
+  SlaterDet::~SlaterDet() 
+  { 
+    ///clean up SPOSet
+  }
+
+  ///add a new SPOSet to the list of determinants
+  void SlaterDet::add(SPOSetBase* sposet, const string& aname)
+  { 
+    if(mySPOSet.find(aname) == mySPOSet.end())
+    {
+      mySPOSet[aname]=sposet;
+      sposet->objectName=aname;
+    }
+    else
+    {
+      APP_ABORT(" SlaterDet::add(SPOSetBase*, const string&) Cannot reuse the " + aname );
+    }
+  }
 
   ///add a new DiracDeterminant to the list of determinants
-  void SlaterDet::add(Determinant_t* det, int rn) 
+  void SlaterDet::add(Determinant_t* det, int ispin)
   { 
-    int last=Dets.size();
-    Dets.push_back(det);
-    M[last+1]=M[last]+Dets[last]->rows();
-    DetID.insert(DetID.end(),det->rows(),last);
-    releasedNode=rn;
+    if(Dets[ispin]) 
+    {
+      APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
+    }
+    else
+      Dets[ispin]=det;
+    //int last=Dets.size();
+    //Dets.push_back(det);
+    //M[last+1]=M[last]+Dets[last]->rows();
+    //DetID.insert(DetID.end(),det->rows(),last);
   }
 
   void SlaterDet::checkInVariables(opt_variables_type& active)
@@ -62,6 +89,13 @@ namespace qmcplusplus {
 
   void SlaterDet::resetTargetParticleSet(ParticleSet& P) 
   {
+    map<string,SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+    while(sit != mySPOSet.end())
+    {
+      (*sit).second->resetTargetParticleSet(P);
+      ++sit;
+    }
+
     //BasisSet->resetTargetParticleSet(P);
     //LOGMSG("\nSlaterDet::resetTargetParticleSet")
     for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
@@ -179,64 +213,84 @@ namespace qmcplusplus {
 
   OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   {
-    map<SPOSetBase*,SPOSetBase*> spomap;
-    SlaterDet* myclone= new SlaterDet(*this);
-    myclone->releasedNode=releasedNode;
-    for(int i=0; i<Dets.size(); i++) 
+    SlaterDet* myclone=new SlaterDet(tqp);
+    if(mySPOSet.size()>1)//each determinant owns its own set
     {
-      map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
-      if (releasedNode==1)
+      for(int i=0; i<Dets.size(); ++i)
       {
-        RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(static_cast<RNDiracDeterminantBase&>(*Dets[i]));
-        adet->NP=0;
-        if(it == spomap.end())
-        {
-          SPOSetBase* newspo=Dets[i]->clonePhi();
-          spomap[Dets[i]->Phi]=newspo;
-          adet->Phi=newspo;//assign a new SPOSet
-        }
-        else
-        {
-          adet->Phi=(*it).second;//safe to transfer
-        }
-        adet->resetTargetParticleSet(tqp);
-        myclone->Dets[i]=adet;
+        SPOSetBasePtr spo=Dets[i]->getPhi();
+        SPOSetBasePtr spo_clone=spo->makeClone();
+        myclone->add(spo_clone,spo->objectName);
+        myclone->add(Dets[i]->makeCopy(spo_clone),i);
       }
-      else if (releasedNode==2)
-      {
-        RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(static_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
-        adet->NP=0;
-        if(it == spomap.end())
-        {
-          SPOSetBase* newspo=Dets[i]->clonePhi();
-          spomap[Dets[i]->Phi]=newspo;
-          adet->Phi=newspo;//assign a new SPOSet
-        }
-        else
-        {
-          adet->Phi=(*it).second;//safe to transfer
-        }
-        adet->resetTargetParticleSet(tqp);
-        myclone->Dets[i]=adet;
-      }
-      else
-      {
-      Determinant_t* adet=new Determinant_t(*Dets[i]);
-      adet->NP=0;
-      if(it == spomap.end())
-      {
-        SPOSetBase* newspo=Dets[i]->clonePhi();
-        spomap[Dets[i]->Phi]=newspo;
-        adet->Phi=newspo;//assign a new SPOSet
-      }
-      else
-      {
-        adet->Phi=(*it).second;//safe to transfer
-      }
-      adet->resetTargetParticleSet(tqp);
-      myclone->Dets[i]=adet;
-     } 
     }
+    else
+    {
+      SPOSetBasePtr spo=Dets[0]->getPhi();
+      SPOSetBasePtr spo_clone=spo->makeClone();
+      myclone->add(spo_clone,spo->objectName);
+      for(int i=0; i<Dets.size(); ++i)
+        myclone->add(Dets[i]->makeCopy(spo_clone),i);
+    }
+
+    //map<SPOSetBase*,SPOSetBase*> spomap;
+    //SlaterDet* myclone= new SlaterDet(*this);
+    //myclone->releasedNode=releasedNode;
+    //for(int i=0; i<Dets.size(); i++) 
+    //{
+    //  map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
+    //  if (releasedNode==1)
+    //  {
+    //    RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(static_cast<RNDiracDeterminantBase&>(*Dets[i]));
+    //    adet->NP=0;
+    //    if(it == spomap.end())
+    //    {
+    //      SPOSetBase* newspo=Dets[i]->clonePhi();
+    //      spomap[Dets[i]->Phi]=newspo;
+    //      adet->Phi=newspo;//assign a new SPOSet
+    //    }
+    //    else
+    //    {
+    //      adet->Phi=(*it).second;//safe to transfer
+    //    }
+    //    adet->resetTargetParticleSet(tqp);
+    //    myclone->Dets[i]=adet;
+    //  }
+    //  else if (releasedNode==2)
+    //  {
+    //    RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(static_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
+    //    adet->NP=0;
+    //    if(it == spomap.end())
+    //    {
+    //      SPOSetBase* newspo=Dets[i]->clonePhi();
+    //      spomap[Dets[i]->Phi]=newspo;
+    //      adet->Phi=newspo;//assign a new SPOSet
+    //    }
+    //    else
+    //    {
+    //      adet->Phi=(*it).second;//safe to transfer
+    //    }
+    //    adet->resetTargetParticleSet(tqp);
+    //    myclone->Dets[i]=adet;
+    //  }
+    //  else
+    //  {
+    //  Determinant_t* adet=new Determinant_t(*Dets[i]);
+    //  adet->NP=0;
+    //  if(it == spomap.end())
+    //  {
+    //    SPOSetBase* newspo=Dets[i]->clonePhi();
+    //    spomap[Dets[i]->Phi]=newspo;
+    //    adet->Phi=newspo;//assign a new SPOSet
+    //  }
+    //  else
+    //  {
+    //    adet->Phi=(*it).second;//safe to transfer
+    //  }
+    //  adet->resetTargetParticleSet(tqp);
+    //  myclone->Dets[i]=adet;
+    // } 
+    //}
     return myclone;
   }
 

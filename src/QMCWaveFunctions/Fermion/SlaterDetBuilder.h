@@ -52,34 +52,15 @@ namespace qmcplusplus {
 
     ///reference to a PtclPoolType
     PtclPoolType& ptclPool;
-
-    ////map<string,BasisSetBase*> BasisSet;
-    //BasisSetBase* myBasisSet;
-
-    map<string,SPOSetBasePtr> SPOSet;
-
-    map<string,Det_t*> DetSet;
-
-    vector<SlaterDeterminant_t*> SlaterDetSet;
-
-    vector<RealType> sdet_coeff;
+    BasisSetFactory* myBasisSetFactory;
+    SlaterDeterminant_t* slaterdet_0;
 
     /** process a determinant element
      * @param cur xml node
      * @param firstIndex index of the determinant
      * @return firstIndex+number of orbitals
      */
-    int putDeterminant(xmlNodePtr cur, int firstIndex);
-
-    /** build a Slater Determinant
-     */
-    void buildSlaterDetermiant();
-
-    /** build a Multi-Slater Determinant
-     */
-    void buildMultiSlaterDetermiant();
-
-    BasisSetFactory* myBasisSetFactory;
+    bool putDeterminant(xmlNodePtr cur, int firstIndex);
   };
 }
 #endif
