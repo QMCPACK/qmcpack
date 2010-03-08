@@ -60,24 +60,15 @@ namespace qmcplusplus
 
       virtual DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
 
-      /** return a clone of Phi
-       */
-      SPOSetBasePtr clonePhi() const;
+      ///** return a clone of Phi
+      // */
+      //SPOSetBasePtr clonePhi() const;
 
-      SPOSetBasePtr getPhi()
-      {
-        return Phi;
-      };
+      SPOSetBasePtr getPhi() { return Phi; };
 
-      inline IndexType rows() const
-        {
-          return NumPtcls;
-        }
+      inline IndexType rows() const { return NumPtcls; }
 
-      inline IndexType cols() const
-        {
-          return NumOrbitals;
-        }
+      inline IndexType cols() const { return NumOrbitals; }
 
       /** set the index of the first particle in the determinant and reset the size of the determinant
        *@param first index of first particle
@@ -204,7 +195,16 @@ namespace qmcplusplus
                ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L);
 
-      OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+      virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
+      /** cloning function 
+       * @param tqp target particleset
+       * @param spo spo set
+       *
+       * This interface is exposed only to SlaterDet and its derived classes
+       * can overwrite to clone itself correctly.
+       */
+      virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
       ///total number of particles

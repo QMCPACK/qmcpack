@@ -721,16 +721,17 @@ namespace qmcplusplus {
 
   }
 
-
   OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
   {
-    APP_ABORT(" Cannot use DiracDeterminantBase::makeClone");
+    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
     return 0;
-    //SPOSetBase* sposclone=Phi->makeClone();
-    //DiracDeterminantBase* dclone= new DiracDeterminantBase(sposclone);
-    //dclone->set(FirstIndex,LastIndex-FirstIndex);
-    //dclone->resetTargetParticleSet(tqp);
-    //return dclone;
+  }
+
+  DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
+  {
+    DiracDeterminantBase* dclone= new DiracDeterminantBase(spo);
+    dclone->set(FirstIndex,LastIndex-FirstIndex);
+    return dclone;
   }
 
   DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): 
@@ -744,10 +745,10 @@ namespace qmcplusplus {
     this->resize(s.NumPtcls,s.NumOrbitals);
   }
 
-  SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
-  {
-    return Phi->makeClone();
-  }
+  //SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
+  //{
+  //  return Phi->makeClone();
+  //}
 
   void DiracDeterminantBase::registerTimers()
   {
