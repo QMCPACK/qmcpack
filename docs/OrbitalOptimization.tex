@@ -1,4 +1,7 @@
-\documentclass{article}
+\documentclass[letterpaper]{article}
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
 \usepackage{amsmath}
 \title{Notes on Orbital Optimization}
 \author{Ken Esler}
@@ -59,17 +62,42 @@ We first need to compute
   A^{-1}\right]_m}{1 + \delta^T A^{-1}e_k},
 \end{equation}
 
-\begin{equation}
-\frac{d \Aopt_{nm}}{d_{c_{ij}}} =
--\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_m 
+\begin{eqnarray}
+\frac{d \left[\Aopt^{-1}\right]_{nm}}{d_{c_{ij}}} & = &
+-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_k)\Aopt^{-1}\right]_m  \\
+& = & -\left[\Aopt^{-1}\right]_{ni} \sum_k \left(\Aopt^{-1}\right)_{km} \varphi_j(\vr_k) \\
+& = & -\left[\Aopt^{-1}\right]_{ni} \frac{d}{d c_{mj}} \log\left[\det(\Aopt)\right]
 %-\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_i
+\end{eqnarray}
+Define
+\begin{equation}
+\gamma_{mj} \equiv \frac{d}{d c_{mj}} \log\left[\det(\Aopt)\right].
 \end{equation}
 Now, we can compute
-\begin{multline}
-\frac{d}{dc_{ij}} \left[\frac{\nabla_n
-    \det(\Aopt)}{\det(\Aopt)}\right] = \\ -\sum_m \left\{\rule{0cm}{0.6cm}
-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_m
-\nabla \phi_m(\vr_n) +
-\left(\Aopt^{-1}\right)_{nm} \nabla \varphi_j(\vr_n) \right\}
-\end{multline}
+\begin{eqnarray}
+\frac{d}{dc_{ij}} \left[\frac{\nabla^2_n
+    \det(\Aopt)}{\det(\Aopt)}\right] & = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_i)\Aopt^{-1}\right]_m
+\nabla^2 \phi_m(\vr_n) +
+\left(\Aopt^{-1}\right)_{nm} \nabla^2 \varphi_j(\vr_n)\delta_{i,m} \right\} \nonumber \\
+& = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} \gamma_{mj}
+\nabla^2 \phi_m(\vr_n) +
+\left(\Aopt^{-1}\right)_{nm} \nabla^2 \varphi_j(\vr_n) \delta_{i,m}\right\} \\ 
+& = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} \gamma_{mj}
+\nabla^2 \phi_m(\vr_n) \right\}+
+\left(\Aopt^{-1}\right)_{ni} \nabla^2 \varphi_j(\vr_n)
+\end{eqnarray}
+Define
+\begin{eqnarray}
+L_{nm} & \equiv & \nabla^2\phi_m(\vr_n) \\
+\mathcal{L}_{nj} & \equiv & \nabla^2\varphi_j(\vr_n)
+\end{eqnarray}
+\begin{equation}
+\frac{d}{dc_{ij}} \left[\frac{\nabla^2_n \det(\Aopt)}{\det(\Aopt)}\right] =
+\sum_m  \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} L_{nm} \gamma_{mj} \right\} + \left[\Aopt^{-1}\right]_{ni} \mathcal{L}_{nj}
+\end{equation}
+
 \end{document}
