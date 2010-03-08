@@ -119,7 +119,8 @@ namespace qmcplusplus {
     return success;
   }
 
-  void SPOSetBase::checkObject() {
+  void SPOSetBase::checkObject()
+  {
     if(!(OrbitalSetSize == C.rows() && BasisSetSize == C.cols()))
     {
       app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << endl; 

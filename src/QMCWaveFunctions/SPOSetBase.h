@@ -61,6 +61,11 @@ namespace qmcplusplus {
     Vector<RealType> Occ;
     ///name of the basis set
     string className;
+    /** name of the object
+     *
+     * Several user classes can own SPOSetBase and use objectName as counter
+     */
+    string objectName;
 
     /** constructor
      */
