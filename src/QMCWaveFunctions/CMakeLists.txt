@@ -68,7 +68,7 @@ IF(QMC_CUDA)
    SET(FERMION_SRCS ${FERMION_SRCS}
        Fermion/determinant_update.cu 
        Fermion/DiracDeterminantCUDA.cpp
-       Fermion/SlaterDeterminantCUDA.cpp
+       Fermion/SlaterDetCUDA.cpp
        TrialWaveFunction_CUDA.cpp
       )
    SET(JASTROW_SRCS ${JASTROW_SRCS}

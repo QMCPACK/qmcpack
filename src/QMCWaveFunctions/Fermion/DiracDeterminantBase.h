@@ -28,7 +28,8 @@ namespace qmcplusplus
 
   class DiracDeterminantBase: public OrbitalBase
     {
-    private:
+    protected:
+      ParticleSet *targetPtcl;
     public:
       void registerTimers();
       NewTimer UpdateTimer, RatioTimer, InverseTimer;
@@ -105,6 +106,7 @@ namespace qmcplusplus
       void resetTargetParticleSet(ParticleSet& P)
       {
         Phi->resetTargetParticleSet(P);
+	targetPtcl = &P;
       }
 
       ///reset the size: with the number of particles and number of orbtials

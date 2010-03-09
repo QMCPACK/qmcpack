@@ -29,7 +29,6 @@ namespace qmcplusplus
     ///typedef for name-value lists
     typedef optimize::VariableSet::variable_map_type variable_map_type;
 
-
     // Number of occupied states, number of basis states
     int N, M;
 
@@ -39,50 +38,68 @@ namespace qmcplusplus
 
     // The first index is the orbital to be optimized, the second is the
     // basis element
-    ValueMatrix_t OptCoefs;
+    //    ValueMatrix_t OptCoefs;
 
-    // This maps the parameter indices to elements in the OptCoefs
-    // matrix.  Using pointers allows the use of complex OptCoefs
+    // This maps the parameter indices to elements in the C
+    // matrix.  Using pointers allows the use of complex C
     // while maintaining real optimizable parameters.
     vector<RealType*> ParamPointers;
 
-    ///set of variables to be optimized;  These are mapped to the
-    ///OptCoefs matrix
-    opt_variables_type myVars;
-    
+    ValueVector_t GSVal, BasisVal, GSLapl, BasisLapl;
+    GradVector_t  GSGrad, BasisGrad;
+
+    // Cache the positions to avoid recomputing GSVal, BasisVal, etc.
+    // if unnecessary.
+    vector<PosType> CachedPos;
   public:
+    ///set of variables to be optimized;  These are mapped to the
+    ///C matrix
+    opt_variables_type myVars;
+
     // For each occupied orbital, this lists which of the M
     // basis functions are used to construct the optimal orbital.
     // This must be initialized by the SPOSet builder.  If it is not
-    // initialized, we assume that OptCoefs is fully dense
-    vector<vector<int> > ActiveBasis;
+    // initialized, we assume that C is fully dense.
+    // The first element of the TinyVector is the basis element
+    // number.  The second is the corresponding parameter number.
+    vector<vector<TinyVector<int,2> > > ActiveBasis;
 
     OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs, 
 		      SPOSetBase* basisOrbs=NULL) :
       GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
     {
       N = num_orbs;
-      if (BasisOrbitals) 
+      if (BasisOrbitals) {
 	M = BasisOrbitals->getOrbitalSetSize();
-      else
+	GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
+	BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+      }
+      else {
 	M = GSOrbitals->getOrbitalSetSize() - N;
+	GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
+      }
     
-      OptCoefs.resize(N,M);
+      C.resize(N,M);
       ActiveBasis.resize(N);
+    }
+
+    void set_active_basis (vector<vector<int> > &active)
+    { 
+      //ActiveBasis = active; 
     }
   
     // Read coefficients, or create the XML element.
     bool put (xmlNodePtr node);
 
-    // This stores new orbital coefficients int OptCoefs
+    // This stores new orbital coefficients int C
     void resetParameters(const opt_variables_type& optvars);
   
     // Evaluate the derivative of the optimized orbitals with
     // respect to the parameters
-    void evaluateDerivatives(ParticleSet& P,
+    void evaluateDerivatives(ParticleSet& P, int iat,
 			     const opt_variables_type& active,
-			     vector<RealType>& d_phi,
-			     vector<RealType>& d_lapl_phi);
+			     ValueMatrix_t& d_phi,
+			     ValueMatrix_t& d_lapl_phi);
   
     void checkInVariables(opt_variables_type& active);
     void checkOutVariables(const opt_variables_type& active);
@@ -90,9 +107,9 @@ namespace qmcplusplus
 
     // Evaluate routines.  These call GSOrbitals->evaluate and possibly
     // BasisOrbitals->evaluate, then does the matrix product with
-    // OptCoefs.
+    // C.
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate (const ParticleSet& P, PosType r, vector<RealType> &psi);
+    void evaluate(const ParticleSet& P, PosType r, vector<RealType> &psi);
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
 		  GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
@@ -101,6 +118,10 @@ namespace qmcplusplus
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 			      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
 			      ValueMatrix_t& d2logdet);
+    void evaluateBasis (const ParticleSet &P, int first, int last,
+			ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
+			ValueMatrix_t &basis_lapl);
+      
 
     // Make a copy of myself
     SPOSetBase* makeClone() const;

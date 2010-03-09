@@ -23,6 +23,9 @@ namespace qmcplusplus
   class DiracDeterminantOpt : public DiracDeterminantBase
   {
   protected:
+    typedef optimize::VariableSet opt_variables_type;
+    opt_variables_type myVars;
+
     // Basis for optimization
     SPOSetBasePtr Basis;
 
@@ -37,6 +40,13 @@ namespace qmcplusplus
     // Basis functions evaluated at all of my electron positions
     // First index is electron, second index is basis index
     ValueMatrix_t BasisVals, BasisLapl;
+    GradMatrix_t  BasisGrad;
+    // Matrix product of Ainv and BasisVals
+    ValueMatrix_t dlogdet_dC;
+    // Stores the C_{ij} derivative of (\nabla^2 det)/det
+    ValueMatrix_t dlapl_dC;
+    // Intermediate used to compute the above.
+    ValueMatrix_t L_gamma;
 
     // This vector maps variable number into ExcitedCoefs matrix
     vector<TinyVector<int,2> > VarIndex;

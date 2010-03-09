@@ -112,8 +112,8 @@ namespace qmcplusplus {
     // Evaluate the derivative of the optimized orbitals with
     // respect to the parameters
     virtual void evaluateDerivatives
-    (ParticleSet& P, const opt_variables_type& active,
-     vector<RealType>& d_phi, vector<RealType>& d_lapl_phi) {}
+    (ParticleSet& P, int iat, const opt_variables_type& active,
+     ValueMatrix_t& d_phi, ValueMatrix_t& d_lapl_phi) {}
   
 
     ///reset the target particleset
@@ -174,6 +174,16 @@ namespace qmcplusplus {
 				     GradMatrix_t &grad_phi,
 				     HessMatrix_t &grad_grad_phi,
 				     GradMatrix_t &grad_lapl_phi);
+
+
+    virtual void evaluateBasis (const ParticleSet &P, int first, int last,
+				ValueMatrix_t &basis_val, 
+				GradMatrix_t  &basis_grad,
+				ValueMatrix_t &basis_lapl)
+    { 
+      app_error() << "Need specialization of SPOSetBase::evaluateBasis.\n";
+      abort();
+    }
 
     /** make a clone of itself
      */

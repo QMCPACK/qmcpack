@@ -134,6 +134,22 @@ struct BLAS {
       zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
     }
 
+  inline static
+    void gemm (char Atrans, char Btrans, int M, int N, int K, double alpha,
+	      const double *A, int lda, const double* restrict B, int ldb,
+	      double beta, double* restrict C, int ldc)
+  {
+    dgemm (Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+
+  inline static
+    void gemm (char Atrans, char Btrans, int M, int N, int K, complex<double> alpha,
+	       const complex<double> *A, int lda, const complex<double>* restrict B, int ldb,
+	       complex<double> beta, complex<double>* restrict C, int ldc)
+  {
+    zgemm (Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+
 
 //   inline static
 //   void symv(char uplo, int n, const double alpha, double* a, int lda,

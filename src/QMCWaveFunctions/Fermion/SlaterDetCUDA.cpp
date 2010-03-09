@@ -34,7 +34,7 @@ namespace qmcplusplus
   // }
 
   void 
-    SalterDet::ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
+    SlaterDet::ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
         vector<PosType> &rNew, vector<ValueType> &psi_ratios, 
         vector<GradType>  &grad, vector<ValueType> &lapl)
     {
