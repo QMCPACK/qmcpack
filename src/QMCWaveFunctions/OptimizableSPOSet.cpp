@@ -46,6 +46,7 @@ namespace qmcplusplus
     }
   }
 
+  // Obsolete
   void
   OptimizableSPOSet::evaluateDerivatives
   (ParticleSet& P, int iat, const opt_variables_type& active,
@@ -138,20 +139,90 @@ namespace qmcplusplus
       
   }
 
-  void
-  OptimizableSPOSet::evaluate(const ParticleSet& P, int first, int last,
-			      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-			      ValueMatrix_t& d2logdet)
+  void 
+  OptimizableSPOSet::copyParamsFromMatrix (const opt_variables_type& active,
+					   const Matrix<RealType> &mat,
+					   vector<RealType> &destVec)
   {
-
+    for (int ip=0; ip<myVars.size(); ip++) {
+      int loc = myVars.where(ip);
+      if (loc >= 0) {
+	TinyVector<int,2> idx = ParamIndex[ip];
+	destVec[loc] = mat(idx[0], idx[1]);
+      }
+    }
   }
+
+  void 
+  OptimizableSPOSet::copyParamsFromMatrix (const opt_variables_type& active,
+					   const Matrix<ComplexType> &mat,
+					   vector<RealType> &destVec)
+  {
+    for (int ip=0; ip<myVars.size(); ip+=2) {
+      int loc = myVars.where(ip);
+      if (loc >= 0) {
+	TinyVector<int,2> idx = ParamIndex[ip];
+	assert (ParamIndex[ip+1][0] == idx[0] &&
+		ParamIndex[ip+1][1] == idx[1]);
+	destVec[loc] = mat(idx[0], idx[1]).real();
+	loc = myVars.where(ip+1);
+	assert (loc >= 0);
+	destVec[loc] = mat(idx[0], idx[1]).imag();
+      }
+    }
+  }
+
+
 
   void
   OptimizableSPOSet::evaluate_notranspose
   (const ParticleSet& P, int first, int last,
    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
+    GSOrbitals->evaluate_notranspose
+      (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
+    if (BasisOrbitals) {
+      BasisOrbitals->evaluate_notranspose
+	(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
+      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+		   M, BasisValMatrix.data(), M, 0.0, logdet.data(), N);
+      logdet += GSValMatrix;
+      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+		   M, BasisLaplMatrix.data(), M, 0.0, d2logdet.data(), N);
+      d2logdet += GSLaplMatrix;
 
+      // Gradient part.  
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	for (int i=0; i<M; i++)
+	  for (int j=0; j<N; j++)
+	    GradTmpSrc(i,j) = BasisGradMatrix(i,j)[dim];
+	BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(), M, 
+		     GradTmpSrc.data(), M, 0.0, GradTmpDest.data(), N);
+	for (int i=0; i<N; i++)
+	  for (int j=0; j<N; j++)
+	    dlogdet(i,j)[dim] = GradTmpDest(i,j) + GSGradMatrix(i,j)[dim];
+      }
+    }
+    else {
+      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+		  M, GSValMatrix.data()+N, M+N, 0.0, logdet.data(), N);
+      logdet += GSValMatrix;
+      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+		  M, GSLaplMatrix.data()+N, M+N, 0.0, d2logdet.data(), N);
+      d2logdet += GSLaplMatrix;
+
+      // Gradient part.  
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	for (int i=0; i<M; i++)
+	  for (int j=0; j<N; j++)
+	    GradTmpSrc(i,j) = GSGradMatrix(i,j+N)[dim];
+	BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(), M, 
+		     GradTmpSrc.data(), M, 0.0, GradTmpDest.data(), N);
+	for (int i=0; i<N; i++)
+	  for (int j=0; j<N; j++)
+	    dlogdet(i,j)[dim] = GradTmpDest(i,j) + GSGradMatrix(i,j)[dim];
+      }
+    }
   }
 
   SPOSetBase*

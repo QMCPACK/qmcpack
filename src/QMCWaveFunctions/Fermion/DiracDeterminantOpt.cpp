@@ -77,6 +77,8 @@ namespace qmcplusplus
 
     // Pull elements from dense d_dC matrices and put into parameter
     // derivatives, dlogpsi and dhpsioverpsi    
+    Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
+    Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
 
   }
 

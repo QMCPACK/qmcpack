@@ -44,9 +44,14 @@ namespace qmcplusplus
     // matrix.  Using pointers allows the use of complex C
     // while maintaining real optimizable parameters.
     vector<RealType*> ParamPointers;
+    // Maps the parameter index in myVars to an index in the C array
+    vector<TinyVector<int,2> > ParamIndex;
 
     ValueVector_t GSVal, BasisVal, GSLapl, BasisLapl;
     GradVector_t  GSGrad, BasisGrad;
+
+    ValueMatrix_t GSValMatrix, BasisValMatrix, GSLaplMatrix, BasisLaplMatrix, GradTmpSrc, GradTmpDest;
+    GradMatrix_t  GSGradMatrix, BasisGradMatrix;
 
     // Cache the positions to avoid recomputing GSVal, BasisVal, etc.
     // if unnecessary.
@@ -112,15 +117,18 @@ namespace qmcplusplus
     void evaluate(const ParticleSet& P, PosType r, vector<RealType> &psi);
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
 		  GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-		  ValueMatrix_t& d2logdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 			      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
 			      ValueMatrix_t& d2logdet);
     void evaluateBasis (const ParticleSet &P, int first, int last,
 			ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
 			ValueMatrix_t &basis_lapl);
+    void copyParamsFromMatrix (const opt_variables_type& active,
+			       const Matrix<RealType> &mat,
+			       vector<RealType> &destVec);
+    void copyParamsFromMatrix (const opt_variables_type& active,
+			       const Matrix<ComplexType> &mat,
+			       vector<RealType> &destVec);
       
 
     // Make a copy of myself

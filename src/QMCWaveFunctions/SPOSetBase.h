@@ -184,6 +184,15 @@ namespace qmcplusplus {
       app_error() << "Need specialization of SPOSetBase::evaluateBasis.\n";
       abort();
     }
+    
+    virtual void copyParamsFromMatrix (const opt_variables_type& active,
+				       const ValueMatrix_t &mat,
+				       vector<RealType> &destVec)
+    { 
+      app_error() << "Need specialization of SPOSetBase::copyParamsFromMatrix.\n";
+      abort();
+    }
+
 
     /** make a clone of itself
      */
