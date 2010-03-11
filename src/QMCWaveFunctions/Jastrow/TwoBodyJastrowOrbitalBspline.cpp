@@ -3,6 +3,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
+#include <unistd.h>
 
 
 namespace qmcplusplus {
@@ -430,7 +431,9 @@ namespace qmcplusplus {
 	for (int i=0; i<OHMMS_DIM; i++) 
 	  grad(iw,ptcl)[i] += GradLaplHost[4*N*iw + 4*ptcl + i];
 	if (std::isnan(GradLaplHost[4*N*iw+ + 4*ptcl +3])) {
-	  fprintf (stderr, "NAN in TwoBodyJastrowOrbitalBspline laplacian.\n");
+	  char buff[500];
+	  gethostname(buff, 500);
+	  fprintf (stderr, "NAN in TwoBodyJastrowOrbitalBspline laplacian.  Host=%s\n", buff);
 	  abort();
 	}
 	lapl(iw,ptcl) += GradLaplHost[4*N*iw+ + 4*ptcl +3];
