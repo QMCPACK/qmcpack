@@ -157,6 +157,7 @@ namespace qmcplusplus {
     bool ReadOrbitalInfo_ESHDF ();
     void ReadGvectors_ESHDF();
     void BroadcastOrbitalInfo();
+    bool CheckLattice();
 
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;

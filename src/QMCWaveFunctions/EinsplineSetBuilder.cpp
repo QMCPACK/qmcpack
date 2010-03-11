@@ -100,6 +100,19 @@ namespace qmcplusplus {
     return attribs.put(XMLRoot);
   }
 
+  bool 
+  EinsplineSetBuilder::CheckLattice()
+  {
+    bool match=true;
+    for (int i=0; i<OHMMS_DIM; i++)
+      for (int j=0; j<OHMMS_DIM; j++) {
+	RealType diff = SuperLattice(i,j) - TargetPtcl.Lattice.a(i)[j];
+	match = match && (std::fabs(diff) < 1.0e-6);
+      }
+    return match;
+  }
+	
+
   bool
   EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
@@ -114,6 +127,12 @@ namespace qmcplusplus {
     h_Lattice.read      (H5FileID, "/supercell/primitive_vectors");
     RecipLattice = 2.0*M_PI*inverse(Lattice);
     SuperLattice = dot(TileMatrix, Lattice);
+
+    if (!CheckLattice()) {
+      app_error() << "The supercell lattice in the ESHDF5 file does not match the "
+		  << "lattice specified in the XML input file.  Aborting.\n";
+      abort();
+    }
 
     char buff[1000];
 
@@ -397,6 +416,12 @@ namespace qmcplusplus {
     
     h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
     SuperLattice = dot(TileMatrix, Lattice);
+    if (!CheckLattice()) {
+      app_error() << "The supercell lattice in the orbital .h5 file does not match the "
+		  << "lattice specified in the XML input file.  Aborting.\n";
+      abort();
+    }
+
 
     char buff[1000];
 
