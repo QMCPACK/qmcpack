@@ -22,6 +22,7 @@
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
+#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #if QMC_BUILD_LEVEL>1
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #endif
@@ -69,6 +70,8 @@ namespace qmcplusplus {
     aAttrib.add(transformOpt,"transform");
     if(rootNode != NULL)  aAttrib.put(rootNode);
 
+    app_log() << "type = " << typeOpt << endl;
+
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
     {
@@ -105,6 +108,10 @@ namespace qmcplusplus {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
       }
     }
+    else if (typeOpt == "linearopt") {
+      bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+    }
+    
 
     PRE.flush();
 

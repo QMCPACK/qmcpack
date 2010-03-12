@@ -41,6 +41,7 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
     typedef ParticleSet::Walker_t                      Walker_t;
+    typedef std::map<string,SPOSetBase*> SPOPool_t;
     ///true if C is an identity matrix
     bool Identity;
     ///total number of orbitals 
@@ -102,6 +103,9 @@ namespace qmcplusplus {
 
     ///get C and Occ
     bool put(xmlNodePtr cur);
+
+    virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool) 
+    { put(cur); }
 
     ///reset
     virtual void resetParameters(const opt_variables_type& optVariables)=0;
@@ -177,22 +181,15 @@ namespace qmcplusplus {
 
 
     virtual void evaluateBasis (const ParticleSet &P, int first, int last,
-				ValueMatrix_t &basis_val, 
-				GradMatrix_t  &basis_grad,
+				ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
 				ValueMatrix_t &basis_lapl)
-    { 
-      app_error() << "Need specialization of SPOSetBase::evaluateBasis.\n";
-      abort();
-    }
+    { app_error() << "Need specialization of SPOSetBase::evaluateBasis.\n"; abort(); }
     
     virtual void copyParamsFromMatrix (const opt_variables_type& active,
-				       const ValueMatrix_t &mat,
-				       vector<RealType> &destVec)
-    { 
-      app_error() << "Need specialization of SPOSetBase::copyParamsFromMatrix.\n";
-      abort();
-    }
+				       const ValueMatrix_t &mat, vector<RealType> &destVec)
+    { app_error() << "Need specialization of SPOSetBase::copyParamsFromMatrix.\n"; abort(); }
 
+    virtual PosType get_k(int orb) { return PosType(); }
 
     /** make a clone of itself
      */

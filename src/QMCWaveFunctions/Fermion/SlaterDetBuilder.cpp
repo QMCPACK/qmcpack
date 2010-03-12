@@ -99,7 +99,7 @@ namespace qmcplusplus
         }
         myBasisSetFactory->createBasisSet(cur,cur);
 	SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
-	spo->put(cur);
+	spo->put(cur, spomap);
 	if (spomap.find(spo_name) != spomap.end()) {
 	  app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
 	  abort();
@@ -208,7 +208,7 @@ namespace qmcplusplus
     SPOSetBasePtr psi;
     if (lit == spo_ref.end())
     {
-      cerr << "Didn't find sposet named \"" << detname << "\"\n";
+      // cerr << "Didn't find sposet named \"" << detname << "\"\n";
 #if defined(ENABLE_SMARTPOINTER)
       psi.reset(myBasisSetFactory->createSPOSet(cur));
 #else

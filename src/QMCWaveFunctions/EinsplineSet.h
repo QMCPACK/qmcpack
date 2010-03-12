@@ -323,6 +323,7 @@ namespace qmcplusplus {
 
   public:
     void registerTimers();
+    PosType get_k(int orb) { return kPoints[orb]; }
 
     // Real return values
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);

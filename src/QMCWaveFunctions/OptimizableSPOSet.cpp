@@ -14,15 +14,123 @@
 
 #include "QMCWaveFunctions/OptimizableSPOSet.h"
 #include "Numerics/OhmmsBlas.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
 
-  bool
-  OptimizableSPOSet::put (xmlNodePtr node)
+  void
+  OptimizableSPOSet::addParameter (string id, int iorb, int basis)
   {
 
   }
+
+  bool
+  OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
+  {
+    cerr << "In OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)\n";
+    string gsName, basisName;
+    bool same_k = false;
+    OhmmsAttributeSet attrib;
+    attrib.add (gsName,    "gs_sposet");
+    attrib.add (basisName, "basis_sposet");
+    attrib.add (same_k,    "same_k");
+    attrib.add (N,         "size");
+    attrib.put (node);
+
+    if (N == 0) {
+      app_error() << "You must specify \"size\" attribute for linearopt sposet.\n";
+      abort();
+    }
+
+    /////////////////////////////////////
+    // First, find ground-state SPOSet //
+    /////////////////////////////////////
+    if (gsName == "") {
+      app_error() << "You must supply \"gs_sposet\".  Aborting.\n";
+      abort();
+    }
+    SPOPool_t::iterator iter = spo_pool.find(gsName);
+    if (iter == spo_pool.end()) {
+      app_error() << "No sposet named \"" << gsName << "\" found.  Abort.\n";
+      abort();
+    }
+    else {
+      app_log() << "  Found ground-state SPOSet \"" << gsName << "\".\n";
+      GSOrbitals = iter->second;
+      
+    }
+    
+    //////////////////////////////////////
+    // Now, find basis SPOSet from pool //
+    //////////////////////////////////////
+    iter = spo_pool.find(basisName);
+    if (iter != spo_pool.end()) {
+      BasisOrbitals = iter->second;
+      app_log() << "  Found basis SPOSet \"" << basisName << "\".\n";
+    }
+    if (BasisOrbitals == GSOrbitals)
+      BasisOrbitals = 0;
+
+    /////////////////
+    // Setup sizes //
+    /////////////////
+    setOrbitalSetSize(N);
+    if (BasisOrbitals) {
+      M = BasisOrbitals->getOrbitalSetSize();
+      GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
+      BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+    }
+    else {
+      M = GSOrbitals->getOrbitalSetSize() - N;
+      GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
+    }
+    
+    app_log() << "  linearopt sposet has " << N << " ground-state orbitals and " 
+	      << M << " basis orbitals.\n";
+
+    C.resize(N,M);
+    ActiveBasis.resize(N);
+    BasisSetSize = M;
+
+    if (same_k) {
+      int off         = BasisOrbitals ? N : 0;
+      SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+      
+      for (int igs=0; igs<N; igs++) {
+	PosType k_gs = GSOrbitals->get_k(igs);
+	for (int ib=0; ib<M; ib++) {
+	  PosType k_b = basOrbs->get_k(ib+off);
+	  if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-10)
+	    ;
+	}
+      }
+    }
+    else {
+      for (int igs=0; igs<N; igs++) {
+	for (int ib=0; ib<M; ib++) {
+	}
+      }
+    }
+
+    // Now, look for coefficients element
+    
+    SPOSetBase::put(node);
+  }
+
+
+  void 
+  OptimizableSPOSet::resetTargetParticleSet(ParticleSet& P)
+  {
+
+  }
+    
+  void 
+  OptimizableSPOSet::setOrbitalSetSize(int norbs)
+  {
+
+  }
+
 
   void 
   OptimizableSPOSet::checkInVariables(opt_variables_type& active)

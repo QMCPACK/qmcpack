@@ -126,6 +126,10 @@ namespace qmcplusplus {
         app_log()<<"  Removed Helium Molecular terms from qmcpack "<<endl;
         abort();
       }
+      else if (cname == OrbitalBuilderBase::sposet_tag) {
+	
+
+      }
 #if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX) && OHMMS_DIM==3
       else if(cname == "agp") 
       {

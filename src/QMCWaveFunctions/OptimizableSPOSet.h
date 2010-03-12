@@ -47,6 +47,8 @@ namespace qmcplusplus
     // Maps the parameter index in myVars to an index in the C array
     vector<TinyVector<int,2> > ParamIndex;
 
+    void addParameter (string id, int iorb, int basis);
+
     ValueVector_t GSVal, BasisVal, GSLapl, BasisLapl;
     GradVector_t  GSGrad, BasisGrad;
 
@@ -69,6 +71,11 @@ namespace qmcplusplus
     // number.  The second is the corresponding parameter number.
     vector<vector<TinyVector<int,2> > > ActiveBasis;
 
+
+    OptimizableSPOSet() : N(0), M(0), GSOrbitals(0), BasisOrbitals(0)
+    {
+    }
+
     OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs, 
 		      SPOSetBase* basisOrbs=NULL) :
       GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
@@ -88,13 +95,17 @@ namespace qmcplusplus
       ActiveBasis.resize(N);
     }
 
+    //    bool put(xmlNodePtr cur, SPOPool_t &spo_pool);
+    void resetTargetParticleSet(ParticleSet& P);
+    void setOrbitalSetSize(int norbs);
+
     void set_active_basis (vector<vector<int> > &active)
     { 
       //ActiveBasis = active; 
     }
   
     // Read coefficients, or create the XML element.
-    bool put (xmlNodePtr node);
+    bool put (xmlNodePtr node, SPOPool_t &spo_pool);
 
     // This stores new orbital coefficients int C
     void resetParameters(const opt_variables_type& optvars);

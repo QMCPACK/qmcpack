@@ -131,11 +131,15 @@ namespace qmcplusplus {
    */
   struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   {
+    typedef std::map<string,SPOSetBase*> SPOPool_t;
+
     BasisSetBase<RealType>* myBasisSet;
     BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0) {}
     virtual ~BasisSetBuilder(){}
     virtual bool put(xmlNodePtr cur)=0;
     virtual SPOSetBase* createSPOSet(xmlNodePtr cur)=0;
+    // virtual SPOSetBase* createSPOSet(xmlNodePtr cur, SPOPool_t& spo_pool)
+    // { createSPOSet(cur); }
   };
 
 }

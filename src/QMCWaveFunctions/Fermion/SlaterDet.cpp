@@ -219,8 +219,21 @@ namespace qmcplusplus {
       for(int i=0; i<Dets.size(); ++i)
       {
         SPOSetBasePtr spo=Dets[i]->getPhi();
-        SPOSetBasePtr spo_clone=spo->makeClone();
-        myclone->add(spo_clone,spo->objectName);
+	// Check to see if this determinants SPOSet has already been
+	// cloned
+	bool found = false;
+        SPOSetBasePtr spo_clone;
+	for (int j=0; j<i; j++)
+	  if (spo == Dets[j]->getPhi()) {
+	    found = true;
+	    spo_clone = myclone->Dets[j]->getPhi();
+	  }
+	// If it hasn't, clone it now
+	if (!found) {
+	  spo_clone=spo->makeClone();
+	  myclone->add(spo_clone,spo->objectName);
+	}
+	// Make a copy of the determinant.
         myclone->add(Dets[i]->makeCopy(spo_clone),i);
       }
     }

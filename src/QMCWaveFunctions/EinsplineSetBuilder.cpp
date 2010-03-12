@@ -128,12 +128,6 @@ namespace qmcplusplus {
     RecipLattice = 2.0*M_PI*inverse(Lattice);
     SuperLattice = dot(TileMatrix, Lattice);
 
-    if (!CheckLattice()) {
-      app_error() << "The supercell lattice in the ESHDF5 file does not match the "
-		  << "lattice specified in the XML input file.  Aborting.\n";
-      abort();
-    }
-
     char buff[1000];
 
     snprintf (buff, 1000, 
@@ -151,6 +145,12 @@ namespace qmcplusplus {
 	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
 	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
 	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+    if (!CheckLattice()) {
+      app_error() << "The supercell lattice in the ESHDF5 file does not match the "
+		  << "lattice specified in the XML input file.  Aborting.\n";
+      abort();
+    }
+
     app_log() << buff;
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)
@@ -416,12 +416,6 @@ namespace qmcplusplus {
     
     h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
     SuperLattice = dot(TileMatrix, Lattice);
-    if (!CheckLattice()) {
-      app_error() << "The supercell lattice in the orbital .h5 file does not match the "
-		  << "lattice specified in the XML input file.  Aborting.\n";
-      abort();
-    }
-
 
     char buff[1000];
 
@@ -440,6 +434,12 @@ namespace qmcplusplus {
 	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
 	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
 	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+    if (!CheckLattice()) {
+      app_error() << "The supercell lattice in the orbital .h5 file does not match the "
+		  << "lattice specified in the XML input file.  Aborting.\n";
+      abort();
+    }
+
     app_log() << buff;
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)
