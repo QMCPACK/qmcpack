@@ -68,6 +68,7 @@ namespace qmcplusplus
     xmlNodePtr curRoot=cur;
     bool success=true;
     string cname, tname;
+    std::map<string,SPOSetBasePtr> spomap;
 
     //check the basis set
     cur = curRoot->children;
@@ -82,6 +83,30 @@ namespace qmcplusplus
           myBasisSetFactory->setReportLevel(ReportLevel);
         }
         myBasisSetFactory->createBasisSet(cur,curRoot);
+      }
+      else if (cname == sposet_tag) {
+	app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
+	string spo_name;
+	OhmmsAttributeSet spoAttrib;
+	spoAttrib.add (spo_name, "name");
+	spoAttrib.put(cur);
+	app_log() << "spo_name = " << spo_name << endl;
+
+	if (myBasisSetFactory == 0)
+        {
+          myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+          myBasisSetFactory->setReportLevel(ReportLevel);
+        }
+        myBasisSetFactory->createBasisSet(cur,cur);
+	SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
+	spo->put(cur);
+	if (spomap.find(spo_name) != spomap.end()) {
+	  app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
+	  abort();
+	}
+	spomap[spo_name] = spo;
+	assert(spomap.find(spo_name) != spomap.end());
+	//	slaterdet_0->add(spo,spo_name);
       }
       cur = cur->next;
     }
@@ -107,6 +132,14 @@ namespace qmcplusplus
           APP_ABORT("slaterdet is already instantiated.");
         }
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
+	// Copy any entries in sposetmap into slaterdet_0
+	std::map<string,SPOSetBasePtr>::iterator iter;
+	for (iter=spomap.begin(); iter!=spomap.end(); iter++) {
+	  cerr << "Adding SPO \"" << iter->first << "\" to slaterdet_0.\n";
+	  slaterdet_0->add(iter->second,iter->first);
+	}
+
+
         int spin_group = 0;
         xmlNodePtr tcur = cur->children;
         while (tcur != NULL)
@@ -121,6 +154,7 @@ namespace qmcplusplus
       }
       cur = cur->next;
     }
+    
 
     if (!slaterdet_0)
     {
@@ -168,11 +202,13 @@ namespace qmcplusplus
     aAttrib.add(rntype,"primary");
     aAttrib.put(cur);
 
+
     map<string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
     map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(detname));
     SPOSetBasePtr psi;
     if (lit == spo_ref.end())
     {
+      cerr << "Didn't find sposet named \"" << detname << "\"\n";
 #if defined(ENABLE_SMARTPOINTER)
       psi.reset(myBasisSetFactory->createSPOSet(cur));
 #else
