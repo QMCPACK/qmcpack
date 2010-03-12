@@ -45,6 +45,8 @@ namespace qmcplusplus
 
   string OrbitalBuilderBase::spo_tag="psi";
 
+  string OrbitalBuilderBase::sposet_tag="sposet";
+
   string OrbitalBuilderBase::basisset_tag="basisset";
 
   string OrbitalBuilderBase::basis_tag="basis";

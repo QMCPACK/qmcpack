@@ -68,6 +68,8 @@ namespace qmcplusplus
       static std::string rn_tag;
       /// the element name for single-particle orbital
       static std::string spo_tag;
+      /// the element name for single-particle orbital set
+      static std::string sposet_tag;
       /// the element name for the basis set: basis set contains multiple basis elements
       static std::string basisset_tag;
       /// the element name for a group of basis functions: basis contains multiple basisfunc elements
