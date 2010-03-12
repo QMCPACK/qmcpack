@@ -1896,7 +1896,7 @@ one_body_NLratio_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
       dy = myRnew[iq][1] - c[tid][1];
       dz = myRnew[iq][2] - c[tid][2];
       d = dist(dx, dy, dz);
-      if (ptcl1 != myJob.Elec && (ptcl1 < (N+first)))
+      if (ptcl1 < (N+first))
 	shared_sum[iq][tid] += eval_1d_spline (d, rMax, drInv, A, coefs) - uOld;
     }
     __syncthreads();
@@ -1982,7 +1982,7 @@ one_body_NLratio_kernel(NLjobGPU<double> *jobs, double *C, int first, int last,
       dy = myRnew[iq][1] - c[tid][1];
       dz = myRnew[iq][2] - c[tid][2];
       d = dist(dx, dy, dz);
-      if (ptcl1 != myJob.Elec && (ptcl1 < (N+first)))
+      if (ptcl1 < (N+first))
 	shared_sum[iq][tid] += eval_1d_spline (d, rMax, drInv, A, coefs) - uOld;
     }
     __syncthreads();

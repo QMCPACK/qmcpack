@@ -2800,7 +2800,7 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
       dy = myRnew[iq][1] - c[tid][1];
       dz = myRnew[iq][2] - c[tid][2];
       dist = min_dist_only(dx, dy, dz, L, Linv, images);
-      if (ptcl1 != myJob.Elec && (ptcl1 < (N+first)))
+      if (ptcl1 < (N+first))
 	shared_sum[iq][tid] += eval_1d_spline (dist, rMax, drInv, A, coefs) - uOld;
     }
     __syncthreads();
@@ -2890,7 +2890,7 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
       dy = myRnew[iq][1] - c[tid][1];
       dz = myRnew[iq][2] - c[tid][2];
       dist = min_dist_fast(dx, dy, dz, L, Linv);
-      if (ptcl1 != myJob.Elec && (ptcl1 < (N+first)))
+      if (ptcl1 < (N+first))
 	shared_sum[iq][tid] += eval_1d_spline (dist, rMax, drInv, A, coefs) - uOld;
     }
     __syncthreads();
@@ -3028,27 +3028,35 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
 
   while (numjobs > 65535) {
     dim3 dimGrid(65535);
-    if (rMax <= sim_cell_radius)
+    if (rMax <= sim_cell_radius) {
+      // fprintf (stderr, "Using fast J1 NL kernel.\n");
       one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
 	(jobs, C, first, last, spline_coefs, numCoefs, rMax,
 	 lattice, latticeInv);
-    else
+    }
+    else {
+      // fprintf (stderr, "Using slow J1 NL kernel.\n");
       one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
 	(jobs, C, first, last, spline_coefs, numCoefs, rMax,
 	 lattice, latticeInv);
+    }
     numjobs -= 65535;
     jobs += 65535;
   }
 
   dim3 dimGrid(numjobs);
-  if (rMax <= sim_cell_radius)
+  if (rMax <= sim_cell_radius) {
+    // fprintf (stderr, "Using fast J1 NL kernel.\n");
     one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv);
-  else
+  }
+  else {
+    // fprintf (stderr, "Using slow J1 NL kernel.\n");
     one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
-       lattice, latticeInv);
+       lattice, latticeInv); 
+  }
   
   cudaThreadSynchronize();
   cudaError_t err = cudaGetLastError();
