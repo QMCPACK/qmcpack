@@ -28,7 +28,7 @@ namespace qmcplusplus
   bool 
   OptimizableSPOBuilder::put (xmlNodePtr cur)
   {
-  
+    return true;
   }
   
 

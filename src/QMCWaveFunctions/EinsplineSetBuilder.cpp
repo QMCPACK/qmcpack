@@ -106,9 +106,25 @@ namespace qmcplusplus {
     bool match=true;
     for (int i=0; i<OHMMS_DIM; i++)
       for (int j=0; j<OHMMS_DIM; j++) {
-	RealType diff = SuperLattice(i,j) - TargetPtcl.Lattice.a(i)[j];
-	match = match && (std::fabs(diff) < 1.0e-6);
+        RealType diff = SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j);
+        match = match && (std::fabs(diff) < 1.0e-6);
       }
+
+    if(!match) 
+    {
+      ostringstream o;
+      o.setf(std::ios::scientific, std::ios::floatfield);
+      o.precision(6);
+      o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
+        << "Mismatched supercell lattices.\n";
+      o << " Lattice in ESHDF5 " << endl;
+      o << SuperLattice << endl;
+      o << " Lattice in xml" << endl;
+      o << TargetPtcl.Lattice.R << endl;
+      o << " Difference " << endl;
+      o << SuperLattice-TargetPtcl.Lattice.R << endl;
+      APP_ABORT(o.str());
+    }
     return match;
   }
 	
@@ -145,12 +161,7 @@ namespace qmcplusplus {
 	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
 	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
 	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-    if (!CheckLattice()) {
-      app_error() << "The supercell lattice in the ESHDF5 file does not match the "
-		  << "lattice specified in the XML input file.  Aborting.\n";
-      abort();
-    }
-
+    CheckLattice();
     app_log() << buff;
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)
@@ -434,12 +445,7 @@ namespace qmcplusplus {
 	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
 	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
 	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-    if (!CheckLattice()) {
-      app_error() << "The supercell lattice in the orbital .h5 file does not match the "
-		  << "lattice specified in the XML input file.  Aborting.\n";
-      abort();
-    }
-
+    CheckLattice();
     app_log() << buff;
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)

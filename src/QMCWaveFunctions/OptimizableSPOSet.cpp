@@ -115,7 +115,7 @@ namespace qmcplusplus
 
     // Now, look for coefficients element
     
-    SPOSetBase::put(node);
+    return SPOSetBase::put(node);
   }
 
 
@@ -337,6 +337,7 @@ namespace qmcplusplus
   OptimizableSPOSet::makeClone() const
   {
 
+    return 0;
   }
 
 

@@ -105,7 +105,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool) 
-    { put(cur); }
+    { return put(cur); }
 
     ///reset
     virtual void resetParameters(const opt_variables_type& optVariables)=0;
