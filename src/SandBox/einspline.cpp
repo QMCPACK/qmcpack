@@ -118,10 +118,20 @@ int main(int argc, char** argv)
   double nops=num_splines*nsamples*niters*omp_get_max_threads();
   cout.precision(6);
   cout.setf(std::ios::scientific, std::ios::floatfield);
-  cout << "einspline::double          " << nops/d_timer_t << endl;
-  cout << "einspline::float           " << nops/s_timer_t << endl;
-  cout << "einspline::complex<double> " << nops/z_timer_t << endl;
-  cout << "einspline::complex<float>  " << nops/c_timer_t << endl;
+  cout << "evals "<< nops << setw(4) << omp_get_max_threads() <<  " double    "<< setw(15) << nops/d_timer_t[0] << setw(15) << nops/d_timer_t[1]<< setw(15) << nops/d_timer_t[2] << endl;
+  cout << "evals "<< nops << setw(4) << omp_get_max_threads() <<  " single    "<< setw(15) << nops/s_timer_t[0] << setw(15) << nops/s_timer_t[1]<< setw(15) << nops/s_timer_t[2] << endl;
+  cout << "evals "<< nops << setw(4) << omp_get_max_threads() <<  " d-complex "<< setw(15) << nops/z_timer_t[0] << setw(15) << nops/z_timer_t[1]<< setw(15) << nops/z_timer_t[2] << endl;
+  cout << "evals "<< nops << setw(4) << omp_get_max_threads() <<  " s-complex "<< setw(15) << nops/c_timer_t[0] << setw(15) << nops/c_timer_t[1]<< setw(15) << nops/c_timer_t[2] << endl;
+
+  double tfac=1.0/static_cast<double>(omp_get_max_threads());
+  d_timer_t*=tfac;
+  s_timer_t*=tfac;
+  z_timer_t*=tfac;
+  c_timer_t*=tfac;
+  cout << "wtime " << nops << setw(4) << omp_get_max_threads() << " double    " << setw(15) << d_timer_t[0]  << setw(15) << d_timer_t[1] << setw(15) << d_timer_t[2] << endl;
+  cout << "wtime " << nops << setw(4) << omp_get_max_threads() << " single    " << setw(15) << s_timer_t[0]  << setw(15) << s_timer_t[1] << setw(15) << s_timer_t[2] << endl;
+  cout << "wtime " << nops << setw(4) << omp_get_max_threads() << " d-complex " << setw(15) << z_timer_t[0]  << setw(15) << z_timer_t[1] << setw(15) << z_timer_t[2] << endl;
+  cout << "wtime " << nops << setw(4) << omp_get_max_threads() << " s-complex " << setw(15) << c_timer_t[0]  << setw(15) << c_timer_t[1] << setw(15) << c_timer_t[2] << endl;
 
   OHMMS::Controller->finalize();
   return 0;
