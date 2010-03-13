@@ -59,7 +59,7 @@ namespace qmcplusplus
        */
       DiracDeterminantBase(const DiracDeterminantBase& s);
 
-      virtual DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
+      DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
 
       ///** return a clone of Phi
       // */
