@@ -487,7 +487,7 @@ namespace qmcplusplus {
   }
   template<> void
   EinsplineSetExtended<double>::evaluate
-  (const ParticleSet &P, PosType r, vector<RealType> &psi)
+  (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
   {
     ValueTimer.start();
     PosType ru(PrimLattice.toUnit(r));
@@ -511,7 +511,7 @@ namespace qmcplusplus {
 
   template<> void
   EinsplineSetExtended<complex<double> >::evaluate
-  (const ParticleSet &P, PosType r, vector<RealType> &psi)
+  (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
   {
     cerr << "Not Implemented.\n";
   }

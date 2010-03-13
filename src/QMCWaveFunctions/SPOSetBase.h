@@ -135,15 +135,6 @@ namespace qmcplusplus {
     virtual void 
     evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
-/** evaluate the values of this single-particle orbital set
-     * @param P current ParticleSet
-     * @param r is the position of the particle
-     * @param psi values of the SPO
-     */
-    virtual void
-    evaluate (const ParticleSet& P, PosType r, vector<RealType> &psi)
-    { cerr << "Not implemented.\n";  }
-
     /** evaluate the values, gradients and laplacians of this single-particle orbital set
      * @param P current ParticleSet
      * @param iat active particle
@@ -163,31 +154,24 @@ namespace qmcplusplus {
      *
      * Call evaluate_notranspose to build logdet
      */
-    void evaluate(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
-    virtual void evaluate_notranspose(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
+    virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
-    virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
-				     const ParticleSet &source,
-				     int iat_src, GradMatrix_t &gradphi);
+    virtual void evaluateGradSource (const ParticleSet &P, int first, int last
+        , const ParticleSet &source, int iat_src, GradMatrix_t &gradphi);
 
-    virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
-				     const ParticleSet &source, int iat_src, 
-				     GradMatrix_t &grad_phi,
-				     HessMatrix_t &grad_grad_phi,
-				     GradMatrix_t &grad_lapl_phi);
+    virtual void evaluateGradSource (const ParticleSet &P, int first, int last
+        , const ParticleSet &source, int iat_src
+        , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-
-    virtual void evaluateBasis (const ParticleSet &P, int first, int last,
-				ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-				ValueMatrix_t &basis_lapl)
-    { app_error() << "Need specialization of SPOSetBase::evaluateBasis.\n"; abort(); }
+    virtual void evaluateBasis (const ParticleSet &P, int first, int last
+        , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
     
-    virtual void copyParamsFromMatrix (const opt_variables_type& active,
-				       const ValueMatrix_t &mat, vector<RealType> &destVec)
-    { app_error() << "Need specialization of SPOSetBase::copyParamsFromMatrix.\n"; abort(); }
+    virtual void copyParamsFromMatrix (const opt_variables_type& active
+        , const ValueMatrix_t &mat, vector<RealType> &destVec);
 
     virtual PosType get_k(int orb) { return PosType(); }
 
@@ -195,59 +179,43 @@ namespace qmcplusplus {
      */
     virtual SPOSetBase* makeClone() const;
 
+
 #ifdef QMC_CUDA
-    virtual void init_cuda() 
-    {    }
+
+    /** evaluate the values of this single-particle orbital set
+     * @param P current ParticleSet
+     * @param r is the position of the particle
+     * @param psi values of the SPO
+     */
+    virtual void
+      evaluate (const ParticleSet& P, const PosType& r, vector<RealType> &psi);
+
+
+    virtual void init_cuda() {  }
 
     //////////////////////////////////////////
     // Walker-parallel vectorized functions //
     //////////////////////////////////////////
     virtual void
-    reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
-    { }
+    reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) { }
 
     virtual void
-    evaluate (vector<Walker_t*> &walkers, int iat,
-	      gpu::device_vector<CudaValueType*> &phi)
-    {
-      app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
-      abort();
-    }
+    evaluate (vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
 
-    virtual void
-    evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos, 
-	      gpu::device_vector<CudaValueType*> &phi)
-    {
-      app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
-      abort();
-    }
+    virtual void evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos
+        , gpu::device_vector<CudaValueType*> &phi);
 
     virtual void
     evaluate (vector<Walker_t*> &walkers,
 	      vector<PosType> &new_pos,
 	      gpu::device_vector<CudaValueType*> &phi,
 	      gpu::device_vector<CudaValueType*> &grad_lapl_list, 
-	      int row_stride)
-    {
-      app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
-      abort();
-    }
+	      int row_stride);
 
     virtual void 
-    evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
-    { 
-      app_error() << "Need specialization of vectorized evaluate "
-		  << "in SPOSetBase.\n";
-      abort();
-    }
-
+    evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
     virtual void 
-    evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
-    { 
-      app_error() << "Need specialization of vectorized evaluate "
-		  << "in SPOSetBase.\n";
-      abort();
-    }
+    evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
 
 protected:

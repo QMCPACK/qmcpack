@@ -125,7 +125,7 @@ namespace qmcplusplus
     // BasisOrbitals->evaluate, then does the matrix product with
     // C.
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, PosType r, vector<RealType> &psi);
+    void evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi);
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
 		  GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,

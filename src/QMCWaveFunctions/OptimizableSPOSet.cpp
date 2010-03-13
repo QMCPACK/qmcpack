@@ -198,7 +198,7 @@ namespace qmcplusplus
   }
 
   void
-  OptimizableSPOSet::evaluate(const ParticleSet& P, PosType r, 
+  OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, 
 			      vector<RealType> &psi)
   {
 
@@ -292,6 +292,11 @@ namespace qmcplusplus
     if (BasisOrbitals) {
       BasisOrbitals->evaluate_notranspose
 	(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
+
+      //Note to Ken:
+      //Use Numerics/MatrixOperators.h 
+      //for C=AB MatrixOperators::product(C,BasisValMatrix,logdet);
+      //for C=AB^t MatrixOperators::ABt(C,BasisValMatrix,logdet);
       BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
 		   M, BasisValMatrix.data(), M, 0.0, logdet.data(), N);
       logdet += GSValMatrix;

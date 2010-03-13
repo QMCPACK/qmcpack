@@ -21,15 +21,17 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #endif
+#if QMC_BUILD_LEVEL>1
+#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 //AGP is experimental and only valid with real
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
+#endif
 #endif
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -123,12 +125,7 @@ namespace qmcplusplus {
       }
       else if ((cname ==  "Molecular") || (cname =="molecular"))
       {
-        app_log()<<"  Removed Helium Molecular terms from qmcpack "<<endl;
-        abort();
-      }
-      else if (cname == OrbitalBuilderBase::sposet_tag) {
-	
-
+        APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
       }
 #if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX) && OHMMS_DIM==3
       else if(cname == "agp") 
@@ -161,7 +158,7 @@ namespace qmcplusplus {
     oAttrib.add(orbtype,"type");
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
-    //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
+
     OrbitalBuilderBase* detbuilder=0;
     if(orbtype == "electron-gas") 
     {
@@ -180,15 +177,10 @@ namespace qmcplusplus {
     else 
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
 
-    if(detbuilder) 
-    {//valid determinant set
-      detbuilder->setReportLevel(ReportLevel);
-      detbuilder->put(cur);
-      addNode(detbuilder,cur);
-      return true;
-    } else {
-      return false;
-    }
+    detbuilder->setReportLevel(ReportLevel);
+    detbuilder->put(cur);
+    addNode(detbuilder,cur);
+    return true;
   }
 
 

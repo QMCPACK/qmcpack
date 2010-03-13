@@ -39,21 +39,6 @@ namespace qmcplusplus {
      //MatrixOperators::transpose(logdet);
    }
 
-   void SPOSetBase::evaluateGradSource (const ParticleSet &P
-       , int first, int last, const ParticleSet &source
-       , int iat_src, GradMatrix_t &gradphi) 
-   {
-     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
-   }
-
-   void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last, 
-       const ParticleSet &source, int iat_src, 
-       GradMatrix_t &grad_phi,
-       HessMatrix_t &grad_grad_phi,
-       GradMatrix_t &grad_lapl_phi)
-   { 
-     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
-   }
 
    SPOSetBase* SPOSetBase::makeClone() const
    {
@@ -241,6 +226,81 @@ namespace qmcplusplus {
       return true;
     }
 
+    void SPOSetBase::evaluateBasis (const ParticleSet &P, int first, int last,
+        ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
+        ValueMatrix_t &basis_lapl)
+    { 
+      APP_ABORT("Need specialization of SPOSetBase::evaluateBasis.\n");
+    }
+
+    void SPOSetBase::copyParamsFromMatrix (const opt_variables_type& active,
+        const ValueMatrix_t &mat, vector<RealType> &destVec)
+    { 
+      APP_ABORT("Need specialization of SPOSetBase::copyParamsFromMatrix.");
+    }
+
+   void SPOSetBase::evaluateGradSource (const ParticleSet &P
+       , int first, int last, const ParticleSet &source
+       , int iat_src, GradMatrix_t &gradphi) 
+   {
+     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
+   }
+
+   void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last, 
+       const ParticleSet &source, int iat_src, 
+       GradMatrix_t &grad_phi,
+       HessMatrix_t &grad_grad_phi,
+       GradMatrix_t &grad_lapl_phi)
+   { 
+     APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); 
+   }
+
+#ifdef QMC_CUDA
+
+   void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi)
+   { 
+     APP_ABORT("Not implemented.\n"); 
+   }
+
+
+   void SPOSetBase::evaluate (vector<Walker_t*> &walkers, int iat,
+       gpu::device_vector<CudaValueType*> &phi)
+   {
+     app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+     abort();
+   }
+
+   void SPOSetBase::evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos, 
+       gpu::device_vector<CudaValueType*> &phi)
+   {
+     app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+     abort();
+   }
+
+   void SPOSetBase::evaluate (vector<Walker_t*> &walkers,
+       vector<PosType> &new_pos,
+       gpu::device_vector<CudaValueType*> &phi,
+       gpu::device_vector<CudaValueType*> &grad_lapl_list, 
+       int row_stride)
+   {
+     app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
+     abort();
+   }
+
+   void SPOSetBase::evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
+   { 
+     app_error() << "Need specialization of vectorized evaluate "
+       << "in SPOSetBase.\n";
+     abort();
+   }
+
+   void SPOSetBase::evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
+   { 
+     app_error() << "Need specialization of vectorized evaluate "
+       << "in SPOSetBase.\n";
+     abort();
+   }
+#endif
 }
 
 /***************************************************************************

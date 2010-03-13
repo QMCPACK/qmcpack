@@ -333,7 +333,7 @@ namespace qmcplusplus {
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
 
-    void evaluate (const ParticleSet& P, PosType r, vector<double> &psi);
+    void evaluate (const ParticleSet& P, const PosType& r, vector<double> &psi);
 #if !defined(QMC_COMPLEX)
     // This is the gradient of the orbitals w.r.t. the ion iat
     void evaluateGradSource (const ParticleSet &P, int first, int last, 
