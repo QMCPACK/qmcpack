@@ -139,11 +139,7 @@ namespace qmcplusplus {
     Return_t evaluateForPyP(ParticleSet& P);
     void add(int groupID, RadFunctorType* ppot);
 
-    void addObservables(PropertySetType& plist)
-    { 
-      QMCHamiltonianBase::addObservables(plist);
-      if (ComputeForces) addObservablesF(plist);   
-    }
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
     void setObservables(PropertySetType& plist)
     { 

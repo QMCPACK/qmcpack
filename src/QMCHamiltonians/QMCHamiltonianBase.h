@@ -102,21 +102,25 @@ namespace qmcplusplus {
      */
     inline bool getMode(int i) { return UpdateMode[i];}
 
-    /** default implementation to add named values to a list
+    /** named values to  the property list
      * @param plist RecordNameProperty
+     *
+     * Previously addObservables but it is renamed and a non-virtial function.
      */
-    virtual void addObservables(PropertySetType& plist)
+    inline void addValue(PropertySetType& plist)
     {
       if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
     }
 
-    /** default implementation to add named values to  the property list
+    /** named values to  the property list
      * @param plist RecordNameProperty
      * @param collectables Observables that are accumulated by evaluate
+     *
+     * Default implementaton uses addValue(plist)
      */
     virtual void addObservables(PropertySetType& plist, BufferType& collectables)
     {
-      addObservables(plist);
+      addValue(plist);
     }
 
     /*** add to observable descriptor for hdf5 

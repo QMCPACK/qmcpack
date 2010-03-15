@@ -63,6 +63,12 @@ namespace qmcplusplus {
 
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
 
+  void CoulombPBCAATemp::addObservables(PropertySetType& plist, BufferType& collectables)
+  {
+    addValue(plist);
+    if (ComputeForces) addObservablesF(plist); 
+  }
+
   void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P) {
     if(is_active)
     {

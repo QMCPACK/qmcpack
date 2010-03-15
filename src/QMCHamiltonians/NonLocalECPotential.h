@@ -68,23 +68,12 @@ namespace qmcplusplus {
 
     void setRandomGenerator(RandomGenerator_t* rng);
 
-    void addObservables(PropertySetType& plist);
-//     { 
-//       QMCHamiltonianBase::addObservables(plist);
-//       if (ComputeForces) addObservablesF(plist);   
-//     }
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
     void setObservables(PropertySetType& plist);
-//     { 
-//       QMCHamiltonianBase::setObservables(plist);
-//       if (ComputeForces) setObservablesF(plist);   
-//     }
 
     void setParticlePropertyList(PropertySetType& plist, int offset);
-//     {  
-//       QMCHamiltonianBase::setParticlePropertyList(plist, offset);
-//       if (ComputeForces) setParticleSetF(plist, offset);  
-//     }
+
     void registerObservables(vector<observable_helper*>& h5list,
 			     hid_t gid) const;
   };

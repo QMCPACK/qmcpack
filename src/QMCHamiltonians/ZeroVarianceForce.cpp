@@ -26,11 +26,10 @@ namespace qmcplusplus {
       APP_ABORT("ZeroVarianceForce::resetTargetParticleSet found inconsistent table index");
   }
   
-  void 
-  ZeroVarianceForce::addObservables(QMCTraits::PropertySetType& plist) {
-    QMCHamiltonianBase::addObservables(plist);
-    if(FirstForceIndex<0) 
-      FirstForceIndex=plist.size();
+  void ZeroVarianceForce::addObservables(PropertySetType& plist
+      , BufferType& collectables)
+  {
+    if(FirstForceIndex<0) FirstForceIndex=plist.size();
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
         ostringstream obsName1, obsName2;

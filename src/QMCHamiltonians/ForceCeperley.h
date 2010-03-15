@@ -51,10 +51,11 @@ namespace qmcplusplus {
       registerObservablesF(h5list,gid);
     }
 
-    void addObservables(PropertySetType& plist)
+    void addObservables(PropertySetType& plist, BufferType& collectables)
     {
       addObservablesF(plist);
     }
+
     void setObservables(PropertySetType& plist)
     {
       setObservablesF(plist);

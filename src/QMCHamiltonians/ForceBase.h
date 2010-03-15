@@ -87,11 +87,12 @@ namespace qmcplusplus {
       registerObservablesF(h5list,gid);
     }
 
-    void addObservables(PropertySetType& plist)
-    {
-      addObservablesF(plist);
-      myIndex=FirstForceIndex;
-    }
+    /** default implementation to add named values to  the property list
+     * @param plist RecordNameProperty
+     * @param collectables Observables that are accumulated by evaluate
+     */
+    void addObservables(PropertySetType& plist, BufferType& collectables);
+
     void setObservables(PropertySetType& plist)
     {
       setObservablesF(plist);

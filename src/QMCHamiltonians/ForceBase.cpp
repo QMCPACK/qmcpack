@@ -133,6 +133,11 @@ namespace qmcplusplus {
     return new BareForce(*this);
   }
 
+  void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
+  {
+    addObservablesF(plist);
+    myIndex=FirstForceIndex;
+  }
 
   BareForce::Return_t 
     BareForce::evaluate(ParticleSet& P) {

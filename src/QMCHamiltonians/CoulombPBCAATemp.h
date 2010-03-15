@@ -97,11 +97,7 @@ namespace qmcplusplus {
     Return_t evalConsts();
     Return_t evaluateForPbyP(ParticleSet& P);
 
-    void addObservables(PropertySetType& plist)
-    { 
-      QMCHamiltonianBase::addObservables(plist);
-      if (ComputeForces) addObservablesF(plist);   
-    }
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
     void setObservables(PropertySetType& plist)
     { 

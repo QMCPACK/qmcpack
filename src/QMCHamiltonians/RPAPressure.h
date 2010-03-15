@@ -60,34 +60,11 @@ namespace qmcplusplus {
     ~RPAPressure() {};
     
     
-    void addObservables(PropertySetType& plist)
-    {
-      myIndex=plist.add("Pressure");
-      plist.add("ZVterm");
-      plist.add("dpsi");
-      plist.add("Edpsi");
-      plist.add("Vdpsi");
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
-    }
+    void setObservables(PropertySetType& plist);
 
-    void setObservables(PropertySetType& plist)
-    {
-      plist[myIndex]=Press;
-      plist[myIndex+1]=Value;
-      plist[myIndex+2]=tValue;
-      plist[myIndex+3]=Energy*tValue;
-      plist[myIndex+4]=Pot*tValue;
-      
-    }
-    void setParticlePropertyList(PropertySetType& plist, int offset)
-    {
-      plist[myIndex+offset]=Press;
-      plist[myIndex+1+offset]=Value;
-      plist[myIndex+2+offset]=tValue;
-      plist[myIndex+3+offset]=Energy*tValue;
-      plist[myIndex+4+offset]=Pot*tValue;
-      
-    }
+    void setParticlePropertyList(PropertySetType& plist, int offset);
 
     void resetTargetParticleSet(ParticleSet& P);
 

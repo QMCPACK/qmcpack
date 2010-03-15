@@ -48,7 +48,8 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) {
       trialPsi->resizeTempP(P);
     }
-    void addObservables(PropertySetType& plist)
+
+    void addObservables(PropertySetType& plist, BufferType& collectables)
     {
       myIndex=plist.add("Psi");
       plist.add("PsiTW");
@@ -63,6 +64,7 @@ namespace qmcplusplus {
       plist[myIndex+2]=EW;
       plist[myIndex+3]=W;
     }
+
     void setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myIndex+offset]=Ps0;

@@ -22,11 +22,10 @@ namespace qmcplusplus {
       APP_ABORT("PulayForce::resetTargetParticleSet found inconsistent table index");
   }
   
-  void 
-  PulayForce::addObservables(QMCTraits::PropertySetType& plist) {
-    QMCHamiltonianBase::addObservables(plist);
-    if(FirstForceIndex<0) 
-      FirstForceIndex=plist.size();
+  void PulayForce::addObservables(PropertySetType& plist
+      , BufferType& collectables)
+  {
+    if(FirstForceIndex<0) FirstForceIndex=plist.size();
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
         ostringstream obsName1, obsName2;

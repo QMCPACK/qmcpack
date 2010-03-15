@@ -72,6 +72,12 @@ namespace qmcplusplus {
     AB->resetTargetParticleSet(P);
   }
 
+  void CoulombPBCABTemp::addObservables(PropertySetType& plist, BufferType& collectables)
+  {
+    myIndex=plist.add(myName.c_str());
+    if (ComputeForces) addObservablesF(plist);   
+  }
+
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluate(ParticleSet& P) 
     {

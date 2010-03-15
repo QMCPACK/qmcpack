@@ -58,7 +58,7 @@ namespace qmcplusplus {
     WarpFunction (RealType r)
     { return 1.0/(r*r*r*r); }
 
-    void addObservables(PropertySetType& plist);
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
     void setObservables(PropertySetType& plist);
 

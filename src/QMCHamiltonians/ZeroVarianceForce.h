@@ -53,7 +53,7 @@ namespace qmcplusplus {
       return myClone;
     }
 
-    void addObservables(PropertySetType& plist);
+    void addObservables(PropertySetType& plist, BufferType& collectables);
 
     void setObservables(PropertySetType& plist);
 

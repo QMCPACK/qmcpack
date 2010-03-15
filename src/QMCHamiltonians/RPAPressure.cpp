@@ -37,6 +37,35 @@ namespace qmcplusplus {
 
   typedef QMCHamiltonianBase::Return_t Return_t;
   
+  void RPAPressure::addObservables(PropertySetType& plist, BufferType& collectables)
+  {
+    myIndex=plist.add("Pressure");
+    plist.add("ZVterm");
+    plist.add("dpsi");
+    plist.add("Edpsi");
+    plist.add("Vdpsi");
+  }
+
+  void RPAPressure::setObservables(PropertySetType& plist)
+  {
+    plist[myIndex]=Press;
+    plist[myIndex+1]=Value;
+    plist[myIndex+2]=tValue;
+    plist[myIndex+3]=Energy*tValue;
+    plist[myIndex+4]=Pot*tValue;
+
+  }
+
+  void RPAPressure::setParticlePropertyList(PropertySetType& plist, int offset)
+  {
+    plist[myIndex+offset]=Press;
+    plist[myIndex+1+offset]=Value;
+    plist[myIndex+2+offset]=tValue;
+    plist[myIndex+3+offset]=Energy*tValue;
+    plist[myIndex+4+offset]=Pot*tValue;
+
+  }
+
   void RPAPressure::resetTargetParticleSet(ParticleSet& P) {
 //     cout<<dPsi.size()<<endl;
     for (int i=0;i<(dPsi.size());i++) dPsi[i]->resetTargetParticleSet(P);
