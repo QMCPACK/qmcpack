@@ -3,6 +3,9 @@
 
 #include <type_traits/container_proxy.h>
 #include <mpi/mpi_datatype.h>
+#if defined(HAVE_MPI)
+#include <boost/mpi/operations.hpp>
+#endif
 
 namespace APPNAMESPACE {
 
@@ -26,7 +29,25 @@ namespace APPNAMESPACE {
     //     all_reduce<T,OP>(comm,in,out);
     //     in=out;
     //   }
+    //
 
+    template<typename T>
+      inline void reduce(const communicator& comm, T& in, T& out,  int dest=0)
+      {
+        container_proxy<T> t_in(in),t_out(out);
+        MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
+        MPI_Reduce(t_in.data(),t_out.data(),t_in.size(),type_id, MPI_SUM, dest, comm);
+      }
+
+    template<typename T>
+      inline void reduce(const communicator& comm, T& in, int dest=0)
+      {
+        T out(in);
+        reduce<T>(comm,in,out,dest);
+        in=out;
+      }
+
+  
     /** generic function to perform allgather
      *
      * allgather of a scalar to a vectorized container
@@ -144,6 +165,12 @@ namespace APPNAMESPACE {
     template<typename CT>
       inline void bcast(const communicator& comm, CT& inout, int source=0)
       {}
+    template<typename T>
+      inline void reduce(const communicator& comm, T& in, int dest=0)
+      {}
+    template<typename T>
+      inline void reduce(const communicator& comm, T& in, T& out, int dest=0)
+      { out=in; }
 #endif
   }
 }
