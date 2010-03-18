@@ -1,9 +1,8 @@
 #ifndef QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 #define QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 
-#include <OhmmsPETE/TinyVector.h>
+#include <type_traits/scalar_traits.h>
 #include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/PooledData.h>
 
