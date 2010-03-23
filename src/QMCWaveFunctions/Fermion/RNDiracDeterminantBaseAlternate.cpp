@@ -599,7 +599,13 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
     return LogValue;
   }
 
-
+RNDiracDeterminantBaseAlternate::DiracDeterminantBase* RNDiracDeterminantBaseAlternate::makeCopy(SPOSetBase* spo) const
+{
+  RNDiracDeterminantBaseAlternate* dclone= new RNDiracDeterminantBaseAlternate(spo);
+  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  dclone->setLogEpsilon(logepsilon);
+  return dclone;
+}
 
 }
 /***************************************************************************

@@ -346,6 +346,7 @@ namespace qmcplusplus
 
             Psi.copyFromBuffer(W,w_buffer);
             H.copyFromBuffer(W,w_buffer);
+//             Psi.evaluateLog(W);
 
             RealType eold(thisWalker.Properties(LOCALENERGY));
             RealType logpsi(thisWalker.Properties(LOGPSI));

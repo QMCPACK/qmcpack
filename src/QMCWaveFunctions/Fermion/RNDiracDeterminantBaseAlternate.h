@@ -115,6 +115,8 @@ namespace qmcplusplus
       evaluateLog(ParticleSet& P,
                   ParticleSet::ParticleGradient_t& G,
                   ParticleSet::ParticleLaplacian_t& L) ;
+                  
+      DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 
 
       ValueType alternateCurRatio;

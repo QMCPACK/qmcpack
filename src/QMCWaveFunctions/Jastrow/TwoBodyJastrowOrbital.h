@@ -426,6 +426,14 @@ namespace qmcplusplus {
       GradType sumg,dg;
       ValueType suml=0.0,dl;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+        if (iat==jat)
+        {
+          dU[ij]=0;
+          d2U[ij]=0;
+          U[ij] =0;
+        }
+        else
+        {
 	sumg += (dg=curGrad[jat]-dU[ij]);
 	suml += (dl=curLap[jat]-d2U[ij]);
 	dU[ij]=curGrad[jat]; 
@@ -435,6 +443,7 @@ namespace qmcplusplus {
 	U[ij] =  U[ji] = curVal[jat];
         dG[jat] -= dg;
 	dL[jat] += dl;
+        }
       }
       dG[iat] += sumg;
       dL[iat] += suml;     

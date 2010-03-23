@@ -121,8 +121,9 @@ namespace qmcplusplus
       ParticleSet::ParticleLaplacian_t myL_alternate;
       ValueType logepsilon;
       RealType alternatePhaseValue, alternateLogValue;
-
-//
+      
+      DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+     
       inline void setLogEpsilon(ValueType x)
       {
         logepsilon=x;

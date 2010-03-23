@@ -210,8 +210,8 @@ namespace qmcplusplus {
 	stringstream name_real, name_imag;
 	name_real << OneBodyID << "_" << 2*i;
 	name_imag << OneBodyID << "_" << 2*i+1;
-        myVars.insert(name_real.str(),OneBodySymmCoefs[i].cG.real());
-        myVars.insert(name_imag.str(),OneBodySymmCoefs[i].cG.imag());
+        myVars.insert(name_real.str(),OneBodySymmCoefs[i].cG.real(),true,optimize::LOGLINEAR_P);
+        myVars.insert(name_imag.str(),OneBodySymmCoefs[i].cG.imag(),true,optimize::LOGLINEAR_P);
 	//VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
 	//VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
       }
@@ -222,7 +222,7 @@ namespace qmcplusplus {
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
 	name << TwoBodyID << "_" << i;
-        myVars.insert(name.str(),TwoBodySymmCoefs[i].cG);
+   myVars.insert(name.str(),TwoBodySymmCoefs[i].cG,true,optimize::LOGLINEAR_P);
 	//VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
       }
     }

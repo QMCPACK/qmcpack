@@ -32,6 +32,7 @@ namespace optimize
   enum{ 
     OTHER_P=0,
     LOGLINEAR_P, //B-spline Jastrows
+    LOGLINEAR_K, //K space Jastrows
     LINEAR_P     //Multi-determinant coefficients
   };
   
