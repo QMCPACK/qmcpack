@@ -168,6 +168,8 @@ namespace qmcplusplus {
     {
       Identity=false;
       vector<ValueType> Ctemp;
+      Ctemp.resize(norbs*BasisSetSize);
+      setIdentity(Identity);
       putContent(Ctemp,coeff_ptr);
       int n=0,i=0;
       vector<ValueType>::iterator cit(Ctemp.begin());
