@@ -66,17 +66,9 @@ int main(int argc, char** argv)
     }
   }
 
-  app_log() << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
-    << " num_splines = " << num_splines << " num_samples = " << nsamples 
-    << " iterations = " << niters
-    << " number of operations in millions " << endl;
-  app_log() << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << endl;
-  app_log() << "#   mpi   openmp    datatype     "
-    << "  value_op         vgl_op              vgh_op         value_time       vgl_time         vgh_time" << endl;
-  app_log().flush();
-
   typedef TinyVector<double,3> timer_type;
   timer_type d_timer_t,s_timer_t,z_timer_t,c_timer_t;
+  Timer big_clock;
 
   einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
   z_bench.set(nx,ny,nz,num_splines);
@@ -90,6 +82,17 @@ int main(int argc, char** argv)
   einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
   c_bench.set(nx,ny,nz,num_splines);
 
+  double t_init=big_clock.elapsed();
+  app_log() << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
+    << " num_splines = " << num_splines << " num_samples = " << nsamples 
+    << " iterations = " << niters
+    << " number of operations in millions " << endl;
+  app_log() << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << endl;
+  app_log() << "#   mpi   openmp    datatype     "
+    << "  value_op         vgl_op              vgh_op         value_time       vgl_time         vgh_time" << endl;
+
+  big_clock.restart();
+  app_log().flush();
 #pragma omp parallel 
   {
     random_position_generator<double> d_pos(nsamples,omp_get_thread_num());
@@ -114,6 +117,7 @@ int main(int argc, char** argv)
       c_timer_t += c_timer;
     }
   }
+  double t_comp=big_clock.elapsed();
 
   mpi::reduce(*mycomm,d_timer_t);
   mpi::reduce(*mycomm,z_timer_t);
@@ -133,6 +137,9 @@ int main(int argc, char** argv)
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " single    "<< nops/s_timer_t << s_timer_t << endl;
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " d-complex "<< nops/z_timer_t << z_timer_t << endl;
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " s-complex "<< nops/c_timer_t << c_timer_t << endl;
+
+  app_log() << " Initialization = " << t_init << endl;
+  app_log() << " Total time = " << t_comp << endl;
 
   OHMMS::Controller->finalize();
   return 0;

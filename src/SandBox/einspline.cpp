@@ -33,7 +33,7 @@ int main(int argc, char** argv)
   int nx=48,ny=48,nz=48;
   int num_splines=128;
   int nsamples=512;
-  int niters=100;
+  int niters=10;
   int opt;
 
   while((opt = getopt(argc, argv, "hg:x:y:z:i:s:p:")) != -1) {
