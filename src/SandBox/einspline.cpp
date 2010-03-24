@@ -160,8 +160,8 @@ int main(int argc, char** argv)
   app_log().setf(std::ios::scientific, std::ios::floatfield);
   app_log().precision(6);
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " double    "<< nops/d_timer_t << d_timer_t << endl;
-  app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " single    "<< nops/s_timer_t << s_timer_t << endl;
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " d-complex "<< nops/z_timer_t << z_timer_t << endl;
+  app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " single    "<< nops/s_timer_t << s_timer_t << endl;
   app_log() << "einspline "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " s-complex "<< nops/c_timer_t << c_timer_t << endl;
 
   OHMMS::Controller->finalize();
