@@ -32,6 +32,19 @@ namespace qmcplusplus
     , FFT_MAX
   };
 
+  template<typename T1, typename T2>
+    struct is_complex2complex
+    {
+      static const int value=1;
+    };
+
+  template<typename T>
+    struct is_complex2complex<T,std::complex<T> >
+    {
+      static const int value=0;
+    };
+
+
   /** dummy declaration of fft_engine_base */
   template<typename T, unsigned ENG> struct fft_engine_base{ };
 }
