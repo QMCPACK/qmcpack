@@ -889,9 +889,9 @@ namespace qmcplusplus {
   }
   
   void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+					  const opt_variables_type& active,
+					  vector<RealType>& dlogpsi,
+					  vector<RealType>& dhpsioverpsi)
       {
         bool recalculate(false);
         for (int k=0; k<myVars.size(); ++k)
@@ -922,11 +922,11 @@ namespace qmcplusplus {
               //real part of coeff
               dlogpsi[kk] += Prefactor*real(z);
               dhpsioverpsi[kk] +=  0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z)
-              + Prefactor*real(z*eye)*dot(OneBodyGvecs[i],P.G[iat]);
+		+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
               //imaginary part of coeff,
               dlogpsi[kk+1] += Prefactor*real(eye*z);
               //mius here due to i*i term
-              dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*dot(OneBodyGvecs[i],P.G[iat]);
+              dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*real(dot(OneBodyGvecs[i],P.G[iat]));
             }
           }
         }
@@ -964,7 +964,7 @@ namespace qmcplusplus {
             int kk=myVars.where(TwoBodyVarMap[i]);
             if (kk>0)
             {
-              dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*dot(P.G[iat],Gvec)*imag(conj(TwoBody_rhoG[i])*z);
+              dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(conj(TwoBody_rhoG[i])*z);
             }
           }
         }
