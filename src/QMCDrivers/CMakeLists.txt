@@ -22,14 +22,10 @@ SET(QMCDRIVERS
   VMC/VMCFactory.cpp
   WFMC/WFMCUpdateAll.cpp
   DMC/DMCOMP.cpp
-  DMC/RNDMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
-  DMC/RNDMCUpdatePbyPCeperley.cpp
-  DMC/RNDMCUpdatePbyPAlternate.cpp
   DMC/DMCFactory.cpp
-  DMC/RNFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
   ../Estimators/LocalEnergyEstimator.cpp
@@ -42,6 +38,16 @@ SET(QMCDRIVERS
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
+
+IF(NOT QMC_COMPLEX)
+  SET(QMCDRIVERS  ${QMCDRIVERS}
+    DMC/RNDMCOMP.cpp
+    DMC/RNDMCUpdatePbyPCeperley.cpp
+    DMC/RNDMCUpdatePbyPAlternate.cpp
+    DMC/RNFactory.cpp
+    )
+ENDIF(NOT QMC_COMPLEX)
+
 
 IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}

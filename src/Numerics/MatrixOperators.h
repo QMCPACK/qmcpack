@@ -203,6 +203,23 @@ namespace qmcplusplus {
       zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
     }
 
+    /** static function to perform y=Ax for generic matrix and vector
+     */
+    inline static void product(const Matrix<std::complex<double> >& A
+        , const Vector<double>& x, std::complex<double>* restrict yptr) 
+    {
+      
+      const int n=A.rows();
+      const int m=A.cols();
+      const std::complex<double>* restrict aptr=A.data();
+      for(int i=0,ij=0; i<n; ++i)
+      {
+        std::complex<double> t=0.0;
+        for(int j=0; j<m; ++j,++ij) t += aptr[ij]*x[j];
+        yptr[i]=t;
+      }
+    }
+
     inline static void product(const Matrix<std::complex<double> >& A
         , const std::complex<double>* restrict x
         , std::complex<double>* restrict yptr) 

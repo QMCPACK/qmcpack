@@ -126,8 +126,6 @@ ENDIF(OHMMS_DIM MATCHES 3)
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
   Fermion/DiracDeterminantOpt.cpp
-  Fermion/RNDiracDeterminantBase.cpp
-  Fermion/RNDiracDeterminantBaseAlternate.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   MultiSlaterDeterminant.cpp
@@ -135,6 +133,13 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )
+
+IF(NOT QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    Fermion/RNDiracDeterminantBase.cpp
+    Fermion/RNDiracDeterminantBaseAlternate.cpp
+    )
+ENDIF(NOT QMC_COMPLEX)
 
 ####################################
 # create libqmcwfs

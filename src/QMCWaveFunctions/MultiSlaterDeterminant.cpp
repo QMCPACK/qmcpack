@@ -337,17 +337,19 @@ namespace qmcplusplus {
         
         int kk=myVars.where(i);
         if (kk<0) continue;
-        dlogpsi[kk] = cdet;
+        //dlogpsi[kk] = cdet;
+        convert(cdet,dlogpsi[kk]);
         dhpsioverpsi[kk] = -0.5*Sum(l)-Dot(P.G,g);
       }
-       psi=1.0/psi;
-       
-       for(int i=0; i<SDets.size(); i++){
-         int kk=myVars.where(i);
-         if (kk<0) continue;
-         dlogpsi[kk]*=psi;
-         dhpsioverpsi[kk]*=psi;
-       }
+
+      RealType psi_inv=real(1.0/psi);
+      //psi=1.0/psi;
+      for(int i=0; i<SDets.size(); i++){
+        int kk=myVars.where(i);
+        if (kk<0) continue;
+        dlogpsi[kk]*=psi_inv;
+        dhpsioverpsi[kk]*=psi_inv;
+      }
     
     }
   }

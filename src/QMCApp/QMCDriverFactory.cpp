@@ -313,17 +313,19 @@ namespace qmcplusplus {
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
-    else if(curRunType == RN_RUN) 
-    {
-      RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
-    } 
     else if(curRunType == DMC_RUN) 
     {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],
 		     curQmcModeBits[GPU_MODE], cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
+#if !defined(QMC_COMPLEX)
+    else if(curRunType == RN_RUN) 
+    {
+      RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+    } 
+#endif
 #if QMC_BUILD_LEVEL>1
     else if(curRunType == RMC_RUN)
     {

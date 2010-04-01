@@ -93,7 +93,7 @@ namespace qmcplusplus
 
     ///constructor
     ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
-    typedef VarRegistry<RealType> OptimizableSetType;
+    //typedef VarRegistry<RealType> OptimizableSetType;
 
     ///implement vritual function
     bool put(xmlNodePtr cur);

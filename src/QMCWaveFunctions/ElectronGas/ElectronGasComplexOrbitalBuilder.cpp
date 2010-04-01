@@ -76,9 +76,13 @@ namespace qmcplusplus {
     downdet->set(nup,nup);
 
     //create a Slater determinant
-    SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-    sdet->add(updet);
-    sdet->add(downdet);
+    //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
+    SlaterDet *sdet  = new SlaterDet(targetPtcl);
+    sdet->add(psiu,"u");
+    sdet->add(psid,"d");
+
+    sdet->add(updet,0);
+    sdet->add(downdet,1);
 
     //add Slater determinant to targetPsi
     targetPsi.addOrbital(sdet,"SlaterDet");

@@ -16,16 +16,19 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-//#define BRYAN_MULTIDET_TRIAL
+
+#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
+//this is only for Bryan
 #if defined(BRYAN_MULTIDET_TRIAL)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantIterative.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 #endif
-#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
+//Cannot use complex and released node
+#if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
-
+#endif
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
@@ -270,6 +273,7 @@ namespace qmcplusplus
     string dname;
     getNodeName(dname,cur);
     DiracDeterminantBase* adet=0;
+#if !defined(QMC_COMPLEX)
     if (rn_tag == dname)
     {
       double bosonicEpsilon=s_smallnumber;
@@ -281,6 +285,7 @@ namespace qmcplusplus
       adet->setLogEpsilon(bosonicEpsilon);  
     }
     else
+#endif
     {
 #ifdef QMC_CUDA
       adet = new DiracDeterminantCUDA(psi,firstIndex);
