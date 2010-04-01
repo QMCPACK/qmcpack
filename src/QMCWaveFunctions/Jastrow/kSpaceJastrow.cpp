@@ -905,6 +905,7 @@ namespace qmcplusplus {
         {
           int N = P.getTotalNum();
           ComplexType eye(0.0, 1.0);
+          RealType tmp_dot;
           int nOne = OneBodyGvecs.size();
            
         for (int iat=0; iat<N; iat++) {
@@ -921,12 +922,14 @@ namespace qmcplusplus {
             {
               //real part of coeff
               dlogpsi[kk] += Prefactor*real(z);
-              dhpsioverpsi[kk] +=  0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z)
-		+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
+              convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+              dhpsioverpsi[kk] +=  0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z) + Prefactor*real(z*eye)*tmp_dot;
+              //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
               //imaginary part of coeff,
               dlogpsi[kk+1] += Prefactor*real(eye*z);
               //mius here due to i*i term
-              dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*real(dot(OneBodyGvecs[i],P.G[iat]));
+              //dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*real(dot(OneBodyGvecs[i],P.G[iat]));
+              dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*tmp_dot;
             }
           }
         }
@@ -964,7 +967,9 @@ namespace qmcplusplus {
             int kk=myVars.where(TwoBodyVarMap[i]);
             if (kk>0)
             {
-              dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(conj(TwoBody_rhoG[i])*z);
+              convert(dot(P.G[iat],Gvec),tmp_dot);
+              //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(conj(TwoBody_rhoG[i])*z);
+              dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*tmp_dot*imag(conj(TwoBody_rhoG[i])*z);
             }
           }
         }

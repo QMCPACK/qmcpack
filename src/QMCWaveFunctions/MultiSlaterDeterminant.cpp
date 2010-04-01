@@ -342,7 +342,8 @@ namespace qmcplusplus {
         dhpsioverpsi[kk] = -0.5*Sum(l)-Dot(P.G,g);
       }
 
-      RealType psi_inv=real(1.0/psi);
+      RealType psi_inv;
+      convert(1.0/psi,psi_inv);
       //psi=1.0/psi;
       for(int i=0; i<SDets.size(); i++){
         int kk=myVars.where(i);
