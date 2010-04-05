@@ -29,14 +29,16 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   //if(currentWords[1]=="ROHF" || currentWords[1]=="UHF") {
   if(currentWords[1]=="UHF") {
     SpinRestricted=false;
+    std::cout << " Spin Unrestricted Calculation (UHF). " << endl;    
   } else {
     SpinRestricted=true;
+    std::cout << " Spin Restricted Calculation (RHF). " << endl;    
   }
 
   getwords(currentWords,fin);//3  Number of atoms
   NumberOfAtoms = atoi(currentWords.back().c_str());
 
-  // TDB: THIS FIX SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
+  // TDB: THIS FIX SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES
   //getwords(currentWords,fin); //4 Charge
   bool notfound = true;
   while(notfound) {
@@ -44,7 +46,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
     getwords(currentWords,fin);
     for(int i=0; i<currentWords.size(); i++){
       if("Charge" == currentWords[i]){
-	notfound = false;
+        notfound = false;
       }
     }
   }
@@ -67,13 +69,13 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin); //9 Number of basis functions
   SizeOfBasisSet=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //10 Number of independant functions 
+  int NumOfIndOrb=atoi(currentWords.back().c_str());
 
   // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
   streampos pivottdb = fin.tellg();
 
-   ///
-  int ng;
-  notfound = true; // TDB: originally - bool notfound = true;
+  int ng; 
+  notfound = true;
   while(notfound) {
     std::string aline;
     getwords(currentWords,fin);
@@ -98,7 +100,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
     for(int i=0; i<currentWords.size(); i++){
       if("primitive" == currentWords[i]){
         nx=atoi(currentWords.back().c_str()); //Number of exponents
-	notfound = false;
+        notfound = false;
       }
     }
   }
@@ -127,23 +129,39 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getGaussianCenters(fin);
   std::cout << " Shell types reading: OK" << endl;
 
+// mmorales:
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
-  search(fin, "Alpha"); //search "Alpha Orbital Energies"
-  getValues(fin,EigVal_alpha.begin(), EigVal_alpha.end());
+  search(fin, "Alpha Orbital"); //search "Alpha Orbital Energies"
+// only read NumOfIndOrb
+  getValues(fin,EigVal_alpha.begin(), EigVal_alpha.begin()+NumOfIndOrb);
   std::cout << " Orbital energies reading: OK" << endl;
-
   if(SpinRestricted) {
-    EigVec.resize(SizeOfBasisSet*SizeOfBasisSet);
+    EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
     EigVal_beta=EigVal_alpha;
+    vector<value_type> etemp;
+    search(fin, "Alpha MO");
+
+    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*NumOfIndOrb); 
+    std::copy(EigVec.begin(),EigVec.begin()+SizeOfBasisSet*NumOfIndOrb,EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet);
+    std::cout << " Orbital coefficients reading: OK" << endl;
   }
   else {
     EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
+    vector<value_type> etemp;
+    search(fin, "Beta Orbital"); 
+    getValues(fin,EigVal_beta.begin(), EigVal_beta.begin()+NumOfIndOrb);
+    std::cout << " Read Beta Orbital energies: OK" << endl;
+
+    search(fin, "Alpha MO");
+    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*NumOfIndOrb); 
+
+    search(fin, "Beta MO");
+    getValues(fin,EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet, EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet+SizeOfBasisSet*NumOfIndOrb); 
+
+    std::cout << " Alpha and Beta Orbital coefficients reading: OK" << endl;
   }
 
-  search(fin, "Alpha MO");
-  getValues(fin,EigVec.begin(), EigVec.end());
-  std::cout << " Orbital coefficients reading: OK" << endl;
 }
 
 void GaussianFCHKParser::getGeometry(std::istream& is) {
@@ -185,13 +203,9 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
   gsMap[0] =1; //s
   gsMap[-1]=2; //sp
   gsMap[1] =3; //p
-  gsMap[-2]=4; //l=2 d
-  gsMap[-3]=5; //l=3 f
-  gsMap[-4]=6; //l=4 g
-  gsMap[-5]=7; //l=5 h
-  gsMap[-6]=8; //l=6 h1??
-  gsMap[-7]=9; //l=7 h2??
-  gsMap[-8]=10; //l=8 h3??
+  gsMap[-2]=4; //d
+  gsMap[-3]=5; //f
+  gsMap[-4]=6; //g
 
   vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
 
