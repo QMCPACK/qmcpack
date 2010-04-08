@@ -127,6 +127,14 @@ namespace qmcplusplus {
      */
     virtual void setOrbitalSetSize(int norbs)=0;
 
+    virtual void
+    evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
+    {
+      app_error() << "Need specialization for SPOSetBase::evaluate "
+		  << "(const ParticleSet& P, PosType &r).\n";
+      abort();
+    }
+
     /** evaluate the values of this single-particle orbital set
      * @param P current ParticleSet
      * @param iat active particle

@@ -161,6 +161,10 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
+	  for (int i=0; i<3; i++) {
+	    assert (udiff[i] > -0.5);
+	    assert (udiff[i] < 0.5);
+	  }
 	  for (int i=0; i<3; i++)
 	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
@@ -394,6 +398,10 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
+	  for (int i=0; i<3; i++) {
+	    assert (udiff[i] > -0.5);
+	    assert (udiff[i] < 0.5);
+	  }
 	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  psi = (*Bspline)(udiff);
@@ -418,12 +426,25 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
-	  PosType uBox = uMax - uMin;
-	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
+	  // PosType uBox = uMax - uMin;
+	  // udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
+	  // 	  Bspline->evaluate (udiff, psi, grad, hess);
+	  // eval_UBspline_3d_z_vgh (Spline, udiff[0], udiff[1], udiff[2], 
+	  //         		     &psi, &(grad[0]), &(hess(0,0)));
 	  
+	  PosType uBox = uMax - uMin;
+	  for (int i=0; i<3; i++)
+	    udiff[i] *= Reflection[i]; 
+	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  Bspline->evaluate (udiff, psi, grad, hess);
-// 	  eval_UBspline_3d_z_vgh (Spline, udiff[0], udiff[1], udiff[2], 
+// 	  eval_UBspline_3d_d_vgh (Spline, udiff[0], udiff[1], udiff[2], 
 // 				  &psi, &(grad[0]), &(hess(0,0)));
+
+	  for (int i=0; i<3; i++) {
+	    grad[i] *= Reflection[i];
+	    for (int j=0; j<3; j++)
+	      hess(i,j) *= Reflection[i]*Reflection[j];
+	  }
 	}
 	else {
 	  //psi = 1.0e-10;

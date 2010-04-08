@@ -91,7 +91,9 @@ ENDIF(QMC_CUDA)
   IF(HAVE_EINSPLINE)
     SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSet.cpp
-      EinsplineSetBuilder.cpp
+      EinsplineSetBuilderCommon.cpp
+      EinsplineSetBuilderOld.cpp
+      EinsplineSetBuilderESHDF.cpp
       EinsplineWrapper.cpp
       MuffinTin.cpp
       AtomicOrbital.cpp
