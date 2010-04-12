@@ -45,10 +45,13 @@ namespace qmcplusplus {
 
     app_log() 
       << "\n=====================================================\n"
-      <<  "                    QMCPACK 0.2                       \n"
+      <<  "                    QMCPACK "
+      << QMCPLUSPLUS_VERSION_MAJOR << "." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH << " \n"
       << "\n  (c) Copyright 2003-  QMCPACK developers            \n"
+#if defined(QMCPLUSPLUS_BRANCH)
       << "\n  Subversion branch " << QMCPLUSPLUS_BRANCH 
       << "\n  Last modified     " << QMCPLUSPLUS_LAST_CHANGED_DATE
+#endif
       << "\n=====================================================\n";
 
     app_log().flush();
