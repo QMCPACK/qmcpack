@@ -213,9 +213,12 @@ namespace qmcplusplus {
       // cerr << "f_G = " << f_G[iG]/volInv << endl;
       // cerr << "f_G - 4*pi/G2= " << f_G[iG]/volInv - 4.0*M_PI/G2 << endl;
     }
-    fprintf (stderr, "    Worst MPC discrepancy:\n"
-	     "      Linear Extrap   : %18.14e\n"
-	     "      Quadratic Extrap: %18.14e\n", worstLin, worstQuad);
+    char buff[1000];
+    snprintf (buff, 1000 , 
+	      "    Worst MPC discrepancy:\n"
+	      "      Linear Extrap   : %18.14e\n"
+	      "      Quadratic Extrap: %18.14e\n", worstLin, worstQuad);
+    app_log() << buff;
     
   }
 
