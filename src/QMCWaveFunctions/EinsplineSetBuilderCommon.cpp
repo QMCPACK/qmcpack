@@ -468,25 +468,25 @@ namespace qmcplusplus {
 	  else
 	    ReadBands(spinSet, orbitalSet); 
 #ifdef QMC_CUDA
-	  if (true || useGPU) {
-	    app_log() << "Copying einspline orbitals to GPU.\n";
-	    create_multi_UBspline_3d_cuda 
-	      (orbitalSet->MultiSpline, orbitalSet->CudaMultiSpline);
-	    app_log() << "Successful copy.\n";
-	    // Destroy original CPU spline
-	    // HACK HACK HACK
-	    //destroy_Bspline (orbitalSet->MultiSpline);
-	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
-	    orbitalSet->Linv_cuda.resize(9);
-	    orbitalSet->L_cuda.resize(9);
-	    for (int i=0; i<3; i++)
-	      for (int j=0; j<3; j++) {
-		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
-		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
-	      }
-	    orbitalSet->L_cuda    = L_host;
-	    orbitalSet->Linv_cuda = Linv_host;
-	  }
+//	  if (true || useGPU) {
+// 	    app_log() << "Copying einspline orbitals to GPU.\n";
+// 	    create_multi_UBspline_3d_cuda 
+// 	      (orbitalSet->MultiSpline, orbitalSet->CudaMultiSpline);
+// 	    app_log() << "Successful copy.\n";
+// 	    // Destroy original CPU spline
+// 	    // HACK HACK HACK
+// 	    //destroy_Bspline (orbitalSet->MultiSpline);
+// 	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+// 	    orbitalSet->Linv_cuda.resize(9);
+// 	    orbitalSet->L_cuda.resize(9);
+// 	    for (int i=0; i<3; i++)
+// 	      for (int j=0; j<3; j++) {
+// 		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
+// 		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
+// 	      }
+// 	    orbitalSet->L_cuda    = L_host;
+// 	    orbitalSet->Linv_cuda = Linv_host;
+//	  }
 #endif
 	}
       }
@@ -501,26 +501,26 @@ namespace qmcplusplus {
 	  else
 	    ReadBands(spinSet, orbitalSet); 
 #ifdef QMC_CUDA
-	  if (useGPU) {
-	    app_log() << "Copying einspline orbitals to GPU.\n";
-	    create_multi_UBspline_3d_cuda (orbitalSet->MultiSpline,
-	    				   orbitalSet->CudaMultiSpline);
-	    app_log() << "Successful copy.\n";
-	    // Destroy original CPU spline
-	    // HACK HACK HACK
-	    //destroy_Bspline (orbitalSet->MultiSpline);
+// 	  if (useGPU) {
+// 	    app_log() << "Copying einspline orbitals to GPU.\n";
+// 	    create_multi_UBspline_3d_cuda (orbitalSet->MultiSpline,
+// 	    				   orbitalSet->CudaMultiSpline);
+// 	    app_log() << "Successful copy.\n";
+// 	    // Destroy original CPU spline
+// 	    // HACK HACK HACK
+// 	    //destroy_Bspline (orbitalSet->MultiSpline);
 
-	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
-	    orbitalSet->Linv_cuda.resize(9);
-	    orbitalSet->L_cuda.resize(9);
-	    for (int i=0; i<3; i++)
-	      for (int j=0; j<3; j++) {
-		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
-		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
-	      }
-	    orbitalSet->L_cuda    = L_host;
-	    orbitalSet->Linv_cuda = Linv_host;
-	  }
+// 	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+// 	    orbitalSet->Linv_cuda.resize(9);
+// 	    orbitalSet->L_cuda.resize(9);
+// 	    for (int i=0; i<3; i++)
+// 	      for (int j=0; j<3; j++) {
+// 		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
+// 		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
+// 	      }
+// 	    orbitalSet->L_cuda    = L_host;
+// 	    orbitalSet->Linv_cuda = Linv_host;
+// 	  }
 #endif
 	}
       }
@@ -585,7 +585,7 @@ namespace qmcplusplus {
 #ifdef QMC_CUDA
     if (useGPU) {
       app_log() << "Initializing GPU data structures.\n";
-      OrbitalSet->init_cuda();
+      OrbitalSet->initGPU();
     }
 #endif
     return OrbitalSet;

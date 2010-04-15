@@ -333,7 +333,7 @@ namespace qmcplusplus {
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
 
-    void evaluate (const ParticleSet& P, const PosType& r, vector<double> &psi);
+    //    void evaluate (const ParticleSet& P, const PosType& r, vector<double> &psi);
 #if !defined(QMC_COMPLEX)
     // This is the gradient of the orbitals w.r.t. the ion iat
     void evaluateGradSource (const ParticleSet &P, int first, int last, 
@@ -358,6 +358,8 @@ namespace qmcplusplus {
 		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
 		  ComplexValueMatrix_t& d2psi);
 #ifdef QMC_CUDA
+    void initGPU();
+
     // Vectorized evaluation functions
     void evaluate (vector<Walker_t*> &walkers, int iat,
 		   gpu::device_vector<CudaRealType*> &phi);
@@ -506,7 +508,7 @@ namespace qmcplusplus {
     void sort_electrons(vector<PosType> &pos);
 
   public:
-    void init_cuda();
+    void initGPU();
     //    void registerTimers();
 
     // Resize cuda objects

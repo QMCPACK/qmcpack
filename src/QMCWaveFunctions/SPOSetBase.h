@@ -198,8 +198,7 @@ namespace qmcplusplus {
     virtual void
       evaluate (const ParticleSet& P, const PosType& r, vector<RealType> &psi);
 
-
-    virtual void init_cuda() {  }
+    virtual void initGPU() {  }
 
     //////////////////////////////////////////
     // Walker-parallel vectorized functions //

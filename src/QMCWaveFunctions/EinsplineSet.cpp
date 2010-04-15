@@ -485,36 +485,38 @@ namespace qmcplusplus {
     }
     ValueTimer.stop();
   }
-  template<> void
-  EinsplineSetExtended<double>::evaluate
-  (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
-  {
-    ValueTimer.start();
-    PosType ru(PrimLattice.toUnit(r));
-    int image[OHMMS_DIM];
-    for (int i=0; i<OHMMS_DIM; i++) {
-      RealType img = std::floor(ru[i]);
-      ru[i] -= img;
-      image[i] = (int) img;
-    }
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, psi);
-    EinsplineTimer.stop();
-    int sign=0;
-    for (int i=0; i<OHMMS_DIM; i++) 
-      sign += HalfG[i]*image[i];
-    if (sign & 1) 
-      for (int j=0; j<psi.size(); j++)
-	psi[j] *= -1.0;
-    ValueTimer.stop();
-  }
 
-  template<> void
-  EinsplineSetExtended<complex<double> >::evaluate
-  (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
-  {
-    cerr << "Not Implemented.\n";
-  }
+  // template<> void
+  // EinsplineSetExtended<double>::evaluate
+  // (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
+  // {
+  //   ValueTimer.start();
+  //   PosType ru(PrimLattice.toUnit(r));
+  //   int image[OHMMS_DIM];
+  //   for (int i=0; i<OHMMS_DIM; i++) {
+  //     RealType img = std::floor(ru[i]);
+  //     ru[i] -= img;
+  //     image[i] = (int) img;
+  //   }
+  //   EinsplineTimer.start();
+  //   EinsplineMultiEval (MultiSpline, ru, psi);
+  //   EinsplineTimer.stop();
+  //   int sign=0;
+  //   for (int i=0; i<OHMMS_DIM; i++) 
+  //     sign += HalfG[i]*image[i];
+  //   if (sign & 1) 
+  //     for (int j=0; j<psi.size(); j++)
+  // 	psi[j] *= -1.0;
+  //   ValueTimer.stop();
+  // }
+
+
+  // template<> void
+  // EinsplineSetExtended<complex<double> >::evaluate
+  // (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
+  // {
+  //   cerr << "Not Implemented.\n";
+  // }
 
 
   // Value, gradient, and laplacian

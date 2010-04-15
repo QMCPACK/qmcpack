@@ -32,6 +32,38 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
 			 int num_splines, int num_walkers, int row_stride);
 
 namespace qmcplusplus {
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
+					     multi_UBspline_3d_s_cuda* &out)
+  { out = create_multi_UBspline_3d_s_cuda_conv (in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
+					     multi_UBspline_3d_d_cuda * &out)
+  { out = create_multi_UBspline_3d_d_cuda(in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_c_cuda* &out)
+  { out = create_multi_UBspline_3d_c_cuda_conv (in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_z_cuda * &out)
+  { out = create_multi_UBspline_3d_z_cuda(in); }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_d_cuda * &out)
+  { 
+    app_error() << "Attempted to convert complex CPU spline into a real "
+		<< " GPU spline.\n";
+    abort();
+  }
+
+  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
+					     multi_UBspline_3d_s_cuda * &out)
+  { 
+    app_error() << "Attempted to convert complex CPU spline into a real "
+		<< " GPU spline.\n";
+    abort();
+  }
+
     // Real evaluation functions
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
@@ -1634,8 +1666,55 @@ namespace qmcplusplus {
   }
 
   template<> void
-  EinsplineSetHybrid<double>::init_cuda()
+  EinsplineSetExtended<double>::initGPU()
   {
+    app_log() << "Copying einspline orbitals to GPU.\n";
+    create_multi_UBspline_3d_cuda 
+      (MultiSpline, CudaMultiSpline);
+    app_log() << "Successful copy.\n";
+    // Destroy original CPU spline
+    // HACK HACK HACK
+    //destroy_Bspline (MultiSpline);
+    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+    Linv_cuda.resize(9);
+    L_cuda.resize(9);
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++) {
+	L_host[i*3+j]    = (float)PrimLattice.R(i,j);
+	Linv_host[i*3+j] = (float)PrimLattice.G(i,j);
+      }
+    L_cuda    = L_host;
+    Linv_cuda = Linv_host;
+  }
+
+  template<> void
+  EinsplineSetExtended<complex<double> >::initGPU()
+  {
+    app_log() << "Copying einspline orbitals to GPU.\n";
+    create_multi_UBspline_3d_cuda 
+      (MultiSpline, CudaMultiSpline);
+    app_log() << "Successful copy.\n";
+    // Destroy original CPU spline
+    // HACK HACK HACK
+    //destroy_Bspline (MultiSpline);
+    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+    Linv_cuda.resize(9);
+    L_cuda.resize(9);
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++) {
+	L_host[i*3+j]    = (float)PrimLattice.R(i,j);
+	Linv_host[i*3+j] = (float)PrimLattice.G(i,j);
+      }
+    L_cuda    = L_host;
+    Linv_cuda = Linv_host;
+  }
+
+
+
+  template<> void
+  EinsplineSetHybrid<double>::initGPU()
+  {
+    EinsplineSetExtended<double>::initGPU();
     // Setup B-spline Acuda matrix in constant memory
     init_atomic_cuda();
 
@@ -1716,8 +1795,9 @@ namespace qmcplusplus {
   }
 
   template<> void
-  EinsplineSetHybrid<complex<double> >::init_cuda()
+  EinsplineSetHybrid<complex<double> >::initGPU()
   {
+    EinsplineSetExtended<complex<double> >::initGPU();
     // Setup B-spline Acuda matrix in constant memory
     init_atomic_cuda();
 

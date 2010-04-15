@@ -739,6 +739,7 @@ namespace qmcplusplus {
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     bool sortBands = true;
+    bool distribute = false;
     string sourceName;
     bool useGPU = false;
     attribs.add (H5FileName, "href");
@@ -749,6 +750,7 @@ namespace qmcplusplus {
     attribs.add (sourceName, "source");
     attribs.add (MeshFactor, "meshfactor");
     attribs.add (useGPU,     "gpu");    
+    attribs.add (distribute, "distribute");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
