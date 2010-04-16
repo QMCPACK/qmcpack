@@ -63,12 +63,9 @@ namespace qmcplusplus {
 #endif
 
 
-  extern std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
-  EinsplineSetBuilder::OrbitalMap;
-  extern std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet>
-  EinsplineSetBuilder::ExtendedMap_z;
-  extern std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet>
-  EinsplineSetBuilder::ExtendedMap_d;
+  std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
+  std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
+  std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
   bool
   EinsplineSetBuilder::ReadOrbitalInfo()
