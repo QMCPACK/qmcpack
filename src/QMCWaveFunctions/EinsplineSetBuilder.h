@@ -18,6 +18,7 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/EinsplineSet.h"
+#include "QMCWaveFunctions/EinsplineSetLocal.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 #include <fftw3.h>

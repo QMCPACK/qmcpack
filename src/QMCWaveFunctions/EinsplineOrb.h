@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign                   //
 //   Urbana, IL 61801                                           //
 //   e-mail: jnkim@ncsa.uiuc.edu                                //
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)             //
 //                                                              //
 // Supported by                                                 //
 //   National Center for Supercomputing Applications, UIUC      //
@@ -17,13 +16,10 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_ORB_H
 #define QMCPLUSPLUS_EINSPLINE_ORB_H
 
-extern "C"
-{
-#include <einspline/bspline.h>
-}
+#include <config.h>
+#include "QMCWaveFunctions/EinsplineWrapper.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
-#include "EinsplineWrapper.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -34,6 +30,7 @@ namespace qmcplusplus {
   };
   
   
+#if OHMMS_DIM==2
   template<>
   class EinsplineOrb<double,2> //: public QMCTraits
   {
@@ -134,6 +131,7 @@ namespace qmcplusplus {
   
   
   
+#elif OHMMS_DIM==3
   template<>
   class EinsplineOrb<double,3> //: public QMCTraits
   {
@@ -161,10 +159,10 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
-	  for (int i=0; i<3; i++) {
-	    assert (udiff[i] > -0.5);
-	    assert (udiff[i] < 0.5);
-	  }
+	  //for (int i=0; i<3; i++) {
+	  //  assert (udiff[i] > -0.5);
+	  //  assert (udiff[i] < 0.5);
+	  //}
 	  for (int i=0; i<3; i++)
 	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
@@ -398,10 +396,10 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
-	  for (int i=0; i<3; i++) {
-	    assert (udiff[i] > -0.5);
-	    assert (udiff[i] < 0.5);
-	  }
+	  //for (int i=0; i<3; i++) {
+	  //  assert (udiff[i] > -0.5);
+	  //  assert (udiff[i] < 0.5);
+	  //}
 	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  psi = (*Bspline)(udiff);
@@ -585,5 +583,6 @@ namespace qmcplusplus {
       Reflections = orb.Reflections;
     }
   };
+#endif
 }
 #endif

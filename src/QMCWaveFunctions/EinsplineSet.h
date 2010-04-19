@@ -19,8 +19,6 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include "Optimize/VarList.h"
-#include "QMCWaveFunctions/EinsplineOrb.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
@@ -89,44 +87,15 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
-    string Type();
-    EinsplineSet() :  
-      TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0)
+    inline string Type()
+    {
+      return "EinsplineSet";
+    }
+    EinsplineSet() :  TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0)
     {
       className = "EinsplineSet";
     }
   };
-
-  class EinsplineSetLocal : public EinsplineSet
-  {
-    friend class EinsplineSetBuilder;
-  protected:
-    /////////////////////
-    // Orbital storage //
-    /////////////////////
-    /// Store the orbital objects.  Using template class allows us to
-    /// avoid making separate real and complex versions of this class.
-    //std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
-    std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
-
-  public:
-    SPOSetBase* makeClone() const;
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, 
-		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
-		  ValueMatrix_t& d2psi);
-
-    void resetParameters(const opt_variables_type& active);
-
-    EinsplineSetLocal() 
-    {
-      className = "EinsplineSetLocal";
-    }
-  };
-
-
 
   ////////////////////////////////////////////////////////////////////
   // This is just a template trick to avoid template specialization //

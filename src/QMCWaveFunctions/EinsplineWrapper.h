@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign                   //
 //   Urbana, IL 61801                                           //
 //   e-mail: esler@uiuc.edu                                     //
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)             //
 //                                                              //
 // Supported by                                                 //
 //   National Center for Supercomputing Applications, UIUC      //
@@ -16,6 +15,7 @@
 #ifndef EINSPLINE_WRAPPER_H
 #define EINSPLINE_WRAPPER_H
 
+#include <config.h>
 #include <einspline/bspline.h>
 #include <einspline/nubspline.h>
 #include "OhmmsPETE/OhmmsArray.h"
@@ -24,6 +24,7 @@
 #include "OhmmsPETE/TinyVectorOps.h"	
 
 namespace qmcplusplus {
+#if   OHMMS_DIM==2
   ////////////////////////////////////////////////////////////
   //                         2D                             //
   ////////////////////////////////////////////////////////////
@@ -140,7 +141,7 @@ namespace qmcplusplus {
 			 Array<complex<double>,2> &data);
   };
 
-
+#elif   OHMMS_DIM==3
 
   ////////////////////////////////////////////////////////////
   //                         3D                             //
@@ -257,6 +258,7 @@ namespace qmcplusplus {
 			 BCtype_z xBC, BCtype_z yBC, BCtype_z zBC,
 			 Array<complex<double>,3> &data);
   };
+#endif
 
 }
 #endif

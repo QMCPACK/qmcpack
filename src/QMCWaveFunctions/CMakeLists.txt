@@ -91,6 +91,7 @@ ENDIF(QMC_CUDA)
   IF(HAVE_EINSPLINE)
     SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSet.cpp
+      EinsplineSetLocal.cpp
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
       EinsplineSetBuilderESHDF.cpp
