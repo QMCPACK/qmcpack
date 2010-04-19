@@ -55,6 +55,8 @@ namespace qmcplusplus
 
   string OrbitalBuilderBase::ionorb_tag="ionwf";
 
+  string OrbitalBuilderBase::backflow_tag="backflow";
+
   OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
       MPIObjectBase(psi.getCommunicator()),
       targetPtcl(p), targetPsi(psi), myNode(NULL)

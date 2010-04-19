@@ -40,6 +40,12 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
     SPOSetBase* makeClone() const;
 
   };
@@ -56,6 +62,12 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
     SPOSetBase* makeClone() const;
   };
 
@@ -70,6 +82,12 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
     SPOSetBase* makeClone() const;
   };
 
@@ -85,6 +103,12 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
     SPOSetBase* makeClone() const;
   };
 
@@ -99,6 +123,12 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
     SPOSetBase* makeClone() const;
   };
 #endif

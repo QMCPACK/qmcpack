@@ -41,6 +41,9 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
+                  HessMatrix_t& grad_grad_logdet);
 
     void resetParameters(const opt_variables_type& active);
 

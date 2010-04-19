@@ -129,6 +129,10 @@ namespace qmcplusplus {
 		   Vector<complex<double> > &phi,
 		   Vector<TinyVector<complex<double>,3> > &grad,
 		   Vector<complex<double> > &lapl);
+    void evaluate (TinyVector<double,3> r,
+                   Vector<complex<double> > &phi,
+                   Vector<TinyVector<complex<double>,3> > &grad,
+                   Vector<Tensor<complex<double>,3> > &hess);
     void evaluateFD (TinyVector<double,3> r,
 		     Vector<complex<double> > &phi,
 		     Vector<TinyVector<complex<double>,3> > &grad,
@@ -154,6 +158,11 @@ namespace qmcplusplus {
 		       Vector<TinyVector<complex<double>,3> > &grad,
 		       Vector<complex<double> > &lapl,
 		       int first=0);
+    void evaluateCore (TinyVector<double,3> r,
+                       Vector<complex<double> > &phi,
+                       Vector<TinyVector<complex<double>,3> > &grad,
+                       Vector<Tensor<complex<double>,3> > &hess,
+                       int first=0);
 
     friend class LAPWClass;
     MuffinTinClass() : RadialSplines(NULL),

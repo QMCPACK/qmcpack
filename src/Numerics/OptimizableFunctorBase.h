@@ -104,6 +104,11 @@ struct OptimizableFunctorBase
     {
       return false;
     }
+
+// mmorales: don't know how to solve a template problem for cusp correction, 
+//           so for now I do this 
+    virtual void setGridManager(bool willmanage) { }
+      
 };
 
 #endif

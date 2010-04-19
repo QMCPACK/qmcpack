@@ -22,7 +22,9 @@
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-
+#if QMC_BUILD_LEVEL>2
+#include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.h"
+#endif
 namespace qmcplusplus {
 
 
@@ -44,8 +46,8 @@ namespace qmcplusplus {
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions):
-      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0) 
+    MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false):
+      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp) 
       { 
         ClassName="MolecularBasisBuilder";
       }   
@@ -116,8 +118,16 @@ namespace qmcplusplus {
         string cname((const char*)(cur->name));
         if(cname.find("coeff") < cname.size()) 
         {
-          app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
-          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel);
+#if QMC_BUILD_LEVEL>2
+          if(cuspCorr) {
+            app_log() << "Creating LCOrbitalSetWithCorrection with the input coefficients" << endl;
+            lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel);
+          } else 
+#endif
+          {
+            app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
+            lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel);
+          }
         }
         cur=cur->next;
       }
@@ -140,6 +150,8 @@ namespace qmcplusplus {
     ThisBasisSetType* thisBasisSet;
     ///save AtomiBasisBuilder<RFB>*
     map<string,BasisSetBuilder*> aoBuilders;
+    ///apply cusp correction to molecular orbitals
+    bool cuspCorr;
   };
 }
 #endif

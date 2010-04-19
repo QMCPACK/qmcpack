@@ -45,6 +45,8 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
     typedef typename OrbitalSetTraits<T>::GradVector_t  GradVector_t;
     typedef typename OrbitalSetTraits<T>::GradMatrix_t  GradMatrix_t;
+    typedef typename OrbitalSetTraits<T>::HessVector_t  HessVector_t;
+    typedef typename OrbitalSetTraits<T>::HessMatrix_t  HessMatrix_t;
 
     ///size of the basis set
     IndexType BasisSetSize;
@@ -58,6 +60,8 @@ namespace qmcplusplus {
     GradVector_t  dPhi;
     ///d2phi[i] the laplacian of the i-th basis set 
     ValueVector_t d2Phi;
+    ///d2phi_full[i] the full hessian of the i-th basis set 
+    HessVector_t  grad_grad_Phi;
     ///container to store value, laplacian and gradient
     ValueMatrix_t Temp;
 
@@ -66,7 +70,7 @@ namespace qmcplusplus {
     ValueMatrix_t d2Y;
 
     ///default constructor
-    BasisSetBase():BasisSetSize(0), ActivePtcl(-1), Counter(0){ }
+    BasisSetBase():BasisSetSize(0), ActivePtcl(-1), Counter(0) { }
     ///virtual destructor
     virtual ~BasisSetBase() { }
     /** resize the container */
@@ -77,6 +81,7 @@ namespace qmcplusplus {
         Phi.resize(BasisSetSize);
         dPhi.resize(BasisSetSize);
         d2Phi.resize(BasisSetSize);
+        grad_grad_Phi.resize(BasisSetSize);
         Temp.resize(BasisSetSize,MAXINDEX);
 
         Y.resize(ntargets,BasisSetSize);
@@ -110,6 +115,7 @@ namespace qmcplusplus {
     ///reset the target particle set
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
+    virtual void evaluateWithHessian(const ParticleSet& P, int iat)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P, int iat) =0;
     virtual void evaluateForPtclMove(const ParticleSet& P, int iat) =0;

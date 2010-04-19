@@ -78,6 +78,8 @@ namespace qmcplusplus
       static std::string basisfunc_tag;
       /// the element name for an ion wavefunction
       static std::string ionorb_tag;
+      /// the element name for a backflow transformation
+      static std::string backflow_tag;
 
       //@}
 

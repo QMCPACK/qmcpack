@@ -20,7 +20,9 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#endif
 namespace qmcplusplus {
 
  /** derived class from OrbitalBuilderBase
@@ -54,6 +56,11 @@ namespace qmcplusplus {
     PtclPoolType& ptclPool;
     BasisSetFactory* myBasisSetFactory;
     SlaterDeterminant_t* slaterdet_0;
+    
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    bool UseBackflow;
+    BackflowTransformation *BFTrans;
+#endif
 
     /** process a determinant element
      * @param cur xml node

@@ -13,14 +13,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file LocalizedBasisSet.h
+/** @file CorrectingOrbitalBasisSet.h
  * @brief A derived class from BasisSetBase
  *
- * This is intended as a replacement for MolecularOrbitalBase and
- * any other localized basis set.
+ * This class calculates correcting orbitals (s-type NGO functions) 
+ * which are meant to go on top of a modified LCOrbitalSet 
+ * Used in cusp correction algorithms
  */
-#ifndef QMCPLUSPLUS_LOCALIZEDBASISSET_H
-#define QMCPLUSPLUS_LOCALIZEDBASISSET_H
+#ifndef QMCPLUSPLUS_CORRECTINGORBITALBASISSET_H
+#define QMCPLUSPLUS_CORRECTINGORBITALBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTable.h"
@@ -35,9 +36,7 @@ namespace qmcplusplus {
    * a set of localized orbitals associated with a center.
    */
   template<class COT>
-  struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type> {
-    typedef COT                     ThisCOT_t;
-    typedef typename COT::RadialOrbital_t    ThisRadialOrbital_t;
+  struct CorrectingOrbitalBasisSet: public BasisSetBase<typename COT::value_type> {
     typedef BasisSetBase<typename COT::value_type> BasisSetType;
     typedef typename BasisSetType::RealType      RealType;
     typedef typename BasisSetType::ValueType     ValueType;
@@ -54,7 +53,6 @@ namespace qmcplusplus {
     using BasisSetType::Phi;
     using BasisSetType::dPhi;
     using BasisSetType::d2Phi;
-    using BasisSetType::grad_grad_Phi;
     using BasisSetType::Y;
     using BasisSetType::dY;
     using BasisSetType::d2Y;
@@ -78,15 +76,9 @@ namespace qmcplusplus {
      */
     vector<COT*> LOBasis;
 
-    /** container of the unique pointers to the Atomic Orbitals 
-     *
-     * size of LOBasisSet = number  of unique centers
-     */
-    vector<COT*> LOBasisSet;
-
     /** distance table, e.g., ion-electron
      *
-     * Localized basis sets require a pair relationship between CenterSys 
+     * CorrectingOrbitalBasisSet basis sets require a pair relationship between CenterSys 
      * and the quantum particle set. 
      */
     const DistanceTableData* myTable;
@@ -95,26 +87,19 @@ namespace qmcplusplus {
      * @param ions ionic system
      * @param els electronic system
      */
-    LocalizedBasisSet(ParticleSet& ions, ParticleSet& els): CenterSys(ions), myTable(0){ 
-      myTable = DistanceTable::add(ions,els);
+    CorrectingOrbitalBasisSet(const DistanceTableData* tbl, ParticleSet &ions, int nEls): myTable(tbl), CenterSys(ions), NumTargets(nEls){ 
       NumCenters=CenterSys.getTotalNum();
-      NumTargets=els.getTotalNum();
       LOBasis.resize(NumCenters,0);
-      LOBasisSet.resize(CenterSys.getSpeciesSet().getTotalNum(),0);
       BasisOffset.resize(NumCenters+1);
     }
 
-    LocalizedBasisSet<COT>* makeClone() const
+    CorrectingOrbitalBasisSet<COT>* makeClone() const
     {
-      LocalizedBasisSet<COT>* myclone = new LocalizedBasisSet<COT>(*this);
-      for(int i=0; i<LOBasisSet.size(); ++i)
+      CorrectingOrbitalBasisSet<COT>* myclone = new CorrectingOrbitalBasisSet<COT>(*this);
+      for(int i=0; i<LOBasis.size(); ++i)
       {
-        COT* cc=LOBasisSet[i]->makeClone();
-        myclone->LOBasisSet[i]=cc;
-        for(int j=0; j<CenterSys.getTotalNum(); ++j)
-        {
-          if(CenterSys.GroupID[j]==i) myclone->LOBasis[j]=cc;
-        }
+        COT* cc=LOBasis[i]->makeClone();
+        myclone->LOBasis[i]=cc;
       }
       return myclone;
     }
@@ -128,12 +113,12 @@ namespace qmcplusplus {
       if(nbs == BasisSetSize) return;
 
       if(myTable ==0) {
-        app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << endl;
+        app_error() << "CorrectingOrbitalBasisSet cannot function without a distance table. Abort" << endl;
       }
 
       //reset the distance table for the atomic orbitals
-      for(int i=0; i<LOBasisSet.size(); i++) 
-        LOBasisSet[i]->setTable(myTable);
+      for(int i=0; i<LOBasis.size(); i++) 
+        LOBasis[i]->setTable(myTable);
       //evaluate the total basis dimension and offset for each center
       BasisOffset[0] = 0;
       for(int c=0; c<NumCenters; c++)
@@ -146,8 +131,8 @@ namespace qmcplusplus {
     void resetParameters(const opt_variables_type& active) 
     {
       //reset each unique basis functions
-      for(int i=0; i<LOBasisSet.size(); i++)
-        LOBasisSet[i]->resetParameters(active);
+      for(int i=0; i<LOBasis.size(); i++)
+        LOBasis[i]->resetParameters(active);
     }
     
     /** reset the distance table with a new target P
@@ -155,15 +140,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) 
     {
       myTable = DistanceTable::add(CenterSys,P);
-      for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->setTable(myTable);
-    }
-
-    inline void
-    evaluateWithHessian(const ParticleSet& P, int iat)
-    {
-      for(int c=0; c<NumCenters;c++)
-        LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
-      Counter++; // increment a conter
+      for(int i=0; i<LOBasis.size(); i++) LOBasis[i]->setTable(myTable);
     }
 
     inline void 
@@ -201,6 +178,12 @@ namespace qmcplusplus {
       ActivePtcl=iat;
     }
 
+    inline void 
+    evaluateWithHessian(const ParticleSet& P, int iat)
+    { 
+       APP_ABORT("CorrectingOrbitalBasisSet::evaluateWithHessian is not implemented.");
+    } 
+
     /** add a new set of Centered Atomic Orbitals
      * @param icenter the index of the center
      * @param aos a set of Centered Atomic Orbitals
@@ -208,18 +191,15 @@ namespace qmcplusplus {
     void add(int icenter, COT* aos) 
     {
       aos->setTable(myTable);
-      LOBasisSet[icenter]=aos;
-      for(int i=0; i<NumCenters; i++) {
-        if(CenterSys.GroupID[i] == icenter) LOBasis[i]=aos;
-      }
+      LOBasis[icenter]=aos;
     }
   };
 }
 #endif
 
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
+ * $RCSfile$   $Author: jnkim $
+ * $Revision: 3851 $   $Date: 2009-05-20 13:49:01 -0500 (Wed, 20 May 2009) $
+ * $Id: CorrectingOrbitalBasisSet.h 3851 2009-05-20 18:49:01Z jnkim $ 
  ***************************************************************************/
 

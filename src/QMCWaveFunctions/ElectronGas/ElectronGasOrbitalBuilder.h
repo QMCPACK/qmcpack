@@ -18,6 +18,9 @@
 
 #include <QMCWaveFunctions/OrbitalBuilderBase.h>
 #include <QMCWaveFunctions/SPOSetBase.h>
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#endif
 #include <config/stdlib/math.h>
 
 namespace qmcplusplus {
@@ -129,6 +132,42 @@ namespace qmcplusplus {
         evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
     }
 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet
+        , HessMatrix_t& grad_grad_logdet)
+    {
+      for(int i=0,iat=first; iat<last; i++,iat++) {
+        //evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
+        ValueType* psi=logdet[i];
+        GradType* dpsi=dlogdet[i];
+        HessType*  hess=grad_grad_logdet[i];  
+        psi[0]=1.0;
+        dpsi[0]=0.0;
+        hess[0]=0.0;
+        RealType coskr, sinkr;
+        for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
+        {  
+          int j2=j1+1;
+          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+          psi[j1]=coskr;
+          psi[j2]=sinkr;
+          dpsi[j1]=-sinkr*K[ik];
+          dpsi[j2]= coskr*K[ik];
+          for(int la=0; la<3; la++) {
+            (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
+            (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
+            for(int lb=+1; lb<3; lb++) {
+              (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
+              (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
+              (hess[j1])(lb,la)=(hess[j1])(la,lb);
+              (hess[j2])(lb,la)=(hess[j2])(la,lb);
+            }
+          }  
+        }
+      }
+    }
+
+
   };
 
   /** OrbitalBuilder for Slater determinants of electron-gas 
@@ -141,6 +180,11 @@ namespace qmcplusplus {
 
     ///implement vritual function
     bool put(xmlNodePtr cur);
+
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    bool UseBackflow;
+    BackflowTransformation *BFTrans;
+#endif
 
   private:
 

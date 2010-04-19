@@ -121,6 +121,8 @@ ENDIF(QMC_CUDA)
   IF(QMC_BUILD_LEVEL GREATER 2)
     SET(FERMION_SRCS ${FERMION_SRCS}
       AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+      Fermion/DiracDeterminantWithBackflow.cpp
+      Fermion/SlaterDetWithBackflow.cpp
       )
   ENDIF(QMC_BUILD_LEVEL GREATER 2)
     

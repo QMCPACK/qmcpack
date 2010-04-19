@@ -49,23 +49,26 @@ namespace qmcplusplus
     void add(SPOSetBasePtr sposet, const string& aname);
 
     ///add a new DiracDeterminant to the list of determinants
+    virtual
     void add(Determinant_t* det, int ispin);
 
-    void checkInVariables(opt_variables_type& active);
+    virtual void checkInVariables(opt_variables_type& active);
 
-    void checkOutVariables(const opt_variables_type& active);
+    virtual void checkOutVariables(const opt_variables_type& active);
 
     ///reset all the Dirac determinants, Optimizable is true
-    void resetParameters(const opt_variables_type& optVariables);
+    virtual void resetParameters(const opt_variables_type& optVariables);
 
     void reportStatus(ostream& os);
 
     void resetTargetParticleSet(ParticleSet& P);
 
+    virtual
     ValueType evaluate(ParticleSet& P
           ,ParticleSet::ParticleGradient_t& G
           ,ParticleSet::ParticleLaplacian_t& L);
 
+    virtual
     RealType evaluateLog(ParticleSet& P
           ,ParticleSet::ParticleGradient_t& G
           ,ParticleSet::ParticleLaplacian_t& L);
@@ -82,13 +85,25 @@ namespace qmcplusplus
       return Dets[i]->cols();
     }
 
+    virtual
     RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+
+    virtual
     RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+
+    virtual
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
+    virtual
     void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
+    virtual
     void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
+    virtual
     RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
+    virtual
     inline ValueType ratio(ParticleSet& P, int iat,
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL)
@@ -96,26 +111,31 @@ namespace qmcplusplus
       return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
     }
 
+    virtual
     inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
     }
 
+    virtual
     inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       return Dets[DetID[iat]]->alternateRatioGrad(P,iat,grad_iat);
     }
 
+    virtual
     GradType evalGrad(ParticleSet& P, int iat)
     {
       return Dets[DetID[iat]]->evalGrad(P,iat);
     }
 
+    virtual
     GradType alternateEvalGrad(ParticleSet& P, int iat)
     {
       return Dets[DetID[iat]]->alternateEvalGrad(P,iat);
     }
 
+    virtual
     GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
     {
       GradType G = GradType();
@@ -124,6 +144,7 @@ namespace qmcplusplus
       return G;
     }
 
+    virtual
     GradType evalGradSource (ParticleSet& P, ParticleSet& src, int iat,
         TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
         TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad) 
@@ -134,6 +155,7 @@ namespace qmcplusplus
       return G; 
     }
 
+    virtual
     inline ValueType logRatio(ParticleSet& P, int iat,
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL)
@@ -159,16 +181,19 @@ namespace qmcplusplus
       return Dets[DetID[iat]]->getAlternatePhaseDiff();
     }
 
+    virtual
     inline void acceptMove(ParticleSet& P, int iat)
     {
       Dets[DetID[iat]]->acceptMove(P,iat);
     }
 
+    virtual
     inline ValueType ratio(ParticleSet& P, int iat)
     {
       return Dets[DetID[iat]]->ratio(P,iat);
     }
 
+    virtual
     inline ValueType alternateRatio(ParticleSet& P)
     {
       ValueType v(1.0);
@@ -176,11 +201,13 @@ namespace qmcplusplus
       return v;
     }
 
+    virtual
     inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
     {
       for(int i=0; i<Dets.size(); ++i) Dets[i]->alternateGrad(G);
     }
 
+    virtual
     void update(ParticleSet& P,
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL,
@@ -189,13 +216,16 @@ namespace qmcplusplus
       return Dets[DetID[iat]]->update(P,dG,dL,iat);
     }
 
+    virtual
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
+    virtual
     SPOSetBasePtr getPhi(int i=0)
     {
       return Dets[i]->getPhi();
     }
 
+    virtual
     void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
 

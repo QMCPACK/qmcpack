@@ -86,6 +86,20 @@ namespace qmcplusplus
           Phi[m]->evaluate(P.R[iat],i,logdet,dlogdet,d2logdet);
     }
 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of GroupedOrbitalSet::evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
+
   };
 }
 #endif

@@ -207,6 +207,7 @@ namespace qmcplusplus
     ValueType logpsi = Psi.evaluateLog(W);
     RealType eloc=H.evaluate(W);
 
+    app_log() << "  Logpsi: " <<logpsi  << endl;
     app_log() << "  HamTest " << "  Total " <<  eloc << endl;
     for (int i=0; i<H.sizeOfObservables(); i++)
       app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;

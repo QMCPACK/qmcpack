@@ -19,6 +19,10 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
+#endif
 
 namespace qmcplusplus
   {
@@ -39,7 +43,11 @@ namespace qmcplusplus
   }
 
   ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+      OrbitalBuilderBase(els,psi),UseBackflow(false),BFTrans(0)
+#else
       OrbitalBuilderBase(els,psi)
+#endif
   {
   }
 
@@ -56,6 +64,26 @@ namespace qmcplusplus
     aAttrib.add(rntype,"primary");
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
+
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    xmlNodePtr curRoot=cur;
+    string cname;
+    cur = curRoot->children;
+    while (cur != NULL)//check the basis set
+    {
+      getNodeName(cname,cur);
+      if(cname == backflow_tag) {
+        app_log() <<"Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
+
+// FIX FIX FIX !!!
+        PtclPoolType dummy; 
+        UseBackflow=true;
+        if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,dummy);
+        BFTrans->put(cur);     
+      }
+      cur = cur->next; 
+    }
+#endif
 
     typedef SlaterDet::Determinant_t Det_t;
     typedef SlaterDet SlaterDeterminant_t;
@@ -92,7 +120,13 @@ namespace qmcplusplus
 
 
     //create a Slater determinant
-    SlaterDeterminant_t *sdet  = new SlaterDeterminant_t(targetPtcl);
+    SlaterDeterminant_t *sdet;
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    if(UseBackflow)
+      sdet = new SlaterDetWithBackflow(targetPtcl,BFTrans);
+    else  
+#endif
+      sdet  = new SlaterDeterminant_t(targetPtcl);
 
     //add SPOSets
     sdet->add(psiu,"u");
@@ -100,6 +134,11 @@ namespace qmcplusplus
 
     if (rntype>0)
       {
+         
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+        if(UseBackflow) APP_ABORT("RN with Backflow not implemented. \n"); 
+#endif
+
         if (rntype==1) app_log()<<" Using determinant with eps="<<bosonic_eps<<endl;
         else app_log()<<" Using alternate determinant with eps="<<bosonic_eps<<endl;
         //create up determinant
@@ -124,18 +163,38 @@ namespace qmcplusplus
       }
     else
       {
-        //create up determinant
-        Det_t *updet = new Det_t(psiu);
-        updet->set(0,nup);
+        Det_t *updet, *downdet;
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+        if(UseBackflow) {
+          //create up determinant
+          updet = new DiracDeterminantWithBackflow(psiu,BFTrans,0);
+          updet->set(0,nup);
 
-        //create down determinant
-        Det_t *downdet = new Det_t(psid);
-        downdet->set(nup,nup);
+          //create down determinant
+          downdet = new DiracDeterminantWithBackflow(psid,BFTrans,nup);
+          downdet->set(nup,nup);
+        } else 
+#endif
+        {
 
+          //create up determinant
+          updet = new Det_t(psiu);
+          updet->set(0,nup);
+
+          //create down determinant
+          downdet = new Det_t(psid);
+          downdet->set(nup,nup);
+        }
         sdet->add(updet,0);
         sdet->add(downdet,1);
       }
 
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    // change DistanceTables if using backflow
+    if(UseBackflow)   {
+       sdet->resetTargetParticleSet(BFTrans->QP);
+    }
+#endif
 
     //add Slater determinant to targetPsi
     targetPsi.addOrbital(sdet,"SlaterDet");

@@ -37,10 +37,13 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<value_type>::IndexType     IndexType;
     typedef typename OrbitalSetTraits<value_type>::PosType       PosType;
     typedef typename OrbitalSetTraits<value_type>::GradType      GradType;
+    typedef typename OrbitalSetTraits<value_type>::HessType      HessType;
     typedef typename OrbitalSetTraits<value_type>::ValueVector_t ValueVector_t;
     typedef typename OrbitalSetTraits<value_type>::ValueMatrix_t ValueMatrix_t;
     typedef typename OrbitalSetTraits<value_type>::GradVector_t  GradVector_t;
     typedef typename OrbitalSetTraits<value_type>::GradMatrix_t  GradMatrix_t;
+    typedef typename OrbitalSetTraits<value_type>::HessVector_t  HessVector_t;
+    typedef typename OrbitalSetTraits<value_type>::HessMatrix_t  HessMatrix_t;
     typedef SphericalTensor<RealType,PosType>                    SphericalHarmonics_t;
 
     ///size of the basis set
@@ -151,6 +154,49 @@ namespace qmcplusplus {
         psi[offset]  = ang*rnl.Y;
         dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
 	d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+    inline void
+    evaluateForWalkerMove(int c, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_Phi) {
+      int nn = myTable->M[c]+iat;
+      RealType r(myTable->r(nn));
+      RealType rinv(myTable->rinv(nn));
+      PosType  dr(myTable->dr(nn));
+
+      Ylm.evaluateWithHessian(dr);
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit);//NL[ib];
+        int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        ValueType ang(Ylm.getYlm(lm));
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(Ylm.getGradYlm(lm));
+        HessType hess(Ylm.getHessYlm(lm));
+        psi[offset]  = ang*rnl.Y;
+        dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
+// sloppy for now
+        RealType temp1=rnl.d2Y*ang*rinv*rinv;
+        RealType temp2=drnloverr*ang*rinv*rinv;
+        for(int i=0; i<3; i++) {
+          grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr(i)*dr(i) 
+                    + drnloverr*ang + rnl.Y*hess(i,i)
+                    + 2*drnloverr*dr(i)*gr_ang(i);
+          for(int j=i+1; j<3; j++) {
+            grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr(i)*dr(j)
+                    + rnl.Y*hess(i,j)
+                    + drnloverr*(dr(i)*gr_ang(j) + dr(j)*gr_ang(i));
+            grad_grad_Phi[offset](j,i) = grad_grad_Phi[offset](i,j);
+          }
+        }
+	//d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
         ++nlit; ++lmit;++offset;
       }
     }

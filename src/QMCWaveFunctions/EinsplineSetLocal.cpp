@@ -133,6 +133,48 @@ namespace qmcplusplus {
     }
   }
 
+  void
+  EinsplineSetLocal::evaluate_notranspose (const ParticleSet& P, int first, int last,
+                               ValueMatrix_t& vals, GradMatrix_t& grads,
+                               HessMatrix_t& grad_grad_psi)
+  {
+    for(int iat=first,i=0; iat<last; iat++,i++) {
+      PosType r (P.R[iat]);
+      PosType ru(PrimLattice.toUnit(r));
+      ru[0] -= std::floor (ru[0]);
+      ru[1] -= std::floor (ru[1]);
+      ru[2] -= std::floor (ru[2]);
+      complex<double> val;
+      TinyVector<complex<double>,3> gu;
+      Tensor<complex<double>,3> hess;
+      complex<double> eye (0.0, 1.0);
+      for(int j=0; j<OrbitalSetSize; j++) {
+        complex<double> u;
+        TinyVector<complex<double>,3> gradu;
+        Tensor<complex<double>,3> tmphs,hs;
+
+        Orbitals[j]->evaluate(ru, val, gu, hess);
+        u  = val;
+        gradu = dot(PrimLattice.G, gu);
+// FIX FIX FIX: store transpose(PrimLattice.G) to avoid recalculation
+        tmphs = dot(transpose(PrimLattice.G),hess);
+        hs = dot(tmphs,PrimLattice.G);
+
+        PosType k = Orbitals[j]->kVec;
+        TinyVector<complex<double>,3> ck;
+        ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
+        double s,c;
+        double phase = -dot(r, k);
+        sincos (phase, &s, &c);
+        complex<double> e_mikr (c,s);
+        convert(e_mikr * u, vals(i,j));
+        convert(e_mikr*(-eye*u*ck + gradu),grads(i,j));
+        convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));
+      }
+    }
+  }
+
+
 
   SPOSetBase*
   EinsplineSetLocal::makeClone() const 

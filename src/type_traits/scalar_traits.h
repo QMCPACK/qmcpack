@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_SCLAR_TRAITS_H
 #include <complex>
 #include <OhmmsPETE/OhmmsMatrix.h>
+#include <OhmmsPETE/Tensor.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/TinyVector.h>
 namespace qmcplusplus {
@@ -96,6 +97,13 @@ namespace qmcplusplus {
   /** specialization for a vector */
   template<typename T1, typename T2>
     inline void convert(const Matrix<T1>& in, Matrix<T2>& out)
+    {
+      convert(in.data(),out.data(),in.size());
+    }
+
+  /** specialization for a vector */
+  template<typename T1, typename T2>
+    inline void convert(const Tensor<T1,3>& in, Tensor<T2,3>& out)
     {
       convert(in.data(),out.data(),in.size());
     }

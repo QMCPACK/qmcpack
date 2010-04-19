@@ -90,7 +90,7 @@ namespace qmcplusplus
         Phi->checkOutVariables(active);
       }
 
-      virtual void resetParameters(const opt_variables_type& active)
+      void resetParameters(const opt_variables_type& active)
       {
         Phi->resetParameters(active);
       }
@@ -182,11 +182,11 @@ namespace qmcplusplus
                           ParticleSet::ParticleLaplacian_t& dL,
                           int iat);
 
-      RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+      virtual RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 
       ///evaluate log of determinant for a particle set: should not be called
-      RealType
+      virtual RealType
       evaluateLog(ParticleSet& P,
                   ParticleSet::ParticleGradient_t& G,
                   ParticleSet::ParticleLaplacian_t& L) ;

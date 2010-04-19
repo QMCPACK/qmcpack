@@ -51,6 +51,7 @@ namespace qmcplusplus {
     using BasisSetType::Phi;
     using BasisSetType::dPhi;
     using BasisSetType::d2Phi;
+    using BasisSetType::grad_grad_Phi;
     using BasisSetType::Y;
     using BasisSetType::dY;
     using BasisSetType::d2Y;
@@ -186,6 +187,12 @@ namespace qmcplusplus {
       myTable = DistanceTable::add(CenterRef,P);
       for(int ig=0; ig<NumGroups; ig++)
         if(LOBasisSet[ig]) LOBasisSet[ig]->myO->setTable(myTable);
+    }
+
+    inline void
+    evaluateWithHessian(const ParticleSet& P, int iat)
+    {
+       APP_ABORT("SparseLocalizsedBasisSet::evaluateWithHessian has not been implemented. \n");
     }
 
     inline void 

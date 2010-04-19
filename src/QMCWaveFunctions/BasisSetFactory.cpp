@@ -63,8 +63,10 @@ namespace qmcplusplus {
     string typeOpt("MolecularOrbital");
     string keyOpt("NMO"); //numerical Molecular Orbital
     string transformOpt("yes"); //numerical Molecular Orbital
+    string cuspC("no");  // cusp correction
     OhmmsAttributeSet aAttrib;
     aAttrib.add(sourceOpt,"source");
+    aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(typeOpt,"type");
     aAttrib.add(keyOpt,"keyword"); aAttrib.add(keyOpt,"key");
     aAttrib.add(transformOpt,"transform");
@@ -98,10 +100,18 @@ namespace qmcplusplus {
       else 
         ions=(*pit).second; 
 
-      if(transformOpt == "yes") 
-        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions);
-      else 
+      if(transformOpt == "yes") { 
+#if QMC_BUILD_LEVEL>2
+        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes");
+#else
+        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
+#endif
+      } else 
       {
+#if QMC_BUILD_LEVEL>2
+        if(cuspC == "yes")
+           app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
+#endif
         if(keyOpt == "GTO") 
           bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
         else if(keyOpt == "STO") 

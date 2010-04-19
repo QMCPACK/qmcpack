@@ -13,22 +13,34 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
-#define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
+#ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSETWITHCORRECTION_TEMP_H
+#define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSETWITHCORRECTION_TEMP_H
 
+#include <vector>
+#include <cstdlib>
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/Communicate.h"
+#include "QMCWaveFunctions/Experimental/CorrectingOrbitalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "QMCWaveFunctions/Experimental/CuspCorr.h"
 
 namespace qmcplusplus {
 
+// mmorales:
+/* A class designed for cusp corrected LCAO-type molecular orbitals.
+ * It is basically a copy of LCOrbitalSet with a few minor modifications.
+ */
+
   /** decalaration of generic class to handle a linear-combination of basis function*/
   template<class BS, bool IDENTITY>
-  class LCOrbitalSet: public SPOSetBase {
+  class LCOrbitalSetWithCorrection: public SPOSetBase {
   };
 
   template<class BS>
-  class LCOrbitalSet<BS,true>: public SPOSetBase {
+  class LCOrbitalSetWithCorrection<BS,true>: public SPOSetBase {
 
   public:
 
@@ -41,9 +53,9 @@ namespace qmcplusplus {
 
     /** constructor
      * @param bs pointer to the BasisSet
-     * @param id identifier of this LCOrbitalSet
+     * @param id identifier of thisLCOrbitalSetWithCorrection 
      */
-    LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl) 
+    LCOrbitalSetWithCorrection(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl) 
     {
       if(bs) setBasisSet(bs);
     }
@@ -52,11 +64,11 @@ namespace qmcplusplus {
      *
      * BasisSet is deleted by the object with ID == 0
      */
-    ~LCOrbitalSet() {}
+    ~LCOrbitalSetWithCorrection() {}
 
     SPOSetBase* makeClone() const 
     {
-      LCOrbitalSet<BS,true>* myclone = new LCOrbitalSet<BS,true>(*this);
+      LCOrbitalSetWithCorrection<BS,true>* myclone = new LCOrbitalSetWithCorrection<BS,true>(*this);
       myclone->myBasisSet = myBasisSet->makeClone();
       return myclone;
     }
@@ -108,6 +120,20 @@ namespace qmcplusplus {
       for(int j=0; j<OrbitalSetSize; j++) d2psi[j]=myBasisSet->d2Phi[j];
     }
 
+    ///** evaluate everything for the walker move
+    // *
+    // * Using gemm can improve the performance for a larger problem
+    // */
+    //void evaluate(const ParticleSet& P, int first, int last,
+    //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+    //  for(int i=0, iat=first; iat<last; i++,iat++){
+    //    myBasisSet->evaluateForWalkerMove(P,iat);
+    //    for(int j=0; j<OrbitalSetSize; j++) logdet(j,i)=myBasisSet->Phi[j];
+    //    for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
+    //    for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
+    //  }
+    //}
+
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
     {
@@ -120,41 +146,59 @@ namespace qmcplusplus {
       }
     }
 
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+    {
+       APP_ABORT("LCOrbitalSet:evaluate() not implemented yet. \n");
+    }
+
     void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
     {
-      APP_ABORT("Need specialization of LCOrbitalSet<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
+      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
     }
+
 
   };
 
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
    *
-   * LCOrbitalSet stands for (L)inear(C)ombinationOrbitals
+   * LCOrbitalSetWithCorrection stands for (L)inear(C)ombinationOrbitals wit correction
    * Any single-particle orbital \f$ \psi_j \f$ that can be represented by
    * \f[
-   * \psi_j ({\bf r}_i) = \sum_k C_{jk} \phi_{k}({\bf r}_i),
+   * \psi_j ({\bf r}_i) = \sum_k C_{jk} \phi_{k}({\bf r}_i) + \sum_k' C'_{jk'} \phi^{'}_{k'}({\bf r}_i),
    * \f]
-   * where \f$ \phi_{k} \f$ is the k-th basis.
+   * where \f$ \phi_{k} \f$ is the k-th basis and \f$ \phi^{'}_{k'} \f$ is the k'-th basis which contains all corrected sperically symmetric functions.
    * A templated version is LCOrbitals.
    */
   template<class BS>
-  class LCOrbitalSet<BS,false>: public SPOSetBase {
+  class LCOrbitalSetWithCorrection<BS,false>: public SPOSetBase {
 
   public:
+
+//    typedef typename BS::ThisCOT_t oldCOT;
+    typedef typename NGOBuilder::CenteredOrbitalType COT;
+    typedef typename NGOBuilder::GridType GridType_;
 
     ///level of printing
     int ReportLevel;
     ///pointer to the basis set
     BS* myBasisSet;
+    CorrectingOrbitalBasisSet<COT>* corrBasisSet;
+
+    ///target ParticleSet
+    ParticleSet* targetPtcl;
+    ///source ParticleSet
+    ParticleSet* sourcePtcl;
 
     ValueMatrix_t Temp;
     ValueMatrix_t Tempv;
     /** constructor
      * @param bs pointer to the BasisSet
-     * @param id identifier of this LCOrbitalSet
+     * @param id identifier of thisLCOrbitalSetWithCorrection 
      */
-    LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl) {
+    LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc) {
+// call APP_ABORT if els==0, ions==0
       if(bs) setBasisSet(bs);
     }
 
@@ -162,12 +206,13 @@ namespace qmcplusplus {
      *
      * BasisSet is deleted by the object with ID == 0
      */
-    ~LCOrbitalSet() {}
+    ~LCOrbitalSetWithCorrection() {}
 
     SPOSetBase* makeClone() const 
     {
-      LCOrbitalSet<BS,false>* myclone = new LCOrbitalSet<BS,false>(*this);
+      LCOrbitalSetWithCorrection<BS,false>* myclone = new LCOrbitalSetWithCorrection<BS,false>(*this);
       myclone->myBasisSet = myBasisSet->makeClone();
+      myclone->corrBasisSet = corrBasisSet->makeClone();
       return myclone;
     }
 
@@ -206,8 +251,13 @@ namespace qmcplusplus {
     inline void 
     evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) {
       myBasisSet->evaluateForPtclMove(P,iat);
-      for(int j=0 ; j<OrbitalSetSize; j++) 
+      corrBasisSet->evaluateForPtclMove(P,iat);
+      int numCenters=corrBasisSet->NumCenters; 
+      for(int j=0 ; j<OrbitalSetSize; j++) { 
         psi[j] = dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
+        for(int k=0 ; k<numCenters; k++)
+          psi[j] += corrBasisSet->Phi[k*OrbitalSetSize+j];
+      }
       //overhead of blas::gemv is big
       //MatrixOperators::product(C,myBasisSet->Phi,psi.data());
       //overhead of blas::dot is too big, better to use the inline function
@@ -219,8 +269,10 @@ namespace qmcplusplus {
     evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
       myBasisSet->evaluateAllForPtclMove(P,iat);
+      corrBasisSet->evaluateAllForPtclMove(P,iat);
       //optimal on tungsten
       const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters; 
       const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
       const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
@@ -236,6 +288,11 @@ namespace qmcplusplus {
           //d2res += *cptr* (*d2ptr++);
           //dres += *cptr* (*dptr++);
         }
+        for(int k=0 ; k<numCenters; k++) {
+          res += corrBasisSet->Phi[k*OrbitalSetSize+j];
+          d2res += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+          dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+        } 
         psi[j]=res; dpsi[j]=dres; d2psi[j]=d2res;
       }
       //blasI is not too good
@@ -250,58 +307,104 @@ namespace qmcplusplus {
 
     }
 
+    /** evaluate everything for the walker move
+     *
+     * Using gemm can improve the performance for a larger problem
+     */
+//    void evaluate(const ParticleSet& P, int first, int last,
+//        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+//      //unroll myself: rely on the compilers
+//      //optimal on xeon
+//#pragma ivdep
+//      for(int i=0, iat=first; iat<last; i++,iat++){
+//        myBasisSet->evaluateForWalkerMove(P,iat);
+//        const ValueType* restrict cptr=C.data();
+//        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+//        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+//        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+//        for(int j=0; j<OrbitalSetSize; j++) {
+//          register ValueType res=0.0, d2res=0.0;
+//          register GradType dres;
+//          for(int b=0; b<BasisSetSize; b++,cptr++) {
+//            res += *cptr*pptr[b];
+//            d2res += *cptr*d2ptr[b];
+//            dres += *cptr*dptr[b];
+//          }
+//          logdet(j,i)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
+//        }
+//      }
+//    }
+
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
     {
       const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters; 
 #pragma ivdep
       for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
         myBasisSet->evaluateForWalkerMove(P,iat);
+        corrBasisSet->evaluateForWalkerMove(P,iat);
         MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
         MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
         const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
         for(int j=0,jk=0; j<OrbitalSetSize; j++) 
         {
           register GradType dres;
-          for(int b=0; b<BasisSetSize; ++b) dres +=  cptr[jk++]*dptr[b];
-          dlogdet(ij)=dres;
-          ++ij;
-        }
-      }
-    }
-
-    void evaluate_notranspose(const ParticleSet& P, int first, int last,
-        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
-    {
-      const ValueType* restrict cptr=C.data();
-#pragma ivdep
-      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
-        myBasisSet->evaluateWithHessian(P,iat);
-        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
-        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-        const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
-        for(int j=0,jk=0; j<OrbitalSetSize; j++)
-        {
-          register GradType dres;
-          register HessType d2res;
-          for(int b=0; b<BasisSetSize; ++b) {
-             dres +=  cptr[jk]*dptr[b];
-             d2res +=  cptr[jk++]*d2ptr[b];
+          for(int k=0 ; k<numCenters; k++) 
+          {
+            logdet(i,j) += corrBasisSet->Phi[k*OrbitalSetSize+j]; 
+            d2logdet(i,j) += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+            dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+          }
+          for(int b=0; b<BasisSetSize; ++b) 
+          {
+            dres +=  cptr[jk++]*dptr[b];
           }
           dlogdet(ij)=dres;
-          grad_grad_logdet(ij)=d2res;
           ++ij;
         }
       }
+
     }
 
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+    {
+       evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
+       MatrixOperators::transpose(logdet);
+    }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
+
+    LCOrbitalSet<BS,false>* clone2LCOrbitalSet();
+
+    bool transformSPOSet();
+
+  private:
+
+    BS* extractHighYLM(vector<bool> &rmv);
+    LCOrbitalSet<BS,false>* originalSPOSet; 
+    double Rcut;
+    vector<double> Z;
+
+    void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
+
   };
+
 }
+
+#include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.cpp"
+
 #endif
 
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
+ * $RCSfile$   $Author: jeongnim.kim $
+ * $Revision: 4351 $   $Date: 2009-11-01 15:40:52 -0600 (Sun, 01 Nov 2009) $
+ * $Id: LCOrbitalSetWithCorrection.h 4351 2010-01-11 21:40:52Z jeongnim.kim $ 
  ***************************************************************************/
 

@@ -83,6 +83,9 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
+                  HessMatrix_t& grad_grad_logdet);
 
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
@@ -242,6 +245,7 @@ namespace qmcplusplus {
     // Temporary storage used when blending functions        
     StorageValueVector_t BlendValueVector, BlendLaplVector;   
     StorageGradVector_t BlendGradVector;
+    StorageHessVector_t  BlendHessVector;
         
     // True if we should unpack this orbital into two copies
     vector<bool>         MakeTwoCopies;
@@ -301,6 +305,9 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
+                  RealHessMatrix_t& grad_grad_psi);
 
     //    void evaluate (const ParticleSet& P, const PosType& r, vector<double> &psi);
 #if !defined(QMC_COMPLEX)
@@ -326,6 +333,9 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
 		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
 		  ComplexValueMatrix_t& d2psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
+                  ComplexHessMatrix_t& grad_grad_psi);
 #ifdef QMC_CUDA
     void initGPU();
 

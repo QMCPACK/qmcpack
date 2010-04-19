@@ -47,6 +47,8 @@ namespace qmcplusplus {
     typedef Vector<TinyVector<double,OHMMS_DIM> > RealGradVector_t;
     typedef Vector<complex<double> >              ComplexValueVector_t;
     typedef Vector<TinyVector<complex<double>,OHMMS_DIM> > ComplexGradVector_t;
+    typedef Vector<Tensor<double,OHMMS_DIM> >     RealHessVector_t;
+    typedef Vector<Tensor<complex<double>,OHMMS_DIM> >  ComplexHessVector_t;
     typedef typename AtomicOrbitalTraits<StorageType>::SplineType SplineType;
 
   private:
@@ -111,10 +113,16 @@ namespace qmcplusplus {
     inline bool evaluate (PosType r, ComplexValueVector_t &val,
 			  ComplexGradVector_t &grad,
 			  ComplexValueVector_t &lapl);
+    inline bool evaluate (PosType r, ComplexValueVector_t &val,
+			  ComplexGradVector_t &grad,
+			  ComplexHessVector_t &lapl);
     inline bool evaluate (PosType r, RealValueVector_t &vals);
     inline bool evaluate (PosType r, RealValueVector_t &val,
 			  RealGradVector_t &grad,
 			  RealValueVector_t &lapl);
+    inline bool evaluate (PosType r, RealValueVector_t &val,
+                          RealGradVector_t &grad,
+                          RealHessVector_t &lapl);
 
     
     AtomicOrbital() : RadialSpline(NULL), 
@@ -247,6 +255,16 @@ namespace qmcplusplus {
     return true;
   }
 
+  template<typename StorageType> inline bool
+  AtomicOrbital<StorageType>::evaluate (PosType r,
+                                        RealValueVector_t &vals,
+                                        RealGradVector_t  &grads,
+                                        RealHessVector_t &hess)
+  {
+    APP_ABORT(" AtomicOrbital<StorageType>::evaluate not implemented for Hess. \n"); 
+    return true; 
+  }
+
 
   template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, 
@@ -360,7 +378,15 @@ namespace qmcplusplus {
     return true;
   }
 
-
+  template<typename StorageType> inline bool
+  AtomicOrbital<StorageType>::evaluate (PosType r,
+                                        ComplexValueVector_t &vals,
+                                        ComplexGradVector_t  &grads,
+                                        ComplexHessVector_t &hess)
+  {
+    APP_ABORT(" AtomicOrbital<StorageType>::evaluate not implemented for Hess. \n");
+    return true; 
+  }
 
   template<typename StorageType> inline bool
   AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals,

@@ -165,8 +165,14 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
+    void evaluate(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
+
+    virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
 
     virtual void evaluateGradSource (const ParticleSet &P, int first, int last
         , const ParticleSet &source, int iat_src, GradMatrix_t &gradphi);
@@ -187,6 +193,10 @@ namespace qmcplusplus {
      */
     virtual SPOSetBase* makeClone() const;
 
+    virtual bool transformSPOSet()
+    {
+      return true;
+    }
 
 #ifdef QMC_CUDA
 

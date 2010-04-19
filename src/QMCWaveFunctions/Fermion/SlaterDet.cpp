@@ -70,17 +70,21 @@ namespace qmcplusplus {
 
   void SlaterDet::checkInVariables(opt_variables_type& active)
   {
+    if(Optimizable) 
+      for(int i=0; i<Dets.size(); i++) Dets[i]->checkInVariables(active);
   }
 
   void SlaterDet::checkOutVariables(const opt_variables_type& active)
   {
+    if(Optimizable) 
+      for(int i=0; i<Dets.size(); i++) Dets[i]->checkOutVariables(active);
   }
 
   ///reset all the Dirac determinants, Optimizable is true
   void SlaterDet::resetParameters(const opt_variables_type& active) 
   {  
-    //if(Optimizable) 
-    //  for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
+    if(Optimizable) 
+      for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
   }
 
   void SlaterDet::reportStatus(ostream& os)

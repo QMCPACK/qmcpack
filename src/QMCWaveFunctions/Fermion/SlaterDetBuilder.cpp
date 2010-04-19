@@ -32,6 +32,11 @@
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
+#endif
+
 
 namespace qmcplusplus
 {
@@ -42,6 +47,10 @@ namespace qmcplusplus
       , myBasisSetFactory(0), slaterdet_0(0)
   {
     ClassName="SlaterDetBuilder";
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    BFTrans=0;
+    UseBackflow=false;
+#endif
   }
   SlaterDetBuilder::~SlaterDetBuilder()
   {
@@ -69,6 +78,7 @@ namespace qmcplusplus
 
     ///save the current node
     xmlNodePtr curRoot=cur;
+    xmlNodePtr BFnode;
     bool success=true;
     string cname, tname;
     std::map<string,SPOSetBasePtr> spomap;
@@ -111,6 +121,16 @@ namespace qmcplusplus
 	assert(spomap.find(spo_name) != spomap.end());
 	//	slaterdet_0->add(spo,spo_name);
       }
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 
+      else if(cname == backflow_tag) {
+        app_log() <<"Creating Backflow transformation in SlaterDetBuilder::put(xmlNodePtr cur).\n";
+        UseBackflow=true;
+        if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
+        BFnode=cur;
+// read xml later, in case some ParticleSets are read from hdf5 file.
+        //BFTrans->put(cur);  
+      }
+#endif
       cur = cur->next;
     }
 
@@ -134,7 +154,12 @@ namespace qmcplusplus
         {
           APP_ABORT("slaterdet is already instantiated.");
         }
-        slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+        if(UseBackflow) 
+          slaterdet_0 = new SlaterDetWithBackflow(targetPtcl,BFTrans);
+        else 
+#endif
+          slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 	// Copy any entries in sposetmap into slaterdet_0
 	std::map<string,SPOSetBasePtr>::iterator iter;
 	for (iter=spomap.begin(); iter!=spomap.end(); iter++) {
@@ -166,6 +191,13 @@ namespace qmcplusplus
       return false;
     }
 
+    // change DistanceTables if using backflow
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+    if(UseBackflow)   { 
+       BFTrans->put(BFnode);
+       slaterdet_0->resetTargetParticleSet(BFTrans->QP);
+    }
+#endif
     //only single slater determinant
     targetPsi.addOrbital(slaterdet_0,"SlaterDet");
 
@@ -290,7 +322,12 @@ namespace qmcplusplus
 #ifdef QMC_CUDA
       adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else
-      adet = new DiracDeterminantBase(psi,firstIndex);
+#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+      if(UseBackflow) 
+        adet = new DiracDeterminantWithBackflow(psi,BFTrans,firstIndex);
+      else 
+#endif
+        adet = new DiracDeterminantBase(psi,firstIndex);
 #endif
     }
     adet->set(firstIndex,lastIndex-firstIndex);

@@ -507,7 +507,14 @@ namespace qmcplusplus {
     }
   }
   
-  
+   void
+  MuffinTinClass::evaluate (TinyVector<double,3> r,
+                            Vector<complex<double> > &phi,
+                            Vector<TinyVector<complex<double>,3> > &grad,
+                            Vector<Tensor<complex<double>,3> > &hess)
+  {
+     APP_ABORT("Hessian not inplemented in MuffinTinClass::evaluate. \n");
+  } 
   
   
   void 
@@ -741,6 +748,15 @@ namespace qmcplusplus {
       // sincos(phase, &s, &c);
       // phi[first+i] *= complex<double>(c,s);
     }
+  }
+
+ void
+  MuffinTinClass::evaluateCore (TinyVector<double,3> r,
+                                Vector<complex<double> > &phi,
+                                Vector<TinyVector<complex<double>,3> > &grad,
+                                Vector<Tensor<complex<double>,3> > &hess, int first)
+  {
+
   }
 
  void

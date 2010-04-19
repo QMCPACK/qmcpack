@@ -395,12 +395,13 @@ namespace qmcplusplus
 	  vmcEngine = new VMCcuda(W,Psi,H);
         else
 #endif
-#if defined(ENABLE_OPENMP)
-        if(omp_get_max_threads()>1)
-          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
-        else
-#endif
-          vmcEngine = new VMCSingle(W,Psi,H);
+//#if defined(ENABLE_OPENMP)
+//        if(omp_get_max_threads()>1)
+//          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+//        else
+//#endif
+//          vmcEngine = new VMCSingle(W,Psi,H);
+        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
       }
