@@ -148,6 +148,7 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   class BsplineClass_3d_d
   {
+  
   public:
     virtual double operator()(TinyVector<double,3> r)                 = 0;
     virtual void evaluate (TinyVector<double,3> r, 
@@ -158,7 +159,6 @@ namespace qmcplusplus {
 			   TinyVector<double,3> &grad,
 			   Tensor<double,3> &hess)                    = 0;
   };
-  
   class UBsplineClass_3d_d : public BsplineClass_3d_d
   {
   private:

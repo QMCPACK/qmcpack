@@ -16,20 +16,36 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_ORB_H
 #define QMCPLUSPLUS_EINSPLINE_ORB_H
 
-#include <config.h>
+#include <Configuration.h>
+#if defined(__xlC__)
+#include <type_traits/scalar_traits.h>
+#else
 #include "QMCWaveFunctions/EinsplineWrapper.h"
+#endif
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
 #include <cmath>
 
 namespace qmcplusplus {
 
-  template<typename T, int N>
-  class EinsplineOrb //: public QMCTraits
-  {
-  };
+#if defined(__xlC__)
+  template<typename T, unsigned D>
+    class EinsplineOrb 
+    {
+      public:
+      typedef typename scalar_traits<T>::real_type real_type;
+      typedef TinyVector<real_type,D> PosType;
+      PosType kVec;
+      void evaluate (const PosType& u, T &psi) {}
+      void evaluate (const PosType& u, T &psi, TinyVector<T,D> &grad, Tensor<T,D> &hess){}
+      void read (hid_t h5file, const string& groupPath)
+      {
+        APP_ABORT("Using xlC compiler. Cannot use EinsplineOrb");
+      }
+    };
   
   
+#else
 #if OHMMS_DIM==2
   template<>
   class EinsplineOrb<double,2> //: public QMCTraits
@@ -583,6 +599,7 @@ namespace qmcplusplus {
       Reflections = orb.Reflections;
     }
   };
+#endif
 #endif
 }
 #endif

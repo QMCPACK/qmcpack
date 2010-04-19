@@ -95,12 +95,13 @@ ENDIF(QMC_CUDA)
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
       EinsplineSetBuilderESHDF.cpp
-      EinsplineWrapper.cpp
       MuffinTin.cpp
       AtomicOrbital.cpp
       )
+    if(NOT IBM_COMPILER)
+      SET(FERMION_SRCS ${FERMION_SRCS} EinsplineWrapper.cpp)
+    endif(NOT IBM_COMPILER)
   ENDIF(HAVE_EINSPLINE)
-
 
   IF(QMC_BUILD_LEVEL GREATER 1)
 

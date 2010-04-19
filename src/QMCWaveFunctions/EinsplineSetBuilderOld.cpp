@@ -559,6 +559,9 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::ReadBands (int spin, EinsplineSetLocal* orbitalSet)
   {
+#if defined(__xlC__)
+    APP_ABORT("EinsplineSetBuilder::ReadBands EinsplineSetLocal cannot be used with IBM XL compilers");
+#else
     string eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) 
       eigenstatesGroup = "/eigenstates_3";
@@ -630,6 +633,7 @@ namespace qmcplusplus {
       }
       iband++;      
     }
+#endif
   }
   
 

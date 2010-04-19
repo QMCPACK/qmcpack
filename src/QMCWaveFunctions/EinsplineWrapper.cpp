@@ -7,14 +7,14 @@
 //   University of Illinois, Urbana-Champaign                   //
 //   Urbana, IL 61801                                           //
 //   e-mail: esler@uiuc.edu                                     //
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)             //
 //                                                              //
 // Supported by                                                 //
 //   National Center for Supercomputing Applications, UIUC      //
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
 
-#include "EinsplineWrapper.h"
+#include "Configuration.h"
+#include "QMCWaveFunctions/EinsplineWrapper.h"
 
 namespace qmcplusplus {
 
@@ -233,6 +233,7 @@ namespace qmcplusplus {
   }
 
 #elif OHMMS_DIM==3
+#if !defined(__xlC__)
   ////////////////////////////////////////////////////////////
   //                         3D                             //
   ////////////////////////////////////////////////////////////
@@ -453,5 +454,6 @@ namespace qmcplusplus {
     eval_NUBspline_3d_z_vgh (Spline, r[0], r[1], r[2], &val, &grad[0],
 			    &hess(0,0));
   }
+#endif
 #endif
 }
