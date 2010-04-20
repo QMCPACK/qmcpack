@@ -46,6 +46,14 @@ namespace qmcplusplus {
   
   
 #else
+  template<typename T, int N>
+    class EinsplineOrb //: public QMCTraits
+  {
+  };
+
+
+
+
 #if OHMMS_DIM==2
   template<>
   class EinsplineOrb<double,2> //: public QMCTraits
