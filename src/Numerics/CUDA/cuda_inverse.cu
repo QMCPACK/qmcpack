@@ -843,6 +843,116 @@ inverse_many_naive_pivot (T **A_list, T **work_list, int N, int stride)
 
 
 
+template<typename T, int BS>
+__global__ void
+complex_inverse_many_naive_pivot (T **A_list, T **work_list, int N, int stride)
+{
+  int tid = threadIdx.x;
+  __shared__ T *A;
+  unsigned str = 2*stride;
+  if (tid == 0) 
+    A    = A_list[blockIdx.x];
+  __syncthreads();
+  __shared__ int kbar, ipiv[BS];  
+  __shared__ T colk[2*BS], rowk[2*BS];
+  __shared__ short imax[BS];
+  
+  ipiv[tid] = tid;
+  __syncthreads();
+  for (int k=0; k<N; k++) {
+    // Find location of largest element in the column at or below k
+    T re = A[tid*str+2*k];
+    T im = A[tid*str+2*k+1];
+    colk[tid] = (tid < k) ? 0.0 : re*re + im*im;
+    __syncthreads();
+    int skip = 1<<((int)ceil(log2((double)BS)-1.0e-6)-1);
+    imax[tid] = tid;
+    __syncthreads();
+    for (; skip>0; skip>>=1) {
+      if (tid < skip && (tid+skip)<N) 
+    	// colk[tid] = max(colk[tid],colk[tid+skip]);
+	if (colk[tid+skip] > colk[tid]) {
+	  imax[tid] = imax[tid+skip];
+	  colk[tid] = colk[tid+skip];
+	}
+      __syncthreads();
+    }
+    if (tid == 0) {
+      kbar = imax[0];
+      int i = ipiv[kbar];
+      ipiv[kbar] = ipiv[k];
+      ipiv[k] = i;
+    }
+    __syncthreads();
+    // Swap rows
+    rowk[tid   ] = A[kbar*str + tid];
+    rowk[tid+BS] = A[kbar*str + tid + BS];
+    colk[tid   ] = A[k   *str + tid];
+    colk[tid+BS] = A[k   *str + tid + BS];
+    __syncthreads();
+    A[k   *str + tid   ] = rowk[tid];
+    A[k   *str + tid+BS] = rowk[tid+BS];
+    A[kbar*str + tid   ] = colk[tid];
+    A[kbar*str + tid+BS] = colk[tid+BS];
+    __syncthreads();
+    re = rowk[2*k+0];
+    im = rowk[2*k+1];
+    T nrmInv = 1.0/(re*re + im*im);
+    T pivInv_re =  nrmInv * re;
+    T pivInv_im = -nrmInv * im;
+    if (tid == k) {
+      rowk[2*k+0] = T();
+      rowk[2*k+1] = T();
+    }
+    // Column scaling
+    re = A[tid*str+2*k+0];
+    im = A[tid*str+2*k+1];
+    colk[2*tid+0] = -(pivInv_re*re - pivInv_im*im);
+    colk[2*tid+1] = -(pivInv_im*re + pivInv_im*re);
+    
+    if (tid == k) 
+      colk[2*tid+0] = colk[2*tid+1] = T();
+    __syncthreads();
+    A[tid*str+k   ] = colk[tid];
+    A[tid*str+k+BS] = colk[tid+BS];
+    __syncthreads();
+    // Rank-1 update
+    for (int j=0; j<N; j++) {
+      re = colk[2*j+0]*rowk[2*tid+0] - colk[2*j+1]*rowk[2*tid+1];
+      im = colk[2*j+0]*rowk[2*tid+1] + colk[2*j+1]*rowk[2*tid+0];
+      A[j*str+2*tid  ] += re;
+      A[j*str+2*tid+1] += im;
+    }
+    __syncthreads();
+    // Row scaling
+    re = pivInv_re * rowk[2*tid+0] - pivInv_im * rowk[2*tid+1];
+    im = pivInv_re * rowk[2*tid+1] + pivInv_im * rowk[2*tid+0];
+    if (tid == k) 
+      re = im = T();
+    A[k*str + 2*tid+0] = re;
+    A[k*str + 2*tid+1] = im;
+    __syncthreads();
+  }
+  // Now, permute columns one row at a time in shared memory
+  for (int k=0; k<N; k++) {
+    rowk[tid   ] = A[k*str+tid   ];
+    rowk[tid+BS] = A[k*str+tid+BS];
+    __syncthreads();
+    colk[2*ipiv[tid]+0] = rowk[2*tid+0];
+    colk[2*ipiv[tid]+1] = rowk[2*tid+1];
+    __syncthreads();
+    A[k*str+tid   ] = colk[tid   ];
+    A[k*str+tid+BS] = colk[tid+BS];
+    __syncthreads();
+  }
+}
+
+
+
+
+
+
+
 #define CONVERT_BS 256
 
 
@@ -1421,6 +1531,397 @@ cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
      N_double, N_double, N_double);
 }
 
+
+
+
+void
+cuda_inverse_many_complex_double (float *Alist_d[], float *worklist_d[],
+				  int N, int row_stride, int num_mats)
+{
+  int N_double = ((N + INVERSE_BS-1)/INVERSE_BS)*INVERSE_BS;
+  
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert((N_double*N_double+(CONVERT_BS-1))/CONVERT_BS, 
+		      num_mats);
+  convert<<<dimGridConvert,dimBlockConvert>>> 
+    ((double**)worklist_d, Alist_d, 
+     N_double, N_double, N_double,
+     N, N, row_stride);
+
+  // We need to replace the pointers to the single-precision A
+  // with the double-precision version we just converted.  We
+  // Also need generate a new set of workspace pointers to point
+  // to the region after the double-precision A.
+
+  float *Alist_new[num_mats], *Alist_h[num_mats];
+  float *worklist_h[num_mats];
+  double *worklist_double_h[num_mats];
+  float *bad_inverse[num_mats];
+
+  // Save the original pointer lists on the host
+  cudaMemcpy (worklist_h, worklist_d, num_mats*sizeof(float*),
+	      cudaMemcpyDeviceToHost);
+  cudaMemcpy (Alist_h, Alist_d, num_mats*sizeof(float*),
+	      cudaMemcpyDeviceToHost);
+
+  // Create new pointers as discussed above
+  for (int i=0; i<num_mats; i++) {
+    Alist_new[i] = worklist_h[i];
+    worklist_double_h[i] = (double*)(worklist_h[i]) +N_double*N_double;
+  }
+  cudaMemcpy (worklist_d, worklist_double_h, num_mats*sizeof(double*),
+	      cudaMemcpyHostToDevice);
+  cudaMemcpy (Alist_d, Alist_new, num_mats*sizeof(double*),
+	      cudaMemcpyHostToDevice);
+
+
+  // Do the inversion in double-precision
+  dim3 dimGrid(num_mats);
+  
+  int NB = (N+15)/16;
+  int BS=0;
+  dim3 dimBlock(NB*16);
+  switch (NB) {
+    case 1:
+      complex_inverse_many_naive_pivot<double,16><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=16;
+      break;
+    case 2:
+      complex_inverse_many_naive_pivot<double,32><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=32;
+      break;
+    case 3:
+      complex_inverse_many_naive_pivot<double,48><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=48;
+      break;
+    case 4:
+      complex_inverse_many_naive_pivot<double,64><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=64;
+      break;
+    case 5:
+      complex_inverse_many_naive_pivot<double,80><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=80;
+      break;
+    case 6:
+      complex_inverse_many_naive_pivot<double,96><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=96;
+      break;
+    case 7:
+      complex_inverse_many_naive_pivot<double,112><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=112;
+      break;
+    case 8:
+      complex_inverse_many_naive_pivot<double,128><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=128;
+      break;
+    case 9:
+      complex_inverse_many_naive_pivot<double,144><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=144;
+      break;
+    case 10:
+      complex_inverse_many_naive_pivot<double,160><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=160;
+      break;
+    case 11:
+      complex_inverse_many_naive_pivot<double,176><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=176;
+      break;
+    case 12:
+      complex_inverse_many_naive_pivot<double,192><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=192;
+      break;
+    case 13:
+      complex_inverse_many_naive_pivot<double,208><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 208;
+      break;
+    case 14:
+      complex_inverse_many_naive_pivot<double,224><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=224;
+      break;
+    case 15:
+      complex_inverse_many_naive_pivot<double,240><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=240;
+      break;
+    case 16:
+      complex_inverse_many_naive_pivot<double,256><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=256;
+      break;
+    case 17:
+      complex_inverse_many_naive_pivot<double,272><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=272;
+      break;
+    case 18:
+      complex_inverse_many_naive_pivot<double,288><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=288;
+      break;
+    case 19:
+      complex_inverse_many_naive_pivot<double,304><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=304;
+      break;
+    case 20:
+      complex_inverse_many_naive_pivot<double,320><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=320;
+      break;
+    case 21:
+      complex_inverse_many_naive_pivot<double,336><<<dimGrid,dimBlock>>> 
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS=336;
+      break;
+    case 22:
+      complex_inverse_many_naive_pivot<double,352><<<dimGrid,dimBlock>>>
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 352;
+      break;
+    case 23:
+      complex_inverse_many_naive_pivot<double,368><<<dimGrid,dimBlock>>>
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 368;
+      break;
+    case 24:
+      complex_inverse_many_naive_pivot<double,384><<<dimGrid,dimBlock>>>
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 384;
+      break;
+    case 25:
+      complex_inverse_many_naive_pivot<double,400><<<dimGrid,dimBlock>>>
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 400;
+      break;
+    case 26:
+      complex_inverse_many_naive_pivot<double,416><<<dimGrid,dimBlock>>>
+	((double**)Alist_d, (double**)worklist_d, N, N_double);
+      BS = 416;
+      break;
+    // case 27:
+    //   complex_inverse_many_naive_pivot<double,432><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 432;
+    //   break;
+    // case 28:
+    //   complex_inverse_many_naive_pivot<double,448><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 448;
+    //   break;
+    // case 29:
+    //   complex_inverse_many_naive_pivot<double,464><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 464;
+    //   break;
+    // case 30:
+    //   complex_inverse_many_naive_pivot<double,480><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 480;
+    //   break;
+    // case 31:
+    //   complex_inverse_many_naive_pivot<double,496><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 496;
+    //   break;
+    // case 32:
+    //   complex_inverse_many_naive_pivot<double,512><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 512;
+    //   break;
+    // case 33:
+    //   complex_inverse_many_naive_pivot<double,528><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 528;
+    //   break;
+    // case 34:
+    //   complex_inverse_many_naive_pivot<double,544><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 544;
+    //   break;
+    // case 35:
+    //   complex_inverse_many_naive_pivot<double,560><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 560;
+    //   break;
+    // case 36:
+    //   complex_inverse_many_naive_pivot<double,576><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 576;
+    //   break;
+    // case 37:
+    //   complex_inverse_many_naive_pivot<double,592><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 592;
+    //   break;
+    // case 38:
+    //   complex_inverse_many_naive_pivot<double,608><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 608;
+    // break;
+    // case 39:
+    //   complex_inverse_many_naive_pivot<double,624><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 624;
+    //   break;
+    // case 40:
+    //   complex_inverse_many_naive_pivot<double,640><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 640;
+    //   break;
+    // case 41:
+    //   complex_inverse_many_naive_pivot<double,656><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 656;
+    //   break;
+    // case 42:
+    //   complex_inverse_many_naive_pivot<double,672><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 672;
+    //   break;
+    // case 43:
+    //   complex_inverse_many_naive_pivot<double,688><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 688;
+    //   break;
+    // case 44:
+    //   complex_inverse_many_naive_pivot<double,704><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 704;
+    //   break;
+    // case 45:
+    //   complex_inverse_many_naive_pivot<double,720><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 720;
+    //   break;
+    // case 46:
+    //   complex_inverse_many_naive_pivot<double,736><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 736;
+    //   break;
+    // case 47:
+    //   complex_inverse_many_naive_pivot<double,752><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 752;
+    //   break;
+    // case 48:
+    //   complex_inverse_many_naive_pivot<double,768><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 768;
+    //   break;
+    // case 49:
+    //   complex_inverse_many_naive_pivot<double,784><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 784;
+    //   break;
+    // case 50:
+    //   complex_inverse_many_naive_pivot<double,800><<<dimGrid,dimBlock>>>
+    // 	((double**)Alist_d, (double**)worklist_d, N, N_double);
+    //   BS = 800;
+    //   break;
+
+    default:
+      fprintf (stderr, "N=%d is larger than maximum 416 in cuda_complex_inverse_many_double.\n");
+  };
+
+  cudaThreadSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    char buff[500];
+    gethostname(buff, 500);
+    fprintf (stderr, "CUDA error in complex_inverse_many<double,%d>:\n  %s\n",
+	     BS, cudaGetErrorString(err));
+    fprintf (stderr, "Hostname = %s\n", buff);
+
+    abort();
+  }
+
+  // Check inverses for correctness
+  // Copy A matrix pointers to worklist_d
+  cudaMemcpy (worklist_d, Alist_h, num_mats*sizeof(double*),
+  	      cudaMemcpyHostToDevice);
+  // Call kernel to check (A^(-1) * A - I).  It returns 0 or 1 in
+  // the Alist_d pointer.
+  dim3 checkBlock(32);
+  dim3 checkGrid(num_mats);
+  check_inv<double,float,32><<<checkGrid,checkBlock>>>((double**)Alist_d, worklist_d, N, N_double, row_stride);
+  cudaThreadSynchronize();
+  cudaError_t checkerr = cudaGetLastError();
+  if (checkerr != cudaSuccess) {
+    char buff[500];
+    gethostname(buff, 500);
+    fprintf (stderr, "CUDA error in check_inv<double,float,32>:\n  %s\n",
+	     cudaGetErrorString(checkerr));
+    fprintf (stderr, "Hostname = %s\n", buff);
+
+    abort();
+  }
+
+  cudaMemcpy (bad_inverse, Alist_d, num_mats*sizeof(double*),
+	      cudaMemcpyDeviceToHost);
+  for (int mat=0; mat<num_mats; mat++)
+    if (bad_inverse[mat]) {
+      char name[1000];
+      gethostname(name, 1000);
+      fprintf (stderr, "Offending hostname = %s\n", name);
+      std::cerr << "bad inverse for matrix " << mat << std::endl;
+      std::vector<float>  Amat(N*row_stride);
+      cudaMemcpy (&(Amat[0]), Alist_h[mat], N*row_stride*sizeof(float), cudaMemcpyDeviceToHost);
+      std::ostringstream matName;
+      matName << "BadMat_" << mat << ".dat";
+      FILE *fout = fopen (matName.str().c_str(), "w");
+      for (int row=0; row<N; row++) {
+	for (int col=0; col<N; col++) {
+	  //fprintf (stderr, "row=%d col=%d\n", row, col);
+	  fprintf (fout, "%24.16e ", Amat[row*row_stride+col]);
+	}
+	fprintf (fout, "\n");
+      }
+      fclose (fout);
+
+      std::vector<double> Ainv (N*N_double);
+      cudaMemcpy (&(Ainv[0]), worklist_h[mat], N*N_double*sizeof(double), cudaMemcpyDeviceToHost);
+      std::ostringstream invName;
+      invName << "BadInv_" << mat << ".dat";
+      fout = fopen (invName.str().c_str(), "w");
+      for (int row=0; row<N; row++) {
+	for (int col=0; col<N; col++) {
+	  //fprintf (stderr, "row=%d col=%d\n", row, col);
+	  fprintf (fout, "%24.16e ", Ainv[row*N_double+col]);
+	}
+	fprintf (fout, "\n");
+      }
+      fclose (fout);
+    }
+
+  // Copy original pointer lists back to device
+  cudaMemcpy (Alist_d, Alist_h, num_mats*sizeof(float*),
+	      cudaMemcpyHostToDevice);
+
+  cudaMemcpy (worklist_d, worklist_h, num_mats*sizeof(float*),
+	      cudaMemcpyHostToDevice);
+
+  dim3 dimGridConvert2((N*row_stride+(CONVERT_BS-1))/CONVERT_BS, num_mats);
+
+  // Convert back to single precision.
+  convert<<<dimGridConvert2,dimBlockConvert>>> 
+    (Alist_d, (double**) worklist_d, 
+     N, N, row_stride,
+     N_double, N_double, N_double);
+}
 
 
 
