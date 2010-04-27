@@ -184,6 +184,12 @@ namespace qmcplusplus {
        APP_ABORT("CorrectingOrbitalBasisSet::evaluateWithHessian is not implemented.");
     } 
 
+    inline void
+    evaluateWithThirdDeriv(const ParticleSet& P, int iat)
+    { 
+       APP_ABORT("CorrectingOrbitalBasisSet::evaluateWithThirdDerivatives is not implemented.");
+    }
+
     /** add a new set of Centered Atomic Orbitals
      * @param icenter the index of the center
      * @param aos a set of Centered Atomic Orbitals

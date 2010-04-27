@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Configuration.h"
 #include "Particle/DistanceTable.h"
+#include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
 {
@@ -30,7 +31,11 @@ namespace qmcplusplus
   {
 
     public:
-   
+
+    typedef Array<HessType,3>       HessArray_t;
+    //typedef Array<GradType,3>       GradArray_t;
+    //typedef Array<PosType,3>        PosArray_t;
+ 
       ///recasting enum of DistanceTableData to maintain consistency
       enum {SourceIndex  = DistanceTableData::SourceIndex,
             VisitorIndex = DistanceTableData::VisitorIndex,
@@ -45,21 +50,30 @@ namespace qmcplusplus
     int NumCenters;
     ///number of quantum particles
     int NumTargets;
+    // number of variational parameters own by the radial function
+    int numParams;
+    // index of first parameter in derivative array
+    int indexOfFirstParam;
+    // temporary storage for derivatives
+    vector<TinyVector<RealType,3> > derivs;
+
+    bool uniqueFunctions;
 
     BackflowFunctionBase(ParticleSet& ions, ParticleSet& els):
-     CenterSys(ions), myTable(0) {
+     CenterSys(ions), myTable(0),numParams(0),indexOfFirstParam(-1),
+     uniqueFunctions(false) {
       NumCenters=CenterSys.getTotalNum(); // in case
       NumTargets=els.getTotalNum();
     }
 
     BackflowFunctionBase(BackflowFunctionBase &fn):
-     CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters)
+     CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam),uniqueFunctions(fn.uniqueFunctions)
     {}
 
     virtual
     BackflowFunctionBase* makeClone()=0;
 
-    ~BackflowFunctionBase() {}; 
+    virtual ~BackflowFunctionBase() {}; 
  
     /** reset the distance table with a new target P
      */
@@ -74,6 +88,14 @@ namespace qmcplusplus
 
     virtual void checkOutVariables(const opt_variables_type& active)=0;
 
+    // Note: numParams should be set in Builder class, so it is known here
+    int setParamIndex(int n) {
+      indexOfFirstParam=n;
+      return indexOfFirstParam+numParams;
+    }
+
+    virtual inline int 
+    indexOffset()=0;
     
     /** calculate quasi-particle coordinates only
      */
@@ -85,6 +107,11 @@ namespace qmcplusplus
     virtual inline void
     evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
+    /** calculate quasi-particle coordinates, Bmat and Amat 
+     *  calculate derivatives wrt to variational parameters
+     */
+    virtual inline void
+    evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
   };
 
 }

@@ -158,6 +158,12 @@ namespace qmcplusplus {
       APP_ABORT("Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
     }
 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+    }
+
 
   };
 
@@ -378,6 +384,12 @@ namespace qmcplusplus {
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
     {
       APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+    }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate_notranspose() for grad_grad_grad_logdet. \n");
     }
 
 

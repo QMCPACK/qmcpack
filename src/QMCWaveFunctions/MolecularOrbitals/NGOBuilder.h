@@ -30,7 +30,7 @@ namespace qmcplusplus {
     typedef OneDimGridBase<real_type>    grid_type;
     typedef OneDimCubicSpline<real_type> functor_type;
     functor_type myFunc;
-    real_type Y, dY, d2Y;
+    real_type Y, dY, d2Y, d3Y;
 
     NGOrbital(grid_type* agrid):myFunc(agrid) { }
 
@@ -53,6 +53,25 @@ namespace qmcplusplus {
     inline value_type evaluateAll(real_type r, real_type rinv) 
     {
       return Y=myFunc.splint(r,dY,d2Y);
+    }
+
+    inline value_type evaluateWithThirdDeriv(real_type r, real_type rinv)
+    {
+      real_type dr = 0.000001,drinv = 0.5/(dr*dr*dr);
+/*
+      real_type Y_2=myFunc.splint(r-2.0*dr);
+      real_type Y_1=myFunc.splint(r-dr);
+      real_type Y1=myFunc.splint(r+dr);
+      real_type Y2=myFunc.splint(r+2.0*dr);
+      d3Y = drinv*(-Y_2+2.0*Y_1-2.0*Y1+Y2); 
+*/
+      real_type Y1,Y2;  
+      Y=myFunc.splint(r,dY,Y1);
+      Y=myFunc.splint(r+dr,dY,Y2);
+      d3Y = (Y2-Y1)/dr; 
+
+      return Y=myFunc.splint(r,dY,d2Y);
+
     }
 
     inline value_type operator()(int i) const { return myFunc(i);}

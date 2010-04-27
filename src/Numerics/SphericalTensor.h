@@ -130,6 +130,7 @@ public :
 template<class T, class Point_t, class Tensor_t>
 SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool addsign) : Lmax(l_max){ 
   int ntot = (Lmax+1)*(Lmax+1);
+  const value_type pi = 4.0*atan(1.0);
   Ylm.resize(ntot);
   gradYlm.resize(ntot);
   gradYlm[0] = 0.0;
@@ -139,6 +140,29 @@ SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool add
     hessYlm[1] = 0.0;
     hessYlm[2] = 0.0;
     hessYlm[3] = 0.0;
+  }
+  if(ntot >= 9) {
+  // m=-2 
+    hessYlm[4] = 0.0;
+    hessYlm[4](1,0) = std::sqrt(15.0/4.0/pi);     
+    hessYlm[4](0,1) = hessYlm[4](1,0);     
+  // m=-1
+    hessYlm[5] = 0.0;
+    hessYlm[5](1,2) = std::sqrt(15.0/4.0/pi);  
+    hessYlm[5](2,1) = hessYlm[5](1,2);
+  // m=0
+    hessYlm[6] = 0.0;
+    hessYlm[6](0,0) = -std::sqrt(5.0/4.0/pi);  
+    hessYlm[6](1,1) = hessYlm[6](0,0);  
+    hessYlm[6](2,2) = -2.0*hessYlm[6](0,0);  
+  // m=1
+    hessYlm[7] = 0.0;
+    hessYlm[7](0,2) = std::sqrt(15.0/4.0/pi);
+    hessYlm[7](2,0) = hessYlm[7](0,2);
+  // m=2
+    hessYlm[8] = 0.0;
+    hessYlm[8](0,0) = std::sqrt(15.0/4.0/pi);
+    hessYlm[8](1,1) = -hessYlm[8](0,0);
   }
 
   NormFactor.resize(ntot,1);

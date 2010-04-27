@@ -86,6 +86,10 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
                   ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
                   HessMatrix_t& grad_grad_logdet);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
+                  HessMatrix_t& grad_grad_logdet,
+                  GGGMatrix_t& grad_grad_grad_logdet);
 
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
@@ -209,14 +213,22 @@ namespace qmcplusplus {
     typedef Vector<complex<double> >                              ComplexValueVector_t;
     typedef Vector<TinyVector<double,OHMMS_DIM> >                 RealGradVector_t;
     typedef Vector<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradVector_t;
-    typedef Vector<Tensor<double,OHMMS_DIM> >                     RealHessVector_t;
-    typedef Matrix<Tensor<double,OHMMS_DIM> >                     RealHessMatrix_t;
-    typedef Vector<Tensor<complex<double>,OHMMS_DIM> >            ComplexHessVector_t;
-    typedef Matrix<Tensor<complex<double>,OHMMS_DIM> >            ComplexHessMatrix_t;
+    typedef Tensor<double,OHMMS_DIM>                            RealHessType;
+    typedef Tensor<complex<double>,OHMMS_DIM>                   ComplexHessType;
+    typedef Vector<RealHessType>                                  RealHessVector_t;
+    typedef Matrix<RealHessType>                                  RealHessMatrix_t;
+    typedef Vector<ComplexHessType>                               ComplexHessVector_t;
+    typedef Matrix<ComplexHessType>                               ComplexHessMatrix_t;
     typedef Matrix<double>                                        RealValueMatrix_t;
     typedef Matrix<complex<double> >                              ComplexValueMatrix_t;
     typedef Matrix<TinyVector<double,OHMMS_DIM> >                 RealGradMatrix_t;
     typedef Matrix<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradMatrix_t;
+    typedef TinyVector<RealHessType, 3>                           RealGGGType;
+    typedef Vector<RealGGGType>                                   RealGGGVector_t;
+    typedef Matrix<RealGGGType>                                   RealGGGMatrix_t;
+    typedef TinyVector<ComplexHessType, 3>                        ComplexGGGType;
+    typedef Vector<ComplexGGGType>                                ComplexGGGVector_t;
+    typedef Matrix<ComplexGGGType>                                ComplexGGGMatrix_t;
 //     typedef typename OrbitalSetTraits<ReturnType >::ValueVector_t ReturnValueVector_t;
 //     typedef typename OrbitalSetTraits<ReturnType >::GradVector_t  ReturnGradVector_t;
 //     typedef typename OrbitalSetTraits<ReturnType >::HessVector_t  ReturnHessVector_t;
@@ -308,6 +320,10 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
                   RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
                   RealHessMatrix_t& grad_grad_psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
+                  RealHessMatrix_t& grad_grad_psi,
+                  RealGGGMatrix_t& grad_grad_grad_logdet);
 
     //    void evaluate (const ParticleSet& P, const PosType& r, vector<double> &psi);
 #if !defined(QMC_COMPLEX)
@@ -336,6 +352,10 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
                   ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
                   ComplexHessMatrix_t& grad_grad_psi);
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
+                  ComplexHessMatrix_t& grad_grad_psi,
+                  ComplexGGGMatrix_t& grad_grad_grad_logdet); 
 #ifdef QMC_CUDA
     void initGPU();
 

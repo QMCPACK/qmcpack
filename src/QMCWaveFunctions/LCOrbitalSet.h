@@ -126,6 +126,12 @@ namespace qmcplusplus {
       APP_ABORT("Need specialization of LCOrbitalSet<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
     }
 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of LCOrbitalSet<BS,true>::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+    }
+
   };
 
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
@@ -290,6 +296,37 @@ namespace qmcplusplus {
           }
           dlogdet(ij)=dres;
           grad_grad_logdet(ij)=d2res;
+          ++ij;
+        }
+      }
+    }
+
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      const ValueType* restrict cptr=C.data();
+#pragma ivdep
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateWithThirdDeriv(P,iat);
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
+        const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GradType dres;
+          register HessType d2res;
+          register GGGType gggres;
+          for(int b=0; b<BasisSetSize; ++b) {
+             dres +=  cptr[jk]*dptr[b];
+             d2res +=  cptr[jk]*d2ptr[b];
+             gggres[0] +=  cptr[jk]*(gggptr[b])[0];
+             gggres[1] +=  cptr[jk]*(gggptr[b])[1];
+             gggres[2] +=  cptr[jk++]*(gggptr[b])[2];
+          }
+          dlogdet(ij)=dres;
+          grad_grad_logdet(ij)=d2res;
+          grad_grad_grad_logdet(ij)=gggres;
           ++ij;
         }
       }

@@ -44,6 +44,9 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<value_type>::GradMatrix_t  GradMatrix_t;
     typedef typename OrbitalSetTraits<value_type>::HessVector_t  HessVector_t;
     typedef typename OrbitalSetTraits<value_type>::HessMatrix_t  HessMatrix_t;
+    typedef TinyVector<HessType, 3>                    GGGType;
+    typedef Vector<GGGType>                            GGGVector_t;
+    typedef Matrix<GGGType>                            GGGMatrix_t;
     typedef SphericalTensor<RealType,PosType>                    SphericalHarmonics_t;
 
     ///size of the basis set
@@ -200,6 +203,198 @@ namespace qmcplusplus {
         ++nlit; ++lmit;++offset;
       }
     }
+
+    inline void
+    evaluateForWalkerMove(int c, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_Phi, GGGVector_t& grad_grad_grad_Phi) {
+
+/*
+      int la=2;  
+      PosType  dr0=1,dr1=1,dr2=1;
+      RealType r0,r1,r2;
+      RealType dh=0.00001;
+      dr0[0] = 0.5;dr1[0] = dr0[0];dr2[0] = dr0[0];
+      dr0[1] = 1.0;dr1[1] = dr0[1];dr2[1] = dr0[1];
+      dr0[2] = 1.5;dr1[2] = dr0[2];dr2[2] = dr0[2];
+      dr1[la] = dr0[la]+dh;dr2[la] = dr0[la]-dh;
+      r0 = std::sqrt(dr0[0]*dr0[0] + dr0[1]*dr0[1] + dr0[2]*dr0[2]);
+      r1 = std::sqrt(dr1[0]*dr1[0] + dr1[1]*dr1[1] + dr1[2]*dr1[2]);
+      r2 = std::sqrt(dr2[0]*dr2[0] + dr2[1]*dr2[1] + dr2[2]*dr2[2]);
+      int nb = NL.size();
+      ValueVector_t psi0,psi1,psi2;
+      GradVector_t dpsi0,dpsi1,dpsi2;
+      HessVector_t hpsi0,hpsi1,hpsi2;
+      GGGVector_t gpsi0,gpsi1,gpsi2;
+    
+       psi0.resize(nb);      
+       psi1.resize(nb);      
+       psi2.resize(nb);      
+       dpsi0.resize(nb);      
+       dpsi1.resize(nb);      
+       dpsi2.resize(nb);      
+       hpsi0.resize(nb);      
+       hpsi1.resize(nb);      
+       hpsi2.resize(nb);      
+       gpsi0.resize(nb);      
+       gpsi1.resize(nb);      
+       gpsi2.resize(nb);      
+
+       dummyEval(r0,dr0,psi0,dpsi0,hpsi0,gpsi0);
+       dummyEval(r1,dr1,psi1,dpsi1,hpsi1,gpsi1);
+       dummyEval(r2,dr2,psi2,dpsi2,hpsi2,gpsi2);
+ 
+       for(int i=0; i<nb; i++) { 
+          cout<<"i: " <<i <<endl
+              <<"dPhi_x: " <<dpsi0[i][la]-(psi1[i]-psi2[i])/(2*dh) <<endl  
+              <<"hPhi_0: " <<hpsi0[i](la,0)-(dpsi1[i][0]-dpsi2[i][0])/(2*dh) <<endl  
+              <<"hPhi_1: " <<hpsi0[i](la,1)-(dpsi1[i][1]-dpsi2[i][1])/(2*dh) <<endl  
+              <<"hPhi_2: " <<hpsi0[i](la,2)-(dpsi1[i][2]-dpsi2[i][2])/(2*dh) <<endl  
+              <<"gPhi_00: " <<gpsi0[i][la](0,0)-(hpsi1[i](0,0)-hpsi2[i](0,0))/(2*dh)  <<"  " <<gpsi0[i][la](0,0)  <<endl  
+              <<"gPhi_11: " <<gpsi0[i][la](1,1)-(hpsi1[i](1,1)-hpsi2[i](1,1))/(2*dh) <<"  " <<gpsi0[i][la](1,1) <<endl  
+              <<"gPhi_22: " <<gpsi0[i][la](2,2)-(hpsi1[i](2,2)-hpsi2[i](2,2))/(2*dh) <<"  " <<gpsi0[i][la](2,2) <<endl  
+              <<"gPhi_01: " <<gpsi0[i][la](0,1)-(hpsi1[i](0,1)-hpsi2[i](0,1))/(2*dh) <<"  " <<gpsi0[i][la](0,1) <<endl  
+              <<"gPhi_02: " <<gpsi0[i][la](0,2)-(hpsi1[i](0,2)-hpsi2[i](0,2))/(2*dh) <<"  " <<gpsi0[i][la](0,2) <<endl  
+              <<"gPhi_12: " <<gpsi0[i][la](1,2)-(hpsi1[i](1,2)-hpsi2[i](1,2))/(2*dh) <<"  " <<gpsi0[i][la](1,2) <<endl;  
+ 
+       }
+
+  //cout<<"psi: " <<psi0[0] <<endl
+  //    <<"dpsi: " <<dpsi0[0] <<endl
+  //    <<"hpsi: " <<hpsi0[0] <<endl
+  //    <<"gpsi: " <<gpsi0[0] <<endl;
+
+      APP_ABORT("Aborting after testing. \n");
+*/
+/*********************************************************************/
+      int nn = myTable->M[c]+iat;
+      RealType r(myTable->r(nn));
+      RealType rinv(myTable->rinv(nn));
+      PosType  dr(myTable->dr(nn));
+      PosType  drr(dr*rinv);
+      GGGType ggg1,ggg2;
+      for(int i=0; i<3; i++) {
+       ggg1[i] = drr[i]*outerProduct(drr,drr);
+       ggg2[i]=0.0;
+       for(int j=0; j<3; j++) {
+        for(int k=0; k<3; k++) {
+           if(i==j) (ggg2[i])(j,k) += rinv*drr[k];  
+           if(i==k) (ggg2[i])(j,k) += rinv*drr[j];  
+           if(k==j) (ggg2[i])(j,k) += rinv*drr[i];  
+        }   
+       }
+      } 
+      Ylm.evaluateWithHessian(dr);
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
+
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit);//NL[ib];
+        int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        ValueType ang(Ylm.getYlm(lm));
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(Ylm.getGradYlm(lm));
+        HessType hess(Ylm.getHessYlm(lm));
+        HessType Rhs;
+        GGGType& ggg=grad_grad_grad_Phi[offset];
+        psi[offset]  = ang*rnl.Y;
+        dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
+
+        RealType temp1=rnl.d2Y-drnloverr;
+        RealType temp2=rnl.d3Y-3.0*rinv*temp1;
+        // hessian of radial piece
+        for(int i=0; i<3; i++) {
+          Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv; 
+          for(int j=i+1; j<3; j++) {
+            Rhs(i,j) = temp1*drr(i)*drr(j); 
+            Rhs(j,i) = Rhs(i,j);   
+          }
+        }
+        grad_grad_Phi[offset] = ang*Rhs + outerProduct(gr_rad,gr_ang) 
+                              + outerProduct(gr_ang,gr_rad) + rnl.Y*hess;  
+        // assuming third derivatives of angular piece are zero
+        for(int i=0; i<3; i++) {
+         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1); 
+                 // + rnl.Y*Slm_ijk[i];
+        }
+ 
+        // I don't know how to make this part compact, so sloppy for now
+        for(int i=0; i<3; i++) 
+          for(int j=0; j<3; j++) 
+            for(int k=0; k<3; k++) { 
+              ggg[i](j,k) += Rhs(j,k)*gr_ang[i] + Rhs(i,k)*gr_ang[j] + Rhs(i,j)*gr_ang[k] + gr_rad[k]*hess(i,j) + gr_rad[j]*hess(i,k) + gr_rad[i]*hess(j,k); 
+            }
+
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+    void  
+    dummyEval(RealType r, PosType  dr, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_Phi, GGGVector_t& grad_grad_grad_Phi) {
+      int offset=0;
+      RealType rinv(1.0/r);
+      PosType  drr(dr*rinv);
+      GGGType ggg1,ggg2;
+      for(int i=0; i<3; i++) {
+       ggg1[i] = drr[i]*outerProduct(drr,drr);
+       ggg2[i]=0.0;
+       for(int j=0; j<3; j++) {
+        for(int k=0; k<3; k++) {
+           if(i==j) (ggg2[i])(j,k) += rinv*drr[k];
+           if(i==k) (ggg2[i])(j,k) += rinv*drr[j];
+           if(k==j) (ggg2[i])(j,k) += rinv*drr[i];
+        }
+       }
+      }
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
+
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit);//NL[ib];
+        int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        ValueType ang(Ylm.getYlm(lm));
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(Ylm.getGradYlm(lm));
+        HessType hess(Ylm.getHessYlm(lm));
+        HessType Rhs;
+        GGGType& ggg=grad_grad_grad_Phi[offset];
+        psi[offset]  = ang*rnl.Y;
+        dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
+        RealType temp1=rnl.d2Y-drnloverr;
+        RealType temp2=rnl.d3Y-3.0*rinv*temp1;
+        // hessian of radial piece
+        for(int i=0; i<3; i++) {
+          Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv;
+          for(int j=i+1; j<3; j++) {
+            Rhs(i,j) = temp1*drr(i)*drr(j);
+            Rhs(j,i) = Rhs(i,j);
+          }
+        }
+        grad_grad_Phi[offset] = ang*Rhs + outerProduct(gr_rad,gr_ang)
+                              + outerProduct(gr_ang,gr_rad) + rnl.Y*hess;
+        // assuming third derivatives of angular piece are zero
+        for(int i=0; i<3; i++) {
+         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1);
+                 // + rnl.Y*Slm_ijk[i];
+        }
+
+        // I don't know how to make this part compact, so sloppy for now
+        for(int i=0; i<3; i++)
+          for(int j=0; j<3; j++)
+            for(int k=0; k<3; k++) {
+              ggg[i](j,k) += Rhs(j,k)*gr_ang[i] + Rhs(i,k)*gr_ang[j] + Rhs(i,j)*gr_ang[k] + gr_rad[k]*hess(i,j) + gr_rad[j]*hess(i,k) + gr_rad[i]*hess(j,k); 
+            }
+
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
 
     inline void 
     evaluateForWalkerMove(int source, int first, int nptcl, int offset, ValueMatrix_t& y, GradMatrix_t& dy, ValueMatrix_t& d2y) {

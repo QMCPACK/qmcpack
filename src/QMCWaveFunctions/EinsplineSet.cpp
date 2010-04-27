@@ -76,6 +76,15 @@ namespace qmcplusplus {
     APP_ABORT("Should never instantiate EinsplineSet.");
   }
 
+  void
+  EinsplineSet::evaluate_notranspose (const ParticleSet& P, int first, int last,
+                          ValueMatrix_t& vals, GradMatrix_t& grads,
+                          HessMatrix_t& grad_grad_logdet,
+                          GGGMatrix_t& grad_grad_grad_logdet) 
+  {
+    APP_ABORT("Should never instantiate EinsplineSet.");
+  }
+
 
   ///////////////////////////////////////////
   // EinsplineSetExtended Member functions //
@@ -1456,6 +1465,24 @@ namespace qmcplusplus {
     }
     VGLMatTimer.stop();
    }
+
+   template<typename StorageType> void
+  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
+                  RealHessMatrix_t& grad_grad_psi,
+                  RealGGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+    }
+
+   template<typename StorageType> void
+  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
+                  ComplexHessMatrix_t& grad_grad_psi,
+                  ComplexGGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+    }
 
  
   template<typename StorageType> string

@@ -23,7 +23,7 @@ template<class T>
 struct GaussianCombo: public OptimizableFunctorBase {
 
   typedef T value_type;
-  real_type Y, dY, d2Y;
+  real_type Y, dY, d2Y, d3Y;
 
   struct BasicGaussian {
     real_type Sigma;
@@ -32,6 +32,8 @@ struct GaussianCombo: public OptimizableFunctorBase {
     real_type MinusSigma;
     real_type CoeffP;
     real_type CoeffPP;
+    real_type CoeffPPP1;
+    real_type CoeffPPP2;
     BasicGaussian(): Sigma(1.0), Coeff(1.0) { } 
 
     inline BasicGaussian(real_type sig, real_type c) { 
@@ -44,12 +46,16 @@ struct GaussianCombo: public OptimizableFunctorBase {
       Coeff = c;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
+      CoeffPPP1= 12.0*Sigma*Sigma*Coeff;
+      CoeffPPP2= -8.0*Sigma*Sigma*Sigma*Coeff;
     }
 
     inline void reset() {
       MinusSigma=-Sigma;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
+      CoeffPPP1= 12.0*Sigma*Sigma*Coeff;
+      CoeffPPP2= -8.0*Sigma*Sigma*Sigma*Coeff;
     }
 
     void resetParameters(const opt_variables_type& active)
@@ -69,6 +75,13 @@ struct GaussianCombo: public OptimizableFunctorBase {
       real_type v=exp(MinusSigma*rr);
       du += CoeffP*r*v;
       d2u += (CoeffP+CoeffPP*rr)*v;
+      return Coeff*v;
+    }
+    inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u, real_type& d3u) {
+      real_type v=exp(MinusSigma*rr);
+      du += CoeffP*r*v;
+      d2u += (CoeffP+CoeffPP*rr)*v;
+      d3u += (CoeffPPP1*r+CoeffPPP2*r*rr)*v;
       return Coeff*v;
     }
   };
@@ -141,6 +154,15 @@ struct GaussianCombo: public OptimizableFunctorBase {
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end) {
       Y+=(*it).evaluate(r,rr,dY,d2Y); ++it;
+    }
+  }
+
+  inline void evaluateWithThirdDeriv(real_type r, real_type rinv) {
+    Y=0.0;dY=0.0;d2Y=0.0,d3Y=0.0;
+    real_type rr = r*r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
+    while(it != it_end) {
+      Y+=(*it).evaluate(r,rr,dY,d2Y,d3Y); ++it;
     }
   }
 

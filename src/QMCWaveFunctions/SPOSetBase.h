@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 
+#include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #if defined(ENABLE_SMARTPOINTER)
@@ -40,6 +41,10 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
+    typedef Array<HessType,3>                          HessArray_t;
+    typedef TinyVector<HessType, 3>                    GGGType;
+    typedef Vector<GGGType>                            GGGVector_t;
+    typedef Matrix<GGGType>                            GGGMatrix_t;
     typedef ParticleSet::Walker_t                      Walker_t;
     typedef std::map<string,SPOSetBase*> SPOPool_t;
     ///true if C is an identity matrix
@@ -168,11 +173,17 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
 
+    void evaluate(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);    
+
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+
+    virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
 
     virtual void evaluateGradSource (const ParticleSet &P, int first, int last
         , const ParticleSet &source, int iat_src, GradMatrix_t &gradphi);

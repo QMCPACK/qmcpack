@@ -69,7 +69,7 @@ struct GenericSTO: public OptimizableFunctorBase {
   int Power;
   real_type Z;
   real_type Norm;
-  real_type Y, dY, d2Y;
+  real_type Y, dY, d2Y, d3Y;
 
   GenericSTO(): N(-1), Power(0), Z(1.0), Norm(1.0) { } 
 
@@ -141,6 +141,22 @@ struct GenericSTO: public OptimizableFunctorBase {
       real_type x = Power*rinv-Z;
       drnl = rnl*x;
       d2rnl = rnl*(x*x-Power*rinv*rinv);
+    }
+    return rnl;
+  }
+
+  inline real_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl, real_type& d3rnl) {
+    real_type rnl = Norm*exp(-Z*r);
+    if(Power == 0) {
+      drnl = -Z*rnl;
+      d2rnl = rnl*Z*Z;
+      d3rnl = -d2rnl*Z;
+    } else {
+      rnl *= pow(r,Power);
+      real_type x = Power*rinv-Z;
+      drnl = rnl*x;
+      d2rnl = rnl*(x*x-Power*rinv*rinv);
+      d3rnl = rnl*(x*x*x+(2.0*rinv-3.0*x)*Power*rinv*rinv);
     }
     return rnl;
   }

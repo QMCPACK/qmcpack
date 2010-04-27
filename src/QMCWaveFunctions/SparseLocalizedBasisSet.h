@@ -195,6 +195,11 @@ namespace qmcplusplus {
        APP_ABORT("SparseLocalizsedBasisSet::evaluateWithHessian has not been implemented. \n");
     }
 
+    void evaluateWithThirdDeriv(const ParticleSet& P, int iat)
+    {
+       APP_ABORT("SparseLocalizsedBasisSet::evaluateWithThirdDeriv has not been implemented. \n");
+    }
+
     inline void 
     evaluateForWalkerMove(const ParticleSet& P) 
     {

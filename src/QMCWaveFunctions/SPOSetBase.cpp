@@ -48,10 +48,25 @@ namespace qmcplusplus {
      //MatrixOperators::transpose(logdet);
    }
 
+   void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+   {
+     evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet,grad_grad_grad_logdet);
+     transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
+     //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
+     //MatrixOperators::transpose(logdet);
+   }
+
     void SPOSetBase::evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
    {
      APP_ABORT("Need specialization of SPOSetBase::evaluate_notranspose() for grad_grad_logdet. \n");
+   }
+
+   void SPOSetBase::evaluate_notranspose(const ParticleSet& P, int first, int last,
+       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+   {
+     APP_ABORT("Need specialization of SPOSetBase::evaluate_notranspose() for grad_grad_grad_logdet. \n");
    }
 
 

@@ -167,6 +167,51 @@ namespace qmcplusplus {
       }
     }
 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      for(int i=0,iat=first; iat<last; i++,iat++) {
+        //evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
+        ValueType* psi=logdet[i];
+        GradType* dpsi=dlogdet[i];
+        HessType*  hess=grad_grad_logdet[i];
+        GGGType* ggg=grad_grad_grad_logdet[i];
+        psi[0]=1.0;
+        dpsi[0]=0.0;
+        hess[0]=0.0;
+        ggg[0]=0.0;
+        RealType coskr, sinkr;
+        for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
+        {
+          int j2=j1+1;
+          sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+          psi[j1]=coskr;
+          psi[j2]=sinkr;
+          dpsi[j1]=-sinkr*K[ik];
+          dpsi[j2]= coskr*K[ik];
+          for(int la=0; la<3; la++) {
+            (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
+            (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
+            for(int lb=la+1; lb<3; lb++) {
+              (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
+              (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
+              (hess[j1])(lb,la)=(hess[j1])(la,lb);
+              (hess[j2])(lb,la)=(hess[j2])(la,lb);
+            }
+          }
+          for(int la=0; la<3; la++) {
+            for(int lb=0; lb<3; lb++) {
+              for(int lc=0; lc<3; lc++) {
+                ( (ggg[j1])[la] )(lb,lc) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+                ( (ggg[j2])[la] )(lb,lc) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+              }
+            }
+          }
+
+        }
+      }
+    }
+
 
   };
 

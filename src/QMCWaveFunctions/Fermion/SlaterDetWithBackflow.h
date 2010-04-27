@@ -180,6 +180,12 @@ namespace qmcplusplus
 
     void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
+    void evaluateDerivatives(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     vector<RealType>& dlogpsi,
+                                     vector<RealType>& dhpsioverpsi);
+
+    void testDerivGL(ParticleSet& P);
 
     //private:
     //SlaterDetWithBackflow() {}

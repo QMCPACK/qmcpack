@@ -24,6 +24,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
   {
@@ -42,6 +43,12 @@ namespace qmcplusplus
       typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
       typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
       typedef SPOSetBase::HessType      HessType;
+      typedef TinyVector<HessType, 3>   GGGType;
+      typedef Vector<GGGType>           GGGVector_t;           
+      typedef Matrix<GGGType>           GGGMatrix_t;           
+      typedef Array<HessType,3>         HessArray_t;
+      //typedef Array<GradType,3>       GradArray_t;
+      //typedef Array<PosType,3>        PosArray_t;
 
       /** constructor
        *@param spos the single-particle orbital set
@@ -71,6 +78,14 @@ namespace qmcplusplus
 				       const opt_variables_type& active,
 				       vector<RealType>& dlogpsi,
 				       vector<RealType>& dhpsioverpsi);
+
+      void evaluateDerivatives(ParticleSet& P,
+                                       const opt_variables_type& active,
+                                       vector<RealType>& dlogpsi,
+                                       vector<RealType>& dhpsioverpsi,
+                                       ParticleSet::ParticleGradient_t* G0,
+                                       ParticleSet::ParticleLaplacian_t* L0,
+                                       int k);
 
       ///reset the size: with the number of particles and number of orbtials
       void resize(int nel, int morb);
@@ -163,9 +178,18 @@ namespace qmcplusplus
 
       inline void setLogEpsilon(ValueType x) { }
 
+      GradMatrix_t dFa; 
       HessMatrix_t grad_grad_psiM; 
-      HessVector_t Qmat;
+      GGGMatrix_t  grad_grad_grad_psiM; 
       BackflowTransformation *BFTrans;
+      ParticleSet::ParticleGradient_t Gtemp;
+      ValueType La1,La2,La3;
+      HessMatrix_t Ajk_sum,Qmat;
+
+      void testDerivFjj(ParticleSet& P, int pa);
+      void testGGG(ParticleSet& P);
+      void testDerivLi(ParticleSet& P, int pa);
+      void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
 
     };
 

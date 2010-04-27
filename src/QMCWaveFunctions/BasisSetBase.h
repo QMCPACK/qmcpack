@@ -40,6 +40,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<T>::RealType      RealType;
     typedef typename OrbitalSetTraits<T>::ValueType     ValueType;
     typedef typename OrbitalSetTraits<T>::IndexType     IndexType;
+    typedef typename OrbitalSetTraits<T>::HessType      HessType;
     typedef typename OrbitalSetTraits<T>::IndexVector_t IndexVector_t;
     typedef typename OrbitalSetTraits<T>::ValueVector_t ValueVector_t;
     typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
@@ -47,6 +48,10 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<T>::GradMatrix_t  GradMatrix_t;
     typedef typename OrbitalSetTraits<T>::HessVector_t  HessVector_t;
     typedef typename OrbitalSetTraits<T>::HessMatrix_t  HessMatrix_t;
+    typedef TinyVector<HessType, 3>                     GGGType;
+    typedef Vector<GGGType>                             GGGVector_t;
+    typedef Matrix<GGGType>                             GGGMatrix_t;
+
 
     ///size of the basis set
     IndexType BasisSetSize;
@@ -60,8 +65,10 @@ namespace qmcplusplus {
     GradVector_t  dPhi;
     ///d2phi[i] the laplacian of the i-th basis set 
     ValueVector_t d2Phi;
-    ///d2phi_full[i] the full hessian of the i-th basis set 
+    ///grad_grad_Phi[i] the full hessian of the i-th basis set 
     HessVector_t  grad_grad_Phi;
+    ///grad_grad_grad_Phi the full hessian of the i-th basis set 
+    GGGVector_t  grad_grad_grad_Phi;
     ///container to store value, laplacian and gradient
     ValueMatrix_t Temp;
 
@@ -82,6 +89,7 @@ namespace qmcplusplus {
         dPhi.resize(BasisSetSize);
         d2Phi.resize(BasisSetSize);
         grad_grad_Phi.resize(BasisSetSize);
+        grad_grad_grad_Phi.resize(BasisSetSize);
         Temp.resize(BasisSetSize,MAXINDEX);
 
         Y.resize(ntargets,BasisSetSize);
@@ -116,6 +124,7 @@ namespace qmcplusplus {
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
     virtual void evaluateWithHessian(const ParticleSet& P, int iat)=0;
+    virtual void evaluateWithThirdDeriv(const ParticleSet& P, int iat)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P, int iat) =0;
     virtual void evaluateForPtclMove(const ParticleSet& P, int iat) =0;

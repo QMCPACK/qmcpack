@@ -33,7 +33,7 @@ struct SlaterCombo: public OptimizableFunctorBase
     std::string  coeffName;
     std::vector<xmlNodePtr> InParam;
     std::vector<Component_t> sset;
-    real_type Y, dY, d2Y;
+    real_type Y, dY, d2Y, d3Y;
 
     explicit
     SlaterCombo(int l=0,
@@ -101,6 +101,24 @@ struct SlaterCombo: public OptimizableFunctorBase
           Y+=(*it).evaluate(r,rinv,du,d2u);
           dY+=du;
           d2Y+=d2u;
+          ++it;
+        }
+    }
+
+    inline void  evaluateWithThirdDeriv(real_type r, real_type rinv)
+    {
+      Y=0.0;
+      dY=0.0;
+      d2Y=0.0;
+      d3Y=0.0;
+      real_type du, d2u, d3u;
+      typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
+      while (it != it_end)
+        {
+          Y+=(*it).evaluate(r,rinv,du,d2u,d3u);
+          dY+=du;
+          d2Y+=d2u;
+          d3Y+=d3u;
           ++it;
         }
     }

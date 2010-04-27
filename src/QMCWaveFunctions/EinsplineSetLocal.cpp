@@ -174,6 +174,14 @@ namespace qmcplusplus {
     }
   }
 
+  void EinsplineSetLocal::evaluate_notranspose(const ParticleSet& P, int first, int last,
+                  ValueMatrix_t& psi, GradMatrix_t& dpsi,
+                  HessMatrix_t& grad_grad_psi,
+                  GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+    }
+
 
 
   SPOSetBase*

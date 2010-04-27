@@ -909,7 +909,6 @@ namespace qmcplusplus
         RealType logpsiPlus = Psi.evaluateLog(W);
         RealType elocPlus=H.evaluate(W);
 
-
         wfvar_prime[i] = wfVars[i]- FiniteDiff;
 //     Psi.checkOutVariables(wfvar_prime);
         Psi.resetParameters(wfvar_prime);
@@ -924,9 +923,9 @@ namespace qmcplusplus
         HGradient[i]= (elocPlus-elocMinus)*dh;
       }
     cout<<endl<<"Deriv  Numeric Analytic"<<endl;
-    for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<endl;
+    for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
     cout<<endl<<"Hderiv  Numeric Analytic"<<endl;
-    for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i]<<endl;
+    for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
 
   }
 

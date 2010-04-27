@@ -124,8 +124,17 @@ namespace qmcplusplus
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 
       else if(cname == backflow_tag) {
         app_log() <<"Creating Backflow transformation in SlaterDetBuilder::put(xmlNodePtr cur).\n";
+
+        // to simplify the logic inside DiracDeterminantWithBackflow,
+        // I'm requiring that only a single <backflow> block appears
+        // in the xml file
+        if(BFTrans != 0) {
+           APP_ABORT("Only a single backflow block is allowed in the xml. Please collect all transformations into a single block. \n");
+        }
         UseBackflow=true;
-        if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
+        // creating later due to problems with ParticleSets
+        //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
+        BFTrans = NULL;
         BFnode=cur;
 // read xml later, in case some ParticleSets are read from hdf5 file.
         //BFTrans->put(cur);  
@@ -194,8 +203,16 @@ namespace qmcplusplus
     // change DistanceTables if using backflow
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     if(UseBackflow)   { 
+       BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
+  // HACK HACK HACK, until I figure out a solution      
+       SlaterDetWithBackflow* tmp = (SlaterDetWithBackflow*) slaterdet_0;
+       tmp->BFTrans = BFTrans;
+       for(int i=0; i<tmp->Dets.size(); i++) {
+         DiracDeterminantWithBackflow* tmpD = (DiracDeterminantWithBackflow*) tmp->Dets[i]; 
+         tmpD->BFTrans = BFTrans;
+       }
        BFTrans->put(BFnode);
-       slaterdet_0->resetTargetParticleSet(BFTrans->QP);
+       tmp->resetTargetParticleSet(BFTrans->QP);
     }
 #endif
     //only single slater determinant
