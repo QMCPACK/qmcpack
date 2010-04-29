@@ -88,26 +88,70 @@ int main(int argc, char** argv)
 
   mat_t psi0(M,M), psiv(M,M), psic(cmax,M), Identity(M,M);
   vec_t psiv_big(M+cmax);
+  vector<mat_t*> inverse(excitations.size());
+  for(int i=0; i<inverse.size(); ++i) inverse[i]=new mat_t(M,M);
 
   //build up big  psi
   for(int i=0; i<psiv.size();++i) psiv(i)=Random();
   for(int i=0; i<psic.size();++i) psic(i)=Random();
+  for(int i=0; i<psiv_big.size();++i) psiv_big(i)=Random();
   psi0=psiv;//save
 
-  vector<double> dets(excitations.size()),ratios(excitations.size()), ptcl_ratios(excitations.size());
-  const bool substitute_col=false;
+  int mdtot=excitations.size();
+  vector<double> dets(mdtot),detbyratio(mdtot);//store determinants
+  vector<double> ratios_rec(mdtot), ptcl_ratios(mdtot), ptcl_ratios_rec(mdtot);
+
+  const bool substitute_col=true;
   const double eps=1e-12;
   double det_0,det_inv;
 
-  det_0=CI.getRatios(psiv,psic,ratios,substitute_col);
-  CI.debugRatios(psiv,psic,dets,substitute_col);
+  //get multi determinant values using recursive
+  CI.inverse=psiv;
+  det_0=invert_matrix(CI.inverse,true);
 
-  for(int i=0; i<ratios.size(); ++i) ratios[i]*=det_0;
-  check_ratios(dets,ratios,eps);
+  CI.getRatios(psic,ratios_rec,substitute_col);
+  CI.debugRatios(psiv,psic,dets,inverse,substitute_col);
 
-  //pick a particle index
+  cout << "Comparing promotion " << endl;
+  for(int i=0; i<mdtot; ++i) detbyratio[i]=det_0*ratios_rec[i];
+  check_ratios(dets,detbyratio,eps);
+
+
+  //consider a particle update
   int iat=0;
-  CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios);
+  CI.debugRatioByRowSubstitution(psiv_big,iat,ptcl_ratios,inverse);
+  CI.inverse=*inverse[0];
+  //CI.ratioByRowSubstitution(psic,psiv_big,iat,ptcl_ratios_rec);
+  CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios_rec);
+
+  cout << "Comparing particle-update ratios " << endl;
+  check_ratios(ptcl_ratios,ptcl_ratios_rec,eps);
+
+  {//use direct method
+    psiv=psi0;
+    for(int j=0; j<M; ++j) psiv(j,iat)=psiv_big(j);
+    for(int j=0; j<cmax; ++j) psic(j,iat)=psiv_big(j+M);
+    CI.debugRatios(psiv,psic,dets,inverse,substitute_col);
+    for(int i=0; i<mdtot; ++i) detbyratio[i]=det_0*ratios_rec[i]*ptcl_ratios[i];
+    cout << "Comparing particle-update against direct method" << endl;
+    check_ratios(dets,detbyratio,eps);
+  }
+
+  Timer clock;
+  for(int i=0; i<1000; ++i)
+    CI.debugRatioByRowSubstitution(psiv_big,iat,ptcl_ratios,inverse);
+  cout << "Time for direct ratio = " << clock.elapsed() << endl;
+
+  clock.restart();
+  for(int i=0; i<1000; ++i)
+    CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios);
+  cout << "Time for recusrive ratio = " << clock.elapsed() << endl;
+
+
+  
+  //for(int i=0; i<ratios.size(); ++i) detbyratio[i]=det_0*ratios[i]*ptcl_ratios[i];
+  //check_ratios(dets,detbyratio,eps);
+ 
 
   //psi_big=psi0;
   //for(int i=0; i<psi_big.rows(); ++i) psi_big(i,iat)=psiv_big(i);
