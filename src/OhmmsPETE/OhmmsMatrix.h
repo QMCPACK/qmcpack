@@ -404,7 +404,7 @@ const Expression<RHS> &rhs)
   else
     {
       std::cerr << "Error: LHS and RHS don't conform." << std::endl;
-      exit(1);
+      abort();
     }
 }
 }
