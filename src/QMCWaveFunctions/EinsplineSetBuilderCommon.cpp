@@ -68,6 +68,7 @@ namespace qmcplusplus {
       PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), 
       NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
+      NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
       ParticleSets(psets), TargetPtcl(p), H5FileID(-1),
       Format(QMCPACK), makeRotations(false), MeshFactor(1.0),
       MeshSize(0,0,0)

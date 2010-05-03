@@ -173,7 +173,7 @@ namespace qmcplusplus {
       h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
       h_NumMuffinTins(NumMuffinTins), h_have_dpsi(have_dpsi), 
       h_NumAtomicOrbitals(NumAtomicOrbitals);
-    NumCoreStates = NumMuffinTins;
+    NumCoreStates = NumMuffinTins = 0;
 
     h_NumBands.read      (H5FileID, "/electrons/kpoint_0/spin_0/number_of_states");
     h_NumCore.read       (H5FileID, "/electrons/kpoint_0/spin_0/number_of_core_states");
@@ -186,7 +186,8 @@ namespace qmcplusplus {
     HaveOrbDerivs = have_dpsi;
     app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons 
 	      << ", spins=" << NumSpins << ", twists=" << NumTwists 
-	      << ", muffin tins=" << NumMuffinTins << endl;
+	      << ", muffin tins=" << NumMuffinTins <<
+	      << ", core states=" << NumCoreStates << endl;
     app_log() << "atomic orbital=" << NumAtomicOrbitals << endl;
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
       app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
