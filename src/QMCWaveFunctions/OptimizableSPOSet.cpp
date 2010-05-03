@@ -28,7 +28,6 @@ namespace qmcplusplus
   bool
   OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   {
-    cerr << "In OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)\n";
     string gsName, basisName;
     bool same_k = false;
     OhmmsAttributeSet attrib;
@@ -80,11 +79,22 @@ namespace qmcplusplus
       M = BasisOrbitals->getOrbitalSetSize();
       GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
       BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+      GSValMatrix.resize (N,N);
+      GSGradMatrix.resize(N,N);
+      GSLaplMatrix.resize(N,N);
+      BasisValMatrix.resize (M,N);
+      BasisGradMatrix.resize(M,N);
+      BasisLaplMatrix.resize(M,N);
     }
     else {
       M = GSOrbitals->getOrbitalSetSize() - N;
       GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
+      GSValMatrix.resize (N+M,N);
+      GSGradMatrix.resize(N+M,N);
+      GSLaplMatrix.resize(N+M,N);
     }
+    GradTmpSrc.resize(M,N);
+    GradTmpDest.resize(N,N);
     
     app_log() << "  linearopt sposet has " << N << " ground-state orbitals and " 
 	      << M << " basis orbitals.\n";
@@ -114,7 +124,58 @@ namespace qmcplusplus
     }
 
     // Now, look for coefficients element
-    
+    xmlNodePtr xmlCoefs = node->xmlChildrenNode;
+    while (xmlCoefs != NULL) {
+      string cname((const char*)xmlCoefs->name);
+      if (cname == "coefficients") {
+	string type("0"), id("0");
+	int state=-1;
+	OhmmsAttributeSet cAttrib;
+	cAttrib.add(id, "id");
+	cAttrib.add(type, "type");
+	cAttrib.add(state, "state");
+	cAttrib.put(xmlCoefs);
+	
+	if (state == -1) {
+	  app_error() << "You must specify the \"state\" attribute in <linearopt>'s <coefficient>.\n";
+	}
+
+	if (type != "Array") {
+	  // app_error() << "Unknown correlation type " + type + " in OptimizableSPOSet." + "Resetting to \"Array\"\n";
+	  xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
+	}
+	
+	vector<RealType> params;
+	putContent(params, xmlCoefs);
+	app_log() << "Coefficients for state" << state << ":\n";
+	for (int i=0; i< params.size(); i++) {
+	  std::stringstream sstr;
+#ifndef QMC_COMPLEX
+	  ParamPointers.push_back(&(C(state,i)));
+	  ParamIndex.push_back(TinyVector<int,2>(state,i));
+	  sstr << id << "_" << i;
+	  C(state,i) = params[i];
+	  myVars.insert(sstr.str(),C(state,i),true,optimize::LINEAR_P);
+#else
+	  ParamPointers.push_back(&(C(state,i).real()));
+	  ParamPointers.push_back(&(C(state,i).imag()));
+	  ParamIndex.push_back(TinyVector<int,2>(state,i));
+	  ParamIndex.push_back(TinyVector<int,2>(state,i));
+	  sstr << id << "_" << 2*i+0;
+	  myVars.insert(sstr.str(),C(state,i).real(),true,optimize::LINEAR_P);
+	  sstr << id << "_" << 2*i+1;
+	  myVars.insert(sstr.str(),C(state,i).imag(),true,optimize::LINEAR_P);
+#endif
+	}
+
+	for (int i=0; i<params.size(); i++) {
+	  char buf[100];
+	  snprintf (buf, 100, "  %12.5f\n", params[i]);
+	  app_log() << buf;
+	}
+      }
+      xmlCoefs = xmlCoefs->next;
+    }
     return SPOSetBase::put(node);
   }
 
@@ -128,7 +189,7 @@ namespace qmcplusplus
   void 
   OptimizableSPOSet::setOrbitalSetSize(int norbs)
   {
-
+    OrbitalSetSize = norbs;
   }
 
 
@@ -287,6 +348,11 @@ namespace qmcplusplus
   (const ParticleSet& P, int first, int last,
    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
+    cerr << "GSValMatrix.size =(" << GSValMatrix.size(0) << ", " << GSValMatrix.size(1) << ")\n";
+    cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
+    cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
+
+    cerr << "first=" << first << "  last=" << last << endl;
     GSOrbitals->evaluate_notranspose
       (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
     if (BasisOrbitals) {
@@ -319,10 +385,17 @@ namespace qmcplusplus
     else {
       BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
 		  M, GSValMatrix.data()+N, M+N, 0.0, logdet.data(), N);
-      logdet += GSValMatrix;
+      for (int i=0; i<N; i++)
+	for (int j=0; j<N; j++)
+	  logdet(i,j) += GSValMatrix(i,j);
+      //      logdet += GSValMatrix;
       BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
 		  M, GSLaplMatrix.data()+N, M+N, 0.0, d2logdet.data(), N);
-      d2logdet += GSLaplMatrix;
+      for (int i=0; i<N; i++)
+	for (int j=0; j<N; j++)
+	  d2logdet(i,j) += GSLaplMatrix(i,j);
+      //d2logdet += GSLaplMatrix;
+
 
       // Gradient part.  
       for (int dim=0; dim<OHMMS_DIM; dim++) {

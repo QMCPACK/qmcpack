@@ -52,8 +52,7 @@ namespace qmcplusplus
     vector<TinyVector<int,2> > VarIndex;
 
   public:
-    DiracDeterminantOpt(SPOSetBasePtr const &gs_spos, 
-			SPOSetBasePtr const &basis_spos, int first=0);
+    DiracDeterminantOpt(SPOSetBasePtr const &gs_spos, int first=0);
     // This stores new orbital coefficients and updates the
     // inverse matrices.
     void resetParameters(const opt_variables_type& optvars);

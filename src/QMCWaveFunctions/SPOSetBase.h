@@ -49,6 +49,8 @@ namespace qmcplusplus {
     typedef std::map<string,SPOSetBase*> SPOPool_t;
     ///true if C is an identity matrix
     bool Identity;
+    ///true if C is an identity matrix
+    bool Optimizable;
     ///total number of orbitals 
     IndexType TotalOrbitalSize;
     ///number of Single-particle orbtials
@@ -77,7 +79,8 @@ namespace qmcplusplus {
      */
     //SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) 
     SPOSetBase()
-      :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1)
+      :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1),
+       Optimizable(false)
     {
       className="invalid";
     }
@@ -96,6 +99,8 @@ namespace qmcplusplus {
     inline int getBasisSetSize() const { 
       return BasisSetSize;
     }
+
+    
 
     bool setIdentity(bool useIdentity) {
       Identity=useIdentity;

@@ -20,10 +20,8 @@ namespace qmcplusplus
 {
 
   DiracDeterminantOpt::DiracDeterminantOpt
-  (SPOSetBasePtr const &gs_spos, 
-   SPOSetBasePtr const &basis_spos, int first) :
-    DiracDeterminantBase(gs_spos, first),
-    Basis(basis_spos)
+  (SPOSetBasePtr const &gs_spos, int first) :
+    DiracDeterminantBase(gs_spos, first)
   {
     
   }
@@ -85,12 +83,14 @@ namespace qmcplusplus
   void
   DiracDeterminantOpt::checkInVariables(opt_variables_type& active)
   {
+    Phi->checkInVariables(active);
   }
 
 
   void
   DiracDeterminantOpt::checkOutVariables(const opt_variables_type& active)
   {
+    Phi->checkOutVariables(active);
   }
 
 }

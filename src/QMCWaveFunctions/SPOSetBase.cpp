@@ -154,7 +154,7 @@ namespace qmcplusplus {
       return false;
     }
 
-    Occ.resize(BasisSetSize);
+    Occ.resize(max(BasisSetSize,OrbitalSetSize));
     Occ=0.0;
     for(int i=0; i<OrbitalSetSize; i++) Occ[i]=1.0;
 
@@ -193,6 +193,7 @@ namespace qmcplusplus {
 
     if(norbs < OrbitalSetSize) 
     {
+      return false;
       APP_ABORT("SPOSetBase::putFromXML missing or incorrect size");
     }
 

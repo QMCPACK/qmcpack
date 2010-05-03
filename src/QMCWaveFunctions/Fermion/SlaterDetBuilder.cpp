@@ -36,6 +36,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #endif
+#include "QMCWaveFunctions/Fermion/DiracDeterminantOpt.h"
 
 
 namespace qmcplusplus
@@ -344,11 +345,16 @@ namespace qmcplusplus
         adet = new DiracDeterminantWithBackflow(psi,BFTrans,firstIndex);
       else 
 #endif
-        adet = new DiracDeterminantBase(psi,firstIndex);
+	if (psi->Optimizable)
+	  adet = new DiracDeterminantOpt(psi, firstIndex);
+	else
+	  adet = new DiracDeterminantBase(psi,firstIndex);
 #endif
     }
     adet->set(firstIndex,lastIndex-firstIndex);
     slaterdet_0->add(adet,spin_group);
+    if (psi->Optimizable)
+      slaterdet_0->Optimizable = true;
     return true;
   }
 

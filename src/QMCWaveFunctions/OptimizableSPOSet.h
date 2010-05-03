@@ -74,6 +74,7 @@ namespace qmcplusplus
 
     OptimizableSPOSet() : N(0), M(0), GSOrbitals(0), BasisOrbitals(0)
     {
+      Optimizable = true;
     }
 
     OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs, 
@@ -93,6 +94,7 @@ namespace qmcplusplus
     
       C.resize(N,M);
       ActiveBasis.resize(N);
+      Optimizable = true;
     }
 
     //    bool put(xmlNodePtr cur, SPOPool_t &spo_pool);
