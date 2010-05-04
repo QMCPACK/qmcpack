@@ -277,8 +277,21 @@ namespace qmcplusplus
       BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
     }
     else {
-      BLAS::gemv (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
-      BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
+      for (int iorb=0; iorb<N; iorb++) {
+	psi  [iorb] = GSVal[iorb];
+	dpsi [iorb] = GSGrad[iorb];
+	d2psi[iorb] = GSLapl[iorb];
+	for (int ibasis=0; ibasis<M; ibasis++) {
+	  psi[iorb] += C(iorb,ibasis) * GSVal[N+ibasis];
+	  for (int dim=0; dim<OHMMS_DIM; dim++)
+	    dpsi[iorb][dim] += C(iorb,ibasis) * GSGrad[N+ibasis][dim];
+	  d2psi[iorb] += C(iorb,ibasis) * GSLapl[N+ibasis];
+	
+	}
+      }
+
+      // BLAS::gemv (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
+      // BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
     }
     
     for (int i=0; i<N; i++) {
@@ -299,9 +312,9 @@ namespace qmcplusplus
       for (int iat=first; iat<last; iat++) {
 	GSOrbitals->evaluate (P, iat, GSVal, GSGrad, GSLapl);
 	for (int i=0; i<M; i++) {
-	  basis_val (iat,i) = GSVal[N+i];
-      	  basis_grad(iat,i) = GSGrad[N+i];
-      	  basis_lapl(iat,i) = GSLapl[N+i];
+	  basis_val (iat-first,i) = GSVal[N+i];
+      	  basis_grad(iat-first,i) = GSGrad[N+i];
+      	  basis_lapl(iat-first,i) = GSLapl[N+i];
 	}
       }
     }

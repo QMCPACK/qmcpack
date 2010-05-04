@@ -68,11 +68,21 @@ namespace qmcplusplus
     // The dlogpsi part is simple -- just ratios
     // First, evaluate the basis functions
     // cerr << "GEMM 1:\n";
+    // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex, LastIndex);
     Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
     // BLAS::gemm ('N', 'T', NumOrbitals, NumBasis, NumOrbitals, 1.0, psiM.data(), 
     // 		NumOrbitals, BasisVals.data(), NumBasis, 0.0, dlogdet_dC.data(), NumOrbitals);
-    BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumBasis, 1.0, 
-		BasisVals.data(), NumBasis, psiM.data(), NumOrbitals, 0.0, dlogdet_dC.data(), NumOrbitals);
+
+    // BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumBasis, 1.0, 
+    // 		BasisVals.data(), NumBasis, psiM.data(), NumOrbitals, 0.0, dlogdet_dC.data(), NumOrbitals);
+    for (int i=0; i<NumOrbitals; i++)
+      for (int j=0; j<NumBasis; j++) {
+	dlogdet_dC(i,j) = 0.0;
+	for (int n=0; n<NumOrbitals; n++) {
+	  dlogdet_dC(i,j) += psiM(n,i) * BasisVals(n,j);
+	  //	  fprintf (stderr, "BasisVals(%d,%d) = %12.6e\n", n, j, BasisVals(n,j));
+	}
+      }
 
     // Now, d_dC should hold d/dC_{ij} log(det).
     
@@ -82,22 +92,39 @@ namespace qmcplusplus
     // BLAS::gemm('T', 'T', NumOrbitals, NumBasis, NumOrbitals, -1.0, d2psiM.data(),
     // 	       NumOrbitals, dlogdet_dC.data(), NumBasis, 0.0, L_gamma.data(), NumBasis);
 
-    BLAS::gemm('T', 'T', NumBasis, NumOrbitals, NumOrbitals, -1.0, dlogdet_dC.data(), NumOrbitals, 
-	       d2psiM.data(), NumOrbitals, 0.0, L_gamma.data(), NumBasis);
+    // BLAS::gemm('T', 'T', NumBasis, NumOrbitals, NumOrbitals, -1.0, dlogdet_dC.data(), NumOrbitals, 
+    // 	       d2psiM.data(), NumOrbitals, 0.0, L_gamma.data(), NumBasis);
+    for (int n=0; n<NumOrbitals; n++)
+      for (int j=0; j<NumBasis; j++) {
+	L_gamma(n,j) = 0.0;
+	for (int m=0; m<NumOrbitals; m++)
+	  L_gamma(n,j) -= d2psiM(n,m)*dlogdet_dC(m,j);
+      }
     
+
     // Add on BasisLapl matrix
     L_gamma += BasisLapl;
 
     // Now, compute d/dC_{ij} lapl(det)/det by multiplying by Ainv
     // cerr << "GEMM 3:\n";
-    BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumOrbitals, 1.0, L_gamma.data(), NumOrbitals, 
-		psiM.data(), NumOrbitals, 0.0, dlapl_dC.data(), NumBasis);
+    // BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumOrbitals, 1.0, L_gamma.data(), NumOrbitals, 
+    // 		psiM.data(), NumOrbitals, 0.0, dlapl_dC.data(), NumBasis);
+    for (int i=0; i<NumOrbitals; i++)
+      for (int j=0; j<NumBasis; j++) {
+	dlapl_dC(i,j) = 0.0;
+	for (int n=0; n<NumOrbitals; n++)
+	  dlapl_dC(i,j) += psiM(n,i)*L_gamma(n,j);
+      }
+
 
     // Pull elements from dense d_dC matrices and put into parameter
     // derivatives, dlogpsi and dhpsioverpsi    
     Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
     Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
-
+    // fprintf (stderr, "dlogpsi:\n");
+    // for (int i=0; i<dlogpsi.size(); i++)
+    //   fprintf (stderr, "%12.6e ", dlogpsi[i]);
+    // fprintf (stderr, "\n");
   }
 
   void
