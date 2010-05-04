@@ -20,10 +20,10 @@ namespace qmcplusplus
 {
 
   DiracDeterminantOpt::DiracDeterminantOpt
-  (SPOSetBasePtr const &gs_spos, int first) :
+  (ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
     DiracDeterminantBase(gs_spos, first)
   {
-    
+    targetPtcl = &ptcl;
   }
 
   

@@ -346,7 +346,7 @@ namespace qmcplusplus
       else 
 #endif
 	if (psi->Optimizable)
-	  adet = new DiracDeterminantOpt(psi, firstIndex);
+	  adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
 	else
 	  adet = new DiracDeterminantBase(psi,firstIndex);
 #endif

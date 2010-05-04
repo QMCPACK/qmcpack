@@ -348,11 +348,11 @@ namespace qmcplusplus
   (const ParticleSet& P, int first, int last,
    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    cerr << "GSValMatrix.size =(" << GSValMatrix.size(0) << ", " << GSValMatrix.size(1) << ")\n";
-    cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
-    cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
+//     cerr << "GSValMatrix.size =(" << GSValMatrix.size(0) << ", " << GSValMatrix.size(1) << ")\n";
+//     cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
+//     cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
 
-    cerr << "first=" << first << "  last=" << last << endl;
+//     cerr << "first=" << first << "  last=" << last << endl;
     GSOrbitals->evaluate_notranspose
       (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
     if (BasisOrbitals) {
