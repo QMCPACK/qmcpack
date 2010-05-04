@@ -24,6 +24,14 @@ namespace qmcplusplus
     DiracDeterminantBase(gs_spos, first)
   {
     targetPtcl = &ptcl;
+    NumOrbitals = gs_spos->OrbitalSetSize;
+    NumBasis    = gs_spos->BasisSetSize;
+    BasisVals.resize(NumOrbitals,NumBasis);
+    BasisGrad.resize(NumOrbitals,NumBasis);
+    BasisLapl.resize(NumOrbitals,NumBasis);
+    dlogdet_dC.resize(NumOrbitals, NumBasis);
+    L_gamma.resize(NumOrbitals, NumBasis);
+    dlapl_dC.resize(NumOrbitals,NumBasis);
   }
 
   
@@ -54,24 +62,36 @@ namespace qmcplusplus
 					   vector<RealType>& dlogpsi,
 					   vector<RealType>& dhpsioverpsi)
   {
+    // cerr << "NumOrbitals = " << NumOrbitals << endl;
+    // cerr << "NumBasis    = " << NumBasis << endl;
+    
     // The dlogpsi part is simple -- just ratios
     // First, evaluate the basis functions
+    // cerr << "GEMM 1:\n";
     Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
-    BLAS::gemm ('N', 'T', NumOrbitals, NumBasis, NumOrbitals, 1.0, psiM.data(), 
-		NumOrbitals, BasisVals.data(), NumBasis, 0.0, dlogdet_dC.data(), NumBasis);
+    // BLAS::gemm ('N', 'T', NumOrbitals, NumBasis, NumOrbitals, 1.0, psiM.data(), 
+    // 		NumOrbitals, BasisVals.data(), NumBasis, 0.0, dlogdet_dC.data(), NumOrbitals);
+    BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumBasis, 1.0, 
+		BasisVals.data(), NumBasis, psiM.data(), NumOrbitals, 0.0, dlogdet_dC.data(), NumOrbitals);
+
     // Now, d_dC should hold d/dC_{ij} log(det).
     
     // Multiply L matrix by gamma matrix, as shown in eq. 17 of
     // docs/OrbitalOptimization.tex 
-    BLAS::gemm('T', 'T', NumOrbitals, NumBasis, NumOrbitals, -1.0, d2psiM.data(),
-	       NumOrbitals, dlogdet_dC.data(), NumBasis, 0.0, L_gamma.data(), NumBasis);
+    // cerr << "GEMM 2:\n";
+    // BLAS::gemm('T', 'T', NumOrbitals, NumBasis, NumOrbitals, -1.0, d2psiM.data(),
+    // 	       NumOrbitals, dlogdet_dC.data(), NumBasis, 0.0, L_gamma.data(), NumBasis);
+
+    BLAS::gemm('T', 'T', NumBasis, NumOrbitals, NumOrbitals, -1.0, dlogdet_dC.data(), NumOrbitals, 
+	       d2psiM.data(), NumOrbitals, 0.0, L_gamma.data(), NumBasis);
     
     // Add on BasisLapl matrix
     L_gamma += BasisLapl;
 
     // Now, compute d/dC_{ij} lapl(det)/det by multiplying by Ainv
-    BLAS::gemm ('T', 'T', NumOrbitals, NumBasis, NumOrbitals, 1.0, psiM.data(), 
-		NumOrbitals, L_gamma.data(), NumBasis, 0.0, dlapl_dC.data(), NumBasis);
+    // cerr << "GEMM 3:\n";
+    BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumOrbitals, 1.0, L_gamma.data(), NumOrbitals, 
+		psiM.data(), NumOrbitals, 0.0, dlapl_dC.data(), NumBasis);
 
     // Pull elements from dense d_dC matrices and put into parameter
     // derivatives, dlogpsi and dhpsioverpsi    

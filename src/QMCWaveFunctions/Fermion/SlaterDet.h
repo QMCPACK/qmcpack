@@ -228,6 +228,14 @@ namespace qmcplusplus
     virtual
     void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
+    void evaluateDerivatives(ParticleSet& P,
+			     const opt_variables_type& active,
+			     vector<RealType>& dlogpsi,
+			     vector<RealType>& dhpsioverpsi)
+    {
+      for (int i=0; i<Dets.size(); i++)
+	Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+    }
 
 #ifdef QMC_CUDA
     /////////////////////////////////////////////////////
