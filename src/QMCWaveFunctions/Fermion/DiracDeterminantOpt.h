@@ -40,13 +40,13 @@ namespace qmcplusplus
     // Basis functions evaluated at all of my electron positions
     // First index is electron, second index is basis index
     ValueMatrix_t BasisVals, BasisLapl;
-    GradMatrix_t  BasisGrad;
+    GradMatrix_t  BasisGrad, dgrad_dC, G_gamma;
     // Matrix product of Ainv and BasisVals
     ValueMatrix_t dlogdet_dC;
     // Stores the C_{ij} derivative of (\nabla^2 det)/det
     ValueMatrix_t dlapl_dC;
     // Intermediate used to compute the above.
-    ValueMatrix_t L_gamma;
+    ValueMatrix_t Gamma, L_gamma;
 
     // This vector maps variable number into ExcitedCoefs matrix
     vector<TinyVector<int,2> > VarIndex;

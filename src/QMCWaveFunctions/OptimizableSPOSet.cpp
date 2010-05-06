@@ -89,9 +89,9 @@ namespace qmcplusplus
     else {
       M = GSOrbitals->getOrbitalSetSize() - N;
       GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
-      GSValMatrix.resize (N+M,N);
-      GSGradMatrix.resize(N+M,N);
-      GSLaplMatrix.resize(N+M,N);
+      GSValMatrix.resize (N,N+M);
+      GSGradMatrix.resize(N,N+M);
+      GSLaplMatrix.resize(N,N+M);
     }
     GradTmpSrc.resize(M,N);
     GradTmpDest.resize(N,N);
@@ -253,7 +253,12 @@ namespace qmcplusplus
       BLAS::gemv (N, M, C.data(), &(GSVal[N]), &(psi[0]));
     }
     else 
-      BLAS::gemv (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+      // BLAS::gemv (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+      for (int i=0; i<N; i++) {
+	psi[i] = 0.0;
+	for (int j=0; j<M; j++)
+	  psi[i] += C(i,j)*GSVal[N+j];
+      }
 
     for (int i=0; i<N; i++)	psi[i] += GSVal[i];
   }
@@ -262,7 +267,8 @@ namespace qmcplusplus
   OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, 
 			      vector<RealType> &psi)
   {
-
+    app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi)\n  should not be called.  Abort.\n";
+    abort();
   }
   
   void
@@ -286,18 +292,18 @@ namespace qmcplusplus
 	  for (int dim=0; dim<OHMMS_DIM; dim++)
 	    dpsi[iorb][dim] += C(iorb,ibasis) * GSGrad[N+ibasis][dim];
 	  d2psi[iorb] += C(iorb,ibasis) * GSLapl[N+ibasis];
-	
 	}
+
       }
 
       // BLAS::gemv (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
       // BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
     }
     
-    for (int i=0; i<N; i++) {
-      psi[i]  += GSVal[i];
-      d2psi[i] += GSLapl[i];
-    }
+    // for (int i=0; i<N; i++) {
+    //   psi[i]  += GSVal[i];
+    //   d2psi[i] += GSLapl[i];
+    // }
   }
 
 
@@ -330,7 +336,7 @@ namespace qmcplusplus
       int loc = myVars.where(ip);
       if (loc >= 0) {
 	TinyVector<int,2> idx = ParamIndex[ip];
-	destVec[loc] = mat(idx[0], idx[1]);
+	destVec[loc] += mat(idx[0], idx[1]);
       }
     }
   }
@@ -349,7 +355,7 @@ namespace qmcplusplus
 	destVec[loc] = mat(idx[0], idx[1]).real();
 	loc = myVars.where(ip+1);
 	assert (loc >= 0);
-	destVec[loc] = mat(idx[0], idx[1]).imag();
+	destVec[loc] += mat(idx[0], idx[1]).imag();
       }
     }
   }
@@ -396,31 +402,51 @@ namespace qmcplusplus
       }
     }
     else {
-      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
-		  M, GSValMatrix.data()+N, M+N, 0.0, logdet.data(), N);
-      for (int i=0; i<N; i++)
-	for (int j=0; j<N; j++)
-	  logdet(i,j) += GSValMatrix(i,j);
+      // HACK HACK HACK
+//       BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+// 		  M, GSValMatrix.data()+N, M+N, 0.0, logdet.data(), N);
+//       for (int i=0; i<N; i++)
+// 	for (int j=0; j<N; j++)
+// 	  logdet(i,j) += GSValMatrix(i,j);
+      for (int iel=0; iel<N; iel++)
+	for (int iorb=0; iorb<N; iorb++) {
+	  logdet(iel,iorb) = GSValMatrix(iel,iorb);
+	  for (int ibasis=0; ibasis<M; ibasis++)
+	    logdet(iel,iorb) += C(iorb,ibasis)*GSValMatrix(iel,N+ibasis);
+	}
+	  
       //      logdet += GSValMatrix;
-      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
-		  M, GSLaplMatrix.data()+N, M+N, 0.0, d2logdet.data(), N);
-      for (int i=0; i<N; i++)
-	for (int j=0; j<N; j++)
-	  d2logdet(i,j) += GSLaplMatrix(i,j);
+      // BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+      // 		  M, GSLaplMatrix.data()+N, M+N, 0.0, d2logdet.data(), N);
+      
+      for (int iel=0; iel<N; iel++) 
+	for (int iorb=0; iorb<N; iorb++) {
+	  d2logdet(iel,iorb) = GSLaplMatrix(iel,iorb);
+	  for (int ibasis=0; ibasis<M; ibasis++)
+	    d2logdet(iel,iorb) += C(iorb,ibasis)*GSLaplMatrix(iel,N+ibasis);
+	}
       //d2logdet += GSLaplMatrix;
 
 
       // Gradient part.  
-      for (int dim=0; dim<OHMMS_DIM; dim++) {
-	for (int i=0; i<M; i++)
-	  for (int j=0; j<N; j++)
-	    GradTmpSrc(i,j) = GSGradMatrix(i,j+N)[dim];
-	BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(), M, 
-		     GradTmpSrc.data(), M, 0.0, GradTmpDest.data(), N);
-	for (int i=0; i<N; i++)
-	  for (int j=0; j<N; j++)
-	    dlogdet(i,j)[dim] = GradTmpDest(i,j) + GSGradMatrix(i,j)[dim];
-      }
+      for (int i=0; i<N; i++) 
+	for (int iorb=0; iorb<N; iorb++) {
+	  dlogdet(i,iorb) = GSGradMatrix(i,iorb);
+	  for (int n=0; n<M; n++)
+	    dlogdet(i,iorb) += C(iorb,n) * GSGradMatrix(i,N+n);
+	}
+ 
+      
+      // for (int dim=0; dim<OHMMS_DIM; dim++) {
+      // 	for (int i=0; i<M; i++)
+      // 	  for (int j=0; j<N; j++)
+      // 	    GradTmpSrc(i,j) = GSGradMatrix(i,j+N)[dim];
+      // 	BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(), M, 
+      // 		     GradTmpSrc.data(), M, 0.0, GradTmpDest.data(), N);
+      // 	for (int i=0; i<N; i++)
+      // 	  for (int j=0; j<N; j++)
+      // 	    dlogdet(i,j)[dim] = GradTmpDest(i,j) + GSGradMatrix(i,j)[dim];
+      //}
     }
   }
 

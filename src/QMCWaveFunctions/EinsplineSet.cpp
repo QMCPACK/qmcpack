@@ -1387,8 +1387,8 @@ namespace qmcplusplus {
 	int sign=0;
 	for (int n=0; n<OHMMS_DIM; n++) {
 	  RealType img = std::floor(ru[n]);
-	ru[n] -= img;
-	sign += HalfG[n] * (int)img;
+	  ru[n] -= img;
+	  sign += HalfG[n] * (int)img;
 	}
 	for (int n=0; n<OHMMS_DIM; n++)
 	  ru[n] -= std::floor (ru[n]);

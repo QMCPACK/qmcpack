@@ -702,13 +702,19 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
       vector<RealType>& dlogpsi,
       vector<RealType>& dhpsioverpsi)
   {
-    for (int i=0; i<Z.size(); i++)
-      {
-        if (Z[i]->dPsi)(Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-        else Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-      }
+    // First, zero out derivatives
+    for (int j=0; j<dlogpsi.size(); j++) 
+      dlogpsi[j] = dhpsioverpsi[j] = 0.0;
+      
+    for (int i=0; i<Z.size(); i++) {
+      if (Z[i]->dPsi)(Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+      else Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+    }
     //orbitals do not know about mass of particle.
-    for (int i=0;i<dhpsioverpsi.size();i++) dhpsioverpsi[i]*=OneOverM;
+    for (int i=0;i<dhpsioverpsi.size();i++) {
+      dhpsioverpsi[i]*=OneOverM;
+      fprintf (stderr, "%2d  %12.6e  %12.6e\n", i, dlogpsi[i], dhpsioverpsi[i]);
+    }
   }
 
   TrialWaveFunction::RealType
