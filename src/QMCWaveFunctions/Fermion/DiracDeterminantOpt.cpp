@@ -159,10 +159,10 @@ namespace qmcplusplus
     // derivatives, dlogpsi and dhpsioverpsi    
     Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
     Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
-    fprintf (stderr, "dlogpsi:\n");
-    for (int i=0; i<dlogpsi.size(); i++)
-      fprintf (stderr, "%12.6e ", dlogpsi[i]);
-    fprintf (stderr, "\n");
+    // fprintf (stderr, "dlogpsi:\n");
+    // for (int i=0; i<dlogpsi.size(); i++)
+    //   fprintf (stderr, "%12.6e ", dlogpsi[i]);
+    // fprintf (stderr, "\n");
   }
 
   void

@@ -711,10 +711,8 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
       else Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
     }
     //orbitals do not know about mass of particle.
-    for (int i=0;i<dhpsioverpsi.size();i++) {
+    for (int i=0;i<dhpsioverpsi.size();i++) 
       dhpsioverpsi[i]*=OneOverM;
-      fprintf (stderr, "%2d  %12.6e  %12.6e\n", i, dlogpsi[i], dhpsioverpsi[i]);
-    }
   }
 
   TrialWaveFunction::RealType
