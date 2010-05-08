@@ -79,13 +79,10 @@ namespace qmcplusplus
     // cerr << "GEMM 1:\n";
     // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex, LastIndex);
     Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
-    // BLAS::gemm ('N', 'T', NumOrbitals, NumBasis, NumOrbitals, 1.0, psiM.data(), 
-    // 		NumOrbitals, BasisVals.data(), NumBasis, 0.0, dlogdet_dC.data(), NumOrbitals);
 
     BLAS::gemm ('N', 'T', NumBasis, NumOrbitals, NumOrbitals, 1.0, 
     		BasisVals.data(), NumBasis, psiM.data(), NumOrbitals,
     		0.0, dlogdet_dC.data(), NumBasis);
-
 //     for (int i=0; i<NumOrbitals; i++)
 //       for (int j=0; j<NumBasis; j++) {
 // 	dlogdet_dC(i,j) = 0.0;
@@ -109,19 +106,10 @@ namespace qmcplusplus
     
     // Multiply L matrix by gamma matrix, as shown in eq. 17 of
     // docs/OrbitalOptimization.tex 
-    // cerr << "GEMM 2:\n";
-    // BLAS::gemm('T', 'T', NumOrbitals, NumBasis, NumOrbitals, -1.0, d2psiM.data(),
-    // 	       NumOrbitals, dlogdet_dC.data(), NumBasis, 0.0, L_gamma.data(), NumBasis);
-
-    // BLAS::gemm('T', 'T', NumBasis, NumOrbitals, NumOrbitals, -1.0, dlogdet_dC.data(), NumOrbitals, 
-    // 	       d2psiM.data(), NumOrbitals, 0.0, L_gamma.data(),
-    // 	       NumBasis);
-
     L_gamma = BasisLapl;
     BLAS::gemm ('N', 'N', NumBasis, NumOrbitals, NumOrbitals, -1.0,
 		Gamma.data(), NumBasis, d2psiM.data(), NumOrbitals, 
 		1.0, L_gamma.data(), NumBasis);
-
 //     for (int l=0; l<NumOrbitals; l++)
 //       for (int j=0; j<NumBasis; j++) {
 // 	// L_gamma(l,j) = BasisLapl(l,j);
@@ -134,19 +122,11 @@ namespace qmcplusplus
 //       }
     
 
-    // Add on BasisLapl matrix
-    //L_gamma += BasisLapl;
-
     // Now, compute d/dC_{ij} lapl(det)/det by multiplying by Ainv
-    // cerr << "GEMM 3:\n";
-    // BLAS::gemm ('T', 'N', NumBasis, NumOrbitals, NumOrbitals, 1.0, L_gamma.data(), NumOrbitals, 
-    // 		psiM.data(), NumOrbitals, 0.0, dlapl_dC.data(),
-    // NumBasis);
 
     BLAS::gemm('N', 'T', NumBasis, NumOrbitals, NumOrbitals, -0.5,
 	       L_gamma.data(), NumBasis, psiM.data(), NumOrbitals,
 	       0.0, dlapl_dC.data(), NumBasis);
-
 //     for (int i=0; i<NumOrbitals; i++)
 //       for (int j=0; j<NumBasis; j++) {
 // 	dlapl_dC(i,j) = 0.0;
@@ -158,35 +138,11 @@ namespace qmcplusplus
 // 	}
 //       }
 
-    // double KE=0.0;
-    // for (int l=0; l<NumOrbitals; l++)
-    //   KE += 0.5*(P.L[l+FirstIndex] + dot (P.G[l+FirstIndex],P.G[l+FirstIndex]));
-    // cerr << "KE = " << KE << endl;
-    // dlapl_dC -= KE * dlogdet_dC;
-    // for (int i=0; i<NumOrbitals; i++)
-    //   for (int j=0; j<NumBasis; j++) 
-    // 	for (int l=0; l<NumOrbitals; l++) {
-    // 	  double KE = P.L[l+FirstIndex] + dot (P.G[l+FirstIndex],P.G[l+FirstIndex]);
-    // 	  dlapl_dC(i,j) += KE * dlogdet_dC(i,j);
-    // 	  // TinyVector<ValueType,3> G1 = psiM(l,i)*G_gamma(l,j);
-    // 	  // TinyVector<ValueType,3> G2 = -dlogdet_dC(i,j) * P.G[l+FirstIndex];
-    // 	  // cerr << "G1 = " << G1 << endl;
-    // 	  // cerr << "G2 = " << G2 << endl;
-    // 	  // cerr << "P.G = " << P.G[l+FirstIndex] << endl;
-    // 	  // cerr << "addand = " << 2.0*dot(P.G[l+FirstIndex],G1 + G2) << endl;
-    // 	  // dlapl_dC(i,j) -= dot(P.G[l+FirstIndex],G1 + G2);
-    // 	}
       
-
-
     // Pull elements from dense d_dC matrices and put into parameter
     // derivatives, dlogpsi and dhpsioverpsi    
     Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
     Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
-    // fprintf (stderr, "dlogpsi:\n");
-    // for (int i=0; i<dlogpsi.size(); i++)
-    //   fprintf (stderr, "%12.6e ", dlogpsi[i]);
-    // fprintf (stderr, "\n");
   }
 
   void
