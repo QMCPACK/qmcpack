@@ -505,6 +505,7 @@ class AtomTypes(gtk.Frame):
             i = i+1
         self.Table.show_all()
         self.emit ("type_changed", self.GetElementTypes())
+        return row
 
     def RowChangedCallback(self, row):
         self.emit("type_changed", self.GetElementTypes())
@@ -692,6 +693,15 @@ class AtomPositions(gtk.Frame):
             pos = [row[1].get_value(), row[2].get_value(), row[3].get_value()]
             positions.append(pos)
         return positions
+
+    def set_atom_positions(self, pos):
+        positions = []
+        i = 0
+        for row in self.AtomRowList:
+            row[1].set_value(pos[i,0])
+            row[2].set_value(pos[i,1])
+            row[3].set_value(pos[i,2])
+            i += 1
 
     def get_atom_types(self):
         types = []

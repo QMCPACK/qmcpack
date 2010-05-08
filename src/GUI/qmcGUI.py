@@ -152,7 +152,7 @@ class GUI:
         notebook = gtk.Notebook()
         notebook.set_tab_pos (gtk.POS_LEFT)
         self.GeometryFrame = Geometry()
-        self.WavefunctionFrame = Wavefunction()
+        self.WavefunctionFrame = Wavefunction(self.GeometryFrame)
         self.RunFrame = Run()
         notebook.append_page (self.GeometryFrame, gtk.Label("Geometry"))
         notebook.append_page (self.WavefunctionFrame, gtk.Label("Wave function"))
