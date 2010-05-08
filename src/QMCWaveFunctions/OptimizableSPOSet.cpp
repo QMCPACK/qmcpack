@@ -148,6 +148,7 @@ namespace qmcplusplus
 	vector<RealType> params;
 	putContent(params, xmlCoefs);
 	app_log() << "Coefficients for state" << state << ":\n";
+	cerr << "params.size() = " << params.size() << endl;
 	for (int i=0; i< params.size(); i++) {
 	  std::stringstream sstr;
 #ifndef QMC_COMPLEX

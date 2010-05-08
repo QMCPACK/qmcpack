@@ -52,6 +52,8 @@ namespace qmcplusplus
     vector<TinyVector<int,2> > VarIndex;
 
   public:
+    DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+
     DiracDeterminantOpt(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first=0);
     // This stores new orbital coefficients and updates the
     // inverse matrices.
