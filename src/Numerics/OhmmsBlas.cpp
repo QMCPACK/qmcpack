@@ -28,6 +28,7 @@ const int BLAS::INCX;
 const int BLAS::INCY;
 const char BLAS::UPLO;
 const char BLAS::TRANS;
+const char BLAS::NOTRANS;
 
 const float  BLAS::sone = 1.0e0;
 const float  BLAS::szero = 0.0e0;

@@ -251,15 +251,15 @@ namespace qmcplusplus
     GSOrbitals->evaluate(P,iat,GSVal);
     if (BasisOrbitals) {
       BasisOrbitals->evaluate(P,iat,BasisVal);
-      BLAS::gemv (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]), &(psi[0]));
     }
     else 
-      // BLAS::gemv (N, M, C.data(), &(GSVal[N]), &(psi[0]));
-      for (int i=0; i<N; i++) {
-	psi[i] = 0.0;
-	for (int j=0; j<M; j++)
-	  psi[i] += C(i,j)*GSVal[N+j];
-      }
+      BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+//       for (int i=0; i<N; i++) {
+// 	psi[i] = 0.0;
+// 	for (int j=0; j<M; j++)
+// 	  psi[i] += C(i,j)*GSVal[N+j];
+//       }
 
     for (int i=0; i<N; i++)	psi[i] += GSVal[i];
   }
@@ -280,8 +280,8 @@ namespace qmcplusplus
     GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
     if (BasisOrbitals) {
       BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
-      BLAS::gemv (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
-      BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
     }
     else {
       for (int iorb=0; iorb<N; iorb++) {
@@ -297,8 +297,8 @@ namespace qmcplusplus
 
       }
 
-      // BLAS::gemv (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
-      // BLAS::gemv (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
+      // BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
+      // BLAS::gemv_trans (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
     }
     
     // for (int i=0; i<N; i++) {

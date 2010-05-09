@@ -43,7 +43,8 @@ struct BLAS {
   static const int INCX = 1;
   static const int INCY = 1;
   static const char UPLO = 'L';
-  static const char TRANS = 'N';
+  static const char TRANS = 'T';
+  static const char NOTRANS = 'N';
   static const float sone;
   static const float szero;
   static const double done;
@@ -105,6 +106,11 @@ struct BLAS {
   //}
   inline static 
   void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y) {
+    dgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+  }
+
+  inline static
+  void gemv_trans(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y) {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
   }
 
@@ -113,7 +119,7 @@ struct BLAS {
       const std::complex<double>* restrict amat, 
       const std::complex<double>* restrict x, 
       std::complex<double>* restrict y) {
-    zgemv(TRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
+    zgemv(NOTRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
   }
 
   inline static 
