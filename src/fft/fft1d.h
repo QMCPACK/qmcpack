@@ -31,8 +31,9 @@ namespace qmcplusplus
   {
     typedef T1 space_type;
     typedef T2 spectral_type;
+    typedef typename scalar_traits<T1>::real_type real_type;
     int mydesc[FFT_MAX];
-    fft_engine_base<typename scalar_traits<T1>::real_type,ENG> my_engine;
+    fft_engine_base<real_type,ENG> my_engine;
 
     /** default constructor
      */
