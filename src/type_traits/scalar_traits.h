@@ -32,7 +32,7 @@ namespace qmcplusplus {
   template<typename T> struct scalar_traits<std::complex<T> > 
   {
     enum {DIM=2};
-    typedef double          real_type;
+    typedef T          real_type;
     typedef std::complex<T> value_type;
   };
 
