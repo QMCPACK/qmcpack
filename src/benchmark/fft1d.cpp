@@ -21,6 +21,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
+//#define SINGLE_PREC
 #include <fft/fft.h>
 
 
@@ -109,29 +110,29 @@ namespace qmcplusplus
       }
     };
 
-  template<unsigned fft_id>
+  template<typename T, unsigned fft_id>
     struct fft1d_debug
     {
       static void doit(int fft_dim, int howmany)
       {
         {
-          cout << "Double precision, r2c, in-place " << endl;
-          fft1d_test<double,complex<double>,fft_id> test(fft_dim,howmany,true);
+          cout << "r2c, in-place " << endl;
+          fft1d_test<T,complex<T>,fft_id> test(fft_dim,howmany,true);
           test.debug();
         }
         {
-          cout << "Double precision, r2c, out-place " << endl;
-          fft1d_test<double,complex<double>,fft_id> test(fft_dim,howmany,false);
+          cout << "r2c, out-place " << endl;
+          fft1d_test<T,complex<T>,fft_id> test(fft_dim,howmany,false);
           test.debug();
         }
         {
-          cout << "Double precision, c2c, in-place " << endl;
-          fft1d_test<complex<double>,complex<double>,fft_id> test(fft_dim,howmany,true);
+          cout << "c2c, in-place " << endl;
+          fft1d_test<complex<T>,complex<T>,fft_id> test(fft_dim,howmany,true);
           test.debug();
         }
         {
-          cout << "Double precision, c2c, out-place " << endl;
-          fft1d_test<complex<double>,complex<double>,fft_id> test(fft_dim,howmany,false);
+          cout << "c2c, out-place " << endl;
+          fft1d_test<complex<T>,complex<T>,fft_id> test(fft_dim,howmany,false);
           test.debug();
         }
       }
@@ -139,7 +140,6 @@ namespace qmcplusplus
 
 }
 
-using namespace qmcplusplus;
 
 inline void print_help(const string& msg)
 {
@@ -149,6 +149,7 @@ inline void print_help(const string& msg)
 int main(int argc, char** argv)
 {
 
+  using namespace qmcplusplus;
   OHMMS::Controller->initialize(argc,argv);
   Communicate* mycomm=OHMMS::Controller;
   OhmmsInfo Welcome(argc,argv,mycomm->rank());
@@ -196,20 +197,32 @@ int main(int argc, char** argv)
   if(fft_eng =="fftw")
   {
     cout << "Testing FFT1D with FFTW " << endl;
-    fft1d_debug<FFTW_ENG>::doit(fft_dim,howmany);
+#if defined(SINGLE_PREC)
+    cout << "Single precision " << endl;
+    fft1d_debug<float,FFTW_ENG>::doit(fft_dim,howmany);
+#else
+    cout << "Double precision " << endl;
+    fft1d_debug<double,FFTW_ENG>::doit(fft_dim,howmany);
+#endif
   }
 #if defined(HAVE_MKL)
   else if(fft_eng=="mkl")
   {
     cout << "Testing FFT1D with MKL " << endl;
-    fft1d_debug<FFTMKL_ENG>::doit(fft_dim,howmany);
+    cout << "Double precision " << endl;
+    fft1d_debug<double,FFTMKL_ENG>::doit(fft_dim,howmany);
+    cout << "Single precision " << endl;
+    fft1d_debug<float,FFTMKL_ENG>::doit(fft_dim,howmany);
   }
 #endif
 #if defined(HAVE_ESSL)
   else if(fft_eng =="essl")
   {
     cout << "Testing FFT1D with ESSL " << endl;
-    fft1d_debug<FFTESSL_ENG>::doit(fft_dim,howmany);
+    cout << "Double precision " << endl;
+    fft1d_debug<double,FFTESSL_ENG>::doit(fft_dim,howmany);
+    cout << "Single precision " << endl;
+    fft1d_debug<float,FFTESSL_ENG>::doit(fft_dim,howmany);
   }
 #endif
   else
