@@ -704,8 +704,8 @@ namespace qmcplusplus {
 	  }
       assert (num == dval_Vec.size()); 
 
-      for (int i=0; i<dval_Vec.size(); i++)
-	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
+      // for (int i=0; i<dval_Vec.size(); i++)
+      // 	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
 
       ///////////////////////////////////////////
       // Now, compensate for constraint matrix //
@@ -714,8 +714,10 @@ namespace qmcplusplus {
       int var = 0;
       for (int i=0; i<NumGamma; i++) 
 	if (IndepVar[i]) {
-	  fprintf (stderr, "%d is independent.\n", i);
-	  d_vals[var++] = dval_Vec[i];
+	  d_vals[var]  = dval_Vec[i];
+	  d_grads[var] = dgrad_Vec[i];
+	  d_hess[var]  = dhess_Vec[i];
+	  var++;
 	}
 
       int constraint = 0;
@@ -724,7 +726,10 @@ namespace qmcplusplus {
       	  int indep_var = 0;
       	  for (int j=0; j<NumGamma; j++)
       	    if (IndepVar[j]) {
-      	      d_vals[indep_var++] -= ConstraintMatrix(constraint,j) * dval_Vec[i];
+      	      d_vals[indep_var]  -= ConstraintMatrix(constraint,j) * dval_Vec[i];
+      	      d_grads[indep_var] -= ConstraintMatrix(constraint,j) * dgrad_Vec[i];
+      	      d_hess[indep_var]  -= ConstraintMatrix(constraint,j) * dhess_Vec[i];
+	      indep_var++;
       	    }
       	    else if (i != j)
       	      assert (std::fabs(ConstraintMatrix(constraint,j)) < 1.0e-10);
@@ -736,6 +741,24 @@ namespace qmcplusplus {
       fprintf (stderr, "Param   Analytic   Finite diffference\n");
       for (int ip=0; ip<Parameters.size(); ip++)
 	fprintf (stderr, "  %3d  %12.6e  %12.6e\n", ip, d_vals[ip], d_valsFD[ip]);
+
+      fprintf (stderr, "Param   Analytic   Finite diffference\n");
+      for (int ip=0; ip<Parameters.size(); ip++)
+	fprintf (stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, 
+		 d_grads[ip][0], d_gradsFD[ip][0],
+		 d_grads[ip][1], d_gradsFD[ip][1],
+		 d_grads[ip][2], d_gradsFD[ip][2] );
+
+      fprintf (stderr, "Param   Analytic   Finite diffference\n");
+      for (int ip=0; ip<Parameters.size(); ip++)
+	for (int dim=0; dim<3; dim++)
+	fprintf (stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, 
+		 d_hess[ip](0,dim), d_hessFD[ip](0,dim),
+		 d_hess[ip](1,dim), d_hessFD[ip](1,dim),
+		 d_hess[ip](2,dim), d_hessFD[ip](2,dim) );
+
+
+
 
       // for (int i=0; i<NumGamma; i++)
       // 	if (!IndepVar[i]) {
