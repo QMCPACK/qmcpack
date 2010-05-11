@@ -65,6 +65,7 @@ namespace qmcplusplus {
     // The first index is the ion, the second two are
     // the electrons
     Array<int,3> TripletID;
+    Array<int,3> J3UniqueIndex;
 
     std::map<std::string,FT*> J3Unique;
     ParticleSet *eRef, *IRef;
@@ -136,15 +137,28 @@ namespace qmcplusplus {
 
       IonDataList.resize(Nion);
       
-      
+    }
+
+    void initUnique()
+    {
       typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
       du_dalpha.resize(J3Unique.size());
       dgrad_dalpha.resize(J3Unique.size());
       dhess_dalpha.resize(J3Unique.size());
+      J3UniqueIndex.resize(Nion,Nelec,Nelec);
+
       int ifunc=0;
       while(it != it_end) 
       {
-	int numParams = (*it).second->getNumParameters();
+	FT &functor = *(it->second);
+	for (int i=0; i<Nion; i++)
+	  for(int j=0; j<Nelec; j++) 
+	    for(int k=0; k<Nelec; k++) {
+	      FT &func_ijk = *F.data()[TripletID(i, j, k)];
+	      if (&func_ijk == &functor)
+		J3UniqueIndex(i,j,k) = ifunc;
+	    }
+	int numParams = functor.getNumParameters();
 	du_dalpha[ifunc].resize(numParams);
 	dgrad_dalpha[ifunc].resize(numParams);
 	dhess_dalpha[ifunc].resize(numParams);
@@ -195,7 +209,7 @@ namespace qmcplusplus {
 	  }
       
       J3Unique[aname]=j;
-
+      initUnique();
       //      ChiesaKEcorrection();
       FirstTime = false;
     }
@@ -1053,7 +1067,6 @@ namespace qmcplusplus {
     }
 
     inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
-      cerr << "Called registerData.\n";
       // cerr<<"REGISTERING 2 BODY JASTROW"<<endl;
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue=0.0;
@@ -1242,6 +1255,7 @@ namespace qmcplusplus {
 			     vector<RealType>& dlogpsi,
 			     vector<RealType>& dhpsioverpsi)
     {
+      cerr << "eeI evaluateDerivatives called.\n";
       // First, create lists of electrons within the sphere of each ion
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
@@ -1256,6 +1270,7 @@ namespace qmcplusplus {
       RealType u;
       PosType gradF;
       Tensor<RealType,3> hessF;
+
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
@@ -1272,6 +1287,10 @@ namespace qmcplusplus {
 	    RealType r_jk     = ee_table->r(ee0+kel);
 	    RealType r_jk_inv = ee_table->rinv(ee0+kel);
 	    FT &func = *F.data()[TripletID(i, jel, kel)];
+	    int idx = J3UniqueIndex(i,jel,kel);
+	    
+	    func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx],
+				     dgrad_dalpha[idx], dhess_dalpha[idx]);
 	    u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
 	    LogValue -= u;
 

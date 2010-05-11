@@ -430,6 +430,15 @@ namespace qmcplusplus
         return false;
       }
 
+      inline bool
+      evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
+			   vector<double> &d_vals,
+			   vector<TinyVector<real_type,3> >& d_grads,
+			   vector<Tensor<real_type,3> > &d_hess) 
+      {
+
+      }
+
       inline real_type f(real_type r)
       {
         return 0.0;

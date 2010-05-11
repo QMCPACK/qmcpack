@@ -45,16 +45,19 @@ namespace qmcplusplus {
     vector<Tensor<real_type,3> > dhess_Vec;
     int NumConstraints, NumGamma;
     Matrix<real_type> ConstraintMatrix;
-    std::vector<real_type> Parameters;
+    std::vector<real_type> Parameters, d_valsFD;
+    std::vector<TinyVector<real_type,3> > d_gradsFD;
+    std::vector<Tensor<real_type,3> > d_hessFD;
     std::vector<std::string> ParameterNames;
     std::string iSpecies, eSpecies1, eSpecies2;
     int ResetCount;
+    real_type scale;
     // Order of continuity
     const int C;
 
     ///constructor
     PolynomialFunctor3D(real_type ee_cusp=0.0, real_type eI_cusp=0.0) : 
-      N_eI(0), N_ee(0), ResetCount(0), C(3)
+      N_eI(0), N_ee(0), ResetCount(0), C(3), scale(0.001)
     { 
       if (std::fabs(ee_cusp) > 0.0 || std::fabs(eI_cusp) > 0.0) {
 	app_error() << "PolynomialFunctor3D does not support nonzero cusp.\n";
@@ -84,6 +87,10 @@ namespace qmcplusplus {
       NumConstraints = (2*N_eI+1) + (N_eI+N_ee+1);
       int numParams = NumGamma - NumConstraints;
       Parameters.resize(numParams);
+      d_valsFD.resize(numParams);
+      d_gradsFD.resize(numParams);
+      d_hessFD.resize(numParams);
+
       GammaVec.resize(NumGamma);
       dval_Vec.resize(NumGamma);
       dgrad_Vec.resize(NumGamma);
@@ -224,7 +231,7 @@ namespace qmcplusplus {
       int var=0;
       for (int i=0; i<NumGamma; i++)
 	if (IndepVar[i])
-	  GammaVec[i] = 0.001*Parameters[var++];
+	  GammaVec[i] = scale*Parameters[var++];
       
       assert (var == Parameters.size());
 
@@ -545,6 +552,42 @@ namespace qmcplusplus {
 
 
     inline bool
+    evaluateDerivativesFD (real_type r_12, real_type r_1I, real_type r_2I,
+			    vector<double> &d_vals,
+			    vector<TinyVector<real_type,3> >& d_grads,
+			    vector<Tensor<real_type,3> > &d_hess)
+    {
+      const real_type eps = 1.0e-6;
+      assert (d_vals.size() == Parameters.size());
+      assert (d_grads.size() == Parameters.size());
+      assert (d_hess.size() == Parameters.size());
+
+      for (int ip=0; ip < Parameters.size(); ip++) {
+	real_type v_plus, v_minus;
+	TinyVector<real_type,3> g_plus, g_minus;
+	Tensor<real_type,3> h_plus, h_minus;
+
+	real_type save_p = Parameters[ip];
+	Parameters[ip]  = save_p + eps;
+	reset();
+	v_plus = evaluate (r_12, r_1I, r_2I, g_plus, h_plus);
+
+	Parameters[ip]  = save_p - eps;
+	reset();
+	v_minus = evaluate (r_12, r_1I, r_2I, g_minus, h_minus);
+
+	Parameters[ip]  = save_p;
+	reset();
+
+	real_type dp_inv = 0.5/eps;
+	d_vals[ip]  = dp_inv * (v_plus - v_minus);
+	d_grads[ip] = dp_inv * (g_plus - g_minus);
+	d_hess[ip]  = dp_inv * (h_plus - h_minus);
+      }
+    }
+      
+
+    inline bool
     evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
 			 vector<double> &d_vals,
 			 vector<TinyVector<real_type,3> >& d_grads,
@@ -647,18 +690,61 @@ namespace qmcplusplus {
       for (int m=0; m<=N_eI; m++)
 	for (int l=m; l<=N_eI; l++)
 	  for (int n=0; n<=N_ee; n++) {
-	    dval_Vec[num] = dval_dgamma(l,m,n) + dval_dgamma(m,l,n);
+	    // Don't double-count diagonal terms
+	    real_type nodiag = (l==m) ? 0.0 : 1.0;
+	    dval_Vec[num] = scale*(dval_dgamma(l,m,n) + nodiag*dval_dgamma(m,l,n));
 	    for (int i=0; i<3; i++) {
-	      dgrad_Vec[num][i] = dgrad_dgamma(l,m,n)[i] + dgrad_dgamma(m,l,n)[i];
+	      dgrad_Vec[num][i] = scale*(dgrad_dgamma(l,m,n)[i] + nodiag*dgrad_dgamma(m,l,n)[i]);
 	      for (int j=i; j<3; j++) {
-		dhess_Vec[num](i,j) = dhess_dgamma(l,m,n)(i,j) + dhess_dgamma(m,l,n)(i,j);
-		dhess_Vec[num](j,i) = dhess_dgamma(l,m,n)(i,j) + dhess_dgamma(m,l,n)(i,j);
+		dhess_Vec[num](i,j) = scale*(dhess_dgamma(l,m,n)(i,j) + nodiag*dhess_dgamma(m,l,n)(i,j));
+		dhess_Vec[num](j,i) = scale*(dhess_dgamma(l,m,n)(i,j) + nodiag*dhess_dgamma(m,l,n)(i,j));
 	      }
-	      
 	    }
+	    num++;
 	  }
-      // Now, compensate for constraint matrix
+      assert (num == dval_Vec.size()); 
 
+      for (int i=0; i<dval_Vec.size(); i++)
+	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
+
+      ///////////////////////////////////////////
+      // Now, compensate for constraint matrix //
+      ///////////////////////////////////////////
+      std::fill (d_vals.begin(), d_vals.end(), 0.0);
+      int var = 0;
+      for (int i=0; i<NumGamma; i++) 
+	if (IndepVar[i]) {
+	  fprintf (stderr, "%d is independent.\n", i);
+	  d_vals[var++] = dval_Vec[i];
+	}
+
+      int constraint = 0;
+      for (int i=0; i<NumGamma; i++) {
+      	if (!IndepVar[i]) {
+      	  int indep_var = 0;
+      	  for (int j=0; j<NumGamma; j++)
+      	    if (IndepVar[j]) {
+      	      d_vals[indep_var++] -= ConstraintMatrix(constraint,j) * dval_Vec[i];
+      	    }
+      	    else if (i != j)
+      	      assert (std::fabs(ConstraintMatrix(constraint,j)) < 1.0e-10);
+      	  constraint++;
+      	}
+      }
+      
+      evaluateDerivativesFD(r_12, r_1I, r_2I, d_valsFD, d_gradsFD, d_hessFD);
+      fprintf (stderr, "Param   Analytic   Finite diffference\n");
+      for (int ip=0; ip<Parameters.size(); ip++)
+	fprintf (stderr, "  %3d  %12.6e  %12.6e\n", ip, d_vals[ip], d_valsFD[ip]);
+
+      // for (int i=0; i<NumGamma; i++)
+      // 	if (!IndepVar[i]) {
+      // 	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-6);
+      // 	  for (int j=0; j<NumGamma; j++)
+      // 	    if (i != j)
+      // 	      GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
+      // 	  var++;
+      // 	}
 
       return false;
     }
