@@ -184,59 +184,59 @@ namespace qmcplusplus {
             addConstCoulombPotential(cur,sourceInp);
         } 
 #if QMC_BUILD_LEVEL>2
-	else if (potType == "LJP_smoothed") {
-	  LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(LJP,"LJP",true);
-	  LJP->addCorrection(*targetH);
-	}
-	else if (potType == "HeSAPT_smoothed") {
-	  HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(SAPT,"HeSAPT",true);
-	  SAPT->addCorrection(*targetH);
-	}
-	else if (potType == "HFDHE2_Moroni1995") {
-	  HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-HE2",true);
-	  HFD->addCorrection(*targetH);
-	}
-	else if(potType == "eHe")
-	{
-	  string SourceName = "e";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(SourceName, "source");
-	  hAttrib.put(cur);
+        else if (potType == "LJP_smoothed") {
+          LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
+          targetH->addOperator(LJP,"LJP",true);
+          LJP->addCorrection(*targetH);
+        }
+        else if (potType == "HeSAPT_smoothed") {
+          HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
+          targetH->addOperator(SAPT,"HeSAPT",true);
+          SAPT->addCorrection(*targetH);
+        }
+        else if (potType == "HFDHE2_Moroni1995") {
+          HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
+          targetH->addOperator(HFD,"HFD-HE2",true);
+          HFD->addCorrection(*targetH);
+        }
+        else if(potType == "eHe")
+        {
+          string SourceName = "e";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
 
-	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) 
-	  {
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
             APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-	  }
-	  ParticleSet* source = (*pit).second;
-	  
-	  HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
-	  targetH->addOperator(eHetype,potName,true);
-// 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-	  
-	}
-    else if(potType == "jellium")
-  {
-    string SourceName = "e";
-    OhmmsAttributeSet hAttrib;
-    hAttrib.add(SourceName, "source");
-    hAttrib.put(cur);
+          }
+          ParticleSet* source = (*pit).second;
 
-    PtclPoolType::iterator pit(ptclPool.find(SourceName));
-    if(pit == ptclPool.end()) 
-    {
+          HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
+          targetH->addOperator(eHetype,potName,true);
+          // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+
+        }
+        else if(potType == "jellium")
+        {
+          string SourceName = "e";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
+
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
             APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-    }
-    ParticleSet* source = (*pit).second;
-    
-    JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
-    targetH->addOperator(JP,potName,true);
-//    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-    
-  }
+          }
+          ParticleSet* source = (*pit).second;
+
+          JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
+          targetH->addOperator(JP,potName,true);
+          //    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+
+        }
         else if(potType == "HFDHE2") 
         {
           HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
@@ -246,17 +246,10 @@ namespace qmcplusplus {
           app_log() << "  Adding HFDHE2Potential(Au) " << endl;
         }
 #endif
-	/*
-	else if (potType == "HFDBHE_smoothed") {
-	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-B(He)",true);
-	  HFD->addCorrection(*targetH);
-	}
-	*/
-	else if (potType == "MPC" || potType == "mpc")
-	  addMPCPotential(cur);
-	else if (potType == "VHXC" || potType == "vhxc")
-	  addVHXCPotential(cur);
+        else if (potType == "MPC" || potType == "mpc")
+          addMPCPotential(cur, true);
+        else if (potType == "VHXC" || potType == "vhxc")
+          addVHXCPotential(cur);
         else if(potType == "pseudo") 
         {
           addPseudoPotential(cur);
@@ -289,22 +282,26 @@ namespace qmcplusplus {
         {
           addForceHam(cur);
         }
-	else if(potType == "gofr")
+        else if (potType == "MPC" || potType == "mpc")
+        {//use false
+          addMPCPotential(cur, false);
+        }
+        else if(potType == "gofr")
         {
           PairCorrEstimator* apot=new PairCorrEstimator(*targetPtcl,sourceInp);
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
         }
-	else if(potType == "density")
+        else if(potType == "density")
         {
-	  //          if(PBCType)//only if perioidic 
+          //          if(PBCType)//only if perioidic 
           {
             DensityEstimator* apot=new DensityEstimator(*targetPtcl);
             apot->put(cur);
             targetH->addOperator(apot,potName,false);
           }
         }
-	else if(potType == "sk")
+        else if(potType == "sk")
         {
           if(PBCType)//only if perioidic 
           {
@@ -317,32 +314,32 @@ namespace qmcplusplus {
             targetH->addOperator(apot,potName,false);
           }
         }
-	else if(potType == "chiesa")
-	{
-	  string PsiName="psi0";
-	  string SourceName = "e";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(PsiName,"psi"); 
-	  hAttrib.add(SourceName, "source");
-	  hAttrib.put(cur);
+        else if(potType == "chiesa")
+        {
+          string PsiName="psi0";
+          string SourceName = "e";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(PsiName,"psi"); 
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
 
-	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) 
-	  {
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
             APP_ABORT("Unknown source \""+SourceName+"\" for Chiesa correction.");
-	  }
-	  ParticleSet &source = *pit->second;
+          }
+          ParticleSet &source = *pit->second;
 
-	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-	  if(psi_it == psiPool.end()) 
+          OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+          if(psi_it == psiPool.end()) 
           {
             APP_ABORT("Unknown psi \""+PsiName+"\" for Chiesa correction.");
           }
 
-	  const TrialWaveFunction &psi = *psi_it->second->targetPsi;
-	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
-	  targetH->addOperator(chiesa,"KEcorr",false);
-	}  
+          const TrialWaveFunction &psi = *psi_it->second->targetPsi;
+          ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
+          targetH->addOperator(chiesa,"KEcorr",false);
+        }  
         else if(potType == "Pressure")
         {
           if(estType=="coulomb")
@@ -354,21 +351,21 @@ namespace qmcplusplus {
             int nlen(100);
             attrib.add(nlen,"truncateSum");
             attrib.put(cur);
-            //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-            //             targetH->addOperator(DMCP,"PressureSum",false);
+            //DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+            //targetH->addOperator(DMCP,"PressureSum",false);
 
           } 
 #if defined(QMC_BUILD_COMPLETE)
-	  else if (estType=="HFDHE2")
-	  {
+          else if (estType=="HFDHE2")
+          {
             HePressure* BP = new HePressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"HePress",false);
           } 
-	  else if (estType=="RPAZVZB")
-	  {
+          else if (estType=="RPAZVZB")
+          {
             RPAPressure* BP= new RPAPressure(*targetPtcl);
-            
+
             ParticleSet* Isource;
             bool withSource=false;
             xmlNodePtr tcur = cur->children;
@@ -378,15 +375,15 @@ namespace qmcplusplus {
               {
                 string PsiName="psi0";
                 withSource=true;
-//                 string in0("ion0");
+                //                 string in0("ion0");
                 OhmmsAttributeSet hAttrib;
-//                 hAttrib.add(in0,"source");
+                //                 hAttrib.add(in0,"source");
                 hAttrib.add(PsiName,"psi"); 
                 hAttrib.put(tcur);
-//                 renameProperty(a);
+                //                 renameProperty(a);
                 PtclPoolType::iterator pit(ptclPool.find(sourceInp));
                 if(pit == ptclPool.end()) 
-		{
+                {
                   ERRORMSG("Missing source ParticleSet" << sourceInp)
                 }
                 Isource = (*pit).second;
@@ -396,71 +393,71 @@ namespace qmcplusplus {
             }
             if (!withSource) BP-> put(cur, *targetPtcl);
             targetH->addOperator(BP,BP->MyName,false);
-            
+
             int nlen(100);
             attrib.add(nlen,"truncateSum");
             attrib.put(cur);
-//             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-//             targetH->addOperator(DMCP,"PressureSum",false);
+            //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+            //             targetH->addOperator(DMCP,"PressureSum",false);
           }
 #endif
         }
-	else if(potType=="psi")
-	{
-	  int pwr=2;
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(pwr,"power"); 
-	  hAttrib.put(cur);
-	  PsiValue* PV = new PsiValue(pwr);
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"PsiValue",false);
-	}
-	else if(potType=="overlap")
-	{
-	  int pwr=1;
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(pwr,"power"); 
-	  hAttrib.put(cur);
-	  
-	  PsiOverlapValue* PV = new PsiOverlapValue(pwr);
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"PsiRatio",false);
-	}
-	else if(potType=="DMCoverlap")
-	{
-	  DMCPsiValue* PV = new DMCPsiValue( );
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"DMCPsiRatio",false);
-	}
-	else if(potType=="momentum")
-	{
-	  app_log()<<"  Adding Momentum Estimator"<<endl;
-	  
-	  string PsiName="psi0";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(PsiName,"wavefunction"); 
-	  hAttrib.put(cur);
+        else if(potType=="psi")
+        {
+          int pwr=2;
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(pwr,"power"); 
+          hAttrib.put(cur);
+          PsiValue* PV = new PsiValue(pwr);
+          PV->put(cur,targetPtcl,ptclPool,myComm);
+          targetH->addOperator(PV,"PsiValue",false);
+        }
+        else if(potType=="overlap")
+        {
+          int pwr=1;
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(pwr,"power"); 
+          hAttrib.put(cur);
 
-	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-	  if(psi_it == psiPool.end()) 
+          PsiOverlapValue* PV = new PsiOverlapValue(pwr);
+          PV->put(cur,targetPtcl,ptclPool,myComm);
+          targetH->addOperator(PV,"PsiRatio",false);
+        }
+        else if(potType=="DMCoverlap")
+        {
+          DMCPsiValue* PV = new DMCPsiValue( );
+          PV->put(cur,targetPtcl,ptclPool,myComm);
+          targetH->addOperator(PV,"DMCPsiRatio",false);
+        }
+        else if(potType=="momentum")
+        {
+          app_log()<<"  Adding Momentum Estimator"<<endl;
+
+          string PsiName="psi0";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(PsiName,"wavefunction"); 
+          hAttrib.put(cur);
+
+          OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+          if(psi_it == psiPool.end()) 
           {
             APP_ABORT("Unknown psi \""+PsiName+"\" for momentum.");
           }
           TrialWaveFunction *psi=(*psi_it).second->targetPsi;
-	  MomentumEstimator* ME = new MomentumEstimator(*targetPtcl, *psi);
-    bool rt(myComm->rank()==0);
-	  ME->putSpecial(cur,*targetPtcl,rt);
-	  targetH->addOperator(ME,"MomentumEstimator",false);
-	}
+          MomentumEstimator* ME = new MomentumEstimator(*targetPtcl, *psi);
+          bool rt(myComm->rank()==0);
+          ME->putSpecial(cur,*targetPtcl,rt);
+          targetH->addOperator(ME,"MomentumEstimator",false);
+        }
       } 
       else if (cname == "Kinetic")
       {
-      	  string TargetName="e";
-	  string SourceName = "I";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(TargetName,"Dependant"); 
-	  hAttrib.add(SourceName, "Independant");
-	  hAttrib.put(cur);
+        string TargetName="e";
+        string SourceName = "I";
+        OhmmsAttributeSet hAttrib;
+        hAttrib.add(TargetName,"Dependant"); 
+        hAttrib.add(SourceName, "Independant");
+        hAttrib.put(cur);
       }
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
@@ -514,116 +511,113 @@ namespace qmcplusplus {
   }
 
   void
-  HamiltonianFactory::addMPCPotential(xmlNodePtr cur) 
-  {
+    HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool physical) 
+    {
 #if defined(HAVE_LIBFFTW)
-    string a("e"), title("MPC");
-    OhmmsAttributeSet hAttrib;
-    bool physical = true;
-    double cutoff = 30.0;
-    hAttrib.add(title,"id"); 
-    hAttrib.add(title,"name"); 
-    hAttrib.add(cutoff,"cutoff");
-    hAttrib.add(physical,"physical");
-    hAttrib.put(cur);
-
-    renameProperty(a);
-
-
+      string a("e"), title("MPC");
+      OhmmsAttributeSet hAttrib;
+      //bool physical = true;
+      double cutoff = 30.0;
+      hAttrib.add(title,"id"); 
+      hAttrib.add(title,"name"); 
+      hAttrib.add(cutoff,"cutoff");
+      //hAttrib.add(physical,"physical");
+      hAttrib.put(cur);
+      renameProperty(a);
 #ifdef QMC_CUDA
-    MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
+      MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
 #else
-    MPC *mpc = new MPC (*targetPtcl, cutoff);
+      MPC *mpc = new MPC (*targetPtcl, cutoff);
 #endif
-    targetH->addOperator(mpc, "MPC", physical);
+      targetH->addOperator(mpc, "MPC", physical);
 #else
-    APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
+      APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
 #endif // defined(HAVE_LIBFFTW)
-  }
+    }
 
   void
-  HamiltonianFactory::addVHXCPotential(xmlNodePtr cur) 
-  {
+    HamiltonianFactory::addVHXCPotential(xmlNodePtr cur) 
+    {
 #if defined(HAVE_LIBFFTW)
-    string a("e"), title("VHXC");
-    OhmmsAttributeSet hAttrib;
-    bool physical = true;
-    hAttrib.add(title,"id"); 
-    hAttrib.add(title,"name"); 
-    hAttrib.add(physical,"physical");
-    hAttrib.put(cur);
+      string a("e"), title("VHXC");
+      OhmmsAttributeSet hAttrib;
+      bool physical = true;
+      hAttrib.add(title,"id"); 
+      hAttrib.add(title,"name"); 
+      hAttrib.add(physical,"physical");
+      hAttrib.put(cur);
 
-    renameProperty(a);
+      renameProperty(a);
 
-    VHXC *vhxc = new VHXC (*targetPtcl);
-    cerr << "physical = " << physical << endl;
-    targetH->addOperator(vhxc, "VHXC", physical);
+      VHXC *vhxc = new VHXC (*targetPtcl);
+      cerr << "physical = " << physical << endl;
+      targetH->addOperator(vhxc, "VHXC", physical);
 #else
-    APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
+      APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
 #endif // defined(HAVE_LIBFFTW)
-  }
+    }
 
 
 
   void 
-  HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) {
+    HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) {
 
-    string a("e"),title("ElecElec"),pbc("yes");
-    bool physical = true;
-    OhmmsAttributeSet hAttrib;
-    hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
-    hAttrib.add(a,"source"); 
-    hAttrib.add(pbc,"pbc"); 
-    hAttrib.add(physical,"physical");
-    hAttrib.put(cur);
-    
+      string a("e"),title("ElecElec"),pbc("yes");
+      bool physical = true;
+      OhmmsAttributeSet hAttrib;
+      hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
+      hAttrib.add(a,"source"); 
+      hAttrib.add(pbc,"pbc"); 
+      hAttrib.add(physical,"physical");
+      hAttrib.put(cur);
 
-    renameProperty(a);
 
-    PtclPoolType::iterator pit(ptclPool.find(a));
-    if(pit == ptclPool.end()) {
-      ERRORMSG("Missing source ParticleSet" << a)
-      return;
-    }
+      renameProperty(a);
 
-    ParticleSet* source = (*pit).second;
+      PtclPoolType::iterator pit(ptclPool.find(a));
+      if(pit == ptclPool.end()) {
+        ERRORMSG("Missing source ParticleSet" << a)
+          return;
+      }
 
-    bool applyPBC= (PBCType && pbc=="yes");
+      ParticleSet* source = (*pit).second;
 
-    //CHECK PBC and create CoulombPBC for el-el
-    if(source == targetPtcl) {
-      if(applyPBC) 
-      {
-        //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
+      bool applyPBC= (PBCType && pbc=="yes");
+
+      //CHECK PBC and create CoulombPBC for el-el
+      if(source == targetPtcl) {
+        if(applyPBC) 
+        {
+          //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
 #ifdef QMC_CUDA
-	targetH->addOperator(new CoulombPBCAA_CUDA(*targetPtcl,true),title,physical);
+          targetH->addOperator(new CoulombPBCAA_CUDA(*targetPtcl,true),title,physical);
 #else
-	targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title,physical);
+          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title,physical);
 #endif
-      } 
-      else 
-      {
-        if(source->getTotalNum()>1) 
+        } 
+        else 
+        {
+          if(source->getTotalNum()>1) 
 #ifdef QMC_CUDA
-          targetH->addOperator(new CoulombPotentialAA_CUDA(*targetPtcl), title,physical);
+            targetH->addOperator(new CoulombPotentialAA_CUDA(*targetPtcl), title,physical);
 #else
           targetH->addOperator(new CoulombPotentialAA(*targetPtcl), title,physical);
 #endif
 
-      }
-    } else {
-      if(applyPBC) {
-        //targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
-#ifdef QMC_CUDA
-        targetH->addOperator(new CoulombPBCAB_CUDA(*source,*targetPtcl),title);
-#else
-        targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
-#endif
+        }
       } else {
-        targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
+        if(applyPBC) {
+          //targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
+#ifdef QMC_CUDA
+          targetH->addOperator(new CoulombPBCAB_CUDA(*source,*targetPtcl),title);
+#else
+          targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
+#endif
+        } else {
+          targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
+        }
       }
     }
-  }
 
   // void
   // HamiltonianFactory::addPulayForce (xmlNodePtr cur) {
@@ -645,271 +639,269 @@ namespace qmcplusplus {
   //     return;
   //   }
   //   ParticleSet* target = (*pit).second;
-    
+
   //   targetH->addOperator(new PulayForce(*source, *target), title, false);
 
   // }
 
   void 
-  HamiltonianFactory::addForceHam(xmlNodePtr cur) {
-    string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
-      PsiName="psi0";
-    OhmmsAttributeSet hAttrib;
-    string mode("bare");
-    //hAttrib.add(title,"id");
-    //hAttrib.add(title,"name"); 
-    hAttrib.add(a,"source"); 
-    hAttrib.add(targetName,"target"); 
-    hAttrib.add(pbc,"pbc"); 
-    hAttrib.add(mode,"mode"); 
-    hAttrib.add(PsiName, "psi");
-    hAttrib.put(cur);
-    cerr << "HamFac forceBase mode " << mode << endl;
-    renameProperty(a);
+    HamiltonianFactory::addForceHam(xmlNodePtr cur) {
+      string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
+             PsiName="psi0";
+      OhmmsAttributeSet hAttrib;
+      string mode("bare");
+      //hAttrib.add(title,"id");
+      //hAttrib.add(title,"name"); 
+      hAttrib.add(a,"source"); 
+      hAttrib.add(targetName,"target"); 
+      hAttrib.add(pbc,"pbc"); 
+      hAttrib.add(mode,"mode"); 
+      hAttrib.add(PsiName, "psi");
+      hAttrib.put(cur);
+      cerr << "HamFac forceBase mode " << mode << endl;
+      renameProperty(a);
 
-    PtclPoolType::iterator pit(ptclPool.find(a));
-    if(pit == ptclPool.end()) {
-      ERRORMSG("Missing source ParticleSet" << a)
-      return;
-    }
-    ParticleSet* source = (*pit).second;
-    pit = ptclPool.find(targetName);
-    if(pit == ptclPool.end()) {
-      ERRORMSG("Missing target ParticleSet" << targetName)
-      return;
-    }
-    ParticleSet* target = (*pit).second;
-
-    //bool applyPBC= (PBCType && pbc=="yes");
-
-    if(mode=="bare") 
-      targetH->addOperator(new BareForce(*source, *target), title, false);
-    else if(mode=="cep") 
-      targetH->addOperator(new ForceCeperley(*source, *target), title, false);
-    else if(mode=="pulay") {
-      OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-      if(psi_it == psiPool.end()) {
-	APP_ABORT("Unknown psi \""+PsiName+"\" for Pulay force.");
+      PtclPoolType::iterator pit(ptclPool.find(a));
+      if(pit == ptclPool.end()) {
+        ERRORMSG("Missing source ParticleSet" << a)
+          return;
       }
-      TrialWaveFunction &psi = *psi_it->second->targetPsi;
-      targetH->addOperator(new PulayForce(*source, *target, psi), 
-			   "PulayForce", false);
-    }
-    else if(mode=="zero_variance") {
-      app_log() << "Adding zero-variance force term.\n";
-      OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-      if(psi_it == psiPool.end()) {
-	APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
+      ParticleSet* source = (*pit).second;
+      pit = ptclPool.find(targetName);
+      if(pit == ptclPool.end()) {
+        ERRORMSG("Missing target ParticleSet" << targetName)
+          return;
       }
-      TrialWaveFunction &psi = *psi_it->second->targetPsi;
-      targetH->addOperator
-	(new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
+      ParticleSet* target = (*pit).second;
+      //bool applyPBC= (PBCType && pbc=="yes");
+      if(mode=="bare") 
+        targetH->addOperator(new BareForce(*source, *target), title, false);
+      else if(mode=="cep") 
+        targetH->addOperator(new ForceCeperley(*source, *target), title, false);
+      else if(mode=="pulay") 
+      {
+        OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+        if(psi_it == psiPool.end()) {
+          APP_ABORT("Unknown psi \""+PsiName+"\" for Pulay force.");
+        }
+        TrialWaveFunction &psi = *psi_it->second->targetPsi;
+        targetH->addOperator(new PulayForce(*source, *target, psi), 
+            "PulayForce", false);
+      }
+      else if(mode=="zero_variance") 
+      {
+        app_log() << "Adding zero-variance force term.\n";
+        OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+        if(psi_it == psiPool.end()) {
+          APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
+        }
+        TrialWaveFunction &psi = *psi_it->second->targetPsi;
+        targetH->addOperator
+          (new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
+      }
+      else 
+      {
+        ERRORMSG("Failed to recognize Force mode " << mode);
+      }
     }
-
-    else {
-      ERRORMSG("Failed to recognize Force mode " << mode);
-      //} else if(mode=="FD") {
-      //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
-    }
-  }
 
   void 
-  HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
+    HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
 
 #if OHMMS_DIM == 3
-    string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
+      string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
 
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(title,"name");
-    pAttrib.add(src,"source");
-    pAttrib.add(wfname,"wavefunction");
-    pAttrib.add(format,"format"); //temperary tag to switch between format
-    pAttrib.put(cur);
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(title,"name");
+      pAttrib.add(src,"source");
+      pAttrib.add(wfname,"wavefunction");
+      pAttrib.add(format,"format"); //temperary tag to switch between format
+      pAttrib.put(cur);
 
-    if(format == "old")
-    {
-      APP_ABORT("pseudopotential Table format is not supported.");
-    }
+      if(format == "old")
+      {
+        APP_ABORT("pseudopotential Table format is not supported.");
+      }
 
-    renameProperty(src);
-    renameProperty(wfname);
+      renameProperty(src);
+      renameProperty(wfname);
 
-    PtclPoolType::iterator pit(ptclPool.find(src));
-    if(pit == ptclPool.end()) {
-      ERRORMSG("Missing source ParticleSet" << src)
-      return;
-    }
+      PtclPoolType::iterator pit(ptclPool.find(src));
+      if(pit == ptclPool.end()) {
+        ERRORMSG("Missing source ParticleSet" << src)
+          return;
+      }
 
-    ParticleSet* ion=(*pit).second;
-
-    OrbitalPoolType::iterator oit(psiPool.find(wfname));
-    TrialWaveFunction* psi=0;
-    if(oit == psiPool.end()) {
-      if(psiPool.empty()) return;
-      app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
-      psi=(*(psiPool.begin())).second->targetPsi;
-    } else {
-      psi=(*oit).second->targetPsi;
-    }
-
-    //remember the TrialWaveFunction used by this pseudopotential
-    psiName=wfname;
-
-    //if(format == "old") {
-    //  app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
-    //  targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
-    //}
-    //else  {
-    app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
-    ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi,myComm);
-    ecp.put(cur);
-#endif
-    //}
-  }
-
-  void 
-  HamiltonianFactory::addCorePolPotential(xmlNodePtr cur) {
-#if OHMMS_DIM == 3
-    string src("i"),title("CorePol");
-
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(title,"name");
-    pAttrib.add(src,"source");
-    pAttrib.put(cur);
-
-    PtclPoolType::iterator pit(ptclPool.find(src));
-    if(pit == ptclPool.end()) {
-      ERRORMSG("Missing source ParticleSet" << src)
-      return;
-    }
-    ParticleSet* ion=(*pit).second;
-
-    QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*targetPtcl));
-    cpp->put(cur); 
-    targetH->addOperator(cpp, title);
-#endif
-  }
-
-  void 
-  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
-    OhmmsAttributeSet hAttrib;
-    string hname("IonIon");
-    string forces("no");
-    hAttrib.add(forces,"forces");
-    hAttrib.add(hname,"name");
-    hAttrib.put(cur);
-    bool doForces = (forces == "yes") || (forces == "true");
-
-    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
-    renameProperty(nuclei);
-    PtclPoolType::iterator pit(ptclPool.find(nuclei));
-    if(pit != ptclPool.end()) {
       ParticleSet* ion=(*pit).second;
-      if(PBCType){
-        //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-        //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
-#ifdef QMC_CUDA
-	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
-#else
-	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
-#endif
+
+      OrbitalPoolType::iterator oit(psiPool.find(wfname));
+      TrialWaveFunction* psi=0;
+      if(oit == psiPool.end()) {
+        if(psiPool.empty()) return;
+        app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
+        psi=(*(psiPool.begin())).second->targetPsi;
       } else {
-        if(ion->getTotalNum()>1) 
-          targetH->addOperator(new IonIonPotential(*ion),hname);
+        psi=(*oit).second->targetPsi;
+      }
+
+      //remember the TrialWaveFunction used by this pseudopotential
+      psiName=wfname;
+
+      //if(format == "old") {
+      //  app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
+      //  targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
+      //}
+      //else  {
+      app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
+      ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi,myComm);
+      ecp.put(cur);
+#endif
+      //}
+    }
+
+  void 
+    HamiltonianFactory::addCorePolPotential(xmlNodePtr cur) {
+#if OHMMS_DIM == 3
+      string src("i"),title("CorePol");
+
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(title,"name");
+      pAttrib.add(src,"source");
+      pAttrib.put(cur);
+
+      PtclPoolType::iterator pit(ptclPool.find(src));
+      if(pit == ptclPool.end()) {
+        ERRORMSG("Missing source ParticleSet" << src)
+          return;
+      }
+      ParticleSet* ion=(*pit).second;
+
+      QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*targetPtcl));
+      cpp->put(cur); 
+      targetH->addOperator(cpp, title);
+#endif
+    }
+
+  void 
+    HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
+      OhmmsAttributeSet hAttrib;
+      string hname("IonIon");
+      string forces("no");
+      hAttrib.add(forces,"forces");
+      hAttrib.add(hname,"name");
+      hAttrib.put(cur);
+      bool doForces = (forces == "yes") || (forces == "true");
+
+      app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
+      renameProperty(nuclei);
+      PtclPoolType::iterator pit(ptclPool.find(nuclei));
+      if(pit != ptclPool.end()) {
+        ParticleSet* ion=(*pit).second;
+        if(PBCType){
+          //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
+          //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
+#ifdef QMC_CUDA
+          targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
+#else
+          targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
+#endif
+        } else {
+          if(ion->getTotalNum()>1) 
+            targetH->addOperator(new IonIonPotential(*ion),hname);
+        }
       }
     }
-  }
 
   void
-  HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
+    HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
 #if defined(HAVE_LIBFFTW_LS)
-    typedef QMCTraits::RealType    RealType;
-    typedef QMCTraits::IndexType   IndexType;
-    typedef QMCTraits::PosType     PosType;
-    
-    string Dimensions, DispRelType, PtclSelType, MomDistType;
-    RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
-    
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(Dimensions, "dims");
-    pAttrib.add(DispRelType, "dispersion");
-    pAttrib.add(PtclSelType, "selectParticle");
-    pAttrib.add(Cutoff, "cutoff");
-    pAttrib.add(GapSize, "gapSize");
-    pAttrib.add(FermiMomentum, "kf");
-    pAttrib.add(MomDistType, "momdisttype");
-    pAttrib.put(cur);
-    
-    if (MomDistType == "") MomDistType = "FFT";
-    
-    TrialWaveFunction* psi;
-    psi = (*(psiPool.begin())).second->targetPsi;
-    
-    Vector<PosType> LocLattice;
-    Vector<IndexType> DimSizes;
-    Vector<RealType> Dispersion;
+      typedef QMCTraits::RealType    RealType;
+      typedef QMCTraits::IndexType   IndexType;
+      typedef QMCTraits::PosType     PosType;
 
-    if (Dimensions == "3") {
-      gen3DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-    } else if (Dimensions == "1" || Dimensions == "1averaged") {
-      gen1DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-    } else if (Dimensions == "homogeneous") {
-      genDegenLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-    } else {
-      ERRORMSG("Dimensions value not recognized!")
-    }
-    
-    if (DispRelType == "freeParticle") {
-      genFreeParticleDispersion(LocLattice, Dispersion);
-    } else if (DispRelType == "simpleModel") {
-      genSimpleModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
-    } else if (DispRelType == "pennModel") {
-      genPennModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
-    } else if (DispRelType == "debug") {
-      genDebugDispersion(LocLattice, Dispersion);  
-    } else {
-      ERRORMSG("Dispersion relation not recognized");
-    }
-    
-    PtclChoiceBase* pcp;
-    if (PtclSelType == "random") {
-      pcp = new RandomChoice(*targetPtcl);
-    } else if (PtclSelType == "randomPerWalker") {
-      pcp = new RandomChoicePerWalker(*targetPtcl);
-    } else if (PtclSelType == "constant") {
-      pcp = new StaticChoice(*targetPtcl);
-    } else {
-      ERRORMSG("Particle choice policy not recognized!");
-    }
-    
-    MomDistBase* mdp;
-    if (MomDistType == "direct") {
-      mdp = new RandomMomDist(*targetPtcl, LocLattice, pcp);
-    } else if (MomDistType == "FFT" || MomDistType =="fft") { 
+      string Dimensions, DispRelType, PtclSelType, MomDistType;
+      RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
+
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(Dimensions, "dims");
+      pAttrib.add(DispRelType, "dispersion");
+      pAttrib.add(PtclSelType, "selectParticle");
+      pAttrib.add(Cutoff, "cutoff");
+      pAttrib.add(GapSize, "gapSize");
+      pAttrib.add(FermiMomentum, "kf");
+      pAttrib.add(MomDistType, "momdisttype");
+      pAttrib.put(cur);
+
+      if (MomDistType == "") MomDistType = "FFT";
+
+      TrialWaveFunction* psi;
+      psi = (*(psiPool.begin())).second->targetPsi;
+
+      Vector<PosType> LocLattice;
+      Vector<IndexType> DimSizes;
+      Vector<RealType> Dispersion;
+
       if (Dimensions == "3") {
-	mdp = new ThreeDimMomDist(*targetPtcl, DimSizes, pcp);
-      } else if (Dimensions == "1") {
-	mdp = new OneDimMomDist(*targetPtcl, DimSizes, pcp);
-      } else if (Dimensions == "1averaged") {
-	mdp = new AveragedOneDimMomDist(*targetPtcl, DimSizes, pcp);
+        gen3DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
+      } else if (Dimensions == "1" || Dimensions == "1averaged") {
+        gen1DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
+      } else if (Dimensions == "homogeneous") {
+        genDegenLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
       } else {
-	ERRORMSG("Dimensions value not recognized!");
+        ERRORMSG("Dimensions value not recognized!")
       }
-    } else {
-      ERRORMSG("MomDistType value not recognized!");
-    }
-    delete pcp;
-    
-    QMCHamiltonianBase* modInsKE = new ModInsKineticEnergy(*psi, Dispersion, mdp);
-    modInsKE->put(cur);
-    targetH->addOperator(modInsKE, "ModelInsKE");
-    
-    delete mdp;
+
+      if (DispRelType == "freeParticle") {
+        genFreeParticleDispersion(LocLattice, Dispersion);
+      } else if (DispRelType == "simpleModel") {
+        genSimpleModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
+      } else if (DispRelType == "pennModel") {
+        genPennModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
+      } else if (DispRelType == "debug") {
+        genDebugDispersion(LocLattice, Dispersion);  
+      } else {
+        ERRORMSG("Dispersion relation not recognized");
+      }
+
+      PtclChoiceBase* pcp;
+      if (PtclSelType == "random") {
+        pcp = new RandomChoice(*targetPtcl);
+      } else if (PtclSelType == "randomPerWalker") {
+        pcp = new RandomChoicePerWalker(*targetPtcl);
+      } else if (PtclSelType == "constant") {
+        pcp = new StaticChoice(*targetPtcl);
+      } else {
+        ERRORMSG("Particle choice policy not recognized!");
+      }
+
+      MomDistBase* mdp;
+      if (MomDistType == "direct") {
+        mdp = new RandomMomDist(*targetPtcl, LocLattice, pcp);
+      } else if (MomDistType == "FFT" || MomDistType =="fft") { 
+        if (Dimensions == "3") {
+          mdp = new ThreeDimMomDist(*targetPtcl, DimSizes, pcp);
+        } else if (Dimensions == "1") {
+          mdp = new OneDimMomDist(*targetPtcl, DimSizes, pcp);
+        } else if (Dimensions == "1averaged") {
+          mdp = new AveragedOneDimMomDist(*targetPtcl, DimSizes, pcp);
+        } else {
+          ERRORMSG("Dimensions value not recognized!");
+        }
+      } else {
+        ERRORMSG("MomDistType value not recognized!");
+      }
+      delete pcp;
+
+      QMCHamiltonianBase* modInsKE = new ModInsKineticEnergy(*psi, Dispersion, mdp);
+      modInsKE->put(cur);
+      targetH->addOperator(modInsKE, "ModelInsKE");
+
+      delete mdp;
 #else
-    app_error() << "  ModelInsulatorKE cannot be used without FFTW " << endl;
+      app_error() << "  ModelInsulatorKE cannot be used without FFTW " << endl;
 #endif
-  }
-  
+    }
+
   void HamiltonianFactory::renameProperty(const string& a, const string& b){
     RenamedProperty[a]=b;
   }
@@ -937,18 +929,18 @@ namespace qmcplusplus {
   }
 
   HamiltonianFactory*
-  HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi, 
-      int ip, const string& aname) {
-    HamiltonianFactory* aCopy=new HamiltonianFactory(qp, ptclPool, psiPool, myComm);
-    aCopy->setName(aname);
+    HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi, 
+        int ip, const string& aname) {
+      HamiltonianFactory* aCopy=new HamiltonianFactory(qp, ptclPool, psiPool, myComm);
+      aCopy->setName(aname);
 
-    aCopy->renameProperty("e",qp->getName());
-    aCopy->renameProperty(psiName,psi->getName());
-    aCopy->build(myNode,false);
-    myClones[ip]=aCopy;
-    //aCopy->get(app_log());
-    return aCopy;
-  }
+      aCopy->renameProperty("e",qp->getName());
+      aCopy->renameProperty(psiName,psi->getName());
+      aCopy->build(myNode,false);
+      myClones[ip]=aCopy;
+      //aCopy->get(app_log());
+      return aCopy;
+    }
 
   bool HamiltonianFactory::put(xmlNodePtr cur) {
     return build(cur,true);
