@@ -595,7 +595,7 @@ namespace qmcplusplus {
     {
       const real_type L = 0.5*cutoff_radius; 
       if (r_1I >= L || r_2I >= L) 
-        return 0.0;
+        return false;
       real_type val = 0.0;
       TinyVector<real_type,3> grad;
       Tensor<real_type,3> hess;
@@ -736,7 +736,10 @@ namespace qmcplusplus {
       	  constraint++;
       	}
       }
-      
+
+      return true;
+
+#ifdef DEBUG_DERIVS      
       evaluateDerivativesFD(r_12, r_1I, r_2I, d_valsFD, d_gradsFD, d_hessFD);
       fprintf (stderr, "Param   Analytic   Finite diffference\n");
       for (int ip=0; ip<Parameters.size(); ip++)
@@ -756,20 +759,7 @@ namespace qmcplusplus {
 		 d_hess[ip](0,dim), d_hessFD[ip](0,dim),
 		 d_hess[ip](1,dim), d_hessFD[ip](1,dim),
 		 d_hess[ip](2,dim), d_hessFD[ip](2,dim) );
-
-
-
-
-      // for (int i=0; i<NumGamma; i++)
-      // 	if (!IndepVar[i]) {
-      // 	  assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-6);
-      // 	  for (int j=0; j<NumGamma; j++)
-      // 	    if (i != j)
-      // 	      GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
-      // 	  var++;
-      // 	}
-
-      return false;
+#endif
     }
 
     inline real_type f(real_type r) {

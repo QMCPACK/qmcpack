@@ -22,6 +22,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -80,6 +81,13 @@ namespace qmcplusplus {
     vector<vector<RealType> >               du_dalpha;
     vector<vector<PosType> >             dgrad_dalpha;
     vector<vector<Tensor<RealType,3> > > dhess_dalpha;
+
+    // Used for evaluating derivatives with respect to the parameters
+    int NumVars;
+    Array<pair<int,int>,3> VarOffset;
+    Vector<RealType> dLogPsi;
+    Array<PosType,2> gradLogPsi;
+    Array<RealType,2> lapLogPsi;
 
   public:
 
@@ -244,14 +252,50 @@ namespace qmcplusplus {
      */
     void checkOutVariables(const opt_variables_type& active)
     {
-      myVars.getIndex(active);
-      Optimizable=myVars.is_optimizable();
+      fprintf (stderr, "checkOutVariables called.\n");
+      // myVars.getIndex(active);
+      // Optimizable=myVars.is_optimizable();
+      // typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
+      // while(it != it_end) 
+      // {
+      //   (*it++).second->checkOutVariables(active);
+      // }
+
+      myVars.clear();
       typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
-      while(it != it_end) 
-      {
-        (*it++).second->checkOutVariables(active);
+      while (it != it_end) {
+	(*it).second->myVars.getIndex(active);
+	myVars.insertFrom((*it).second->myVars);
+	++it;
       }
-      //      if(dPsi) dPsi->checkOutVariables(active);
+      
+      myVars.getIndex(active);
+      NumVars=myVars.size();
+      
+      //myVars.print(cout);
+      
+      if (NumVars)	{
+	dLogPsi.resize(NumVars);
+	gradLogPsi.resize(NumVars,Nelec);
+	lapLogPsi.resize(NumVars,Nelec);
+	// for (int i=0; i<NumVars; ++i) {
+	//   gradLogPsi[i].resize(Nelec);//=new GradVectorType(Nelec);
+	//   lapLogPsi[i].resize(Nelec);//=new ValueVectorType(Nelec);
+	// }
+
+	int nisp=iGroups=IRef->getSpeciesSet().getTotalNum();
+	int nesp=eGroups=eRef->groups();
+
+	VarOffset.resize(Nion, Nelec, Nelec);
+	int varoffset=myVars.Index[0];
+	for (int i=0; i<Nion; i++)
+	  for (int j=0; j<Nelec; j++)
+	    for (int k=0; k<Nelec; k++) {
+	      FT &func_ijk = *F.data()[TripletID(i, j, k)];
+	      VarOffset(i,j,k).first  = func_ijk.myVars.Index.front()-varoffset;
+	      VarOffset(i,j,k).second = func_ijk.myVars.Index.size()+VarOffset(i,j,k).first;
+	    }
+      }
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
@@ -1255,7 +1299,6 @@ namespace qmcplusplus {
 			     vector<RealType>& dlogpsi,
 			     vector<RealType>& dhpsioverpsi)
     {
-      cerr << "eeI evaluateDerivatives called.\n";
       // First, create lists of electrons within the sphere of each ion
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
@@ -1270,6 +1313,16 @@ namespace qmcplusplus {
       RealType u;
       PosType gradF;
       Tensor<RealType,3> hessF;
+
+      dLogPsi=0.0;
+      gradLogPsi = PosType();
+      lapLogPsi = 0.0;
+      fprintf (stderr, "gradLogPsi has size %d by %d.\n", gradLogPsi.size(0), 
+	       gradLogPsi.size(1));
+      // for (int p=0;p<NumVars; ++p) {
+      // 	gradLogPsi[p]=0.0;
+      // 	lapLogPsi[p]=0.0;
+      // }
 
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
@@ -1298,24 +1351,68 @@ namespace qmcplusplus {
 	    U[jel*Nelec+kel] += u;
 	    U[kel*Nelec+jel] += u;
 
-	    PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
-	    PosType du_j, du_k;
-	    RealType d2u_j, d2u_k;
-	    du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
-	    du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
-	    d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
-		     2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
-		     + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
-	    d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
-		     2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
-		     + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
-	    // G[jel] -= du_j;
-	    // G[kel] -= du_k;
-	    // L[jel] -= d2u_j;
-	    // L[kel] -= d2u_k;
+	    int first = VarOffset(i,jel,kel).first;
+	    int last  = VarOffset(i,jel,kel).second;
+	    
+	    vector<RealType> &dlog = du_dalpha[idx];
+	    vector<PosType>  &dgrad = dgrad_dalpha[idx];
+	    vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
+	    for (int p=first,ip=0; p<last; p++,ip++) {
+	      // fprintf (stderr, "p = %d  ip = %d\n", p, ip);
+	      // fprintf (stderr, "jel = %d kel=%d\n", jel, kel);
+	      RealType dval =  dlog[ip];
+	      PosType dg  = dgrad[ip];
+	      Tensor<RealType,3> dh  = dhess[ip];
+	      PosType gr_ee =    dg[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	      PosType du_j, du_k;
+	      RealType d2u_j, d2u_k;
+	      du_j = dg[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
+	      du_k = dg[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
+	      d2u_j = (dh(0,0) + 2.0*r_jk_inv*dg[0] -
+		       2.0*dh(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+		       + dh(1,1) + 2.0*r_Ij_inv*dg[1]);
+	      d2u_k = (dh(0,0) + 2.0*r_jk_inv*dg[0] +
+		       2.0*dh(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+		       + dh(2,2) + 2.0*r_Ik_inv*dg[2]);
+	      dLogPsi[p] -= dval;
+	      gradLogPsi(p,jel) -= du_j;
+	      gradLogPsi(p,kel) -= du_k;
+	      lapLogPsi(p,jel)  -= d2u_j;
+	      lapLogPsi(p,kel)  -= d2u_k;
+	    }
+
+	    // PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
+	    // PosType du_j, du_k;
+	    // RealType d2u_j, d2u_k;
+	    // du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
+	    // du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
+	    // d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
+	    // 	     2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
+	    // 	     + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
+	    // d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
+	    // 	     2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
+	    // 	     + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
+	    // // G[jel] -= du_j;
+	    // // G[kel] -= du_k;
+	    // // L[jel] -= d2u_j;
+	    // // L[kel] -= d2u_k;
 	  }
 	}
       }
+
+      for (int k=0; k<myVars.size(); ++k) {
+	int kk=myVars.where(k);
+	fprintf (stderr, "k = %d  kk=%d\n", k, kk);
+	if (kk<0) continue;
+	dlogpsi[kk]=dLogPsi[k];
+	RealType sum = 0.0;
+	for (int i=0; i<Nelec; i++)
+	  sum -= 0.5*lapLogPsi(k,i) - dot(P.G[i], gradLogPsi(k,i));
+	dhpsioverpsi[kk] = sum;
+	fprintf (stderr, "sum = %1.8e\n", sum);
+	//optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
+      }
+
     }
     
   };
