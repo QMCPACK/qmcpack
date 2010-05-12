@@ -719,6 +719,23 @@ namespace qmcplusplus
           }
         xmlXPathFreeObject(result);
 
+        //check ci 
+        result = xmlXPathEvalExpression((const xmlChar*)"//ci",acontext);
+        for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+          {
+            xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+            if (iptr == NULL) continue;
+            string aname((const char*)iptr);
+            xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
+            opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+            if (aptr != NULL && oit != OptVariablesForPsi.end())
+              {
+                attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
+              }
+          }
+        xmlXPathFreeObject(result);
+
         addCoefficients(acontext, "//coefficient");
         addCoefficients(acontext, "//coefficients");
 
