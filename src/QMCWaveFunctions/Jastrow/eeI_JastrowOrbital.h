@@ -133,8 +133,6 @@ namespace qmcplusplus {
       TripletID.resize(Nion,Nelec,Nelec);
       int nisp=iGroups=IRef->getSpeciesSet().getTotalNum();
       int nesp=eGroups=p.groups();
-      cerr << "nisp = " << nisp << endl;
-      cerr << "nesp = " << nesp << endl;
       for (int i=0; i<Nion; i++)
 	for(int j=0; j<Nelec; j++) 
 	  for(int k=0; k<Nelec; k++)
@@ -178,9 +176,9 @@ namespace qmcplusplus {
     void addFunc(const string& aname, int iSpecies, 
 		 int eSpecies1, int eSpecies2, FT* j)
     {
-      cerr << "iSpecies = " << iSpecies << "   eSpecies1 = " << eSpecies1
-	   << "   eSpecies2 = " << eSpecies2 << endl;
-      cerr << "eGroups = " << eGroups << endl;
+      // cerr << "iSpecies = " << iSpecies << "   eSpecies1 = " << eSpecies1
+      // 	   << "   eSpecies2 = " << eSpecies2 << endl;
+      // cerr << "eGroups = " << eGroups << endl;
 
       if(eSpecies1==eSpecies2)
       {
@@ -203,7 +201,6 @@ namespace qmcplusplus {
       // Make sure cutoff radii are the same for all functors with the same
       // iSpecies
       double rcut = 0.5 * F(iSpecies,0,0)->cutoff_radius;
-      cerr << "rcut = " << rcut << endl;
       for (int i=0; i<Nion; i++) 
 	if (IRef->GroupID[i] == iSpecies)
 	  IonDataList[i].cutoff_radius = rcut;
@@ -963,7 +960,6 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleGradient_t& dG, 
 		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat) {
-      cerr << "update called.\n";
       DiffValSum += DiffVal;
       GradType sumg,dg;
       ValueType suml=0.0,dl;
@@ -1371,22 +1367,6 @@ namespace qmcplusplus {
 	      lapLogPsi(p,jel)  -= d2u_j;
 	      lapLogPsi(p,kel)  -= d2u_k;
 	    }
-
-	    // PosType gr_ee =    gradF[0]*r_jk_inv * ee_table->dr(ee0+kel);
-	    // PosType du_j, du_k;
-	    // RealType d2u_j, d2u_k;
-	    // du_j = gradF[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
-	    // du_k = gradF[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
-	    // d2u_j = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] -
-	    // 	     2.0*hessF(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
-	    // 	     + hessF(1,1) + 2.0*r_Ij_inv*gradF[1]);
-	    // d2u_k = (hessF(0,0) + 2.0*r_jk_inv*gradF[0] +
-	    // 	     2.0*hessF(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
-	    // 	     + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
-	    // // G[jel] -= du_j;
-	    // // G[kel] -= du_k;
-	    // // L[jel] -= d2u_j;
-	    // // L[kel] -= d2u_k;
 	  }
 	}
       }
@@ -1399,11 +1379,8 @@ namespace qmcplusplus {
 	for (int i=0; i<Nelec; i++)
 	  sum -= 0.5*lapLogPsi(k,i) + dot(P.G[i], gradLogPsi(k,i));
 	dhpsioverpsi[kk] = sum;
-	//optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
-
     }
-    
   };
 
 
