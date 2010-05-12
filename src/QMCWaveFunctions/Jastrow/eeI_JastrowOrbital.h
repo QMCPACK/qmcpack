@@ -252,7 +252,6 @@ namespace qmcplusplus {
      */
     void checkOutVariables(const opt_variables_type& active)
     {
-      fprintf (stderr, "checkOutVariables called.\n");
       // myVars.getIndex(active);
       // Optimizable=myVars.is_optimizable();
       // typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
@@ -1317,12 +1316,6 @@ namespace qmcplusplus {
       dLogPsi=0.0;
       gradLogPsi = PosType();
       lapLogPsi = 0.0;
-      fprintf (stderr, "gradLogPsi has size %d by %d.\n", gradLogPsi.size(0), 
-	       gradLogPsi.size(1));
-      // for (int p=0;p<NumVars; ++p) {
-      // 	gradLogPsi[p]=0.0;
-      // 	lapLogPsi[p]=0.0;
-      // }
 
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++) {
@@ -1358,8 +1351,6 @@ namespace qmcplusplus {
 	    vector<PosType>  &dgrad = dgrad_dalpha[idx];
 	    vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
 	    for (int p=first,ip=0; p<last; p++,ip++) {
-	      // fprintf (stderr, "p = %d  ip = %d\n", p, ip);
-	      // fprintf (stderr, "jel = %d kel=%d\n", jel, kel);
 	      RealType dval =  dlog[ip];
 	      PosType dg  = dgrad[ip];
 	      Tensor<RealType,3> dh  = dhess[ip];
@@ -1402,14 +1393,12 @@ namespace qmcplusplus {
 
       for (int k=0; k<myVars.size(); ++k) {
 	int kk=myVars.where(k);
-	fprintf (stderr, "k = %d  kk=%d\n", k, kk);
 	if (kk<0) continue;
 	dlogpsi[kk]=dLogPsi[k];
 	RealType sum = 0.0;
 	for (int i=0; i<Nelec; i++)
-	  sum -= 0.5*lapLogPsi(k,i) - dot(P.G[i], gradLogPsi(k,i));
+	  sum -= 0.5*lapLogPsi(k,i) + dot(P.G[i], gradLogPsi(k,i));
 	dhpsioverpsi[kk] = sum;
-	fprintf (stderr, "sum = %1.8e\n", sum);
 	//optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
 
