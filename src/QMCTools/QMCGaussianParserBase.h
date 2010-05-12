@@ -1,6 +1,7 @@
 #ifndef QMCPLUSPLUS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
 #define QMCPLUSPLUS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
 #include <iostream>
+#include <cstdlib>
 #include <sstream>
 #include <iomanip>
 #include <vector>
@@ -16,6 +17,7 @@ struct QMCGaussianParserBase {
   typedef double value_type;
   typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
 
+  bool multideterminant;
   bool BohrUnit;
   bool SpinRestricted;
   bool Periodicity;
@@ -33,6 +35,7 @@ struct QMCGaussianParserBase {
   std::string basisName;
   std::string Normalized;
   std::string CurrentCenter;
+  std::string outputFile; 
 
   ParticleSet IonSystem;
 
@@ -46,6 +49,10 @@ struct QMCGaussianParserBase {
   //std::vector<GaussianCombo<value_type> > gExp, gC0, gC1;
   //std::string EigVecU, EigVecD;
   xmlNodePtr gridPtr;
+  std::vector<std::string> CIalpha,CIbeta;
+  std::vector<double> CIcoeff;
+  int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
+  double ci_threshold;
 
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);
@@ -54,12 +61,14 @@ struct QMCGaussianParserBase {
 
   void createGridNode(int argc, char** argv);
 
+  void createSPOSets(xmlNodePtr,xmlNodePtr);
   xmlNodePtr createElectronSet();
   xmlNodePtr createIonSet();
   xmlNodePtr createBasisSet();
   xmlNodePtr createCenter(int iat, int _off);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
   xmlNodePtr createDeterminantSet();
+  xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createDeterminantSetWithHDF5();
 
   void map2GridFunctors(xmlNodePtr cur);

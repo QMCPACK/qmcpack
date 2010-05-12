@@ -16,9 +16,10 @@
 /** @file SPOSetProxy.h
  * @brief declare a proxy class to a SPOSetBase for multi determinants
  */
-#ifndef QMCPLUSPLUS_SPOSETPROXY_H
-#define QMCPLUSPLUS_SPOSETPROXY_H
+#ifndef QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
+#define QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
 #include "QMCWaveFunctions/SPOSetBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 namespace qmcplusplus {
 
   /** proxy SPOSetBase 
@@ -26,7 +27,7 @@ namespace qmcplusplus {
    * This class owns a SPOSetBase for all the states to be evaluated
    * and will be owned by a DiracDeterminantBase object.
    */
-  struct SPOSetProxy: public SPOSetBase
+  struct SPOSetProxyForMSD: public SPOSetBase
   {
 
     ///pointer to the SPOSet which evaluate the single-particle states
@@ -43,13 +44,17 @@ namespace qmcplusplus {
     GradVector_t dpsiV;
     ///contatiner for the laplacians for a particle
     ValueVector_t d2psiV;
+    
+    Matrix<int> occup;
+
+    int workingSet;
 
     /** constructor
      * @param spos a SPOSet
      * @param first the first particle index
      * @param last the last particle index
      */
-    SPOSetProxy(SPOSetBasePtr const& spos, int first, int last);
+    SPOSetProxyForMSD(SPOSetBasePtr const& spos, int first, int last);
     void resetParameters(const opt_variables_type& optVariables);
     void resetTargetParticleSet(ParticleSet& P);
     void setOrbitalSetSize(int norbs);
@@ -71,6 +76,12 @@ namespace qmcplusplus {
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+
+    void prepareFor(int n) {workingSet = n;}
+
+    void evaluateForWalkerMove(const ParticleSet& P, int first, int last); 
+    void evaluateForPtclMove(const ParticleSet& P, int iat); 
+    void evaluateAllForPtclMove(const ParticleSet& P, int iat); 
 
    };
 }

@@ -51,6 +51,8 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/NGOBuilder.cpp
     MolecularOrbitals/BsplineAOBuilder.cpp
     OptimizableSPOBuilder.cpp
+    Fermion/SPOSetProxy.cpp
+    Fermion/SPOSetProxyForMSD.cpp
     )
 
   IF(QMC_COMPLEX)

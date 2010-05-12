@@ -12,8 +12,9 @@ int main(int argc, char **argv) {
 
   if(argc<2) {
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename ";
-    std::cout << "[-hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
-    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
+    std::cout << "[-hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin]"
+              << std::endl;
+    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
@@ -34,9 +35,12 @@ int main(int argc, char **argv) {
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   string in_file(argv[1]);
+  string punch_file;
   string psi_tag("psi0");
   string ion_tag("ion0");
   bool usehdf5=false;
+  bool ci=false;
+  double thres=0.01;
   while(iargc<argc) {
     std::string a(argv[iargc]);
     if(a == "-gaussian") {
@@ -60,7 +64,12 @@ int main(int argc, char **argv) {
       psi_tag=argv[++iargc];
     } else if(a == "-ion_tag") {
       ion_tag=argv[++iargc];
-    }
+    } else if(a == "-ci") {
+      ci=true; 
+      punch_file = argv[++iargc];
+    } else if(a == "-threshold" ) {
+      thres = atof(argv[++iargc]);
+    } 
     ++iargc;
   }
 
@@ -84,6 +93,9 @@ int main(int argc, char **argv) {
 
   parser->UseHDF5=usehdf5;
   parser->IonSystem.setName(ion_tag);
+  parser->multideterminant=ci;
+  parser->ci_threshold=thres;
+  parser->outputFile=punch_file;
   parser->parse(in_file);
   parser->dump(psi_tag, ion_tag);
   return 0;

@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #endif
@@ -34,6 +35,7 @@ namespace qmcplusplus {
   public:
 
     typedef SlaterDet SlaterDeterminant_t;
+    typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
     typedef DiracDeterminantBase Det_t;
     /** constructor
      * \param els reference to the electrons
@@ -56,6 +58,7 @@ namespace qmcplusplus {
     PtclPoolType& ptclPool;
     BasisSetFactory* myBasisSetFactory;
     SlaterDeterminant_t* slaterdet_0;
+    MultiSlaterDeterminant_t* multislaterdet_0;
     
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     bool UseBackflow;
@@ -68,6 +71,11 @@ namespace qmcplusplus {
      * @return firstIndex+number of orbitals
      */
     bool putDeterminant(xmlNodePtr cur, int firstIndex);
+
+    bool createCINODE(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+
+    bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+
   };
 }
 #endif

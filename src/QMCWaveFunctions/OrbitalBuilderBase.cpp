@@ -57,6 +57,8 @@ namespace qmcplusplus
 
   string OrbitalBuilderBase::backflow_tag="backflow";
 
+  string OrbitalBuilderBase::multisd_tag="multideterminant";
+
   OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
       MPIObjectBase(psi.getCommunicator()),
       targetPtcl(p), targetPsi(psi), myNode(NULL)

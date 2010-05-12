@@ -109,7 +109,8 @@ namespace APPNAMESPACE {
   inline void Copy(const ParticleAttrib<TinyVector<std::complex<T>,D> >& c,
       ParticleAttrib<TinyVector<T,D> >& r) {
     for(int i=0; i<c.size(); i++) {
-      r[i]=real(c[i]);
+      //r[i]=real(c[i]);
+      for(int j=0; j<D; j++) r[i][j] = c[i][j].real();
     }
   }
 

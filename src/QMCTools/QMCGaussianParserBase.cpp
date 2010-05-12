@@ -19,7 +19,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase(): 
   Title("sample"),basisType("Gaussian"),basisName("generic"),
-  Normalized("no"),gridPtr(0)
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
 {
 }
 
@@ -27,7 +27,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),  
-  Normalized("no"),gridPtr(0)
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -58,6 +58,19 @@ void QMCGaussianParserBase::init() {
   IonName[46] = "Pd"; IonName[47] = "Ag";  IonName[48] = "Cd";
   IonName[49] = "In"; IonName[50] = "Sn"; IonName[51] = "Sb"; 
   IonName[52] = "Te"; IonName[53] = "I"; IonName[54] = "Xe"; 
+  IonName[55] = "Cs"; IonName[56] = "Ba"; IonName[57] = "La";
+  IonName[58] = "Ce"; IonName[59] = "Pr"; IonName[60] = "Nd";
+  IonName[61] = "Pm"; IonName[62] = "Sm"; IonName[63] = "Eu";
+  IonName[64] = "Gd"; IonName[65] = "Tb"; IonName[66] = "Dy";
+  IonName[67] = "Ho"; IonName[68] = "Er"; IonName[69] = "Tm";
+  IonName[70] = "Yb"; IonName[71] = "Lu"; IonName[72] = "Hf";
+  IonName[73] = "Ta"; IonName[74] = "W"; IonName[75] = "Re";
+  IonName[76] = "Os"; IonName[77] = "Ir"; IonName[78] = "Pt";
+  IonName[79] = "Au"; IonName[80] = "Hg"; IonName[81] = "Tl";
+  IonName[82] = "Pb"; IonName[83] = "Bi"; IonName[84] = "Po";
+  IonName[85] = "At"; IonName[86] = "Rn"; IonName[87] = "Fr";
+  IonName[88] = "Ra"; IonName[89] = "Ac"; IonName[90] = "Th";
+  IonName[91] = "Pa"; IonName[92] = "U"; IonName[93] = "Np";
 
  
   gShellType.resize(10);
@@ -367,6 +380,145 @@ QMCGaussianParserBase::createDeterminantSet() {
   return slaterdet;
 }
 
+void
+QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN) {
+
+
+  setOccupationNumbers();
+
+  std::ostringstream up_size, down_size, b_size, occ, nstates_alpha,nstates_beta;
+  up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
+  nstates_alpha <<ci_nstates+ci_nca;;
+  nstates_beta <<ci_nstates+ci_ncb;
+
+  xmlNewProp(spoUP,(const xmlChar*)"name",(const xmlChar*)"spo-up");
+  xmlNewProp(spoDN,(const xmlChar*)"name",(const xmlChar*)"spo-dn");
+
+  xmlNewProp(spoUP,(const xmlChar*)"size",(const xmlChar*)nstates_alpha.str().c_str());
+  xmlNewProp(spoDN,(const xmlChar*)"size",(const xmlChar*)nstates_beta.str().c_str());
+
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(spoUP,occ_data);
+
+  int btot=SizeOfBasisSet*SizeOfBasisSet;
+  int n=btot/4, b=0;
+  int dn=btot-n*4;
+
+  std::ostringstream eig;
+  eig.setf(std::ios::scientific, std::ios::floatfield);
+  eig.setf(std::ios::right,std::ios::adjustfield);
+  eig.precision(14);
+  eig << "\n";
+  for(int k=0; k<n; k++) {
+    eig << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+    b += 4;
+  }
+  for(int k=0; k<dn; k++) { eig << setw(22) << EigVec[b++]; }
+  if(dn) eig << endl;
+  xmlNodePtr det_data
+    = xmlNewTextChild(spoUP,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
+  xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"updetC");
+
+  {
+    occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+    xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+    xmlAddChild(spoDN,occ_data);
+
+    std::ostringstream eigD;
+    eigD.setf(std::ios::scientific, std::ios::floatfield);
+    eigD.setf(std::ios::right,std::ios::adjustfield);
+    eigD.precision(14);
+    eigD << "\n";
+    b=SizeOfBasisSet*SizeOfBasisSet;
+    for(int k=0; k<n; k++) {
+      eigD << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+      b += 4;
+    }
+    for(int k=0; k<dn; k++) {
+      eigD << setw(22) << EigVec[b++];
+    }
+    if(dn) eigD << endl;
+    if(SpinRestricted)
+      det_data
+        = xmlNewTextChild(spoDN,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
+    else
+      det_data
+        = xmlNewTextChild(spoDN,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"downdetC");
+  }
+}
+
+xmlNodePtr 
+QMCGaussianParserBase::createMultiDeterminantSet()  {
+
+  xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
+
+  xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
+
+  ci_size=0;
+  for(int i=0; i<CIcoeff.size(); i++) if(fabs(CIcoeff[i]) > ci_threshold) ci_size++;
+  std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb;
+  cisize <<ci_size; nstates <<ci_nstates; 
+  cinca <<ci_nca;
+  cincb <<ci_ncb;
+  cinea <<ci_nea;
+  cineb <<ci_neb;
+
+  xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"DETS");
+  xmlNewProp(detlist,(const xmlChar*)"nca",(const xmlChar*)cinca.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"ncb",(const xmlChar*)cincb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+
+  if(CIcoeff.size() == 0) {
+    cerr<<" CI configuration list is empty. \n";
+    exit(101);
+  } 
+  if(CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size()) {
+    cerr<<" Problem with CI configuration lists. \n";
+    exit(102);
+  }
+
+  int iv=0;
+ 
+   
+  /*
+  while(iv < CIcoeff.size() && fabs(CIcoeff[iv]) < ci_threshold) iv++;
+
+  {
+    xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
+    std::ostringstream coeff; coeff<<CIcoeff[iv];
+    xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
+    xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[iv].c_str());
+    xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[iv].c_str());
+    xmlAddChild(detlist,ci);
+    iv++;
+  }
+  */
+  for(int i=0; i<CIcoeff.size(); i++) {
+    if(fabs(CIcoeff[i]) > ci_threshold) {
+      xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
+      std::ostringstream coeff; coeff<<CIcoeff[i];
+      xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
+      xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[i].c_str());
+      xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[i].c_str());
+      xmlAddChild(detlist,ci);
+    }
+  }
+  
+  xmlAddChild(multislaterdet,detlist);
+
+  return multislaterdet;
+}
+
+
 xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_) {
 
   //CurrentCenter = IonName[GroupID[iat]];
@@ -552,17 +704,31 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
       xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
+
       {
         xmlNodePtr bsetPtr = createBasisSet();
         xmlAddChild(detPtr,bsetPtr);
 
-        xmlNodePtr slaterdetPtr=NULL;
-        if(UseHDF5) {
-          slaterdetPtr = createDeterminantSetWithHDF5();
+        if(multideterminant) 
+        {
+          xmlNodePtr spoupPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
+          xmlNodePtr spodnPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
+          createSPOSets(spoupPtr,spodnPtr);
+          xmlAddChild(detPtr,spoupPtr);
+          xmlAddChild(detPtr,spodnPtr);
+
+          xmlNodePtr multislaterdetPtr=NULL;
+          multislaterdetPtr = createMultiDeterminantSet();
+          xmlAddChild(detPtr,multislaterdetPtr);
         } else {
-          slaterdetPtr = createDeterminantSet();
+          xmlNodePtr slaterdetPtr=NULL;
+          if(UseHDF5) {
+            slaterdetPtr = createDeterminantSetWithHDF5();
+          } else {
+            slaterdetPtr = createDeterminantSet();
+          }
+          xmlAddChild(detPtr,slaterdetPtr);
         }
-        xmlAddChild(detPtr,slaterdetPtr);
       }
       xmlAddChild(wfPtr,detPtr);
     }

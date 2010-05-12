@@ -17,7 +17,8 @@
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
 #include <QMCWaveFunctions/OrbitalBase.h>
-#include <QMCWaveFunctions/Fermion/SlaterDet.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 
 namespace qmcplusplus
   {
@@ -51,10 +52,23 @@ namespace qmcplusplus
 
     public:
 
-      typedef SlaterDet DeterminantSet_t;
+      typedef DiracDeterminantBase*    DiracDeterminantPtr;
+      typedef SPOSetBase*              SPOSetBasePtr;
+      typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
+    typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
+    typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+    typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
+    typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
+    typedef OrbitalSetTraits<ValueType>::HessType      HessType;
+    typedef Array<HessType,3>                          HessArray_t;
+    typedef TinyVector<HessType, 3>                    GGGType;
+    typedef Vector<GGGType>                            GGGVector_t;
+    typedef Matrix<GGGType>                            GGGMatrix_t;
+    typedef ParticleSet::Walker_t                      Walker_t;
+
 
       ///constructor
-      MultiSlaterDeterminant();
+      MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo);
 
       ///destructor
       ~MultiSlaterDeterminant();
@@ -99,18 +113,62 @@ namespace qmcplusplus
                                vector<RealType>& dlogpsi,
                                vector<RealType>& dhpsioverpsi);
 
+      void resize(int,int);
+
       /**
         add a new SlaterDeterminant with coefficient c to the
         list of determinants
         */
-      void add(DeterminantSet_t* sdet, RealType c);
+      //int NumOrbitals_ground,NumOrbitals_total;
+      int nels_up, nels_dn;
+      int NumUniqueDets_up;
+      int NumUniqueDets_dn;
+      vector<int> DetID;
 
-      void add(DeterminantSet_t* sdet, RealType c, const string& id);
+      int FirstIndex_up, LastIndex_up;
+      int FirstIndex_dn, LastIndex_dn;
 
-      vector<DeterminantSet_t*> SDets;
+      map<string,int> SPOSetID;
+
+      SPOSetProxyPtr spo_up;
+      SPOSetProxyPtr spo_dn;
+
+      std::vector<DiracDeterminantPtr> dets_up;
+      std::vector<DiracDeterminantPtr> dets_dn;
+
+      // map determinant in linear combination to unique det list
+      vector<int> C2node_up;
+      vector<int> C2node_dn;
+
       vector<RealType> C;
-      vector<ValueType> detValues;
-      vector<ValueType> tempDetRatios;
+
+      // lap(#uniqueDet,part#)
+      ValueVector_t detValues_up;
+      ValueVector_t detValues_dn;
+
+// UGLY, how do I get around this? I want to use GradMatrix instead...
+      // grads(#uniqueDet,part#)
+      Vector<ParticleSet::ParticleGradient_t> grads_up;
+      Vector<ParticleSet::ParticleGradient_t> grads_dn;
+
+      // lap(#uniqueDet,part#)
+      Vector<ParticleSet::ParticleLaplacian_t> lapls_up;
+      Vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
+
+      // grads(#uniqueDet,part#)
+      Vector<ParticleSet::ParticleGradient_t> tempgrad;
+
+      // lap(#uniqueDet,part#)
+      Vector<ParticleSet::ParticleLaplacian_t> templapl;
+
+      ValueType curRatio;
+      ValueVector_t detsRatios;
+      ValueVector_t lapl_temp;
+      GradVector_t grad_temp;
+
+      ParticleSet::ParticleGradient_t myG;
+      ParticleSet::ParticleLaplacian_t myL;
+
       opt_variables_type myVars;
     };
 

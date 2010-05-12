@@ -23,7 +23,7 @@ namespace qmcplusplus {
     : refPhi(spos)
   {
     Identity=true;
-    classNamse="SPOSetProxy";
+    className="SPOSetProxy";
     OrbitalSetSize=last-first;
     BasisSetSize=last-first;
     setOrbitalSetSize(refPhi->getOrbitalSetSize());
@@ -41,9 +41,12 @@ namespace qmcplusplus {
 
   void SPOSetProxy::setOrbitalSetSize(int norbs)
   {
-    psiM.resize(norbs,OrbitalSetSize);
-    dpsiM.resize(norbs,OrbitalSetSize);
-    d2psiM.resize(norbs,OrbitalSetSize);
+    //psiM.resize(norbs,OrbitalSetSize);
+    //dpsiM.resize(norbs,OrbitalSetSize);
+    //d2psiM.resize(norbs,OrbitalSetSize);
+    psiM.resize(OrbitalSetSize,norbs);
+    dpsiM.resize(OrbitalSetSize,norbs);
+    d2psiM.resize(OrbitalSetSize,norbs);
     psiV.resize(norbs);
     dpsiV.resize(norbs);
     d2psiV.resize(norbs);
@@ -51,17 +54,23 @@ namespace qmcplusplus {
 
   void SPOSetProxy::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    Phi->evaluate(P, iat, psiV);
-    std::copy(psiV.begin(),psiV.begin()+ObritalSetSize,psi.begin());
+    refPhi->evaluate(P, iat, psiV);
+    std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
+// mmorales: needed for MultiSlaterDeterminant moves: put an if statement??
+    std::copy(psiV.begin(),psiV.end(),psiM[iat]);
   }
 
   void SPOSetProxy::evaluate(const ParticleSet& P, int iat
       , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    Phi->evaluate(P, iat, psiV,dpsiV,d2psiV);
-    std::copy(psiV.begin(),psiV.begin()+ObritalSetSize,psi.begin());
-    std::copy(dpsiV.begin(),dpsiV.begin()+ObritalSetSize,dpsi.begin());
-    std::copy(d2psiV.begin(),d2psiV.begin()+ObritalSetSize,d2psi.begin());
+    refPhi->evaluate(P, iat, psiV,dpsiV,d2psiV);
+    std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
+    std::copy(dpsiV.begin(),dpsiV.begin()+OrbitalSetSize,dpsi.begin());
+    std::copy(d2psiV.begin(),d2psiV.begin()+OrbitalSetSize,d2psi.begin());
+// mmorales: needed for MultiSlaterDeterminant moves: put an if statement??
+    std::copy(psiV.begin(),psiV.end(),psiM[iat]);
+    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[iat]);
+    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[iat]);
   }
 
   void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
@@ -83,6 +92,7 @@ namespace qmcplusplus {
   void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
+
     //evaluate all
     refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,d2psiM);
 
@@ -92,6 +102,32 @@ namespace qmcplusplus {
 
     for(int i=0; i<OrbitalSetSize; ++i) std::copy(dpsiM[i],dpsiM[i]+OrbitalSetSize,dlogdet[i]);
     for(int i=0; i<OrbitalSetSize; ++i) std::copy(d2psiM[i],d2psiM[i]+OrbitalSetSize,d2logdet[i]);
+  }
+
+  void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
+      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+  {
+     APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
+  }
+
+  void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
+      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
+      , GGGMatrix_t& grad_grad_grad_logdet)
+  {
+     APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
+  }
+
+  void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+  {
+     APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
+  }
+
+  void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
+      , GGGMatrix_t& grad_grad_grad_logdet)
+  {
+     APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
   }
 
 }

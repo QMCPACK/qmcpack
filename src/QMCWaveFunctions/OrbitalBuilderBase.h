@@ -80,6 +80,8 @@ namespace qmcplusplus
       static std::string ionorb_tag;
       /// the element name for a backflow transformation
       static std::string backflow_tag;
+      /// the element name for a multi slater determinant wavefunction
+      static std::string multisd_tag;
 
       //@}
 

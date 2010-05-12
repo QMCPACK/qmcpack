@@ -94,6 +94,21 @@ struct OhmmsAsciiParser {
     }
     return 1;
   }
+
+  bool lookFor(std::istream& is, const std::string& keyword) {
+    bool notfound = true;
+    while(notfound) {
+      std::string aline;
+      getline(is,aline,'\n');
+      if(! is){
+        return false;
+      }
+      if(aline.find(keyword) < aline.size()) {
+        notfound = false;
+      }
+    }
+    return true;
+  }
 };
 
 #endif

@@ -21,6 +21,12 @@ CasinoParser::CasinoParser(int argc, char** argv):
 
 void CasinoParser::parse(const std::string& fname) {
 
+  if(multideterminant) {
+   cerr<<"Multideterminant parser for Casino is not implemented. \n";
+   exit(301);
+  }
+
+
   std::ifstream fin(fname.c_str());
 
   //Grep the first word of the first line to assign a file name

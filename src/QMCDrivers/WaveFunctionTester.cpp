@@ -224,6 +224,28 @@ namespace qmcplusplus
 //  ValueType logpsi(std::log(std::abs(psi)));
 //#endif
 
+{
+
+   int iat=0;
+   ofstream out("eloc.dat");
+   double dx=7.0/999.0;
+   W.R[iat] = 0.0;
+   W.R[iat][0] = -3.5;
+   for (int k=0; k<1000; k++)
+   {
+       W.R[iat][0] += dx;
+       W.update();
+       ValueType logpsi_p = Psi.evaluateLog(W); 
+       ValueType ene = H.evaluate(W);
+
+       out<<W.R[iat][0] <<"  "
+           <<std::exp(logpsi_p) <<"  "
+           <<logpsi_p <<"  "
+           <<ene <<endl;
+   }
+   out.close();
+}
+
     for (int iat=0; iat<nat; iat++)
       {
         PosType r0 = W.R[iat];

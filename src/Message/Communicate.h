@@ -42,7 +42,7 @@ struct CommunicatorTraits {
 };
 
 #define APP_ABORT(msg) \
-  std::cerr << "Fatal Error. Aborting at " << msg << std::endl; abort()
+  std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); abort()
 
 #endif
 

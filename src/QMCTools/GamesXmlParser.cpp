@@ -37,6 +37,11 @@
 
   void GamesXmlParser::parse(const std::string& fname) {
 
+    if(multideterminant) {
+     cerr<<"Multideterminant parser for Gamesxml is not implemented. \n";
+     exit(201);
+    }
+
     xmlDocPtr m_doc = xmlParseFile(fname.c_str());
     if (m_doc == NULL) {
       ERRORMSG("File " << fname << " is invalid")

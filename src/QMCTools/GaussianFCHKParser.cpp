@@ -28,6 +28,8 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin);//2  SP RHF Gen
   //if(currentWords[1]=="ROHF" || currentWords[1]=="UHF") {
   if(currentWords[1]=="UHF") {
+// mmorales: this should be determined by the existence of "Beta MO", since
+// there are many ways to get unrestricted runs without UHF (e.g. UMP2,UCCD,etc)
     SpinRestricted=false;
     std::cout << " Spin Unrestricted Calculation (UHF). " << endl;    
   } else {
@@ -160,6 +162,172 @@ void GaussianFCHKParser::parse(const std::string& fname) {
     getValues(fin,EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet, EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet+SizeOfBasisSet*NumOfIndOrb); 
 
     std::cout << " Alpha and Beta Orbital coefficients reading: OK" << endl;
+  }
+
+  if(multideterminant) {
+
+    std::ifstream ofile(outputFile.c_str());
+    if(ofile.fail()) {
+      cerr<<"Failed to open output file from gaussian. \n";
+      exit(401);
+    }
+
+    bool found = lookFor(ofile, "SLATER DETERMINANT BASIS");
+    if(!found) {
+      cerr<<"Gaussian parser currenly works for slater determinant basis only.\n";
+      abort();
+    }
+
+// mmorales: gaussian by default prints only 50 states
+// if you want more you need to use, iop(5/33=1), but thus prints
+// a lot of things. This stuff is printed in l510.F, line ~93300
+// so a simple modification can fix this, but is not general for everyone
+    //found = lookFor(ofile, "EIGENVALUES AND  EIGENVECTORS OF CI MATRIX");
+    found = lookFor(ofile, "Do an extra-iteration for final printing");
+/*    if(!found) {
+      ofile.close();
+      ofile.open(outputFile.c_str());
+      if(ofile.fail()) {
+        cerr<<"Failed to open output file from gaussian a second time. \n";
+        exit(401);
+      }
+      found = lookFor(ofile, "EIGENVALUES AND  EIGENVECTORS OF CI MATRIX");
+    }
+*/
+    map<int,int> coeff2confg;
+//   290 FORMAT(1X,7('(',I5,')',F10.7,1X)/(1X,7('(',I5,')',F10.7,1X)))
+    if(found) {
+
+      streampos tmppos = ofile.tellg();
+      if(!lookFor(ofile,"EIGENVALUE")) {
+        ofile.seekg(tmppos);//rewind it
+        if(!lookFor(ofile,"Eigenvalue")) {
+          cerr<<"Failed to find VI voefficients.\n";
+          abort();
+        }
+      }
+      int cnt=0;
+      CIcoeff.clear();
+      CIalpha.clear(); 
+      CIbeta.clear(); 
+      for(int i=0; i<7; i++) {
+        int pos=2;
+        std::string aline; 
+        getline(ofile,aline,'\n');
+        for(int i=0; i<7; i++) {
+          int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+          coeff2confg[q] = cnt++;  
+          CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
+          pos+=18; 
+//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
+        }
+      }
+      {
+        int pos=2;
+        std::string aline;
+        getline(ofile,aline,'\n');
+        int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+        coeff2confg[q] = cnt++;  
+        CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
+//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
+      } 
+      ofile.close();  // can I rewind???
+      ofile.open(outputFile.c_str());
+      if(ofile.fail()) {
+        cerr<<"Failed to open output file from gaussian. \n";
+        abort();
+      }
+
+// this might not work, look for better entry point later
+      search(ofile,"Truncation Level=");
+//cout<<"found Truncation Level=" <<endl; 
+      getwords(currentWords,ofile);
+      while(!ofile.eof() && (currentWords[0] != "no." || currentWords[1] != "active" || currentWords[2] != "orbitals") )
+      {
+//        cout<<"1. " <<currentWords[0] <<endl;
+        getwords(currentWords,ofile);
+      }
+      ci_nstates=atoi(currentWords[4].c_str());
+     
+      getwords(currentWords,ofile);
+// can choose specific irreps if I want...
+      while(currentWords[0] != "Configuration" || currentWords[2] != "Symmetry" ) 
+      {
+//        cout<<"2. " <<currentWords[0] <<endl;
+        getwords(currentWords,ofile);
+      }
+
+      CIbeta.resize(CIcoeff.size());
+      CIalpha.resize(CIcoeff.size());
+     
+      bool done=false;
+// can choose specific irreps if I want...
+      while(currentWords[0] == "Configuration" && currentWords[2] == "Symmetry" ) 
+      {
+         int pos = atoi(currentWords[1].c_str());
+         map<int,int>::iterator it = coeff2confg.find( pos );
+
+//cout<<"3. configuration: " <<currentWords[1].c_str() <<endl;
+        
+         if(it != coeff2confg.end()) {
+
+           std::string alp(currentWords[4]);
+           std::string beta(currentWords[4]);
+
+           if(alp.size() != ci_nstates) {
+             cerr<<"Problem with ci string. \n";
+             abort();
+           }
+           
+           for(int i=0; i<alp.size(); i++) {
+             if(alp[i] == 'a') alp[i]='1';
+             if(alp[i] == 'b') alp[i]='0';
+             if(beta[i] == 'a') beta[i]='0';
+             if(beta[i] == 'b') beta[i]='1';
+           } 
+           if(done) {
+           // check number of alpha/beta electrons
+             int n1=0;
+             for(int i=0; i<alp.size(); i++)  
+               if(alp[i] == '1') n1++;
+             if(n1 != ci_nea) {
+               cerr<<"Problems with alpha ci string: " 
+                   <<endl <<alp <<endl <<currentWords[3] <<endl;
+               abort();
+             } 
+             n1=0;
+             for(int i=0; i<beta.size(); i++) 
+               if(beta[i] == '1') n1++;
+             if(n1 != ci_neb) {
+               cerr<<"Problems with beta ci string: "
+                   <<endl <<beta <<endl <<currentWords[3] <<endl;
+               abort();
+             } 
+           } else {
+           // count number of alpha/beta electrons
+             ci_nea=0;
+             for(int i=0; i<alp.size(); i++) 
+               if(alp[i] == '1') ci_nea++;
+             ci_neb=0;
+             for(int i=0; i<beta.size(); i++)
+               if(beta[i] == '1') ci_neb++;
+             ci_nca = nup-ci_nea;
+             ci_ncb = ndown-ci_neb;
+           } 
+           CIalpha[it->second] = alp; 
+           CIbeta[it->second] = beta; 
+//cout<<"alpha: " <<alp <<"  -   "  <<CIalpha[it->second] <<endl;
+         } 
+         getwords(currentWords,ofile);
+      }
+//cout.flush();
+      ofile.close();
+    } else {
+// if iop(5/33=1), look for "FINAL EIGENVALUES AND EIGENVECTORS"
+      cerr<<"Could not find CI coefficients in gaussian output file. \n";
+      abort();
+    }
+
   }
 
 }
