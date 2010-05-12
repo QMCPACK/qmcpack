@@ -42,6 +42,13 @@ namespace qmcplusplus
       mydesc[FFT_COMPLEX]=is_complex2complex<T1,T2>::value;
     }
 
+    inline double gflops() const
+    {
+      double nops=(std::log(static_cast<double>(mydesc[FFT_LENGTH]))/std::log(2.))*5.
+        *mydesc[FFT_LENGTH]*mydesc[FFT_NUMBER_OF_TRANSFORMS]*1e-9;
+      return mydesc[FFT_COMPLEX]? nops:nops*0.5;
+    }
+
     /** operator to set the FFT properties */
     int& operator()(int i) { return mydesc[i];}
     /** operator to get the FFT properties */
