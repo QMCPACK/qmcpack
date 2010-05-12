@@ -516,14 +516,21 @@ namespace qmcplusplus {
 #if defined(HAVE_LIBFFTW)
       string a("e"), title("MPC");
       OhmmsAttributeSet hAttrib;
-      //bool physical = true;
+      string physical_flag("no");
       double cutoff = 30.0;
       hAttrib.add(title,"id"); 
       hAttrib.add(title,"name"); 
       hAttrib.add(cutoff,"cutoff");
-      //hAttrib.add(physical,"physical");
+      hAttrib.add(physical_flag,"physical");
       hAttrib.put(cur);
       renameProperty(a);
+
+      if(physical)
+      {
+        if(physical_flag == "no" || physical_flag == "false" || physical_flag == "0")
+          physical=false;
+      }
+
 #ifdef QMC_CUDA
       MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
 #else
