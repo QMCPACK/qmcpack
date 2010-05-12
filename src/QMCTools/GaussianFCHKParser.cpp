@@ -199,7 +199,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
     if(found) {
 
       streampos tmppos = ofile.tellg();
-      if(!lookFor(ofile,"EIGENVALUE")) {
+      if(!lookFor(ofile,"EIGENVALUE ")) {
         ofile.seekg(tmppos);//rewind it
         if(!lookFor(ofile,"Eigenvalue")) {
           cerr<<"Failed to find VI voefficients.\n";
