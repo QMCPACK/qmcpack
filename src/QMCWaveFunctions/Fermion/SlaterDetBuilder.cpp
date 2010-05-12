@@ -754,6 +754,7 @@ app_log() <<NCA <<"  "
      configuration baseC_up;
      configuration baseC_dn;
      vector<RealType>& coeff = multiSD->C;
+     vector<std::string> CItags;
 
      string optCI="no";
      OhmmsAttributeSet ciAttrib;
@@ -831,11 +832,12 @@ app_log() <<NCA <<"  "
        if(cname == "configuration" || cname == "ci")
        {
          RealType ci=0.0;
-         string alpha,beta;
+         string alpha,beta,tag;
          OhmmsAttributeSet confAttrib;
          confAttrib.add(ci,"coeff");
          confAttrib.add(alpha,"alpha");
          confAttrib.add(beta,"beta");
+         confAttrib.add(tag,"id");
          confAttrib.put(cur);
 
          int nq=0,na,nr;
@@ -879,6 +881,7 @@ app_log() <<NCA <<"  "
 
          count++;
          coeff.push_back(ci);
+         CItags.push_back(tag);
          confgList_up.push_back(dummyC_alpha);
          for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
          for(int i=NCA; i<NCA+nstates; i++) 
@@ -981,9 +984,9 @@ app_log() <<NCA <<"  "
        app_log() <<"CI coefficients are optimizable. ";
        multiSD->Optimizable=true;
        for(int i=0; i<coeff.size(); i++) {
-         std::stringstream sstr;
-         sstr << "CIcoeff" << "_" << i;
-         multiSD->myVars.insert(sstr.str(),coeff[i],true,optimize::LINEAR_P);
+         //std::stringstream sstr;
+         //sstr << "CIcoeff" << "_" << i;
+         multiSD->myVars.insert(CItags[i],coeff[i],true,optimize::LINEAR_P);
        }
      }
 
