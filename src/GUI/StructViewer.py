@@ -1,4 +1,5 @@
 import pygtk
+import numpy
 pygtk.require('2.0')
 
 
@@ -38,10 +39,111 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
         self.connect("configure_event", self.reshape)
         self.connect("expose_event"   , self.display)
         self.connect("map_event"      , self.map    )
+        self.atom_pos = 8.0*numpy.array([[0.00, 0.00, 0.00],\
+                                         [0.25, 0.25, 0.25]])
+        self.lattice = 8.0*numpy.array([[0.50, 0.50, 0.00],\
+                                        [0.50, 0.00, 0.50],\
+                                        [0.00, 0.50, 0.00]])
+
+    def set_lattice(self, lattice):
+        self.lattice = lattice
+        self.BoxList = glGenLists(1)
+        glNewList (self.BoxList, GL_COMPILE)
+        a = []
+        ma = []
+        a.append (numpy.array([lattice[0,0], lattice[0,1], lattice[0,2]]))
+        a.append (numpy.array([lattice[1,0], lattice[1,1], lattice[1,2]]))
+        a.append (numpy.array([lattice[2,0], lattice[2,1], lattice[2,2]]))
+        ma.append(-1.0*a[0])
+        ma.append(-1.0*a[1])
+        ma.append(-1.0*a[2])
+        r = []
+        r.append(0.5*(ma[0] + ma[1] + ma[2]));
+        r.append(0.5*(ma[0] + ma[1] +  a[2]));
+        r.append(0.5*(ma[0] +  a[1] +  a[2]));
+        r.append(0.5*(ma[0] +  a[1] + ma[2]));
+        r.append(0.5*( a[0] + ma[1] + ma[2]));
+        r.append(0.5*( a[0] + ma[1] +  a[2]));
+        r.append(0.5*( a[0] +  a[1] +  a[2]));
+        r.append(0.5*( a[0] +  a[1] + ma[2]));
+        glColor3d (0.3, 0.3, 0.3)
+        c = (1.0, 1.0, 1.0, 1.0)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, c)
+        glLineWidth (2.0);
+
+
+        p01 = numpy.cross (self.lattice[0], self.lattice[1])
+        p12 = numpy.cross (self.lattice[1], self.lattice[2]);
+        p20 = numpy.cross (self.lattice[2], self.lattice[0]);
+        p01 = 1.0/numpy.sqrt(numpy.dot(p01, p01)) * p01;
+        p12 = 1.0/numpy.sqrt(numpy.dot(p12, p12)) * p12;
+        p20 = 1.0/numpy.sqrt(numpy.dot(p20, p20)) * p20;
+        d01 = abs(0.5001*numpy.dot(self.lattice[2], p01));
+        d12 = abs(0.5001*numpy.dot(self.lattice[0], p12));
+        d20 = abs(0.5001*numpy.dot(self.lattice[1], p20));
+        
+        eqn0 = ( p01[0], p01[1], p01[2], d01);
+        eqn1 = (-p01[0],-p01[1],-p01[2], d01);
+        eqn2 = ( p12[0], p12[1], p12[2], d12);
+        eqn3 = (-p12[0],-p12[1],-p12[2], d12);
+        eqn4 = ( p20[0], p20[1], p20[2], d20);
+        eqn5 = (-p20[0],-p20[1],-p20[2], d20);
+        glClipPlane(GL_CLIP_PLANE0, eqn0);
+        glClipPlane(GL_CLIP_PLANE1, eqn1);
+        glClipPlane(GL_CLIP_PLANE2, eqn2);
+        glClipPlane(GL_CLIP_PLANE3, eqn3);
+        glClipPlane(GL_CLIP_PLANE4, eqn4);
+        glClipPlane(GL_CLIP_PLANE5, eqn5);
+#        glEnable(GL_CLIP_PLANE0);
+#        glEnable(GL_CLIP_PLANE1);
+#        glEnable(GL_CLIP_PLANE2);
+#        glEnable(GL_CLIP_PLANE3);
+#        glEnable(GL_CLIP_PLANE4);
+#        glEnable(GL_CLIP_PLANE5);
+        
+
+
+        glBegin(GL_LINES);
+        glNormal3d(1.0, 1.0, 1.0)
+        glVertex3d(r[0][0],r[0][1],r[0][2]); 
+        glVertex3d(r[1][0],r[1][1],r[1][2]);
+        glVertex3d(r[1][0],r[1][1],r[1][2]); 
+        glVertex3d(r[2][0],r[2][1],r[2][2]);
+        glVertex3d(r[2][0],r[2][1],r[2][2]); 
+        glVertex3d(r[3][0],r[3][1],r[3][2]);
+        glVertex3d(r[3][0],r[3][1],r[3][2]); 
+        glVertex3d(r[0][0],r[0][1],r[0][2]);
+        glVertex3d(r[4][0],r[4][1],r[4][2]); 
+        glVertex3d(r[5][0],r[5][1],r[5][2]);
+        glVertex3d(r[5][0],r[5][1],r[5][2]); 
+        glVertex3d(r[6][0],r[6][1],r[6][2]);
+        glVertex3d(r[6][0],r[6][1],r[6][2]); 
+        glVertex3d(r[7][0],r[7][1],r[7][2]);
+        glVertex3d(r[7][0],r[7][1],r[7][2]); 
+        glVertex3d(r[4][0],r[4][1],r[4][2]);
+        glVertex3d(r[0][0],r[0][1],r[0][2]); 
+        glVertex3d(r[4][0],r[4][1],r[4][2]);
+        glVertex3d(r[1][0],r[1][1],r[1][2]); 
+        glVertex3d(r[5][0],r[5][1],r[5][2]);
+        glVertex3d(r[2][0],r[2][1],r[2][2]); 
+        glVertex3d(r[6][0],r[6][1],r[6][2]);
+        glVertex3d(r[3][0],r[3][1],r[3][2]); 
+        glVertex3d(r[7][0],r[7][1],r[7][2]);
+        glEnd()
+        glEndList()
 
     def init (self, glDrawingArea):
         glcontext  = self.get_gl_context()
         gldrawable = self.get_gl_drawable()
+        
+        self.DisplayLists = []
+        self.SphereList = glGenLists(1)
+        glNewList(self.SphereList, GL_COMPILE)
+        gtk.gdkgl.draw_sphere(True, 1.0, 30, 30)
+        glEndList()
+        self.set_lattice(self.lattice)
+        self.redraw()
+
 
         glShadeModel(GL_SMOOTH);
         glEnable (GL_LIGHTING);
@@ -53,14 +155,15 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
         glEnable(GL_LIGHT0)
 
         diffuse  = (1.0, 1.0, 1.0, 1.0)
-        ambient  = (0.2, 0.2, 0.2, 1.0)
+        ambient  = (0.001, 0.001, 0.001, 1.0)
         specular = (1.0, 1.0, 1.0, 1.0)
-        position = (1.0, 1.0, 2.0, 0.0)
+        position = (1.0, 1.0, 1.0, 0.0)
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffuse)
         glLightfv(GL_LIGHT0, GL_AMBIENT,  ambient)
         glLightfv(GL_LIGHT0, GL_SPECULAR, specular)
-        glLightfv(GL_LIGHT0, GL_POSITION, diffuse)
-
+        glLightfv(GL_LIGHT0, GL_POSITION, position)
+        glMaterialfv (GL_FRONT_AND_BACK, GL_SPECULAR, specular)
+        glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, 92)
         glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE)
 
         (width, height) = self.window.get_size()
@@ -111,6 +214,20 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
     
         return True
 
+    def redraw(self):
+        for l in self.DisplayLists:
+            glDeleteLists(l,1)
+        for r in self.atom_pos:
+            rtran = r - 0.5*(self.lattice[0] + self.lattice[1] + self.lattice[2])
+            list = glGenLists(1)
+            self.DisplayLists.append(list)
+            glNewList(list, GL_COMPILE)
+            glPushMatrix();
+            glTranslated (rtran[0], rtran[1], rtran[2])
+            glCallList(self.SphereList)
+            glPopMatrix();
+            glEndList()
+
     def display(self, glDrawArea, event):
         # get GLContext and GLDrawable
         glcontext  = self.get_gl_context()
@@ -125,8 +242,13 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
 #       glLoadIdentity()
         glTranslatef(0.0, 0.0, -5.0)
         
+        #gtk.gdkgl.draw_sphere(True, 1.0, 30, 30)
+        #glCallList(self.SphereList)
+        glCallList(self.BoxList)
         glColor ([1.0, 0.0, 0.0, 1.0])
-        gtk.gdkgl.draw_sphere(True, 1.0, 30, 30)
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        for list in self.DisplayLists:
+            glCallList(list)
 
         glPopMatrix()
         if gldrawable.is_double_buffered():
@@ -142,8 +264,8 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
     def map(self, event, dummy):
         print "map_event"
 
-    def set_lattice (self, lattice):
-        print "set_lattice"
+#    def set_lattice (self, lattice):
+#        print "set_lattice"
 
     def set_atoms (self, atomList):
         print "set_atoms"
