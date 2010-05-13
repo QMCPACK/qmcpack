@@ -683,26 +683,14 @@ namespace qmcplusplus {
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n);
       ValueType gg=0.0, ggP=0.0;
-
-      for(int k=FirstIndex_up; k<LastIndex_up; k++) {
-        g(k)=0.0;
-        for(int i=0; i<C.size(); i++){
-          int upC = C2node_up[i];
-          int dnC = C2node_dn[i];
-          ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          lapl_sum += tmp*lapls_up[upC][k];
-          g(k) += tmp*grads_up[upC][k];
-        }
-      }
-      for(int k=FirstIndex_dn; k<LastIndex_dn; k++) {
-        g(k)=0.0;
-        for(int i=0; i<C.size(); i++){
-          int upC = C2node_up[i];
-          int dnC = C2node_dn[i];
-          ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          lapl_sum += tmp*lapls_dn[dnC][k];
-          g(k) += tmp*grads_dn[dnC][k];
-        }
+      g=0.0;
+      for(int i=0; i<C.size(); i++){
+        int upC = C2node_up[i];
+        int dnC = C2node_dn[i];
+        ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+        lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
+        g += tmp*grads_up[upC];
+        g += tmp*grads_dn[dnC];
       }
       gg=Dot(g,g);
       ggP=Dot(P.G,g);
@@ -715,11 +703,10 @@ namespace qmcplusplus {
         int dnC = C2node_dn[i];
         ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
         convert(cdet,dlogpsi[kk]);
-        ValueType dhpsi =  (-0.5*cdet)*Sum(lapls_up[upC])
-                           -0.5*cdet*Sum(lapls_dn[upC])
-                           + cdet*(Dot(g,grads_up[upC])+Dot(g,grads_dn[dnC])-gg)
-                           - cdet*(Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP)
-                           + 0.5*cdet*lapl_sum;
+        ValueType dhpsi =  (-0.5*cdet)*
+                       ( Sum(lapls_up[upC])+Sum(lapls_dn[dnC])-lapl_sum
+                          +2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
+                          +Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
         convert(dhpsi,dhpsioverpsi[kk]);
       }
     
