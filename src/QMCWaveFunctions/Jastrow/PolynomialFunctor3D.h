@@ -584,6 +584,7 @@ namespace qmcplusplus {
 	d_grads[ip] = dp_inv * (g_plus - g_minus);
 	d_hess[ip]  = dp_inv * (h_plus - h_minus);
       }
+      return true;
     }
       
 

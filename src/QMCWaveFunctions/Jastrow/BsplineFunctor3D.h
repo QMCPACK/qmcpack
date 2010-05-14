@@ -437,6 +437,7 @@ namespace qmcplusplus
 			   vector<Tensor<real_type,3> > &d_hess) 
       {
 
+        return false;
       }
 
       inline real_type f(real_type r)

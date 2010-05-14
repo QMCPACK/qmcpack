@@ -3,9 +3,9 @@
 
 #include <type_traits/container_proxy.h>
 #include <mpi/mpi_datatype.h>
-#if defined(HAVE_MPI)
-#include <boost/mpi/operations.hpp>
-#endif
+//#if defined(HAVE_MPI)
+//#include <boost/mpi/operations.hpp>
+//#endif
 
 namespace APPNAMESPACE {
 
