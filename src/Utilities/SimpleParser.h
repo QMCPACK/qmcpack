@@ -95,20 +95,56 @@ struct OhmmsAsciiParser {
     return 1;
   }
 
-  bool lookFor(std::istream& is, const std::string& keyword) {
+  int search(std::istream& is, const std::string& keyword, std::string& the_line) {
     bool notfound = true;
     while(notfound) {
       std::string aline;
       getline(is,aline,'\n');
       if(! is){
-        return false;
+        cout << "KEYWORD " << keyword << " : NOT FOUND. " << endl;
+        abort();
       }
       if(aline.find(keyword) < aline.size()) {
         notfound = false;
+        the_line = aline;
+      }
+    }
+    return 1;
+  }
+
+  bool lookFor(std::istream& is, const std::string& keyword) {
+    bool notfound = true;
+    while(notfound) {
+      std::string aline;
+      getline(is,aline,'\n');
+      if(aline.find(keyword) != string::npos) { // < aline.size()) {
+        notfound = false;
+      }
+      //if(! is){
+      if(is.eof()){
+        return false;
       }
     }
     return true;
   }
+
+  bool lookFor(std::istream& is, const std::string& keyword, std::string& the_line) {
+    bool notfound = true;
+    while(notfound) {
+      std::string aline;
+      getline(is,aline,'\n');
+      if(aline.find(keyword) != string::npos) { // < aline.size()) {
+        notfound = false;
+        the_line = aline;
+      }
+      //if(! is){
+      if(is.eof()){
+        return false;
+      }
+    }
+    return true;
+  }
+
 };
 
 #endif
