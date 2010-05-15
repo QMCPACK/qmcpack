@@ -3,6 +3,68 @@ import gtk
 import IO
 import numpy
 
+class TilingMatrix(gtk.Frame):
+    def __init__(self):
+        gtk.Frame.__init__(self, 'Orbital tiling')
+        self.matrix = numpy.array([[1,0,0],[0,1,0],[0,0,1]])
+        self.set_label('Orbital tiling')
+        self.TileTable = gtk.Table(3,3)
+        self.TileOrbitals = gtk.CheckButton('Tile orbitals')
+        self.TileOrbitals.set_active(False)
+        self.TileOrbitals.connect("toggled", self.tile_toggled)
+
+        self.TileButtons = []
+        for i in range(0,3):
+            TileList = []
+            for j in range(0,3):
+                tile = gtk.SpinButton\
+                    (gtk.Adjustment(0.0, -100.0, 100.0, 1.0, 2.0))
+                if (i == j):
+                    tile.set_value(self.matrix[i,j])
+                tile.set_digits(0)
+                tile.set_width_chars(2)
+                tile.connect('value_changed', self.matrix_changed)
+                self.TileTable.attach(tile, i, i+1, j, j+1)
+                TileList.append(tile)
+            self.TileButtons.append(TileList)
+        vbox = gtk.VBox()
+        self.UnitLabel = gtk.Label()
+        self.UnitLabel.set_text('Unit cells:  1')
+        vbox.pack_start(self.TileOrbitals)
+        vbox.pack_start(self.TileTable)
+        vbox.pack_start(self.UnitLabel)
+        self.TileTable.set_sensitive(False)
+        self.add(vbox)
+
+    def matrix_changed(self, button):
+        units = self.get_units()
+        self.UnitLabel.set_text('Unit cells:  %d' %(units))
+
+    def get_units(self):
+       mat = self.get_matrix()
+       units = numpy.abs(numpy.linalg.det(mat))
+       return units
+
+    def get_matrix(self):
+        mat = []
+        for i in range(0,3):
+            row = []
+            for j in range(0,3):
+                row.append(int(self.TileButtons[i][j].get_value()))
+            mat.append(row)
+        return numpy.array(mat)
+
+    def set_matrix(self, mat):
+        for i in range(0,3):
+            for j in range(0,3):
+                TileButtons[i,j].set_value(mat[i,j])
+
+    def tile_toggled(self, button):
+        self.TileTable.set_sensitive(button.get_active())
+    
+
+
+
 class Orbitals(gtk.Frame):
     def h5_chosen_callback(self, fileDialog, response):
         if (response == gtk.RESPONSE_ACCEPT):
@@ -69,8 +131,10 @@ class Orbitals(gtk.Frame):
         filter = gtk.FileFilter()
         filter.add_pattern("*.h5")
         filter.set_name ("XML files")
-        buttons = (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_ACCEPT)
-        self.FileDialog = gtk.FileChooserDialog("Select orbital file", buttons=buttons)
+        buttons = (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,\
+                   gtk.STOCK_OPEN,gtk.RESPONSE_ACCEPT)
+        self.FileDialog = gtk.FileChooserDialog \
+            ("Select orbital file", buttons=buttons)
         self.FileDialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
         self.FileDialog.connect("response", self.h5_chosen_callback)
         self.FileButton = gtk.FileChooserButton(self.FileDialog)
@@ -78,8 +142,15 @@ class Orbitals(gtk.Frame):
         self.FileButton.set_sensitive(True)
         self.FileButton.set_action (gtk.FILE_CHOOSER_ACTION_OPEN)
         filebox = gtk.HBox(True)
-        filebox.pack_start(self.FileButton)
+        vbox = gtk.VBox(True)
+        self.TileFrame = TilingMatrix()
+        filebox.pack_start(self.FileButton, True, False)
+        filebox.pack_start(self.TileFrame , True, False)
+
         self.add(filebox)
+
+    def tile_matrix_changed(self, button):
+        print
 
 class Jastrows(gtk.Frame):
     def __init__(self):

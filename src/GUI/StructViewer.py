@@ -1,6 +1,7 @@
 import pygtk
 import numpy
 pygtk.require('2.0')
+from trackball import *
 
 
 haveGTK_GL = True
@@ -21,6 +22,7 @@ def ViewerOkay():
 #    print "Found gtk.gtkgl.apputils.  Description = " + desc
 #    imp.load_module("gtk.gtkgl.apputils", file, pathname, desc)
     
+
 class StructureViewer(gtk.gtkgl.DrawingArea):
     def __init__(self):
         try:
@@ -35,16 +37,63 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
 
         gtk.gtkgl.DrawingArea.__init__(self, glconfig)
         
-        self.connect_after("realize"  , self.init   )
-        self.connect("configure_event", self.reshape)
-        self.connect("expose_event"   , self.display)
-        self.connect("map_event"      , self.map    )
+        self.connect_after("realize"      , self.init        )
+        self.connect("configure_event"    , self.reshape     )
+        self.connect("expose_event"       , self.display     )
+        self.connect("map_event"          , self.map         )
+        self.connect("button_press_event" , self.button_press)
+        self.connect("motion_notify_event", self.button_motion)
         self.atom_pos = 8.0*numpy.array([[0.00, 0.00, 0.00],\
                                          [0.25, 0.25, 0.25]])
         self.lattice = 8.0*numpy.array([[0.50, 0.50, 0.00],\
                                         [0.50, 0.00, 0.50],\
                                         [0.00, 0.50, 0.00]])
+        self.set_events(gtk.gdk.BUTTON1_MOTION_MASK    |
+                        gtk.gdk.BUTTON2_MOTION_MASK    |
+                        gtk.gdk.BUTTON3_MOTION_MASK    |
+                        gtk.gdk.BUTTON_PRESS_MASK      |
+                        gtk.gdk.BUTTON_RELEASE_MASK    |
+                        gtk.gdk.VISIBILITY_NOTIFY_MASK |
+                        gtk.gdk.SCROLL_MASK)
+        self.Scale = 1.0
+        self.Distance = 3.0
+        self.tb = Trackball()
+    
 
+    def button_press(self, glDrawArea, event):
+        if (event.button == 1):
+            self.StartX = event.x
+            self.StartY = event.y
+            self.Button1Pressed=True
+            self.Button2Pressed=False
+            self.Button3Pressed=False
+        elif (event.button == 2):
+            self.StartX = event.x
+            self.StartY = event.y
+            self.Button1Pressed=False
+            self.Button2Pressed=True
+            self.Button3Pressed=False
+            self.OldScale = self.Scale
+        elif (event.button == 3):
+            self.StartX = event.x
+            self.StartY = event.y
+            self.Button1Pressed=False
+            self.Button2Pressed=False
+            self.Button3Pressed=True
+        print 'button pressed at (%3d,%3d)' % (event.x, event.y)
+
+    def button_motion(self, glDrawArea, event):
+        if (self.Button3Pressed):
+            print 'translate'
+        elif (self.Button1Pressed):
+            w = self.get_allocation()[2]
+            h = self.get_allocation()[3]
+            x = event.x
+            y = event.y
+            self.tb.update(self.StartX, self.StartY, x, y, w, h)
+            self.display(self, None)
+            #print self.tb.matrix
+         
     def set_lattice(self, lattice):
         self.lattice = lattice
         self.BoxList = glGenLists(1)
@@ -215,6 +264,20 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
         return True
 
     def redraw(self):
+#        glMatrixMode(GL_PROJECTION)
+#        glLoadIdentity();
+#        width  = self.get_allocation()[2]
+#        height = self.get_allocation()[3]
+#        ratio = width/height
+#        gluPerspective(40.0, ratio, 1.0, 8.0*self.Distance/Scale)
+#        glMatrixMode(GL_MODELVIEW);
+#        glLoadIdentity();
+#        gluLookAt(0.0, 0.0, self.Distance/Scale,\
+#                  0.0, 0.0,            0.0,\
+#                  0.0, 1.0, 0.0);
+#        glTranslatef(0.0, 0.0, -self.Distance/Scale);
+#        glScaled(Scale, Scale, Scale);
+
         for l in self.DisplayLists:
             glDeleteLists(l,1)
         for r in self.atom_pos:
@@ -237,6 +300,7 @@ class StructureViewer(gtk.gtkgl.DrawingArea):
         if not gldrawable.gl_begin(glcontext): return
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glPushMatrix()
+        glMultMatrixd(self.tb.matrix);
         # Do stuff here
 #       glMatrixMode(GL_MODELVIEW)
 #       glLoadIdentity()
