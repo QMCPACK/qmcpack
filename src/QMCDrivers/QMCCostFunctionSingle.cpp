@@ -411,11 +411,18 @@ namespace qmcplusplus
         for (int pm=0; pm<NumParams();pm++)
           {
             Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-            Hamiltonian(0,pm+1) += weight*(HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w));
+            Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w) )*weight; 
+
+            H2(0,pm+1) += wfe*(eloc_new );
+            H2(pm+1,0) += wfe*(eloc_new );
+            
+            Hamiltonian(0,pm+1) += wfe;
             Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);
+            
             for (int pm2=0; pm2<NumParams();pm2++)
               {
-                Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2] + Dsaved[pm2]*(eloc_new-curAvg_w));
+                H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+                Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
                 Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
               }
           }

@@ -158,6 +158,10 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
       PopHist.clear();
       PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
+    else
+    {
+      BranchMode.set(B_DMCSTAGE,0);//always reset warmup
+    }
 
     //save the BranchMode in anticipating state changes in reset
     bitset<B_MODE_MAX> bmode(BranchMode);

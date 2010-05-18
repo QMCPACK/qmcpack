@@ -503,7 +503,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
                 H2(0,pm+1) += wfe*(eloc_new );
                 H2(pm+1,0) += wfe*(eloc_new );
                 
-                Hamiltonian(0,pm+1) += weight*(HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w));
+                Hamiltonian(0,pm+1) += wfe;
                 Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);                
                 for (int pm2=0; pm2<NumParams();pm2++)
                 {
