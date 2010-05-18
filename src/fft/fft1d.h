@@ -62,6 +62,20 @@ namespace qmcplusplus
       return (idir==FFTW_FORWARD)?mydesc[FFT_IN_DISTANCE]:mydesc[FFT_OUT_DISTANCE];
     }
 
+    inline void transpose(int idir)
+    {
+      if(idir == FFTW_FORWARD)
+      {
+        mydesc[FFT_IN_DISTANCE]=1;
+        mydesc[FFT_IN_STRIDE]=mydesc[FFT_NUMBER_OF_TRANSFORMS];
+      }
+      else
+      {
+        mydesc[FFT_OUT_DISTANCE]=1;
+        mydesc[FFT_OUT_STRIDE]=mydesc[FFT_NUMBER_OF_TRANSFORMS];
+      }
+    }
+
     /** create InPlace plan 
      * @param dims fft dimension
      * @param m number of ffts

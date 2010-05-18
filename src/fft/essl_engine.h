@@ -42,6 +42,9 @@ namespace qmcplusplus
         int num_ffts;
         int in_displ;
         int out_displ;
+        int in_stride;
+        int out_stride;
+
         std::vector<T> vaux1;
         std::vector<T> vaux2;
         fft_plan():fft_size(0),num_ffts(0),in_displ(0),out_displ(0){}
@@ -51,22 +54,28 @@ namespace qmcplusplus
           fft_size=desc[FFT_LENGTH];
           num_ffts=desc[FFT_NUMBER_OF_TRANSFORMS];
           int naux1=0,naux2=0;
-          if(desc[FFT_COMPLEX])
+          if(eflag==ESSL_FFT_FORWARD)
           {
-            in_displ=out_displ=fft_size;
-            naux1=(fft_size>4096)?static_cast<int>(20000.+1.64*fft_size)+1:25000;
-            naux2=naux1;
+            in_displ=desc[FFT_IN_DISTANCE];
+            out_displ=desc[FFT_OUT_DISTANCE];
+            in_stride=desc[FFT_IN_STRIDE];
+            out_stride=desc[FFT_OUT_STRIDE];
           }
           else
           {
-            if(eflag==ESSL_FFT_FORWARD)
-            {
-              in_displ=desc[FFT_IN_DISTANCE];out_displ=desc[FFT_OUT_DISTANCE];
-            }
-            else
-            {
-              in_displ=desc[FFT_OUT_DISTANCE];out_displ=desc[FFT_IN_DISTANCE];
-            }
+            in_displ=desc[FFT_OUT_DISTANCE];
+            in_stride=desc[FFT_OUT_STRIDE];
+            out_displ=desc[FFT_IN_DISTANCE];
+            out_stride=desc[FFT_IN_STRIDE];
+          }
+          if(desc[FFT_COMPLEX])
+          {
+            //in_displ=out_displ=fft_size;
+            naux1=(fft_size>4096)?static_cast<int>(20000.+1.64*fft_size)+1:25000;
+            naux2=naux1+(2*fft_size+256)*std::min(64,num_ffts);
+          }
+          else
+          {
             naux1=(fft_size>2048)?static_cast<int>(20000.+2.28*fft_size)+1:20000;
             naux2=std::max(naux1,(2*fft_size+256)*std::min(64,num_ffts));
           }
@@ -86,11 +95,11 @@ namespace qmcplusplus
      * @param out starting address of the output data
      * @param idir ESSL_FFT_FORWARD or ESSL_FFT_BACKWARD
      */
-    inline void create_plan(fft_plan<double>& aplan, complex<double>* in, std::complex<double>* out, int eflag)
+    inline void create_plan(fft_plan<double>& aplan, std::complex<double>* in, std::complex<double>* out, int eflag)
     {
       dcft(1 
-          , in, 1, aplan.in_displ 
-          , out, 1, aplan.out_displ
+          , in, aplan.in_stride, aplan.in_displ 
+          , out, aplan.out_stride, aplan.out_displ
           , aplan.fft_size, aplan.num_ffts
           , eflag, 1.0
           , aplan.data1(), aplan.size1(), aplan.data2(), aplan.size2());
@@ -99,8 +108,8 @@ namespace qmcplusplus
     inline void fft(fft_plan<double>& aplan, std::complex<double>* in, std::complex<double>* out)
     {
       dcft(0 
-          , in, 1, aplan.in_displ 
-          , out, 1, aplan.out_displ
+          , in, aplan.in_stride, aplan.in_displ 
+          , out, aplan.out_stride, aplan.out_displ
           , aplan.fft_size, aplan.num_ffts
           , ESSL_FFT_FORWARD, 1.0
           , aplan.data1(), aplan.size1(), aplan.data2(), aplan.size2());
@@ -109,8 +118,8 @@ namespace qmcplusplus
     inline void ifft(fft_plan<double>& aplan, std::complex<double>* in, std::complex<double>* out)
     {
       dcft(0 
-          , in, 1, aplan.in_displ 
-          , out, 1, aplan.out_displ
+          , in, aplan.in_stride, aplan.in_displ 
+          , out, aplan.out_stride, aplan.out_displ
           , aplan.fft_size, aplan.num_ffts
           , ESSL_FFT_BACKWARD, 1.0
           , aplan.data1(), aplan.size1(), aplan.data2(), aplan.size2());
