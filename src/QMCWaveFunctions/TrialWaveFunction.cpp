@@ -702,9 +702,10 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
       vector<RealType>& dlogpsi,
       vector<RealType>& dhpsioverpsi)
   {
-    // First, zero out derivatives
-    for (int j=0; j<dlogpsi.size(); j++) 
-      dlogpsi[j] = dhpsioverpsi[j] = 0.0;
+    //     // First, zero out derivatives
+    //  This should only be done for some variables.
+    //     for (int j=0; j<dlogpsi.size(); j++) 
+    //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
       
     for (int i=0; i<Z.size(); i++) {
       if (Z[i]->dPsi)(Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
