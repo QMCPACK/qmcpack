@@ -362,7 +362,7 @@ namespace qmcplusplus {
 	int m = grid_global->size();
 	double loc_max = grid_global->r(m-1);
 	int nloc = (int)std::floor(loc_max / d);
-	loc_max = nloc * d;
+	loc_max = (nloc-1) * d;
 	LinearGrid<RealType>* grid_loc = new LinearGrid<RealType>;
 	grid_loc->set(0.0, loc_max, nloc);
 
