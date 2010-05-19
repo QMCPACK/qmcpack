@@ -149,8 +149,8 @@ namespace qmcplusplus
    if(NumWalkersEff < NumSamples*MinNumWalkers) 
 //    if (NumWalkersEff < MinNumWalkers)
       {
-//        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-//        ERRORMSG("Going to stop now.")
+        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
+        ERRORMSG("Going to stop now.")
         IsValid=false;
       }
     return CostValue;

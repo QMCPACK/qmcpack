@@ -107,8 +107,10 @@ namespace qmcplusplus
       else if (cname == sposet_tag) {
 	app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
 	string spo_name;
+	string basisset("null");
 	OhmmsAttributeSet spoAttrib;
 	spoAttrib.add (spo_name, "name");
+	spoAttrib.add (basisset, "basisset");
 	spoAttrib.put(cur);
 	app_log() << "spo_name = " << spo_name << endl;
 
@@ -116,9 +118,9 @@ namespace qmcplusplus
         {
           myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
           myBasisSetFactory->setReportLevel(ReportLevel);
-          //myBasisSetFactory->createBasisSet(cur,cur);
         }
-        myBasisSetFactory->createBasisSet(cur,cur);
+        if(basisset == "null")
+          myBasisSetFactory->createBasisSet(cur,cur);
 	SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
 	spo->put(cur, spomap);
 	if (spomap.find(spo_name) != spomap.end()) {

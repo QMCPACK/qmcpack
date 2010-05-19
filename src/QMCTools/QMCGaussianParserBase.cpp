@@ -181,8 +181,8 @@ xmlNodePtr QMCGaussianParserBase::createIonSet() {
 xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
+  xmlNewProp(bset,(const xmlChar*)"name",(const xmlChar*)"LCAOBSet");
   /*
-  xmlNewProp(bset,(const xmlChar*)"ref",(const xmlChar*)"i");
   xmlNodePtr cur = xmlAddChild(bset,xmlNewNode(NULL,(const xmlChar*)"distancetable"));
   xmlNewProp(cur,(const xmlChar*)"source",(const xmlChar*)"i");
   xmlNewProp(cur,(const xmlChar*)"target",(const xmlChar*)"e");
@@ -713,6 +713,8 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
         {
           xmlNodePtr spoupPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
           xmlNodePtr spodnPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
+          xmlNewProp(spoupPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
+          xmlNewProp(spodnPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
           createSPOSets(spoupPtr,spodnPtr);
           xmlAddChild(detPtr,spoupPtr);
           xmlAddChild(detPtr,spodnPtr);

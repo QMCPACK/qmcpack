@@ -83,8 +83,9 @@ namespace qmcplusplus
     QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
     {
       for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
+      QMCLinearOptimize::RealType c = optTarget->Cost(false);
       validFuncVal= optTarget->IsValid;
-      return optTarget->Cost(false);
+      return c;
       // return 0;                                                                            
     }                                                                                     
     
