@@ -224,8 +224,8 @@ namespace qmcplusplus
 //  ValueType logpsi(std::log(std::abs(psi)));
 //#endif
 
+/*
 {
-
    int iat=0;
    ofstream out("eloc.dat");
    double dx=7.0/999.0;
@@ -245,6 +245,7 @@ namespace qmcplusplus
    }
    out.close();
 }
+*/
 
     for (int iat=0; iat<nat; iat++)
       {
