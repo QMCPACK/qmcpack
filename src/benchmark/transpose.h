@@ -24,6 +24,28 @@
 #include <essl.h>
 #endif
 
+#if !defined(__IBMCPP__)
+#define transpose_xy transpose_xy_
+#define transpose_yx transpose_yx_
+#define transpose_1 transpose_1_
+#endif
+
+extern "C"
+{
+  void transpose_1(const int& nx,const int& ny,const int& first_x, const int& last_x
+            ,const std::complex<double>* input, std::complex<double>* output);
+
+  void transpose_xy(const int* nx, const int* ny, const int* howmany
+      , const int* first, const int* last
+      , const std::complex<double>* restrict, std::complex<double>* restrict);
+
+  void transpose_yx(const int* nx, const int* ny, const int* howmany
+      , const int* first, const int* last
+      , const std::complex<double>* restrict, std::complex<double>* restrict);
+}
+
+
+
 namespace qmcplusplus
 {
   enum {DUMMY_TRANSPOSER=0

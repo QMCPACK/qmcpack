@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2008-  by Jeongnim Kim
+// (c) Copyright 2010-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -13,8 +13,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file multidet.cpp
- * @brief Test codes for multidets
+/**@file fft2d.cpp
+ * @brief Test codes for 2D FFT with OpenMP
  */
 #include <Configuration.h>
 #include "Utilities/OhmmsInfo.h"
@@ -23,35 +23,17 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Message/Communicate.h"
 #include <benchmark/fft_help.h>
-#if !defined(__IBMCPP__)
-#define transpose_xy transpose_xy_
-#define transpose_yx transpose_yx_
-#define transpose_1 transpose_1_
-#endif
+#include <benchmark/transpose.h>
 
 #if defined(HAVE_ESSL)
 #define TEST_FFT_ENG FFTESSL_ENG
+#define TEST_TRANSPOSER ESSL_TRANSPOSER
 #elif defined(HAVE_MKL)
 #define TEST_FFT_ENG FFTMKL_ENG
+#define TEST_TRANSPOSER MKL_TRANSPOSER
 #else
 #error "Only tested with ESSL and MKL library "
 #endif
-
-extern "C"
-{
-  void transpose_1(const int& nx,const int& ny,const int& first_x, const int& last_x
-            ,const std::complex<double>* input, std::complex<double>* output);
-
-  void transpose_xy(const int* nx, const int* ny, const int* howmany
-      , const int* first, const int* last
-      , const std::complex<double>* restrict, std::complex<double>* restrict);
-
-  void transpose_yx(const int* nx, const int* ny, const int* howmany
-      , const int* first, const int* last
-      , const std::complex<double>* restrict, std::complex<double>* restrict);
-}
-
-
 
 inline void print_help(const string& msg)
 {
@@ -165,13 +147,13 @@ int main(int argc, char** argv)
 
         myclock.restart();
         myfft_xy.fft_forward(in_ptr);
-        zgetmo(in_ptr,ny,ny,nx,in_t_ptr,nx);
+        Transpose2D<complex_type,TEST_TRANSPOSER>::apply(*in[i],*in_t[i]);
         myfft_yx.fft_forward(in_t_ptr);
         my_dt_f += myclock.elapsed();
 
         myclock.restart();
         myfft_yx.fft_backward(in_t_ptr);
-        zgetmo(in_t_ptr,nx,nx,ny,in_ptr,ny);
+        Transpose2D<complex_type,TEST_TRANSPOSER>::apply(*in_t[i],*in[i]);
         myfft_xy.fft_backward(in_ptr);
         my_dt_b += myclock.elapsed();
       }
@@ -321,5 +303,5 @@ int main(int argc, char** argv)
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1770 $   $Date: 2007-02-17 17:45:38 -0600 (Sat, 17 Feb 2007) $
- * $Id: OrbitalBase.h 1770 2007-02-17 23:45:38Z jnkim $ 
+ * $Id: fft2d.cpp 1770 2007-02-17 23:45:38Z jnkim $ 
  ***************************************************************************/
