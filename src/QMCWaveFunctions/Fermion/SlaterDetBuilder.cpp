@@ -447,10 +447,10 @@ namespace qmcplusplus
     4. build mapping from original expansion to location in the tree
 *********************************/
 
-     vector<configuration> confgList_up, uniqueConfg_up;    
-     vector<configuration> confgList_dn, uniqueConfg_dn;    
-     configuration baseC_up;
-     configuration baseC_dn;
+     vector<ci_configuration> confgList_up, uniqueConfg_up;    
+     vector<ci_configuration> confgList_dn, uniqueConfg_dn;    
+     ci_configuration baseC_up;
+     ci_configuration baseC_dn;
      vector<RealType>& coeff = multiSD->C;
 
 
@@ -518,8 +518,8 @@ app_log() <<NCA <<"  "
      }
 
      cur = DetListNode->children;
-     configuration dummyC_alpha;
-     configuration dummyC_beta;
+     ci_configuration dummyC_alpha;
+     ci_configuration dummyC_beta;
      dummyC_alpha.taken=false;
      dummyC_alpha.nExct=0;
      dummyC_alpha.occup.resize(NCA+nstates,false);
@@ -542,7 +542,7 @@ app_log() <<NCA <<"  "
      while (cur != NULL)//check the basis set
      {
        getNodeName(cname,cur);
-       if(cname == "configuration" || cname == "ci")
+       if(cname == "ci_configuration" || cname == "ci")
        {
          RealType ci=0.0;
          string alpha,beta;
@@ -591,7 +591,7 @@ app_log() <<NCA <<"  "
              APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
          }
  
-         //app_log() <<"Found determinant configuration: \n"
+         //app_log() <<"Found determinant ci_configuration: \n"
          //          <<"alpha: " <<alpha <<endl 
          //          <<"beta: " <<beta <<endl 
          //          <<"c: " <<ci <<endl;
@@ -651,15 +651,15 @@ app_log() <<NCA <<"  "
      }
 
      if(!foundHF) {
-       APP_ABORT("Problems with determinant configurations. HF state must be in the list. \n");
+       APP_ABORT("Problems with determinant ci_configurations. HF state must be in the list. \n");
      }
      if(count != ndets) {
        cerr<<"count, ndets: " <<count <<"  " <<ndets <<endl;
-       APP_ABORT("Problems reading determinant configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
+       APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
      }
 
      if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-       APP_ABORT("Problems reading determinant configurations.");
+       APP_ABORT("Problems reading determinant ci_configurations.");
      }
 
      multiSD->C2node_up.resize(coeff.size());
@@ -743,16 +743,16 @@ app_log() <<NCA <<"  "
      bool success=true;
 
 /*********************************
-    1. read configurations and coefficients from xml
+    1. read ci_configurations and coefficients from xml
     2. get unique set of determinants
     3. create excitation tree for both spin channels
     4. build mapping from original expansion to location in the tree
 *********************************/
 
-     vector<configuration> confgList_up, uniqueConfg_up;
-     vector<configuration> confgList_dn, uniqueConfg_dn;
-     configuration baseC_up;
-     configuration baseC_dn;
+     vector<ci_configuration> confgList_up, uniqueConfg_up;
+     vector<ci_configuration> confgList_dn, uniqueConfg_dn;
+     ci_configuration baseC_up;
+     ci_configuration baseC_dn;
      vector<RealType>& coeff = multiSD->C;
      vector<std::string> CItags;
 
@@ -816,8 +816,8 @@ app_log() <<NCA <<"  "
      }
 
      cur = DetListNode->children;
-     configuration dummyC_alpha;
-     configuration dummyC_beta;
+     ci_configuration dummyC_alpha;
+     ci_configuration dummyC_beta;
      dummyC_alpha.occup.resize(NCA+nstates,false);
      for(int i=0; i<NCA+NEA; i++) dummyC_alpha.occup[i]=true;
      dummyC_beta.occup.resize(NCB+nstates,false);
@@ -896,10 +896,10 @@ app_log() <<NCA <<"  "
 
      if(count != ndets) {
        cerr<<"count, ndets: " <<count <<"  " <<ndets <<endl;
-       APP_ABORT("Problems reading determinant configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
+       APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
      }
      if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-       APP_ABORT("Problems reading determinant configurations.");
+       APP_ABORT("Problems reading determinant ci_configurations.");
      }
 
      multiSD->C2node_up.resize(coeff.size());
@@ -954,7 +954,7 @@ app_log() <<NCA <<"  "
      for(int i=0; i<uniqueConfg_up.size(); i++)
      {
        int nq=0;
-       configuration& ci = uniqueConfg_up[i];
+       ci_configuration& ci = uniqueConfg_up[i];
        for(int k=0; k<ci.occup.size(); k++) {
          if(ci.occup[k]) { 
            spo->occup(i,nq++) = k;
@@ -969,7 +969,7 @@ app_log() <<NCA <<"  "
      for(int i=0; i<uniqueConfg_dn.size(); i++)
      {
        int nq=0;
-       configuration& ci = uniqueConfg_dn[i];
+       ci_configuration& ci = uniqueConfg_dn[i];
        for(int k=0; k<ci.occup.size(); k++) {
          if(ci.occup[k]) {
            spo->occup(i,nq++) = k;
@@ -983,13 +983,19 @@ app_log() <<NCA <<"  "
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. ";
        multiSD->Optimizable=true;
-       for(int i=0; i<coeff.size(); i++) {
+       multiSD->myVars.insert(CItags[0],coeff[0],false,optimize::LINEAR_P);
+       for(int i=1; i<coeff.size(); i++) {
          //std::stringstream sstr;
          //sstr << "CIcoeff" << "_" << i;
          multiSD->myVars.insert(CItags[i],coeff[i],true,optimize::LINEAR_P);
        }
      }
-
+//      //store this for making clones later.
+//      multiSD->confgList_up=confgList_up;
+//      multiSD->uniqueConfg_up=uniqueConfg_up;
+//      multiSD->confgList_dn=confgList_dn;
+//      multiSD->uniqueConfg_dn=uniqueConfg_dn;
+ 
      return success;
   }
 

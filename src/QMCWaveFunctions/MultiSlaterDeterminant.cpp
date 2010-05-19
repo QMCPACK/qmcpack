@@ -36,6 +36,59 @@ namespace qmcplusplus {
     for(int i=0; i<targetPtcl.groups(); ++i)
       for(int j=targetPtcl.first(i); j<targetPtcl.last(i); ++j) DetID[j]=i;    
   }
+  
+  OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+  { 
+    SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
+    SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
+    spo_up_C->occup= spo_up->occup;
+    spo_dn_C->occup= spo_dn->occup;
+    spo_up_C->refPhi->resetTargetParticleSet(tqp);
+    spo_dn_C->refPhi->resetTargetParticleSet(tqp);
+    
+    MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp,spo_up_C,spo_dn_C); 
+    clone->C2node_up=C2node_up;
+    clone->C2node_dn=C2node_dn;
+    clone->resize(dets_up.size(),dets_dn.size());
+    
+//     SPOSetProxyForMSD* spo = clone->spo_up;
+//     spo->occup.resize(uniqueConfg_up.size(),clone->nels_up);
+for(int i=0; i<dets_up.size(); i++)
+    {
+//       int nq=0;
+// //       configuration& ci = uniqueConfg_up[i];
+//       for(int k=0; k<uniqueConfg_up[i].occup.size(); k++) {
+//         if(uniqueConfg_up[i].occup[k]) { 
+//           spo->occup(i,nq++) = k;
+//         }
+//       }
+DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
+      adet->set(clone->FirstIndex_up,clone->nels_up);
+      clone->dets_up.push_back(adet);
+    }
+//     spo = clone->spo_dn;
+//     spo->occup.resize(uniqueConfg_dn.size(),clone->nels_dn);
+for(int i=0; i<dets_dn.size(); i++)
+    {
+//       int nq=0;
+// //       configuration& ci = uniqueConfg_dn[i];
+//       for(int k=0; k<uniqueConfg_dn[i].occup.size(); k++) {
+//         if(uniqueConfg_dn[i].occup[k]) {
+//           spo->occup(i,nq++) = k;
+//         }
+//       }
+DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
+      adet->set(clone->FirstIndex_dn,clone->nels_dn);
+      clone->dets_dn.push_back(adet);
+    }
+
+    clone->Optimizable=Optimizable;
+    clone->C=C;
+    clone->myVars=myVars;
+    
+    return clone;
+  }
+  
 
   MultiSlaterDeterminant::~MultiSlaterDeterminant() { }
   void MultiSlaterDeterminant::resetTargetParticleSet(ParticleSet& P) 
@@ -165,7 +218,7 @@ namespace qmcplusplus {
         int dnC = C2node_dn[i];
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
         psi += tmp;
-        grad_iat += tmp*grads_up[dnC](iat);
+        grad_iat += tmp*grads_dn[dnC](iat);
       }
       grad_iat *= 1.0/psi;
       return grad_iat;
@@ -654,11 +707,11 @@ namespace qmcplusplus {
   {
   }
 
-  OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
-  {
-     APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
-     return 0;
-  }
+//   OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+//   {
+//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      return 0;
+//   }
 
   void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P, 
       const opt_variables_type& optvars,
