@@ -569,6 +569,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
     spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
 
+    myG = P.G;
+    myL = P.L;
+
     ValueType logpsi(0.0);
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++)
@@ -582,10 +585,8 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       logpsi += dets_dn[i]->registerData(P,buf);
     }
 
-//     P.G=0.0;
-//     P.L=0.0;
-// FIX FIX FIX, redundant
-// LogValue / PhaseValue are stores in evaluateLog
+    P.G = myG;
+    P.L = myL;
     logpsi = evaluateLog(P,P.G,P.L);
 
     int TotalDim = PosType::Size*P.getTotalNum();
@@ -612,11 +613,8 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
     }
 
-    ParticleSet::ParticleGradient_t g(P.getTotalNum());
-    ParticleSet::ParticleLaplacian_t l(P.getTotalNum());
-
-    g = P.G;
-    l = P.L;
+    myG = P.G;
+    myL = P.L;
 
     ValueType logpsi(0.0);
     PhaseValue=0.0;
@@ -641,12 +639,34 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
     }
 
-    P.G=g;
-    P.L=l;
-// FIX FIX FIX, write short version that doesn't call evaluate
-    logpsi = evaluateLog(P,P.G,P.L);
+    P.G=myG;
+    P.L=myL;
 
-    return LogValue;
+    ValueType psi=0.0;
+    myG=0.0;
+    myL=0.0;
+    for(int i=0; i<C.size(); i++){
+      int upC = C2node_up[i];
+      int dnC = C2node_dn[i];
+      ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+      psi += tmp;
+      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
+        myG += tmp*grads_up[upC]; // other spin sector should be zero 
+        myL += tmp*lapls_up[upC];
+      //}
+      //for(int n=FirstIndex_dn; n<LastIndex_dn; n++) {
+        myG += tmp*grads_dn[dnC]; // other spin sector should be zero 
+        myL += tmp*lapls_dn[dnC];
+      //}
+    }
+    ValueType psiinv = 1.0/psi;
+    myG *= psiinv;
+    myL *= psiinv;
+    P.G += myG;
+    for(int i=0; i<P.L.size(); i++)
+      P.L(i) += myL[i] - dot(myG[i],myG[i]);
+
+    return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
   }
 
   void MultiSlaterDeterminant::copyFromBuffer(ParticleSet& P, BufferType& buf)
