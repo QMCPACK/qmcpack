@@ -225,7 +225,7 @@ struct NRCOptimization {
 
     qmcplusplus::app_log()<<"Before:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
     success=mnbrakNRC(ax,xx,bx,fa,fx,fb);
-    if(!success || !validFuncVal) {
+    if((!success && !validFuncVal) || (success && !validFuncVal)) {
       Lambda = 0.0;
       qmcplusplus::app_log()<<"Problems bracketing minimum.\n";
       return false;
@@ -343,8 +343,9 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
   if(!validFuncVal) return false; 
   fb = Func(bx); // *fb=(*func)(*bx);
   if(!validFuncVal) {
+   validFuncVal=true;
    bx = ax;
-   return fb<fa; 
+   return false; 
   }
 
   if (fb > fa) {
@@ -354,7 +355,10 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
 
   cx=bx+GOLD*(bx-ax);
   fc = Func(cx); // *fc=(*func)(*cx);
-  if(!validFuncVal) return true; 
+  if(!validFuncVal) {
+   validFuncVal=true;
+   return false;
+  }
   while (fb > fc) {
     r=(bx-ax)*(fb-fc);
     q=(bx-cx)*(fb-fa);
@@ -365,7 +369,10 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
       fu = Func(u); // fu=(*func)(u);
 // this is a problematic case, since both bx,cx is good, 
 // but u, which is in between {bx,cx} is bad.
-      if(!validFuncVal) return true;   // keep bx
+      if(!validFuncVal) {
+        validFuncVal=true;
+        return false;
+      }
       if (fu < fc) {
 	ax=bx;
         bx=u;
@@ -379,24 +386,44 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
       }
       u=cx+GOLD*(cx-bx);
       fu = Func(u);//fu=(*func)(u);
-      if(!validFuncVal) { bx=cx; return true; }  // keep cx
+      if(!validFuncVal) { 
+        bx=cx; 
+        validFuncVal=true;
+        return false;
+      }
     } else if ((cx-u)*(u-ulim) > 0.0) {
       fu = Func(u);//fu=(*func)(u);
-      if(!validFuncVal) { bx=cx; return true; }  // keep cx
+      if(!validFuncVal) {
+        bx=cx; 
+        validFuncVal=true;
+        return false;
+      }
       if (fu < fc) {
 
         shift(bx,cx,u,cx + GOLD*(cx-bx));
         shift(fb,fc,fu,Func(u)) ;
-        if(!validFuncVal) { bx=cx; return true; }  // keep cx
+        if(!validFuncVal) { 
+          bx=cx; 
+          validFuncVal=true;
+          return false;
+        } 
       }
     } else if ((u-ulim)*(ulim-cx) >= 0.0) {
       u=ulim;
       fu = Func(u);//fu=(*func)(u);
-      if(!validFuncVal) { bx=cx; return true; }  // keep cx
+      if(!validFuncVal) { 
+        bx=cx; 
+        validFuncVal=true;
+        return false;
+      } 
     } else {
       u=cx+GOLD*(cx-bx);
       fu = Func(u);//fu=(*func)(u);
-      if(!validFuncVal) { bx=cx; return true; }  // keep cx
+      if(!validFuncVal) { 
+        bx=cx; 
+        validFuncVal=true;
+        return false;
+      } 
     }
     shift(ax,bx,cx,u);
     shift(fa,fb,fc,fu);
