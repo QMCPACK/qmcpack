@@ -582,8 +582,8 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       logpsi += dets_dn[i]->registerData(P,buf);
     }
 
-    P.G=0.0;
-    P.L=0.0;
+//     P.G=0.0;
+//     P.L=0.0;
 // FIX FIX FIX, redundant
 // LogValue / PhaseValue are stores in evaluateLog
     logpsi = evaluateLog(P,P.G,P.L);
