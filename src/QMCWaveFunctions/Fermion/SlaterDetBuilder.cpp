@@ -116,9 +116,9 @@ namespace qmcplusplus
         {
           myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
           myBasisSetFactory->setReportLevel(ReportLevel);
-          myBasisSetFactory->createBasisSet(cur,cur);
+          //myBasisSetFactory->createBasisSet(cur,cur);
         }
-        //myBasisSetFactory->createBasisSet(cur,cur);
+        myBasisSetFactory->createBasisSet(cur,cur);
 	SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
 	spo->put(cur, spomap);
 	if (spomap.find(spo_name) != spomap.end()) {

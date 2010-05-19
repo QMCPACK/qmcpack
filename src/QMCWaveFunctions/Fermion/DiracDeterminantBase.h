@@ -31,8 +31,12 @@ namespace qmcplusplus
     protected:
       ParticleSet *targetPtcl;
     public:
+      bool Optimizable;
       void registerTimers();
       NewTimer UpdateTimer, RatioTimer, InverseTimer;
+      // Optimizable parameters
+      opt_variables_type myVars;
+
 
       typedef SPOSetBase::IndexVector_t IndexVector_t;
       typedef SPOSetBase::ValueVector_t ValueVector_t;
@@ -83,16 +87,24 @@ namespace qmcplusplus
       inline void checkInVariables(opt_variables_type& active)
       {
         Phi->checkInVariables(active);
+        Phi->checkInVariables(myVars);
       }
 
       inline void checkOutVariables(const opt_variables_type& active)
       {
-        Phi->checkOutVariables(active);
+	Phi->checkOutVariables(active);
+	myVars.clear();
+	myVars.insertFrom(Phi->myVars);
+	myVars.getIndex(active);
       }
-
+      
       void resetParameters(const opt_variables_type& active)
       {
         Phi->resetParameters(active);
+	for(int i=0; i<myVars.size(); ++i) {
+	  int ii=myVars.Index[i];
+	  if(ii>=0) myVars[i]= active[ii];
+	}
       }
 
       virtual void evaluateDerivatives(ParticleSet& P,

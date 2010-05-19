@@ -35,6 +35,7 @@ namespace qmcplusplus
     dgrad_dC.resize(NumOrbitals,NumBasis);
     dlapl_dC.resize(NumOrbitals,NumBasis);
     Gamma.resize(NumOrbitals,NumBasis);
+    Optimizable = true;
   }
 
   DiracDeterminantBase* 

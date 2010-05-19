@@ -62,6 +62,7 @@ namespace qmcplusplus {
     }
     else
       Dets[ispin]=det;
+    Optimizable = Optimizable || det->Optimizable;
     //int last=Dets.size();
     //Dets.push_back(det);
     //M[last+1]=M[last]+Dets[last]->rows();
@@ -70,14 +71,21 @@ namespace qmcplusplus {
 
   void SlaterDet::checkInVariables(opt_variables_type& active)
   {
+    myVars.clear();
     if(Optimizable) 
-      for(int i=0; i<Dets.size(); i++) Dets[i]->checkInVariables(active);
+      for(int i=0; i<Dets.size(); i++) {
+	Dets[i]->checkInVariables(active);
+	Dets[i]->checkInVariables(myVars);
+      }
   }
 
   void SlaterDet::checkOutVariables(const opt_variables_type& active)
   {
     if(Optimizable) 
-      for(int i=0; i<Dets.size(); i++) Dets[i]->checkOutVariables(active);
+      for(int i=0; i<Dets.size(); i++) {
+	Dets[i]->checkOutVariables(active);
+	myVars.insertFrom(Dets[i]->myVars);
+      }
   }
 
   ///reset all the Dirac determinants, Optimizable is true
