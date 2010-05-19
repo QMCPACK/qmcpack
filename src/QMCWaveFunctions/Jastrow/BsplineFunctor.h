@@ -370,9 +370,11 @@ namespace qmcplusplus
             if (cname == "coefficients")
               {
                 string type("0"), id("0");
+                string optimize("yes");
                 OhmmsAttributeSet cAttrib;
                 cAttrib.add(id, "id");
                 cAttrib.add(type, "type");
+                cAttrib.add(optimize, "optimize");
                 cAttrib.put(xmlCoefs);
 
                 if (type != "Array")
@@ -414,17 +416,21 @@ namespace qmcplusplus
                       app_log() << "   " << Parameters[i] << endl;
                   }
 
-                // Setup parameter names
-                for (int i=0; i< NumParams; i++)
-                  {
-                    std::stringstream sstr;
-                    sstr << id << "_" << i;
+                if(optimize == "yes") {   
+                  // Setup parameter names
+                  for (int i=0; i< NumParams; i++)
+                    {
+                      std::stringstream sstr;
+                      sstr << id << "_" << i;
                     myVars.insert(sstr.str(),Parameters[i],true,optimize::LOGLINEAR_P);
-                  }
+                    }
 
-                app_log() << "Parameter     Name      Value\n";
-                myVars.print(app_log());
-
+                  app_log() << "Parameter     Name      Value\n";
+                  myVars.print(app_log());
+                } else {
+                  app_log() << "Parameters of BsplineFunctor id:"
+                             <<id <<" are not being optimized.\n";
+                }
                 //for (int i=0; i<ParameterNames.size(); i++)
                 //  app_log() << "    " << i << "         " << ParameterNames[i]
                 //    << "       " << Parameters[i] << endl;

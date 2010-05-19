@@ -65,8 +65,14 @@ namespace qmcplusplus
         Return_t KEtemp = H_KE.evaluate(W);
         Return_t eloc_new = KEtemp + saved[ENERGY_FIXED];
         Return_t weight;
-        if (samplePsi2) weight = std::min(std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
-        else weight = std::min(std::exp(logpsi-saved[LOGPSI_FREE]),MaxWeight) ;
+        //if (samplePsi2) weight = std::min(std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+        //else weight = std::min(std::exp(logpsi-saved[LOGPSI_FREE]),MaxWeight) ;
+
+        if(SmallWeight > 0.0 && std::exp(saved[LOGPSI_FREE]) < SmallWeight) {
+        // set weight to zero           
+          weight = 0.0;
+        } else
+         weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
 
         //Return_t eloc_new=+saved[ENERGY_FIXED];
         //Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
@@ -85,10 +91,19 @@ namespace qmcplusplus
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
 
+    Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
+    wgt_tot=0.0;
+    int nw=W.getActiveWalkers();
+    for (int iw=0; iw<nw;iw++)
+      {
+        Return_t* restrict saved = Records[iw];
+        saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
+        wgt_tot+= saved[REWEIGHT];
+      }
+    myComm->allreduce(wgt_tot);
+
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
     CSWeight=wgt_tot=1.0/wgt_tot;
-
-    int nw=W.getActiveWalkers();
     for (iw=0; iw<nw;iw++)
       {
         Return_t* restrict saved = Records[iw];
@@ -103,7 +118,6 @@ namespace qmcplusplus
         SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
         SumValue[SUM_WGT] += saved[REWEIGHT];
         SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
-        SumValue[SUM_WGTSQ] += weight*weight;
       }
 
     //collect everything

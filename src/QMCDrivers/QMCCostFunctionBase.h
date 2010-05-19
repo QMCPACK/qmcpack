@@ -192,6 +192,8 @@ namespace qmcplusplus
       Return_t curVar_w;
       ///current variance of SUM_ABSE_WGT/SUM_WGT
       Return_t curVar_abs;
+      ///threshold to remove configurations from sample with |Psi_old| < SmallWeight
+      Return_t SmallWeight;
 
       /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
        *

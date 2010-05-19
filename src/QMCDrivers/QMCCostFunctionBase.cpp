@@ -32,15 +32,15 @@ namespace qmcplusplus
       W(w),H(h),Psi(psi),  Write2OneXml(true),
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
       w_en(0.0), w_var(0.0), w_abs(0.0), samplePsi2(true),
-      CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
+      CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0), SmallWeight(0)
   {
 
 
     //paramList.resize(10);
     //costList.resize(10,0.0);
 
-    //default: when walkers below 50% stop
-    MinNumWalkers = 0.5;
+    //default: don't check fo MinNumWalkers 
+    MinNumWalkers = 0.0;
 
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
     H_KE.addObservables(W);
@@ -119,8 +119,10 @@ namespace qmcplusplus
     curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg;
 
     curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
+
 // app_log() << "curVar     = " << curVar
-//     << "   curAvg     = " << curAvg << endl;
+//     << "   curAvg     = " << curAvg 
+//     << "   NumWalkersEff     = " << NumWalkersEff << endl;
 // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << endl;
 // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << endl;
 // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << endl;
@@ -141,14 +143,14 @@ namespace qmcplusplus
       CostValue += w_w*curVar;
 
 //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-// app_log() << "CostValue = " << CostValue << endl << endl;
+// app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << endl; 
 
     IsValid=true;
-//       if(NumWalkersEff < NumSamples*MinNumWalkers) {
-    if (NumWalkersEff < MinNumWalkers)
+   if(NumWalkersEff < NumSamples*MinNumWalkers) 
+//    if (NumWalkersEff < MinNumWalkers)
       {
-        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-        ERRORMSG("Going to stop now.")
+//        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
+//        ERRORMSG("Going to stop now.")
         IsValid=false;
       }
     return CostValue;
@@ -483,6 +485,7 @@ namespace qmcplusplus
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
+    m_param.add(SmallWeight,"smallWeight","scalar");
 //     m_param.add(useWeightStr,"reweight","string");
     m_param.put(q);
 
@@ -840,16 +843,18 @@ namespace qmcplusplus
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
         OhmmsAttributeSet cAttrib;
         string aname("0");
+        string optimize("yes");
         string datatype("none");
         cAttrib.add(aname,"id");
         cAttrib.add(aname,"name");
         cAttrib.add(datatype,"type");
+        cAttrib.add(optimize, "optimize");        
         cAttrib.put(cur);
         if (aname[0] == '0') continue;
 
         if (datatype == "Array")
           {
-            coeffNodes[aname]=cur;
+            if(optimize == "yes") coeffNodes[aname]=cur;
           }
         else
           {

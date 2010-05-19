@@ -316,10 +316,14 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
           myG += tmp2*tempgrad[upC]; // other spin sector should be zero 
           myL += tmp2*templapl[upC];
+          myG += tmp2*grads_dn[dnC]; // other spin sector should be zero 
+          myL += tmp2*lapls_dn[dnC];
         //}
         //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
           gold += tmp*grads_up[upC]; // other spin sector should be zero 
           lold += tmp*lapls_up[upC];
+          gold += tmp*grads_dn[dnC]; // other spin sector should be zero 
+          lold += tmp*lapls_dn[dnC];
         //}
       }
 
@@ -364,10 +368,14 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         psiNew += tmp2;
         psiOld += tmp;
         //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
+          myG += tmp2*grads_up[upC]; // other spin sector should be zero 
+          myL += tmp2*lapls_up[upC];
           myG += tmp2*tempgrad[dnC]; // other spin sector should be zero 
           myL += tmp2*templapl[dnC];
         //}
         //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
+          gold += tmp*grads_up[upC]; // other spin sector should be zero 
+          lold += tmp*lapls_up[upC];
           gold += tmp*grads_dn[dnC]; // other spin sector should be zero 
           lold += tmp*lapls_dn[dnC];
         //}
@@ -595,11 +603,13 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     buf.add(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.add(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-      buf.add(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+//      buf.add(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+      buf.add(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.add(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+//      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+      buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
     return LogValue;
   }
@@ -608,7 +618,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
   {
 
-    if(fromscratch || dets_up[0]->UpdateMode == ORB_PBYP_RATIO) {
+    if(fromscratch || UpdateMode == ORB_PBYP_RATIO) {
       spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
       spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
     }
@@ -620,11 +630,21 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++) {
       spo_up->prepareFor(i);
-      logpsi += dets_up[i]->updateBuffer(P,buf,fromscratch);
+      logpsi = dets_up[i]->updateBuffer(P,buf,fromscratch);
+      detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
+      grads_up[i]=dets_up[i]->myG; 
+      lapls_up[i]=dets_up[i]->myL; 
+      for(int k=FirstIndex_up; k<LastIndex_up; k++)
+        lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
     }
     for (int i=0; i<dets_dn.size(); i++) {
       spo_dn->prepareFor(i);
-      logpsi += dets_dn[i]->updateBuffer(P,buf,fromscratch);
+      logpsi = dets_dn[i]->updateBuffer(P,buf,fromscratch);
+      detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
+      grads_dn[i]=dets_dn[i]->myG; 
+      lapls_dn[i]=dets_dn[i]->myL; 
+      for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
+        lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
     }
 
     int TotalDim = PosType::Size*P.getTotalNum();
@@ -632,11 +652,13 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     buf.put(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.put(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-      buf.put(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+//      buf.put(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+      buf.put(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.put(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-      buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+//      buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+      buf.put(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
 
     P.G=myG;
@@ -682,11 +704,13 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     buf.get(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.get(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-      buf.get(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+      //buf.get(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+      buf.get(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.get(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-      buf.get(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+      //buf.get(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+      buf.get(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
   }
 

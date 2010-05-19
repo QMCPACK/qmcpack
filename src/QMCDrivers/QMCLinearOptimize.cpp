@@ -44,7 +44,8 @@ namespace qmcplusplus
     SkipSampleGeneration("no"), hamPool(hpool),
     optTarget(0), vmcEngine(0), Max_iterations(1),
     wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6), 
-    nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1)
+    nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),
+    UseQuarticMin("yes")
     {
       //set the optimization flag
       QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -65,6 +66,8 @@ namespace qmcplusplus
       m_param.add(w_beta,"beta","double");
       quadstep=3.0;
       m_param.add(quadstep,"stepsize","double");
+      m_param.add(UseQuarticMin,"UseQuarticMin","string");
+      m_param.add(LambdaMax,"LambdaMax","double");
       //Set parameters for line minimization:
       
     }
@@ -80,6 +83,7 @@ namespace qmcplusplus
     QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
     {
       for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
+      validFuncVal= optTarget->IsValid;
       return optTarget->Cost(false);
       // return 0;                                                                            
     }                                                                                     
@@ -144,7 +148,13 @@ namespace qmcplusplus
       {
         Total_iterations+=1;               
         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
-        
+ 
+// mmorales
+        if(!Valid) {
+          app_log() <<"Aborting current opt cycle due to small wfn overlap during correlated sampling. If this happens to frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl; 
+          break;
+        }       
+ 
         
 //         store this for use in later tries
         int bestStability(0);
@@ -160,8 +170,23 @@ namespace qmcplusplus
 
           RealType lastCost(optTarget->Cost(true));
           RealType newCost(lastCost);
+
+// mmorales
+          if(!optTarget->IsValid) 
+          {
+            Valid=false;
+            break;
+          }
           
+// correlated sampling was called in Cost, so the call here is redundant
           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
+
+// mmorales
+          if(!optTarget->IsValid) 
+          {
+            Valid=false;
+            break;
+          }
           
           vector<RealType> bestParameters(currentParameters);
           bool acceptedOneMove(false);
@@ -230,7 +255,7 @@ namespace qmcplusplus
                   for (int i=1;i<N;i++) currentParameterDirections[i] *= nrmold/nrmnew;
                 }
  //If not rescaling and linear parameters, step size and grad are the same.
-              LambdaMax = 1.0;
+//              LambdaMax=1.0;
               optparm= currentParameters;
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
               
@@ -240,16 +265,35 @@ namespace qmcplusplus
               
               largeQuarticStep=1e3;
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
-              lineoptimization();
-              
-              if (dopt*std::abs(Lambda)>bigChange)
-                lineoptimization2();
+              if(UseQuarticMin=="yes") {
+                Valid=lineoptimization();
+                if (dopt*std::abs(Lambda)>bigChange)
+                  Valid=lineoptimization2();
+              } else {
+                Valid=lineoptimization2();
+              }
+              if(!Valid) break;
+
               dopt *= std::abs(Lambda);
                 
               if ( (Lambda==Lambda)&&(dopt<bigChange))
               {
+                app_log() <<endl <<"lambda: " <<Lambda <<endl;
+                for (int i=0;i<numParams; i++) {
+                  app_log() <<"param: i, currValue, optdir: " 
+                            <<i <<"  " <<optparm[i] <<"  " <<optdir[i] <<endl;
+                }
+
+
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
                 newCost = optTarget->Cost(false);
+
+// mmorales
+                if(!optTarget->IsValid)
+                {
+                  Valid=false;
+                  break;
+                }
                 app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size:"<<dopt<<endl;
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
                 
@@ -270,7 +314,7 @@ namespace qmcplusplus
                 app_log()<<"  Failed Step. RMS step Size:"<<dopt<<endl;
               }
             }
-          if(acceptedOneMove)
+          if(acceptedOneMove && Valid)
           {
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
             currentParameters=bestParameters;

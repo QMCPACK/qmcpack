@@ -84,6 +84,8 @@ namespace qmcplusplus
       ///target cost function to optimize
       //QMCCostFunction* optTarget;
       QMCCostFunctionBase* optTarget;
+      /// switch to control whether NRCOptimization::lineoptimization() is used
+      string UseQuarticMin; 
 
       vector<RealType> optdir, optparm;
       RealType allowedCostDifference,stabilizerScale,bigChange;
