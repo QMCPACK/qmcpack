@@ -72,8 +72,6 @@ namespace qmcplusplus {
     aAttrib.add(transformOpt,"transform");
     if(rootNode != NULL)  aAttrib.put(rootNode);
 
-    app_log() << "type = " << typeOpt << endl;
-
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
     {

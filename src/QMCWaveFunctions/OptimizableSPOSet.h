@@ -60,8 +60,8 @@ namespace qmcplusplus
     vector<PosType> CachedPos;
   public:
     ///set of variables to be optimized;  These are mapped to the
-    ///C matrix
-    opt_variables_type myVars;
+    ///C matrix.  Update:  Moved to SPOSetBase
+    // opt_variables_type myVars;
 
     // For each occupied orbital, this lists which of the M
     // basis functions are used to construct the optimal orbital.
@@ -82,18 +82,32 @@ namespace qmcplusplus
       GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
     {
       N = num_orbs;
+
+      setOrbitalSetSize(N);
       if (BasisOrbitals) {
 	M = BasisOrbitals->getOrbitalSetSize();
 	GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
 	BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+	GSValMatrix.resize (N,N);
+	GSGradMatrix.resize(N,N);
+	GSLaplMatrix.resize(N,N);
+	BasisValMatrix.resize (M,N);
+	BasisGradMatrix.resize(M,N);
+	BasisLaplMatrix.resize(M,N);
       }
       else {
 	M = GSOrbitals->getOrbitalSetSize() - N;
 	GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
+	GSValMatrix.resize (N,N+M);
+	GSGradMatrix.resize(N,N+M);
+	GSLaplMatrix.resize(N,N+M);
       }
-    
+      GradTmpSrc.resize(M,N);
+      GradTmpDest.resize(N,N);
+      
       C.resize(N,M);
       ActiveBasis.resize(N);
+      BasisSetSize = M;
       Optimizable = true;
     }
 

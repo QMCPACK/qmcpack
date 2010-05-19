@@ -1248,8 +1248,8 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
-      eeI_JastrowOrbital<FT>* j2copy=new eeI_JastrowOrbital<FT>(*IRef, tqp,false);
-      //      if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
+      eeI_JastrowOrbital<FT>* eeIcopy=
+	new eeI_JastrowOrbital<FT>(*IRef, tqp, false);
       map<const FT*,FT*> fcmap;
       for (int iG=0; iG<iGroups; iG++)
 	for (int eG1=0; eG1<eGroups; eG1++)
@@ -1261,15 +1261,25 @@ namespace qmcplusplus {
 	      FT* fc=new FT(*F(iG,eG1,eG2));
 	      stringstream aname;
 	      aname << iG << eG1 << eG2;
-	      j2copy->addFunc(aname.str(),iG, eG1, eG2, fc);
-	      //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
+	      eeIcopy->addFunc(aname.str(),iG, eG1, eG2, fc);
+	      //if (dPsi) (eeIcopy->dPsi)->addFunc(aname.str(),ig,jg,fc);
 	      fcmap[F(iG,eG1,eG2)]=fc;
           }
         }
         
-      j2copy->Optimizable = Optimizable;
+      
+      eeIcopy->myVars.clear();
+      eeIcopy->myVars.insertFrom(myVars);
+      eeIcopy->NumVars=NumVars;
+      eeIcopy->dLogPsi.resize(NumVars);
+      eeIcopy->gradLogPsi.resize(NumVars,Nelec);
+      eeIcopy->lapLogPsi.resize(NumVars,Nelec);
+      eeIcopy->VarOffset=VarOffset;
+
+
+      eeIcopy->Optimizable = Optimizable;
         
-      return j2copy;
+      return eeIcopy;
     }
 
     void copyFrom(const OrbitalBase& old)

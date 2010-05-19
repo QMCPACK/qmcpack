@@ -47,6 +47,11 @@ namespace qmcplusplus {
     typedef Matrix<GGGType>                            GGGMatrix_t;
     typedef ParticleSet::Walker_t                      Walker_t;
     typedef std::map<string,SPOSetBase*> SPOPool_t;
+
+    // Optimizable variables
+    opt_variables_type myVars;
+
+
     ///true if C is an identity matrix
     bool Identity;
     ///true if C is an identity matrix

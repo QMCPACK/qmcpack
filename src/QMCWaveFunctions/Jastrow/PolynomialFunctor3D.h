@@ -57,7 +57,7 @@ namespace qmcplusplus {
 
     ///constructor
     PolynomialFunctor3D(real_type ee_cusp=0.0, real_type eI_cusp=0.0) : 
-      N_eI(0), N_ee(0), ResetCount(0), C(3), scale(0.001)
+      N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0)
     { 
       if (std::fabs(ee_cusp) > 0.0 || std::fabs(eI_cusp) > 0.0) {
 	app_error() << "PolynomialFunctor3D does not support nonzero cusp.\n";
@@ -219,7 +219,13 @@ namespace qmcplusplus {
       // }
     }
     
-    void reset() 
+    void reset()
+    {
+      resize(N_eI, N_ee);
+      reset_gamma();
+    }
+
+    void reset_gamma() 
     {
       // fprintf (stderr, "Paramters:\n");
       // for (int i=0; i<Parameters.size(); i++)
@@ -569,15 +575,15 @@ namespace qmcplusplus {
 
 	real_type save_p = Parameters[ip];
 	Parameters[ip]  = save_p + eps;
-	reset();
+	reset_gamma();
 	v_plus = evaluate (r_12, r_1I, r_2I, g_plus, h_plus);
 
 	Parameters[ip]  = save_p - eps;
-	reset();
+	reset_gamma();
 	v_minus = evaluate (r_12, r_1I, r_2I, g_minus, h_minus);
 
 	Parameters[ip]  = save_p;
-	reset();
+	reset_gamma();
 
 	real_type dp_inv = 0.5/eps;
 	d_vals[ip]  = dp_inv * (v_plus - v_minus);
@@ -847,7 +853,7 @@ namespace qmcplusplus {
       	}
       	xmlCoefs = xmlCoefs->next;
       }
-      reset();
+      reset_gamma();
       print();
       return true;
     }
@@ -863,7 +869,7 @@ namespace qmcplusplus {
 	ResetCount = 0;
 	print();
       }
-      reset();
+      reset_gamma();
     }
 
     void checkInVariables(opt_variables_type& active)

@@ -60,6 +60,13 @@ namespace qmcplusplus {
 	int eNum2 = eSet.findSpecies (eSpecies2);
 	
 	functor->put (kids);
+	if (functor->cutoff_radius < 1.0e-6) {
+	  app_log()  << "  eeI functor rcut is currently zero.\n"
+		     << "  Setting to Wigner-Seitz radius = " 
+		     << sourcePtcl->Lattice.WignerSeitzRadius << endl;
+	  functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
+	  functor->reset();
+	}
 	strstream aname;
 	aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
 	J3.addFunc(aname.str(), iNum, eNum1, eNum2, functor);
