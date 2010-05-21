@@ -1,0 +1,112 @@
+\documentclass[11pt,letterpaper,fleqn]{report}
+
+\usepackage{fullpage}
+%\usepackage{graphicx}
+\usepackage[bookmarks=false,colorlinks=true,linkcolor={blue},pdfstartview={XYZ null null 1.22}]{hyperref}
+
+\title{QMCPack User Documentation}
+\author{UIUC Electronic Structure Group}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+\include{qmcpack-u-ov}	%overview
+\include{qmcpack-u-gs}	%getting started
+\include{qmcpack-u-cnf}	%configuring
+\include{qmcpack-u-run}	%running
+\appendix
+\include{qmcpack-u-ex}	%examples tested against other qmc codes
+\clearpage
+\nocite{*}
+%\bibliographystyle{halpha}
+%\bibliographystyle{is-unsrt}
+\bibliographystyle{unsrt}
+\bibliography{qmcpack-u}
+\end{document}
+
+%User Documentation Outline
+%==========================
+%Brief Overview of QMC
+%  What is calculable w/ QMC?
+%  Why use QMC over other methods?
+%  Modern methods of continuum QMC
+%    Overview of VMC Method
+%    Overview of DMC Method
+%    Overview of RMC Method
+%    Sources of Error in QMC Methods
+%QMCPack: an efficient implementation of QMC Methods
+%  Quantities obtainable via QMCPack
+%  Scalability of QMCpack
+%  Methods implemented in QMCPack
+%Obtaining QMCPack
+%  SVN instructions
+%Building QMCPack
+%  Simple build instructions
+%  Building with toolchain files (machine specific)
+%  Building QMCPack from scratch
+%    Library Dependencies and where to obtain them
+%    Detailed build instructions
+%  Using the benchmark database to test your build
+%  Known Good Configurations (combinations of library versions that work)
+%  Known version conflicts
+%  Who to contact if you are experiencing difficulties
+%Using QMCPack
+%  Start to finish walkthrough of a basic system (e.g. Si total energy)
+%    Navigating the input file
+%    Preparing DFT Orbitals
+%    Wavefunction Optimization
+%    Your First VMC Calculation
+%    Your First DMC Calculation
+%    Analyzing output data
+%  Files used by QMCPack
+%  Complete input file reference
+%    Specifying the system
+%    Specifying the wavefunction
+%      One body jastrow
+%      Two body jastrow
+%      Three body jastrow
+%      Slater Determinant
+%      Multideterminants
+%      Backflow
+%    Optimization options
+%      General parameters
+%      Conjugate gradient 
+%      Others
+%    Controlling the calculation process
+%      VMC
+%      DMC
+%    Estimators
+%  Obtaining/Creating Pseudopotentials
+%    Where to obtain quality pseudopotentials
+%    Converting to the native fsatom format using PPconvert
+%    Making pseudopotentials with OPIUM
+%    Validating pseudopotentials
+%      Checking for ghost states
+%      Other tests
+%  Generating Orbitals
+%    From Abinit
+%    From PWSCF
+%    Using orbital file conversion utilities
+%      wfconv
+%      pw2qmcpack
+%  Performing Optimization Well
+%    Jastrow Optimization
+%    Orbital Optimization
+%  Output and Data analysis tools
+%  Considerations for accurate and efficient calculations
+%    Timestep Studies
+%    Monitoring Fixed Node Error
+%    Correcting Pseudopotential Errors
+%    Finite Size Corrections
+%      Correcting for momentum quantization 
+%        k point sampling
+%      Correcting for image interactions
+%        The S(k) correction
+%        Model Periodic Coulomb 
+%  Chasing down problems
+%    Common Errors and Gotchas
+%    Warnings and Error messages
+%    Where to go for help
+%  Specific Example Calculations
+%

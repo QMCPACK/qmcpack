@@ -1,0 +1,64 @@
+\chapter{Configuring Simulations}
+%\section{Complete input file reference}
+... maybe a link to the schema once it's complete?
+\section{Specifying the system}
+cell and the particles
+
+maybe a subsection on the HDF5 format?
+\section{Specifying the wavefunction}
+mention B-splines and postpone the discussion to ``Customized wavefunctions''
+\subsection{Wavefunctions imported from other codes}
+\subsubsection{Pseudopotentials}
+mention OPIUM
+\subsubsection{Orbitals}
+mention Abinit, PWSCF
+\section{Observables and estimators}
+\section{QMC drivers}
+mention wf test runs
+\section{Simulation parameters}
+\section{Optimization}
+\section{GUI frontend}
+
+%Using QMCPack
+%  Start to finish walkthrough of a basic system (e.g. Si total energy)
+%    Navigating the input file
+%    Preparing DFT Orbitals
+%    Wavefunction Optimization
+%    Your First VMC Calculation
+%    Your First DMC Calculation
+%    Analyzing output data
+%  Files used by QMCPack
+%  Complete input file reference
+%    Specifying the system
+%    Specifying the wavefunction
+%      One body jastrow
+%      Two body jastrow
+%      Three body jastrow
+%      Slater Determinant
+%      Multideterminants
+%      Backflow
+%    Optimization options
+%      General parameters
+%      Conjugate gradient 
+%      Others
+%    Controlling the calculation process
+%      VMC
+%      DMC
+%    Estimators
+%  Obtaining/Creating Pseudopotentials
+%    Where to obtain quality pseudopotentials
+%    Converting to the native fsatom format using PPconvert
+%    Making pseudopotentials with OPIUM
+%    Validating pseudopotentials
+%      Checking for ghost states
+%      Other tests
+%  Generating Orbitals
+%    From Abinit
+%    From PWSCF
+%    Using orbital file conversion utilities
+%      wfconv
+%      pw2qmcpack
+%  Performing Optimization Well
+%    Jastrow Optimization
+%    Orbital Optimization
+
