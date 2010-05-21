@@ -100,4 +100,21 @@ L_{nm} & \equiv & \nabla^2\phi_m(\vr_n) \\
 -\left[\Aopt^{-1}\right]_{ni} L_{nm} \gamma_{mj} \right\} + \left[\Aopt^{-1}\right]_{ni} \mathcal{L}_{nj}
 \end{equation}
 
+\newpage
+When we change $c_{ij}$, a column of $\Aopt$ changes.  Using the Sherman-Morrison formula, we can compute the change in $\Aopt^{-1}$.
+\begin{equation}
+\left[\Aopt^{-1} + \Delta c_{ij} \varphi_j e_i^T\right]^{-1}_{nm} =
+\Aopt^{-1} - \frac{\Delta c_{ij} \left[\sum_k \left(\Aopt^{-1}\right)_{nk} \varphi_j(\vr_k)\right]\Aopt^{-1}_{im}}{1 + \lambda}.
+\end{equation}
+We expand around $\Delta c_{ij}=0$.  Taking the derivative,
+\begin{equation}
+\frac{d}{dc_{ij}} \left[\Aopt^{-1}\right]_{nm} = \underbrace{\left[-\sum_k \Aopt^{-1}_{nk} \varphi_j(\vr_k)\right]}_{\equiv \gamma_{nj}}\Aopt^{-1}_{im}.
+\end{equation}
+Now, let us consider how the gradient with respect particle $m$ changes with
+$c_{ij}$.  Two terms contribute.  First, a term contributes from the
+ratio of 
+
+
+
+
 \end{document}
