@@ -78,7 +78,9 @@ namespace qmcplusplus
     // The dlogpsi part is simple -- just ratios
     // First, evaluate the basis functions
     // cerr << "GEMM 1:\n";
-    // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex, LastIndex);
+    // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex,
+    // LastIndex);
+    resetParameters(active);
     Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
 
     BLAS::gemm ('N', 'T', NumBasis, NumOrbitals, NumOrbitals, 1.0, 
