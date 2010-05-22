@@ -279,11 +279,11 @@ namespace qmcplusplus
                 
               if ( (Lambda==Lambda)&&(dopt<bigChange))
               {
-                app_log() <<endl <<"lambda: " <<Lambda <<endl;
-                for (int i=0;i<numParams; i++) {
-                  app_log() <<"param: i, currValue, optdir: " 
-                            <<i <<"  " <<optparm[i] <<"  " <<optdir[i] <<endl;
-                }
+//                 app_log() <<endl <<"lambda: " <<Lambda <<endl;
+//                 for (int i=0;i<numParams; i++) {
+//                   app_log() <<"param: i, currValue, optdir: " 
+//                             <<i <<"  " <<optparm[i] <<"  " <<optdir[i] <<endl;
+//                 }
 
 
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];

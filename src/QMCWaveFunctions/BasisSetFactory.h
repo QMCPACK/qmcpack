@@ -42,17 +42,18 @@ namespace qmcplusplus {
 
     SPOSetBase* createSPOSet(xmlNodePtr cur);
 
-    BasisSetBase<RealType>* getBasisSet(int i=0)
-    {
-      if(i<basisBuilder.size())
-        return basisBuilder[i]->myBasisSet;
-      else
-        return 0;
-    }
+//     BasisSetBase<RealType>* getBasisSet(int i=0)
+//     {
+//       if(i<basisBuilder.size())
+//         return basisBuilder[i]->myBasisSet;
+//       else
+//         return 0;
+//     } 
 
   private:
     ///set of basis set: potential static data
-    vector<BasisSetBuilder*> basisBuilder;
+    map<string,BasisSetBuilder*> basisBuilder;
+//     map<string,int> basissets;
     ///reference to the particle pool
     PtclPoolType& ptclPool;
   };

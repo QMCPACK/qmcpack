@@ -47,7 +47,7 @@ namespace qmcplusplus {
   BasisSetFactory::~BasisSetFactory()
   {
     DEBUG_MEMORY("BasisSetFactory::~BasisSetFactory");
-    delete_iter(basisBuilder.begin(),basisBuilder.end());
+//     delete_iter(basisBuilder.begin(),basisBuilder.end());
   }
 
   bool BasisSetFactory::put(xmlNodePtr cur) 
@@ -55,12 +55,13 @@ namespace qmcplusplus {
     return true;
   }
 
-  void BasisSetFactory::createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode) {
+  void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode) {
 
     ReportEngine PRE(ClassName,"createBasisSet");
 
     string sourceOpt("ion0");
     string typeOpt("MolecularOrbital");
+    string name("null");
     string keyOpt("NMO"); //numerical Molecular Orbital
     string transformOpt("yes"); //numerical Molecular Orbital
     string cuspC("no");  // cusp correction
@@ -69,8 +70,22 @@ namespace qmcplusplus {
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(typeOpt,"type");
     aAttrib.add(keyOpt,"keyword"); aAttrib.add(keyOpt,"key");
+    aAttrib.add(name,"name");
     aAttrib.add(transformOpt,"transform");
-    if(rootNode != NULL)  aAttrib.put(rootNode);
+    if(rootNode != NULL)  aAttrib.put(rootNode); 
+    
+    xmlNodePtr tc = cur->children; tc=tc->next;
+    while(tc != NULL) {
+    string cname;  getNodeName(cname,tc);
+    if (cname.find("asis")>1)
+    {
+      OhmmsAttributeSet bAttrib;
+      bAttrib.add(name,"name");
+      bAttrib.put(tc);
+      break;
+    }
+    tc=tc->next;
+    }
 
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
@@ -128,7 +143,9 @@ namespace qmcplusplus {
       bb->setReportLevel(ReportLevel);
       bb->initCommunicator(myComm);
       bb->put(cur);
-      basisBuilder.push_back(bb);
+      app_log()<<" Built basis "<< name<< endl;
+//       basissets[name]=basisBuilder.size();
+      basisBuilder[name]=(bb);
     } 
     else 
     {
@@ -137,11 +154,31 @@ namespace qmcplusplus {
     }
   }
 
-  SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) 
+  SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   {
+    string bname("null"); 
+    string sname("null"); 
+    OhmmsAttributeSet aAttrib; 
+    aAttrib.add(bname,"basisset");
+    aAttrib.add(sname,"name");
+    aAttrib.put(cur); 
+    
+    string cname;
+    xmlNodePtr tcur=cur->children;
+    if (tcur!=NULL) getNodeName(cname,cur);
+    
+    if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
+      createBasisSet(tcur,cur);
+    else if (basisBuilder.count(bname)==0 )
+      {
+        bname=sname;
+        createBasisSet(cur,cur);
+      }
+    
     if(basisBuilder.size()) 
     {
-      return basisBuilder.back()->createSPOSet(cur);
+      app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<<endl;
+      return basisBuilder[bname]->createSPOSet(cur);
     } 
     else 
     {
