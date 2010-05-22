@@ -163,6 +163,7 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
       BranchMode.set(B_DMCSTAGE,0);//always reset warmup
     }
 
+
     //save the BranchMode in anticipating state changes in reset
     bitset<B_MODE_MAX> bmode(BranchMode);
     //reset Feedback pararmeter
@@ -332,6 +333,10 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
     //use effective time step of BranchInterval*Tau
     //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);
     //logN = Feed*std::log(static_cast<RealType>(Nideal));
+    
+    BranchMode.set(B_DMC,1);//set DMC
+    BranchMode.set(B_DMCSTAGE,0);//set warmup
+    
     if(WalkerController)
     {
       //this is to compare the time step errors
