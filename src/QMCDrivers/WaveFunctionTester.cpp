@@ -915,6 +915,9 @@ namespace qmcplusplus
     vector<RealType> HDsaved(Nvars);
     vector<RealType> PGradient(Nvars);
     vector<RealType> HGradient(Nvars);
+    Psi.resetParameters(wfVars);
+    logpsi = Psi.evaluateLog(W);
+    eloc=H.evaluate(W);
     Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
     RealType FiniteDiff = 1e-5;
 
