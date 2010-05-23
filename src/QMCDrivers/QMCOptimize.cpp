@@ -271,7 +271,7 @@ namespace qmcplusplus {
       else
 #endif
 #if defined(ENABLE_OPENMP)
-      if(omp_get_max_threads()>1)
+	if(true /*omp_get_max_threads()>1*/)
       {
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
       }
