@@ -81,11 +81,13 @@ namespace qmcplusplus {
 
   void SlaterDet::checkOutVariables(const opt_variables_type& active)
   {
+    myVars.clear();
     if(Optimizable) 
       for(int i=0; i<Dets.size(); i++) {
 	Dets[i]->checkOutVariables(active);
 	myVars.insertFrom(Dets[i]->myVars);
       }
+    myVars.getIndex(active);
   }
 
   ///reset all the Dirac determinants, Optimizable is true

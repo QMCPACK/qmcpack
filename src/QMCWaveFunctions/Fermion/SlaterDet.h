@@ -242,6 +242,7 @@ namespace qmcplusplus
 	  dlogpsi[kk] = dhpsioverpsi[kk] = 0.0;
       }
 
+      
       // Now add on contribution from each determinant to the derivatives
       for (int i=0; i<Dets.size(); i++)
 	Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);

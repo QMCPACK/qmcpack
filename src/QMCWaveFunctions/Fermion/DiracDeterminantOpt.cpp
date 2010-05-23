@@ -124,12 +124,51 @@ namespace qmcplusplus
 // 	}
 //       }
     
+    for (int l=0; l<NumOrbitals; l++)
+      for (int j=0; j<NumBasis; j++) {
+	G_gamma(l,j) = BasisGrad(l,j);
+	for (int n=0; n<NumOrbitals; n++) 
+	  G_gamma(l,j) -=  dpsiM(l,n)*Gamma(n,j);
+      }
+
 
     // Now, compute d/dC_{ij} lapl(det)/det by multiplying by Ainv
-
     BLAS::gemm('N', 'T', NumBasis, NumOrbitals, NumOrbitals, -0.5,
 	       L_gamma.data(), NumBasis, psiM.data(), NumOrbitals,
 	       0.0, dlapl_dC.data(), NumBasis);
+
+    vector<PosType> myG2(NumOrbitals);
+    for (int ptcl=0; ptcl<NumOrbitals; ptcl++) {
+      myG2[ptcl] = PosType();
+      for (int orb=0; orb<NumOrbitals; orb++)
+	myG2[ptcl] += dpsiM(ptcl,orb)*psiM(ptcl,orb);
+//       fprintf (stderr, "myG  = %11.4e %11.4e %11.4e\n",  
+// 	       myG[ptcl][0],  myG[ptcl][1],  myG[ptcl][2]);
+//       fprintf (stderr, "myG2 = %11.4e %11.4e %11.4e\n", 
+// 	       myG2[ptcl][0], myG2[ptcl][1], myG2[ptcl][2]);
+//       fprintf (stderr, "P.G  = %11.4e %11.4e %11.4e\n",
+// 	       P.G[ptcl+FirstIndex][0],
+// 	       P.G[ptcl+FirstIndex][1],
+// 	       P.G[ptcl+FirstIndex][2]);
+    }
+    
+
+    for (int i=0; i<NumOrbitals; i++)
+      for (int j=0; j<NumBasis; j++)
+	for (int l=0; l<NumOrbitals; l++) {
+	  PosType g = P.G[FirstIndex+l];
+	  PosType dg1 = psiM(l,i)*G_gamma(l,j);
+	  PosType dg2 = g*dlogdet_dC(i,j);
+	  PosType dg = dg1;// - dg2;
+// 	  fprintf (stderr, "dg = %9.4f %9.4f %9.4f\n",
+// 		   dg[0], dg[1], dg[2]);
+// 	  fprintf (stderr, "g1 = %11.4e %11.4e %11.4e  g2 = %11.4e %11.4e %11.4e\n",
+// 		   dg1[0], dg1[1], dg1[2], dg2[0], dg2[1], dg2[2]);
+	  g -= myG2[l];
+	  dlapl_dC(i,j) -= dot(g, dg);
+	}
+	  
+
 //     for (int i=0; i<NumOrbitals; i++)
 //       for (int j=0; j<NumBasis; j++) {
 // 	dlapl_dC(i,j) = 0.0;
