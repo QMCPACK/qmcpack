@@ -47,9 +47,11 @@ namespace qmcplusplus
     ValueMatrix_t dlapl_dC;
     // Intermediate used to compute the above.
     ValueMatrix_t Gamma, L_gamma;
-
+    
     // This vector maps variable number into ExcitedCoefs matrix
     vector<TinyVector<int,2> > VarIndex;
+    //
+    vector<PosType> MyG;
 
   public:
     DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
