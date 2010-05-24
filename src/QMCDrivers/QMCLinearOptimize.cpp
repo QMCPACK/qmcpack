@@ -119,7 +119,7 @@ namespace qmcplusplus
       Timer t1;                                                         
       
       optTarget->getConfigurations(h5FileRoot);
-      optTarget->checkConfigurations();        
+//       optTarget->checkConfigurations();        
       
       app_log() << "  Execution time = " << t1.elapsed() << endl;
       app_log() << "  </log>"<<endl;                             
@@ -128,7 +128,7 @@ namespace qmcplusplus
       app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << endl;
       app_log() << "  <log>" << endl;                                                             
       
-      optTarget->setTargetEnergy(branchEngine->getEref());
+//       optTarget->setTargetEnergy(branchEngine->getEref());
       
       t1.restart();
       
@@ -168,7 +168,9 @@ namespace qmcplusplus
           vector<RealType> BestDirection(N,0);
 
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
-
+          
+          optTarget->checkConfigurations();
+          optTarget->setTargetEnergy(branchEngine->getEref());
           RealType lastCost(optTarget->Cost(true));
           RealType newCost(lastCost);
 
