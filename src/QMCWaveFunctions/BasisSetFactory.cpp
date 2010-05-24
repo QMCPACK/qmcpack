@@ -156,8 +156,10 @@ namespace qmcplusplus {
 
   SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   {
-    string bname("null"); 
-    string sname("null"); 
+    string bname(""); 
+    if (basisBuilder.size()>0)
+      bname=basisBuilder.begin()->first;
+    string sname(""); 
     OhmmsAttributeSet aAttrib; 
     aAttrib.add(bname,"basisset");
     aAttrib.add(sname,"name");
@@ -169,7 +171,7 @@ namespace qmcplusplus {
     
     if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
       createBasisSet(tcur,cur);
-    else if (basisBuilder.count(bname)==0 )
+    else if ((basisBuilder.count(bname)==0)&&(basisBuilder.size()==0))
       {
         bname=sname;
         createBasisSet(cur,cur);

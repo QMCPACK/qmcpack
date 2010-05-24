@@ -906,8 +906,13 @@ namespace qmcplusplus
       }
 
     opt_variables_type wfVars,wfvar_prime;
+//build optimizables from the wavefunction
+    wfVars.clear();
     Psi.checkInVariables(wfVars);
+
+    wfVars.resetIndex();
     Psi.checkOutVariables(wfVars);
+    
     wfvar_prime= wfVars;
     wfVars.print(cout);
     int Nvars= wfVars.size();
@@ -933,8 +938,8 @@ namespace qmcplusplus
         W.G=0;
         W.L=0;
         RealType logpsiPlus = Psi.evaluateLog(W);
-        RealType elocPlus=H.evaluate(W);
-
+        H.evaluate(W);
+        RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
         wfvar_prime[i] = wfVars[i]- FiniteDiff;
 //     Psi.checkOutVariables(wfvar_prime);
         Psi.resetParameters(wfvar_prime);
@@ -943,8 +948,9 @@ namespace qmcplusplus
         W.G=0;
         W.L=0;
         RealType logpsiMinus = Psi.evaluateLog(W);
-        RealType elocMinus =H.evaluate(W);
-
+        H.evaluate(W);
+        RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+        
         PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
         HGradient[i]= (elocPlus-elocMinus)*dh;
       }
