@@ -61,7 +61,7 @@ namespace qmcplusplus {
 
     string sourceOpt("ion0");
     string typeOpt("MolecularOrbital");
-    string name("null");
+    string name("");
     string keyOpt("NMO"); //numerical Molecular Orbital
     string transformOpt("yes"); //numerical Molecular Orbital
     string cuspC("no");  // cusp correction
@@ -132,6 +132,7 @@ namespace qmcplusplus {
       }
     }
     else if (typeOpt == "linearopt") {
+      //app_log()<<"Optimizable SPO set"<<endl;
       bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
     }
     
@@ -156,12 +157,13 @@ namespace qmcplusplus {
 
   SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   {
-    string bname(""); 
-    if (basisBuilder.size()>0)
-      bname=basisBuilder.begin()->first;
+    string bname("");
+    string bsname("");
+    int bsize=basisBuilder.size(); 
     string sname(""); 
     OhmmsAttributeSet aAttrib; 
     aAttrib.add(bname,"basisset");
+    aAttrib.add(bsname,"basis_sposet");
     aAttrib.add(sname,"name");
     aAttrib.put(cur); 
     
@@ -171,12 +173,17 @@ namespace qmcplusplus {
     
     if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
       createBasisSet(tcur,cur);
-    else if ((basisBuilder.count(bname)==0)&&(basisBuilder.size()==0))
-      {
-        bname=sname;
-        createBasisSet(cur,cur);
-      }
-    
+    else if (basisBuilder.count(bsname))
+    {
+      createBasisSet(cur,cur);
+      bname=sname;
+    }
+    else if (bname=="")
+    {
+      createBasisSet(cur,cur);
+      bname=basisBuilder.rbegin()->first;
+    }
+
     if(basisBuilder.size()) 
     {
       app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<<endl;
