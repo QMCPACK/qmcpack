@@ -91,7 +91,7 @@ namespace qmcplusplus
     // Note: numParams should be set in Builder class, so it is known here
     int setParamIndex(int n) {
       indexOfFirstParam=n;
-      return indexOfFirstParam+numParams;
+      return numParams;
     }
 
     virtual inline int 

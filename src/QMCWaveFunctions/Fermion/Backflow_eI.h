@@ -30,44 +30,39 @@ namespace qmcplusplus
     public:
 
     vector<FT*> RadFun;
+    vector<FT*> uniqueRadFun;
+    vector<int> offsetPrms;
 
     Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
     {
       myTable = DistanceTable::add(ions,els); 
     }
 
-    // if uniqueFunctions==true, build RadFun manually from builder class
+    //  build RadFun manually from builder class
     Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els)
     {
       myTable = DistanceTable::add(ions,els);
-      // same radial function for all centers
+      // same radial function for all centers by default
+      uniqueRadFun.push_back(RF);
       for(int i=0; i<NumCenters; i++) RadFun.push_back(RF);
-      uniqueFunctions=false;
     }
 
     ~Backflow_eI() {}; 
  
     void resetParameters(const opt_variables_type& active)
     {
-       RadFun[0]->resetParameters(active);
-       if(uniqueFunctions)
-        for(int i=1; i<RadFun.size(); i++) RadFun[i]->resetParameters(active);
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->resetParameters(active);
     }
 
     void checkInVariables(opt_variables_type& active)
     {
-      RadFun[0]->checkInVariables(active);
-       if(uniqueFunctions)
-        for(int i=1; i<RadFun.size(); i++) RadFun[i]->checkInVariables(active);
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->checkInVariables(active);
     }
 
     void checkOutVariables(const opt_variables_type& active)
     {
-      RadFun[0]->checkOutVariables(active);
-       if(uniqueFunctions)
-        for(int i=1; i<RadFun.size(); i++) RadFun[i]->checkOutVariables(active);
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->checkOutVariables(active);
     }
-
 
     BackflowFunctionBase* makeClone()
     {
@@ -175,7 +170,8 @@ namespace qmcplusplus
           //u = (d2u+4.0*du)*myTable->dr(nn); 
           Bmat_full(j,j) += (d2u+4.0*du)*myTable->dr(nn);
 
-          for(int prm=0,la=indexOfFirstParam; prm<numParams; prm++,la++) {
+          int NPrms = RadFun[i]->NumParams; 
+          for(int prm=0,la=indexOfFirstParam+offsetPrms[i]; prm<NPrms; prm++,la++) {
             Cmat(la,j) += myTable->dr(nn)*derivs[prm][0];
 
             Xmat(la,j,j) += (derivs[prm][1]*myTable->rinv(nn))*op;

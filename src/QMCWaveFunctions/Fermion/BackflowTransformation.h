@@ -132,7 +132,6 @@ namespace qmcplusplus
     void checkInVariables(opt_variables_type& active)
     {
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->checkInVariables(active);
-      numVarBefore = bfFuns[0]->indexOffset();
     }
 
     void checkOutVariables(const opt_variables_type& active)
@@ -151,114 +150,190 @@ namespace qmcplusplus
       while (cur != NULL)
       {
         getNodeName(cname,cur);
-        if (cname == "transformation")
+        if (cname == "transf" || cname == "transformation")
         {
           OhmmsAttributeSet spoAttrib;
           string source("none");
           string name("bf0");
           string type("none");
-          RealType cusp=0.0;
-          string funct("Gaussian");
-          string unique("no");
           spoAttrib.add (name, "name");
           spoAttrib.add (type, "type");
-          spoAttrib.add (cusp, "cusp");
           spoAttrib.add (source, "source");
-          spoAttrib.add (funct, "function");
-          spoAttrib.add (unique, "unique");
           spoAttrib.put(cur);
 
           sources[source] = names.size();
           names.push_back(name);
           if(type == "e-e") {
-            app_log() <<"Adding electron-electron backflow. \n";
-
-            if(funct == "Gaussian") {
-   APP_ABORT("Disabled GaussianFunctor for now, \n");
-              app_log() <<"Using GaussianFunctor type. \n";
-              GaussianFunctor *GaussFT = new GaussianFunctor();
-              GaussFT->put(cur);
-              BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<GaussianFunctor>(targetPtcl,targetPtcl,GaussFT);
-              bfFuns.push_back(tbf);
-            } else if(funct == "Bspline")  {
-              app_log() <<"Using BsplineFunctor type. \n";
-              BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
-              bsp->put(cur);
-              BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
-              tbf->numParams = bsp->NumParams;
-              tbf->derivs.resize(tbf->numParams);
-              bfFuns.push_back(tbf);
-            } else {
-              APP_ABORT("Unknown function type in e-e BF Transformation.\n");
-            }
+            addTwoBody(cur); 
           } else if(type == "e-e-I") {
             APP_ABORT("e-e-I backflow is not implemented yet. \n");
-            app_log() <<"Adding electron-electron-Ion backflow. \n";
           } else if(type == "e-I") {
-            app_log() <<"Adding electron-Ion backflow for source:"
-                      <<source <<" \n";
-
-            ParticleSet* ions=0;
-            PtclPoolType::iterator pit(ptclPool.find(source));
-            if(pit == ptclPool.end())
-            {
-              APP_ABORT("Missing backflow/@source.");
-            } else {
-              ions=(*pit).second;
-            }
-
-            if(funct == "Gaussian") {
-   APP_ABORT("Disabled GaussianFunctor for now, \n");
-              app_log() <<"Using GaussianFunctor type. \n";
-              if(unique == "yes") {
-                APP_ABORT("Unique radial functors for e-I backflow not implemented. \n"); 
-              } else {
-                app_log() <<"Using a single radial functor. \n";
-                GaussianFunctor *GaussFT = new GaussianFunctor();
-                GaussFT->put(cur);
-                BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_eI<GaussianFunctor>(*ions,targetPtcl,GaussFT);
-                bfFuns.push_back(tbf);
-              }
-            } else if(funct == "Bspline")  {
-              app_log() <<"Using BsplineFunctor type. \n";
-              if(unique == "yes") {
-                //APP_ABORT("Unique radial functors for e-I backflow not implemented. \n");
-                app_log() <<"Using unique radial functors for ions of this type. \n";
-                BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
-                Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
-                tbf->uniqueFunctions=true;
-                int nI = ions->getTotalNum();
-                tbf->numParams=0;
-                for(int i=0; i<nI; i++)  {
-                  BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
-// right now doesn't work because I need to loop over different xml nodes
-                  bsp->put(cur); 
-                  dum->RadFun.push_back(bsp);
-                  tbf->numParams += bsp->NumParams;
-                }
-                tbf->derivs.resize(tbf->numParams);
-                bfFuns.push_back(tbf);
-              } else {
-                app_log() <<"Using a single radial functor for all ions of this type. \n";
-                BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
-                bsp->put(cur);
-                BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl,bsp);
-                tbf->numParams = bsp->NumParams;
-                tbf->derivs.resize(tbf->numParams); 
-                bfFuns.push_back(tbf);
-              }
-            } else {
-              APP_ABORT("Unknown function type in e-I BF Transformation.\n");
-            }
-
+            addOneBody(cur); 
           } else {
             APP_ABORT("Unknown backflow type. \n");
           }
-          cur = cur->next;
         }
         cur = cur->next;
       }
       return success;
+    }
+
+    void addOneBody(xmlNodePtr cur)
+    {
+      OhmmsAttributeSet spoAttrib;
+      string source("none");
+      string name("bf0");
+      string type("none");
+      string funct("Gaussian");
+      string unique("no");
+      spoAttrib.add (name, "name");
+      spoAttrib.add (type, "type");
+      spoAttrib.add (source, "source");
+      spoAttrib.add (funct, "function");
+      spoAttrib.add (unique, "unique");
+      spoAttrib.put(cur);
+
+      ParticleSet* ions=0;
+      PtclPoolType::iterator pit(ptclPool.find(source));
+      if(pit == ptclPool.end())
+      {
+        APP_ABORT("Missing backflow/@source.");
+      } else {
+        ions=(*pit).second;
+      }
+      app_log() <<"Adding electron-Ion backflow for source:"
+                <<source <<" \n";
+
+      BackflowFunctionBase *tbf;
+      int nIons = ions->getTotalNum();
+      SpeciesSet &sSet = ions->getSpeciesSet();
+      int numSpecies = sSet.getTotalNum();
+
+      vector<xmlNodePtr> funs;
+      vector<int> ion2functor(nIons,-1);
+      vector<RealType> cusps; 
+      xmlNodePtr curRoot=cur;
+      string cname;
+      cur = curRoot->children;
+      while (cur != NULL)
+      {
+        getNodeName(cname,cur);
+        if (cname == "correlation")
+        {
+          RealType my_cusp=0.0;
+          string elementType("none");
+          OhmmsAttributeSet anAttrib;
+          anAttrib.add (elementType, "elementType");
+          anAttrib.add (my_cusp, "cusp");
+          anAttrib.put(cur);
+          funs.push_back(cur);
+          cusps.push_back(my_cusp);
+          if(unique == "yes") // look for <index> block, and map based on that
+          {
+            xmlNodePtr kids=cur;
+            string aname;    
+            kids = cur->children;
+            while (kids != NULL)
+            {
+              getNodeName(aname,kids);
+              if (aname == "index")
+              {
+                vector<int> pos;
+                putContent(pos, kids);
+                for(int i=0; i<pos.size(); i++) {
+                  app_log() << "Adding backflow transformation of type " << funs.size()-1 << " for atom " << pos[i] << ".\n";
+                  ion2functor[pos[i]]=funs.size()-1;
+                }
+              }
+              kids = kids->next;
+            }
+          } else {  // map based on elementType
+            int ig = sSet.findSpecies (elementType);
+            if (ig < numSpecies)
+            {
+              for (int i=0; i<ion2functor.size(); i++)
+                if (ions->GroupID[i] == ig)
+                {
+                  ion2functor[i]=funs.size()-1;
+                  app_log() << "Adding backflow transformation of element type " << elementType << " for atom " << i << ".\n";
+                }
+            } 
+          }
+        }
+        cur = cur->next;
+      }
+
+      vector<int> offsets;
+
+      if(funct == "Bspline")  {
+        app_log() <<"Using BsplineFunctor type. \n";
+
+        tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
+        Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
+        tbf->numParams=0;
+
+        for(int i=0; i<funs.size(); i++)
+        {
+          BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
+          bsp->put(funs[i]);
+          dum->uniqueRadFun.push_back(bsp);
+          offsets.push_back(tbf->numParams);
+          tbf->numParams += bsp->NumParams;
+        } 
+        tbf->derivs.resize(tbf->numParams);
+        dum->offsetPrms.resize(nIons);
+        dum->RadFun.resize(nIons);
+        for(int i=0; i<ion2functor.size(); i++)
+        {
+          if(ion2functor[i] < 0 || ion2functor[i] >= funs.size()) {
+            APP_ABORT("backflowTransformation::put() ion not mapped to radial function.\n");
+          }
+          dum->RadFun[i] = dum->uniqueRadFun[ion2functor[i]];  
+          dum->offsetPrms[i] = offsets[ion2functor[i]];  
+        }
+      } else {
+        APP_ABORT("Unknown function type in e-I BF Transformation.\n");
+      }
+
+      bfFuns.push_back(tbf);
+
+    }
+
+    void addTwoBody(xmlNodePtr cur)
+    {
+      app_log() <<"Adding electron-electron backflow. \n";
+
+      OhmmsAttributeSet trAttrib;
+      string source("none");
+      string name("bf0");
+      string type("none");
+      RealType cusp=0.0;
+      string funct("Bspline");
+      trAttrib.add (name, "name");
+      trAttrib.add (cusp, "cusp");
+      trAttrib.add (source, "source");
+      trAttrib.add (funct, "function");
+      trAttrib.put(cur);
+
+      if(funct == "Gaussian") {
+   APP_ABORT("Disabled GaussianFunctor for now, \n");
+        app_log() <<"Using GaussianFunctor type. \n";
+        GaussianFunctor *GaussFT = new GaussianFunctor();
+        GaussFT->put(cur);
+        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<GaussianFunctor>(targetPtcl,targetPtcl,GaussFT);
+        bfFuns.push_back(tbf);
+      } else if(funct == "Bspline")  {
+        app_log() <<"Using BsplineFunctor type. \n";
+        BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
+        bsp->put(cur);
+        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
+        tbf->numParams = bsp->NumParams;
+        tbf->derivs.resize(tbf->numParams);
+        bfFuns.push_back(tbf);
+      } else {
+        APP_ABORT("Unknown function type in e-e BF Transformation.\n");
+      }
+
     }
 
     /** reset the distance table with a new target P
@@ -318,8 +393,12 @@ namespace qmcplusplus
           numParams+=tmp; 
         } 
 
-        for(int i=0; i<numParams; i++) 
+        numVarBefore = bfFuns[0]->indexOffset();
+        //app_log() <<"numVarBefore: " <<numVarBefore <<endl;
+        for(int i=0; i<numParams; i++) { 
           optIndexMap[i] = i+numVarBefore;
+          //app_log() <<"prm, map: " <<i <<"  " <<optIndexMap[i] <<endl;
+        }
 
         Cmat.resize(numParams,NumTargets);
         Xmat.resize(numParams,NumTargets,NumTargets);
