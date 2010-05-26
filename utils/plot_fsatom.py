@@ -63,11 +63,16 @@ class pseudo:
     def plot (self):
         spd = ['s', 'p', 'd', 'f', 'g', 'h', 'i']
         leglist = []
+        r = []
         for ch in self.channels:
             Vofr = ch.V / ch.grid
             Vofr[0] = Vofr[1]
             plot (ch.grid, Vofr, lw=1.5)
+            r = ch.grid
             leglist.append(spd[ch.l])
+        a = axis()
+        plot (r, -1.0/r * self.Z)
+        axis(a)
         leg = legend(leglist, loc='lower right')
         setp(leg.get_texts(), 'FontSize', 16)
         xlabel (r'$r$ (bohr)', size=16)
@@ -78,7 +83,7 @@ class pseudo:
         print 'parsing grid'
 
     def parse_header(self, header_elem):
-        print 'parsing header'
+        self.Z = int(header_elem.attributes['zval'].value)
 
     def parse_wavefunctions(self, header_elem):
         print 'parsing wavefunctions'
