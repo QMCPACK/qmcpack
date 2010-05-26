@@ -60,9 +60,9 @@ namespace qmcplusplus {
     ReportEngine PRE(ClassName,"createBasisSet");
 
     string sourceOpt("ion0");
-    string typeOpt("MolecularOrbital");
+    string typeOpt("");
     string name("");
-    string keyOpt("NMO"); //numerical Molecular Orbital
+    string keyOpt("NMO"); //gaussian Molecular Orbital
     string transformOpt("yes"); //numerical Molecular Orbital
     string cuspC("no");  // cusp correction
     OhmmsAttributeSet aAttrib;
@@ -90,6 +90,7 @@ namespace qmcplusplus {
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
     {
+      name=typeOpt;
 #if defined(HAVE_EINSPLINE)
       PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
@@ -119,7 +120,8 @@ namespace qmcplusplus {
 #else
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif
-      } else 
+      } 
+      else 
       {
 #if QMC_BUILD_LEVEL>2
         if(cuspC == "yes")
@@ -151,7 +153,7 @@ namespace qmcplusplus {
     else 
     {
       //fatal error
-      PRE.error("Failed to create a basis set.",true);
+//       PRE.error("Failed to create a basis set.",true);
     }
   }
 
