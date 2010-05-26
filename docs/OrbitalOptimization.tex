@@ -9,6 +9,51 @@
 \maketitle
 \newcommand{\vr}{\mathbf{r}}
 \newcommand{\Aopt}{\tilde{A}}
+
+\section{Trial wave functions in logarithmic form}
+Let us consider a trial wave funciton, $\psi$, which is a product of
+components,
+\begin{equation}
+  \psi = \psi_1 \psi_2 \psi_3 \dots
+\end{equation}
+To avoid the complicated application of the product rule, we work
+rather with the quantity, $\ln(\psi)$.
+\begin{equation}
+\ln(\psi) = \ln(\psi_1) + \ln(\psi_2) + \ln(\psi_3) \dots
+\end{equation}
+\subsection{Optimizing trial wave functions}
+Each of the components of $\psi$ can be parametrized to allow
+optimization of the trial function.  Efficient optimization algorithms
+can be employed if we can compute the derivatives of two quantities
+with respect to these parameters.  For simplicity, we label one
+parameter as $\alpha$.  We then need to compute
+\begin{eqnarray}
+\partial_\alpha \ln(\psi) & = & \partial_\alpha \ln (\psi_1)
++ \partial_\alpha \ln (\psi_2) + \dots,\ \text{and} \\
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right] & = &
+\partial_\alpha \left\{\nabla^2 \ln(\psi) + \left[\nabla
+    \ln(\psi)\right]^2 \right\} \\
+& = & \partial_\alpha \nabla^2 \ln(\psi) + 2 \left[\nabla \ln(\psi)
+\right]\cdot \left[ \partial_\alpha \nabla \ln(\psi)\right].
+\end{eqnarray}
+Let us consider the second term in terms of its components.
+\begin{eqnarray}
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right] & = &
+ \partial_\alpha \nabla^2\ln(\psi_1) + \partial_\alpha
+ \nabla^2\ln(\psi_2)+ \dots \\
+& & + 2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_1)\right] +
+2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_2)\right] + \cdots \nonumber
+\end{eqnarray}
+Thus, the contribution of $\psi1$ to the total is given by
+\begin{equation}
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right]_{\psi_1} =
+\partial_\alpha \nabla^2\ln(\psi_1) + 2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_1)\right].
+\end{equation}
+
+
 \section{Statement of problem}
 We would like to optimize the occupied single-particle orbitals,
 $\left\{\phi_i(\vr)\right\}$ in a determinant in the basis of the
