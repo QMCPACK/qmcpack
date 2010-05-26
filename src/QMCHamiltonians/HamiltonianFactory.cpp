@@ -288,7 +288,7 @@ namespace qmcplusplus {
       { 
         if(potType =="flux")
         {
-          targetH->addOperator(new ConservedEnergy(*targetPtcl),potName,false);
+          targetH->addOperator(new ConservedEnergy,potName,false);
         }
         else if(potType == "Force")
         {
@@ -519,12 +519,11 @@ namespace qmcplusplus {
   }
 
   void
-  HamiltonianFactory::addMPCPotential(xmlNodePtr cur) 
+  HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool physical) 
   {
 #if defined(HAVE_LIBFFTW)
     string a("e"), title("MPC");
     OhmmsAttributeSet hAttrib;
-    bool physical = true;
     double cutoff = 30.0;
     hAttrib.add(title,"id"); 
     hAttrib.add(title,"name"); 
