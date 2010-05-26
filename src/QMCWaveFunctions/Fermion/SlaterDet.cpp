@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
+#include "Utilities/OhmmsInfo.h" 
 
 namespace qmcplusplus
 {
@@ -237,40 +237,72 @@ namespace qmcplusplus
   OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   {
     SlaterDet* myclone = new SlaterDet(tqp);
-    if (mySPOSet.size() > 1)//each determinant owns its own set
+    myclone->Optimizable=Optimizable;
+    if (mySPOSet.size() > 1)
     {
-      for (int i = 0; i < Dets.size(); ++i)
+      map<string,SPOSetBasePtr>::const_iterator Mit,Lit;
+      Mit= mySPOSet.begin();
+      Lit= mySPOSet.end();
+      while (Mit!=Lit)
       {
-        SPOSetBasePtr spo = Dets[i]->getPhi();
-        // Check to see if this determinants SPOSet has already been
-        // cloned
-        bool found = false;
+        SPOSetBasePtr spo = (*Mit).second;
+        
         SPOSetBasePtr spo_clone;
-        for (int j = 0; j < i; j++)
-          if (spo == Dets[j]->getPhi())
-          {
-            found = true;
-            spo_clone = myclone->Dets[j]->getPhi();
-          }
-        // If it hasn't, clone it now
-        if (!found)
+        spo_clone = spo->makeClone();
+        spo_clone->resetTargetParticleSet(tqp); 
+        myclone->add(spo_clone,spo->objectName);
+        for (int i = 0; i < Dets.size(); ++i)
         {
-          spo_clone = spo->makeClone();
-          spo_clone->resetTargetParticleSet(tqp);
-          myclone->add(spo_clone, spo->objectName);
+          if (spo == Dets[i]->getPhi())
+          {
+            Determinant_t* newD=Dets[i]->makeCopy(spo_clone);
+            newD->resetTargetParticleSet(tqp);
+            myclone->add(newD, i);
+          }
         }
-        // Make a copy of the determinant.
-        myclone->add(Dets[i]->makeCopy(spo_clone), i);
+        Mit++;
       }
     }
+//         {
+//       for (int i = 0; i < Dets.size(); ++i)
+//       {
+//         SPOSetBasePtr spo = Dets[i]->getPhi();
+//         // Check to see if this determinants SPOSet has already been
+//         // cloned
+//         bool found = false;
+//         SPOSetBasePtr spo_clone;
+//         for (int j = 0; j < i; j++)
+//           if (spo == Dets[j]->getPhi())
+//           {
+//             found = true;
+//             spo_clone = myclone->Dets[j]->getPhi();
+//             spo_clone->resetTargetParticleSet(tqp);
+//           }
+//         // If it hasn't, clone it now
+//         if (!found)
+//         {
+//           spo_clone = spo->makeClone();
+//           spo_clone->resetTargetParticleSet(tqp);
+//           myclone->add(spo_clone, spo->objectName);
+//         }
+//         // Make a copy of the determinant.
+//         Determinant_t* newD=Dets[i]->makeCopy(spo_clone);
+//         newD->resetTargetParticleSet(tqp);
+//         myclone->add(newD, i);
+//       }
+//     }
     else
-    {
+    { 
       SPOSetBasePtr spo = Dets[0]->getPhi();
       SPOSetBasePtr spo_clone = spo->makeClone();
       spo_clone->resetTargetParticleSet(tqp);
       myclone->add(spo_clone, spo->objectName);
       for (int i = 0; i < Dets.size(); ++i)
-        myclone->add(Dets[i]->makeCopy(spo_clone), i);
+      {
+        Determinant_t* newD=Dets[i]->makeCopy(spo_clone);
+        newD->resetTargetParticleSet(tqp);
+        myclone->add(newD, i);
+      } 
     }
 
     //map<SPOSetBase*,SPOSetBase*> spomap;

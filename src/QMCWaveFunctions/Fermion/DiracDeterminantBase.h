@@ -117,8 +117,7 @@ namespace qmcplusplus
       }
       void resetTargetParticleSet(ParticleSet& P)
       {
-        Phi->resetTargetParticleSet(P);
-	targetPtcl = &P;
+        Phi->resetTargetParticleSet(P); targetPtcl = &P;
       }
 
       ///reset the size: with the number of particles and number of orbtials
@@ -219,6 +218,7 @@ namespace qmcplusplus
        * can overwrite to clone itself correctly.
        */
       virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
 
       void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
       ///total number of particles

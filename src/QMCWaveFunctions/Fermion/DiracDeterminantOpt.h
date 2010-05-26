@@ -27,13 +27,13 @@ namespace qmcplusplus
     opt_variables_type myVars;
 
     // Basis for optimization
-    SPOSetBasePtr Basis;
+//     SPOSetBasePtr Basis;
 
     // First index is basis element
     // Second index is the orbital number being optimized
-    Array<ValueType,2> ExcitedCoefs;
+//     Array<ValueType,2> ExcitedCoefs;
     int NumOrbitals, NumBasis;
-    SPOSetBasePtr ExcitedStates;
+//     SPOSetBasePtr ExcitedStates;
 
     // Inverse of Aopt -- not transposed as in DiracDeterminantBase
     ValueMatrix_t AoptInv;
@@ -55,7 +55,7 @@ namespace qmcplusplus
 
   public:
     DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
-
+    
     DiracDeterminantOpt(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first=0);
     // This stores new orbital coefficients and updates the
     // inverse matrices.

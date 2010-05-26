@@ -78,38 +78,18 @@ namespace qmcplusplus
     }
 
     OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs, 
-		      SPOSetBase* basisOrbs=NULL) :
+		      SPOSetBase* basisOrbs=0) :
       GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
     {
       N = num_orbs;
-
       setOrbitalSetSize(N);
-      if (BasisOrbitals) {
-	M = BasisOrbitals->getOrbitalSetSize();
-	GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
-	BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
-	GSValMatrix.resize (N,N);
-	GSGradMatrix.resize(N,N);
-	GSLaplMatrix.resize(N,N);
-	BasisValMatrix.resize (M,N);
-	BasisGradMatrix.resize(M,N);
-	BasisLaplMatrix.resize(M,N);
-      }
-      else {
-	M = GSOrbitals->getOrbitalSetSize() - N;
-	GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
-	GSValMatrix.resize (N,N+M);
-	GSGradMatrix.resize(N,N+M);
-	GSLaplMatrix.resize(N,N+M);
-      }
-      GradTmpSrc.resize(M,N);
-      GradTmpDest.resize(N,N);
-      
-      C.resize(N,M);
-      ActiveBasis.resize(N);
-      BasisSetSize = M;
+      if (BasisOrbitals) M = BasisOrbitals->getOrbitalSetSize();
+      else M = GSOrbitals->getOrbitalSetSize() - N;
+      resize(N,M);
       Optimizable = true;
     }
+    
+
 
     //    bool put(xmlNodePtr cur, SPOPool_t &spo_pool);
     void resetTargetParticleSet(ParticleSet& P);
@@ -169,7 +149,36 @@ namespace qmcplusplus
 			       const Matrix<ComplexType> &mat,
 			       vector<RealType> &destVec);
       
-
+             
+  void resize(int n, int m) {
+    N=n; M=m;
+    if (BasisOrbitals) { 
+      GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
+      BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+      GSValMatrix.resize (N,N);
+      GSGradMatrix.resize(N,N);
+      GSLaplMatrix.resize(N,N);
+      BasisValMatrix.resize (M,N);
+      BasisGradMatrix.resize(M,N);
+      BasisLaplMatrix.resize(M,N);
+    }
+    else { 
+      GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
+      GSValMatrix.resize(N,N+M);
+      GSGradMatrix.resize(N,N+M);
+      GSLaplMatrix.resize(N,N+M);
+    }
+    GradTmpSrc.resize(M,N);
+    GradTmpDest.resize(N,N);
+    
+    C.resize(N,M);
+    ActiveBasis.resize(N);
+    BasisSetSize = M;
+    
+    ///from inherited class
+    t_logpsi.resize(N,N);
+  }
+  
     // Make a copy of myself
     SPOSetBase* makeClone() const;
   };

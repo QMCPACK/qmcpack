@@ -535,6 +535,7 @@ namespace qmcplusplus
       OrbitalBasePtr makeClone(ParticleSet& tqp) const
         {
           OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
+          j1copy->Optimizable=Optimizable;
           for (int i=0; i<Funique.size(); ++i)
             {
               if (Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));

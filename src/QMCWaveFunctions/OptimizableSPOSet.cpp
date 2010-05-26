@@ -71,57 +71,34 @@ namespace qmcplusplus
     if (BasisOrbitals == GSOrbitals)
       BasisOrbitals = 0;
 
-    /////////////////
-    // Setup sizes //
-    /////////////////
-    setOrbitalSetSize(N);
-    if (BasisOrbitals) {
-      M = BasisOrbitals->getOrbitalSetSize();
-      GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
-      BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
-      GSValMatrix.resize (N,N);
-      GSGradMatrix.resize(N,N);
-      GSLaplMatrix.resize(N,N);
-      BasisValMatrix.resize (M,N);
-      BasisGradMatrix.resize(M,N);
-      BasisLaplMatrix.resize(M,N);
-    }
-    else {
-      M = GSOrbitals->getOrbitalSetSize() - N;
-      GSVal.resize(N+M);  GSGrad.resize(N+M);  GSLapl.resize(N+M);
-      GSValMatrix.resize (N,N+M);
-      GSGradMatrix.resize(N,N+M);
-      GSLaplMatrix.resize(N,N+M);
-    }
-    GradTmpSrc.resize(M,N);
-    GradTmpDest.resize(N,N);
+ 
+    if (BasisOrbitals) M = BasisOrbitals->getOrbitalSetSize();
+    else M = GSOrbitals->getOrbitalSetSize() - N; 
+    resize(N,M);
     
     app_log() << "  linearopt sposet has " << N << " ground-state orbitals and " 
 	      << M << " basis orbitals.\n";
+ 
 
-    C.resize(N,M);
-    ActiveBasis.resize(N);
-    BasisSetSize = M;
-
-    if (same_k) {
-      int off         = BasisOrbitals ? N : 0;
-      SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
-      
-      for (int igs=0; igs<N; igs++) {
-	PosType k_gs = GSOrbitals->get_k(igs);
-	for (int ib=0; ib<M; ib++) {
-	  PosType k_b = basOrbs->get_k(ib+off);
-	  if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-10)
-	    ;
-	}
-      }
-    }
-    else {
-      for (int igs=0; igs<N; igs++) {
-	for (int ib=0; ib<M; ib++) {
-	}
-      }
-    }
+//     if (same_k) {
+//       int off         = BasisOrbitals ? N : 0;
+//       SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+//       
+//       for (int igs=0; igs<N; igs++) {
+// 	PosType k_gs = GSOrbitals->get_k(igs);
+// 	for (int ib=0; ib<M; ib++) {
+// 	  PosType k_b = basOrbs->get_k(ib+off);
+// 	  if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-10)
+// 	    ;
+// 	}
+//       }
+//     }
+//     else {
+//       for (int igs=0; igs<N; igs++) {
+// 	for (int ib=0; ib<M; ib++) {
+// 	}
+//       }
+//     }
 
     // Now, look for coefficients element
     xmlNodePtr xmlCoefs = node->xmlChildrenNode;
@@ -148,7 +125,8 @@ namespace qmcplusplus
 	vector<RealType> params;
 	putContent(params, xmlCoefs);
 	app_log() << "Coefficients for state" << state << ":\n";
-	// cerr << "params.size() = " << params.size() << endl;
+	// cerr << "params.size() = " << params.size() << endl; 
+  
 	for (int i=0; i< params.size(); i++) {
 	  std::stringstream sstr;
 #ifndef QMC_COMPLEX
@@ -184,7 +162,8 @@ namespace qmcplusplus
   void 
   OptimizableSPOSet::resetTargetParticleSet(ParticleSet& P)
   {
-
+    GSOrbitals->resetTargetParticleSet(P);
+    if (BasisOrbitals) BasisOrbitals->resetTargetParticleSet(P);
   }
     
   void 
@@ -454,15 +433,34 @@ namespace qmcplusplus
   SPOSetBase*
   OptimizableSPOSet::makeClone() const
   {
-    SPOSetBase *gs, *basis;
+    SPOSetBase *gs, *basis(0);
+    OptimizableSPOSet *clone;
 
     gs = GSOrbitals->makeClone();
     if (BasisOrbitals)
       basis = BasisOrbitals->makeClone();
-
-    OptimizableSPOSet& clone = *(new OptimizableSPOSet(N, gs, basis));
-
-    return &clone;
+    clone = new OptimizableSPOSet(N,gs,basis);
+    
+    clone->C=C;  
+    clone->myVars=myVars;
+    
+    clone->ParamPointers.clear();
+    clone->ParamIndex.clear();
+  for (int i=0; i< N; i++) {
+  for (int j=0; j< M; j++) {
+    std::stringstream sstr;
+#ifndef QMC_COMPLEX
+    clone->ParamPointers.push_back(&(clone->C(i,j)));
+    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+#else
+    clone->ParamPointers.push_back(&(clone->C(i,j).real()));
+    clone->ParamPointers.push_back(&(clone->C(i,j).imag()));
+    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+#endif
+  }
+  }
+    return clone;
   }
 
 

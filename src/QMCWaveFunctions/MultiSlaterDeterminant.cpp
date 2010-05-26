@@ -64,6 +64,7 @@ for(int i=0; i<dets_up.size(); i++)
 //       }
 DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
       adet->set(clone->FirstIndex_up,clone->nels_up);
+      adet->resetTargetParticleSet(tqp);
       clone->dets_up.push_back(adet);
     }
 //     spo = clone->spo_dn;
@@ -79,6 +80,7 @@ for(int i=0; i<dets_dn.size(); i++)
 //       }
 DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
       adet->set(clone->FirstIndex_dn,clone->nels_dn);
+      adet->resetTargetParticleSet(tqp);
       clone->dets_dn.push_back(adet);
     }
 
