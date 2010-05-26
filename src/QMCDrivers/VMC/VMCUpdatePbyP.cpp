@@ -279,12 +279,12 @@ namespace qmcplusplus {
 	makeGaussRandomWithEngine(deltaR,RandomGen);
 	for(int iat=0; iat<W.getTotalNum(); ++iat) {
 	  GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-          PosType dr;
-	  //RealType sc=getDriftScale(m_tauovermass,grad_now);
-	  //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
-          getScaledDrift(m_tauovermass,grad_now,dr);
-          dr += m_sqrttau*deltaR[iat];
-	  
+//           PosType dr;
+// 	  //RealType sc=getDriftScale(m_tauovermass,grad_now);
+// 	  //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
+//           getScaledDrift(m_tauovermass,grad_now,dr);
+//           dr += m_sqrttau*deltaR[iat];
+	  PosType dr(m_sqrttau*deltaR[iat]+m_tauovermass*grad_now);
 	  if(!W.makeMoveAndCheck(iat,dr)) {
 	    ++nReject;
 	    continue;
@@ -306,11 +306,11 @@ namespace qmcplusplus {
 	  //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
 	  RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 	  
-	  //sc=getDriftScale(m_tauovermass,grad_new);
-	  //dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
-          getScaledDrift(m_tauovermass,grad_new,dr);
-          dr = thisWalker.R[iat]-W.R[iat]-dr;
-	  
+// 	  //sc=getDriftScale(m_tauovermass,grad_new);
+// 	  //dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
+//           getScaledDrift(m_tauovermass,grad_new,dr);
+//           dr = thisWalker.R[iat]-W.R[iat]-dr;
+	  dr = thisWalker.R[iat]-W.R[iat]-m_tauovermass*grad_new;
 	  RealType logGb = -m_oneover2tau*dot(dr,dr);
 	  
 	  //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));

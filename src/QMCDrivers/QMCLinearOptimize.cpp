@@ -259,12 +259,14 @@ namespace qmcplusplus
                 }
  //If not rescaling and linear parameters, step size and grad are the same.
 //              LambdaMax=1.0;
-              optparm= currentParameters;
-              for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
+              optparm= currentParameters; 
+              for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1]; 
               
               RealType dopt(0);
               for (int i=0;i<numParams; i++) dopt += optdir[i] * optdir[i];
-              dopt =std::sqrt(dopt)/RealType(numParams);
+              dopt=std::sqrt(dopt);
+              TOL = allowedCostDifference*dopt;
+              dopt /= RealType(numParams);
               
               largeQuarticStep=1e3;
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
