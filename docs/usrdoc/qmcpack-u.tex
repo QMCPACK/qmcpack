@@ -1,8 +1,38 @@
 \documentclass[11pt,letterpaper,fleqn]{report}
 
+%\usepackage{amsmath,amssymb,amsfonts,slashed,bm}
+\usepackage{amsmath,amssymb,amsfonts}
 \usepackage{fullpage}
 %\usepackage{graphicx}
 \usepackage[bookmarks=false,colorlinks=true,linkcolor={blue},pdfstartview={XYZ null null 1.22}]{hyperref}
+\usepackage[usenames,dvipsnames]{color}
+%\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{natbib,mdwlist}
+%\usepackage[tracking=true]{microtype}
+
+%\DeclareMicrotypeSet*[tracking]{my}
+%   { encoding = *,
+%     size     = {-small,Large-},
+%     font     = */*/*/tt/* }
+
+\definecolor{codebg}{gray}{0.80}
+%\SetTracking{encoding=*,shape=tt}{-5}
+\lstloadlanguages{[ISO]C++}
+\newcommand{\icode}[1]{\textcolor{OliveGreen}{\texttt{#1}}}
+\newcommand{\icnsl}[1]{\textcolor{RoyalBlue}{\texttt{#1}}}
+\lstnewenvironment{lstcpp}{\lstset{backgroundcolor=\color{codebg},language=[ISO]C++,basicstyle=\color{OliveGreen}\ttfamily}}{}
+%\lstnewenvironment{lstxml}{\lstset{backgroundcolor=\color{codebg},language=XML}}{}
+%\lstnewenvironment{lstcmake}{\lstset{backgroundcolor=\color{codebg},language=make}}{}
+%\lstnewenvironment{lstcnsl}{\lstset{backgroundcolor=\color{codebg},language=bash,basicstyle=\color{OliveGreen}\tt}}{}
+\lstnewenvironment{lstcnsl}{\lstset{backgroundcolor=\color{codebg},basicstyle=\color{OliveGreen}\ttfamily}}{}
+%\newenvironment{code}{\color{OliveGreen}\verbatim}{\endverbatim}
+%\newenvironment{fpath}{\color{RoyalBlue}\verbatim}{\endverbatim}
+%\newenvironment{code}{\fbox\bgroup}{\egroup}
+%\makeatletter\newenvironment{code}{%
+%   \begin{lrbox}{\@tempboxa}\begin{minipage}{0.9\columnwidth}}{\end{minipage}\end{lrbox}%
+%   \colorbox{OliveGreen}{\usebox{\@tempboxa}}
+%}\makeatother
 
 \title{QMCPACK User Documentation}
 \author{UIUC Electronic Structure Group}

@@ -1,18 +1,319 @@
 \chapter{Getting Started}
-developer contact info here (Jeongnim? or all of us?)
+%developer contact info here (Jeongnim? or all of us?)
 \section{Obtaining QMCPACK}
-can pretty much copy the svn instructions from google code
+QMCPACK is written in C++ and is currently under the New BSD License.  Due to its incomplete compliance with the current ISO C++ standard, it is not released in cross-compilable packages.  It is instead obtained from its source code repository hosted by Google Code.  As described in project website at http://code.google.com/p/qmcpack/, the latest revision of the code can be checked out anonymously using Subversion, with the command
+\begin{lstcnsl}
+svn checkout http://qmcpack.googlecode.com/svn/trunk/ qmcpack-read-only
+\end{lstcnsl}
+where the local directory name \icode{qmcpack-read-only} can be changed as needed.  The repository forbids anonymous users (ie. nonmembers of the project) from committing changes to the code.  The above command will create a directory \icode{qmcpack-read-only} (topdir) which contains
+\begin{verbatim} 
+qmcpack-read-only/
+  CMakeLists.txt
+  src/           : directory for the source
+    CMakeLists.txt
+    dir1/
+      CMakeLists.txt
+    dir2/
+      CMakeLists.txt
+    ....
+  CMake/        : directory with cmake files for external package and compiler
+  config/       : directory with toolchain files for tested systems
+  docs/         : directory with Doxygen files
+  utils/        : directory with utility scripts
+  build/        : empty directory for a build 
+\end{verbatim}
+
+%can pretty much copy the svn instructions from google code
 \section{Building QMCPACK}
-\subsection{Tested environments}
-discuss toolchains here
-\subsection{Compiler settings}
+The aim of this section is to provide a guideline for building QMCPACK in the most generic way.
+A compromise must be made between overly many case-by-case examples and a simplified procedure.
+
+Theoretically speaking, QMCPACK can be used on any *nix machine with recent [meaning $> 4.2$ at least] GNU C/C++ compilers.
+Compiling the QMCPACK source requires the CMake package.
+%For cmake documentation and guides, consult cmake wiki.
+
+Change to qmcpack the top directory (name can be different).
+\begin{lstcnsl}
+cd qmcpack-read-only
+\end{lstcnsl}
+We recommend out-of-source compilation by creating a directory for the libraries and binaries that is separate from the source directory.  If not in \icnsl{qmcpack-read-only} already, create the build directory (eg. \icnsl{build}) then change to the directory.\footnote{Like the top directory, the build directory name is completely arbitrary and it can be created at any location, even outside \icnsl{qmcpack-read-only}.  This is useful if you need more than one build, for testing purposes.}
+\begin{lstcnsl}
+mkdir build
+cd build
+\end{lstcnsl}
+In the build directory, run cmake to create Makefiles, then build the executable using make.
+%(Don't forget ..)
+\begin{lstcnsl}
+cmake ..
+make
+\end{lstcnsl}
+If everything goes well, then you should see \icnsl{qmcpack-read-only/build/bin/qmcapp}.
+%The procedure above, creating build directory and running camke in a new directory, is an example. We can further separate the source (development) and build. Let's assume that the QMCPACK topdir is /home/foo/src/qmcpack. Then, one can build multiple executables in different locations by creating new directories and build QMCPACK in each directory.
+%\begin{verbatim}
+%/home/foo/build/gcc-real
+%/home/foo/build/gcc-complex
+%/home/foo/build/mpi-real
+%....
+%\end{verbatim}
+%
+%In each directory, e.g., /home/foo/build/gcc-real (after setting the environments properly), execute
+%\begin{verbatim}
+%$cmake /home/foo/src/qmcpack
+%$make 
+%\end{verbatim}
+So far, there is no need to change sources or cmake files.  \icode{cmake ..} in the above procedure uses \icnsl{..} because the source tree resides in the parent directory.  If something did not work, simply remove the directory (eg. \icode{rm -rf build}) and start again. 
+
+Additional configurations must be considered if you need to deviate from the default settings of parallel computing (MPI) and multithreading (OpenMP).  See \S{}\ref{ss:compset} for details.
+
+%discuss toolchains here
+\subsection{Compiler settings} \label{ss:compset}
 icc vs. g++
-\subsection{Library dependencies}
-intel mkl, gsl, boost, mpich/openmpi, openmp, cuda, etc.
+
+MPI is automatically enabled if
+\begin{itemize*}
+  \item{} CXX is set to parallel compilers
+  \begin{itemize*}
+    \item{} mpicxx, mpic++, cmpic++ (tungsten at NCSA)
+    \item{} mpCC/mpCC\_r on AIX 
+  \end{itemize*}
+  \item{} mpi.h is found in standard paths, e.g., /usr/include or /usr/local/include
+  \begin{itemize*}
+    \item{} SGI Altix  [?]
+  \end{itemize*}
+\end{itemize*}
+One of these actions will disable MPI
+\begin{itemize*}
+  \item{} Set \icode{QMC\_MPI} environment to 0, eg. \icode{export QMC\_MPI=0} for bash.
+  \item{} Modify \icnsl{topdir/CMakeLists.txt}:
+\begin{verbatim}
+SET(QMC_MPI 0)
+\end{verbatim}
+\end{itemize*}
+
+OpenMP is disabled by default in \icnsl{CMakeLists.txt}.  But, OpenMP is automatically enabled if CMake detects that these compilers are being used:
+\begin{itemize}
+  \item{} Intel compilers
+  \item{} IBM VisualAge compilers
+  \item{} GNU/OpenMP compilers $>$ 4.2.x on Linux 2.6.x kernels, Mac OS X 
+\end{itemize}
+To enable OpenMP for other compilers, one of the following actions will be needed:
+\begin{itemize}
+  \item{} Set \icode{QMC\_OMP} to 1, eg. \icode{export QMC\_OMP=1} for bash.
+  \item{} Modify \icnsl{topdir/CMakeLists.txt}:
+\begin{verbatim}
+SET(QMC_OMP 1)
+\end{verbatim}
+\end{itemize}
+
+If your machine has multiple cores, there is no need to disable OpenMP.  However, make sure to set the environment variables which control OpenMP runs.  Especially with MKL, set
+\begin{verbatim}
+MKL_NUM_THREADS=1
+MKL_SERIAL=YES
+\end{verbatim}
+so that the blas/lapack calls DO NOT USE threaded version.
+
+Note that the default number of threads on your machine may be set to the number of cores (or CPU units). It is always safe to set the number of threads yourself as
+\begin{verbatim}
+export OMP\_NUM\_THREADS=1
+\end{verbatim}
+
+More on cmake
+cmake environment variables
+
+QMCPACK/cmake uses environment variables to determine compiler-time options.
+
+These are most critical environment variables with default values
+\begin{verbatim}
+QMC_MPI=1
+\end{verbatim}
+
+1/0 to enable/disable MPI
+\begin{verbatim}
+QMC_OMP=0
+\end{verbatim}
+
+1/0 to enable/disable OpenMP
+\begin{verbatim}
+QMC_COMPLEX=0
+\end{verbatim}
+
+1/0 to use complex/real for the wavefunctions
+\begin{verbatim}
+QMC_BITS=32
+\end{verbatim}
+
+32/64 for the OS
+
+Each build should use identical variables. If the working shell has different variables from the previous build environments, cmake/make will rebuild everything which can take time. Out-of-source compilation becomes very useful to build different combinations.
+
+Note that separate executables have to be built for real and complex wavefunctions. One can use real wavefunction for the complex-enabled build but it will be extremely inefficient (4-8 times slower). However, complex wavefunctions cannot be used with real-enabled build. 
+
+%\subsection{Library dependencies}
+\subsection{Required utilities and libraries}
+In order to install QMCPACK, users have to install several required packages. These packages are included in standard Linux/cygwin distributions or can be downloaded by following the links. If these libraries are installed in standard directories, /usr /usr/local and /sw (Mac), no action is necessary. Alternatively, environment variables XYZ\_HOME should be set. Here, XYZ stands for the name of package; the build utility can locate the libraries and use them.
+
+With few exceptions, the build utility cmake will look for XYZ\_HOME/include for the header files and XYZ\_HOME/lib for the library files. When multiple environment variables apply to a library, e.g., blas/lapack, the library is searched according to the listed order. 
+%intel mkl, gsl, boost, mpich/openmpi, openmp, cuda, etc.
+\begin{itemize}
+\item{} cmake   utility                 source and binary distribution on multiple platforms
+\item{} blas/lapack     Numerical library       MKL\_HOME, LAPACK, ATLAS         Alternatives: vendor-provided blas, e.g., ESSL
+\item{} hdf5    I/O     HDF5\_HOME, HDF\_HOME     source and binary distribution on multiple platforms
+\item{} libxml2         I/O     LIBXML2\_HOME    Standard library for Linux distributions
+\item{} boost   C++ standard libraries  BOOST\_HOME      Using only the header files. No need to compile anything. Simply download and unpack the package.
+\item{} einspline       c library for 3D bspline        see Using Einspline library     
+\item{} fftw    c library for FFT       FFTW\_HOME       http://www.fftw.org/
+\item{} pygtkglext      OpenGl extensions for Python GTK bindings               For the GUI interface. This package has some dependencies.
+\end{itemize}
+
+On many HPC centers, these packages are managed by utilities like module and softenv. Consult the documentations on each site.
+
+Notes on Numerical Libraries: If lapack/blas or atlas is not in your standard paths, do one of the followings. location is where the libraries are located.
+
+For bash users,
+\begin{verbatim}
+ export LAPACK="-L/location -llapack -lblas"
+ export ATLAS="-L/location -llapack -lf77blas -lcblas -latlas" 
+\end{verbatim}
+For tcsh users,
+\begin{verbatim}
+ setenv LAPACK "-L/location -llapack -lblas"
+ setenv ATLAS "-L/location -llapack -lf77blas -lcblas -latlas"
+\end{verbatim}
+
 \subsection{Configurations known to work}
+\subsubsection{Intel 64 Abe cluster \@ NCSA}
+    *  They are usually installed by the system admins of super computing centers. If not, request the libraries.
+    * Use standard Linux package management tools, e.g., dpkg, yum, to install them. 
+
+Before building
+
+    * Use default mpi library: +mvapich2-intel
+    * Add using SoftEnv: in .soft file or in your login shell
+          o +intel-mkl
+          o +hdf5-1.6.5
+          o +libxml2-2.6.29 
+    * boost is available at /u/ac/jnkim/share/boost
+    * Set environment variables in your shell 
+\begin{verbatim}
+ CXX=mpicxx
+ CC=icc
+ LIBXML2_HOME=/usr/local/libxml2-2.6.29
+ QMC_BITS=64
+ QMC_OMP=1
+\end{verbatim}
+
+\subsubsection{Intel Mac OS X}
+Intel Mac OS X
+From QMCPACK
+
+Basic steps
+
+    * Install cmake and hdf5 via fink (building from source is perfectly acceptable)
+          o Set HDF5\_HOME as
+
+\begin{verbatim}
+            export HDF5_HOME=/sw
+\end{verbatim}
+
+    * libxml2 is most likely in the standard paths, i.e., /usr/include and /usr/lib
+          o Otherwise, use fink and set
+
+\begin{verbatim}
+            export LIBXML2_HOME=/sw
+\end{verbatim}
+
+    * Download and unpack boost
+          o Set BOOST\_HOME to the directory name (full path) of the boost package 
+
+[edit] Few facts
+
+    * Do not install lapack/blas via fink or port
+    * cmake will use Mac Framework and link the libraries automatically 
+
+[edit] Extras
+
+    * The performance of plane-wave depends on blas library. Framework or GotoBlas do not perform as well as MKL.
+    * If Intel compilers and MKL are available, set the environments as 
+
+\begin{verbatim}
+export CXX=icpc
+export CC=icc
+export MKL_HOME=/Library/Frameworks/Intel_MKL.framework/Versions/Current
+\end{verbatim}
+
+    * Then, cmake/make
+    * Check DYLD\_LIBRARY\_PATH. Add the lines below (32->64 for 64bit OS) in the shell 
+
+\begin{verbatim}
+if [ -z "${LD_LIBRARY_PATH}" ]
+then
+  LD_LIBRARY_PATH=$MKL_HOME/lib/32; export LD_LIBRARY_
+PATH
+else
+  LD_LIBRARY_PATH=$MKL_HOME/lib/32:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH
+fi
+
+if [ -z "${DYLD_LIBRARY_PATH}" ]
+then
+  DYLD_LIBRARY_PATH=$MKL_HOME/lib/32:; export DYLD_LIBRARY_PATH
+else
+  DYLD_LIBRARY_PATH=$MKL_HOME/lib/32:$DYLD_LIBRARY_PATH; export DYLD_LIBRARY_PATH
+fi
+\end{verbatim}
+
+\subsection{Tested environments}
+QMCPACK is developed for large-scale high-performance computing systems. We update the status of QMCPACK on the HPC systems the developers have access to and share experiences in dealing with some quirkiness of each system.
+
+In general, the quickest way to build and use QMCPACK is to use a toolchain file for each system. They are available in config directory with the distribution. Current list includes
+\begin{itemize}
+\item{} AbeMvapich2.20091104.cmake : abe@ncsa
+\item{} AbeMvapich2.cmake
+\item{} AbeOpenMPI.cmake
+\item{} BGToolChain.cmake : BlueGeneP
+\item{} BluePrintXL.cmake : BluePrint@ncsa, IBM P5
+\item{} JaguarGNU.cmake : jaguar@ornl, Cray XT
+\item{} KrakenGNU.cmake : kraken@nics, Cray XT
+\item{} LinuxIntel.cmake : generic for LINUX using Intel compilers
+\item{} LOP6\_xlC\_xlc.cmake : huygens@sara, IBM P6, running LINUX, IBM XL compilers
+\item{} LOP6\_xlC\_gcc.cmake: huygens@sara, IBM P6, running LINUX, IBM XLC compiler and GNU C compiler
+\end{itemize}
+Once a toolchain file (mychain.cmake)  is selected,
+\begin{verbatim}
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/mychain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/mychain.cmake ..
+make
+\end{verbatim}
+Feel free to make a local copy in build directory and modify it for your environment. For each platform, only the paths to the external libraries have to be modified. Where the toolchain file is located is not important.
+
+\subsubsection{Cygwin}
+Update qmcpack using svn, especially src/CMakeLists.txt
+ Summary
+
+    * cygwin 1.5.25-7
+    * GCC 3.4.4 
+
+ Libraries
+
+    * cmake : cygwin update
+    * libxml2 : cygwin update
+          o Set LIBXML2\_HOME=/usr/include/libxml2 
+    * boost : select boost-devel using cygwin update
+          o Set BOOST\_HOME=/usr/include/boost-1\_33\_1
+          o Or search the directory where boost/config.hpp resides 
+    * HDF5
+          o download source from HDF5 home page:
+            wget ftp://ftp.hdfgroup.org/HDF5/current16/src/hdf5-1.6.7.tar.gz
+                + Do not use version 1.8.x. 
+          o unpack:
+            tar zxf hdf5-1.6.7.tar.gz
+          o configure and make:
+            cd hdf5-1.6.7; ./configure --prefix=/usr/local; make; make install
+          o Set HDF5\_HOME=/usr/local 
+
 \subsection{Known version conflicts}
 \section{A walk-through example with Si}
-I guess Jaron knows more about 
+I guess Jaron knows more about this...
 \subsection{Input file layout}
 mention just the standard-ness of xml and postpone further discussion to next chapter
 \subsection{Preparing wavefunctions}
