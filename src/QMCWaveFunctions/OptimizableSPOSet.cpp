@@ -30,10 +30,12 @@ namespace qmcplusplus
   {
     string gsName, basisName;
     bool same_k = false;
+    bool mapped_k = false;
     OhmmsAttributeSet attrib;
     attrib.add (gsName,    "gs_sposet");
     attrib.add (basisName, "basis_sposet");
     attrib.add (same_k,    "same_k");
+    attrib.add (mapped_k,    "mapped_k");
     attrib.add (N,         "size");
     attrib.put (node);
 
@@ -79,37 +81,49 @@ namespace qmcplusplus
     app_log() << "  linearopt sposet has " << N << " ground-state orbitals and " 
 	      << M << " basis orbitals.\n";
  
-
-//     if (same_k) {
-//       int off         = BasisOrbitals ? N : 0;
-//       SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
-//       
-//       for (int igs=0; igs<N; igs++) {
-// 	PosType k_gs = GSOrbitals->get_k(igs);
-// 	for (int ib=0; ib<M; ib++) {
-// 	  PosType k_b = basOrbs->get_k(ib+off);
-// 	  if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-10)
-// 	    ;
-// 	}
-//       }
-//     }
-//     else {
-//       for (int igs=0; igs<N; igs++) {
-// 	for (int ib=0; ib<M; ib++) {
-// 	}
-//       }
-//     }
-
+    
+   //Map K points to orbitals.
+   ValueMatrix_t allowedOrbs; allowedOrbs.resize(N,M);
+//    if (mapped_k)
+//    {
+//      cerr<<"Not Done"<<endl;
+//    }
+//    else 
+     if (same_k) 
+   {
+      int off         = BasisOrbitals ? N : 0;
+      SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+      
+      for (int igs=0; igs<N; igs++) {
+        PosType k_gs = GSOrbitals->get_k(igs);
+        for (int ib=0; ib<M; ib++) {
+          PosType k_b = basOrbs->get_k(ib+off);
+          if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-6) 
+            allowedOrbs(igs,ib)=1;
+          else
+            allowedOrbs(igs,ib)=0;
+        }
+      }
+   }
+   else {
+     for (int igs=0; igs<N; igs++) {
+       for (int ib=0; ib<M; ib++) {
+        allowedOrbs(igs,ib)=1;   
+       }
+     }
+   }
+   
     // Now, look for coefficients element
     xmlNodePtr xmlCoefs = node->xmlChildrenNode;
     while (xmlCoefs != NULL) {
       string cname((const char*)xmlCoefs->name);
       if (cname == "coefficients") {
 	string type("0"), id("0");
-	int state=-1;
+	int state=-1; int asize(0);
 	OhmmsAttributeSet cAttrib;
-	cAttrib.add(id, "id");
-	cAttrib.add(type, "type");
+   cAttrib.add(id, "id");
+   cAttrib.add(type, "type");
+   cAttrib.add(asize, "size");
 	cAttrib.add(state, "state");
 	cAttrib.put(xmlCoefs);
 	
@@ -126,15 +140,31 @@ namespace qmcplusplus
 	putContent(params, xmlCoefs);
 	app_log() << "Coefficients for state" << state << ":\n";
 	// cerr << "params.size() = " << params.size() << endl; 
-  
-	for (int i=0; i< params.size(); i++) {
+   //If params is missized resize and initialize to zero.
+   if ((asize)&&(params.size()!=asize)) params.resize(asize,0.0);
+   else asize=params.size();
+//    for (int i=0; i< params.size(); i++) {
+   int indx=0;
+   for (int i=0; i< M; i++) {
 	  std::stringstream sstr;
 #ifndef QMC_COMPLEX
-	  ParamPointers.push_back(&(C(state,i)));
-	  ParamIndex.push_back(TinyVector<int,2>(state,i));
-	  sstr << id << "_" << i;
-	  C(state,i) = params[i];
-	  myVars.insert(sstr.str(),C(state,i),true,optimize::LINEAR_P);
+// 	  ParamPointers.push_back(&(C(state,i)));
+// 	  ParamIndex.push_back(TinyVector<int,2>(state,i));
+     sstr << id << "_" << indx;
+     if (allowedOrbs(state,i))
+     {
+       ParamPointers.push_back(&(C(state,i)));
+       ParamIndex.push_back(TinyVector<int,2>(state,i));
+	    if (indx<asize) C(state,i) = params[indx];
+	    else C(state,i) = 0.0;
+	    myVars.insert(sstr.str(),C(state,i),true,optimize::LINEAR_P);
+       indx++;
+     }
+     else
+     {
+       C(state,i) = 0.0;
+//        myVars.insert(sstr.str(),C(state,i),false,optimize::LINEAR_P);
+     }
 #else
 	  ParamPointers.push_back(&(C(state,i).real()));
 	  ParamPointers.push_back(&(C(state,i).imag()));
@@ -445,21 +475,31 @@ namespace qmcplusplus
     clone->myVars=myVars;
     
     clone->ParamPointers.clear();
-    clone->ParamIndex.clear();
-  for (int i=0; i< N; i++) {
-  for (int j=0; j< M; j++) {
-    std::stringstream sstr;
-#ifndef QMC_COMPLEX
-    clone->ParamPointers.push_back(&(clone->C(i,j)));
-    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
-#else
-    clone->ParamPointers.push_back(&(clone->C(i,j).real()));
-    clone->ParamPointers.push_back(&(clone->C(i,j).imag()));
-    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
-    clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
-#endif
-  }
-  }
+    clone->ParamIndex=ParamIndex;
+    for(int i=0; i<ParamIndex.size() ;i++)
+    {
+      #ifndef QMC_COMPLEX
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0])));
+      #else
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0]).real()));
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0]).imag()));
+      #endif
+    }
+    
+//   for (int i=0; i< N; i++) {
+//   for (int j=0; j< M; j++) {
+//     std::stringstream sstr;
+// #ifndef QMC_COMPLEX
+//     clone->ParamPointers.push_back(&(clone->C(i,j)));
+//     clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+// #else
+//     clone->ParamPointers.push_back(&(clone->C(i,j).real()));
+//     clone->ParamPointers.push_back(&(clone->C(i,j).imag()));
+//     clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+//     clone->ParamIndex.push_back(TinyVector<int,2>(i,j));
+// #endif
+//   }
+//   }
     return clone;
   }
 
