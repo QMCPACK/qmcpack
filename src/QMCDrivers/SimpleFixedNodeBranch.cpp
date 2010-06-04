@@ -381,9 +381,12 @@ void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers,
     
     R2Accepted(1.0e-10); 
     R2Proposed(1.0e-10);
-    
+BranchMode.set(B_DMCSTAGE,0);    
     bitset<B_MODE_MAX> bmode(BranchMode);
-    
+this->reset();   
+MyEstimator->reset();
+WalkerController->put(myNode);
+ 
     //assign current Eref and a large number for variance
     WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
     vParam[B_TAUEFF]=vParam[B_TAU];

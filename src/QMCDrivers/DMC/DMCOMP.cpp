@@ -50,14 +50,16 @@ namespace qmcplusplus {
     
   void DMCOMP::resetComponents(xmlNodePtr cur)
   {
+    qmcNode=cur;
     m_param.put(cur);
     put(cur);
-    app_log()<<"DMCOMP::resetComponents"<<endl;
+    //app_log()<<"DMCOMP::resetComponents"<<endl;
     Estimators->reset();
     branchEngine->resetRun(cur);
-    
-    delete Movers[0];
-    for(int ip=1; ip<NumThreads; ++ip)
+    branchEngine->checkParameters(W);    
+
+    //delete Movers[0];
+    for(int ip=0; ip<NumThreads; ++ip)
     {
       delete Movers[ip]; delete estimatorClones[ip]; delete branchClones[ip];
       estimatorClones[ip]= new EstimatorManager(*Estimators);
