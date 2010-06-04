@@ -52,27 +52,31 @@ namespace qmcplusplus {
   {
     m_param.put(cur);
     put(cur);
-    
+    app_log()<<"DMCOMP::resetComponents"<<endl;
     Estimators->reset();
     branchEngine->resetRun(cur);
     
+    delete Movers[0];
+    for(int ip=1; ip<NumThreads; ++ip)
+    {
+      delete Movers[ip]; delete estimatorClones[ip]; delete branchClones[ip];
+      estimatorClones[ip]= new EstimatorManager(*Estimators);
+      estimatorClones[ip]->setCollectionMode(false);
+      branchClones[ip] = new BranchEngineType(*branchEngine);
+    }
     
 #pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
       {
-        delete Movers[ip]; delete estimatorClones[ip]; delete branchClones[ip];
-        estimatorClones[ip]= new EstimatorManager(*Estimators);
-        estimatorClones[ip]->setCollectionMode(false);
-
-        branchClones[ip] = new BranchEngineType(*branchEngine);
         if(QMCDriverMode[QMC_UPDATE_MODE])
         {
           if(UseFastGrad == "yes")
             Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->put(qmcNode);
+          Movers[ip]->put(cur);
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         else
         {
@@ -80,11 +84,12 @@ namespace qmcplusplus {
             Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           else 
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          Movers[ip]->put(qmcNode);
+          Movers[ip]->put(cur);
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
-    
+      
   }
 
 

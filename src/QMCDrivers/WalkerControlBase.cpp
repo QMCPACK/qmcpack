@@ -138,6 +138,7 @@ namespace qmcplusplus {
   void WalkerControlBase::reset() 
   {
     std::fill(accumData.begin(),accumData.end(),0.0);
+    std::fill(curData.begin(),curData.end(),0.0);
   }
 
   int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
