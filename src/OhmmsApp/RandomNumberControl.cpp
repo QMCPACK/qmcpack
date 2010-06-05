@@ -98,15 +98,18 @@ namespace APPNAMESPACE
     vector<uint_type> myprimes;
     PrimeNumbers.get(baseoffset,nthreads,myprimes);
 
-    ostringstream o;
-    o << "  Random seeds Node = " << rank << ":";
-    for(int ip=0; ip<nthreads; ip++)
+    if(nprocs<4)
     {
-      int offset=baseoffset+ip;
-      Children[ip]->init(rank,nprocs,myprimes[ip],offset);
-      o << setw(12) << myprimes[ip];
+      ostringstream o;
+      o << "  Random seeds Node = " << rank << ":";
+      for(int ip=0; ip<nthreads; ip++)
+      {
+        int offset=baseoffset+ip;
+        Children[ip]->init(rank,nprocs,myprimes[ip],offset);
+        o << setw(12) << myprimes[ip];
+      }
+      cout << o.str() << endl;
     }
-    cout << o.str() << endl;
   }
 
   xmlNodePtr 
