@@ -44,6 +44,7 @@ namespace qmcplusplus
       std::vector<std::string> ParameterNames;
       std::string elementType, pairType;
       int ResetCount;
+      int ReportLevel;
 
       ///constructor
       BsplineFunctor(real_type cusp=0.0) :
@@ -64,15 +65,20 @@ namespace qmcplusplus
               0.0, 0.0,  0.0,  3.0,
               0.0, 0.0,  0.0, -3.0,
               0.0, 0.0,  0.0,  1.0),
-          CuspValue(cusp), ResetCount(0)
+          CuspValue(cusp), ResetCount(0), ReportLevel(0)
       {
         cutoff_radius = 0.0;
       }
 
       OptimizableFunctorBase* makeClone() const
-        {
-          return new BsplineFunctor(*this);
-        }
+      {
+        return new BsplineFunctor(*this);
+      }
+
+      inline void setReportLevel(int i)
+      {
+        ReportLevel=i;
+      }
 
       void resize(int n)
       {
@@ -103,28 +109,6 @@ namespace qmcplusplus
         SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
         for (int i=2; i<Parameters.size(); i++)
           SplineCoefs[i+1] = Parameters[i];
-//#if !defined(HAVE_MPI)
-//      string fname = (elementType != "") ? elementType : pairType;
-//      fname = fname + ".dat";
-//      // fprintf (stderr, "Writing %s file.\n", fname.c_str());
-//      FILE *fout = fopen (fname.c_str(), "w");
-//      for (real_type r=1.0e-5; r<cutoff_radius; r+=0.01) {
-//        real_type eps = 1.0e-6;
-//        real_type du, d2u, du_FD, d2u_FD;
-//        real_type u = evaluate (r, du, d2u);
-//        real_type uplus  = evaluate(r+eps);
-//        real_type uminus = evaluate(r-eps);
-//        du_FD  = (uplus-uminus)/(2.0*eps);
-//        d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
-//        fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n",
-//            r, evaluate(r), du, du_FD, d2u, d2u_FD);
-//      }
-//      fclose (fout);
-//      //cerr << "SplineCoefs = ";
-//      //for (int i=0; i<SplineCoefs.size(); i++)
-//      //  cerr << SplineCoefs[i] << " ";
-//      //cerr << endl;
-//#endif
       }
 
       inline real_type evaluate(real_type r)
@@ -455,15 +439,15 @@ namespace qmcplusplus
       void resetParameters(const opt_variables_type& active)
       {
         for (int i=0; i<Parameters.size(); ++i)
-          {
-            int loc=myVars.where(i);
-            if (loc>=0) Parameters[i]=myVars[i]=active[loc];
-          }
+        {
+          int loc=myVars.where(i);
+          if (loc>=0) Parameters[i]=myVars[i]=active[loc];
+        }
         if (ResetCount++ == 100)
-          {
-            ResetCount = 0;
-            //print();
-          }
+        {
+          ResetCount = 0;
+          if(ReportLevel) print();
+        }
         reset();
       }
 
@@ -499,5 +483,5 @@ namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineConstraints.h 1691 2007-02-01 21:51:50Z jnkim $
+ * $Id: BsplineFunctor.h 1691 2007-02-01 21:51:50Z jnkim $
  ***************************************************************************/

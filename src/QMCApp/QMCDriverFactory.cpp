@@ -119,6 +119,8 @@ namespace qmcplusplus {
     WhatToDo[UPDATE_MODE]= (update_mode == "pbyp");
     WhatToDo[GPU_MODE      ] = (gpu_tag     == "yes");
 
+    OhmmsInfo::flush();
+
     QMCRunType newRunType = DUMMY_RUN;
     if(curName != "qmc") qmc_mode=curName;
     int nchars=qmc_mode.size();

@@ -128,7 +128,6 @@ VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift(MCWalkerConfiguration& w, TrialWa
     QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg)
 {
-  app_log() << "VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift" << endl;
   add_vmc_timers(myTimers);
 }
 
@@ -260,7 +259,6 @@ VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
     QMCHamiltonian& h, RandomGenerator_t& rg) :
     QMCUpdateBase(w,psi,h,rg)
 {
-  app_log() << "VMCUpdatePbyPWithDriftFast::VMCUpdatePbyPWithDriftFast" << endl;
   add_vmc_timers(myTimers);
 }
 

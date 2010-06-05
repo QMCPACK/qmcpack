@@ -150,12 +150,11 @@ namespace APPNAMESPACE
 
       if(offset_in==0)
       {
-        offset_in=static_cast<uint_type>(std::time(0))%4096;
+        offset_in=static_cast<uint_type>(std::time(0))%1024;
         mpi::bcast(*OHMMS::Controller,offset_in);
-        //OHMMS::Controller->bcast(offset_in);//broadcast the seed
       }
       else
-        offset_in%=4096;
+        offset_in%=1024;
 
       Offset=offset_in;
       vector<uint_type> mySeeds;

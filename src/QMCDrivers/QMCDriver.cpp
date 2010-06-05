@@ -321,6 +321,8 @@ namespace qmcplusplus {
 	tcur=tcur->next;
       }
     }
+
+    if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
     
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
@@ -348,9 +350,9 @@ namespace qmcplusplus {
       nStepsBetweenSamples = (int)std::floor(RealType(nStepsTotal*nTargetWalkers*Nprocs)/RealType(nTargetSamples));
       Period4WalkerDump = nStepsBetweenSamples;
     }
-    else Period4WalkerDump=(nBlocks+1)*nSteps;
+    else 
+      Period4WalkerDump=(nBlocks+1)*nSteps;
 
-    if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
 
     app_log() << "  Walker Check Points are dumped every " << Period4CheckPoint << " steps." << endl;
     if (Period4WalkerDump>0) app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;

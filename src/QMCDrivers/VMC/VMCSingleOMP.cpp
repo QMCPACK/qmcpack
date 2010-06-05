@@ -137,47 +137,60 @@ namespace qmcplusplus
 
 #pragma omp parallel for
         for (int ip=0; ip<NumThreads; ++ip)
+        {
+          ostringstream os;
+          estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
+          estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
+          estimatorClones[ip]->setCollectionMode(false);
+          Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+          hClones[ip]->setRandomGenerator(Rng[ip]);
+
+          branchClones[ip] = new BranchEngineType(*branchEngine);
+
+          //         if(reweight=="yes")
+          //         {
+          //           if (ip== 0) app_log() << "  WFMCUpdateAllWithReweight"<<endl;
+          //           Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
+          //         }
+          //         else
+          if (reweight=="psi")
           {
-            estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
-            estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-            estimatorClones[ip]->setCollectionMode(false);
-            Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-            hClones[ip]->setRandomGenerator(Rng[ip]);
-
-            branchClones[ip] = new BranchEngineType(*branchEngine);
-
-//         if(reweight=="yes")
-//         {
-//           if (ip== 0) app_log() << "  WFMCUpdateAllWithReweight"<<endl;
-//           Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
-//         }
-//         else
-            if (reweight=="psi")
-              {
-                if (ip== 0) app_log() << "  Sampling Psi to increase number of walkers near nodes"<<endl;
-                if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-              }
-            else if (QMCDriverMode[QMC_UPDATE_MODE])
-              {
-                if (ip== 0) app_log() << "  PbyP moves"<<endl;
-                if (UseDrift == "yes")
-//                   Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                  Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                else
-                  Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-              }
-            else
-              {
-                if (ip== 0) app_log() << "  Walker moves"<<endl;
-                if (UseDrift == "yes")
-                  Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                else
-                  Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-                //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-              }
+            os << "  Sampling Psi to increase number of walkers near nodes"<<endl;
+            if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           }
+          else if (QMCDriverMode[QMC_UPDATE_MODE])
+          {
+            if (UseDrift == "yes")
+            {
+              os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
+              Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+              // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            }
+            else
+            {
+              os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
+              Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            }
+            //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          }
+          else
+          {
+            if (UseDrift == "yes")
+            {
+              os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<<endl;
+              Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            }
+            else
+            {
+              os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
+              Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            }
+            //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          }
+
+          if(ip==0) app_log() << os.str() << endl;
+        }
       }
 
 #pragma omp parallel  for

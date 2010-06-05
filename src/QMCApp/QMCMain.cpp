@@ -82,7 +82,7 @@ namespace qmcplusplus {
     //initialize all the instances of distance tables and evaluate them 
     ptclPool->reset();
 
-
+    OhmmsInfo::flush();
     //write stuff
     app_log() << "=========================================================\n";
     app_log() << " Summary of QMC systems \n";
@@ -395,6 +395,8 @@ namespace qmcplusplus {
       qmcDriver->setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
+
+      OhmmsInfo::flush();
 
       Timer qmcTimer;
       qmcDriver->run();
