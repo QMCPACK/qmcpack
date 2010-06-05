@@ -164,15 +164,18 @@ namespace APPNAMESPACE
       app_log() << "  Random number offset = " << Offset 
         <<  "  seeds = " << mySeeds[0] <<"-" << mySeeds[nprocs*omp_get_max_threads()] <<  endl;
 
-      int imax=8*(mySeeds.size()/8);
-      int jmax=std::min(std::size_t(8),mySeeds.size());
-      for(int i=0; i<imax;)
+      if(nprocs<4)
       {
-        for(int j=0; j<jmax; j++, i++) app_log() <<  std::setw(12) << mySeeds[i];
+        int imax=8*(mySeeds.size()/8);
+        int jmax=std::min(std::size_t(8),mySeeds.size());
+        for(int i=0; i<imax;)
+        {
+          for(int j=0; j<jmax; j++, i++) app_log() <<  std::setw(12) << mySeeds[i];
+          app_log() << endl;
+        }
+        for(int i=imax; i<mySeeds.size(); i++) app_log() <<  std::setw(12) << mySeeds[i];
         app_log() << endl;
       }
-      for(int i=imax; i<mySeeds.size(); i++) app_log() <<  std::setw(12) << mySeeds[i];
-      app_log() << endl;
 
       make_children();
       NeverBeenInitialized = false; 
