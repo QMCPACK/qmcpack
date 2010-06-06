@@ -33,8 +33,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8"
-     inkscape:cx="159.0715"
-     inkscape:cy="299.80344"
+     inkscape:cx="248.4429"
+     inkscape:cy="329.57447"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -1121,23 +1121,23 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="32.362183"
+       x="457.5"
+       y="32.36216"
        id="text4152"><tspan
          sodipodi:role="line"
          id="tspan4154"
-         x="375"
-         y="32.362183">major,minor,patch</tspan></text>
+         x="457.5"
+         y="32.36216">major,minor,patch</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="17.362183"
+       x="457.5"
+       y="17.362162"
        id="text4156"><tspan
          sodipodi:role="line"
          id="tspan4158"
-         x="375"
-         y="17.362183">&quot;ES-HDF&quot;</tspan></text>
+         x="457.5"
+         y="17.362162">&quot;ES-HDF&quot;</tspan></text>
     <text
        id="text4160"
        y="77.362183"
@@ -1151,13 +1151,13 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="77.362183"
+       x="457.5"
+       y="77.36216"
        id="text4164"><tspan
          sodipodi:role="line"
          id="tspan4166"
-         x="375"
-         y="77.362183">primitive lattice vectors</tspan></text>
+         x="457.5"
+         y="77.36216">primitive lattice vectors</tspan></text>
     <g
        transform="matrix(0.14285714,0,0,0.14285714,91.071428,282.73899)"
        id="g4168">
@@ -1700,11 +1700,11 @@
     </g>
     <text
        id="text4418"
-       y="429.86215"
+       y="437.36215"
        x="90"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
        xml:space="preserve"><tspan
-         y="429.86215"
+         y="437.36215"
          x="90"
          id="tspan4420"
          sodipodi:role="line">number_of_atomic_orbitals</tspan></text>
@@ -3034,11 +3034,11 @@
        transform="matrix(0,1,-1,0,0,0)"
        id="text5112"
        y="-120"
-       x="763.75348"
+       x="771.25348"
        style="font-size:12px;font-style:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
        xml:space="preserve"><tspan
          y="-120"
-         x="763.75348"
+         x="771.25348"
          id="tspan5114"
          sodipodi:role="line">...</tspan></text>
     <text
@@ -3575,13 +3575,13 @@
     <text
        sodipodi:linespacing="125%"
        id="text5356"
-       y="-5.1378388"
-       x="375"
+       y="-5.1378603"
+       x="457.5"
        style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
        xml:space="preserve"><tspan
          style="font-size:16px;font-style:oblique;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold Oblique"
-         y="-5.1378388"
-         x="375"
+         y="-5.1378603"
+         x="457.5"
          id="tspan5358"
          sodipodi:role="line">Description</tspan></text>
     <text
@@ -3597,13 +3597,13 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="92.36216"
+       x="457.5"
+       y="92.362137"
        id="text5364"><tspan
          sodipodi:role="line"
          id="tspan5366"
-         x="375"
-         y="92.36216">1 for periodic, 0 for open</tspan></text>
+         x="457.5"
+         y="92.362137">1 for periodic, 0 for open</tspan></text>
     <text
        id="text5368"
        y="122.36216"
@@ -3616,12 +3616,12 @@
          sodipodi:role="line">int</tspan></text>
     <text
        id="text5372"
-       y="122.36216"
-       x="375"
+       y="122.36214"
+       x="457.5"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
        xml:space="preserve"><tspan
-         y="122.36216"
-         x="375"
+         y="122.36214"
+         x="457.5"
          id="tspan5374"
          sodipodi:role="line">number of atoms in primitive cell</tspan></text>
     <text
@@ -3637,13 +3637,13 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="137.36217"
+       x="457.5"
+       y="137.36215"
        id="text5380"><tspan
          sodipodi:role="line"
          id="tspan5382"
-         x="375"
-         y="137.36217">number of atomic species</tspan></text>
+         x="457.5"
+         y="137.36215">number of atomic species</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -3657,13 +3657,13 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="152.36217"
+       x="457.5"
+       y="152.36215"
        id="text5388"><tspan
          sodipodi:role="line"
          id="tspan5390"
-         x="375"
-         y="152.36217">Absolute positions in bohr</tspan></text>
+         x="457.5"
+         y="152.36215">absolute positions in bohr</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -3687,23 +3687,23 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="167.36217"
+       x="457.5"
+       y="167.36215"
        id="text5400"><tspan
          sodipodi:role="line"
          id="tspan5402"
-         x="375"
-         y="167.36217">Position in units of primitive vectors</tspan></text>
+         x="457.5"
+         y="167.36215">position in units of primitive vectors</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="375"
-       y="182.36217"
+       x="457.5"
+       y="182.36215"
        id="text5404"><tspan
          sodipodi:role="line"
          id="tspan5406"
-         x="375"
-         y="182.36217">Indices of species listed below</tspan></text>
+         x="457.5"
+         y="182.36215">Indices of species listed below</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -3828,5 +3828,665 @@
          x="120"
          id="tspan5464"
          sodipodi:role="line">valence_charge</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="212.36217"
+       id="text5466"><tspan
+         sodipodi:role="line"
+         id="tspan5468"
+         x="277.5"
+         y="212.36217">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="212.36215"
+       id="text5470"><tspan
+         sodipodi:role="line"
+         id="tspan5472"
+         x="457.5"
+         y="212.36215">atomic number of the species</tspan></text>
+    <text
+       id="text5474"
+       y="227.36217"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="227.36217"
+         x="277.5"
+         id="tspan5476"
+         sodipodi:role="line">double</tspan></text>
+    <text
+       id="text5478"
+       y="227.36215"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="227.36215"
+         x="457.5"
+         id="tspan5480"
+         sodipodi:role="line">atomic mass</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="242.36217"
+       id="text5482"><tspan
+         sodipodi:role="line"
+         id="tspan5484"
+         x="277.5"
+         y="242.36217">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="242.36215"
+       id="text5486"><tspan
+         sodipodi:role="line"
+         id="tspan5488"
+         x="457.5"
+         y="242.36215">name of atomic species (e.g. C)</tspan></text>
+    <text
+       id="text5490"
+       y="257.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="257.36215"
+         x="277.5"
+         id="tspan5492"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5494"
+       y="257.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="257.36212"
+         x="457.5"
+         id="tspan5496"
+         sodipodi:role="line">pseudopotential file name</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="272.36215"
+       id="text5498"><tspan
+         sodipodi:role="line"
+         id="tspan5500"
+         x="277.5"
+         y="272.36215">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="272.36212"
+       id="text5502"><tspan
+         sodipodi:role="line"
+         id="tspan5504"
+         x="457.5"
+         y="272.36212">charge of pseudo-ion</tspan></text>
+    <text
+       id="text5506"
+       y="332.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="332.36215"
+         x="277.5"
+         id="tspan5508"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5510"
+       y="332.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="332.36212"
+         x="457.5"
+         id="tspan5512"
+         sodipodi:role="line">number of electrons in the primitive cell</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="347.36215"
+       id="text5514"><tspan
+         sodipodi:role="line"
+         id="tspan5516"
+         x="277.5"
+         y="347.36215">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="347.36212"
+       id="text5518"><tspan
+         sodipodi:role="line"
+         id="tspan5520"
+         x="457.5"
+         y="347.36212">number of k-points</tspan></text>
+    <text
+       id="text5522"
+       y="362.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="362.36215"
+         x="277.5"
+         id="tspan5524"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5526"
+       y="362.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="362.36212"
+         x="457.5"
+         id="tspan5528"
+         sodipodi:role="line">number of spins (1 or 2)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="377.36215"
+       id="text5538"><tspan
+         sodipodi:role="line"
+         id="tspan5540"
+         x="277.5"
+         y="377.36215">string</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="377.36212"
+       id="text5542"><tspan
+         sodipodi:role="line"
+         id="tspan5544"
+         x="457.5"
+         y="377.36212">exchange-correlation functional</tspan></text>
+    <text
+       id="text5546"
+       y="392.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="392.36215"
+         x="277.5"
+         id="tspan5548"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5550"
+       y="392.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="392.36212"
+         x="457.5"
+         id="tspan5552"
+         sodipodi:role="line">total energy in Hartrees</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="407.36215"
+       id="text5554"><tspan
+         sodipodi:role="line"
+         id="tspan5556"
+         x="277.5"
+         y="407.36215">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="407.36212"
+       id="text5558"><tspan
+         sodipodi:role="line"
+         id="tspan5560"
+         x="457.5"
+         y="407.36212">1 if real-space orbitals are complex</tspan></text>
+    <text
+       id="text5562"
+       y="422.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="422.36215"
+         x="277.5"
+         id="tspan5564"
+         sodipodi:role="line">int[3]</tspan></text>
+    <text
+       id="text5566"
+       y="422.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="422.36212"
+         x="457.5"
+         id="tspan5568"
+         sodipodi:role="line">number of points in real-space mesh</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="437.36215"
+       id="text5570"><tspan
+         sodipodi:role="line"
+         id="tspan5572"
+         x="277.5"
+         y="437.36215">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="437.36212"
+       id="text5574"><tspan
+         sodipodi:role="line"
+         id="tspan5576"
+         x="457.5"
+         y="437.36212">number of atomic orbitals (may be 0)</tspan></text>
+    <text
+       id="text5578"
+       y="452.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="452.36215"
+         x="277.5"
+         id="tspan5580"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5582"
+       y="452.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="452.36212"
+         x="457.5"
+         id="tspan5584"
+         sodipodi:role="line">1 if derivatives of orbitals are present</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="482.36215"
+       id="text5586"><tspan
+         sodipodi:role="line"
+         id="tspan5588"
+         x="277.5"
+         y="482.36215">int</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="482.36212"
+       id="text5590"><tspan
+         sodipodi:role="line"
+         id="tspan5592"
+         x="457.5"
+         y="482.36212">number of reciprocal lattice vectors</tspan></text>
+    <text
+       id="text5594"
+       y="497.36215"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="497.36215"
+         x="277.5"
+         id="tspan5596"
+         sodipodi:role="line">int[N][3]</tspan></text>
+    <text
+       id="text5598"
+       y="497.36212"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="497.36212"
+         x="457.5"
+         id="tspan5600"
+         sodipodi:role="line">g-vectors in units of primitive reciprocal lattice</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="512.36218"
+       id="text5602"><tspan
+         sodipodi:role="line"
+         id="tspan5604"
+         x="277.5"
+         y="512.36218">double[3]</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="512.36218"
+       id="text5606"><tspan
+         sodipodi:role="line"
+         id="tspan5608"
+         x="457.5"
+         y="512.36218">k-point in units of primitive reciprocla lattice</tspan></text>
+    <text
+       id="text5610"
+       y="527.36218"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="527.36218"
+         x="277.5"
+         id="tspan5612"
+         sodipodi:role="line">double</tspan></text>
+    <text
+       id="text5614"
+       y="527.36218"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="527.36218"
+         x="457.5"
+         id="tspan5616"
+         sodipodi:role="line">weight for this k-point</tspan></text>
+    <text
+       id="text5618"
+       y="557.36218"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="557.36218"
+         x="277.5"
+         id="tspan5620"
+         sodipodi:role="line">int</tspan></text>
+    <text
+       id="text5622"
+       y="557.36218"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="557.36218"
+         x="457.5"
+         id="tspan5624"
+         sodipodi:role="line">number of orbitals for this k-point and spin</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="572.36218"
+       id="text5626"><tspan
+         sodipodi:role="line"
+         id="tspan5628"
+         x="277.5"
+         y="572.36218">double[N]</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="572.36218"
+       id="text5630"><tspan
+         sodipodi:role="line"
+         id="tspan5632"
+         x="457.5"
+         y="572.36218">occupation for each state</tspan></text>
+    <text
+       id="text5634"
+       y="587.36218"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="587.36218"
+         x="277.5"
+         id="tspan5636"
+         sodipodi:role="line">double[N]</tspan></text>
+    <text
+       id="text5638"
+       y="587.36218"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="587.36218"
+         x="457.5"
+         id="tspan5640"
+         sodipodi:role="line">eigenvalues in Hartrees</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="277.5"
+       y="624.86218"
+       id="text5642"><tspan
+         sodipodi:role="line"
+         id="tspan5644"
+         x="277.5"
+         y="624.86218">double[][2]</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="457.5"
+       y="624.86218"
+       id="text5646"><tspan
+         sodipodi:role="line"
+         id="tspan5648"
+         x="457.5"
+         y="624.86218">complex coefficients corresponding to g-vectors</tspan></text>
+    <text
+       id="text5650"
+       y="639.86218"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:100%;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"
+       sodipodi:linespacing="100%"><tspan
+         y="639.86218"
+         x="277.5"
+         id="tspan5652"
+         sodipodi:role="line"
+         dy="0 0 0 0 0 0 0 0 3.5714288 -3.5714288 0 0 3.5714288 -3.5714288 0 0 3.5714288 -3.5714288">double[N<tspan
+   style="font-size:8px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+   id="tspan5662">x</tspan>][N<tspan
+   style="font-size:8px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+   id="tspan5660">y</tspan>][N<tspan
+   style="-inkscape-font-specification:Bitstream Vera Sans;font-family:Bitstream Vera Sans;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:8px;text-anchor:start;text-align:start;writing-mode:lr;line-height:100%"
+   id="tspan5664">z</tspan>][1 or 2]</tspan></text>
+    <text
+       id="text5654"
+       y="639.86218"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="639.86218"
+         x="457.5"
+         id="tspan5656"
+         sodipodi:role="line">real or complex coefficients on psi_r_mesh</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 45,870 0,37.5 15,0"
+       id="path5666"
+       transform="translate(0,62.362161)" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="90"
+       y="969.86218"
+       id="text5668"><tspan
+         sodipodi:role="line"
+         id="tspan5670"
+         x="90"
+         y="969.86218">density</tspan></text>
+    <g
+       id="g5672"
+       transform="matrix(0.14285714,0,0,0.14285714,91.071428,965.23883)">
+      <path
+         id="path5674"
+         d="m -165,-35.137817 0,67.5 105,0 0,-67.5 -75,0 -7.5,-7.5 -15,0 -7.5,7.5 z"
+         style="fill:#ffeda3;fill-opacity:1;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         id="path5676"
+         d="m -165,-35.137817 7.5,7.5 15,0 7.5,-7.5"
+         style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    </g>
+    <g
+       id="g5678"
+       transform="matrix(0.14285714,0,0,0.14285714,121.07143,1025.239)">
+      <path
+         id="path5680"
+         d="m -165,-35.137817 0,67.5 105,0 0,-67.5 -75,0 -7.5,-7.5 -15,0 -7.5,7.5 z"
+         style="fill:#ffeda3;fill-opacity:1;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         id="path5682"
+         d="m -165,-35.137817 7.5,7.5 15,0 7.5,-7.5"
+         style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="120"
+       y="1029.8622"
+       id="text5684"><tspan
+         sodipodi:role="line"
+         id="tspan5686"
+         x="120"
+         y="1029.8622">spin_0</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 75,1014.8622 0,14.9999 15,0"
+       id="path5688"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 105,1037.3621 0,7.5 15,0"
+       id="path5692" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 105,1044.8621 0,15 15,0"
+       id="path5696" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="127.5"
+       y="1044.8622"
+       id="text5698"><tspan
+         sodipodi:role="line"
+         id="tspan5700"
+         x="127.5"
+         y="1044.8622">density_r</tspan></text>
+    <text
+       id="text5702"
+       y="1059.8622"
+       x="127.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="1059.8622"
+         x="127.5"
+         id="tspan5704"
+         sodipodi:role="line">density_g</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 75,1029.8621 0,45 15,0"
+       id="path5706" />
+    <g
+       transform="matrix(0.14285714,0,0,0.14285714,121.07143,1070.239)"
+       id="g5708">
+      <path
+         style="fill:#ffeda3;fill-opacity:1;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         d="m -165,-35.137817 0,67.5 105,0 0,-67.5 -75,0 -7.5,-7.5 -15,0 -7.5,7.5 z"
+         id="path5710" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         d="m -165,-35.137817 7.5,7.5 15,0 7.5,-7.5"
+         id="path5712" />
+    </g>
+    <text
+       id="text5714"
+       y="1074.8622"
+       x="120"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="1074.8622"
+         x="120"
+         id="tspan5716"
+         sodipodi:role="line">spin_0</tspan></text>
+    <text
+       transform="matrix(0,1,-1,0,0,0)"
+       id="text5718"
+       y="-97.5"
+       x="1078.5741"
+       style="font-size:12px;font-style:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="-97.5"
+         x="1078.5741"
+         id="tspan5720"
+         sodipodi:role="line">...</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 75,915 0,7.5 15,0"
+       id="path5722"
+       transform="translate(0,62.362161)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 75,922.5 0,15 15,0"
+       id="path5724"
+       transform="translate(0,62.362161)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 75,937.5 0,15 15,0"
+       id="path5726"
+       transform="translate(0,62.362161)" />
+    <text
+       id="text5728"
+       y="984.86218"
+       x="97.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="984.86218"
+         x="97.5"
+         id="tspan5730"
+         sodipodi:role="line">number_of_gvectors</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="97.5"
+       y="999.86218"
+       id="text5732"><tspan
+         sodipodi:role="line"
+         id="tspan5734"
+         x="97.5"
+         y="999.86218">gvectors</tspan></text>
+    <text
+       id="text5736"
+       y="1014.8622"
+       x="97.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="1014.8622"
+         x="97.5"
+         id="tspan5738"
+         sodipodi:role="line">mesh</tspan></text>
+    <text
+       id="text5740"
+       y="654.86218"
+       x="277.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:100%;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"
+       sodipodi:linespacing="100%"><tspan
+         y="654.86218"
+         x="277.5"
+         id="tspan5742"
+         sodipodi:role="line"
+         dy="0 0 0 0 0 0 0 0 3.5714288 0 -3.5714288 0 0 0 3.5714288 0 0 -3.5714288 0 0 -3.5714288 3.5714288">double[N<tspan
+   style="-inkscape-font-specification:Bitstream Vera Sans;font-family:Bitstream Vera Sans;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:8px;text-anchor:start;text-align:start;writing-mode:lr;line-height:100%"
+   id="tspan5752">sp</tspan>][(l<tspan
+   style="font-size:8px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+   id="tspan5750">max</tspan>+1)<tspan
+   style="font-size:8px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+   id="tspan5748">2</tspan>][2]</tspan></text>
+    <text
+       id="text5744"
+       y="654.86218"
+       x="457.5"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="654.86218"
+         x="457.5"
+         id="tspan5746"
+         sodipodi:role="line">complex coefficients corresponding to g-vectors</tspan></text>
   </g>
 </svg>
