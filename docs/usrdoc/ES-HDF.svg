@@ -32,9 +32,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
+     inkscape:zoom="2.8"
      inkscape:cx="236.4347"
-     inkscape:cy="582.29121"
+     inkscape:cy="368.0055"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -2967,17 +2967,6 @@
          x="150"
          id="tspan5082"
          sodipodi:role="line">state_1</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="711.25348"
-       y="-120"
-       id="text5084"
-       transform="matrix(0,1,-1,0,0,0)"><tspan
-         sodipodi:role="line"
-         id="tspan5086"
-         x="711.25348"
-         y="-120">...</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:1.01129985px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 45,407.36216 0,337.50002 15,0"
