@@ -110,20 +110,22 @@ namespace qmcplusplus
     RemoteData[0]->resize(wb*W.getActiveWalkers());
     W.putConfigurations(RemoteData[0]->begin());
 
-    TinyVector<hsize_t,3> gounts, counts,offset;
+    //TinyVector<hsize_t,3> gcounts, counts, offset;
+    hsize_t gcounts[3], counts[3], offset[3];
     gcounts[0]=W.WalkerOffsets[myComm->size()]; gcounts[1]=number_of_particles; gcounts[2]=OHMMS_DIM;
     counts[0]=W.getActiveWalkers(); counts[1]=number_of_particles; counts[2]=OHMMS_DIM;
-    offset[0]=W.WalkerOffsets[i];
+    offset[0]=W.WalkerOffsets[myComm->rank()]; offset[1]=0; offset[2]=0;
 
-    const hid_t etype=get_h5_datatype(RealType);
+    BufferType::value_type t;
+    const hid_t etype=get_h5_datatype(t);
     hout.write(gcounts[0],hdf::num_walkers);
 
     hid_t gid=hout.top();
-    hid_t sid1  = H5Screate_simple(RANK,gcounts->data(),NULL);
-    hid_t memspace=H5Screate_simple(RANK,counts->data(),NULL);
+    hid_t sid1  = H5Screate_simple(3,gcounts,NULL);
+    hid_t memspace=H5Screate_simple(3,counts,NULL);
     hid_t dset_id=H5Dcreate(gid,hdf::walkers,etype,sid1,H5P_DEFAULT);
     hid_t filespace=H5Dget_space(dset_id);
-    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,counts,NULL);
+    herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,counts,NULL);
     ret = H5Dwrite(dset_id,etype,memspace,filespace,hout.xfer_plist,RemoteData[0]->data());
     H5Sclose(filespace);
     H5Dclose(dset_id);
