@@ -28,11 +28,23 @@ qmcpack-read-only/
 The aim of this section is to provide a guideline for building QMCPACK in the most generic way.
 A compromise must be made between overly many case-by-case examples and a simplified procedure.
 
-Theoretically speaking, QMCPACK can be used on any *nix machine with recent [meaning $> 4.2$ at least] GNU C/C++ compilers.
-Compiling the QMCPACK source requires the CMake package.
+%Theoretically speaking, 
+QMCPACK can be used on any *nix machine with C++ compilers that are reasonably recent.  Some examples to date are g++ $\geq 4.2$ (GNU) and icc $\geq 10.1$ (Intel).  There are other required packages which the compilation process will point out if missing.  Listed below are those required specifically by QMCPACK, with the oldest tested versions.
+\begin{itemize}
+\item{} CMake $\geq 2.8$
+\item{} mpich, mvapich or openmpi
+\item{} blas or lapack library (provided as mkl in Intel compilers)
+\item{} boost library
+\item{} fftw library $\geq 3$
+\item{} xml2 library
+\item{} hdf5 library $\geq 1.8$
+\end{itemize}
+For library packages, their full development versions (with suffixes -dev or -devel) are needed.  No additional environment variables need to be set if the above packages are installed from precompiled binaries.\footnote{Typical examples are rpm or deb packages.}  If instead the libraries are locally built, their installation directories must be explicitly set as environment variables, eg. \icode{LIBXML2\_HOME=/usr/local}.  See the installation notes in each package for details.
+% recent [meaning $> 4.2$ at least] GNU
+%Compiling the QMCPACK source requires the CMake package.
 %For cmake documentation and guides, consult cmake wiki.
 
-Change to qmcpack the top directory (name can be different).
+Assuming that all of the above packages are properly set up, building QMCPACK proceeds as follows.  Change to qmcpack the top directory (name can be different).
 \begin{lstcnsl}
 cd qmcpack-read-only
 \end{lstcnsl}
@@ -66,10 +78,13 @@ So far, there is no need to change sources or cmake files.  \icode{cmake ..} in 
 Additional configurations must be considered if you need to deviate from the default settings of parallel computing (MPI) and multithreading (OpenMP).  See \S{}\ref{ss:compset} for details.
 
 %discuss toolchains here
-\subsection{Compiler settings} \label{ss:compset}
-icc vs. g++
+\subsection{Compiler settings for MPI and OpenMP} \label{ss:compset}
+%To run QMCPACK under MPI, 
+Running QMCPACK under MPI requires it to be built with a modified compiler.  This usually involves installing an additional \emph{compiler wrapper} package which turns the already working compiler into an MPI-capable one, without having to rebuild the compiler itself.\footnote{MPI implementations of this type are known as \emph{portable implementations}.}  Examples of MPI implementations known to work with QMCPACK are OpenMPI, MPICH2, and MVAPICH.
+%icc vs. g++
 
-MPI is automatically enabled if
+Several environment variables must be set in order to use MPI.
+%MPI is automatically enabled if
 \begin{itemize*}
   \item{} CXX is set to parallel compilers
   \begin{itemize*}
