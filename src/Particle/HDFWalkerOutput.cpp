@@ -83,7 +83,7 @@ namespace qmcplusplus
   bool HDFWalkerOutput::dump(MCWalkerConfiguration& W) 
   {
     string FileName=myComm->getName()+hdf::config_ext;
-    hdf_archive dump_file(myComm);
+    hdf_archive dump_file(myComm,true);
     dump_file.create(FileName);
     HDFVersion cur_version;
     //version
@@ -104,7 +104,31 @@ namespace qmcplusplus
       RemoteData.push_back(new BufferType);
     }
     const int wb=OHMMS_DIM*number_of_particles;
+
     //populate RemoteData[0] to dump
+#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
+    RemoteData[0]->resize(wb*W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0]->begin());
+
+    TinyVector<hsize_t,3> gounts, counts,offset;
+    gcounts[0]=W.WalkerOffsets[myComm->size()]; gcounts[1]=number_of_particles; gcounts[2]=OHMMS_DIM;
+    counts[0]=W.getActiveWalkers(); counts[1]=number_of_particles; counts[2]=OHMMS_DIM;
+    offset[0]=W.WalkerOffsets[i];
+
+    const hid_t etype=get_h5_datatype(RealType);
+    hout.write(gcounts[0],hdf::num_walkers);
+
+    hid_t gid=hout.top();
+    hid_t sid1  = H5Screate_simple(RANK,gcounts->data(),NULL);
+    hid_t memspace=H5Screate_simple(RANK,counts->data(),NULL);
+    hid_t dset_id=H5Dcreate(gid,hdf::walkers,etype,sid1,H5P_DEFAULT);
+    hid_t filespace=H5Dget_space(dset_id);
+    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,counts,NULL);
+    ret = H5Dwrite(dset_id,etype,memspace,filespace,hout.xfer_plist,RemoteData[0]->data());
+    H5Sclose(filespace);
+    H5Dclose(dset_id);
+
+#else
     if(myComm->size()==1)
     {
       number_of_walkers=W.getActiveWalkers();
@@ -137,6 +161,7 @@ namespace qmcplusplus
 
     hyperslab_proxy<BufferType,3> slab(*RemoteData[0],inds);
     hout.write(slab,hdf::walkers);
+#endif
     //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
     //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
   }
