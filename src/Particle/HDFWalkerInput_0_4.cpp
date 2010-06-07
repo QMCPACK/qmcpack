@@ -113,7 +113,7 @@ namespace qmcplusplus
       string h5name(FileName);
       h5name.append(hdf::config_ext);
 
-      hdf_archive hin(myComm);
+      hdf_archive hin(myComm,true);
       int success=hin.open(h5name,H5F_ACC_RDONLY);
       mpi::bcast(*myComm,success);
 
@@ -125,9 +125,62 @@ namespace qmcplusplus
 
       //check if hdf and xml versions can work together
       HDFVersion aversion;
+
+#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
+
+      hin.read(aversion,hdf::version);
+      int found_group=hin.is_group(hdf::main_state);
+      if(!found_group) continue;
+
+      //start main_state
+      hin.push(hdf::main_state);
+      int nw_in=0;
+      hin.read(nw_in,hdf::num_walkers);
+
+      vector<int> woffsets(myComm->size()+1,0);
+      FairDivideLow(nw_in,myComm->size(),woffsets);
+
+      int mynode=myComm->rank();
+      int nw_loc=woffsets[mynode+1]-woffsets[mynode];
+
+      cout << "node =" << mynode << " nw_loc=" << nw_loc << " nw_in=" << nw_in << endl;
+
+      //TinyVector<hsize_t,3> gcounts, counts, offset;
+      hsize_t gcounts[3], counts[3], offset[3];
+      gcounts[0]=nw_in; gcounts[1]=targetW.getTotalNum(); gcounts[2]=OHMMS_DIM;
+      counts[0]=nw_loc; counts[1]=targetW.getTotalNum(); counts[2]=OHMMS_DIM;
+      offset[0]=woffsets[mynode]; offset[1]=0; offset[2]=0;
+
+      int nitems=targetW.getTotalNum()*OHMMS_DIM;
+      typedef vector<QMCTraits::RealType>  Buffer_t;
+      Buffer_t posin(nw_loc*nitems);
+
+      hid_t dataset = H5Dopen(hin.top(),hdf::walkers);
+      hid_t dataspace = H5Dget_space(dataset);
+      int rank_n = H5Sget_simple_extent_ndims(dataspace);
+      int status_n = H5Sget_simple_extent_dims(dataspace, gcounts, NULL);
+
+      hid_t type_id=get_h5_datatype(posin[0]);
+      hid_t memspace = H5Screate_simple(3, counts, NULL);
+      herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offset,NULL,counts,NULL);
+      status = H5Dread(dataset, type_id, memspace, dataspace, hin.xfer_plist, &posin[0]);
+
+      H5Sclose(dataspace);
+      H5Sclose(memspace);
+      H5Dclose(dataset);
+
+      int curWalker = targetW.getActiveWalkers();
+      targetW.createWalkers(nw_loc);
+      Buffer_t::iterator it(posin.begin());
+      for(int i=0,iw=curWalker; i<nw_loc; ++i,++iw)
+      {
+        std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+        it += nitems;
+      }
+
+#else
       hin.read(aversion,hdf::version);
       mpi::bcast(*myComm,aversion.version);
-
       if(aversion < i_info.version)
       {
         app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
@@ -150,6 +203,7 @@ namespace qmcplusplus
         app_error() << "  HDFWalkerInput_0_4::put empty walkers " << endl;
         continue;
       }
+
 
       TinyVector<size_t,3> dims(nw_in,targetW.getTotalNum(),OHMMS_DIM);
       if(!myComm->rank())
@@ -195,6 +249,7 @@ namespace qmcplusplus
           it += nitems;
         }
       }
+#endif
     }
 
     //char fname[128];
