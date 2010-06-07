@@ -21,7 +21,6 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/RandomGeneratorIO.h"
 #include "OhmmsData/FileUtility.h"
 namespace qmcplusplus
 {

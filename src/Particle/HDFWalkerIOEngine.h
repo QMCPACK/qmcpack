@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file HDFWalkerIOEngine.h
- * @breif definition  of reader/writer of MCWalkerConfiguration
+ * @brief definition  of reader/writer of MCWalkerConfiguration
  */
 #ifndef QMCPLUSPLUS_WALKERPACKEDIO_H
 #define QMCPLUSPLUS_WALKERPACKEDIO_H
