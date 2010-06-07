@@ -56,7 +56,7 @@ namespace qmcplusplus
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
         MPI_Info info=MPI_INFO_NULL;
         access_id = H5Pcreate(H5P_FILE_ACCESS);
-        H5Pset_fapl_mpio(access_id,comm,info);
+        H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
         xfer_plist = H5Pcreate(H5P_DATASET_XFER);
         H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
 #else
