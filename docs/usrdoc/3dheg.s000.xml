@@ -1,0 +1,31 @@
+<qmcsystem>
+  <simulationcell>
+    <!-- Note 1.
+    change condition for different number of electrons. Only closed-shell
+    systems are supported for the moment. The allowed numbers are:
+    14 38 54 66 114 162 ....
+    -->
+    <parameter name="rs" condition="14">5</parameter>
+    <parameter name="bconds">p p p</parameter>
+    <parameter name="LR\_dim\_cutoff">6</parameter>
+  </simulationcell>
+  <particleset name="e" random="yes">
+    <group name="u" size="7">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="7">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+  </hamiltonian>
+  <wavefunction name="psi0" target="e">
+    <!-- Note 2.
+    change shell according to the parameter/@condition
+    14(1) 38(2) 54 (3) 66 (4) 114 (5) 162 (6) ...
+    -->
+    <determinantset type="electron-gas" shell="1" randomize="true"/>
+    <jastrow name="Jee" type="Two-Body" function="rpa"/>
+  </wavefunction>
+</qmcsystem>

@@ -1,0 +1,142 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="BN2\_prim" series="0">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+    </application>
+  </project>
+  <random seed="13"/>
+  <qmcsystem dim="3">
+    <simulationcell>
+      <parameter name="scale"> 6.839904 </parameter>
+      <parameter name="lattice">
+        0.5 0.5 0.0
+        0.0 0.5 0.5
+        0.5 0.0 0.5
+      </parameter>
+      <parameter name="bconds">p p p</parameter>
+      <parameter name="LR\_dim\_cutoff">20.0</parameter>
+    </simulationcell>
+    <particleset name="e" random="yes">
+      <group name="u" size="4">
+        <parameter name="charge">-1</parameter>
+      </group>
+      <group name="d" size="4">
+        <parameter name="charge">-1</parameter>
+      </group>
+    </particleset>
+    <particleset name="i" size="2">
+      <group name="B">
+        <parameter name="charge">3</parameter>
+        <parameter name="valence">3</parameter>
+        <parameter name="atomicnumber">5</parameter>
+      </group>
+      <group name="N">
+        <parameter name="charge">5</parameter>
+        <parameter name="valence">5</parameter>
+        <parameter name="atomicnumber">7</parameter>
+      </group>
+      <attrib name="position" datatype="posArray" condition="1">
+        0.000 0.000 0.000
+        0.250 0.250 0.250
+      </attrib>
+      <attrib name="ionid" datatype="stringArray">
+        B N
+      </attrib>
+    </particleset>
+    <wavefunction name="psi0" target="e">
+      <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+        <correlation elementType="B" cusp="0.0" size="2">
+          <coefficients id="b" type="Array">
+            0 0
+          </coefficients>
+        </correlation>
+        <correlation elementType="N" cusp="0.0" size="6">
+          <coefficients id="n" type="Array">
+            0 0
+          </coefficients>
+        </correlation>
+      </jastrow>
+
+      <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+        <correlation pairType="uu" speciesA="u" speciesB="u" size="2">
+          <coefficients id="uu" type="Array">
+            0 0
+          </coefficients>
+        </correlation>
+        <correlation pairType="ud" speciesA="u" speciesB="d" size="2">
+          <coefficients id="ud" type="Array">
+            0 0
+          </coefficients>
+        </correlation>
+      </jastrow>
+     
+      <determinantset type="einspline" href="cBNprim.h5" sort="1">
+        <basisset/>
+        <slaterdeterminant>
+          <determinant id="updet" size="4">    
+            <occupation mode="ground" spindataset="0">
+            </occupation>  
+          </determinant>
+          <determinant id="downdet" size="4">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+        </slaterdeterminant>
+      </determinantset>
+    </wavefunction>
+   
+    <hamiltonian name="h0" type="generic" target="e">
+      <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+      <pairpot type="pseudo" name="PPot" source="i" wavefunction="psi0"
+               format="xml">
+        <pseudo elementType="B" href="B.BFD.fsatom.xml" format="xml"/>
+        <pseudo elementType="N" href="N.BFD.fsatom.xml" format="xml"/>
+      </pairpot>
+      <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    </hamiltonian>
+  </qmcsystem>
+ 
+  <!-- Optimize -->
+  <loop max="2">
+    <qmc method="optimize" move="pbyp">
+      <parameter name="blocks">  1000 </parameter>
+      <parameter name="steps">     10 </parameter>
+      <parameter name="timestep"> 0.7 </parameter>
+      <parameter name="walkers">    8 </parameter>
+      <parameter name="samples"> 1000 </parameter>
+      <cost name="energy"> 0.0 </cost>
+      <cost name="variance"> 1.0 </cost>
+      <cost name="difference"> 0.0 </cost>
+      <parameter name="minWalkers"> 0.4 </parameter>
+      <parameter name="useWeight"> no </parameter>
+      <optimizer method="cg">
+        <parameter name="max\_steps">   15 </parameter>
+        <parameter name="tolerance"> 1e-6 </parameter>
+        <parameter name="stepsize">  0.02 </parameter>
+        <parameter name="friction">     5 </parameter>
+        <parameter name="epsilon">    0.0 </parameter>
+      </optimizer>
+      <parameter name="power"> 2 </parameter>
+      <parameter name="correlation"> 0.01 </parameter>
+    </qmc>
+  </loop>
+ 
+  <!-- WARMUP -->
+  <qmc method="vmc" move="pbyp">
+    <estimator name="LocalEnergy"/>
+    <parameter name="walkers">       8 </parameter>
+    <parameter name="warmupSteps"> 100 </parameter>
+    <parameter name="blocks">      160 </parameter>
+    <parameter name="steps">        10 </parameter>
+    <parameter name="samples">    1280 </parameter>
+    <parameter name="timestep">    0.5 </parameter>
+  </qmc>
+
+  <qmc method="dmc" move="pbyp">
+    <parameter name="blocks">       20000 </parameter>
+    <parameter name="steps">           10 </parameter>
+    <parameter name="timestep">      0.01 </parameter>
+    <parameter name="nonlocalmoves">  yes </parameter>
+    <parameter name="warmupSteps">    500 </parameter>
+  </qmc>
+</simulation>

@@ -23,8 +23,8 @@ After downloading these tools, do \icode{chmod u+x wfconv ppconvert} to mark the
 \subsection*{Convert the pseudopotentials}
 [check this, perhaps also explaining what each line in the file means]
 
-Copy the following pseudopotential in GAMESS format into a file "B.BFD.gamess":
-\begin{lstcpp}
+Copy the following pseudopotential in GAMESS format into a file \iconsole{B.BFD.gamess}:
+\begin{code}
 B-QMC GEN 2 1
 3
 3.00000000 1 5.40423964
@@ -32,10 +32,10 @@ B-QMC GEN 2 1
 -11.86640633 2 4.48974455
 1
 15.49737620 2 3.43781634
-\end{lstcpp}
+\end{code}
 
-Likewise, the following into "N.BFD.gamess":
-\begin{verbatim}
+Likewise, the following into \iconsole{N.BFD.gamess}:
+\begin{code}
 N-QMC GEN 2 1
 3
 5.00000000 1 9.23501007
@@ -43,15 +43,15 @@ N-QMC GEN 2 1
 -30.18893534 2 7.34486070
 1
 31.69720409 2 6.99536540
-\end{verbatim}
+\end{code}
 
 We will now convert the pseudopotentials into the FHI format used by ABINIT and the FSatom XML format used by QMCPACK. Put ppconvert into a directory in your PATH. Then execute
-\begin{verbatim}
+\begin{code}
 ppconvert --gamess_pot B.BFD.gamess --s_ref "1s(2)2p(1)" --p_ref "1s(2)2p(1)" \
           --fhi B.BFD.fhi --xml B.BFD.fsatom.xml
 ppconvert --gamess_pot N.BFD.gamess --s_ref "1s(2)2p(3)" --p_ref "1s(2)2p(3)" \
           --fhi N.BFD.fhi --xml N.BFD.fsatom.xml
-\end{verbatim}
+\end{code}
 \begin{itemize}
   \item{} The first argument given is the input pseudopotential file.
   \item{} The second and third arguments give the reference state for forming Kleinmann-Bylander projectors.
@@ -64,74 +64,11 @@ ppconvert --gamess_pot N.BFD.gamess --s_ref "1s(2)2p(3)" --p_ref "1s(2)2p(3)" \
 \subsection*{Generating orbitals with ABINIT}
 ABINIT (http://www.abinit.org) is a general-purpose plane-wave DFT code which supports pseudopotential and PAW calculations.  It is well-documented, full-featured, and has a vibrant community support forum.
 
-We will begin with a primitive cell of c-BN. Copy the following into cBNprim.in:
-\begin{verbatim}
-# Cubic Boron Nitride : primitive cell orbitals
-#
-# Definition of the unit cell
-# BN lattice constant near experimental volume
-acell  3*6.839904
+We will begin with a primitive cell of c-BN. Copy the following into \iconsole{cBNprim.in}:
+\codesrc{cBNprim.in}
 
-# FCC lattice vectors
-rprim 0.5 0.5 0.0
-      0.0 0.5 0.5
-      0.5 0.0 0.5
-
-# Definition of the atom types
-ntypat 2          # There is only one type of atom
-znucl 5 7         # The keyword "znucl" refers to the atomic number of the 
-                  # possible type(s) of atom. The pseudopotential(s) 
-                  # mentioned in the "files" file must correspond
-                  # to the type(s) of atom. Here, the only type is Silicon.
-                         
-
-# Definition of the atoms
-natom 2           # There are two atoms
-                  # They both of type boron and nitrogen
-typat 1 2
-
-xred
-   0.0000  0.0000  0.0000  # B1
-   0.2500  0.2500  0.2500  # N1
-
-# Definition of the planewave basis set
-ecut  200.0         # Maximal kinetic energy cut-off, in Hartree
-
-# Allow non-primitive unit cell
-chkprim 0
-
-
-#Definition of the k-point grid
-##################################
-# USE THESE FOR CASINO OUTPUT!!! #
-##################################
-kptopt 0          # Manual k-points
-nkpt 1
-istwfk 1
-wtk 1
-
-kpt
-    0.000 0.000 0.000
-
-prtwf 1
-
-# Definition of the SCF procedure
-nstep 100          # Maximal number of SCF cycles
-toldfe 1.0d-12     # Will stop when, twice in a row, the difference 
-                   # between two consecutive evaluations of total energy 
-                   # differ by less than toldfe (in Hartree) 
-diemac 2.0         # Although this is not mandatory, it is worth to
-                   # precondition the SCF cycle. The model dielectric
-                   # function used as the standard preconditioner
-                   # is described in the "dielng" input variable section.
-                   # Here, we follow the prescription for bulk silicon.
-
-# ixc 23           # Wu-Cohen
-ixc 7             # LDA
-\end{verbatim}
-
-Copy the following into cBNprim.files:
-\begin{verbatim}
+Copy the following into \iconsole{cBNprim.files}:
+\begin{code}
 cBNprim.in
 cBNprim.out
 cBNprim.xi
@@ -139,181 +76,35 @@ cBNprim.xo
 cBNprim_
 B.BFD.fhi
 N.BFD.fhi
-\end{verbatim}
+\end{code}
 
 Now, run
-\begin{verbatim}
+\begin{console}
 abinis < cBNprim.files
-\end{verbatim}
+\end{console}
 
 \subsection*{Converting the orbitals}
 With wfconv in your PATH, run
-\begin{verbatim}
+\begin{console}
 wfconv --eshdf cBNprim.h5 cBNprim.xo_WFK
-\end{verbatim}
+\end{console}
 
 This will generated an orbital file in the ESHDF format that QMCPACK reads.
 
 N.B. The GPU version of QMCPACK uses an older format for the orbital file. To generate orbitals for the GPU code, do instead
-\begin{verbatim}
+\begin{console}
 wfconv --spline --qmcPACK cBNprim.h5 cBNprim.xo_WFK
-\end{verbatim}
+\end{console}
 
 The newer CPU code also can read this format, but we are trying to deprecate it. We intend to remerge the GPU and CPU versions in the near future. 
 
 \subsection*{Running QMCPACK}
-Copy the following to ``cBNprim.qmc.xml'':
-\begin{lstcpp}
-<?xml version="1.0"?>
-<simulation>
-  <project id="BN2_prim" series="0">
-    <application name="qmcapp" role="molecu" class="serial" version="0.2">
-    </application>
-  </project>
-  <random seed="13"/>
-  <qmcsystem dim="3">
-    <simulationcell>
-      <parameter name="scale"> 6.839904 </parameter>
-      <parameter name="lattice">
-        0.5 0.5 0.0
-        0.0 0.5 0.5
-        0.5 0.0 0.5
-      </parameter>
-      <parameter name="bconds">p p p</parameter>
-      <parameter name="LR_dim_cutoff">20.0</parameter>
-    </simulationcell>
-    <particleset name="e" random="yes">
-      <group name="u" size="4">
-        <parameter name="charge">-1</parameter>
-      </group>
-      <group name="d" size="4">
-        <parameter name="charge">-1</parameter>
-      </group>
-    </particleset>
-    <particleset name="i" size="2">
-      <group name="B">
-        <parameter name="charge">3</parameter>
-        <parameter name="valence">3</parameter>
-        <parameter name="atomicnumber">5</parameter>
-      </group>
-      <group name="N">
-        <parameter name="charge">5</parameter>
-        <parameter name="valence">5</parameter>
-        <parameter name="atomicnumber">7</parameter>
-      </group>
-      <attrib name="position" datatype="posArray" condition="1">
-        0.000 0.000 0.000
-        0.250 0.250 0.250
-      </attrib>
-      <attrib name="ionid" datatype="stringArray">
-        B N
-      </attrib>
-    </particleset>
-    <wavefunction name="psi0" target="e">
-      <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
-        <correlation elementType="B" cusp="0.0" size="2">
-          <coefficients id="b" type="Array">
-            0 0
-          </coefficients>
-        </correlation>
-        <correlation elementType="N" cusp="0.0" size="6">
-          <coefficients id="n" type="Array">
-            0 0
-          </coefficients>
-        </correlation>
-      </jastrow>
-     
-      <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
-        <correlation pairType="uu" speciesA="u" speciesB="u" size="2">
-          <coefficients id="uu" type="Array">
-            0 0
-          </coefficients>
-        </correlation>
-        <correlation pairType="ud" speciesA="u" speciesB="d" size="2">
-          <coefficients id="ud" type="Array">
-            0 0
-          </coefficients>
-        </correlation>
-      </jastrow>
-     
-      <determinantset type="einspline" href="cBNprim.h5" sort="1">
-        <basisset/>
-        <slaterdeterminant>
-          <determinant id="updet" size="4">    
-            <occupation mode="ground" spindataset="0">
-            </occupation>  
-          </determinant>
-          <determinant id="downdet" size="4">
-            <occupation mode="ground" spindataset="0">
-            </occupation>
-          </determinant>
-        </slaterdeterminant>
-      </determinantset>
-    </wavefunction>
-   
-   
-    <hamiltonian name="h0" type="generic" target="e">
-      <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
-      <pairpot type="pseudo" name="PPot" source="i" wavefunction="psi0"
-               format="xml">
-        <pseudo elementType="B" href="B.BFD.fsatom.xml" format="xml"/>
-        <pseudo elementType="N" href="N.BFD.fsatom.xml" format="xml"/>
-      </pairpot>
-      <constant name="IonIon" type="coulomb" source="i" target="i"/>
-    </hamiltonian>
-  </qmcsystem>
- 
-  <!-- Optimize -->
-  <loop max="2">
-    <qmc method="optimize" move="pbyp">
-      <parameter name="blocks">  1000 </parameter>
-      <parameter name="steps">     10 </parameter>
-      <parameter name="timestep"> 0.7 </parameter>
-      <parameter name="walkers">    8 </parameter>
-      <parameter name="samples"> 1000 </parameter>
-      <cost name="energy"> 0.0 </cost>
-      <cost name="variance"> 1.0 </cost>
-      <cost name="difference"> 0.0 </cost>
-      <parameter name="minWalkers"> 0.4 </parameter>
-      <parameter name="useWeight"> no </parameter>
-      <optimizer method="cg">
-        <parameter name="max_steps">   15 </parameter>
-        <parameter name="tolerance"> 1e-6 </parameter>
-        <parameter name="stepsize">  0.02 </parameter>
-        <parameter name="friction">     5 </parameter>
-        <parameter name="epsilon">    0.0 </parameter>
-      </optimizer>
-      <parameter name="power"> 2 </parameter>
-      <parameter name="correlation"> 0.01 </parameter>
-    </qmc>
-  </loop>
- 
-  <!-- WARMUP -->
-  <qmc method="vmc" move="pbyp">
-    <estimator name="LocalEnergy"/>
-    <parameter name="walkers">       8 </parameter>
-    <parameter name="warmupSteps"> 100 </parameter>
-    <parameter name="blocks">      160 </parameter>
-    <parameter name="steps">        10 </parameter>
-    <parameter name="samples">    1280 </parameter>
-    <parameter name="timestep">    0.5 </parameter>
-  </qmc>
+Copy the following to \iconsole{cBNprim.qmc.xml}:
+\codesrc{cBNprim.qmc.xml}
 
-  <qmc method="dmc" move="pbyp">
-    <parameter name="blocks">       20000 </parameter>
-    <parameter name="steps">           10 </parameter>
-    <parameter name="timestep">      0.01 </parameter>
-    <parameter name="nonlocalmoves">  yes </parameter>
-    <parameter name="warmupSteps">    500 </parameter>
-  </qmc>
-</simulation>
-\end{lstcpp}
-
-More from 
-\begin{verbatim}
-http://cms.mcc.uiuc.edu/qmcpack/index.php/Bulk_solid_calculations_with_DFT_orbitals
-http://qmcpack.cmscc.org/tutorials/bulk-solid
-\end{verbatim}
+More from\\
+\url{http://cms.mcc.uiuc.edu/qmcpack/index.php/Bulk_solid_calculations_with_DFT_orbitals}\\
+\url{http://qmcpack.cmscc.org/tutorials/bulk-solid}
 \section{Liquid helium}
 \section{3D homogeneous electron gas}
 Reviews on homogeneous electron gas can be found in standard solid-state physics or electronic structure textbooks.  A particularly relevant discussion is in Ref.~\citenum{Martin2003} Ch.~5.  The system is fully specified by only two parameters: $r_s = \left( \cfrac{3}{4 \pi \rho} \right)^{1/3} \equiv \mathtt{rs}$ and the shell number.  For a momentum eigenvalue $\mathbf{k}$, the shell number is defined by mutually exclusive sets of Fermi surfaces\footnote{Note that the Fermi surface is spherical only in the case of noninteracting fermions.  Interaction causes a slight deviation from a perfect sphere.} in $\mathbf{k}$-space which contain the same number of allowed $\mathbf{k}$ states.  The simulation cell in this case is defined with periodic boundary conditions (PBC), resulting in a discrete set of allowed $\mathbf{k}$ values.  The smallest Fermi surface containing more than one $\mathbf{k}$ state contains 7 $\mathbf{k}$ states which include $\mathbf{k} = \mathbf{0}$ and its 6 nearest neighbors.  The next smallest set of Fermi surfaces (``shells'') contain 19 $\mathbf{k}$ and the numbers continue in a sequence of 27, 33, 57, 81, etc.
@@ -324,46 +115,14 @@ QMCPACK currently supports only closed-shell systems, meaning that the allowed n
 
 %Key parameters \icode{} sets rs of the problem. condition is used to set the number of particles at the given rs.
 The path of the key parameters of the simulation (XPath) are as follows.
-\begin{lstcpp}
+\begin{code}
 simulationcell/parameter/@name='rs'
 particleset/group/@size : number of particles per spin
 determinantset/@shell
-\end{lstcpp}
+\end{code}
 
 Shown below is a typical form of the input file.
-\begin{lstcpp}
-<qmcsystem>
-  <simulationcell>
-    <!-- Note 1.
-    change condition for different number of electrons. Only closed-shell
-    systems are supported for the moment. The allowed numbers are:
-    14 38 54 66 114 162 ....
-    -->
-    <parameter name="rs" condition="14">5</parameter>
-    <parameter name="bconds">p p p</parameter>
-    <parameter name="LR_dim_cutoff">6</parameter>
-  </simulationcell>
-  <particleset name="e" random="yes">
-    <group name="u" size="7">
-      <parameter name="charge">-1</parameter>
-    </group>
-    <group name="d" size="7">
-      <parameter name="charge">-1</parameter>
-    </group>
-  </particleset>
-  <hamiltonian name="h0" type="generic" target="e">
-    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
-  </hamiltonian>
-  <wavefunction name="psi0" target="e">
-    <!-- Note 2.
-    change shell according to the parameter/@condition
-    14(1) 38(2) 54 (3) 66 (4) 114 (5) 162 (6) ...
-    -->
-    <determinantset type="electron-gas" shell="1" randomize="true"/>
-    <jastrow name="Jee" type="Two-Body" function="rpa"/>
-  </wavefunction>
-</qmcsystem>
-\end{lstcpp}
+\codesrc{3dheg.s000.xml}
 \section{Spherical systems}
 \subsection{Spherical jellium}
 %  Specific Example Calculations
