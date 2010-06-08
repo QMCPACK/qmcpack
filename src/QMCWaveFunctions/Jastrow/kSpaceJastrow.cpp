@@ -745,8 +745,10 @@ namespace qmcplusplus {
     active.insertFrom(myVars);
     
     int nOne = OneBodyGvecs.size();
-    OneBodyVarMap.resize(nOne);
     int obi=0;
+    if (nOne)
+    {
+    OneBodyVarMap.resize(nOne);
     for (int i=0; i<nOne; i++) 
     {
       //two coeffs for each of these points, imaginary coefficients.
@@ -754,6 +756,8 @@ namespace qmcplusplus {
       if (i==OneBodySymmCoefs[obi].lastIndex) obi+=2;
     }
     obi+=2;
+    }
+    
     int nTwo = TwoBodyGvecs.size();
     TwoBodyVarMap.resize(nTwo);
     int tbi=0;
@@ -869,9 +873,10 @@ namespace qmcplusplus {
 
     //copy the variable map
     myVars=old.myVars;
-    Optimizable=true;
+    Optimizable=old.Optimizable;
     TwoBodyVarMap=old.TwoBodyVarMap;
     OneBodyVarMap=old.OneBodyVarMap;
+    Prefactor=old.Prefactor;
     
 
     //for (int i=0; i<OneBodySymmCoefs.size(); i++) {
@@ -907,7 +912,7 @@ namespace qmcplusplus {
           ComplexType eye(0.0, 1.0);
           RealType tmp_dot;
           int nOne = OneBodyGvecs.size();
-           
+          if (nOne) {   
         for (int iat=0; iat<N; iat++) {
           PosType r(P.R[iat]);
           for (int i=0; i<nOne; i++) 
@@ -933,7 +938,7 @@ namespace qmcplusplus {
             }
           }
         }
-        
+          }
         // Do two-body part
         int nTwo = TwoBodyGvecs.size();
         for (int i=0; i<nTwo; i++)
