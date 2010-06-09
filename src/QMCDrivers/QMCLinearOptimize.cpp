@@ -170,20 +170,11 @@ namespace qmcplusplus
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           
           optTarget->checkConfigurations();
-          optTarget->setTargetEnergy(branchEngine->getEref());
+//           optTarget->setTargetEnergy(branchEngine->getEref());
+
           RealType lastCost(optTarget->Cost(true));
           RealType newCost(lastCost);
-
-// mmorales
-          if(!optTarget->IsValid) 
-          {
-            Valid=false;
-            break;
-          }
-          
-// correlated sampling was called in Cost, so the call here is redundant
           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
-
 // mmorales
           if(!optTarget->IsValid) 
           {
@@ -191,8 +182,10 @@ namespace qmcplusplus
             break;
           }
           
+
           vector<RealType> bestParameters(currentParameters);
           bool acceptedOneMove(false);
+          
           for(int stability=0;stability<((tries==0)?nstabilizers:1);stability++){
 
             Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
@@ -203,11 +196,14 @@ namespace qmcplusplus
                 ST(i,j)= (S)(j,i);
                 HamT2(i,j)= (Ham2)(j,i);        
               }
-              RealType Xs(0);
-              if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
-              else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
-              for (int i=1;i<N;i++) HamT(i,i) += Xs;
+            RealType Xs(0);
+//             if ((tries==0)&&(stability==0)) Xs = 0.0;
+//             else 
+            if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
+            else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
+            for (int i=1;i<N;i++) HamT(i,i) += Xs;
 
+// Getting the optimal worksize
               char jl('N');
               char jr('V');
               vector<RealType> alphar(N),alphai(N),beta(N);
@@ -222,8 +218,22 @@ namespace qmcplusplus
               lwork=work[0];
               work.resize(lwork);
 
+              //Get an estimate of E_lin
+              Matrix<RealType> H_tmp(HamT);
+              Matrix<RealType> S_tmp(ST);
+              dggev(&jl, &jr, &N, H_tmp.data(), &N, S_tmp.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+              RealType E_lin(alphar[0]/beta[0]);
+              int e_min_indx(0);
+              for (int i=1;i<N;i++)
+                if (E_lin>(alphar[i]/beta[i]))
+                {
+                  E_lin=alphar[i]/beta[i];
+                  e_min_indx=i;
+                }
+//               app_log()<<"E_lin = "<<E_lin<<endl;
+              if (abs(E_lin/Ham(0,0))>1.5) break;
               Matrix<RealType> ST2(N,N);
-              RealType H2rescale=1.0/std::sqrt(std::abs(HamT2(0,0)));
+              RealType H2rescale=1.0/(E_lin*E_lin);
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
 
@@ -234,14 +244,18 @@ namespace qmcplusplus
                 for (int i=0;i<N;i++)
                 {
                   RealType evi(alphar[i]/beta[i]);
-                  mappedEigenvalues[i].first=(evi-Ham(0,0))*(evi-Ham(0,0));
+//                   mappedEigenvalues[i].first=(evi-Ham(0,0))*(evi-Ham(0,0));
+//                   mappedEigenvalues[i].first=1-evi;
+                  mappedEigenvalues[i].first=evi;
                   mappedEigenvalues[i].second=i;
-//                  app_log()<<evi<<" "<<(evi-Ham(0,0))*(evi-Ham(0,0))<<endl;
+//                  app_log()<<i<<"   "<<evi<<endl;//" "<<(evi-Ham(0,0))*(evi-Ham(0,0))<<endl;
                 }
-                app_log()<<endl;
+//                 app_log()<<endl;
                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+//                 app_log()<<mappedEigenvalues[0].second<<endl;
+                
 
-                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT( mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
+                for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
                 //eigenCG part
                 RealType nrmold(0);
 
@@ -270,10 +284,11 @@ namespace qmcplusplus
               
               largeQuarticStep=1e3;
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
+              
               if(UseQuarticMin=="yes") {
                 Valid=lineoptimization();
-                if (dopt*std::abs(Lambda)>bigChange)
-                  Valid=lineoptimization2();
+//                 if (dopt*std::abs(Lambda)>bigChange)
+//                   Valid=lineoptimization2();
               } else {
                 Valid=lineoptimization2();
               }
@@ -318,7 +333,8 @@ namespace qmcplusplus
               {
                 app_log()<<"  Failed Step. RMS step Size:"<<dopt<<endl;
               }
-            }
+          
+          }
           if(acceptedOneMove && Valid)
           {
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
@@ -332,6 +348,7 @@ namespace qmcplusplus
             for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];   
             tries=eigCG;
           }
+          
         }
       }
       

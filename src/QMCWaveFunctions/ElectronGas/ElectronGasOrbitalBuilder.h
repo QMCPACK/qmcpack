@@ -23,6 +23,9 @@
 #endif
 #include <config/stdlib/math.h>
 
+
+#include "QMCWaveFunctions/BasisSetBase.h"
+
 namespace qmcplusplus {
 
   struct RealEGOSet: public SPOSetBase
@@ -37,7 +40,7 @@ namespace qmcplusplus {
 
     void resetParameters(const opt_variables_type& optVariables){}
     inline void resetTargetParticleSet(ParticleSet& P) { }
-    void setOrbitalSetSize(int norbs) { }
+    void setOrbitalSetSize(int norbs) { } 
 
     SPOSetBase* makeClone() const
     {
@@ -231,9 +234,29 @@ namespace qmcplusplus {
     BackflowTransformation *BFTrans;
 #endif
 
-  private:
-
   };
+
+  /** OrbitalBuilder for Slater determinants of electron-gas 
+  */
+  class ElectronGasBasisBuilder: public BasisSetBuilder {
+    protected:
+      typedef map<string,ParticleSet*> PtclPoolType;
+      typedef map<string,SPOSetBase*>  SPOPoolType;
+      ParticleSet *targetPtcl;
+      RealEGOSet* myBasis;
+    public:
+      ///constructor
+      ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
+      
+      ///implement vritual function
+      bool put(xmlNodePtr cur);
+      /** initialize the Antisymmetric wave function for electrons
+      *@param cur the current xml node
+      */
+      SPOSetBase* createSPOSet(xmlNodePtr cur) {return myBasis;}; 
+      
+  };
+
 }
 #endif
 /***************************************************************************

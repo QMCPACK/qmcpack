@@ -479,10 +479,10 @@ namespace qmcplusplus
     for(int i=0; i<ParamIndex.size() ;i++)
     {
       #ifndef QMC_COMPLEX
-      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0])));
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1])));
       #else
-      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0]).real()));
-      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][0]).imag()));
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).real()));
+      clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).imag()));
       #endif
     }
     

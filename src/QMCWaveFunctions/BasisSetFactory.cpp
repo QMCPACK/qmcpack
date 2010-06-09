@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
@@ -74,18 +75,18 @@ namespace qmcplusplus {
     aAttrib.add(transformOpt,"transform");
     if(rootNode != NULL)  aAttrib.put(rootNode); 
     
-    xmlNodePtr tc = cur->children; tc=tc->next;
-    while(tc != NULL) {
-    string cname;  getNodeName(cname,tc);
-    if (cname.find("asis")>1)
-    {
-      OhmmsAttributeSet bAttrib;
-      bAttrib.add(name,"name");
-      bAttrib.put(tc);
-      break;
-    }
-    tc=tc->next;
-    }
+//     xmlNodePtr tc = cur->children; tc=tc->next;
+//     while(tc != NULL) {
+//     string cname;  getNodeName(cname,tc);
+//     if (cname.find("asis")>1)
+//     {
+//       OhmmsAttributeSet bAttrib;
+//       bAttrib.add(name,"name");
+//       bAttrib.put(tc);
+//       break;
+//     }
+//     tc=tc->next;
+//     }
 
     BasisSetBuilder* bb=0;
     if(typeOpt.find("spline")<typeOpt.size())
@@ -137,7 +138,10 @@ namespace qmcplusplus {
       //app_log()<<"Optimizable SPO set"<<endl;
       bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
     }
-    
+    else if (typeOpt == "jellium") {
+      app_log()<<"Electron gas SPO set"<<endl;
+      bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
+    }    
 
     PRE.flush();
 

@@ -52,7 +52,6 @@ namespace qmcplusplus
   {
   }
 
-
   bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   {
     int nc=0;
@@ -202,7 +201,61 @@ namespace qmcplusplus
 
     return true;
   }
-}
+  
+  ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur):targetPtcl (&p)
+  {
+  }
+  
+  bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
+  {
+    int nc=0;
+    ValueType bosonic_eps(-999999);
+    ValueType rntype(0);
+    PosType twist(0.0);
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(nc,"shell");
+    aAttrib.add(bosonic_eps,"eps");
+    aAttrib.add(rntype,"primary");
+    aAttrib.add(twist,"twist");
+    aAttrib.put(cur);
+
+    
+//     int nat=targetPtcl->getTotalNum();
+//     int nup=nat/2;
+    
+    HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl->Lattice);
+    
+//     if (nc == 0) nc = egGrid.getShellIndex(nup);
+    
+    if (nc<0)
+    {
+      app_error() << "  HEG Invalid Shell." << endl;
+      APP_ABORT("ElectronGasOrbitalBuilder::put");
+    }
+    
+//     if (nup!=egGrid.getNumberOfKpoints(nc))
+//     {
+//       app_error() << "  The number of particles does not match to the shell." << endl;
+//       app_error() << "  Suggested values for the number of particles " << endl;
+//       app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc) << " for shell "<< nc << endl;
+//       app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc-1) << " for shell "<< nc-1 << endl;
+//       APP_ABORT("ElectronGasOrbitalBuilder::put");
+//       return false;
+//     }
+    int nup = egGrid.n_within_shell[nc];
+    int nkpts=(nup-1)/2;
+    app_log()<<nup<< "  "<<nkpts<<endl;
+    
+    //create a E(lectron)G(as)O(rbital)Set
+    egGrid.createGrid(nc,nkpts);
+    myBasis=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
+//     myBasis->OrbitalSetSize= 
+//     myBasis->BasisSetSize=
+    
+    return true;
+  }
+  
+  }
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

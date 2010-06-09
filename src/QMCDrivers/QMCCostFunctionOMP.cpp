@@ -457,8 +457,8 @@ namespace qmcplusplus
 
 QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)
   {
-    resetPsi();
-    Return_t NWE = NumWalkersEff=correlatedSampling(true);
+//     resetPsi();
+//     Return_t NWE = NumWalkersEff=correlatedSampling(true);
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
     vector<Return_t> D_avg(NumParams(),0);
@@ -528,7 +528,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
     Overlap(0,0) = 1.0;
     H2(0,0) = curAvg2_w;
     
-    return NWE;
+    return 1.0;
   }
 
 
