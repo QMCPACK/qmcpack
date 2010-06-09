@@ -23,7 +23,7 @@ After downloading these tools, do \icode{chmod u+x wfconv ppconvert} to mark the
 \subsection*{Convert the pseudopotentials}
 [check this, perhaps also explaining what each line in the file means]
 
-Copy the following pseudopotential in GAMESS format into a file \iconsole{B.BFD.gamess}:
+Copy the following pseudopotential in GAMESS format into a file \iterm{B.BFD.gamess}:
 \begin{code}
 B-QMC GEN 2 1
 3
@@ -34,7 +34,7 @@ B-QMC GEN 2 1
 15.49737620 2 3.43781634
 \end{code}
 
-Likewise, the following into \iconsole{N.BFD.gamess}:
+Likewise, the following into \iterm{N.BFD.gamess}:
 \begin{code}
 N-QMC GEN 2 1
 3
@@ -64,10 +64,10 @@ ppconvert --gamess_pot N.BFD.gamess --s_ref "1s(2)2p(3)" --p_ref "1s(2)2p(3)" \
 \subsection*{Generating orbitals with ABINIT}
 ABINIT (http://www.abinit.org) is a general-purpose plane-wave DFT code which supports pseudopotential and PAW calculations.  It is well-documented, full-featured, and has a vibrant community support forum.
 
-We will begin with a primitive cell of c-BN. Copy the following into \iconsole{cBNprim.in}:
+We will begin with a primitive cell of c-BN. Copy the following into \iterm{cBNprim.in}:
 \codesrc{cBNprim.in}
 
-Copy the following into \iconsole{cBNprim.files}:
+Copy the following into \iterm{cBNprim.files}:
 \begin{code}
 cBNprim.in
 cBNprim.out
@@ -79,27 +79,27 @@ N.BFD.fhi
 \end{code}
 
 Now, run
-\begin{console}
+\begin{term}
 abinis < cBNprim.files
-\end{console}
+\end{term}
 
 \subsection*{Converting the orbitals}
 With wfconv in your PATH, run
-\begin{console}
+\begin{term}
 wfconv --eshdf cBNprim.h5 cBNprim.xo_WFK
-\end{console}
+\end{term}
 
 This will generated an orbital file in the ESHDF format that QMCPACK reads.
 
 N.B. The GPU version of QMCPACK uses an older format for the orbital file. To generate orbitals for the GPU code, do instead
-\begin{console}
+\begin{term}
 wfconv --spline --qmcPACK cBNprim.h5 cBNprim.xo_WFK
-\end{console}
+\end{term}
 
 The newer CPU code also can read this format, but we are trying to deprecate it. We intend to remerge the GPU and CPU versions in the near future. 
 
 \subsection*{Running QMCPACK}
-Copy the following to \iconsole{cBNprim.qmc.xml}:
+Copy the following to \iterm{cBNprim.qmc.xml}:
 \codesrc{cBNprim.qmc.xml}
 
 More from\\

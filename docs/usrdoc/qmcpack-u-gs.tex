@@ -2,9 +2,9 @@
 %developer contact info here (Jeongnim? or all of us?)
 \section{Obtaining QMCPACK}
 QMCPACK is written in C++ and is currently under the New BSD License.  Due to its incomplete compliance with the current ISO C++ standard, it is not released in cross-compilable packages.  It is instead obtained from its source code repository hosted by Google Code.  As described in project website at http://code.google.com/p/qmcpack/, the latest revision of the code can be checked out anonymously using Subversion, with the command
-\begin{console}
+\begin{term}
 svn checkout http://qmcpack.googlecode.com/svn/trunk/ qmcpack-read-only
-\end{console}
+\end{term}
 where the local directory name \icode{qmcpack-read-only} can be changed as needed.  The repository forbids anonymous users (ie. nonmembers of the project) from committing changes to the code.  The above command will create a directory \icode{qmcpack-read-only} (topdir) which contains
 \begin{verbatim} 
 qmcpack-read-only/
@@ -48,21 +48,21 @@ For library packages, their full development versions (with suffixes -dev or -de
 %For cmake documentation and guides, consult cmake wiki.
 
 Assuming that all of the above packages are properly set up, building QMCPACK proceeds as follows.  Change to qmcpack the top directory (name can be different).
-\begin{console}
+\begin{term}
 cd qmcpack-read-only
-\end{console}
-We recommend out-of-source compilation by creating a directory for the libraries and binaries that is separate from the source directory.  If not in \iconsole{qmcpack-read-only} already, create the build directory (eg. \iconsole{build}) then change to the directory.\footnote{Like the top directory, the build directory name is completely arbitrary and it can be created at any location, even outside \iconsole{qmcpack-read-only}.  This is useful if you need more than one build, for testing purposes.}
-\begin{console}
+\end{term}
+We recommend out-of-source compilation by creating a directory for the libraries and binaries that is separate from the source directory.  If not in \iterm{qmcpack-read-only} already, create the build directory (eg. \iterm{build}) then change to the directory.\footnote{Like the top directory, the build directory name is completely arbitrary and it can be created at any location, even outside \iterm{qmcpack-read-only}.  This is useful if you need more than one build, for testing purposes.}
+\begin{term}
 mkdir build
 cd build
-\end{console}
+\end{term}
 In the build directory, run cmake to create Makefiles, then build the executable using make.
 %(Don't forget ..)
-\begin{console}
+\begin{term}
 cmake ..
 make
-\end{console}
-If everything goes well, then you should see \iconsole{qmcpack-read-only/build/bin/qmcapp}.
+\end{term}
+If everything goes well, then you should see \iterm{qmcpack-read-only/build/bin/qmcapp}.
 %The procedure above, creating build directory and running camke in a new directory, is an example. We can further separate the source (development) and build. Let's assume that the QMCPACK topdir is /home/foo/src/qmcpack. Then, one can build multiple executables in different locations by creating new directories and build QMCPACK in each directory.
 %\begin{verbatim}
 %/home/foo/build/gcc-real
@@ -76,7 +76,7 @@ If everything goes well, then you should see \iconsole{qmcpack-read-only/build/b
 %$cmake /home/foo/src/qmcpack
 %$make 
 %\end{verbatim}
-So far, there is no need to change sources or cmake files.  \icode{cmake ..} in the above procedure uses \iconsole{..} because the source tree resides in the parent directory.  If something did not work, simply remove the directory (eg. \icode{rm -rf build}) and start again. 
+So far, there is no need to change sources or cmake files.  \icode{cmake ..} in the above procedure uses \iterm{..} because the source tree resides in the parent directory.  If something did not work, simply remove the directory (eg. \icode{rm -rf build}) and start again. 
 
 Additional configurations must be considered if you need to deviate from the default settings of parallel computing (MPI) and multithreading (OpenMP).  See \S{}\ref{ss:compset} for details.
 
@@ -100,7 +100,7 @@ Next, add the directory containing mpi.h to the include file search path.  If th
 %  \end{itemize*}
 %One of these actions will disable MPI
 \begin{itemize*}
-  \item{} Modify \iconsole{topdir/CMakeLists.txt}:
+  \item{} Modify \iterm{topdir/CMakeLists.txt}:
 \begin{code}
 SET(QMC_MPI 0)
 \end{code}
@@ -109,7 +109,7 @@ SET(QMC_MPI 0)
 \textbf{Note}: Shell environment variables take precedence over CMake settings.
 
 \paragraph{Multithreading}
-OpenMP is disabled by default in \iconsole{CMakeLists.txt} but is automatically enabled if CMake detects that these compilers are being used:
+OpenMP is disabled by default in \iterm{CMakeLists.txt} but is automatically enabled if CMake detects that these compilers are being used:
 \begin{itemize*}
   \item{} Intel compilers
   \item{} IBM VisualAge compilers
@@ -117,7 +117,7 @@ OpenMP is disabled by default in \iconsole{CMakeLists.txt} but is automatically 
 \end{itemize*}
 To enable OpenMP for other compilers, one of the following actions will be needed:
 \begin{itemize*}
-  \item{} Modify \iconsole{topdir/CMakeLists.txt}:
+  \item{} Modify \iterm{topdir/CMakeLists.txt}:
 \begin{code}
 SET(QMC_OMP 1)
 \end{code}
@@ -161,7 +161,7 @@ In addition to \icode{QMC\_MPI} and \icode{QMC\_OMP}, there are few more environ
 
 \paragraph{Numerical Libraries}
 %If lapack/blas or atlas is not in your standard path, do one of the following. ``location'' is where the libraries are located.
-If LAPACK/BLAS or ATLAS is not in your library search path, set the environment variables \icode{LAPACK} to \icode{"-L/installdir -llapack -lblas"} and \icode{ATLAS} to\\ \icode{"-L/installdir -llapack -lf77blas -lcblas -latlas"}, changing \iconsole{installdir} appropriately.
+If LAPACK/BLAS or ATLAS is not in your library search path, set the environment variables \icode{LAPACK} to \icode{"-L/installdir -llapack -lblas"} and \icode{ATLAS} to\\ \icode{"-L/installdir -llapack -lf77blas -lcblas -latlas"}, changing \iterm{installdir} appropriately.
 
 %For bash users,
 %\begin{verbatim}
@@ -177,22 +177,22 @@ If LAPACK/BLAS or ATLAS is not in your library search path, set the environment 
 \subsection{Configurations known to work}
 \subsubsection{Intel 64 Abe cluster @ NCSA}
 Abe uses SoftEnv to activate the configurations for the (otherwise dormant) software installed in it.  Create the file .soft in the home directory, containing the following lines:
-\begin{console}
+\begin{term}
 @default
 @boost-1.42.0
 @teragrid-basic
 +intel-mkl
 +libxml2
 +hdf5-1.8.4
-\end{console}
+\end{term}
 Set the following environment variables:
-\begin{console}
+\begin{term}
 CXX=mpicxx
 CC=icc
 LIBXML2\_HOME=/usr/local/libxml2-2.6.29
 QMC\_BITS=64
 QMC\_OMP=1
-\end{console}
+\end{term}
 
 \subsubsection{Intel Mac OS X}
 [I can try this on my laptop, with MacPorts]
