@@ -244,7 +244,6 @@ namespace qmcplusplus
 //     }
     int nup = egGrid.n_within_shell[nc];
     int nkpts=(nup-1)/2;
-    app_log()<<nup<< "  "<<nkpts<<endl;
     
     //create a E(lectron)G(as)O(rbital)Set
     egGrid.createGrid(nc,nkpts);

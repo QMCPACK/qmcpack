@@ -91,19 +91,65 @@ namespace qmcplusplus
 //    else 
      if (same_k) 
    {
-      int off         = BasisOrbitals ? N : 0;
+      int off         = BasisOrbitals ? 0 : N;
       SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
-      
+      app_log()<<"OFFSET "<<off<<endl;
       for (int igs=0; igs<N; igs++) {
         PosType k_gs = GSOrbitals->get_k(igs);
         for (int ib=0; ib<M; ib++) {
           PosType k_b = basOrbs->get_k(ib+off);
-          if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-6) 
+          if (dot(k_gs-k_b, k_gs-k_b) < 1.0e-6)
+          {
+//             app_log()<<"Allowing ("<<igs<<","<<ib<<") :";
+//             for(int ix=0;ix<3;ix++) app_log()<<k_gs[ix]<<"  ";
+//             app_log()<<" : ";
+//             for(int ix=0;ix<3;ix++) app_log()<<k_b[ix]<<"  ";
+//             app_log()<<endl;
             allowedOrbs(igs,ib)=1;
-          else
+          }
+          else          
+          {
+//             app_log()<<"Not allowing ("<<igs<<","<<ib<<") :";
+//             for(int ix=0;ix<3;ix++) app_log()<<k_gs[ix]<<"  ";
+//             app_log()<<" : ";
+//             for(int ix=0;ix<3;ix++) app_log()<<k_b[ix]<<"  ";
+//             app_log()<<endl;
             allowedOrbs(igs,ib)=0;
+          }
         }
       }
+   }
+   else if (mapped_k)
+   {
+     xmlNodePtr xmlCoefs = node->xmlChildrenNode;
+     while (xmlCoefs != NULL) {
+       string cname((const char*)xmlCoefs->name);
+       if (cname == "orbitalmap") {
+         string type("0");
+         OhmmsAttributeSet cAttrib;
+         cAttrib.add(type, "type");
+         cAttrib.put(xmlCoefs);
+         if (type != "Array") {
+           // app_error() << "Unknown correlation type " + type + " in OptimizableSPOSet." + "Resetting to \"Array\"\n";
+           xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
+       }
+       vector<RealType> params;
+       putContent(params, xmlCoefs);
+       int indx(0);
+       if(params.size()==N*M)       
+       for (int igs=0; igs<N; igs++) {
+         for (int ib=0; ib<M; ib++) {
+           allowedOrbs(igs,ib)=params[indx++];   
+         }
+       }
+       else
+       {
+         app_error()<<"Map size is incorrect. parameters given= "<<params.size()<<" parameters needed= "<<M*N<<endl;
+       }
+       
+       }
+       xmlCoefs = xmlCoefs->next;
+   }
    }
    else {
      for (int igs=0; igs<N; igs++) {
@@ -142,10 +188,10 @@ namespace qmcplusplus
 	// cerr << "params.size() = " << params.size() << endl; 
    //If params is missized resize and initialize to zero.
    if ((asize)&&(params.size()!=asize)) params.resize(asize,0.0);
-   else asize=params.size();
+   else if (params.size()) asize=params.size();
 //    for (int i=0; i< params.size(); i++) {
-   int indx=0;
-   for (int i=0; i< M; i++) {
+  int indx=0;
+  for (int i=0; i< M; i++) {
 	  std::stringstream sstr;
 #ifndef QMC_COMPLEX
 // 	  ParamPointers.push_back(&(C(state,i)));
