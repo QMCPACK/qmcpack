@@ -57,10 +57,10 @@ namespace qmcplusplus {
         int even=(i-1)%2;
         PosType k_tmp = K[ik];
         k_tmp *= 1.0/std::sqrt(-mK2[ik]);
-        if(even)
-          return -1*k_tmp;
-        else
-          return k_tmp;
+//         if(even)
+//           return -1*k_tmp;
+//         else
+        return k_tmp;
       } 
       else
         return PosType();

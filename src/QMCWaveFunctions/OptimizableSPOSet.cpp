@@ -93,7 +93,6 @@ namespace qmcplusplus
    {
       int off         = BasisOrbitals ? 0 : N;
       SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
-      app_log()<<"OFFSET "<<off<<endl;
       for (int igs=0; igs<N; igs++) {
         PosType k_gs = GSOrbitals->get_k(igs);
         for (int ib=0; ib<M; ib++) {
@@ -165,7 +164,7 @@ namespace qmcplusplus
       string cname((const char*)xmlCoefs->name);
       if (cname == "coefficients") {
 	string type("0"), id("0");
-	int state=-1; int asize(0);
+	int state=-1; int asize(-1);
 	OhmmsAttributeSet cAttrib;
    cAttrib.add(id, "id");
    cAttrib.add(type, "type");
@@ -187,7 +186,7 @@ namespace qmcplusplus
 	app_log() << "Coefficients for state" << state << ":\n";
 	// cerr << "params.size() = " << params.size() << endl; 
    //If params is missized resize and initialize to zero.
-   if ((asize)&&(params.size()!=asize)) params.resize(asize,0.0);
+   if ((params.size()!=asize)&&(asize>0)) params.resize(asize,0.0);
    else if (params.size()) asize=params.size();
 //    for (int i=0; i< params.size(); i++) {
   int indx=0;
