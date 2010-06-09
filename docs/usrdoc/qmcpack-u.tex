@@ -12,6 +12,7 @@
 \usepackage{natbib,mdwlist}
 %\usepackage[tracking=true]{microtype}
 
+\urlstyle{same}
 %\definecolor{codebg}{gray}{0.80}
 %\newcommand{\icode}[1]{\textcolor{OliveGreen}{\texttt{#1}}}
 %\newcommand{\iconsole}[1]{\textcolor{RoyalBlue}{\texttt{#1}}}
@@ -19,8 +20,8 @@
 \newcommand{\iconsole}[1]{\textcolor{RoyalBlue}{\Verb|#1|}}
 \newcommand{\codesrc}[1]{\VerbatimInput[frame=single,rulecolor=\color{black},formatcom=\color{OliveGreen},numbers=left]{#1}}
 \newcommand{\consolesrc}[1]{\VerbatimInput[frame=single,rulecolor=\color{black},formatcom=\color{RoyalBlue},numbers=none]{#1}}
-\DefineVerbatimEnvironment{code}{Verbatim}{numbers=left,frame=single,rulecolor=\color{black},formatcom=\color{OliveGreen},numbers=none}
-\DefineVerbatimEnvironment{console}{Verbatim}{numbers=left,frame=single,rulecolor=\color{black},formatcom=\color{RoyalBlue},numbers=none}
+\DefineVerbatimEnvironment{code}{Verbatim}{frame=single,rulecolor=\color{black},formatcom=\color{OliveGreen},numbers=none,commandchars=\\\{\}}
+\DefineVerbatimEnvironment{console}{Verbatim}{frame=single,rulecolor=\color{black},formatcom=\color{RoyalBlue},numbers=none,commandchars=\\\{\}}
 
 \title{QMCPACK User Documentation}
 \author{UIUC Electronic Structure Group}

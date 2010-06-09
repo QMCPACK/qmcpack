@@ -178,19 +178,19 @@ If LAPACK/BLAS or ATLAS is not in your library search path, set the environment 
 \subsubsection{Intel 64 Abe cluster @ NCSA}
 Abe uses SoftEnv to activate the configurations for the (otherwise dormant) software installed in it.  Create the file .soft in the home directory, containing the following lines:
 \begin{console}
-@default\\
-@boost-1.42.0\\
-@teragrid-basic\\
-+intel-mkl\\
-+libxml2\\
+@default
+@boost-1.42.0
+@teragrid-basic
++intel-mkl
++libxml2
 +hdf5-1.8.4
 \end{console}
 Set the following environment variables:
 \begin{console}
-CXX=mpicxx\\
-CC=icc\\
-LIBXML2\_HOME=/usr/local/libxml2-2.6.29\\
-QMC\_BITS=64\\
+CXX=mpicxx
+CC=icc
+LIBXML2\_HOME=/usr/local/libxml2-2.6.29
+QMC\_BITS=64
 QMC\_OMP=1
 \end{console}
 
