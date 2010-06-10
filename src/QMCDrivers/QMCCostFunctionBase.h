@@ -56,6 +56,7 @@ namespace qmcplusplus
 
       ///process xml node
       bool put(xmlNodePtr cur);
+      void resetCostFunction(vector<xmlNodePtr> cset);
       ///assign optimization parameter i
       Return_t& Params(int i)
       {
@@ -239,7 +240,6 @@ namespace qmcplusplus
       string RootName;
       ///Hamiltonians that depend on the optimization: KE
       QMCHamiltonian H_KE;
-      bool samplePsi2;
 
       /** Sum of energies and weights for averages
        *

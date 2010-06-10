@@ -161,7 +161,8 @@ namespace qmcplusplus
         int bestStability(0);
         vector<vector<RealType> > LastDirections;
         RealType deltaPrms(-1.0);
-        for(int tries=0;tries<eigCG;tries++){
+        for(int tries=0;tries<eigCG;tries++)
+        {
           Matrix<RealType> Ham(N,N);
           Matrix<RealType> Ham2(N,N);
           Matrix<RealType> S(N,N);
@@ -169,15 +170,16 @@ namespace qmcplusplus
 
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           
+//           checkConfigurations calculates the derivatives
           optTarget->checkConfigurations();
-//           optTarget->setTargetEnergy(branchEngine->getEref());
-
-          RealType lastCost(optTarget->Cost(true));
+          RealType lastCost(optTarget->Cost(false));
           RealType newCost(lastCost);
           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
+          
 // mmorales
           if(!optTarget->IsValid) 
           {
+            app_log()<<"Invalid Cost Function!"<<endl;
             Valid=false;
             break;
           }
@@ -231,7 +233,11 @@ namespace qmcplusplus
                   e_min_indx=i;
                 }
 //               app_log()<<"E_lin = "<<E_lin<<endl;
-              if (abs(E_lin/Ham(0,0))>1.5) break;
+              if (abs(E_lin/Ham(0,0))>1.5)
+              {
+                app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
+                break; 
+              }
               Matrix<RealType> ST2(N,N);
               RealType H2rescale=1.0/(E_lin*E_lin);
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
@@ -244,32 +250,21 @@ namespace qmcplusplus
                 for (int i=0;i<N;i++)
                 {
                   RealType evi(alphar[i]/beta[i]);
-//                   mappedEigenvalues[i].first=(evi-Ham(0,0))*(evi-Ham(0,0));
-//                   mappedEigenvalues[i].first=1-evi;
                   mappedEigenvalues[i].first=evi;
                   mappedEigenvalues[i].second=i;
-//                  app_log()<<i<<"   "<<evi<<endl;//" "<<(evi-Ham(0,0))*(evi-Ham(0,0))<<endl;
                 }
-//                 app_log()<<endl;
                 std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-//                 app_log()<<mappedEigenvalues[0].second<<endl;
                 
-
                 for (int i=0;i<N;i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
                 //eigenCG part
-                RealType nrmold(0);
-
+                
                 for(int ldi=0;ldi<LastDirections.size();ldi++)
                 {
-                  for (int i=1;i<N;i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
-                  RealType ovlpold(0), nrmnew(0);
-                  for (int i=1;i<N;i++) nrmnew +=currentParameterDirections[i]*currentParameterDirections[i];
+                  RealType nrmold(0), ovlpold(0);
+                  for (int i=1;i<N;i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i]; 
                   for (int i=1;i<N;i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
-                  for (int i=1;i<N;i++) currentParameterDirections[i] -= ovlpold/nrmold * LastDirections[ldi][i];
-                  nrmnew=0;
-                  for (int i=1;i<N;i++) nrmnew +=currentParameterDirections[i]*currentParameterDirections[i];
-                  //rescale to be something that worked before
-                  for (int i=1;i<N;i++) currentParameterDirections[i] *= nrmold/nrmnew;
+                  ovlpold*=1.0/nrmold;
+                  for (int i=1;i<N;i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
                 }
  //If not rescaling and linear parameters, step size and grad are the same.
 //              LambdaMax=1.0;
@@ -292,7 +287,11 @@ namespace qmcplusplus
               } else {
                 Valid=lineoptimization2();
               }
-              if(!Valid) break;
+              if(!Valid) 
+              {
+                app_log()<<"Invalid Cost Function!"<<endl;
+                break;
+              }
 
               dopt *= std::abs(Lambda);
                 
@@ -311,10 +310,11 @@ namespace qmcplusplus
 // mmorales
                 if(!optTarget->IsValid)
                 {
+                  app_log()<<"Invalid Cost Function!"<<endl;
                   Valid=false;
                   break;
                 }
-                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size:"<<dopt<<endl;
+                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
                 
                 if ((newCost < lastCost)&&(newCost==newCost))
@@ -335,6 +335,7 @@ namespace qmcplusplus
               }
           
           }
+          
           if(acceptedOneMove && Valid)
           {
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
@@ -399,7 +400,7 @@ namespace qmcplusplus
         app_log() << "</vmc>" << endl;                                           
         
         //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
-        branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
+//         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
         //set the h5File to the current RootName                              
         h5FileRoot=RootName;                                                  
     }                                                                       
@@ -494,6 +495,13 @@ namespace qmcplusplus
         success=optTarget->put(q);
       }
       return success;
+    }
+    
+    void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
+    {
+      m_param.put(cur);
+      optTarget->put(cur);
+      vmcEngine->resetComponents(cur);
     }
 }
 /***************************************************************************

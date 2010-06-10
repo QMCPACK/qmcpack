@@ -52,8 +52,8 @@ namespace qmcplusplus
 
       /** Temp derivative properties and Hderivative properties of all the walkers
       */
-      vector<vector<vector<Return_t> >* > TempDerivRecords;
-      vector<vector<vector<Return_t> >* > TempHDerivRecords;
+      vector<Matrix<Return_t>* > DerivRecords;
+      vector<Matrix<Return_t>* > HDerivRecords;
       Return_t CSWeight;
 
       Return_t correlatedSampling(bool needGrad=true);

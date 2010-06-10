@@ -31,7 +31,7 @@ namespace qmcplusplus
       MPIObjectBase(0),
       W(w),H(h),Psi(psi),  Write2OneXml(true),
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-      w_en(0.0), w_var(0.0), w_abs(0.0), samplePsi2(true),
+      w_en(0.0), w_var(0.0), w_abs(0.0),
       CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0), SmallWeight(0)
   {
 
@@ -70,12 +70,12 @@ namespace qmcplusplus
   {
 
     Etarget = et;
-    app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
+//     app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
 
     //evaluate effective target energy
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
 
-    app_log() << "Effective Target Energy = " << EtargetEff << endl;
+//     app_log() << "Effective Target Energy = " << EtargetEff << endl;
     app_log() << "Cost Function = " << w_en << "*<E> + "
     << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
     //if(UseWeight)
@@ -90,8 +90,8 @@ namespace qmcplusplus
         *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
         *msg_stream << "  Optimization report = ";
         *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
-        *msg_stream << "  Optimized variables = ";
-        for (int i=0; i<OptVariables.size(); ++i) *msg_stream << OptVariables.name(i) << ",";
+        *msg_stream << "  Optimized variables = " << OptVariables.name(0);
+        for (int i=1; i<OptVariables.size(); ++i) *msg_stream << "," << OptVariables.name(i) ;
         *msg_stream << endl;
       }
   }
@@ -473,24 +473,18 @@ namespace qmcplusplus
   bool
   QMCCostFunctionBase::put(xmlNodePtr q)
   {
-
-    string useWeightStr("yes");
     string writeXmlPerStep("no");
 
     ParameterSet m_param;
-    //m_param.add(useWeightStr,"useWeight","string");
     m_param.add(writeXmlPerStep,"dumpXML","string");
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.add(MinNumWalkers,"minWalkers","scalar");
+    m_param.add(MinNumWalkers,"minwalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
-    m_param.add(SmallWeight,"smallWeight","scalar");
-//     m_param.add(useWeightStr,"reweight","string");
     m_param.put(q);
 
-//     samplePsi2 = (useWeightStr != "psi");
-//     app_log()<<"  samplePsi2 is "<<samplePsi2<<endl;
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -626,9 +620,9 @@ namespace qmcplusplus
         APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
       }
 
-    app_log() << "<active-optimizables> " << endl;
-    OptVariables.print(app_log());
-    app_log() << "</active-optimizables>" << endl;
+//     app_log() << "<active-optimizables> " << endl;
+//     OptVariables.print(app_log());
+//     app_log() << "</active-optimizables>" << endl;
 
     if (msg_stream) msg_stream->setf(ios::scientific, ios::floatfield);
 
@@ -641,30 +635,33 @@ namespace qmcplusplus
       {
         if (msg_stream) *msg_stream << " Using Default Cost Function: Cost = <|E-E_ff|^2>" << endl;
       }
-    else
-      {
-        for (int i=0; i<cset.size(); i++)
-          {
-            string pname;
-            Return_t wgt=1.0;
-            OhmmsAttributeSet pAttrib;
-            pAttrib.add(pname,"name");
-            pAttrib.put(cset[i]);
-            if (pname == "energy")
-              putContent(w_en,cset[i]);
-            else if ((pname == "variance")|| (pname == "unreweightedvariance"))
-              putContent(w_w,cset[i]);
-            else if (pname == "difference")
-              putContent(w_abs,cset[i]);
-            else if ((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
-              putContent(w_var,cset[i]);
-          }
-      }
+    else resetCostFunction(cset);
+
 
     //maybe overwritten but will try out
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
 
     return true;
+  }
+  
+  void QMCCostFunctionBase::resetCostFunction(vector<xmlNodePtr> cset)
+  {
+    for (int i=0; i<cset.size(); i++)
+    {
+      string pname;
+      Return_t wgt=1.0;
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(pname,"name");
+      pAttrib.put(cset[i]);
+      if (pname == "energy")
+        putContent(w_en,cset[i]);
+      else if ((pname == "variance")|| (pname == "unreweightedvariance"))
+        putContent(w_w,cset[i]);
+      else if (pname == "difference")
+        putContent(w_abs,cset[i]);
+      else if ((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
+        putContent(w_var,cset[i]);
+    }
   }
 
 

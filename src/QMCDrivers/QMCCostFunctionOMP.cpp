@@ -86,8 +86,8 @@ namespace qmcplusplus
                 Return_t weight=saved[REWEIGHT]*wgtinv;
                 Return_t eloc_new=saved[ENERGY_NEW];
                 delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
-                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+                const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+                const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
                 for (int pm=0; pm<NumOptimizables;pm++)
                   {
                     HD_avg[pm]+= HDsaved[pm];
@@ -111,8 +111,8 @@ namespace qmcplusplus
                 if (eloc_new-EtargetEff<0) ltz=false;
                 Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
                 Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
-                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+                const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+                const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
                 for (int pm=0; pm<NumOptimizables;pm++)
                   {
                     EDtotals_w[pm] += weight*(HDsaved[pm] + 2.0*Dsaved[pm]*delta_l);
@@ -137,8 +137,8 @@ namespace qmcplusplus
                 Return_t eloc_new=saved[ENERGY_NEW];
                 Return_t delta_l = (eloc_new-curAvg_w);
                 Return_t sigma_l = delta_l*delta_l;
-                vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-                vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+                const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+                const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
                 for (int pm=0; pm<NumOptimizables;pm++)
                   {
                     E2Dtotals_w[pm] += weight*2.0*(Dsaved[pm]*(sigma_l-curVar_w) + delta_l*(HDsaved[pm]-EDtotals_w[pm]));
@@ -183,8 +183,8 @@ namespace qmcplusplus
         RecordsOnNode.resize(NumThreads,0);
         //DerivRecords.resize(NumThreads );
         //HDerivRecords.resize(NumThreads );
-        TempDerivRecords.resize(NumThreads,0);
-        TempHDerivRecords.resize(NumThreads,0);
+        DerivRecords.resize(NumThreads,0);
+        HDerivRecords.resize(NumThreads,0);
       }
 
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
@@ -250,10 +250,16 @@ namespace qmcplusplus
         {
           RecordsOnNode[ip]=new Matrix<Return_t>;
           RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
-          //DerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(0.0,NumOptimizables));
-          //HDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(0.0,NumOptimizables));
-          TempDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
-          TempHDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
+          DerivRecords[ip]=new Matrix<Return_t>;
+          DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+          HDerivRecords[ip]=new Matrix<Return_t>;
+          HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);        
+        }
+       else if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
+        {
+          RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+          DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+          HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);   
         }
       //set the optimization mode for the trial wavefunction
       psiClones[ip]->startOptimization();
@@ -271,27 +277,21 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-          //vector<Return_t> Dsaved= (*DerivRecords[ip])[iw];
-          //vector<Return_t> HDsaved= (*HDerivRecords[ip])[iw];
           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
           saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-//           if (samplePsi2) thisWalker.Weight=1.0;
-//           else thisWalker.Weight=std::exp(saved[LOGPSI_FIXED]+saved[LOGPSI_FREE]);
           thisWalker.Weight=1.0;
 
 
-          vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
-          vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
-
-          psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi,*Dsaved,*HDsaved);
-
-          //for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
-          //for(int l=0; l<NumOptimizables; l++) cout<<HDsaved[l]<<"  "<<Dsaved[l];
-          //cout<<endl;
+          vector<Return_t> Dsaved(NumOptimizables);
+          vector<Return_t> HDsaved(NumOptimizables);
+          psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+          std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
+          std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
         }
+        
       //add them all
 #pragma omp atomic
       et_tot+=e0;
@@ -371,26 +371,20 @@ namespace qmcplusplus
 
           RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
           eloc_new = KEtemp + saved[ENERGY_FIXED];
-          Return_t weight;
-//           if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
-//           else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
-//           if (samplePsi2) weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
-//           else 
-            //weight = std::exp(logpsi-saved[LOGPSI_FREE]) ;
-          //  Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
-          if(SmallWeight > 0.0 && std::exp(saved[LOGPSI_FREE]) < SmallWeight) {
-          // set weight to zero           
-            weight = 0.0;
-          } else
-           weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+          Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
 
           saved[ENERGY_NEW]=eloc_new;
           saved[REWEIGHT]=weight;
 
-          vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
-          vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
-          if (needGrad) psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi,*Dsaved,*HDsaved);
-
+          if (needGrad)
+          {
+            vector<Return_t> Dsaved(NumOptimizables);
+            vector<Return_t> HDsaved(NumOptimizables);
+            psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+            std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
+            std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+          }
+          
           wgt_node+=weight;
           wgt_node2+=weight*weight;
         }
@@ -466,15 +460,17 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
     for (int ip=0, wn=0; ip<NumThreads; ip++)
       {
         int nw=wClones[ip]->getActiveWalkers();
+        
+        
         for (int iw=0; iw<nw;iw++,wn++)
           {
             const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
             Return_t weight=saved[REWEIGHT]*wgtinv;
-            vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
+            const Return_t* Dsaved= (*DerivRecords[ip])[iw];
             for (int pm=0; pm<NumParams();pm++)
               {
                 D_avg[pm]+= Dsaved[pm]*weight;
-              }
+              } 
           }
       }
     myComm->allreduce(D_avg);
@@ -498,8 +494,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
             const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
             Return_t weight=saved[REWEIGHT]*wgtinv;
             Return_t eloc_new=saved[ENERGY_NEW];
-            vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
-            vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+            const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+            const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
 
               for (int pm=0; pm<NumParams();pm++)
               {

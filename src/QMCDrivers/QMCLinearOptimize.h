@@ -53,6 +53,7 @@ namespace qmcplusplus
       bool run();
       ///process xml node
       bool put(xmlNodePtr cur);
+      void resetComponents(xmlNodePtr cur);
       ///add a configuration file to the list of files
       void addConfiguration(const string& a);
       RealType Func(Return_t dl);

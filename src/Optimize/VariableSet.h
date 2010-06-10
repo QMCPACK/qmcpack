@@ -33,7 +33,8 @@ namespace optimize
     OTHER_P=0,
     LOGLINEAR_P, //B-spline Jastrows
     LOGLINEAR_K, //K space Jastrows
-    LINEAR_P     //Multi-determinant coefficients
+    LINEAR_P,    //Multi-determinant coefficients
+    SPO_P        //SPO set Parameters
   };
   
   /** class to handle a set of variables that can be modified during optimizations
@@ -194,9 +195,19 @@ namespace optimize
       
       inline void setComputed()
       {
-        for(int i=0;i<Recompute.size();i++) if (ParameterType[i].second==1) Recompute[i].second=0;
+        for(int i=0;i<Recompute.size();i++)
+        {
+          if      (ParameterType[i].second==LOGLINEAR_P) Recompute[i].second=0;
+          else if (ParameterType[i].second==LOGLINEAR_K) Recompute[i].second=0;
+          else Recompute[i].second=1;
+        }
       }
 
+      inline void setRecompute()
+      {
+        for(int i=0;i<Recompute.size();i++) Recompute[i].second=1;
+      }
+      
       /** clear the variable set
        *
        * Remove all the data.
