@@ -66,8 +66,8 @@ get_num_appropriate_devices()
   for (int device=0; device < deviceCount; ++device) {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
-    if ((deviceProp.major >= 1) &&
-	(deviceProp.minor >= 3)) 
+    if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
+	deviceProp.major >= 2)
       num_appropriate++;
   }
   return num_appropriate;
@@ -82,8 +82,8 @@ set_appropriate_device_num(int num)
   for (device = 0; device < deviceCount; ++device) {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
-    if ((deviceProp.major >= 1) &&
-	(deviceProp.minor >= 3)) {
+    if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
+	deviceProp.major >= 2) {
       num_appropriate++;
       if (num_appropriate == num+1)
 	cudaSetDevice (device);
