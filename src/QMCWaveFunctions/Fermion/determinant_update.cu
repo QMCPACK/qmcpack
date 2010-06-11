@@ -119,8 +119,8 @@ void
 update_inverse_cuda(updateJob updateList[], float dummy,
 		    int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 64;
+  const int BS2 = 64;
   int NB1 = N/BS1 + ((N%BS1) ? 1 : 0);
   int NB2 = N/BS2 + ((N%BS2) ? 1 : 0);
 
@@ -295,8 +295,8 @@ update_inverse_cuda(float **data, int iat[],
 		    int AinvDelta_off, int AinvColk_off,
 		    int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 64;
+  const int BS2 = 64;
   int NB1 = (N+BS1-1)/BS1;
   int NB2 = (N+BS2-1)/BS2;
 
@@ -468,8 +468,8 @@ update_inverse_cuda(float **data, int iat,
 		    int AinvDelta_off, int AinvColk_off,
 		    int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 64;
+  const int BS2 = 64;
   int NB1 = (N+BS1-1)/BS1;
   int NB2 = (N+BS2-1)/BS2;
 
@@ -638,8 +638,8 @@ update_inverse_cuda(float *A_g[], float *Ainv_g[], float *u_g[],
 		    float *Ainv_delta_g[], float *Ainv_colk_g[], 
 		    int N, int rowstride, int iat, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 64;
+  const int BS2 = 64;
 
   int NB1 = N/BS1 + ((N%BS1) ? 1 : 0);
   int NB2 = N/BS2 + ((N%BS2) ? 1 : 0);
