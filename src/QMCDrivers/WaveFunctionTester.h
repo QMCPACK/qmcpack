@@ -52,6 +52,7 @@ namespace qmcplusplus {
     void runBasicTest();
     void runCloneTest();
     void runDerivTest();
+    void runDerivCloneTest();
     void runGradSourceTest();
     void runZeroVarianceTest();
     void runwftricks();

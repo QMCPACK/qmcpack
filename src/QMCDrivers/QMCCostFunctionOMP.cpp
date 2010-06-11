@@ -282,7 +282,7 @@ namespace qmcplusplus
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
           saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-          thisWalker.Weight=1.0;
+          saved[REWEIGHT]=thisWalker.Weight=1.0;
 
 
           vector<Return_t> Dsaved(NumOptimizables);
@@ -299,13 +299,13 @@ namespace qmcplusplus
       e2_tot+=e2;
     }
     OptVariablesForPsi.setComputed();
-
+    
     //Need to sum over the processors
     vector<Return_t> etemp(3);
     etemp[0]=et_tot;
     etemp[1]=static_cast<Return_t>(wPerNode[NumThreads]);
     etemp[2]=e2_tot;
-
+    
     myComm->allreduce(etemp);
     Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
@@ -313,6 +313,7 @@ namespace qmcplusplus
     app_log() << "  VMC Eavg = " << Etarget << endl;
     app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
     app_log() << "  Total weights = " << etemp[1] << endl;
+    
 
     setTargetEnergy(Etarget);
 

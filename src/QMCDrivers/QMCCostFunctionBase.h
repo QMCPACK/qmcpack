@@ -73,6 +73,10 @@ namespace qmcplusplus
       }
       ///return the cost value for CGMinimization
       Return_t Cost(bool needGrad=true);
+
+      ///return the cost value for CGMinimization
+      Return_t computedCost();
+      void printEstimates();
       ///return the gradient of cost value for CGMinimization
       virtual void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0) {};
       ///return the number of optimizable parameters

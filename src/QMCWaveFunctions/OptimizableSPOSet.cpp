@@ -202,7 +202,7 @@ namespace qmcplusplus
        ParamIndex.push_back(TinyVector<int,2>(state,i));
 	    if (indx<asize) C(state,i) = params[indx];
 	    else C(state,i) = 0.0;
-	    myVars.insert(sstr.str(),C(state,i),true,optimize::LINEAR_P);
+	    myVars.insert(sstr.str(),C(state,i),true,optimize::SPO_P);
        indx++;
      }
      else
@@ -216,9 +216,9 @@ namespace qmcplusplus
 	  ParamIndex.push_back(TinyVector<int,2>(state,i));
 	  ParamIndex.push_back(TinyVector<int,2>(state,i));
 	  sstr << id << "_" << 2*i+0;
-	  myVars.insert(sstr.str(),C(state,i).real(),true,optimize::LINEAR_P);
+	  myVars.insert(sstr.str(),C(state,i).real(),true,optimize::SPO_P);
 	  sstr << id << "_" << 2*i+1;
-	  myVars.insert(sstr.str(),C(state,i).imag(),true,optimize::LINEAR_P);
+	  myVars.insert(sstr.str(),C(state,i).imag(),true,optimize::SPO_P);
 #endif
 	}
 

@@ -76,62 +76,70 @@ namespace qmcplusplus
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
 
 //     app_log() << "Effective Target Energy = " << EtargetEff << endl;
-    app_log() << "Cost Function = " << w_en << "*<E> + "
-    << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
+//     app_log() << "Cost Function = " << w_en << "*<E> + "
+//     << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
     //if(UseWeight)
     //app_log() << "Correlated sampling is used." << endl;
     //else
     //app_log() << "Weight is set to one." << endl;
 
-    if (msg_stream)
-      {
-        *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
-        *msg_stream << "  Effective Target Energy = " << EtargetEff << endl;
-        *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
-        *msg_stream << "  Optimization report = ";
-        *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
-        *msg_stream << "  Optimized variables = " << OptVariables.name(0);
-        for (int i=1; i<OptVariables.size(); ++i) *msg_stream << "," << OptVariables.name(i) ;
-        *msg_stream << endl;
-      }
+//     if (msg_stream)
+//       {
+//         *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
+//         *msg_stream << "  Effective Target Energy = " << EtargetEff << endl;
+//         *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
+//         *msg_stream << "  Optimization report = ";
+//         *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
+//         *msg_stream << "  Optimized variables = " << OptVariables.name(0);
+//         for (int i=1; i<OptVariables.size(); ++i) *msg_stream << "," << OptVariables.name(i) ;
+//         *msg_stream << endl;
+//       }
   }
 
   QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost(bool needGrad)
   {
-
     NumCostCalls++;
-
-    //if(checkParameters()) {
-
 //reset the wave function
-    resetPsi();
-
+    resetPsi(); 
 //evaluate new local energies
     NumWalkersEff=correlatedSampling(needGrad);
+    return computedCost();
+  }
+  
+  void QMCCostFunctionBase::printEstimates()
+  {
+    app_log()<<"      Current var:     " <<curVar_w<<endl;
+    app_log()<<"      Current ene:     " <<curAvg_w<<endl;
+    app_log()<<"      Current var_urw: " <<curVar<<endl;
+  }
 
-//Estimators::accumulate has been called by correlatedSampling
+QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
+{
+//   Assumes the Sums have been computed all ready
+    
+    //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
-
+    
     Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
-// app_log() << "wgtinv = " << wgtinv << endl;
+    // app_log() << "wgtinv = " << wgtinv << endl;
     curAvg = SumValue[SUM_E_BARE]*wgtinv;
     curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg;
-
+    
     curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
-
-// app_log() << "curVar     = " << curVar
-//     << "   curAvg     = " << curAvg 
-//     << "   NumWalkersEff     = " << NumWalkersEff << endl;
-// app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << endl;
-// app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << endl;
-// app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << endl;
-// app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << endl;
-// app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << endl;
-
+    
+    // app_log() << "curVar     = " << curVar
+    //     << "   curAvg     = " << curAvg 
+    //     << "   NumWalkersEff     = " << NumWalkersEff << endl;
+    // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << endl;
+    // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << endl;
+    // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << endl;
+    // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << endl;
+    // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << endl;
+    
     Return_t wgt_var = SumValue[SUM_WGTSQ]-SumValue[SUM_WGT]*SumValue[SUM_WGT];
     wgt_var *=wgtinv;
-
+    
     CostValue = 0.0;
     if (std::fabs(w_abs) > 1.0e-10)
       CostValue += w_abs*curVar_abs;
@@ -141,20 +149,20 @@ namespace qmcplusplus
       CostValue += w_en*curAvg_w;
     if (std::fabs(w_w) > 1.0e-10)
       CostValue += w_w*curVar;
-
-//CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-// app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << endl; 
-
+    
+    //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
+    // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << endl; 
+    
     IsValid=true;
-   if(NumWalkersEff < NumSamples*MinNumWalkers) 
-//    if (NumWalkersEff < MinNumWalkers)
+    if(NumWalkersEff < NumSamples*MinNumWalkers) 
+      //    if (NumWalkersEff < MinNumWalkers)
       {
         ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
         ERRORMSG("Going to stop now.")
         IsValid=false;
       }
-    return CostValue;
-  }
+      return CostValue;
+}
 
 //  /**  Perform the correlated sampling algorthim.
 //   */

@@ -170,7 +170,7 @@ namespace qmcplusplus
 
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           
-//           checkConfigurations calculates the derivatives
+//           checkConfigurations should be rewritten to include the necessary functions of Cost.
           optTarget->checkConfigurations();
           RealType lastCost(optTarget->Cost(false));
           RealType newCost(lastCost);
@@ -305,6 +305,8 @@ namespace qmcplusplus
 
 
                 for (int i=0;i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+                //Might need to recompute this if the bracketing is too wide
+//                 newCost = optTarget->computedCost();
                 newCost = optTarget->Cost(false);
 
 // mmorales
@@ -315,6 +317,7 @@ namespace qmcplusplus
                   break;
                 }
                 app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
+                optTarget->printEstimates();
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
                 
                 if ((newCost < lastCost)&&(newCost==newCost))
@@ -336,7 +339,7 @@ namespace qmcplusplus
           
           }
           
-          if(acceptedOneMove && Valid)
+          if(acceptedOneMove)
           {
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
             currentParameters=bestParameters;

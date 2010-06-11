@@ -220,6 +220,7 @@ namespace qmcplusplus
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;
         saved[ENERGY_FIXED] = H.getLocalPotential();
+        saved[REWEIGHT]=thisWalker.Weight=1.0;
 
         vector<Return_t>* Dsaved=  &(TempDerivRecords[iw]) ;
         vector<Return_t>* HDsaved=  &(TempHDerivRecords[iw]) ;
