@@ -118,7 +118,8 @@ namespace qmcplusplus
 
     BufferType::value_type t;
     const hid_t etype=get_h5_datatype(t);
-    hout.write(gcounts[0],hdf::num_walkers);
+    number_of_walkers=W.WalkerOffsets[myComm->size()];
+    hout.write(number_of_walkers,hdf::num_walkers);
 
     hid_t gid=hout.top();
     hid_t sid1  = H5Screate_simple(3,gcounts,NULL);
