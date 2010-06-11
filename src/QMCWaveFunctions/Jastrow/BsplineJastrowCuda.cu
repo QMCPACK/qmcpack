@@ -7,13 +7,13 @@ bool AisInitialized = false;
 __constant__ float AcudaSpline[48];
 __constant__ double AcudaSpline_double[48];
 
-__device__  float  recipSqrt (float x)  { return rsqrtf(x); }
-__device__  double recipSqrt (double x) { return rsqrt(x); }
+inline __device__  float  recipSqrt (float x)  { return rsqrtf(x); }
+inline __device__  double recipSqrt (double x) { return rsqrt(x); }
 
-__device__ float dist (float dx, float dy, float dz)
+inline __device__ float dist (float dx, float dy, float dz)
 { return sqrtf(dx*dx + dy*dy + dz*dz); }
 
-__device__ double dist (double dx, double dy, double dz)
+inline __device__ double dist (double dx, double dy, double dz)
 { return sqrt(dx*dx + dy*dy + dz*dz); }
 
 
