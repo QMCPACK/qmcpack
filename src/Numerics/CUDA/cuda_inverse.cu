@@ -1457,6 +1457,8 @@ cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
     abort();
   }
 
+
+#ifdef CHECK_INVERSES
   // Check inverses for correctness
   // Copy A matrix pointers to worklist_d
   cudaMemcpy (worklist_d, Alist_h, num_mats*sizeof(double*),
@@ -1514,6 +1516,8 @@ cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
       }
       fclose (fout);
     }
+
+#endif
 
   // Copy original pointer lists back to device
   cudaMemcpy (Alist_d, Alist_h, num_mats*sizeof(float*),
@@ -1849,6 +1853,7 @@ cuda_inverse_many_complex_double (float *Alist_d[], float *worklist_d[],
     abort();
   }
 
+#ifdef CHECK_INVERSES
   // Check inverses for correctness
   // Copy A matrix pointers to worklist_d
   cudaMemcpy (worklist_d, Alist_h, num_mats*sizeof(double*),
@@ -1907,6 +1912,7 @@ cuda_inverse_many_complex_double (float *Alist_d[], float *worklist_d[],
       fclose (fout);
     }
 
+#endif
   // Copy original pointer lists back to device
   cudaMemcpy (Alist_d, Alist_h, num_mats*sizeof(float*),
 	      cudaMemcpyHostToDevice);
