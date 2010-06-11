@@ -59,7 +59,8 @@ namespace qmcplusplus {
     TrialWaveFunction::GradMatrix_t  newG(nw, numPtcl);
     TrialWaveFunction::ValueMatrix_t newL(nw, numPtcl);
     Psi.evaluateOptimizableLog(W, logpsi_new, newG, newL);
-    RealType factor = samplePsi2 ? 2.0 : 1.0;
+    //    RealType factor = samplePsi2 ? 2.0 : 1.0;
+    RealType factor = 2.0;
     // Add optimizable and non-optimizable gradients and Laplacians
     for (int iw=0; iw<nw; iw++) {
       ParticleSet::Walker_t& walker = *(W[iw]);
