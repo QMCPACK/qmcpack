@@ -42,13 +42,14 @@ namespace qmcplusplus {
 
     SPOSetBase* createSPOSet(xmlNodePtr cur);
 
-//     BasisSetBase<RealType>* getBasisSet(int i=0)
-//     {
-//       if(i<basisBuilder.size())
-//         return basisBuilder[i]->myBasisSet;
-//       else
-//         return 0;
-//     } 
+    BasisSetBase<RealType>* getBasisSet()
+    {
+      string bname=basisBuilder.rbegin()->first;
+      if(basisBuilder.size())
+        return basisBuilder[bname]->myBasisSet;
+      else
+        return 0;
+    } 
 
   private:
     ///set of basis set: potential static data
