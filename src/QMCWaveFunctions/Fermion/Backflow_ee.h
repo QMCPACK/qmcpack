@@ -13,8 +13,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_BACKFLOW_E-E_H
-#define QMCPLUSPLUS_BACKFLOW_E-E_H
+#ifndef QMCPLUSPLUS_BACKFLOW_E_E_H
+#define QMCPLUSPLUS_BACKFLOW_E_E_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "Particle/DistanceTable.h"
@@ -56,11 +56,17 @@ namespace qmcplusplus
     {
       RadFun->checkOutVariables(active);
     }
+    
+    void resetTargetParticleSet(ParticleSet& P)
+    {
+      myTable = DistanceTable::add(P);
+    }
 
 
     BackflowFunctionBase* makeClone()
     {
        Backflow_ee* clone = new Backflow_ee(*this);
+       clone->RadFun = new FT(*RadFun);
        return clone; 
     }
 

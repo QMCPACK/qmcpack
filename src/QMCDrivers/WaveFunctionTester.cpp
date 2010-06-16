@@ -1031,12 +1031,12 @@ void WaveFunctionTester::runDerivCloneTest()
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = w_clone->G;
   L = w_clone->L;
-//   cout<<"Clone Gradients"<<endl;
-//   for (int iat=0;iat<w_clone->R.size();iat++)
-//   {
-//     for (int i=0; i<3 ; i++) cout<<w_clone->G[iat][i]<<"  ";
-//     cout<<endl;
-//   }
+  cout<<"Clone Gradients"<<endl;
+  for (int iat=0;iat<w_clone->R.size();iat++)
+  {
+    for (int i=0; i<3 ; i++) cout<<w_clone->G[iat][i]<<"  ";
+    cout<<endl;
+  }
   
   RealType FiniteDiff = 1e-5;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);

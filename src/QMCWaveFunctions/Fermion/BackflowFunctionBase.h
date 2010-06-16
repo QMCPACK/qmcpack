@@ -68,7 +68,9 @@ namespace qmcplusplus
 
     BackflowFunctionBase(BackflowFunctionBase &fn):
      CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam),uniqueFunctions(fn.uniqueFunctions)
-    {}
+    {
+      derivs.resize(fn.derivs.size());
+    }
 
     virtual
     BackflowFunctionBase* makeClone()=0;
@@ -77,7 +79,7 @@ namespace qmcplusplus
  
     /** reset the distance table with a new target P
      */
-    void resetTargetParticleSet(ParticleSet& P)
+    virtual void resetTargetParticleSet(ParticleSet& P)
     {
       myTable = DistanceTable::add(CenterSys,P);
     }
@@ -94,24 +96,20 @@ namespace qmcplusplus
       return numParams;
     }
 
-    virtual inline int 
-    indexOffset()=0;
+    virtual inline int indexOffset()=0;
     
     /** calculate quasi-particle coordinates only
      */
-    virtual inline void 
-    evaluate(const ParticleSet& P, ParticleSet& QP)=0;
+    virtual inline void evaluate(const ParticleSet& P, ParticleSet& QP)=0;
 
     /** calculate quasi-particle coordinates, Bmat and Amat 
      */
-    virtual inline void
-    evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
+    virtual inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
     /** calculate quasi-particle coordinates, Bmat and Amat 
      *  calculate derivatives wrt to variational parameters
      */
-    virtual inline void
-    evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
+    virtual inline void evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
   };
 
 }

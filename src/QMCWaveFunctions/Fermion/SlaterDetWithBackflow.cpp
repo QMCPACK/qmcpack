@@ -138,7 +138,9 @@ namespace qmcplusplus {
   OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   {
     BackflowTransformation *tr = BFTrans->makeClone();
+    tr->resetTargetParticleSet(tqp);
     SlaterDetWithBackflow* myclone=new SlaterDetWithBackflow(tqp,tr);
+    myclone->BFTrans=tr;
     if(mySPOSet.size()>1)//each determinant owns its own set
     {
       for(int i=0; i<Dets.size(); ++i)
@@ -152,25 +154,38 @@ namespace qmcplusplus {
 	  if (spo == Dets[j]->getPhi()) {
 	    found = true;
 	    spo_clone = myclone->Dets[j]->getPhi();
+       spo_clone->resetTargetParticleSet(tr->QP);
 	  }
 	// If it hasn't, clone it now
 	if (!found) {
 	  spo_clone=spo->makeClone();
+     spo_clone->resetTargetParticleSet(tr->QP);
 	  myclone->add(spo_clone,spo->objectName);
 	}
 	// Make a copy of the determinant.
-        myclone->add(Dets[i]->makeCopy(spo_clone),i);
+        DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) Dets[i]->makeCopy(spo_clone);
+        dclne->BFTrans=tr;
+        dclne->resetTargetParticleSet(tr->QP);
+        myclone->add(dclne,i);
       }
     }
     else
     {
       SPOSetBasePtr spo=Dets[0]->getPhi();
       SPOSetBasePtr spo_clone=spo->makeClone();
+      spo_clone->resetTargetParticleSet(tr->QP);
       myclone->add(spo_clone,spo->objectName);
       for(int i=0; i<Dets.size(); ++i)
-        myclone->add(Dets[i]->makeCopy(spo_clone),i);
+      {
+        DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) Dets[i]->makeCopy(spo_clone);
+        dclne->BFTrans=tr;
+        dclne->resetTargetParticleSet(tr->QP);
+        myclone->add(dclne,i);
+      }
     }
-
+    
+    myclone->resetTargetParticleSet(tr->QP);
+    
     return myclone;
   }
 

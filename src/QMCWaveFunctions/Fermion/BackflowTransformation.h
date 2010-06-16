@@ -106,7 +106,7 @@ namespace qmcplusplus
 
     BackflowTransformation(BackflowTransformation &tr): 
       NumTargets(tr.NumTargets),QP(tr.QP), 
-      targetPtcl(tr.targetPtcl),ptclPool(tr.ptclPool) { 
+      targetPtcl(tr.targetPtcl),ptclPool(tr.ptclPool), numParams(tr.numParams) {
       Bmat.resize(NumTargets);
       Bmat_full.resize(NumTargets,NumTargets);
       Amat.resize(NumTargets,NumTargets);
