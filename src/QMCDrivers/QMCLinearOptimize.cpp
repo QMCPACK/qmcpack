@@ -232,14 +232,17 @@ namespace qmcplusplus
                   E_lin=alphar[i]/beta[i];
                   e_min_indx=i;
                 }
-//               app_log()<<"E_lin = "<<E_lin<<endl;
+              app_log()<<"E_lin = "<<E_lin<<" <H^2>="<<HamT2(0,0)<<endl;
+
+                
               if (abs(E_lin/Ham(0,0))>1.5)
               {
                 app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
                 break; 
               }
               Matrix<RealType> ST2(N,N);
-              RealType H2rescale=1.0/(E_lin*E_lin);
+//              RealType H2rescale=1.0/(E_lin*E_lin);
+              RealType H2rescale=1.0/HamT2(0,0);
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
 

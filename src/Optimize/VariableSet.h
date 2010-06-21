@@ -133,6 +133,16 @@ namespace optimize
         //disable it if enable == false
         if(!enable) Index[ind_loc]=-1;
       }
+      
+      inline void setParameterType(int type)
+      {
+        std::vector<indx_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
+        while (PTit!=PTend)
+        {
+          (*PTit).second=type;
+          PTit++;
+        }
+      }
 
       /** equivalent to map<string,T>[string] operator
        */

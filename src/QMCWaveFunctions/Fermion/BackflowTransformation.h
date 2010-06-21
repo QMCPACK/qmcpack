@@ -276,6 +276,7 @@ namespace qmcplusplus
         {
           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
           bsp->put(funs[i]);
+          bsp->myVars.setParameterType(optimize::SPO_P);
           dum->uniqueRadFun.push_back(bsp);
           offsets.push_back(tbf->numParams);
           tbf->numParams += bsp->NumParams;
@@ -326,6 +327,7 @@ namespace qmcplusplus
         app_log() <<"Using BsplineFunctor type. \n";
         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
         bsp->put(cur);
+        bsp->myVars.setParameterType(optimize::SPO_P);
         BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
         tbf->numParams = bsp->NumParams;
         tbf->derivs.resize(tbf->numParams);
