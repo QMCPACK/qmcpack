@@ -191,10 +191,9 @@ namespace qmcplusplus {
     return LogValue/OldLog; 
   }
     
-  void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
      APP_ABORT(" Need to implement DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, int iat). \n");
-     return 0.0;
   }
 
   DiracDeterminantWithBackflow::GradType 

@@ -826,10 +826,10 @@ namespace qmcplusplus {
       	  if (params.size() == Parameters.size()) 
       	    Parameters = params;
       	  else {
-      	    app_error() << "Expected " << Parameters.size() << " parameters,"
+      	    app_log() << "Expected " << Parameters.size() << " parameters,"
       			<< " but found " << params.size()
       			<< " in PolynomialFunctor3D.\n";
-             if (params.size()!=0) abort();
+             if (params.size()!=0) abort(); //you think you know what they should be but don't.
       	  }
 	  
 	  
