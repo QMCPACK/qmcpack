@@ -1972,7 +1972,7 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
   mydelta      =      delta[blockIdx.y];
   int first_row = blockIdx.x*16;
   
-  __shared__ T Ainv_s[2][17], delta_s[16][17], Ainv_delta_s[16][17];
+  __shared__ T Ainv_s[16][17], delta_s[2][17], Ainv_delta_s[16][17];
   int nb = (N+15)/16;
 
   for (int row=0; row<16; row++)
@@ -1986,16 +1986,16 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
     int c = block*16+tid;
     if (tid < 16)
       for (int row=0; row<16; row++) {
-    	delta_s[row][tid] = mydelta[row*rowstride+c];
+      Ainv_s[row][col]  = myAinv[(first_row+row)*rowstride+c];
       }
     __syncthreads();
     for (int irow=0; irow<8; irow++) {
       int odd = tid>15;
       int row = 2*irow + odd;
-      Ainv_s[odd][col]  = myAinv[(first_row+row)*rowstride+c];
+      delta_s[odd][tid] = mydelta[row*rowstride+c];
       if (row+first_row < N && col < nend)
 	for (int k=0; k<16; k++)
-	  Ainv_delta_s[row][col] += Ainv_s[odd][k] *  delta_s[col][k];
+	  Ainv_delta_s[row][col] += Ainv_s[col][k] *  delta_s[odd][k];
     }
     __syncthreads();
   }
@@ -2505,7 +2505,7 @@ test_woodbury()
   //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
-  for (int i=0; i<1000; i++) {
+  for (int i=0; i<100; i++) {
     woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
     // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
@@ -2521,7 +2521,7 @@ test_woodbury()
   }
   double end = omp_get_wtime();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
-	   (double)(1000*NUM_MATS)/(end - start));
+	   (double)(100*NUM_MATS)/(end - start));
 
   fprintf (stderr, "About to copy %ld back\n", N*M*sizeof(float));
 
@@ -2538,13 +2538,13 @@ test_woodbury()
   float Ainv_delta[N*M];
   for (int i=0; i<N*M; i++)
     Ainv_delta[i] = 0.0;
-  for (int i=0; i<N; i++)
-    for (int j=0; j<16; j++)
+  for (int i=0; i<16; i++)
+    for (int j=0; j<N; j++)
       for (int k=0; k<N; k++)
-	Ainv_delta[j*N+i] += Ainv_h[i*N+k]*delta_h[j*N+k];
+	Ainv_delta[i*N+j] += Ainv_h[j*N+k]*delta_h[i*N+k];
 
-  fprintf (stderr, "Ainv_delta_cpu = %1.8e\n", Ainv_delta[0]);
-  fprintf (stderr, "Ainv_delta_gpu = %1.8e\n", Ainv_delta_h[0]);
+  fprintf (stderr, "Ainv_delta_cpu = %1.8e\n", Ainv_delta[51]);
+  fprintf (stderr, "Ainv_delta_gpu = %1.8e\n", Ainv_delta_h[51]);
 
   // cudaMemcpy (Ainv_h, AinvList[0], N*N*sizeof(float),cudaMemcpyDeviceToHost);
 
