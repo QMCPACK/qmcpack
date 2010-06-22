@@ -2463,6 +2463,7 @@ test_woodbury()
   for (int i=0; i<1000; i++) {
     woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
+    cudaThreadSynchronize();
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
       fprintf (stderr, "CUDA error in woodbury_update_16:\n  %s\n",
@@ -2471,8 +2472,10 @@ test_woodbury()
     }
   }
   double end = omp_get_wtime();
-  fprintf (stderr, "Rate = %12.8f million updates per second.\n",
-	   (double)(1000*NUM_MATS)/(end - start)/1.0e6);
+  fprintf (stderr, "Rate = %12.8f updates per second.\n",
+	   (double)(1000*NUM_MATS)/(end - start));
+
+  fprintf (stderr, "About to copy %ld back\n", N*M*sizeof(float));
 
   cudaMemcpy (Ainv_delta_h, Ainv_deltaList[0], N*M*sizeof(float),
    	      cudaMemcpyDeviceToHost);
