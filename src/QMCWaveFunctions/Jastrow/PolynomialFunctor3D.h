@@ -856,7 +856,7 @@ namespace qmcplusplus {
       	xmlCoefs = xmlCoefs->next;
       }
       reset_gamma();
-      print();
+      //print();
       return true;
     }
     
@@ -869,7 +869,7 @@ namespace qmcplusplus {
       }
       if (ResetCount++ == 100) {
 	ResetCount = 0;
-	print();
+	//print();
       }
       reset_gamma();
     }
