@@ -220,7 +220,7 @@ namespace qmcplusplus
       virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
 
-      void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+      virtual void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
       ///total number of particles
       int NP;
       ///number of single-particle orbitals which belong to this Dirac determinant

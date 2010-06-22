@@ -34,7 +34,8 @@ namespace optimize
     LOGLINEAR_P, //B-spline Jastrows
     LOGLINEAR_K, //K space Jastrows
     LINEAR_P,    //Multi-determinant coefficients
-    SPO_P        //SPO set Parameters
+    SPO_P,       //SPO set Parameters
+    BACKFLOW_P   //Backflow parameters
   };
   
   /** class to handle a set of variables that can be modified during optimizations

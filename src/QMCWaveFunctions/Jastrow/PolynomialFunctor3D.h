@@ -104,7 +104,7 @@ namespace qmcplusplus {
 	    index(l,m,n) = index(m,l,n) = num++;
       assert (num == NumGamma);
 
-      cerr << "NumGamma = " << NumGamma << endl;
+//       cerr << "NumGamma = " << NumGamma << endl;
 
       // Fill up contraint matrix
       // For 3 constraints and 2 parameters, we would have
@@ -147,13 +147,15 @@ namespace qmcplusplus {
       	  }
       	}
       }
-
-      fprintf (stderr, "Constraint matrix:\n");
-      for (int i=0; i<NumConstraints; i++) {
-	for (int j=0; j<NumGamma; j++)
-	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
-	fprintf(stderr, "\n");
-      }
+   
+//    {
+//       fprintf (stderr, "Constraint matrix:\n");
+//       for (int i=0; i<NumConstraints; i++) {
+// 	for (int j=0; j<NumGamma; j++)
+// 	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
+// 	fprintf(stderr, "\n");
+//       }
+//     }
 
       
       // Now, row-reduce constraint matrix
@@ -197,17 +199,17 @@ namespace qmcplusplus {
       for (int c=col+1; c<NumGamma; c++)
 	IndepVar[c] = true;
 
-      fprintf (stderr, "Reduced Constraint matrix:\n");
-      for (int i=0; i<NumConstraints; i++) {
-	for (int j=0; j<NumGamma; j++)
-	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
-	fprintf(stderr, "\n");
-      }
-      fprintf (stderr, "Independent vars = \n");
-      for (int i=0; i<NumGamma; i++)
-	if (IndepVar[i])
-	  fprintf (stderr, "%d ", i);
-      fprintf (stderr, "\n");
+//       fprintf (stderr, "Reduced Constraint matrix:\n");
+//       for (int i=0; i<NumConstraints; i++) {
+// 	for (int j=0; j<NumGamma; j++)
+// 	  fprintf (stderr, "%5.2f ", ConstraintMatrix(i,j));
+// 	fprintf(stderr, "\n");
+//       }
+//       fprintf (stderr, "Independent vars = \n");
+//       for (int i=0; i<NumGamma; i++)
+// 	if (IndepVar[i])
+// 	  fprintf (stderr, "%d ", i);
+//       fprintf (stderr, "\n");
 
       // fprintf (stderr, "Inverse matrix:\n");
       // // Now, invert constraint matrix
@@ -827,7 +829,7 @@ namespace qmcplusplus {
       	    app_error() << "Expected " << Parameters.size() << " parameters,"
       			<< " but found " << params.size()
       			<< " in PolynomialFunctor3D.\n";
-      	    abort();
+             if (params.size()!=0) abort();
       	  }
 	  
 	  

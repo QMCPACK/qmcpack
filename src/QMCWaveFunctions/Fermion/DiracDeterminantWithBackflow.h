@@ -102,6 +102,7 @@ namespace qmcplusplus
        */
       ValueType ratio(ParticleSet& P, int iat);
 
+      void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
 
       ValueType alternateRatio(ParticleSet& P)
       {
