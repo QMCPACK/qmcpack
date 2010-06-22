@@ -1972,7 +1972,7 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
   mydelta      =      delta[blockIdx.y];
   int first_row = blockIdx.x*16;
   
-  __shared__ T Ainv_s[16][17], delta_s[16][17], Ainv_delta_s[16][17];
+  __shared__ T Ainv_s[2][17], delta_s[16][17], Ainv_delta_s[16][17];
   int nb = (N+15)/16;
 
   for (int row=0; row<16; row++)
@@ -1986,15 +1986,16 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
     int c = block*16+tid;
     if (tid < 16)
       for (int row=0; row<16; row++) {
-	Ainv_s[row][tid]  = myAinv[(first_row+row)*rowstride+c];
     	delta_s[row][tid] = mydelta[row*rowstride+c];
       }
     __syncthreads();
     for (int irow=0; irow<8; irow++) {
-      int row = 2*irow + (tid > 15);
+      int odd = tid>15;
+      int row = 2*irow + odd;
+      Ainv_s[odd][col]  = myAinv[(first_row+row)*rowstride+c];
       if (row+first_row < N && col < nend)
 	for (int k=0; k<16; k++)
-	  Ainv_delta_s[row][col] += Ainv_s[row][k] *  delta_s[col][k];
+	  Ainv_delta_s[row][col] += Ainv_s[odd][k] *  delta_s[col][k];
     }
     __syncthreads();
   }
@@ -2402,7 +2403,7 @@ void
 test_woodbury()
 {
   int const N = MAT_SIZE;
-  int M = 32;
+  int M = 16;
   double *A, *Ainv;
   int numMats = NUM_MATS;
   float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h;
@@ -2500,15 +2501,15 @@ test_woodbury()
 
 
   dim3 dimBlock2(32);
-  //dim3 dimGrid2((N/16), numMats);
-  dim3 dimGrid2((N/32), numMats);
+  dim3 dimGrid2((N/16), numMats);
+  //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
   for (int i=0; i<1000; i++) {
-    // woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
-    //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
-    woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
+    woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
+    // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
+    //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
 
     cudaThreadSynchronize();
     cudaError_t err = cudaGetLastError();
