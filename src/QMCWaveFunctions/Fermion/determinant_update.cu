@@ -2002,8 +2002,51 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
   if (tid < 16 && mycol < N)
     for (int row=0; row<16; row++)
       myAinv_delta[row*rowstride+mycol] = Ainv_delta_s[row][tid];
- 
+}
 
+
+template<typename T>
+__global__ void
+woodbury_update_32 (T** Ainv_trans, T** delta,
+		    T** Ainv_delta,
+		    int N, int rowstride)
+{
+  T *myAinv, *mydelta, *myAinv_delta;
+  int tid = threadIdx.x;
+
+  myAinv       = Ainv_trans[blockIdx.y];
+  myAinv_delta = Ainv_delta[blockIdx.y];
+  mydelta      =      delta[blockIdx.y];
+  int first_row = blockIdx.x*32;
+  
+  __shared__ T Ainv_s[32][33], delta_s[32][33], Ainv_delta_s[32][33];
+  int nb = (N+31)/32;
+
+  for (int row=0; row<32; row++)
+    if (tid < 32)
+      Ainv_delta_s[row][tid] = 0.0f;
+  __syncthreads();
+
+  int col = tid;
+  for (int block=0; block<nb; block++) {
+    int nend = N - block*32;
+    int c = block*32+tid;
+    for (int row=0; row<32; row++) {
+      Ainv_s[row][tid]  = myAinv[(first_row+row)*rowstride+c];
+      delta_s[row][tid] = mydelta[row*rowstride+c];
+    }
+    __syncthreads();
+    for (int row=0; row<32; row++) {
+      if (row+first_row < N && col < nend)
+	for (int k=0; k<32; k++)
+	  Ainv_delta_s[row][col] += Ainv_s[row][k] *  delta_s[col][k];
+    }
+    __syncthreads();
+  }
+  int mycol = blockIdx.x*32+tid;
+  if (mycol < N)
+    for (int row=0; row<32; row++)
+      myAinv_delta[row*rowstride+mycol] = Ainv_delta_s[row][tid];
 }
 
 
@@ -2359,7 +2402,7 @@ void
 test_woodbury()
 {
   int const N = MAT_SIZE;
-  int M = 16;
+  int M = 32;
   double *A, *Ainv;
   int numMats = NUM_MATS;
   float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h;
@@ -2448,9 +2491,6 @@ test_woodbury()
     cudaMemcpy (deltaList[mat], delta_h, N*M*sizeof(float), cudaMemcpyHostToDevice);
   }
 
-  dim3 dimBlock2(32);
-  dim3 dimGrid2((N/16), numMats);
-
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
     fprintf (stderr, "CUDA error in test_woodbury memcopy's:\n  %s\n",
@@ -2459,10 +2499,17 @@ test_woodbury()
   }
 
 
+  dim3 dimBlock2(32);
+  //dim3 dimGrid2((N/16), numMats);
+  dim3 dimGrid2((N/32), numMats);
+
   double start = omp_get_wtime();
   for (int i=0; i<1000; i++) {
-    woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
+    // woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
+    //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
+    woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
+
     cudaThreadSynchronize();
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
