@@ -1960,48 +1960,49 @@ test_all_grad_lapl_kernel()
 
 template<typename T>
 __global__ void
-woodbury_update_16 (T** Ainv, T** delta_trans,
-		   int first_row, int last_row,
-		   T** Ainv_delta,
-		   int N, int rowstride)
+woodbury_update_16 (T** Ainv_trans, T** delta,
+		    T** Ainv_delta,
+		    int N, int rowstride)
 {
   T *myAinv, *mydelta, *myAinv_delta;
   int tid = threadIdx.x;
 
-  if (tid == 0) {
-    myAinv = Ainv[blockIdx.y];
-    mydelta = delta_trans[blockIdx.y];
-    myAinv_delta = Ainv_delta[0/**blockIdx.y*/];
-  }
-  __syncthreads();
+  myAinv       = Ainv_trans[blockIdx.y];
+  myAinv_delta = Ainv_delta[blockIdx.y];
+  mydelta      =      delta[blockIdx.y];
+  int first_row = blockIdx.x*16;
   
   __shared__ T Ainv_s[16][17], delta_s[16][17], Ainv_delta_s[16][17];
   int nb = (N+15)/16;
 
-  // for (int row=0; row<16; row++)
-  //   if (tid < 16)
-  //     Ainv_delta_s[row][tid] = 0.0f;
-  // __syncthreads();
+  for (int row=0; row<16; row++)
+    if (tid < 16)
+      Ainv_delta_s[row][tid] = 0.0f;
+  __syncthreads();
+
+  return;
 
   int col = tid & 15;
   for (int block=0; block<nb; block++) {
     int nend = N - block*16;
+    int c = block*16+tid;
     if (tid < 16)
       for (int row=0; row<16; row++) {
-	//	Ainv_s[row][tid]  = myAinv[(first_row+row)*rowstride+tid];
-	// delta_s[row][tid] = mydelta[row*rowstride+tid];
+	Ainv_s[row][tid]  = myAinv[(first_row+row)*rowstride+c];
+    	delta_s[row][tid] = mydelta[row*rowstride+c];
       }
-    for (int irow=0; irow<8; irow++) {
-      int row = irow*2 + tid>16;
-      // if (row < nend && col < nend)
-      // 	for (int k=0; k<16; k++)
-      // 	  Ainv_delta_s[row][col] += Ainv_s[row][tid] *  delta_s[col][tid];
-    }
+    __syncthreads();
+    if (tid < 16)
+      for (int row=0; row<16; row++) {
+	if (row+first_row < N && col < nend)
+	  for (int k=0; k<16; k++)
+	    Ainv_delta_s[row][col] += 0.0f*Ainv_s[row][k] *  delta_s[col][k];
+      }
     __syncthreads();
     int mycol = blockIdx.x*16+tid;
     if (tid < 16 && mycol < N)
       for (int row=0; row<16; row++)
-	myAinv_delta[/*row*rowstride+blockIdx.x*16*/+tid] = Ainv_delta_s[row][tid];
+    	myAinv_delta[row*rowstride+mycol] = 0.0f*Ainv_delta_s[row][tid];
   }
 
 }
@@ -2353,6 +2354,8 @@ test_update_transpose()
 
 
 
+#include <omp.h>
+
 void 
 test_woodbury()
 {
@@ -2423,7 +2426,8 @@ test_woodbury()
   for (int mat=0; mat<numMats; mat++) {
     if (mat == 0 ) {
       for (int i=0; i<N; i++) {
-	delta_h[i] = drand48();
+	for (int j=0; j<16; j++)
+	  delta_h[j*N+i] = drand48();
 	for (int j=0; j<N; j++) 
 	  A[i*N+j] = Ainv[i*N+j] = A_h[i*N+j] = drand48();
       }
@@ -2456,21 +2460,41 @@ test_woodbury()
   }
 
 
-  clock_t start = clock();
+  double start = omp_get_wtime();
   for (int i=0; i<1000; i++) {
     woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
-      (AinvList_d, deltaList_d, 0, 15, Ainv_deltaList_d, N, N);
+      (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
       fprintf (stderr, "CUDA error in woodbury_update_16:\n  %s\n",
 	       cudaGetErrorString(err));
       abort();
     }
-
   }
-  clock_t end = clock();
-  fprintf (stderr, "Rate = %12.8f updates per second.\n",
-	   (double)(1000*NUM_MATS)/((double)(end - start)/(double)CLOCKS_PER_SEC));
+  double end = omp_get_wtime();
+  fprintf (stderr, "Rate = %12.8f million updates per second.\n",
+	   (double)(1000*NUM_MATS)/(end - start)/1.0e6);
+
+  cudaMemcpy (Ainv_delta_h, Ainv_deltaList[0], N*M*sizeof(float),
+   	      cudaMemcpyDeviceToHost);
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in test_woodbury memcopy back:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
+  }
+  fprintf(stderr, "Copied result back.\n");
+
+  float Ainv_delta[N*M];
+  for (int i=0; i<N*M; i++)
+    Ainv_delta[i] = 0.0;
+  for (int i=0; i<N; i++)
+    for (int j=0; j<16; j++)
+      for (int k=0; k<N; k++)
+	Ainv_delta[j*N+i] += Ainv_h[i*N+k]*delta_h[j*N+k];
+
+  fprintf (stderr, "Ainv_delta_cpu = %1.8e\n", Ainv_delta[0]);
+  fprintf (stderr, "Ainv_delta_gpu = %1.8e\n", Ainv_delta_h[0]);
 
   // cudaMemcpy (Ainv_h, AinvList[0], N*N*sizeof(float),cudaMemcpyDeviceToHost);
 
