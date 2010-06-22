@@ -567,7 +567,7 @@ namespace qmcplusplus
         if (ResetCount++ == 100)
           {
             ResetCount = 0;
-            print();
+            //print();
           }
         reset();
       }
