@@ -88,7 +88,7 @@ namespace qmcplusplus {
 
     // Create a three-body Jastrow
     if (sourcePtcl) {
-      cerr << "sourcePtcl = " << sourcePtcl << endl;
+//       cerr << "sourcePtcl = " << sourcePtcl << endl;
       string ftype("Bspline");
       OhmmsAttributeSet tAttrib;
       tAttrib.add(ftype,"function");
