@@ -1990,12 +1990,12 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
     	delta_s[row][tid] = mydelta[row*rowstride+c];
       }
     __syncthreads();
-    if (tid < 16)
-      for (int row=0; row<16; row++) {
-	if (row+first_row < N && col < nend)
-	  for (int k=0; k<16; k++)
-	    Ainv_delta_s[row][col] += Ainv_s[row][k] *  delta_s[col][k];
-      }
+    for (int irow=0; irow<8; irow++) {
+      int row = 2*irow + (tid > 15);
+      if (row+first_row < N && col < nend)
+	for (int k=0; k<16; k++)
+	  Ainv_delta_s[row][col] += Ainv_s[row][k] *  delta_s[col][k];
+    }
     __syncthreads();
   }
   int mycol = blockIdx.x*16+tid;
