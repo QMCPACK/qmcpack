@@ -197,6 +197,7 @@ namespace qmcplusplus {
 			       string twobodyid, bool twoBodySpin)
     : Ions(ions), Elecs(elecs),OneBodyID(onebodyid),TwoBodyID(twobodyid)
   {
+    Optimizable=true;
     Prefactor = 1.0/elecs.Lattice.Volume;
     NumIonSpecies = 0;
     NumElecs = elecs.getLocalNum();
@@ -265,8 +266,8 @@ namespace qmcplusplus {
 				 std::vector<RealType> &twoBodyCoefs)
   {
     int kk(0);
-    for (int i=0; i<oneBodyCoefs.size(); i++) 
-      cerr << "oneBodyCoefs[" << i << "] = " << oneBodyCoefs[i] << endl;
+//     for (int i=0; i<oneBodyCoefs.size(); i++) 
+//       cerr << "oneBodyCoefs[" << i << "] = " << oneBodyCoefs[i] << endl;
     if (oneBodyCoefs.size() != 2*OneBodySymmCoefs.size()) {
       app_warning() << "Warning!  Wrong number of coefficients specified in "
 		    << "kSpaceJastrow's one-body coefficients.\n"
@@ -748,14 +749,13 @@ namespace qmcplusplus {
     int obi=0;
     if (nOne)
     {
-    OneBodyVarMap.resize(nOne);
-    for (int i=0; i<nOne; i++) 
-    {
-      //two coeffs for each of these points, imaginary coefficients.
-      OneBodyVarMap[i]=obi;
-      if (i==OneBodySymmCoefs[obi].lastIndex) obi+=2;
-    }
-    obi+=2;
+      OneBodyVarMap.resize(nOne);
+      for (int i=0; i<nOne; i++) 
+      {
+        //two coeffs for each of these points, imaginary coefficients.
+        OneBodyVarMap[i]=obi;
+        if (i==OneBodySymmCoefs[obi/2].lastIndex) obi+=2;
+      }
     }
     
     int nTwo = TwoBodyGvecs.size();
@@ -764,17 +764,14 @@ namespace qmcplusplus {
     for (int i=0; i<nTwo; i++) 
     {
       //one coeff for each of these points, real coefficients.
-      for (int tbi=0; tbi<TwoBodySymmCoefs.size(); tbi++) 
-        if ((TwoBodySymmCoefs[tbi].firstIndex<=i)&&(i<=TwoBodySymmCoefs[tbi].lastIndex)) 
-          TwoBodyVarMap[i]=obi+tbi;
-    }
-    
+      TwoBodyVarMap[i]=obi+tbi;
+      if (i==TwoBodySymmCoefs[tbi].lastIndex) tbi+=1;
+    }  
   }
 
   void kSpaceJastrow::checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
-    Optimizable=true;
     //Optimizable=myVars.is_optimizable();
   }
 
