@@ -153,7 +153,7 @@ namespace qmcplusplus
 // mmorales
         if(!Valid) {
           app_log() <<"Aborting current opt cycle due to small wfn overlap during correlated sampling. If this happens to frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl; 
-          break;
+          continue;
         }       
  
         
@@ -181,7 +181,7 @@ namespace qmcplusplus
           {
             app_log()<<"Invalid Cost Function!"<<endl;
             Valid=false;
-            break;
+            continue;
           }
           
 
@@ -238,7 +238,7 @@ namespace qmcplusplus
               if (abs(E_lin/Ham(0,0))>1.5)
               {
                 app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
-                break; 
+                continue; 
               }
               Matrix<RealType> ST2(N,N);
 //              RealType H2rescale=1.0/(E_lin*E_lin);
@@ -293,7 +293,7 @@ namespace qmcplusplus
               if(!Valid) 
               {
                 app_log()<<"Invalid Cost Function!"<<endl;
-                break;
+                continue;
               }
 
               dopt *= std::abs(Lambda);
@@ -317,7 +317,7 @@ namespace qmcplusplus
                 {
                   app_log()<<"Invalid Cost Function!"<<endl;
                   Valid=false;
-                  break;
+                  continue;
                 }
                 app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
                 optTarget->printEstimates();
@@ -362,7 +362,7 @@ namespace qmcplusplus
       MyCounter++;
       app_log() << "  Execution time = " << t1.elapsed() << endl;
       app_log() << "  </log>" << endl;                           
-      optTarget->reportParameters();                             
+      optTarget->reportParameters();  
       app_log() << "</opt>" << endl;                             
       app_log() << "</optimization-report>" << endl;             
       return (optTarget->getReportCounter() > 0);                

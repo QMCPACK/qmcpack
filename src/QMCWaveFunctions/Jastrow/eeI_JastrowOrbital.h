@@ -1304,6 +1304,19 @@ namespace qmcplusplus {
 			     vector<RealType>& dlogpsi,
 			     vector<RealType>& dhpsioverpsi)
     {
+      
+              bool recalculate(false);
+        vector<bool> rcsingles(myVars.size(),false);
+        for (int k=0; k<myVars.size(); ++k)
+          {
+            int kk=myVars.where(k);
+            if (kk<0) continue;
+            if (optvars.recompute(kk)) recalculate=true;
+            rcsingles[k]=true;
+          }
+          
+          if (recalculate)
+          {
       // First, create lists of electrons within the sphere of each ion
       for (int i=0; i<Nion; i++) {
 	IonData &ion = IonDataList[i];
@@ -1390,6 +1403,7 @@ namespace qmcplusplus {
 	  sum -= 0.5*lapLogPsi(k,i) + dot(P.G[i], gradLogPsi(k,i));
 	dhpsioverpsi[kk] = sum;
       }
+    }
     }
   };
 

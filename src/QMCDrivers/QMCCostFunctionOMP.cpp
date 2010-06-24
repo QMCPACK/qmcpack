@@ -84,6 +84,7 @@ namespace qmcplusplus
               {
                 const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
                 Return_t weight=saved[REWEIGHT]*wgtinv;
+                
                 Return_t eloc_new=saved[ENERGY_NEW];
                 delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
                 const Return_t* Dsaved= (*DerivRecords[ip])[iw];
@@ -94,6 +95,7 @@ namespace qmcplusplus
                   }
               }
           }
+          
         myComm->allreduce(HD_avg);
         myComm->allreduce(delE_bar);
         for (int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
@@ -382,8 +384,12 @@ namespace qmcplusplus
             vector<Return_t> Dsaved(NumOptimizables);
             vector<Return_t> HDsaved(NumOptimizables);
             psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-            std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
-            std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+            for( int i=0;i<NumOptimizables;i++)
+              if(OptVariablesForPsi.recompute(i))
+              {
+               (*DerivRecords[ip])(iw,i) = Dsaved[i];
+               (*HDerivRecords[ip])(iw,i) = HDsaved[i];
+              }
           }
           
           wgt_node+=weight;
@@ -444,9 +450,11 @@ namespace qmcplusplus
       }
     //collect everything
     myComm->allreduce(SumValue);
+    
+//     for (int i=0; i<SumValue.size(); i++) cerr<<SumValue[i]<<"  ";
+//     cerr<<endl;
 
     //app_log()<<"After After Purge"<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
-
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
