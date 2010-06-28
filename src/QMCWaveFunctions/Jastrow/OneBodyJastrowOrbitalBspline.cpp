@@ -45,7 +45,7 @@ namespace qmcplusplus {
 					vector<RealType> &logPsi)
   {
     vector<Walker_t*> &walkers = W.WalkerList;
-    if (SumGPU.size() < 4*walkers.size()) {
+    if (SumHost.size() < 4*walkers.size()) {
       SumGPU.resize(4*walkers.size());
       SumHost.resize(4*walkers.size());
       UpdateListHost.resize(walkers.size());
@@ -347,6 +347,7 @@ namespace qmcplusplus {
       int elast  = N-1;
       if (GPUSplines[cgroup]) {
 	CudaSpline<CudaReal> &spline = *(GPUSplines[cgroup]);
+	// spline.check_coefs();
 	if (UsePBC) 
 	  one_body_grad_lapl_PBC (C.data(), W.RList_GPU.data(), 
 				  cfirst, clast, efirst, elast, 

@@ -28,7 +28,7 @@ bool AisInitializedPBC = false;
 
 
 template<typename T>
-__device__
+__device__ inline
 T min_dist (T& x, T& y, T& z, 
 	    T L[3][3], T Linv[3][3])
 {
@@ -71,7 +71,7 @@ T min_dist (T& x, T& y, T& z,
 
 
 template<typename T>
-__device__
+__device__ inline
 T min_dist_fast (T& x, T& y, T& z, 
 		 T L[3][3], T Linv[3][3])
 {
@@ -94,7 +94,7 @@ T min_dist_fast (T& x, T& y, T& z,
 
 
 template<typename T>
-__device__
+__device__ inline
 T min_dist (T& x, T& y, T& z, 
 	    T L[3][3], T Linv[3][3],
 	    T images[27][3])
@@ -240,7 +240,7 @@ eval_1d_spline(T dist, T rmax, T drInv, T A[4][4], T coefs[])
 
 
 template<typename T>
-__device__ void 
+__device__ inline void 
 eval_1d_spline_vgl(T dist, T rmax, T drInv, T A[12][4], T coefs[],
 		   T& u, T& du, T& d2u)
 {
@@ -261,17 +261,19 @@ eval_1d_spline_vgl(T dist, T rmax, T drInv, T A[12][4], T coefs[],
        coefs[index+2]*(A[2][0]*t3 + A[2][1]*t2 + A[2][2]*t + A[2][3]) +
        coefs[index+3]*(A[3][0]*t3 + A[3][1]*t2 + A[3][2]*t + A[3][3]));
 
- du = drInv *    
-   (coefs[index+0]*(A[4][0]*t3 + A[4][1]*t2 + A[4][2]*t + A[4][3]) +
-    coefs[index+1]*(A[5][0]*t3 + A[5][1]*t2 + A[5][2]*t + A[5][3]) +
-    coefs[index+2]*(A[6][0]*t3 + A[6][1]*t2 + A[6][2]*t + A[6][3]) +
-    coefs[index+3]*(A[7][0]*t3 + A[7][1]*t2 + A[7][2]*t + A[7][3]));
- 
- d2u = drInv*drInv * 
-   (coefs[index+0]*(A[ 8][0]*t3 + A[ 8][1]*t2 + A[ 8][2]*t + A[ 8][3]) +
-    coefs[index+1]*(A[ 9][0]*t3 + A[ 9][1]*t2 + A[ 9][2]*t + A[ 9][3]) +
-    coefs[index+2]*(A[10][0]*t3 + A[10][1]*t2 + A[10][2]*t + A[10][3]) +
-    coefs[index+3]*(A[11][0]*t3 + A[11][1]*t2 + A[11][2]*t + A[11][3]));
+  du = drInv *    
+    (coefs[index+0]*(A[4][0]*t3 + A[4][1]*t2 + A[4][2]*t + A[4][3]) +
+     coefs[index+1]*(A[5][0]*t3 + A[5][1]*t2 + A[5][2]*t + A[5][3]) +
+     coefs[index+2]*(A[6][0]*t3 + A[6][1]*t2 + A[6][2]*t + A[6][3]) +
+     coefs[index+3]*(A[7][0]*t3 + A[7][1]*t2 + A[7][2]*t + A[7][3]));
+  
+  d2u = drInv*drInv * 
+    (coefs[index+0]*(A[ 8][0]*t3 + A[ 8][1]*t2 + A[ 8][2]*t + A[ 8][3]) +
+     coefs[index+1]*(A[ 9][0]*t3 + A[ 9][1]*t2 + A[ 9][2]*t + A[ 9][3]) +
+     coefs[index+2]*(A[10][0]*t3 + A[10][1]*t2 + A[10][2]*t + A[10][3]) +
+     coefs[index+3]*(A[11][0]*t3 + A[11][1]*t2 + A[11][2]*t + A[11][3]));
+//   if (isnan (u) || isnan(du) || isnan(d2u))
+//     printf("index=%d t=%1.5f drInv=%1.5f  s=%1.5f coefs[index]=%1.5f A[0]=%1.5f\n", index, t, drInv, s, coefs[index], A[0]);
 }
 
 
@@ -288,7 +290,7 @@ two_body_sum_PBC_kernel(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
 
   int tid = threadIdx.x;
@@ -430,7 +432,7 @@ two_body_ratio_PBC_kernel(T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
 
   int tid = threadIdx.x;
@@ -574,7 +576,7 @@ two_body_ratio_grad_PBC_kernel(T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
@@ -700,7 +702,7 @@ two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
 
   __shared__ T *myR;
@@ -1237,7 +1239,7 @@ two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
   
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1326,7 +1328,7 @@ two_body_grad_lapl_PBC_kernel_fast(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
   
 
   int tid = threadIdx.x;
@@ -1473,7 +1475,7 @@ two_body_grad_PBC_kernel(T **R, int first, int last, int iat,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
   
   int tid = threadIdx.x;
   __shared__ T *myR, r2[3];
@@ -1568,7 +1570,7 @@ two_body_grad_PBC_kernel_fast(T **R, int first, int last, int iat,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
 
   
   int tid = threadIdx.x;
@@ -1718,7 +1720,7 @@ two_body_derivs_PBC_kernel(T **R, T **gradLogPsi,
   T drInv = 1.0f/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
 
   
   int tid = threadIdx.x;
@@ -1926,7 +1928,7 @@ one_body_sum_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -2062,7 +2064,7 @@ one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -2203,7 +2205,7 @@ one_body_ratio_grad_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -2328,7 +2330,7 @@ one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -2570,7 +2572,7 @@ one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;    
+  rMax *= 0.999999f;
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -2587,6 +2589,12 @@ one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast,
     Linv[0][tid] = latticeInv[tid];
   }
   
+  __syncthreads();
+  // if (tid == 31)
+  //   printf ("1) coefs[] = %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f\n",
+  // 	    coefs[0], coefs[1], coefs[2], coefs[3], 
+  // 	    coefs[4], coefs[5], coefs[6], coefs[7]);
+
   int index=0;
   __shared__ T images[27][3];
   if (tid < 3)
@@ -2611,11 +2619,18 @@ one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast,
 
   int Nc = clast - cfirst + 1;
   int Ne = elast - efirst + 1;
-  int NBc = Nc/BS + ((Nc % BS) ? 1 : 0);
-  int NBe = Ne/BS + ((Ne % BS) ? 1 : 0);
+  int NBc = (Nc+BS-1)/BS;
+  int NBe = (Ne+BS-1)/BS;
+
+  T c0 = coefs[0];
 
   __shared__ T sGradLapl[BS][4];
   for (int be=0; be < NBe; be++) {
+    // if (tid == 31)
+    //   printf ("2) coefs[] = %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f\n",
+    // 	    coefs[0], coefs[1], coefs[2], coefs[3], 
+    // 	    coefs[4], coefs[5], coefs[6], coefs[7]);
+
     // Load block of positions from global memory
     for (int i=0; i<3; i++)
       if ((3*be+i)*BS + tid < 3*Ne) 
@@ -2640,7 +2655,18 @@ one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast,
   	dy = r[tid][1] - c[j][1];
   	dz = r[tid][2] - c[j][2];
   	T dist = min_dist(dx, dy, dz, L, Linv, images);
+	// if (isinf(coefs[0]))
+	//   printf ("3) c0=%1.5f coefs[] = %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f tid=%d\n", c0,
+	// 	  coefs[0], spline_coefs[1], coefs[2], coefs[3], 
+	// 	  coefs[4], coefs[5], coefs[6], coefs[7], tid);
 	eval_1d_spline_vgl (dist, rMax, drInv, A, coefs, u, du, d2u);
+	// if (isinf(coefs[0]))
+	//   printf ("4) coefs[] = %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f %1.5f tid=%d\n",
+	// 	  coefs[0], coefs[1], coefs[2], coefs[3], 
+	// 	  coefs[4], coefs[5], coefs[6], coefs[7], tid);
+	  // printf("drInv=%1.5f  dist=%1.5f coefs[1]=%1.5f A[0]=%1.5f\n", 
+	  // 	 drInv, dist, coefs[1], A[0]);
+
   	if (cptcl < (Nc+cfirst)  && (eptcl < (Ne+efirst))) {
 	  du /= dist;
 	  sGradLapl[tid][0] -= du * dx;
@@ -2738,7 +2764,7 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
   float drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   __shared__ float coefs[MAX_COEFS];
   __shared__ float c[BS][3];
@@ -2843,7 +2869,7 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
   float drInv = 1.0/dr;
     __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   __shared__ float coefs[MAX_COEFS];
   __shared__ float c[BS][3];
@@ -3106,7 +3132,7 @@ one_body_grad_PBC_kernel(T **R, int iat, T *C, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
   
 
   int tid = threadIdx.x;
@@ -3200,7 +3226,7 @@ one_body_grad_PBC_kernel_fast(T **R, int iat, T *C, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   
   int tid = threadIdx.x;
@@ -3347,7 +3373,7 @@ one_body_derivs_PBC_kernel(T* C, T **R, T **gradLogPsi,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   
   int tid = threadIdx.x;

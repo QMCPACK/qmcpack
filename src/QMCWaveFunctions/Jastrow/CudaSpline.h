@@ -18,10 +18,18 @@ namespace qmcplusplus {
       gpu::host_vector<T> coefs_h(num_coefs);
       for (int i=0; i<num_coefs; i++) {
 	coefs_h[i] = func.SplineCoefs[i];
-	//app_log() << "coefs_h[" << i << "] = " << coefs_h[i] << endl;
+	// app_log() << "coefs_h[" << i << "] = " << coefs_h[i] << endl;
       }
       coefs = coefs_h;
       rMax = func.cutoff_radius;
+    }
+
+    void check_coefs() {
+      gpu::host_vector<T> coefs_h(coefs.size());
+      coefs_h = coefs;
+      for (int i=0; i<coefs.size(); i++)
+	if (isinf(coefs_h[i]))
+	  fprintf (stderr, "coefs[%d] = %1.5f\n", i, coefs_h[i]);
     }
 
     template<typename T2>
