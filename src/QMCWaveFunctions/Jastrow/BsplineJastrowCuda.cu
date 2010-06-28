@@ -77,7 +77,7 @@ eval_1d_spline(T dist, T rmax, T drInv, T A[4][4], T coefs[])
 
 
 template<typename T>
-__device__ void 
+__device__ inline void 
 eval_1d_spline_vgl(T dist, T rmax, T drInv, T A[12][4], T coefs[],
 		   T& u, T& du, T& d2u)
 {
@@ -124,7 +124,7 @@ two_body_sum_kernel(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
 
   int tid = threadIdx.x;
@@ -259,7 +259,7 @@ two_body_ratio_kernel(T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
 
   int tid = threadIdx.x;
@@ -395,7 +395,7 @@ two_body_ratio_grad_kernel(T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
@@ -814,7 +814,7 @@ two_body_grad_lapl_kernel(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
   
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -949,7 +949,7 @@ two_body_grad_kernel(T **R, int first, int last, int iat,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
   
   int tid = threadIdx.x;
   __shared__ T *myR, r2[3];
@@ -1083,7 +1083,7 @@ two_body_derivs_kernel(T **R, T **gradLogPsi,
   T drInv = 1.0f/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;
+  rMax *= 0.999999f;
 
   
   int tid = threadIdx.x;
@@ -1272,7 +1272,7 @@ one_body_sum_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1402,7 +1402,7 @@ one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1535,7 +1535,7 @@ one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1702,7 +1702,7 @@ one_body_grad_lapl_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;    
+  rMax *= 0.99999f;    
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1852,7 +1852,7 @@ one_body_NLratio_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
   float drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   __shared__ float coefs[MAX_COEFS];
   __shared__ float c[BS][3];
@@ -2073,7 +2073,7 @@ one_body_grad_kernel(T **R, int iat, T *C, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
   
 
   int tid = threadIdx.x;
@@ -2208,7 +2208,7 @@ one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999;  
+  rMax *= 0.999999f;  
 
   
   int tid = threadIdx.x;
