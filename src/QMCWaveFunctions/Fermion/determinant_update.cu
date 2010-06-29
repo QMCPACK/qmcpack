@@ -32,7 +32,7 @@ update_inverse_cuda1 (updateJob *updateList,
   Ainv_delta_tid = 0.0f;
  __syncthreads();
   int col = blockIdx.x*BS + threadIdx.x;
-  int numblocks = N / BS + ((N%BS) ? 1 : 0);
+  int numblocks = (N+BS-1) / BS;
   int kBlock = k/BS;
 
   // If the column I need to pull from Ainv is in this thread block
@@ -121,8 +121,8 @@ update_inverse_cuda(updateJob updateList[], float dummy,
 {
   const int BS1 = 64;
   const int BS2 = 64;
-  int NB1 = N/BS1 + ((N%BS1) ? 1 : 0);
-  int NB2 = N/BS2 + ((N%BS2) ? 1 : 0);
+  int NB1 = (N+BS1-1)/BS1;
+  int NB2 = (N+BS2-1)/BS2;
 
   dim3 dimBlock1(BS1);
   dim3 dimGrid1(NB1, numWalkers);
@@ -133,6 +133,8 @@ update_inverse_cuda(updateJob updateList[], float dummy,
     (updateList, N, rowstride);
   update_inverse_cuda2<float,BS2><<<dimGrid2,dimBlock2>>>
     (updateList, N, rowstride);
+
+  cudaThreadSynchronize();
 
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
