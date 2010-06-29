@@ -2008,6 +2008,59 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
 }
 
 
+
+template<typename T>
+__global__ void
+woodbury_update_16b (T** Ainv_trans, T** delta,
+		    T** Ainv_delta,
+		    int N, int rowstride)
+{
+  T *myAinv, *mydelta, *myAinv_delta;
+  int tid = threadIdx.x;
+
+  myAinv       = Ainv_trans[blockIdx.y];
+  myAinv_delta = Ainv_delta[blockIdx.y];
+  mydelta      =      delta[blockIdx.y];
+  int first_row = blockIdx.x*16;
+  
+  __shared__ T Ainv_s[16][17], delta_s[4][17], Ainv_delta_s[16][17];
+  int nb = (N+15)/16;
+
+  int row = tid >> 4;
+  int col = tid & 0x0000000f;
+  for (int irow=0; irow<4; irow++,row+=4) 
+    Ainv_delta_s[row][col] = 0.0f;
+  __syncthreads();
+  
+  for (int block=0; block<nb; block++) {
+    //    int nend = N - block*16;
+    int c = block*16+ col;
+    int row = tid >> 4;
+    for (int irow=0; irow<4; irow++) {
+      Ainv_s[row][col]  = myAinv[(first_row+row)*rowstride+c];
+      row +=4;
+    }
+    __syncthreads();
+    row = tid >> 4;
+    for (int irow=0; irow<4; irow++) {
+      delta_s[row][col] = mydelta[(row+4*irow)*rowstride+c];
+      if (row+first_row < N && c < N)
+	for (int k=0; k<16; k++)
+	  Ainv_delta_s[row+4*irow][col] += Ainv_s[col][k] *  delta_s[row][k];
+    }
+    __syncthreads();
+  }
+  int mycol = blockIdx.x*16+col;
+  row = tid >> 4;
+  if (mycol < N) {
+    for (int irow=0; irow<4; irow++,row+=4)
+      myAinv_delta[row*rowstride+mycol] = Ainv_delta_s[row][col];
+  }
+}
+
+
+
+
 template<typename T>
 __global__ void
 woodbury_update_32 (T** Ainv_trans, T** delta,
@@ -2139,6 +2192,9 @@ void GJInverse (double *A, int n)
   }
 }
 
+#include <omp.h>
+
+
 
 #define MAT_SIZE 256
 #define NUM_MATS 512
@@ -2236,21 +2292,22 @@ test_update()
     cudaMemcpy (uList[mat], u_h, N*sizeof(float), cudaMemcpyHostToDevice);
   }
 
-  dim3 dimBlock2(DET_BLOCK_SIZE);
-  dim3 dimGrid2((N/DET_BLOCK_SIZE), NUM_MATS);
+  dim3 dimBlock2(64);
+  dim3 dimGrid2((N+63)/64, NUM_MATS);
 
 
-  clock_t start = clock();
+  double start = omp_get_wtime();
+
   for (int i=0; i<1000; i++) {
-    // update_inverse_cuda1<float><<<dimGrid2,dimBlock2>>>
-    //   (AList_d, AinvList_d, deltaList_d, Ainv_deltaList_d, Ainv_colkList_d, N, N, row);
-    // update_inverse_cuda2<float><<<dimGrid2,dimBlock2>>>
-    //   (AList_d, AinvList_d, deltaList_d, Ainv_deltaList_d, Ainv_colkList_d, N, N, row);
+    update_inverse_cuda1<float,64><<<dimGrid2,dimBlock2>>>
+      (AList_d, AinvList_d, uList_d, Ainv_uList_d, Ainv_colkList_d, N, N, row);
+    update_inverse_cuda2<float,64><<<dimGrid2,dimBlock2>>>
+      (AList_d, AinvList_d, uList_d, Ainv_uList_d, Ainv_colkList_d, N, N, row);
   }
-  clock_t end = clock();
+  cudaThreadSynchronize();
+  double end = omp_get_wtime();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
-	   (double)(1000*NUM_MATS)/
-	   ((double)(end - start)/(double)CLOCKS_PER_SEC));
+	   (double)(1000*NUM_MATS)/(end - start));
   cudaMemcpy (Ainv_h, AinvList[0], N*N*sizeof(float),cudaMemcpyDeviceToHost);
 
   
@@ -2399,7 +2456,6 @@ test_update_transpose()
 
 
 
-#include <omp.h>
 
 void 
 test_woodbury()
@@ -2502,13 +2558,13 @@ test_woodbury()
   }
 
 
-  dim3 dimBlock2(32);
+  dim3 dimBlock2(64);
   dim3 dimGrid2((N/16), numMats);
   //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
   for (int i=0; i<100; i++) {
-    woodbury_update_16<float><<<dimGrid2,dimBlock2>>>
+    woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
     // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
     //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
@@ -2573,7 +2629,7 @@ main()
 {
   //test_all_ratios_kernel();
   // test_all_grad_lapl_kernel();
-  // test_update();
+  test_update();
   // test_update_transpose();
   test_woodbury();
 }
