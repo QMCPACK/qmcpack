@@ -2008,12 +2008,38 @@ woodbury_update_16 (T** Ainv_trans, T** delta,
 }
 
 
+// Require 64 threads per block
+template<typename T>
+__device__ inline void
+block_inverse_16(T A[16][17])
+{
+  int tid = threadIdx.x;
+  __shared__ T Arowk[16], Acolk[16];
+  for (int k=0; k<16; k++) {
+    T pivotInv = 1.0f/A[k][k];
+    if (tid < 16) {
+      T tmp = -pivotInv*A[tid][k];
+      A[tid][k] = tmp;
+      Acolk[tid] = tmp;
+      Arowk[tid] = A[k][tid];
+    }
+    __syncthreads();
+    int row= tid >> 4;
+    int col = tid & 0x0f;
+    for (;row<16;row+=4) 
+      A[row][col] += Arowk[col]*Acolk[row];
+    __syncthreads();
+    A[k][tid] *= pivotInv;
+  }
+}
+    
+
 
 template<typename T>
 __global__ void
-woodbury_update_16b (T** Ainv_trans, T** delta,
-		    T** Ainv_delta,
-		    int N, int rowstride)
+woodbury_update_16a (T** Ainv_trans, T** delta,
+		     T** Ainv_delta,
+		     int N, int rowstride, int kblock)
 {
   T *myAinv, *mydelta, *myAinv_delta;
   int tid = threadIdx.x;
@@ -2058,6 +2084,9 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
     for (int irow=0; irow<4; irow++,row+=4)
       myAinv_delta[row*rowstride+mycol] = Ainv_delta_s[row][col];
   }
+  __syncthreads();
+  if (blockIdx.x == kblock)
+    block_inverse_16<T> (Ainv_delta_s);
 }
 
 
@@ -2566,8 +2595,8 @@ test_woodbury()
 
   double start = omp_get_wtime();
   for (int i=0; i<100; i++) {
-    woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
-      (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
+    woodbury_update_16a<float><<<dimGrid2,dimBlock2>>>
+      (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N, 0);
     // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
     //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
 
