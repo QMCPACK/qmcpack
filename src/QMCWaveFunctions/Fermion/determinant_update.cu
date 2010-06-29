@@ -2021,6 +2021,7 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
   myAinv       = Ainv_trans[blockIdx.y];
   myAinv_delta = Ainv_delta[blockIdx.y];
   mydelta      =      delta[blockIdx.y];
+
   int first_row = blockIdx.x*16;
   
   __shared__ T Ainv_s[16][17], delta_s[4][17], Ainv_delta_s[16][17];
@@ -2033,7 +2034,6 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
   __syncthreads();
   
   for (int block=0; block<nb; block++) {
-    //    int nend = N - block*16;
     int c = block*16+ col;
     int row = tid >> 4;
     for (int irow=0; irow<4; irow++) {
@@ -2044,9 +2044,11 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
     row = tid >> 4;
     for (int irow=0; irow<4; irow++) {
       delta_s[row][col] = mydelta[(row+4*irow)*rowstride+c];
+      T mysum = Ainv_delta_s[row+4*irow][col];
       if (row+first_row < N && c < N)
 	for (int k=0; k<16; k++)
-	  Ainv_delta_s[row+4*irow][col] += Ainv_s[col][k] *  delta_s[row][k];
+	  mysum += Ainv_s[col][k] *  delta_s[row][k];
+      Ainv_delta_s[row+4*irow][col] = mysum;
     }
     __syncthreads();
   }
