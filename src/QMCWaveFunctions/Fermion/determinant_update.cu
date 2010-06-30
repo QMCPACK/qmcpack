@@ -2104,9 +2104,46 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
 		     T** Ainv_delta, T** inv_block,
 		     int N, int rowstride, int kblock)
 {
-  __shared__ T invblock[16][17];
-  
+  int tid = threadIdx.x;
+  __shared__ T B1[16][17], B2[16][17], B3[16][17];
+  __shared__ T *myAinv, *myAinv_delta, *myinv_block;
+  if (tid == 0) {
+    myAinv       = Ainv_trans[blockIdx.y];
+    myAinv_delta = Ainv_delta[blockIdx.y];
+    myinv_block  = inv_block[blockIdx.y];
+  }
+  __syncthreads();
+  int row = tid >> 4;
+  int col = tid & 0x0f;
+  int c = blockIdx.x*16+col;
+  for (int i=0; i<4; i++, row+=4) {
+    B1[row][col] = myinv_block[16*row+col];
+    B2[row][col] = myAinv[(16*kblock+row)*rowstride + c];
+  }
+  __syncthreads();
+  row = tid >> 4;
+  // Now, multiply Ainv block by inv_block
+  for (int i=0; i<4; i++, row+=4) {
+    T mysum = 0.0f;
+    for (int j=0; j<16; j++)
+      mysum += B2[j][row] * B1[j][col];
+    B3[row][col] = mysum;
+  }    
 
+  // Now do outer product
+  int nb = (N+15)>>4;
+  for (int block=0; block<nb; block++) {
+    int row = tid >> 4;
+    for (int i=0; i<4; i++, row+=4) 
+      B1[row][col] = myAinv_delta[row*16+col+16*block];
+    row = tid >> 4;
+    for (int irow=0; irow<4; irow++) {
+      T mysum = myAinv[(16*block+row)*rowstride + c];
+      for (int k=0; k<16; k++)
+	mysum += B3[row][k] * B1[col][k];
+      myAinv[(16*block+row)*rowstride + c] = mysum;
+    }
+  }
 }
 
 
@@ -2625,6 +2662,9 @@ test_woodbury()
   double start = omp_get_wtime();
   for (int i=0; i<100; i++) {
     woodbury_update_16a<float><<<dimGrid2,dimBlock2>>>
+      (AinvList_d, deltaList_d, Ainv_deltaList_d, 
+       invBlockList_d, N, N, 0);
+    woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, 0);
     // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
