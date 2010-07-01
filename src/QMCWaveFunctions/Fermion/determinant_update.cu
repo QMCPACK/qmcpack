@@ -2163,12 +2163,12 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
     row = tid >> 4;
     for (int i=0; i<4; i++, row+=4) 
       B1[row][col] = myAinv_delta[row*rowstride+col+16*block];
+    __syncthreads();
     row = tid >> 4;
     for (int irow=0; irow<4; irow++,row+=4) {
       T mysum = myAinv[(16*block+row)*rowstride + c];
       for (int k=0; k<16; k++)
 	mysum -= B3[col][k] * B1[k][row];
-	//mysum -= B3[row][k] * B1[k][col];
       myAinv[(16*block+row)*rowstride + c] = mysum;
     }
   }
