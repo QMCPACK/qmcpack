@@ -2014,23 +2014,50 @@ __device__ inline void
 block_inverse_16(T A[16][17])
 {
   int tid = threadIdx.x;
-  __shared__ T Arowk[16], Acolk[16];
+  __shared__ T Acolk[16];
+  if (blockIdx.y == 0 && tid == 0) {
+    printf ("Ablock:\n");
+    for (int i=0; i<16; i++) {
+      for (int j=0; j<16; j++)
+	printf ("%14.8e ", A[i][j]);
+      printf ("\n");
+    }
+  }
+    
   for (int k=0; k<16; k++) {
     T pivotInv = 1.0f/A[k][k];
     if (tid < 16) {
-      T tmp = -pivotInv*A[tid][k];
+      T tmp = (tid==k) ? 0.0f : -pivotInv*A[tid][k];
       A[tid][k] = tmp;
       Acolk[tid] = tmp;
-      Arowk[tid] = A[k][tid];
     }
     __syncthreads();
     int row= tid >> 4;
     int col = tid & 0x0f;
-    for (;row<16;row+=4) 
-      A[row][col] += Arowk[col]*Acolk[row];
+    T Arowk = A[k][col];
+    A[row+ 0][col] += Arowk*Acolk[row+ 0];
+    A[row+ 4][col] += Arowk*Acolk[row+ 4];
+    A[row+ 8][col] += Arowk*Acolk[row+ 8];
+    A[row+12][col] += Arowk*Acolk[row+12];
+
     __syncthreads();
-    A[k][tid] *= pivotInv;
+    if (tid < 16) {
+      if (tid == k)
+	A[k][tid] = pivotInv;
+      else
+	A[k][tid] *= pivotInv;
+    }
+    __syncthreads();
   }
+  if (blockIdx.y == 0 && tid == 0) {
+    printf ("Ainvblock:\n");
+    for (int i=0; i<16; i++) {
+      for (int j=0; j<16; j++)
+	printf ("%14.8e ", A[i][j]);
+      printf ("\n");
+    }
+  }
+
 }
     
 
@@ -2093,7 +2120,7 @@ woodbury_update_16a (T** Ainv_trans, T** delta,
     block_inverse_16<T> (Ainv_delta_s);
     row = tid >> 4;
     for (int irow=0; irow<4; irow++,row+=4)
-      myinvblock[row*16+mycol] = Ainv_delta_s[row][col];
+      myinvblock[row*16+col] = Ainv_delta_s[row][col];
   }
 }
 
@@ -2140,7 +2167,7 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
     for (int irow=0; irow<4; irow++,row+=4) {
       T mysum = myAinv[(16*block+row)*rowstride + c];
       for (int k=0; k<16; k++)
-	mysum += B3[row][k] * B1[col][k];
+	mysum -= B3[col][k] * B1[k][row];
       myAinv[(16*block+row)*rowstride + c] = mysum;
     }
   }
@@ -2326,9 +2353,6 @@ test_update()
   cudaMalloc((void**)&Ainv_colkList_d, numMats*sizeof(float*));
   cudaMalloc((void**)&uList_d,         numMats*sizeof(float*));
 
-  fprintf (stderr, "N = %d\n", N);
-
-  
   for (int mat=0; mat<numMats; mat++) {
     cudaMalloc((void**)&(AList[mat])        , N*N*sizeof(float)+1000);
     cudaMalloc((void**)&(AinvList[mat])     , N*N*sizeof(float)+1000);
@@ -2336,8 +2360,6 @@ test_update()
     cudaMalloc((void**)&(Ainv_colkList[mat]),   N*sizeof(float)+1000);
     cudaMalloc((void**)&(uList[mat])        ,   N*sizeof(float)+1000);
   }
-
-  fprintf (stderr, "N = %d\n", N);
 
 
   cudaMemcpy (AList_d, AList, numMats*sizeof(float*), 
@@ -2352,9 +2374,6 @@ test_update()
 	      cudaMemcpyHostToDevice);
   
   srand48((long int) 12341313);
-
-  fprintf (stderr, "N = %d\n", N);
-
 
   int row = 0;
 
@@ -2454,9 +2473,6 @@ test_update_transpose()
   cudaMalloc((void**)&Ainv_colkList_d, numMats*sizeof(float*));
   cudaMalloc((void**)&uList_d,         numMats*sizeof(float*));
 
-  fprintf (stderr, "N = %d\n", N);
-
-  
   for (int mat=0; mat<numMats; mat++) {
     cudaMalloc((void**)&(AList[mat])        , N*N*sizeof(float));
     cudaMalloc((void**)&(AinvList[mat])     , N*N*sizeof(float));
@@ -2464,9 +2480,6 @@ test_update_transpose()
     cudaMalloc((void**)&(Ainv_colkList[mat]),   N*sizeof(float));
     cudaMalloc((void**)&(uList[mat])        ,   N*sizeof(float));
   }
-
-  fprintf (stderr, "N = %d\n", N);
-
 
   cudaMemcpy (AList_d, AList, numMats*sizeof(float*), 
 	      cudaMemcpyHostToDevice);
@@ -2480,8 +2493,6 @@ test_update_transpose()
 	      cudaMemcpyHostToDevice);
   
   srand48((long int) 12341313);
-
-  fprintf (stderr, "N = %d\n", N);
 
 
   int row = 1;
@@ -2553,17 +2564,22 @@ test_woodbury()
 {
   int const N = MAT_SIZE;
   int M = 16;
-  double *A, *Ainv;
+  int updateBlock = 3;
+  double *A, *Ainv, *Anew, *Anew_inv;
   int numMats = NUM_MATS;
-  float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h;
+  float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h, *Anew_h, *Anew_inv_h;;
   float *Ainv_d, *Ainv_delta_d, *Ainv_colk_d, *delta_d;
 
-  A       = (double*)malloc (N*N*sizeof(double));
-  Ainv    = (double*)malloc (N*N*sizeof(double));
-  Ainv_h  = (float*) malloc (N*N*sizeof(float));
-  A_h     = (float*) malloc (N*N*sizeof(float));
-  delta_h     = (float*) malloc (N*M*sizeof(float));
-  Ainv_delta_h     = (float*) malloc (N*M*sizeof(float));
+  A            = (double*)malloc (N*N*sizeof(double));
+  Anew         = (double*)malloc (N*N*sizeof(double));
+  Ainv         = (double*)malloc (N*N*sizeof(double));
+  Anew_inv     = (double*)malloc (N*N*sizeof(double));
+  Ainv_h       = (float*) malloc (N*N*sizeof(float));
+  A_h          = (float*) malloc (N*N*sizeof(float));
+  delta_h      = (float*) malloc (N*M*sizeof(float));
+  Ainv_delta_h = (float*) malloc (N*M*sizeof(float));
+  Anew_h       = (float*) malloc (N*N*sizeof(float));
+  Anew_inv_h   = (float*) malloc (N*N*sizeof(float));
   cudaMalloc((void**)&Ainv_d,       N*N*sizeof(float));
   cudaMalloc((void**)&delta_d,      N*M*sizeof(float));
   cudaMalloc((void**)&Ainv_delta_d, N*M*sizeof(float));
@@ -2586,8 +2602,6 @@ test_woodbury()
   cudaMalloc((void**)&deltaList_d,         numMats*sizeof(float*));
   cudaMalloc((void**)&invBlockList_d,         numMats*sizeof(float*));
 
-  fprintf (stderr, "N = %d\n", N);
-  
   for (int mat=0; mat<numMats; mat++) {
     //    cudaMalloc((void**)&(AList[mat])        , N*N*sizeof(float)+1000);
     cudaMalloc((void**)&(AinvList[mat])      , N*N*sizeof(float)+1000);
@@ -2603,9 +2617,6 @@ test_woodbury()
 
   }
 
-  fprintf (stderr, "N = %d\n", N);
-
-
   cudaMemcpy (AinvList_d, AinvList, numMats*sizeof(float*), 
 	      cudaMemcpyHostToDevice);
   cudaMemcpy (Ainv_deltaList_d, Ainv_deltaList, numMats*sizeof(float*), 
@@ -2618,28 +2629,37 @@ test_woodbury()
 
   srand48((long int) 12341313);
 
-  fprintf (stderr, "N = %d    M = %d\n", N, M);
   int row = 0;
 
   for (int mat=0; mat<numMats; mat++) {
     if (mat == 0 ) {
       for (int i=0; i<N; i++) {
-	for (int j=0; j<16; j++)
-	  delta_h[j*N+i] = drand48();
-	for (int j=0; j<N; j++) 
+	for (int j=0; j<N; j++) {
 	  A[i*N+j] = Ainv[i*N+j] = A_h[i*N+j] = drand48();
+	  Anew[i*N+j] = Anew_inv[i*N+j] = A[i*N+j];
+	}
       }
+      for (int i=0; i<16; i++) 
+	for (int j=0; j<N; j++) {
+	  delta_h[i*N+j] = drand48()-0.5;
+	  Anew[(updateBlock*16+i)*N + j] = 
+	    Anew_inv[(updateBlock*16+i)*N + j] = A[i*N+j] + delta_h[i*N+j];
+	}
       // for (int i=0; i<N; i++)
       // 	delta_h[i] = A_h[row*N+i];
-
+      
       GJInverse(Ainv, N);
+      GJInverse(Anew_inv, N);
       for (int i=0; i<N; i++)
-	for (int j=0; j<N; j++) 
+	for (int j=0; j<N; j++) {
 	  Ainv_h[i*N+j] = (float)Ainv[j*N+i];
+	  Anew_inv_h[i*N+j] = (float)Anew_inv[j*N+i];
+	}
     }
+    
     // for (int i=0; i<N; i++)
     //   delta_h[i] = A_h[row*N+i];
-
+    
     // cudaMemcpy (AList[mat], A_h, N*N*sizeof(float), 
     // 		cudaMemcpyHostToDevice);
     cudaMemcpy (AinvList[mat], Ainv_h, N*N*sizeof(float), 
@@ -2660,13 +2680,13 @@ test_woodbury()
   //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
-  for (int i=0; i<100; i++) {
+  for (int i=0; i<1; i++) {
     woodbury_update_16a<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
-       invBlockList_d, N, N, 0);
+       invBlockList_d, N, N, updateBlock);
     woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
-       invBlockList_d, N, N, 0);
+       invBlockList_d, N, N, updateBlock);
     // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
     //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
 
@@ -2683,9 +2703,12 @@ test_woodbury()
 	   (double)(100*NUM_MATS)/(end - start));
 
   fprintf (stderr, "About to copy %ld back\n", N*M*sizeof(float));
-
   cudaMemcpy (Ainv_delta_h, Ainv_deltaList[0], N*M*sizeof(float),
    	      cudaMemcpyDeviceToHost);
+    fprintf (stderr, "About to copy %ld back\n", N*N*sizeof(float));
+  cudaMemcpy (Anew_inv_h, AinvList[0], N*N*sizeof(float),
+   	      cudaMemcpyDeviceToHost);
+
   err = cudaGetLastError();
   if (err != cudaSuccess) {
     fprintf (stderr, "CUDA error in test_woodbury memcopy back:\n  %s\n",
@@ -2704,6 +2727,23 @@ test_woodbury()
 
   fprintf (stderr, "Ainv_delta_cpu = %1.8e\n", Ainv_delta[51]);
   fprintf (stderr, "Ainv_delta_gpu = %1.8e\n", Ainv_delta_h[51]);
+
+  int i = 10;
+  int j = 17;
+
+  FILE *fcpu = fopen("Ainv_cpu.dat", "w");
+  FILE *fgpu = fopen("Ainv_gpu.dat", "w");
+  for (int i=0; i<N; i++) {
+    for (int j=0; j<N; j++) {
+      fprintf (fcpu, "%16.8e ", Anew_inv[i*N+j]);
+      fprintf (fgpu, "%16.8e ", Anew_inv_h[j*N+i]);
+    }
+    fprintf (fcpu, "\n");    
+    fprintf (fgpu, "\n");
+  }
+  fprintf (stderr, "Anew_inv cpu = %1.8e\n", Anew_inv[i*N+j]);
+  fprintf (stderr, "Anew_inv_gpu = %1.8e\n", Anew_inv_h[j*N+i]);
+
 
   // cudaMemcpy (Ainv_h, AinvList[0], N*N*sizeof(float),cudaMemcpyDeviceToHost);
 
@@ -2730,7 +2770,7 @@ main()
 {
   //test_all_ratios_kernel();
   // test_all_grad_lapl_kernel();
-  test_update();
+  //test_update();
   // test_update_transpose();
   test_woodbury();
 }
