@@ -2015,14 +2015,14 @@ block_inverse_16(T A[16][17])
 {
   int tid = threadIdx.x;
   __shared__ T Acolk[16];
-  if (blockIdx.y == 0 && tid == 0) {
-    printf ("Ablock:\n");
-    for (int i=0; i<16; i++) {
-      for (int j=0; j<16; j++)
-	printf ("%14.8e ", A[i][j]);
-      printf ("\n");
-    }
-  }
+  // if (blockIdx.y == 0 && tid == 0) {
+  //   printf ("Ablock:\n");
+  //   for (int i=0; i<16; i++) {
+  //     for (int j=0; j<16; j++)
+  // 	printf ("%14.8e ", A[i][j]);
+  //     printf ("\n");
+  //   }
+  // }
     
   for (int k=0; k<16; k++) {
     T pivotInv = 1.0f/A[k][k];
@@ -2049,14 +2049,14 @@ block_inverse_16(T A[16][17])
     }
     __syncthreads();
   }
-  if (blockIdx.y == 0 && tid == 0) {
-    printf ("Ainvblock:\n");
-    for (int i=0; i<16; i++) {
-      for (int j=0; j<16; j++)
-	printf ("%14.8e ", A[i][j]);
-      printf ("\n");
-    }
-  }
+  // if (blockIdx.y == 0 && tid == 0) {
+  //   printf ("Ainvblock:\n");
+  //   for (int i=0; i<16; i++) {
+  //     for (int j=0; j<16; j++)
+  // 	printf ("%14.8e ", A[i][j]);
+  //     printf ("\n");
+  //   }
+  // }
 
 }
     
@@ -2409,7 +2409,7 @@ test_update()
 
   double start = omp_get_wtime();
 
-  for (int i=0; i<1000; i++) {
+  for (int i=0; i<100; i++) {
     update_inverse_cuda1<float,64><<<dimGrid2,dimBlock2>>>
       (AList_d, AinvList_d, uList_d, Ainv_uList_d, Ainv_colkList_d, N, N, row);
     update_inverse_cuda2<float,64><<<dimGrid2,dimBlock2>>>
@@ -2418,7 +2418,7 @@ test_update()
   cudaThreadSynchronize();
   double end = omp_get_wtime();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
-	   (double)(1000*NUM_MATS)/(end - start));
+	   (double)(100*NUM_MATS)/(end - start));
   cudaMemcpy (Ainv_h, AinvList[0], N*N*sizeof(float),cudaMemcpyDeviceToHost);
 
   
@@ -2565,7 +2565,7 @@ test_woodbury()
 {
   int const N = MAT_SIZE;
   int M = 16;
-  int updateBlock = 0;
+  int updateBlock = 3;
   double *A, *Ainv, *Anew, *Anew_inv;
   int numMats = NUM_MATS;
   float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h, *Anew_h, *Anew_inv_h;;
@@ -2677,11 +2677,11 @@ test_woodbury()
 
 
   dim3 dimBlock2(64);
-  dim3 dimGrid2((N/16), numMats);
+  dim3 dimGrid2((N+15)/16, numMats);
   //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
-  for (int i=0; i<1; i++) {
+  for (int i=0; i<100; i++) {
     woodbury_update_16a<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, updateBlock);
@@ -2768,7 +2768,7 @@ main()
 {
   //test_all_ratios_kernel();
   // test_all_grad_lapl_kernel();
-  //test_update();
+  test_update();
   // test_update_transpose();
   test_woodbury();
 }
