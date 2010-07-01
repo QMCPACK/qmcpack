@@ -2160,14 +2160,15 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
   // Now do outer product
   int nb = (N+15)>>4;
   for (int block=0; block<nb; block++) {
-    int row = tid >> 4;
+    row = tid >> 4;
     for (int i=0; i<4; i++, row+=4) 
-      B1[row][col] = myAinv_delta[row*16+col+16*block];
+      B1[row][col] = myAinv_delta[row*rowstride+col+16*block];
     row = tid >> 4;
     for (int irow=0; irow<4; irow++,row+=4) {
       T mysum = myAinv[(16*block+row)*rowstride + c];
       for (int k=0; k<16; k++)
 	mysum -= B3[col][k] * B1[k][row];
+	//mysum -= B3[row][k] * B1[k][col];
       myAinv[(16*block+row)*rowstride + c] = mysum;
     }
   }
@@ -2564,7 +2565,7 @@ test_woodbury()
 {
   int const N = MAT_SIZE;
   int M = 16;
-  int updateBlock = 3;
+  int updateBlock = 0;
   double *A, *Ainv, *Anew, *Anew_inv;
   int numMats = NUM_MATS;
   float *A_h, *Ainv_h, *delta_h, *Ainv_delta_h, *Anew_h, *Anew_inv_h;;
@@ -2643,7 +2644,7 @@ test_woodbury()
 	for (int j=0; j<N; j++) {
 	  delta_h[i*N+j] = drand48()-0.5;
 	  Anew[(updateBlock*16+i)*N + j] = 
-	    Anew_inv[(updateBlock*16+i)*N + j] = A[i*N+j] + delta_h[i*N+j];
+	    Anew_inv[(updateBlock*16+i)*N + j] = A[(updateBlock*16+i)*N + j] + delta_h[i*N+j];
 	}
       // for (int i=0; i<N; i++)
       // 	delta_h[i] = A_h[row*N+i];
@@ -2687,16 +2688,13 @@ test_woodbury()
     woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, updateBlock);
-    // woodbury_update_32<float><<<dimGrid2,dimBlock2>>>
-    //   (AinvList_d, deltaList_d, Ainv_deltaList_d, N, N);
-
-    cudaThreadSynchronize();
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-      fprintf (stderr, "CUDA error in woodbury_update_16:\n  %s\n",
-	       cudaGetErrorString(err));
-      abort();
-    }
+  }
+  cudaThreadSynchronize();
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    fprintf (stderr, "CUDA error in woodbury_update_16:\n  %s\n",
+	     cudaGetErrorString(err));
+    abort();
   }
   double end = omp_get_wtime();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
@@ -2705,7 +2703,7 @@ test_woodbury()
   fprintf (stderr, "About to copy %ld back\n", N*M*sizeof(float));
   cudaMemcpy (Ainv_delta_h, Ainv_deltaList[0], N*M*sizeof(float),
    	      cudaMemcpyDeviceToHost);
-    fprintf (stderr, "About to copy %ld back\n", N*N*sizeof(float));
+  fprintf (stderr, "About to copy %ld back\n", N*N*sizeof(float));
   cudaMemcpy (Anew_inv_h, AinvList[0], N*N*sizeof(float),
    	      cudaMemcpyDeviceToHost);
 
