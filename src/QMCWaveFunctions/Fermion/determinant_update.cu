@@ -1932,7 +1932,7 @@ test_all_grad_lapl_kernel()
 
   struct timeval tstart, tend;
   gettimeofday(&tstart, NULL);
-  for (int i=0; i<100; i++) 
+  for (int i=0; i<1; i++) 
     calc_grad_lapl (Ainv_list_d, A_list_d, ratio_list_d, N, N, numMats);
   cudaMemcpy (ratio, ratio_d, 4*N*sizeof(float), cudaMemcpyDeviceToHost);
   gettimeofday(&tend, NULL);
@@ -2062,6 +2062,13 @@ block_inverse_16(T A[16][17])
     
 
 
+// This routine performs the first half of a Woodbury formula update
+// for updating 16 rows at a time of the A matrix.  It assumes that
+// the inverse matrix is stored in transposed form.  This kernel
+// computes transpose(Ainv) * delta, where delta is 16xN matrix of the
+// changes in A.  kblock indicates which block of 16 rows has been
+// changed.  Each blockIdx.x computes a different 16x16 block for the
+// product.
 template<typename T>
 __global__ void
 woodbury_update_16a (T** Ainv_trans, T** delta,
@@ -2076,51 +2083,72 @@ woodbury_update_16a (T** Ainv_trans, T** delta,
   mydelta      =      delta[blockIdx.y];
   myinvblock   =  inv_block[blockIdx.y];
 
-  int first_row = blockIdx.x*16;
+  int first_row = blockIdx.x*32;
   
-  __shared__ T Ainv_s[16][17], delta_s[4][17], Ainv_delta_s[16][17];
+  __shared__ T Ainv1[16][17], Ainv2[16][17],
+    delta_s[4][17], Ainv_delta1[16][17], Ainv_delta2[16][17];
   int nb = (N+15)/16;
 
   int row = tid >> 4;
-  int col = tid & 0x0000000f;
-  for (int irow=0; irow<4; irow++,row+=4) 
-    Ainv_delta_s[row][col] = 0.0f;
+  int col = tid & 0x0f;
+  Ainv_delta1[row+ 0][col] = Ainv_delta2[row+ 0][col] = 0.0f;
+  Ainv_delta1[row+ 4][col] = Ainv_delta2[row+ 4][col] = 0.0f;
+  Ainv_delta1[row+ 8][col] = Ainv_delta2[row+ 8][col] = 0.0f;
+  Ainv_delta1[row+12][col] = Ainv_delta2[row+12][col] = 0.0f;
+
   __syncthreads();
   
   for (int block=0; block<nb; block++) {
     int c = block*16+ col;
     int row = tid >> 4;
-    for (int irow=0; irow<4; irow++) {
-      Ainv_s[row][col]  = myAinv[(first_row+row)*rowstride+c];
-      row +=4;
+    for (int irow=0; irow<4; irow++,row+=4) {
+      Ainv1[row][col]  = myAinv[(first_row+row   )*rowstride+c];
+      Ainv2[row][col]  = myAinv[(first_row+row+16)*rowstride+c];
     }
     __syncthreads();
     row = tid >> 4;
-    for (int irow=0; irow<4; irow++) {
-      delta_s[row][col] = mydelta[(row+4*irow)*rowstride+c];
-      T mysum = Ainv_delta_s[row+4*irow][col];
+    int row2 = row;
+    for (int irow=0; irow<4; irow++, row+=4) {
+      delta_s[row2][col] = mydelta[row*rowstride+c];
+      T mysum1 = Ainv_delta1[row][col];
+      T mysum2 = Ainv_delta2[row][col];
       if (row+first_row < N && c < N)
-	for (int k=0; k<16; k++)
-	  mysum += Ainv_s[col][k] *  delta_s[row][k];
-      Ainv_delta_s[row+4*irow][col] = mysum;
+	for (int k=0; k<16; k++) {
+	  mysum1 += Ainv1[col][k] *  delta_s[row2][k];
+	  mysum2 += Ainv2[col][k] *  delta_s[row2][k];
+	}
+      Ainv_delta1[row][col] = mysum1;
+      Ainv_delta2[row][col] = mysum2;
     }
     __syncthreads();
   }
-  int mycol = blockIdx.x*16+col;
+  int mycol = blockIdx.x*32+col;
   row = tid >> 4;
   if (mycol < N) {
-    for (int irow=0; irow<4; irow++,row+=4)
-      myAinv_delta[row*rowstride+mycol] = Ainv_delta_s[row][col];
+    for (int irow=0; irow<4; irow++,row+=4) {
+      myAinv_delta[row*rowstride+mycol   ] = Ainv_delta1[row][col];
+      myAinv_delta[row*rowstride+mycol+16] = Ainv_delta2[row][col];
+    }
   }
   __syncthreads();
-  if (blockIdx.x == kblock) {
+
+  row = tid >> 4;
+  col = tid & 0x0f;
+  if (2*blockIdx.x+1 == kblock) {
     if (tid < 16)
-      Ainv_delta_s[tid][tid] += 1.0f;
+      Ainv_delta2[tid][tid] += 1.0f;
     __syncthreads();
-    block_inverse_16<T> (Ainv_delta_s);
-    row = tid >> 4;
+    block_inverse_16<T> (Ainv_delta2);
     for (int irow=0; irow<4; irow++,row+=4)
-      myinvblock[row*16+col] = Ainv_delta_s[row][col];
+      myinvblock[row*16+col] = Ainv_delta2[row][col];
+  }
+  if (2*blockIdx.x == kblock) {
+    if (tid < 16)
+      Ainv_delta1[tid][tid] += 1.0f;
+    __syncthreads();
+    block_inverse_16<T> (Ainv_delta1);
+    for (int irow=0; irow<4; irow++,row+=4)
+      myinvblock[row*16+col] = Ainv_delta1[row][col];
   }
 }
 
@@ -2703,7 +2731,7 @@ test_woodbury()
 
   double start = omp_get_wtime();
   for (int i=0; i<100; i++) {
-    woodbury_update_16a<float><<<dimGrida,dimBlock2>>>
+    woodbury_update_16a<float><<<dimGridb,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, updateBlock);
     woodbury_update_16b<float><<<dimGridb,dimBlock2>>>
