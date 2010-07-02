@@ -2132,7 +2132,7 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
 		     int N, int rowstride, int kblock)
 {
   int tid = threadIdx.x;
-  __shared__ T B1[16][17], B2[16][17], B3[16][17];
+  __shared__ T B1[16][17], B2[16][17], B3[16][17], B4[16][17];
   __shared__ T *myAinv, *myAinv_delta, *myinv_block;
   if (tid == 0) {
     myAinv       = Ainv_trans[blockIdx.y];
@@ -2142,7 +2142,7 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
   __syncthreads();
   int row = tid >> 4;
   int col = tid & 0x0f;
-  int c = blockIdx.x*16+col;
+  int c = blockIdx.x*32+col;
   for (int i=0; i<4; i++, row+=4) {
     B1[row][col] = myinv_block[16*row+col];
     B2[row][col] = myAinv[(16*kblock+row)*rowstride + c];
@@ -2157,19 +2157,39 @@ woodbury_update_16b (T** Ainv_trans, T** delta,
     B3[row][col] = mysum;
   }    
 
+  __syncthreads();
+  row = tid >> 4;
+  for (int i=0; i<4; i++, row+=4) 
+    B2[row][col] = myAinv[(16*kblock+row)*rowstride + c + 16];
+  __syncthreads();
+  row = tid >> 4;
+  // Now, multiply Ainv block by inv_block
+  for (int i=0; i<4; i++, row+=4) {
+    T mysum = 0.0f;
+    for (int j=0; j<16; j++)
+      mysum += B2[j][row] * B1[j][col];
+    B4[row][col] = mysum;
+  }    
+
   // Now do outer product
   int nb = (N+15)>>4;
   for (int block=0; block<nb; block++) {
     row = tid >> 4;
+    col = tid & 0x0f;
     for (int i=0; i<4; i++, row+=4) 
       B1[row][col] = myAinv_delta[row*rowstride+col+16*block];
     __syncthreads();
     row = tid >> 4;
+    col = tid & 0x0f;
     for (int irow=0; irow<4; irow++,row+=4) {
-      T mysum = myAinv[(16*block+row)*rowstride + c];
-      for (int k=0; k<16; k++)
-	mysum -= B3[col][k] * B1[k][row];
-      myAinv[(16*block+row)*rowstride + c] = mysum;
+      T mysum3 = myAinv[(16*block+row)*rowstride + c];
+      T mysum4 = myAinv[(16*block+row)*rowstride + c + 16];
+      for (int k=0; k<16; k++) {
+	mysum3 -= B3[col][k] * B1[k][row];
+	mysum4 -= B4[col][k] * B1[k][row];
+      }
+      myAinv[(16*block+row)*rowstride + c     ] = mysum3;
+      myAinv[(16*block+row)*rowstride + c + 16] = mysum4;
     }
   }
 }
@@ -2677,15 +2697,16 @@ test_woodbury()
 
 
   dim3 dimBlock2(64);
-  dim3 dimGrid2((N+15)/16, numMats);
+  dim3 dimGrida((N+15)/16, numMats);
+  dim3 dimGridb((N+31)/32, numMats);
   //dim3 dimGrid2((N/32), numMats);
 
   double start = omp_get_wtime();
   for (int i=0; i<100; i++) {
-    woodbury_update_16a<float><<<dimGrid2,dimBlock2>>>
+    woodbury_update_16a<float><<<dimGrida,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, updateBlock);
-    woodbury_update_16b<float><<<dimGrid2,dimBlock2>>>
+    woodbury_update_16b<float><<<dimGridb,dimBlock2>>>
       (AinvList_d, deltaList_d, Ainv_deltaList_d, 
        invBlockList_d, N, N, updateBlock);
   }
