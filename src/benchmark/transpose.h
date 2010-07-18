@@ -15,19 +15,21 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_TRANSPOSE_OPS
 #define QMCPLUSPLUS_TRANSPOSE_OPS
-#include <OhmmsPETE/OhmmsMatrix.h>
 
+#include <fft/fft.h>
 #if defined(HAVE_MKL)
 #include <mkl_trans.h>
 #endif
 #if defined(HAVE_ESSL)
 #include <essl.h>
 #endif
+#include <OhmmsPETE/OhmmsMatrix.h>
 
 #if !defined(__IBMCPP__)
 #define transpose_xy transpose_xy_
 #define transpose_yx transpose_yx_
 #define transpose_1 transpose_1_
+#define trans_b trans_b_
 #endif
 
 extern "C"
@@ -42,6 +44,10 @@ extern "C"
   void transpose_yx(const int* nx, const int* ny, const int* howmany
       , const int* first, const int* last
       , const std::complex<double>* restrict, std::complex<double>* restrict);
+
+  void trans_b(const int &nx_th, const int  &ny, const std::complex<double>* restrict in
+      ,const  int &ny_th,const  int &nx, std::complex<double>* restrict out
+      , int *i_start, int *j_start);
 }
 
 
@@ -53,6 +59,36 @@ namespace qmcplusplus
     , MKL_TRANSPOSER
     , ESSL_TRANSPOSER
   };
+
+  /** C version of transpose 
+   */
+  template<typename T>
+    inline void transpose_b(int nx_th, int  ny, const T* restrict in
+        , int ny_th, int nx, T* restrict out, int i_start, int j_start)
+    {
+      for(int i=0,ii=i_start; i<ny_th; ++i,++ii)
+        for(int j=0,jj=j_start; j<nx_th; ++j,++jj)
+          out[i*nx+jj]=in[j*ny+ii];
+    }
+
+  template<typename MT>
+    inline void transpose_block(const vector<MT*>& in, MT& out, int ip)
+    {
+      int npy=out.rows();
+      for(int jp=0; jp<in.size(); ++jp)
+      {
+        int npx=in[jp]->rows();
+        int i_offset=ip*npy;
+        int j_offset=jp*npx;
+        trans_b(npx, in[jp]->cols(), in[jp]->data() 
+            , npy, out.cols(), out.data()
+            , &i_offset, &j_offset);
+        //transpose_b(npx, in[jp]->cols(), in[jp]->data() 
+        //    , npy, out.cols(), out.data()
+        //    , ip*npy, jp*npx);
+      }
+    }
+
 
   /** dummy declaration to be specialized */
   template <typename T, unsigned ENG> struct Transpose2D {};
@@ -100,13 +136,12 @@ namespace qmcplusplus
     struct Transpose2D<double,MKL_TRANSPOSER>
     {
       typedef double value_type;
-      static inline void apply(const Matrix<value_type>& in, Matrix<value_type>& out)
+      static inline void apply(Matrix<value_type>& in, Matrix<value_type>& out)
       {
         mkl_domatcopy('R','T',in.rows(),in.cols(),1.0,in.data(),in.cols(),out.data(),out.cols());
       }
 
-      typedef double value_type;
-      static inline void apply(const value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
+      static inline void apply(value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
       {
         mkl_domatcopy('R','T',rows,cols,1.0,iptr,cols,optr,rows);
       }
@@ -117,15 +152,19 @@ namespace qmcplusplus
     struct Transpose2D<std::complex<double>,MKL_TRANSPOSER>
     {
       typedef std::complex<double> value_type;
-      static inline void apply(const Matrix<value_type>& in, Matrix<value_type>& out)
+      static inline void apply(Matrix<value_type>& in, Matrix<value_type>& out)
       {
-        mkl_zomatcopy('R','T',in.rows(),in.cols(),1.0,in.data(),in.cols(),out.data(),out.cols());
+        _MKL_Complex16 one;
+        one.real=1.0; one.imag=0.0;
+        mkl_zomatcopy('R','T',in.rows(),in.cols(),one,mkl_mangle(in.data())
+            ,in.cols(),mkl_mangle(out.data()),out.cols());
       }
 
-      typedef double value_type;
-      static inline void apply(const value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
+      static inline void apply(value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
       {
-        mkl_zomatcopy('R','T',rows,cols,1.0,iptr,cols,optr,rows);
+        _MKL_Complex16 one;
+        one.real=1.0; one.imag=0.0;
+        mkl_zomatcopy('R','T',rows,cols,one,mkl_mangle(iptr),cols,mkl_mangle(optr),rows);
       }
 
     };
@@ -135,7 +174,7 @@ namespace qmcplusplus
     struct Transpose2D<float,MKL_TRANSPOSER>
     {
       typedef float value_type;
-      static inline void apply(const Matrix<value_type>& in, Matrix<value_type>& out)
+      static inline void apply(Matrix<value_type>& in, Matrix<value_type>& out)
       {
         mkl_somatcopy('R','T',in.rows(),in.cols(),1.0,in.data(),in.cols(),out.data(),out.cols());
       }
@@ -145,15 +184,19 @@ namespace qmcplusplus
     struct Transpose2D<std::complex<float>,MKL_TRANSPOSER>
     {
       typedef std::complex<float> value_type;
-      static inline void apply(const Matrix<value_type>& in, Matrix<value_type>& out)
+      static inline void apply(Matrix<value_type>& in, Matrix<value_type>& out)
       {
-        mkl_zomatcopy('R','T',in.rows(),in.cols(),1.0,in.data(),in.cols(),out.data(),out.cols());
+        _MKL_Complex8 one;
+        one.real=1.0; one.imag=0.0;
+        mkl_comatcopy('R','T',in.rows(),in.cols(),one,mkl_mangle(in.data())
+            ,in.cols(),mkl_mangle(out.data()),out.cols());
       }
 
-      typedef float value_type;
-      static inline void apply(const value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
+      static inline void apply(value_type* restrict iptr, int rows, int cols, value_type* restrict optr)
       {
-        mkl_zomatcopy('R','T',rows,cols,1.0,iptr,cols,optr,rows);
+        _MKL_Complex8 one;
+        one.real=1.0; one.imag=0.0;
+        mkl_comatcopy('R','T',rows,cols,one,mkl_mangle(iptr),cols,mkl_mangle(optr),rows);
       }
     };
   
@@ -201,6 +244,19 @@ namespace qmcplusplus
     };
 #endif
 
+//template<typename MT>
+//inline void transpose(const vector<MT*>& in, MT& out, int ip)
+//{
+//  const int np=in.size();
+//  for(int i=0, ii=ip*out.rows(); i<out.rows(); ++i,++ii)
+//  {
+//    for(int jp=0; jp<np; ++jp)
+//      zcopy(in[jp]->rows() 
+//          ,in[jp]->data()+ii,in[jp]->cols() 
+//          ,out[i]+jp*in[jp]->rows(),1
+//          ); 
+//  }
+//}
 }
 #endif
 /***************************************************************************

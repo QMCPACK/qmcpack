@@ -11,6 +11,24 @@
       RETURN
       END
 
+      SUBROUTINE trans_b(nx_th,ny,a,ny_th,nx,b,i0,j0)
+      integer nx_th,ny,ny_th,nx
+      integer i0,j0
+      double complex a(0:ny-1,0:nx_th-1)
+      double complex b(0:nx-1,0:ny_th-1)
+      integer i,j,ii,jj
+      ii=i0
+      DO i=0,ny_th-1
+        jj=j0
+        DO j=0,nx_th-1
+        b(jj,i)=a(ii,j)
+        jj=jj+1
+        END DO
+        ii=ii+1
+      END DO
+      RETURN
+      END
+
       SUBROUTINE transpose_xy(nx,ny,m,j_start,j_end,a,b)
       integer nx,ny,m
       integer j_start, j_end

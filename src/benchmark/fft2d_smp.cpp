@@ -24,7 +24,7 @@
 #include "Message/Communicate.h"
 #include <benchmark/fft_help.h>
 #include <benchmark/transpose.h>
-#include <Numerics/OhmmsBlas.h>
+//#include <Numerics/OhmmsBlas.h>
 
 #if defined(HAVE_ESSL)
 #define TEST_FFT_ENG FFTESSL_ENG
@@ -39,20 +39,6 @@
 inline void print_help(const string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
-}
-
-template<typename MT>
-inline void transpose(const vector<MT*>& in, MT& out, int ip)
-{
-  const int np=in.size();
-  for(int i=0, ii=ip*out.rows(); i<out.rows(); ++i,++ii)
-  {
-    for(int jp=0; jp<np; ++jp)
-      BLAS::copy(in[jp]->rows() 
-          ,in[jp]->data()+ii,in[jp]->cols() 
-          ,out[i]+jp*in[jp]->rows(),1
-          ); 
-  }
 }
 
 int main(int argc, char** argv)
@@ -126,12 +112,12 @@ int main(int argc, char** argv)
   int nx_thread=nx/np;
   int ny_thread=ny/np;
 
-  Timer myclock;
 #pragma omp parallel
   {
     int ip=omp_get_thread_num();
     in[ip]=new matrix_type(nx_thread,ny);
     in_copy[ip]=new matrix_type(nx_thread,ny);
+
     in_t[ip]=new matrix_type(ny_thread,nx);
 
     //for(int i=0,ii=ip*nx_thread; i<nx_thread; ++i,++ii)
@@ -151,16 +137,15 @@ int main(int argc, char** argv)
     fft_yx[ip]->create(in_t[ip]->data());
   }
 
-//DEBUG transpose
-//  for(int ip=0; ip<np; ++ip)
-//  {
-//    cout << *in_copy[ip];
-//  }
-//
 //#pragma omp parallel 
 //  {
 //    int ip=omp_get_thread_num();
-//    transpose(in,*in_t[ip],ip);
+//    transpose_block(in_copy,*in_t[ip],ip);
+//  }
+//
+//  for(int ip=0; ip<np; ++ip)
+//  {
+//    cout << *in[ip];
 //  }
 //
 //  cout << endl;
@@ -172,53 +157,47 @@ int main(int argc, char** argv)
 //#pragma omp parallel 
 //  {
 //    int ip=omp_get_thread_num();
-//    transpose(in_t,*in[ip],ip);
+//    transpose_block(in_t,*in[ip],ip);
 //  }
 //
-//  cout << endl;
 //  for(int ip=0; ip<np; ++ip)
 //  {
-//    cout << *in[ip];
+//    if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0)) 
+//      cout << "We are good with 1D FFT+t(1D FFT)" << endl;
 //  }
-//
-  double dt_f=0.0, dt_b=0.0;
-#pragma omp parallel  reduction(+:dt_f,dt_b)
+////
+//  return 0;
+////
+  double dt_f=0.0, dt_b=0.0, dt_trans=0.0;
+  Timer clock_big, clock;
+  clock_big.restart();
+  for(int iter=0; iter<niters; ++iter)
   {
-    int ip=omp_get_thread_num();
-    //init_array(*in_copy[ip]);
-    //*in[ip]=*in_copy[ip];
-
-    fft1d_engine_t& myfft_xy(*fft_xy[ip]);
-    fft1d_engine_t& myfft_yx(*fft_yx[ip]);
-
-    Timer clock;
-    double dt_f_th=0.0, dt_b_th=0.0;
-    for(int iter=0; iter<niters; ++iter)
+    clock.restart();
+#pragma omp parallel
     {
-      clock.restart();
-      myfft_xy.fft_forward(in[ip]->data());
-#pragma omp barrier
-      transpose(in,*in_t[ip],ip);
-      myfft_yx.fft_forward(in_t[ip]->data());
-      dt_f_th+=clock.elapsed();
+      int ip=omp_get_thread_num();
+      fft_xy[ip]->fft_forward(in[ip]->data());
 
-      clock.restart();
-      myfft_yx.fft_backward(in_t[ip]->data());
 #pragma omp barrier
-      transpose(in_t,*in[ip],ip);
-      myfft_xy.fft_backward(in[ip]->data());
-      dt_b_th+=clock.elapsed();
+      transpose_block(in,*in_t[ip],ip);
+      fft_yx[ip]->fft_forward(in_t[ip]->data());
 
-      dt_f += dt_f_th;
-      dt_b += dt_b_th;
-      if(debug && !iter)
-        if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0/static_cast<double>(nx*ny))) 
-          cout << "We are good with 1D FFT+t(1D FFT)" << endl;
+      fft_yx[ip]->fft_backward(in_t[ip]->data());
+#pragma omp barrier
+      transpose_block(in_t,*in[ip],ip);
+      fft_xy[ip]->fft_backward(in[ip]->data());
     }
+    if(debug && !iter)
+      for(int ip=0; ip<np; ++ip)
+        if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0/static_cast<double>(nx*ny))) 
+          cout << "We are good with 1D FFT+t(1D FFT) "<< ip << endl;
   }
 
-  double factor=1.0/static_cast<double>(niters*np);
-  cout << dt_f*factor << " " << dt_b*factor << endl;
+  double factor=1.0/static_cast<double>(niters);
+  
+  cout <<" Timer said= " << clock_big.elapsed()/static_cast<double>(niters) << endl;
+  cout << dt_f*factor << " " << dt_b*factor << " " << dt_trans*factor << endl;
   OHMMS::Controller->finalize();
   return 0;
 }
