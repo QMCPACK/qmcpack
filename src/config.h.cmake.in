@@ -177,11 +177,14 @@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Fund mkl library */
+/* Find mkl library */
 #cmakedefine HAVE_MKL @HAVE_MKL@
 
-/* Fund mkl/vml library */
+/* Find mkl/vml library */
 #cmakedefine HAVE_MKL_VML @HAVE_MKL_VML@
+
+/* Find essl library */
+#cmakedefine HAVE_ESSL @HAVE_ESSL@
 
 /* Fund acml library */
 #cmakedefine HAVE_ACML @HAVE_ACML@
