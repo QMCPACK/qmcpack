@@ -89,6 +89,25 @@ namespace qmcplusplus
       }
     }
 
+  template<typename MT>
+    inline void transpose_block(const vector<MT*>& in, MT& out
+        , int ip, int np, int ivar, int howmany)
+    {
+      int npy=out.rows();
+      for(int jp=0; jp<np; ++jp)
+      {
+        int jj=jp*howmany+ivar;
+        int npx=in[jj]->rows();
+        int i_offset=ip*npy;
+        int j_offset=jp*npx;
+        trans_b(npx, in[jj]->cols(), in[jj]->data() 
+            , npy, out.cols(), out.data()
+            , &i_offset, &j_offset);
+        //transpose_b(npx, in[jp]->cols(), in[jp]->data() 
+        //    , npy, out.cols(), out.data()
+        //    , ip*npy, jp*npx);
+      }
+    }
 
   /** dummy declaration to be specialized */
   template <typename T, unsigned ENG> struct Transpose2D {};
