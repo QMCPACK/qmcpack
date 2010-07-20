@@ -39,6 +39,7 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
     typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
     typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+    typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
     typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
     typedef Array<HessType,3>                          HessArray_t;
@@ -166,6 +167,15 @@ namespace qmcplusplus {
     virtual void 
     evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)=0;
+
+    /** evaluate the values, gradients and hessians of this single-particle orbital set
+     * @param P current ParticleSet
+     * @param iat active particle
+     * @param psi values of the SPO
+     */
+    virtual void
+    evaluate(const ParticleSet& P, int iat,
+        ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)=0;
 
     /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last)particles
      * @param P current ParticleSet

@@ -25,6 +25,12 @@
 
 namespace qmcplusplus
 {
+// NOTE NOTE NOTE
+// template<bool backflow>
+//  class SlaterDet: public OrbitalBase {}
+//     then change SlaterDet to SlaterDet<false>
+//     and SlaterDeterminantWithBackflow to SlaterDet<true>
+//     and remove all virtuals and inline them 
 
   class SlaterDet: public OrbitalBase
   {
@@ -164,6 +170,7 @@ namespace qmcplusplus
       return evaluateLogAndPhase(r,PhaseValue);
     }
 
+    virtual
     inline void restore(int iat)
     {
       return Dets[DetID[iat]]->restore(iat);

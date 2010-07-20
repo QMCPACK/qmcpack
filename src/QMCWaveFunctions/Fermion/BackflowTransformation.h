@@ -15,6 +15,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
 #define QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
+#include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
@@ -37,6 +38,7 @@ namespace qmcplusplus
 
     public:
 
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef map<string,ParticleSet*>   PtclPoolType;
     typedef Array<HessType,3>       HessArray_t;
     //typedef Array<GradType,3>       GradArray_t;
@@ -45,14 +47,36 @@ namespace qmcplusplus
     ///number of quantum particles
     int NumTargets;
 
-    // quasiparticle coordinates
+    /// active particle in pbyp moves
+    int activeParticle;
+
+    /// quasiparticle coordinates
     ParticleSet QP; 
+
+    /// Distance Table
+    DistanceTableData* myTable;
 
     // number of variational parameters
     int numParams;
 
+    /** current update mode */
+    int UpdateMode;
+
+    /** enum for a update mode */
+    enum
+    {
+      ORB_PBYP_RATIO,   /*!< particle-by-particle ratio only */
+      ORB_PBYP_ALL,     /*!< particle-by-particle, update Value-Gradient-Laplacian */
+      ORB_PBYP_PARTIAL, /*!< particle-by-particle, update Value and Grdient */
+      ORB_WALKER,    /*!< walker update */
+      ORB_ALLWALKER  /*!< all walkers update */
+    };
+
     // map index of variables from local arrays to outside world
     map<int,int> optIndexMap;
+
+    // cutoff of radial funtions
+    double cutOff;
 
     // pos of first optimizable variable in global array
     int numVarBefore; 
@@ -64,15 +88,14 @@ namespace qmcplusplus
     // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i} 
     GradVector_t Bmat;
 
-    GradMatrix_t Bmat_full;
+    GradMatrix_t Bmat_full, Bmat_temp;
 
     // matrix of first derivatives 
     // A(i,j)[a,b] = (Grad_i)_a (x_j)_b  
     //               i,j:particle index
     //               a,b=(x,y,z)  
 // notice that A(i,j) is a symmetric matrix, improve later
-    HessMatrix_t Amat;
-
+    HessMatrix_t Amat, Amat_temp;
 
     // \nabla_a A_{i,j}^{\alpha,\beta}
     // derivative of A matrix with respect to var. prms.
@@ -84,6 +107,12 @@ namespace qmcplusplus
     // \nabla_a x_i^{\alpha}   
     GradMatrix_t Cmat;
 
+    ValueType *FirstOfP, *LastOfP;
+    ValueType *FirstOfA, *LastOfA;
+    ValueType *FirstOfB, *LastOfB;
+    ValueType *FirstOfA_temp, *LastOfA_temp;
+    ValueType *FirstOfB_temp, *LastOfB_temp;
+
     // Identity
     HessType HESS_ID;
     HessType DummyHess;
@@ -93,23 +122,60 @@ namespace qmcplusplus
     map<string,int> sources;     
     vector<string> names;     
 
+    /// new qp coordinates for pbyp moves.
+    ParticleSet::ParticlePos_t newQP;
+
+    Vector<PosType> storeQP;
+
+    /// store index of qp coordinates that changed during pbyp move
+    std::vector<int> indexQP, index;
+
     BackflowTransformation(ParticleSet& els, PtclPoolType& pool):
-      targetPtcl(els),QP(els),ptclPool(pool) {
+      targetPtcl(els),QP(els),ptclPool(pool),cutOff(0.0) {
+      myTable = DistanceTable::add(els,els);
       NumTargets=els.getTotalNum();
       Bmat.resize(NumTargets);
       Bmat_full.resize(NumTargets,NumTargets);
       Amat.resize(NumTargets,NumTargets);
+      newQP.resize(NumTargets);
+      indexQP.resize(NumTargets);
       HESS_ID.diagonal(1.0);
       DummyHess=0.0;
       numVarBefore=0;
+
+
+// move after debugging
+      Bmat_temp.resize(NumTargets,NumTargets);
+      Amat_temp.resize(NumTargets,NumTargets);
+      storeQP.resize(NumTargets);
+
+      FirstOfP = &(storeQP[0][0]);
+      LastOfP = FirstOfP + 3*NumTargets;
+
+      FirstOfA = &(Amat(0,0)[0]);
+      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+
+      FirstOfB = &(Bmat_full(0,0)[0]);
+      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+
+      FirstOfA_temp = &(Amat_temp(0,0)[0]);
+      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
+
+      FirstOfB_temp = &(Bmat_temp(0,0)[0]);
+      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
+
+
     }
 
     BackflowTransformation(BackflowTransformation &tr): 
-      NumTargets(tr.NumTargets),QP(tr.QP), 
+      NumTargets(tr.NumTargets),QP(tr.QP),cutOff(tr.cutOff), 
       targetPtcl(tr.targetPtcl),ptclPool(tr.ptclPool), numParams(tr.numParams) {
+      myTable = DistanceTable::add(targetPtcl,targetPtcl);
       Bmat.resize(NumTargets);
       Bmat_full.resize(NumTargets,NumTargets);
       Amat.resize(NumTargets,NumTargets);
+      newQP.resize(NumTargets);
+      indexQP.resize(NumTargets);
       HESS_ID.diagonal(1.0);
       DummyHess=0.0;
       numVarBefore=tr.numVarBefore;
@@ -118,9 +184,31 @@ namespace qmcplusplus
       vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
       for(int i=0; i<(tr.bfFuns).size() ; i++,it++)
         bfFuns[i] = (*it)->makeClone();
+
+// move after debugging
+      Bmat_temp.resize(NumTargets,NumTargets);
+      Amat_temp.resize(NumTargets,NumTargets);
+      storeQP.resize(NumTargets);
+
+      FirstOfP = &(storeQP[0][0]);
+      LastOfP = FirstOfP + 3*NumTargets;
+
+      FirstOfA = &(Amat(0,0)[0]);
+      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+
+      FirstOfB = &(Bmat_full(0,0)[0]);
+      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+
+      FirstOfA_temp = &(Amat_temp(0,0)[0]);
+      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
+
+      FirstOfB_temp = &(Bmat_temp(0,0)[0]);
+      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
+
+
     }
     
-
+// FIX FIX FIX
     BackflowTransformation* makeClone()
     {
        BackflowTransformation *clone = new BackflowTransformation(*this);
@@ -129,12 +217,54 @@ namespace qmcplusplus
 
     ~BackflowTransformation() {}; 
 
-    void checkInVariables(opt_variables_type& active)
+    inline void
+    acceptMove(const ParticleSet& P, int iat)
+    {
+      for(int i=0; i<NumTargets; i++) QP.R[i] = newQP[i];
+      switch(UpdateMode)
+      {
+        case ORB_PBYP_RATIO:
+          indexQP.clear();
+          //QP.R = newQP;
+          break;
+        case ORB_PBYP_PARTIAL:
+          indexQP.clear();
+          //QP.R = newQP;
+          //Amat = Amat_temp;
+          std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
+          break;
+        case ORB_PBYP_ALL:
+          indexQP.clear();
+          //QP.R = newQP;
+          //Amat = Amat_temp;
+          std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
+          //Bmat = Bmat_temp;
+          std::copy(FirstOfB_temp,LastOfB_temp,FirstOfB); 
+          break;
+        default:
+          indexQP.clear();
+          //QP.R = newQP;
+          //Amat = Amat_temp;
+          std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
+          //Bmat = Bmat_temp;
+          std::copy(FirstOfB_temp,LastOfB_temp,FirstOfB); 
+          break;
+      }
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->acceptMove(iat,UpdateMode);
+    }
+
+    inline void
+    restore(int iat)
+    {
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->restore(iat,UpdateMode);
+    }
+
+    inline void checkInVariables(opt_variables_type& active)
     {
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->checkInVariables(active);
     }
 
-    void checkOutVariables(const opt_variables_type& active)
+    inline void checkOutVariables(const opt_variables_type& active)
     {
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->checkOutVariables(active);
     }
@@ -146,6 +276,7 @@ namespace qmcplusplus
       xmlNodePtr curRoot=cur;
       string cname;      
 
+      cutOff=-1.0;
       cur = curRoot->children;
       while (cur != NULL)
       {
@@ -175,6 +306,9 @@ namespace qmcplusplus
         }
         cur = cur->next;
       }
+
+      //testPbyP(targetPtcl);
+
       return success;
     }
 
@@ -276,6 +410,7 @@ namespace qmcplusplus
         {
           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
           bsp->put(funs[i]);
+          if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
           bsp->myVars.setParameterType(optimize::SPO_P);
           dum->uniqueRadFun.push_back(bsp);
           offsets.push_back(tbf->numParams);
@@ -317,16 +452,12 @@ namespace qmcplusplus
       trAttrib.put(cur);
 
       if(funct == "Gaussian") {
-   APP_ABORT("Disabled GaussianFunctor for now, \n");
-        app_log() <<"Using GaussianFunctor type. \n";
-        GaussianFunctor *GaussFT = new GaussianFunctor();
-        GaussFT->put(cur);
-        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<GaussianFunctor>(targetPtcl,targetPtcl,GaussFT);
-        bfFuns.push_back(tbf);
+        APP_ABORT("Disabled GaussianFunctor for now, \n");
       } else if(funct == "Bspline")  {
         app_log() <<"Using BsplineFunctor type. \n";
         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
         bsp->put(cur);
+        if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::SPO_P);
         BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
         tbf->numParams = bsp->NumParams;
@@ -342,6 +473,7 @@ namespace qmcplusplus
      */
     void resetTargetParticleSet(ParticleSet& P)
     {
+      myTable = DistanceTable::add(P,P);
       for(int i=0; i<bfFuns.size(); i++)
         bfFuns[i]->resetTargetParticleSet(P);
     }
@@ -354,6 +486,56 @@ namespace qmcplusplus
         bfFuns[i]->resetParameters(active);
     }    
 
+    void registerData(ParticleSet& P, PooledData<RealType>& buf)
+    {
+      if(storeQP.size() == 0) { 
+        Bmat_temp.resize(NumTargets,NumTargets);
+        Amat_temp.resize(NumTargets,NumTargets);
+        storeQP.resize(NumTargets);
+      } 
+
+      evaluate(P);
+      FirstOfP = &(storeQP[0][0]);
+      LastOfP = FirstOfP + 3*NumTargets;
+
+      FirstOfA = &(Amat(0,0)[0]);
+      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+
+      FirstOfB = &(Bmat_full(0,0)[0]);
+      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+
+      FirstOfA_temp = &(Amat_temp(0,0)[0]);
+      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
+
+      FirstOfB_temp = &(Bmat_temp(0,0)[0]);
+      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
+
+      for(int i=0; i<NumTargets; i++) storeQP[i] = QP.R[i];
+      buf.add(FirstOfP,LastOfP);
+      buf.add(FirstOfA,LastOfA);
+      buf.add(FirstOfB,LastOfB);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->registerData(buf);
+    }
+
+    void updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool redo)
+    {
+      // can I store QP.R directly???
+      if(redo) evaluate(P);
+      for(int i=0; i<NumTargets; i++) storeQP[i] = QP.R[i];
+      buf.put(FirstOfP,LastOfP);
+      buf.put(FirstOfA,LastOfA);
+      buf.put(FirstOfB,LastOfB);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->updateBuffer(buf);
+    }
+
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+    {
+      buf.get(FirstOfP,LastOfP);
+      buf.get(FirstOfA,LastOfA);
+      buf.get(FirstOfB,LastOfB);
+      for(int i=0; i<NumTargets; i++) QP.R[i] = storeQP[i];
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->copyFromBuffer(buf);
+    }
     
     /** calculate quasi-particle coordinates only
      */
@@ -365,6 +547,86 @@ namespace qmcplusplus
       QP.update(0);  // update distance tables
     }
 
+    /** calculate new quasi-particle coordinates after pbyp move 
+     */
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat)
+    {
+      UpdateMode = ORB_PBYP_RATIO;
+      activeParticle=iat;
+      indexQP.clear();
+      //newQP = QP.R;
+      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
+      indexQP.push_back(iat); // set in the beggining by default
+// FIX FIX FIX, not sure this is correct for PBC
+      //newQP[iat] += (P.R[iat] - activePos);  
+      newQP[iat] += myTable->Temp[iat].dr1;  
+      for(int jat=0; jat<NumTargets; jat++) { 
+      //  cout<<"iat, jat, dr, cut: " <<iat <<" " <<jat <<" " 
+      //      <<myTable->Temp[jat].r1 <<"  " <<cutOff <<endl;
+        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)   
+          indexQP.push_back(jat);
+      }
+
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP);
+    }
+
+    /** calculate new quasi-particle coordinates after pbyp move 
+     */
+    inline void
+    evaluatePbyPWithGrad(const ParticleSet& P, int iat)
+    {
+      UpdateMode = ORB_PBYP_PARTIAL;
+      activeParticle=iat;
+      indexQP.clear();
+      //newQP = QP.R;
+      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
+      //Amat_temp = Amat;
+      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
+      indexQP.push_back(iat); // set in the beggining by default
+// FIX FIX FIX, not sure this is correct for PBC
+      //newQP[iat] += (P.R[iat] - activePos);  
+      newQP[iat] += myTable->Temp[iat].dr1;  
+      for(int jat=0; jat<NumTargets; jat++)
+        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)
+          indexQP.push_back(jat);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP,Amat_temp);
+    }
+
+    /** calculate new quasi-particle coordinates after pbyp move 
+     */
+    inline void
+    evaluatePbyPAll(const ParticleSet& P, int iat)
+    {
+      UpdateMode = ORB_PBYP_ALL;
+      activeParticle=iat;
+      indexQP.clear();
+      //newQP = QP.R;
+      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
+      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
+      std::copy(FirstOfB,LastOfA,FirstOfB_temp);
+      //Amat_temp = Amat;
+      //Bmat_temp = Bmat;
+      indexQP.push_back(iat); // set in the beggining by default
+// FIX FIX FIX, not sure this is correct for PBC
+      //newQP[iat] += (P.R[iat] - activePos);  
+      newQP[iat] += myTable->Temp[iat].dr1;
+      for(int jat=0; jat<NumTargets; jat++)
+        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)
+          indexQP.push_back(jat);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP,Bmat_temp,Amat_temp);
+    }
+
+
+    /** calculate only Bmat. Assume that QP and Amat are current
+     *  This is used in pbyp moves, in updateBuffer() 
+     */
+    inline void
+    evaluateBmatOnly(const ParticleSet& P, int iat)
+    {
+      Bmat_full=0.0;
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluateBmatOnly(P,Bmat_full);
+    }
     
     /** calculate quasi-particle coordinates, Bmat and Amat 
      */
@@ -374,12 +636,21 @@ namespace qmcplusplus
       Bmat=0.0;
       Amat=0.0;
       Bmat_full=0.0;
+      QP.R=P.R;
       for(int i=0; i<NumTargets; i++) {
-        QP.R[i] = P.R[i];
+        //QP.R[i] = P.R[i];
         Amat(i,i).diagonal(1.0);
       } 
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluate(P,QP,Bmat_full,Amat);
       QP.update(0);  // update distance tables
+
+// erase after debugging
+      Amat_temp=Amat;
+      Bmat_temp=Bmat_full;
+      indexQP.clear();
+      for(int i=0; i<NumTargets; i++) indexQP.push_back(i);
+      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
+
     } 
 
     inline void 
@@ -559,6 +830,93 @@ namespace qmcplusplus
  
        }
 
+
+    }
+
+    void testPbyP(ParticleSet& P)
+    {
+
+      GradMatrix_t Bmat_full_0;
+      HessMatrix_t Amat_0;
+      GradMatrix_t Bmat_full_1;
+      HessMatrix_t Amat_1;      
+      ParticleSet::ParticlePos_t qp_0;
+      ParticleSet::ParticlePos_t qp_1;
+      ParticleSet::ParticlePos_t qp_2,qp_3;
+
+      qp_0.resize(NumTargets);
+      qp_1.resize(NumTargets);
+      qp_2.resize(NumTargets);
+      qp_3.resize(NumTargets);
+      Bmat_full_0.resize(NumTargets,NumTargets);
+      Bmat_full_1.resize(NumTargets,NumTargets);
+      Amat_0.resize(NumTargets,NumTargets);
+      Amat_1.resize(NumTargets,NumTargets);
+
+      P.update();
+
+      Walker_t::Buffer_t tbuffer;
+      size_t BufferCursor=tbuffer.current();
+      registerData(P,tbuffer);
+      tbuffer.rewind(BufferCursor);
+      updateBuffer(P,tbuffer,true);
+
+      qp_3 = P.R; 
+      evaluate(P);
+      qp_2 = QP.R; 
+      app_log() <<"after 1st eval: " <<cutOff <<endl;
+      for(int jat=0; jat<NumTargets; jat++)
+        app_log() <<jat <<"  " 
+                  <<P.R[jat]-QP.R[jat]  <<endl;
+
+      //for(int  iat=0; iat<NumTargets; iat++) {
+      for(int  iat=0; iat<1; iat++) {
+        PosType dr; dr[0]=0.1;dr[1]=0.05;dr[2]=-0.3;       
+        P.makeMove(iat,dr);
+        app_log() <<"Move: " <<myTable->Temp[iat].dr1 <<endl;  
+        app_log() <<"cutOff: " <<cutOff <<endl;
+        for(int jat=0; jat<NumTargets; jat++)
+          app_log() <<jat <<"  " <<myTable->Temp[jat].r1 <<endl;
+
+        //evaluatePbyP(P,iat);
+        evaluatePbyPWithGrad(P,iat);
+ 
+        app_log() <<"Moving: ";
+        for(int i=0; i<indexQP.size(); i++) app_log() <<indexQP[i] <<" ";
+        app_log() <<endl;
+
+        acceptMove(P,iat);
+        P.acceptMove(iat);
+      }  
+
+      qp_0 = QP.R;
+      Amat_0 = Amat;
+
+      tbuffer.rewind(BufferCursor);
+      updateBuffer(P,tbuffer,false);
+
+      P.update();
+      evaluate(P);
+
+      Amat_1 = Amat_0 - Amat;
+      qp_1 = QP.R - qp_0;
+      double qpdiff = Dot(qp_1,qp_1);
+      double Amdiff = 0.0;
+      for(int i=0; i<NumTargets; i++)
+       for(int k=0; k<NumTargets; k++)
+        for(int j=0; j<9; j++)
+          Amdiff += Amat_1(i,k)[j]*Amat_1(i,k)[j];
+      app_log() <<"Error in pbyp QP transformation: " <<qpdiff <<endl;
+      app_log() <<"Error in pbyp QP Amat: " <<Amdiff <<endl;
+
+      app_log() <<"i, diff, newPbyP, newEval: \n";
+      for(int i=0; i<NumTargets; i++)
+        app_log() <<i <<"\n"
+                  <<qp_0[i]-QP.R[i] <<"\n"
+                  <<qp_0[i] <<"\n"
+                  <<QP.R[i] <<endl <<endl;
+
+      APP_ABORT("Finished BackflowTransformation::testPbyP() \n.");
 
     }
 

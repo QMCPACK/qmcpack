@@ -16,9 +16,19 @@
 // -*- C++ -*-
 
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
+#include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
+#include <algorithm>
+#include <vector>
+
+// mmorales:
+// NOTE NOTE NOTE:
+// right now the code assumes that all the orbitals in the active space are used,
+// this means that there can be problems if some of the orbitals are not used
 
 namespace qmcplusplus {
 
@@ -27,534 +37,422 @@ namespace qmcplusplus {
    *@param nel number of particles in the determinant
    */
   void MultiDiracDeterminantBase::set(int first, int nel) {
-    FirstIndex = first;
-    resize(nel,nel);
+    APP_ABORT("MultiDiracDeterminantBase::set(int first, int nel) is disabled. \n");
   }
 
-
-
-  void MultiDiracDeterminantBase::set_Multi(int first, int nel,int norb) {
+  void MultiDiracDeterminantBase::set(int first, int nel,int norb) {
     FirstIndex = first;
+    DetCalculator.resize(nel);
     resize(nel,norb);
+  }
+
+  void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, vector<int>& data,
+                vector<pair<int,int> >& pairs, vector<double>& sign)
+  {
+     int nci = confgList.size(), nex; 
+     vector<int> pos(NumPtcls);
+     vector<int> ocp(NumPtcls);
+     vector<int> uno(NumPtcls);
+     data.clear();
+     sign.resize(nci);
+     pairs.clear();
+     for(int i=0; i<nci; i++)
+     {
+       sign[i] = ref.calculateExcitations(confgList[i],nex,pos,ocp,uno); 
+       data.push_back(nex);
+       for(int k=0; k<nex; k++) data.push_back(pos[k]);
+       for(int k=0; k<nex; k++) data.push_back(uno[k]);
+       for(int k=0; k<nex; k++) data.push_back(ocp[k]);
+
+       // determine unique pairs, to avoid redundant calculation of matrix elements
+       // if storing the entire MOxMO matrix is too much, then make an array and a mapping to it.
+       // is there an easier way??
+       for(int k1=0; k1<nex; k1++)
+         for(int k2=0; k2<nex; k2++)
+         {
+//           pair<int,int> temp(ocp[k1],uno[k2]);
+           pair<int,int> temp(pos[k1],uno[k2]);
+           if(find(pairs.begin(),pairs.end(),temp) == pairs.end()) //pair is new
+             pairs.push_back(temp);
+         } 
+     }
+/*
+     cout<<"ref: " <<ref <<endl;
+     cout<<"list: " <<endl;
+     for(int i=0; i<confgList.size(); i++)
+       cout<<confgList[i] <<endl;
+  
+     cout<<"pairs: " <<endl;
+     for(int i=0; i<pairs.size(); i++)
+       cout<<pairs[i].first <<"   " <<pairs[i].second <<endl;
+*/
+
+  }
+
+//erase
+  void out1(int n, string str="NULL") {}
+  //{ cout<<"MDD: " <<str <<"  " <<n <<endl; cout.flush(); }
+
+
+  void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P)
+  {
+    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM,dpsiM,d2psiM);
+
+    if(NumPtcls==1) {
+      APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
+    } else {
+
+      //InverseTimer.start();
+      vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+      for(int i=0; i<NumPtcls; i++) {
+       for(int j=0; j<NumPtcls; j++)  
+         psiMinv(j,i) = psiM(j,*it);
+       it++;
+      }
+      for(int i=0; i<NumPtcls; i++) {
+       for(int j=0; j<NumOrbitals; j++)
+         TpsiM(j,i) = psiM(i,j);
+      }
+      ValueType phaseValueRef; 
+      ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
+      //InverseTimer.stop();
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
+      detValues[ReferenceDeterminant] = det0; 
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+      //RatioTimer.start();
+      for(int iat=0; iat<NumPtcls; iat++)
+      {
+        it = confgList[ReferenceDeterminant].occup.begin();
+        GradType gradRatio = 0.0;  
+        ValueType ratioLapl = 0.0;
+        for(int i=0; i<NumPtcls; i++) { 
+          gradRatio += psiMinv(i,iat)*dpsiM(iat,*it);
+          ratioLapl += psiMinv(i,iat)*d2psiM(iat,*it);
+          it++;
+        }
+        grads(ReferenceDeterminant,iat) = det0*gradRatio;
+        lapls(ReferenceDeterminant,iat) = det0*ratioLapl;
+         
+        for(int idim=0; idim<3; idim++) {
+          dpsiMinv = psiMinv;
+          it = confgList[ReferenceDeterminant].occup.begin();
+          for(int i=0; i<NumPtcls; i++)
+            psiV_temp[i] = dpsiM(iat,*(it++))[idim]; 
+          InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,gradRatio[idim]);
+          //MultiDiracDeterminantBase::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
+          for(int i=0; i<NumOrbitals; i++)
+            TpsiM(i,iat) = dpsiM(iat,i)[idim];
+          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+        }
+
+        dpsiMinv = psiMinv;
+        it = confgList[ReferenceDeterminant].occup.begin();
+        for(int i=0; i<NumPtcls; i++)
+          psiV_temp[i] = d2psiM(iat,*(it++)); 
+        InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,ratioLapl);
+        //MultiDiracDeterminantBase::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,iat) = d2psiM(iat,i);
+        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+
+// restore matrix
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,iat) = psiM(iat,i);
+      }
+
+    } // NumPtcls==1
+
+    psiMinv_temp = psiMinv;
+    // only used with ORB_PBYP_ALL, 
+    // do I need this here???
+    //psiM_temp = psiM;
+    //dpsiM_temp = dpsiM;
+    //d2psiM_temp = d2psiM;
+
   }
 
 
   MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(ParticleSet& P, 
       PooledData<RealType>& buf, bool fromscratch) 
   {
-    ///needs to be fixed to work with tranposed psiM
-    myG=0.0;
-    myL=0.0;
 
     if(fromscratch)
-      LogValue=evaluateLog(P,myG,myL);
-    else
-    {
-      if(UpdateMode == ORB_PBYP_RATIO) 
-	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
-
-      if(NumPtcls==1) {
-	APP_ABORT("Evaluate Log with 1 particle in MultiMultiDiracDeterminantBase is potentially dangerous");
-        ValueType y=1.0/psiM_temp(0,0);
-        psiM(0,0)=y;
-        GradType rv = y*dpsiM(0,0);
-        myG(FirstIndex) += rv;
-        myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      } else {
-        const ValueType* restrict yptr=psiM.data();
-        const ValueType* restrict d2yptr=d2psiM.data();
-        const GradType* restrict dyptr=dpsiM.data();
-        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
-        {
-          GradType rv;
-          ValueType lap=0.0;
-          for(int j=0; j<NumOrbitals; j++,yptr++) {
-            rv += *yptr * *dyptr++;
-            lap += *yptr * *d2yptr++;
-          }
-          myG(iat) += rv;
-          myL(iat) += lap - dot(rv,rv);
-        }
-      }
-    }
-
-    P.G += myG;
-    P.L += myL;
+      evaluateForWalkerMove(P);
 
     buf.put(psiM.first_address(),psiM.last_address());
-    buf.put(psiM_actual.first_address(),psiM_actual.last_address());
-    buf.put(FirstAddressOfdV,LastAddressOfdV);
+    buf.put(FirstAddressOfdpsiM,LastAddressOfdpsiM);
     buf.put(d2psiM.first_address(),d2psiM.last_address());
-    buf.put(myL.first_address(), myL.last_address());
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(LogValue);
-    buf.put(PhaseValue);
+    buf.put(psiMinv.first_address(),psiMinv.last_address());
+    buf.put(detValues.first_address(), detValues.last_address());
+    buf.put(FirstAddressOfGrads,LastAddressOfGrads);
+    buf.put(lapls.first_address(), lapls.last_address());
 
-    return LogValue;
+    return 1.0;
+  }
+
+  void MultiDiracDeterminantBase::update(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& dG,
+      ParticleSet::ParticleLaplacian_t& dL,
+      int iat) {
+    APP_ABORT("Need to implement  MultiDiracDeterminantBase::update \n");
   }
 
   void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
     buf.get(psiM.first_address(),psiM.last_address());
-    buf.get(psiM_actual.first_address(),psiM_actual.last_address());
-    buf.get(FirstAddressOfdV,LastAddressOfdV);
+    buf.get(FirstAddressOfdpsiM,LastAddressOfdpsiM);
     buf.get(d2psiM.first_address(),d2psiM.last_address());
-    buf.get(myL.first_address(), myL.last_address());
-    buf.get(FirstAddressOfG,LastAddressOfG);
-    buf.get(LogValue);
-    buf.get(PhaseValue);
+    buf.get(psiMinv.first_address(),psiMinv.last_address());
+    buf.get(detValues.first_address(), detValues.last_address());
+    buf.get(FirstAddressOfGrads,LastAddressOfGrads);
+    buf.get(lapls.first_address(), lapls.last_address());
 
-    //re-evaluate it for testing
-    //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-    //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-    //need extra copy for gradient/laplacian calculations without updating it
-    psiM_temp = psiM;
-    dpsiM_temp = dpsiM;
-    d2psiM_temp = d2psiM;
-  }
-  
-
-
-  MultiDiracDeterminantBase::GradType 
-    MultiDiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
-  {
-    cerr<<"GS VALUE PSI init IS "<<iat<<" "<<gs_value_psi<<endl;
-
-    Phi->evaluate(P, FirstIndex, LastIndex, psiM_actual,dpsiM, d2psiM);
-    //     const ValueType* restrict yptr=psiM[iat-FirstIndex];
-    //     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
-     GradType rv;
-     //     for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
-     for(int j=0; j<NumOrbitals; j++) 
-       rv += dpsiM(iat-FirstIndex,j)*psiM(iat-FirstIndex,j); //   (*yptr++) *(*dyptr++);
-
-     //     int dim=0;
-
-//      //attempt 1
-//      for (int i=0;i<NumOrbitals; i++)
-//        psiV[i]=dpsiM(iat,i)[dim];
-//      DetUpdate(psiM,psiV,workV1,workV2,iat-FirstIndex,rv[0]);
-//      for (int i=0;i<psiM.extent(0);i++){
-//        for (int j=0;j<psiM.extent(1);j++){
-// 	 cerr<<psiM(i,j)<<endl;
-//        }
-//      }
-//      assert(1==2);
-
-     ////attempt 2
-
-
-     GradVector_t workV2_grad(workV2.size());
-     for (int dim=0;dim<OHMMS_DIM;dim++){
-       for (int i=0;i<NumOrbitals; i++){
-	 workV1[i]=-(dpsiM(iat-FirstIndex,i)[dim]-psiM_actual(i,iat-FirstIndex));
-       }
-       //really I think we only need to take a piece of this product!
-       MatrixOperators::product(psiM,workV1,workV2.data()); //check to see if this doesn't need a transpose on the psiM
-       for (int i=0;i<NumOrbitals;i++)
-	 workV2_grad(i)[dim]=workV2(i);
-     }
-     
-
-     psiMInv=psiM;
-     for (int i=0;i<psiMInv.extent(0);i++)
-       for (int j=0;j<psiMInv.extent(1);j++){
-	 psiMInv(i,j)+=(1.0/rv[2])*workV2[i]*psiM(iat-FirstIndex,j);
-	 cerr<<psiMInv(i,j)<<endl;
-       }
-     
-
-  //  GradType one_over_ratio=1.0/rv;
-  Excitations.BuildDotProducts_grad(psiM,psiM_actual,dpsiM,workV2_grad,1.0/rv,iat-FirstIndex);
-  GradType val(1.0,1.0,1.0);
-  int coefIndex=0;
-  Excitations.CalcSingleExcitations_grad(coefs,val,coefIndex);
-  Excitations.CalcDoubleExcitations_grad(coefs,val,coefIndex);
-  cerr<<"GS VALUE PSI IS "<<gs_value_psi<<" "<<rv<<" "<<val<<endl;
-  //  assert(1==2);
-  return val*rv*gs_value_psi; //*gs_value_psi;
-     //     Excitations.BuildDotProducts(psiM,workV1,workV2,dpsiM_actual,1.0/rv);
-//     double coefIndex=0;
-//     ValueType newVal=1.0;
-//     Excitations.CalcSingleExcitations(coefs,newVal,coefIndex);
-//     cerr<<(rv*newVal)/psi_old;
-//     return rv;
-  
-
-//   MultiDiracDeterminantBase::GradType 
-//     MultiDiracDeterminantBase::evalGrad_slow(ParticleSet& P, int iat)
-//   {
-//     const ValueType* restrict yptr=psiM[iat-FirstIndex];
-//     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
-//     GradType rv;
-//     for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
-//     psiMInv=psiM_temp;
-//     DetUpdate(psiMInv,dpsiM[iat-FirstIndex],workV1,workV2,iat-FirstIndex,rv);    
-//     TinyVector<int,2> second_replaces_first=Excitations.begin();
-//     while (second_replaces_first[0]!=-1){
-      
-      
-
-    
-
-//     }
-
-//     return rv;
-//   }
-
-
-  }
-    MultiDiracDeterminantBase::ValueType 
-      MultiDiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-    WorkingIndex = iat-FirstIndex;
-
-    UpdateMode=ORB_PBYP_PARTIAL;
-    
-    const ValueType* restrict vptr = psiV.data();
-    const ValueType* restrict yptr = psiM[WorkingIndex];
-    const GradType* restrict dyptr = dpsiV.data();
-    
-    GradType rv;
-    curRatio = 0.0;
-    for(int j=0; j<NumOrbitals; ++j) {
-      rv       += yptr[j] * dyptr[j];
-      curRatio += yptr[j] * vptr[j];
-    }
-    grad_iat += (1.0/curRatio) * rv;
-    return curRatio;
-  }
-
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::ratio(ParticleSet& P, int iat,
-      ParticleSet::ParticleGradient_t& dG, 
-      ParticleSet::ParticleLaplacian_t& dL) 
-  {
-    APP_ABORT("  MultiDiracDeterminantBase::ratio with grad is distabled");
-    UpdateMode=ORB_PBYP_ALL;
-    Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-    WorkingIndex = iat-FirstIndex;
-
+    // only used with ORB_PBYP_ALL, 
     //psiM_temp = psiM;
-#ifdef DIRAC_USE_BLAS
-    curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
-#else
-    curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
-#endif
-
-    if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
-    {
-      UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
-      return 0.0;
-    }
-
-    //update psiM_temp with the row substituted
-    DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
-
-    //update dpsiM_temp and d2psiM_temp 
-    for(int j=0; j<NumOrbitals; j++) {
-      dpsiM_temp(WorkingIndex,j)=dpsiV[j];
-      d2psiM_temp(WorkingIndex,j)=d2psiV[j];
-    }
-
-    int kat=FirstIndex;
-
-    const ValueType* restrict yptr=psiM_temp.data();
-    const ValueType* restrict d2yptr=d2psiM_temp.data();
-    const GradType* restrict dyptr=dpsiM_temp.data();
-    for(int i=0; i<NumPtcls; i++,kat++) {
-      //This mimics gemm with loop optimization
-      GradType rv;
-      ValueType lap=0.0;
-      for(int j=0; j<NumOrbitals; j++,yptr++) {
-        rv += *yptr * *dyptr++;
-        lap += *yptr * *d2yptr++;
-      }
-
-      //using inline dot functions
-      //GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-      //ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
-
-      //Old index: This is not pretty
-      //GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
-      //ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-      //for(int j=1; j<NumOrbitals; j++) {
-      //  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
-      //  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
-      //}
-      lap -= dot(rv,rv);
-      dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
-      dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
-    }
-
-    return curRatio;
+    //dpsiM_temp = dpsiM;
+    //d2psiM_temp = d2psiM;
+    psiMinv_temp = psiMinv;
+    int n1 = psiM.extent(0);
+    int n2 = psiM.extent(1);
+    for(int i=0; i<n1; i++)
+     for(int j=0; j<n2; j++)
+      TpsiM(j,i) = psiM(i,j);
   }
-
-
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   * psiM and psiM_temp shoudl be the same upon entering
-   */
-  MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::ratio(ParticleSet& P, int iat)
-  {
-    old_gs_value_psi=gs_value_psi;
-    UpdateMode=ORB_PBYP_ALL;
-    WorkingIndex = iat-FirstIndex;
-    Phi->evaluate(P, iat, psiV);
-
-
-// 	///Copying ground state data to psiM
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  for (int ptcl=0;ptcl<NumPtcls;ptcl++) 
-// 	    psiM_temp(orbital,ptcl)=psiM_actual(orbital,ptcl); //Note: Because psiM is typically an inverse, it's typically ptcl,orbital
-// 	//done copying
-// 	LogValue=InvertWithLog(psiM_temp.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-
-
-    psiMInv=psiM_temp;
-    MatrixOperators::transpose(psiMInv);
-    Excitations.BuildDotProducts(psiMInv,psiM_actual);
-    ValueType oldVal=1.0; //eventually store previous valuess
-    int coefIndex=0;
-    Excitations.CalcSingleExcitations(coefs,oldVal,coefIndex);
-    Excitations.CalcDoubleExcitations(coefs,oldVal,coefIndex);
-    ValueType gs_ratio=0.0;
-    for (int orbital=0;orbital<NumOrbitals;orbital++)
-      gs_ratio+=psiM_temp(WorkingIndex,orbital)*psiV(orbital);
-    gs_value_psi*=gs_ratio;
-
-
-    //relying here on the fact that DetUpdate only uses the first (psiM_temp.cols()) rows of psiV!
-    //update psiM_temp with the row substituted
-
-
-    for (int orbital=0;orbital<NumOrbitals_total;orbital++){
-      psiV_old(orbital)=psiM_actual(orbital,WorkingIndex);
-      psiM_actual(orbital,WorkingIndex)=psiV(orbital);
-    }
-
-    DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,gs_ratio);
-
-
-// 	///Copying ground state data to psiM
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  for (int ptcl=0;ptcl<NumPtcls;ptcl++) 
-// 	    psiM_temp(orbital,ptcl)=psiM_actual(orbital,ptcl); //Note: Because psiM is typically an inverse, it's typically ptcl,orbital
-// 	//done copying
-// 	LogValue=InvertWithLog(psiM_temp.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-
-
-
-    psiMInv=psiM_temp;
-    MatrixOperators::transpose(psiMInv);
-   //currnetly psiM sending incorrectly transposed!
-    Excitations.BuildDotProducts(psiMInv,psiM_actual);
-    ValueType val=1.0;
-    coefIndex=0;
-    Excitations.CalcSingleExcitations(coefs,val,coefIndex);
-    Excitations.CalcDoubleExcitations(coefs,val,coefIndex);
-    curRatio=(gs_ratio*val)/oldVal;
-    gs_value_psi=gs_value_psi/curRatio;
-    psi_new=val;
-    psi_old=oldVal;
-    return curRatio;
-  }
-
-
-
-
 
   /** move was accepted, update the real container
   */
   void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat) 
   {
-    cerr<<"MultiDiracDeterminantBase accepting "<<iat<<" "<<FirstIndex<<endl;
-    psi_new=psi_old;
-    PhaseValue += evaluatePhase(curRatio);
-    LogValue +=std::log(std::abs(curRatio));
+    WorkingIndex = iat-FirstIndex;
     switch(UpdateMode)
     {
       case ORB_PBYP_RATIO:
-        DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+        psiMinv = psiMinv_temp;
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = psiV(i);
+        std::copy(psiV.begin(),psiV.end(),psiM[iat-FirstIndex]);
+        std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
         break;
       case ORB_PBYP_PARTIAL:
-        //psiM = psiM_temp;
-	DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+        psiMinv = psiMinv_temp;
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = psiV(i);
+        std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
+        std::copy(new_grads.begin(),new_grads.end(),grads.begin());
+        std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-
-        //////////////////////////////////////
-        ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
-        //myG = myG_temp;
-        //myL = myL_temp;
-        ///////////////////////
-
         break;
       default:
-        myG = myG_temp;
-        myL = myL_temp;
-        psiM = psiM_temp;
+        psiMinv = psiMinv_temp;
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = psiV(i);
+        std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
+        std::copy(new_grads.begin(),new_grads.end(),grads.begin());
+        std::copy(new_lapls.begin(),new_lapls.end(),lapls.begin());
+        std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
         break;
     }
 
-    curRatio=1.0;
   }
 
   /** move was rejected. copy the real container to the temporary to move on
   */
   void MultiDiracDeterminantBase::restore(int iat) {
-    gs_value_psi=old_gs_value_psi;
-    psi_old=psi_new;
-    if(UpdateMode == ORB_PBYP_ALL) {
-      psiM_temp = psiM;
-      for (int orbital=0;orbital<NumOrbitals_total;orbital++)
-	psiM_actual(orbital,WorkingIndex)=psiV_old(orbital);
-      std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
-      std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
+
+    WorkingIndex = iat-FirstIndex;
+    psiMinv_temp = psiMinv;
+    for(int i=0; i<NumOrbitals; i++)
+      TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);        
+/*
+    switch(UpdateMode)
+    {
+      case ORB_PBYP_RATIO:
+        psiMinv_temp = psiMinv;
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);        
+        break;
+      case ORB_PBYP_PARTIAL:
+        psiMinv_temp = psiMinv;
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);        
+        break;
+      default:
+        break;
     }
-    else if (UpdateMode== ORB_PBYP_RATIO){
-      for (int orbital=0;orbital<NumOrbitals_total;orbital++)
-	psiM_actual(orbital,WorkingIndex)=psiV_old(orbital);
+*/
+  }
+
+  /*
+    MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::logRatio(ParticleSet& P, int iat,
+      ParticleSet::ParticleGradient_t& dG,
+      ParticleSet::ParticleLaplacian_t& dL) {
+    APP_ABORT("  logRatio is not allowed");
+    return 1.0; 
+  }
+  */
+
+  MultiDiracDeterminantBase::RealType
+    MultiDiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
+    {
+      buf.put(psiM.first_address(),psiM.last_address());
+      buf.put(FirstAddressOfdpsiM,LastAddressOfdpsiM);
+      buf.put(d2psiM.first_address(),d2psiM.last_address());
+      buf.put(psiMinv.first_address(),psiMinv.last_address());
+      buf.put(detValues.first_address(), detValues.last_address());
+      buf.put(FirstAddressOfGrads,LastAddressOfGrads);
+      buf.put(lapls.first_address(), lapls.last_address());
+
+      return 1.0;
     }
-    curRatio=1.0;
+
+  // this is probably wrong
+  MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
+    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex),
+    UpdateTimer("MultiDiracDeterminantBase::update"),
+    RatioTimer("MultiDiracDeterminantBase::ratio"),
+    InverseTimer("MultiDiracDeterminantBase::inverse")
+  {
+    setDetInfo(s.ReferenceDeterminant,s.confgList);
+    registerTimers();
+    this->resize(s.NumPtcls,s.NumOrbitals);
+    this->DetCalculator.resize(s.NumPtcls);
+  }
+
+  SPOSetBasePtr  MultiDiracDeterminantBase::clonePhi() const
+  {
+    return Phi->makeClone();
+  }
+
+  OrbitalBasePtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const 
+  {
+    APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminantBase::makeClone");
+    return 0;
+  }
+
+  /** constructor
+   *@param spos the single-particle orbital set
+   *@param first index of the first particle
+   */
+  MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetBasePtr const &spos, int first):
+    NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0),
+    UpdateTimer("MultiDiracDeterminantBase::update"),
+    RatioTimer("MultiDiracDeterminantBase::ratio"),
+    InverseTimer("MultiDiracDeterminantBase::inverse")
+  {
+    Optimizable=true;
+    OrbitalName="MultiDiracDeterminantBase";
+    registerTimers();
+  }
+
+  ///default destructor
+  MultiDiracDeterminantBase::~MultiDiracDeterminantBase() {}
+
+  MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDiracDeterminantBase& s) {
+    NP=0;
+    setDetInfo(s.ReferenceDeterminant,s.confgList);
+    FirstIndex=s.FirstIndex;
+    resize(s.NumPtcls, s.NumOrbitals);
+    this->DetCalculator.resize(s.NumPtcls);
+    return *this;
   }
 
 
   MultiDiracDeterminantBase::RealType
-    MultiDiracDeterminantBase::evaluateLog(ParticleSet& P, 
-        ParticleSet::ParticleGradient_t& G, 
-        ParticleSet::ParticleLaplacian_t& L)
+    MultiDiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
     {
-      //      Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM_actual,dpsiM, d2psiM);
 
-      if(NumPtcls==1) 
-      {
-	APP_ABORT("Evaluate Log with 1 particle in MultiMultiDiracDeterminantBase is potentially dangerous");
-        //CurrentDet=psiM(0,0);
-        ValueType det=psiM(0,0);
-        ValueType y=1.0/det;
-        psiM(0,0)=y;
-        GradType rv = y*dpsiM(0,0);
-        G(FirstIndex) += rv;
-        L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-        LogValue = evaluateLogAndPhase(det,PhaseValue);
-      } else {
-	
-	///Copying ground state data to psiM
-	for (int orbital=0;orbital<NumOrbitals;orbital++)
-	  for (int ptcl=0;ptcl<NumPtcls;ptcl++) 
-	    psiM(orbital,ptcl)=psiM_actual(orbital,ptcl); //Note: Because psiM is typically an inverse, it's typically ptcl,orbital
-	//done copying
-	LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-        const ValueType* restrict yptr=psiM.data();
-        const ValueType* restrict d2yptr=d2psiM.data();
-        const GradType* restrict dyptr=dpsiM.data();
-        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) {
-          GradType rv;
-          ValueType lap=0.0;
-          for(int j=0; j<NumOrbitals; j++,yptr++) {
-            rv += *yptr * *dyptr++;
-            lap += *yptr * *d2yptr++;
-          }
-          G(iat) += rv;
-          L(iat) += lap - dot(rv,rv);
-        }
-      }
-      psiM_temp = psiM;
-      double val1=std::exp(LogValue)*std::cos(abs(PhaseValue));
-      //      gs_value_psi=1.0;
-      //      gs_value_psi=val1;
-      cerr<<"Starting gs_value_psi as "<<gs_value_psi<<endl;
-      //      return LogValue;
-      //Single Excitations!
-      TinyVector<int,2> second_replaces_first=Excitations.begin();
-      while (second_replaces_first[0]!=-1){
-	for (int orbital=0;orbital<NumOrbitals;orbital++){
-	  for (int ptcl=0;ptcl<NumPtcls;ptcl++){ 
-	    psiM(orbital,ptcl)=psiM_actual(orbital,ptcl);
-	  }
-	}
-	for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-	  psiM(second_replaces_first[0],ptcl)=psiM_actual(second_replaces_first[1],ptcl);
-	}
-	double PhaseValuep;
-	double LogValuep=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValuep);
-
-	double val2=std::exp(LogValuep)*std::cos(abs(PhaseValuep));
-	double val=std::exp(LogValue)*std::cos(abs(PhaseValue))+std::exp(LogValuep)*std::cos(abs(PhaseValuep));
-	LogValue=std::log(abs(val));
-	if (val>0)
-	  PhaseValue=0.0;
-	else 
-	  PhaseValue=M_PI;
-	psiM=psiM_temp;
-	second_replaces_first=Excitations.next();
-      }
-
-
-      //double excitations
-      
-      for (int ii1=0;ii1<Excitations.orbitals_to_replace.size();ii1++){
-	for (int ii2=ii1+1;ii2<Excitations.orbitals_to_replace.size();ii2++){
-	  for (int jj1=0;jj1<Excitations.unoccupied_orbitals_to_use.size();jj1++){
-	    for (int jj2=jj1+1;jj2<Excitations.unoccupied_orbitals_to_use.size();jj2++){
-	       
-	      int or1=Excitations.orbitals_to_replace[ii1];
-	      int or2=Excitations.orbitals_to_replace[ii2];
-	      int uo1=Excitations.unoccupied_orbitals_to_use[jj1];
-	      int uo2=Excitations.unoccupied_orbitals_to_use[jj2];
-	      for (int orbital=0;orbital<NumOrbitals;orbital++){
-		for (int ptcl=0;ptcl<NumPtcls;ptcl++){ 
-		  psiM(orbital,ptcl)=psiM_actual(orbital,ptcl);
-		}
-	      }
-	      for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-		psiM(or1,ptcl)=psiM_actual(uo1,ptcl);
-		psiM(or2,ptcl)=psiM_actual(uo2,ptcl);
-	      }
-	      double PhaseValuep;
-	      double LogValuep=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValuep);
-	      
-	      double val2=std::exp(LogValuep)*std::cos(abs(PhaseValuep));
-
-	      double val=std::exp(LogValue)*std::cos(abs(PhaseValue))+std::exp(LogValuep)*std::cos(abs(PhaseValuep));
-	      LogValue=std::log(abs(val));
-	      if (val>0)
-		PhaseValue=0.0;
-	      else 
-		PhaseValue=M_PI;
-
-	      psiM=psiM_temp;
-	      second_replaces_first=Excitations.next();
-	    }
-	  }
-	}
-      }
-      //double excitations done!
-
-      cerr<<"Pre-gs-value-psi"<<gs_value_psi<<endl;
-      gs_value_psi=val1/(std::exp(LogValue)*std::cos(abs(PhaseValue)));
-      cerr<<"Post-gs-value-psi"<<gs_value_psi<<endl;
-      return LogValue;
-
-      return LogValue;
+    if(NP == 0) {//first time, allocate once
+      //int norb = cols();
+      NP=P.getTotalNum();
+      FirstAddressOfGrads = &(grads(0,0)[0]);
+      LastAddressOfGrads = FirstAddressOfGrads + NumPtcls*DIM*NumDets;
+      FirstAddressOfdpsiM = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
+      LastAddressOfdpsiM = FirstAddressOfdpsiM + NumPtcls*NumOrbitals*DIM;
     }
 
+    evaluateForWalkerMove(P);
 
-#include "MultiDiracDeterminantBase_help.cpp";
+    //add the data:
+    buf.add(psiM.first_address(),psiM.last_address());
+    buf.add(FirstAddressOfdpsiM,LastAddressOfdpsiM);
+    buf.add(d2psiM.first_address(),d2psiM.last_address());
+    buf.add(psiMinv.first_address(),psiMinv.last_address());
+    buf.add(detValues.first_address(), detValues.last_address());
+    buf.add(FirstAddressOfGrads,LastAddressOfGrads);
+    buf.add(lapls.first_address(), lapls.last_address());
+
+    return 1.0;
+  }
+
+  void MultiDiracDeterminantBase::setDetInfo(int ref, vector<ci_configuration2> list) 
+  {
+    ReferenceDeterminant = ref;
+    confgList = list; 
+    NumDets = list.size();
+  }
+
+  ///reset the size: with the number of particles and number of orbtials
+  /// morb is the total number of orbitals, including virtual 
+  void MultiDiracDeterminantBase::resize(int nel, int morb) {
+
+    if(nel <= 0 || morb <= 0) {
+      APP_ABORT(" ERROR: MultiDiracDeterminantBase::resize arguments equal to zero. \n");
+    }
+
+    if(NumDets == 0 || NumDets != confgList.size()) {
+      APP_ABORT(" ERROR: MultiDiracDeterminantBase::resize problems with NumDets. \n");
+    }
+    NumPtcls=nel;
+    NumOrbitals=morb;
+    LastIndex = FirstIndex + nel;
+
+    psiV_temp.resize(nel);
+    psiV.resize(NumOrbitals);
+    dpsiV.resize(NumOrbitals);
+    d2psiV.resize(NumOrbitals);
+    psiM.resize(nel,morb);
+    dpsiM.resize(nel,morb);
+    d2psiM.resize(nel,morb);
+    //psiM_temp.resize(nel,morb);
+    //dpsiM_temp.resize(nel,morb);
+    //d2psiM_temp.resize(nel,morb);
+    TpsiM.resize(morb,nel);
+    psiMinv.resize(nel,nel);
+    dpsiMinv.resize(nel,nel);
+    psiMinv_temp.resize(nel,nel);
+
+    WorkSpace.resize(nel);
+    Pivot.resize(nel);
+    workV1.resize(nel);
+    workV2.resize(nel);
+
+    detValues.resize(NumDets);
+    new_detValues.resize(NumDets);
+    grads.resize(NumDets,nel);
+    new_grads.resize(NumDets,nel);
+    lapls.resize(NumDets,nel);
+    new_lapls.resize(NumDets,nel);
+
+    dotProducts.resize(morb,morb);
+
+    createDetData(confgList[ReferenceDeterminant], detData,uniquePairs,DetSigns);
+
+  }
+
+  void MultiDiracDeterminantBase::registerTimers()
+  {
+    UpdateTimer.reset();
+    RatioTimer.reset();
+    TimerManager.addTimer (&UpdateTimer);
+    TimerManager.addTimer (&RatioTimer);
+    TimerManager.addTimer (&InverseTimer);
+  }
+
+
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: kesler $

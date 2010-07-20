@@ -177,7 +177,7 @@ namespace qmcplusplus {
     xmlNodePtr tcur=cur->children;
     if (tcur!=NULL) getNodeName(cname,cur);
     
-    if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
+    if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag)) 
       createBasisSet(tcur,cur);
     else if (basisBuilder.count(bsname))
     {

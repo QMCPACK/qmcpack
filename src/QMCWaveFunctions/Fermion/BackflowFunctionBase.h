@@ -44,6 +44,16 @@ namespace qmcplusplus
 
     DistanceTableData* myTable; 
 
+    /** enum for a update mode */
+    enum
+    {
+      ORB_PBYP_RATIO,   /*!< particle-by-particle ratio only */
+      ORB_PBYP_ALL,     /*!< particle-by-particle, update Value-Gradient-Laplacian */
+      ORB_PBYP_PARTIAL, /*!< particle-by-particle, update Value and Grdient */
+      ORB_WALKER,    /*!< walker update */
+      ORB_ALLWALKER  /*!< all walkers update */
+    };
+
     ///Reference to the center
     const ParticleSet& CenterSys;
     ///number of centers, e.g., ions
@@ -56,6 +66,19 @@ namespace qmcplusplus
     int indexOfFirstParam;
     // temporary storage for derivatives
     vector<TinyVector<RealType,3> > derivs;
+
+    GradMatrix_t UIJ;
+    GradVector_t UIJ_temp; 
+
+    HessMatrix_t AIJ;
+    HessVector_t AIJ_temp;
+
+    GradMatrix_t BIJ;
+    GradVector_t BIJ_temp;
+
+    ValueType *FirstOfU, *LastOfU;
+    ValueType *FirstOfA, *LastOfA;
+    ValueType *FirstOfB, *LastOfB;
 
     bool uniqueFunctions;
 
@@ -84,6 +107,12 @@ namespace qmcplusplus
       myTable = DistanceTable::add(CenterSys,P);
     }
 
+    virtual void
+    acceptMove(int iat, int UpdateType)=0;
+
+    virtual void
+    restore(int iat, int UpdateType)=0;
+
     virtual void resetParameters(const opt_variables_type& active)=0;
 
     virtual void checkInVariables(opt_variables_type& active)=0;
@@ -91,12 +120,43 @@ namespace qmcplusplus
     virtual void checkOutVariables(const opt_variables_type& active)=0;
 
     // Note: numParams should be set in Builder class, so it is known here
-    int setParamIndex(int n) {
+    inline int
+    setParamIndex(int n) {
       indexOfFirstParam=n;
       return numParams;
     }
 
     virtual inline int indexOffset()=0;
+
+    inline void 
+    registerData(PooledData<RealType>& buf)
+    {
+      FirstOfU = &(UIJ(0,0)[0]); 
+      LastOfU = FirstOfU + 3*NumTargets*NumTargets; 
+      FirstOfA = &(AIJ(0,0)[0]); 
+      LastOfA = FirstOfA + 9*NumTargets*NumTargets; 
+      FirstOfB = &(BIJ(0,0)[0]); 
+      LastOfB = FirstOfB + 3*NumTargets*NumTargets; 
+      buf.add(FirstOfU,LastOfU);
+      buf.add(FirstOfA,LastOfA);
+      buf.add(FirstOfB,LastOfB);
+    }
+  
+    inline void
+    updateBuffer(PooledData<RealType>& buf)
+    {
+      buf.put(FirstOfU,LastOfU);
+      buf.put(FirstOfA,LastOfA);
+      buf.put(FirstOfB,LastOfB);
+    }
+
+    inline void
+    copyFromBuffer(PooledData<RealType>& buf)
+    {
+      buf.get(FirstOfU,LastOfU);
+      buf.get(FirstOfA,LastOfA);
+      buf.get(FirstOfB,LastOfB);
+    }
     
     /** calculate quasi-particle coordinates only
      */
@@ -106,10 +166,32 @@ namespace qmcplusplus
      */
     virtual inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
+     /** calculate quasi-particle coordinates after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index)=0;
+
+     /** calculate quasi-particle coordinates and Amat after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index, HessMatrix_t& Amat)=0;
+
+     /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
+
+    /** calculate only Bmat
+     *  This is used in pbyp moves, in updateBuffer()  
+     */ 
+    virtual void
+    evaluateBmatOnly(const ParticleSet& P,GradMatrix_t& Bmat_full)=0;
+
     /** calculate quasi-particle coordinates, Bmat and Amat 
      *  calculate derivatives wrt to variational parameters
      */
     virtual inline void evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
+
   };
 
 }

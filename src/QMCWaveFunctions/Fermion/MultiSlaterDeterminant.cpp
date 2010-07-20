@@ -13,13 +13,19 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus {
 
-  MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo):spo_up(upspo),spo_dn(dnspo) 
+  MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo):spo_up(upspo),spo_dn(dnspo),
+    RatioTimer("MultiSlaterDeterminant::ratio"),
+    RatioGradTimer("MultiSlaterDeterminant::ratioGrad"),
+    RatioAllTimer("MultiSlaterDeterminant::ratio(all)"),
+    UpdateTimer("MultiSlaterDeterminant::updateBuffer"),
+    EvaluateTimer("MultiSlaterDeterminant::evaluate")
   { 
+    registerTimers();
     //Optimizable=true;
     Optimizable=false;
     OrbitalName="MultiSlaterDeterminant";
@@ -142,8 +148,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
       , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   { 
-// mmorales: For now always assume 2 electron components, up/down
+    EvaluateTimer.start();
 
+// mmorales: For now always assume 2 electron components, up/down
     spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
     spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
 
@@ -189,6 +196,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     G += myG;
     for(int i=0; i<L.size(); i++) 
       L(i) += myL[i] - dot(myG[i],myG[i]);
+    EvaluateTimer.stop();
     return psi;
   }
 
@@ -232,6 +240,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
+      RatioGradTimer.start();
       spo_up->evaluateAllForPtclMove(P,iat);
 
       grad_temp=0.0; 
@@ -253,8 +262,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       }
       grad_iat+=dummy/psiNew;
       curRatio = psiNew/psiOld;
+      RatioGradTimer.stop();
       return curRatio; 
     } else {
+      RatioGradTimer.start();
       spo_dn->evaluateAllForPtclMove(P,iat);
 
       grad_temp=0.0;
@@ -276,6 +287,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       }
       grad_iat+=dummy/psiNew;
       curRatio = psiNew/psiOld;
+      RatioGradTimer.stop();
       return curRatio; 
     }
   }
@@ -287,6 +299,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
     UpdateMode=ORB_PBYP_ALL;
     if(DetID[iat] == 0) {
+      RatioAllTimer.start();
       spo_up->evaluateAllForPtclMove(P,iat);
 
       for(int i=0; i<dets_up.size(); i++) {
@@ -339,8 +352,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       for(int i=0; i<dL.size(); i++) 
         dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
       curRatio = psiNew/psiOld;
+      RatioAllTimer.stop();
       return curRatio; 
     } else {
+      RatioAllTimer.start();
       spo_dn->evaluateAllForPtclMove(P,iat);
 
       for(int i=0; i<dets_dn.size(); i++) {
@@ -393,6 +408,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       for(int i=0; i<dL.size(); i++) 
         dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
       curRatio = psiNew/psiOld;
+      RatioAllTimer.stop();
       return curRatio; 
     }
   }
@@ -402,6 +418,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
+      RatioTimer.start();
       spo_up->evaluateForPtclMove(P,iat);
 
       for(int i=0; i<dets_up.size(); i++) {
@@ -418,8 +435,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         psiNew += tmp2*detsRatios[upC];
       }
       curRatio = psiNew/psiOld;
+      RatioTimer.stop();
       return curRatio; 
     } else {
+      RatioTimer.start();
       spo_dn->evaluateForPtclMove(P,iat);
 
       for(int i=0; i<dets_dn.size(); i++) {
@@ -436,6 +455,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         psiNew += tmp2*detsRatios[dnC];
       }
       curRatio = psiNew/psiOld;
+      RatioTimer.stop();
       return curRatio; 
     }
   }
@@ -620,6 +640,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
   {
 
+    UpdateTimer.start();
     if(fromscratch || UpdateMode == ORB_PBYP_RATIO) {
       spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
       spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
@@ -689,6 +710,8 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     P.G += myG;
     for(int i=0; i<P.L.size(); i++)
       P.L(i) += myL[i] - dot(myG[i],myG[i]);
+
+    UpdateTimer.stop();
 
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
   }
@@ -790,9 +813,13 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
         g += tmp*grads_up[upC];
         g += tmp*grads_dn[dnC];
+//cout<<"upC: " <<upC <<"  " <<"sum: " <<Sum(lapls_up[upC]) <<" tmp: " <<tmp <<" psiC: " <<psi <<endl;
+//cout<<"dnC: " <<upC <<"  " <<"sum: " <<Sum(lapls_dn[dnC]) <<endl;
       }
       gg=Dot(g,g);
       ggP=Dot(P.G,g);
+
+//cout<<"gg: " <<gg <<"  ggP:" <<ggP <<endl;
  
       for(int i=0; i<C.size(); i++){
         int kk=myVars.where(i);
@@ -811,6 +838,21 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     
     }
   }
+
+  void MultiSlaterDeterminant::registerTimers()
+  {
+    RatioTimer.reset();
+    RatioGradTimer.reset();
+    RatioAllTimer.reset();
+    UpdateTimer.reset();
+    EvaluateTimer.reset();
+    TimerManager.addTimer (&RatioTimer);
+    TimerManager.addTimer (&RatioGradTimer);
+    TimerManager.addTimer (&RatioAllTimer);
+    TimerManager.addTimer (&UpdateTimer);
+    TimerManager.addTimer (&EvaluateTimer);
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

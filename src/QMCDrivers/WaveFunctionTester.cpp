@@ -182,7 +182,7 @@ namespace qmcplusplus
   {
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 1e-4;
+    RealType delta = 1e-5;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -610,6 +610,7 @@ namespace qmcplusplus
 
                 newpos=W.makeMove(iat,dr);
                 RealType ratio1 = Psi.ratio(W,iat);
+                //Psi.rejectMove(iat);
                 W.rejectMove(iat);
                 cout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
               }

@@ -81,18 +81,24 @@ namespace qmcplusplus
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL)
     {
-      dG=0;
-      dL=0;   
-      ValueType det = evaluate(P,dG,dL);
-      dG-=P.G; 
-      dL-=P.L; 
-      return det/std::exp(P.Properties(LOGPSI));
+      //BFTrans->evaluatePbyPAll(P,iat);
+      BFTrans->evaluate(P);
+
+      ValueType psi=1.0;
+      for(int i=0; i<Dets.size(); ++i)
+        psi *= Dets[i]->ratio(P,iat,dG,dL);
+      return psi;
     }
 
     inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      APP_ABORT("Need to implement SlaterDetWithBackflow::ratioGrad() \n");
-      return 0.0;
+      //BFTrans->evaluatePbyPWithGrad(P,iat);
+      BFTrans->evaluate(P);
+
+      ValueType psi=1.0;
+      for(int i=0; i<Dets.size(); ++i)
+        psi *= Dets[i]->ratioGrad(P,iat,grad_iat);
+      return psi;
     }
 
     inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
@@ -103,8 +109,10 @@ namespace qmcplusplus
 
     GradType evalGrad(ParticleSet& P, int iat)
     {
-      APP_ABORT("Need to implement SlaterDetWithBackflow::evalGrad() \n");
-      return 0.0;
+      QMCTraits::GradType g;
+      for(int i=0; i<Dets.size(); ++i)
+        g += Dets[i]->evalGrad(P,iat);
+      return g;
     }
 
     GradType alternateEvalGrad(ParticleSet& P, int iat)
@@ -137,19 +145,28 @@ namespace qmcplusplus
 
     inline void acceptMove(ParticleSet& P, int iat)
     {
+      //BFTrans->acceptMove(P,iat);
       for(int i=0; i<Dets.size(); i++)
         Dets[i]->acceptMove(P,iat);
     }
 
+    inline void restore(int iat)
+    {
+      //BFTrans->restore(iat);
+      for(int i=0; i<Dets.size(); i++)
+        Dets[i]->restore(iat);
+    }
+
+
     inline ValueType ratio(ParticleSet& P, int iat)
     {
+      //BFTrans->evaluatePbyP(P,iat);
       BFTrans->evaluate(P);
 
       RealType ratio=1.0;
       for(int i=0; i<Dets.size(); ++i)
-        ratio*=Dets[i]->ratio(P,0);
+        ratio*=Dets[i]->ratio(P,iat);
       return ratio; 
-
     }
 
     inline ValueType alternateRatio(ParticleSet& P)
@@ -168,7 +185,8 @@ namespace qmcplusplus
         ParticleSet::ParticleLaplacian_t& dL,
         int iat)
     {
-      return Dets[DetID[iat]]->update(P,dG,dL,iat);
+      for(int i=0; i<Dets.size(); ++i)
+        Dets[i]->update(P,dG,dL,iat);
     }
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;

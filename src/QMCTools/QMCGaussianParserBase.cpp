@@ -358,6 +358,7 @@ QMCGaussianParserBase::createDeterminantSet() {
     eigD.precision(14);
     eigD << "\n";
     b=SizeOfBasisSet*SizeOfBasisSet;
+
     for(int k=0; k<n; k++) {
       eigD << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
       b += 4;

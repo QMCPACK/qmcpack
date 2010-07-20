@@ -17,7 +17,6 @@
  *@brief Definition of a WaveFunctionFactory 
  */
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"

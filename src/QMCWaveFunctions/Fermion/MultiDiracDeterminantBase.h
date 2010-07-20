@@ -21,12 +21,30 @@
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include "QMCWaveFunctions/Fermion/ExcitationClass.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "Numerics/DeterminantOperators.h"
+#include "Numerics/OhmmsBlas.h"
+#include "Numerics/MatrixOperators.h"
+#include "Message/Communicate.h"
+#include <OhmmsPETE/TinyVector.h>
+#include <config/stdlib/math.h>
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "vector.h"
+
 namespace qmcplusplus {
 
-  class MultiDiracDeterminantBase: public DiracDeterminantBase {
-  public:
+  class MultiDiracDeterminantBase: public OrbitalBase { 
+
+    protected:
+      ParticleSet *targetPtcl;
+    public:
+      bool Optimizable;
+      void registerTimers();
+      NewTimer UpdateTimer, RatioTimer, InverseTimer;
+      // Optimizable parameters
+      opt_variables_type myVars;
 
     typedef SPOSetBase::IndexVector_t IndexVector_t;
     typedef SPOSetBase::ValueVector_t ValueVector_t;
@@ -36,9 +54,6 @@ namespace qmcplusplus {
     typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
     typedef SPOSetBase::HessType      HessType;
 
-
-    int NumOrbitals_unoccupied;
-    int NumOrbitals_total;
     /** constructor
      *@param spos the single-particle orbital set
      *@param first index of the first particle
@@ -62,6 +77,8 @@ namespace qmcplusplus {
      */
     SPOSetBasePtr clonePhi() const;
 
+    SPOSetBasePtr getPhi() { return Phi; };
+
     inline IndexType rows() const {
       return NumPtcls;
     }
@@ -73,11 +90,11 @@ namespace qmcplusplus {
     /** set the index of the first particle in the determinant and reset the size of the determinant
      *@param first index of first particle
      *@param nel number of particles in the determinant
+     *@param norb total number of orbitals (including unoccupied) 
      */
+    void set(int first, int nel, int norb);
+
     void set(int first, int nel);
-    void set_Multi(int first, int nel,int norb);
-
-
 
     ///optimizations  are disabled
     inline void checkInVariables(opt_variables_type& active)
@@ -102,6 +119,9 @@ namespace qmcplusplus {
       Phi->resetTargetParticleSet(P);
     }
 
+    virtual RealType getAlternatePhaseDiff(){return 0.0;}
+    virtual RealType getAlternatePhaseDiff(int iat){return 0.0;}
+
     ///reset the size: with the number of particles and number of orbtials
     virtual void resize(int nel, int morb);
 
@@ -113,57 +133,17 @@ namespace qmcplusplus {
 
     /** dump the inverse to the buffer
      */
-    void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
+    void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
+    {
+      APP_ABORT("  Need to implement MSDFast::dumpToBuffer. \n");
+    }
 
     /** copy the inverse from the buffer
      */
-    void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-    /** return the ratio only for the  iat-th partcle move
-     * @param P current configuration
-     * @param iat the particle thas is being moved
-     */
-    ValueType ratio(ParticleSet& P, int iat);
-    ValueType gs_value_psi;
-    ValueType old_gs_value_psi;
-    
-    /** return the ratio
-     * @param P current configuration
-     * @param iat particle whose position is moved
-     * @param dG differential Gradients
-     * @param dL differential Laplacians
-     *
-     * Data member *_temp contain the data assuming that the move is accepted
-     * and are used to evaluate differential Gradients and Laplacians.
-     */
-    ValueType ratio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG, 
-		    ParticleSet::ParticleLaplacian_t& dL);
-    ValueType ratio_multi(ParticleSet& P, int iat);
-    ExcitationClass Excitations;
-    ValueVector_t coefs;
-    ValueType psi_new;
-    ValueType psi_old;
-    //    ValueVector_t coef_vals;
-    //    ValueVector_t coef_vals_temp;
-    ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-    GradType evalGrad(ParticleSet& P, int iat);
-    GradType evalGradSource (ParticleSet &P, ParticleSet &source,
-			     int iat);
-
-    GradType evalGradSource
-    (ParticleSet& P, ParticleSet& source, int iat,
-     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
-
-    GradType evalGradSourcep
-    (ParticleSet& P, ParticleSet& source, int iat,
-     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
-
-    ValueType logRatio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG, 
-		    ParticleSet::ParticleLaplacian_t& dL);
+    void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+    {
+      APP_ABORT("  Need to implement MSDFast::dumpFromBuffer. \n");
+    }
 
     /** move was accepted, update the real container
      */
@@ -180,77 +160,513 @@ namespace qmcplusplus {
 
     RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    ///evaluate log of determinant for a particle set: should not be called 
-    RealType
-    evaluateLog(ParticleSet& P, 
-	        ParticleSet::ParticleGradient_t& G, 
-	        ParticleSet::ParticleLaplacian_t& L) ;
+/****************************************************************************
+ * These functions should not be called. 
+ ***************************************************************************/
+
+  ValueType ratio(ParticleSet& P, int iat)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
+
+  GradType evalGrad(ParticleSet& P, int iat)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
+
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
+
+  ValueType ratio(ParticleSet& P, int iat, 
+      ParticleSet::ParticleGradient_t& dG, 
+      ParticleSet::ParticleLaplacian_t& dL)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
+
+  RealType evaluateLog(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& G,
+        ParticleSet::ParticleLaplacian_t& L)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
+
+  RealType evaluate(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& G,
+        ParticleSet::ParticleLaplacian_t& L)
+  {
+    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    return 0.0;
+  }
 
 
-    ValueType
-    evaluate(ParticleSet& P, 
-	     ParticleSet::ParticleGradient_t& G, 
-	     ParticleSet::ParticleLaplacian_t& L);
+/****************************************************************************
+ * END END END 
+ ***************************************************************************/
 
-    //    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    // create necessary structures used in the evaluation of the determinants
+    // this works with confgList, which shouldn't change during a simulation
+    void createDetData(ci_configuration2& ref, vector<int>& data,
+                vector<pair<int,int> >& pairs, vector<double>& sign);
 
-//     ///total number of particles
-//     int NP;
-//     ///number of single-particle orbitals which belong to this Dirac determinant
-//     int NumOrbitals;
-//     ///number of particles which belong to this Dirac determinant
-//     int NumPtcls;
-//     ///index of the first particle with respect to the particle set
-//     int FirstIndex;
-//     ///index of the last particle with respect to the particle set
-//     int LastIndex;
-//     ///index of the particle (or row) 
-//     int WorkingIndex;      
-//     ///a set of single-particle orbitals used to fill in the  values of the matrix 
-//     SPOSetBasePtr Phi;
+    inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, vector<int>::iterator it)
+    {
+       switch(n)
+       {
+          case 0:
+            return 1.0;
+          case 1:
+            return dotProducts(*it,*(it+1));
+            break;
+          case 2:
+          {
+            register int i=*it;
+            register int j=*(it+1);
+            register int a=*(it+2);
+            register int b=*(it+3);
+            return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a); 
+            break;
+          }
+          case 3:
+          {
+            register int i1=*it;
+            register int i2=*(it+1);
+            register int i3=*(it+2);
+            register int a1=*(it+3);
+            register int a2=*(it+4);
+            register int a3=*(it+5);
+            return DetCalculator.evaluate(
+                    dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
+                    dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
+                    dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
+            break;
+          } 
+          case 4:
+          {
+            register int i1=*it;
+            register int i2=*(it+1);
+            register int i3=*(it+2);
+            register int i4=*(it+3);
+            register int a1=*(it+4);
+            register int a2=*(it+5);
+            register int a3=*(it+6);
+            register int a4=*(it+7);
+            return DetCalculator.evaluate(
+                    dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
+                    dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
+                    dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
+                    dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
+            break;
+          }
+          case 5:
+          {
+            register int i1=*it;
+            register int i2=*(it+1);
+            register int i3=*(it+2);
+            register int i4=*(it+3);
+            register int i5=*(it+4);
+            register int a1=*(it+5);
+            register int a2=*(it+6);
+            register int a3=*(it+7);
+            register int a4=*(it+8);
+            register int a5=*(it+9);
+            return DetCalculator.evaluate(
+                    dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
+                    dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
+                    dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
+                    dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
+                    dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
+            break;
+          }
+          case 6:
+          {
+            register int i1=*it;
+            register int i2=*(it+1);
+            register int i3=*(it+2);
+            register int i4=*(it+3);
+            register int i5=*(it+4);
+            register int i6=*(it+5);
+            register int a1=*(it+6);
+            register int a2=*(it+7);
+            register int a3=*(it+8);
+            register int a4=*(it+9);
+            register int a5=*(it+10);
+            register int a6=*(it+11);
+            return DetCalculator.evaluate(
+                    dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),dotProducts(i1,a6),
+                    dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),dotProducts(i2,a6),
+                    dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),dotProducts(i3,a6),
+                    dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),dotProducts(i4,a6),
+                    dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5),dotProducts(i5,a6),
+                    dotProducts(i6,a1),dotProducts(i6,a2),dotProducts(i6,a3),dotProducts(i6,a4),dotProducts(i6,a5),dotProducts(i6,a6));
+            break;
+          }
+          default:
+          {
+            return DetCalculator.evaluate(dotProducts,it,n);
+          }
+       }
+    }  
+    
+    inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign)
+    {
+      ValueType det0 = ratios[ref];
 
-    /////Current determinant value
-    //ValueType CurrentDet;
-    /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-    //    ValueMatrix_t psiM, psiM_temp;
-    ValueMatrix_t psiM_actual;
-    /// temporary container for testing
-    ValueMatrix_t psiMInv;
-    ValueVector_t psiV_old;
+      int num=psi.extent(1);
+      vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+      while(it != last) {
+        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        it++;
+      }
+
+      vector<int>::iterator it2 = data.begin();
+      int count= 0;  // number of determinants processed
+      while(it2 != data.end())  {
+        int n = *it2; // number of excitations
+        if(count == ref) {
+          it2+=3*n+1;  // number of integers used to encode the current excitation
+          count++;
+          continue;
+        }
+        ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+        count++;
+        it2+=3*n+1;
+      }
+    }
+
+    inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign, int dx)
+    {
+      ValueType det0 = ratios(ref,iat)[dx];
+
+      int num=psi.extent(1);
+      vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+      while(it != last) {
+        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        it++;
+      }
+
+      vector<int>::iterator it2 = data.begin();
+      int count= 0;  // number of determinants processed
+      while(it2 != data.end())  {
+        int n = *it2; // number of excitations
+        if(count == ref) {
+          it2+=3*n+1;  // number of integers used to encode the current excitation
+          count++;
+          continue;
+        }
+        ratios(count,iat)[dx] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+        count++;
+        it2+=3*n+1;
+      }
+    }
+
+    inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign)
+    {
+      ValueType det0 = ratios(ref,iat);
+
+      int num=psi.extent(1);
+      vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+      while(it != last) {
+        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        it++;
+      }
+
+      vector<int>::iterator it2 = data.begin();
+      int count= 0;  // number of determinants processed
+      while(it2 != data.end())  {
+        int n = *it2; // number of excitations
+        if(count == ref) {
+          it2+=3*n+1;  // number of integers used to encode the current excitation
+          count++;
+          continue;
+        }
+        ratios(count,iat) = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+        count++;
+        it2+=3*n+1;
+      }
+    } 
+
+//   Finish this at some point
+    inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv
+          , GradVector_t& newcol, ValueVector_t& rvec
+          , ValueVector_t& rvecinv, int colchanged
+          , ValueType c_ratio, int dx)
+    {
+      c_ratio=1.0/c_ratio;
+      int m = Minv.rows();
+      BLAS::gemv('N', m, m, c_ratio, Minv.data(), m, newcol[0].data()+dx, 3, 0.0, rvec.data(), 1);
+      rvec[colchanged]=1.0-c_ratio;
+      BLAS::copy(m,Minv.data()+colchanged,m,rvecinv.data(),1);
+      BLAS::ger(m,m,-1.0,rvec.data(),1,rvecinv.data(),1,Minv.data(),m);
+    }
+/*
+    inline void InverseUpdateByColumn(ValueMatrix_t& Minv
+          , GradVector_t& dM, ValueVector_t& rvec
+          , ValueVector_t& rvecinv, int colchanged
+          , ValueType c_ratio, vector<int>::iterator& it)
+    {
+          ValueType c_ratio=1.0/ratioLapl;
+          BLAS::gemv('N', NumPtcls, NumPtcls, c_ratio, dpsiMinv.data(), NumPtcls, tv, 1, T(), workV1, 1);
+          workV1[colchanged]=1.0-c_ratio;
+          BLAS::copy(m,pinv+colchanged,m,workV2,1);
+          BLAS::ger(m,m,-1.0,workV1,1,workV2,1,dpsiMinv.data(),m);
+    }
+*/ 
+
+    void setDetInfo(int ref, vector<ci_configuration2> list);
+
+    inline void 
+    evaluateDetsForPtclMove(ParticleSet& P, int iat)  {
+      UpdateMode=ORB_PBYP_RATIO;
+      Phi->evaluate(P,iat,psiV);
+
+      WorkingIndex = iat-FirstIndex;
+      vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+// mmorales: the only reason this is here is because 
+// NonlocalECP do not necessarily call rejectMove after
+// calling ratio(), and even if the move is rejected
+// this matrix needs to be restored 
+// If we always restore after ratio, then this is not needed
+// For efficiency reasons, I don't do this for ratioGrad or ratio(P,dG,dL)
+      psiMinv_temp = psiMinv;
+      for(int i=0; i<NumPtcls; i++) 
+        psiV_temp[i] = psiV(*(it++));
+      ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+      new_detValues[ReferenceDeterminant] = ratioRef * detValues[ReferenceDeterminant];
+      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
+      for(int i=0; i<NumOrbitals; i++) 
+        TpsiM(i,WorkingIndex) = psiV(i);
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+
+// check comment above
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
+    }
+
+    inline void 
+    evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)  {
+      UpdateMode=ORB_PBYP_PARTIAL;
+      Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
+
+      WorkingIndex = iat-FirstIndex;
+      vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+      GradType ratioGradRef;
+      for(int i=0; i<NumPtcls; i++) { 
+        psiV_temp[i] = psiV(*it);
+        ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
+        it++;
+      }
+      ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+      new_grads(ReferenceDeterminant,WorkingIndex) = ratioGradRef*detValues[ReferenceDeterminant];
+      new_detValues[ReferenceDeterminant] = ratioRef * detValues[ReferenceDeterminant];
+      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiV[i];
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+
+      for(int idim=0; idim<3; idim++) {
+        //dpsiMinv = psiMinv_temp;
+        dpsiMinv = psiMinv;
+        it = confgList[ReferenceDeterminant].occup.begin();
+        for(int i=0; i<NumPtcls; i++)
+          psiV_temp[i] = dpsiV(*(it++))[idim];
+        InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioGradRef[idim]);
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = dpsiV[i][idim];
+        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+      }
+    }
+
+    inline void 
+    evaluateGrads(ParticleSet& P, int iat)  {
+
+
+    }
+
+    inline void 
+    evaluateAllForPtclMove(ParticleSet& P, int iat) {
+      UpdateMode=ORB_PBYP_ALL;
+      Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
+
+      WorkingIndex = iat-FirstIndex;
+      vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+      //GradType ratioGradRef;
+      //ValueType ratioLapl = 0.0;
+      for(int i=0; i<NumPtcls; i++) {
+        psiV_temp[i] = psiV(*it);
+        //ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
+        //ratioLapl += psiMinv_temp(i,WorkingIndex)*d2psiV(*it);
+        it++;
+      }
+      ValueType det0, ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+      //new_lapls(ReferenceDeterminant,WorkingIndex) = ratioLapl*detValues[ReferenceDeterminant];
+      //new_grads(ReferenceDeterminant,WorkingIndex) = ratioGradRef*detValues[ReferenceDeterminant];
+      det0 = ratioRef * detValues[ReferenceDeterminant];
+      new_detValues[ReferenceDeterminant] = det0; 
+      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiV[i];
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+
+      for(int jat=0; jat<NumPtcls; jat++) {
+
+        it = confgList[ReferenceDeterminant].occup.begin();
+        GradType gradRatio = 0.0;
+        ValueType ratioLapl = 0.0;
+
+        if(jat==WorkingIndex) {
+          for(int i=0; i<NumPtcls; i++) {
+            gradRatio += psiMinv_temp(i,jat)*dpsiV(*it);
+            ratioLapl += psiMinv_temp(i,jat)*d2psiV(*it);
+            it++;
+          }
+          new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
+          new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
+          for(int idim=0; idim<3; idim++) {
+            dpsiMinv = psiMinv_temp;
+            it = confgList[ReferenceDeterminant].occup.begin();
+            for(int i=0; i<NumPtcls; i++)
+              psiV_temp[i] = dpsiV(*(it++))[idim];
+            InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
+            for(int i=0; i<NumOrbitals; i++)
+              TpsiM(i,jat) = dpsiV[i][idim];
+            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+          }
+
+          dpsiMinv = psiMinv_temp;
+          it = confgList[ReferenceDeterminant].occup.begin();
+          for(int i=0; i<NumPtcls; i++)
+            psiV_temp[i] = d2psiV(*(it++));
+          InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
+          for(int i=0; i<NumOrbitals; i++)
+            TpsiM(i,jat) = d2psiV[i];
+          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+          for(int i=0; i<NumOrbitals; i++)
+            TpsiM(i,jat) = psiV[i];
+
+        } else {
+          for(int i=0; i<NumPtcls; i++) {
+            gradRatio += psiMinv_temp(i,jat)*dpsiM(jat,*it);
+            ratioLapl += psiMinv_temp(i,jat)*d2psiM(jat,*it);
+            it++;
+          }
+          new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
+          new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
+          for(int idim=0; idim<3; idim++) {
+            dpsiMinv = psiMinv_temp;
+            it = confgList[ReferenceDeterminant].occup.begin();
+            for(int i=0; i<NumPtcls; i++)
+              psiV_temp[i] = dpsiM(jat,*(it++))[idim];
+            InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
+            for(int i=0; i<NumOrbitals; i++)
+              TpsiM(i,jat) = dpsiM(jat,i)[idim];
+            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+          }
+
+          dpsiMinv = psiMinv_temp;
+          it = confgList[ReferenceDeterminant].occup.begin();
+          for(int i=0; i<NumPtcls; i++)
+            psiV_temp[i] = d2psiM(jat,*(it++));
+          InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
+          for(int i=0; i<NumOrbitals; i++)
+            TpsiM(i,jat) = d2psiM(jat,i);
+          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+          for(int i=0; i<NumOrbitals; i++)
+            TpsiM(i,jat) = psiM(jat,i);
+        }
+      } // jat
+    }
+
+
+    // full evaluation of all the structures from scratch, used in evaluateLog for example
+    void evaluateForWalkerMove(ParticleSet& P);    
+
+    ///total number of particles
+    int NP;
+    ///number of single-particle orbitals which belong to this Dirac determinant
+    int NumOrbitals;
+    ///number of particles which belong to this Dirac determinant
+    int NumPtcls;
+    ///index of the first particle with respect to the particle set
+    int FirstIndex;
+    ///index of the last particle with respect to the particle set
+    int LastIndex;
+    ///index of the particle (or row) 
+    int WorkingIndex;      
+    ///a set of single-particle orbitals used to fill in the  values of the matrix 
+    SPOSetBasePtr Phi;
+    /// number of determinants handled by this object
+    int NumDets;
+    /// 
+    vector<ci_configuration2> confgList;
+// the reference determinant never changes, so there is no need to store it.
+// if its value is zero, then use a data from backup, but always use this one 
+// by default
+    int ReferenceDeterminant;
+
+    /// store determinants (old and new)
+    ValueVector_t detValues, new_detValues;  
+    GradMatrix_t grads,new_grads;
+    ValueMatrix_t lapls,new_lapls;
+    
+    /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
+    /// TpsiM(i,j) \f$= psiM(j,i) \f$
+    ValueMatrix_t psiM,psiM_temp, TpsiM, psiMinv, psiMinv_temp;
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-    //    GradMatrix_t  dpsiM, dpsiM_temp;
-
+    GradMatrix_t  dpsiM,dpsiM_temp;
+    // temporaty storage
+    ValueMatrix_t dpsiMinv;
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-    //    ValueMatrix_t d2psiM, d2psiM_temp;
-
-    /// Used for force computations
-    //    GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-    //    HessMatrix_t  grad_grad_source_psiM;
-    //    GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
-    //    ValueMatrix_t lapl_phi_Minv;
-    //    HessMatrix_t grad_phi_alpha_Minv;
+    ValueMatrix_t d2psiM,d2psiM_temp;
 
     /// value of single-particle orbital for particle-by-particle update
-    //    ValueVector_t psiV;
-    //    GradVector_t dpsiV;
-    //    ValueVector_t d2psiV;
-    //    ValueVector_t workV1, workV2;
+    ValueVector_t psiV, psiV_temp;
+    GradVector_t dpsiV;
+    ValueVector_t d2psiV;
+    ValueVector_t workV1, workV2;
 
-    //    Vector<ValueType> WorkSpace;
-    //    Vector<IndexType> Pivot;
+    ValueMatrix_t dotProducts;
 
-    //    ValueType curRatio,cumRatio;
-    //    ValueType *FirstAddressOfG;
-    //    ValueType *LastAddressOfG;
-    //    ValueType *FirstAddressOfdV;
-    //    ValueType *LastAddressOfdV;
-    //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
-    //    ParticleSet::ParticleGradient_t myG, myG_temp;
-    //    ParticleSet::ParticleLaplacian_t myL, myL_temp;
+    Vector<ValueType> WorkSpace;
+    Vector<IndexType> Pivot;
+
+    ValueType curRatio,cumRatio;
+    ValueType *FirstAddressOfGrads;
+    ValueType *LastAddressOfGrads;
+    ValueType *FirstAddressOfdpsiM;
+    ValueType *LastAddressOfdpsiM;
+
+/* mmorales:
+ *  i decided to stored the excitation information of all determinants in the following
+ *  compact form: (all these integers are found consecutively in the array) 
+ *    For each determinant: 
+ *     -n : number of excitations
+ *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1) 
+ *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything) 
+ */
+    vector<int> detData;
+    vector<pair<int,int> > uniquePairs;
+    vector<double> DetSigns;
+
+    int backup_reference;
+    vector<int> backup_detData;
+    vector<pair<int,int> > backup_uniquePairs;
+    vector<double> backup_DetSigns;
+
+    MyDeterminant<ValueType> DetCalculator;
+
   };
 
-
+//  #include "MultiDiracDeterminantBase_help.h"
   
 }
 #endif

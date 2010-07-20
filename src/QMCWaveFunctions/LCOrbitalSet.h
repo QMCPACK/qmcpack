@@ -108,6 +108,16 @@ namespace qmcplusplus {
       for(int j=0; j<OrbitalSetSize; j++) d2psi[j]=myBasisSet->d2Phi[j];
     }
 
+    inline void
+    evaluate(const ParticleSet& P, int iat,
+        ValueVector_t& psi, GradVector_t& dpsi,  
+        HessVector_t& grad_grad_psi) {
+      myBasisSet->evaluateWithHessian(P,iat);
+      for(int j=0; j<OrbitalSetSize; j++) psi[j]=myBasisSet->Phi[j];
+      for(int j=0; j<OrbitalSetSize; j++) dpsi[j]=myBasisSet->dPhi[j];
+      for(int j=0; j<OrbitalSetSize; j++) grad_grad_psi[j]=myBasisSet->grad_grad_Phi[j];
+    }
+
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) 
     {
@@ -254,6 +264,29 @@ namespace qmcplusplus {
       //  //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
       //}
 
+    }
+
+    inline void
+    evaluate(const ParticleSet& P, int iat,
+        ValueVector_t& psi, GradVector_t& dpsi,
+        HessVector_t& grad_grad_psi) {
+      myBasisSet->evaluateWithHessian(P,iat);
+      const ValueType* restrict cptr=C.data();
+      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+      const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
+      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+#pragma ivdep
+      for(int j=0; j<OrbitalSetSize; j++) {
+        register ValueType res=0.0;
+        register GradType dres;
+        register HessType hess;
+        for(int b=0; b<BasisSetSize; b++,cptr++) {
+          res += *cptr*pptr[b];
+          hess += *cptr*d2ptr[b];
+          dres += *cptr*dptr[b];
+        }
+        psi[j]=res; dpsi[j]=dres; grad_grad_psi[j]=hess;
+      }
     }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,

@@ -31,10 +31,10 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 // mmorales: this should be determined by the existence of "Beta MO", since
 // there are many ways to get unrestricted runs without UHF (e.g. UMP2,UCCD,etc)
     SpinRestricted=false;
-    std::cout << " Spin Unrestricted Calculation (UHF). " << endl;    
+    //std::cout << " Spin Unrestricted Calculation (UHF). " << endl;    
   } else {
     SpinRestricted=true;
-    std::cout << " Spin Restricted Calculation (RHF). " << endl;    
+    //std::cout << " Spin Restricted Calculation (RHF). " << endl;    
   }
 
   getwords(currentWords,fin);//3  Number of atoms
@@ -72,6 +72,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   SizeOfBasisSet=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //10 Number of independant functions 
   int NumOfIndOrb=atoi(currentWords.back().c_str());
+  std::cout <<"Number of independent orbitals: " <<NumOfIndOrb <<endl; 
 
   // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
   streampos pivottdb = fin.tellg();
@@ -134,7 +135,12 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 // mmorales:
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
+
+// mmorales HACK HACK HACK, look for a way to rewind w/o closing/opening a file
+  SpinRestricted = !(lookFor(fin, "Beta MO"));
+  fin.close(); fin.open(fname.c_str());
   search(fin, "Alpha Orbital"); //search "Alpha Orbital Energies"
+
 // only read NumOfIndOrb
   getValues(fin,EigVal_alpha.begin(), EigVal_alpha.begin()+NumOfIndOrb);
   std::cout << " Orbital energies reading: OK" << endl;

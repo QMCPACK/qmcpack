@@ -136,7 +136,9 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
-  MultiSlaterDeterminant.cpp
+  Fermion/MultiSlaterDeterminant.cpp
+  Fermion/MultiSlaterDeterminantFast.cpp
+  Fermion/MultiDiracDeterminantBase.cpp
   BasisSetFactory.cpp
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp

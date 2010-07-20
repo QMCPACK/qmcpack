@@ -44,13 +44,13 @@ namespace qmcplusplus {
     SlaterDetWithBackflow::evaluate(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) 
-    {
+  {
       BFTrans->evaluate(P);
 
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       return psi;
-    }
+  }
 
   SlaterDetWithBackflow::RealType 
     SlaterDetWithBackflow::evaluateLog(ParticleSet& P, 
@@ -71,6 +71,7 @@ namespace qmcplusplus {
 
   SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
+    //BFTrans->registerData(P,buf);
     BFTrans->evaluate(P);
 
     LogValue=0.0;
@@ -86,6 +87,7 @@ namespace qmcplusplus {
   SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch)
   {
+    //BFTrans->updateBuffer(P,buf,true);
     BFTrans->evaluate(P);
 
     LogValue=0.0;
@@ -100,7 +102,10 @@ namespace qmcplusplus {
 
   void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    for(int i=0; i<Dets.size(); i++) 	Dets[i]->copyFromBuffer(P,buf);
+    //BFTrans->copyFromBuffer(P,buf);
+    BFTrans->evaluate(P);
+    for(int i=0; i<Dets.size(); i++)
+      Dets[i]->copyFromBuffer(P,buf);
   }
 
   void SlaterDetWithBackflow::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) 
@@ -115,25 +120,19 @@ namespace qmcplusplus {
 
   SlaterDetWithBackflow::RealType 
     SlaterDetWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
-    {
-//      BFTrans->evaluate(P);
+  {
+    //BFTrans->updateBuffer(P,buf,false);
+    BFTrans->evaluate(P);
 
-      LogValue=0.0;
-      PhaseValue=0.0;
-      for(int i=0; i<Dets.size(); i++) 	
-      { 
-        LogValue += Dets[i]->evaluateLog(P,buf);
-        PhaseValue +=Dets[i]->PhaseValue;
-      }
-      return LogValue;
+    LogValue=0.0;
+    PhaseValue=0.0;
+    for(int i=0; i<Dets.size(); i++) 	
+    { 
+      LogValue += Dets[i]->evaluateLog(P,buf);
+      PhaseValue +=Dets[i]->PhaseValue;
     }
-  //SlaterDetWithBackflow::ValueType 
-  //  SlaterDetWithBackflow::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
-  //  {
-  //    ValueType r=1.0;
-  //    for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
-  //    return r;
-  //  }
+    return LogValue;
+  }
 
   OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   {

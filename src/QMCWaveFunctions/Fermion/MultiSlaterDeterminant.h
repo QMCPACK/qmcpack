@@ -19,6 +19,7 @@
 #include <QMCWaveFunctions/OrbitalBase.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
+#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
   {
@@ -51,6 +52,8 @@ namespace qmcplusplus
     {
 
     public:
+      void registerTimers();
+      NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
 
       typedef DiracDeterminantBase*    DiracDeterminantPtr;
       typedef SPOSetBase*              SPOSetBasePtr;
@@ -175,7 +178,7 @@ namespace qmcplusplus
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: miguel.mmorales $
+ * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
+ * $Id: MultiSlaterDeterminant.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
  ***************************************************************************/

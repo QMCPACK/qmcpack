@@ -17,10 +17,14 @@
 #ifndef QMCPLUSPLUS_LCORBITALSETBUILDER_H
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
+#include <vector>
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
+#include "QMCWaveFunctions/Fermion/ci_configuration.h"
+#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #endif
@@ -59,6 +63,7 @@ namespace qmcplusplus {
     BasisSetFactory* myBasisSetFactory;
     SlaterDeterminant_t* slaterdet_0;
     MultiSlaterDeterminant_t* multislaterdet_0;
+    MultiSlaterDeterminantFast* multislaterdetfast_0;
     
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     bool UseBackflow;
@@ -72,9 +77,11 @@ namespace qmcplusplus {
      */
     bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
-    bool createCINODE(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
-
     bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+
+    bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
+
+    bool readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn);
 
   };
 }

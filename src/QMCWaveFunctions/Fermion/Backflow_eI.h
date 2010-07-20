@@ -36,6 +36,12 @@ namespace qmcplusplus
     Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
     {
       myTable = DistanceTable::add(ions,els); 
+      UIJ.resize(NumTargets,NumCenters);
+      AIJ.resize(NumTargets,NumCenters);
+      BIJ.resize(NumTargets,NumCenters);
+      UIJ_temp.resize(NumCenters);
+      AIJ_temp.resize(NumCenters);
+      BIJ_temp.resize(NumCenters);
     }
 
     //  build RadFun manually from builder class
@@ -76,6 +82,61 @@ namespace qmcplusplus
        return RadFun[0]->myVars.where(0);
     }
 
+    inline void
+    acceptMove(int iat, int UpdateMode)
+    {
+      int num;
+      switch(UpdateMode)
+      {
+        case ORB_PBYP_RATIO:
+          num = UIJ.rows();
+          for(int i=0; i<num; i++) 
+            UIJ(iat,i) = UIJ_temp(i);
+          break;
+        case ORB_PBYP_PARTIAL:
+          num = UIJ.rows();
+          for(int i=0; i<num; i++) 
+            UIJ(iat,i) = UIJ_temp(i);
+          num = AIJ.rows();
+          for(int i=0; i<num; i++) 
+            AIJ(iat,i) = AIJ_temp(i);
+          break;
+        case ORB_PBYP_ALL:
+          num = UIJ.rows();
+          for(int i=0; i<num; i++) 
+            UIJ(iat,i) = UIJ_temp(i);
+          num = AIJ.rows();
+          for(int i=0; i<num; i++) 
+            AIJ(iat,i) = AIJ_temp(i);
+          num = BIJ.rows();
+          for(int i=0; i<num; i++) 
+            BIJ(iat,i) = BIJ_temp(i);
+          break;
+        default:
+          num = UIJ.rows();
+          for(int i=0; i<num; i++) 
+            UIJ(iat,i) = UIJ_temp(i);
+          num = AIJ.rows();
+          for(int i=0; i<num; i++) 
+            AIJ(iat,i) = AIJ_temp(i);
+          num = BIJ.rows();
+          for(int i=0; i<num; i++) 
+            BIJ(iat,i) = BIJ_temp(i);
+          break;
+      }
+      UIJ_temp=0.0;
+      AIJ_temp=0.0;
+      BIJ_temp=0.0;
+    }
+
+    inline void
+    restore(int iat, int UpdateType)
+    {
+      UIJ_temp=0.0;
+      AIJ_temp=0.0;
+      BIJ_temp=0.0;
+    }
+
     /** calculate quasi-particle coordinates only
      */
     inline void 
@@ -86,7 +147,7 @@ namespace qmcplusplus
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
           ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
-          QP.R[j] += uij*myTable->dr(nn);  // dr(ij) = r_j-r_i 
+          QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));  // dr(ij) = r_j-r_i 
         }
       }
     }
@@ -100,17 +161,19 @@ namespace qmcplusplus
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
           ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
-          PosType u = uij*myTable->dr(nn);
+          //PosType u = uij*myTable->dr(nn);
           du *= myTable->rinv(nn);
-          QP.R[j] += u;
+          QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));
 
-          Amat(j,j) += du*outerProduct(myTable->dr(nn),myTable->dr(nn));
-          Amat(j,j)[0] += uij;
-          Amat(j,j)[4] += uij;
-          Amat(j,j)[8] += uij;
+          HessType& hess = AIJ(j,i);
+          hess = du*outerProduct(myTable->dr(nn),myTable->dr(nn));
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(j,j) += hess;
 
-          u = (d2u+4.0*du)*myTable->dr(nn);
-          Bmat(j) += u;
+          //u = (d2u+4.0*du)*myTable->dr(nn);
+          Bmat(j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
         }
       }
     }
@@ -128,17 +191,102 @@ namespace qmcplusplus
           ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
           du *= myTable->rinv(nn);
           //PosType u = uij*myTable->dr(nn); 
-          QP.R[j] += uij*myTable->dr(nn); 
- 
-          //HessType op = outerProduct(myTable->dr(nn),myTable->dr(nn));
-          Amat(j,j) += du*outerProduct(myTable->dr(nn),myTable->dr(nn));
-          Amat(j,j)[0] += uij;
-          Amat(j,j)[4] += uij;
-          Amat(j,j)[8] += uij;
+          QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));
+
+          HessType& hess = AIJ(j,i);
+          hess = du*outerProduct(myTable->dr(nn),myTable->dr(nn));
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(j,j) += hess;
 
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           //u = (d2u+4.0*du)*myTable->dr(nn); 
-          Bmat_full(j,j) += (d2u+4.0*du)*myTable->dr(nn);  
+          Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));  
+        }
+      }
+    }
+
+     /** calculate quasi-particle coordinates after pbyp move  
+      */
+    inline void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
+               ,const vector<int>& index)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+      int iat = index[0];
+      
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+      }
+    }
+
+    inline void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
+               ,const vector<int>& index, HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+      int iat = index[0];
+      
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+
+        HessType& hess = AIJ_temp(j);
+        hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+// should I expand this??? Is the compiler smart enough???
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+      }
+    }
+
+    inline void
+    evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
+               ,const vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+      int iat = index[0];
+
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        du *= myTable->Temp[j].rinv1;
+
+        HessType& hess = AIJ_temp(j);
+        hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+// should I expand this??? Is the compiler smart enough???
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+        
+        BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
+        Bmat_full(iat,iat) += (BIJ_temp(j)-BIJ(iat,j));
+      }
+    }
+
+
+    /** calculate only Bmat
+     *  This is used in pbyp moves, in updateBuffer()  
+     */
+    inline void
+    evaluateBmatOnly(const ParticleSet& P,GradMatrix_t& Bmat_full)
+    {
+      RealType du,d2u;
+      for(int i=0; i<myTable->size(SourceIndex); i++) {
+        for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
+          int j = myTable->J[nn];
+          ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
+          Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du*myTable->rinv(nn))*myTable->dr(nn));
         }
       }
     }
@@ -158,17 +306,19 @@ namespace qmcplusplus
           RadFun[i]->evaluateDerivatives(myTable->r(nn),derivs);
           du *= myTable->rinv(nn);
           //PosType u = uij*myTable->dr(nn); 
-          QP.R[j] += uij*myTable->dr(nn);
+          QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn)); 
 
           HessType op = outerProduct(myTable->dr(nn),myTable->dr(nn));
-          Amat(j,j) += du*op;
-          Amat(j,j)[0] += uij;
-          Amat(j,j)[4] += uij;
-          Amat(j,j)[8] += uij;
+          HessType& hess = AIJ(j,i);
+          hess = du*op;
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(j,j) += hess;
 
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           //u = (d2u+4.0*du)*myTable->dr(nn); 
-          Bmat_full(j,j) += (d2u+4.0*du)*myTable->dr(nn);
+          Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
 
           int NPrms = RadFun[i]->NumParams; 
           for(int prm=0,la=indexOfFirstParam+offsetPrms[i]; prm<NPrms; prm++,la++) {

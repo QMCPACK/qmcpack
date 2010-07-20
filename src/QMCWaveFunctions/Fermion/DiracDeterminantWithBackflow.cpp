@@ -52,12 +52,7 @@ namespace qmcplusplus {
     if(norb <= 0) norb = nel; // for morb == -1 (default)
     psiM.resize(nel,norb);
     dpsiM.resize(nel,norb);
-    //d2psiM.resize(nel,norb);
-    //psiM_temp.resize(nel,norb);
-    dpsiM_temp.resize(nel,norb);
-    //d2psiM_temp.resize(nel,norb);
     psiMinv.resize(nel,norb);
-    //psiV.resize(norb);
     WorkSpace.resize(nel);
     Pivot.resize(nel);
     LastIndex = FirstIndex + nel;
@@ -69,6 +64,11 @@ namespace qmcplusplus {
     dFa.resize(nel,norb);
     Ajk_sum.resize(nel,norb);
     Qmat.resize(nel,norb);
+    Fmat.resize(nel,norb);
+    Fmatdiag.resize(norb);
+    psiMinv_temp.resize(NumPtcls,norb);
+    psiV.resize(norb);
+    psiM_temp.resize(NumPtcls,norb);
 
     // For forces
     /*  not used
@@ -87,8 +87,14 @@ namespace qmcplusplus {
     {
 
     if(NP == 0) {//first time, allocate once
-      //int norb = cols();
+      int norb = NumOrbitals;
       NP=P.getTotalNum();
+      dpsiM_temp.resize(NumPtcls,norb);
+      grad_grad_psiM_temp.resize(NumPtcls,norb);
+      dpsiV.resize(norb);
+      d2psiV.resize(norb);
+      grad_gradV.resize(norb);
+      Fmatdiag_temp.resize(norb);
       myG.resize(NP);
       myL.resize(NP);
       myG_temp.resize(NP);
@@ -98,6 +104,10 @@ namespace qmcplusplus {
       LastAddressOfG = FirstAddressOfG + NP*DIM;
       FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
       LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
+      FirstAddressOfGGG = grad_grad_psiM(0,0).begin(); //[0];
+      LastAddressOfGGG = FirstAddressOfGGG + NumPtcls*norb*DIM*DIM;
+      FirstAddressOfFm = &(Fmatdiag[0][0]); //[0];
+      LastAddressOfFm = FirstAddressOfFm + norb*DIM;
     }
 
     myG=0.0;
@@ -112,9 +122,11 @@ namespace qmcplusplus {
     //add the data: determinant, inverse, gradient and laplacians
     buf.add(psiM.first_address(),psiM.last_address());
     buf.add(FirstAddressOfdV,LastAddressOfdV);
-    buf.add(d2psiM.first_address(),d2psiM.last_address());
+    buf.add(FirstAddressOfGGG,LastAddressOfGGG);
     buf.add(myL.first_address(), myL.last_address());
     buf.add(FirstAddressOfG,LastAddressOfG);
+    buf.add(FirstAddressOfFm,LastAddressOfFm);
+    buf.add(psiMinv.first_address(),psiMinv.last_address());
     buf.add(LogValue);
     buf.add(PhaseValue);
 
@@ -139,9 +151,11 @@ namespace qmcplusplus {
 
     buf.put(psiM.first_address(),psiM.last_address());
     buf.put(FirstAddressOfdV,LastAddressOfdV);
-    buf.put(d2psiM.first_address(),d2psiM.last_address());
+    buf.put(FirstAddressOfGGG,LastAddressOfGGG);
     buf.put(myL.first_address(), myL.last_address());
     buf.put(FirstAddressOfG,LastAddressOfG);
+    buf.put(FirstAddressOfFm,LastAddressOfFm);
+    buf.put(psiMinv.first_address(),psiMinv.last_address());
     buf.put(LogValue);
     buf.put(PhaseValue);
 
@@ -153,9 +167,11 @@ namespace qmcplusplus {
 
     buf.get(psiM.first_address(),psiM.last_address());
     buf.get(FirstAddressOfdV,LastAddressOfdV);
-    buf.get(d2psiM.first_address(),d2psiM.last_address());
+    buf.get(FirstAddressOfGGG,LastAddressOfGGG);
     buf.get(myL.first_address(), myL.last_address());
     buf.get(FirstAddressOfG,LastAddressOfG);
+    buf.get(FirstAddressOfFm,LastAddressOfFm);
+    buf.get(psiMinv.first_address(),psiMinv.last_address());
     buf.get(LogValue);
     buf.get(PhaseValue);
 
@@ -174,21 +190,47 @@ namespace qmcplusplus {
    */
   DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat) 
   {
-    RealType OldLog = LogValue;
-    RealType OldPhase = PhaseValue;
 
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
-    //app_log() <<psiM <<endl;
+//cout<<"ok1 \n"; cout.flush(); 
+    // FIX FIX FIX : code Woodbury formula
+    psiM_temp=psiM;
+//cout<<"ok2 \n"; cout.flush(); 
 
-    //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
-    psiMinv=psiM;
+    UpdateMode=ORB_PBYP_RATIO;
+    vector<int>::iterator it = BFTrans->indexQP.begin();
+    vector<int>::iterator it_end = BFTrans->indexQP.end();
+    while(it != it_end) {
+      if(*it<FirstIndex || *it>=LastIndex ) { ++it; continue;}
+      int jat = *it-FirstIndex;
+      PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];  
+      BFTrans->QP.makeMoveAndCheck(*it,dr);
+      Phi->evaluate(BFTrans->QP, *it, psiV);
+       // FIX FIX FIX
+      std::copy(psiV.begin(),psiV.end(),psiM_temp.begin(jat));  
+      BFTrans->QP.rejectMove(jat);
+      it++;
+    }
 
-    // invert backflow matrix
+//cout<<"ok3 \n"; cout.flush(); 
+    // FIX FIX FIX : code Woodbury formula
+    psiMinv_temp = psiM_temp;
+//cout<<"ok4 \n"; cout.flush(); 
+
+    // FIX FIX FIX : code Woodbury formula
     InverseTimer.start();
-    LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
+    RealType NewPhase;
+//cout<<"ok5 \n"; cout.flush(); 
+//cout<<psiMinv_temp.data() <<" "
+//    <<NumPtcls <<" "
+//    <<NumOrbitals <<" "
+//    <<WorkSpace.data() <<" "
+//    <<Pivot.data() <<" "
+//    <<NewPhase <<" done " <<endl;
+    RealType NewLog=InvertWithLog(psiMinv_temp.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),NewPhase);
+//cout<<"ok6 \n"; cout.flush(); 
     InverseTimer.stop();
    
-    return LogValue/OldLog; 
+    return curRatio = std::cos(NewPhase-PhaseValue)*std::exp(NewLog-LogValue); 
   }
     
   void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
@@ -199,8 +241,13 @@ namespace qmcplusplus {
   DiracDeterminantWithBackflow::GradType 
     DiracDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
   {
-     APP_ABORT(" Need to implement DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat). \n");
-     return 0.0;
+    GradType g;
+    g=0.0;
+    for(int j=0; j<NumPtcls; j++) {
+      g += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag(j));
+    }
+
+    return g;
   }
 
   DiracDeterminantWithBackflow::GradType 
@@ -235,8 +282,43 @@ namespace qmcplusplus {
     DiracDeterminantWithBackflow::ValueType 
       DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-     APP_ABORT(" Need to implement DiracDeterminantWithBackflow::ratioGrad() \n");
-     return 0.0;
+    // FIX FIX FIX : code Woodbury formula
+    psiM_temp=psiM;
+
+    UpdateMode=ORB_PBYP_PARTIAL;
+    vector<int>::iterator it = BFTrans->indexQP.begin();
+    vector<int>::iterator it_end = BFTrans->indexQP.end();
+    ParticleSet::ParticlePos_t dr;
+    while(it != it_end) {
+      if(*it<FirstIndex || *it>=LastIndex ) { ++it; continue;}
+      int jat = *it-FirstIndex;
+      PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
+      BFTrans->QP.makeMoveAndCheck(*it,dr);
+      Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
+       // FIX FIX FIX
+      std::copy(psiV.begin(),psiV.end(),psiM_temp.begin(jat));
+      std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
+//      std::copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
+      BFTrans->QP.rejectMove(jat);
+      it++;
+    }
+
+    // FIX FIX FIX : code Woodbury formula
+    psiMinv_temp = psiM_temp;
+
+    // FIX FIX FIX : code Woodbury formula
+    InverseTimer.start();
+    RealType NewPhase;
+    RealType NewLog=InvertWithLog(psiMinv_temp.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),NewPhase);
+    InverseTimer.stop();
+
+    // update Fmatdiag_temp
+    for(int j=0; j<NumPtcls; j++) {
+      Fmatdiag_temp(j)=dot(psiMinv_temp[j],dpsiM_temp[j],NumOrbitals);
+      grad_iat += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag_temp(j));
+    }
+
+    return curRatio = std::cos(NewPhase-PhaseValue)*std::exp(NewLog-LogValue);
   }
 
   /** return the ratio
@@ -252,8 +334,83 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL) 
   { 
-     APP_ABORT(" Need to implement DiracDeterminantWithBackflow::ratio() \n");
-     return 0.0;
+    // FIX FIX FIX : code Woodbury formula
+    psiM_temp=psiM;
+    dpsiM_temp=dpsiM;
+    grad_grad_psiM_temp = grad_grad_psiM;
+    UpdateMode=ORB_PBYP_PARTIAL;
+
+    vector<int>::iterator it = BFTrans->indexQP.begin();
+    vector<int>::iterator it_end = BFTrans->indexQP.end();
+    ParticleSet::ParticlePos_t dr;
+    while(it != it_end) {
+      if(*it<FirstIndex || *it>=LastIndex ) { ++it; continue;}
+      int jat = *it-FirstIndex;
+      PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
+      BFTrans->QP.makeMoveAndCheck(*it,dr);
+      Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, grad_gradV);
+       // FIX FIX FIX
+      std::copy(psiV.begin(),psiV.end(),psiM_temp.begin(jat));
+      std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
+      std::copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
+      BFTrans->QP.rejectMove(*it);
+      it++;
+    }
+
+    // FIX FIX FIX : code Woodbury formula
+    psiMinv_temp = psiM_temp;
+
+    // FIX FIX FIX : code Woodbury formula
+    InverseTimer.start();
+    RealType NewPhase;
+    RealType NewLog=InvertWithLog(psiMinv_temp.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),NewPhase);
+    InverseTimer.stop();
+
+    for(int i=0; i<NumPtcls; i++) {
+      for(int j=0; j<NumPtcls; j++)
+      {
+         Fmat(i,j)=dot(psiMinv_temp[i],dpsiM_temp[j],NumOrbitals);
+      }
+      Fmatdiag_temp(i) = Fmat(i,i);
+    }
+
+    // calculate gradients and first piece of laplacians 
+    GradType temp;
+    ValueType temp2;
+    int num = P.getTotalNum();
+    myG_temp = 0.0; 
+    myL_temp = 0.0; 
+    for(int i=0; i<num; i++) {
+      temp=0.0;
+      temp2=0.0;
+      for(int j=0; j<NumPtcls; j++) {
+        temp2 += dot(BFTrans->Bmat_temp(i,FirstIndex+j),Fmat(j,j));
+        temp  += dot(BFTrans->Amat_temp(i,FirstIndex+j),Fmat(j,j));
+      }
+      myG_temp(i) += temp;
+      myL_temp(i) += temp2;
+    }
+
+    for(int j=0; j<NumPtcls; j++) {
+      HessType q_j = 0.0;
+      for(int k=0; k<NumPtcls; k++)  q_j += psiMinv_temp(j,k)*grad_grad_psiM_temp(j,k);
+      for(int i=0; i<num; i++) {
+        myL_temp(i) += traceAtB(dot(transpose(BFTrans->Amat_temp(i,FirstIndex+j)),BFTrans->Amat_temp(i,FirstIndex+j)),q_j);
+      }
+
+      for(int k=0; k<NumPtcls; k++) {
+        for(int i=0; i<num; i++) {
+          myL_temp(i) -= traceAtB(dot(transpose(BFTrans->Amat_temp(i,FirstIndex+j)),BFTrans->Amat_temp(i,FirstIndex+k)), outerProduct(Fmat(k,j),Fmat(j,k)));
+        }
+      }
+    }
+
+    for(int i=0; i<num; i++) {
+      dG[i] += myG_temp[i] - myG[i];
+      dL[i] += myL_temp[i] - myL[i];
+    }
+
+    return curRatio = std::cos(NewPhase-PhaseValue)*std::exp(NewLog-LogValue);
   }
 
 
@@ -276,13 +433,15 @@ namespace qmcplusplus {
 
     // calculate F matrix (gradients wrt bf coordinates)
     // could use dgemv with increments of 3*nCols  
-    for(int i=0; i<NumPtcls; i++)
-    for(int j=0; j<NumPtcls; j++)
-    {
-       dpsiM_temp(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+    for(int i=0; i<NumPtcls; i++) {
+      for(int j=0; j<NumPtcls; j++)
+      {
+         Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+      }
+      Fmatdiag(i) = Fmat(i,i);
     }
     //for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
-    // G(iat) += dpsiM_temp(i,i);
+    // G(iat) += Fmat(i,i);
 
     // calculate gradients and first piece of laplacians 
     GradType temp;
@@ -292,8 +451,8 @@ namespace qmcplusplus {
       temp=0.0;
       temp2=0.0;
       for(int j=0; j<NumPtcls; j++) {
-        temp2 += dot(BFTrans->Bmat_full(i,FirstIndex+j),dpsiM_temp(j,j));
-        temp  += dot(BFTrans->Amat(i,FirstIndex+j),dpsiM_temp(j,j));
+        temp2 += dot(BFTrans->Bmat_full(i,FirstIndex+j),Fmat(j,j));
+        temp  += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
       } 
       G(i) += temp; 
       L(i) += temp2;
@@ -308,7 +467,7 @@ namespace qmcplusplus {
 
       for(int k=0; k<NumPtcls; k++) {
         for(int i=0; i<num; i++) {
-          L(i) -= traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)), outerProduct(dpsiM_temp(k,j),dpsiM_temp(j,k)));
+          L(i) -= traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)), outerProduct(Fmat(k,j),Fmat(j,k)));
         }
       }
     }
@@ -330,7 +489,34 @@ namespace qmcplusplus {
   */
   void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat) 
   {
-     APP_ABORT(" Need to implement DiracDeterminantWithBackflow::acceptMove() \n");
+    PhaseValue += evaluatePhase(curRatio);
+    LogValue +=std::log(std::abs(curRatio));
+    UpdateTimer.start();
+    switch(UpdateMode)
+    {
+      case ORB_PBYP_RATIO:
+        psiMinv = psiMinv_temp;
+        psiM = psiM_temp;
+        break;
+      case ORB_PBYP_PARTIAL:
+        psiMinv = psiMinv_temp;
+        psiM = psiM_temp;
+        dpsiM = dpsiM_temp;
+        Fmatdiag = Fmatdiag_temp;
+        break;
+      default:
+        myG = myG_temp;
+        myL = myL_temp;
+        psiMinv = psiMinv_temp;
+        psiM = psiM_temp;
+        dpsiM = dpsiM_temp;
+        grad_grad_psiM = grad_grad_psiM_temp;
+        Fmatdiag = Fmatdiag_temp;
+        break;
+    }
+    UpdateTimer.stop();
+
+    curRatio=1.0;
   }
 
   /** move was rejected. Nothing to restore for now. 
@@ -352,11 +538,19 @@ namespace qmcplusplus {
   
   DiracDeterminantWithBackflow::RealType
     DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-    {
+  {
+    buf.put(psiM.first_address(),psiM.last_address());
+    buf.put(FirstAddressOfdV,LastAddressOfdV);
+    buf.put(FirstAddressOfGGG,LastAddressOfGGG);
+    buf.put(myL.first_address(), myL.last_address());
+    buf.put(FirstAddressOfG,LastAddressOfG);
+    buf.put(FirstAddressOfFm,LastAddressOfFm);
+    buf.put(psiMinv.first_address(),psiMinv.last_address());
+    buf.put(LogValue);
+    buf.put(PhaseValue);
 
-     APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateLog(PooldedData)() \n");
-      return LogValue;
-    }
+    return LogValue;
+  }
 
 
   /** Calculate the value of the Dirac determinant for particles
@@ -374,9 +568,6 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)
     {
-
-//       APP_ABORT("  DiracDeterminantWithBackflow::evaluate is disabled");
-
       ValueType logval = evaluateLog(P, G, L);
       return std::cos(PhaseValue)*std::exp(logval);
     }
@@ -398,7 +589,7 @@ namespace qmcplusplus {
  *       -dpsiM
  *       -grad_grad_psiM
  *       -psiM_inv
- *       -dpsiM_temp
+ *       -Fmat
  */     
 
     Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM); 
@@ -416,10 +607,10 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_temp(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
     //for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
-    // G(iat) += dpsiM_temp(i,i);
+    // G(iat) += Fmat(i,i);
 
     int num = P.getTotalNum();
     for(int j=0; j<NumPtcls; j++)  
@@ -453,23 +644,23 @@ namespace qmcplusplus {
           GradType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
-                   -  dpsiM_temp(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),dpsiM_temp(i,k)));
+                   -  Fmat(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
           }
           dFa(i,j)=f_a;
         }
       for(int i=0; i<num; i++) {
         temp=0.0;
         for(int j=0; j<NumPtcls; j++)
-          temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),dpsiM_temp(j,j))
+          temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j))
                     + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
         Gtemp(i) += temp;
       }
       for(int j=0; j<NumPtcls; j++) {
         GradType B_j=0.0;
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j);
-        dLa += (dot(dpsiM_temp(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
+        dLa += (dot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
-        dpsia += dot(dpsiM_temp(j,j),BFTrans->Cmat(pa,FirstIndex+j));
+        dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
 
      for(int j=0; j<NumPtcls; j++) {
@@ -482,12 +673,12 @@ namespace qmcplusplus {
       for(int k=0; k<NumPtcls; k++)  {
         //tmp=0.0;
         //for(int n=0; n<NumPtcls; n++) tmp+=psiMinv(k,n)*grad_grad_psiM(j,n);
-        //tmp *= dot(BFTrans->Cmat(pa,FirstIndex+k),dpsiM_temp(j,k));
+        //tmp *= dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k));
 
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0]
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]
                        + cj[2]*grad_grad_grad_psiM(j,k)[2]) 
-                     - dot(BFTrans->Cmat(pa,FirstIndex+k),dpsiM_temp(j,k))
+                     - dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
                        *Qmat(k,j) );
       }
 
@@ -499,9 +690,9 @@ namespace qmcplusplus {
         HessType a_jk_prime = 0.0;
         for(int i=0; i<num; i++) a_jk_prime += ( dot(transpose(BFTrans->Xmat(pa,i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)) + dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Xmat(pa,i,FirstIndex+k)) );
 
-        dLa -= (traceAtB(a_jk_prime, outerProduct(dpsiM_temp(k,j),dpsiM_temp(j,k)))
-               + traceAtB(Ajk_sum(j,k), outerProduct(dFa(k,j),dpsiM_temp(j,k))
-               + outerProduct(dpsiM_temp(k,j),dFa(j,k)) ));
+        dLa -= (traceAtB(a_jk_prime, outerProduct(Fmat(k,j),Fmat(j,k)))
+               + traceAtB(Ajk_sum(j,k), outerProduct(dFa(k,j),Fmat(j,k))
+               + outerProduct(Fmat(k,j),dFa(j,k)) ));
 
       }  // k
      }   // j
@@ -537,10 +728,10 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_temp(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
     //for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
-    // G(iat) += dpsiM_temp(i,i);
+    // G(iat) += Fmat(i,i);
 
    // this is a mess, there should be a better way
    // to rearrange this  
@@ -560,23 +751,23 @@ namespace qmcplusplus {
           GradType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
-                   -  dpsiM_temp(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),dpsiM_temp(i,k)));
+                   -  Fmat(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
           }
           dFa(i,j)=f_a;
         }
       for(int i=0; i<num; i++) {
         temp=0.0;
         for(int j=0; j<NumPtcls; j++) 
-          temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),dpsiM_temp(j,j)) 
+          temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j)) 
                     + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
         Gtemp(i) += temp;
       }
       for(int j=0; j<NumPtcls; j++) {
         GradType B_j=0.0; 
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j); 
-        La1 += (dot(dpsiM_temp(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
+        La1 += (dot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
-        dpsia += dot(dpsiM_temp(j,j),BFTrans->Cmat(pa,FirstIndex+j));
+        dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
 
      for(int j=0; j<NumPtcls; j++) {
@@ -595,7 +786,7 @@ namespace qmcplusplus {
       for(int k=0; k<NumPtcls; k++)  {
         tmp=0.0;
         for(int n=0; n<NumPtcls; n++) tmp+=psiMinv(k,n)*grad_grad_psiM(j,n);
-        tmp *= dot(BFTrans->Cmat(pa,FirstIndex+k),dpsiM_temp(j,k));
+        tmp *= dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k));
       
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0] 
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]  
@@ -614,9 +805,9 @@ namespace qmcplusplus {
         HessType a_jk_prime = 0.0;
         for(int i=0; i<num; i++) a_jk_prime += ( dot(transpose(BFTrans->Xmat(pa,i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)) + dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Xmat(pa,i,FirstIndex+k)) );        
  
-        La3 -= (traceAtB(a_jk_prime, outerProduct(dpsiM_temp(k,j),dpsiM_temp(j,k))) 
-               + traceAtB(a_jk, outerProduct(dFa(k,j),dpsiM_temp(j,k)) 
-               + outerProduct(dpsiM_temp(k,j),dFa(j,k)) )); 
+        La3 -= (traceAtB(a_jk_prime, outerProduct(Fmat(k,j),Fmat(j,k))) 
+               + traceAtB(a_jk, outerProduct(dFa(k,j),Fmat(j,k)) 
+               + outerProduct(Fmat(k,j),dFa(j,k)) )); 
 
       }  // k
      }   // j
@@ -793,7 +984,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_temp(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
 
     double cnt=0,av=0,maxD=0;
@@ -804,8 +995,7 @@ namespace qmcplusplus {
        dpsiM_0(i,j)[lb]=0.0;
        for(int k=0; k<NumPtcls; k++)
        for(int lc=0; lc<3; lc++)  {
-
-           dpsiM_0(i,j)[lb] += (BFTrans->Cmat(pr,FirstIndex+j)[lc]*psiMinv(i,k)*grad_grad_psiM(j,k)(lb,lc) - BFTrans->Cmat(pr,FirstIndex+k)[lc]*dpsiM_temp(i,k)[lc]*dpsiM_temp(k,j)[lb]); 
+           dpsiM_0(i,j)[lb] += (BFTrans->Cmat(pr,FirstIndex+j)[lc]*psiMinv(i,k)*grad_grad_psiM(j,k)(lb,lc) - BFTrans->Cmat(pr,FirstIndex+k)[lc]*Fmat(i,k)[lc]*Fmat(k,j)[lb]); 
        }
        cnt++;
        av+=dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh);
@@ -898,7 +1088,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_temp(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
    
     GradType temp;
@@ -906,7 +1096,7 @@ namespace qmcplusplus {
     int num = BFTrans->QP.getTotalNum();
     for(int i=0; i<num; i++) {
       for(int j=0; j<NumPtcls; j++) 
-        L1 += dot(dpsiM_temp(j,j),BFTrans->Bmat_full(i,FirstIndex+j));
+        L1 += dot(Fmat(j,j),BFTrans->Bmat_full(i,FirstIndex+j));
     }
 
 
@@ -922,7 +1112,7 @@ namespace qmcplusplus {
        HessType a_jk = 0.0;
        for(int i=0; i<num; i++) a_jk += dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k));
        
-       L3 -= traceAtB(a_jk, outerProduct(dpsiM_temp(k,j),dpsiM_temp(j,k))); 
+       L3 -= traceAtB(a_jk, outerProduct(Fmat(k,j),Fmat(j,k))); 
      }
    }
 

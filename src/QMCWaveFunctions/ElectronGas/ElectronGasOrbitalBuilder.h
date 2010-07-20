@@ -119,10 +119,49 @@ namespace qmcplusplus {
        }
     }
 
+    /** generic inline function to handle a row
+     * @param r position of the particle
+     * @param psi value row
+     * @param dpsi gradient row
+     * @param hess hessian row
+     */
+    inline void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi, HessType* restrict hess)
+    {
+       psi[0]=1.0;
+       dpsi[0]=0.0;
+       hess[0]=0.0;
+       RealType coskr, sinkr;
+       for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
+       {
+         int j2=j1+1;
+         sincos(dot(K[ik],r),&sinkr,&coskr);
+         psi[j1]=coskr;
+         psi[j2]=sinkr;
+         dpsi[j1]=-sinkr*K[ik];
+         dpsi[j2]= coskr*K[ik];
+         for(int la=0; la<3; la++) {
+           (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
+           (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
+           for(int lb=+1; lb<3; lb++) {
+             (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
+             (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
+             (hess[j1])(lb,la)=(hess[j1])(la,lb);
+             (hess[j2])(lb,la)=(hess[j2])(la,lb);
+           }
+         }
+       }
+    }
+
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
     {
       evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
     }
+
+    inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+    {
+      evaluate_p(P.R[iat],psi.data(),dpsi.data(),grad_grad_psi.data());
+    }
+
 
     /*
     void evaluate(const ParticleSet& P, int first, int last,

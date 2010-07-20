@@ -176,6 +176,28 @@ namespace qmcplusplus {
       return detvalue;
     }
 
+  /** determinant of a matrix 
+   * @param x starting address of an n-by-m matrix
+   * @param n rows
+   * @param m cols
+   * @param pivot integer pivot array
+   * @return determinant
+   */
+  template<class T>
+    inline T
+    Determinant(T* restrict x, int n, int m,int* restrict pivot)
+    {
+      T detvalue(1.0);
+      LUFactorization(n,m,x,n,pivot);
+      for(int i=0,ip=1; i<m; i++, ip++) {
+        if(pivot[i]==ip)
+          detvalue *= x[i*m+i];
+        else
+          detvalue *= -x[i*m+i];
+      }
+      return detvalue;
+    }
+
   /** inverse a matrix 
    * @param x starting address of an n-by-m matrix
    * @param n rows
@@ -389,7 +411,6 @@ inline void InverseUpdateByColumn(MatA& Minv, VecT& newcol
   //}
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
-
 
 // template<class T1, class T2>
 // inline T2

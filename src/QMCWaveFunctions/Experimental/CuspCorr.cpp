@@ -60,9 +60,14 @@
       xd = xb + delx;
       fd=loop(xd,X);
       while( fb > fd ) {
+        int xx = xb, ff = fb;
+        xb = xd; fb = fd;
+        xa=xx; fa=ff; 
         xd += delx; // dumb, fix later 
         fd=loop(xd,X); 
-        if(++cnt == 50) { 
+ //std::cout <<"x,f: " <<xd <<"  " <<fd <<endl;
+ //std::cout.flush();
+        if(++cnt == 100) { 
           APP_ABORT("Problems bracketing minimum. \n");  
         }
       } 
@@ -72,10 +77,10 @@
     // find minimum
       while( std::fabs(xa-xd) > 1e-5*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec. 
       {
-      //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
-      //   <<"xb,fb: " <<xb <<"  " <<fb <<endl
-      //   <<"xc,fc: " <<xc <<"  " <<fc <<endl
-      //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl <<endl;
+      app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
+         <<"xb,fb: " <<xb <<"  " <<fb <<endl
+         <<"xc,fc: " <<xc <<"  " <<fc <<endl
+         <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl <<endl;
      
         if(fb > fc) {
           xa=xb;

@@ -181,11 +181,22 @@ namespace qmcplusplus
 
       GradMatrix_t dFa; 
       HessMatrix_t grad_grad_psiM; 
+      HessVector_t grad_gradV; 
+      HessMatrix_t grad_grad_psiM_temp; 
       GGGMatrix_t  grad_grad_grad_psiM; 
       BackflowTransformation *BFTrans;
       ParticleSet::ParticleGradient_t Gtemp;
       ValueType La1,La2,La3;
       HessMatrix_t Ajk_sum,Qmat;
+      GradMatrix_t Fmat;
+      GradVector_t Fmatdiag;
+      GradVector_t Fmatdiag_temp;
+
+      ValueMatrix_t psiMinv_temp;
+      ValueType *FirstAddressOfGGG;
+      ValueType *LastAddressOfGGG;
+      ValueType *FirstAddressOfFm;
+      ValueType *LastAddressOfFm;
 
       void testDerivFjj(ParticleSet& P, int pa);
       void testGGG(ParticleSet& P);

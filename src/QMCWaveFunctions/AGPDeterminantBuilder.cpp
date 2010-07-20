@@ -143,8 +143,9 @@ namespace qmcplusplus {
       myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi,ptclPool);
       myBasisSetFactory->createBasisSet(bPtr,curRoot);
     }
-
-    BasisSetBase<RealType>* myBasisSet=myBasisSetFactory->getBasisSet();
+// mmorales: this needs to be fixed after changes to BasisSetfactory
+//    BasisSetBase<RealType>* myBasisSet=myBasisSetFactory->getBasisSet();
+    BasisSetBase<RealType>* myBasisSet; //=myBasisSetFactory->getBasisSet();
     int nup=targetPtcl.first(1), ndown=0;
     if(targetPtcl.groups()>1) ndown = targetPtcl.first(2)-nup;
     myBasisSet->resize(nup+ndown);

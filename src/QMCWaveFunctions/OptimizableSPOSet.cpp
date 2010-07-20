@@ -361,6 +361,15 @@ namespace qmcplusplus
     // }
   }
 
+  void
+  OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
+                              ValueVector_t& psi, GradVector_t& dpsi,
+                              HessVector_t& gg_psi)
+  {
+    app_error() << "Need specialization for OptimizableSPOSet::evaluate(HessVector_t)  Abort.\n";
+    abort();
+    
+  }
 
   void 
   OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,

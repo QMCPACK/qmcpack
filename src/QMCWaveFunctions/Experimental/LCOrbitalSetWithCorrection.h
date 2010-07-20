@@ -120,6 +120,17 @@ namespace qmcplusplus {
       for(int j=0; j<OrbitalSetSize; j++) d2psi[j]=myBasisSet->d2Phi[j];
     }
 
+    inline void
+    evaluate(const ParticleSet& P, int iat,
+        ValueVector_t& psi, GradVector_t& dpsi,
+        HessVector_t& grad_grad_psi) {
+      myBasisSet->evaluateWithHessian(P,iat);
+      for(int j=0; j<OrbitalSetSize; j++) psi[j]=myBasisSet->Phi[j];
+      for(int j=0; j<OrbitalSetSize; j++) dpsi[j]=myBasisSet->dPhi[j];
+      for(int j=0; j<OrbitalSetSize; j++) grad_grad_psi[j]=myBasisSet->grad_grad_Phi[j];
+    }
+
+
     ///** evaluate everything for the walker move
     // *
     // * Using gemm can improve the performance for a larger problem
@@ -312,6 +323,14 @@ namespace qmcplusplus {
       //}
 
     }
+
+    inline void 
+    evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) 
+    {
+      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate(HessVector_t&) for grad_grad_grad_logdet. \n");
+    }
+
 
     /** evaluate everything for the walker move
      *
