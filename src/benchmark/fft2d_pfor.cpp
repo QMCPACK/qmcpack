@@ -33,7 +33,8 @@
 #define TEST_FFT_ENG FFTMKL_ENG
 #define TEST_TRANSPOSER MKL_TRANSPOSER
 #else
-#error "Only tested with ESSL and MKL library "
+#define TEST_FFT_ENG FFTW_ENG
+#define TEST_TRANSPOSER DUMMY_TRANSPOSER
 #endif
 
 inline void print_help(const string& msg)
@@ -120,8 +121,6 @@ int main(int argc, char** argv)
       in[kk]=new matrix_type(nx_thread,ny);
       in_copy[kk]=new matrix_type(nx_thread,ny);
       in_t[kk]=new matrix_type(ny_thread,nx);
-      init_array(*in_copy[kk]);
-      *in[kk]=*in_copy[kk];
     }
 
     //for(int i=0,ii=ip*nx_thread; i<nx_thread; ++i,++ii)
@@ -133,11 +132,21 @@ int main(int argc, char** argv)
 
     fft_xy[ip]=new fft1d_engine_t;
     fft_xy[ip]->set_defaults(ny,nx_thread);
-    fft_xy[ip]->create(in[first]->data());
 
     fft_yx[ip]=new fft1d_engine_t;
     fft_yx[ip]->set_defaults(nx,ny_thread);
-    fft_yx[ip]->create(in_t[first]->data());
+
+#pragma omp critical
+    {
+      fft_xy[ip]->create(in[first]->data());
+      fft_yx[ip]->create(in_t[first]->data());
+    }
+
+    for(int k=0,kk=ip*howmany; k<howmany; ++k,++kk)
+    {
+      init_array(*in_copy[kk]);
+      *in[kk]=*in_copy[kk];
+    }
   }
 
   double dt_f=0.0, dt_b=0.0, dt_trans=0.0;

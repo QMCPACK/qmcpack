@@ -32,8 +32,11 @@
 #elif defined(HAVE_MKL)
 #define TEST_FFT_ENG FFTMKL_ENG
 #define TEST_TRANSPOSER MKL_TRANSPOSER
+#elif defined(HAVE_LIBFFTW)
+#define TEST_FFT_ENG FFTW_ENG
+#define TEST_TRANSPOSER DUMMY_TRANSPOSER
 #else
-#error "Only tested with ESSL and MKL library "
+#error "Need essl|mkl|fftw"
 #endif
 
 inline void print_help(const string& msg)
@@ -50,7 +53,7 @@ int main(int argc, char** argv)
   OhmmsInfo Welcome(argc,argv,mycomm->rank());
   qmcplusplus::Random.init(0,1,11);
 
-  int howmany=4;
+  int howmany=1;
   int niters=10;
   int nx=6;
   int ny=6;
@@ -117,8 +120,19 @@ int main(int argc, char** argv)
     int ip=omp_get_thread_num();
     in[ip]=new matrix_type(nx_thread,ny);
     in_copy[ip]=new matrix_type(nx_thread,ny);
-
     in_t[ip]=new matrix_type(ny_thread,nx);
+
+    fft_xy[ip]=new fft1d_engine_t;
+    fft_xy[ip]->set_defaults(ny,nx_thread);
+
+    fft_yx[ip]=new fft1d_engine_t;
+    fft_yx[ip]->set_defaults(nx,ny_thread);
+
+#pragma omp critical
+    {
+      fft_xy[ip]->create(in[ip]->data());
+      fft_yx[ip]->create(in_t[ip]->data());
+    }
 
     //for(int i=0,ii=ip*nx_thread; i<nx_thread; ++i,++ii)
     //  for(int jp=0; jp<np; ++jp)
@@ -128,13 +142,6 @@ int main(int argc, char** argv)
     init_array(*in_copy[ip]);
     *in[ip]=*in_copy[ip];
 
-    fft_xy[ip]=new fft1d_engine_t;
-    fft_xy[ip]->set_defaults(ny,nx_thread);
-    fft_xy[ip]->create(in[ip]->data());
-
-    fft_yx[ip]=new fft1d_engine_t;
-    fft_yx[ip]->set_defaults(nx,ny_thread);
-    fft_yx[ip]->create(in_t[ip]->data());
   }
 
 //#pragma omp parallel 
@@ -145,7 +152,7 @@ int main(int argc, char** argv)
 //
 //  for(int ip=0; ip<np; ++ip)
 //  {
-//    cout << *in[ip];
+//    cout << *in_copy[ip];
 //  }
 //
 //  cout << endl;
@@ -165,9 +172,8 @@ int main(int argc, char** argv)
 //    if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0)) 
 //      cout << "We are good with 1D FFT+t(1D FFT)" << endl;
 //  }
-////
 //  return 0;
-////
+//
   double dt_f=0.0, dt_b=0.0, dt_trans=0.0;
   Timer clock_big, clock;
   clock_big.restart();
@@ -194,10 +200,12 @@ int main(int argc, char** argv)
           cout << "We are good with 1D FFT+t(1D FFT) "<< ip << endl;
   }
 
+  double dt_t=clock_big.elapsed();
   double factor=1.0/static_cast<double>(niters);
   
-  cout <<" Timer said= " << clock_big.elapsed()/static_cast<double>(niters) << endl;
-  cout << dt_f*factor << " " << dt_b*factor << " " << dt_trans*factor << endl;
+  printf("tag nX  nY  M  OMP tot  \n");
+  printf("fft2d_smp %d %d %d %d %12.4e\n"
+      , nx, ny, howmany, omp_get_max_threads(),dt_t*factor);
   OHMMS::Controller->finalize();
   return 0;
 }
