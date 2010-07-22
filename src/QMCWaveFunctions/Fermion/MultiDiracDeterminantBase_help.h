@@ -37,7 +37,7 @@ namespace qmcplusplus {
       Pivot.resize(n);
     }
 
-    inline T evaluate(T a11, T a21,
+    inline T evaluate(T a11, T a12,
                       T a21, T a22)
     {
        return a11*a22-a21*a12;
@@ -96,7 +96,7 @@ namespace qmcplusplus {
        for(int j=0; j<n; j++)
         //M(i,j) = dots(*(it+i),*(it+n+j));
          *(d++)= dots(*(it+i),*(it+n+j));
-      return Determinant(M.data(),n,n,Pivot.data());
+      return Determinant(&(M[0]),n,n,&(Pivot[0]));
     }
 
   };
