@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="hfdhe2_021a" series="000">
+    <application name="qmcapp" role="molecu" class="serial" version="0.0">
+      DMC: liquid helium with McMillan Jastrow, HFD-HE2
+    </application>
+  </project>
+  <!-- set seed to -1 for random seems -->
+  <random seed="481"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="scale">27.03967289</parameter>
+      <parameter name="lattice">
+	1 0 0 
+	0 1 0 
+	0 0 1
+      </parameter>
+      <parameter name="bconds">p p p</parameter>
+    </simulationcell>
+    <particleset name="LHe" random="yes">
+      <group name="He" size="64">
+	<parameter name="charge">0</parameter>
+	<parameter name="mass">7296.299379</parameter>
+      </group>
+    </particleset>
+    <wavefunction name="psi0" target="LHe">
+      <jastrow name="J2" type="Two-Body" function="McMillan2B">
+	<correlation speciesA="He" speciesB="He">
+	  <parameter name="a">5.0</parameter>
+	  <parameter name="b" id="J2_b">4.913287948</parameter>
+	</correlation>
+      </jastrow>
+    </wavefunction>
+    <hamiltonian name="h0" type="generic" target="LHe" default="He">
+      <!--
+      <pairpot name="HeLJP" type="ljp"/>
+      <pairpot name="HeSAPT" type="hesapt"/>
+      <pairpot name="HFDBHE" type="hfdbhe"/>
+      -->
+      <pairpot name="HFDHE2" type="HFDHE2"/>
+    </hamiltonian>
+  </qmcsystem>
+  <qmc method="vmc" move="pbyp" target="LHe">
+    <parameter name="usedrift">no</parameter>
+    <parameter name="walkers">480</parameter>
+    <parameter name="samples">1</parameter>
+    <parameter name="blocks">10</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">20000</parameter>
+    <estimator name="LocalEnergy"/>
+    <estimator name="gofr"/>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="LHe">
+    <parameter name="reconfiguration">no</parameter>
+    <parameter name="blocks">10</parameter>
+    <parameter name="steps">500</parameter>
+    <parameter name="branchInterval">1</parameter>
+    <parameter name="feedback">0.005</parameter>
+    <parameter name="timestep">315.7746646</parameter>
+    <parameter name="targetWalkers">480</parameter>
+    <estimator name="LocalEnergy"/>
+    <estimator name="gofr"/>
+  </qmc>
+</simulation>

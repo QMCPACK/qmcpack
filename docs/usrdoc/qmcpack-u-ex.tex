@@ -106,6 +106,11 @@ More from\\
 \url{http://cms.mcc.uiuc.edu/qmcpack/index.php/Bulk_solid_calculations_with_DFT_orbitals}\\
 \url{http://qmcpack.cmscc.org/tutorials/bulk-solid}
 \section{Liquid helium}
+VMC and DMC simulations of liquid helium-4 is a fairly standard benchmark for any QMC code because of its long history~\cite{PhysRev.138.A442,PhysRevA.9.2178}.  This is the same for QMCPACK in that helium atoms are bosonic and have masses greater than 1 (the electron mass in atomic units).  These are features distinct from most of the other simulations done by QMCPACK, which use electrons as fundamental particles.  Since its first success with the Lennard-Jones (LJ) 6-12 pair potential and two-body Jastrow correlations of the form $\exp[-b/r^a]$, there have been many improvements to their functional forms.  There are four types of commonly used pair potentials which are implemented in QMCPACK: LJ, HFD-HE2~\cite{Aziz1979}, HFD-B(HE)~\cite{Aziz1987}, and one based on symmetry-adapted perturbation theory~\cite{Jeziorska2007}.
+
+Shown below is a typical input file which runs VMC first, then DMC.
+\codesrc{hfdhe2-sample.xml}
+
 \section{3D homogeneous electron gas}
 Reviews on homogeneous electron gas can be found in standard solid-state physics or electronic structure textbooks.  A particularly relevant discussion is in Ref.~\citenum{Martin2003} Ch.~5.  The system is fully specified by only two parameters: $r_s = \left( \cfrac{3}{4 \pi \rho} \right)^{1/3} \equiv \mathtt{rs}$ and the shell number.  For a momentum eigenvalue $\mathbf{k}$, the shell number is defined by mutually exclusive sets of Fermi surfaces\footnote{Note that the Fermi surface is spherical only in the case of noninteracting fermions.  Interaction causes a slight deviation from a perfect sphere.} in $\mathbf{k}$-space which contain the same number of allowed $\mathbf{k}$ states.  The simulation cell in this case is defined with periodic boundary conditions (PBC), resulting in a discrete set of allowed $\mathbf{k}$ values.  The smallest Fermi surface containing more than one $\mathbf{k}$ state contains 7 $\mathbf{k}$ states which include $\mathbf{k} = \mathbf{0}$ and its 6 nearest neighbors.  The next smallest set of Fermi surfaces (``shells'') contain 19 $\mathbf{k}$ and the numbers continue in a sequence of 27, 33, 57, 81, etc.
 
