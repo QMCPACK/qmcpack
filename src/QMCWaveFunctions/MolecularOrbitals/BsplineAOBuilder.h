@@ -44,7 +44,7 @@ namespace qmcplusplus {
 
     bool addGrid(xmlNodePtr cur) { return true;}
 
-    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms, bool useSphericalHarmonicsNormalization=true);
 
     bool putCommon(xmlNodePtr cur);
 

@@ -287,6 +287,8 @@
     cout << "Size of eig vectors " << a.size() << " x " << SizeOfBasisSet << endl;
     EigVal_alpha.resize(SizeOfBasisSet);
     EigVal_beta.resize(SizeOfBasisSet);
+// mmorales: not sure if this is correct, this leaves it unmodified
+    numMO = SizeOfBasisSet;
 
     EigVec.resize(a.size()*SizeOfBasisSet);
     int ii=0; double x;

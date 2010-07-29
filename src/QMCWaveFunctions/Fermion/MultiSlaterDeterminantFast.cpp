@@ -30,6 +30,7 @@ namespace qmcplusplus {
     //Optimizable=true;
     Optimizable=true;
     OrbitalName="MultiSlaterDeterminantFast";
+    usingCSF=false;
 
     NP = targetPtcl.getTotalNum();
     nels_up = targetPtcl.last(0)-targetPtcl.first(0);
@@ -84,7 +85,7 @@ namespace qmcplusplus {
      ParticleSet::ParticleGradient_t G(n),G0(n);
      ParticleSet::ParticleLaplacian_t L(n),L0(n);
      ValueType log, log0;
-     log = msd->evaluate(P,G,L);
+//     log = msd->evaluate(P,G,L);
      log0 = evaluate(P,G0,L0);
 
 /*
@@ -108,7 +109,7 @@ namespace qmcplusplus {
      wbuffer.clear();
      log=registerData(P,wbuffer);
 
-     log = msd->evaluate(P,G,L);
+//     log = msd->evaluate(P,G,L);
      log0 = evaluate(P,G0,L0);
 
      PosType dr;
@@ -117,7 +118,7 @@ namespace qmcplusplus {
 
      app_log() <<"Testing ratio(P,dG,dL). \n";
      G=0;G0=0;L=0;L0=0;
-     log = msd->ratio(P,iat,G,L);
+//     log = msd->ratio(P,iat,G,L);
      log0 = ratio(P,iat,G0,L0);
      cout<<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 <<endl;
 
@@ -583,14 +584,27 @@ namespace qmcplusplus {
    */
   void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& active)
   {  
-    if(Optimizable) 
-    {
-      for(int i=0; i<C.size(); i++) 
-      {
-        int loc=myVars.where(i);
-        if(loc>=0) C[i]=myVars[i]=active[loc];
+    if(Optimizable)  {
+      if(usingCSF) {
+        for(int i=0; i<CSFcoeff.size(); i++)  {
+          int loc=myVars.where(i);
+          if(loc>=0) CSFcoeff[i]=myVars[i]=active[loc];
+        }
+        int cnt=0;
+        for(int i=0; i<DetsPerCSF.size(); i++) {
+          for(int k=0; k<DetsPerCSF[i]; k++) {
+            C[cnt] = CSFcoeff[i]*CSFexpansion[cnt];
+            cnt++;
+          }
+        }  
+        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
+      } else {
+        for(int i=0; i<C.size(); i++) {
+          int loc=myVars.where(i);
+          if(loc>=0) C[i]=myVars[i]=active[loc];
+        }
+       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       }
-      //for(int i=0; i<SDets.size(); i++) SDets[i]->resetParameters(active);
     }
   }
   void MultiSlaterDeterminantFast::reportStatus(ostream& os)

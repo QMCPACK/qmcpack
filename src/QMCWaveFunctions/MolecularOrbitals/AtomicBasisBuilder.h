@@ -26,7 +26,7 @@ namespace qmcplusplus {
 
     typedef typename RFB::CenteredOrbitalType COT;
 
-    enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
+    enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND};
 
     RFB radFuncBuilder;
 
@@ -61,6 +61,8 @@ namespace qmcplusplus {
     addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
     sph("default"), basisType("Numerical"), elementType(eName)
   {
+// mmorales: for "Cartesian Gaussian", m is an integer that maps
+//           the component to Gamess notation, see Numerics/CartesianTensor.h 
     nlms_id["n"] = q_n;
     nlms_id["l"] = q_l;
     nlms_id["m"] = q_m;
@@ -90,6 +92,10 @@ namespace qmcplusplus {
     } else if(Morder == "no") {
       expandlm = DONOT_EXPAND;
     }
+    if(sph == "cartesian" || Morder == "Gamess") {
+      expandlm = CARTESIAN_EXPAND;
+      addsignforM=0;
+    }
 
     return radFuncBuilder.putCommon(cur);
   }
@@ -101,7 +107,7 @@ namespace qmcplusplus {
     ReportEngine PRE("AtomicBasisBuilder","createAOSet(xmlNodePtr)");
 
     app_log() << "  AO BasisSet for " << elementType << "\n";
-    if(addsignforM) 
+    if(addsignforM && expandlm!=CARTESIAN_EXPAND) 
       app_log() << "   Spherical Harmonics contain (-1)^m factor" << endl;
     else
       app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << endl;
@@ -112,6 +118,9 @@ namespace qmcplusplus {
       break;
       case(NATURAL_EXPAND):
       app_log() << "   Angular momentum m expanded as -l, ... ,l" << endl;
+      break;
+      case(CARTESIAN_EXPAND):
+      app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << endl;
       break;
       default:
       app_log() << "   Angular momentum m is explicitly given." << endl;
@@ -134,7 +143,9 @@ namespace qmcplusplus {
         int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
         Lmax = max(Lmax,l);
         //expect that only Rnl is given
-        if(expandlm) 
+        if(expandlm == CARTESIAN_EXPAND)
+          num += (l+1)*(l+2)/2;
+        else if(expandlm) 
           num += 2*l+1;
         else
           num++;
@@ -145,7 +156,7 @@ namespace qmcplusplus {
     }
     //create a new set of atomic orbitals sharing a center with (Lmax, num)
     //if(addsignforM) the basis function has (-1)^m sqrt(2)Re(Ylm)
-    COT* aos = new COT(Lmax,addsignforM);
+    COT* aos = new COT(Lmax,addsignforM,expandlm==CARTESIAN_EXPAND);
     aos->LM.resize(num);
     aos->NL.resize(num);
 
@@ -228,6 +239,22 @@ namespace qmcplusplus {
             app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<<endl;
             for(int tm=-l; tm<=l; tm++,num++) {
               aos->LM[num] = aos->Ylm.index(l,tm);  aos->NL[num] = nl;
+            }
+          }
+        }
+      } else if(expandlm==CARTESIAN_EXPAND) { 
+        app_log() << "Expanding Ylm (angular function) according to Gamess using cartesian gaussians" <<endl;
+        map<string,int>::iterator rnl_it = RnlID.find(rnl);
+        if(rnl_it == RnlID.end()) {
+          int nl = aos->Rnl.size();
+          if(radFuncBuilder.addRadialOrbital(cur1,nlms)) {
+            RnlID[rnl] = nl;
+            int l = nlms[q_l];
+            app_log() << "Adding " << (l+1)*(l+2)/2 << " cartesian gaussian orbitals for l= " << l<<endl;
+            int nbefore=0;
+            for(int i=0; i<l; i++) nbefore += (i+1)*(i+2)/2;
+            for(int i=0; i<(l+1)*(l+2)/2; i++) {
+              aos->LM[num] = nbefore+i;  aos->NL[num] = nl; num++;
             }
           }
         }

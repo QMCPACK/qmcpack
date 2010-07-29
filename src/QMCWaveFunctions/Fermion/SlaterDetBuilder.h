@@ -81,7 +81,7 @@ namespace qmcplusplus {
 
     bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
 
-    bool readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn);
+    bool readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn, vector<RealType>& CSFcoeff, vector<int>& DetsPerCSF, vector<RealType>& CSFexpansion, bool& usingCSF);
 
   };
 }

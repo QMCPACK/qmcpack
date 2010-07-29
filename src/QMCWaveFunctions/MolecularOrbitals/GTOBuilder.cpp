@@ -33,7 +33,7 @@ namespace qmcplusplus {
   }
 
   bool
-  GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms) {
+  GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms) { 
 
     if(!m_orbitals) {
       ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")

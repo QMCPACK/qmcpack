@@ -73,6 +73,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin); //10 Number of independant functions 
   int NumOfIndOrb=atoi(currentWords.back().c_str());
   std::cout <<"Number of independent orbitals: " <<NumOfIndOrb <<endl; 
+  numMO = NumOfIndOrb;
 
   // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES 
   streampos pivottdb = fin.tellg();
@@ -132,7 +133,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getGaussianCenters(fin);
   std::cout << " Shell types reading: OK" << endl;
 
-// mmorales:
+// mmorales: SizeOfBasisSet > numMO always, so leave it like this 
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
 
@@ -142,30 +143,30 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   search(fin, "Alpha Orbital"); //search "Alpha Orbital Energies"
 
 // only read NumOfIndOrb
-  getValues(fin,EigVal_alpha.begin(), EigVal_alpha.begin()+NumOfIndOrb);
+  getValues(fin,EigVal_alpha.begin(), EigVal_alpha.begin()+numMO);
   std::cout << " Orbital energies reading: OK" << endl;
   if(SpinRestricted) {
-    EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
+    EigVec.resize(2*numMO*SizeOfBasisSet);
     EigVal_beta=EigVal_alpha;
     vector<value_type> etemp;
     search(fin, "Alpha MO");
 
-    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*NumOfIndOrb); 
-    std::copy(EigVec.begin(),EigVec.begin()+SizeOfBasisSet*NumOfIndOrb,EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet);
+    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*numMO); 
+    std::copy(EigVec.begin(),EigVec.begin()+SizeOfBasisSet*numMO,EigVec.begin()+SizeOfBasisSet*numMO);
     std::cout << " Orbital coefficients reading: OK" << endl;
   }
   else {
-    EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
+    EigVec.resize(2*numMO*SizeOfBasisSet);
     vector<value_type> etemp;
     search(fin, "Beta Orbital"); 
-    getValues(fin,EigVal_beta.begin(), EigVal_beta.begin()+NumOfIndOrb);
+    getValues(fin,EigVal_beta.begin(), EigVal_beta.begin()+numMO);
     std::cout << " Read Beta Orbital energies: OK" << endl;
 
     search(fin, "Alpha MO");
-    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*NumOfIndOrb); 
+    getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*numMO); 
 
     search(fin, "Beta MO");
-    getValues(fin,EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet, EigVec.begin()+SizeOfBasisSet*SizeOfBasisSet+SizeOfBasisSet*NumOfIndOrb); 
+    getValues(fin,EigVec.begin()+numMO*SizeOfBasisSet, EigVec.begin()+2*numMO*SizeOfBasisSet); 
 
     std::cout << " Alpha and Beta Orbital coefficients reading: OK" << endl;
   }

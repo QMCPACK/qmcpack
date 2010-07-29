@@ -23,6 +23,7 @@
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Numerics/SphericalTensor.h"
+#include "Numerics/CartesianTensor.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 namespace qmcplusplus {
@@ -47,7 +48,8 @@ namespace qmcplusplus {
     typedef TinyVector<HessType, 3>                    GGGType;
     typedef Vector<GGGType>                            GGGVector_t;
     typedef Matrix<GGGType>                            GGGMatrix_t;
-    typedef SphericalTensor<RealType,PosType>                    SphericalHarmonics_t;
+    typedef CartesianTensor<RealType,PosType>          CartesianHarmonics_t;
+    typedef SphericalTensor<RealType,PosType>          SphericalHarmonics_t;
 
     ///size of the basis set
     IndexType BasisSetSize;
@@ -58,7 +60,14 @@ namespace qmcplusplus {
     ///reference to a DistanceTableData (ion-electron)
     const DistanceTableData* myTable;
     ///spherical tensor unique to this set of SphericalOrbitals
+    //AngularFunction_t* Ylm;
     SphericalHarmonics_t Ylm;
+// mmorales: HACK HACK HACK!!! 
+//  to avoid having to template this function, which will change
+//  all the builders
+// remember to add laplacian of angular piece with cartesian gaussian
+    bool useCartesian;
+    CartesianHarmonics_t XYZ;
     ///index of the corresponding real Spherical Harmonic with quantum 
     ///numbers \f$ (l,m) \f$
     vector<int> LM;
@@ -73,7 +82,7 @@ namespace qmcplusplus {
     vector<QuantumNumberType> RnlID;
 
     ///the constructor
-    explicit SphericalBasisSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM){ }
+    explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(lmax),useCartesian(useXYZ) {} 
 
     ~SphericalBasisSet() { }
 
@@ -140,7 +149,13 @@ namespace qmcplusplus {
       RealType rinv(myTable->rinv(nn));
       PosType  dr(myTable->dr(nn));
 
-      Ylm.evaluateAll(dr);
+      if(useCartesian) 
+        XYZ.evaluateAll(dr);
+      else 
+        Ylm.evaluateAll(dr);
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
@@ -151,12 +166,12 @@ namespace qmcplusplus {
 	int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
 	RealType drnloverr(rinv*rnl.dY);
-	ValueType ang(Ylm.getYlm(lm));
+	ValueType ang(valueYlm[lm]);
 	PosType gr_rad(drnloverr*dr);
-	PosType gr_ang(Ylm.getGradYlm(lm));
+	PosType gr_ang(gradYlm[lm]);
         psi[offset]  = ang*rnl.Y;
         dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
-	d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+	d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang) + rnl.Y*laplYlm[lm];
         ++nlit; ++lmit;++offset;
       }
     }
@@ -168,7 +183,15 @@ namespace qmcplusplus {
       RealType rinv(myTable->rinv(nn));
       PosType  dr(myTable->dr(nn));
 
-      Ylm.evaluateWithHessian(dr);
+      if(useCartesian) {
+        XYZ.evaluateWithHessian(dr);
+      } else {
+        Ylm.evaluateWithHessian(dr);
+      }
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
+
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
@@ -179,10 +202,10 @@ namespace qmcplusplus {
         int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
         RealType drnloverr(rinv*rnl.dY);
-        ValueType ang(Ylm.getYlm(lm));
+        ValueType ang(valueYlm[lm]);
         PosType gr_rad(drnloverr*dr);
-        PosType gr_ang(Ylm.getGradYlm(lm));
-        HessType hess(Ylm.getHessYlm(lm));
+        PosType gr_ang(gradYlm[lm]);
+        HessType hess(hessYlm[lm]);
         psi[offset]  = ang*rnl.Y;
         dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
 // sloppy for now
@@ -282,7 +305,15 @@ namespace qmcplusplus {
         }   
        }
       } 
-      Ylm.evaluateWithHessian(dr);
+
+      if(useCartesian) {
+        XYZ.evaluateWithHessian(dr);
+      } else {
+        Ylm.evaluateWithHessian(dr);
+      }
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
@@ -293,10 +324,10 @@ namespace qmcplusplus {
         int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
         RealType drnloverr(rinv*rnl.dY);
-        ValueType ang(Ylm.getYlm(lm));
+        ValueType ang(valueYlm[lm]);
         PosType gr_rad(drnloverr*dr);
-        PosType gr_ang(Ylm.getGradYlm(lm));
-        HessType hess(Ylm.getHessYlm(lm));
+        PosType gr_ang(gradYlm[lm]);
+        HessType hess(hessYlm[lm]);
         HessType Rhs;
         GGGType& ggg=grad_grad_grad_Phi[offset];
         psi[offset]  = ang*rnl.Y;
@@ -315,6 +346,7 @@ namespace qmcplusplus {
         grad_grad_Phi[offset] = ang*Rhs + outerProduct(gr_rad,gr_ang) 
                               + outerProduct(gr_ang,gr_rad) + rnl.Y*hess;  
         // assuming third derivatives of angular piece are zero
+        // not true for F ang G functions
         for(int i=0; i<3; i++) {
          ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1); 
                  // + rnl.Y*Slm_ijk[i];
@@ -358,10 +390,10 @@ namespace qmcplusplus {
         int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
         RealType drnloverr(rinv*rnl.dY);
-        ValueType ang(Ylm.getYlm(lm));
+        ValueType ang(valueYlm[lm]);
         PosType gr_rad(drnloverr*dr);
-        PosType gr_ang(Ylm.getGradYlm(lm));
-        HessType hess(Ylm.getHessYlm(lm));
+        PosType gr_ang(gradYlm[lm]);
+        HessType hess(hessYlm[lm]);
         HessType Rhs;
         GGGType& ggg=grad_grad_grad_Phi[offset];
         psi[offset]  = ang*rnl.Y;
@@ -405,7 +437,14 @@ namespace qmcplusplus {
 	RealType rinv(myTable->rinv(nn));
 	PosType dr(myTable->dr(nn));
 
-	Ylm.evaluateAll(dr);
+        if(useCartesian) {
+	  XYZ.evaluateAll(dr);
+        } else {
+	  Ylm.evaluateAll(dr);
+        }
+        std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+        std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+        std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
 
         typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
         while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
@@ -421,12 +460,12 @@ namespace qmcplusplus {
           int lm(*lmit);//LM[ib];
           const ROT& rnl(*Rnl[nl]);
 	  RealType drnloverr = rinv*rnl.dY;
-	  ValueType ang = Ylm.getYlm(lm);
+	  ValueType ang = valueYlm[lm];
 	  PosType gr_rad(drnloverr*dr);
-	  PosType gr_ang(Ylm.getGradYlm(lm));
+	  PosType gr_ang(gradYlm[lm]);
 	  *yptr++ = ang*rnl.Y;
 	  *dyptr++ = ang*gr_rad+rnl.Y*gr_ang;
-	  *d2yptr++= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+	  *d2yptr++= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang)  + rnl.Y*laplYlm[lm];
 	  //y(iat,bindex)= ang*rnl.Y;
 	  //dy(iat,bindex) = ang*gr_rad+rnl.Y*gr_ang;
 	  //d2y(iat,bindex)= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
@@ -447,7 +486,14 @@ namespace qmcplusplus {
       RealType r(myTable->r(nn));
       RealType rinv(myTable->rinv(nn));
       PosType  dr(myTable->dr(nn));
-      Ylm.evaluateAll(dr);
+      if(useCartesian) {
+        XYZ.evaluateAll(dr);
+      } else {
+        Ylm.evaluateAll(dr);
+      }
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit++)->evaluateAll(r,rinv);}
       
@@ -458,12 +504,12 @@ namespace qmcplusplus {
         int lm(*lmit++);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
         RealType drnloverr(rinv*rnl.dY);
-        RealType ang(Ylm.getYlm(lm));
+        RealType ang(valueYlm[lm]);
         PosType gr_rad(drnloverr*dr);
-        PosType gr_ang(Ylm.getGradYlm(lm));
+        PosType gr_ang(gradYlm[lm]);
         //PosType g(ang*gr_rad+rnl.Y*gr_ang);
         *tptr++ = ang*rnl.Y;
-        *tptr++ = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        *tptr++ = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang) + rnl.Y*laplYlm[lm];
         *tptr++ = ang*gr_rad[0]+rnl.Y*gr_ang[0];
         *tptr++ = ang*gr_rad[1]+rnl.Y*gr_ang[1];
         *tptr++ = ang*gr_rad[2]+rnl.Y*gr_ang[2];
@@ -478,12 +524,17 @@ namespace qmcplusplus {
       //RealType rinv(myTable->Temp[source].rinv1);
       RealType rinv(1/r);
       PosType  dr(myTable->Temp[source].dr1);
-      Ylm.evaluate(dr);
+      if(useCartesian)
+        XYZ.evaluate(dr);
+      else
+        Ylm.evaluate(dr);
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-        y[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+        //y[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+        y[offset++]=valueYlm[*lmit++]*Rnl[*nlit++]->Y;
       }
     }
 
@@ -493,9 +544,13 @@ namespace qmcplusplus {
       RealType r(myTable->Temp[source].r1);
       RealType rinv(myTable->Temp[source].rinv1);
       PosType  dr(myTable->Temp[source].dr1);
-
-      Ylm.evaluateAll(dr);
-	
+      if(useCartesian)
+        XYZ.evaluateAll(dr);
+      else
+        Ylm.evaluateAll(dr);
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
       
@@ -505,12 +560,12 @@ namespace qmcplusplus {
 	int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
 	RealType drnloverr(rinv*rnl.dY);
-	ValueType ang(Ylm.getYlm(lm));
+	ValueType ang(valueYlm[lm]);
 	PosType gr_rad(drnloverr*dr);
-	PosType gr_ang(Ylm.getGradYlm(lm));
+	PosType gr_ang(gradYlm[lm]);
 	y[offset]= ang*rnl.Y;
 	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
-	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang) + rnl.Y*laplYlm[lm];
         ++nlit; ++lmit;++offset;
       }
     }
@@ -518,21 +573,30 @@ namespace qmcplusplus {
 
     inline void
     evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& psi) {
-      Ylm.evaluate(dr);
+      if(useCartesian)
+        XYZ.evaluate(dr);
+      else
+        Ylm.evaluate(dr);
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-        psi[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+        //psi[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+        psi[offset++]=valueYlm[*lmit++]*Rnl[*nlit++]->Y;
       }
     }
 
     inline void 
     evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& y, 
         GradVector_t& dy, ValueVector_t& d2y) {
-
-      Ylm.evaluateAll(dr);
-	
+      if(useCartesian)
+        XYZ.evaluateAll(dr);
+      else
+        Ylm.evaluateAll(dr);
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
       
@@ -542,12 +606,12 @@ namespace qmcplusplus {
 	int lm(*lmit);//LM[ib];
         const ROT& rnl(*Rnl[nl]);
 	RealType drnloverr(rinv*rnl.dY);
-	ValueType ang(Ylm.getYlm(lm));
+	ValueType ang(valueYlm[lm]);
 	PosType gr_rad(drnloverr*dr);
-	PosType gr_ang(Ylm.getGradYlm(lm));
+	PosType gr_ang(gradYlm[lm]);
 	y[offset]= ang*rnl.Y;
 	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
-	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang) + rnl.Y*laplYlm[lm];
         ++nlit; ++lmit;++offset;
       }
     }

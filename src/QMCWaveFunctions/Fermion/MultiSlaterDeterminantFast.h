@@ -126,6 +126,7 @@ namespace qmcplusplus
       int nels_up,nels_dn;
       int FirstIndex_up;
       int FirstIndex_dn;
+      bool usingCSF;
 
       // assume Dets[0]: up, Dets[1]:down
       vector<MultiDiracDeterminantBase*> Dets;
@@ -153,8 +154,16 @@ namespace qmcplusplus
 
       opt_variables_type myVars;
 
+// CSFs
+      // coefficients of csfs, these are only used during optm
+      vector<RealType> CSFcoeff; 
+      // number of dets per csf
+      vector<int> DetsPerCSF;
+      // coefficient of csf expansion (smaller dimension)
+      vector<RealType> CSFexpansion;
+
 // debug, erase later
-      MultiSlaterDeterminant *msd;
+//      MultiSlaterDeterminant *msd;
 
     };
 

@@ -35,6 +35,7 @@ using namespace std;
 char* readLine(char *s, int max, istream &fp);
 
 int getwords(vector<string>& slist, istream &fp);
+int getwords(vector<string>& slist, istream &fp, string& aline );
 int getwords(vector<string>& slist,istream& fpos, const char* field, const char* terminate);
 int getwords(vector<string>& slist,istream& fpos, const char* terminate);
 int getXwords(vector<string>& slist, istream &fp);

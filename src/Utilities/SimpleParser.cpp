@@ -100,6 +100,21 @@ unsigned parsewords(const char *inbuf, list<string>& slist){
 
 }
 
+int getwords(vector<string>& slist, istream &fp, string& aline) {
+
+  const int max = 1024;
+  char s[max];
+
+  if(readLine(s,max,fp)) {
+    aline.clear();
+    aline.append(s);
+    return parsewords(s,slist);
+  } else
+    return -1;
+
+}
+
+
 int getwords(vector<string>& slist, istream &fp) {
 
   const int max = 1024;

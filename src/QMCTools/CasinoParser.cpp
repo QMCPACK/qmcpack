@@ -79,6 +79,9 @@ void CasinoParser::parse(const std::string& fname) {
   EigVal_beta.resize(SizeOfBasisSet);
   vector<value_type> etemp;
 
+// morales: setting numMO to SizeOfBasisSet, for now
+  numMO = SizeOfBasisSet;
+
   //////////////
   LOGMSG("Looking for EIGENVECTOR ")
   search(fin, "EIGENVECTOR");

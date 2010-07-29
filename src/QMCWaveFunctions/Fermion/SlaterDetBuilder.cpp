@@ -252,13 +252,13 @@ namespace qmcplusplus
           success = createMSDFast(multislaterdetfast_0,cur);
 
 // debug, erase later
-          SPOSetProxyForMSD* spo_up;
-          SPOSetProxyForMSD* spo_dn;
-          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
-          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
-
-          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-          success = createMSD(multislaterdetfast_0->msd,cur); 
+//          SPOSetProxyForMSD* spo_up;
+//          SPOSetProxyForMSD* spo_dn;
+//          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
+//          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
+//
+//          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
+//          success = createMSD(multislaterdetfast_0->msd,cur); 
 
         } else {
           app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
@@ -458,9 +458,10 @@ namespace qmcplusplus
 
      int nels_up = multiSD->nels_up;
      int nels_dn = multiSD->nels_dn;
-     success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,nels_up,nels_dn);
+     success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,nels_up,nels_dn,multiSD->CSFcoeff,multiSD->DetsPerCSF,multiSD->CSFexpansion,multiSD->usingCSF);
      if(!success) return false;
 
+// you should choose the det with highest weight for reference
      multiSD->Dets[0]->ReferenceDeterminant = 0; // for now
      multiSD->Dets[0]->NumDets=uniqueConfg_up.size(); 
      vector<ci_configuration2>& list_up = multiSD->Dets[0]->confgList;
@@ -494,11 +495,20 @@ namespace qmcplusplus
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. ";
        multiSD->Optimizable=true;
-       multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-       for(int i=1; i<multiSD->C.size(); i++) {
-         //std::stringstream sstr;
-         //sstr << "CIcoeff" << "_" << i;
-         multiSD->myVars.insert(CItags[i],multiSD->C[i],true,optimize::LINEAR_P);
+       if(multiSD->usingCSF) {
+         multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
+         for(int i=1; i<multiSD->C.size(); i++) {
+           //std::stringstream sstr;
+           //sstr << "CIcoeff" << "_" << i;
+           multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
+         }
+       } else {
+         multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
+         for(int i=1; i<multiSD->C.size(); i++) {
+           //std::stringstream sstr;
+           //sstr << "CIcoeff" << "_" << i;
+           multiSD->myVars.insert(CItags[i],multiSD->C[i],true,optimize::LINEAR_P);
+         }
        }
      }
      return success;
@@ -822,7 +832,7 @@ namespace qmcplusplus
   }
 
 
-  bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn)
+  bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,  vector<RealType>& CSFcoeff, vector<int>& DetsPerCSF, vector<RealType>& CSFexpansion, bool& usingCSF)
   {
      bool success=true;
 
@@ -832,6 +842,9 @@ namespace qmcplusplus
      C2node_dn.clear();
      CItags.clear();
      coeff.clear();
+     CSFcoeff.clear();
+     DetsPerCSF.clear();
+     CSFexpansion.clear();
 
      vector<ci_configuration> confgList_up;
      vector<ci_configuration> confgList_dn;
@@ -845,7 +858,7 @@ namespace qmcplusplus
      optimizeCI = (optCI=="yes");
 
      xmlNodePtr curRoot=cur,DetListNode;
-     string cname;
+     string cname,cname0;
      cur = curRoot->children;
      while (cur != NULL)//check the basis set
      {
@@ -874,8 +887,12 @@ namespace qmcplusplus
        APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
      }
 
-     if(Dettype != "DETS" && Dettype != "Determinants") {
-       APP_ABORT("Only allowed type in detlist is DETS. CSF not implemented yet.\n");
+     if(Dettype == "DETS" || Dettype == "Determinants") 
+       usingCSF=false;
+     else if(Dettype == "CSF")
+       usingCSF=true;
+     else {
+        APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
      }
 
 // cheating until I fix the converter
@@ -891,83 +908,181 @@ namespace qmcplusplus
      dummyC_beta.occup.resize(NCB+nstates,false);
      for(int i=0; i<NCB+NEB; i++) dummyC_beta.occup[i]=true;
 
-     app_log() <<"alpha reference: \n" <<dummyC_alpha;
-     app_log() <<"beta reference: \n" <<dummyC_beta;
+     //app_log() <<"alpha reference: \n" <<dummyC_alpha;
+     //app_log() <<"beta reference: \n" <<dummyC_beta;
 
-     while (cur != NULL)//check the basis set
-     {
-       getNodeName(cname,cur);
-       if(cname == "configuration" || cname == "ci")
+     if(usingCSF) {
+       cout<<"Reading CSFs." <<endl;
+       while (cur != NULL)//check the basis set
        {
-         RealType ci=0.0;
-         string alpha,beta,tag;
-         OhmmsAttributeSet confAttrib;
-         confAttrib.add(ci,"coeff");
-         confAttrib.add(alpha,"alpha");
-         confAttrib.add(beta,"beta");
-         confAttrib.add(tag,"id");
-         confAttrib.put(cur);
-
-         int nq=0,na,nr;
-         if(alpha.size() < nstates)
+         getNodeName(cname,cur);
+         if(cname == "csf")
          {
-           cerr<<"alpha: " <<alpha <<endl;
-           APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
-         }
+           RealType ci=0.0;
+           OhmmsAttributeSet confAttrib;
+           string tag;
+           confAttrib.add(ci,"coeff");
+           confAttrib.add(tag,"id");
+           confAttrib.put(cur);
 
-         for(int i=0; i<nstates; i++)
+           CSFcoeff.push_back(ci);
+           DetsPerCSF.push_back(0);           
+           CItags.push_back(tag);
+           count++;
+
+           xmlNodePtr csf=cur->children;
+           while(csf != NULL) {
+
+             getNodeName(cname0,csf);
+             if(cname0 == "det") {
+
+               string alpha,beta,tag0;
+               RealType coef=0.0;
+               OhmmsAttributeSet detAttrib;
+               detAttrib.add(tag0,"id");
+               detAttrib.add(coef,"coeff");
+               detAttrib.add(beta,"beta");
+               detAttrib.add(alpha,"alpha");
+               detAttrib.put(csf);
+
+               int nq=0,na,nr;
+               if(alpha.size() < nstates)
+               {
+                 cerr<<"alpha: " <<alpha <<endl;
+                 APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
+               }
+
+               for(int i=0; i<nstates; i++)
+               {
+                 if(alpha[i] != '0' && alpha[i] != '1') {
+                   cerr<<alpha <<endl;
+                   APP_ABORT("Found incorrect determinant label.");
+                 }
+                 if(alpha[i] == '1') nq++;
+               }
+               if(nq != NEA) {
+                 cerr<<"alpha: " <<alpha <<endl;
+                 APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
+               }
+ 
+               nq=0;
+               if(beta.size() < nstates)
+               {
+                 cerr<<"beta: " <<beta <<endl;
+                 APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
+               }
+               for(int i=0; i<nstates; i++)
+               {
+                 if(beta[i] != '0' && beta[i] != '1') {
+                   cerr<<beta <<endl;
+                   APP_ABORT("Found incorrect determinant label.");
+                 }
+                 if(beta[i] == '1') nq++;
+               }
+               if(nq != NEB) {
+                 cerr<<"beta: " <<beta <<endl;
+                 APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
+               }
+
+               DetsPerCSF.back()++;           
+               CSFexpansion.push_back(coef);
+               coeff.push_back(coef*ci);
+               confgList_up.push_back(dummyC_alpha);
+               for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
+               for(int i=NCA; i<NCA+nstates; i++)
+                 confgList_up.back().occup[i]= (alpha[i-NCA]=='1');
+               confgList_dn.push_back(dummyC_beta);
+               for(int i=0; i<NCB; i++) confgList_dn.back().occup[i]=true;
+               for(int i=NCB; i<NCB+nstates; i++)
+                 confgList_dn.back().occup[i]=(beta[i-NCB]=='1');
+
+             } // if(name=="det")
+             csf = csf->next;
+           } // csf loop
+           if(DetsPerCSF.back() == 0) {
+             APP_ABORT("Found empty CSF (no det blocks).");
+           }           
+         } // if (name == "csf")
+         cur = cur->next;
+       }
+     } else {
+       cout<<"Reading CI expansion." <<endl;
+       while (cur != NULL)//check the basis set
+       {
+         getNodeName(cname,cur);
+         if(cname == "configuration" || cname == "ci")
          {
-           if(alpha[i] != '0' && alpha[i] != '1') {
-             cerr<<alpha <<endl;
-             APP_ABORT("Found incorrect determinant label.");
+           RealType ci=0.0;
+           string alpha,beta,tag;
+           OhmmsAttributeSet confAttrib;
+           confAttrib.add(ci,"coeff");
+           confAttrib.add(alpha,"alpha");
+           confAttrib.add(beta,"beta");
+           confAttrib.add(tag,"id");
+           confAttrib.put(cur);
+
+           int nq=0,na,nr;
+           if(alpha.size() < nstates)
+           {
+             cerr<<"alpha: " <<alpha <<endl;
+             APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
            }
-           if(alpha[i] == '1') nq++;
-         }
-         if(nq != NEA) {
+
+           for(int i=0; i<nstates; i++)
+           {
+             if(alpha[i] != '0' && alpha[i] != '1') {
+               cerr<<alpha <<endl;
+               APP_ABORT("Found incorrect determinant label.");
+             }
+             if(alpha[i] == '1') nq++;
+           }
+           if(nq != NEA) {
              cerr<<"alpha: " <<alpha <<endl;
              APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
-         }
-
-         nq=0;
-         if(beta.size() < nstates)
-         {
-           cerr<<"beta: " <<beta <<endl;
-           APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
-         }
-         for(int i=0; i<nstates; i++)
-         {
-           if(beta[i] != '0' && beta[i] != '1') {
-             cerr<<beta <<endl;
-             APP_ABORT("Found incorrect determinant label.");
            }
-           if(beta[i] == '1') nq++;
-         }
-         if(nq != NEB) {
-             cerr<<"beta: " <<beta <<endl;
-             APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
-         }
 
-         count++;
-         coeff.push_back(ci);
-         CItags.push_back(tag);
-         confgList_up.push_back(dummyC_alpha);
-         for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
-         for(int i=NCA; i<NCA+nstates; i++)
-           confgList_up.back().occup[i]= (alpha[i-NCA]=='1');
-         confgList_dn.push_back(dummyC_beta);
-         for(int i=0; i<NCB; i++) confgList_dn.back().occup[i]=true;
-         for(int i=NCB; i<NCB+nstates; i++)
-           confgList_dn.back().occup[i]=(beta[i-NCB]=='1');
+           nq=0;
+           if(beta.size() < nstates)
+           {
+             cerr<<"beta: " <<beta <<endl;
+             APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
+           }
+           for(int i=0; i<nstates; i++)
+           {
+             if(beta[i] != '0' && beta[i] != '1') {
+               cerr<<beta <<endl;
+               APP_ABORT("Found incorrect determinant label.");
+             }
+             if(beta[i] == '1') nq++;
+           }
+           if(nq != NEB) {
+               cerr<<"beta: " <<beta <<endl;
+               APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
+           }
+
+           count++;
+           coeff.push_back(ci);
+           CItags.push_back(tag);
+           confgList_up.push_back(dummyC_alpha);
+           for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
+           for(int i=NCA; i<NCA+nstates; i++)
+             confgList_up.back().occup[i]= (alpha[i-NCA]=='1');
+           confgList_dn.push_back(dummyC_beta);
+           for(int i=0; i<NCB; i++) confgList_dn.back().occup[i]=true;
+           for(int i=NCB; i<NCB+nstates; i++)
+             confgList_dn.back().occup[i]=(beta[i-NCB]=='1');
+         }
+         cur = cur->next;
        }
-       cur = cur->next;
-     }
+     } //usingCSF
      if(count != ndets) {
        cerr<<"count, ndets: " <<count <<"  " <<ndets <<endl;
        APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
      }
-     if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-       APP_ABORT("Problems reading determinant ci_configurations.");
-     }
+     if(!usingCSF)
+       if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
+         APP_ABORT("Problems reading determinant ci_configurations.");
+       }
 
      C2node_up.resize(coeff.size());
      C2node_dn.resize(coeff.size());
@@ -1017,6 +1132,8 @@ namespace qmcplusplus
 
      return success;
   }
+
+
 
  // void SlaterDetBuilder::buildMultiSlaterDetermiant()
  // {

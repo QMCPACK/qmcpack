@@ -14,6 +14,7 @@ SET(CASINO
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
+  GamesAsciiParser.cpp
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp

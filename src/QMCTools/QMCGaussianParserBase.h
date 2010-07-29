@@ -30,12 +30,15 @@ struct QMCGaussianParserBase {
   int SpinMultiplicity;
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
+// mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
+  int numMO;   
   std::string Title;
   std::string basisType;
   std::string basisName;
   std::string Normalized;
   std::string CurrentCenter;
   std::string outputFile; 
+  std::string angular_type;
 
   ParticleSet IonSystem;
 
@@ -50,9 +53,14 @@ struct QMCGaussianParserBase {
   //std::string EigVecU, EigVecD;
   xmlNodePtr gridPtr;
   std::vector<std::string> CIalpha,CIbeta;
+  std::vector<std::string> CSFocc;
+  std::vector<vector<std::string> > CSFalpha,CSFbeta;
+  std::vector<vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
+  bool usingCSF;
+  std::vector<pair<int,double> > coeff2csf;
 
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);

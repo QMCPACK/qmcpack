@@ -27,7 +27,7 @@ namespace qmcplusplus {
   }
 
   bool
-  BsplineAOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms) {
+  BsplineAOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms, bool useSphericalHarmonicsNormalization) {
 
     if(!m_orbitals) {
       ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")

@@ -1,6 +1,7 @@
 #include "QMCTools/CasinoParser.h"
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesXmlParser.h"
+#include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
@@ -11,12 +12,12 @@
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename ";
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii] filename ";
     std::cout << "[-hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
-    std::cout << " *.Fchk -> gaussian; *.data -> casino; *.xml -> gamesxml" << std::endl;
+    std::cout << " *.Fchk -> gaussian; *.out -> gamessAscii; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
 
@@ -49,6 +50,10 @@ int main(int argc, char **argv) {
     }
     else if(a == "-gamesxml") {
       parser = new GamesXmlParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-gamessAscii") {
+      parser = new GamesAsciiParser(argc,argv);
       in_file =argv[++iargc];
     }
     else if(a == "-casino") {
@@ -88,7 +93,10 @@ int main(int argc, char **argv) {
     } else if(ext == "10") {
       WARNMSG("Creating BParser")
       parser = new BParser(argc,argv);
-    }
+    } else if(ext == "out") {
+      WARNMSG("Creating GamesAsciiParser")
+      parser = new GamesAsciiParser(argc,argv);
+    } 
   }
 
   parser->UseHDF5=usehdf5;

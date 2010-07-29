@@ -34,7 +34,8 @@
  * locator of the combination for l and m.
  */
 template<class T, class Point_t, class Tensor_t = APPNAMESPACE::Tensor<T,3> >
-class SphericalTensor {
+class SphericalTensor 
+{
 public : 
 
   typedef T value_type;
@@ -124,6 +125,9 @@ public :
   std::vector<Point_t> gradYlm;
   ///hessian hessYlm\f$=(\nabla X \nabla) r^l S_l^m(x,y,z)\f$
   std::vector<hess_type> hessYlm;
+  /// mmorales: HACK HACK HACK, to avoid having to rewrite 
+  /// QMCWaveFunctions/SphericalBasisSet.h
+  std::vector<value_type> laplYlm; //(always zero) 
 
 };
 
@@ -134,6 +138,8 @@ SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool add
   Ylm.resize(ntot);
   gradYlm.resize(ntot);
   gradYlm[0] = 0.0;
+  laplYlm.resize(ntot);
+  for(int i=0; i<ntot; i++) laplYlm[i]=0.0;
   hessYlm.resize(ntot);
   hessYlm[0] = 0.0;
   if(ntot >= 4) {
