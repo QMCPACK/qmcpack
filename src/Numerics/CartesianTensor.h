@@ -57,16 +57,16 @@ public :
   ///makes a table of \f$ N(a,b,c) x^a y^b z^c \f$ and their gradients and hessians up to Lmax.
   void evaluateWithHessian(const Point_t& p);
 
-  inline value_type getYlm(int lm) const {return Ylm[lm];}
+  inline value_type getYlm(int lm) const {return XYZ[lm];}
 
-  inline Point_t getGradYlm(int lm) const {return gradYlm[lm];}
+  inline Point_t getGradYlm(int lm) const {return gradXYZ[lm];}
 
-  inline value_type getLaplYlm(int lm) const {return laplYlm[lm];}
+  inline value_type getLaplYlm(int lm) const {return laplXYZ[lm];}
 
   inline Tensor_t getHessYlm(int lm) const
-  {return hessYlm[lm];}
+  {return hessXYZ[lm];}
 
-  inline int size() const { return Ylm.size();}
+  inline int size() const { return XYZ.size();}
 
   inline int lmax() const { return Lmax;}
 

@@ -383,6 +383,9 @@ namespace qmcplusplus {
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
 
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
