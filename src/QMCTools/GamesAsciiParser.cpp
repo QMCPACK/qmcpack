@@ -133,20 +133,25 @@ void GamesAsciiParser::parse(const std::string& fname) {
   }
   fin.close(); fin.open(fname.c_str());
   getMO(fin);
+  fin.close();
 
+// using a possibly different output file for ci coefficients
   if(multideterminant) {
-    fin.close(); fin.open(fname.c_str());
+    fin.open(outputFile.c_str());
+    pivot_begin= fin.tellg();
     if(lookFor(fin,"GUGA DISTINCT ROW TABLE")) {
       cout<<"Found GUGA ROW TABLE, reading CSF." <<endl;
       fin.seekg(pivot_begin);
       getCSF(fin);
     } else {
       cout<<"Could not find GUGA ROW TABLE, reading Slater Dets." <<endl;
-      fin.close(); fin.open(fname.c_str());
+      fin.close(); fin.open(outputFile.c_str());
+      pivot_begin= fin.tellg();
       getCI(fin);
-    } 
+    }
+    fin.close();
   }
-
+  
 }
 
 void GamesAsciiParser::getGeometry(std::istream& is) {
