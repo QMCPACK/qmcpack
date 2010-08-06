@@ -69,6 +69,10 @@ namespace qmcplusplus {
       sorted_ids=true;
     }
 
+    int membersize= mySpecies.addAttribute("membersize");
+    for(int ig=0; ig<mySpecies.size(); ++ig)
+      SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
+
     convert2Cart(R); //make sure that R is in Cartesian coordinates
     //if(Lattice.BoxBConds[0] && SK == 0)
     if(Lattice.SuperCellEnum != SUPERCELL_OPEN)

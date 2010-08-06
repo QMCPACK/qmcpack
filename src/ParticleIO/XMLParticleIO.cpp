@@ -28,15 +28,16 @@ using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
+#include "ParticleIO/ParticleIOUtility.h"
 //#include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 using namespace qmcplusplus;
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize):
-  AssignmentOnly(donotresize),
-  ref_(aptcl)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& tmat
+    , bool donotresize):
+  AssignmentOnly(donotresize),ref_(aptcl),TileMatrix(tmat)
 { 
 }
 
@@ -208,7 +209,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     for(int iat=0;iat<ntot; iat++,nloci++) ref_.ID[iat]=nloci;
   }
   
-  TinyVector<int,OHMMS_DIM> uc_grid(1);      
+  //TinyVector<int,OHMMS_DIM> uc_grid(1);      
   
   SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
 
@@ -221,9 +222,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     { //if(cname == "UnitCell" || cname == "unitcell") {
       LatticeParser lat(ref_.Lattice);
       lat.put(cur);
-      ParameterSet params;
-      params.add(uc_grid,"uc_grid","int");
-      params.put(cur);
+      //ParameterSet params;
+      //params.add(uc_grid,"uc_grid","int");
+      //params.put(cur);
     } else if (cname == attrib_tag) {
       getPtclAttrib(cur,nat,nloc);
     } else  if (cname == "group") { //found group
@@ -261,6 +262,12 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     cur = cur->next;
   }
 
+    cout << "#### before expanding " << endl;
+    ref_.Lattice.print(cout);
+    expandSuperCell(ref_,TileMatrix);
+    cout << "#### after expanding " << endl;
+    ref_.Lattice.print(cout);
+
   //Disable atom 
   ////have read from <attrib/>'s and <group/>'s. Time to add <atom/>'s
   //nloc += nat;
@@ -293,12 +300,13 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   //  ref_.GroupID[nloc] = sid;
   //}
 
-  int ngtot=uc_grid[0];
-  for(int idim=1; idim<OHMMS_DIM; idim++) ngtot*=uc_grid[idim];
-  if(ngtot>1) {
-    ExpandSuperCell(ref_,uc_grid);
-    //ref_.Lattice.print(cout);
-  }
+  //disable uc_grid
+  //int ngtot=uc_grid[0];
+  //for(int idim=1; idim<OHMMS_DIM; idim++) ngtot*=uc_grid[idim];
+  //if(ngtot>1) {
+  //  ExpandSuperCell(ref_,uc_grid);
+  //  //ref_.Lattice.print(cout);
+  //}
   
   ref_.RandomSource=randomsrc;
 
@@ -310,19 +318,19 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       ref_.convert2Cart(ref_.R);
     }  
     else if (randomsrc == "") {
-      ERRORMSG("Not know how to randomize R of an open system.\n"
-	       "Use randomsrc=\"ion\" instead.\n");
-      abort();
+      ostringstream o;
+      o << "Not know how to randomize R of an open system.\n"
+        << "Use randomsrc=\"ion\" instead.\n";
+      APP_ABORT(o.str());
     }
   }
 
   vector<int> numPerGroup(tspecies.getTotalNum(),0);
-  for(int iat=0; iat<ref_.GroupID.size(); iat++) {
+  for(int iat=0; iat<ref_.GroupID.size(); iat++) 
     numPerGroup[ref_.GroupID[iat]]++;
-  }
+
 
   int membersize= tspecies.addAttribute("membersize");
-
   for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
     tspecies(membersize,ig)=numPerGroup[ig];
   }

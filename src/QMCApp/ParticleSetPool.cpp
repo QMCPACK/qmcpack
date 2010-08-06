@@ -31,7 +31,7 @@
 namespace qmcplusplus {
   
   ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), SimulationCell(0)
+    : MPIObjectBase(c), SimulationCell(0), TileMatrix(1,0,0,0,1,0,0,0,1)
   { 
     ClassName="ParticleSetPool";
     myName=aname;
@@ -78,6 +78,10 @@ namespace qmcplusplus {
   bool ParticleSetPool::putLattice(xmlNodePtr cur) 
   {
     ReportEngine PRE("ParticleSetPool","putLattice");
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(TileMatrix,"tilematrix"); 
+    pAttrib.put(cur);
+
     if(SimulationCell==0)
     {
       app_log() << "  Create Global SuperCell " << endl;
@@ -133,7 +137,7 @@ namespace qmcplusplus {
         pTemp->Lattice.copy(*SimulationCell);
       }
       myPool[id] = pTemp;
-      XMLParticleParser pread(*pTemp);
+      XMLParticleParser pread(*pTemp,TileMatrix);
       bool success = pread.put(cur);
       pTemp->setName(id);
       app_log() << pTemp->getName() <<endl;
@@ -171,8 +175,8 @@ namespace qmcplusplus {
 
   ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& target)
   {
-    TinyVector<int,OHMMS_DIM> TileFactor;
-    Tensor<int,OHMMS_DIM> TileMatrix;
+    TinyVector<int,OHMMS_DIM> tilefactor;
+    Tensor<int,OHMMS_DIM> tilematrix(1,0,0,0,1,0,0,0,1);
     double lr_cut=10;
     string h5name;
     string source("i");
@@ -180,8 +184,8 @@ namespace qmcplusplus {
 
     OhmmsAttributeSet attribs;
     attribs.add(h5name, "href");
-    attribs.add(TileFactor, "tile");
-    attribs.add(TileMatrix, "tilematrix");
+    attribs.add(tilefactor, "tile");
+    attribs.add(tilematrix, "tilematrix");
     attribs.add(source, "source");
     attribs.add(bc, "bconds");
     attribs.add(lr_cut, "LR_dim_cutoff");
@@ -210,7 +214,7 @@ namespace qmcplusplus {
       h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
     ESHDFIonsParser ap(*ions,h5,myComm);
     ap.put(cur);
-    ap.expand(TileMatrix);
+    ap.expand(tilematrix);
     if(h5>-1) H5Fclose(h5);
 
     //failed to initialize the ions

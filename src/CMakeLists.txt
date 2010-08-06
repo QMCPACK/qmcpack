@@ -89,6 +89,7 @@ SET(PARTICLEIO
   ParticleTags.cpp 
   ParticleIO/ParticleLayoutIO.cpp 
   ParticleIO/XMLParticleIO.cpp 
+  ParticleIO/ParticleIOUtility.cpp 
 )
 
 IF(HAVE_LIBHDF5)

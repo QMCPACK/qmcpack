@@ -25,34 +25,34 @@
 
 namespace qmcplusplus {
 
-  class LatticeParser {
-    ParticleSet::ParticleLayout_t& ref_;
-    public:
-    LatticeParser(ParticleSet::ParticleLayout_t& lat): ref_(lat){ }
-    PARSEDOM
-  };
+  //class LatticeParser {
+  //  ParticleSet::ParticleLayout_t& ref_;
+  //  public:
+  //  LatticeParser(ParticleSet::ParticleLayout_t& lat): ref_(lat){ }
+  //  //PARSEDOM
+  //};
 
 
-  class LatticeXMLWriter {
+  //class LatticeXMLWriter {
 
-    ParticleSet::ParticleLayout_t& ref_;
-    public:
+  //  ParticleSet::ParticleLayout_t& ref_;
+  //  public:
 
-    LatticeXMLWriter(ParticleSet::ParticleLayout_t& lat): ref_(lat){ }
-    bool get(ostream& ) const;
-  };
+  //  LatticeXMLWriter(ParticleSet::ParticleLayout_t& lat): ref_(lat){ }
+  //  bool get(ostream& ) const;
+  //};
 
-  class ParticleParser {
+  //class ParticleParser {
 
-    ParticleSet& ref_;
+  //  ParticleSet& ref_;
 
-  public:
+  //public:
 
-    ParticleParser(ParticleSet& aptcl):ref_(aptcl){ }
-    ///reading from a file
-    ///bool put(const char*);
-    PARSEDOM
-  };
+  //  ParticleParser(ParticleSet& aptcl):ref_(aptcl){ }
+  //  ///reading from a file
+  //  ///bool put(const char*);
+  //  //PARSEDOM
+  //};
 
 
 
@@ -79,6 +79,9 @@ namespace qmcplusplus {
     }
   }
   
+  /** expand a particleset including lattice */
+  void expandSuperCell(ParticleSet& ref, Tensor<int,3>& tmat);
+
 }
 #endif
 

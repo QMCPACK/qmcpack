@@ -44,6 +44,7 @@ namespace qmcplusplus {
 
     bool AssignmentOnly;
     Particle_t& ref_;
+    Tensor<int,OHMMS_DIM>& TileMatrix;
 
     bool putSpecial(xmlNodePtr cur);
 
@@ -60,7 +61,8 @@ namespace qmcplusplus {
      *@param aptcl the particleset to be initialized
      *@param donotresize if true, only assignment is done
      */
-    XMLParticleParser(Particle_t& aptcl, bool donotresize=false);
+    XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& tmat
+        , bool donotresize=false);
 
     ///reading from a file
     bool put(const string& fname_in, const string& fext_in);
