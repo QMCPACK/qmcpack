@@ -23,15 +23,9 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
-#include "Numerics/MatrixOperators.h"
-#include "Message/Communicate.h"
-#include <OhmmsPETE/TinyVector.h>
-#include <config/stdlib/math.h>
-#include "OhmmsPETE/OhmmsMatrix.h"
-#include "OhmmsPETE/OhmmsVector.h"
-#include "vector.h"
 
 namespace qmcplusplus {
 

@@ -21,7 +21,6 @@
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_HELP_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "vector.h"
 
 namespace qmcplusplus {
 
