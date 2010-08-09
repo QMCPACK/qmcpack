@@ -107,10 +107,12 @@ namespace qmcplusplus {
     ReportEngine PRE("AtomicBasisBuilder","createAOSet(xmlNodePtr)");
 
     app_log() << "  AO BasisSet for " << elementType << "\n";
-    if(addsignforM && expandlm!=CARTESIAN_EXPAND) 
-      app_log() << "   Spherical Harmonics contain (-1)^m factor" << endl;
-    else
-      app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << endl;
+    if(expandlm!=CARTESIAN_EXPAND) {
+      if(addsignforM ) 
+        app_log() << "   Spherical Harmonics contain (-1)^m factor" << endl;
+      else 
+        app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << endl;
+    }
 
     switch(expandlm) {
       case(GAUSSIAN_EXPAND):

@@ -46,13 +46,14 @@ namespace qmcplusplus
                                          QMCHamiltonian& h,
                                          ParticleSetPool &ptclPool):
       QMCDriver(w,psi,h),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
-      PtclPool(ptclPool), wftricks("no")
+      PtclPool(ptclPool), wftricks("no"),checkEloc("no")
   {
     m_param.add(checkRatio,"ratio","string");
     m_param.add(checkClone,"clone","string");
     m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
     m_param.add(sourceName,"source","string");
     m_param.add(wftricks,"orbitalutility","string");
+    m_param.add(checkEloc,"printEloc","string");
   }
 
 
@@ -90,6 +91,8 @@ namespace qmcplusplus
       }
     else if (checkClone == "yes")
       runCloneTest();
+    else if(checkEloc != "no")   
+      printEloc();
     else if (sourceName.size() != 0)
       {
         runGradSourceTest();
@@ -176,6 +179,103 @@ namespace qmcplusplus
         delete psi_clone;
         delete w_clone;
       }
+  }
+
+  void WaveFunctionTester::printEloc()
+  {
+    ParticleSetPool::PoolType::iterator p;
+    for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
+      app_log() << "ParticelSet = " << p->first << endl;
+
+    // Find source ParticleSet
+    ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+    ParticleSet& source = *((*pit).second);
+    app_log() << "Source = " <<sourceName <<"  " <<(*pit).first << endl;
+
+    int nel = W.getTotalNum();
+    int ncenter = source.getTotalNum();
+//    int ncenter = 3;
+//    cout<<"number of centers: " <<source.getTotalNum() <<endl;
+//    cout<<"0: " <<source.R[0] <<endl;
+//    cout<<"1: " <<source.R[1] <<endl;
+//    cout<<"2: " <<source.R[2] <<endl;
+
+    MCWalkerConfiguration::PropertyContainer_t Properties;
+    //pick the first walker
+    MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+
+    //copy the properties of the working walker
+    Properties = awalker->Properties;
+
+    W.R = awalker->R;
+
+    W.update();
+    //ValueType psi = Psi.evaluate(W);
+    ValueType logpsi = Psi.evaluateLog(W);
+    RealType eloc=H.evaluate(W);
+
+    app_log() << "  Logpsi: " <<logpsi  << endl;
+    app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+    for (int i=0; i<H.sizeOfObservables(); i++)
+      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+
+    //RealType psi = Psi.evaluateLog(W);
+
+    //int iat=0;
+    double maxR = 1000000.0;
+    vector<int> closestElectron(ncenter);
+
+    for(int iat=0; iat<ncenter; iat++) {
+      maxR=10000000;
+      for(int k=0; k<nel; k++)
+      {
+        double dx = std::sqrt( (W.R[k][0]-source.R[iat][0])*(W.R[k][0]-source.R[iat][0])  
+                              +(W.R[k][1]-source.R[iat][1])*(W.R[k][1]-source.R[iat][1]) 
+                              +(W.R[k][2]-source.R[iat][2])*(W.R[k][2]-source.R[iat][2])); 
+        if(dx < maxR) { maxR = dx; closestElectron[iat]=k; }
+      }
+    }
+
+//    closestElectron[iat]=1;   
+    ofstream out("eloc.dat");
+    double x,dx=1.0/499.0;
+    for (int k=0; k<500; k++)
+    {
+      x=-0.5+k*dx; 
+      out<<x <<"  ";
+      for(int iat=0; iat<ncenter; iat++) {
+        PosType tempR = W.R[closestElectron[iat]];
+        W.R[closestElectron[iat]]=source.R[iat];
+//        W.R[closestElectron[iat]]=0.0;
+
+        W.R[closestElectron[iat]][0] += x;
+        W.update();
+        ValueType logpsi_p = Psi.evaluateLog(W); 
+        ValueType ene = H.evaluate(W);
+        out<<ene <<"  ";
+        W.R[closestElectron[iat]]=source.R[iat];
+//        W.R[closestElectron[iat]]=0.0;
+
+        W.R[closestElectron[iat]][1] += x;
+        W.update();
+        logpsi_p = Psi.evaluateLog(W);
+        ene = H.evaluate(W);
+        out<<ene <<"  ";
+        W.R[closestElectron[iat]]=source.R[iat];
+//        W.R[closestElectron[iat]]=0.0;
+
+        W.R[closestElectron[iat]][2] += x;
+        W.update();
+        logpsi_p = Psi.evaluateLog(W);
+        ene = H.evaluate(W);
+        out<<ene <<"  ";
+
+        W.R[closestElectron[iat]] = tempR;
+      } 
+      out<<endl;
+
+    }
+    out.close();
   }
 
   void WaveFunctionTester::runBasicTest()

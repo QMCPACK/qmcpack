@@ -66,6 +66,7 @@ namespace qmcplusplus {
     string keyOpt("NMO"); //gaussian Molecular Orbital
     string transformOpt("yes"); //numerical Molecular Orbital
     string cuspC("no");  // cusp correction
+    string cuspInfo("");  // file with precalculated cusp correction info
     OhmmsAttributeSet aAttrib;
     aAttrib.add(sourceOpt,"source");
     aAttrib.add(cuspC,"cuspCorrection");
@@ -73,6 +74,7 @@ namespace qmcplusplus {
     aAttrib.add(keyOpt,"keyword"); aAttrib.add(keyOpt,"key");
     aAttrib.add(name,"name");
     aAttrib.add(transformOpt,"transform");
+    aAttrib.add(cuspInfo,"cuspInfo");
     if(rootNode != NULL)  aAttrib.put(rootNode); 
     
 //     xmlNodePtr tc = cur->children; tc=tc->next;
@@ -114,10 +116,14 @@ namespace qmcplusplus {
         PRE.error("Missing basisset/@source.",true);
       else 
         ions=(*pit).second; 
+   
+//      if(name=="") {
+//        APP_ABORT("Missing basisset/@name.\n");
+//      }
 
       if(transformOpt == "yes") { 
 #if QMC_BUILD_LEVEL>2
-        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes");
+        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
 #else
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif

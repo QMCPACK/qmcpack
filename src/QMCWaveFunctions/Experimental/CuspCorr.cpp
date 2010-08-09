@@ -1,8 +1,132 @@
 #include<iostream>
 
   template<class BS>
-  void CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string thisFile)
+  void CuspCorr<BS>::fillRadFunWithPhiBar(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, double* data)
   {
+    Psi1=Phi;
+    Psi2=Eta;
+    int norb=Psi1->OrbitalSetSize;
+    curOrb=curOrb_;
+    curCenter=curCenter_;
+
+    C=data[1];
+    sg=data[2];
+    Rc=data[3];
+    alpha[0]=data[4];
+    alpha[1]=data[5];
+    alpha[2]=data[6];
+    alpha[3]=data[7];
+    alpha[4]=data[8];
+    Z=Zion;
+
+    val1.resize(norb);
+    grad1.resize(norb);
+    lapl1.resize(norb);
+
+    for(int i=0; i<xgrid.size(); i++) {
+      rad_orb[i] = phiBar(xgrid[i])*std::sqrt(4.0*3.14159265358979);
+    }
+  }
+
+  template<class BS>
+  void CuspCorr<BS>::fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb)
+  {
+    Psi1=Phi;
+    Psi2=Eta;
+    int norb=Psi1->OrbitalSetSize;
+    curOrb=curOrb_;
+    curCenter=curCenter_;
+
+    Z=Zion;
+    val1.resize(norb);
+    grad1.resize(norb);
+    lapl1.resize(norb);
+
+    for(int i=0; i<xgrid.size(); i++) {
+      rad_orb[i] = phi(xgrid[i])*std::sqrt(4.0*3.14159265358979);
+    }
+  }
+
+  template<class BS>
+  void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string file, double cutoff, double* data)
+  {
+    double bestRc = cutoff, smallX2;
+    double xa, xb, xc, xd;
+    double fa,fb,fc, fd,delx;
+    int cnt=0;
+    // FIX FIX FIX
+    // bracket the minimum and use golden search to 
+    // find optimum Rc 
+      cnt=0;
+      
+      xa=bestRc;
+      fa=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xa,data);
+      xb=xa+0.005;
+      fb=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xb,data);
+      if( fb > fa ) {
+        xc=xa;xa=xb;xb=xc;
+        fc=fa;fa=fb;fb=fc;
+      }
+
+      bestRc = xb;
+      smallX2=fb;
+
+      delx = 1.61*(xb-xa);
+      xd = xb + delx;
+      fd=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xd,data);
+      while( fb > fd ) {
+        int xx = xb, ff = fb;
+        xb = xd; fb = fd;
+        xa=xx; fa=ff;
+        xd += delx; // dumb, fix later 
+        if(xd < 0.0 || xd > Rc_max) {
+          smallX2==execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,file,bestRc,data);
+          return;
+        }
+        fd=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xd,data);
+        
+        if(++cnt == 500) {
+//          APP_ABORT("Problems bracketing minimum. \n");
+          smallX2==execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,file,bestRc,data);
+          app_log() <<"Problems bracketing minimum, using best rc so far: " <<bestRc <<"  " <<smallX2 <<endl;
+          return;
+     
+        }
+      }
+      xc=xb + 0.4*(xd-xb);
+      fc=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xc,data);
+
+    // find minimum
+      //while( std::fabs(xa-xd) > 1e-4*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec. 
+      while( std::fabs(xa-xd) > 0.01 ) // from Num Rec. 
+      {
+        if(fb > fc) {
+          xa=xb;
+          //xb=xc; fb=fc;
+          xb=xa+0.4*(xd-xa);
+          fb=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xb,data);
+          xc=xa+0.6*(xd-xa);
+          fc=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xc,data);
+        } else {
+          xd=xc;
+          //xc=xb; fc=fb;
+          xb=xa+0.4*(xd-xa);
+          fb=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xb,data);
+          xc=xa+0.6*(xd-xa);
+          fc=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xc,data);
+        }
+      }
+      if(fb < fc) {
+        fb=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,file,xb,data);
+      } else {
+        fc=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,file,xc,data);
+      }
+  }
+
+  template<class BS>
+  double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string thisFile, double cutoff, double* data)
+  {
+    bool writeout=(thisFile!="NULL");
     Psi1=Phi;  
     Psi2=Eta; 
     int norb=Psi1->OrbitalSetSize;
@@ -25,11 +149,16 @@
     lapl2.resize(norb);
 
     TinyVector<RealType,3> ddr=0;
-    Rc=Rc_init;
+    //Rc=Rc_init;
+    Rc=cutoff;
     RealType chi2,chi2Min,phi0,phiMin;
     RealType tmpo;
     evaluate(Psi2,ddr,val2,grad2,lapl2);  // eta(0)
     eta0=val2[curOrb];
+    ddr=0;
+    ddr[0]=Rc;
+    evaluate(Psi1,ddr,val1,grad1,lapl1);
+    valAtRc = val1[curOrb];
 
 //    Rc=Rc_init;
 //    RealType tmpo=getELorig();
@@ -44,8 +173,8 @@
     // bracket the minimum and use golden search to 
     // find optimum Rc 
       cnt=0;
-      tmpo=getELorig();
-      getELideal(tmpo);
+      ELorigAtRc=getELorig();
+      getELideal(ELorigAtRc);
     // try to bracket the minimum
       xa=phi(0.0);
       fa=loop(xa,X);
@@ -67,7 +196,9 @@
         fd=loop(xd,X); 
  //std::cout <<"x,f: " <<xd <<"  " <<fd <<endl;
  //std::cout.flush();
-        if(++cnt == 100) { 
+        if(cnt == 50) delx*=5;
+        if(cnt == 100) delx*=5;
+        if(++cnt == 1000) { 
           APP_ABORT("Problems bracketing minimum. \n");  
         }
       } 
@@ -77,10 +208,10 @@
     // find minimum
       while( std::fabs(xa-xd) > 1e-5*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec. 
       {
-      app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
-         <<"xb,fb: " <<xb <<"  " <<fb <<endl
-         <<"xc,fc: " <<xc <<"  " <<fc <<endl
-         <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl <<endl;
+      //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
+      //   <<"xb,fb: " <<xb <<"  " <<fb <<endl
+      //   <<"xc,fc: " <<xc <<"  " <<fc <<endl
+      //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl <<endl;
      
         if(fb > fc) {
           xa=xb;
@@ -98,10 +229,10 @@
           fc=loop(xc,X);
         }  
       }  
-      app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
-         <<"xb,fb: " <<xb <<"  " <<fb <<endl
-         <<"xc,fc: " <<xc <<"  " <<fc <<endl
-         <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl;
+      //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
+      //   <<"xb,fb: " <<xb <<"  " <<fb <<endl
+      //   <<"xc,fc: " <<xc <<"  " <<fc <<endl
+      //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl;
       if(fb < fc) {
         chi2=loop(xb,X);
       } else {
@@ -124,31 +255,52 @@
       }
       chi2=loop(phiMin,X);
 */
+    if(writeout) { 
       app_log()<<setprecision(12) <<"alpha: " <<alpha[0] <<"  "
              <<alpha[1] <<"  "
              <<alpha[2] <<"  "
              <<alpha[3] <<"  "
              <<alpha[4] <<"  " <<endl;
-      app_log()<<"C, sg: " <<C <<"  " <<sg <<endl;
-      app_log()<<"chi2: " <<chi2 <<endl; 
+      app_log()<<"mo,ion,C, sg, rc, chi2: " <<curOrb_ <<"  " <<curCenter_ <<"  " <<C <<"  " <<sg <<"  " <<Rc <<" " <<chi2 <<endl;
+    }
 
     for(int i=0; i<xgrid.size(); i++) {
       rad_orb[i] = phiBar(xgrid[i])*std::sqrt(4.0*3.14159265358979);
       //rad_orb[i] = phi(xgrid[i])*std::sqrt(4.0*3.14159265358979);
     }
 // write report file if desired 
-    std::ofstream out(thisFile.c_str());
-    for(int i=0; i<nElms; i++) {
-      out<<pos[i] <<"  " 
-         <<ELideal[i] <<"  "
-         <<ELorig[i] <<"  "
-         <<ELcurr[i] <<"  "
-         <<phi(pos[i]) <<"  "
-         <<phiBar(pos[i]) <<"  "
-         <<pr(pos[i]) <<"  "
-         <<endl;
+    if(writeout && printOrbs) {
+      std::ofstream out(thisFile.c_str());
+      for(int i=0; i<nElms; i++) {
+        out<<pos[i] <<"  " 
+           <<ELideal[i] <<"  "
+           <<ELorig[i] <<"  "
+           <<ELcurr[i] <<"  "
+           <<phi(pos[i]) <<"  "
+           <<phiBar(pos[i]) <<"  "
+           <<pr(pos[i]) <<"  "
+           <<endl;
+      }
+      out.close();
+      std::string full;
+      full = thisFile + ".full.dat";
+      out.open(full.c_str());
+      int nx = 500;
+      for(int i=0; i<nx; i++) {
+        double xp = i*5.0/(nx-1.0);
+        out<<xp <<"  "
+           <<phi(xp) <<endl;
+      }
+      out.close();
     }
-    out.close();
-
+    data[1]=C;
+    data[2]=sg;
+    data[3]=Rc;
+    data[4]=alpha[0];
+    data[5]=alpha[1];
+    data[6]=alpha[2];
+    data[7]=alpha[3];
+    data[8]=alpha[4];
+    return chi2;
   }
 

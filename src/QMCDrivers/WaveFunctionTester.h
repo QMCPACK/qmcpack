@@ -40,7 +40,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr q);
   private:
     ParticleSetPool &PtclPool;
-    string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks;
+    string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
     xmlNodePtr myNode;
     /// Copy Constructor (disabled)
     WaveFunctionTester(const WaveFunctionTester& a): 
@@ -56,6 +56,7 @@ namespace qmcplusplus {
     void runGradSourceTest();
     void runZeroVarianceTest();
     void runwftricks();
+    void printEloc();
     vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
   };
 }

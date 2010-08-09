@@ -351,14 +351,14 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is) {
     getwords(currentWords,is); // empty line
     nshll[currPos]=0;
     ncoeffpershell[currPos].clear();
-    ncoeffpershell[currPos].push_back(0.0);
+    ncoeffpershell[currPos].push_back(0);
     shID[currPos].clear();
     shID[currPos].push_back("NONE");
     while(true) {
       getwords(currentWords,is); 
       if(currentWords.size() == 0) {
         nshll[currPos]++;
-        ncoeffpershell[currPos].push_back(0.0);
+        ncoeffpershell[currPos].push_back(0);
         shID[currPos].push_back("NONE");
         continue;
       }
@@ -394,7 +394,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is) {
     getwords(currentWords,is); // empty line
     nshll[currPos]=0;
     ncoeffpershell[currPos].clear();
-    ncoeffpershell[currPos].push_back(0.0);
+    ncoeffpershell[currPos].push_back(0);
     shID[currPos].clear();
     shID[currPos].push_back("NONE");
     while(true) {
@@ -438,9 +438,9 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is) {
     gBound[i] = gtot;
     int indx = it->second;
     gtot+=nshll[indx]; 
-    for(int k=0; k<shID[indx].size(); k++)
+    for(int k=0; k<nshll[indx]; k++)
       gShell.push_back(gsMap[shID[indx][k]]);
-    for(int k=0; k<ncoeffpershell[indx].size(); k++)
+    for(int k=0; k<nshll[indx]; k++)
       gNumber.push_back(ncoeffpershell[indx][k]);
     for(int k=0; k<expo[indx].size(); k++)
       gExp.push_back(expo[indx][k]);

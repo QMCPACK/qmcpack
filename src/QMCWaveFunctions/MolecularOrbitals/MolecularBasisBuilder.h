@@ -46,8 +46,8 @@ namespace qmcplusplus {
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false):
-      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp) 
+    MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, string cusp_info=""):
+      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info)
       { 
         ClassName="MolecularBasisBuilder";
       }   
@@ -112,6 +112,13 @@ namespace qmcplusplus {
 
       ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
 
+      string spo_name(""), id, cusp_file("");
+      OhmmsAttributeSet spoAttrib;
+      spoAttrib.add (spo_name, "name");
+      spoAttrib.add (id, "id");
+      spoAttrib.add (cusp_file, "cuspInfo");
+      spoAttrib.put(cur);
+
       SPOSetBase *lcos=0;
       cur = cur->xmlChildrenNode;
       while(cur!=NULL) {
@@ -121,7 +128,16 @@ namespace qmcplusplus {
 #if QMC_BUILD_LEVEL>2
           if(cuspCorr) {
             app_log() << "Creating LCOrbitalSetWithCorrection with the input coefficients" << endl;
-            lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel);
+            string tmp = cuspInfo;
+            if(cusp_file != "") tmp=cusp_file;
+            lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp);
+// mmorales:
+// this is a small hack to allow the cusp correction to work
+// but it should be fixed, all basisset/sposet objects should always be named
+            if(spo_name != "")
+              lcos->objectName=spo_name;
+            else
+              lcos->objectName=id;
           } else 
 #endif
           {
@@ -152,6 +168,7 @@ namespace qmcplusplus {
     map<string,BasisSetBuilder*> aoBuilders;
     ///apply cusp correction to molecular orbitals
     bool cuspCorr;
+    string cuspInfo;
   };
 }
 #endif

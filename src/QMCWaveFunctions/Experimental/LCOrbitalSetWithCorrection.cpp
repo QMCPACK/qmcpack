@@ -1,5 +1,8 @@
 #include "QMCWaveFunctions/LCOrbitalSet.h"
-#include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "ParticleIO/XMLParticleIO.h"
+#include "Utilities/OhmmsInfo.h"
+#include "OhmmsData/Libxml2Doc.h"
+
 
 namespace qmcplusplus {
 
@@ -175,10 +178,116 @@ namespace qmcplusplus {
      return newSPO;
   }
 
+  template<class BS>
+  bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealType,9> > &info)
+  {
+    bool success=true;
+    string cname;
+    int ncenter = info.rows();
+    int nOrbs = info.cols();
+
+cout<<"Reading cusp info from : " <<cuspInfoFile <<endl;cout.flush();
+
+    Libxml2Document adoc;
+    if(!adoc.parse(cuspInfoFile)) {
+      app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName <<endl;
+      app_log() <<"Recalculating data.\n";
+      return false;
+    }
+    xmlNodePtr head=adoc.getRoot();
+    head=head->children;
+    xmlNodePtr cur=NULL,ctr;    
+    while (head != NULL)
+    {
+      getNodeName(cname,head);
+      if(cname == "sposet") {
+        string name;
+        OhmmsAttributeSet spoAttrib;
+        spoAttrib.add (name, "name");
+        spoAttrib.put(head);
+        if(name == objectName) {
+          cur=head;
+          break;
+        }
+      }
+      head=head->next;
+    }
+    if(cur==NULL) {
+      app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName <<endl;
+      app_log() <<"Recalculating data.\n";
+      return false;
+    } else {
+      app_log() <<"Found precomputed cusp data for spo set: " <<objectName <<endl;
+    }
+    cur=cur->children;
+    while (cur != NULL)
+    {
+      getNodeName(cname,cur);
+      if(cname == "center") {
+        int num=-1;
+        OhmmsAttributeSet Attrib;
+        Attrib.add (num, "num");
+        Attrib.put(cur);
+        if(num < 0 || num >= ncenter ) {
+          APP_ABORT("Error with cusp info xml block. incorrect center number. \n");
+        }
+        ctr=cur->children;
+        while (ctr != NULL)
+        {
+          getNodeName(cname,ctr);
+          if(cname == "orbital") {
+            int orb=-1;
+            OhmmsAttributeSet orbAttrib;
+            RealType a1,a2,a3,a4,a5,a6,a7,a8,a9;
+            orbAttrib.add (orb,"num");
+            orbAttrib.add (a1, "redo");
+            orbAttrib.add (a2, "C");
+            orbAttrib.add (a3, "sg");
+            orbAttrib.add (a4, "rc");
+            orbAttrib.add (a5, "a1");
+            orbAttrib.add (a6, "a2");
+            orbAttrib.add (a7, "a3");
+            orbAttrib.add (a8, "a4");
+            orbAttrib.add (a9, "a5");
+            orbAttrib.put(ctr);
+            info(num,orb)[0] = a1;
+            info(num,orb)[1] = a2;
+            info(num,orb)[2] = a3;
+            info(num,orb)[3] = a4;
+            info(num,orb)[4] = a5;
+            info(num,orb)[5] = a6;
+            info(num,orb)[6] = a7;
+            info(num,orb)[7] = a8;
+            info(num,orb)[8] = a9;
+/*
+cout<<" Found: num,orb:" <<num <<"  " <<orb <<endl 
+    <<info(num,orb)[0] <<"\n"
+    <<info(num,orb)[1] <<"\n"
+    <<info(num,orb)[2] <<"\n"
+    <<info(num,orb)[3] <<"\n"
+    <<info(num,orb)[4] <<"\n"
+    <<info(num,orb)[5] <<"\n"
+    <<info(num,orb)[6] <<"\n"
+    <<info(num,orb)[7] <<"\n"
+    <<info(num,orb)[8] <<"\n"
+     <<endl;cout.flush();
+*/
+          }
+          ctr=ctr->next;
+        } 
+      }
+      cur=cur->next;
+    } 
+
+    return success;
+  }
+
   template<class BS>  
   bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   {
      app_log()<<" Transforming Single Particle Orbital Set with cusp correcting algorithm. \n";
+
+cout<<"cuspFile: " <<cuspInfoFile <<endl; cout.flush();
 
       SpeciesSet& tspecies(sourcePtcl->getSpeciesSet());
       int iz = tspecies.addAttribute("charge");
@@ -218,8 +327,15 @@ namespace qmcplusplus {
      dummyLO1->Occ = Occ;
      dummyLO2 = (LCOrbitalSet<BS,false>*) dummyLO1->makeClone();
 
+     Matrix<TinyVector<RealType,9> > info;
+     info.resize(numCentr,OrbitalSetSize);
+     info=0;
+     bool readCuspCoeff=false;
+     if(cuspInfoFile != "")
+       readCuspCoeff = readCuspInfo(info);
+
      targetPtcl->R[0]=0;
-     CuspCorr<BS> myCorr(Rcut,500,targetPtcl,sourcePtcl); 
+     CuspCorr<BS> myCorr(0.2,500,targetPtcl,sourcePtcl,true); 
      char buff1[10],buff2[10];
      Vector<double> rad_orb, xgrid;
      std::vector<bool> rmv;
@@ -231,6 +347,8 @@ namespace qmcplusplus {
        xgrid[ig] = mygrid->r(ig);
        //if(xgrid[ig]>2*Rcut && indexRc < 0) indexRc=ig;
      }
+     xmlNodePtr spo = xmlNewNode(NULL,(const xmlChar*)"sposet"); 
+     xmlNewProp(spo,(const xmlChar*)"name",(const xmlChar*)objectName.c_str());
 
      for(int i=0; i<numCentr; i++ )
      {
@@ -248,24 +366,82 @@ namespace qmcplusplus {
        myCOT->RnlID.resize(OrbitalSetSize);
        std::sprintf(buff1,"%d",i);
 
+       xmlNodePtr ctr = xmlNewNode(NULL,(const xmlChar*)"center");
+       std::ostringstream num; 
+       num <<i; 
+       xmlNewProp(ctr,(const xmlChar*)"num",(const xmlChar*)num.str().c_str());
+
        for(int k=0; k<OrbitalSetSize; k++ )
        {
+
+          xmlNodePtr orb = xmlNewNode(NULL,(const xmlChar*)"orbital");
+          std::ostringstream num0,redo,C,sg,rc,a1,a2,a3,a4,a5; 
+          num0<<k; 
+          xmlNewProp(orb,(const xmlChar*)"num",(const xmlChar*)num0.str().c_str());
           bool corrO = false;
-          for(int ip=0; ip<dummyLO1->C.cols(); ip++) { 
+          for(int ip=0; ip<dummyLO1->C.cols(); ip++) {
             if(std::fabs(dummyLO1->C(k,ip)) > 1e-8) {
               corrO = true;
-              break; 
+              break;
             }
-          }   
-          if(corrO) {
-// this should be Zion = charge of ion i
-            std::sprintf(buff2,"%d",k);
-            myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs.C"+string(buff1)+".MO"+string(buff2)); 
           }
-          else {
+          if(corrO) {
+            if(readCuspCoeff) {
+              RealType redo = info(i,k)[0];
+              if(redo < -1) { // no correction to this orbital
+                myCorr.fillRadFunWithPhi(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb); 
+              } else if(redo > 10) { // recompute with rc loop 
+                std::sprintf(buff2,"%d",k);
+                myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),Rcut,info(i,k).data()); 
+              } else if(redo > 1) { // no rc loop, read rc from file
+                RealType rc = info(i,k)[3]; 
+                std::sprintf(buff2,"%d",k);
+                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),rc,info(i,k).data());
+              } else { // read from file
+                myCorr.fillRadFunWithPhiBar(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,info(i,k).data());  
+              } 
+            } else {
+              std::sprintf(buff2,"%d",k);
+              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),Rcut,info(i,k).data());
+              info(i,k)[0]=0;
+            }
+          } else {
             for(int ip=0; ip<rad_orb.size(); ip++)
               rad_orb[ip]=0.0; 
           } 
+          C.setf(std::ios::scientific, std::ios::floatfield);
+          C.precision(14);
+          C<<info(i,k)[1];
+          sg.setf(std::ios::scientific, std::ios::floatfield);
+          sg.precision(14);
+          sg<<info(i,k)[2];
+          rc.setf(std::ios::scientific, std::ios::floatfield);
+          rc.precision(14);
+          rc<<info(i,k)[3];
+          a1.setf(std::ios::scientific, std::ios::floatfield);
+          a1.precision(14);
+          a1<<info(i,k)[4];
+          a2.setf(std::ios::scientific, std::ios::floatfield);
+          a2.precision(14);
+          a2<<info(i,k)[5];
+          a3.setf(std::ios::scientific, std::ios::floatfield);
+          a3.precision(14);
+          a3<<info(i,k)[6];
+          a4.setf(std::ios::scientific, std::ios::floatfield);
+          a4.precision(14);
+          a4<<info(i,k)[7];
+          a5.setf(std::ios::scientific, std::ios::floatfield);
+          a5.precision(14);
+          a5<<info(i,k)[8];
+          xmlNewProp(orb,(const xmlChar*)"C",(const xmlChar*)C.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"sg",(const xmlChar*)sg.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"rc",(const xmlChar*)rc.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a1",(const xmlChar*)a1.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a2",(const xmlChar*)a2.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a3",(const xmlChar*)a3.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a4",(const xmlChar*)a4.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a5",(const xmlChar*)a5.str().c_str());
+          xmlAddChild(ctr,orb);
 /*
           for(int ig=0; ig<xgrid.size(); ++ig)
           {
@@ -292,6 +468,7 @@ namespace qmcplusplus {
        }
        myCOT->setBasisSetSize(-1);
        corrBasisSet->add(i,myCOT);
+       xmlAddChild(spo,ctr);
      }
      corrBasisSet->setBasisSetSize(-1);
 
@@ -322,6 +499,15 @@ namespace qmcplusplus {
             C(k,i) = 0.0;
        }
      this->checkObject();
+
+     xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+     xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+     xmlAddChild(cuspRoot,spo);
+     xmlDocSetRootElement(doc, cuspRoot);
+     std::string fname = objectName+".cuspInfo.xml";
+     app_log() <<"Saving resulting cusp Info xml block to: " <<fname <<endl;
+     xmlSaveFormatFile(fname.c_str(),doc,1); 
+     xmlFreeDoc(doc);
 
 /*
      ofstream out("test.txt");

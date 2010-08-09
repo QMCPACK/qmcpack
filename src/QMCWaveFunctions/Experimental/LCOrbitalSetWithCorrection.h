@@ -214,7 +214,7 @@ namespace qmcplusplus {
      * @param bs pointer to the BasisSet
      * @param id identifier of thisLCOrbitalSetWithCorrection 
      */
-    LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc) {
+    LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, string cusp_info=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info) {
 // call APP_ABORT if els==0, ions==0
       if(bs) setBasisSet(bs);
     }
@@ -416,12 +416,15 @@ namespace qmcplusplus {
 
     bool transformSPOSet();
 
+    bool readCuspInfo(Matrix<TinyVector<RealType,9> > &);
+
   private:
 
     BS* extractHighYLM(vector<bool> &rmv);
     LCOrbitalSet<BS,false>* originalSPOSet; 
     double Rcut;
     vector<double> Z;
+    string cuspInfoFile;
 
     void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
 

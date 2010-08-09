@@ -30,7 +30,7 @@ class CuspCorr : public QMCTraits {
 
  public:
 
-  CuspCorr(RealType r, int nIntPnts, ParticleSet* targetP, ParticleSet* sourceP): Rc_init(r),Rc(r)
+  CuspCorr(RealType r, int nIntPnts, ParticleSet* targetP, ParticleSet* sourceP, bool print=true): Rc_init(r),Rc(r),Rc_max(r),printOrbs(print)
   {
     sourcePtcl=sourceP;
     targetPtcl=targetP;
@@ -51,12 +51,20 @@ class CuspCorr : public QMCTraits {
 
   ~CuspCorr() {}
 
-  void execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string file);
+  double execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string file, double cutoff,double* data);
+
+  void executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string file, double cutoff,double* data);
+
+  void fillRadFunWithPhiBar(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, double* data);
+
+  void fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb);
+
 
   RealType loop(RealType phi0, ValueVector_t X)
   {
     valAtZero = phi0;
     sg = phi0>0.0?1.0:-1.0;
+    C = (valAtRc*phi0<0.0)?1.5*valAtRc:0.0;
     evalX(X);
     X2alpha(X);
     getELcurr();
@@ -95,7 +103,7 @@ class CuspCorr : public QMCTraits {
   RealType getELorig() 
   {
     RealType dx = Rc*1.2/nElms;
-    TinyVector<RealType,3> ddr=0;
+     TinyVector<RealType,3> ddr=0;
     evaluate(Psi2,ddr,val2,grad2,lapl2);  // eta(0)
     evaluate(Psi1,ddr,val1,grad1,lapl1);  // phi(0)
     RealType Zeff = Z*(1.0+ val2[curOrb]/val1[curOrb]);
@@ -130,16 +138,19 @@ class CuspCorr : public QMCTraits {
     RealType Zeff = Z*(1.0+ eta0/phiBar(0.0));
     RealType dp;
     TinyVector<RealType,3> ddr=0;
+    ddr[0]=Rc;
+    evaluate(Psi1,ddr,val1,grad1,lapl1);
+    RealType dE = ELorigAtRc - (-0.5*lapl1[curOrb]/val1[curOrb]-Zeff/Rc); 
     for( int i=0; i<nElms; i++)
     {
       pos[i]=(i+1.0)*dx;
       if(pos[i] <= Rc) {
         dp=dpr(pos[i]);
-        ELcurr[i] = -0.5*Rr(pos[i])*(2.0*dp/pos[i]+d2pr(pos[i])+dp*dp)/phiBar(pos[i])-Zeff/pos[i];
+        ELcurr[i] = -0.5*Rr(pos[i])*(2.0*dp/pos[i]+d2pr(pos[i])+dp*dp)/phiBar(pos[i])-Zeff/pos[i] + dE;
       } else {
         ddr[0]=pos[i];
         evaluate(Psi1,ddr,val1,grad1,lapl1);
-        ELcurr[i] = -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/pos[i];
+        ELcurr[i] = -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/pos[i] + dE;
       }
     }
   }
@@ -236,10 +247,11 @@ class CuspCorr : public QMCTraits {
   SPOSetBasePtr Psi1,Psi2;
 
   // cutoff
-  RealType beta0,DX,eta0;
-  RealType Rc_init,Rc,C,sg,Z,valAtZero;
+  RealType beta0,DX,eta0, ELorigAtRc;
+  RealType Rc_init,Rc,C,sg,Z,valAtZero,valAtRc,Rc_max;
   int nElms,curOrb,curCenter;
   ValueVector_t alpha,coeff;
+  bool printOrbs;
 
   ValueVector_t ELideal;
   ValueVector_t ELorig;

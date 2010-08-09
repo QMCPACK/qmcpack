@@ -155,6 +155,7 @@ namespace qmcplusplus
     }
 
     //missing basiset, e.g. einspline
+// mmorales: this should not be allowed now, either basisset or sposet must exist
     if (myBasisSetFactory == 0)
     {
       myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
@@ -493,11 +494,11 @@ namespace qmcplusplus
      multiSD->Dets[1]->set(multiSD->FirstIndex_dn,nels_dn,multiSD->Dets[1]->Phi->getOrbitalSetSize());
 
      if(optimizeCI) {
-       app_log() <<"CI coefficients are optimizable. ";
+       app_log() <<"CI coefficients are optimizable. \n";
        multiSD->Optimizable=true;
        if(multiSD->usingCSF) {
          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
-         for(int i=1; i<multiSD->C.size(); i++) {
+         for(int i=1; i<multiSD->CSFcoeff.size(); i++) {
            //std::stringstream sstr;
            //sstr << "CIcoeff" << "_" << i;
            multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
@@ -813,7 +814,7 @@ namespace qmcplusplus
      }
 
      if(optimizeCI) {
-       app_log() <<"CI coefficients are optimizable. ";
+       app_log() <<"CI coefficients are optimizable. \n";
        multiSD->Optimizable=true;
        multiSD->myVars.insert(CItags[0],coeff[0],false,optimize::LINEAR_P);
        for(int i=1; i<coeff.size(); i++) {

@@ -635,86 +635,185 @@ namespace qmcplusplus {
     if (recalculate)
     {
 
-      if(laplSum_up.size() == 0)
-         laplSum_up.resize(Dets[0]->detValues.size());
-      if(laplSum_dn.size() == 0)
-         laplSum_dn.resize(Dets[1]->detValues.size());
+     if(usingCSF) {
 
-    Dets[0]->evaluateForWalkerMove(P);
-    Dets[1]->evaluateForWalkerMove(P);
+       if(laplSum_up.size() == 0)
+          laplSum_up.resize(Dets[0]->detValues.size());
+       if(laplSum_dn.size() == 0)
+          laplSum_dn.resize(Dets[1]->detValues.size());
 
-      ValueVector_t& detValues_up = Dets[0]->detValues;
-      ValueVector_t& detValues_dn = Dets[1]->detValues;
-      GradMatrix_t& grads_up = Dets[0]->grads;
-      GradMatrix_t& grads_dn = Dets[1]->grads;
-      ValueMatrix_t& lapls_up = Dets[0]->lapls;
-      ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-      int N1 = Dets[0]->FirstIndex;
-      int N2 = Dets[1]->FirstIndex;
-      int NP1 = Dets[0]->NumPtcls;
-      int NP2 = Dets[1]->NumPtcls;
+   // assume that evaluateLog has been called in opt routine before 
+   //   Dets[0]->evaluateForWalkerMove(P);
+   //   Dets[1]->evaluateForWalkerMove(P);
 
-      int n = P.getTotalNum();
-      ValueType psiinv = 1.0/psiCurrent;
-      ValueType lapl_sum=0.0;
-      //ParticleSet::ParticleGradient_t g(n);
-      ValueType gg=0.0, ggP=0.0;
-      myG_temp=0.0;
-      for(int i=0; i<C.size(); i++){
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType tmp1 = C[i]*detValues_dn[dnC]*psiinv;
-        ValueType tmp2 = C[i]*detValues_up[upC]*psiinv;
-        //lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
-        ValueType& dummy1 = laplSum_up[upC];
-        ValueType& dummy2 = laplSum_dn[dnC];
-        dummy1=dummy2=0.0; 
-        //for(int k=0; k<nels_up; k++) dummy1 += lapls_up(upC,k); 
-        ValueType* ptr = lapls_up[upC]; 
-        for(int k=0; k<nels_up; k++,ptr++) dummy1 += *ptr; 
-        //for(int k=0; k<nels_dn; k++) dummy2 += lapls_dn(dnC,k); 
-        ptr = lapls_dn[dnC]; 
-        for(int k=0; k<nels_dn; k++,ptr++) dummy2 += *ptr; 
-        lapl_sum += tmp1*dummy1+tmp2*dummy2;  
-        for(int k=0,j=N1; k<NP1; k++,j++)  
-          myG_temp[j] += tmp1*grads_up(upC,k);
-        for(int k=0,j=N2; k<NP2; k++,j++) 
-          myG_temp[j] += tmp2*grads_dn(dnC,k);
-      }
-      //gg=Dot(myG_temp,myG_temp);
-      //ggP=Dot(P.G,myG_temp);
-      gg=ggP=0.0;
-      for(int i=0; i<n; i++)
-      {
-        //gg += dot(myG_temp[i],myG_temp[i]); 
-        //ggP += dot(P.G[i],myG_temp[i]); 
-        gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
-      } 
+       ValueVector_t& detValues_up = Dets[0]->detValues;
+       ValueVector_t& detValues_dn = Dets[1]->detValues;
+       GradMatrix_t& grads_up = Dets[0]->grads;
+       GradMatrix_t& grads_dn = Dets[1]->grads;
+       ValueMatrix_t& lapls_up = Dets[0]->lapls;
+       ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+       int N1 = Dets[0]->FirstIndex;
+       int N2 = Dets[1]->FirstIndex;
+       int NP1 = Dets[0]->NumPtcls;
+       int NP2 = Dets[1]->NumPtcls;
+
+// myG,myL should already be calculated
+       int n = P.getTotalNum();
+       ValueType psiinv = 1.0/psiCurrent;
+       ValueType lapl_sum=0.0;
+       ValueType gg=0.0, ggP=0.0;
+       myG_temp=0.0;
+       int num=laplSum_up.size();
+       ValueVector_t::iterator it(laplSum_up.begin());
+       ValueVector_t::iterator last(laplSum_up.end());
+       ValueType* ptr0 = lapls_up[0];
+       while(it != last) 
+       {
+         (*it)=0.0;
+         for(int k=0; k<nels_up; k++,ptr0++) (*it) += *ptr0;
+         it++;
+       }
+       it=laplSum_dn.begin();
+       last=laplSum_dn.end();
+       ptr0 = lapls_dn[0];
+       while(it != last)
+       {
+         (*it)=0.0;
+         for(int k=0; k<nels_dn; k++,ptr0++) (*it) += *ptr0;
+         it++;
+       }
+       for(int i=0; i<C.size(); i++){
+         int upC = C2node_up[i];
+         int dnC = C2node_dn[i];
+         ValueType tmp1 = C[i]*detValues_dn[dnC]*psiinv;
+         ValueType tmp2 = C[i]*detValues_up[upC]*psiinv;
+         lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
+         for(int k=0,j=N1; k<NP1; k++,j++)
+           myG_temp[j] += tmp1*grads_up(upC,k);
+         for(int k=0,j=N2; k<NP2; k++,j++)
+           myG_temp[j] += tmp2*grads_dn(dnC,k);
+       }
+       gg=ggP=0.0;
+       for(int i=0; i<n; i++)
+       {
+         gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+       }
+
+//       for(int i=0; i<C.size(); i++){
+       num=CSFcoeff.size();
+       int cnt=0;
+       for(int i=0; i<num; i++) {
+         int kk=myVars.where(i);
+         if (kk<0) {
+           cnt+=DetsPerCSF[i];
+           continue;
+         }
+         ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0; 
+         for(int k=0; k<DetsPerCSF[i]; k++) {
+           int upC = C2node_up[cnt];
+           int dnC = C2node_dn[cnt];
+           ValueType tmp1=CSFexpansion[cnt]*detValues_dn[dnC]*psiinv;
+           ValueType tmp2=CSFexpansion[cnt]*detValues_up[upC]*psiinv;
+           cdet+=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+           q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);  
+           for(int k=0,j=N1; k<NP1; k++,j++)
+             v1 += tmp1*(dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
+           for(int k=0,j=N2; k<NP2; k++,j++)
+             v2 += tmp2*(dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
+           cnt++;
+         }
+         convert(cdet,dlogpsi[kk]);
+         ValueType dhpsi =  -0.5*(q0-cdet*lapl_sum)
+                            -cdet*gg-v1-v2;
+         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+         //                         -cdet*lapl_sum)
+         //                   -cdet*gg-(tmp1*v1+tmp2*v2);
+         convert(dhpsi,dhpsioverpsi[kk]);
+       }
+
+     } else { //usingCSF
+       if(laplSum_up.size() == 0)
+          laplSum_up.resize(Dets[0]->detValues.size());
+       if(laplSum_dn.size() == 0)
+          laplSum_dn.resize(Dets[1]->detValues.size());
+
+   // assume that evaluateLog has been called in opt routine before 
+   //   Dets[0]->evaluateForWalkerMove(P);
+   //   Dets[1]->evaluateForWalkerMove(P);
+
+       ValueVector_t& detValues_up = Dets[0]->detValues;
+       ValueVector_t& detValues_dn = Dets[1]->detValues;
+       GradMatrix_t& grads_up = Dets[0]->grads;
+       GradMatrix_t& grads_dn = Dets[1]->grads;
+       ValueMatrix_t& lapls_up = Dets[0]->lapls;
+       ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+       int N1 = Dets[0]->FirstIndex;
+       int N2 = Dets[1]->FirstIndex;
+       int NP1 = Dets[0]->NumPtcls;
+       int NP2 = Dets[1]->NumPtcls;
+
+       int n = P.getTotalNum();
+       ValueType psiinv = 1.0/psiCurrent;
+       ValueType lapl_sum=0.0;
+       ValueType gg=0.0, ggP=0.0;
+       myG_temp=0.0;
+       int num=laplSum_up.size();
+       ValueVector_t::iterator it(laplSum_up.begin());
+       ValueVector_t::iterator last(laplSum_up.end());
+       ValueType* ptr0 = lapls_up[0];
+       while(it != last)
+       {
+         (*it)=0.0;
+         for(int k=0; k<nels_up; k++,ptr0++) (*it) += *ptr0;
+         it++;
+       }
+       it=laplSum_dn.begin();
+       last=laplSum_dn.end();
+       ptr0 = lapls_dn[0];
+       while(it != last)
+       {
+         (*it)=0.0;
+         for(int k=0; k<nels_dn; k++,ptr0++) (*it) += *ptr0;
+         it++;
+       }
+
+       for(int i=0; i<C.size(); i++){
+         int upC = C2node_up[i];
+         int dnC = C2node_dn[i];
+         ValueType tmp1 = C[i]*detValues_dn[dnC]*psiinv;
+         ValueType tmp2 = C[i]*detValues_up[upC]*psiinv;
+         lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];  
+         for(int k=0,j=N1; k<NP1; k++,j++)  
+           myG_temp[j] += tmp1*grads_up(upC,k);
+         for(int k=0,j=N2; k<NP2; k++,j++) 
+           myG_temp[j] += tmp2*grads_dn(dnC,k);
+       }
+        gg=ggP=0.0;
+        for(int i=0; i<n; i++)
+        {
+          gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+        } 
  
-      for(int i=0; i<C.size(); i++){
-        int kk=myVars.where(i);
-        if (kk<0) continue;
-        //dlogpsi[kk] = cdet;
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
-        ValueType tmp1=detValues_dn[dnC]*psiinv;
-        ValueType tmp2=detValues_up[upC]*psiinv;
-        convert(cdet,dlogpsi[kk]);
-        ValueType v1=0.0,v2=0.0;
-        for(int k=0,j=N1; k<NP1; k++,j++) 
-          v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
-        for(int k=0,j=N2; k<NP2; k++,j++) 
-          v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
-        ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+       for(int i=0; i<C.size(); i++){
+         int kk=myVars.where(i);
+         if (kk<0) continue;
+         int upC = C2node_up[i];
+         int dnC = C2node_dn[i];
+         ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+         ValueType tmp1=detValues_dn[dnC]*psiinv;
+         ValueType tmp2=detValues_up[upC]*psiinv;
+         convert(cdet,dlogpsi[kk]);
+         ValueType v1=0.0,v2=0.0;
+         for(int k=0,j=N1; k<NP1; k++,j++) 
+           v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
+         for(int k=0,j=N2; k<NP2; k++,j++) 
+           v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
+         ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
                                  -cdet*lapl_sum)  
                            -cdet*gg-(tmp1*v1+tmp2*v2);
-//        ValueType dhpsi =  (-0.5*cdet)*
-//                       ( laplSum_up[upC]+laplSum_dn[dnC]-lapl_sum
-//                          +2.0*(gg-Dot(myG_temp,grads_up[upC])-Dot(myG_temp,grads_dn[dnC])
-//                          +Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
-        convert(dhpsi,dhpsioverpsi[kk]);
-      }
+         convert(dhpsi,dhpsioverpsi[kk]);
+       }
+     } // usingCSF
     }
   }
 
