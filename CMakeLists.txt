@@ -4,10 +4,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 
 #####################################################
 SET(CMAKE_FALLBACK FALSE)
-#if(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
-#  MESSAGE(WARNING ">>>> Recommend using cmake version 2.8.0 and higher. Using old cmake scripts. <<<< ")
+if(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+  MESSAGE(WARNING ">>>> Recommend using cmake version 2.8.0 and higher. Using old cmake scripts. <<<< ")
   SET(CMAKE_FALLBACK TRUE)
-#endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
 
 ######################################################################
 # Version 
@@ -20,7 +20,7 @@ SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINO
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
+SET(QMC_BUILD_LEVEL 1 CACHE INTEGER 
   "QMC Build Level: 1=bare, 2=developer, 3=experimental")
 
 ######################################################################
@@ -145,8 +145,8 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Build static libraries and binary")
-SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
-SET(BUILD_SANDBOX 1 CACHE BOOL "Build snadbox for testing")
+SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
+SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 
 ######################################################################
