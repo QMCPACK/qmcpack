@@ -262,11 +262,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     cur = cur->next;
   }
 
-    cout << "#### before expanding " << endl;
-    ref_.Lattice.print(cout);
     expandSuperCell(ref_,TileMatrix);
-    cout << "#### after expanding " << endl;
-    ref_.Lattice.print(cout);
 
   //Disable atom 
   ////have read from <attrib/>'s and <group/>'s. Time to add <atom/>'s

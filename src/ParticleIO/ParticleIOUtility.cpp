@@ -32,8 +32,6 @@ namespace qmcplusplus {
 
     if(identity) return;
 
-    cout << "### TileMatrix \n" << tmat;
-
     //convert2unit
     ref_.convert2Unit(ref_.R);
     ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
