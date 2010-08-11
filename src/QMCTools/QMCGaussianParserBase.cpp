@@ -20,7 +20,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 QMCGaussianParserBase::QMCGaussianParserBase(): 
   Title("sample"),basisType("Gaussian"),basisName("generic"),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
-  ,usingCSF(false)
+  ,usingCSF(false),readNO(0)
 {
 }
 
@@ -29,7 +29,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),  
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
-  angular_type("spherical"),usingCSF(false)
+  angular_type("spherical"),usingCSF(false),readNO(0)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -770,6 +770,7 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
     xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
     {
       xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
+      xmlNewProp(detPtr,(const xmlChar*)"name",(const xmlChar*)"LCAOBSet");
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
       xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());

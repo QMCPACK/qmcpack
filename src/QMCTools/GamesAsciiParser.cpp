@@ -116,22 +116,45 @@ void GamesAsciiParser::parse(const std::string& fname) {
   getGaussianCenters(fin);
 
   fin.seekg(pivot_begin);
-  if(lookFor(fin,"NATURAL ORBITALS IN ATOMIC ORBITAL BASIS")) {
-    MOtype = "NaturalOrbitals";
-    readtype=1;
-    cout<<"Reading Natural Orbitals from Gamess output. \n";
-  } else {
-    fin.close(); fin.open(fname.c_str());
-    if(lookFor(fin,"MCSCF NATURAL ORBITALS")) {
+  if(readNO > 0) { // look for natural orbitals
+// output from ALDET and GUGA CI
+    cout<<"Reading " <<readNO <<" orbitals from file.\n";
+    numMO=readNO;
+    if(lookFor(fin,"NATURAL ORBITALS IN ATOMIC ORBITAL BASIS")) {
       MOtype = "NaturalOrbitals";
-      readtype=2;
-      cout<<"Reading Natural Orbitals from Gamess output. \n";
-    } else { 
+      readtype=1;
+      cout<<"Reading Natural Orbitals from ALDET/GUGA/FSOCI run output. \n";
+    } else {
+      fin.close(); fin.open(fname.c_str());
+// output from MCSCF run
+      if(lookFor(fin,"MCSCF NATURAL ORBITALS")) {
+        MOtype = "NaturalOrbitals";
+        readtype=2;
+        cout<<"Reading Natural Orbitals from MCSCF run output. \n";
+      } else {
+        cerr<<"Could not find Natural Orbitals. \n";
+        abort();
+      }
+    }
+  } else {  // look for eigenvectors 
+    if(lookFor(fin,"   EIGENVECTORS")) {
       MOtype = "Canonical";
-      cout<<"Reading Canonical Orbitals from Gamess output. \n";
+      readtype=0;
+      cout<<"Reading RHF Canonical Orbitals from Gamess output. \n";
+    } else {
+      fin.close(); fin.open(fname.c_str());
+// output
+      if(lookFor(fin,"MCSCF OPTIMIZED ORBITALS")) {
+        MOtype = "Canonical";
+        readtype=0;
+        cout<<"Reading Optimized Orbitals from MCSCF run output. \n";
+      } else {
+        cerr<<"Could not find eigenstates. \n";
+        abort();
+      }
     }
   }
-  fin.close(); fin.open(fname.c_str());
+//  fin.close(); fin.open(fname.c_str());
   getMO(fin);
   fin.close();
 
@@ -457,14 +480,14 @@ void GamesAsciiParser::getMO(std::istream& is) {
   EigVec.resize(2*SizeOfBasisSet*numMO);
   std::string aline;
   
-  if(MOtype == "Canonical")
-    search(is,"   EIGENVECTORS");
-  else if(MOtype == "NaturalOrbitals") {
-    if(readtype==1)
-      search(is,"NATURAL ORBITALS IN ATOMIC ORBITAL BASIS"); // ci
-    else 
-      search(is,"MCSCF NATURAL ORBITALS");  // mcscf
-  }
+  //if(MOtype == "Canonical")
+  //  search(is,"   EIGENVECTORS");
+  //else if(MOtype == "NaturalOrbitals") {
+  //  if(readtype==1)
+  //    search(is,"NATURAL ORBITALS IN ATOMIC ORBITAL BASIS"); // ci
+  //  else if(readtype == 2)
+  //    search(is,"MCSCF NATURAL ORBITALS");  // mcscf
+  //}
   getwords(currentWords,is);  // ----------------------
   getwords(currentWords,is);  // empty line 
   
@@ -700,7 +723,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
       while(currentWords.size() != 0) {
         if(currentWords[0] == "......" || currentWords[1] == "END") break;
         double cof = atof(currentWords[1].c_str());
-        if(cof > ci_threshold) {
+        if(std::abs(cof) > ci_threshold) {
           ci_size++;
           int nq = atoi(currentWords[0].c_str());
           pair<int,double> cic(nq,cof);

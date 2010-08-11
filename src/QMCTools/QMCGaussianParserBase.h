@@ -31,7 +31,7 @@ struct QMCGaussianParserBase {
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
-  int numMO;   
+  int numMO, readNO;   
   std::string Title;
   std::string basisType;
   std::string basisName;

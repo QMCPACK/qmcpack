@@ -270,11 +270,16 @@ void GaussianFCHKParser::parse(const std::string& fname) {
           int pos=2;
           std::string aline; 
           getline(ofile,aline,'\n');
+//cout<<"aline: " <<aline <<endl;
           for(int i=0; i<7; i++) {
-            int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+            //int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+            //coeff2confg[q] = cnt++;  
+            //CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
+            //pos+=18; 
+            int q = atoi( (aline.substr(pos,pos+7)).c_str() );  
             coeff2confg[q] = cnt++;  
-            CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
-            pos+=18; 
+            CIcoeff.push_back( atof( (aline.substr(pos+9,pos+18)).c_str() ) );
+            pos+=21; 
 //cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
           }
         }
@@ -282,9 +287,12 @@ void GaussianFCHKParser::parse(const std::string& fname) {
           int pos=2;
           std::string aline;
           getline(ofile,aline,'\n');
-          int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+          //int q = atoi( (aline.substr(pos,pos+4)).c_str() );  
+          //coeff2confg[q] = cnt++;  
+          //CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
+          int q = atoi( (aline.substr(pos,pos+7)).c_str() );  
           coeff2confg[q] = cnt++;  
-          CIcoeff.push_back( atof( (aline.substr(pos+6,pos+15)).c_str() ) );
+          CIcoeff.push_back( atof( (aline.substr(pos+9,pos+18)).c_str() ) );
 //cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
         } 
       } else {
@@ -321,22 +329,24 @@ void GaussianFCHKParser::parse(const std::string& fname) {
             }
           }
         } 
-        getwords(currentWords,ofile);
-        if(currentWords.size() != nextra) {
-          cerr<<"Error reading CI configurations last line \n";
-          abort();
-        }
-        for(int k=0; k<nextra; k++) indx[k]=atoi(currentWords[k].c_str());
-        getwords(currentWords,ofile);
-        if(currentWords.size() != nextra+1) {
-          cerr<<"Error reading CI configurations last line \n";
-          abort();
-        }
-        for(int k=0; k<nextra; k++) {
-          double ci = atof(currentWords[k+1].c_str());
-          if(std::abs(ci) > ci_threshold ) {
-            coeff2confg[indx[k]] = cnt++;
-            CIcoeff.push_back(ci); 
+        if(nextra>0) {
+          getwords(currentWords,ofile);
+          if(currentWords.size() != nextra) {
+            cerr<<"Error reading CI configurations last line \n";
+            abort();
+          }
+          for(int k=0; k<nextra; k++) indx[k]=atoi(currentWords[k].c_str());
+          getwords(currentWords,ofile);
+          if(currentWords.size() != nextra+1) {
+            cerr<<"Error reading CI configurations last line \n";
+            abort();
+          }
+          for(int k=0; k<nextra; k++) {
+            double ci = atof(currentWords[k+1].c_str());
+            if(std::abs(ci) > ci_threshold ) {
+              coeff2confg[indx[k]] = cnt++;
+              CIcoeff.push_back(ci); 
+            }
           }
         }
       }

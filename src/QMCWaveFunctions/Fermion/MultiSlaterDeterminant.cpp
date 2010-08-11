@@ -211,6 +211,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
     GradType grad_iat=0.0;
     if(DetID[iat] == 0) {
+      for(int i=0; i<dets_up.size(); i++) {
+        spo_up->prepareFor(i);
+        grads_up[i](iat) = dets_up[i]->evalGrad(P,iat);
+      }
       ValueType psi=0.0;
       for(int i=0; i<C.size(); i++){
         int upC = C2node_up[i];
@@ -223,6 +227,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       return grad_iat;
     } else {
       ValueType psi=0.0;
+      for(int i=0; i<dets_dn.size(); i++) {
+        spo_dn->prepareFor(i);
+        grads_dn[i](iat) = dets_dn[i]->evalGrad(P,iat);
+      }
       for(int i=0; i<C.size(); i++){ 
         int upC = C2node_up[i];
         int dnC = C2node_dn[i];

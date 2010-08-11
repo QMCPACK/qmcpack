@@ -238,7 +238,9 @@ namespace qmcplusplus {
         for(int i=0; i<NumOrbitals; i++)
           TpsiM(i,WorkingIndex) = psiV(i);
         std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
-        std::copy(new_grads.begin(),new_grads.end(),grads.begin());
+// no use saving these
+//        for(int i=0; i<NumDets; i++)
+//          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
         std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         break;

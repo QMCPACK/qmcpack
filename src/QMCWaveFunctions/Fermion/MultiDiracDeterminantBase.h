@@ -451,6 +451,9 @@ namespace qmcplusplus {
       UpdateMode=ORB_PBYP_PARTIAL;
       Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
 
+//mmorales: check comment above
+      psiMinv_temp = psiMinv;
+
       WorkingIndex = iat-FirstIndex;
       vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
       GradType ratioGradRef;
@@ -478,11 +481,38 @@ namespace qmcplusplus {
           TpsiM(i,WorkingIndex) = dpsiV[i][idim];
         BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
       }
+
+// check comment above
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
     }
 
     inline void 
     evaluateGrads(ParticleSet& P, int iat)  {
 
+      WorkingIndex = iat-FirstIndex;
+      vector<int>::iterator it;  
+
+      for(int idim=0; idim<3; idim++) {
+        //dpsiMinv = psiMinv_temp;
+        dpsiMinv = psiMinv;
+        it = confgList[ReferenceDeterminant].occup.begin();
+        ValueType ratioG = 0.0; 
+        for(int i=0; i<NumPtcls; i++) {
+          psiV_temp[i] = dpsiM(WorkingIndex,*it)[idim];
+          ratioG += psiMinv(i,WorkingIndex)*dpsiM(WorkingIndex,*it)[idim];
+          it++;
+        }
+        grads(ReferenceDeterminant,WorkingIndex)[idim] = ratioG*detValues[ReferenceDeterminant];
+        InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioG);
+        for(int i=0; i<NumOrbitals; i++)
+          TpsiM(i,WorkingIndex) = dpsiM(WorkingIndex,i)[idim];
+        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+      }
+
+// check comment above
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
 
     }
 
@@ -490,6 +520,9 @@ namespace qmcplusplus {
     evaluateAllForPtclMove(ParticleSet& P, int iat) {
       UpdateMode=ORB_PBYP_ALL;
       Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
+
+//mmorales: check comment above
+      psiMinv_temp = psiMinv;
 
       WorkingIndex = iat-FirstIndex;
       vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
@@ -578,6 +611,10 @@ namespace qmcplusplus {
             TpsiM(i,jat) = psiM(jat,i);
         }
       } // jat
+
+// check comment above
+      for(int i=0; i<NumOrbitals; i++)
+        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
     }
 
 

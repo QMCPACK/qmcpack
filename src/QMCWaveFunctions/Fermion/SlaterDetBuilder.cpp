@@ -851,9 +851,11 @@ namespace qmcplusplus
      vector<ci_configuration> confgList_dn;
 
      string optCI="no";
+     RealType cutoff=0.0;
      OhmmsAttributeSet ciAttrib;
      ciAttrib.add (optCI,"optimize");
      ciAttrib.add (optCI,"Optimize");
+     ciAttrib.add (cutoff,"cutoff");
      ciAttrib.put(cur);
 
      optimizeCI = (optCI=="yes");
@@ -872,7 +874,7 @@ namespace qmcplusplus
        cur = cur->next;
      }
 
-     int NCA,NCB,NEA,NEB,nstates,ndets=0,count=0;
+     int NCA,NCB,NEA,NEB,nstates,ndets=0,count=0,cnt0=0;
      string Dettype="DETS";
      OhmmsAttributeSet spoAttrib;
      spoAttrib.add (NCA, "nca");
@@ -925,6 +927,13 @@ namespace qmcplusplus
            confAttrib.add(ci,"coeff");
            confAttrib.add(tag,"id");
            confAttrib.put(cur);
+
+           if(abs(ci) < cutoff) { 
+             cur = cur->next;
+             cnt0++;
+             continue; 
+           }
+           cnt0++;
 
            CSFcoeff.push_back(ci);
            DetsPerCSF.push_back(0);           
@@ -1021,6 +1030,13 @@ namespace qmcplusplus
            confAttrib.add(beta,"beta");
            confAttrib.add(tag,"id");
            confAttrib.put(cur);
+      
+           if(abs(ci) < cutoff) { 
+             cur = cur->next;
+             cnt0++;
+             continue;
+           }
+           cnt0++;
 
            int nq=0,na,nr;
            if(alpha.size() < nstates)
@@ -1076,19 +1092,23 @@ namespace qmcplusplus
          cur = cur->next;
        }
      } //usingCSF
-     if(count != ndets) {
-       cerr<<"count, ndets: " <<count <<"  " <<ndets <<endl;
+     //if(count != ndets) {
+     if(cnt0 != ndets) {
+       cerr<<"count, ndets: " <<cnt0 <<"  " <<ndets <<endl;
        APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
      }
-     if(!usingCSF)
-       if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-         APP_ABORT("Problems reading determinant ci_configurations.");
-       }
+     //if(!usingCSF)
+     //  if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
+     //    APP_ABORT("Problems reading determinant ci_configurations.");
+     //  }
 
      C2node_up.resize(coeff.size());
      C2node_dn.resize(coeff.size());
 
      app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
+     RealType sumsq=0.0;
+     for(int i=0; i<coeff.size(); i++) sumsq += coeff[i]*coeff[i];
+     app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq <<endl;
 
      for(int i=0; i<confgList_up.size(); i++)
      {

@@ -194,6 +194,7 @@ namespace qmcplusplus {
   {
     GradType grad_iat=0.0;
     if(DetID[iat] == 0) {
+      Dets[0]->evaluateGrads(P,iat);
       ValueVector_t& detValues_up = Dets[0]->detValues;
       ValueVector_t& detValues_dn = Dets[1]->detValues;
       GradMatrix_t& grads_up = Dets[0]->grads;
@@ -209,6 +210,7 @@ namespace qmcplusplus {
       grad_iat *= 1.0/psi;
       return grad_iat;
     } else {
+      Dets[1]->evaluateGrads(P,iat);
       ValueType psi=0.0;
       ValueVector_t& detValues_up = Dets[0]->detValues;
       ValueVector_t& detValues_dn = Dets[1]->detValues;
@@ -446,6 +448,43 @@ namespace qmcplusplus {
       default: 
         break;
     }
+
+//    Dets[0]->evaluateForWalkerMove(P);
+//    Dets[1]->evaluateForWalkerMove(P);
+    // can this change over time??? I don't know yet
+/*
+    ValueVector_t& detValues_up = Dets[0]->detValues;
+    ValueVector_t& detValues_dn = Dets[1]->detValues;
+    GradMatrix_t& grads_up = Dets[0]->grads;
+    GradMatrix_t& grads_dn = Dets[1]->grads;
+    ValueMatrix_t& lapls_up = Dets[0]->lapls;
+    ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+    int N1 = Dets[0]->FirstIndex;
+    int N2 = Dets[1]->FirstIndex;
+    int NP1 = Dets[0]->NumPtcls;
+    int NP2 = Dets[1]->NumPtcls;
+
+    ValueType psi=0.0;
+    myG_temp=0.0;
+    myL_temp=0.0;
+    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    vector<RealType>::iterator it(C.begin()),last(C.end());
+    while(it != last) {
+      psi += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
+      for(int k=0,n=N1; k<NP1; k++,n++) {
+        myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+        myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+      }
+      for(int k=0,n=N2; k<NP2; k++,n++) {
+        myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+        myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+      }
+      it++;upC++;dnC++;
+    }
+    ValueType psiinv = 1.0/psi;
+    myG_temp *= psiinv;
+    myL_temp *= psiinv;
+*/
   }
 
   void MultiSlaterDeterminantFast::restore(int iat)
