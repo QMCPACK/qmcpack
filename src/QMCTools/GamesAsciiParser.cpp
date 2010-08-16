@@ -18,6 +18,7 @@ GamesAsciiParser::GamesAsciiParser() {
   MOtype="Canonical";
   angular_type="cartesian";
   readtype=0;
+  NFZC=0;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv): 
@@ -29,6 +30,7 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   MOtype="Canonical";
   angular_type="cartesian";
   readtype=0;
+  NFZC=0;
 }
 
 void GamesAsciiParser::parse(const std::string& fname) {
@@ -164,6 +166,12 @@ void GamesAsciiParser::parse(const std::string& fname) {
     pivot_begin= fin.tellg();
     if(lookFor(fin,"GUGA DISTINCT ROW TABLE")) {
       cout<<"Found GUGA ROW TABLE, reading CSF." <<endl;
+      if(!lookFor(fin,"NFZC=",aline)) {
+        cerr<<"Could not find number of frozen core orbitals in output file.\n";
+        abort();
+      } else {
+        NFZC = atoi(aline.substr(10,4).c_str());
+      }
       fin.seekg(pivot_begin);
       getCSF(fin);
     } else {
@@ -755,6 +763,12 @@ void GamesAsciiParser::getCSF(std::istream& is)
     abort();
   }
 
+  int ds=SpinMultiplicity-1;
+  int neb= (NumberOfEls-ds)/2;
+  int nea= NumberOfEls-NumberOfBeta;
+  ci_nca = ci_ncb = NFZC;
+  vector<int> csfOccup;
+
   bool done=false,first=true;
   int cnt=1,current=0;
   int naea=0,naeb=0;
@@ -784,6 +798,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
 //    }
     if(coeff2csf[current].first == cnt) { // read dets
 // first time the string is longer
+      csfOccup.clear(); 
       {
         std::string alp(ci_nstates,'0'),beta(ci_nstates,'0');
         if(first) {
@@ -793,8 +808,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
           {
             //int nq = atoi(currentWords[i].c_str());
             int nq = atoi(aline.substr(33+i*3,3).c_str());
+            csfOccup.push_back(nq);
             if(nq > 0) {
-              if(nq-1 >= ci_nstates) {
+              if(nq-1 >= ci_nstates+ci_nca) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -803,10 +819,10 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }                
-              alp.at(nq-1) = '1';
+              alp.at(nq-1-ci_nca) = '1';
               naea++;
             } else {
-              if(-nq-1 >= ci_nstates) {
+              if(-nq-1 >= ci_nstates+ci_ncb) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -815,7 +831,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }
-              beta.at(-nq-1) = '1';
+              beta.at(-nq-1-ci_ncb) = '1';
               naeb++;
             }
           }
@@ -826,8 +842,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
           {
             //int nq = atoi(currentWords[i].c_str());
             int nq = atoi(aline.substr(33+i*3,3).c_str());
+            csfOccup.push_back(nq);
             if(nq > 0) {
-              if(nq-1 >= ci_nstates) {
+              if(nq-1 >= ci_nstates+ci_nca) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -836,10 +853,10 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }
-              alp.at(nq-1) = '1';
+              alp.at(nq-1-ci_nca) = '1';
               na++;
             } else {
-              if(-nq-1 >= ci_nstates) {
+              if(-nq-1 >= ci_nstates+ci_ncb) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -848,7 +865,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }
-              beta.at(-nq-1) = '1';
+              beta.at(-nq-1-ci_ncb) = '1';
               nb++;
             }
           }
@@ -862,9 +879,10 @@ void GamesAsciiParser::getCSF(std::istream& is)
              abort();
           }
         }
+        double sg = getCSFSign(csfOccup);
         CSFalpha[current].push_back(alp);
         CSFbeta[current].push_back(beta);
-        CSFexpansion[current].push_back(atof(currentWords[4].c_str()));
+        CSFexpansion[current].push_back(atof(currentWords[4].c_str())*sg);
         getwords(currentWords,is,aline);
       } 
       while(currentWords.size() != 0) {
@@ -880,14 +898,16 @@ void GamesAsciiParser::getCSF(std::istream& is)
           }
           break;
         }
+        csfOccup.clear();
         std::string alp(ci_nstates,'0'),beta(ci_nstates,'0');
         int num=(aline.size()-33)/3;
         for(int i=0; i<num; i++)
         {
           //int nq = atoi(currentWords[i].c_str());
           int nq = atoi(aline.substr(33+i*3,3).c_str());
+          csfOccup.push_back(nq);
           if(nq > 0) {
-              if(nq-1 >= ci_nstates) {
+              if(nq-1 >= ci_nstates+ci_nca) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -896,9 +916,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }
-            alp.at(nq-1) = '1';
+            alp.at(nq-1-ci_nca) = '1';
           } else {
-              if(-nq-1 >= ci_nstates) {
+              if(-nq-1 >= ci_nstates+ci_ncb) {
                 cerr<<"Problems with det string #,nq,i: " <<cnt <<"  " <<nq <<"  " <<i <<endl;
                 cout<<"line: " <<aline <<endl;
                 cout<<"alpha: " <<alp <<endl;
@@ -907,13 +927,14 @@ void GamesAsciiParser::getCSF(std::istream& is)
                 cerr<<endl;
                 abort();
               }
-            beta.at(-nq-1) = '1';
+            beta.at(-nq-1-ci_ncb) = '1';
           }
         } 
 
+        double sg = getCSFSign(csfOccup);
         CSFalpha[current].push_back(alp);
         CSFbeta[current].push_back(beta);
-        CSFexpansion[current].push_back(atof(currentWords[2].c_str()));
+        CSFexpansion[current].push_back(atof(currentWords[2].c_str())*sg);
         getwords(currentWords,is,aline);
       }
       current++;
@@ -943,11 +964,11 @@ void GamesAsciiParser::getCSF(std::istream& is)
   for(int i=0; i<CSFbeta[0][0].size(); i++)
     if(CSFbeta[0][0].at(i)=='1') ci_neb++;
 
-  int ds=SpinMultiplicity-1;
-  int neb= (NumberOfEls-ds)/2;
-  int nea= NumberOfEls-NumberOfBeta;
-  ci_nca = nea-ci_nea;
-  ci_ncb = neb-ci_neb;
+//  int ds=SpinMultiplicity-1;
+//  int neb= (NumberOfEls-ds)/2;
+//  int nea= NumberOfEls-NumberOfBeta;
+//  ci_nca = nea-ci_nea;
+//  ci_ncb = neb-ci_neb;
 /*
   cout<<"Summary. #ci: " <<ci_size <<endl;
   for(int i=0; i<ci_size; i++) {
@@ -1012,6 +1033,24 @@ void GamesAsciiParser::getCI(std::istream& is)
   ci_ncb = neb-ci_neb;
   ci_nstates = CIalpha[0].size();
   
+}
+
+double GamesAsciiParser::getCSFSign(vector<int> & occ)
+{
+// reference ordering is irrelevant as long as it is consistent
+// within all determinants.  
+  double res=1.0;
+  int n=occ.size();
+  for(int i=0; i<n; i++)
+    for(int j=i+1; j<n; j++) {
+      if(occ[j] > occ[i]) {
+        res*=-1.0;
+        double tmp=occ[i];
+        occ[i]=occ[j];
+        occ[j]=tmp;
+      }
+    }  
+  return res; 
 }
 
 

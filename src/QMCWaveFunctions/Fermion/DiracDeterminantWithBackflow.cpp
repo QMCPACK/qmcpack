@@ -243,9 +243,12 @@ namespace qmcplusplus {
   {
     GradType g;
     g=0.0;
-    for(int j=0; j<NumPtcls; j++) {
-      g += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag(j));
-    }
+// need keep BFTrans->Amat_temp(iat,FirstIndex+j) and Fmatdiag updated
+// at all times since this is called before ratioGrad
+//    for(int j=0; j<NumPtcls; j++) {
+//      g += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag(j));
+//    }
+    APP_ABORT("Need to implement DiracDeterminantWithBackflow::evalGrad\n");
 
     return g;
   }

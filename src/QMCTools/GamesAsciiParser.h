@@ -23,6 +23,7 @@ public:
   std::string MOtype;
   //int nCartMO;
   int readtype;
+  int NFZC;
 
   void parse(const std::string& fname);
 
@@ -35,6 +36,8 @@ public:
   void getCI(std::istream& is);
 
   void getCSF(std::istream& is);
+
+  double getCSFSign(vector<int>&);
 
 };
 #endif

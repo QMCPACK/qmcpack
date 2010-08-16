@@ -45,6 +45,7 @@
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantOpt.h"
 
+#include <bitset>
 
 namespace qmcplusplus
 {
@@ -248,7 +249,7 @@ namespace qmcplusplus
           app_log() <<"Creating base determinant (up) for MSD expansion. \n";
           up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
           app_log() <<"Creating base determinant (down) for MSD expansion. \n";
-          dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,1);
+          dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
           success = createMSDFast(multislaterdetfast_0,cur);
 
@@ -913,9 +914,10 @@ namespace qmcplusplus
 
      //app_log() <<"alpha reference: \n" <<dummyC_alpha;
      //app_log() <<"beta reference: \n" <<dummyC_beta;
+     int ntot=0;
 
      if(usingCSF) {
-       cout<<"Reading CSFs." <<endl;
+       app_log() <<"Reading CSFs." <<endl;
        while (cur != NULL)//check the basis set
        {
          getNodeName(cname,cur);
@@ -923,9 +925,10 @@ namespace qmcplusplus
          {
            RealType ci=0.0;
            OhmmsAttributeSet confAttrib;
-           string tag;
+           string tag,OccString;
            confAttrib.add(ci,"coeff");
            confAttrib.add(tag,"id");
+           confAttrib.add(OccString,"occ");
            confAttrib.put(cur);
 
            if(abs(ci) < cutoff) { 
@@ -994,6 +997,8 @@ namespace qmcplusplus
                  APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
                }
 
+//app_log() <<" <ci id=\"coeff_" <<ntot++ <<"\" coeff=\"" <<ci*coef <<"\" alpha=\"" <<alpha <<"\" beta=\"" <<beta <<"\" />" <<endl;
+
                DetsPerCSF.back()++;           
                CSFexpansion.push_back(coef);
                coeff.push_back(coef*ci);
@@ -1016,7 +1021,7 @@ namespace qmcplusplus
          cur = cur->next;
        }
      } else {
-       cout<<"Reading CI expansion." <<endl;
+       app_log() <<"Reading CI expansion." <<endl;
        while (cur != NULL)//check the basis set
        {
          getNodeName(cname,cur);
