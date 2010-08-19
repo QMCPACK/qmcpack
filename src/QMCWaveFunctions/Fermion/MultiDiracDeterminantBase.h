@@ -31,8 +31,6 @@ namespace qmcplusplus {
 
   class MultiDiracDeterminantBase: public OrbitalBase { 
 
-    protected:
-      ParticleSet *targetPtcl;
     public:
       bool Optimizable;
       void registerTimers();
