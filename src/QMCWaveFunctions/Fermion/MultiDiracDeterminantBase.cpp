@@ -309,15 +309,16 @@ namespace qmcplusplus {
       return 1.0;
     }
 
-  // this is probably wrong
+  // this has been fixed
   MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
-    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex),
+    OrbitalBase(s), NP(0), FirstIndex(s.FirstIndex),
     UpdateTimer("MultiDiracDeterminantBase::update"),
     RatioTimer("MultiDiracDeterminantBase::ratio"),
     InverseTimer("MultiDiracDeterminantBase::inverse")
   {
     setDetInfo(s.ReferenceDeterminant,s.confgList);
     registerTimers();
+    Phi = (s.Phi->makeClone());
     this->resize(s.NumPtcls,s.NumOrbitals);
     this->DetCalculator.resize(s.NumPtcls);
   }
