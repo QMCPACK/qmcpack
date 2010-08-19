@@ -51,12 +51,8 @@ namespace qmcplusplus {
   
   OrbitalBasePtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
   { 
-//    MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
-//    MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
-    MultiDiracDeterminantBase* up_clone(Dets[0]);
-    MultiDiracDeterminantBase* dn_clone(Dets[1]);    
-    
-//  (MultiDiracDeterminantBase*) Dets[0]->makeClone(tqp),(MultiDiracDeterminantBase*) Dets[1]->makeClone(tqp)
+    MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
+    MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
     MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone); 
     clone->Dets[0]->resetTargetParticleSet(tqp);
     clone->Dets[1]->resetTargetParticleSet(tqp);
