@@ -58,7 +58,11 @@ namespace qmcplusplus
         Return_t* restrict saved = Records[iw];
         W.R=(*it)->R;
         W.update();
-        Return_t logpsi=Psi.evaluateDeltaLog(W);
+
+// buffer for MultiSlaterDet data
+        Walker_t::Buffer_t tbuffer=thisWalker.DataSetForDerivatives;
+
+        Return_t logpsi=Psi.evaluateDeltaLog(W,tbuffer);
         W.G += *dLogPsi[iw];
         W.L += *d2LogPsi[iw];
 
@@ -214,8 +218,13 @@ namespace qmcplusplus
         Walker_t& thisWalker(**it);
         W.R=thisWalker.R;
         W.update();
+// buffer for MultiSlaterDet data
+        Walker_t::Buffer_t tbuffer;
+        // creates space but doesn't evaluate anything
+        Psi.registerDataForDerivatives(W,tbuffer); 
+        thisWalker.DataSetForDerivatives=tbuffer;
         Return_t*  saved=Records[iw];
-        Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw]);
+        Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
         Return_t e=H.evaluate(W);
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;
@@ -257,7 +266,13 @@ namespace qmcplusplus
     else
       for (int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
 
-    if (final_reset) Psi.stopOptimization();
+    if (final_reset) {
+      Psi.stopOptimization();
+      MCWalkerConfiguration::iterator it(W.begin());
+      MCWalkerConfiguration::iterator it_end(W.end());
+      for (; it!=it_end; ++it)
+        (**it).DataSetForDerivatives.clear();
+    }
     Psi.resetParameters(OptVariablesForPsi);
   }
 
@@ -451,7 +466,6 @@ namespace qmcplusplus
     H2(0,0) = curAvg2_w;
     return 1.0;
   }
-
 
 ///** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
 // *@return true always

@@ -169,6 +169,15 @@ namespace qmcplusplus
                             ParticleSet::ParticleGradient_t& fixedG,
                             ParticleSet::ParticleLaplacian_t& fixedL);
 
+      RealType evaluateDeltaLog(ParticleSet& P,BufferType& buf);
+
+      void evaluateDeltaLog(ParticleSet& P,
+                            RealType& logpsi_fixed,
+                            RealType& logpsi_opt,
+                            ParticleSet::ParticleGradient_t& fixedG,
+                            ParticleSet::ParticleLaplacian_t& fixedL,
+                            BufferType& buf);
+
       /** functions to handle particle-by-particle update */
       RealType ratio(ParticleSet& P, int iat);
       RealType alternateRatio(ParticleSet& P);
@@ -200,6 +209,7 @@ namespace qmcplusplus
       void acceptMove(ParticleSet& P, int iat);
 
       RealType registerData(ParticleSet& P, BufferType& buf);
+      RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf);
       RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
       void copyFromBuffer(ParticleSet& P, BufferType& buf);
       RealType evaluateLog(ParticleSet& P, BufferType& buf);
@@ -213,6 +223,12 @@ namespace qmcplusplus
                                const opt_variables_type& optvars,
                                vector<RealType>& dlogpsi,
                                vector<RealType>& dhpsioverpsi);
+
+      void evaluateDerivatives(ParticleSet& P,
+                               const opt_variables_type& optvars,
+                               vector<RealType>& dlogpsi,
+                               vector<RealType>& dhpsioverpsi,
+                               BufferType& buf);
 
       /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
       //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);

@@ -119,6 +119,12 @@ namespace qmcplusplus {
 
     RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
+    void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf);
+
+    void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
+    void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
     RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);

@@ -192,6 +192,62 @@ namespace qmcplusplus {
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   }
 
+  OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G, 
+      ParticleSet::ParticleLaplacian_t& L,
+      PooledData<RealType>& buf,
+      bool fillBuffer )
+  {
+    
+    if(fillBuffer) {
+      Dets[0]->evaluateForWalkerMove(P);
+      Dets[0]->copyToDerivativeBuffer(P,buf);
+      Dets[1]->evaluateForWalkerMove(P);
+      Dets[1]->copyToDerivativeBuffer(P,buf);
+    } else {
+      Dets[0]->copyFromDerivativeBuffer(P,buf);
+      Dets[1]->copyFromDerivativeBuffer(P,buf);
+    }
+    // can this change over time??? I don't know yet
+    ValueVector_t& detValues_up = Dets[0]->detValues;
+    ValueVector_t& detValues_dn = Dets[1]->detValues;
+    GradMatrix_t& grads_up = Dets[0]->grads;
+    GradMatrix_t& grads_dn = Dets[1]->grads;
+    ValueMatrix_t& lapls_up = Dets[0]->lapls;
+    ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+    int N1 = Dets[0]->FirstIndex;
+    int N2 = Dets[1]->FirstIndex;
+    int NP1 = Dets[0]->NumPtcls;
+    int NP2 = Dets[1]->NumPtcls;
+
+    psiCurrent=0.0;
+    myG=0.0;
+    myL=0.0;
+    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    vector<RealType>::iterator it(C.begin()),last(C.end());
+    while(it != last) {
+      psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
+      for(int k=0,n=N1; k<NP1; k++,n++) {
+        myG(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+        myL(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+      }
+      for(int k=0,n=N2; k<NP2; k++,n++) {
+        myG(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+        myL(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+      }
+      it++;upC++;dnC++;
+    }
+    ValueType psiinv = 1.0/psiCurrent;
+    myG *= psiinv;
+    myL *= psiinv;
+    G += myG;
+    for(int i=0; i<L.size(); i++)
+      L(i) += myL[i] - dot(myG[i],myG[i]);
+    return psiCurrent;
+
+  }
+
+
   OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
   {
     GradType grad_iat=0.0;
@@ -532,6 +588,13 @@ namespace qmcplusplus {
 //    msd->registerData(P,buf);
 
     return LogValue;
+  }
+
+// this routine does not initialize the data, just reserves the space
+  void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P, BufferType& buf)
+  {
+    Dets[0]->registerDataForDerivatives(P,buf);
+    Dets[1]->registerDataForDerivatives(P,buf);
   }
 
 // FIX FIX FIX

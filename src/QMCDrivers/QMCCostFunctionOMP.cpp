@@ -331,10 +331,16 @@ namespace qmcplusplus
     else
       for (int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
 
-    if (final_reset)
+    if (final_reset) {
       for (int i=0; i<psiClones.size(); ++i)
         psiClones[i]->stopOptimization();
+// is this correct with OMP?
+      MCWalkerConfiguration::iterator it(W.begin());
+      MCWalkerConfiguration::iterator it_end(W.end());
+      for (; it!=it_end; ++it)
+        (**it).DataSetForDerivatives.clear();
 
+    }
     //cout << "######### QMCCostFunctionOMP::resetPsi " << endl;
     //OptVariablesForPsi.print(cout);
     //cout << "-------------------------------------- " << endl;
@@ -535,7 +541,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
     
     return 1.0;
   }
-
 
 }
 /***************************************************************************

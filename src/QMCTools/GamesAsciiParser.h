@@ -23,7 +23,7 @@ public:
   std::string MOtype;
   //int nCartMO;
   int readtype;
-  int NFZC;
+  int NFZC, NEXT, NTOT, NAC;
 
   void parse(const std::string& fname);
 

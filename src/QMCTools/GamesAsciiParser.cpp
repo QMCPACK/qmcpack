@@ -166,11 +166,15 @@ void GamesAsciiParser::parse(const std::string& fname) {
     pivot_begin= fin.tellg();
     if(lookFor(fin,"GUGA DISTINCT ROW TABLE")) {
       cout<<"Found GUGA ROW TABLE, reading CSF." <<endl;
-      if(!lookFor(fin,"NFZC=",aline)) {
+      if(!lookFor(fin,"SYMMETRIES FOR THE",aline)) {
         cerr<<"Could not find number of frozen core orbitals in output file.\n";
         abort();
       } else {
-        NFZC = atoi(aline.substr(10,4).c_str());
+        NFZC = atoi(aline.substr(20,3).c_str());
+        NAC = atoi(aline.substr(30,3).c_str());
+        NEXT = atoi(aline.substr(42,3).c_str());
+        NTOT=NEXT+NAC;
+        cout<<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT <<endl;
       }
       fin.seekg(pivot_begin);
       getCSF(fin);
@@ -736,15 +740,41 @@ void GamesAsciiParser::getCSF(std::istream& is)
           int nq = atoi(currentWords[0].c_str());
           pair<int,double> cic(nq,cof);
           coeff2csf.push_back(cic);
-          CSFocc.push_back(currentWords[2]); 
+          if(NTOT <= 50) {
+            CSFocc.push_back(currentWords[2]); 
+          } else {
+            string tmp=currentWords[2];
+            getwords(currentWords,is);
+            tmp+=currentWords[0];
+            CSFocc.push_back(tmp); 
+          }   
+          getwords(currentWords,is);
+        } else { 
+          if(NTOT <= 50) 
+            getwords(currentWords,is);
+          else {
+            getwords(currentWords,is);
+            getwords(currentWords,is);
+          } 
         }
-        getwords(currentWords,is);
       }
     }
   } while(notfound);
-  cout<<"Done reading ci coefficients." <<endl; cout.flush();
+  cout<<"Done reading csf coefficients." <<endl; 
+  cout<<"Found: " <<coeff2csf.size() <<" CSFs.\n"; cout.flush();
   
-  ci_nstates = CSFocc[0].size();
+// look for highest occupied MO to avoid using unnecesary ones
+  ci_nstates = 0;
+  for(int i=0; i<CSFocc.size(); i++) {
+    int max=CSFocc[i].size();
+    for(int k=CSFocc[i].size()-1; k>=0; k--) {
+      if(CSFocc[i][k] == '1' || CSFocc[i][k] == '2') {
+        max = k+1;
+        break;
+      }
+    }
+    if(ci_nstates < max) ci_nstates=max;
+  }
   CSFalpha.resize(ci_size);
   CSFbeta.resize(ci_size);
   CSFexpansion.resize(ci_size);

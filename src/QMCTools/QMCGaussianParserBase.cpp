@@ -503,7 +503,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
       std::ostringstream tag; tag<<"CSFcoeff_" <<iv;
       xmlNewProp(csf,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
       xmlNewProp(csf,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
-      xmlNewProp(csf,(const xmlChar*)"occ",(const xmlChar*) (*occit).c_str());
+      xmlNewProp(csf,(const xmlChar*)"occ",(const xmlChar*) (*occit).substr(0,ci_nstates).c_str());
       for(int i=0; i<CSFexpansion[iv].size(); i++)
       {
         xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"det");
@@ -511,8 +511,8 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
         std::ostringstream tag0; tag0<<"csf_" <<iv <<"-" <<i;
         xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag0.str().c_str());
         xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff0.str().c_str());
-        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CSFalpha[iv][i].c_str());
-        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CSFbeta[iv][i].c_str());
+        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CSFalpha[iv][i].substr(0,ci_nstates).c_str());
+        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CSFbeta[iv][i].substr(0,ci_nstates).c_str());
         xmlAddChild(csf,ci);
       }
       xmlAddChild(detlist,csf);

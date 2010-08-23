@@ -197,6 +197,23 @@ namespace qmcplusplus
       evaluateLog(ParticleSet& P,
                   ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
 
+      /** evaluate the value of the orbital
+       * @param P active ParticleSet
+       * @param G Gradients, \f$\nabla\ln\Psi\f$
+       * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
+       * @param buf Buffer, data for analytical derivative calculation
+       *
+       */
+      virtual RealType
+      evaluateLog(ParticleSet& P,
+                  ParticleSet::ParticleGradient_t& G, 
+                  ParticleSet::ParticleLaplacian_t& L,
+                  PooledData<RealType>& buf,
+                  bool fillBuffer )
+      {
+         return evaluateLog(P,G,L); 
+      } 
+
       /** return the current gradient for the iat-th particle
        * @param Pquantum particle set
        * @param iat particle index
@@ -328,6 +345,13 @@ namespace qmcplusplus
        */
       virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
 
+      /** add temporary (constant) data used to calculate analytical
+       *  derivatives during linear optimization of parameters 
+       */
+      virtual void registerDataForDerivatives(ParticleSet& P, BufferType& buf)
+      {
+      } 
+
       /** re-evaluate the content and buffer data
        * @param P particle set
        * @param buf Anonymous storage
@@ -370,6 +394,15 @@ namespace qmcplusplus
                                        const opt_variables_type& optvars,
                                        vector<RealType>& dlogpsi,
                                        vector<RealType>& dhpsioverpsi) ;
+
+//      virtual void evaluateDerivatives(ParticleSet& P,
+//                                       const opt_variables_type& optvars,
+//                                       vector<RealType>& dlogpsi,
+//                                       vector<RealType>& dhpsioverpsi, 
+//                                       PooledData<RealType>& buf) 
+//      {  
+//         evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+//      } 
 
       virtual void finalizeOptimization() { }
 

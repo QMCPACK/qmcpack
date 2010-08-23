@@ -95,6 +95,13 @@ namespace qmcplusplus
                   , ParticleSet::ParticleGradient_t& G
                   , ParticleSet::ParticleLaplacian_t& L);
 
+      RealType
+      evaluateLog(ParticleSet& P,
+                  ParticleSet::ParticleGradient_t& G,
+                  ParticleSet::ParticleLaplacian_t& L,
+                  PooledData<RealType>& buf,
+                  bool fillBuffer );
+
       GradType evalGrad(ParticleSet& P, int iat);
       ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
       ValueType ratio(ParticleSet& P, int iat
@@ -109,6 +116,7 @@ namespace qmcplusplus
                   , int iat);
       RealType evaluateLog(ParticleSet& P,BufferType& buf);
       RealType registerData(ParticleSet& P, BufferType& buf);
+      void registerDataForDerivatives(ParticleSet& P, BufferType& buf);
       RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
       void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
@@ -117,6 +125,12 @@ namespace qmcplusplus
                                const opt_variables_type& optvars,
                                vector<RealType>& dlogpsi,
                                vector<RealType>& dhpsioverpsi);
+
+//      void evaluateDerivatives(ParticleSet& P,
+//                                       const opt_variables_type& optvars,
+//                                       vector<RealType>& dlogpsi,
+//                                       vector<RealType>& dhpsioverpsi, 
+//                                       PooledData<RealType>& buf);
 
       void resize(int,int);
 

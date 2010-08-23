@@ -203,6 +203,28 @@ namespace qmcplusplus
     //return LogValue=real(logpsi);
   }
 
+  TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    P.G = 0.0;
+    P.L = 0.0;
+    ValueType logpsi(0.0);
+    PhaseValue=0.0;
+    buf.rewind();
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    for (; it!=it_end; ++it)
+      {
+        if ((*it)->Optimizable)
+          {
+            logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
+            PhaseValue += (*it)->PhaseValue;
+          }
+      }
+    convert(logpsi,LogValue);
+    return LogValue;
+    //return LogValue=real(logpsi);
+  }
+
 
   /** evalaute the sum of log value of optimizable many-body wavefunctions
   * @param P  input configuration containing N particles
@@ -237,6 +259,40 @@ namespace qmcplusplus
       {
         if ((*it)->Optimizable)
           logpsi_opt += (*it)->evaluateLog(P, P.G, P.L);
+        else
+          {
+            logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
+          }
+      }
+    P.G += fixedG;
+    P.L += fixedL;
+    convert(logpsi_fixed,logpsi_fixed_r);
+    convert(logpsi_opt,logpsi_opt_r);
+    //logpsi_fixed_r = real(logpsi_fixed);
+    //logpsi_opt_r = real(logpsi_opt);
+  }
+
+  void
+  TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
+                                      , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
+                                      , ParticleSet::ParticleGradient_t& fixedG
+                                      , ParticleSet::ParticleLaplacian_t& fixedL 
+                                      , PooledData<RealType>& buf)
+  {
+    //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
+    P.G = 0.0;
+    P.L = 0.0;
+    fixedG = 0.0;
+    fixedL = 0.0;
+    ValueType logpsi_fixed(0.0);
+    ValueType logpsi_opt(0.0);
+    buf.rewind();
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    for (; it!=it_end; ++it)
+      {
+        if ((*it)->Optimizable)
+          logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
         else
           {
             logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
@@ -534,6 +590,20 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
     return LogValue;
+  }
+
+  TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    for (; it!=it_end; ++it)
+      {
+        if ((*it)->Optimizable)
+          {
+            (*it)->registerDataForDerivatives(P,buf);
+          }
+      }
+    return 1.0;
   }
 
   TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
