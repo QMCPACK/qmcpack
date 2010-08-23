@@ -43,7 +43,7 @@ namespace qmcplusplus
     PartID(0), NumParts(1), WarmupBlocks(10), 
     SkipSampleGeneration("no"), hamPool(hpool),
     optTarget(0), vmcEngine(0), Max_iterations(1),
-    wfNode(NULL), optNode(NULL), exp0(-8), allowedCostDifference(2.0e-6), 
+    wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), 
     nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),
     UseQuarticMin("yes")
     {
@@ -55,9 +55,7 @@ namespace qmcplusplus
       optmethod = "Linear";                                                                                                     
       m_param.add(WarmupBlocks,"warmupBlocks","int");                                                                           
       m_param.add(SkipSampleGeneration,"skipVMC","string");                                                                     
-      m_param.add(Max_iterations,"max_its","int"); 
-      
-      m_param.add(exp0,"exp0","int");                                                                        
+      m_param.add(Max_iterations,"max_its","int");                                                                  
       m_param.add(nstabilizers,"nstabilizers","int");                                                                        
       m_param.add(stabilizerScale,"stabilizerscale","double");
       m_param.add(allowedCostDifference,"alloweddifference","double"); 
@@ -119,7 +117,7 @@ namespace qmcplusplus
       Timer t1;                                                         
       
       optTarget->getConfigurations(h5FileRoot);
-//       optTarget->checkConfigurations();        
+      optTarget->checkConfigurations();        
       
       app_log() << "  Execution time = " << t1.elapsed() << endl;
       app_log() << "  </log>"<<endl;                             
@@ -138,6 +136,7 @@ namespace qmcplusplus
       
       TOL = allowedCostDifference;         
 
+//size of matrix
       int N=optTarget->NumParams() + 1;
       int numParams = optTarget->NumParams();
       optdir.resize(numParams,0);
@@ -147,18 +146,19 @@ namespace qmcplusplus
       for (int i=0;i<numParams; i++) currentParameters[i] = optTarget->Params(i);
       while (Max_iterations>Total_iterations)
       {
-        Total_iterations+=1;               
+        Total_iterations+=1;
         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
  
 // mmorales
         if(!Valid) {
           app_log() <<"Aborting current opt cycle due to small wfn overlap during correlated sampling. If this happens to frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl; 
           continue;
-        }       
- 
-        
+        }
 //         store this for use in later tries
         int bestStability(0);
+//this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
+        RealType stabilityBase(-16.0);
+        
         vector<vector<RealType> > LastDirections;
         RealType deltaPrms(-1.0);
         for(int tries=0;tries<eigCG;tries++)
@@ -171,8 +171,8 @@ namespace qmcplusplus
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           
 //           checkConfigurations should be rewritten to include the necessary functions of Cost.
-          optTarget->checkConfigurations();
-          RealType lastCost(optTarget->Cost(false));
+//           optTarget->checkConfigurations();
+          RealType lastCost(optTarget->Cost(true));
           RealType newCost(lastCost);
           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
           
@@ -188,8 +188,8 @@ namespace qmcplusplus
           vector<RealType> bestParameters(currentParameters);
           bool acceptedOneMove(false);
           
-          for(int stability=0;stability<((tries==0)?nstabilizers:1);stability++){
-
+          for(int stability=0;stability<nstabilizers;stability++)
+          {
             Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
             for (int i=0;i<N;i++)
               for (int j=0;j<N;j++)
@@ -201,8 +201,10 @@ namespace qmcplusplus
             RealType Xs(0);
 //             if ((tries==0)&&(stability==0)) Xs = 0.0;
 //             else 
-            if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
-            else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
+//             if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
+//             else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
+
+            Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
             for (int i=1;i<N;i++) HamT(i,i) += Xs;
 
 // Getting the optimal worksize
@@ -233,17 +235,22 @@ namespace qmcplusplus
                   e_min_indx=i;
                 }
               app_log()<<"E_lin = "<<E_lin<<" <H^2>="<<HamT2(0,0)<<endl;
-
-                
-              if (abs(E_lin/Ham(0,0))>1.5)
+              
+              if ((abs(E_lin/Ham(0,0))>1.5)&&(E_lin+10.0<Ham(0,0))&&(w_beta<1.0))
               {
                 app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
+//                 try a larger stability base and repeat
+                stabilityBase+=1.0;
+//                 maintain same number of "good" stability tries
+                stability-=1;
                 continue; 
               }
+              
               Matrix<RealType> ST2(N,N);
 //              RealType H2rescale=1.0/(E_lin*E_lin);
               RealType H2rescale=1.0/HamT2(0,0);
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) HamT2(i,j) *= H2rescale;
+//               These should have the same 0,0 element = 1.0
               for (int i=0;i<N;i++)  for (int j=0;j<N;j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
 
               dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);

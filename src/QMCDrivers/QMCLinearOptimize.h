@@ -74,8 +74,6 @@ namespace qmcplusplus
       int NumOfVMCWalkers;
       ///Number of iterations maximum before generating new configurations.
       int Max_iterations;
-      ///exp0 is exponent of added factor
-      int exp0;
       ///stop optimizing if cost function decrease is less than this
       RealType costgradtol;
       ///yes/no applicable only first time
