@@ -334,11 +334,22 @@ namespace qmcplusplus
     if (final_reset) {
       for (int i=0; i<psiClones.size(); ++i)
         psiClones[i]->stopOptimization();
+      
+#pragma omp parallel
+    {
+      int ip = omp_get_thread_num();
+      MCWalkerConfiguration& wRef(*wClones[ip]);
+      
+      MCWalkerConfiguration::iterator it(wRef.begin());
+      MCWalkerConfiguration::iterator it_end(wRef.end());
+      for (; it!=it_end; ++it) (**it).DataSetForDerivatives.clear();
+    }
+      
 // is this correct with OMP?
-      MCWalkerConfiguration::iterator it(W.begin());
-      MCWalkerConfiguration::iterator it_end(W.end());
-      for (; it!=it_end; ++it)
-        (**it).DataSetForDerivatives.clear();
+//       MCWalkerConfiguration::iterator it(W.begin());
+//       MCWalkerConfiguration::iterator it_end(W.end());
+//       for (; it!=it_end; ++it)
+//         (**it).DataSetForDerivatives.clear();
 
     }
     //cout << "######### QMCCostFunctionOMP::resetPsi " << endl;
