@@ -38,7 +38,7 @@ namespace qmcplusplus
   
   QMCChooseBestParameters::QMCChooseBestParameters(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h), CloneManager(hpool), 
-     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10)
+     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10), alpha(1)
     {
       //set the optimization flag
       QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -134,7 +134,7 @@ namespace qmcplusplus
       
       ParameterSet pAttrib;
       pAttrib.add(alpha,"alpha","scalar");
-      pAttrib.put(cur);
+      pAttrib.put(q);
       
       int pid=OHMMS::Controller->rank();
       while (cur != NULL)               
