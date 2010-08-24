@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_QMCCHOSEBESTPARAMETERS_VMCSINGLE_H
 
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 
 namespace qmcplusplus
   {
@@ -33,7 +34,7 @@ namespace qmcplusplus
    */
   class HamiltonianPool;
   
-  class QMCChooseBestParameters: public QMCDriver
+  class QMCChooseBestParameters: public QMCDriver, public CloneManager
     {
     public:
 
@@ -62,7 +63,7 @@ namespace qmcplusplus
       ///cost for choosing best wf 0<=alpha<=1 0=energy, 1=variance
       RealType alpha;
       ///Copy Constructor (disabled).
-      QMCChooseBestParameters(const QMCChooseBestParameters& a): QMCDriver(a),hamPool(a.hamPool){ }
+      QMCChooseBestParameters(const QMCChooseBestParameters& a): QMCDriver(a),CloneManager(a.hamPool),hamPool(a.hamPool){ }
       ///Copy operator (disabled).
       QMCChooseBestParameters& operator=(const QMCChooseBestParameters&)
       {

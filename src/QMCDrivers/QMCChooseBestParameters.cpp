@@ -37,8 +37,8 @@ namespace qmcplusplus
 {
   
   QMCChooseBestParameters::QMCChooseBestParameters(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h), hamPool(hpool),
-    vmcEngine(0), WF(&psi), WarmupBlocks(10)
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h), CloneManager(hpool), 
+     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10)
     {
       //set the optimization flag
       QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -83,7 +83,6 @@ namespace qmcplusplus
         opt_variables_type OptVariablesForPsi;
         OptVariablesForPsi.clear();
         WF->checkInVariables(OptVariablesForPsi);
-        OptVariablesForPsi.resetIndex();
         
         //write parameter history and energies to the parameter file in the trial wave function through opttarget
         RealType e,w,var;
@@ -94,12 +93,24 @@ namespace qmcplusplus
         app_log()<<"  energy:"<<1.0-alpha<<"  variance:"<<alpha<<endl;
         //choose best set of parameters
         opt_variables_type bestCoeffs = WF->coefficientHistory.getBestCoefficients(1.0-alpha,alpha,!myComm->rank());
+        
         //check back into the WF
         WF->resetParameters(bestCoeffs);
+        for (int i=0; i<psiClones.size(); ++i)
+           psiClones[i]->resetParameters(bestCoeffs);
+           
+        //for (int i=0; i<psiClones.size(); ++i) 
+        //{
+        //  app_log()<<i<<endl;
+        //  psiClones[i]->reportStatus(app_log());
+        //}
+        
         if (!myComm->rank())
         {
           app_log()<<"Best Parameters are:"<<endl;
           bestCoeffs.print(app_log()); 
+          //app_log()<<"WF params"<<endl;
+          //WF->reportStatus(app_log());
         }
       return true;
     }                                                                       
