@@ -30,6 +30,7 @@
 #include "QMCDrivers/ForwardWalking/FRSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCLinearOptimize.h"
+#include "QMCDrivers/QMCChooseBestParameters.h"    
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if QMC_BUILD_LEVEL>1
 #include "QMCDrivers/RQMCMultiple.h"
@@ -127,6 +128,10 @@ namespace qmcplusplus {
     if((qmc_mode.find("linear") < nchars)|(qmc_mode.find("Energy") < nchars))
     {
       newRunType=LINEAR_OPTIMIZE_RUN;
+    }
+    if(qmc_mode.find("set") < nchars)
+    {
+      newRunType=SET_PARAMS;
     }
     else if(qmc_mode.find("opt") < nchars)
     {
@@ -366,6 +371,11 @@ namespace qmcplusplus {
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
     } 
+    else if(curRunType == SET_PARAMS)
+    {
+      QMCChooseBestParameters *opt = new QMCChooseBestParameters(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      qmcDriver=opt;
+    }
     else if(curRunType == FR_RUN)
     { 
       qmcDriver = new FRSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool, *ptclPool);

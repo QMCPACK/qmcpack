@@ -6,6 +6,7 @@ SET(QMCDRIVERS
   BranchIO.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
+  QMCChooseBestParameters.cpp
   QMCLinearOptimize.cpp
   QMCCostFunctionBase.cpp
   QMCCostFunctionSingle.cpp

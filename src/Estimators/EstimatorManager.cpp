@@ -315,8 +315,8 @@ namespace qmcplusplus {
     for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
     for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
-    for(int i=0; i<num_threads; ++i)
-      varAccumulator(est[i]->varAccumulator.mean());
+    //for(int i=0; i<num_threads; ++i)
+      //varAccumulator(est[i]->varAccumulator.mean()); 
 
     collectBlockAverages(num_threads);
   }
@@ -367,7 +367,7 @@ namespace qmcplusplus {
 
     //add the block average to summarize
     energyAccumulator(AverageCache[0]);
-    if(num_threads==1) varAccumulator(MainEstimator->variance());
+    varAccumulator(SquaredAverageCache[0]-AverageCache[0]*AverageCache[0]);
 
     if(Archive)
     {

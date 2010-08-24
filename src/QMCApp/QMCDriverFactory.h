@@ -48,7 +48,8 @@ namespace qmcplusplus {
       FW_RUN,
       LINEAR_OPTIMIZE_RUN,
       FR_RUN,
-      RN_RUN
+      RN_RUN,
+      SET_PARAMS
     };
 
     /*! enum to set the bit to determine the QMC mode */

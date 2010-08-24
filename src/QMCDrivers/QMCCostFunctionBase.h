@@ -106,6 +106,8 @@ namespace qmcplusplus
       {
         m_wfPtr=cur;
       }
+      
+      void recordParametersToPsi(Return_t e, Return_t v) {Psi.coefficientHistory.addParams(OptVariables,e,v);}
 
       //void getConfigurations(vector<string>& ConfigFile, int partid, int nparts);
 

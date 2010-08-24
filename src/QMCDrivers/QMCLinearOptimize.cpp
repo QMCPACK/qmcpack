@@ -406,11 +406,16 @@ namespace qmcplusplus
         app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
         t1.restart();                                                            
         //     W.reset();                                                            
-        //     branchEngine->flush(0);                                               
-        //     branchEngine->reset();                                                
+        branchEngine->flush(0);                                               
+        branchEngine->reset();                                                
         vmcEngine->run();                                                        
         app_log() << "  Execution time = " << t1.elapsed() << endl;              
         app_log() << "</vmc>" << endl;                                           
+        
+        //write parameter history and energies to the parameter file in the trial wave function through opttarget
+        RealType e,w,var;
+        vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
+        optTarget->recordParametersToPsi(e,var);
         
         //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
 //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
