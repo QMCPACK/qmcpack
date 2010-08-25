@@ -392,11 +392,11 @@ namespace qmcplusplus
           ParticleSet::Walker_t& thisWalker(**it);
           wRef.R=thisWalker.R;
           wRef.update();
-          Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+          //Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
 
 // buffer for MultiSlaterDet data
-          //Walker_t::Buffer_t tbuffer=thisWalker.DataSetForDerivatives;
-          //Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
+          Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
 
           wRef.G += *dLogPsi[iwg];
           wRef.L += *d2LogPsi[iwg];

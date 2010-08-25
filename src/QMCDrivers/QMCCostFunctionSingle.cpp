@@ -60,8 +60,7 @@ namespace qmcplusplus
         W.update();
 
 // buffer for MultiSlaterDet data
-        Walker_t::Buffer_t tbuffer=thisWalker.DataSetForDerivatives;
-
+        Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
         Return_t logpsi=Psi.evaluateDeltaLog(W,tbuffer);
         //Return_t logpsi=Psi.evaluateDeltaLog(W);
         W.G += *dLogPsi[iw];
