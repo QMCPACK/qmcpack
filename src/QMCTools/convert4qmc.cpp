@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
   bool ci=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
+  int readGuess=0; // if > 0, read Initial Guess from gamess output
   while(iargc<argc) {
     std::string a(argv[iargc]);
     if(a == "-gaussian") {
@@ -77,9 +78,16 @@ int main(int argc, char **argv) {
       thres = atof(argv[++iargc]);
     } else if(a == "-NaturalOrbitals") { 
       readNO = atoi(argv[++iargc]);
+    } else if(a == "-readInitialGuess") { 
+      readGuess = atoi(argv[++iargc]);
     }
     ++iargc;
   }
+
+  if(readNO > 0 && readGuess > 0) {
+    cerr<<"Can only use one of: -NaturalOrbitals or -readInitialGuess. \n"; 
+    abort();
+  } 
 
   //Failed to create a parser. Try with the extension
   if(parser == 0) {
@@ -107,6 +115,7 @@ int main(int argc, char **argv) {
   parser->multideterminant=ci;
   parser->ci_threshold=thres;
   parser->readNO=readNO;  
+  parser->readGuess=readGuess;  
   parser->outputFile=punch_file;
   parser->parse(in_file);
   parser->dump(psi_tag, ion_tag);

@@ -138,6 +138,17 @@ void GamesAsciiParser::parse(const std::string& fname) {
         abort();
       }
     }
+  } else if (readGuess > 0) {
+    cout<<"Reading " <<readGuess <<" orbitals from file.\n";
+    numMO=readGuess;
+    if(lookFor(fin,"INITIAL GUESS ORBITALS")) {
+      MOtype = "InitialGuess";
+      readtype=0;
+      cout<<"Reading INITIAL GUESS ORBITALS output. \n";
+    } else {
+      cerr<<"Could not find INITIAL GUESS ORBITALS. \n";
+      abort();
+    }
   } else {  // look for eigenvectors 
     if(lookFor(fin,"   EIGENVECTORS")) {
       MOtype = "Canonical";
@@ -812,20 +823,16 @@ void GamesAsciiParser::getCSF(std::istream& is)
     getwords(currentWords,is);
     getwords(currentWords,is);
 // checking
-    if(currentWords[0] != "FOR" || currentWords[1] != "MS") {
-      cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (3). \n";
-      abort();
-    }
+    //if(currentWords[0] != "FOR" || currentWords[1] != "MS") {
+    //  cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (3). \n";
+    //  abort();
+    //}
     getwords(currentWords,is,aline);
-    if(currentWords[0] != "CSF") {
+    if(aline.substr(1,3) != "CSF") {
+      cerr<<"aline:" <<aline <<endl;
       cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (4). \n";
       abort();
     }
-//    getline(is,aline);
-//    if(aline.substr(1,3) != "CSF") {
-//      cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (4). \n";
-//      abort();
-//    }
     if(coeff2csf[current].first == cnt) { // read dets
 // first time the string is longer
       csfOccup.clear(); 
@@ -912,7 +919,8 @@ void GamesAsciiParser::getCSF(std::istream& is)
         double sg = getCSFSign(csfOccup);
         CSFalpha[current].push_back(alp);
         CSFbeta[current].push_back(beta);
-        CSFexpansion[current].push_back(atof(currentWords[4].c_str())*sg);
+        //CSFexpansion[current].push_back(atof(currentWords[4].c_str())*sg);
+        CSFexpansion[current].push_back(atof(aline.substr(20,9).c_str())*sg);
         getwords(currentWords,is,aline);
       } 
       while(currentWords.size() != 0) {
@@ -964,7 +972,8 @@ void GamesAsciiParser::getCSF(std::istream& is)
         double sg = getCSFSign(csfOccup);
         CSFalpha[current].push_back(alp);
         CSFbeta[current].push_back(beta);
-        CSFexpansion[current].push_back(atof(currentWords[2].c_str())*sg);
+        //CSFexpansion[current].push_back(atof(currentWords[2].c_str())*sg);
+        CSFexpansion[current].push_back(atof(aline.substr(20,9).c_str())*sg);
         getwords(currentWords,is,aline);
       }
       current++;

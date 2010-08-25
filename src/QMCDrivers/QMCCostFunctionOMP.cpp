@@ -268,6 +268,7 @@ namespace qmcplusplus
 
       //int nat = wRef.getTotalNum();
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
+      typedef MCWalkerConfiguration::Walker_t Walker_t;
       Return_t e0=0.0;
       Return_t e2=0.0;
       MCWalkerConfiguration::iterator it(wRef.begin());
@@ -279,7 +280,14 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
+          //psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
+
+// buffer for MultiSlaterDet data
+          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
+          psiClones[ip]->registerDataForDerivatives(W,tbuffer);
+          //thisWalker.DataSetForDerivatives=tbuffer;
+          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
+
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
@@ -369,6 +377,7 @@ namespace qmcplusplus
     Return_t NSm1 = 1.0/NumSamples;
 
     //#pragma omp parallel reduction(+:wgt_tot)
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
@@ -384,6 +393,11 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+
+// buffer for MultiSlaterDet data
+          //Walker_t::Buffer_t tbuffer=thisWalker.DataSetForDerivatives;
+          //Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+
           wRef.G += *dLogPsi[iwg];
           wRef.L += *d2LogPsi[iwg];
 

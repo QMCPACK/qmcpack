@@ -63,6 +63,7 @@ namespace qmcplusplus
         Walker_t::Buffer_t tbuffer=thisWalker.DataSetForDerivatives;
 
         Return_t logpsi=Psi.evaluateDeltaLog(W,tbuffer);
+        //Return_t logpsi=Psi.evaluateDeltaLog(W);
         W.G += *dLogPsi[iw];
         W.L += *d2LogPsi[iw];
 
@@ -219,12 +220,12 @@ namespace qmcplusplus
         W.R=thisWalker.R;
         W.update();
 // buffer for MultiSlaterDet data
-        Walker_t::Buffer_t tbuffer;
-        // creates space but doesn't evaluate anything
+        Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
         Psi.registerDataForDerivatives(W,tbuffer); 
-        thisWalker.DataSetForDerivatives=tbuffer;
+        //thisWalker.DataSetForDerivatives=tbuffer;
         Return_t*  saved=Records[iw];
         Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
+        //Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw]);
         Return_t e=H.evaluate(W);
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;

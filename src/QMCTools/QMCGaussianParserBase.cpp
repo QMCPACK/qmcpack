@@ -20,7 +20,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 QMCGaussianParserBase::QMCGaussianParserBase(): 
   Title("sample"),basisType("Gaussian"),basisName("generic"),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
-  ,usingCSF(false),readNO(0)
+  ,usingCSF(false),readNO(0),readGuess(0)
 {
 }
 
@@ -29,7 +29,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),  
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
-  angular_type("spherical"),usingCSF(false),readNO(0)
+  angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0) 
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
