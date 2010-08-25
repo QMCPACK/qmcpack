@@ -61,7 +61,13 @@ namespace qmcplusplus {
     clone->Optimizable=Optimizable;
     clone->C=C;
     clone->myVars=myVars;
-    
+    clone->usingCSF=usingCSF;
+    if (usingCSF)
+    {
+      clone->CSFcoeff=CSFcoeff;
+      clone->CSFexpansion=CSFexpansion;
+      clone->DetsPerCSF=DetsPerCSF;
+    }
     return clone;
   }
   
