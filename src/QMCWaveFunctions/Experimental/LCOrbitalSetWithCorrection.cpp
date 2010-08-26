@@ -502,15 +502,16 @@ app_log() <<"cuspFile: " <<cuspInfoFile <<endl;
        }
      this->checkObject();
 
-     xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
-     xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-     xmlAddChild(cuspRoot,spo);
-     xmlDocSetRootElement(doc, cuspRoot);
-     std::string fname = objectName+".cuspInfo.xml";
-     app_log() <<"Saving resulting cusp Info xml block to: " <<fname <<endl;
-     xmlSaveFormatFile(fname.c_str(),doc,1); 
-     xmlFreeDoc(doc);
-
+     if(!readCuspCoeff) {
+       xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+       xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+       xmlAddChild(cuspRoot,spo);
+       xmlDocSetRootElement(doc, cuspRoot);
+       std::string fname = objectName+".cuspInfo.xml";
+       app_log() <<"Saving resulting cusp Info xml block to: " <<fname <<endl;
+       xmlSaveFormatFile(fname.c_str(),doc,1); 
+       xmlFreeDoc(doc);
+     }
 /*
      ofstream out("test.txt");
      ofstream out9("test9.txt");
