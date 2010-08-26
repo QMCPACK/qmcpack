@@ -186,7 +186,7 @@ namespace qmcplusplus {
     int ncenter = info.rows();
     int nOrbs = info.cols();
 
-cout<<"Reading cusp info from : " <<cuspInfoFile <<endl;cout.flush();
+app_log() <<"Reading cusp info from : " <<cuspInfoFile <<endl;
 
     Libxml2Document adoc;
     if(!adoc.parse(cuspInfoFile)) {
@@ -250,15 +250,17 @@ cout<<"Reading cusp info from : " <<cuspInfoFile <<endl;cout.flush();
             orbAttrib.add (a8, "a4");
             orbAttrib.add (a9, "a5");
             orbAttrib.put(ctr);
-            info(num,orb)[0] = a1;
-            info(num,orb)[1] = a2;
-            info(num,orb)[2] = a3;
-            info(num,orb)[3] = a4;
-            info(num,orb)[4] = a5;
-            info(num,orb)[5] = a6;
-            info(num,orb)[6] = a7;
-            info(num,orb)[7] = a8;
-            info(num,orb)[8] = a9;
+            if(orb < OrbitalSetSize) {
+              info(num,orb)[0] = a1;
+              info(num,orb)[1] = a2;
+              info(num,orb)[2] = a3;
+              info(num,orb)[3] = a4;
+              info(num,orb)[4] = a5;
+              info(num,orb)[5] = a6;
+              info(num,orb)[6] = a7;
+              info(num,orb)[7] = a8;
+              info(num,orb)[8] = a9;
+            }
 /*
 cout<<" Found: num,orb:" <<num <<"  " <<orb <<endl 
     <<info(num,orb)[0] <<"\n"
@@ -287,7 +289,7 @@ cout<<" Found: num,orb:" <<num <<"  " <<orb <<endl
   {
      app_log()<<" Transforming Single Particle Orbital Set with cusp correcting algorithm. \n";
 
-cout<<"cuspFile: " <<cuspInfoFile <<endl; cout.flush();
+app_log() <<"cuspFile: " <<cuspInfoFile <<endl; 
 
       SpeciesSet& tspecies(sourcePtcl->getSpeciesSet());
       int iz = tspecies.addAttribute("charge");
