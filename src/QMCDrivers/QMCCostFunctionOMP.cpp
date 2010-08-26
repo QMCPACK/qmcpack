@@ -284,7 +284,7 @@ namespace qmcplusplus
 
 // buffer for MultiSlaterDet data
           Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-          psiClones[ip]->registerDataForDerivatives(W,tbuffer);
+          psiClones[ip]->registerDataForDerivatives(wRef,tbuffer);
           //thisWalker.DataSetForDerivatives=tbuffer;
           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
 
