@@ -34,17 +34,18 @@ namespace qmcplusplus
     Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),RadFun(0) 
     {
       myTable = DistanceTable::add(els,els);
-      UIJ.resize(NumTargets,NumTargets);
-      AIJ.resize(NumTargets,NumTargets);
-      BIJ.resize(NumTargets,NumTargets);
-      UIJ_temp.resize(NumTargets);
-      AIJ_temp.resize(NumTargets);
-      BIJ_temp.resize(NumTargets);
+      resize(NumTargets);
     }
 
     Backflow_ee(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els),RadFun(RF) 
     {
       myTable = DistanceTable::add(els,els);
+      resize(NumTargets);
+    }
+    
+    void resize(int NT)
+    {
+      NumTargets=NT;
       UIJ.resize(NumTargets,NumTargets);
       AIJ.resize(NumTargets,NumTargets);
       BIJ.resize(NumTargets,NumTargets);
@@ -79,6 +80,7 @@ namespace qmcplusplus
     BackflowFunctionBase* makeClone()
     {
        Backflow_ee* clone = new Backflow_ee(*this);
+       clone->resize(NumTargets);
        clone->RadFun = new FT(*RadFun);
        return clone; 
     }

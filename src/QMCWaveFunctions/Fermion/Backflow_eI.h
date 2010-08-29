@@ -36,12 +36,7 @@ namespace qmcplusplus
     Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
     {
       myTable = DistanceTable::add(ions,els); 
-      UIJ.resize(NumTargets,NumCenters);
-      AIJ.resize(NumTargets,NumCenters);
-      BIJ.resize(NumTargets,NumCenters);
-      UIJ_temp.resize(NumCenters);
-      AIJ_temp.resize(NumCenters);
-      BIJ_temp.resize(NumCenters);
+      resize(NumTargets,NumCenters);
     }
 
     //  build RadFun manually from builder class
@@ -54,6 +49,17 @@ namespace qmcplusplus
     }
 
     ~Backflow_eI() {}; 
+    
+    void resize(int NT, int NC)
+    {
+      NumTargets=NT; NumCenters=NC;
+      UIJ.resize(NumTargets,NumCenters);
+      AIJ.resize(NumTargets,NumCenters);
+      BIJ.resize(NumTargets,NumCenters);
+      UIJ_temp.resize(NumCenters);
+      AIJ_temp.resize(NumCenters);
+      BIJ_temp.resize(NumCenters);
+    }
  
     void resetParameters(const opt_variables_type& active)
     {
