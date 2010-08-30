@@ -280,13 +280,12 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-          //psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
+//           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
-// buffer for MultiSlaterDet data
-          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-          psiClones[ip]->registerDataForDerivatives(wRef,tbuffer);
+// buffer for MultiSlaterDet data 
+          psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
           //thisWalker.DataSetForDerivatives=tbuffer;
-          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
+          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
@@ -392,9 +391,9 @@ namespace qmcplusplus
           ParticleSet::Walker_t& thisWalker(**it);
           wRef.R=thisWalker.R;
           wRef.update();
-          //Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+//           Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
 
-// buffer for MultiSlaterDet data
+// // buffer for MultiSlaterDet data
           Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
           Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
 

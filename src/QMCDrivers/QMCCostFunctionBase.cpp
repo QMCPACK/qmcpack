@@ -69,11 +69,8 @@ namespace qmcplusplus
   void QMCCostFunctionBase::setTargetEnergy(Return_t et)
   {
 
-    Etarget = et;
-//     app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
-
     //evaluate effective target energy
-    EtargetEff=(1.0+CorrelationFactor)*Etarget;
+    EtargetEff= Etarget = et;
 
 //     app_log() << "Effective Target Energy = " << EtargetEff << endl;
 //     app_log() << "Cost Function = " << w_en << "*<E> + "
@@ -485,11 +482,6 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 
     ParameterSet m_param;
     m_param.add(writeXmlPerStep,"dumpXML","string");
-    m_param.add(PowerE,"power","int");
-    m_param.add(CorrelationFactor,"correlation","scalar");
-    m_param.add(MinNumWalkers,"min_walkers","scalar");
-    m_param.add(MinNumWalkers,"minWalkers","scalar");
-    m_param.add(MinNumWalkers,"minwalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.put(q);
 
@@ -647,7 +639,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 
 
     //maybe overwritten but will try out
-    EtargetEff=(1.0+CorrelationFactor)*Etarget;
+    EtargetEff=Etarget;
 
     return true;
   }
