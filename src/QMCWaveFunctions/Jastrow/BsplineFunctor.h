@@ -443,11 +443,11 @@ namespace qmcplusplus
           int loc=myVars.where(i);
           if (loc>=0) Parameters[i]=myVars[i]=active[loc];
         }
-        if (ResetCount++ == 100)
-        {
-          ResetCount = 0;
-          if(ReportLevel) print();
-        }
+//         if (ResetCount++ == 100)
+//         {
+//           ResetCount = 0;
+//           if(ReportLevel) print();
+//         }
         reset();
       }
 
