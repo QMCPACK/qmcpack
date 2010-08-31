@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
-#include "QMCWaveFunctions/Fermion/BFsplineFunctor.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
 #include "Configuration.h"
 #include <map>
@@ -400,16 +400,16 @@ namespace qmcplusplus
       vector<int> offsets;
 
       if(funct == "Bspline")  {
-        app_log() <<"Using BFsplineFunctor type. \n";
+        app_log() <<"Using BsplineFunctor type. \n";
 
-        tbf = (BackflowFunctionBase *) new Backflow_eI<BFsplineFunctor<double> >(*ions,targetPtcl);
-        Backflow_eI<BFsplineFunctor<double> > *dum = (Backflow_eI<BFsplineFunctor<double> >*) tbf;
+        tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
+        Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
         tbf->numParams=0;
 
         for(int i=0; i<funs.size(); i++)
         {
-//           BFsplineFunctor<double> *bsp = new BFsplineFunctor<double>(cusps[i]);
-          BFsplineFunctor<double> *bsp = new BFsplineFunctor<double>();
+//           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
+          BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
           bsp->put(funs[i]);
           if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
           bsp->myVars.setParameterType(optimize::SPO_P);
@@ -455,13 +455,13 @@ namespace qmcplusplus
       if(funct == "Gaussian") {
         APP_ABORT("Disabled GaussianFunctor for now, \n");
       } else if(funct == "Bspline")  {
-        app_log() <<"Using BFsplineFunctor type. \n";
-//         BFsplineFunctor<double> *bsp = new BFsplineFunctor<double>(cusp);
-        BFsplineFunctor<double> *bsp = new BFsplineFunctor<double>();
+        app_log() <<"Using BsplineFunctor type. \n";
+//         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
+        BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
         bsp->put(cur);
         if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::SPO_P);
-        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BFsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
+        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
         tbf->numParams = bsp->NumParams;
         tbf->derivs.resize(tbf->numParams);
         bfFuns.push_back(tbf);
