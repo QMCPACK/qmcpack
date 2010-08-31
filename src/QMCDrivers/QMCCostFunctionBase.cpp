@@ -482,6 +482,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 
     ParameterSet m_param;
     m_param.add(writeXmlPerStep,"dumpXML","string");
+    m_param.add(MinNumWalkers,"minwalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.put(q);
 
