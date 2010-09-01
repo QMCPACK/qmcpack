@@ -242,6 +242,7 @@ namespace qmcplusplus {
     ///reset the target particleset
     void resetTargetParticleSet(ParticleSet& P) {
       myBasisSet->resetTargetParticleSet(P);
+      corrBasisSet->resetTargetParticleSet(P);
     }
 
     /** set the OrbitalSetSize
