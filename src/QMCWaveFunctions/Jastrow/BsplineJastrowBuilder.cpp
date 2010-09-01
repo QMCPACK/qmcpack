@@ -188,8 +188,10 @@ namespace qmcplusplus {
 	     functor->reset();
 	  }
 
-          J2->addFunc(pairType,ia,ib,functor);
-          dJ2->addFunc(pairType,ia,ib,functor);
+          stringstream aname;
+          aname<<ia<<ib;
+          J2->addFunc(aname.str(),ia,ib,functor);
+          dJ2->addFunc(aname.str(),ia,ib,functor);
 
           functor->setReportLevel(ReportLevel);
           if(ReportLevel) 

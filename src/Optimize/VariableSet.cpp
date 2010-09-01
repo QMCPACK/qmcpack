@@ -72,6 +72,7 @@ namespace optimize
         Recompute.push_back(input.Recompute[i]);
       }
     }
+    num_active_vars=input.num_active_vars;
   }
 
   void VariableSet::activate(const variable_map_type& selected)

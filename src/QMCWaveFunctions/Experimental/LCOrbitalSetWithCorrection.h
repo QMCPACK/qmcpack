@@ -240,6 +240,7 @@ namespace qmcplusplus {
     void resetParameters(const opt_variables_type& active) 
     {
       myBasisSet->resetParameters(active);
+      corrBasisSet->resetParameters(active);
     }
 
     ///reset the target particleset

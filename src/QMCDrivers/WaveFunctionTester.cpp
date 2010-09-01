@@ -1085,38 +1085,18 @@ void WaveFunctionTester::runDerivCloneTest()
   int nat = W.getTotalNum();
   
   ParticleSet::ParticlePos_t deltaR(nat);
-  MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
-  
-  //copy the properties of the working walker
-  Properties = awalker->Properties;
   
   W.R = awalker->R;
   W.update();
   ValueType logpsi1 = Psi.evaluateLog(W);
   RealType eloc1  = H.evaluate(W);
-  
-  
-  opt_variables_type wfVars,wfvar_prime;
-  //build optimizables from the wavefunction
-  wfVars.clear();
-  psi_clone->checkInVariables(wfVars);
-  wfVars.resetIndex();
-  psi_clone->checkOutVariables(wfVars);
-  wfvar_prime= wfVars;
-  wfVars.print(cout);
-  int Nvars= wfVars.size();
-  vector<RealType> Dsaved(Nvars);
-  vector<RealType> HDsaved(Nvars);
-  vector<RealType> PGradient(Nvars);
-  vector<RealType> HGradient(Nvars);
-  psi_clone->resetParameters(wfVars);
+
   w_clone->R=awalker->R;
   w_clone->update();
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
   RealType eloc2  = h_clone->evaluate(*w_clone);  
-  psi_clone->evaluateDerivatives(*w_clone, wfVars, Dsaved, HDsaved);
   
   
   app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
@@ -1138,6 +1118,37 @@ void WaveFunctionTester::runDerivCloneTest()
     for (int i=0; i<3 ; i++) cout<<w_clone->G[iat][i]<<"  ";
     cout<<endl;
   }
+
+  opt_variables_type wfVars;
+  //build optimizables from the wavefunction
+//   wfVars.clear();
+  Psi.checkInVariables(wfVars);
+  wfVars.resetIndex();
+  Psi.checkOutVariables(wfVars);
+  wfVars.print(cout);
+  
+  opt_variables_type wfvar_prime;
+//   wfvar_prime.insertFrom(wfVars);
+  wfvar_prime.clear();
+  psi_clone->checkInVariables(wfvar_prime);
+  wfvar_prime.resetIndex();
+  psi_clone->checkOutVariables(wfvar_prime);
+  wfvar_prime.print(cout);
+  
+  psi_clone->resetParameters(wfvar_prime);
+  
+  int Nvars= wfVars.size();
+  vector<RealType> Dsaved(Nvars), og_Dsaved(Nvars);
+  vector<RealType> HDsaved(Nvars), og_HDsaved(Nvars);
+  vector<RealType> PGradient(Nvars), og_PGradient(Nvars);
+  vector<RealType> HGradient(Nvars), og_HGradient(Nvars);
+  
+  
+  psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
+  Psi.evaluateDerivatives(W,wfVars, og_Dsaved, og_HDsaved);
+  
+  app_log()<<" Saved quantities:"<<endl;
+  for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<<endl;
   
   RealType FiniteDiff = 1e-5;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);

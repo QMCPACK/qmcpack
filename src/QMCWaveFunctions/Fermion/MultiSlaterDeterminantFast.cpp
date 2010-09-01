@@ -54,8 +54,7 @@ namespace qmcplusplus {
     MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
     MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
     MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone); 
-    clone->Dets[0]->resetTargetParticleSet(tqp);
-    clone->Dets[1]->resetTargetParticleSet(tqp);
+    clone->resetTargetParticleSet(tqp);
     clone->C2node_up=C2node_up;
     clone->C2node_dn=C2node_dn;
     clone->Optimizable=Optimizable;
