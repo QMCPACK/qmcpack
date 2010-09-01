@@ -90,7 +90,7 @@ namespace qmcplusplus
     //create a Jastrow function
     typedef TwoBodyJastrowOrbital<OutFuncType> JeeType;
     JeeType *J2 = new JeeType(targetPtcl,targetPsi.is_manager());
-    J2->addFunc("Jee",0,0,nfunc);
+    J2->addFunc(0,0,nfunc);
     targetPsi.addOrbital(J2,"wm_j2");
     //2008-04-07 derivatives not complete
     //typedef DiffTwoBodyJastrowOrbital<DerivFuncType> dJeeType;

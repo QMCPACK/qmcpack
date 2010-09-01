@@ -91,7 +91,7 @@ namespace qmcplusplus
       FuncType *func=new FuncType(cusp,pade_b);
       func->setIDs("jee_cusp",id_b);//set the ID's
 
-      J2->addFunc("pade_uu",0,0,func);
+      J2->addFunc(0,0,func);
 
       //DerivFuncType *dfunc=new DerivFuncType(cusp,B);
       //dJ2->addFunc("pade_uu",0,0,dfunc);
@@ -110,7 +110,7 @@ namespace qmcplusplus
       FuncType *funcUD=new FuncType(cusp_ud,pade_b);
       funcUD->setIDs("pade_ud",id_b);//set the ID's
 
-      J2->addFunc("pade_uu",0,0,funcUU);
+      J2->addFunc(0,0,funcUU);
 
       //DerivFuncType *dfuncUU=new DerivFuncType(cusp_uu,B);
       //DerivFuncType *dfuncUD=new DerivFuncType(cusp_ud,B);

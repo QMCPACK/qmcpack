@@ -220,7 +220,7 @@ namespace qmcplusplus {
           << myHandler->evaluateLR(r) << endl;
     }
     TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
-    j2->addFunc("rpa",0,0,nfunc);
+    j2->addFunc(0,0,nfunc);
     ShortRangeRPA=j2;
     Psi.push_back(ShortRangeRPA);
   }

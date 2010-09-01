@@ -173,7 +173,7 @@ namespace qmcplusplus {
       }
     }
 
-    void addFunc(const string& aname, int iSpecies, 
+    void addFunc(int iSpecies, 
 		 int eSpecies1, int eSpecies2, FT* j)
     {
       // cerr << "iSpecies = " << iSpecies << "   eSpecies1 = " << eSpecies1
@@ -212,8 +212,11 @@ namespace qmcplusplus {
 			<< " have different radii.  Aborting.\n";
 	    abort();
 	  }
-      
-      J3Unique[aname]=j;
+      strstream aname;
+      aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
+
+   
+      J3Unique[aname.str()]=j;
       initUnique();
       //      ChiesaKEcorrection();
       FirstTime = false;
@@ -1258,10 +1261,8 @@ namespace qmcplusplus {
 	    if(F(iG,eG1,eG2)==0) continue;
 	    typename map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
 	    if(fit == fcmap.end()) {
-	      FT* fc=new FT(*F(iG,eG1,eG2));
-	      stringstream aname;
-	      aname << iG << eG1 << eG2;
-	      eeIcopy->addFunc(aname.str(),iG, eG1, eG2, fc);
+	      FT* fc=new FT(*F(iG,eG1,eG2)); 
+	      eeIcopy->addFunc( iG, eG1, eG2, fc);
 	      //if (dPsi) (eeIcopy->dPsi)->addFunc(aname.str(),ig,jg,fc);
 	      fcmap[F(iG,eG1,eG2)]=fc;
           }

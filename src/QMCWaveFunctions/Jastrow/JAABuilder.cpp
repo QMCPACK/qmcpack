@@ -88,8 +88,8 @@ namespace qmcplusplus
             FN *j= new FN;
             j->cutoff_radius=rc;
             j->put(cur);
-            J2->addFunc(pairID,ia,ib,j);
-            dJ2->addFunc(pairID,ia,ib,j);
+            J2->addFunc( ia,ib,j);
+            dJ2->addFunc( ia,ib,j);
             ++pairs;
           }
         cur = cur->next;

@@ -67,9 +67,9 @@ namespace qmcplusplus {
 	  functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
 	  functor->reset();
 	}
-	strstream aname;
-	aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
-	J3.addFunc(aname.str(), iNum, eNum1, eNum2, functor);
+
+
+      J3.addFunc(iNum, eNum1, eNum2, functor);
       }
       kids = kids->next;
     }

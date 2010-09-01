@@ -1147,8 +1147,8 @@ void WaveFunctionTester::runDerivCloneTest()
   psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
   Psi.evaluateDerivatives(W,wfVars, og_Dsaved, og_HDsaved);
   
-  app_log()<<" Saved quantities:"<<endl;
-  for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<<endl;
+//   app_log()<<" Saved quantities:"<<endl;
+//   for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<<endl;
   
   RealType FiniteDiff = 1e-5;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);

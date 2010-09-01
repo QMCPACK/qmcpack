@@ -100,7 +100,7 @@ namespace qmcplusplus {
       F.resize(nsp*nsp,0);
     }
 
-    void addFunc(const string& aname, int ia, int ib, FT* j)
+    void addFunc(int ia, int ib, FT* j)
     {
       if(ia==ib)
       {
@@ -117,8 +117,10 @@ namespace qmcplusplus {
         F[ia*NumGroups+ib]=j;
         if(ia<ib) F[ib*NumGroups+ia]=j; 
       }
-
-      J2Unique[aname]=j;
+      
+      stringstream aname;
+      aname<<ia<<ib;
+      J2Unique[aname.str()]=j;
 
       ChiesaKEcorrection();
       FirstTime = false;
@@ -602,9 +604,7 @@ namespace qmcplusplus {
           if(fit == fcmap.end())
           {
             FT* fc=new FT(*F[ij]);
-            stringstream aname;
-            aname<<ig<<jg;
-            j2copy->addFunc(aname.str(),ig,jg,fc);
+            j2copy->addFunc(ig,jg,fc);
             //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
             fcmap[F[ij]]=fc;
           }
