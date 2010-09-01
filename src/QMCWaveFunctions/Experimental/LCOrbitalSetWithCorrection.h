@@ -69,7 +69,8 @@ namespace qmcplusplus {
     SPOSetBase* makeClone() const 
     {
       LCOrbitalSetWithCorrection<BS,true>* myclone = new LCOrbitalSetWithCorrection<BS,true>(*this);
-      myclone->myBasisSet = myBasisSet->makeClone();
+      myclone->setBasisSet(myBasisSet->makeClone());
+      myclone->setOrbitalSetSize(OrbitalSetSize);
       return myclone;
     }
 
@@ -228,7 +229,9 @@ namespace qmcplusplus {
     SPOSetBase* makeClone() const 
     {
       LCOrbitalSetWithCorrection<BS,false>* myclone = new LCOrbitalSetWithCorrection<BS,false>(*this);
-      myclone->myBasisSet = myBasisSet->makeClone();
+//       myclone->myBasisSet = myBasisSet->makeClone();
+      myclone->setBasisSet(myBasisSet->makeClone());
+      myclone->setOrbitalSetSize(OrbitalSetSize);
       myclone->corrBasisSet = corrBasisSet->makeClone();
       return myclone;
     }

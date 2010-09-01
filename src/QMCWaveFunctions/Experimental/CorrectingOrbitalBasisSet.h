@@ -101,6 +101,7 @@ namespace qmcplusplus {
         COT* cc=LOBasis[i]->makeClone();
         myclone->LOBasis[i]=cc;
       }
+      myclone->setBasisSetSize(BasisSetSize);
       return myclone;
     }
 
