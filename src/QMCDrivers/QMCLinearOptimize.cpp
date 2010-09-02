@@ -43,7 +43,7 @@ namespace qmcplusplus
     PartID(0), NumParts(1), WarmupBlocks(10), 
     SkipSampleGeneration("no"), hamPool(hpool),
     optTarget(0), vmcEngine(0), Max_iterations(1),
-    wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), 
+    wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), exp0(0),
     nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),
     UseQuarticMin("yes")
     {
@@ -64,6 +64,7 @@ namespace qmcplusplus
       m_param.add(w_beta,"beta","double");
       quadstep=3.0;
       m_param.add(quadstep,"stepsize","double");
+      m_param.add(exp0,"exp0","double");
       m_param.add(UseQuarticMin,"UseQuarticMin","string");
       m_param.add(LambdaMax,"LambdaMax","double");
       //Set parameters for line minimization:
@@ -158,6 +159,7 @@ namespace qmcplusplus
         int bestStability(0);
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
         RealType stabilityBase(-16.0);
+        if (exp0!=0) stabilityBase=exp0;
         
         vector<vector<RealType> > LastDirections;
         RealType deltaPrms(-1.0);

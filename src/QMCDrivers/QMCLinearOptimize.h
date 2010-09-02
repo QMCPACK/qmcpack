@@ -87,7 +87,7 @@ namespace qmcplusplus
       string UseQuarticMin; 
 
       vector<RealType> optdir, optparm;
-      RealType allowedCostDifference,stabilizerScale,bigChange;
+      RealType allowedCostDifference, stabilizerScale, bigChange, exp0;
       int nstabilizers; 
       int eigCG;
       RealType w_beta;
