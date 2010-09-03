@@ -1069,14 +1069,8 @@ namespace qmcplusplus
 void WaveFunctionTester::runDerivCloneTest()
 {
   app_log()<<" Testing derivatives clone"<<endl;
-  IndexType nskipped = 0;
-  RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 0.00001;
-  RealType delta2 = 2*delta;
-  ValueType c1 = 1.0/delta/2.0;
-  ValueType c2 = 1.0/delta/delta;
   
-  ParticleSet* w_clone = new MCWalkerConfiguration(W);
+  MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(W);
   TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
   QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
   h_clone->setPrimary(false);
@@ -1087,37 +1081,15 @@ void WaveFunctionTester::runDerivCloneTest()
   ParticleSet::ParticlePos_t deltaR(nat);
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+//   MCWalkerConfiguration::Walker_t* bwalker = *(w_clone->begin());
+//   bwalker->R = awalker->R;
+  
   
   W.R = awalker->R;
   W.update();
-  ValueType logpsi1 = Psi.evaluateLog(W);
-  RealType eloc1  = H.evaluate(W);
 
   w_clone->R=awalker->R;
-  w_clone->update();
-  ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
-  RealType eloc2  = h_clone->evaluate(*w_clone);  
-  
-  
-  app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
-  
-  app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
-  for (int i=0; i<h_clone->sizeOfObservables(); i++)
-    app_log() << "  HamTest " << h_clone->getObservableName(i) << " " << h_clone->getObservable(i) << endl;
-  
-  //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = w_clone->G;
-  L = w_clone->L;
-  cout<<"Clone Gradients"<<endl;
-  for (int iat=0;iat<w_clone->R.size();iat++)
-  {
-    for (int i=0; i<3 ; i++) cout<<w_clone->G[iat][i]<<"  ";
-    cout<<endl;
-  }
+  w_clone->update(); 
 
   opt_variables_type wfVars;
   //build optimizables from the wavefunction
@@ -1126,37 +1098,56 @@ void WaveFunctionTester::runDerivCloneTest()
   wfVars.resetIndex();
   Psi.checkOutVariables(wfVars);
   wfVars.print(cout);
+  int Nvars= wfVars.size();
+  
   
   opt_variables_type wfvar_prime;
 //   wfvar_prime.insertFrom(wfVars);
-  wfvar_prime.clear();
+//   wfvar_prime.clear();
   psi_clone->checkInVariables(wfvar_prime);
   wfvar_prime.resetIndex();
+  for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
   psi_clone->checkOutVariables(wfvar_prime);
   wfvar_prime.print(cout);
   
   psi_clone->resetParameters(wfvar_prime);
-  
-  int Nvars= wfVars.size();
-  vector<RealType> Dsaved(Nvars), og_Dsaved(Nvars);
-  vector<RealType> HDsaved(Nvars), og_HDsaved(Nvars);
-  vector<RealType> PGradient(Nvars), og_PGradient(Nvars);
-  vector<RealType> HGradient(Nvars), og_HGradient(Nvars);
+  Psi.resetParameters(wfVars);
   
   
+  vector<RealType> Dsaved(Nvars,0), og_Dsaved(Nvars,0);
+  vector<RealType> HDsaved(Nvars,0), og_HDsaved(Nvars,0);
+  vector<RealType> PGradient(Nvars,0), og_PGradient(Nvars,0);
+  vector<RealType> HGradient(Nvars,0), og_HGradient(Nvars,0);
+  
+  
+  ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
+  RealType eloc2  = h_clone->evaluate(*w_clone); 
   psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
-  Psi.evaluateDerivatives(W,wfVars, og_Dsaved, og_HDsaved);
+  
+  
+  ValueType logpsi1 = Psi.evaluateLog(W);
+  RealType eloc1  = H.evaluate(W);
+  Psi.evaluateDerivatives(W, wfVars, og_Dsaved, og_HDsaved);
+
+    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
+  for (int i=0; i<H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+  
+  app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
+  for (int i=0; i<h_clone->sizeOfObservables(); i++)
+    app_log() << "  HamTest " << h_clone->getObservableName(i) << " " << h_clone->getObservable(i) << endl;
+  
   
 //   app_log()<<" Saved quantities:"<<endl;
 //   for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<<endl;
   
-  RealType FiniteDiff = 1e-5;
+  RealType FiniteDiff = 1e-6;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
   for (int i=0; i<Nvars ; i++)
   {
     for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
+    
     wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-    //     Psi.checkOutVariables(wfvar_prime);
     psi_clone->resetParameters(wfvar_prime);
     psi_clone->reset();
     w_clone->update();
@@ -1165,8 +1156,8 @@ void WaveFunctionTester::runDerivCloneTest()
     RealType logpsiPlus = psi_clone->evaluateLog(*w_clone);
     h_clone->evaluate(*w_clone);
     RealType elocPlus=h_clone->getLocalEnergy()-h_clone->getLocalPotential();
+    
     wfvar_prime[i] = wfVars[i]- FiniteDiff;
-    //     Psi.checkOutVariables(wfvar_prime);
     psi_clone->resetParameters(wfvar_prime);
     psi_clone->reset();
     w_clone->update();
@@ -1179,10 +1170,45 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  cout<<endl<<"Deriv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
-  cout<<endl<<"Hderiv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+  cout<<"CLONE"<<endl;
+  cout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  cout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+  
+  
+  for (int i=0; i<Nvars ; i++)
+  {
+    for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
+    
+    wfvar_prime[i] = wfVars[i]+ FiniteDiff;
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+    W.update();
+    W.G=0;
+    W.L=0;
+    RealType logpsiPlus = Psi.evaluateLog(W);
+    H.evaluate(W);
+    RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
+    
+    wfvar_prime[i] = wfVars[i]- FiniteDiff;
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+    W.update();
+    W.G=0;
+    W.L=0;
+    RealType logpsiMinus = Psi.evaluateLog(W);
+    H.evaluate(W);
+    RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+    
+    PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
+    HGradient[i]= (elocPlus-elocMinus)*dh;
+  }
+  cout<<"ORIGINAL"<<endl;
+  cout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  cout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
   
 }
     void WaveFunctionTester::runwftricks()
