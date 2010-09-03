@@ -238,7 +238,7 @@ namespace qmcplusplus
                 }
               app_log()<<"E_lin = "<<E_lin<<" <H^2>="<<HamT2(0,0)<<endl;
               
-              if ((abs(E_lin/Ham(0,0))>1.5)&&(E_lin+10.0<Ham(0,0))&&(w_beta<1.0))
+              if ((abs(E_lin/Ham(0,0))>1.5)&&(E_lin+10.0<Ham(0,0)))
               {
                 app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
 //                 try a larger stability base and repeat
