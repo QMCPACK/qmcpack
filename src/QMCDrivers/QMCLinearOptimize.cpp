@@ -34,6 +34,7 @@
   #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
 
+/*#include "Message/Communicate.h"*/
                                                                  
 namespace qmcplusplus                                                                 
 {
@@ -81,7 +82,11 @@ namespace qmcplusplus
     
     QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
     {
-      for (int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
+      std::vector<RealType> bp(optparm.size(),0.0);
+      if (!myComm->rank())
+        for (int i=0;i<optparm.size();i++) bp[i] = optparm[i] + dl*optdir[i];
+      myComm->bcast(bp);
+      for (int i=0;i<optparm.size();i++) optTarget->Params(i) = bp[i];
       QMCLinearOptimize::RealType c = optTarget->Cost(false);
       validFuncVal= optTarget->IsValid;
       return c;
@@ -169,6 +174,8 @@ namespace qmcplusplus
           Matrix<RealType> Ham2(N,N);
           Matrix<RealType> S(N,N);
           vector<RealType> BestDirection(N,0);
+          
+          
 
           for (int i=0;i<numParams; i++) optTarget->Params(i) = currentParameters[i];
           
@@ -209,6 +216,9 @@ namespace qmcplusplus
             Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
             for (int i=1;i<N;i++) HamT(i,i) += Xs;
 
+
+if (!myComm->rank())
+{
 // Getting the optimal worksize
               char jl('N');
               char jr('V');
@@ -280,6 +290,16 @@ namespace qmcplusplus
                 }
  //If not rescaling and linear parameters, step size and grad are the same.
 //              LambdaMax=1.0;
+              }
+              
+              int l(currentParameters.size()+currentParameterDirections.size());
+              std::vector<RealType> pl(l,0);
+              for(int pi=0;pi<currentParameters.size();pi++) pl[pi]=currentParameters[pi];
+              for(int pi=0;pi<currentParameterDirections.size();pi++) pl[pi+currentParameters.size()]=currentParameterDirections[pi];
+              myComm->bcast(pl);
+              for(int pi=0;pi<currentParameters.size();pi++) currentParameters[pi]=pl[pi];
+              for(int pi=0;pi<currentParameterDirections.size();pi++) currentParameterDirections[pi]=pl[pi+currentParameters.size()];
+              
               optparm= currentParameters; 
               for (int i=0;i<numParams; i++) optdir[i] = currentParameterDirections[i+1]; 
               
@@ -304,7 +324,7 @@ namespace qmcplusplus
                 app_log()<<"Invalid Cost Function!"<<endl;
                 continue;
               }
-
+              myComm->bcast(Lambda);
               dopt *= std::abs(Lambda);
                 
               if ( (Lambda==Lambda)&&(dopt<bigChange))
@@ -350,9 +370,18 @@ namespace qmcplusplus
               }
           
           }
-          
+          myComm->bcast(acceptedOneMove);
           if(acceptedOneMove)
           {
+
+            int l(bestParameters.size()+BestDirection.size());
+            std::vector<RealType> pl(l,0);
+            for(int pi=0;pi<bestParameters.size();pi++) pl[pi]=bestParameters[pi];
+            for(int pi=0;pi<BestDirection.size();pi++) pl[pi+bestParameters.size()]=BestDirection[pi];
+            myComm->bcast(pl);
+            for(int pi=0;pi<bestParameters.size();pi++) bestParameters[pi]=pl[pi];
+            for(int pi=0;pi<BestDirection.size();pi++) BestDirection[pi]=pl[pi+bestParameters.size()];
+            
             for (int i=0;i<numParams; i++) optTarget->Params(i) = bestParameters[i]; 
             currentParameters=bestParameters;
             LastDirections.push_back(BestDirection);
@@ -367,6 +396,7 @@ namespace qmcplusplus
           
         }
       }
+      
       
       MyCounter++;
       app_log() << "  Execution time = " << t1.elapsed() << endl;
