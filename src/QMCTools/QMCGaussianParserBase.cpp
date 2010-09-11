@@ -470,7 +470,7 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSet()  {
 
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
+  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
 
