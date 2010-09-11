@@ -700,15 +700,15 @@ namespace qmcplusplus {
           if(loc>=0) CSFcoeff[i+1]=myVars[i]=active[loc];
         }
         int cnt=0;
-        for(int i=0; i<DetsPerCSF.size()-1; i++) {
+        for(int i=0; i<DetsPerCSF.size(); i++) {
           for(int k=0; k<DetsPerCSF[i]; k++) {
-            C[cnt] = CSFcoeff[i+1]*CSFexpansion[cnt];
+            C[cnt] = CSFcoeff[i]*CSFexpansion[cnt];
             cnt++;
           }
         }  
         //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       } else {
-        for(int i=0; i<C.size(); i++) {
+        for(int i=0; i<C.size()-1; i++) {
           int loc=myVars.where(i);
           if(loc>=0) C[i+1]=myVars[i]=active[loc];
         }
@@ -809,26 +809,29 @@ namespace qmcplusplus {
        }
 
 //       for(int i=0; i<C.size(); i++){
-       num=CSFcoeff.size();
+       num=CSFcoeff.size()-1;
        int cnt=0;
-       for(int i=0; i<num; i++) {
+//        this one is not optable
+       cnt+=DetsPerCSF[0];
+       int ip(1);
+       for(int i=0; i<num; i++,ip++) {
          int kk=myVars.where(i);
          if (kk<0) {
-           cnt+=DetsPerCSF[i];
+           cnt+=DetsPerCSF[ip];
            continue;
          }
          ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0; 
-         for(int k=0; k<DetsPerCSF[i]; k++) {
+         for(int k=0; k<DetsPerCSF[ip]; k++) {
            int upC = C2node_up[cnt];
            int dnC = C2node_dn[cnt];
            ValueType tmp1=CSFexpansion[cnt]*detValues_dn[dnC]*psiinv;
            ValueType tmp2=CSFexpansion[cnt]*detValues_up[upC]*psiinv;
            cdet+=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
            q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);  
-           for(int k=0,j=N1; k<NP1; k++,j++)
-             v1 += tmp1*(dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
-           for(int k=0,j=N2; k<NP2; k++,j++)
-             v2 += tmp2*(dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
+           for(int l=0,j=N1; l<NP1; l++,j++)
+             v1 += tmp1*(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[l],grads_up(upC,l)) );
+           for(int l=0,j=N2; l<NP2; l++,j++)
+             v2 += tmp2*(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[l],grads_dn(dnC,l)));
            cnt++;
          }
          convert(cdet,dlogpsi[kk]);
@@ -903,8 +906,8 @@ namespace qmcplusplus {
           gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
         } 
  
-       for(int i=0; i<C.size(); i++){
-         int kk=myVars.where(i);
+       for(int i=1; i<C.size(); i++){
+         int kk=myVars.where(i-1);
          if (kk<0) continue;
          int upC = C2node_up[i];
          int dnC = C2node_dn[i];
