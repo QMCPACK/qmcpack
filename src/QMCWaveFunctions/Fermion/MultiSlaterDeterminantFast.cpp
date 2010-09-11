@@ -695,14 +695,14 @@ namespace qmcplusplus {
   {  
     if(Optimizable)  {
       if(usingCSF) {
-        for(int i=0; i<CSFcoeff.size(); i++)  {
+        for(int i=0; i<CSFcoeff.size()-1; i++)  {
           int loc=myVars.where(i);
-          if(loc>=0) CSFcoeff[i]=myVars[i]=active[loc];
+          if(loc>=0) CSFcoeff[i+1]=myVars[i]=active[loc];
         }
         int cnt=0;
-        for(int i=0; i<DetsPerCSF.size(); i++) {
+        for(int i=0; i<DetsPerCSF.size()-1; i++) {
           for(int k=0; k<DetsPerCSF[i]; k++) {
-            C[cnt] = CSFcoeff[i]*CSFexpansion[cnt];
+            C[cnt] = CSFcoeff[i+1]*CSFexpansion[cnt];
             cnt++;
           }
         }  
@@ -710,7 +710,7 @@ namespace qmcplusplus {
       } else {
         for(int i=0; i<C.size(); i++) {
           int loc=myVars.where(i);
-          if(loc>=0) C[i]=myVars[i]=active[loc];
+          if(loc>=0) C[i+1]=myVars[i]=active[loc];
         }
        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       }

@@ -498,14 +498,14 @@ namespace qmcplusplus
        app_log() <<"CI coefficients are optimizable. \n";
        multiSD->Optimizable=true;
        if(multiSD->usingCSF) {
-         multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
+//          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
          for(int i=1; i<multiSD->CSFcoeff.size(); i++) {
            //std::stringstream sstr;
            //sstr << "CIcoeff" << "_" << i;
            multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
          }
        } else {
-         multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
+//          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
          for(int i=1; i<multiSD->C.size(); i++) {
            //std::stringstream sstr;
            //sstr << "CIcoeff" << "_" << i;
@@ -817,7 +817,7 @@ namespace qmcplusplus
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. \n";
        multiSD->Optimizable=true;
-       multiSD->myVars.insert(CItags[0],coeff[0],false,optimize::LINEAR_P);
+//        multiSD->myVars.insert(CItags[0],coeff[0],false,optimize::LINEAR_P);
        for(int i=1; i<coeff.size(); i++) {
          //std::stringstream sstr;
          //sstr << "CIcoeff" << "_" << i;
