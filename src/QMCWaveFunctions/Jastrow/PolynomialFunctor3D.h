@@ -838,7 +838,7 @@ namespace qmcplusplus {
 	  for (int i=0; i<Parameters.size(); i++) {
 	    std::stringstream sstr;
 	    sstr << id << "_" << i;;
-	    myVars.insert(sstr.str(),Parameters[i],true);
+	    myVars.insert(sstr.str(),Parameters[i],optimize::LOGLINEAR_P,true);
 	  }
           // for (int i=0; i< N_ee; i++) 
       	  //   for (int j=0; j < N_eI; j++)
