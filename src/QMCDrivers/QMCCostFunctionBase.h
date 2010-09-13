@@ -91,6 +91,12 @@ namespace qmcplusplus
       }
       ///reset the wavefunction
       virtual void resetPsi(bool final_reset=false)=0;
+      
+      inline void getParameterTypes(std::vector<int>& types) 
+      { 
+        return OptVariablesForPsi.getParameterTypeList(types);
+      }
+      
       ///dump the current parameters and other report
       void Report();
       ///report  parameters at the end

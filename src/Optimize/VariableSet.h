@@ -144,6 +144,15 @@ namespace optimize
           PTit++;
         }
       }
+      
+      inline void getParameterTypeList(std::vector<int>& types)
+      {
+        std::vector<indx_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
+        types.resize(PTend-PTit);
+        std::vector<int>::iterator tit(types.begin());
+        while (PTit!=PTend) (*tit++) = (*PTit++).second;
+      }      
+      
 
       /** equivalent to map<string,T>[string] operator
        */
