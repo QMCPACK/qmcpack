@@ -113,11 +113,6 @@ namespace qmcplusplus
         {
           return PhaseValue;
         }
-      inline RealType getSign() const
-        {
-          return std::cos(PhaseValue);
-        }
-       
         inline RealType getAlternatePhaseDiff()
         {
           RealType apd=0.0;
