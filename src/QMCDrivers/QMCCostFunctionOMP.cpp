@@ -286,6 +286,7 @@ namespace qmcplusplus
           psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
           //thisWalker.DataSetForDerivatives=tbuffer;
           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
+          saved[SIGN_FREE] = psiClones[ip]->getSign();
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
@@ -401,10 +402,11 @@ namespace qmcplusplus
           wRef.L += *d2LogPsi[iwg];
 
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+          RealType changedSign = saved[SIGN_FREE]*psiClones[ip]->getSign();
 
           RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
           eloc_new = KEtemp + saved[ENERGY_FIXED];
-          Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+          Return_t weight = changedSign*std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
 
           saved[ENERGY_NEW]=eloc_new;
           saved[REWEIGHT]=weight;
@@ -450,7 +452,8 @@ namespace qmcplusplus
         for (int iw=0; iw<nw;iw++)
           {
             Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-            saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
+            RealType sgn=(saved[REWEIGHT]>0)?1:-1;
+            saved[REWEIGHT] = sgn*std::min(std::abs(saved[REWEIGHT])*wgtnorm,MaxWeight) ;
             wgt_tot+= saved[REWEIGHT];
           }
       }

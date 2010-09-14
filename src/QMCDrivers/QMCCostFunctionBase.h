@@ -41,7 +41,7 @@ namespace qmcplusplus
     {
     public:
 
-      enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
+      enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, SIGN_FREE=2, ENERGY_TOT=3, ENERGY_FIXED=4, ENERGY_NEW=5, REWEIGHT=6};
       enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
                          SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ,
                          SUM_INDEX_SIZE

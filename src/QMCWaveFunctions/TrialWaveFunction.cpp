@@ -251,6 +251,7 @@ namespace qmcplusplus
     P.L = 0.0;
     fixedG = 0.0;
     fixedL = 0.0;
+    PhaseValue = 0.0;
     ValueType logpsi_fixed(0.0);
     ValueType logpsi_opt(0.0);
     vector<OrbitalBase*>::iterator it(Z.begin());
@@ -258,7 +259,10 @@ namespace qmcplusplus
     for (; it!=it_end; ++it)
       {
         if ((*it)->Optimizable)
+        {
           logpsi_opt += (*it)->evaluateLog(P, P.G, P.L);
+          PhaseValue += (*it)->PhaseValue;
+        }
         else
           {
             logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
@@ -284,6 +288,7 @@ namespace qmcplusplus
     P.L = 0.0;
     fixedG = 0.0;
     fixedL = 0.0;
+    PhaseValue = 0.0;
     ValueType logpsi_fixed(0.0);
     ValueType logpsi_opt(0.0);
     buf.rewind();
@@ -292,7 +297,10 @@ namespace qmcplusplus
     for (; it!=it_end; ++it)
       {
         if ((*it)->Optimizable)
+        {
           logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
+          PhaseValue += (*it)->PhaseValue;
+        }
         else
           {
             logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
