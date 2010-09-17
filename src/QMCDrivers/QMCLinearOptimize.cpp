@@ -221,29 +221,19 @@ bool QMCLinearOptimize::run()
                   lwork=work[0];
                   work.resize(lwork);
 
-                  //Get an estimate of E_lin
-                  Matrix<RealType> H_tmp(HamT);
-                  Matrix<RealType> S_tmp(ST);
-                  dggev(&jl, &jr, &N, H_tmp.data(), &N, S_tmp.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-                  RealType E_lin(alphar[0]/beta[0]);
-                  int e_min_indx(0);
-                  for (int i=1; i<N; i++)
-                    if (E_lin>(alphar[i]/beta[i]))
-                      {
-                        E_lin=alphar[i]/beta[i];
-                        e_min_indx=i;
-                      }
-                  app_log()<<"E_lin = "<<E_lin<<" <H^2>="<<HamT2(0,0)<<endl;
+                  //~ //Get an estimate of E_lin
+                  //~ Matrix<RealType> H_tmp(HamT);
+                  //~ Matrix<RealType> S_tmp(ST);
+                  //~ dggev(&jl, &jr, &N, H_tmp.data(), &N, S_tmp.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+                  //~ RealType E_lin(alphar[0]/beta[0]);
+                  //~ int e_min_indx(0);
+                  //~ for (int i=1; i<N; i++)
+                    //~ if (E_lin>(alphar[i]/beta[i]))
+                      //~ {
+                        //~ E_lin=alphar[i]/beta[i];
+                        //~ e_min_indx=i;
+                      //~ }
 
-                  if ((abs(E_lin/Ham(0,0))>1.5)&&(E_lin+10.0<Ham(0,0)))
-                    {
-                      app_log()<<"Probably will not converge: E_lin="<<E_lin<<" H(0,0)="<<Ham(0,0)<<endl;
-//                 try a larger stability base and repeat
-                      stabilityBase+=1.0;
-//                 maintain same number of "good" stability tries
-                      stability-=1;
-                      continue;
-                    }
                   Matrix<RealType> ST2(N,N);
                   if (w_beta>=0.0)
                   {
@@ -274,6 +264,20 @@ bool QMCLinearOptimize::run()
                   int bestEigenvalue(0);
                   for (int i=N-1; i>=0; i--) if (!std::isnan(mappedEigenvalues[i].first) && !std::isinf(mappedEigenvalues[i].first)) bestEigenvalue=i;
                   //~ app_log()<<bestEigenvalue<<": "<<mappedEigenvalues[bestEigenvalue].first<<endl;
+
+
+                  if ((w_beta>=0.0)&&(abs(mappedEigenvalues[bestEigenvalue].first/Ham(0,0))>1.5)&&(mappedEigenvalues[bestEigenvalue].first+10.0<Ham(0,0)))
+                    {
+                      app_log()<<"Probably will not converge: E_lin="<<mappedEigenvalues[bestEigenvalue].first<<" H(0,0)="<<Ham(0,0)<<endl;
+//                 try a larger stability base and repeat
+                      stabilityBase+=stabilizerScale;
+//                 maintain same number of "good" stability tries
+                      stability-=1;
+                      continue;
+                    }
+                    
+
+
 
                   for (int i=0; i<N; i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[bestEigenvalue].second,i)/eigenT(mappedEigenvalues[bestEigenvalue].second,0);
                   //eigenCG part
