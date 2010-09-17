@@ -44,7 +44,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     PartID(0), NumParts(1), WarmupBlocks(10),
     SkipSampleGeneration("no"), hamPool(hpool),
     optTarget(0), vmcEngine(0), Max_iterations(1),
-    wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), exp0(0),
+    wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), exp0(-16),
     nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),
     UseQuarticMin("yes")
 {
@@ -82,11 +82,7 @@ QMCLinearOptimize::~QMCLinearOptimize()
 
 QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
 {
-  std::vector<RealType> bp(optparm.size(),0.0);
-  if (!myComm->rank())
-    for (int i=0; i<optparm.size(); i++) bp[i] = optparm[i] + dl*optdir[i];
-  myComm->bcast(bp);
-  for (int i=0; i<optparm.size(); i++) optTarget->Params(i) = bp[i];
+  for(int i=0;i<optparm.size();i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
   QMCLinearOptimize::RealType c = optTarget->Cost(false);
   validFuncVal= optTarget->IsValid;
   return c;
@@ -163,8 +159,7 @@ bool QMCLinearOptimize::run()
 //         store this for use in later tries
       int bestStability(0);
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
-      RealType stabilityBase(-16.0);
-      if (exp0!=0) stabilityBase=exp0;
+      RealType stabilityBase(exp0);
 
       vector<vector<RealType> > LastDirections;
       RealType deltaPrms(-1.0);
@@ -207,18 +202,10 @@ bool QMCLinearOptimize::run()
                     ST(i,j)= (S)(j,i);
                     HamT2(i,j)= (Ham2)(j,i);
                   }
-              RealType Xs(0);
-//             if ((tries==0)&&(stability==0)) Xs = 0.0;
-//             else
-//             if (tries==0) Xs = std::pow(10.0,exp0 + stabilizerScale*stability);
-//             else Xs = std::pow(10.0,exp0 + stabilizerScale*bestStability);
 
-              Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
+              RealType Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
               for (int i=1; i<N; i++) HamT(i,i) += Xs;
 
-
-              if (!myComm->rank())
-                {
 // Getting the optimal worksize
                   char jl('N');
                   char jr('V');
@@ -257,13 +244,20 @@ bool QMCLinearOptimize::run()
                       stability-=1;
                       continue;
                     }
-
                   Matrix<RealType> ST2(N,N);
-//              RealType H2rescale=1.0/(E_lin*E_lin);
-                  RealType H2rescale=1.0/HamT2(0,0);
-                  for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) *= H2rescale;
-//               These should have the same 0,0 element = 1.0
-                  for (int i=0; i<N; i++)  for (int j=0; j<N; j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
+                  if (w_beta>=0.0)
+                  {
+                    RealType H2rescale=1.0/HamT2(0,0);
+                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) *= H2rescale;
+                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
+                  }
+                  else
+                    {
+                      Matrix<RealType> VarT(HamT2);
+                      //~ true variance minimization
+                      for (int i=0; i<N; i++)  for (int j=0; j<N; j++) VarT(i,j) -= HamT(0,0)*HamT(i,j);
+                      HamT=VarT; ST2=ST;
+                    }
 
                   dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
                   assert(info==0);
@@ -276,8 +270,12 @@ bool QMCLinearOptimize::run()
                       mappedEigenvalues[i].second=i;
                     }
                   std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+                  
+                  int bestEigenvalue(0);
+                  for (int i=N-1; i>=0; i--) if (!std::isnan(mappedEigenvalues[i].first) && !std::isinf(mappedEigenvalues[i].first)) bestEigenvalue=i;
+                  //~ app_log()<<bestEigenvalue<<": "<<mappedEigenvalues[bestEigenvalue].first<<endl;
 
-                  for (int i=0; i<N; i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
+                  for (int i=0; i<N; i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[bestEigenvalue].second,i)/eigenT(mappedEigenvalues[bestEigenvalue].second,0);
                   //eigenCG part
 
                   for (int ldi=0; ldi<LastDirections.size(); ldi++)
@@ -290,25 +288,14 @@ bool QMCLinearOptimize::run()
                     }
 //If not rescaling and linear parameters, step size and grad are the same.
 //              LambdaMax=1.0;
-                }
-
-              int l(currentParameters.size()+currentParameterDirections.size());
-              std::vector<RealType> pl(l,0);
-              for (int pi=0; pi<currentParameters.size(); pi++) pl[pi]=currentParameters[pi];
-              for (int pi=0; pi<currentParameterDirections.size(); pi++) pl[pi+currentParameters.size()]=currentParameterDirections[pi];
-              myComm->bcast(pl);
-              for (int pi=0; pi<currentParameters.size(); pi++) currentParameters[pi]=pl[pi];
-              for (int pi=0; pi<currentParameterDirections.size(); pi++) currentParameterDirections[pi]=pl[pi+currentParameters.size()];
 
               optparm= currentParameters;
               for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-
+              
               RealType dopt(0);
-              for (int i=0; i<numParams; i++) dopt += optdir[i] * optdir[i];
-              dopt=std::sqrt(dopt);
-              TOL = allowedCostDifference*dopt;
-              dopt /= RealType(numParams);
-
+              for (int i=0; i<numParams; i++) dopt = std::max(dopt,optdir[i]);
+              TOL = allowedCostDifference/dopt;
+              
               largeQuarticStep=1e3;
               if (deltaPrms>0) quadstep=deltaPrms/dopt;
 
@@ -327,7 +314,7 @@ bool QMCLinearOptimize::run()
                   app_log()<<"Invalid Cost Function!"<<endl;
                   continue;
                 }
-              myComm->bcast(Lambda);
+                
               dopt *= std::abs(Lambda);
 
               if ((Lambda==Lambda)&&(dopt<bigChange))
@@ -351,7 +338,7 @@ bool QMCLinearOptimize::run()
                       Valid=false;
                       continue;
                     }
-                  app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" RMS step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
+                  app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
                   optTarget->printEstimates();
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
 
@@ -364,28 +351,19 @@ bool QMCLinearOptimize::run()
                       BestDirection=currentParameterDirections;
                       acceptedOneMove=true;
 
-                      deltaPrms=dopt;
+                      deltaPrms=Lambda*Lambda/dopt;
                     }
 //                else if (newCost>lastCost+0.001) stability = nstabilizers;
                 }
               else
                 {
-                  app_log()<<"  Failed Step. RMS step Size:"<<dopt<<endl;
+                  app_log()<<"  Failed Step. Largest parameter change:"<<dopt<<endl;
                 }
 
             }
-          myComm->bcast(acceptedOneMove);
+            
           if (acceptedOneMove)
             {
-
-              int l(bestParameters.size()+BestDirection.size());
-              std::vector<RealType> pl(l,0);
-              for (int pi=0; pi<bestParameters.size(); pi++) pl[pi]=bestParameters[pi];
-              for (int pi=0; pi<BestDirection.size(); pi++) pl[pi+bestParameters.size()]=BestDirection[pi];
-              myComm->bcast(pl);
-              for (int pi=0; pi<bestParameters.size(); pi++) bestParameters[pi]=pl[pi];
-              for (int pi=0; pi<BestDirection.size(); pi++) BestDirection[pi]=pl[pi+bestParameters.size()];
-
               for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];
               currentParameters=bestParameters;
               LastDirections.push_back(BestDirection);
