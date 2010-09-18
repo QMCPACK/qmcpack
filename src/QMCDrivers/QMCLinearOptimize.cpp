@@ -163,6 +163,7 @@ bool QMCLinearOptimize::run()
 
       vector<vector<RealType> > LastDirections;
       RealType deltaPrms(-1.0);
+      RealType storedQuadStep = quadstep;
       for (int tries=0; tries<eigCG; tries++)
         {
           Matrix<RealType> Ham(N,N);
@@ -191,7 +192,7 @@ bool QMCLinearOptimize::run()
 
           vector<RealType> bestParameters(currentParameters);
           bool acceptedOneMove(false);
-
+          int tooManyTries(10);
           for (int stability=0; stability<nstabilizers; stability++)
             {
               Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
@@ -206,8 +207,8 @@ bool QMCLinearOptimize::run()
               RealType Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
               for (int i=1; i<N; i++) HamT(i,i) += Xs;
 
-// Getting the optimal worksize
-                  char jl('N');
+//            Getting the optimal worksize
+              char jl('N');
                   char jr('V');
                   vector<RealType> alphar(N),alphai(N),beta(N);
                   Matrix<RealType> eigenT(N,N);
@@ -245,27 +246,37 @@ bool QMCLinearOptimize::run()
                     {
                       Matrix<RealType> VarT(HamT2);
                       //~ true variance minimization
-                      for (int i=0; i<N; i++)  for (int j=0; j<N; j++) VarT(i,j) -= HamT(0,0)*HamT(i,j);
+                      //~ RealType ENoffset = std::sqrt(HamT2(0,0));
+                      RealType ENoffset = HamT(0,0);
+                      for (int i=0; i<N; i++)  for (int j=0; j<N; j++) VarT(i,j) -= ENoffset*HamT(i,j);
+                      for (int i=1; i<N; i++) VarT(i,i) -= ENoffset*Xs;
                       HamT=VarT; ST2=ST;
                     }
 
                   dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-                  assert(info==0);
+                  if (info!=0)
+                  {
+                    APP_ABORT("Invalid Matrix Diagonalization Function!");
+                  }
 
                   vector<std::pair<RealType,int> > mappedEigenvalues(N);
                   for (int i=0; i<N; i++)
                     {
-                      RealType evi(alphar[i]/beta[i]);
-                      mappedEigenvalues[i].first=evi;
-                      mappedEigenvalues[i].second=i;
+                      RealType evi(alphar[i]/beta[i]); 
+                      if(std::isfinite(evi))
+                      {
+                        mappedEigenvalues[i].first=evi;
+                        mappedEigenvalues[i].second=i;
+                      }
+                      else
+                      {
+                        mappedEigenvalues[i].first=1e100;
+                        mappedEigenvalues[i].second=i;
+                      }
                     }
                   std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
                   
                   int bestEigenvalue(0);
-                  for (int i=N-1; i>=0; i--) if (!std::isnan(mappedEigenvalues[i].first) && !std::isinf(mappedEigenvalues[i].first)) bestEigenvalue=i;
-                  //~ app_log()<<bestEigenvalue<<": "<<mappedEigenvalues[bestEigenvalue].first<<endl;
-
-
                   if ((w_beta>=0.0)&&(abs(mappedEigenvalues[bestEigenvalue].first/Ham(0,0))>1.5)&&(mappedEigenvalues[bestEigenvalue].first+10.0<Ham(0,0)))
                     {
                       app_log()<<"Probably will not converge: E_lin="<<mappedEigenvalues[bestEigenvalue].first<<" H(0,0)="<<Ham(0,0)<<endl;
@@ -276,9 +287,6 @@ bool QMCLinearOptimize::run()
                       continue;
                     }
                     
-
-
-
                   for (int i=0; i<N; i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[bestEigenvalue].second,i)/eigenT(mappedEigenvalues[bestEigenvalue].second,0);
                   //eigenCG part
 
@@ -290,38 +298,30 @@ bool QMCLinearOptimize::run()
                       ovlpold*=1.0/nrmold;
                       for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
                     }
-//If not rescaling and linear parameters, step size and grad are the same.
-//              LambdaMax=1.0;
 
               optparm= currentParameters;
               for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
               
-              RealType dopt(0);
-              for (int i=0; i<numParams; i++) dopt = std::max(dopt,optdir[i]);
-              TOL = allowedCostDifference/dopt;
+              RealType bigVec(0);
+              for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
+              TOL = allowedCostDifference/bigVec;
               
-              largeQuarticStep=1e3;
-              if (deltaPrms>0) quadstep=deltaPrms/dopt;
+              largeQuarticStep=bigChange/bigVec;
+              if (deltaPrms>0) quadstep=deltaPrms/bigVec;
+              else quadstep = storedQuadStep/bigVec;
 
-              if (UseQuarticMin=="yes")
-                {
-                  Valid=lineoptimization();
-//                 if (dopt*std::abs(Lambda)>bigChange)
-//                   Valid=lineoptimization2();
-                }
-              else
-                {
-                  Valid=lineoptimization2();
-                }
+              if (UseQuarticMin=="yes")  Valid=lineoptimization();
+              else  Valid=lineoptimization2(); 
+              
               if (!Valid)
                 {
                   app_log()<<"Invalid Cost Function!"<<endl;
                   continue;
                 }
                 
-              dopt *= std::abs(Lambda);
+              RealType biggestParameterChange = bigVec*std::abs(Lambda);
 
-              if ((Lambda==Lambda)&&(dopt<bigChange))
+              if (std::isfinite(Lambda)&&(biggestParameterChange<bigChange))
                 {
 //                 app_log() <<endl <<"lambda: " <<Lambda <<endl;
 //                 for (int i=0;i<numParams; i++) {
@@ -342,7 +342,7 @@ bool QMCLinearOptimize::run()
                       Valid=false;
                       continue;
                     }
-                  app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" step size: "<<dopt<<" Lambda: "<<Lambda<<endl;
+                  app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<"  Largest Parameter Change: "<<biggestParameterChange<<" Lambda: "<<Lambda<<endl;
                   optTarget->printEstimates();
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
 
@@ -355,13 +355,22 @@ bool QMCLinearOptimize::run()
                       BestDirection=currentParameterDirections;
                       acceptedOneMove=true;
 
-                      deltaPrms=Lambda*Lambda/dopt;
+                      deltaPrms=std::abs(Lambda*bigVec);
                     }
 //                else if (newCost>lastCost+0.001) stability = nstabilizers;
                 }
               else
                 {
-                  app_log()<<"  Failed Step. Largest parameter change:"<<dopt<<endl;
+                  app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
+                  tooManyTries--;
+                  if ((tooManyTries>0) && (w_beta<0.0))
+                    {
+                      stabilityBase+=stabilizerScale;
+                      stability-=1;
+                      app_log()<<" Re-run Pure Variance with stabilizer:"<<stabilityBase<<endl;
+
+                      continue;
+                    }
                 }
 
             }
