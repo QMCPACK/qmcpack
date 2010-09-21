@@ -263,7 +263,7 @@ bool QMCLinearOptimize::run()
                   for (int i=0; i<N; i++)
                     {
                       RealType evi(alphar[i]/beta[i]); 
-                      if(std::isfinite(evi))
+                      if(abs(evi)<1e10)
                       {
                         mappedEigenvalues[i].first=evi;
                         mappedEigenvalues[i].second=i;
@@ -321,7 +321,7 @@ bool QMCLinearOptimize::run()
                 
               RealType biggestParameterChange = bigVec*std::abs(Lambda);
 
-              if (std::isfinite(Lambda)&&(biggestParameterChange<bigChange))
+              if ((abs(Lambda)<1e100)&&(biggestParameterChange<bigChange))
                 {
 //                 app_log() <<endl <<"lambda: " <<Lambda <<endl;
 //                 for (int i=0;i<numParams; i++) {
@@ -547,6 +547,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
 
 void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
 {
+  exp0=-16;
   m_param.put(cur);
   optTarget->put(cur);
   vmcEngine->resetComponents(cur);
