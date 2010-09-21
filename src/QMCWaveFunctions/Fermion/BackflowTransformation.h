@@ -410,6 +410,7 @@ namespace qmcplusplus
         {
 //           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
           BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+          bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
           bsp->put(funs[i]);
           if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
           bsp->myVars.setParameterType(optimize::SPO_P);
@@ -458,6 +459,7 @@ namespace qmcplusplus
         app_log() <<"Using BsplineFunctor type. \n";
 //         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
         BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bsp->put(cur);
         if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::SPO_P);
