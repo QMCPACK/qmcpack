@@ -31,7 +31,7 @@
 namespace qmcplusplus {
 
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
-  branchEngine(0), ResetRandom(false), AppendRun(false),
+  branchEngine(0), ResetRandom(false), AppendRun(false), DumpConfig(true),
   MyCounter(0), RollBackBlocks(0),
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
   Period4CheckProperties(100), 
@@ -182,7 +182,7 @@ namespace qmcplusplus {
   void QMCDriver::recordBlock(int block) {
 
     ////first dump the data for restart
-    if(block%Period4CheckPoint == 0)
+    if(DumpConfig &&block%Period4CheckPoint == 0)
     {
       wOut->dump(W);
       branchEngine->write(RootName,true); //save energy_history
@@ -198,11 +198,16 @@ namespace qmcplusplus {
   }
 
   bool QMCDriver::finalize(int block) {
+
     TimerManager.print(myComm);
     TimerManager.reset();
-    wOut->dump(W);
-    branchEngine->finalize(W);
-    RandomNumberControl::write(RootName,myComm);
+
+    if(DumpConfig)
+    {
+      wOut->dump(W);
+      branchEngine->finalize(W);
+      RandomNumberControl::write(RootName,myComm);
+    }
 
     delete wOut;
     wOut=0;
@@ -308,6 +313,7 @@ namespace qmcplusplus {
           rAttrib.add(Period4CheckPoint,"stride");
           rAttrib.add(Period4CheckPoint,"period");
           rAttrib.put(tcur);
+          DumpConfig=(Period4CheckPoint>0);
         }
         else if(cname == "dumpconfig") {
           OhmmsAttributeSet rAttrib; 

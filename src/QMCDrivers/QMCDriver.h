@@ -181,6 +181,8 @@ namespace qmcplusplus {
     bool ResetRandom;
     ///flag to append or restart the run
     bool AppendRun;
+    ///flag to turn off dumping configurations
+    bool DumpConfig;
     /** the number of times this QMCDriver is executed
      *
      * MyCounter is initialized to zero by the constructor and is incremented 
