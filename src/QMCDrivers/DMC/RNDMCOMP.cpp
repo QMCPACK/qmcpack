@@ -88,9 +88,11 @@ namespace qmcplusplus {
       for(int ip=1;ip<NumThreads;++ip) wClones[ip]->loadEnsemble(W);
 
       if (useAlternate=="yes")
-        branchEngine->initWalkerController(W,Tau,false,false);
+        branchEngine->initWalkerController(W,false,false);
+        //branchEngine->initWalkerController(W,Tau,false,false);
       else
-        branchEngine->initWalkerController(W,Tau,false,true);
+        branchEngine->initWalkerController(W,false,true);
+        //branchEngine->initWalkerController(W,Tau,false,true);
       branchEngine->setRN(true);
 
       //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();

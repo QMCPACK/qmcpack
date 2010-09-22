@@ -154,32 +154,31 @@ namespace qmcplusplus {
       else if(qmc_mode.find("fw")<nchars) //number 9
       {
         newRunType=FW_RUN;
-          WhatToDo[UPDATE_MODE]=1;
-  WhatToDo[MULTIPLE_MODE]=0;
-  WhatToDo[SPACEWARP_MODE]=0;
-  WhatToDo[ALTERNATE_MODE]=1;
+        WhatToDo[UPDATE_MODE]=1;
+        WhatToDo[MULTIPLE_MODE]=0;
+        WhatToDo[SPACEWARP_MODE]=0;
+        WhatToDo[ALTERNATE_MODE]=1;
       }
       else if(qmc_mode.find("density")<nchars) //number 8
       {
         newRunType=FR_RUN;
-          WhatToDo[UPDATE_MODE]=0;
-  WhatToDo[MULTIPLE_MODE]=0;
-  WhatToDo[SPACEWARP_MODE]=0;
-  WhatToDo[ALTERNATE_MODE]=1;
+        WhatToDo[UPDATE_MODE]=0;
+        WhatToDo[MULTIPLE_MODE]=0;
+        WhatToDo[SPACEWARP_MODE]=0;
+        WhatToDo[ALTERNATE_MODE]=1;
       }
       else if(qmc_mode.find("wfqmc")<nchars) //number 8
       {
         newRunType=WFMC_RUN;
-	WhatToDo[UPDATE_MODE]=0;
-	WhatToDo[MULTIPLE_MODE]=0;
-  WhatToDo[SPACEWARP_MODE]=0;
-  WhatToDo[ALTERNATE_MODE]=1;
+        WhatToDo[UPDATE_MODE]=0;
+        WhatToDo[MULTIPLE_MODE]=0;
+        WhatToDo[SPACEWARP_MODE]=0;
+        WhatToDo[ALTERNATE_MODE]=1;
       }
       else if (qmc_mode.find("rmcPbyP")<nchars)
-	{
-	  newRunType=RMC_PBYP_RUN;
-	}
-
+      {
+        newRunType=RMC_PBYP_RUN;
+      }
       else if(qmc_mode.find("rmc")<nchars)
       {
         newRunType=RMC_RUN;
@@ -201,7 +200,10 @@ namespace qmcplusplus {
         {
           APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
         }
-        
+
+        //pass to the new driver
+        branchEngine=qmcDriver->getBranchEngine();
+
         delete qmcDriver;
         //set to 0 so that a new driver is created
         qmcDriver = 0;
@@ -211,8 +213,8 @@ namespace qmcplusplus {
       else 
       { 
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
-//         if(curRunType == DMC_RUN) 
-          qmcDriver->resetComponents(cur); 
+        //         if(curRunType == DMC_RUN) 
+        qmcDriver->resetComponents(cur); 
       }
     }
 

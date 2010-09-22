@@ -18,6 +18,7 @@
 #include <vector>
 #include <sstream>        
 #include <bitset>
+#include <deque>
 namespace qmcplusplus
 {
   /** specialization for vector<T>
@@ -152,6 +153,40 @@ namespace qmcplusplus
         return false;
       }
     };
+
+  ///** i/o for deque<T>, internally use vector<T> 
+  // */
+  //template<typename T> struct h5data_proxy<deque<T> >
+  //  : public h5_space_type<T,1>
+  //  { 
+  //    using h5_space_type<T,1>::dims;
+  //    using h5_space_type<T,1>::get_address;
+  //    typedef deque<T> data_type;
+  //    data_type& ref_;
+
+  //    inline h5data_proxy(data_type& a): ref_(a) { dims[0]=ref_.size(); }
+
+  //    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  //    {
+  //      vector<T> temp(ref_.size());
+  //      if(!h5d_getspace(grp,aname,temp.size(),dims)) {temp.resize(dims[0]);}
+  //      if(h5d_read(grp,aname,get_address(&temp[0]),xfer_plist))
+  //      {
+  //        ref_.resize(temp.size());
+  //        ref_.assign(temp.begin(),temp.end());
+  //        return true;
+  //      }
+  //      else
+  //        return false;
+  //    }
+
+  //    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  //    {
+  //      vector<T> temp(ref_.size());
+  //      temp.assign(ref_.begin(),ref_.end());
+  //      return h5d_write(grp,aname.c_str(),temp.size(),dims,get_address(&temp[0]),xfer_plist);
+  //    }
+  //  };
 }
 #endif
 /***************************************************************************

@@ -34,20 +34,16 @@ namespace qmcplusplus {
   class WalkerControlBase;
   class EstimatorManager;
 
-  /** Implements branching algorithm for the fixed-node Diffusion Monte Carlo
+  /** Manages the state of QMC sections and handles population control for DMCs
    *
-   * Calculates the Branching Green's function
-   * \f[
-   * G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])
-   * \f]
-   * which is used for the weight and mulitplicity of each walker
-   * \f[ Weight =  G_{branch} \f]
-   * \f[ Mulitplicity =  G_{branch} + \nu \f]
-   * and to update the energy offset
-   * \f[ E_T = <E_G> - feed \log \left( \frac{P(t)}{P_0} \right) \f]
-   * where \f$P(t)\f$ is the current population, \f$P_0\f$ is the 
-   * ideal population, and \f$<E_G>\f$ is an estimate of the
-   * local energy. 
+   * QMCDriver object owns a SimpleFixedNodeBranch to keep track of the
+   * progress of a qmc section. It implements several methods to control the
+   * population and trial energy during a DMC and evaluate the properties of
+   * a population, e.g., energy, variance, population etc.  
+   * It owns WalkerController (pointer to a WalkerControlBase object) which
+   * manages the population (killing and duplicating walkers) and
+   * load balancing among multiple MPI tasks.
+   * \see {http://qmcpack.cmscc.org/qmc-basics}
    */
   class SimpleFixedNodeBranch: public QMCTraits 
   {
@@ -59,42 +55,41 @@ namespace qmcplusplus {
      */
     enum  
     {
-      B_DMC=0, B_DMCSTAGE=1, B_POPCONTROL=2, B_USETAUEFF=3, 
-      B_CLEARHISTORY=4, B_KILLNODES=5,
-      B_MODE_MAX=8
+      B_DMC=0              /**< 1 for dmc, 0 for anything else */
+        , B_DMCSTAGE=1     /**< 1 for main, 0 for wamrup  */
+        , B_POPCONTROL=2   /**< 1 for the standard dmc, 0 for the comb method */
+        , B_USETAUEFF=3    /**< 1 to use taueff accordning to JCP 93, 0 to use tau */
+        , B_CLEARHISTORY=4 /**< 1 to clear the history */
+        , B_KILLNODES=5    /**< 1 to kill walkers when a node crossing is detected */
+        , B_RESTART=6      /**< 1 if restarting */
+        , B_MODE_MAX=8     /**< size of BranchMode */
     };
 
     /** booleans to set the branch modes
      * \since 2008-05-05
-     *
-     * - BranchMode[D_DMC]  1 for dmc, 0 for anything else
-     * - BranchMode[D_DMCSTAGE]  1 for main, 0 for wamrup 
-     * - BranchMode[D_POPCONTROL] 1 for the standard dmc, 0 for the comb method
-     * - BranchMode[B_USETAUEFF]  1 to use taueff accordning to JCP 93, 0 to use tau
      */
     typedef bitset<B_MODE_MAX> BranchModeType;
     BranchModeType BranchMode;
 
-    /*! enum for iParam 
+    /*! enum for iParam bitset<B_IPARAM_MAX> 
      * \since 2008-05-05
+     *
+     * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
      */
     enum  
     {
-      B_WARMUPSTEPS, B_ENERGYUPDATEINTERVAL, B_COUNTER, 
-      B_TARGETWALKERS,  B_MAXWALKERS, B_MINWALKERS, B_BRANCHINTERVAL,
-      B_IPARAM_MAX
+      B_WARMUPSTEPS=0              /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
+        , B_ENERGYUPDATEINTERVAL=1 /**< frequency of the trial energy updates, default 1 */
+        , B_COUNTER=2              /**< counter for tracking object state */
+        , B_TARGETWALKERS=3        /**< target total number of walkers per mpi group */
+        , B_MAXWALKERS=4           /**< maximum number of walkers per node */
+        , B_MINWALKERS=5           /**< minimum number of walkers per node */
+        , B_BRANCHINTERVAL=6       /**< interval between branch, see population control */
+        , B_IPARAM_MAX=8           /**< size of iParam */
     };
 
     /** input parameters of integer types 
      * \since 2008-05-05
-     *
-     * - iParam[B_WARMUPSTEPS] warmup steps, valid when BranchMode[D_DMCSTAGE] == 0
-     * - iParam[B_ENERGYUPDATEINTERVAL] frequency of the trial energy updates, default 1 
-     *   -- iParam[B_ENERGYUPDATEINTERVAL]  = 1 for the warmup
-     * - iParam[B_COUNTER] counter for tracking object state
-     * - iParam[B_TARGETWALKERS] target total number of walkers per mpi group
-     * - iParam[B_MAXWALKERS]  maximum number of walkers per node
-     * - iParam[B_MINWALKERS]  minimum number of walkers per node
      */
     typedef TinyVector<int,B_IPARAM_MAX> IParamType;
     IParamType iParam; 
@@ -102,10 +97,10 @@ namespace qmcplusplus {
     /*! enum for vParam */
     enum  
     {
-      B_TAU, B_TAUEFF, B_ETRIAL, B_EREF, B_ENOW,
-      B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER, B_SIGMA, 
-      B_ACC_ENERGY, B_ACC_SAMPLES, 
-      B_VPARAM_MAX
+      B_TAU=0, B_TAUEFF , B_ETRIAL , B_EREF
+        , B_ENOW, B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER
+        , B_SIGMA, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
+        , B_VPARAM_MAX=16
     };
 
     /** controlling parameters of real type
@@ -120,16 +115,6 @@ namespace qmcplusplus {
      * set differently for BranchMode[B_DMCSTAGE] 
      */
     int ToDoSteps;
-    ////the timestep
-    //RealType Tau;
-    /////the effective timestep
-    //RealType TauEff;
-    ///feedback parameter to control the population
-    RealType Feedback;
-    ///energy offset to control branching
-    //RealType Eref;
-    /////actual trial energy
-    //RealType Etrial;
     ///Feed*log(N)
     RealType logN;
     ///save xml element
@@ -148,10 +133,10 @@ namespace qmcplusplus {
     accumulator_set<RealType> R2Accepted;
     ///a simple accumulator for energy
     accumulator_set<RealType> R2Proposed;
-    ///histogram of populations
-    BlockHistogram<RealType> PopHist;
-    ///histogram of populations
-    BlockHistogram<RealType> DMCEnergyHist;
+    /////histogram of populations
+    //BlockHistogram<RealType> PopHist;
+    /////histogram of populations
+    //BlockHistogram<RealType> DMCEnergyHist;
     ///root name
     string RootName;
     ///set of parameters
@@ -216,7 +201,8 @@ namespace qmcplusplus {
      * @param tau timestep
      * @param fixW true, if reconfiguration with the fixed number of walkers is used
      */
-    void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
+    void initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
+    //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
 
     /** determine trial and reference energies
      */

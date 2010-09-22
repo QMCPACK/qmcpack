@@ -91,6 +91,8 @@ namespace qmcplusplus {
     ///ensenble properties
     MCDataType<RealType> EnsembleProperty;
 
+    ///filename for dmc.dat
+    string dmcFname;
     ///file to save energy histogram
     ofstream* dmcStream;
     ///archive

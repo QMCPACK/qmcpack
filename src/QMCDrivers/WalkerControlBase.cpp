@@ -56,29 +56,33 @@ namespace qmcplusplus {
   {
     if(MyContext == 0)
     {
-      if(dmcStream) delete dmcStream;
       string hname(myComm->getName());
       if (WriteRN) hname.append(".rn.dat");
       else hname.append(".dmc.dat");
-      dmcStream= new ofstream(hname.c_str());
-      //oa = new boost::archive::binary_oarchive (*dmcStream);
-      dmcStream->setf(ios::scientific, ios::floatfield);
-      dmcStream->precision(10);
-      (*dmcStream) << setw(10) << "# Index "
-		   << setw(20) << "LocalEnergy"
-		   << setw(20) << "Variance" 
-		   << setw(20) << "Weight"
-		   << setw(20) << "NumOfWalkers"; 
-      if (WriteRN) 
+      if(hname != dmcFname)
+      {
+        if(dmcStream) delete dmcStream;
+        dmcStream= new ofstream(hname.c_str());
+        //oa = new boost::archive::binary_oarchive (*dmcStream);
+        dmcStream->setf(ios::scientific, ios::floatfield);
+        dmcStream->precision(10);
+        (*dmcStream) << setw(10) << "# Index "
+          << setw(20) << "LocalEnergy"
+          << setw(20) << "Variance" 
+          << setw(20) << "Weight"
+          << setw(20) << "NumOfWalkers"; 
+        if (WriteRN) 
         {
-	(*dmcStream) << setw(20) << "RNWalkers" 
-		     << setw(20) << "AlternateEnergy";
+          (*dmcStream) << setw(20) << "RNWalkers" 
+            << setw(20) << "AlternateEnergy";
         }
-      (*dmcStream)   << setw(20) << "TrialEnergy" 
-		     << setw(20) << "DiffEff";
-      if (WriteRN) (*dmcStream)  
-        << setw(20) << "LivingFraction";
-      (*dmcStream) << endl;
+        (*dmcStream)   << setw(20) << "TrialEnergy" 
+          << setw(20) << "DiffEff";
+        if (WriteRN) 
+          (*dmcStream)  << setw(20) << "LivingFraction";
+        (*dmcStream) << endl;
+        dmcFname=hname;
+      }
     }
   }
 
