@@ -11,11 +11,7 @@
 IF(Boost_INCLUDE_DIRS)
   FIND_PATH(BOOST_INCLUDE_DIR boost/config.hpp  ${Boost_INCLUDE_DIRS})
 ELSE(Boost_INCLUDE_DIRS)
-  if(EXISTS $ENV{BOOST_HOME}/boost/config.hpp)
-    set(Boost_INCLUDE_DIR $ENV{BOOST_HOME})
-  else()
-    FIND_PATH(Boost_INCLUDE_DIR boost/config.hpp ${QMC_INCLUDE_PATHS})
-  endif()
+  FIND_PATH(Boost_INCLUDE_DIR boost/config.hpp ${CMAKE_FIND_ROOT_PATH} ${QMC_INCLUDE_PATHS})
 ENDIF(Boost_INCLUDE_DIRS)
 
 SET(Boost_FOUND false)
