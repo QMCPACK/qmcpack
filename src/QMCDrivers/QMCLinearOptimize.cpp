@@ -417,9 +417,9 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     //reduce the matrix pair to generalized upper Hesenberg form
     char COMPQ('N'), COMPZ('I');
     int ILO(1);
-    int LDQ(1);
-    Matrix<double> Z(N,N), Q(LDQ,N); //starts as unit matrix
-    for (int zi=0; zi<N; zi++) Z(zi,zi)=Q(zi,zi)=1;
+    int LDQ(N);
+    Matrix<double> Z(N,N), Q(N,LDQ); //starts as unit matrix
+    for (int zi=0; zi<N; zi++) Z(zi,zi)=1;
     dgghrd(&COMPQ, &COMPZ, &N, &ILO, &N, A.data(), &N, B.data(), &N, Q.data(), &LDQ, Z.data(), &N, &INFO);
 
     //Take the pair and reduce to shur form and get eigenvalues
@@ -479,15 +479,15 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     WORK.resize(6*N);
     dtgevc(&SIDE, &HOWMNY, &SELECT[0], &N, A.data(), &N, B.data(), &N, Q.data(), &LDQ, Z_I.data(), &N, &N, &M, &WORK[0], &INFO);
 
-    int biggest_zi(0);
-    for (int i=0; i<N; i++) biggest_zi=(Z_I(0,i)==0.0)?biggest_zi:i;
+//     int biggest_zi(0);
+//     for (int i=0; i<N; i++) biggest_zi=(Z_I(0,i)==0.0?biggest_zi:i);
 
 
     std::vector<RealType> evec(N,0);
-    for (int i=0; i<N; i++) for (int j=0; j<biggest_zi; j++) evec[i] += Z(j,i)*Z_I(0,j);
+    for (int i=0; i<N; i++) for (int j=0; j<N; j++) evec[i] += Z(j,i)*Z_I(0,j);
     for (int i=0; i<N; i++) ev[i] = evec[i]/evec[0];
-//                 for (int i=0; i<N; i++) app_log()<<currentParameterDirections[i]<<" ";
-//                 app_log()<<endl;
+//     for (int i=0; i<N; i++) app_log()<<ev[i]<<" ";
+//     app_log()<<endl;
 
 // OLD ROUTINE. CALCULATES ALL EIGENVECTORS
 //            Getting the optimal worksize
