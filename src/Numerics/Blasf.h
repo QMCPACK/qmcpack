@@ -58,6 +58,13 @@ using namespace std;
 #define dggev dggev_
 #define dger dger_
 #define zgeru zgeru_
+
+#define dgeqrf dgeqrf_
+#define dormqr dormqr_
+#define dgghrd dgghrd_
+#define dhgeqz dhgeqz_
+#define dtgexc dtgexc_
+#define dtgevc dtgevc_
 #endif 
 
 // declaring Fortran interfaces
@@ -184,6 +191,18 @@ extern "C" {
   void zgeru(const int* m, const int* n, const complex<double>* alpha
       , const complex<double>* x, const int* incx, const complex<double>* y, const int* incy
       , complex<double>* a, const int* lda);
+
+  void dgeqrf( const int *M, const int *N, double *A, const int *LDA, double *TAU, double *WORK, const int *LWORK, int *INFO );
+  
+  void dormqr( const char *SIDE, const char *TRANS, const int *M, const int *N, const int *K, const double *A, const int * LDA, const double *TAU, double *C, const int *LDC, double *WORK, int *LWORK, int *INFO );
+      
+  void dgghrd(const char *COMPQ, const char *COMPZ, const int *N, const int *ILO, const int *IHI, double *A, const int *LDA, double *B, const int *LDB, double *Q, const int *LDQ, double *Z, const int *LDZ, int *INFO );
+  
+  void dhgeqz(const char *JOB, const char *COMPQ, const char *COMPZ, const int *N, const int *ILO, const int *IHI, double *H, const int *LDH, double *T, const int *LDT, double *ALPHAR, double *ALPHAI, double *BETA, double *Q, const int *LDQ, double *Z, const int *LDZ, double *WORK, int *LWORK, int *INFO);
+  
+  void dtgexc(const bool *WANTQ, const bool *WANTZ, const int *N, double *A, const int *LDA, double *B, const int *LDB, double *Q, const int *LDQ, double *Z, const int *LDZ, int *IFST, int *ILST, double *WORK, int *LWORK, int *INFO);
+  
+  void dtgevc(const char *SIDE, const char *HOWMNY, const bool *SELECT, const int *N, double *S, const int *LDS, double *P, const int *LDP, double *VL, const int *LDVL, double *VR, const int *LDVR, const int *MM, int *M, double *WORK, int *INFO );
 }
 #endif
 
