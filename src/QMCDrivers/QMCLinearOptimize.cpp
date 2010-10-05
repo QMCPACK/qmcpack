@@ -34,6 +34,9 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
 
+#include <iostream>
+#include <fstream>
+
 /*#include "Message/Communicate.h"*/
 
 namespace qmcplusplus
@@ -225,6 +228,26 @@ bool QMCLinearOptimize::run()
                     HamT=VarT;
                     ST2=ST;
                 }
+                
+//                string fname("H.dat");
+//               ofstream fout;
+//                fout.open(fname.c_str());
+//                for (int i=0; i<N; i++)  
+//                {
+//                  for (int j=0; j<N; j++) fout<<HamT(i,j)<<" ";
+//                  fout<<endl;
+//                }
+//                
+//                fout.close();
+//                fout.open("S.dat");
+//                for (int i=0; i<N; i++)  
+//                {
+//                  for (int j=0; j<N; j++) fout<<ST2(i,j)<<" ";
+//                  fout<<endl;
+//               }
+//                fout.close();
+//                assert(2==1);
+                
                 //calculate lowest eigenvaector only.
                 getLowestEigenvector(HamT,ST2,currentParameterDirections);
 
@@ -398,7 +421,7 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     vector<RealType> WORK(1);
     //optimal work size
     dgeqrf( &N, &N, B.data(), &N, TAU.data(), &WORK[0], &LWORK, &INFO);
-    LWORK=WORK[0];
+    LWORK=int(WORK[0]);
     WORK.resize(LWORK);
     //QR factorization of S, or H2 matrix. to be applied to H before solve.
     dgeqrf( &N, &N, B.data(), &N, TAU.data(), &WORK[0], &LWORK, &INFO);
@@ -408,7 +431,7 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     LWORK=-1;
     //optimal work size
     dormqr(&SIDE, &TRANS, &N, &N, &N, B.data(), &N, TAU.data(), A.data(), &N, &WORK[0], &LWORK, &INFO);
-    LWORK=WORK[0];
+    LWORK=int(WORK[0]);
     WORK.resize(LWORK);
     //Apply Q^T to H
     dormqr(&SIDE, &TRANS, &N, &N, &N, B.data(), &N, TAU.data(), A.data(), &N, &WORK[0], &LWORK, &INFO);
@@ -430,7 +453,7 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     LWORK=-1;
     //get optimal work size
     dhgeqz(&JOB, &COMPQ, &COMPZ, &N, &ILO, &N, A.data(), &N, B.data(), &N, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &N, &WORK[0], &LWORK, &INFO);
-    LWORK=WORK[0];
+    LWORK=int(WORK[0]);
     WORK.resize(LWORK);
     dhgeqz(&JOB, &COMPQ, &COMPZ, &N, &ILO, &N, A.data(), &N, B.data(), &N, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &N, &WORK[0], &LWORK, &INFO);
     //find the best eigenvalue
@@ -463,7 +486,7 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
         LWORK=-1;
 
         dtgexc(&WANTQ, &WANTZ, &N, A.data(), &N, B.data(), &N, Q.data(), &N, Z.data(), &N, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
-        LWORK=WORK[0];
+        LWORK=int(WORK[0]);
         WORK.resize(LWORK);
         dtgexc(&WANTQ, &WANTZ, &N, A.data(), &N, B.data(), &N, Q.data(), &N, Z.data(), &N, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
     }
