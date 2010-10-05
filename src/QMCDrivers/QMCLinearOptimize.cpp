@@ -72,6 +72,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(UseQuarticMin,"UseQuarticMin","string");
     m_param.add(LambdaMax,"LambdaMax","double");
     //Set parameters for line minimization:
+    this->add_timers(myTimers);
 
 }
 
@@ -82,6 +83,15 @@ QMCLinearOptimize::~QMCLinearOptimize()
     delete optTarget;
 }
 
+void QMCLinearOptimize::add_timers(vector<NewTimer*>& timers)
+{
+  timers.push_back(new NewTimer("QMCLinearOptimize::GenerateSamples")); 
+  timers.push_back(new NewTimer("QMCLinearOptimize::Initialize")); 
+  timers.push_back(new NewTimer("QMCLinearOptimize::Eigenvalue")); 
+  timers.push_back(new NewTimer("QMCLinearOptimize::Line_Minimization"));
+  timers.push_back(new NewTimer("QMCLinearOptimize::GradCost"));
+  for (int i=0; i<timers.size(); ++i) TimerManager.addTimer(timers[i]);
+}
 
 QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
 {
@@ -107,7 +117,9 @@ bool QMCLinearOptimize::run()
 
 
     //generate samples
+    myTimers[0]->start();
     generateSamples();
+    myTimers[0]->stop();
 
     app_log() << "<opt stage=\"setup\">" << endl;
     app_log() << "  <log>"<<endl;
@@ -119,9 +131,12 @@ bool QMCLinearOptimize::run()
     app_log() << "   Reading configurations from h5FileRoot " << endl;
     //get configuration from the previous run
     Timer t1;
+    
 
+    myTimers[1]->start();
     optTarget->getConfigurations(h5FileRoot);
     optTarget->checkConfigurations();
+    myTimers[1]->stop();
 
     app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "  </log>"<<endl;
@@ -180,7 +195,9 @@ bool QMCLinearOptimize::run()
 
 //           checkConfigurations should be rewritten to include the necessary functions of Cost.
 //           optTarget->checkConfigurations();
+            myTimers[4]->start();
             RealType lastCost(optTarget->Cost(true));
+            myTimers[4]->start();
             RealType newCost(lastCost);
             optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
 
@@ -249,7 +266,9 @@ bool QMCLinearOptimize::run()
 //                assert(2==1);
                 
                 //calculate lowest eigenvaector only.
+                myTimers[2]->start();
                 getLowestEigenvector(HamT,ST2,currentParameterDirections);
+                myTimers[2]->stop();
 
                 //eigenCG part
                 for (int ldi=0; ldi<LastDirections.size(); ldi++)
@@ -272,8 +291,10 @@ bool QMCLinearOptimize::run()
                 if (deltaPrms>0) quadstep=deltaPrms/bigVec;
                 else quadstep = storedQuadStep/bigVec;
 
+                myTimers[3]->start();
                 if (UseQuarticMin=="yes")  Valid=lineoptimization();
                 else  Valid=lineoptimization2();
+                myTimers[3]->stop();
 
                 if (!Valid)
                 {
@@ -357,6 +378,8 @@ bool QMCLinearOptimize::run()
 
     MyCounter++;
     app_log() << "  Execution time = " << t1.elapsed() << endl;
+    TimerManager.print(myComm);
+    TimerManager.reset();
     app_log() << "  </log>" << endl;
     optTarget->reportParameters();
     app_log() << "</opt>" << endl;

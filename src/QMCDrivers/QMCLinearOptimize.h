@@ -110,6 +110,8 @@ private:
     }
     void getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
     void generateSamples();
+    void add_timers(vector<NewTimer*>& timers);
+    vector<NewTimer*> myTimers;
 };
 }
 #endif
