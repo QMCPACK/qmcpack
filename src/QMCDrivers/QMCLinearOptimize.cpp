@@ -246,30 +246,21 @@ bool QMCLinearOptimize::run()
                     ST2=ST;
                 }
                 
-//                string fname("H.dat");
-//               ofstream fout;
-//                fout.open(fname.c_str());
-//                for (int i=0; i<N; i++)  
-//                {
-//                  for (int j=0; j<N; j++) fout<<HamT(i,j)<<" ";
-//                  fout<<endl;
-//                }
-//                
-//                fout.close();
-//                fout.open("S.dat");
-//                for (int i=0; i<N; i++)  
-//                {
-//                  for (int j=0; j<N; j++) fout<<ST2(i,j)<<" ";
-//                  fout<<endl;
-//               }
-//                fout.close();
-//                assert(2==1);
-                
-                //calculate lowest eigenvaector only.
                 myTimers[2]->start();
                 getLowestEigenvector(HamT,ST2,currentParameterDirections);
                 myTimers[2]->stop();
 
+                RealType lowestEV = getLowestEigenvector(HamT,ST2,currentParameterDirections);
+                if((w_beta>=0.0) && (abs(lowestEV/Ham(0,0))>1.5) && (lowestEV+10.0<Ham(0,0)))
+                {
+                  app_log()<<"Probably will not converge: E_lin="<<lowestEV<<" H(0,0)="<<Ham(0,0)<<endl;
+                  //try a larger stability base and repeat
+                  stabilityBase+=stabilizerScale;
+                  //maintain same number of "good" stability tries
+                  stability-=1;
+                  continue;
+                }
+                
                 //eigenCG part
                 for (int ldi=0; ldi<LastDirections.size(); ldi++)
                 {
@@ -435,9 +426,14 @@ void QMCLinearOptimize::generateSamples()
     h5FileRoot=RootName;
 }
 
-void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev)
+QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev)
 {
-    int N(ev.size());
+  int N(ev.size());
+  //Tested the single eigenvalue speed and It was no faster.
+  //segfault issues with single eigenvalue problem for some machines
+  bool singleEV(false);
+  if (singleEV)
+  {
     Matrix<double> TAU(N,N);
     int INFO;
     int LWORK(-1);
@@ -484,7 +480,6 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     for (int i=0; i<N; i++)
     {
         RealType evi(alphar[i]/beta[i]);
-//                       app_log()<<i<<" "<<evi<<endl;
         if (abs(evi)<1e10)
         {
             mappedEigenvalues[i].first=evi;
@@ -525,80 +520,69 @@ void QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealTyp
     WORK.resize(6*N);
     dtgevc(&SIDE, &HOWMNY, &SELECT[0], &N, A.data(), &N, B.data(), &N, Q.data(), &LDQ, Z_I.data(), &N, &N, &M, &WORK[0], &INFO);
 
-//     int biggest_zi(0);
-//     for (int i=0; i<N; i++) biggest_zi=(Z_I(0,i)==0.0?biggest_zi:i);
-
-
     std::vector<RealType> evec(N,0);
     for (int i=0; i<N; i++) for (int j=0; j<N; j++) evec[i] += Z(j,i)*Z_I(0,j);
     for (int i=0; i<N; i++) ev[i] = evec[i]/evec[0];
 //     for (int i=0; i<N; i++) app_log()<<ev[i]<<" ";
 //     app_log()<<endl;
-
+    return mappedEigenvalues[0].first;
+  }
+  else
+  {
 // OLD ROUTINE. CALCULATES ALL EIGENVECTORS
-//            Getting the optimal worksize
-//               char jl('N');
-//                   char jr('V');
-//                   vector<RealType> alphar(N),alphai(N),beta(N);
-//                   Matrix<RealType> eigenT(N,N);
-//                   int info;
-//                   int lwork(-1);
-//                   vector<RealType> work(1);
-//
-//                   RealType tt(0);
-//                   int t(1);
-//                   dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-//                   lwork=work[0];
-//                   work.resize(lwork);
-//
-//                   //~ //Get an estimate of E_lin
-//                   //~ Matrix<RealType> H_tmp(HamT);
-//                   //~ Matrix<RealType> S_tmp(ST);
-//                   //~ dggev(&jl, &jr, &N, H_tmp.data(), &N, S_tmp.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-//                   //~ RealType E_lin(alphar[0]/beta[0]);
-//                   //~ int e_min_indx(0);
-//                   //~ for (int i=1; i<N; i++)
-//                     //~ if (E_lin>(alphar[i]/beta[i]))
-//                       //~ {
-//                         //~ E_lin=alphar[i]/beta[i];
-//                         //~ e_min_indx=i;
-//                       //~ }
-//                   dggev(&jl, &jr, &N, HamT.data(), &N, ST2.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-//                   if (info!=0)
-//                   {
-//                     APP_ABORT("Invalid Matrix Diagonalization Function!");
-//                   }
-//
-//                   vector<std::pair<RealType,int> > mappedEigenvalues(N);
-//                   for (int i=0; i<N; i++)
-//                     {
-//                       RealType evi(alphar[i]/beta[i]);
-//                       if(abs(evi)<1e10)
-//                       {
-//                         mappedEigenvalues[i].first=evi;
-//                         mappedEigenvalues[i].second=i;
-//                       }
-//                       else
-//                       {
-//                         mappedEigenvalues[i].first=1e100;
-//                         mappedEigenvalues[i].second=i;
-//                       }
-//                     }
-//                   std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-//                   app_log()<<"Original:  best eigenvalue is: "<<mappedEigenvalues[0].second<<": "<<mappedEigenvalues[0].first<<endl;
-//
-//                   int bestEigenvalue(0);
-//                   if ((w_beta>=0.0)&&(abs(mappedEigenvalues[bestEigenvalue].first/Ham(0,0))>1.5)&&(mappedEigenvalues[bestEigenvalue].first+10.0<Ham(0,0)))
-//                     {
-//                       app_log()<<"Probably will not converge: E_lin="<<mappedEigenvalues[bestEigenvalue].first<<" H(0,0)="<<Ham(0,0)<<endl;
-// //                 try a larger stability base and repeat
-//                       stabilityBase+=stabilizerScale;
-// //                 maintain same number of "good" stability tries
-//                       stability-=1;
-//                       continue;
-//                     }
-//
-//                   for (int i=0; i<N; i++) currentParameterDirections[i] = eigenT(mappedEigenvalues[bestEigenvalue].second,i)/eigenT(mappedEigenvalues[bestEigenvalue].second,0);
+//   Getting the optimal worksize
+    char jl('N');
+    char jr('V');
+    vector<RealType> alphar(N),alphai(N),beta(N);
+    Matrix<RealType> eigenT(N,N);
+    int info;
+    int lwork(-1);
+    vector<RealType> work(1);
+
+    RealType tt(0);
+    int t(1);
+    dggev(&jl, &jr, &N, A.data(), &N, B.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+    lwork=work[0];
+    work.resize(lwork);
+
+    //~ //Get an estimate of E_lin
+    //~ Matrix<RealType> H_tmp(HamT);
+    //~ Matrix<RealType> S_tmp(ST);
+    //~ dggev(&jl, &jr, &N, H_tmp.data(), &N, S_tmp.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+    //~ RealType E_lin(alphar[0]/beta[0]);
+    //~ int e_min_indx(0);
+    //~ for (int i=1; i<N; i++)
+      //~ if (E_lin>(alphar[i]/beta[i]))
+        //~ {
+          //~ E_lin=alphar[i]/beta[i];
+          //~ e_min_indx=i;
+        //~ }
+    dggev(&jl, &jr, &N, A.data(), &N, B.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
+    if (info!=0)
+    {
+      APP_ABORT("Invalid Matrix Diagonalization Function!");
+    }
+
+    vector<std::pair<RealType,int> > mappedEigenvalues(N);
+    for (int i=0; i<N; i++)
+      {
+        RealType evi(alphar[i]/beta[i]);
+        if(abs(evi)<1e10)
+        {
+          mappedEigenvalues[i].first=evi;
+          mappedEigenvalues[i].second=i;
+        }
+        else
+        {
+          mappedEigenvalues[i].first=1e100;
+          mappedEigenvalues[i].second=i;
+        }
+      }
+    std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+
+    for (int i=0; i<N; i++) ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
+    return mappedEigenvalues[0].first;
+  }
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
