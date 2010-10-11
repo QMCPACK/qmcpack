@@ -247,10 +247,9 @@ bool QMCLinearOptimize::run()
                 }
                 
                 myTimers[2]->start();
-                getLowestEigenvector(HamT,ST2,currentParameterDirections);
+                RealType lowestEV =getLowestEigenvector(HamT,ST2,currentParameterDirections);
                 myTimers[2]->stop();
 
-                RealType lowestEV = getLowestEigenvector(HamT,ST2,currentParameterDirections);
                 if((w_beta>=0.0) && (abs(lowestEV/Ham(0,0))>1.5) && (lowestEV+10.0<Ham(0,0)))
                 {
                   app_log()<<"Probably will not converge: E_lin="<<lowestEV<<" H(0,0)="<<Ham(0,0)<<endl;
