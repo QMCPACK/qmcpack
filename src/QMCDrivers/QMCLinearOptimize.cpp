@@ -213,6 +213,11 @@ bool QMCLinearOptimize::run()
             vector<RealType> bestParameters(currentParameters);
             bool acceptedOneMove(false);
             int tooManyTries(10);
+ 
+            RealType od_largest;
+            for (int i=0; i<N; i++) for (int j=0; j<N; j++)
+              od_largest=std::max( std::max(od_largest,std::abs(Ham(i,j))-Ham(i,i)), std::abs(Ham(i,j))-Ham(j,j));
+
             for (int stability=0; stability<nstabilizers; stability++)
             {
                 Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
@@ -224,33 +229,35 @@ bool QMCLinearOptimize::run()
                         HamT2(i,j)= (Ham2)(j,i);
                     }
 
-                RealType Xs = std::pow(10.0,stabilityBase + stabilizerScale*stability);
-                for (int i=1; i<N; i++) HamT(i,i) += Xs;
+                RealType Xs = std::pow(10.0,stabilityBase);
+                for (int i=1; i<N; i++) HamT(i,i) += Xs + od_largest*stability/(nstabilizers-1);
 
                 Matrix<RealType> ST2(N,N);
+                RealType red_sig = 1- HamT(0,0)*HamT(0,0)/HamT2(0,0);
                 if (w_beta>=0.0)
                 {
                     RealType H2rescale=1.0/HamT2(0,0);
                     for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) *= H2rescale;
+                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) -= 0.9*red_sig*ST(i,j);
                     for (int i=0; i<N; i++)  for (int j=0; j<N; j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
                 }
                 else
                 {
                     Matrix<RealType> VarT(HamT2);
                     //~ true variance minimization
-                    //~ RealType ENoffset = std::sqrt(HamT2(0,0));
-                    RealType ENoffset = HamT(0,0);
-                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) VarT(i,j) -= ENoffset*HamT(i,j);
-                    for (int i=1; i<N; i++) VarT(i,i) -= ENoffset*Xs;
+                    RealType ENoffset = HamT(0,0) - std::abs( std::abs(HamT(0,0)) - std::sqrt(HamT2(0,0)) );
+                    // RealType ENoffset = HamT(0,0);
+                    for (int i=0; i<N; i++) for (int j=0; j<N; j++) VarT(i,j) -= ENoffset*HamT(i,j);
+                    for (int i=1; i<N; i++) VarT(i,i) -= ENoffset*(Xs+od_largest*stability/(nstabilizers-1));
                     HamT=VarT;
                     ST2=ST;
                 }
-                
+
                 myTimers[2]->start();
                 RealType lowestEV =getLowestEigenvector(HamT,ST2,currentParameterDirections);
                 myTimers[2]->stop();
 
-                if((w_beta>=0.0) && (abs(lowestEV/Ham(0,0))>1.5) && (lowestEV+10.0<Ham(0,0)))
+                if((w_beta>=0.0) && (abs(lowestEV/Ham(0,0))>1.1) && (lowestEV+5.0<Ham(0,0)))
                 {
                   app_log()<<"Probably will not converge: E_lin="<<lowestEV<<" H(0,0)="<<Ham(0,0)<<endl;
                   //try a larger stability base and repeat
@@ -330,17 +337,23 @@ bool QMCLinearOptimize::run()
 
                         deltaPrms=std::abs(Lambda*bigVec);
                     }
-//                else if (newCost>lastCost+0.001) stability = nstabilizers;
+                    else if (newCost>lastCost+1.0e-3)
+                    {
+                     stability = nstabilizers;
+                     app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
+                    }
                 }
                 else
                 {
                     app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
+                    app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<"  Largest Parameter Change: "<<biggestParameterChange<<" Lambda: "<<Lambda<<endl;
+                    optTarget->printEstimates();
                     tooManyTries--;
-                    if ((tooManyTries>0) && (w_beta<0.0))
+                    if (tooManyTries>0)
                     {
                         stabilityBase+=stabilizerScale;
                         stability-=1;
-                        app_log()<<" Re-run Pure Variance with stabilizer:"<<stabilityBase<<endl;
+                        app_log()<<" Re-run "<<endl;
 
                         continue;
                     }
