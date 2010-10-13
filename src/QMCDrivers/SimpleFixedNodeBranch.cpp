@@ -150,7 +150,7 @@ namespace qmcplusplus
       if(!BranchMode[B_RESTART])
       {
         fromscratch=true;
-        cout << "  START ALL OVER " << endl;
+        app_log() << "  START ALL OVER " << endl;
         vParam[B_TAUEFF]=tau;
         BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0 
         BranchMode.set(B_KILLNODES,killwalker);
