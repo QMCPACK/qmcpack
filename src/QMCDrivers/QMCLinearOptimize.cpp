@@ -48,7 +48,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0), Max_iterations(1),
         wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), exp0(-16),
-        nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),
+        nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),fr_rwv(0.0),
         UseQuarticMin("yes")
 {
     //set the optimization flag
@@ -66,6 +66,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(bigChange,"bigchange","double");
     m_param.add(eigCG,"eigcg","int");
     m_param.add(w_beta,"beta","double");
+    m_param.add(fr_rwv,"fracvar","double");
     quadstep=3.0;
     m_param.add(quadstep,"stepsize","double");
     m_param.add(exp0,"exp0","double");
@@ -238,7 +239,7 @@ bool QMCLinearOptimize::run()
                 {
                     RealType H2rescale=1.0/HamT2(0,0);
                     for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) *= H2rescale;
-                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) -= 0.9*red_sig*ST(i,j);
+                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) -= fr_rwv*red_sig*ST(i,j);
                     for (int i=0; i<N; i++)  for (int j=0; j<N; j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
                 }
                 else
@@ -554,7 +555,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     RealType tt(0);
     int t(1);
     dggev(&jl, &jr, &N, A.data(), &N, B.data(), &N, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &N, &work[0], &lwork, &info);
-    lwork=work[0];
+    lwork=int(work[0]);
     work.resize(lwork);
 
     //~ //Get an estimate of E_lin

@@ -90,6 +90,7 @@ private:
     RealType allowedCostDifference, stabilizerScale, bigChange, exp0;
     int nstabilizers;
     int eigCG;
+    RealType fr_rwv;
     RealType w_beta;
     ///vmc engine
     QMCDriver* vmcEngine;
