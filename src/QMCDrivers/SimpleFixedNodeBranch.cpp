@@ -49,7 +49,7 @@ namespace qmcplusplus
     R2Proposed(1.0e-10);
 
     //set the default values for integer parameters
-    iParam[B_WARMUPSTEPS]=1000;
+    iParam[B_WARMUPSTEPS]=200;
     iParam[B_ENERGYUPDATEINTERVAL]=1;
     iParam[B_BRANCHINTERVAL]=1;
     iParam[B_TARGETWALKERS]=0;
@@ -82,6 +82,7 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::registerParameters() 
   {
     m_param.add(iParam[B_WARMUPSTEPS],"warmupSteps","int"); 
+    m_param.add(iParam[B_WARMUPSTEPS],"warmupsteps","int");
     m_param.add(iParam[B_ENERGYUPDATEINTERVAL],"energyUpdateInterval","int"); 
     m_param.add(iParam[B_BRANCHINTERVAL],"branchInterval","int"); 
 
