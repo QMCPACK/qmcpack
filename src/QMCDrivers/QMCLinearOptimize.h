@@ -83,14 +83,17 @@ private:
     ///target cost function to optimize
     //QMCCostFunction* optTarget;
     QMCCostFunctionBase* optTarget;
-    /// switch to control whether NRCOptimization::lineoptimization() is used
-    string UseQuarticMin;
+    /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
+    string MinMethod, GEVtype;
 
     vector<RealType> optdir, optparm;
     RealType allowedCostDifference, stabilizerScale, bigChange, exp0;
     int nstabilizers;
+    /// number of previous steps to orthogonalize to.
     int eigCG;
-    RealType fr_rwv;
+    /// total number of cg steps per iterations
+    int  TotalCGSteps;
+    /// percent variance or H2 to mix in
     RealType w_beta;
     ///vmc engine
     QMCDriver* vmcEngine;
@@ -110,6 +113,8 @@ private:
         return *this;
     }
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
+    bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
+    RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     void generateSamples();
     void add_timers(vector<NewTimer*>& timers);
     vector<NewTimer*> myTimers;

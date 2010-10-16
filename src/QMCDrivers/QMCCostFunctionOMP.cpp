@@ -488,7 +488,7 @@ namespace qmcplusplus
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
-QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)
+QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)
   {
 //     resetPsi();
 //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
@@ -521,6 +521,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
             Overlap(pm,pm2)=0;
             Hamiltonian(pm,pm2)=0;
             H2(pm,pm2)=0;
+            Variance(pm,pm2)=0;
           }
       }
       
@@ -538,18 +539,24 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
 
               for (int pm=0; pm<NumParams();pm++)
               {
-                Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w) )*weight;
+                Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+                Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
                 Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
                 
-                H2(0,pm+1) += wfe*(eloc_new );
-                H2(pm+1,0) += wfe*(eloc_new );
+                H2(0,pm+1) += wfe*(eloc_new);
+                H2(pm+1,0) += wfe*(eloc_new);
+                
+                Return_t vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+                Variance(0,pm+1) += vterm*weight;
+                Variance(pm+1,0) += vterm*weight;
                 
                 Hamiltonian(0,pm+1) += wfe;
                 Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);                
                 for (int pm2=0; pm2<NumParams();pm2++)
                 {
-                  H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+                  H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
                   Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+                  Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
                   Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
                 }
               }
@@ -557,12 +564,18 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
       }
     myComm->allreduce(Hamiltonian);
     myComm->allreduce(Overlap);
+    myComm->allreduce(Variance);
     myComm->allreduce(H2);
     
     Hamiltonian(0,0) = curAvg_w;
     Overlap(0,0) = 1.0;
     H2(0,0) = curAvg2_w;
-    
+    Variance(0,0) = curAvg2_w - curAvg_w*curAvg_w;
+    for (int pm=1; pm<NumParams()+1;pm++)
+      for (int pm2=1; pm2<NumParams()+1;pm2++)
+        Variance(pm,pm2) += Variance(0,0)*Overlap(pm,pm2);
+          
+            
     return 1.0;
   }
 

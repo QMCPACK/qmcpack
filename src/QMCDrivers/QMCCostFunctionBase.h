@@ -143,7 +143,7 @@ namespace qmcplusplus
       bool lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0,
                             Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
-      virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap)=0;
+      virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
 
       virtual void getConfigurations(const string& aroot)=0;
 

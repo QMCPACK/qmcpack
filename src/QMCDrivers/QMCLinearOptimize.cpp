@@ -33,7 +33,7 @@
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
-
+#include "Numerics/LinearFit.h"
 #include <iostream>
 #include <fstream>
 
@@ -44,12 +44,10 @@ namespace qmcplusplus
 
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h),
-        PartID(0), NumParts(1), WarmupBlocks(10),
-        SkipSampleGeneration("no"), hamPool(hpool),
-        optTarget(0), vmcEngine(0), Max_iterations(1),
-        wfNode(NULL), optNode(NULL), allowedCostDifference(2.0e-6), exp0(-16),
-        nstabilizers(3), stabilizerScale(4.0), bigChange(1), eigCG(1), w_beta(1),fr_rwv(0.0),
-        UseQuarticMin("yes")
+        PartID(0), NumParts(1), WarmupBlocks(10), SkipSampleGeneration("no"), hamPool(hpool),
+        optTarget(0), vmcEngine(0), Max_iterations(1), wfNode(NULL), optNode(NULL), allowedCostDifference(1.0e-6), 
+        exp0(-16),  nstabilizers(10), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(2), w_beta(0.0), 
+        MinMethod("quartic"), GEVtype("mixed")
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -65,12 +63,13 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(allowedCostDifference,"alloweddifference","double");
     m_param.add(bigChange,"bigchange","double");
     m_param.add(eigCG,"eigcg","int");
+    m_param.add(TotalCGSteps,"cgsteps","int");
     m_param.add(w_beta,"beta","double");
-    m_param.add(fr_rwv,"fracvar","double");
-    quadstep=3.0;
+    quadstep=-1.0;
     m_param.add(quadstep,"stepsize","double");
     m_param.add(exp0,"exp0","double");
-    m_param.add(UseQuarticMin,"UseQuarticMin","string");
+    m_param.add(MinMethod,"MinMethod","string");
+    m_param.add(GEVtype,"GEVMethod","string");
     m_param.add(LambdaMax,"LambdaMax","double");
     //Set parameters for line minimization:
     this->add_timers(myTimers);
@@ -154,7 +153,7 @@ bool QMCLinearOptimize::run()
     bool Valid(true);
     int Total_iterations(0);
 
-    TOL = allowedCostDifference;
+    RealType quadstep_saved = quadstep;
 
 //size of matrix
     int N=optTarget->NumParams() + 1;
@@ -182,11 +181,11 @@ bool QMCLinearOptimize::run()
 
         vector<vector<RealType> > LastDirections;
         RealType deltaPrms(-1.0);
-        RealType storedQuadStep = quadstep;
-        for (int tries=0; tries<eigCG; tries++)
+        for (int tries=0; tries<TotalCGSteps; tries++)
         {
             Matrix<RealType> Ham(N,N);
             Matrix<RealType> Ham2(N,N);
+            Matrix<RealType> Var(N,N);
             Matrix<RealType> S(N,N);
             vector<RealType> BestDirection(N,0);
 
@@ -200,7 +199,7 @@ bool QMCLinearOptimize::run()
             RealType lastCost(optTarget->Cost(true));
             myTimers[4]->start();
             RealType newCost(lastCost);
-            optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, S);
+            optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
 
 // mmorales
             if (!optTarget->IsValid)
@@ -215,151 +214,183 @@ bool QMCLinearOptimize::run()
             bool acceptedOneMove(false);
             int tooManyTries(10);
  
-            RealType od_largest;
+            Matrix<RealType> Left(N,N);
+            Matrix<RealType> Right(N,N);
+            app_log()<<"  GEV method "<<GEVtype<<endl;
+            app_log()<<"  Line Minimization method "<<MinMethod<<endl;
+            if (GEVtype=="H2")
+            {
+              Left=Ham;
+              RealType H2rescale=1.0/Ham2(0,0);
+              Right=(1-w_beta)*S + w_beta*H2rescale*Ham2;
+            }
+            else
+            {
+              Right=S;
+              Left=(1.0-w_beta)*Ham + w_beta*Var;
+            }
+                
+            //Find largest off-diagonal element compared to diagonal element. 
+            //This gives us an idea how well conditioned it is and can be used to stabilize.
+            RealType od_largest(0);    
             for (int i=0; i<N; i++) for (int j=0; j<N; j++)
-              od_largest=std::max( std::max(od_largest,std::abs(Ham(i,j))-Ham(i,i)), std::abs(Ham(i,j))-Ham(j,j));
-
+              od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+            
+            vector<std::pair<RealType,RealType> > mappedStabilizers;
             for (int stability=0; stability<nstabilizers; stability++)
             {
-                Matrix<RealType> HamT(N,N), ST(N,N), HamT2(N,N);
+                Matrix<RealType> LeftT(N,N), RightT(N,N);
                 for (int i=0; i<N; i++)
-                    for (int j=0; j<N; j++)
+                  for (int j=0; j<N; j++)
                     {
-                        HamT(i,j)= (Ham)(j,i);
-                        ST(i,j)= (S)(j,i);
-                        HamT2(i,j)= (Ham2)(j,i);
+                      LeftT(i,j)= Left(j,i);
+                      RightT(i,j)= Right(j,i);
                     }
-
-                RealType Xs = std::pow(10.0,stabilityBase);
-                for (int i=1; i<N; i++) HamT(i,i) += Xs + od_largest*stability/(nstabilizers-1);
-
-                Matrix<RealType> ST2(N,N);
-                RealType red_sig = 1- HamT(0,0)*HamT(0,0)/HamT2(0,0);
-                if (w_beta>=0.0)
-                {
-                    RealType H2rescale=1.0/HamT2(0,0);
-                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) *= H2rescale;
-                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) HamT2(i,j) -= fr_rwv*red_sig*ST(i,j);
-                    for (int i=0; i<N; i++)  for (int j=0; j<N; j++) ST2(i,j) = (1.0-w_beta)*ST(i,j) + w_beta*HamT2(i,j);
-                }
-                else
-                {
-                    Matrix<RealType> VarT(HamT2);
-                    //~ true variance minimization
-                    RealType ENoffset = HamT(0,0) - std::abs( std::abs(HamT(0,0)) - std::sqrt(HamT2(0,0)) );
-                    // RealType ENoffset = HamT(0,0);
-                    for (int i=0; i<N; i++) for (int j=0; j<N; j++) VarT(i,j) -= ENoffset*HamT(i,j);
-                    for (int i=1; i<N; i++) VarT(i,i) -= ENoffset*(Xs+od_largest*stability/(nstabilizers-1));
-                    HamT=VarT;
-                    ST2=ST;
-                }
+                RealType XS = std::pow(10.0,stabilityBase) + 2.0*od_largest*stability/nstabilizers;
+//                 if (stability==nstabilizers-1) XS=od_largest;
+                for (int i=1; i<N; i++) LeftT(i,i) += XS;
+                RealType safe = LeftT(0,0);
 
                 myTimers[2]->start();
-                RealType lowestEV =getLowestEigenvector(HamT,ST2,currentParameterDirections);
+                RealType lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
                 myTimers[2]->stop();
-
-                if((w_beta>=0.0) && (abs(lowestEV/Ham(0,0))>1.1) && (lowestEV+5.0<Ham(0,0)))
+                
+                if((abs(lowestEV/safe)>1.1) && (lowestEV+3.0<safe))
                 {
-                  app_log()<<"Probably will not converge: E_lin="<<lowestEV<<" H(0,0)="<<Ham(0,0)<<endl;
+                  app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
                   //try a larger stability base and repeat
                   stabilityBase+=stabilizerScale;
                   //maintain same number of "good" stability tries
                   stability-=1;
                   continue;
                 }
-                
-                //eigenCG part
-                for (int ldi=0; ldi<LastDirections.size(); ldi++)
-                {
-                    RealType nrmold(0), ovlpold(0);
-                    for (int i=1; i<N; i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
-                    for (int i=1; i<N; i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
-                    ovlpold*=1.0/nrmold;
-                    for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
-                }
-
-                optparm= currentParameters;
-                for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-
-                RealType bigVec(0);
-                for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
-                TOL = allowedCostDifference/bigVec;
-
-                largeQuarticStep=bigChange/bigVec;
-                if (deltaPrms>0) quadstep=deltaPrms/bigVec;
-                else quadstep = storedQuadStep/bigVec;
-
-                myTimers[3]->start();
-                if (UseQuarticMin=="yes")  Valid=lineoptimization();
-                else  Valid=lineoptimization2();
-                myTimers[3]->stop();
-
-                if (!Valid)
-                {
-                    app_log()<<"Invalid Cost Function!"<<endl;
-                    continue;
-                }
-
-                RealType biggestParameterChange = bigVec*std::abs(Lambda);
-
-                if ((abs(Lambda)<1e100)&&(biggestParameterChange<bigChange))
-                {
-//                 app_log() <<endl <<"lambda: " <<Lambda <<endl;
-//                 for (int i=0;i<numParams; i++) {
-//                   app_log() <<"param: i, currValue, optdir: "
-//                             <<i <<"  " <<optparm[i] <<"  " <<optdir[i] <<endl;
+//                 else
+//                 {
+//                   app_log()<<"lowestEV: "<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
 //                 }
 
+                
 
-                    for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-                    //Might need to recompute this if the bracketing is too wide
-//                 newCost = optTarget->computedCost();
-                    newCost = optTarget->Cost(false);
-
-// mmorales
-                    if (!optTarget->IsValid)
-                    {
-                        app_log()<<"Invalid Cost Function!"<<endl;
-                        Valid=false;
-                        continue;
-                    }
-                    app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<"  Largest Parameter Change: "<<biggestParameterChange<<" Lambda: "<<Lambda<<endl;
-                    optTarget->printEstimates();
-//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
-
-                    if ((newCost < lastCost)&&(newCost==newCost))
-                    {
-                        //Move was acceptable
-                        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i);
-                        bestStability=stability;
-                        lastCost=newCost;
-                        BestDirection=currentParameterDirections;
-                        acceptedOneMove=true;
-
-                        deltaPrms=std::abs(Lambda*bigVec);
-                    }
-                    else if (newCost>lastCost+1.0e-3)
-                    {
-                     stability = nstabilizers;
-                     app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
-                    }
-                }
-                else
+                if (MinMethod=="rescale")
                 {
-                    app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
-                    app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<"  Largest Parameter Change: "<<biggestParameterChange<<" Lambda: "<<Lambda<<endl;
-                    optTarget->printEstimates();
+                  myTimers[3]->start();
+                  Lambda = getNonLinearRescale(currentParameterDirections,S);
+                  myTimers[3]->stop();
+                  
+                  RealType bigVec(0);
+                  for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
+                  if(Lambda*bigVec>bigChange)
+                  {
+                    app_log()<<"  Failed Step. Largest parameter change: "<<Lambda*bigVec<<endl;
                     tooManyTries--;
                     if (tooManyTries>0)
                     {
                         stabilityBase+=stabilizerScale;
                         stability-=1;
-                        app_log()<<" Re-run "<<endl;
-
+                        app_log()<<" Re-run with larger stabilityBase"<<endl;
                         continue;
                     }
+                  }
+                  else
+                    for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
                 }
+                else
+                {
+                  //eigenCG part
+                  for (int ldi=0; ldi < std::min(eigCG,int(LastDirections.size())); ldi++)
+                  {
+                    RealType nrmold(0), ovlpold(0);
+                    for (int i=1; i<N; i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
+                    for (int i=1; i<N; i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
+                    ovlpold*=1.0/nrmold;
+                    for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
+                  }
+                  optparm = currentParameters;
+                  for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
+                  RealType bigVec(0);
+                  for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
 
+                  TOL = allowedCostDifference/bigVec;
+
+                  largeQuarticStep=bigChange/bigVec;
+                  if (deltaPrms>0) quadstep=deltaPrms/bigVec;
+                  else if (quadstep_saved>0) quadstep=quadstep_saved/bigVec;
+                  else quadstep = 0.75*getNonLinearRescale(currentParameterDirections,S);
+//                   app_log()<<"quadstep: "<<quadstep<<endl;
+                
+                  myTimers[3]->start();
+                  if (MinMethod=="quartic")  Valid=lineoptimization();
+                  else Valid=lineoptimization2();
+                  myTimers[3]->stop();
+                  
+                  RealType biggestParameterChange = bigVec*std::abs(Lambda);
+                  if ( biggestParameterChange>bigChange )
+                  {
+                    app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
+//                     optTarget->printEstimates();
+                    tooManyTries--;
+                    if (tooManyTries>0)
+                    {
+                        stabilityBase+=stabilizerScale;
+                        stability-=1;
+                        app_log()<<" Re-run with larger stabilityBase"<<endl;
+                        continue;
+                    }
+                  }
+                  else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+                  Lambda = biggestParameterChange;
+                }
+                //get cost at new minimum
+                newCost = optTarget->Cost(false);
+// mmorales
+                if (!optTarget->IsValid)
+                {
+                  app_log()<<"Invalid Cost Function!"<<endl;
+                  Valid=false;
+                  continue;
+                }
+                
+//                 std::pair<RealType,RealType> ms;
+//                 ms.first=newCost;
+//                 ms.second=XS;
+//                 mappedStabilizers.push_back(ms);
+                
+                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+                optTarget->printEstimates();
+//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
+
+                if ((newCost < lastCost)&&(newCost==newCost))
+                {
+                  //Move was acceptable
+                  for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i);
+                  bestStability=stability;
+                  lastCost=newCost;
+                  BestDirection=currentParameterDirections;
+                  acceptedOneMove=true;
+
+                  deltaPrms= Lambda;
+                }
+                else if ( newCost>lastCost+1.0e-4)
+                {
+                  stability = nstabilizers;                  
+                  app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
+//                     //fit the stabilizers quadratically, get a new best stabilityBase
+//                     int nms=mappedStabilizers.size();
+//                     vector<RealType>  Y(nms), Coefs(3);
+//                     Matrix<RealType> X(nms,3);
+//                     for(int i=0;i<nms;i++) X(i,0)=1.0;
+//                     for(int i=0;i<nms;i++) X(i,1)=mappedStabilizers[i].second;
+//                     for(int i=0;i<nms;i++) X(i,2)=X(i,1)*X(i,1);
+//                     for(int i=0;i<nms;i++) Y[i]=mappedStabilizers[i].first;
+//                     
+//                     LinearFit(Y,X,Coefs);
+//                     
+// //                     Don't accept values less than zero
+//                     od_largest=std::max(0.0,-0.5*Coefs[1]/Coefs[2]);
+//                     app_log()<<"Best Guess for stability parameter is "<<od_largest<<endl;
+//                     stability=max(nstabilizers-2,stability);
+
+                } 
             }
 
             if (acceptedOneMove)
@@ -373,7 +404,7 @@ bool QMCLinearOptimize::run()
             else
             {
                 for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
-                tries=eigCG;
+                tries=TotalCGSteps;
             }
 
         }
@@ -597,6 +628,65 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     return mappedEigenvalues[0].first;
   }
 }
+
+
+bool QMCLinearOptimize::nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+{
+  RealType rescale = getNonLinearRescale(dP,S); 
+  for (int i=1;i<dP.size(); i++) dP[i]*=rescale; 
+  return true;
+};
+
+QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+{
+  int N=dP.size();
+  
+  std::vector<int> types(N-1);
+  optTarget->getParameterTypes(types);
+  int first(0),last(types.size());
+  
+  //assume all non-linear coeffs are together.
+  if(types[0]==optimize::LINEAR_P)
+    {
+      int i(0);
+      while ((types[i]==optimize::LINEAR_P)&&(i<types.size())) i++;
+      first=i;
+    }
+  else
+    {
+      int i(1);
+      while ((types[i]!=optimize::LINEAR_P)&&(i<types.size())) i++;
+      last=i;
+    }
+  //all linear
+  if (first==last) return 1.0;
+  
+  RealType D(1.0);
+  for (int i=first;i<last;i++) for (int j=first;j<last;j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
+  
+  D = std::sqrt(std::abs(D));
+  
+  
+  vector<RealType> N_i(last-first,0);
+  vector<RealType> M_i(last-first,0);
+  RealType xi(0.5);
+  for (int i=0;i<last-first;i++)
+  {
+    M_i[i] = xi*D +(1-xi);
+    RealType tsumN(0);
+    for (int j=first;j<last;j++)
+    {
+       tsumN += S(i+first+1,j+1)*dP[j+1];
+    }
+    N_i[i] += (1-xi)*tsumN;
+    N_i[i] *= -1.0/M_i[i];
+  }
+
+  RealType rescale(1);
+  for (int j=0;j<last-first;j++) rescale -= N_i[j]*dP[j+first+1];
+  rescale = 1.0/rescale;
+  return rescale;
+};
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
 * @param q current xmlNode

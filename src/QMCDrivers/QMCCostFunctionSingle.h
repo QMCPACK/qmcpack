@@ -41,7 +41,7 @@ namespace qmcplusplus {
     void getConfigurations(const string& aroot);
     void checkConfigurations();
     void GradCost(vector<QMCTraits::RealType>& PGradient, vector<QMCTraits::RealType> PM, QMCTraits::RealType FiniteDiff=0) ;
-    Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Overlap );
+    Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
   protected:
     vector<vector<Return_t> > TempDerivRecords;
     vector<vector<Return_t> > TempHDerivRecords;

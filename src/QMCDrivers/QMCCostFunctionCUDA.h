@@ -45,8 +45,7 @@ namespace qmcplusplus {
     void checkConfigurations();
     void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0);
     Return_t fillOverlapHamiltonianMatrices
-    (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, 
-     Matrix<Return_t>& Overlap);
+    (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
   protected:
     Matrix<Return_t> Records;
     typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
