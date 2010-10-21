@@ -525,6 +525,11 @@ namespace qmcplusplus
          }
        }
      }
+     else
+     {
+       app_log() <<"CI coefficients are not optimizable. \n";
+       multiSD->Optimizable=false;
+     }
      return success;
   }
 /*
