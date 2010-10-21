@@ -496,13 +496,25 @@ namespace qmcplusplus
 
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. \n";
+       
+       string resetCI("no");
+       OhmmsAttributeSet spoAttrib;
+       spoAttrib.add (resetCI, "reset_coeff");
+       spoAttrib.put(cur);
+       if (resetCI=="yes")
+       {
+         if(multiSD->usingCSF) for(int i=1; i<multiSD->CSFcoeff.size(); i++) multiSD->CSFcoeff[i]=0;
+         else                  for(int i=1; i<multiSD->C.size(); i++)multiSD->C[i]=0;
+         app_log() <<"CI coefficients are reset. \n";
+       }
+       
        multiSD->Optimizable=true;
        if(multiSD->usingCSF) {
 //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
          for(int i=1; i<multiSD->CSFcoeff.size(); i++) {
            //std::stringstream sstr;
            //sstr << "CIcoeff" << "_" << i;
-           multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
+             multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
          }
        } else {
 //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
