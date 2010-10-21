@@ -31,7 +31,7 @@ namespace qmcplusplus
       MPIObjectBase(0),
       W(w),H(h),Psi(psi),  Write2OneXml(true),
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-      w_en(0.0), w_var(0.0), w_abs(0.0),
+      w_en(0.0), w_var(0.0), w_abs(0.0), includeNonlocalH("no"),
       CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0), SmallWeight(0)
   {
 
@@ -41,10 +41,6 @@ namespace qmcplusplus
 
     //default: don't check fo MinNumWalkers 
     MinNumWalkers = 0.0;
-
-    H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
-    H_KE.addObservables(W);
-    //H_KE.addObservables(W.PropertyList);
 
     SumValue.resize(SUM_INDEX_SIZE,0.0);
     IsValid=true;
@@ -484,6 +480,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     m_param.add(writeXmlPerStep,"dumpXML","string");
     m_param.add(MinNumWalkers,"minwalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
+    m_param.add(includeNonlocalH,"nonlocalpp","string");
     m_param.put(q);
 
     Write2OneXml = (writeXmlPerStep == "no");

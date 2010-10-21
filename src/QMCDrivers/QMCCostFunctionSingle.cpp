@@ -65,18 +65,10 @@ namespace qmcplusplus
         //Return_t logpsi=Psi.evaluateDeltaLog(W);
         W.G += *dLogPsi[iw];
         W.L += *d2LogPsi[iw];
-
-        Return_t KEtemp = H_KE.evaluate(W);
-        Return_t eloc_new = KEtemp + saved[ENERGY_FIXED];
-        Return_t weight;
-        //if (samplePsi2) weight = std::min(std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
-        //else weight = std::min(std::exp(logpsi-saved[LOGPSI_FREE]),MaxWeight) ;
-
-//         if(SmallWeight > 0.0 && std::exp(saved[LOGPSI_FREE]) < SmallWeight) {
-//         // set weight to zero           
-//           weight = 0.0;
-//         } else
-         weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+        
+        Return_t eloc_new = H_KE.evaluate(W) + saved[ENERGY_FIXED];
+        
+        Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
 
         //Return_t eloc_new=+saved[ENERGY_FIXED];
         //Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
@@ -206,7 +198,18 @@ namespace qmcplusplus
 
     TempHDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
     TempDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
-
+    
+    if ( !H_KE.getHamiltonian("Kinetic") )
+    {
+      H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
+      if ( includeNonlocalH=="yes" )
+      {
+        H_KE.addOperator(H.getHamiltonian("NonLocalECP"),"NonLocalECP");
+        app_log()<<" Adding Non local PP component for optimization"<<endl;
+      }
+      H_KE.addObservables(W);
+    }
+    
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin());
     MCWalkerConfiguration::iterator it_end(W.end());
@@ -228,7 +231,10 @@ namespace qmcplusplus
         Return_t e=H.evaluate(W);
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;
-        saved[ENERGY_FIXED] = H.getLocalPotential();
+        if (includeNonlocalH=="yes")
+          saved[ENERGY_FIXED] = 0;
+        else
+          saved[ENERGY_FIXED] = H.getLocalPotential();
         saved[REWEIGHT]=thisWalker.Weight=1.0;
 
         vector<Return_t>* Dsaved=  &(TempDerivRecords[iw]) ;

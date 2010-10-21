@@ -252,6 +252,7 @@ namespace qmcplusplus
       string RootName;
       ///Hamiltonians that depend on the optimization: KE
       QMCHamiltonian H_KE;
+      string includeNonlocalH;
 
       /** Sum of energies and weights for averages
        *

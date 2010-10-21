@@ -201,6 +201,10 @@ namespace qmcplusplus
           {
             H_KE_Node[ip]= new QMCHamiltonian;
             H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
+            if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
+            {
+              H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
+            }
           }
         wClones[ip]->loadEnsemble();
       }
@@ -212,6 +216,8 @@ namespace qmcplusplus
       app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
     app_log() << endl;
     FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
+    
+    app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
 
     if (dLogPsi.size() != wPerNode[NumThreads])
       {
@@ -240,7 +246,9 @@ namespace qmcplusplus
   {
 
     RealType et_tot=0.0;
+    RealType eft_tot=0.0;
     RealType e2_tot=0.0;
+    RealType enl_tot=0.0;
     RealType TotLogPsi=0.0;
 
     //#pragma omp parallel reduction(+:et_tot,e2_tot)
@@ -270,6 +278,7 @@ namespace qmcplusplus
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       typedef MCWalkerConfiguration::Walker_t Walker_t;
       Return_t e0=0.0;
+      Return_t ef=0.0;
       Return_t e2=0.0;
       MCWalkerConfiguration::iterator it(wRef.begin());
       MCWalkerConfiguration::iterator it_end(wRef.end());
@@ -290,7 +299,11 @@ namespace qmcplusplus
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
-          saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+          if (includeNonlocalH=="yes")
+            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
+          else 
+            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+          ef += saved[ENERGY_FIXED];
           saved[REWEIGHT]=thisWalker.Weight=1.0;
 
 
@@ -306,8 +319,12 @@ namespace qmcplusplus
       et_tot+=e0;
 #pragma omp atomic
       e2_tot+=e2;
+#pragma omp atomic
+      eft_tot+=ef;
     }
     OptVariablesForPsi.setComputed();
+    
+    app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
     
     //Need to sum over the processors
     vector<Return_t> etemp(3);
@@ -322,7 +339,6 @@ namespace qmcplusplus
     app_log() << "  VMC Eavg = " << Etarget << endl;
     app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
     app_log() << "  Total weights = " << etemp[1] << endl;
-    
 
     setTargetEnergy(Etarget);
 
@@ -391,23 +407,16 @@ namespace qmcplusplus
           ParticleSet::Walker_t& thisWalker(**it);
           wRef.R=thisWalker.R;
           wRef.update();
-//           Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-
-// // buffer for MultiSlaterDet data
-          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-          Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
-
-          wRef.G += *dLogPsi[iwg];
-          wRef.L += *d2LogPsi[iwg];
 
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
 
-          RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
-          eloc_new = KEtemp + saved[ENERGY_FIXED];
-          Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
-
-          saved[ENERGY_NEW]=eloc_new;
-          saved[REWEIGHT]=weight;
+          // buffer for MultiSlaterDet data
+          Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+          wRef.G += *dLogPsi[iwg];
+          wRef.L += *d2LogPsi[iwg];
+          saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
 
           if (needGrad)
           {
@@ -431,7 +440,6 @@ namespace qmcplusplus
 #pragma omp atomic
       wgt_tot2 += wgt_node2;
     }
-
 
     //this is MPI barrier
     //OHMMS::Controller->barrier();
@@ -484,7 +492,9 @@ namespace qmcplusplus
 //     for (int i=0; i<SumValue.size(); i++) cerr<<SumValue[i]<<"  ";
 //     cerr<<endl;
 
-    //app_log()<<"After After Purge"<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
+    app_log()<<"Energy After Purge   "<<SumValue[SUM_E_WGT]/SumValue[SUM_WGT]<<endl;
+    app_log()<<"Variance After Purge "<<SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]<<endl;
+    app_log()<<"Weight After Purge   "<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
