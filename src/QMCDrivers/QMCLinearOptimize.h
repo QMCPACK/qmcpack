@@ -84,7 +84,7 @@ private:
     //QMCCostFunction* optTarget;
     QMCCostFunctionBase* optTarget;
     /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
-    string MinMethod, GEVtype;
+    string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
 
     vector<RealType> optdir, optparm;
     RealType allowedCostDifference, stabilizerScale, bigChange, exp0;
@@ -113,6 +113,7 @@ private:
         return *this;
     }
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
+    void getLinearRange(int& first, int& last);
     bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     void generateSamples();

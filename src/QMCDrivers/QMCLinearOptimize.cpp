@@ -47,7 +47,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
         PartID(0), NumParts(1), WarmupBlocks(10), SkipSampleGeneration("no"), hamPool(hpool),
         optTarget(0), vmcEngine(0), Max_iterations(1), wfNode(NULL), optNode(NULL), allowedCostDifference(1.0e-6), 
         exp0(-16),  nstabilizers(10), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(2), w_beta(0.0), 
-        MinMethod("quartic"), GEVtype("mixed")
+        MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -70,6 +70,8 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     m_param.add(exp0,"exp0","double");
     m_param.add(MinMethod,"MinMethod","string");
     m_param.add(GEVtype,"GEVMethod","string");
+    m_param.add(GEVSplit,"GEVSplit","string");
+    m_param.add(StabilizerMethod,"StabilizerMethod","string");
     m_param.add(LambdaMax,"LambdaMax","double");
     //Set parameters for line minimization:
     this->add_timers(myTimers);
@@ -217,6 +219,7 @@ bool QMCLinearOptimize::run()
             Matrix<RealType> Left(N,N);
             Matrix<RealType> Right(N,N);
             app_log()<<"  GEV method "<<GEVtype<<endl;
+            app_log()<<"  Split EV   "<<GEVSplit<<endl;
             app_log()<<"  Line Minimization method "<<MinMethod<<endl;
             if (GEVtype=="H2")
             {
@@ -237,6 +240,11 @@ bool QMCLinearOptimize::run()
               od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
             
             vector<std::pair<RealType,RealType> > mappedStabilizers;
+            if (nstabilizers<5)
+            {
+              StabilizerMethod="best";
+              if (StabilizerMethod=="fit") app_log()<<" Need 5 stabilizers minimum for the fit"<<endl;
+            }
             for (int stability=0; stability<nstabilizers; stability++)
             {
                 Matrix<RealType> LeftT(N,N), RightT(N,N);
@@ -246,16 +254,148 @@ bool QMCLinearOptimize::run()
                       LeftT(i,j)= Left(j,i);
                       RightT(i,j)= Right(j,i);
                     }
-                RealType XS = std::pow(10.0,stabilityBase) + 2.0*od_largest*stability/nstabilizers;
+                    
+                od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
+                RealType XS = std::pow(10.0,stabilityBase) + od_largest*stability/nstabilizers;
 //                 if (stability==nstabilizers-1) XS=od_largest;
+                if ((StabilizerMethod=="fit")&&(stability==nstabilizers-1))
+                {
+//                   fit the stabilizers we have tried and try to choose the best we can
+                    //fit the stabilizers quartically, get a new best stabilityBase
+                    int nms=mappedStabilizers.size();
+                    vector<RealType>  Y(nms), Coefs(5);
+                    Matrix<RealType> X(nms,5);
+                    for(int i=0;i<nms;i++) X(i,0)=1.0;
+                    for(int i=0;i<nms;i++) X(i,1)=mappedStabilizers[i].second;
+                    for(int i=0;i<nms;i++) X(i,2)=X(i,1)*X(i,1);
+                    for(int i=0;i<nms;i++) X(i,3)=X(i,2)*X(i,1);
+                    for(int i=0;i<nms;i++) X(i,4)=X(i,3)*X(i,1);
+                    for(int i=0;i<nms;i++) Y[i]=mappedStabilizers[i].first;
+                    LinearFit(Y,X,Coefs);
+                    
+                    RealType logBest=QuarticMinimum(Coefs);
+                    //some limits on this value
+                    RealType logMin=std::min(stabilityBase-0.1*std::abs(stabilityBase),stabilityBase-5);
+                    if (logBest>logMin)
+                      XS=std::pow(10,logBest);
+                    else
+                      XS=std::pow(10,logMin);
+                    app_log()<<"Best Guess for stability parameter is "<<XS<<endl;
+                }
                 for (int i=1; i<N; i++) LeftT(i,i) += XS;
                 RealType safe = LeftT(0,0);
+                
+//              solve CSFs and other parameters separately then rescale elements accordingly
+                int first,last;
+                getLinearRange(first,last);
+//                 There is only one type of parameter, can't split it up
+                if(first==last) GEVSplit=="no";
+                
+                if (GEVSplit=="yes")
+                {
+                  int N_lin=last-first;
+                  int N_nonlin=N-N_lin;
+//                   both must include the 0,0 row and column
+                  N_lin+=1;
+                  first++; last++;
+                  
+                  Matrix<RealType> LeftTJ(N_nonlin,N_nonlin), RightTJ(N_nonlin,N_nonlin);
+                  
+                  if(first==1)
+                  {
+//                     assume all jastrow parameters are together either first or last
+                    LeftTJ(0,0) =  LeftT(0,0);
+                    RightTJ(0,0)= RightT(0,0);
+                    for (int i=last; i<N; i++)
+                    {
+                      LeftTJ(i-last+1,0) =  LeftT(i,0);
+                      RightTJ(i-last+1,0)= RightT(i,0);
+                      LeftTJ(0,i-last+1) =  LeftT(0,i);
+                      RightTJ(0,i-last+1)= RightT(0,i);
+                      for (int j=last; j<N; j++)
+                      {
+                        LeftTJ(i-last+1,j-last+1) =  LeftT(i,j);
+                        RightTJ(i-last+1,j-last+1)= RightT(i,j);
+                      }
+                    }
+                  }
+                  else
+                  {
+                    for (int i=0; i<first; i++)
+                      for (int j=0; j<first; j++)
+                       {
+                         LeftTJ(i,j) =  LeftT(i,j);
+                         RightTJ(i,j)= RightT(i,j);
+                       }
+                  }
+                  
+                  vector<RealType> J_parms(N_nonlin);
+                  myTimers[2]->start();
+                  RealType lowest_J_EV =getLowestEigenvector(LeftTJ,RightTJ,J_parms);
+                  myTimers[2]->stop();
+                  
+                  Matrix<RealType> LeftTCSF(N_lin,N_lin), RightTCSF(N_lin,N_lin);
+                  if(first==1)
+                  {
+                   for (int i=0; i<last; i++)
+                    for (int j=0; j<last; j++)
+                     {
+                       LeftTCSF(i,j) =  LeftT(i+first,j+first);
+                       RightTCSF(i,j)= RightT(i+first,j+first);
+                     }
+                  }
+                  else
+                  {
+                    LeftTCSF(0,0) =  LeftT(0,0);
+                    RightTCSF(0,0)= RightT(0,0);
+                    for (int i=first; i<last; i++)
+                    {
+                      LeftTCSF(i-first+1,0) =  LeftT(i,0);
+                      RightTCSF(i-first+1,0)= RightT(i,0);
+                      LeftTCSF(0,i-first+1) =  LeftT(0,i);
+                      RightTCSF(0,i-first+1)= RightT(0,i);
+                      for (int j=first; j<last; j++)
+                      {
+                        LeftTCSF(i-first+1,j-first+1) =  LeftT(i,j);
+                        RightTCSF(i-first+1,j-first+1)= RightT(i,j);
+                      }
+                    }
+                    
+                  }                   
+                   
+                  vector<RealType> CSF_parms(N_lin);
+                  myTimers[2]->start();
+                  RealType lowest_CSF_EV =getLowestEigenvector(LeftTCSF,RightTCSF,CSF_parms);
+                  myTimers[2]->stop();
+//                   Now we have both eigenvalues and eigenvectors
+                  app_log()<<" Jastrow eigenvalue: "<<lowest_J_EV<<endl;
+                  app_log()<<"     CSF eigenvalue: "<<lowest_CSF_EV<<endl;
+                  
+                  RealType matrixRescaler=std::sqrt(std::abs(lowest_J_EV/lowest_CSF_EV));
+                  for (int i=0; i<N; i++)
+                    for (int j=0; j<N; j++)
+                    {
+                      if((i>=first)&&(i<last))
+                      {
+                        LeftT(i,j) *=matrixRescaler;
+                        RightT(i,j)*=matrixRescaler;
+                      }
+                      
+                      if((j>=first)&&(j<last))
+                      {
+                        LeftT(i,j) *=matrixRescaler;
+                        RightT(i,j)*=matrixRescaler;
+                      }
+                    }
+
+                }
 
                 myTimers[2]->start();
                 RealType lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
                 myTimers[2]->stop();
                 
-                if((abs(lowestEV/safe)>1.1) && (lowestEV+3.0<safe))
+                RealType lowestCostAllowed=std::min(safe-0.1*std::abs(safe),safe-3.0);
+                if(lowestEV<lowestCostAllowed)
                 {
                   app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
                   //try a larger stability base and repeat
@@ -315,11 +455,12 @@ bool QMCLinearOptimize::run()
                   largeQuarticStep=bigChange/bigVec;
                   if (deltaPrms>0) quadstep=deltaPrms/bigVec;
                   else if (quadstep_saved>0) quadstep=quadstep_saved/bigVec;
-                  else quadstep = 0.75*getNonLinearRescale(currentParameterDirections,S);
-//                   app_log()<<"quadstep: "<<quadstep<<endl;
+                  else quadstep = getNonLinearRescale(currentParameterDirections,S);
+                  //use the rescaling from umrigar everytime for the quartic guess
+                  if (MinMethod=="quartic_u") quadstep = getNonLinearRescale(currentParameterDirections,S);
                 
                   myTimers[3]->start();
-                  if (MinMethod=="quartic")  Valid=lineoptimization();
+                  if ((MinMethod=="quartic")||(MinMethod=="quartic_u"))  Valid=lineoptimization();
                   else Valid=lineoptimization2();
                   myTimers[3]->stop();
                   
@@ -350,10 +491,14 @@ bool QMCLinearOptimize::run()
                   continue;
                 }
                 
-//                 std::pair<RealType,RealType> ms;
-//                 ms.first=newCost;
-//                 ms.second=XS;
-//                 mappedStabilizers.push_back(ms);
+                if (StabilizerMethod=="fit")
+                {
+                   std::pair<RealType,RealType> ms;
+                   ms.first=newCost;
+                   ms.second=std::log(XS);
+                   mappedStabilizers.push_back(ms);                  
+                }
+
                 
                 app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
                 optTarget->printEstimates();
@@ -370,27 +515,24 @@ bool QMCLinearOptimize::run()
 
                   deltaPrms= Lambda;
                 }
-                else if ( newCost>lastCost+1.0e-4)
+                else if (newCost>lastCost+1.0e-4)
                 {
-                  stability = nstabilizers;                  
-                  app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
-//                     //fit the stabilizers quadratically, get a new best stabilityBase
-//                     int nms=mappedStabilizers.size();
-//                     vector<RealType>  Y(nms), Coefs(3);
-//                     Matrix<RealType> X(nms,3);
-//                     for(int i=0;i<nms;i++) X(i,0)=1.0;
-//                     for(int i=0;i<nms;i++) X(i,1)=mappedStabilizers[i].second;
-//                     for(int i=0;i<nms;i++) X(i,2)=X(i,1)*X(i,1);
-//                     for(int i=0;i<nms;i++) Y[i]=mappedStabilizers[i].first;
-//                     
-//                     LinearFit(Y,X,Coefs);
-//                     
-// //                     Don't accept values less than zero
-//                     od_largest=std::max(0.0,-0.5*Coefs[1]/Coefs[2]);
-//                     app_log()<<"Best Guess for stability parameter is "<<od_largest<<endl;
-//                     stability=max(nstabilizers-2,stability);
-
-                } 
+                  if ((StabilizerMethod=="fit")&&(stability < 5))
+                  {               
+                    app_log()<<"Small change, but need 5 values for stability fit."<<endl;
+                  }
+                  else if ((StabilizerMethod=="fit")&&(stability > 4))
+                  {
+                    stability = max(nstabilizers-2,stability);
+                    if (stability==nstabilizers-2) app_log()<<"Small change, moving on to stability fit."<<endl;
+                    else app_log()<<"Moving on to next eigCG or iteration."<<endl;
+                  }
+                  else
+                  {
+                    stability = nstabilizers;                  
+                    app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
+                  }
+                }
             }
 
             if (acceptedOneMove)
@@ -637,13 +779,12 @@ bool QMCLinearOptimize::nonLinearRescale(std::vector<RealType>& dP, Matrix<RealT
   return true;
 };
 
-QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+void QMCLinearOptimize::getLinearRange(int& first, int& last)
 {
-  int N=dP.size();
-  
-  std::vector<int> types(N-1);
+  std::vector<int> types;
   optTarget->getParameterTypes(types);
-  int first(0),last(types.size());
+  first=0;
+  last=types.size();
   
   //assume all non-linear coeffs are together.
   if(types[0]==optimize::LINEAR_P)
@@ -658,7 +799,14 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<R
       while ((types[i]!=optimize::LINEAR_P)&&(i<types.size())) i++;
       last=i;
     }
-  //all linear
+};
+
+QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+{
+  int N=dP.size();
+  
+  int first(0),last(0);
+  getLinearRange(first,last);
   if (first==last) return 1.0;
   
   RealType D(1.0);
