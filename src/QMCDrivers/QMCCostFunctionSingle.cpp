@@ -202,11 +202,11 @@ namespace qmcplusplus
     if ( !H_KE.getHamiltonian("Kinetic") )
     {
       H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
-      if ( includeNonlocalH=="yes" )
-      {
-        H_KE.addOperator(H.getHamiltonian("NonLocalECP"),"NonLocalECP");
-        app_log()<<" Adding Non local PP component for optimization"<<endl;
-      }
+//       if ( includeNonlocalH=="yes" )
+//       {
+//         H_KE.addOperator(H.getHamiltonian("NonLocalECP"),"NonLocalECP");
+//         app_log()<<" Adding Non local PP component for optimization"<<endl;
+//       }
       H_KE.addObservables(W);
     }
     
@@ -231,9 +231,9 @@ namespace qmcplusplus
         Return_t e=H.evaluate(W);
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;
-        if (includeNonlocalH=="yes")
-          saved[ENERGY_FIXED] = 0;
-        else
+//         if (includeNonlocalH=="yes")
+//           saved[ENERGY_FIXED] = 0;
+//         else
           saved[ENERGY_FIXED] = H.getLocalPotential();
         saved[REWEIGHT]=thisWalker.Weight=1.0;
 

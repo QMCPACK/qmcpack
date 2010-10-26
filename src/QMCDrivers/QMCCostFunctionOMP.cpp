@@ -201,10 +201,10 @@ namespace qmcplusplus
           {
             H_KE_Node[ip]= new QMCHamiltonian;
             H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-            if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
-            {
-              H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
-            }
+//             if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
+//             {
+//               H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
+//             }
           }
         wClones[ip]->loadEnsemble();
       }
@@ -217,7 +217,7 @@ namespace qmcplusplus
     app_log() << endl;
     FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
     
-    app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
+//     app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
 
     if (dLogPsi.size() != wPerNode[NumThreads])
       {
@@ -299,9 +299,9 @@ namespace qmcplusplus
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
-          if (includeNonlocalH=="yes")
-            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
-          else 
+//           if (includeNonlocalH=="yes")
+//             saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
+//           else 
             saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
           ef += saved[ENERGY_FIXED];
           saved[REWEIGHT]=thisWalker.Weight=1.0;
@@ -319,12 +319,12 @@ namespace qmcplusplus
       et_tot+=e0;
 #pragma omp atomic
       e2_tot+=e2;
-#pragma omp atomic
-      eft_tot+=ef;
+// #pragma omp atomic
+//       eft_tot+=ef;
     }
     OptVariablesForPsi.setComputed();
     
-    app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+//     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
     
     //Need to sum over the processors
     vector<Return_t> etemp(3);
