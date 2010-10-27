@@ -87,7 +87,7 @@ private:
     string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
 
     vector<RealType> optdir, optparm;
-    RealType allowedCostDifference, stabilizerScale, bigChange, exp0;
+    RealType allowedCostDifference, stabilizerScale, bigChange, exp0, exp1;
     int nstabilizers;
     /// number of previous steps to orthogonalize to.
     int eigCG;
@@ -95,6 +95,8 @@ private:
     int  TotalCGSteps;
     /// percent variance or H2 to mix in
     RealType w_beta;
+    ///Dimension of matrix and number of parameters
+    int N,numParams;
     ///vmc engine
     QMCDriver* vmcEngine;
     ///xml node to be dumped
@@ -112,13 +114,25 @@ private:
     {
         return *this;
     }
+    bool ValidCostFunction(bool valid);
+    inline bool tooLow(RealType safeValue, RealType CurrentValue)
+    {
+      RealType lowestCostAllowed=std::min(safeValue-0.1*std::abs(safeValue),safeValue-3.0);
+      if (CurrentValue<lowestCostAllowed) return true;
+      else return false;
+    }
+    void start();
+    void finish();
+    
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
-    void getLinearRange(int& first, int& last);
+    RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
+    void getNonLinearRange(int& first, int& last);
     bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     void generateSamples();
     void add_timers(vector<NewTimer*>& timers);
     vector<NewTimer*> myTimers;
+    Timer t1;
 };
 }
 #endif
