@@ -151,7 +151,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
       //    if (NumWalkersEff < MinNumWalkers)
       {
         ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-        ERRORMSG("Going to stop now.")
+        // ERRORMSG("Going to stop now.")
         IsValid=false;
       }
       return CostValue;

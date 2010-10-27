@@ -251,7 +251,7 @@ bool QMCLinearOptimize::run()
             //Find largest off-diagonal element compared to diagonal element.
             //This gives us an idea how well conditioned it is and can be used to stabilize.
             RealType od_largest(0);
-            for (int i=1; i<N; i++) for (int j=1; j<N; j++)
+            for (int i=0; i<N; i++) for (int j=0; j<N; j++)
               od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
             od_largest = std::log(od_largest);
 

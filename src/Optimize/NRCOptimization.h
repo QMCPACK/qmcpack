@@ -166,6 +166,7 @@ struct NRCOptimization {
       y[i] = Func(x[i]);
       for (int j=0; j<5; j++)
 	S(i,j) = std::pow(x[i],j);
+    if (!validFuncVal) i=5;
     }
     start_cost = y[2];
 
@@ -233,6 +234,7 @@ struct NRCOptimization {
 // in case the function is unable to bracket the minimum but
 // still finds a point with lower cost and validFuncVal, take this point
       Lambda=xx;
+      qmcplusplus::app_log()<<"Problems bracketing minimum. Lower Value returned.\n";
       return true;
     }
     qmcplusplus::app_log()<<"After:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
