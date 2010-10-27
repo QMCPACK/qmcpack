@@ -165,6 +165,7 @@ bool QMCLinearOptimize::run()
     start();
     bool Valid(true);
     int Total_iterations(0);
+    savedQuadstep=quadstep;
 
 //size of matrix
     numParams = optTarget->NumParams();
@@ -249,8 +250,8 @@ bool QMCLinearOptimize::run()
             //Find largest off-diagonal element compared to diagonal element.
             //This gives us an idea how well conditioned it is and can be used to stabilize.
             RealType od_largest(0);
-            for (int i=0; i<N; i++) for (int j=0; j<N; j++)
-                    od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+            for (int i=1; i<N; i++) for (int j=1; j<N; j++)
+              od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
 
             RealType safe = Left(0,0);
             for (int stability=0; stability<nstabilizers; stability++)
@@ -267,8 +268,7 @@ bool QMCLinearOptimize::run()
                 RealType XS(0);
                 if ((StabilizerMethod=="fit")&&(stability==nstabilizers-1))
                 {
-//                   fit the stabilizers we have tried and try to choose the best we can
-                    //fit the stabilizers quartically, get a new best stabilityBase
+                    //Quartic fit the stabilizers we have tried and try to choose the best we can
                     int nms=mappedStabilizers.size();
                     vector<RealType>  Y(nms), Coefs(5);
                     Matrix<RealType> X(nms,5);
@@ -279,23 +279,24 @@ bool QMCLinearOptimize::run()
                     for (int i=0; i<nms; i++) X(i,4)=X(i,3)*X(i,1);
                     for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
                     LinearFit(Y,X,Coefs);
-                    
+                    //lowest we will allow
                     RealType lowestExp = std::min(exp0 - 0.1*std::abs(exp0),exp0-5.0);
 
                     RealType dltaBest=std::max(lowestExp , QuarticMinimum(Coefs));
                     XS = std::pow(10.0,dltaBest);
-//                     app_log()<<"Best Guess for stability parameter is "<<XS<<endl;
                 }
 
                 RealType lowestEV(0);
                 if ((GEVSplit=="rescale")||(GEVSplit=="freeze"))
                 {
+                  //These are experimental and aren't very good.
                     //dummy bool
                     bool CSF_lower(true);
                     lowestEV = getSplitEigenvectors(first,last,LeftT,RightT,currentParameterDirections,GEVSplitParameters,GEVSplit,CSF_lower);
                 }
                 else if (GEVSplit=="stability")
                 {
+                  //This seems to work pretty well.
                     if (XS==0)
                     {
                         od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
@@ -308,8 +309,10 @@ bool QMCLinearOptimize::run()
                     }
                     else
                     {
+                      //Not sure how to control for the quartic fitand the two different stabilizers. This seems ok.
+                      //Better algorithm exists?
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
-//                         Some Bounds
+                      //  Some Bounds
                         RealType XS_lin = std::max(0.0, XS - std::pow(10.0,stabilityBase)) + std::pow(10.0,stabilityBase + linearStabilityBase);
                         for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
                         for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
@@ -317,7 +320,7 @@ bool QMCLinearOptimize::run()
 
                     if (stability==0)
                     {
-//                       Only need to do this the first time we step into the routine
+                        //  Only need to do this the first time we step into the routine
                         bool CSF_lower(true);
                         lowestEV=getSplitEigenvectors(first,last,LeftT,RightT,currentParameterDirections,GEVSplitParameters,GEVSplit,CSF_lower);
                         if (tooLow(safe,lowestEV))
@@ -338,6 +341,7 @@ bool QMCLinearOptimize::run()
                             continue;
                         }
                     }
+                    
                     myTimers[2]->start();
                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
                     myTimers[2]->stop();
@@ -349,6 +353,7 @@ bool QMCLinearOptimize::run()
                         od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
                         XS = std::pow(10.0,stabilityBase) + od_largest*stability/nstabilizers;
                     }
+                    //else XS is from the quartic fit
                     for (int i=1; i<N; i++) LeftT(i,i) += XS;
 
                     myTimers[2]->start();
@@ -411,7 +416,8 @@ bool QMCLinearOptimize::run()
                     TOL = allowedCostDifference/bigVec;
 
                     largeQuarticStep=bigChange/bigVec;
-                    if (deltaPrms>0) quadstep=deltaPrms/bigVec;
+                    if (savedQuadstep>0) quadstep=savedQuadstep/bigVec;
+                    else if (deltaPrms>0) quadstep=deltaPrms/bigVec;
                     else quadstep = getNonLinearRescale(currentParameterDirections,S);
                     //use the rescaling from umrigar everytime for the quartic guess
                     if (MinMethod=="quartic_u") quadstep = getNonLinearRescale(currentParameterDirections,S);
@@ -478,7 +484,7 @@ bool QMCLinearOptimize::run()
                     else if ((StabilizerMethod=="fit")&&(stability >= 4))
                     {
                         stability = max(nstabilizers-2,stability);
-                        if (stability==nstabilizers-2) app_log()<<"Small change, moving on to stability fit."<<endl;
+                        if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
                         else app_log()<<"Moving on to next eigCG or iteration."<<endl;
                     }
                     else

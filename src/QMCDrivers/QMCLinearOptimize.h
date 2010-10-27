@@ -87,7 +87,7 @@ private:
     string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
 
     vector<RealType> optdir, optparm;
-    RealType allowedCostDifference, stabilizerScale, bigChange, exp0, exp1;
+    RealType allowedCostDifference, stabilizerScale, bigChange, exp0, exp1, savedQuadstep;
     int nstabilizers;
     /// number of previous steps to orthogonalize to.
     int eigCG;
