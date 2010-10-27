@@ -302,9 +302,11 @@ bool QMCLinearOptimize::run()
                         od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
                         XS     = std::pow(10.0,stabilityBase) + od_largest*stability/nstabilizers;
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
+                        
                         RealType XS_lin = std::pow(10.0,stabilityBase + linearStabilityBase) + od_largest*stability/nstabilizers;
-                        for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
-                        for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
+                        
+                        if (first==0) for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
+                        else for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
 
                     }
                     else
@@ -314,8 +316,9 @@ bool QMCLinearOptimize::run()
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
                       //  Some Bounds
                         RealType XS_lin = std::max(0.0, XS - std::pow(10.0,stabilityBase)) + std::pow(10.0,stabilityBase + linearStabilityBase);
+                        
+                        if (first==0) for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
                         for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
-                        for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
                     }
 
                     if (stability==0)
