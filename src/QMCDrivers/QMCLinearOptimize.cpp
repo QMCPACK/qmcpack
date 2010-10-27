@@ -484,11 +484,12 @@ bool QMCLinearOptimize::run()
                 }
                 else if (newCost>lastCost+1.0e-4)
                 {
-                    if ((StabilizerMethod=="fit")&&(stability < 4))
+                    int neededForGoodQuarticFit=6;//really one more so if 4, then 5 values kept. if 6 then 7 etc.
+                    if ((StabilizerMethod=="fit")&&(stability < neededForGoodQuarticFit))
                     {
-                        app_log()<<"Small change, but need 5 values for stability fit."<<endl;
+                        app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
                     }
-                    else if ((StabilizerMethod=="fit")&&(stability >= 4))
+                    else if ((StabilizerMethod=="fit")&&(stability >= neededForGoodQuarticFit))
                     {
                         stability = max(nstabilizers-2,stability);
                         if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
