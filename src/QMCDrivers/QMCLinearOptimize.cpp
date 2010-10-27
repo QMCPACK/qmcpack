@@ -99,7 +99,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::Func(RealType dl)
 {
     for (int i=0; i<optparm.size(); i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
     QMCLinearOptimize::RealType c = optTarget->Cost(false);
-    validFuncVal= optTarget->IsValid;
+    //only allow this to go false if it was true. If false, stay false
+    if (validFuncVal) validFuncVal = optTarget->IsValid;
     return c;
 }
 
@@ -218,8 +219,8 @@ bool QMCLinearOptimize::run()
             vector<std::pair<RealType,RealType> > mappedStabilizers;
             if (nstabilizers<5)
             {
-                StabilizerMethod="best";
                 if (StabilizerMethod=="fit") app_log()<<" Need 5 stabilizers minimum for the fit"<<endl;
+                StabilizerMethod="best";
             }
 
             for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
@@ -252,6 +253,7 @@ bool QMCLinearOptimize::run()
             RealType od_largest(0);
             for (int i=1; i<N; i++) for (int j=1; j<N; j++)
               od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+            od_largest = std::log(od_largest);
 
             RealType safe = Left(0,0);
             for (int stability=0; stability<nstabilizers; stability++)
@@ -280,10 +282,10 @@ bool QMCLinearOptimize::run()
                     for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
                     LinearFit(Y,X,Coefs);
                     //lowest we will allow
-                    RealType lowestExp = std::min(exp0 - 0.1*std::abs(exp0),exp0-5.0);
+                    RealType lowestExp = std::min(exp0 - 0.25*std::abs(exp0), exp0-2.0*stabilizerScale);
 
                     RealType dltaBest=std::max(lowestExp , QuarticMinimum(Coefs));
-                    XS = std::pow(10.0,dltaBest);
+                    XS = dltaBest;
                 }
 
                 RealType lowestEV(0);
@@ -294,29 +296,26 @@ bool QMCLinearOptimize::run()
                     bool CSF_lower(true);
                     lowestEV = getSplitEigenvectors(first,last,LeftT,RightT,currentParameterDirections,GEVSplitParameters,GEVSplit,CSF_lower);
                 }
-                else if (GEVSplit=="stability")
+                else if (GEVSplit=="stability") //This seems to work pretty well.
                 {
-                  //This seems to work pretty well.
                     if (XS==0)
                     {
-                        od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
-                        XS     = std::pow(10.0,stabilityBase) + od_largest*stability/nstabilizers;
+                        od_largest=std::max(od_largest,stabilityBase+nstabilizers*stabilizerScale);
+                        RealType spart = (1.0*stability)/nstabilizers;
+                        XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
                         
-                        RealType XS_lin = std::pow(10.0,stabilityBase + linearStabilityBase) + od_largest*stability/nstabilizers;
-                        
+                        RealType XS_lin = std::exp(linearStabilityBase + (1.0-spart)*stabilityBase + spart*od_largest);
                         if (first==0) for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
                         else for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
-
                     }
-                    else
+                    else //else XS is from the quartic fit
                     {
-                      //Not sure how to control for the quartic fitand the two different stabilizers. This seems ok.
+                      //Not sure how to control for the quartic fit and the two different stabilizers. This seems ok.
                       //Better algorithm exists?
-                        for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
-                      //  Some Bounds
-                        RealType XS_lin = std::max(0.0, XS - std::pow(10.0,stabilityBase)) + std::pow(10.0,stabilityBase + linearStabilityBase);
-                        
+                        for (int i=first; i<last; i++) LeftT(i+1,i+1) += std::exp(XS);
+                      
+                        RealType XS_lin = std::exp(linearStabilityBase+XS);
                         if (first==0) for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
                         for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
                     }
@@ -353,12 +352,17 @@ bool QMCLinearOptimize::run()
                 {
                     if (XS==0)
                     {
-                        od_largest=std::max(od_largest,std::pow(10.0,stabilityBase));
-                        XS = std::pow(10.0,stabilityBase) + od_largest*stability/nstabilizers;
+                      od_largest=std::max(od_largest,stabilityBase+nstabilizers*stabilizerScale);
+                      RealType spart = (1.0*stability)/nstabilizers;
+                      XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
+                      for (int i=1; i<N; i++) LeftT(i,i) += XS;
                     }
-                    //else XS is from the quartic fit
-                    for (int i=1; i<N; i++) LeftT(i,i) += XS;
-
+                    else
+                    {
+                      //else XS is from the quartic fit
+                      for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
+                    }
+                    
                     myTimers[2]->start();
                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
                     myTimers[2]->stop();
@@ -459,7 +463,7 @@ bool QMCLinearOptimize::run()
                     std::pair<RealType,RealType> ms;
                     ms.first=newCost;
 //                     the log fit seems to work best
-                    ms.second=std::log(XS);
+                    ms.second=std::log10(XS);
                     mappedStabilizers.push_back(ms);
                 }
 

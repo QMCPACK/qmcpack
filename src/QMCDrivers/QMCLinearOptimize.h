@@ -115,12 +115,14 @@ private:
         return *this;
     }
     bool ValidCostFunction(bool valid);
+    
     inline bool tooLow(RealType safeValue, RealType CurrentValue)
     {
-      RealType lowestCostAllowed=std::min(safeValue-0.1*std::abs(safeValue),safeValue-3.0);
+      RealType lowestCostAllowed=std::min(safeValue-0.05*std::abs(safeValue),safeValue-2.0);
       if (CurrentValue<lowestCostAllowed) return true;
       else return false;
     }
+    
     void start();
     void finish();
     
