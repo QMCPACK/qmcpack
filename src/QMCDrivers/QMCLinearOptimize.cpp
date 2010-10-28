@@ -462,7 +462,7 @@ bool QMCLinearOptimize::run()
                     else if (MinMethod=="quartic_u")
                     {
                       int npts(9); int offset(2);
-                      quadstep *= 2.0*getNonLinearRescale(currentParameterDirections,S)/npts;
+                      quadstep *= 2.0/npts;
                       Valid=lineoptimization3(npts,offset);
                     }
                     else Valid=lineoptimization2();
