@@ -304,7 +304,7 @@ bool QMCLinearOptimize::run()
                 {
                     if (XS==0)
                     {
-                        od_largest=std::max(od_largest,stabilityBase+nstabilizers*stabilizerScale);
+                        od_largest=std::max(od_largest,stabilityBase);
                         RealType spart = (1.0*stability)/nstabilizers;
                         XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
@@ -356,7 +356,7 @@ bool QMCLinearOptimize::run()
                 {
                     if (XS==0)
                     {
-                      od_largest=std::max(od_largest,stabilityBase+nstabilizers*stabilizerScale);
+                      od_largest=std::max(od_largest,stabilityBase);
                       RealType spart = (1.0*stability)/nstabilizers;
                       XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
                       for (int i=1; i<N; i++) LeftT(i,i) += XS;
@@ -444,7 +444,7 @@ bool QMCLinearOptimize::run()
                     myTimers[3]->stop();
 
                     RealType biggestParameterChange = bigVec*std::abs(Lambda);
-                    if ( biggestParameterChange>bigChange )
+                    if ( (!Valid) || (biggestParameterChange>bigChange ))
                     {
                         app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
 //                     optTarget->printEstimates();

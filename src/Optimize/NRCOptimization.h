@@ -237,7 +237,7 @@ struct NRCOptimization {
 // still finds a point with lower cost and validFuncVal, take this point
       Lambda=xx;
       qmcplusplus::app_log()<<"Problems bracketing minimum. Lower Value returned.\n";
-      return true;
+      return false;
     }
     qmcplusplus::app_log()<<"After:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
     
