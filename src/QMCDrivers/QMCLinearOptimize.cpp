@@ -272,6 +272,9 @@ bool QMCLinearOptimize::run()
                 {
                     //Quartic fit the stabilizers we have tried and try to choose the best we can
                     int nms=mappedStabilizers.size();
+                    
+                    
+                    
                     vector<RealType>  Y(nms), Coefs(5);
                     Matrix<RealType> X(nms,5);
                     for (int i=0; i<nms; i++) X(i,0)=1.0;
@@ -286,6 +289,7 @@ bool QMCLinearOptimize::run()
 
                     RealType dltaBest=std::max(lowestExp , QuarticMinimum(Coefs));
                     XS = dltaBest;
+                    stability=nstabilizers;
                 }
 
                 RealType lowestEV(0);
@@ -484,7 +488,7 @@ bool QMCLinearOptimize::run()
                 }
                 else if (newCost>lastCost+1.0e-4)
                 {
-                    int neededForGoodQuarticFit=6;//really one more so if 4, then 5 values kept. if 6 then 7 etc.
+                    int neededForGoodQuarticFit=5;//really one more so if 5, then 6 values kept. 4 is minimum.
                     if ((StabilizerMethod=="fit")&&(stability < neededForGoodQuarticFit))
                     {
                         app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
