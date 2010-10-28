@@ -182,6 +182,7 @@ bool QMCLinearOptimize::run()
     vector<RealType> currentParameterDirections(N,0);
     vector<RealType> currentParameters(numParams,0);
     optdir.resize(numParams,0);
+    optparm.resize(numParams,0);
     for (int i=0; i<numParams; i++) currentParameters[i] = optTarget->Params(i);
 
     Matrix<RealType> Ham(N,N);
@@ -211,7 +212,7 @@ bool QMCLinearOptimize::run()
         for (int tries=0; tries<TotalCGSteps; tries++)
         {
             bool acceptedOneMove(false);
-            int tooManyTries(40);
+            int tooManyTries(20);
 
             Matrix<RealType> Left(N,N);
             Matrix<RealType> Right(N,N);
@@ -229,12 +230,12 @@ bool QMCLinearOptimize::run()
             RealType lastCost(optTarget->Cost(true));
             myTimers[4]->start();
 
-            RealType newCost(lastCost);
-            optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
-
-// mmorales
+            // mmorales
             Valid=optTarget->IsValid;
             if (!ValidCostFunction(Valid)) continue;
+            
+            RealType newCost(lastCost);
+            optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
 
             if (GEVtype=="H2")
             {
@@ -253,7 +254,8 @@ bool QMCLinearOptimize::run()
             RealType od_largest(0);
             for (int i=0; i<N; i++) for (int j=0; j<N; j++)
               od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-            od_largest = std::log(od_largest);
+            if (od_largest>0) od_largest = std::log(od_largest);
+            else od_largest=1.0;
 
             RealType safe = Left(0,0);
             for (int stability=0; stability<nstabilizers; stability++)
@@ -284,10 +286,8 @@ bool QMCLinearOptimize::run()
                     for (int i=0; i<nms; i++) X(i,4)=X(i,3)*X(i,1);
                     for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
                     LinearFit(Y,X,Coefs);
-                    //lowest we will allow
-                    RealType lowestExp = std::min(exp0 - 0.25*std::abs(exp0), exp0-2.0*stabilizerScale);
-
-                    RealType dltaBest=std::max(lowestExp , QuarticMinimum(Coefs));
+                    //lowest we will allow is a little less than the bare base stabilizer
+                    RealType dltaBest=std::max(stabilityBase-0.1, QuarticMinimum(Coefs));
                     XS = dltaBest;
                     stability=nstabilizers;
                 }
@@ -304,12 +304,10 @@ bool QMCLinearOptimize::run()
                 {
                     if (XS==0)
                     {
-                        od_largest=std::max(od_largest,stabilityBase);
-                        RealType spart = (1.0*stability)/nstabilizers;
-                        XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
+                        XS  = std::exp(stabilityBase + stability*od_largest/nstabilizers);
                         for (int i=first; i<last; i++) LeftT(i+1,i+1) += XS;
                         
-                        RealType XS_lin = std::exp(linearStabilityBase + (1.0-spart)*stabilityBase + spart*od_largest);
+                        RealType XS_lin = std::exp(linearStabilityBase + stabilityBase + stability*od_largest/nstabilizers);
                         if (first==0) for (int i=last; i<N; i++) LeftT(i+1,i+1) += XS_lin;
                         else for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
                     }
@@ -356,9 +354,7 @@ bool QMCLinearOptimize::run()
                 {
                     if (XS==0)
                     {
-                      od_largest=std::max(od_largest,stabilityBase);
-                      RealType spart = (1.0*stability)/nstabilizers;
-                      XS     = std::exp((1.0-spart)*stabilityBase + spart*od_largest);
+                      XS     = std::exp(stabilityBase +  stability*od_largest/nstabilizers);
                       for (int i=1; i<N; i++) LeftT(i,i) += XS;
                     }
                     else
@@ -374,11 +370,32 @@ bool QMCLinearOptimize::run()
 
                 if (tooLow(safe,lowestEV))
                 {
-                    app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-                    //try a larger stability base and repeat
-                    stabilityBase+=stabilizerScale;
-                    //maintain same number of "good" stability tries
-                    stability-=1;
+                    tooManyTries--;
+                    if (tooManyTries>0)
+                    {
+                      if (stability==0)
+                      {
+                        app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+                        //try a larger stability base and repeat
+                        stabilityBase+=stabilizerScale;
+                        //maintain same number of "good" stability tries
+                        stability-=1;
+                      }
+                      else
+                      {
+                        app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+                        //try a larger stability base and repeat
+                        stabilityBase-=0.66*stabilizerScale;
+                        //maintain same number of "good" stability tries
+                        stability-=1;               
+                      }
+                    }
+                    else
+                    {
+                      app_log()<<"Too many tries: Moving on to next step"<<endl;
+                      stability=nstabilizers;
+                    }
+                    
                     continue;
                 }
 
@@ -418,7 +435,9 @@ bool QMCLinearOptimize::run()
                         for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
                     }
 
-                    optparm.resize(numParams);
+                    
+                    //if we chose to "freeze" the CSF solutions at their minimum 
+                    //  then we must add them in to the fixed part of the parameter changes
                     for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
                     for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
                     RealType bigVec(0);
@@ -427,19 +446,25 @@ bool QMCLinearOptimize::run()
                     TOL = allowedCostDifference/bigVec;
 
                     largeQuarticStep=bigChange/bigVec;
-                    if (savedQuadstep>0) quadstep=savedQuadstep/bigVec;
-                    else if (deltaPrms>0) quadstep=deltaPrms/bigVec;
-                    else quadstep = getNonLinearRescale(currentParameterDirections,S);
-                    //use the rescaling from umrigar everytime for the quartic guess
-                    if (MinMethod=="quartic_u") 
-                    {
-//                       Do quartic minimum around the rescaled guess.
-                      quadoffset = getNonLinearRescale(currentParameterDirections,S);
-                      quadstep = 0.5*quadoffset;
-                    }
-
+                    if (savedQuadstep>0)
+                      quadstep=savedQuadstep/bigVec;
+                    else if (deltaPrms>0)
+                      quadstep=deltaPrms/bigVec;
+                    else 
+                      quadstep = 0.5*getNonLinearRescale(currentParameterDirections,S);
+                    
+//                  initial guess for line min bracketing
+                    LambdaMax = 0.1/bigVec;
+                    
                     myTimers[3]->start();
-                    if ((MinMethod=="quartic")||(MinMethod=="quartic_u"))  Valid=lineoptimization();
+                    if (MinMethod=="quartic")
+                      Valid=lineoptimization();
+                    else if (MinMethod=="quartic_u")
+                    {
+                      int npts(9); int offset(2);
+                      quadstep *= 2.0*getNonLinearRescale(currentParameterDirections,S)/npts;
+                      Valid=lineoptimization3(npts,offset);
+                    }
                     else Valid=lineoptimization2();
                     myTimers[3]->stop();
 
@@ -458,6 +483,7 @@ bool QMCLinearOptimize::run()
                         }
                     }
                     else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+                    //Save this value in here for later
                     Lambda = biggestParameterChange;
                 }
                 //get cost at new minimum

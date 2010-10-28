@@ -25,6 +25,7 @@
 
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
+#include "Numerics/LinearFit.h"
 #include "Configuration.h"
 
 #include <math.h>
@@ -161,14 +162,13 @@ struct NRCOptimization {
   bool lineoptimization() {
     vector<Return_t> x(5), y(5), coefs(5), deriv(4);
     qmcplusplus::Matrix<Return_t> S(5,5);
-    x[0]=-2*quadstep+quadoffset; x[1]=-quadstep+quadoffset; x[2]=0.0+quadoffset; x[3]=quadstep+quadoffset; x[4]=2*quadstep+quadoffset;
+    x[0]=-2*quadstep; x[1]=-quadstep; x[2]=0.0; x[3]=quadstep; x[4]=2*quadstep;
     Return_t start_cost, cost;
     validFuncVal=true;
     for (int i=0; i<5; i++) {
       y[i] = Func(x[i]);
       for (int j=0; j<5; j++)
 	S(i,j) = std::pow(x[i],j);
-    if (!validFuncVal) i=5;
     }
     start_cost = y[2];
 
@@ -208,6 +208,91 @@ struct NRCOptimization {
 
 
   }    
+
+  bool lineoptimization3(int points, int offset) {
+    // quartic fit with variable number of points for input.
+    //  least squares solver
+    vector<Return_t> x(points), y(points), coefs(5);
+    qmcplusplus::Matrix<Return_t> S(points,5);
+    for(int i=0;i<points;i++) x[i]=(points/2 - i + offset)*quadstep;
+    
+    Return_t start_cost, cost;
+    vector<bool> cFailed(points,false);
+    int nFailed(0);
+    validFuncVal=true;
+    for (int i=0; i<points; i++) {
+      y[i] = Func(x[i]);
+      if (!validFuncVal)
+      {
+        cFailed[i]=true;
+        nFailed++;
+      }
+      for (int j=0; j<5; j++)
+        S(i,j) = std::pow(x[i],j);
+    }
+    start_cost = y[points/2+offset];
+    if (nFailed>0)
+    {
+      int ok_pts(points-nFailed);
+      if (ok_pts>=5)
+      {
+        //some failed but we still have enough to do a fit
+        vector<Return_t> xp(ok_pts), yp(ok_pts);
+        qmcplusplus::Matrix<Return_t> Sp(ok_pts,5);
+        for (int i=0,ip=0; i<points; i++)
+        {
+          if (!cFailed[i])
+          {
+            yp[ip]=y[i];
+            xp[ip]=x[i];
+            for (int j=0; j<5; j++)
+              Sp(ip,j) = S(i,j);
+            ip++;
+          }
+        }
+        x=xp;
+        y=yp;
+        S=Sp;
+        validFuncVal=true;
+      }
+      else validFuncVal=false;
+    }
+
+    if(validFuncVal) {
+      qmcplusplus::LinearFit(y,S,coefs);
+
+      Lambda = QuarticMinimum (coefs);
+      if (abs(Lambda) > largeQuarticStep || isnan(Lambda))
+        return lineoptimization2();
+      cost = Func(Lambda);
+      if (isnan(cost) || cost > start_cost)
+        return lineoptimization2();
+    } else {
+      return lineoptimization2();
+    }
+    //fprintf (stderr, "Minimum found at %1.8f\n", Lambda);
+    
+    current_step++;
+    return true;
+
+    // HACK HACK HACK
+//     if (Lambda < 0.0) {
+      // char fname[50];
+      // snprintf (fname, 50, "line_opt_%d.dat", current_step);
+      // FILE *fout = fopen (fname, "w");
+      // for (double lam=-0.01; lam<=0.01; lam+=0.0001) {
+      //   double val = 0.0;
+      //   for (int j=0; j<5; j++) 
+      //    val += coefs[j] * std::pow(lam, j);
+      //   fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, Func(lam), val);
+      // }
+      // fclose(fout);
+//     }
+    // END HACK HACK HACK
+
+
+
+  }  
 
   bool lineoptimization2() {
     Return_t ax = 0;
@@ -342,7 +427,8 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
 			    Return_t& fa, Return_t& fb, Return_t& fc) {
 
   Return_t ulim,u,r,q,fu,dum = 0.0e0;
-
+  
+  validFuncVal=true;
   fa = Func(ax); // *fa=(*func)(*ax);
   if(!validFuncVal) return false; 
   fb = Func(bx); // *fb=(*func)(*bx);
