@@ -431,7 +431,12 @@ bool QMCLinearOptimize::run()
                     else if (deltaPrms>0) quadstep=deltaPrms/bigVec;
                     else quadstep = getNonLinearRescale(currentParameterDirections,S);
                     //use the rescaling from umrigar everytime for the quartic guess
-                    if (MinMethod=="quartic_u") quadstep = getNonLinearRescale(currentParameterDirections,S);
+                    if (MinMethod=="quartic_u") 
+                    {
+//                       Do quartic minimum around the rescaled guess.
+                      quadoffset = getNonLinearRescale(currentParameterDirections,S);
+                      quadstep = 0.5*quadoffset;
+                    }
 
                     myTimers[3]->start();
                     if ((MinMethod=="quartic")||(MinMethod=="quartic_u"))  Valid=lineoptimization();
@@ -467,7 +472,7 @@ bool QMCLinearOptimize::run()
                     std::pair<RealType,RealType> ms;
                     ms.first=newCost;
 //                     the log fit seems to work best
-                    ms.second=std::log10(XS);
+                    ms.second=std::log(XS);
                     mappedStabilizers.push_back(ms);
                 }
 

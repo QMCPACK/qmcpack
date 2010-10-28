@@ -64,6 +64,7 @@ struct NRCOptimization {
    */
   Return_t LambdaMax;
   Return_t quadstep;
+  Return_t quadoffset;
   Return_t largeQuarticStep;
   bool validFuncVal;
 
@@ -80,6 +81,7 @@ struct NRCOptimization {
     LambdaMax = 0.02;
     current_step = 0;
     quadstep=0.01;
+    quadoffset=0.0;
     largeQuarticStep=2.0;
     validFuncVal=true;
   }
@@ -159,7 +161,7 @@ struct NRCOptimization {
   bool lineoptimization() {
     vector<Return_t> x(5), y(5), coefs(5), deriv(4);
     qmcplusplus::Matrix<Return_t> S(5,5);
-    x[0]=-2*quadstep; x[1]=-quadstep; x[2]=0.0; x[3]=quadstep; x[4]=2*quadstep;
+    x[0]=-2*quadstep+quadoffset; x[1]=-quadstep+quadoffset; x[2]=0.0+quadoffset; x[3]=quadstep+quadoffset; x[4]=2*quadstep+quadoffset;
     Return_t start_cost, cost;
     validFuncVal=true;
     for (int i=0; i<5; i++) {
