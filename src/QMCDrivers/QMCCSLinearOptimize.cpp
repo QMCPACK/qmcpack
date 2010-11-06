@@ -177,7 +177,7 @@ bool QMCCSLinearOptimize::run()
     RealType stabilityBase(exp0);
     //This is the amount we add to the linear parameters
     RealType linearStabilityBase(exp1);
-    int tooManyTries(20);
+    int tooManyTries(200);
 
     Matrix<RealType> Left(N,N);
     Matrix<RealType> Right(N,N);
@@ -375,6 +375,7 @@ bool QMCCSLinearOptimize::run()
         myTimers[3]->start();
         Lambda = getNonLinearRescale(currentParameterDirections,S);
         myTimers[3]->stop();
+        app_log()<<"Computed Lambda is: "<<Lambda<<endl;
 
         if (MinMethod=="rescale")
         {
@@ -412,11 +413,11 @@ bool QMCCSLinearOptimize::run()
                if (Lambda_Last>0)
                  for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda_Last;
                else if (Lambda_Last<0)
-                 for(int i=0;i<nthreads;i++) lambdas[i] = Lambda_Last-i/(nthreads-1.0)*Lambda_Last;
+                 for(int i=0;i<nthreads;i++) lambdas[i] = Lambda_Last - i/(nthreads-1.0)*Lambda_Last;
                else
-                 for(int i=0;i<nthreads;i++) lambdas[i] = (i+1.0)/(nthreads-1.0)*Lambda;
+                 for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
              }
-             else for(int i=0;i<nthreads;i++) lambdas[i] = (i+1.0)/(nthreads-1.0)*Lambda;
+             else for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
              newCost = vmcEngine->runCS(currentParameters,currentParameterDirections,lambdas);
              Lambda=lambdas[0];
              if (Lambda==0)
@@ -496,6 +497,7 @@ bool QMCCSLinearOptimize::run()
     vmcEngine->clearComponentMatrices();
 
 
+    
     finish();
     if (tooManyTries==0) return false;
     return true;
@@ -506,6 +508,7 @@ void QMCCSLinearOptimize::finish()
     MyCounter++;
     TimerManager.print(myComm);
     TimerManager.reset();
+    Lambda=0;
     app_log() << "  </log>" << endl;
     optTarget->reportParameters();
     app_log() << "</opt>" << endl;

@@ -29,7 +29,7 @@ namespace qmcplusplus
 VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                                  HamiltonianPool& hpool):
         QMCDriver(w,psi,h),  CloneManager(hpool),
-        myWarmupSteps(0),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(1e-9)
+        myWarmupSteps(0),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0)
 {
     RootName = "vmc";
     QMCType ="VMCLinearOptOMP";
@@ -219,8 +219,8 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
         CSBlock++;
 
     }//block
-//     app_log()<<" Blocks used   : "<<CSBlock<<endl;
-//     app_log()<<" Errorbars are : "<<errorbars<<endl;
+    app_log()<<" Blocks used   : "<<CSBlock<<endl;
+    app_log()<<" Errorbars are : "<<errorbars<<endl;
 //     app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
     
     //copy back the random states
@@ -232,7 +232,7 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
 bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
 {
       //Do some bracketing and line searching if we need to
-    RealType dl = std::abs(lambdas[minE]-lambdas[nE]);
+    RealType dl = std::abs(lambdas[1]-lambdas[0]);
     RealType mL= lambdas[minE];
     RealType DE = NE_i[nE] - NE_i[minE];
     
@@ -245,13 +245,15 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     {
       if(moved_left)
       {
+        app_log()<<" Bracketed minimum between CS runs"<<endl;
         moved_right=true;
         mL=lambdas[minE]-dl;
-        dl = 2.0*std::abs(lambdas[minE]-lambdas[nE])/(NumThreads-1);
+        dl = 2.0*std::abs(lambdas[0]-lambdas[1])/(NumThreads-1.0);
         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
       }
       else
       {
+        app_log()<<" Move Right"<<endl;
         moved_right=true;
         //minE is an extreme value on the line search, move over and repeat.
         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = ip*dl + mL;
@@ -261,13 +263,15 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     {
       if (moved_right)
       {
+        app_log()<<" Bracketed minimum between CS runs"<<endl;
         moved_left=true;
         mL = lambdas[minE]-dl;
-        dl = 2.0*std::abs(lambdas[minE]-lambdas[nE])/(NumThreads-1);
+        dl = 2.0*std::abs(lambdas[1]-lambdas[0])/(NumThreads-1.0);
         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
       }
       else
       {
+        app_log()<<" Move Left"<<endl;
         moved_left=true;
         //minE is an extreme value on the line search, move over and repeat.
         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = (ip-NumThreads+1.0)*dl + mL;
@@ -280,10 +284,11 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
         if (DE<errorbars) return false;
         else
         {
+          app_log()<<" Bracketed minimum, refine"<<endl;
           moved_left=moved_right=false;
 // energy difference between the points is still larger than the error bars we require
 // need to "zoom" into find minimum more precisely
-            dl = std::abs(lambdas[minE]-lambdas[nE])/(NumThreads-1);
+            dl = std::abs(lambdas[0]-lambdas[1])/(NumThreads-1.0);
             mL = std::min(lambdas[minE],lambdas[nE]);
             for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + dl*ip;
         }
@@ -304,8 +309,9 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType> curParams, vec
     for (int ip=0; ip<NumThreads; ++ip) for (int i=0;i<curParams.size();i++)  dummy[ip][i] = curParams[i] + lambdas[ip]*curDir[i+1];
     RealType errorbars;
     runCS(dummy, errorbars);
+    for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
     notConverged = bracketing(lambdas, errorbars);
-//     for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
+    
   }
 
     lambdas[0]=lambdas[minE];
