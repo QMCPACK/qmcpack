@@ -8,6 +8,8 @@ SET(QMCDRIVERS
   QMCOptimize.cpp
   QMCChooseBestParameters.cpp
   QMCLinearOptimize.cpp
+  QMCCSLinearOptimize.cpp
+  QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
   QMCCostFunctionSingle.cpp
   WaveFunctionTester.cpp
@@ -61,6 +63,7 @@ ENDIF(QMC_CUDA)
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
+      VMC/VMCLinearOptOMP.cpp
       WFMC/WFMCSingleOMP.cpp
       QMCCostFunctionOMP.cpp
      )

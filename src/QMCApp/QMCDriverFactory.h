@@ -47,6 +47,7 @@ namespace qmcplusplus {
       WFMC_RUN,
       FW_RUN,
       LINEAR_OPTIMIZE_RUN,
+      CS_LINEAR_OPTIMIZE_RUN,
       FR_RUN,
       RN_RUN,
       SET_PARAMS

@@ -35,6 +35,7 @@ namespace qmcplusplus
       ~VMCUpdateAll();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
 
     private:
       /// Copy Constructor (disabled)
@@ -59,6 +60,7 @@ namespace qmcplusplus
       ~VMCUpdateAllWithDrift();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
 
     private:
       /// Copy Constructor (disabled)
@@ -74,25 +76,27 @@ namespace qmcplusplus
   /** @ingroup QMCDrivers  ParticleByParticle
    *@brief Implements the VMC algorithm using particle-by-particle move.
    */
-  class VMCUpdateAllSamplePsi: public QMCUpdateBase
+  class VMCUpdateAllSampleRN: public QMCUpdateBase
     {
     public:
       /// Constructor.
-      VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+      VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                             QMCHamiltonian& h, RandomGenerator_t& rg);
 
-      ~VMCUpdateAllSamplePsi();
+      ~VMCUpdateAllSampleRN();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+      void setLogEpsilon(RealType eps) { logEpsilon=eps; }
 
     private:
       /// Copy Constructor (disabled)
-      VMCUpdateAllSamplePsi(const VMCUpdateAllSamplePsi& a): QMCUpdateBase(a) { }
+      VMCUpdateAllSampleRN(const VMCUpdateAllSampleRN& a): QMCUpdateBase(a) { }
       /// Copy operator (disabled).
-      VMCUpdateAllSamplePsi& operator=(const VMCUpdateAllSamplePsi&)
+      VMCUpdateAllSampleRN& operator=(const VMCUpdateAllSampleRN&)
       {
         return *this;
       }
+      RealType logEpsilon;
     };
 
 }

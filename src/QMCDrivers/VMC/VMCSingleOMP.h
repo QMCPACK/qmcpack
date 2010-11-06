@@ -36,13 +36,14 @@ namespace qmcplusplus
     private:
       ///number of warmup steps
       int myWarmupSteps;
+      ///number of RN warmup steps
+      int myRNWarmupSteps;
       ///period for walker dump
       int myPeriod4WalkerDump;
-      ///option to enable/disable drift equation for VMC
+      ///option to enable/disable drift equation or RN for VMC
       string UseDrift;
-      ///options to use Pure DMC with truncated weights.
-      string reweight;
-      int weightLength,Eindex;
+      ///Ways to set rn constant
+      RealType logoffset,logepsilon;
       ///check the run-time environments
       void resetRun();
       ///copy constructor

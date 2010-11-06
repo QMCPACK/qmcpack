@@ -34,6 +34,7 @@ namespace qmcplusplus {
     ~VMCUpdatePbyP();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
 
   private:
     vector<NewTimer*> myTimers;
@@ -68,26 +69,31 @@ namespace qmcplusplus {
     ~VMCUpdatePbyPWithDriftFast();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+//     for linear opt CS
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
  
   private:
     vector<NewTimer*> myTimers;
   };
-  
+
     /** @ingroup QMCDrivers  ParticleByParticle
    *@brief Implements the VMC algorithm using particle-by-particle move. Samples |Psi| to increase number of walkers near nodes.
    */
-  class VMCUpdatePbyPSamplePsi: public QMCUpdateBase {
+  class VMCUpdatePbyPSampleRN: public QMCUpdateBase {
   public:
     /// Constructor.
-    VMCUpdatePbyPSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+    VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    ~VMCUpdatePbyPSamplePsi();
+    ~VMCUpdatePbyPSampleRN();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+    void setLogEpsilon(RealType eps) { logEpsilon=eps; }
 
   private:
     vector<NewTimer*> myTimers;
+    RealType logEpsilon;
   };
 }
 
