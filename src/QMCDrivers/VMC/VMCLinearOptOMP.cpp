@@ -211,7 +211,7 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
 //     run until errorbars are small enough or when the energy difference is resolved to with 2 errorbars.
 //     max run is defined by nBlocks
     while ((CSBlock<4)||
-      (((errorbars>alpha_errorbars)||(NE_i[nE]-NE_i[minE])/errorbars<2.0)&&(CSBlock<nBlocks) ))
+      (((errorbars>alpha_errorbars)||(NE_i[nE]-NE_i[minE])/errorbars>2.0)&&(CSBlock<nBlocks) ))
     {
         int now_loc=CurrentStep;
         for (int step=0; step<nSteps; ++step)

@@ -40,12 +40,9 @@ public:
     int runCS(vector<vector<RealType> > bestParams, RealType& errorbars);
     bool put(xmlNodePtr cur);
 
-    inline RealType Cost()
+    inline void getDeltaCosts(std::vector<RealType>& cstVec)
     {
-//       pure energy minimization for line min
-        app_log()<<"Energy: "<<E_avg<<endl;
-        app_log()<<"Variance: "<<V_avg<<endl;
-        return E_avg;
+      for(int i=0;i<NE_i.size();i++) cstVec[i]=NE_i[i];
     }
 
     void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);

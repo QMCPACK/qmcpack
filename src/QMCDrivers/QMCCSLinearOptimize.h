@@ -128,7 +128,7 @@ private:
     void finish();
     
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
-    RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
+    RealType getSplitEigenvectors(int first, int last, Matrix<RealType> FullLeft, Matrix<RealType> FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
     void getNonLinearRange(int& first, int& last);
     bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
     RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
