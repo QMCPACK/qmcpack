@@ -239,10 +239,10 @@ private:
         return w_beta*err_E2+(1.0-w_beta)*err_E;
     }
     
-    Matrix<RealType> CorrelatedH, Norm2s;
-    vector<RealType> Norms;
-    vector<RealType> Energies;
-    vector<RealType> NE_i;
+    Matrix<long double> CorrelatedH, Norm2s;
+    vector<long double> Norms;
+    vector<long double> Energies;
+    vector<long double> NE_i;
     int CSBlock;
     int minE,nE;
     RealType logpsi2_0_0;

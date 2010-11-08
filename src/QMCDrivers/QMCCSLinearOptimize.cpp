@@ -356,7 +356,7 @@ bool QMCCSLinearOptimize::run()
                 else
                 {
                     app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-//try a larger stability base and repeat
+//try a smaller sbase (one succeeded allready)
                     stabilityBase-=0.66*stabilizerScale;
 //maintain same number of "good" stability tries
                     stability-=1;
@@ -384,26 +384,24 @@ bool QMCCSLinearOptimize::run()
         Lambda = getNonLinearRescale(currentParameterDirections,S);
         myTimers[3]->stop();
 //         app_log()<<"Computed Lambda is: "<<Lambda<<endl;
+        RealType bigVec(0);
+        for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
+        if (Lambda*bigVec>bigChange)
+        {
+            app_log()<<"  Failed Step. Largest parameter change: "<<Lambda*bigVec<<endl;
+            tooManyTries--;
+            if (tooManyTries>0)
+            {
+                stabilityBase+=stabilizerScale;
+                stability-=1;
+                app_log()<<" Re-run with larger stabilityBase"<<endl;
+                continue;
+            }
+        }
 
         if (MinMethod=="rescale")
         {
-//                   method from umrigar
-            RealType bigVec(0);
-            for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-            if (Lambda*bigVec>bigChange)
-            {
-                app_log()<<"  Failed Step. Largest parameter change: "<<Lambda*bigVec<<endl;
-                tooManyTries--;
-                if (tooManyTries>0)
-                {
-                    stabilityBase+=stabilizerScale;
-                    stability-=1;
-                    app_log()<<" Re-run with larger stabilityBase"<<endl;
-                    continue;
-                }
-            }
-            else
-                for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+            for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
 //             app_log()<<" Umrigar Lambda: "<<Lambda<<endl;
             optTarget->resetPsi(false);
             vmcEngine->clearComponentMatrices();
@@ -416,16 +414,18 @@ bool QMCCSLinearOptimize::run()
 //here is correlated sampling routine
              int nthreads = omp_get_max_threads();
              std::vector<RealType> lambdas(nthreads);
-             if (savedCSparameters.size()>1)
-             {
-               if (Lambda_Last>0)
-                 for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda_Last;
-               else if (Lambda_Last<0)
-                 for(int i=0;i<nthreads;i++) lambdas[i] = Lambda_Last - i/(nthreads-1.0)*Lambda_Last;
-               else
-                 for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
-             }
-             else for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
+//              if (savedCSparameters.size()>1)
+//              {
+//                if (Lambda_Last>0)
+//                  for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda_Last;
+//                else if (Lambda_Last<0)
+//                  for(int i=0;i<nthreads;i++) lambdas[i] = Lambda_Last - i/(nthreads-1.0)*Lambda_Last;
+//                else
+//                  for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
+//              }
+//              else 
+               
+             for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
              
              newCost = vmcEngine->runCS(currentParameters,currentParameterDirections,lambdas);
              Lambda=lambdas[0];

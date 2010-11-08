@@ -341,7 +341,9 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType> curParams, vec
     int maxI(0);
     RealType maxV(0);
     for (int i=0;i<curParams.size();i++) if (maxV<abs(curDir[i+1])){ maxI=i; maxV=abs(curDir[i+1]);};
-    if (maxV*(lambdas[1]-lambdas[0])<1e-6)
+    RealType maxPChange(maxV*(lambdas[1]-lambdas[0]));
+    app_log()<<" Parameter diffs: "<<maxPChange<<endl;
+    if (maxPChange<1e-6)
     {
       notConverged = false;
     }
@@ -385,8 +387,8 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
     }
     
   // global quantities for mpi collection
-  std::vector<RealType> gEnergies(Energies), gNorms(Norms);
-  Matrix<RealType> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
+  std::vector<long double> gEnergies(Energies), gNorms(Norms);
+  Matrix<long double> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
   myComm->allreduce(gEnergies);
   myComm->allreduce(gNorms);
   myComm->allreduce(gNorm2s);
