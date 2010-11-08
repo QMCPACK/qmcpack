@@ -304,13 +304,13 @@ bool QMCCSLinearOptimize::run()
                     if (CSF_lower)
                     {
                         linearStabilityBase+=stabilizerScale;
-                        app_log()<<"Probably will not converge: CSF Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+                        app_log()<<"Probably will not converge:\n  CSF Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
                     }
                     else
                     {
                         linearStabilityBase-=stabilizerScale;
                         stabilityBase+=stabilizerScale;
-                        app_log()<<"Probably will not converge: Jas Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+                        app_log()<<"Probably will not converge:\n  Jas Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
                     }
 //maintain same number of "good" stability tries
                     stability-=1;
@@ -373,9 +373,17 @@ bool QMCCSLinearOptimize::run()
         
         RealType Lambda_Last(Lambda);
         myTimers[3]->start();
+        if (GEVtype=="H2")
+        {
+//           the rescaling isn't right for this
+          RealType bigVec(0);
+          for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
+          Lambda=0.5*bigChange/bigVec;
+        }
+          else
         Lambda = getNonLinearRescale(currentParameterDirections,S);
         myTimers[3]->stop();
-        app_log()<<"Computed Lambda is: "<<Lambda<<endl;
+//         app_log()<<"Computed Lambda is: "<<Lambda<<endl;
 
         if (MinMethod=="rescale")
         {
@@ -418,6 +426,7 @@ bool QMCCSLinearOptimize::run()
                  for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
              }
              else for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
+             
              newCost = vmcEngine->runCS(currentParameters,currentParameterDirections,lambdas);
              Lambda=lambdas[0];
              if (Lambda==0)
@@ -455,10 +464,16 @@ bool QMCCSLinearOptimize::run()
             app_log()<<"   Choosing best"<<endl;
             RealType error;
             int bestP = vmcEngine->runCS(savedCSparameters,error);
+            if (bestP<0)
+            {
+              app_log()<<"   Error in CS cost function. Unchanged parameters."<<endl;
+              bestP=0;
+            }
             vector<RealType> cs(numParams);
             for (int i=0; i<numParams; i++) cs[i] = bestParameters[i] = savedCSparameters[bestP][i];
             savedCSparameters.clear();
             savedCSparameters.push_back(cs);
+            Lambda=Lambda_Last;
           }
         }
         else if (newCost < lastCost)
@@ -753,25 +768,30 @@ QMCCSLinearOptimize::RealType QMCCSLinearOptimize::getNonLinearRescale(std::vect
     for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
 
     D = std::sqrt(std::abs(D));
-
-
-    vector<RealType> N_i(last-first,0);
-    vector<RealType> M_i(last-first,0);
     RealType xi(0.5);
-    for (int i=0; i<last-first; i++)
-    {
-        M_i[i] = xi*D +(1-xi);
-        RealType tsumN(0);
-        for (int j=first; j<last; j++)
-        {
-            tsumN += S(i+first+1,j+1)*dP[j+1];
-        }
-        N_i[i] += (1-xi)*tsumN;
-        N_i[i] *= -1.0/M_i[i];
-    }
+//for the jchem126 paper
+//     vector<RealType> N_i(last-first,0);
+//     vector<RealType> M_i(last-first,0);
+//     for (int i=0; i<last-first; i++)
+//     {
+//         M_i[i] = xi*D +(1-xi);
+//         RealType tsumN(0);
+//         for (int j=first; j<last; j++)
+//         {
+//             tsumN += S(i+first+1,j+1)*dP[j+1];
+//         }
+//         N_i[i] += (1-xi)*tsumN;
+//         N_i[i] *= -1.0/M_i[i];
+//     }
 
+//from the prl98
+    D = 1.0/((1.0-xi) + xi*D);
+    vector<RealType> N_i(dP.size()-1,0);
+    for (int j=0; j<dP.size()-1; j++) for (int i=first; i<last; i++) N_i[j]+=S(j+1,i+1)*dP[i+1];
+    for (int j=0; j<dP.size()-1; j++) N_i[j] *= D;
+    
     RealType rescale(1);
-    for (int j=0; j<last-first; j++) rescale -= N_i[j]*dP[j+first+1];
+    for (int j=0; j<dP.size()-1; j++) rescale += N_i[j]*dP[j+1];
     rescale = 1.0/rescale;
     return rescale;
 }

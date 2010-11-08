@@ -20,6 +20,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Optimize/VarList.h"
+#include "Numerics/LinearFit.h"
 //#define ENABLE_VMC_OMP_MASTER
 
 namespace qmcplusplus
@@ -206,7 +207,11 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
     errorbars=alpha_errorbars+1;
     CurrentStep=0;
     CSBlock=0;
-    while ((CSBlock<4)||((errorbars>alpha_errorbars)&&(CSBlock<nBlocks)))
+//     run long enough to get accurate errorbars ~4 blocks.
+//     run until errorbars are small enough or when the energy difference is resolved to with 2 errorbars.
+//     max run is defined by nBlocks
+    while ((CSBlock<4)||
+      (((errorbars>alpha_errorbars)||(NE_i[nE]-NE_i[minE])/errorbars<2.0)&&(CSBlock<nBlocks) ))
     {
         int now_loc=CurrentStep;
         for (int step=0; step<nSteps; ++step)
@@ -226,7 +231,8 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
     //copy back the random states
     for (int ip=0; ip<NumThreads; ++ip)
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
-    return minE;
+    if (std::abs(NE_i[minE])<1e6)  return minE;
+    else return -1;
 }
 
 bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
@@ -235,6 +241,8 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     RealType dl = std::abs(lambdas[1]-lambdas[0]);
     RealType mL= lambdas[minE];
     RealType DE = NE_i[nE] - NE_i[minE];
+    
+    
     
     if (moved_left&&moved_right&&(DE<errorbars))
     {
@@ -281,7 +289,22 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     {
 //         minimum is bracketed
 // if energy difference is smaller than the errorbars we computed then we are done
-        if (DE<errorbars) return false;
+        if (DE<errorbars)
+        {
+          int nms=3;
+          vector<RealType>  Y(nms), Coefs(3);
+          Matrix<RealType> X(nms,3);
+          for (int i=0; i<nms; i++) X(i,0)=1.0;
+          for (int i=0; i<nms; i++) X(i,1)=lambdas[i+minE-1];
+          for (int i=0; i<nms; i++) X(i,2)=X(i,1)*X(i,1);
+          for (int i=0; i<nms; i++) Y[i]=NE_i[i+minE-1];
+          LinearFit(Y,X,Coefs);
+          
+          RealType quadraticMinimum(-1.0*Coefs[1]/Coefs[2]);
+          lambdas[minE]=quadraticMinimum;
+          
+          return false;
+        }
         else
         {
           app_log()<<" Bracketed minimum, refine"<<endl;
@@ -307,11 +330,23 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType> curParams, vec
   {
     vector<vector<RealType> > dummy(NumThreads,std::vector<RealType>(curParams.size()));
     for (int ip=0; ip<NumThreads; ++ip) for (int i=0;i<curParams.size();i++)  dummy[ip][i] = curParams[i] + lambdas[ip]*curDir[i+1];
-    RealType errorbars;
-    runCS(dummy, errorbars);
-    for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
-    notConverged = bracketing(lambdas, errorbars);
     
+    RealType errorbars;
+    int bombed = runCS(dummy, errorbars);
+    if (bombed<0){
+      lambdas[0]=0;
+      return 0;
+    }
+    for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
+    int maxI(0);
+    RealType maxV(0);
+    for (int i=0;i<curParams.size();i++) if (maxV<abs(curDir[i+1])){ maxI=i; maxV=abs(curDir[i+1]);};
+    if (maxV*(lambdas[1]-lambdas[0])<1e-6)
+    {
+      notConverged = false;
+    }
+    else
+      notConverged = bracketing(lambdas, errorbars); 
   }
 
     lambdas[0]=lambdas[minE];
