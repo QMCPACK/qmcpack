@@ -203,8 +203,8 @@ bool QMCCSLinearOptimize::run()
         Left=(1.0-w_beta)*Ham + w_beta*Var;
     }
     
-    bool csf(false);
-    std::vector<RealType> bareEV(N), localEV(N);
+//     bool csf(false);
+//     std::vector<RealType> bareEV(N), localEV(N);
 //     RealType barelowest = getSplitEigenvectors(first, last, Left, Right, bareEV, localEV, "print", csf);
 //     if (csf) linearStabilityBase = std::log(barelowest);
 //     app_log()<<" lowest from bare ev problem:"<< barelowest <<endl;
@@ -358,35 +358,35 @@ bool QMCCSLinearOptimize::run()
                 else for (int i=0; i<first; i++) LeftT(i+1,i+1) += XS_lin;
             }
 
-            if (stability==0)
-            {
-//  Only need to do this the first time we step into the routine
-                bool CSF_lower(true);
-                lowestEV=getSplitEigenvectors(first,last,LeftT,RightT,currentParameterDirections,GEVSplitParameters,GEVSplit,CSF_lower);
-                if (tooLow(safe,lowestEV))
-                {
-                  tooManyTries--;
-                  if (tooManyTries>0)
-                  {
-                    app_log()<<"Error in split EV."<<endl;
-                    for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
-                    finish();
-                  }
-                    if (CSF_lower)
-                    {
-                        linearStabilityBase+=stabilizerScale;
-                        app_log()<<"Probably will not converge:\n  CSF Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
-                    }
-                    else
-                    {
-                        stabilityBase+=stabilizerScale;
-                        app_log()<<"Probably will not converge:\n  Jas Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
-                    }
-//maintain same number of "good" stability tries
-                    stability-=1;
-                    continue;
-                }
-            }
+//             if (stability==0)
+//             {
+// //  Only need to do this the first time we step into the routine
+//                 bool CSF_lower(true);
+//                 lowestEV=getSplitEigenvectors(first,last,LeftT,RightT,currentParameterDirections,GEVSplitParameters,GEVSplit,CSF_lower);
+//                 if (tooLow(safe,lowestEV))
+//                 {
+//                   tooManyTries--;
+//                   if (tooManyTries>0)
+//                   {
+//                     app_log()<<"Error in split EV."<<endl;
+//                     for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
+//                     finish();
+//                   }
+//                     if (CSF_lower)
+//                     {
+//                         linearStabilityBase+=stabilizerScale;
+//                         app_log()<<"Probably will not converge:\n  CSF Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
+//                     }
+//                     else
+//                     {
+//                         stabilityBase+=stabilizerScale;
+//                         app_log()<<"Probably will not converge:\n  Jas Ev="<<lowestEV<<" LeftT(0,0)="<<safe<<" exp0: "<<stabilityBase<<" exp1: "<<linearStabilityBase<<endl;
+//                     }
+// //maintain same number of "good" stability tries
+//                     stability-=1;
+//                     continue;
+//                 }
+//             }
 
             myTimers[2]->start();
             lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
