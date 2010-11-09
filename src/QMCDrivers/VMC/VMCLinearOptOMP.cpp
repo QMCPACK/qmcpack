@@ -387,8 +387,8 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
     }
     
   // global quantities for mpi collection
-  std::vector<long double> gEnergies(Energies), gNorms(Norms);
-  Matrix<long double> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
+  std::vector<RealType> gEnergies(Energies), gNorms(Norms);
+  Matrix<RealType> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
   myComm->allreduce(gEnergies);
   myComm->allreduce(gNorms);
   myComm->allreduce(gNorm2s);
