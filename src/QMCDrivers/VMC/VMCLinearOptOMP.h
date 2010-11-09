@@ -33,7 +33,7 @@ public:
     VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                     HamiltonianPool& hpool);
     bool run() {
-        run(true);
+        return run(true);
     }
     bool run(bool needMatrix);
     RealType runCS(vector<RealType> curParams, vector<RealType> curDir, vector<RealType>& lambdas);
@@ -69,6 +69,7 @@ public:
         sE2=0;
         sE4=0;
         sW=0;
+        ncalls=0;
     }
 
 
@@ -102,7 +103,7 @@ private:
     ///These are the values we collect to build the Matrices GLOBAL
     Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
     std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
-    RealType sE,sE2,sE4,sW;
+    RealType sE,sE2,sE4,sW,ncalls;
     ///Temp matrices
     Matrix<RealType> DerivRecords, HDerivRecords;
 
@@ -132,7 +133,7 @@ private:
         ///These are the values we collect to build the Matrices LOCAL
         Matrix<RealType> lHDiHDj(n,n), lDiHDj(n,n), lDiHDjE(n,n), lDiDj(n,n), lDiDjE(n,n), lDiDjE2(n,n);
         std::vector<RealType> lHDi(n), lHDiE(n), lDi(n), lDiE(n), lDiE2(n);
-        RealType lsE,lsE2,lsE4,lsW;
+        RealType lsE(0),lsE2(0),lsE4(0),lsW(0);
 
         for (int ip=0; ip<NumThreads; ip++)
         {
@@ -228,12 +229,15 @@ private:
         E_avg = nrm*sE;
         V_avg = nrm*sE2-E_avg*E_avg;
         
-        RealType err_E(std::sqrt(V_avg*nrm));
+        ncalls++;
+        RealType err_E(V_avg/ncalls);
         RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
-        err_E2 *= nrm;
-        err_E2 = std::sqrt(err_E2);
+        err_E2 /= ncalls;
+        err_E = ((err_E<0.0)?(1.0):(std::sqrt(err_E)));
+        err_E2 = ((err_E2<0.0)?(1.0):(std::sqrt(err_E2)));
 
         return w_beta*err_E2+(1.0-w_beta)*err_E;
+        //return err_E;
     }
     
     Matrix<RealType> CorrelatedH, Norm2s;

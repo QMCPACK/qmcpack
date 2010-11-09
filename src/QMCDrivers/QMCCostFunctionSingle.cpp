@@ -22,6 +22,9 @@
 #include "Utilities/Timer.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
+#include <Platforms/sysutil.h>
+#include "Utilities/PooledData.h"
+
 
 namespace qmcplusplus
   {
@@ -60,8 +63,13 @@ namespace qmcplusplus
         W.update();
 
 // buffer for MultiSlaterDet data
-        Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-        Return_t logpsi=Psi.evaluateDeltaLog(W,tbuffer);
+        Return_t logpsi;
+        if(usebuffer=="yes") {
+          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
+          logpsi=Psi.evaluateDeltaLog(W,tbuffer);
+        } else {
+          logpsi=Psi.evaluateDeltaLog(W);
+        }
         //Return_t logpsi=Psi.evaluateDeltaLog(W);
         W.G += *dLogPsi[iw];
         W.L += *d2LogPsi[iw];
@@ -196,6 +204,9 @@ namespace qmcplusplus
     int numLocWalkers=W.getActiveWalkers();
     Records.resize(numLocWalkers,6);
 
+    if(usebuffer == "yes" ) 
+      app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" <<endl;   
+
     TempHDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
     TempDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
     
@@ -209,7 +220,7 @@ namespace qmcplusplus
 //       }
       H_KE.addObservables(W);
     }
-    
+
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin());
     MCWalkerConfiguration::iterator it_end(W.end());
@@ -222,12 +233,14 @@ namespace qmcplusplus
         W.R=thisWalker.R;
         W.update();
 // buffer for MultiSlaterDet data
-        Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-        Psi.registerDataForDerivatives(W,tbuffer); 
-        //thisWalker.DataSetForDerivatives=tbuffer;
         Return_t*  saved=Records[iw];
-        Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
-        //Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw]);
+        if(usebuffer=="yes") {
+          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
+          Psi.registerDataForDerivatives(W,tbuffer); 
+          Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw],tbuffer);
+        } else {
+          Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw], *d2LogPsi[iw]);
+        }
         Return_t e=H.evaluate(W);
         e2sum += e*e;
         Etarget += saved[ENERGY_TOT] = e;

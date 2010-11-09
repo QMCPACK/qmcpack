@@ -451,6 +451,7 @@ if(EINSPLINE_FOUND)
   ELSE(HAVE_EINSPLINE_EXT)
     SUBDIRS(src/einspline)
   ENDIF(HAVE_EINSPLINE_EXT)
+  MESSAGE(STATUS "EINSPLINE_INCLUDE_DIR="${EINSPLINE_INCLUDE_DIR})
 endif()
 
 #######################################################################

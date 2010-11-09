@@ -269,6 +269,9 @@ namespace qmcplusplus
       //*/
       //vector<vector<vector<Return_t> >* > DerivRecords;
       //vector<vector<vector<Return_t> >* > HDerivRecords;
+      // string that defines whether buffers are used during correlated sampling
+      // to store temporary object
+      string usebuffer;
 
 
       typedef ParticleSet::ParticleGradient_t ParticleGradient_t;

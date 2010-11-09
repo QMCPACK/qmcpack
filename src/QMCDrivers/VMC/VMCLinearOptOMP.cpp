@@ -91,7 +91,8 @@ bool VMCLinearOptOMP::run(bool needMatrix)
     RealType errorbars = target_errorbars+1;
     CurrentStep=0;
     int CurrentBlock=0;
-    while ((errorbars>target_errorbars)&&(CurrentBlock<nBlocks))
+    int minBlocks=100;
+    while (((errorbars>target_errorbars)&&(CurrentBlock<nBlocks))||(CurrentBlock<minBlocks))
     {
 #pragma omp parallel for
         for (int ip=0; ip<NumThreads; ++ip)
@@ -410,7 +411,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 //return the error in the energy differences between lowest two
   RealType rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE])) - (NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
   
-  rval = std::sqrt(rval/(CSBlock+1));
+  rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1))));
   return rval;
 }
 

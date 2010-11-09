@@ -292,9 +292,12 @@ namespace qmcplusplus
 //           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
 // buffer for MultiSlaterDet data 
-          psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
-          //thisWalker.DataSetForDerivatives=tbuffer;
-          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
+          if(usebuffer=="yes") {
+            psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
+            psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
+          } else {
+            psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]); 
+          }
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
@@ -409,10 +412,14 @@ namespace qmcplusplus
           wRef.update();
 
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-          Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
-
           // buffer for MultiSlaterDet data
-          Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+          Return_t logpsi;
+          if(usebuffer=="yes") { 
+            Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
+            logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+          }  else  {
+            logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+          }
           Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
           wRef.G += *dLogPsi[iwg];
           wRef.L += *d2LogPsi[iwg];

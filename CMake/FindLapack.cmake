@@ -28,9 +28,9 @@ set(MKL_FOUND FALSE)
 
       if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
         SET(MKLPATH $ENV{MKL_HOME}/lib/em64t)
-        if(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
+        if(${MKL_VERSION} MATCHES "10\\.2\\.[0-4]")
           set(mkl_libs "mkl_intel_lp64;mkl_sequential;mkl_core;mkl_solver_lp64_sequential")
-        endif(${MKL_VERSION} MATCHES "10\\.2\\.[0-2]")
+        endif(${MKL_VERSION} MATCHES "10\\.2\\.[0-4]")
       endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
       if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
