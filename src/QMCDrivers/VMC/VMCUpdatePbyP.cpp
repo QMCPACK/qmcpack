@@ -122,214 +122,85 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
     }
   myTimers[0]->stop();
 }
-
 void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
     , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
-    {
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng)
+{
   int NumThreads(pclone.size());
-  myTimers[0]->start();
-  myTimers[1]->start();
-  bool moved = false;
-  
-  std::vector<RealType> psi2_i_now(NumThreads);
-  RealType psi2_now=0;
+
+  //this can be modified for cache etc
+  RealType psi2_i_new[128];
   for (int ip=0; ip<NumThreads; ++ip)
+    psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
+
+#pragma omp parallel 
   {
-    psi2_i_now[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
-    psi2_now += std::exp(psi2_i_now[ip]-psi2_i_now[0]);
-  }
-  
-  for (int iter=0; iter<nSubSteps; ++iter)
+    RealType psi2_new=1.0;
+    for (int ip=1; ip<NumThreads; ++ip)
+      psi2_new += std::exp(psi2_i_new[ip]-psi2_i_new[0]);
+
+    int nptcl=W.getTotalNum();
+    int ip=omp_get_thread_num();
+    RandomGenerator_t& rng_loc(*rng[ip]);
+
+    //copy the new to now
+    RealType psi2_now=psi2_new;
+    RealType psi2_i_now=psi2_i_new[ip];
+    RealType psi2_0_now=psi2_i_new[0];
+      
+    for (int iter=0; iter<nSubSteps; ++iter)
     {
       //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandomWithEngine(deltaR,RandomGen);
-      moved = false;
-      
-      for (int iat=0; iat<W.getTotalNum(); ++iat)
+      makeGaussRandomWithEngine(deltaR,rng_loc);
+
+      for (int iat=0; iat<nptcl; ++iat)
       {
+        PosType dr=m_sqrttau*deltaR[iat];
+        
+        bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
+        //everyone should skip this; could be a problem with compilers
+        if (!movePtcl) continue;
 
-        PosType dr;
-        dr += m_sqrttau*deltaR[iat];
-        
-        
-        for (int ip=1; ip<NumThreads; ++ip)
-          wclone[ip]->makeMoveAndCheck(iat,dr);
-        
-            
-        if (!wclone[0]->makeMoveAndCheck(iat,dr))
-          {
-            ++nReject;
-            continue;
-          }
-        
-        RealType psi2_new(0);
-        RealType psi_0_ratio(0);
-        std::vector<RealType> psi2_i_new(NumThreads);
-// #pragma omp parallel for  
-        for (int ip=0; ip<NumThreads; ++ip)
+        RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
+#pragma omp barrier
+#pragma omp critical
+        psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now;
+#pragma omp barrier
+        psi2_new=1.0;
+        for(int jp=1; jp<NumThreads; ++jp)
+          psi2_new+=std::exp(psi2_i_new[jp]-psi2_i_new[0]);
+        RealType prob = std::exp(psi2_i_new[0]-psi2_0_now)*(psi2_new/psi2_now);  
+        if (prob > rng_loc())
         {
-          RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
-          if (ip==0) psi_0_ratio= ratio*ratio;
-          psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now[ip];
-        }
-        for (int ip=0; ip<NumThreads; ++ip) psi2_new += std::exp(psi2_i_new[ip]-psi2_i_new[0]);
-        
-        RealType prob = psi_0_ratio*(psi2_new/psi2_now);
+          wclone[ip]->acceptMove(iat);
+          pclone[ip]->acceptMove(*wclone[ip],iat);
 
-        //zero is always rejected
-        if (prob < numeric_limits<RealType>::epsilon())
-          {
-            ++nReject;
-            for (int ip=0; ip<NumThreads; ++ip)
-            {
-              wclone[ip]->rejectMove(iat);
-              pclone[ip]->rejectMove(iat);
-            }
-            continue;
-          }
-          
-        if ( RandomGen() < prob)
-          {
-            moved = true;
-            ++nAccept;
-            for (int ip=0; ip<NumThreads; ++ip)
-            {
-              wclone[ip]->acceptMove(iat);
-              pclone[ip]->acceptMove(*wclone[ip],iat);
-              psi2_i_now[ip]=psi2_i_new[ip];
-            }
-            psi2_now = psi2_new;
-          } 
+          psi2_i_now=psi2_i_new[ip];
+          psi2_0_now=psi2_i_new[0];
+          psi2_now=psi2_new;
+        }
         else
-          {
-            ++nReject;
-            for (int ip=0; ip<NumThreads; ++ip)
-            {
-              wclone[ip]->rejectMove(iat);
-              pclone[ip]->rejectMove(iat);
-            }
-          }
-        }
-        //for subSteps must update walkers
-        for (int ip=0; ip<NumThreads; ++ip) wclone[ip]->saveWalker(*W[ip]);
-      }
-      
-    myTimers[1]->stop();
-    
-// #pragma omp parallel for  
-    for (int ip=0; ip<NumThreads; ++ip)
-    {
-      Walker_t& thisWalker(*W[ip]);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-      if (moved)
         {
-          RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
-          wclone[ip]->saveWalker(*W[ip]);
-          RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
-//           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
-          thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
-          hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
-          hclone[ip]->saveProperty(thisWalker.getPropertyBase());
+          wclone[ip]->rejectMove(iat);
+          pclone[ip]->rejectMove(iat);
         }
-      else
-        {
-          ++nAllRejected;
-          hclone[ip]->rejectedMove(*wclone[ip],thisWalker);
-        }
+      }//loop over iat
     }
 
-  myTimers[0]->stop();
+    Walker_t& thisWalker(*W[ip]);
+    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+    RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
+    wclone[ip]->saveWalker(*W[ip]);
+    RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+    //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
+    thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
+    hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
+    hclone[ip]->saveProperty(thisWalker.getPropertyBase());
+  }
+
+    myTimers[0]->stop();
 }
-
-// {
-//   int NumThreads(pclone.size());
-// 
-//   //this can be modified for cache etc
-//   long double psi2_i_new[NumThreads];
-//   long double psi2_new=0;
-//   for (int ip=0; ip<NumThreads; ++ip)
-//   {
-//     psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
-//     psi2_new += expl(psi2_i_new[ip]-psi2_i_new[0]);
-//   }
-// 
-//   long double psi_0_ratio(0);
-// #pragma omp parallel  
-// #pragma threadprivate(psi2_new)
-//   {
-// 
-//     int nptcl=W.getTotalNum();
-//     int ip=omp_get_thread_num();
-// 
-//     //copy the new to now
-//     long double psi2_now=psi2_new;
-//     long double psi2_i_now=psi2_i_new[ip];
-// 
-//     for (int iter=0; iter<nSubSteps; ++iter)
-//     {
-//       //create a 3N-Dimensional Gaussian with variance=1
-//       makeGaussRandomWithEngine(deltaR,*rng[ip]);
-// 
-//       for (int iat=0; iat<nptcl; ++iat)
-//       {
-//         PosType dr=m_sqrttau*deltaR[iat];
-// 
-// //         //everyone should skip this; could be a problem with compilers
-//         if (!wclone[ip]->makeMoveAndCheck(iat,dr)) continue;
-// //         wclone[ip]->makeMoveAndCheck(iat,dr);
-// 
-//         RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
-// 
-//         //assign new psi2
-//         psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now;
-// 
-// #pragma omp barrier
-// #pragma omp master
-//         psi_0_ratio=ratio*ratio;
-// #pragma omp flush
-// 
-//         psi2_new=1.0;
-//         for(int jp=1; jp<NumThreads; ++jp)
-//           psi2_new+= expl(psi2_i_new[jp]-psi2_i_new[0]);
-//         long double prob = psi_0_ratio*(psi2_new/psi2_now);
-// 
-//         if (prob>(*rng[ip])())
-//         {
-//           wclone[ip]->acceptMove(iat);
-//           pclone[ip]->acceptMove(*wclone[ip],iat);
-// 
-//           psi2_i_now=psi2_i_new[ip];
-//           psi2_now=psi2_new;
-//         }
-//         else
-//         {
-//           wclone[ip]->rejectMove(iat);
-//           pclone[ip]->rejectMove(iat);
-//         }
-//       }//loop over iat
-// 
-//       //for subSteps must update walkers
-//       wclone[ip]->saveWalker(*W[ip]);
-//     }
-// 
-//     Walker_t& thisWalker(*W[ip]);
-//     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-//     RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
-//     wclone[ip]->saveWalker(*W[ip]);
-//     thisWalker.Weight = psi2_i_now/psi2_now;
-//     RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
-//     //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
-//     thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
-//     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
-//     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
-//   }
-// 
-//     myTimers[0]->stop();
-// }
-
-
-
 
 /// Constructor.
 VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,

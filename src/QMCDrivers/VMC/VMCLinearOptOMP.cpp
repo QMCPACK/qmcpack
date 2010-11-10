@@ -152,12 +152,12 @@ void VMCLinearOptOMP::initCS()
   
   //resetting containersx
     CorrelatedH.resize(NumThreads,NumThreads);
-    Norms.resize(NumThreads+1); 
     Norm2s.resize(NumThreads+1,NumThreads+1);
+    Norms.resize(NumThreads+1); 
     Energies.resize(NumThreads);
+    NE_i.resize(NumThreads);
     CorrelatedH=0;
     Norm2s=0;
-    NE_i.resize(NumThreads);
     for (int ip=0; ip<NumThreads+1; ++ip) Norms[ip]=0;
     for (int ip=0; ip<NumThreads; ++ip) Energies[ip]=0;
     for (int ip=0; ip<NumThreads; ++ip) NE_i[ip]=0;
@@ -208,10 +208,10 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> >& bestParams, RealType& erro
     }
       // save the state of current generators
     vector<RandomGenerator_t> RngSaved(NumThreads);
-    for(int ip=0; ip<NumThreads; ++ip)
+    for(int ip=0; ip<NumThreads; ++ip) RngSaved[ip]=*Rng[ip];
+    for(int ip=1; ip<NumThreads; ++ip)
     {
-      RngSaved[ip]=*Rng[ip];
-//       synchronize the random number generator with the node
+//    synchronize the random number generator with the node
       *Rng[ip]=*Rng[0];
       hClones[ip]->setRandomGenerator(Rng[ip]);
     }
@@ -220,11 +220,12 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> >& bestParams, RealType& erro
     errorbars=alpha_errorbars+1;
     CurrentStep=0;
     CSBlock=0;
+    int minCSBlocks(100);
 //     run long enough to get accurate errorbars ~4 blocks.
-//     run until errorbars are small enough or when the energy difference is resolved to with 2 errorbars.
+//     run until errorbars are small enough or when the energy difference is greater than 3 errorbars.
 //     max run is defined by nBlocks
-    while ((CSBlock<100)||
-      (((errorbars>alpha_errorbars)/*&&((NE_i[nE]-NE_i[minE])/2.0>errorbars)*/)&&(CSBlock<nBlocks) ))
+    while ((CSBlock<minCSBlocks)||
+      (((errorbars>alpha_errorbars)&&((NE_i[nE]-NE_i[minE])/3.0>errorbars))&&(CSBlock<nBlocks) ))
     {
         for (int step=0; step<nSteps; ++step)
           Movers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng);
