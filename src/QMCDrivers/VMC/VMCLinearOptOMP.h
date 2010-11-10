@@ -36,8 +36,8 @@ public:
         return run(true);
     }
     bool run(bool needMatrix);
-    RealType runCS(vector<RealType> curParams, vector<RealType> curDir, vector<RealType>& lambdas);
-    int runCS(vector<vector<RealType> > bestParams, RealType& errorbars);
+    RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
+    int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
     bool put(xmlNodePtr cur);
 
     inline void getDeltaCosts(std::vector<RealType>& cstVec)
@@ -47,7 +47,7 @@ public:
 
     void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
 
-    void clearComponentMatrices()
+    inline void clearComponentMatrices()
     {
         HDiHDj=0;
         DiHDj=0;
@@ -69,7 +69,6 @@ public:
         sE2=0;
         sE4=0;
         sW=0;
-        ncalls=0;
     }
 
 
@@ -103,7 +102,7 @@ private:
     ///These are the values we collect to build the Matrices GLOBAL
     Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
     std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
-    RealType sE,sE2,sE4,sW,ncalls;
+    RealType sE,sE2,sE4,sW;
     ///Temp matrices
     Matrix<RealType> DerivRecords, HDerivRecords;
 
@@ -127,118 +126,7 @@ private:
         HDerivRecords.resize(NumThreads,n);
     }
 
-    RealType fillComponentMatrices(bool needMatrix)
-    {
-        int n(NumOptimizables);
-        ///These are the values we collect to build the Matrices LOCAL
-        Matrix<RealType> lHDiHDj(n,n), lDiHDj(n,n), lDiHDjE(n,n), lDiDj(n,n), lDiDjE(n,n), lDiDjE2(n,n);
-        std::vector<RealType> lHDi(n), lHDiE(n), lDi(n), lDiE(n), lDiE2(n);
-        RealType lsE(0),lsE2(0),lsE4(0),lsW(0);
-
-        for (int ip=0; ip<NumThreads; ip++)
-        {
-            MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-            RealType E_L = (*wit)->getPropertyBase()[LOCALENERGY];
-            RealType E_L2= E_L*E_L;
-            RealType wW  = (*wit)->Weight;
-            lsE +=E_L*wW;
-            lsE2+=E_L2*wW;
-            lsE4+=E_L2*E_L2*wW;
-            lsW +=wW;
-        }
-
-        if (needMatrix)
-        {
-            for (int ip=0; ip<NumThreads; ip++)
-            {
-                MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-                RealType E_L = (*wit)->getPropertyBase()[LOCALENERGY];
-                RealType E_L2= E_L*E_L;
-                RealType wW  = (*wit)->Weight;
-                for (int i=0; i<NumOptimizables; i++)
-                {
-                    RealType di  = DerivRecords(ip,i);
-                    RealType hdi = HDerivRecords(ip,i);
-                    //             vectors
-                    lHDiE[i]+= wW*E_L* hdi;
-                    lHDi[i] += wW*     hdi;
-                    lDiE2[i]+= wW*E_L2*di;
-                    lDiE[i] += wW*E_L* di;
-                    lDi[i]  += wW*     di;
-
-                    for (int j=0; j<NumOptimizables; j++)
-                    {
-                        RealType dj  = DerivRecords(ip,j);
-                        RealType hdj = HDerivRecords(ip,j);
-
-                        lHDiHDj(i,j) += wW*    hdi*hdj;
-                        lDiHDjE(i,j) += wW* E_L*di*hdj;
-                        lDiHDj(i,j)  += wW*     di*hdj;
-                        lDiDjE2(i,j) += wW*E_L2*di*dj;
-                        lDiDjE(i,j)  += wW* E_L*di*dj;
-                        lDiDj(i,j)   += wW*     di*dj;
-                    }
-                }
-            }
-        }
-
-        //Lazy. Pack these for better performance.
-        myComm->allreduce(lsE);
-        myComm->allreduce(lsE2);
-        myComm->allreduce(lsE4);
-        myComm->allreduce(lsW);
-        if (needMatrix)
-        {
-            myComm->allreduce(lHDiE);
-            myComm->allreduce(lHDi);
-            myComm->allreduce(lDiE2);
-            myComm->allreduce(lDiE);
-            myComm->allreduce(lDi);
-            myComm->allreduce(lHDiHDj);
-            myComm->allreduce(lDiHDjE);
-            myComm->allreduce(lDiHDj);
-            myComm->allreduce(lDiDjE2);
-            myComm->allreduce(lDiDjE);
-            myComm->allreduce(lDiDj);
-        }
-        //add locals to globals
-        sE +=lsE;
-        sE2+=lsE2;
-        sE4+=lsE4;
-        sW +=lsW;
-        if (needMatrix)
-        {
-            for (int j=0; j<NumOptimizables; j++)
-            {
-                HDiE[j]+=lHDiE[j];
-                HDi[j] +=lHDi[j] ;
-                DiE2[j]+=lDiE2[j];
-                DiE[j] +=lDiE[j] ;
-                Di[j]  +=lDi[j]  ;
-            }
-
-            HDiHDj += lHDiHDj;
-            DiHDjE += lDiHDjE;
-            DiHDj  += lDiHDj ;
-            DiDjE2 += lDiDjE2;
-            DiDjE  += lDiDjE ;
-            DiDj   += lDiDj  ;
-        }
-
-        RealType nrm = 1.0/sW;
-        E_avg = nrm*sE;
-        V_avg = nrm*sE2-E_avg*E_avg;
-        
-        ncalls++;
-        RealType err_E(V_avg/ncalls);
-        RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
-        err_E2 /= ncalls;
-        err_E = ((err_E<0.0)?(1.0):(std::sqrt(err_E)));
-        err_E2 = ((err_E2<0.0)?(1.0):(std::sqrt(err_E2)));
-
-        return w_beta*err_E2+(1.0-w_beta)*err_E;
-        //return err_E;
-    }
+    RealType fillComponentMatrices(bool needMatrix);
     
     Matrix<RealType> CorrelatedH, Norm2s;
     vector<RealType> Norms;

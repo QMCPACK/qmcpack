@@ -410,36 +410,36 @@ bool QMCCSLinearOptimize::run()
             myTimers[2]->stop();
         }
 
-        if (tooLow(safe,lowestEV))
-        {
-            tooManyTries--;
-            if (tooManyTries>0)
-            {
-                if (stability==0)
-                {
-                    app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-//try a larger stability base and repeat
-                    stabilityBase+=stabilizerScale;
-//maintain same number of "good" stability tries
-                    stability-=1;
-                }
-                else
-                {
-                    app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-//try a smaller sbase (one succeeded allready)
-                    stabilityBase-=0.66*stabilizerScale;
-//maintain same number of "good" stability tries
-                    stability-=1;
-                }
-            }
-            else
-            {
-                app_log()<<"Too many tries: Moving on to next step"<<endl;
-                stability=nstabilizers;
-            }
-
-            continue;
-        }
+//         if (tooLow(safe,lowestEV))
+//         {
+//             tooManyTries--;
+//             if (tooManyTries>0)
+//             {
+//                 if (stability==0)
+//                 {
+//                     app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+// //try a larger stability base and repeat
+//                     stabilityBase+=stabilizerScale;
+// //maintain same number of "good" stability tries
+//                     stability-=1;
+//                 }
+//                 else
+//                 {
+//                     app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+// //try a smaller sbase (one succeeded allready)
+//                     stabilityBase-=0.66*stabilizerScale;
+// //maintain same number of "good" stability tries
+//                     stability-=1;
+//                 }
+//             }
+//             else
+//             {
+//                 app_log()<<"Too many tries: Moving on to next step"<<endl;
+//                 stability=nstabilizers;
+//             }
+// 
+//             continue;
+//         }
         
 //         RealType Lambda_Last(Lambda);
         myTimers[3]->start();
@@ -493,8 +493,12 @@ bool QMCCSLinearOptimize::run()
 //                  for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
 //              }
 //              else 
-               
-             for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*Lambda;
+//              if (Lambda<0)
+//                for(int i=0;i<nthreads;i++) lambdas[i] = 0.5*Lambda - 0.5*i/(nthreads-1.0)*Lambda;
+//              else
+             Lambda = quadstep/bigVec;
+             for(int i=0;i<nthreads;i++) lambdas[i] = 0.5*i/(nthreads-1.0)*Lambda;
+//              for(int i=0;i<nthreads;i++) lambdas[i] = i/(nthreads-1.0)*1.0;
              
              vmcEngine->runCS(currentParameters,currentParameterDirections,lambdas);
              Lambda=lambdas[0];

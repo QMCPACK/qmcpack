@@ -146,7 +146,7 @@ namespace qmcplusplus
       virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
       
       virtual void setLogEpsilon(RealType eps) {};
-      virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone){};
+      virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng){};
 
     protected:
       ///update particle-by-particle

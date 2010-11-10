@@ -123,9 +123,10 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
   myTimers[0]->stop();
 }
 
-
-void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone)
-{
+void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
+    {
   int NumThreads(pclone.size());
   myTimers[0]->start();
   myTimers[1]->start();
@@ -240,6 +241,93 @@ void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<
 
   myTimers[0]->stop();
 }
+
+// {
+//   int NumThreads(pclone.size());
+// 
+//   //this can be modified for cache etc
+//   long double psi2_i_new[NumThreads];
+//   long double psi2_new=0;
+//   for (int ip=0; ip<NumThreads; ++ip)
+//   {
+//     psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
+//     psi2_new += expl(psi2_i_new[ip]-psi2_i_new[0]);
+//   }
+// 
+//   long double psi_0_ratio(0);
+// #pragma omp parallel  
+// #pragma threadprivate(psi2_new)
+//   {
+// 
+//     int nptcl=W.getTotalNum();
+//     int ip=omp_get_thread_num();
+// 
+//     //copy the new to now
+//     long double psi2_now=psi2_new;
+//     long double psi2_i_now=psi2_i_new[ip];
+// 
+//     for (int iter=0; iter<nSubSteps; ++iter)
+//     {
+//       //create a 3N-Dimensional Gaussian with variance=1
+//       makeGaussRandomWithEngine(deltaR,*rng[ip]);
+// 
+//       for (int iat=0; iat<nptcl; ++iat)
+//       {
+//         PosType dr=m_sqrttau*deltaR[iat];
+// 
+// //         //everyone should skip this; could be a problem with compilers
+//         if (!wclone[ip]->makeMoveAndCheck(iat,dr)) continue;
+// //         wclone[ip]->makeMoveAndCheck(iat,dr);
+// 
+//         RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
+// 
+//         //assign new psi2
+//         psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now;
+// 
+// #pragma omp barrier
+// #pragma omp master
+//         psi_0_ratio=ratio*ratio;
+// #pragma omp flush
+// 
+//         psi2_new=1.0;
+//         for(int jp=1; jp<NumThreads; ++jp)
+//           psi2_new+= expl(psi2_i_new[jp]-psi2_i_new[0]);
+//         long double prob = psi_0_ratio*(psi2_new/psi2_now);
+// 
+//         if (prob>(*rng[ip])())
+//         {
+//           wclone[ip]->acceptMove(iat);
+//           pclone[ip]->acceptMove(*wclone[ip],iat);
+// 
+//           psi2_i_now=psi2_i_new[ip];
+//           psi2_now=psi2_new;
+//         }
+//         else
+//         {
+//           wclone[ip]->rejectMove(iat);
+//           pclone[ip]->rejectMove(iat);
+//         }
+//       }//loop over iat
+// 
+//       //for subSteps must update walkers
+//       wclone[ip]->saveWalker(*W[ip]);
+//     }
+// 
+//     Walker_t& thisWalker(*W[ip]);
+//     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+//     RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
+//     wclone[ip]->saveWalker(*W[ip]);
+//     thisWalker.Weight = psi2_i_now/psi2_now;
+//     RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+//     //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
+//     thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
+//     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
+//     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
+//   }
+// 
+//     myTimers[0]->stop();
+// }
+
 
 
 
@@ -512,7 +600,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
 // {
 // }
 
-void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone)
+void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
 {
   int NumThreads(pclone.size());
   myTimers[0]->start();
@@ -530,7 +618,7 @@ void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pc
   for (int iter=0; iter<nSubSteps; ++iter)
     {
       //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandomWithEngine(deltaR,RandomGen);
+      makeGaussRandomWithEngine(deltaR, RandomGen);
       moved = false;
       
       for (int iat=0; iat<W.getTotalNum(); ++iat)
@@ -747,7 +835,7 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
 }
 
 
-void VMCUpdatePbyPSampleRN::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone)
+void VMCUpdatePbyPSampleRN::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
 {
   int NumThreads(pclone.size());
   myTimers[0]->start();

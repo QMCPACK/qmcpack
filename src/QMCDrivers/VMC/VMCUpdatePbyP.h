@@ -34,7 +34,7 @@ namespace qmcplusplus {
     ~VMCUpdatePbyP();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng);
 
   private:
     vector<NewTimer*> myTimers;
@@ -70,7 +70,7 @@ namespace qmcplusplus {
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 //     for linear opt CS
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng);
  
   private:
     vector<NewTimer*> myTimers;
@@ -88,7 +88,7 @@ namespace qmcplusplus {
     ~VMCUpdatePbyPSampleRN();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng);
     void setLogEpsilon(RealType eps) { logEpsilon=eps; }
 
   private:

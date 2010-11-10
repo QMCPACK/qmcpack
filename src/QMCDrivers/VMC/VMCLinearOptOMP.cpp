@@ -152,7 +152,8 @@ void VMCLinearOptOMP::initCS()
   
   //resetting containersx
     CorrelatedH.resize(NumThreads,NumThreads);
-    Norms.resize(NumThreads+1); Norm2s.resize(NumThreads+1,NumThreads+1);
+    Norms.resize(NumThreads+1); 
+    Norm2s.resize(NumThreads+1,NumThreads+1);
     Energies.resize(NumThreads);
     CorrelatedH=0;
     Norm2s=0;
@@ -185,14 +186,14 @@ void VMCLinearOptOMP::initCS()
         hClones[ip]->saveProperty(thisWalker.getPropertyBase());
         wClones[ip]->saveWalker(thisWalker);
       }
-    
+      
     for (int prestep=0; prestep<myWarmupSteps; ++prestep)
     {
-      Movers[0]->advanceCSWalkers(psiClones, wClones, hClones);
+      Movers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng);
     }
 }
 
-int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& errorbars)
+int VMCLinearOptOMP::runCS(vector<vector<RealType> >& bestParams, RealType& errorbars)
 {
     for (int ip=0; ip<NumThreads; ++ip)
     {
@@ -202,6 +203,17 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
       psiClones[ip]->checkOutVariables(dummy);
       for (int i=0;i<bestParams[0].size();i++)  dummy[i] = bestParams[ip][i];
       psiClones[ip]->resetParameters(dummy);
+//       app_log()<<ip<<endl;
+//       psiClones[ip]->reportStatus(app_log());
+    }
+      // save the state of current generators
+    vector<RandomGenerator_t> RngSaved(NumThreads);
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      RngSaved[ip]=*Rng[ip];
+//       synchronize the random number generator with the node
+      *Rng[ip]=*Rng[0];
+      hClones[ip]->setRandomGenerator(Rng[ip]);
     }
     initCS();
   
@@ -211,15 +223,12 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
 //     run long enough to get accurate errorbars ~4 blocks.
 //     run until errorbars are small enough or when the energy difference is resolved to with 2 errorbars.
 //     max run is defined by nBlocks
-    while ((CSBlock<4)||
-      (((errorbars>alpha_errorbars)&&((NE_i[nE]-NE_i[minE])/2.0>errorbars))&&(CSBlock<nBlocks) ))
+    while ((CSBlock<100)||
+      (((errorbars>alpha_errorbars)/*&&((NE_i[nE]-NE_i[minE])/2.0>errorbars)*/)&&(CSBlock<nBlocks) ))
     {
-        int now_loc=CurrentStep;
         for (int step=0; step<nSteps; ++step)
-        {
-            Movers[0]->advanceCSWalkers(psiClones, wClones, hClones);
-            ++now_loc;
-        }
+          Movers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng);
+        
         CurrentStep+=nSteps;
         errorbars = estimateCS();
         CSBlock++;
@@ -229,9 +238,14 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> > bestParams, RealType& error
     app_log()<<" Errorbars are : "<<errorbars<<endl;
 //     app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
     
-    //copy back the random states
-    for (int ip=0; ip<NumThreads; ++ip)
-        *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+  ///restore the state
+  for(int ip=0; ip<NumThreads; ++ip)
+  {
+    *Rng[ip]=RngSaved[ip];
+    hClones[ip]->setRandomGenerator(Rng[ip]);
+  }
+  //copy back the random states
+  for (int ip=0; ip<NumThreads; ++ip) *(RandomNumberControl::Children[ip])=*(Rng[ip]);
     if (std::abs(NE_i[minE])<1e6)  return minE;
     else return -1;
 }
@@ -320,7 +334,7 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     return true;
 }
 
-VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType> curParams, vector<RealType> curDir, vector<RealType>& lambdas)
+VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas)
 {
   bool notConverged(true);
   
@@ -334,22 +348,24 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType> curParams, vec
     
     RealType errorbars;
     int bombed = runCS(dummy, errorbars);
+    for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
     if (bombed<0){
       lambdas[0]=0;
       return 0;
-    }
-    for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
+    }    
+    
     int maxI(0);
     RealType maxV(0);
     for (int i=0;i<curParams.size();i++) if (maxV<abs(curDir[i+1])){ maxI=i; maxV=abs(curDir[i+1]);};
     RealType maxPChange(maxV*(lambdas[1]-lambdas[0]));
     app_log()<<" Parameter diffs: "<<maxPChange<<endl;
-    if (maxPChange<1e-6)
+    if (maxPChange<1e-8)
     {
       notConverged = false;
     }
     else
-      notConverged = bracketing(lambdas, errorbars); 
+      notConverged = bracketing(lambdas, alpha_errorbars);
+    
   }
 
     lambdas[0]=lambdas[minE];
@@ -397,7 +413,9 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
   
 //   Here are the global energy estimates
   for (int ip=0; ip<NumThreads; ip++) NE_i[ip] = gEnergies[ip]/gNorms[ip];
-
+//   for (int ip=0; ip<NumThreads; ip++) app_log()<<ip<<": "<<gEnergies[ip]<<"  "<<gNorms[ip]<<"  "<<gNorm2s(ip,ip)<<endl;
+//   app_log()<<NumThreads<<": "<<gNorms[NumThreads]<<"  "<<gNorm2s(NumThreads,NumThreads)<<endl;
+//   app_log()<<endl;
 //   find lowest energy
   minE=0;
   for (int ip=1; ip<NumThreads; ip++) if (NE_i[ip]<NE_i[minE]) minE=ip;
@@ -746,6 +764,117 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
             Variance(pm,pm2) += V_avg*Overlap(pm,pm2);
 
 }
+
+    VMCLinearOptOMP::RealType VMCLinearOptOMP::fillComponentMatrices(bool needMatrix)
+    {
+        int n(NumOptimizables);
+        ///These are the values we collect to build the Matrices LOCAL
+        Matrix<RealType> lHDiHDj(n,n), lDiHDj(n,n), lDiHDjE(n,n), lDiDj(n,n), lDiDjE(n,n), lDiDjE2(n,n);
+        std::vector<RealType> lHDi(n), lHDiE(n), lDi(n), lDiE(n), lDiE2(n);
+        RealType lsE,lsE2,lsE4,lsW;
+
+        for (int ip=0; ip<NumThreads; ip++)
+        {
+            MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+            RealType E_L = (*wit)->getPropertyBase()[LOCALENERGY];
+            RealType E_L2= E_L*E_L;
+            RealType wW  = (*wit)->Weight;
+            lsE +=E_L*wW;
+            lsE2+=E_L2*wW;
+            lsE4+=E_L2*E_L2*wW;
+            lsW +=wW;
+        }
+
+        if (needMatrix)
+        {
+            for (int ip=0; ip<NumThreads; ip++)
+            {
+                MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+                RealType E_L = (*wit)->getPropertyBase()[LOCALENERGY];
+                RealType E_L2= E_L*E_L;
+                RealType wW  = (*wit)->Weight;
+                for (int i=0; i<NumOptimizables; i++)
+                {
+                    RealType di  = DerivRecords(ip,i);
+                    RealType hdi = HDerivRecords(ip,i);
+                    //             vectors
+                    lHDiE[i]+= wW*E_L* hdi;
+                    lHDi[i] += wW*     hdi;
+                    lDiE2[i]+= wW*E_L2*di;
+                    lDiE[i] += wW*E_L* di;
+                    lDi[i]  += wW*     di;
+
+                    for (int j=0; j<NumOptimizables; j++)
+                    {
+                        RealType dj  = DerivRecords(ip,j);
+                        RealType hdj = HDerivRecords(ip,j);
+
+                        lHDiHDj(i,j) += wW*    hdi*hdj;
+                        lDiHDjE(i,j) += wW* E_L*di*hdj;
+                        lDiHDj(i,j)  += wW*     di*hdj;
+                        lDiDjE2(i,j) += wW*E_L2*di*dj;
+                        lDiDjE(i,j)  += wW* E_L*di*dj;
+                        lDiDj(i,j)   += wW*     di*dj;
+                    }
+                }
+            }
+        }
+
+        //Lazy. Pack these for better performance.
+        myComm->allreduce(lsE);
+        myComm->allreduce(lsE2);
+        myComm->allreduce(lsE4);
+        myComm->allreduce(lsW);
+        if (needMatrix)
+        {
+            myComm->allreduce(lHDiE);
+            myComm->allreduce(lHDi);
+            myComm->allreduce(lDiE2);
+            myComm->allreduce(lDiE);
+            myComm->allreduce(lDi);
+            myComm->allreduce(lHDiHDj);
+            myComm->allreduce(lDiHDjE);
+            myComm->allreduce(lDiHDj);
+            myComm->allreduce(lDiDjE2);
+            myComm->allreduce(lDiDjE);
+            myComm->allreduce(lDiDj);
+        }
+        //add locals to globals
+        sE +=lsE;
+        sE2+=lsE2;
+        sE4+=lsE4;
+        sW +=lsW;
+        if (needMatrix)
+        {
+            for (int j=0; j<NumOptimizables; j++)
+            {
+                HDiE[j]+=lHDiE[j];
+                HDi[j] +=lHDi[j] ;
+                DiE2[j]+=lDiE2[j];
+                DiE[j] +=lDiE[j] ;
+                Di[j]  +=lDi[j]  ;
+            }
+
+            HDiHDj += lHDiHDj;
+            DiHDjE += lDiHDjE;
+            DiHDj  += lDiHDj ;
+            DiDjE2 += lDiDjE2;
+            DiDjE  += lDiDjE ;
+            DiDj   += lDiDj  ;
+        }
+
+        RealType nrm = 1.0/sW;
+        E_avg = nrm*sE;
+        V_avg = nrm*sE2-E_avg*E_avg;
+        
+        RealType err_E(std::sqrt(V_avg*nrm));
+        RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
+        err_E2 *= nrm;
+        err_E2 = std::sqrt(err_E2);
+
+        return w_beta*err_E2+(1.0-w_beta)*err_E;
+    }
+
 
 bool
 VMCLinearOptOMP::put(xmlNodePtr q)

@@ -66,7 +66,7 @@ namespace qmcplusplus
       }
   }
 
-  void VMCUpdateAll::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone)
+  void VMCUpdateAll::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
   {
     int NumThreads=pclone.size();
     bool moved(false);
@@ -184,7 +184,7 @@ namespace qmcplusplus
       }
   }
 
-void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone)
+void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
   {
     int NumThreads=pclone.size();
     bool moved(false);

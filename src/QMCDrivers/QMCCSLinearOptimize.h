@@ -119,7 +119,7 @@ private:
     
     inline bool tooLow(RealType safeValue, RealType CurrentValue)
     {
-      RealType lowestCostAllowed=std::min(safeValue-0.03*std::abs(safeValue),safeValue-3.0);
+      RealType lowestCostAllowed=std::min(safeValue-0.1*std::abs(safeValue),safeValue-10.0);
       if (CurrentValue<lowestCostAllowed) return true;
       else return false;
     }

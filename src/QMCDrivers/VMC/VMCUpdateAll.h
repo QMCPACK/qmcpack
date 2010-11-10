@@ -35,7 +35,7 @@ namespace qmcplusplus
       ~VMCUpdateAll();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng);
 
     private:
       /// Copy Constructor (disabled)
@@ -60,7 +60,7 @@ namespace qmcplusplus
       ~VMCUpdateAllWithDrift();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone);
+      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng);
 
     private:
       /// Copy Constructor (disabled)
