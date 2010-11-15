@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BesselZeroFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
+#include "QMCWaveFunctions/Jastrow/OpenGaussianSlaterFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
@@ -130,6 +131,11 @@ namespace qmcplusplus
     else if (jastfunction == "gaussian")
       {
         success = createJAB<GaussianFunctor<RealType> >(cur,jastfunction);
+      }
+    else if (jastfunction == "opengaussianslater")
+      {
+        app_log()<<jastfunction<<endl;
+        success = createJAB<OpenGaussianSlaterFunctor<RealType> >(cur,jastfunction);
       }
     else if (jastfunction == "besselzero")
       {
