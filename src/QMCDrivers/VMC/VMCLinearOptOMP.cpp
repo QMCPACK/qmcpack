@@ -409,7 +409,8 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 //return the error in the energy differences between lowest two
   RealType rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE])) - (NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
   
-  rval = ((rval<0)?-1.0:(std::sqrt(rval/(CSBlock+1))));
+  //rval = ((rval<0)?-1.0:(std::sqrt(rval/(CSBlock+1))));
+  rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1))));
   return rval;
 }
 
@@ -790,10 +791,10 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
         V_avg = nrm*sE2-E_avg*E_avg;
 //         app_log()<<V_avg<<"  "<<E_avg<<endl;
         
-        RealType err_E(std::sqrt(V_avg*nrm));
+        RealType err_E(std::sqrt( ((V_avg<0.0)?(1.0):(V_avg*nrm)) ));
         RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
         err_E2 *= nrm;
-        err_E2 = std::sqrt(err_E2);
+        err_E2 = std::sqrt( ((err_E2<0.0)?(1.0):(err_E2)) );
         
         return w_beta*err_E2+(1.0-w_beta)*err_E;
     }
