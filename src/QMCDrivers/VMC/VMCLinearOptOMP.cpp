@@ -141,7 +141,7 @@ void VMCLinearOptOMP::initCS()
     w_i.resize(NumThreads);
     for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=0;    
 
-//         set all walker positions to the same place
+//  set all walker positions to the same place
     Walker_t& firstWalker(*W[0]);
     
     if(myRNWarmupSteps>0)
@@ -149,7 +149,7 @@ void VMCLinearOptOMP::initCS()
       setWalkersEqual(firstWalker);
       for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
       {
-        Movers[0]->estimateNormWalkers(psiClones, wClones, hClones, Rng, w_i);
+        CSMovers[0]->estimateNormWalkers(psiClones, wClones, hClones, Rng, w_i);
       }
       myComm->allreduce(w_i);
       for (int ip=0; ip<NumThreads; ++ip) w_i[ip] = -std::log(w_i[ip]/(myRNWarmupSteps*myComm->size()));
@@ -164,7 +164,7 @@ void VMCLinearOptOMP::initCS()
       
     for (int step=0; step<myWarmupSteps; ++step)
     {
-      Movers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
+      CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
       estimateCS();
       //   rebalance weights
       for (int ip=0; ip<NumThreads; ip++)
@@ -213,7 +213,7 @@ int VMCLinearOptOMP::runCS(vector<vector<RealType> >& bestParams, RealType& erro
     while ((CSBlock<minCSBlocks)||((errorbars>alpha_errorbars)&&(CSBlock<nBlocks)))
     {
         for (int step=0; step<nSteps; ++step)
-          Movers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
+          CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
         
         CurrentStep+=nSteps;
         errorbars = estimateCS();
@@ -417,12 +417,14 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 void VMCLinearOptOMP::resetRun()
 {
     makeClones(W,Psi,H);
+    if (UseDrift == "rn") makeClones( *(psipool.getWaveFunction("guide")) );
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
 
 
     if (Movers.empty())
     {
         Movers.resize(NumThreads,0);
+        CSMovers.resize(NumThreads,0);
         branchClones.resize(NumThreads,0);
         estimatorClones.resize(NumThreads,0);
         Rng.resize(NumThreads,0);
@@ -449,7 +451,6 @@ void VMCLinearOptOMP::resetRun()
           {
             if (UseDrift == "rn")
             {
-              makeClones( *(psipool.getWaveFunction("guide")) );
               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
               Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
               Movers[ip]->setLogEpsilon(logepsilon);
@@ -466,7 +467,7 @@ void VMCLinearOptOMP::resetRun()
             else
             {
               os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
-              Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+              CSMovers[ip]=Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             }
             //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           }
@@ -474,7 +475,6 @@ void VMCLinearOptOMP::resetRun()
           {
             if (UseDrift == "rn")
             {
-              makeClones( *(psipool.getWaveFunction("guide")) );
               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
               Movers[ip] =new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
               Movers[ip]->setLogEpsilon(logepsilon);
@@ -489,7 +489,7 @@ void VMCLinearOptOMP::resetRun()
             else
             {
               os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
-              Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+              CSMovers[ip]=Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             }
             //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           }
@@ -502,7 +502,9 @@ void VMCLinearOptOMP::resetRun()
       {
         int ip=omp_get_thread_num();
         Movers[ip]->put(qmcNode);
+        CSMovers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
 
         if (QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
@@ -591,25 +593,25 @@ void VMCLinearOptOMP::resetRun()
 //           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
 //     }
-//     else if (UseDrift == "rn")
-//     {
-//       app_log()<<"  Using LogEpsilon of: "<<logepsilon<<endl;
-// #pragma omp parallel
-//       {
-//         int ip=omp_get_thread_num();
-//         Movers[ip]->setLogEpsilon(logepsilon);
+    if (UseDrift == "rn")
+    {
+      app_log()<<"  Using LogEpsilon of: "<<logepsilon<<endl;
+#pragma omp parallel
+      {
+        int ip=omp_get_thread_num();
+        Movers[ip]->setLogEpsilon(logepsilon);
 //         for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
 //         {
 //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 //         }
-//       }
+      }
 // #pragma omp parallel
 //       {
 //         int ip=omp_get_thread_num();
 //         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
 //           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
-//     }
+    }
       
 
     

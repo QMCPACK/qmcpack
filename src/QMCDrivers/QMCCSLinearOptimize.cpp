@@ -185,8 +185,8 @@ bool QMCCSLinearOptimize::run()
     else
     {
       nstabilizers -= omp_get_max_threads()+1;
-      int Ns(nstabilizers/(omp_get_max_threads()-2));
-      nstabilizers = omp_get_max_threads() + 1 + Ns*(omp_get_max_threads()-2);
+      int Ns(nstabilizers/(omp_get_max_threads()-1));
+      nstabilizers = omp_get_max_threads() + 1 + Ns*(omp_get_max_threads()-1);
     }
     
     for (int stability=0; stability<nstabilizers; stability++)

@@ -211,10 +211,11 @@ void VMCUpdatePbyP::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
   int NumThreads(pclone.size());
 
   //this can be modified for cache etc
-  long double psi2_i_new[128];
+  RealType psi2_i_new[128];
   for (int ip=0; ip<NumThreads; ++ip)
     psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
-  long double nn = -logl(nSubSteps*W.getTotalNum());
+  
+  RealType nn = -std::log(1.0*nSubSteps*W.getTotalNum());
 #pragma omp parallel 
   {
     int nptcl=W.getTotalNum();
@@ -222,8 +223,8 @@ void VMCUpdatePbyP::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
     RandomGenerator_t& rng_loc(*rng[ip]);
 
     //copy the new to now
-    long double psi2_i_now=psi2_i_new[ip];
-    long double psi2_0_now=psi2_i_new[0];
+    RealType psi2_i_now=psi2_i_new[ip];
+    RealType psi2_0_now=psi2_i_new[0];
       
     for (int iter=0; iter<nSubSteps; ++iter)
     {
@@ -678,34 +679,37 @@ VMCUpdatePbyPSampleRN::VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWave
     QMCUpdateBase(w,psi,guide,h,rg), logEpsilon(0.0)
 {
   add_vmc_timers(myTimers);
+//   dummy= new MCWalkerConfiguration(w);
 }
 
 VMCUpdatePbyPSampleRN::~VMCUpdatePbyPSampleRN()
 {
 }
 
-  void VMCUpdatePbyPSampleRN::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
-  {
-    UpdatePbyP=true;
+void VMCUpdatePbyPSampleRN::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
+{
+  UpdatePbyP=true;
+  Guide.resizeTempP(W);
 
-    for (;it != it_end; ++it)
-      {
-        Walker_t& thisWalker(**it);
-        W.loadWalker(thisWalker,UpdatePbyP);
+  for (;it != it_end; ++it)
+    {
+      Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,UpdatePbyP);
 
-        Walker_t::Buffer_t tbuffer;
-        RealType logguide=Guide.registerData(W,tbuffer)+logEpsilon;
-        RealType logpsi=Psi.registerData(W,tbuffer);
-        thisWalker.DataSet=tbuffer;
-        RealType ene = H.evaluate(W);
+      Walker_t::Buffer_t tbuffer;
+      RealType logguide=Guide.evaluateLogOnly(W)+logEpsilon;
+      RealType logpsi=Psi.registerData(W,tbuffer);
+      thisWalker.DataSet=tbuffer;
+      RealType ene = H.evaluate(W);
 
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, 0.0);
-        H.saveProperty(thisWalker.getPropertyBase());
-        thisWalker.ReleasedNodeAge=0;
-        thisWalker.ReleasedNodeWeight=0;
-        thisWalker.Weight=1.0/(std::exp(2.0*(logguide-logpsi)));
-      }
-  }
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),ene);
+      H.saveProperty(thisWalker.getPropertyBase());
+      thisWalker.ReleasedNodeAge=0;
+      thisWalker.ReleasedNodeWeight=0;
+//       thisWalker.Weight=1.0;
+      thisWalker.Weight=1.0/(std::exp(2.0*(logguide-logpsi)));
+    }
+}
   
 void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
@@ -718,15 +722,12 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
       W.loadWalker(thisWalker,true);
-      //W.R = thisWalker.R;
-      //w_buffer.rewind();
-      //W.copyFromBuffer(w_buffer);
-      Guide.copyFromBuffer(W,w_buffer);
-//       ParticleSet::ParticleGradient_t G_G(W.G);
-      RealType logguide2_now=2.0*(logEpsilon+Guide.getLogPsi());
+//       dummy.loadWalker(thisWalker,true);
+//       RealType logguide2_now=2.0*(logEpsilon+Guide.evaluateLog(W));
       
+      RealType logguide2_now = 2.0*(logEpsilon+Guide.evaluateLogOnly(W));
       Psi.copyFromBuffer(W,w_buffer);
-      RealType logpsi2_now = 2.0*thisWalker.getPropertyBase()[LOGPSI];
+      RealType logpsi2_now = 2.0*Psi.getLogPsi();
 
       myTimers[1]->start();
       for (int iter=0; iter<nSubSteps; ++iter)
@@ -742,13 +743,14 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
                 ++nReject;
                 continue;
               }
+//               dummy.makeMoveAndCheck(iat,dr);
               //PosType newpos = W.makeMove(iat,dr);
               RealType psi_ratio = Psi.ratio(W,iat);
-              RealType guide_ratio = Guide.ratio(W,iat);
               RealType logpsi2_new = 2.0*std::log(std::abs(psi_ratio))+logpsi2_now;
-              RealType logguide2_new = 2.0*std::log(std::abs(guide_ratio))+logguide2_now;
+              RealType logguide2_new = 2.0*(Guide.evaluateLogOnly(W) + logEpsilon);
               
-              RealType prob = 1.0/(1.0+std::exp(logguide2_new - logpsi2_new));
+              long double prob = psi_ratio*psi_ratio*(1.0 + expl(logguide2_new-logpsi2_new))/(1.0+ expl(logguide2_now-logpsi2_now));
+//               app_log()<<prob<<endl;
               //RealType prob = std::min(1.0e0,ratio*ratio);
               if (RandomGen() < prob)
                 {
@@ -756,7 +758,6 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
                   ++nAccept;
                   W.acceptMove(iat);
                   Psi.acceptMove(W,iat);
-                  Guide.acceptMove(W,iat);
                   logpsi2_now=logpsi2_new;
                   logguide2_now=logguide2_new;
                 }
@@ -765,7 +766,6 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
                   ++nReject;
                   W.rejectMove(iat);
                   Psi.rejectMove(iat);
-                  Guide.rejectMove(iat);
                 }
             }
           if (stucked)
@@ -781,7 +781,7 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
       //w_buffer.rewind();
       //W.updateBuffer(w_buffer);
-      RealType logguide = logEpsilon + Guide.updateBuffer(W,w_buffer,true);
+//       RealType logguide = logguide2_now;
       RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
       W.saveWalker(thisWalker);
 
@@ -794,7 +794,8 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
 //       thisWalker.resetProperty(0.5*logpsi2_now,Psi.getPhase(),eloc);
       H.auxHevaluate(W,thisWalker);
-      thisWalker.Weight = 1.0/(1+std::exp(logguide-logpsi));
+//       thisWalker.Weight = 1.0;
+      thisWalker.Weight = 1.0/(1.0+expl(logguide2_now-2.0*logpsi));
       H.saveProperty(thisWalker.getPropertyBase());
     }
   myTimers[0]->stop();
