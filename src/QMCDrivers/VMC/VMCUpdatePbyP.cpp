@@ -125,14 +125,14 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
 void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
     , vector<MCWalkerConfiguration*>& wclone
     , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng)
+    , vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
 {
   int NumThreads(pclone.size());
 
   //this can be modified for cache etc
   RealType psi2_i_new[128];
   for (int ip=0; ip<NumThreads; ++ip)
-    psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
+    psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI] + c_i[ip];
 
 #pragma omp parallel 
   {
@@ -164,7 +164,6 @@ void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
 
         RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
 #pragma omp barrier
-#pragma omp critical
         psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now;
 #pragma omp barrier
         psi2_new=1.0;
@@ -195,8 +194,73 @@ void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
     RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
     //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
     thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
+    thisWalker.Weight=1.0;
     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
+  }
+
+    myTimers[0]->stop();
+}
+
+void VMCUpdatePbyP::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng
+    , vector<RealType>& ratio_i_0)
+{
+  int NumThreads(pclone.size());
+
+  //this can be modified for cache etc
+  long double psi2_i_new[128];
+  for (int ip=0; ip<NumThreads; ++ip)
+    psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
+  long double nn = -logl(nSubSteps*W.getTotalNum());
+#pragma omp parallel 
+  {
+    int nptcl=W.getTotalNum();
+    int ip=omp_get_thread_num();
+    RandomGenerator_t& rng_loc(*rng[ip]);
+
+    //copy the new to now
+    long double psi2_i_now=psi2_i_new[ip];
+    long double psi2_0_now=psi2_i_new[0];
+      
+    for (int iter=0; iter<nSubSteps; ++iter)
+    {
+      //create a 3N-Dimensional Gaussian with variance=1
+      makeGaussRandomWithEngine(deltaR,rng_loc);
+
+      for (int iat=0; iat<nptcl; ++iat)
+      {
+        PosType dr=m_sqrttau*deltaR[iat];
+        
+        bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
+        //everyone should skip this; could be a problem with compilers
+        if (!movePtcl) continue;
+
+        RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
+#pragma omp barrier
+        psi2_i_new[ip] = 2.0*logl(std::abs(ratio)) + psi2_i_now;
+#pragma omp barrier
+#pragma omp critical
+    {
+      ratio_i_0[ip] += expl( psi2_i_new[ip]-psi2_i_new[0] + nn);
+    }
+          wclone[ip]->rejectMove(iat);
+          pclone[ip]->rejectMove(iat);
+      }
+    }
+
+//     Walker_t& thisWalker(*W[ip]);
+//     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+//     RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
+//     wclone[ip]->saveWalker(*W[ip]);
+//     RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+//     //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
+//     thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
+    
+//     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
+//     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
   }
 
     myTimers[0]->stop();
@@ -471,7 +535,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
 // {
 // }
 
-void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
+void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
 {
   int NumThreads(pclone.size());
   myTimers[0]->start();
@@ -609,9 +673,9 @@ void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pc
   myTimers[0]->stop();
 }
 
-VMCUpdatePbyPSampleRN::VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+VMCUpdatePbyPSampleRN::VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
     QMCHamiltonian& h, RandomGenerator_t& rg):
-    QMCUpdateBase(w,psi,h,rg), logEpsilon(0.0)
+    QMCUpdateBase(w,psi,guide,h,rg), logEpsilon(0.0)
 {
   add_vmc_timers(myTimers);
 }
@@ -620,6 +684,29 @@ VMCUpdatePbyPSampleRN::~VMCUpdatePbyPSampleRN()
 {
 }
 
+  void VMCUpdatePbyPSampleRN::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
+  {
+    UpdatePbyP=true;
+
+    for (;it != it_end; ++it)
+      {
+        Walker_t& thisWalker(**it);
+        W.loadWalker(thisWalker,UpdatePbyP);
+
+        Walker_t::Buffer_t tbuffer;
+        RealType logguide=Guide.registerData(W,tbuffer)+logEpsilon;
+        RealType logpsi=Psi.registerData(W,tbuffer);
+        thisWalker.DataSet=tbuffer;
+        RealType ene = H.evaluate(W);
+
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, 0.0);
+        H.saveProperty(thisWalker.getPropertyBase());
+        thisWalker.ReleasedNodeAge=0;
+        thisWalker.ReleasedNodeWeight=0;
+        thisWalker.Weight=1.0/(std::exp(2.0*(logguide-logpsi)));
+      }
+  }
+  
 void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
 
@@ -634,6 +721,10 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       //W.R = thisWalker.R;
       //w_buffer.rewind();
       //W.copyFromBuffer(w_buffer);
+      Guide.copyFromBuffer(W,w_buffer);
+//       ParticleSet::ParticleGradient_t G_G(W.G);
+      RealType logguide2_now=2.0*(logEpsilon+Guide.getLogPsi());
+      
       Psi.copyFromBuffer(W,w_buffer);
       RealType logpsi2_now = 2.0*thisWalker.getPropertyBase()[LOGPSI];
 
@@ -652,11 +743,12 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
                 continue;
               }
               //PosType newpos = W.makeMove(iat,dr);
-              RealType ratio = Psi.ratio(W,iat);
-              RealType logpsi2_new = 2.0*std::log(std::abs(ratio))+logpsi2_now;
+              RealType psi_ratio = Psi.ratio(W,iat);
+              RealType guide_ratio = Guide.ratio(W,iat);
+              RealType logpsi2_new = 2.0*std::log(std::abs(psi_ratio))+logpsi2_now;
+              RealType logguide2_new = 2.0*std::log(std::abs(guide_ratio))+logguide2_now;
               
-              
-              RealType prob = ratio*ratio*(1+std::exp(logEpsilon-logpsi2_new))/(1+std::exp(logEpsilon-logpsi2_now));
+              RealType prob = 1.0/(1.0+std::exp(logguide2_new - logpsi2_new));
               //RealType prob = std::min(1.0e0,ratio*ratio);
               if (RandomGen() < prob)
                 {
@@ -664,14 +756,16 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
                   ++nAccept;
                   W.acceptMove(iat);
                   Psi.acceptMove(W,iat);
+                  Guide.acceptMove(W,iat);
                   logpsi2_now=logpsi2_new;
-                  
+                  logguide2_now=logguide2_new;
                 }
               else
                 {
                   ++nReject;
                   W.rejectMove(iat);
                   Psi.rejectMove(iat);
+                  Guide.rejectMove(iat);
                 }
             }
           if (stucked)
@@ -687,6 +781,7 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
       //w_buffer.rewind();
       //W.updateBuffer(w_buffer);
+      RealType logguide = logEpsilon + Guide.updateBuffer(W,w_buffer,true);
       RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
       W.saveWalker(thisWalker);
 
@@ -699,14 +794,14 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
 //       thisWalker.resetProperty(0.5*logpsi2_now,Psi.getPhase(),eloc);
       H.auxHevaluate(W,thisWalker);
-      thisWalker.Weight = 1.0/(1+std::exp(logEpsilon-logpsi2_now));
+      thisWalker.Weight = 1.0/(1+std::exp(logguide-logpsi));
       H.saveProperty(thisWalker.getPropertyBase());
     }
   myTimers[0]->stop();
 }
 
 
-void VMCUpdatePbyPSampleRN::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
+void VMCUpdatePbyPSampleRN::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
 {
   int NumThreads(pclone.size());
   myTimers[0]->start();

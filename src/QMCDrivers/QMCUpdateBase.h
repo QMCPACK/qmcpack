@@ -61,6 +61,9 @@ namespace qmcplusplus
       /// Constructor.
       QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                     RandomGenerator_t& rg);
+      ///Alt Constructor.
+      QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h,
+                    RandomGenerator_t& rg);                    
       ///destructor
       virtual ~QMCUpdateBase();
 
@@ -146,7 +149,13 @@ namespace qmcplusplus
       virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
       
       virtual void setLogEpsilon(RealType eps) {};
-      virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng){};
+      virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i){};
+      
+      virtual void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng
+    , vector<RealType>& ratio_i_0){};
 
     protected:
       ///update particle-by-particle
@@ -171,6 +180,8 @@ namespace qmcplusplus
       MCWalkerConfiguration& W;
       ///trial function
       TrialWaveFunction& Psi;
+      ///guide function
+      TrialWaveFunction& Guide;
       ///Hamiltonian
       QMCHamiltonian& H;
       ///random number generator
@@ -200,7 +211,7 @@ namespace qmcplusplus
       RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
       /// Copy Constructor (disabled)
-      QMCUpdateBase(const QMCUpdateBase& a): W(a.W),Psi(a.Psi),H(a.H), RandomGen(a.RandomGen) { }
+      QMCUpdateBase(const QMCUpdateBase& a): W(a.W),Psi(a.Psi),Guide(a.Guide),H(a.H), RandomGen(a.RandomGen) { }
       /// Copy operator (disabled).
       QMCUpdateBase& operator=(const QMCUpdateBase&)
       {

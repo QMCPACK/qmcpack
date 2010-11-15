@@ -29,6 +29,8 @@ namespace qmcplusplus {
   vector<MCWalkerConfiguration*> CloneManager::wClones;
   //initialization of the static psiClones
   vector<TrialWaveFunction*> CloneManager::psiClones;
+  //initialization of the static guideClones
+  vector<TrialWaveFunction*> CloneManager::guideClones;
   //initialization of the static hClones
   vector<QMCHamiltonian*> CloneManager::hClones;
 
@@ -44,6 +46,7 @@ namespace qmcplusplus {
   {
     delete_iter(Rng.begin(),Rng.end());
     delete_iter(Movers.begin(),Movers.end());
+    delete_iter(CSMovers.begin(),CSMovers.end());
     delete_iter(branchClones.begin(),branchClones.end());
     delete_iter(estimatorClones.begin(),estimatorClones.end());
   }
@@ -87,6 +90,33 @@ namespace qmcplusplus {
     cloneEngine.clone(w,psi,ham,wClones,psiClones,hClones);
 #endif
   }
+  
+    void CloneManager::makeClones(TrialWaveFunction& guide)
+  {
+
+    if(guideClones.size()) 
+    {
+      app_log() << "  Cannot make guideClones again. Use existing " << NumThreads << " clones" << endl;
+      return;
+    }
+
+    guideClones.resize(NumThreads,0);
+    guideClones[0]=&guide;
+
+    if(NumThreads==1) return;
+
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide." <<endl;
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
+    char pname[16];
+    for(int ip=1; ip<NumThreads; ++ip) 
+    {
+      guideClones[ip]=guide.makeClone(*wClones[ip]);
+    }
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
+  }
+  
 }
 
 /***************************************************************************

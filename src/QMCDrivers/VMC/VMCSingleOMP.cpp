@@ -167,7 +167,7 @@ namespace qmcplusplus
             if (UseDrift == "rn")
             {
               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
-              Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+              Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
               Movers[ip]->setLogEpsilon(logepsilon);
               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             }
@@ -189,7 +189,7 @@ namespace qmcplusplus
             if (UseDrift == "rn")
             {
               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
-              Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+              Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
               Movers[ip]->setLogEpsilon(logepsilon);
             }
             else if (UseDrift == "yes")

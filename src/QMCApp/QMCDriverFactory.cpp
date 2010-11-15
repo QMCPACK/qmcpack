@@ -380,7 +380,7 @@ namespace qmcplusplus {
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
     {
 //       QMCLinearOptimize *opt = new QMCLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
-      QMCCSLinearOptimize *opt = new QMCCSLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      QMCCSLinearOptimize *opt = new QMCCSLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;

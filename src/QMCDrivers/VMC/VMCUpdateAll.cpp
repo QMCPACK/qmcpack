@@ -66,68 +66,111 @@ namespace qmcplusplus
       }
   }
 
-  void VMCUpdateAll::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
+  void VMCUpdateAll::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
   {
     int NumThreads=pclone.size();
-    bool moved(false);
-    std::vector<RealType> psi2_i_now(NumThreads);
-    RealType psi2_now=0;
-    for (int ip=0; ip<NumThreads; ++ip)
+    
+    RealType psi2_new(1.0);
+    RealType psi2_0_new(2.0*W[0]->getPropertyBase()[LOGPSI] + c_i[0]);
+    for (int ip=1; ip<NumThreads; ++ip)
     {
-      psi2_i_now[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
-      psi2_now += std::exp(psi2_i_now[ip]-psi2_i_now[0]);
+      psi2_new += std::exp(2.0*W[ip]->getPropertyBase()[LOGPSI]+ c_i[ip] -psi2_0_new);
     }
     
+    #pragma omp parallel
+    {
+      int nptcl=W.getTotalNum();
+      int ip=omp_get_thread_num();
+      RandomGenerator_t& rng_loc(*rng[ip]);
+
+      RealType psi2_now=psi2_new;
+      RealType psi2_0_now=psi2_0_new;
+      RealType psi2_i_now=2.0*W[ip]->getPropertyBase()[LOGPSI]+ c_i[ip];
+
     for (int iter=0; iter<nSubSteps; ++iter)
     {
-        makeGaussRandomWithEngine(deltaR,RandomGen);
+        makeGaussRandomWithEngine(deltaR,rng_loc);
+        bool moved =  wclone[ip]->makeMove(*W[ip],deltaR, m_sqrttau);
+        if (!moved) continue;
         
-        for (int ip=1; ip<NumThreads; ++ip)
-          wclone[ip]->makeMove(*W[ip],deltaR, m_sqrttau);
-        if (!wclone[0]->makeMove(*W[0],deltaR, m_sqrttau))
-          {
-            continue;
-          }
-          
+        RealType psi2_i_new(2.0*pclone[ip]->evaluateLog(*wclone[ip])+ c_i[ip]);
+       
+        #pragma master
+       {
+         psi2_new=0.0;
+         psi2_0_new=psi2_i_new;
+       }
+       
+        #pragma barrier
+// #pragma flush(psi2_new,psi2_0_new)
 
-        //W.R = m_sqrttau*deltaR + thisWalker.R;
-        //W.update();
-        std::vector<RealType> psi2_i_new(NumThreads);
-        for (int ip=0; ip<NumThreads; ++ip) psi2_i_new[ip]= 2.0*pclone[ip]->evaluateLog(*wclone[ip]);
-        RealType psi2_new(1.0);
-        for (int ip=1; ip<NumThreads; ++ip) psi2_new += std::exp(psi2_i_new[ip]-psi2_i_new[0]);
-        
-        RealType p= std::exp(psi2_i_new[0]-psi2_i_now[0])*(psi2_new/psi2_now);
+       //everybody adds the value including master
+#pragma critical
+       {
+         psi2_new+=std::exp(psi2_i_new-psi2_0_new);
+       }
+#pragma barrier
 
-        if (RandomGen() > p)
-          {
-            for (int ip=0; ip<NumThreads; ++ip) W[ip]->Age++;
-            ++nReject;
-          }
+       RealType prob = std::exp(psi2_0_new-psi2_0_now)*(psi2_new/psi2_now);
+        if (rng_loc() > prob) W[ip]->Age++;
         else
           {
-            moved=true;
-            for (int ip=0; ip<NumThreads; ++ip) psi2_i_now[ip] = psi2_i_new[ip];
+            psi2_i_now = psi2_i_new;
             psi2_now = psi2_new;
-            for (int ip=0; ip<NumThreads; ++ip) wclone[ip]->saveWalker(*W[ip]);
-            ++nAccept;
+            psi2_0_now = psi2_0_new;
           }
     }
-// #pragma omp parallel for  
-    for (int ip=0; ip<NumThreads; ++ip)
+    wclone[ip]->saveWalker(*W[ip]);
+    RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+    (*W[ip]).resetProperty(0.5*(psi2_i_now-c_i[ip]),pclone[ip]->getPhase(), eloc);
+    hclone[ip]->auxHevaluate(*wclone[ip],*W[ip]);
+    hclone[ip]->saveProperty((*W[ip]).getPropertyBase());
+    }
+  }
+
+  void VMCUpdateAll::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng
+    , vector<RealType>& ratio_i_0)
+  {
+    int NumThreads=pclone.size();
+    
+    RealType psi2_i_now[128];
+    for(int i=0;i<NumThreads;i++)
+      psi2_i_now[i]=2.0*W[i]->getPropertyBase()[LOGPSI];
+    RealType nn(-1.0*std::log(1.0*nSubSteps));
+    
+    
+#pragma omp parallel
     {
-      Walker_t& thisWalker(*W[ip]);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-      if (moved)
-        {
-          RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
-          thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
-          hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
-          hclone[ip]->saveProperty(thisWalker.getPropertyBase());
-        }
+      int nptcl=W.getTotalNum();
+      int ip=omp_get_thread_num();
+      RandomGenerator_t& rng_loc(*rng[ip]);
+
+      for (int iter=0; iter<nSubSteps; ++iter)
+      {
+        makeGaussRandomWithEngine(deltaR,rng_loc);
+        if (!wclone[ip]->makeMove(*W[ip],deltaR, m_sqrttau)) continue;
+        RealType psi2_i_new(2.0*pclone[ip]->evaluateLog(*wclone[ip]));
+       
+#pragma barrier
+#pragma critical
+       {
+         psi2_i_now[ip]=psi2_i_new;
+       }
+#pragma barrier
+#pragma flush 
+#pragma critical
+{
+         ratio_i_0[ip] += expl(psi2_i_now[ip]-psi2_i_now[0] + nn);
+}
+#pragma barrier
     }
+
     }
-  
+  }
+
   /// Constructor.
   VMCUpdateAllWithDrift::VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
       QMCHamiltonian& h, RandomGenerator_t& rg):
@@ -184,7 +227,7 @@ namespace qmcplusplus
       }
   }
 
-void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng)
+void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
   {
     int NumThreads=pclone.size();
     bool moved(false);
@@ -264,9 +307,9 @@ void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone,
     
 
 
-  VMCUpdateAllSampleRN::VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  VMCUpdateAllSampleRN::VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
       QMCHamiltonian& h, RandomGenerator_t& rg):
-      QMCUpdateBase(w,psi,h,rg), logEpsilon(0.0)
+      QMCUpdateBase(w,psi,guide,h,rg), logEpsilon(0.0)
   {
   }
 

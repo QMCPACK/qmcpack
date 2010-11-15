@@ -25,8 +25,8 @@ namespace qmcplusplus
   {
 
   /// Constructor.
-  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-      : W(w),Psi(psi),H(h)
+  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
+      : W(w),Psi(psi),Guide(guide),H(h)
       , UpdatePbyP(true), UseTMove(false)
       , NumPtcl(0), nSubSteps(1)
       , RandomGen(rg), MaxAge(0),  m_r2max(-1)
@@ -38,6 +38,20 @@ namespace qmcplusplus
     myParams.add(nSubSteps,"sub_steps","int");
   }
 
+  /// Constructor.
+  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+      : W(w),Psi(psi),H(h),Guide(psi)
+      , UpdatePbyP(true), UseTMove(false)
+      , NumPtcl(0), nSubSteps(1)
+      , RandomGen(rg), MaxAge(0),  m_r2max(-1)
+      , branchEngine(0), Estimators(0)
+  {
+    myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
+    myParams.add(nSubSteps,"subSteps","int");
+    myParams.add(nSubSteps,"substeps","int");
+    myParams.add(nSubSteps,"sub_steps","int");
+  }
+  
   /// destructor
   QMCUpdateBase::~QMCUpdateBase()
   {
@@ -140,6 +154,7 @@ namespace qmcplusplus
         RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         RealType ene = H.evaluate(W);
         (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
+        (*it)->Weight=1;
         H.saveProperty((*it)->getPropertyBase());
       }
   }
@@ -165,6 +180,7 @@ namespace qmcplusplus
         H.saveProperty(thisWalker.getPropertyBase());
         thisWalker.ReleasedNodeAge=0;
         thisWalker.ReleasedNodeWeight=0;
+        thisWalker.Weight=1;
       }
   }
 

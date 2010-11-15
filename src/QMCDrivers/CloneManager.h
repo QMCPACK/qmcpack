@@ -38,6 +38,7 @@ namespace qmcplusplus {
     virtual ~CloneManager();
 
     void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+    void makeClones(TrialWaveFunction& guide);
 
     inline RealType acceptRatio() const 
     {
@@ -59,12 +60,16 @@ namespace qmcplusplus {
     static vector<MCWalkerConfiguration*> wClones;
     ///trial wavefunctions
     static vector<TrialWaveFunction*> psiClones;
+    ///guide wavefunctions
+    static vector<TrialWaveFunction*> guideClones;
     ///Hamiltonians
     static vector<QMCHamiltonian*> hClones;
     ///Random number generators
     vector<RandomGenerator_t*> Rng;
     ///update engines
     vector<QMCUpdateBase*> Movers;
+    ///update engines
+    vector<QMCUpdateBase*> CSMovers;
     ///update engines
     vector<EstimatorManager*> estimatorClones;;
     ///Brnach engines

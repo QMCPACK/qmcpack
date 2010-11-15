@@ -587,6 +587,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     TotalDim = PosType::Size*NumPtcls;
 
     buf.add(PhaseValue);
+    buf.add(LogValue);
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
     return LogValue;
@@ -629,6 +630,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     convert(logpsi,LogValue);
     //LogValue=real(logpsi);
     buf.put(PhaseValue);
+    buf.put(LogValue);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
     return LogValue;
@@ -644,6 +646,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
 
     //get the gradients and laplacians from the buffer
     buf.get(PhaseValue);
+    buf.get(LogValue);
     buf.get(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.get(&(P.L[0]), &(P.L[0])+NumPtcls);
   }
@@ -696,6 +699,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
         PhaseValue += Z[i]->PhaseValue;
       }
     buf.put(PhaseValue);
+    buf.put(LogValue);
     //buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     //buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
     return LogValue;

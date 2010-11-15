@@ -20,6 +20,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/CommOperators.h"
+#include "QMCApp/WaveFunctionPool.h"
 namespace qmcplusplus
 {
 
@@ -31,11 +32,8 @@ class VMCLinearOptOMP: public QMCDriver, public CloneManager
 public:
     /// Constructor.
     VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    HamiltonianPool& hpool);
-    bool run() {
-        return run(true);
-    }
-    bool run(bool needMatrix);
+                    HamiltonianPool& hpool, WaveFunctionPool& ppool);
+    bool run();
     RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
     int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
     bool put(xmlNodePtr cur);
@@ -81,11 +79,11 @@ private:
     string UseDrift;
     ///target errorbars to use to determine when to stop for filling matrix and line minimization
     RealType alpha_errorbars, beta_errorbars;
-
+    WaveFunctionPool& psipool;
     ///check the run-time environments
     void resetRun();
     ///copy constructor
-    VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
+    VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a),psipool(a.psipool) { }
     /// Copy operator (disabled).
     VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
     {
@@ -124,9 +122,51 @@ private:
         DiE2.resize(n);
         DerivRecords.resize(NumThreads,n);
         HDerivRecords.resize(NumThreads,n);
+        clearComponentMatrices();
+    }
+    
+    void clearCSEstimators()
+    {
+      CorrelatedH.resize(NumThreads,NumThreads);
+      Norm2s.resize(NumThreads+1,NumThreads+1);
+      Norms.resize(NumThreads+1); 
+      Energies.resize(NumThreads);
+      NE_i.resize(NumThreads);
+      CorrelatedH=0;
+      Norm2s=0;
+      for (int ip=0; ip<NumThreads+1; ++ip) Norms[ip]=0;
+      for (int ip=0; ip<NumThreads; ++ip) Energies[ip]=0;
+      for (int ip=0; ip<NumThreads; ++ip) NE_i[ip]=0;
+    }
+    
+    void setWalkersEqual(Walker_t& firstWalker)
+    {      
+      for (int ip=0; ip<NumThreads; ++ip)
+      {
+        (*W[ip]).makeCopy(firstWalker);
+      }
+
+      for (int ip=0; ip<NumThreads; ++ip)
+        {
+          Walker_t& thisWalker(*W[ip]);
+          wClones[ip]->loadWalker(thisWalker,true);
+
+          Walker_t::Buffer_t tbuffer;
+          RealType logpsi=psiClones[ip]->evaluateLog(*wClones[ip]);
+          logpsi=psiClones[ip]->registerData(*wClones[ip],tbuffer);
+    //               logpsi=psiClones[ip]->updateBuffer(*wClones[ip],tbuffer,true);
+          thisWalker.DataSet=tbuffer;
+          thisWalker.Weight = 1.0;
+          RealType ene = hClones[ip]->evaluate( *wClones[ip]);
+    //         app_log()<<ene<<" "<<logpsi<<endl;
+          thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),ene);
+          hClones[ip]->saveProperty(thisWalker.getPropertyBase());
+          wClones[ip]->saveWalker(thisWalker);
+        }
     }
 
-    RealType fillComponentMatrices(bool needMatrix);
+
+    RealType fillComponentMatrices();
     
     Matrix<RealType> CorrelatedH, Norm2s;
     vector<RealType> Norms;
@@ -140,7 +180,8 @@ private:
     bool moved_right;
     bool moved_left;
     bool bracketing(vector<RealType>& lambdas, RealType errorbars);
-    
+//     weights for correlated sampling
+    vector<RealType> w_i;
 };
 
 }
