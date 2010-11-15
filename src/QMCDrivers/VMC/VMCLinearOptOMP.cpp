@@ -701,7 +701,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
         ///These are the values we collect to build the Matrices LOCAL
         Matrix<RealType> lHDiHDj(n,n), lDiHDj(n,n), lDiHDjE(n,n), lDiDj(n,n), lDiDjE(n,n), lDiDjE2(n,n);
         std::vector<RealType> lHDi(n), lHDiE(n), lDi(n), lDiE(n), lDiE2(n);
-        RealType lsE,lsE2,lsE4,lsW;
+        RealType lsE(0),lsE2(0),lsE4(0),lsW(0);
 
         for (int ip=0; ip<NumThreads; ip++)
         {
