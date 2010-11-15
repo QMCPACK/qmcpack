@@ -125,13 +125,9 @@ bool QMCCSLinearOptimize::run()
     numParams = optTarget->NumParams();
     N = numParams + 1;
 
-app_log()<<"Here 1" <<endl; cout.flush();
-
 //  solve CSFs and other parameters separately then rescale elements accordingly
     int first,last;
     getNonLinearRange(first,last);
-
-app_log()<<"Here 2" <<endl; cout.flush();
 
 //     initialize our parameters
     vector<RealType> currentParameterDirections(N,0);
@@ -146,8 +142,6 @@ app_log()<<"Here 2" <<endl; cout.flush();
     Matrix<RealType> Var(N,N);
     Matrix<RealType> S(N,N);
     vmcEngine->fillMatrices(Ham2,Ham,Var,S);
-
-app_log()<<"Here 3" <<endl; cout.flush();
 
     vector<RealType> bestParameters(currentParameters);
 
@@ -187,8 +181,6 @@ app_log()<<"Here 3" <<endl; cout.flush();
     RealType safe = Left(0,0);
     RealType XS(0);
 
-app_log()<<"Here 4" <<endl; cout.flush();
-    
     if (nstabilizers<=omp_get_max_threads()+1) nstabilizers=omp_get_max_threads()+1;
     else
     {
