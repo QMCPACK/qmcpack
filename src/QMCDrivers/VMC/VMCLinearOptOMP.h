@@ -115,13 +115,33 @@ private:
         DiDj.resize(n,n);
         DiDjE.resize(n,n);
         DiDjE2.resize(n,n);
+        DerivRecords.resize(NumThreads,n);
+        HDerivRecords.resize(NumThreads,n);
+        
+        HDiHDj=0.0;
+        DiHDj=0.0;
+        DiHDjE=0.0;
+        DiDj=0.0;
+        DiDjE=0.0;
+        DiDjE2=0.0;
+        DerivRecords=0.0;
+        HDerivRecords=0.0;
+        
+        
         HDi.resize(n);
         HDiE.resize(n);
         Di.resize(n);
         DiE.resize(n);
         DiE2.resize(n);
-        DerivRecords.resize(NumThreads,n);
-        HDerivRecords.resize(NumThreads,n);
+        for(int i=0;i<n;i++)
+        {
+          HDi[i]=0.0;
+          HDiE[i]=0.0;
+          Di[i]=0.0;
+          DiE[i]=0.0;
+          DiE2[i]=0.0;
+        }
+        
         clearComponentMatrices();
     }
     
