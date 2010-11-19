@@ -160,7 +160,7 @@ private:
     }
     
     void setWalkersEqual(Walker_t& firstWalker)
-    {      
+    {
       for (int ip=0; ip<NumThreads; ++ip)
       {
         (*W[ip]).makeCopy(firstWalker);
@@ -187,7 +187,7 @@ private:
 
 
     RealType fillComponentMatrices();
-    
+    Walker_t firstWalker;
     Matrix<RealType> CorrelatedH, Norm2s;
     vector<RealType> Norms;
     vector<RealType> Energies;

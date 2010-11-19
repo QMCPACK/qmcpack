@@ -98,6 +98,12 @@ namespace qmcplusplus {
     void setLogEpsilon(RealType eps) { logEpsilon=eps; }
     void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
+    void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng
+    , vector<RealType>& ratio_i_0);
+
   private:
     vector<NewTimer*> myTimers;
     //prefactor multiplying the guiding function
