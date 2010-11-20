@@ -731,10 +731,9 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
 
         for (int ip=0; ip<NumThreads; ip++)
         {
-            MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-            RealType E_L = (*wit)->getPropertyBase()[LOCALENERGY];
+            RealType E_L = W[ip]->getPropertyBase()[LOCALENERGY];
             RealType E_L2= E_L*E_L;
-            RealType wW  = (*wit)->Weight;
+            RealType wW  = W[ip]->Weight;
             lsE +=E_L*wW;
             lsE2+=E_L2*wW;
             lsE4+=E_L2*E_L2*wW;
