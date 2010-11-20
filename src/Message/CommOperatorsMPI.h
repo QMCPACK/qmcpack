@@ -254,6 +254,16 @@ Communicate::allreduce(std::vector<double>& g)
 
 template<>
 inline void 
+Communicate::allreduce(PooledData<double>& g) 
+{
+  PooledData<double> gt(g.size());
+  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,
+      myMPI);
+  g = gt;
+}
+
+template<>
+inline void 
 Communicate::reduce(std::vector<double>& g) 
 {
   std::vector<double> gt(g.size(), 0);
