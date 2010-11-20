@@ -773,22 +773,66 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
           }
         }
 
-        //Lazy. Pack these for better performance.
-        myComm->allreduce(lsE);
-        myComm->allreduce(lsE2);
-        myComm->allreduce(lsE4);
-        myComm->allreduce(lsW);
-        myComm->allreduce(lHDiE);
-        myComm->allreduce(lHDi);
-        myComm->allreduce(lDiE2);
-        myComm->allreduce(lDiE);
-        myComm->allreduce(lDi);
-        myComm->allreduce(lHDiHDj);
-        myComm->allreduce(lDiHDjE);
-        myComm->allreduce(lDiHDj);
-        myComm->allreduce(lDiDjE2);
-        myComm->allreduce(lDiDjE);
-        myComm->allreduce(lDiDj);
+//         //Lazy. Pack these for better performance.
+//         myComm->allreduce(lsE);
+//         myComm->allreduce(lsE2);
+//         myComm->allreduce(lsE4);
+//         myComm->allreduce(lsW);
+//         myComm->allreduce(lHDiE);
+//         myComm->allreduce(lHDi);
+//         myComm->allreduce(lDiE2);
+//         myComm->allreduce(lDiE);
+//         myComm->allreduce(lDi);
+//         myComm->allreduce(lHDiHDj);
+//         myComm->allreduce(lDiHDjE);
+//         myComm->allreduce(lDiHDj);
+//         myComm->allreduce(lDiDjE2);
+//         myComm->allreduce(lDiDjE);
+//         myComm->allreduce(lDiDj);
+        if(myComm->size() > 1)
+        {
+          Walker_t::Buffer_t tmpBuffer;
+          tmpBuffer.rewind();
+          tmpBuffer.add(lsE);
+          tmpBuffer.add(lsE2);
+          tmpBuffer.add(lsE4);
+          tmpBuffer.add(lsW);
+          
+          tmpBuffer.add(lHDiE.begin(),lHDiE.end());
+          tmpBuffer.add(lHDi.begin(),lHDi.end());
+          tmpBuffer.add(lDiE2.begin(),lDiE2.end());
+          tmpBuffer.add(lDiE.begin(),lDiE.end());
+          tmpBuffer.add(lDi.begin(),lDi.end());
+          
+          tmpBuffer.add(lHDiHDj.begin(),lHDiHDj.end());
+          tmpBuffer.add(lDiHDjE.begin(),lDiHDjE.end());
+          tmpBuffer.add(lDiHDj.begin(),lDiHDj.end());
+          tmpBuffer.add(lDiDjE2.begin(),lDiDjE2.end());
+          tmpBuffer.add(lDiDjE.begin(),lDiDjE.end());
+          tmpBuffer.add(lDiDj.begin(),lDiDj.end());
+          
+          myComm->allreduce(tmpBuffer);
+          tmpBuffer.rewind();
+          
+          tmpBuffer.get(lsE);
+          tmpBuffer.get(lsE2);
+          tmpBuffer.get(lsE4);
+          tmpBuffer.get(lsW);
+
+          tmpBuffer.get(lHDiE.begin(),lHDiE.end());
+          tmpBuffer.get(lHDi.begin(),lHDi.end());
+          tmpBuffer.get(lDiE2.begin(),lDiE2.end());
+          tmpBuffer.get(lDiE.begin(),lDiE.end());
+          tmpBuffer.get(lDi.begin(),lDi.end());
+          
+          tmpBuffer.get(lHDiHDj.begin(),lHDiHDj.end());
+          tmpBuffer.get(lDiHDjE.begin(),lDiHDjE.end());
+          tmpBuffer.get(lDiHDj.begin(),lDiHDj.end());
+          tmpBuffer.get(lDiDjE2.begin(),lDiDjE2.end());
+          tmpBuffer.get(lDiDjE.begin(),lDiDjE.end());
+          tmpBuffer.get(lDiDj.begin(),lDiDj.end());    
+        }
+        
         //add locals to globals
         sE +=lsE;
         sE2+=lsE2;
