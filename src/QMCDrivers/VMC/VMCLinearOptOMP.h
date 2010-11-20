@@ -192,6 +192,11 @@ private:
     vector<RealType> Norms;
     vector<RealType> Energies;
     vector<RealType> NE_i;
+    
+      // global quantities for mpi collection
+    std::vector<RealType> gEnergies, gNorms;
+    Matrix<RealType> gNorm2s, gCorrelatedH;
+    
     int CSBlock;
     int minE,nE;
     RealType logpsi2_0_0;

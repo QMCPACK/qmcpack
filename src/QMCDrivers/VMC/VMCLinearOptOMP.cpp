@@ -177,7 +177,7 @@ void VMCLinearOptOMP::initCS()
       //   rebalance weights
       for (int ip=0; ip<NumThreads; ip++)
       {
-        w_i[ip] = std::log(0.5*(Norms[0]/Norms[ip]+std::exp(w_i[ip])));
+        w_i[ip] = std::log(0.5*(gNorms[0]/gNorms[ip]+std::exp(w_i[ip])));
 //         app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
       }
       clearCSEstimators();
@@ -393,9 +393,16 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
       CorrelatedH(ip,ip2) += (psi2_i[ip]/psi2)*(psi2_i[ip2]/psi2)*e_i[ip]*e_i[ip2];
     }
     
-  // global quantities for mpi collection
-  std::vector<RealType> gEnergies(Energies), gNorms(Norms);
-  Matrix<RealType> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
+//   // global quantities for mpi collection
+//   std::vector<RealType> gEnergies(Energies), gNorms(Norms);
+//   Matrix<RealType> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
+  gNorm2s=Norm2s;
+  gCorrelatedH=CorrelatedH;
+  for (int ip=0; ip<NumThreads; ip++)
+  {
+    gEnergies[ip]=Energies[ip];
+    gNorms[ip]=Norms[ip];
+  }
   myComm->allreduce(gEnergies);
   myComm->allreduce(gNorms);
   myComm->allreduce(gNorm2s);
