@@ -98,7 +98,7 @@ bool VMCLinearOptOMP::run()
               Movers[ip]->advanceWalkers(wit,wit_end,false);
               Movers[ip]->accumulate(wit,wit_end);
           }
-          Movers[ip]->stopBlock(true);
+          Movers[ip]->stopBlock(false);
         }//end-of-parallel for
         CurrentStep+=nSteps;
 
