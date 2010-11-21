@@ -179,7 +179,6 @@ private:
           Walker_t::Buffer_t tbuffer;
           RealType logpsi=psiClones[ip]->evaluateLog(*wClones[ip]);
           logpsi=psiClones[ip]->registerData(*wClones[ip],tbuffer);
-    //               logpsi=psiClones[ip]->updateBuffer(*wClones[ip],tbuffer,true);
           thisWalker.DataSet=tbuffer;
           thisWalker.Weight = 1.0;
           RealType ene = hClones[ip]->evaluate( *wClones[ip]);
@@ -188,6 +187,8 @@ private:
           hClones[ip]->saveProperty(thisWalker.getPropertyBase());
           wClones[ip]->saveWalker(thisWalker);
         }
+        logpsi2_0_0 = W[0]->getPropertyBase()[LOGPSI];
+        myComm->bcast(logpsi2_0_0);
     }
 
 

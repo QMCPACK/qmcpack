@@ -151,10 +151,9 @@ void VMCLinearOptOMP::initCS()
     for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=0;    
 
 //  set all walker positions to the same place
-    
+    setWalkersEqual(firstWalker);
     if(myRNWarmupSteps>0)
     {
-      setWalkersEqual(firstWalker);
       for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
       {
         CSMovers[0]->estimateNormWalkers(psiClones, wClones, hClones, Rng, w_i);
@@ -168,9 +167,6 @@ void VMCLinearOptOMP::initCS()
       for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=1.0;
     }
       
-
-    setWalkersEqual(firstWalker);
-//       app_log()<<" CS:"<<endl;
     for (int step=0; step<myWarmupSteps; ++step)
     {
       CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
@@ -376,7 +372,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
   for (int ip=0; ip<NumThreads; ip++)
   {
     e_i[ip]    = (W[ip])->getPropertyBase()[LOCALENERGY];
-    psi2_i[ip] = expl(2.0*(W[ip])->getPropertyBase()[LOGPSI] + w_i[ip]);
+    psi2_i[ip] = expl(2.0*(W[ip])->getPropertyBase()[LOGPSI] + w_i[ip] - logpsi2_0_0);
     psi2       += psi2_i[ip];
   }
   for (int ip=0; ip<NumThreads; ip++) Norms[ip]  += psi2_i[ip]/psi2;
