@@ -136,6 +136,7 @@ bool VMCLinearOptOMP::run()
 
 void VMCLinearOptOMP::initCS()
 {
+  firstWalker=(*W[0]);
 #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -153,7 +154,7 @@ void VMCLinearOptOMP::initCS()
     
     if(myRNWarmupSteps>0)
     {
-//       setWalkersEqual(firstWalker);
+      setWalkersEqual(firstWalker);
       for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
       {
         CSMovers[0]->estimateNormWalkers(psiClones, wClones, hClones, Rng, w_i);
@@ -168,7 +169,7 @@ void VMCLinearOptOMP::initCS()
     }
       
 
-//     setWalkersEqual(firstWalker);
+    setWalkersEqual(firstWalker);
 //       app_log()<<" CS:"<<endl;
     for (int step=0; step<myWarmupSteps; ++step)
     {
@@ -182,7 +183,7 @@ void VMCLinearOptOMP::initCS()
       }
       clearCSEstimators();
     }
-//     setWalkersEqual(firstWalker);
+    setWalkersEqual(firstWalker);
     clearCSEstimators();
 }
 
@@ -335,7 +336,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType>& curParams, ve
   
   moved_right=false;
   moved_left=false;
-  setWalkersEqual(firstWalker);
+//   setWalkersEqual(firstWalker);
   while (notConverged)
   {
     vector<vector<RealType> > dummy(NumThreads,std::vector<RealType>(curParams.size()));
@@ -362,7 +363,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType>& curParams, ve
       notConverged = bracketing(lambdas, alpha_errorbars);
     
   }
-
+    setWalkersEqual(firstWalker);
     lambdas[0]=lambdas[minE];
     return NE_i[minE];
 }
@@ -431,7 +432,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 
 void VMCLinearOptOMP::resetRun()
 {
-    firstWalker=(*W[0]);
+//     firstWalker=(*W[0]);
     makeClones(W,Psi,H);
     if (UseDrift == "rn") makeClones( *(psipool.getWaveFunction("guide")) );
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
