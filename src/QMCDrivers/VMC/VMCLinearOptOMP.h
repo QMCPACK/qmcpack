@@ -67,6 +67,7 @@ public:
         sE2=0;
         sE4=0;
         sW=0;
+        sN=0;
     }
 
 
@@ -100,7 +101,7 @@ private:
     ///These are the values we collect to build the Matrices GLOBAL
     Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
     std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
-    RealType sE,sE2,sE4,sW;
+    RealType sE,sE2,sE4,sW,sN;
     ///Temp matrices
     Matrix<RealType> DerivRecords, HDerivRecords;
 

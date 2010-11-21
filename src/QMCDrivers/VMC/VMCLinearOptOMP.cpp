@@ -422,10 +422,10 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
   else nE=(NE_i[minE+1]>NE_i[minE-1])?minE-1:minE+1;
 
 //return the error in the energy differences between lowest two
-  RealType rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE])) - (NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
+  long double rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE])) - (NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
   
   //rval = ((rval<0)?-1.0:(std::sqrt(rval/(CSBlock+1))));
-  rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1))));
+  rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1.0))));
   return rval;
 }
 
@@ -732,7 +732,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
           lDiE[i]=0;
           lDiE2[i]=0;
         }
-        RealType lsE(0),lsE2(0),lsE4(0),lsW(0);
+        RealType lsE(0),lsE2(0),lsE4(0),lsW(0),lsN(0);
 
         for (int ip=0; ip<NumThreads; ip++)
         {
@@ -743,6 +743,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
             lsE2+=E_L2*wW;
             lsE4+=E_L2*E_L2*wW;
             lsW +=wW;
+            lsN+=1;
         }
 
         
@@ -802,6 +803,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
           tmpBuffer.add(lsE2);
           tmpBuffer.add(lsE4);
           tmpBuffer.add(lsW);
+          tmpBuffer.add(lsN);
           
           tmpBuffer.add(lHDiE.begin(),lHDiE.end());
           tmpBuffer.add(lHDi.begin(),lHDi.end());
@@ -823,6 +825,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
           tmpBuffer.get(lsE2);
           tmpBuffer.get(lsE4);
           tmpBuffer.get(lsW);
+          tmpBuffer.get(lsN);
 
           tmpBuffer.get(lHDiE.begin(),lHDiE.end());
           tmpBuffer.get(lHDi.begin(),lHDi.end());
@@ -843,6 +846,7 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
         sE2+=lsE2;
         sE4+=lsE4;
         sW +=lsW;
+        sN +=lsN;
         for (int j=0; j<NumOptimizables; j++)
         {
             HDiE[j]+=lHDiE[j];
@@ -863,10 +867,10 @@ void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamil
         E_avg = nrm*sE;
         V_avg = nrm*sE2-E_avg*E_avg;
 //         app_log()<<V_avg<<"  "<<E_avg<<"  "<<std::log(sW)<<endl;
-        
-        RealType err_E(std::sqrt( ((V_avg<0.0)?(1.0):(V_avg*nrm)) ));
+        RealType g_nrm = 1.0/sN;
+        RealType err_E(std::sqrt( ((V_avg<0.0)?(1.0):(V_avg*g_nrm)) ));
         RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
-        err_E2 *= nrm;
+        err_E2 *= g_nrm;
         err_E2 = std::sqrt( ((err_E2<0.0)?(1.0):(err_E2)) );
         
         return w_beta*err_E2+(1.0-w_beta)*err_E;
