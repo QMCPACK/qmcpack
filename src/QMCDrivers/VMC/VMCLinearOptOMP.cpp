@@ -98,7 +98,7 @@ bool VMCLinearOptOMP::run()
               Movers[ip]->advanceWalkers(wit,wit_end,false);
               Movers[ip]->accumulate(wit,wit_end);
           }
-          Movers[ip]->stopBlock(false);
+          Movers[ip]->stopBlock(true);
         }//end-of-parallel for
         CurrentStep+=nSteps;
 
@@ -434,6 +434,7 @@ void VMCLinearOptOMP::resetRun()
 {
 //     firstWalker=(*W[0]);
     makeClones(W,Psi,H);
+    clearCSEstimators();
     if (UseDrift == "rn") makeClones( *(psipool.getWaveFunction("guide")) );
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
 
