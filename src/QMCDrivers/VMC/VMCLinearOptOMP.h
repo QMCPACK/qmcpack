@@ -148,14 +148,18 @@ private:
     void clearCSEstimators()
     {
       CorrelatedH.resize(NumThreads,NumThreads);
+      gCorrelatedH.resize(NumThreads,NumThreads);
       Norm2s.resize(NumThreads+1,NumThreads+1);
+      gNorm2s.resize(NumThreads+1,NumThreads+1);
       Norms.resize(NumThreads+1); 
       Energies.resize(NumThreads);
+      gNorms.resize(NumThreads+1); 
+      gEnergies.resize(NumThreads);
       NE_i.resize(NumThreads);
-      CorrelatedH=0;
-      Norm2s=0;
-      for (int ip=0; ip<NumThreads+1; ++ip) Norms[ip]=0;
-      for (int ip=0; ip<NumThreads; ++ip) Energies[ip]=0;
+      gCorrelatedH=CorrelatedH=0;
+      gNorm2s=Norm2s=0;
+      for (int ip=0; ip<NumThreads+1; ++ip) gNorms[ip]=Norms[ip]=0;
+      for (int ip=0; ip<NumThreads; ++ip) gEnergies[ip]=Energies[ip]=0;
       for (int ip=0; ip<NumThreads; ++ip) NE_i[ip]=0;
     }
     

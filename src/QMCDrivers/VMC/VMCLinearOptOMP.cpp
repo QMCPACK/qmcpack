@@ -398,11 +398,9 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 //   Matrix<RealType> gNorm2s(Norm2s), gCorrelatedH(CorrelatedH);
   gNorm2s=Norm2s;
   gCorrelatedH=CorrelatedH;
-  for (int ip=0; ip<NumThreads; ip++)
-  {
-    gEnergies[ip]=Energies[ip];
-    gNorms[ip]=Norms[ip];
-  }
+  for (int ip=0; ip<NumThreads; ip++) gEnergies[ip]=Energies[ip];
+  for (int ip=0; ip<NumThreads+1; ip++) gNorms[ip]=Norms[ip];
+  
   myComm->allreduce(gEnergies);
   myComm->allreduce(gNorms);
   myComm->allreduce(gNorm2s);
