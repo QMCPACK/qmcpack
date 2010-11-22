@@ -1043,7 +1043,6 @@ void
 	    // symmetry at special k-points.
 
 	    double rNorm=0.0, iNorm=0.0;
-	    
 	    PosType ru;
 	    for (int ix=0; ix<nx; ix++) {
 	      ru[0] = (RealType)ix / (RealType)(nx-1);
@@ -1393,9 +1392,12 @@ void
 	    // symmetry at special k-points.
 	    double rNorm=0.0, iNorm=0.0;
 	    PosType ru;
-	    for (int ix=0; ix<nx; ix++)
-	      for (int iy=0; iy<ny; iy++)
+	    for (int ix=0; ix<nx; ix++) {
+	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      for (int iy=0; iy<ny; iy++){
+		ru[1] = (RealType)iy / (RealType)(ny-1);
 		for (int iz=0; iz<nz; iz++) {
+		  ru[2] = (RealType)iz / (RealType)(nz-1);
 		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 		  double s, c;
 		  sincos(phi, &s, &c);
@@ -1405,10 +1407,12 @@ void
 		  rNorm += z.real()*z.real();
 		  iNorm += z.imag()*z.imag();
 		}
+	      }
+	    }
 	    double arg = std::atan2(iNorm, rNorm);
-	    // cerr << "Phase = " << arg/M_PI << " pi.\n";
 	    double s,c;
-	    sincos(0.25*M_PI-arg, &s, &c);
+	    sincos(0.125*M_PI-0.5*arg, &s, &c);
+	    //sincos(0.25*M_PI-arg, &s, &c);
 	    complex<double> phase(c,s);
 	    for (int ix=0; ix<nx; ix++)
 	      for (int iy=0; iy<ny; iy++)
