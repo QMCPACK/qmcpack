@@ -1045,11 +1045,14 @@ void
 	    double rNorm=0.0, iNorm=0.0;
 	    PosType ru;
 	    for (int ix=0; ix<nx; ix++) {
-	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      //	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      ru[0] = (RealType)ix / (RealType)nx;
 	      for (int iy=0; iy<ny; iy++){
-		ru[1] = (RealType)iy / (RealType)(ny-1);
+		//		ru[1] = (RealType)iy / (RealType)(ny-1);
+		ru[1] = (RealType)iy / (RealType)ny;
 		for (int iz=0; iz<nz; iz++) {
-		  ru[2] = (RealType)iz / (RealType)(nz-1);
+		  //		  ru[2] = (RealType)iz / (RealType)(nz-1);
+		  ru[2] = (RealType)iz / (RealType)nz;
 		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 		  double s, c;
 		  sincos(phi, &s, &c);
@@ -1393,11 +1396,14 @@ void
 	    double rNorm=0.0, iNorm=0.0;
 	    PosType ru;
 	    for (int ix=0; ix<nx; ix++) {
-	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      //	      ru[0] = (RealType)ix / (RealType)(nx-1);
+	      ru[0] = (RealType)ix / (RealType)nx;
 	      for (int iy=0; iy<ny; iy++){
-		ru[1] = (RealType)iy / (RealType)(ny-1);
+		//		ru[1] = (RealType)iy / (RealType)(ny-1);
+		ru[1] = (RealType)iy / (RealType)ny;
 		for (int iz=0; iz<nz; iz++) {
-		  ru[2] = (RealType)iz / (RealType)(nz-1);
+		  //		  ru[2] = (RealType)iz / (RealType)(nz-1);
+		  ru[2] = (RealType)iz / (RealType)nz;
 		  double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 		  double s, c;
 		  sincos(phi, &s, &c);
