@@ -493,7 +493,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is) {
     for(int k=0; k<coef[indx].size(); k++)
       gC0.push_back(coef[indx][k]);
   }
-  gBound[NumberOfAtoms+1] = gtot+1;
+  gBound[NumberOfAtoms] = gtot;
 }
 
 void GamesAsciiParser::getMO(std::istream& is) {
