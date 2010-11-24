@@ -246,23 +246,21 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     RealType dl = std::abs(lambdas[1]-lambdas[0]);
     RealType mL= lambdas[minE];
     RealType DE = NE_i[nE] - NE_i[minE];
-    
-//     if (moved_left&&moved_right&&(DE<errorbars))
-//     {
-//       app_log()<<"   Decrease target error bars to resolve energy difference."<<endl;
-//       return false;
-//     }
-//     else 
+
     if (minE==(NumThreads-1))
     {
       if(moved_left)
       {
         app_log()<<" Bracketed minimum between CS runs"<<endl;
+        if (lambdas[minE]==0)
+        {
           moved_right=false;
           moved_left=false;
-        mL=lambdas[minE]-(NumThreads-1.0)*dl;
-        dl = 2.0*std::abs(lambdas[1]-lambdas[0]);
-        for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
+          dl = std::abs(lambdas[1]-lambdas[0]);
+          mL = -0.5*(NumThreads-1)*dl;
+          for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
+        }
+        else return false;
       }
       else
       {
@@ -277,11 +275,15 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
       if (moved_right)
       {
         app_log()<<" Bracketed minimum between CS runs"<<endl;
+        if (lambdas[minE]==0)
+        {
           moved_right=false;
           moved_left=false;
-        mL=lambdas[minE]-(NumThreads-1.0)*dl;
-        dl = 2.0*std::abs(lambdas[1]-lambdas[0]);
-        for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
+          dl = std::abs(lambdas[1]-lambdas[0]);
+          mL = -0.5*(NumThreads-1)*dl;
+          for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + ip*dl;
+        }
+        else return false;
       }
       else
       {
@@ -295,8 +297,8 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
     {
 //         minimum is bracketed
 // if energy difference is smaller than the errorbars and deltaP<1e-4 we computed then we are done
-        if (DE<errorbars)
-        {
+//         if (DE<errorbars)
+//         {
           int nms=3;
           vector<RealType>  Y(nms), Coefs(3);
           Matrix<RealType> X(nms,3);
@@ -306,22 +308,22 @@ bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
           for (int i=0; i<nms; i++) Y[i]=NE_i[i+minE-1];
           LinearFit(Y,X,Coefs);
           
-          RealType quadraticMinimum(-1.0*Coefs[1]/Coefs[2]);
+          RealType quadraticMinimum(-0.5*Coefs[1]/Coefs[2]);
           lambdas[minE]=quadraticMinimum;
-          
+          app_log()<<"Min predicted at: "<<quadraticMinimum<<endl;
           return false;
-        }
-        else
-        {
-          app_log()<<" Bracketed minimum, refine"<<endl;
-          moved_right=false;
-          moved_left=false;
-// energy difference between the points is still larger than the error bars we require
-// need to "zoom" into find minimum more precisely
-            dl = 2.0*std::abs(lambdas[1]-lambdas[0])/(NumThreads-1.0);
-            mL = std::min(lambdas[minE],lambdas[nE])-0.5*dl;
-            for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + dl*ip;
-        }
+//         }
+//         else
+//         {
+//           app_log()<<" Bracketed minimum, refine"<<endl;
+//           moved_right=false;
+//           moved_left=false;
+// // energy difference between the points is still larger than the error bars we require
+// // need to "zoom" into find minimum more precisely
+//             dl = 2.0*std::abs(lambdas[1]-lambdas[0])/(NumThreads-1.0);
+//             mL = std::min(lambdas[minE],lambdas[nE])-0.5*dl;
+//             for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = mL + dl*ip;
+//         }
     }
     return true;
 }

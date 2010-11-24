@@ -33,6 +33,12 @@ public:
     /// Constructor.
     VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                     HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                    
+    ~VMCLinearOptOMP()
+    {
+      if (UseDrift == "rn")
+        delete_iter(CSMovers.begin(),CSMovers.end());
+    }
     bool run();
     RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
     int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
