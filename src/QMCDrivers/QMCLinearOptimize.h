@@ -22,7 +22,8 @@
 
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
-#include "Optimize/NRCOptimization.h"
+#include "QMCApp/WaveFunctionPool.h"
+
 
 namespace qmcplusplus
 {
@@ -38,32 +39,30 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCLinearOptimize: public QMCDriver, private NRCOptimization<QMCTraits::RealType>
+class QMCLinearOptimize: public QMCDriver
 {
 public:
 
     ///Constructor.
     QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                      QMCHamiltonian& h, HamiltonianPool& hpool);
-
+                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                      
     ///Destructor
-    ~QMCLinearOptimize();
+    virtual ~QMCLinearOptimize();
 
     ///Run the Optimization algorithm.
-    bool run();
+    virtual bool run()=0;
     ///process xml node
-    bool put(xmlNodePtr cur);
+    virtual bool put(xmlNodePtr cur);
     void resetComponents(xmlNodePtr cur);
     ///add a configuration file to the list of files
     void addConfiguration(const string& a);
-    RealType Func(Return_t dl);
     void setWaveFunctionNode(xmlNodePtr cur)
     {
         wfNode=cur;
     }
-
-private:
-
+    
+    vector<RealType> optdir, optparm;
     ///index to denote the partition id
     int PartID;
     ///total number of partitions that will share a set of configuratons
@@ -74,27 +73,10 @@ private:
     int NumOfVMCWalkers;
     ///Number of iterations maximum before generating new configurations.
     int Max_iterations;
-    ///stop optimizing if cost function decrease is less than this
-    RealType costgradtol;
-    ///yes/no applicable only first time
-    string SkipSampleGeneration;
     ///need to know HamiltonianPool to use OMP
     HamiltonianPool& hamPool;
     ///target cost function to optimize
-    //QMCCostFunction* optTarget;
     QMCCostFunctionBase* optTarget;
-    /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
-    string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
-
-    vector<RealType> optdir, optparm;
-    RealType allowedCostDifference, stabilizerScale, bigChange, exp0, exp1, savedQuadstep;
-    int nstabilizers;
-    /// number of previous steps to orthogonalize to.
-    int eigCG;
-    /// total number of cg steps per iterations
-    int  TotalCGSteps;
-    /// percent variance or H2 to mix in
-    RealType w_beta;
     ///Dimension of matrix and number of parameters
     int N,numParams;
     ///vmc engine
@@ -103,18 +85,8 @@ private:
     xmlNodePtr wfNode;
     ///xml node for optimizer
     xmlNodePtr optNode;
-    ///method for optimization, default conjugate gradient
-    string optmethod;
     ///list of files storing configurations
     vector<string> ConfigFile;
-    ///Copy Constructor (disabled).
-    QMCLinearOptimize(const QMCLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
-    ///Copy operator (disabled).
-    QMCLinearOptimize& operator=(const QMCLinearOptimize&)
-    {
-        return *this;
-    }
-    bool ValidCostFunction(bool valid);
     
     inline bool tooLow(RealType safeValue, RealType CurrentValue)
     {
@@ -125,8 +97,10 @@ private:
     
     void start();
     void finish();
-    
+    //asymmetric generalized EV
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
+    //asymmetric EV
+    RealType getLowestEigenvector(Matrix<RealType>& A, vector<RealType>& ev);
     RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
     void getNonLinearRange(int& first, int& last);
     bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);

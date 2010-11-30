@@ -29,8 +29,8 @@
 #include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
 #include "QMCDrivers/ForwardWalking/FRSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
-#include "QMCDrivers/QMCLinearOptimize.h"
-#include "QMCDrivers/QMCCSLinearOptimize.h"
+#include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
+#include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/QMCChooseBestParameters.h"    
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if QMC_BUILD_LEVEL>1
@@ -372,7 +372,7 @@ namespace qmcplusplus {
     } 
     else if(curRunType == LINEAR_OPTIMIZE_RUN)
     {
-      QMCLinearOptimize *opt = new QMCLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;

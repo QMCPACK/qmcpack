@@ -8,7 +8,8 @@ SET(QMCDRIVERS
   QMCOptimize.cpp
   QMCChooseBestParameters.cpp
   QMCLinearOptimize.cpp
-  QMCCSLinearOptimize.cpp
+  QMCCorrelatedSamplingLinearOptimize.cpp
+  QMCFixedSampleLinearOptimize.cpp
   QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
   QMCCostFunctionSingle.cpp

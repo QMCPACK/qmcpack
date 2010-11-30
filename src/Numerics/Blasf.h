@@ -55,6 +55,7 @@ using namespace std;
 #define zgetrf zgetrf_
 #define zgetri zgetri_
 #define dgesvd dgesvd_
+#define dgeev dgeev_
 #define dggev dggev_
 #define dger dger_
 #define zgeru zgeru_
@@ -181,6 +182,9 @@ extern "C" {
 	      int *LDU, double *VT, int *LDVT, double *work,
 	      int *LWORK, int *INFO);
   
+  void dgeev(char *JOBVL,char *JOBVR,int *N,double *A,int *LDA, double *ALPHAR,double *ALPHAI, 
+             double *VL,int *LDVL,double *VR,int *LDVR, double *WORK,int *LWORK, int *INFO );
+         
   void dggev(char *JOBVL,char *JOBVR,int *N,double *A,int *LDA,double *B,int *LDB,double *ALPHAR,double *ALPHAI,
               double *BETA, double *VL,int *LDVL,double *VR,int *LDVR, double *WORK,int *LWORK, int *INFO );
 

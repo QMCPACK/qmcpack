@@ -20,10 +20,10 @@
 #ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 
+#include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/VMC/VMCLinearOptOMP.h"
 #include "QMCDrivers/QMCCSLinearOptimizeWFmanagerOMP.h"
 #include "Optimize/OptimizeBase.h"
-#include "QMCApp/WaveFunctionPool.h"
 
 namespace qmcplusplus
 {
@@ -39,7 +39,7 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCCSLinearOptimize: public QMCDriver
+class QMCCSLinearOptimize: public QMCLinearOptimize
 {
 public:
 
@@ -54,58 +54,21 @@ public:
     bool run();
     ///process xml node
     bool put(xmlNodePtr cur);
-    void resetComponents(xmlNodePtr cur);
-    ///add a configuration file to the list of files
-    void addConfiguration(const string& a);
-    void setWaveFunctionNode(xmlNodePtr cur)
-    {
-        wfNode=cur;
-    }
 
 private:
-
+    VMCLinearOptOMP* vmcCSEngine;
+    WaveFunctionPool& psipool;
     int NumOfVMCWalkers;
     ///Number of iterations maximum before generating new configurations.
     int Max_iterations;
-    ///need to know HamiltonianPool to use OMP
-    HamiltonianPool& hamPool;
-    WaveFunctionPool& psipool;
-    ///target cost function to optimize
-//     QMCCostFunction* optTarget;
-    QMCCSLinearOptimizeWFmanagerOMP* optTarget;
     /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
     string MinMethod, GEVtype;
 
-    vector<RealType> optdir, optparm;
     RealType stabilizerScale, bigChange, exp0, stepsize;
     RealType Lambda;
     int nstabilizers;
     /// percent variance or H2 to mix in
     RealType w_beta;
-    ///Dimension of matrix and number of parameters
-    int N,numParams;
-    ///vmc engine
-    VMCLinearOptOMP* vmcEngine;
-    ///xml node to be dumped
-    xmlNodePtr wfNode;
-    ///xml node for optimizer
-    xmlNodePtr optNode;
-    ///method for optimization, default best
-    string optmethod;
-    ///list of files storing configurations
-    vector<string> ConfigFile;
-    ///Copy Constructor (disabled).
-    QMCCSLinearOptimize(const QMCCSLinearOptimize& a): QMCDriver(a),hamPool(a.hamPool), psipool(a.psipool) { }
-    ///Copy operator (disabled).
-    QMCCSLinearOptimize& operator=(const QMCCSLinearOptimize&)
-    {
-        return *this;
-    }
-    bool ValidCostFunction(bool valid){return true;};
-    
-    void start();
-    void finish();
-    
     inline int CubicFormula (double a, double b, double c, double d,
             double &x1, double &x2, double &x3)
     {
@@ -164,15 +127,6 @@ private:
         return x1;
       }
     }
-    
-    RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
-    void getNonLinearRange(int& first, int& last);
-    bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
-    RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
-    void generateSamples();
-    void add_timers(vector<NewTimer*>& timers);
-    vector<NewTimer*> myTimers;
-    Timer t1;
 };
 }
 #endif
