@@ -39,7 +39,7 @@ namespace qmcplusplus
     public:
 
       ///Constructor.
-      QMCChooseBestParameters(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool);
+      QMCChooseBestParameters(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
 
       ///Destructor
       ~QMCChooseBestParameters();

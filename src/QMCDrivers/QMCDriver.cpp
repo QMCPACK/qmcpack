@@ -30,7 +30,7 @@
 
 namespace qmcplusplus {
 
-  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
+  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool): MPIObjectBase(0),
   branchEngine(0), ResetRandom(false), AppendRun(false), DumpConfig(true),
   MyCounter(0), RollBackBlocks(0),
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
@@ -40,7 +40,7 @@ namespace qmcplusplus {
   nAccept(0), nReject(0),  CurrentStep(0), 
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0), storeConfigs(0),
-  W(w), Psi(psi), H(h), Estimators(0)
+  W(w), Psi(psi), H(h), psiPool(ppool), Estimators(0)
   { 
 
     //use maximum double

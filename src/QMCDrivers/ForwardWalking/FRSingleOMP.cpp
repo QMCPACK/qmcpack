@@ -20,8 +20,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  FRSingleOMP::FRSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, ParticleSetPool& pset)
-    : QMCDriver(w,psi,h), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
+  FRSingleOMP::FRSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, ParticleSetPool& pset, WaveFunctionPool& ppool)
+    : QMCDriver(w,psi,h,ppool), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
       , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0), doWeights(1), gridDivs(100), ptclPool(pset), ionroot("ion0")
   { 
     

@@ -312,7 +312,7 @@ namespace qmcplusplus {
     {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       VMCFactory fac(curQmcModeBits.to_ulong(),cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
       //TESTING CLONE
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
@@ -321,7 +321,7 @@ namespace qmcplusplus {
     {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       VMCFactory fac(curQmcModeBits.to_ulong(),cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
       //TESTING CLONE
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
@@ -330,20 +330,20 @@ namespace qmcplusplus {
     {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],
 		     curQmcModeBits[GPU_MODE], cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
     } 
 #if !defined(QMC_COMPLEX)
     else if(curRunType == RN_RUN) 
     {
       RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
     } 
 #endif
 #if QMC_BUILD_LEVEL>1
     else if(curRunType == RMC_RUN)
     {
       app_log() << "Using RQMCMultiple: no warping, no pbyp" << endl;
-      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
     }
 #endif
 //#if defined(QMC_BUILD_COMPLETE)
@@ -365,16 +365,16 @@ namespace qmcplusplus {
 //#endif
     else if(curRunType == OPTIMIZE_RUN)
     {
-      QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
     else if(curRunType == LINEAR_OPTIMIZE_RUN)
     {
       QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
@@ -382,33 +382,33 @@ namespace qmcplusplus {
 //       QMCLinearOptimize *opt = new QMCLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
       QMCCSLinearOptimize *opt = new QMCCSLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
     else if(curRunType == SET_PARAMS)
     {
-      QMCChooseBestParameters *opt = new QMCChooseBestParameters(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      QMCChooseBestParameters *opt = new QMCChooseBestParameters(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       qmcDriver=opt;
     }
     else if(curRunType == FR_RUN)
     { 
-      qmcDriver = new FRSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool, *ptclPool);
+      qmcDriver = new FRSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool, *ptclPool,*psiPool);
     } 
     else if(curRunType == FW_RUN)
     {
 //       qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
 
 #if defined(HAVE_MPI)
-      qmcDriver = new FWSingleMPI(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      qmcDriver = new FWSingleMPI(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
 #else
-      qmcDriver = new FWSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      qmcDriver = new FWSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
 #endif
     } 
     else 
     {
       WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing");
       qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
-					 *ptclPool);
+					 *ptclPool,*psiPool);
     }
 
     if(curQmcModeBits[MULTIPLE_MODE]) 

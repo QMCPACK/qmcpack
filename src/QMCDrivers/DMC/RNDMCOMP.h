@@ -35,7 +35,7 @@ namespace qmcplusplus {
 
     /// Constructor.
     RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        HamiltonianPool& hpool);
+        HamiltonianPool& hpool,WaveFunctionPool& ppool);
 
     bool run();
     bool put(xmlNodePtr cur);

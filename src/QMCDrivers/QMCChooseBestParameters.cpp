@@ -37,7 +37,7 @@ namespace qmcplusplus
 {
   
   QMCChooseBestParameters::QMCChooseBestParameters(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h), CloneManager(hpool), 
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool), CloneManager(hpool), 
      hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10), alpha(1)
     {
       //set the optimization flag
@@ -158,7 +158,7 @@ namespace qmcplusplus
 	  vmcEngine = new VMCcuda(W,Psi,H);
         else
 #endif
-        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
       }

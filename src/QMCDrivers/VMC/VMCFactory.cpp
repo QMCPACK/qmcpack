@@ -34,7 +34,7 @@
 namespace qmcplusplus {
 
   QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-      QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool) {
+      QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool) {
     int np=omp_get_max_threads();
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
@@ -46,7 +46,7 @@ namespace qmcplusplus {
 #endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
-      qmc = new VMCSingleOMP(w,psi,h,hpool);
+      qmc = new VMCSingleOMP(w,psi,h,hpool,ppool);
     } 
 #if defined(QMC_BUILD_COMPLETE)
     //else if(VMCMode == 2) //(0,1,0)
@@ -73,7 +73,7 @@ namespace qmcplusplus {
 //#endif
     else if(VMCMode == 8) //(only possible for WFMC run)
     {
-      qmc = new WFMCSingleOMP(w,psi,h,hpool);
+      qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
     }
 #endif
     qmc->setUpdateMode(VMCMode&1);

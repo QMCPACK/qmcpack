@@ -20,8 +20,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  FWSingle::FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h)
-    : QMCDriver(w,psi,h), weightFreq(1), weightLength(5), fname(""), verbose(0)
+  FWSingle::FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
+    : QMCDriver(w,psi,h,ppool), weightFreq(1), weightLength(5), fname(""), verbose(0)
       , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0)
   { 
     RootName = "FW";

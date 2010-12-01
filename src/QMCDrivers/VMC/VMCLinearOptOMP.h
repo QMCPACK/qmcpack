@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/CommOperators.h"
-#include "QMCApp/WaveFunctionPool.h"
 namespace qmcplusplus
 {
 
@@ -86,11 +85,10 @@ private:
     string UseDrift;
     ///target errorbars to use to determine when to stop for filling matrix and line minimization
     RealType alpha_errorbars, beta_errorbars;
-    WaveFunctionPool& psipool;
     ///check the run-time environments
     void resetRun();
     ///copy constructor
-    VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a),psipool(a.psipool) { }
+    VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
     /// Copy operator (disabled).
     VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
     {

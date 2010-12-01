@@ -34,7 +34,7 @@ namespace qmcplusplus
 {
 
 QMCCSLinearOptimize::QMCCSLinearOptimize(MCWalkerConfiguration& w,
-        TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool), psipool(ppool),
+        TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool), 
         vmcCSEngine(0), Max_iterations(1), exp0(-16), nstabilizers(10), stabilizerScale(0.5), bigChange(1), w_beta(0.0),
         MinMethod("quartic"), GEVtype("mixed")
 {
@@ -361,7 +361,7 @@ QMCCSLinearOptimize::put(xmlNodePtr q)
     //create VMC engine
     if (vmcEngine ==0)
     {
-        vmcEngine = vmcCSEngine = new VMCLinearOptOMP(W,Psi,H,hamPool,psipool);
+        vmcEngine = vmcCSEngine = new VMCLinearOptOMP(W,Psi,H,hamPool,psiPool);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
     }

@@ -95,7 +95,11 @@ namespace qmcplusplus {
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
     void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
-    void setLogEpsilon(RealType eps) { logEpsilon=eps; }
+    void setLogEpsilon(RealType eps) 
+    {
+      logEpsilon=eps; 
+//       app_log()<<eps<<endl;
+    }
     void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
     void estimateNormWalkers(vector<TrialWaveFunction*>& pclone

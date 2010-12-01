@@ -28,7 +28,7 @@ namespace qmcplusplus {
   {
     public:
       /// Constructor.
-      FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+      FWSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
       bool run();
       bool put(xmlNodePtr cur);
 

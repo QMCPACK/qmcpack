@@ -30,7 +30,7 @@ namespace qmcplusplus {
   class DMCcuda: public QMCDriver {
   public:
     /// Constructor.
-    DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
     bool run();
     bool runWithNonlocal();
     bool put(xmlNodePtr cur);

@@ -32,7 +32,7 @@ namespace qmcplusplus {
 
     QMCDriver* create(MCWalkerConfiguration& w, 
 		      TrialWaveFunction& psi, 
-		      QMCHamiltonian& h, HamiltonianPool& hpool);
+		      QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
   };
 }
 

@@ -34,7 +34,8 @@ namespace qmcplusplus {
     WaveFunctionTester(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h,
-		       ParticleSetPool& ptclPool);
+		       ParticleSetPool& ptclPool,
+             WaveFunctionPool& ppool);
 
     bool run();
     bool put(xmlNodePtr q);

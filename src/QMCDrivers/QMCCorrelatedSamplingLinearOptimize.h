@@ -57,7 +57,6 @@ public:
 
 private:
     VMCLinearOptOMP* vmcCSEngine;
-    WaveFunctionPool& psipool;
     int NumOfVMCWalkers;
     ///Number of iterations maximum before generating new configurations.
     int Max_iterations;

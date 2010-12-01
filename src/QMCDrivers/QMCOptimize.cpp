@@ -38,7 +38,7 @@
 namespace qmcplusplus {
 
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
-      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool): QMCDriver(w,psi,h), 
+      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool),
       PartID(0), NumParts(1), WarmupBlocks(10), 
       SkipSampleGeneration("no"), hamPool(hpool),
       optTarget(0), optSolver(0), vmcEngine(0),
@@ -218,7 +218,7 @@ namespace qmcplusplus {
 //      else
 //#endif
 //        vmcEngine = new VMCSingle(W,Psi,H);
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
       vmcEngine->initCommunicator(myComm);
     }

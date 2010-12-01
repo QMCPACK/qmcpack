@@ -30,7 +30,7 @@ namespace qmcplusplus
     public:
       /// Constructor.
       VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                   HamiltonianPool& hpool);
+                   HamiltonianPool& hpool, WaveFunctionPool& ppool);
       bool run();
       bool put(xmlNodePtr cur);
     private:
@@ -47,7 +47,7 @@ namespace qmcplusplus
       ///check the run-time environments
       void resetRun();
       ///copy constructor
-      VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+      VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a){ }
       /// Copy operator (disabled).
       VMCSingleOMP& operator=(const VMCSingleOMP&)
       {

@@ -164,11 +164,12 @@ bool QMCFixedSampleLinearOptimize::run()
             
             RealType newCost(lastCost);
             optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
+            RealType H2rescale=1.0;
 
             if (GEVtype=="H2")
             {
                 Left_tmp=Ham;
-                RealType H2rescale=1.0/Ham2(0,0);
+                H2rescale=1.0/Ham2(0,0);
                 Right=(1-w_beta)*S + w_beta*H2rescale*Ham2;
             }
             else
@@ -209,27 +210,65 @@ bool QMCFixedSampleLinearOptimize::run()
 
 
                 RealType XS(0);
-                if ((StabilizerMethod=="fit")&&(stability==nstabilizers-1))
-                {
-                    //Quartic fit the stabilizers we have tried and try to choose the best we can
-                    int nms=mappedStabilizers.size();
-                    
-                    
-                    
-                    vector<RealType>  Y(nms), Coefs(5);
-                    Matrix<RealType> X(nms,5);
-                    for (int i=0; i<nms; i++) X(i,0)=1.0;
-                    for (int i=0; i<nms; i++) X(i,1)=mappedStabilizers[i].second;
-                    for (int i=0; i<nms; i++) X(i,2)=X(i,1)*X(i,1);
-                    for (int i=0; i<nms; i++) X(i,3)=X(i,2)*X(i,1);
-                    for (int i=0; i<nms; i++) X(i,4)=X(i,3)*X(i,1);
-                    for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
-                    LinearFit(Y,X,Coefs);
-                    //lowest we will allow is a little less than the bare base stabilizer
-                    RealType dltaBest=std::max(stabilityBase-0.1, QuarticMinimum(Coefs));
-                    XS = dltaBest;
-                    stability=nstabilizers;
-                }
+//                 if ((StabilizerMethod=="fit")&&(stability==nstabilizers-1))
+//                 {
+//                     //Quartic fit the stabilizers we have tried and try to choose the best we can
+//                     int nms=mappedStabilizers.size();
+//                     
+//                     
+//                     int cTerms(3);
+//                     vector<RealType>  Y(nms), Coefs(cTerms);
+//                     Matrix<RealType> X(nms,cTerms);
+//                     for (int i=0; i<nms; i++) X(i,0)=1.0;
+//                     for (int i=0; i<nms; i++) X(i,1)=mappedStabilizers[i].second;
+//                     for (int i=0; i<nms; i++) X(i,2)=X(i,1)*X(i,1);
+// //                     for (int i=0; i<nms; i++) X(i,3)=X(i,2)*X(i,1);
+// //                     for (int i=0; i<nms; i++) X(i,4)=X(i,3)*X(i,1);
+//                     for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
+//                     LinearFit(Y,X,Coefs);
+//                     //lowest we will allow is a little less than the bare base stabilizer
+//                     RealType dltaBest=std::max(stabilityBase-0.1, QuarticMinimum(Coefs));
+//                     XS = dltaBest;
+//                     stability=nstabilizers;
+//                 }
+            int nms=mappedStabilizers.size();
+            if ((StabilizerMethod=="fit")&&(stability==nstabilizers-1))
+            {
+              if (nms>=5)
+              {//Quartic fit the stabilizers we have tried and try to choose the best we can
+                vector<RealType>  Y(nms), Coefs(5);
+                Matrix<RealType> X(nms,5);
+                for (int i=0; i<nms; i++) X(i,0)=1.0;
+                for (int i=0; i<nms; i++) X(i,1)=mappedStabilizers[i].second;
+                for (int i=0; i<nms; i++) X(i,2)=X(i,1)*X(i,1);
+                for (int i=0; i<nms; i++) X(i,3)=X(i,2)*X(i,1);
+                for (int i=0; i<nms; i++) X(i,4)=X(i,3)*X(i,1);
+                for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
+                LinearFit(Y,X,Coefs);
+    //lowest we will allow is a little less than the bare base stabilizer
+                RealType dltaBest=std::max(stabilityBase-0.1, QuarticMinimum(Coefs));
+                XS = dltaBest;
+              }
+              else
+              {//Quadratic fit the stabilizers we have tried and try to choose the best we can
+                std::sort(mappedStabilizers.begin(),mappedStabilizers.end());
+                vector<RealType>  Y(nms), Coefs(3);
+                Matrix<RealType> X(nms,3);
+                for (int i=0; i<nms; i++) X(i,0)=1.0;
+                for (int i=0; i<nms; i++) X(i,1)=mappedStabilizers[i].second;
+                for (int i=0; i<nms; i++) X(i,2)=X(i,1)*X(i,1);
+                for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
+                LinearFit(Y,X,Coefs);
+                
+                RealType quadraticMinimum(-1.0*Coefs[1]/Coefs[2]);
+                RealType dltaBest=std::max(stabilityBase-0.1, quadraticMinimum);
+    //               app_log()<<"smallest XS:      "<<X(0,1)<<endl;
+    //               app_log()<<"quadraticMinimum: "<<quadraticMinimum<<endl;
+                XS = dltaBest;
+              }
+               stability=nstabilizers;
+            }
+
 
                 RealType lowestEV(0);
 //                 if ((GEVSplit=="rescale")||(GEVSplit=="freeze"))
@@ -343,7 +382,7 @@ bool QMCFixedSampleLinearOptimize::run()
                 {
 //                   method from umrigar
                     myTimers[3]->start();
-                    Lambda = getNonLinearRescale(currentParameterDirections,S);
+                    Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
                     myTimers[3]->stop();
 
                     RealType bigVec(0);
@@ -391,7 +430,7 @@ bool QMCFixedSampleLinearOptimize::run()
                     else if (deltaPrms>0)
                       quadstep=deltaPrms/bigVec;
                     else 
-                      quadstep = 0.5*getNonLinearRescale(currentParameterDirections,S);
+                      quadstep = 0.5*H2rescale*getNonLinearRescale(currentParameterDirections,S);
                     
 //                  initial guess for line min bracketing
                     LambdaMax = 0.1/bigVec;
@@ -459,12 +498,12 @@ bool QMCFixedSampleLinearOptimize::run()
                 }
                 else if (newCost>lastCost+1.0e-4)
                 {
-                    int neededForGoodQuarticFit=5;//really one more so if 5, then 6 values kept. 4 is minimum.
-                    if ((StabilizerMethod=="fit")&&(stability < neededForGoodQuarticFit))
+                    int neededForGoodQuarticFit=3;
+                    if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))
                     {
                         app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
                     }
-                    else if ((StabilizerMethod=="fit")&&(stability >= neededForGoodQuarticFit))
+                    else if ((StabilizerMethod=="fit")&&(stability+1 >= neededForGoodQuarticFit))
                     {
                         stability = max(nstabilizers-2,stability);
                         if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
@@ -562,7 +601,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 //        else
 //#endif
 //          vmcEngine = new VMCSingle(W,Psi,H);
-            vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+            vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
     }

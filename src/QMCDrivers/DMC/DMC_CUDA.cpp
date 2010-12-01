@@ -27,8 +27,8 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-		   QMCHamiltonian& h):
-    QMCDriver(w,psi,h), myWarmupSteps(0), Mover(0),
+		   QMCHamiltonian& h,WaveFunctionPool& ppool):
+    QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
     ResizeTimer("DMCcuda::resize"),
     DriftDiffuseTimer("DMCcuda::Drift/Diffuse"),
     BranchTimer("DMCcuda::Branch"),

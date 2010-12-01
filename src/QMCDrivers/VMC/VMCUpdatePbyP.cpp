@@ -707,7 +707,7 @@ void VMCUpdatePbyPSampleRN::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_
       thisWalker.ReleasedNodeAge=0;
       thisWalker.ReleasedNodeWeight=0;
 //       thisWalker.Weight=1.0;
-      thisWalker.Weight=1.0/(std::exp(2.0*(logguide-logpsi)));
+      thisWalker.Weight=std::exp(2.0*(logpsi-logguide));
     }
 }
   
@@ -799,6 +799,7 @@ void VMCUpdatePbyPSampleRN::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
 //       thisWalker.resetProperty(0.5*logpsi2_now,Psi.getPhase(),eloc);
       H.auxHevaluate(W,thisWalker);
 //       thisWalker.Weight = 1.0;
+//       thisWalker.Weight = expl(logpsi2_now-logguide2_now);
       thisWalker.Weight = 1.0/(1.0+expl(2.0*(logguide+logEpsilon-logpsi)));
       H.saveProperty(thisWalker.getPropertyBase());
     }

@@ -26,8 +26,8 @@ namespace qmcplusplus
 
   /// Constructor.
   WFMCSingleOMP::WFMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                               HamiltonianPool& hpool):
-      QMCDriver(w,psi,h),  CloneManager(hpool),
+                               HamiltonianPool& hpool, WaveFunctionPool& ppool):
+      QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
       myWarmupSteps(0),UseDrift("yes"),reweight("yes")
   {
     RootName = "wfmc";

@@ -42,7 +42,7 @@ namespace qmcplusplus {
 
     ///Constructor.
     QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-	    QMCHamiltonian& h, HamiltonianPool& hpool);
+	    QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
     
     ///Destructor
     ~QMCOptimize();

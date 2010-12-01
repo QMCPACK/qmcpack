@@ -21,10 +21,10 @@
 namespace qmcplusplus {
 
   QMCDriver* RNFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
-      , QMCHamiltonian& h, HamiltonianPool& hpool) 
+      , QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool) 
   {
     app_log() << "Creating RNDMCMP for the qmc driver" << endl;
-    QMCDriver*  qmc = new RNDMCOMP(w,psi,h,hpool);
+    QMCDriver*  qmc = new RNDMCOMP(w,psi,h,hpool,ppool);
     qmc->setUpdateMode(PbyPUpdate);
     qmc->put(myNode);
     return qmc;

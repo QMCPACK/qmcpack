@@ -420,7 +420,7 @@ namespace qmcplusplus
           }  else  {
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
           }
-          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
           wRef.G += *dLogPsi[iwg];
           wRef.L += *d2LogPsi[iwg];
           saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];

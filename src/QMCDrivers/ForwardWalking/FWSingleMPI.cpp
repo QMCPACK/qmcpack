@@ -21,8 +21,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  FWSingleMPI::FWSingleMPI(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool)
-    : QMCDriver(w,psi,h), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
+  FWSingleMPI::FWSingleMPI(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool)
+    : QMCDriver(w,psi,h,ppool), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
       , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0), doWeights(1), doObservables(1), doDat(1)
   { 
     RootName = "FW";

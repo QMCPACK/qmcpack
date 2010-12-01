@@ -26,7 +26,7 @@
 namespace qmcplusplus {
 
   QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
-      , QMCHamiltonian& h, HamiltonianPool& hpool) 
+      , QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool) 
   {
 #ifdef QMC_CUDA
     if (GPU)
@@ -34,7 +34,7 @@ namespace qmcplusplus {
 #endif
 
     app_log() << "Creating DMCMP for the qmc driver" << endl;
-    QMCDriver*  qmc = new DMCOMP(w,psi,h,hpool);
+    QMCDriver*  qmc = new DMCOMP(w,psi,h,hpool,ppool);
     qmc->setUpdateMode(PbyPUpdate);
     qmc->put(myNode);
     return qmc;

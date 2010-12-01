@@ -25,6 +25,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
@@ -83,7 +84,7 @@ namespace qmcplusplus {
 
 
     /// Constructor.
-    QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
 
     virtual ~QMCDriver();
 
@@ -272,6 +273,8 @@ namespace qmcplusplus {
 
     ///trial function
     TrialWaveFunction& Psi;
+    
+    WaveFunctionPool& psiPool;
 
     ///Hamiltonian
     QMCHamiltonian& H;
@@ -303,7 +306,7 @@ namespace qmcplusplus {
     //PooledData<RealType> HamPool;
 
     ///Copy Constructor (disabled).
-    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), Estimators(0){}
+    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), psiPool(a.psiPool), Estimators(0){}
  
     bool putQMCInfo(xmlNodePtr cur);
 

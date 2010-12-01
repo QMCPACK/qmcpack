@@ -34,7 +34,7 @@ namespace qmcplusplus {
     public:
       /// Constructor.
       FRSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        HamiltonianPool& hpool, ParticleSetPool& pset);
+        HamiltonianPool& hpool, ParticleSetPool& pset, WaveFunctionPool& ppool);
       bool run();
       bool put(xmlNodePtr cur);
 

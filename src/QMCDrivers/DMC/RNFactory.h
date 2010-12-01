@@ -27,7 +27,7 @@ namespace qmcplusplus {
     bool PbyPUpdate;
     xmlNodePtr myNode;
     RNFactory(bool pbyp, xmlNodePtr cur):PbyPUpdate(pbyp), myNode(cur){}
-    QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool);
+    QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
   };
 }
 

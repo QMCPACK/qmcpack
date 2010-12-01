@@ -102,7 +102,7 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
     //cerr << " done." << endl;
 
     bool append_run = false;
@@ -128,7 +128,7 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
     //qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     //cerr << " done." << endl;
 
@@ -157,7 +157,7 @@ namespace qmcplusplus {
     bool isNewDriver = false;
     if(qmcDriver == NULL){
       //cerr << "Creating new RQMC driver" << endl;
-      qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+      qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
       // get second psi, hamiltonian
       QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
 

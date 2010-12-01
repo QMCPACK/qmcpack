@@ -28,8 +28,8 @@ namespace qmcplusplus
 
   /// Constructor.
   VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                             HamiltonianPool& hpool):
-      QMCDriver(w,psi,h),  CloneManager(hpool),
+                             HamiltonianPool& hpool, WaveFunctionPool& ppool):
+      QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
       myWarmupSteps(0),UseDrift("yes"), logoffset(2.0), logepsilon(0)
   {
     RootName = "vmc";
@@ -122,7 +122,7 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ++ip)
       app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
-
+    if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
     
     if (Movers.empty())
       {
@@ -221,163 +221,74 @@ namespace qmcplusplus
           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 
 
+        if (UseDrift != "rn")
+        {
+          for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+
+          if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+            Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          
+    #pragma omp critical
+          {
+            wClones[ip]->clearEnsemble();
+            wClones[ip]->setNumSamples(samples_th[ip]);
+          }
+        }
+      }
+    
+    
+    if (UseDrift == "rn")
+    {
+      RealType avg_w(0);
+      RealType n_w(0);
+#pragma omp parallel
+      {
+        int ip=omp_get_thread_num();
+        
+        for (int step=0; step<myWarmupSteps; ++step)
+        {
+          avg_w=0;
+          n_w=0;
+          for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
+          {
+            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+            #pragma omp single
+            {
+              MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
+              while (wit!=wit_end)
+              {
+                avg_w += (*wit)->Weight;
+                n_w +=1;
+                wit++;
+              }
+            }
+            #pragma omp barrier
+           }
+           #pragma omp single
+           {
+             avg_w *= 1.0/n_w;
+             RealType w_m = avg_w/(1.0-avg_w);
+             w_m = std::log(0.5+0.5*w_m);
+             if (std::abs(w_m)>0.01)
+               logepsilon += w_m;
+           }
+           #pragma omp barrier
+           Movers[ip]->setLogEpsilon(logepsilon);
+          }
+        
         for (int prestep=0; prestep<myWarmupSteps; ++prestep)
           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 
         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        
-#pragma omp critical
-        {
-          wClones[ip]->clearEnsemble();
-          wClones[ip]->setNumSamples(samples_th[ip]);
-        }
-      }
-    
-    
-    if ((UseDrift == "rn")&&(logepsilon==0.0))
-    {
-      long double psi2_sum(0.0);
-      long double psi4_sum(0.0);
-      RealType psi2_0_0(0.0);
-      RealType nw_local(0.0);
-      
-      if (myRNWarmupSteps==0) myRNWarmupSteps=myWarmupSteps;
-      #pragma omp parallel
-      {
-        int ip=omp_get_thread_num();
-        Movers[ip]->setLogEpsilon(logepsilon);
-        for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-        {
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-          #pragma omp flush
-          if((ip==0)&&(prestep>5))
-          {
-            MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-            if (prestep==0)
-            {
-              if (myComm->rank()==0) psi2_0_0=2.0* (*wit)->getPropertyBase()[LOGPSI];
-              myComm->bcast(psi2_0_0);
-            }
-            nw_local += wit_end-wit;
-            while (wit!=wit_end)
-            {
-              long double t(expl(2.0*(*wit)->getPropertyBase()[LOGPSI]-psi2_0_0));
-              psi2_sum += t;
-              psi4_sum += t*t;
-              wit++;
-            }
-//             app_log()<<logl(psi2_sum/nw_local)<<"  "<<logl(sqrtl((psi4_sum/nw_local - (psi2_sum/nw_local * psi2_sum/nw_local))/(1+prestep)) )<<endl;
-          }
-          #pragma omp barrier
           
-        }
-      }
-
-//           we need to set the logepsilon to something reasonable
-        myComm->allreduce(psi2_sum);
-        myComm->allreduce(psi4_sum);
-        myComm->allreduce(nw_local);
-
-        long double p2(psi2_sum*nw_local);
-        RealType eps0 = logl(p2) + psi2_0_0 - logoffset;
-        app_log()<<" Using logepsilon "<<eps0<<endl;
-        app_log()<<" log<Psi^2>= "<<logl(p2)+ psi2_0_0<<endl;
-        long double sigp2(psi4_sum*nw_local-p2*p2);
-        app_log()<<" logError  = "<< logl(sqrtl(sigp2*nw_local))<<endl;
-        for (int ip=0; ip<NumThreads; ++ip) Movers[ip]->setLogEpsilon(eps0);
-        #pragma omp parallel
-        {
-          int ip=omp_get_thread_num();
-          for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
+    #pragma omp critical
           {
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+            wClones[ip]->clearEnsemble();
+            wClones[ip]->setNumSamples(samples_th[ip]);
           }
-        }
-        
-//         bool badEPS(true);
-//         RealType stabilizer=0;
-//         RealType eps0 = logl(psi2_sum*nw_local) + psi2_0_0;
-// 
-//         int Accept(0), Reject(0);
-//           for (int ip=0; ip<NumThreads; ++ip) Accept+=Movers[ip]->nAccept;
-//           for (int ip=0; ip<NumThreads; ++ip) Reject+=Movers[ip]->nReject;
-//           myComm->allreduce(Accept);
-//           myComm->allreduce(Reject);
-//           RealType accpt=(1.0*Accept)/(Accept+Reject);
-//         app_log()<<"Pre: "<<accpt<<endl;
-//         while (badEPS)
-//         {
-//           eps0 = logl(psi2_sum*nw_local) + psi2_0_0 + stabilizer;
-//             #pragma omp parallel
-//             {
-//               int ip=omp_get_thread_num();
-//               Movers[ip]->setLogEpsilon(eps0);
-//               for (int prestep=0; prestep<myWarmupSteps; ++prestep)
-//               {
-//                 Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//                 if(ip==0)
-//                 {
-//                   MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-//                   nw_local += wit_end-wit;
-//                   while (wit!=wit_end)
-//                   {
-//                     psi2_sum += expl(2.0*(*wit)->getPropertyBase()[LOGPSI]-psi2_0_0);
-//                     wit++;
-//                   }
-//                 }
-//                 #pragma omp barrier
-//               }
-//             }
-//           myComm->allreduce(psi2_sum);
-//           myComm->allreduce(nw_local);
-//         
-//           for (int ip=0; ip<NumThreads; ++ip) 
-//             {
-//               Movers[ip]->nAccept=0;
-//               Movers[ip]->nReject=0;
-//               Accept=0;
-//               Reject=0;
-//             }
-//             #pragma omp parallel
-//             {
-//               int ip=omp_get_thread_num();
-//               for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-//                 Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//             }
-//             for (int ip=0; ip<NumThreads; ++ip) Accept+=Movers[ip]->nAccept;
-//             for (int ip=0; ip<NumThreads; ++ip) Reject+=Movers[ip]->nReject;
-//             myComm->allreduce(Accept);
-//             myComm->allreduce(Reject);
-//             RealType accptE=(1.0*Accept)/(Accept+Reject);
-//             app_log()<<Accept<<"  "<<Reject<<endl;
-//             app_log()<<stabilizer<<"  "<<accptE<<endl;
-//             if (accptE<rn_accept_target) badEPS=false;
-//             else if (accptE>99) stabilizer -= 8.0;
-//             else if (accptE>rn_accept_target+0.3) stabilizer -=1.0;
-//             else if (accptE>rn_accept_target+0.2) stabilizer -=0.1;
-//             else stabilizer -= 0.01;
-//         }
-//         app_log()<<"  Using LogEpsilon of: "<<eps0<<endl;
-    }
-    else if (UseDrift == "rn")
-    {
-      app_log()<<"  Using LogEpsilon of: "<<logepsilon<<endl;
-#pragma omp parallel
-      {
-        int ip=omp_get_thread_num();
-        Movers[ip]->setLogEpsilon(logepsilon);
-        for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-        {
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-        }
       }
-    }
-    #pragma omp parallel
-    {
-      int ip=omp_get_thread_num();
-      if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
             
     myWarmupSteps=0;

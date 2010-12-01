@@ -27,8 +27,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool)
-    : QMCDriver(w,psi,h), CloneManager(hpool), useAlternate("no")
+  RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
+    : QMCDriver(w,psi,h,ppool), CloneManager(hpool), useAlternate("no")
     , BranchInterval(-1),mover_MaxAge(-1)
     {
       RootName = "dmc";

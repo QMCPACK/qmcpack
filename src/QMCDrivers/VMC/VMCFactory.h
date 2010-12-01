@@ -27,7 +27,7 @@ namespace qmcplusplus {
     xmlNodePtr myNode;
     VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur){}
     QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        ParticleSetPool& ptclpool, HamiltonianPool& hpool);
+        ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool);
   };
 }
 
