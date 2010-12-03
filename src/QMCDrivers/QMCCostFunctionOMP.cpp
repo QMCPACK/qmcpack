@@ -38,6 +38,7 @@ namespace qmcplusplus
   QMCCostFunctionOMP::~QMCCostFunctionOMP()
   {
     delete_iter(H_KE_Node.begin(),H_KE_Node.end());
+    delete_iter(RngSaved.begin(),RngSaved.end());
   }
 
 
@@ -201,10 +202,10 @@ namespace qmcplusplus
           {
             H_KE_Node[ip]= new QMCHamiltonian;
             H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-//             if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
-//             {
-//               H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
-//             }
+            if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
+            {
+              H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
+            }
           }
         wClones[ip]->loadEnsemble();
       }
@@ -230,7 +231,7 @@ namespace qmcplusplus
         for (int i=0; i<nwtot; ++i) dLogPsi[i]=new ParticleGradient_t(nptcl);
         for (int i=0; i<nwtot; ++i) d2LogPsi[i]=new ParticleLaplacian_t(nptcl);
       }
-
+      
     //JNKIM TO JEREMY
     //for(int ip=1; ip<NumThreads;++ip)
     //{
@@ -244,12 +245,14 @@ namespace qmcplusplus
   void
   QMCCostFunctionOMP::checkConfigurations()
   {
-
     RealType et_tot=0.0;
     RealType eft_tot=0.0;
     RealType e2_tot=0.0;
     RealType enl_tot=0.0;
     RealType TotLogPsi=0.0;
+        
+
+    
 
     //#pragma omp parallel reduction(+:et_tot,e2_tot)
 #pragma omp parallel
@@ -273,12 +276,15 @@ namespace qmcplusplus
         }
       //set the optimization mode for the trial wavefunction
       psiClones[ip]->startOptimization();
+//    synchronize the random number generator with the node
+      (*MoverRng[ip]) = (*RngSaved[ip]);
+      hClones[ip]->setRandomGenerator(MoverRng[ip]);
 
       //int nat = wRef.getTotalNum();
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       typedef MCWalkerConfiguration::Walker_t Walker_t;
       Return_t e0=0.0;
-      Return_t ef=0.0;
+//       Return_t ef=0.0;
       Return_t e2=0.0;
       MCWalkerConfiguration::iterator it(wRef.begin());
       MCWalkerConfiguration::iterator it_end(wRef.end());
@@ -289,25 +295,30 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
+          Return_t logpsi(0);
 //           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
 // buffer for MultiSlaterDet data 
           if(usebuffer=="yes") {
             psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
+            logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
           } else {
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]); 
+//             logpsi = psiClones[ip]->evaluateLog(wRef);
           }
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
-//           if (includeNonlocalH=="yes")
-//             saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
-//           else 
+          if (includeNonlocalH=="yes")
+            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
+          else 
             saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-          ef += saved[ENERGY_FIXED];
+//           ef += saved[ENERGY_FIXED];
           saved[REWEIGHT]=thisWalker.Weight=1.0;
+          
+//           thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
 
 
           vector<Return_t> Dsaved(NumOptimizables);
@@ -393,6 +404,12 @@ namespace qmcplusplus
     Return_t wgt_tot=0.0;
     Return_t wgt_tot2=0.0;
     Return_t NSm1 = 1.0/NumSamples;
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+//    synchronize the random number generator with the node
+      (*MoverRng[ip]) = (*RngSaved[ip]);
+      hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    }
 
     //#pragma omp parallel reduction(+:wgt_tot)
     typedef MCWalkerConfiguration::Walker_t Walker_t;
@@ -414,17 +431,32 @@ namespace qmcplusplus
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
           // buffer for MultiSlaterDet data
           Return_t logpsi;
+//           Return_t logpsi_old = thisWalker.getPropertyBase()[LOGPSI];
           if(usebuffer=="yes") { 
             Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
-          }  else  {
+          }
+//           else if (includeNonlocalH=="yes")
+//           {
+//             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+//           }
+          else  {
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+//             logpsi=psiClones[ip]->evaluateLog(wRef);
           }
           Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
-          wRef.G += *dLogPsi[iwg];
-          wRef.L += *d2LogPsi[iwg];
-          saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
+//           Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-logpsi_old))*thisWalker.Weight ;
+//           thisWalker.getPropertyBase()[LOGPSI] = logpsi_old;
 
+//           if (includeNonlocalH=="yes")
+//           {
+            wRef.G += *dLogPsi[iwg];
+            wRef.L += *d2LogPsi[iwg];
+            saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
+//           }
+//           else
+//             saved[ENERGY_NEW] = hClones[ip]->evaluate(wRef);
+          
           if (needGrad)
           {
             vector<Return_t> Dsaved(NumOptimizables);
@@ -500,7 +532,7 @@ namespace qmcplusplus
 //     cerr<<endl;
 
 //     app_log()<<"Energy After Purge   "<<SumValue[SUM_E_WGT]/SumValue[SUM_WGT]<<endl;
-//     app_log()<<"Variance After Purge "<<SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]<<endl;
+// //     app_log()<<"Variance After Purge "<<SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])<<endl;
 //     app_log()<<"Weight After Purge   "<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }

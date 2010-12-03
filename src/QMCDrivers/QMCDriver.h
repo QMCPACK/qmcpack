@@ -170,6 +170,7 @@ namespace qmcplusplus {
     
     ///resetComponents for next run if reusing a driver.
     virtual void resetComponents(xmlNodePtr cur) {}
+    virtual vector<RandomGenerator_t*>& getRng() {}
 
     ///Observables manager
     EstimatorManager* Estimators;

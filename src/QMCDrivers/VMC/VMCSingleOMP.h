@@ -33,6 +33,7 @@ namespace qmcplusplus
                    HamiltonianPool& hpool, WaveFunctionPool& ppool);
       bool run();
       bool put(xmlNodePtr cur);
+      inline vector<RandomGenerator_t*>& getRng() { return Rng;}
     private:
       ///number of warmup steps
       int myWarmupSteps;

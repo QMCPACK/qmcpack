@@ -50,6 +50,9 @@ namespace qmcplusplus {
       }
       return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
     }
+    
+    virtual inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+    virtual inline RandomGenerator_t& getRng(int i) { return (*Rng[i]);}
 
   protected:
     ///reference to HamiltonianPool to clone everything

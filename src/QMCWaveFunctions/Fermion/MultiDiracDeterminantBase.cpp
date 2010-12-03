@@ -394,6 +394,8 @@ namespace qmcplusplus {
     buf.add(detValues.first_address(), detValues.last_address());
     buf.add(&(grads(0,0)[0]),&(grads(0,0)[0])+ NumPtcls*DIM*NumDets);
     buf.add(lapls.first_address(), lapls.last_address());
+    buf.add(psiMinv.first_address(),psiMinv.last_address());
+    buf.add(TpsiM.first_address(),TpsiM.last_address());
   }
 
   void MultiDiracDeterminantBase::copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
@@ -401,6 +403,8 @@ namespace qmcplusplus {
     buf.put(detValues.first_address(), detValues.last_address());
     buf.put(&(grads(0,0)[0]),&(grads(0,0)[0])+ NumPtcls*DIM*NumDets);
     buf.put(lapls.first_address(), lapls.last_address());
+    buf.put(psiMinv.first_address(),psiMinv.last_address());
+    buf.put(TpsiM.first_address(),TpsiM.last_address());
   }
 
   void MultiDiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
@@ -408,6 +412,11 @@ namespace qmcplusplus {
     buf.get(detValues.first_address(), detValues.last_address());
     buf.get(&(grads(0,0)[0]),&(grads(0,0)[0])+ NumPtcls*DIM*NumDets);
     buf.get(lapls.first_address(), lapls.last_address());
+    buf.get(psiMinv.first_address(),psiMinv.last_address());
+    buf.get(TpsiM.first_address(),TpsiM.last_address());
+    for (int i=0;i<TpsiM.rows();i++)
+      for (int j=0;j<TpsiM.cols();j++)
+         psiM(j,i)=TpsiM(i,j);
   }
 
   void MultiDiracDeterminantBase::setDetInfo(int ref, vector<ci_configuration2> list) 

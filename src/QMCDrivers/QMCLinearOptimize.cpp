@@ -106,6 +106,7 @@ void QMCLinearOptimize::start()
 
     myTimers[1]->start();
     optTarget->getConfigurations(h5FileRoot);
+    optTarget->setRng(vmcEngine->getRng());
     optTarget->checkConfigurations();
     myTimers[1]->stop();
 
@@ -717,30 +718,9 @@ QMCLinearOptimize::put(xmlNodePtr q)
     if (W.getActiveWalkers() == 0) addWalkers(omp_get_max_threads());
 
     NumOfVMCWalkers=W.getActiveWalkers();
-
-    //create VMC engine
-    if (vmcEngine ==0)
-    {
-#if defined (QMC_CUDA)
-        if (useGPU == "yes")
-            vmcEngine = new VMCcuda(W,Psi,H);
-        else
-#endif
-//#if defined(ENABLE_OPENMP)
-//        if(omp_get_max_threads()>1)
-//          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
-//        else
-//#endif
-//          vmcEngine = new VMCSingle(W,Psi,H);
-            vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
-        vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-        vmcEngine->initCommunicator(myComm);
-    }
-    vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
-    vmcEngine->process(qsave);
-
+    
     bool success=true;
-
+    
     if (optTarget == 0)
     {
 #if defined (QMC_CUDA)
@@ -755,11 +735,31 @@ QMCLinearOptimize::put(xmlNodePtr q)
             }
             else
 #endif
-                optTarget = new QMCCostFunctionSingle(W,Psi,H);
-
+        optTarget = new QMCCostFunctionSingle(W,Psi,H);
         optTarget->setStream(&app_log());
         success=optTarget->put(q);
     }
+    
+    //create VMC engine
+    if (vmcEngine ==0)
+    {
+#if defined (QMC_CUDA)
+        if (useGPU == "yes")
+            vmcEngine = new VMCcuda(W,Psi,H);
+        else
+#endif
+//#if defined(ENABLE_OPENMP)
+//        if(omp_get_max_threads()>1)
+//          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+//        else
+//#endif
+//          vmcEngine = new VMCSingle(W,Psi,H);
+        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+        vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+        vmcEngine->initCommunicator(myComm);
+    }
+    vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
+    vmcEngine->process(qsave);
     return success;
 }
 

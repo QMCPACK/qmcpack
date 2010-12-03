@@ -248,8 +248,7 @@ namespace qmcplusplus {
     G += myG;
     for(int i=0; i<L.size(); i++)
       L(i) += myL[i] - dot(myG[i],myG[i]);
-    return psiCurrent;
-
+    return evaluateLogAndPhase(psiCurrent,PhaseValue);
   }
 
 

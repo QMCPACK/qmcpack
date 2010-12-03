@@ -31,9 +31,9 @@ namespace qmcplusplus
       MPIObjectBase(0),
       W(w),H(h),Psi(psi),  Write2OneXml(true),
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-      w_en(0.0), w_var(0.0), w_abs(0.0), //includeNonlocalH("no"),
+      w_en(0.0), w_var(0.0), w_abs(0.0), 
       CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
-      SmallWeight(0),usebuffer("yes")
+      SmallWeight(0),usebuffer("yes"), includeNonlocalH("no")
   {
 
 
@@ -483,7 +483,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.add(usebuffer,"useBuffer","string");
     m_param.add(usebuffer,"usebuffer","string");
-//     m_param.add(includeNonlocalH,"nonlocalpp","string");
+    m_param.add(includeNonlocalH,"nonlocalpp","string");
     m_param.put(q);
 
     Write2OneXml = (writeXmlPerStep == "no");
