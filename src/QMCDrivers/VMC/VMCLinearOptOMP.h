@@ -74,6 +74,8 @@ public:
         sW=0;
         sN=0;
     }
+    
+    inline vector<RandomGenerator_t*>& getRng() { return Rng;}
 
 
 private:
