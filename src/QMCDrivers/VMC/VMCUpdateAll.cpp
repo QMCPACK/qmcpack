@@ -95,21 +95,21 @@ namespace qmcplusplus
         
         RealType psi2_i_new(2.0*pclone[ip]->evaluateLog(*wclone[ip])+ c_i[ip]);
        
-        #pragma master
+        #pragma omp master
        {
          psi2_new=0.0;
          psi2_0_new=psi2_i_new;
        }
        
-        #pragma barrier
+        #pragma  omp barrier
 // #pragma flush(psi2_new,psi2_0_new)
 
        //everybody adds the value including master
-#pragma critical
+#pragma omp critical
        {
          psi2_new+=std::exp(psi2_i_new-psi2_0_new);
        }
-#pragma barrier
+#pragma omp barrier
 
        RealType prob = std::exp(psi2_0_new-psi2_0_now)*(psi2_new/psi2_now);
         if (rng_loc() > prob) W[ip]->Age++;
@@ -154,18 +154,18 @@ namespace qmcplusplus
         if (!wclone[ip]->makeMove(*W[ip],deltaR, m_sqrttau)) continue;
         RealType psi2_i_new(2.0*pclone[ip]->evaluateLog(*wclone[ip]));
        
-#pragma barrier
-#pragma critical
+#pragma omp barrier
+#pragma omp critical
        {
          psi2_i_now[ip]=psi2_i_new;
        }
-#pragma barrier
-#pragma flush 
-#pragma critical
+#pragma omp barrier
+#pragma omp flush 
+#pragma omp critical
 {
          ratio_i_0[ip] += expl(psi2_i_now[ip]-psi2_i_now[0] + nn);
 }
-#pragma barrier
+#pragma omp barrier
     }
 
     }

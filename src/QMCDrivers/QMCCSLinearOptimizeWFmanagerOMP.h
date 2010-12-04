@@ -46,9 +46,13 @@ namespace qmcplusplus
       void startOptimization();
       void resetPsi(bool final_reset=false);
       void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0){};
-      Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap){};
+      Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian
+          , Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)
+      {
+        return 0.0;
+      }
     protected:
-      Return_t correlatedSampling(bool needGrad=true){};
+      Return_t correlatedSampling(bool needGrad=true){return 0.0;}
     };
 }
 #endif

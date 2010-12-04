@@ -71,6 +71,7 @@ namespace qmcplusplus {
 
   QMCDriver::~QMCDriver() 
   { 
+    delete_iter(Rng.begin(),Rng.end());
   }
 
   void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {

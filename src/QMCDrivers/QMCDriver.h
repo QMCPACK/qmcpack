@@ -170,10 +170,16 @@ namespace qmcplusplus {
     
     ///resetComponents for next run if reusing a driver.
     virtual void resetComponents(xmlNodePtr cur) {}
-    virtual vector<RandomGenerator_t*>& getRng() {}
+    //virtual vector<RandomGenerator_t*>& getRng() {}
 
     ///Observables manager
     EstimatorManager* Estimators;
+
+    ///return the random generators
+    inline vector<RandomGenerator_t*>& getRng() { return Rng;} 
+
+    ///return the i-th random generator
+    inline RandomGenerator_t& getRng(int i) { return (*Rng[i]);}
 
   protected:
 
@@ -285,6 +291,9 @@ namespace qmcplusplus {
 
     ///a list of QMCHamiltonians for multiple method
     vector<QMCHamiltonian*> H1;
+
+    ///Random number generators
+    vector<RandomGenerator_t*> Rng;
 
     ///a list of mcwalkerset element
     vector<xmlNodePtr> mcwalkerNodePtr;

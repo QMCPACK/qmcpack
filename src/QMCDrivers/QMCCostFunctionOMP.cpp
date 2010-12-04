@@ -531,9 +531,11 @@ namespace qmcplusplus
 //     for (int i=0; i<SumValue.size(); i++) cerr<<SumValue[i]<<"  ";
 //     cerr<<endl;
 
-//     app_log()<<"Energy After Purge   "<<SumValue[SUM_E_WGT]/SumValue[SUM_WGT]<<endl;
-// //     app_log()<<"Variance After Purge "<<SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])<<endl;
-//     app_log()<<"Weight After Purge   "<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
+    //app_log()<<"After purge Energy Variance Weight "
+    //  << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
+    //  << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
+    //  << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << endl;
+
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 

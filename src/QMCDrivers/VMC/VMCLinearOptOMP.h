@@ -75,9 +75,6 @@ public:
         sN=0;
     }
     
-    inline vector<RandomGenerator_t*>& getRng() { return Rng;}
-
-
 private:
     ///number of warmup steps
     int myWarmupSteps;

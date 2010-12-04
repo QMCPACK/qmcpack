@@ -51,9 +51,6 @@ namespace qmcplusplus {
       return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
     }
     
-    virtual inline vector<RandomGenerator_t*>& getRng() { return Rng;}
-    virtual inline RandomGenerator_t& getRng(int i) { return (*Rng[i]);}
-
   protected:
     ///reference to HamiltonianPool to clone everything
     HamiltonianPool& cloneEngine;
@@ -67,8 +64,6 @@ namespace qmcplusplus {
     static vector<TrialWaveFunction*> guideClones;
     ///Hamiltonians
     static vector<QMCHamiltonian*> hClones;
-    ///Random number generators
-    vector<RandomGenerator_t*> Rng;
     ///update engines
     vector<QMCUpdateBase*> Movers;
     ///update engines
