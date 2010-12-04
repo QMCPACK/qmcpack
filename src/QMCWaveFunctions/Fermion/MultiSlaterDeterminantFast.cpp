@@ -23,6 +23,9 @@ namespace qmcplusplus {
     RatioTimer("MultiSlaterDeterminantFast::ratio"),
     RatioGradTimer("MultiSlaterDeterminantFast::ratioGrad"),
     RatioAllTimer("MultiSlaterDeterminantFast::ratio(all)"),
+    Ratio1Timer("MultiSlaterDeterminantFast::detEval_ratio"),
+    Ratio1GradTimer("MultiSlaterDeterminantFast::detEval_ratioGrad"),
+    Ratio1AllTimer("MultiSlaterDeterminantFast::detEval_ratio(all)"),
     UpdateTimer("MultiSlaterDeterminantFast::updateBuffer"),
     EvaluateTimer("MultiSlaterDeterminantFast::evaluate")
   { 
@@ -296,7 +299,9 @@ namespace qmcplusplus {
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
       RatioGradTimer.start();
+      Ratio1GradTimer.start();
       Dets[0]->evaluateDetsAndGradsForPtclMove(P,iat);
+      Ratio1GradTimer.stop();
       ValueVector_t& detValues_up = Dets[0]->new_detValues;
       ValueVector_t& detValues_dn = Dets[1]->detValues;
       GradMatrix_t& grads_up = Dets[0]->new_grads;
@@ -316,7 +321,9 @@ namespace qmcplusplus {
       return curRatio; 
     } else {
       RatioGradTimer.start();
+      Ratio1GradTimer.start();
       Dets[1]->evaluateDetsAndGradsForPtclMove(P,iat);
+      Ratio1GradTimer.stop();
 
       ValueVector_t& detValues_up = Dets[0]->detValues;
       ValueVector_t& detValues_dn = Dets[1]->new_detValues;
@@ -359,7 +366,9 @@ namespace qmcplusplus {
 */
 
 //*
+      Ratio1AllTimer.start();
       Dets[0]->evaluateAllForPtclMove(P,iat);
+      Ratio1AllTimer.stop();
 
       ValueVector_t& detValues_up = Dets[0]->new_detValues;
       ValueVector_t& detValues_dn = Dets[1]->detValues;
@@ -408,7 +417,9 @@ namespace qmcplusplus {
     } else {
       RatioAllTimer.start();
 
+      Ratio1AllTimer.start();
       Dets[1]->evaluateAllForPtclMove(P,iat);
+      Ratio1AllTimer.stop();
 
       ValueVector_t& detValues_up = Dets[0]->detValues;
       ValueVector_t& detValues_dn = Dets[1]->new_detValues;
@@ -463,7 +474,9 @@ namespace qmcplusplus {
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
       RatioTimer.start();
+      Ratio1Timer.start();
       Dets[0]->evaluateDetsForPtclMove(P,iat);
+      Ratio1Timer.stop();
       ValueVector_t& detValues_up = Dets[0]->new_detValues;
       ValueVector_t& detValues_dn = Dets[1]->detValues;
       ValueType psiNew=0.0;
@@ -476,7 +489,9 @@ namespace qmcplusplus {
       return curRatio;
     } else {
       RatioTimer.start();
+      Ratio1Timer.start();
       Dets[1]->evaluateDetsForPtclMove(P,iat);
+      Ratio1Timer.stop();
       ValueVector_t& detValues_up = Dets[0]->detValues;
       ValueVector_t& detValues_dn = Dets[1]->new_detValues;
       ValueType psiNew=0.0;
@@ -828,9 +843,9 @@ namespace qmcplusplus {
            cdet+=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
            q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);  
            for(int l=0,j=N1; l<NP1; l++,j++)
-             v1 += tmp1*(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[l],grads_up(upC,l)) );
+             v1 += tmp1*(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)) );
            for(int l=0,j=N2; l<NP2; l++,j++)
-             v2 += tmp2*(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[l],grads_dn(dnC,l)));
+             v2 += tmp2*(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
            cnt++;
          }
          convert(cdet,dlogpsi[kk]);
@@ -933,11 +948,17 @@ namespace qmcplusplus {
     RatioTimer.reset();
     RatioGradTimer.reset();
     RatioAllTimer.reset();
+    Ratio1Timer.reset();
+    Ratio1GradTimer.reset();
+    Ratio1AllTimer.reset();
     UpdateTimer.reset();
     EvaluateTimer.reset();
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&RatioGradTimer);
     TimerManager.addTimer (&RatioAllTimer);
+    TimerManager.addTimer (&Ratio1Timer);
+    TimerManager.addTimer (&Ratio1GradTimer);
+    TimerManager.addTimer (&Ratio1AllTimer);
     TimerManager.addTimer (&UpdateTimer);
     TimerManager.addTimer (&EvaluateTimer);
   }

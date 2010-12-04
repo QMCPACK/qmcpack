@@ -189,11 +189,21 @@ void GamesAsciiParser::parse(const std::string& fname) {
       }
       fin.seekg(pivot_begin);
       getCSF(fin);
-    } else {
-      cout<<"Could not find GUGA ROW TABLE, reading Slater Dets." <<endl;
+    } else  {
+      cout<<"Could not find GUGA ROW TABLE, looking for Slater Dets." <<endl;
       fin.close(); fin.open(outputFile.c_str());
       pivot_begin= fin.tellg();
-      getCI(fin);
+      if(lookFor(fin,"DIRECT DETERMINANT ORMAS-CI")) {
+        cout<<"Found ORMAS-CI" <<endl;
+        fin.close(); fin.open(outputFile.c_str());
+        pivot_begin= fin.tellg();
+        getORMAS(fin);
+      } else {
+        cout<<"Assuming ALDET-CI" <<endl;
+        fin.close(); fin.open(outputFile.c_str());
+        pivot_begin= fin.tellg();
+        getCI(fin);
+      }
     }
     fin.close();
   }
@@ -1072,6 +1082,113 @@ void GamesAsciiParser::getCI(std::istream& is)
   ci_ncb = neb-ci_neb;
   ci_nstates = CIalpha[0].size();
   
+}
+
+void GamesAsciiParser::getORMAS(std::istream& is)
+{
+
+  is.seekg(pivot_begin);
+  //look for CI coefficients
+  bool notfound=true;
+  ci_size=0;
+  CIcoeff.clear();
+  CIalpha.clear();
+  CIbeta.clear();
+  string aline;
+
+  if(!lookFor(is,"NUMBER OF CORE ORBITALS",aline))   
+  {
+    cerr<<"Couldn't find # of CORE ORBITALS in ORMAS.\n";
+    abort();
+  }
+  parsewords(aline.c_str(),currentWords);
+  ci_nea = atoi(currentWords[4].c_str());
+
+  if(!lookFor(is,"NUMBER OF ACTIVE ORBITALS",aline))
+  {
+    cerr<<"Couldn't find # of ACTIVE ORBITALS in ORMAS.\n";
+    abort();
+  }
+  parsewords(aline.c_str(),currentWords);
+  int nactive(atoi(currentWords[4].c_str()));
+
+
+  if(!lookFor(is,"NUMBER OF ALPHA ELECTRONS",aline))
+  {
+    cerr<<"Couldn't find # of ALPHA ELECTRONS in ORMAS.\n";
+    abort();
+  }
+  parsewords(aline.c_str(),currentWords);
+  ci_nea = atoi(currentWords[4].c_str());
+
+  if(!lookFor(is,"NUMBER OF BETA ELECTRONS",aline))
+  {
+    cerr<<"Couldn't find # of BETA ELECTRONS in ORMAS.\n";
+    abort();
+  }
+  parsewords(aline.c_str(),currentWords);
+  ci_neb = atoi(currentWords[4].c_str());
+
+  int ds=SpinMultiplicity-1;
+  int neb= (NumberOfEls-ds)/2;
+  int nea= NumberOfEls-NumberOfBeta;
+  if( ci_nca != nea-ci_nea) 
+  {
+    cerr<<"Inconsistent number of core electrons: " <<ci_nca <<" " <<nea-ci_nea <<endl;
+    abort();
+  }
+  if( ci_ncb != neb-ci_neb) 
+  {
+    cerr<<"Inconsistent number of core electrons: " <<ci_ncb <<" " <<neb-ci_neb <<endl;
+    abort();
+  }
+
+  string dummy_alpha(nactive,'0');
+  string dummy_beta(nactive,'0');
+  int nskip = ci_nea+ci_neb+2;
+  do {
+    if(is.eof()) {
+      cerr<<"Could not find ORMAS CI expansion. \n";
+      abort();
+    }
+    getwords(currentWords,is);
+    if(currentWords.size() < 5 ) continue;
+    if(currentWords[0] == "ALPHA" &&
+       currentWords[2] == "BETA" &&
+       currentWords[4] == "COEFFICIENT" ) {
+      getwords(currentWords,is);  // 1      2 
+      getwords(currentWords,is);  // -------- 
+      notfound=false;
+      getwords(currentWords,is);
+      while(currentWords.size() != 0) {
+        if(currentWords[0] == "....." || currentWords[1] == "DONE") break;
+        double cof = atof(currentWords[nskip].c_str()); 
+        if(std::abs(cof) > ci_threshold) {
+          ci_size++;
+          CIcoeff.push_back(cof);
+          CIalpha.push_back(dummy_alpha);
+          CIbeta.push_back(dummy_beta);
+          for(int i=0; i<ci_nea; i++) (CIalpha.back())[atoi(currentWords[i].c_str())-1]='1';
+          for(int i=0; i<ci_neb; i++) (CIbeta.back())[atoi(currentWords[ci_nea+1+i].c_str())-1]='1';
+        }
+        getwords(currentWords,is);
+      }
+    }
+  } while(notfound);
+
+  ci_nstates = 0;
+  for(int i=0; i<ci_size; i++) {
+    int max=0; //=nactive;
+    for(int k=nactive-1; k>=0; k--) {
+      if(CIalpha[i][k] == '1' || CIbeta[i][k] == '1') {
+        max = k+1;
+        break;
+      }
+    }
+    //cout<<i <<" " <<max <<endl;
+    if(ci_nstates < max) ci_nstates=max;
+  }
+
 }
 
 double GamesAsciiParser::getCSFSign(vector<int> & occ)

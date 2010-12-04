@@ -573,8 +573,8 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
         std::ostringstream tag; tag<<"CIcoeff_" <<iv++;
         xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
         xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
-        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[i].c_str());
-        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[i].c_str());
+        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[i].substr(0,ci_nstates).c_str());
+        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[i].substr(0,ci_nstates).c_str());
         xmlAddChild(detlist,ci);
       }
     }

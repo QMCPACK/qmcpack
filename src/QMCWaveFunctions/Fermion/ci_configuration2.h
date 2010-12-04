@@ -45,6 +45,22 @@ namespace qmcplusplus
       return true;
     }
 
+     /* 
+     * The routine determines the number excitations that 
+     * transform the given configuration (argument) into (*this).
+     */
+    int calculateNumOfExcitations(const ci_configuration2& c) const
+    {
+      if(occup.size() != c.occup.size()) {
+       APP_ABORT("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
+      }
+      int n=0;
+      for(int i=0; i<occup.size(); i++)  {
+        if(std::find(c.occup.begin(),c.occup.end(),occup[i]) == c.occup.end()) n++;
+      }
+      return n;
+    } 
+
     /* 
      * The routine determines the excitations that 
      * transform the given configuration (argument) into (*this).

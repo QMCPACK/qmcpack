@@ -34,7 +34,7 @@ namespace qmcplusplus {
     public:
       bool Optimizable;
       void registerTimers();
-      NewTimer UpdateTimer, RatioTimer, InverseTimer;
+      NewTimer UpdateTimer, RatioTimer, InverseTimer, buildTableTimer, readMatTimer, evalWTimer, evalOrbTimer;
       // Optimizable parameters
       opt_variables_type myVars;
 
@@ -319,26 +319,35 @@ namespace qmcplusplus {
     {
       ValueType det0 = ratios[ref];
 
+      buildTableTimer.start();
       int num=psi.extent(1);
       vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
       while(it != last) {
         dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
         it++;
       }
+      buildTableTimer.stop();
 
+      readMatTimer.start();
       vector<int>::iterator it2 = data.begin();
+      //ValueVector_t::iterator itr = ratios.begin();
+      //vector<double>::iterator its = sign.begin();
       int count= 0;  // number of determinants processed
       while(it2 != data.end())  {
         int n = *it2; // number of excitations
         if(count == ref) {
           it2+=3*n+1;  // number of integers used to encode the current excitation
+          //itr++;
+          //its++;
           count++;
           continue;
         }
         ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+        //*(itr++) = *(its++)*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
         count++;
         it2+=3*n+1;
       }
+      readMatTimer.stop();
     }
 
     inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign, int dx)
@@ -425,7 +434,10 @@ namespace qmcplusplus {
     inline void 
     evaluateDetsForPtclMove(ParticleSet& P, int iat)  {
       UpdateMode=ORB_PBYP_RATIO;
+      RatioTimer.start();
+      evalOrbTimer.start();
       Phi->evaluate(P,iat,psiV);
+      evalOrbTimer.stop();
 
       WorkingIndex = iat-FirstIndex;
       vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
@@ -448,6 +460,7 @@ namespace qmcplusplus {
 // check comment above
       for(int i=0; i<NumOrbitals; i++)
         TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
+      RatioTimer.stop();
     }
 
     inline void 

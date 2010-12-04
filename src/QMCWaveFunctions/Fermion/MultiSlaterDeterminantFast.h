@@ -56,6 +56,7 @@ namespace qmcplusplus
 
       void registerTimers();
       NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
+      NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer;
 
       typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
       typedef SPOSetBase*              SPOSetBasePtr;

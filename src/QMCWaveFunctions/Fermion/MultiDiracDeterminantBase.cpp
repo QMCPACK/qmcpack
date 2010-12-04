@@ -76,6 +76,7 @@ namespace qmcplusplus {
              pairs.push_back(temp);
          } 
      }
+     app_log()<<"Number of terms in pairs array: " <<pairs.size() <<endl; 
 /*
      cout<<"ref: " <<ref <<endl;
      cout<<"list: " <<endl;
@@ -96,13 +97,14 @@ namespace qmcplusplus {
 
   void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P)
   {
+    evalWTimer.start();
     Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM,dpsiM,d2psiM);
 
     if(NumPtcls==1) {
       APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
     } else {
 
-      //InverseTimer.start();
+      InverseTimer.start();
       vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
       for(int i=0; i<NumPtcls; i++) {
        for(int j=0; j<NumPtcls; j++)  
@@ -115,11 +117,10 @@ namespace qmcplusplus {
       }
       ValueType phaseValueRef; 
       ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
-      //InverseTimer.stop();
+      InverseTimer.stop();
       ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
       detValues[ReferenceDeterminant] = det0; 
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-      //RatioTimer.start();
       for(int iat=0; iat<NumPtcls; iat++)
       {
         it = confgList[ReferenceDeterminant].occup.begin();
@@ -168,6 +169,7 @@ namespace qmcplusplus {
     //psiM_temp = psiM;
     //dpsiM_temp = dpsiM;
     //d2psiM_temp = d2psiM;
+    evalWTimer.stop();
 
   }
 
@@ -314,7 +316,11 @@ namespace qmcplusplus {
     OrbitalBase(s), NP(0), FirstIndex(s.FirstIndex),
     UpdateTimer("MultiDiracDeterminantBase::update"),
     RatioTimer("MultiDiracDeterminantBase::ratio"),
-    InverseTimer("MultiDiracDeterminantBase::inverse")
+    InverseTimer("MultiDiracDeterminantBase::inverse"),
+    buildTableTimer("MultiDiracDeterminantBase::buildTable"),
+    evalWTimer("MultiDiracDeterminantBase::evalW"),
+    evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
+    readMatTimer("MultiDiracDeterminantBase::readMat")
   {
     setDetInfo(s.ReferenceDeterminant,s.confgList);
     registerTimers();
@@ -342,7 +348,11 @@ namespace qmcplusplus {
     NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0),
     UpdateTimer("MultiDiracDeterminantBase::update"),
     RatioTimer("MultiDiracDeterminantBase::ratio"),
-    InverseTimer("MultiDiracDeterminantBase::inverse")
+    InverseTimer("MultiDiracDeterminantBase::inverse"),
+    buildTableTimer("MultiDiracDeterminantBase::buildTable"),
+    evalWTimer("MultiDiracDeterminantBase::evalW"),
+    evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
+    readMatTimer("MultiDiracDeterminantBase::readMat")
   {
     Optimizable=true;
     OrbitalName="MultiDiracDeterminantBase";
@@ -478,9 +488,18 @@ namespace qmcplusplus {
   {
     UpdateTimer.reset();
     RatioTimer.reset();
+    InverseTimer.reset();
+    buildTableTimer.reset();
+    readMatTimer.reset();
+    evalOrbTimer.reset();
+    evalWTimer.reset();
     TimerManager.addTimer (&UpdateTimer);
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&InverseTimer);
+    TimerManager.addTimer (&buildTableTimer);
+    TimerManager.addTimer (&readMatTimer);
+    TimerManager.addTimer (&evalWTimer);
+    TimerManager.addTimer (&evalOrbTimer);
   }
 
 

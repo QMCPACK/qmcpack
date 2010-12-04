@@ -35,6 +35,8 @@ public:
 
   void getCI(std::istream& is);
 
+  void getORMAS(std::istream& is);
+
   void getCSF(std::istream& is);
 
   double getCSFSign(vector<int>&);
