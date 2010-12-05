@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -23,35 +22,35 @@
 namespace qmcplusplus
 {
 
-/** @ingroup QMCDrivers  ParticleByParticle
- * @brief Implements a VMC using particle-by-particle move. Threaded execution.
- */
-class VMCLinearOptOMP: public QMCDriver, public CloneManager
-{
-public:
-    /// Constructor.
-    VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    HamiltonianPool& hpool, WaveFunctionPool& ppool);
-                    
-    ~VMCLinearOptOMP()
-    {
-      if (UseDrift == "rn")
-        delete_iter(CSMovers.begin(),CSMovers.end());
-    }
-    bool run();
-    RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
-    int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
-    bool put(xmlNodePtr cur);
+  /** @ingroup QMCDrivers  ParticleByParticle
+   * @brief Implements a VMC using particle-by-particle move. Threaded execution.
+   */
+  class VMCLinearOptOMP: public QMCDriver, public CloneManager
+  {
+    public:
+      /// Constructor.
+      VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+          HamiltonianPool& hpool, WaveFunctionPool& ppool);
 
-    inline void getDeltaCosts(std::vector<RealType>& cstVec)
-    {
-      for(int i=0;i<NE_i.size();i++) cstVec[i]=NE_i[i];
-    }
+      ~VMCLinearOptOMP()
+      {
+        if (UseDrift == "rn")
+          delete_iter(CSMovers.begin(),CSMovers.end());
+      }
+      bool run();
+      RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
+      int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
+      bool put(xmlNodePtr cur);
 
-    void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
+      inline void getDeltaCosts(std::vector<RealType>& cstVec)
+      {
+        for(int i=0;i<NE_i.size();i++) cstVec[i]=NE_i[i];
+      }
 
-    inline void clearComponentMatrices()
-    {
+      void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
+
+      inline void clearComponentMatrices()
+      {
         HDiHDj=0;
         DiHDj=0;
         DiHDjE=0;
@@ -60,11 +59,11 @@ public:
         DiDjE2=0;
         for (int i=0; i<NumOptimizables; i++)
         {
-            HDi[i]=0;
-            HDiE[i]=0;
-            Di[i]=0;
-            DiE[i]=0;
-            DiE2[i]=0;
+          HDi[i]=0;
+          HDiE[i]=0;
+          Di[i]=0;
+          DiE[i]=0;
+          DiE2[i]=0;
         }
         DerivRecords=0;
         HDerivRecords=0;
@@ -73,46 +72,46 @@ public:
         sE4=0;
         sW=0;
         sN=0;
-    }
-    
-private:
-    ///number of warmup steps
-    int myWarmupSteps;
-    ///number of RN warmup steps
-    int myRNWarmupSteps;
-    ///option to enable/disable drift equation for VMC
-    string UseDrift;
-    ///target errorbars to use to determine when to stop for filling matrix and line minimization
-    RealType alpha_errorbars, beta_errorbars;
-    ///check the run-time environments
-    void resetRun();
-    ///copy constructor
-    VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
-    /// Copy operator (disabled).
-    VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
-    {
+      }
+
+    private:
+      ///number of warmup steps
+      int myWarmupSteps;
+      ///number of RN warmup steps
+      int myRNWarmupSteps;
+      ///option to enable/disable drift equation for VMC
+      string UseDrift;
+      ///target errorbars to use to determine when to stop for filling matrix and line minimization
+      RealType alpha_errorbars, beta_errorbars;
+      ///check the run-time environments
+      void resetRun();
+      ///copy constructor
+      VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
+      /// Copy operator (disabled).
+      VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
+      {
         return *this;
-    }
-    ///Ways to set rn constant
-    RealType logoffset,logepsilon;
-      
-    int NumOptimizables;
-    RealType w_beta;
-    RealType E_avg, V_avg;
-    string GEVtype;
+      }
+      ///Ways to set rn constant
+      RealType logoffset,logepsilon;
 
-    ///These are the values we collect to build the Matrices GLOBAL
-    Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
-    std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
-    RealType sE,sE2,sE4,sW,sN;
-    ///Temp matrices
-    Matrix<RealType> DerivRecords, HDerivRecords;
+      int NumOptimizables;
+      RealType w_beta;
+      RealType E_avg, V_avg;
+      string GEVtype;
+
+      ///These are the values we collect to build the Matrices GLOBAL
+      Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
+      std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
+      RealType sE,sE2,sE4,sW,sN;
+      ///Temp matrices
+      Matrix<RealType> DerivRecords, HDerivRecords;
 
 
-    void initCS();
-    
-    void resizeForOpt(int n)
-    {
+      void initCS();
+
+      void resizeForOpt(int n)
+      {
         HDiHDj.resize(n,n);
         DiHDj.resize(n,n);
         DiHDjE.resize(n,n);
@@ -121,7 +120,7 @@ private:
         DiDjE2.resize(n,n);
         DerivRecords.resize(NumThreads,n);
         HDerivRecords.resize(NumThreads,n);
-        
+
         HDiHDj=0.0;
         DiHDj=0.0;
         DiHDjE=0.0;
@@ -130,8 +129,8 @@ private:
         DiDjE2=0.0;
         DerivRecords=0.0;
         HDerivRecords=0.0;
-        
-        
+
+
         HDi.resize(n);
         HDiE.resize(n);
         Di.resize(n);
@@ -145,36 +144,36 @@ private:
           DiE[i]=0.0;
           DiE2[i]=0.0;
         }
-        
+
         clearComponentMatrices();
-    }
-    
-    void clearCSEstimators()
-    {
-      CorrelatedH.resize(NumThreads,NumThreads);
-      gCorrelatedH.resize(NumThreads,NumThreads);
-      Norm2s.resize(NumThreads+1,NumThreads+1);
-      gNorm2s.resize(NumThreads+1,NumThreads+1);
-      Norms.resize(NumThreads+1); 
-      Energies.resize(NumThreads);
-      gNorms.resize(NumThreads+1); 
-      gEnergies.resize(NumThreads);
-      NE_i.resize(NumThreads);
-      gCorrelatedH=CorrelatedH=0;
-      gNorm2s=Norm2s=0;
-      for (int ip=0; ip<NumThreads+1; ++ip) gNorms[ip]=Norms[ip]=0;
-      for (int ip=0; ip<NumThreads; ++ip) gEnergies[ip]=Energies[ip]=0;
-      for (int ip=0; ip<NumThreads; ++ip) NE_i[ip]=0;
-    }
-    
-    void setWalkersEqual(Walker_t& firstWalker)
-    {
-      for (int ip=0; ip<NumThreads; ++ip)
-      {
-        (*W[ip]).makeCopy(firstWalker);
       }
 
-      for (int ip=0; ip<NumThreads; ++ip)
+      void clearCSEstimators()
+      {
+        CorrelatedH.resize(NumThreads,NumThreads);
+        gCorrelatedH.resize(NumThreads,NumThreads);
+        Norm2s.resize(NumThreads+1,NumThreads+1);
+        gNorm2s.resize(NumThreads+1,NumThreads+1);
+        Norms.resize(NumThreads+1); 
+        Energies.resize(NumThreads);
+        gNorms.resize(NumThreads+1); 
+        gEnergies.resize(NumThreads);
+        NE_i.resize(NumThreads);
+        gCorrelatedH=CorrelatedH=0;
+        gNorm2s=Norm2s=0;
+        for (int ip=0; ip<NumThreads+1; ++ip) gNorms[ip]=Norms[ip]=0;
+        for (int ip=0; ip<NumThreads; ++ip) gEnergies[ip]=Energies[ip]=0;
+        for (int ip=0; ip<NumThreads; ++ip) NE_i[ip]=0;
+      }
+
+      void setWalkersEqual(Walker_t& firstWalker)
+      {
+        for (int ip=0; ip<NumThreads; ++ip)
+        {
+          (*W[ip]).makeCopy(firstWalker);
+        }
+
+        for (int ip=0; ip<NumThreads; ++ip)
         {
           Walker_t& thisWalker(*W[ip]);
           wClones[ip]->loadWalker(thisWalker,true);
@@ -185,38 +184,38 @@ private:
           thisWalker.DataSet=tbuffer;
           thisWalker.Weight = 1.0;
           RealType ene = hClones[ip]->evaluate( *wClones[ip]);
-    //         app_log()<<ene<<" "<<logpsi<<endl;
+          //         app_log()<<ene<<" "<<logpsi<<endl;
           thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),ene);
           hClones[ip]->saveProperty(thisWalker.getPropertyBase());
           wClones[ip]->saveWalker(thisWalker);
         }
         logpsi2_0_0 = W[0]->getPropertyBase()[LOGPSI];
         myComm->bcast(logpsi2_0_0);
-    }
+      }
 
 
-    RealType fillComponentMatrices();
-    Walker_t firstWalker;
-    Matrix<RealType> CorrelatedH, Norm2s;
-    vector<RealType> Norms;
-    vector<RealType> Energies;
-    vector<RealType> NE_i;
-    
+      RealType fillComponentMatrices();
+      Walker_t firstWalker;
+      Matrix<RealType> CorrelatedH, Norm2s;
+      vector<RealType> Norms;
+      vector<RealType> Energies;
+      vector<RealType> NE_i;
+
       // global quantities for mpi collection
-    std::vector<RealType> gEnergies, gNorms;
-    Matrix<RealType> gNorm2s, gCorrelatedH;
-    
-    int CSBlock;
-    int minE,nE;
-    RealType logpsi2_0_0;
-    RealType estimateCS();
-    
-    bool moved_right;
-    bool moved_left;
-    bool bracketing(vector<RealType>& lambdas, RealType errorbars);
-//     weights for correlated sampling
-    vector<RealType> w_i;
-};
+      std::vector<RealType> gEnergies, gNorms;
+      Matrix<RealType> gNorm2s, gCorrelatedH;
+
+      int CSBlock;
+      int minE,nE;
+      RealType logpsi2_0_0;
+      RealType estimateCS();
+
+      bool moved_right;
+      bool moved_left;
+      bool bracketing(vector<RealType>& lambdas, RealType errorbars);
+      //     weights for correlated sampling
+      vector<RealType> w_i;
+  };
 
 }
 #endif
