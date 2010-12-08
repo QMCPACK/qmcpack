@@ -418,7 +418,7 @@ void CartesianTensor<T,Point_t, Tensor_t>::getABC(int n, int& a, int& b, int& c)
       a=0;
       break;
     case 19: // XYZ 
-      c=b=c=1;
+      a=b=c=1;
       break;
 // G
     case 20: // XXXX 
