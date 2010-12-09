@@ -125,8 +125,16 @@ namespace qmcplusplus
 
       virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
       
-      virtual void evaluateFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+      virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf);
 
+      virtual void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
+      virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+      
+      virtual RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+      
+      virtual RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+      
       virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
       virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);

@@ -156,8 +156,9 @@ namespace qmcplusplus
   
   void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf)
   {
+    for (int i = 0; i < Dets.size(); ++i) Dets[i]->registerDataForDerivatives(P,buf);
   }
-
+  
   SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G, 
       ParticleSet::ParticleLaplacian_t& L,
@@ -169,19 +170,18 @@ namespace qmcplusplus
     if(fillBuffer) {
       for (int i = 0; i < Dets.size(); ++i)
       {
-        Dets[i]->registerData(P, buf);
-        LogValue += Dets[i]->LogValue;
+        LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
+        Dets[i]->copyToDerivativeBuffer(P, buf);
         PhaseValue += Dets[i]->PhaseValue;
-      }
+      } 
     } else {
       for (int i = 0; i < Dets.size(); ++i)
       {
-        Dets[i]->evaluateFromBuffer(P,buf);
-        LogValue += Dets[i]->LogValue;
+        Dets[i]->copyFromDerivativeBuffer(P,buf);
+        LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
         PhaseValue += Dets[i]->PhaseValue;
       }
     }
-
     return LogValue;
   }
 

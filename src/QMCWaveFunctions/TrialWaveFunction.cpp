@@ -257,9 +257,7 @@ namespace qmcplusplus
         if ((*it)->Optimizable)
           logpsi_opt += (*it)->evaluateLog(P, P.G, P.L);
         else
-          {
             logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
-          }
       }
     P.G += fixedG;
     P.L += fixedL;

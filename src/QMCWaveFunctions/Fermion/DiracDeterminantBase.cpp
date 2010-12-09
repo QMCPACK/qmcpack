@@ -208,11 +208,6 @@ namespace qmcplusplus {
     d2psiM_temp = d2psiM;
   }
   
-  void DiracDeterminantBase::evaluateFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-    copyFromBuffer(P,buf);
-    P.G += myG;
-    P.L += myL;
-  }
   /** dump the inverse to the buffer
   */
   void DiracDeterminantBase::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {
@@ -653,7 +648,59 @@ namespace qmcplusplus {
       buf.put(PhaseValue);
       return LogValue;
     }
+    
+  void DiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf)
+  { 
+    buf.add(psiM.first_address(),psiM.last_address());
+//     buf.add(FirstAddressOfdV,LastAddressOfdV);
+//     buf.add(d2psiM.first_address(),d2psiM.last_address());
+    buf.add(myL.first_address(), myL.last_address());
+    buf.add(FirstAddressOfG,LastAddressOfG);
+    buf.add(LogValue);
+    buf.add(PhaseValue);
+  }
 
+  void DiracDeterminantBase::copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    buf.put(psiM.first_address(),psiM.last_address());
+//     buf.put(FirstAddressOfdV,LastAddressOfdV);
+//     buf.put(d2psiM.first_address(),d2psiM.last_address());
+    buf.put(myL.first_address(), myL.last_address());
+    buf.put(FirstAddressOfG,LastAddressOfG);
+    buf.put(LogValue);
+    buf.put(PhaseValue);
+  }
+
+  void DiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    buf.get(psiM.first_address(),psiM.last_address());
+//     buf.get(FirstAddressOfdV,LastAddressOfdV);
+//     buf.get(d2psiM.first_address(),d2psiM.last_address());
+    buf.get(myL.first_address(), myL.last_address());
+    buf.get(FirstAddressOfG,LastAddressOfG);
+    buf.get(LogValue);
+    buf.get(PhaseValue);
+  }
+  
+  DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    myG=0.0;
+    myL=0.0;
+
+    //ValueType x=evaluate(P,myG,myL); 
+    LogValue=evaluateLog(P,myG,myL); 
+
+    P.G += myG;
+    P.L += myL;
+    return LogValue;
+  }
+  
+    DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    P.G += myG;
+    P.L += myL;
+    return LogValue;
+  }
 
   /** Calculate the value of the Dirac determinant for particles
    *@param P input configuration containing N particles
