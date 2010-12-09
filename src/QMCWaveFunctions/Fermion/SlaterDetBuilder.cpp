@@ -493,7 +493,8 @@ namespace qmcplusplus
        }
      }
      multiSD->Dets[1]->set(multiSD->FirstIndex_dn,nels_dn,multiSD->Dets[1]->Phi->getOrbitalSetSize());
-
+     
+     if (multiSD->CSFcoeff.size()==1) optimizeCI=false;
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. \n";
        
@@ -507,6 +508,7 @@ namespace qmcplusplus
          else                  for(int i=1; i<multiSD->C.size(); i++)multiSD->C[i]=0;
          app_log() <<"CI coefficients are reset. \n";
        }
+       
        
        multiSD->Optimizable=true;
        if(multiSD->usingCSF) {

@@ -214,11 +214,8 @@ namespace qmcplusplus
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
       {
-        if ((*it)->Optimizable)
-          {
-            logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
-            PhaseValue += (*it)->PhaseValue;
-          }
+        logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
+        PhaseValue += (*it)->PhaseValue;
       }
     convert(logpsi,LogValue);
     return LogValue;
@@ -249,8 +246,8 @@ namespace qmcplusplus
     //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
     P.G = 0.0;
     P.L = 0.0;
-    fixedG = 0.0;
     fixedL = 0.0;
+    fixedG = 0.0;
     ValueType logpsi_fixed(0.0);
     ValueType logpsi_opt(0.0);
     vector<OrbitalBase*>::iterator it(Z.begin());
@@ -290,16 +287,7 @@ namespace qmcplusplus
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
-      {
-        if ((*it)->Optimizable)
-          logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
-        else
-          {
-            logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
-          }
-      }
-    P.G += fixedG;
-    P.L += fixedL;
+      logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
     convert(logpsi_fixed,logpsi_fixed_r);
     convert(logpsi_opt,logpsi_opt_r);
     //logpsi_fixed_r = real(logpsi_fixed);
@@ -598,12 +586,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
-      {
-        if ((*it)->Optimizable)
-          {
-            (*it)->registerDataForDerivatives(P,buf);
-          }
-      }
+        (*it)->registerDataForDerivatives(P,buf);
     return 1.0;
   }
 

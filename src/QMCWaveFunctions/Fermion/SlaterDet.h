@@ -78,6 +78,15 @@ namespace qmcplusplus
     RealType evaluateLog(ParticleSet& P
           ,ParticleSet::ParticleGradient_t& G
           ,ParticleSet::ParticleLaplacian_t& L);
+    
+    virtual    
+    RealType evaluateLog(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G, 
+      ParticleSet::ParticleLaplacian_t& L,
+      PooledData<RealType>& buf,
+      bool fillBuffer);
+      
+    void registerDataForDerivatives(ParticleSet& P, BufferType& buf);
 
     ///return the total number of Dirac determinants
     inline int size() const

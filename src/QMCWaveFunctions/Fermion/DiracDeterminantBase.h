@@ -124,6 +124,8 @@ namespace qmcplusplus
       virtual void resize(int nel, int morb);
 
       virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+      
+      virtual void evaluateFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
       virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 

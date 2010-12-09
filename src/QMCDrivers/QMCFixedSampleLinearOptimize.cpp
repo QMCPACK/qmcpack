@@ -601,7 +601,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 //        else
 //#endif
 //          vmcEngine = new VMCSingle(W,Psi,H);
-            vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
     }
@@ -617,15 +617,15 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
             optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
         else
 #endif
-#if defined(ENABLE_OPENMP)
-            if (omp_get_max_threads()>1)
-            {
-                optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-            }
-            else
-#endif
-                optTarget = new QMCCostFunctionSingle(W,Psi,H);
-
+// #if defined(ENABLE_OPENMP)
+//             if (omp_get_max_threads()>1)
+//             {
+//                 optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+//             }
+//             else
+// #endif
+//                 optTarget = new QMCCostFunctionSingle(W,Psi,H);
+        optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
         optTarget->setStream(&app_log());
         success=optTarget->put(q);
     }

@@ -207,7 +207,12 @@ namespace qmcplusplus {
     dpsiM_temp = dpsiM;
     d2psiM_temp = d2psiM;
   }
-
+  
+  void DiracDeterminantBase::evaluateFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    copyFromBuffer(P,buf);
+    P.G += myG;
+    P.L += myL;
+  }
   /** dump the inverse to the buffer
   */
   void DiracDeterminantBase::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {

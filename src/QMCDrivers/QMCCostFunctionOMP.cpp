@@ -299,7 +299,7 @@ namespace qmcplusplus
 //           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
 // buffer for MultiSlaterDet data 
-          if(usebuffer=="yes") {
+          if((usebuffer=="yes")||(includeNonlocalH=="yes")) {
             psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
             logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
@@ -432,31 +432,18 @@ namespace qmcplusplus
           // buffer for MultiSlaterDet data
           Return_t logpsi;
 //           Return_t logpsi_old = thisWalker.getPropertyBase()[LOGPSI];
-          if(usebuffer=="yes") { 
+          if((usebuffer=="yes")||(includeNonlocalH=="yes")) { 
             Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
           }
-//           else if (includeNonlocalH=="yes")
-//           {
-//             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-//           }
           else  {
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-//             logpsi=psiClones[ip]->evaluateLog(wRef);
-          }
-          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
-//           Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-logpsi_old))*thisWalker.Weight ;
-//           thisWalker.getPropertyBase()[LOGPSI] = logpsi_old;
-
-//           if (includeNonlocalH=="yes")
-//           {
             wRef.G += *dLogPsi[iwg];
             wRef.L += *d2LogPsi[iwg];
-            saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
-//           }
-//           else
-//             saved[ENERGY_NEW] = hClones[ip]->evaluate(wRef);
-          
+            //             logpsi=psiClones[ip]->evaluateLog(wRef);
+          }
+          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
+          saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
           if (needGrad)
           {
             vector<Return_t> Dsaved(NumOptimizables);
@@ -531,10 +518,10 @@ namespace qmcplusplus
 //     for (int i=0; i<SumValue.size(); i++) cerr<<SumValue[i]<<"  ";
 //     cerr<<endl;
 
-    //app_log()<<"After purge Energy Variance Weight "
-    //  << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
-    //  << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
-    //  << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << endl;
+//     app_log()<<"After purge Energy Variance Weight "
+//      << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
+//      << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
+//      << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << endl;
 
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
