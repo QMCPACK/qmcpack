@@ -31,11 +31,13 @@ namespace qmcplusplus
     string gsName, basisName;
     bool same_k = false;
     bool mapped_k = false;
+    bool same_orbital = false;
     OhmmsAttributeSet attrib;
     attrib.add (gsName,    "gs_sposet");
     attrib.add (basisName, "basis_sposet");
     attrib.add (same_k,    "same_k");
     attrib.add (mapped_k,    "mapped_k");
+    attrib.add (same_orbital,    "same_orbital");
     attrib.add (N,         "size");
     attrib.put (node);
 
@@ -149,6 +151,15 @@ namespace qmcplusplus
        }
        xmlCoefs = xmlCoefs->next;
    }
+   }
+   else if(same_orbital)
+   {
+     if(M<N) 
+     {
+       app_error()<<"Map size is incorrect. N<M for same orbital mapping"<<endl;
+     }
+     for (int igs=0; igs<N; igs++)
+        allowedOrbs(igs,igs)=1;   
    }
    else {
      for (int igs=0; igs<N; igs++) {
