@@ -352,7 +352,7 @@ namespace qmcplusplus
       BLAS::gemv_trans (N, M, C.data(), &(BasisLapl[0]), &(d2psi[0]));
       for (int iorb=0; iorb<N; iorb++) {
         psi  [iorb] += GSVal[iorb];
-        dpsi [iorb] += GSGrad[iorb];
+        dpsi [iorb] = GSGrad[iorb];
         d2psi[iorb] += GSLapl[iorb];
         for (int ibasis=0; ibasis<M; ibasis++)
           for (int dim=0; dim<OHMMS_DIM; dim++)

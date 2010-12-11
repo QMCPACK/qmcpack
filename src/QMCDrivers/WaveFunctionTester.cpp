@@ -1069,10 +1069,14 @@ namespace qmcplusplus
 void WaveFunctionTester::runDerivCloneTest()
 {
   app_log()<<" Testing derivatives clone"<<endl;
-  
+  RandomGenerator_t* Rng1= new RandomGenerator_t();
+  RandomGenerator_t* Rng2= new RandomGenerator_t();
+  (*Rng1) = (*Rng2);
   MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(W);
   TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
   QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
+  h_clone->setRandomGenerator(Rng2);
+  H.setRandomGenerator(Rng1);
   h_clone->setPrimary(false);
   
   
@@ -1124,12 +1128,11 @@ void WaveFunctionTester::runDerivCloneTest()
   RealType eloc2  = h_clone->evaluate(*w_clone); 
   psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
   
-  
   ValueType logpsi1 = Psi.evaluateLog(W);
   RealType eloc1  = H.evaluate(W);
   Psi.evaluateDerivatives(W, wfVars, og_Dsaved, og_HDsaved);
-
-    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
+  
+  app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
   
