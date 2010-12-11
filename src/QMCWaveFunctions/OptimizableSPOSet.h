@@ -156,7 +156,7 @@ namespace qmcplusplus
     N=n; M=m;
     if (BasisOrbitals) { 
       GSVal.resize(N);    GSGrad.resize(N);    GSLapl.resize(N);
-      BasisVal.resize(M); BasisGrad.resize(M); BasisGrad.resize(N);
+      BasisVal.resize(M); BasisGrad.resize(M); BasisLapl.resize(M);
       GSValMatrix.resize (N,N);
       GSGradMatrix.resize(N,N);
       GSLaplMatrix.resize(N,N);

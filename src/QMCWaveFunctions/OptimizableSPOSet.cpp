@@ -158,6 +158,7 @@ namespace qmcplusplus
      {
        app_error()<<"Map size is incorrect. N<M for same orbital mapping"<<endl;
      }
+     allowedOrbs=0;
      for (int igs=0; igs<N; igs++)
         allowedOrbs(igs,igs)=1;   
    }
@@ -316,7 +317,7 @@ namespace qmcplusplus
     GSOrbitals->evaluate(P,iat,GSVal);
     if (BasisOrbitals) {
       BasisOrbitals->evaluate(P,iat,BasisVal);
-      BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(BasisVal[0]), &(psi[0]));
     }
     else 
       BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]), &(psi[0]));
@@ -343,10 +344,20 @@ namespace qmcplusplus
 			      ValueVector_t& d2psi)
   {
     GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
+    
+    
     if (BasisOrbitals) {
       BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
-      BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
-      BLAS::gemv_trans (N, M, C.data(), &(GSLapl[N]), &(d2psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(BasisVal[0]),  &(psi[0]));
+      BLAS::gemv_trans (N, M, C.data(), &(BasisLapl[0]), &(d2psi[0]));
+      for (int iorb=0; iorb<N; iorb++) {
+        psi  [iorb] += GSVal[iorb];
+        dpsi [iorb] += GSGrad[iorb];
+        d2psi[iorb] += GSLapl[iorb];
+        for (int ibasis=0; ibasis<M; ibasis++)
+          for (int dim=0; dim<OHMMS_DIM; dim++)
+            dpsi[iorb][dim] += C(iorb,ibasis) * BasisGrad[ibasis][dim];
+      }
     }
     else {
       for (int iorb=0; iorb<N; iorb++) {
@@ -450,8 +461,7 @@ namespace qmcplusplus
     GSOrbitals->evaluate_notranspose
       (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
     if (BasisOrbitals) {
-      BasisOrbitals->evaluate_notranspose
-	(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
+      BasisOrbitals->evaluate_notranspose(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
 
       //Note to Ken:
       //Use Numerics/MatrixOperators.h 
