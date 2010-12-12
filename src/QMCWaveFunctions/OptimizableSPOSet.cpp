@@ -198,7 +198,13 @@ namespace qmcplusplus
 	app_log() << "Coefficients for state" << state << ":\n";
 	// cerr << "params.size() = " << params.size() << endl; 
    //If params is missized resize and initialize to zero.
-   if ((params.size()!=asize)&&(asize>0)) params.resize(asize,0.0);
+   if ((params.size()!=asize)&&(asize>0))
+   {
+     vector<RealType> t_params(params);
+     params.resize(asize,0.0);
+     int ipm(0);
+     for (int ib=0; ib<M; ib++) if(allowedOrbs(state,ib)>0) params[ib]=t_params[ipm++];
+   }
    else if (params.size()) asize=params.size();
 //    for (int i=0; i< params.size(); i++) {
   int indx=0;
