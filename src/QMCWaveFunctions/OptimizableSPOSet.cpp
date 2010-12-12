@@ -204,6 +204,7 @@ namespace qmcplusplus
      params.resize(asize,0.0);
      int ipm(0);
      for (int ib=0; ib<M; ib++) if(allowedOrbs(state,ib)>0) params[ib]=t_params[ipm++];
+     else params[ib]=0;
    }
    else if (params.size()) asize=params.size();
 //    for (int i=0; i< params.size(); i++) {
