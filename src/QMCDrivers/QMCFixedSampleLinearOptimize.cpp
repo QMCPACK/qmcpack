@@ -146,9 +146,9 @@ bool QMCFixedSampleLinearOptimize::run()
             Matrix<RealType> Right(N,N);
 
             vector<std::pair<RealType,RealType> > mappedStabilizers;
-            if (nstabilizers<5)
+            if (nstabilizers<2)
             {
-                if (StabilizerMethod=="fit") app_log()<<" Need 5 stabilizers minimum for the fit"<<endl;
+                if (StabilizerMethod=="fit") app_log()<<" Need 2 stabilizers minimum for the fit"<<endl;
                 StabilizerMethod="best";
             }
 
