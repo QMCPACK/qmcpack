@@ -220,7 +220,7 @@ namespace qmcplusplus
 
         //needed to copy R/L/G
         W.saveWalker(thisWalker);
-        thisWalker.Weight=1;
+//         thisWalker.Weight=1;
         //thisWalker.Properties(DRIFTSCALE)=getNodeCorrection(W.G,(*it)->Drift);
         //RealType enew= H.evaluate(W);
         //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
