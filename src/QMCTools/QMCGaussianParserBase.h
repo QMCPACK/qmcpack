@@ -22,6 +22,8 @@ struct QMCGaussianParserBase {
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool zeroCI;
+  bool orderByExcitation;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -57,6 +59,7 @@ struct QMCGaussianParserBase {
   std::vector<vector<std::string> > CSFalpha,CSFbeta;
   std::vector<vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
+  std::vector<int> CIexcitLVL;
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
   bool usingCSF;
@@ -78,6 +81,9 @@ struct QMCGaussianParserBase {
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createDeterminantSetWithHDF5();
+
+
+  int numberOfExcitationsCSF(string&);
 
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;

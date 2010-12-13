@@ -20,7 +20,8 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 QMCGaussianParserBase::QMCGaussianParserBase(): 
   Title("sample"),basisType("Gaussian"),basisName("generic"),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
-  ,usingCSF(false),readNO(0),readGuess(0)
+  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
+  ,orderByExcitation(false)
 {
 }
 
@@ -29,7 +30,8 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),  
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
-  angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0) 
+  angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false) 
+  ,orderByExcitation(false)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -478,12 +480,14 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
 
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
 
-    std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb;
+    std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
     cisize <<ci_size; nstates <<ci_nstates;
     cinca <<ci_nca;
     cincb <<ci_ncb;
     cinea <<ci_nea;
     cineb <<ci_neb;
+    ci_thr <<ci_threshold; 
+
 
     xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"CSF");
@@ -492,32 +496,78 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
     xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
 
-    std::vector<pair<int,double> >::iterator it(coeff2csf.begin()); 
-    std::vector<std::string>::iterator occit(CSFocc.begin()); 
-    std::vector<pair<int,double> >::iterator last(coeff2csf.end()); 
+    //std::vector<pair<int,double> >::iterator it(coeff2csf.begin()); 
+    //std::vector<std::string>::iterator occit(CSFocc.begin()); 
+    //std::vector<pair<int,double> >::iterator last(coeff2csf.end()); 
+
+    CIexcitLVL.clear();
+    for(int i=0; i<CSFocc.size(); i++) { 
+      CIexcitLVL.push_back(numberOfExcitationsCSF(CSFocc[i]));
+      //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() <<endl;
+    }
+    // order dets according to ci coeff
+    std::vector<pair<double,int> > order;
+    if(orderByExcitation) {
+      cout<<"Ordering csfs by excitation level. \n"; 
+      int maxE =  *max_element(CIexcitLVL.begin(),CIexcitLVL.end());
+      vector<int> pos(maxE);
+      int ip1,ip2,cnt=0,cnt2;
+      // add by excitations, and do partial sorts of the list
+      // messy but I dont want pair< pair<> > types right now
+      for(int i=maxE; i>=0; i--) {
+        ip1 = ip2 = cnt;
+        cnt2=0;
+        for(int k=0; k<CIexcitLVL.size(); k++) {
+          if(CIexcitLVL[k] == i) {
+            pair<double,int> cic(std::abs(coeff2csf[k].second),k);
+            order.push_back(cic);
+            cnt2++;cnt++;
+          }         
+        }
+        if(cnt2 > 0) sort(order.begin()+ip1,order.end());
+      }
+    } else {
+      for(int i=0; i<coeff2csf.size(); i++) {
+        pair<double,int> cic(std::abs(coeff2csf[i].second),i);
+        order.push_back(cic); 
+      }
+      sort(order.begin(),order.end());
+    }
+    std::vector<pair<double,int> >::reverse_iterator it(order.rbegin()); 
+    std::vector<pair<double,int> >::reverse_iterator last(order.rend()); 
+
     int iv=0;
     while(it != last) {
+
+      int nq = (*it).second; 
       xmlNodePtr csf = xmlNewNode(NULL,(const xmlChar*)"csf");
-      std::ostringstream coeff; coeff<<(*it).second;
+      std::ostringstream qc_coeff; qc_coeff<<coeff2csf[nq].second;
+      std::ostringstream coeff;
+      std::ostringstream exct; exct<<CIexcitLVL[nq];
+      if(zeroCI && iv==0) { coeff<<1.0; }
+      else if(zeroCI && iv>0) { coeff<<0.0; }
+      else { coeff<<coeff2csf[nq].second; }
       std::ostringstream tag; tag<<"CSFcoeff_" <<iv;
       xmlNewProp(csf,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
+      xmlNewProp(csf,(const xmlChar*)"exctLvl",(const xmlChar*) exct.str().c_str());
       xmlNewProp(csf,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
-      xmlNewProp(csf,(const xmlChar*)"occ",(const xmlChar*) (*occit).substr(0,ci_nstates).c_str());
-      for(int i=0; i<CSFexpansion[iv].size(); i++)
+      xmlNewProp(csf,(const xmlChar*)"qchem_coeff",(const xmlChar*) qc_coeff.str().c_str());
+      xmlNewProp(csf,(const xmlChar*)"occ",(const xmlChar*) CSFocc[nq].substr(0,ci_nstates).c_str());
+      for(int i=0; i<CSFexpansion[nq].size(); i++)
       {
         xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"det");
-        std::ostringstream coeff0; coeff0<<CSFexpansion[iv][i];
+        std::ostringstream coeff0; coeff0<<CSFexpansion[nq][i];
         std::ostringstream tag0; tag0<<"csf_" <<iv <<"-" <<i;
         xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag0.str().c_str());
         xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff0.str().c_str());
-        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CSFalpha[iv][i].substr(0,ci_nstates).c_str());
-        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CSFbeta[iv][i].substr(0,ci_nstates).c_str());
+        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CSFalpha[nq][i].substr(0,ci_nstates).c_str());
+        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CSFbeta[nq][i].substr(0,ci_nstates).c_str());
         xmlAddChild(csf,ci);
       }
       xmlAddChild(detlist,csf);
       it++;
-      occit++;
       iv++;
     }
     xmlAddChild(multislaterdet,detlist);
@@ -823,3 +873,20 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
 }
+
+int QMCGaussianParserBase::numberOfExcitationsCSF(string& occ) {
+  int res=0;
+  for(int i=ci_neb; i<ci_nstates; i++) {
+    if(i < ci_nea && occ[i]=='2') {
+      res++;  //excitation into singly occupied alpha states in the reference
+    } else {
+      if(occ[i] == '1' )
+        res++;
+      else if(occ[i] == '2' )
+        res+=2;
+    }
+  }
+  return res;
+  
+}
+

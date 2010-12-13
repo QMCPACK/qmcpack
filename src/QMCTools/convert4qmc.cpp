@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   string psi_tag("psi0");
   string ion_tag("ion0");
   bool usehdf5=false;
-  bool ci=false;
+  bool ci=false,zeroCI=false,orderByExcitation=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
@@ -80,6 +80,12 @@ int main(int argc, char **argv) {
       readNO = atoi(argv[++iargc]);
     } else if(a == "-readInitialGuess") { 
       readGuess = atoi(argv[++iargc]);
+    } else if(a == "-zeroCI") { 
+      zeroCI = true;
+    } else if(a == "-orderByExcitation") { 
+      orderByExcitation = true;
+    } else if(a == "-cutoff") { 
+      orderByExcitation = true;
     }
     ++iargc;
   }
@@ -115,6 +121,8 @@ int main(int argc, char **argv) {
   parser->multideterminant=ci;
   parser->ci_threshold=thres;
   parser->readNO=readNO;  
+  parser->orderByExcitation=orderByExcitation;  
+  parser->zeroCI = zeroCI;
   parser->readGuess=readGuess;  
   parser->outputFile=punch_file;
   parser->parse(in_file);

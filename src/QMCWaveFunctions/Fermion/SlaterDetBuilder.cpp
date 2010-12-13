@@ -942,15 +942,16 @@ namespace qmcplusplus
          getNodeName(cname,cur);
          if(cname == "csf")
          {
-           RealType ci=0.0;
+           RealType ci=0.0,qc_ci=0.0;
            OhmmsAttributeSet confAttrib;
            string tag,OccString;
            confAttrib.add(ci,"coeff");
+           confAttrib.add(qc_ci,"qchem_coeff");
            confAttrib.add(tag,"id");
            confAttrib.add(OccString,"occ");
            confAttrib.put(cur);
 
-           if(abs(ci) < cutoff) { 
+           if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
              cnt0++;
              continue; 
@@ -1046,16 +1047,17 @@ namespace qmcplusplus
          getNodeName(cname,cur);
          if(cname == "configuration" || cname == "ci")
          {
-           RealType ci=0.0;
+           RealType ci=0.0, qc_ci=0.0;
            string alpha,beta,tag;
            OhmmsAttributeSet confAttrib;
            confAttrib.add(ci,"coeff");
+           confAttrib.add(qc_ci,"qchem_coeff");
            confAttrib.add(alpha,"alpha");
            confAttrib.add(beta,"beta");
            confAttrib.add(tag,"id");
            confAttrib.put(cur);
       
-           if(abs(ci) < cutoff) { 
+           if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
              cnt0++;
              continue;
