@@ -16,6 +16,7 @@ close(INN);
 
 $dcnt = 0;
 $int1 = 0;
+$ndet = 0;
 
 while($dcnt < $#alldata)
 {
@@ -26,6 +27,7 @@ while($dcnt < $#alldata)
    #print "my num $somevar\n";
    if(abs($somevar) > abs($dbl1))
    { 
+    $ndet++;
     $alldata[$dcnt] =~ /occ.\"(.*)[12](0+)"/;
     $mylength = length($1)+1;
     #print "dol1 $1 dol2 $2 \n";
@@ -39,4 +41,5 @@ while($dcnt < $#alldata)
  $dcnt++;
 }
 
+print "Number of determinants: $ndet \n"; 
 print "Required number of orbitals: $int1 \n"; 
