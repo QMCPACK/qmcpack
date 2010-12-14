@@ -41,5 +41,6 @@ while($dcnt < $#alldata)
  $dcnt++;
 }
 
+# must add number of core orbitals to this
 print "Number of determinants: $ndet \n"; 
 print "Required number of orbitals: $int1 \n"; 

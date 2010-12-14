@@ -875,7 +875,6 @@ namespace qmcplusplus
      OhmmsAttributeSet ciAttrib;
      ciAttrib.add (optCI,"optimize");
      ciAttrib.add (optCI,"Optimize");
-     ciAttrib.add (cutoff,"cutoff");
      ciAttrib.put(cur);
 
      optimizeCI = (optCI=="yes");
@@ -904,6 +903,7 @@ namespace qmcplusplus
      spoAttrib.add (ndets, "size");
      spoAttrib.add (Dettype, "type");
      spoAttrib.add (nstates, "nstates");
+     spoAttrib.add (cutoff,"cutoff");
      spoAttrib.put(DetListNode);
 
      if(ndets==0) {
