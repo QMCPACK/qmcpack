@@ -39,6 +39,7 @@ namespace qmcplusplus
     attrib.add (mapped_k,    "mapped_k");
     attrib.add (same_orbital,    "same_orbital");
     attrib.add (N,         "size");
+    attrib.add (derivScale,"scale");
     attrib.put (node);
 
     if (N == 0) {
@@ -429,7 +430,7 @@ namespace qmcplusplus
       int loc = myVars.where(ip);
       if (loc >= 0) {
 	TinyVector<int,2> idx = ParamIndex[ip];
-	destVec[loc] += mat(idx[0], idx[1]);
+	destVec[loc] += derivScale*mat(idx[0], idx[1]);
       }
     }
   }
@@ -445,10 +446,10 @@ namespace qmcplusplus
 	TinyVector<int,2> idx = ParamIndex[ip];
 	assert (ParamIndex[ip+1][0] == idx[0] &&
 		ParamIndex[ip+1][1] == idx[1]);
-	destVec[loc] = mat(idx[0], idx[1]).real();
+	destVec[loc] += derivScale*mat(idx[0], idx[1]).real();
 	loc = myVars.where(ip+1);
 	assert (loc >= 0);
-	destVec[loc] += mat(idx[0], idx[1]).imag();
+	destVec[loc] += derivScale*mat(idx[0], idx[1]).imag();
       }
     }
   }
@@ -555,6 +556,7 @@ namespace qmcplusplus
     
     clone->C=C;  
     clone->myVars=myVars;
+    clone->derivScale=derivScale;
     
     clone->ParamPointers.clear();
     clone->ParamIndex=ParamIndex;

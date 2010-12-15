@@ -31,6 +31,8 @@ namespace qmcplusplus
 
     // Number of occupied states, number of basis states
     int N, M;
+    
+    RealType derivScale;
 
     // If BasisOrbitals==NULL, only GSOrbitals is used and it's evaluate
     // functions should return N+M orbitals.
@@ -72,14 +74,14 @@ namespace qmcplusplus
     vector<vector<TinyVector<int,2> > > ActiveBasis;
 
 
-    OptimizableSPOSet() : N(0), M(0), GSOrbitals(0), BasisOrbitals(0)
+    OptimizableSPOSet() : N(0), M(0), derivScale(10.0), GSOrbitals(0), BasisOrbitals(0)
     {
       Optimizable = true;
     }
 
     OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs, 
 		      SPOSetBase* basisOrbs=0) :
-      GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
+      GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
     {
       N = num_orbs;
       setOrbitalSetSize(N);
