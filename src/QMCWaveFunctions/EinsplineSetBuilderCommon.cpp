@@ -308,10 +308,12 @@ namespace qmcplusplus {
       if(cname == "occupation") {
 	string occ_mode("ground");
   occ_format="energy";
+   particle_hole_pairs=0;
         OhmmsAttributeSet oAttrib;
         oAttrib.add(occ_mode,"mode");
         oAttrib.add(spinSet,"spindataset");
         oAttrib.add(occ_format,"format");
+        oAttrib.add(particle_hole_pairs,"pairs");
         oAttrib.put(cur);
 	if(occ_mode == "excited"){
           putContent(Occ,cur);

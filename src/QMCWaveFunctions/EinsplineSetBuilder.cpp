@@ -769,11 +769,13 @@ namespace qmcplusplus {
       string cname((const char*)(cur->name));
       if(cname == "occupation") {
 	string occ_mode("ground");
-  occ_format="energy";
+   occ_format="energy";
+   particle_hole_pairs=0;
         OhmmsAttributeSet oAttrib;
         oAttrib.add(occ_mode,"mode");
         oAttrib.add(spinSet,"spindataset");
         oAttrib.add(occ_format,"format");
+        oAttrib.add(particle_hole_pairs,"pairs");
         oAttrib.put(cur);
 	if(occ_mode == "excited"){
           putContent(Occ,cur);
@@ -1583,6 +1585,57 @@ namespace qmcplusplus {
         ReOrderedBands.push_back(SortBands[i]);
       }
       else if (SumOrb[i]==0)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        RejectedBands.push_back(SortBands[i]);
+      }
+      else
+      {
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        APP_ABORT("Sorting Excitation");
+      }
+    }
+    ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
+    SortBands=ReOrderedBands;
+}
+else if (occ_format=="band"){
+  app_log()<<"  Occupying bands based on (bi,ti) data."<<endl;
+    if(Occ.size() != particle_hole_pairs*4)
+    {
+      app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<<endl;
+      APP_ABORT("ChangedOccupations");
+    }
+    int cnt(0);
+    for(int ien=0;ien<SortBands.size();ien++)
+    { 
+      if((Occ[cnt] == SortBands[ien].TwistIndex)&&(Occ[cnt+1] == SortBands[ien].BandIndex))
+        if(cnt<particle_hole_pairs*2)
+        {
+          gsOcc[ien]-=1;
+          cnt+=2;
+          app_log()<<"removing orbital "<<ien<<endl;
+        }
+        else
+        {
+          gsOcc[ien]+=1;
+          app_log()<<"adding orbital "<<ien<<endl;
+          cnt+=2;
+        }
+    }
+    vector<BandInfo> ReOrderedBands;
+    vector<BandInfo> RejectedBands;
+    for(int i=0;i<SortBands.size();i++){
+      if(gsOcc[i]==2)
+      {
+        SortBands[i].MakeTwoCopies=true;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==1)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==0)
       {
         SortBands[i].MakeTwoCopies=false;
         RejectedBands.push_back(SortBands[i]);

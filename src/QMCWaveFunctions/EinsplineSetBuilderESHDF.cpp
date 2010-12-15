@@ -434,6 +434,58 @@ namespace qmcplusplus {
     ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
     SortBands=ReOrderedBands;
 }
+else if (occ_format=="band"){
+  app_log()<<"  Occupying bands based on (bi,ti) data."<<endl;
+    if(Occ.size() != particle_hole_pairs*4)
+    {
+      app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<<endl;
+      app_log()<<Occ.size()<<" "<<particle_hole_pairs<<endl;
+      APP_ABORT("ChangedOccupations");
+    }
+    int cnt(0);
+    for(int ien=0;ien<SortBands.size();ien++)
+    { 
+      if((Occ[cnt] == SortBands[ien].TwistIndex)&&(Occ[cnt+1] == SortBands[ien].BandIndex))
+        if(cnt<particle_hole_pairs*2)
+        {
+          gsOcc[ien]-=1;
+          cnt+=2;
+          app_log()<<"removing orbital "<<ien<<endl;
+        }
+        else
+        {
+          gsOcc[ien]+=1;
+          app_log()<<"adding orbital "<<ien<<endl;
+          cnt+=2;
+        }
+    }
+    vector<BandInfo> ReOrderedBands;
+    vector<BandInfo> RejectedBands;
+    for(int i=0;i<SortBands.size();i++){
+      if(gsOcc[i]==2)
+      {
+        SortBands[i].MakeTwoCopies=true;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==1)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==0)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        RejectedBands.push_back(SortBands[i]);
+      }
+      else
+      {
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        APP_ABORT("Sorting Excitation");
+      }
+    }
+    ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
+    SortBands=ReOrderedBands;
+}
     //for(int sw=0;sw<Removed.size();sw++){
     //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
     //  BandInfo tempband(SortBands[Removed[sw]-1]);

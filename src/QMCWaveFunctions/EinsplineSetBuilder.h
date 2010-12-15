@@ -89,7 +89,11 @@ namespace qmcplusplus {
     // True if this state is a core state
     bool IsCoreState;
     inline bool operator<(BandInfo other) const
-    { return Energy < other.Energy; }
+    { 
+      if  ((Energy < other.Energy+2e-5)&&(Energy > other.Energy-2e-5))
+        return TwistIndex < other.TwistIndex;
+      else
+        return Energy < other.Energy; }
   };
 
   class EinsplineSetBuilder : public BasisSetBuilder {
@@ -236,6 +240,7 @@ namespace qmcplusplus {
     int LastSpinSet, NumOrbitalsRead;
     
     string occ_format;
+    int particle_hole_pairs;
     bool makeRotations;
     std::vector<RealType> rotationMatrix;
     std::vector<int> rotatedOrbitals;
