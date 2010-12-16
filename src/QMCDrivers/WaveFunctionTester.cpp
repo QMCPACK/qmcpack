@@ -1224,7 +1224,7 @@ void WaveFunctionTester::runDerivCloneTest()
       
       SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
       int NumOrbitals=Phi->getBasisSetSize();
-//       app_log()<<"Basis set size: "<<NumOrbitals<<endl;
+      app_log()<<"Basis set size: "<<NumOrbitals<<endl;
       
       vector<int> SPONumbers(0,0);
       vector<int> irrepRotations(0,0);
@@ -1273,7 +1273,7 @@ void WaveFunctionTester::runDerivCloneTest()
 //         R_unit[0][2]=0;
 //         R_unit[0][i]=1;
 //         W.convert2Cart(R_unit,R_cart);
-// //         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
+//         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
 //         for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
 //       }
 
@@ -1282,7 +1282,7 @@ void WaveFunctionTester::runDerivCloneTest()
       for(int i=0;i<Nrotated;i++) app_log()<< SPONumbers[i] <<" ";
       app_log()<<endl;
       //indexing trick
-      for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
+//       for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
       
       SymmetryBuilder SO;
       SO.put(myNode);
@@ -1332,14 +1332,16 @@ void WaveFunctionTester::runDerivCloneTest()
                 R_unit[0][2]=overG2*RealType(k);// R_cart[0][2]=0;
                 
 //                 for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
-                 W.convert2Cart(R_unit,R_cart);
+                W.convert2Cart(R_unit,R_cart);
 
                 symOp.TransformSinglePosition(R_cart,l);
                 W.R[0]=R_cart[0];
                 values=0.0;
                 //evaluate orbitals
-                Phi->evaluate(W,0,values);
                 
+//                 Phi->evaluate(W,0,values);
+                Psi.evaluateLog(W);
+                for(int n=0;n<NumOrbitals;n++) values[n] = Phi->t_logpsi(0,n);
                 if (l==0){
                   identityValues=values;
                   #if defined(QMC_COMPLEX)
