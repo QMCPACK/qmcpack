@@ -224,6 +224,7 @@ namespace qmcplusplus {
       int numG = TargetPtcl.DensityReducedGvecs.size();
       // Convert primitive G-vectors to supercell G-vectors
       // Also, flip sign since ESHDF format uses opposite sign convention
+#pragma omp parallel for
       for (int iG=0; iG < numG; iG++) 
 	TargetPtcl.DensityReducedGvecs[iG] = 
 	  -1 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
@@ -272,6 +273,7 @@ namespace qmcplusplus {
       int numG = TargetPtcl.VHXCReducedGvecs.size();
       // Convert primitive G-vectors to supercell G-vectors
       // Also, flip sign since ESHDF format uses opposite sign convention
+#pragma omp parallel for
       for (int iG=0; iG < numG; iG++) 
 	TargetPtcl.VHXCReducedGvecs[iG] = 
 	  -1 * dot(TileMatrix, TargetPtcl.VHXCReducedGvecs[iG]);
@@ -650,10 +652,12 @@ else if (occ_format=="band"){
       app_log()<<endl;
       
       vector<Array<complex<double>,3> > allOriginalSplines(allRotatedSplines);
+#pragma omp parallel for
       for (int i=0;i<rotatedOrbitals.size();i++) 
         for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++) 
           allRotatedSplines[i](ix,iy,iz)=0.0;
         
+#pragma omp parallel for
         for (int i=0;i<rotatedOrbitals.size();i++){
           for(int j=0;j<rotatedOrbitals.size();j++){
             for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++)
@@ -830,10 +834,12 @@ void
       app_log()<<endl;
       
       vector<Array<complex<double>,3> > allOriginalSplines(allRotatedSplines);
+#pragma omp parallel for
       for (int i=0;i<rotatedOrbitals.size();i++) 
         for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++) 
           allRotatedSplines[i](ix,iy,iz)=0.0;
         
+#pragma omp parallel for
         for (int i=0;i<rotatedOrbitals.size();i++){
           for(int j=0;j<rotatedOrbitals.size();j++){
             for (int ix=0;ix<nx;ix++) for (int iy=0;iy<ny;iy++) for (int iz=0;iz<nz;iz++)
@@ -974,7 +980,7 @@ void
 	(MeshSize[0], MeshSize[1], MeshSize[2],
 	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
 	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
-	 +1, FFTW_MEASURE);
+	 +1, FFTW_ESTIMATE);
     }
     myComm->bcast(MeshSize);
 
@@ -1081,6 +1087,7 @@ void
 	    h_cG.read (H5FileID, psiGname.c_str());
 	    assert (cG.size() == Gvecs[ti].size());
 	    FFTbox = complex<double>();
+#pragma omp parallel for
 	    for (int iG=0; iG<cG.size(); iG++) {
 	      TinyVector<int,3> index = Gvecs[ti][iG];
 	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
@@ -1095,8 +1102,9 @@ void
 	    // symmetry at special k-points.
 
 	    double rNorm=0.0, iNorm=0.0;
-	    PosType ru;
+#pragma omp parallel for reduction(+:rNorm,iNorm)
 	    for (int ix=0; ix<nx; ix++) {
+	    PosType ru;
 	      //	      ru[0] = (RealType)ix / (RealType)(nx-1);
 	      ru[0] = (RealType)ix / (RealType)nx;
 	      for (int iy=0; iy<ny; iy++){
@@ -1122,6 +1130,7 @@ void
 	    sincos(0.5*(0.25*M_PI-arg), &s, &c);
 	    complex<double> phase(c,s);
 	    rNorm=0.0; iNorm=0.0;
+#pragma omp parallel for reduction(+:rNorm,iNorm)
 	    for (int ix=0; ix<nx; ix++)
 	      for (int iy=0; iy<ny; iy++)
 		for (int iz=0; iz<nz; iz++) {
@@ -1290,7 +1299,7 @@ void
 	(MeshSize[0], MeshSize[1], MeshSize[2],
 	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
 	 reinterpret_cast<fftw_complex*>(FFTbox.data()),
-	 +1, FFTW_MEASURE);
+	 +1, FFTW_ESTIMATE);
     }
     myComm->bcast(MeshSize);
     app_log() << "MeshSize = (" << MeshSize[0] << ", " 
@@ -1396,8 +1405,9 @@ void
 		fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
 		abort();
 	      }
-	      PosType ru;
+#pragma omp parallel for
 	      for (int ix=0; ix<nx; ix++) {
+	      PosType ru;
 		ru[0] = (RealType)ix / (RealType)nx;
 		for (int iy=0; iy<ny; iy++) {
 		  ru[1] = (RealType)iy / (RealType)ny;
@@ -1432,6 +1442,7 @@ void
 	    h_cG.read (H5FileID, psiGname.c_str());
 	    assert (cG.size() == Gvecs[ti].size());
 	    FFTbox = complex<double>();
+#pragma omp parallel for
 	    for (int iG=0; iG<cG.size(); iG++) {
 	      TinyVector<int,3> index = Gvecs[ti][iG];
 	      index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
@@ -1446,8 +1457,9 @@ void
 	    // zero.  This sometimes happens in crystals with high
 	    // symmetry at special k-points.
 	    double rNorm=0.0, iNorm=0.0;
-	    PosType ru;
+#pragma omp parallel for reduction(+:rNorm,iNorm)
 	    for (int ix=0; ix<nx; ix++) {
+	    PosType ru;
 	      //	      ru[0] = (RealType)ix / (RealType)(nx-1);
 	      ru[0] = (RealType)ix / (RealType)nx;
 	      for (int iy=0; iy<ny; iy++){
@@ -1472,6 +1484,7 @@ void
 	    sincos(0.125*M_PI-0.5*arg, &s, &c);
 	    //sincos(0.25*M_PI-arg, &s, &c);
 	    complex<double> phase(c,s);
+#pragma omp parallel for
 	    for (int ix=0; ix<nx; ix++)
 	      for (int iy=0; iy<ny; iy++)
 		for (int iz=0; iz<nz; iz++) 
@@ -1534,8 +1547,9 @@ void
 		    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
 		    abort();
 		  }
-		  PosType ru;
+#pragma omp parallel for
 		  for (int ix=0; ix<nx; ix++) {
+		  PosType ru;
 		    ru[0] = (RealType)ix / (RealType)nx;
 		    for (int iy=0; iy<ny; iy++) {
 		      ru[1] = (RealType)iy / (RealType)ny;
@@ -1610,3 +1624,9 @@ void
   }
 
 }
+
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$
+ ***************************************************************************/
