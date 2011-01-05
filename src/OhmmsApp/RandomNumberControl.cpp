@@ -71,7 +71,7 @@ namespace APPNAMESPACE
     int pid = OHMMS::Controller->rank();
     int nprocs = OHMMS::Controller->size();
 
-    uint_type iseed=static_cast<uint_type>(std::time(0)%4096);
+    uint_type iseed=static_cast<uint_type>(std::time(0))%1024;
     mpi::bcast(*OHMMS::Controller,iseed);
     //OHMMS::Controller->bcast(iseed);//broadcast the seed
 
