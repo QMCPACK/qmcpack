@@ -18,7 +18,7 @@ $dcnt = 0;
 $int1 = 0;
 $ndet = 0;
 
-while($dcnt < $#alldata)
+while($dcnt < $#alldata+1)
 {
  if($alldata[$dcnt] =~ /<csf/)
  {
@@ -28,7 +28,7 @@ while($dcnt < $#alldata)
    if(abs($somevar) > abs($dbl1))
    { 
     $ndet++;
-    $alldata[$dcnt] =~ /occ.\"(.*)[12](0+)"/;
+    $alldata[$dcnt] =~ /occ.\"(.*)[12](0*)"/;
     $mylength = length($1)+1;
     #print "dol1 $1 dol2 $2 \n";
     #print "my length is $mylength\n";
