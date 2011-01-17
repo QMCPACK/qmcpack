@@ -22,6 +22,8 @@ TARGET_LINK_LIBRARIES(einspline_bench qmcbase qmcutil)
 ADD_EXECUTABLE( einspline_smp  einspline_smp.cpp)
 TARGET_LINK_LIBRARIES(einspline_smp qmcbase qmcutil)
 
+ADD_EXECUTABLE( h2o_vmc  h2o_vmc.c)
+
 #ADD_EXECUTABLE(gnubug gnubug.cpp)
 #TARGET_LINK_LIBRARIES(gnubug qmcbase qmcutil)
 
