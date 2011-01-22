@@ -268,9 +268,7 @@ bool QMCFixedSampleLinearOptimize::run()
               }
                stability=nstabilizers;
             }
-
-
-                RealType lowestEV(0);
+            RealType lowestEV(0);
 //                 if ((GEVSplit=="rescale")||(GEVSplit=="freeze"))
 //                 {
 //                   //These are experimental and aren't very good.
@@ -330,207 +328,206 @@ bool QMCFixedSampleLinearOptimize::run()
 //                 }
 //                 else
 //                 {
-                    if (XS==0)
-                    {
-                      XS     = std::exp(stabilityBase +  stability*od_largest/nstabilizers);
-                      for (int i=1; i<N; i++) LeftT(i,i) += XS;
-                    }
-                    else
-                    {
-                      //else XS is from the quartic fit
-                      for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
-                    }
-                    
-                    myTimers[2]->start();
-//                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
-                    lowestEV =getLowestEigenvector(LeftT,currentParameterDirections);
-                    myTimers[2]->stop();
-//                 }
-
-                if (tooLow(safe,lowestEV))
-                {
-                    tooManyTries--;
-                    if (tooManyTries>0)
-                    {
-                      if (stability==0)
-                      {
-                        app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-                        //try a larger stability base and repeat
-                        stabilityBase+=stabilizerScale;
-                        //maintain same number of "good" stability tries
-                        stability-=1;
-                      }
-                      else
-                      {
-                        app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-                        //try a larger stability base and repeat
-                        stabilityBase-=0.66*stabilizerScale;
-                        //maintain same number of "good" stability tries
-                        stability-=1;               
-                      }
-                    }
-                    else
-                    {
-                      app_log()<<"Too many tries: Moving on to next step"<<endl;
-                      stability=nstabilizers;
-                    }
-                    
-                    continue;
-                }
-
-                if (MinMethod=="rescale")
-                {
-//                   method from umrigar
-                    myTimers[3]->start();
-                    Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
-                    myTimers[3]->stop();
-
-                    RealType bigVec(0);
-                    for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-                    if (Lambda*bigVec>bigChange)
-                    {
-                        app_log()<<"  Failed Step. Largest parameter change: "<<Lambda*bigVec<<endl;
-                        tooManyTries--;
-                        if (tooManyTries>0)
-                        {
-                            stabilityBase+=stabilizerScale;
-                            stability-=1;
-                            app_log()<<" Re-run with larger stabilityBase"<<endl;
-                            continue;
-                        }
-                    }
-                    else
-                        for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-                }
-                else
-                {
-                    //eigenCG part
-                    for (int ldi=0; ldi < std::min(eigCG,int(LastDirections.size())); ldi++)
-                    {
-                        RealType nrmold(0), ovlpold(0);
-                        for (int i=1; i<N; i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
-                        for (int i=1; i<N; i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
-                        ovlpold*=1.0/nrmold;
-                        for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
-                    }
-
-                    
-                    //if we chose to "freeze" the CSF solutions at their minimum 
-                    //  then we must add them in to the fixed part of the parameter changes
-                    for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
-                    for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-                    RealType bigVec(0);
-                    for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
-
-                    TOL = 1e-8/bigVec;
-
-                    largeQuarticStep=bigChange/bigVec;
-                    if (savedQuadstep>0)
-                      quadstep=savedQuadstep/bigVec;
-                    else if (deltaPrms>0)
-                      quadstep=deltaPrms/bigVec;
-                    else 
-                      quadstep = 0.5*H2rescale*getNonLinearRescale(currentParameterDirections,S);
-                    
-//                  initial guess for line min bracketing
-                    LambdaMax = 0.1/bigVec;
-                    
-                    myTimers[3]->start();
-                    if (MinMethod=="quartic")
-                      Valid=lineoptimization();
-                    else if (MinMethod=="quartic_u")
-                    {
-                      int npts(9); int offset(2);
-                      quadstep *= 2.0/npts;
-                      Valid=lineoptimization3(npts,offset);
-                    }
-                    else Valid=lineoptimization2();
-                    myTimers[3]->stop();
-
-                    RealType biggestParameterChange = bigVec*std::abs(Lambda);
-                    if ( (!Valid) || (biggestParameterChange>bigChange ))
-                    {
-                        app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
-//                     optTarget->printEstimates();
-                        tooManyTries--;
-                        if (tooManyTries>0)
-                        {
-                            stabilityBase+=stabilizerScale;
-                            stability-=1;
-                            app_log()<<" Re-run with larger stabilityBase"<<endl;
-                            continue;
-                        }
-                    }
-                    else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-                    //Save this value in here for later
-                    Lambda = biggestParameterChange;
-                }
-                //get cost at new minimum
-                newCost = optTarget->Cost(false);
-
-                // mmorales
-                Valid=optTarget->IsValid;
-                if (!ValidCostFunction(Valid)) continue;
-
-                if (StabilizerMethod=="fit")
-                {
-                    std::pair<RealType,RealType> ms;
-                    ms.first=newCost;
-//                     the log fit seems to work best
-                    ms.second=std::log(XS);
-                    mappedStabilizers.push_back(ms);
-                }
-
-
-                app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
-                optTarget->printEstimates();
-//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
-
-                if ((newCost < lastCost)&&(newCost==newCost))
-                {
-                    //Move was acceptable
-                    for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i);
-                    lastCost=newCost;
-                    BestDirection=currentParameterDirections;
-                    acceptedOneMove=true;
-
-                    deltaPrms= Lambda;
-                }
-                else if (newCost>lastCost+1.0e-4)
-                {
-                    int neededForGoodQuarticFit=3;
-                    if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))
-                    {
-                        app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
-                    }
-                    else if ((StabilizerMethod=="fit")&&(stability+1 >= neededForGoodQuarticFit))
-                    {
-                        stability = max(nstabilizers-2,stability);
-                        if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
-                        else app_log()<<"Moving on to next eigCG or iteration."<<endl;
-                    }
-                    else
-                    {
-                        stability = nstabilizers;
-                        app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
-                    }
-                }
-            }
-
-            if (acceptedOneMove)
+            if (XS==0)
             {
-                for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];
-                currentParameters=bestParameters;
-                LastDirections.push_back(BestDirection);
-//             app_log()<< " Wave Function Parameters updated."<<endl;
-//             optTarget->reportParameters();
+              XS     = std::exp(stabilityBase +  stability*od_largest/nstabilizers);
+              for (int i=1; i<N; i++) LeftT(i,i) += XS;
             }
             else
             {
-                for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
-                tries=TotalCGSteps;
+              //else XS is from the quartic fit
+              for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
+            }
+            
+            myTimers[2]->start();
+//                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
+            lowestEV =getLowestEigenvector(LeftT,currentParameterDirections);
+            myTimers[2]->stop();
+            
+            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
+        
+            myTimers[3]->stop();
+            RealType bigVec(0);
+            for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
+            if (Lambda*bigVec>bigChange)
+            {
+                app_log()<<"  Failed Step. Largest parameter change: "<<Lambda*bigVec<<endl;
+                tooManyTries--;
+                if (tooManyTries>0)
+                {
+                    if(stability==0) stabilityBase+=stabilizerScale;
+                    else stabilityBase-=stabilizerScale;
+                    stability-=1;
+                    app_log()<<" Re-run with larger stabilityBase"<<endl;
+                    continue;
+                }
+            }
+        
+//                 }
+
+//                 if (tooLow(safe,lowestEV))
+//                 {
+//                     tooManyTries--;
+//                     if (tooManyTries>0)
+//                     {
+//                       if (stability==0)
+//                       {
+//                         app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+//                         //try a larger stability base and repeat
+//                         stabilityBase+=stabilizerScale;
+//                         //maintain same number of "good" stability tries
+//                         stability-=1;
+//                       }
+//                       else
+//                       {
+//                         app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
+//                         //try a larger stability base and repeat
+//                         stabilityBase-=0.66*stabilizerScale;
+//                         //maintain same number of "good" stability tries
+//                         stability-=1;               
+//                       }
+//                     }
+//                     else
+//                     {
+//                       app_log()<<"Too many tries: Moving on to next step"<<endl;
+//                       stability=nstabilizers;
+//                     }
+//                     
+//                     continue;
+//                 }
+
+            if (MinMethod=="rescale")
+            {
+              for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+            }
+            else
+            {
+                //eigenCG part
+                for (int ldi=0; ldi < std::min(eigCG,int(LastDirections.size())); ldi++)
+                {
+                    RealType nrmold(0), ovlpold(0);
+                    for (int i=1; i<N; i++) nrmold += LastDirections[ldi][i]*LastDirections[ldi][i];
+                    for (int i=1; i<N; i++) ovlpold += LastDirections[ldi][i]*currentParameterDirections[i];
+                    ovlpold*=1.0/nrmold;
+                    for (int i=1; i<N; i++) currentParameterDirections[i] -= ovlpold * LastDirections[ldi][i];
+                }
+
+                
+                //if we chose to "freeze" the CSF solutions at their minimum 
+                //  then we must add them in to the fixed part of the parameter changes
+                for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
+                for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
+                RealType bigVec(0);
+                for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
+
+                TOL = param_tol/bigVec;
+
+                largeQuarticStep=bigChange/bigVec;
+                if (savedQuadstep>0)
+                  quadstep=savedQuadstep/bigVec;
+                else if (deltaPrms>0)
+                  quadstep=deltaPrms/bigVec;
+                else 
+                  quadstep = Lambda;
+                
+//                  initial guess for line min bracketing
+                LambdaMax = quadstep;
+                
+                myTimers[3]->start();
+                if (MinMethod=="quartic")
+                  Valid=lineoptimization();
+                else if (MinMethod=="quartic_u")
+                {
+                  int npts(9); int offset(2);
+                  quadstep *= 2.0/npts;
+                  Valid=lineoptimization3(npts,offset);
+                }
+                else Valid=lineoptimization2();
+                myTimers[3]->stop();
+
+                RealType biggestParameterChange = bigVec*std::abs(Lambda);
+                if ( (!Valid) || (biggestParameterChange>bigChange ))
+                {
+                    app_log()<<"  Failed Step. Largest parameter change:"<<biggestParameterChange<<endl;
+//                     optTarget->printEstimates();
+                    tooManyTries--;
+                    if (tooManyTries>0)
+                    {
+                        stabilityBase+=stabilizerScale;
+                        stability-=1;
+                        app_log()<<" Re-run with larger stabilityBase"<<endl;
+                        continue;
+                    }
+                }
+                else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+                //Save this value in here for later
+                Lambda = biggestParameterChange;
+            }
+            //get cost at new minimum
+            newCost = optTarget->Cost(false);
+
+            // mmorales
+            Valid=optTarget->IsValid;
+            if (!ValidCostFunction(Valid)) continue;
+
+            if (StabilizerMethod=="fit")
+            {
+                std::pair<RealType,RealType> ms;
+                ms.first=newCost;
+//                     the log fit seems to work best
+                ms.second=std::log(XS);
+                mappedStabilizers.push_back(ms);
             }
 
+
+            app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+            optTarget->printEstimates();
+//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
+
+            if ((newCost < lastCost)&&(newCost==newCost))
+            {
+                //Move was acceptable
+                for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i);
+                lastCost=newCost;
+                BestDirection=currentParameterDirections;
+                acceptedOneMove=true;
+
+                deltaPrms= Lambda;
+            }
+            else if (newCost>lastCost+1.0e-4)
+            {
+                int neededForGoodQuarticFit=3;
+                if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))
+                {
+                    app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
+                }
+                else if ((StabilizerMethod=="fit")&&(stability+1 >= neededForGoodQuarticFit))
+                {
+                    stability = max(nstabilizers-2,stability);
+                    if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
+                    else app_log()<<"Moving on to next eigCG or iteration."<<endl;
+                }
+                else
+                {
+                    stability = nstabilizers;
+                    app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
+                }
+            }
+          }
+
+          if (acceptedOneMove)
+          {
+              for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];
+              currentParameters=bestParameters;
+              LastDirections.push_back(BestDirection);
+//             app_log()<< " Wave Function Parameters updated."<<endl;
+//             optTarget->reportParameters();
+          }
+          else
+          {
+              for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
+              tries=TotalCGSteps;
+          }
         }
     }
     finish();

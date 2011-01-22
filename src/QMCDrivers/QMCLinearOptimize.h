@@ -88,6 +88,8 @@ public:
     ///list of files storing configurations
     vector<string> ConfigFile;
     
+    RealType param_tol;
+    
     inline bool tooLow(RealType safeValue, RealType CurrentValue)
     {
       RealType lowestCostAllowed=std::min(safeValue-0.03*std::abs(safeValue),safeValue-3.0);
