@@ -8,7 +8,6 @@ SET(QMCAPPDIR
     QMCAppBase.cpp
     QMCDriverFactory.cpp
     QMCMain.cpp
-    QMCInterface.cpp
 )
 
 ####################################
@@ -68,9 +67,9 @@ ENDIF(INTEL_MKL)
 #ENDIF(NOT HAVE_MPI)
 
 # Get rid of error message
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+#if(COMMAND cmake_policy)
+#  cmake_policy(SET CMP0003 NEW)
+#endif(COMMAND cmake_policy)
 
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
@@ -78,6 +77,7 @@ endif(COMMAND cmake_policy)
 ADD_EXECUTABLE(qmcapp ${QMCMAIN})
 
 TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
+
 IF(HAVE_EINSPLINE AND NOT HAVE_EINSPLINE_EXT)
   TARGET_LINK_LIBRARIES(qmcapp einspline)
 ENDIF(HAVE_EINSPLINE AND NOT HAVE_EINSPLINE_EXT)	

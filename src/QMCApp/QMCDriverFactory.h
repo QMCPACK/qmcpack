@@ -60,14 +60,15 @@ namespace qmcplusplus {
       MULTIPLE_MODE, /**< bit for multple configuration */
       SPACEWARP_MODE, /**< bit for space-warping */
       ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
-      GPU_MODE      /**< bit to use GPU driver */
+      GPU_MODE,     /**< bit to use GPU driver */
+      QMC_MODE_MAX=8
     };
 
     ///current QMC mode determined by curQmcModeBits
     unsigned long curQmcMode;
 
-    ///4-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
-    std::bitset<4> curQmcModeBits;
+    ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
+    std::bitset<QMC_MODE_MAX> curQmcModeBits;
 
     ///type of qmcdriver
     QMCRunType curRunType;

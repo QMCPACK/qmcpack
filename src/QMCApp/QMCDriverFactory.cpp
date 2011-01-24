@@ -33,14 +33,14 @@
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/QMCChooseBestParameters.h"    
 #include "QMCDrivers/ZeroVarianceOptimize.h"
-#if QMC_BUILD_LEVEL>1
-#include "QMCDrivers/RQMCMultiple.h"
-//THESE ARE BROKEN
-//#if !defined(QMC_COMPLEX)
-//#include "QMCDrivers/RQMCMultiWarp.h"
-//#include "QMCDrivers/RQMCMultiplePbyP.h"
+//#if QMC_BUILD_LEVEL>1
+//#include "QMCDrivers/RQMCMultiple.h"
+////THESE ARE BROKEN
+////#if !defined(QMC_COMPLEX)
+////#include "QMCDrivers/RQMCMultiWarp.h"
+////#include "QMCDrivers/RQMCMultiplePbyP.h"
+////#endif
 //#endif
-#endif
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
 #include <queue>
@@ -108,18 +108,19 @@ namespace qmcplusplus {
     aAttrib.add(multi_tag,"multiple");
     aAttrib.add(warp_tag,"warp");
     aAttrib.add(append_tag,"append"); 
-#if defined(QMC_CUDA)
     aAttrib.add(gpu_tag,"gpu");
-#endif
     aAttrib.put(cur);
 
-    
+    bitset<QMC_MODE_MAX>  WhatToDo;
     bool append_run =(append_tag == "yes"); 
-    bitset<4>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
     WhatToDo[MULTIPLE_MODE]= (multi_tag == "yes");
     WhatToDo[UPDATE_MODE]= (update_mode == "pbyp");
+#if defined(QMC_CUDA)
     WhatToDo[GPU_MODE      ] = (gpu_tag     == "yes");
+#else
+    WhatToDo[GPU_MODE      ] = 0;
+#endif
 
     OhmmsInfo::flush();
 
@@ -339,13 +340,13 @@ namespace qmcplusplus {
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
     } 
 #endif
-#if QMC_BUILD_LEVEL>1
-    else if(curRunType == RMC_RUN)
-    {
-      app_log() << "Using RQMCMultiple: no warping, no pbyp" << endl;
-      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
-    }
-#endif
+//#if QMC_BUILD_LEVEL>1
+//    else if(curRunType == RMC_RUN)
+//    {
+//      app_log() << "Using RQMCMultiple: no warping, no pbyp" << endl;
+//      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
+//    }
+//#endif
 //#if defined(QMC_BUILD_COMPLETE)
 //    else if(curRunType == RMC_RUN) 
 //    {
