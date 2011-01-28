@@ -20,7 +20,7 @@ SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINO
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 1 CACHE INTEGER 
+SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
   "QMC Build Level: 1=bare, 2=developer, 3=experimental")
 
 ######################################################################
@@ -145,7 +145,7 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Build static libraries and binary")
-SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
+SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 

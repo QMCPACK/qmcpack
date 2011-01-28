@@ -595,211 +595,14 @@ namespace qmcplusplus
   {
      bool success=true;
 
-/*********************************
-    1. read ci_configurations and coefficients from xml
-    2. get unique set of determinants
-    3. create excitation tree for both spin channels
-    4. build mapping from original expansion to location in the tree
-*********************************/
-
-     vector<ci_configuration> confgList_up, uniqueConfg_up;
-     vector<ci_configuration> confgList_dn, uniqueConfg_dn;
-     ci_configuration baseC_up;
-     ci_configuration baseC_dn;
-     vector<RealType>& coeff = multiSD->C;
+     vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
      vector<std::string> CItags;
+     bool optimizeCI;
 
-     string optCI="no";
-     OhmmsAttributeSet ciAttrib;
-     ciAttrib.add (optCI,"optimize");
-     ciAttrib.add (optCI,"Optimize");
-     ciAttrib.put(cur);
-
-     bool optimizeCI = optCI=="yes";
-
-     xmlNodePtr curRoot=cur,DetListNode;
-     string cname;
-     cur = curRoot->children;
-     while (cur != NULL)//check the basis set
-     {
-       getNodeName(cname,cur);
-       if(cname == "detlist")
-       {
-         DetListNode=cur;
-         app_log() <<"Found determinant list. \n";
-       }
-       cur = cur->next;
-     }
-
-     int NCA,NCB,NEA,NEB,nstates,ndets=0,count=0;
-     string Dettype="DETS";
-     OhmmsAttributeSet spoAttrib;
-     spoAttrib.add (NCA, "nca");
-     spoAttrib.add (NCB, "ncb");
-     spoAttrib.add (NEA, "nea");
-     spoAttrib.add (NEB, "neb");
-     spoAttrib.add (ndets, "size");
-     spoAttrib.add (Dettype, "type");
-     spoAttrib.add (nstates, "nstates");
-     spoAttrib.put(DetListNode);
-
-     if(ndets==0) {
-       APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
-     }
-
-     if(Dettype != "DETS" && Dettype != "Determinants") {
-       APP_ABORT("Only allowed type in detlist is DETS. CSF not implemented yet.\n");
-     }
-
-// cheating until I fix the converter
-     NCA = multiSD->nels_up-NEA;
-     NCB = multiSD->nels_dn-NEB;
-
-     if(multiSD->nels_up != (NCA+NEA)) {
-       APP_ABORT("Number of up electrons in ParticleSet doesn't agree with NCA+NEA in detlist.");
-     }
-     if(multiSD->nels_dn != (NCB+NEB)) {
-       APP_ABORT("Number of down electrons in ParticleSet doesn't agree with NCB+NEB in detlist.");
-     }
-     if(multiSD->spo_up->refPhi->getOrbitalSetSize() < NCA+nstates) {
-       APP_ABORT("Number of states in SPOSet is smaller than NCA+nstates in detlist.");
-     }
-     if(multiSD->spo_dn->refPhi->getOrbitalSetSize() < NCB+nstates) {
-       APP_ABORT("Number of states in SPOSet is smaller than NCB+nstates in detlist.");
-     }
-
-     cur = DetListNode->children;
-     ci_configuration dummyC_alpha;
-     ci_configuration dummyC_beta;
-     dummyC_alpha.occup.resize(NCA+nstates,false);
-     for(int i=0; i<NCA+NEA; i++) dummyC_alpha.occup[i]=true;
-     dummyC_beta.occup.resize(NCB+nstates,false);
-     for(int i=0; i<NCB+NEB; i++) dummyC_beta.occup[i]=true;
-
-     app_log() <<"alpha reference: \n" <<dummyC_alpha;
-     app_log() <<"beta reference: \n" <<dummyC_beta;
-
-     while (cur != NULL)//check the basis set
-     {
-       getNodeName(cname,cur);
-       if(cname == "configuration" || cname == "ci")
-       {
-         RealType ci=0.0;
-         string alpha,beta,tag;
-         OhmmsAttributeSet confAttrib;
-         confAttrib.add(ci,"coeff");
-         confAttrib.add(alpha,"alpha");
-         confAttrib.add(beta,"beta");
-         confAttrib.add(tag,"id");
-         confAttrib.put(cur);
-
-         int nq=0,na,nr;
-         if(alpha.size() < nstates)
-         {
-           cerr<<"alpha: " <<alpha <<endl;
-           APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
-         }
-
-         for(int i=0; i<nstates; i++)
-         {
-           if(alpha[i] != '0' && alpha[i] != '1') {
-             cerr<<alpha <<endl;
-             APP_ABORT("Found incorrect determinant label.");
-           }
-           if(alpha[i] == '1') nq++;
-         }
-         if(nq != NEA) {
-             cerr<<"alpha: " <<alpha <<endl;
-             APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
-         }
-
-         nq=0;
-         if(beta.size() < nstates)
-         {
-           cerr<<"beta: " <<beta <<endl;
-           APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
-         }
-         for(int i=0; i<nstates; i++)
-         {
-           if(beta[i] != '0' && beta[i] != '1') {
-             cerr<<beta <<endl;
-             APP_ABORT("Found incorrect determinant label.");
-           }
-           if(beta[i] == '1') nq++;
-         }
-         if(nq != NEB) {
-             cerr<<"beta: " <<beta <<endl;
-             APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
-         }
-
-         count++;
-         coeff.push_back(ci);
-         CItags.push_back(tag);
-         confgList_up.push_back(dummyC_alpha);
-         for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
-         for(int i=NCA; i<NCA+nstates; i++)
-           confgList_up.back().occup[i]= (alpha[i-NCA]=='1');
-         confgList_dn.push_back(dummyC_beta);
-         for(int i=0; i<NCB; i++) confgList_dn.back().occup[i]=true;
-         for(int i=NCB; i<NCB+nstates; i++)
-           confgList_dn.back().occup[i]=(beta[i-NCB]=='1');
-       }
-       cur = cur->next;
-     }
-
-     if(count != ndets) {
-       cerr<<"count, ndets: " <<count <<"  " <<ndets <<endl;
-       APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
-     }
-     if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-       APP_ABORT("Problems reading determinant ci_configurations.");
-     }
-
-     multiSD->C2node_up.resize(coeff.size());
-     multiSD->C2node_dn.resize(coeff.size());
-
-     app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
-
-     for(int i=0; i<confgList_up.size(); i++)
-     {
-       bool found=false;
-       int k=-1;
-       for(int j=0; j<uniqueConfg_up.size(); j++)
-       {
-         if(confgList_up[i] == uniqueConfg_up[j]) {
-           found=true;
-           k=j;
-           break;
-         }
-       }
-       if(found) {
-         multiSD->C2node_up[i]=k;
-       } else {
-         uniqueConfg_up.push_back(confgList_up[i]);
-         multiSD->C2node_up[i]=uniqueConfg_up.size()-1;
-       }
-     }
-     for(int i=0; i<confgList_dn.size(); i++)
-     {
-       bool found=false;
-       int k=-1;
-       for(int j=0; j<uniqueConfg_dn.size(); j++)
-       {
-         if(confgList_dn[i] == uniqueConfg_dn[j]) {
-           found=true;
-           k=j;
-           break;
-         }
-       }
-       if(found) {
-         multiSD->C2node_dn[i]=k;
-       } else {
-         uniqueConfg_dn.push_back(confgList_dn[i]);
-         multiSD->C2node_dn[i]=uniqueConfg_dn.size()-1;
-       }
-     }
-     app_log() <<"Found " <<uniqueConfg_up.size() <<" unique up determinants.\n";
-     app_log() <<"Found " <<uniqueConfg_dn.size() <<" unique down determinants.\n";
+     int nels_up = multiSD->nels_up;
+     int nels_dn = multiSD->nels_dn;
+     success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,nels_up,nels_dn,multiSD->CSFcoeff,multiSD->DetsPerCSF,multiSD->CSFexpansion,multiSD->usingCSF);
+     if(!success) return false;
 
      multiSD->resize(uniqueConfg_up.size(),uniqueConfg_dn.size());
      SPOSetProxyForMSD* spo = multiSD->spo_up;
@@ -833,21 +636,43 @@ namespace qmcplusplus
        multiSD->dets_dn.push_back(adet);
      }
 
+     if (multiSD->CSFcoeff.size()==1 || multiSD->C.size()==1) optimizeCI=false;
      if(optimizeCI) {
        app_log() <<"CI coefficients are optimizable. \n";
+
+       string resetCI("no");
+       OhmmsAttributeSet spoAttrib;
+       spoAttrib.add (resetCI, "reset_coeff");
+       spoAttrib.put(cur);
+       if (resetCI=="yes")
+       {
+         if(multiSD->usingCSF) for(int i=1; i<multiSD->CSFcoeff.size(); i++) multiSD->CSFcoeff[i]=0;
+         else                  for(int i=1; i<multiSD->C.size(); i++)multiSD->C[i]=0;
+         app_log() <<"CI coefficients are reset. \n";
+       }
+
        multiSD->Optimizable=true;
-//        multiSD->myVars.insert(CItags[0],coeff[0],false,optimize::LINEAR_P);
-       for(int i=1; i<coeff.size(); i++) {
-         //std::stringstream sstr;
-         //sstr << "CIcoeff" << "_" << i;
-         multiSD->myVars.insert(CItags[i],coeff[i],true,optimize::LINEAR_P);
+       if(multiSD->usingCSF) {
+//          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
+         for(int i=1; i<multiSD->CSFcoeff.size(); i++) {
+           //std::stringstream sstr;
+           //sstr << "CIcoeff" << "_" << i;
+             multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
+         }
+       } else {
+//          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
+         for(int i=1; i<multiSD->C.size(); i++) {
+           //std::stringstream sstr;
+           //sstr << "CIcoeff" << "_" << i;
+           multiSD->myVars.insert(CItags[i],multiSD->C[i],true,optimize::LINEAR_P);
+         }
        }
      }
-//      //store this for making clones later.
-//      multiSD->confgList_up=confgList_up;
-//      multiSD->uniqueConfg_up=uniqueConfg_up;
-//      multiSD->confgList_dn=confgList_dn;
-//      multiSD->uniqueConfg_dn=uniqueConfg_dn;
+     else
+     {
+       app_log() <<"CI coefficients are not optimizable. \n";
+       multiSD->Optimizable=false;
+     }
 
      return success;
   }
@@ -930,6 +755,7 @@ namespace qmcplusplus
      for(int i=0; i<NCA+NEA; i++) dummyC_alpha.occup[i]=true;
      dummyC_beta.occup.resize(NCB+nstates,false);
      for(int i=0; i<NCB+NEB; i++) dummyC_beta.occup[i]=true;
+     RealType sumsq_qc=0.0;
 
      //app_log() <<"alpha reference: \n" <<dummyC_alpha;
      //app_log() <<"beta reference: \n" <<dummyC_beta;
@@ -950,6 +776,7 @@ namespace qmcplusplus
            confAttrib.add(tag,"id");
            confAttrib.add(OccString,"occ");
            confAttrib.put(cur);
+           if(qc_ci == 0.0) qc_ci = ci;
 
            if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
@@ -959,6 +786,7 @@ namespace qmcplusplus
            cnt0++;
 
            CSFcoeff.push_back(ci);
+           sumsq_qc += qc_ci*qc_ci;
            DetsPerCSF.push_back(0);           
            CItags.push_back(tag);
            count++;
@@ -1056,6 +884,7 @@ namespace qmcplusplus
            confAttrib.add(beta,"beta");
            confAttrib.add(tag,"id");
            confAttrib.put(cur);
+           if(qc_ci == 0.0) qc_ci = ci;
       
            if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
@@ -1105,6 +934,7 @@ namespace qmcplusplus
 
            count++;
            coeff.push_back(ci);
+           sumsq_qc += qc_ci*qc_ci;
            CItags.push_back(tag);
            confgList_up.push_back(dummyC_alpha);
            for(int i=0; i<NCA; i++) confgList_up.back().occup[i]=true;
@@ -1135,6 +965,7 @@ namespace qmcplusplus
      RealType sumsq=0.0;
      for(int i=0; i<coeff.size(); i++) sumsq += coeff[i]*coeff[i];
      app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq <<endl;
+     app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc <<endl;
 
      for(int i=0; i<confgList_up.size(); i++)
      {

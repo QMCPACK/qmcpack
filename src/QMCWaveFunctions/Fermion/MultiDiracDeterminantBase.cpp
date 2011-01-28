@@ -44,6 +44,8 @@ namespace qmcplusplus {
     FirstIndex = first;
     DetCalculator.resize(nel);
     resize(nel,norb);
+// mmorales; remove later
+//    testDets();
   }
 
   void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, vector<int>& data,
@@ -95,13 +97,25 @@ namespace qmcplusplus {
   //{ cout<<"MDD: " <<str <<"  " <<n <<endl; cout.flush(); }
 
 
-  void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P)
+  void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
   {
     evalWTimer.start();
-    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM,dpsiM,d2psiM);
+    if(fromScratch) Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM,dpsiM,d2psiM);
 
     if(NumPtcls==1) {
-      APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
+      //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
+      vector<ci_configuration2>::iterator it(confgList.begin());
+      vector<ci_configuration2>::iterator last(confgList.end());
+      ValueVector_t::iterator det(detValues.begin());
+      ValueMatrix_t::iterator lap(lapls.begin());
+      GradMatrix_t::iterator grad(grads.begin());
+      while(it != last) {
+        int orb = (it++)->occup[0];
+        *(det++) = psiM(0,orb); 
+        *(lap++) = d2psiM(0,orb); 
+        *(grad++) = dpsiM(0,orb); 
+      }
+
     } else {
 
       InverseTimer.start();
@@ -164,11 +178,6 @@ namespace qmcplusplus {
     } // NumPtcls==1
 
     psiMinv_temp = psiMinv;
-    // only used with ORB_PBYP_ALL, 
-    // do I need this here???
-    //psiM_temp = psiM;
-    //dpsiM_temp = dpsiM;
-    //d2psiM_temp = d2psiM;
     evalWTimer.stop();
 
   }
@@ -178,8 +187,7 @@ namespace qmcplusplus {
       PooledData<RealType>& buf, bool fromscratch) 
   {
 
-    if(fromscratch)
-      evaluateForWalkerMove(P);
+    evaluateForWalkerMove(P,(fromscratch || UpdateMode == ORB_PBYP_RATIO) );
 
     buf.put(psiM.first_address(),psiM.last_address());
     buf.put(FirstAddressOfdpsiM,LastAddressOfdpsiM);
@@ -225,6 +233,7 @@ namespace qmcplusplus {
   */
   void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat) 
   {
+
     WorkingIndex = iat-FirstIndex;
     switch(UpdateMode)
     {
@@ -245,6 +254,7 @@ namespace qmcplusplus {
 //          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
         std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
         break;
       default:
         psiMinv = psiMinv_temp;
@@ -264,7 +274,6 @@ namespace qmcplusplus {
   /** move was rejected. copy the real container to the temporary to move on
   */
   void MultiDiracDeterminantBase::restore(int iat) {
-
     WorkingIndex = iat-FirstIndex;
     psiMinv_temp = psiMinv;
     for(int i=0; i<NumOrbitals; i++)
@@ -320,7 +329,11 @@ namespace qmcplusplus {
     buildTableTimer("MultiDiracDeterminantBase::buildTable"),
     evalWTimer("MultiDiracDeterminantBase::evalW"),
     evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
-    readMatTimer("MultiDiracDeterminantBase::readMat")
+    evalOrb1Timer("MultiDiracDeterminantBase::evalOrbGrad"),
+    readMatTimer("MultiDiracDeterminantBase::readMat"),
+    readMatGradTimer("MultiDiracDeterminantBase::readMatGrad"),
+    buildTableGradTimer("MultiDiracDeterminantBase::buildTableGrad"),
+    ExtraStuffTimer("MultiDiracDeterminantBase::ExtraStuff")
   {
     setDetInfo(s.ReferenceDeterminant,s.confgList);
     registerTimers();
@@ -352,7 +365,11 @@ namespace qmcplusplus {
     buildTableTimer("MultiDiracDeterminantBase::buildTable"),
     evalWTimer("MultiDiracDeterminantBase::evalW"),
     evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
-    readMatTimer("MultiDiracDeterminantBase::readMat")
+    evalOrb1Timer("MultiDiracDeterminantBase::evalOrbGrad"),
+    readMatTimer("MultiDiracDeterminantBase::readMat"),
+    readMatGradTimer("MultiDiracDeterminantBase::readMatGrad"),
+    buildTableGradTimer("MultiDiracDeterminantBase::buildTableGrad"),
+    ExtraStuffTimer("MultiDiracDeterminantBase::ExtraStuff")
   {
     Optimizable=true;
     OrbitalName="MultiDiracDeterminantBase";
@@ -385,7 +402,7 @@ namespace qmcplusplus {
       LastAddressOfdpsiM = FirstAddressOfdpsiM + NumPtcls*NumOrbitals*DIM;
     }
 
-    evaluateForWalkerMove(P);
+    evaluateForWalkerMove(P,true);
 
     //add the data:
     buf.add(psiM.first_address(),psiM.last_address());
@@ -492,7 +509,11 @@ namespace qmcplusplus {
     buildTableTimer.reset();
     readMatTimer.reset();
     evalOrbTimer.reset();
+    evalOrb1Timer.reset();
     evalWTimer.reset();
+    ExtraStuffTimer.reset();
+    buildTableGradTimer.reset();
+    readMatGradTimer.reset();
     TimerManager.addTimer (&UpdateTimer);
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&InverseTimer);
@@ -500,6 +521,10 @@ namespace qmcplusplus {
     TimerManager.addTimer (&readMatTimer);
     TimerManager.addTimer (&evalWTimer);
     TimerManager.addTimer (&evalOrbTimer);
+    TimerManager.addTimer (&evalOrb1Timer);
+    TimerManager.addTimer (&buildTableGradTimer);
+    TimerManager.addTimer (&readMatGradTimer);
+    TimerManager.addTimer (&ExtraStuffTimer);
   }
 
 

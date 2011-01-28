@@ -578,12 +578,13 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
 
     ci_size=0;
     for(int i=0; i<CIcoeff.size(); i++) if(fabs(CIcoeff[i]) > ci_threshold) ci_size++;
-    std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb;
+    std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
     cisize <<ci_size; nstates <<ci_nstates; 
     cinca <<ci_nca;
     cincb <<ci_ncb;
     cinea <<ci_nea;
     cineb <<ci_neb;
+    ci_thr <<ci_threshold; 
 
     xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"DETS");
@@ -592,6 +593,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
     xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
 
     if(CIcoeff.size() == 0) {
       cerr<<" CI configuration list is empty. \n";

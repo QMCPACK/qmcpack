@@ -36,6 +36,7 @@ public:
   typedef const T*     const_pointer;
   typedef C            Container_t;
   typedef typename C::size_type size_type;
+  typedef typename Container_t::iterator iterator;
   typedef Matrix<T,C>  This_t;
 
   Matrix():D1(0),D2(0){ } // Default Constructor initializes to zero.

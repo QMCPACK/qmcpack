@@ -26,12 +26,15 @@ namespace qmcplusplus {
     RatioAllTimer("MultiSlaterDeterminant::ratio(all)"),
     Ratio1AllTimer("MultiSlaterDeterminant::detEval_ratio(all)"),
     UpdateTimer("MultiSlaterDeterminant::updateBuffer"),
-    EvaluateTimer("MultiSlaterDeterminant::evaluate")
+    AccRejTimer("MultiSlaterDeterminant::Accept_Reject"),
+    EvaluateTimer("MultiSlaterDeterminant::evaluate"),
+    evalOrbTimer("MultiSlaterDeterminant::evalOrbGrad")
   { 
     registerTimers();
     //Optimizable=true;
     Optimizable=false;
     OrbitalName="MultiSlaterDeterminant";
+    usingCSF=false;
 
     FirstIndex_up = targetPtcl.first(0); 
     LastIndex_up = targetPtcl.last(0);
@@ -59,6 +62,12 @@ namespace qmcplusplus {
     clone->C2node_up=C2node_up;
     clone->C2node_dn=C2node_dn;
     clone->resize(dets_up.size(),dets_dn.size());
+    if (usingCSF)
+    {
+      clone->CSFcoeff=CSFcoeff;
+      clone->CSFexpansion=CSFexpansion;
+      clone->DetsPerCSF=DetsPerCSF;
+    }
     
 //     SPOSetProxyForMSD* spo = clone->spo_up;
 //     spo->occup.resize(uniqueConfg_up.size(),clone->nels_up);
@@ -252,7 +261,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
       RatioGradTimer.start();
+      evalOrbTimer.start();
       spo_up->evaluateAllForPtclMove(P,iat);
+      evalOrbTimer.stop();
 
       Ratio1GradTimer.start();
       grad_temp=0.0; 
@@ -279,7 +290,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       return curRatio; 
     } else {
       RatioGradTimer.start();
+      evalOrbTimer.start();
       spo_dn->evaluateAllForPtclMove(P,iat);
+      evalOrbTimer.stop();
 
       Ratio1GradTimer.start();
       grad_temp=0.0;
@@ -437,48 +450,47 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
-      RatioTimer.start();
+     RatioTimer.start();
       spo_up->evaluateForPtclMove(P,iat);
-
-      Ratio1Timer.start();
+     Ratio1Timer.start();
       for(int i=0; i<dets_up.size(); i++) {
         spo_up->prepareFor(i);
         detsRatios[i]=dets_up[i]->ratio(P,iat);
       }
-      Ratio1Timer.stop();
+     Ratio1Timer.stop();
 
+      vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+      vector<RealType>::iterator it(C.begin()),last(C.end());
       ValueType psiOld=0.0,psiNew=0.0;
-      for(int i=0; i<C.size(); i++){
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType tmp2 = C[i]*detValues_up[upC]*detValues_dn[dnC];
-        psiOld += tmp2;
-        psiNew += tmp2*detsRatios[upC];
+      while(it != last) { 
+        ValueType tmp = (*it)*detValues_up[*upC]*detValues_dn[*dnC];
+        psiNew += tmp*detsRatios[*upC];
+        psiOld += tmp;
+        it++;upC++;dnC++;
       }
       curRatio = psiNew/psiOld;
-      RatioTimer.stop();
+     RatioTimer.stop();
       return curRatio; 
     } else {
-      RatioTimer.start();
+     RatioTimer.start();
       spo_dn->evaluateForPtclMove(P,iat);
-
-      Ratio1Timer.start();
+     Ratio1Timer.start();
       for(int i=0; i<dets_dn.size(); i++) {
         spo_dn->prepareFor(i);
         detsRatios[i]=dets_dn[i]->ratio(P,iat);
       }
-      Ratio1Timer.stop();
-
+     Ratio1Timer.stop();
+      vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+      vector<RealType>::iterator it(C.begin()),last(C.end());
       ValueType psiOld=0.0,psiNew=0.0;
-      for(int i=0; i<C.size(); i++){
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType tmp2 = C[i]*detValues_up[upC]*detValues_dn[dnC];
-        psiOld += tmp2;
-        psiNew += tmp2*detsRatios[dnC];
+      while(it != last) {
+        ValueType tmp = (*it)*detValues_up[*upC]*detValues_dn[*dnC];
+        psiNew += tmp*detsRatios[*dnC];
+        psiOld += tmp;
+        it++;upC++;dnC++;
       }
       curRatio = psiNew/psiOld;
-      RatioTimer.stop();
+     RatioTimer.stop();
       return curRatio; 
     }
   }
@@ -487,6 +499,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {
 // this should depend on the type of update, ratio / ratioGrad 
 // for now is incorrect fot ratio(P,iat,dG,dL) updates 
+    AccRejTimer.start();
     if(DetID[iat] == 0) {
       for(int i=0; i<dets_up.size(); i++) 
         dets_up[i]->acceptMove(P,iat); 
@@ -572,10 +585,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
           break;
       }
     }
+    AccRejTimer.stop();
   }
 
   void MultiSlaterDeterminant::restore(int iat)
   {
+    AccRejTimer.start();
     if(DetID[iat] == 0) {
       for(int i=0; i<dets_up.size(); i++) 
         dets_up[i]->restore(iat);
@@ -584,6 +599,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         dets_dn[i]->restore(iat);
     }
     curRatio=1.0;
+    AccRejTimer.stop();
   }
 
   void MultiSlaterDeterminant::update(ParticleSet& P
@@ -787,10 +803,24 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   {  
     if(Optimizable) 
     {
-      for(int i=0; i<C.size(); i++) 
-      {
-        int loc=myVars.where(i);
-        if(loc>=0) C[i]=myVars[i]=active[loc];
+      if(usingCSF) {
+        for(int i=0; i<CSFcoeff.size()-1; i++)  {
+          int loc=myVars.where(i);
+          if(loc>=0) CSFcoeff[i+1]=myVars[i]=active[loc];
+        }
+        int cnt=0;
+        for(int i=0; i<DetsPerCSF.size(); i++) {
+          for(int k=0; k<DetsPerCSF[i]; k++) {
+            C[cnt] = CSFcoeff[i]*CSFexpansion[cnt];
+            cnt++;
+          }
+        }
+      } else {
+        for(int i=0; i<C.size()-1; i++) 
+        {
+          int loc=myVars.where(i);
+          if(loc>=0) C[i+1]=myVars[i]=active[loc];
+        }
       }
       //for(int i=0; i<SDets.size(); i++) SDets[i]->resetParameters(active);
     }
@@ -822,43 +852,92 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
 // need to modify for CSF later on, right now assume Slater Det basis 
     if (recalculate)
     {
-      int n = P.getTotalNum();
-      ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
-      ValueType psiinv = 1.0/psi;;
-      ValueType lapl_sum=0.0;
-      ParticleSet::ParticleGradient_t g(n);
-      ValueType gg=0.0, ggP=0.0;
-      g=0.0;
-      for(int i=0; i<C.size(); i++){
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-        lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
-        g += tmp*grads_up[upC];
-        g += tmp*grads_dn[dnC];
-//cout<<"upC: " <<upC <<"  " <<"sum: " <<Sum(lapls_up[upC]) <<" tmp: " <<tmp <<" psiC: " <<psi <<endl;
-//cout<<"dnC: " <<upC <<"  " <<"sum: " <<Sum(lapls_dn[dnC]) <<endl;
-      }
-      gg=Dot(g,g);
-      ggP=Dot(P.G,g);
+      if(usingCSF) {
+        int n = P.getTotalNum();
+        ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+        ValueType psiinv = 1.0/psi;;
+        ValueType lapl_sum=0.0;
+        ParticleSet::ParticleGradient_t g(n);
+        ValueType gg=0.0, ggP=0.0;
+        g=0.0;
+        for(int i=0; i<C.size(); i++){
+          int upC = C2node_up[i];
+          int dnC = C2node_dn[i];
+          ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+          lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
+          g += tmp*grads_up[upC];
+          g += tmp*grads_dn[dnC];
+        }
+        gg=Dot(g,g)-Dot(P.G,g);
+//        ggP=Dot(P.G,g);
 
-//cout<<"gg: " <<gg <<"  ggP:" <<ggP <<endl;
- 
-      for(int i=0; i<C.size(); i++){
-        int kk=myVars.where(i);
-        if (kk<0) continue;
-        //dlogpsi[kk] = cdet;
-        int upC = C2node_up[i];
-        int dnC = C2node_dn[i];
-        ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
-        convert(cdet,dlogpsi[kk]);
-        ValueType dhpsi =  (-0.5*cdet)*
-                       ( Sum(lapls_up[upC])+Sum(lapls_dn[dnC])-lapl_sum
-                          +2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
-                          +Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
-        convert(dhpsi,dhpsioverpsi[kk]);
+       int num=CSFcoeff.size()-1;
+       int cnt=0;
+//        this one is not optable
+       cnt+=DetsPerCSF[0];
+       int ip(1);
+       for(int i=0; i<num; i++,ip++) {
+         int kk=myVars.where(i);
+         if (kk<0) {
+           cnt+=DetsPerCSF[ip];
+           continue;
+         }
+         ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+         for(int k=0; k<DetsPerCSF[ip]; k++) {
+           int upC = C2node_up[cnt];
+           int dnC = C2node_dn[cnt];
+
+           ValueType tmp=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+           cdet+=tmp;
+           q0 += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
+           v1 += tmp*(Dot(P.G,grads_up[upC])-Dot(g,grads_up[upC]));
+           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
+           cnt++;
+         }
+         convert(cdet,dlogpsi[kk]);
+         ValueType dhpsi =  -0.5*(q0-cdet*lapl_sum)
+                            -cdet*gg-v1-v2;
+         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+         //                         -cdet*lapl_sum)
+         //                   -cdet*gg-(tmp1*v1+tmp2*v2);
+         convert(dhpsi,dhpsioverpsi[kk]);
+       }
+
+      } else {
+        int n = P.getTotalNum();
+        ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+        ValueType psiinv = 1.0/psi;;
+        ValueType lapl_sum=0.0;
+        ParticleSet::ParticleGradient_t g(n);
+        ValueType gg=0.0, ggP=0.0;
+        g=0.0;
+        for(int i=0; i<C.size(); i++){
+          int upC = C2node_up[i];
+          int dnC = C2node_dn[i];
+          ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+          lapl_sum += tmp*(Sum(lapls_up[upC])+Sum(lapls_dn[dnC]));
+          g += tmp*grads_up[upC];
+          g += tmp*grads_dn[dnC];
+        }
+        gg=Dot(g,g);
+        ggP=Dot(P.G,g);
+
+        int ip(1);
+        for(int i=0; i<C.size()-1; i++,ip++){
+          int kk=myVars.where(i);
+          if (kk<0) continue;
+          //dlogpsi[kk] = cdet;
+          int upC = C2node_up[ip];
+          int dnC = C2node_dn[ip];
+          ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+          convert(cdet,dlogpsi[kk]);
+          ValueType dhpsi =  (-0.5*cdet)*
+                         ( Sum(lapls_up[upC])+Sum(lapls_dn[dnC])-lapl_sum
+                            +2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
+                            +Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
+          convert(dhpsi,dhpsioverpsi[kk]);
+        }
       }
-    
     }
   }
 
@@ -871,7 +950,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     RatioAllTimer.reset();
     Ratio1AllTimer.reset();
     UpdateTimer.reset();
+    AccRejTimer.reset();
     EvaluateTimer.reset();
+    evalOrbTimer.reset();
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&RatioGradTimer);
     TimerManager.addTimer (&RatioAllTimer);
@@ -879,7 +960,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     TimerManager.addTimer (&Ratio1GradTimer);
     TimerManager.addTimer (&Ratio1AllTimer);
     TimerManager.addTimer (&UpdateTimer);
+    TimerManager.addTimer (&AccRejTimer);
     TimerManager.addTimer (&EvaluateTimer);
+    TimerManager.addTimer (&evalOrbTimer);
   }
 
 }

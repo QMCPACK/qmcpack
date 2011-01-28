@@ -43,9 +43,11 @@ namespace qmcplusplus {
      {
         int bss = myBasisSet->LOBasis[i]->BasisSetSize;
         for(int k=0; k<bss; k++)
-           rmv[cnt++] = (myBasisSet->LOBasis[i]->RnlID[myBasisSet->LOBasis[i]->NL[k]])[1]==0;
+           rmv[cnt++] = (((myBasisSet->LOBasis[i]->RnlID[myBasisSet->LOBasis[i]->NL[k]])[1]==0)&&(corrCenter[i]));
      }
 
+     BS* Eta;
+/* not used any more, restore if you want to test and propagate changes due to corrCenter 
      BS* Eta = new BS(*myBasisSet);
      for(int i=0; i<nUniqCenters; i++)
      {
@@ -119,7 +121,7 @@ namespace qmcplusplus {
 // now set basis set sizes
      Eta->setBasisSetSize(-10);
      Eta->resize(Eta->NumTargets);
-
+*/
      return Eta;
   }
 
@@ -141,7 +143,7 @@ namespace qmcplusplus {
 // WARNING, assuming that COT has to be NGOrbital, otherwise problems
          COT* cur = (COT*) myBasisSet->LOBasis[i];
          for(int k=0; k<bss; k++)
-           rmv[cnt++] = (cur->RnlID[cur->NL[k]])[1]==0;
+           rmv[cnt++] = (((cur->RnlID[cur->NL[k]])[1]==0)&&(corrCenter[i]));;
        }
        else
        {
@@ -297,7 +299,17 @@ app_log() <<"cuspFile: " <<cuspInfoFile <<endl;
       for(int iat=0; iat<Z.size();iat++) {
         Z[iat] = tspecies(iz,sourcePtcl->GroupID[iat]);
       }
-
+      int numAttrib = tspecies.numAttributes();
+      int cctag = tspecies.addAttribute("cuspCorr");
+      corrCenter.resize(Z.size(),"true");
+      if(cctag < numAttrib) { // parameter is not new
+        for(int iat=0; iat<Z.size();iat++) {
+          if( tspecies(cctag,sourcePtcl->GroupID[iat]) != 0) {
+            corrCenter[iat] = false;
+            app_log() <<"Not using cusp correction algorithm in atoms of type: " <<tspecies.speciesName[sourcePtcl->GroupID[iat]] <<endl;
+          }
+        }
+      }
      if(Rcut < 0) Rcut=0.1;
      //int indexRc=-1;
 
@@ -381,10 +393,12 @@ app_log() <<"cuspFile: " <<cuspInfoFile <<endl;
           num0<<k; 
           xmlNewProp(orb,(const xmlChar*)"num",(const xmlChar*)num0.str().c_str());
           bool corrO = false;
-          for(int ip=0; ip<dummyLO1->C.cols(); ip++) {
-            if(std::fabs(dummyLO1->C(k,ip)) > 1e-8) {
-              corrO = true;
-              break;
+          if(corrCenter[i]) {
+            for(int ip=0; ip<dummyLO1->C.cols(); ip++) {
+              if(std::fabs(dummyLO1->C(k,ip)) > 1e-8) {
+                corrO = true;
+                break;
+              }
             }
           }
           if(corrO) {
@@ -475,7 +489,7 @@ app_log() <<"cuspFile: " <<cuspInfoFile <<endl;
      corrBasisSet->setBasisSetSize(-1);
 
      BS *dum3 = extractHighYLM(rmv);
-     dum3->setBasisSetSize(-1);
+     //dum3->setBasisSetSize(-1);
      int norb=0, cnt=0;
      for(int i=0; i<rmv.size(); i++) if(!rmv[i]) norb++;
      app_log()<<"Found " <<rmv.size()-norb <<" spherically symmetric basis functions and " <<norb <<" non symmetric ones. \n";

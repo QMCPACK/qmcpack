@@ -203,6 +203,7 @@ namespace qmcplusplus {
     ///pointer to the basis set
     BS* myBasisSet;
     CorrectingOrbitalBasisSet<COT>* corrBasisSet;
+    vector<bool> corrCenter;
 
     ///target ParticleSet
     ParticleSet* targetPtcl;

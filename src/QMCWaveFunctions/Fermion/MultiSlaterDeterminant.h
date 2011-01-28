@@ -54,7 +54,7 @@ namespace qmcplusplus
     public:
       void registerTimers();
       NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
-      NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer;
+      NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
       typedef DiracDeterminantBase*    DiracDeterminantPtr;
       typedef SPOSetBase*              SPOSetBasePtr;
@@ -166,6 +166,7 @@ namespace qmcplusplus
       Vector<ParticleSet::ParticleLaplacian_t> templapl;
 
       ValueType curRatio;
+      ValueType psiCurrent;
       ValueVector_t detsRatios;
       ValueVector_t lapl_temp;
       GradVector_t grad_temp;
@@ -174,6 +175,16 @@ namespace qmcplusplus
       ParticleSet::ParticleLaplacian_t myL;
 
       opt_variables_type myVars;
+
+// CSFs
+      bool usingCSF;
+      // coefficients of csfs, these are only used during optm
+      vector<RealType> CSFcoeff;
+      // number of dets per csf
+      vector<int> DetsPerCSF;
+      // coefficient of csf expansion (smaller dimension)
+      vector<RealType> CSFexpansion;
+
     };
 
 }

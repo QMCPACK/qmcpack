@@ -27,7 +27,8 @@ namespace qmcplusplus {
     Ratio1GradTimer("MultiSlaterDeterminantFast::detEval_ratioGrad"),
     Ratio1AllTimer("MultiSlaterDeterminantFast::detEval_ratio(all)"),
     UpdateTimer("MultiSlaterDeterminantFast::updateBuffer"),
-    EvaluateTimer("MultiSlaterDeterminantFast::evaluate")
+    EvaluateTimer("MultiSlaterDeterminantFast::evaluate"),
+    AccRejTimer("MultiSlaterDeterminantFast::Accept_Reject")
   { 
     registerTimers();
     //Optimizable=true;
@@ -310,11 +311,13 @@ namespace qmcplusplus {
       vector<RealType>::iterator it(C.begin()),last(C.end());
       ValueType psiNew=0.0;
       GradType dummy=0.0; 
+      it=C.begin();last=C.end();
       while(it != last) {
         psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
         dummy += (*it)*grads_up(*upC,iat-N1)*detValues_dn[*dnC]; 
         it++;upC++;dnC++;
       }
+
       grad_iat+=dummy/psiNew;
       curRatio = psiNew/psiCurrent;
       RatioGradTimer.stop();
@@ -511,7 +514,7 @@ namespace qmcplusplus {
 // for now is incorrect fot ratio(P,iat,dG,dL) updates 
 
 // update psiCurrent,myG_temp,myL_temp
-
+    AccRejTimer.start();
     psiCurrent *= curRatio;
     curRatio=1.0;
     Dets[DetID[iat]]->acceptMove(P,iat); 
@@ -525,6 +528,7 @@ namespace qmcplusplus {
       default: 
         break;
     }
+    AccRejTimer.stop();
 
 //    Dets[0]->evaluateForWalkerMove(P);
 //    Dets[1]->evaluateForWalkerMove(P);
@@ -566,8 +570,10 @@ namespace qmcplusplus {
 
   void MultiSlaterDeterminantFast::restore(int iat)
   {
+    AccRejTimer.start();
     Dets[DetID[iat]]->restore(iat);
     curRatio=1.0;
+    AccRejTimer.stop();
   }
 
   void MultiSlaterDeterminantFast::update(ParticleSet& P
@@ -620,16 +626,10 @@ namespace qmcplusplus {
   OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
   {
     UpdateTimer.start();
-    if(fromscratch) {
-      Dets[0]->updateBuffer(P,buf,true); 
-      Dets[1]->updateBuffer(P,buf,true); 
-    } else {
-// FIX FIX FIX: right now, I need to allow to recalculate 
-//    dets, grads and lapls without recomputing orbitals, 
-//    for now i always recalculate
-      Dets[0]->updateBuffer(P,buf,true); 
-      Dets[1]->updateBuffer(P,buf,true); 
-    }
+    Dets[0]->updateBuffer(P,buf,fromscratch); 
+    Dets[1]->updateBuffer(P,buf,fromscratch); 
+    //Dets[0]->updateBuffer(P,buf,true); 
+    //Dets[1]->updateBuffer(P,buf,true); 
 
     // can this change over time??? I don't know yet
     ValueVector_t& detValues_up = Dets[0]->detValues;
@@ -953,6 +953,7 @@ namespace qmcplusplus {
     Ratio1AllTimer.reset();
     UpdateTimer.reset();
     EvaluateTimer.reset();
+    AccRejTimer.reset();
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&RatioGradTimer);
     TimerManager.addTimer (&RatioAllTimer);
@@ -961,6 +962,7 @@ namespace qmcplusplus {
     TimerManager.addTimer (&Ratio1AllTimer);
     TimerManager.addTimer (&UpdateTimer);
     TimerManager.addTimer (&EvaluateTimer);
+    TimerManager.addTimer (&AccRejTimer);
   }
 
 

@@ -175,8 +175,11 @@ void GamesAsciiParser::parse(const std::string& fname) {
   if(multideterminant) {
     fin.open(outputFile.c_str());
     pivot_begin= fin.tellg();
+//cout<<"looking for dets " <<endl;
+//cout.flush();
     if(lookFor(fin,"GUGA DISTINCT ROW TABLE")) {
       cout<<"Found GUGA ROW TABLE, reading CSF." <<endl;
+//cout.flush();
       if(!lookFor(fin,"SYMMETRIES FOR THE",aline)) {
         cerr<<"Could not find number of frozen core orbitals in output file.\n";
         abort();
@@ -187,19 +190,23 @@ void GamesAsciiParser::parse(const std::string& fname) {
         NTOT=NEXT+NAC;
         cout<<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT <<endl;
       }
+//cout.flush();
       fin.seekg(pivot_begin);
       getCSF(fin);
     } else  {
       cout<<"Could not find GUGA ROW TABLE, looking for Slater Dets." <<endl;
+//cout.flush();
       fin.close(); fin.open(outputFile.c_str());
       pivot_begin= fin.tellg();
       if(lookFor(fin,"DIRECT DETERMINANT ORMAS-CI")) {
         cout<<"Found ORMAS-CI" <<endl;
+//cout.flush();
         fin.close(); fin.open(outputFile.c_str());
         pivot_begin= fin.tellg();
         getORMAS(fin);
       } else {
         cout<<"Assuming ALDET-CI" <<endl;
+//cout.flush();
         fin.close(); fin.open(outputFile.c_str());
         pivot_begin= fin.tellg();
         getCI(fin);
@@ -272,7 +279,8 @@ void GamesAsciiParser::getGeometry(std::istream& is) {
       core.resize(NumberOfAtoms);
       getwords(currentWords,is); // -------------
 // this only works if all atoms have an ECP, fix later
-      for(int i=0; i<NumberOfAtoms; i++) {
+//      for(int i=0; i<NumberOfAtoms; i++) {
+// fixing this problem
         bool done=false; 
         while(!done) {
           if(is.eof()) {
@@ -282,45 +290,58 @@ void GamesAsciiParser::getGeometry(std::istream& is) {
       
           getwords(currentWords,is); 
           if(currentWords.size() == 0) continue;
+          if(currentWords.size() >= 4) {
+            if(currentWords[0] == "THE" &&
+             currentWords[1] == "ECP"  && 
+             currentWords[2] == "RUN"  && 
+             currentWords[3] == "REMOVES" ) {  done=true; }
+          } 
           if(currentWords[0] == "PARAMETERS" && 
              currentWords[1] == "FOR" ) {
-            done=true;
-            std::vector<std::string>::iterator it;
+            //done=true;
+            std::vector<std::string>::iterator it,it0;
             it = find(currentWords.begin(),currentWords.end(),"ZCORE");  
+            it0 = find(currentWords.begin(),currentWords.end(),"ATOM");  
+            if(it0 == currentWords.end()) { 
+              cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
+              cerr<<is <<endl;
+              abort();
+            }
+            it0++;
+            int nq0 = atoi(it0->c_str())-1;
             if(it != currentWords.end()) { 
               it++;
-              core[i] = atoi(it->c_str());
-              q[i] -= core[i];
-              cout<<"Found ECP for atom " <<i <<" with zcore " <<core[i] <<endl; 
+              core[nq0] = atoi(it->c_str());
+              q[nq0] -= core[nq0];
+              cout<<"Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] <<endl; 
             } else {
               it = find(currentWords.begin(),currentWords.end(),"ATOM");  
               if(it == currentWords.end()) {
                 cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
-                cerr<<"Atom: " <<i <<endl;
+                cerr<<"Atom: " <<nq0 <<endl;
                 abort();
               }
               std::vector<std::string>::iterator it2=it;
               it2++;
               int nq = atoi(it2->c_str());
-              if(nq != i+1) {
+              if(nq != nq0+1) {
                 cerr<<"Problem with ECP data. ID's don't agree\n";
-                cerr<<"Atom: " <<i <<endl;
+                cerr<<"Atom: " <<nq0 <<endl;
                 abort();
               }
               it = find(it2,currentWords.end(),"ATOM");
               if(it == currentWords.end()) {
                 cerr<<"Problem with ECP data (2).\n";
-                cerr<<"Atom: " <<i <<endl;
+                cerr<<"Atom: " <<nq0 <<endl;
                 abort();
               }
               nq = atoi((it+1)->c_str());
-              core[i] = core[nq-1];
-              q[i] -= core[i];
-              cout<<"Found ECP for atom " <<i <<" with zcore " <<core[i] <<endl;       
+              core[nq0] = core[nq-1];
+              q[nq0] -= core[nq0];
+              cout<<"Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] <<endl;       
             }     
           } 
         }
-      }
       notfound=false;  
     } else {
       if(currentWords.size() < 3 ) continue;
@@ -761,8 +782,11 @@ void GamesAsciiParser::getCSF(std::istream& is)
           int nq = atoi(currentWords[0].c_str());
           pair<int,double> cic(nq,cof);
           coeff2csf.push_back(cic);
-          if(NTOT <= 50) {
+          if(NTOT < 50) {
             CSFocc.push_back(currentWords[2]); 
+          } else if(NTOT == 50) {
+            CSFocc.push_back(currentWords[2]); 
+            getwords(currentWords,is);
           } else {
             string tmp=currentWords[2];
             getwords(currentWords,is);
@@ -771,7 +795,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
           }   
           getwords(currentWords,is);
         } else { 
-          if(NTOT <= 50) 
+          if(NTOT < 50) 
             getwords(currentWords,is);
           else {
             getwords(currentWords,is);
@@ -1102,7 +1126,7 @@ void GamesAsciiParser::getORMAS(std::istream& is)
     abort();
   }
   parsewords(aline.c_str(),currentWords);
-  ci_nea = atoi(currentWords[4].c_str());
+  ci_nca = ci_ncb = atoi(currentWords[4].c_str());
 
   if(!lookFor(is,"NUMBER OF ACTIVE ORBITALS",aline))
   {
@@ -1119,7 +1143,8 @@ void GamesAsciiParser::getORMAS(std::istream& is)
     abort();
   }
   parsewords(aline.c_str(),currentWords);
-  ci_nea = atoi(currentWords[4].c_str());
+  //ci_nea = atoi(currentWords[4].c_str());
+  ci_nea = atoi(currentWords[6].c_str());
 
   if(!lookFor(is,"NUMBER OF BETA ELECTRONS",aline))
   {
@@ -1127,7 +1152,14 @@ void GamesAsciiParser::getORMAS(std::istream& is)
     abort();
   }
   parsewords(aline.c_str(),currentWords);
-  ci_neb = atoi(currentWords[4].c_str());
+  //ci_neb = atoi(currentWords[4].c_str());
+  ci_neb = atoi(currentWords[6].c_str());
+
+  cout <<"ORMAS: nea,neb,ncore,nact: " 
+            <<ci_nea <<" " 
+            <<ci_neb <<" " 
+            <<ci_nca <<" " 
+            <<nactive <<"\n"; 
 
   int ds=SpinMultiplicity-1;
   int neb= (NumberOfEls-ds)/2;
