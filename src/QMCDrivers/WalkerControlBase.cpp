@@ -240,8 +240,7 @@ namespace qmcplusplus {
 
     //set the global number of walkers
     W.setGlobalNumWalkers(nw_tot);
-
-    return prefill_numwalkers;
+    return nw_tot;
   }
 
   void Write2XYZ(MCWalkerConfiguration& W)

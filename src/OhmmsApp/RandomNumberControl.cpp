@@ -103,7 +103,8 @@ namespace APPNAMESPACE
       int offset=baseoffset+ip;
       Children[ip]->init(rank,nprocs,myprimes[ip],offset);
     }
-    if(nprocs<4)
+
+    if(nprocs<32)
     {
       ostringstream o;
       o << "  Random seeds Node = " << rank << ":";
@@ -190,80 +191,113 @@ namespace APPNAMESPACE
 
   void RandomNumberControl::read(const string& fname, Communicate* comm)
   {
-    const int nthreads=omp_get_max_threads();
-    vector<uint_type> vt,vt_tot;
+    int nthreads=omp_get_max_threads();
 
-    {//check the size
-      std::stringstream otemp;
-      if(nthreads>1)
-        for(int ip=0; ip<nthreads; ip++) Children[ip]->write(otemp);
-      else
-        Random.write(otemp);
-      std::copy(istream_iterator<uint_type>(otemp), istream_iterator<uint_type>(),back_inserter(vt));
-    }
+    vector<uint_type> vt_tot(comm->size()*nthreads*Random.state_size()), vt;
 
-    vt_tot.resize(vt.size()*comm->size());
-    TinyVector<hsize_t,2> shape(0);
-
+    TinyVector<int,2> shape(0);
     {//read it
       string h5name(fname);
       if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
       hdf_archive hout(comm);
-      hout.open(h5name,H5F_ACC_RDWR);
+      hout.open(h5name,H5F_ACC_RDONLY);
       hout.push(hdf::main_state);
       hout.push("random");
 
-      hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape);
+      TinyVector<hsize_t,2> shape_t(0);
+      hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
       hout.read(slab,Random.EngineName);
       shape[0]=slab.size(0);
       shape[1]=slab.size(1);
-      //HDFAttribIO<PooledData<uint_type> > o(vt_tot,shape);
-      //o.read(hout.top(),Random.EngineName);
-      //shape[0]=o.size(0);
-      //shape[1]=o.size(1);
     }
-    
+
+    //bcast of hsize_t is not working
     mpi::bcast(*comm,shape);
-    if(shape[0]!=comm->size()*nthreads)
+
+    if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
     {
-      app_error() << "The number of parallel threads has changed from " << shape[0]
-        << " to " << comm->size()*nthreads << endl;
+      app_warning() << "Mismatched random number generators."
+        << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads 
+        << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
+        << "\n  Using the random streams generated at the initialization." << endl;
       return;
     }
-    mpi::scatter(*comm,vt_tot,vt);
+
+    app_log() << "  Restart from the random number streams from the previous configuration." << endl;
+
+    vt.resize(nthreads*Random.state_size());
+    if(comm->size()>1)
+      mpi::scatter(*comm,vt_tot,vt);
+    else
+      std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
 
     {
-      std::stringstream otemp;
-      std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(otemp," "));
       if(nthreads>1)
-        for(int ip=0; ip<nthreads; ip++) Children[ip]->read(otemp);
+      {
+        vector<uint_type>::iterator vt_it(vt.begin());
+        for(int ip=0; ip<nthreads; ip++, vt_it += shape[1]) 
+        {
+          vector<uint_type> c(vt_it,vt_it+shape[1]);
+          Children[ip]->load(c);
+        }
+      }
       else
-        Random.read(otemp);
+        Random.load(vt);
     }
+
+    /* Add random number generator tester 
+    const int n=1000000;
+    double avg=0.0,avg2=0.0;
+#pragma omp parallel reduction(+:avg,avg2)
+    {
+      double sum=0.0, sum2=0.0;
+      int ip=omp_get_thread_num();
+      RandomGenerator_t& myrand(*Children[ip]);
+      for(int i=0; i<n; ++i)
+      {
+        double r=myrand.rand();
+        sum +=r; sum2+= r*r;
+      }
+      avg+=sum; avg2+=sum2;
+    }
+    comm->allreduce(avg);
+    comm->allreduce(avg2);
+    avg/=static_cast<double>(nthreads*n);
+    avg2/=static_cast<double>(nthreads*n);
+    app_log() << " Average = " << avg << "  Variance = " << avg2-avg*avg << endl;
+    */
   }
 
   void RandomNumberControl::write(const string& fname, Communicate* comm)
   {
-    const int nthreads=omp_get_max_threads();
-    std::stringstream otemp;
+    int nthreads=omp_get_max_threads();
+    vector<uint_type> vt, vt_tot;
+    vt.reserve(nthreads*1024);
     if(nthreads>1)
-      for(int ip=0; ip<nthreads; ip++) Children[ip]->write(otemp);
+      for(int ip=0; ip<nthreads; ++ip)
+      {
+        vector<uint_type> c;
+        Children[ip]->save(c);
+        vt.insert(vt.end(),c.begin(),c.end());
+      }
     else
-      Random.write(otemp);
+      Random.save(vt);
 
-    vector<uint_type> vt,vt_tot;
-    std::copy(istream_iterator<uint_type>(otemp), istream_iterator<uint_type>(),back_inserter(vt));
-    vt_tot.resize(vt.size()*comm->size());
-    mpi::gather(*comm,vt,vt_tot);
+    if(comm->size()>1)
+    {
+      vt_tot.resize(vt.size()*comm->size());
+      mpi::gather(*comm,vt,vt_tot);
+    }
+    else
+      vt_tot=vt;
 
-    //append .config.h5 if missing
     string h5name(fname);
     if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
     hdf_archive hout(comm);
     hout.open(h5name,H5F_ACC_RDWR);
     hout.push(hdf::main_state);
     hout.push("random");
-    TinyVector<hsize_t,2> shape(comm->size()*nthreads,vt.size()/nthreads);
+    TinyVector<hsize_t,2> shape(comm->size()*nthreads,Random.state_size());
     hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape);
     hout.write(slab,Random.EngineName);
     hout.close();

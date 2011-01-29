@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -23,15 +22,14 @@
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #endif
-namespace qmcplusplus {
 
-#if defined(HAVE_MPI)
+namespace qmcplusplus {
 
   WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur,
       bool reconfig) 
   {
 
-    app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
+    app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << endl;
 
     ///set of parameters
     int nmax=0;
@@ -69,7 +67,9 @@ namespace qmcplusplus {
       }
     }
 
-    if(ncontexts>1) {
+#if defined(HAVE_MPI)
+    if(ncontexts>1) 
+    {
       if(fixw) {
         app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
         wc = new WalkerReconfigurationMPI(comm);
@@ -77,7 +77,9 @@ namespace qmcplusplus {
         app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
         wc = new WalkerControlMPI(comm);
       }
-    } else {
+    } else 
+#endif
+    {
       if(fixw)  {
         app_log() << "  Using WalkerReconfiguration for population control." << endl;
         wc = new WalkerReconfiguration(comm);
@@ -141,7 +143,9 @@ namespace qmcplusplus {
       } 
 
       if(wc == 0) {
-        if(swapmode) {
+#if defined(HAVE_MPI)
+        if(swapmode) 
+        {
           if(reconfig)  {
             app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
             wc = new WalkerReconfigurationMPI(comm);
@@ -149,7 +153,9 @@ namespace qmcplusplus {
             app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
             wc = new WalkerControlMPI(comm);
           }
-        } else {
+        } else 
+#endif
+        {
           if(reconfig)  {
             app_log() << "  Using WalkerReconfiguration for population control." << endl;
             wc = new WalkerReconfiguration(comm);
@@ -164,100 +170,6 @@ namespace qmcplusplus {
       wc->Nmax=nmax;
       return wc;
     }
-#else
-  WalkerControlBase* CreateWalkerController(
-      bool reconfig, int& swapmode, int nideal,
-      int nmax, int nmin, WalkerControlBase* wc,
-      Communicate* comm) {
-    //reset to 0 so that never ask the same question
-    swapmode = 0;
-    //if(nmax<0) nmax=2*nideal;
-    //if(nmin<0) nmin=nideal/2;
-
-    //if(wc== 0) wc= new WalkerControlBase;
-    if(wc== 0) {
-      if(reconfig) {
-        app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
-        wc = new WalkerReconfiguration(comm);
-        wc->Nmax=nideal;
-        wc->Nmin=nideal;
-      } else {
-        app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
-        wc = new WalkerControlBase(comm);
-	  if (nmax==0)
-	  {
-            wc->Nmax=2*nideal;
-            wc->Nmin=nideal/2;
-	  }
-	  else
-	  {
-            wc->Nmax=nmax;
-            wc->Nmin=nideal/2;
-	  }
-//         wc->Nmax=2*nideal;
-//         wc->Nmin=nideal/2;
-      }
-    }
-    return wc;
-  }
-
-  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig) 
-  {
-
-    app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
-
-    ///set of parameters
-    int nmax=0;
-    int nmin=0;
-    string reconfigopt("no");
-    ParameterSet m_param;
-    m_param.add(nwtot,"targetWalkers","int"); 
-    m_param.add(nwtot,"targetwalkers","int"); 
-    m_param.add(nmax,"max_walkers","int");
-    m_param.add(reconfigopt,"reconfiguration","string");
-    m_param.put(cur);
-
-    //if(nmax<0) nmax=2*nideal;
-    //if(nmin<0) nmin=nideal/2;
-
-    WalkerControlBase* wc=0;
-
-    //if(wc== 0) wc= new WalkerControlBase;
-    if(reconfig || reconfigopt == "yes") {      
-      app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
-      wc = new WalkerReconfiguration(comm);
-      wc->Nmax=nwtot;
-      wc->Nmin=nwtot;
-    } 
-    else if  (reconfigopt == "pure")
-    {
-      app_log() << "  Using a fixed number of walkers by pure DMC." << endl;
-      wc = new WalkerPureDMC(comm);
-      wc->Nmax=nwtot;
-      wc->Nmin=nwtot;
-    }
-    else
-    {
-      app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
-      app_log() << "  Target number of walkers = " << nwtot << endl;
-      wc = new WalkerControlBase(comm);
-      if (nmax==0)
-      {
-	wc->Nmax=2*nwtot;
-	wc->Nmin=nwtot/2;
-      }
-      else
-      {
-	wc->Nmax=nmax;
-	wc->Nmin=nwtot/2;
-      }
-//       wc->Nmax=2*nwtot;
-//       wc->Nmin=nwtot/2;
-    }
-
-    return wc;
-  }
-#endif
 }
 /***************************************************************************
  * $RCSfile: WalkerControlFactory.cpp,v $   $Author$

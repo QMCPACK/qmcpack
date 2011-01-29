@@ -27,18 +27,28 @@
  */
 #ifndef OHMMS_RANDOMGENERATOR
 #define OHMMS_RANDOMGENERATOR
-#include <cmath>
-#include <vector>
-using std::vector;
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+#include <cmath>
+#include <ctime>        
+
+#include <stdint.h>
+
+inline uint32_t make_seed(int i, int n)
+{
+  return static_cast<uint32_t>(std::time(0))%10474949+(i+1)*n+i;
+}
 
 #ifdef HAVE_LIBBOOST
+
 #include "Utilities/BoostRandom.h"
 namespace qmcplusplus {
   typedef BoostRandom<OHMMS_PRECISION> RandomGenerator_t;
   extern RandomGenerator_t Random;
 }
 #else
+
 #ifdef USE_SPRNG
 #include "Utilities/SprngRandom.h"
 namespace qmcplusplus {
@@ -46,9 +56,9 @@ namespace qmcplusplus {
   extern RandomGenerator_t Random;
 }
 #else
-#include "Utilities/RandRandom.h"
+#include "Utilities/SimpleRandom.h"
 namespace qmcplusplus {
-  typedef RandRandom RandomGenerator_t;
+  typedef SimpleRandom<MTRand> RandomGenerator_t;
   extern RandomGenerator_t Random;
 }
 #endif

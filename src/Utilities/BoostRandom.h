@@ -24,11 +24,6 @@
 #include <limits>
 #include <boost/random.hpp>
 
-inline uint32_t make_seed(int i, int n)
-{
-  return static_cast<uint32_t>(std::time(0))%10474949+(i+1)*n+i;
-}
-
 /** random number generator using boost::random
  *
  * A wrapper of boost::random class to work with applicatoins.
@@ -50,7 +45,8 @@ public:
   std::string EngineName;
 
   ///default constructor
-  explicit BoostRandom(uint_type iseed=911, const std::string& aname="mt19937"): ClassName("boost"), EngineName(aname), 
+  explicit BoostRandom(uint_type iseed=911, const std::string& aname="mt19937")
+    : ClassName("boost"), EngineName(aname), 
   myContext(0), nContexts(1), baseOffset(0),
   uni(generator_type(iseed),boost::uniform_real<T>(0,1))
   { 
@@ -134,12 +130,30 @@ public:
   //  g2 = v2*fac;
   //}
 
+  inline int state_size() const { return uni.engine().state_size; }
+
   inline void read(std::istream& rin) {
     rin >> uni.engine();
   }
 
   inline void write(std::ostream& rout) const {
     rout << uni.engine();
+  }
+
+  inline void save(std::vector<uint_type>& curstate) const 
+  {
+    curstate.clear();
+    std::stringstream otemp;
+    otemp << uni.engine();
+    std::copy(std::istream_iterator<uint_type>(otemp)
+        , std::istream_iterator<uint_type>(),back_inserter(curstate));
+  }
+
+  inline void load(const std::vector<uint_type>& newstate) 
+  {
+    std::stringstream otemp;
+    std::copy(newstate.begin(),newstate.end(),std::ostream_iterator<uint_type>(otemp," "));
+    otemp >> uni.engine();
   }
 
 private:
