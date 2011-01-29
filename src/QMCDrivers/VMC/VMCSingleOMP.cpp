@@ -21,6 +21,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
+#include "tau/profiler.h"
 //#define ENABLE_VMC_OMP_MASTER
 
 namespace qmcplusplus
@@ -50,45 +51,48 @@ namespace qmcplusplus
 
     //start the main estimator
     Estimators->start(nBlocks);
-
     for (int ip=0; ip<NumThreads; ++ip) Movers[ip]->startRun(nBlocks,false);
 
+    hpmStart(QMC_VMC_0_EVENT,"vmc::main");
+
     for (int block=0;block<nBlocks; ++block)
-      {
+    {
 #pragma omp parallel for
-        for (int ip=0; ip<NumThreads; ++ip)
+      for (int ip=0; ip<NumThreads; ++ip)
+      {
+        //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+        IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:0;
+        //assign the iterators and resuse them
+        MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+
+        Movers[ip]->startBlock(nSteps);
+        int now_loc=CurrentStep;
+        //rest the collectables and keep adding
+        wClones[ip]->resetCollectables();
+        for (int step=0; step<nSteps;++step)
+        {
+          Movers[ip]->advanceWalkers(wit,wit_end,false);
+          Movers[ip]->accumulate(wit,wit_end);
+          ++now_loc;
+          if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
+          if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);                
+          if(storeConfigs && (now_loc%storeConfigs == 0)) 
           {
-            //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-            IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:0;
-            //assign the iterators and resuse them
-            MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+            ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
+          }
+        }
+        Movers[ip]->stopBlock(false);
+      }//end-of-parallel for
 
-            Movers[ip]->startBlock(nSteps);
-            int now_loc=CurrentStep;
-            //rest the collectables and keep adding
-            wClones[ip]->resetCollectables();
-            for (int step=0; step<nSteps;++step)
-              {
-                Movers[ip]->advanceWalkers(wit,wit_end,false);
-                Movers[ip]->accumulate(wit,wit_end);
-                ++now_loc;
-                if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
-                if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);                
-                if(storeConfigs && (now_loc%storeConfigs == 0)) 
-                {
-                  ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
-                }
-              }
-            Movers[ip]->stopBlock(false);
-          }//end-of-parallel for
+      Estimators->accumulateCollectables(wClones,nSteps);
 
-        Estimators->accumulateCollectables(wClones,nSteps);
+      CurrentStep+=nSteps;
+      Estimators->stopBlock(estimatorClones);
+      //why was this commented out? Are checkpoints stored some other way?
+      if(storeConfigs) recordBlock(block);
+    }//block
 
-        CurrentStep+=nSteps;
-        Estimators->stopBlock(estimatorClones);
-        //why was this commented out? Are checkpoints stored some other way?
-        if(storeConfigs) recordBlock(block);
-      }//block
+    hpmStop(QMC_VMC_0_EVENT);
 
     Estimators->stop(estimatorClones);
 

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cstdio>
 #include <Platforms/sysutil.h>
+#include <tau/profiler.h>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -85,6 +86,7 @@ Communicate::~Communicate()
 
 void Communicate::initialize(int argc, char **argv)
 {
+
   OOMPI_COMM_WORLD.Init(argc, argv);
   myComm = OOMPI_COMM_WORLD;
   myMPI = myComm.Get_mpi();
@@ -101,6 +103,8 @@ void Communicate::initialize(int argc, char **argv)
   barrier();
 #endif
 
+  std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
+  hpmInit(QMC_MAIN_EVENT,when.c_str());
 }
 
 void Communicate::finalize() 
@@ -132,8 +136,11 @@ void Communicate::abort(const char* msg)
 #else
 
 Communicate::~Communicate(){}
+
 void Communicate::initialize(int argc, char **argv)
 { 
+  std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
+  hpmInit(QMC_MAIN_EVENT,when.c_str());
 }
 
 void Communicate::set_world()
@@ -142,6 +149,7 @@ void Communicate::set_world()
 
 void Communicate::finalize()
 { 
+  hpmTerminate(QMC_MAIN_EVENT);
 }
 
 void Communicate::abort()

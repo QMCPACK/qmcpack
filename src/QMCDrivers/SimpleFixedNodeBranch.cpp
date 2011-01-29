@@ -563,7 +563,6 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::read(const string& fname) 
   {
-    app_log() << "#### SimpleFixedNodeBranch::read " << endl;
     BranchMode.set(B_RESTART,0);
 
     if(fname.empty()) return;

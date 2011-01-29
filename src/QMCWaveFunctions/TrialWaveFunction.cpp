@@ -79,33 +79,6 @@ namespace qmcplusplus
   {
 
     Z.push_back(aterm);
-    //int n=Z.size();
-    char name1[64],name2[64],name3[64],name4[64], name5[64], name6[64];
-    sprintf(name1,"WaveFunction::%s_V",aname.c_str());
-    sprintf(name2,"WaveFunction::%s_VGL",aname.c_str());
-    sprintf(name3,"WaveFunction::%s_accept",aname.c_str());
-    sprintf(name4,"WaveFunction::%s_NLratio",aname.c_str());
-    sprintf(name5,"WaveFunction::%s_recompute",aname.c_str());
-    sprintf(name6,"WaveFunction::%s_derivs",aname.c_str());
-    NewTimer *vtimer=new NewTimer(name1);
-    NewTimer *vgltimer=new NewTimer(name2);
-    NewTimer *accepttimer=new NewTimer(name3);
-    NewTimer *NLtimer=new NewTimer(name4);
-    NewTimer *recomputetimer=new NewTimer(name5);
-    NewTimer *derivstimer=new NewTimer(name6);
-
-    myTimers.push_back(vtimer);
-    myTimers.push_back(vgltimer);
-    myTimers.push_back(accepttimer);
-    myTimers.push_back(NLtimer);
-    myTimers.push_back(recomputetimer);
-    myTimers.push_back(derivstimer);
-    TimerManager.addTimer(vtimer);
-    TimerManager.addTimer(vgltimer);
-    TimerManager.addTimer(accepttimer);
-    TimerManager.addTimer(NLtimer);
-    TimerManager.addTimer(recomputetimer);
-    TimerManager.addTimer(derivstimer);
   }
 
 
@@ -320,9 +293,7 @@ namespace qmcplusplus
     ValueType r(1.0);
     for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
       {
-        myTimers[ii]->start();
         r *= Z[i]->ratio(P,iat);
-        myTimers[ii]->stop();
       }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -341,9 +312,7 @@ namespace qmcplusplus
     ValueType r(1.0);
     for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
       {
-        myTimers[ii]->start();
         r *= Z[i]->alternateRatio(P);
-        myTimers[ii]->stop();
       }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -411,9 +380,7 @@ TrialWaveFunction::GradType TrialWaveFunction::alternateEvalGrad(ParticleSet& P,
     ValueType r(1.0);
     for (int i=0,ii=1; i<Z.size(); ++i,ii+=2)
       {
-        myTimers[ii]->start();
         r *= Z[i]->ratioGrad(P,iat,grad_iat );
-        myTimers[ii]->stop();
       }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -434,9 +401,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
   ValueType r(1.0);
   for (int i=0,ii=1; i<Z.size(); ++i,ii+=2)
   {
-    myTimers[ii]->start();
     r *= Z[i]->alternateRatioGrad(P,iat,grad_iat);
-    myTimers[ii]->stop();
   }
   #if defined(QMC_COMPLEX)
   //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -478,9 +443,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     ValueType r(1.0);
     for (int i=0, ii=1; i<Z.size(); ++i, ii+=2)
       {
-        myTimers[ii]->start();
         r *= Z[i]->ratio(P,iat,dG,dL);
-        myTimers[ii]->stop();
       }
 
 #if defined(QMC_COMPLEX)
@@ -603,10 +566,8 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (int ii=1; it!=it_end; ++it,ii+=2)
       {
-        myTimers[ii]->start();
         logpsi += (*it)->updateBuffer(P,buf,fromscratch);
         PhaseValue += (*it)->PhaseValue;
-        myTimers[ii]->stop();
       }
     convert(logpsi,LogValue);
     //LogValue=real(logpsi);
@@ -746,8 +707,6 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
       myclone->BufferCursor=BufferCursor;
       for (int i=0; i<Z.size(); ++i)
         myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
-      for (int i=0; i<myTimers.size(); i++)
-        myclone->myTimers[i]->set_name(myTimers[i]->get_name());
       myclone->OneOverM=OneOverM;
       return myclone;
     }
