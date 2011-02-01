@@ -24,21 +24,23 @@
 #include <Utilities/Timer.h>
 using namespace qmcplusplus;
 
-void test_numerics(int n, int niters)
+void test_numerics(int n, int m, int niters)
 {
   typedef TinyVector<double,3> pos_type;
-  Matrix<double> A(n,n);
-  Vector<double> v(n),v_out(n);
-  Vector<pos_type> p(n),p_out(n);
+  Matrix<double> A(n,m);
+  Vector<double> v(m),v_out(m), v2(m),v2_out(m);
+  Vector<pos_type> p(m),p_out(m);
 
   for(int j=0; j<n; ++j) v[j]=Random();
+  for(int j=0; j<n; ++j) v2[j]=Random();
   for(int j=0; j<n; ++j) p[j]=pos_type(Random(),Random(),Random());
 
   Timer clock;
   for(int i=0; i<niters; ++i)
   {
-    for(int j=0; j<n; ++j) v_out[j]=dot(A[j],v.data(),n);
-    for(int j=0; j<n; ++j) p_out[j]=dot(A[j],p.data(),n);
+    for(int j=0; j<n; ++j) v_out[j]=dot(A[j],v.data(),m);
+    for(int j=0; j<n; ++j) v2_out[j]=dot(A[j],v2.data(),m);
+    for(int j=0; j<n; ++j) p_out[j]=dot(A[j],p.data(),m);
   }
   double dt_dot=clock.elapsed();
 
@@ -46,25 +48,44 @@ void test_numerics(int n, int niters)
   for(int i=0; i<niters; ++i)
   {
     MatrixOperators::product(A,v,v_out.data());
+    MatrixOperators::product(A,v2,v2_out.data());
     MatrixOperators::product(A,p.data(),p_out.data());
   }
   double dt_gemm=clock.elapsed();
 
-  cout << " n= " << n << " dot/gemm = " << dt_dot/dt_gemm
-    << " dot = " << dt_dot/static_cast<double>(niters) << " gemm = " << dt_gemm/static_cast<double>(niters) << endl;
+  cout << n << " " << m << " " << dt_dot/dt_gemm << endl;
 }
 
 int main(int argc, char** argv)
 {
   Random.init(0,1,11);
 
-  int niters=1<<20;
+  int niters=1<<16;
   int n=4;
 
-  for(int m=n; m<512; m+= 8)
+  cout << "# n m dot/gemm " << endl;
+  for(int m=n; m<600; m*= 2)
   {
     int i=niters/n/n;
-    test_numerics(m,i);
+    test_numerics(m,m,i);
+  }
+
+  for(int m=n; m<600; m*= 2)
+  {
+    int i=niters/n/n/8;
+    test_numerics(m,m*8,i);
+  }
+
+  for(int m=n; m<600; m*= 2)
+  {
+    int i=niters/n/n/16;
+    test_numerics(m,m*16,i);
+  }
+
+  for(int m=n; m<600; m*= 2)
+  {
+    int i=niters/n/n/32;
+    test_numerics(m,m*32,i);
   }
 
   return 0;
