@@ -1,28 +1,31 @@
 PROJECT(sandbox)
 
-IF(INTEL_MKL)
-  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-ELSE(INTEL_MKL)
-  LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
-ENDIF(INTEL_MKL)
+#IF(INTEL_MKL)
+#  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+#ELSE(INTEL_MKL)
+#  LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
+#ENDIF(INTEL_MKL)
 
 IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   LINK_LIBRARIES(${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
 ENDIF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-ADD_EXECUTABLE(mpi_group group.cpp)
-TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
+IF(HAVE_MPI)
+  ADD_EXECUTABLE(mpi_group group.cpp)
+  TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 
-ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
-TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
+  ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
+  TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
+ENDIF(HAVE_MPI)
 
-ADD_EXECUTABLE( einspline_bench  einspline.cpp)
-TARGET_LINK_LIBRARIES(einspline_bench qmcbase qmcutil)
 
-ADD_EXECUTABLE( einspline_smp  einspline_smp.cpp)
-TARGET_LINK_LIBRARIES(einspline_smp qmcbase qmcutil)
+IF(HAVE_EINSPLINE)
+  ADD_EXECUTABLE( einspline_bench  einspline.cpp)
+  TARGET_LINK_LIBRARIES(einspline_bench qmcbase qmcutil)
 
-ADD_EXECUTABLE( h2o_vmc  h2o_vmc.c)
+  ADD_EXECUTABLE( einspline_smp  einspline_smp.cpp)
+  TARGET_LINK_LIBRARIES(einspline_smp qmcbase qmcutil)
+ENDIF(HAVE_EINSPLINE)
 
 #ADD_EXECUTABLE(gnubug gnubug.cpp)
 #TARGET_LINK_LIBRARIES(gnubug qmcbase qmcutil)
