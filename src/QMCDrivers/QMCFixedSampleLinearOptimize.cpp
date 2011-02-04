@@ -250,8 +250,8 @@ bool QMCFixedSampleLinearOptimize::run()
                 for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
                 LinearFit(Y,X,Coefs);
     //lowest we will allow is a little less than the bare base stabilizer
-                RealType dltaBest=std::max(stabilityBase, QuarticMinimum(Coefs));
-                XS = dltaBest;
+//                 RealType dltaBest=std::max(stabilityBase-0.5*stabilizerScale, QuarticMinimum(Coefs));
+                XS = QuarticMinimum(Coefs);
               }
               else
               {//Quadratic fit the stabilizers we have tried and try to choose the best we can
@@ -264,11 +264,12 @@ bool QMCFixedSampleLinearOptimize::run()
                 for (int i=0; i<nms; i++) Y[i]=mappedStabilizers[i].first;
                 LinearFit(Y,X,Coefs);
                 
+                //extremum really.
                 RealType quadraticMinimum(-1.0*Coefs[1]/Coefs[2]);
-                RealType dltaBest=std::max(stabilityBase, quadraticMinimum);
+//                 RealType dltaBest=std::max(stabilityBase, quadraticMinimum);
     //               app_log()<<"smallest XS:      "<<X(0,1)<<endl;
     //               app_log()<<"quadraticMinimum: "<<quadraticMinimum<<endl;
-                XS = dltaBest;
+                XS = quadraticMinimum;
               }
                stability=nstabilizers;
             }
