@@ -105,8 +105,8 @@ public:
     RealType getLowestEigenvector(Matrix<RealType>& A, vector<RealType>& ev);
     RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
     void getNonLinearRange(int& first, int& last);
-    bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
-    RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType> S);
+    bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType>& S);
+    RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType>& S);
     void generateSamples();
     void add_timers(vector<NewTimer*>& timers);
     vector<NewTimer*> myTimers;

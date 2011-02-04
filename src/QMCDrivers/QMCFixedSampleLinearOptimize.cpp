@@ -182,6 +182,9 @@ bool QMCFixedSampleLinearOptimize::run()
             if(apply_inverse)
             {
               invert_matrix(Right,false);
+//               app_log()<<Right(0,0)<<endl;
+//               RealType S_D_inv(1.0/Right(0,0));
+//               for (int i=0; i<N; i++) for (int j=0; j<N; j++) Right(i,j)*=S_D_inv;
               MatrixOperators MO;
               MO.product(Right,Left_tmp,Left);
             }
@@ -194,8 +197,9 @@ bool QMCFixedSampleLinearOptimize::run()
             RealType od_largest(0);
             for (int i=0; i<N; i++) for (int j=0; j<N; j++)
               od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+//             app_log()<<"od_largest "<<od_largest<<endl;
             if (od_largest>0) od_largest = std::log(od_largest);
-            else od_largest=1.0;
+            else od_largest=stabilizerScale;
 
             RealType safe = Left(0,0);
             for (int stability=0; stability<nstabilizers; stability++)
@@ -330,7 +334,7 @@ bool QMCFixedSampleLinearOptimize::run()
 //                 {
             if (XS==0)
             {
-              XS     = std::exp(stabilityBase +  stability*stabilizerScale/nstabilizers);
+              XS     = std::exp(stabilityBase) +  std::exp(1.0*stability*od_largest/(nstabilizers+1));
               for (int i=1; i<N; i++) LeftT(i,i) += XS;
             }
             else
@@ -363,42 +367,11 @@ bool QMCFixedSampleLinearOptimize::run()
                 }
             }
         
-//                 }
-
-//                 if (tooLow(safe,lowestEV))
-//                 {
-//                     tooManyTries--;
-//                     if (tooManyTries>0)
-//                     {
-//                       if (stability==0)
-//                       {
-//                         app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-//                         //try a larger stability base and repeat
-//                         stabilityBase+=stabilizerScale;
-//                         //maintain same number of "good" stability tries
-//                         stability-=1;
-//                       }
-//                       else
-//                       {
-//                         app_log()<<"Probably will not converge: Eigenvalue="<<lowestEV<<" LeftT(0,0)="<<safe<<endl;
-//                         //try a larger stability base and repeat
-//                         stabilityBase-=0.66*stabilizerScale;
-//                         //maintain same number of "good" stability tries
-//                         stability-=1;               
-//                       }
-//                     }
-//                     else
-//                     {
-//                       app_log()<<"Too many tries: Moving on to next step"<<endl;
-//                       stability=nstabilizers;
-//                     }
-//                     
-//                     continue;
-//                 }
 
             if (MinMethod=="rescale")
             {
               for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+              optTarget->IsValid = true;
             }
             else
             {
@@ -415,7 +388,7 @@ bool QMCFixedSampleLinearOptimize::run()
                 
                 //if we chose to "freeze" the CSF solutions at their minimum 
                 //  then we must add them in to the fixed part of the parameter changes
-                for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
+//                 for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
                 for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
                 RealType bigVec(0);
                 for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
@@ -494,7 +467,7 @@ bool QMCFixedSampleLinearOptimize::run()
 
                 deltaPrms= Lambda;
             }
-            else if (newCost>lastCost+1.0e-4)
+            else if (newCost>lastCost+1.0e-3); //&&(MinMethod!="rescale"))
             {
                 int neededForGoodQuarticFit=3;
                 if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))

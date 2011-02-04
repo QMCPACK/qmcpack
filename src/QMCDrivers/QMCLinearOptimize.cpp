@@ -486,7 +486,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
         for (int i=0; i<Nl; i++)
         {
             RealType evi(alphar[i]);
-            if (abs(evi)<1e10)
+            if ((abs(evi)<1e10)&&(evi<zerozero))
             {
 //               sort according to those closest to the zero zero element form the H matrix
                 mappedEigenvalues[i].first=(evi-zerozero)*(evi-zerozero);
@@ -499,12 +499,11 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
             }
         }
         std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-
-        for (int i=0; i<Nl; i++) ev[i] = eigenT(mappedEigenvalues[0].second,i);
+        for (int i=0; i<Nl; i++) ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
         return alphar[mappedEigenvalues[0].second];
 //     }
 }
-bool QMCLinearOptimize::nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+bool QMCLinearOptimize::nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
 {
     RealType rescale = getNonLinearRescale(dP,S);
     for (int i=1; i<dP.size(); i++) dP[i]*=rescale;
@@ -523,49 +522,33 @@ void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
     if (types[0]==optimize::LINEAR_P)
     {
         int i(0);
-        while ((types[i]==optimize::LINEAR_P)&&(i<types.size())) i++;
-        first=i;
+        while (i++ < types.size())
+          if (types[i]==optimize::LINEAR_P) first=i;
     }
     else
     {
-        int i(1);
-        while ((types[i]!=optimize::LINEAR_P)&&(i<types.size())) i++;
-        last=i;
+      int i(0);
+        while (i++ < types.size())
+          if (types[i]!=optimize::LINEAR_P) last=i;
     }
 //     returns the number of non-linear parameters.
-//     app_log()<<first<<" "<<last<<endl;
+//     app_log()<<"line params: "<<first<<" "<<last<<endl;
 };
 
-QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType> S)
+QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
 {
     int first(0),last(0);
     getNonLinearRange(first,last);
     if (first==last) return 1.0;
 
-    RealType D(1.0);
-    for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(j+1,i+1)*dP[i+1]*dP[j+1];
-
-    D = std::sqrt(std::abs(D));
-
-
-    vector<RealType> N_i(last-first,0);
-    vector<RealType> M_i(last-first,0);
+    RealType rescale(1.0);
     RealType xi(0.5);
-    for (int i=0; i<last-first; i++)
-    {
-        M_i[i] = xi*D +(1-xi);
-        RealType tsumN(0);
-        for (int j=first; j<last; j++)
-        {
-            tsumN += S(i+first+1,j+1)*dP[j+1];
-        }
-        N_i[i] += (1-xi)*tsumN;
-        N_i[i] *= -1.0/M_i[i];
-    }
-
-    RealType rescale(1);
-    for (int j=0; j<last-first; j++) rescale -= N_i[j]*dP[j+first+1];
-    rescale = 1.0/rescale;
+    RealType D(1.0);
+    
+    for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(i+1,j+1)*dP[i+1]*dP[j+1];
+    rescale = (1-xi)*D/((1-xi) + xi*std::sqrt(1+D));
+    rescale = 1.0/(1.0-rescale);
+//     app_log()<<"rescale: "<<rescale<<endl;
     return rescale;
 };
 
