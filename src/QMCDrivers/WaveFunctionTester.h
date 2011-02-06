@@ -37,8 +37,11 @@ namespace qmcplusplus {
 		       ParticleSetPool& ptclPool,
              WaveFunctionPool& ppool);
 
+    ~WaveFunctionTester();
+
     bool run();
     bool put(xmlNodePtr q);
+
   private:
     ParticleSetPool &PtclPool;
     string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
@@ -59,6 +62,8 @@ namespace qmcplusplus {
     void runwftricks();
     void printEloc();
     vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
+
+    ofstream *fout;
   };
 }
 #endif

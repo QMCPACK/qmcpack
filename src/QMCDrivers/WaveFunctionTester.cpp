@@ -25,7 +25,6 @@ using namespace std;
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Optimize/VarList.h"
 #include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
@@ -54,8 +53,18 @@ namespace qmcplusplus
     m_param.add(sourceName,"source","string");
     m_param.add(wftricks,"orbitalutility","string");
     m_param.add(checkEloc,"printEloc","string");
+
+    char fname[16];
+    sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
+
+    fout=new ofstream(fname);
+    fout->precision(15);
+
   }
 
+  WaveFunctionTester::~WaveFunctionTester()
+  {
+  }
 
   /*!
    * \brief Test the evaluation of the wavefunction, gradient and laplacian
@@ -109,7 +118,7 @@ namespace qmcplusplus
 
     RealType ene = H.evaluate(W);
 
-    cout << " Energy " << ene << endl;
+    *fout << " Energy " << ene << endl;
 
     return true;
   }
@@ -377,19 +386,17 @@ namespace qmcplusplus
           }
         G1[iat] = c1*g0;
         L1[iat] = c2*(lap-6.0*logpsi);
-        cerr << "G1 = " << G1[iat] << endl;
-        cerr << "L1 = " << L1[iat] << endl;
+        *fout << "G1 = " << G1[iat] << endl;
+        *fout << "L1 = " << L1[iat] << endl;
       }
 
-    cout.precision(15);
     for (int iat=0; iat<nat; iat++)
       {
-        cout.precision(15);
-        cout << "For particle #" << iat << " at " << W.R[iat] << endl;
-        cout << "Gradient      = " << setw(12) << G[iat] << endl
+        *fout << "For particle #" << iat << " at " << W.R[iat] << endl;
+        *fout << "Gradient      = " << setw(12) << G[iat] << endl
              << "  Finite diff = " << setw(12) << G1[iat] << endl
              << "  Error       = " << setw(12) << G[iat]-G1[iat] << endl << endl;
-        cout << "Laplacian     = " << setw(12) << L[iat] << endl
+        *fout << "Laplacian     = " << setw(12) << L[iat] << endl
              << "  Finite diff = " << setw(12) << L1[iat] << endl
              << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
       }
@@ -417,7 +424,7 @@ namespace qmcplusplus
         RealType phase_m=Psi.getPhase();
 
         RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p) ;
-        cout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
+        *fout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
       }
   }
 
@@ -456,7 +463,7 @@ namespace qmcplusplus
           app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
       }
 
-    cout << "  Update using drift " << endl;
+    *fout << "  Update using drift " << endl;
     bool pbyp_mode=true;
     for (int iter=0; iter<4;++iter)
       {
@@ -465,7 +472,7 @@ namespace qmcplusplus
         while (it != it_end)
           {
 
-            cout << "\nStart Walker " << iw++ << endl;
+            *fout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
             W.loadWalker(thisWalker,pbyp_mode);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -498,8 +505,8 @@ namespace qmcplusplus
 
                 if (ratio > Random())
                   {
-                    cout << " Accepting a move for " << iat << endl;
-                    cout << " Energy after a move " << enew << endl;
+                    *fout << " Accepting a move for " << iat << endl;
+                    *fout << " Energy after a move " << enew << endl;
                     W.G += W.dG;
                     W.L += W.dL;
                     W.acceptMove(iat);
@@ -509,14 +516,14 @@ namespace qmcplusplus
                   }
                 else
                   {
-                    cout << " Rejecting a move for " << iat << endl;
+                    *fout << " Rejecting a move for " << iat << endl;
                     W.rejectMove(iat);
                     Psi.rejectMove(iat);
                     //H.rejectMove(iat);
                   }
               }
 
-            cout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
+            *fout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
             RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
             W.saveWalker(thisWalker);
             RealType ene_up;
@@ -534,26 +541,26 @@ namespace qmcplusplus
             thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
             //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
 
-            cout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
-            cout << iter << " Ratio " << ratio_accum*ratio_accum
+            *fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
+            *fout << iter << " Ratio " << ratio_accum*ratio_accum
                  << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
                  << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
                  << " new log(psi) updated " << newlogpsi_up
                  << " new log(psi) calculated " << newlogpsi
                  << " old log(psi) " << logpsi << endl;
 
-            cout << " Gradients " << endl;
+            *fout << " Gradients " << endl;
             for (int iat=0; iat<nat; iat++)
-              cout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
-            cout << " Laplacians " << endl;
+              *fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+            *fout << " Laplacians " << endl;
             for (int iat=0; iat<nat; iat++)
-              cout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+              *fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
 
             ++it;
           }
       }
 
-    cout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
+    *fout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
     for (int iter=0; iter<4;++iter)
       {
         it=W.begin();
@@ -561,7 +568,7 @@ namespace qmcplusplus
         while (it != it_end)
           {
 
-            cout << "\nStart Walker " << iw++ << endl;
+            *fout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
             W.loadWalker(thisWalker,pbyp_mode);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -588,14 +595,14 @@ namespace qmcplusplus
                     RealType prob = ratio*ratio;
                     if (prob > Random())
                       {
-                        cout << " Accepting a move for " << iat << endl;
+                        *fout << " Accepting a move for " << iat << endl;
                         W.acceptMove(iat);
                         Psi.acceptMove(W,iat);
                         ratio_accum *= ratio;
                       }
                     else
                       {
-                        cout << " Rejecting a move for " << iat << endl;
+                        *fout << " Rejecting a move for " << iat << endl;
                         W.rejectMove(iat);
                         Psi.rejectMove(iat);
                       }
@@ -613,21 +620,21 @@ namespace qmcplusplus
 
             W.update();
             RealType newlogpsi=Psi.evaluateLog(W);
-            cout << iter << " Ratio " << ratio_accum*ratio_accum
+            *fout << iter << " Ratio " << ratio_accum*ratio_accum
                  << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
                  << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
                  << " new log(psi) " << newlogpsi
                  << " old log(psi) " << logpsi << endl;
 
-            cout << " Gradients " << endl;
+            *fout << " Gradients " << endl;
             for (int iat=0; iat<nat; iat++)
               {
-                cout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+                *fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
               }
-            cout << " Laplacians " << endl;
+            *fout << " Laplacians " << endl;
             for (int iat=0; iat<nat; iat++)
               {
-                cout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+                *fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
               }
             ++it;
           }
@@ -680,7 +687,7 @@ namespace qmcplusplus
         //while(it != it_end)
         for (; it != it_end; ++it)
           {
-            cout << "\nStart Walker " << iw++ << endl;
+            *fout << "\nStart Walker " << iw++ << endl;
             Walker_t& thisWalker(**it);
             W.loadWalker(thisWalker,true);
             Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -699,7 +706,7 @@ namespace qmcplusplus
             for (int iat=0; iat<nat; iat++)
               {
                 GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-                for(int sds=0;sds<3;sds++) cout<< realGrad[iat][sds]-grad_now[sds]<<" ";
+                for(int sds=0;sds<3;sds++) *fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
                 
                 PosType dr(Tau*deltaR[iat]);
                 PosType newpos(W.makeMove(iat,dr));
@@ -712,7 +719,7 @@ namespace qmcplusplus
                 RealType ratio1 = Psi.ratio(W,iat);
                 //Psi.rejectMove(iat);
                 W.rejectMove(iat);
-                cout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
+                *fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
               }
               
           }
@@ -830,18 +837,16 @@ namespace qmcplusplus
                 lapl_grad_FD[iondim][iat] = c2*(lapFD[iondim]-6.0*grad_log[iondim]);
               }
           }
-        cout.precision(15);
         for (int dimsrc=0; dimsrc<OHMMS_DIM; dimsrc++)
           {
             for (int iat=0; iat<nat; iat++)
               {
-                cout.precision(15);
-                cout << "For particle #" << iat << " at " << W.R[iat] << endl;
-                cout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl
+                *fout << "For particle #" << iat << " at " << W.R[iat] << endl;
+                *fout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl
                      << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl
                      << "  Error       = " << setw(12)
                      <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
-                cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl
+                *fout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl
                      << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl
                      << "  Error       = " << setw(12)
                      << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
@@ -904,8 +909,9 @@ namespace qmcplusplus
     for (int i=1; i<8; i++)
       W.R[i] -= PosType(2.5, 2.5, 2.5);
 
-
-    FILE *fout = fopen("ZVtest.dat", "w");
+    char fname[32];
+    sprintf(fname,"ZVtest.%03d.dat",OHMMS::Controller->rank());
+    FILE *fzout = fopen(fname, "w");
 
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad;
@@ -922,16 +928,16 @@ namespace qmcplusplus
     for (r1[0]=0.0; r1[0]<5.0; r1[0]+=1.0e-4)
       {
         W.R[0] = r1;
-        fprintf(fout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
+        fprintf(fzout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
         ValueType log = Psi.evaluateLog(W);
         ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
         double E = H.evaluate(W);
         //double KE = E - W.PropertyList[LOCALPOTENTIAL];
         double KE = -0.5*(Sum(W.L) + Dot(W.G,W.G));
 #if defined(QMC_COMPLEX)
-        fprintf(fout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(),KE);
+        fprintf(fzout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(),KE);
 #else
-        fprintf(fout, "%16.12e %16.12e ", psi, KE);
+        fprintf(fzout, "%16.12e %16.12e ", psi, KE);
 #endif
         for (int isrc=0; isrc < source.getTotalNum(); isrc++)
           {
@@ -940,15 +946,15 @@ namespace qmcplusplus
               {
                 double ZV = 0.5*Sum(lapl_grad[dim]) + Dot(grad_grad[dim], W.G);
 #if defined(QMC_COMPLEX)
-                fprintf(fout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
+                fprintf(fzout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
 #else
-                fprintf(fout, "%16.12e %16.12e ", ZV, grad_log[dim]);
+                fprintf(fzout, "%16.12e %16.12e ", ZV, grad_log[dim]);
 #endif
               }
           }
-        fprintf(fout, "\n");
+        fprintf(fzout, "\n");
       }
-    fclose(fout);
+    fclose(fzout);
   }
 
 
@@ -1001,11 +1007,11 @@ namespace qmcplusplus
     ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
     G = W.G;
     L = W.L;
-    cout<<"Gradients"<<endl;
+    *fout<<"Gradients"<<endl;
     for (int iat=0;iat<W.R.size();iat++)
       {
-        for (int i=0; i<3 ; i++) cout<<W.G[iat][i]<<"  ";
-        cout<<endl;
+        for (int i=0; i<3 ; i++) *fout<<W.G[iat][i]<<"  ";
+        *fout<<endl;
       }
 
     opt_variables_type wfVars,wfvar_prime;
@@ -1017,7 +1023,7 @@ namespace qmcplusplus
     Psi.checkOutVariables(wfVars);
     
     wfvar_prime= wfVars;
-    wfVars.print(cout);
+    wfVars.print(*fout);
     int Nvars= wfVars.size();
     vector<RealType> Dsaved(Nvars);
     vector<RealType> HDsaved(Nvars);
@@ -1057,10 +1063,10 @@ namespace qmcplusplus
         PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
         HGradient[i]= (elocPlus-elocMinus)*dh;
       }
-    cout<<endl<<"Deriv  Numeric Analytic"<<endl;
-    for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
-    cout<<endl<<"Hderiv  Numeric Analytic"<<endl;
-    for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+    *fout<<endl<<"Deriv  Numeric Analytic"<<endl;
+    for (int i=0; i<Nvars ; i++) *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
+    *fout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+    for (int i=0; i<Nvars ; i++) *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
 
   }
 
@@ -1101,7 +1107,7 @@ void WaveFunctionTester::runDerivCloneTest()
   Psi.checkInVariables(wfVars);
   wfVars.resetIndex();
   Psi.checkOutVariables(wfVars);
-  wfVars.print(cout);
+  wfVars.print(*fout);
   int Nvars= wfVars.size();
   
   
@@ -1112,7 +1118,7 @@ void WaveFunctionTester::runDerivCloneTest()
   wfvar_prime.resetIndex();
   for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
   psi_clone->checkOutVariables(wfvar_prime);
-  wfvar_prime.print(cout);
+  wfvar_prime.print(*fout);
   
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
@@ -1173,11 +1179,11 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  cout<<"CLONE"<<endl;
-  cout<<endl<<"   Deriv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  cout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+  *fout<<"CLONE"<<endl;
+  *fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  *fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
   
   
   for (int i=0; i<Nvars ; i++)
@@ -1207,11 +1213,11 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  cout<<"ORIGINAL"<<endl;
-  cout<<endl<<"   Deriv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  cout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
-  for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+  *fout<<"ORIGINAL"<<endl;
+  *fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  *fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++) *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
   
 }
     void WaveFunctionTester::runwftricks()
