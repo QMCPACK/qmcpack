@@ -30,9 +30,8 @@ namespace qmcplusplus {
   {
 #ifdef QMC_CUDA
     if (GPU)
-      return new DMCcuda (w, psi, h);
+      return new DMCcuda (w, psi, h,ppool);
 #endif
-
     app_log() << "Creating DMCMP for the qmc driver" << endl;
     QMCDriver*  qmc = new DMCOMP(w,psi,h,hpool,ppool);
     qmc->setUpdateMode(PbyPUpdate);

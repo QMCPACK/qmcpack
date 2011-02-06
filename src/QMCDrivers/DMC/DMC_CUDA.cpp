@@ -484,7 +484,7 @@ namespace qmcplusplus {
       //load walkers if they were saved
       W.loadEnsemble();
       
-      branchEngine->initWalkerController(W,false);
+      branchEngine->initWalkerController(W,false,false);
       
       Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random); 
       Mover->resetRun(branchEngine,Estimators);

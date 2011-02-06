@@ -40,9 +40,9 @@ namespace qmcplusplus {
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     QMCDriver* qmc=0;
 #ifdef QMC_CUDA
-    if (VMCMode & 16) {
-      qmc = new VMCcuda(w,psi,h);
-    } else
+    if (VMCMode & 16) 
+      qmc = new VMCcuda(w,psi,h,ppool);
+    else
 #endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {

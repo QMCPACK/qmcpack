@@ -360,6 +360,7 @@ namespace qmcplusplus {
     // Compute the size of data needed for each walker on the GPU card
     PointerPool<Walker_t::cuda_Buffer_t > pool;
     
+    app_log() << "Starting VMCcuda::resetRun() " << endl;
     Psi.reserve (pool);
     app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
 	      << " bytes in GPU memory.\n";

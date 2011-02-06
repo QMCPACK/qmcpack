@@ -155,10 +155,11 @@ namespace qmcplusplus
       if(vmcEngine ==0) {
 #if defined (QMC_CUDA)
         if (useGPU == "yes")
-	  vmcEngine = new VMCcuda(W,Psi,H);
+	  vmcEngine = new VMCcuda(W,Psi,H,psiPool);
         else
 #endif
-        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+          vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+
         vmcEngine->setUpdateMode(vmcMove[0] == 'p');
         vmcEngine->initCommunicator(myComm);
       }
