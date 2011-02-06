@@ -26,10 +26,10 @@ SET(CMAKE_Fortran_FLAGS_RELEASE ${CMAKE_Fortran_FLAGS})
 # boost,hdf,szip,libxml2,fftw,essl
 #--------------------------------------------------------------------------
 set(CMAKE_FIND_ROOT_PATH
-  /u/ncsa/jnkim/share/gnu/hdf5
-  /u/ncsa/jnkim/share/intel/einspline
-  /u/ncsa/jnkim/share/boost
-  /usr/apps/math/fftw/intel/3.2.2
+  /u/ac/jnkim/share/gnu/hdf5
+  /u/ac/jnkim/share/intel/einspline_sse
+  /u/ac/jnkim/share/boost
+  /usr/apps/math/fftw/intel/3.2.1
 )
 
 #--------------------------------------------------------------------------
@@ -48,7 +48,7 @@ set(HAVE_MKL_VML 1)
 
 set(MKL_HOME "/usr/local/intel/Compiler/11.1/072/mkl")
 include_directories(${MKL_HOME}/include)
-link_libraries(-mkl=sequential -lmpi)
+link_libraries(-L/usr/local/intel/Compiler/11.1/072/mkl/lib/em64t -mkl=sequential -lmpi)
 
 INCLUDE(Platform/UnixPaths)
 
