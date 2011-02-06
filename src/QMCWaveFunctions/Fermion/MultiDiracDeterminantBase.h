@@ -411,6 +411,7 @@ namespace qmcplusplus {
             return DetCalculator.evaluate(dotProducts,it,n);
           }
        }
+       return 0.0;
     } 
 /*
     inline ValueType NewCalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, vector<int>::iterator it)
