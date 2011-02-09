@@ -46,7 +46,6 @@ using namespace qmcplusplus;
 WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c) 
 {
   SwapMode=1;
-  NumSwaps=0;
   Cur_min=0;
   Cur_max=0; 
 #ifdef MCWALKERSET_MPI_DEBUG
@@ -77,6 +76,8 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
 
+  //use NumWalkersSent from the previous exchange
+  curData[SENTWALKERS_INDEX]=NumWalkersSent;
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
 
@@ -153,7 +154,6 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
  */
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W) {
 
-  NumSwaps++;
   FairDivideLow(Cur_pop,NumContexts,FairOffSet);
   vector<int> minus, plus;
   int deltaN;
@@ -213,10 +213,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W) {
     }
   }
 
+  //save the number of walkers sent
+  NumWalkersSent=nsend;
+
   if(nsend) {
     nsend=NumPerNode[MyContext]-nsend;
     W.destroyWalkers(W.begin()+nsend, W.end());
   }
+
 
   //add walkers from other node
   if(newW.size()) W.insert(W.end(),newW.begin(),newW.end());
@@ -228,7 +232,6 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W) {
  * The communication is one-dimensional. 
  */
 void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W) {
-  NumSwaps++;
 
   OffSet[0]=0;
   for(int i=0; i<NumContexts; i++) OffSet[i+1]=OffSet[i]+NumPerNode[i];
@@ -323,7 +326,6 @@ void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W) {
  * The communication is one-dimensional. 
  */
 void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W) {
-  NumSwaps++;
 
   OffSet[0]=0;
   for(int i=0; i<NumContexts; i++) OffSet[i+1]=OffSet[i]+NumPerNode[i];
@@ -403,7 +405,6 @@ void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W) {
  */
 void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W) {
 
-  NumSwaps++;
   multimap<int,int> nw_map;
   for(int i=0; i<NumContexts; i++) {
     nw_map.insert(pair<int,int>(NumPerNode[i],i));

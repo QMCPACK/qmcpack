@@ -32,11 +32,9 @@ namespace qmcplusplus
    */
   struct WalkerControlMPI: public WalkerControlBase 
   {
-
-    int NumSwaps;
+    int Cur_pop;
     int Cur_max;
     int Cur_min;
-    int Cur_pop;
     vector<NewTimer*> myTimers;
     /** default constructor
      *

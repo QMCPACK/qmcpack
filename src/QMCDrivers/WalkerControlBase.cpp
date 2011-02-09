@@ -20,10 +20,11 @@
 
 namespace qmcplusplus {
 
-  WalkerControlBase::WalkerControlBase(Communicate* c, bool rn):
-    MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10),
-    MaxCopy(2), NumWalkersCreated(0),targetEnergyBound(10), targetVar(2),
-    targetSigma(10), dmcStream(0), WriteRN(rn) 
+  WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
+    : MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10)
+      , MaxCopy(2), NumWalkersCreated(0), NumWalkersSent(0) 
+      , targetEnergyBound(10), targetVar(2), targetSigma(10)
+      , dmcStream(0), WriteRN(rn) 
   {
     NumContexts=myComm->size(); MyContext=myComm->rank();
     curData.resize(LE_MAX+NumContexts);
@@ -70,7 +71,8 @@ namespace qmcplusplus {
           << setw(20) << "LocalEnergy"
           << setw(20) << "Variance" 
           << setw(20) << "Weight"
-          << setw(20) << "NumOfWalkers"; 
+          << setw(20) << "NumOfWalkers"
+          << setw(20) << "AvgSentWalkers";  //add the number of walkers 
         if (WriteRN) 
         {
           (*dmcStream) << setw(20) << "RNWalkers" 
@@ -124,7 +126,8 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.Energy
         << setw(20) << EnsembleProperty.Variance
         << setw(20) << EnsembleProperty.Weight
-	<< setw(20) << EnsembleProperty.NumSamples;
+	<< setw(20) << EnsembleProperty.NumSamples
+        << setw(20) << curData[SENTWALKERS_INDEX]/static_cast<double>(NumContexts);
       if (WriteRN) 
         {
           (*dmcStream) << setw(20) << EnsembleProperty.RNSamples

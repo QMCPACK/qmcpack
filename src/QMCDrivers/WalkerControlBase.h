@@ -48,8 +48,22 @@ namespace qmcplusplus {
     ///typedef of Walker_t
     typedef MCWalkerConfiguration::Walker_t Walker_t;
 
-    enum {ENERGY_INDEX=0, ENERGY_SQ_INDEX, WALKERSIZE_INDEX, WEIGHT_INDEX, EREF_INDEX, 
-      R2ACCEPTED_INDEX, R2PROPOSED_INDEX, FNSIZE_INDEX, RNONESIZE_INDEX, RNSIZE_INDEX, B_ENERGY_INDEX, B_WGT_INDEX, LE_MAX};
+    ///@enum enumeration to access curData and accumData for reduction
+    enum {ENERGY_INDEX=0
+      , ENERGY_SQ_INDEX
+        , WALKERSIZE_INDEX
+        , WEIGHT_INDEX
+        , EREF_INDEX
+        , R2ACCEPTED_INDEX
+        , R2PROPOSED_INDEX
+        , FNSIZE_INDEX
+        , RNONESIZE_INDEX
+        , RNSIZE_INDEX
+        , B_ENERGY_INDEX
+        , B_WGT_INDEX
+        , SENTWALKERS_INDEX
+        , LE_MAX
+    };
 
     ///context id
     IndexType MyContext;
@@ -69,6 +83,8 @@ namespace qmcplusplus {
     IndexType DummyIndex;
     ///Number of walkers created by this node
     IndexType NumWalkersCreated;
+    ///Number of walkers sent during the exchange
+    IndexType NumWalkersSent;
     ///trial energy energy
     RealType trialEnergy;
     ///target average energy
