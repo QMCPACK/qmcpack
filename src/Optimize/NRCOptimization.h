@@ -68,6 +68,8 @@ struct NRCOptimization {
   Return_t quadoffset;
   Return_t largeQuarticStep;
   bool validFuncVal;
+  //if tol is absolute, not a percent
+  bool AbsFuncTol;
 
   int current_step;
 
@@ -85,6 +87,7 @@ struct NRCOptimization {
     quadoffset=0.0;
     largeQuarticStep=2.0;
     validFuncVal=true;
+    AbsFuncTol=false;
   }
 
   virtual ~NRCOptimization() { }
@@ -209,18 +212,49 @@ struct NRCOptimization {
 
   }    
 
-  bool lineoptimization3(int points, int offset) {
+  bool lineoptimization3(int points, Return_t zeroCost) {
     // quartic fit with variable number of points for input.
     //  least squares solver
     vector<Return_t> x(points), y(points), coefs(5);
     qmcplusplus::Matrix<Return_t> S(points,5);
-    for(int i=0;i<points;i++) x[i]=(points/2 - i + offset)*quadstep;
+    for(int i=0;i<points;i++) x[i]=Return_t(i-1)*quadstep;
     
     Return_t start_cost, cost;
     vector<bool> cFailed(points,false);
     int nFailed(0);
     validFuncVal=true;
-    for (int i=0; i<points; i++) {
+    
+    
+    y[0] = Func(x[0]);
+    if (!validFuncVal)
+    {
+      cFailed[0]=true;
+      nFailed++;
+    }
+    y[1]=zeroCost;
+    y[2] = Func(x[2]);
+    if (!validFuncVal)
+    {
+      cFailed[2]=true;
+      nFailed++;
+    }
+    for (int j=0; j<5; j++)
+    {
+      S(2,j) = std::pow(x[2],j);
+      S(1,j) = 0.0;
+      S(0,j) = std::pow(x[0],j);
+    }
+      
+    //if our guess is in the wrong direction, flip the line search
+    if (y[0]<y[1])
+      for (int i=3; i<points; i++) x[i]*=-1.0;
+    else if ((y[0]>y[1])&&(y[2]>y[1]))
+    {
+      Return_t stp=x[2]-x[0];
+      for (int i=1; i<points-2; i++) x[i]=x[0]+1.0*i*stp;
+    }
+      
+    for (int i=3; i<points; i++) {
       y[i] = Func(x[i]);
       if (!validFuncVal)
       {
@@ -230,7 +264,9 @@ struct NRCOptimization {
       for (int j=0; j<5; j++)
         S(i,j) = std::pow(x[i],j);
     }
-    start_cost = y[points/2+offset];
+    
+    start_cost = y[1];
+//     for (int i=0; i<points; i++) cout<<x[i]<<": "<<y[i]<<endl;
     if (nFailed>0)
     {
       int ok_pts(points-nFailed);
@@ -262,13 +298,14 @@ struct NRCOptimization {
       qmcplusplus::LinearFit(y,S,coefs);
 
       Lambda = QuarticMinimum (coefs);
-      if (abs(Lambda) > largeQuarticStep || isnan(Lambda))
+      if (abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
         return lineoptimization2();
       cost = Func(Lambda);
+//       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
       if (isnan(cost) || cost > start_cost)
         return lineoptimization2();
     } else {
-      return lineoptimization2();
+      return false;
     }
     //fprintf (stderr, "Minimum found at %1.8f\n", Lambda);
     
@@ -370,10 +407,21 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
 
   for(int iter=1;iter<=ITMAX;iter++) {
     xm=0.5*(a+b);
-    tol2=2.0*(tol1=TOL*abs(x)+ZEPS);
-    if (abs(x-xm) <= (tol2-0.5*(b-a))) {
-      xmin=x;
-      return fx;
+    if (AbsFuncTol)
+    {
+      tol2=2.0*(tol1=TOL);
+      if (abs(x-xm) <= tol2) {
+        xmin=x;
+        return fx;
+      }
+    }
+    else
+    {
+      tol2=2.0*(tol1=TOL*abs(x)+ZEPS);
+      if (abs(x-xm) <= (tol2-0.5*(b-a))) {
+        xmin=x;
+        return fx;
+      }
     }
     if (abs(e) > tol1) {
       r=(x-w)*(fx-fv);

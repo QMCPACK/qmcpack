@@ -45,7 +45,7 @@ namespace qmcplusplus
 
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool),
-        PartID(0), NumParts(1), WarmupBlocks(10),  hamPool(hpool), optTarget(0), vmcEngine(0),  wfNode(NULL), optNode(NULL), param_tol(1e-4)
+        PartID(0), NumParts(1), WarmupBlocks(10),  hamPool(hpool), optTarget(0), vmcEngine(0),  wfNode(NULL), optNode(NULL), param_tol(1e-5)
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -334,7 +334,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
             }
         }
         std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-
+        
         for (int i=0; i<Nl; i++) ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
         return mappedEigenvalues[0].first;
     }
@@ -486,11 +486,11 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
         for (int i=0; i<Nl; i++)
         {
             RealType evi(alphar[i]);
-            if ((abs(evi)<1e10)&&(evi<zerozero))
+            
+            if ((evi<zerozero)&&(evi>(zerozero-1e2)))
             {
-//               sort according to those closest to the zero zero element form the H matrix
-                mappedEigenvalues[i].first=(evi-zerozero)*(evi-zerozero);
-                mappedEigenvalues[i].second=i;
+              mappedEigenvalues[i].first=(evi-zerozero+2.0)*(evi-zerozero+2.0);
+              mappedEigenvalues[i].second=i;
             }
             else
             {
@@ -499,6 +499,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
             }
         }
         std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
+//         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<<endl;
         for (int i=0; i<Nl; i++) ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
         return alphar[mappedEigenvalues[0].second];
 //     }

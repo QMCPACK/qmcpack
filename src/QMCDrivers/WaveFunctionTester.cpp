@@ -1083,7 +1083,7 @@ void WaveFunctionTester::runDerivCloneTest()
   QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
   h_clone->setRandomGenerator(Rng2);
   H.setRandomGenerator(Rng1);
-  h_clone->setPrimary(false);
+  h_clone->setPrimary(true);
   
   
   int nat = W.getTotalNum();

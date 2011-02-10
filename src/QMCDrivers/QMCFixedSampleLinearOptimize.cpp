@@ -42,12 +42,17 @@
 
 namespace qmcplusplus
 {
+  
+//   static QMCFixedSampleLinearOptimize::RealType runningStabilityBase;
+//   static QMCFixedSampleLinearOptimize::RealType runningQuadStep;
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
         Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(10), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(2), w_beta(0.0),
         MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
 {
+//     runningStabilityBase=-999;
+//     runningQuadStep=10.0;
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
@@ -84,7 +89,9 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
     for (int i=0; i<optparm.size(); i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
     QMCLinearOptimize::RealType c = optTarget->Cost(false);
     //only allow this to go false if it was true. If false, stay false
-    if (validFuncVal) validFuncVal = optTarget->IsValid;
+//     if (validFuncVal) 
+    validFuncVal = optTarget->IsValid;
+    
     return c;
 }
 
@@ -131,6 +138,8 @@ bool QMCFixedSampleLinearOptimize::run()
 
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
         RealType stabilityBase(exp0);
+//         if (runningStabilityBase>stabilityBase) stabilityBase=runningStabilityBase;
+//         app_log()<<"  Starting with Stability Base of: "<<stabilityBase<<endl;
         //This is the amount we add to the linear parameters
         RealType linearStabilityBase(exp1);
 
@@ -163,6 +172,7 @@ bool QMCFixedSampleLinearOptimize::run()
             if (!ValidCostFunction(Valid)) continue;
             
             RealType newCost(lastCost);
+            RealType startCost(lastCost);
             optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
             RealType H2rescale=1.0;
 
@@ -335,7 +345,7 @@ bool QMCFixedSampleLinearOptimize::run()
 //                 {
             if (XS==0)
             {
-              XS     = std::exp(stabilityBase) +  std::exp(1.0*stability*od_largest/(nstabilizers+1));
+              XS     = std::exp(stabilityBase) +  std::exp(1.0*stability*od_largest/(nstabilizers-1));
               for (int i=1; i<N; i++) LeftT(i,i) += XS;
             }
             else
@@ -346,7 +356,7 @@ bool QMCFixedSampleLinearOptimize::run()
             
             myTimers[2]->start();
 //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
-            lowestEV =getLowestEigenvector(LeftT,currentParameterDirections);
+            lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
             myTimers[2]->stop();
             
             Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
@@ -389,20 +399,21 @@ bool QMCFixedSampleLinearOptimize::run()
                 
                 //if we chose to "freeze" the CSF solutions at their minimum 
                 //  then we must add them in to the fixed part of the parameter changes
-//                 for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i] + GEVSplitParameters[i];
+                for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i];
                 for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
                 RealType bigVec(0);
                 for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
 
                 TOL = param_tol/bigVec;
+                AbsFuncTol=true;
 
                 largeQuarticStep=bigChange/bigVec;
-                if (savedQuadstep>0)
-                  quadstep=savedQuadstep/bigVec;
-                else if (deltaPrms>0)
-                  quadstep=deltaPrms/bigVec;
-                else 
-                  quadstep = Lambda;
+//                 if (savedQuadstep>0)
+//                   quadstep=savedQuadstep/bigVec;
+//                 else if (deltaPrms>0)
+//                   quadstep=deltaPrms/bigVec;
+//                 else 
+                quadstep = Lambda;
                 
 //                  initial guess for line min bracketing
                 LambdaMax = quadstep;
@@ -412,9 +423,10 @@ bool QMCFixedSampleLinearOptimize::run()
                   Valid=lineoptimization();
                 else if (MinMethod=="quartic_u")
                 {
-                  int npts(9); int offset(2);
-                  quadstep *= 2.0/npts;
-                  Valid=lineoptimization3(npts,offset);
+                  int npts(7);
+                  quadstep = 0.75*Lambda;
+                  LambdaMax = Lambda;
+                  Valid=lineoptimization3(npts,startCost);
                 }
                 else Valid=lineoptimization2();
                 myTimers[3]->stop();
@@ -454,7 +466,8 @@ bool QMCFixedSampleLinearOptimize::run()
             }
 
 
-            app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<endl;
+            app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
+            
             optTarget->printEstimates();
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
 
@@ -468,24 +481,29 @@ bool QMCFixedSampleLinearOptimize::run()
 
                 deltaPrms= Lambda;
             }
-            else if (newCost>lastCost+1.0e-3); //&&(MinMethod!="rescale"))
+            else if ((newCost-lastCost)>0.001) //&&(MinMethod!="rescale"))
             {
-                int neededForGoodQuarticFit=3;
-                if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))
-                {
-                    app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
-                }
-                else if ((StabilizerMethod=="fit")&&(stability+1 >= neededForGoodQuarticFit))
-                {
-                    stability = max(nstabilizers-2,stability);
-                    if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
-                    else app_log()<<"Moving on to next eigCG or iteration."<<endl;
-                }
-                else
-                {
-                    stability = nstabilizers;
-                    app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
-                }
+              if(stability==0) stabilityBase+=stabilizerScale;
+              else stabilityBase-=stabilizerScale;
+              
+              
+              
+//                 int neededForGoodQuarticFit=4;
+//                 if ((StabilizerMethod=="fit")&&(stability+1 < neededForGoodQuarticFit))
+//                 {
+//                     app_log()<<"Small change, but need "<< neededForGoodQuarticFit+1 <<" values for a good quartic stability fit."<<endl;
+//                 }
+//                 else if ((StabilizerMethod=="fit")&&(stability+1 >= neededForGoodQuarticFit))
+//                 {
+//                     stability = max(nstabilizers-2,stability);
+//                     if (stability==nstabilizers-2) app_log()<<"Small change, moving on to quartic fit."<<endl;
+//                     else app_log()<<"Moving on to next eigCG or iteration."<<endl;
+//                 }
+//                 else
+//                 {
+//                     stability = nstabilizers;
+//                     app_log()<<"Small change, moving on to next eigCG or iteration."<<endl;
+//                 }
             }
           }
 
@@ -494,6 +512,8 @@ bool QMCFixedSampleLinearOptimize::run()
               for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];
               currentParameters=bestParameters;
               LastDirections.push_back(BestDirection);
+              acceptedOneMove=false;
+//               runningStabilityBase = stabilityBase;
 //             app_log()<< " Wave Function Parameters updated."<<endl;
 //             optTarget->reportParameters();
           }
