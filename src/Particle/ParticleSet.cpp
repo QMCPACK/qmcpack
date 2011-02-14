@@ -173,7 +173,7 @@ namespace qmcplusplus
     }
 
     for(int spec=0; spec<NumSpecies; spec++) {
-      NofSpecies[spec] = (int)round(spSet(srcMemberIndx,spec));
+      NofSpecies[spec] = (int)round(spSet(MemberIndx,spec));
       CurElec[spec] = first(spec);
     }
 
@@ -205,7 +205,7 @@ namespace qmcplusplus
 	  app_log() << "  Assigning " << (sp ? "down" : "up  ") 
 		    << " electron " << elec << " to ion " << iat 
 		    << " with charge " << z << endl;
-	  double radius = std::sqrt((double)Zat[iat]);
+	  double radius = 0.5* std::sqrt((double)Zat[iat]);
 	  R[elec] = src.R[iat] + radius * gaussRand[elec];
 	}
 	else
