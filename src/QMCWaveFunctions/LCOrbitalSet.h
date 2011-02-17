@@ -20,6 +20,8 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 
+//#define USE_BLAS1_GRAD
+
 namespace qmcplusplus {
 
   /** decalaration of generic class to handle a linear-combination of basis function*/
@@ -222,8 +224,12 @@ namespace qmcplusplus {
     inline void 
     evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) {
       myBasisSet->evaluateForPtclMove(P,iat);
+#if defined(USE_BLAS2)
+      MatrixOperators::product(C,myBasisSet->Phi.data(),psi.data());
+#else
       for(int j=0 ; j<OrbitalSetSize; j++) 
         psi[j] = dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
+#endif
       //overhead of blas::gemv is big
       //MatrixOperators::product(C,myBasisSet->Phi,psi.data());
       //overhead of blas::dot is too big, better to use the inline function
@@ -232,61 +238,83 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluate(const ParticleSet& P, int iat, 
-        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
-      myBasisSet->evaluateAllForPtclMove(P,iat);
-      //optimal on tungsten
-      const ValueType* restrict cptr=C.data();
-      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
-      const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+      evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) 
+      {
+        myBasisSet->evaluateAllForPtclMove(P,iat);
+#if defined(USE_BLAS1)
+        for(int j=0; j<OrbitalSetSize; j++) psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
+        for(int j=0; j<OrbitalSetSize; j++) dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
+        for(int j=0; j<OrbitalSetSize; j++) d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
+#elif defined(USE_BLAS2)
+        MatrixOperators::product(C,myBasisSet->Phi.data(),psi.data());
+        MatrixOperators::product(C,myBasisSet->dPhi.data(),dpsi.data());
+        MatrixOperators::product(C,myBasisSet->d2Phi.data(),d2psi.data());
+#elif defined(USE_BLAS1_GRAD)
+        const ValueType* restrict cptr=C.data();
+        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
 #pragma ivdep
-      for(int j=0; j<OrbitalSetSize; j++) {
-        register ValueType res=0.0, d2res=0.0;
-        register GradType dres;
-        for(int b=0; b<BasisSetSize; b++,cptr++) {
-          res += *cptr*pptr[b];
-          d2res += *cptr*d2ptr[b];
-          dres += *cptr*dptr[b];
-          //res += *cptr * (*pptr++);
-          //d2res += *cptr* (*d2ptr++);
-          //dres += *cptr* (*dptr++);
+        for(int j=0,kk=0; j<OrbitalSetSize; j++)
+        {
+          register ValueType res=0.0, d2res=0.0;
+          for(int b=0; b<BasisSetSize; ++b,++kk)
+          {
+            res += cptr[kk]*pptr[b];
+            d2res += cptr[kk]*d2ptr[b];
+          }
+          psi[j]=res; d2psi[j]=d2res;
         }
-        psi[j]=res; dpsi[j]=dres; d2psi[j]=d2res;
-      }
-      //blasI is not too good
-      //for(int j=0 ; j<OrbitalSetSize; j++) {
-      //  psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
-      //  dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
-      //  d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
-      //  //psi[j]   = dot(C[j],myBasisSet->Y[0],  BasisSetSize);
-      //  //dpsi[j]  = dot(C[j],myBasisSet->dY[0], BasisSetSize);
-      //  //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
-      //}
-
+        MatrixOperators::product(C,myBasisSet->dPhi.data(),dpsi.data());
+#else
+        const ValueType* restrict cptr=C.data();
+        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+#pragma ivdep
+        for(int j=0,kk=0; j<OrbitalSetSize; j++)
+        {
+          register ValueType res=0.0, d2res=0.0;
+          register GradType dres;
+          for(int b=0; b<BasisSetSize; ++b,++kk)
+          {
+            res += cptr[kk]*pptr[b];
+            d2res += cptr[kk]*d2ptr[b];
+            dres += cptr[kk]*dptr[b];
+          }
+          psi[j]=res; dpsi[j]=dres; d2psi[j]=d2res;
+        }
+#endif
     }
 
     inline void
     evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,
-        HessVector_t& grad_grad_psi) {
+        HessVector_t& grad_grad_psi) 
+    {
       myBasisSet->evaluateWithHessian(P,iat);
+#if defined(USE_BLAS2)
+      MatrixOperators::product(C,myBasisSet->Phi.data(),psi.data());
+      MatrixOperators::product(C,myBasisSet->dPhi.data(),dpsi.data());
+      MatrixOperators::product(C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
+#else
       const ValueType* restrict cptr=C.data();
       const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
       const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
 #pragma ivdep
-      for(int j=0; j<OrbitalSetSize; j++) {
+      for(int j=0,kk=0; j<OrbitalSetSize; j++) {
         register ValueType res=0.0;
         register GradType dres;
         register HessType hess;
-        for(int b=0; b<BasisSetSize; b++,cptr++) {
-          res += *cptr*pptr[b];
-          hess += *cptr*d2ptr[b];
-          dres += *cptr*dptr[b];
+        for(int b=0; b<BasisSetSize; b++,kk++) 
+        {
+          res += cptr[kk]*pptr[b];
+          hess += cptr[kk]*d2ptr[b];
+          dres += cptr[kk]*dptr[b];
         }
         psi[j]=res; dpsi[j]=dres; grad_grad_psi[j]=hess;
       }
+#endif
     }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,

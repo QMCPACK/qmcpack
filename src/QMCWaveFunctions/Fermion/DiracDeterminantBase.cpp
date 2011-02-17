@@ -19,6 +19,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
+#include "simd/fastoperators.h"
 
 namespace qmcplusplus {
 
@@ -126,13 +127,14 @@ namespace qmcplusplus {
     return LogValue;
   }
 
+
   DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
       PooledData<RealType>& buf, bool fromscratch) 
   {
-    myG=0.0;
-    myL=0.0;
-
-    if(fromscratch) {
+    //myG=0.0;
+    //myL=0.0;
+    if(fromscratch) 
+    {
       LogValue=evaluateLog(P,myG,myL);
       UpdateTimer.start();
     }
@@ -140,6 +142,7 @@ namespace qmcplusplus {
     {
       if(UpdateMode == ORB_PBYP_RATIO) 
 	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+
       UpdateTimer.start();
 
       if(NumPtcls==1) {
@@ -148,34 +151,60 @@ namespace qmcplusplus {
         // GradType rv = y*dpsiM(0,0);
         // myG(FirstIndex) += rv;
         // myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-
-        ValueType y=psiM(0,0);
+        ValueType y = psiM(0,0);
         GradType rv = y*dpsiM(0,0);
-        myG(FirstIndex) += rv;
-        myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      } else {
+        P.G[FirstIndex]+=(myG[FirstIndex]=rv);
+        P.L[FirstIndex]+=(myL[FirstIndex]=y*d2psiM(0,0)-dot(rv,rv));
+        //myG(FirstIndex) += rv;
+        //myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+        //P.G += myG;
+        //P.L += myL;
+      } 
+      else 
+      {
+#if defined(USE_DIRAC_FAST_OPERATORS)        
+        //PartialTrace<ValueType,OHMMS_DIM>::traceG(&(myG[FirstIndex][0]),psiM.data(),&(dpsiM[0][0][0]),NumPtcls,NumOrbitals);
+        //PartialTrace<ValueType,OHMMS_DIM>::traceS(&(myL[FirstIndex]),psiM.data(),d2psiM.data(),NumPtcls,NumOrbitals);
+        //for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
+        //for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += (myL[iat]-=dot(myG[iat],myG[iat]));
+        PartialTrace<ValueType,OHMMS_DIM>::computeGL(&(myG[FirstIndex][0]),&myL[FirstIndex]
+            , psiM.data(),&(dpsiM[0][0][0]),d2psiM.data(), NumPtcls,NumOrbitals);
+        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
+        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += myL[iat];
+#else
         const ValueType* restrict yptr=psiM.data();
         const ValueType* restrict d2yptr=d2psiM.data();
         const GradType* restrict dyptr=dpsiM.data();
-        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
+        for(int iat=FirstIndex; iat<LastIndex;++iat) 
         {
-          GradType rv;
-          ValueType lap=0.0;
-          for(int j=0; j<NumOrbitals; j++,yptr++) {
-            rv += *yptr * *dyptr++;
-            lap += *yptr * *d2yptr++;
-          }
-          myG(iat) += rv;
-          myL(iat) += lap - dot(rv,rv);
+          myG[iat]=dot(yptr,dyptr,NumOrbitals);
+          myL[iat]=dot(yptr,d2yptr,NumOrbitals)-dot(myG[iat],myG[iat]);
+          yptr+=NumOrbitals;
+          dyptr+=NumOrbitals;
+          d2yptr+=NumOrbitals;
         }
+        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
+        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += myL[iat];
+#endif
+        //
+        //for(int iat=FirstIndex,ij=0; iat<LastIndex;++iat) 
+        //{
+        //  GradType rv;
+        //  ValueType lap=0;
+        //  for(int j=0; j<NumOrbitals; ++j,++ij)
+        //  {
+        //    rv += yptr[ij] * dyptr[ij];
+        //    lap += yptr[ij] * d2yptr[ij];
+        //  }
+        //  myG(iat) += rv;
+        //  myL(iat) += lap - dot(rv,rv);
+        //}
       }
     }
 
-    P.G += myG;
-    P.L += myL;
-
     //copy psiM to psiM_temp
-    psiM_temp=psiM;
+    //psiM_temp=psiM;
+    BLAS::copy(psiM_temp.data(),psiM.data(),psiM.size());
 
     buf.put(psiM.first_address(),psiM.last_address());
     buf.put(FirstAddressOfdV,LastAddressOfdV);

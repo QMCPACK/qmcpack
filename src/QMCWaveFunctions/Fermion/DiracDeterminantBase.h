@@ -272,6 +272,7 @@ namespace qmcplusplus
       GradVector_t dpsiV;
       ValueVector_t d2psiV;
       ValueVector_t workV1, workV2;
+      GradVector_t workG;
 
       Vector<ValueType> WorkSpace;
       Vector<IndexType> Pivot;
