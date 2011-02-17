@@ -284,6 +284,18 @@ struct BLAS {
     memcpy(b,a,sizeof(T)*n);
   }
 
+  /** copy using memcpy(target,source,size)
+   * @param target starting address of the targe
+   * @param source starting address of the source
+   * @param number of elements to copy
+   */
+  template<typename T>
+  inline static
+  void copy(T* restrict target, const T* restrict source, int n)
+  {
+    memcpy(target,source,sizeof(T)*n);
+  }
+
   template<typename T>
   inline static
   void copy(int n, const complex<T>* restrict a, T* restrict b) 

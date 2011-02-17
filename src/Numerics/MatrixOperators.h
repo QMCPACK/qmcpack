@@ -22,6 +22,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 #include "Numerics/OhmmsBlas.h"
 namespace qmcplusplus {
 
@@ -159,6 +160,18 @@ namespace qmcplusplus {
       dgemm(transa, transb, D, A.rows(), A.cols(), 
           one, xvPtr->begin(), D, A.data(), A.cols(),
           zero, yptr->begin(), D);
+    }
+
+    template<unsigned D>
+    inline static void product(const Matrix<double>& A, const Tensor<double,D>* xvPtr, 
+        Tensor<double,D>* restrict yptr) {
+      const double one=1.0;
+      const double zero=0.0;
+      const char transa = 'N';
+      const char transb = 'N';
+      dgemm(transa, transb, D*D, A.rows(), A.cols(), 
+          one, xvPtr->begin(), D*D, A.data(), A.cols(),
+          zero, yptr->begin(), D*D);
     }
 
     /** static function to perform y=Ax for generic matrix and vector
