@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_FAST_MATRIX_HANLDERS_HPP
 #define QMCPLUSPLUS_FAST_MATRIX_HANLDERS_HPP
 
-#define USE_DIRAC_FAST_OPERATORS
+//#define USE_DIRAC_FAST_OPERATORS
 
 namespace qmcplusplus {
   template<typename T, unsigned D>
