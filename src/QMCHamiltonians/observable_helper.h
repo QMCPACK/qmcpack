@@ -30,6 +30,8 @@ namespace qmcplusplus {
 
   /** define observable_helper
    *
+   * This is a helper class to manage a hdf5 dagroup for each collectable.
+   * The data handled by an Estimator should be presented by dense N-dim array in C. 
    * /observables/title/value
    * /observables/title/value_sq
    */
@@ -93,36 +95,44 @@ namespace qmcplusplus {
     }
 
     /** open a h5 group of this observable 
+     *
+     * Create a group for an observable and dataspace
      */
     inline void open(hid_t grp_id)
     {
       data_id = H5Gcreate(grp_id,group_name.c_str(),0);
 
       hsize_t rank=mydims.size();
+      if(rank)
+      {
+        //create empty data to write something
+        hsize_t nd=1;
+        for(int i=1; i<rank; ++i) nd *= mydims[i];
+        std::vector<value_type> zeros(nd,0.0);
 
-      //create empty data to write something
-      hsize_t nd=1;
-      for(int i=1; i<rank; ++i) nd *= mydims[i];
-      std::vector<value_type> zeros(nd,0.0);
+        hid_t p = H5Pcreate(H5P_DATASET_CREATE);
+        H5Pset_chunk(p,rank,&mydims[0]);
 
-      hid_t p = H5Pcreate(H5P_DATASET_CREATE);
-      H5Pset_chunk(p,rank,&mydims[0]);
+        space1_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
+        value1_id= H5Dcreate(data_id,"value",h5_observable_type,space1_id,p);
+        hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
+        herr_t ret = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
+        H5Sclose(memspace);
 
-      space1_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
-      value1_id= H5Dcreate(data_id,"value",h5_observable_type,space1_id,p);
-      hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      herr_t ret = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
-      H5Sclose(memspace);
+        space2_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
+        value2_id= H5Dcreate(data_id,"value_squared",h5_observable_type,space2_id,p);
+        memspace = H5Screate_simple(rank, &mydims[0], NULL);
+        ret = H5Dwrite(value2_id, h5_observable_type, memspace, space2_id, H5P_DEFAULT, &zeros[0]);
+        H5Sclose(memspace);
 
-      space2_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
-      value2_id= H5Dcreate(data_id,"value_squared",h5_observable_type,space2_id,p);
-      memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      ret = H5Dwrite(value2_id, h5_observable_type, memspace, space2_id, H5P_DEFAULT, &zeros[0]);
-      H5Sclose(memspace);
-
-      H5Pclose(p);
+        H5Pclose(p);
+      }
     }
 
+    /** add named property to describe the collectable this helper class handles
+     * @param p any intrinsic datatype including vector, basic containers
+     * @param pname property
+     */
     template<typename T>
     inline void addProperty(T& p, const std::string& pname)
     {
@@ -133,23 +143,25 @@ namespace qmcplusplus {
     inline void write(const value_type* first_v, const value_type* first_vv)
     {
       hsize_t rank=mydims.size();
+      if(rank)
+      {
+        H5Sset_extent_simple(space1_id,rank,&curdims[0],&maxdims[0]);
+        H5Sselect_hyperslab(space1_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
+        H5Dextend(value1_id,&curdims[0]);
+        hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
+        herr_t ret = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, first_v+lower_bound);
+        H5Sclose(memspace);
 
-      H5Sset_extent_simple(space1_id,rank,&curdims[0],&maxdims[0]);
-      H5Sselect_hyperslab(space1_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
-      H5Dextend(value1_id,&curdims[0]);
-      hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      herr_t ret = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, first_v+lower_bound);
-      H5Sclose(memspace);
+        H5Sset_extent_simple(space2_id,rank,&curdims[0],&maxdims[0]);
+        H5Sselect_hyperslab(space2_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
+        H5Dextend(value2_id,&curdims[0]);
+        memspace = H5Screate_simple(rank, &mydims[0], NULL);
+        ret = H5Dwrite(value2_id, h5_observable_type, memspace, space2_id, H5P_DEFAULT, first_vv+lower_bound);
+        H5Sclose(memspace);
 
-      H5Sset_extent_simple(space2_id,rank,&curdims[0],&maxdims[0]);
-      H5Sselect_hyperslab(space2_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
-      H5Dextend(value2_id,&curdims[0]);
-      memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      ret = H5Dwrite(value2_id, h5_observable_type, memspace, space2_id, H5P_DEFAULT, first_vv+lower_bound);
-      H5Sclose(memspace);
-
-      curdims[0]++;
-      offsets[0]++;
+        curdims[0]++;
+        offsets[0]++;
+      }
     }
   };
 }
