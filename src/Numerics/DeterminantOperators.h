@@ -26,82 +26,10 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <Numerics/OhmmsBlas.h>
 #include <config/stdlib/math.h>
+#include <simd/simd.hpp>
 #include <Numerics/determinant_operators.h>
 
 namespace qmcplusplus {
-
-  /** @defgroup detfunc helper functions for determinant-related operations
-   * @{
-   */
-  /** inline dot product 
-   * @param a starting address of an array of type T
-   * @param b starting address of an array of type TinyVector<T,D>
-   * @param n size
-   * @return \f$ {\bf v} = \sum_i a[i] {\bf b}[i]\f$
-   */
-  template<class T, unsigned D>
-    inline TinyVector<T,D>
-    dot(const T* a, const TinyVector<T,D>* b, int n) 
-    {
-      TinyVector<T,D> res;
-      for(int i=0; i<n; i++) res += a[i]*b[i];
-      return res;
-    }
-
-  /** inline dot product: replacement of BLAS::dot
-   * @param a starting address of an array of type T
-   * @param b starting address of an array of type T
-   * @param n size
-   * @return  \f$ res = \sum_i a[i] b[i]\f$
-   *
-   * The arguments of this inline function are different from BLAS::dot
-   * This is more efficient than BLAS::dot due to the function overhead,
-   * if a compiler knows how to inline.
-   */
-  template<class T>
-    inline T 
-    dot(const T* restrict a, const T* restrict b, int n) 
-    {
-      T res = 0.0;
-      for(int i=0; i<n; i++) res += a[i]*b[i];
-      return res;
-    }
-
-  template<class T>
-    inline std::complex<T> 
-    dot(const std::complex<T>* restrict a, const T* restrict b, int n) 
-    {
-      std::complex<T> res = 0.0;
-      for(int i=0; i<n; i++) res += a[i]*b[i];
-      return res;
-    }
-
-  template<class T>
-    inline std::complex<T> 
-    dot(const T* restrict a, const std::complex<T>* restrict b, int n) 
-    {
-      std::complex<T> res = 0.0;
-      for(int i=0; i<n; i++) res += a[i]*b[i];
-      return res;
-    }
-
-  /** x*y dot product of two vectors using the same arugment list for blas::dot
-   * @param n size
-   * @param x starting address of x 
-   * @param incx stride of x
-   * @param y starting address of y 
-   * @param incx stride of y
-   * @param return \f$\sum_i x[i+=incx]*y[i+=incy]\f$
-   */
-  template<typename T>
-    inline static
-    T dot(int n, const T* restrict x, int incx, const T* restrict y, int incy) 
-    {
-      const int xmax=incx*n;
-      T res=0.0;
-      for(int ic=0,jc=0; ic<xmax; ic+=incx,jc+=incy) res += x[ic]*y[jc];
-      return res;
-    }
 
   /** LU factorization of double */
   inline void 
@@ -110,9 +38,9 @@ namespace qmcplusplus {
       int status;
       dgetrf(n,m,a,n0,piv,status);
     }
+
   inline void 
-    LUFactorization(const int& n, const int& m, float* restrict a, const int& n0, 
-		    int* restrict piv) 
+    LUFactorization(int n, int m, float* restrict a, const int& n0, int* restrict piv) 
     {
       int status;
       sgetrf(n,m,a,n0,piv,status);
@@ -128,8 +56,7 @@ namespace qmcplusplus {
     }
 
   /** Inversion of a double matrix after LU factorization*/
-  inline void InvertLU(int n, double* restrict a, int n0
-      , int* restrict piv, double* restrict work, int n1)
+  inline void InvertLU(int n, double* restrict a, int n0 , int* restrict piv, double* restrict work, int n1)
   {
     int status;
     dgetri(n,a,n0,piv,work,n1,status);
@@ -140,8 +67,6 @@ namespace qmcplusplus {
     int status;
     sgetri(n,a,n0,piv,work,n1,status);
   }
-
-
 
   /** Inversion of a complex<double> matrix after LU factorization*/
   inline void InvertLU(int n, std::complex<double>* restrict a, int n0
@@ -346,7 +271,7 @@ inline
 typename MatA::value_type 
 DetRatioByRow(const MatA& Minv, const VecB& newv, int rowchanged) 
 {
-  return dot(Minv[rowchanged],newv.data(),Minv.cols()); 
+  return simd::dot(Minv[rowchanged],newv.data(),Minv.cols()); 
   //return BLAS::dot(Minv.cols(),Minv[rowchanged],newv.data()); 
 }
 
@@ -362,7 +287,7 @@ typename MatA::value_type
 DetRatioByColumn(const MatA& Minv, const VecB& newv, int colchanged) 
 {
   //use BLAS dot since the stride is not uniform
-  return dot(Minv.cols(),Minv.data()+colchanged,Minv.cols(),newv.data(),1); 
+  return simd::dot(Minv.cols(),Minv.data()+colchanged,Minv.cols(),newv.data(),1); 
 }
 
 /** update a inverse matrix by a row substitution

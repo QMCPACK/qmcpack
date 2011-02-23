@@ -8,6 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <algorithm>
 
 #ifdef QMC_CUDA

@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+//#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus {
 
@@ -448,7 +448,7 @@ namespace qmcplusplus {
       int num=psi.extent(1);
       vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
       while(it != last) {
-        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
         it++;
       }
       buildTableTimer.stop();
@@ -483,7 +483,7 @@ namespace qmcplusplus {
       int num=psi.extent(1);
       vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
       while(it != last) {
-        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
         it++;
       }
       buildTableGradTimer.stop();
@@ -512,7 +512,7 @@ namespace qmcplusplus {
       int num=psi.extent(1);
       vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
       while(it != last) {
-        dotProducts((*it).first,(*it).second) = dot(psiinv[(*it).first],psi[(*it).second],num);
+        dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
         it++;
       }
 

@@ -33,7 +33,7 @@ namespace qmcplusplus
     public:
       bool Optimizable;
       void registerTimers();
-      NewTimer UpdateTimer, RatioTimer, InverseTimer;
+      NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
       // Optimizable parameters
       opt_variables_type myVars;
 

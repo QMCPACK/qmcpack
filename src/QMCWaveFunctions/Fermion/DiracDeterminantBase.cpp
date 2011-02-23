@@ -19,7 +19,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
-#include "simd/fastoperators.h"
+#include "simd/simd.hpp"
 
 namespace qmcplusplus {
 
@@ -28,10 +28,13 @@ namespace qmcplusplus {
    *@param first index of the first particle
    */
   DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first): 
-    NP(0), Phi(spos), FirstIndex(first),
-    UpdateTimer("DiracDeterminantBase::update"),
-    RatioTimer("DiracDeterminantBase::ratio"),
-    InverseTimer("DiracDeterminantBase::inverse")
+    NP(0), Phi(spos), FirstIndex(first)
+    ,UpdateTimer("DiracDeterminantBase::update")
+    ,RatioTimer("DiracDeterminantBase::ratio")
+    ,InverseTimer("DiracDeterminantBase::inverse")
+    ,BufferTimer("DiracDeterminantBase::buffer")
+    ,SPOVTimer("DiracDeterminantBase::spoval")
+    ,SPOVGLTimer("DiracDeterminantBase::spovgl")
   {
     Optimizable=false;
     OrbitalName="DiracDeterminantBase";
@@ -127,7 +130,6 @@ namespace qmcplusplus {
     return LogValue;
   }
 
-
   DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
       PooledData<RealType>& buf, bool fromscratch) 
   {
@@ -141,7 +143,11 @@ namespace qmcplusplus {
     else
     {
       if(UpdateMode == ORB_PBYP_RATIO) 
+      {
+        SPOVGLTimer.start();
 	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+        SPOVGLTimer.stop();
+      }
 
       UpdateTimer.start();
 
@@ -162,49 +168,22 @@ namespace qmcplusplus {
       } 
       else 
       {
-#if defined(USE_DIRAC_FAST_OPERATORS)        
-        //PartialTrace<ValueType,OHMMS_DIM>::traceG(&(myG[FirstIndex][0]),psiM.data(),&(dpsiM[0][0][0]),NumPtcls,NumOrbitals);
-        //PartialTrace<ValueType,OHMMS_DIM>::traceS(&(myL[FirstIndex]),psiM.data(),d2psiM.data(),NumPtcls,NumOrbitals);
-        //for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
-        //for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += (myL[iat]-=dot(myG[iat],myG[iat]));
-        PartialTrace<ValueType,OHMMS_DIM>::computeGL(&(myG[FirstIndex][0]),&myL[FirstIndex]
-            , psiM.data(),&(dpsiM[0][0][0]),d2psiM.data(), NumPtcls,NumOrbitals);
-        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
-        for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += myL[iat];
-#else
-        const ValueType* restrict yptr=psiM.data();
-        const ValueType* restrict d2yptr=d2psiM.data();
-        const GradType* restrict dyptr=dpsiM.data();
-        for(int iat=FirstIndex; iat<LastIndex;++iat) 
+        for(int i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
         {
-          myG[iat]=dot(yptr,dyptr,NumOrbitals);
-          myL[iat]=dot(yptr,d2yptr,NumOrbitals)-dot(myG[iat],myG[iat]);
-          yptr+=NumOrbitals;
-          dyptr+=NumOrbitals;
-          d2yptr+=NumOrbitals;
+          myG[iat]=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+          myL[iat]=simd::dot(psiM[i],d2psiM[i],NumOrbitals)-dot(myG[iat],myG[iat]);
         }
         for(int iat=FirstIndex; iat<LastIndex; ++iat) P.G[iat] += myG[iat];
         for(int iat=FirstIndex; iat<LastIndex; ++iat) P.L[iat] += myL[iat];
-#endif
-        //
-        //for(int iat=FirstIndex,ij=0; iat<LastIndex;++iat) 
-        //{
-        //  GradType rv;
-        //  ValueType lap=0;
-        //  for(int j=0; j<NumOrbitals; ++j,++ij)
-        //  {
-        //    rv += yptr[ij] * dyptr[ij];
-        //    lap += yptr[ij] * d2yptr[ij];
-        //  }
-        //  myG(iat) += rv;
-        //  myL(iat) += lap - dot(rv,rv);
-        //}
       }
     }
 
+    UpdateTimer.stop();
+
+    BufferTimer.start();
     //copy psiM to psiM_temp
     //psiM_temp=psiM;
-    BLAS::copy(psiM_temp.data(),psiM.data(),psiM.size());
+    simd::copy(psiM_temp.data(),psiM.data(),psiM.size());
 
     buf.put(psiM.first_address(),psiM.last_address());
     buf.put(FirstAddressOfdV,LastAddressOfdV);
@@ -213,13 +192,14 @@ namespace qmcplusplus {
     buf.put(FirstAddressOfG,LastAddressOfG);
     buf.put(LogValue);
     buf.put(PhaseValue);
+    BufferTimer.stop();
     
-    UpdateTimer.stop();
     return LogValue;
   }
 
   void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
+    BufferTimer.start();
     buf.get(psiM.first_address(),psiM.last_address());
     buf.get(FirstAddressOfdV,LastAddressOfdV);
     buf.get(d2psiM.first_address(),d2psiM.last_address());
@@ -232,9 +212,13 @@ namespace qmcplusplus {
     //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
     //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
     //need extra copy for gradient/laplacian calculations without updating it
-    psiM_temp = psiM;
-    dpsiM_temp = dpsiM;
-    d2psiM_temp = d2psiM;
+    //psiM_temp = psiM;
+    //dpsiM_temp = dpsiM;
+    //d2psiM_temp = d2psiM;
+    simd::copy(psiM_temp.data(),  psiM.data(),  psiM.size());
+    simd::copy(dpsiM_temp.data(), dpsiM.data(), dpsiM.size());
+    simd::copy(d2psiM_temp.data(),d2psiM.data(),d2psiM.size());
+    BufferTimer.stop();
   }
   
   /** dump the inverse to the buffer
@@ -259,16 +243,24 @@ namespace qmcplusplus {
   {
     UpdateMode=ORB_PBYP_RATIO;
     WorkingIndex = iat-FirstIndex;
+
+    SPOVTimer.start();
     Phi->evaluate(P, iat, psiV);
+    SPOVTimer.stop();
+
     RatioTimer.start();
     curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
     RatioTimer.stop();
+
     return curRatio;
   }
 
   void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
+    SPOVTimer.start();
     Phi->evaluate(P, 0, psiV);
+    SPOVTimer.stop();
+
     MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
   }
 
@@ -278,7 +270,7 @@ namespace qmcplusplus {
   {
     WorkingIndex = iat-FirstIndex;
     RatioTimer.start();
-    DiracDeterminantBase::GradType g = dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+    DiracDeterminantBase::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
     RatioTimer.stop();
     return g;
   }
@@ -287,22 +279,20 @@ namespace qmcplusplus {
     DiracDeterminantBase::evalGradSource(ParticleSet& P, ParticleSet& source,
 					 int iat)
   {
-    Phi->evaluateGradSource (P, FirstIndex, LastIndex,
-			     source, iat, grad_source_psiM);
+    Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
       
 //     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
 //     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-
-    const ValueType* restrict yptr=psiM[0];
-    const GradType* restrict dyptr=grad_source_psiM[0];
-    GradType rv(0.0,0.0,0.0);
-    for (int i=0; i<NumPtcls; i++)
-      for(int j=0; j<NumOrbitals; j++) 
-	//rv += (*yptr++) *(*dyptr++);
-	rv += grad_source_psiM(i,j) * psiM(i,j);
-    // HACK HACK
-    //return (grad_source_psiM(1,3));
-    return rv;
+    return simd::dot(psiM.data(),grad_source_psiM.data(),psiM.size());
+    //const ValueType* restrict yptr=psiM[0];
+    //const GradType* restrict dyptr=grad_source_psiM[0];
+    //for (int i=0; i<NumPtcls; i++)
+    //  for(int j=0; j<NumOrbitals; j++) 
+    //    //rv += (*yptr++) *(*dyptr++);
+    //    rv += grad_source_psiM(i,j) * psiM(i,j);
+    //// HACK HACK
+    ////return (grad_source_psiM(1,3));
+    //return rv;
   }
 
   DiracDeterminantBase::GradType
@@ -346,13 +336,13 @@ namespace qmcplusplus {
       GradType one_row_change_l(0.0);
       GradType two_row_change_l(0.0);
 
-      for (int el_dim=0;el_dim<3;el_dim++){
+      for (int el_dim=0;el_dim<OHMMS_DIM;el_dim++){
 	for (int orbital=0;orbital<NumOrbitals;orbital++){
 	  Grad_psi_over_psi(el_dim)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
 	  if (el_dim==0)
 	    Grad2_psi_over_psi+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
 	}
-	for (int dim=0;dim<3;dim++){
+	for (int dim=0;dim<OHMMS_DIM;dim++){
 	  one_row_change(dim,el_dim)=0.0;
 	  for (int orbital=0;orbital<NumOrbitals;orbital++){
 	    one_row_change(dim,el_dim)+=Grad_phi_alpha(ptcl,orbital)(dim,el_dim)*psiM(ptcl,orbital);
@@ -384,10 +374,10 @@ namespace qmcplusplus {
 	    Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
 	}
       }
-      for (int dim=0;dim<3;dim++){
+      for (int dim=0;dim<OHMMS_DIM;dim++){
 	lapl_grad(dim)(ptcl)=0.0;
 	lapl_grad(dim)(ptcl)+=one_row_change_l(dim)+two_row_change_l(dim)- Psi_alpha_over_psi(dim)*Grad2_psi_over_psi;
-	for (int el_dim=0;el_dim<3;el_dim++){
+	for (int el_dim=0;el_dim<OHMMS_DIM;el_dim++){
 	  lapl_grad(dim)(ptcl)-= 2.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi(el_dim);
 	  lapl_grad(dim)(ptcl)+= 2.0*Psi_alpha_over_psi(dim)*(Grad_psi_over_psi(el_dim)*Grad_psi_over_psi(el_dim));
 	}
@@ -439,13 +429,13 @@ namespace qmcplusplus {
 	for (int k=0; k<NumOrbitals; k++)
 	  lapl_phi_Minv(i,j) += d2psiM(i,k)*psiM(j,k);
       }
-    for (int dim=0; dim<3; dim++) {
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
       for (int i=0; i<NumPtcls; i++)
 	for (int j=0; j<NumOrbitals; j++) {
 	  for (int k=0; k<NumOrbitals; k++) {
 	    phi_alpha_Minv(i,j)[dim] += grad_source_psiM(i,k)[dim] * psiM(j,k);
 	    grad_phi_Minv(i,j)[dim] += dpsiM(i,k)[dim] * psiM(j,k);
-	    for (int dim_el=0; dim_el<3; dim_el++)
+	    for (int dim_el=0; dim_el<OHMMS_DIM; dim_el++)
 	      grad_phi_alpha_Minv(i,j)(dim, dim_el) +=
 		grad_grad_source_psiM(i,k)(dim,dim_el)*psiM(j,k);
 	  }
@@ -456,17 +446,17 @@ namespace qmcplusplus {
     for(int i=0, iel=FirstIndex; i<NumPtcls; i++, iel++) {
       HessType dval (0.0);
       GradType d2val(0.0);
-      for (int dim=0; dim<3; dim++)
-	for (int dim_el=0; dim_el<3; dim_el++)
+      for (int dim=0; dim<OHMMS_DIM; dim++)
+	for (int dim_el=0; dim_el<OHMMS_DIM; dim_el++)
 	  dval(dim,dim_el) = grad_phi_alpha_Minv(i,i)(dim,dim_el);
       for(int j=0; j<NumOrbitals; j++) {
 	gradPsi += grad_source_psiM(i,j) * psiM(i,j);
-	for (int dim=0; dim<3; dim++)
-	  for (int k=0; k<3; k++)
+	for (int dim=0; dim<OHMMS_DIM; dim++)
+	  for (int k=0; k<OHMMS_DIM; k++)
 	    dval(dim,k) -= phi_alpha_Minv(j,i)[dim]*grad_phi_Minv(i,j)[k];
       }
       for (int dim=0; dim<OHMMS_DIM; dim++) {
-	for (int k=0; k<3; k++)
+	for (int k=0; k<OHMMS_DIM; k++)
 	  grad_grad[dim][iel][k] += dval(dim,k);
 	for (int j=0; j<NumOrbitals; j++) {
 	  // First term, eq 9
@@ -474,14 +464,14 @@ namespace qmcplusplus {
 	    psiM(i,j);
 	  // Second term, eq 9
 	  if (j == i)
-	    for (int dim_el=0; dim_el<3; dim_el++)
+	    for (int dim_el=0; dim_el<OHMMS_DIM; dim_el++)
 	      lapl_grad[dim][iel] -= 2.0 * grad_phi_alpha_Minv(j,i)(dim,dim_el)
 		* grad_phi_Minv(i,j)[dim_el];
 	  // Third term, eq 9
 	  // First term, eq 10
 	  lapl_grad[dim][iel] -= phi_alpha_Minv(j,i)[dim]*lapl_phi_Minv(i,j);
 	  // Second term, eq 11
-	  for (int dim_el=0; dim_el<3; dim_el++)
+	  for (int dim_el=0; dim_el<OHMMS_DIM; dim_el++)
 	    lapl_grad[dim][iel] += 2.0*phi_alpha_Minv(j,i)[dim] *
 	      grad_phi_Minv(i,i)[dim_el]*grad_phi_Minv(i,j)[dim_el];
 	}
@@ -493,13 +483,16 @@ namespace qmcplusplus {
     DiracDeterminantBase::ValueType 
       DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+    SPOVGLTimer.start();
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+    SPOVGLTimer.stop();
+
     RatioTimer.start();
     WorkingIndex = iat-FirstIndex;
     UpdateMode=ORB_PBYP_PARTIAL;
     
-    curRatio=dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-    GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+    GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
     grad_iat += (1.0/curRatio) * rv;
     RatioTimer.stop();
     return curRatio;
@@ -545,7 +538,10 @@ namespace qmcplusplus {
       ParticleSet::ParticleLaplacian_t& dL) 
   {
     UpdateMode=ORB_PBYP_ALL;
+    SPOVGLTimer.start();
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+    SPOVGLTimer.stop();
+
     RatioTimer.start();
     WorkingIndex = iat-FirstIndex;
 
@@ -557,20 +553,24 @@ namespace qmcplusplus {
       UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
       return 0.0;
     }
+
     UpdateTimer.start();
     //update psiM_temp with the row substituted
     InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
 
     //update dpsiM_temp and d2psiM_temp 
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+    //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
+    //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+    simd::copy(dpsiM_temp[WorkingIndex],dpsiV.data(),NumOrbitals);
+    simd::copy(d2psiM_temp[WorkingIndex],d2psiV.data(),NumOrbitals);
     UpdateTimer.stop();
+
     RatioTimer.start();
     for(int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++) 
     {
       //using inline dot functions
-      GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-      ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
+      GradType rv=simd::dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
+      ValueType lap=simd::dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
       dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
@@ -603,23 +603,26 @@ namespace qmcplusplus {
         InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         break;
       case ORB_PBYP_PARTIAL:
-        //psiM = psiM_temp;
 	InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-        std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+        //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+        //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+        simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
+        simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
         //////////////////////////////////////
         ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
         //myG = myG_temp;
         //myL = myL_temp;
         ///////////////////////
-
         break;
       default:
         myG = myG_temp;
         myL = myL_temp;
-        psiM = psiM_temp;
-        std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+        //psiM = psiM_temp;
+        //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+        //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+        simd::copy(psiM_temp.data(),     psiM.data(),   psiM.size());
+        simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
+        simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
         break;
     }
     UpdateTimer.stop();
@@ -631,9 +634,12 @@ namespace qmcplusplus {
   */
   void DiracDeterminantBase::restore(int iat) {
     if(UpdateMode == ORB_PBYP_ALL) {
-      psiM_temp = psiM;
-      std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
-      std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
+      //psiM_temp = psiM;
+      //std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
+      //std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
+      simd::copy(psiM.data(),     psiM_temp.data(),   psiM.size());
+      simd::copy(dpsiM_temp[WorkingIndex],  dpsiM[WorkingIndex],  NumOrbitals);
+      simd::copy(d2psiM_temp[WorkingIndex], d2psiM[WorkingIndex], NumOrbitals);
     }
     curRatio=1.0;
   }
@@ -644,17 +650,19 @@ namespace qmcplusplus {
       int iat) {
     UpdateTimer.start();
     InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-    for(int j=0; j<NumOrbitals; j++) {
-      dpsiM(WorkingIndex,j)=dpsiV[j];
-      d2psiM(WorkingIndex,j)=d2psiV[j];
-    }
+    //for(int j=0; j<NumOrbitals; j++) {
+    //  dpsiM(WorkingIndex,j)=dpsiV[j];
+    //  d2psiM(WorkingIndex,j)=d2psiV[j];
+    //}
+    simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
+    simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
     UpdateTimer.stop();
 
     RatioTimer.start();
     int kat=FirstIndex;
     for(int i=0; i<NumPtcls; i++,kat++) {
-      GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
-      ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
+      GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+      ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat]; myG[kat]=rv;
       dL[kat] += lap -myL[kat]; myL[kat]=lap;
@@ -760,7 +768,9 @@ namespace qmcplusplus {
         ParticleSet::ParticleLaplacian_t& L)
     {
       //      cerr<<"I'm calling evaluate log"<<endl;
+      SPOVGLTimer.start();
       Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+      SPOVGLTimer.stop();
 
       if(NumPtcls==1) 
       {
@@ -781,8 +791,8 @@ namespace qmcplusplus {
 	RatioTimer.start();
         for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
         {
-          GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
-          ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
+          GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+          ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
           G(iat) += rv;
           L(iat) += lap - dot(rv,rv);
         }
@@ -815,12 +825,14 @@ namespace qmcplusplus {
     return dclone;
   }
 
-  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): 
-    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex),
-    UpdateTimer("DiracDeterminantBase::update"),
-    RatioTimer("DiracDeterminantBase::ratio"),
-    InverseTimer("DiracDeterminantBase::inverse")
-    
+  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
+    : OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+    ,UpdateTimer(s.UpdateTimer)
+    ,RatioTimer(s.RatioTimer)
+    ,InverseTimer(s.InverseTimer)
+    ,BufferTimer(s.BufferTimer)
+    ,SPOVTimer(s.SPOVTimer)
+    ,SPOVGLTimer(s.SPOVGLTimer)
   {
     registerTimers();
     this->resize(s.NumPtcls,s.NumOrbitals);
@@ -838,6 +850,9 @@ namespace qmcplusplus {
     TimerManager.addTimer (&UpdateTimer);
     TimerManager.addTimer (&RatioTimer);
     TimerManager.addTimer (&InverseTimer);
+    TimerManager.addTimer (&BufferTimer);
+    TimerManager.addTimer (&SPOVTimer);
+    TimerManager.addTimer (&SPOVGLTimer);
   }
 
 }

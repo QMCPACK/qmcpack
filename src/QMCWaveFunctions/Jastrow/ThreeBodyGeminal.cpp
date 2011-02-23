@@ -154,7 +154,8 @@ namespace qmcplusplus {
     const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
     for(int k=0; k<BasisSize; k++) 
     {
-      curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+      //curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+      curV[k] = simd::dot(y_ptr,Lambda[k],BasisSize);
       delV[k] = curV[k]-V[iat][k];
     }
     diffVal=0.0;
@@ -162,7 +163,7 @@ namespace qmcplusplus {
     for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) 
     {
       if(j==iat) continue;
-      diffVal+= (curVal[j]=dot(delV.data(),Y[j],BasisSize));
+      diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
     }
     curVal[iat]=diffVal;
     return std::exp(diffVal);
@@ -210,12 +211,12 @@ namespace qmcplusplus {
         tLap[j]=0.0;
         tGrad[j]=0.0;
       } else {
-        diffVal+= (curVal[j]=dot(delV.data(),Y[j],BasisSize));
-        dG[j] += (tGrad[j]=dot(delV.data(),dY[j],BasisSize));
-        dL[j] += (tLap[j]=dot(delV.data(),d2Y[j],BasisSize));
+        diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
+        dG[j] += (tGrad[j]=simd::dot(delV.data(),dY[j],BasisSize));
+        dL[j] += (tLap[j]=simd::dot(delV.data(),d2Y[j],BasisSize));
 
-        curGrad[j]= dot(vptr,dy_ptr,BasisSize);
-        curLap[j] = dot(vptr,d2y_ptr,BasisSize);
+        curGrad[j]= simd::dot(vptr,dy_ptr,BasisSize);
+        curLap[j] = simd::dot(vptr,d2y_ptr,BasisSize);
 
         dg_acc += curGrad[j]-dUk(iat,j);
         dl_acc += curLap[j]-d2Uk(iat,j);
@@ -312,7 +313,7 @@ namespace qmcplusplus {
     for(int i=0; i< NumPtcls-1; i++) {
       const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        RealType x= dot(V[j],yptr,BasisSize);
+        RealType x= simd::dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -330,8 +331,8 @@ namespace qmcplusplus {
           dUk(i,j) = 0.0;
           d2Uk(i,j)= 0.0;
         } else {
-          grad+= (dUk(i,j) = dot(vptr,dptr,BasisSize));
-          lap += (d2Uk(i,j)= dot(vptr,d2ptr,BasisSize));
+          grad+= (dUk(i,j) = simd::dot(vptr,dptr,BasisSize));
+          lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
         }
       }
       P.G(i)+=grad;

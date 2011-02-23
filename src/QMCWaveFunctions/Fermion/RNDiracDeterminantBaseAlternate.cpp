@@ -17,8 +17,9 @@
 
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
-#include "Numerics/MatrixOperators.h"
+//#include "Numerics/OhmmsBlas.h"
+//#include "Numerics/MatrixOperators.h"
+#include "simd/simd.hpp"
 
 namespace qmcplusplus
   {
@@ -167,10 +168,11 @@ namespace qmcplusplus
           {
             ValueType y=psiM(0,0);
             GradType rv = y*dpsiM(0,0);
+            ValueType rv2=dot(rv,rv);
             myG(FirstIndex) += rv;
-            myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+            myL(FirstIndex) += y*d2psiM(0,0) - rv2;
             myG_alternate(FirstIndex) += bp*rv;
-            myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
+            myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
           }
         else
           {
@@ -281,7 +283,7 @@ namespace qmcplusplus
   {
     WorkingIndex = iat-FirstIndex;
     RatioTimer.start();
-    RNDiracDeterminantBaseAlternate::GradType g = dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+    RNDiracDeterminantBaseAlternate::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
 //     g *= 1.0/(1.0+std::exp(logepsilon-2.0*alternateLogValue));
     RatioTimer.stop();
     return g;
@@ -292,7 +294,7 @@ RNDiracDeterminantBaseAlternate::alternateEvalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  RNDiracDeterminantBaseAlternate::GradType g = dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  RNDiracDeterminantBaseAlternate::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
   g *= 1.0/(1.0+std::exp(logepsilon-2.0*LogValue));
   RatioTimer.stop();
   return g;
@@ -334,7 +336,7 @@ RNDiracDeterminantBaseAlternate::alternateEvalGrad(ParticleSet& P, int iat)
     RatioTimer.start();
     WorkingIndex = iat-FirstIndex;
     UpdateMode=ORB_PBYP_PARTIAL;
-    curRatio=dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
     if (abs(curRatio)< numeric_limits<RealType>::epsilon())
       {
         app_log()<<"stepped on node: ratioGrad"<<endl;
@@ -349,7 +351,7 @@ RNDiracDeterminantBaseAlternate::alternateEvalGrad(ParticleSet& P, int iat)
 //     bp=std::sqrt(1.0/bp);
     bp = 1.0/bp;
 
-    GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+    GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
     grad_iat += (1.0/curRatio)*rv;
     RatioTimer.stop();
     return curRatio;
@@ -362,7 +364,7 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
-  curRatio=dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
   if (abs(curRatio)< numeric_limits<RealType>::epsilon())
   {
     app_log()<<"stepped on node: ratioGrad"<<endl;
@@ -377,7 +379,7 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
   //     bp=std::sqrt(1.0/bp);
   bp = 1.0/bp;
   
-  GradType rv=dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+  GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
   grad_iat += (1.0/curRatio)*rv*bp;
   RatioTimer.stop();
   return alternateCurRatio;
@@ -427,8 +429,8 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
     for (int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++)
       {
         //using inline dot functions
-        GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-        ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
+        GradType rv=simd::dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
+        ValueType lap=simd::dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
         ValueType rv2 = dot(rv,rv);
 
         dG[kat] += rv - myG[kat];
@@ -506,8 +508,8 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
 
     for (int i=0; i<NumPtcls; i++,kat++)
       {
-        GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
-        ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
+        GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+        ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
         ValueType rv2 = dot(rv,rv);
 
         myG_alternate[kat] += bp*rv ;
@@ -564,10 +566,11 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
         ValueType y=1.0/det;
         psiM(0,0)=y;
         GradType rv = y*dpsiM(0,0);
+        ValueType rv2=dot(rv,rv);
         myG_alternate(FirstIndex) += bp*rv;
-        myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
+        myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
         G(FirstIndex) += rv;
-        L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+        L(FirstIndex) += y*d2psiM(0,0) - rv2;
 //         myG(FirstIndex) += bp*rv;
 //         myL(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
 
@@ -584,8 +587,8 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
         RatioTimer.start();
         for (int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
           {
-            GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
-            ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
+            GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+            ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
             G(iat) += rv;
             myG_alternate(iat) += bp*rv;
 
