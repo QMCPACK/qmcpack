@@ -117,7 +117,11 @@ namespace qmcplusplus {
       dot(const T* a, const TinyVector<T,D>* b, int n)
       {
         TinyVector<T,D> res;
+#if defined(USE_GEMV_FOR_G_DOT_V)
+        BLAS::gemv(n,3,b->data(),a,res.data());
+#else
         for(int i=0; i<n; i++) res += a[i]*b[i];
+#endif
         return res;
       }
 
