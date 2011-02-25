@@ -22,14 +22,16 @@
 #include <Numerics/OhmmsBlas.h>
 #include <Utilities/RandomGenerator.h>
 #include <Utilities/Timer.h>
+#include <simd/simd.hpp>
 using namespace qmcplusplus;
 
-void test_numerics(int n, int m, int niters)
+void compare_blas_1_2(int n, int m, int niters)
 {
   typedef TinyVector<double,3> pos_type;
   Matrix<double> A(n,m);
   Vector<double> v(m),v_out(m), v2(m),v2_out(m);
   Vector<pos_type> p(m),p_out(m);
+  Vector<TinyVector<double,4> > q(m),q_out(m);
 
   for(int j=0; j<n; ++j) v[j]=Random();
   for(int j=0; j<n; ++j) v2[j]=Random();
@@ -38,55 +40,99 @@ void test_numerics(int n, int m, int niters)
   Timer clock;
   for(int i=0; i<niters; ++i)
   {
-    for(int j=0; j<n; ++j) v_out[j]=dot(A[j],v.data(),m);
-    for(int j=0; j<n; ++j) v2_out[j]=dot(A[j],v2.data(),m);
-    for(int j=0; j<n; ++j) p_out[j]=dot(A[j],p.data(),m);
+    for(int j=0; j<n; ++j) v_out[j] =simd::dot(A[j],v.data(),m);
   }
   double dt_dot=clock.elapsed();
 
   clock.restart();
   for(int i=0; i<niters; ++i)
   {
+    for(int j=0; j<n; ++j) v_out[j] =BLAS::dot(A[j],v.data(),m);
+  }
+  double dt_blas=clock.elapsed();
+
+  clock.restart();
+  for(int i=0; i<niters; ++i)
+  {
     MatrixOperators::product(A,v,v_out.data());
-    MatrixOperators::product(A,v2,v2_out.data());
-    MatrixOperators::product(A,p.data(),p_out.data());
   }
   double dt_gemm=clock.elapsed();
 
-  cout << n << " " << m << " " << dt_dot/dt_gemm << endl;
+  clock.restart();
+  for(int i=0; i<niters; ++i)
+  {
+    for(int j=0; j<n; ++j) v_out[j] =simd::dot(A[j],v.data(),m);
+    for(int j=0; j<n; ++j) p_out[j] =simd::dot(A[j],p.data(),m);
+  }
+  double dt_v_blas1=clock.elapsed();
+
+  clock.restart();
+  for(int i=0; i<niters; ++i)
+  {
+    MatrixOperators::product(A,v.data(),v_out.data());
+    MatrixOperators::product(A,p.data(),p_out.data());
+  }
+  double dt_v_blas2=clock.elapsed();
+
+  clock.restart();
+  for(int i=0; i<niters; ++i)
+    MatrixOperators::product(A,q.data(),q_out.data());
+  double dt_q_blas2=clock.elapsed();
+
+  double f=1.0/static_cast<double>(niters);
+  cout << n << " " << m << " " << dt_dot*f << " " << dt_gemm*f << " " << dt_blas*f << " "
+    << " " << dt_v_blas1*f << " " << dt_v_blas2*f <<  " " << dt_q_blas2*f << endl;
+
 }
 
+inline int ops(int n, int m)
+{
+  return n*m;
+}
 int main(int argc, char** argv)
 {
   Random.init(0,1,11);
 
-  int niters=1<<16;
+  int niters=1<<25;
   int n=4;
 
-  cout << "# n m dot/gemm " << endl;
+  cout << "# n m dot_v gemm_v blas_v dot_g blase2_g blas2_gl " << endl;
   for(int m=n; m<600; m*= 2)
   {
-    int i=niters/n/n;
-    test_numerics(m,m,i);
+    int i=niters/ops(m,m);
+    compare_blas_1_2(m,m,i);
   }
 
   for(int m=n; m<600; m*= 2)
   {
-    int i=niters/n/n/8;
-    test_numerics(m,m*8,i);
+    int i=niters/ops(m,m*8);
+    compare_blas_1_2(m,m*8,i);
   }
 
   for(int m=n; m<600; m*= 2)
   {
-    int i=niters/n/n/16;
-    test_numerics(m,m*16,i);
+    int i=niters/ops(m,m*11);
+    compare_blas_1_2(m,m*11,i);
   }
 
   for(int m=n; m<600; m*= 2)
   {
-    int i=niters/n/n/32;
-    test_numerics(m,m*32,i);
+    int i=niters/ops(m,m*13);
+    compare_blas_1_2(m,m*13,i);
   }
+
+  for(int m=n; m<600; m*= 2)
+  {
+    int i=niters/ops(m,m*16);
+    compare_blas_1_2(m,m*16,i);
+  }
+
+  for(int m=n; m<600; m*= 2)
+  {
+    int i=niters/ops(m,m*32);
+    compare_blas_1_2(m,m*32,i);
+  }
+
 
   return 0;
 }
