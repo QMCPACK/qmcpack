@@ -77,7 +77,7 @@ namespace qmcplusplus  {
         {
           int i=(*it).second;
           if(callers[i]) //skip zeros
-            fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f  %12.6f %3d \n"
+            fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f  %12.6f %3d TIMER\n"
                 , (*it).first.c_str()
                 , timeList[i], callList[i]
                 , timeList[i]/(static_cast<double>(callList[i])+numeric_limits<double>::epsilon())
