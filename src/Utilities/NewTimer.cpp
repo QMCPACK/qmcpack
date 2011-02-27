@@ -37,6 +37,7 @@ namespace qmcplusplus  {
     std::map<std::string,int> nameList;
     std::vector<double> timeList;
     std::vector<long>   callList;
+    std::vector<int>    callers;
 
     timeList.reserve(TimerList.size());
     callList.reserve(TimerList.size());
@@ -50,13 +51,17 @@ namespace qmcplusplus  {
         int ind=nameList.size();
         nameList[timer.get_name()]=ind;
         timeList.push_back(timer.get_total());
-        callList.push_back(timer.get_num_calls());
+        int ncalls=timer.get_num_calls();
+        callList.push_back(ncalls);
+        callers.push_back(ncalls?1:0);
       }
       else
       {
         int ind=(*it).second;
+        int ncalls=timer.get_num_calls();
         timeList[ind]+=timer.get_total();
-        callList[ind]+=timer.get_num_calls();
+        callList[ind]+=ncalls;
+        if(ncalls) callers[ind]++;
       }
     }
 
@@ -71,9 +76,13 @@ namespace qmcplusplus  {
         while(it != it_end)
         {
           int i=(*it).second;
-          fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f\n", (*it).first.c_str(),
-              timeList[i], callList[i], 
-              timeList[i]/(static_cast<double>(callList[i])+numeric_limits<double>::epsilon()));
+          if(callers[i]) //skip zeros
+            fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f  %12.6f %3d \n"
+                , (*it).first.c_str()
+                , timeList[i], callList[i]
+                , timeList[i]/(static_cast<double>(callList[i])+numeric_limits<double>::epsilon())
+                , timeList[i]/static_cast<double>(callers[i]*comm->size())
+                , callers[i]);
           ++it;
         }
       }
