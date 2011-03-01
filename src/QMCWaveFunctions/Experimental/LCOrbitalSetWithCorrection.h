@@ -277,7 +277,7 @@ namespace qmcplusplus {
       corrBasisSet->evaluateForPtclMove(P,iat);
       int numCenters=corrBasisSet->NumCenters; 
       for(int j=0 ; j<OrbitalSetSize; j++) { 
-        psi[j] = dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
+        psi[j] = simd::dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
         for(int k=0 ; k<numCenters; k++)
           psi[j] += corrBasisSet->Phi[k*OrbitalSetSize+j];
       }
