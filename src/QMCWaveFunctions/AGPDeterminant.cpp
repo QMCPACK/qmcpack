@@ -16,8 +16,8 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/AGPDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
+#include "simd/simd.hpp"
 
 namespace qmcplusplus {
 
@@ -210,14 +210,14 @@ namespace qmcplusplus {
     {
       for(int d=0, jat=Nup; d<Ndown; d++,jat++) 
       {
-        //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->y(jat));
-        psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
+        //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
+        psiM(d,u) = simd::dot(phiT[u],GeminalBasis->Y[jat],BasisSize);//@@
       }
       //unpaired block Ndown x unpaired
       for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
       {
-        //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->y(u));
-        psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
+        //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
+        psiM(d,u) = simd::dot(LambdaUP[unpaired],GeminalBasis->Y[u],BasisSize);//@@
       }
     }
 
@@ -229,18 +229,18 @@ namespace qmcplusplus {
       {
         //dpsiU(iat,d)=dot(phiT[jat],GeminalBasis->dy(iat),BasisSize);
         //d2psiU(iat,d)=dot(phiT[jat],GeminalBasis->d2y(iat),BasisSize);
-        dpsiU(iat,d)=dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
-        d2psiU(iat,d)=dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
+        dpsiU(iat,d)=simd::dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
+        d2psiU(iat,d)=simd::dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
       }
       for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
       {
         //dpsiU(iat,d)=dot(LambdaUP[unpaired],GeminalBasis->dy(iat),BasisSize);
         //d2psiU(iat,d)=dot(LambdaUP[unpaired],GeminalBasis->d2y(iat),BasisSize);
-        dpsiU(iat,d)=dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
-        d2psiU(iat,d)=dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
+        dpsiU(iat,d)=simd::dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
+        d2psiU(iat,d)=simd::dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
       }
-      GradType rv=dot(psiM[iat],dpsiU[iat],Nup);
-      ValueType lap=dot(psiM[iat],d2psiU[iat],Nup);
+      GradType rv=simd::dot(psiM[iat],dpsiU[iat],Nup);
+      ValueType lap=simd::dot(psiM[iat],d2psiU[iat],Nup);
       myG[iat]=rv;
       myL[iat]=lap-dot(rv,rv);
     }
@@ -254,8 +254,8 @@ namespace qmcplusplus {
         ValueType dfac=psiM(u,d);
         //rv += dfac*(dpsiD(d,u)=dot(phiT[u],GeminalBasis->dy(jat),BasisSize));
         //lap += dfac*(d2psiD(d,u)=dot(phiT[u],GeminalBasis->d2y(jat),BasisSize));
-        rv += dfac*(dpsiD(d,u)=dot(phiT[u],GeminalBasis->dY[jat],BasisSize));//@@
-        lap += dfac*(d2psiD(d,u)=dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize));//@@
+        rv += dfac*(dpsiD(d,u)=simd::dot(phiT[u],GeminalBasis->dY[jat],BasisSize));//@@
+        lap += dfac*(d2psiD(d,u)=simd::dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize));//@@
       }
       myG[jat]=rv;
       myL[jat]=lap-dot(rv,rv);
@@ -368,18 +368,20 @@ namespace qmcplusplus {
       if(iat<Nup) 
       {
         for(int d=0,jat=Nup; d<Ndown; d++,jat++) 
-          psiU[d]=dot(y_ptr,phiT[jat],BasisSize);
+          psiU[d]=simd::dot(y_ptr,phiT[jat],BasisSize);
           //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
         //unpaired block Ndown x unpaired
         for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
-          psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
+          //psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
+          psiU[d] = simd::dot(LambdaUP[unpaired],y_ptr,BasisSize);
         //curRatio=DetRatio(psiM, psiU.data(),iat);
         curRatio=DetRatioByRow(psiM, psiU,iat);
       } 
       else 
       {
         for(int u=0; u<Nup; u++) 
-          psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
+          //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
+          psiD[u]=simd::dot(y_ptr,phiT[u],BasisSize);
         //curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
         curRatio=DetRatioByColumn(psiM, psiD,iat-Nup);
       }
@@ -417,8 +419,8 @@ namespace qmcplusplus {
 
       for(int kat=0; kat<Nup; kat++) 
       {
-        GradType rv=dot(psiM_temp[kat],dpsiU[kat],Nup);
-        ValueType lap=dot(psiM_temp[kat],d2psiU[kat],Nup);
+        GradType rv=simd::dot(psiM_temp[kat],dpsiU[kat],Nup);
+        ValueType lap=simd::dot(psiM_temp[kat],d2psiU[kat],Nup);
         lap -= dot(rv,rv);
         dG[kat] += (rv-myG[kat]); myG_temp[kat]=rv;
         dL[kat] += (lap-myL[kat]); myL_temp[kat]=lap;
@@ -448,12 +450,12 @@ namespace qmcplusplus {
       const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
 
       for(int d=0,jat=Nup; d<Ndown; d++,jat++) {
-        psiU[d]=dot(y_ptr,phiT[jat],BasisSize);
+        psiU[d]=simd::dot(y_ptr,phiT[jat],BasisSize);
         //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
       }
       //unpaired block Ndown x unpaired
       for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) {
-        psiU[d] =dot(LambdaUP[unpaired],y_ptr,BasisSize);
+        psiU[d] =simd::dot(LambdaUP[unpaired],y_ptr,BasisSize);
         //psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
       }
 
@@ -470,22 +472,22 @@ namespace qmcplusplus {
       const BasisSetType::ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
       for(int d=0, jat=Nup; d<Ndown; d++,jat++) 
       {
-        dpsiU(iat,d)=dot(phiT[jat],dy_ptr,BasisSize);
-        d2psiU(iat,d)=dot(phiT[jat],d2y_ptr,BasisSize);
+        dpsiU(iat,d)=simd::dot(phiT[jat],dy_ptr,BasisSize);
+        d2psiU(iat,d)=simd::dot(phiT[jat],d2y_ptr,BasisSize);
       }
       for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
       {
-        dpsiU(iat,d)=dot(LambdaUP[unpaired],dy_ptr,BasisSize);
-        d2psiU(iat,d)=dot(LambdaUP[unpaired],d2y_ptr,BasisSize);
+        dpsiU(iat,d)=simd::dot(LambdaUP[unpaired],dy_ptr,BasisSize);
+        d2psiU(iat,d)=simd::dot(LambdaUP[unpaired],d2y_ptr,BasisSize);
       }
 
       for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++) 
       {
         dpsiDv[d]=dpsiD(d,iat);
-        dpsiD(d,iat)=dot(phiT[iat],dY[jat],BasisSize);
+        dpsiD(d,iat)=simd::dot(phiT[iat],dY[jat],BasisSize);
 
         d2psiDv[d]=d2psiD(d,iat);
-        d2psiD(d,iat)=dot(phiT[iat],d2Y[jat],BasisSize);
+        d2psiD(d,iat)=simd::dot(phiT[iat],d2Y[jat],BasisSize);
       }
     }
 
@@ -496,7 +498,7 @@ namespace qmcplusplus {
       int d=iat-Nup;
       for(int u=0; u<Nup; u++) 
       {
-        psiD[u]=dot(y_ptr,phiT[u],BasisSize);
+        psiD[u]=simd::dot(y_ptr,phiT[u],BasisSize);
         //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
       }
 
@@ -513,17 +515,17 @@ namespace qmcplusplus {
       const BasisSetType::ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
       for(int u=0; u<Nup; u++) 
       {
-        dpsiD(d,u)=dot(phiT[u],dy_ptr,BasisSize);
-        d2psiD(d,u)=dot(phiT[u],d2y_ptr,BasisSize);
+        dpsiD(d,u)=simd::dot(phiT[u],dy_ptr,BasisSize);
+        d2psiD(d,u)=simd::dot(phiT[u],d2y_ptr,BasisSize);
       }
 
       for(int kat=0; kat<Nup; kat++) 
       {
         dpsiUv[kat]=dpsiU(kat,d);
-        dpsiU(kat,d)=dot(phiT[iat],dY[kat],BasisSize);
+        dpsiU(kat,d)=simd::dot(phiT[iat],dY[kat],BasisSize);
 
         d2psiUv[kat]=d2psiU(kat,d);
-        d2psiU(kat,d)=dot(phiT[iat],d2Y[kat],BasisSize);
+        d2psiU(kat,d)=simd::dot(phiT[iat],d2Y[kat],BasisSize);
       }
     }
 
