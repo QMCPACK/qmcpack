@@ -21,6 +21,7 @@
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
+#include <simd/simd.hpp>
 
 namespace qmcplusplus {
 
@@ -317,7 +318,7 @@ namespace qmcplusplus {
 
     // update Fmatdiag_temp
     for(int j=0; j<NumPtcls; j++) {
-      Fmatdiag_temp(j)=dot(psiMinv_temp[j],dpsiM_temp[j],NumOrbitals);
+      Fmatdiag_temp(j)=simd::dot(psiMinv_temp[j],dpsiM_temp[j],NumOrbitals);
       grad_iat += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag_temp(j));
     }
 
@@ -372,7 +373,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++) {
       for(int j=0; j<NumPtcls; j++)
       {
-         Fmat(i,j)=dot(psiMinv_temp[i],dpsiM_temp[j],NumOrbitals);
+         Fmat(i,j)=simd::dot(psiMinv_temp[i],dpsiM_temp[j],NumOrbitals);
       }
       Fmatdiag_temp(i) = Fmat(i,i);
     }
@@ -439,7 +440,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++) {
       for(int j=0; j<NumPtcls; j++)
       {
-         Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+         Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
       }
       Fmatdiag(i) = Fmat(i,i);
     }
@@ -610,7 +611,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
     //for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
     // G(iat) += Fmat(i,i);
@@ -731,7 +732,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
     //for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
     // G(iat) += Fmat(i,i);
@@ -942,7 +943,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_1(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       dpsiM_1(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
 
        for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
@@ -965,7 +966,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       dpsiM_2(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       dpsiM_2(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
 
        for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
@@ -987,7 +988,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
 
     double cnt=0,av=0,maxD=0;
@@ -1091,7 +1092,7 @@ namespace qmcplusplus {
     for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-       Fmat(i,j)=dot(psiMinv[i],dpsiM[j],NumOrbitals);
+       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
    
     GradType temp;
