@@ -104,7 +104,7 @@ namespace qmcplusplus
       //w_buffer.rewind();
       //W.updateBuffer(w_buffer);
 
-      RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
+      RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
       W.saveWalker(thisWalker);
 
       //W.copyToBuffer(w_buffer);

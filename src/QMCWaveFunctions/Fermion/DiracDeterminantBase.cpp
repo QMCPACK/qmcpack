@@ -620,7 +620,7 @@ namespace qmcplusplus {
         //psiM = psiM_temp;
         //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-        simd::copy(psiM_temp.data(),     psiM.data(),   psiM.size());
+        simd::copy(psiM.data(),     psiM_temp.data(),   psiM.size());
         simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
         simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
         break;
@@ -637,7 +637,7 @@ namespace qmcplusplus {
       //psiM_temp = psiM;
       //std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
       //std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
-      simd::copy(psiM.data(),     psiM_temp.data(),   psiM.size());
+      simd::copy(psiM_temp.data(),     psiM.data(),   psiM.size());
       simd::copy(dpsiM_temp[WorkingIndex],  dpsiM[WorkingIndex],  NumOrbitals);
       simd::copy(d2psiM_temp[WorkingIndex], d2psiM[WorkingIndex], NumOrbitals);
     }
