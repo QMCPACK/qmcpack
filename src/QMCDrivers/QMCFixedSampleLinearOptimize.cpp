@@ -266,6 +266,7 @@ bool QMCFixedSampleLinearOptimize::run()
             {
                 app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
                 failedTries++; stability--;
+                stabilityBase+=stabilizerScale;
                 mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
                 continue;
 //                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
@@ -322,6 +323,7 @@ bool QMCFixedSampleLinearOptimize::run()
               {
                   app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
                   failedTries++; stability--;
+                  stabilityBase+=stabilizerScale;
 //                   mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
                   mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
                   continue;
