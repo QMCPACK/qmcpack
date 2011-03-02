@@ -267,6 +267,7 @@ bool QMCFixedSampleLinearOptimize::run()
                 app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
                 failedTries++; stability--;
                 mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+                continue;
 //                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
             }
         
@@ -323,6 +324,7 @@ bool QMCFixedSampleLinearOptimize::run()
                   failedTries++; stability--;
 //                   mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
                   mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+                  continue;
 //                     for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i];
               }
               else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
@@ -335,6 +337,7 @@ bool QMCFixedSampleLinearOptimize::run()
             mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
             
             app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
+            
             optTarget->printEstimates();
 //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
 
@@ -351,6 +354,8 @@ bool QMCFixedSampleLinearOptimize::run()
               acceptedOneMove=true;
               deltaPrms= Lambda;
             }
+            else if ((stability>0) && (newCost>lastCost)) 
+              stability=nstabilizers;
 //             else if ((newCost>lastCost)&&(StabilizerMethod=="fit")&&(mappedStabilizers.size()>2))
 //             {
 //               stability = max(nstabilizers-2,stability);

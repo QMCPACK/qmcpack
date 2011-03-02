@@ -137,7 +137,8 @@ bool QMCCSLinearOptimize::run()
 
     RealType safe = Left(0,0);
     RealType XS(0);
-
+    
+    RealType lastCost(0);
     nstabilizers=omp_get_max_threads();
     for (int stability=0; stability<nstabilizers; stability++)
     {
@@ -193,6 +194,7 @@ bool QMCCSLinearOptimize::run()
           app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
           failedTries++; stability--;
           mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+          continue;
 //                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
       }
 
@@ -212,17 +214,22 @@ bool QMCCSLinearOptimize::run()
         //some flavor of linear fit to a "reasonable" linemin search
           int nthreads = omp_get_max_threads();
           std::vector<std::vector<RealType> > params_lambdas(nthreads);
-          std::vector<RealType> csts(nthreads);
-          for(int i=0;i<nthreads;i++)
+          
+          for(int j=0;j<nthreads;j++)
           {
             vector<RealType> cs(numParams);
-            cs[i] = currentParameters[i] + stepsize*(i-1)*Lambda*currentParameterDirections[i+1];
+            for (int i=0; i<numParams; i++) cs[i] = currentParameters[i] + stepsize*(j-1.0)*Lambda*currentParameterDirections[i+1];
             params_lambdas.push_back(cs);
           }
           RealType error(0);
           vmcCSEngine->runCS(params_lambdas,error);
+          
+          std::vector<RealType> csts(nthreads);
           vmcCSEngine->getDeltaCosts(csts);
           
+          app_log()<<"COSTS: ";
+          for(int i=0;i<nthreads;i++)app_log()<<csts[i]<<" ";
+          app_log()<<endl;
           vector<std::pair<RealType,RealType> > mappedCosts;
           for(int i=0;i<nthreads;i++)
             mappedCosts.push_back(*(new std::pair<RealType,RealType>(stepsize*(i-1)*Lambda,csts[i])));
@@ -240,8 +247,9 @@ bool QMCCSLinearOptimize::run()
 //             otherwise use the best value
             int indx(0);
             for(int i=1;i<nthreads;i++) if (csts[i]<csts[indx]) indx=i;
+            newCost=csts[indx];
             savedCSparameters.push_back(params_lambdas[indx]);
-            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,csts[indx])));
+            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
           }
           
         }
@@ -257,20 +265,22 @@ bool QMCCSLinearOptimize::run()
           {
             app_log()<<"   Error in CS cost function. Unchanged parameters."<<endl;
             bestP=0;
+            vmcCSEngine->clearComponentMatrices();
             for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
             finish();
             return false;
           }
         }
-
+        else if ((stability>0) && (newCost>lastCost)) 
+          stability=nstabilizers;
+        else
+          lastCost=newCost;
     }
     
     for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];
 //     optTarget->resetPsi(false);
     vmcCSEngine->clearComponentMatrices();
 
-
-    
     finish();
     if (tooManyTries==0) return false;
     return true;

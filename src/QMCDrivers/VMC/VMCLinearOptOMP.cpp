@@ -81,7 +81,7 @@ namespace qmcplusplus
     RealType errorbars = target_errorbars+1;
     CurrentStep=0;
     int CurrentBlock=0;
-    int minBlocks=100;
+    int minBlocks=4;
     while (((errorbars>target_errorbars)&&(CurrentBlock<nBlocks))||(CurrentBlock<minBlocks))
     {
 #pragma omp parallel for
@@ -175,7 +175,7 @@ namespace qmcplusplus
       for (int ip=0; ip<NumThreads; ip++)
       {
         w_i[ip] = std::log(0.5*(gNorms[0]/gNorms[ip]+std::exp(w_i[ip])));
-        //         app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
+//                 app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
       }
       clearCSEstimators();
     }
@@ -211,7 +211,7 @@ namespace qmcplusplus
     errorbars=alpha_errorbars+1;
     CurrentStep=0;
     CSBlock=0;
-    int minCSBlocks(100);
+    int minCSBlocks(4);
     //     run long enough to get accurate errorbars ~4 blocks.
     //     run until errorbars are small enough or when the energy difference is greater than 3 errorbars.
     //     max run is defined by nBlocks
@@ -226,7 +226,7 @@ namespace qmcplusplus
     }//block
     app_log()<<" Blocks used   : "<<CSBlock<<endl;
     app_log()<<" Errorbars are : "<<errorbars<<endl;
-    //     app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
+        app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
 
     ///restore the state
     for(int ip=1; ip<NumThreads; ++ip)
@@ -474,12 +474,12 @@ namespace qmcplusplus
             CSMovers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             //               Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           }
-          //             else if (UseDrift == "yes")
-          //             {
-          //               os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
-          //               Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          //               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          //             }
+//           else if (UseDrift == "yes")
+//           {
+//             os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
+//             CSMovers[ip]=Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+// //             CSMovers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+//           }
           else
           {
             os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
