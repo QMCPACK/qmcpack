@@ -899,7 +899,7 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ++ip)
       psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
 
-    RealType nn = -std::log(1.0*nSubSteps*W.getTotalNum());
+//     RealType nn = -std::log(1.0*nSubSteps*W.getTotalNum());
 #pragma omp parallel 
     {
       int nptcl=W.getTotalNum();
@@ -929,7 +929,7 @@ namespace qmcplusplus
 #pragma omp barrier
 #pragma omp critical
           {
-            ratio_i_0[ip] += expl( psi2_i_new[ip]-psi2_i_new[0] + nn);
+            ratio_i_0[ip] += expl( psi2_i_new[ip]-psi2_i_new[0]);
           }
           wclone[ip]->rejectMove(iat);
           pclone[ip]->rejectMove(iat);
@@ -947,7 +947,8 @@ namespace qmcplusplus
       //     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
       //     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
     }
-
+    RealType nn = 1.0/ratio_i_0[0];
+    for (int ip=0; ip<NumThreads; ++ip) ratio_i_0[ip]*=nn;
     myTimers[0]->stop();
   }
 
