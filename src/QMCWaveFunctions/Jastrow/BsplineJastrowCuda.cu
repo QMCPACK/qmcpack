@@ -1703,7 +1703,7 @@ one_body_grad_lapl_kernel(T *C, T **R, int cfirst, int clast,
   __syncthreads();
   // Safety for rounding error
   rMax *= 0.999999f;    
-  rMax *= 0.99999f;    
+  //  rMax *= 0.99999f;    
 
   int tid = threadIdx.x;
   __shared__ T *myR;
@@ -1759,7 +1759,7 @@ one_body_grad_lapl_kernel(T *C, T **R, int cfirst, int clast,
   	dz = r[tid][2] - c[j][2];
   	T d = dist(dx, dy, dz);
 	eval_1d_spline_vgl (d, rMax, drInv, A, coefs, u, du, d2u);
-	u = du = d2u = 0.0f;
+	//u = du = d2u = 0.0f;
   	if (cptcl < (Nc+cfirst)  && (eptcl < (Ne+efirst))) {
 	  du /= d;
 	  sGradLapl[tid][0] -= du * dx;
