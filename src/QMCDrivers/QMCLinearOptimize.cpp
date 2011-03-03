@@ -544,7 +544,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<R
 
     RealType rescale(1.0);
     RealType xi(0.5);
-    RealType D(1.0);
+    RealType D(0.0);
     
     for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(i+1,j+1)*dP[i+1]*dP[j+1];
     rescale = (1-xi)*D/((1-xi) + xi*std::sqrt(1+D));

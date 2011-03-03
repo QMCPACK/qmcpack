@@ -155,7 +155,8 @@ bool QMCCSLinearOptimize::run()
       for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
       if (nms>=3)
       {
-        bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS));
+        RealType estval(0);
+        bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval));
         if (!SuccessfulFit)
         {
           if (stability==0)
@@ -175,13 +176,13 @@ bool QMCCSLinearOptimize::run()
             nstabilizers=nstabilizers-stability;
             stability=1;
             stabilityBase=minXS;
-            app_log()<<" Resetting XS range new its:"<<stability<<"/"<<nstabilizers;
+            app_log()<<" Resetting exp0 range\n  New stability: "<<stability<<"/"<<nstabilizers;
           }
           XS = stabilityBase+od_largest*stability;
         }
       }
       for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
-      
+      app_log()<<"Trying exp0: "<<XS<<endl;
       RealType lowestEV;
       myTimers[2]->start();
         lowestEV =getLowestEigenvector(LeftT,currentParameterDirections);
@@ -189,22 +190,26 @@ bool QMCCSLinearOptimize::run()
       Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
       RealType bigVec(0);
       for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-      if (Lambda*bigVec>bigChange)
+      
+      if (std::abs(Lambda*bigVec)>bigChange)
       {
-          app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+        app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+        if (stability==0)
+        {
           failedTries++; stability--;
-          mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
-          continue;
-//                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
+          stabilityBase+=stabilizerScale;
+        }
+        else
+          stability=nstabilizers;
+      
+        continue;
       }
-
+      
       RealType newCost(lowestEV);
       if (MinMethod=="rescale")
       {
           vector<RealType> cs(numParams);
           for (int i=0; i<numParams; i++) cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-          app_log()<<" Lambda: "<<Lambda<<endl;
-//           app_log()<<" Largest parameter change: "<<Lambda*bigVec<<endl;
 //              optTarget->resetPsi(false);
           savedCSparameters.push_back(cs);
           mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
@@ -213,14 +218,10 @@ bool QMCCSLinearOptimize::run()
       {
         //some flavor of linear fit to a "reasonable" linemin search
           int nthreads = omp_get_max_threads();
-          std::vector<std::vector<RealType> > params_lambdas(nthreads);
-          
+          std::vector<std::vector<RealType> > params_lambdas(nthreads,std::vector<RealType>(numParams,0));
           for(int j=0;j<nthreads;j++)
-          {
-            vector<RealType> cs(numParams);
-            for (int i=0; i<numParams; i++) cs[i] = currentParameters[i] + stepsize*(j-1.0)*Lambda*currentParameterDirections[i+1];
-            params_lambdas.push_back(cs);
-          }
+            for (int i=0; i<numParams; i++) 
+              params_lambdas[j][i] = currentParameters[i] + stepsize*Lambda*(j-1.0)*currentParameterDirections[i+1];
           RealType error(0);
           vmcCSEngine->runCS(params_lambdas,error);
           
@@ -228,32 +229,33 @@ bool QMCCSLinearOptimize::run()
           vmcCSEngine->getDeltaCosts(csts);
           
           app_log()<<"COSTS: ";
-          for(int i=0;i<nthreads;i++)app_log()<<csts[i]<<" ";
+          for(int i=0;i<nthreads;i++) app_log()<<csts[i]-csts[1]<<" ";
           app_log()<<endl;
           vector<std::pair<RealType,RealType> > mappedCosts;
           for(int i=0;i<nthreads;i++)
-            mappedCosts.push_back(*(new std::pair<RealType,RealType>(stepsize*(i-1)*Lambda,csts[i])));
-          
-          if (fitMappedStabilizers(mappedCosts,Lambda,newCost))
+            mappedCosts.push_back(*(new std::pair<RealType,RealType>(stepsize*Lambda*(i-1.0),csts[i]-csts[1])));
+          RealType fitCost;
+          if (fitMappedStabilizers(mappedCosts,Lambda,fitCost))
           {
 //             use fit if it works
-            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
+            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,fitCost)));
             vector<RealType> cs(numParams);
-            for (int i=0; i<numParams; i++) cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+            for (int i=0; i<numParams; i++) bestParameters[i] = cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
             savedCSparameters.push_back(cs);
+            app_log()<<"fitCost: "<<fitCost<<endl;
           }
           else
           {
 //             otherwise use the best value
             int indx(0);
             for(int i=1;i<nthreads;i++) if (csts[i]<csts[indx]) indx=i;
-            newCost=csts[indx];
+            newCost=csts[indx]-csts[1];
             savedCSparameters.push_back(params_lambdas[indx]);
+            bestParameters= params_lambdas[indx];
             mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
+            app_log()<<"bestCost: "<<newCost<<endl;
           }
-          
         }
-        
         
         if(savedCSparameters.size()==omp_get_max_threads())
         {
@@ -271,10 +273,10 @@ bool QMCCSLinearOptimize::run()
             return false;
           }
         }
-        else if ((stability>0) && (newCost>lastCost)) 
-          stability=nstabilizers;
-        else
-          lastCost=newCost;
+//         else if ((stability>0) && (newCost>lastCost)) 
+//           stability=nstabilizers;
+//         else
+//           lastCost=newCost;
     }
     
     for (int i=0; i<numParams; i++) optTarget->Params(i) = bestParameters[i];

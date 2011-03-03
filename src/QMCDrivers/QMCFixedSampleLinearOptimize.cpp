@@ -225,7 +225,8 @@ bool QMCFixedSampleLinearOptimize::run()
             for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
             if (nms>=3)
             {
-              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS));
+              RealType estval(0);
+              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval));
               if (!SuccessfulFit)
               {
                 if (stability==0)
@@ -251,7 +252,7 @@ bool QMCFixedSampleLinearOptimize::run()
               }
             }
             for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
-            app_log()<<"  Using XS:"<<XS<<endl;
+//             app_log()<<"  Using XS:"<<XS<<endl;
             
             RealType lowestEV(0);
             myTimers[2]->start();
@@ -262,12 +263,16 @@ bool QMCFixedSampleLinearOptimize::run()
             Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
             RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-            if (Lambda*bigVec>bigChange)
+            if (std::abs(Lambda*bigVec)>bigChange)
             {
                 app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
-                failedTries++; stability--;
-                stabilityBase+=stabilizerScale;
-                mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+                if (stability==0)
+                {
+                  failedTries++; stability--;
+                  stabilityBase+=stabilizerScale;
+                }
+                else
+                  stability=nstabilizers;
                 continue;
 //                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
             }

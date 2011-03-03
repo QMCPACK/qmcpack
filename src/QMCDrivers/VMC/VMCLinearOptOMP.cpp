@@ -160,22 +160,33 @@ namespace qmcplusplus
         //         for (int ip=0; ip<NumThreads; ip++) app_log()<<"  w_i:"<<w_i[ip]<<endl;
       }
       myComm->allreduce(w_i);
-      for (int ip=0; ip<NumThreads; ++ip) w_i[ip] = -std::log(w_i[ip]/(myRNWarmupSteps*myComm->size()));
+      RealType w_0=w_i[0];
+      for (int ip=0; ip<NumThreads; ++ip) w_i[ip] = -std::log(w_i[ip]/w_0);
     }
     else
     {
       for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=1.0;
     }
-
+    RealType overNT= 1.0/NumThreads;
     for (int step=0; step<myWarmupSteps; ++step)
     {
       CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
       estimateCS();
+      int max_i(0);
+      int min_i(0);
+      for (int ip=1; ip<NumThreads; ip++) if(Norms[ip]>Norms[max_i]) max_i=ip;
+      for (int ip=1; ip<NumThreads; ip++) if(Norms[ip]<Norms[min_i]) min_i=ip;
+      if ((Norms[max_i]-Norms[min_i])< 0.1*overNT)
+      {
+        step=myWarmupSteps;
+        clearCSEstimators();
+        continue;
+      }
       //   rebalance weights
       for (int ip=0; ip<NumThreads; ip++)
       {
-        w_i[ip] = std::log(0.5*(gNorms[0]/gNorms[ip]+std::exp(w_i[ip])));
-//                 app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
+        w_i[ip] += overNT*std::log(gNorms[0]/gNorms[ip]);
+//         app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
       }
       clearCSEstimators();
     }
@@ -226,7 +237,7 @@ namespace qmcplusplus
     }//block
     app_log()<<" Blocks used   : "<<CSBlock<<endl;
     app_log()<<" Errorbars are : "<<errorbars<<endl;
-        app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
+//         app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
 
     ///restore the state
     for(int ip=1; ip<NumThreads; ++ip)
@@ -421,8 +432,14 @@ namespace qmcplusplus
     else nE=(NE_i[minE+1]>NE_i[minE-1])?minE-1:minE+1;
 
     //return the error in the energy differences between lowest two
-    long double rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE])) - (NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
+    long double rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE]))-(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
+//     long double rval = (gCorrelatedH(minE,minE)/(gNorm2s(minE,minE)) + gCorrelatedH(nE,nE)/(gNorm2s(nE,nE)) - 2.0*gCorrelatedH(minE,nE)/gNorm2s(minE,nE))-(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
 
+    
+// //     app_log()<<"CS_new_ED: "<<(gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE]))<<endl;
+//     app_log()<<"CS_old_ED: "<<(gCorrelatedH(minE,minE)/(gNorm2s(minE,minE)) + gCorrelatedH(nE,nE)/(gNorm2s(nE,nE)) - 2.0*gCorrelatedH(minE,nE)/gNorm2s(minE,nE))<<endl;
+//     app_log()<<"AV_ED: "<<(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE])<<endl;
+    
     //rval = ((rval<0)?-1.0:(std::sqrt(rval/(CSBlock+1))));
     rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1.0))));
     return rval;

@@ -98,7 +98,7 @@ public:
       else return false;
     }
     
-    inline bool fitMappedStabilizers(vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType val=0)
+    inline bool fitMappedStabilizers(vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType& val)
     {
       int nms(0);
       for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
@@ -119,14 +119,16 @@ public:
           }
         LinearFit(Y,X,Coefs);
 
-        XS = QuarticMinimum(Coefs);
+        RealType Xmin = QuarticMinimum(Coefs);
         val=0;
-        for (int i=0; i<5; i++) val+=std::pow(XS,i)*Coefs[i];
-        
+        for (int i=0; i<5; i++) val+=std::pow(Xmin,i)*Coefs[i];
+        app_log()<<"Fit min: "<<Xmin<<" val: "<<val<<endl;
         SuccessfulFit=true;
         for (int i=0; i<nms; i++)
           if(mappedStabilizers[i].second==mappedStabilizers[i].second)
             if (val>mappedStabilizers[i].second) SuccessfulFit=false;
+        if (SuccessfulFit)
+          XS=Xmin;
       }
       else if (nms>=3)
       {//Quadratic fit the stabilizers we have tried and try to choose the best we can
@@ -144,17 +146,17 @@ public:
         LinearFit(Y,X,Coefs);
         
         //extremum really.
-        RealType quadraticMinimum(-0.5*Coefs[1]/Coefs[2]);
-        val=quadraticMinimum*quadraticMinimum*Coefs[2]+quadraticMinimum*Coefs[1]+Coefs[0];
-//                 RealType dltaBest=std::max(stabilityBase, quadraticMinimum);
-//               app_log()<<"smallest XS:      "<<X(0,1)<<endl;
-//               app_log()<<"quadraticMinimum: "<<quadraticMinimum<<endl;
+        RealType Xmin = -0.5*Coefs[1]/Coefs[2];
+        val=0;
+        for (int i=0; i<3; i++) val+=std::pow(Xmin,i)*Coefs[i];
+        app_log()<<"Fit min: "<<Xmin<<" val: "<<val<<endl;
         SuccessfulFit=true;
         if (val<Y[0])
-          XS = quadraticMinimum;
+          XS = Xmin;
         else
           SuccessfulFit=false;
       }
+      return SuccessfulFit;
     }
     
     inline int CubicFormula (double a, double b, double c, double d,
