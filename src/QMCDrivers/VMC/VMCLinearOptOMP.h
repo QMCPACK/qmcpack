@@ -99,6 +99,7 @@ namespace qmcplusplus
       RealType w_beta;
       RealType E_avg, V_avg;
       string GEVtype;
+      vector<RandomGenerator_t> RngSaved;
 
       ///These are the values we collect to build the Matrices GLOBAL
       Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;

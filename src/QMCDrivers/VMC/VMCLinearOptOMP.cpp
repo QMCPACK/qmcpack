@@ -58,6 +58,7 @@ namespace qmcplusplus
 
   bool VMCLinearOptOMP::run()
   {
+    RngSaved.resize(NumThreads);
     resetRun();
     std::vector<opt_variables_type> dummyOptVars;
     for (int ip=0; ip<NumThreads; ++ip)
@@ -148,10 +149,16 @@ namespace qmcplusplus
     //resetting containers
     clearCSEstimators();
     w_i.resize(NumThreads);
-    for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=0;    
-
+    for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=0;
+    
     //  set all walker positions to the same place
     setWalkersEqual(firstWalker);
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      //    synchronize the random number generator with the node
+      *Rng[ip]=*Rng[0];
+      hClones[ip]->setRandomGenerator(Rng[ip]);
+    }
     if(myRNWarmupSteps>0)
     {
       for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
@@ -162,11 +169,14 @@ namespace qmcplusplus
       myComm->allreduce(w_i);
       RealType w_0=w_i[0];
       for (int ip=0; ip<NumThreads; ++ip) w_i[ip] = -std::log(w_i[ip]/w_0);
+      for(int ip=0; ip<NumThreads; ++ip)
+      {
+        //    synchronize the random number generator with the node
+        *Rng[ip]=*Rng[0];
+        hClones[ip]->setRandomGenerator(Rng[ip]);
+      }
     }
-    else
-    {
-      for (int ip=0; ip<NumThreads; ++ip) w_i[ip]=1.0;
-    }
+    
     RealType overNT= 1.0/NumThreads;
     for (int step=0; step<myWarmupSteps; ++step)
     {
@@ -207,18 +217,13 @@ namespace qmcplusplus
       //       app_log()<<ip<<endl;
       //       psiClones[ip]->reportStatus(app_log());
     }
+    
 
     // save the state of current generators
-    vector<RandomGenerator_t> RngSaved(NumThreads);
-    for(int ip=1; ip<NumThreads; ++ip) RngSaved[ip]=*Rng[ip];
-    for(int ip=0; ip<NumThreads; ++ip)
-    {
-      //    synchronize the random number generator with the node
-      *Rng[ip]=*Rng[0];
-      hClones[ip]->setRandomGenerator(Rng[ip]);
-    }
+    
+    for(int ip=0; ip<NumThreads; ++ip) RngSaved[ip]=*Rng[ip];
     initCS();
-
+    
     errorbars=alpha_errorbars+1;
     CurrentStep=0;
     CSBlock=0;
@@ -399,8 +404,8 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ip++)
       for (int ip2=0; ip2<NumThreads; ip2++)
       {
-        Norm2s(ip,ip2)      += (psi2_i[ip]/psi2)*(psi2_i[ip2]/psi2) ;
-        CorrelatedH(ip,ip2) += (psi2_i[ip]/psi2)*(psi2_i[ip2]/psi2)*e_i[ip]*e_i[ip2];
+        Norm2s(ip,ip2)      += psi2_i[ip]*(psi2_i[ip2]/psi2);
+        CorrelatedH(ip,ip2) += psi2_i[ip]*(psi2_i[ip2]/psi2)*e_i[ip]*e_i[ip2];
       }
 
     //   // global quantities for mpi collection
@@ -431,14 +436,8 @@ namespace qmcplusplus
     else if (minE==NumThreads-1) nE=NumThreads-2;
     else nE=(NE_i[minE+1]>NE_i[minE-1])?minE-1:minE+1;
 
-    //return the error in the energy differences between lowest two
-    long double rval = (gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE]))-(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
-//     long double rval = (gCorrelatedH(minE,minE)/(gNorm2s(minE,minE)) + gCorrelatedH(nE,nE)/(gNorm2s(nE,nE)) - 2.0*gCorrelatedH(minE,nE)/gNorm2s(minE,nE))-(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE]);
-
-    
-// //     app_log()<<"CS_new_ED: "<<(gCorrelatedH(minE,minE)/(gNorms[minE]*gNorms[minE]) + gCorrelatedH(nE,nE)/(gNorms[nE]*gNorms[nE]) - 2.0*gCorrelatedH(minE,nE)/(gNorms[minE]*gNorms[nE]))<<endl;
-//     app_log()<<"CS_old_ED: "<<(gCorrelatedH(minE,minE)/(gNorm2s(minE,minE)) + gCorrelatedH(nE,nE)/(gNorm2s(nE,nE)) - 2.0*gCorrelatedH(minE,nE)/gNorm2s(minE,nE))<<endl;
-//     app_log()<<"AV_ED: "<<(NE_i[minE]-NE_i[nE])*(NE_i[minE]-NE_i[nE])<<endl;
+//     return the error in the energy differences between lowest two. not quite right.
+    long double rval = (gCorrelatedH(minE,minE)+gCorrelatedH(nE,nE)-2.0*gCorrelatedH(minE,nE))/Norm2s(minE,nE);
     
     //rval = ((rval<0)?-1.0:(std::sqrt(rval/(CSBlock+1))));
     rval = ((rval<0)?1.0:(std::sqrt(rval/(CSBlock+1.0))));

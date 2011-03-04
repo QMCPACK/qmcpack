@@ -131,19 +131,19 @@ namespace qmcplusplus
 
     //this can be modified for cache etc
     RealType psi2_i_new[64];
-    for (int ip=0; ip<NumThreads; ++ip)
-      psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI] + c_i[ip];
+    for (int ipx=0; ipx<NumThreads; ++ipx)
+      psi2_i_new[ipx] = 2.0*W[ipx]->getPropertyBase()[LOGPSI] + c_i[ipx];
 
 #pragma omp parallel 
     {
       RealType psi2_new=1.0;
-      for (int ip=1; ip<NumThreads; ++ip)
-        psi2_new += std::exp(psi2_i_new[ip]-psi2_i_new[0]);
+      for (int ipx=1; ipx<NumThreads; ++ipx)
+        psi2_new += std::exp(psi2_i_new[ipx]-psi2_i_new[0]);
 
       int nptcl=W.getTotalNum();
       int ip=omp_get_thread_num();
       RandomGenerator_t& rng_loc(*rng[ip]);
-
+      
       //copy the new to now
       RealType psi2_now=psi2_new;
       RealType psi2_i_now=psi2_i_new[ip];
@@ -160,10 +160,10 @@ namespace qmcplusplus
 
           bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
           //everyone should skip this; could be a problem with compilers
-          if (!movePtcl) continue;
-
-          RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
 #pragma omp barrier
+          if (!movePtcl) continue;
+          RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
+// #pragma omp barrier
           psi2_i_new[ip] = 2.0*std::log(std::abs(ratio)) + psi2_i_now;
 #pragma omp barrier
           psi2_new=1.0;

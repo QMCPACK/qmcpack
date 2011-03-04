@@ -98,7 +98,7 @@ public:
       else return false;
     }
     
-    inline bool fitMappedStabilizers(vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType& val)
+    inline bool fitMappedStabilizers(vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType& val, RealType tooBig )
     {
       int nms(0);
       for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
@@ -112,9 +112,9 @@ public:
           {
             X(i,0)=1.0;
             X(i,1)=mappedStabilizers[i].first;
-            X(i,2)=X(i,1)*X(i,1);
-            X(i,3)=X(i,2)*X(i,1);
-            X(i,4)=X(i,3)*X(i,1);
+            X(i,2)=std::pow(mappedStabilizers[i].first,2);
+            X(i,3)=std::pow(mappedStabilizers[i].first,3);
+            X(i,4)=std::pow(mappedStabilizers[i].first,4);
             Y[i]=mappedStabilizers[i].second;
           }
         LinearFit(Y,X,Coefs);
@@ -122,11 +122,14 @@ public:
         RealType Xmin = QuarticMinimum(Coefs);
         val=0;
         for (int i=0; i<5; i++) val+=std::pow(Xmin,i)*Coefs[i];
-        app_log()<<"Fit min: "<<Xmin<<" val: "<<val<<endl;
+        app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val;
+//         for (int i=0; i<5; i++) app_log()<<Coefs[i]<<" ";
+//         app_log()<<endl;
         SuccessfulFit=true;
         for (int i=0; i<nms; i++)
           if(mappedStabilizers[i].second==mappedStabilizers[i].second)
             if (val>mappedStabilizers[i].second) SuccessfulFit=false;
+        if(Xmin>tooBig) SuccessfulFit=false;
         if (SuccessfulFit)
           XS=Xmin;
       }
@@ -140,7 +143,7 @@ public:
           {
             X(i,0)=1.0;
             X(i,1)=mappedStabilizers[i].first;
-            X(i,2)=X(i,1)*X(i,1);
+            X(i,2)=std::pow(mappedStabilizers[i].first,2);
             Y[i]=mappedStabilizers[i].second;
           }
         LinearFit(Y,X,Coefs);
@@ -149,12 +152,16 @@ public:
         RealType Xmin = -0.5*Coefs[1]/Coefs[2];
         val=0;
         for (int i=0; i<3; i++) val+=std::pow(Xmin,i)*Coefs[i];
-        app_log()<<"Fit min: "<<Xmin<<" val: "<<val<<endl;
+        app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val;
+//         for (int i=0; i<3; i++) app_log()<<Coefs[i]<<" ";
+//         app_log()<<endl;
         SuccessfulFit=true;
-        if (val<Y[0])
+        if(Xmin>tooBig) SuccessfulFit=false;
+        for (int i=0; i<nms; i++)
+          if(mappedStabilizers[i].second==mappedStabilizers[i].second)
+            if (val>mappedStabilizers[i].second) SuccessfulFit=false;
+        if (SuccessfulFit)
           XS = Xmin;
-        else
-          SuccessfulFit=false;
       }
       return SuccessfulFit;
     }

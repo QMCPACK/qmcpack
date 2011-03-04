@@ -226,7 +226,7 @@ bool QMCFixedSampleLinearOptimize::run()
             if (nms>=3)
             {
               RealType estval(0);
-              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval));
+              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval,100));
               if (!SuccessfulFit)
               {
                 if (stability==0)

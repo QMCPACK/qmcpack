@@ -156,7 +156,7 @@ bool QMCCSLinearOptimize::run()
       if (nms>=3)
       {
         RealType estval(0);
-        bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval));
+        bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval,100));
         if (!SuccessfulFit)
         {
           if (stability==0)
@@ -219,41 +219,71 @@ bool QMCCSLinearOptimize::run()
         //some flavor of linear fit to a "reasonable" linemin search
           int nthreads = omp_get_max_threads();
           std::vector<std::vector<RealType> > params_lambdas(nthreads,std::vector<RealType>(numParams,0));
-          for(int j=0;j<nthreads;j++)
-            for (int i=0; i<numParams; i++) 
-              params_lambdas[j][i] = currentParameters[i] + stepsize*Lambda*(j-1.0)*currentParameterDirections[i+1];
-          RealType error(0);
-          vmcCSEngine->runCS(params_lambdas,error);
-          
           std::vector<RealType> csts(nthreads);
-          vmcCSEngine->getDeltaCosts(csts);
+          vector<RealType> cs(numParams);
+          RealType error(0);
+          RealType fitCost;
+          int retry(0);
+          vector<std::pair<RealType,RealType> > mappedCosts;
+          bool goodTry(true);
+          RealType rescaledLambda(Lambda);
           
+          while((goodTry)&&(retry<=1))
+          {
+            if (!goodTry) Lambda*=-1;
+            for(int j=0;j<nthreads;j++)
+              for (int i=0; i<numParams; i++) 
+                params_lambdas[j][i] = currentParameters[i] + stepsize*Lambda*(j-1.0)*currentParameterDirections[i+1];
+            vmcCSEngine->runCS(params_lambdas,error);
+            vmcCSEngine->getDeltaCosts(csts);
+            mappedCosts.clear();
+            for(int i=0;i<nthreads;i++)
+              mappedCosts.push_back(*(new std::pair<RealType,RealType>(stepsize*Lambda*(i-1.0),csts[i]-csts[1])));
+            int nmcs(0);
+            for (int i=0; i<mappedCosts.size(); i++) if (mappedCosts[i].second==mappedCosts[i].second) nmcs++;
+            if (nmcs<3)
+            {
+             if (stability==0)
+             {
+               failedTries++; stability--;
+               stabilityBase+=stabilizerScale;
+             }
+             else
+               stability=nstabilizers;
+              continue;
+            }
+            if (fitMappedStabilizers(mappedCosts,Lambda,fitCost,bigChange/bigVec))
+            {
+  //             use fit if it works
+              for (int i=0; i<numParams; i++) bestParameters[i] = cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+              app_log()<<" : Using fit."<<endl;
+            }
+            else
+            {
+  //             otherwise use the best value
+              int indx(0);
+              for(int i=1;i<nthreads;i++) if (csts[i]<csts[indx]) indx=i;
+              Lambda=stepsize*Lambda*(indx-1.0);
+              fitCost=csts[indx]-csts[1];
+              bestParameters=cs=params_lambdas[indx];
+              app_log()<<" :\n Using best, bestCost: "<<fitCost<<endl;
+            }
+            if (Lambda*rescaledLambda<0) 
+            {
+              goodTry=true;
+              retry++;
+            }
+            else
+            {  
+              goodTry=false;
+          newCost=fitCost;
+          mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
+          savedCSparameters.push_back(cs);
           app_log()<<"COSTS: ";
           for(int i=0;i<nthreads;i++) app_log()<<csts[i]-csts[1]<<" ";
           app_log()<<endl;
-          vector<std::pair<RealType,RealType> > mappedCosts;
-          for(int i=0;i<nthreads;i++)
-            mappedCosts.push_back(*(new std::pair<RealType,RealType>(stepsize*Lambda*(i-1.0),csts[i]-csts[1])));
-          RealType fitCost;
-          if (fitMappedStabilizers(mappedCosts,Lambda,fitCost))
-          {
-//             use fit if it works
-            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,fitCost)));
-            vector<RealType> cs(numParams);
-            for (int i=0; i<numParams; i++) bestParameters[i] = cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-            savedCSparameters.push_back(cs);
-            app_log()<<"fitCost: "<<fitCost<<endl;
-          }
-          else
-          {
-//             otherwise use the best value
-            int indx(0);
-            for(int i=1;i<nthreads;i++) if (csts[i]<csts[indx]) indx=i;
-            newCost=csts[indx]-csts[1];
-            savedCSparameters.push_back(params_lambdas[indx]);
-            bestParameters= params_lambdas[indx];
-            mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
-            app_log()<<"bestCost: "<<newCost<<endl;
+
+            }
           }
         }
         
