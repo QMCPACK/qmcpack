@@ -670,7 +670,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
               for (int pm=0; pm<NumParams();pm++)
               {
                 Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-                Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+//                 Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
                 Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
                 
 //                 H2

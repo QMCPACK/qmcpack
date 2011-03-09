@@ -90,10 +90,13 @@ namespace qmcplusplus
       { 
         Movers[ip]->startBlock(nSteps);
         int now_loc=CurrentStep;
+        //rest the collectables and keep adding
+        wClones[ip]->resetCollectables();
+        //rest the collectables and keep adding
+
         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
         for (int step=0; step<nSteps; ++step)
         {
-          wClones[ip]->resetCollectables();
           Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
           ++now_loc;
@@ -102,8 +105,9 @@ namespace qmcplusplus
         }
         Movers[ip]->stopBlock(false);
       }//end-of-parallel for
-
       CurrentStep+=nSteps;
+
+//       Estimators->accumulateCollectables(wClones,nSteps);
       Estimators->stopBlock(estimatorClones);
 #pragma omp parallel for
       for (int ip=0; ip<NumThreads; ++ip)
@@ -635,85 +639,182 @@ namespace qmcplusplus
 
   }
 
-  void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap)
-  {
-    RealType nrm = 1.0/sW;
-    //     RealType nrm2 = nrm*nrm;
-    for (int i=0; i<NumOptimizables; i++)
-    {
-      HDiE[i]*= nrm;
-      HDi[i] *= nrm;
-      DiE2[i]*= nrm;
-      DiE[i] *= nrm;
-      Di[i]  *= nrm;
-    }
-    HDiHDj*= nrm;
-    DiHDjE*= nrm;
-    DiHDj *= nrm;
-    DiDjE2*= nrm;
-    DiDjE *= nrm;
-    DiDj  *= nrm;
+//   void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap)
+//   {
+//     RealType nrm = 1.0/sW;
+//     //     RealType nrm2 = nrm*nrm;
+//     for (int i=0; i<NumOptimizables; i++)
+//     {
+//       HDiE[i]*= nrm;
+//       HDi[i] *= nrm;
+//       DiE2[i]*= nrm;
+//       DiE[i] *= nrm;
+//       Di[i]  *= nrm;
+//     }
+//     HDiHDj*= nrm;
+//     DiHDjE*= nrm;
+//     DiHDj *= nrm;
+//     DiDjE2*= nrm;
+//     DiDjE *= nrm;
+//     DiDj  *= nrm;
+// 
+//     RealType H2_avg = sE2*nrm;
+//     E_avg = sE*nrm;
+//     V_avg = H2_avg - E_avg*E_avg;
+// 
+// 
+//     for (int pm=0; pm<NumOptimizables; pm++)
+//     {
+//       RealType wfe = HDi[pm] + DiE[pm]-Di[pm]*E_avg;
+//       RealType wfm = HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg;
+//       //         Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+// 
+//       H2(0,pm+1) = HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg;
+//       H2(pm+1,0) = HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg;
+// 
+//       //         HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+//       RealType vterm = HDiE[pm]-HDi[pm]*E_avg + DiE2[pm]-Di[pm]*H2_avg -2.0*E_avg*(DiE[pm]-Di[pm]*E_avg);
+//       Variance(0,pm+1) = vterm;
+//       Variance(pm+1,0) = vterm;
+// 
+//       Hamiltonian(0,pm+1) = wfe;
+//       Hamiltonian(pm+1,0) = DiE[pm]-Di[pm]*E_avg;
+// 
+//       for (int pm2=0; pm2<NumOptimizables; pm2++)
+//       {
+//         //           H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
+//         //           Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+//         //           Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
+//         //           Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
+// 
+//         //        Symmetric  (HDi[pm] + DiE[pm]-Di[pm]*E_avg)(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg)
+//         H2(pm+1,pm2+1) = HDiHDj(pm,pm2) + DiHDjE(pm2,pm) - DiHDj(pm2,pm)*E_avg
+//           + DiHDjE(pm,pm2) + DiDjE2(pm,pm2) - DiDjE(pm,pm2)*E_avg
+//           + E_avg*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - DiDj(pm,pm2)*E_avg);
+//         //        Non-symmetric    (Dsaved[pm]-D_avg[pm])*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w))
+//         Hamiltonian(pm+1,pm2+1) = DiHDj(pm,pm2) + DiDjE(pm,pm2) - Di[pm2]*DiE[pm] - Di[pm]*(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg);
+//         //        Symmetric  (HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg)*( HDi[pm2] - 2.0* DiE[pm2]+2.0*Di[pm2]*E_avg)
+//         Variance(pm+1,pm2+1) = HDiHDj(pm,pm2) -2.0*DiHDjE(pm2,pm) +2.0*DiHDj(pm,pm2)*E_avg
+//           -2.0*( DiHDjE(pm,pm2) - 2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2))
+//           +2.0*E_avg*(DiHDj(pm,pm2) -2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2));
+//         //        Symmetric
+//         Overlap(pm+1,pm2+1) = DiDj(pm,pm2)-Di[pm]*Di[pm2];
+// 
+//       }
+//     }
+// 
+//     Hamiltonian(0,0) = E_avg;
+//     Overlap(0,0) = 1.0;
+//     H2(0,0) = H2_avg;
+//     Variance(0,0) = V_avg;
+// 
+//     for (int pm=1; pm<NumOptimizables+1; pm++)
+//       for (int pm2=1; pm2<NumOptimizables+1; pm2++)
+//         Variance(pm,pm2) += V_avg*Overlap(pm,pm2);
+// 
+//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+//   }
 
-    RealType H2_avg = sE2*nrm;
-    E_avg = sE*nrm;
-    V_avg = H2_avg - E_avg*E_avg;
+//   VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
+//   {
+//     RealType b1,b2;
+//     if (GEVtype=="H2")
+//     {
+//       b1=w_beta; b2=0;
+//     }
+//     else
+//     {
+//       b2=w_beta; b1=0;
+//     }
+//     
+//     RealType nrm = 1.0/sW;
+//     //     RealType nrm2 = nrm*nrm;
+//     for (int i=0; i<NumOptimizables; i++)
+//     {
+//       HDiE[i]*= nrm;
+//       HDi[i] *= nrm;
+//       DiE2[i]*= nrm;
+//       DiE[i] *= nrm;
+//       Di[i]  *= nrm;
+//     }
+//     HDiHDj*= nrm;
+//     DiHDjE*= nrm;
+//     DiHDj *= nrm;
+//     DiDjE2*= nrm;
+//     DiDjE *= nrm;
+//     DiDj  *= nrm;
+// 
+//     RealType H2_avg = 1.0/(sE2*nrm);
+//     E_avg = sE*nrm;
+//     V_avg = H2_avg - E_avg*E_avg;
+// 
+// 
+//     for (int pm=0; pm<NumOptimizables; pm++)
+//     {
+//       RealType wfe = HDi[pm] + DiE[pm]-Di[pm]*E_avg;
+//       RealType wfm = HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg;
+//       //         Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+// 
+// //       H2
+//       RightM(0,pm+1) += b1*H2_avg*(HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
+//       RightM(pm+1,0) += b1*H2_avg*( HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
+// 
+//       //         HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+//       RealType vterm = HDiE[pm]-HDi[pm]*E_avg + DiE2[pm]-Di[pm]*H2_avg -2.0*E_avg*(DiE[pm]-Di[pm]*E_avg);
+// //       variance
+//       LeftM(0,pm+1) += b2*vterm;
+//       LeftM(pm+1,0) += b2*vterm;
+// 
+// //       hamiltonian
+//       LeftM(0,pm+1) += (1-b2)*wfe;
+//       LeftM(pm+1,0) += (1-b2)*(DiE[pm]-Di[pm]*E_avg);
+// 
+//       for (int pm2=0; pm2<NumOptimizables; pm2++)
+//       {
+//         //           H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
+//         //           Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+//         //           Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
+//         //           Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
+// 
+//         //        Symmetric  (HDi[pm] + DiE[pm]-Di[pm]*E_avg)(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg)
+// //         H2
+//         RightM(pm+1,pm2+1) += (b1*H2_avg)*(HDiHDj(pm,pm2) + DiHDjE(pm2,pm) - DiHDj(pm2,pm)*E_avg
+//           + DiHDjE(pm,pm2) + DiDjE2(pm,pm2) - DiDjE(pm,pm2)*E_avg
+//           + E_avg*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - DiDj(pm,pm2)*E_avg));
+//         //        Non-symmetric    (Dsaved[pm]-D_avg[pm])*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w))
+// //         Hamiltonian
+//         LeftM(pm+1,pm2+1) += (1-b2)*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - Di[pm2]*DiE[pm] - Di[pm]*(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg));
+//         //        Symmetric  (HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg)*( HDi[pm2] - 2.0* DiE[pm2]+2.0*Di[pm2]*E_avg)
+// //         Variance
+//         LeftM(pm+1,pm2+1) += b2*(HDiHDj(pm,pm2) -2.0*DiHDjE(pm2,pm) +2.0*DiHDj(pm,pm2)*E_avg
+//           -2.0*( DiHDjE(pm,pm2) - 2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2))
+//           +2.0*E_avg*(DiHDj(pm,pm2) -2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2)));
+//         //        Symmetric
+// //         Overlap
+//         RightM(pm+1,pm2+1) += (1-b1)*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
+// //         LeftM(pm+1,pm2+1) += b2*V_avg*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
+//       }
+//     }
+// 
+//     LeftM(0,0) += (1-b2)*E_avg;
+//     RightM(0,0) = 1.0;
+//     LeftM(0,0) += b2*V_avg;
+// 
+// //     for (int pm=0; pm<NumOptimizables; pm++)
+// //       for (int pm2=0; pm2<NumOptimizables; pm2++)
+// //         LeftM(pm+1,pm2+1) += b2*V_avg*RightM(pm+1,pm2+1);
+// 
+//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+//     if (GEVtype=="H2")
+//       return 1.0/H2_avg;
+//     return 1.0;
+//     
+//   }
 
-
-    for (int pm=0; pm<NumOptimizables; pm++)
-    {
-      RealType wfe = HDi[pm] + DiE[pm]-Di[pm]*E_avg;
-      RealType wfm = HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg;
-      //         Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-
-      H2(0,pm+1) = HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg;
-      H2(pm+1,0) = HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg;
-
-      //         HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
-      RealType vterm = HDiE[pm]-HDi[pm]*E_avg + DiE2[pm]-Di[pm]*H2_avg -2.0*E_avg*(DiE[pm]-Di[pm]*E_avg);
-      Variance(0,pm+1) = vterm;
-      Variance(pm+1,0) = vterm;
-
-      Hamiltonian(0,pm+1) = wfe;
-      Hamiltonian(pm+1,0) = DiE[pm]-Di[pm]*E_avg;
-
-      for (int pm2=0; pm2<NumOptimizables; pm2++)
-      {
-        //           H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
-        //           Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
-        //           Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
-        //           Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
-
-        //        Symmetric  (HDi[pm] + DiE[pm]-Di[pm]*E_avg)(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg)
-        H2(pm+1,pm2+1) = HDiHDj(pm,pm2) + DiHDjE(pm2,pm) - DiHDj(pm2,pm)*E_avg
-          + DiHDjE(pm,pm2) + DiDjE2(pm,pm2) - DiDjE(pm,pm2)*E_avg
-          + E_avg*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - DiDj(pm,pm2)*E_avg);
-        //        Non-symmetric    (Dsaved[pm]-D_avg[pm])*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w))
-        Hamiltonian(pm+1,pm2+1) = DiHDj(pm,pm2) + DiDjE(pm,pm2) - Di[pm2]*DiE[pm] - Di[pm]*(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg);
-        //        Symmetric  (HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg)*( HDi[pm2] - 2.0* DiE[pm2]+2.0*Di[pm2]*E_avg)
-        Variance(pm+1,pm2+1) = HDiHDj(pm,pm2) -2.0*DiHDjE(pm2,pm) +2.0*DiHDj(pm,pm2)*E_avg
-          -2.0*( DiHDjE(pm,pm2) - 2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2))
-          +2.0*E_avg*(DiHDj(pm,pm2) -2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2));
-        //        Symmetric
-        Overlap(pm+1,pm2+1) = DiDj(pm,pm2)-Di[pm]*Di[pm2];
-
-      }
-    }
-
-    Hamiltonian(0,0) = E_avg;
-    Overlap(0,0) = 1.0;
-    H2(0,0) = H2_avg;
-    Variance(0,0) = V_avg;
-
-    for (int pm=1; pm<NumOptimizables+1; pm++)
-      for (int pm2=1; pm2<NumOptimizables+1; pm2++)
-        Variance(pm,pm2) += V_avg*Overlap(pm,pm2);
-
-    //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
-  }
-
-  VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
+VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
   {
     RealType b1,b2;
+    
     if (GEVtype=="H2")
     {
       b1=w_beta; b2=0;
@@ -723,247 +824,206 @@ namespace qmcplusplus
       b2=w_beta; b1=0;
     }
     
-    RealType nrm = 1.0/sW;
-    //     RealType nrm2 = nrm*nrm;
+    std::vector<RealType> g_stats(5,0);
+    g_stats[0]=sE;
+    g_stats[1]=sE2;
+    g_stats[2]=sE4;
+    g_stats[3]=sW;
+    g_stats[4]=sN;
+    myComm->allreduce(g_stats);
+    
+    RealType g_nrm = 1.0/g_stats[3];
+    E_avg = g_nrm*g_stats[0];
+    RealType E_avg2=E_avg*E_avg;
+    RealType E2_avg = g_nrm*g_stats[1];
+    V_avg = E2_avg-E_avg2;
+//     app_log()<<E_avg<<" "<<V_avg<<" "<<E2_avg<<endl;
+    
+    myComm->allreduce(Ham2); Ham2*=g_nrm;
+    myComm->allreduce(Ham);  Ham *=g_nrm;
+    myComm->allreduce(Olp);  Olp *=g_nrm;
+    myComm->allreduce(D_E);
+    myComm->allreduce(D);
+    myComm->allreduce(HD);
+    myComm->allreduce(HD2);
     for (int i=0; i<NumOptimizables; i++)
     {
-      HDiE[i]*= nrm;
-      HDi[i] *= nrm;
-      DiE2[i]*= nrm;
-      DiE[i] *= nrm;
-      Di[i]  *= nrm;
+      D_E[i]*=g_nrm; D[i]*=g_nrm; HD[i]*=g_nrm; HD2[i]*=g_nrm;
     }
-    HDiHDj*= nrm;
-    DiHDjE*= nrm;
-    DiHDj *= nrm;
-    DiDjE2*= nrm;
-    DiDjE *= nrm;
-    DiDj  *= nrm;
-
-    RealType H2_avg = 1.0/(sE2*nrm);
-    E_avg = sE*nrm;
-    V_avg = H2_avg - E_avg*E_avg;
-
-
-    for (int pm=0; pm<NumOptimizables; pm++)
-    {
-      RealType wfe = HDi[pm] + DiE[pm]-Di[pm]*E_avg;
-      RealType wfm = HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg;
-      //         Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-
-//       H2
-      RightM(0,pm+1) += b1*H2_avg*(HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
-      RightM(pm+1,0) += b1*H2_avg*( HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
-
-      //         HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
-      RealType vterm = HDiE[pm]-HDi[pm]*E_avg + DiE2[pm]-Di[pm]*H2_avg -2.0*E_avg*(DiE[pm]-Di[pm]*E_avg);
-//       variance
-      LeftM(0,pm+1) += b2*vterm;
-      LeftM(pm+1,0) += b2*vterm;
-
-//       hamiltonian
-      LeftM(0,pm+1) += (1-b2)*wfe;
-      LeftM(pm+1,0) += (1-b2)*(DiE[pm]-Di[pm]*E_avg);
-
-      for (int pm2=0; pm2<NumOptimizables; pm2++)
-      {
-        //           H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
-        //           Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
-        //           Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
-        //           Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
-
-        //        Symmetric  (HDi[pm] + DiE[pm]-Di[pm]*E_avg)(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg)
-//         H2
-        RightM(pm+1,pm2+1) += (b1*H2_avg)*(HDiHDj(pm,pm2) + DiHDjE(pm2,pm) - DiHDj(pm2,pm)*E_avg
-          + DiHDjE(pm,pm2) + DiDjE2(pm,pm2) - DiDjE(pm,pm2)*E_avg
-          + E_avg*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - DiDj(pm,pm2)*E_avg));
-        //        Non-symmetric    (Dsaved[pm]-D_avg[pm])*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w))
-//         Hamiltonian
-        LeftM(pm+1,pm2+1) += (1-b2)*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - Di[pm2]*DiE[pm] - Di[pm]*(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg));
-        //        Symmetric  (HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg)*( HDi[pm2] - 2.0* DiE[pm2]+2.0*Di[pm2]*E_avg)
-//         Variance
-        LeftM(pm+1,pm2+1) += b2*(HDiHDj(pm,pm2) -2.0*DiHDjE(pm2,pm) +2.0*DiHDj(pm,pm2)*E_avg
-          -2.0*( DiHDjE(pm,pm2) - 2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2))
-          +2.0*E_avg*(DiHDj(pm,pm2) -2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2)));
-        //        Symmetric
-//         Overlap
-        RightM(pm+1,pm2+1) += (1-b1)*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
-//         LeftM(pm+1,pm2+1) += b2*V_avg*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
-      }
-    }
-
-    LeftM(0,0) += (1-b2)*E_avg;
-    RightM(0,0) = 1.0;
-    LeftM(0,0) += b2*V_avg;
-
-//     for (int pm=0; pm<NumOptimizables; pm++)
-//       for (int pm2=0; pm2<NumOptimizables; pm2++)
-//         LeftM(pm+1,pm2+1) += b2*V_avg*RightM(pm+1,pm2+1);
-
-    //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
-    if (GEVtype=="H2")
-      return 1.0/H2_avg;
-    return 1.0;
+      
+    for (int i=0; i<NumOptimizables; i++)
+      for (int j=0; j<NumOptimizables; j++)
+        Ham(i,j) += -D[i]*(HD[j]+D_E[j]-D[j]*E_avg) - D[j]*D_E[i];
     
+    for (int i=0; i<NumOptimizables; i++)
+      for (int j=0; j<NumOptimizables; j++)
+        Olp(i,j) -= D[i]*D[j];
+    
+    for (int i=0; i<NumOptimizables; i++)
+      for (int j=0; j<NumOptimizables; j++)
+        Ham2(i,j) += Olp(i,j)*E_avg2 - E_avg*(Ham(i,j)+Ham(j,i));//For Variance
+//         Ham2(i,j)+= Olp(i,j)*E_avg2 - E_avg*(Ham(i,j)+Ham(j,i)); //H2
+    
+
+    RealType b1_rat = b1/E_avg2;
+    for (int i=1; i<NumOptimizables+1; i++)
+      for (int j=1; j<NumOptimizables+1; j++)
+      {
+        LeftM(i,j) = (1-b2)*Ham(i-1,j-1) + b2*Ham2(i-1,j-1);
+        RightM(i,j) = Olp(i-1,j-1) + b1_rat*Ham2(i-1,j-1);
+      }
+      
+    RightM(0,0)=1.0+b1_rat*V_avg;
+    LeftM(0,0)=(1-b2)*E_avg+b2*V_avg;
+    
+    for (int i=1; i<NumOptimizables+1; i++)
+    {
+      RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+      LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+      LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+    }
+    
+    return 1.0;
   }
 
   VMCLinearOptOMP::RealType VMCLinearOptOMP::fillComponentMatrices()
   {
-    int n(NumOptimizables);
-    ///These are the values we collect to build the Matrices LOCAL
-    Matrix<RealType> lHDiHDj(n,n), lDiHDj(n,n), lDiHDjE(n,n), lDiDj(n,n), lDiDjE(n,n), lDiDjE2(n,n);
-    lHDiHDj=0; lDiHDj=0; lDiHDjE=0; lDiDj=0; lDiDjE=0; lDiDjE2=0;
-
-
-    std::vector<RealType> lHDi(n), lHDiE(n), lDi(n), lDiE(n), lDiE2(n);
-    for (int i=0; i<NumOptimizables; i++)
-    {
-      lHDi[i]=0;
-      lHDiE[i]=0;
-      lDi[i]=0;
-      lDiE[i]=0;
-      lDiE2[i]=0;
-    }
-    RealType lsE(0),lsE2(0),lsE4(0),lsW(0),lsN(0);
+    std::vector<RealType> g_stats(5,0);
 
     for (int ip=0; ip<NumThreads; ip++)
     {
       RealType E_L = W[ip]->getPropertyBase()[LOCALENERGY];
       RealType E_L2= E_L*E_L;
       RealType wW  = W[ip]->Weight;
-      lsE +=E_L*wW;
-      lsE2+=E_L2*wW;
-      lsE4+=E_L2*E_L2*wW;
-      lsW +=wW;
-      lsN+=1;
-    }
-
-
-
-    for (int ip=0; ip<NumThreads; ip++)
-    {
-      RealType E_L = (*W[ip]).getPropertyBase()[LOCALENERGY];
-      RealType E_L2= E_L*E_L;
-      RealType wW  = (*W[ip]).Weight;
+      sE +=E_L*wW;
+      sE2+=E_L2*wW;
+      sE4+=E_L2*E_L2*wW;
+      sW +=wW;
+      sN+=1;
       for (int i=0; i<NumOptimizables; i++)
       {
         RealType di  = DerivRecords(ip,i);
         RealType hdi = HDerivRecords(ip,i);
         //             vectors
-        lHDiE[i]+= wW*E_L* hdi;
-        lHDi[i] += wW*     hdi;
-        lDiE2[i]+= wW*E_L2*di;
-        lDiE[i] += wW*E_L* di;
-        lDi[i]  += wW*     di;
+        D_E[i]+= wW*di*E_L;
+        HD[i]+=  wW*hdi;
+        HD2[i]+= wW*E_L*(hdi+di*E_L);
+        D[i]+=   wW*di;
 
         for (int j=0; j<NumOptimizables; j++)
         {
           RealType dj  = DerivRecords(ip,j);
           RealType hdj = HDerivRecords(ip,j);
-
-          lHDiHDj(i,j) += wW*    hdi*hdj;
-          lDiHDjE(i,j) += wW* E_L*di*hdj;
-          lDiHDj(i,j)  += wW*     di*hdj;
-          lDiDjE2(i,j) += wW*E_L2*di*dj;
-          lDiDjE(i,j)  += wW* E_L*di*dj;
-          lDiDj(i,j)   += wW*     di*dj;
+          
+          Ham(i,j) += wW*di*(hdj+dj*E_L);
+          Olp(i,j) += wW*di*dj;
+          Ham2(i,j)+= wW*(hdj+dj*E_L)*(hdi+di*E_L);
         }
       }
     }
+// 
+//     //         //Lazy. Pack these for better performance.
+//     //         myComm->allreduce(lsE);
+//     //         myComm->allreduce(lsE2);
+//     //         myComm->allreduce(lsE4);
+//     //         myComm->allreduce(lsW);
+//     //         myComm->allreduce(lHDiE);
+//     //         myComm->allreduce(lHDi);
+//     //         myComm->allreduce(lDiE2);
+//     //         myComm->allreduce(lDiE);
+//     //         myComm->allreduce(lDi);
+//     //         myComm->allreduce(lHDiHDj);
+//     //         myComm->allreduce(lDiHDjE);
+//     //         myComm->allreduce(lDiHDj);
+//     //         myComm->allreduce(lDiDjE2);
+//     //         myComm->allreduce(lDiDjE);
+//     //         myComm->allreduce(lDiDj);
+//     if(myComm->size() > 1)
+//     {
+//       Walker_t::Buffer_t tmpBuffer;
+//       tmpBuffer.rewind();
+//       tmpBuffer.add(lsE);
+//       tmpBuffer.add(lsE2);
+//       tmpBuffer.add(lsE4);
+//       tmpBuffer.add(lsW);
+//       tmpBuffer.add(lsN);
+// 
+//       tmpBuffer.add(lHDiE.begin(),lHDiE.end());
+//       tmpBuffer.add(lHDi.begin(),lHDi.end());
+//       tmpBuffer.add(lDiE2.begin(),lDiE2.end());
+//       tmpBuffer.add(lDiE.begin(),lDiE.end());
+//       tmpBuffer.add(lDi.begin(),lDi.end());
+// 
+//       tmpBuffer.add(lHDiHDj.begin(),lHDiHDj.end());
+//       tmpBuffer.add(lDiHDjE.begin(),lDiHDjE.end());
+//       tmpBuffer.add(lDiHDj.begin(),lDiHDj.end());
+//       tmpBuffer.add(lDiDjE2.begin(),lDiDjE2.end());
+//       tmpBuffer.add(lDiDjE.begin(),lDiDjE.end());
+//       tmpBuffer.add(lDiDj.begin(),lDiDj.end());
+// 
+//       myComm->allreduce(tmpBuffer);
+//       tmpBuffer.rewind();
+// 
+//       tmpBuffer.get(lsE);
+//       tmpBuffer.get(lsE2);
+//       tmpBuffer.get(lsE4);
+//       tmpBuffer.get(lsW);
+//       tmpBuffer.get(lsN);
+// 
+//       tmpBuffer.get(lHDiE.begin(),lHDiE.end());
+//       tmpBuffer.get(lHDi.begin(),lHDi.end());
+//       tmpBuffer.get(lDiE2.begin(),lDiE2.end());
+//       tmpBuffer.get(lDiE.begin(),lDiE.end());
+//       tmpBuffer.get(lDi.begin(),lDi.end());
+// 
+//       tmpBuffer.get(lHDiHDj.begin(),lHDiHDj.end());
+//       tmpBuffer.get(lDiHDjE.begin(),lDiHDjE.end());
+//       tmpBuffer.get(lDiHDj.begin(),lDiHDj.end());
+//       tmpBuffer.get(lDiDjE2.begin(),lDiDjE2.end());
+//       tmpBuffer.get(lDiDjE.begin(),lDiDjE.end());
+//       tmpBuffer.get(lDiDj.begin(),lDiDj.end());    
+//     }
+// 
+//     //add locals to globals
+//     sE +=lsE;
+//     sE2+=lsE2;
+//     sE4+=lsE4;
+//     sW +=lsW;
+//     sN +=lsN;
+//     for (int j=0; j<NumOptimizables; j++)
+//     {
+//       HDiE[j]+=lHDiE[j];
+//       HDi[j] +=lHDi[j] ;
+//       DiE2[j]+=lDiE2[j];
+//       DiE[j] +=lDiE[j] ;
+//       Di[j]  +=lDi[j]  ;
+//     }
+// 
+//     HDiHDj += lHDiHDj;
+//     DiHDjE += lDiHDjE;
+//     DiHDj  += lDiHDj ;
+//     DiDjE2 += lDiDjE2;
+//     DiDjE  += lDiDjE ;
+//     DiDj   += lDiDj  ;
 
-    //         //Lazy. Pack these for better performance.
-    //         myComm->allreduce(lsE);
-    //         myComm->allreduce(lsE2);
-    //         myComm->allreduce(lsE4);
-    //         myComm->allreduce(lsW);
-    //         myComm->allreduce(lHDiE);
-    //         myComm->allreduce(lHDi);
-    //         myComm->allreduce(lDiE2);
-    //         myComm->allreduce(lDiE);
-    //         myComm->allreduce(lDi);
-    //         myComm->allreduce(lHDiHDj);
-    //         myComm->allreduce(lDiHDjE);
-    //         myComm->allreduce(lDiHDj);
-    //         myComm->allreduce(lDiDjE2);
-    //         myComm->allreduce(lDiDjE);
-    //         myComm->allreduce(lDiDj);
-    if(myComm->size() > 1)
-    {
-      Walker_t::Buffer_t tmpBuffer;
-      tmpBuffer.rewind();
-      tmpBuffer.add(lsE);
-      tmpBuffer.add(lsE2);
-      tmpBuffer.add(lsE4);
-      tmpBuffer.add(lsW);
-      tmpBuffer.add(lsN);
-
-      tmpBuffer.add(lHDiE.begin(),lHDiE.end());
-      tmpBuffer.add(lHDi.begin(),lHDi.end());
-      tmpBuffer.add(lDiE2.begin(),lDiE2.end());
-      tmpBuffer.add(lDiE.begin(),lDiE.end());
-      tmpBuffer.add(lDi.begin(),lDi.end());
-
-      tmpBuffer.add(lHDiHDj.begin(),lHDiHDj.end());
-      tmpBuffer.add(lDiHDjE.begin(),lDiHDjE.end());
-      tmpBuffer.add(lDiHDj.begin(),lDiHDj.end());
-      tmpBuffer.add(lDiDjE2.begin(),lDiDjE2.end());
-      tmpBuffer.add(lDiDjE.begin(),lDiDjE.end());
-      tmpBuffer.add(lDiDj.begin(),lDiDj.end());
-
-      myComm->allreduce(tmpBuffer);
-      tmpBuffer.rewind();
-
-      tmpBuffer.get(lsE);
-      tmpBuffer.get(lsE2);
-      tmpBuffer.get(lsE4);
-      tmpBuffer.get(lsW);
-      tmpBuffer.get(lsN);
-
-      tmpBuffer.get(lHDiE.begin(),lHDiE.end());
-      tmpBuffer.get(lHDi.begin(),lHDi.end());
-      tmpBuffer.get(lDiE2.begin(),lDiE2.end());
-      tmpBuffer.get(lDiE.begin(),lDiE.end());
-      tmpBuffer.get(lDi.begin(),lDi.end());
-
-      tmpBuffer.get(lHDiHDj.begin(),lHDiHDj.end());
-      tmpBuffer.get(lDiHDjE.begin(),lDiHDjE.end());
-      tmpBuffer.get(lDiHDj.begin(),lDiHDj.end());
-      tmpBuffer.get(lDiDjE2.begin(),lDiDjE2.end());
-      tmpBuffer.get(lDiDjE.begin(),lDiDjE.end());
-      tmpBuffer.get(lDiDj.begin(),lDiDj.end());    
-    }
-
-    //add locals to globals
-    sE +=lsE;
-    sE2+=lsE2;
-    sE4+=lsE4;
-    sW +=lsW;
-    sN +=lsN;
-    for (int j=0; j<NumOptimizables; j++)
-    {
-      HDiE[j]+=lHDiE[j];
-      HDi[j] +=lHDi[j] ;
-      DiE2[j]+=lDiE2[j];
-      DiE[j] +=lDiE[j] ;
-      Di[j]  +=lDi[j]  ;
-    }
-
-    HDiHDj += lHDiHDj;
-    DiHDjE += lDiHDjE;
-    DiHDj  += lDiHDj ;
-    DiDjE2 += lDiDjE2;
-    DiDjE  += lDiDjE ;
-    DiDj   += lDiDj  ;
-
-    RealType nrm = 1.0/sW;
-    E_avg = nrm*sE;
-    V_avg = nrm*sE2-E_avg*E_avg;
+    g_stats[0]=sE;
+    g_stats[1]=sE2;
+    g_stats[2]=sE4;
+    g_stats[3]=sW;
+    g_stats[4]=sN;
+    myComm->allreduce(g_stats);
+    
+    RealType nrm = 1.0/g_stats[3];
+    E_avg = nrm*g_stats[0];
+    V_avg = nrm*g_stats[1]-E_avg*E_avg;
     //         app_log()<<V_avg<<"  "<<E_avg<<"  "<<std::log(sW)<<endl;
-    RealType g_nrm = 1.0/sN;
+    RealType g_nrm = 1.0/g_stats[4];
     RealType err_E(std::sqrt( ((V_avg<0.0)?(1.0):(V_avg*g_nrm)) ));
-    RealType err_E2(nrm*sE4-nrm*nrm*sE2*sE2);
+    RealType err_E2(nrm*g_stats[2]-nrm*nrm*sE2*sE2);
     err_E2 *= g_nrm;
     err_E2 = std::sqrt( ((err_E2<0.0)?(1.0):(err_E2)) );
+    
+    
 
     return w_beta*err_E2+(1.0-w_beta)*err_E;
   }

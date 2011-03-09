@@ -119,11 +119,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     vector<RealType> bestParameters(currentParameters);
     vector<RealType> GEVSplitParameters(numParams,0);
 
-
+    Max_iterations=1;
     while (Total_iterations < Max_iterations)
     {
         Total_iterations+=1;
-        app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
+//         app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
 
 // mmorales
         if (!ValidCostFunction(Valid)) continue;
@@ -137,9 +137,10 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 
         vector<vector<RealType> > LastDirections;
         RealType deltaPrms(-1.0);
+        TotalCGSteps=1;
         for (int tries=0; tries<TotalCGSteps; tries++)
         {
-          app_log()<<" CGSteps: "<<tries<<"/"<<TotalCGSteps<<endl;
+//           app_log()<<" CGSteps: "<<tries<<"/"<<TotalCGSteps<<endl;
           bool acceptedOneMove(false);
           int tooManyTries(20);
           int failedTries(0);
@@ -147,8 +148,25 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
           Matrix<RealType> Left(N,N);
           Matrix<RealType> LeftT(N,N);
           Matrix<RealType> Right(N,N);
-          RealType H2rescale = vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
-
+          vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
+          
+//           for(int i=0;i<N;i++)
+//           {
+//             for(int j=0;j<N;j++)
+//               app_log()<<LeftT(i,j)<<" ";
+//             app_log()<<endl;
+//           }
+//           app_log()<<endl;
+//           
+//           for(int i=0;i<N;i++)
+//           {
+//             for(int j=0;j<N;j++)
+//               app_log()<<Right(i,j)<<" ";
+//             app_log()<<endl;
+//           }
+//           app_log()<<endl;
+          
+          
           vector<std::pair<RealType,RealType> > mappedStabilizers;
 //           if (nstabilizers<2)
 //           {
@@ -159,7 +177,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
           for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i];
 
           myTimers[4]->start();
-          RealType lastCost(optTarget->Cost(true));
+          RealType lastCost(optTarget->Cost(false));
           myTimers[4]->start();
 
           // mmorales
@@ -186,10 +204,9 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
           if(apply_inverse)
           {
             Matrix<RealType> Right_tmp(Right);
-            invert_matrix(Right,false);
+            invert_matrix(Right_tmp,false);
             MatrixOperators MO;
-            MO.product(Right,LeftT,Left);
-            Right=Right_tmp;
+            MO.product(Right_tmp,LeftT,Left);
           }
           else
             Left=LeftT;
@@ -254,7 +271,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
             myTimers[2]->stop();
 //             app_log()<<"lowestEV: "<<lowestEV<<endl;
             
-            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,Right);
+            Lambda = getNonLinearRescale(currentParameterDirections,Right);
             RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
             if (std::abs(Lambda*bigVec)>bigChange)
@@ -355,7 +372,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
               acceptedOneMove=true;
               deltaPrms= Lambda;
             }
-            else if ((stability>0) && (newCost-lastCost>1e-5)) 
+            else if ((stability>0) && (newCost-lastCost>-1e-5)) 
               stability=nstabilizers;
 //             else if ((newCost>lastCost)&&(StabilizerMethod=="fit")&&(mappedStabilizers.size()>2))
 //             {

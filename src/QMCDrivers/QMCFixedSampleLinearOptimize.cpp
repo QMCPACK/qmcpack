@@ -161,10 +161,11 @@ bool QMCFixedSampleLinearOptimize::run()
           RealType newCost(lastCost);
           RealType startCost(lastCost);
           
-          Matrix<RealType> LeftT(N,N);
-          Matrix<RealType> Left(N,N);
-          Matrix<RealType> Right(N,N);
+          Matrix<RealType> LeftT;
+          Matrix<RealType> Left;
+          Matrix<RealType> Right;
           RealType H2rescale=optTarget->fillOverlapHamiltonianMatrices(LeftT,Right);
+          Left=0.0;
 //           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
           
 //           if (GEVtype=="H2")

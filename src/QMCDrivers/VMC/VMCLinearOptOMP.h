@@ -47,27 +47,25 @@ namespace qmcplusplus
         for(int i=0;i<NE_i.size();i++) cstVec[i]=NE_i[i];
       }
 
-      void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
+//       void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
       RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
 
       inline void clearComponentMatrices()
       {
-        HDiHDj=0;
-        DiHDj=0;
-        DiHDjE=0;
-        DiDj=0;
-        DiDjE=0;
-        DiDjE2=0;
-        for (int i=0; i<NumOptimizables; i++)
+        
+        Ham2=0.0;
+        Ham=0.0;
+        Olp=0.0;
+        DerivRecords=0.0;
+        HDerivRecords=0.0;
+
+        for(int i=0;i<D_E.size();i++)
         {
-          HDi[i]=0;
-          HDiE[i]=0;
-          Di[i]=0;
-          DiE[i]=0;
-          DiE2[i]=0;
+          D_E[i]=0.0;
+          HD[i]=0.0;
+          HD2[i]=0.0;
+          D[i]=0.0;
         }
-        DerivRecords=0;
-        HDerivRecords=0;
         sE=0;
         sE2=0;
         sE4=0;
@@ -105,8 +103,8 @@ namespace qmcplusplus
       vector<RandomGenerator_t> RngSaved;
 
       ///These are the values we collect to build the Matrices GLOBAL
-      Matrix<RealType> HDiHDj, DiHDj, DiHDjE, DiDj, DiDjE, DiDjE2;
-      std::vector<RealType> HDi, HDiE, Di, DiE, DiE2;
+      Matrix<RealType> Ham, Ham2, Olp;
+      std::vector<RealType> D_E, HD2, HD, D;
       RealType sE,sE2,sE4,sW,sN;
       ///Temp matrices
       Matrix<RealType> DerivRecords, HDerivRecords;
@@ -116,38 +114,16 @@ namespace qmcplusplus
 
       void resizeForOpt(int n)
       {
-        HDiHDj.resize(n,n);
-        DiHDj.resize(n,n);
-        DiHDjE.resize(n,n);
-        DiDj.resize(n,n);
-        DiDjE.resize(n,n);
-        DiDjE2.resize(n,n);
+        Ham2.resize(n,n);
+        Ham.resize(n,n);
+        Olp.resize(n,n);
         DerivRecords.resize(NumThreads,n);
         HDerivRecords.resize(NumThreads,n);
 
-        HDiHDj=0.0;
-        DiHDj=0.0;
-        DiHDjE=0.0;
-        DiDj=0.0;
-        DiDjE=0.0;
-        DiDjE2=0.0;
-        DerivRecords=0.0;
-        HDerivRecords=0.0;
-
-
-        HDi.resize(n);
-        HDiE.resize(n);
-        Di.resize(n);
-        DiE.resize(n);
-        DiE2.resize(n);
-        for(int i=0;i<n;i++)
-        {
-          HDi[i]=0.0;
-          HDiE[i]=0.0;
-          Di[i]=0.0;
-          DiE[i]=0.0;
-          DiE2[i]=0.0;
-        }
+        D_E.resize(n);
+        HD.resize(n);
+        HD2.resize(n);
+        D.resize(n);
 
         clearComponentMatrices();
       }
