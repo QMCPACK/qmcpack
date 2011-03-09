@@ -1016,15 +1016,12 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     RealType nrm = 1.0/g_stats[3];
     E_avg = nrm*g_stats[0];
     V_avg = nrm*g_stats[1]-E_avg*E_avg;
-    //         app_log()<<V_avg<<"  "<<E_avg<<"  "<<std::log(sW)<<endl;
+    
     RealType g_nrm = 1.0/g_stats[4];
     RealType err_E(std::sqrt( ((V_avg<0.0)?(1.0):(V_avg*g_nrm)) ));
     RealType err_E2(nrm*g_stats[2]-nrm*nrm*sE2*sE2);
-    err_E2 *= g_nrm;
-    err_E2 = std::sqrt( ((err_E2<0.0)?(1.0):(err_E2)) );
+    err_E2 = std::sqrt( ((err_E2<0.0)?(1.0):(err_E2*g_nrm)) );
     
-    
-
     return w_beta*err_E2+(1.0-w_beta)*err_E;
   }
 
