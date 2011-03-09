@@ -20,7 +20,7 @@
 #include "QMCApp/QMCDriverFactory.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h" 
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
@@ -127,9 +127,9 @@ namespace qmcplusplus {
     QMCRunType newRunType = DUMMY_RUN;
     if(curName != "qmc") qmc_mode=curName;
     int nchars=qmc_mode.size();
-    if((qmc_mode.find("linear") < nchars)|(qmc_mode.find("Energy") < nchars))
+    if(qmc_mode.find("linear") < nchars)
     {
-      if (qmc_mode.find("cs") < nchars)
+      if (qmc_mode.find("cslinear") < nchars)
         newRunType=CS_LINEAR_OPTIMIZE_RUN;
       else
         newRunType=LINEAR_OPTIMIZE_RUN;
@@ -380,9 +380,7 @@ namespace qmcplusplus {
     } 
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
     {
-//       QMCLinearOptimize *opt = new QMCLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
-      QMCCSLinearOptimize *opt = new QMCCSLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
+      QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 

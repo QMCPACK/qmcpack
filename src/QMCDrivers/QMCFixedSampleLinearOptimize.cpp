@@ -115,10 +115,6 @@ bool QMCFixedSampleLinearOptimize::run()
     optparm.resize(numParams,0);
     for (int i=0; i<numParams; i++) currentParameters[i] = optTarget->Params(i);
 
-    Matrix<RealType> Ham(N,N);
-    Matrix<RealType> Ham2(N,N);
-    Matrix<RealType> Var(N,N);
-    Matrix<RealType> S(N,N);
     vector<RealType> BestDirection(N,0);
     vector<RealType> bestParameters(currentParameters);
     vector<RealType> GEVSplitParameters(numParams,0);
@@ -146,11 +142,6 @@ bool QMCFixedSampleLinearOptimize::run()
           bool acceptedOneMove(false);
           int tooManyTries(20);
           int failedTries(0);
-
-          Matrix<RealType> Left_tmp(N,N);
-          Matrix<RealType> Left(N,N);
-          Matrix<RealType> Right(N,N);
-
           vector<std::pair<RealType,RealType> > mappedStabilizers;
           if (nstabilizers<2)
           {
@@ -167,37 +158,37 @@ bool QMCFixedSampleLinearOptimize::run()
           // mmorales
           Valid=optTarget->IsValid;
           if (!ValidCostFunction(Valid)) continue;
-          
           RealType newCost(lastCost);
           RealType startCost(lastCost);
-          optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
-          RealType H2rescale=1.0;
-
-          if (GEVtype=="H2")
-          {
-              Left_tmp=Ham;
-              H2rescale=1.0/Ham2(0,0);
-              Right=(1-w_beta)*S + w_beta*H2rescale*Ham2;
-          }
-          else
-          {
-              Right=S;
-              Left_tmp=(1.0-w_beta)*Ham + w_beta*Var;
-          }
+          
+          Matrix<RealType> LeftT(N,N);
+          Matrix<RealType> Left(N,N);
+          Matrix<RealType> Right(N,N);
+          RealType H2rescale=optTarget->fillOverlapHamiltonianMatrices(LeftT,Right);
+//           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
+          
+//           if (GEVtype=="H2")
+//           {
+//             
+//               Left_tmp=Ham;
+//               H2rescale=1.0/Ham2(0,0);
+//               Right=(1-w_beta)*S + w_beta*H2rescale*Ham2;
+//           }
+//           else
+//           {
+//               Right=S;
+//               Left_tmp=(1.0-w_beta)*Ham + w_beta*Var;
+//           }
           
           bool apply_inverse(true);
           if(apply_inverse)
           {
-            invert_matrix(Right,false);
-//               app_log()<<Right(0,0)<<endl;
-//               RealType S_D_inv(1.0/Right(0,0));
-//               for (int i=0; i<N; i++) for (int j=0; j<N; j++) Right(i,j)*=S_D_inv;
+            Matrix<RealType> RightT(Right);
+            invert_matrix(RightT,false);
             MatrixOperators MO;
-            MO.product(Right,Left_tmp,Left);
+            MO.product(RightT,LeftT,Left);
           }
-          else
-            Left=Left_tmp;
-
+          
           
           //Find largest off-diagonal element compared to diagonal element.
           //This gives us an idea how well conditioned it is and can be used to stabilize.
@@ -211,14 +202,9 @@ bool QMCFixedSampleLinearOptimize::run()
           RealType safe = Left(0,0);
           for (int stability=0; stability<nstabilizers; stability++)
           {
-              
-            Matrix<RealType> LeftT(N,N);//, RightT(N,N);
             for (int i=0; i<N; i++)
               for (int j=0; j<N; j++)
-              {
                   LeftT(i,j)= Left(j,i);
-                  //RightT(i,j)= Right(j,i);
-              }
 
             RealType XS(stabilityBase+od_largest*stability);
             int nms(0);
@@ -252,7 +238,7 @@ bool QMCFixedSampleLinearOptimize::run()
               }
             }
             for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
-//             app_log()<<"  Using XS:"<<XS<<endl;
+            app_log()<<"  Using XS:"<<XS<<endl;
             
             RealType lowestEV(0);
             myTimers[2]->start();
@@ -260,12 +246,12 @@ bool QMCFixedSampleLinearOptimize::run()
             lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
             myTimers[2]->stop();
             
-            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
+            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,Right);
             RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
             if (std::abs(Lambda*bigVec)>bigChange)
             {
-                app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+                app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<<endl;
                 if (stability==0)
                 {
                   failedTries++; stability--;
@@ -361,7 +347,7 @@ bool QMCFixedSampleLinearOptimize::run()
               acceptedOneMove=true;
               deltaPrms= Lambda;
             }
-            else if ((stability>0) && (newCost>lastCost)) 
+            else if ((stability>0) && (newCost>(lastCost-1e-5))) 
               stability=nstabilizers;
 //             else if ((newCost>lastCost)&&(StabilizerMethod=="fit")&&(mappedStabilizers.size()>2))
 //             {

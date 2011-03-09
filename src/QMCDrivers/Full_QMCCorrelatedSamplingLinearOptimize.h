@@ -14,18 +14,24 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file QMCCorrelatedSamplingLinearOptimize.h
+/** @file QMCCSLinearOptimize.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCCSINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/VMC/VMCLinearOptOMP.h"
-#include "Optimize/NRCOptimization.h"
+#include "QMCDrivers/QMCCSLinearOptimizeWFmanagerOMP.h"
+#include "Optimize/OptimizeBase.h"
 
 namespace qmcplusplus
 {
+
+///forward declaration of a cost function
+class QMCCostFunctionBase;
+class HamiltonianPool;
+
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -33,46 +39,41 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCCorrelatedSamplingLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+class QMCCSLinearOptimize: public QMCLinearOptimize
 {
 public:
 
     ///Constructor.
-    QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+    QMCCSLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                      QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
 
     ///Destructor
-    ~QMCCorrelatedSamplingLinearOptimize();
+    ~QMCCSLinearOptimize();
 
     ///Run the Optimization algorithm.
     bool run();
     ///process xml node
     bool put(xmlNodePtr cur);
-    RealType Func(Return_t dl);
 
 private:
-   inline bool ValidCostFunction(bool valid)
-   {
-    if (!valid) app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
-    return valid;
-   }
-   VMCLinearOptOMP* vmcCSEngine;
+    VMCLinearOptOMP* vmcCSEngine;
     int NumOfVMCWalkers;
     ///Number of iterations maximum before generating new configurations.
     int Max_iterations;
+    /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
+    string MinMethod, GEVtype;
+
+    RealType stabilizerScale, bigChange, exp0, stepsize;
+    RealType Lambda;
     int nstabilizers;
-    RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-    string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
+    /// percent variance or H2 to mix in
     RealType w_beta;
-    /// number of previous steps to orthogonalize to.
-    int eigCG;
-    /// total number of cg steps per iterations
-    int  TotalCGSteps;
+
 };
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 757 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: QMCCorrelatedSamplingLinearOptimize.h 757 2005-10-31 16:10:28Z jnkim $
+ * $Id: QMCCSLinearOptimize.h 757 2005-10-31 16:10:28Z jnkim $
  ***************************************************************************/

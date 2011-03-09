@@ -122,7 +122,7 @@ public:
         RealType Xmin = QuarticMinimum(Coefs);
         val=0;
         for (int i=0; i<5; i++) val+=std::pow(Xmin,i)*Coefs[i];
-        app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val;
+        app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val<<endl;;
 //         for (int i=0; i<5; i++) app_log()<<Coefs[i]<<" ";
 //         app_log()<<endl;
         SuccessfulFit=true;
@@ -152,7 +152,7 @@ public:
         RealType Xmin = -0.5*Coefs[1]/Coefs[2];
         val=0;
         for (int i=0; i<3; i++) val+=std::pow(Xmin,i)*Coefs[i];
-        app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val;
+        app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val<<endl;
 //         for (int i=0; i<3; i++) app_log()<<Coefs[i]<<" ";
 //         app_log()<<endl;
         SuccessfulFit=true;

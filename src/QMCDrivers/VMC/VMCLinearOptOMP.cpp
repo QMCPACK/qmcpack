@@ -53,7 +53,7 @@ namespace qmcplusplus
     m_param.add(logoffset,"logoffset","double");
     m_param.add(GEVtype,"GEVMethod","string");
     m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
-    m_param.add(myRNWarmupSteps,"cswarmupsteps","int");
+    m_param.add(myRNWarmupSteps,"cswarmupsteps","int");    
   }
 
   bool VMCLinearOptOMP::run()
@@ -89,6 +89,7 @@ namespace qmcplusplus
       for (int ip=0; ip<NumThreads; ++ip)
       { 
         Movers[ip]->startBlock(nSteps);
+        int now_loc=CurrentStep;
         //rest the collectables and keep adding
         wClones[ip]->resetCollectables();
         //rest the collectables and keep adding
@@ -98,6 +99,9 @@ namespace qmcplusplus
         {
           Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
+          ++now_loc;
+          
+          if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
         }
         Movers[ip]->stopBlock(false);
       }//end-of-parallel for
@@ -449,6 +453,26 @@ namespace qmcplusplus
     //     firstWalker=(*W[0]);
     makeClones(W,Psi,H);
     clearCSEstimators();
+    
+    std::vector<IndexType> samples_th(omp_get_max_threads(),0);
+    myPeriod4WalkerDump=(Period4WalkerDump>0)?Period4WalkerDump:(nBlocks+1)*nSteps;
+    
+    int samples_this_node = nTargetSamples/myComm->size();
+    if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
+    
+    int samples_each_thread = samples_this_node/omp_get_max_threads();
+    for (int ip=0; ip<omp_get_max_threads(); ++ip) samples_th[ip]=samples_each_thread; 
+    
+    if(samples_this_node%omp_get_max_threads())
+      for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
+    
+    app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
+    app_log() << "  Total Sample Size =" << nTargetSamples << endl;  
+    app_log() << "  Nodes Sample Size =" << samples_this_node << endl;  
+    for (int ip=0; ip<NumThreads; ++ip)
+      app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+    
     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
 
@@ -551,13 +575,11 @@ namespace qmcplusplus
         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 
-
-
-#pragma omp critical
-        {
-          wClones[ip]->clearEnsemble();
-          wClones[ip]->setNumSamples(0);
-        }
+    #pragma omp critical
+          {
+            wClones[ip]->clearEnsemble();
+            wClones[ip]->setNumSamples(samples_th[ip]);
+          }
       }
     }
 
@@ -609,8 +631,8 @@ namespace qmcplusplus
 
 #pragma omp critical
         {
-          wClones[ip]->clearEnsemble();
-          wClones[ip]->setNumSamples(0);
+            wClones[ip]->clearEnsemble();
+            wClones[ip]->setNumSamples(samples_th[ip]);
         }
       }
     }
@@ -691,6 +713,102 @@ namespace qmcplusplus
         Variance(pm,pm2) += V_avg*Overlap(pm,pm2);
 
     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+  }
+
+  VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
+  {
+    RealType b1,b2;
+    if (GEVtype=="H2")
+    {
+      b1=w_beta; b2=0;
+    }
+    else
+    {
+      b2=w_beta; b1=0;
+    }
+    
+    RealType nrm = 1.0/sW;
+    //     RealType nrm2 = nrm*nrm;
+    for (int i=0; i<NumOptimizables; i++)
+    {
+      HDiE[i]*= nrm;
+      HDi[i] *= nrm;
+      DiE2[i]*= nrm;
+      DiE[i] *= nrm;
+      Di[i]  *= nrm;
+    }
+    HDiHDj*= nrm;
+    DiHDjE*= nrm;
+    DiHDj *= nrm;
+    DiDjE2*= nrm;
+    DiDjE *= nrm;
+    DiDj  *= nrm;
+
+    RealType H2_avg = 1.0/(sE2*nrm);
+    E_avg = sE*nrm;
+    V_avg = H2_avg - E_avg*E_avg;
+
+
+    for (int pm=0; pm<NumOptimizables; pm++)
+    {
+      RealType wfe = HDi[pm] + DiE[pm]-Di[pm]*E_avg;
+      RealType wfm = HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg;
+      //         Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+
+//       H2
+      RightM(0,pm+1) += b1*H2_avg*(HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
+      RightM(pm+1,0) += b1*H2_avg*( HDiE[pm] + DiE2[pm]-DiE[pm]*E_avg);
+
+      //         HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+      RealType vterm = HDiE[pm]-HDi[pm]*E_avg + DiE2[pm]-Di[pm]*H2_avg -2.0*E_avg*(DiE[pm]-Di[pm]*E_avg);
+//       variance
+      LeftM(0,pm+1) += b2*vterm;
+      LeftM(pm+1,0) += b2*vterm;
+
+//       hamiltonian
+      LeftM(0,pm+1) += (1-b2)*wfe;
+      LeftM(pm+1,0) += (1-b2)*(DiE[pm]-Di[pm]*E_avg);
+
+      for (int pm2=0; pm2<NumOptimizables; pm2++)
+      {
+        //           H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
+        //           Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+        //           Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
+        //           Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
+
+        //        Symmetric  (HDi[pm] + DiE[pm]-Di[pm]*E_avg)(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg)
+//         H2
+        RightM(pm+1,pm2+1) += (b1*H2_avg)*(HDiHDj(pm,pm2) + DiHDjE(pm2,pm) - DiHDj(pm2,pm)*E_avg
+          + DiHDjE(pm,pm2) + DiDjE2(pm,pm2) - DiDjE(pm,pm2)*E_avg
+          + E_avg*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - DiDj(pm,pm2)*E_avg));
+        //        Non-symmetric    (Dsaved[pm]-D_avg[pm])*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w))
+//         Hamiltonian
+        LeftM(pm+1,pm2+1) += (1-b2)*(DiHDj(pm,pm2) + DiDjE(pm,pm2) - Di[pm2]*DiE[pm] - Di[pm]*(HDi[pm2] + DiE[pm2]-Di[pm2]*E_avg));
+        //        Symmetric  (HDi[pm] - 2.0*DiE[pm] + 2.0*Di[pm]*E_avg)*( HDi[pm2] - 2.0* DiE[pm2]+2.0*Di[pm2]*E_avg)
+//         Variance
+        LeftM(pm+1,pm2+1) += b2*(HDiHDj(pm,pm2) -2.0*DiHDjE(pm2,pm) +2.0*DiHDj(pm,pm2)*E_avg
+          -2.0*( DiHDjE(pm,pm2) - 2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2))
+          +2.0*E_avg*(DiHDj(pm,pm2) -2.0*DiDjE(pm,pm2) +2.0*E_avg*DiDj(pm,pm2)));
+        //        Symmetric
+//         Overlap
+        RightM(pm+1,pm2+1) += (1-b1)*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
+//         LeftM(pm+1,pm2+1) += b2*V_avg*(DiDj(pm,pm2)-Di[pm]*Di[pm2]);
+      }
+    }
+
+    LeftM(0,0) += (1-b2)*E_avg;
+    RightM(0,0) = 1.0;
+    LeftM(0,0) += b2*V_avg;
+
+//     for (int pm=0; pm<NumOptimizables; pm++)
+//       for (int pm2=0; pm2<NumOptimizables; pm2++)
+//         LeftM(pm+1,pm2+1) += b2*V_avg*RightM(pm+1,pm2+1);
+
+    //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+    if (GEVtype=="H2")
+      return 1.0/H2_avg;
+    return 1.0;
+    
   }
 
   VMCLinearOptOMP::RealType VMCLinearOptOMP::fillComponentMatrices()

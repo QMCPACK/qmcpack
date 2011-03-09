@@ -616,7 +616,104 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
             
     return 1.0;
   }
+  
+  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
+  {
+    RealType b1,b2;
+    if (GEVType=="H2")
+    {
+      b1=w_beta; b2=0;
+    }
+    else
+    {
+      b2=w_beta; b1=0;
+    }
+    
+//     resetPsi();
+//     Return_t NWE = NumWalkersEff=correlatedSampling(true);
+    curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+    Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
+    RealType H2_avg = 1.0/curAvg2_w;
+    RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
+    vector<Return_t> D_avg(NumParams(),0);
+    Return_t wgtinv = 1.0/SumValue[SUM_WGT];
+    
+    
+    for (int ip=0, wn=0; ip<NumThreads; ip++)
+      {
+        int nw=wClones[ip]->getActiveWalkers();
+        
+        
+        for (int iw=0; iw<nw;iw++,wn++)
+          {
+            const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+            Return_t weight=saved[REWEIGHT]*wgtinv;
+            const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+            for (int pm=0; pm<NumParams();pm++)
+              {
+                D_avg[pm]+= Dsaved[pm]*weight;
+              } 
+          }
+      }
+    myComm->allreduce(D_avg);
+    for (int ip=0, wn=0; ip<NumThreads; ip++)
+      {
+        int nw=wClones[ip]->getActiveWalkers();
+        for (int iw=0; iw<nw;iw++,wn++)
+          {
+            const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+            Return_t weight=saved[REWEIGHT]*wgtinv;
+            Return_t eloc_new=saved[ENERGY_NEW];
+            const Return_t* Dsaved= (*DerivRecords[ip])[iw];
+            const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
 
+              for (int pm=0; pm<NumParams();pm++)
+              {
+                Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+                Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+                Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+                
+//                 H2
+                Right(0,pm+1) += b1*H2_avg*wfe*(eloc_new);
+                Right(pm+1,0) += b1*H2_avg*wfe*(eloc_new);
+                
+                Return_t vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+//                 Variance
+                Left(0,pm+1) += b2*vterm*weight;
+                Left(pm+1,0) += b2*vterm*weight;
+                
+//                 Hamiltonian
+                Left(0,pm+1) += (1-b2)*wfe;
+                Left(pm+1,0) += (1-b2)*wfd*(eloc_new-curAvg_w);                
+                for (int pm2=0; pm2<NumParams();pm2++)
+                {
+//                   H2
+                  Right(pm+1,pm2+1) += (b1*H2_avg)*wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
+//                   Hamiltonian
+                  Left(pm+1,pm2+1) += (1-b2)*wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
+// //                   Variance
+//                   RealType varij=wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
+//                   Left(pm+1,pm2+1) +=  b2*varij;
+//                   Overlap
+                  RealType ovlij=wfd*(Dsaved[pm2]-D_avg[pm2]);
+                  Right(pm+1,pm2+1) += (1-b1)*ovlij;
+                  Left(pm+1,pm2+1) += b2*V_avg*ovlij;
+                }
+              }
+          }
+      }
+    myComm->allreduce(Right);
+    myComm->allreduce(Left);
+    
+    Left(0,0) = (1-b2)*curAvg_w + b2*V_avg;
+    Right(0,0) = 1.0;
+        
+    if (GEVType=="H2")
+      return H2_avg;
+            
+    return 1.0;
+    
+  }
 }
 /***************************************************************************
 * $RCSfile$   $Author: jnkim $

@@ -484,6 +484,8 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     m_param.add(usebuffer,"useBuffer","string");
     m_param.add(usebuffer,"usebuffer","string");
     m_param.add(includeNonlocalH,"nonlocalpp","string");
+    m_param.add(w_beta,"beta","double");
+    m_param.add(GEVType,"GEVMethod","string");
     m_param.put(q);
 
     Write2OneXml = (writeXmlPerStep == "no");

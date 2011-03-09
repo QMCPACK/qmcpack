@@ -48,6 +48,7 @@ namespace qmcplusplus
       }
 
       void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
+      RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
 
       inline void clearComponentMatrices()
       {
@@ -79,6 +80,8 @@ namespace qmcplusplus
       int myWarmupSteps;
       ///number of RN warmup steps
       int myRNWarmupSteps;
+      ///period for walker dump
+      int myPeriod4WalkerDump;
       ///option to enable/disable drift equation for VMC
       string UseDrift;
       ///target errorbars to use to determine when to stop for filling matrix and line minimization
