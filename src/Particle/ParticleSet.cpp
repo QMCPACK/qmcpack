@@ -72,6 +72,8 @@ namespace qmcplusplus
 
     PropertyHistory=  p.PropertyHistory;
 
+    Collectables=p.Collectables;
+
     //construct the distance tables with the same order
     //first is always for this-this paier
     for (int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());

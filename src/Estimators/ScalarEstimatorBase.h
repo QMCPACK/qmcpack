@@ -69,6 +69,12 @@ namespace qmcplusplus {
     virtual void accumulate_fw( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
     {}
     
+    ///return the size of scalars it manages
+    inline int size() const 
+    {
+      return scalars.size();
+    }
+
     ///clear the scalars to collect
     inline void clear() 
     {

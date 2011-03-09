@@ -90,13 +90,10 @@ namespace qmcplusplus
       { 
         Movers[ip]->startBlock(nSteps);
         int now_loc=CurrentStep;
-        //rest the collectables and keep adding
-        wClones[ip]->resetCollectables();
-        //rest the collectables and keep adding
-
         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
         for (int step=0; step<nSteps; ++step)
         {
+          wClones[ip]->resetCollectables();
           Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
           ++now_loc;
@@ -105,9 +102,8 @@ namespace qmcplusplus
         }
         Movers[ip]->stopBlock(false);
       }//end-of-parallel for
-      CurrentStep+=nSteps;
 
-      Estimators->accumulateCollectables(wClones,nSteps);
+      CurrentStep+=nSteps;
       Estimators->stopBlock(estimatorClones);
 #pragma omp parallel for
       for (int ip=0; ip<NumThreads; ++ip)

@@ -41,17 +41,21 @@ namespace qmcplusplus {
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)
+   *
+   * Do not add Collectables to record
    */
   void CollectablesEstimator::add2Record(RecordListType& record) 
   {
-    FirstIndex = record.size();
-    for(int i=0; i<refH.sizeOfCollectables(); ++i)
-    {
-      ostringstream o;
-      o<<"a"<<i;
-      int dummy=record.add(o.str());
-    }
-    LastIndex = record.size();
+    FirstIndex=record.size();
+    LastIndex=FirstIndex+scalars.size();
+    //FirstIndex = record.size();
+    //for(int i=0; i<refH.sizeOfCollectables(); ++i)
+    //{
+    //  ostringstream o;
+    //  o<<"a"<<i;
+    //  int dummy=record.add(o.str());
+    //}
+    //LastIndex = record.size();
     clear();
   }
 

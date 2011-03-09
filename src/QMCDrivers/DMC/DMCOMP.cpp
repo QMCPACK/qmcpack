@@ -246,14 +246,14 @@ namespace qmcplusplus {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
 
           wClones[ip]->resetCollectables();
+
           Movers[ip]->advanceWalkers(wit,wit_end,false);
 
           Movers[ip]->setMultiplicity(wit,wit_end);
 
           if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
         }//#pragma omp parallel
-        
-        Estimators->accumulateCollectables(wClones,1.0);
+       
         branchEngine->branch(CurrentStep,W, branchClones);
 //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
 //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);

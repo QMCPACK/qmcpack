@@ -79,44 +79,40 @@ namespace qmcplusplus
       vector<RealType> tmp(NumK);
       collectables.add(tmp.begin(),tmp.end());
     }
-      else
+    else
+    {
+      myIndex=plist.size();
+      for (int i=0;i<NumK;i++)
       {
-        myIndex=plist.size();
-        for (int i=0;i<NumK;i++)
-          {
-            std::stringstream sstr;
-            sstr << "sk_" <<i;
-            int id=plist.add(sstr.str());
-          }
+        std::stringstream sstr;
+        sstr << "sk_" <<i;
+        int id=plist.add(sstr.str());
       }
+    }
   }
   
     void SkEstimator::addObservables(PropertySetType& plist )
   { 
-        myIndex=plist.size();
-        for (int i=0;i<NumK;i++)
-          {
-            std::stringstream sstr;
-            sstr << "sk_" <<i;
-            int id=plist.add(sstr.str());
-          } 
+    myIndex=plist.size();
+    for (int i=0;i<NumK;i++)
+    {
+      std::stringstream sstr;
+      sstr << "sk_" <<i;
+      int id=plist.add(sstr.str());
+    } 
   }
   
     void SkEstimator::setObservables(PropertySetType& plist)
   {
     if (!hdf5_out)
-      {
-        std::copy(values.begin(),values.end(),plist.begin()+myIndex);
-      }
+      std::copy(values.begin(),values.end(),plist.begin()+myIndex);
   }
 
   void SkEstimator::setParticlePropertyList(PropertySetType& plist
       , int offset)
   {
     if (!hdf5_out)
-      {
-        std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
-      }
+      std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
   }
   
 
@@ -125,7 +121,6 @@ namespace qmcplusplus
   {
     if (hdf5_out)
     {
-      app_log() << " SkEstimator::registerCollectables " << endl;
       vector<int> ndim(1,NumK);
       observable_helper* h5o=new observable_helper(myName);
       h5o->set_dimensions(ndim,myIndex);
@@ -150,12 +145,15 @@ namespace qmcplusplus
 
   bool SkEstimator::put(xmlNodePtr cur)
   {
-    string ctype("scalar");
     OhmmsAttributeSet pAttrib;
-    pAttrib.add(ctype,"mode"); 
+    string hdf5_flag="no";
+    pAttrib.add(hdf5_flag,"hdf5");
     pAttrib.put(cur);
-    if (ctype=="hdf5") hdf5_out=true;
-    else hdf5_out=false;
+
+    if (hdf5_flag=="yes") 
+      hdf5_out=true;
+    else 
+      hdf5_out=false;
     
     return true;
   }

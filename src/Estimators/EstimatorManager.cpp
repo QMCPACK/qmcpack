@@ -69,6 +69,7 @@ namespace qmcplusplus {
     for(int i=0; i<em.Estimators.size(); i++) 
       Estimators.push_back(em.Estimators[i]->clone());
     MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
+    if(em.Collectables) Collectables=em.Collectables->clone();
   }
 
   EstimatorManager::~EstimatorManager()
@@ -76,6 +77,7 @@ namespace qmcplusplus {
     delete_iter(Estimators.begin(), Estimators.end());
     delete_iter(RemoteData.begin(), RemoteData.end());
     delete_iter(h5desc.begin(), h5desc.end());
+    if(Collectables) delete Collectables;
   }
 
   void EstimatorManager::setCommunicator(Communicate* c) 
@@ -127,6 +129,8 @@ namespace qmcplusplus {
     BlockAverages.clear();//cleaup the records
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->add2Record(BlockAverages);
+
+    if(Collectables) Collectables->add2Record(BlockAverages);
   }
 
   void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
@@ -160,9 +164,11 @@ namespace qmcplusplus {
     energyAccumulator.clear();
     varAccumulator.clear();
 
+    int nc=(Collectables)?Collectables->size():0;
+
     BlockAverages.setValues(0.0);
-    AverageCache.resize(BlockAverages.size());
-    SquaredAverageCache.resize(BlockAverages.size());
+    AverageCache.resize(BlockAverages.size()+nc);
+    SquaredAverageCache.resize(BlockAverages.size()+nc);
     PropertyCache.resize(BlockProperties.size());
 
     //count the buffer size for message
@@ -211,6 +217,8 @@ namespace qmcplusplus {
       h_file= H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
       for(int i=0; i<Estimators.size(); i++) 
         Estimators[i]->registerObservables(h5desc,h_file);
+
+      if(Collectables) Collectables->registerObservables(h5desc,h_file);
 
 #if defined(QMC_ASYNC_COLLECT)
       if(Options[COLLECT])
@@ -279,6 +287,10 @@ namespace qmcplusplus {
     BlockWeight=0.0;
   }
 
+  /** take statistics of a block
+   * @param accept acceptance rate of this block
+   * @param collectall if true, need to gather data over MPI tasks
+   */
   void EstimatorManager::stopBlock(RealType accept, bool collectall)
   {
     //take block averages and update properties per block
@@ -286,22 +298,21 @@ namespace qmcplusplus {
     PropertyCache[cpuInd] = MyTimer.elapsed();
     PropertyCache[acceptInd] = accept;
 
-    //for(int i=0; i<Estimators.size(); i++) 
-    //  Estimators[i]->takeBlockAverage(AverageCache.begin());
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
 
-    if(collectall) collectBlockAverages();
+    if(Collectables) 
+      Collectables->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
+
+    if(collectall) collectBlockAverages(1);
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*>& est)
   {
+
     //normalized it by the thread
     int num_threads=est.size();
     RealType tnorm=1.0/num_threads;
-
-    //BlockWeight=est[0]->BlockWeight;
-    //for(int i=1; i<num_threads; i++) BlockWeight += est[i]->BlockWeight;
 
     AverageCache=est[0]->AverageCache;
     for(int i=1; i<num_threads; i++) AverageCache +=est[i]->AverageCache;
@@ -332,9 +343,7 @@ namespace qmcplusplus {
       {
         BufferType::iterator cur(RemoteData[0]->begin());
         std::copy(AverageCache.begin(),AverageCache.end(),cur);
-        //cur+=AverageCache.size();
         std::copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
-        //cur+=SquaredAverageCache.size();
         std::copy(PropertyCache.begin(),PropertyCache.end(),cur+n2);
       }
 
@@ -393,24 +402,9 @@ namespace qmcplusplus {
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
+    if(Collectables)
+      Collectables->accumulate_all(W.Collectables,norm);
   }
-
-  void EstimatorManager::accumulateCollectables(const vector<MCWalkerConfiguration*>& wclones, int nsteps)
-  {
-    if(Collectables==0) return;
-    RealType wgt=static_cast<RealType>(nsteps)/static_cast<RealType>(wclones[0]->getGlobalNumWalkers());
-    for(int ip=0;ip<wclones.size(); ++ip)
-      Collectables->accumulate_all(wclones[ip]->Collectables,wgt);
-  }
-
-
-  void EstimatorManager::accumulate( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
-  {
-    BlockWeight=1;
-    for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate_fw(OBS,WGTS,Dims);
-  }
-
 
   void EstimatorManager::accumulate(MCWalkerConfiguration& W 
      , MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end)
@@ -419,7 +413,18 @@ namespace qmcplusplus {
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W,it,it_end,norm);
+
+    if(Collectables)
+      Collectables->accumulate_all(W.Collectables,norm);
   }
+
+  void EstimatorManager::accumulate( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
+  {
+    BlockWeight=1;
+    for(int i=0; i< Estimators.size(); i++) 
+      Estimators[i]->accumulate_fw(OBS,WGTS,Dims);
+  }
+
 
   void EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w, RealType& var) 
   {
@@ -545,12 +550,13 @@ namespace qmcplusplus {
       //add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
+    //Collectables is special and should not be added to Estimators
     if(Collectables == 0 && H.sizeOfCollectables())
     {
       app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << endl;
       Collectables=new CollectablesEstimator(H);
-      add(Collectables,"collectables");
     }
+
     return true;
   }
 

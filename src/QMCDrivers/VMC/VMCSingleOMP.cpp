@@ -67,27 +67,29 @@ namespace qmcplusplus
 
         Movers[ip]->startBlock(nSteps);
         int now_loc=CurrentStep;
-        //rest the collectables and keep adding
-        wClones[ip]->resetCollectables();
+
         for (int step=0; step<nSteps;++step)
         {
+          //collectables are reset, it is accumulated while advancing walkers
+          wClones[ip]->resetCollectables();
           Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
           ++now_loc;
-          if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
+
+          //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
           if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);                
+
           if(storeConfigs && (now_loc%storeConfigs == 0)) 
-          {
             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
-          }
         }
+
         Movers[ip]->stopBlock(false);
       }//end-of-parallel for
 
-      Estimators->accumulateCollectables(wClones,nSteps);
-
+      //Estimators->accumulateCollectables(wClones,nSteps);
       CurrentStep+=nSteps;
       Estimators->stopBlock(estimatorClones);
+
       //why was this commented out? Are checkpoints stored some other way?
       if(storeConfigs) recordBlock(block);
     }//block
