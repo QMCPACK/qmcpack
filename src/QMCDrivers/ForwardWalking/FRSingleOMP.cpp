@@ -178,7 +178,7 @@ namespace qmcplusplus {
         //         if (ip<nthr)
         //         app_log()<< "walkersPerBlock[step] : "<<walkersPerBlock[step]<<" step: "<<step<<" nthr: "<<nthr<<endl;
         //         app_log()<<ThreadsCoordinate[ip]->size()<< " "<<walkersPerBlock[step]*nfloats<<endl;
-#pragma omp for
+#pragma omp parallel for
         for (int ip=0;ip<nthr;ip++)
           for(int iwt=0; iwt<walkersPerBlock[step+ip]; iwt++)
           {
@@ -198,7 +198,9 @@ namespace qmcplusplus {
               }
             }
           }
+
         if (verbose >1) cout<<"Done with step: "<<step<<" Gen: "<<Gen<<endl;
+
       }
 
       //       for (int ip2=0;ip2<NumThreads;ip2++)
