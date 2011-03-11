@@ -24,7 +24,7 @@ namespace qmcplusplus {
     : QMCDriver(w,psi,h,ppool), CloneManager(hpool), weightFreq(1), weightLength(1), fname(""), verbose(0)
       , WIDstring("WalkerID"), PIDstring("ParentID"),gensTransferred(1),startStep(0), doWeights(1), gridDivs(100), ptclPool(pset), ionroot("ion0")
   { 
-    
+
     RootName = "FR";
     QMCType ="FRSingleOMP";
     xmlrootName="";
@@ -38,40 +38,40 @@ namespace qmcplusplus {
     m_param.add(startStep,"ignore","int");
     hdf_ID_data.setID(WIDstring);
     hdf_PID_data.setID(PIDstring);
-    
+
   }
-  
+
   bool FRSingleOMP::run() 
   {
     overL = 1.0/W.Lattice.Length[0];
     int nelectrons = W[0]->R.size();
     int nfloats=OHMMS_DIM*nelectrons;
     if (verbose>1) app_log()<<" nelectrons: "<<nelectrons<<" nfloats: "<<nfloats<<" ngrids: "<<gridDivs<<" overL: "<<overL<<endl;
-    
+
     int Xind = gridDivs*gridDivs;
     int Yind = gridDivs;
-            
+
     ParticleSet* ions = ptclPool.getParticleSet(ionroot);
     if(ions == 0) 
     {
-            APP_ABORT("Unknown source \"" + ionroot + "\" for density.");
+      APP_ABORT("Unknown source \"" + ionroot + "\" for density.");
     }
     vector<string> IONtypes(ions->mySpecies.speciesName);
     SpeciesSet& tspecies(ions->mySpecies);
     int membersize= tspecies.addAttribute("membersize");
-    
+
     vector<string> IONlist;
     for(int i=0;i<IONtypes.size();i++) for(int j=0;j<tspecies(membersize,i);j++) IONlist.push_back(IONtypes[i]);
-    
-//     stringstream Iname("");
-//     for(int i=0;i<IONnames.size();i++) for(int j=0;j<tspecies(membersize,i);j++)
-//     {
-//       Iname<<IONnames[i];
-//       if ((i!=IONnames.size()-1)||(j!=tspecies(membersize,i)-1)) Iname<<",";
-//     }
-//     char Names[sze];
-//     for(int i=0;i<sze;i++) Names[i] = Iname.str()[i];
-//     for(int i=0;i<sze;i++) app_log()<<Names[i];
+
+    //     stringstream Iname("");
+    //     for(int i=0;i<IONnames.size();i++) for(int j=0;j<tspecies(membersize,i);j++)
+    //     {
+    //       Iname<<IONnames[i];
+    //       if ((i!=IONnames.size()-1)||(j!=tspecies(membersize,i)-1)) Iname<<",";
+    //     }
+    //     char Names[sze];
+    //     for(int i=0;i<sze;i++) Names[i] = Iname.str()[i];
+    //     for(int i=0;i<sze;i++) app_log()<<Names[i];
 
 
     vector<double> IONpos;
@@ -82,15 +82,15 @@ namespace qmcplusplus {
       IONpos.push_back(ions->R[i][1]);
       IONpos.push_back(ions->R[i][2]);
     }
-//     for (int i=0;i<IONnames.size();i++)
-//     app_log()<<IONnames[i]<<" ";
-//     app_log()<<endl;
+    //     for (int i=0;i<IONnames.size();i++)
+    //     app_log()<<IONnames[i]<<" ";
+    //     app_log()<<endl;
     hdf_Den_data.setFileName(xmlrootName);
     hdf_Den_data.makeFile();
     hdf_Den_data.openFile();
     hdf_Den_data.writeIons(IONlist,IONpos,W.Lattice.Length[0],nelectrons,gridDivs);
     hdf_Den_data.closeFile();
-    
+
 
     if (doWeights==1)
     {
@@ -107,7 +107,7 @@ namespace qmcplusplus {
       {
         transferParentsOneGeneration();
         FWOneStep();
-  //       WeightHistory.push_back(Weights);
+        //       WeightHistory.push_back(Weights);
         hdf_WGT_data.openFile();
         hdf_WGT_data.addFW(ill);
         for (int i=0;i<Weights.size();i++) hdf_WGT_data.addStep(i,Weights[i]);
@@ -132,7 +132,7 @@ namespace qmcplusplus {
 
 
 
-    
+
 
     for(int Gen=0;Gen<weightLength;Gen++)
     {
@@ -148,7 +148,7 @@ namespace qmcplusplus {
         localDensity[i] = new vector<int> (gridDivs*gridDivs*gridDivs,0);
       }
       vector<int> localWeight(NumThreads,0); 
-      
+
       for(int step=startStep;step<(numSteps-Gen);step+=NumThreads)
       {
         int nEperB(-1);
@@ -159,27 +159,27 @@ namespace qmcplusplus {
           HDF5_FW_float hdf_float_data;
           HDF5_FW_weights hdf_WGT_data;
           hdf_WGT_data.setFileName(xmlrootName);
-          
+
           hdf_float_data.openFile(fname.str());
           hdf_WGT_data.openFile();
-          
+
           hdf_float_data.setStep(step+ip);  
           (*ThreadsCoordinate[ip]).resize(walkersPerBlock[step+ip]*nfloats);
           (*weights[ip]).resize(walkersPerBlock[step+ip]);
           nEperB = hdf_float_data.getFloat(0, walkersPerBlock[step+ip]*nfloats, (*ThreadsCoordinate[ip]) )/OHMMS_DIM;
           hdf_float_data.endStep();
-          
+
           hdf_float_data.closeFile();
-          
+
           hdf_WGT_data.readStep(Gen,step+ip,(*weights[ip]));
           hdf_WGT_data.closeFile();
         } 
 
-//         if (ip<nthr)
-//         app_log()<< "walkersPerBlock[step] : "<<walkersPerBlock[step]<<" step: "<<step<<" nthr: "<<nthr<<endl;
-//         app_log()<<ThreadsCoordinate[ip]->size()<< " "<<walkersPerBlock[step]*nfloats<<endl;
+        //         if (ip<nthr)
+        //         app_log()<< "walkersPerBlock[step] : "<<walkersPerBlock[step]<<" step: "<<step<<" nthr: "<<nthr<<endl;
+        //         app_log()<<ThreadsCoordinate[ip]->size()<< " "<<walkersPerBlock[step]*nfloats<<endl;
 #pragma omp for
-    for (int ip=0;ip<nthr;ip++)
+        for (int ip=0;ip<nthr;ip++)
           for(int iwt=0; iwt<walkersPerBlock[step+ip]; iwt++)
           {
             int ww=(*weights[ip])[iwt];
@@ -200,37 +200,37 @@ namespace qmcplusplus {
           }
         if (verbose >1) cout<<"Done with step: "<<step<<" Gen: "<<Gen<<endl;
       }
-        
-//       for (int ip2=0;ip2<NumThreads;ip2++)
-//       {
-//         totalWeight += localWeight[ip2];
-//         vector<int> ldh = *localDensity[ip2];
-//             for(int i=0;i<gridDivs*gridDivs*gridDivs;i++)
-//               Density[i] += ldh[i];
-//       }
-//       totalWeight=localWeight[0];
-//       Density=(*localDensity[0]);
 
-    for (int ip=0;ip<NumThreads;ip++)
-    {
-      totalWeight += localWeight[ip];
-      for(int i=0;i<gridDivs*gridDivs*gridDivs;i++)
+      //       for (int ip2=0;ip2<NumThreads;ip2++)
+      //       {
+      //         totalWeight += localWeight[ip2];
+      //         vector<int> ldh = *localDensity[ip2];
+      //             for(int i=0;i<gridDivs*gridDivs*gridDivs;i++)
+      //               Density[i] += ldh[i];
+      //       }
+      //       totalWeight=localWeight[0];
+      //       Density=(*localDensity[0]);
+
+      for (int ip=0;ip<NumThreads;ip++)
       {
-        Density[i] += (*localDensity[ip])[i];
-      }
-    }     
-        vector<int> info(3);
-        info[0]=gridDivs;
-        info[1]=Gen;
-        info[2]=totalWeight;
-        if (verbose >1) cout<<"Writing Gen: "<<Gen<<" to file"<<endl;
- 
-        hdf_Den_data.openFile();
-        hdf_Den_data.writeDensity(info, Density);
-        hdf_Den_data.closeFile();
+        totalWeight += localWeight[ip];
+        for(int i=0;i<gridDivs*gridDivs*gridDivs;i++)
+        {
+          Density[i] += (*localDensity[ip])[i];
+        }
+      }     
+      vector<int> info(3);
+      info[0]=gridDivs;
+      info[1]=Gen;
+      info[2]=totalWeight;
+      if (verbose >1) cout<<"Writing Gen: "<<Gen<<" to file"<<endl;
+
+      hdf_Den_data.openFile();
+      hdf_Den_data.writeDensity(info, Density);
+      hdf_Den_data.closeFile();
     } 
-    
-    
+
+
     return true;
   }
 
@@ -285,16 +285,16 @@ namespace qmcplusplus {
       std::sort((*it).begin(),(*it).end());
       it++;
     } while(it<orderedPIDs.end());
-//     vector<vector<long> >::iterator it(orderedPIDs.begin());
-//        do
-//     {
-//       vector<long>::iterator it2((*it).begin());
-//       for(;*it2 < *(it2+1);) it2++;
-//       std::sort(it2,(*it).end());
-//       it++;
-//     } while(it<orderedPIDs.end());
-    
-    
+    //     vector<vector<long> >::iterator it(orderedPIDs.begin());
+    //        do
+    //     {
+    //       vector<long>::iterator it2((*it).begin());
+    //       for(;*it2 < *(it2+1);) it2++;
+    //       std::sort(it2,(*it).end());
+    //       it++;
+    //     } while(it<orderedPIDs.end());
+
+
 
     if (verbose>2) app_log()<<" Done Sorting IDs"<<endl;
     resetWeights();
