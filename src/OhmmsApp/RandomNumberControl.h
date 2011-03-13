@@ -51,6 +51,7 @@ namespace APPNAMESPACE
       bool put(std::istream& is);
       bool put(xmlNodePtr cur);
       void reset();
+      static void test();
 
       static void make_seeds();
       static void make_children();

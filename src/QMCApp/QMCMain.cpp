@@ -213,11 +213,18 @@ namespace qmcplusplus {
   bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   {
     string target("e");
+    string random_test("no");
     OhmmsAttributeSet a;
     a.add(target,"target");
+    a.add(random_test,"testrng");
     a.put(cur);
+
+    if(random_test=="yes")
+      RandomNumberControl::test();
+
     if(qmcSystem ==0) 
       qmcSystem = ptclPool->getWalkerSet(target);
+
     bool success = runQMC(cur);
     FirstQMC=false;
     return success;

@@ -104,7 +104,7 @@ namespace APPNAMESPACE
       Children[ip]->init(rank,nprocs,myprimes[ip],offset);
     }
 
-    if(nprocs<32)
+    if(nprocs<4)
     {
       ostringstream o;
       o << "  Random seeds Node = " << rank << ":";
@@ -125,6 +125,48 @@ namespace APPNAMESPACE
       put(rg_request->nodesetval->nodeTab[0]);
     xmlXPathFreeObject(rg_request);
     return myCur;
+  }
+
+  void RandomNumberControl::test()
+  {
+    /* Add random number generator tester 
+    */
+    int nthreads=omp_get_max_threads();
+    vector<double> avg(nthreads),avg2(nthreads);
+
+#pragma omp parallel for
+    for(int ip=0; ip<nthreads; ++ip)
+    {
+      const int n=1000000;
+      double sum=0.0, sum2=0.0;
+      RandomGenerator_t& myrand(*Children[ip]);
+      for(int i=0; i<n; ++i)
+      {
+        double r=myrand.rand();
+        sum +=r; sum2+= r*r;
+      }
+      avg[ip]=sum/static_cast<double>(n); avg2[ip]=sum2/static_cast<double>(n);
+    }
+
+    char fname[64];
+    sprintf(fname,"random.p%d",OHMMS::Controller->rank());
+    ofstream fout(fname);
+    double avg_node=0.0;
+    double avg2_node=0.0;
+    for(int ip=0; ip<nthreads; ++ip)
+    {
+      fout << " Average = " << avg[ip]
+        << "  Variance = " << avg2[ip]-avg[ip]*avg[ip] << endl;
+      avg_node+=avg[ip];
+      avg2_node+=avg2[ip];
+    }
+
+    mpi::reduce(*OHMMS::Controller,avg_node);
+    mpi::reduce(*OHMMS::Controller,avg2_node);
+
+    avg_node/=static_cast<double>(nthreads*OHMMS::Controller->size());
+    avg2_node/=static_cast<double>(nthreads*OHMMS::Controller->size());
+    app_log() << " Average = " << avg_node << "  Variance = " << avg2_node-avg_node*avg_node << endl;
   }
 
   bool RandomNumberControl::put(xmlNodePtr cur)
@@ -244,28 +286,6 @@ namespace APPNAMESPACE
       else
         Random.load(vt);
     }
-
-    /* Add random number generator tester 
-    const int n=1000000;
-    double avg=0.0,avg2=0.0;
-#pragma omp parallel reduction(+:avg,avg2)
-    {
-      double sum=0.0, sum2=0.0;
-      int ip=omp_get_thread_num();
-      RandomGenerator_t& myrand(*Children[ip]);
-      for(int i=0; i<n; ++i)
-      {
-        double r=myrand.rand();
-        sum +=r; sum2+= r*r;
-      }
-      avg+=sum; avg2+=sum2;
-    }
-    comm->allreduce(avg);
-    comm->allreduce(avg2);
-    avg/=static_cast<double>(nthreads*n);
-    avg2/=static_cast<double>(nthreads*n);
-    app_log() << " Average = " << avg << "  Variance = " << avg2-avg*avg << endl;
-    */
   }
 
   void RandomNumberControl::write(const string& fname, Communicate* comm)
