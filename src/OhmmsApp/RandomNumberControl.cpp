@@ -148,25 +148,28 @@ namespace APPNAMESPACE
       avg[ip]=sum/static_cast<double>(n); avg2[ip]=sum2/static_cast<double>(n);
     }
 
-    char fname[64];
-    sprintf(fname,"random.p%d",OHMMS::Controller->rank());
-    ofstream fout(fname);
-    double avg_node=0.0;
-    double avg2_node=0.0;
-    for(int ip=0; ip<nthreads; ++ip)
+    vector<double> avg_tot(nthreads*OHMMS::Controller->size()),avg2_tot(nthreads*OHMMS::Controller->size());
+    mpi::gather(*OHMMS::Controller,avg,avg_tot);
+    mpi::gather(*OHMMS::Controller,avg2,avg2_tot);
+    double avg_g=0.0;
+    double avg2_g=0.0;
+    for(int i=0,ii=0; i<OHMMS::Controller->size(); ++i)
     {
-      fout << " Average = " << avg[ip]
-        << "  Variance = " << avg2[ip]-avg[ip]*avg[ip] << endl;
-      avg_node+=avg[ip];
-      avg2_node+=avg2[ip];
+      for(int ip=0; ip<nthreads; ++ip,++ii)
+      {
+        app_log() << "RNGTest " << setw(4) << i << setw(4) << ip 
+          << setw(20) << avg_tot[ii] << setw(20) << avg2_tot[ii]-avg_tot[ii]*avg_tot[ii] << endl;
+        avg_g+=avg_tot[ii];
+        avg2_g+=avg2_tot[ii];
+      }
     }
 
-    mpi::reduce(*OHMMS::Controller,avg_node);
-    mpi::reduce(*OHMMS::Controller,avg2_node);
+    avg_g/=static_cast<double>(nthreads*OHMMS::Controller->size());
+    avg2_g/=static_cast<double>(nthreads*OHMMS::Controller->size());
+    app_log() << "RNGTest " << setw(4) << OHMMS::Controller->size() << setw(4) << nthreads
+      << setw(20) << avg_g << setw(20) << avg2_g-avg_g*avg_g<< endl;
 
-    avg_node/=static_cast<double>(nthreads*OHMMS::Controller->size());
-    avg2_node/=static_cast<double>(nthreads*OHMMS::Controller->size());
-    app_log() << " Average = " << avg_node << "  Variance = " << avg2_node-avg_node*avg_node << endl;
+    app_log().flush();
   }
 
   bool RandomNumberControl::put(xmlNodePtr cur)
