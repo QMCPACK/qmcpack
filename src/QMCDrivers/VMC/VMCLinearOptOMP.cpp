@@ -878,14 +878,16 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
         RightM(i,j) = (1-b1)*Olp(i-1,j-1) + b1_rat*(Ham2(i-1,j-1) );
       }
       
-    RightM(0,0)=1.0-b1+b1_rat*E2_avg;
+    RightM(0,0)=(1.0-b1) + b1_rat*E2_avg;
     LeftM(0,0)=(1-b2)*E_avg+b2*V_avg;
     
     for (int i=1; i<NumOptimizables+1; i++)
     {
       RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1] - D[i-1]*E2_avg - E_avg*(HD[i-1]+2.0*D_E[i-1]));
-      LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
-      LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+      LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] - D[i-1]*E2_avg - E_avg*(HD[i-1]+2.0*D_E[i-1]));
+      LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] - D[i-1]*E2_avg - E_avg*(HD[i-1]+2.0*D_E[i-1]));
+//       LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+//       LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
     }
     
     return 1.0;
