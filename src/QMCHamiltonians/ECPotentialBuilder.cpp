@@ -133,25 +133,42 @@ namespace qmcplusplus {
 	new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
 #endif
 
+      int nknot_max=0;
       for(int i=0; i<nonLocalPot.size(); i++) 
       {
         if(nonLocalPot[i]) 
         {
           rc2=std::max(rc2,nonLocalPot[i]->Rmax);
+          nknot_max=std::max(nknot_max,nonLocalPot[i]->nknot);
           apot->add(i,nonLocalPot[i]);
         }
       }
+
+      app_log() << "\n  Using NonLocalECP potential \n"
+                << "    Maximum grid on a sphere for NonLocalECPotential: "
+                << nknot_max << endl;
+
       targetPtcl.checkBoundBox(2*rc2);
       targetH.addOperator(apot,"NonLocalECP");
 
       for(int ic=0; ic<IonConfig.getTotalNum(); ic++) 
       {
         int ig=IonConfig.GroupID[ic];
-        if(nonLocalPot[ig]) { 
-          if(nonLocalPot[ig]->nknot) targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
+        if(nonLocalPot[ig]) 
+        { 
+          if(nonLocalPot[ig]->nknot) 
+          {
+            targetPtcl.Sphere[ic]->resize(nknot_max);
+            targetPsi.resizeSphere(nknot_max);
+            //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
+            //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
+          }
         }
       }
     }
+
+    app_log().flush();
+
     return true;
   }
 

@@ -82,7 +82,7 @@ namespace qmcplusplus
       for (int ik=0; ik<nofK.size(); ++ik) nofK[ik] *= norm_nofK;
       for (int iq=0; iq<compQ.size(); ++iq) compQ[iq] *= mappedQnorms[iq];
       
-    if (hdf5_out)
+      if (hdf5_out)
       {
         int j=myIndex;
         for (int ik=0; ik<nofK.size(); ++ik,++j) P.Collectables[j]+= nofK[ik];
@@ -220,13 +220,15 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
             app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<<endl;
 
             int indx(0);
+            int kgrid_squared=kgrid*kgrid;
+
             for (int i=-kgrid;i<(kgrid+1);i++)
             {
               for (int j=-kgrid;j<(kgrid+1);j++)
               {
                 for (int k=-kgrid;k<(kgrid+1);k++)
                   {
-                    if (std::sqrt(i*i+j*j+k*k)<=kgrid)
+                    if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
                       {
                         PosType kpt;
                         kpt[0]=i-twist[0];
