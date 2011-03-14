@@ -877,7 +877,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     
     for (int i=1; i<NumOptimizables+1; i++)
     {
-      RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1]- E_avg*(HD[i-1]+D_E[i-1]));// - E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
+      RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1]  - E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
       LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
       LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
     }
