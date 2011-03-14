@@ -851,6 +851,12 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
       D_E[i]*=g_nrm; D[i]*=g_nrm; HD[i]*=g_nrm; HD2[i]*=g_nrm;
     }
       
+    
+    for (int i=0; i<NumOptimizables; i++)
+      for (int j=0; j<NumOptimizables; j++)
+        Ham2(i,j) += D[i]*D[j]*E2_avg - HD2[i]*D[j]- HD2[j]*D[i] - E_avg*(Ham(i,j)+Ham(j,i)) + E_avg*(D[i]*D_E[j]+D[j]*D_E[i])+ Olp(i,j)*E_avg2;//H^2
+//         Ham2(i,j) += Olp(i,j)*E_avg2 - E_avg*(Ham(i,j)+Ham(j,i));//For Variance
+
     for (int i=0; i<NumOptimizables; i++)
       for (int j=0; j<NumOptimizables; j++)
         Ham(i,j) += -D[i]*(HD[j]+D_E[j]-D[j]*E_avg) - D[j]*D_E[i];
@@ -861,15 +867,14 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     
     for (int i=0; i<NumOptimizables; i++)
       for (int j=0; j<NumOptimizables; j++)
-        Ham2(i,j) += D[i]*D[j]*E2_avg - HD2[i]*D[j]- HD2[j]*D[i];//H^2
-//         Ham2(i,j) += Olp(i,j)*E_avg2 - E_avg*(Ham(i,j)+Ham(j,i));//For Variance
+        Ham2(i,j) += Olp(i,j)*E_avg2;
     
 
     RealType b1_rat = b1/E_avg2;
     for (int i=1; i<NumOptimizables+1; i++)
       for (int j=1; j<NumOptimizables+1; j++)
       {
-        LeftM(i,j) = (1-b2)*Ham(i-1,j-1) + b2*(Ham2(i-1,j-1)- E_avg*(Ham(i-1,j-1)+Ham(j-1,i-1)) +E_avg2*Olp(i-1,j-1) );
+        LeftM(i,j) = (1-b2)*Ham(i-1,j-1) + b2*(Ham2(i-1,j-1)- E_avg*(Ham(i-1,j-1)+Ham(j-1,i-1)) + E_avg2*Olp(i-1,j-1) );
         RightM(i,j) = (1-b1)*Olp(i-1,j-1) + b1_rat*(Ham2(i-1,j-1) );
       }
       
@@ -878,7 +883,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     
     for (int i=1; i<NumOptimizables+1; i++)
     {
-      RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1] - D[i-1]*E2_avg);
+      RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1] - D[i-1]*E2_avg - E_avg*(HD[i-1]+2.0*D_E[i-1]));
       LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
       LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] -E_avg*(HD[i-1]+2.0*D_E[i-1]-D[i-1]*E_avg));
     }
