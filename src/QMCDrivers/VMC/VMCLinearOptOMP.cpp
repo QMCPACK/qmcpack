@@ -861,7 +861,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     
     for (int i=0; i<NumOptimizables; i++)
       for (int j=0; j<NumOptimizables; j++)
-        Ham2(i,j) += 2.0*D[i]*D[j]*E2_avg - HD2[i]*D[j]- HD2[j]*D[i];//H^2
+        Ham2(i,j) += D[i]*D[j]*E2_avg - HD2[i]*D[j]- HD2[j]*D[i];//H^2
 //         Ham2(i,j) += Olp(i,j)*E_avg2 - E_avg*(Ham(i,j)+Ham(j,i));//For Variance
     
 
@@ -873,7 +873,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
         RightM(i,j) = (1-b1)*Olp(i-1,j-1) + b1_rat*(Ham2(i-1,j-1) );
       }
       
-    RightM(0,0)=1.0-b1+b1_rat*V_avg;
+    RightM(0,0)=1.0-b1+b1_rat*E2_avg;
     LeftM(0,0)=(1-b2)*E_avg+b2*V_avg;
     
     for (int i=1; i<NumOptimizables+1; i++)
