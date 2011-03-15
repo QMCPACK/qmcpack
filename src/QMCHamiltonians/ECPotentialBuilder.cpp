@@ -159,7 +159,7 @@ namespace qmcplusplus {
           if(nonLocalPot[ig]->nknot) 
           {
             targetPtcl.Sphere[ic]->resize(nknot_max);
-            targetPsi.resizeSphere(nknot_max);
+            //targetPsi.resizeSphere(nknot_max);
             //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
             //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
           }

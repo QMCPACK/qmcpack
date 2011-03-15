@@ -292,6 +292,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
             if (MinMethod=="rescale")
             {
               for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+              app_log()<<" Rescaling. Biggest Change:"<<Lambda*bigVec<<endl;
               optTarget->IsValid = true;
             }
             else
@@ -318,7 +319,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
               AbsFuncTol=true;
 
               largeQuarticStep=bigChange/bigVec;
-              quadstep = Lambda;
+              quadstep = stepsize/bigVec;
               
 //                  initial guess for line min bracketing
               LambdaMax = quadstep;
