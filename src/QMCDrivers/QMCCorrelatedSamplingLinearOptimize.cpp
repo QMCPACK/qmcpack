@@ -186,6 +186,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
           
           RealType newCost(lastCost);
           RealType startCost(lastCost);
+          app_log()<<" GEVtype="<<GEVtype<<endl;
 
 //           if (GEVtype=="H2")
 //           {
@@ -489,8 +490,9 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 //                 optTarget = new QMCCostFunctionSingle(W,Psi,H);
 
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+        optTarget->setneedGrads(false);
         optTarget->setStream(&app_log());
-        success=optTarget->put(q);
+        success=optTarget->put(qsave);
     }
     return success;
 }

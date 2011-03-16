@@ -697,6 +697,7 @@ namespace qmcplusplus
 
      string optCI="no";
      RealType cutoff=0.0;
+     RealType zero_cutoff=0.0;
      OhmmsAttributeSet ciAttrib;
      ciAttrib.add (optCI,"optimize");
      ciAttrib.add (optCI,"Optimize");
@@ -729,6 +730,8 @@ namespace qmcplusplus
      spoAttrib.add (Dettype, "type");
      spoAttrib.add (nstates, "nstates");
      spoAttrib.add (cutoff,"cutoff");
+     spoAttrib.add (zero_cutoff,"zero_cutoff");
+     spoAttrib.add (zero_cutoff,"zerocutoff");
      spoAttrib.put(DetListNode);
 
      if(ndets==0) {
@@ -776,7 +779,14 @@ namespace qmcplusplus
            confAttrib.add(tag,"id");
            confAttrib.add(OccString,"occ");
            confAttrib.put(cur);
-           if(qc_ci == 0.0) qc_ci = ci;
+           if(qc_ci == 0.0) 
+           {
+             qc_ci = ci;
+             std::stringstream o; o<<ci;
+             const char* qc( (o.str()).c_str());
+             xmlNewProp(cur , (const xmlChar*) "qchem_coeff", (const xmlChar*) qc );
+             //we can have the qchem_coeff tag added to the wf?
+           }
 
            if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
@@ -784,7 +794,7 @@ namespace qmcplusplus
              continue; 
            }
            cnt0++;
-
+           if(abs(ci)<zero_cutoff) ci=0.0;
            CSFcoeff.push_back(ci);
            sumsq_qc += qc_ci*qc_ci;
            DetsPerCSF.push_back(0);           

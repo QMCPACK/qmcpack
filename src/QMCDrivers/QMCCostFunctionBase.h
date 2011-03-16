@@ -157,7 +157,8 @@ namespace qmcplusplus
        RngSaved.resize(r.size());
        for(int ip=0; ip<r.size(); ++ip) RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
       }
-
+      inline void setneedGrads(bool tf){needGrads=tf;}
+      
     protected:
 
       ///walker ensemble
@@ -218,7 +219,7 @@ namespace qmcplusplus
       Return_t SmallWeight;
       Return_t w_beta;
       string GEVType;
-
+      bool needGrads;
       /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
        *
        * default CorrelationFactor=0.0;

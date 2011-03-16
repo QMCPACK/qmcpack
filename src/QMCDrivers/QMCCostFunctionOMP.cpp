@@ -193,6 +193,8 @@ namespace qmcplusplus
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
 
+    app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
+
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
     // #pragma omp parallel for
@@ -202,9 +204,13 @@ namespace qmcplusplus
           {
             H_KE_Node[ip]= new QMCHamiltonian;
             H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-            if (( includeNonlocalH=="yes")&&(hClones[ip]->getHamiltonian("NonLocalECP")))
+            if (includeNonlocalH=="yes")
             {
-              H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("NonLocalECP"),"NonLocalECP");
+             QMCHamiltonianBase* a=hClones[ip]->getHamiltonian("NonLocalECP");
+             if(a)
+             {
+               H_KE_Node[ip]->addOperator(a,"NonLocalECP");
+             }
             }
           }
         wClones[ip]->loadEnsemble();
@@ -218,8 +224,6 @@ namespace qmcplusplus
     app_log() << endl;
     FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
     
-//     app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
-
     if (dLogPsi.size() != wPerNode[NumThreads])
       {
         delete_iter(dLogPsi.begin(),dLogPsi.end());
@@ -263,16 +267,22 @@ namespace qmcplusplus
         {
           RecordsOnNode[ip]=new Matrix<Return_t>;
           RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+          if (needGrads)
+          {
           DerivRecords[ip]=new Matrix<Return_t>;
           DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
           HDerivRecords[ip]=new Matrix<Return_t>;
           HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);        
+          }
         }
        else if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
         {
           RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+          if (needGrads)
+          {
           DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
           HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);   
+          }
         }
       //set the optimization mode for the trial wavefunction
       psiClones[ip]->startOptimization();
@@ -321,11 +331,14 @@ namespace qmcplusplus
 //           thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
 
 
+          if (needGrads)
+          {
           vector<Return_t> Dsaved(NumOptimizables);
           vector<Return_t> HDsaved(NumOptimizables);
           psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
           std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
           std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+          }
         }
         
       //add them all
