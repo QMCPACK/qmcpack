@@ -59,6 +59,11 @@ namespace qmcplusplus {
     ValueMatrix_t LogPsi_Derivs, LocE_Derivs;
     ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
     GradMatrix_t   dlogPsi_opt,  dlogPsi_fixed;
+
+    vector<Matrix<Return_t>*> RecordsOnNode;
+    vector<Matrix<Return_t>* > DerivRecords;
+    vector<Matrix<Return_t>* > HDerivRecords;
+
     Return_t CSWeight;
     void resetPsi(bool final_reset=false);
     Return_t correlatedSampling(bool needDerivs);
