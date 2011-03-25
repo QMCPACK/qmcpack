@@ -218,9 +218,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
           RealType od_largest(0);
           for (int i=0; i<N; i++) for (int j=0; j<N; j++)
             od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-//             app_log()<<"od_largest "<<od_largest<<endl;
+          app_log()<<"od_largest "<<od_largest<<endl;
           if (od_largest>0) od_largest = std::log(od_largest)/(nstabilizers-1);
           if (od_largest<=0) od_largest = stabilizerScale;
+          RealType d_neg(0);
+          for (int i=0; i<N; i++) if (Left(i,i)<d_neg) d_neg=Left(i,i);
+          if (d_neg<0) stabilityBase=std::log(-d_neg);
 
           RealType safe = Left(0,0);
           for (int stability=0; stability<nstabilizers; stability++)
@@ -262,18 +265,29 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
                 XS = stabilityBase+od_largest*stability;
               }
             }
-            for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
+            if (GEVtype!="H2") for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
             app_log()<<"  Using XS:"<<XS<<endl;
             
             RealType lowestEV(0);
+            RealType bigVec(0);
             myTimers[2]->start();
 //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
-            lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
+            if (GEVtype!="Grad")
+            {
+              lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
+              Lambda = getNonLinearRescale(currentParameterDirections,Right);
+            }
+            else
+            {
+              currentParameterDirections[0]=1.0;
+              for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(LeftT(i+1,0)));
+              //bigVec /= LeftT(0,0);
+              RealType rscale(stepsize/bigVec);
+              for (int i=0; i<numParams; i++) currentParameterDirections[i+1]=LeftT(i+1,0)*rscale;
+              Lambda=1.0;
+            }
             myTimers[2]->stop();
-//             app_log()<<"lowestEV: "<<lowestEV<<endl;
             
-            Lambda = getNonLinearRescale(currentParameterDirections,Right);
-            RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
             if (std::abs(Lambda*bigVec)>bigChange)
             {
@@ -293,7 +307,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
             if (MinMethod=="rescale")
             {
               for (int i=0; i<numParams; i++) optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-              app_log()<<" Rescaling. Biggest Change:"<<Lambda*bigVec<<endl;
+              //app_log()<<" Rescaling. Biggest Change:"<<Lambda*bigVec<<endl;
               optTarget->IsValid = true;
             }
             else
@@ -313,10 +327,10 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
               //  then we must add them in to the fixed part of the parameter changes
               for (int i=0; i<numParams; i++) optparm[i] = currentParameters[i];
               for (int i=0; i<numParams; i++) optdir[i] = currentParameterDirections[i+1];
-              RealType bigVec(0);
-              for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(optdir[i]));
+              RealType bigOptVec(0);
+              for (int i=0; i<numParams; i++) bigOptVec = std::max(bigOptVec,std::abs(optdir[i]));
 
-              TOL = param_tol/bigVec;
+              TOL = param_tol/bigOptVec;
               AbsFuncTol=true;
 
               largeQuarticStep=bigChange/bigVec;
@@ -336,7 +350,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
               else Valid=lineoptimization2();
               myTimers[3]->stop();
 
-              RealType biggestParameterChange = bigVec*std::abs(Lambda);
+              RealType biggestParameterChange = bigOptVec*std::abs(Lambda);
               if (biggestParameterChange>bigChange)
               {
                   app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;

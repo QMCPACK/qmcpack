@@ -779,14 +779,8 @@ namespace qmcplusplus
            confAttrib.add(tag,"id");
            confAttrib.add(OccString,"occ");
            confAttrib.put(cur);
-           if(qc_ci == 0.0) 
-           {
+           if(qc_ci == 0.0)
              qc_ci = ci;
-             std::stringstream o; o<<ci;
-             const char* qc( (o.str()).c_str());
-             xmlNewProp(cur , (const xmlChar*) "qchem_coeff", (const xmlChar*) qc );
-             //we can have the qchem_coeff tag added to the wf?
-           }
 
            if(abs(qc_ci) < cutoff) { 
              cur = cur->next;
@@ -794,7 +788,7 @@ namespace qmcplusplus
              continue; 
            }
            cnt0++;
-           if(abs(ci)<zero_cutoff) ci=0.0;
+           if(abs(qc_ci)<zero_cutoff) ci=0.0;
            CSFcoeff.push_back(ci);
            sumsq_qc += qc_ci*qc_ci;
            DetsPerCSF.push_back(0);           
@@ -902,6 +896,7 @@ namespace qmcplusplus
              continue;
            }
            cnt0++;
+           if(abs(qc_ci) < zero_cutoff) ci=0.0;
 
            int nq=0,na,nr;
            if(alpha.size() < nstates)

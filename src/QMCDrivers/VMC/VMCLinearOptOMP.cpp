@@ -30,7 +30,7 @@ namespace qmcplusplus
   VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool, WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0)
+    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0), w_alpha(0.0)
   {
     RootName = "vmc";
     QMCType ="VMCLinearOptOMP";
@@ -49,6 +49,7 @@ namespace qmcplusplus
     m_param.add(beta_errorbars,"beta_error","double");
     m_param.add(alpha_errorbars,"alpha_error","double");
     m_param.add(w_beta,"beta","double");
+    m_param.add(w_alpha,"alpha","double");
     m_param.add(logepsilon,"logepsilon","double");
     m_param.add(logoffset,"logoffset","double");
     m_param.add(GEVtype,"GEVMethod","string");
@@ -817,7 +818,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     
     if (GEVtype=="H2")
     {
-      b1=w_beta; b2=0;
+      b1=w_beta; b2=w_alpha;
     }
     else
     {

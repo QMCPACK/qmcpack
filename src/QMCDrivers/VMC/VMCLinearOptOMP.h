@@ -97,7 +97,7 @@ namespace qmcplusplus
       RealType logoffset,logepsilon;
 
       int NumOptimizables;
-      RealType w_beta;
+      RealType w_beta,w_alpha;
       RealType E_avg, V_avg;
       string GEVtype;
       vector<RandomGenerator_t> RngSaved;
