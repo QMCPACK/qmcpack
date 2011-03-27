@@ -172,7 +172,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         }
 
       RealType XS(stabilityBase+stabilizerScale*stability);
-      if (GEVtype!="H2")
+      if ((GEVtype!="H2")||(failedTries>0))
       {
         for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
         app_log()<<"  Using XS:"<<XS<<endl;
@@ -202,6 +202,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       if (std::abs(Lambda*bigVec)>bigChange)
       {
           app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+//           if (GEVtype=="H2") continue;
           if (stability==0)
           {
             failedTries++; stability--;
