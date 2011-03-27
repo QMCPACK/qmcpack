@@ -27,42 +27,11 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus {
-#ifdef QMC_CUDA
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
-					     multi_UBspline_3d_s_cuda* &out)
-  { out = create_multi_UBspline_3d_s_cuda_conv (in); }
-
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in, 
-					     multi_UBspline_3d_d_cuda * &out)
-  { out = create_multi_UBspline_3d_d_cuda(in); }
-
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
-					     multi_UBspline_3d_c_cuda* &out)
-  { out = create_multi_UBspline_3d_c_cuda_conv (in); }
-
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
-					     multi_UBspline_3d_z_cuda * &out)
-  { out = create_multi_UBspline_3d_z_cuda(in); }
-
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
-					     multi_UBspline_3d_d_cuda * &out)
-  { 
-    app_error() << "Attempted to convert complex CPU spline into a real "
-		<< " GPU spline.\n";
-    abort();
-  }
-
-  inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_z *in, 
-					     multi_UBspline_3d_s_cuda * &out)
-  { 
-    app_error() << "Attempted to convert complex CPU spline into a real "
-		<< " GPU spline.\n";
-    abort();
-  }
-#endif
 
   std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
-
+  std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
+  std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
+  std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
