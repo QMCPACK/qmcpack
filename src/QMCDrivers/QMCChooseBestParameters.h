@@ -69,6 +69,8 @@ namespace qmcplusplus
       {
         return *this;
       }
+      
+      int naverage;
     };
 }
 #endif

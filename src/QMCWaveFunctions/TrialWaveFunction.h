@@ -61,7 +61,19 @@ namespace qmcplusplus
                 }
               }
               return oldVars[best];
-            } 
+            }
+          opt_variables_type getAvgCoefficients(int lastN)
+          {
+            opt_variables_type return_params(oldVars[0]);
+            for (int i=0;i<return_params.size();i++) return_params[i]=0;
+            int start(std::max((int)(oldVars.size()-lastN),0));
+            for (int x=start;x<oldVars.size();x++)
+              for (int i=0;i<return_params.size();i++)
+                return_params[i]+=oldVars[x][i];
+            RealType nrm(1.0/(oldVars.size()-start));
+            for (int i=0;i<return_params.size();i++) return_params[i]*=nrm;
+            return return_params;
+          } 
       };
 
   /** @ingroup MBWfs

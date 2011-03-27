@@ -30,7 +30,7 @@ namespace qmcplusplus
   VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool, WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0), w_alpha(0.0)
+    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0), w_alpha(0.0), beta_errorbars(0), alpha_errorbars(0)
   {
     RootName = "vmc";
     QMCType ="VMCLinearOptOMP";
