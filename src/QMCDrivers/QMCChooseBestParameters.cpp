@@ -37,8 +37,8 @@ namespace qmcplusplus
 {
   
   QMCChooseBestParameters::QMCChooseBestParameters(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool), CloneManager(hpool), 
-     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10), alpha(1)
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool), CloneManager(hpool), optTarget(w,psi,h,hpool),
+     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10), alpha(1), wfNode(NULL)
     {
       //set the optimization flag
       QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -55,32 +55,27 @@ namespace qmcplusplus
     
     bool QMCChooseBestParameters::run()
     {   
-        opt_variables_type OptVariablesForPsi;
-        OptVariablesForPsi.clear();
-        WF->checkInVariables(OptVariablesForPsi);
-        
-        WF->coefficientHistory.addParams(OptVariablesForPsi,0.0,0.0);
-        opt_variables_type bestCoeffs = WF->coefficientHistory.getAvgCoefficients(naverage);
-        
-        //check back into the WF
-        WF->resetParameters(bestCoeffs);
-        for (int i=0; i<psiClones.size(); ++i)
-           psiClones[i]->resetParameters(bestCoeffs);
-           
-        //for (int i=0; i<psiClones.size(); ++i) 
-        //{
-        //  app_log()<<i<<endl;
-        //  psiClones[i]->reportStatus(app_log());
-        //}
-        
-        if (!myComm->rank())
-        {
-          app_log()<<"AVG Parameters are:"<<endl;
-          bestCoeffs.print(app_log()); 
-          //app_log()<<"WF params"<<endl;
-          //WF->reportStatus(app_log());
-        }
-        QMCDriverMode.set(QMC_OPTIMIZE,0);
+      
+      
+      opt_variables_type OptVariablesForPsi;
+      OptVariablesForPsi.clear();
+      WF->checkInVariables(OptVariablesForPsi);
+      
+      WF->coefficientHistory.addParams(OptVariablesForPsi,0.0,0.0);
+      opt_variables_type bestCoeffs = WF->coefficientHistory.getAvgCoefficients(naverage);
+      
+      //check back into the WF
+//         WF->resetParameters(bestCoeffs);
+//         for (int i=0; i<psiClones.size(); ++i)
+//            psiClones[i]->resetParameters(bestCoeffs);
+      
+      optTarget.initCommunicator(myComm);
+      optTarget.setRootName(RootName);
+      optTarget.setWaveFunctionNode(wfNode);
+      optTarget.startOptimization();
+      for(int i=0;i<bestCoeffs.size();i++) optTarget.Params(i)=bestCoeffs[i];
+//       optTarget.Report();
+      optTarget.reportParameters();
       return true;
     }                                                                       
     
@@ -97,7 +92,11 @@ namespace qmcplusplus
       ParameterSet pAttrib;
       pAttrib.add(naverage,"N","scalar");
       pAttrib.put(q);
+      
 
+      optTarget.setStream(&app_log());
+      optTarget.put(qsave);
+    
       bool success=true;
       return success;
     }

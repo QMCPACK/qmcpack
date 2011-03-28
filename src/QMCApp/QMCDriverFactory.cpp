@@ -387,6 +387,7 @@ namespace qmcplusplus {
     else if(curRunType == SET_PARAMS)
     {
       QMCChooseBestParameters *opt = new QMCChooseBestParameters(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     }
     else if(curRunType == FR_RUN)

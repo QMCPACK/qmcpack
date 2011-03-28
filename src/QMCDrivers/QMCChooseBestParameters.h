@@ -22,6 +22,7 @@
 
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
+#include "QMCDrivers/QMCCSLinearOptimizeWFmanagerOMP.h"
 
 namespace qmcplusplus
   {
@@ -48,6 +49,7 @@ namespace qmcplusplus
       bool run();
       ///process xml node
       bool put(xmlNodePtr cur);
+      void setWaveFunctionNode(xmlNodePtr cur){ wfNode=cur;};
 
     private:
       ///total number of Warmup Blocks
@@ -63,14 +65,15 @@ namespace qmcplusplus
       ///cost for choosing best wf 0<=alpha<=1 0=energy, 1=variance
       RealType alpha;
       ///Copy Constructor (disabled).
-      QMCChooseBestParameters(const QMCChooseBestParameters& a): QMCDriver(a),CloneManager(a.hamPool),hamPool(a.hamPool){ }
+      QMCChooseBestParameters(const QMCChooseBestParameters& a): QMCDriver(a),CloneManager(a.hamPool),hamPool(a.hamPool),optTarget(a.optTarget){ }
       ///Copy operator (disabled).
       QMCChooseBestParameters& operator=(const QMCChooseBestParameters&)
       {
         return *this;
       }
-      
+      QMCCSLinearOptimizeWFmanagerOMP optTarget;
       int naverage;
+      xmlNodePtr wfNode;
     };
 }
 #endif
