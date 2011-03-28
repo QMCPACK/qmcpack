@@ -43,6 +43,7 @@ namespace qmcplusplus
     ReportCounter=0;
     for (int i=0; i<psiClones.size(); ++i)
       psiClones[i]->startOptimization();
+    OptVariablesForPsi.setComputed();
   }
 
   void QMCCSLinearOptimizeWFmanagerOMP::resetPsi(bool final_reset)

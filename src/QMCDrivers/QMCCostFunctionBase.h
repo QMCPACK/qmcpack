@@ -114,7 +114,7 @@ namespace qmcplusplus
       }
       
       void recordParametersToPsi(Return_t e, Return_t v) {Psi.coefficientHistory.addParams(OptVariables,e,v);}
-
+      void getAvgParameters(int N) {OptVariables=Psi.coefficientHistory.getAvgCoefficients(N);}
       //void getConfigurations(vector<string>& ConfigFile, int partid, int nparts);
 
       void setTargetEnergy(Return_t et);

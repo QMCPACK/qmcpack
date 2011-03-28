@@ -52,25 +52,6 @@ namespace qmcplusplus
       void setWaveFunctionNode(xmlNodePtr cur){ wfNode=cur;};
 
     private:
-      ///total number of Warmup Blocks
-      int WarmupBlocks;
-      ///total number of Warmup Blocks
-      int NumOfVMCWalkers;
-      ///need to know HamiltonianPool to use OMP
-      HamiltonianPool& hamPool;
-      ///vmc engine
-      QMCDriver* vmcEngine;
-      ///pointer to trial wave function
-      TrialWaveFunction* WF;
-      ///cost for choosing best wf 0<=alpha<=1 0=energy, 1=variance
-      RealType alpha;
-      ///Copy Constructor (disabled).
-      QMCChooseBestParameters(const QMCChooseBestParameters& a): QMCDriver(a),CloneManager(a.hamPool),hamPool(a.hamPool),optTarget(a.optTarget){ }
-      ///Copy operator (disabled).
-      QMCChooseBestParameters& operator=(const QMCChooseBestParameters&)
-      {
-        return *this;
-      }
       QMCCSLinearOptimizeWFmanagerOMP optTarget;
       int naverage;
       xmlNodePtr wfNode;

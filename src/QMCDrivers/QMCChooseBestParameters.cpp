@@ -37,8 +37,7 @@ namespace qmcplusplus
 {
   
   QMCChooseBestParameters::QMCChooseBestParameters(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool), CloneManager(hpool), optTarget(w,psi,h,hpool),
-     hamPool(hpool),vmcEngine(0), WF(&psi), WarmupBlocks(10), alpha(1), wfNode(NULL)
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool), CloneManager(hpool), optTarget(w,psi,h,hpool), wfNode(NULL)
     {
       //set the optimization flag
       QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -55,26 +54,13 @@ namespace qmcplusplus
     
     bool QMCChooseBestParameters::run()
     {   
-      
-      
-      opt_variables_type OptVariablesForPsi;
-      OptVariablesForPsi.clear();
-      WF->checkInVariables(OptVariablesForPsi);
-      
-      WF->coefficientHistory.addParams(OptVariablesForPsi,0.0,0.0);
-      opt_variables_type bestCoeffs = WF->coefficientHistory.getAvgCoefficients(naverage);
-      
-      //check back into the WF
-//         WF->resetParameters(bestCoeffs);
-//         for (int i=0; i<psiClones.size(); ++i)
-//            psiClones[i]->resetParameters(bestCoeffs);
-      
       optTarget.initCommunicator(myComm);
       optTarget.setRootName(RootName);
       optTarget.setWaveFunctionNode(wfNode);
       optTarget.startOptimization();
-      for(int i=0;i<bestCoeffs.size();i++) optTarget.Params(i)=bestCoeffs[i];
-//       optTarget.Report();
+      optTarget.recordParametersToPsi(0.0,0.0);
+      optTarget.getAvgParameters(naverage);
+      optTarget.resetPsi(true);
       optTarget.reportParameters();
       return true;
     }                                                                       
@@ -93,7 +79,6 @@ namespace qmcplusplus
       pAttrib.add(naverage,"N","scalar");
       pAttrib.put(q);
       
-
       optTarget.setStream(&app_log());
       optTarget.put(qsave);
     
