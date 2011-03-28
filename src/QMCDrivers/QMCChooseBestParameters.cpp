@@ -60,7 +60,7 @@ namespace qmcplusplus
       optTarget.startOptimization();
       optTarget.recordParametersToPsi(0.0,0.0);
       optTarget.getAvgParameters(naverage);
-      optTarget.resetPsi(true);
+//       optTarget.resetPsi(true);
       optTarget.reportParameters();
       return true;
     }                                                                       

@@ -59,7 +59,7 @@ namespace qmcplusplus
   {
     delete_iter(dLogPsi.begin(),dLogPsi.end());
     delete_iter(d2LogPsi.begin(),d2LogPsi.end());
-    if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
+//     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
     if (debug_stream) delete debug_stream;
   }
 
