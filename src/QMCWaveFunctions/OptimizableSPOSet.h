@@ -33,6 +33,7 @@ namespace qmcplusplus
     int N, M;
     
     RealType derivScale;
+    RealType thr;
 
     // If BasisOrbitals==NULL, only GSOrbitals is used and it's evaluate
     // functions should return N+M orbitals.
@@ -74,7 +75,7 @@ namespace qmcplusplus
     vector<vector<TinyVector<int,2> > > ActiveBasis;
 
 
-    OptimizableSPOSet() : N(0), M(0), derivScale(10.0), GSOrbitals(0), BasisOrbitals(0)
+    OptimizableSPOSet() : N(0), M(0), derivScale(10.0), thr(0.0), GSOrbitals(0), BasisOrbitals(0)
     {
       Optimizable = true;
     }

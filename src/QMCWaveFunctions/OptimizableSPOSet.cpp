@@ -40,6 +40,7 @@ namespace qmcplusplus
     attrib.add (same_orbital,    "same_orbital");
     attrib.add (N,         "size");
     attrib.add (derivScale,"scale");
+    attrib.add(thr, "thr");
     attrib.put (node);
 
     if (N == 0) {
@@ -182,7 +183,7 @@ namespace qmcplusplus
    cAttrib.add(id, "id");
    cAttrib.add(type, "type");
    cAttrib.add(asize, "size");
-	cAttrib.add(state, "state");
+   cAttrib.add(state, "state");
 	cAttrib.put(xmlCoefs);
 	
 	if (state == -1) {
@@ -204,8 +205,10 @@ namespace qmcplusplus
      vector<RealType> t_params(params);
      params.resize(asize,0.0);
      int ipm(0);
-     for (int ib=0; ib<M; ib++) if(allowedOrbs(state,ib)>0) params[ib]=t_params[ipm++];
-     else params[ib]=0;
+     if (t_params.size()>0)
+       for (int ib=0; ib<M; ib++)
+         if((allowedOrbs(state,ib)>0)&&(std::abs(t_params[ipm])>thr)) params[ib]=t_params[ipm++];
+         else params[ib]=0;
    }
    else if (params.size()) asize=params.size();
 //    for (int i=0; i< params.size(); i++) {
@@ -220,7 +223,7 @@ namespace qmcplusplus
      {
        ParamPointers.push_back(&(C(state,i)));
        ParamIndex.push_back(TinyVector<int,2>(state,i));
-	    if (indx<asize) C(state,i) = params[indx];
+	    if ((indx<asize)&&(std::abs(params[indx])>thr)) C(state,i) = params[indx];
 	    else C(state,i) = 0.0;
 	    myVars.insert(sstr.str(),C(state,i),true,optimize::SPO_P);
        indx++;
@@ -286,7 +289,9 @@ namespace qmcplusplus
   {
     for (int i=0; i<ParamPointers.size(); i++) {
       int loc=myVars.where(i);
-      if (loc>=0) *(ParamPointers[i])=myVars[i]=active[loc];
+      if (loc>=0)
+        if(std::abs(active[loc])>thr) 
+           *(ParamPointers[i])=myVars[i]=active[loc];
     }
   }
 
@@ -555,6 +560,7 @@ namespace qmcplusplus
     clone = new OptimizableSPOSet(N,gs,basis);
     
     clone->C=C;  
+    clone->thr=thr;
     clone->myVars=myVars;
     clone->derivScale=derivScale;
     

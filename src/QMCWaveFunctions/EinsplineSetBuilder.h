@@ -90,10 +90,16 @@ namespace qmcplusplus {
     bool IsCoreState;
     inline bool operator<(BandInfo other) const
     { 
-      if  ((Energy < other.Energy+2e-5)&&(Energy > other.Energy-2e-5))
-        return TwistIndex < other.TwistIndex;
+      if  ((Energy < other.Energy+1e-6)&&(Energy > other.Energy-1e-6))
+      {
+        if (TwistIndex == other.TwistIndex)
+          return BandIndex<other.BandIndex;
+        else
+          return TwistIndex < other.TwistIndex;
+      }
       else
-        return Energy < other.Energy; }
+        return Energy < other.Energy;
+    }
   };
 
   class EinsplineSetBuilder : public BasisSetBuilder {
