@@ -721,6 +721,7 @@ namespace qmcplusplus
 
      int NCA,NCB,NEA,NEB,nstates,ndets=0,count=0,cnt0=0;
      string Dettype="DETS";
+     string CSFChoice="qchem_coeff";
      OhmmsAttributeSet spoAttrib;
      spoAttrib.add (NCA, "nca");
      spoAttrib.add (NCB, "ncb");
@@ -732,6 +733,7 @@ namespace qmcplusplus
      spoAttrib.add (cutoff,"cutoff");
      spoAttrib.add (zero_cutoff,"zero_cutoff");
      spoAttrib.add (zero_cutoff,"zerocutoff");
+     spoAttrib.add (CSFChoice,"sortby");
      spoAttrib.put(DetListNode);
 
      if(ndets==0) {
@@ -771,22 +773,25 @@ namespace qmcplusplus
          getNodeName(cname,cur);
          if(cname == "csf")
          {
-           RealType ci=0.0,qc_ci=0.0;
+           RealType exctLvl,ci=0.0,qc_ci=0.0;
            OhmmsAttributeSet confAttrib;
            string tag,OccString;
            confAttrib.add(ci,"coeff");
            confAttrib.add(qc_ci,"qchem_coeff");
            confAttrib.add(tag,"id");
            confAttrib.add(OccString,"occ");
+           confAttrib.add(exctLvl,"exctLvl");
            confAttrib.put(cur);
            if(qc_ci == 0.0)
              qc_ci = ci;
-
-           if(abs(qc_ci) < cutoff) { 
+           //Can discriminate based on any of 3 criterion
+           if(((abs(qc_ci) < cutoff)&&(CSFChoice=="qchem_coeff"))||((CSFChoice=="exctLvl")&&(exctLvl>cutoff))||((CSFChoice=="coeff")&&(abs(ci) < cutoff)))
+           { 
              cur = cur->next;
              cnt0++;
              continue; 
            }
+             
            cnt0++;
            if(abs(qc_ci)<zero_cutoff) ci=0.0;
            CSFcoeff.push_back(ci);
