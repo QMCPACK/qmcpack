@@ -36,7 +36,7 @@ namespace qmcplusplus {
     
     app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
     app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
-
+    
     if(!is_active)
     {
       d_aa->evaluate(ref);
@@ -54,9 +54,9 @@ namespace qmcplusplus {
       }
       NewValue=Value = eL+eS+myConst;
       app_log() << "  Fixed Coulomb potential for " << ref.getName();
-      app_log() << "\n    V(short) =" << eS 
-                << "\n    V(long)  =" << eL
-                << "\n    Constant =" << myConst
+//       app_log() << "\n    V(short) =" << eS 
+//                 << "\n    V(long)  =" << eL
+      app_log() << "\n    e-e Madelung Const. =" << MC0
                 << "\n    Vtot     =" << Value << endl;
     }
   }
@@ -263,9 +263,8 @@ namespace qmcplusplus {
           //RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
           RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
           if(spec2==spec1)
-            LR += 0.5*Z1*Z2*temp;    
-          else
-            LR += Z1*Z2*temp;
+            temp*=0.5;
+          LR += Z1*Z2*temp;
         } //spec2
       }//spec1
       //LR*=0.5;
@@ -339,7 +338,12 @@ namespace qmcplusplus {
 
       for(int n=0; n<coefs.size(); n++)
         V0 += coefs[n]*Basis.h(n,0.0); //For charge q1=q2=1
-
+//Compute Madelung constant      
+      MC0 = 0.0;
+      for(int i=0;i<AA->Fk.size();i++) MC0 += AA->Fk[i];
+      MC0 -= V0;
+      MC0 *=0.5;
+      
       for(int spec=0; spec<NumSpecies; spec++) {
         RealType z = Zspec[spec];
         RealType n = NofSpecies[spec];
@@ -371,7 +375,8 @@ namespace qmcplusplus {
         }
       }
 
-      app_log() << "   Constant of PBCAA " << Consts << endl;
+//       app_log() << "   Constant of PBCAA " << Consts << endl;
+//       app_log() << "   MC0 of PBCAA " << MC0 << endl;
       return Consts;
     }
 

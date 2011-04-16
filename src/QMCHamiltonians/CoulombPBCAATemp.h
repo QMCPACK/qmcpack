@@ -54,6 +54,8 @@ namespace qmcplusplus {
     Vector<ComplexType> del_eikr;
     /// Flag for whether to compute forces or not
     bool ComputeForces;
+//     madelung constant
+    RealType MC0;
 
 
     /** constructor */
