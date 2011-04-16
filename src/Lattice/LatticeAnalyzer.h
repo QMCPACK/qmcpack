@@ -112,6 +112,7 @@ namespace qmcplusplus
     struct LatticeAnalyzer<T,2>
     { 
       typedef TinyVector<T,2> SingleParticlePos_t;
+      typedef Tensor<T,2> Tensor_t;
 
       inline int operator()(const TinyVector<int,2>& box) 
       {
@@ -157,6 +158,20 @@ namespace qmcplusplus
 	return 0.5*std::sin(theta)*dist;
         // return calcWignerSeitzRadius(a);
       }
+      
+      inline void makeNextCells(const Tensor_t& lat, vector<SingleParticlePos_t>& nextcells)
+      {
+        nextcells.resize(8);
+        int ic=0;
+        for(int i=-1;i<=1;++i)
+          for(int j=-1;j<=1;++j)
+            {
+              if(!(i || j)) continue;//exclude zero
+              SingleParticlePos_t u(i,j);
+              nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);    
+            }
+      }
+      
     };
 
   /** specialization for 1D lattice
