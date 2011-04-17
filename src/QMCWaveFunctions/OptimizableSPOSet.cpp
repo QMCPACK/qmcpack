@@ -32,6 +32,7 @@ namespace qmcplusplus
     bool same_k = false;
     bool mapped_k = false;
     bool same_orbital = false;
+    derivScale=1.0;
     OhmmsAttributeSet attrib;
     attrib.add (gsName,    "gs_sposet");
     attrib.add (basisName, "basis_sposet");
