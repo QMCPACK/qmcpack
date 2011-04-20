@@ -309,8 +309,13 @@ namespace qmcplusplus {
 	b.push_back(PosType (std::cos(t), std::sin(t)*std::cos(p), std::sin(t)*std::sin(p)));
       }
       // c points
+#if defined(__bgp__)
+      double t1 = 0.6523581397843682;
+      double t2 = 1.382085796011334;
+#else
       double t1 = std::acos ((2.0+std::sqrt(5.0)) / std::sqrt(15.0+6.0*std::sqrt(5.0)));
       double t2 = std::acos (      1.0            / std::sqrt(15.0+6.0*std::sqrt(5.0)));
+#endif
       for (int k=0; k<5; k++) {
 	t = t1; p = (double)(2*k+1)*M_PI/5.0;
 	c.push_back(PosType (std::cos(t), std::sin(t)*std::cos(p), std::sin(t)*std::sin(p)));
