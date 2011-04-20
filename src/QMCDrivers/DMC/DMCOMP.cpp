@@ -235,9 +235,9 @@ namespace qmcplusplus {
           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
           W.resetWalkerParents();
         }
-#pragma omp parallel for
-        for(int ip=0; ip<NumThreads; ++ip)
+#pragma omp parallel 
         {
+          int ip=omp_get_thread_num();
           int now=CurrentStep;
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
