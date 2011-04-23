@@ -964,7 +964,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
         }
         if(currentWords[0] == "CASE" && currentWords[1] == "VECTOR") {
           cnt++;
-          if(atoi(currentWords[2].c_str()) != cnt) {
+          if(cnt < 10000000 && atoi(currentWords[2].c_str()) != cnt) {
             cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (6). \n";
             abort();
           }
@@ -1019,7 +1019,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
         }
         if(currentWords[0] == "CASE" && currentWords[1] == "VECTOR") {
           cnt++;
-          if(atoi(currentWords[2].c_str()) != cnt) {
+          if(cnt < 10000000 && atoi(currentWords[2].c_str()) != cnt) {
             cerr<<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (6). \n";
             abort();
           }

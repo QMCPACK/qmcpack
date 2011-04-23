@@ -813,6 +813,7 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
   xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
   {
     //particleset
+    //cout<<" mmorales: problem with triplet states, commented out line.\n";
     xmlAddChild(qm_root,createElectronSet());
     xmlAddChild(qm_root,createIonSet());
 

@@ -21,6 +21,21 @@ SET(CASINO
   convert4qmc.cpp
 )
 
+SET(MSDGen
+  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  RGFBuilderBase.cpp
+  GTO2GridBuilder.cpp
+  ../QMCApp/InitMolecularSystem.cpp
+  QMCGaussianParserBase.cpp
+  GaussianFCHKParser.cpp
+  GamesXmlParser.cpp
+  GamesAsciiParser.cpp
+  CasinoParser.cpp
+  BParser.cpp
+  BMakeFunc.cpp
+  MSDgenerator.cpp
+)
+
 LINK_LIBRARIES(${FORTRAN_LIBS} 
 ${LAPACK_LIBRARY} 
 ${BLAS_LIBRARY} 
@@ -40,6 +55,11 @@ ENDIF(INTEL_MKL)
 #TARGET_LINK_LIBRARIES(boostrandom qmcbase)
 ADD_EXECUTABLE(convert4qmc ${CASINO})
 TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase qmcutil
+${LAPACK_LIBRARY}
+${BLAS_LIBRARY} ${FORTRAN_LIBS})
+
+ADD_EXECUTABLE(MSDgenerator ${MSDGen}) 
+TARGET_LINK_LIBRARIES(MSDgenerator qmc qmcbase qmcutil
 ${LAPACK_LIBRARY}
 ${BLAS_LIBRARY} ${FORTRAN_LIBS})
 
