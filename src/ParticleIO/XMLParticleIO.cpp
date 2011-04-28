@@ -138,10 +138,10 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
   string randomizeR("no");
-  string randomsrc("");
+  //string randomsrc("");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(randomizeR,"random");
-  pAttrib.add(randomsrc, "randomsrc");
+  //pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(nat,"size");
   pAttrib.add(pname,"name");
   pAttrib.put(cur);
@@ -304,8 +304,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   //  //ref_.Lattice.print(cout);
   //}
   
-  ref_.RandomSource=randomsrc;
-
+  //ref_.RandomSource=randomsrc;
   if(randomizeR == "yes") {
     if(ref_.Lattice.SuperCellEnum)
     { 
@@ -313,12 +312,12 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
     }  
-    else if (randomsrc == "") {
-      ostringstream o;
-      o << "Not know how to randomize R of an open system.\n"
-        << "Use randomsrc=\"ion\" instead.\n";
-      APP_ABORT(o.str());
-    }
+    //else if (randomsrc == "") {
+    //  ostringstream o;
+    //  o << "Not know how to randomize R of an open system.\n"
+    //    << "Use randomsrc=\"ion\" instead.\n";
+    //  APP_ABORT(o.str());
+    //}
   }
 
   vector<int> numPerGroup(tspecies.getTotalNum(),0);

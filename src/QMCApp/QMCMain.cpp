@@ -316,21 +316,6 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-    // Initialize any ParticleSets that need with the source of another
-    ParticleSetPool::PoolType::iterator iter;
-    ParticleSetPool::PoolType &ppool = ptclPool->getPool();
-    for (iter = ppool.begin(); iter != ppool.end(); iter++) {
-      string name = iter->first;
-      ParticleSet &pset = *(iter->second);
-      if (pset.RandomSource != "") {
-	app_log() << "Randomizing particle set \"" << name 
-		  << "\" with source \"" << pset.RandomSource 
-		  << "\".\n"; 
-	ParticleSet &src = *(ptclPool->getParticleSet(pset.RandomSource));
-	pset.randomizeFromSource(src);
-      }
-    }
-
     if(ptclPool->empty()) {
       ERRORMSG("Illegal input. Missing particleset ")
       return false;
@@ -345,6 +330,9 @@ namespace qmcplusplus {
       ERRORMSG("Illegal input. Missing hamiltonian. ")
       return false;
     }
+
+    //randomize any particleset with random="yes" && random_source="ion0"
+    ptclPool->randomize();
 
     setMCWalkers(m_context);
 
@@ -382,6 +370,10 @@ namespace qmcplusplus {
       }
       cur=cur->next;
     }
+
+    //flush
+    app_log().flush();
+
     return inputnode;
   }
 

@@ -113,10 +113,16 @@ namespace qmcplusplus {
     //const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
     //ParticleSet::ParticleLayout_t* sc=0;
 
-    string id("e"), role("none");
+    string id("e");
+    string role("none"); 
+    string randomR("no"); 
+    string randomsrc;
+
     OhmmsAttributeSet pAttrib;
     pAttrib.add(id,"id"); pAttrib.add(id,"name"); 
     pAttrib.add(role,"role");
+    pAttrib.add(randomR,"random");
+    pAttrib.add(randomsrc,"randomsrc"); pAttrib.add(randomsrc,"random_source"); 
     pAttrib.put(cur);
 
     //backward compatibility
@@ -139,6 +145,16 @@ namespace qmcplusplus {
       myPool[id] = pTemp;
       XMLParticleParser pread(*pTemp,TileMatrix);
       bool success = pread.put(cur);
+
+      //if random_source is given, create a node <init target="" soruce=""/>
+      if(randomR=="yes" && !randomsrc.empty())
+      {
+        xmlNodePtr anode = xmlNewNode(NULL,(const xmlChar*)"init");
+        xmlNewProp(anode,(const xmlChar*)"source",(const xmlChar*)randomsrc.c_str());
+        xmlNewProp(anode,(const xmlChar*)"target",(const xmlChar*)id.c_str());
+        randomize_nodes.push_back(anode);
+      }
+
       pTemp->setName(id);
       app_log() << pTemp->getName() <<endl;
       return success;
@@ -147,6 +163,17 @@ namespace qmcplusplus {
     }
 
     return true;
+  }
+
+  void ParticleSetPool::randomize() 
+  {
+    for(int i=0; i<randomize_nodes.size(); ++i)
+    {
+      InitMolecularSystem moinit(this);
+      moinit.put(randomize_nodes[i]);
+      xmlFreeNode(randomize_nodes[i]);
+    }
+    randomize_nodes.clear();
   }
 
   bool ParticleSetPool::get(std::ostream& os) const 

@@ -84,21 +84,15 @@ namespace qmcplusplus {
      */
     ParticleSet* createESParticleSet(xmlNodePtr cur, const string& target);
 
-    /** clone the ParticleSet with the name
-     * @param pname ParticleSet name which is cloned
-     * @param np number of copies
-     * @return vector<ParticleSet*> of np elements
-     *
-     * The first element is always the ParticleSet* of the original
-     * ParticleSet to be cloned.
-     * When OpenMP is enabled, each thread creates the ParticleSet
-     * @todo use vector<shared_ptr<ParticleSet> >
-     vector<ParticleSet*> clone(const string& pname, int np);
+    /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
      */
+    void randomize();
+
   private:
     ParticleSet::ParticleLayout_t* SimulationCell;
     Tensor<int,3> TileMatrix;
     map<string,ParticleSet*> myPool;
+    vector<xmlNodePtr> randomize_nodes;
   };
 }
 #endif
