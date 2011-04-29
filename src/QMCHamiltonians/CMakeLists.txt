@@ -33,18 +33,22 @@ IF(OHMMS_DIM MATCHES 3)
     ECPComponentBuilder.2.cpp
     )
 
+  IF(HAVE_LIBFFTW)
+    SET(HAMSRCS ${HAMSRCS} MPC.cpp VHXC.cpp)
+  ENDIF(HAVE_LIBFFTW)
+
   IF(QMC_CUDA)
-     SET(HAMSRCS ${HAMSRCS}
-         CudaCoulomb.cu 
-         NLPP.cu
-         CoulombPBCAA_CUDA.cpp
-         CoulombPBCAB_CUDA.cpp
-         MPC_CUDA.cpp
-         LocalECPotential_CUDA.cpp
-         NonLocalECPotential_CUDA.cpp
-	 CoulombPotential_CUDA.cpp
-	 SkEstimator_CUDA.cpp
-        )
+    SET(HAMSRCS ${HAMSRCS}
+      CudaCoulomb.cu 
+      NLPP.cu
+      CoulombPBCAA_CUDA.cpp
+      CoulombPBCAB_CUDA.cpp
+      MPC_CUDA.cpp
+      LocalECPotential_CUDA.cpp
+      NonLocalECPotential_CUDA.cpp
+      CoulombPotential_CUDA.cpp
+      SkEstimator_CUDA.cpp
+      )
   ENDIF(QMC_CUDA)
 
   # Add research-related sources here
@@ -63,10 +67,6 @@ ENDIF(OHMMS_DIM MATCHES 3)
 #    MomentumDistribution.cpp
 #)
 #ENDIF(HAVE_LIBFFTW)
-
-IF(HAVE_LIBFFTW)
-  SET(HAMSRCS ${HAMSRCS} MPC.cpp VHXC.cpp)
-ENDIF(HAVE_LIBFFTW)
 
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})

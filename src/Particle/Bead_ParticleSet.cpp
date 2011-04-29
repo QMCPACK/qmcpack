@@ -116,7 +116,7 @@ ReadyForPbyP(false),UpdateMode(Update_Walker)
       //compute Drift
     RealType denom(0.e0),wgtpsi;
     Drift=0.e0;
-    ParticleAttrib<TinyVector<double,3> > TMPgrad(Drift);
+    ParticlePos_t TMPgrad(Drift);
     for(int ipsi=0; ipsi<npsi; ipsi++) {
       wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
           -Properties(0,LOGPSI)   + LogNorm[0]));
