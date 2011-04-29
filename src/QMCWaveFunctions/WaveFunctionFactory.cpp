@@ -20,18 +20,21 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
+
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #endif
-#if QMC_BUILD_LEVEL>1
+
+#if OHMMS_DIM==3 && QMC_BUILD_LEVEL>1
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 //AGP is experimental and only valid with real
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 && !defined(QMC_COMPLEX)
+#if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 #endif
+
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -167,7 +170,7 @@ namespace qmcplusplus {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
 #endif
     } 
-#if QMC_BUILD_LEVEL>1
+#if OHMMS_DIM == 3 && QMC_BUILD_LEVEL>1
     else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
