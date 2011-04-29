@@ -18,12 +18,12 @@
 #include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
-#if OHMMS_DIM ==3
-#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
-#include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/singleRPAJastrowBuilder.h"
+#if OHMMS_DIM ==3
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #endif
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCWaveFunctions/Jastrow/WMJastrowBuilder.h"
@@ -138,12 +138,15 @@ namespace qmcplusplus {
       BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
       success=jb.put(cur);
     } 
+#if OHMMS_DIM ==3
     else if (funcOpt == "rpa" )
     {
       app_log() << "\n  Using RPA for one-body jastrow" << endl;
       singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
       success= jb.put(cur);
     }
+#endif
+
 #if defined(QMC_BUILD_COMPLETE)
     else if(funcOpt == "any")
     {
@@ -164,6 +167,7 @@ namespace qmcplusplus {
 
   bool JastrowBuilder::add_eeI (xmlNodePtr cur)
   {
+#if OHMMS_DIM ==3
     ReportEngine PRE(ClassName,"add_eeI(xmlNodePtr)");
 
     PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
@@ -176,6 +180,10 @@ namespace qmcplusplus {
     ParticleSet& sourcePtcl= *((*pit).second);
     eeI_JastrowBuilder jb(targetPtcl, targetPsi, sourcePtcl);
     return jb.put (cur);
+#else
+    APP_ABORT("  eeI is not valid for OHMMS_DIM != 3 ");
+    return true;
+#endif
   }
 
 
@@ -354,12 +362,12 @@ namespace qmcplusplus {
       J3->put(coeffPtr);
       targetPsi.addOrbital(J3,"J3_full");
     }
+    delete basisBuilder;
 #else
     app_error() << "  Three-body Jastrow function is not supported for DIM != 3." << endl;
 //#error "  Three-body Jastrow is disabled for QMC_DIM != 3\n "
 #endif
 
-    delete basisBuilder;
     //if(jbuilder)
     //{
     //  jbuilder->put(cur);

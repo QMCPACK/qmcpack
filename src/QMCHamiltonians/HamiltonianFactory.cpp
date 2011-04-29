@@ -24,15 +24,6 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
-#if OHMMS_DIM == 3
-  #include "QMCHamiltonians/LocalCorePolPotential.h"
-  #include "QMCHamiltonians/ECPotentialBuilder.h"
-#endif
-#if defined(HAVE_LIBFFTW_LS)
-  #include "QMCHamiltonians/ModInsKineticEnergy.h"
-  #include "QMCHamiltonians/MomentumDistribution.h"
-  #include "QMCHamiltonians/DispersionRelation.h"
-#endif
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "QMCHamiltonians/Pressure.h"
@@ -40,11 +31,31 @@
 #include "QMCHamiltonians/PsiValue.h"
 #include "QMCHamiltonians/DMCPsiValue.h"
 #include "QMCHamiltonians/PsiOverlap.h"
+#include "QMCHamiltonians/ForwardWalking.h"
+#include "QMCHamiltonians/trialDMCcorrection.h"
+#include "QMCHamiltonians/PairCorrEstimator.h"
+#include "QMCHamiltonians/DensityEstimator.h"
+#include "QMCHamiltonians/SkEstimator.h"
+#include "QMCHamiltonians/MomentumEstimator.h"
+#if OHMMS_DIM == 3
+#include "QMCHamiltonians/LocalCorePolPotential.h"
+#include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
-// #include "QMCHamiltonians/ZeroVarObs.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
+#include "QMCHamiltonians/ChiesaCorrection.h"
+#if defined(HAVE_LIBFFTW)
+  #include "QMCHamiltonians/MPC.h"
+  #include "QMCHamiltonians/VHXC.h"
+#endif
+#if defined(HAVE_LIBFFTW_LS)
+  #include "QMCHamiltonians/ModInsKineticEnergy.h"
+  #include "QMCHamiltonians/MomentumDistribution.h"
+  #include "QMCHamiltonians/DispersionRelation.h"
+#endif
+#endif
+// #include "QMCHamiltonians/ZeroVarObs.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HePressure.h"
@@ -57,17 +68,7 @@
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
 #endif
-#include "QMCHamiltonians/ForwardWalking.h"
-#include "QMCHamiltonians/trialDMCcorrection.h"
-#include "QMCHamiltonians/ChiesaCorrection.h"
-#include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCHamiltonians/DensityEstimator.h"
-#include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/MomentumEstimator.h"
-#if defined(HAVE_LIBFFTW)
-  #include "QMCHamiltonians/MPC.h"
-  #include "QMCHamiltonians/VHXC.h"
-#endif
+
 #include "OhmmsData/AttributeSet.h"
 
 #ifdef QMC_CUDA
@@ -219,25 +220,25 @@ namespace qmcplusplus {
 // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
 	  
 	}
-    else if(potType == "jellium")
-  {
-    string SourceName = "e";
-    OhmmsAttributeSet hAttrib;
-    hAttrib.add(SourceName, "source");
-    hAttrib.put(cur);
+        else if(potType == "jellium" || potType =="heg")
+        {
+          string SourceName = "e";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
 
-    PtclPoolType::iterator pit(ptclPool.find(SourceName));
-    if(pit == ptclPool.end()) 
-    {
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
             APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-    }
-    ParticleSet* source = (*pit).second;
-    
-    JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
-    targetH->addOperator(JP,potName,true);
-//    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-    
-  }
+          }
+          ParticleSet* source = (*pit).second;
+
+          JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
+          targetH->addOperator(JP,potName,true);
+          //    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+
+        }
         else if(potType == "HFDHE2") 
         {
           HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
@@ -254,6 +255,7 @@ namespace qmcplusplus {
 	  HFD->addCorrection(*targetH);
 	}
 	*/
+#if OHMMS_DIM==3
 	else if (potType == "MPC" || potType == "mpc")
 	  addMPCPotential(cur);
 	else if (potType == "VHXC" || potType == "vhxc")
@@ -266,6 +268,7 @@ namespace qmcplusplus {
         {
           addCorePolPotential(cur);
         }
+#endif
         else if(potType.find("num") < potType.size())
         {
           if(sourceInp == targetInp)//only accept the pair-potential for now
@@ -322,6 +325,7 @@ namespace qmcplusplus {
             targetH->addOperator(apot,potName,false);
           }
         }
+#if OHMMS_DIM==3
 	else if(potType == "chiesa")
 	{
 	  string PsiName="psi0";
@@ -348,6 +352,7 @@ namespace qmcplusplus {
 	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
 	  targetH->addOperator(chiesa,"KEcorr",false);
 	}  
+#endif
         else if(potType == "Pressure")
         {
           if(estType=="coulomb")
@@ -521,7 +526,7 @@ namespace qmcplusplus {
   void
   HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool physical) 
   {
-#if defined(HAVE_LIBFFTW)
+#if OHMMS_DIM ==3 && defined(HAVE_LIBFFTW)
     string a("e"), title("MPC");
     OhmmsAttributeSet hAttrib;
     double cutoff = 30.0;
@@ -548,7 +553,7 @@ namespace qmcplusplus {
   void
   HamiltonianFactory::addVHXCPotential(xmlNodePtr cur) 
   {
-#if defined(HAVE_LIBFFTW)
+#if OHMMS_DIM==3 && defined(HAVE_LIBFFTW)
     string a("e"), title("VHXC");
     OhmmsAttributeSet hAttrib;
     bool physical = true;
@@ -656,6 +661,7 @@ namespace qmcplusplus {
 
   void 
   HamiltonianFactory::addForceHam(xmlNodePtr cur) {
+#if OHMMS_DIM==3
     string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
       PsiName="psi0";
     OhmmsAttributeSet hAttrib;
@@ -685,7 +691,6 @@ namespace qmcplusplus {
     ParticleSet* target = (*pit).second;
 
     //bool applyPBC= (PBCType && pbc=="yes");
-
     if(mode=="bare") 
       targetH->addOperator(new BareForce(*source, *target), title, false);
     else if(mode=="cep") 
@@ -709,12 +714,12 @@ namespace qmcplusplus {
       targetH->addOperator
 	(new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
     }
-
     else {
       ERRORMSG("Failed to recognize Force mode " << mode);
       //} else if(mode=="FD") {
       //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
     }
+#endif
   }
 
   void 

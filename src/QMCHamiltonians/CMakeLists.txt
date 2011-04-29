@@ -7,31 +7,31 @@ SET(HAMSRCS
   NonLocalTOperator.cpp
   NumericalRadialPotential.cpp
   RPAPressure.cpp
-  ForceBase.cpp
-  PulayForce.cpp
-  ZeroVarianceForce.cpp
-  ForceCeperley.cpp
   ForwardWalking.cpp
   trialDMCcorrection.cpp
-  ChiesaCorrection.cpp
   PairCorrEstimator.cpp
   DensityEstimator.cpp
   SkEstimator.cpp
   MomentumEstimator.cpp
+  ForceBase.cpp
 )
 #  FSAtomPseudoPot.cpp
 
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
-      LocalCorePolPotential.cpp
-      LocalECPotential.cpp
-      NonLocalECPComponent.cpp
-      NonLocalECPotential.cpp
-      ECPotentialBuilder.cpp
-      ECPComponentBuilder.cpp
-      ECPComponentBuilder.1.cpp
-      ECPComponentBuilder.2.cpp
-     )
+    ChiesaCorrection.cpp
+    PulayForce.cpp
+    ZeroVarianceForce.cpp
+    ForceCeperley.cpp
+    LocalCorePolPotential.cpp
+    LocalECPotential.cpp
+    NonLocalECPComponent.cpp
+    NonLocalECPotential.cpp
+    ECPotentialBuilder.cpp
+    ECPComponentBuilder.cpp
+    ECPComponentBuilder.1.cpp
+    ECPComponentBuilder.2.cpp
+    )
 
   IF(QMC_CUDA)
      SET(HAMSRCS ${HAMSRCS}

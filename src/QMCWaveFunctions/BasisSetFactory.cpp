@@ -14,20 +14,20 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
-#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #if QMC_BUILD_LEVEL>1
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #endif
 #endif
+#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -91,7 +91,18 @@ namespace qmcplusplus {
 //     }
 
     BasisSetBuilder* bb=0;
-    if(typeOpt.find("spline")<typeOpt.size())
+    if (typeOpt == "jellium" || typeOpt == "heg") 
+    {
+      app_log()<<"Electron gas SPO set"<<endl;
+      bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
+    }    
+    else if (typeOpt == "linearopt") 
+    {
+      //app_log()<<"Optimizable SPO set"<<endl;
+      bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+    }
+#if OHMMS_DIM ==3
+    else if(typeOpt.find("spline")<typeOpt.size())
     {
       name=typeOpt;
 #if defined(HAVE_EINSPLINE)
@@ -99,8 +110,6 @@ namespace qmcplusplus {
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #else
       PRE.error("Einspline is missing for B-spline orbitals",true);
-      //PRE << "TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
-      //bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #endif
     }
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
@@ -117,11 +126,8 @@ namespace qmcplusplus {
       else 
         ions=(*pit).second; 
    
-//      if(name=="") {
-//        APP_ABORT("Missing basisset/@name.\n");
-//      }
-
-      if(transformOpt == "yes") { 
+      if(transformOpt == "yes") 
+      { 
 #if QMC_BUILD_LEVEL>2
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
 #else
@@ -140,15 +146,7 @@ namespace qmcplusplus {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
       }
     }
-    else if (typeOpt == "linearopt") {
-      //app_log()<<"Optimizable SPO set"<<endl;
-      bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
-    }
-    else if (typeOpt == "jellium") {
-      app_log()<<"Electron gas SPO set"<<endl;
-      bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
-    }    
-
+#endif  //OHMMS_DIM==3
     PRE.flush();
 
     if(bb) 

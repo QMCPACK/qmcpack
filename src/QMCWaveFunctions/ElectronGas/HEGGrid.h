@@ -220,8 +220,14 @@ namespace qmcplusplus {
     map<int,vector<PosType>*> rs;
     vector<PosType> kpt;
     vector<T>  mk2;
+    vector<int> n_within_shell;
 
-    HEGGrid(PL_t& lat):Lattice(lat) { }
+    HEGGrid(PL_t& lat):Lattice(lat) 
+    { 
+      n_within_shell.resize(31);
+      //fill this in
+      n_within_shell[0]=1; 
+    }
 
     ~HEGGrid() { 
       typename map<int,vector<PosType>*>::iterator it(rs.begin()),

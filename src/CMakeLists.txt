@@ -62,12 +62,18 @@ IF(HAVE_OOMPI)
   LINK_LIBRARIES(oompi)
 ENDIF(HAVE_OOMPI)
 
+IF(OHMMS_DIM MATCHES 3)
+  SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
+ENDIF(OHMMS_DIM MATCHES 3)
+
+IF(OHMMS_DIM MATCHES 2)
+  SET(PARTICLE Lattice/Uniform2DGridLayout.cpp)
+ENDIF(OHMMS_DIM MATCHES 2)
 
 ####################################
 # create libqmcbase 
 ####################################
-SET(PARTICLE
-  Lattice/Uniform3DGridLayout.cpp 
+SET(PARTICLE ${PARTICLE}
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
@@ -98,8 +104,12 @@ IF(HAVE_LIBHDF5)
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
-      ParticleIO/ESHDFParticleParser.cpp
      )
+
+   IF(OHMMS_DIM  MATCHES 3)
+     SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
+   ENDIF(OHMMS_DIM  MATCHES 3)
+
 ENDIF(HAVE_LIBHDF5)
 
 ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
@@ -120,8 +130,10 @@ IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
 ENDIF(BUILD_QMCTOOLS)
 
-#IF(BUILD_SANDBOX)
+IF(BUILD_SANDBOX)
   SUBDIRS(SandBox)
-  #ENDIF(BUILD_SANDBOX)
+ENDIF(BUILD_SANDBOX)
 
-SUBDIRS(SQD)
+IF(BUILD_SQD)
+  SUBDIRS(SQD)
+ENDIF(BUILD_SQD)

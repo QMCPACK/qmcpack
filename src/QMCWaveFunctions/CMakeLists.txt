@@ -17,14 +17,29 @@ SET(JASTROW_SRCS
   Jastrow/PadeJastrowBuilder.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/BsplineJastrowBuilder.cpp
-  Jastrow/eeI_JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
   Jastrow/singleRPAJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
+  OptimizableSPOBuilder.cpp
+  Fermion/SPOSetProxy.cpp
+  Fermion/SPOSetProxyForMSD.cpp
 )
+
+IF(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+    PlaneWave/PWOrbitalSet.cpp
+    )
+ELSE(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasOrbitalBuilder.cpp
+    PlaneWave/PWRealOrbitalSet.cpp
+    )
+ENDIF(QMC_COMPLEX)
+
 
 #specialized jastrows: extremely taxing for some compilers
 IF(QMC_BUILD_LEVEL GREATER 1)
@@ -39,6 +54,7 @@ ENDIF(QMC_BUILD_LEVEL GREATER 1)
 IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
+    Jastrow/eeI_JastrowBuilder.cpp
     Jastrow/ThreeBodyGeminal.cpp
     Jastrow/ThreeBodyBlockSparse.cpp
     Jastrow/JastrowBasisBuilder.cpp
@@ -50,22 +66,7 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/GTOBuilder.cpp
     MolecularOrbitals/NGOBuilder.cpp
     MolecularOrbitals/BsplineAOBuilder.cpp
-    OptimizableSPOBuilder.cpp
-    Fermion/SPOSetProxy.cpp
-    Fermion/SPOSetProxyForMSD.cpp
     )
-
-  IF(QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-      PlaneWave/PWOrbitalSet.cpp
-      )
-  ELSE(QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasOrbitalBuilder.cpp
-      PlaneWave/PWRealOrbitalSet.cpp
-      )
-  ENDIF(QMC_COMPLEX)
 
 IF(QMC_CUDA)
    SET(FERMION_SRCS ${FERMION_SRCS}

@@ -76,7 +76,7 @@ namespace APPNAMESPACE
         vec_inv(n,&r[0],&rinv[0]);
       }
 
-      inline void apply_bc(std::vector<TinyVector<T,3> >& dr
+      inline void apply_bc(std::vector<TinyVector<T,D> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=std::sqrt(dot(dr[i],dr[i]));
@@ -331,9 +331,7 @@ namespace APPNAMESPACE
       inline T apply_bc(TinyVector<T,2>& displ)  const
       {
         //cart2unit
-        TinyVector<T,3> 
-          ar(displ[0]*g00+displ[1]*g10
-            ,displ[0]*g01+displ[1]*g11);
+        TinyVector<T,2> ar(displ[0]*g00+displ[1]*g10 ,displ[0]*g01+displ[1]*g11);
 
         //put them in the box
         ar[0]-=round(ar[0]); ar[1]-=round(ar[1]);

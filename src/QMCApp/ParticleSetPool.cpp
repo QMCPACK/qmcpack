@@ -22,7 +22,9 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
+#if OHMMS_DIM ==3
 #include "ParticleIO/ESHDFParticleParser.h"
+#endif
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -202,6 +204,7 @@ namespace qmcplusplus {
 
   ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& target)
   {
+#if OHMMS_DIM==3
     TinyVector<int,OHMMS_DIM> tilefactor;
     Tensor<int,OHMMS_DIM> tilematrix(1,0,0,0,1,0,0,0,1);
     double lr_cut=10;
@@ -344,6 +347,9 @@ namespace qmcplusplus {
       return 0;
     }
     return qp;
+#else
+    APP_ABORT("ESHDF is not valid for OHMMS_DIM != 3");
+#endif
   }
 // Experimental implementation of cloning ParticleSet*
 // All taken care by HamiltonianPool

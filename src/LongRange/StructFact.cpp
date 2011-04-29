@@ -158,7 +158,6 @@ StructFact::FillRhok() {
 void 
 StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID){
 
-  cout << "##### StructFact::UpdateRhok(const PosType& rold,const PosType& rnew USED" << endl;
   TinyVector<double,DIM> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian
   

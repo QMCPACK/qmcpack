@@ -257,8 +257,8 @@ KContainer::BuildKLists(bool useSphere) {
   }
 //#elif OHMMS_DIM == 1
 //add one-dimension
-#else
-   cout << "  Add compiler error " << endl; 
+#else 
+  #error "OHMMS_DIM != 2 || OHMMS_DIM != 3"
 #endif
  
   //Update a record of the number of k vectors

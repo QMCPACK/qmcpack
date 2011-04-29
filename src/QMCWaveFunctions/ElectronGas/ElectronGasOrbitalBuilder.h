@@ -139,10 +139,10 @@ namespace qmcplusplus {
          psi[j2]=sinkr;
          dpsi[j1]=-sinkr*K[ik];
          dpsi[j2]= coskr*K[ik];
-         for(int la=0; la<3; la++) {
+         for(int la=0; la<OHMMS_DIM; la++) {
            (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
            (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
-           for(int lb=+1; lb<3; lb++) {
+           for(int lb=+1; lb<OHMMS_DIM; lb++) {
              (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
              (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
              (hess[j1])(lb,la)=(hess[j1])(la,lb);
@@ -214,10 +214,10 @@ namespace qmcplusplus {
           psi[j2]=sinkr;
           dpsi[j1]=-sinkr*K[ik];
           dpsi[j2]= coskr*K[ik];
-          for(int la=0; la<3; la++) {
+          for(int la=0; la<OHMMS_DIM; la++) {
             (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
             (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
-            for(int lb=+1; lb<3; lb++) {
+            for(int lb=+1; lb<OHMMS_DIM; lb++) {
               (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
               (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
               (hess[j1])(lb,la)=(hess[j1])(la,lb);
@@ -250,16 +250,17 @@ namespace qmcplusplus {
           psi[j2]=sinkr;
           dpsi[j1]=-sinkr*K[ik];
           dpsi[j2]= coskr*K[ik];
-          for(int la=0; la<3; la++) {
+          for(int la=0; la<OHMMS_DIM; la++) {
             (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
             (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
-            for(int lb=la+1; lb<3; lb++) {
+            for(int lb=la+1; lb<OHMMS_DIM; lb++) {
               (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
               (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
               (hess[j1])(lb,la)=(hess[j1])(la,lb);
               (hess[j2])(lb,la)=(hess[j2])(la,lb);
             }
           }
+#if OHMMS_DIM ==3
           for(int la=0; la<3; la++) {
             for(int lb=0; lb<3; lb++) {
               for(int lc=0; lc<3; lc++) {
@@ -268,6 +269,7 @@ namespace qmcplusplus {
               }
             }
           }
+#endif
 
         }
       }

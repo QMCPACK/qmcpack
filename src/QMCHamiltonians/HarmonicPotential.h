@@ -48,7 +48,7 @@ namespace qmcplusplus {
       RealType C = 0.5;
       for(int iat=0; iat<Centers;iat++) {
         //RealType omega = center.getSpeciesSet(charge,center.GroupID[iat]);
-        RealType omega=0.5;
+        RealType omega=1.0;
         Omega[iat] = C*omega*omega;
       }
     }
@@ -65,9 +65,8 @@ namespace qmcplusplus {
       Value=0.0;
       for(int iat=0; iat<Centers; iat++) {
         RealType e = 0.0;
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
+        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) 
           e += d_table->r(nn)*d_table->r(nn);
-        }
         Value += Omega[iat]*e;
       }
       return Value;
@@ -88,7 +87,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
       return new HarmonicPotential(sourcePtcl,qp);
     }

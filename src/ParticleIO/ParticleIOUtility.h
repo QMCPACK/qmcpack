@@ -67,8 +67,8 @@ namespace qmcplusplus {
     int mppgrid_id = lattice.makeGrid(&grid[0][0],-1);
     int ompgrid_id = lattice.makeGrid(&grid[1][0],mppgrid_id);
     
-    for(int idim=0; idim<ndim; idim++) {
-      
+    for(int idim=0; idim<ndim; idim++) 
+    {
       if(grid[1][idim] > grid[2][idim]) grid[1][idim] = grid[2][idim];
       grid[2][idim] /= grid[1][idim];
     }
@@ -80,7 +80,7 @@ namespace qmcplusplus {
   }
   
   /** expand a particleset including lattice */
-  void expandSuperCell(ParticleSet& ref, Tensor<int,3>& tmat);
+  void expandSuperCell(ParticleSet& ref, Tensor<int,OHMMS_DIM>& tmat);
 
 }
 #endif

@@ -90,7 +90,7 @@ namespace qmcplusplus {
 
   private:
     ParticleSet::ParticleLayout_t* SimulationCell;
-    Tensor<int,3> TileMatrix;
+    Tensor<int,OHMMS_DIM> TileMatrix;
     map<string,ParticleSet*> myPool;
     vector<xmlNodePtr> randomize_nodes;
   };
