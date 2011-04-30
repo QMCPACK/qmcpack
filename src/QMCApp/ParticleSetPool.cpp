@@ -33,8 +33,9 @@
 namespace qmcplusplus {
   
   ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), SimulationCell(0), TileMatrix(1,0,0,0,1,0,0,0,1)
+    : MPIObjectBase(c), SimulationCell(0), TileMatrix(0)
   { 
+    for(int i(0);i<OHMMS_DIM;i++) TileMatrix(i,i)=1;
     ClassName="ParticleSetPool";
     myName=aname;
   }
@@ -254,6 +255,7 @@ namespace qmcplusplus {
     vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
     ions->Lattice.reset();
     ions->Lattice.makeGrid(grid);
+    
 
     if(SimulationCell==0)
     {

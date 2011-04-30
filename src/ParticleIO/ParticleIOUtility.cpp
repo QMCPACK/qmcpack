@@ -84,10 +84,10 @@ namespace qmcplusplus {
     typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
     typedef ParticleSet::Tensor_t Tensor_t;
 
-    Tensor<int,3> I(1,0,0,1);
+    Tensor<int,2> I(1,0,0,1);
     bool identity=true;
     int ij=0;
-    while(identity&& ij<9)
+    while(identity&& ij<4)
     {
       identity=(I[ij]==tmat[ij]);
       ++ij;

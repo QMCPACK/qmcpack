@@ -206,7 +206,7 @@ namespace qmcplusplus {
     }
   };
 
-  //three-d specialization
+  //two-d specialization
   template<class T>
   struct HEGGrid<T,2> {
     typedef CrystalLattice<T,2> PL_t;
@@ -226,7 +226,18 @@ namespace qmcplusplus {
     { 
       n_within_shell.resize(31);
       //fill this in
-      n_within_shell[0]=1; 
+      n_within_shell[0]=1; n_within_shell[1]=5; n_within_shell[2]=9;
+      n_within_shell[3]=13; 
+//       n_within_shell[4]=33; n_within_shell[5]=57;
+//       n_within_shell[6]=81; n_within_shell[7]=93; n_within_shell[8]=123;
+//       n_within_shell[9]=147; n_within_shell[10]=171; n_within_shell[11]=179;
+//       n_within_shell[12]=203; n_within_shell[13]=251; n_within_shell[14]=257;
+//       n_within_shell[15]=305; n_within_shell[16]=341; n_within_shell[17]=365;
+//       n_within_shell[18]=389; n_within_shell[19]=437; n_within_shell[20]=461;
+//       n_within_shell[21]=485; n_within_shell[22]=515; n_within_shell[23]=587;
+//       n_within_shell[24]=619; n_within_shell[25]=691; n_within_shell[26]=739;
+//       n_within_shell[27]=751; n_within_shell[28]=799; n_within_shell[29]=847;
+//       n_within_shell[30]=895;
     }
 
     ~HEGGrid() { 
@@ -236,23 +247,30 @@ namespace qmcplusplus {
     }
 
     /** return the estimated number of grid in each direction */
-    inline int getNC(int nup) {
+    inline int getNC(int nup) const {
       return static_cast<int>(std::pow(static_cast<T>(nup),1.0/2))/2+1;
     }
 
     //return the number of k-points upto nsh-shell
     inline int getNumberOfKpoints(int nsh) const
     {
-      return -1;
+      if(nsh<n_within_shell.size())
+        return n_within_shell[nsh];
+      else
+        return -1;
     }
 
     //return the shell index for nkpt k-points
     inline int getShellIndex(int nkpt) const
     {
-      return -1;
+      vector<int>::const_iterator loc=std::upper_bound(n_within_shell.begin(),n_within_shell.end(),nkpt);
+      if(loc<n_within_shell.end()) 
+        return loc-n_within_shell.begin()-1;
+      else
+        return getNC(nkpt);
     }
 
-    inline T getCellLength(int nptcl, T rs_in)
+    inline T getCellLength(int nptcl, T rs_in) const
     {
       return std::sqrt(M_PI*nptcl)*rs_in;
     }

@@ -119,9 +119,9 @@ namespace qmcplusplus
         return box[0]+2*box[1]+4;
       }
 
-      inline bool isDiagonalOnly(const Tensor<T,2>& R) const
+      inline bool isDiagonalOnly(const Tensor<T,2>& a) const
       {
-        T offdiag=abs(R(0,1))+abs(R(1,0));
+        T offdiag=abs(a(0,1))+abs(a(1,0));
         return (offdiag< numeric_limits<T>::epsilon());
       }
 
@@ -134,16 +134,18 @@ namespace qmcplusplus
             rad_to_deg*std::acos(dot(Rv[0],Rv[1])*OneOverLength[0]*OneOverLength[1]), 0.0);
       }
 
-      inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2>& a)
+      inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2>& b)
       {
         T rMin = 1.0e50;
         for (int i=-1; i<=1; i++)
           for (int j=-1; j<=1; j++)
+          {
             if ((i!=0) || (j!=0)) {
-              SingleParticlePos_t L = ((double)i * a[0] + (double)j * a[1]);
-              T dist = 0.5*std::fabs(dot(L,L));
+              SingleParticlePos_t L = ((double)i * b[0] + (double)j * b[1]);
+              T dist = 0.5*std::sqrt(std::fabs(dot(L,L)));
               rMin = std::min(rMin, dist);
             }
+          }
         return rMin;
       }
 
@@ -152,7 +154,8 @@ namespace qmcplusplus
 	T a0mag  = std::sqrt(dot(a[0],a[0]));
 	T a1mag  = std::sqrt(dot(a[1],a[1]));
 	T theta1 = dot (a[0], a[1])/(a0mag*a1mag);
-        T theta2 = M_PI - theta1;
+   theta1 = acos(theta1);
+   T theta2 = M_PI - theta1;
 	T theta  = std::min (theta1, theta2);
 	T dist   = std::min (a0mag, a1mag);
 	return 0.5*std::sin(theta)*dist;
