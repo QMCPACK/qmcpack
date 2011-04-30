@@ -48,6 +48,17 @@ namespace qmcplusplus {
     return false;
   }
 
+  inline bool 
+  Include (int i, int j) {
+    if (i > 0)
+      return true;
+    else if (i==0) 
+    {
+      if (j>0) return true;
+    }
+    return false;
+  }
+
   void
   kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType> &gvecs,
 			    bool useStructFact)
@@ -58,6 +69,7 @@ namespace qmcplusplus {
       maxIndex[i] = 2 + (int)std::floor
 	(std::sqrt(dot(Ions.Lattice.a(i), Ions.Lattice.a(i)))*kc / (2.0*M_PI));
     std::vector<ComplexType> rho_G(NumIonSpecies);
+#if OHMMS_DIM==3
     for (int i=0; i<=maxIndex[0]; i++)
       for (int j=-maxIndex[1]; j<=maxIndex[1]; j++)
 	for (int k=-maxIndex[2]; k<=maxIndex[2]; k++) {
@@ -76,6 +88,25 @@ namespace qmcplusplus {
 	    }
 	  }
 	}
+#elif OHMMS_DIM==2
+    for (int i=0; i<=maxIndex[0]; i++)
+      for (int j=-maxIndex[1]; j<=maxIndex[1]; j++) 
+      {
+	  // Omit half the G-vectors because of time-reversal symmetry
+	  if (Include(i,j)) {
+	    PosType G = 2.0*M_PI*((RealType)i*Ions.Lattice.Gv[0] + 
+				  (RealType)j*Ions.Lattice.Gv[1]);
+	    if (dot(G,G) <= (kc*kc)) {
+	      bool notZero(false);
+	      StructureFactor(G, rho_G);	      
+	      for (int sp=0; sp<NumIonSpecies; sp++) 
+		notZero = notZero || (norm(rho_G[sp]) > 1.0e-12);
+	      if (notZero || !useStructFact)
+		gvecs.push_back(G);
+	    }
+	  }
+	}
+#endif
   }
 
   struct magLess
