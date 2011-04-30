@@ -18,6 +18,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <bitset>
 
@@ -97,14 +98,14 @@ namespace qmcplusplus {
 
     typedef std::vector<IndexType>       IndexVectorType;
     typedef TempDisplacement<RealType,DIM> TempDistType;
-    typedef PooledData<RealType>         BufferType;
+    typedef PooledData<RealType>           BufferType;
 
     ///true if bound box exists
     bool UseBoundBox;
     ///Index of the particle  with a trial move
     IndexType activePtcl;
     ///size of indicies
-    TinyVector<IndexType,DIM> N;
+    TinyVector<IndexType,4> N;
     ///** Maximum radius */
     //RealType Rmax;
     ///** Maximum square */
@@ -141,13 +142,13 @@ namespace qmcplusplus {
      * If the move is rejected, nothing is done and new data will be overwritten.
      */
     std::vector<TempDistType> Temp;
-    vector<RealType> temp_r;
-    vector<PosType> temp_dr;
+    std::vector<RealType> temp_r;
+    std::vector<PosType> temp_dr;
 
     std::string Name;
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(source)//, Rmax(1e6), Rmax2(1e12)
+      : Origin(source), N(0)//, Rmax(1e6), Rmax2(1e12)
     {  }
 
     ///virutal destructor
