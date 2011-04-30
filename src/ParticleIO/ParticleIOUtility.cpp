@@ -47,6 +47,7 @@ namespace qmcplusplus {
     int index=0;
     //set the unit to the Cartesian
     ref_.R.InUnit=PosUnit::CartesianUnit;
+    app_log() << "  Reduced coord    Cartesion coord    species.\n";
     for(int ns=0; ns<ref_.getSpeciesSet().getTotalNum();++ns)
     {
       for (int i0=-maxCopies; i0<=maxCopies; i0++)    
@@ -66,7 +67,6 @@ namespace qmcplusplus {
                   (uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999)) 
               {
                 char buff[500];
-                app_log() << "  Reduced coord    Cartesion coord    species.\n";
                 snprintf (buff, 500, "  %10.4f  %10.4f %10.4f   %12.6f %12.6f %12.6f %d\n", 
                     uSuper[0], uSuper[1], uSuper[2], r[0], r[1], r[2], ns);
                 app_log() << buff;
@@ -109,6 +109,7 @@ namespace qmcplusplus {
     int index=0;
     //set the unit to the Cartesian
     ref_.R.InUnit=PosUnit::CartesianUnit;
+    app_log() << "  Reduced coord    Cartesion coord    species.\n";
     for(int ns=0; ns<ref_.getSpeciesSet().getTotalNum();++ns)
     {
       for (int i0=-maxCopies; i0<=maxCopies; i0++)    
@@ -126,7 +127,6 @@ namespace qmcplusplus {
                 (uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) )
             {
               char buff[500];
-              app_log() << "  Reduced coord    Cartesion coord    species.\n";
               snprintf (buff, 500, "  %10.4f  %10.4f   %12.6f %12.6f %d\n", uSuper[0], uSuper[1], r[0], r[1],  ns);
               app_log() << buff;
               ref_.R[index]= r;
