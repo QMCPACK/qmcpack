@@ -1,0 +1,32 @@
+digraph hierarch {
+label="ESHDF Schema";
+labelloc="top";
+node[shape=record]
+edge[dir=back,arrowtail=odiamond]
+
+1[label="{eshdf|+application\n +supercell\n +atoms\n +electrons}"]
+
+app[label="{application|+text}"]
+sc[label="{supercell|primitive_cell: double[3][3]}"]
+atoms[label="{atoms|number_of_atoms: int\n positions: double[][3]\n ?reduced_positions: double[][3]\n ?forces: double [][3]| number_of_species: int\n species_ids: int[]\n  +species_#}"]
+species[label="{species|name: string\n valence_charge: int\n atomic_number: int\n pseudopotential: string\n ?mass: double}"]
+els[label="{electrons|number_of_electrons: int\n number_of_kpoints: int \n functional: string\n total_energy: double\n number_of_spins: int\n psi_r_is_complex: int\n psi_r_mesh: int[3]\n +density\n +kpoint_#}"]
+density[label="{density|number_of_gvectors: int\n gvectors: double[][3]\n mesh: int[3]\n +spin_#}"]
+spin_d[label="{spin|+(density_r \| density_g)?}"]
+kpoint[label="{kpoint|reduced_k: double[3]\n weight: double\n number_of_gvectors: int\n gvectors: double[][3]\n +spin_#}"]
+spin_psi[label="{spin|number_of_states: int\n eigenvalues: double[]\n occupations: double[]\n +state_#}"]
+state[label="{state|+psi_g\n +psi_r\n +muffin_tin_#}"]
+
+
+1->app
+1->sc
+1->atoms
+atoms->species
+1->els
+els->density
+density->spin_d
+els->kpoint
+kpoint->spin_psi
+spin_psi->state
+
+}
