@@ -279,7 +279,7 @@ namespace qmcplusplus {
       for(int spec2=0; spec2<NumSpecies; spec2++) {
         RealType Z2 = Zspec[spec2];
 	for (int iat=0; iat<grad.size(); iat++) 
-	  grad[iat] = TinyVector<RealType,DIM>(0.0, 0.0, 0.0);
+	  grad[iat] = TinyVector<RealType,DIM>(0.0);
 	AA->evaluateGrad(P, P, spec2, Zat, grad);
 	for (int iat=0; iat<grad.size(); iat++) 
 	  forces[iat] += Z2*grad[iat];

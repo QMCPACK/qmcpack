@@ -27,6 +27,8 @@
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "QMCHamiltonians/Pressure.h"
+#include "QMCHamiltonians/HardSphere.h"
+#include "QMCHamiltonians/SkPot.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/PsiValue.h"
 #include "QMCHamiltonians/DMCPsiValue.h"
@@ -184,7 +186,19 @@ namespace qmcplusplus {
             addCoulombPotential(cur);
           else 
             addConstCoulombPotential(cur,sourceInp);
-        } 
+        }
+        else if (potType == "hardsphere")
+        {
+          HardSphere* hs = new HardSphere(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"HardSphere",true);
+        }
+        else if (potType == "skpot")
+        {
+          SkPot* hs = new SkPot(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"SkPot",true);
+        }
 #if OHMMS_DIM==3
 	/*
 	else if (potType == "HFDBHE_smoothed") {
@@ -323,6 +337,7 @@ namespace qmcplusplus {
 #endif
             apot->put(cur);
             targetH->addOperator(apot,potName,false);
+            app_log()<<"Adding S(k) estimator"<<endl;
           }
         }
 #if OHMMS_DIM==3

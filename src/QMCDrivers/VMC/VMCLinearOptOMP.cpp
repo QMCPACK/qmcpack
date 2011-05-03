@@ -84,7 +84,7 @@ namespace qmcplusplus
     CurrentStep=0;
     int CurrentBlock=0;
     int minBlocks=4;
-    while (((errorbars>target_errorbars)&&(CurrentBlock<nBlocks))||(CurrentBlock<minBlocks))
+    while (CurrentBlock<nBlocks)
     {
 #pragma omp parallel for
       for (int ip=0; ip<NumThreads; ++ip)

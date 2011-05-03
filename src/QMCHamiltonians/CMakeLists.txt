@@ -11,6 +11,7 @@ SET(HAMSRCS
   trialDMCcorrection.cpp
   PairCorrEstimator.cpp
   DensityEstimator.cpp
+  SkPot.cpp
   SkEstimator.cpp
   MomentumEstimator.cpp
   ForceBase.cpp
