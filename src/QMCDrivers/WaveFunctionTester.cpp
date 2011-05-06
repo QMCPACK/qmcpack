@@ -363,7 +363,7 @@ namespace qmcplusplus
         PosType r0 = W.R[iat];
         GradType g0;
         ValueType lap = 0.0;
-        for (int idim=0; idim<3; idim++)
+        for (int idim=0; idim<OHMMS_DIM; idim++)
           {
 
             W.R[iat][idim] = r0[idim]+delta;
@@ -385,7 +385,7 @@ namespace qmcplusplus
             W.R[iat] = r0;
           }
         G1[iat] = c1*g0;
-        L1[iat] = c2*(lap-6.0*logpsi);
+        L1[iat] = c2*(lap-2.0*OHMMS_DIM*logpsi);
         *fout << "G1 = " << G1[iat] << endl;
         *fout << "L1 = " << L1[iat] << endl;
       }

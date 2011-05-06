@@ -241,7 +241,7 @@ namespace qmcplusplus {
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
-	  RealType lap(d2udr2+2.0*dudr);
+	  RealType lap(d2udr2+(OHMMS_DIM-1.0)*dudr);
 
 	  //multiply -1
 	  G[i] += gr;
@@ -307,7 +307,7 @@ namespace qmcplusplus {
 	  curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
 	  dudr *= d_table->Temp[jat].rinv1;
 	  curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
-	  curLap[jat] = -(d2udr2+2.0*dudr);
+	  curLap[jat] = -(d2udr2+(OHMMS_DIM-1.0)*dudr);
 	  DiffVal += (U[ij]-curVal[jat]);
 	}
       }
@@ -353,7 +353,7 @@ namespace qmcplusplus {
 	  curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
 	  dudr *= d_table->Temp[jat].rinv1;
 	  gr += curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
-	  curLap[jat] = -(d2udr2+2.0*dudr);
+	  curLap[jat] = -(d2udr2+(OHMMS_DIM-1.0)*dudr);
 	  DiffVal += (U[ij]-curVal[jat]);
 	}
       }
@@ -471,7 +471,7 @@ namespace qmcplusplus {
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-	  RealType lap = d2udr2+2.0*dudr;
+	  RealType lap = d2udr2+(OHMMS_DIM-1.0)*dudr;
 	  int ij = i*N+j, ji=j*N+i;
 	  U[ij]=u; U[ji]=u;
 	  //dU[ij] = gr; dU[ji] = -1.0*gr;

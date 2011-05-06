@@ -182,7 +182,7 @@ namespace qmcplusplus
                         for (int p=OffSet[ptype].first, ip=0; p<OffSet[ptype].second; ++p,++ip)
                           {
                             RealType dudr(rinv*derivs[ip][1]);
-                            RealType lap(derivs[ip][2]+2.0*dudr);
+                            RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
                             PosType gr(dudr*dr);
 
                             dLogPsi[p]-=derivs[ip][0];
