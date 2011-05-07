@@ -27,10 +27,6 @@
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "QMCHamiltonians/Pressure.h"
-#include "QMCHamiltonians/HardSphere.h"
-#include "QMCHamiltonians/GaussianPot.h"
-#include "QMCHamiltonians/ModPosTelPot.h"
-#include "QMCHamiltonians/SkPot.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/PsiValue.h"
 #include "QMCHamiltonians/DMCPsiValue.h"
@@ -60,6 +56,10 @@
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if QMC_BUILD_LEVEL>2
+#include "QMCHamiltonians/HardSphere.h"
+#include "QMCHamiltonians/GaussianPot.h"
+#include "QMCHamiltonians/SkPot.h"
+#include "QMCHamiltonians/ModPosTelPot.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/JelliumPotential.h"
@@ -189,6 +189,27 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         }
+#if OHMMS_DIM==3
+	/*
+	else if (potType == "HFDBHE_smoothed") {
+	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
+	  targetH->addOperator(HFD,"HFD-B(He)",true);
+	  HFD->addCorrection(*targetH);
+	}
+	*/
+	else if (potType == "MPC" || potType == "mpc")
+	  addMPCPotential(cur);
+	else if (potType == "VHXC" || potType == "vhxc")
+	  addVHXCPotential(cur);
+        else if(potType == "pseudo") 
+        {
+          addPseudoPotential(cur);
+        } 
+        else if(potType == "cpp") 
+        {
+          addCorePolPotential(cur);
+        }
+#if QMC_BUILD_LEVEL>2
         else if (potType == "hardsphere")
         {
           HardSphere* hs = new HardSphere(*targetPtcl);
@@ -213,62 +234,41 @@ namespace qmcplusplus {
           hs->put(cur);
           targetH->addOperator(hs,"SkPot",true);
         }
-#if OHMMS_DIM==3
-	/*
-	else if (potType == "HFDBHE_smoothed") {
-	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-B(He)",true);
-	  HFD->addCorrection(*targetH);
-	}
-	*/
-	else if (potType == "MPC" || potType == "mpc")
-	  addMPCPotential(cur);
-	else if (potType == "VHXC" || potType == "vhxc")
-	  addVHXCPotential(cur);
-        else if(potType == "pseudo") 
-        {
-          addPseudoPotential(cur);
-        } 
-        else if(potType == "cpp") 
-        {
-          addCorePolPotential(cur);
+        else if (potType == "LJP_smoothed") {
+          LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
+          targetH->addOperator(LJP,"LJP",true);
+          LJP->addCorrection(*targetH);
         }
-#if QMC_BUILD_LEVEL>2
-	else if (potType == "LJP_smoothed") {
-	  LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(LJP,"LJP",true);
-	  LJP->addCorrection(*targetH);
-	}
-	else if (potType == "HeSAPT_smoothed") {
-	  HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(SAPT,"HeSAPT",true);
-	  SAPT->addCorrection(*targetH);
-	}
-	else if (potType == "HFDHE2_Moroni1995") {
-	  HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-HE2",true);
-	  HFD->addCorrection(*targetH);
-	}
-	else if(potType == "eHe")
-	{
-	  string SourceName = "e";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(SourceName, "source");
-	  hAttrib.put(cur);
+        else if (potType == "HeSAPT_smoothed") {
+          HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
+          targetH->addOperator(SAPT,"HeSAPT",true);
+          SAPT->addCorrection(*targetH);
+        }
+        else if (potType == "HFDHE2_Moroni1995") {
+          HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
+          targetH->addOperator(HFD,"HFD-HE2",true);
+          HFD->addCorrection(*targetH);
+        }
+        else if(potType == "eHe")
+        {
+          string SourceName = "e";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
 
-	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) 
-	  {
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
             APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-	  }
-	  ParticleSet* source = (*pit).second;
-	  
-	  HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
-	  targetH->addOperator(eHetype,potName,true);
-// 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-	  
-	}
-        else if(potType == "jellium" || potType =="heg")
+          }
+          ParticleSet* source = (*pit).second;
+
+          HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
+          targetH->addOperator(eHetype,potName,true);
+          // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+
+        }
+        else if(potType == "jellium")
         {
           string SourceName = "e";
           OhmmsAttributeSet hAttrib;
@@ -619,7 +619,8 @@ namespace qmcplusplus {
     renameProperty(a);
 
     PtclPoolType::iterator pit(ptclPool.find(a));
-    if(pit == ptclPool.end()) {
+    if(pit == ptclPool.end()) 
+    {
       ERRORMSG("Missing source ParticleSet" << a)
       return;
     }
@@ -752,7 +753,8 @@ namespace qmcplusplus {
   }
 
   void 
-  HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
+  HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) 
+  {
 
 #if OHMMS_DIM == 3
     string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
@@ -793,20 +795,17 @@ namespace qmcplusplus {
     //remember the TrialWaveFunction used by this pseudopotential
     psiName=wfname;
 
-    //if(format == "old") {
-    //  app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
-    //  targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
-    //}
-    //else  {
     app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
     ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi,myComm);
     ecp.put(cur);
+#else
+    APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");
 #endif
-    //}
   }
 
   void 
-  HamiltonianFactory::addCorePolPotential(xmlNodePtr cur) {
+  HamiltonianFactory::addCorePolPotential(xmlNodePtr cur) 
+  {
 #if OHMMS_DIM == 3
     string src("i"),title("CorePol");
 
@@ -825,11 +824,14 @@ namespace qmcplusplus {
     QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*targetPtcl));
     cpp->put(cur); 
     targetH->addOperator(cpp, title);
+#else
+    APP_ABORT("HamiltonianFactory::addCorePolPotential\n pairpot@type=\"cpp\" is invalid if DIM != 3");
 #endif
   }
 
   void 
-  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
+  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei)
+  {
     OhmmsAttributeSet hAttrib;
     string hname("IonIon");
     string forces("no");
@@ -843,9 +845,8 @@ namespace qmcplusplus {
     PtclPoolType::iterator pit(ptclPool.find(nuclei));
     if(pit != ptclPool.end()) {
       ParticleSet* ion=(*pit).second;
-      if(PBCType){
-        //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-        //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
+      if(PBCType)
+      {
 #ifdef QMC_CUDA
 	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
 #else
