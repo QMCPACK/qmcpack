@@ -117,7 +117,7 @@ namespace qmcplusplus {
       Tattrib.put(cur);
       app_log()<<"ModPoschlTeller parameters"<<endl;
       app_log()<<"  range : "<<d<<endl; d=1.0/d;
-      app_log()<<"  length: "<<sl<<endl;
+      app_log()<<"  mag   : "<<Q<<endl;
       return true;
     }
 
