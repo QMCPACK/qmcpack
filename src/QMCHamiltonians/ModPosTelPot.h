@@ -112,13 +112,12 @@ namespace qmcplusplus {
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       OhmmsAttributeSet Tattrib;
-      Tattrib.add(Q,"length");
+      Tattrib.add(Q,"v0");
       Tattrib.add(d,"range");
       Tattrib.put(cur);
-      
       app_log()<<"ModPoschlTeller parameters"<<endl;
       app_log()<<"  range : "<<d<<endl; d=1.0/d;
-      app_log()<<"  length: "<<Q<<endl;
+      app_log()<<"  length: "<<sl<<endl;
       return true;
     }
 
