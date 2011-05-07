@@ -155,7 +155,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       if(nstabilizers>1) 
         stabilizerScale = std::log(-d_neg)/(nstabilizers-1.0);
       else
-        stabilizerScale = std::log(-d_neg);
+        stabilizerScale = std::max(stabilizerScale,std::log(-d_neg));
     
 //     if (d_neg<0) stabilityBase=std::log(-d_neg);
     

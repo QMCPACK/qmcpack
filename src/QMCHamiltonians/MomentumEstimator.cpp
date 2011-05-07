@@ -28,7 +28,7 @@ namespace qmcplusplus
   {
 
   MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-      :M(4), refPsi(psi), kgrid(4), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
+      :M(1), refPsi(psi), kgrid(4), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
   {
     UpdateMode.set(COLLECTABLE,1);
     psi_ratios.resize(elns.getTotalNum());
@@ -177,20 +177,22 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     pAttrib.put(cur);
     hdf5_out = (hdf5_flag=="yes");
     
-
+    app_log()<<" MomentumEstimator::putSpecial "<<endl;
     
     xmlNodePtr kids=cur->children;
     while (kids!=NULL)
       {
         string cname((const char*)(kids->name));
+        app_log()<<" MomentumEstimator::cname : "<<cname<<endl;
         if (cname=="kpoints")
           {
+            
             string ctype("manual");
             OhmmsAttributeSet pAttrib;
             pAttrib.add(ctype,"mode");
             pAttrib.add(kgrid,"grid");
             pAttrib.put(kids);
-            
+#if OHMMS_DIM==3
             int numqtwists(6*kgrid+3);
             std::vector<int> qk(0);
             mappedQtonofK.resize(numqtwists,qk);
@@ -247,6 +249,57 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
                   }
                 }
               }
+#endif
+#if OHMMS_DIM==2
+            int numqtwists(4*kgrid+2);
+            std::vector<int> qk(0);
+            mappedQtonofK.resize(numqtwists,qk);
+            compQ.resize(numqtwists);
+            
+            RealType qn(2.0*M_PI/std::sqrt(Lattice.Volume));
+            mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
+            if (twist[0]==0) mappedQnorms[kgrid]=qn/RealType(M); 
+            if (twist[1]==0) mappedQnorms[2*kgrid+1]=qn/RealType(M);
+            
+//             app_log()<<" Jnorm="<<qn<<endl;
+            Q.resize(numqtwists);
+            for (int i=-kgrid;i<(kgrid+1);i++)
+            {
+              PosType kpt;
+              kpt[0]=i-twist[0];
+              kpt[1]=i-twist[1];
+              kpt=Lattice.k_cart(kpt);
+              Q[i+kgrid]=abs(kpt[0]);
+              Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
+            }
+
+            app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
+            app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<endl;
+
+            int indx(0);
+            int kgrid_squared=kgrid*kgrid;
+
+            for (int i=-kgrid;i<(kgrid+1);i++)
+            {
+              for (int j=-kgrid;j<(kgrid+1);j++)
+              {
+                if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
+                  {
+                    PosType kpt;
+                    kpt[0]=i-twist[0];
+                    kpt[1]=j-twist[1];
+                    
+                    //convert to Cartesian: note that 2Pi is multiplied
+                    kpt=Lattice.k_cart(kpt);
+                    kPoints.push_back(kpt);
+                    
+                    mappedQtonofK[i+kgrid].push_back(indx);
+                    mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+                    indx++;
+                  }
+                }
+              }
+#endif
            }
           
         kids=kids->next;
@@ -254,22 +307,27 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       if (rootNode)
       {
           std::stringstream sstr;  
-          int t0=(int)round(100.0*twist[0]);
-          int t1=(int)round(100.0*twist[1]);
-          int t2=(int)round(100.0*twist[2]);
-          sstr<<"Kpoints."<<t0<<"_"<<t1<<"_"<<t2<<".dat";
+          sstr<<"Kpoints";
+          for(int i(0);i<OHMMS_DIM;i++) sstr<<"_"<<round(100.0*twist[i]);
+          sstr<<".dat";
           ofstream fout(sstr.str().c_str());
           fout.setf(ios::scientific, ios::floatfield);
-          fout << "# mag_k        kx           ky            kz " << endl;
+          fout << "# mag_k        ";
+          for(int i(0);i<OHMMS_DIM;i++) fout << "k_"<<i<<"           ";
+            fout <<endl;
+          
           for (int i=0;i<kPoints.size();i++)
             {
               float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
-              fout<<khere<<"   "<<kPoints[i][0]<<"    "<<kPoints[i][1]<<"    "<<kPoints[i][2] 
-              <<endl;
+              fout<<khere;
+              for(int j(0);j<OHMMS_DIM;j++) fout<<"   "<<kPoints[i][j];
+              fout<<endl;
             }
           fout.close();
           sstr.str("");
-          sstr<<"Qpoints."<<t0<<"_"<<t1<<"_"<<t2<<".dat";
+          sstr<<"Qpoints";
+          for(int i(0);i<OHMMS_DIM;i++) sstr<<"_"<<round(100.0*twist[i]);
+          sstr<<".dat";          
           ofstream qout(sstr.str().c_str());
           qout.setf(ios::scientific, ios::floatfield);
           qout << "# mag_q" << endl;

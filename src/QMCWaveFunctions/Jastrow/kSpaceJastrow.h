@@ -211,6 +211,10 @@ namespace qmcplusplus {
                                             vector<RealType>& dlogpsi,
                                             vector<RealType>& dhpsioverpsi);
 
+    /** evaluate the ratio 
+    */
+    inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+
   private:
     void copyFrom(const kSpaceJastrow& old);
     kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);

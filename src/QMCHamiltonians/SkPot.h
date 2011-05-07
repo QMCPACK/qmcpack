@@ -51,7 +51,7 @@ namespace qmcplusplus
       {
         RealType k=dot(sourcePtcl->SK->KLists.kpts_cart[ki],sourcePtcl->SK->KLists.kpts_cart[ki]);
         k= std::sqrt(k) - K_0;
-        Fk[ki] = V_0*std::exp(-k*k);
+        Fk[ki] = OneOverN*V_0*std::exp(-k*k);
 //         app_log()<<ki<<": "<<Fk[ki] <<endl;
       }
     }

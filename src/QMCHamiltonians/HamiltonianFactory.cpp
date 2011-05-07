@@ -28,6 +28,8 @@
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/HardSphere.h"
+#include "QMCHamiltonians/GaussianPot.h"
+#include "QMCHamiltonians/ModPosTelPot.h"
 #include "QMCHamiltonians/SkPot.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/PsiValue.h"
@@ -192,6 +194,18 @@ namespace qmcplusplus {
           HardSphere* hs = new HardSphere(*targetPtcl);
           hs->put(cur);
           targetH->addOperator(hs,"HardSphere",true);
+        }        
+        else if (potType == "gaussian")
+        {
+          GaussianPot* hs = new GaussianPot(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"GaussianPot",true);
+        }
+        else if (potType == "modpostel")
+        {
+          ModPoschlTeller* hs = new ModPoschlTeller(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"ModPoschlTeller",true);
         }
         else if (potType == "skpot")
         {

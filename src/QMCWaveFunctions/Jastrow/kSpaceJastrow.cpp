@@ -574,6 +574,52 @@ namespace qmcplusplus {
     return std::exp(J1new+J2new - (J1old + J2old));
   }
   
+    /** evaluate the ratio 
+  */
+  inline void kSpaceJastrow::get_ratios(ParticleSet& P, vector<kSpaceJastrow::ValueType>& ratios)
+  {
+    RealType J1new(0.0);
+    PosType rnew(P.R[0]);
+//     Compute one-body contribution
+    int nOne = OneBodyGvecs.size();
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rnew);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+// // 
+    for (int i=0; i<nOne; i++) 
+      J1new += Prefactor*real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
+
+    // Now, do two-body part
+    int nTwo = TwoBodyGvecs.size();   
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rnew);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);  
+    
+    int N = P.getTotalNum();
+    for (int n=0; n<N; n++)
+    {
+      RealType J1old(0.0), J2Rat(0.0);
+      PosType rold;
+      if (n==0) rold=P.getOldPos();
+      else rold=P.R[n];
+      for (int i=0; i<nOne; i++)
+        OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
+      eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+      for (int i=0; i<nOne; i++) 
+        J1old += Prefactor*real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
+      
+      for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rold);
+        eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_old);   
+      
+      for (int i=0; i<nTwo; i++) {
+        ComplexType rho_G_new = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+        ComplexType rho_G_old = TwoBody_rhoG[i];
+        J2Rat += Prefactor*TwoBodyCoefs[i]*(std::norm(rho_G_new) - std::norm(rho_G_old));
+      }
+      ratios[n]=std::exp(J1new-J1old + J2Rat);
+    }
+
+  }
+  
   
   kSpaceJastrow::ValueType 
   kSpaceJastrow::logRatio(ParticleSet& P, int iat,

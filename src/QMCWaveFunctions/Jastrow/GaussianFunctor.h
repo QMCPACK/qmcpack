@@ -36,12 +36,13 @@ namespace qmcplusplus
       string ID_A;
       string ID_C;
       string ID_RC;
+      bool optimizable;
 
       /** constructor
       * @param a A coefficient
       * @param samespin boolean to indicate if this function is for parallel spins
        */
-      GaussianFunctor(real_type a=1.0, real_type c=1.0,real_type rc=1.0):ID_A("G_A"), ID_C("G_C"),ID_RC("G_RC")
+      GaussianFunctor(real_type a=1.0, real_type c=1.0,real_type rc=1.0):ID_A("G_A"), ID_C("G_C"),ID_RC("G_RC"), optimizable(true)
       {
         A=a;
         C=c;
@@ -58,7 +59,7 @@ namespace qmcplusplus
       {
         c0 = -1.0/(C*C);
         c1 = 2*RC;
-        c2 = 2*A*std::exp(-(RC)*(RC)/(C*C));
+        c2 = 2*A*std::exp(-(RC*RC)/(C*C));
         c3 = -2.0*A/(C*C);
         c4 = 4.0*A/(C*C*C*C);
       }
@@ -69,23 +70,24 @@ namespace qmcplusplus
        */
       void resetParameters(const opt_variables_type& active)
       {
+        if (!optimizable) return;
         int ia=myVars.where(0);
         if (ia>-1) A=myVars[0]=active[ia];
         int ic=myVars.where(1);
         if (ic>-1) C=myVars[1]=active[ic];
-        int id=myVars.where(2);
-        if (id>-1) RC=myVars[2]=active[id];
+//         int id=myVars.where(2);
+//         if (id>-1) RC=myVars[2]=active[id];
         reset();
       }
 
       void checkInVariables(opt_variables_type& active)
       {
-        active.insertFrom(myVars);
+        if (optimizable) active.insertFrom(myVars);
       }
 
       void checkOutVariables(const opt_variables_type& active)
       {
-        myVars.getIndex(active);
+        if (optimizable) myVars.getIndex(active);
       }
 
       /** evaluate the value at r
@@ -180,7 +182,7 @@ namespace qmcplusplus
       inline bool
       evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
       {
-        if (r >= RC) return false;
+        if ((r >= RC)||(!optimizable)) return false;
         else
           {
             real_type rcmr =(c1-r);
@@ -188,33 +190,34 @@ namespace qmcplusplus
             real_type r2   =r*r;
             real_type expart = std::exp(c0*r2);
             real_type expartRC = std::exp(c0*rcmr2);
-            real_type Am1 = 1.0/(A);
+            real_type Am1 = -2.0/(C*C);
             real_type cm2 = 1.0/(C*C);
             real_type cm3 = 1.0/(C*C*C);
             real_type cm4 = cm2*cm2;
             real_type cm5 = cm2*cm3;
             //Derivs of function
+            
 //
 //  df_dA
             derivs[0][0]= (expart+expartRC)+c2*Am1 ;
 //  df_dC
-            derivs[1][0]= 2*A*expart*r2*cm3 - 2.0*c2*RC*RC*cm3 + 2*A*expartRC*rcmr2*cm3 ;
+            derivs[1][0]= 2*A*( expart*r2 - 2.0*expartRC*rcmr2 + expartRC*rcmr2)*cm3 ;
 //  df_dRC
-            derivs[2][0]= 2.0*c2*RC*cm2 - 2.0*expartRC*rcmr*cm2 ;
+//             derivs[2][0]= (2.0*c2*RC - 2.0*A*expartRC*rcmr)*cm2 ;
             //grad derivs
 //  dr_df_dA
-            derivs[0][1]= Am1*c3*(r*expart - rcmr*expartRC) ;
+            derivs[0][1]= Am1*(r*expart - rcmr*expartRC) ;
 //  dr_df_dC
             derivs[1][1]= 4.0*A*(expart*r*cm3*(1.0-r2*cm2)-expartRC*rcmr*cm3*(1.0-rcmr2*cm2)) ;
 //  dr_df_dRC
-            derivs[2][1]= 4.0*A*expartRC*cm2*(1.0-2.0*rcmr2*cm2) ;
+//             derivs[2][1]= 4.0*A*expartRC*cm2*(1.0-2.0*rcmr2*cm2) ;
             //lap derivs
 //  dr2_df_dA
-            derivs[0][2]= Am1*((c4*r2+c3)*expart + (c4*rcmr2 + c3)*expartRC);
+            derivs[0][2]= Am1*((Am1*r2+1)*expart + (Am1*rcmr2 + 1)*expartRC);
 //  dr2_df_dC
             derivs[1][2]= 4.0*A*cm3*(expart*(1.0-5.0*r2*cm2+2.0*r2*r2*cm4)+expartRC*(1.0-5.0*rcmr2*cm2+2.0*rcmr2*rcmr2*cm4)) ;
 //  dr2_df_dRC
-            derivs[2][2]= 24*A*expartRC*rcmr*cm4 - 16.0*A*rcmr*rcmr2*expartRC*cm3*cm3;
+//             derivs[2][2]= 24*A*expartRC*rcmr*cm4 - 16.0*A*rcmr*rcmr2*expartRC*cm3*cm3;
             return true;
           }
       }
@@ -226,6 +229,12 @@ namespace qmcplusplus
       bool put(xmlNodePtr cur)
       {
         RC = cutoff_radius;
+        string opt("yes");
+        OhmmsAttributeSet Tattrib;
+        Tattrib.add(opt,"optimize");
+        Tattrib.put(cur);
+        optimizable = (opt=="yes");
+        
         xmlNodePtr tcur = cur->xmlChildrenNode;
         while (tcur != NULL)
           {
@@ -253,9 +262,12 @@ namespace qmcplusplus
               }
             tcur = tcur->next;
           }
-        myVars.insert(ID_A,A);
-        myVars.insert(ID_C,C);
-        myVars.insert(ID_RC,RC);
+          if (optimizable)
+          {
+            myVars.insert(ID_A,A);
+            myVars.insert(ID_C,C);
+//          myVars.insert(ID_RC,RC);
+          }
         reset();
         return true;
       }
