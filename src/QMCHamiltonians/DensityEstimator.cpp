@@ -161,7 +161,7 @@ namespace qmcplusplus
     RealType myRcut;
     AA = LRCoulombSingleton::getHandler(P);
     //AA->initBreakup(*PtclRef);
-     myRcut=AA->Basis.get_rc();
+     myRcut=AA->get_rc();
      if(rVs==0) {
        rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
      }

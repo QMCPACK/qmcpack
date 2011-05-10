@@ -245,12 +245,29 @@ namespace qmcplusplus {
     AA = LRCoulombSingleton::getHandler(P);
     //AA->initBreakup(*PtclRef);
     myConst=evalConsts();
-    myRcut=AA->Basis.get_rc();
+    myRcut=AA->get_rc();//Basis.get_rc();
     if(rVs==0) {
       rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
     }
-
   }
+
+  CoulombPBCAATemp::Return_t
+    CoulombPBCAATemp::evalSR(ParticleSet& P) {
+      const DistanceTableData *d_aa = P.DistTables[0];
+      RealType SR=0.0;
+      for(int ipart=0; ipart<NumCenters; ipart++){
+        RealType esum = 0.0;
+        for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
+          //if(d_aa->r(nn)>=myRcut) continue;
+          //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
+          esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
+        }
+        //Accumulate pair sums...species charge for atom i.
+        SR += Zat[ipart]*esum;
+      }
+
+      return SR;
+    }
 
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalLR(ParticleSet& P) {
@@ -271,6 +288,7 @@ namespace qmcplusplus {
       return LR;
     }
 
+
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalLRwithForces(ParticleSet& P) {
     RealType LR=0.0;
@@ -287,23 +305,6 @@ namespace qmcplusplus {
       return evalLR(P);
     }
 
-
-  CoulombPBCAATemp::Return_t
-    CoulombPBCAATemp::evalSR(ParticleSet& P) {
-      const DistanceTableData *d_aa = P.DistTables[0];
-      RealType SR=0.0;
-      for(int ipart=0; ipart<NumCenters; ipart++){
-        RealType esum = 0.0;
-        for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
-          //if(d_aa->r(nn)>=myRcut) continue;
-          //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
-          esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
-        }
-        //Accumulate pair sums...species charge for atom i.
-        SR += Zat[ipart]*esum;
-      }
-      return SR;
-    }
 
 
   CoulombPBCAATemp::Return_t
@@ -329,54 +330,53 @@ namespace qmcplusplus {
     }
 
 
+  /** evaluate the constant term that does not depend on the position
+   *
+   * \htmlonly
+   * <ul>
+   * <li> self-energy: \f$ -\frac{1}{2}\sum_{i} v_l(r=0) q_i^2 = -\frac{1}{2}v_l(r=0) \sum_{alpha} N^{\alpha} q^{\alpha}^2\f$
+   * <li> background term \f$ V_{bg} = -\frac{1}{2}\sum_{\alpha}\sum_{\beta} N^{\alpha}q^{\alpha}N^{\beta}q^{\beta} v_s(k=0)\f$
+   * </ul>
+   * \endhtmlonly
+   * CoulombPBCABTemp contributes additional background term which completes the background term
+   */
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalConsts() {
 
-      LRHandlerType::BreakupBasisType &Basis(AA->Basis);
-      const Vector<RealType> &coefs(AA->coefs);
-      RealType Consts=0.0, V0=0.0;
+      //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
+      //const Vector<RealType> &coefs(AA->coefs);
+      RealType Consts=0.0; // constant term
 
-      for(int n=0; n<coefs.size(); n++)
-        V0 += coefs[n]*Basis.h(n,0.0); //For charge q1=q2=1
-//Compute Madelung constant      
-      MC0 = 0.0;
-      for(int i=0;i<AA->Fk.size();i++) MC0 += AA->Fk[i];
-      MC0 -= V0;
-      MC0 *=0.5;
-      
-      for(int spec=0; spec<NumSpecies; spec++) {
+      //v_l(r=0)
+      RealType vl_r0 = AA->evaluateLR_r0();
+      for(int spec=0; spec<NumSpecies; spec++) 
+      {
         RealType z = Zspec[spec];
         RealType n = NofSpecies[spec];
-        Consts += -V0*0.5*z*z*n;
+        Consts -= 0.5*vl_r0*z*z*n;
       }
 
-      V0 = Basis.get_rc()*Basis.get_rc()*0.5;
-      for(int n=0; n<Basis.NumBasisElem(); n++)
-        V0 -= coefs[n]*Basis.hintr2(n);
-      V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
-
-      for(int spec=0; spec<NumSpecies; spec++){
-        RealType z = Zspec[spec];
-        int n = NofSpecies[spec];
-        Consts += -V0*z*z*0.5*n*n;
-      }
-
-      //If we have more than one species in this particleset then there is also a 
-      //single AB term that should be added to the last constant...
-      //=-Na*Nb*V0*Za*Zb
-      //This accounts for the partitioning of the neutralizing background...
-      for(int speca=0;speca<NumSpecies;speca++) {
+      //Compute Madelung constant: this is not correct for general cases
+      MC0 = 0.0;
+      for(int i=0;i<AA->Fk.size();i++) MC0 += AA->Fk[i];
+      MC0 = 0.5*(MC0 - vl_r0);
+      
+      //Neutraling background term
+      RealType vs_k0=AA->evaluateSR_k0(); //v_s(k=0)
+      for(int speca=0;speca<NumSpecies;speca++) 
+      {
         RealType za = Zspec[speca];
-        int na = NofSpecies[speca];
+        RealType na = NofSpecies[speca];
+        Consts -= 0.5*vs_k0*za*na*za*na;
         for(int specb=speca+1;specb<NumSpecies;specb++) {
           RealType zb = Zspec[specb];
           int nb = NofSpecies[specb];
-          Consts += -V0*za*zb*na*nb;
+          Consts -= vs_k0*za*zb*na*nb;
         }
       }
 
-//       app_log() << "   Constant of PBCAA " << Consts << endl;
-//       app_log() << "   MC0 of PBCAA " << MC0 << endl;
+      //app_log() << "   Constant of PBCAA " << Consts << endl;
+      //app_log() << "   MC0 of PBCAA " << MC0 << endl;
       return Consts;
     }
 
