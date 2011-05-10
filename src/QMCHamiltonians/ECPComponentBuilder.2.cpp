@@ -263,6 +263,8 @@ namespace qmcplusplus {
    * @param vnn semilocal tables of size (angList.size(),global_grid->size())
    * @param rmax cutoff radius
    * @param Vprefactor conversion factor to Hartree
+   *
+   * Note that local pseudopotential is r*V !!!
    */
   void 
     ECPComponentBuilder::doBreakUp(const vector<int>& angList, 

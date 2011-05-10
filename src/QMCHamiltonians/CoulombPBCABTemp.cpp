@@ -212,6 +212,10 @@ namespace qmcplusplus {
     }
   }
 
+  /** add a local pseudo potential
+   * @param groupID species index
+   * @param ppot radial functor for \f$rV_{loc}\f$ on a grid
+   */
   void CoulombPBCABTemp::add(int groupID, RadFunctorType* ppot) {
 
     if(myGrid ==0)
@@ -223,16 +227,18 @@ namespace qmcplusplus {
       myGrid->set(0,myRcut,ng);
     }
 
-    //add a numerical functor
     if(Vspec[groupID]==0){
       int ng=myGrid->size();
       vector<RealType> v(ng);
       v[0]=0.0;
-      for(int ig=1; ig<ng-1; ig++) {
+      for(int ig=1; ig<ng-2; ig++) 
+      {
         RealType r=(*myGrid)[ig];
-        //need to multiply r for the LR
+        //need to multiply r for the LR 
         v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
       }
+      //to absolutely
+      v[ng-2]=0.0;
       v[ng-1]=0.0;
 
 
@@ -246,14 +252,17 @@ namespace qmcplusplus {
     }
 
     if (ComputeForces) {
-      FILE *fout = fopen ("Vlocal.dat", "w");
-      for (double r=1.0e-8; r<5.0; r+=1.0e-4) {
-	double d_rV_dr, d2_rV_dr2;
-	double Vr = Vat[0]->splint(r, d_rV_dr, d2_rV_dr2);
-	Vr = Vat[0]->splint(r);
-	fprintf (fout, "%1.8e %1.12e %1.12e %1.12e\n", r, Vr, d_rV_dr, d2_rV_dr2);
+      if(OHMMS::Controller->rank()==0)
+      {
+        FILE *fout = fopen ("Vlocal.dat", "w");
+        for (double r=1.0e-8; r<myRcut; r+=1.0e-2) {
+          double d_rV_dr, d2_rV_dr2;
+          double Vr = Vat[0]->splint(r, d_rV_dr, d2_rV_dr2);
+          Vr = Vat[0]->splint(r);
+          fprintf (fout, "%1.8e %1.12e %1.12e %1.12e\n", r, Vr, d_rV_dr, d2_rV_dr2);
+        }
+        fclose(fout);
       }
-      fclose(fout);
     }
   }
 
