@@ -28,8 +28,8 @@ SET(CMAKE_Fortran_FLAGS_RELEASE ${CMAKE_Fortran_FLAGS})
 # boost,hdf,szip,libxml2,fftw,essl
 #--------------------------------------------------------------------------
 set(CMAKE_FIND_ROOT_PATH
-  /nics/b/home/jnkim2/keeneland/cpu/einspline
-  /sw/keeneland/hdf5/1.6.10-openmpi-intel
+  /nics/a/proj/qmc/keeneland/intel11.1/einspline
+  /sw/keeneland/hdf5/1.8.6/centos5.5_intel11.1.073
   /sw/keeneland/fftw/3.2.1/centos5.4_gnu4.1.2_fPIC
 )
 
