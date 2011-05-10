@@ -90,6 +90,11 @@ template<class T=double>
         - std::exp(-rc*OneOverSqrtRs)*(coskr - OneOverSqrtRs * sinkr * oneOverK)/(k*k+1.0/Rs));
   }
 
+  inline T integrate_r2(T rc)
+  {
+    return 0.0;
+  }
+
   /** return RPA value at |k|
     * @param kk |k|^2
     */
@@ -164,6 +169,10 @@ void reset(ParticleSet& ref, T rs) {
     return  NormFactor* 3.0/( (k*k*k*k*Rs*Rs*Rs*Rs*(std::pow(1.0/(Sy*Sy)+12.0/(k*k*k*k*Rs*Rs*Rs),0.5))) );
   }
   
+  inline T integrate_r2(T rc)
+  {
+    return 0.0;
+  }
   /** return RPA value at |k|
   * @param kk |k|^2
   */
@@ -237,6 +246,11 @@ template<class T=double>
     };
       //multiply by NORM?
     return  NormFactor*(0.5*(-1.0/Sy + std::pow(1.0/(Sy*Sy) + 12.0/(k*k*k*k*Rs*Rs*Rs),0.5)));
+  }
+
+  inline T integrate_r2(T rc)
+  {
+    return 0.0;
   }
 
     /** return RPA value at |k|
@@ -321,6 +335,10 @@ template<class T=double>
       }
     }
 
+    inline T integrate_r2(T rc)
+    {
+      return 0.0;
+    }
 
     inline T Fk(T k, T rc) {
       return -Xk(k,rc);
@@ -394,6 +412,11 @@ template<class T=double>
     return  -0.5*NormFactor*val*std::pow(1.0/(Sy*Sy)+val,-0.5);
   }
 
+  inline T integrate_r2(T rc)
+  {
+    return 0.0;
+  }
+
       /** return RPA value at |k|
    * @param kk |k|^2
        */
@@ -463,6 +486,10 @@ template<class T=double>
         T val = 12.0/(k*k*k*k*Rs*Rs*Rs);
         T uk = val*std::pow(1.0/(Sy*Sy)+val,-0.5);
         return  -0.5*NormFactor*(uk/Rs)*(1.0-0.5*val/(1.0/(Sy*Sy)+val) );
+      }
+      inline T integrate_r2(T rc)
+      {
+        return 0.0;
       }
 
         /** return RPA value at |k|
