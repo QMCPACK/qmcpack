@@ -40,7 +40,6 @@ namespace qmcplusplus {
     Matrix<ComplexType> eikr;
     /// K-Vector List.
     KContainer KLists;
-  public:
     ///eikr[K] for a proposed move
     Vector<ComplexType> eikr_temp;
     /** Constructor - copy ParticleSet and init. k-shells

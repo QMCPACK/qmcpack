@@ -21,21 +21,87 @@
 #include <numeric>
 
 namespace qmcplusplus {
+
   //initialization of the static data
   LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::CoulombHandler=0;
 
+  /** CoulombFunctor
+   *
+   * An example for a Func for LRHandlerTemp. Four member functions have to be provided
+   * - reset(T volume) : reset the normalization factor
+   * - operator()(T r, T rinv): return a value of the original function, e.g., 1.0/r
+   * - Fk(T k, T rc)
+   * - Xk(T k, T rc)
+   */
+  template<class T=double>
+  struct CoulombFunctor {
+    T NormFactor;
+    inline CoulombFunctor(){}
+    void reset(ParticleSet& ref) 
+    {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    }
+    void reset(ParticleSet& ref, T rs) {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    }
+    inline T operator()(T r, T rinv) { return rinv;}
+    inline T df(T r) { return -1.0/(r*r); }
+    inline T Fk(T k, T rc) {
+      return NormFactor/(k*k)* std::cos(k*rc);
+    }
+    inline T Xk(T k, T rc) {
+      return -NormFactor/(k*k)* std::cos(k*rc);
+    }
+
+    inline T integrate_r2(T r) const 
+    {
+      return 0.5*r*r;
+    }
+  };
+
+  template<class T=double>
+  struct PseudoCoulombFunctor {
+    //typedef OneDimCubicSpline<T> RadialFunctorType;
+    typedef OneDimLinearSpline<T> RadialFunctorType;
+    RadialFunctorType& radFunc;
+    T NormFactor;
+    inline PseudoCoulombFunctor(RadialFunctorType& rfunc):radFunc(rfunc){}
+    void reset(ParticleSet& ref) {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    }
+    inline T operator()(T r, T rinv) { return radFunc.splint(r);}
+    inline T df(T r) {
+      T du, d2u;
+      radFunc.splint(r, du, d2u);
+      return du;
+    }
+    inline T Fk(T k, T rc) {
+      return NormFactor/(k*k)* std::cos(k*rc);
+    }
+    inline T Xk(T k, T rc) {
+      return -NormFactor/(k*k)* std::cos(k*rc);
+    }
+    inline T integrate_r2(T r) const 
+    {
+      //fix this to return the integration
+      return 0.5*r*r;
+    }
+  };
+
+
   LRCoulombSingleton::LRHandlerType*
     LRCoulombSingleton::getHandler(ParticleSet& ref) {
-      if(CoulombHandler ==0) {
+      if(CoulombHandler ==0) 
+      {
         app_log() << "  Create CoulombHandler. " << endl;
-        CoulombHandler=new LRHandlerType(ref);
+        CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
         CoulombHandler->initBreakup(ref);
         return CoulombHandler;
       }
       else
       {
-        app_log() << "  Copy CoulombHandler. " << endl;
-        return new LRHandlerType(*CoulombHandler,ref);
+        app_log() << "  Clone CoulombHandler. " << endl;
+        return CoulombHandler->makeClone(ref);
       }
     }
 

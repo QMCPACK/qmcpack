@@ -44,7 +44,6 @@ namespace qmcplusplus {
 
     bool FirstTime;
     RealType rs;
-    //RealType kc;
     BreakupBasisType Basis; //This needs a Lattice for the constructor...
     Func myFunc;
     
@@ -74,6 +73,11 @@ namespace qmcplusplus {
       fillFk(ref.SK->KLists);
     }
     
+    LRHandlerBase* makeClone(ParticleSet& ref)
+    {
+      return new LRHandlerTemp<Func,BreakupBasis>(*this,ref);
+    }
+
     void initBreakup(ParticleSet& ref) {
       InitBreakup(ref.Lattice,1); 
       fillFk(ref.SK->KLists);
@@ -123,73 +127,22 @@ namespace qmcplusplus {
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
-    
-    /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
-     * @param kshell degeneracies of the vectors
-     * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
-     * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
-     * 
-     * Valid for the strictly ordered k and \f$F_{k}\f$.
-     */
-    inline RealType evaluate(const vector<int>& kshell, 
-			     const ComplexType* restrict rk1, const ComplexType* restrict rk2) 
-    {
-      RealType vk=0.0;
-      for(int ks=0,ki=0; ks<MaxKshell; ks++) {
-	RealType u=0;
-	for(;ki<kshell[ks+1]; ki++,rk1++,rk2++)
-	  u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
-        vk += Fk_symm[ks]*u;
 
-      }
-      //for(int ki=0; ki<Fk.size(); ki++) {
-      //  //vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
-      //  vk += (rk1[ki].real()*rk2[ki].real()+rk1[ki].imag()*rk2[ki].imag())*Fk[ki];
-      //} //ki
-      return vk;
-    }
-    
-     inline RealType evaluate(const vector<int>& kshell, 
- 			     int iat, const ComplexType* restrict rk2,
-			      ParticleSet &P) 
+    inline RealType evaluateSR_k0() 
     {
-       RealType vk=0.0;
-       for(int ks=0,ki=0; ks<MaxKshell; ks++) {
-	 RealType u=0;
-	 for(;ki<kshell[ks+1]; ki++,rk2++){
-	   ComplexType eikr=P.SK->eikr(iat,ki);
-	   u += eikr.real()*(*rk2).real()+eikr.imag()*(*rk2).imag();
-	 }
-	 vk += Fk_symm[ks]*u;
-       }
+      RealType v0=myFunc.integrate_r2(Basis.get_rc());
+      for(int n=0; n<coefs.size(); n++)
+        v0 -= coefs[n]*Basis.hintr2(n);
+      return v0*2.0*TWOPI/Basis.get_CellVolume(); 
     }
 
-    /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
-     * and \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
-     * @param kshell degeneracies of the vectors
-     * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
-     * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
-     * 
-     * Valid for the strictly ordered k and \f$F_{k}\f$.
-     */
-    inline void evaluateGrad(const ParticleSet &A, const ParticleSet &B,
-			     int specB, vector<RealType> &Zat,
-			     vector<TinyVector<RealType,DIM> > &grad1) 
+    inline RealType evaluateLR_r0()
     {
-      const Matrix<ComplexType> &e2ikrA = A.SK->eikr;
-      const ComplexType *rhokB = B.SK->rhok[specB];
-      const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
-      for (int ki=0; ki<Fk.size(); ki++) {
-      	TinyVector<RealType,DIM> k = kpts[ki];
-      	for (int iat=0; iat<Zat.size(); iat++) {
-	  grad1[iat] -= Zat[iat]*k*Fk[ki]*
-	    (e2ikrA(iat,ki).real()*rhokB[ki].imag() - e2ikrA(iat,ki).imag()*rhokB[ki].real());
-	}
-      }
+      RealType v0=0.0;
+      for(int n=0; n<coefs.size(); n++) v0 += coefs[n]*Basis.h(n,0.0); 
+      return v0;
     }
     
-
-
   private:
 
     inline RealType evalFk(RealType k) {

@@ -73,6 +73,11 @@ namespace qmcplusplus {
           fillFk(ref.SK->KLists);
         }
       
+    LRHandlerBase* makeClone(ParticleSet& ref)
+    {
+      return new LRRPAHandlerTemp<Func,BreakupBasis>(*this,ref);
+    }
+
         void initBreakup(ParticleSet& ref) {
           InitBreakup(ref.Lattice,1); 
           fillFk(ref.SK->KLists);
