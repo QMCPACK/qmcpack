@@ -222,22 +222,22 @@ namespace qmcplusplus {
     {
       myGrid = new LinearGrid<RealType>;
       int ng=static_cast<int>(myRcut/1e-3)+1;
-      app_log() << "  CoulombPBCABTemp::add \n Setting a linear grid=[0," 
+      app_log() << "    CoulombPBCABTemp::add \n Setting a linear grid=[0," 
         << myRcut << ") number of grid =" << ng << endl;
       myGrid->set(0,myRcut,ng);
     }
 
     if(Vspec[groupID]==0){
+      app_log() << "    Creating the short-range pseudopotential for species " << groupID << endl;
       int ng=myGrid->size();
       vector<RealType> v(ng);
-      v[0]=0.0;
       for(int ig=1; ig<ng-2; ig++) 
       {
         RealType r=(*myGrid)[ig];
         //need to multiply r for the LR 
         v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
       }
-      //to absolutely
+      v[0] = 2.0*v[1] - v[2];
       v[ng-2]=0.0;
       v[ng-1]=0.0;
 
