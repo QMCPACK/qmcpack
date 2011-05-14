@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Jastrow/McMillanJ2Functor.h"
 #include "QMCWaveFunctions/Jastrow/McMillanJ2GFunctor.h"
 #include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
+#include "QMCWaveFunctions/Jastrow/TanhFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "OhmmsData/AttributeSet.h"
@@ -186,6 +187,12 @@ namespace qmcplusplus
         app_log() << "  PadeTwo2ndOrderFunctor Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
         //IgnoreSpin=true;
         newJ = createJAA<PadeTwo2ndOrderFunctor<RealType> >(cur,jastfunction);
+      }
+    else if (jastfunction == "ptfunctor")
+      {
+        app_log() << "  PTFunctor Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
+        //IgnoreSpin=true;
+        newJ = createJAA<PTFunctor<RealType> >(cur,jastfunction);
       }
 //} else if(jastfunction == "rpa") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;

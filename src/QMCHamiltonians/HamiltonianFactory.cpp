@@ -54,6 +54,7 @@
   #include "QMCHamiltonians/MomentumDistribution.h"
   #include "QMCHamiltonians/DispersionRelation.h"
 #endif
+#endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/HardSphere.h"
@@ -70,7 +71,6 @@
 #include "QMCHamiltonians/HFDHE2_Moroni1995.h"
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
-#endif
 #endif
 
 #include "OhmmsData/AttributeSet.h"
@@ -189,26 +189,6 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         }
-#if OHMMS_DIM==3
-	/*
-	else if (potType == "HFDBHE_smoothed") {
-	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-	  targetH->addOperator(HFD,"HFD-B(He)",true);
-	  HFD->addCorrection(*targetH);
-	}
-	*/
-	else if (potType == "MPC" || potType == "mpc")
-	  addMPCPotential(cur);
-	else if (potType == "VHXC" || potType == "vhxc")
-	  addVHXCPotential(cur);
-        else if(potType == "pseudo") 
-        {
-          addPseudoPotential(cur);
-        } 
-        else if(potType == "cpp") 
-        {
-          addCorePolPotential(cur);
-        }
 #if QMC_BUILD_LEVEL>2
         else if (potType == "hardsphere")
         {
@@ -234,6 +214,28 @@ namespace qmcplusplus {
           hs->put(cur);
           targetH->addOperator(hs,"SkPot",true);
         }
+#endif
+#if OHMMS_DIM==3
+	/*
+	else if (potType == "HFDBHE_smoothed") {
+	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
+	  targetH->addOperator(HFD,"HFD-B(He)",true);
+	  HFD->addCorrection(*targetH);
+	}
+	*/
+	else if (potType == "MPC" || potType == "mpc")
+	  addMPCPotential(cur);
+	else if (potType == "VHXC" || potType == "vhxc")
+	  addVHXCPotential(cur);
+        else if(potType == "pseudo") 
+        {
+          addPseudoPotential(cur);
+        } 
+        else if(potType == "cpp") 
+        {
+          addCorePolPotential(cur);
+        }
+#if QMC_BUILD_LEVEL>2
         else if (potType == "LJP_smoothed") {
           LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
           targetH->addOperator(LJP,"LJP",true);
