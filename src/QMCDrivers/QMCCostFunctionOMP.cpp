@@ -29,7 +29,7 @@ namespace qmcplusplus
                                          TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
       QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
   {
-    CSWeight=(1.0);
+    CSWeight=1.0;
     app_log()<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<<endl;
   }
 
@@ -455,7 +455,7 @@ namespace qmcplusplus
             wRef.L += *d2LogPsi[iwg];
             //             logpsi=psiClones[ip]->evaluateLog(wRef);
           }
-          Return_t weight=saved[REWEIGHT] = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
+          Return_t weight=saved[REWEIGHT] = std::exp(vmc_or_dmc*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
           saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
           if (needGrad)
           {

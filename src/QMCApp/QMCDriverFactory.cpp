@@ -33,7 +33,9 @@
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/QMCChooseBestParameters.h"    
 #include "QMCDrivers/ZeroVarianceOptimize.h"
-//#if QMC_BUILD_LEVEL>1
+#if QMC_BUILD_LEVEL>1
+#include "QMCDrivers/QMCSHLinearOptimize.h"
+#endif
 //#include "QMCDrivers/RQMCMultiple.h"
 ////THESE ARE BROKEN
 ////#if !defined(QMC_COMPLEX)
@@ -131,10 +133,16 @@ namespace qmcplusplus {
     {
       if (qmc_mode.find("cslinear") < nchars)
         newRunType=CS_LINEAR_OPTIMIZE_RUN;
+      #if QMC_BUILD_LEVEL>1
+      else if(qmc_mode.find("shlinear") < nchars)
+      {
+        newRunType=SH_RUN;
+      }
+      #endif
       else
         newRunType=LINEAR_OPTIMIZE_RUN;
     }
-    if(qmc_mode.find("set") < nchars)
+    else if(qmc_mode.find("set") < nchars)
     {
       newRunType=SET_PARAMS;
     }
@@ -239,7 +247,8 @@ namespace qmcplusplus {
     qmcDriver->initCommunicator(myComm);
     //branchEngine has to be transferred to a new QMCDriver
     if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
-
+    
+    
     return append_run;
   }
 
@@ -378,6 +387,15 @@ namespace qmcplusplus {
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
+    #if QMC_BUILD_LEVEL>1
+    else if(curRunType == SH_RUN)
+    {
+      QMCSHLinearOptimize *opt = new QMCSHLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
+      qmcDriver=opt;
+    } 
+    #endif
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
     {
       QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);

@@ -50,8 +50,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
-    RootName = "pot";
-    QMCType ="QMCLinearOptimize";
     m_param.add(param_tol,"alloweddifference","double");
     //Set parameters for line minimization:
     this->add_timers(myTimers);
@@ -100,7 +98,7 @@ void QMCLinearOptimize::start()
     optTarget->setRootName(RootName);
     optTarget->setWaveFunctionNode(wfNode);
 
-    app_log() << "   Reading configurations from h5FileRoot " << endl;
+    app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << endl;
     //get configuration from the previous run
     Timer t1;
 

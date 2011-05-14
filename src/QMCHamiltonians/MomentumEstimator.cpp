@@ -177,13 +177,13 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     pAttrib.put(cur);
     hdf5_out = (hdf5_flag=="yes");
     
-    app_log()<<" MomentumEstimator::putSpecial "<<endl;
+//     app_log()<<" MomentumEstimator::putSpecial "<<endl;
     
     xmlNodePtr kids=cur->children;
     while (kids!=NULL)
       {
         string cname((const char*)(kids->name));
-        app_log()<<" MomentumEstimator::cname : "<<cname<<endl;
+//         app_log()<<" MomentumEstimator::cname : "<<cname<<endl;
         if (cname=="kpoints")
           {
             
@@ -259,7 +259,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
             RealType qn(2.0*M_PI/std::sqrt(Lattice.Volume));
             mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
             if (twist[0]==0) mappedQnorms[kgrid]=qn/RealType(M); 
-            if (twist[1]==0) mappedQnorms[2*kgrid+1]=qn/RealType(M);
+            if (twist[1]==0) mappedQnorms[3*kgrid+1]=qn/RealType(M);
             
 //             app_log()<<" Jnorm="<<qn<<endl;
             Q.resize(numqtwists);

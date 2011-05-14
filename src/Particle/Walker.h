@@ -185,7 +185,12 @@ namespace qmcplusplus
         PHindex.push_back(0);
         return newL;
       }
-
+      
+      inline void deletePropertyHistory()
+      {
+        PropertyHistory.erase(PropertyHistory.begin(), PropertyHistory.end());
+      }
+      
       inline void resetPropertyHistory()
       {
         for (int i=0;i<PropertyHistory.size();i++)

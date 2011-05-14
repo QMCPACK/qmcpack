@@ -78,7 +78,15 @@ namespace qmcplusplus
        * Update time-step variables to move walkers
        */
       void resetRun(BranchEngineType* brancher, EstimatorManager* est);
-
+      
+      inline RealType getTau()
+      {
+        SpeciesSet tspecies(W.getSpeciesSet());
+        int massind=tspecies.addAttribute("mass");
+        RealType mass = tspecies(massind,0);
+        return m_tauovermass*mass;
+      }
+      
       inline void setTau(RealType i)
       {
         SpeciesSet tspecies(W.getSpeciesSet());

@@ -79,6 +79,8 @@ ENDIF(HAVE_MPI)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
+    DMC/DMCOMPOPT.cpp
+    QMCSHLinearOptimize.cpp
     PolymerEstimator.cpp
     MultiChain.cpp
     RQMCMultiple.cpp

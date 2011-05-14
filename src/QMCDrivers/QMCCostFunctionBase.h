@@ -158,6 +158,7 @@ namespace qmcplusplus
        for(int ip=0; ip<r.size(); ++ip) RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
       }
       inline void setneedGrads(bool tf){needGrads=tf;}
+      inline void setDMC() {vmc_or_dmc=1.0;};
       
     protected:
 
@@ -219,6 +220,7 @@ namespace qmcplusplus
       Return_t SmallWeight;
       Return_t w_beta;
       string GEVType;
+      Return_t vmc_or_dmc;
       bool needGrads;
       /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
        *
