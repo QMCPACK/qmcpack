@@ -38,6 +38,7 @@ namespace qmcplusplus {
     virtual ~CloneManager();
 
     void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+    void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
     void makeClones(TrialWaveFunction& guide);
 
     inline RealType acceptRatio() const 

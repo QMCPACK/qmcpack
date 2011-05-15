@@ -89,8 +89,46 @@ namespace qmcplusplus {
     cloneEngine.clone(w,psi,ham,wClones,psiClones,hClones);
 #endif
   }
+
+  void CloneManager::makeClones_new(MCWalkerConfiguration& w, 
+      TrialWaveFunction& psi, QMCHamiltonian& ham)
+  {
+
+    if(wClones.size()) 
+    {
+      delete_iter(wClones.begin()+1,wClones.end());
+      delete_iter(psiClones.begin()+1,psiClones.end());
+      delete_iter(hClones.begin()+1,hClones.end());
+    }
+    else
+    {
+      wClones.resize(NumThreads,0);
+      psiClones.resize(NumThreads,0);
+      hClones.resize(NumThreads,0);
+    }
+
+    wClones[0]=&w;
+    psiClones[0]=&psi;
+    hClones[0]=&ham;
+
+    if(NumThreads==1) return;
+
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
+    app_log() << "  Cloning methods for both Psi and H are used" << endl;
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
+    char pname[16];
+    for(int ip=1; ip<NumThreads; ++ip) 
+    {
+      wClones[ip]=new MCWalkerConfiguration(w);
+      psiClones[ip]=psi.makeClone(*wClones[ip]);
+      hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+    }
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
+  }
   
-    void CloneManager::makeClones(TrialWaveFunction& guide)
+  void CloneManager::makeClones(TrialWaveFunction& guide)
   {
 
     if(guideClones.size()) 
