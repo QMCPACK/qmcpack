@@ -110,6 +110,7 @@ namespace qmcplusplus {
     RealType sE,sE2,sE4,sW,sN;
     int myPeriod4WalkerDump, wlen, Eindx;
     int samples_this_node;
+    bool firsttime;
 
 
     void resetUpdateEngines();

@@ -33,7 +33,7 @@
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/QMCChooseBestParameters.h"    
 #include "QMCDrivers/ZeroVarianceOptimize.h"
-#if QMC_BUILD_LEVEL>1
+#if QMC_BUILD_LEVEL>2
 #include "QMCDrivers/QMCSHLinearOptimize.h"
 #endif
 //#include "QMCDrivers/RQMCMultiple.h"
@@ -387,7 +387,7 @@ namespace qmcplusplus {
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
-    #if QMC_BUILD_LEVEL>1
+    #if QMC_BUILD_LEVEL>2
     else if(curRunType == SH_RUN)
     {
       QMCSHLinearOptimize *opt = new QMCSHLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);

@@ -167,7 +167,9 @@ namespace qmcplusplus
       {
         Walker_t& thisWalker(**it);
         W.loadWalker(thisWalker,UpdatePbyP);
-
+        if (thisWalker.DataSet.size())
+          thisWalker.DataSet.clear();
+        
         Walker_t::Buffer_t tbuffer;
         RealType logpsi=Psi.registerData(W,tbuffer);
         thisWalker.DataSet=tbuffer;

@@ -166,6 +166,10 @@ namespace qmcplusplus {
 
     ///copy constructor
     SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
+    
+    ~SimpleFixedNodeBranch(){}
+    
+    
 
     inline bool phaseChanged(RealType psi0) const 
     {
@@ -181,6 +185,7 @@ namespace qmcplusplus {
      * QMCCounter is the number of times any QMC section is processed.
      */
     inline void advanceQMCCounter() { iParam[B_COUNTER]++;}
+    inline void regressQMCCounter() { iParam[B_COUNTER]--;}
 
     /** get the EstimatorManager */
     EstimatorManager* getEstimatorManager()

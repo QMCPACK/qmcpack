@@ -772,7 +772,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
       {
         Return_t v=OptVariablesForPsi[(*pit).first];
         getContent(v,(*pit).second);
-        app_log()<<(*pit).second<<endl;
+//         vout <<(*pit).second<<endl;
         ++pit;
       }
     map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());

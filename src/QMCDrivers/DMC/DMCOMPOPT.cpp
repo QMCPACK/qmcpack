@@ -31,9 +31,9 @@ namespace qmcplusplus {
   DMCOMPOPT::DMCOMPOPT(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
     : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
     , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no"), UseFastGrad("yes")
-    , BranchInterval(-1),mover_MaxAge(-1), wlen(10)
+    , BranchInterval(-1),mover_MaxAge(-1), wlen(10), firsttime(true)
     {
-      RootName = "dmc";
+      RootName = "opt";
       QMCType ="DMCOPT";
 
       QMCDriverMode.set(QMC_UPDATE_MODE,1);
@@ -112,14 +112,40 @@ namespace qmcplusplus {
     
     Timer init_timer;
 
+    
+//     HACK HACK HACK
+// This is so ugly it's probably a crime. It must be fixed.
+    if(firsttime) 
+    {
+      for(int ip=1; ip<NumThreads; ++ip)
+      {
+        delete wClones[ip];
+        delete psiClones[ip];
+        delete hClones[ip];
+      }
+      wClones.resize(0);
+      firsttime=false;
+    }
+    
     makeClones(W,Psi,H);
 
     if(Movers.empty()) 
     {
-      //load walkers
+//       //load walkers
+      
+      Eindx = W.addPropertyHistory(wlen);
       W.loadEnsemble();
-      for(int ip=1;ip<NumThreads;++ip) wClones[ip]->loadEnsemble(W);
+      for(int ip=1;ip<NumThreads;++ip) {
+        wClones[ip]->loadEnsemble(W);
+        wClones[ip]->addPropertyHistory(wlen);
+      }
 
+//       m_param.put(qmcNode);
+//       put(qmcNode);
+//       //app_log()<<"DMCOMPOPT::resetComponents"<<endl;
+//       Estimators->reset();
+//       branchEngine->resetRun(qmcNode);
+//       branchEngine->checkParameters(W);
       branchEngine->initWalkerController(W,fixW,false);
 
       //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
@@ -152,7 +178,7 @@ namespace qmcplusplus {
 
         app_log() << o.str() << endl;
       }
-
+      
 #pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
       {
@@ -184,6 +210,20 @@ namespace qmcplusplus {
           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
+//       #pragma omp parallel for
+//       for (int ip=0; ip<NumThreads; ++ip)
+//       {
+//         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+//         while (wit!=wit_end)
+//         {
+//           Walker_t& thisWalker(**wit);
+//           Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+//           wClones[ip]->loadWalker(thisWalker,true);
+//           psiClones[ip]->copyFromBuffer(*wClones[ip],w_buffer);
+//           psiClones[ip]->updateBuffer(*wClones[ip],w_buffer,true);
+//           wit++;
+//         }
+//       }
     }
     
 //   #pragma omp parallel for
@@ -205,7 +245,7 @@ namespace qmcplusplus {
     
   //       adding weight index
     MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-    Eindx = (**wit).addPropertyHistory(wlen); wit++;
+    (**wit).addPropertyHistory(wlen); wit++;
     while(wit!=wit_end)
     {
       (**wit).addPropertyHistory(wlen); 
@@ -281,6 +321,7 @@ namespace qmcplusplus {
     
 
     bool variablePop = (Reconfiguration == "no");
+    
     resetUpdateEngines();
     
     std::vector<opt_variables_type> dummyOptVars;

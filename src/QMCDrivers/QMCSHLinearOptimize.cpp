@@ -46,7 +46,7 @@ QMCSHLinearOptimize::QMCSHLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
         bigChange(1), w_beta(0.0), MinMethod("quartic")
 {
-    //set the optimization flag
+//     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
     RootName = "opt";
@@ -79,7 +79,7 @@ QMCSHLinearOptimize::RealType QMCSHLinearOptimize::Func(RealType dl)
 
 bool QMCSHLinearOptimize::run()
 {
-  NumOfVMCWalkers = W.getActiveWalkers();
+    NumOfVMCWalkers = W.getActiveWalkers();
     start();
 //size of matrix
     numParams = optTarget->NumParams();
@@ -208,20 +208,20 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
     oAttrib.add(vmcMove,"move");
     oAttrib.put(q);
 
-    xmlNodePtr qsave=q;
-    xmlNodePtr cur=qsave->children;
+    optNode=q;
+    xmlNodePtr cur=optNode->children;
 
 
     int pid=OHMMS::Controller->rank();
-    while (cur != NULL)
-    {
-        string cname((const char*)(cur->name));
-        if (cname == "mcwalkerset")
-        {
-            mcwalkerNodePtr.push_back(cur);
-        }
-        cur=cur->next;
-    }
+//     while (cur != NULL)
+//     {
+//         string cname((const char*)(cur->name));
+//         if (cname == "mcwalkerset")
+//         {
+//             mcwalkerNodePtr.push_back(cur);
+//         }
+//         cur=cur->next;
+//     }
     //no walkers exist, add 10
     if (W.getActiveWalkers() == 0) addWalkers(omp_get_max_threads());
 
@@ -236,13 +236,15 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
       else
 #endif
       vmcEngine = dmcEngine = new DMCOMPOPT(W,Psi,H,hamPool,psiPool);
-
-      dmcEngine->setUpdateMode(true);
+      dmcEngine->setUpdateMode(vmcMove[0] == 'p');
       dmcEngine->initCommunicator(myComm);
     }
-    app_log()<<RootName<<"   "<<h5FileRoot<<endl;
+//     app_log()<<RootName<<"   "<<h5FileRoot<<endl;
+      dmcEngine->setBranchEngine(branchEngine);
     dmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
-    dmcEngine->process(qsave);
+    dmcEngine->process(optNode);
+    branchEngine->regressQMCCounter();
+    
 
     bool success=true;
 
@@ -266,7 +268,7 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
         optTarget->setneedGrads(false);
         optTarget->setStream(&app_log());
         optTarget->setDMC();
-        success=optTarget->put(qsave);
+        success=optTarget->put(optNode);
     }
     return success;
 }
