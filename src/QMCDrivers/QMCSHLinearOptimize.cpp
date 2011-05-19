@@ -78,8 +78,7 @@ QMCSHLinearOptimize::RealType QMCSHLinearOptimize::Func(RealType dl)
 }
 
 bool QMCSHLinearOptimize::run()
-{
-    NumOfVMCWalkers = W.getActiveWalkers();
+{   
     start();
 //size of matrix
     numParams = optTarget->NumParams();
@@ -130,13 +129,13 @@ bool QMCSHLinearOptimize::run()
 
     if (MinMethod=="rescale")
     {
-      if (bigOptVec*std::abs(Lambda)>bigChange)
-          app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec*std::abs(Lambda)<<endl;
-      else
-      {
-        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentParameters[i] + Lambda*optdir[i];
+//       if (bigOptVec*std::abs(Lambda)>bigChange)
+//           app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec*std::abs(Lambda)<<endl;
+//       else
+//       {
+        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentParameters[i] + optdir[i];
         acceptedOneMove = true;
-      }
+//       }
     }
     else
     {
@@ -240,12 +239,11 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
       dmcEngine->initCommunicator(myComm);
     }
 //     app_log()<<RootName<<"   "<<h5FileRoot<<endl;
-      dmcEngine->setBranchEngine(branchEngine);
+      
     dmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
     dmcEngine->process(optNode);
-    branchEngine->regressQMCCounter();
+//     dmcEngine->setBranchEngine(branchEngine);
     
-
     bool success=true;
 
     if (optTarget == 0)

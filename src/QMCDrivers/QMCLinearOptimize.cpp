@@ -145,14 +145,14 @@ void QMCLinearOptimize::generateSamples()
     //  app_log() << "  Execution time = " << t1.elapsed() << endl;
     //  app_log() << "</vmc>" << endl;
     //}
-
-    if (W.getActiveWalkers()>NumOfVMCWalkers)
-    {
-        W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-        app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << endl;
-        app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
-    }
-
+    
+//     if (W.getActiveWalkers()>NumOfVMCWalkers)
+//     {
+//         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
+//         app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << endl;
+//         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
+//     }
+    
     vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
     vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
 
@@ -171,6 +171,7 @@ void QMCLinearOptimize::generateSamples()
     RealType e,w,var;
     vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
     optTarget->recordParametersToPsi(e,var);
+//     NumOfVMCWalkers=W.getActiveWalkers();
 
     //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
 //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
@@ -730,7 +731,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
         vmcEngine = new VMCcuda(W,Psi,H,psiPool);
       else
 #endif
-        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
 
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
       vmcEngine->initCommunicator(myComm);

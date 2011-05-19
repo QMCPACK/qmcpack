@@ -50,63 +50,62 @@ namespace qmcplusplus {
       m_param.add(wlen,"wlen","int");
     }
     
-  void DMCOMPOPT::resetComponents(xmlNodePtr cur)
-  {
-    qmcNode=cur;
-    m_param.put(cur);
-    put(cur);
-    //app_log()<<"DMCOMPOPT::resetComponents"<<endl;
-    Estimators->reset();
-    branchEngine->resetRun(cur);
-    branchEngine->checkParameters(W);    
-
-    //delete Movers[0];
-    for(int ip=0; ip<NumThreads; ++ip)
-    {
-      delete Movers[ip]; delete estimatorClones[ip]; delete branchClones[ip];
-      estimatorClones[ip]= new EstimatorManager(*Estimators);
-      estimatorClones[ip]->setCollectionMode(false);
-      branchClones[ip] = new BranchEngineType(*branchEngine);
-    }
-    
-#pragma omp parallel for
-      for(int ip=0; ip<NumThreads; ++ip)
-      {
-        if(QMCDriverMode[QMC_UPDATE_MODE])
-        {
-          if(UseFastGrad == "yes")
-            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          else
-            Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->put(cur);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        }
-        else
-        {
-          if(KillNodeCrossing) 
-            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          else 
-            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          Movers[ip]->put(cur);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        }
-      }
-      MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-      while(wit!=wit_end)
-      {
-        (**wit).resetPropertyHistory();
-        wit++;
-      }
-      
-  }
+//   void DMCOMPOPT::resetComponents(xmlNodePtr cur)
+//   {
+//     m_param.put(cur);
+//     put(cur);
+// //     branchEngine->resetRun(cur);
+// //     branchEngine->checkParameters(W);
+//     
+// 
+//     //delete Movers[0];
+//     for(int ip=0; ip<NumThreads; ++ip)
+//     {
+//       delete Movers[ip]; delete estimatorClones[ip]; delete branchClones[ip];
+//       estimatorClones[ip]= new EstimatorManager(*Estimators);
+//       estimatorClones[ip]->setCollectionMode(false);
+//       branchClones[ip] = new BranchEngineType(*branchEngine);
+//     }
+//     
+// #pragma omp parallel for
+//       for(int ip=0; ip<NumThreads; ++ip)
+//       {
+//         if(QMCDriverMode[QMC_UPDATE_MODE])
+//         {
+//           if(UseFastGrad == "yes")
+//             Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+//           else
+//             Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+//           Movers[ip]->put(cur);
+//           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//         }
+//         else
+//         {
+//           if(KillNodeCrossing) 
+//             Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+//           else 
+//             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+//           Movers[ip]->put(cur);
+//           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//         }
+//       }
+//       MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
+//       while(wit!=wit_end)
+//       {
+//         (**wit).resetPropertyHistory();
+//         wit++;
+//       }
+//       
+//   }
 
 
   void DMCOMPOPT::resetUpdateEngines() 
   {
 
     ReportEngine PRE("DMCOMPOPT","resetUpdateEngines");
+    resetComponents(qmcNode);
 
     bool fixW = (Reconfiguration == "yes");
     
@@ -117,13 +116,28 @@ namespace qmcplusplus {
 // This is so ugly it's probably a crime. It must be fixed.
     if(firsttime) 
     {
-      for(int ip=1; ip<NumThreads; ++ip)
+//       for(int ip=1; ip<NumThreads; ++ip)
+//       {
+//         delete wClones[ip];
+//         delete psiClones[ip];
+//         delete hClones[ip];
+//       }
+//       wClones.resize(0);
+      for (int ip=0; ip<NumThreads; ++ip)
       {
-        delete wClones[ip];
-        delete psiClones[ip];
-        delete hClones[ip];
+        opt_variables_type dummy;
+        psiClones[ip]->checkInVariables(dummy);
+        dummy.resetIndex();
+        psiClones[ip]->checkOutVariables(dummy);
+        dummyOptVars.push_back(dummy);
       }
-      wClones.resize(0);
+      NumOptimizables=dummyOptVars[0].size();
+      resizeForOpt(NumOptimizables);
+
+
+      wClones.clear();
+      psiClones.clear();
+      hClones.clear();
       firsttime=false;
     }
     
@@ -195,9 +209,9 @@ namespace qmcplusplus {
             Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->put(qmcNode);
+//           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         else
         {
@@ -205,9 +219,9 @@ namespace qmcplusplus {
             Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           else 
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->put(qmcNode);
+//           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
 //       #pragma omp parallel for
@@ -226,22 +240,22 @@ namespace qmcplusplus {
 //       }
     }
     
-//   #pragma omp parallel for
-//     for(int ip=0; ip<NumThreads; ++ip)
-//     {
-//       if(QMCDriverMode[QMC_UPDATE_MODE])
-//       {
-//         Movers[ip]->put(qmcNode);
-//         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-//         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-//       }
-//       else
-//       {
-//         Movers[ip]->put(qmcNode);
-//         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-//         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-//       }
-//     }
+  #pragma omp parallel for
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+      {
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      }
+      else
+      {
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      }
+    }
     
   //       adding weight index
     MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
@@ -323,19 +337,7 @@ namespace qmcplusplus {
     bool variablePop = (Reconfiguration == "no");
     
     resetUpdateEngines();
-    
-    std::vector<opt_variables_type> dummyOptVars;
-    for (int ip=0; ip<NumThreads; ++ip)
-    {
-      opt_variables_type dummy;
-      psiClones[ip]->checkInVariables(dummy);
-      dummy.resetIndex();
-      psiClones[ip]->checkOutVariables(dummy);
-      dummyOptVars.push_back(dummy);
-    }
-    NumOptimizables=dummyOptVars[0].size();
-    resizeForOpt(NumOptimizables);
-    
+
     //estimator does not need to collect data
     Estimators->setCollectionMode(true);
     Estimators->start(nBlocks);
@@ -345,7 +347,6 @@ namespace qmcplusplus {
     IndexType block = 0;
     IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
     int nsampls(0);
-    
 
     do // block
     {
@@ -388,7 +389,7 @@ namespace qmcplusplus {
             (**wit).addPropertyHistoryPoint(Eindx,(**wit).getPropertyBase()[LOCALENERGY]); wit2++;
           }
           wit2=wit;
-          if (Period4WalkerDump&&(now%myPeriod4WalkerDump==0)) 
+          if (myPeriod4WalkerDump&&(now%myPeriod4WalkerDump==0)) 
           {
             wClones[ip]->saveEnsemble(wit2,wit_end);
 #pragma omp master              

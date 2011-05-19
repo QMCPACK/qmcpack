@@ -25,7 +25,7 @@
 #include "QMCDrivers/CloneManager.h" 
 #include "QMCDrivers/DriftOperators.h" 
 #include "Message/CommOperators.h"
-
+#include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus {
 
@@ -44,41 +44,63 @@ namespace qmcplusplus {
     bool run();
     bool put(xmlNodePtr cur) { return true; };
     void setTau(RealType i);
-    void resetComponents(xmlNodePtr cur);
+//     void resetComponents(xmlNodePtr cur);
     void fillVectors(std::vector<RealType>& d, std::vector<RealType>& hd, RealType& e, Matrix<RealType>& olp)
     {
       myComm->allreduce(D);
+      myComm->allreduce(DT);
       myComm->allreduce(D2);
       myComm->allreduce(D_E);
       myComm->allreduce(Overlap);
       
-      std::vector<RealType> g_stats(5,0);
+      std::vector<RealType> g_stats(6,0);
       g_stats[0]=sE;
       g_stats[1]=sE2;
-      g_stats[2]=sE4;
+      g_stats[2]=ssE;
       g_stats[3]=sW;
-      g_stats[4]=sN;
+      g_stats[4]=smW;
+      g_stats[5]=sN;
       myComm->allreduce(g_stats);
       
-      RealType invfnw_nrm = std::exp(-0.5*t*g_stats[2]/g_stats[4]);
-      RealType nrmfnw=1.0/g_stats[3];
+      RealType nrm=1.0/g_stats[5];
+      for(int i=0;i<5;i++) g_stats[i]/=g_stats[5];
+      E_avg = g_stats[0];
+      V_avg = g_stats[1]-E_avg*E_avg;
       
-      RealType nrm=1.0/g_stats[4];
-      E_avg = nrm*g_stats[0];
-      V_avg = nrm*g_stats[1]-E_avg*E_avg;
-      RealType fnwavg=g_stats[3]/g_stats[4];
       
-      d.resize(D.size());
-      for(int i=0;i<D2.size();i++) D2[i]*=nrm;
-      for(int i=0;i<D.size();i++) d[i] = invfnw_nrm*nrm*(D[i]*fnwavg - D_E[i])/D2[i];
+      d.resize(D.size(),0);
+      for(int i=0;i<D2.size();i++)  D2[i]=1.0/(nrm*D2[i]);
+      for(int i=0;i<DT.size();i++)  DT[i]*=nrm;
+      for(int i=0;i<D.size();i++)   D[i]*=nrm;
+      for(int i=0;i<D_E.size();i++) D_E[i]*=nrm;
+      
+      RealType wmw=std::sqrt(g_stats[3]*g_stats[4]);
+      std::vector<RealType> d0(D.size(),0);
+      for(int i=0;i<D.size();i++) d[i] = (D[i]*wmw - DT[i])*D2[i];
       e=E_avg;
       for (int i=0; i<NumOptimizables; i++)
-        olp(i,0) = olp(0,i)= 0;
-      olp(0,0)=1;
+        olp(i,0) = olp(0,i)= DT[i];
+      olp(0,0)=g_stats[3];
         
       for (int i=0; i<NumOptimizables; i++)
         for (int j=0; j<NumOptimizables; j++) 
-          olp(i+1,j+1)=nrm*Overlap(i,j)-nrm*nrm*D[i]*D[j];
+        {
+          olp=Overlap(i,j)*=nrm;//*D2[i]*D2[j];
+        }
+      
+/*      RealType Det= invert_matrix(Overlap,true);
+      for (int i=0; i<NumOptimizables; i++)
+        for (int j=0; j<NumOptimizables; j++)
+          d[i]+= Overlap(i,j)*d0[j]*D2[j];*/
+      
+//       for (int i=0; i<NumOptimizables; i++)
+//       {
+//         for (int j=0; j<NumOptimizables; j++)  
+//           app_log()<<Det*Overlap(i,j)<<" ";
+//         app_log()<<endl;
+//       }
+      
+        
     }
     
   private:
@@ -105,12 +127,13 @@ namespace qmcplusplus {
     
     int NumOptimizables;
     RealType E_avg, V_avg, t;      
-    std::vector<RealType> D_E, D2, D;
+    std::vector<RealType> D_E, D2, D, DT;
     Matrix<RealType> Overlap;
-    RealType sE,sE2,sE4,sW,sN;
+    RealType sE,sE2,ssE,smW,sW,sN;
     int myPeriod4WalkerDump, wlen, Eindx;
     int samples_this_node;
     bool firsttime;
+    std::vector<opt_variables_type> dummyOptVars;
 
 
     void resetUpdateEngines();
@@ -128,12 +151,14 @@ namespace qmcplusplus {
       {
         D_E[i]=0.0;
         D[i]=0.0;
+        DT[i]=0.0;
         D2[i]=0.0;
       }
       sE=0;
       sE2=0;
-      sE4=0;
+      ssE=0;
       sW=0;
+      smW=0;
       sN=0;
     }
     
@@ -143,6 +168,7 @@ namespace qmcplusplus {
 
       D_E.resize(n);
       D.resize(n);
+      DT.resize(n);
       D2.resize(n);
 
       clearComponentMatrices();
@@ -158,21 +184,20 @@ namespace qmcplusplus {
       sN+=1;
       
       RealType invfnw=w.getPropertyHistorySum(Eindx,wlen);
-      sE4+=invfnw;
+      ssE+=invfnw;
       invfnw = std::exp(t*invfnw);
       sW +=invfnw;
+      smW+=1.0/invfnw;
       
       for (int i=0; i<NumOptimizables; i++)
       {
         RealType di  = d[i];
         D_E[i]+=   invfnw*di*E_L;
+        DT[i]  +=   di*invfnw;
         D[i]  +=   di;
-        D2[i] +=   di*di*invfnw;
+        D2[i] +=   di*di;
         for (int j=0; j<NumOptimizables; j++) 
-        {
-          RealType dj  = d[j];
-          Overlap(i,j) += di*dj;
-        }
+          Overlap(i,j) += di*d[j]*invfnw;
       }
     }
   };
