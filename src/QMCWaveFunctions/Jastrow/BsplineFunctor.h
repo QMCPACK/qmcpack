@@ -45,6 +45,7 @@ namespace qmcplusplus
       std::string elementType, pairType;
       int ResetCount;
       int ReportLevel;
+      bool notOpt;
 
       ///constructor
       BsplineFunctor(real_type cusp=0.0) :
@@ -65,7 +66,7 @@ namespace qmcplusplus
               0.0, 0.0,  0.0,  3.0,
               0.0, 0.0,  0.0, -3.0,
               0.0, 0.0,  0.0,  1.0),
-          CuspValue(cusp), ResetCount(0), ReportLevel(0)
+          CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false)
       {
         cutoff_radius = 0.0;
       }
@@ -412,6 +413,7 @@ namespace qmcplusplus
                   app_log() << "Parameter     Name      Value\n";
                   myVars.print(app_log());
                 } else {
+                  notOpt=true;
                   app_log() << "Parameters of BsplineFunctor id:"
                              <<id <<" are not being optimized.\n";
                 }
@@ -438,6 +440,7 @@ namespace qmcplusplus
 
       void resetParameters(const opt_variables_type& active)
       {
+        if (notOpt) return;
         for (int i=0; i<Parameters.size(); ++i)
         {
           int loc=myVars.where(i);

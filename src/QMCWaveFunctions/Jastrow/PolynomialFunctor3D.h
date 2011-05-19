@@ -54,10 +54,11 @@ namespace qmcplusplus {
     real_type scale;
     // Order of continuity
     const int C;
+    bool notOpt;
 
     ///constructor
     PolynomialFunctor3D(real_type ee_cusp=0.0, real_type eI_cusp=0.0) : 
-      N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0)
+      N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
     { 
       if (std::fabs(ee_cusp) > 0.0 || std::fabs(eI_cusp) > 0.0) {
 	app_error() << "PolynomialFunctor3D does not support nonzero cusp.\n";
@@ -808,11 +809,13 @@ namespace qmcplusplus {
       {
         string cname((const char*)xmlCoefs->name);
         if (cname == "coefficients")  {
-          string type("0"), id("0");
+          string type("0"), id("0"), opt("yes");
           OhmmsAttributeSet cAttrib;
           cAttrib.add(id, "id");
           cAttrib.add(type, "type");
+          cAttrib.add(opt, "optimize");
           cAttrib.put(xmlCoefs);
+          notOpt = (opt=="no");
 
           if (type != "Array") {
             PRE.error( "Unknown correlation type " + type + 
@@ -838,7 +841,8 @@ namespace qmcplusplus {
 	  for (int i=0; i<Parameters.size(); i++) {
 	    std::stringstream sstr;
 	    sstr << id << "_" << i;;
-	    myVars.insert(sstr.str(),Parameters[i],optimize::LOGLINEAR_P,true);
+       if(!notOpt)
+	      myVars.insert(sstr.str(),Parameters[i],optimize::LOGLINEAR_P,true);
 	  }
           // for (int i=0; i< N_ee; i++) 
       	  //   for (int j=0; j < N_eI; j++)
@@ -850,8 +854,11 @@ namespace qmcplusplus {
       	  // 	index++;
       	  //     }
 
-      	  app_log() << "Parameter     Name      Value\n";
-      	  myVars.print(app_log());
+      	  if(!notOpt) 
+           {
+             app_log() << "Parameter     Name      Value\n";
+      	    myVars.print(app_log());
+           }
       	}
       	xmlCoefs = xmlCoefs->next;
       }
@@ -862,6 +869,7 @@ namespace qmcplusplus {
     
     void resetParameters(const opt_variables_type& active)
     {
+      if (notOpt) return;
       for(int i=0; i<Parameters.size(); ++i)
       {
         int loc=myVars.where(i);

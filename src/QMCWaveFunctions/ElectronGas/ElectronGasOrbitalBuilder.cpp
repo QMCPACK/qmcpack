@@ -208,12 +208,14 @@ namespace qmcplusplus
   
   bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
   {
-    int nc=0;
+    int nc=-1;
+    int ns=0;
     ValueType bosonic_eps(-999999);
     ValueType rntype(0);
     PosType twist(0.0);
     OhmmsAttributeSet aAttrib;
     aAttrib.add(nc,"shell");
+    aAttrib.add(ns,"states");
     aAttrib.add(bosonic_eps,"eps");
     aAttrib.add(rntype,"primary");
     aAttrib.add(twist,"twist");
@@ -227,6 +229,8 @@ namespace qmcplusplus
     
 //     if (nc == 0) nc = egGrid.getShellIndex(nup);
     
+    if (ns>0)
+      nc=egGrid.getShellFromStates(ns);
     if (nc<0)
     {
       app_error() << "  HEG Invalid Shell." << endl;

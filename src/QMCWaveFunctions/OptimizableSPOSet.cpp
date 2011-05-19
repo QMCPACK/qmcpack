@@ -32,6 +32,7 @@ namespace qmcplusplus
     bool same_k = false;
     bool mapped_k = false;
     bool same_orbital = false;
+    bool lapl = false;
     derivScale=1.0;
     OhmmsAttributeSet attrib;
     attrib.add (gsName,    "gs_sposet");
@@ -39,6 +40,7 @@ namespace qmcplusplus
     attrib.add (same_k,    "same_k");
     attrib.add (mapped_k,    "mapped_k");
     attrib.add (same_orbital,    "same_orbital");
+    attrib.add (lapl,    "lapl");
     attrib.add (N,         "size");
     attrib.add (derivScale,"scale");
     attrib.add(thr, "thr");
@@ -164,6 +166,12 @@ namespace qmcplusplus
      allowedOrbs=0;
      for (int igs=0; igs<N; igs++)
         allowedOrbs(igs,igs)=1;   
+   }
+   else if(lapl)
+   {
+     for (int igs=0; igs<N; igs++)
+       for (int ib=0; ib<(M/N); ib++)
+         allowedOrbs(igs,igs+N*ib)=1;
    }
    else {
      for (int igs=0; igs<N; igs++) {

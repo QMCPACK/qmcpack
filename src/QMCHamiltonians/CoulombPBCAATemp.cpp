@@ -53,12 +53,13 @@ namespace qmcplusplus {
 	eS=evalSR(ref);
       }
       NewValue=Value = eL+eS+myConst;
+//       app_log() << "  Fixed Coulomb potential for " << ref.getName();
+//       app_log() << "\n    e-e Madelung Const. =" << MC0
+//                 << "\n    Vtot     =" << Value << endl;
+    }
       app_log() << "  Fixed Coulomb potential for " << ref.getName();
-//       app_log() << "\n    V(short) =" << eS 
-//                 << "\n    V(long)  =" << eL
       app_log() << "\n    e-e Madelung Const. =" << MC0
                 << "\n    Vtot     =" << Value << endl;
-    }
   }
 
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }

@@ -72,6 +72,15 @@ namespace qmcplusplus {
       else
         return -1;
     }
+    
+    
+    inline int getShellFromStates(int nst)
+    {
+      for(int i=0;i<n_within_shell.size();i++)
+        if (n_within_shell[i]==nst)
+          return i;
+      return -1;
+    }
 
     //return the shell index for nkpt k-points
     inline int getShellIndex(int nkpt) const

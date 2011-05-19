@@ -116,7 +116,7 @@ namespace qmcplusplus {
 
     switch(expandlm) {
       case(GAUSSIAN_EXPAND):
-      app_log() << "   Angular momentum m expanded addocrding to Gaussian" << endl;
+      app_log() << "   Angular momentum m expanded according to Gaussian" << endl;
       break;
       case(NATURAL_EXPAND):
       app_log() << "   Angular momentum m expanded as -l, ... ,l" << endl;
