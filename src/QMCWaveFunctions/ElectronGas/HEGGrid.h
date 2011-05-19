@@ -279,6 +279,14 @@ namespace qmcplusplus {
         return getNC(nkpt);
     }
 
+    inline int getShellFromStates(int nst)
+    {
+      for(int i=0;i<n_within_shell.size();i++)
+        if (n_within_shell[i]==nst)
+          return i;
+      return -1;
+    }
+    
     inline T getCellLength(int nptcl, T rs_in) const
     {
       return std::sqrt(M_PI*nptcl)*rs_in;
