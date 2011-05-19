@@ -59,6 +59,7 @@
 #if QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/HardSphere.h"
 #include "QMCHamiltonians/GaussianPot.h"
+#include "QMCHamiltonians/OscillatoryPot.h"
 #include "QMCHamiltonians/SkPot.h"
 #include "QMCHamiltonians/ModPosTelPot.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
@@ -207,6 +208,12 @@ namespace qmcplusplus {
           ModPoschlTeller* hs = new ModPoschlTeller(*targetPtcl);
           hs->put(cur);
           targetH->addOperator(hs,"ModPoschlTeller",true);
+        }
+        else if (potType == "oscillatory")
+        {
+          OscillatoryPotential* hs = new OscillatoryPotential(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"OscillatoryPotential",true);
         }
         else if (potType == "skpot")
         {

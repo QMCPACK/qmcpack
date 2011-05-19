@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_MODPOSTEL_H
-#define QMCPLUSPLUS_MODPOSTEL_H
+#ifndef QMCPLUSPLUS_OSCILLPOT_H
+#define QMCPLUSPLUS_OSCILLPOT_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
@@ -26,26 +26,23 @@
 namespace qmcplusplus {
 
   /** @ingroup hamiltonian
-   *@brief ModPoschlTeller for the indentical source and target particle sets. 
+   *@brief OscillatoryPotential for the indentical source and target particle sets. 
    *
    */
-  struct ModPoschlTeller: public QMCHamiltonianBase {
-
-    ///number of particle
-    int Centers;
-//     core radius
-    RealType d;
-//     core strength
-    RealType Q;
+  struct OscillatoryPotential: public QMCHamiltonianBase {
+    RealType v0, k0, r0, r1, rm0, rm1;
     
-    ModPoschlTeller(ParticleSet& P) 
+    
+    OscillatoryPotential(ParticleSet& P) 
     {
-      Centers=P.getTotalNum();
-      d = 1.0; Q=1.0;
+      v0=-1.0;
+      k0=1.0;
+      r0=1.0;
+      r1=1.0;
       const DistanceTableData* d_table = DistanceTable::add(P);
     }
 
-    ~ModPoschlTeller() { }
+    ~OscillatoryPotential() { }
 
     void resetTargetParticleSet(ParticleSet& P)  
     {
@@ -61,10 +58,12 @@ namespace qmcplusplus {
       
       for(int nn=0; nn<d_table->getTotNadj(); ++nn) 
       {
-        Return_t x( 1.0/std::cosh(d*d_table->r(nn)) );
-        Value +=  x*x; 
+        Return_t x(d_table->r(nn));
+        Return_t x2(x*x);
+        Value += std::cos(k0*x)*std::exp(-x2*rm0)/std::sqrt(rm1*x2+1);
       }
-      return Value*= d*d*Q;
+      Value*=v0;
+      return Value;
     }
 
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
@@ -101,7 +100,7 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      APP_ABORT("ModPoschlTeller::evaluatePbyP");
+      APP_ABORT("OscillatoryPotential::evaluatePbyP");
       return 0.0;
       //const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
       //Return_t del=0.0;
@@ -112,24 +111,25 @@ namespace qmcplusplus {
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       OhmmsAttributeSet Tattrib;
-      Tattrib.add(Q,"v0");
-      Tattrib.add(d,"r0");
+      Tattrib.add(v0,"v0");
+      Tattrib.add(r0,"r0");
+      Tattrib.add(r1,"r1");
+      Tattrib.add(k0,"k0");
       Tattrib.put(cur);
-      app_log()<<"ModPoschlTeller parameters"<<endl;
-      app_log()<<"  range : "<<d<<endl; d=1.0/d;
-      app_log()<<"  mag   : "<<Q<<endl;
+      rm0=1.0/(r0*r0);
+      rm1=1.0/(r1*r1);
       return true;
     }
 
     bool get(std::ostream& os) const {
-      //os << "ModPoschlTeller: " << PtclRef->getName();
+      //os << "OscillatoryPotential: " << PtclRef->getName();
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
       
-      ModPoschlTeller* cl = new ModPoschlTeller(*this);
+      OscillatoryPotential* cl = new OscillatoryPotential(*this);
       return cl;
     }
     
