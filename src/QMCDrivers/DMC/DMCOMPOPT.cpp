@@ -347,6 +347,7 @@ namespace qmcplusplus {
     IndexType block = 0;
     IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
     int nsampls(0);
+    int g_nsampls(0);
 
     do // block
     {
@@ -434,9 +435,11 @@ namespace qmcplusplus {
       Estimators->stopBlock(acceptRatio());
       block++;
       recordBlock(block);
+      g_nsampls=nsampls;
+      myComm->allreduce(g_nsampls);
 
-    } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs  && nsampls<samples_this_node);
-
+    } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs  && g_nsampls<nTargetSamples);
+    
     //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
     for(int ip=0; ip<NumThreads; ip++) 
       *(RandomNumberControl::Children[ip])=*(Rng[ip]);
