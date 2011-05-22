@@ -67,39 +67,70 @@ namespace qmcplusplus {
       E_avg = g_stats[0];
       V_avg = g_stats[1]-E_avg*E_avg;
       
+      for(int i=0;i<5;i++) app_log()<<g_stats[i]<<" ";
+      app_log()<<endl;
+      
       
       d.resize(D.size(),0);
       for(int i=0;i<D2.size();i++)  D2[i]=1.0/(nrm*D2[i]);
       for(int i=0;i<DT.size();i++)  DT[i]*=nrm;
       for(int i=0;i<D.size();i++)   D[i]*=nrm;
       for(int i=0;i<D_E.size();i++) D_E[i]*=nrm;
+      Overlap *= nrm;
       
-      RealType wmw=std::sqrt(g_stats[3]*g_stats[4]);
+      RealType wmw=std::sqrt(g_stats[3]/g_stats[4]);
       std::vector<RealType> d0(D.size(),0);
-      for(int i=0;i<D.size();i++) d[i] = (D[i]*wmw - DT[i])*D2[i];
+      for(int i=0;i<D.size();i++) d[i] = d0[i] = (D[i]*wmw - DT[i])*D2[i];
+//       for(int i=0;i<D.size();i++) d[i] = d0[i] = (D[i]*wmw - DT[i])*D2[i];
       e=E_avg;
       for (int i=0; i<NumOptimizables; i++)
         olp(i,0) = olp(0,i)= DT[i];
       olp(0,0)=g_stats[3];
         
+      std::vector<RealType> DT2(DT.size(),0);
+      for(int i=0;i<DT.size();i++) DT2[i] = 1.0/std::sqrt(Overlap(i,i));
+      
+      RealType nrmT=1.0/g_stats[3];  
       for (int i=0; i<NumOptimizables; i++)
         for (int j=0; j<NumOptimizables; j++) 
         {
-          olp=Overlap(i,j)*=nrm;//*D2[i]*D2[j];
+          olp(i+1,j+1)=Overlap(i,j);
+          Overlap(i,j)*=DT2[i]*DT2[j];
         }
       
-/*      RealType Det= invert_matrix(Overlap,true);
-      for (int i=0; i<NumOptimizables; i++)
-        for (int j=0; j<NumOptimizables; j++)
-          d[i]+= Overlap(i,j)*d0[j]*D2[j];*/
+      
+//       for(int i=0;i<d.size();i++)
+//         for (int j=0; j<i; j++) 
+//           d[i] -= Overlap(i,j)*d[j];
+      
+//       RealType Num(0); 
+//       for(int i=0;i<NumOptimizables;i++) Num+=DT[i]*d[i];
+//       
+//       RealType DNom(0);
+//       for (int i=0; i<NumOptimizables; i++)
+//         for (int j=0; j<NumOptimizables; j++)
+//           DNom += d[i]*d[j]*olp(i+1,j+1);
+//       Num/=DNom;
+// //       app_log()<<"Rescale DMCOPT "<<Num<<endl;
+//       for(int i=0;i<D.size();i++) d[i]*=Num;
+        
+//       RealType Det= invert_matrix(Overlap,true);
+//       app_log()<<Det<<endl;
+//       Det=determinant_matrix(Overlap);
+//       app_log()<<Det<<endl;
+//       Overlap*=1.0/Det;
+      
       
 //       for (int i=0; i<NumOptimizables; i++)
 //       {
-//         for (int j=0; j<NumOptimizables; j++)  
-//           app_log()<<Det*Overlap(i,j)<<" ";
+//         for (int j=0; j<NumOptimizables; j++)
+//           app_log()<<Overlap(i,j)<<" ";
 //         app_log()<<endl;
 //       }
-      
+      app_log()<<endl;
+      for (int i=0; i<NumOptimizables; i++)
+         app_log()<<d[i]<<" ";
+      app_log()<<endl;
         
     }
     

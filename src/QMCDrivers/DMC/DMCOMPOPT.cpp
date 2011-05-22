@@ -123,23 +123,23 @@ namespace qmcplusplus {
 //         delete hClones[ip];
 //       }
 //       wClones.resize(0);
-      for (int ip=0; ip<NumThreads; ++ip)
-      {
-        opt_variables_type dummy;
-        psiClones[ip]->checkInVariables(dummy);
-        dummy.resetIndex();
-        psiClones[ip]->checkOutVariables(dummy);
-        dummyOptVars.push_back(dummy);
-      }
-      NumOptimizables=dummyOptVars[0].size();
-      resizeForOpt(NumOptimizables);
-
-
       wClones.clear();
       psiClones.clear();
       hClones.clear();
       firsttime=false;
     }
+    
+    for (int ip=0; ip<NumThreads; ++ip)
+    {
+      opt_variables_type dummy;
+      psiClones[ip]->checkInVariables(dummy);
+      dummy.resetIndex();
+      psiClones[ip]->checkOutVariables(dummy);
+      dummyOptVars.push_back(dummy);
+    }
+    NumOptimizables=dummyOptVars[0].size();
+    resizeForOpt(NumOptimizables);
+      
     
     makeClones(W,Psi,H);
 
@@ -421,8 +421,8 @@ namespace qmcplusplus {
           wClones[ip]->loadWalker(thisWalker,true);
           psiClones[ip]->copyFromBuffer(*wClones[ip],w_buffer);
           
-          vector<RealType> Dsaved(NumOptimizables);
-          vector<RealType> HDsaved(NumOptimizables);
+          vector<RealType> Dsaved(NumOptimizables,0);
+          vector<RealType> HDsaved(NumOptimizables,0);
           psiClones[ip]->evaluateDerivatives(*wClones[ip],dummyOptVars[ip],Dsaved,HDsaved);
 #pragma omp critical
           fillComponentMatrices(Dsaved,HDsaved,thisWalker);

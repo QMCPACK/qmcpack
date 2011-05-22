@@ -223,7 +223,31 @@ namespace qmcplusplus {
         InvertLU(n, M.data(), n, pivot, work, n);
         return det0;
       }
-
+      
+    /** determinant a matrix
+     * \param M a matrix to be inverted
+     * \return the determinant
+     */
+    template<class MatrixA>
+      inline typename MatrixA::value_type
+      determinant_matrix(MatrixA& M) 
+      {
+        typedef typename MatrixA::value_type value_type;
+        MatrixA N(M);
+        const int n=N.rows();
+        int pivot[n];
+        value_type work[n];
+        LUFactorization(n,n,N.data(),n,pivot);
+        value_type det0 = 1.0;
+        int sign = 1;
+        for(int i=0; i<n; ++i)
+        {
+          if(pivot[i] != i+1) sign *= -1;
+          det0 *= M(i,i);
+        }
+        det0 *= static_cast<value_type>(sign);
+        return det0;
+      }
 //
 ///** invert a matrix                                                                                                                                          
 // * \param M a matrix to be inverted                                                                                                                          
