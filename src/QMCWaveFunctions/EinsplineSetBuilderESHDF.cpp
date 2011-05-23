@@ -1026,11 +1026,10 @@ void
     int icore = 0;
     int ival = 0;
 
-    int isComplex;
+    int isComplex=1;
     if (root) {
       HDFAttribIO<int> h_isComplex(isComplex);
       h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
-
       if (!isComplex) {
 	app_error() << "Expected complex orbitals in ES-HDF file, but found real ones.\n";
 	abort();
@@ -1038,8 +1037,6 @@ void
     }
 
     EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
-
-    
 
 
     while (iorb < N) {
