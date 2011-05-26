@@ -18,6 +18,7 @@
  * @brief Define a LRHandler with two template parameters
  */
 #include "LongRange/LRCoulombSingleton.h"
+#include "LongRange/EwaldHandler.h"
 #include <numeric>
 
 namespace qmcplusplus {
@@ -93,8 +94,16 @@ namespace qmcplusplus {
     LRCoulombSingleton::getHandler(ParticleSet& ref) {
       if(CoulombHandler ==0) 
       {
-        app_log() << "  Create CoulombHandler. " << endl;
-        CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
+        if(ref.Lattice.SuperCellEnum == SUPERCELL_BULK)
+        {
+          app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
+          CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
+        }
+        else if(ref.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+        {
+          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+          CoulombHandler= new EwaldHandler(ref);
+        }
         CoulombHandler->initBreakup(ref);
         return CoulombHandler;
       }

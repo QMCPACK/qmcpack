@@ -82,6 +82,7 @@ SET(PARTICLE ${PARTICLE}
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
   LongRange/LPQHIBasis.cpp			      	
+  LongRange/EwaldHandler.cpp			      	
   LongRange/LRCoulombSingleton.cpp
 )
 

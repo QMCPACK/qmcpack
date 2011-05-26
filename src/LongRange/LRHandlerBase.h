@@ -70,6 +70,13 @@ namespace qmcplusplus {
       //} //ki
       return vk;
     }
+
+    /** Evaluate the long-range potential with the open BC for the D-1 direction */
+    virtual  RealType evaluate_slab(RealType z, const vector<int>& kshell
+        , const ComplexType* restrict eikr_i, const ComplexType* restrict eikr_j) 
+    {
+      return 0.0;
+    }
     
     inline RealType evaluate(const vector<int>& kshell
         , int iat, const ComplexType* restrict rk2, ParticleSet &P) 

@@ -4,13 +4,17 @@
 
 using namespace qmcplusplus;
 
-//Constructor
+/*** Constructor
+ * @param ref reference lattice
+ */
 KContainer::KContainer(ParticleLayout_t& ref): Lattice(ref),kcutoff(0.0) { }
 
-//Destructor
+/*** Destructor
+ */
 KContainer::~KContainer() { }
 
-//Overloaded assignment operator
+/** Overloaded assignment operator
+ */
 KContainer&
 KContainer::operator=(const KContainer& ref) {
   //Lattices should be equal. 
@@ -43,12 +47,14 @@ KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere) {
   Lattice = ref;
 
   LOGMSG("  KContainer initialised with cutoff " << kcutoff);
-  if(kcutoff <= 0.0){
+  if(kcutoff <= 0.0)
+  {
     OHMMS::Controller->abort();
   }
 
   FindApproxMMax();
   BuildKLists(useSphere);
+
 }
 
 // UpdateKLists - call for new k or when lattice changed.
@@ -67,6 +73,7 @@ KContainer::UpdateKLists(RealType kc, bool useSphere) {
   app_log() << "  KContainer initialised with cutoff " << kcutoff << endl;
   app_log() << "   # of K-shell  = " << kshell.size() << endl;
   app_log() << "   # of K points = " << kpts.size() << endl;
+
 }
 
 //Private Methods:
@@ -114,14 +121,15 @@ KContainer::FindApproxMMax() {
   for (int i = 0; i < DIM; i++) 
     mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
-  /** @todo enable mixed boundary conditions */
-//#if OHMMS_DIM==3
-//  if(Lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
-//  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
-//#elif OHMMS_DIM==2
-//  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]0;
-//#endif
+  //overwrite the non-periodic directon to be zero
+#if OHMMS_DIM==3
+  if(Lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
+  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
+#elif OHMMS_DIM==2
+  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]0;
+#endif
 }
+
 void 
 KContainer::BuildKLists(bool useSphere) {
 
@@ -299,7 +307,6 @@ KContainer::BuildKLists(bool useSphere) {
       kpts[ok]=kpts_tmp[ik];
       kpts_cart[ok]=kpts_cart_tmp[ik];
       ksq[ok]=ksq_tmp[ik];
-      //cout << "   " << ik <<  " " << kpts[ik] << " " << ksq[ik] << endl;
       ++vit;++ok;
     }
     kshell[ish+1]=kshell[ish]+(*it).second->size();
