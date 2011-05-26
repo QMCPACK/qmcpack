@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
-//
+// (c) Copyright 1998-2002, 2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,12 +18,9 @@
 #ifndef OHMMS_TENSOR_OPERATORS_H
 #define OHMMS_TENSOR_OPERATORS_H
 
+/*** Tenor operators.  Generic operators are specialized for 1,2 and 3 D
+ */
 namespace APPNAMESPACE {
-//////////////////////////////////////////////////////////////////////
-//
-// The default definitions for Tensors of arbitrary size.
-//
-//////////////////////////////////////////////////////////////////////
 
 template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< Tensor<T1,D> , Tensor<T2,D> , OP >
@@ -1151,7 +1148,6 @@ struct OTDot< SymTensor<T1,3> , SymTensor<T2,3> >
 			
   }
 };
-
 }
 
 #endif // OHMMS_TENSOR_OPERATORS_H

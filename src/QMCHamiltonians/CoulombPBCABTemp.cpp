@@ -114,16 +114,36 @@ namespace qmcplusplus {
 
   CoulombPBCABTemp::Return_t
   CoulombPBCABTemp::evalLR(ParticleSet& P) {
+
+    const int slab_dir=OHMMS_DIM-1;
+
     RealType res=0.0;
     const StructFact& RhoKA(*(PtclA.SK));
     const StructFact& RhoKB(*(P.SK));
-    for(int i=0; i<NumSpeciesA; i++) {
-      RealType esum=0.0;
-      for(int j=0; j<NumSpeciesB; j++) {
-	esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
-      } //speceln
-      res += Zspec[i]*esum;
+
+    if(P.Lattice.SuperCellEnum==SUPERCELL_SLAB)
+    {
+      const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+      for(int iat=0; iat<NptclA; ++iat)
+      {
+        RealType u=0;
+        for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat) 
+          u += Qat[jat]*AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.KLists.kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
+        res += Zat[iat]*u;
+      }
+    }
+    else
+    {
+      for(int i=0; i<NumSpeciesA; i++) {
+        RealType esum=0.0;
+        for(int j=0; j<NumSpeciesB; j++) {
+          esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
+        } //speceln
+        res += Zspec[i]*esum;
+      }
     }//specion
+
+
     return res;
   }
 
@@ -148,7 +168,8 @@ namespace qmcplusplus {
       return Consts;
     }
 
-  void CoulombPBCABTemp::initBreakup(ParticleSet& P) {
+  void CoulombPBCABTemp::initBreakup(ParticleSet& P) 
+  {
     SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
     SpeciesSet& tspeciesB(P.getSpeciesSet());
 
@@ -185,7 +206,8 @@ namespace qmcplusplus {
     for(int iat=0; iat<NptclB; iat++) 
       totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
 
-    if(totQ>numeric_limits<RealType>::epsilon()) {
+    if(totQ>numeric_limits<RealType>::epsilon()) 
+    {
       LOGMSG("PBCs not yet finished for non-neutral cells");
       OHMMS::Controller->abort();
     }
@@ -201,14 +223,16 @@ namespace qmcplusplus {
     myConst=evalConsts();
     myRcut=AB->get_rc();//Basis.get_rc();
 
-    if(V0==0) {
+    // create the spline function for the short-range part assuming pure potential
+    if(V0==0) 
+    {
       V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
       if(Vat.size()) {
         app_log() << "  Vat is not empty. Something is wrong" << endl;
         OHMMS::Controller->abort();
       }
       Vat.resize(NptclA,V0);
-      Vspec.resize(NumSpeciesA,0);
+      Vspec.resize(NumSpeciesA,0);//prepare for PP to overwrite it
     }
   }
 
@@ -227,7 +251,8 @@ namespace qmcplusplus {
       myGrid->set(0,myRcut,ng);
     }
 
-    if(Vspec[groupID]==0){
+    if(Vspec[groupID]==0)
+    {
       app_log() << "    Creating the short-range pseudopotential for species " << groupID << endl;
       int ng=myGrid->size();
       vector<RealType> v(ng);
@@ -238,6 +263,7 @@ namespace qmcplusplus {
         v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
       }
       v[0] = 2.0*v[1] - v[2];
+      //by construction, v has to go to zero at the boundary
       v[ng-2]=0.0;
       v[ng-1]=0.0;
 

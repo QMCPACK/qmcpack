@@ -14,11 +14,13 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "ParticleIO/ParticleIOUtility.h"
+#include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus {
 
 #if OHMMS_DIM ==3
   void expandSuperCell(ParticleSet& ref_, Tensor<int,3>& tmat)
   {
+
     typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
     typedef ParticleSet::Tensor_t Tensor_t;
 
@@ -33,13 +35,25 @@ namespace qmcplusplus {
 
     if(identity) return;
 
+    ReportEngine PRE("expandSuperCell"," ");
+    app_log() << "  TileMatrix != Identity. Expanding a simulation cell for "
+      << ref_.getName() << endl;
+
+    {
+      char buff[500];
+      snprintf (buff, 500
+          , "   tilematrix= %4d %4d %4d %4d %4d %4d %4d %4d %4d\n"
+          , tmat[0], tmat[1], tmat[2] ,tmat[3], tmat[4], tmat[5], tmat[6], tmat[7], tmat[8]);
+      app_log() << buff<< endl;
+    }
+
     //convert2unit
     ref_.convert2Unit(ref_.R);
     ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
     ref_.Lattice.set(dot(tmat,PrimCell.R));
 
     int natoms=ref_.getTotalNum();
-    int numCopies = abs(tmat.det());
+    int numCopies = abs(det(tmat));
     ParticleSet::ParticlePos_t primPos(ref_.R);
     ParticleSet::ParticleIndex_t primTypes(ref_.GroupID);
     ref_.resize(natoms*numCopies);
@@ -48,6 +62,7 @@ namespace qmcplusplus {
     //set the unit to the Cartesian
     ref_.R.InUnit=PosUnit::CartesianUnit;
     app_log() << "  Reduced coord    Cartesion coord    species.\n";
+
     for(int ns=0; ns<ref_.getSpeciesSet().getTotalNum();++ns)
     {
       for (int i0=-maxCopies; i0<=maxCopies; i0++)    
@@ -76,6 +91,9 @@ namespace qmcplusplus {
               }
             }
     }
+    app_log() << "  Simulationcell after tiling" << endl;
+    ref_.Lattice.print(app_log());
+    app_log() << endl;
   }
 
 #elif OHMMS_DIM == 2

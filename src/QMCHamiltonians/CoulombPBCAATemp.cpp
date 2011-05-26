@@ -53,13 +53,13 @@ namespace qmcplusplus {
 	eS=evalSR(ref);
       }
       NewValue=Value = eL+eS+myConst;
-//       app_log() << "  Fixed Coulomb potential for " << ref.getName();
-//       app_log() << "\n    e-e Madelung Const. =" << MC0
-//                 << "\n    Vtot     =" << Value << endl;
+      //app_log() << "  Fixed Coulomb potential for " << ref.getName();
+      //app_log() << "\n    e-e Madelung Const. =" << MC0
+      //          << "\n    Vtot     =" << Value << endl;
     }
-      app_log() << "  Fixed Coulomb potential for " << ref.getName();
-      app_log() << "\n    e-e Madelung Const. =" << MC0
-                << "\n    Vtot     =" << Value << endl;
+    app_log() << "  Fixed Coulomb potential for " << ref.getName();
+    app_log() << "\n    e-e Madelung Const. =" << MC0
+      << "\n    Vtot     =" << Value << endl;
   }
 
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
@@ -254,14 +254,14 @@ namespace qmcplusplus {
 
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalSR(ParticleSet& P) {
-      const DistanceTableData *d_aa = P.DistTables[0];
+      const DistanceTableData &d_aa(*P.DistTables[0]);
       RealType SR=0.0;
       for(int ipart=0; ipart<NumCenters; ipart++){
         RealType esum = 0.0;
-        for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
+        for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++) {
           //if(d_aa->r(nn)>=myRcut) continue;
           //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
-          esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
+          esum += Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
         SR += Zat[ipart]*esum;
@@ -272,21 +272,34 @@ namespace qmcplusplus {
 
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalLR(ParticleSet& P) {
-      RealType LR=0.0;
+      const int slab_dir=OHMMS_DIM-1;
+      RealType res=0.0;
       const StructFact& PtclRhoK(*(P.SK));
-      for(int spec1=0; spec1<NumSpecies; spec1++) {
-        RealType Z1 = Zspec[spec1];
-        for(int spec2=spec1; spec2<NumSpecies; spec2++) {
-          RealType Z2 = Zspec[spec2];
-          //RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-          RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-          if(spec2==spec1)
-            temp*=0.5;
-          LR += Z1*Z2*temp;
-        } //spec2
-      }//spec1
-      //LR*=0.5;
-      return LR;
+      if(P.Lattice.SuperCellEnum==SUPERCELL_SLAB)
+      {
+        const DistanceTableData &d_aa(*P.DistTables[0]);
+        //distance table handles jat>iat
+        for(int iat=0; iat<NumCenters; ++iat)
+        {
+          RealType u=0;
+          for(int nn=d_aa.M[iat], jat=iat+1; nn<d_aa.M[iat+1]; ++nn,++jat) 
+            u += Zat[jat]*AA->evaluate_slab(d_aa.dr(nn)[slab_dir]
+                , PtclRhoK.KLists.kshell , PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+          res += Zat[iat]*u;
+        }
+      }
+      else
+      {
+        for(int spec1=0; spec1<NumSpecies; spec1++) {
+          RealType Z1 = Zspec[spec1];
+          for(int spec2=spec1; spec2<NumSpecies; spec2++) {
+            RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+            if(spec2==spec1) temp*=0.5;
+            res += Z1*Zspec[spec2]*temp;
+          } //spec2
+        }//spec1
+      }
+      return res;
     }
 
 
@@ -348,7 +361,7 @@ namespace qmcplusplus {
       //const Vector<RealType> &coefs(AA->coefs);
       RealType Consts=0.0; // constant term
 
-      //v_l(r=0)
+      //v_l(r=0) including correction due to the non-periodic direction
       RealType vl_r0 = AA->evaluateLR_r0();
       for(int spec=0; spec<NumSpecies; spec++) 
       {
@@ -356,6 +369,7 @@ namespace qmcplusplus {
         RealType n = NofSpecies[spec];
         Consts -= 0.5*vl_r0*z*z*n;
       }
+      app_log() << "   PBCAA self-interaction term " << Consts << endl;
 
       //Compute Madelung constant: this is not correct for general cases
       MC0 = 0.0;
@@ -376,7 +390,7 @@ namespace qmcplusplus {
         }
       }
 
-      //app_log() << "   Constant of PBCAA " << Consts << endl;
+      app_log() << "   PBCAA total constant " << Consts << endl;
       //app_log() << "   MC0 of PBCAA " << MC0 << endl;
       return Consts;
     }

@@ -6,7 +6,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -45,12 +44,11 @@ template <class T, unsigned D> class SymTensor;
 template <class T, unsigned D> class AntiSymTensor;
 
 
-//////////////////////////////////////////////////////////////////////
-//
-// Definition of class Tensor.
-//
-//////////////////////////////////////////////////////////////////////
-
+/** Tensor<T,D>  class for D by D tensor
+ *
+ * @tparam T datatype
+ * @tparm D dimension
+ */
 template<class T, unsigned D>
 class Tensor
 {
@@ -126,13 +124,13 @@ public:
 
   // accumulation operators
   template<class T1>
-  Tensor<T,D>& operator+=(const Tensor<T1,D> &rhs)
+  inline Tensor<T,D>& operator+=(const Tensor<T1,D> &rhs)
   {
     OTAssign< Tensor<T,D> , Tensor<T1,D> , OpAddAssign > :: 
       apply(*this,rhs,OpAddAssign());
     return *this;
   }
-  Tensor<T,D>& operator+=(const T& rhs)
+  inline Tensor<T,D>& operator+=(const T& rhs)
   {
     OTAssign< Tensor<T,D> , T , OpAddAssign > :: 
       apply(*this,rhs, OpAddAssign());
@@ -140,13 +138,14 @@ public:
   }
 
   template<class T1>
-  Tensor<T,D>& operator-=(const Tensor<T1,D> &rhs)
+  inline Tensor<T,D>& operator-=(const Tensor<T1,D> &rhs)
   {
     OTAssign< Tensor<T,D> , Tensor<T1,D> , OpSubtractAssign > :: 
       apply(*this,rhs,OpSubtractAssign());
     return *this;
   }
-  Tensor<T,D>& operator-=(const T& rhs)
+
+  inline Tensor<T,D>& operator-=(const T& rhs)
   {
     OTAssign< Tensor<T,D> , T , OpSubtractAssign > :: 
       apply(*this,rhs,OpSubtractAssign());
@@ -154,13 +153,14 @@ public:
   }
 
   template<class T1>
-  Tensor<T,D>& operator*=(const Tensor<T1,D> &rhs)
+  inline Tensor<T,D>& operator*=(const Tensor<T1,D> &rhs)
   {
     OTAssign< Tensor<T,D> , Tensor<T1,D> , OpMultiplyAssign > :: 
       apply(*this,rhs,OpMultiplyAssign());
     return *this;
   }
-  Tensor<T,D>& operator*=(const T& rhs)
+
+  inline Tensor<T,D>& operator*=(const T& rhs)
   {
     OTAssign< Tensor<T,D> , T , OpMultiplyAssign > :: 
       apply(*this,rhs, OpMultiplyAssign());
@@ -168,13 +168,14 @@ public:
   }
 
   template<class T1>
-  Tensor<T,D>& operator/=(const Tensor<T1,D> &rhs)
+  inline Tensor<T,D>& operator/=(const Tensor<T1,D> &rhs)
   {
     OTAssign< Tensor<T,D> , Tensor<T1,D> , OpDivideAssign > :: 
       apply(*this,rhs, OpDivideAssign());
     return *this;
   }
-  Tensor<T,D>& operator/=(const T& rhs)
+
+  inline Tensor<T,D>& operator/=(const T& rhs)
   {
     OTAssign< Tensor<T,D> , T , OpDivideAssign > :: 
       apply(*this,rhs, OpDivideAssign());
@@ -183,51 +184,56 @@ public:
 
   // Methods
 
-  void diagonal(const T& rhs) {
+  inline void diagonal(const T& rhs) {
     for (int i = 0 ; i < D ; i++ ) 
       (*this)(i,i) = rhs;
   }
 
-  T det()
-  {
-    Tensor<T,D>& A = *this;
-    return (A(0,0)*(A(1,1)*A(2,2)-A(1,2)*A(2,1)) -
-	    A(0,1)*(A(1,0)*A(2,2)-A(1,2)*A(2,0)) +
-	    A(0,2)*(A(1,0)*A(2,1)-A(1,1)*A(2,0)));
-  }
+  ///return the size
+  inline int len()  const { return Size; }
+  ///return the size
+  inline int size() const { return Size;}
 
-  int len(void)  const { return Size; }
-  int size(void) const { return sizeof(*this); }
-
-  // Operators
-
-  Type_t &operator[]( unsigned int i )
+  /** return the i-th value or assign
+   * @param i index [0,D*D)
+   */
+  inline Type_t &operator[]( unsigned int i )
   {
     return X[i];
   }
 
-  Type_t operator[]( unsigned int i ) const
+  /** return the i-th value
+   * @param i index [0,D*D)
+   */
+  inline Type_t operator[]( unsigned int i ) const
   {
     return X[i];
   }
 
   //TJW: add these 12/16/97 to help with NegReflectAndZeroFace BC:
   // These are the same as operator[] but with () instead:
-
-  Type_t& operator()(unsigned int i) { 
+  inline Type_t& operator()(unsigned int i) { 
     return X[i];
   }
 
-  Type_t operator()(unsigned int i) const { 
+  inline Type_t operator()(unsigned int i) const { 
     return X[i];
   }
   //TJW.
 
-  Type_t operator()( unsigned int i,  unsigned int j ) const {
+  /** return the (i,j) component
+   * @param i index [0,D)
+   * @param j index [0,D)
+   */
+  inline Type_t operator()( unsigned int i,  unsigned int j ) const {
     return X[i*D+j];
   }
 
-  Type_t& operator()( unsigned int i, unsigned int j ) {
+  /** return/assign the (i,j) component 
+   * @param i index [0,D)
+   * @param j index [0,D)
+   */
+  inline Type_t& operator()( unsigned int i, unsigned int j ) {
     return X[i*D+j];
   }
 
@@ -300,6 +306,9 @@ private:
 //
 //////////////////////////////////////////////////////////////////////
 
+/** trace \f$ result = \sum_k rhs(k,k)\f$
+ * @param rhs a tensor
+ */
 template <class T, unsigned D>
 inline T trace(const Tensor<T,D>& rhs) {
   T result = 0.0;
@@ -308,6 +317,8 @@ inline T trace(const Tensor<T,D>& rhs) {
   return result;
 }
 
+/** transpose a tensor
+ */
 template <class T, unsigned D>
 inline Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
   Tensor<T,D> result; // = Tensor<T,D>::DontInitialize();
@@ -317,6 +328,8 @@ inline Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
   return result;
 }
 
+/** Tr(a*b), \f$ \sum_i\sum_j a(i,j)*b(j,i) \f$
+ */
 template <class T1, class T2, unsigned D>
 inline T1 trace(const Tensor<T1,D>& a, const Tensor<T2,D>& b) {
   T1 result = 0.0;
@@ -325,6 +338,8 @@ inline T1 trace(const Tensor<T1,D>& a, const Tensor<T2,D>& b) {
   return result;
 }
 
+/** Tr(a^t *b), \f$ \sum_i\sum_j a(i,j)*b(i,j) \f$
+ */
 template <class T, unsigned D>
 inline T traceAtB(const Tensor<T,D>& a, const Tensor<T,D>& b) {
   T result = 0.0;
@@ -337,7 +352,6 @@ inline T traceAtB(const Tensor<T,D>& a, const Tensor<T,D>& b) {
 // Unary Operators
 //
 //////////////////////////////////////////////////////////////////////
-
 //----------------------------------------------------------------------
 // unary operator-
 //template<class T, unsigned D>
@@ -345,7 +359,6 @@ inline T traceAtB(const Tensor<T,D>& a, const Tensor<T,D>& b) {
 //{
 //  return MetaUnary< Tensor<T,D> , OpUnaryMinus > :: apply(op,OpUnaryMinus());
 //}
-
 //----------------------------------------------------------------------
 // unary operator+
 //template<class T, unsigned D>
@@ -354,15 +367,7 @@ inline T traceAtB(const Tensor<T,D>& a, const Tensor<T,D>& b) {
 //  return op;
 //}
 
-//////////////////////////////////////////////////////////////////////
-//
-// Binary Operators
-//
-//////////////////////////////////////////////////////////////////////
-
-//
-// Elementwise operators.
-//
+/// Binary Operators
 OHMMS_META_BINARY_OPERATORS(Tensor,operator+,OpAdd)
 OHMMS_META_BINARY_OPERATORS(Tensor,operator-,OpSubtract)
 OHMMS_META_BINARY_OPERATORS(Tensor,operator*,OpMultiply)
@@ -370,10 +375,10 @@ OHMMS_META_BINARY_OPERATORS(Tensor,operator/,OpDivide)
 //TSV_ELEMENTWISE_OPERATOR(Tensor,Min,FnMin)
 //TSV_ELEMENTWISE_OPERATOR(Tensor,Max,FnMax)
 
-//----------------------------------------------------------------------
-// dot products.
-//----------------------------------------------------------------------
-
+/** Tensor-Tensor dot product \f$result(i,j)=\sum_k lhs(i,k)*rhs(k,j)\f$
+ * @param lhs  a tensor
+ * @param rhs  a tensor
+ */
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t, D>
 dot(const Tensor<T1,D> &lhs, const Tensor<T2,D> &rhs) 
@@ -381,6 +386,10 @@ dot(const Tensor<T1,D> &lhs, const Tensor<T2,D> &rhs)
   return OTDot< Tensor<T1,D> , Tensor<T2,D> > :: apply(lhs,rhs);
 }
 
+/** Vector-Tensor dot product \f$result(i)=\sum_k lhs(k)*rhs(k,i)\f$
+ * @param lhs  a vector
+ * @param rhs  a tensor
+ */
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t, D>
 dot(const TinyVector<T1,D> &lhs, const Tensor<T2,D> &rhs) 
@@ -388,6 +397,10 @@ dot(const TinyVector<T1,D> &lhs, const Tensor<T2,D> &rhs)
   return OTDot< TinyVector<T1,D> , Tensor<T2,D> > :: apply(lhs,rhs);
 }
 
+/** Tensor-Vector dot product \f$result(i)=\sum_k lhs(i,k)*rhs(k)\f$
+ * @param lhs  a tensor
+ * @param rhs  a vector
+ */
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
 dot(const Tensor<T1,D> &lhs, const TinyVector<T2,D> &rhs) 
@@ -411,6 +424,10 @@ dot(const Tensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 // Outer product.
 //----------------------------------------------------------------------
 
+/** Vector-vector outter product \f$ result(i,j)=v1(i)*v2(j)\f$
+ * @param v1 a vector
+ * @param v2 a vector
+ */
   template<class T1, class T2, unsigned int D>
   inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::type,D >
   outerProduct(const TinyVector<T1,D>& v1, const TinyVector<T2,D>& v2)

@@ -588,7 +588,7 @@ namespace qmcplusplus {
   {
     Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
     Vector<int>                            primTypes = IonTypes;
-    int numCopies = abs(TileMatrix.det());
+    int numCopies = abs(det(TileMatrix));
     IonTypes.resize(primPos.size()*numCopies);
     IonPos.resize  (primPos.size()*numCopies);
 
@@ -740,7 +740,7 @@ namespace qmcplusplus {
 
     // Now check to see that each supercell twist has the right twists
     // to tile the primitive cell orbitals.
-    int numTwistsNeeded = abs(TileMatrix.det());
+    int numTwistsNeeded = abs(det(TileMatrix));
     for (int si=0; si<numSuperTwists; si++) {
       // First make sure we have enough points
       if (superSets[si].size() != numTwistsNeeded) {

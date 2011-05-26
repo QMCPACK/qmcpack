@@ -32,6 +32,7 @@ using namespace std;
 //#include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Utilities/ProgressReportEngine.h"
 using namespace qmcplusplus;
 
 
@@ -131,6 +132,8 @@ bool XMLParticleParser::put(xmlNodePtr cur) {
  *
  */
 bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
+
+  ReportEngine PRE("XMLParticleParser","putSpecial");
 
   string pname("none");
   //xmlDocPtr doc = cur->doc;

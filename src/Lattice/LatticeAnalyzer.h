@@ -24,10 +24,7 @@ namespace qmcplusplus
   enum {SUPERCELL_OPEN=0, SUPERCELL_WIRE=1, SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
 
   ///generic class to analyze a Lattice
-  template<typename T,  unsigned D>
-    struct LatticeAnalyzer
-    { };
-
+  template<typename T,  unsigned D> struct LatticeAnalyzer { };
 
   /** specialization for  3D lattice
   */
@@ -37,10 +34,12 @@ namespace qmcplusplus
 
       typedef TinyVector<T,3> SingleParticlePos_t;
       typedef Tensor<T,3> Tensor_t;
+      ///SuperCell type
+      int mySC;
 
       inline int operator()(const TinyVector<int,3>& box) 
       {
-        return box[0]+2*(box[1]+box[2]*2);
+        return mySC=box[0]+2*(box[1]+box[2]*2);
       }
 
       inline bool isDiagonalOnly(const Tensor_t& R) const
@@ -62,47 +61,106 @@ namespace qmcplusplus
 
       inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3>& a)
       {
-        T rMin = 1.0e50;
-        for (int i=-1; i<=1; i++)
-          for (int j=-1; j<=1; j++)
-            for (int k=-1; k<=1; k++) 
-              if ((i!=0) || (j!=0) || (k!=0)) {
-                SingleParticlePos_t L = ((double)i * a[0] +
-                    (double)j * a[1] +
-                    (double)k * a[2]);
-                double dist = 0.5*std::sqrt(dot(L,L));
-                rMin = std::min(rMin, dist);
+        T rMin = 0.5*std::numeric_limits<T>::max();
+        if(mySC == SUPERCELL_BULK) //bulk type
+        {
+          for (int i=-1; i<=1; i++)
+            for (int j=-1; j<=1; j++)
+              for (int k=-1; k<=1; k++) 
+                if (i || j || k)
+                {
+                  SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1] + static_cast<T>(k) * a[2]);
+                  rMin=std::min(rMin,dot(L,L));
+                }
+        }
+        else if(mySC == SUPERCELL_SLAB)//slab type
+        {
+          for (int i=-1; i<=1; i++)
+            for (int j=-1; j<=1; j++)
+              if (i || j)
+              {
+                SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
+                rMin=std::min(rMin,dot(L,L));
               }
-        return rMin;
+          cout << " calcWignerSeitzRadius for Slab" << endl;
+        }
+        else if(mySC == SUPERCELL_WIRE)//wire
+        {
+          rMin=dot(a[0],a[0]);
+        }
+        return 0.5*std::sqrt(rMin);
       }
 
       inline T calcSimulationCellRadius(TinyVector<SingleParticlePos_t,3>& a)
       {
-        T scr=10e50;
-        for (int i=0; i<3; ++i) 
-        {
-          SingleParticlePos_t A = a(i);
-          SingleParticlePos_t B = a((i+1)%3);    
-          SingleParticlePos_t C = a((i+2)%3);
-          SingleParticlePos_t BxC = cross(B,C);
-          T dist = 0.5*std::fabs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
-          scr = std::min(scr, dist);
-        }
+        T scr = 0.5*std::numeric_limits<T>::max();
+        //if(mySC == SUPERCELL_BULK)
+        //{
+          for (int i=0; i<3; ++i) 
+          {
+            SingleParticlePos_t A = a(i);
+            SingleParticlePos_t B = a((i+1)%3);    
+            SingleParticlePos_t C = a((i+2)%3);
+            SingleParticlePos_t BxC = cross(B,C);
+            T dist = 0.5*std::abs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
+            scr = std::min(scr, dist);
+          }
+        //}
+        //else if(mySC == SUPERCELL_SLAB)
+        //{
+        //  T a0mag  = std::sqrt(dot(a[0],a[0]));
+        //  T a1mag  = std::sqrt(dot(a[1],a[1]));
+        //  scr=0.5*std::min(a0mag,a1mag);
+        //  //T dist = 0.5*std::abs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
+        //  //T theta1 = dot (a[0], a[1])/(a0mag*a1mag);
+        //  //T theta2 = M_PI - theta1;
+        //  //T theta  = std::min (theta1, theta2);
+        //  //T dist   = std::min (a0mag, a1mag);
+        //  //scr=0.5*std::sin(theta)*dist;
+        //  cout << " calcSimulationCellRadius for Slab" << endl;
+        //}
+        //else if(mySC == SUPERCELL_WIRE)
+        //{
+        //  scr=0.5*std::sqrt(dot(a[0],a[0]));
+        //}
         return scr;
       }
 
       inline void makeNextCells(const Tensor_t& lat, vector<SingleParticlePos_t>& nextcells)
       {
-        nextcells.resize(26);
         int ic=0;
-        for(int i=-1;i<=1;++i)
-          for(int j=-1;j<=1;++j)
-            for(int k=-1;k<=1;++k)
-            {
-              if(!(i || j || k )) continue;//exclude zero
-              SingleParticlePos_t u(i,j,k);
-              nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);    
-            }
+        if(mySC == SUPERCELL_BULK)
+        {
+          nextcells.resize(26);
+          for(int i=-1;i<=1;++i)
+            for(int j=-1;j<=1;++j)
+              for(int k=-1;k<=1;++k)
+              {
+                if(!(i || j || k )) continue;//exclude zero
+                SingleParticlePos_t u(i,j,k);
+                nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);    
+              }
+        }
+        else if(mySC == SUPERCELL_SLAB)
+        {
+          nextcells.resize(8);
+          int k=0;
+          for(int i=-1;i<=1;++i)
+            for(int j=-1;j<=1;++j)
+              if(i||j)
+              {
+                SingleParticlePos_t u(i,j,k);
+                nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);    
+              }
+        }
+        else if(mySC == SUPERCELL_WIRE)
+        {
+          nextcells.resize(2);
+          SingleParticlePos_t um(-1,0,0);
+          nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(um,lat);    
+          SingleParticlePos_t up(1,0,0);
+          nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(up,lat);    
+        }
       }
     };
 
@@ -114,14 +172,18 @@ namespace qmcplusplus
       typedef TinyVector<T,2> SingleParticlePos_t;
       typedef Tensor<T,2> Tensor_t;
 
+      /** return supercell enum
+       * @param[in] box[2] if box[i]==1, PBC
+       * @return SUPERCELL_OPEN, SUPERCELL_WIRE or SUPERCELL_SLAB
+       */
       inline int operator()(const TinyVector<int,2>& box) 
       {
-        return box[0]+2*box[1]+4;
+        return box[0]+2*box[1];
       }
 
-      inline bool isDiagonalOnly(const Tensor<T,2>& a) const
+      inline bool isDiagonalOnly(const Tensor<T,2>& R) const
       {
-        T offdiag=abs(a(0,1))+abs(a(1,0));
+        T offdiag=abs(R(0,1))+abs(R(1,0));
         return (offdiag< numeric_limits<T>::epsilon());
       }
 
@@ -131,21 +193,20 @@ namespace qmcplusplus
       {
         const T rad_to_deg = 180.0/M_PI;
         return SingleParticlePos_t(
-            rad_to_deg*std::acos(dot(Rv[0],Rv[1])*OneOverLength[0]*OneOverLength[1]), 0.0);
+            rad_to_deg*std::acos(dot(Rv[0],Rv[1])*OneOverLength[0]*OneOverLength[1])
+            , 0.0);
       }
 
-      inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2>& b)
+      inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2>& a)
       {
         T rMin = 1.0e50;
         for (int i=-1; i<=1; i++)
           for (int j=-1; j<=1; j++)
-          {
             if ((i!=0) || (j!=0)) {
-              SingleParticlePos_t L = ((double)i * b[0] + (double)j * b[1]);
-              T dist = 0.5*std::sqrt(std::fabs(dot(L,L)));
+              SingleParticlePos_t L = ((double)i * a[0] + (double)j * a[1]);
+              T dist = 0.5*std::fabs(dot(L,L));
               rMin = std::min(rMin, dist);
             }
-          }
         return rMin;
       }
 
@@ -154,8 +215,7 @@ namespace qmcplusplus
 	T a0mag  = std::sqrt(dot(a[0],a[0]));
 	T a1mag  = std::sqrt(dot(a[1],a[1]));
 	T theta1 = dot (a[0], a[1])/(a0mag*a1mag);
-   theta1 = acos(theta1);
-   T theta2 = M_PI - theta1;
+        T theta2 = M_PI - theta1;
 	T theta  = std::min (theta1, theta2);
 	T dist   = std::min (a0mag, a1mag);
 	return 0.5*std::sin(theta)*dist;
@@ -188,7 +248,7 @@ namespace qmcplusplus
         return true;
       }
 
-      inline int operator()(const TinyVector<int,2>& box) 
+      inline int operator()(const TinyVector<int,1>& box) 
       {
         return box[0]+6;
       }

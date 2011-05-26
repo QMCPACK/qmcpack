@@ -35,7 +35,7 @@ namespace qmcplusplus {
   ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
     : MPIObjectBase(c), SimulationCell(0), TileMatrix(0)
   { 
-    for(int i(0);i<OHMMS_DIM;i++) TileMatrix(i,i)=1;
+    TileMatrix.diagonal(1.0);
     ClassName="ParticleSetPool";
     myName=aname;
   }
@@ -78,17 +78,25 @@ namespace qmcplusplus {
     }
   }
 
-  bool ParticleSetPool::putLattice(xmlNodePtr cur) 
+  bool ParticleSetPool::putTileMatrix(xmlNodePtr cur) 
   {
-    ReportEngine PRE("ParticleSetPool","putLattice");
+    TileMatrix=0;
+    TileMatrix.diagonal(1);
     OhmmsAttributeSet pAttrib;
     pAttrib.add(TileMatrix,"tilematrix"); 
     pAttrib.put(cur);
+    return true;
+  }
 
+  bool ParticleSetPool::putLattice(xmlNodePtr cur) 
+  {
+    ReportEngine PRE("ParticleSetPool","putLattice");
+    bool printcell=false;
     if(SimulationCell==0)
     {
       app_log() << "  Create Global SuperCell " << endl;
       SimulationCell = new ParticleSet::ParticleLayout_t;
+      printcell=true;
     }
     else
     {
@@ -97,7 +105,8 @@ namespace qmcplusplus {
     LatticeParser a(*SimulationCell);
     bool success=a.put(cur);
 
-    SimulationCell->print(app_log());
+    if(printcell) SimulationCell->print(app_log());
+
     return success;
   }
 
@@ -160,10 +169,12 @@ namespace qmcplusplus {
 
       pTemp->setName(id);
       app_log() << pTemp->getName() <<endl;
+
       return success;
     } else {
       app_warning() << "particleset " << id << " is already created. Ignore this" << endl;
     }
+
 
     return true;
   }
@@ -203,11 +214,14 @@ namespace qmcplusplus {
     }
   }
 
+  /** Create particlesets from ES-HDF file
+   */
   ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& target)
   {
 #if OHMMS_DIM==3
-    TinyVector<int,OHMMS_DIM> tilefactor;
-    Tensor<int,OHMMS_DIM> tilematrix(1,0,0,0,1,0,0,0,1);
+    //TinyVector<int,OHMMS_DIM> tilefactor;
+    Tensor<int,OHMMS_DIM> eshdf_tilematrix(0);
+    eshdf_tilematrix.diagonal(1);
     double lr_cut=10;
     string h5name;
     string source("i");
@@ -215,8 +229,7 @@ namespace qmcplusplus {
 
     OhmmsAttributeSet attribs;
     attribs.add(h5name, "href");
-    attribs.add(tilefactor, "tile");
-    attribs.add(tilematrix, "tilematrix");
+    attribs.add(eshdf_tilematrix, "tilematrix");
     attribs.add(source, "source");
     attribs.add(bc, "bconds");
     attribs.add(lr_cut, "LR_dim_cutoff");
@@ -245,7 +258,7 @@ namespace qmcplusplus {
       h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
     ESHDFIonsParser ap(*ions,h5,myComm);
     ap.put(cur);
-    ap.expand(tilematrix);
+    ap.expand(eshdf_tilematrix);
     if(h5>-1) H5Fclose(h5);
 
     //failed to initialize the ions

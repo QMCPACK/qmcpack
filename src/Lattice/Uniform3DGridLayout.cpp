@@ -73,6 +73,8 @@ void Uniform3DGridLayout::SetLRCutoffs() {
 
     LOGMSG("\tLong-range breakup parameters:");
     LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n");
+    LOGMSG("\tWignerSeitzRadius = " << WignerSeitzRadius << "\n");
+    LOGMSG("\tSimulationCellRadius = " << SimulationCellRadius << "\n");
   }
 
 void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,

@@ -30,40 +30,66 @@ namespace qmcplusplus
   {
     typedef OHMMS_PRECISION RealType;
     enum {DIM=OHMMS_DIM};
+
+    int sc=s.Lattice.SuperCellEnum;
     DistanceTableData* dt=0;
-    if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-    {
-      app_log() << "  Sym Distance table specialized for an open cell ";
-      //dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,s);
-      dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
-      dt->UseBoundBox=false;
-    }
-    else
+
+    ostringstream o;
+
+    o << "  Distance table for AA: source/target = " << s.getName() << "\n";
+
+    if(sc == SUPERCELL_BULK)
     {
       if(s.Lattice.DiagonalOnly)
       {
-        app_log() << "  Sym Distance table specialized for an Orthorhombic cell ";
-        //dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,s);
+        o << "    PBC=bulk Orthorhombic=yes\n";
         dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD>(s,s);
       }
       else
       {
-        //dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,s);
         dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,s);
-        //dt->setRmax(s.Lattice.SimulationCellRadius);
-        app_log() << "  Sym Distance table specialized for a generic cell ";
-        app_log() << "  Setting Rmax = " << s.Lattice.SimulationCellRadius <<endl;
+        o << "    PBC=bulk Orthorhombic=no\n" 
+          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
-      dt->UseBoundBox=true;
     }
-    ostringstream o;
-    o << s.getName() << "_" << s.getName();
-    dt->Name=o.str();//assign the table name
+    else if(sc == SUPERCELL_SLAB)
+    {
+      if(s.Lattice.DiagonalOnly)
+      {
+        o << "    PBC=slab Orthorhombic=yes\n";
+        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_SLAB+TwoPowerD>(s,s);
+      }
+      else
+      {
+        o << "    PBC=slab Orthorhombic=no\n" 
+          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
+        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_SLAB>(s,s);
+      }
+    }
+    else if(sc == SUPERCELL_WIRE)
+    {
+      o << "    PBC=wire Orthorhombic=NA\n";
+      dt = new SymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,s);
+    }
+    else  //open boundary condition
+    {
+      o << "    PBC=open Orthorhombic=NA\n";
+      dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
+    }
+
+    dt->UseBoundBox= (sc!=SUPERCELL_OPEN);
+
+    ostringstream p;
+    p << s.getName() << "_" << s.getName();
+    dt->Name=p.str();//assign the table name
+
     if(dt->UseBoundBox) 
       o << " Using bonding box/reduced coordinates ";
     else
       o << " using Cartesian coordinates ";
+
     app_log() << o.str() << endl;
+
     return dt;
   }
 
@@ -76,34 +102,57 @@ namespace qmcplusplus
     typedef OHMMS_PRECISION RealType;
     enum {DIM=OHMMS_DIM};
     DistanceTableData* dt=0;
-    if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-    {
-      app_log() << "  Asymm Distance table specialized for an open cell ";
-      //dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,t);
-      dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
-      dt->UseBoundBox=false;
-    }
-    else 
+    int sc=s.Lattice.SuperCellEnum;
+
+    ostringstream o;
+    o << "  Distance table for AB: source = " << s.getName() << " target = " << t.getName() << "\n";
+
+    if(sc == SUPERCELL_BULK)
     {
       if(s.Lattice.DiagonalOnly)
       {
-        app_log() << "  Asymm Distance table specialized for an Orthorhombic cell ";
-        //dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,t);
+        o << "    PBC=bulk Orthorhombic=yes\n";
         dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD>(s,t);
       }
       else
       {
-        //dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,t);
         dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,t);
-        //dt->setRmax(s.Lattice.SimulationCellRadius);
-        app_log() << "  Asymm Distance table specialized for a generic cell ";
-        app_log() << "  Setting Rmax = " << s.Lattice.SimulationCellRadius <<endl;
+        o << "    PBC=bulk Orthorhombic=no\n" 
+          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
-      dt->UseBoundBox=true;
     }
-    ostringstream o;
-    o << s.getName() << "_" << t.getName();
-    dt->Name=o.str();//assign the table name
+    else if(sc == SUPERCELL_SLAB)
+    {
+      if(s.Lattice.DiagonalOnly)
+      {
+        o << "    PBC=slab Orthorhombic=yes\n";
+        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_SLAB+TwoPowerD>(s,t);
+      }
+      else
+      {
+        o << "    PBC=slab Orthorhombic=no\n" 
+          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
+        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_SLAB>(s,t);
+      }
+    }
+    else if(sc == SUPERCELL_WIRE)
+    {
+      o << "    PBC=wire Orthorhombic=NA\n";
+      dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,t);
+    }
+    else  //open boundary condition
+    {
+      o << "    PBC=open Orthorhombic=NA\n";
+      dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
+      dt->UseBoundBox=false;
+    }
+
+    dt->UseBoundBox= (sc!=SUPERCELL_OPEN);
+
+    ostringstream p;
+    p << s.getName() << "_" << t.getName();
+    dt->Name=p.str();//assign the table name
+
     if(dt->UseBoundBox) 
       o << " Using bonding box/reduced coordinates ";
     else

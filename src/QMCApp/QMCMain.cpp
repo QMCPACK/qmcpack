@@ -353,12 +353,16 @@ namespace qmcplusplus {
     if(cur == NULL) return true;
 
     bool inputnode=true;
+    //save the root to grep @tilematrix
+    xmlNodePtr cur_root=cur;
+
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "simulationcell") {
         ptclPool->putLattice(cur);
       } else if(cname == "particleset") {
+        ptclPool->putTileMatrix(cur_root);
         ptclPool->put(cur);
       } else if(cname == "wavefunction") {
         psiPool->put(cur);
