@@ -24,6 +24,7 @@ struct QMCGaussianParserBase {
   bool UseHDF5;
   bool zeroCI;
   bool orderByExcitation;
+  bool addJastrow;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -81,6 +82,8 @@ struct QMCGaussianParserBase {
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr createJ2();
+  xmlNodePtr createJ1();
 
 
   int numberOfExcitationsCSF(string&);
