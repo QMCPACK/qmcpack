@@ -63,13 +63,19 @@ namespace qmcplusplus {
 	  putContent(ref_.Grid[mpigrid],cur);
 	} else if(aname == "bconds") {
 	  putContent(bconds,cur);
+          int boxsum=0;
           for(int idir=0;idir<DIM; idir++) {
             char b = bconds[idir][0];
             if(b == 'n' || b == 'N') {
               ref_.BoxBConds[idir] = false;
             } else {
               ref_.BoxBConds[idir] = true;
+              boxsum++;
             }
+          }
+          if(boxsum==1 || boxsum ==2)
+          {
+            APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
           }
 	} else if(aname == "LR_dim_cutoff") {
 	  putContent(ref_.LR_dim_cutoff,cur);
