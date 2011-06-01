@@ -729,7 +729,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
     xmlNewProp(uu,(const xmlChar*)"size", (const xmlChar*)"10");
     xmlNewProp(uu,(const xmlChar*)"speciesA", (const xmlChar*)"u");
     xmlNewProp(uu,(const xmlChar*)"speciesB", (const xmlChar*)"u");
-    xmlNodePtr a= xmlNewTextChild(uu,NULL,(const xmlChar*)"coefficient",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
+    xmlNodePtr a= xmlNewTextChild(uu,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
     xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)"uu");
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
     xmlAddChild(j2,uu);
@@ -742,7 +742,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
     xmlNewProp(uu,(const xmlChar*)"speciesA", (const xmlChar*)"u");
     xmlNewProp(uu,(const xmlChar*)"speciesB", (const xmlChar*)"d");
     //xmlNodePtr a = xmlNewNode(NULL,(const xmlChar*)"coefficients");
-    xmlNodePtr a= xmlNewTextChild(uu,NULL,(const xmlChar*)"coefficient",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
+    xmlNodePtr a= xmlNewTextChild(uu,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
     xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)"ud");
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
    // xmlAddChild(uu,a);
@@ -768,7 +768,7 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
     xmlNewProp(c,(const xmlChar*)"size", (const xmlChar*)"10");
     xmlNewProp(c,(const xmlChar*)"cusp", (const xmlChar*)"0");
     xmlNewProp(c,(const xmlChar*)"elementType", (const xmlChar*)ionSpecies.speciesName[i].c_str());
-    xmlNodePtr a= xmlNewTextChild(c,NULL,(const xmlChar*)"coefficient",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
+    xmlNodePtr a= xmlNewTextChild(c,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
     ostringstream o;
     o<< 'e'<<ionSpecies.speciesName[i];
     xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)o.str().c_str());
