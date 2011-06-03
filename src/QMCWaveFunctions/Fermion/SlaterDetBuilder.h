@@ -25,9 +25,7 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#endif
 namespace qmcplusplus {
 
  /** derived class from OrbitalBuilderBase
@@ -65,10 +63,8 @@ namespace qmcplusplus {
     MultiSlaterDeterminant_t* multislaterdet_0;
     MultiSlaterDeterminantFast* multislaterdetfast_0;
     
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     bool UseBackflow;
     BackflowTransformation *BFTrans;
-#endif
 
     /** process a determinant element
      * @param cur xml node

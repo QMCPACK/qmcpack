@@ -175,6 +175,14 @@ namespace qmcplusplus {
       Counter++; // increment a conter
     }
 
+    inline void
+    evaluateThirdDerivOnly(const ParticleSet& P, int iat)
+    { // should only work for s,p 
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateThirdDerivOnly(c,iat,BasisOffset[c],grad_grad_grad_Phi);
+      Counter++; // increment a conter
+    }
+
     inline void 
     evaluateForWalkerMove(const ParticleSet& P) 
     {
@@ -189,7 +197,6 @@ namespace qmcplusplus {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
       Counter++;
-      ActivePtcl=iat;
     }
 
     inline void 
@@ -206,6 +213,15 @@ namespace qmcplusplus {
     {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+      Counter++;
+      ActivePtcl=iat;
+    }
+
+    inline void
+    evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)
+    {
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
       Counter++;
       ActivePtcl=iat;
     }

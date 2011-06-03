@@ -428,14 +428,19 @@ namespace qmcplusplus
         return true;
       }
 
-      void checkInVariables(opt_variables_type& active)
+      void reportStatus(ostream& os)
       {
-        active.insertFrom(myVars);
+        myVars.print(os);
       }
 
       void checkOutVariables(const opt_variables_type& active)
       {
         myVars.getIndex(active);
+      }
+
+      void checkInVariables(opt_variables_type& active)
+      {
+        active.insertFrom(myVars);
       }
 
       void resetParameters(const opt_variables_type& active)
@@ -454,6 +459,16 @@ namespace qmcplusplus
         reset();
       }
 
+      // check if this object has active optimizable parameters
+      bool isOptimizable() 
+      {
+        for (int i=0; i<Parameters.size(); ++i)
+        {
+          int loc=myVars.where(i);
+          if (loc>=0) return true; 
+        }
+        return false;
+      }
 
       void print()
       {

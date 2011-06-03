@@ -200,6 +200,11 @@ namespace qmcplusplus {
        APP_ABORT("SparseLocalizsedBasisSet::evaluateWithThirdDeriv has not been implemented. \n");
     }
 
+    void evaluateThirdDerivOnly(const ParticleSet& P, int iat)
+    {
+       APP_ABORT("SparseLocalizsedBasisSet::evaluateThirdDerivOnly has not been implemented. \n");
+    }
+
     inline void 
     evaluateForWalkerMove(const ParticleSet& P) 
     {
@@ -267,7 +272,12 @@ namespace qmcplusplus {
         }
       }
     }
-    
+
+    inline void
+    evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)
+    {
+       APP_ABORT("SparseLocalizsedBasisSet::evaluateForPtclMoveWithHessian has not been implemented. \n");
+    }
 
     /** add a new set of Centered Atomic Orbitals
      * @param icenter the index of the center

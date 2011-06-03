@@ -33,7 +33,8 @@ namespace qmcplusplus
       PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
       w_en(0.0), w_var(0.0), w_abs(0.0), 
       CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
-      SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0)
+      SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
+      StoreDerivInfo(true),DerivStorageLevel(-1)
   {
 
 

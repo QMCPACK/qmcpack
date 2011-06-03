@@ -21,6 +21,7 @@
 #else
   #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #endif
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
 
 namespace qmcplusplus
@@ -58,6 +59,10 @@ namespace qmcplusplus
     virtual
     void add(Determinant_t* det, int ispin);
 
+    ///set BF pointers
+    virtual
+    void setBF(BackflowTransformation* BFTrans) {}
+
     virtual void checkInVariables(opt_variables_type& active);
 
     virtual void checkOutVariables(const opt_variables_type& active);
@@ -86,7 +91,12 @@ namespace qmcplusplus
       PooledData<RealType>& buf,
       bool fillBuffer);
       
-    void registerDataForDerivatives(ParticleSet& P, BufferType& buf);
+    void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
+
+    virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
+    {
+       for (int i = 0; i < Dets.size(); ++i) Dets[i]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
+    }
 
     ///return the total number of Dirac determinants
     inline int size() const

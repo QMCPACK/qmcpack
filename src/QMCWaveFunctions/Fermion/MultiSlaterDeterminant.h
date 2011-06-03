@@ -20,6 +20,7 @@
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
   {
@@ -77,47 +78,51 @@ namespace qmcplusplus
       ///destructor
       ~MultiSlaterDeterminant();
 
-      void checkInVariables(opt_variables_type& active);
-      void checkOutVariables(const opt_variables_type& active);
-      void resetParameters(const opt_variables_type& active);
-      void reportStatus(ostream& os);
+      virtual void checkInVariables(opt_variables_type& active);
+      virtual void checkOutVariables(const opt_variables_type& active);
+      virtual void resetParameters(const opt_variables_type& active);
+      virtual void reportStatus(ostream& os);
 
       void resetTargetParticleSet(ParticleSet& P);
 
-      ValueType
+      ///set BF pointers
+      virtual
+      void setBF(BackflowTransformation* BFTrans) {}
+
+      virtual ValueType
       evaluate(ParticleSet& P
                ,ParticleSet::ParticleGradient_t& G
                ,ParticleSet::ParticleLaplacian_t& L);
 
-      RealType
+      virtual RealType
       evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
                   , ParticleSet::ParticleGradient_t& G
                   , ParticleSet::ParticleLaplacian_t& L);
 
-      GradType evalGrad(ParticleSet& P, int iat);
-      ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-      ValueType ratio(ParticleSet& P, int iat
+      virtual GradType evalGrad(ParticleSet& P, int iat);
+      virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+      virtual ValueType ratio(ParticleSet& P, int iat
                       , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
 
-      ValueType ratio(ParticleSet& P, int iat);
-      void acceptMove(ParticleSet& P, int iat);
-      void restore(int iat);
+      virtual ValueType ratio(ParticleSet& P, int iat);
+      virtual void acceptMove(ParticleSet& P, int iat);
+      virtual void restore(int iat);
 
-      void update(ParticleSet& P
+      virtual void update(ParticleSet& P
                   , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
                   , int iat);
-      RealType evaluateLog(ParticleSet& P,BufferType& buf);
-      RealType registerData(ParticleSet& P, BufferType& buf);
-      RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-      void copyFromBuffer(ParticleSet& P, BufferType& buf);
+      virtual RealType evaluateLog(ParticleSet& P,BufferType& buf);
+      virtual RealType registerData(ParticleSet& P, BufferType& buf);
+      virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+      virtual void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-      OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-      void evaluateDerivatives(ParticleSet& P,
+      virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+      virtual void evaluateDerivatives(ParticleSet& P,
                                const opt_variables_type& optvars,
                                vector<RealType>& dlogpsi,
                                vector<RealType>& dhpsioverpsi);
 
-      void resize(int,int);
+      virtual void resize(int,int);
 
       /**
         add a new SlaterDeterminant with coefficient c to the
@@ -168,7 +173,8 @@ namespace qmcplusplus
       ValueType curRatio;
       ValueType psiCurrent;
       ValueVector_t detsRatios;
-      ValueVector_t lapl_temp;
+      ValueVector_t tempstorage_up;
+      ValueVector_t tempstorage_dn;
       GradVector_t grad_temp;
 
       ParticleSet::ParticleGradient_t myG;

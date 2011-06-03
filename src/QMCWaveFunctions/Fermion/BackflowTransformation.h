@@ -124,6 +124,7 @@ namespace qmcplusplus
 
     /// new qp coordinates for pbyp moves.
     ParticleSet::ParticlePos_t newQP;
+    ParticleSet::ParticlePos_t oldQP;
 
     Vector<PosType> storeQP;
 
@@ -138,33 +139,11 @@ namespace qmcplusplus
       Bmat_full.resize(NumTargets,NumTargets);
       Amat.resize(NumTargets,NumTargets);
       newQP.resize(NumTargets);
+      oldQP.resize(NumTargets);
       indexQP.resize(NumTargets);
       HESS_ID.diagonal(1.0);
       DummyHess=0.0;
       numVarBefore=0;
-
-
-// move after debugging
-      Bmat_temp.resize(NumTargets,NumTargets);
-      Amat_temp.resize(NumTargets,NumTargets);
-      storeQP.resize(NumTargets);
-
-      FirstOfP = &(storeQP[0][0]);
-      LastOfP = FirstOfP + 3*NumTargets;
-
-      FirstOfA = &(Amat(0,0)[0]);
-      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
-
-      FirstOfB = &(Bmat_full(0,0)[0]);
-      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
-
-      FirstOfA_temp = &(Amat_temp(0,0)[0]);
-      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
-
-      FirstOfB_temp = &(Bmat_temp(0,0)[0]);
-      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
-
-
     }
 
     BackflowTransformation(BackflowTransformation &tr): 
@@ -175,6 +154,7 @@ namespace qmcplusplus
       Bmat_full.resize(NumTargets,NumTargets);
       Amat.resize(NumTargets,NumTargets);
       newQP.resize(NumTargets);
+      oldQP.resize(NumTargets);
       indexQP.resize(NumTargets);
       HESS_ID.diagonal(1.0);
       DummyHess=0.0;
@@ -184,28 +164,6 @@ namespace qmcplusplus
       vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
       for(int i=0; i<(tr.bfFuns).size() ; i++,it++)
         bfFuns[i] = (*it)->makeClone();
-
-// move after debugging
-      Bmat_temp.resize(NumTargets,NumTargets);
-      Amat_temp.resize(NumTargets,NumTargets);
-      storeQP.resize(NumTargets);
-
-      FirstOfP = &(storeQP[0][0]);
-      LastOfP = FirstOfP + 3*NumTargets;
-
-      FirstOfA = &(Amat(0,0)[0]);
-      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
-
-      FirstOfB = &(Bmat_full(0,0)[0]);
-      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
-
-      FirstOfA_temp = &(Amat_temp(0,0)[0]);
-      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
-
-      FirstOfB_temp = &(Bmat_temp(0,0)[0]);
-      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
-
-
     }
     
 // FIX FIX FIX
@@ -220,33 +178,24 @@ namespace qmcplusplus
     inline void
     acceptMove(const ParticleSet& P, int iat)
     {
+      // update QP table 
+      // may be faster if I do this one qp at a time, for now do full update
       for(int i=0; i<NumTargets; i++) QP.R[i] = newQP[i];
+      QP.update(0); 
+      indexQP.clear();
       switch(UpdateMode)
       {
         case ORB_PBYP_RATIO:
-          indexQP.clear();
-          //QP.R = newQP;
           break;
         case ORB_PBYP_PARTIAL:
-          indexQP.clear();
-          //QP.R = newQP;
-          //Amat = Amat_temp;
           std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
           break;
         case ORB_PBYP_ALL:
-          indexQP.clear();
-          //QP.R = newQP;
-          //Amat = Amat_temp;
           std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
-          //Bmat = Bmat_temp;
           std::copy(FirstOfB_temp,LastOfB_temp,FirstOfB); 
           break;
         default:
-          indexQP.clear();
-          //QP.R = newQP;
-          //Amat = Amat_temp;
           std::copy(FirstOfA_temp,LastOfA_temp,FirstOfA); 
-          //Bmat = Bmat_temp;
           std::copy(FirstOfB_temp,LastOfB_temp,FirstOfB); 
           break;
       }
@@ -254,8 +203,9 @@ namespace qmcplusplus
     }
 
     inline void
-    restore(int iat)
+    restore(int iat=0)
     {
+      indexQP.clear(); 
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->restore(iat,UpdateMode);
     }
 
@@ -264,9 +214,21 @@ namespace qmcplusplus
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->checkInVariables(active);
     }
 
+    inline void reportStatus(ostream& os)
+    {
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->reportStatus(os);
+    }
+
     inline void checkOutVariables(const opt_variables_type& active)
     {
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->checkOutVariables(active);
+    }
+
+    inline bool isOptimizable() 
+    {
+      for(int i=0; i<bfFuns.size(); i++) 
+        if(bfFuns[i]->isOptimizable()) return true;
+      return false;
     }
 
     bool put(xmlNodePtr cur)
@@ -414,6 +376,7 @@ namespace qmcplusplus
           bsp->put(funs[i]);
           if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
           bsp->myVars.setParameterType(optimize::SPO_P);
+          bsp->print();
           dum->uniqueRadFun.push_back(bsp);
           offsets.push_back(tbf->numParams);
           tbf->numParams += bsp->NumParams;
@@ -463,6 +426,16 @@ namespace qmcplusplus
         bsp->put(cur);
         if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::SPO_P);
+        if(OHMMS::Controller->rank()==0)
+        {
+          char fname[16];
+          sprintf(fname,"BF.%s.dat",name.c_str());
+          ofstream fout(fname);
+          fout.setf(ios::scientific, ios::floatfield);
+          fout << "# Backflow radial function \n"; 
+          bsp->print(fout);
+          fout.close();
+        }
         BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
         tbf->numParams = bsp->NumParams;
         tbf->derivs.resize(tbf->numParams);
@@ -523,8 +496,8 @@ namespace qmcplusplus
 
     void updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool redo)
     {
-      // can I store QP.R directly???
-      if(redo) evaluate(P);
+      //if(redo) evaluate(P);
+      evaluate(P);
       for(int i=0; i<NumTargets; i++) storeQP[i] = QP.R[i];
       buf.put(FirstOfP,LastOfP);
       buf.put(FirstOfA,LastOfA);
@@ -538,6 +511,7 @@ namespace qmcplusplus
       buf.get(FirstOfA,LastOfA);
       buf.get(FirstOfB,LastOfB);
       for(int i=0; i<NumTargets; i++) QP.R[i] = storeQP[i];
+      QP.update(0);
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->copyFromBuffer(buf);
     }
     
@@ -550,29 +524,49 @@ namespace qmcplusplus
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluate(P,QP);
       QP.update(0);  // update distance tables
     }
-
+ 
     /** calculate new quasi-particle coordinates after pbyp move 
      */
     inline void
     evaluatePbyP(const ParticleSet& P, int iat)
+    //evaluatePbyP( ParticleSet& P, int iat)
     {
       UpdateMode = ORB_PBYP_RATIO;
+      // there should be no need for this, but there is (missing calls in QMCHam...) 
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->restore(iat,UpdateMode);
       activeParticle=iat;
-      indexQP.clear();
-      //newQP = QP.R;
-      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
-      indexQP.push_back(iat); // set in the beggining by default
-// FIX FIX FIX, not sure this is correct for PBC
-      //newQP[iat] += (P.R[iat] - activePos);  
+      for(int i=0; i<NumTargets; i++) oldQP[i] = newQP[i] = QP.R[i];
       newQP[iat] += myTable->Temp[iat].dr1;  
+      indexQP.clear();
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,iat,newQP);
       for(int jat=0; jat<NumTargets; jat++) { 
-      //  cout<<"iat, jat, dr, cut: " <<iat <<" " <<jat <<" " 
-      //      <<myTable->Temp[jat].r1 <<"  " <<cutOff <<endl;
-        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)   
-          indexQP.push_back(jat);
+        // make direct routine in OhmmsPETE later
+        RealType dr = std::sqrt( dot( newQP[jat]-QP.R[jat], newQP[jat]-QP.R[jat] ) ); 
+        if( dr > 1e-10 ) indexQP.push_back(jat);
       }
 
-      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP);
+//debug
+      /*
+      dummyQP2.R = P.R;
+      dummyQP2.update(); 
+      resetTargetParticleSet(dummyQP2); 
+      evaluate(P,dummyQP);
+      resetTargetParticleSet(P); 
+      cout<<"index: ";
+      for(int i=0; i<indexQP.size(); i++) cout<<indexQP[i] <<" ";
+      cout<<endl;  
+      for(int jat=0; jat<NumTargets; jat++) 
+        cout<<jat <<"  " 
+        <<(newQP[jat]-dummyQP.R[jat]) <<" " <<newQP[jat] <<" " <<QP.R[jat] <<"\n";
+      for(int i=0; i<NumTargets; i++) newQP[i] = dummyQP.R[i];    
+      * /
+      indexQP.clear();
+      indexQP.push_back(iat); // set in the beggining by default
+      for(int jat=0; jat<NumTargets; jat++) {
+        if(jat!=iat) // && myTable->Temp[jat].r1 < cutOff )   
+          indexQP.push_back(jat);
+      }
+      */
     }
 
     /** calculate new quasi-particle coordinates after pbyp move 
@@ -581,20 +575,19 @@ namespace qmcplusplus
     evaluatePbyPWithGrad(const ParticleSet& P, int iat)
     {
       UpdateMode = ORB_PBYP_PARTIAL;
+      // there should be no need for this, but there is (missing calls in QMCHam...) 
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->restore(iat,UpdateMode);
       activeParticle=iat;
-      indexQP.clear();
-      //newQP = QP.R;
-      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
-      //Amat_temp = Amat;
-      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
-      indexQP.push_back(iat); // set in the beggining by default
-// FIX FIX FIX, not sure this is correct for PBC
-      //newQP[iat] += (P.R[iat] - activePos);  
+      for(int i=0; i<NumTargets; i++) oldQP[i] = newQP[i] = QP.R[i];
       newQP[iat] += myTable->Temp[iat].dr1;  
-      for(int jat=0; jat<NumTargets; jat++)
-        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)
-          indexQP.push_back(jat);
-      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP,Amat_temp);
+      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,iat,newQP,Amat_temp);
+      for(int jat=0; jat<NumTargets; jat++) {
+        // make direct routine in OhmmsPETE later
+        RealType dr = std::sqrt( dot( newQP[jat]-QP.R[jat], newQP[jat]-QP.R[jat] ) );
+        if( dr > 1e-10 ) indexQP.push_back(jat);
+      }
+
     }
 
     /** calculate new quasi-particle coordinates after pbyp move 
@@ -603,22 +596,20 @@ namespace qmcplusplus
     evaluatePbyPAll(const ParticleSet& P, int iat)
     {
       UpdateMode = ORB_PBYP_ALL;
+      // there should be no need for this, but there is (missing calls in QMCHam...) 
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->restore(iat,UpdateMode);
       activeParticle=iat;
-      indexQP.clear();
-      //newQP = QP.R;
-      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
-      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
-      std::copy(FirstOfB,LastOfA,FirstOfB_temp);
-      //Amat_temp = Amat;
-      //Bmat_temp = Bmat;
-      indexQP.push_back(iat); // set in the beggining by default
-// FIX FIX FIX, not sure this is correct for PBC
-      //newQP[iat] += (P.R[iat] - activePos);  
+      for(int i=0; i<NumTargets; i++) oldQP[i] = newQP[i] = QP.R[i];
       newQP[iat] += myTable->Temp[iat].dr1;
-      for(int jat=0; jat<NumTargets; jat++)
-        if(jat!=iat && myTable->Temp[jat].r1 < cutOff)
-          indexQP.push_back(jat);
-      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,newQP,indexQP,Bmat_temp,Amat_temp);
+      std::copy(FirstOfA,LastOfA,FirstOfA_temp);
+      std::copy(FirstOfB,LastOfB,FirstOfB_temp);
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,iat,newQP,Bmat_temp,Amat_temp);
+      for(int jat=0; jat<NumTargets; jat++) {
+        // make direct routine in OhmmsPETE later
+        RealType dr = std::sqrt( dot( newQP[jat]-QP.R[jat], newQP[jat]-QP.R[jat] ) );
+        if( dr > 1e-10 ) indexQP.push_back(jat);
+      }
+
     }
 
 
@@ -647,15 +638,17 @@ namespace qmcplusplus
       } 
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluate(P,QP,Bmat_full,Amat);
       QP.update(0);  // update distance tables
-
-// erase after debugging
-      Amat_temp=Amat;
-      Bmat_temp=Bmat_full;
-      indexQP.clear();
-      for(int i=0; i<NumTargets; i++) indexQP.push_back(i);
-      for(int i=0; i<NumTargets; i++) newQP[i] = QP.R[i];
-
     } 
+
+    /** calculate quasi-particle coordinates and store in Pnew
+     */
+    inline void
+    evaluate(const ParticleSet& P, ParticleSet& Pnew)
+    {
+      Pnew.R=P.R;
+      for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluate(P,Pnew);
+      Pnew.update(0);  
+    }
 
     inline void 
     evaluateDerivatives(const ParticleSet& P)

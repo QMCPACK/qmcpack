@@ -255,7 +255,8 @@ namespace qmcplusplus
       void acceptMove(ParticleSet& P, int iat);
 
       RealType registerData(ParticleSet& P, BufferType& buf);
-      RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf);
+      RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
+      void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
       RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
       void copyFromBuffer(ParticleSet& P, BufferType& buf);
       RealType evaluateLog(ParticleSet& P, BufferType& buf);

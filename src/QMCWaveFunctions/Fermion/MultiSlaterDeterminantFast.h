@@ -21,6 +21,7 @@
 #include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
   {
@@ -61,16 +62,16 @@ namespace qmcplusplus
       typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
       typedef SPOSetBase*              SPOSetBasePtr;
       typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
-    typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
-    typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-    typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
-    typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
-    typedef OrbitalSetTraits<ValueType>::HessType      HessType;
-    typedef Array<HessType,3>                          HessArray_t;
-    typedef TinyVector<HessType, 3>                    GGGType;
-    typedef Vector<GGGType>                            GGGVector_t;
-    typedef Matrix<GGGType>                            GGGMatrix_t;
-    typedef ParticleSet::Walker_t                      Walker_t;
+      typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
+      typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+      typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
+      typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
+      typedef OrbitalSetTraits<ValueType>::HessType      HessType;
+      typedef Array<HessType,3>                          HessArray_t;
+      typedef TinyVector<HessType, 3>                    GGGType;
+      typedef Vector<GGGType>                            GGGVector_t;
+      typedef Matrix<GGGType>                            GGGMatrix_t;
+      typedef ParticleSet::Walker_t                      Walker_t;
 
 
       ///constructor
@@ -85,6 +86,15 @@ namespace qmcplusplus
       void reportStatus(ostream& os);
 
       void resetTargetParticleSet(ParticleSet& P);
+
+      ///set BF pointers
+      void setBF(BackflowTransformation* bf) {
+        usingBF=true;
+        BFTrans=bf;
+        Dets[0]->setBF(bf);
+        Dets[1]->setBF(bf);
+      }
+
 
       ValueType
       evaluate(ParticleSet& P
@@ -117,7 +127,12 @@ namespace qmcplusplus
                   , int iat);
       RealType evaluateLog(ParticleSet& P,BufferType& buf);
       RealType registerData(ParticleSet& P, BufferType& buf);
-      void registerDataForDerivatives(ParticleSet& P, BufferType& buf);
+      void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
+      virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
+      {
+        Dets[0]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
+        Dets[1]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
+      }
       RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
       void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
@@ -176,6 +191,16 @@ namespace qmcplusplus
       vector<int> DetsPerCSF;
       // coefficient of csf expansion (smaller dimension)
       vector<RealType> CSFexpansion;
+
+      // transformation 
+      BackflowTransformation *BFTrans;
+      bool usingBF;
+
+      // temporary storage for evaluateDerivatives
+      ParticleSet::ParticleGradient_t gmPG;
+      Matrix<RealType> dpsia_up, dLa_up;
+      Matrix<RealType> dpsia_dn, dLa_dn;
+      Array<GradType,3> dGa_up, dGa_dn;
 
 // debug, erase later
 //      MultiSlaterDeterminant *msd;

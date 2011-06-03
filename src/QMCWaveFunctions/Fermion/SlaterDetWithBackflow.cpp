@@ -71,8 +71,8 @@ namespace qmcplusplus {
 
   SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
-    //BFTrans->registerData(P,buf);
-    BFTrans->evaluate(P);
+    BFTrans->registerData(P,buf);
+    //BFTrans->evaluate(P);
 
     LogValue=0.0;
     PhaseValue=0.0;
@@ -87,8 +87,9 @@ namespace qmcplusplus {
   SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch)
   {
-    //BFTrans->updateBuffer(P,buf,true);
-    BFTrans->evaluate(P);
+    //BFTrans->updateBuffer(P,buf,fromscratch);
+    BFTrans->updateBuffer(P,buf,fromscratch);
+    //BFTrans->evaluate(P);
 
     LogValue=0.0;
     PhaseValue=0.0;
@@ -102,8 +103,8 @@ namespace qmcplusplus {
 
   void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    //BFTrans->copyFromBuffer(P,buf);
-    BFTrans->evaluate(P);
+    BFTrans->copyFromBuffer(P,buf);
+    //BFTrans->evaluate(P);
     for(int i=0; i<Dets.size(); i++)
       Dets[i]->copyFromBuffer(P,buf);
   }
@@ -121,8 +122,8 @@ namespace qmcplusplus {
   SlaterDetWithBackflow::RealType 
     SlaterDetWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    //BFTrans->updateBuffer(P,buf,false);
-    BFTrans->evaluate(P);
+    BFTrans->updateBuffer(P,buf,false);
+    //BFTrans->evaluate(P);
 
     LogValue=0.0;
     PhaseValue=0.0;
@@ -269,7 +270,7 @@ namespace qmcplusplus {
 
        }
        resetParameters(wfVars);        
-      //APP_ABORT("Testing bF derivs \n");
+      APP_ABORT("Testing bF derivs \n");
   }
 
 

@@ -18,6 +18,7 @@
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 
@@ -28,7 +29,11 @@ namespace qmcplusplus {
     typedef real_type                    value_type;
     typedef real_type                    point_type;
     typedef OneDimGridBase<real_type>    grid_type;
+#if QMC_BUILD_LEVEL>2
+    typedef OneDimQuinticSpline<real_type> functor_type;
+#else
     typedef OneDimCubicSpline<real_type> functor_type;
+#endif
     functor_type myFunc;
     real_type Y, dY, d2Y, d3Y;
 
@@ -57,21 +62,7 @@ namespace qmcplusplus {
 
     inline value_type evaluateWithThirdDeriv(real_type r, real_type rinv)
     {
-      real_type dr = 0.000001,drinv = 0.5/(dr*dr*dr);
-/*
-      real_type Y_2=myFunc.splint(r-2.0*dr);
-      real_type Y_1=myFunc.splint(r-dr);
-      real_type Y1=myFunc.splint(r+dr);
-      real_type Y2=myFunc.splint(r+2.0*dr);
-      d3Y = drinv*(-Y_2+2.0*Y_1-2.0*Y1+Y2); 
-*/
-      real_type Y1,Y2;  
-      Y=myFunc.splint(r,dY,Y1);
-      Y=myFunc.splint(r+dr,dY,Y2);
-      d3Y = (Y2-Y1)/dr; 
-
-      return Y=myFunc.splint(r,dY,d2Y);
-
+      return Y=myFunc.splint(r,dY,d2Y,d3Y);
     }
 
     inline value_type operator()(int i) const { return myFunc(i);}

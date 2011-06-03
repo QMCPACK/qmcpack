@@ -66,6 +66,11 @@ namespace qmcplusplus
       RadFun->checkInVariables(active);
     }
 
+    void reportStatus(ostream& os)
+    {
+      RadFun->reportStatus(os);
+    }
+
     void checkOutVariables(const opt_variables_type& active)
     {
       RadFun->checkOutVariables(active);
@@ -76,6 +81,10 @@ namespace qmcplusplus
       myTable = DistanceTable::add(P);
     }
 
+    bool isOptimizable()
+    {
+      return RadFun->isOptimizable(); 
+    }
 
     BackflowFunctionBase* makeClone()
     {
@@ -89,6 +98,33 @@ namespace qmcplusplus
     indexOffset() 
     {
        return RadFun->myVars.where(0);
+    }
+
+    void registerData(PooledData<RealType>& buf)
+    {
+      FirstOfU = &(UIJ(0,0)[0]);
+      LastOfU = FirstOfU + 3*NumTargets*NumTargets;
+      FirstOfA = &(AIJ(0,0)[0]);
+      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+      FirstOfB = &(BIJ(0,0)[0]);
+      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+      buf.add(FirstOfU,LastOfU);
+      buf.add(FirstOfA,LastOfA);
+      buf.add(FirstOfB,LastOfB);
+    }
+
+    void updateBuffer(PooledData<RealType>& buf)
+    {
+      buf.put(FirstOfU,LastOfU);
+      buf.put(FirstOfA,LastOfA);
+      buf.put(FirstOfB,LastOfB);
+    }
+
+    void copyFromBuffer(PooledData<RealType>& buf)
+    {
+      buf.get(FirstOfU,LastOfU);
+      buf.get(FirstOfA,LastOfA);
+      buf.get(FirstOfB,LastOfB);
     }
 
     inline void
@@ -271,10 +307,33 @@ namespace qmcplusplus
       int iat = index[0];
       for(int i=1; i<maxI; i++) {
         int j = index[i];
+        // Temp[j].dr1 = (ri - rj)
         ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);   
         newQP[iat] += u;
         newQP[j] -= u;
+      }
+    }
+
+     /** calculate quasi-particle coordinates after pbyp move  
+      */
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
+    {
+      RealType du,d2u;
+      for(int i=0; i<iat; i++) {
+        // Temp[j].dr1 = (ri - rj)
+        ValueType uij = RadFun->evaluate(myTable->Temp[i].r1,du,d2u);
+        PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
+        newQP[iat] += u;
+        newQP[i] -= u;
+      }
+      for(int i=iat+1; i<NumTargets; i++) {
+        // Temp[j].dr1 = (ri - rj)
+        ValueType uij = RadFun->evaluate(myTable->Temp[i].r1,du,d2u);
+        PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
+        newQP[iat] += u;
+        newQP[i] -= u;
       }
     }
 
@@ -312,6 +371,52 @@ namespace qmcplusplus
      /** calculate quasi-particle coordinates and Amat after pbyp move  
       */
     inline void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP
+               , HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+// myTable->Temp[jat].r1
+      for(int j=0; j<iat; j++) {
+        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+
+        HessType& hess = AIJ_temp(j);
+        hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+      }
+      for(int j=iat+1; j<NumTargets; j++) {
+        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+        
+        HessType& hess = AIJ_temp(j);
+        hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+      }
+    }
+
+     /** calculate quasi-particle coordinates and Amat after pbyp move  
+      */
+    inline void
     evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
                ,const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)
     {
@@ -328,6 +433,71 @@ namespace qmcplusplus
         newQP[j] -= u;
 
         du *= TMP[j].rinv1; 
+        HessType& hess = AIJ_temp(j);
+        hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+
+        GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
+        grad = (d2u+4.0*du)*TMP[j].dr1;
+        GradType dg = grad - BIJ(iat,j);
+        Bmat(iat,iat) += dg;
+        Bmat(j,j) -= dg;
+        Bmat(iat,j) -= dg;
+        Bmat(j,iat) += dg;
+      }
+    }
+
+     /** calculate quasi-particle coordinates and Amat after pbyp move  
+      */
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP
+               , GradMatrix_t& Bmat, HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+// myTable->Temp[jat].r1
+      const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
+      for(int j=0; j<iat; j++) {
+        ValueType uij = RadFun->evaluate(TMP[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+
+        du *= TMP[j].rinv1;
+        HessType& hess = AIJ_temp(j);
+        hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+
+        GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
+        grad = (d2u+4.0*du)*TMP[j].dr1;
+        GradType dg = grad - BIJ(iat,j);
+        Bmat(iat,iat) += dg;
+        Bmat(j,j) -= dg;
+        Bmat(iat,j) -= dg;
+        Bmat(j,iat) += dg;
+      }
+      for(int j=iat+1; j<NumTargets; j++) {
+        ValueType uij = RadFun->evaluate(TMP[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+
+        du *= TMP[j].rinv1;
         HessType& hess = AIJ_temp(j);
         hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
         hess[0] += uij;

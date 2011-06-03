@@ -33,7 +33,7 @@
  * can be accessed by index(l,m) which returns the
  * locator of the combination for l and m.
  */
-template<class T, class Point_t, class Tensor_t = APPNAMESPACE::Tensor<T,3> >
+template<class T, class Point_t, class Tensor_t = APPNAMESPACE::Tensor<T,3>, class GGG_t = APPNAMESPACE::TinyVector<Tensor_t, 3>  >
 class SphericalTensor 
 {
 public : 
@@ -41,6 +41,7 @@ public :
   typedef T value_type;
   typedef Point_t pos_type;
   typedef Tensor_t hess_type;
+  typedef GGG_t ggg_type;
   typedef SphericalTensor<T,Point_t> This_t;
 
   /** constructor
@@ -79,6 +80,9 @@ public :
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients and hessians up to Lmax.
   void evaluateWithHessian(const Point_t& p);
 
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients and hessians and third derivatives up to Lmax.
+  void evaluateThirdDerivOnly(const Point_t& p);
+
   ///returns the index/locator for (\f$l,m\f$) combo, \f$ l(l+1)+m \f$
   inline int index(int l, int m) const {return (l*(l+1))+m;}
 
@@ -93,6 +97,10 @@ public :
   ///returns the hessian of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline Tensor_t getHessYlm(int l, int m) const
   {return hessYlm[index(l,m)];}
+
+  ///returns the matrix of third derivatives of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
+  inline GGG_t getGGGYlm(int lm) const
+  {return gggYlm[lm];}
 
   ///returns the value of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline value_type getYlm(int lm) const {return Ylm[lm];}
@@ -129,10 +137,12 @@ public :
   /// QMCWaveFunctions/SphericalBasisSet.h
   std::vector<value_type> laplYlm; //(always zero) 
 
+  std::vector<ggg_type> gggYlm;
+
 };
 
-template<class T, class Point_t, class Tensor_t>
-SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool addsign) : Lmax(l_max){ 
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+SphericalTensor<T, Point_t, Tensor_t, GGG_t>::SphericalTensor(const int l_max, bool addsign) : Lmax(l_max){ 
   int ntot = (Lmax+1)*(Lmax+1);
   const value_type pi = 4.0*atan(1.0);
   Ylm.resize(ntot);
@@ -141,6 +151,7 @@ SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool add
   laplYlm.resize(ntot);
   for(int i=0; i<ntot; i++) laplYlm[i]=0.0;
   hessYlm.resize(ntot);
+  gggYlm.resize(ntot);
   hessYlm[0] = 0.0;
   if(ntot >= 4) {
     hessYlm[1] = 0.0;
@@ -169,6 +180,11 @@ SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool add
     hessYlm[8] = 0.0;
     hessYlm[8](0,0) = std::sqrt(15.0/4.0/pi);
     hessYlm[8](1,1) = -hessYlm[8](0,0);
+  }
+  for (int i=0; i<ntot; i++) {
+    gggYlm[i][0]=0.0;
+    gggYlm[i][1]=0.0;
+    gggYlm[i][2]=0.0;
   }
 
   NormFactor.resize(ntot,1);
@@ -206,8 +222,8 @@ SphericalTensor<T, Point_t, Tensor_t>::SphericalTensor(const int l_max, bool add
     }
 }
 
-template<class T, class Point_t, class Tensor_t>
-void SphericalTensor<T,Point_t, Tensor_t>::evaluate(const Point_t& p) {
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluate(const Point_t& p) {
   value_type x=p[0], y=p[1], z=p[2];
   const value_type pi = 4.0*atan(1.0);
   const value_type pi4 = 4.0*pi;
@@ -294,8 +310,8 @@ void SphericalTensor<T,Point_t, Tensor_t>::evaluate(const Point_t& p) {
   for (int i=0; i<Ylm.size(); i++) Ylm[i]*= NormFactor[i];
 }
 
-template<class T, class Point_t, class Tensor_t>
-void SphericalTensor<T,Point_t, Tensor_t>::evaluateAll(const Point_t& p) {
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p) {
   value_type x=p[0], y=p[1], z=p[2];
   const value_type pi = 4.0*atan(1.0);
   const value_type pi4 = 4.0*pi;
@@ -444,9 +460,9 @@ void SphericalTensor<T,Point_t, Tensor_t>::evaluateAll(const Point_t& p) {
 }
 
 
-template<class T, class Point_t, class Tensor_t>
-void SphericalTensor<T,Point_t, Tensor_t>::evaluateWithHessian(const Point_t& p) {
-  value_type x=p[0], y=p[1], z=p[2];
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithHessian(const Point_t& p) {
+  value_type x=p[0], y=p[1], z=p[2], GGG_t;
   const value_type pi = 4.0*atan(1.0);
   const value_type pi4 = 4.0*pi;
   const value_type omega = 1.0/sqrt(pi4);
@@ -592,6 +608,11 @@ void SphericalTensor<T,Point_t, Tensor_t>::evaluateWithHessian(const Point_t& p)
  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }
 
+// Not implemented yet, but third derivatives are zero for l<=2
+// so ok for lmax<=2
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateThirdDerivOnly(const Point_t& p) 
+{}
 
 //These template functions are slower than the recursive one above
 template<class SCT, unsigned L> 
@@ -659,8 +680,8 @@ struct SCTFunctor<SCT,3> {
 };
 
 
-template<class T, class Point_t, class Tensor_t>
-void SphericalTensor<T,Point_t, Tensor_t>::evaluateTest(const Point_t& p) {
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateTest(const Point_t& p) {
 
   const value_type pi = 4.0*atan(1.0);
   const value_type norm = 1.0/sqrt(4.0*pi);

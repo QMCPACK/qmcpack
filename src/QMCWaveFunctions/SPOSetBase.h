@@ -199,6 +199,10 @@ namespace qmcplusplus {
     evaluate(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);    
 
+    virtual void
+    evaluateThirdDeriv(const ParticleSet& P, int first, int last
+        , GGGMatrix_t& grad_grad_grad_logdet);
+
     virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 

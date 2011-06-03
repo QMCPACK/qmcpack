@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
   {
@@ -83,6 +84,10 @@ namespace qmcplusplus
       virtual RealType getAlternatePhaseDiff(){return 0.0;}
       virtual RealType getAlternatePhaseDiff(int iat){return 0.0;}
 
+      ///set BF pointers
+      virtual
+      void setBF(BackflowTransformation* BFTrans) {}
+
       ///optimizations  are disabled
       inline void checkInVariables(opt_variables_type& active)
       {
@@ -112,6 +117,14 @@ namespace qmcplusplus
 				       vector<RealType>& dlogpsi,
 				       vector<RealType>& dhpsioverpsi);
 
+      // used by DiracDeterminantWithBackflow 
+      virtual void evaluateDerivatives(ParticleSet& P,
+                                            const opt_variables_type& active,
+                                            int offset,
+                                            Matrix<RealType>& dlogpsi,
+                                            Array<GradType,3>& dG,
+                                            Matrix<RealType>& dL) {}
+
       inline void reportStatus(ostream& os)
       {
       }
@@ -125,7 +138,14 @@ namespace qmcplusplus
 
       virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
       
-      virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf);
+      virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
+
+      virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
+      {
+      // mmorales: not sure you need to store myL,myG for nonlocal psp optimization 
+          orbs_only += NumPtcls*NumOrbitals; 
+          orbs += NumPtcls*NumOrbitals + NP*4 + 2; 
+      }
 
       virtual void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
 

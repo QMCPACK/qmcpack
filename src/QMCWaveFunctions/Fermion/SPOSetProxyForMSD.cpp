@@ -50,6 +50,10 @@ namespace qmcplusplus {
     psiV.resize(norbs);
     dpsiV.resize(norbs);
     d2psiV.resize(norbs);
+    grad_grad_psiM.resize(OrbitalSetSize,norbs);
+    grad_grad_grad_psiM.resize(OrbitalSetSize,norbs);
+    grad_gradV.resize(norbs);
+    grad_grad_gradV.resize(norbs);
   }
 
   void SPOSetProxyForMSD::evaluateForPtclMove(const ParticleSet& P, int iat)
@@ -65,6 +69,16 @@ namespace qmcplusplus {
   void SPOSetProxyForMSD::evaluateForWalkerMove(const ParticleSet& P, int first, int last)
   {
     refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,d2psiM);
+  }
+
+  void SPOSetProxyForMSD::evaluateForWalkerMoveWithHessian(const ParticleSet& P, int first, int last)
+  {
+    refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,grad_grad_psiM);
+  }
+
+  void SPOSetProxyForMSD::evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P, int first, int last)
+  {
+    refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
   }
 
   void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
@@ -119,27 +133,61 @@ namespace qmcplusplus {
   void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-     APP_ABORT("SPOSetProxyForMSD::evaluate_notranspose need specialization for GGGMatrix.\n");
+    int n=occup.cols();
+    for(int k=first,p=0; k<last; k++,p++) {
+      for(int i=0; i<n; i++) {
+        int q = occup(workingSet,i);
+        logdet(i,p)=psiM(p,q);
+        dlogdet(p,i)=dpsiM(p,q);
+        grad_grad_logdet(p,i)=grad_grad_psiM(p,q);
+      }
+    }
   }
 
   void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
       , GGGMatrix_t& grad_grad_grad_logdet)
   {
-     APP_ABORT("SPOSetProxyForMSD::evaluate_notranspose need specialization for GGGMatrix.\n");
+    int n=occup.cols();
+    for(int k=first,p=0; k<last; k++,p++) {
+      for(int i=0; i<n; i++) {
+        int q = occup(workingSet,i);
+        logdet(i,p)=psiM(p,q);
+        dlogdet(p,i)=dpsiM(p,q);
+        grad_grad_logdet(p,i)=grad_grad_psiM(p,q);
+        grad_grad_grad_logdet(p,i)=grad_grad_grad_psiM(p,q);
+      }
+    }
   }
 
   void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-     APP_ABORT("SPOSetProxyForMSD::evaluate_notranspose need specialization for GGGMatrix.\n");
+    int n=occup.cols();
+    for(int k=first,p=0; k<last; k++,p++) {
+      for(int i=0; i<n; i++) {
+        int q = occup(workingSet,i);
+        logdet(p,i)=psiM(p,q);
+        dlogdet(p,i)=dpsiM(p,q);
+        grad_grad_logdet(p,i)=grad_grad_psiM(p,q);
+      }
+    }
   }
 
   void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last
       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
       , GGGMatrix_t& grad_grad_grad_logdet)
   {
-     APP_ABORT("SPOSetProxyForMSD::evaluate_notranspose need specialization for GGGMatrix.\n");
+    int n=occup.cols();
+    for(int k=first,p=0; k<last; k++,p++) {
+      for(int i=0; i<n; i++) {
+        int q = occup(workingSet,i);
+        logdet(p,i)=psiM(p,q);
+        dlogdet(p,i)=dpsiM(p,q);
+        grad_grad_logdet(p,i)=grad_grad_psiM(p,q);
+        grad_grad_grad_logdet(p,i)=grad_grad_grad_psiM(p,q);
+      }
+    }
   }
 
 }

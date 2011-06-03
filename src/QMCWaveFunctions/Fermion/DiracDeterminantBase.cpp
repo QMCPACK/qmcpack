@@ -686,37 +686,50 @@ namespace qmcplusplus {
       return LogValue;
     }
     
-  void DiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf)
+  void DiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
   { 
-    buf.add(psiM.first_address(),psiM.last_address());
-//     buf.add(FirstAddressOfdV,LastAddressOfdV);
-//     buf.add(d2psiM.first_address(),d2psiM.last_address());
-    buf.add(myL.first_address(), myL.last_address());
-    buf.add(FirstAddressOfG,LastAddressOfG);
-    buf.add(LogValue);
-    buf.add(PhaseValue);
+    DerivStorageType=storageType;
+    if(storageType == 0) { // store everything
+      buf.add(psiM.first_address(),psiM.last_address());
+//       buf.add(FirstAddressOfdV,LastAddressOfdV);
+//       buf.add(d2psiM.first_address(),d2psiM.last_address());
+      buf.add(myL.first_address(), myL.last_address());
+      buf.add(FirstAddressOfG,LastAddressOfG);
+      buf.add(LogValue);
+      buf.add(PhaseValue);
+    } else { // only store the inverse
+      buf.add(psiM.first_address(),psiM.last_address());
+    }
   }
 
   void DiracDeterminantBase::copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
-    buf.put(psiM.first_address(),psiM.last_address());
+    if(DerivStorageType==0) {
+      buf.put(psiM.first_address(),psiM.last_address());
 //     buf.put(FirstAddressOfdV,LastAddressOfdV);
 //     buf.put(d2psiM.first_address(),d2psiM.last_address());
-    buf.put(myL.first_address(), myL.last_address());
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(LogValue);
-    buf.put(PhaseValue);
+      buf.put(myL.first_address(), myL.last_address());
+      buf.put(FirstAddressOfG,LastAddressOfG);
+      buf.put(LogValue);
+      buf.put(PhaseValue);
+    } else {
+      buf.put(psiM.first_address(),psiM.last_address());
+    } 
   }
 
   void DiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
-    buf.get(psiM.first_address(),psiM.last_address());
+    if(DerivStorageType==0) {
+      buf.get(psiM.first_address(),psiM.last_address());
 //     buf.get(FirstAddressOfdV,LastAddressOfdV);
 //     buf.get(d2psiM.first_address(),d2psiM.last_address());
-    buf.get(myL.first_address(), myL.last_address());
-    buf.get(FirstAddressOfG,LastAddressOfG);
-    buf.get(LogValue);
-    buf.get(PhaseValue);
+      buf.get(myL.first_address(), myL.last_address());
+      buf.get(FirstAddressOfG,LastAddressOfG);
+      buf.get(LogValue);
+      buf.get(PhaseValue);
+    } else {
+      buf.get(psiM.first_address(),psiM.last_address());
+    }
   }
   
   DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)

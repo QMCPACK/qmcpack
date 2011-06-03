@@ -38,6 +38,14 @@ namespace qmcplusplus {
     GradMatrix_t dpsiM;
     ///container for the laplacians
     ValueMatrix_t d2psiM;
+    ///container for the hessians 
+    HessMatrix_t grad_grad_psiM;
+    ///container for the hessian 
+    HessVector_t grad_gradV;
+    ///container for the GGGtypes 
+    GGGMatrix_t  grad_grad_grad_psiM;
+    ///container for the GGGtypes 
+    GGGVector_t  grad_grad_gradV;
     ///contatiner for the values for a particle
     ValueVector_t psiV;
     ///contatiner for the gradients for a particle
@@ -86,6 +94,8 @@ namespace qmcplusplus {
     void prepareFor(int n) {workingSet = n;}
 
     void evaluateForWalkerMove(const ParticleSet& P, int first, int last); 
+    void evaluateForWalkerMoveWithHessian(const ParticleSet& P, int first, int last); 
+    void evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P, int first, int last); 
     void evaluateForPtclMove(const ParticleSet& P, int iat); 
     void evaluateAllForPtclMove(const ParticleSet& P, int iat); 
 

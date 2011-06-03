@@ -256,7 +256,6 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   ///the number of nodes
   int NumNodes;
 
-
   ///address of coefficients Y and dY or d2Y
   //std::vector<value_type*> FirstAddress;
 };

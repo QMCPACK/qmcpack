@@ -54,7 +54,7 @@ namespace qmcplusplus
        *@param spos the single-particle orbital set
        *@param first index of the first particle
        */
-      DiracDeterminantWithBackflow(SPOSetBasePtr const &spos, BackflowTransformation * BF, int first=0);
+      DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first=0);
 
       ///default destructor
       ~DiracDeterminantWithBackflow();
@@ -73,6 +73,12 @@ namespace qmcplusplus
       // */
       //SPOSetBasePtr clonePhi() const;
 
+      ///set BF pointers
+      void setBF(BackflowTransformation* bf)  
+      {
+        BFTrans = bf;
+      }
+
       // in general, assume that P is the quasiparticle set
       void evaluateDerivatives(ParticleSet& P,
 				       const opt_variables_type& active,
@@ -86,6 +92,13 @@ namespace qmcplusplus
                                        ParticleSet::ParticleGradient_t* G0,
                                        ParticleSet::ParticleLaplacian_t* L0,
                                        int k);
+
+      void evaluateDerivatives(ParticleSet& P,
+                                            const opt_variables_type& active,
+                                            int offset,
+                                            Matrix<RealType>& dlogpsi,
+                                            Array<GradType,3>& dG,
+                                            Matrix<RealType>& dL);
 
       ///reset the size: with the number of particles and number of orbtials
       void resize(int nel, int morb);
@@ -179,6 +192,7 @@ namespace qmcplusplus
 
       inline void setLogEpsilon(ValueType x) { }
 
+      int NumParticles;
       GradMatrix_t dFa; 
       HessMatrix_t grad_grad_psiM; 
       HessVector_t grad_gradV; 

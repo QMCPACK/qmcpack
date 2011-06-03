@@ -26,6 +26,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "QMCWaveFunctions/Experimental/CuspCorr.h"
+#include "Numerics/OptimizableFunctorBase.h"
+#include "Numerics/OneDimQuinticSpline.h"
+#include "QMCWaveFunctions/SphericalBasisSet.h"
 
 namespace qmcplusplus {
 
@@ -125,7 +128,7 @@ namespace qmcplusplus {
     evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,
         HessVector_t& grad_grad_psi) {
-      myBasisSet->evaluateWithHessian(P,iat);
+      myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
       for(int j=0; j<OrbitalSetSize; j++) psi[j]=myBasisSet->Phi[j];
       for(int j=0; j<OrbitalSetSize; j++) dpsi[j]=myBasisSet->dPhi[j];
       for(int j=0; j<OrbitalSetSize; j++) grad_grad_psi[j]=myBasisSet->grad_grad_Phi[j];
@@ -176,6 +179,11 @@ namespace qmcplusplus {
       APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate_notranspose() for grad_grad_grad_logdet. \n");
     }
 
+    void evaluateThirdDeriv(const ParticleSet& P, int first, int last
+        , GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluateThirdDeriv()\n");
+    }
 
   };
 
@@ -194,7 +202,6 @@ namespace qmcplusplus {
 
   public:
 
-//    typedef typename BS::ThisCOT_t oldCOT;
     typedef typename NGOBuilder::CenteredOrbitalType COT;
     typedef typename NGOBuilder::GridType GridType_;
 
@@ -202,7 +209,9 @@ namespace qmcplusplus {
     int ReportLevel;
     ///pointer to the basis set
     BS* myBasisSet;
+    ///pointer to the basis set of corrected s functions
     CorrectingOrbitalBasisSet<COT>* corrBasisSet;
+    /// vector that defines whether a center is corrected 
     vector<bool> corrCenter;
 
     ///target ParticleSet
@@ -334,7 +343,31 @@ namespace qmcplusplus {
     evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) 
     {
-      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate(HessVector_t&) for grad_grad_grad_logdet. \n");
+      myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
+      corrBasisSet->evaluateForPtclMoveWithHessian(P,iat);
+      //optimal on tungsten
+      const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters;
+      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+      const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
+      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+#pragma ivdep
+      for(int j=0; j<OrbitalSetSize; j++) {
+        register ValueType res=0.0;
+        register HessType d2res=0.0;
+        register GradType dres;
+        for(int b=0; b<BasisSetSize; b++,cptr++) {
+          res += *cptr*pptr[b];
+          d2res += *cptr*d2ptr[b];
+          dres += *cptr*dptr[b];
+        }
+        for(int k=0 ; k<numCenters; k++) {
+          res += corrBasisSet->Phi[k*OrbitalSetSize+j];
+          d2res += corrBasisSet->grad_grad_Phi[k*OrbitalSetSize+j];
+          dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+        }
+        psi[j]=res; dpsi[j]=dres; d2psi[j]=d2res;
+      }
     }
 
 
@@ -408,13 +441,109 @@ namespace qmcplusplus {
     void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
     {
-      APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
+      const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters;
+#pragma ivdep
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateWithHessian(P,iat);
+        corrBasisSet->evaluateWithHessian(P,iat);
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GradType dres;
+          register HessType d2res;
+          for(int k=0 ; k<numCenters; k++)
+          {
+            logdet(i,j) += corrBasisSet->Phi[k*OrbitalSetSize+j];
+            d2res += corrBasisSet->grad_grad_Phi[k*OrbitalSetSize+j];
+            dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+          }
+          for(int b=0; b<BasisSetSize; ++b,++jk)
+          {
+            dres +=  cptr[jk]*dptr[b];
+            d2res +=  cptr[jk]*d2ptr[b];
+          }
+          dlogdet(ij)=dres;
+          grad_grad_logdet(ij)=d2res;
+          ++ij;
+        }
+      }
     }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
     {
-      APP_ABORT("Need specialization of LCOrbitalSetWithCorrection::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+      const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters;
+#pragma ivdep
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateWithThirdDeriv(P,iat);
+        corrBasisSet->evaluateWithThirdDeriv(P,iat);
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
+        const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GradType dres;
+          register HessType d2res;
+          register GGGType gggres;
+          for(int k=0 ; k<numCenters; k++)
+          {
+            logdet(i,j) += corrBasisSet->Phi[k*OrbitalSetSize+j];
+            d2res += corrBasisSet->grad_grad_Phi[k*OrbitalSetSize+j];
+            dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+            gggres[0] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[0]; 
+            gggres[1] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[1]; 
+            gggres[2] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[2]; 
+          }
+          for(int b=0; b<BasisSetSize; ++b,++jk)
+          {
+            dres +=  cptr[jk]*dptr[b];
+            d2res +=  cptr[jk]*d2ptr[b];
+            gggres[0] +=  cptr[jk]*(gggptr[b])[0];
+            gggres[1] +=  cptr[jk]*(gggptr[b])[1];
+            gggres[2] +=  cptr[jk]*(gggptr[b])[2];
+          }
+          dlogdet(ij)=dres;
+          grad_grad_logdet(ij)=d2res;
+          grad_grad_grad_logdet(ij)=gggres;
+          ++ij;
+        }
+      }
+    }
+
+    void evaluateThirdDeriv(const ParticleSet& P, int first, int last
+        , GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      const ValueType* restrict cptr=C.data();
+      int numCenters=corrBasisSet->NumCenters;
+#pragma ivdep
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateThirdDerivOnly(P,iat);
+        corrBasisSet->evaluateThirdDerivOnly(P,iat);
+        const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GGGType gggres;
+          for(int k=0 ; k<numCenters; k++)
+          {
+            gggres[0] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[0];
+            gggres[1] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[1];
+            gggres[2] +=  (corrBasisSet->grad_grad_grad_Phi[k*OrbitalSetSize+j])[2];
+          }
+          for(int b=0; b<BasisSetSize; ++b,++jk)
+          {
+            gggres[0] +=  cptr[jk]*(gggptr[b])[0];
+            gggres[1] +=  cptr[jk]*(gggptr[b])[1];
+            gggres[2] +=  cptr[jk]*(gggptr[b])[2];
+          }
+          grad_grad_grad_logdet(ij)=gggres;
+          ++ij;
+        }
+      }
     }
 
 

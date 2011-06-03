@@ -117,6 +117,8 @@ namespace qmcplusplus
 
     virtual void checkInVariables(opt_variables_type& active)=0;
 
+    virtual void reportStatus(ostream& os) = 0;
+
     virtual void checkOutVariables(const opt_variables_type& active)=0;
 
     // Note: numParams should be set in Builder class, so it is known here
@@ -128,35 +130,13 @@ namespace qmcplusplus
 
     virtual inline int indexOffset()=0;
 
-    inline void 
-    registerData(PooledData<RealType>& buf)
-    {
-      FirstOfU = &(UIJ(0,0)[0]); 
-      LastOfU = FirstOfU + 3*NumTargets*NumTargets; 
-      FirstOfA = &(AIJ(0,0)[0]); 
-      LastOfA = FirstOfA + 9*NumTargets*NumTargets; 
-      FirstOfB = &(BIJ(0,0)[0]); 
-      LastOfB = FirstOfB + 3*NumTargets*NumTargets; 
-      buf.add(FirstOfU,LastOfU);
-      buf.add(FirstOfA,LastOfA);
-      buf.add(FirstOfB,LastOfB);
-    }
-  
-    inline void
-    updateBuffer(PooledData<RealType>& buf)
-    {
-      buf.put(FirstOfU,LastOfU);
-      buf.put(FirstOfA,LastOfA);
-      buf.put(FirstOfB,LastOfB);
-    }
+    virtual bool isOptimizable()=0;
 
-    inline void
-    copyFromBuffer(PooledData<RealType>& buf)
-    {
-      buf.get(FirstOfU,LastOfU);
-      buf.get(FirstOfA,LastOfA);
-      buf.get(FirstOfB,LastOfB);
-    }
+    virtual void registerData(PooledData<RealType>& buf)=0;
+  
+    virtual void updateBuffer(PooledData<RealType>& buf)=0;
+
+    virtual void copyFromBuffer(PooledData<RealType>& buf)=0;
     
     /** calculate quasi-particle coordinates only
      */
@@ -180,6 +160,21 @@ namespace qmcplusplus
       */
     virtual void
     evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
+
+     /** calculate quasi-particle coordinates after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)=0;
+
+     /** calculate quasi-particle coordinates and Amat after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)=0;
+
+     /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move  
+      */
+    virtual void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
     /** calculate only Bmat
      *  This is used in pbyp moves, in updateBuffer()  

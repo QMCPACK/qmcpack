@@ -51,6 +51,8 @@ namespace qmcplusplus {
     DetID.resize(NP);
     for(int i=0; i<targetPtcl.groups(); ++i)
       for(int j=targetPtcl.first(i); j<targetPtcl.last(i); ++j) DetID[j]=i;    
+    usingBF=false;
+    BFTrans=0;
   }
   
   OrbitalBasePtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
@@ -58,6 +60,10 @@ namespace qmcplusplus {
     MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
     MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
     MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone); 
+    if(usingBF) {
+      BackflowTransformation *tr = BFTrans->makeClone();
+      clone->setBF(tr);
+    } 
     clone->resetTargetParticleSet(tqp);
     clone->C2node_up=C2node_up;
     clone->C2node_dn=C2node_dn;
@@ -78,8 +84,14 @@ namespace qmcplusplus {
 
   void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P) 
   {
-    for(int i=0; i<Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(P);
+    if(usingBF) {
+      BFTrans->resetTargetParticleSet(P);
+      for(int i=0; i<Dets.size(); i++)
+        Dets[i]->resetTargetParticleSet(BFTrans->QP);
+    } else {
+      for(int i=0; i<Dets.size(); i++)
+        Dets[i]->resetTargetParticleSet(P);
+    }
   }
 
 //  void MultiSlaterDeterminantFast::resize(int n1, int n2)
@@ -258,6 +270,9 @@ namespace qmcplusplus {
 
   OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
   {
+
+    if(usingBF) APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
+
     GradType grad_iat=0.0;
     if(DetID[iat] == 0) {
       Dets[0]->evaluateGrads(P,iat);
@@ -297,6 +312,9 @@ namespace qmcplusplus {
   OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
       , int iat, GradType& grad_iat)
   {
+
+    if(usingBF) APP_ABORT("Fast MSD+BF: ratioGrad not implemented. \n");
+
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
       RatioGradTimer.start();
@@ -353,6 +371,9 @@ namespace qmcplusplus {
   OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat
      , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
   {
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: ratio(P,dG,dL) not implemented. \n");
+
     UpdateMode=ORB_PBYP_ALL;
     if(DetID[iat] == 0) {
       RatioAllTimer.start();
@@ -474,6 +495,9 @@ namespace qmcplusplus {
   {
 // debug
 //    testMSD(P,iat);
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: ratio not implemented. \n");
+
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
       RatioTimer.start();
@@ -512,6 +536,9 @@ namespace qmcplusplus {
   {
 // this should depend on the type of update, ratio / ratioGrad 
 // for now is incorrect fot ratio(P,iat,dG,dL) updates 
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: acceptMove not implemented. \n");
+
 
 // update psiCurrent,myG_temp,myL_temp
     AccRejTimer.start();
@@ -570,6 +597,9 @@ namespace qmcplusplus {
 
   void MultiSlaterDeterminantFast::restore(int iat)
   {
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+
     AccRejTimer.start();
     Dets[DetID[iat]]->restore(iat);
     curRatio=1.0;
@@ -597,6 +627,9 @@ namespace qmcplusplus {
 
   OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, BufferType& buf)
   {
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+
     Dets[0]->registerData(P,buf);
     Dets[1]->registerData(P,buf);
 
@@ -616,10 +649,13 @@ namespace qmcplusplus {
   }
 
 // this routine does not initialize the data, just reserves the space
-  void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P, BufferType& buf)
+  void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
   {
-    Dets[0]->registerDataForDerivatives(P,buf);
-    Dets[1]->registerDataForDerivatives(P,buf);
+    
+    if(usingBF) APP_ABORT("Fast MSD+BF: registerDataForDerivatives not implemented. \n");
+
+    Dets[0]->registerDataForDerivatives(P,buf,storageType);
+    Dets[1]->registerDataForDerivatives(P,buf,storageType);
   }
 
 // FIX FIX FIX
@@ -677,6 +713,9 @@ namespace qmcplusplus {
 
   void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, BufferType& buf)
   {
+
+    if(usingBF) APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n");
+
     Dets[0]->copyFromBuffer(P,buf);
     Dets[1]->copyFromBuffer(P,buf);
     buf.get(psiCurrent);

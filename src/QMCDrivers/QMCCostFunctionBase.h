@@ -290,6 +290,10 @@ namespace qmcplusplus
       // string that defines whether buffers are used during correlated sampling
       // to store temporary object
       string usebuffer;
+      // are we using buffers to store derivative informatin
+      bool StoreDerivInfo;
+      // storage level
+      int DerivStorageLevel; 
 
 
       typedef ParticleSet::ParticleGradient_t ParticleGradient_t;

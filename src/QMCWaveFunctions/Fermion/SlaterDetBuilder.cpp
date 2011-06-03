@@ -33,10 +33,9 @@
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
-#endif
 #include<vector>
 //#include "QMCWaveFunctions/Fermion/ci_node.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration.h"
@@ -57,10 +56,8 @@ namespace qmcplusplus
       , multislaterdetfast_0(0)
   {
     ClassName="SlaterDetBuilder";
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     BFTrans=0;
     UseBackflow=false;
-#endif
   }
   SlaterDetBuilder::~SlaterDetBuilder()
   {
@@ -133,7 +130,6 @@ namespace qmcplusplus
 	assert(spomap.find(spo_name) != spomap.end());
 	//	slaterdet_0->add(spo,spo_name);
       }
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3 
       else if(cname == backflow_tag) {
         app_log() <<"Creating Backflow transformation in SlaterDetBuilder::put(xmlNodePtr cur).\n";
 
@@ -151,7 +147,6 @@ namespace qmcplusplus
 // read xml later, in case some ParticleSets are read from hdf5 file.
         //BFTrans->put(cur);  
       }
-#endif
       cur = cur->next;
     }
 
@@ -177,11 +172,9 @@ namespace qmcplusplus
         {
           APP_ABORT("slaterdet is already instantiated.");
         }
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
         if(UseBackflow) 
           slaterdet_0 = new SlaterDetWithBackflow(targetPtcl,BFTrans);
         else 
-#endif
           slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 	// Copy any entries in sposetmap into slaterdet_0
 	std::map<string,SPOSetBasePtr>::iterator iter;
@@ -213,12 +206,6 @@ namespace qmcplusplus
           APP_ABORT("multideterminant is already instantiated.");
         }
 
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
-        if(UseBackflow) {
-           APP_ABORT("Backflow is not implemented with multi determinants.");
-        }
-#endif
-
         string spo_alpha;
         string spo_beta;
         string fastAlg("yes");
@@ -243,6 +230,10 @@ namespace qmcplusplus
 
         if(FastMSD) {
 
+        if(UseBackflow) {
+           APP_ABORT("Backflow is not implemented with multi determinants.");
+        }
+
           app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
           MultiDiracDeterminantBase* up_det=0;
           MultiDiracDeterminantBase* dn_det=0;
@@ -251,6 +242,9 @@ namespace qmcplusplus
           app_log() <<"Creating base determinant (down) for MSD expansion. \n";
           dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
+//          up_det->usingBF = UseBackflow;  
+//          dn_det->usingBF = UseBackflow;  
+//          multislaterdetfast_0->usingBF = UseBackflow;  
           success = createMSDFast(multislaterdetfast_0,cur);
 
 // debug, erase later
@@ -263,14 +257,22 @@ namespace qmcplusplus
 //          success = createMSD(multislaterdetfast_0->msd,cur); 
 
         } else {
-          app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
           SPOSetProxyForMSD* spo_up;
           SPOSetProxyForMSD* spo_dn;
           spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
           spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
+          if(UseBackflow) {
+            app_log() <<"Multi-Slater Determinant expansion with Backflow. \n";
+            app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
 
-          multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-          success = createMSD(multislaterdet_0,cur);
+            multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl,spo_up,spo_dn,BFTrans);
+            success = createMSD(multislaterdet_0,cur);
+          } else {
+            app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
+
+            multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
+            success = createMSD(multislaterdet_0,cur);
+          }
         }
       }
       cur = cur->next;
@@ -290,20 +292,22 @@ namespace qmcplusplus
     }
 
     // change DistanceTables if using backflow
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
     if(UseBackflow)   { 
        BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-  // HACK HACK HACK, until I figure out a solution      
-       SlaterDetWithBackflow* tmp = (SlaterDetWithBackflow*) slaterdet_0;
-       tmp->BFTrans = BFTrans;
-       for(int i=0; i<tmp->Dets.size(); i++) {
-         DiracDeterminantWithBackflow* tmpD = (DiracDeterminantWithBackflow*) tmp->Dets[i]; 
-         tmpD->BFTrans = BFTrans;
-       }
        BFTrans->put(BFnode);
-       tmp->resetTargetParticleSet(BFTrans->QP);
+       if(multiDet) {
+         if(FastMSD)  {
+           multislaterdetfast_0->setBF(BFTrans);
+           multislaterdetfast_0->resetTargetParticleSet(BFTrans->QP); 
+         } else {
+           multislaterdet_0->setBF(BFTrans);
+           multislaterdet_0->resetTargetParticleSet(BFTrans->QP); 
+         }
+       } else {
+         slaterdet_0->setBF(BFTrans); 
+         slaterdet_0->resetTargetParticleSet(BFTrans->QP);
+       }
     }
-#endif
     //only single slater determinant
     if(multiDet) { 
       if(FastMSD)
@@ -432,11 +436,9 @@ namespace qmcplusplus
 #ifdef QMC_CUDA
       adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
       if(UseBackflow) 
-        adet = new DiracDeterminantWithBackflow(psi,BFTrans,firstIndex);
+        adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
       else 
-#endif
 	if (psi->Optimizable)
 	  adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
 	else
@@ -616,7 +618,12 @@ namespace qmcplusplus
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       DiracDeterminantBase* adet;
+       if(UseBackflow) {
+         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,NULL);
+       } else {
+         adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       }
        adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
        multiSD->dets_up.push_back(adet);
      }
@@ -631,7 +638,12 @@ namespace qmcplusplus
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       DiracDeterminantBase* adet;
+       if(UseBackflow) {
+         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,NULL);
+       } else {
+         adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       }
        adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
        multiSD->dets_dn.push_back(adet);
      }

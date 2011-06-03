@@ -412,7 +412,7 @@ namespace qmcplusplus
         RealType phase_p=Psi.getPhase();
 
         W.makeMove(iat,deltaR[iat]);
-        W.update();
+        //W.update();
         RealType aratio = Psi.ratio(W,iat);
         W.rejectMove(iat);
         Psi.rejectMove(iat);

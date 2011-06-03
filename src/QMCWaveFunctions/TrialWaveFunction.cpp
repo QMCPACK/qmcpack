@@ -217,6 +217,10 @@ namespace qmcplusplus
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
       {
+// mmorales: I don't remember if I did this, but eliminating the "if ((*it)->Optimizable)" 
+//           forces everything to be evaluated. This was probably done because for optm with the
+//           nonlocal component in the cost function, the slater determinant might not be optimizable
+//           but this must be called anyway to load the inverse. CHECK CHECK CHECK, FIX FIX FIX 
         logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
         PhaseValue += (*it)->PhaseValue;
       }
@@ -572,13 +576,22 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     return LogValue;
   }
 
-  TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf)
+  TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
   {
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
-        (*it)->registerDataForDerivatives(P,buf);
+        (*it)->registerDataForDerivatives(P,buf,storageType);
     return 1.0;
+  }
+
+  void TrialWaveFunction::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
+  {
+     orbs_only=orbs=invs=dets=0;
+     vector<OrbitalBase*>::iterator it(Z.begin());
+     vector<OrbitalBase*>::iterator it_end(Z.end());
+     for (; it!=it_end; ++it)
+        (*it)->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
   }
 
   TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P

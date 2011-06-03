@@ -125,10 +125,12 @@ namespace qmcplusplus {
 
     virtual void evaluateWithHessian(const ParticleSet& P, int iat)=0;
     virtual void evaluateWithThirdDeriv(const ParticleSet& P, int iat)=0;
+    virtual void evaluateThirdDerivOnly(const ParticleSet& P, int iat)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P)=0;
     virtual void evaluateForWalkerMove(const ParticleSet& P, int iat) =0;
     virtual void evaluateForPtclMove(const ParticleSet& P, int iat) =0;
     virtual void evaluateAllForPtclMove(const ParticleSet& P, int iat) =0;
+    virtual void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)=0;
   };
 
 

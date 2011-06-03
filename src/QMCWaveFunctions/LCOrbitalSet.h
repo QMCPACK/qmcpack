@@ -111,7 +111,7 @@ namespace qmcplusplus {
     evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,  
         HessVector_t& grad_grad_psi) {
-      myBasisSet->evaluateWithHessian(P,iat);
+      myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
       for(int j=0; j<OrbitalSetSize; j++) psi[j]=myBasisSet->Phi[j];
       for(int j=0; j<OrbitalSetSize; j++) dpsi[j]=myBasisSet->dPhi[j];
       for(int j=0; j<OrbitalSetSize; j++) grad_grad_psi[j]=myBasisSet->grad_grad_Phi[j];
@@ -239,7 +239,7 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi,
         HessVector_t& grad_grad_psi) 
     {
-      myBasisSet->evaluateWithHessian(P,iat);
+      myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
       simd::gemv(C,myBasisSet->Phi.data(),psi.data());
       simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
       simd::gemv(C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
@@ -339,6 +339,28 @@ namespace qmcplusplus {
           }
           dlogdet(ij)=dres;
           grad_grad_logdet(ij)=d2res;
+          grad_grad_grad_logdet(ij)=gggres;
+          ++ij;
+        }
+      }
+    }
+
+    void evaluateThirdDeriv(const ParticleSet& P, int first, int last
+        , GGGMatrix_t& grad_grad_grad_logdet)
+    {
+      const ValueType* restrict cptr=C.data();
+#pragma ivdep
+      for(int i=0,ij=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateThirdDerivOnly(P,iat);
+        const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GGGType gggres;
+          for(int b=0; b<BasisSetSize; ++b) {
+             gggres[0] +=  cptr[jk]*(gggptr[b])[0];
+             gggres[1] +=  cptr[jk]*(gggptr[b])[1];
+             gggres[2] +=  cptr[jk++]*(gggptr[b])[2];
+          }
           grad_grad_grad_logdet(ij)=gggres;
           ++ij;
         }

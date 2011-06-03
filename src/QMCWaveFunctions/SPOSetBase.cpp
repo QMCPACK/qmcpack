@@ -57,6 +57,12 @@ namespace qmcplusplus {
      //MatrixOperators::transpose(logdet);
    }
 
+   void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
+       GGGMatrix_t& grad_grad_grad_logdet)
+   {
+     APP_ABORT("Need specialization of SPOSetBase::evaluateThirdDeriv(). \n");
+   }
+
     void SPOSetBase::evaluate_notranspose(const ParticleSet& P, int first, int last
         , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
    {

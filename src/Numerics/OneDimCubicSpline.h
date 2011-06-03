@@ -565,6 +565,34 @@ public:
     //return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
   }
 
+  /** Interpolation to evaluate the function and itsderivatives.
+   *@param r the radial distance
+   *@param du return the derivative
+   *@param d2u return the 2nd derivative
+   *@param d3u return the 3nd derivative
+   *@return the value of the function
+  */
+  inline value_type
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) {
+    if(r<r_min) { //linear-extrapolation returns y[0]+y'*(r-r[0])
+      du = first_deriv;
+      d2u = 0.0;
+      return m_Y[0]+first_deriv*(r-r_min);
+    }  else if(r>=r_max) {
+      du = 0.0; d2u = 0.0;
+      return ConstValue;
+    }
+
+    if(GridManager) {
+      m_grid->updateSecondOrder(r,true);
+    }
+
+    int Loc(m_grid->currentIndex());
+    // no third derivatives yet, only for templating purposes
+    d3u = 0.0;
+    return
+      m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
+  } 
   /** Evaluate the 2nd derivate on the grid points
    *\param imin the index of the first valid data point
    *\param yp1 the derivative at the imin-th grid point

@@ -254,9 +254,56 @@ namespace qmcplusplus
     RealType e2_tot=0.0;
     RealType enl_tot=0.0;
     RealType TotLogPsi=0.0;
-        
-
+    /* mmorales:
+       Since there are cases when memory is an issue (too many dets), the use of a buffer
+       is decoupled from the use of includeNonlocalH in the cost function. Without a buffer,
+       everything is recalculated.
+       Options:
+         - "yes" or "all"  : store everything
+         - "minimum"       : store orbitals and inverses only, recalculate dets 
+       FIX FIX FIX: right now, there is no way to include the nonlocalH in the cost function
+       without using a buffer because evaluateLog needs to be called to get the inverse of psiM
+       This implies that isOptimizable must be set to true, which is risky. Fix this somehow
+    */   
+    StoreDerivInfo=false; 
+    DerivStorageLevel=-1; 
+    if(usebuffer == "yes" || usebuffer == "all") {
+      StoreDerivInfo=true;
+      if(includeNonlocalH=="yes")  DerivStorageLevel=0;
+      else DerivStorageLevel=1; 
+      app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" <<endl;
+    } else if (usebuffer == "minimum") {
+      StoreDerivInfo=true;
+      // in this case the use of nonlocalH is irrelevant, since the same inf is enough for both cases
+      DerivStorageLevel=2; 
+      app_log() <<"Using minimum storage for determinant evaluation. \n";  
+    } else {
+      if(includeNonlocalH=="yes") {
+        app_error() <<"Need to enable the use of includeNonlocalH=='yes' without a buffer. \n";
+        abort(); 
+      } 
+    } 
+    int numW = 0; 
+    for(int i=0; i<wClones.size(); i++) numW += wClones[i]->getActiveWalkers();
+    app_log() <<"Memory usage: " <<endl; 
     
+    // Jeremy!!! can you fix these numbers???
+    app_log() <<"Linear method (approx matrix usage: 4*N^2): " <<NumParams()*NumParams()*sizeof(QMCTraits::RealType)*4.0/1.0e6  <<" MB" <<endl; // assuming 4 matrices  
+    app_log() <<"Deriv,HDerivRecord:      " <<numW*NumOptimizables*sizeof(QMCTraits::RealType)*3.0/1.0e6 <<" MB" <<endl;
+    if(StoreDerivInfo) {
+      MCWalkerConfiguration& dummy(*wClones[0]);
+      long memorb=0,meminv=0,memdets=0,memorbs_only=0; 
+      Psi.memoryUsage_DataForDerivatives(dummy,memorbs_only,memorb,meminv,memdets);
+      memorbs_only*=sizeof(QMCTraits::RealType);
+      memorb*=sizeof(QMCTraits::RealType);
+      meminv*=sizeof(QMCTraits::RealType);
+      memdets*=sizeof(QMCTraits::RealType);
+      app_log() <<"Buffer memory cost:     MB/walker       MB/total " <<endl;
+      app_log() <<"Orbitals only:           " <<memorbs_only/1.0e6 <<"      " <<memorbs_only*numW/1.0e6 <<endl; 
+      app_log() <<"Orbitals + dervs:        " <<memorb/1.0e6 <<"      " <<memorb*numW/1.0e6 <<endl; 
+      app_log() <<"Inverse:                 " <<meminv/1.0e6 <<"      " <<meminv*numW/1.0e6 <<endl; 
+      app_log() <<"Determinants:            " <<memdets/1.0e6 <<"      " <<memdets*numW/1.0e6 <<endl; 
+    }   
 
     //#pragma omp parallel reduction(+:et_tot,e2_tot)
 #pragma omp parallel
@@ -309,14 +356,16 @@ namespace qmcplusplus
 //           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
 // buffer for MultiSlaterDet data 
-          if((usebuffer=="yes")||(includeNonlocalH=="yes")) {
-            psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives);
+//          if((usebuffer=="yes")||(includeNonlocalH=="yes")) {
+          if(StoreDerivInfo) { 
+            psiClones[ip]->registerDataForDerivatives(wRef, thisWalker.DataSetForDerivatives,DerivStorageLevel);
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg], thisWalker.DataSetForDerivatives);
-            logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
+//            logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
           } else {
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]); 
 //             logpsi = psiClones[ip]->evaluateLog(wRef);
           }
+          if(includeNonlocalH=="yes") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
@@ -445,7 +494,8 @@ namespace qmcplusplus
           // buffer for MultiSlaterDet data
           Return_t logpsi;
 //           Return_t logpsi_old = thisWalker.getPropertyBase()[LOGPSI];
-          if((usebuffer=="yes")||(includeNonlocalH=="yes")) { 
+//          if((usebuffer=="yes")||(includeNonlocalH=="yes")) { 
+          if(StoreDerivInfo) {
             Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
           }

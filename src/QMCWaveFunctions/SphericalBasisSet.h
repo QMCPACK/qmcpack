@@ -32,6 +32,7 @@ namespace qmcplusplus {
   struct SphericalBasisSet 
   {
     typedef ROT                                                  RadialOrbital_t;
+    typedef GT                                                   GridType_t; 
     typedef typename ROT::value_type                             value_type;
     typedef typename OrbitalSetTraits<value_type>::RealType      RealType;
     typedef typename OrbitalSetTraits<value_type>::ValueType     ValueType;
@@ -82,7 +83,7 @@ namespace qmcplusplus {
     vector<QuantumNumberType> RnlID;
 
     ///the constructor
-    explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(lmax),useCartesian(useXYZ) {} 
+    explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(lmax),useCartesian(useXYZ) {}
 
     ~SphericalBasisSet() { }
 
@@ -149,10 +150,11 @@ namespace qmcplusplus {
       RealType rinv(myTable->rinv(nn));
       PosType  dr(myTable->dr(nn));
 
-      if(useCartesian) 
+      if(useCartesian) { 
         XYZ.evaluateAll(dr);
-      else 
+      } else { 
         Ylm.evaluateAll(dr);
+      }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
@@ -230,8 +232,8 @@ namespace qmcplusplus {
     inline void
     evaluateForWalkerMove(int c, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_Phi, GGGVector_t& grad_grad_grad_Phi) {
 
-/*
-      int la=2;  
+/*********************************************************************
+      int la=1;  
       PosType  dr0=1,dr1=1,dr2=1;
       RealType r0,r1,r2;
       RealType dh=0.00001;
@@ -286,8 +288,7 @@ namespace qmcplusplus {
   //    <<"gpsi: " <<gpsi0[0] <<endl;
 
       APP_ABORT("Aborting after testing. \n");
-*/
-/*********************************************************************/
+*********************************************************************/
       int nn = myTable->M[c]+iat;
       RealType r(myTable->r(nn));
       RealType rinv(myTable->rinv(nn));
@@ -307,13 +308,16 @@ namespace qmcplusplus {
       } 
 
       if(useCartesian) {
-        XYZ.evaluateWithHessian(dr);
+        XYZ.evaluateWithThirdDeriv(dr);
       } else {
+        // FIX FIX FIX: not implemented for spherical basis
+        //Ylm.evaluateWithThirdDeriv(dr);
         Ylm.evaluateWithHessian(dr);
       }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
+      std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
@@ -328,6 +332,7 @@ namespace qmcplusplus {
         PosType gr_rad(drnloverr*dr);
         PosType gr_ang(gradYlm[lm]);
         HessType hess(hessYlm[lm]);
+        GGGType Slm_ijk(gggYlm[lm]); 
         HessType Rhs;
         GGGType& ggg=grad_grad_grad_Phi[offset];
         psi[offset]  = ang*rnl.Y;
@@ -345,11 +350,87 @@ namespace qmcplusplus {
         }
         grad_grad_Phi[offset] = ang*Rhs + outerProduct(gr_rad,gr_ang) 
                               + outerProduct(gr_ang,gr_rad) + rnl.Y*hess;  
-        // assuming third derivatives of angular piece are zero
-        // not true for F ang G functions
         for(int i=0; i<3; i++) {
-         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1); 
-                 // + rnl.Y*Slm_ijk[i];
+         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1)
+                  + rnl.Y*Slm_ijk[i];
+        }
+ 
+        // I don't know how to make this part compact, so sloppy for now
+        for(int i=0; i<3; i++) 
+          for(int j=0; j<3; j++) 
+            for(int k=0; k<3; k++) { 
+              ggg[i](j,k) += Rhs(j,k)*gr_ang[i] + Rhs(i,k)*gr_ang[j] + Rhs(i,j)*gr_ang[k] + gr_rad[k]*hess(i,j) + gr_rad[j]*hess(i,k) + gr_rad[i]*hess(j,k); 
+            }
+
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+    inline void
+    evaluateThirdDerivOnly(int c, int iat, int offset, GGGVector_t& grad_grad_grad_Phi) {
+
+      int nn = myTable->M[c]+iat;
+      RealType r(myTable->r(nn));
+      RealType rinv(myTable->rinv(nn));
+      PosType  dr(myTable->dr(nn));
+      PosType  drr(dr*rinv);
+      GGGType ggg1,ggg2;
+      for(int i=0; i<3; i++) {
+       ggg1[i] = drr[i]*outerProduct(drr,drr);
+       ggg2[i]=0.0;
+       for(int j=0; j<3; j++) {
+        for(int k=0; k<3; k++) {
+           if(i==j) (ggg2[i])(j,k) += rinv*drr[k];  
+           if(i==k) (ggg2[i])(j,k) += rinv*drr[j];  
+           if(k==j) (ggg2[i])(j,k) += rinv*drr[i];  
+        }   
+       }
+      } 
+
+      if(useCartesian) {
+        XYZ.evaluateThirdDerivOnly(dr);
+      } else {
+        // not implemented, so only works for lmax <= 2 
+        // where ggg is zero anyway
+        if(Ylm.lmax() > 2) {
+          APP_ABORT("Need to implement Third derivatives in Spherical basis. \n");
+        }
+      }
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
+      std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
+
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit);//NL[ib];
+        int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        ValueType ang(valueYlm[lm]);
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(gradYlm[lm]);
+        HessType hess(hessYlm[lm]);
+        GGGType Slm_ijk(gggYlm[lm]); 
+        HessType Rhs;
+        GGGType& ggg=grad_grad_grad_Phi[offset];
+
+        RealType temp1=rnl.d2Y-drnloverr;
+        RealType temp2=rnl.d3Y-3.0*rinv*temp1;
+        // hessian of radial piece
+        for(int i=0; i<3; i++) {
+          Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv; 
+          for(int j=i+1; j<3; j++) {
+            Rhs(i,j) = temp1*drr(i)*drr(j); 
+            Rhs(j,i) = Rhs(i,j);   
+          }
+        }
+        for(int i=0; i<3; i++) {
+         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1)
+                  + rnl.Y*Slm_ijk[i];
         }
  
         // I don't know how to make this part compact, so sloppy for now
@@ -383,9 +464,19 @@ namespace qmcplusplus {
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateWithThirdDeriv(r,rinv); ++rit;}
+
+      if(useCartesian) {
+        XYZ.evaluateWithThirdDeriv(dr);
+      } else {
+        // FIX FIX FIX: not implemented for spherical basis
+        //Ylm.evaluateWithThirdDeriv(dr);
+        Ylm.evaluateWithHessian(dr);
+      }
+
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
+      std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
 
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
@@ -397,6 +488,7 @@ namespace qmcplusplus {
         PosType gr_rad(drnloverr*dr);
         PosType gr_ang(gradYlm[lm]);
         HessType hess(hessYlm[lm]);
+        GGGType Slm_ijk(gggYlm[lm]);
         HessType Rhs;
         GGGType& ggg=grad_grad_grad_Phi[offset];
         psi[offset]  = ang*rnl.Y;
@@ -415,8 +507,8 @@ namespace qmcplusplus {
                               + outerProduct(gr_ang,gr_rad) + rnl.Y*hess;
         // assuming third derivatives of angular piece are zero
         for(int i=0; i<3; i++) {
-         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1);
-                 // + rnl.Y*Slm_ijk[i];
+         ggg[i] = ang*(ggg1[i]*temp2 + ggg2[i]*temp1)
+                 + rnl.Y*Slm_ijk[i];
         }
 
         // I don't know how to make this part compact, so sloppy for now
@@ -527,10 +619,11 @@ namespace qmcplusplus {
       //RealType rinv(myTable->Temp[source].rinv1);
       RealType rinv(1/r);
       PosType  dr(myTable->Temp[source].dr1);
-      if(useCartesian)
+      if(useCartesian) {
         XYZ.evaluate(dr);
-      else
+      } else {
         Ylm.evaluate(dr);
+      }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
@@ -547,10 +640,11 @@ namespace qmcplusplus {
       RealType r(myTable->Temp[source].r1);
       RealType rinv(myTable->Temp[source].rinv1);
       PosType  dr(myTable->Temp[source].dr1);
-      if(useCartesian)
+      if(useCartesian) {
         XYZ.evaluateAll(dr);
-      else
+      } else {
         Ylm.evaluateAll(dr);
+      }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
@@ -576,10 +670,11 @@ namespace qmcplusplus {
 
     inline void
     evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& psi) {
-      if(useCartesian)
+      if(useCartesian) {
         XYZ.evaluate(dr);
-      else
+      } else {
         Ylm.evaluate(dr);
+      }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
@@ -593,10 +688,11 @@ namespace qmcplusplus {
     inline void 
     evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& y, 
         GradVector_t& dy, ValueVector_t& d2y) {
-      if(useCartesian)
+      if(useCartesian) {
         XYZ.evaluateAll(dr);
-      else
+      } else {
         Ylm.evaluateAll(dr);
+      }
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
@@ -615,6 +711,56 @@ namespace qmcplusplus {
 	y[offset]= ang*rnl.Y;
 	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
 	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang) + rnl.Y*laplYlm[lm];
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+    inline void
+    evaluateAllForPtclMove(int source, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_Phi) {
+      RealType r(myTable->Temp[source].r1);
+      RealType rinv(myTable->Temp[source].rinv1);
+      PosType  dr(myTable->Temp[source].dr1);
+
+      if(useCartesian) {
+        XYZ.evaluateWithHessian(dr);
+      } else {
+        Ylm.evaluateWithHessian(dr);
+      }
+      std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
+      std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
+      std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
+
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit);//NL[ib];
+        int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        ValueType ang(valueYlm[lm]);
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(gradYlm[lm]);
+        HessType hess(hessYlm[lm]);
+        psi[offset]  = ang*rnl.Y;
+        dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
+// sloppy for now
+        RealType temp1=rnl.d2Y*ang*rinv*rinv;
+        RealType temp2=drnloverr*ang*rinv*rinv;
+        for(int i=0; i<3; i++) {
+          grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr(i)*dr(i)
+                    + drnloverr*ang + rnl.Y*hess(i,i)
+                    + 2*drnloverr*dr(i)*gr_ang(i);
+          for(int j=i+1; j<3; j++) {
+            grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr(i)*dr(j)
+                    + rnl.Y*hess(i,j)
+                    + drnloverr*(dr(i)*gr_ang(j) + dr(j)*gr_ang(i));
+            grad_grad_Phi[offset](j,i) = grad_grad_Phi[offset](i,j);
+          }
+        }
+        //d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
         ++nlit; ++lmit;++offset;
       }
     }

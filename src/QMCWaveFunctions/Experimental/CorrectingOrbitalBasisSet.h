@@ -41,11 +41,15 @@ namespace qmcplusplus {
     typedef typename BasisSetType::RealType      RealType;
     typedef typename BasisSetType::ValueType     ValueType;
     typedef typename BasisSetType::IndexType     IndexType;
+    typedef typename BasisSetType::HessType      HessType;
     typedef typename BasisSetType::IndexVector_t IndexVector_t;
     typedef typename BasisSetType::ValueVector_t ValueVector_t;
     typedef typename BasisSetType::ValueMatrix_t ValueMatrix_t;
     typedef typename BasisSetType::GradVector_t  GradVector_t;
     typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
+    typedef typename BasisSetType::HessVector_t  HessVector_t;
+    typedef typename BasisSetType::HessMatrix_t  HessMatrix_t;
+
 
     using BasisSetType::ActivePtcl;
     using BasisSetType::Counter;
@@ -53,6 +57,8 @@ namespace qmcplusplus {
     using BasisSetType::Phi;
     using BasisSetType::dPhi;
     using BasisSetType::d2Phi;
+    using BasisSetType::grad_grad_Phi;
+    using BasisSetType::grad_grad_grad_Phi;
     using BasisSetType::Y;
     using BasisSetType::dY;
     using BasisSetType::d2Y;
@@ -158,7 +164,6 @@ namespace qmcplusplus {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
       Counter++;
-      ActivePtcl=iat;
     }
 
     inline void 
@@ -179,16 +184,37 @@ namespace qmcplusplus {
       ActivePtcl=iat;
     }
 
+    inline void
+    evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)
+    {
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
+      Counter++;
+      ActivePtcl=iat;
+    }
+
     inline void 
     evaluateWithHessian(const ParticleSet& P, int iat)
     { 
-       APP_ABORT("CorrectingOrbitalBasisSet::evaluateWithHessian is not implemented.");
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
+      Counter++; // increment a conter
     } 
 
     inline void
     evaluateWithThirdDeriv(const ParticleSet& P, int iat)
     { 
-       APP_ABORT("CorrectingOrbitalBasisSet::evaluateWithThirdDerivatives is not implemented.");
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi,grad_grad_grad_Phi);
+      Counter++; // increment a conter
+    }
+
+    inline void
+    evaluateThirdDerivOnly(const ParticleSet& P, int iat)
+    {
+      for(int c=0; c<NumCenters;c++)
+        LOBasis[c]->evaluateThirdDerivOnly(c,iat,BasisOffset[c],grad_grad_grad_Phi);
+      Counter++; // increment a conter
     }
 
     /** add a new set of Centered Atomic Orbitals

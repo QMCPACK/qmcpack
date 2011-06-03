@@ -147,7 +147,6 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Build static libraries and binary")
 SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
 SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
-SET(BUILD_SQD 0 CACHE BOOL "Build spherical quandum dot packge SQD")
 SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 
 ######################################################################

@@ -13,52 +13,33 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus {
 
-  MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo):spo_up(upspo),spo_dn(dnspo),
-    RatioTimer("MultiSlaterDeterminant::ratio"),
-    Ratio1Timer("MultiSlaterDeterminant::detEval_ratio"),
-    RatioGradTimer("MultiSlaterDeterminant::ratioGrad"),
-    Ratio1GradTimer("MultiSlaterDeterminant::detEval_ratioGrad"),
-    RatioAllTimer("MultiSlaterDeterminant::ratio(all)"),
-    Ratio1AllTimer("MultiSlaterDeterminant::detEval_ratio(all)"),
-    UpdateTimer("MultiSlaterDeterminant::updateBuffer"),
-    AccRejTimer("MultiSlaterDeterminant::Accept_Reject"),
-    EvaluateTimer("MultiSlaterDeterminant::evaluate"),
-    evalOrbTimer("MultiSlaterDeterminant::evalOrbGrad")
+  MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *BF):MultiSlaterDeterminant(targetPtcl,upspo,dnspo),BFTrans(BF)
   { 
-    registerTimers();
-    //Optimizable=true;
     Optimizable=false;
-    OrbitalName="MultiSlaterDeterminant";
-    usingCSF=false;
+    OrbitalName="MultiSlaterDeterminantWithBackflow";
 
-    FirstIndex_up = targetPtcl.first(0); 
-    LastIndex_up = targetPtcl.last(0);
-    FirstIndex_dn = targetPtcl.first(1); 
-    LastIndex_dn = targetPtcl.last(1);
 
-    nels_up = LastIndex_up-FirstIndex_up;
-    nels_dn = LastIndex_dn-FirstIndex_dn;
-
-    DetID.resize(targetPtcl.getTotalNum());
-    for(int i=0; i<targetPtcl.groups(); ++i)
-      for(int j=targetPtcl.first(i); j<targetPtcl.last(i); ++j) DetID[j]=i;    
   }
   
-  OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+  OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
   { 
+    // mmorales: the proxy classes read from the particle set inside BFTrans
+    BackflowTransformation *tr = BFTrans->makeClone();
+    tr->resetTargetParticleSet(tqp);
+
     SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
     SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
     spo_up_C->occup= spo_up->occup;
     spo_dn_C->occup= spo_dn->occup;
-    spo_up_C->refPhi->resetTargetParticleSet(tqp);
-    spo_dn_C->refPhi->resetTargetParticleSet(tqp);
-    
-    MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp,spo_up_C,spo_dn_C); 
+    spo_up_C->refPhi->resetTargetParticleSet(tr->QP);
+    spo_dn_C->refPhi->resetTargetParticleSet(tr->QP);
+
+    MultiSlaterDeterminantWithBackflow* clone = new MultiSlaterDeterminantWithBackflow(tqp,spo_up_C,spo_dn_C,tr); 
     clone->C2node_up=C2node_up;
     clone->C2node_dn=C2node_dn;
     clone->resize(dets_up.size(),dets_dn.size());
@@ -69,57 +50,34 @@ namespace qmcplusplus {
       clone->DetsPerCSF=DetsPerCSF;
     }
     
-//     SPOSetProxyForMSD* spo = clone->spo_up;
-//     spo->occup.resize(uniqueConfg_up.size(),clone->nels_up);
-for(int i=0; i<dets_up.size(); i++)
+    for(int i=0; i<dets_up.size(); i++)
     {
-//       int nq=0;
-// //       configuration& ci = uniqueConfg_up[i];
-//       for(int k=0; k<uniqueConfg_up[i].occup.size(); k++) {
-//         if(uniqueConfg_up[i].occup[k]) { 
-//           spo->occup(i,nq++) = k;
-//         }
-//       }
-DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
-      adet->set(clone->FirstIndex_up,clone->nels_up);
-      adet->resetTargetParticleSet(tqp);
-      clone->dets_up.push_back(adet);
+      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetBasePtr) clone->spo_up);
+      dclne->BFTrans=tr;
+      dclne->resetTargetParticleSet(tr->QP);
+      clone->dets_up.push_back(dclne);
     }
-//     spo = clone->spo_dn;
-//     spo->occup.resize(uniqueConfg_dn.size(),clone->nels_dn);
-for(int i=0; i<dets_dn.size(); i++)
+    for(int i=0; i<dets_dn.size(); i++)
     {
-//       int nq=0;
-// //       configuration& ci = uniqueConfg_dn[i];
-//       for(int k=0; k<uniqueConfg_dn[i].occup.size(); k++) {
-//         if(uniqueConfg_dn[i].occup[k]) {
-//           spo->occup(i,nq++) = k;
-//         }
-//       }
-DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
-      adet->set(clone->FirstIndex_dn,clone->nels_dn);
-      adet->resetTargetParticleSet(tqp);
-      clone->dets_dn.push_back(adet);
+      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetBasePtr) clone->spo_dn);
+      dclne->BFTrans=tr;
+      dclne->resetTargetParticleSet(tr->QP);
+      clone->dets_dn.push_back(dclne);
     }
 
     clone->Optimizable=Optimizable;
     clone->C=C;
     clone->myVars=myVars;
+
+    clone->resetTargetParticleSet(tr->QP);
     
     return clone;
   }
   
 
-  MultiSlaterDeterminant::~MultiSlaterDeterminant() { }
-  void MultiSlaterDeterminant::resetTargetParticleSet(ParticleSet& P) 
-  {
-    for(int i=0; i<dets_up.size(); i++)
-      dets_up[i]->resetTargetParticleSet(P);
-    for(int i=0; i<dets_dn.size(); i++)
-      dets_dn[i]->resetTargetParticleSet(P);
-  }
+  MultiSlaterDeterminantWithBackflow::~MultiSlaterDeterminantWithBackflow() { }
 
-  void MultiSlaterDeterminant::resize(int n1, int n2)
+  void MultiSlaterDeterminantWithBackflow::resize(int n1, int n2)
   {
     NumUniqueDets_up=n1;
     NumUniqueDets_dn=n2;
@@ -156,52 +114,58 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       tempgrad[i].resize(nels_up+nels_dn);
       templapl[i].resize(nels_up+nels_dn);
     }
+
   }
 
-  OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
+  OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
       , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   { 
     EvaluateTimer.start();
 
-// mmorales: For now always assume 2 electron components, up/down
-    spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
-    spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
+    BFTrans->evaluate(P);
 
+// mmorales: For now always assume 2 electron components, up/down
+// trouble: if this is called during an optimization routine, you will need to
+//          evaluate grad_grad_grad structures for BF derivatives
+//  FIX FIX FIX
+    spo_up->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_up,LastIndex_up);
+    spo_dn->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_dn,LastIndex_dn);
+
+    int numP = grads_up[0].size(); 
     for(int i=0; i<dets_up.size(); i++) {
       spo_up->prepareFor(i);
       grads_up[i]=0.0; 
       lapls_up[i]=0.0; 
-      detValues_up[i]=dets_up[i]->evaluate(P,grads_up[i],lapls_up[i]);
+      detValues_up[i]=dets_up[i]->evaluate(BFTrans->QP,grads_up[i],lapls_up[i]);
       // need \nabla^2 Det / Det
-      for(int k=FirstIndex_up; k<LastIndex_up; k++) 
+      for(int k=0; k<numP; k++) 
         lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
     }
     for(int i=0; i<dets_dn.size(); i++) {
       spo_dn->prepareFor(i);
       grads_dn[i]=0.0; 
       lapls_dn[i]=0.0; 
-      detValues_dn[i]=dets_dn[i]->evaluate(P,grads_dn[i],lapls_dn[i]);
+      detValues_dn[i]=dets_dn[i]->evaluate(BFTrans->QP,grads_dn[i],lapls_dn[i]);
       // need \nabla^2 Det / Det
-      for(int k=FirstIndex_dn; k<LastIndex_dn; k++) 
+      for(int k=0; k<numP; k++) 
         lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
     }
 
     ValueType psi=0.0;
     myG=0.0;
     myL=0.0;
+    
     for(int i=0; i<C.size(); i++){
       int upC = C2node_up[i];
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-        myG += tmp*grads_up[upC]; // other spin sector should be zero 
-        myL += tmp*lapls_up[upC]; 
-      //}
-      //for(int n=FirstIndex_dn; n<LastIndex_dn; n++) {
-        myG += tmp*grads_dn[dnC]; // other spin sector should be zero 
-        myL += tmp*lapls_dn[dnC]; 
-      //}
+      myG += tmp*grads_up[upC]; 
+      myG += tmp*grads_dn[dnC]; 
+      myL += tmp*lapls_up[upC]; 
+      myL += tmp*lapls_dn[dnC]; 
+      for(int k=0; k<numP; k++)
+       myL[k] += 2.0*tmp*dot(grads_up[upC][k],grads_dn[dnC][k]); 
     }
     ValueType psiinv = 1.0/psi;
     myG *= psiinv;
@@ -213,15 +177,16 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     return psi;
   }
 
-  OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
+  OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
       , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     ValueType psi = evaluate(P,G,L);
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   }
 
-  OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
+  OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
   {
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
     GradType grad_iat=0.0;
     if(DetID[iat] == 0) {
       for(int i=0; i<dets_up.size(); i++) {
@@ -256,9 +221,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     }
   }
 
-  OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
+  OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
       , int iat, GradType& grad_iat)
   {
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
       RatioGradTimer.start();
@@ -323,9 +289,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
 
 
 // This routine need work, sloppy for now
-  OrbitalBase::ValueType  MultiSlaterDeterminant::ratio(ParticleSet& P, int iat
+  OrbitalBase::ValueType  MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat
      , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
   {
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
     UpdateMode=ORB_PBYP_ALL;
     if(DetID[iat] == 0) {
       RatioAllTimer.start();
@@ -447,8 +414,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   }
 
 // use ci_node for this routine only
-  OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+  OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
   {
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
      RatioTimer.start();
@@ -496,10 +464,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     }
   }
 
-  void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
+  void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
   {
 // this should depend on the type of update, ratio / ratioGrad 
 // for now is incorrect fot ratio(P,iat,dG,dL) updates 
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
+    //BFTrans->acceptMove(P,iat);
     AccRejTimer.start();
     if(DetID[iat] == 0) {
       for(int i=0; i<dets_up.size(); i++) 
@@ -589,8 +559,9 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     AccRejTimer.stop();
   }
 
-  void MultiSlaterDeterminant::restore(int iat)
+  void MultiSlaterDeterminantWithBackflow::restore(int iat)
   {
+    APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
     AccRejTimer.start();
     if(DetID[iat] == 0) {
       for(int i=0; i<dets_up.size(); i++) 
@@ -603,21 +574,23 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     AccRejTimer.stop();
   }
 
-  void MultiSlaterDeterminant::update(ParticleSet& P
+  void MultiSlaterDeterminantWithBackflow::update(ParticleSet& P
       , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
       , int iat)
   {
-    APP_ABORT("IMPLEMENT MultiSlaterDeterminant::update");
+    APP_ABORT("IMPLEMENT MultiSlaterDeterminantWithBackflow::update");
   }
 
-  OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,BufferType& buf)
+  OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,BufferType& buf)
   {
+
+    BFTrans->evaluate(P);
 
     ValueType logpsi(0.0);
     for (int i=0; i<dets_up.size(); i++)
-      logpsi += dets_up[i]->evaluateLog(P,buf);
+      logpsi += dets_up[i]->evaluateLog(BFTrans->QP,buf);
     for (int i=0; i<dets_dn.size(); i++)
-      logpsi += dets_dn[i]->evaluateLog(P,buf);
+      logpsi += dets_dn[i]->evaluateLog(BFTrans->QP,buf);
 
     int TotalDim = PosType::Size*P.getTotalNum();
     buf.put(detValues_up.begin(),detValues_up.end());
@@ -633,11 +606,14 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     return LogValue; 
   }
 
-  OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, BufferType& buf)
+  OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, BufferType& buf)
   {
+
+    BFTrans->evaluate(P);
+
 // move resize of pbyp structures to here
-    spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
-    spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
+    spo_up->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_up,LastIndex_up);
+    spo_dn->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_dn,LastIndex_dn);
 
     myG = P.G;
     myL = P.L;
@@ -647,12 +623,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     for (int i=0; i<dets_up.size(); i++)
     {
       spo_up->prepareFor(i);
-      logpsi += dets_up[i]->registerData(P,buf);
+      logpsi += dets_up[i]->registerData(BFTrans->QP,buf);
     }
     for (int i=0; i<dets_dn.size(); i++)
     {
       spo_dn->prepareFor(i);
-      logpsi += dets_dn[i]->registerData(P,buf);
+      logpsi += dets_dn[i]->registerData(BFTrans->QP,buf);
     }
 
     P.G = myG;
@@ -665,25 +641,24 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     buf.add(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.add(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-//      buf.add(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
       buf.add(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.add(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-//      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
       buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
     return LogValue;
   }
 
 // FIX FIX FIX
-  OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+  OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
   {
 
     UpdateTimer.start();
     if(fromscratch || UpdateMode == ORB_PBYP_RATIO) {
-      spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
-      spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
+      BFTrans->evaluate(P);
+      spo_up->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_up,LastIndex_up);
+      spo_dn->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_dn,LastIndex_dn);
     }
 
     myG = P.G;
@@ -693,7 +668,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++) {
       spo_up->prepareFor(i);
-      logpsi = dets_up[i]->updateBuffer(P,buf,fromscratch);
+      logpsi = dets_up[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
       detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
       grads_up[i]=dets_up[i]->myG; 
       lapls_up[i]=dets_up[i]->myL; 
@@ -702,7 +677,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     }
     for (int i=0; i<dets_dn.size(); i++) {
       spo_dn->prepareFor(i);
-      logpsi = dets_dn[i]->updateBuffer(P,buf,fromscratch);
+      logpsi = dets_dn[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
       detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
       grads_dn[i]=dets_dn[i]->myG; 
       lapls_dn[i]=dets_dn[i]->myL; 
@@ -715,12 +690,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     buf.put(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.put(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-//      buf.put(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
       buf.put(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.put(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-//      buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
       buf.put(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
 
@@ -735,14 +708,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-        myG += tmp*grads_up[upC]; // other spin sector should be zero 
-        myL += tmp*lapls_up[upC];
-      //}
-      //for(int n=FirstIndex_dn; n<LastIndex_dn; n++) {
-        myG += tmp*grads_dn[dnC]; // other spin sector should be zero 
-        myL += tmp*lapls_dn[dnC];
-      //}
+      myG += tmp*grads_up[upC]; // other spin sector should be zero 
+      myG += tmp*grads_dn[dnC]; // other spin sector should be zero 
+      myL += tmp*lapls_up[upC];
+      myL += tmp*lapls_dn[dnC];
     }
     ValueType psiinv = 1.0/psi;
     myG *= psiinv;
@@ -756,54 +725,38 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
   }
 
-  void MultiSlaterDeterminant::copyFromBuffer(ParticleSet& P, BufferType& buf)
+  void MultiSlaterDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, BufferType& buf)
   {
 
+    BFTrans->evaluate(P);
     for (int i=0; i<dets_up.size(); i++)
-      dets_up[i]->copyFromBuffer(P,buf);
+      dets_up[i]->copyFromBuffer(BFTrans->QP,buf);
     for (int i=0; i<dets_dn.size(); i++)
-      dets_dn[i]->copyFromBuffer(P,buf);
+      dets_dn[i]->copyFromBuffer(BFTrans->QP,buf);
 
     int TotalDim = PosType::Size*P.getTotalNum();
     buf.get(detValues_up.begin(),detValues_up.end());
     buf.get(detValues_dn.begin(),detValues_dn.end());
     for(int i=0; i<NumUniqueDets_up; i++) {
       buf.get(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-      //buf.get(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
       buf.get(lapls_up[i].first_address(),lapls_up[i].last_address());
     }
     for(int i=0; i<NumUniqueDets_dn; i++) {
       buf.get(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-      //buf.get(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
       buf.get(lapls_dn[i].first_address(),lapls_dn[i].last_address());
     }
   }
 
 
-  void MultiSlaterDeterminant::checkInVariables(opt_variables_type& active)
-  {
-    if(Optimizable) 
-    {
-      if(myVars.size()) 
-        active.insertFrom(myVars);
-      else  
-        Optimizable=false;
-    }
-  }
-
-  void MultiSlaterDeterminant::checkOutVariables(const opt_variables_type& active)
-  {
-    if(Optimizable) myVars.getIndex(active);
-  }
-
   /** resetParameters with optVariables
    *
    * USE_resetParameters
    */
-  void MultiSlaterDeterminant::resetParameters(const opt_variables_type& active)
+  void MultiSlaterDeterminantWithBackflow::resetParameters(const opt_variables_type& active)
   {  
     if(Optimizable) 
     {
+      BFTrans->resetParameters(active);
       if(usingCSF) {
         for(int i=0; i<CSFcoeff.size()-1; i++)  {
           int loc=myVars.where(i);
@@ -823,20 +776,44 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
           if(loc>=0) C[i+1]=myVars[i]=active[loc];
         }
       }
-      //for(int i=0; i<SDets.size(); i++) SDets[i]->resetParameters(active);
     }
   }
-  void MultiSlaterDeterminant::reportStatus(ostream& os)
+
+  void MultiSlaterDeterminantWithBackflow::reportStatus(ostream& os)
   {
+    if(Optimizable)
+    {
+      BFTrans->reportStatus(os);
+      myVars.print(os);
+    }
   }
 
-//   OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+  void MultiSlaterDeterminantWithBackflow::checkInVariables(opt_variables_type& active)
+  {
+    if(Optimizable)
+    {
+      BFTrans->checkInVariables(active);
+      if(myVars.size())
+        active.insertFrom(myVars);
+    }
+  }
+
+  void MultiSlaterDeterminantWithBackflow::checkOutVariables(const opt_variables_type& active)
+  {
+    if(Optimizable) { 
+      BFTrans->checkOutVariables(active);
+      if(myVars.size())
+        myVars.getIndex(active);
+    }  
+  }
+
+//   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 //   {
 //      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
 //      return 0;
 //   }
 
-  void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P, 
+  void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P, 
       const opt_variables_type& optvars,
       vector<RealType>& dlogpsi,
       vector<RealType>& dhpsioverpsi)
@@ -848,10 +825,10 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       if (kk<0) continue;
       if (optvars.recompute(kk)) recalculate=true;
     }
-
+    bool optmBF=BFTrans->isOptimizable();
 
 // need to modify for CSF later on, right now assume Slater Det basis 
-    if (recalculate)
+    if (recalculate || optmBF)
     {
       if(usingCSF) {
         int n = P.getTotalNum();
@@ -863,25 +840,23 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         g=0.0;
         gmP=0.0;
         for(int i=0; i<lapls_up.size(); i++)
-          tempstorage_up[i] = Sum(lapls_up[i]); 
+          tempstorage_up[i] = Sum(lapls_up[i]);
         for(int i=0; i<lapls_dn.size(); i++)
-          tempstorage_dn[i] = Sum(lapls_dn[i]); 
+          tempstorage_dn[i] = Sum(lapls_dn[i]);
         for(int i=0; i<C.size(); i++){
           int upC = C2node_up[i];
           int dnC = C2node_dn[i];
           ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
+          lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]
+                                 +2.0*Dot(grads_up[upC],grads_dn[dnC]));
           g += tmp*grads_up[upC];
           g += tmp*grads_dn[dnC];
         }
         gmP=g-P.G;
         gg=Dot(gmP,g);
-        //gg=Dot(g,g)-Dot(P.G,g);
-//        ggP=Dot(P.G,g);
 
        int num=CSFcoeff.size()-1;
        int cnt=0;
-//        this one is not optable
        cnt+=DetsPerCSF[0];
        int ip(1);
        for(int i=0; i<num; i++,ip++) {
@@ -897,22 +872,23 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
 
            ValueType tmp=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
            cdet+=tmp;
-           q0 += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
+           q0 += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]+2.0*Dot(grads_up[upC],grads_dn[dnC]));
            v1 += tmp*(Dot(gmP,grads_up[upC])+Dot(gmP,grads_dn[dnC]));
-//           v1 += tmp*(Dot(P.G,grads_up[upC])-Dot(g,grads_up[upC]));
-//           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
            cnt++;
          }
          convert(cdet,dlogpsi[kk]);
          ValueType dhpsi =  -0.5*(q0-cdet*lapl_sum)
                             -cdet*gg+v1;
-//                            -cdet*gg-v1-v2;
-         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-         //                         -cdet*lapl_sum)
-         //                   -cdet*gg-(tmp1*v1+tmp2*v2);
          convert(dhpsi,dhpsioverpsi[kk]);
        }
 
+       if(optmBF) {
+         // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
+         BFTrans->evaluateDerivatives(P);
+         
+            
+
+       }
       } else {
         int n = P.getTotalNum();
         ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
@@ -923,69 +899,108 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
         g=0.0;
         gmP=0.0;
         for(int i=0; i<lapls_up.size(); i++)
-          tempstorage_up[i] = Sum(lapls_up[i]);  
+          tempstorage_up[i] = Sum(lapls_up[i]);
         for(int i=0; i<lapls_dn.size(); i++)
           tempstorage_dn[i] = Sum(lapls_dn[i]);
         for(int i=0; i<C.size(); i++){
           int upC = C2node_up[i];
           int dnC = C2node_dn[i];
           ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
+          lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]+2.0*Dot(grads_up[upC],grads_dn[dnC]));
           g += tmp*grads_up[upC];
           g += tmp*grads_dn[dnC];
         }
         gmP=g-P.G;
-        gg=Dot(gmP,g);
-        //gg=Dot(g,g);
-        //ggP=Dot(P.G,g);
+        ggP=Dot(gmP,g);
 
-        int ip(1);
-        for(int i=0; i<C.size()-1; i++,ip++){
-          int kk=myVars.where(i);
-          if (kk<0) continue;
-          //dlogpsi[kk] = cdet;
-          int upC = C2node_up[ip];
-          int dnC = C2node_dn[ip];
-          ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          convert(cdet,dlogpsi[kk]);
-          ValueType dhpsi =  (-0.5*cdet)*
+        // CI coefficients
+        if(recalculate) {
+          int ip(1);
+          for(int i=0; i<C.size()-1; i++,ip++){
+            int kk=myVars.where(i);
+            if (kk<0) continue;
+            //dlogpsi[kk] = cdet;
+            int upC = C2node_up[ip];
+            int dnC = C2node_dn[ip];
+            ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+            convert(cdet,dlogpsi[kk]);
+            ValueType dhpsi =  (-0.5*cdet)*
                          ( tempstorage_up[upC]+tempstorage_dn[dnC]-lapl_sum
-                            +2.0*(gg-Dot(gmP,grads_up[upC])-Dot(gmP,grads_dn[dnC])));
-                            //+2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
-                            //+Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
-          convert(dhpsi,dhpsioverpsi[kk]);
+                            +2.0*Dot(grads_up[upC],grads_dn[dnC]) 
+                            +2.0*(ggP-Dot(gmP,grads_up[upC])-Dot(gmP,grads_dn[dnC])));
+            convert(dhpsi,dhpsioverpsi[kk]);
+          }
         }
+        // BF parameters
+        if(optmBF) {
+          // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
+          BFTrans->evaluateDerivatives(P);
+
+          int numBFprm = BFTrans->optIndexMap.size();
+          if(dpsia_up.rows() < dets_up.size() || dpsia_up.cols() < numBFprm) 
+            dpsia_up.resize(dets_up.size(),numBFprm);
+          if(dpsia_dn.rows() < dets_dn.size() || dpsia_dn.cols() < numBFprm) 
+            dpsia_dn.resize(dets_dn.size(),numBFprm);
+          if(dLa_up.rows() < dets_up.size() || dLa_up.cols() < numBFprm)
+            dLa_up.resize(dets_up.size(),numBFprm);
+          if(dLa_dn.rows() < dets_dn.size() || dLa_dn.cols() < numBFprm) 
+            dLa_dn.resize(dets_dn.size(),numBFprm);
+          if(dGa_up.size(0) < dets_up.size() || dGa_up.size(1) < numBFprm || dGa_up.size(2) < n)
+            dGa_up.resize(dets_up.size(),numBFprm,n);
+          if(dGa_dn.size(0) < dets_dn.size() || dGa_dn.size(1) < numBFprm || dGa_dn.size(2) < n)
+            dGa_dn.resize(dets_dn.size(),numBFprm,n);
+
+          // avoid this in the future
+          spo_up->evaluateForWalkerMoveWithThirdDeriv(BFTrans->QP,FirstIndex_up,LastIndex_up);
+          spo_dn->evaluateForWalkerMoveWithThirdDeriv(BFTrans->QP,FirstIndex_dn,LastIndex_dn);
+
+          for(int i=0; i<dets_up.size(); i++) {
+            spo_up->prepareFor(i);
+            dets_up[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_up,dGa_up,dLa_up);
+          }
+          for(int i=0; i<dets_dn.size(); i++) {
+            spo_dn->prepareFor(i);
+            dets_dn[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_dn,dGa_dn,dLa_dn);
+          }
+ 
+          for(int pa=0; pa<numBFprm; pa++)  {
+            int kk=BFTrans->optIndexMap[pa];
+            if (kk<0) continue;
+            ValueType dlog=0.0,dhpsi = 0.0;
+            for(int i=0; i<C.size(); i++){
+              int upC = C2node_up[i];
+              int dnC = C2node_dn[i];
+        
+              ValueType cdet=C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;   
+              ValueType dot1=0.0;
+              ValueType dpsi1=dpsia_up(upC,pa);
+              ValueType dpsi2=dpsia_dn(dnC,pa);
+              ParticleSet::ParticleGradient_t& g1 = grads_up[upC]; 
+              ParticleSet::ParticleGradient_t& g2 = grads_dn[dnC]; 
+              for(int k=0; k<n; k++)
+                dot1 += dot(dGa_up(upC,pa,k),(g2(k)-gmP(k)))
+                        + dot(dGa_dn(dnC,pa,k),(g1(k)-gmP(k)))   
+                        - dpsi1*dot(gmP(k),g2(k)) 
+                        - dpsi2*dot(gmP(k),g1(k)); 
+              dlog += cdet*(dpsi1+dpsi2);
+              dhpsi += cdet*( dLa_up(upC,pa) + dLa_dn(dnC,pa) 
+                    + dpsi2*tempstorage_up[upC] + dpsi1*tempstorage_dn[dnC]
+                    + 2.0*dot1 );
+            } // i
+            dhpsi = -0.5*(dhpsi + dlog*(2.0*ggP-lapl_sum));  
+            convert(dlog,dlogpsi[kk]);
+            convert(dhpsi,dhpsioverpsi[kk]);
+            
+          }  // pa
+        }  
+
       }
     }
-  }
-
-  void MultiSlaterDeterminant::registerTimers()
-  {
-    RatioTimer.reset();
-    Ratio1Timer.reset();
-    RatioGradTimer.reset();
-    Ratio1GradTimer.reset();
-    RatioAllTimer.reset();
-    Ratio1AllTimer.reset();
-    UpdateTimer.reset();
-    AccRejTimer.reset();
-    EvaluateTimer.reset();
-    evalOrbTimer.reset();
-    TimerManager.addTimer (&RatioTimer);
-    TimerManager.addTimer (&RatioGradTimer);
-    TimerManager.addTimer (&RatioAllTimer);
-    TimerManager.addTimer (&Ratio1Timer);
-    TimerManager.addTimer (&Ratio1GradTimer);
-    TimerManager.addTimer (&Ratio1AllTimer);
-    TimerManager.addTimer (&UpdateTimer);
-    TimerManager.addTimer (&AccRejTimer);
-    TimerManager.addTimer (&EvaluateTimer);
-    TimerManager.addTimer (&evalOrbTimer);
   }
 
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 3416 $   $Date: 2008-12-07 11:34:49 -0600 (Sun, 07 Dec 2008) $
- * $Id: MultiSlaterDeterminant.cpp 3416 2008-12-07 17:34:49Z jnkim $
+ * $Id: MultiSlaterDeterminantWithBackflow.cpp 3416 2008-12-07 17:34:49Z jnkim $
  ***************************************************************************/

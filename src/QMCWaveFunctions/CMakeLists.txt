@@ -125,8 +125,6 @@ ENDIF(QMC_CUDA)
   IF(QMC_BUILD_LEVEL GREATER 2)
     SET(FERMION_SRCS ${FERMION_SRCS}
       AGPDeterminant.cpp AGPDeterminantBuilder.cpp
-      Fermion/DiracDeterminantWithBackflow.cpp
-      Fermion/SlaterDetWithBackflow.cpp
       )
   ENDIF(QMC_BUILD_LEVEL GREATER 2)
     
@@ -140,6 +138,9 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminantBase.cpp
+  Fermion/DiracDeterminantWithBackflow.cpp
+  Fermion/SlaterDetWithBackflow.cpp
+  Fermion/MultiSlaterDeterminantWithBackflow.cpp
   BasisSetFactory.cpp
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp

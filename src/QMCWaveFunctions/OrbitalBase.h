@@ -102,7 +102,8 @@ namespace qmcplusplus
        * If true, this object is actively modified during optimization
        */
       bool Optimizable;
-
+      /** define the level of storage in derivative buffer **/
+      int DerivStorageType;
       bool derivsDone;
       int parameterType;
       /** current update mode */
@@ -348,9 +349,13 @@ namespace qmcplusplus
       /** add temporary (constant) data used to calculate analytical
        *  derivatives during linear optimization of parameters 
        */
-      virtual void registerDataForDerivatives(ParticleSet& P, BufferType& buf)
+      virtual void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0)
       {
       } 
+
+      virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only ,long& orbs, long& invs, long& dets)
+      {
+      }
 
       /** re-evaluate the content and buffer data
        * @param P particle set

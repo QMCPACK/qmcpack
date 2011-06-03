@@ -167,11 +167,11 @@ namespace qmcplusplus
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
         if(UseBackflow) {
           //create up determinant
-          updet = new DiracDeterminantWithBackflow(psiu,BFTrans,0);
+          updet = new DiracDeterminantWithBackflow(targetPtcl,psiu,BFTrans,0);
           updet->set(0,nup);
 
           //create down determinant
-          downdet = new DiracDeterminantWithBackflow(psid,BFTrans,nup);
+          downdet = new DiracDeterminantWithBackflow(targetPtcl,psid,BFTrans,nup);
           downdet->set(nup,nup);
         } else 
 #endif

@@ -154,9 +154,9 @@ namespace qmcplusplus
     return LogValue;
   }
   
-  void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf)
+  void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
   {
-    for (int i = 0; i < Dets.size(); ++i) Dets[i]->registerDataForDerivatives(P,buf);
+    for (int i = 0; i < Dets.size(); ++i) Dets[i]->registerDataForDerivatives(P,buf,storageType);
   }
   
   SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,

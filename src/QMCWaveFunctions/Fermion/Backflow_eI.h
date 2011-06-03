@@ -60,6 +60,11 @@ namespace qmcplusplus
       AIJ_temp.resize(NumCenters);
       BIJ_temp.resize(NumCenters);
     }
+
+    void reportStatus(ostream& os)
+    {
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->reportStatus(os);
+    }
  
     void resetParameters(const opt_variables_type& active)
     {
@@ -82,12 +87,20 @@ namespace qmcplusplus
        return clone; 
     }
 
+    inline bool isOptimizable()
+    {
+      for(int i=0; i<uniqueRadFun.size(); i++)
+        if(uniqueRadFun[i]->isOptimizable()) return true;
+      return false;
+    }
+
     inline int 
     indexOffset() 
     {
        return RadFun[0]->myVars.where(0);
     }
 
+    // only elements of qp coordinates that changed should be copied
     inline void
     acceptMove(int iat, int UpdateMode)
     {
@@ -95,37 +108,37 @@ namespace qmcplusplus
       switch(UpdateMode)
       {
         case ORB_PBYP_RATIO:
-          num = UIJ.rows();
+          num = UIJ.cols();
           for(int i=0; i<num; i++) 
             UIJ(iat,i) = UIJ_temp(i);
           break;
         case ORB_PBYP_PARTIAL:
-          num = UIJ.rows();
+          num = UIJ.cols();
           for(int i=0; i<num; i++) 
             UIJ(iat,i) = UIJ_temp(i);
-          num = AIJ.rows();
+          num = AIJ.cols();
           for(int i=0; i<num; i++) 
             AIJ(iat,i) = AIJ_temp(i);
           break;
         case ORB_PBYP_ALL:
-          num = UIJ.rows();
+          num = UIJ.cols();
           for(int i=0; i<num; i++) 
             UIJ(iat,i) = UIJ_temp(i);
-          num = AIJ.rows();
+          num = AIJ.cols();
           for(int i=0; i<num; i++) 
             AIJ(iat,i) = AIJ_temp(i);
-          num = BIJ.rows();
+          num = BIJ.cols();
           for(int i=0; i<num; i++) 
             BIJ(iat,i) = BIJ_temp(i);
           break;
         default:
-          num = UIJ.rows();
+          num = UIJ.cols();
           for(int i=0; i<num; i++) 
             UIJ(iat,i) = UIJ_temp(i);
-          num = AIJ.rows();
+          num = AIJ.cols();
           for(int i=0; i<num; i++) 
             AIJ(iat,i) = AIJ_temp(i);
-          num = BIJ.rows();
+          num = BIJ.cols();
           for(int i=0; i<num; i++) 
             BIJ(iat,i) = BIJ_temp(i);
           break;
@@ -141,6 +154,33 @@ namespace qmcplusplus
       UIJ_temp=0.0;
       AIJ_temp=0.0;
       BIJ_temp=0.0;
+    }
+
+    void registerData(PooledData<RealType>& buf)
+    {
+      FirstOfU = &(UIJ(0,0)[0]);
+      LastOfU = FirstOfU + 3*NumTargets*NumCenters;
+      FirstOfA = &(AIJ(0,0)[0]);
+      LastOfA = FirstOfA + 9*NumTargets*NumCenters;
+      FirstOfB = &(BIJ(0,0)[0]);
+      LastOfB = FirstOfB + 3*NumTargets*NumCenters;
+      buf.add(FirstOfU,LastOfU);
+      buf.add(FirstOfA,LastOfA);
+      buf.add(FirstOfB,LastOfB);
+    }
+
+    void updateBuffer(PooledData<RealType>& buf)
+    {
+      buf.put(FirstOfU,LastOfU);
+      buf.put(FirstOfA,LastOfA);
+      buf.put(FirstOfB,LastOfB);
+    }
+
+    void copyFromBuffer(PooledData<RealType>& buf)
+    {
+      buf.get(FirstOfU,LastOfU);
+      buf.get(FirstOfA,LastOfA);
+      buf.get(FirstOfB,LastOfB);
     }
 
     /** calculate quasi-particle coordinates only
@@ -222,7 +262,23 @@ namespace qmcplusplus
       RealType du,d2u;
       int maxI = myTable->size(SourceIndex);
       int iat = index[0];
-      
+
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+      }
+    }
+
+
+     /** calculate quasi-particle coordinates after pbyp move  
+      */
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+
       for(int j=0; j<maxI; j++) {
         ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
@@ -238,6 +294,28 @@ namespace qmcplusplus
       int maxI = myTable->size(SourceIndex);
       int iat = index[0];
       
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+
+        HessType& hess = AIJ_temp(j);
+        hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+// should I expand this??? Is the compiler smart enough???
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+      }
+    }
+
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat 
+               ,ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+
       for(int j=0; j<maxI; j++) {
         ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
@@ -272,7 +350,6 @@ namespace qmcplusplus
         hess[0] += uij;
         hess[4] += uij;
         hess[8] += uij;
-// should I expand this??? Is the compiler smart enough???
         Amat(iat,iat) += (hess - AIJ(iat,j));
         
         BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
@@ -280,6 +357,30 @@ namespace qmcplusplus
       }
     }
 
+    inline void
+    evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP
+               , GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+    {
+      RealType du,d2u;
+      int maxI = myTable->size(SourceIndex);
+
+      for(int j=0; j<maxI; j++) {
+        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        newQP[iat] += u;
+        du *= myTable->Temp[j].rinv1;
+
+        HessType& hess = AIJ_temp(j);
+        hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+
+        BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
+        Bmat_full(iat,iat) += (BIJ_temp(j)-BIJ(iat,j));
+      }
+    }
 
     /** calculate only Bmat
      *  This is used in pbyp moves, in updateBuffer()  

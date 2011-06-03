@@ -37,6 +37,14 @@ namespace qmcplusplus
     ///destructor
     ~SlaterDetWithBackflow();
 
+    ///set BF pointers
+    void setBF(BackflowTransformation* bf) 
+    {
+      BFTrans = bf;
+      for(int i=0; i<Dets.size(); i++) Dets[i]->setBF(bf);
+    }
+
+
     void checkInVariables(opt_variables_type& active)
     {
       if(Optimizable) {
@@ -81,8 +89,8 @@ namespace qmcplusplus
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL)
     {
-      //BFTrans->evaluatePbyPAll(P,iat);
-      BFTrans->evaluate(P);
+      BFTrans->evaluatePbyPAll(P,iat);
+      //BFTrans->evaluate(P);
 
       ValueType psi=1.0;
       for(int i=0; i<Dets.size(); ++i)
@@ -92,8 +100,8 @@ namespace qmcplusplus
 
     inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      //BFTrans->evaluatePbyPWithGrad(P,iat);
-      BFTrans->evaluate(P);
+      BFTrans->evaluatePbyPWithGrad(P,iat);
+      //BFTrans->evaluate(P);
 
       ValueType psi=1.0;
       for(int i=0; i<Dets.size(); ++i)
@@ -145,14 +153,14 @@ namespace qmcplusplus
 
     inline void acceptMove(ParticleSet& P, int iat)
     {
-      //BFTrans->acceptMove(P,iat);
+      BFTrans->acceptMove(P,iat);
       for(int i=0; i<Dets.size(); i++)
         Dets[i]->acceptMove(P,iat);
     }
 
     inline void restore(int iat)
     {
-      //BFTrans->restore(iat);
+      BFTrans->restore(iat);
       for(int i=0; i<Dets.size(); i++)
         Dets[i]->restore(iat);
     }
@@ -160,8 +168,8 @@ namespace qmcplusplus
 
     inline ValueType ratio(ParticleSet& P, int iat)
     {
-      //BFTrans->evaluatePbyP(P,iat);
-      BFTrans->evaluate(P);
+      BFTrans->evaluatePbyP(P,iat);
+      //BFTrans->evaluate(P);
 
       RealType ratio=1.0;
       for(int i=0; i<Dets.size(); ++i)
