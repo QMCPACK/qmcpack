@@ -350,6 +350,13 @@ Communicate::bcast(APPNAMESPACE::TinyVector<int,3>& g)
 
 template<>
 inline void 
+Communicate::bcast(vector<APPNAMESPACE::TinyVector<int,3> >& g) 
+{
+  MPI_Bcast(&g[0][0],3*g.size(),MPI_INT,0,myMPI);
+}
+
+template<>
+inline void 
 Communicate::bcast(APPNAMESPACE::TinyVector<double,3>& g) 
 {
   MPI_Bcast(g.begin(),3,MPI_DOUBLE,0,myMPI);
