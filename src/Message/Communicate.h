@@ -31,7 +31,7 @@ struct CommunicatorTraits {
   typedef OOMPI_Intra_comm intra_comm_type;
 };
 #define APP_ABORT(msg) \
-  std::cerr << "Fatal Error. Aborting at " << msg << endl; OOMPI_COMM_WORLD.Abort()
+{std::cerr << "Fatal Error. Aborting at " << msg << endl; OOMPI_COMM_WORLD.Abort();}
 
 #else
 struct CommunicatorTraits {
@@ -42,7 +42,7 @@ struct CommunicatorTraits {
 };
 
 #define APP_ABORT(msg) \
-  std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); abort()
+{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); abort();}
 
 #endif
 
