@@ -209,7 +209,7 @@ public:
     D = 0.0;
     E = 0.0;
     F = 0.0;
-    QuinticSplineSolve<grid_type,data_type>(npts-imin,m_grid->data()+imin, m_Y.data()+imin, 
+    QuinticSplineSolve(npts-imin,m_grid->data()+imin, m_Y.data()+imin, 
 		  B.data()+imin, m_Y2.data()+imin,D.data()+imin,E.data()+imin,F.data()+imin);
     ConstValue=m_Y[imax];
   }
