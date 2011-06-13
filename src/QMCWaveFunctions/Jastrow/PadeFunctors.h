@@ -184,7 +184,7 @@ namespace qmcplusplus {
       void checkOutVariables(const opt_variables_type& active)
       {
         myVars.getIndex(active);
-        myVars.print(std::cout);
+        //myVars.print(std::cout);
       }
 
       void resetParameters(const opt_variables_type& active) 

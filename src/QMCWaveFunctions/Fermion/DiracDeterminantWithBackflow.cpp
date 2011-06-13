@@ -594,12 +594,10 @@ namespace qmcplusplus {
     
     //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
     psiMinv=psiM;
-
     // invert backflow matrix
     InverseTimer.start();
     LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue); 
     InverseTimer.stop();
-    
     // calculate F matrix (gradients wrt bf coordinates)
     // could use dgemv with increments of 3*nCols  
     for(int i=0; i<NumPtcls; i++)
@@ -609,9 +607,7 @@ namespace qmcplusplus {
     }
  
 //    Phi->evaluateThirdDeriv(BFTrans->QP, FirstIndex, LastIndex, grad_grad_grad_psiM);
-
     int num = P.getTotalNum();
-    Gtemp.resize(num); 
 
     for(int j=0; j<NumPtcls; j++)  
       for(int k=0; k<NumPtcls; k++) { 
@@ -627,7 +623,6 @@ namespace qmcplusplus {
           a_jk += dot(transpose(BFTrans->Amat(n,FirstIndex+j)),BFTrans->Amat(n,FirstIndex+k));
 
       }
-
    // this is a mess, there should be a better way
    // to rearrange this  
    for (int pa=0; pa<BFTrans->optIndexMap.size(); ++pa)
@@ -662,7 +657,6 @@ namespace qmcplusplus {
                   dot(B_j,dFa(j,j)));
         dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
-
      for(int j=0; j<NumPtcls; j++) {
 
       HessType a_j_prime = 0.0;

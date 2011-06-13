@@ -462,7 +462,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p) 
 
 template<class T, class Point_t, class Tensor_t, class GGG_t>
 void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithHessian(const Point_t& p) {
-  value_type x=p[0], y=p[1], z=p[2], GGG_t;
+  value_type x=p[0], y=p[1], z=p[2];
   const value_type pi = 4.0*atan(1.0);
   const value_type pi4 = 4.0*pi;
   const value_type omega = 1.0/sqrt(pi4);

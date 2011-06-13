@@ -24,11 +24,10 @@
 namespace qmcplusplus
 {
   template<class FT>
-  class Backflow_eI: public BackflowFunctionBase 
+  class Backflow_eI: public BackflowFunctionBase
   {
 
     public:
-
     vector<FT*> RadFun;
     vector<FT*> uniqueRadFun;
     vector<int> offsetPrms;
@@ -61,11 +60,38 @@ namespace qmcplusplus
       BIJ_temp.resize(NumCenters);
     }
 
+    void resetTargetParticleSet(ParticleSet& P)
+    {
+      myTable = DistanceTable::add(CenterSys,P);
+    }
+
+    BackflowFunctionBase* makeClone()
+    {
+       Backflow_eI<FT>* clone = new Backflow_eI<FT>(*this);
+       clone->resize(NumTargets,NumCenters);
+       for(int i=0; i<uniqueRadFun.size(); i++)
+         clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+       for(int i=0; i<RadFun.size(); i++)
+       {
+         bool done=false;
+         for(int k=0; k<uniqueRadFun.size(); k++)
+           if(RadFun[i] == uniqueRadFun[k]) {
+             done=true;
+             clone->RadFun[i] = clone->uniqueRadFun[k];
+             break;
+           }
+         if(!done) {
+           APP_ABORT("Error cloning Backflow_eI object. \n");
+         }
+       }
+       return clone; 
+    }
+
     void reportStatus(ostream& os)
     {
       for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->reportStatus(os);
     }
- 
+
     void resetParameters(const opt_variables_type& active)
     {
       for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->resetParameters(active);
@@ -81,12 +107,6 @@ namespace qmcplusplus
       for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->checkOutVariables(active);
     }
 
-    BackflowFunctionBase* makeClone()
-    {
-       Backflow_eI* clone = new Backflow_eI(*this);
-       return clone; 
-    }
-
     inline bool isOptimizable()
     {
       for(int i=0; i<uniqueRadFun.size(); i++)
@@ -94,8 +114,8 @@ namespace qmcplusplus
       return false;
     }
 
-    inline int 
-    indexOffset() 
+    inline int
+    indexOffset()
     {
        return RadFun[0]->myVars.where(0);
     }
@@ -167,20 +187,6 @@ namespace qmcplusplus
       buf.add(FirstOfU,LastOfU);
       buf.add(FirstOfA,LastOfA);
       buf.add(FirstOfB,LastOfB);
-    }
-
-    void updateBuffer(PooledData<RealType>& buf)
-    {
-      buf.put(FirstOfU,LastOfU);
-      buf.put(FirstOfA,LastOfA);
-      buf.put(FirstOfB,LastOfB);
-    }
-
-    void copyFromBuffer(PooledData<RealType>& buf)
-    {
-      buf.get(FirstOfU,LastOfU);
-      buf.get(FirstOfA,LastOfA);
-      buf.get(FirstOfB,LastOfB);
     }
 
     /** calculate quasi-particle coordinates only

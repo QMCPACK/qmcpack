@@ -24,24 +24,37 @@
 namespace qmcplusplus
 {
   template<class FT>
-  class Backflow_ee: public BackflowFunctionBase 
+  class Backflow_ee: public BackflowFunctionBase
   {
 
     public:
 
-    FT *RadFun;
+    //number of groups of the target particleset
+    vector<FT*> RadFun;
+    vector<FT*> uniqueRadFun;
+    vector<int> offsetPrms;
+    int NumGroups;
+    Matrix<int> PairID;
+    bool first;
 
-    Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),RadFun(0) 
+    Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),first(true) //,RadFun(0) 
     {
       myTable = DistanceTable::add(els,els);
       resize(NumTargets);
+      NumGroups=els.groups();
+      PairID.resize(NumTargets,NumTargets);
+      for(int i=0; i<NumTargets; ++i)
+        for(int j=0; j<NumTargets; ++j)
+          PairID(i,j) = els.GroupID[i]*NumGroups+els.GroupID[j];
+      RadFun.resize(NumGroups*NumGroups,0);
+      offsetPrms.resize(NumGroups*NumGroups,0);
     }
 
-    Backflow_ee(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els),RadFun(RF) 
-    {
-      myTable = DistanceTable::add(els,els);
-      resize(NumTargets);
-    }
+    //Backflow_ee(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els),RadFun(RF) 
+    //{
+    //  myTable = DistanceTable::add(els,els);
+    //  resize(NumTargets);
+    //}
     
     void resize(int NT)
     {
@@ -56,48 +69,46 @@ namespace qmcplusplus
 
     ~Backflow_ee() {}; 
  
-    void resetParameters(const opt_variables_type& active)
-    {
-       RadFun->resetParameters(active);
-    }
-
-    void checkInVariables(opt_variables_type& active)
-    {
-      RadFun->checkInVariables(active);
-    }
-
-    void reportStatus(ostream& os)
-    {
-      RadFun->reportStatus(os);
-    }
-
-    void checkOutVariables(const opt_variables_type& active)
-    {
-      RadFun->checkOutVariables(active);
-    }
-    
     void resetTargetParticleSet(ParticleSet& P)
     {
       myTable = DistanceTable::add(P);
     }
 
-    bool isOptimizable()
-    {
-      return RadFun->isOptimizable(); 
-    }
-
     BackflowFunctionBase* makeClone()
     {
-       Backflow_ee* clone = new Backflow_ee(*this);
+       Backflow_ee<FT>* clone = new Backflow_ee<FT>(*this);
+       first=true;
        clone->resize(NumTargets);
-       clone->RadFun = new FT(*RadFun);
+       for(int i=0; i<uniqueRadFun.size(); i++)
+         clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+       for(int i=0; i<RadFun.size(); i++)
+       {
+         bool done=false;
+         for(int k=0; k<uniqueRadFun.size(); k++)
+           if(RadFun[i] == uniqueRadFun[k]) {
+             done=true;
+             clone->RadFun[i] = clone->uniqueRadFun[k];
+             break;
+           }
+         if(!done) {
+           APP_ABORT("Error cloning Backflow_ee object. \n");
+         }
+       }
        return clone; 
     }
-
-    inline int 
-    indexOffset() 
+   
+    void addFunc(int ia, int ib, FT* rf) 
     {
-       return RadFun->myVars.where(0);
+      uniqueRadFun.push_back(rf);
+      if(first) {
+        // initialize all with rf the first time
+        for(int i=0; i<RadFun.size(); i++)
+          RadFun[i]=rf;
+        first=false;
+      } else {
+        RadFun[ia*NumGroups+ib] = rf;
+        RadFun[ib*NumGroups+ia] = rf;
+      }  
     }
 
     void registerData(PooledData<RealType>& buf)
@@ -113,18 +124,37 @@ namespace qmcplusplus
       buf.add(FirstOfB,LastOfB);
     }
 
-    void updateBuffer(PooledData<RealType>& buf)
+    void reportStatus(ostream& os)
     {
-      buf.put(FirstOfU,LastOfU);
-      buf.put(FirstOfA,LastOfA);
-      buf.put(FirstOfB,LastOfB);
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->reportStatus(os);
     }
 
-    void copyFromBuffer(PooledData<RealType>& buf)
+    void resetParameters(const opt_variables_type& active)
     {
-      buf.get(FirstOfU,LastOfU);
-      buf.get(FirstOfA,LastOfA);
-      buf.get(FirstOfB,LastOfB);
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->resetParameters(active);
+    }
+
+    void checkInVariables(opt_variables_type& active)
+    {
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->checkInVariables(active);
+    }
+
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->checkOutVariables(active);
+    }
+
+    inline bool isOptimizable()
+    {
+      for(int i=0; i<uniqueRadFun.size(); i++)
+        if(uniqueRadFun[i]->isOptimizable()) return true;
+      return false;
+    }
+
+    inline int
+    indexOffset()
+    {
+       return RadFun[0]->myVars.where(0);
     }
 
     inline void
@@ -209,7 +239,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun->evaluate(myTable->r(nn),du,d2u);
+          ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           PosType u = uij*myTable->dr(nn);
           QP.R[i] -= u;  // dr(ij) = r_j-r_i 
           QP.R[j] += u;  
@@ -227,7 +257,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun->evaluate(myTable->r(nn),du,d2u);
+          ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           PosType u = uij*myTable->dr(nn);
           // UIJ = eta(r) * (r_i - r_j)
           UIJ(j,i) = u;
@@ -262,7 +292,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun->evaluate(myTable->r(nn),du,d2u);
+          ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           du *= myTable->rinv(nn);
           PosType u = uij*myTable->dr(nn); 
           UIJ(j,i) = u;
@@ -308,7 +338,7 @@ namespace qmcplusplus
       for(int i=1; i<maxI; i++) {
         int j = index[i];
         // Temp[j].dr1 = (ri - rj)
-        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);   
         newQP[iat] += u;
         newQP[j] -= u;
@@ -323,14 +353,14 @@ namespace qmcplusplus
       RealType du,d2u;
       for(int i=0; i<iat; i++) {
         // Temp[j].dr1 = (ri - rj)
-        ValueType uij = RadFun->evaluate(myTable->Temp[i].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,i)]->evaluate(myTable->Temp[i].r1,du,d2u);
         PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
         newQP[iat] += u;
         newQP[i] -= u;
       }
       for(int i=iat+1; i<NumTargets; i++) {
         // Temp[j].dr1 = (ri - rj)
-        ValueType uij = RadFun->evaluate(myTable->Temp[i].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,i)]->evaluate(myTable->Temp[i].r1,du,d2u);
         PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
         newQP[iat] += u;
         newQP[i] -= u;
@@ -349,7 +379,7 @@ namespace qmcplusplus
       int iat = index[0];
       for(int i=1; i<maxI; i++) {
         int j = index[i];
-        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j); 
         newQP[iat] += u;
         newQP[j] -= u;
@@ -377,7 +407,7 @@ namespace qmcplusplus
       RealType du,d2u;
 // myTable->Temp[jat].r1
       for(int j=0; j<iat; j++) {
-        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         newQP[j] -= u;
@@ -395,7 +425,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
       }
       for(int j=iat+1; j<NumTargets; j++) {
-        ValueType uij = RadFun->evaluate(myTable->Temp[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         newQP[j] -= u;
@@ -427,7 +457,7 @@ namespace qmcplusplus
       const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp; 
       for(int i=1; i<maxI; i++) {
         int j = index[i];
-        ValueType uij = RadFun->evaluate(TMP[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         newQP[j] -= u;
@@ -465,7 +495,7 @@ namespace qmcplusplus
 // myTable->Temp[jat].r1
       const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
       for(int j=0; j<iat; j++) {
-        ValueType uij = RadFun->evaluate(TMP[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         newQP[j] -= u;
@@ -492,7 +522,7 @@ namespace qmcplusplus
         Bmat(j,iat) += dg;
       }
       for(int j=iat+1; j<NumTargets; j++) {
-        ValueType uij = RadFun->evaluate(TMP[j].r1,du,d2u);
+        ValueType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
         PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         newQP[j] -= u;
@@ -530,7 +560,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun->evaluate(myTable->r(nn),du,d2u);
+          ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           PosType u = (d2u+4.0*du*myTable->rinv(nn))*myTable->dr(nn);
           Bmat_full(i,i) -= u;
           Bmat_full(j,j) += u;
@@ -550,10 +580,10 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun->evaluate(myTable->r(nn),du,d2u);
+          ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           //for(int q=0; q<derivs.size(); q++) derivs[q]=0.0; // I believe this is necessary
           std::fill(derivs.begin(),derivs.end(),0.0);
-          RadFun->evaluateDerivatives(myTable->r(nn),derivs);
+          RadFun[PairID(i,j)]->evaluateDerivatives(myTable->r(nn),derivs);
 
           du *= myTable->rinv(nn);
           PosType u = uij*myTable->dr(nn);
@@ -584,7 +614,7 @@ namespace qmcplusplus
           Bmat_full(i,j) += grad;
           Bmat_full(j,i) -= grad;
 
-          for(int prm=0,la=indexOfFirstParam; prm<numParams; prm++,la++) {
+          for(int prm=0,la=indexOfFirstParam+offsetPrms[PairID(i,j)]; prm<numParams; prm++,la++) {
             GradType uk = myTable->dr(nn)*derivs[prm][0]; 
             Cmat(la,i) -= uk; 
             Cmat(la,j) += uk; 

@@ -286,7 +286,6 @@ namespace qmcplusplus {
 
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) Dets[i]->evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
-
   }
 
 

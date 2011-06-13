@@ -408,38 +408,86 @@ namespace qmcplusplus
       string source("none");
       string name("bf0");
       string type("none");
-//       RealType cusp=0.0;
       string funct("Bspline");
       trAttrib.add (name, "name");
-//       trAttrib.add (cusp, "cusp");
-      trAttrib.add (source, "source");
       trAttrib.add (funct, "function");
       trAttrib.put(cur);
+
+      xmlNodePtr curRoot=cur;
+      //BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
+      Backflow_ee<BsplineFunctor<double> > *tbf = new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
+      SpeciesSet& species(targetPtcl.getSpeciesSet());
+      vector<int> offsets;
 
       if(funct == "Gaussian") {
         APP_ABORT("Disabled GaussianFunctor for now, \n");
       } else if(funct == "Bspline")  {
         app_log() <<"Using BsplineFunctor type. \n";
 //         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
-        BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
-        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-        bsp->put(cur);
-        if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
-        bsp->myVars.setParameterType(optimize::SPO_P);
-        if(OHMMS::Controller->rank()==0)
+
+        string cname;
+        cur = curRoot->children;
+        while (cur != NULL)
         {
-          char fname[16];
-          sprintf(fname,"BF.%s.dat",name.c_str());
-          ofstream fout(fname);
-          fout.setf(ios::scientific, ios::floatfield);
-          fout << "# Backflow radial function \n"; 
-          bsp->print(fout);
-          fout.close();
+          getNodeName(cname,cur);
+          if (cname == "correlation")
+          {
+            RealType cusp=0;
+            string spA(species.speciesName[0]);
+            string spB(species.speciesName[0]);
+            OhmmsAttributeSet anAttrib;
+            anAttrib.add (cusp, "cusp");
+            anAttrib.add(spA,"speciesA");
+            anAttrib.add(spB,"speciesB");
+            anAttrib.add(cusp,"cusp");
+            anAttrib.put(cur);
+
+            int ia = species.findSpecies(spA);
+            int ib = species.findSpecies(spB);
+            if(ia==species.size() || ib == species.size())
+            {
+              APP_ABORT("Failed. Species are incorrect in e-e backflow.");
+            }
+            app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib <<endl;
+
+            BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+            bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+            bsp->put(cur);
+            if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
+            bsp->myVars.setParameterType(optimize::SPO_P);
+            tbf->addFunc(ia,ib,bsp);
+            offsets.push_back(tbf->numParams); 
+            tbf->numParams += bsp->NumParams;
+            if(OHMMS::Controller->rank()==0)
+            {   
+              char fname[16];
+              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
+              ofstream fout(fname);
+              fout.setf(ios::scientific, ios::floatfield);
+              fout << "# Backflow radial function \n"; 
+              bsp->print(fout);
+              fout.close();
+            }
+          }
+          cur = cur->next;
         }
-        BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl,bsp);
-        tbf->numParams = bsp->NumParams;
         tbf->derivs.resize(tbf->numParams);
-        bfFuns.push_back(tbf);
+        // setup offsets
+        // could keep a map<pair<>,int>
+        for(int i=0; i<tbf->RadFun.size(); i++) {
+          bool done = false;
+          for(int k=0; k<tbf->uniqueRadFun.size(); k++) {
+            if(tbf->RadFun[i] == tbf->uniqueRadFun[k]) {
+              done=true;
+              tbf->offsetPrms[i] = offsets[k];
+              break;
+            }
+          }
+          if(!done) {
+            APP_ABORT("Error creating Backflow_ee object. \n");
+          }
+        }
+        bfFuns.push_back((BackflowFunctionBase *)tbf);
       } else {
         APP_ABORT("Unknown function type in e-e BF Transformation.\n");
       }

@@ -102,10 +102,7 @@ namespace qmcplusplus
  
     /** reset the distance table with a new target P
      */
-    virtual void resetTargetParticleSet(ParticleSet& P)
-    {
-      myTable = DistanceTable::add(CenterSys,P);
-    }
+    virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
     virtual void
     acceptMove(int iat, int UpdateType)=0;
@@ -113,13 +110,18 @@ namespace qmcplusplus
     virtual void
     restore(int iat, int UpdateType)=0;
 
+    virtual void reportStatus(ostream& os)=0;
+
     virtual void resetParameters(const opt_variables_type& active)=0;
 
     virtual void checkInVariables(opt_variables_type& active)=0;
 
-    virtual void reportStatus(ostream& os) = 0;
-
     virtual void checkOutVariables(const opt_variables_type& active)=0;
+
+    virtual bool isOptimizable()=0;
+
+    virtual int
+    indexOffset()=0;
 
     // Note: numParams should be set in Builder class, so it is known here
     inline int
@@ -128,15 +130,21 @@ namespace qmcplusplus
       return numParams;
     }
 
-    virtual inline int indexOffset()=0;
-
-    virtual bool isOptimizable()=0;
-
     virtual void registerData(PooledData<RealType>& buf)=0;
   
-    virtual void updateBuffer(PooledData<RealType>& buf)=0;
+    void updateBuffer(PooledData<RealType>& buf)
+    {
+      buf.put(FirstOfU,LastOfU);
+      buf.put(FirstOfA,LastOfA);
+      buf.put(FirstOfB,LastOfB);
+    }
 
-    virtual void copyFromBuffer(PooledData<RealType>& buf)=0;
+    void copyFromBuffer(PooledData<RealType>& buf)
+    {
+      buf.get(FirstOfU,LastOfU);
+      buf.get(FirstOfA,LastOfA);
+      buf.get(FirstOfB,LastOfB);
+    }
     
     /** calculate quasi-particle coordinates only
      */
