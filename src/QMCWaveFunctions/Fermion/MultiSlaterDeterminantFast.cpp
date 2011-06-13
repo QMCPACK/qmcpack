@@ -271,7 +271,7 @@ namespace qmcplusplus {
   OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
   {
 
-    if(usingBF) APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n"); }
 
     GradType grad_iat=0.0;
     if(DetID[iat] == 0) {
@@ -313,7 +313,7 @@ namespace qmcplusplus {
       , int iat, GradType& grad_iat)
   {
 
-    if(usingBF) APP_ABORT("Fast MSD+BF: ratioGrad not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: ratioGrad not implemented. \n"); }
 
     UpdateMode=ORB_PBYP_PARTIAL;
     if(DetID[iat] == 0) {
@@ -372,7 +372,7 @@ namespace qmcplusplus {
      , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
   {
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: ratio(P,dG,dL) not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: ratio(P,dG,dL) not implemented. \n"); }
 
     UpdateMode=ORB_PBYP_ALL;
     if(DetID[iat] == 0) {
@@ -496,7 +496,7 @@ namespace qmcplusplus {
 // debug
 //    testMSD(P,iat);
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: ratio not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: ratio not implemented. \n"); }
 
     UpdateMode=ORB_PBYP_RATIO;
     if(DetID[iat] == 0) {
@@ -537,7 +537,7 @@ namespace qmcplusplus {
 // this should depend on the type of update, ratio / ratioGrad 
 // for now is incorrect fot ratio(P,iat,dG,dL) updates 
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: acceptMove not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: acceptMove not implemented. \n"); }
 
 
 // update psiCurrent,myG_temp,myL_temp
@@ -598,7 +598,7 @@ namespace qmcplusplus {
   void MultiSlaterDeterminantFast::restore(int iat)
   {
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: restore not implemented. \n"); }
 
     AccRejTimer.start();
     Dets[DetID[iat]]->restore(iat);
@@ -628,7 +628,7 @@ namespace qmcplusplus {
   OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, BufferType& buf)
   {
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: restore not implemented. \n"); }
 
     Dets[0]->registerData(P,buf);
     Dets[1]->registerData(P,buf);
@@ -652,7 +652,7 @@ namespace qmcplusplus {
   void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
   {
     
-    if(usingBF) APP_ABORT("Fast MSD+BF: registerDataForDerivatives not implemented. \n");
+    if(usingBF) { APP_ABORT("Fast MSD+BF: registerDataForDerivatives not implemented. \n"); }
 
     Dets[0]->registerDataForDerivatives(P,buf,storageType);
     Dets[1]->registerDataForDerivatives(P,buf,storageType);
@@ -714,8 +714,8 @@ namespace qmcplusplus {
   void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, BufferType& buf)
   {
 
-    if(usingBF) APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n");
-
+    if(usingBF) { APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n"); }
+ 
     Dets[0]->copyFromBuffer(P,buf);
     Dets[1]->copyFromBuffer(P,buf);
     buf.get(psiCurrent);
