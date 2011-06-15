@@ -166,9 +166,12 @@ namespace qmcplusplus {
     bool HaveLocalizedOrbs;
     bool ReadOrbitalInfo ();
     bool ReadOrbitalInfo_ESHDF ();
-    void ReadGvectors_ESHDF();
     void BroadcastOrbitalInfo();
     bool CheckLattice();
+    /** read gvectors for each twist
+     * @return true, if psi_g is found
+     */
+    bool ReadGvectors_ESHDF();
 
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
@@ -252,6 +255,14 @@ namespace qmcplusplus {
     std::vector<int> rotatedOrbitals;
     void RotateBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet);
     void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
+
+    /** broadcast SortBands
+     * @param N number of state
+     * @param root true if it is the i/o node
+     * @return true, if core is found
+     */
+    bool bcastSortBands(int N, bool root);
+
   }; 
 }
 
