@@ -844,7 +844,7 @@ namespace qmcplusplus {
 
     } 
 
-  void
+  bool
     EinsplineSetBuilder::ReadGvectors_ESHDF()
     {
       int numk;
@@ -879,6 +879,8 @@ namespace qmcplusplus {
       app_log() << "B-spline mesh factor is " << MeshFactor << endl;
       app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
         << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+
+      return true;
     }
 
   void
