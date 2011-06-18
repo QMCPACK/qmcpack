@@ -520,18 +520,25 @@ void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
     //assume all non-linear coeffs are together.
     if (types[0]==optimize::LINEAR_P)
     {
-        int i(0);
-        while (i++ < types.size())
-          if (types[i]==optimize::LINEAR_P) first=i;
+      int i(0);
+      while (i < types.size())
+      {
+        if (types[i]==optimize::LINEAR_P) first=i;
+        i++;
+      }
+      first++;
     }
     else
     {
-      int i(0);
-        while (i++ < types.size())
-          if (types[i]!=optimize::LINEAR_P) last=i;
+      int i(types.size()-1);
+      while (i >= 0)
+      {
+        if (types[i]==optimize::LINEAR_P) last=i;
+        i--;
+      }
     }
 //     returns the number of non-linear parameters.
-//     app_log()<<"line params: "<<first<<" "<<last<<endl;
+    app_log()<<"line params: "<<first<<" "<<last<<endl;
 };
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
@@ -549,6 +556,46 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<R
     rescale = 1.0/(1.0-rescale);
 //     app_log()<<"rescale: "<<rescale<<endl;
     return rescale;
+};
+
+void QMCLinearOptimize::orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S)
+{
+//     int first(0),last(0);
+//     getNonLinearRange(first,last);
+//     if (first==last) return;
+    int x(dP.size());
+    Matrix<RealType> T(S);
+
+    std::vector<RealType> nP(dP);
+    Matrix<RealType> lS(x,x);
+    for (int i=0; i<x; i++)
+      for (int j=0; j<x; j++)
+        lS(i,j)=S(i+1,j+1);
+    RealType Det= invert_matrix(lS,true);
+    for (int i=0; i<x; i++)
+    {
+      dP[i]=0;
+      for (int j=0; j<x; j++)
+      {
+        dP[i]+=nP[j]*lS(i,j);
+      }
+    }
+    
+    RealType rs = getNonLinearRescale(dP,T);
+    for (int i=0; i<x; i++) dP[i] *=rs;
+    for (int i=0; i<dP.size(); i++) app_log()<<dP[i]<<" ";
+    app_log()<<endl;
+      
+//     RealType D(0.0);
+//     for (int i=first; i<last; i++) D += 2.0*S(i+1,0)*dP[i];
+//     for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(i+1,j+1)*dP[i]*dP[j];
+//     app_log()<<D<<endl;
+//     
+//     
+//     RealType rescale = 0.5*D/(0.5 + 0.5*std::sqrt(1.0+D));
+//     rescale = 1.0/(1.0-rescale);
+//     app_log()<<rescale<<endl;
+//     for (int i=0; i<dP.size(); i++) dP[i] *= rescale;
 };
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled)

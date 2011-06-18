@@ -112,7 +112,7 @@ bool QMCSHLinearOptimize::run()
     std::vector<RealType> dP(N,1);
     for (int i=0; i<numParams; i++) dP[i+1]=optdir[i];
     Lambda = getNonLinearRescale(dP,OM);
-//     app_log()<<"rescaling factor :"<<Lambda<<endl;
+    app_log()<<"rescaling factor :"<<Lambda<<endl;
     RealType bigOptVec(std::abs(optdir[0]));
     for (int i=1; i<numParams; i++) bigOptVec =std::max(std::abs(optdir[i]),bigOptVec);
     
@@ -139,6 +139,7 @@ bool QMCSHLinearOptimize::run()
     }
     else if (MinMethod=="overlap")
     {
+      orthoScale(optdir,OM);
       if (bigOptVec>bigChange)
           app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec<<endl;
       else
@@ -146,6 +147,11 @@ bool QMCSHLinearOptimize::run()
         for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentParameters[i] + optdir[i];
         acceptedOneMove = true;
       }
+    }    
+    else if (MinMethod=="average")
+    {
+        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentHOvlp[i];
+        acceptedOneMove = true;
     }
     else
     {

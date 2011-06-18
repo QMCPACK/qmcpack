@@ -278,7 +278,7 @@ namespace qmcplusplus {
     if(samples_this_node%omp_get_max_threads())
       for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
       
-    int ndumps = samples_this_node/W.getActiveWalkers() + 1;
+    int ndumps = std::max(samples_this_node/W.getActiveWalkers() + 1,2);
     myPeriod4WalkerDump = nBlocks*nSteps/ndumps;
       
     
@@ -361,19 +361,17 @@ namespace qmcplusplus {
         {
           int ip=omp_get_thread_num();
           int now=CurrentStep;
-          MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit2(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+          MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_first(W.begin()+wPerNode[ip]), wit2(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
           for(int interval = 0;interval<BranchInterval-1; ++interval,++now)
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
-            MCWalkerConfiguration::iterator wit2(wit);
-            wit2=wit;
             while(wit2!=wit_end)
             {
-              (**wit).addPropertyHistoryPoint(Eindx,(**wit).getPropertyBase()[LOCALENERGY]); wit2++;
+              (**wit2).addPropertyHistoryPoint(Eindx,(**wit2).getPropertyBase()[LOCALENERGY]); wit2++;
             }
-            wit2=wit;
-            if (Period4WalkerDump&&(now%myPeriod4WalkerDump==0)) 
+            wit2=wit_first;
+            if (Period4WalkerDump&&((now+1)%myPeriod4WalkerDump==0)) 
             {
               wClones[ip]->saveEnsemble(wit2,wit_end);
 #pragma omp master              
@@ -384,13 +382,13 @@ namespace qmcplusplus {
           wClones[ip]->resetCollectables();
 
           Movers[ip]->advanceWalkers(wit,wit_end,false);
-          wit2=wit;
+          wit2=wit_first;
           while(wit2!=wit_end)
           {
-            (**wit).addPropertyHistoryPoint(Eindx,(**wit).getPropertyBase()[LOCALENERGY]); wit2++;
+            (**wit2).addPropertyHistoryPoint(Eindx,(**wit2).getPropertyBase()[LOCALENERGY]); wit2++;
           }
-          wit2=wit;
-          if (myPeriod4WalkerDump&&(now%myPeriod4WalkerDump==0)) 
+          wit2=wit_first;
+          if (myPeriod4WalkerDump&&((now+1)%myPeriod4WalkerDump==0)) 
           {
             wClones[ip]->saveEnsemble(wit2,wit_end);
 #pragma omp master              
@@ -402,13 +400,6 @@ namespace qmcplusplus {
           if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
              
         }//#pragma omp parallel
-        
-        branchEngine->branch(CurrentStep,W, branchClones);
-//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-//           W.resetWalkerParents();
-//         }
-        if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       } 
 //       branchEngine->debugFWconfig();
 #pragma omp parallel for
@@ -431,6 +422,8 @@ namespace qmcplusplus {
         }
       }
       
+      branchEngine->branch(CurrentStep,W, branchClones);
+      if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
 
       Estimators->stopBlock(acceptRatio());
       block++;
@@ -438,7 +431,7 @@ namespace qmcplusplus {
       g_nsampls=nsampls;
       myComm->allreduce(g_nsampls);
 
-    } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs  && g_nsampls<nTargetSamples);
+    } while(((block<nBlocks) || (g_nsampls<nTargetSamples)) && myclock.elapsed()<MaxCPUSecs);
     
     //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
     for(int ip=0; ip<NumThreads; ip++) 

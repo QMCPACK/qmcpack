@@ -62,75 +62,55 @@ namespace qmcplusplus {
       g_stats[5]=sN;
       myComm->allreduce(g_stats);
       
-      RealType nrm=1.0/g_stats[5];
-      for(int i=0;i<5;i++) g_stats[i]/=g_stats[5];
-      E_avg = g_stats[0];
-      V_avg = g_stats[1]-E_avg*E_avg;
+      RealType nrm = 1.0/g_stats[5];
+      RealType wgtNrm = std::exp(t*g_stats[2]*nrm);
+      RealType avgInvWgt = std::sqrt((g_stats[3]/g_stats[5])/wgtNrm);
+      RealType avgWgt = std::sqrt((g_stats[4]/g_stats[5])*wgtNrm);
+//       app_log()<<"Ebar: "<<g_stats[2]/g_stats[5]<<endl;
+//       app_log()<<"Weights: "<<avgWgt<<" "<<avgInvWgt<<" "<<(g_stats[4]/g_stats[5])*wgtNrm<<" "<<(g_stats[3]/g_stats[5])/wgtNrm<<" "<<wgtNrm<<endl;
       
-      for(int i=0;i<5;i++) app_log()<<g_stats[i]<<" ";
-      app_log()<<endl;
-      
-      
-      d.resize(D.size(),0);
-      for(int i=0;i<D2.size();i++)  D2[i]=1.0/(nrm*D2[i]);
-      for(int i=0;i<DT.size();i++)  DT[i]*=nrm;
-      for(int i=0;i<D.size();i++)   D[i]*=nrm;
-      for(int i=0;i<D_E.size();i++) D_E[i]*=nrm;
-      Overlap *= nrm;
-      
-      RealType wmw=std::sqrt(g_stats[3]/g_stats[4]);
-      std::vector<RealType> d0(D.size(),0);
-      for(int i=0;i<D.size();i++) d[i] = d0[i] = (D[i]*wmw - DT[i])*D2[i];
-//       for(int i=0;i<D.size();i++) d[i] = d0[i] = (D[i]*wmw - DT[i])*D2[i];
-      e=E_avg;
-      for (int i=0; i<NumOptimizables; i++)
-        olp(i,0) = olp(0,i)= DT[i];
-      olp(0,0)=g_stats[3];
-        
       std::vector<RealType> DT2(DT.size(),0);
-      for(int i=0;i<DT.size();i++) DT2[i] = 1.0/std::sqrt(Overlap(i,i));
+      for(int i=0;i<NumOptimizables;i++) DT2[i] = (Overlap(i,i)==0)?0:std::sqrt(wgtNrm/(Overlap(i,i)*nrm));
       
-      RealType nrmT=1.0/g_stats[3];  
-      for (int i=0; i<NumOptimizables; i++)
-        for (int j=0; j<NumOptimizables; j++) 
+      for(int i=0; i<NumOptimizables; i++)
+        for(int j=0; j<NumOptimizables; j++) 
         {
-          olp(i+1,j+1)=Overlap(i,j);
-          Overlap(i,j)*=DT2[i]*DT2[j];
+          Overlap(i,j) *= nrm/wgtNrm;//DT2[i]*DT2[j];
+          olp(i+1,j+1) = Overlap(i,j);
         }
+      for (int i=0; i<NumOptimizables; i++)
+        olp(i+1,0) = olp(0,i+1)= 0.0;
+      olp(0,0)=1.0;
       
-      
-//       for(int i=0;i<d.size();i++)
-//         for (int j=0; j<i; j++) 
-//           d[i] -= Overlap(i,j)*d[j];
-      
-//       RealType Num(0); 
-//       for(int i=0;i<NumOptimizables;i++) Num+=DT[i]*d[i];
-//       
-//       RealType DNom(0);
-//       for (int i=0; i<NumOptimizables; i++)
-//         for (int j=0; j<NumOptimizables; j++)
-//           DNom += d[i]*d[j]*olp(i+1,j+1);
-//       Num/=DNom;
-// //       app_log()<<"Rescale DMCOPT "<<Num<<endl;
-//       for(int i=0;i<D.size();i++) d[i]*=Num;
+      RealType dpNrm = std::sqrt(4.0/(avgInvWgt + avgWgt + 2.0))*nrm;
+      for(int i=0;i<D.size();i++) d[i] = (D[i]- (DT[i]/wgtNrm))*dpNrm;
+      for(int i=0;i<D.size();i++) hd[i] = DT2[i]*(D[i]- (DT[i]/wgtNrm))*dpNrm;
+//       std::vector<RealType> d2(d.size(),0);
+//       for(int i=0;i<D.size();i++) d2[i] = DT2[i]*(D[i] - DT[i]/avgInvWgt);
+      e=E_avg;
         
 //       RealType Det= invert_matrix(Overlap,true);
 //       app_log()<<Det<<endl;
-//       Det=determinant_matrix(Overlap);
-//       app_log()<<Det<<endl;
-//       Overlap*=1.0/Det;
-      
-      
+//       
+//       for (int i=0; i<NumOptimizables; i++) app_log()<< DT2[i] <<" ";
+//       app_log()<<endl;
+      for (int i=0; i<NumOptimizables; i++) app_log()<< DT[i]*nrm/wgtNrm<<" ";
+      app_log()<<endl;
+      for (int i=0; i<NumOptimizables; i++) app_log()<< D[i]*nrm<<" ";
+      app_log()<<endl;
+// 
+      for (int i=0; i<NumOptimizables; i++) app_log()<<d[i]<<" ";
+      app_log()<<endl;
+// 
 //       for (int i=0; i<NumOptimizables; i++)
 //       {
+//         d[i]=0.0;
 //         for (int j=0; j<NumOptimizables; j++)
-//           app_log()<<Overlap(i,j)<<" ";
-//         app_log()<<endl;
+//           d[i] += d0[j]*Overlap(i,j);
 //       }
-      app_log()<<endl;
-      for (int i=0; i<NumOptimizables; i++)
-         app_log()<<d[i]<<" ";
-      app_log()<<endl;
+// 
+//       for (int i=0; i<NumOptimizables; i++) app_log()<<d[i]<<" ";
+//       app_log()<<endl;
         
     }
     
@@ -160,7 +140,8 @@ namespace qmcplusplus {
     RealType E_avg, V_avg, t;      
     std::vector<RealType> D_E, D2, D, DT;
     Matrix<RealType> Overlap;
-    RealType sE,sE2,ssE,smW,sW,sN;
+    RealType sE,sE2,ssE,sN;
+    RealType sW,smW;
     int myPeriod4WalkerDump, wlen, Eindx;
     int samples_this_node;
     bool firsttime;
@@ -214,9 +195,8 @@ namespace qmcplusplus {
       sE2+=E_L2;
       sN+=1;
       
-      RealType invfnw=w.getPropertyHistorySum(Eindx,wlen);
-      ssE+=invfnw;
-      invfnw = std::exp(t*invfnw);
+      ssE+=w.getPropertyHistorySum(Eindx,wlen);
+      RealType invfnw = std::exp(t*w.getPropertyHistorySum(Eindx,wlen));
       sW +=invfnw;
       smW+=1.0/invfnw;
       

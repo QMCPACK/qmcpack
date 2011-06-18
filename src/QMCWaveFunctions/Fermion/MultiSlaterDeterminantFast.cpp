@@ -71,6 +71,7 @@ namespace qmcplusplus {
     clone->C=C;
     clone->myVars=myVars;
     clone->usingCSF=usingCSF;
+    clone->usingBF=usingBF;
     if (usingCSF)
     {
       clone->CSFcoeff=CSFcoeff;

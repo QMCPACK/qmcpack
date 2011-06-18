@@ -759,6 +759,8 @@ namespace qmcplusplus
      else {
         APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
      }
+     if(zero_cutoff>0)
+       app_log()<<"  Initializing CI coeffs less than "<<zero_cutoff<<" to zero."<<endl;
 
 // cheating until I fix the converter
      NCA = nels_up-NEA;
