@@ -415,7 +415,7 @@ namespace qmcplusplus {
           
           vector<RealType> Dsaved(NumOptimizables,0);
           vector<RealType> HDsaved(NumOptimizables,0);
-          psiClones[ip]->evaluateDerivatives(*wClones[ip],dummyOptVars[ip],Dsaved,HDsaved);
+          psiClones[ip]->evaluateDerivatives(*wClones[ip],dummyOptVars[ip],Dsaved,HDsaved,true);//SH like deriv style
 #pragma omp critical
           fillComponentMatrices(Dsaved,HDsaved,thisWalker);
           wit++;

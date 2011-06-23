@@ -269,7 +269,8 @@ namespace qmcplusplus
       void evaluateDerivatives(ParticleSet& P,
                                const opt_variables_type& optvars,
                                vector<RealType>& dlogpsi,
-                               vector<RealType>& dhpsioverpsi);
+                               vector<RealType>& dhpsioverpsi,
+                               bool project=false);
 
       void evaluateDerivatives(ParticleSet& P,
                                const opt_variables_type& optvars,

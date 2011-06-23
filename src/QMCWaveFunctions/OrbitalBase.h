@@ -399,7 +399,15 @@ namespace qmcplusplus
                                        const opt_variables_type& optvars,
                                        vector<RealType>& dlogpsi,
                                        vector<RealType>& dhpsioverpsi) ;
-
+      virtual void multiplyDerivsByOrbR(vector<RealType>& dlogpsi)
+      {
+        RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);
+        for(int j=0; j<myVars.size(); j++) {
+          int loc=myVars.where(j);
+          dlogpsi[loc] *= myrat;
+        }
+      };
+      
 //      virtual void evaluateDerivatives(ParticleSet& P,
 //                                       const opt_variables_type& optvars,
 //                                       vector<RealType>& dlogpsi,

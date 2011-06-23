@@ -88,6 +88,18 @@ namespace qmcplusplus
                                        const opt_variables_type& optvars,
                                        vector<RealType>& dlogpsi,
                                        vector<RealType>& dhpsioverpsi)=0;
+      
+      virtual void multiplyDerivsByOrbR(vector<RealType>& dlogpsi)
+      {
+        for (int i=0; i<refOrbital.size(); ++i)
+        {
+          RealType myrat = std::exp(refOrbital[i]->LogValue)*std::cos(refOrbital[i]->PhaseValue);
+          for(int j=0; j<refOrbital[i]->myVars.size(); j++) {
+            int loc=refOrbital[j]->myVars.where(j);
+            dlogpsi[loc] *= myrat;
+          }
+        }
+      };
 
       /** check out optimizable variables
        */

@@ -150,7 +150,7 @@ bool QMCSHLinearOptimize::run()
     }    
     else if (MinMethod=="average")
     {
-        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentHOvlp[i];
+        for (int i=0; i<numParams; i++) bestParameters[i] = optTarget->Params(i) = currentParameters[i] + currentHOvlp[i];
         acceptedOneMove = true;
     }
     else

@@ -64,27 +64,28 @@ namespace qmcplusplus {
       
       RealType nrm = 1.0/g_stats[5];
       RealType wgtNrm = std::exp(t*g_stats[2]*nrm);
+      RealType avgInv =std::sqrt(g_stats[3]/g_stats[5]);
       RealType avgInvWgt = std::sqrt((g_stats[3]/g_stats[5])/wgtNrm);
-      RealType avgWgt = std::sqrt((g_stats[4]/g_stats[5])*wgtNrm);
+      RealType avgWgt = std::sqrt(g_stats[4]/g_stats[5]);
 //       app_log()<<"Ebar: "<<g_stats[2]/g_stats[5]<<endl;
 //       app_log()<<"Weights: "<<avgWgt<<" "<<avgInvWgt<<" "<<(g_stats[4]/g_stats[5])*wgtNrm<<" "<<(g_stats[3]/g_stats[5])/wgtNrm<<" "<<wgtNrm<<endl;
       
       std::vector<RealType> DT2(DT.size(),0);
-      for(int i=0;i<NumOptimizables;i++) DT2[i] = (Overlap(i,i)==0)?0:std::sqrt(wgtNrm/(Overlap(i,i)*nrm));
+      for(int i=0;i<NumOptimizables;i++) DT2[i] = (Overlap(i,i)==0)?0:1.0/std::sqrt(nrm*Overlap(i,i));
       
       for(int i=0; i<NumOptimizables; i++)
         for(int j=0; j<NumOptimizables; j++) 
         {
-          Overlap(i,j) *= nrm/wgtNrm;//DT2[i]*DT2[j];
+          Overlap(i,j) *= nrm;//DT2[i]*DT2[j];
           olp(i+1,j+1) = Overlap(i,j);
         }
       for (int i=0; i<NumOptimizables; i++)
         olp(i+1,0) = olp(0,i+1)= 0.0;
       olp(0,0)=1.0;
       
-      RealType dpNrm = std::sqrt(4.0/(avgInvWgt + avgWgt + 2.0))*nrm;
-      for(int i=0;i<D.size();i++) d[i] = (D[i]- (DT[i]/wgtNrm))*dpNrm;
-      for(int i=0;i<D.size();i++) hd[i] = DT2[i]*(D[i]- (DT[i]/wgtNrm))*dpNrm;
+//       RealType dpNrm = std::sqrt(4.0/(avgInvWgt + avgWgt + 2.0))*nrm;
+      for(int i=0;i<D.size();i++) d[i] = DT2[i]*(D[i]/avgWgt - DT[i]/avgInv)*nrm;
+      for(int i=0;i<D.size();i++) hd[i] = avgInv*DT2[i]*DT2[i]*(D[i]/avgWgt - (DT[i]/avgInv))*nrm;
 //       std::vector<RealType> d2(d.size(),0);
 //       for(int i=0;i<D.size();i++) d2[i] = DT2[i]*(D[i] - DT[i]/avgInvWgt);
       e=E_avg;
@@ -94,9 +95,9 @@ namespace qmcplusplus {
 //       
 //       for (int i=0; i<NumOptimizables; i++) app_log()<< DT2[i] <<" ";
 //       app_log()<<endl;
-      for (int i=0; i<NumOptimizables; i++) app_log()<< DT[i]*nrm/wgtNrm<<" ";
+      for (int i=0; i<NumOptimizables; i++) app_log()<< DT2[i]*(D[i]/avgWgt)*nrm<<" ";
       app_log()<<endl;
-      for (int i=0; i<NumOptimizables; i++) app_log()<< D[i]*nrm<<" ";
+      for (int i=0; i<NumOptimizables; i++) app_log()<< DT2[i]*(DT[i]/avgInv)*nrm<<" ";
       app_log()<<endl;
 // 
       for (int i=0; i<NumOptimizables; i++) app_log()<<d[i]<<" ";

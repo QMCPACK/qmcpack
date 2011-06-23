@@ -757,7 +757,8 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
   void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
       vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi)
+      vector<RealType>& dhpsioverpsi, 
+      bool project)
   {
     //     // First, zero out derivatives
     //  This should only be done for some variables.
@@ -771,6 +772,18 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     //orbitals do not know about mass of particle.
     for (int i=0;i<dhpsioverpsi.size();i++) 
       dhpsioverpsi[i]*=OneOverM;
+    
+    if (project)
+    {
+      for (int i=0; i<Z.size(); i++) {
+       if (Z[i]->dPsi)
+         (Z[i]->dPsi)->multiplyDerivsByOrbR(dlogpsi);
+       else
+         Z[i]->multiplyDerivsByOrbR(dlogpsi);
+      }
+      RealType psiValue=std::exp(-LogValue)*std::cos(PhaseValue);
+      for (int i=0; i<dlogpsi.size(); i++) dlogpsi[i] *= psiValue;
+    }
   }
 
   TrialWaveFunction::RealType
