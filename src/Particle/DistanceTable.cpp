@@ -102,7 +102,8 @@ namespace qmcplusplus
     typedef OHMMS_PRECISION RealType;
     enum {DIM=OHMMS_DIM};
     DistanceTableData* dt=0;
-    int sc=s.Lattice.SuperCellEnum;
+    //int sc=s.Lattice.SuperCellEnum;
+    int sc=t.Lattice.SuperCellEnum;
 
     ostringstream o;
     o << "  Distance table for AB: source = " << s.getName() << " target = " << t.getName() << "\n";
