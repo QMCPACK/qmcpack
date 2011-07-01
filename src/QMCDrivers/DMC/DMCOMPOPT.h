@@ -85,7 +85,7 @@ namespace qmcplusplus {
       
 //       RealType dpNrm = std::sqrt(4.0/(avgInvWgt + avgWgt + 2.0))*nrm;
       for(int i=0;i<D.size();i++) d[i] = DT2[i]*(D[i]/avgWgt - DT[i]/avgInv)*nrm;
-      for(int i=0;i<D.size();i++) hd[i] = avgInv*DT2[i]*DT2[i]*(D[i]/avgWgt - (DT[i]/avgInv))*nrm;
+      for(int i=0;i<D.size();i++) hd[i] = DT2[i]*(D[i]/avgWgt)*nrm;
 //       std::vector<RealType> d2(d.size(),0);
 //       for(int i=0;i<D.size();i++) d2[i] = DT2[i]*(D[i] - DT[i]/avgInvWgt);
       e=E_avg;

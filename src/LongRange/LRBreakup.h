@@ -227,8 +227,8 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
 
   //Add high |k| ( >kcont, <kmax) k-points with approximate degeneracy
   //Volume of 1 K-point is (2pi)^3/(a1.a2^a3)
+#if OHMMS_DIM==3  
   RealType kelemvol = 8*M_PI*M_PI*M_PI/Basis.get_CellVolume();
-
   //Generate 4000 shells:
   const int N=4000;
   RealType deltak = (kmax-kcont)/N;
@@ -241,6 +241,22 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
     AddKToList(kmid,degeneracy);
     numk += static_cast<int>(degeneracy);
   }
+#elif OHMMS_DIM==2
+  RealType kelemvol = 4*M_PI*M_PI/Basis.get_CellVolume();
+  //Generate 8000 shells:
+  const int N=8000;
+  RealType deltak = (kmax-kcont)/N;
+  for(int i=0; i<N; i++) {
+    RealType k1 = kcont + deltak*i;
+    RealType k2 = k1 + deltak;
+    RealType kmid = 0.5*(k1+k2);
+    RealType shellvol = M_PI*(k2*k2-k1*k1);
+    RealType degeneracy = shellvol/kelemvol;
+    AddKToList(kmid,degeneracy);
+    numk += static_cast<int>(degeneracy);
+  }
+#endif
+
 
   return maxkshell;
   //numk now contains the total number of vectors. 

@@ -34,6 +34,7 @@ namespace qmcplusplus {
    * - Fk(T k, T rc)
    * - Xk(T k, T rc)
    */
+#if OHMMS_DIM==3  
   template<class T=double>
   struct CoulombFunctor {
     T NormFactor;
@@ -59,6 +60,33 @@ namespace qmcplusplus {
       return 0.5*r*r;
     }
   };
+#elif OHMMS_DIM==2
+    template<class T=double>
+  struct CoulombFunctor {
+    T NormFactor;
+    inline CoulombFunctor(){}
+    void reset(ParticleSet& ref) 
+    {
+      NormFactor=2.0*M_PI/ref.Lattice.Volume;
+    }
+    void reset(ParticleSet& ref, T rs) {
+      NormFactor=2.0*M_PI/ref.Lattice.Volume;
+    }
+    inline T operator()(T r, T rinv) { return rinv;}
+    inline T df(T r) { return -1.0/(r*r); }
+    inline T Fk(T k, T rc) {
+      return NormFactor/k* std::cos(k*rc);
+    }
+    inline T Xk(T k, T rc) {
+      return -NormFactor/k* std::cos(k*rc);
+    }
+
+    inline T integrate_r2(T r) const 
+    {
+      return 0.5*r*r;
+    }
+  };
+#endif  
 
   template<class T=double>
   struct PseudoCoulombFunctor {
@@ -94,6 +122,7 @@ namespace qmcplusplus {
     LRCoulombSingleton::getHandler(ParticleSet& ref) {
       if(CoulombHandler ==0) 
       {
+#if OHMMS_DIM==3  
         if(ref.Lattice.SuperCellEnum == SUPERCELL_BULK)
         {
           app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
@@ -104,6 +133,11 @@ namespace qmcplusplus {
           app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
           CoulombHandler= new EwaldHandler(ref);
         }
+#elif OHMMS_DIM==2
+          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+          CoulombHandler= new TwoDEwaldHandler(ref);
+#endif
+
         CoulombHandler->initBreakup(ref);
         return CoulombHandler;
       }

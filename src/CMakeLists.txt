@@ -81,10 +81,14 @@ SET(PARTICLE ${PARTICLE}
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
-  LongRange/LPQHIBasis.cpp			      	
-  LongRange/EwaldHandler.cpp			      	
+  LongRange/LPQHIBasis.cpp
+  LongRange/EwaldHandler.cpp
   LongRange/LRCoulombSingleton.cpp
 )
+
+IF(OHMMS_DIM MATCHES 2)
+  SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
+ENDIF(OHMMS_DIM MATCHES 2)
 
 IF(QMC_BUILD_LEVEL GREATER 2)
   IF(NOT QMC_COMPLEX)
