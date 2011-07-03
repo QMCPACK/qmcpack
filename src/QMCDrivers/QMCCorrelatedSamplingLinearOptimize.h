@@ -60,7 +60,7 @@ private:
     return valid;
    }
     
-#if defined (QMC_CUDA)
+#if defined(QMC_CUDA)
     VMCcuda* vmcCSEngine;
 #else
     VMCLinearOptOMP* vmcCSEngine;

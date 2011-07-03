@@ -345,12 +345,12 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 #if defined (QMC_CUDA)
       if (useGPU == "yes")
       {  
-        vmcEngine = vmcCSEngine = new VMCcuda(W,Psi,H,psiPool);
+        vmcCSEngine = new VMCcuda(W,Psi,H,psiPool);
         vmcCSEngine->setOpt(true);
+        vmcEngine = vmcCSEngine;
       }
       else
 #endif
-//         vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
       vmcEngine = vmcCSEngine = new VMCLinearOptOMP(W,Psi,H,hamPool,psiPool);
 
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
