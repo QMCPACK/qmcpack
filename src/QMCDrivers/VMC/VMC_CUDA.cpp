@@ -181,7 +181,9 @@ namespace qmcplusplus {
       Psi.recompute(W);
       
       if(forOpt)
-      {
+      {        
+        d_logpsi_dalpha=0.0;
+        d_hpsioverpsi_dalpha=0.0;
         Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
         std::vector<RealType> g_stats(5,0);
         for (int ip=0; ip<nw; ip++)
@@ -400,6 +402,8 @@ namespace qmcplusplus {
       
       if(forOpt)
       {
+        d_logpsi_dalpha=0.0;
+        d_hpsioverpsi_dalpha=0.0;
         Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
         std::vector<RealType> g_stats(5,0);
         for (int ip=0; ip<nw; ip++)
