@@ -32,7 +32,7 @@ namespace qmcplusplus {
     bool runWithDrift();
     bool put(xmlNodePtr cur);
     RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
-    inline void setOpt(bool o){forOpt=o};
+    inline void setOpt(bool o){forOpt=o;};
  
   private:
     /// tau/mass
