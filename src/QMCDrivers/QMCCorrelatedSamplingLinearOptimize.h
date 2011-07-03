@@ -23,6 +23,9 @@
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "QMCDrivers/VMC/VMCLinearOptOMP.h"
 #include "Optimize/NRCOptimization.h"
+#if defined(QMC_CUDA)
+#include "QMCDrivers/VMC/VMC_CUDA.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -56,7 +59,13 @@ private:
     if (!valid) app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
     return valid;
    }
-   VMCLinearOptOMP* vmcCSEngine;
+    
+#if defined (QMC_CUDA)
+    VMCcuda* vmcCSEngine;
+#else
+    VMCLinearOptOMP* vmcCSEngine;
+#endif
+
     int NumOfVMCWalkers;
     ///Number of iterations maximum before generating new configurations.
     int Max_iterations;

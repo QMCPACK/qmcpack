@@ -115,12 +115,8 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     Matrix<RealType> Left(N,N);
     Matrix<RealType> LeftT(N,N);
     Matrix<RealType> Right(N,N);
-#if defined (QMC_CUDA)
-    vmcEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
-#else
-    vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
-#endif
 
+    vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
     vector<std::pair<RealType,RealType> > mappedStabilizers;
     
     RealType lastCost(0);
@@ -349,8 +345,8 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 #if defined (QMC_CUDA)
       if (useGPU == "yes")
       {  
-        vmcEngine = new VMCcuda(W,Psi,H,psiPool);
-        vmcEngine->setOpt(true);
+        vmcEngine = vmcCSEngine = new VMCcuda(W,Psi,H,psiPool);
+        vmcCSEngine->setOpt(true);
       }
       else
 #endif
