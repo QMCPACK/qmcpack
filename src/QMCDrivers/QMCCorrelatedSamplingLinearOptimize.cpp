@@ -343,7 +343,10 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     {
 #if defined (QMC_CUDA)
       if (useGPU == "yes")
-        vmcEngine = new VMCcuda(W,Psi,H,psiPool);
+      {  
+        vmcCSEngine = vmcEngine = new VMCcuda(W,Psi,H,psiPool);
+        vmcEngine->setOpt(true);
+      }
       else
 #endif
 //         vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
@@ -364,15 +367,6 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
             optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
         else
 #endif
-// #if defined(ENABLE_OPENMP)
-//             if (omp_get_max_threads()>1)
-//             {
-//                 optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-//             }
-//             else
-// #endif
-//                 optTarget = new QMCCostFunctionSingle(W,Psi,H);
-
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
         optTarget->setneedGrads(false);
         optTarget->setStream(&app_log());

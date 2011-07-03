@@ -31,6 +31,8 @@ namespace qmcplusplus {
     bool run();
     bool runWithDrift();
     bool put(xmlNodePtr cur);
+    RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
+    inline void setOpt(bool o){forOpt=o};
  
   private:
     /// tau/mass
@@ -49,6 +51,46 @@ namespace qmcplusplus {
     bool checkBounds (vector<PosType> &newpos, vector<bool> &valid);
 
     void resetRun();
+    
+    opt_variables_type dummy;
+    int numParams;
+    Matrix<ValueType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
+    RealType w_beta,w_alpha;
+    RealType E_avg, V_avg;
+    string GEVtype;
+    bool forOpt;
+
+    ///These are the values we collect to build the Matrices GLOBAL
+    Matrix<RealType> Olp;
+    std::vector<RealType> D_E, HD2, HD, D;
+    RealType sE,sE2,sE4,sW,sN;
+    
+    inline void clearComponentMatrices()
+    {
+      Olp=0.0;
+      for(int i=0;i<D_E.size();i++)
+      {
+        D_E[i]=0.0;
+        HD[i]=0.0;
+        HD2[i]=0.0;
+        D[i]=0.0;
+      }
+      sE=0;
+      sE2=0;
+      sE4=0;
+      sW=0;
+      sN=0;
+    }
+    
+    void resizeForOpt(int n)
+    {
+      Olp.resize(n,n);
+      D_E.resize(n);
+      HD.resize(n);
+      HD2.resize(n);
+      D.resize(n);
+      clearComponentMatrices();
+    }
   };
 }
 
