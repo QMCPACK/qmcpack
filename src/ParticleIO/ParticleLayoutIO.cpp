@@ -73,7 +73,7 @@ namespace qmcplusplus {
               boxsum++;
             }
           }
-          if(boxsum==1 || boxsum ==2)
+          if(boxsum<DIM && DIM>0)
           {
             APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
           }

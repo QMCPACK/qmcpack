@@ -85,6 +85,19 @@ namespace qmcplusplus
     }
     else
     {
+#if OHMMS_DIM==2      
+      RealType kgauss=1.0/(4*Sigma*Sigma);
+      RealType knorm=2*M_PI/Volume;
+      const RealType acclog=std::abs(std::log(1.0e-10));
+      for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
+      {
+        RealType t2e=KList.ksq[ki]*kgauss;
+        RealType uk=knorm*std::exp(-t2e)/KList.ksq[ki];
+        Fk_symm[ks]=uk;
+        while(ki<KList.kshell[ks+1] && ki<Fk.size()) Fk[ki++]=uk;
+      }
+      PreFactors[3]=0.0;
+#elif OHMMS_DIM==3
       RealType kgauss=1.0/(4*Sigma*Sigma);
       RealType knorm=4*M_PI/Volume;
       const RealType acclog=std::abs(std::log(1.0e-10));
@@ -96,6 +109,7 @@ namespace qmcplusplus
         while(ki<KList.kshell[ks+1] && ki<Fk.size()) Fk[ki++]=uk;
       }
       PreFactors[3]=0.0;
+#endif
     }
 
     app_log().flush();

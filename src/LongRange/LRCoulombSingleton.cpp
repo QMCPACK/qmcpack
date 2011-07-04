@@ -18,7 +18,11 @@
  * @brief Define a LRHandler with two template parameters
  */
 #include "LongRange/LRCoulombSingleton.h"
+#if OHMMS_DIM==3
 #include "LongRange/EwaldHandler.h"
+#elif OHMMS_DIM==2
+#include "LongRange/TwoDEwaldHandler.h"
+#endif
 #include <numeric>
 
 namespace qmcplusplus {
@@ -134,10 +138,9 @@ namespace qmcplusplus {
           CoulombHandler= new EwaldHandler(ref);
         }
 #elif OHMMS_DIM==2
-          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+          app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << endl;
           CoulombHandler= new TwoDEwaldHandler(ref);
 #endif
-
         CoulombHandler->initBreakup(ref);
         return CoulombHandler;
       }

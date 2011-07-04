@@ -119,7 +119,7 @@ namespace qmcplusplus {
     ref_.Lattice.set(dot(tmat,PrimCell.R));
 
     int natoms=ref_.getTotalNum();
-    int numCopies = abs(tmat.det());
+    int numCopies = abs(det(tmat));
     ParticleSet::ParticlePos_t primPos(ref_.R);
     ParticleSet::ParticleIndex_t primTypes(ref_.GroupID);
     ref_.resize(natoms*numCopies);
