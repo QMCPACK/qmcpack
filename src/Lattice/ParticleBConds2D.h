@@ -24,7 +24,7 @@ namespace APPNAMESPACE
   /** specialization for a periodic 2D cell
   */
   template<class T>
-    struct DTD_BConds<T,2,SUPERCELL_SLAB> 
+    struct DTD_BConds<T,2,SUPERCELL_BULK> 
     {
       T r00,r10,r01,r11;
       T g00,g10,g01,g11;
@@ -120,7 +120,7 @@ namespace APPNAMESPACE
   /** specialization for a periodic 2D orthorombic cell
   */
   template<class T>
-    struct DTD_BConds<T,2,SUPERCELL_SLAB+TwoPowerD> 
+    struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD> 
     {
 
       T Linv0,L0,Linv1,L1;
