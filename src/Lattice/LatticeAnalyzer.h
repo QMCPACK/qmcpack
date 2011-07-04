@@ -174,11 +174,11 @@ namespace qmcplusplus
 
       /** return supercell enum
        * @param[in] box[2] if box[i]==1, PBC
-       * @return SUPERCELL_OPEN, SUPERCELL_WIRE or SUPERCELL_SLAB
+       * @return SUPERCELL_OPEN or SUPERCELL_BULK
        */
       inline int operator()(const TinyVector<int,2>& box) 
       {
-        return box[0]+2*box[1];
+        return (box[0]+2*box[1])? SUPERCELL_BULK: SUPERCELL_OPEN;
       }
 
       inline bool isDiagonalOnly(const Tensor<T,2>& R) const
@@ -250,7 +250,7 @@ namespace qmcplusplus
 
       inline int operator()(const TinyVector<int,1>& box) 
       {
-        return box[0]+6;
+        return (box[0])? SUPERCELL_BULK:SUPERCELL_OPEN;
       }
 
       inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,1>& a)
