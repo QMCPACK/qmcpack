@@ -18,6 +18,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
@@ -26,7 +27,7 @@ namespace qmcplusplus {
   VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 		   QMCHamiltonian& h,WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool), myWarmupSteps(0), UseDrift("yes"),    nSubSteps(1),
-    myPeriod4WalkerDump(0)
+    myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
   { 
     RootName = "vmc";
     QMCType ="VMCcuda";
@@ -178,7 +179,6 @@ namespace qmcplusplus {
 	  W.saveEnsemble();
 	Estimators->accumulate(W);
       } while(step<nSteps);
-      Psi.recompute(W);
       
       if(forOpt)
       {        
@@ -230,7 +230,7 @@ namespace qmcplusplus {
 
       // vector<RealType> logPsi(W.WalkerList.size(), 0.0);
       // Psi.evaluateLog(W, logPsi);
-      
+      Psi.recompute(W);      
       double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
       Estimators->stopBlock(accept_ratio);
 
@@ -398,7 +398,6 @@ namespace qmcplusplus {
 	  W.saveEnsemble();
 	Estimators->accumulate(W);
       } while(step<nSteps);
-      Psi.recompute(W);
       
       if(forOpt)
       {
@@ -446,7 +445,7 @@ namespace qmcplusplus {
         E_avg = nrm*g_stats[0];
         V_avg = nrm*g_stats[1]-E_avg*E_avg;
       }
-      
+      Psi.recompute(W); 
       double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
       Estimators->stopBlock(accept_ratio);
 
@@ -516,7 +515,7 @@ namespace qmcplusplus {
     app_log() << "  Node zero will generate " << samples_this_node << " samples.\n";
     W.setNumSamples(samples_this_node);
     
-    clearComponentMatrices();
+    if(forOpt) clearComponentMatrices();
   }
 
   bool 

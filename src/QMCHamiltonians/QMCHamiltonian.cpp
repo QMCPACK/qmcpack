@@ -424,7 +424,7 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
     //H[i]->setObservables(Observables);
     myTimers[i]->stop();
   }
-  KineticEnergyVector=H[0]->ValueVector;
+  //KineticEnergyVector=H[0]->ValueVector;
 
   for (int iw=0; iw<walkers.size(); iw++) {
     walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
