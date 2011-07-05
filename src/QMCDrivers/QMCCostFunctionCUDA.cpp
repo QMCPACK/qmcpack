@@ -40,8 +40,8 @@ namespace qmcplusplus {
   {
     Return_t wgt_tot=0.0;
     Return_t wgt_tot2=0.0;
-    Return_t NSm1 = 1.0/NumSamples;
     int nw = W.getActiveWalkers();
+    
 
     //#pragma omp parallel reduction(+:wgt_tot)
     Return_t eloc_new;
@@ -53,11 +53,17 @@ namespace qmcplusplus {
     int numPtcl   = W.getTotalNum();
 
     vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
-    TrialWaveFunction::ValueMatrix_t d_logpsi_dalpha(nw, numParams), d_hpsioverpsi_dalpha(nw, numParams);
+    TrialWaveFunction::ValueMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
     TrialWaveFunction::GradMatrix_t  fixedG(nw, numPtcl);
     TrialWaveFunction::ValueMatrix_t fixedL(nw, numPtcl);
     TrialWaveFunction::GradMatrix_t  newG(nw, numPtcl);
     TrialWaveFunction::ValueMatrix_t newL(nw, numPtcl);
+    if (needDerivs)
+    {
+      d_logpsi_dalpha.resize(nw, numParams);
+      d_hpsioverpsi_dalpha.resize(nw, numParams);
+    }
+    
     Psi.evaluateOptimizableLog(W, logpsi_new, newG, newL);
     //    RealType factor = samplePsi2 ? 2.0 : 1.0;
     RealType factor = 2.0;
@@ -65,8 +71,8 @@ namespace qmcplusplus {
     for (int iw=0; iw<nw; iw++) {
       ParticleSet::Walker_t& walker = *(W[iw]);
       for (int iat=0; iat<numPtcl; iat++) {
-	walker.G[iat] = newG(iw, iat) + dlogPsi_fixed(iw, iat);
-	walker.L[iat]  = newL(iw, iat) + d2logPsi_fixed(iw, iat);	
+        walker.G[iat] = newG(iw, iat) + dlogPsi_fixed(iw, iat);
+        walker.L[iat] = newL(iw, iat) + d2logPsi_fixed(iw, iat);
       }
       // W.R = walker.R;
       // W.update();
@@ -88,7 +94,7 @@ namespace qmcplusplus {
       // 	       d2logPsi_fixed(iw,0));
       
     }
-    W.copyWalkersToGPU(true);
+    W.copyWalkersToGPU(needDerivs);
 
     H_KE.evaluate (W, KE);
     if (needDerivs) 
@@ -106,10 +112,10 @@ namespace qmcplusplus {
       wgt_tot += weight;
       wgt_tot2 += weight*weight;
       if (needDerivs)
-	for (int ip=0; ip<NumOptimizables; ip++) {
-	  TempDerivRecords[iw][ip]  =      d_logpsi_dalpha(iw,ip);
-	  TempHDerivRecords[iw][ip] = d_hpsioverpsi_dalpha(iw,ip);
-	}
+        for (int ip=0; ip<NumOptimizables; ip++) {
+          TempDerivRecords[iw][ip]  =      d_logpsi_dalpha(iw,ip);
+          TempHDerivRecords[iw][ip] = d_hpsioverpsi_dalpha(iw,ip);
+        }
     }
     
     //this is MPI barrier
@@ -206,9 +212,11 @@ namespace qmcplusplus {
     d2logPsi_opt.resize(numWalkers, nptcl);
     dlogPsi_fixed.resize (numWalkers, nptcl);
     d2logPsi_fixed.resize(numWalkers, nptcl);
-    
-    TempHDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
-    TempDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
+    if (needGrads)
+    {
+      TempHDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
+      TempDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
+    }
     LogPsi_Derivs.resize(numWalkers, NumOptimizables);
     LocE_Derivs.resize  (numWalkers, NumOptimizables);
 
@@ -218,7 +226,8 @@ namespace qmcplusplus {
     vector<GradType> dlogPsi_free(numWalkers);
     //Psi.evaluateDeltaLog(W, logPsi_free);
     Psi.evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
-    Psi.evaluateDerivatives (W, OptVariables, LogPsi_Derivs, LocE_Derivs);
+    if (needGrads)
+      Psi.evaluateDerivatives (W, OptVariables, LogPsi_Derivs, LocE_Derivs);
     int nat = W.getTotalNum();
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -232,13 +241,14 @@ namespace qmcplusplus {
       saved[LOGPSI_FREE]  = logPsi_free[iw];
       e0 += prop[LOCALENERGY];
       e2 += prop[LOCALENERGY] * prop[LOCALENERGY];	
-      for (int ip=0; ip<OptVariables.size(); ip++) {
-	TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);
-	TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
+      if (needGrads)
+        for (int ip=0; ip<OptVariables.size(); ip++) {
+          TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);
+          TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
       }
       for (int iat=0; iat<nat; iat++) {
-	dlogPsi_fixed(iw, iat)  = w.G[iat] - dlogPsi_opt(iw,iat);
-	d2logPsi_fixed(iw, iat) = w.L[iat] - d2logPsi_opt(iw,iat);
+        dlogPsi_fixed(iw, iat)  = w.G[iat] - dlogPsi_opt(iw,iat);
+        d2logPsi_fixed(iw, iat) = w.L[iat] - d2logPsi_opt(iw,iat);
       }
       w.Weight = 1.0;
 
@@ -530,8 +540,6 @@ namespace qmcplusplus {
     for (int ip=0, wn=0; ip<NumThreads; ip++)
       {
         int nw=wClones[ip]->getActiveWalkers();
-        
-        
         for (int iw=0; iw<nw;iw++,wn++)
           {
             const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
