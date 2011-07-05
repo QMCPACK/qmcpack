@@ -204,12 +204,16 @@ namespace qmcplusplus
           {
             H_KE_Node[ip]= new QMCHamiltonian;
             H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-            if (includeNonlocalH=="yes")
+            if (includeNonlocalH!="no")
             {
-             QMCHamiltonianBase* a=hClones[ip]->getHamiltonian("NonLocalECP");
+             if(includeNonlocalH=="yes") 
+               includeNonlocalH="NonLocalECP";
+             else
+               app_log()<<" Attempting add of non-local Hamiltonian element named "<<includeNonlocalH<<endl;
+             QMCHamiltonianBase* a=hClones[ip]->getHamiltonian(includeNonlocalH);
              if(a)
              {
-               H_KE_Node[ip]->addOperator(a,"NonLocalECP");
+               H_KE_Node[ip]->addOperator(a,includeNonlocalH);
              }
             }
           }
