@@ -95,7 +95,7 @@ namespace qmcplusplus {
       
     }
     W.copyWalkersToGPU(needDerivs);
-
+    
     H_KE.evaluate (W, KE);
     if (needDerivs) 
       Psi.evaluateDerivatives(W, OptVariablesForPsi,
@@ -173,6 +173,7 @@ namespace qmcplusplus {
           H_KE.addOperator(a,includeNonlocalH);
         }
       }
+      H_KE.addObservables(W);
     }
           
     
@@ -198,7 +199,10 @@ namespace qmcplusplus {
     }
     PointerPool<Walker_t::cuda_Buffer_t > pool;
     // Reserve memory only for optimizable parts of the wavefunction
-    Psi.reserve (pool, true);
+    if (includeNonlocalH != "no")
+      Psi.reserve (pool, false);
+    else
+      Psi.reserve (pool, true);
     app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
 	      << " bytes in GPU memory.\n";
     // for (int iw=0; iw<W.WalkerList.size(); iw++) {
@@ -231,16 +235,20 @@ namespace qmcplusplus {
     {
       TempHDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
       TempDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
+      LogPsi_Derivs.resize(numWalkers, NumOptimizables);
+      LocE_Derivs.resize  (numWalkers, NumOptimizables);
     }
-    LogPsi_Derivs.resize(numWalkers, NumOptimizables);
-    LocE_Derivs.resize  (numWalkers, NumOptimizables);
 
     Return_t e0=0.0;
     Return_t e2=0.0;
     vector<RealType> logPsi_free(numWalkers), d2logPsi_free(numWalkers);
+    vector<RealType> logPsi_fixed(numWalkers);
     vector<GradType> dlogPsi_free(numWalkers);
     //Psi.evaluateDeltaLog(W, logPsi_free);
-    Psi.evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
+    if (includeNonlocalH != "no")
+      Psi.evaluateDeltaLog(W, logPsi_fixed, logPsi_free, dlogPsi_fixed, d2logPsi_fixed);
+    else  
+      Psi.evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
     if (needGrads)
       Psi.evaluateDerivatives (W, OptVariables, LogPsi_Derivs, LocE_Derivs);
     int nat = W.getTotalNum();
@@ -258,13 +266,19 @@ namespace qmcplusplus {
       e2 += prop[LOCALENERGY] * prop[LOCALENERGY];	
       if (needGrads)
         for (int ip=0; ip<OptVariables.size(); ip++) {
-          TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);
-          TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
+          TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);          
+	  TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
       }
-      for (int iat=0; iat<nat; iat++) {
-        dlogPsi_fixed(iw, iat)  = w.G[iat] - dlogPsi_opt(iw,iat);
-        d2logPsi_fixed(iw, iat) = w.L[iat] - d2logPsi_opt(iw,iat);
-      }
+      if (includeNonlocalH != "no")
+        for (int iat=0; iat<nat; iat++) {
+          dlogPsi_opt(iw, iat)  = w.G[iat] - dlogPsi_fixed(iw,iat);
+          d2logPsi_opt(iw, iat) = w.L[iat] - d2logPsi_fixed(iw,iat);
+        }
+      else
+        for (int iat=0; iat<nat; iat++) {
+          dlogPsi_fixed(iw, iat)  = w.G[iat] - dlogPsi_opt(iw,iat);
+          d2logPsi_fixed(iw, iat) = w.L[iat] - d2logPsi_opt(iw,iat);
+        }
       w.Weight = 1.0;
 
       // DEBUG
