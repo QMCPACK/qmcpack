@@ -161,6 +161,21 @@ namespace qmcplusplus {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
     
+    if (H_KE.size()==0)
+    {
+      H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
+      if (includeNonlocalH != "no")
+      {
+        if (includeNonlocalH=="yes") includeNonlocalH="NonLocalECP";
+        QMCHamiltonianBase* a=H.getHamiltonian(includeNonlocalH);
+        if(a)
+        {
+          H_KE.addOperator(a,includeNonlocalH);
+        }
+      }
+    }
+          
+    
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
     W.loadEnsemble();
