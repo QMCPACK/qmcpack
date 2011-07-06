@@ -148,7 +148,7 @@ namespace qmcplusplus {
         grads(ReferenceDeterminant,iat) = det0*gradRatio;
         lapls(ReferenceDeterminant,iat) = det0*ratioLapl;
          
-        for(int idim=0; idim<3; idim++) {
+        for(int idim=0; idim<OHMMS_DIM; idim++) {
           dpsiMinv = psiMinv;
           it = confgList[ReferenceDeterminant].occup.begin();
           for(int i=0; i<NumPtcls; i++)

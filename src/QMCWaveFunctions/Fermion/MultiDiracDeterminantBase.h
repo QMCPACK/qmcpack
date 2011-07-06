@@ -656,7 +656,7 @@ namespace qmcplusplus {
         ExtraStuffTimer.stop();
         BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
 
-        for(int idim=0; idim<3; idim++) {
+        for(int idim=0; idim<OHMMS_DIM; idim++) {
           ExtraStuffTimer.start();
           //dpsiMinv = psiMinv_temp;
           dpsiMinv = psiMinv;
@@ -691,7 +691,7 @@ namespace qmcplusplus {
           *(grad++) = dpsiM(0,orb);
         }
       } else {
-        for(int idim=0; idim<3; idim++) {
+        for(int idim=0; idim<OHMMS_DIM; idim++) {
           //dpsiMinv = psiMinv_temp;
           dpsiMinv = psiMinv;
           it = confgList[ReferenceDeterminant].occup.begin();
@@ -770,7 +770,7 @@ namespace qmcplusplus {
             }
             new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
             new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
-             for(int idim=0; idim<3; idim++) {
+             for(int idim=0; idim<OHMMS_DIM; idim++) {
               dpsiMinv = psiMinv_temp;
               it = confgList[ReferenceDeterminant].occup.begin();
               for(int i=0; i<NumPtcls; i++)
@@ -800,7 +800,7 @@ namespace qmcplusplus {
             }
             new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
             new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
-            for(int idim=0; idim<3; idim++) {
+            for(int idim=0; idim<OHMMS_DIM; idim++) {
               dpsiMinv = psiMinv_temp;
               it = confgList[ReferenceDeterminant].occup.begin();
               for(int i=0; i<NumPtcls; i++)
