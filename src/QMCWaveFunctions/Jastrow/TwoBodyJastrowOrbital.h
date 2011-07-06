@@ -622,7 +622,7 @@ namespace qmcplusplus {
 
     RealType ChiesaKEcorrection()
     {
-      if (!PtclRef->Lattice.SuperCellEnum)
+      if ((!PtclRef->Lattice.SuperCellEnum)||(OHMMS_DIM!=3))
 	return 0.0;
       const int numPoints = 1000;
       RealType vol = PtclRef->Lattice.Volume;

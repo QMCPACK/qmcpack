@@ -122,7 +122,10 @@ namespace qmcplusplus {
             app_log()<< "\n     filled kshells      = " << nsh 
             << "\n     lattice constant    = " << acubic << " bohr"<< endl;
           ref_.R=0.0;
-          for(int idim=0; idim<DIM; idim++) ref_.R(idim,idim)=acubic;
+          for(int idim=0; idim<DIM; idim++)
+            for(int jdim=0; jdim<DIM; jdim++)
+              if (idim==jdim) ref_.R(idim,jdim)=acubic;
+              else ref_.R(idim,jdim)=0.0;
           a0=1.0;
         }
       } 

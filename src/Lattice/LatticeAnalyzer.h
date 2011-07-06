@@ -199,14 +199,11 @@ namespace qmcplusplus
 
       inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2>& a)
       {
-        T rMin = 1.0e50;
-        for (int i=-1; i<=1; i++)
-          for (int j=-1; j<=1; j++)
-            if ((i!=0) || (j!=0)) {
-              SingleParticlePos_t L = ((double)i * a[0] + (double)j * a[1]);
-              T dist = 0.5*std::fabs(dot(L,L));
-              rMin = std::min(rMin, dist);
-            }
+        T rMin;
+        T dotP= dot(a[0], a[1]);
+        SingleParticlePos_t L0 = a[0] - dotP*a[1];
+        SingleParticlePos_t L1 = a[1] - dotP*a[0];
+        rMin = 0.5*std::min(std::sqrt(dot(L0,L0)), std::sqrt(dot(L1,L1)));
         return rMin;
       }
 
@@ -214,8 +211,8 @@ namespace qmcplusplus
       {
 	T a0mag  = std::sqrt(dot(a[0],a[0]));
 	T a1mag  = std::sqrt(dot(a[1],a[1]));
-	T theta1 = dot (a[0], a[1])/(a0mag*a1mag);
-        T theta2 = M_PI - theta1;
+	T theta1 = std::acos( dot (a[0], a[1])/(a0mag*a1mag) );
+   T theta2 = M_PI - theta1;
 	T theta  = std::min (theta1, theta2);
 	T dist   = std::min (a0mag, a1mag);
 	return 0.5*std::sin(theta)*dist;

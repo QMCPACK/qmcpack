@@ -32,16 +32,11 @@ namespace qmcplusplus
     //Compute the coordinate of the box center
     c = 0.5*(a(0)+a(1));
 
-    LR_rc = 1.e+9;
-    for (int i=-1; i<=1; i++)
-      for (int j=-1; j<=1; j++)
-        if (i || j) 
-        {
-          SingleParticlePos_t L = static_cast<OHMMS_PRECISION>(i)*a(0) + static_cast<OHMMS_PRECISION>(j) * a(1);
-          LR_rc=std::min(LR_rc,dot(L,L));
-        }
-
-    LR_rc=0.5*std::sqrt(LR_rc);
+    Scalar_t dotP= dot(a(0), a(1));
+    SingleParticlePos_t L0 = a(0) - dotP*a(1);
+    SingleParticlePos_t L1 = a(1) - dotP*a(0);
+    LR_rc = 0.5*std::min(std::sqrt(dot(L0,L0)), std::sqrt(dot(L1,L1)));
+    
     LR_kc = LR_dim_cutoff/LR_rc;
 
     LOGMSG("\tLong-range breakup parameters:");
