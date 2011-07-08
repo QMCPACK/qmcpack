@@ -250,7 +250,11 @@ namespace qmcplusplus {
     int numOrbs = 0;
     bool sortBands = true;
     string sourceName;
-    bool useGPU = false;
+#if defined(QMC_CUDA)
+    string useGPU="yes";
+#else
+    string useGPU="no";
+#endif
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
     attribs.add (sortBands,  "sort");
@@ -276,8 +280,8 @@ namespace qmcplusplus {
       string cname((const char*)(cur->name));
       if(cname == "occupation") {
 	string occ_mode("ground");
-  occ_format="energy";
-   particle_hole_pairs=0;
+        occ_format="energy";
+        particle_hole_pairs=0;
         OhmmsAttributeSet oAttrib;
         oAttrib.add(occ_mode,"mode");
         oAttrib.add(spinSet,"spindataset");
@@ -555,7 +559,8 @@ namespace qmcplusplus {
       }
     }
 #ifdef QMC_CUDA
-    if (useGPU) {
+    if (useGPU == "yes" || useGPU == "1")
+    {
       app_log() << "Initializing GPU data structures.\n";
       OrbitalSet->initGPU();
     }
