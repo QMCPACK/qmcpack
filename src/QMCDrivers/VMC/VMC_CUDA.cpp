@@ -81,16 +81,6 @@ namespace qmcplusplus {
     Matrix<GradType>  grad(nw, nat);
     double Esum;
 
-    if(forOpt)
-    {
-      Psi.checkInVariables(dummy);
-      dummy.resetIndex();
-      Psi.checkOutVariables(dummy);
-      numParams = dummy.size();
-      resizeForOpt(numParams);
-      d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
-    }
-
     // First do warmup steps
     for (int step=0; step<myWarmupSteps; step++) {
       for(int iat=0; iat<nat; ++iat)  {
@@ -268,15 +258,7 @@ namespace qmcplusplus {
     Matrix<ValueType> lapl(nw, nat);
     Matrix<GradType>  grad(nw, nat);
     
-    if(forOpt)
-    {
-      Psi.checkInVariables(dummy);
-      dummy.resetIndex();
-      Psi.checkOutVariables(dummy);
-      numParams = dummy.size();
-      resizeForOpt(numParams);
-      d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
-    }
+
 
     // First, do warmup steps
     for (int step=0; step<myWarmupSteps; step++) {
@@ -515,7 +497,16 @@ namespace qmcplusplus {
     app_log() << "  Node zero will generate " << samples_this_node << " samples.\n";
     W.setNumSamples(samples_this_node);
     
-    if(forOpt) clearComponentMatrices();
+    if(forOpt)
+    {
+      Psi.checkInVariables(dummy);
+      dummy.resetIndex();
+      Psi.checkOutVariables(dummy);
+      numParams = dummy.size();
+      resizeForOpt(numParams);
+      d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
+    }
+    
   }
 
   bool 
