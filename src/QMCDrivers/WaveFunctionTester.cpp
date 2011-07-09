@@ -1035,7 +1035,7 @@ namespace qmcplusplus
     logpsi = Psi.evaluateLog(W);
     eloc=H.evaluate(W);
     Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
-    RealType FiniteDiff = 1e-5;
+    RealType FiniteDiff = 1e-6;
 
     QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
     for (int i=0; i<Nvars ; i++)
@@ -1617,31 +1617,31 @@ void WaveFunctionTester::runDerivCloneTest()
         plot_out<<"plt.savefig('"<<fn.str().c_str()<<"', bbox_inches='tight', pad_inches=0.01 )\n";
       }
 #elif OHMMS_DIM==3
-        assert(Grid.size()==3);
-        
-        RealType overG0(1.0/Grid[0]);
-        RealType overG1(1.0/Grid[1]);
-        RealType overG2(1.0/Grid[2]);
-        int iat(0);
-        W.update();
-        plot_out<<"#e  x  y  z  ratio"<<endl;
-
-        for(int i=0;i<Grid[0];i++)
-          for(int j=0;j<Grid[1];j++)
-          for(int k=0;k<Grid[2];k++)
-          {
-            R_unit[iat][0]=overG0*RealType(i);
-            R_unit[iat][1]=overG1*RealType(j);
-            R_unit[iat][2]=overG2*RealType(k);
-            W.convert2Cart(R_unit,R_cart);
-            PosType dr(R_cart[iat]-W.R[iat]);
-
-            W.makeMove(iat,dr);
-            RealType aratio = Psi.ratio(W,iat);
-            W.rejectMove(iat);
-            Psi.rejectMove(iat);
-            plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<<endl;
-          }
+//         assert(Grid.size()==3);
+//         
+//         RealType overG0(1.0/Grid[0]);
+//         RealType overG1(1.0/Grid[1]);
+//         RealType overG2(1.0/Grid[2]);
+//         int iat(0);
+//         W.update();
+//         plot_out<<"#e  x  y  z  ratio"<<endl;
+// 
+//         for(int i=0;i<Grid[0];i++)
+//           for(int j=0;j<Grid[1];j++)
+//           for(int k=0;k<Grid[2];k++)
+//           {
+//             R_unit[iat][0]=overG0*RealType(i);
+//             R_unit[iat][1]=overG1*RealType(j);
+//             R_unit[iat][2]=overG2*RealType(k);
+//             W.convert2Cart(R_unit,R_cart);
+//             PosType dr(R_cart[iat]-W.R[iat]);
+// 
+//             W.makeMove(iat,dr);
+//             RealType aratio = Psi.ratio(W,iat);
+//             W.rejectMove(iat);
+//             Psi.rejectMove(iat);
+//             plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<<endl;
+//           }
   #endif
       }
       
