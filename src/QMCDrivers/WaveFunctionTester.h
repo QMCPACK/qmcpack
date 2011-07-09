@@ -60,6 +60,7 @@ namespace qmcplusplus {
     void runGradSourceTest();
     void runZeroVarianceTest();
     void runwftricks();
+    void runNodePlot();
     void printEloc();
     vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 

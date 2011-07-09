@@ -103,16 +103,18 @@ namespace qmcplusplus
     else if(checkEloc != "no")   
       printEloc();
     else if (sourceName.size() != 0)
-      {
-        runGradSourceTest();
-        runZeroVarianceTest();
-      }
-      else if (checkRatio =="deriv")
-        runDerivTest();
-      else if (checkRatio =="derivclone")
-        runDerivCloneTest();
-    else if (wftricks !="no")
+    {
+      runGradSourceTest();
+      runZeroVarianceTest();
+    }
+    else if (checkRatio =="deriv")
+      runDerivTest();
+    else if (checkRatio =="derivclone")
+      runDerivCloneTest();
+    else if (wftricks =="rotate")
       runwftricks();
+    else if (wftricks =="plot")
+      runNodePlot();
     else
       runBasicTest();
 
@@ -291,7 +293,7 @@ namespace qmcplusplus
   {
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 1e-5;
+    RealType delta = 1e-4;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -1464,6 +1466,185 @@ void WaveFunctionTester::runDerivCloneTest()
       }
 
     }
+    
+    void  WaveFunctionTester::runNodePlot()
+    {
+      xmlNodePtr kids=myNode->children;
+      
+      string doEnergy("no");
+      ParameterSet aAttrib;
+      aAttrib.add(doEnergy,"energy","string");
+      aAttrib.put(myNode);
+      
+      vector<int> Grid;
+      
+      while(kids != NULL) 
+      {
+        string cname((const char*)(kids->name));
+        if(cname=="grid")
+          putContent(Grid,kids);
+        kids=kids->next;
+      }
+      
+      
+      ParticleSet::ParticlePos_t R_cart(1);
+      R_cart.setUnit(PosUnit::CartesianUnit);
+      ParticleSet::ParticlePos_t R_unit(1);
+      R_unit.setUnit(PosUnit::LatticeUnit);
+      
+      Walker_t& thisWalker(**(W.begin()));
+      W.loadWalker(thisWalker,true);
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Psi.copyFromBuffer(W,w_buffer);
+            
+
+#if OHMMS_DIM==2      
+      assert(Grid.size()==2);
+
+      char fname[16];
+//       sprintf(fname,"loc.xy");
+//       ofstream e_out(fname);
+//       e_out.precision(6);
+//       e_out<<"#e  x  y"<<endl;
+      int nat = W.getTotalNum();
+      int nup = W.getTotalNum()/2;//std::max(W.getSpeciesSet().findSpecies("u"),W.getSpeciesSet().findSpecies("d"));
+      
+//       for(int iat(0);iat<nat;iat++)
+//         e_out<<iat<<" "<<W[0]->R[iat][0]<<" "<<W[0]->R[iat][1]<<endl;
+      
+      RealType overG0(1.0/Grid[0]);
+      RealType overG1(1.0/Grid[1]);
+      for(int iat(0);iat<nat;iat++)
+      {
+        W.update();
+        stringstream fn;
+        fn<<RootName.c_str()<<".ratios."<<iat<<".py";
+        
+        ofstream plot_out(fn.str().c_str());
+        plot_out.precision(6);
+//         plot_out<<"#e  x  y  ratio"<<endl;
+
+        R_unit[0][0]=1.0;
+        R_unit[0][1]=1.0;
+        W.convert2Cart(R_unit,R_cart);
+        RealType xmax=R_cart[0][0];
+        RealType ymax=R_cart[0][1];
+        plot_out<<"import matplotlib\n";
+        plot_out<<"import numpy as np\n";
+        plot_out<<"import matplotlib.cm as cm\n";
+        plot_out<<"import matplotlib.mlab as mlab\n";
+        plot_out<<"import matplotlib.pyplot as plt\n";
+        plot_out<<endl;
+        plot_out<<"matplotlib.rcParams['xtick.direction'] = 'out'\n";
+        plot_out<<"matplotlib.rcParams['ytick.direction'] = 'out'\n";
+        plot_out<<endl;
+        plot_out<<"x = np.arange(0, "<<xmax<<", "<< xmax*overG0 <<")\n";
+        plot_out<<"y = np.arange(0, "<<ymax<<", "<< ymax*overG1 <<")\n";
+        plot_out<<"X, Y = np.meshgrid(x, y)\n";
+        plot_out<<"Z = [";
+
+        for(int i=0;i<Grid[0];i++)
+        {
+          plot_out<<"[ ";
+          for(int j=0;j<Grid[1];j++)
+          {
+            R_unit[0][0]=overG0*RealType(i);
+            R_unit[0][1]=overG1*RealType(j);
+            W.convert2Cart(R_unit,R_cart);
+            PosType dr(R_cart[0]-W.R[iat]);
+
+            W.makeMove(iat,dr);
+            RealType aratio = Psi.ratio(W,iat);
+            W.rejectMove(iat);
+            Psi.rejectMove(iat);
+            plot_out<<aratio<<", ";
+          }
+          plot_out<<"], ";
+        }
+        plot_out<<"]\n";
+
+        
+        plot_out<<"up_y=[";
+        for(int ix(0);ix<nup;ix++)
+        {
+          RealType yy(W[0]->R[ix][0]);
+          while (yy>xmax) yy-=xmax;
+          while (yy<0) yy+=xmax;
+          plot_out<<yy<<", ";
+        }
+        plot_out<<"]\n";
+        plot_out<<"up_x=[";
+        for(int ix(0);ix<nup;ix++)
+        {
+          RealType yy(W[0]->R[ix][1]);
+          while (yy>ymax) yy-=ymax;
+          while (yy<0) yy+=ymax;
+          plot_out<<yy<<", ";
+        }
+        plot_out<<"]\n";
+        
+        plot_out<<"dn_y=[";
+        for(int ix(nup);ix<nat;ix++)
+        {
+          RealType yy(W[0]->R[ix][0]);
+          while (yy>xmax) yy-=xmax;
+          while (yy<0) yy+=xmax;
+          plot_out<<yy<<", ";
+        }
+        plot_out<<"]\n";
+        plot_out<<"dn_x=[";
+        for(int ix(nup);ix<nat;ix++)
+        {
+          RealType yy(W[0]->R[ix][1]);
+          while (yy>ymax) yy-=ymax;
+          while (yy<0) yy+=ymax;
+          plot_out<<yy<<", ";
+        }
+        plot_out<<"]\n";
+        
+        plot_out<<"matplotlib.rcParams['contour.negative_linestyle'] = 'solid'\n";
+        plot_out<<"plt.figure()\n";
+        plot_out<<"CS = plt.contourf(X, Y, Z, 5, cmap=cm.gray)\n";
+        plot_out<<"CS2 = plt.contour(X, Y, Z, colors='k',levels=[0])\n";
+        plot_out<<"PTu = plt.scatter(up_x,up_y, c='r', marker='o')\n";       
+        plot_out<<"PTd = plt.scatter(dn_x,dn_y, c='b', marker='d')\n";    
+        plot_out<<"plt.clabel(CS2, fontsize=9, inline=1)\n";
+        plot_out<<"plt.title('2D Nodal Structure')\n";
+        plot_out<<"plt.xlim(0,"<< ymax*(1.0-overG1) <<")\n";
+        plot_out<<"plt.ylim(0,"<< xmax*(1.0-overG0) <<")\n";
+        fn.str("");
+        fn<<RootName.c_str()<<".ratios."<<iat<<".png";
+        plot_out<<"plt.savefig('"<<fn.str().c_str()<<"', bbox_inches='tight', pad_inches=0.01 )\n";
+      }
+#elif OHMMS_DIM==3
+        assert(Grid.size()==3);
+        
+        RealType overG0(1.0/Grid[0]);
+        RealType overG1(1.0/Grid[1]);
+        RealType overG2(1.0/Grid[2]);
+        int iat(0);
+        W.update();
+        plot_out<<"#e  x  y  z  ratio"<<endl;
+
+        for(int i=0;i<Grid[0];i++)
+          for(int j=0;j<Grid[1];j++)
+          for(int k=0;k<Grid[2];k++)
+          {
+            R_unit[iat][0]=overG0*RealType(i);
+            R_unit[iat][1]=overG1*RealType(j);
+            R_unit[iat][2]=overG2*RealType(k);
+            W.convert2Cart(R_unit,R_cart);
+            PosType dr(R_cart[iat]-W.R[iat]);
+
+            W.makeMove(iat,dr);
+            RealType aratio = Psi.ratio(W,iat);
+            W.rejectMove(iat);
+            Psi.rejectMove(iat);
+            plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<<endl;
+          }
+  #endif
+      }
+      
     
 }
 
