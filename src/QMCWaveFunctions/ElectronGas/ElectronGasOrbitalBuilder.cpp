@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
@@ -65,7 +65,7 @@ namespace qmcplusplus
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
 
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
     xmlNodePtr curRoot=cur;
     string cname;
     cur = curRoot->children;
@@ -121,7 +121,7 @@ namespace qmcplusplus
 
     //create a Slater determinant
     SlaterDeterminant_t *sdet;
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
     if(UseBackflow)
       sdet = new SlaterDetWithBackflow(targetPtcl,BFTrans);
     else  
@@ -135,7 +135,7 @@ namespace qmcplusplus
     if (rntype>0)
       {
          
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
         if(UseBackflow) APP_ABORT("RN with Backflow not implemented. \n"); 
 #endif
 
@@ -164,7 +164,7 @@ namespace qmcplusplus
     else
       {
         Det_t *updet, *downdet;
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
         if(UseBackflow) {
           //create up determinant
           updet = new DiracDeterminantWithBackflow(targetPtcl,psiu,BFTrans,0);
@@ -189,7 +189,7 @@ namespace qmcplusplus
         sdet->add(downdet,1);
       }
 
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
     // change DistanceTables if using backflow
     if(UseBackflow)   {
        sdet->resetTargetParticleSet(BFTrans->QP);

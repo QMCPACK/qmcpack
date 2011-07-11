@@ -18,7 +18,7 @@
 
 #include <QMCWaveFunctions/OrbitalBuilderBase.h>
 #include <QMCWaveFunctions/SPOSetBase.h>
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #endif
 #include <config/stdlib/math.h>
@@ -217,7 +217,7 @@ namespace qmcplusplus {
           for(int la=0; la<OHMMS_DIM; la++) {
             (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
             (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
-            for(int lb=+1; lb<OHMMS_DIM; lb++) {
+            for(int lb=la+1; lb<OHMMS_DIM; lb++) {
               (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
               (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
               (hess[j1])(lb,la)=(hess[j1])(la,lb);
@@ -289,7 +289,7 @@ namespace qmcplusplus {
     ///implement vritual function
     bool put(xmlNodePtr cur);
 
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2
     bool UseBackflow;
     BackflowTransformation *BFTrans;
 #endif

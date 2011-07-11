@@ -114,11 +114,11 @@ namespace qmcplusplus
     void registerData(PooledData<RealType>& buf)
     {
       FirstOfU = &(UIJ(0,0)[0]);
-      LastOfU = FirstOfU + 3*NumTargets*NumTargets;
+      LastOfU = FirstOfU + OHMMS_DIM*NumTargets*NumTargets;
       FirstOfA = &(AIJ(0,0)[0]);
-      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+      LastOfA = FirstOfA + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
       FirstOfB = &(BIJ(0,0)[0]);
-      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+      LastOfB = FirstOfB + OHMMS_DIM*NumTargets*NumTargets;
       buf.add(FirstOfU,LastOfU);
       buf.add(FirstOfA,LastOfA);
       buf.add(FirstOfB,LastOfB);
@@ -267,15 +267,20 @@ namespace qmcplusplus
           QP.R[j] += u;
 
           Amat(i,j) -= du*outerProduct(myTable->dr(nn),myTable->dr(nn));
+#if OHMMS_DIM==3
           Amat(i,j)[0] -= uij;
           Amat(i,j)[4] -= uij;
           Amat(i,j)[8] -= uij;
+#elif OHMMS_DIM==2
+          Amat(i,j)[0] -= uij;
+          Amat(i,j)[3] -= uij;          
+#endif          
           Amat(j,i) += Amat(i,j);
           Amat(i,i)-=Amat(i,j);
           Amat(j,j)-=Amat(i,j);
 
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-          u = 2.0*(d2u+4.0*du)*myTable->dr(nn);
+          u = 2.0*(d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn);
           Bmat(i) -= u;
           Bmat(j) += u;
         }
@@ -302,9 +307,15 @@ namespace qmcplusplus
 
           HessType& hess = AIJ(i,j);
           hess = du*outerProduct(myTable->dr(nn),myTable->dr(nn));
+#if OHMMS_DIM==3
           hess[0] += uij;
           hess[4] += uij;
           hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif   
+
           AIJ(j,i) = hess;
 
           Amat(i,i) += hess;
@@ -315,7 +326,7 @@ namespace qmcplusplus
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           // d2u + (ndim+1)*du
           GradType& grad = BIJ(j,i);  // dr = r_j - r_i
-          grad = (d2u+4.0*du)*myTable->dr(nn); 
+          grad = (d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn); 
           BIJ(i,j) = -1.0*grad;
           Bmat_full(i,i) -= grad;  
           Bmat_full(j,j) += grad;  
@@ -386,9 +397,14 @@ namespace qmcplusplus
 
         HessType& hess = AIJ_temp(j); 
         hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j); 
         Amat(iat,iat) += dA;
@@ -414,9 +430,14 @@ namespace qmcplusplus
 
         HessType& hess = AIJ_temp(j);
         hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j);
         Amat(iat,iat) += dA;
@@ -432,9 +453,14 @@ namespace qmcplusplus
         
         HessType& hess = AIJ_temp(j);
         hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j);
         Amat(iat,iat) += dA;
@@ -465,9 +491,14 @@ namespace qmcplusplus
         du *= TMP[j].rinv1; 
         HessType& hess = AIJ_temp(j);
         hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j);
         Amat(iat,iat) += dA;
@@ -476,7 +507,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+4.0*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -503,9 +534,14 @@ namespace qmcplusplus
         du *= TMP[j].rinv1;
         HessType& hess = AIJ_temp(j);
         hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j);
         Amat(iat,iat) += dA;
@@ -514,7 +550,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+4.0*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -530,9 +566,14 @@ namespace qmcplusplus
         du *= TMP[j].rinv1;
         HessType& hess = AIJ_temp(j);
         hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
+#if OHMMS_DIM==3
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
         HessType dA = hess - AIJ(iat,j);
         Amat(iat,iat) += dA;
@@ -541,7 +582,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+4.0*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -561,7 +602,7 @@ namespace qmcplusplus
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
           ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
-          PosType u = (d2u+4.0*du*myTable->rinv(nn))*myTable->dr(nn);
+          PosType u = (d2u+(OHMMS_DIM-1)*du*myTable->rinv(nn))*myTable->dr(nn);
           Bmat_full(i,i) -= u;
           Bmat_full(j,j) += u;
           Bmat_full(i,j) += u;
@@ -595,9 +636,14 @@ namespace qmcplusplus
           HessType op = outerProduct(myTable->dr(nn),myTable->dr(nn)); 
           HessType& hess = AIJ(i,j);
           hess = du*op;
+#if OHMMS_DIM==3
           hess[0] += uij;
           hess[4] += uij;
           hess[8] += uij;
+#elif OHMMS_DIM==2
+          hess[0] += uij;
+          hess[3] += uij;
+#endif
 
           Amat(i,i) += hess;
           Amat(j,j) += hess;
@@ -607,7 +653,7 @@ namespace qmcplusplus
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           // d2u + (ndim+1)*du
           GradType& grad = BIJ(j,i);  // dr = r_j - r_i
-          grad = (d2u+4.0*du)*myTable->dr(nn);
+          grad = (d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn);
           BIJ(i,j) = -1.0*grad;
           Bmat_full(i,i) -= grad;
           Bmat_full(j,j) += grad;
@@ -620,14 +666,21 @@ namespace qmcplusplus
             Cmat(la,j) += uk; 
  
             Xmat(la,i,j) -= (derivs[prm][1]*myTable->rinv(nn))*op;
+            
+#if OHMMS_DIM==3
             Xmat(la,i,j)[0] -= derivs[prm][0]; 
             Xmat(la,i,j)[4] -= derivs[prm][0]; 
-            Xmat(la,i,j)[8] -= derivs[prm][0]; 
+            Xmat(la,i,j)[8] -= derivs[prm][0];
+#elif OHMMS_DIM==2
+            Xmat(la,i,j)[0] -= derivs[prm][0]; 
+            Xmat(la,i,j)[3] -= derivs[prm][0];
+#endif            
+            
             Xmat(la,j,i) += Xmat(la,i,j);
             Xmat(la,i,i) -= Xmat(la,i,j);
             Xmat(la,j,j) -= Xmat(la,i,j);
            
-            uk = 2.0*(derivs[prm][2]+4.0*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
+            uk = 2.0*(derivs[prm][2]+(OHMMS_DIM-1)*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
             Ymat(la,i) -= uk; 
             Ymat(la,j) += uk;
  

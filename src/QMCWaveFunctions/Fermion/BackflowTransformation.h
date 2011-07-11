@@ -521,19 +521,19 @@ namespace qmcplusplus
 
       evaluate(P);
       FirstOfP = &(storeQP[0][0]);
-      LastOfP = FirstOfP + 3*NumTargets;
+      LastOfP = FirstOfP + OHMMS_DIM*NumTargets;
 
       FirstOfA = &(Amat(0,0)[0]);
-      LastOfA = FirstOfA + 9*NumTargets*NumTargets;
+      LastOfA = FirstOfA + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
 
       FirstOfB = &(Bmat_full(0,0)[0]);
-      LastOfB = FirstOfB + 3*NumTargets*NumTargets;
+      LastOfB = FirstOfB + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
 
       FirstOfA_temp = &(Amat_temp(0,0)[0]);
-      LastOfA_temp = FirstOfA_temp + 9*NumTargets*NumTargets;
+      LastOfA_temp = FirstOfA_temp + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
 
       FirstOfB_temp = &(Bmat_temp(0,0)[0]);
-      LastOfB_temp = FirstOfB_temp + 3*NumTargets*NumTargets;
+      LastOfB_temp = FirstOfB_temp + OHMMS_DIM*NumTargets*NumTargets;
 
       for(int i=0; i<NumTargets; i++) storeQP[i] = QP.R[i];
       buf.add(FirstOfP,LastOfP);
