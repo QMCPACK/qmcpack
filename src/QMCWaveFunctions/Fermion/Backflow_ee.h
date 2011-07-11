@@ -280,7 +280,7 @@ namespace qmcplusplus
           Amat(j,j)-=Amat(i,j);
 
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-          u = 2.0*(d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn);
+          u = 2.0*(d2u+(OHMMS_DIM+1)*du)*myTable->dr(nn);
           Bmat(i) -= u;
           Bmat(j) += u;
         }
@@ -326,7 +326,7 @@ namespace qmcplusplus
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           // d2u + (ndim+1)*du
           GradType& grad = BIJ(j,i);  // dr = r_j - r_i
-          grad = (d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn); 
+          grad = (d2u+(OHMMS_DIM+1)*du)*myTable->dr(nn); 
           BIJ(i,j) = -1.0*grad;
           Bmat_full(i,i) -= grad;  
           Bmat_full(j,j) += grad;  
@@ -507,7 +507,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -550,7 +550,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -582,7 +582,7 @@ namespace qmcplusplus
         Amat(j,iat) -= dA;
 
         GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
-        grad = (d2u+(OHMMS_DIM-1)*du)*TMP[j].dr1;
+        grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
         GradType dg = grad - BIJ(iat,j);
         Bmat(iat,iat) += dg;
         Bmat(j,j) -= dg;
@@ -602,7 +602,7 @@ namespace qmcplusplus
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
           ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
-          PosType u = (d2u+(OHMMS_DIM-1)*du*myTable->rinv(nn))*myTable->dr(nn);
+          PosType u = (d2u+(OHMMS_DIM+1)*du*myTable->rinv(nn))*myTable->dr(nn);
           Bmat_full(i,i) -= u;
           Bmat_full(j,j) += u;
           Bmat_full(i,j) += u;
@@ -653,7 +653,7 @@ namespace qmcplusplus
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
           // d2u + (ndim+1)*du
           GradType& grad = BIJ(j,i);  // dr = r_j - r_i
-          grad = (d2u+(OHMMS_DIM-1)*du)*myTable->dr(nn);
+          grad = (d2u+(OHMMS_DIM+1)*du)*myTable->dr(nn);
           BIJ(i,j) = -1.0*grad;
           Bmat_full(i,i) -= grad;
           Bmat_full(j,j) += grad;
@@ -680,7 +680,7 @@ namespace qmcplusplus
             Xmat(la,i,i) -= Xmat(la,i,j);
             Xmat(la,j,j) -= Xmat(la,i,j);
            
-            uk = 2.0*(derivs[prm][2]+(OHMMS_DIM-1)*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
+            uk = 2.0*(derivs[prm][2]+(OHMMS_DIM+1)*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
             Ymat(la,i) -= uk; 
             Ymat(la,j) += uk;
  
