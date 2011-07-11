@@ -142,7 +142,7 @@ namespace qmcplusplus {
          for(int la=0; la<OHMMS_DIM; la++) {
            (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
            (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
-           for(int lb=+1; lb<OHMMS_DIM; lb++) {
+           for(int lb=la+1; lb<OHMMS_DIM; lb++) {
              (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
              (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
              (hess[j1])(lb,la)=(hess[j1])(la,lb);
