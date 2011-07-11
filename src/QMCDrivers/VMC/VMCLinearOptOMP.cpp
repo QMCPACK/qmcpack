@@ -853,6 +853,18 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
     {
       D_E[i]*=g_nrm; D[i]*=g_nrm; HD[i]*=g_nrm; HD2[i]*=g_nrm;
     }
+    
+    if ((printderivs=="yes")&&(myComm->rank()==0))
+    {
+      stringstream fn;
+      fn<<RootName.c_str()<<".derivs";
+      
+      ofstream d_out(fn.str().c_str());
+      d_out.precision(6);
+      d_out<<"#csf    D        HD"<<endl;
+      for (int i=0; i<NumOptimizables; i++) d_out<<i+1<<" "<<D[i]<<"  "<<HD[i]<<endl;
+    }
+    
       
     for (int i=0; i<NumOptimizables; i++)
       for (int j=0; j<NumOptimizables; j++)
@@ -924,16 +936,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
       }
     }
     
-    if ((printderivs=="yes")&&(myComm->rank()==0))
-    {
-      stringstream fn;
-      fn<<RootName.c_str()<<".derivs";
-      
-      ofstream d_out(fn.str().c_str());
-      d_out.precision(6);
-      d_out<<"#D        HD"<<endl;
-      for (int i=0; i<NumOptimizables; i++) d_out<<D[i]<<"  "<<HD[i]<<endl;
-    }
+
 // 
 //     //         //Lazy. Pack these for better performance.
 //     //         myComm->allreduce(lsE);

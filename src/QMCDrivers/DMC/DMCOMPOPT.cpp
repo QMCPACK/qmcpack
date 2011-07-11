@@ -31,7 +31,7 @@ namespace qmcplusplus {
   DMCOMPOPT::DMCOMPOPT(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
     : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
     , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no"), UseFastGrad("yes")
-    , BranchInterval(-1),mover_MaxAge(-1), wlen(10), firsttime(true)
+    , BranchInterval(-1),mover_MaxAge(-1), wlen(10), firsttime(true), printderivs("no")
     {
       RootName = "opt";
       QMCType ="DMCOPT";
@@ -47,6 +47,7 @@ namespace qmcplusplus {
       m_param.add(mover_MaxAge,"MaxAge","double");
       m_param.add(UseFastGrad,"fastgrad", "string");
       m_param.add(nTargetSamples,"samples","int");
+      m_param.add(printderivs,"printderivs","string");
       m_param.add(wlen,"wlen","int");
     }
     

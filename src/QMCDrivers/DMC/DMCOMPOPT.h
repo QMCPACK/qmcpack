@@ -48,6 +48,7 @@ namespace qmcplusplus {
     void fillVectors(std::vector<RealType>& d, std::vector<RealType>& hd, RealType& e, Matrix<RealType>& olp)
     {
       myComm->allreduce(D);
+      myComm->allreduce(HD);
       myComm->allreduce(DT);
       myComm->allreduce(D2);
       myComm->allreduce(D_E);
@@ -67,6 +68,19 @@ namespace qmcplusplus {
       RealType avgInv =std::sqrt(g_stats[3]/g_stats[5]);
       RealType avgInvWgt = std::sqrt((g_stats[3]/g_stats[5])/wgtNrm);
       RealType avgWgt = std::sqrt(g_stats[4]/g_stats[5]);
+      
+      if ((printderivs=="yes")&&(myComm->rank()==0))
+      {
+        stringstream fn;
+        fn<<RootName.c_str()<<".derivs";
+        
+        ofstream d_out(fn.str().c_str());
+        d_out.precision(6);
+        d_out<<"#CSF    D        HD"<<endl;
+        for (int i=0; i<NumOptimizables; i++) d_out<<i<<"  "<<nrm*D[i]<<"  "<<nrm*HD[i]<<endl;
+      }
+      
+      
 //       app_log()<<"Ebar: "<<g_stats[2]/g_stats[5]<<endl;
 //       app_log()<<"Weights: "<<avgWgt<<" "<<avgInvWgt<<" "<<(g_stats[4]/g_stats[5])*wgtNrm<<" "<<(g_stats[3]/g_stats[5])/wgtNrm<<" "<<wgtNrm<<endl;
       
@@ -139,13 +153,14 @@ namespace qmcplusplus {
     
     int NumOptimizables;
     RealType E_avg, V_avg, t;      
-    std::vector<RealType> D_E, D2, D, DT;
+    std::vector<RealType> D_E, D2, D, DT, HD;
     Matrix<RealType> Overlap;
     RealType sE,sE2,ssE,sN;
     RealType sW,smW;
     int myPeriod4WalkerDump, wlen, Eindx;
     int samples_this_node;
     bool firsttime;
+    string printderivs;
     std::vector<opt_variables_type> dummyOptVars;
 
 
@@ -164,6 +179,7 @@ namespace qmcplusplus {
       {
         D_E[i]=0.0;
         D[i]=0.0;
+        HD[i]=0.0;
         DT[i]=0.0;
         D2[i]=0.0;
       }
@@ -181,6 +197,7 @@ namespace qmcplusplus {
 
       D_E.resize(n);
       D.resize(n);
+      HD.resize(n);
       DT.resize(n);
       D2.resize(n);
 
@@ -207,6 +224,7 @@ namespace qmcplusplus {
         D_E[i]+=   invfnw*di*E_L;
         DT[i]  +=   di*invfnw;
         D[i]  +=   di;
+        HD[i]  +=   hd[i];
         D2[i] +=   di*di;
         for (int j=0; j<NumOptimizables; j++) 
           Overlap(i,j) += di*d[j]*invfnw;
