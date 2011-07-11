@@ -30,7 +30,8 @@ namespace qmcplusplus
   VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool, WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"), logoffset(2.0), logepsilon(0), w_alpha(0.0), beta_errorbars(0), alpha_errorbars(0)
+    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
+    logoffset(2.0), logepsilon(0), w_alpha(0.0), beta_errorbars(0), alpha_errorbars(0), printderivs("no")
   {
     RootName = "vmc";
     QMCType ="VMCLinearOptOMP";
@@ -52,6 +53,7 @@ namespace qmcplusplus
     m_param.add(w_alpha,"alpha","double");
     m_param.add(logepsilon,"logepsilon","double");
     m_param.add(logoffset,"logoffset","double");
+    m_param.add(printderivs,"printderivs","string");
     m_param.add(GEVtype,"GEVMethod","string");
     m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
     m_param.add(myRNWarmupSteps,"cswarmupsteps","int");    
@@ -920,6 +922,17 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
           Ham2(i,j)+= wW*(hdj+dj*E_L)*(hdi+di*E_L);
         }
       }
+    }
+    
+    if ((printderivs=="yes")&&(myComm->rank()==0))
+    {
+      stringstream fn;
+      fn<<RootName.c_str()<<".derivs";
+      
+      ofstream d_out(fn.str().c_str());
+      d_out.precision(6);
+      d_out<<"#D        HD"<<endl;
+      for (int i=0; i<NumOptimizables; i++) d_out<<D[i]<<"  "<<HD[i]<<endl;
     }
 // 
 //     //         //Lazy. Pack these for better performance.

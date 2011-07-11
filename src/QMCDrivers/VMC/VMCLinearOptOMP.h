@@ -106,6 +106,7 @@ namespace qmcplusplus
       Matrix<RealType> Ham, Ham2, Olp;
       std::vector<RealType> D_E, HD2, HD, D;
       RealType sE,sE2,sE4,sW,sN;
+      string printderivs;
       ///Temp matrices
       Matrix<RealType> DerivRecords, HDerivRecords;
 
