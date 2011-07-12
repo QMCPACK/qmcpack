@@ -43,10 +43,10 @@ namespace qmcplusplus
       typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
       typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
       typedef SPOSetBase::HessType      HessType;
-      typedef TinyVector<HessType, 3>   GGGType;
+      typedef TinyVector<HessType, OHMMS_DIM>   GGGType;
       typedef Vector<GGGType>           GGGVector_t;           
       typedef Matrix<GGGType>           GGGMatrix_t;           
-      typedef Array<HessType,3>         HessArray_t;
+      typedef Array<HessType,OHMMS_DIM>         HessArray_t;
       //typedef Array<GradType,3>       GradArray_t;
       //typedef Array<PosType,3>        PosArray_t;
 
@@ -97,7 +97,7 @@ namespace qmcplusplus
                                             const opt_variables_type& active,
                                             int offset,
                                             Matrix<RealType>& dlogpsi,
-                                            Array<GradType,3>& dG,
+                                            Array<GradType,OHMMS_DIM>& dG,
                                             Matrix<RealType>& dL);
 
       ///reset the size: with the number of particles and number of orbtials

@@ -179,11 +179,11 @@ namespace qmcplusplus
     void registerData(PooledData<RealType>& buf)
     {
       FirstOfU = &(UIJ(0,0)[0]);
-      LastOfU = FirstOfU + 3*NumTargets*NumCenters;
+      LastOfU = FirstOfU + OHMMS_DIM*NumTargets*NumCenters;
       FirstOfA = &(AIJ(0,0)[0]);
-      LastOfA = FirstOfA + 9*NumTargets*NumCenters;
+      LastOfA = FirstOfA + OHMMS_DIM*OHMMS_DIM*NumTargets*NumCenters;
       FirstOfB = &(BIJ(0,0)[0]);
-      LastOfB = FirstOfB + 3*NumTargets*NumCenters;
+      LastOfB = FirstOfB + OHMMS_DIM*NumTargets*NumCenters;
       buf.add(FirstOfU,LastOfU);
       buf.add(FirstOfA,LastOfA);
       buf.add(FirstOfB,LastOfB);

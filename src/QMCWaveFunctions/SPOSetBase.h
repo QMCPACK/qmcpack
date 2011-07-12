@@ -42,8 +42,8 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
     typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
     typedef OrbitalSetTraits<ValueType>::HessType      HessType;
-    typedef Array<HessType,3>                          HessArray_t;
-    typedef TinyVector<HessType, 3>                    GGGType;
+    typedef Array<HessType,OHMMS_DIM>                          HessArray_t;
+    typedef TinyVector<HessType, OHMMS_DIM>                    GGGType;
     typedef Vector<GGGType>                            GGGVector_t;
     typedef Matrix<GGGType>                            GGGMatrix_t;
     typedef ParticleSet::Walker_t                      Walker_t;

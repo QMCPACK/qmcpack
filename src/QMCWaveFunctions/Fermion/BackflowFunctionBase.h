@@ -32,7 +32,7 @@ namespace qmcplusplus
 
     public:
 
-    typedef Array<HessType,3>       HessArray_t;
+    typedef Array<HessType,OHMMS_DIM>       HessArray_t;
     //typedef Array<GradType,3>       GradArray_t;
     //typedef Array<PosType,3>        PosArray_t;
  

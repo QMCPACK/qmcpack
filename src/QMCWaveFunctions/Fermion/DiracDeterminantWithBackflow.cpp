@@ -704,7 +704,7 @@ namespace qmcplusplus {
                                             const opt_variables_type& active,
                                             int offset,   
                                             Matrix<RealType>& dlogpsi,
-                                            Array<GradType,3>& dG, 
+                                            Array<GradType,OHMMS_DIM>& dG, 
                                             Matrix<RealType>& dL) 
   {
 /*  Note:
