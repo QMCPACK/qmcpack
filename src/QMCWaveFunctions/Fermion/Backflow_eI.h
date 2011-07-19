@@ -415,8 +415,12 @@ namespace qmcplusplus
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
           ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
-          std::fill(derivs.begin(),derivs.end(),0.0);
-          RadFun[i]->evaluateDerivatives(myTable->r(nn),derivs);
+//           std::fill(derivs.begin(),derivs.end(),0.0);
+          
+          int NPrms = RadFun[i]->NumParams;
+          vector<TinyVector<RealType,3> > derivsju(NPrms);
+          
+          RadFun[i]->evaluateDerivatives(myTable->r(nn),derivsju);
           du *= myTable->rinv(nn);
           //PosType u = uij*myTable->dr(nn); 
           QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn)); 
@@ -433,16 +437,16 @@ namespace qmcplusplus
           //u = (d2u+4.0*du)*myTable->dr(nn); 
           Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
 
-          int NPrms = RadFun[i]->NumParams; 
+          
           for(int prm=0,la=indexOfFirstParam+offsetPrms[i]; prm<NPrms; prm++,la++) {
-            Cmat(la,j) += myTable->dr(nn)*derivs[prm][0];
+            Cmat(la,j) += myTable->dr(nn)*derivsju[prm][0];
 
-            Xmat(la,j,j) += (derivs[prm][1]*myTable->rinv(nn))*op;
-            Xmat(la,j,j)[0] += derivs[prm][0];
-            Xmat(la,j,j)[4] += derivs[prm][0];
-            Xmat(la,j,j)[8] += derivs[prm][0];
+            Xmat(la,j,j) += (derivsju[prm][1]*myTable->rinv(nn))*op;
+            Xmat(la,j,j)[0] += derivsju[prm][0];
+            Xmat(la,j,j)[4] += derivsju[prm][0];
+            Xmat(la,j,j)[8] += derivsju[prm][0];
 
-            Ymat(la,j) += (derivs[prm][2]+4.0*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn);
+            Ymat(la,j) += (derivsju[prm][2]+4.0*derivsju[prm][1]*myTable->rinv(nn))*myTable->dr(nn);
 
           }
 

@@ -623,8 +623,13 @@ namespace qmcplusplus
           int j = myTable->J[nn];
           ValueType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
           //for(int q=0; q<derivs.size(); q++) derivs[q]=0.0; // I believe this is necessary
-          std::fill(derivs.begin(),derivs.end(),0.0);
-          RadFun[PairID(i,j)]->evaluateDerivatives(myTable->r(nn),derivs);
+//           std::fill(derivs.begin(),derivs.end(),0.0);
+          
+          
+          int numParamJU = RadFun[PairID(i,j)]->NumParams;
+          vector<TinyVector<RealType,3> > derivsju(numParamJU);
+          RadFun[PairID(i,j)]->evaluateDerivatives(myTable->r(nn),derivsju);
+          
 
           du *= myTable->rinv(nn);
           PosType u = uij*myTable->dr(nn);
@@ -660,27 +665,28 @@ namespace qmcplusplus
           Bmat_full(i,j) += grad;
           Bmat_full(j,i) -= grad;
 
-          for(int prm=0,la=indexOfFirstParam+offsetPrms[PairID(i,j)]; prm<numParams; prm++,la++) {
-            GradType uk = myTable->dr(nn)*derivs[prm][0]; 
+          for(int prm=0,la=indexOfFirstParam+offsetPrms[PairID(i,j)]; prm<numParamJU; prm++,la++) 
+          {
+            GradType uk = myTable->dr(nn)*derivsju[prm][0]; 
             Cmat(la,i) -= uk; 
             Cmat(la,j) += uk; 
  
-            Xmat(la,i,j) -= (derivs[prm][1]*myTable->rinv(nn))*op;
+            Xmat(la,i,j) -= (derivsju[prm][1]*myTable->rinv(nn))*op;
             
 #if OHMMS_DIM==3
-            Xmat(la,i,j)[0] -= derivs[prm][0]; 
-            Xmat(la,i,j)[4] -= derivs[prm][0]; 
-            Xmat(la,i,j)[8] -= derivs[prm][0];
+            Xmat(la,i,j)[0] -= derivsju[prm][0]; 
+            Xmat(la,i,j)[4] -= derivsju[prm][0]; 
+            Xmat(la,i,j)[8] -= derivsju[prm][0];
 #elif OHMMS_DIM==2
-            Xmat(la,i,j)[0] -= derivs[prm][0]; 
-            Xmat(la,i,j)[3] -= derivs[prm][0];
+            Xmat(la,i,j)[0] -= derivsju[prm][0]; 
+            Xmat(la,i,j)[3] -= derivsju[prm][0];
 #endif            
             
             Xmat(la,j,i) += Xmat(la,i,j);
             Xmat(la,i,i) -= Xmat(la,i,j);
             Xmat(la,j,j) -= Xmat(la,i,j);
            
-            uk = 2.0*(derivs[prm][2]+(OHMMS_DIM+1)*derivs[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
+            uk = 2.0*(derivsju[prm][2]+(OHMMS_DIM+1)*derivsju[prm][1]*myTable->rinv(nn))*myTable->dr(nn); 
             Ymat(la,i) -= uk; 
             Ymat(la,j) += uk;
  
