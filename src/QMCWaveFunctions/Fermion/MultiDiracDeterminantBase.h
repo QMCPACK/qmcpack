@@ -179,19 +179,19 @@ namespace qmcplusplus {
   ValueType ratio(ParticleSet& P, int iat)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
+    return ValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
+    return GradType();
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
+    return ValueType();
   }
 
   ValueType ratio(ParticleSet& P, int iat, 
@@ -199,7 +199,7 @@ namespace qmcplusplus {
       ParticleSet::ParticleLaplacian_t& dL)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
+    return ValueType();
   }
 
   RealType evaluateLog(ParticleSet& P, 
@@ -210,12 +210,12 @@ namespace qmcplusplus {
     return 0.0;
   }
 
-  RealType evaluate(ParticleSet& P, 
+  ValueType evaluate(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G,
         ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
+    return ValueType();
   }
 
 
@@ -759,7 +759,7 @@ namespace qmcplusplus {
         for(int jat=0; jat<NumPtcls; jat++) {
 
           it = confgList[ReferenceDeterminant].occup.begin();
-          GradType gradRatio = 0.0;
+          GradType gradRatio;// = 0.0;
           ValueType ratioLapl = 0.0;
 
           if(jat==WorkingIndex) {

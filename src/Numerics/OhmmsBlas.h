@@ -114,6 +114,13 @@ struct BLAS {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
   }
 
+  inline static
+  void gemv_trans(int n, int m, const std::complex<double>* restrict amat, const std::complex<double>* restrict x
+      , std::complex<double>* restrict y) 
+  {
+    zgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+  }
+
   inline static 
   void gemv(int n, int m, 
       const std::complex<double>* restrict amat, 

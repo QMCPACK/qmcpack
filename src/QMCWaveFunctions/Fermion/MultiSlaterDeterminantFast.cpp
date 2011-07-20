@@ -274,7 +274,7 @@ namespace qmcplusplus {
 
     if(usingBF) { APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n"); }
 
-    GradType grad_iat=0.0;
+    GradType grad_iat;
     if(DetID[iat] == 0) {
       Dets[0]->evaluateGrads(P,iat);
       ValueVector_t& detValues_up = Dets[0]->detValues;
@@ -329,7 +329,7 @@ namespace qmcplusplus {
       vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
       vector<RealType>::iterator it(C.begin()),last(C.end());
       ValueType psiNew=0.0;
-      GradType dummy=0.0; 
+      GradType dummy;
       it=C.begin();last=C.end();
       while(it != last) {
         psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -354,7 +354,7 @@ namespace qmcplusplus {
       vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
       vector<RealType>::iterator it(C.begin()),last(C.end());
       ValueType psiNew=0.0;
-      GradType dummy=0.0;
+      GradType dummy;
       while(it != last) {
         psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
         dummy += (*it)*grads_dn(*dnC,iat-N2)*detValues_up[*upC];

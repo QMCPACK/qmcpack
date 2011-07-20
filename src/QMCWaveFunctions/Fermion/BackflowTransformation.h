@@ -126,7 +126,8 @@ namespace qmcplusplus
     ParticleSet::ParticlePos_t newQP;
     ParticleSet::ParticlePos_t oldQP;
 
-    Vector<PosType> storeQP;
+    //Vector<PosType> storeQP;
+    Vector<GradType> storeQP;
 
     /// store index of qp coordinates that changed during pbyp move
     std::vector<int> indexQP, index;
@@ -822,13 +823,23 @@ namespace qmcplusplus
 
          app_log() <<"Cmat: \n" 
                    <<"i, AvDiff, max: \n";
-         ValueType df,av=0.0,cnt=0.0,maxD=-100.0;
+    
+         //2011-07-17: what is the proper data type?
+         ValueType df,av=0.0,cnt=0.0;
+         RealType maxD=-100.0;
+
+         const ValueType ConstOne(1.0);
+
          for(int k=0; k<NumTargets; k++) { 
-          for(int q=0; q<3; q++) {
-           cnt++;
+          for(int q=0; q<OHMMS_DIM; q++) {
+           cnt += ConstOne;
            df=(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]);
            av+=df;
-           if( std::fabs(df) > maxD ) maxD=std::fabs(df); 
+#if defined(QMC_COMPLEX)
+           if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
+#else
+           if( std::abs(df) > maxD ) maxD=std::abs(df); 
+#endif
            //app_log() <<k <<"  " <<q <<"   "
            //          <<( (qp_1[k])[q] - (qp_2[k])[0] )/(2.0*dh)   <<"  "
            //          <<Cmat(i,k)[q] <<"  " <<(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]) <<endl;
@@ -841,16 +852,25 @@ namespace qmcplusplus
          for(int k=0; k<NumTargets; k++) {
            for(int q=0; q<3; q++) {
              RealType dB=0.0;
+#if defined(QMC_COMPLEX)
+             for(int j=0; j<NumTargets; j++) dB+= (Bmat_full_1(j,k)[q] - Bmat_full_2(j,k)[q]).real();
+#else
              for(int j=0; j<NumTargets; j++) dB+= (Bmat_full_1(j,k)[q] - Bmat_full_2(j,k)[q]);
-             cnt++;
+#endif
+             cnt+=ConstOne;
              df=(dB/(2.0*dh)-Ymat(i,k)[q]);
              av+=df;
-             if( std::fabs(df) > maxD ) maxD=std::fabs(df); 
+#if defined(QMC_COMPLEX)
+             if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
+#else
+             if( std::abs(df) > maxD ) maxD=std::abs(df); 
+#endif
              //app_log() <<k <<"  " <<q <<"   "
              //        <<dB/(2.0*dh)   <<"  "
              //        <<Ymat(i,k)[q] <<"  " <<(dB/(2.0*dh)-Ymat(i,k)[q]) <<endl;
            }         
          }         
+
          app_log() <<i <<"  " <<av/cnt <<"  " <<maxD <<endl;
          av=cnt=maxD=0.0;
 
@@ -859,11 +879,21 @@ namespace qmcplusplus
           for(int k2=0; k2<NumTargets; k2++) {
            for(int q1=0; q1<3; q1++) {
             for(int q2=0; q2<3; q2++) {
+#if defined(QMC_COMPLEX)
+             RealType dB;
+             convert((Amat_1(k1,k2))(q1,q2) - (Amat_2(k1,k2))(q1,q2),dB);
+#else
              RealType dB=(Amat_1(k1,k2))(q1,q2) - (Amat_2(k1,k2))(q1,q2);
-             cnt++;
+#endif
+             cnt+=ConstOne;
+
              df=(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2));
              av+=df;
-             if( std::fabs(df) > maxD ) maxD=std::fabs(df); 
+#if defined(QMC_COMPLEX)
+             if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
+#else
+             if( std::abs(df) > maxD ) maxD=std::abs(df); 
+#endif
              //app_log() <<k1 <<"  " <<k2 <<"  " <<q1 <<"  " <<q2 <<"   "
              //        <<dB/(2.0*dh)   <<"  "
              //        <<(Xmat(i,k1,k2))(q1,q2) <<"  " <<(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2)) <<endl;
@@ -946,10 +976,10 @@ namespace qmcplusplus
       Amat_1 = Amat_0 - Amat;
       qp_1 = QP.R - qp_0;
       double qpdiff = Dot(qp_1,qp_1);
-      double Amdiff = 0.0;
+      ValueType Amdiff = 0.0;
       for(int i=0; i<NumTargets; i++)
        for(int k=0; k<NumTargets; k++)
-        for(int j=0; j<9; j++)
+        for(int j=0; j<OHMMS_DIM*OHMMS_DIM; j++)
           Amdiff += Amat_1(i,k)[j]*Amat_1(i,k)[j];
       app_log() <<"Error in pbyp QP transformation: " <<qpdiff <<endl;
       app_log() <<"Error in pbyp QP Amat: " <<Amdiff <<endl;

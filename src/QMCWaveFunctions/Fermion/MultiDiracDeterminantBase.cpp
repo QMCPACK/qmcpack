@@ -129,7 +129,7 @@ namespace qmcplusplus {
        for(int j=0; j<NumOrbitals; j++)
          TpsiM(j,i) = psiM(i,j);
       }
-      ValueType phaseValueRef; 
+      RealType phaseValueRef; 
       ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
       InverseTimer.stop();
       ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
@@ -138,7 +138,7 @@ namespace qmcplusplus {
       for(int iat=0; iat<NumPtcls; iat++)
       {
         it = confgList[ReferenceDeterminant].occup.begin();
-        GradType gradRatio = 0.0;  
+        GradType gradRatio;
         ValueType ratioLapl = 0.0;
         for(int i=0; i<NumPtcls; i++) { 
           gradRatio += psiMinv(i,iat)*dpsiM(iat,*it);

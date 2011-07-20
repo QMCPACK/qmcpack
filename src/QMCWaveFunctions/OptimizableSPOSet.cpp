@@ -216,7 +216,11 @@ namespace qmcplusplus
      int ipm(0);
      if (t_params.size()>0)
        for (int ib=0; ib<M; ib++)
+#if defined(QMC_COMPLEX)
+         if((allowedOrbs(state,ib).real()>0)&&(std::abs(t_params[ipm])>thr)) params[ib]=t_params[ipm++];
+#else
          if((allowedOrbs(state,ib)>0)&&(std::abs(t_params[ipm])>thr)) params[ib]=t_params[ipm++];
+#endif
          else params[ib]=0;
    }
    else if (params.size()) asize=params.size();

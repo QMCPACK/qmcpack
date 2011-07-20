@@ -156,10 +156,10 @@ namespace qmcplusplus
     for (int i=0; i<NumOrbitals; i++)
       for (int j=0; j<NumBasis; j++)
 	for (int l=0; l<NumOrbitals; l++) {
-	  PosType g = P.G[FirstIndex+l];
-	  PosType dg1 = psiM(l,i)*G_gamma(l,j);
-	  PosType dg2 = g*dlogdet_dC(i,j);
-	  PosType dg = dg1;// - dg2;
+	  GradType g = P.G[FirstIndex+l];
+	  GradType dg1 = psiM(l,i)*G_gamma(l,j);
+	  GradType dg2 = g*dlogdet_dC(i,j);
+	  GradType dg = dg1;// - dg2;
 // 	  fprintf (stderr, "dg = %9.4f %9.4f %9.4f\n",
 // 		   dg[0], dg[1], dg[2]);
 // 	  fprintf (stderr, "g1 = %11.4e %11.4e %11.4e  g2 = %11.4e %11.4e %11.4e\n",

@@ -16,16 +16,16 @@
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #if OHMMS_DIM == 3
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-#if defined(HAVE_EINSPLINE)
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#endif
-#if QMC_BUILD_LEVEL>1
-#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-#endif
+  #if !defined(QMC_COMPLEX)
+  #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+  #endif
+
+  #if defined(HAVE_EINSPLINE)
+  #include "QMCWaveFunctions/EinsplineSetBuilder.h"
+  #endif
 #endif
 #include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -112,6 +112,7 @@ namespace qmcplusplus {
       PRE.error("Einspline is missing for B-spline orbitals",true);
 #endif
     }
+#if !defined(QMC_COMPLEX)
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
       ParticleSet* ions=0;
@@ -146,6 +147,7 @@ namespace qmcplusplus {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
       }
     }
+#endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3
     PRE.flush();
 

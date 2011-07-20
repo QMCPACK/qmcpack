@@ -76,6 +76,13 @@ namespace qmcplusplus {
       convert(in[2],out[2]);
     }
 
+  /** specialization for D tensory*/
+  template<typename T1, typename T2, unsigned D>
+    inline void convert(const Tensor<T1,D>& in, Tensor<T2,D>& out)
+    {
+      for(int i=0; i<D*D; ++i) convert(in[i],out[i]);
+    }
+
   /** generic function to convert arrays
    * @param in starting address of type T1
    * @param out starting address of type T2

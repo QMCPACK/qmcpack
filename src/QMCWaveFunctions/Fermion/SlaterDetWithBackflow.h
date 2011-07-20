@@ -112,7 +112,7 @@ namespace qmcplusplus
     inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       APP_ABORT("Need to implement SlaterDetWithBackflow::ratioGrad() \n");
-      return 0.0;
+      return ValueType();
     }
 
     GradType evalGrad(ParticleSet& P, int iat)
@@ -126,13 +126,13 @@ namespace qmcplusplus
     GradType alternateEvalGrad(ParticleSet& P, int iat)
     {
       APP_ABORT("Need to implement SlaterDetWithBackflow::alternateEvalGrad() \n");
-      return 0.0;
+      return GradType();
     }
 
     GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
     {
       APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
-      return 0.0;
+      return ValueType();
     }
 
     GradType evalGradSource (ParticleSet& P, ParticleSet& src, int iat,
@@ -140,7 +140,7 @@ namespace qmcplusplus
         TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad) 
     {      
       APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
-      return 0.0;
+      return GradType();
     }
 
     inline ValueType logRatio(ParticleSet& P, int iat,
@@ -148,7 +148,7 @@ namespace qmcplusplus
         ParticleSet::ParticleLaplacian_t& dL)
     {
       APP_ABORT("Need to implement SlaterDetWithBackflow::logRatio() \n");
-      return 0.0;
+      return ValueType();
     }
 
     inline void acceptMove(ParticleSet& P, int iat)
@@ -171,7 +171,7 @@ namespace qmcplusplus
       BFTrans->evaluatePbyP(P,iat);
       //BFTrans->evaluate(P);
 
-      RealType ratio=1.0;
+      ValueType ratio=1.0;
       for(int i=0; i<Dets.size(); ++i)
         ratio*=Dets[i]->ratio(P,iat);
       return ratio; 
@@ -180,7 +180,7 @@ namespace qmcplusplus
     inline ValueType alternateRatio(ParticleSet& P)
     {
       APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
-      return 0.0;
+      return ValueType();
     }
 
     inline void alternateGrad(ParticleSet::ParticleGradient_t& G)

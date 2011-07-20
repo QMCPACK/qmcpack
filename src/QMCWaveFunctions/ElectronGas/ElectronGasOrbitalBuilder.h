@@ -26,6 +26,9 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 
+#if defined(QMC_COMPLEX)
+  #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#else /** declare real HEG orbitals **/
 namespace qmcplusplus {
 
   struct RealEGOSet: public SPOSetBase
@@ -318,6 +321,7 @@ namespace qmcplusplus {
   };
 
 }
+#endif /** QMC_COMPLEX **/
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

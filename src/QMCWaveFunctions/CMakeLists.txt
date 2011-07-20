@@ -1,12 +1,12 @@
 SET(WFBASE_SRCS
-    OrbitalBase.cpp
-    DiffOrbitalBase.cpp
-    OrbitalBuilderBase.cpp
-    ProductOrbital.cpp
-    OrbitalConstraintsBase.cpp
-    SPOSetBase.cpp
-    OptimizableSPOSet.cpp
-   )
+  OrbitalBase.cpp
+  DiffOrbitalBase.cpp
+  OrbitalBuilderBase.cpp
+  ProductOrbital.cpp
+  OrbitalConstraintsBase.cpp
+  SPOSetBase.cpp
+  OptimizableSPOSet.cpp
+  )
 
 ########################
 # build jastrows
@@ -26,18 +26,17 @@ SET(JASTROW_SRCS
   OptimizableSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
-)
+  )
 
 IF(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-    PlaneWave/PWOrbitalSet.cpp
     )
 ELSE(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasOrbitalBuilder.cpp
-    PlaneWave/PWRealOrbitalSet.cpp
     )
+
 ENDIF(QMC_COMPLEX)
 
 
@@ -61,6 +60,7 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CBSOBuilder.cpp
     )
 
+
   SET(FERMION_SRCS ${FERMION_SRCS}
     MolecularOrbitals/STOBuilder.cpp
     MolecularOrbitals/GTOBuilder.cpp
@@ -68,27 +68,27 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/BsplineAOBuilder.cpp
     )
 
-IF(QMC_CUDA)
-   SET(FERMION_SRCS ${FERMION_SRCS}
-       Fermion/determinant_update.cu 
-       Fermion/DiracDeterminantCUDA.cpp
-       Fermion/SlaterDetCUDA.cpp
-       TrialWaveFunction_CUDA.cpp
+  IF(QMC_CUDA)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      Fermion/determinant_update.cu 
+      Fermion/DiracDeterminantCUDA.cpp
+      Fermion/SlaterDetCUDA.cpp
+      TrialWaveFunction_CUDA.cpp
       )
-   SET(JASTROW_SRCS ${JASTROW_SRCS}
-       Jastrow/BsplineJastrowCuda.cu
-       Jastrow/BsplineJastrowCudaPBC.cu
-       Jastrow/OneBodyJastrowOrbitalBspline.cpp
-       Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+    SET(JASTROW_SRCS ${JASTROW_SRCS}
+      Jastrow/BsplineJastrowCuda.cu
+      Jastrow/BsplineJastrowCudaPBC.cu
+      Jastrow/OneBodyJastrowOrbitalBspline.cpp
+      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
       )
-   IF(HAVE_EINSPLINE)
+    IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
-         EinsplineSetCuda.cpp
-         PhaseFactors.cu
-         AtomicOrbitalCuda.cu
-         )
-   ENDIF(HAVE_EINSPLINE)
-ENDIF(QMC_CUDA)
+        EinsplineSetCuda.cpp
+        PhaseFactors.cu
+        AtomicOrbitalCuda.cu
+        )
+    ENDIF(HAVE_EINSPLINE)
+  ENDIF(QMC_CUDA)
 
 
   IF(HAVE_EINSPLINE)
@@ -106,20 +106,20 @@ ENDIF(QMC_CUDA)
     endif(NOT IBM_COMPILER)
   ENDIF(HAVE_EINSPLINE)
 
-  IF(QMC_BUILD_LEVEL GREATER 1)
-
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      Bspline3DSetBase.cpp
-      Bspline3DSet.cpp
-      Bspline3DSetTrunc.cpp
-      TricubicBsplineSetBuilder.cpp
-      TricubicBsplineSetBuilder.1.cpp
-      TricubicBsplineSetBuilder.2.cpp
-      PlaneWave/PWBasis.cpp
-      PlaneWave/PWParameterSet.cpp
-      PlaneWave/PWOrbitalBuilder.cpp
-      )
-  ENDIF(QMC_BUILD_LEVEL GREATER 1)
+  #  IF(QMC_BUILD_LEVEL GREATER 1)
+  #
+  #    SET(FERMION_SRCS ${FERMION_SRCS}
+  #      Bspline3DSetBase.cpp
+  #      Bspline3DSet.cpp
+  #      Bspline3DSetTrunc.cpp
+  #      TricubicBsplineSetBuilder.cpp
+  #      TricubicBsplineSetBuilder.1.cpp
+  #      TricubicBsplineSetBuilder.2.cpp
+  #      PlaneWave/PWBasis.cpp
+  #      PlaneWave/PWParameterSet.cpp
+  #      PlaneWave/PWOrbitalBuilder.cpp
+  #      )
+  #  ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
   #only experimental version
   IF(QMC_BUILD_LEVEL GREATER 2)
@@ -127,7 +127,7 @@ ENDIF(QMC_CUDA)
       AGPDeterminant.cpp AGPDeterminantBuilder.cpp
       )
   ENDIF(QMC_BUILD_LEVEL GREATER 2)
-    
+
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}

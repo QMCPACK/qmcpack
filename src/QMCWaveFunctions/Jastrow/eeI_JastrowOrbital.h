@@ -1401,7 +1401,15 @@ namespace qmcplusplus {
 	dlogpsi[kk]=dLogPsi[k];
 	RealType sum = 0.0;
 	for (int i=0; i<Nelec; i++)
+        {
+#if defined(QMC_COMPLEX)
+	  sum -= 0.5*lapLogPsi(k,i);
+          for(int jdim=0; jdim<OHMMS_DIM; ++jdim)
+            sum -= P.G[i][jdim].real()*gradLogPsi(k,i)[jdim];
+#else
 	  sum -= 0.5*lapLogPsi(k,i) + dot(P.G[i], gradLogPsi(k,i));
+#endif
+        }
 	dhpsioverpsi[kk] = sum;
       }
     }
