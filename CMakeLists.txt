@@ -83,8 +83,8 @@ SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
-SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
+SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 ######################################################################
 # check environment variables 
 ######################################################################
@@ -378,9 +378,24 @@ ELSE()
 ENDIF()
 
 IF(QMC_CUDA)
-  SET(CUDA_NVCC_FLAGS "-arch;sm_13")
+  if(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CUDA_NVCC_FLAGS "-arch;sm_13;")
+  else(CMAKE_COMPILER_IS_GNUCXX)
+    set(CUDA_PROPAGATE_HOST_FLAGS "OFF")
+    SET(CUDA_NVCC_FLAGS "-arch;sm_13;-Drestrict=__restrict__")
+  endif(CMAKE_COMPILER_IS_GNUCXX)
+
   FIND_PACKAGE(CUDA REQUIRED)
-  SET(CUDA_NVCC_FLAGS "-arch;sm_13")
+
+  if(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CUDA_NVCC_FLAGS "-arch;sm_13;")
+  else(CMAKE_COMPILER_IS_GNUCXX)
+    set(CUDA_PROPAGATE_HOST_FLAGS "OFF")
+    SET(CUDA_NVCC_FLAGS "-arch;sm_13;-Drestrict=__restrict__")
+  endif(CMAKE_COMPILER_IS_GNUCXX)
+
+  MESSAGE(STATUS "Setting CUDA FLAGS="${CUDA_NVCC_FLAGS})
+
 ENDIF(QMC_CUDA)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
