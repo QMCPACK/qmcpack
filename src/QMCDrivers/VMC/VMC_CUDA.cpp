@@ -504,6 +504,7 @@ namespace qmcplusplus {
       Psi.checkOutVariables(dummy);
       numParams = dummy.size();
       resizeForOpt(numParams);
+      int nw  = W.getActiveWalkers();
       d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
     }
     
