@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- paripot@type=(coulomb, pseudo) -->
+<qmcsystem>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml" format="xml"/>
+    </pairpot>
+  </hamiltonian>
+</qmcsystem>
+
