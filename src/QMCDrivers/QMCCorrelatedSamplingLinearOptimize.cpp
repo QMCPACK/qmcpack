@@ -44,8 +44,7 @@ namespace qmcplusplus
 
 QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
-        exp0(-16), nstabilizers(4), stabilizerScale(1.0), bigChange(1), w_beta(0.0),
-        MinMethod("quartic"), GEVtype("mixed")
+        exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
 {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -58,7 +57,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
     m_param.add(w_beta,"beta","double");
     m_param.add(GEVtype,"GEVMethod","string");
     quadstep=-1.0;
-    stepsize=0.75;
+    stepsize=0.3;
     m_param.add(quadstep,"quadstep","double");
     m_param.add(stepsize,"stepsize","double");
     m_param.add(exp0,"exp0","double");
@@ -127,8 +126,6 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       startCost = lastCost = optTarget->Cost(false);
       myTimers[4]->start();
     }
-    
-    if (GEVtype=="H2") nstabilizers=1;
     
     MatrixOperators MO;
     bool apply_inverse(true);
