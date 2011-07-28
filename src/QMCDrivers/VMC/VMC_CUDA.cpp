@@ -481,7 +481,7 @@ namespace qmcplusplus {
     Estimators->start(nBlocks, true);
 
     // Compute sample dumping frequency
-    if (nTargetSamples) {
+    if (nTargetSamples>(myComm->size()*W.WalkerList.size())) {
       int nnodes = myComm->size();
       int nw = W.WalkerList.size();
       int samples_per_node = (nTargetSamples+nnodes-1)/nnodes; 
@@ -489,6 +489,11 @@ namespace qmcplusplus {
       myPeriod4WalkerDump = Period4WalkerDump;
       app_log() << "  Dumping walker ensemble every " << myPeriod4WalkerDump
 		<< " steps.\n";
+    }
+    else
+    {
+      myPeriod4WalkerDump=nBlocks*nSteps;
+      nTargetSamples=myComm->size()*W.WalkerList.size();
     }
 
     W.clearEnsemble();
@@ -504,7 +509,8 @@ namespace qmcplusplus {
       Psi.checkOutVariables(dummy);
       numParams = dummy.size();
       resizeForOpt(numParams);
-      int nw  = W.getActiveWalkers();
+      int nw = W.WalkerList.size();
+//       int nw  = W.getActiveWalkers();
       d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
     }
     
