@@ -1782,6 +1782,7 @@ namespace qmcplusplus {
   template<> string
   EinsplineSetHybrid<double>::Type()
   {
+    return "EinsplineSetHybrid<double>";
   }
   
   
@@ -1803,6 +1804,7 @@ namespace qmcplusplus {
   template<> string
   EinsplineSetHybrid<complex<double> >::Type()
   {
+    return "EinsplineSetHybrid<complex<double> >";
   }
   
 

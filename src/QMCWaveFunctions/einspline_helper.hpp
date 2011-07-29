@@ -37,7 +37,7 @@ namespace qmcplusplus
   {
     fftbox=std::complex<T>();
     //this is rather unsafe
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int iG=0; iG<cG.size(); iG++) 
     {
       fftbox((gvecs[iG][0]+maxg[0])%maxg[0]
@@ -179,7 +179,7 @@ namespace qmcplusplus
     T nz_i=1.0/static_cast<T>(nz);
 
     T rNorm=0.0, iNorm=0.0;
-//#pragma omp parallel for reduction(+:rNorm,iNorm), firstprivate(nx_i,ny_i,nz_i)
+#pragma omp parallel for reduction(+:rNorm,iNorm), firstprivate(nx_i,ny_i,nz_i)
     for (int ix=0; ix<nx; ix++) 
     {
       T s, c, r, i;
@@ -209,7 +209,7 @@ namespace qmcplusplus
     T phase_r, phase_i;
     sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
 
-//#pragma omp parallel for firstprivate(phase_r,phase_i)
+#pragma omp parallel for firstprivate(phase_r,phase_i)
     for (int ix=0; ix<nx; ix++)
     {
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
