@@ -184,9 +184,15 @@ public:
 
   // Methods
 
-  inline void diagonal(const T& rhs) {
+  inline void diagonal(const T& rhs) 
+  {
     for (int i = 0 ; i < D ; i++ ) 
       (*this)(i,i) = rhs;
+  }
+
+  inline void add2diagonal(T rhs)
+  {
+    for (int i = 0 ; i < D ; i++ ) (*this)(i,i) += rhs;
   }
 
   ///return the size

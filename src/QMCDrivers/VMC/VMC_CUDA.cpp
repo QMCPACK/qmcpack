@@ -52,6 +52,7 @@ namespace qmcplusplus {
       PosType red = W.Lattice.toUnit(newpos[iw]);
       valid[iw] = W.Lattice.isValid(red);
     }
+    return true;
   }
 
   bool VMCcuda::run() { 
