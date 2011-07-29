@@ -427,6 +427,8 @@ namespace qmcplusplus {
         RealType nrm = 1.0/g_stats[3];
         E_avg = nrm*g_stats[0];
         V_avg = nrm*g_stats[1]-E_avg*E_avg;
+        //for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
+        //  app_log()<<endl;
       }
       Psi.recompute(W); 
       double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
@@ -512,7 +514,8 @@ namespace qmcplusplus {
       resizeForOpt(numParams);
       int nw = W.WalkerList.size();
 //       int nw  = W.getActiveWalkers();
-      d_logpsi_dalpha.resize(nw, numParams), d_hpsioverpsi_dalpha.resize(nw, numParams);
+      d_logpsi_dalpha.resize(nw, numParams);
+      d_hpsioverpsi_dalpha.resize(nw, numParams);
     }
     
   }
@@ -592,7 +595,32 @@ namespace qmcplusplus {
       LeftM(i,0) = (1-b2)*(D_E[i-1]-E_avg*D[i-1])         +b2*(HD2[i-1] - E_avg*(HD[i-1]+ 2.0*(D_E[i-1]-D[i-1]*E_avg)) - D[i-1]*E2_avg);
       LeftM(0,i) = (1-b2)*(HD[i-1]+D_E[i-1]-E_avg*D[i-1]) +b2*(HD2[i-1] - E_avg*(HD[i-1]+ 2.0*(D_E[i-1]-D[i-1]*E_avg)) - D[i-1]*E2_avg);
     }
-    
+
+/*
+    for (int i=0; i<numParams; i++) app_log()<<D[i]<<" ";
+    app_log()<<endl;
+    for (int i=0; i<numParams; i++) app_log()<<D_E[i]<<" ";
+    app_log()<<endl;
+    for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
+    app_log()<<endl;
+    for (int i=0; i<numParams; i++) app_log()<<HD2[i]<<" ";
+    app_log()<<endl;
+
+    for (int i=0; i<numParams+1; i++)
+    {
+      for (int j=0; j<numParams+1; j++)
+        app_log()<<LeftM(i,j)<<" ";
+      app_log()<<endl;
+    }
+    app_log()<<endl;
+    for (int i=0; i<numParams+1; i++)
+    {
+      for (int j=0; j<numParams+1; j++)
+        app_log()<<RightM(i,j)<<" ";
+      app_log()<<endl;
+    }
+    app_log()<<endl;
+*/    
     return 1.0;
   }
 
