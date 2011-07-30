@@ -77,24 +77,37 @@ namespace qmcplusplus {
 
   };
   
-  class RNDMCUpdatePbyPAlternate: public QMCUpdateBase {
+  class RNDMCUpdatePbyPFast: public QMCUpdateBase {
 
   public:
 
-    /// Constructor.
-    RNDMCUpdatePbyPAlternate(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-                             QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~RNDMCUpdatePbyPAlternate();
+    RNDMCUpdatePbyPFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~RNDMCUpdatePbyPFast();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+    
+    void setLogEpsilon(RealType eps) 
+    {
+      logEpsilon=eps; 
+    }
     void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+
+    void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+    , vector<MCWalkerConfiguration*>& wclone
+    , vector<QMCHamiltonian*>& hclone
+    , vector<RandomGenerator_t*>& rng
+    , vector<RealType>& ratio_i_0);
 
   private:
     vector<NewTimer*> myTimers;
     int maxS;
     RealType efn;
     int estimateCrossings, maxcopy;
+    
+    RealType logEpsilon;
+    
   };
   
   

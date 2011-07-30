@@ -58,6 +58,7 @@ namespace qmcplusplus {
     string useAlternate;
     ///input to control maximum age allowed for walkers.
     IndexType mover_MaxAge;
+    IndexType myRNWarmupSteps, myWarmupSteps;
 
 
     void resetUpdateEngines(); 

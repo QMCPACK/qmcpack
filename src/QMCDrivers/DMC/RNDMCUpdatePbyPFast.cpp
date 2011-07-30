@@ -27,9 +27,9 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  RNDMCUpdatePbyPWithRejectionFast::RNDMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, 
-        TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
-        QMCUpdateBase(w,psi,h,rg), maxS(100)
+  RNDMCUpdatePbyPFast::RNDMCUpdatePbyPFast(MCWalkerConfiguration& w, 
+        TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg):
+        QMCUpdateBase(w,psi,guide,h,rg), maxS(100), logEpsilon(0)
     { 
       myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::advance")); //timer for the walker loop
       myTimers.push_back(new NewTimer("RNDMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
@@ -40,11 +40,12 @@ namespace qmcplusplus {
       TimerManager.addTimer(myTimers[2]);
       TimerManager.addTimer(myTimers[3]);
       myParams.add(maxS,"Smax","int");
+      myParams.add(logEpsilon,"logepsilon","float");
       myParams.add(efn,"fnenergy","float");
     }
   
   /// destructor
-  RNDMCUpdatePbyPWithRejectionFast::~RNDMCUpdatePbyPWithRejectionFast() { }
+  RNDMCUpdatePbyPFast::~RNDMCUpdatePbyPFast() { }
 
   /** advance all the walkers with killnode==no
    * @param nat number of particles to move
@@ -52,7 +53,7 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void RNDMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
+  void RNDMCUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       , bool measure) 
   {
     myTimers[0]->start();
@@ -63,19 +64,20 @@ namespace qmcplusplus {
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
       W.loadWalker(thisWalker,true);
-      //W.R = thisWalker.R;
-      //w_buffer.rewind();
-      //W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
-
+      RealType logpsi2_now = 2.0*Psi.getLogPsi();
+      ParticleSet::ParticleGradient_t psi_G(W.G);
+      
+      Guide.copyFromBuffer(W,w_buffer);
+      RealType logguide2_now = 2.0*(logEpsilon+Guide.getLogPsi());
+      
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
       int nAcceptTemp(0);
       int nRejectTemp(0);
       //copy the old energy and scale factor of drift
       RealType eold(thisWalker.Properties(LOCALENERGY));
-      RealType feold(thisWalker.Properties(BRANCHINGENERGY));
-      ValueType oldAltR = Psi.alternateRatio(W);
+      RealType feold(thisWalker.Properties(ALTERNATEENERGY));
       RealType vqold(thisWalker.Properties(DRIFTSCALE));
       RealType enew(eold);
       RealType rr_proposed=0.0;
@@ -86,12 +88,12 @@ namespace qmcplusplus {
       for(int iat=0; iat<NumPtcl; ++iat) 
       {
         //get the displacement
-        GradType grad_iat=Psi.evalGrad(W,iat);
+        GradType grad_iat=Guide.evalGrad(W,iat);
         PosType dr;
         //RealType sc=getDriftScale(m_tauovermass,grad_iat);
         //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_iat));
-        getScaledDrift(m_tauovermass, grad_iat, dr);
-        dr += m_sqrttau * deltaR[iat];
+//         getScaledDrift(m_tauovermass, grad_iat, dr);
+        dr = m_sqrttau *(deltaR[iat]+grad_iat);
 
         //RealType rr=dot(dr,dr);
         RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
@@ -105,7 +107,7 @@ namespace qmcplusplus {
         //PosType newpos(W.makeMove(iat,dr));
         if(!W.makeMoveAndCheck(iat,dr)) continue;
         PosType newpos(W.R[iat]);
-        RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
+        RealType ratio = Guide.ratioGrad(W,iat,grad_iat);
         bool valid_move=false;
 
         //node is crossed reject the move
@@ -115,7 +117,7 @@ namespace qmcplusplus {
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.rejectMove(iat); Psi.rejectMove(iat);
+          W.rejectMove(iat); Guide.rejectMove(iat);
         } 
         else 
         {
@@ -124,7 +126,7 @@ namespace qmcplusplus {
           //Use the force of the particle iat
           //RealType scale=getDriftScale(m_tauovermass,grad_iat);
           //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
-          getScaledDrift(m_tauovermass, grad_iat, dr);
+//           getScaledDrift(m_tauovermass, grad_iat, dr);
           dr = thisWalker.R[iat] - newpos - dr;
 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
@@ -134,7 +136,7 @@ namespace qmcplusplus {
             valid_move=true;
             ++nAcceptTemp;
             W.acceptMove(iat);
-            Psi.acceptMove(W,iat);
+            Guide.acceptMove(W,iat);
             rr_accepted+=rr;
             gf_acc *=prob;//accumulate the ratio 
             
@@ -142,7 +144,7 @@ namespace qmcplusplus {
           else 
           {
             ++nRejectTemp; 
-            W.rejectMove(iat); Psi.rejectMove(iat);
+            W.rejectMove(iat); Guide.rejectMove(iat);
           }
         } 
       }
@@ -160,7 +162,7 @@ namespace qmcplusplus {
 
         //w_buffer.rewind();
         //W.updateBuffer(w_buffer);
-        RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+        RealType logpsi = Guide.updateBuffer(W,w_buffer,false);
         W.saveWalker(thisWalker);
         myTimers[2]->stop();
 
@@ -214,6 +216,98 @@ namespace qmcplusplus {
       nReject += nRejectTemp;
 
     }
+    myTimers[0]->stop();
+  }
+  
+    void RNDMCUpdatePbyPFast::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
+  {
+    UpdatePbyP=true;
+    //   Guide.resizeTempP(W);
+
+    for (;it != it_end; ++it)
+    {
+      Walker_t& thisWalker(**it);
+      W.loadWalker(thisWalker,UpdatePbyP);
+
+      Walker_t::Buffer_t tbuffer;
+      RealType logpsi=Psi.registerData(W,tbuffer);
+      RealType logguide=Guide.registerData(W,tbuffer)+logEpsilon;
+      thisWalker.DataSet=tbuffer;
+      RealType ene = H.evaluate(W);
+
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),ene);
+      H.saveProperty(thisWalker.getPropertyBase());
+      thisWalker.ReleasedNodeAge=0;
+      thisWalker.ReleasedNodeWeight=std::exp(2.0*(logpsi-logguide));
+      thisWalker.Weight=1.0;
+    }
+  }
+  
+  
+  
+  void RNDMCUpdatePbyPFast::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+      , vector<MCWalkerConfiguration*>& wclone
+      , vector<QMCHamiltonian*>& hclone
+      , vector<RandomGenerator_t*>& rng
+      , vector<RealType>& ratio_i_0)
+  {
+    int NumThreads(pclone.size());
+
+    //this can be modified for cache etc
+    RealType psi2_i_new[64];
+    for (int ip=0; ip<NumThreads; ++ip)
+      psi2_i_new[ip] = 2.0*W[ip]->getPropertyBase()[LOGPSI];
+
+//     RealType nn = -std::log(1.0*nSubSteps*W.getTotalNum());
+#pragma omp parallel 
+    {
+      int nptcl=W.getTotalNum();
+      int ip=omp_get_thread_num();
+      RandomGenerator_t& rng_loc(*rng[ip]);
+
+      //copy the new to now
+      RealType psi2_i_now=psi2_i_new[ip];
+      RealType psi2_0_now=psi2_i_new[0];
+
+      for (int iter=0; iter<nSubSteps; ++iter)
+      {
+        //create a 3N-Dimensional Gaussian with variance=1
+        makeGaussRandomWithEngine(deltaR,rng_loc);
+
+        for (int iat=0; iat<nptcl; ++iat)
+        {
+          PosType dr=m_sqrttau*deltaR[iat];
+
+          bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
+          //everyone should skip this; could be a problem with compilers
+          if (!movePtcl) continue;
+
+          RealType ratio = pclone[ip]->ratio(*wclone[ip],iat);
+#pragma omp barrier
+          psi2_i_new[ip] = 2.0*logl(std::abs(ratio)) + psi2_i_now;
+#pragma omp barrier
+#pragma omp critical
+          {
+            ratio_i_0[ip] += expl( psi2_i_new[ip]-psi2_i_new[0]);
+          }
+          wclone[ip]->rejectMove(iat);
+          pclone[ip]->rejectMove(iat);
+        }
+      }
+
+      //     Walker_t& thisWalker(*W[ip]);
+      //     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      //     RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
+      //     wclone[ip]->saveWalker(*W[ip]);
+      //     RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+      //     //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
+      //     thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
+
+      //     hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
+      //     hclone[ip]->saveProperty(thisWalker.getPropertyBase());
+    }
+    RealType nn = 1.0/ratio_i_0[0];
+    for (int ip=0; ip<NumThreads; ++ip) ratio_i_0[ip]*=nn;
     myTimers[0]->stop();
   }
 

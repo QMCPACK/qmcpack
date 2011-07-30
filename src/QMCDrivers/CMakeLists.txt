@@ -47,7 +47,7 @@ IF(NOT QMC_COMPLEX)
   SET(QMCDRIVERS  ${QMCDRIVERS}
     DMC/RNDMCOMP.cpp
     DMC/RNDMCUpdatePbyPCeperley.cpp
-    DMC/RNDMCUpdatePbyPAlternate.cpp
+    DMC/RNDMCUpdatePbyPFast.cpp
     DMC/RNFactory.cpp
     )
 ENDIF(NOT QMC_COMPLEX)

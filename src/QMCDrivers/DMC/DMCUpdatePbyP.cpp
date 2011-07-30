@@ -259,6 +259,7 @@ namespace qmcplusplus {
   {
     app_error() << "  DMCUpdatePbyPWithKill::advanceWalkers in not implemented." << endl;
   }
+  
 }
 
 /***************************************************************************

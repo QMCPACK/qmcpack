@@ -226,7 +226,7 @@ namespace qmcplusplus {
     { 
       if(BranchMode[B_DMCSTAGE]) return std::exp(vParam[B_TAU]*(eref-0.5*(enew+eold)));
       else 
-        return 0.0;
+        return 1.0;
     }
 
     /** return the bare branch weight with a filtering using an energy window
