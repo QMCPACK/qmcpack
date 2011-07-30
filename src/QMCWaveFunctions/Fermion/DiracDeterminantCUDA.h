@@ -117,12 +117,12 @@ namespace qmcplusplus {
 
   public:
     ValueType ratio(ParticleSet& P, int iat)
-    { DiracDeterminantBase::ratio (P, iat); }
+    { return DiracDeterminantBase::ratio (P, iat); }
 
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL)
-    { DiracDeterminantBase::ratio (P, iat, dG, dL); }
+    { return DiracDeterminantBase::ratio (P, iat, dG, dL); }
 
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 

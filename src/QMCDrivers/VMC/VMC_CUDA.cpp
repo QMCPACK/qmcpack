@@ -507,6 +507,7 @@ namespace qmcplusplus {
     
     if(forOpt)
     {
+      dummy.clear();
       Psi.checkInVariables(dummy);
       dummy.resetIndex();
       Psi.checkOutVariables(dummy);

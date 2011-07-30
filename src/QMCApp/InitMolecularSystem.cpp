@@ -90,7 +90,7 @@ namespace qmcplusplus {
     if(ions->getTotalNum()==1) return initAtom(ions,els);
 
     DistanceTableData* d_ii = DistanceTable::add(*ions);
-    d_ii->create(1);
+    //d_ii->create(1);
     d_ii->evaluate(*ions);
 
     const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
@@ -149,7 +149,11 @@ namespace qmcplusplus {
     }
 
     //put all the electrons in a unit box
-    if(els->Lattice.SuperCellEnum != SUPERCELL_OPEN) els->applyBC(els->R);
+    if(els->Lattice.SuperCellEnum != SUPERCELL_OPEN) 
+    {
+      els->applyBC(els->R);
+      els->update(0);
+    }
 
     /*
     //Overwrite the valence charge
