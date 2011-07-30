@@ -147,6 +147,10 @@ namespace qmcplusplus {
       els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
       ++it;
     }
+
+    //put all the electrons in a unit box
+    if(els->Lattice.SuperCellEnum != SUPERCELL_OPEN) els->applyBC(els->R);
+
     /*
     //Overwrite the valence charge
     int iz = Species.addAttribute("atomicnumber");
