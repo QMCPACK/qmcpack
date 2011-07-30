@@ -170,12 +170,12 @@ namespace qmcplusplus {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
 #endif
     } 
-#if OHMMS_DIM == 3 && QMC_BUILD_LEVEL>1
-    else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
-    {
-      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
-    } 
-#endif /* QMC_BUILD_LEVEL>1 */
+//#if OHMMS_DIM == 3 && QMC_BUILD_LEVEL>1
+//    else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
+//    {
+//      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
+//    } 
+//#endif /* QMC_BUILD_LEVEL>1 */
     else 
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
 
