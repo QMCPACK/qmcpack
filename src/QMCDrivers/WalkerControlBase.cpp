@@ -80,7 +80,7 @@ namespace qmcplusplus {
         }
         (*dmcStream)   << setw(20) << "TrialEnergy" 
           << setw(20) << "DiffEff";
-        if (WriteRN) 
+//         if (WriteRN) 
           (*dmcStream)  << setw(20) << "LivingFraction";
         (*dmcStream) << endl;
         dmcFname=hname;
@@ -136,8 +136,8 @@ namespace qmcplusplus {
       (*dmcStream)
         << setw(20) << trialEnergy 
         << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed;
-      if (WriteRN) (*dmcStream)
-        << setw(20) << EnsembleProperty.LivingFraction;
+//       if (WriteRN) (*dmcStream)
+      (*dmcStream) << setw(20) << EnsembleProperty.LivingFraction;
       (*dmcStream)  << endl;
     }
   }
@@ -158,36 +158,55 @@ namespace qmcplusplus {
     for(; it!=it_end;++it)
     {
       bool inFN=(((*it)->ReleasedNodeAge)==0);
-      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       
-      if ((*it)->ReleasedNodeAge==1) ncr+=1;
-      else if ((*it)->ReleasedNodeAge==0) 
+      if(WriteRN)
       {
-        nfn+=1;
-        ngoodfn+=nc;
+        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+      
+        if ((*it)->ReleasedNodeAge==1) ncr+=1;
+        else if ((*it)->ReleasedNodeAge==0) 
+        {
+          nfn+=1;
+          ngoodfn+=nc;
+        }
+      
+        r2_accepted+=(*it)->Properties(R2ACCEPTED);
+        r2_proposed+=(*it)->Properties(R2PROPOSED);
+        RealType e((*it)->Properties(LOCALENERGY));
+        RealType bfe((*it)->Properties(ALTERNATEENERGY));
+        RealType wgt=((*it)->Weight);
+        RealType rnwgt=((*it)->ReleasedNodeWeight);
+      
+        esum += wgt*rnwgt*e;
+        e2sum += wgt*rnwgt*e*e;
+        wsum += rnwgt*wgt;
+        w2sum += rnwgt*rnwgt*wgt*wgt;
+        ecum += e;
+        besum += bfe*wgt;
+        bwgtsum += wgt;
+        
+      }
+      else
+      {
+        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+        if (nc>0)
+          nfn++;
+        else
+          ncr++;
+      
+        r2_accepted+=(*it)->Properties(R2ACCEPTED);
+        r2_proposed+=(*it)->Properties(R2PROPOSED);
+        RealType e((*it)->Properties(LOCALENERGY));
+        RealType wgt=((*it)->Weight);
+        
+        esum += wgt*e;
+        e2sum += wgt*e*e;
+        wsum += wgt;
+        w2sum += wgt*wgt;
+        ecum += e;
       }
       
-      r2_accepted+=(*it)->Properties(R2ACCEPTED);
-      r2_proposed+=(*it)->Properties(R2PROPOSED);
-      RealType e((*it)->Properties(LOCALENERGY));
-      RealType bfe((*it)->Properties(ALTERNATEENERGY));
-      RealType rnwgt(0.0);
-      if (inFN)
-        rnwgt=((*it)->Properties(SIGN));
-      else
-        nrn+=nc;
-      //       RealType wgt((*it)->Weight);
-      RealType wgt(0.0);
-      if (inFN)
-        wgt=((*it)->Weight); 
-      
-      esum += wgt*e;
-      e2sum += wgt*e*e;
-      wsum += wgt;
-      w2sum += wgt*wgt;
-      ecum += e;
-      besum += bfe*rnwgt*wgt;
-      bwgtsum += rnwgt*wgt;
+
     }
 
     //temp is an array to perform reduction operations
@@ -275,32 +294,57 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end());
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
     RealType r2_accepted=0.0,r2_proposed=0.0;
-    int nrn(0),ncr(0);
+    int nfn(0),nrn(0),ngoodfn(0),ncr(0),nc(0);
     while(it != it_end) 
     {
       bool inFN=(((*it)->ReleasedNodeAge)==0);
-      if ((*it)->ReleasedNodeAge==1) ncr+=1;
-      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      r2_accepted+=(*it)->Properties(R2ACCEPTED);
-      r2_proposed+=(*it)->Properties(R2PROPOSED);
-      RealType e((*it)->Properties(LOCALENERGY));
-      RealType bfe((*it)->Properties(ALTERNATEENERGY));
-      RealType rnwgt(0.0);
-      if (inFN)
-        rnwgt=((*it)->Properties(SIGN));
       
-//       RealType wgt((*it)->Weight);
-      RealType wgt(0.0);
-      if (inFN)
-        wgt=((*it)->Weight); 
+      if(WriteRN)
+      {
+        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       
-      esum += wgt*e;
-      e2sum += wgt*e*e;
-      wsum += wgt;
-      w2sum += wgt*wgt;
-      ecum += e;
-      besum += bfe*rnwgt*wgt;
-      bwgtsum += rnwgt*wgt;
+        if ((*it)->ReleasedNodeAge==1) ncr+=1;
+        else if ((*it)->ReleasedNodeAge==0) 
+        {
+          nfn+=1;
+          ngoodfn+=nc;
+        }
+      
+        r2_accepted+=(*it)->Properties(R2ACCEPTED);
+        r2_proposed+=(*it)->Properties(R2PROPOSED);
+        RealType e((*it)->Properties(LOCALENERGY));
+        RealType bfe((*it)->Properties(ALTERNATEENERGY));
+        RealType wgt=((*it)->Weight);
+        RealType rnwgt=((*it)->ReleasedNodeWeight);
+      
+        esum += wgt*rnwgt*e;
+        e2sum += wgt*rnwgt*e*e;
+        wsum += rnwgt*wgt;
+        w2sum += rnwgt*rnwgt*wgt*wgt;
+        ecum += e;
+        besum += bfe*wgt;
+        bwgtsum += wgt;
+        
+      }
+      else
+      {
+        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+        if (nc>0)
+          nfn++;
+        else
+          ncr++;
+      
+        r2_accepted+=(*it)->Properties(R2ACCEPTED);
+        r2_proposed+=(*it)->Properties(R2PROPOSED);
+        RealType e((*it)->Properties(LOCALENERGY));
+        RealType wgt=((*it)->Weight);
+        
+        esum += wgt*e;
+        e2sum += wgt*e*e;
+        wsum += wgt;
+        w2sum += wgt*wgt;
+        ecum += e;
+      }
 
       if((nc) && (inFN))
       {

@@ -346,7 +346,7 @@ namespace qmcplusplus {
     else if(curRunType == RN_RUN) 
     {
       RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*(psiPool->getWaveFunction("guide")),*primaryH,*hamPool,*psiPool);
     } 
 #endif
 //#if QMC_BUILD_LEVEL>1

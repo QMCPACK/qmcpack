@@ -39,8 +39,9 @@ namespace qmcplusplus {
 
     void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
     void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+    void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
     void makeClones(TrialWaveFunction& guide);
-
+    
     inline RealType acceptRatio() const 
     {
       IndexType nAcceptTot=0;
@@ -59,6 +60,7 @@ namespace qmcplusplus {
     IndexType NumThreads;
     ///walkers
     static vector<MCWalkerConfiguration*> wClones;
+    static vector<MCWalkerConfiguration*> wgClones;
     ///trial wavefunctions
     static vector<TrialWaveFunction*> psiClones;
     ///guide wavefunctions

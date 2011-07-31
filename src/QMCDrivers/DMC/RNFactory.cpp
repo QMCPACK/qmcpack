@@ -19,12 +19,12 @@
 #include "Message/OpenMP.h"
 //#define PETA_DMC_TEST
 namespace qmcplusplus {
-
-  QMCDriver* RNFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
+  
+  QMCDriver* RNFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide
       , QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool) 
   {
     app_log() << "Creating RNDMCMP for the qmc driver" << endl;
-    QMCDriver*  qmc = new RNDMCOMP(w,psi,h,hpool,ppool);
+    QMCDriver*  qmc = new RNDMCOMP(w,psi,guide,h,hpool,ppool);
     qmc->setUpdateMode(PbyPUpdate);
     qmc->put(myNode);
     return qmc;

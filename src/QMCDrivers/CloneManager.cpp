@@ -31,6 +31,8 @@ namespace qmcplusplus {
   vector<TrialWaveFunction*> CloneManager::psiClones;
   //initialization of the static guideClones
   vector<TrialWaveFunction*> CloneManager::guideClones;
+  
+  vector<MCWalkerConfiguration*> CloneManager::wgClones;
   //initialization of the static hClones
   vector<QMCHamiltonian*> CloneManager::hClones;
 
@@ -127,28 +129,66 @@ namespace qmcplusplus {
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();
   }
-  
-  void CloneManager::makeClones(TrialWaveFunction& guide)
+    
+    void CloneManager::makeClones(TrialWaveFunction& guide)
   {
 
+    
     if(guideClones.size()) 
     {
-      app_log() << "  Cannot make guideClones again. Use existing " << NumThreads << " clones" << endl;
-      return;
+      delete_iter(guideClones.begin()+1,guideClones.end());
+    }
+    else
+    {
+      guideClones.resize(NumThreads,0);
     }
 
     guideClones.resize(NumThreads,0);
     guideClones[0]=&guide;
-
+    
     if(NumThreads==1) return;
 
-    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide." <<endl;
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." <<endl;
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
     char pname[16];
     for(int ip=1; ip<NumThreads; ++ip) 
     {
       guideClones[ip]=guide.makeClone(*wClones[ip]);
+    }
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
+  }
+  void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide)
+  {
+
+    
+    if(guideClones.size()) 
+    {
+      delete_iter(guideClones.begin()+1,guideClones.end());
+      delete_iter(wgClones.begin(),wgClones.end());
+    }
+    else
+    {
+      guideClones.resize(NumThreads,0);
+      wgClones.resize(NumThreads,0);
+    }
+
+    guideClones.resize(NumThreads,0);
+    wgClones.resize(NumThreads,0);
+    guideClones[0]=&guide;
+    wgClones[0]=new MCWalkerConfiguration(wg);
+    
+    if(NumThreads==1) return;
+
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." <<endl;
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
+    char pname[16];
+    for(int ip=1; ip<NumThreads; ++ip) 
+    {
+      wgClones[ip]=new MCWalkerConfiguration(wg);
+      guideClones[ip]=guide.makeClone(*wgClones[ip]);
     }
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();

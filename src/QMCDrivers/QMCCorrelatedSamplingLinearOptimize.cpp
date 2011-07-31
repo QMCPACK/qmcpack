@@ -232,7 +232,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         myTimers[3]->start();
         if (MinMethod=="quartic")
         {
-          int npts(7);
+          int npts(5);
           quadstep = stepsize*Lambda;
           LambdaMax = Lambda;
           lineoptimization3(npts,startCost);

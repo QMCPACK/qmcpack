@@ -27,8 +27,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
-    : QMCDriver(w,psi,h,ppool), CloneManager(hpool), useAlternate("no")
+  RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
+    : QMCDriver(w,psi,h,ppool), CloneManager(hpool), Guide(guide)
     , BranchInterval(-1),mover_MaxAge(-1), myRNWarmupSteps(0), myWarmupSteps(0)
     {
       RootName = "dmc";
@@ -39,7 +39,6 @@ namespace qmcplusplus {
       m_param.add(KillWalker,"killnode","string");
       m_param.add(BranchInterval,"branchInterval","string");
       m_param.add(mover_MaxAge,"MaxAge","double");
-      m_param.add(useAlternate,"alternate", "string");
       m_param.add(myRNWarmupSteps,"rnwarmupsteps", "int");
       m_param.add(myWarmupSteps,"warmupsteps", "int");
     }
@@ -64,7 +63,7 @@ namespace qmcplusplus {
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
         
-        Movers[ip] = new RNDMCUpdatePbyPFast(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]); 
+        Movers[ip] = new RNDMCUpdatePbyPFast(*wClones[ip],*wgClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]); 
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);        
       }
@@ -80,6 +79,7 @@ namespace qmcplusplus {
     Timer init_timer;
 
     makeClones(W,Psi,H);
+    makeClones(W,Guide);
 
     if(Movers.empty()) 
     {
@@ -121,7 +121,7 @@ namespace qmcplusplus {
         branchClones[ip] = new BranchEngineType(*branchEngine);
 //         Movers[ip] = new RNDMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
         
-        Movers[ip] = new RNDMCUpdatePbyPFast(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]); 
+        Movers[ip] = new RNDMCUpdatePbyPFast(*wClones[ip],*wgClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]); 
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);   
         MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
@@ -140,45 +140,45 @@ namespace qmcplusplus {
       app_log() << endl << o.str() << endl;
     }
     
-    RealType avg_w(0);
-    RealType n_w(0);
-    RealType logepsilon(0);
-#pragma omp parallel
-      {
-        int ip=omp_get_thread_num();
-        
-        for (int step=0; step<myWarmupSteps; ++step)
-        {
-          avg_w=0;
-          n_w=0;
-          for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-          {
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-            #pragma omp single
-            {
-              MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-              while (wit!=wit_end)
-              {
-                avg_w += (*wit)->Weight;
-                n_w +=1;
-                wit++;
-              }
-            }
-            #pragma omp barrier
-           }
-           #pragma omp single
-           {
-             avg_w *= 1.0/n_w;
-             RealType w_m = avg_w/(1.0-avg_w);
-             w_m = std::log(0.5+0.5*w_m);
-             if (std::abs(w_m)>0.01)
-               logepsilon += w_m;
-           }
-           #pragma omp barrier
-           Movers[ip]->setLogEpsilon(logepsilon);
-        }
-        
-      }
+//     RealType avg_w(0);
+//     RealType n_w(0);
+//     RealType logepsilon(0);
+// #pragma omp parallel
+//       {
+//         int ip=omp_get_thread_num();
+//         
+//         for (int step=0; step<myWarmupSteps; ++step)
+//         {
+//           avg_w=0;
+//           n_w=0;
+//           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
+//           {
+//             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+//             #pragma omp single
+//             {
+//               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
+//               while (wit!=wit_end)
+//               {
+//                 avg_w += (*wit)->Weight;
+//                 n_w +=1;
+//                 wit++;
+//               }
+//             }
+//             #pragma omp barrier
+//            }
+//            #pragma omp single
+//            {
+//              avg_w *= 1.0/n_w;
+//              RealType w_m = avg_w/(1.0-avg_w);
+//              w_m = std::log(0.5+0.5*w_m);
+//              if (std::abs(w_m)>0.01)
+//                logepsilon += w_m;
+//            }
+//            #pragma omp barrier
+//            Movers[ip]->setLogEpsilon(logepsilon);
+//         }
+//         
+//       }
     
         
     app_log() << " RNDMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;

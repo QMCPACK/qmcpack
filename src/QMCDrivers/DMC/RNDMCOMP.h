@@ -34,7 +34,7 @@ namespace qmcplusplus {
   public: 
 
     /// Constructor.
-    RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+    RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h,
         HamiltonianPool& hpool,WaveFunctionPool& ppool);
 
     bool run();
@@ -43,6 +43,7 @@ namespace qmcplusplus {
     void resetComponents(xmlNodePtr cur);
  
   private:
+    TrialWaveFunction& Guide;
     
     ///Interval between branching
     IndexType BranchInterval;
@@ -63,9 +64,9 @@ namespace qmcplusplus {
 
     void resetUpdateEngines(); 
     /// Copy Constructor (disabled)
-    RNDMCOMP(const RNDMCOMP& a): QMCDriver(a), CloneManager(a) { }
+//     RNDMCOMP(const RNDMCOMP& a): QMCDriver(a), CloneManager(a) { }
     /// Copy operator (disabled).
-    RNDMCOMP& operator=(const RNDMCOMP&) { return *this;}
+//     RNDMCOMP& operator=(const RNDMCOMP&) { return *this;}
     
 //     //parameters for released node calculation.
 //     int Eindex, nSteps;
