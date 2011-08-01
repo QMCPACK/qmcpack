@@ -60,6 +60,7 @@ namespace qmcplusplus {
     RadFunctorType* V0;
     /// Flag for whether to compute forces or not
     bool ComputeForces;
+    int MaxGridPoints;
 
     ///number of particles per species of A
     vector<int> NofSpeciesA;

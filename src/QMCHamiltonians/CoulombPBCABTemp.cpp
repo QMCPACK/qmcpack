@@ -24,7 +24,7 @@ namespace qmcplusplus {
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns, 
 				     bool computeForces): 
     PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
-    ForceBase (ions, elns)
+    ForceBase (ions, elns), MaxGridPoints(10000)
     {
       // if (ComputeForces)
       // 	InitVarReduction (0.5, 0, 3);
@@ -245,7 +245,7 @@ namespace qmcplusplus {
     if(myGrid ==0)
     {
       myGrid = new LinearGrid<RealType>;
-      int ng=static_cast<int>(myRcut/1e-3)+1;
+      int ng = min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
       app_log() << "    CoulombPBCABTemp::add \n Setting a linear grid=[0," 
         << myRcut << ") number of grid =" << ng << endl;
       myGrid->set(0,myRcut,ng);

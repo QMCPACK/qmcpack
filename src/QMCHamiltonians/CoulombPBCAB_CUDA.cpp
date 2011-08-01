@@ -31,6 +31,7 @@ namespace qmcplusplus {
       RhoklistGPU("CoulombPBCABTemp::RhoklistGPU"),
       RhokElecGPU("CoulombPBCABTemp::RhokElecGPU")
   {
+    MaxGridPoints = 8191;
     SpeciesSet &sSet = ions.getSpeciesSet();
     NumIonSpecies = sSet.getTotalNum();
     NumIons  = ions.getTotalNum();
