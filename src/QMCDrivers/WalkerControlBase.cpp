@@ -154,15 +154,14 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end());
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
     RealType r2_accepted=0.0,r2_proposed=0.0;
-    int nrn(0),ncr(0),nfn(0),ngoodfn(0);
+    int nrn(0),ncr(0),nfn(0),ngoodfn(0), nc(0);
     for(; it!=it_end;++it)
     {
       bool inFN=(((*it)->ReleasedNodeAge)==0);
-      
+      nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+
       if(WriteRN)
       {
-        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      
         if ((*it)->ReleasedNodeAge==1) ncr+=1;
         else if ((*it)->ReleasedNodeAge==0) 
         {
@@ -188,7 +187,6 @@ namespace qmcplusplus {
       }
       else
       {
-        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
         if (nc>0)
           nfn++;
         else
@@ -298,11 +296,10 @@ namespace qmcplusplus {
     while(it != it_end) 
     {
       bool inFN=(((*it)->ReleasedNodeAge)==0);
-      
+      nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+ 
       if(WriteRN)
       {
-        nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      
         if ((*it)->ReleasedNodeAge==1) ncr+=1;
         else if ((*it)->ReleasedNodeAge==0) 
         {
@@ -328,7 +325,6 @@ namespace qmcplusplus {
       }
       else
       {
-        nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
         if (nc>0)
           nfn++;
         else

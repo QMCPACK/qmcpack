@@ -122,13 +122,14 @@ namespace qmcplusplus {
     //OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
-    myComm->allreduce(wgt_tot2);
+//    myComm->allreduce(wgt_tot2);
 
     Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
     wgt_tot=0.0;
     for (int iw=0; iw<nw;iw++) {
       Return_t* restrict saved = Records[iw];
       saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
+//app_log()<<saved[REWEIGHT]<<endl;
       wgt_tot+= saved[REWEIGHT];
     }
     myComm->allreduce(wgt_tot);
@@ -241,8 +242,8 @@ namespace qmcplusplus {
 
     Return_t e0=0.0;
     Return_t e2=0.0;
-    vector<RealType> logPsi_free(numWalkers), d2logPsi_free(numWalkers);
-    vector<RealType> logPsi_fixed(numWalkers);
+    vector<RealType> logPsi_free(numWalkers,0), d2logPsi_free(numWalkers,0);
+    vector<RealType> logPsi_fixed(numWalkers,0);
     vector<GradType> dlogPsi_free(numWalkers);
     //Psi.evaluateDeltaLog(W, logPsi_free);
     if (includeNonlocalH != "no")
