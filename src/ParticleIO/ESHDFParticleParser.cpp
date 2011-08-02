@@ -243,11 +243,15 @@ namespace qmcplusplus {
 
     ref_.createSK();
 
+
     SpeciesSet& tspecies(ref_.getSpeciesSet());
     vector<int> numPerGroup(tspecies.getTotalNum(),0);
     for(int iat=0; iat<ref_.GroupID.size(); iat++) {
       numPerGroup[ref_.GroupID[iat]]++;
     }
+
+    ref_.resetGroups(numPerGroup);
+
     int membersize= tspecies.addAttribute("membersize");
     for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
       tspecies(membersize,ig)=numPerGroup[ig];

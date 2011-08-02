@@ -143,6 +143,14 @@ namespace qmcplusplus
     //addAttribute(redR);
   }
 
+  void ParticleSet::resetGroups(const vector<int>& natpergroup)
+  {
+    SubPtcl.resize(ng.size()+1,0);
+    for(int i=0; i<natpergroup.size(); ++i)
+      SubPtcl[i+1]=SubPtcl[i]+natpergroup[i];
+    sorted_ids=true;
+  }
+
   void
   ParticleSet::randomizeFromSource (ParticleSet &src)
   {

@@ -171,11 +171,6 @@ namespace qmcplusplus {
      */
     string RandomSource;
     
-    /** Initialize particles around another ParticleSet
-     * Used to initialize an electron ParticleSet by an ion ParticleSet 
-     */
-    void randomizeFromSource (ParticleSet &src);
-
     ///default constructor
     ParticleSet();
 
@@ -244,9 +239,12 @@ namespace qmcplusplus {
     ///return parent's id 
     inline int parent() const { return ParentTag;}
 
-    inline RealType getTotalWeight() const {
+    inline RealType getTotalWeight() const 
+    {
       return EnsembleProperty.Weight;
     }
+
+    void resetGroups(const vector<int>& ng);
 
     /**move a particle
      *@param iat the index of the particle to be moved
@@ -299,7 +297,6 @@ namespace qmcplusplus {
     /** reject the move
      */
     void rejectMove(Index_t iat);
-
 
     inline SingleParticlePos_t getOldPos() const
     {
@@ -375,6 +372,12 @@ namespace qmcplusplus {
     
     inline void setTwist(SingleParticlePos_t t){myTwist=t;}
     inline SingleParticlePos_t getTwist(){return myTwist;}
+
+    /** Initialize particles around another ParticleSet
+     * Used to initialize an electron ParticleSet by an ion ParticleSet 
+     */
+    void randomizeFromSource (ParticleSet &src);
+
   protected:
     ///the number of particle objects
     static Index_t PtclObjectCounter;
