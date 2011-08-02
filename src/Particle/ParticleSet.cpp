@@ -145,7 +145,8 @@ namespace qmcplusplus
 
   void ParticleSet::resetGroups(const vector<int>& natpergroup)
   {
-    SubPtcl.resize(ng.size()+1,0);
+    SubPtcl.resize(natpergroup.size()+1);
+    SubPtcl[0]=0;
     for(int i=0; i<natpergroup.size(); ++i)
       SubPtcl[i+1]=SubPtcl[i]+natpergroup[i];
     sorted_ids=true;
