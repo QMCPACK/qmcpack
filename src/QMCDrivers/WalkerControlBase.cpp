@@ -301,7 +301,7 @@ namespace qmcplusplus {
       
       if(WriteRN)
       {
-        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+        nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       
         if ((*it)->ReleasedNodeAge==1) ncr+=1;
         else if ((*it)->ReleasedNodeAge==0) 
@@ -328,7 +328,7 @@ namespace qmcplusplus {
       }
       else
       {
-        int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+        nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
         if (nc>0)
           nfn++;
         else
