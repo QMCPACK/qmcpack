@@ -120,12 +120,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     
     RealType lastCost(0);
     RealType startCost(0);
-    if ((GEVtype!="H2")||(MinMethod!="rescale"))
-    {
+//    if ((GEVtype!="H2")||(MinMethod!="rescale"))
+//    {
       myTimers[4]->start();
       startCost = lastCost = optTarget->Cost(false);
       myTimers[4]->start();
-    }
+//    }
     
     MatrixOperators MO;
     bool apply_inverse(true);
@@ -232,7 +232,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         myTimers[3]->start();
         if (MinMethod=="quartic")
         {
-          int npts(5);
+          int npts(7);
           quadstep = stepsize*Lambda;
           LambdaMax = Lambda;
           lineoptimization3(npts,startCost);
@@ -256,8 +256,8 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         Lambda = biggestParameterChange;
       }
       
-      if ((GEVtype!="H2")||(MinMethod!="rescale"))
-      {
+//      if ((GEVtype!="H2")||(MinMethod!="rescale"))
+//      {
         //get cost at new minimum
         RealType newCost = optTarget->Cost(false);
         mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
@@ -274,7 +274,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         }
         else if ((stability>0) && (newCost-lastCost>-1e-5)) 
           stability=nstabilizers;
-      }
+//    }
     }
 
     if (acceptedOneMove)
