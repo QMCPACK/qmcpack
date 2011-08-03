@@ -562,10 +562,10 @@ namespace qmcplusplus {
   }
 
   void
-  HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool physical) 
+  HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical) 
   {
 #if OHMMS_DIM ==3 && defined(HAVE_LIBFFTW)
-    string a("e"), title("MPC");
+    string a("e"), title("MPC"), physical("no");
     OhmmsAttributeSet hAttrib;
     double cutoff = 30.0;
     hAttrib.add(title,"id"); 
@@ -576,13 +576,14 @@ namespace qmcplusplus {
 
     renameProperty(a);
 
+    isphysical = (physical=="yes" || physical == "true");
 
 #ifdef QMC_CUDA
     MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
 #else
     MPC *mpc = new MPC (*targetPtcl, cutoff);
 #endif
-    targetH->addOperator(mpc, "MPC", physical);
+    targetH->addOperator(mpc, "MPC", isphysical);
 #else
     APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
 #endif // defined(HAVE_LIBFFTW)
