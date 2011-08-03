@@ -713,7 +713,7 @@ namespace qmcplusplus
     PropertyList.add("R2Accepted");
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
-    PropertyList.add("BranchingEnergy");
+    PropertyList.add("AltEnergy");
     PropertyList.add("LocalEnergy");
     PropertyList.add("LocalPotential");
 

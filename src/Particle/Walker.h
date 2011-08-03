@@ -30,6 +30,7 @@ namespace qmcplusplus
   /** an enum denoting index of physical properties
    *
    * LOCALPOTENTIAL should be always the last enumeation
+   * When a new enum is needed, modify ParticleSet::initPropertyList to match the list
    */
   enum {LOGPSI=0,       /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
         SIGN,           /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
@@ -37,9 +38,9 @@ namespace qmcplusplus
         R2ACCEPTED,     /*!< r^2 for accepted moves */
         R2PROPOSED,     /*!< r^2 for proposed moves */
         DRIFTSCALE,     /*!< scaling value for the drift */
+        ALTERNATEENERGY,  /*!< alternatelocal energy, the sum of all the components */
         LOCALENERGY,    /*!< local energy, the sum of all the components */
         LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
-        ALTERNATEENERGY,    /*!< local energy, the sum of all the components */
         NUMPROPERTIES   /*!< the number of properties */
        };
 
