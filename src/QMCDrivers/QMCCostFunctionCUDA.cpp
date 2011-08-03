@@ -226,7 +226,7 @@ namespace qmcplusplus {
     RealType e2_tot=0.0;
 
     int numWalkers=W.getActiveWalkers();
-    Records.resize(numWalkers,6);
+    Records.resize(numWalkers,NUMPROPERTIES);
     int nptcl = W.getTotalNum();
     dlogPsi_opt.resize (numWalkers, nptcl);
     d2logPsi_opt.resize(numWalkers, nptcl);
