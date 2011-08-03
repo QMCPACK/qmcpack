@@ -1,14 +1,19 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
 
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/4.7/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/4.7/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/4.9/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/4.9/bin/CC)
+set(CMAKE_Fortran_COMPILER /opt/cray/xt-asyncpe/4.9/bin/ftn)
+
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 #set(GNU_FLAGS "-Wl,-z,muldefs -fopenmp -O3 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(GNU_FLAGS "-fopenmp -O3 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS}")
+set(CMAKE_Fortran_FLAGS "-O3 -march=amdfam10 -funroll-all-loops -fno-f2c")
+set(CMAKE_Fortran_FLAGS_RELEASE ${CMAKE_Fortran_FLAGS})
+set(CMAKE_Fortran_FLAGS_DEBUG  "-march=amdfam10 -fopenmp  -msse3 -fno-f2c -O0 -g")
 
 FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
   SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
