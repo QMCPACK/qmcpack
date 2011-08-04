@@ -471,7 +471,7 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
   if (copyGrad) copyWalkerGradToGPU();
 }
 
-}
+
 void MCWalkerConfiguration::copyWalkerGradToGPU()
 {
   gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > 
