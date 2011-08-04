@@ -381,16 +381,26 @@ namespace qmcplusplus {
 	  W.saveEnsemble();
 	Estimators->accumulate(W);
       } while(step<nSteps);
-      
+      Psi.recompute(W);      
       if(forOpt)
       {
         d_logpsi_dalpha=0.0;
         d_hpsioverpsi_dalpha=0.0;
-        Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
+	W.copyWalkersToGPU(true);
+/*
+        vector<RealType> logPsi_free(nw);
+	Matrix<RealType> d2logPsi_opt;
+	Matrix<PosType> dlogPsi_opt;
+        dlogPsi_opt.resize (nw, nat);
+        d2logPsi_opt.resize(nw, nat);
+        Psi.evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
+*/	
+	Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
         std::vector<RealType> g_stats(5,0);
         for (int ip=0; ip<nw; ip++)
         {
           RealType E_L = LocalEnergy[ip];
+//	  app_log()<<E_L<<endl;
           RealType E_L2= E_L*E_L;
           sE +=E_L;
           sE2+=E_L2;
@@ -401,6 +411,11 @@ namespace qmcplusplus {
           {
             RealType di  = d_logpsi_dalpha(ip,i);
             RealType hdi = d_hpsioverpsi_dalpha(ip,i);
+//	    if ((hdi != hdi)||(di != di)|| isinf(hdi) || isinf(di))
+//	    {
+//              app_log()<<i<<" "<<hdi<<" "<<di<<endl;
+//	      continue;
+//	    }
             //             vectors
             D_E[i]+= di*E_L;
             HD[i]+=  hdi;
@@ -410,8 +425,8 @@ namespace qmcplusplus {
             {              
               RealType dj  = d_logpsi_dalpha(ip,j);
               RealType hdj = d_hpsioverpsi_dalpha(ip,j);
-              
-              Olp(i,j) += di*dj;
+//              if ((hdj != hdj)||(dj != dj)|| isinf(hdj) || isinf(dj)) continue;
+	      Olp(i,j) += di*dj;
               Ham(i,j) += di*(hdj+dj*E_L);
               Ham2(i,j)+= (hdj+dj*E_L)*(hdi+di*E_L);
             }
@@ -430,7 +445,7 @@ namespace qmcplusplus {
         //for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
         //  app_log()<<endl;
       }
-      Psi.recompute(W); 
+//      Psi.recompute(W); 
       double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
       Estimators->stopBlock(accept_ratio);
 
@@ -516,6 +531,8 @@ namespace qmcplusplus {
       int nw = W.getActiveWalkers();
       d_logpsi_dalpha.resize(nw, numParams);
       d_hpsioverpsi_dalpha.resize(nw, numParams);
+      d_logpsi_dalpha=0.0;
+      d_hpsioverpsi_dalpha=0.0;
     }
     
   }
