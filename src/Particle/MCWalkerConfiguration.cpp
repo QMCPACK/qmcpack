@@ -468,11 +468,19 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 	R_host[i][dim] = WalkerList[iw]->R[i][dim];
     WalkerList[iw]->R_GPU = R_host;
   }
-  if (copyGrad)
+  if (copyGrad) copyWalkerGradToGPU();
+}
+
+}
+void MCWalkerConfiguration::copyWalkerGradToGPU()
+{
+  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > 
+    R_host(WalkerList[0]->R.size());
+
     for (int iw=0; iw<WalkerList.size(); iw++) {
       for (int i=0; i<WalkerList[iw]->size(); i++)
-	for (int dim=0; dim<OHMMS_DIM; dim++) 
-	  R_host[i][dim] = WalkerList[iw]->G[i][dim];
+   for (int dim=0; dim<OHMMS_DIM; dim++) 
+     R_host[i][dim] = WalkerList[iw]->G[i][dim];
       WalkerList[iw]->Grad_GPU = R_host;
   }
 

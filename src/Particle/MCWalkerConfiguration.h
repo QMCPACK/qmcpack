@@ -106,6 +106,7 @@ namespace qmcplusplus {
     gpu::host_vector<int> AcceptList_host;
     void allocateGPU(size_t buffersize);
     void copyWalkersToGPU(bool copyGrad=false);
+    void copyWalkerGradToGPU();
     void updateLists_GPU();
     int CurrentParticle;
     void proposeMove_GPU 
