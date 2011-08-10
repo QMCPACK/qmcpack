@@ -49,7 +49,7 @@ set(HAVE_MKL 1)
 set(HAVE_MKL_VML 1)
 
 include_directories(/opt/intel/composerxe/mkl/include)
-link_libraries(-L/opt/intel/composerxe/mkl/lib/intel64 -mkl=sequential -lgpfs)
+link_libraries(-L/opt/intel/composerxe/mkl/lib/intel64 -mkl=sequential)
 
 ADD_DEFINITIONS(-Drestrict=__restrict__)
 
