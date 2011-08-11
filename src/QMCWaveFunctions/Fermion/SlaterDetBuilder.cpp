@@ -43,6 +43,7 @@
 #include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantOpt.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantAFM.h"
 
 #include <bitset>
 
@@ -332,12 +333,12 @@ namespace qmcplusplus
     string basisName("invalid");
     string detname("0"), refname("0");
     string s_detSize("0");
-    string detMethod("");
+    string afm("no");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(basisName,basisset_tag);
     aAttrib.add(detname,"id");
     aAttrib.add(refname,"ref");
-    aAttrib.add(detMethod,"DetMethod");
+    aAttrib.add(afm,"type");
     aAttrib.add(s_detSize,"DetSize");
 
     string s_cutoff("0.0");
@@ -438,11 +439,15 @@ namespace qmcplusplus
 #else
       if(UseBackflow) 
         adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
-      else 
-	if (psi->Optimizable)
-	  adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
-	else
-	  adet = new DiracDeterminantBase(psi,firstIndex);
+      else if (afm=="AFM")
+      {
+        app_log()<<"Using the AFM determinant"<<endl;
+        adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
+      }
+      else if (psi->Optimizable)
+        adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
+      else
+        adet = new DiracDeterminantBase(psi,firstIndex);
 #endif
     }
     adet->set(firstIndex,lastIndex-firstIndex);

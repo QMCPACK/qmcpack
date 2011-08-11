@@ -6,6 +6,7 @@ SET(WFBASE_SRCS
   OrbitalConstraintsBase.cpp
   SPOSetBase.cpp
   OptimizableSPOSet.cpp
+  AFMSPOSet.cpp
   )
 
 ########################
@@ -24,6 +25,7 @@ SET(JASTROW_SRCS
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
+  AFMSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -133,6 +135,7 @@ ENDIF(OHMMS_DIM MATCHES 3)
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
   Fermion/DiracDeterminantOpt.cpp
+  Fermion/DiracDeterminantAFM.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp

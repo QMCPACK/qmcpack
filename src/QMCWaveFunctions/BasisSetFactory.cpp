@@ -28,6 +28,7 @@
   #endif
 #endif
 #include "QMCWaveFunctions/OptimizableSPOBuilder.h"
+#include "QMCWaveFunctions/AFMSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -100,6 +101,11 @@ namespace qmcplusplus {
     {
       //app_log()<<"Optimizable SPO set"<<endl;
       bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+    }
+    else if (typeOpt == "AFM") 
+    {
+//       app_log()<<"AFM SPO set"<<endl;
+      bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
     }
 #if OHMMS_DIM ==3
     else if(typeOpt.find("spline")<typeOpt.size())
