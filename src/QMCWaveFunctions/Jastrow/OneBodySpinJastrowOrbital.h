@@ -32,7 +32,7 @@ namespace qmcplusplus
   template<class FT>
   class OneBodySpinJastrowOrbital: public OrbitalBase
     {
-
+      bool Spin;
       const ParticleSet& CenterRef;
       const DistanceTableData* d_table;
       RealType curVal;
@@ -71,7 +71,7 @@ namespace qmcplusplus
 
       ///constructor
       OneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-          : CenterRef(centers), d_table(0),FirstAddressOfdU(0), LastAddressOfdU(0)
+          : Spin(false), CenterRef(centers), d_table(0),FirstAddressOfdU(0), LastAddressOfdU(0)
       {
         U.resize(els.getTotalNum());
         d_table = DistanceTable::add(CenterRef,els);
@@ -89,7 +89,14 @@ namespace qmcplusplus
         for(int t=0;t<F.cols(); ++t) t_offset[t+1]=els.last(t);
       }
 
-      ~OneBodySpinJastrowOrbital() { }
+      ~OneBodySpinJastrowOrbital() 
+      { 
+        if(Spin)
+          for(int sg=0; sg<F.rows(); ++sg)
+            for(int tg=0; tg<F.cols(); ++tg) if(F(sg,tg)) delete F(sg,tg);
+        else
+          for(int sg=0; sg<F.rows(); ++sg) if(F(sg,0)) delete F(sg,0);
+      }
 
       //evaluate the distance table with P
       void resetTargetParticleSet(ParticleSet& P)
@@ -109,6 +116,10 @@ namespace qmcplusplus
       {
         if(target_g<0)
         {
+          if(Spin) 
+          {
+            APP_ABORT("Cannot mix spin-depdent with spin-indepdentent Jastrow");
+          }
           int pid=source_g*F.cols();
           for(int ig=0; ig<F.cols(); ++ig)
           {
@@ -119,6 +130,7 @@ namespace qmcplusplus
         }
         else
         {
+          Spin=true;
           F(source_g,target_g)=afunc;
           Fmask(source_g,target_g)=source_g*F.cols()+target_g;
           app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << endl;
@@ -452,17 +464,18 @@ namespace qmcplusplus
       OrbitalBasePtr makeClone(ParticleSet& tqp) const
       {
         OneBodySpinJastrowOrbital<FT>* j1copy=new OneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
-        for(int sg=0; sg<F.rows(); ++sg)
+        if(Spin)
         {
-          bool spindep=true;
-          for(int tg=0; tg<F.cols(); ++tg) spindep &= (Fmask(sg,tg)== sg*F.cols()+tg);
-          if(spindep)
-            for(int tg=0; tg<F.cols(); ++tg) j1copy->addFunc(sg,new FT(*F(sg,tg)),tg);
-          else
-            j1copy->addFunc(sg,new FT(*F(sg,0)),-1);
+          for(int sg=0; sg<F.rows(); ++sg)
+            for(int tg=0; tg<F.cols(); ++tg) if(F(sg,tg)) j1copy->addFunc(sg,new FT(*F(sg,tg)),tg);
         }
+        else
+        {
+          for(int sg=0; sg<F.rows(); ++sg)
+            if(F(sg,0)) j1copy->addFunc(sg,new FT(*F(sg,0)),-1);
+        }
+        j1copy->Spin=Spin;
         if(dPsi) j1copy->dPsi =  dPsi->makeClone(tqp);
-
         return j1copy;
       }
 

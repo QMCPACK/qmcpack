@@ -38,8 +38,12 @@ namespace qmcplusplus {
       ClassName="BsplineJastrowBuilder";
     }
 
+    /** create one-body Jastrow
+     * @tparm OBJT one-body jastrow orbital class
+     */
+    template<typename OBJT, typename DOBJT>
+      bool createOneBodyJastrow(xmlNodePtr cur);
 
-    
     bool put(xmlNodePtr cur);
   };
 

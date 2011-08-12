@@ -32,8 +32,7 @@ namespace qmcplusplus
   template<class FT>
   class DiffOneBodySpinJastrowOrbital: public DiffOrbitalBase
     {
-
-
+      bool Spin;
       ///number of variables this object handles
       int NumVars;
       ///number of target particles
@@ -60,7 +59,7 @@ namespace qmcplusplus
 
       ///constructor
       DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-          :CenterRef(centers),NumVars(0),VarOffset(0)
+          :Spin(false),CenterRef(centers),NumVars(0),VarOffset(0)
       {
         NumPtcls=els.getTotalNum();
         d_table=DistanceTable::add(centers,els);
@@ -78,6 +77,11 @@ namespace qmcplusplus
       {
         delete_iter(gradLogPsi.begin(),gradLogPsi.end());
         delete_iter(lapLogPsi.begin(),lapLogPsi.end());
+        if(Spin)
+          for(int sg=0; sg<F.rows(); ++sg)
+            for(int tg=0; tg<F.cols(); ++tg) if(F(sg,tg)) delete F(sg,tg);
+        else
+          for(int sg=0; sg<F.rows(); ++sg) if(F(sg,0)) delete F(sg,0);
       }
 
       /** Add a radial functor for a group
@@ -88,6 +92,10 @@ namespace qmcplusplus
       {
         if(target_g<0)
         {
+          if(Spin)
+          {
+            APP_ABORT("Cannot mix spin-depdent with spin-indepdentent Jastrow");
+          }
           int pid=source_g*F.cols();
           for(int ig=0; ig<F.cols(); ++ig)
           {
@@ -97,6 +105,7 @@ namespace qmcplusplus
         }
         else
         {
+          Spin=true;
           F(source_g,target_g)=afunc;
           Fmask(source_g,target_g)=source_g*F.cols()+target_g;
         }
@@ -226,15 +235,17 @@ namespace qmcplusplus
       DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
       {
         DiffOneBodySpinJastrowOrbital<FT>* j1copy=new DiffOneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
-        for(int sg=0; sg<F.rows(); ++sg)
+        if(Spin)
         {
-          bool spindep=true;
-          for(int tg=0; tg<F.cols(); ++tg) spindep &= (Fmask(sg,tg)== sg*F.cols()+tg);
-          if(spindep)
-            for(int tg=0; tg<F.cols(); ++tg) j1copy->addFunc(sg,new FT(*F(sg,tg)),tg);
-          else
-            j1copy->addFunc(sg,new FT(*F(sg,0)),-1);
+          for(int sg=0; sg<F.rows(); ++sg)
+            for(int tg=0; tg<F.cols(); ++tg) if(F(sg,tg)) j1copy->addFunc(sg,new FT(*F(sg,tg)),tg);
         }
+        else
+        {
+          for(int sg=0; sg<F.rows(); ++sg)
+            if(F(sg,0)) j1copy->addFunc(sg,new FT(*F(sg,0)),-1);  
+        }
+        j1copy->Spin=Spin;
         j1copy->setVars(myVars);
         return j1copy;
       }

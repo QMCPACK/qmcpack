@@ -25,9 +25,9 @@ namespace qmcplusplus {
   }
   
   void 
-  OneBodyJastrowOrbitalBspline::addFunc(int i, FT* j)
+  OneBodyJastrowOrbitalBspline::addFunc(int ig, FT* j, int jg=-1)
   {
-    OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(i, j);
+    OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ig, j);
     CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
     UniqueSplines.push_back(newSpline);
 
@@ -36,7 +36,7 @@ namespace qmcplusplus {
     // 	if(GPUSplines[ig]==0) GPUSplines[ig]=newSpline;
     // }
     // else 
-    GPUSplines[i]=newSpline;
+    GPUSplines[ig]=newSpline;
   }
   
 

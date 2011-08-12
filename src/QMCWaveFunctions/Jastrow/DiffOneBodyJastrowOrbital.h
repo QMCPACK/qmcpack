@@ -32,8 +32,6 @@ namespace qmcplusplus
   template<class FT>
   class DiffOneBodyJastrowOrbital: public DiffOrbitalBase
     {
-
-
       ///number of variables this object handles
       int NumVars;
       ///number of target particles
@@ -48,7 +46,6 @@ namespace qmcplusplus
       vector<FT*> Fs;
       ///container for the unique Jastrow functions
       vector<FT*> Funique;
-
       vector<pair<int,int> > OffSet;
       Vector<RealType> dLogPsi;
       vector<GradVectorType*> gradLogPsi;
@@ -74,13 +71,13 @@ namespace qmcplusplus
        * @param source_type group index of the center species
        * @param afunc radial functor
        */
-      void addFunc(int source_type, FT* afunc)
+      void addFunc(int source_type, FT* afunc, int target_type)
       {
         if (Fs.empty())
-          {
-            Fs.resize(CenterRef.getTotalNum(),0);
-            Funique.resize(CenterRef.getSpeciesSet().size(),0);
-          }
+        {
+          Fs.resize(CenterRef.getTotalNum(),0);
+          Funique.resize(CenterRef.getSpeciesSet().size(),0);
+        }
 
         for (int i=0; i<Fs.size(); i++)
           if (CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
@@ -221,7 +218,7 @@ namespace qmcplusplus
         DiffOneBodyJastrowOrbital<FT>* j1copy=new DiffOneBodyJastrowOrbital<FT>(CenterRef,tqp);
         for (int i=0; i<Funique.size(); ++i)
         {
-          if (Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));
+          if (Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]),-1);
         }
         j1copy->setVars(myVars);
         j1copy->OffSet=OffSet;
@@ -229,11 +226,13 @@ namespace qmcplusplus
       }
 
     };
+
+
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1761 $   $Date: 2007-02-17 17:11:59 -0600 (Sat, 17 Feb 2007) $
- * $Id: OneBodyJastrowOrbital.h 1761 2007-02-17 23:11:59Z jnkim $
+ * $Id: DiffOneBodyJastrowOrbital.h 1761 2007-02-17 23:11:59Z jnkim $
  ***************************************************************************/
 

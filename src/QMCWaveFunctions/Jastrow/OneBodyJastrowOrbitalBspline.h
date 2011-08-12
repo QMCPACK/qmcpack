@@ -56,7 +56,7 @@ namespace qmcplusplus {
 
     void resetParameters(const opt_variables_type& active);
     void checkInVariables(opt_variables_type& active);
-    void addFunc(int ib, FT* j);
+    void addFunc(int ig, FT* j, int jg);
     void recompute(MCWalkerConfiguration &W, bool firstTime);
     void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
     void addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi);

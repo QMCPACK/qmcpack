@@ -110,7 +110,7 @@ namespace qmcplusplus
         if (dPsi) dPsi->resetTargetParticleSet(P);
       }
 
-      void addFunc(int source_type, FT* afunc)
+      void addFunc(int source_type, FT* afunc, int target_type=-1)
       {
         for (int i=0; i<Fs.size(); i++)
           if (CenterRef.GroupID[i] == source_type)
