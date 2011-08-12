@@ -56,7 +56,7 @@ namespace qmcplusplus
   void
   DiracDeterminantAFM::resetParameters(const opt_variables_type& optvars)
   {
-    Phi->resetParameters(optvars);
+    if(Optimizable) Phi->resetParameters(optvars);
     // Update the direct matrices
     
     Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
@@ -79,10 +79,11 @@ namespace qmcplusplus
 					   vector<RealType>& dlogpsi,
 					   vector<RealType>& dhpsioverpsi)
   {
+    if(!Optimizable) return;
     resetParameters(active);
     int loc=Phi->myVars.where(0);
     
-    Phi->evaluateForDeriv(P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
+     Phi->evaluateForDeriv(P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
     
     BLAS::gemm ('N', 'T', NumOrbitals, NumOrbitals, NumOrbitals, 1.0, 
       BasisVals.data(), NumOrbitals, psiM.data(), NumOrbitals,
@@ -131,14 +132,14 @@ namespace qmcplusplus
   void
   DiracDeterminantAFM::checkInVariables(opt_variables_type& active)
   {
-    Phi->checkInVariables(active);
+    if(Optimizable) Phi->checkInVariables(active);
   }
 
 
   void
   DiracDeterminantAFM::checkOutVariables(const opt_variables_type& active)
   {
-    Phi->checkOutVariables(active);
+    if(Optimizable) Phi->checkOutVariables(active);
   }
 
 }

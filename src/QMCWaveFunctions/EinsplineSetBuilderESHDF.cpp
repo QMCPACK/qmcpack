@@ -166,9 +166,9 @@ namespace qmcplusplus {
       if (version[0] >= 2)
         for (int dim=0; dim<OHMMS_DIM; dim++)
           TwistAngles[ti][dim] *= -1.0;
-      snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
-          TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
-      app_log() << buff;
+//       snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
+//           TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+//       app_log() << buff;
     }
 
     //////////////////////////////////////////////////////////
@@ -318,32 +318,71 @@ namespace qmcplusplus {
         else maxOrbs++;
       }
     }
-
-    // Now sort the bands by energy
+    
     if (sortBands) {
       app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
-
-    //occupy the ground state first
+    
     vector<int> gsOcc(maxOrbs);
     int N_gs_orbs=OrbitalSet->getOrbitalSetSize();
-    int nocced(0);
+    int nocced(0), ntoshift(0);
     for (int ti=0; ti<SortBands.size(); ti++) {
       if (nocced<N_gs_orbs)
       {
         if (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced>1))
         {
-          nocced+=2;
+          nocced+=2;ntoshift++;
           gsOcc[ti]=2;
         }
         else if ( (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced==1)) || !SortBands[ti].MakeTwoCopies )
         {
-          nocced+=1;
+          nocced+=1;ntoshift++;
           gsOcc[ti]=1;
         }
       }
     }
+    
+    
+    if(qafm>0)
+    {
+      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<<endl;
+      
+      for (int ti=0; ti<ntoshift; ti++)
+      {
+        bool found(false);
+        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
+        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
+        for (int tj=0; tj<TwistAngles.size(); tj++) 
+        {
+          if(tj!=SortBands[ti].TwistIndex)
+          {
+            ku=TwistAngles[tj];
+            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+            double dkx = abs(k1[0] - k2[0]);
+//             if (dkx>2.0*qafm) dkx-=2.0*qafm;
+//             if (dkx<-2.0*qafm) dkx+=2.0*qafm;
+            double dky = abs(k1[1] - k2[1]);
+            double dkz = abs(k1[2] - k2[2]);
+            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+            if(rightK)
+            {
+              SortBands[ti].TwistIndex = tj;
+//               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+              found=true;
+              break;
+            }
+          }
+        }
+        if(!found)
+        {
+          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
+          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
+          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
+        }
+      }
+    }
+
 
 
     if (occ_format=="energy"){
@@ -1048,13 +1087,16 @@ namespace qmcplusplus {
               h_cG.read (H5FileID, psiGname.c_str());
               assert (cG.size() == Gvecs[ti].size());
               FFTbox = complex<double>();
+              complex<double> eye(0.0,1.0);
+              if(qafm==0)
+                eye=complex<double>(1.0,0.0);
 #pragma omp parallel for
               for (int iG=0; iG<cG.size(); iG++) {
                 TinyVector<int,3> index = Gvecs[ti][iG];
                 index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
                 index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
                 index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
-                FFTbox(index[0], index[1], index[2]) = cG[iG];
+                FFTbox(index[0], index[1], index[2]) = eye*cG[iG];
               }
               fftw_execute (FFTplan);
               // Now, rotate the phase of the orbitals so that neither

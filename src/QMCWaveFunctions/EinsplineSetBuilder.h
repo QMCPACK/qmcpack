@@ -249,6 +249,7 @@ namespace qmcplusplus {
     int LastSpinSet, NumOrbitalsRead;
     
     string occ_format;
+    RealType qafm;
     int particle_hole_pairs;
     bool makeRotations;
     std::vector<RealType> rotationMatrix;

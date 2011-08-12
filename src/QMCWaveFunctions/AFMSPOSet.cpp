@@ -122,9 +122,13 @@ namespace qmcplusplus
   void
   AFMSPOSet::resetParameters(const opt_variables_type& active)
   {
-      int loc=myVars.where(0);
-      if (loc>=0) myVars[0]=active[loc];
-      resetTheta(active[loc]);
+      if(Optimizable)
+      {
+        int loc=myVars.where(0);
+        if (loc>=0) myVars[0]=active[loc];
+        theta=active[loc];
+      }
+      resetTheta(theta);
   }
 
   // Obsolete
@@ -162,10 +166,10 @@ namespace qmcplusplus
     GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
     BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
     for (int iorb=0; iorb<N; iorb++) {
-      psi  [iorb] += costheta*GSVal[iorb] + pm*sintheta*BasisVal[iorb];
-      d2psi[iorb] += costheta*GSLapl[iorb]+ pm*sintheta*BasisLapl[iorb];
+      psi  [iorb] = costheta*GSVal[iorb] + pm*sintheta*BasisVal[iorb];
+      d2psi[iorb] = costheta*GSLapl[iorb]+ pm*sintheta*BasisLapl[iorb];
       for(int x(0); x<OHMMS_DIM; x++)
-        dpsi [iorb][x] += costheta*GSGrad[iorb][x] + pm*sintheta*BasisGrad[iorb][x];
+        dpsi [iorb][x] = costheta*GSGrad[iorb][x] + pm*sintheta*BasisGrad[iorb][x];
     }
   }
 
@@ -223,9 +227,11 @@ namespace qmcplusplus
     gs = GSOrbitals->makeClone();
     basis = BasisOrbitals->makeClone();
     clone = new AFMSPOSet(N,gs,basis);
+    clone->setOrbitalSetSize(N);
+    clone->Optimizable=Optimizable;
     clone->myVars=myVars;
     clone->resetTheta(theta);
-
+    clone->pm=pm;
     return clone;
   }
 

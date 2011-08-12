@@ -248,6 +248,7 @@ namespace qmcplusplus {
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
+    qafm=0;
     bool sortBands = true;
     string sourceName;
 #if defined(QMC_CUDA)
@@ -258,6 +259,7 @@ namespace qmcplusplus {
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
     attribs.add (sortBands,  "sort");
+    attribs.add (qafm,  "afmshift");
     attribs.add (TileMatrix, "tilematrix");
     attribs.add (TwistNum,   "twistnum");
     attribs.add (sourceName, "source");
@@ -308,7 +310,7 @@ namespace qmcplusplus {
     H5OrbSet aset(H5FileName, spinSet, numOrbs);
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
     iter = SPOSetMap.find (aset);
-    if ((iter != SPOSetMap.end() ) && (!NewOcc)) {
+    if ((iter != SPOSetMap.end() ) && (!NewOcc) && (qafm==0)) {
       app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
 		<< "cloning EinsplineSet object.\n";
       return iter->second->makeClone();
@@ -714,15 +716,15 @@ namespace qmcplusplus {
     for (int ki=0; ki<numPrimTwists; ki++)
       superSets[superIndex[ki]].push_back(ki);
 
-    if (myComm->rank() == 0) 
-      for (int si=0; si<numSuperTwists; si++) {
-	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
-		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
-	fprintf (stderr, "  Using k-points: ");
-	for (int i=0; i<superSets[si].size(); i++) 
-	  fprintf (stderr, " %d", superSets[si][i]);
-	fprintf (stderr, "\n");
-      }
+//     if (myComm->rank() == 0) 
+//       for (int si=0; si<numSuperTwists; si++) {
+// 	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
+// 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
+// 	fprintf (stderr, "  Using k-points: ");
+// 	for (int i=0; i<superSets[si].size(); i++) 
+// 	  fprintf (stderr, " %d", superSets[si][i]);
+// 	fprintf (stderr, "\n");
+//       }
 
     // Check supertwist for this node
     if (!myComm->rank()) 
@@ -1043,31 +1045,68 @@ namespace qmcplusplus {
 	  SortBands.push_back(band);
       }
     }
-    // Now sort the bands by energy
-    if (sortBands) {
-      app_log() << "Sorting the bands now:\n";
-      sort (SortBands.begin(), SortBands.end());
-    }
-    
+        
     int orbIndex = 0;
     int numOrbs = 0;
     NumValenceOrbs=0;
     NumCoreOrbs=0;
     while (numOrbs < OrbitalSet->getOrbitalSetSize()) {
       if (SortBands[orbIndex].MakeTwoCopies)
-	numOrbs += 2;
+   numOrbs += 2;
       else
-	numOrbs++;
+   numOrbs++;
       if (SortBands[orbIndex].IsCoreState)
-	NumCoreOrbs++;
+   NumCoreOrbs++;
       else
-	NumValenceOrbs++;
+   NumValenceOrbs++;
       orbIndex++;
     }
     NumDistinctOrbitals = orbIndex;
     app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
     app_log() << "There are " << NumCoreOrbs << " core states and " 
-	      << NumValenceOrbs << " valence states.\n";
+         << NumValenceOrbs << " valence states.\n";
+         
+    
+    if(qafm>0)
+    {
+      app_log()<<"Finding AFM pair for first "<<orbIndex<<" orbitals."<<endl;
+      
+      for (int ti=0; ti<orbIndex; ti++)
+      {
+        bool found(false);
+        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
+        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
+        for (int tj=0; tj<TwistAngles.size(); tj++) 
+        {
+          if(tj!=SortBands[ti].TwistIndex)
+          {
+            ku=TwistAngles[tj];
+            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+            double dkx = abs(k1[0] - k2[0]);
+//             if (dkx>2.0*qafm) dkx-=2.0*qafm;
+//             if (dkx<-2.0*qafm) dkx+=2.0*qafm;
+            double dky = abs(k1[1] - k2[1]);
+            double dkz = abs(k1[2] - k2[2]);
+            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+            if(rightK)
+            {
+              SortBands[ti].TwistIndex = tj;
+//               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+              found=true;
+              break;
+            }
+          }
+        }
+        if(!found)
+        {
+          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
+          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
+          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
+        }
+      }
+    }
+    
+
   }
 
   void

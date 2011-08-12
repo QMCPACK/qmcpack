@@ -54,7 +54,11 @@ namespace qmcplusplus
       resize(N);
     }
     
-    inline void setpm(int x){pm=x;}
+    inline void setpm(int x)
+    {
+      pm=x;
+//       app_log()<<"setting pm:"<<x<<endl;
+    }
     
     inline void resetTheta(RealType x)
     {
