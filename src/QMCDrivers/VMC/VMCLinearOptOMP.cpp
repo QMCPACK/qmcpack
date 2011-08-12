@@ -30,7 +30,7 @@ namespace qmcplusplus
   VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool, WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-    myRNWarmupSteps(100), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
+    myRNWarmupSteps(0), myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
     logoffset(2.0), logepsilon(0), w_alpha(0.0), beta_errorbars(0), alpha_errorbars(0), printderivs("no")
   {
     RootName = "vmc";
@@ -80,12 +80,12 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ++ip) Movers[ip]->startRun(nBlocks,false);
 
 
-    RealType target_errorbars;
-    target_errorbars = beta_errorbars;
-    RealType errorbars = target_errorbars+1;
+//     RealType target_errorbars;
+//     target_errorbars = beta_errorbars;
+//     RealType errorbars = target_errorbars+1;
     CurrentStep=0;
     int CurrentBlock=0;
-    int minBlocks=4;
+//     int minBlocks=4;
     while (CurrentBlock<nBlocks)
     {
 #pragma omp parallel for
@@ -124,12 +124,12 @@ namespace qmcplusplus
           std::copy(HDsaved.begin(),HDsaved.end(),&HDerivRecords(ip,0));
         }
       }
-      errorbars = fillComponentMatrices();
+      fillComponentMatrices();
       CurrentBlock++;
 
     }//block
-    app_log()<<" Blocks used   : "<<CurrentBlock<<endl;
-    app_log()<<" Errorbars are : "<<errorbars<<endl;
+//     app_log()<<" Blocks used   : "<<CurrentBlock<<endl;
+//     app_log()<<" Errorbars are : "<<errorbars<<endl;
 
     Estimators->stop(estimatorClones);
     //copy back the random states
