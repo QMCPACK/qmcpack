@@ -89,8 +89,11 @@ namespace qmcplusplus
       BasisVals.data(), NumOrbitals, psiM.data(), NumOrbitals,
       0.0, dlogdet_dC.data(), NumOrbitals);
          
+#ifdef QMC_COMPLEX
+    for (int i=0; i<NumOrbitals; i++) dlogpsi[loc]+=dlogdet_dC(i,i).real();
+#else
     for (int i=0; i<NumOrbitals; i++) dlogpsi[loc]+=dlogdet_dC(i,i);
-    
+#endif    
     L_gamma = BasisLapl;
     BLAS::gemm ('N', 'N', NumOrbitals, NumOrbitals, NumOrbitals, -1.0,
       dlogdet_dC.data(), NumOrbitals, d2psiM.data(), NumOrbitals, 
@@ -125,8 +128,11 @@ namespace qmcplusplus
         dlapl_dC(i,i) -= dot(g, dg);
       }
    
-    
+#ifdef QMC_COMPLEX
+    for (int i=0; i<NumOrbitals; i++) dhpsioverpsi[loc] += dlapl_dC(i,i).real();
+#else
     for (int i=0; i<NumOrbitals; i++) dhpsioverpsi[loc] += dlapl_dC(i,i);
+#endif    
   }
 
   void

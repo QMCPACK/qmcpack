@@ -280,7 +280,7 @@ namespace qmcplusplus
           Amat(j,j)-=Amat(i,j);
 
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-          u = 2.0*(d2u+(OHMMS_DIM+1)*du)*myTable->dr(nn);
+          u = 2.0*(d2u+(OHMMS_DIM+1.0)*du)*myTable->dr(nn);
           Bmat(i) -= u;
           Bmat(j) += u;
         }
