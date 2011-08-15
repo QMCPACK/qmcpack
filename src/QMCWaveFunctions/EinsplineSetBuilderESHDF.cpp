@@ -344,7 +344,8 @@ namespace qmcplusplus {
     }
     
     
-    if(qafm>0)
+    
+    if(qafm!=0)
     {
       app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<<endl;
       
@@ -360,8 +361,6 @@ namespace qmcplusplus {
             ku=TwistAngles[tj];
             PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
             double dkx = abs(k1[0] - k2[0]);
-//             if (dkx>2.0*qafm) dkx-=2.0*qafm;
-//             if (dkx<-2.0*qafm) dkx+=2.0*qafm;
             double dky = abs(k1[1] - k2[1]);
             double dkz = abs(k1[2] - k2[2]);
             bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
@@ -374,6 +373,32 @@ namespace qmcplusplus {
             }
           }
         }
+        if(!found)
+        {
+          if((abs(k1[1])<qafm+0.0001)&&(abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
+          else if((abs(k1[2])<qafm+0.0001)&&(abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
+          
+          for (int tj=0; tj<TwistAngles.size(); tj++) 
+          {
+            if(tj!=SortBands[ti].TwistIndex)
+            {
+              ku=TwistAngles[tj];
+              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+              double dkx = abs(k1[0] - k2[0]);
+              double dky = abs(k1[1] - k2[1]);
+              double dkz = abs(k1[2] - k2[2]);
+              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+              if(rightK)
+              {
+                SortBands[ti].TwistIndex = tj;
+  //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+                found=true;
+                break;
+              }
+            }
+          }
+        }
+        
         if(!found)
         {
           app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
@@ -1087,16 +1112,13 @@ namespace qmcplusplus {
               h_cG.read (H5FileID, psiGname.c_str());
               assert (cG.size() == Gvecs[ti].size());
               FFTbox = complex<double>();
-              complex<double> eye(0.0,1.0);
-              if(qafm==0)
-                eye=complex<double>(1.0,0.0);
 #pragma omp parallel for
               for (int iG=0; iG<cG.size(); iG++) {
                 TinyVector<int,3> index = Gvecs[ti][iG];
                 index[0] = ((index[0] + MeshSize[0])%MeshSize[0]);
                 index[1] = ((index[1] + MeshSize[1])%MeshSize[1]);
                 index[2] = ((index[2] + MeshSize[2])%MeshSize[2]);
-                FFTbox(index[0], index[1], index[2]) = eye*cG[iG];
+                FFTbox(index[0], index[1], index[2]) = cG[iG];
               }
               fftw_execute (FFTplan);
               // Now, rotate the phase of the orbitals so that neither
@@ -1108,13 +1130,10 @@ namespace qmcplusplus {
 #pragma omp parallel for reduction(+:rNorm,iNorm)
               for (int ix=0; ix<nx; ix++) {
                 PosType ru;
-                //	      ru[0] = (RealType)ix / (RealType)(nx-1);
                 ru[0] = (RealType)ix / (RealType)nx;
                 for (int iy=0; iy<ny; iy++){
-                  //		ru[1] = (RealType)iy / (RealType)(ny-1);
                   ru[1] = (RealType)iy / (RealType)ny;
                   for (int iz=0; iz<nz; iz++) {
-                    //		  ru[2] = (RealType)iz / (RealType)(nz-1);
                     ru[2] = (RealType)iz / (RealType)nz;
                     double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
                     double s, c;
@@ -1127,24 +1146,26 @@ namespace qmcplusplus {
                   }
                 }
               }
-              double arg = std::atan2(iNorm, rNorm);
+              double arg = std::atan2(std::sqrt(iNorm), std::sqrt(rNorm));
               // cerr << "Phase = " << arg/M_PI << " pi.\n";
               double s,c;
-              sincos(0.5*(0.25*M_PI-arg), &s, &c);
+              sincos(0.25*M_PI-arg, &s, &c);
               complex<double> phase(c,s);
               rNorm=0.0; iNorm=0.0;
 #pragma omp parallel for reduction(+:rNorm,iNorm)
-              for (int ix=0; ix<nx; ix++)
-                for (int iy=0; iy<ny; iy++)
+              for (int ix=0; ix<nx; ix++){
+                for (int iy=0; iy<ny; iy++){
                   for (int iz=0; iz<nz; iz++) {
-                    complex<double> z = 
-                      splineData(ix,iy,iz) = phase*FFTbox(ix,iy,iz);
+                    complex<double> z = splineData(ix,iy,iz) = phase*FFTbox(ix,iy,iz);
                     rNorm += z.real()*z.real();
                     iNorm += z.imag()*z.imag();
                   }
+                }
+              }
               arg = std::atan2(iNorm, rNorm);
+//               cerr << "Phase = " << arg/M_PI << " pi.\n";
             }
-
+            
           }
           myComm->bcast(splineData);
           myComm->bcast(twist);
@@ -1409,12 +1430,15 @@ namespace qmcplusplus {
                   abort();
                 }
 #pragma omp parallel for
-                for (int ix=0; ix<nx; ix++) {
+                for (int ix=0; ix<nx; ix++) 
+                {
                   PosType ru;
                   ru[0] = (RealType)ix / (RealType)nx;
-                  for (int iy=0; iy<ny; iy++) {
+                  for (int iy=0; iy<ny; iy++) 
+                  {
                     ru[1] = (RealType)iy / (RealType)ny;
-                    for (int iz=0; iz<nz; iz++) {
+                    for (int iz=0; iz<nz; iz++) 
+                    {
                       ru[2] = (RealType)iz / (RealType)nz;
                       double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
                       double s, c;
@@ -1438,7 +1462,7 @@ namespace qmcplusplus {
                 }
               }
             }
-            else {  // Don't have psi_r
+            else {// Don't have psi_r
               string psiGname = path.str() + "psi_g"; 
               Vector<complex<double> > cG;
               HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
@@ -1463,13 +1487,10 @@ namespace qmcplusplus {
 #pragma omp parallel for reduction(+:rNorm,iNorm)
               for (int ix=0; ix<nx; ix++) {
                 PosType ru;
-                //	      ru[0] = (RealType)ix / (RealType)(nx-1);
                 ru[0] = (RealType)ix / (RealType)nx;
                 for (int iy=0; iy<ny; iy++){
-                  //		ru[1] = (RealType)iy / (RealType)(ny-1);
                   ru[1] = (RealType)iy / (RealType)ny;
                   for (int iz=0; iz<nz; iz++) {
-                    //		  ru[2] = (RealType)iz / (RealType)(nz-1);
                     ru[2] = (RealType)iz / (RealType)nz;
                     double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
                     double s, c;
@@ -1585,8 +1606,6 @@ namespace qmcplusplus {
                   (orbitalSet->FirstOrderSplines[ion][dim], ival, splineData.data());
               }
           }
-
-
 
           // Now read muffin tin data
           for (int tin=0; tin<NumMuffinTins; tin++) {

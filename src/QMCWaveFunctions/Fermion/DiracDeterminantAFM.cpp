@@ -51,27 +51,27 @@ namespace qmcplusplus
 
 
   
-  // Note:  Currently, this calls Phi-evaluate.  This should not be
-  // necessary if the GS orbitals and basis orbitals are cacheed.
-  void
-  DiracDeterminantAFM::resetParameters(const opt_variables_type& optvars)
-  {
-    if(Optimizable) Phi->resetParameters(optvars);
-    // Update the direct matrices
-    
-    Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-
-    // Invert PsiM
-    if(NumPtcls==1) 
-      psiM(0,0) = 1.0/psiM(0,0);
-    else {
-      InverseTimer.start();
-      LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-			     WorkSpace.data(),Pivot.data(),PhaseValue);
-      InverseTimer.stop();
-    }
-    psiM_temp = psiM;
-  }
+//   // Note:  Currently, this calls Phi-evaluate.  This should not be
+//   // necessary if the GS orbitals and basis orbitals are cacheed.
+//   void
+//   DiracDeterminantAFM::resetParameters(const opt_variables_type& optvars)
+//   {
+//     if(Optimizable) Phi->resetParameters(optvars);
+//     // Update the direct matrices
+//     
+//     Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+// 
+//     // Invert PsiM
+//     if(NumPtcls==1) 
+//       psiM(0,0) = 1.0/psiM(0,0);
+//     else {
+//       InverseTimer.start();
+//       LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
+// 			     WorkSpace.data(),Pivot.data(),PhaseValue);
+//       InverseTimer.stop();
+//     }
+//     psiM_temp = psiM;
+//   }
 
   void
   DiracDeterminantAFM::evaluateDerivatives(ParticleSet& P,

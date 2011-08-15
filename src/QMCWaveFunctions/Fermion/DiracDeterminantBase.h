@@ -89,13 +89,13 @@ namespace qmcplusplus
       void setBF(BackflowTransformation* BFTrans) {}
 
       ///optimizations  are disabled
-      inline void checkInVariables(opt_variables_type& active)
+      virtual inline void checkInVariables(opt_variables_type& active)
       {
         Phi->checkInVariables(active);
         Phi->checkInVariables(myVars);
       }
 
-      inline void checkOutVariables(const opt_variables_type& active)
+      virtual inline void checkOutVariables(const opt_variables_type& active)
       {
 	Phi->checkOutVariables(active);
 	myVars.clear();
@@ -103,7 +103,7 @@ namespace qmcplusplus
 	myVars.getIndex(active);
       }
       
-      void resetParameters(const opt_variables_type& active)
+      virtual void resetParameters(const opt_variables_type& active)
       {
         Phi->resetParameters(active);
 	for(int i=0; i<myVars.size(); ++i) {

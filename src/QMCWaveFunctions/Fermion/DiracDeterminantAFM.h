@@ -49,7 +49,7 @@ namespace qmcplusplus
     DiracDeterminantAFM(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first=0);
     // This stores new orbital coefficients and updates the
     // inverse matrices.
-    void resetParameters(const opt_variables_type& optvars);
+//     void resetParameters(const opt_variables_type& optvars);
 
     void evaluateDerivatives(ParticleSet& P,
 			     const opt_variables_type& active,

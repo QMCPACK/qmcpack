@@ -42,6 +42,7 @@ namespace qmcplusplus {
       Format(QMCPACK), makeRotations(false), MeshFactor(1.0),
       MeshSize(0,0,0)
   {
+//     for (int i=0; i<3; i++) afm_vector[i]=0;
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
 	TileMatrix(i,j) = 0;
@@ -1066,47 +1067,30 @@ namespace qmcplusplus {
     app_log() << "There are " << NumCoreOrbs << " core states and " 
          << NumValenceOrbs << " valence states.\n";
          
-    
-    if(qafm>0)
-    {
-      app_log()<<"Finding AFM pair for first "<<orbIndex<<" orbitals."<<endl;
-      
-      for (int ti=0; ti<orbIndex; ti++)
-      {
-        bool found(false);
-        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
-        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
-        for (int tj=0; tj<TwistAngles.size(); tj++) 
-        {
-          if(tj!=SortBands[ti].TwistIndex)
-          {
-            ku=TwistAngles[tj];
-            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-            double dkx = abs(k1[0] - k2[0]);
-//             if (dkx>2.0*qafm) dkx-=2.0*qafm;
-//             if (dkx<-2.0*qafm) dkx+=2.0*qafm;
-            double dky = abs(k1[1] - k2[1]);
-            double dkz = abs(k1[2] - k2[2]);
-            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-            if(rightK)
-            {
-              SortBands[ti].TwistIndex = tj;
-//               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
-              found=true;
-              break;
-            }
-          }
-        }
-        if(!found)
-        {
-          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
-          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
-          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-        }
-      }
-    }
-    
-
+//     if(qafm!=0) //afm_vector[0]=qafm;
+//     {afm_vector
+//       bool found(false);
+//       for (int tj=0; tj<TwistAngles.size(); tj++)
+//       {
+//         PosType ku=TwistAngles[tj];
+//         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+//         double dkx = abs(afm_vector[0] - k2[0]);
+//         double dky = abs(afm_vector[1] - k2[1]);
+//         double dkz = abs(afm_vector[2] - k2[2]);
+//         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+//         if(rightK)
+//         {
+//           afm_vector=k2;
+//           found=true;
+//           break;
+//         }
+//       }
+//       if(!found)
+//       {
+//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<<endl;
+//         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
+//       }
+//     }
   }
 
   void
