@@ -34,6 +34,7 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
+#include "QMCHamiltonians/LocalMomentEstimator"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
@@ -340,6 +341,12 @@ namespace qmcplusplus {
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
         }
+	else if(potType == "localmoment")
+        {
+          LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,sourceInp);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+        }        
 	else if(potType == "density")
         {
 	  //          if(PBCType)//only if perioidic 

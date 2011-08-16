@@ -10,6 +10,7 @@ SET(HAMSRCS
   ForwardWalking.cpp
   trialDMCcorrection.cpp
   PairCorrEstimator.cpp
+  LocalMomentEstimator.cpp
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
