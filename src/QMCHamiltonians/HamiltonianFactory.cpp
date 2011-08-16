@@ -34,7 +34,7 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCHamiltonians/LocalMomentEstimator"
+#include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
@@ -343,7 +343,19 @@ namespace qmcplusplus {
         }
 	else if(potType == "localmoment")
         {
-          LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,sourceInp);
+          string SourceName = "ion0";
+          OhmmsAttributeSet hAttrib;
+          hAttrib.add(SourceName, "source");
+          hAttrib.put(cur);
+
+          PtclPoolType::iterator pit(ptclPool.find(SourceName));
+          if(pit == ptclPool.end()) 
+          {
+            APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
+          }
+          ParticleSet* source = (*pit).second;
+
+          LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,*source);
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
         }        

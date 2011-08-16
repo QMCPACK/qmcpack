@@ -35,7 +35,7 @@ namespace qmcplusplus
        *
        * Use the elns.DistTables to evaluate the pair correlation functions.
        */
-      LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs, string& sources);
+      LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs);
 
       void resetTargetParticleSet(ParticleSet& P);
 
@@ -66,7 +66,7 @@ namespace qmcplusplus
 	  for(int j(0);j<lm.size2();j++,k++)
 	    plist[myIndex+k]=lm(i,j);
       }
-      void setParticlePropertyList(PropertySetType& plist, int offset);
+      void setParticlePropertyList(PropertySetType& plist, int offset)
       {
 	int k(0);
 	for(int i(0);i<lm.size1();i++)
@@ -86,6 +86,7 @@ namespace qmcplusplus
     int nag;
     DistanceTableData* d_table;
     vector<string> names;
+    ParticleSet& ions;
   };
 
 }
