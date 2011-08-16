@@ -37,8 +37,8 @@ namespace qmcplusplus
     Gamma.resize(NumOrbitals,NumOrbitals);
     MyG.resize(NumOrbitals);
     Optimizable = gs_spos->Optimizable;
-    if (first==0) Phi->setpm(+1);
-    else Phi->setpm(-1);
+//    if (first==0) Phi->setpm(+1);
+//    else Phi->setpm(-1);
   }
 
   DiracDeterminantBase* 

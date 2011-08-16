@@ -71,7 +71,7 @@ namespace qmcplusplus
        * @param source_type group index of the center species
        * @param afunc radial functor
        */
-      void addFunc(int source_type, FT* afunc, int target_type)
+      void addFunc(int source_type, FT* afunc, int target_type=-1)
       {
         if (Fs.empty())
         {

@@ -42,12 +42,12 @@ namespace qmcplusplus
 
   public:
     
-    AFMSPOSet() : N(0), GSOrbitals(0), BasisOrbitals(0)
+    AFMSPOSet() : N(0), GSOrbitals(0), BasisOrbitals(0), theta(0), pm(1)
     {
     }
 
     AFMSPOSet(int num_orbs, SPOSetBase *gsOrbs, SPOSetBase* basisOrbs):
-      GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs)
+      GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs),theta(0), pm(1)
     {
       N = num_orbs;
       setOrbitalSetSize(N);
@@ -56,7 +56,7 @@ namespace qmcplusplus
     
     inline void setpm(int x)
     {
-      pm=x;
+//      pm=x;
 //       app_log()<<"setting pm:"<<x<<endl;
     }
     
