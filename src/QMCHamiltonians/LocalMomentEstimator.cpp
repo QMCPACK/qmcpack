@@ -39,8 +39,6 @@ namespace qmcplusplus
     }
       
     for(int i=0; i<ne; ++i) el_nrm[i]=1.0/el_nrm[i];
-    for(int i=0; i<ne; ++i) 
-      app_log()<<"Setting electron "<<i<<" norm to "<<el_nrm[i]<<endl;
     
     int num_srcs=srcs.groups();
 
@@ -55,13 +53,12 @@ namespace qmcplusplus
     ion_id.resize(nag);
     for(int i=0; i<ng; ++i)
     {
-      std::stringstream nm;
       for(int j(0);j<num_species;j++)
       {
-        app_log()<<" Adding local moment estimator for "<<species.speciesName[i]<<"_"<<e_species.speciesName[j]<<endl;
+        std::stringstream nm;
 	nm<<species.speciesName[i]<<"_"<<e_species.speciesName[j];
+        names.push_back(nm.str());
       }
-      names.push_back(nm.str());
     }
     
     for(int iat=0; iat<ng; ++iat)
@@ -78,6 +75,7 @@ namespace qmcplusplus
 
   LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
   {
+      lm=0;
       for(int iat=0; iat<nag; ++iat) 
       {
 	int j(0);
@@ -123,8 +121,9 @@ namespace qmcplusplus
       , TrialWaveFunction& psi)
   {
     //default constructor is sufficient
-    LocalMomentEstimator* myClone = new LocalMomentEstimator(qp,ions);
+    LocalMomentEstimator* myClone = new LocalMomentEstimator(*this);
     myClone->Dmax=Dmax;
+    myClone->resetTargetParticleSet(qp);
     return myClone;
   }
 

@@ -54,7 +54,7 @@ namespace qmcplusplus
           {
             std::stringstream sstr;
             sstr << "locmom_" <<names[i];
-            int id=plist.add(sstr.str());
+            plist.add(sstr.str());
           }
       }
       void addObservables(PropertySetType& plist, BufferType& collectables);
