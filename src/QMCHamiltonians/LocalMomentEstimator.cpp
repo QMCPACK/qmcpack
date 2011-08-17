@@ -61,7 +61,7 @@ namespace qmcplusplus
       }
     }
     
-    for(int iat=0; iat<ng; ++iat)
+    for(int iat=0; iat<nag; ++iat)
       ion_id[iat]=srcs.GroupID[iat];
 
     lm.resize(num_srcs,num_species);
