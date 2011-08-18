@@ -37,6 +37,7 @@ namespace qmcplusplus {
     ,SPOVGLTimer("DiracDeterminantBase::spovgl")
   {
     Optimizable=false;
+    if(Phi->Optimizable) Optimizable=true;
     OrbitalName="DiracDeterminantBase";
     registerTimers();
   }

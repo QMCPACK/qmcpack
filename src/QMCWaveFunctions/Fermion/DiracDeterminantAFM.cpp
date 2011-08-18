@@ -26,6 +26,7 @@ namespace qmcplusplus
   {
     targetPtcl = &ptcl;
     NumOrbitals = gs_spos->OrbitalSetSize;
+    resize(NumOrbitals,NumOrbitals);
     BasisVals.resize(NumOrbitals,NumOrbitals);
     BasisGrad.resize(NumOrbitals,NumOrbitals);
     BasisLapl.resize(NumOrbitals,NumOrbitals);

@@ -50,10 +50,11 @@ namespace qmcplusplus
       void addObservables(PropertySetType& plist)
       {
 	myIndex=plist.size();
+        int dm=std::floor(Dmax*100);
         for (int i=0;i<lm.size1()*lm.size2();i++)
           {
             std::stringstream sstr;
-            sstr << "locmom_" <<names[i];
+            sstr << "lm" <<dm<<names[i];
             plist.add(sstr.str());
           }
       }

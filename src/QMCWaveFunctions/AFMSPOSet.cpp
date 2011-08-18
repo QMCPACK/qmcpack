@@ -28,12 +28,13 @@ namespace qmcplusplus
   bool
   AFMSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   {
-    string gsName, basisName, opt("true");
+    string gsName, basisName, opt("true"), varname("theta");
     OhmmsAttributeSet attrib;
     attrib.add (gsName,    "gs_sposet");
     attrib.add (basisName, "basis_sposet");
 //     attrib.add (pm, "sign");
     attrib.add (theta, "theta");
+    attrib.add (varname, "prefix");
     attrib.add (opt, "optimize");
     attrib.put (node);
     Optimizable = ((opt=="yes")||(opt=="true"));
@@ -86,7 +87,7 @@ namespace qmcplusplus
     resize(N);
     
     if(Optimizable)
-      myVars.insert("theta",theta,true,optimize::SPO_P);
+      myVars.insert(varname,theta,true,optimize::SPO_P);
     
     resetTheta(theta);
     return SPOSetBase::put(node);
