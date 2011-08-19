@@ -27,7 +27,7 @@ namespace qmcplusplus
     int N;
     
     int pm;
-    RealType theta, costheta, sintheta;
+    RealType theta, costheta, sintheta, dcostheta, dsintheta;
     
     //GS is Gamma point, Basis is AFM vector orbitals
     SPOSetBase *GSOrbitals, *BasisOrbitals;
@@ -52,6 +52,7 @@ namespace qmcplusplus
       N = num_orbs;
       setOrbitalSetSize(N);
       resize(N);
+      resetTheta(theta);
     }
     
     inline void setpm(int x)
@@ -63,8 +64,11 @@ namespace qmcplusplus
     inline void resetTheta(RealType x)
     {
       theta = x;
-      costheta = std::cos(theta);
-      sintheta = std::sin(theta);
+      //scaling theta to have a range from -15 to 15
+      costheta = std::cos(0.1*theta);
+      sintheta = std::sin(0.1*theta);
+      dcostheta = -0.1*sintheta;
+      dsintheta = 0.1*costheta;
     }
 
     //    bool put(xmlNodePtr cur, SPOPool_t &spo_pool);

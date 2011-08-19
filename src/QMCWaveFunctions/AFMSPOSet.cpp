@@ -190,13 +190,13 @@ namespace qmcplusplus
     GSOrbitals->evaluate_notranspose(P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
     BasisOrbitals->evaluate_notranspose(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
 
-    logdet = pm*costheta*BasisValMatrix - sintheta*GSValMatrix;
-    d2logdet = pm*costheta*BasisLaplMatrix - sintheta*GSLaplMatrix;
+    logdet = dsintheta*BasisValMatrix + dcostheta*GSValMatrix;
+    d2logdet = dsintheta*BasisLaplMatrix + dcostheta*GSLaplMatrix;
     
     // Gradient part.  
     for (int i=0; i<N; i++) for (int j=0; j<N; j++)
       for (int dim=0; dim<OHMMS_DIM; dim++) 
-        dlogdet(i,j)[dim] = pm*costheta*BasisGradMatrix(i,j)[dim] - sintheta*GSGradMatrix(i,j)[dim];
+        dlogdet(i,j)[dim] = dsintheta*BasisGradMatrix(i,j)[dim] + dcostheta*GSGradMatrix(i,j)[dim];
       
 //     for (int i=0; i<N; i++) for (int j=0; j<N; j++) d2logdet(i,j) -= 2.0*dot(dlogdet(i,j),dlogdet(i,j));
   }

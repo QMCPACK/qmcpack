@@ -145,12 +145,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //     RealType od_largest(0);
 //     for (int i=0; i<N; i++) for (int j=0; j<N; j++)
 //       od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-    RealType d_neg(0);
-    for (int i=1; i<N; i++) if (Left(i,i)<d_neg) d_neg=Left(i,i);
+//    RealType d_neg(0);
+//    for (int i=1; i<N; i++) if (Left(i,i)<d_neg) d_neg=Left(i,i);
     
-    stabilizerScale = std::max(stabilizerScale*(nstabilizers-1.0),std::log(-d_neg)); 
-    if(nstabilizers>1) 
-      stabilizerScale = stabilizerScale/(nstabilizers-1.0);
+//    stabilizerScale = std::max(stabilizerScale*(nstabilizers-1.0),std::log(-d_neg)); 
+//    if(nstabilizers>1) 
+//      stabilizerScale = stabilizerScale/(nstabilizers-1.0);
     
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
