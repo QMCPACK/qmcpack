@@ -1126,7 +1126,7 @@ namespace qmcplusplus {
               // zero.  This sometimes happens in crystals with high
               // symmetry at special k-points.
 
-              double rNorm=0.0, iNorm=0.0;
+              double rNorm=0.0, iNorm=0.0, riNorm=0.0;
 #pragma omp parallel for reduction(+:rNorm,iNorm)
               for (int ix=0; ix<nx; ix++) {
                 PosType ru;
@@ -1143,29 +1143,30 @@ namespace qmcplusplus {
 
                     rNorm += z.real()*z.real();
                     iNorm += z.imag()*z.imag();
+                    riNorm+=z.imag()*z.real();
                   }
+                 
                 }
               }
-              double arg = std::atan2(std::sqrt(iNorm), std::sqrt(rNorm));
-              // cerr << "Phase = " << arg/M_PI << " pi.\n";
-              double s,c;
-              sincos(0.25*M_PI-arg, &s, &c);
-              complex<double> phase(c,s);
-              rNorm=0.0; iNorm=0.0;
+              
+              double x=(rNorm-iNorm)/riNorm;
+              x=1.0/std::sqrt(x*x+4);
+              double phs(0);
+              if (x>0.5) phs=std::sqrt(0.5+x);
+              else phs=std::sqrt(0.5-x);
+//              app_log()<<"phs info "<<phs<<" "<<rNorm<<" "<<iNorm<<" "<<riNorm<<endl;
+
+              complex<double> phase(phs*phs,1.0-phs*phs);
+              double nrm=1.0/(rNorm+iNorm);
 #pragma omp parallel for reduction(+:rNorm,iNorm)
-              for (int ix=0; ix<nx; ix++){
+              for (int ix=0; ix<nx; ix++) {
                 for (int iy=0; iy<ny; iy++){
                   for (int iz=0; iz<nz; iz++) {
-                    complex<double> z = splineData(ix,iy,iz) = phase*FFTbox(ix,iy,iz);
-                    rNorm += z.real()*z.real();
-                    iNorm += z.imag()*z.imag();
+                    splineData(ix,iy,iz) = phase*nrm*FFTbox(ix,iy,iz);
                   }
                 }
               }
-              arg = std::atan2(iNorm, rNorm);
-//               cerr << "Phase = " << arg/M_PI << " pi.\n";
             }
-            
           }
           myComm->bcast(splineData);
           myComm->bcast(twist);
