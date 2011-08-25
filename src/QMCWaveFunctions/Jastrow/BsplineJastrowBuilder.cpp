@@ -130,7 +130,7 @@ namespace qmcplusplus {
       jAttrib.add(j1spin,"spin");
       jAttrib.put(cur);
 #ifdef QMC_CUDA
-      return createOneBodyJastrow<OneBodyJastrowOrbtialBspline,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
+      return createOneBodyJastrow<OneBodyJastrowOrbitalBspline,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
 #else
       if(j1spin=="yes")
         return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
