@@ -27,6 +27,15 @@
 namespace qmcplusplus  {
   /** Timer using omp_get_wtime 
    */
+#if defined(BGP_BUG)
+  struct Timer
+  {
+    double start_time;
+    inline Timer():start_time(0){}
+    inline void restart() {}
+    inline double elapsed() const { return 1e-16; }
+  };
+#else
   struct Timer
   {
     double start_time;
@@ -36,6 +45,7 @@ namespace qmcplusplus  {
       return omp_get_wtime()-start_time;
     }
   };
+#endif
 }
 #else /* use boost or pooma */
 #if defined(HAVE_LIBBOOST)

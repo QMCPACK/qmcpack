@@ -29,6 +29,43 @@ class Communicate;
 namespace qmcplusplus  {
 
 #if defined(ENABLE_OPENMP)
+#if defined(BGP_BUG)
+  class NewTimer
+  {
+  protected:
+    double start_time;
+    double total_time;
+    long num_calls;
+    std::string name;
+  public:
+    inline void start() 
+    { }
+    
+    inline void stop()  
+    { }
+
+    inline double    get_total() const  
+    { return total_time;             }
+    
+    inline long  get_num_calls() const  
+    { return num_calls;              }
+    
+    inline std::string get_name() const 
+    { return name;                   }
+
+    inline void reset()           
+    { num_calls = 0; total_time=0.0; }
+        
+    NewTimer(const std::string& myname) : 
+      total_time(0.0), num_calls(0), name(myname)
+    { }
+
+    void set_name(const std::string& myname)
+    {
+      name=myname;
+    }
+  };
+#else
   /* Timer using omp_get_wtime  */
   class NewTimer
   {
@@ -65,6 +102,7 @@ namespace qmcplusplus  {
       name=myname;
     }
   };
+#endif
 #else /* use boost or pooma */
 #include <sys/time.h>
   /* Timer using gettimeofday  */

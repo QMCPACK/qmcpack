@@ -309,7 +309,7 @@ namespace qmcplusplus {
 	b.push_back(PosType (std::cos(t), std::sin(t)*std::cos(p), std::sin(t)*std::sin(p)));
       }
       // c points
-#if defined(__bgp__)
+#if defined(BGP_BUG)
       double t1 = 0.6523581397843682;
       double t2 = 1.382085796011334;
 #else

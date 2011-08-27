@@ -57,9 +57,9 @@ namespace qmcplusplus
 
     for (int block=0;block<nBlocks; ++block)
     {
-#pragma omp parallel for
-      for (int ip=0; ip<NumThreads; ++ip)
+#pragma omp parallel
       {
+        int ip=omp_get_thread_num();
         //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
         IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:0;
         //assign the iterators and resuse them
@@ -143,9 +143,11 @@ namespace qmcplusplus
         std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
         app_log() << endl;
 
-#pragma omp parallel for
-        for (int ip=0; ip<NumThreads; ++ip)
+#if !defined(BGP_BUG)
+#pragma omp parallel 
+#endif
         {
+          int ip=omp_get_thread_num();
           ostringstream os;
           estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
           estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
@@ -215,7 +217,9 @@ namespace qmcplusplus
         }
       }
         
+#if !defined(BGP_BUG)
 #pragma omp parallel
+#endif
       {
         int ip=omp_get_thread_num();
         Movers[ip]->put(qmcNode);
@@ -248,7 +252,9 @@ namespace qmcplusplus
     {
       RealType avg_w(0);
       RealType n_w(0);
+#if !defined(BGP_BUG)
 #pragma omp parallel
+#endif
       {
         int ip=omp_get_thread_num();
         
