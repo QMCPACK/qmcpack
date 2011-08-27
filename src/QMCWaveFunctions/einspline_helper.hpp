@@ -178,18 +178,18 @@ namespace qmcplusplus
     T ny_i=1.0/static_cast<T>(ny);
     T nz_i=1.0/static_cast<T>(nz);
 
-    T rNorm=0.0, iNorm=0.0;
-#pragma omp parallel for reduction(+:rNorm,iNorm), firstprivate(nx_i,ny_i,nz_i)
-    for (int ix=0; ix<nx; ix++) 
+    T rNorm=0.0, iNorm=0.0, riNorm=0.0;
+#pragma omp parallel for reduction(+:rNorm,iNorm,riNorm), firstprivate(nx_i,ny_i,nz_i)
+    for (int ix=0; ix<nx; ++ix) 
     {
       T s, c, r, i;
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
       T rux=static_cast<T>(ix)*nx_i*twist[0];
-      T rsum=0, isum=0;
-      for (int iy=0; iy<ny; iy++)
+      T rsum=0, isum=0,risum=0.0;
+      for (int iy=0; iy<ny; ++iy)
       {
         T ruy=static_cast<T>(iy)*ny_i*twist[1];
-        for (int iz=0; iz<nz; iz++) 
+        for (int iz=0; iz<nz; ++iz)
         {
           T ruz=static_cast<T>(iz)*nz_i*twist[2];
           sincos(two_pi*(rux+ruy+ruz), &s, &c);
@@ -198,24 +198,31 @@ namespace qmcplusplus
           ++in_ptr;
           rsum += r*r;
           isum += i*i;
+          risum+= r*i;
         }
       }
       rNorm += rsum;
       iNorm += isum;
+      riNorm+= risum;
     }
 
-    T arg = std::atan2(iNorm, rNorm);
-    //cerr << "Phase = " << arg/M_PI << " pi.\n";
-    T phase_r, phase_i;
-    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
+//    T arg = std::atan2(iNorm, rNorm);
+//    //cerr << "Phase = " << arg/M_PI << " pi.\n";
+//    T phase_r, phase_i;
+//    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
+     T x=(rNorm-iNorm)/riNorm;
+     x=1.0/std::sqrt(x*x+4.0);
+     T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
+     T phase_r=phs*phs/(rNorm+iNorm);
+     T phase_i=(1.0-phs*phs)/(rNorm+iNorm);
 
 #pragma omp parallel for firstprivate(phase_r,phase_i)
-    for (int ix=0; ix<nx; ix++)
+    for (int ix=0; ix<nx; ++ix)
     {
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
       std::complex<T>* restrict out_ptr=out.data()+ix*ny*nz;
-      for (int iy=0; iy<ny; iy++)
-        for (int iz=0; iz<nz; iz++) 
+      for (int iy=0; iy<ny; ++iy)
+        for (int iz=0; iz<nz; ++iz) 
         {
           *out_ptr=std::complex<T>(
               phase_r*in_ptr->real()-phase_i*in_ptr->imag()
