@@ -33,7 +33,7 @@
   <qmc method="vmc" move="walker">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">1000</parameter>
-    <parameter name="walkersperthread">10</parameter>
+    <parameter name="walkers">1</parameter>
     <parameter name="time_step">2.0</parameter>
   </qmc>
 </simulation>
