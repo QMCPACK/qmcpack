@@ -37,6 +37,9 @@ my $kecorr = 0;
 my $ewald = 0;
 my $enerr = 0;
 
+my $blockcpu=0;
+my $blockweight=0;
+
 for (my $i = 2; $i <= $#{$filedata[0]}; $i++) {    
     my $colname =  $filedata[0][$i];
     my @arr = getColumn(\@filedata,$i,$start,$end);
@@ -70,6 +73,21 @@ for (my $i = 2; $i <= $#{$filedata[0]}; $i++) {
     }
     my $formatStr = formatString($error);
     my $str = sprintf("%-21s =  $formatStr +/- $formatStr\n", $colname, $avg, $error);
+    if($colname eq 'BlockCPU')
+    {
+      $blockcpu=$avg;
+    }
+    if($colname eq 'BlockWeight')
+    {
+      $blockweight=$avg;
+    }
+    print $str;
+}
+
+if($blockcpu>0)
+{
+    my $formatStr = formatString(0.01);
+    my $str = sprintf("%-21s =  $formatStr +/- $formatStr\n", "Efficiency", $blockweight/$blockcpu, 0);
     print $str;
 }
 
