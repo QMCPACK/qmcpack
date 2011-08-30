@@ -9,6 +9,11 @@ if(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
   SET(CMAKE_FALLBACK TRUE)
 endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
 
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
+
 ######################################################################
 # Version 
 ######################################################################
@@ -371,8 +376,9 @@ ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
-  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
+#  SET(Boost_INCLUDE_DIR /home/jnkim/share/boost_1_45_0/boost)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
 ELSE()
   MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF()
