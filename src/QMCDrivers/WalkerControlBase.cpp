@@ -67,7 +67,7 @@ namespace qmcplusplus {
         //oa = new boost::archive::binary_oarchive (*dmcStream);
         dmcStream->setf(ios::scientific, ios::floatfield);
         dmcStream->precision(10);
-        (*dmcStream) << setw(10) << "# Index "
+        (*dmcStream) << "# Index "
           << setw(20) << "LocalEnergy"
           << setw(20) << "Variance" 
           << setw(20) << "Weight"
