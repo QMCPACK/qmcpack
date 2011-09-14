@@ -1,5 +1,8 @@
-PROJECT(newqmc)
+PROJECT(qmcapp)
 
+####################################
+# create libqmc 
+####################################
 SET(QMCAPPDIR 
     ParticleSetPool.cpp
     WaveFunctionPool.cpp
@@ -9,85 +12,31 @@ SET(QMCAPPDIR
     QMCDriverFactory.cpp
     QMCMain.cpp
 )
-
-####################################
-# create libqmc 
-####################################
 ADD_LIBRARY(qmc ${QMCAPPDIR})
-#IF(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmc STATIC ${QMCAPPDIR})
-#ELSE(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmc SHARED ${QMCAPPDIR})
-#ENDIF(QMC_BUILD_STATIC)
 
 ####################################
-#sources for new qmcapp, general QMC code to handle multiple
-#configurations, hamiltonians and wavefunctions.
+# list of QMC applications
+# qmcapp is the only one
 ####################################
-SET(QMCMAIN 
-  qmcapp.cpp
-)
+SET(QMCSRCS qmcapp)
 
-####################################
-# sources for mo2grid
-####################################
-#SET(MOSRCS 
-#  ${QMCDRIVERS}
-#  ParticleSetPool.cpp
-#  QMCAppBase.cpp
-#  MO2Grid3D.cpp 
-#  mo2grid3d_main.cpp
-#)
+FOREACH(p ${QMCSRCS})
 
-####################################
-# link lapack/blas and fortran library 
-####################################
-#LINK_LIBRARIES(
-#  ${LAPACK_LIBRARY} 
-#  ${BLAS_LIBRARY} 
-#  ${FORTRAN_LIBS} 
-#)
+  ADD_EXECUTABLE(${p} ${p}.cpp)
+  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
 
-####################################
-# adding thread library: e.g., -lguide -lpthread
-####################################
-IF(INTEL_MKL)
-  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-ELSE(INTEL_MKL)
-  LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
-ENDIF(INTEL_MKL)
+  FOREACH(l ${QMC_UTIL_LIBS})
+    TARGET_LINK_LIBRARIES(${p} ${l})
+  ENDFOREACH(l ${QMC_UTIL_LIBS})
 
+  TARGET_LINK_LIBRARIES(${p} ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBRARIES})
 
-####################################
-# build mo2grid3d executable
-####################################
-#IF(NOT HAVE_MPI)
-#ADD_EXECUTABLE(mo2grid3d ${MOSRCS})
-#TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
-#ENDIF(NOT HAVE_MPI)
+  if(ENABLE_TAU_PROFILE)
+    TARGET_LINK_LIBRARIES(${p} tau)
+  endif(ENABLE_TAU_PROFILE)
 
-# Get rid of error message
-#if(COMMAND cmake_policy)
-#  cmake_policy(SET CMP0003 NEW)
-#endif(COMMAND cmake_policy)
+  IF(MPI_LIBRARY)
+    TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
+  ENDIF(MPI_LIBRARY)
 
-####################################
-#general qmcapp for multiple configurations, hamiltonians and wavefunctions.
-####################################
-ADD_EXECUTABLE(qmcapp ${QMCMAIN})
-
-TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-
-IF(HAVE_EINSPLINE AND NOT HAVE_EINSPLINE_EXT)
-  TARGET_LINK_LIBRARIES(qmcapp einspline)
-ENDIF(HAVE_EINSPLINE AND NOT HAVE_EINSPLINE_EXT)	
-IF(NOT MAC_VECLIB)
-  TARGET_LINK_LIBRARIES(qmcapp ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
-ENDIF(NOT MAC_VECLIB)
-
-####################################
-# link built-in tau library 
-####################################
-if(ENABLE_TAU_PROFILE)
-  TARGET_LINK_LIBRARIES(qmcapp tau)
-endif(ENABLE_TAU_PROFILE)
+ENDFOREACH(p ${QMCSRCS})

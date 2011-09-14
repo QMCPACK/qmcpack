@@ -2,31 +2,17 @@
 # FFTW_LIBRARIES = libfftw3.a
 # FFTW_FOUND = true if FFTW3 is found
 
+SET(Libfftw fftw3)
+IF(QMC_BUILD_STATIC)
+  SET(Libfftw libfftw3.a)
+ENDIF(QMC_BUILD_STATIC)
+
 IF(FFTW_INCLUDE_DIRS)
   FIND_PATH(FFTW_INCLUDE_DIR fftw3.h  ${FFTW_INCLUDE_DIRS})
-  FIND_LIBRARY(FFTW_LIBRARY fftw3 ${FFTW_LIBRARY_DIRS})
+  FIND_LIBRARY(FFTW_LIBRARY ${Libfftw} ${FFTW_LIBRARY_DIRS})
 ELSE(FFTW_INCLUDE_DIRS)
-  #  SET(TRIAL_PATHS
-  #    $ENV{FFTW_HOME}/include
-  #    /usr/include
-  #    /usr/local/include
-  #    /opt/include
-  #    /usr/apps/include
-  #  )
-  #
-  #  SET(TRIAL_LIBRARY_PATHS
-  #    $ENV{FFTW_HOME}/lib
-  #    /usr/lib 
-  #    /usr/local/lib
-  #    /opt/lib
-  #    /sw/lib
-  #    )
-  #
-  #  FIND_PATH(FFTW_INCLUDE_DIR fftw3.h ${TRIAL_PATHS})
-  #  FIND_LIBRARY(FFTW_LIBRARY fftw3 ${TRIAL_LIBRARY_PATHS})
-  FIND_PATH(FFTW_INCLUDE_DIR fftw3.h ${QMC_INCLUDE_PATHS})
-  FIND_LIBRARY(FFTW_LIBRARIES fftw3 ${QMC_LIBRARY_PATHS}) 
-
+  FIND_PATH(FFTW_INCLUDE_DIR fftw3.h ${FFTW_HOME}/include $ENV{FFTW_HOME}/include)
+  FIND_LIBRARY(FFTW_LIBRARIES ${Libfftw} ${FFTW_HOME}/lib $ENV{FFTW_HOME}/lib) 
 ENDIF(FFTW_INCLUDE_DIRS)
 
 SET(FFTW_FOUND FALSE)

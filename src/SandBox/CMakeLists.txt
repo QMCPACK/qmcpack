@@ -1,36 +1,44 @@
 PROJECT(sandbox)
 
+SET(SANDBOX)
+
 #IF(INTEL_MKL)
 #  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 #ELSE(INTEL_MKL)
 #  LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
 #ENDIF(INTEL_MKL)
 
-IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  LINK_LIBRARIES(${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
-ENDIF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-IF(HAVE_MPI)
-  ADD_EXECUTABLE(mpi_group group.cpp)
-  TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
-
-  ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
-  TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
-ENDIF(HAVE_MPI)
+#IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#  LINK_LIBRARIES(${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
+#ENDIF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#
+#IF(HAVE_MPI)
+#  ADD_EXECUTABLE(mpi_group group.cpp)
+#  TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
+#
+#  ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
+#  TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
+#ENDIF(HAVE_MPI)
 
 
 IF(HAVE_EINSPLINE)
-  ADD_EXECUTABLE( einspline_bench  einspline.cpp)
-  TARGET_LINK_LIBRARIES(einspline_bench qmcbase qmcutil)
 
-  ADD_EXECUTABLE( einspline_smp  einspline_smp.cpp)
-  TARGET_LINK_LIBRARIES(einspline_smp qmcbase qmcutil)
+  SET(ESTEST einspline_bench einspline_smp)
+
+  FOREACH(p ${ESTEST})
+    ADD_EXECUTABLE( ${p}  ${p}.cpp)
+    TARGET_LINK_LIBRARIES(${p} qmcbase qmcutil)
+    TARGET_LINK_LIBRARIES(${p} ${EINSPLINE_LIBRARIES})
+    IF(MPI_LIBRARY)
+      TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
+    ENDIF(MPI_LIBRARY)
+
+  ENDFOREACH(p ${ESTEST})
+
 ENDIF(HAVE_EINSPLINE)
 
 #ADD_EXECUTABLE(gnubug gnubug.cpp)
 #TARGET_LINK_LIBRARIES(gnubug qmcbase qmcutil)
-
-
 #FIND_LIBRARY(BOOST_SERIALIZATION_LIBRARY  boost_serialization-il-1_33
 #/u/ncsa/jnkim/share/boost/bin/boost/libs/serialization/build/libboost_serialization.so/intel-linux/release/shared-linkable-true/
 #)

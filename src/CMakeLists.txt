@@ -1,5 +1,3 @@
-#CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/Configuration.h.in
-#               ${qmcpack_BINARY_DIR}/src/Configuration.h)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
                ${qmcpack_BINARY_DIR}/src/config.h)
 
@@ -27,6 +25,7 @@ SET(UTILITIES
   Optimize/VariableSet.cpp
   io/hdf_archive.cpp
 )
+
 IF(QMC_CUDA)
    SET(UTILITIES ${UTILITIES} 
        Numerics/CUDA/cuda_inverse.cu 
@@ -34,17 +33,12 @@ IF(QMC_CUDA)
        Particle/accept_kernel.cu)
 ENDIF(QMC_CUDA)
 
-
-##gsl library will be optional
-#IF(HAVE_LIBGSL)
-#  SET(UTILITIES ${UTILITIES} Optimize/GSLMinimize.cpp)
-#ENDIF(HAVE_LIBGSL)
-
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
 ELSE(QMC_CUDA)
   ADD_LIBRARY(qmcutil ${UTILITIES})
 ENDIF(QMC_CUDA)
+
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
 #ELSE(QMC_BUILD_STATIC)
@@ -59,7 +53,9 @@ IF(HAVE_OOMPI)
                  ${qmcpack_BINARY_DIR}/src/oompi-config.h)
   INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
   SUBDIRS(OOMPI)
-  LINK_LIBRARIES(oompi)
+
+  set(MPI_LIBRARY oompi ${MPI_LIBRARY})
+
 ENDIF(HAVE_OOMPI)
 
 IF(OHMMS_DIM MATCHES 3)
@@ -131,12 +127,13 @@ SUBDIRS(QMCDrivers)
 SUBDIRS(QMCApp)
 #SUBDIRS(einspline)
 
+
 IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
 ENDIF(BUILD_QMCTOOLS)
 
 IF(BUILD_SANDBOX)
-  SUBDIRS(SandBox)
+  SUBDIRS(SandBox benchmark)
 ENDIF(BUILD_SANDBOX)
 
 IF(BUILD_SQD)

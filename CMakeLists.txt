@@ -1,6 +1,6 @@
 PROJECT(qmcpack)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 #####################################################
 SET(CMAKE_FALLBACK FALSE)
@@ -12,7 +12,6 @@ endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
-
 
 ######################################################################
 # Version 
@@ -44,26 +43,10 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 #
 # find_package is used with cmake 2.8 and higher
 ######################################################################
-SET(QMC_INCLUDE_PATHS 
-  $ENV{HDF5_HOME}/include 
-  $ENV{HDF5_DIR}/include 
-  $ENV{FFTW_HOME}/include
-  $ENV{LIBXML2_HOME}/include
-  $ENV{EINSPLINE_HOME}/include
-  $ENV{BOOST_HOME}
-  )
-SET(QMC_LIBRARY_PATHS 
-  $ENV{HDF5_HOME}/lib 
-  $ENV{HDF5_DIR}/lib 
-  $ENV{FFTW_HOME}/lib
-  $ENV{LIBXML2_HOME}/lib
-  $ENV{EINSPLINE_HOME}/lib
-  )
-
-if(APPLE)
-  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
-  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
-endif(APPLE)
+#if(APPLE)
+#  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
+#  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
+#endif(APPLE)
 
 ######################################################################
 # Set the compiler-time parameters
@@ -92,41 +75,39 @@ SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 ######################################################################
 # check environment variables 
+# todo: disallow environment
 ######################################################################
 IF($ENV{QMC_MPI})
   SET(QMC_MPI $ENV{QMC_MPI}) 
-  MESSAGE("-- Found QMC_MPI=${QMC_MPI}")
+  MESSAGE(STATUS "Found environment QMC_MPI=${QMC_MPI}")
 ENDIF($ENV{QMC_MPI})
 IF($ENV{QMC_OMP})
   SET(QMC_OMP $ENV{QMC_OMP}) 
-  MESSAGE("-- Found QMC_OMP=${QMC_OMP}")
+  MESSAGE(STATUS "Found environment QMC_OMP=${QMC_OMP}")
 ENDIF($ENV{QMC_OMP})
-#IF($ENV{QMC_BITS})
-#  SET(QMC_BITS $ENV{QMC_BITS})
-#  MESSAGE("-- Found QMC_BITS=${QMC_BITS}")
-#ENDIF($ENV{QMC_BITS})
+IF($ENV{QMC_BITS})
+  SET(QMC_BITS $ENV{QMC_BITS})
+  MESSAGE(STATUS "Found environment QMC_BITS=${QMC_BITS}")
+ENDIF($ENV{QMC_BITS})
 IF($ENV{QMC_COMPLEX})
   SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
-  MESSAGE("-- Found QMC_COMPLEX=${QMC_COMPLEX}")
+  MESSAGE(STATUS "Found environment QMC_COMPLEX=${QMC_COMPLEX}")
 ENDIF($ENV{QMC_COMPLEX})
-#IF($ENV{QMC_CUDA})
-#  SET(QMC_CUDA $ENV{QMC_CUDA} CACHE BOOL "Build with GPU support through CUDA")
-#  MESSAGE("-- Found QMC_CUDA=${QMC_CUDA}")
-#ENDIF($ENV{QMC_CUDA})
 
 ######################################################################
 # Standard test
 ######################################################################
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
-INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
-CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
-CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
 
 ######################################################################
 # add macros to compile einspline if necessary
 ######################################################################
+INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
+
+CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
 CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 CHECK_FUNCTION_EXISTS(pow HAVE_POW)
@@ -149,10 +130,12 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_SANDBOX    build test programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
-SET(QMC_BUILD_STATIC 0 CACHE BOOL "Build static libraries and binary")
-SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
-SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
-SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
+#SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
+#SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
+#SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
+#SET(BUILD_QMCTOOLS 0)
+#SET(BUILD_SANDBOX 0)
+#SET(MPIP_PROFILE 0)
 
 ######################################################################
 # Performance-related macros
@@ -160,7 +143,7 @@ SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 ######################################################################
 SET(QMC_SK_USE_RECURSIVE 0)
 IF($ENV{QMC_SK_RECURSIVE})
-  MESSAGE("-- SK structure factor uses a recursive algorithm.")
+  MESSAGE(STATUS "SK structure factor uses a recursive algorithm.")
   SET(QMC_SK_USE_RECURSIVE $ENV{QMC_SK_RECURSIVE}) 
 ENDIF($ENV{QMC_SK_RECURSIVE})
 
@@ -204,7 +187,7 @@ SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
 FIND_PACKAGE(Subversion) 
 IF(Subversion_FOUND) 
   Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project) 
-  MESSAGE("-- Current revision : ${Project_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
+  MESSAGE(STATUS "Current revision : ${Project_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
   SET(QMCPLUSPLUS_BRANCH ${Project_WC_REVISION})
   SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${Project_WC_LAST_CHANGED_DATE})
 ENDIF(Subversion_FOUND)
@@ -226,9 +209,9 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 # now set the compiler flags and the macros in src/config.h
 ######################################################
 IF(CMAKE_TOOLCHAIN_FILE)
-  MESSAGE(STATUS "-- Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
+  MESSAGE(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 ELSE(CMAKE_TOOLCHAIN_FILE)
-  #fun begins
+  SET(QMC_BUILD_STATIC 0)
   SET(FOUND_CXXENV 0)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_MPI 0)
@@ -318,7 +301,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
           SET(HAVE_OOMPI 1)
-          LINK_LIBRARIES(${MPI_LIBRARY})
+          #LINK_LIBRARIES(${MPI_LIBRARY})
         ELSE(MPI_WORKS)
           MESSAGE(STATUS "MPI is disabled")
           SET(HAVE_MPI 0)
@@ -336,8 +319,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
-MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
-MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
+MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
+MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
 
 SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
@@ -348,27 +331,33 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 ####################################################################
 # use customized cmake file for boost so that we can deal with multiple
 # installataions
+# list of libraries to be linked with the main applications using I/O
+SET(QMC_UTIL_LIBS )
+
 INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
+INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 
 IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
-  LINK_LIBRARIES(${LIBXML2_LIBRARIES})
   SET(HAVE_LIBXML2 1)
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
 ENDIF(LIBXML2_FOUND)
 
 IF(HDF5_FOUND)
   SET(HAVE_LIBHDF5 1)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-  LINK_LIBRARIES(${HDF5_LIBRARIES})
-  IF(ZLIB_FOUND)
-    LINK_LIBRARIES(${ZLIB_LIBRARIES})
-  ENDIF(ZLIB_FOUND)
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
+  if(ZLIB_LIBRARY)
+    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARY})
+  endif(ZLIB_LIBRARY)
+  #IF(ZLIB_FOUND)
+  #  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARIES})
+  #ENDIF(ZLIB_FOUND)
   IF(SZLIB_FOUND)
-    LINK_LIBRARIES(${SZLIB_LIBRARIES})
+    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
   ENDIF(SZLIB_FOUND)
 ELSE(HDF5_FOUND)
   MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
@@ -376,7 +365,7 @@ ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
-#  SET(Boost_INCLUDE_DIR /home/jnkim/share/boost_1_45_0/boost)
+  #SET(Boost_INCLUDE_DIR /home/jnkim/share/boost_1_45_0/boost)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
 ELSE()
@@ -453,7 +442,7 @@ INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
   INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  LINK_LIBRARIES(${FFTW_LIBRARIES})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
 ENDIF(FFTW_FOUND)
 
 ######################################################################
@@ -468,9 +457,10 @@ if(EINSPLINE_FOUND)
   set(HAVE_EINSPLINE 1)
   IF(HAVE_EINSPLINE_EXT)
     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-    LINK_LIBRARIES(${EINSPLINE_LIBRARIES})  
+    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
   ELSE(HAVE_EINSPLINE_EXT)
     SUBDIRS(src/einspline)
+    SET(QMC_UTIL_LIBS einspline  ${QMC_UTIL_LIBS})
   ENDIF(HAVE_EINSPLINE_EXT)
   MESSAGE(STATUS "EINSPLINE_INCLUDE_DIR="${EINSPLINE_INCLUDE_DIR})
 endif()
@@ -501,7 +491,7 @@ endif()
 # Done searching libraries. Start building qmcpack
 ###################################################
 
-MESSAGE("-- Ready to build qmcpack")
+MESSAGE(STATUS "Ready to build qmcpack")
 
 INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src

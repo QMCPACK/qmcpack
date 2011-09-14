@@ -6,6 +6,12 @@
 # HDF5_LIBRARY      = the library to link against (hdf5 etc)
 # HDF5_FOUND        = set to true after finding the library
 #
+
+set(Libhdf5 hdf5)
+IF(QMC_BUILD_STATIC)
+  set(Libhdf5 libhdf5.a)
+ENDIF(QMC_BUILD_STATIC)
+
 IF(EXISTS ${PROJECT_CMAKE}/Hdf5Config.cmake)
   INCLUDE(${PROJECT_CMAKE}/Hdf5Config.cmake)
 ENDIF(EXISTS ${PROJECT_CMAKE}/Hdf5Config.cmake)
@@ -13,38 +19,12 @@ ENDIF(EXISTS ${PROJECT_CMAKE}/Hdf5Config.cmake)
 IF(Hdf5_INCLUDE_DIRS)
 
   FIND_PATH(HDF5_INCLUDE_DIR hdf5.h ${Hdf5_INCLUDE_DIRS})
-  FIND_LIBRARY(HDF5_LIBRARY hdf5 ${Hdf5_LIBRARY_DIRS})
+  FIND_LIBRARY(HDF5_LIBRARY ${Libhdf5} ${Hdf5_LIBRARY_DIRS})
 
 ELSE(Hdf5_INCLUDE_DIRS)
 
-  #  SET(TRIAL_LIBRARY_PATHS
-  #    $ENV{PHDF5_HOME}/lib
-  #    $ENV{HDF5_HOME}/lib
-  #    $ENV{HDF5_DIR}/lib
-  #    $ENV{HDF_HOME}/lib
-  #    /usr/apps/lib
-  #    /usr/lib 
-  #    /usr/local/lib
-  #    /opt/lib
-  #    /sw/lib
-  #    )
-  #
-  #  SET(TRIAL_INCLUDE_PATHS
-  #    $ENV{PHDF5_HOME}/include
-  #    $ENV{HDF5_HOME}/include
-  #    $ENV{HDF5_DIR}/include
-  #    $ENV{HDF_HOME}/include
-  #    /usr/apps/include
-  #    /usr/include
-  #    /opt/include
-  #    /usr/local/include
-  #    /sw/include
-  #    )
-  #
-  #  FIND_LIBRARY(HDF5_LIBRARIES hdf5 ${TRIAL_LIBRARY_PATHS})
-  #  FIND_PATH(HDF5_INCLUDE_DIR hdf5.h ${TRIAL_INCLUDE_PATHS} )
-  FIND_LIBRARY(HDF5_LIBRARIES hdf5 ${QMC_LIBRARY_PATHS})
-  FIND_PATH(HDF5_INCLUDE_DIR hdf5.h ude ${QMC_INCLUDE_PATHS})
+  FIND_PATH(HDF5_INCLUDE_DIR hdf5.h ${HDF5_HOME}/include $ENV{HDF5_HOME}/include)
+  FIND_LIBRARY(HDF5_LIBRARIES ${Libhdf5} ${HDF5_HOME}/lib $ENV{HDF5_HOME}/lib)
 
 ENDIF(Hdf5_INCLUDE_DIRS)
 

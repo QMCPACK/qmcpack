@@ -43,16 +43,25 @@ namespace qmcplusplus {
     char* cbuffer=0;
 
     ifstream *fin=0;
+    int missing_xml=0;
     if(myComm->rank()==0)
     {
       fin = new ifstream(fname.c_str());
-      // if (!fin->is_open()) 
-      // 	APP_ABORT("Could not open pseudopotential file \"" + fname + "\".\n");
+       if (!fin->is_open()) missing_xml=1;
+    }
+    myComm->bcast(missing_xml);
+
+    if(missing_xml)
+    {
+      APP_ABORT("ECPComponentBuilder::parse  Missing PP file " + fname +"\n");
+    }
+
+    if(myComm->rank()==0)
+    {
       fin->seekg (0, ios::end);
       length = fin->tellg();
       fin->seekg (0, ios::beg);
     }
-
     myComm->bcast(length);
     cbuffer = new char[length];
     if(myComm->rank()==0) fin->read (cbuffer,length);
@@ -64,7 +73,8 @@ namespace qmcplusplus {
 
     // build an XML tree from a the file;
     //xmlDocPtr m_doc = xmlParseFile(fname.c_str());
-    if (m_doc == NULL) {
+    if (m_doc == NULL) 
+    {
       xmlFreeDoc(m_doc);
       APP_ABORT("ECPComponentBuilder::parse xml file "+fname+" is invalid");
     }    

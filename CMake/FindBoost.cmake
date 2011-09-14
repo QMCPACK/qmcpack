@@ -11,7 +11,7 @@
 IF(Boost_INCLUDE_DIRS)
   FIND_PATH(BOOST_INCLUDE_DIR boost/config.hpp  ${Boost_INCLUDE_DIRS})
 ELSE(Boost_INCLUDE_DIRS)
-  FIND_PATH(Boost_INCLUDE_DIR boost/config.hpp ${CMAKE_FIND_ROOT_PATH} ${QMC_INCLUDE_PATHS})
+  FIND_PATH(Boost_INCLUDE_DIR boost/config.hpp ${BOOST_HOME} ${BOOST_HOME}/include)
 ENDIF(Boost_INCLUDE_DIRS)
 
 SET(Boost_FOUND false)
