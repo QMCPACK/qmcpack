@@ -6,11 +6,12 @@ SET(QMCTOOLS
   GTO2GridBuilder.cpp
 )
 
-SET(CASINO
+SET(MOSRCS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  ../QMCApp/InitMolecularSystem.cpp
+  ../QMCApp/ParticleSetPool.cpp
   RGFBuilderBase.cpp
   GTO2GridBuilder.cpp
-  ../QMCApp/InitMolecularSystem.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
@@ -18,64 +19,31 @@ SET(CASINO
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp
-  convert4qmc.cpp
 )
 
-SET(MSDGen
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
-  RGFBuilderBase.cpp
-  GTO2GridBuilder.cpp
-  ../QMCApp/InitMolecularSystem.cpp
-  QMCGaussianParserBase.cpp
-  GaussianFCHKParser.cpp
-  GamesXmlParser.cpp
-  GamesAsciiParser.cpp
-  CasinoParser.cpp
-  BParser.cpp
-  BMakeFunc.cpp
-  MSDgenerator.cpp
-)
+# create libmocommon 
+ADD_LIBRARY(mocommon ${MOSRCS})
 
-LINK_LIBRARIES(${FORTRAN_LIBS} 
-${LAPACK_LIBRARY} 
-${BLAS_LIBRARY} 
-)
+set(QTOOLS convert4qmc MSDgenerator)
 
-IF(INTEL_MKL)
-  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-ELSE(INTEL_MKL)
-  LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
-ENDIF(INTEL_MKL)
+FOREACH(p ${QTOOLS})
 
-#ADD_EXECUTABLE(gto2grid gto2grid.cpp ${QMCTOOLS})
-#TARGET_LINK_LIBRARIES(gto2grid qmc qmcbase)
-#ADD_EXECUTABLE(gto2slater gto2slater.cpp ${QMCTOOLS})
-#TARGET_LINK_LIBRARIES(gto2slater qmcbase)
-#ADD_EXECUTABLE(boostrandom random.cpp)
-#TARGET_LINK_LIBRARIES(boostrandom qmcbase)
-ADD_EXECUTABLE(convert4qmc ${CASINO})
-TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase qmcutil
-${LAPACK_LIBRARY}
-${BLAS_LIBRARY} ${FORTRAN_LIBS})
+  ADD_EXECUTABLE(${p} ${p}.cpp)
+  TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
 
-ADD_EXECUTABLE(MSDgenerator ${MSDGen}) 
-TARGET_LINK_LIBRARIES(MSDgenerator qmc qmcbase qmcutil
-${LAPACK_LIBRARY}
-${BLAS_LIBRARY} ${FORTRAN_LIBS})
+  FOREACH(l ${QMC_UTIL_LIBS})
+    TARGET_LINK_LIBRARIES(${p} ${l})
+  ENDFOREACH(l ${QMC_UTIL_LIBS})
 
-#ADD_EXECUTABLE(density2D densityplot.cpp)
-#TARGET_LINK_LIBRARIES(density2D qmc qmcbase qmcutil)
-#
-#ADD_EXECUTABLE(gofr gofr.cpp)
-#TARGET_LINK_LIBRARIES(gofr qmc qmcbase qmcutil)
+  TARGET_LINK_LIBRARIES(${p} ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBRARIES})
 
-#ADD_EXECUTABLE(spline spline.cpp)
-#TARGET_LINK_LIBRARIES(spline qmc qmcbase)
-#ADD_EXECUTABLE(spline3d spline3.cpp)
-#TARGET_LINK_LIBRARIES(spline3d qmc qmcbase)
-#ADD_EXECUTABLE(spline3d_io spline3_io.cpp)
-#TARGET_LINK_LIBRARIES(spline3d_io qmc qmcbase)
-#ADD_EXECUTABLE(molinit ../QMCWaveFunctions/OrbitalBuilderBase.cpp Assign.cpp)
-#TARGET_LINK_LIBRARIES(molinit qmc qmcbase)
-#ADD_EXECUTABLE(h5merge HDFWalkerMerger h5merge.cpp)
-#TARGET_LINK_LIBRARIES(h5merge qmc qmcbase qmcutil)
+  if(ENABLE_TAU_PROFILE)
+    TARGET_LINK_LIBRARIES(${p} tau)
+  endif(ENABLE_TAU_PROFILE)
+
+  IF(MPI_LIBRARY)
+    TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
+  ENDIF(MPI_LIBRARY)
+
+ENDFOREACH(p ${QTOOLS})
+

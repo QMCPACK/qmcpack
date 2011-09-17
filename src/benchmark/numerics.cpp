@@ -47,7 +47,7 @@ void compare_blas_1_2(int n, int m, int niters)
   clock.restart();
   for(int i=0; i<niters; ++i)
   {
-    for(int j=0; j<n; ++j) v_out[j] =BLAS::dot(A[j],v.data(),m);
+    for(int j=0; j<n; ++j) v_out[j] =simd::dot(A[j],v.data(),m);
   }
   double dt_blas=clock.elapsed();
 
