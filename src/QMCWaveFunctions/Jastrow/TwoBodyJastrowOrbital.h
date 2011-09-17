@@ -37,16 +37,16 @@ namespace qmcplusplus {
   class TwoBodyJastrowOrbital: public OrbitalBase {
   protected:
 
-    const DistanceTableData* d_table;
-
-    //flag to prevent parallel output
-    bool Write_Chiesa_Correction;
-    //nuber of particles
+    ///nuber of particles
     int N;
-    //N*N
+    ///N*N
     int NN;
-    //number of groups of the target particleset
+    ///number of groups of the target particleset
     int NumGroups;
+    ///task id
+    int TaskID;
+    ///pointer to the distable table
+    const DistanceTableData* d_table;
     RealType DiffVal, DiffValSum;
     ParticleAttrib<RealType> U,d2U,curLap,curVal;
     ParticleAttrib<PosType> dU,curGrad;
@@ -66,8 +66,8 @@ namespace qmcplusplus {
     ///container for the Jastrow functions 
     vector<FT*> F;
 
-    TwoBodyJastrowOrbital(ParticleSet& p, bool is_master) 
-      : Write_Chiesa_Correction(is_master), KEcorr(0.0)
+    TwoBodyJastrowOrbital(ParticleSet& p, int tid)
+      : TaskID(tid), KEcorr(0.0)
       {
         PtclRef = &p;
         d_table=DistanceTable::add(p);
@@ -592,7 +592,7 @@ namespace qmcplusplus {
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
       //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
-      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,false);
+      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,TaskID);
       if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
       map<const FT*,FT*> fcmap;
       for(int ig=0; ig<NumGroups; ++ig)
@@ -628,7 +628,15 @@ namespace qmcplusplus {
       RealType vol = PtclRef->Lattice.Volume;
       RealType aparam = 0.0;
       int nsp = PtclRef->groups();
-      FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
+      //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
+      FILE *fout=0;
+      if(TaskID > -1) //taskid=-1
+      {
+        char fname[16];
+        sprintf(fname,"uk.g%03d.dat",TaskID);
+        fout=fopen(fname,"w");
+      }
+
       for (int iG=0; iG<PtclRef->SK->KLists.ksq.size(); iG++) 
       {
         RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);

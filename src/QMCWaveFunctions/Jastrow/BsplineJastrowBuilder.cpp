@@ -148,7 +148,8 @@ namespace qmcplusplus {
 #endif
       typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
 
-      J2Type *J2 = new J2Type(targetPtcl,targetPsi.is_manager());
+      int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
+      J2Type *J2 = new J2Type(targetPtcl,taskid);
       dJ2Type *dJ2 = new dJ2Type(targetPtcl);
 
       SpeciesSet& species(targetPtcl.getSpeciesSet());

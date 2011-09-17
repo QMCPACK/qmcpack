@@ -134,8 +134,8 @@ namespace qmcplusplus {
       a.read(g,"name");
       int ii=tspecies.addSpecies(aname);
 
-      double q=-1;
-      HDFAttribIO<double> b(q);
+      int q=-1;
+      HDFAttribIO<int> b(q);
       b.read(g,charge_tag.c_str());
       tspecies(icharge,ii)=q;
 

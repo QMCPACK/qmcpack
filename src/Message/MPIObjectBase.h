@@ -49,6 +49,9 @@ namespace APPNAMESPACE
       ///return the rank of the communicator
       inline int rank() const {return myComm->rank();}
 
+      ///return the group id of the communicator
+      inline int getGroupID() const { return myComm->getGroupID();}
+
       ///return myComm
       inline Communicate* getCommunicator() const 
       {
