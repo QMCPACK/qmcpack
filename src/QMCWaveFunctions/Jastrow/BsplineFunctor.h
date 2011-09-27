@@ -43,6 +43,8 @@ namespace qmcplusplus
       std::vector<real_type> Parameters;
       std::vector<std::string> ParameterNames;
       std::string elementType, pairType;
+      std::string fileName;
+
       int ResetCount;
       int ReportLevel;
       bool notOpt;
@@ -76,9 +78,10 @@ namespace qmcplusplus
         return new BsplineFunctor(*this);
       }
 
-      inline void setReportLevel(int i)
+      inline void setReportLevel(int i, const std::string& fname)
       {
         ReportLevel=i;
+        fileName=(ReportLevel)? fname:"0";
       }
 
       void resize(int n)
@@ -472,13 +475,11 @@ namespace qmcplusplus
 
       void print()
       {
-        string fname = (elementType != "") ? elementType : pairType;
-        fname = fname + ".dat";
-        //cerr << "Writing " << fname << " file.\n";
-        FILE *fout = fopen(fname.c_str(), "w");
-        for (double r=0.0; r<cutoff_radius; r+=0.001)
-          fprintf(fout, "%8.3f %16.10f\n", r, evaluate(r));
-        fclose(fout);
+        if(ReportLevel)
+        {
+          ofstream fout(fileName.c_str());
+          this->print(fout);
+        }
       }
 
 
