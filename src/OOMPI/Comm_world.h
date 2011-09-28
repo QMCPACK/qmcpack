@@ -18,6 +18,10 @@
 #ifndef _OOMPI_COMM_WORLD_H_
 #define _OOMPI_COMM_WORLD_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "oompi-config.h"
 #include "Intra_comm.h"
 
