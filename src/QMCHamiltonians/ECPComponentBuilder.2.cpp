@@ -19,7 +19,9 @@
 #include "Utilities/SimpleParser.h"
 //#include "QMCHamiltonians/FSAtomPseudoPot.h"
 //#include "Utilities/IteratorUtility.h"
-
+#ifdef QMC_CUDA
+  #include <cuda_runtime_api.h>
+#endif
 
 namespace qmcplusplus {
   //this is abinit/siesta format
@@ -271,6 +273,16 @@ namespace qmcplusplus {
         const Matrix<RealType>& vnn, 
         RealType rmax, RealType Vprefactor) 
     {
+
+#ifdef QMC_CUDA
+      int device;
+      cudaGetDevice(&device);
+      cudaDeviceProp deviceProp;
+      cudaGetDeviceProperties(&deviceProp, device);
+      const int max_points = deviceProp.maxTexture1D-1;
+#else
+      const int max_points = 100000;
+#endif
       app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
       //this is a new grid
       RealType d=1e-4;
@@ -280,14 +292,17 @@ namespace qmcplusplus {
       int ng;
       if (grid_global->getGridTag() == LINEAR_1DGRID) {
       	ng = (int)std::ceil(rmax/grid_global->Delta) + 1;
-       	app_log() << "  Using global grid with delta = " << grid_global->Delta << endl;
-       	rmax = grid_global->Delta * (ng-1);
-       	agrid->set(0.0,rmax,ng);
-       	// fprintf (stderr, " grid_global delta = %1.10e  agrid delta = %1.12e\n",
-       	// 	 grid_global->Delta, agrid->Delta);
+	if (ng <= max_points) {
+	  app_log() << "  Using global grid with delta = " 
+		    << grid_global->Delta << endl;
+	  rmax = grid_global->Delta * (ng-1);
+	  agrid->set(0.0,rmax,ng);
+	}
+	else
+	  agrid->set(0.0,rmax,max_points);
       }
       else {
-	ng=static_cast<int>(rmax/d)+1;
+	ng = min (max_points, static_cast<int>(rmax/d)+1);
 	agrid->set(0,rmax,ng);
       }
 	
