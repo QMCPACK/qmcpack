@@ -142,9 +142,9 @@ OOMPI_Comm_world::Init(int& argc, char**& argv, bool call_init)
         MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
         MPI_Query_thread(&claimed);
         if (claimed != provided) {
-          fprintf(stderr, "Error in MPI initialization: \n");
-          fprintf(stderr, "  MPI_Query_thread thread level %d \n", claimed);
-          fprintf(stderr, "  MPI_Init_threadthread level %d \n", provided);
+	  std::cerr << "Error in MPI initialization" << std::endl;
+	  std::cerr << "  MPI_Query_thread thread level " << claimed << std::endl;
+	  std::cerr << "  MPI_Init_threadthread level " << provided << std::endl;
         }
 #else
 	MPI_Init(&argc, &argv);
