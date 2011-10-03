@@ -148,11 +148,11 @@ namespace qmcplusplus
     
     /** calculate quasi-particle coordinates only
      */
-    virtual inline void evaluate(const ParticleSet& P, ParticleSet& QP)=0;
+    virtual void evaluate(const ParticleSet& P, ParticleSet& QP)=0;
 
     /** calculate quasi-particle coordinates, Bmat and Amat 
      */
-    virtual inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
+    virtual void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
      /** calculate quasi-particle coordinates after pbyp move  
       */
@@ -193,7 +193,7 @@ namespace qmcplusplus
     /** calculate quasi-particle coordinates, Bmat and Amat 
      *  calculate derivatives wrt to variational parameters
      */
-    virtual inline void evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
+    virtual void evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)=0;
 
   };
 
