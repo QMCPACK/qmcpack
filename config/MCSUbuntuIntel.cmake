@@ -40,7 +40,7 @@ set(HAVE_MKL 1)
 set(HAVE_MKL_VML 1)
 
 include_directories(${MKL_HOME}/include)
-set(LAPACK_LIBRARY -L${MKL_HOME}/lib/intel64 -lmkl_intel_ilp64)
+set(LAPACK_LIBRARY -L${MKL_HOME}/lib/intel64 -lmkl_intel_lp64)
 set(BLAS_LIBRARY -lmkl_sequential -lmkl_core -lpthread)
 # set(LAPACK_LIBRARY /usr/lib/liblapack-3.a)
 # set(BLAS_LIBRARY   /usr/lib/libblas-3.a)
