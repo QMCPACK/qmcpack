@@ -247,6 +247,7 @@ namespace qmcplusplus {
 
   SPOSetBase*
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
+
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     qafm=0;
@@ -307,7 +308,6 @@ namespace qmcplusplus {
     }
     else NewOcc=false;
 
-
     H5OrbSet aset(H5FileName, spinSet, numOrbs);
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
     iter = SPOSetMap.find (aset);
@@ -345,6 +345,8 @@ namespace qmcplusplus {
     else 
       app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
 
+    Timer mytimer;
+    mytimer.restart();
 
     /////////////////////////////////////////////////////////////////
     // Read the basic orbital information, without reading all the //
@@ -355,8 +357,14 @@ namespace qmcplusplus {
 	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
         APP_ABORT("EinsplineSetBuilder::createSPOSet");
       }
-    
+    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo" << mytimer.elapsed() << endl;
+    myComm->barrier();
+
+    mytimer.restart();
     BroadcastOrbitalInfo();
+    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo" << mytimer.elapsed() << endl;
+
+    app_log().flush();
 
     ///////////////////////////////////////////////////////////////////
     // Now, analyze the k-point mesh to figure out the what k-points //
@@ -435,18 +443,25 @@ namespace qmcplusplus {
       NumOrbitalsRead = numOrbs;
     }
     // Otherwise, use EinsplineSetExtended
-    else {
-      if (UseRealOrbitals) { 
+    else 
+    {
+      mytimer.restart();
+      if (UseRealOrbitals) 
+      { 
 	EinsplineSetExtended<double> *restrict orbitalSet =
 	  dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
+
         OccupyBands(spinSet, sortBands);
-#pragma omp critical(read_extended_orbs)
+
 	{ 
 	  if (Format == ESHDF)
 	    ReadBands_ESHDF(spinSet,orbitalSet);
 	  else
 	    ReadBands(spinSet, orbitalSet); 
-#ifdef QMC_CUDA
+
+          app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands" << mytimer.elapsed() << endl;
+
+//#ifdef QMC_CUDA
 //	  if (true || useGPU) {
 // 	    app_log() << "Copying einspline orbitals to GPU.\n";
 // 	    create_multi_UBspline_3d_cuda 
@@ -466,20 +481,20 @@ namespace qmcplusplus {
 // 	    orbitalSet->L_cuda    = L_host;
 // 	    orbitalSet->Linv_cuda = Linv_host;
 //	  }
-#endif
+//#endif
 	}
       }
-      else {
+      else 
+      {
 	EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
 	  dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
 	OccupyBands(spinSet, sortBands);
-#pragma omp critical(read_extended_orbs)
 	{ 
 	  if (Format == ESHDF)
 	    ReadBands_ESHDF(spinSet,orbitalSet);
 	  else
 	    ReadBands(spinSet, orbitalSet); 
-#ifdef QMC_CUDA
+//#ifdef QMC_CUDA
 // 	  if (useGPU) {
 // 	    app_log() << "Copying einspline orbitals to GPU.\n";
 // 	    create_multi_UBspline_3d_cuda (orbitalSet->MultiSpline,
@@ -500,9 +515,10 @@ namespace qmcplusplus {
 // 	    orbitalSet->L_cuda    = L_host;
 // 	    orbitalSet->Linv_cuda = Linv_host;
 // 	  }
-#endif
+//#endif
 	}
       }
+      app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands" << mytimer.elapsed() << endl;
     }
 
 #ifndef QMC_COMPLEX
