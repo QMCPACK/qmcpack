@@ -1,15 +1,14 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 use POSIX qw/floor/;
 use strict;
 use FileHandle;
+use Getopt::Long;
 
-# this is a drop in replacement for PlotDMC.py which can be useful when python
-# libraries are not available on a system.  Simply give the script the name
-# of a .dmc.dat file to analyze and the step at which to start analysis and
-# it will plot the local energy, population and histograms of the same.
-# The location of gnuplot on the next line need to be updated
-
-my $gnuplot = "/usr/bin/gnuplot";
+my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
+my $gnuplot = $config{gnuplot};
+                                                                                
+my $epsfile;                                                                    
+GetOptions('eps=s' => \$epsfile);       
 
 my $file = shift;
 my $start = shift;
@@ -38,14 +37,25 @@ my $popmax;
 ($popmin, $popmax) = getMinMax(\@filedata, 5, $start, $end);
 my $popTicString = getTicString($popmin,$popmax);
 
-my $plotstring = "set title \"$file\"\n set multiplot\n";
-$plotstring .= "set ylabel \"Energy (Hartrees)\"\n ";
+my $plotstring = "set title \"$file\"\n";
+if ($epsfile) {
+    $plotstring .= "set term post color enhanced 20\n set output \"$epsfile\"\n";
+}
+$plotstring .= "set multiplot\n set ylabel \"Energy (Hartrees)\"\n ";
 $plotstring .= "set origin 0,0.5\n set size 0.82,0.5\n";
 $plotstring .= "set format x \"\"\n set ytics $enTicString \n unset y2tics\n set lmargin 12\n";
-$plotstring .= "plot [$start:][$min:$max] \"$file\" u 1:2 w l notitle, \"\" u 1:6 lt 3 notitle w l \n";
+if ($end < 0) {
+  $plotstring .= "plot [$start:][$min:$max] \"$file\" u 1:2 w l notitle, \"\" u 1:5 lt 3 notitle w l \n";
+} else {
+  $plotstring .= "plot [$start:$end][$min:$max] \"$file\" u 1:2 w l notitle, \"\" u 1:5 lt 3 notitle w l \n";
+}
 $plotstring .= "set format x \n unset title\n set xlabel \"DMC step\"\n set ylabel \"Population (Walkers)\"\n";
 $plotstring .= "set xtics\n set ytics $popTicString\n set bmargin 4\n";
-$plotstring .= "set origin 0,0\n plot [$start:][$popmin:$popmax] \"\" u 1:5 w l notitle\n";
+if ($end < 0) {
+  $plotstring .= "set origin 0,0\n plot [$start:][$popmin:$popmax] \"\" u 1:5 w l notitle\n";
+} else {
+  $plotstring .= "set origin 0,0\n plot [$start:$end][$popmin:$popmax] \"\" u 1:5 w l notitle\n";
+}
 $plotstring .= "set format x \"\"\n";
 $plotstring .= "set origin 0.8,0.5\n set size 0.2, 0.5\n set title \"histogram\"\n";
 $plotstring .= "set lmargin 0\n unset xlabel\n unset ylabel \n set bmargin 1\n";
@@ -54,13 +64,17 @@ $plotstring .= getGPLHistString(\@filedata, 2, $start, $end);
 $plotstring .= "set origin 0.8,0.0\n set size 0.2, 0.5\n unset title \n set y2tics $popTicString \n";
 $plotstring .= "set format y2 \"\"\n set xlabel \"counts\"\n set bmargin 4\n";
 $plotstring .= getGPLHistString(\@filedata, 5, $start, $end);
-$plotstring .= "unset multiplot\n pause -1\n";
-
+$plotstring .= "unset multiplot\n";
+unless($epsfile) {
+    $plotstring .= "pause -1\n";
+}
 
 open(GPL, "|$gnuplot");
 GPL->autoflush(1);
 print GPL $plotstring;
-my $blah = <>; # Hack to leave graph up until user hits a key
+unless($epsfile) {
+    my $blah = <>; # Hack to leave graph up until user hits a key
+}
 close(GPL);
 
 
@@ -188,7 +202,8 @@ sub getColumn {
     return @outmat;
 }
 
- #**************************************************************************
+
+ #***************************************************************************
  # $RCSfile$   $Author: lshulenburger $
  # $Revision: 5115 $   $Date: 2011-2-7 8:15:23 -0700 (Mon, 7 Feb 2011) $
  # $Id: PlotDMC.pl 5115 2011-2-7 8:15:23 lshulenburger $

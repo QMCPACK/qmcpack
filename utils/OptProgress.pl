@@ -1,15 +1,16 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl 
 use POSIX qw/floor/;
 use strict;
 use FileHandle;
+use Getopt::Long;
 
-# This tool uses energy.pl to plot the energy of a series of VMC optimizations.
-# Simply give it the filename of one of the .scalar.dat files and it will plot
-# the energy as a function of sequence.  The locations of gnuplot and energy.pl
-# may need to be configured on the next lines
+my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
 
-my $gnuplot = "/usr/bin/gnuplot";
-my $energytool = "/bin/energy.pl";
+my $gnuplot = $config{gnuplot};
+my $energytool = $config{energytool};
+
+my $epsfile;
+GetOptions('eps=s' => \$epsfile);
 
 my $template = shift || die "Must give a template file name as the first argument here\n";
 my $start = shift;
@@ -18,6 +19,7 @@ my $plotstart = shift @ARGV;
 if (!(defined $plotstart)) {
     $plotstart = 1;
 }
+
 
 
 $template =~ /(.*\.s)(\d\d\d)(\.scalar\.dat)/;
@@ -49,22 +51,28 @@ foreach my $file (sort bySequence @rawfiles) {
     my $str = `$energytool $file $start | head -1`;
     my @data = split(/\s+/,$str);
     my $energy = "$data[2]  $data[4]";   
+    print "$sequence  $energy\n";
     push @energies, $energy;
-    $str = `$energytool $file $start | tail -1`;
-    @data = split(/\s+/,$str);
-    my $correnergy = "$data[3]  $data[5]";   
-    push @correnergies, $correnergy;
+#    $str = `$energytool $file $start | tail -1`;
+#    @data = split(/\s+/,$str);
+#    my $correnergy = "$data[3]  $data[5]";   
+#    push @correnergies, $correnergy;
 }
 
 my $plotstring = "set title \"Sequence vs Energy for VMC optimization\" \n";
+
+if ($epsfile) {
+   $plotstring .= "set term post color enhanced 20\n set output \"$epsfile\"\n";
+}
 $plotstring .= "set xlabel \"sequence\"; set ylabel \"energy (Ha)\"\n";
 my $st = $plotstart-1.2;
 my $ed = $#sequences+0.2;
 my $xtics = "set xtics (";
 $plotstring .= "plot [$st:$ed] \"-\" u 1:2:3 notitle w e \n";
 for (my $i = 0; $i <= $#sequences; $i++) {
-    $plotstring .= "$i  $correnergies[$i]\n";
-    
+#    $plotstring .= "$i  $correnergies[$i]\n";
+    $plotstring .= "$i  $energies[$i]\n"; 
+   
     $xtics .= "\"$sequences[$i]\" $i";
     if ($i < $#sequences) {
 	$xtics .= ", " ;
@@ -72,13 +80,17 @@ for (my $i = 0; $i <= $#sequences; $i++) {
 }
 $xtics .= ")\n";
 $plotstring .= "end \n";
-$plotstring .= "pause -1\n";
+unless ($epsfile) {
+  $plotstring .= "pause -1\n";
+}
 $plotstring = "$xtics $plotstring";
 
 open(GPL, "|$gnuplot");
 GPL->autoflush(1);
 print GPL $plotstring;
-my $redundantString = <>; # Hack to leave graph up until user hits a key
+unless($epsfile) {
+  my $redundantString = <>; # Hack to leave graph up until user hits a key
+}
 close(GPL);
 
 
@@ -113,9 +125,8 @@ sub getColumn {
 }
 
 
- #***************************************************************************
+ #**************************************************************************
  # $RCSfile$   $Author: lshulenburger $
- # $Revision: 5115 $   $Date: 2011-2-7 8:15:23 -0700 (Mon, 7 Feb 2011) $
- # $Id: OptProgress.pl 5115 2011-2-7 8:15:23 lshulenburger $
+ # $Revision: 5115 $   $Date: 2011-9-15 10:19:08 -0700 (Thu, 15 Sep 2011) $
+ # $Id: OptProgress.pl 5115 2011-9-15 10:19:08 lshulenburger $
  #*************************************************************************/
-

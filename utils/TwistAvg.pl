@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 use POSIX qw/floor/;
 use strict;
 
@@ -25,10 +25,10 @@ if (!(defined $end)) {
 #print "template = $template\n";
 #print "numfiles = $numfiles\n";
 
-$template =~ /(.*-tw)(\d+)\..*(\.s...\.scalar\.dat)/;
+$template =~ /(.*-tw)(\d+)(\..*)?(\.s...\.scalar\.dat)/;
 my $prefix = $1;
 my $tnum = $2;
-my $suffix = $3;
+my $suffix = $4;
 
 #print "prefix = $prefix,  tnum = $tnum,  suffix = $suffix\n";
 
@@ -40,19 +40,27 @@ closedir DIR;
 my @twistens;
 my @twisterrs;
 my @rawfiles;
-for (my $i = $tnum; $i < $tnum+$numfiles; $i++) {
-    my @match = grep /$prefix$i\..+$suffix/, @files;
+if ($numfiles > 1) {
 
-    my $curfile;
-    if ($match[0]) {
-	$curfile = shift @match;
-	push @rawfiles, $curfile;
-	push @twistens, 0.0;
-        push @twisterrs, 0.0;
-    } else {
-	die "Cannot find enough raw data files to satsify this request\n";
-    }
+    for (my $i = $tnum; $i < $tnum+$numfiles; $i++) {
+	my @match = grep /$prefix$i(\..*)?$suffix/, @files;
+	
+	my $curfile;
+	if ($match[0]) {
+	    $curfile = shift @match;
+	    push @rawfiles, $curfile;
+	    push @twistens, 0.0;
+	    push @twisterrs, 0.0;
+	} else {
+	    die "Cannot find enough raw data files to satsify this request\n";
+	}
 #    print "Looking for a file like $prefix" . $i . ".????$suffix:   found $curfile\n";
+    }
+} else {
+    $tnum = 0;
+    push @rawfiles, $template;
+    push @twistens, 0.0;
+    push @twisterrs, 0.0;
 }
 
 open (FILE, "$template") || die "Cannot open file $template\n";
@@ -292,7 +300,7 @@ sub formatString {
 
  #**************************************************************************
  # $RCSfile$   $Author: lshulenburger $
- # $Revision: 5115 $   $Date: 2011-2-7 8:15:23 -0700 (Mon, 7 Feb 2011) $
- # $Id: TwistAvg.pl 5115 2011-2-7 8:15:23 lshulenburger $
+ # $Revision: 5115 $   $Date: 2011-9-15 10:19:08 -0700 (Thu, 15 Sep 2011) $
+ # $Id: TwistAvg.pl 5115 2011-9-15 10:19:08 lshulenburger $
  #*************************************************************************/
 

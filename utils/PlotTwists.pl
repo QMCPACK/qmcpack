@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 use POSIX qw/floor/;
 use strict;
 use FileHandle;
@@ -8,7 +8,8 @@ use FileHandle;
 # to the script and it will plot all matching files it can find.  Before using the
 # script, the location of gnuplot may need to be set on the previous line
 
-my $gnuplot = "/usr/bin/gnuplot";
+my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
+my $gnuplot = $config{gnuplot};
 
 my $template = shift || die "Must give a template file name as the first argument here\n";
 my $start = shift;
@@ -96,7 +97,8 @@ sub getColumn {
 
  #**************************************************************************
  # $RCSfile$   $Author: lshulenburger $
- # $Revision: 5115 $   $Date: 2011-2-7 8:15:23 -0700 (Mon, 7 Feb 2011) $
- # $Id: PlotTwists.pl 5115 2011-2-7 8:15:23 lshulenburger $
+ # $Revision: 5115 $   $Date: 2011-9-15 10:19:08 -0700 (Thu, 15 Sep 2011) $
+ # $Id: PlotTwists.pl 5115 2011-9-15 10:19:08 lshulenburger $
  #*************************************************************************/
+
 
