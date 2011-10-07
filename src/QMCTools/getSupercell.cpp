@@ -68,9 +68,13 @@ double getScore(double *mat) {
     score += 50000;
   }
 
-  // Now prefer positive elements
+  // Now prefer positive elements that come as early as possible
   for (int i = 0; i < 9; i++) {
-    if (mat[i] > 0.0) score += 1;
+    if (mat[i] > 0.0) {
+      score += 10;
+      double v = (9.0-static_cast<double>(i))*0.1;
+      score += v*v;
+    }
   }
 
   return score;
@@ -100,6 +104,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 
   double largest = 0.0;
   double bestScore = 0.0;
+  static const double tol = 0.0000001;
 
   double detPrim = getDet(primcell);
   //  cout << "detPrim = " << detPrim << endl;
@@ -113,6 +118,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
     double my_largest = 0.0;
     int my_besttile[9];
     double localBestScore = 0.0;
+    int flag = 0;
 #pragma omp for
 
     
@@ -145,11 +151,12 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 		      		      
 		      if (rem == 0) {
 			d[8] = (numpart - target) / denominator;
+
 			getSupercell(primcell, d, super);
 			double score = getScore(super);
 			double rad = SimCellRad(super);			
 			//double rad = WigSeitzRad(super);
-			if (rad > my_largest || (rad > my_largest-0.00001 && score > localBestScore)) {
+			if (rad > my_largest+tol || (rad > my_largest-tol && score > localBestScore)) {
 			  my_largest = rad;
 			  localBestScore = score;
 			  memcpy(my_besttile, d, 9*sizeof(int));
@@ -165,7 +172,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 			  double score = getScore(super);
 			  double rad = SimCellRad(super);			
 			  //double rad = WigSeitzRad(super);
-			  if (rad > my_largest || (rad > my_largest-0.00001 && score > localBestScore)) {
+			  if (rad > my_largest+tol || (rad > my_largest-tol && score > localBestScore)) {
 			    my_largest = rad;
 			    localBestScore = score;
 			    memcpy(my_besttile, d, 9*sizeof(int));
@@ -187,10 +194,10 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 
 
 
-    if (my_largest > largest || (my_largest > largest-0.00001 && localBestScore > bestScore)) {
+    if (my_largest > largest+tol || (my_largest > largest-tol && localBestScore > bestScore)) {
 #pragma omp critical
       {
-	if (my_largest > largest || (my_largest > largest-0.00001 && localBestScore > bestScore) ) {
+	if (my_largest > largest+tol || (my_largest > largest-tol && localBestScore > bestScore) ) {
 	  largest = my_largest;
 	  bestScore = localBestScore;
 	  memcpy(tilemat, my_besttile, 9*sizeof(int));
@@ -209,10 +216,10 @@ int main(int argc, char* argv[]) {
   int target;
   char* pend;
   int verbose = 0;
-  int maxentry = 7;
+  int maxentry = 4;
 
   for (int i =1; i < argc; i++) {
-    if (i+1 != argc) {
+    if (i <= argc) {
       if (!strcmp(argv[i],"--ptvs")) {
 	for (int j = 0; j < 9; j++) {
 	  prim[j] = strtod(argv[i+j+1], &pend);
@@ -228,6 +235,7 @@ int main(int argc, char* argv[]) {
       }
       if (!strcmp(argv[i],"--maxentry")) {
 	maxentry = strtol(argv[i+1], &pend, 10);
+	i++;
       }
     }
   }
@@ -264,7 +272,36 @@ int main(int argc, char* argv[]) {
       cout << endl;
     }
     cout << "radius = " << radius << endl;
-  } else {
+    double score = getScore(super);
+    cout << "score = " << score << endl;
+
+    int trialtile[9];
+    trialtile[0] = -1;
+    trialtile[1] =  3;   
+    trialtile[2] = -1;   
+    trialtile[3] = -3;
+    trialtile[4] =  1;
+    trialtile[5] =  1;
+    trialtile[6] =  1;
+    trialtile[7] =  1;
+    trialtile[8] =  1;
+    double ts[9];
+    getSupercell(prim, trialtile, ts);
+    cout << "Trial Supercell = " << endl;
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+	cout << ts[i*3+j] << "   ";
+      }
+      cout << endl;
+    }
+    cout << "radius = " << SimCellRad(ts) << endl;
+    score = getScore(ts);
+    cout << "score = " << score << endl;
+
+
+
+
+} else {
 
     cout << radius << "   ";
     for (int i = 0; i < 9; i++) {
@@ -276,7 +313,8 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   }
-
+  
+  
 }
 
 
