@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -20,12 +19,12 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#if defined(ENABLE_OPENMP)
+//#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
-#endif
-#include "QMCDrivers/VMC/VMCSingle.h"
-#include "QMCDrivers/QMCCostFunctionSingle.h"
+//#endif
+//#include "QMCDrivers/VMC/VMCSingle.h"
+//#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -758,14 +757,15 @@ QMCLinearOptimize::put(xmlNodePtr q)
             optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
         else
 #endif
-#if defined(ENABLE_OPENMP)
-            if (omp_get_max_threads()>1)
-            {
-                optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-            }
-            else
-#endif
-        optTarget = new QMCCostFunctionSingle(W,Psi,H);
+        optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+//#if defined(ENABLE_OPENMP)
+//            if (omp_get_max_threads()>1)
+//            {
+//                optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+//            }
+//            else
+//#endif
+//        optTarget = new QMCCostFunctionSingle(W,Psi,H);
         optTarget->setStream(&app_log());
         success=optTarget->put(q);
     }

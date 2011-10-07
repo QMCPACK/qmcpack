@@ -149,11 +149,8 @@ namespace qmcplusplus {
 //       //load walkers
       
       Eindx = W.addPropertyHistory(wlen);
-      W.loadEnsemble();
-      for(int ip=1;ip<NumThreads;++ip) {
-        wClones[ip]->loadEnsemble(W);
-        wClones[ip]->addPropertyHistory(wlen);
-      }
+      W.loadEnsemble(wClones);
+      for(int ip=1;ip<NumThreads;++ip) wClones[ip]->addPropertyHistory(wlen);
 
 //       m_param.put(qmcNode);
 //       put(qmcNode);

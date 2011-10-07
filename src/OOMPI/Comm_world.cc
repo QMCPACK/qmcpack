@@ -14,7 +14,7 @@
 // MPI_COMM_WORLD class
 //
 
-#include <iostream>
+#include <Configuration.h>
 #include "oompi-config.h"
 
 #include "Comm_world.h"
@@ -23,7 +23,7 @@
 #include "Error_table.h"
 #include "Message.h"
 #include "Datatype.h"
-
+#include <Message/OpenMP.h>
 
 //
 // Instantiate OOMPI_COMM_WORLD
@@ -136,15 +136,19 @@ OOMPI_Comm_world::Init(int& argc, char**& argv, bool call_init)
 
     if (call_init) {
       MPI_Initialized(&flag);
-      if (!flag) {
+      if (!flag) 
+      {
 #if defined(ENABLE_OPENMP)
         int provided, claimed;
         MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
         MPI_Query_thread(&claimed);
-        if (claimed != provided) {
-	  std::cerr << "Error in MPI initialization" << std::endl;
-	  std::cerr << "  MPI_Query_thread thread level " << claimed << std::endl;
-	  std::cerr << "  MPI_Init_threadthread level " << provided << std::endl;
+        if (claimed != provided) 
+        {
+          std::ostringstream o;
+	  o << "OOMPI_Comm_world::init"
+           << "\n  MPI_Query_thread thread level " << claimed
+	   << "\n  MPI_Init_threadthread level " << provided;
+          APP_ABORT(o.str());
         }
 #else
 	MPI_Init(&argc, &argv);

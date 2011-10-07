@@ -42,11 +42,6 @@ struct PooledData {
   //default constructor
   inline PooledData() { Anchor=myData.begin();}
 
-  ////copy constructor
-  //inline PooledData(const PooledData& a): myData(a.myData) { 
-  //  Anchor=myData.begin();
-  //}
-
   //constructor with a size
   explicit inline PooledData(int n): myData(n)
   {
@@ -79,7 +74,7 @@ struct PooledData {
   inline const_iterator end() const { return myData.end();}
 
   inline void reserve(size_type n) { myData.reserve(n);}
-  inline void clear() { myData.clear();Anchor=myData.begin();}
+  inline void clear() { myData.clear();Anchor=myData.begin(); Current=0;}
 
   ///@{Add data to the pool
   template<class T1>

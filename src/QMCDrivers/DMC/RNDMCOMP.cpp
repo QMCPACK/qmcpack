@@ -83,9 +83,7 @@ namespace qmcplusplus {
 
     if(Movers.empty()) 
     {
-      //load walkers
-      W.loadEnsemble();
-      for(int ip=1;ip<NumThreads;++ip) wClones[ip]->loadEnsemble(W);
+      W.loadEnsemble(wClones);
       branchEngine->initWalkerController(W,false,true);
       branchEngine->setRN(true);
 

@@ -67,7 +67,8 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 }
 
 ///default destructor
-MCWalkerConfiguration::~MCWalkerConfiguration(){
+MCWalkerConfiguration::~MCWalkerConfiguration()
+{
   if(OwnWalkers) destroyWalkers(WalkerList.begin(), WalkerList.end());
 }
 
@@ -273,112 +274,126 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   resizeWalkerHistories();
 }
 
+/** allocate the SampleStack 
+ * @param n number of samples per thread
+ */
 void MCWalkerConfiguration::setNumSamples(int n)
 {
+
+  clearEnsemble();
+
   MaxSamples=n;
-  CurSampleCount=0;
   //do not add anything
   if(n==0) return;
+
+  SampleStack.reserve(n);
+
   int nadd=n-SampleStack.size();
   while(nadd>0)
   {
-    RealType *prop  = getPropertyBase(0);
-    RealType logpsi = 0.0;//prop[LOGPSI];
-    RealType PE     = 0.0;//prop[LOCALPOTENTIAL];
-    RealType KE     = 0.0;//prop[LOCALENERGY] - PE;
-
-    SampleStack.push_back(MCSample(R, G, L, logpsi, KE, PE));
+    SampleStack.push_back(new MCSample(GlobalNum));
     --nadd;
   }
 }
 
+/** save the current walkers to SampleStack 
+ */
 void MCWalkerConfiguration::saveEnsemble()
 {
   saveEnsemble(WalkerList.begin(),WalkerList.end());
 }
 
+/** save the [first,last) walkers to SampleStack
+ */
 void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 {
   //safety check
   if(MaxSamples==0) return;
   while((first != last) && (CurSampleCount<MaxSamples))
   {
-    //SampleStack.push_back(new ParticlePos_t((*first)->R));
-    RealType *prop = (*first)->getPropertyBase();
-    RealType logpsi = prop[LOGPSI];
-    RealType PE     = prop[LOCALPOTENTIAL];
-    RealType KE     = prop[LOCALENERGY] - PE;
-    // SampleStack.push_back(MCSample((*first)->R, (*first)->G, (*first)->L,
-    // 				   logpsi, KE, PE));
-    // CurSampleCount++;
-    SampleStack[CurSampleCount++] = 
-      MCSample((*first)->R, (*first)->G, (*first)->L, logpsi, KE, PE);
+    SampleStack[CurSampleCount]->put(**first);
     ++first;
+    ++CurSampleCount;
   }
 }
+
+/** load SampleStack to WalkerList
+ */
 void MCWalkerConfiguration::loadEnsemble()
 {
   if(SampleStack.empty()) return;
 
-  Walker_t::PropertyContainer_t prop(1,PropertyList.size());
   int nsamples=MaxSamples;
-  //  delete_iter(WalkerList.begin(),WalkerList.end());
-  // Do in reverse order -- maybe will help with memory fragmentation?
-  while (WalkerList.size()) pop_back();
-  WalkerList.resize(nsamples);
-  for(int i=0; i<nsamples; ++i)
-  {
-    Walker_t* awalker=new Walker_t(GlobalNum);
-    // awalker->R = *(SampleStack[i]);
-    // awalker->Drift = 0.0;
-    awalker->R = SampleStack[i].R;
-    awalker->G = SampleStack[i].G;
-    awalker->L = SampleStack[i].L;
-    // Make sure properties is resized properly first
-    awalker->Properties.copy(prop);
-    RealType *myprop = awalker->getPropertyBase();
-    myprop[LOGPSI]         = SampleStack[i].LogPsi;
-    myprop[LOCALENERGY]    = SampleStack[i].KE + SampleStack[i].PE;
-    myprop[LOCALPOTENTIAL] = SampleStack[i].PE;
-    WalkerList[i]=awalker;
-  }
-  resizeWalkerHistories();
-  SampleStack.clear();
 
-  MaxSamples=0;
-  CurSampleCount=0;
+  Walker_t wcopy(*WalkerList[0]);
+  wcopy.DataSet.clear(); 
+
+  //remove all
+  delete_iter(WalkerList.begin(),WalkerList.end());
+  WalkerList.clear();
+  WalkerList.reserve(nsamples);
+
+  int iw=WalkerList.size();
+  for(int i=0; i<nsamples; ++i, ++iw)
+  {
+    Walker_t* awalker=new Walker_t(wcopy);
+    SampleStack[i]->get(*awalker);
+    WalkerList.push_back(awalker);
+  }
+
+  clearEnsemble();
 }
+//
+//void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
+//{
+//  if(SampleStack.empty()) return;
+//
+//  Walker_t twalker(*WalkerList[0]);
+//  for(int i=0; i<MaxSamples; ++i)
+//  {
+//    Walker_t* awalker=new Walker_t(twalker);
+//    SampleStack[i]->get(*awalker);
+//    other.WalkerList.push_back(awalker);
+//  }
+//
+//  clearEnsemble();
+//}
 
-void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
+void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others)
 {
-  if(SampleStack.empty()) return;
-  //if(!MaxSamples) return;
-  Walker_t::PropertyContainer_t prop(1,PropertyList.size());
-  //int nsamples=SampleStack.size();
-  //for(int i=0; i<nsamples; ++i)
-  for(int i=0; i<MaxSamples; ++i)
+
+  vector<int> off(others.size()+1,0);
+  for(int i=0; i<others.size(); ++i) off[i+1]=off[i]+others[i]->MaxSamples;
+
+  //use what you have
+  if(off.back() == 0) return;
+
+  Walker_t wcopy(*WalkerList[0]);
+  wcopy.DataSet.clear(); 
+
+  delete_iter(WalkerList.begin(),WalkerList.end());
+  WalkerList.clear();
+  WalkerList.resize(off.back(),0);
+
+  for(int i=0; i<others.size(); ++i)
   {
-    Walker_t* awalker=new Walker_t(GlobalNum);
-    awalker->R = SampleStack[i].R;
-    awalker->G = SampleStack[i].G;
-    awalker->L = SampleStack[i].L;
-    //awalker->Drift = 0.0;
-    awalker->Properties.copy(prop);
-    RealType *myprop = awalker->getPropertyBase();
-    myprop[LOGPSI]         = SampleStack[i].LogPsi;
-    myprop[LOCALENERGY]    = SampleStack[i].KE + SampleStack[i].PE;
-    myprop[LOCALPOTENTIAL] = SampleStack[i].PE;
-    other.WalkerList.push_back(awalker);
-    //delete SampleStack[i];
+    const vector<MCSample*>& astack(others[i]->SampleStack);
+    int iw=off[i];
+    for(int j=0; j<others[i]->MaxSamples; ++j, ++iw)
+    {
+      WalkerList[iw]=new Walker_t(wcopy);
+      astack[j]->get(*WalkerList[iw]);
+    }
+    others[i]->clearEnsemble();
   }
-  other.resizeWalkerHistories();
-  //SampleStack.clear();
-  MaxSamples=0;
-  CurSampleCount=0;
+
+  //TO JEREMY: What about this????
+  //resizeWalkerHistories();
 }
 
 void MCWalkerConfiguration::clearEnsemble()
 {
+  delete_iter(SampleStack.begin(),SampleStack.end());
   SampleStack.clear();
   MaxSamples=0;
   CurSampleCount=0;

@@ -73,6 +73,12 @@ public:
   //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& comm, int nparts);
 
+  /** constructor
+   * @param comm a communicator which will be split into groups
+   * @param jobs number of tasks per group
+   */
+  Communicate(const Communicate& comm, const std::vector<int>& jobs);
+
   /**destructor
    * Call proper finalization of Communication library
    */
@@ -95,24 +101,21 @@ public:
   inline intra_comm_type& getComm() { return myComm;}
   inline const intra_comm_type& getComm() const { return myComm;}
 
+  ///return the rank 
   inline int rank() const {return d_mycontext;}
+  ///return the number of tasks
   inline int size() const {return d_ncontexts;}
-  ///return the rank of this node
-  //inline int getNodeID() const { return d_mycontext;}
-  //inline int mycontext() const { return d_mycontext;}
 
-  ///return the number of nodes
-  //inline int getNumNodes() const { return d_ncontexts;}
-  //inline int ncontexts() const { return d_ncontexts;}
   ///return the group id
   inline int getGroupID() const {return d_groupid;}
-
+  ///return the number of intra_comms which belong to the same group
+  inline int getGroupSize() const { return d_ngroups;}
   //inline bool master() const { return (d_mycontext == 0);}
-
   //intra_comm_type split(int n);
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
   inline void setNumNodes(int n) { d_ncontexts = n;}
+
   void barrier();
 
   inline void setName(const std::string& aname) { myName=aname;}
@@ -143,6 +146,7 @@ protected:
   int d_mycontext; 
   int d_ncontexts;
   int d_groupid;
+  int d_ngroups;
 };
 
 

@@ -26,35 +26,43 @@ namespace qmcplusplus
 
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
-      : W(w),Psi(psi),Guide(guide),H(h)
-      , UpdatePbyP(true), UseTMove(false)
-      , NumPtcl(0), nSubSteps(1)
-      , RandomGen(rg), MaxAge(0),  m_r2max(-1)
-      , branchEngine(0), Estimators(0)
+      : W(w),Psi(psi),Guide(guide),H(h), RandomGen(rg), branchEngine(0), Estimators(0)
   {
-    myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
-    myParams.add(nSubSteps,"subSteps","int");
-    myParams.add(nSubSteps,"substeps","int");
-    myParams.add(nSubSteps,"sub_steps","int");
+    setDefaults();
   }
 
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-      : W(w),Psi(psi),H(h),Guide(psi)
-      , UpdatePbyP(true), UseTMove(false)
-      , NumPtcl(0), nSubSteps(1)
-      , RandomGen(rg), MaxAge(0),  m_r2max(-1)
-      , branchEngine(0), Estimators(0)
+      : W(w),Psi(psi),H(h),Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0)
   {
+    setDefaults();
+  }
+  
+  ///copy constructor
+  QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
+    : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), RandomGen(a.RandomGen)
+      , branchEngine(0), Estimators(0) 
+    {
+      APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
+    }
+
+  /// destructor
+  QMCUpdateBase::~QMCUpdateBase()
+  {
+  }
+
+  void QMCUpdateBase::setDefaults()
+  {
+    UpdatePbyP=true; 
+    UseTMove=false;
+    NumPtcl=0;
+    nSubSteps=1;
+    MaxAge=0;
+    m_r2max=-1;
     myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
     myParams.add(nSubSteps,"subSteps","int");
     myParams.add(nSubSteps,"substeps","int");
     myParams.add(nSubSteps,"sub_steps","int");
-  }
-  
-  /// destructor
-  QMCUpdateBase::~QMCUpdateBase()
-  {
   }
 
   bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -159,31 +167,92 @@ namespace qmcplusplus
       }
   }
 
+
   void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   {
     UpdatePbyP=true;
 
     for (;it != it_end; ++it)
+    {
+      Walker_t& awalker(**it);
+      W.loadWalker(awalker,UpdatePbyP);
+      if (awalker.DataSet.size()) awalker.DataSet.clear();
+
+      awalker.DataSet.rewind();
+      RealType logpsi=Psi.registerData(W,awalker.DataSet);
+
+      //a vmc step to randomize the samples
+      randomize(awalker);
+    }
+  }
+
+  void QMCUpdateBase::randomize(Walker_t& awalker)
+  {
+    Walker_t::Buffer_t& w_buffer(awalker.DataSet);
+    W.loadWalker(awalker,true);
+    Psi.copyFromBuffer(W,w_buffer);
+
+    //create a 3N-Dimensional Gaussian with variance=1
+    makeGaussRandomWithEngine(deltaR,RandomGen);
+    for (int iat=0; iat<W.getTotalNum(); ++iat)
+    {
+
+      GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+      PosType dr;
+      getScaledDrift(m_tauovermass,grad_now,dr);
+      dr += m_sqrttau*deltaR[iat];
+      if (!W.makeMoveAndCheck(iat,dr))
       {
-        Walker_t& thisWalker(**it);
-        W.loadWalker(thisWalker,UpdatePbyP);
-        if (thisWalker.DataSet.size())
-          thisWalker.DataSet.clear();
-        
-        Walker_t::Buffer_t tbuffer;
-        RealType logpsi=Psi.registerData(W,tbuffer);
-        thisWalker.DataSet=tbuffer;
-
-        //setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
-        RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-        RealType ene = H.evaluate(W);
-
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
-        H.saveProperty(thisWalker.getPropertyBase());
-        thisWalker.ReleasedNodeAge=0;
-        thisWalker.ReleasedNodeWeight=0;
-        thisWalker.Weight=1;
+        ++nReject;
+        continue;
       }
+
+      //PosType newpos = W.makeMove(iat,dr);
+      RealType ratio = Psi.ratioGrad(W,iat,grad_new);
+      RealType prob = ratio*ratio;
+
+      //zero is always rejected
+      if (prob<numeric_limits<RealType>::epsilon())
+      {
+        ++nReject;
+        W.rejectMove(iat);
+        Psi.rejectMove(iat);
+        continue;
+      }
+      RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+
+      getScaledDrift(m_tauovermass,grad_new,dr);
+      dr = awalker.R[iat]-W.R[iat]-dr;
+      RealType logGb = -m_oneover2tau*dot(dr,dr);
+
+      if (RandomGen() < prob*std::exp(logGb-logGf))
+      {
+        W.acceptMove(iat);
+        Psi.acceptMove(W,iat);
+      }
+      else
+      {
+        W.rejectMove(iat);
+        Psi.rejectMove(iat);
+      }
+    }
+    //for subSteps must update thiswalker
+    awalker.R=W.R;
+    awalker.G=W.G;
+    awalker.L=W.L;
+
+    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+    W.saveWalker(awalker);
+    RealType eloc=H.evaluate(W);
+
+    //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+    awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+    H.auxHevaluate(W,awalker);
+    H.saveProperty(awalker.getPropertyBase());
+
+    awalker.ReleasedNodeAge=0;
+    awalker.ReleasedNodeWeight=0;
+    awalker.Weight=1;
   }
 
   QMCUpdateBase::RealType

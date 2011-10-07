@@ -12,7 +12,6 @@ SET(QMCDRIVERS
   QMCFixedSampleLinearOptimize.cpp
   QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
-  QMCCostFunctionSingle.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
@@ -43,6 +42,7 @@ SET(QMCDRIVERS
   ../Estimators/CollectablesEstimator.cpp
 )
 
+#  QMCCostFunctionSingle.cpp
 IF(NOT QMC_COMPLEX)
   SET(QMCDRIVERS  ${QMCDRIVERS}
     DMC/RNDMCOMP.cpp

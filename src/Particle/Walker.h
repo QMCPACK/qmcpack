@@ -149,34 +149,21 @@ namespace qmcplusplus
 	
 #endif
 
-
-      ///default constructor
-      inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
-          Weight(1.0e0),Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
-#ifdef QMC_CUDA
-	  , cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
-	  Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
-	  Rhok_GPU("Walker::Rhok_GPU")
-#endif
-      {
-        Properties.resize(1,NUMPROPERTIES);
-        reset();
-      }
-
       ///create a walker for n-particles 
-      inline explicit Walker(int nptcl) : 
-	ID(0), ParentID(0), Generation(0), Age(0), Weight(1.0e0),
-	Multiplicity(1.0e0), ReleasedNodeWeight(1.0), ReleasedNodeAge(0)
+      inline explicit Walker(int nptcl=0) 
 #ifdef QMC_CUDA
-	, cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
+        :cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"), 
         Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
         Rhok_GPU("Walker::Rhok_GPU")
 #endif 
-      {
-        Properties.resize(1,NUMPROPERTIES);
-        resize(nptcl);
-        reset();
-      }
+        {
+          ID=0; ParentID=0; Generation=0; 
+          Age=0; Weight=1.0; Multiplicity=1.0;
+          ReleasedNodeWeight=1.0; ReleasedNodeAge=0;
+          Properties.resize(1,NUMPROPERTIES);
+          if(nptcl>0) resize(nptcl);
+          Properties=0.0;
+        }
 
       inline int addPropertyHistory(int leng)
       {

@@ -753,7 +753,7 @@ namespace qmcplusplus {
       // First make sure we have enough points
       if (superSets[si].size() != numTwistsNeeded) {
 	fprintf (stderr, "Super twist %d should own %d k-points, but owns %d.\n",
-		 si, numTwistsNeeded, superSets[si].size());
+		 si, numTwistsNeeded, static_cast<int>(superSets[si].size()));
 	abort();
       }
       // Now, make sure they are all distinct

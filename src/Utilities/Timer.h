@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -21,52 +20,17 @@
 #ifndef QMCPLUSPLUS_TIMER_H
 #define QMCPLUSPLUS_TIMER_H
 
-#include "Message/OpenMP.h"
+#include <Utilities/Clock.h>
 
-#if defined(ENABLE_OPENMP)
 namespace qmcplusplus  {
-  /** Timer using omp_get_wtime 
-   */
-#if defined(BGP_BUG)
   struct Timer
   {
     double start_time;
-    inline Timer():start_time(0){}
-    inline void restart() {}
-    inline double elapsed() const { return 1e-16; }
-  };
-#else
-  struct Timer
-  {
-    double start_time;
-    inline Timer() { start_time=omp_get_wtime();}
-    inline void restart() {start_time=omp_get_wtime();}
+    inline Timer() { start_time=cpu_clock();}
+    inline void restart() {start_time=cpu_clock();}
     inline double elapsed() const {
-      return omp_get_wtime()-start_time;
-    }
-  };
-#endif
-}
-#else /* use boost or pooma */
-#if defined(HAVE_LIBBOOST)
-#include <boost/timer.hpp>
-namespace qmcplusplus {
-  typedef boost::timer Timer;
-}
-#else
-#include "Utilities/Clock.h"
-namespace qmcplusplus {
-
-  struct Timer: private Pooma::Clock {
-
-    Timer() { }
-    inline void restart() { start();}
-    inline double elapsed() { 
-      stop();
-      return cpu_time();
+      return cpu_clock()-start_time;
     }
   };
 }
-#endif
-#endif
 #endif

@@ -27,19 +27,44 @@ namespace qmcplusplus {
   //Forward declaration
   struct MultiChain;
 
-  struct MCSample {
+  struct MCSample 
+  {
+    typedef ParticleSet::Walker_t Walker_t;
+
     ParticleSet::ParticlePos_t R;
     ParticleSet::ParticleGradient_t G;
     ParticleSet::ParticleLaplacian_t L;
-    ParticleSet::RealType LogPsi, KE, PE;
-    MCSample(ParticleSet::ParticlePos_t r,
-	     ParticleSet::ParticleGradient_t g,
-	     ParticleSet::ParticleLaplacian_t l,
-	     ParticleSet::RealType logpsi, 
-	     ParticleSet::RealType ke, 
-	     ParticleSet::RealType pe) :
-      R(r), G(g), L(l), LogPsi(logpsi), KE(ke), PE(pe)
-    { }
+    ParticleSet::RealType LogPsi, Sign, PE, KE;
+
+    inline MCSample(int n)
+    {
+      R.resize(n);
+      G.resize(n);
+      L.resize(n);
+    }
+
+    inline void put(const Walker_t& w)
+    {
+      R=w.R;
+      G=w.G;
+      L=w.L;
+      LogPsi=w.Properties(LOGPSI);
+      Sign=w.Properties(SIGN);
+      PE=w.Properties(LOCALPOTENTIAL);
+      KE=w.Properties(LOCALENERGY)-PE;
+    }
+
+    inline void get(Walker_t& w) const
+    {
+      w.R=R;
+      w.G=G;
+      w.L=L;
+      w.Properties(LOGPSI)=LogPsi;
+      w.Properties(SIGN)=Sign;
+      w.Properties(LOCALPOTENTIAL)=PE;
+      w.Properties(LOCALENERGY)=PE+KE;
+    }
+
   };
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
@@ -233,7 +258,8 @@ namespace qmcplusplus {
     }
     
     inline void resizeWalkerHistories() {
-      for(iterator Wit=WalkerList.begin();Wit!=WalkerList.end();Wit++){
+      for(iterator Wit=WalkerList.begin();Wit!=WalkerList.end();Wit++)
+      {
         if ((*Wit)->PropertyHistory.size()!=PropertyHistory.size()) (*Wit)->PropertyHistory=PropertyHistory;
         if ((*Wit)->PHindex.size()!=PHindex.size()) (*Wit)->PHindex=PHindex;
       }
@@ -289,10 +315,9 @@ namespace qmcplusplus {
     /** load SampleStack data to current walkers
      */
     void loadEnsemble();
-    /** load SampleStack data to other
-     * @param other MCWalkerConfiguration
-     */
-    void loadEnsemble(MCWalkerConfiguration& other);
+    /** load SampleStack from others 
+      */
+    void loadEnsemble(vector<MCWalkerConfiguration*>& others);
     ///clear the ensemble
     void clearEnsemble();
     //@}
@@ -341,7 +366,7 @@ namespace qmcplusplus {
      int MaxSamples;
      int CurSampleCount;
      //add samples
-     vector<MCSample> SampleStack;
+     vector<MCSample*> SampleStack;
 
     /** initialize the PropertyList
      *

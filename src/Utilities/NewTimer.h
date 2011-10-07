@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_NEW_TIMER_H
 #define QMCPLUSPLUS_NEW_TIMER_H
 
-#include "Message/OpenMP.h"
+#include <Utilities/Clock.h>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -28,44 +28,6 @@ class Communicate;
 
 namespace qmcplusplus  {
 
-#if defined(ENABLE_OPENMP)
-#if defined(BGP_BUG)
-  class NewTimer
-  {
-  protected:
-    double start_time;
-    double total_time;
-    long num_calls;
-    std::string name;
-  public:
-    inline void start() 
-    { }
-    
-    inline void stop()  
-    { }
-
-    inline double    get_total() const  
-    { return total_time;             }
-    
-    inline long  get_num_calls() const  
-    { return num_calls;              }
-    
-    inline std::string get_name() const 
-    { return name;                   }
-
-    inline void reset()           
-    { num_calls = 0; total_time=0.0; }
-        
-    NewTimer(const std::string& myname) : 
-      total_time(0.0), num_calls(0), name(myname)
-    { }
-
-    void set_name(const std::string& myname)
-    {
-      name=myname;
-    }
-  };
-#else
   /* Timer using omp_get_wtime  */
   class NewTimer
   {
@@ -75,11 +37,16 @@ namespace qmcplusplus  {
     long num_calls;
     std::string name;
   public:
+#if defined(DISABLE_TIMER)
+    inline void start(){}
+    inline void stop(){}
+#else
     inline void start() 
-    { start_time = omp_get_wtime(); }
+    { start_time = cpu_clock(); }
     
     inline void stop()  
-    { total_time += omp_get_wtime() - start_time;  num_calls++;   }
+    { total_time += cpu_clock() - start_time;  num_calls++;   }
+#endif
 
     inline double    get_total() const  
     { return total_time;             }
@@ -102,51 +69,6 @@ namespace qmcplusplus  {
       name=myname;
     }
   };
-#endif
-#else /* use boost or pooma */
-#include <sys/time.h>
-  /* Timer using gettimeofday  */
-  class NewTimer
-  {
-  protected:
-    suseconds_t start_time;
-    double total_time;
-    long num_calls;
-    struct timeval tv;
-    std::string name;
-  public:
-    inline void start() 
-    { 
-      gettimeofday(&tv, NULL);
-       start_time=(double)tv.tv_sec+(1.e-6)*tv.tv_usec;
-    }
-    inline void stop()  
-    { 
-      gettimeofday(&tv, NULL);
-      total_time += (double)tv.tv_sec+(1.e-6)*tv.tv_usec-start_time;
-      num_calls++;
-    }
-    inline double    get_total() const 
-    { return total_time; }
-
-    inline long  get_num_calls() const 
-    { return num_calls;  }
-
-    inline std::string get_name() const
-    { return name; }
-
-    inline void reset()          { num_calls = 0; total_time=0.0; }
-
-    NewTimer(const std::string& myname) : 
-      total_time(0.0), num_calls(0), name(myname)
-    { }
-
-    void set_name(const std::string& myname)
-    {
-      name=myname;
-    }
-  };
-#endif
 
   struct TimerComparator
   {

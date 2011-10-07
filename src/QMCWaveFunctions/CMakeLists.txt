@@ -99,14 +99,17 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetLocal.cpp
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
-      EinsplineSetBuilderESHDF.cpp
       MuffinTin.cpp
       AtomicOrbital.cpp
+      EinsplineSetBuilderReadBands_ESHDF.cpp
+      EinsplineSetBuilderESHDF.fft.cpp
       )
     if(NOT IBM_COMPILER)
       SET(FERMION_SRCS ${FERMION_SRCS} EinsplineWrapper.cpp)
     endif(NOT IBM_COMPILER)
   ENDIF(HAVE_EINSPLINE)
+
+  #      EinsplineSetBuilderESHDF.cpp
 
   #  IF(QMC_BUILD_LEVEL GREATER 1)
   #

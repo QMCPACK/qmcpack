@@ -102,7 +102,11 @@ namespace qmcplusplus {
     string multi_tag("no");
     string warp_tag("no");
     string append_tag("no"); 
+#if defined(QMC_CUDA)
+    string gpu_tag("yes");
+#else
     string gpu_tag("no");
+#endif
     
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
@@ -120,8 +124,6 @@ namespace qmcplusplus {
     WhatToDo[UPDATE_MODE]= (update_mode == "pbyp");
 #if defined(QMC_CUDA)
     WhatToDo[GPU_MODE      ] = (gpu_tag     == "yes");
-#else
-    WhatToDo[GPU_MODE      ] = 0;
 #endif
 
     OhmmsInfo::flush();
@@ -248,6 +250,7 @@ namespace qmcplusplus {
     //branchEngine has to be transferred to a new QMCDriver
     if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
     
+    OhmmsInfo::flush();
     
     return append_run;
   }

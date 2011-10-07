@@ -218,8 +218,17 @@ namespace qmcplusplus
        */
       RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-      /// Copy Constructor (disabled)
-      QMCUpdateBase(const QMCUpdateBase& a): W(a.W),Psi(a.Psi),Guide(a.Guide),H(a.H), RandomGen(a.RandomGen) { }
+      ///copy constructor
+      QMCUpdateBase(const QMCUpdateBase& a);
+
+      /** a VMC step to randomize awalker
+       */
+      void randomize(Walker_t& awalker);
+
+    private:
+
+      ///set default parameters
+      void setDefaults();
       /// Copy operator (disabled).
       QMCUpdateBase& operator=(const QMCUpdateBase&)
       {

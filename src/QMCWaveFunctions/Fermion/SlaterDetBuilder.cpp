@@ -625,7 +625,7 @@ namespace qmcplusplus
        }
        DiracDeterminantBase* adet;
        if(UseBackflow) {
-         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,NULL);
+         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,0);
        } else {
          adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
        }
@@ -645,7 +645,7 @@ namespace qmcplusplus
        }
        DiracDeterminantBase* adet;
        if(UseBackflow) {
-         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,NULL);
+         adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,0);
        } else {
          adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
        }

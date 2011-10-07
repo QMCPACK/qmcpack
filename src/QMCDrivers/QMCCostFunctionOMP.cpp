@@ -199,26 +199,29 @@ namespace qmcplusplus
     OhmmsInfo::Warn->turnoff();
     // #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
+    {
+      if (H_KE_Node[ip]==0)
       {
-        if (H_KE_Node[ip]==0)
+        H_KE_Node[ip]= new QMCHamiltonian;
+        H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
+        if (includeNonlocalH!="no")
+        {
+          if(includeNonlocalH=="yes") 
+            includeNonlocalH="NonLocalECP";
+          else
+            app_log()<<" Attempting add of non-local Hamiltonian element named "<<includeNonlocalH<<endl;
+          QMCHamiltonianBase* a=hClones[ip]->getHamiltonian(includeNonlocalH);
+          if(a)
           {
-            H_KE_Node[ip]= new QMCHamiltonian;
-            H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-            if (includeNonlocalH!="no")
-            {
-             if(includeNonlocalH=="yes") 
-               includeNonlocalH="NonLocalECP";
-             else
-               app_log()<<" Attempting add of non-local Hamiltonian element named "<<includeNonlocalH<<endl;
-             QMCHamiltonianBase* a=hClones[ip]->getHamiltonian(includeNonlocalH);
-             if(a)
-             {
-               H_KE_Node[ip]->addOperator(a,includeNonlocalH);
-             }
-            }
+            H_KE_Node[ip]->addOperator(a,includeNonlocalH);
           }
-        wClones[ip]->loadEnsemble();
+        }
       }
+    }
+
+    //load walkers from SampleStack
+    W.loadEnsemble(wClones);
+
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();
 

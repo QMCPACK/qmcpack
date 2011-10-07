@@ -34,7 +34,7 @@ namespace qmcplusplus  {
   void
   TimerManagerClass::print(Communicate* comm) 
   {
-
+#if !defined(DISABLE_TIMER)
     std::map<std::string,int> nameList;
     std::vector<double> timeList;
     std::vector<long>   callList;
@@ -83,5 +83,6 @@ namespace qmcplusplus  {
         }
       }
     }
+#endif
   }
 }
