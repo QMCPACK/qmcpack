@@ -357,12 +357,12 @@ namespace qmcplusplus {
 	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
         APP_ABORT("EinsplineSetBuilder::createSPOSet");
       }
-    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo" << mytimer.elapsed() << endl;
+    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << endl;
     myComm->barrier();
 
     mytimer.restart();
     BroadcastOrbitalInfo();
-    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo" << mytimer.elapsed() << endl;
+    app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << endl;
 
     app_log().flush();
 
@@ -459,7 +459,7 @@ namespace qmcplusplus {
 	  else
 	    ReadBands(spinSet, orbitalSet); 
 
-          app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands" << mytimer.elapsed() << endl;
+          app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
 
 //#ifdef QMC_CUDA
 //	  if (true || useGPU) {
