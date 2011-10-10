@@ -67,7 +67,9 @@ namespace qmcplusplus {
       branchClones[ip] = new BranchEngineType(*branchEngine);
     }
     
+#if !defined(BGP_BUG)
 #pragma omp parallel for
+#endif
       for(int ip=0; ip<NumThreads; ++ip)
       {
         if(QMCDriverMode[QMC_UPDATE_MODE])
@@ -140,7 +142,9 @@ namespace qmcplusplus {
         app_log() << o.str() << endl;
       }
 
+#if !defined(BGP_BUG)
 #pragma omp parallel for
+#endif
       for(int ip=0; ip<NumThreads; ++ip)
       {
         estimatorClones[ip]= new EstimatorManager(*Estimators);
