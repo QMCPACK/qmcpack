@@ -447,7 +447,8 @@ OOMPI_Comm::delete_ports()
   if (ports != 0) {
     for (i = 0; i < num_ports; i++) 
       delete ports[i];
-    delete[] ports;
+    delete [] ports;
+    ports=0;
   }
 }
 
