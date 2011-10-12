@@ -4,15 +4,12 @@ use Getopt::Long ;
 use POSIX qw/floor fmod ceil/;
 
 
-# Input pwscf file must follow some rather strict conventions.  It must 
-# specify the pseudo directory directly, use ibrav=1 or ibrav=0, Decleare 
-# explicitly ntyp, nbnd and nspin. Finally, the atomic positions should be 
-# given in terms of the PTV of the cell (not real space coordinates although 
-#it will probably be worthwhile to relax this later)
+# Input pwscf file must follow some rather strict conventions.  It must specify the pseudo
+# directory directly, use ibrav=1 or ibrav=0, Decleare explicitly ntyp, nbnd and nspin.
+# finally, the atomic positions should be given in terms of the PTV of the cell 
+# (not real space coordinates although it will probably be worthwhile to relax this later)
 
-# will allow only the use of ibrav=3 (bcc), ibrav=2 (fcc), ibrav=1 
-#(simple cubic) and ibrav=0 (arbitrary)
-
+# will allow only the use of ibrav=3 (bcc), ibrav=2 (fcc), ibrav=1 (simple cubic) and ibrav=0 (arbitrary)
 print "$0 @ARGV\n";
 
 my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
@@ -841,7 +838,7 @@ if ($convDMCTstep) {
    
     for (my $locdmctstep = $maxdmctstep; $locdmctstep > $mindmctstep-0.000001; $locdmctstep -= $dmctstepinc) {
 	my $dmcSection = getDMCSection($useGPU, $dmcwalkers, $dmcwarmupsteps, 
-                                       floor($dmcblocks*$maxdmctstep/$locdmctstep),
+                                       floor($dmcblocks*$maxdmctstep/$dmctstep),
 				       $dmcsteps, $locdmctstep, $dmcUseTmoves);
 	$qmcFile .= $dmcSection;
     }
@@ -980,18 +977,13 @@ sub getSystemInformation {
 	getPPInfo($ppname, $atValenceCharge, $atAtomicNumber);
 
 	$$nelec += $atValenceCharge;
+	push(@{$atchgref}, $atValenceCharge);
+	push(@{$atvalref}, $atValenceCharge);
+	push(@{$atatnumref}, $atAtomicNumber);
     }   
 
     foreach my $at (@{$anameref}) {
 	my $ppname = $$atnmtoppref{$at};
-	my $atValenceCharge;
-	my $atAtomicNumber;
-	getPPInfo($ppname, $atValenceCharge, $atAtomicNumber);
-	push(@{$atchgref}, $atValenceCharge);
-	push(@{$atvalref}, $atValenceCharge);
-	push(@{$atatnumref}, $atAtomicNumber);
-
-
 	if ($ppname =~ /ncpp/i) {
 	    $ppname =~ s/ncpp/xml/;
 	    my $ppbasename = $ppname;

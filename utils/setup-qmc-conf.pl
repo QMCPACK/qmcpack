@@ -1,6 +1,6 @@
 ppconvert => '/remote/lshulen/sharedmaintenance/mywfconv/build/ppconvert',
 energytool => '/remote/lshulen/bin/energy.pl',
-supercell => '/remote/lshulen/sharedmaintenance/qmcpack/src/QMCTools/getSupercell',
+supercell => '/remote/lshulen/sharedmaintenance/qmc-tools-working/laptop-briefcase/Matrices-Det/getSupercell',
 twenergytool => '/remote/lshulen/bin/TwistAvg.pl',
 gnuplot => '/usr/bin/gnuplot',
 
