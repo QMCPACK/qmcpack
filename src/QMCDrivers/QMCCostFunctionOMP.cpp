@@ -197,7 +197,11 @@ namespace qmcplusplus
 
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
-    // #pragma omp parallel for
+   
+    ParticleSet::Walker_t wcopy(*W[0]);
+    wcopy.DataSet.clear();
+
+//#pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
       if (H_KE_Node[ip]==0)
@@ -219,8 +223,13 @@ namespace qmcplusplus
       }
     }
 
+#pragma omp parallel for
+    for (int ip=0; ip<NumThreads; ++ip)
+    {
+      wClones[ip]->loadEnsemble(wcopy);
+    }
+
     //load walkers from SampleStack
-    W.loadEnsemble(wClones);
 
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();

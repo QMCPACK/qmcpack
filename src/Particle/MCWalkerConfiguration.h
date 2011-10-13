@@ -36,12 +36,20 @@ namespace qmcplusplus {
     ParticleSet::ParticleLaplacian_t L;
     ParticleSet::RealType LogPsi, Sign, PE, KE;
 
-    inline MCSample(int n)
+    inline MCSample(const Walker_t& w)
+      :R(w.R), G(w.G), L(w.L)
     {
-      R.resize(n);
-      G.resize(n);
-      L.resize(n);
+      LogPsi=w.Properties(LOGPSI);
+      Sign=w.Properties(SIGN);
+      PE=w.Properties(LOCALPOTENTIAL);
+      KE=w.Properties(LOCALENERGY)-PE;
     }
+    //inline MCSample(int n)
+    //{
+    //  R.resize(n);
+    //  G.resize(n);
+    //  L.resize(n);
+    //}
 
     inline void put(const Walker_t& w)
     {
@@ -314,7 +322,7 @@ namespace qmcplusplus {
     void saveEnsemble(iterator first, iterator last);
     /** load SampleStack data to current walkers
      */
-    void loadEnsemble();
+    void loadEnsemble(const Walker_t& wcopy);
     /** load SampleStack from others 
       */
     void loadEnsemble(vector<MCWalkerConfiguration*>& others);

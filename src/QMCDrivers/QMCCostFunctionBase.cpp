@@ -136,14 +136,11 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     wgt_var *=wgtinv;
     
     CostValue = 0.0;
-    if (std::fabs(w_abs) > 1.0e-10)
-      CostValue += w_abs*curVar_abs;
-    if (std::fabs(w_var) > 1.0e-10)
-      CostValue += w_var*curVar_w;
-    if (std::fabs(w_en) > 1.0e-10)
-      CostValue += w_en*curAvg_w;
-    if (std::fabs(w_w) > 1.0e-10)
-      CostValue += w_w*curVar;
+    const Return_t small=1.0e-10;
+    if (std::abs(w_abs) > small) CostValue += w_abs*curVar_abs;
+    if (std::abs(w_var) > small) CostValue += w_var*curVar_w;
+    if (std::abs(w_en) > small) CostValue += w_en*curAvg_w;
+    if (std::abs(w_w) > small) CostValue += w_w*curVar;
     
     //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
     // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << endl; 
@@ -151,12 +148,12 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     IsValid=true;
     if(NumWalkersEff < NumSamples*MinNumWalkers) 
       //    if (NumWalkersEff < MinNumWalkers)
-      {
-        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-        // ERRORMSG("Going to stop now.")
-        IsValid=false;
-      }
-      return CostValue;
+    {
+      ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff);
+      // ERRORMSG("Going to stop now.")
+      IsValid=false;
+    }
+    return CostValue;
 }
 
 //  /**  Perform the correlated sampling algorthim.
@@ -676,180 +673,180 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   {
 
     if (m_doc_out == NULL) //first time, create a document tree and get parameters and attributes to be updated
+    {
+      m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
+      xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+      xmlAddChild(qm_root, m_wfPtr);
+      xmlDocSetRootElement(m_doc_out, qm_root);
+
+      xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+
+      //check parameter
+      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
+      for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
       {
-        m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
-        xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-        xmlAddChild(qm_root, m_wfPtr);
-        xmlDocSetRootElement(m_doc_out, qm_root);
-
-        xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
-
-        //check parameter
-        xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
-        for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
-          {
-            xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-            if (iptr == NULL) continue;
-            string aname((const char*)iptr);
-            opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-            if (oit != OptVariablesForPsi.end())
-              {
-                paramNodes[aname]=cur;
-              }
-          }
-        xmlXPathFreeObject(result);
-
-        //check radfunc
-        result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
-        for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
-          {
-            xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-            if (iptr == NULL) continue;
-            string aname((const char*)iptr);
-            string expID=aname+"_E";
-            xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
-            opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-            if (aptr != NULL && oit != OptVariablesForPsi.end())
-              {
-                attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
-              }
-
-            string cID=aname+"_C";
-            aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
-            oit=OptVariablesForPsi.find(cID);
-            if (aptr != NULL && oit != OptVariablesForPsi.end())
-              {
-                attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
-              }
-          }
-        xmlXPathFreeObject(result);
-
-        //check ci 
-        result = xmlXPathEvalExpression((const xmlChar*)"//ci",acontext);
-        for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
-          {
-            xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-            if (iptr == NULL) continue;
-            string aname((const char*)iptr);
-            xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
-            opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-            if (aptr != NULL && oit != OptVariablesForPsi.end())
-              {
-                attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
-              }
-          }
-        xmlXPathFreeObject(result);
-
-        //check csf 
-        result = xmlXPathEvalExpression((const xmlChar*)"//csf",acontext);
-        for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
-          {
-            xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-            if (iptr == NULL) continue;
-            string aname((const char*)iptr);
-            xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
-            opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-            if (aptr != NULL && oit != OptVariablesForPsi.end())
-              {
-                attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
-              }
-          }
-        xmlXPathFreeObject(result);
-        
-        addCoefficients(acontext, "//coefficient");
-        addCoefficients(acontext, "//coefficients");
-
-        xmlXPathFreeContext(acontext);
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if (iptr == NULL) continue;
+        string aname((const char*)iptr);
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+        if (oit != OptVariablesForPsi.end())
+        {
+          paramNodes[aname]=cur;
+        }
       }
+      xmlXPathFreeObject(result);
 
-//     Psi.reportStatus(app_log());
+      //check radfunc
+      result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
+      for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+      {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if (iptr == NULL) continue;
+        string aname((const char*)iptr);
+        string expID=aname+"_E";
+        xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
+        if (aptr != NULL && oit != OptVariablesForPsi.end())
+        {
+          attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
+        }
+
+        string cID=aname+"_C";
+        aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
+        oit=OptVariablesForPsi.find(cID);
+        if (aptr != NULL && oit != OptVariablesForPsi.end())
+        {
+          attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      //check ci 
+      result = xmlXPathEvalExpression((const xmlChar*)"//ci",acontext);
+      for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+      {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if (iptr == NULL) continue;
+        string aname((const char*)iptr);
+        xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+        if (aptr != NULL && oit != OptVariablesForPsi.end())
+        {
+          attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      //check csf 
+      result = xmlXPathEvalExpression((const xmlChar*)"//csf",acontext);
+      for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+      {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if (iptr == NULL) continue;
+        string aname((const char*)iptr);
+        xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+        if (aptr != NULL && oit != OptVariablesForPsi.end())
+        {
+          attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      addCoefficients(acontext, "//coefficient");
+      addCoefficients(acontext, "//coefficients");
+
+      xmlXPathFreeContext(acontext);
+    }
+
+    //     Psi.reportStatus(app_log());
 
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while (pit != pit_end)
-      {
-        Return_t v=OptVariablesForPsi[(*pit).first];
-        getContent(v,(*pit).second);
-//         vout <<(*pit).second<<endl;
-        ++pit;
-      }
+    {
+      Return_t v=OptVariablesForPsi[(*pit).first];
+      getContent(v,(*pit).second);
+      //         vout <<(*pit).second<<endl;
+      ++pit;
+    }
     map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
     while (ait != ait_end)
-      {
-        std::ostringstream vout;
-        vout.setf(ios::scientific, ios::floatfield);
-        vout.precision(16);
-        vout << OptVariablesForPsi[(*ait).first];
-        xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
-        ++ait;
-      }
+    {
+      std::ostringstream vout;
+      vout.setf(ios::scientific, ios::floatfield);
+      vout.precision(16);
+      vout << OptVariablesForPsi[(*ait).first];
+      xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
+      ++ait;
+    }
 
     map<string,xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
     while (cit != cit_end)
-      {
-        string rname((*cit).first);
-        OhmmsAttributeSet cAttrib;
-        string datatype("none");
-        string aname("0");
-        cAttrib.add(datatype,"type");
-        cAttrib.add(aname,"id");
-        cAttrib.put((*cit).second);
+    {
+      string rname((*cit).first);
+      OhmmsAttributeSet cAttrib;
+      string datatype("none");
+      string aname("0");
+      cAttrib.add(datatype,"type");
+      cAttrib.add(aname,"id");
+      cAttrib.put((*cit).second);
 
-        if (datatype == "Array")
-          { //
-            aname.append("_");
-            opt_variables_type::iterator vit(OptVariablesForPsi.begin());
-            vector<Return_t> c;
-            while (vit != OptVariablesForPsi.end())
-              {
-                if ((*vit).first.find(aname) == 0)
-                  {
-                    c.push_back((*vit).second);
-                  }
-                ++vit;
-              }
-            xmlNodePtr contentPtr = cit->second;
-            if (xmlNodeIsText(contentPtr->children))
-              contentPtr = contentPtr->children;
-            getContent(c,contentPtr);
-          }
-        else
+      if (datatype == "Array")
+      { //
+        aname.append("_");
+        opt_variables_type::iterator vit(OptVariablesForPsi.begin());
+        vector<Return_t> c;
+        while (vit != OptVariablesForPsi.end())
+        {
+          if ((*vit).first.find(aname) == 0)
           {
-            xmlNodePtr cur=(*cit).second->children;
-            while (cur != NULL)
-              {
-                string cname((const char*)(cur->name));
-                if (cname == "lambda")
-                  {
-                    int i=0;
-                    int j=-1;
-                    OhmmsAttributeSet pAttrib;
-                    pAttrib.add(i,"i");
-                    pAttrib.add(j,"j");
-                    pAttrib.put(cur);
-                    char lambda_id[32];
-                    if (j<0)
-                      sprintf(lambda_id,"%s_%d",rname.c_str(),i);
-                    else
-                      sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
-                    opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
-                    if (vTarget != OptVariablesForPsi.end())
-                      {
-                        std::ostringstream vout;
-                        vout.setf(ios::scientific, ios::floatfield);
-                        vout.precision(16);
-                        vout << (*vTarget).second;
-                        xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
-                      }
-                  }
-                cur=cur->next;
-              }
+            c.push_back((*vit).second);
           }
-        ++cit;
+          ++vit;
+        }
+        xmlNodePtr contentPtr = cit->second;
+        if (xmlNodeIsText(contentPtr->children))
+          contentPtr = contentPtr->children;
+        getContent(c,contentPtr);
       }
+      else
+      {
+        xmlNodePtr cur=(*cit).second->children;
+        while (cur != NULL)
+        {
+          string cname((const char*)(cur->name));
+          if (cname == "lambda")
+          {
+            int i=0;
+            int j=-1;
+            OhmmsAttributeSet pAttrib;
+            pAttrib.add(i,"i");
+            pAttrib.add(j,"j");
+            pAttrib.put(cur);
+            char lambda_id[32];
+            if (j<0)
+              sprintf(lambda_id,"%s_%d",rname.c_str(),i);
+            else
+              sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
+            opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+            if (vTarget != OptVariablesForPsi.end())
+            {
+              std::ostringstream vout;
+              vout.setf(ios::scientific, ios::floatfield);
+              vout.precision(16);
+              vout << (*vTarget).second;
+              xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
+            }
+          }
+          cur=cur->next;
+        }
+      }
+      ++cit;
+    }
   }
 
   /** add coefficient or coefficients

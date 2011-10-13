@@ -239,7 +239,7 @@ namespace qmcplusplus
           if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
             Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
           
-    //#pragma omp critical
+#pragma omp critical
           {
             wClones[ip]->clearEnsemble();
             wClones[ip]->setNumSamples(samples_th[ip]);

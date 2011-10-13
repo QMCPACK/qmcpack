@@ -281,19 +281,17 @@ void MCWalkerConfiguration::setNumSamples(int n)
 {
 
   clearEnsemble();
-
   MaxSamples=n;
   //do not add anything
   if(n==0) return;
-
-  SampleStack.reserve(n);
-
-  int nadd=n-SampleStack.size();
-  while(nadd>0)
-  {
-    SampleStack.push_back(new MCSample(GlobalNum));
-    --nadd;
-  }
+  SampleStack.resize(n,0);
+  //SampleStack.reserve(n);
+  //int nadd=n-SampleStack.size();
+  //while(nadd>0)
+  //{
+  //  SampleStack.push_back(new MCSample(GlobalNum));
+  //  --nadd;
+  //}
 }
 
 /** save the current walkers to SampleStack 
@@ -311,7 +309,10 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
   if(MaxSamples==0) return;
   while((first != last) && (CurSampleCount<MaxSamples))
   {
-    SampleStack[CurSampleCount]->put(**first);
+    if(SampleStack[CurSampleCount])
+      SampleStack[CurSampleCount]->put(**first);
+    else
+      SampleStack[CurSampleCount]=new MCSample(**first);
     ++first;
     ++CurSampleCount;
   }
@@ -319,28 +320,28 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 
 /** load SampleStack to WalkerList
  */
-void MCWalkerConfiguration::loadEnsemble()
+void MCWalkerConfiguration::loadEnsemble(const Walker_t& wcopy)
 {
   if(SampleStack.empty()) return;
 
-  int nsamples=MaxSamples;
+  int nsamples=std::min(MaxSamples,CurSampleCount);
 
-  Walker_t wcopy(*WalkerList[0]);
-  wcopy.DataSet.clear(); 
+  //Walker_t wcopy(*WalkerList[0]);
+  //wcopy.DataSet.clear(); 
 
   //remove all
   delete_iter(WalkerList.begin(),WalkerList.end());
   WalkerList.clear();
   WalkerList.reserve(nsamples);
 
-  int iw=WalkerList.size();
-  for(int i=0; i<nsamples; ++i, ++iw)
+  int i=0;
+  while(i<nsamples && SampleStack[i])
   {
     Walker_t* awalker=new Walker_t(wcopy);
     SampleStack[i]->get(*awalker);
     WalkerList.push_back(awalker);
+    ++i;
   }
-
   clearEnsemble();
 }
 //
