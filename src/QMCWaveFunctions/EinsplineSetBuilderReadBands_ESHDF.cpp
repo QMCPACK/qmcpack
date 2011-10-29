@@ -326,7 +326,8 @@ namespace qmcplusplus {
     app_log() << "MeshSize = (" << MeshSize[0] << ", " 
 	      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
 
-    int nx, ny, nz, bi, ti;
+    //int nx, ny, nz, bi, ti;
+    int nx, ny, nz;
     nx=MeshSize[0]; ny=MeshSize[1]; nz=MeshSize[2];
     Ugrid x_grid, y_grid, z_grid;
     BCtype_d xBC, yBC, zBC;
@@ -403,6 +404,7 @@ namespace qmcplusplus {
         Array<complex<double>,3> rawData;
         for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
         {
+          int ti=SortBands[iorb].TwistIndex;
           if(root)
           {
             ostringstream path;
