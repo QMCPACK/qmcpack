@@ -135,6 +135,10 @@ namespace qmcplusplus {
     ref_.R *= a0;
     ref_.reset();
     ref_.makeGrid(grid);
+
+    if(ref_.SuperCellEnum == SUPERCELL_OPEN)
+      ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
+
     app_log() << std::fixed;
     app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << endl;
     app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << endl;
