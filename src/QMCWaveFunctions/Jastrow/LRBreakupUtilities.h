@@ -542,6 +542,252 @@ struct ShortRangePartAdapter : OptimizableFunctorBase {
 };
 
 
+template<class T=double>
+    struct RPABFeeBreakup {
+  T Rs;
+  T kf;
+  T kfm[2];
+  T Density;
+  T volume;
+  T hbs2m;
+  int nelec;
+  int nspin;
+  int nppss[2]; 
+  inline RPABFeeBreakup(){}
+
+  // assumes 3D here, fix 
+  void reset(ParticleSet& ref) {
+    volume = ref.Lattice.Volume;
+    nspin = ref.groups();
+    for(int i=0; i<nspin; ++i)
+      nppss[i] = ref.last(i) - ref.first(i); 
+    Density=ref.getTotalNum()/ref.Lattice.Volume;
+    Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
+    nelec = ref.getTotalNum();
+    hbs2m=0.5;
+    kf = 0.0; 
+    kfm[0]=kfm[1]=0.0;
+    for(int i=0; i<nspin; i++) { 
+      T a3=3.0*volume/(4.0*M_PI*nppss[i]);
+      kfm[i]=std::pow(9.0*M_PI/(2.0*a3),1.0/OHMMS_DIM);
+      kf += kfm[i]*nppss[i]/ref.getTotalNum(); 
+    }
+  }
+
+  // assumes 3D here, fix 
+  void reset(ParticleSet& ref, T rs) {
+    Density=ref.getTotalNum()/ref.Lattice.Volume;
+    volume = ref.Lattice.Volume;
+    nspin = ref.groups();
+    for(int i=0; i<nspin; ++i)
+      nppss[i] = ref.last(i) - ref.first(i);
+    Rs = rs;
+    nelec = ref.getTotalNum();
+    hbs2m=0.5;
+    kf = 0.0; 
+    kfm[0]=kfm[1]=0.0;
+    for(int i=0; i<nspin; i++) { 
+      T a3=3.0*volume/(4.0*M_PI*nppss[i]);
+      kfm[i]=std::pow(9.0*M_PI/(2.0*a3),1.0/OHMMS_DIM);
+      kf += kfm[i]*nppss[i]/ref.getTotalNum(); 
+    }
+  }
+
+
+  inline T operator()(T r, T rinv) {
+    return 0.0;
+  }
+
+  inline T df(T r) {
+    return 0.0;
+  }
+
+  inline T Fk(T k, T rc) {
+    return -Xk(k,rc);
+  }
+
+  inline T Xk(T k, T rc) {
+    T u = urpa(k)*volume/nelec; 
+    T eq=k*k*hbs2m;
+    T vlr=u*u*2.0*Density*eq;
+    T vq=(2.0*M_PI*(OHMMS_DIM-1.0))/(std::pow(k,OHMMS_DIM-1.0));
+    T veff=vq-vlr;
+    T op2=Density*2.0*vq*eq;
+#if OHMMS_DIM==3    
+    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*hbs2m;
+    T op=(op2+1.2*( kfm[0]*kfm[0] + kfm[1]*kfm[1] )*eq*hbs2m + eq*eq );
+#elif OHMMS_DIM==2
+    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*std::pow(kf,3.0-OHMMS_DIM)*hbs2m;
+    T op=(op2+1.5*( kfm[0]*kfm[0] + kfm[1]*kfm[1] )*hbs2m*eq + eq*eq );
+#endif
+    op=std::sqrt(op);
+    T denom=1.0/veff - Dlindhard(k,-eq);
+    T dp=-Dlindhardp(k,-eq);
+    T s0 = 0.0,ss=0.0;
+    for(int i=0; i<nspin; i++) {
+      if(nppss[i] > 0) { 
+        T y=0.5*k/kfm[i];
+        if(y < 1.0) { 
+#if OHMMS_DIM==3  
+          ss=0.5*y*(3.0-y*y);
+#elif OHMMS_DIM==2
+          ss=(2.0/M_PI)*(std::asin(y)+y*std::sqrt(1.0-y*y));
+#endif
+        } else {
+          ss=1.0;
+        }
+        s0 += nppss[i]*ss/nelec;
+      }
+    } 
+
+    T yq = s0*s0/(4.0*k*k)*(1.0/(eq*denom)+dp/(denom*denom))
+             + 2.0*hbs2m*vlr/(op*(std::sqrt(op2)+eq));
+    return yq/volume;  
+  }
+
+  inline T integrate_r2(T rc)
+  {
+    return 0.0;
+  }
+
+    /** return RPA value at |k|
+    * @param kk |k|^2
+    */
+  inline T Uk(T kk)
+  {
+    return 0.0; 
+  }
+
+      /** return d u(k)/d rs
+    *
+    * Implement a correct one
+        */
+  inline T derivUk(T kk)
+  {
+    return 0.0;
+  }
+
+  T urpa(T q)
+  {
+    T a=0.0,vkbare;
+
+    if(q > 0.0) {
+      vkbare=4.0*M_PI/(q*q);
+      a=2.0*Density*vkbare/(hbs2m*q*q);  
+    }
+    return -0.5+0.5*std::sqrt(1.0+a); 
+  }
+
+  // mmorales: taken from bopimc (originally by M Holzmann)
+  T Dlindhard(T q, T w)
+  {
+    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2,sd1,sd2;
+    T res=0.0; 
+
+    for(int i=0; i<nspin; i++) {
+      if(kfm[i] > 0.0) { 
+        T xq=q/kfm[i];
+        if(xq < small) xq=small;
+        T om=w/(kfm[i]*kfm[i]*hbs2m*2.0);
+        xd1=om/xq-xq/2.0;
+        xd2=om/xq+xq/2.0;
+        if(std::abs(xd1-1.0) <= small) { 
+          if(xd1 >= 1.0)
+            xd1=1.0+small;
+          else
+            xd1=1.0-small;
+        } else if(std::abs(xd2-1.0) <= small) { 
+          if(xd2 >= 1.0)  
+            xd2=1.0+small;
+          else
+            xd2=1.0-small;
+        }
+#if OHMMS_DIM==3
+        rq1 = std::log(std::abs(1.0+xd1)/std::abs(1.0-xd1));
+        rq2 = std::log(std::abs(1.0+xd2)/std::abs(1.0-xd2));
+        xdummy = -1.0+0.5*(1.0-xd1*xd1)/xq*rq1-0.50*(1.0-xd2*xd2)/xq*rq2;
+        xdummy *= kfm[i]/(8.0*M_PI*M_PI*hbs2m);
+#elif OHMMS_DIM==2
+        if(std::abs(xd1) < small) 
+           sd1=0.0;
+        else
+          sd1=xd1/std::abs(xd1);
+        if(std::abs(xd2) < small) 
+          sd2=0.0;
+        else
+          sd2=xd2/std::abs(xd2);
+        if(xd1*xd1-1.0 > 1.0) 
+          rq1=std::sqrt(xd1*xd1-1.0)*sd1;
+        else
+          rq1=0.0;
+        if(xd2*xd2-1.0 > 1.0) 
+          rq2=std::sqrt(xd2*xd2-1.0)*sd2;
+        else
+          rq2=0.0;
+        xdummy=-(xq+rq1-rq2)/(4.0*M_PI*xq*hbs2m);
+#endif
+        res += xdummy;
+      }
+    }
+    return res;
+  }
+
+  // mmorales: taken from bopimc (originally by M Holzmann)
+  T Dlindhardp(T q, T w)
+  {
+    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2,sd1,sd2;
+    T res=0.0;
+
+    for(int i=0; i<nspin; i++) {
+      if(kfm[i] > 0.0) {
+        T xq=q/kfm[i];
+        if(xq < small) xq=small;
+        T om=w/(kfm[i]*kfm[i]*hbs2m*2.0);
+        xd1=om/xq-xq/2.0;
+        xd2=om/xq+xq/2.0;
+        if(std::abs(xd1-1.0) <= small) {
+          if(xd1 >= 1.0)
+            xd1=1.0+small;
+          else
+            xd1=1.0-small;
+        } else if(std::abs(xd2-1.0) <= small) {
+          if(xd2 >= 1.0)   
+            xd2=1.0+small;
+          else
+            xd2=1.0-small;
+        }
+#if OHMMS_DIM==3
+        rq1 = std::log(std::abs(1.0+xd1)/std::abs(1.0-xd1));
+        rq2 = std::log(std::abs(1.0+xd2)/std::abs(1.0-xd2));
+        xdummy=-xd1/(xq*kfm[i]*kfm[i]*2.0*hbs2m)*rq1+ xd2/(xq*kfm[i]*kfm[i]*2.0*hbs2m)*rq2;
+        xdummy *= kfm[i]/(8.0*M_PI*M_PI*hbs2m*xq);
+#elif OHMMS_DIM==2
+        if(std::abs(xd1) < small) 
+           sd1=0.0;
+        else
+          sd1=xd1/std::abs(xd1);
+        if(std::abs(xd2) < small) 
+          sd2=0.0;
+        else
+          sd2=xd2/std::abs(xd2);
+        if(xd1*xd1-1.0 > 1.0)
+          rq1=sd1*xd1/std::sqrt(xd1*xd1-1.0);
+        else
+          rq1=0.0;
+        if(xd2*xd2-1.0 > 1.0)
+          rq2=sd2*xd2/std::sqrt(xd2*xd2-1.0);
+        else
+          rq2=0.0;
+        xdummy=-(rq1-rq2)/(8.0*M_PI*(xq*kfm[i]*hbs2m)*(xq*kfm[i]*hbs2m));
+#endif
+        res += xdummy;
+      }
+    }
+    return res;
+  }
+
+};
+
 }
 #endif
 /***************************************************************************

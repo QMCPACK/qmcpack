@@ -43,6 +43,8 @@ namespace qmcplusplus {
       ///typedef for the grid
       typedef OneDimGridBase<real_type> grid_type;
 
+      // mmorales: until I figure out how to go around this
+      int NumParams;
       FNIN *InFunc;
       FNOUT OutFunc;
       int NumGridPoints;
@@ -60,6 +62,7 @@ namespace qmcplusplus {
         Rmax(old.Rmax), 
         GridDelta(old.GridDelta)
       {
+        NumParams=0;
         if(old.InFunc)
         {
           initialize(old.InFunc->makeClone(),old.Rmax,old.NumGridPoints);
@@ -83,6 +86,13 @@ namespace qmcplusplus {
       }
       ///set the input, analytic function
       void setInFunc(FNIN* in_) { InFunc=in_;}
+
+      void reportStatus(ostream& os)
+      {
+        //myVars.print(os);
+      }
+
+      bool isOptimizable() { return false; }
 
       /** evaluate everything: value, first, second and third derivatives
        */

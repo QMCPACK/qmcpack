@@ -24,7 +24,7 @@ namespace qmcplusplus {
 
   SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation *BF):SlaterDet(targetPtcl),BFTrans(BF)
   {
-    Optimizable=true;
+    Optimizable=false;
     OrbitalName="SlaterDetWithBackflow";
   }
 
@@ -280,12 +280,14 @@ namespace qmcplusplus {
                                      vector<RealType>& dhpsioverpsi)
   {
       //testDerivGL(P);
+      if(BFTrans->isOptimizable()) { 
 
-      // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
-      BFTrans->evaluateDerivatives(P);
+        // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
+        BFTrans->evaluateDerivatives(P);
 
-      ValueType psi = 1.0;
-      for(int i=0; i<Dets.size(); i++) Dets[i]->evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+        ValueType psi = 1.0;
+        for(int i=0; i<Dets.size(); i++) Dets[i]->evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+      }
   }
 
 

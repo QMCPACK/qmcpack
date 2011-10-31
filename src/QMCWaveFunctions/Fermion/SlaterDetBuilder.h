@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/Fermion/ci_configuration.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 namespace qmcplusplus {
 
  /** derived class from OrbitalBuilderBase

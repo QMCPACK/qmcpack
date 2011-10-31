@@ -321,6 +321,7 @@ namespace qmcplusplus
         return du;
       }
 
+
       bool put(xmlNodePtr cur)
       {
         ReportEngine PRE("BsplineFunctor","put(xmlNodePtr)");
@@ -429,20 +430,82 @@ namespace qmcplusplus
 
         reset();
         return true;
+
+      }
+
+      void initialize(int numPoints, vector<real_type>& x, vector<real_type>& y, real_type cusp, real_type rcut, string id, string optimize )
+      {
+        ReportEngine PRE("BsplineFunctor","initialize");
+        NumParams = numPoints;
+        cutoff_radius = rcut;
+        CuspValue = cusp;
+
+        if (NumParams == 0)
+        {
+          PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
+        }
+        app_log() << "Initializing BsplineFunctor from array. \n"; 
+        app_log() << " size = " << NumParams << " parameters " << endl;
+        app_log() << " cusp = " << CuspValue << endl;
+        app_log() << " rcut = " << cutoff_radius << endl;
+
+        resize(NumParams);
+
+        int npts = x.size();
+        Matrix<real_type> basis(npts,NumParams);
+        vector<TinyVector<real_type,3> > derivs(NumParams);
+        for (int i=0; i<npts; i++)
+          {
+            real_type r = x[i]; 
+            if (r > cutoff_radius)
+            {
+               PRE.error("Error in BsplineFunctor::initialize: r > cutoff_radius.",true); 
+            }
+            evaluateDerivatives(r, derivs);
+            for (int j=0; j<NumParams; j++)
+              basis(i,j) = derivs[j][0];
+          }
+        resize(NumParams);
+        LinearFit(y, basis, Parameters);
+        app_log() << "New parameters are:\n";
+        for (int i=0; i < Parameters.size(); i++)
+          app_log() << "   " << Parameters[i] << endl;
+        
+
+        if(optimize == "yes") {   
+        // Setup parameter names
+          for (int i=0; i< NumParams; i++)
+          {
+            std::stringstream sstr;
+            sstr << id << "_" << i;
+            myVars.insert(sstr.str(),Parameters[i],true,optimize::LOGLINEAR_P);
+          }
+
+          app_log() << "Parameter     Name      Value\n";
+          myVars.print(app_log());
+        } else {
+          notOpt=true;
+          app_log() << "Parameters of BsplineFunctor id:"
+                    <<id <<" are not being optimized.\n";
+        }
+        reset();
       }
 
       void reportStatus(ostream& os)
       {
+        if (notOpt) return;
         myVars.print(os);
       }
 
       void checkOutVariables(const opt_variables_type& active)
       {
+        if (notOpt) return;
         myVars.getIndex(active);
       }
 
       void checkInVariables(opt_variables_type& active)
       {
+        if (notOpt) return;
         active.insertFrom(myVars);
       }
 
@@ -465,6 +528,7 @@ namespace qmcplusplus
       // check if this object has active optimizable parameters
       bool isOptimizable() 
       {
+        if (notOpt) return false;
         for (int i=0; i<Parameters.size(); ++i)
         {
           int loc=myVars.where(i);

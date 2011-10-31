@@ -33,6 +33,7 @@
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
+#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
@@ -294,19 +295,23 @@ namespace qmcplusplus
 
     // change DistanceTables if using backflow
     if(UseBackflow)   { 
-       BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-       BFTrans->put(BFnode);
+       BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,ptclPool,targetPsi);
+       bfbuilder->put(BFnode);
+       BFTrans = bfbuilder->getBFTrans();
        if(multiDet) {
          if(FastMSD)  {
            multislaterdetfast_0->setBF(BFTrans);
            multislaterdetfast_0->resetTargetParticleSet(BFTrans->QP); 
+           //if(BFTrans->Optimize) multislaterdetfast_0->Optimizable = true; 
          } else {
            multislaterdet_0->setBF(BFTrans);
            multislaterdet_0->resetTargetParticleSet(BFTrans->QP); 
+           //if(BFTrans->Optimize) multislaterdet_0->Optimizable = true; 
          }
        } else {
          slaterdet_0->setBF(BFTrans); 
          slaterdet_0->resetTargetParticleSet(BFTrans->QP);
+         //if(BFTrans->Optimize) slaterdet_0->Optimizable = true; 
        }
     }
     //only single slater determinant

@@ -67,6 +67,8 @@ namespace qmcplusplus
     // temporary storage for derivatives
     vector<TinyVector<RealType,3> > derivs;
 
+// mmorales: all quantities produced by BF transformations 
+//           should be real, so change everything here to ???<RealType> 
     GradMatrix_t UIJ;
     GradVector_t UIJ_temp; 
 
