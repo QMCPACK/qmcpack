@@ -345,6 +345,17 @@ struct PooledData
     m.Unpack(&(myData[0]),myData.size());
     return m;
   }
+
+  inline PooledData<T>& operator += (const PooledData<T>& s)
+  {
+    for(int i=0; i<myData.size(); ++i) myData[i] += s[i];
+    return *this;
+  }
+  inline PooledData<T>& operator *= (T scale)
+  {
+    for(int i=0; i<myData.size(); ++i) myData[i] *= scale;
+    return *this;
+  }
 };
 #endif
 

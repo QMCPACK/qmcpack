@@ -302,7 +302,9 @@ namespace qmcplusplus {
       Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
 
     if(Collectables) 
+    {
       Collectables->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
+    }
 
     if(collectall) collectBlockAverages(1);
   }
@@ -393,17 +395,19 @@ namespace qmcplusplus {
     RecordCount++;
   }
 
-  //NOTE: weights are not handled nicely.
-  //weight should be done carefully, not valid for DMC
-  //will add a function to MCWalkerConfiguration to track total weight
+  /** accumulate Local energies and collectables
+   * @param W ensemble
+   */
   void EstimatorManager::accumulate(MCWalkerConfiguration& W)
   {
     BlockWeight += W.getActiveWalkers();
     RealType norm=1.0/W.getGlobalNumWalkers();
+
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
-    if(Collectables)
-      Collectables->accumulate_all(W.Collectables,norm);
+
+    if(Collectables)//collectables are normalized by QMC drivers
+      Collectables->accumulate_all(W.Collectables,1.0);
   }
 
   void EstimatorManager::accumulate(MCWalkerConfiguration& W 
@@ -411,11 +415,12 @@ namespace qmcplusplus {
   {
     BlockWeight += it_end-it;
     RealType norm=1.0/W.getGlobalNumWalkers();
+
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W,it,it_end,norm);
 
     if(Collectables)
-      Collectables->accumulate_all(W.Collectables,norm);
+      Collectables->accumulate_all(W.Collectables,1.0);
   }
 
   void EstimatorManager::accumulate( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )

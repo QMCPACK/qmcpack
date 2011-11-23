@@ -77,7 +77,7 @@ struct accumulator_set
    */
   inline void add(value_type x) 
   {
-    properties[VALUE]+=x; properties[WEIGHT]=1;
+    properties[VALUE]+=x; properties[VALUESQ] += x*x; properties[WEIGHT]=1;
   }
 
   /** return true if Weight!= 0 */

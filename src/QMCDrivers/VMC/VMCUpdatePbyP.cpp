@@ -495,7 +495,8 @@ namespace qmcplusplus
       }
       myTimers[1]->stop();
 
-      if (moved)
+      //Always compute the energy
+      //if(moved)
       {
         myTimers[2]->start();
         //thisWalker.R = W.R;
@@ -513,11 +514,13 @@ namespace qmcplusplus
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       }
-      else
-      {
-        ++nAllRejected;
-        H.rejectedMove(W,thisWalker);
-      }
+
+      if(!moved) ++nAllRejected;
+      //else
+      //{
+      //  ++nAllRejected;
+      //  H.rejectedMove(W,thisWalker);
+      //}
 
     }
     myTimers[0]->stop();

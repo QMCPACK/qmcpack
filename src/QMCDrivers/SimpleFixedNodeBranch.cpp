@@ -323,10 +323,10 @@ namespace qmcplusplus
 
     WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
 
-
-    //evaluate everything else
+    //accumulate collectables and energies for scalar.dat
+    RealType wgt_inv=WalkerController->NumContexts/WalkerController->EnsembleProperty.Weight;
+    walkers.Collectables *= wgt_inv;
     MyEstimator->accumulate(walkers);
-
   }
 
   /** perform branching

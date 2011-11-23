@@ -254,7 +254,15 @@ namespace qmcplusplus {
           if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
         }//#pragma omp parallel
        
-        branchEngine->branch(CurrentStep,W, branchClones);
+        //Collectables are weighted but not yet normalized
+        if(W.Collectables.size()) 
+        { // only when collectable is not empty, need to generalize for W != wClones[0]
+          for(int ip=1; ip<NumThreads; ++ip) 
+            W.Collectables += wClones[ip]->Collectables;
+        }
+
+        branchEngine->branch(CurrentStep, W, branchClones);
+
 //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
 //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
 //           W.resetWalkerParents();

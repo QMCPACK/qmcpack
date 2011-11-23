@@ -171,8 +171,11 @@ namespace qmcplusplus {
         //nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
         //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
+
+        thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
+
       } 
       else 
       {//all moves are rejected: does not happen normally with reasonable wavefunctions
@@ -183,7 +186,10 @@ namespace qmcplusplus {
         ++nAllRejected;
         enew=eold;//copy back old energy
         gf_acc=1.0;
+
+        thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
       }
+
 
       if(UseTMove)
       {
@@ -221,7 +227,8 @@ namespace qmcplusplus {
 
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
-      thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
+      //2011-11-15 JNKIM COLLECTABLE FIX
+      //thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
 
       //Filtering extreme energies
       //thisWalker.Weight *= branchEngine->branchWeight(eold,enew);

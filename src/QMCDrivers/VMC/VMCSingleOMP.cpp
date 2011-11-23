@@ -53,6 +53,8 @@ namespace qmcplusplus
     Estimators->start(nBlocks);
     for (int ip=0; ip<NumThreads; ++ip) Movers[ip]->startRun(nBlocks,false);
 
+    const bool has_collectables=W.Collectables.size();
+
     hpmStart(QMC_VMC_0_EVENT,"vmc::main");
 
     for (int block=0;block<nBlocks; ++block)
@@ -68,12 +70,17 @@ namespace qmcplusplus
         Movers[ip]->startBlock(nSteps);
         int now_loc=CurrentStep;
 
+        RealType cnorm=1.0/static_cast<RealType>(wPerNode[ip+1]-wPerNode[ip]);
+
         for (int step=0; step<nSteps;++step)
         {
           //collectables are reset, it is accumulated while advancing walkers
           wClones[ip]->resetCollectables();
           Movers[ip]->advanceWalkers(wit,wit_end,false);
+
+          if(has_collectables) wClones[ip]->Collectables *= cnorm;
           Movers[ip]->accumulate(wit,wit_end);
+
           ++now_loc;
 
           //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);

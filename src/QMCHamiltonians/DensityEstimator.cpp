@@ -46,6 +46,7 @@ namespace qmcplusplus
 
   DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
   {
+    RealType wgt=tWalker->Weight;
     if (Periodic)
     {
       for(int iat=0; iat<P.getTotalNum(); ++iat) 
@@ -55,7 +56,7 @@ namespace qmcplusplus
         int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
         int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
         int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-        P.Collectables[getGridIndex(i,j,k)]+=1.0;
+        P.Collectables[getGridIndex(i,j,k)]+=wgt;//1.0;
         //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
         //HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
@@ -76,7 +77,7 @@ namespace qmcplusplus
           int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
           int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
           int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-          P.Collectables[getGridIndex(i,j,k)]+=1.0;
+          P.Collectables[getGridIndex(i,j,k)]+=wgt;//1.0;
           //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
           //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
         }
