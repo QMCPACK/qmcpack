@@ -177,6 +177,11 @@ namespace qmcplusplus
 
     ~BackflowTransformation() {}; 
 
+    bool put(xmlNodePtr cur)
+    {
+      return true;
+    }
+
     inline void
     acceptMove(const ParticleSet& P, int iat)
     {
