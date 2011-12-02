@@ -77,7 +77,7 @@ namespace qmcplusplus
         vector<Return_t> HD_avg(NumOptimizables,0.0);
 
         Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-        Return_t delE_bar;
+        Return_t delE_bar=0;
         for (int ip=0, wn=0; ip<NumThreads; ip++)
           {
             int nw=wClones[ip]->getActiveWalkers();
@@ -198,9 +198,6 @@ namespace qmcplusplus
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
    
-    ParticleSet::Walker_t wcopy(*W[0]);
-    wcopy.DataSet.clear();
-
 //#pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
@@ -226,7 +223,7 @@ namespace qmcplusplus
 #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
-      wClones[ip]->loadEnsemble(wcopy);
+      wClones[ip]->loadEnsemble();
     }
 
     //load walkers from SampleStack

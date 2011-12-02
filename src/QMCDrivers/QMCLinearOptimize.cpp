@@ -753,9 +753,9 @@ QMCLinearOptimize::put(xmlNodePtr q)
     if (optTarget == 0)
     {
 #if defined (QMC_CUDA)
-        if (useGPU == "yes")
-            optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
-        else
+      if (useGPU == "yes")
+        optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      else
 #endif
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
 //#if defined(ENABLE_OPENMP)

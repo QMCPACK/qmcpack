@@ -25,55 +25,8 @@
 namespace qmcplusplus {
 
   //Forward declaration
-  struct MultiChain;
-
-  struct MCSample 
-  {
-    typedef ParticleSet::Walker_t Walker_t;
-
-    ParticleSet::ParticlePos_t R;
-    ParticleSet::ParticleGradient_t G;
-    ParticleSet::ParticleLaplacian_t L;
-    ParticleSet::RealType LogPsi, Sign, PE, KE;
-
-    inline MCSample(const Walker_t& w)
-      :R(w.R), G(w.G), L(w.L)
-    {
-      LogPsi=w.Properties(LOGPSI);
-      Sign=w.Properties(SIGN);
-      PE=w.Properties(LOCALPOTENTIAL);
-      KE=w.Properties(LOCALENERGY)-PE;
-    }
-    //inline MCSample(int n)
-    //{
-    //  R.resize(n);
-    //  G.resize(n);
-    //  L.resize(n);
-    //}
-
-    inline void put(const Walker_t& w)
-    {
-      R=w.R;
-      G=w.G;
-      L=w.L;
-      LogPsi=w.Properties(LOGPSI);
-      Sign=w.Properties(SIGN);
-      PE=w.Properties(LOCALPOTENTIAL);
-      KE=w.Properties(LOCALENERGY)-PE;
-    }
-
-    inline void get(Walker_t& w) const
-    {
-      w.R=R;
-      w.G=G;
-      w.L=L;
-      w.Properties(LOGPSI)=LogPsi;
-      w.Properties(SIGN)=Sign;
-      w.Properties(LOCALPOTENTIAL)=PE;
-      w.Properties(LOCALENERGY)=PE+KE;
-    }
-
-  };
+  class MultiChain;
+  class MCSample;
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
@@ -322,7 +275,8 @@ namespace qmcplusplus {
     void saveEnsemble(iterator first, iterator last);
     /** load SampleStack data to current walkers
      */
-    void loadEnsemble(const Walker_t& wcopy);
+    void loadEnsemble();
+    //void loadEnsemble(const Walker_t& wcopy);
     /** load SampleStack from others 
       */
     void loadEnsemble(vector<MCWalkerConfiguration*>& others);

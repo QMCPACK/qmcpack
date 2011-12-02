@@ -24,7 +24,7 @@ namespace qmcplusplus {
   */
   template<class IT>
     inline void delete_iter(IT first, IT last) {
-      while(first != last) { delete *first; ++first;}
+      while(first != last) { if(*first) delete *first; ++first;}
     }
 
 

@@ -279,6 +279,16 @@ namespace qmcplusplus
 
     //this is always ugly
     MeshSize = 0; 
+    int hasPsig=1;
+#if defined(__bgp__)
+    if(root)
+    {
+      hid_t gid=H5Dopen(H5FileID,"/electrons/kpoint_0/spin_0/state_0/psi_g");
+      if(gid<0) hasPsig=0;
+      H5Dclose(gid);
+    }
+    myComm->bcast(hasPsig);
+#else
     if(root)
     {
       HDFAttribIO<TinyVector<int,3> > h_mesh(MeshSize);
@@ -286,19 +296,9 @@ namespace qmcplusplus
       h_mesh.read (H5FileID, "/electrons/mesh");
     }
     myComm->bcast(MeshSize);
-
-    //check if psi_r exists
-    bool hasPsig = (MeshSize[0] == 0);
-    //if(root)
-    //{
-    //  hid_t gid=H5Dopen(H5FileID,"/electrons/kpoint_0/spin_0/state_0/psi_r");
-    //  if(gid<0)
-    //    hasPsig=true;
-    //  else
-    //    H5Dclose(gid);
-    //}
-    //myComm->bcast(hasPsig);
-
+    hasPsig = (MeshSize[0] == 0);
+#endif
+    
     if(hasPsig)
     {
       int numk=0;

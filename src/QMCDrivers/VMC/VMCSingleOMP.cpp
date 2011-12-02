@@ -177,7 +177,7 @@ namespace qmcplusplus
 //             else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
 //           else 
-            if (QMCDriverMode[QMC_UPDATE_MODE])
+          if (QMCDriverMode[QMC_UPDATE_MODE])
           {
             if (UseDrift == "rn")
             {
@@ -228,46 +228,34 @@ namespace qmcplusplus
 #pragma omp parallel for
 #endif
     for(int ip=0; ip<NumThreads; ++ip)
+    {
+      //int ip=omp_get_thread_num();
+      Movers[ip]->put(qmcNode);
+      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+
+      if (QMCDriverMode[QMC_UPDATE_MODE])
+        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      else
+        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+
+      if (UseDrift != "rn")
       {
-        //int ip=omp_get_thread_num();
-        Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 
-        if (QMCDriverMode[QMC_UPDATE_MODE])
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-        else
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-
-        if (UseDrift != "rn")
-        {
-          for (int prestep=0; prestep<myWarmupSteps; ++prestep)
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-
-          if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-            Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-          
-#pragma omp critical
-          {
-            wClones[ip]->clearEnsemble();
-            wClones[ip]->setNumSamples(samples_th[ip]);
-          }
-        }
+        if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
-
+    }
 
     //JNKIM: THIS IS BAD AND WRONG
     if (UseDrift == "rn")
     {
       RealType avg_w(0);
       RealType n_w(0);
-#if defined(BGP_BUG)
-      for(int ip=0; ip<NumThreads; ++ip)
-      {
-#else
 #pragma omp parallel 
       {
         int ip=omp_get_thread_num();
-#endif
         for (int step=0; step<myWarmupSteps; ++step)
         {
           avg_w=0;
@@ -304,15 +292,15 @@ namespace qmcplusplus
 
         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-          
-    #pragma omp critical
-          {
-            wClones[ip]->clearEnsemble();
-            wClones[ip]->setNumSamples(samples_th[ip]);
-          }
       }
     }
-            
+
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      wClones[ip]->clearEnsemble();
+      wClones[ip]->setNumSamples(samples_th[ip]);
+    }
+
     myWarmupSteps=0;
     //Used to debug and benchmark opnemp
     //#pragma omp parallel for

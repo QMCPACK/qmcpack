@@ -175,22 +175,25 @@ namespace qmcplusplus
     for (;it != it_end; ++it)
     {
       Walker_t& awalker(**it);
-      W.loadWalker(awalker,UpdatePbyP);
+      W.R=awalker.R;
+      W.update();
+      //W.loadWalker(awalker,UpdatePbyP);
       if (awalker.DataSet.size()) awalker.DataSet.clear();
 
       awalker.DataSet.rewind();
       RealType logpsi=Psi.registerData(W,awalker.DataSet);
+      RealType logpsi2=Psi.updateBuffer(W,awalker.DataSet,false);
 
-      //a vmc step to randomize the samples
       randomize(awalker);
     }
   }
 
+  /** randomize a walker with a diffusion MC using gradients */
   void QMCUpdateBase::randomize(Walker_t& awalker)
   {
-    Walker_t::Buffer_t& w_buffer(awalker.DataSet);
-    W.loadWalker(awalker,true);
-    Psi.copyFromBuffer(W,w_buffer);
+    //Walker_t::Buffer_t& w_buffer(awalker.DataSet);
+    //W.loadWalker(awalker,true);
+    //Psi.copyFromBuffer(W,w_buffer);
 
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -201,11 +204,7 @@ namespace qmcplusplus
       PosType dr;
       getScaledDrift(m_tauovermass,grad_now,dr);
       dr += m_sqrttau*deltaR[iat];
-      if (!W.makeMoveAndCheck(iat,dr))
-      {
-        ++nReject;
-        continue;
-      }
+      if (!W.makeMoveAndCheck(iat,dr)) continue;
 
       //PosType newpos = W.makeMove(iat,dr);
       RealType ratio = Psi.ratioGrad(W,iat,grad_new);
@@ -241,7 +240,7 @@ namespace qmcplusplus
     awalker.G=W.G;
     awalker.L=W.L;
 
-    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+    RealType logpsi = Psi.updateBuffer(W,awalker.DataSet,false);
     W.saveWalker(awalker);
     RealType eloc=H.evaluate(W);
 
