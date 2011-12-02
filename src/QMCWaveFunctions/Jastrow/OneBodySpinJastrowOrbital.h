@@ -416,19 +416,22 @@ namespace qmcplusplus
         evaluateLogAndStore(P,P.G,P.L);
 
         //add U, d2U and dU. Keep the order!!!
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ",buf.current());
         buf.add(U.begin(), U.end());
         buf.add(d2U.begin(), d2U.end());
         buf.add(FirstAddressOfdU,LastAddressOfdU);
-
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ",buf.current());
         return LogValue;
       }
 
       RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)
       {
         evaluateLogAndStore(P,P.G,P.L);
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::updateBuffer ",buf.current());
         buf.put(U.first_address(), U.last_address());
         buf.put(d2U.first_address(), d2U.last_address());
         buf.put(FirstAddressOfdU,LastAddressOfdU);
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::updateBuffer ",buf.current());
         return LogValue;
       }
 
@@ -440,9 +443,11 @@ namespace qmcplusplus
        */
       void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
       {
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::copyFromBuffer ",buf.current());
         buf.get(U.first_address(), U.last_address());
         buf.get(d2U.first_address(), d2U.last_address());
         buf.get(FirstAddressOfdU,LastAddressOfdU);
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::copyFromBuffer ",buf.current());
       }
 
       /** return the current value and copy the current data to a buffer
@@ -454,9 +459,11 @@ namespace qmcplusplus
         RealType sumu = 0.0;
         for (int i=0; i<U.size(); i++) sumu+=U[i];
 
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::evaluateLog ",buf.current());
         buf.put(U.first_address(), U.last_address());
         buf.put(d2U.first_address(), d2U.last_address());
         buf.put(FirstAddressOfdU,LastAddressOfdU);
+        DEBUG_PSIBUFFER(" OneBodySpinJastrow::evaluateLog ",buf.current());
         return -sumu;
         //return std::exp(-sumu);
       }

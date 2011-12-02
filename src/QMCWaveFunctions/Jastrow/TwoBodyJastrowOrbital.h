@@ -523,11 +523,12 @@ namespace qmcplusplus {
       //  }
       //}
 
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
       U[NN]=LogValue;
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
       buf.add(FirstAddressOfdU,LastAddressOfdU);
-
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
       return LogValue;
     }
 
@@ -568,24 +569,30 @@ namespace qmcplusplus {
       //}
 
       U[NN]= LogValue;
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ",buf.current());
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ",buf.current());
       return LogValue;
     }
     
     inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::copyFromBuffer ",buf.current());
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::copyFromBuffer ",buf.current());
       DiffValSum=0.0;
     }
 
     inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::evaluateLog ",buf.current());
       RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+      DEBUG_PSIBUFFER(" TwoBodyJastrow::evaluateLog ",buf.current());
       return x;
     }
 

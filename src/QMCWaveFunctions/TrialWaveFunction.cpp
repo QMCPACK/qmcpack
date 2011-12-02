@@ -607,11 +607,11 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    for (int ii=1; it!=it_end; ++it,ii+=2)
-      {
-        logpsi += (*it)->updateBuffer(P,buf,fromscratch);
-        PhaseValue += (*it)->PhaseValue;
-      }
+    for (; it!=it_end; ++it)
+    {
+      logpsi += (*it)->updateBuffer(P,buf,fromscratch);
+      PhaseValue += (*it)->PhaseValue;
+    }
     convert(logpsi,LogValue);
     //LogValue=real(logpsi);
     buf.put(PhaseValue);

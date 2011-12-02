@@ -188,6 +188,7 @@ namespace qmcplusplus
   SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
       PooledData<RealType>& buf)
   {
+    DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
     //ValueType psi = 1.0;
     //for(int i=0; i<Dets.size(); i++)
     //  psi *= Dets[i]->registerData(P,buf);
@@ -199,12 +200,14 @@ namespace qmcplusplus
       LogValue += Dets[i]->registerData(P, buf);
       PhaseValue += Dets[i]->PhaseValue;
     }
+    DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
     return LogValue;
   }
 
   SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
       PooledData<RealType>& buf, bool fromscratch)
   {
+    DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
     //ValueType psi = 1.0;
     //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
     //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
@@ -215,13 +218,16 @@ namespace qmcplusplus
       LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
       PhaseValue += Dets[i]->PhaseValue;
     }
+    DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
     return LogValue;
   }
 
   void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
+    DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->copyFromBuffer(P, buf);
+    DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
   }
 
   /** reimplements the virtual function
@@ -248,6 +254,7 @@ namespace qmcplusplus
   SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
       PooledData<RealType>& buf)
   {
+    DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
     LogValue = 0.0;
     PhaseValue = 0.0;
     for (int i = 0; i < Dets.size(); i++)
@@ -255,6 +262,7 @@ namespace qmcplusplus
       LogValue += Dets[i]->evaluateLog(P, buf);
       PhaseValue += Dets[i]->PhaseValue;
     }
+    DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
     return LogValue;
   }
   //SlaterDet::ValueType
