@@ -191,7 +191,11 @@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+
+/* Setting precision for CUDA core kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
+
+#cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 
