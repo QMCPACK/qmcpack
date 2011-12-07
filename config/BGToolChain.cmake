@@ -16,7 +16,7 @@ set(AIX_ARCH "450d")
 SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH}  -qsmp=omp:noopt -qthreaded -qkeyword=restrict -qstrict")
 #SET(AIX_CXX_COMMON_FLAGS " -qkeyword=restrict -qstrict -qhot -qnoeh -qsuppress=1540-1090:1540-1088 ")
 #SET(AIX_CXX_COMMON_FLAGS " -qkeyword=restrict -qstrict -qnoeh -qsuppress=1540-1090:1540-1088 ")
-SET(AIX_CXX_COMMON_FLAGS "-qsuppress=1540-1090:1540-1088 ")
+SET(AIX_CXX_COMMON_FLAGS "-qdebug=NADDRTKNCFG -qsuppress=1540-1090:1540-1088 ")
 SET(AIX_OPT_FLAGS "-qmaxmem=-1 -qprefetch ")
 
 #SET(AIX_OPT_FLAGS "-O3 -Q -qmaxmem=-1 -qipa=inline -qinline -qlargepage -qprefetch ")
