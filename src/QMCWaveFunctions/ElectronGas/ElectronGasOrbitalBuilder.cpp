@@ -44,7 +44,7 @@ namespace qmcplusplus
   }
 
   ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
-#if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
+#if QMC_BUILD_LEVEL>2 
       OrbitalBuilderBase(els,psi),UseBackflow(false),BFTrans(0)
 #else
       OrbitalBuilderBase(els,psi),UseBackflow(false)
@@ -100,9 +100,8 @@ namespace qmcplusplus
     if (nc == 0) nc = nc2 = egGrid.getShellIndex(nat/2);
     int nup= egGrid.getNumberOfKpoints(nc);
     int ndn(nup);
-    if (nc2>-1)
+    if (nc2!=nc)
       ndn = egGrid.getNumberOfKpoints(nc2);
-      
     
     if (nc<0)
       {

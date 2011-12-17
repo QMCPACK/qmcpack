@@ -114,6 +114,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     Matrix<RealType> Left(N,N);
     Matrix<RealType> LeftT(N,N);
     Matrix<RealType> Right(N,N);
+    Right=0; LeftT=0; Left=0;
 
     vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
     vector<std::pair<RealType,RealType> > mappedStabilizers;
@@ -251,7 +252,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
             continue;
 //                     for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i];
         }
-        else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+        else
+        {
+           for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+           app_log()<<"  Largest LM parameter change:"<<biggestParameterChange<<endl;
+        }
         //Save this value in here for later
         Lambda = biggestParameterChange;
       }

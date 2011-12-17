@@ -182,12 +182,12 @@ namespace qmcplusplus
       {
         app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << endl;
         //make H_KE_Node
-        H_KE_Node.resize(NumThreads,0);
-        RecordsOnNode.resize(NumThreads,0);
+        H_KE_Node.resize(NumThreads);
+        RecordsOnNode.resize(NumThreads);
         //DerivRecords.resize(NumThreads );
         //HDerivRecords.resize(NumThreads );
-        DerivRecords.resize(NumThreads,0);
-        HDerivRecords.resize(NumThreads,0);
+        DerivRecords.resize(NumThreads);
+        HDerivRecords.resize(NumThreads);
       }
 
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
@@ -243,8 +243,8 @@ namespace qmcplusplus
         delete_iter(d2LogPsi.begin(),d2LogPsi.end());
         int nptcl=W.getTotalNum();
         int nwtot=wPerNode[NumThreads];
-        dLogPsi.resize(nwtot,0);
-        d2LogPsi.resize(nwtot,0);
+        dLogPsi.resize(nwtot);
+        d2LogPsi.resize(nwtot);
         for (int i=0; i<nwtot; ++i) dLogPsi[i]=new ParticleGradient_t(nptcl);
         for (int i=0; i<nwtot; ++i) d2LogPsi[i]=new ParticleLaplacian_t(nptcl);
       }
@@ -282,7 +282,7 @@ namespace qmcplusplus
     DerivStorageLevel=-1; 
     if(usebuffer == "yes" || usebuffer == "all") {
       StoreDerivInfo=true;
-      if(includeNonlocalH=="yes")  DerivStorageLevel=0;
+      if(includeNonlocalH!="no")  DerivStorageLevel=0;
       else DerivStorageLevel=1; 
       app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" <<endl;
     } else if (usebuffer == "minimum") {
@@ -291,8 +291,8 @@ namespace qmcplusplus
       DerivStorageLevel=2; 
       app_log() <<"Using minimum storage for determinant evaluation. \n";  
     } else {
-      if(includeNonlocalH=="yes") {
-        app_error() <<"Need to enable the use of includeNonlocalH=='yes' without a buffer. \n";
+      if(includeNonlocalH!="no") {
+        app_error() <<"Need to enable the use of includeNonlocalH=='name' without a buffer. \n";
         abort(); 
       } 
     } 
@@ -378,13 +378,13 @@ namespace qmcplusplus
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]); 
 //             logpsi = psiClones[ip]->evaluateLog(wRef);
           }
-          if(includeNonlocalH=="yes") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
+          if(includeNonlocalH!="no") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
-          if (includeNonlocalH=="yes")
-            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian("NonLocalECP"))).Value;
+          if (includeNonlocalH!="no")
+            saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian(includeNonlocalH.c_str()))).Value;
           else 
             saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
 //           ef += saved[ENERGY_FIXED];
@@ -395,8 +395,8 @@ namespace qmcplusplus
 
           if (needGrads)
           {
-          vector<Return_t> Dsaved(NumOptimizables);
-          vector<Return_t> HDsaved(NumOptimizables);
+          vector<Return_t> Dsaved(NumOptimizables,0);
+          vector<Return_t> HDsaved(NumOptimizables,0);
           psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
           std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
           std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
@@ -522,8 +522,8 @@ namespace qmcplusplus
           saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
           if (needGrad)
           {
-            vector<Return_t> Dsaved(NumOptimizables);
-            vector<Return_t> HDsaved(NumOptimizables);
+            vector<Return_t> Dsaved(NumOptimizables,0);
+            vector<Return_t> HDsaved(NumOptimizables,0);
             psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
             for( int i=0;i<NumOptimizables;i++)
               if(OptVariablesForPsi.recompute(i))

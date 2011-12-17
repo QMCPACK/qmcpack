@@ -537,7 +537,7 @@ void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
       }
     }
 //     returns the number of non-linear parameters.
-    app_log()<<"line params: "<<first<<" "<<last<<endl;
+//    app_log()<<"line params: "<<first<<" "<<last<<endl;
 };
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
