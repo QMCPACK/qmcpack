@@ -182,12 +182,14 @@ namespace qmcplusplus {
 
   void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
   {
-    APP_ABORT("Do implement ParticleSet::convert2UnitInBox");
-    for(int i=0; i<pin.size(); ++i)
-    {
-      //MinimumImageBConds<RealType,DIM>::apply(Lattice.G,pin[i]);
-    }
+    convert2Unit(pin,pout); // convert to crystalline unit
+    put2box(&pout[0][0],pin.size()*DIM); // remove the round
   }
+   void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
+  {
+    convert2UnitInBox(pin,pout); // convert to crystalline unit
+    convert2Cart(pout);
+  } 
 }
 /***************************************************************************
  * $RCSfile$   $Author$

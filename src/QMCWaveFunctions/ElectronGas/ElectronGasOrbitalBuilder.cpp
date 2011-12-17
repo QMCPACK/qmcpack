@@ -47,23 +47,27 @@ namespace qmcplusplus
 #if QMC_BUILD_LEVEL>2 && OHMMS_DIM==3
       OrbitalBuilderBase(els,psi),UseBackflow(false),BFTrans(0)
 #else
-      OrbitalBuilderBase(els,psi)
+      OrbitalBuilderBase(els,psi),UseBackflow(false)
 #endif
   {
   }
 
   bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   {
-    int nc=0;
+    int nc(0), nc2(-2);
+    ValueType pol(0);
     ValueType bosonic_eps(-999999);
     ValueType rntype(0);
     PosType twist(0.0);
     OhmmsAttributeSet aAttrib;
     aAttrib.add(nc,"shell");
+    aAttrib.add(nc2,"shell2");
     aAttrib.add(bosonic_eps,"eps");
     aAttrib.add(rntype,"primary");
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
+    if (nc2==-2) nc2=nc;
+    
 
 #if QMC_BUILD_LEVEL>2
     xmlNodePtr curRoot=cur;
@@ -87,21 +91,26 @@ namespace qmcplusplus
 
     typedef SlaterDet::Determinant_t Det_t;
     typedef SlaterDet SlaterDeterminant_t;
+    
+    HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
+    HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
 
     int nat=targetPtcl.getTotalNum();
-    int nup=nat/2;
-
-    HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
-
-    if (nc == 0) nc = egGrid.getShellIndex(nup);
-
+    
+    if (nc == 0) nc = nc2 = egGrid.getShellIndex(nat/2);
+    int nup= egGrid.getNumberOfKpoints(nc);
+    int ndn(nup);
+    if (nc2>-1)
+      ndn = egGrid.getNumberOfKpoints(nc2);
+      
+    
     if (nc<0)
       {
         app_error() << "  HEG Invalid Shell." << endl;
         APP_ABORT("ElectronGasOrbitalBuilder::put");
       }
 
-    if (nup!=egGrid.getNumberOfKpoints(nc))
+    if (nat!=(nup+ndn))
       {
         app_error() << "  The number of particles does not match to the shell." << endl;
         app_error() << "  Suggested values for the number of particles " << endl;
@@ -112,11 +121,32 @@ namespace qmcplusplus
       }
 
     int nkpts=(nup-1)/2;
-
+    int nkpts2=(ndn-1)/2;
+    
+    RealEGOSet* psiu;
+    RealEGOSet* psid;
+    if(nup==ndn)
+    {
     //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc,nkpts);
-    RealEGOSet* psiu=new RealEGOSet(egGrid.kpt,egGrid.mk2);
-    RealEGOSet* psid=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+      egGrid.createGrid(nc,nkpts);
+      psiu=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+      psid=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+    }
+    else if(ndn>0)
+    {
+    //create a E(lectron)G(as)O(rbital)Set
+      egGrid.createGrid(nc,nkpts);
+      egGrid2.createGrid(nc2,nkpts2);
+      
+      psiu=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+      psid=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+    }
+    else 
+    {
+    //create a E(lectron)G(as)O(rbital)Set
+      egGrid.createGrid(nc,nkpts);
+      psiu=new RealEGOSet(egGrid.kpt,egGrid.mk2);
+    }
 
 
     //create a Slater determinant
@@ -130,7 +160,8 @@ namespace qmcplusplus
 
     //add SPOSets
     sdet->add(psiu,"u");
-    sdet->add(psid,"d");
+    if(ndn>0)
+      sdet->add(psid,"d");
 
     if (rntype>0)
       {
@@ -149,17 +180,21 @@ namespace qmcplusplus
           updet = new RNDiracDeterminantBaseAlternate(psiu);
         updet->setLogEpsilon(bosonic_eps);
         updet->set(0,nup);
-
-        //create down determinant
-        Det_t *downdet;
-        if (rntype==1)
-          downdet = new RNDiracDeterminantBase(psiu);
-        else
-          downdet = new RNDiracDeterminantBaseAlternate(psiu);
-        downdet->set(nup,nup);
-        downdet->setLogEpsilon(bosonic_eps);
         sdet->add(updet,0);
-        sdet->add(downdet,1);
+
+        if(ndn>0)
+        {
+          //create down determinant
+          Det_t *downdet;
+          if (rntype==1)
+            downdet = new RNDiracDeterminantBase(psiu);
+          else
+            downdet = new RNDiracDeterminantBaseAlternate(psiu);
+          downdet->set(nup,ndn);
+          downdet->setLogEpsilon(bosonic_eps);
+          sdet->add(downdet,1);
+        }
+        
       }
     else
       {
@@ -169,10 +204,13 @@ namespace qmcplusplus
           //create up determinant
           updet = new DiracDeterminantWithBackflow(targetPtcl,psiu,BFTrans,0);
           updet->set(0,nup);
-
+          
+          if(ndn>0)
+          {
           //create down determinant
-          downdet = new DiracDeterminantWithBackflow(targetPtcl,psid,BFTrans,nup);
-          downdet->set(nup,nup);
+            downdet = new DiracDeterminantWithBackflow(targetPtcl,psid,BFTrans,nup);
+            downdet->set(nup,ndn);
+          }
         } else 
 #endif
         {
@@ -181,12 +219,14 @@ namespace qmcplusplus
           updet = new Det_t(psiu);
           updet->set(0,nup);
 
-          //create down determinant
-          downdet = new Det_t(psid);
-          downdet->set(nup,nup);
+          if(ndn>0)
+          {          //create down determinant
+            downdet = new Det_t(psid);
+            downdet->set(nup,ndn);
+          }
         }
         sdet->add(updet,0);
-        sdet->add(downdet,1);
+        if(ndn>0) sdet->add(downdet,1);
       }
 
 #if QMC_BUILD_LEVEL>2

@@ -32,6 +32,7 @@
 #include "QMCHamiltonians/DMCPsiValue.h"
 #include "QMCHamiltonians/PsiOverlap.h"
 #include "QMCHamiltonians/ForwardWalking.h"
+#include "QMCHamiltonians/NumberFluctuations.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/LocalMomentEstimator.h"
@@ -341,7 +342,7 @@ namespace qmcplusplus {
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
         }
-	else if(potType == "localmoment")
+   else if(potType == "localmoment")
         {
           string SourceName = "ion0";
           OhmmsAttributeSet hAttrib;
@@ -358,7 +359,14 @@ namespace qmcplusplus {
           LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,*source);
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
-        }        
+        }  
+         else if(potType == "numberfluctuations")
+        {
+          app_log()<<" Adding Number Fluctuation estimator"<<endl;
+          NumberFluctuations* apot=new NumberFluctuations(*targetPtcl);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+        }  
 	else if(potType == "density")
         {
 	  //          if(PBCType)//only if perioidic 
