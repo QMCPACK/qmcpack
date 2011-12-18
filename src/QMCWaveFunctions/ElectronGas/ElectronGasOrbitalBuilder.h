@@ -18,9 +18,6 @@
 
 #include <QMCWaveFunctions/OrbitalBuilderBase.h>
 #include <QMCWaveFunctions/SPOSetBase.h>
-#if QMC_BUILD_LEVEL>2
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#endif
 #include <config/stdlib/math.h>
 
 
@@ -30,6 +27,9 @@
   #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else /** declare real HEG orbitals **/
 namespace qmcplusplus {
+
+  //forward declaration
+  class  BackflowTransformation;
 
   struct RealEGOSet: public SPOSetBase
   {
@@ -292,11 +292,8 @@ namespace qmcplusplus {
     ///implement vritual function
     bool put(xmlNodePtr cur);
 
-#if QMC_BUILD_LEVEL>2
     bool UseBackflow;
     BackflowTransformation *BFTrans;
-#endif
-
   };
 
   /** OrbitalBuilder for Slater determinants of electron-gas 
