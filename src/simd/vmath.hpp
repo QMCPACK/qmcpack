@@ -14,24 +14,35 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file simd.hpp
- *
- * master header file 
- * - inner_product.hpp defines dot, copy and gemv operators
- * - trace.hpp defins trace functions used by determinant classes
- */
-#ifndef QMCPLUSPLUS_MATH_SIMD_ADOPTORS_HPP
-#define QMCPLUSPLUS_MATH_SIMD_ADOPTORS_HPP
+#ifndef QMCPLUSPLUS_VECTORIZED_STDMATH_HPP
+#define QMCPLUSPLUS_VECTORIZED_STDMATH_HPP
 
-//#define USE_BLAS_DOT
-//#define USE_DIRAC_FAST_OPERATORS
+#include <cmath>
 
-#include <simd/inner_product.hpp>
-#include <simd/trace.hpp>
-#include <simd/vmath.hpp>
+namespace qmcplusplus {
+
+  namespace simd 
+  {
+    /**  mod on an array
+     * out[i]=in[i]-floor(in[i])
+     */
+    template<typename T, typename SIZET>
+      inline void remainder(const T* restrict in, T* restrict out, SIZET n)
+      {
+        for(SIZET i=0; i<n; ++i) out[i]=in[i]-std::floor(in[i]);
+      }
+
+    template<typename T, typename SIZET>
+      inline void remainder(T* restrict inout, SIZET n)
+      {
+        for(SIZET i=0; i<n; ++i) inout[i]-=std::floor(inout[i]);
+      }
+
+  }
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jmcminis $
  * $Revision: 5077 $   $Date: 2010-12-09 03:14:51 -0600 (Thu, 09 Dec 2010) $
- * $Id: simd.hpp 5077 2010-12-09 09:14:51Z jmcminis $ 
+ * $Id: vmath.hpp 5077 2010-12-09 09:14:51Z jmcminis $ 
  ***************************************************************************/
