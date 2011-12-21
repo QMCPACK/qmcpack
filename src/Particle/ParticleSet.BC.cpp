@@ -182,10 +182,12 @@ namespace qmcplusplus {
 
   void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
   {
+    pout.setUnit(PosUnit::LatticeUnit); 
     convert2Unit(pin,pout); // convert to crystalline unit
-    put2box(&pout[0][0],pin.size()*DIM); // remove the round
+    put2box(pout);
   }
-   void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
+
+  void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
   {
     convert2UnitInBox(pin,pout); // convert to crystalline unit
     convert2Cart(pout);

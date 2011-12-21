@@ -329,12 +329,6 @@ namespace qmcplusplus {
     void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
     void applyMinimumImage(ParticlePos_t& pinout);
    
-    template<typename T> inline void put2box(T* restrict pinout, int n)
-    {
-      for(int i=0; i<n; ++i) pinout[i]-=floor(pinout[i]);
-    }
- 
-
     /** load a Walker_t to the current ParticleSet
      * @param awalker the reference to the walker to be loaded
      * @param pbyp true if it is used by PbyP update

@@ -19,6 +19,9 @@
  */
 #ifndef OHMMS_FAST_PARTICLE_OPERATORS_H
 #define OHMMS_FAST_PARTICLE_OPERATORS_H
+
+#include <simd/simd.hpp>
+
 namespace qmcplusplus {
 /** Dummy template class to be specialized
  *
@@ -868,6 +871,25 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T,2> >, Tensor<T,2>, 2,false> {
     return Component_t(x*R[0]+y*R[2], x*R[1]+y*R[3]);
   }
 };
+
+/** inout[i]=inout[i]-floor(inout[i])
+ *
+ * See simd/vmath.h and should be specialized for vector libraries, e.g., INTEL vml, IBM massv
+ */
+template<typename T, unsigned D>
+inline void put2box(ParticleAttrib<TinyVector<T,D> >& inout)
+{
+  simd::remainder(&(inout[0][0]),inout.size()*D);
+}
+
+/** out[i]=in[i]-floor(in[i])
+ */
+template<typename T, unsigned D>
+inline void put2box(const ParticleAttrib<TinyVector<T,D> >& in
+    , ParticleAttrib<TinyVector<T,D> >& out)
+{
+  simd::remainder(&(in[0][0]),&(out[0][0]),in.size()*D);
+}
 }
 #endif
 /***************************************************************************
