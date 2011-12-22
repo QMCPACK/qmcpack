@@ -314,7 +314,7 @@ namespace qmcplusplus {
           rAttrib.add(Period4CheckPoint,"stride");
           rAttrib.add(Period4CheckPoint,"period");
           rAttrib.put(tcur);
-          DumpConfig=(Period4CheckPoint>0);
+          //DumpConfig=(Period4CheckPoint>0);
         }
         else if(cname == "dumpconfig") {
           OhmmsAttributeSet rAttrib; 
@@ -329,7 +329,8 @@ namespace qmcplusplus {
       }
     }
 
-    if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
+    DumpConfig=(Period4CheckPoint>0);
+    if(!DumpConfig)  Period4CheckPoint=(nBlocks+1)*nSteps; //just safeguard
     
     int Nthreads = omp_get_max_threads();
     int Nprocs=myComm->size();
