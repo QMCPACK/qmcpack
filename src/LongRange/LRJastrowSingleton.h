@@ -46,18 +46,35 @@ namespace qmcplusplus {
     T NormFactor;
     inline JastrowFunctor(){}
     
-    void reset(ParticleSet& ref) {
-      NormFactor=4.0*M_PI/ref.Lattice.Volume;
-      T Density=ref.getTotalNum()/ref.Lattice.Volume;
+    void reset(ParticleSet& ref) 
+    {
+      reset(ref.getTotalNum(),ref.Lattice.Volume);
+      //NormFactor=4.0*M_PI/ref.Lattice.Volume;
+      //T Density=ref.getTotalNum()/ref.Lattice.Volume;
+      //Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
+      //SqrtRs=std::sqrt(Rs);
+      //OneOverSqrtRs = 1.0 / SqrtRs;
+    }
+     
+    void reset(ParticleSet& ref, T rs) 
+    {
+       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+       Rs = rs;
+       SqrtRs=std::sqrt(Rs);
+       OneOverSqrtRs = 1.0 /SqrtRs;
+    }
+
+    /** reset by the number of particles and the volume
+     * @param n  number of particles
+     * @param vol volume
+     */
+    void reset(int n, T vol)
+    {
+      NormFactor=4.0*M_PI/vol;
+      T Density=static_cast<T>(n)/vol;
       Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
       SqrtRs=std::sqrt(Rs);
       OneOverSqrtRs = 1.0 / SqrtRs;
-    }
-     
-    void reset(ParticleSet& ref, T rs) {
-       NormFactor=4.0*M_PI/ref.Lattice.Volume;
-       Rs = rs;
-       OneOverSqrtRs = 1.0 / std::sqrt(Rs);
     }
      
     inline T operator()(T r, T rinv) { 

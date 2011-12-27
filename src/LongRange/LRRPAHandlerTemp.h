@@ -84,9 +84,13 @@ namespace qmcplusplus {
           LR_rc=Basis.get_rc();
         }
     
-        void Breakup(ParticleSet& ref, RealType rs_ext) {
-      //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
-          rs=rs_ext;
+        void Breakup(ParticleSet& ref, RealType rs_ext) 
+        {
+          //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+          if(rs_ext>0)
+            rs=rs_ext;
+          else
+            rs = std::pow(3.0/4.0/M_PI*ref.Lattice.Volume/static_cast<RealType>(ref.getTotalNum()) ,1.0/3.0);
           myFunc.reset(ref,rs);
           InitBreakup(ref.Lattice,1); 
           fillFk(ref.SK->KLists);
