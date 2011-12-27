@@ -209,16 +209,21 @@ namespace qmcplusplus {
     SRA->setRmax(Rcut);
     nfunc->initialize(SRA, myGrid);
 
-    static  int counter=0;
-    char fname[32];
-    sprintf(fname,"%s.%d.dat",MyName.c_str(),counter++);
-    ofstream fout(fname);
-    for (int i = 0; i < myGrid->size(); i++) {
-      RealType r=(*myGrid)(i);
-      fout << r << "   " << nfunc->evaluate(r) << "   "
-          << myHandler->evaluate(r,1.0/r) << " " 
-          << myHandler->evaluateLR(r) << endl;
-    }
+    //Do not write the table
+    //static  int counter=0;
+    //if(IsManager && counter==0)
+    //{
+    //  char fname[32];
+    //  sprintf(fname,"%s.%d.dat",MyName.c_str(),counter++);
+    //  ofstream fout(fname);
+    //  for (int i = 0; i < myGrid->size(); i++) {
+    //    RealType r=(*myGrid)(i);
+    //    fout << r << "   " << nfunc->evaluate(r) << "   "
+    //      << myHandler->evaluate(r,1.0/r) << " " 
+    //      << myHandler->evaluateLR(r) << endl;
+    //  }
+    //}
+
     TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
     j2->addFunc(0,0,nfunc);
     ShortRangeRPA=j2;

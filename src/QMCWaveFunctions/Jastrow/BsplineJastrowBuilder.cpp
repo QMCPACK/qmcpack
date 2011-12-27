@@ -27,7 +27,10 @@
   #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
   #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif
+#include "LongRange/LRRPAHandlerTemp.h"
+#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {
 
@@ -121,6 +124,39 @@ namespace qmcplusplus {
     }
   }
 
+  /** initialize with RPA 
+   * @param ref particleset
+   * @param bfunc bspline function to be initialized
+   * @param nopbc true, if not periodic
+   */
+  template<typename T>
+    inline void initWithRPA(ParticleSet& ref,  BsplineFunctor<T>& bfunc, T fac, bool nopbc)
+    {
+      if(nopbc) // for open systems, do nothing
+      {
+        return; 
+        //T vol=std::pow(bfunc.cutoff_radius,3);
+        //rpa.reset(ref.getTotalNum(),vol*0.5);
+      }
+
+      LRRPAHandlerTemp<RPABreakup<T>,LPQHIBasis> rpa(ref,-1.0);
+      rpa.Breakup(ref,-1.0);
+
+      int npts=bfunc.NumParams;
+      T dr=bfunc.cutoff_radius/static_cast<T>(npts);
+      vector<T>  y(npts);
+      T r=0;
+      for (int i=0; i<npts; i++)
+      {
+        y[i]=fac*rpa.evaluate(r,1.0/r);
+        r += dr;
+      }
+      T last=y[npts-1]; 
+      for(int i=0; i<npts; i++) bfunc.Parameters[i]=y[i]-last;
+      bfunc.reset();
+      bfunc.print();
+    }
+
   bool BsplineJastrowBuilder::put(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
@@ -207,7 +243,7 @@ namespace qmcplusplus {
 
 	  RadFuncType *functor = new RadFuncType(cusp);
 	  functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-	  functor->put (kids);
+	  bool initialized_p=functor->put(kids);
 	  functor->elementType=pairType;
 	  if (functor->cutoff_radius < 1.0e-6) {
 	    app_log()  << "  BsplineFunction rcut is currently zero.\n"
@@ -216,6 +252,13 @@ namespace qmcplusplus {
 	     functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
 	     functor->reset();
 	  }
+
+          //RPA INIT 
+          //if(!initialized_p)
+          //{
+          //  app_log() << "  Initializing Two-Body with RPA Jastrow " << endl;
+          //  initWithRPA(targetPtcl,*functor,-cusp/0.5,targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN);
+          //}
 
           J2->addFunc(ia,ib,functor);
           dJ2->addFunc(ia,ib,functor);
@@ -239,8 +282,10 @@ namespace qmcplusplus {
       targetPsi.addOrbital(J2,"J2_bspline");
       J2->setOptimizable(true);
     }
+
     return true;
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

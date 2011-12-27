@@ -377,7 +377,7 @@ namespace qmcplusplus
                 if (params.size() == NumParams)
                   Parameters = params;
                 else
-                  {
+                 {
                     app_log() << "Changing number of Bspline parameters from "
                     << params.size() << " to " << NumParams << ".  Performing fit:\n";
                     // Fit function to new number of parameters
@@ -429,11 +429,15 @@ namespace qmcplusplus
           }
 
         reset();
-        return true;
 
+        real_type zeros=0;
+        for (int i=0; i< NumParams; i++) zeros+=Parameters[i]*Parameters[i];
+
+        return zeros>1.0e-12; //true if Parameters are not zero
       }
 
-      void initialize(int numPoints, vector<real_type>& x, vector<real_type>& y, real_type cusp, real_type rcut, string id, string optimize )
+      void initialize(int numPoints, vector<real_type>& x, vector<real_type>& y
+          , real_type cusp, real_type rcut, string& id, string& optimize )
       {
         ReportEngine PRE("BsplineFunctor","initialize");
         NumParams = numPoints;
