@@ -90,19 +90,6 @@ namespace qmcplusplus {
      */
     inline void setWaveFunctionPool(WaveFunctionPool* pset) { psiPool=pset;}
 
-    /** clone P/Psi/H 
-     * @param qp original ParticleSet to be cloned
-     * @param psi original TrialWaveFunction to be cloned
-     * @param h original QuantumHamiltonian to be cloned
-     * @param plist array containing the original and cloned ParticleSets
-     * @param olist array containing the original and cloned TrialWaveFunctions
-     * @param hlist array containing the original and cloned QMCHamiltonians
-     */
-    void clone(const MCWalkerConfiguration& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
-        vector<MCWalkerConfiguration*>& plist, vector<TrialWaveFunction*>& olist, 
-        vector<QMCHamiltonian*>& hlist);
-
-
   private:
 
     /** pointer to the primary QMCHamiltonian
