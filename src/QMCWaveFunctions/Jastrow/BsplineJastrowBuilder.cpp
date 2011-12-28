@@ -124,38 +124,50 @@ namespace qmcplusplus {
     }
   }
 
-  /** initialize with RPA 
-   * @param ref particleset
-   * @param bfunc bspline function to be initialized
-   * @param nopbc true, if not periodic
+  /** class to initialize bsplin functions
    */
   template<typename T>
-    inline void initWithRPA(ParticleSet& ref,  BsplineFunctor<T>& bfunc, T fac, bool nopbc)
+  struct BsplineInitializer
+  {
+
+    vector<T> rpaValues;
+
+    /** initialize with RPA 
+     * @param ref particleset
+     * @param bfunc bspline function to be initialized
+     * @param nopbc true, if not periodic
+     */
+    inline void initWithRPA(ParticleSet& P,  BsplineFunctor<T>& bfunc, T fac)
     {
-      if(nopbc) // for open systems, do nothing
+      if(P.Lattice.SuperCellEnum==SUPERCELL_OPEN) // for open systems, do nothing
       {
         return; 
         //T vol=std::pow(bfunc.cutoff_radius,3);
         //rpa.reset(ref.getTotalNum(),vol*0.5);
       }
 
-      LRRPAHandlerTemp<RPABreakup<T>,LPQHIBasis> rpa(ref,-1.0);
-      rpa.Breakup(ref,-1.0);
-
       int npts=bfunc.NumParams;
-      T dr=bfunc.cutoff_radius/static_cast<T>(npts);
-      vector<T>  y(npts);
-      T r=0;
-      for (int i=0; i<npts; i++)
+      if(rpaValues.empty())
       {
-        y[i]=fac*rpa.evaluate(r,1.0/r);
-        r += dr;
+        rpaValues.resize(npts);
+        LRRPAHandlerTemp<RPABreakup<T>,LPQHIBasis> rpa(P,-1.0);
+        rpa.Breakup(P,-1.0);
+        T dr=bfunc.cutoff_radius/static_cast<T>(npts);
+        T r=0;
+        for (int i=0; i<npts; i++)
+        {
+          rpaValues[i]=rpa.evaluate(r,1.0/r); //y[i]=fac*rpa.evaluate(r,1.0/r);
+          r += dr;
+        }
       }
-      T last=y[npts-1]; 
-      for(int i=0; i<npts; i++) bfunc.Parameters[i]=y[i]-last;
+      T last=rpaValues[npts-1];
+      //vector<T>  y(npts);
+      //for (int i=0; i<npts; i++) y[i]=fac*rpaValues[i];
+      //T last=y[npts-1]; 
+      for(int i=0; i<npts; i++) bfunc.Parameters[i]=fac*(rpaValues[i]-last);
       bfunc.reset();
-      bfunc.print();
     }
+  };
 
   bool BsplineJastrowBuilder::put(xmlNodePtr cur)
   {
@@ -182,6 +194,15 @@ namespace qmcplusplus {
     } 
     else // Create a two-body Jastrow
     {
+      string init_mode("0");
+      {
+        OhmmsAttributeSet hAttrib;
+        hAttrib.add(init_mode,"init");
+        hAttrib.put(cur);
+      }
+
+      BsplineInitializer<RealType> j2Initializer;
+
       xmlNodePtr kids = cur->xmlChildrenNode;
 #ifdef QMC_CUDA
       typedef TwoBodyJastrowOrbitalBspline J2Type;
@@ -254,11 +275,11 @@ namespace qmcplusplus {
 	  }
 
           //RPA INIT 
-          //if(!initialized_p)
-          //{
-          //  app_log() << "  Initializing Two-Body with RPA Jastrow " << endl;
-          //  initWithRPA(targetPtcl,*functor,-cusp/0.5,targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN);
-          //}
+          if(!initialized_p && init_mode =="rpa")
+          {
+            app_log() << "  Initializing Two-Body with RPA Jastrow " << endl;
+            j2Initializer.initWithRPA(targetPtcl,*functor,-cusp/0.5);
+          }
 
           J2->addFunc(ia,ib,functor);
           dJ2->addFunc(ia,ib,functor);
