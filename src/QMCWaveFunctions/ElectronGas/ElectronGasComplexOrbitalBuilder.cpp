@@ -16,6 +16,9 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#if QMC_BUILD_LEVEL>2
+#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#endif
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
