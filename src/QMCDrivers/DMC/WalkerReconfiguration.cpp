@@ -112,6 +112,9 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
       minus.push_back(iw);
   }
 
+  curData[FNSIZE_INDEX]=nw-minus.size();
+  curData[RNONESIZE_INDEX]=minus.size();
+
   for(int i=0; i<plus.size(); i++) 
   {
     int im=minus[i],ip=plus[i];

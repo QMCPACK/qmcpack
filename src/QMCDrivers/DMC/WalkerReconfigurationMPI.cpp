@@ -78,7 +78,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     wConf.resize(nw);
     //wSum.resize(NumContexts);
     wOffset.resize(NumContexts+1);
-    dN.resize(NumContexts+1);
+    dN.resize(NumContexts+4);
   }
 
   //std::fill(wSum.begin(),wSum.end(),0.0);
@@ -158,6 +158,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     ncopy_w[iw]=ni;
   }
 
+  //plus: a list of walkers to be duplicated
+  //minus: a list of walkers to be removed
   vector<int> plus, minus;
   for(iw=0;iw<nw; iw++) {
     int m=ncopy_w[iw];
@@ -168,65 +170,53 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     }
   }
 
+  //save the number of local walkers to be removed. This will be collected later.
+  int nw_removed=minus.size();
+
   //copy within the local node
   int lower=std::min(plus.size(),minus.size()); 
   while(lower>0) 
   {
     --lower;
-    int im=minus[lower], ip=plus[lower];
-    W[im]->makeCopy(*(W[ip]));
+    int im=minus[lower]; //walker index to be replaced
+    int ip=plus[lower]; //walker index to be duplicated
+    W[im]->makeCopy(*(W[ip])); //copy the walker
     W[im]->ParentID=W[ip]->ID;
     W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-    minus.pop_back();
-    plus.pop_back();
+    minus.pop_back();//remove it
+    plus.pop_back();//remove it
   }
 
+  std::fill(dN.begin(),dN.end(),0);
 
   //dN[ip] extra/missing walkers
-  //dN[NumContexts] contains the number of surviving walkers
-  std::fill(dN.begin(),dN.end(),0);
-  dN[NumContexts]=icdiff;
   if(plus.size()) { dN[MyContext]=plus.size();}
   if(minus.size()) { dN[MyContext]=-minus.size();}
+
+  //dN[NumContexts] contains the number of surviving walkers
+  dN[NumContexts]=icdiff;
+
+  //other data to compute survival rate and how many walkers are swapped
+  dN[NumContexts+1]=nw_removed;
+  dN[NumContexts+2]=plus.size();
+  dN[NumContexts+3]=minus.size();
 
   //collect the data
   myComm->allreduce(dN);
 
+  //Each task will send or recv not both.
   if(plus.size()) sendWalkers(W,plus);
   if(minus.size()) recvWalkers(W,minus);
 
-  //vector<int> minusN, plusN;
-  //bool tosend=false, torecv=false;
-  //for(int ip=0; ip<NumContexts; ip++) {
-  //  if(dN[ip]>0) {
-  //    plusN.insert(plusN.end(),dN[ip],ip);
-  //    tosend=true;
-  //  } else if(dN[ip]<0) {
-  //    minusN.insert(minusN.end(),-dN[ip],ip);
-  //    torecv=true;
-  //  }
-  //}
+  //app_log() << "RECONFIGURATION  plus= " << dN[NumContexts+2] << " minus= " << dN[NumContexts+3] << endl;
+  //app_log() << "RECONFIGURATION ";
+  //for(int i=0; i<NumContexts; ++i) app_log() << dN[i] << " ";
+  //app_log() << endl;
 
-  //int wbuffer_size=W[0]->byteSize();
-
-  //int nswap=plusN.size();
-  //int last = abs(dN[MyContext])-1;
-  //int ic=0;
-  //while(ic<nswap && last>=0) {
-  //  if(plusN[ic]==MyContext) {
-  //    OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-  //    W[plus[last]]->putMessage(sendBuffer);
-  //    OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
-  //    --last; 
-  //  } 
-  //  if(minusN[ic]==MyContext) {
-  //    OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-  //    OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
-  //    W[minus[last]]->getMessage(recvBuffer);
-  //    --last;
-  //  }
-  //  ++ic;
-  //}
+  //record the number of walkers created/destroyed
+  curData[RNONESIZE_INDEX]=dN[NumContexts+1];
+  curData[FNSIZE_INDEX]=curData[WEIGHT_INDEX]-curData[RNONESIZE_INDEX];
+  curData[SENTWALKERS_INDEX]=dN[NumContexts+2];
 
   //collect surviving walkers
   return dN[NumContexts];
