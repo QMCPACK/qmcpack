@@ -362,7 +362,7 @@ namespace qmcplusplus {
       Period4WalkerDump=(nBlocks+1)*nSteps;
 
 
-    app_log() << "  Walker Check Points are dumped every " << Period4CheckPoint << " steps." << endl;
+    app_log() << "  Walker Check Points are dumped every " << Period4CheckPoint << " block." << endl;
     if (Period4WalkerDump>0) app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;

@@ -256,6 +256,8 @@ namespace qmcplusplus
           ToDoSteps=iParam[B_ENERGYUPDATEINTERVAL]-1;
         }
       }
+      else
+        vParam[B_ETRIAL]=vParam[B_EREF];
     }
     else//warmup
     {
@@ -270,6 +272,9 @@ namespace qmcplusplus
         else
           vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])+vParam[B_FEEDBACK]*(logN-std::log(pop_now));
       }
+      else
+        vParam[B_ETRIAL]=vParam[B_EREF];
+
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
       {
@@ -370,7 +375,8 @@ namespace qmcplusplus
       {
         //may set Eref to a safe value
         //if(EnergyHistory.count()<5) Eref -= vParam[EnergyWindowIndex];
-        vParam[B_ETRIAL]=0.0;vParam[B_FEEDBACK]=0.0;logN=0.0;
+        vParam[B_ETRIAL]=vParam[B_EREF];
+        vParam[B_FEEDBACK]=0.0;logN=0.0;
       }
 //       vParam(abranch.vParam)
 
@@ -440,7 +446,10 @@ namespace qmcplusplus
       logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
     else
     {
-      vParam[B_ETRIAL]=0.0;vParam[B_FEEDBACK]=0.0;logN=0.0;
+      //vParam[B_ETRIAL]=0.0;
+      vParam[B_ETRIAL]=vParam[B_EREF];
+      vParam[B_FEEDBACK]=0.0;
+      logN=0.0;
     }
 
     WalkerController->put(myNode);
@@ -451,6 +460,7 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w) 
   {
+    ostringstream o;
     if(!BranchMode[B_DMCSTAGE])
     {
       RealType e, sigma2;
@@ -467,10 +477,12 @@ namespace qmcplusplus
       VarianceHist(vParam[B_SIGMA]);
       //DMCEnergyHist(vParam[B_EREF]);
 
-      app_log() << "SimpleFixedNodeBranch::checkParameters " << endl;
-      app_log() << "  Average Energy of a population  = " << e << endl;
-      app_log() << "  Energy Variance = " << vParam[B_SIGMA] << endl;
+      o << "SimpleFixedNodeBranch::checkParameters " << endl;
+      o << "  Average Energy of a population  = " << e << endl;
+      o << "  Energy Variance = " << vParam[B_SIGMA] << endl;
     }
+    app_log() << o.str() << endl;
+    app_log().flush();
   }
 
   void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w) 
@@ -563,6 +575,7 @@ namespace qmcplusplus
 
   void SimpleFixedNodeBranch::read(const string& fname) 
   {
+
     BranchMode.set(B_RESTART,0);
 
     if(fname.empty()) return;
