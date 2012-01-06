@@ -621,10 +621,15 @@ QMCGaussianParserBase::createMultiDeterminantSet()  {
     for(int i=0; i<CIcoeff.size(); i++) {
       if(fabs(CIcoeff[i]) > ci_threshold) {
         xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
-        std::ostringstream coeff; coeff<<CIcoeff[i];
+        std::ostringstream coeff; 
+        std::ostringstream qc_coeff; qc_coeff<<CIcoeff[i];
+        if(zeroCI && i==0) { coeff<<1.0; }
+        else if(zeroCI && i>0) { coeff<<0.0; }
+        else { coeff<<CIcoeff[i]; }
         std::ostringstream tag; tag<<"CIcoeff_" <<iv++;
         xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
         xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
+        xmlNewProp(ci,(const xmlChar*)"qc_coeff",(const xmlChar*) qc_coeff.str().c_str());
         xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[i].substr(0,ci_nstates).c_str());
         xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[i].substr(0,ci_nstates).c_str());
         xmlAddChild(detlist,ci);
