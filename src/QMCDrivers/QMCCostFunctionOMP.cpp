@@ -365,8 +365,8 @@ namespace qmcplusplus
           wRef.R=thisWalker.R;
           wRef.update();
           Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-          Return_t logpsi(0);
-//           psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
+//          Return_t logpsi(0);
+//          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
 
 // buffer for MultiSlaterDet data 
 //          if((usebuffer=="yes")||(includeNonlocalH=="yes")) {
@@ -376,9 +376,9 @@ namespace qmcplusplus
 //            logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
           } else {
             psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]); 
-//             logpsi = psiClones[ip]->evaluateLog(wRef);
+//            logpsi = psiClones[ip]->evaluateLog(wRef);
           }
-          if(includeNonlocalH!="no") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
+//          if(includeNonlocalH!="no") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
 
           Return_t x= hClones[ip]->evaluate(wRef);
           e0 += saved[ENERGY_TOT] = x;
@@ -390,7 +390,7 @@ namespace qmcplusplus
 //           ef += saved[ENERGY_FIXED];
           saved[REWEIGHT]=thisWalker.Weight=1.0;
           
-//           thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
+//          thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
 
 
           if (needGrads)
@@ -487,12 +487,14 @@ namespace qmcplusplus
     }
 
     //#pragma omp parallel reduction(+:wgt_tot)
+    Return_t inv_n_samples=1.0/NumSamples;
     typedef MCWalkerConfiguration::Walker_t Walker_t;
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      Return_t eloc_new, wgt_node=0.0, wgt_node2=0.0;
+      Return_t eloc_new;
+      Return_t wgt_node=0.0, wgt_node2=0.0;
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin());
       MCWalkerConfiguration::iterator it_end(wRef.end());
@@ -518,7 +520,9 @@ namespace qmcplusplus
             wRef.L += *d2LogPsi[iwg];
             //             logpsi=psiClones[ip]->evaluateLog(wRef);
           }
-          Return_t weight=saved[REWEIGHT] = std::exp(vmc_or_dmc*(logpsi-saved[LOGPSI_FREE]))*thisWalker.Weight ;
+//          Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]));
+          Return_t weight = saved[REWEIGHT] = vmc_or_dmc*(logpsi-saved[LOGPSI_FREE])+std::log(thisWalker.Weight);
+//          if(std::isnan(weight)||std::isinf(weight)) weight=0;
           saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
           if (needGrad)
           {
@@ -533,8 +537,8 @@ namespace qmcplusplus
               }
           }
           
-          wgt_node+=weight;
-          wgt_node2+=weight*weight;
+          wgt_node+=inv_n_samples*weight;
+          wgt_node2+=inv_n_samples*weight*weight;
         }
 
 #pragma omp atomic
@@ -544,15 +548,15 @@ namespace qmcplusplus
     }
 
     //this is MPI barrier
-    //OHMMS::Controller->barrier();
+    OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
     myComm->allreduce(wgt_tot2);
-    //app_log()<<"Before Purge"<<wgt_tot*wgt_tot/wgt_tot2<<endl;
+//    app_log()<<"Before Purge"<<wgt_tot<<" "<<wgt_tot2<<endl;
 
 
 
-    Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
+    Return_t wgtnorm = (wgt_tot==0)?0:wgt_tot;
     wgt_tot=0.0;
     for (int ip=0; ip<NumThreads; ip++)
       {
@@ -560,15 +564,31 @@ namespace qmcplusplus
         for (int iw=0; iw<nw;iw++)
           {
             Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-            saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
-            wgt_tot+= saved[REWEIGHT];
+            saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), numeric_limits<Return_t>::max()*0.1 );
+            wgt_tot+= inv_n_samples*saved[REWEIGHT];
           }
       }
-    //app_log()<<"After Purge"<<wgt_tot*wgt_tot/new_wgt_tot2<<endl;
     myComm->allreduce(wgt_tot);
+//    app_log()<<"During Purge"<<wgt_tot<<" "<<endl;
+
+
+    wgtnorm =(wgt_tot==0)?1:1.0/wgt_tot;
+    wgt_tot=0.0;
+    for (int ip=0; ip<NumThreads; ip++)
+      {
+        int nw=wClones[ip]->getActiveWalkers();
+        for (int iw=0; iw<nw;iw++)
+          {
+            Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+            saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight);
+            wgt_tot+= inv_n_samples*saved[REWEIGHT];
+          }
+      }
+    myComm->allreduce(wgt_tot);
+//    app_log()<<"After Purge"<<wgt_tot<<" "<<endl;
 
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
-    CSWeight=wgt_tot=1.0/wgt_tot;
+    CSWeight=wgt_tot=(wgt_tot==0)?1:1.0/wgt_tot;
     for (int ip=0; ip<NumThreads; ip++)
       {
         int nw=wClones[ip]->getActiveWalkers();
