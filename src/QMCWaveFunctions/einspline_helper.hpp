@@ -64,7 +64,7 @@ namespace qmcplusplus
     T ny_i=1.0/static_cast<T>(ny);
     T nz_i=1.0/static_cast<T>(nz);
 
-#pragma omp parallel for firstprivate(nx_i,ny_i,nz_i)
+//#pragma omp parallel for firstprivate(nx_i,ny_i,nz_i)
     for (int ix=0; ix<nx; ix++) 
     {
       T s, c;
@@ -103,6 +103,7 @@ namespace qmcplusplus
 //            }
 //          }
   }
+
 
   /** rotate the state after 3dfft
    *
@@ -233,6 +234,106 @@ namespace qmcplusplus
     }
   }
 
+  /** rotate the state after 3dfft
+   *
+   * Compute phase factor a a twist
+   *
+   */
+  template<typename T>
+    inline void compute_phase(const TinyVector<T,3>& twist, Array<std::complex<T>,3>& inout)
+    {
+//#pragma omp parallel 
+      {
+        const T two_pi=-2.0*M_PI;
+        const int nx=inout.size(0);
+        const int ny=inout.size(1);
+        const int nz=inout.size(2);
+        T nx_i=two_pi/static_cast<T>(nx)*twist[0];
+        T ny_i=two_pi/static_cast<T>(ny)*twist[1];
+        T nz_i=two_pi/static_cast<T>(nz)*twist[2];
+        T phase[nz],s,c;
+//#pragma omp for
+        for (int ix=0; ix<nx; ix++)
+        {
+          std::complex<T>* restrict in_ptr=inout.data()+ix*ny*nz;
+          T rux=static_cast<T>(ix)*nx_i;
+          for (int iy=0; iy<ny; iy++)
+          {
+            T ruy=static_cast<T>(iy)*ny_i+rux;
+            //for(int iz=0; iz<nz; ++iz)
+            //{
+            //  T phi=(ruy+(static_cast<T>(iz)*nz_i));
+            //  sincos(phi,&s,&c);
+            //  *in_ptr++=complex<T>(c,s);
+            //}
+            for(int iz=0; iz<nz;iz++) phase[iz]=(ruy+(static_cast<T>(iz)*nz_i));
+            eval_e2iphi(nz,phase,in_ptr);
+            in_ptr+=nz;
+          }
+        }
+      }
+    }
+
+  /** rotate the state after 3dfft
+   *
+   */
+  template<typename T>
+    inline void fix_phase_rotate(const Array<std::complex<T>,3>& e2pi, Array<std::complex<T>,3>& in, Array<T,3>& out)
+    {
+      const int nx=e2pi.size(0);
+      const int ny=e2pi.size(1);
+      const int nz=e2pi.size(2);
+      T rNorm=0.0, iNorm=0.0;
+//#pragma omp parallel for reduction(+:rNorm,iNorm)
+      for (int ix=0; ix<nx; ix++) 
+      {
+        T rpart=0.0, ipart=0.0;
+        const std::complex<T>* restrict p_ptr=e2pi.data()+ix*ny*nz;
+        std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
+        for (int iyz=0; iyz<ny*nz; ++iyz)
+        {
+          in_ptr[iyz] *= p_ptr[iyz];
+          rpart += in_ptr[iyz].real()*in_ptr[iyz].real();
+          ipart += in_ptr[iyz].imag()*in_ptr[iyz].imag();
+        }
+        rNorm+=rpart;
+        iNorm+=ipart;
+      }
+
+//#pragma omp parallel
+      {
+        T arg = std::atan2(iNorm, rNorm);
+        T phase_i,phase_r;
+        sincos(0.125*M_PI-0.5*arg, &phase_i, &phase_r);
+//#pragma omp for 
+        for (int ix=0; ix<nx; ix++)
+        {
+          const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
+          T* restrict out_ptr=out.data()+ix*ny*nz;
+          for (int iyz=0; iyz<ny*nz; iyz++)
+            out_ptr[iyz]=phase_r*in_ptr[iyz].real()-phase_i*in_ptr[iyz].imag();
+        }
+      }
+    }
+
+  template<typename T>
+    inline void fix_phase_rotate(const Array<std::complex<T>,3>& e2pi
+        , const Array<std::complex<T>,3>& in , Array<std::complex<T>,3>& out)
+    {
+      T rNorm=0.0, iNorm=0.0, riNorm=0.0;
+
+      //defined in simd/inner_product.hpp
+      simd::accumulate_phases(e2pi.size(),e2pi.data(),in.data(),rNorm,iNorm,riNorm);
+
+      T x=(rNorm-iNorm)/riNorm;
+      x=1.0/std::sqrt(x*x+4.0);
+      T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
+      std::complex<T> phase_c(phs*phs/(rNorm+iNorm),(1.0-phs*phs)/(rNorm+iNorm));
+
+      BLAS::axpy(in.size(),phase_c,in.data(),out.data());
+    }
+
+
   inline bool EinsplineSetBuilder::bcastSortBands(int n, bool root)
   {
     PooledData<RealType> misc(n*3+1);
@@ -298,23 +399,20 @@ namespace qmcplusplus
     myComm->bcast(MeshSize);
     hasPsig = (MeshSize[0] == 0);
 #endif
-    
+
     if(hasPsig)
     {
       int numk=0;
-      if(root)
-      {
-        HDFAttribIO<int> h_numk(numk);
-        h_numk.read (H5FileID, "/electrons/number_of_kpoints");
-      }
-      myComm->bcast(numk);
-
+      MaxNumGvecs=0;
       //    std::set<TinyVector<int,3> > Gset;
       // Read k-points for all G-vectors and take the union
       TinyVector<int,3> maxIndex(0,0,0);
-      Gvecs.resize(numk);
-      for (int ik=0; ik<numk; ik++) 
+      Gvecs.resize(NumTwists);
+      //for (int ik=0; ik<numk; ik++) 
+      //{
+      for(int k=0; k<DistinctTwists.size(); ++k)
       {
+        int ik=DistinctTwists[k];
         // ostringstream numGpath;
         // HDFAttribIO<int> h_numg(numG);
         // int numG=0;
@@ -333,6 +431,8 @@ namespace qmcplusplus
         if(!root) Gvecs[ik].resize(numg);
         myComm->bcast(Gvecs[ik]);
 
+        MaxNumGvecs=std::max(int(Gvecs[ik].size()),MaxNumGvecs);
+
         for (int ig=0; ig<Gvecs[ik].size(); ig++) 
         {
           maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[ik][ig][0]));
@@ -350,6 +450,8 @@ namespace qmcplusplus
     app_log() << "B-spline mesh factor is " << MeshFactor << endl;
     app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
       << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+    app_log() << "Maxmimum number of Gvecs " << MaxNumGvecs << endl;
+    app_log().flush();
 
     return hasPsig;
   }
