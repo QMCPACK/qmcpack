@@ -160,6 +160,23 @@ namespace qmcplusplus {
       {
         MatrixOperators::product(a,v,b);
       }
+
+
+    template<typename T>
+      inline void accumulate_phases(const int& n
+          , const std::complex<T> * restrict x, const std::complex<T> * restrict y
+          , T& rN, T& iN, T& riN)
+      {
+        for(int i=0; i<n; ++i)
+        {
+          T tr=x[i].real()*y[i].real()-x[i].imag()*y[i].imag();
+          T ti=x[i].real()*y[i].imag()+x[i].imag()*y[i].real();
+          rN += tr*tr;
+          iN += ti*ti;
+          riN += tr*ti;
+        }//
+      }
+
   } //simd namepsace
 
 //    template<typename T>
