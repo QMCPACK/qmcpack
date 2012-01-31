@@ -23,7 +23,7 @@
 using std::string;
 #include <time.h>
 
-#if defined(XT_CATAMOUNT)
+#if defined(_CRAYMPI) || defined(XT_CATAMOUNT)
 string getUserName()
 {
   return "auser";
