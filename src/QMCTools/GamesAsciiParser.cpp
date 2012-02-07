@@ -141,7 +141,7 @@ void GamesAsciiParser::parse(const std::string& fname) {
   } else if (readGuess > 0) {
     cout<<"Reading " <<readGuess <<" orbitals from file.\n";
     numMO=readGuess;
-    if(lookFor(fin,"INITIAL GUESS ORBITALS")) {
+    if(lookFor(fin,"     INITIAL GUESS ORBITALS")) {
       MOtype = "InitialGuess";
       readtype=0;
       cout<<"Reading INITIAL GUESS ORBITALS output. \n";
