@@ -169,6 +169,7 @@ namespace qmcplusplus {
       if (shape=="sphere") return evaluateSphere(P);
       else if (shape=="box") return evaluateBox(P);
       else if (shape=="half") return evaluateHalfSpace(P);
+      return 0.0;
     }
 
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
@@ -178,11 +179,13 @@ namespace qmcplusplus {
     inline Return_t 
     registerData(ParticleSet& P, BufferType& buffer) 
     {
+      return 0.0;
     }
 
     inline Return_t 
     updateBuffer(ParticleSet& P, BufferType& buffer) 
     {
+      return 0.0;
     }
 
     inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
