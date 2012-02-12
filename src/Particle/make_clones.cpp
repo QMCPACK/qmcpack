@@ -31,7 +31,7 @@ namespace qmcplusplus
     if(myClones.empty())
     {
       myClones.resize(n,0);
-#pragma omp parallel for
+//#pragma omp parallel for
       for(int i=0; i<n;++i)
         if(i) myClones[i]=new ParticleSet(*this);
     }
@@ -58,7 +58,7 @@ namespace qmcplusplus
     if(myClones.empty())
     {
       myClones.resize(n,0);
-#pragma omp parallel for
+//#pragma omp parallel for
       for(int i=0; i<n;++i)
         if(i) myClones[i]=new MCWalkerConfiguration(*this);
     }

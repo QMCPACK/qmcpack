@@ -33,7 +33,55 @@ using namespace std;
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
-using namespace qmcplusplus;
+namespace qmcplusplus
+{
+
+  /** set the property of a SpeciesSet
+   * @param tspecies SpeciesSet
+   * @param sid id of the species whose properties to be set
+   *
+   * Need unit handlers but for now, everything is in AU:
+   * m_e=1.0, hartree and bohr and unit="au" 
+   * Example to define C(arbon)
+   * <group name="C">
+   *   <parameter name="mass" unit="amu">12</parameter>
+   *   <parameter name="charge">-6</parameter>
+   * </group>
+   * Note that unit="amu" is given for the mass.
+   * When mass is not given, they are set to the electron mass.
+   */
+  void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
+  {
+
+    const double proton_mass=1822.888530063;
+    cur = cur->xmlChildrenNode;
+    while(cur != NULL)
+    {
+      string cname((const char*)cur->name);
+      if(cname == "parameter") 
+      {
+        string pname;
+        string unit_name("au");//hartree, bohr & me=1
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(pname,"name");
+        pAttrib.add(unit_name,"unit");
+        pAttrib.put(cur);
+        if(pname.size())
+        {
+          int iproperty=tspecies.addAttribute(pname);
+          double ap=0.0;
+          double unit_conv=1.0;
+          putContent(ap,cur);
+          if(pname == "mass")
+          {
+            if(unit_name=="amu") unit_conv=proton_mass;
+          }
+          tspecies(iproperty,sid) = ap*unit_conv;
+        }
+      } 
+      cur=cur->next;
+    }
+  }
 
 
 XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& tmat
@@ -238,26 +286,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       if(sname.size()) //only if name is found
       {
         int sid=tspecies.addSpecies(sname);
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL) {
-          string tcname((const char*)tcur->name);
-          if(tcname == "parameter") {
-            string pname;
-            OhmmsAttributeSet pAttrib;
-            pAttrib.add(pname,"name");
-            pAttrib.put(tcur);
-            if(pname.size())
-            {
-              int iproperty=tspecies.addAttribute(pname);
-              double ap;
-              putContent(ap,tcur);
-              tspecies(iproperty,sid) = ap;
-            }
-          } else if(nat_group[ng] && tcname == attrib_tag) { 
-            getPtclAttrib(tcur,nat_group[ng],nloc);
-          }
-          tcur = tcur->next;
-        }
+        setSpeciesProperty(tspecies,sid,cur);
         for(int iat=0; iat<nat_group[ng]; iat++, nloc++)  ref_.GroupID[nloc] = sid;
         ng++;
       }
@@ -333,16 +362,47 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     tspecies(membersize,ig)=numPerGroup[ig];
   }
 
-  int beforemass=tspecies.numAttributes();
-  int massind= tspecies.addAttribute("mass");
-  if(beforemass == massind)
-  {
-    app_log() << "  XMLParticleParser setting mass of  " << ref_.getName() << " to 1.0" << endl;
-    for(int ig=0; ig<tspecies.getTotalNum(); ++ig) 
-      tspecies(massind,ig)=1.0; 
-  }
   //Check the unit of ParticleSet::R and PBC
   ref_.createSK();
+
+  return true;
+}
+
+/** process xmlnode to reset the properties of a particle set
+ * @param cur current node
+ * @return true, if successful
+ *
+ * This resets or adds new attributes to a particle set. 
+ * It cannot modify the size of the particle set.
+ */
+bool XMLParticleParser::reset(xmlNodePtr cur) {
+
+  ReportEngine PRE("XMLParticleParser","reset");
+
+  SpeciesSet& tspecies(ref_.getSpeciesSet()); 
+  cur = cur->xmlChildrenNode;
+  while(cur != NULL) 
+  {
+    string cname((const char*)cur->name);
+    if(cname == "group") 
+    {
+      string sname;
+      OhmmsAttributeSet gAttrib;
+      gAttrib.add(sname,"name");
+      gAttrib.put(cur);
+      if(sname.size()) 
+      {
+        int sid=tspecies.addSpecies(sname);
+        setSpeciesProperty(tspecies,sid,cur);
+      }
+    } 
+    cur = cur->next;
+  }
+
+  //@todo Will add a member function to ParticleSet to handle these
+  int massind=tspecies.addAttribute("mass");
+  for(int iat=0; iat<ref_.getTotalNum(); iat++) 
+    ref_.Mass[iat]=tspecies(massind,ref_.GroupID[iat]);
 
   return true;
 }
@@ -614,6 +674,7 @@ xmlNodePtr XMLSaveParticle::createNode(bool addlattice) {
   }
 
   return cur;
+}
 }
 
 /***************************************************************************

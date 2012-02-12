@@ -69,6 +69,10 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
 
+    /** reset the properties of a particle set
+     */
+    bool reset(xmlNodePtr cur);
+
   };
 
   class XMLSaveParticle: 

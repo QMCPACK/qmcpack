@@ -45,18 +45,17 @@ namespace qmcplusplus
 
   ParticleSet::ParticleSet()
     : UseBoundBox(true), UseSphereUpdate(true), sorted_ids(false), reordered_ids(false)
-      , SK(0), ParentTag(-1)
+      , ThreadID(0), SK(0), ParentTag(-1)
     {
       initParticleSet();
       initPropertyList();
-
       add_p_timer(myTimers);
     }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
       : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
         ,sorted_ids(p.sorted_ids), reordered_ids(p.reordered_ids)
-      , SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag())
+      , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag())
   {
     initBase();
     initParticleSet();
@@ -70,7 +69,7 @@ namespace qmcplusplus
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
 
-    PropertyHistory=  p.PropertyHistory;
+    PropertyHistory=p.PropertyHistory;
 
     Collectables=p.Collectables;
 
@@ -91,7 +90,6 @@ namespace qmcplusplus
     myTwist=p.myTwist;
   }
 
-
   ParticleSet::~ParticleSet()
   {
     DEBUG_MEMORY("ParticleSet::~ParticleSet");
@@ -103,6 +101,7 @@ namespace qmcplusplus
   void ParticleSet::initParticleSet()
   {
     ObjectTag = PtclObjectCounter;
+
 #pragma omp atomic
     PtclObjectCounter++;
 
@@ -126,6 +125,10 @@ namespace qmcplusplus
     addAttribute(L);
     addAttribute(dG);
     addAttribute(dL);
+
+    Mass.setTypeName(ParticleTags::scalartype_tag);
+    Mass.setObjName("mass");
+    addAttribute(Mass);
 
     orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
     orgID.setObjName("id0"); 
@@ -312,38 +315,41 @@ namespace qmcplusplus
   //}
   int ParticleSet::addTable(const ParticleSet& psrc)
   {
-    if (DistTables.empty())
-      {
-        DistTables.reserve(4);
-        DistTables.push_back(createDistanceTable(*this));
-        //add  this-this pair
-        myDistTableMap.clear();
-        myDistTableMap[ObjectTag]=0;
-        app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
 
-        if (psrc.tag() == ObjectTag) return 0;
-      }
+    if (DistTables.empty())
+    {
+      DistTables.reserve(4);
+      DistTables.push_back(createDistanceTable(*this));
+      //add  this-this pair
+      myDistTableMap.clear();
+      myDistTableMap[ObjectTag]=0;
+      app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
+
+      if (psrc.tag() == ObjectTag) return 0;
+    }
 
     if (psrc.tag() == ObjectTag)
-      {
-        app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
-        return 0;
-      }
+    {
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
+      return 0;
+    }
 
     int tsize=DistTables.size(),tid;
     map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
     if (tit == myDistTableMap.end())
-      {
-        tid=DistTables.size();
-        DistTables.push_back(createDistanceTable(psrc,*this));
-        myDistTableMap[psrc.tag()]=tid;
-        app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
-      }
+    {
+      tid=DistTables.size();
+      DistTables.push_back(createDistanceTable(psrc,*this));
+      myDistTableMap[psrc.tag()]=tid;
+      app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
+    }
     else
-      {
-        tid = (*tit).second;
-        app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
-      }
+    {
+      tid = (*tit).second;
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
+    }
+
+    app_log().flush();
     return tid;
   }
 

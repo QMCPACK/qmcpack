@@ -22,8 +22,6 @@
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-//#include <deque>
-//#include <algorithm>
 
 namespace qmcplusplus {
 
@@ -57,10 +55,10 @@ namespace qmcplusplus {
 
   /** Specialized paritlce class for atomistic simulations
    *
-   *Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
-   *The ParticleLayout class represents a supercell with/without periodic boundary
-   *conditions. The ParticleLayout class also takes care of spatial decompositions
-   *for efficient evaluations for the interactions with a finite cutoff.
+   * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
+   * The ParticleLayout class represents a supercell with/without periodic boundary
+   * conditions. The ParticleLayout class also takes care of spatial decompositions
+   * for efficient evaluations for the interactions with a finite cutoff.
    */
   class ParticleSet
     :  public QMCTraits
@@ -68,11 +66,14 @@ namespace qmcplusplus {
        , public ParticleBase<PtclOnLatticeTraits>
   {
   public:
-    ///define a Walker_t
+    ///@typedef walker type
     typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
+    ///@typedef container type to store the property
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+    ///@typedef buufer type for a serialized buffer
     typedef Walker_t::Buffer_t             Buffer_t;
 
+    //@{ public data members
     ///property of an ensemble represented by this ParticleSet
     MCDataType<RealType> EnsembleProperty;
 
@@ -95,6 +96,8 @@ namespace qmcplusplus {
     ParticleIndex_t orgID;
     ///orginal GroupID before grouping
     ParticleIndex_t orgGroupID;
+    ///mass of each particle
+    ParticleScalar_t Mass;
 
     ///true, if a physical or local bounding box is used
     bool UseBoundBox;
@@ -104,7 +107,8 @@ namespace qmcplusplus {
     bool sorted_ids;
     ///true if the particles are reordered
     bool reordered_ids;
-    
+    ///threa id
+    Index_t ThreadID;
     ///the indexp of the active particle for particle-by-particle moves
     Index_t activePtcl;
 
@@ -162,19 +166,18 @@ namespace qmcplusplus {
      */
     Buffer_t Collectables;
 
+    ///clones of this object: used by the thread pool
+    vector<ParticleSet*> myClones;
+
     ///Property history vector
     vector<vector<RealType> >  PropertyHistory;
     vector<int> PHindex;
+    ///@} 
 
-    /** Name of ParticleSet around which to initialize
-     * Used to initialize an electron ParticleSet by an ion ParticleSet 
-     */
-    string RandomSource;
-    
     ///default constructor
     ParticleSet();
 
-    ///default constructor
+    ///copy constructor
     ParticleSet(const ParticleSet& p);
 
     ///default destructor
@@ -379,6 +382,36 @@ namespace qmcplusplus {
      */
     void randomizeFromSource (ParticleSet &src);
 
+    /** make clones 
+     * @param n number of clones including itself
+     */
+    virtual void make_clones(int n);
+
+    /** return the ip-th clone
+     * @param ip thread number
+     *
+     * Return itself if ip==0
+     */
+    inline ParticleSet* get_clone(int ip) 
+    {
+      if(ip >= myClones.size())
+        return 0;
+      return (ip)? myClones[ip]:this;
+    }
+
+    /** update R of its own and its clones
+     * @param rnew new position array of N
+     */
+    template<typename PAT>
+      inline void update_clones(const PAT& rnew)
+      {
+        if(R.size() != rnew.size()) 
+          APP_ABORT("ParticleSet::updateR failed due to different sizes");
+        R=rnew;
+        for(int ip=1; ip<myClones.size(); ++ip)
+          myClones[ip]->R=rnew;
+      }
+
   protected:
     ///the number of particle objects
     static Index_t PtclObjectCounter;
@@ -388,7 +421,7 @@ namespace qmcplusplus {
 
     ///id of the parent
     Index_t ParentTag;
-
+    
     /** map to handle distance tables
      *
      * myDistTableMap[source-particle-tag]= locator in the distance table
