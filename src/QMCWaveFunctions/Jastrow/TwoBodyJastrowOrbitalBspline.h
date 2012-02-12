@@ -83,8 +83,10 @@ namespace qmcplusplus {
 			 ValueMatrix_t &dlogpsi, 
 			 ValueMatrix_t &dlapl_over_psi);
 
-    TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
-      TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
+    //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
+    //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
+    TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid) :
+      TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, tid),
       PtclRef(pset),
       UpdateListGPU        ("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
       L                    ("TwoBodyJastrowOrbitalBspline::L"),
