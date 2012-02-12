@@ -92,9 +92,24 @@ namespace qmcplusplus {
       //This uses the copy constructor to avoid recomputing the data.
       //SKOld = new StructFact(*SK);
     }
+
+    //set the mass array
+    int beforemass=mySpecies.numAttributes();
+    int massind= mySpecies.addAttribute("mass");
+    if(beforemass == massind) 
+    {
+      app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << endl;
+      for(int ig=0; ig<mySpecies.getTotalNum(); ++ig) 
+        mySpecies(massind,ig)=1.0; 
+    }
+
+    for(int iat=0; iat<GroupID.size(); iat++) 
+      Mass[iat]=mySpecies(massind,GroupID[iat]);
+
   }
 
-  void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout){
+  void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
+  {
 
     if(pin.getUnit() == pout.getUnit())   {
       pout = pin;
