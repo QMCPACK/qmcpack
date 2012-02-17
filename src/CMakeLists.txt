@@ -126,6 +126,7 @@ SUBDIRS(QMCWaveFunctions)
 SUBDIRS(QMCHamiltonians)
 SUBDIRS(QMCDrivers)
 SUBDIRS(QMCApp)
+
 #SUBDIRS(einspline)
 
 

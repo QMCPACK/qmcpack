@@ -73,6 +73,12 @@ SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+
+######################################################################
+# set debug printout
+# DEBUG_PSIBUFFER_ON keep track buffer's locator
+######################################################################
+SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Build with GPU support through CUDA")
 ######################################################################
 # check environment variables 
 # todo: disallow environment
@@ -170,8 +176,6 @@ SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
 SET(ENABLE_GTK_GUI 0)
-SET(HAVE_EINSPLINE 0)
-SET(HAVE_EINSPLINE_EXT 0)
 set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
 set(TAU_HOME $ENV{TAU_HOME})
 
@@ -226,6 +230,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(USE_PREFETCH 0)
   SET(PREFETCH_AHEAD 12)
   SET(HAVE_C_VARARRAYS 1)
+
+  SET(HAVE_EINSPLINE 0)
+  SET(HAVE_EINSPLINE_EXT 0)
 
   ######################################################
   # Try to identify CPU identity
@@ -372,25 +379,18 @@ ELSE()
   MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF()
 
+#set(HAVE_CUDA 0)
 IF(QMC_CUDA)
-  if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CUDA_NVCC_FLAGS "-arch;sm_13;")
-  else(CMAKE_COMPILER_IS_GNUCXX)
-    set(CUDA_PROPAGATE_HOST_FLAGS "OFF")
-    SET(CUDA_NVCC_FLAGS "-arch;sm_13;-Drestrict=__restrict__")
-  endif(CMAKE_COMPILER_IS_GNUCXX)
-
+  set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+  if(CUDA_NVCC_FLAGS MATCHES "arch")
+    MESSAGE(STATUS "Setting CUDA FLAGS="${CUDA_NVCC_FLAGS})
+  else()
+    SET(CUDA_NVCC_FLAGS
+      "-arch=sm_13;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
+    MESSAGE(WARNING "Using outdated CUDA FLAGS="${CUDA_NVCC_FLAGS})
+  endif()
   FIND_PACKAGE(CUDA REQUIRED)
-
-  if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CUDA_NVCC_FLAGS "-arch;sm_13;")
-  else(CMAKE_COMPILER_IS_GNUCXX)
-    set(CUDA_PROPAGATE_HOST_FLAGS "OFF")
-    SET(CUDA_NVCC_FLAGS "-arch;sm_13;-Drestrict=__restrict__")
-  endif(CMAKE_COMPILER_IS_GNUCXX)
-
-  MESSAGE(STATUS "Setting CUDA FLAGS="${CUDA_NVCC_FLAGS})
-
+  set(HAVE_CUDA 1)
 ENDIF(QMC_CUDA)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
@@ -445,25 +445,50 @@ IF(FFTW_FOUND)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
 ENDIF(FFTW_FOUND)
 
+#include qmcpack/src build/src
+INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
+
 ######################################################################
 # Manage Einspline library
+# - toolchain file can set 
 # - check if libeinspline can be found in $EINSPLINE_HOME/include and
 # $EINSPLINE_HOME/lib
 # - if not found, build it from the source directory in $EINSPLINE_HOME
 # - if everything fails, do not use it
 ######################################################################
-INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
-if(EINSPLINE_FOUND)
-  set(HAVE_EINSPLINE 1)
-  IF(HAVE_EINSPLINE_EXT)
-    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
-  ELSE(HAVE_EINSPLINE_EXT)
+if(HAVE_EINSPLINE)
+  if(EINSPLINE_HOME)
     SUBDIRS(src/einspline)
-    SET(QMC_UTIL_LIBS einspline  ${QMC_UTIL_LIBS})
-  ENDIF(HAVE_EINSPLINE_EXT)
-  MESSAGE(STATUS "EINSPLINE_INCLUDE_DIR="${EINSPLINE_INCLUDE_DIR})
+    INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
+    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
+  endif()
+else()
+  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
+  if(EINSPLINE_FOUND)
+    set(HAVE_EINSPLINE 1)
+    IF(HAVE_EINSPLINE_EXT)
+      INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
+      SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
+    ELSE(HAVE_EINSPLINE_EXT)
+      SUBDIRS(src/einspline)
+      INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
+    ENDIF(HAVE_EINSPLINE_EXT)
+    MESSAGE(STATUS "EINSPLINE_INCLUDE_DIR="${EINSPLINE_INCLUDE_DIR})
+  endif()
 endif()
+#include(ExternalProject)
+#  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
+#  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
+#  set(einspline_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${einspline_INSTALL_DIR})
+#ExternalProject_Add(
+#   einspline
+#   SVN_REPOSITORY http://qmctools.googlecode.com/svn/ext-packages/einspline
+#   )
+#    INSTALL_DIR ${einspline_INSTALL_DIR}
+#    CMAKE_ARGS ${einspline_CMAKE_ARGS}
+#    )
+#  find_package(einspline REQUIRED)
+#  set(HAVE_EINSPLINE 1)
 
 #######################################################################
 ## Manage GTK+ and GTKMM packages for GUI
@@ -492,11 +517,6 @@ endif()
 ###################################################
 
 MESSAGE(STATUS "Ready to build qmcpack")
-
-INCLUDE_DIRECTORIES(
-  ${qmcpack_SOURCE_DIR}/src
-  ${qmcpack_BINARY_DIR}/src
-  )
 
 ####################################################################
 # add definitions
