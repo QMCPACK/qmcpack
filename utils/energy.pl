@@ -1,10 +1,15 @@
 #!/usr/bin/env perl
 use POSIX qw/floor/;
+use Getopt::Long;
 use strict;
 
 ## This is a perl script to replace Energy.py.
 ## This is created solely because numpy can be hard to come by on new machines
 ## and is a real pain to build by hand
+
+
+my $inEv = 0;
+GetOptions('ev' => \$inEv);
 
 my $filename = shift @ARGV || die "First argument must be name of file to analyze!\n";
 my $start = shift @ARGV;
@@ -17,6 +22,11 @@ my $end = shift @ARGV;
 if (!(defined $end)) {
     $end = -1;
 }
+
+if ($inEv) {
+    $factor /= 27.2113966413;
+}
+
 
 open (FILE, "$filename") || die "Cannot open file $filename\n";
 
@@ -57,7 +67,9 @@ for (my $i = 2; $i <= $#{$filedata[0]}; $i++) {
 	my $avg2;
 	my $err2;
 	($avg2, $err2) = stats(\@arr2, $factor);
-	$avg = $avg - $avg2*$avg2/$factor;
+	$avg /= $factor;
+	$error /= $factor;
+	$avg = $avg - $avg2*$avg2;
     }
     if ($colname eq 'LocalEnergy') {
 	$Locen = $avg;

@@ -16,7 +16,7 @@ GetOptions('ke=f' => \$exactke,
            'eps=s' => \$epsfile);
 
 
-my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/home/lshulen/maintenance/qmcpack-assembla/utils/setup-qmc-conf.pl";
 
 my $gnuplot = $config{gnuplot};
 my $energytool = $config{energytool};

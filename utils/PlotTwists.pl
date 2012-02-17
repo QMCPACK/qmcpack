@@ -8,7 +8,7 @@ use FileHandle;
 # to the script and it will plot all matching files it can find.  Before using the
 # script, the location of gnuplot may need to be set on the previous line
 
-my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/home/lshulen/maintenance/qmcpack-assembla/utils/setup-qmc-conf.pl";
 my $gnuplot = $config{gnuplot};
 
 my $template = shift || die "Must give a template file name as the first argument here\n";

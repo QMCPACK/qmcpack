@@ -4,16 +4,20 @@ use FileHandle;
 use Getopt::Long;
 
 
-my %config = do "/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/home/lshulen/maintenance/qmcpack-assembla/utils/setup-qmc-conf.pl";
 
 my $supercellsize;
 my $start;
 my $epsfile;
 my $smallestTwist;
+my $largestTwist;
+my $withoutDFT = 0;
 GetOptions('supercellsize=i' => \$supercellsize,
 	   'start=i' => \$start,
 	   'eps=s' => \$epsfile,
-	   'smallesttwist=i' => \$smallestTwist);
+	   'smallesttwist=i' => \$smallestTwist,
+	   'largesttwist=i' => \$largestTwist,
+	   'withoutdft' => \$withoutDFT);
 
 $#ARGV == 0 || die "Must give a pwscf input file as the argument to this script\n";
 my $inputFile = $ARGV[0];
@@ -31,6 +35,9 @@ unless ($start) {
 }
 unless ($smallestTwist) {
     $smallestTwist = 0;
+}
+unless ($largestTwist) {
+    $largestTwist = 10000000000000000;
 }
 
 opendir DIR, ".";
@@ -53,16 +60,15 @@ my $allWithCorrections = 1;
 
 # Loop over different calcs and get twist averaged energy
 foreach my $keyval ( sort {$a <=> $b} keys %numToDir ) {
-    if ($keyval > $smallestTwist) {
+    if ($keyval > $smallestTwist && $keyval < $largestTwist) {
 	my $pscfname = $baseName;
+	if ($keyval > 1) {
+	    $pscfname .= "-${keyval}twists";
+	}
 	if ($numToDir{$keyval} =~ /-S(\d+)/) {
 	    $pscfname .= "-S$1";
 	}
-	if ($keyval > 1) {
-	    $pscfname .= "-${keyval}twists-pscf.out";
-	} else {
-	    $pscfname .= "-pscf.out";
-	}
+	$pscfname .= "-pscf.out";
 	my $pscfen;
 	if (-e $pscfname) {
 	    my $pscfenout = `grep \"total energy\" $pscfname`;
@@ -102,6 +108,10 @@ foreach my $keyval (sort {$a <=> $b} keys %numToEn) {
 }
 $gplstring = substr($gplstring,0,-1);
 $gplstring .= ")\n";
+
+if ($withoutDFT) {
+    $allWithCorrections = 0;
+}
 
 if ($allWithCorrections) {
     $gplstring .= "plot [-0.5:$counter-0.5] \"-\" u 0:2:3 w e ti \"DMC Energy with DFT correction\"\n";
