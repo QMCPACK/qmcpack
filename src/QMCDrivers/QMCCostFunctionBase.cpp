@@ -103,8 +103,9 @@ namespace qmcplusplus
   
   void QMCCostFunctionBase::printEstimates()
   {
-    app_log()<<"      Current var:     " <<curVar_w<<endl;
     app_log()<<"      Current ene:     " <<curAvg_w<<endl;
+    app_log()<<"      Current var:     " <<curVar_w<<endl;
+    app_log()<<"      Current ene_urw:     " <<curAvg<<endl;
     app_log()<<"      Current var_urw: " <<curVar<<endl;
   }
 

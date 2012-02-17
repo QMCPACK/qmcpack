@@ -713,7 +713,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
     return 1.0;
   }
   
-  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
+  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
   {
     RealType b1,b2;
     if (GEVType=="H2")
@@ -729,7 +729,9 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
 //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
-    RealType H2_avg = 1.0/curAvg2_w;
+//    RealType H2_avg = 1.0/curAvg2_w;
+    RealType H2_avg = 1.0/(curAvg_w*curAvg_w);
+//    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
     RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
     vector<Return_t> D_avg(NumParams(),0);
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];
@@ -765,44 +767,50 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
 
               for (int pm=0; pm<NumParams();pm++)
               {
-                Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-//                 Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+                Return_t wfe = (HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new)*weight;
                 Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
                 
+                Return_t vterm =  HDsaved[pm]*(eloc_new-curAvg_w)+(Dsaved[pm]-D_avg[pm])*eloc_new*(eloc_new-2.0*curAvg_w);
+//                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
+
 //                 H2
-                Right(0,pm+1) += b1*H2_avg*wfe*(eloc_new);
-                Right(pm+1,0) += b1*H2_avg*wfe*(eloc_new);
-                
-                Return_t vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+                Right(0,pm+1) += b1*H2_avg*vterm*weight;
+                Right(pm+1,0) += b1*H2_avg*vterm*weight;
+
 //                 Variance
                 Left(0,pm+1) += b2*vterm*weight;
                 Left(pm+1,0) += b2*vterm*weight;
+
                 
 //                 Hamiltonian
                 Left(0,pm+1) += (1-b2)*wfe;
-                Left(pm+1,0) += (1-b2)*wfd*(eloc_new-curAvg_w);                
+                Left(pm+1,0) += (1-b2)*wfd*eloc_new;
                 for (int pm2=0; pm2<NumParams();pm2++)
                 {
-//                   H2
-                  Right(pm+1,pm2+1) += (b1*H2_avg)*wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
-//                   Hamiltonian
-                  Left(pm+1,pm2+1) += (1-b2)*wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
-// //                   Variance
-//                   RealType varij=wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
-//                   Left(pm+1,pm2+1) +=  b2*varij;
-//                   Overlap
+//                Hamiltonian
+                  Left(pm+1,pm2+1) += (1-b2)*wfd*(HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new);
+//                Overlap
                   RealType ovlij=wfd*(Dsaved[pm2]-D_avg[pm2]);
-                  Right(pm+1,pm2+1) += (1-b1)*ovlij;
-                  Left(pm+1,pm2+1) += b2*V_avg*ovlij;
+                  Right(pm+1,pm2+1) += ovlij;
+                  Overlap(pm+1,pm2+1) += ovlij;
+//                Variance
+                  RealType varij=weight*(HDsaved[pm] - 2.0*(Dsaved[pm]-D_avg[pm])*eloc_new)*(HDsaved[pm2] - 2.0*(Dsaved[pm2]-D_avg[pm2])*eloc_new);
+//                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
+//                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
+                  Left(pm+1,pm2+1) +=  b2*(varij+V_avg*ovlij);
+//                H2
+                  Right(pm+1,pm2+1) += b1*H2_avg*varij;
                 }
               }
           }
       }
     myComm->allreduce(Right);
     myComm->allreduce(Left);
+    myComm->allreduce(Overlap);
+
     
     Left(0,0) = (1-b2)*curAvg_w + b2*V_avg;
-    Right(0,0) = 1.0;
+    Overlap(0,0) = Right(0,0) = 1.0;
         
     if (GEVType=="H2")
       return H2_avg;

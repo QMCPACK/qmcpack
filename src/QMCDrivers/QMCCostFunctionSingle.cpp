@@ -33,6 +33,7 @@ namespace qmcplusplus
       QMCCostFunctionBase(w,psi,h)
   {
     CSWeight=(1.0);
+    APP_ABORT("QMCCostFunctionSingle is deprecated");
     app_log()<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<<endl;
   }
 

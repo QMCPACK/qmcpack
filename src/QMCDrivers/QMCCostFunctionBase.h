@@ -144,7 +144,7 @@ namespace qmcplusplus
                             Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
       virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
-      virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right){APP_ABORT("NOT IMPLEMENTED"); return 1;};
+      virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap){APP_ABORT("NOT IMPLEMENTED"); return 1;};
 
       virtual void getConfigurations(const string& aroot)=0;
 

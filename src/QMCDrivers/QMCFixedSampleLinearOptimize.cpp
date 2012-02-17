@@ -44,7 +44,7 @@ namespace qmcplusplus
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
-        Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(10), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(2), w_beta(0.0),
+        Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(1), w_beta(0.0),
         MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
 {
     //set the optimization flag
@@ -164,7 +164,8 @@ bool QMCFixedSampleLinearOptimize::run()
           Matrix<RealType> LeftT(N,N);
           Matrix<RealType> Left(N,N);
           Matrix<RealType> Right(N,N);
-          RealType H2rescale=optTarget->fillOverlapHamiltonianMatrices(LeftT,Right);
+          Matrix<RealType> S(N,N);
+          RealType H2rescale=optTarget->fillOverlapHamiltonianMatrices(LeftT,Right,S);
           Left=0.0;
 //           optTarget->fillOverlapHamiltonianMatrices(Ham2, Ham, Var, S);
           
@@ -247,7 +248,7 @@ bool QMCFixedSampleLinearOptimize::run()
             lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
             myTimers[2]->stop();
             
-            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,Right);
+            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
             RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
             if (std::abs(Lambda*bigVec)>bigChange)

@@ -166,7 +166,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         }
 
       RealType XS(stabilityBase+stabilizerScale*stability);
-      if ((GEVtype!="H2")||(failedTries>0))
+      if (failedTries>0)
       {
         for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
         app_log()<<"  Using XS:"<<XS<<endl;

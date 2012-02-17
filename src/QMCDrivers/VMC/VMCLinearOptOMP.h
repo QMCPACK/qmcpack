@@ -56,21 +56,11 @@ namespace qmcplusplus
         Ham2=0.0;
         Ham=0.0;
         Olp=0.0;
+        m_vec=0.0;
         DerivRecords=0.0;
         HDerivRecords=0.0;
 
-        for(int i=0;i<D_E.size();i++)
-        {
-          D_E[i]=0.0;
-          HD[i]=0.0;
-          HD2[i]=0.0;
-          D[i]=0.0;
-        }
-        sE=0;
-        sE2=0;
-        sE4=0;
-        sW=0;
-        sN=0;
+        for(int i=0;i<s_vec.size();i++) s_vec[i]=0;
       }
 
     private:
@@ -103,9 +93,10 @@ namespace qmcplusplus
       vector<RandomGenerator_t> RngSaved;
 
       ///These are the values we collect to build the Matrices GLOBAL
-      Matrix<RealType> Ham, Ham2, Olp;
-      std::vector<RealType> D_E, HD2, HD, D;
-      RealType sE,sE2,sE4,sW,sN;
+      Matrix<RealType> Ham, Ham2, Olp, m_vec;
+      std::vector<RealType> s_vec;
+//       std::vector<RealType> D_E, HD2, HD, D;
+//       RealType sE,sE2,sE4,sW,sN;
       string printderivs;
       ///Temp matrices
       Matrix<RealType> DerivRecords, HDerivRecords;
@@ -118,13 +109,11 @@ namespace qmcplusplus
         Ham2.resize(n,n);
         Ham.resize(n,n);
         Olp.resize(n,n);
+        m_vec.resize(6,n);
         DerivRecords.resize(NumThreads,n);
         HDerivRecords.resize(NumThreads,n);
 
-        D_E.resize(n);
-        HD.resize(n);
-        HD2.resize(n);
-        D.resize(n);
+        s_vec.resize(5,0);
 
         clearComponentMatrices();
       }
