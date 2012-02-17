@@ -264,7 +264,7 @@ namespace qmcplusplus
         if ((*it)->Optimizable)
           logpsi_opt += (*it)->evaluateLog(P, P.G, P.L);
         else
-            logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
+          logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
       }
     P.G += fixedG;
     P.L += fixedL;
@@ -292,7 +292,15 @@ namespace qmcplusplus
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     for (; it!=it_end; ++it)
-      logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
+      {
+        if ((*it)->Optimizable)
+          logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
+        else
+          logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL,buf,true);
+      }      
+    
+    P.G += fixedG;
+    P.L += fixedL;
     convert(logpsi_fixed,logpsi_fixed_r);
     convert(logpsi_opt,logpsi_opt_r);
     //logpsi_fixed_r = real(logpsi_fixed);
