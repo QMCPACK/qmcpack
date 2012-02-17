@@ -1,37 +1,9 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XK6")
-#2011-12-06
-#Currently Loaded Modulefiles:
-#  1) modules/3.2.6.6
-#  2) DefApps
-#  3) torque/2.4.1b1-snap.200905191614
-#  4) moab/5.3.6
-#  5) nodestat/2.2-1.0400.29866.4.3.gem
-#  6) sdb/1.0-1.0400.30000.6.18.gem
-#  7) MySQL/5.0.64-1.0000.4667.20.1
-#  8) lustre-cray_gem_s/1.8.4_2.6.32.45_0.3.2_1.0400.6221.1.1-1.0400.30303.0.0novmap1
-#  9) udreg/2.3.1-1.0400.3911.5.6.gem
-# 10) ugni/2.3-1.0400.3912.4.29.gem
-# 11) gni-headers/2.1-1.0400.3906.5.1.gem
-# 12) dmapp/3.2.1-1.0400.3965.10.12.gem
-# 13) xpmem/0.1-2.0400.29883.4.6.gem
-# 14) hss-llm/6.0.0
-# 15) Base-opts/1.0.2-1.0400.29823.8.1.gem
-# 16) xtpe-network-gemini
-# 17) PrgEnv-gnu/4.0.30
-# 18) xt-mpich2/5.4.0
-# 19) atp/1.4.0
-# 20) xt-asyncpe/5.04
-# 21) pmi/3.0.0-1.0000.8661.28.2807.gem
-# 22) xt-libsci/11.0.04.4
-# 23) gcc/4.5.3
-# 24) xtpe-interlagos
-# 25) subversion/1.6.17
-# 26) hdf5/1.8.6
-# 27) fftw/3.3.0.0
-# 28) cmake/2.8.6
-# 29) boost/1.44.0
-
-
+#2012-02-17
+#NEED THESES + defaults
+#  module swap PrgEnv-pgi PrgEnv-gnu
+#  module load xtpe-accel-nvidia20
+#  module load cudatools
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.04/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.04/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
@@ -43,8 +15,7 @@ set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS} -W
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 
 # need for both c++ and c
-add_definitions(-DHAVE_SSE -DHAVE_SSE2 -DHAVE_CUDA)
-
+set(QMC_CUDA 1)
 SET(ENABLE_OPENMP 1)
 SET(HAVE_MPI 1)
 set(HAVE_CUDA 1)
@@ -72,7 +43,7 @@ set(CMAKE_FIND_ROOT_PATH
 # bypass einspline search
 set(EINSPLINE_HOME /lustre/widow3/scratch/jnkim/einspline)
 set(HAVE_EINSPLINE 1)
-set(HAVE_EINSPLINE_EXT 1)
+set(HAVE_EINSPLINE_EXT 0)
 
 include_directories(/opt/nvidia/cuda/4.0.17a/include )
 #SET(CUDA_NVCC_FLAGS "-arch;sm_20;-Drestrict=__restrict__")

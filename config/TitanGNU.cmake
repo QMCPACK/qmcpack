@@ -10,7 +10,7 @@ set(XT_FLAGS " -msse -msse2 -msse3 -D_CRAYMPI")
 #set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
-set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99 -DHAVE_SSE -DHAVE_SSE2 ")
+set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")# -DHAVE_SSE -DHAVE_SSE2 ")
 
 SET(QMC_BUILD_STATIC 1)
 SET(ENABLE_OPENMP 1)
@@ -44,6 +44,6 @@ set(CMAKE_FIND_ROOT_PATH
 # bypass einspline search and build it inside QMCPACK
 set(EINSPLINE_HOME /lustre/widow3/scratch/jnkim/einspline)
 set(HAVE_EINSPLINE 1)
-set(HAVE_EINSPLINE_EXT 1)
+set(HAVE_EINSPLINE_EXT 0)
 
 #link_libraries(/opt/xt-libsci/11.0.04.4/gnu/45/interlagos/lib/libsci_gnu.a)
