@@ -166,6 +166,8 @@ namespace qmcplusplus
                                vector<RealType>& dlogpsi,
                                vector<RealType>& dhpsioverpsi)
       {
+        if (myVars.Index.size()==0)
+           return;
         dLogPsi=0.0;
         for (int p=0;p<NumVars; ++p)(*gradLogPsi[p])=0.0;
         for (int p=0;p<NumVars; ++p)(*lapLogPsi[p])=0.0;
