@@ -44,7 +44,7 @@ namespace qmcplusplus
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
-        Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(0.5), bigChange(1), eigCG(1), TotalCGSteps(1), w_beta(0.0),
+        Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(2.0), bigChange(1), eigCG(1), TotalCGSteps(1), w_beta(0.0),
         MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
 {
     //set the optimization flag
@@ -85,8 +85,8 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
     for (int i=0; i<optparm.size(); i++) optTarget->Params(i) = optparm[i] + dl*optdir[i];
     QMCLinearOptimize::RealType c = optTarget->Cost(false);
     //only allow this to go false if it was true. If false, stay false
-//     if (validFuncVal) 
-    validFuncVal = optTarget->IsValid;
+//    if (validFuncVal) 
+      validFuncVal = optTarget->IsValid;
     
     return c;
 }
@@ -197,8 +197,8 @@ bool QMCFixedSampleLinearOptimize::run()
           RealType od_largest(0);
           for (int i=0; i<N; i++) for (int j=0; j<N; j++)
             od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-//             app_log()<<"od_largest "<<od_largest<<endl;
-          if (od_largest>0) od_largest = std::log(od_largest)/(nstabilizers-1);
+          app_log()<<"od_largest "<<od_largest<<endl;
+          if((nstabilizers>1)and (od_largest>0)) od_largest = std::log(od_largest)/(nstabilizers-1);
           if (od_largest<=0) od_largest = stabilizerScale;
 
           RealType safe = Left(0,0);
@@ -303,7 +303,7 @@ bool QMCFixedSampleLinearOptimize::run()
               myTimers[3]->start();
               if (MinMethod=="quartic")
               {
-                int npts(7);
+                int npts(5);
                 quadstep = stepsize*Lambda;
                 LambdaMax = Lambda;
                 Valid=lineoptimization3(npts,startCost);
@@ -322,7 +322,11 @@ bool QMCFixedSampleLinearOptimize::run()
                   continue;
 //                     for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i];
               }
-              else for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+              else
+              {
+                 for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+                 app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
+              }
               //Save this value in here for later
               Lambda = biggestParameterChange;
             }
@@ -339,7 +343,17 @@ bool QMCFixedSampleLinearOptimize::run()
 
             // mmorales
             Valid=optTarget->IsValid;
-            if (!ValidCostFunction(Valid)) continue;
+            if (!ValidCostFunction(Valid))
+            {
+              app_log()<<"  Good Step, but cost function invalid"<<endl;
+              failedTries++; stability--;
+              if(stability<0) stabilityBase+=stabilizerScale;
+              else stability=nstabilizers;
+//                   mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
+              mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+              continue;
+            }
+
             if (newCost < lastCost)
             {
               //Move was acceptable
