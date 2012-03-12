@@ -4,8 +4,8 @@ SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 #  module swap PrgEnv-pgi PrgEnv-gnu
 #  module load xtpe-accel-nvidia20
 #  module load cudatools
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.04/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.04/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS " -fomit-frame-pointer -malign-double  -fopenmp -O3 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops ")
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
@@ -34,10 +34,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_SHARED_LINKER_FLAGS "")
 
 set(CMAKE_FIND_ROOT_PATH
-  /opt/cray/hdf5/1.8.6/gnu/45
+  /opt/cray/hdf5/1.8.6/gnu/46
   /opt/fftw/3.3.0.0/interlagos
-  /ccs/home/jnkim/xk6/gnu45/libxml2
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
+  /ccs/home/jnkim/xk6/gnu45/libxml2
 )
 
 # bypass einspline search
