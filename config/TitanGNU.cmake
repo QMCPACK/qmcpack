@@ -6,6 +6,7 @@ set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
+set(XT_FLAGS " -msse3 -D_CRAYMPI") 
 #interlogs bdver1 but without it better
 #set(XT_FLAGS "-march=bdver1  -msse3 -D_CRAYMPI") 
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
