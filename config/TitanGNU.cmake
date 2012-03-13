@@ -38,10 +38,10 @@ set(CMAKE_FIND_ROOT_PATH
   /opt/cray/hdf5/1.8.6/gnu/46
   /opt/fftw/3.3.0.0/interlagos
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
-  /ccs/home/jnkim/xk6/gnu45/libxml2
+  /ccs/proj/mat034/jnkim/xk6/gnu45/libxml2
 )
 
-set(EINSPLINE_HOME /ccs/home/jnkim/svnwork/einspline)
+set(EINSPLINE_HOME /ccs/proj/mat034/jnkim/share/einspline)
 set(HAVE_EINSPLINE 1)
 set(HAVE_EINSPLINE_EXT 0)
 #link_libraries(/opt/acml/5.0.0/gfortran64_int64/lib/libacml.a)
