@@ -203,12 +203,9 @@ namespace qmcplusplus {
     TimerManager.print(myComm);
     TimerManager.reset();
 
-    if(DumpConfig)
-    {
-      wOut->dump(W);
-      branchEngine->finalize(W);
-      RandomNumberControl::write(RootName,myComm);
-    }
+    if(DumpConfig) wOut->dump(W);
+    branchEngine->finalize(W);
+    RandomNumberControl::write(RootName,myComm);
 
     delete wOut;
     wOut=0;
