@@ -99,7 +99,8 @@ namespace qmcplusplus {
     evaluateLogAndPhase(const std::complex<T>& psi, T& phase) {
       phase = std::arg(psi);
       if(phase<0.0) phase += 2.0*M_PI;
-      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
+      return std::log( std::abs(psi) );
+//      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
       //return std::log(psi);
     }
 
