@@ -221,8 +221,11 @@ namespace qmcplusplus
 //           forces everything to be evaluated. This was probably done because for optm with the
 //           nonlocal component in the cost function, the slater determinant might not be optimizable
 //           but this must be called anyway to load the inverse. CHECK CHECK CHECK, FIX FIX FIX 
-        logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
-        PhaseValue += (*it)->PhaseValue;
+        if ((*it)->Optimizable)
+        {
+          logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
+          PhaseValue += (*it)->PhaseValue;
+        }
       }
     convert(logpsi,LogValue);
     return LogValue;

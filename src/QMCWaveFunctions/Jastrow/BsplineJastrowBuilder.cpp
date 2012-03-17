@@ -50,6 +50,7 @@ namespace qmcplusplus {
     SpeciesSet &tSet = targetPtcl.getSpeciesSet();
     int numSpecies = sSet.getTotalNum();
     bool success=false;
+    bool Opt(false);
     while (kids != NULL) 
     {
       std::string kidsname = (char*)kids->name;
@@ -86,7 +87,8 @@ namespace qmcplusplus {
           J1->addFunc (ig,functor,jg);
           success = true;
           dJ1->addFunc(ig,functor,jg);
-
+          
+          Opt=(!functor->notOpt or Opt);
           char fname[32];
           if(ReportLevel)
           {
@@ -112,7 +114,7 @@ namespace qmcplusplus {
     {
       J1->dPsi=dJ1;
       targetPsi.addOrbital(J1,"J1_bspline");
-      J1->setOptimizable(true);
+      J1->setOptimizable(Opt); 
       return true;
     }
     else
@@ -219,6 +221,7 @@ namespace qmcplusplus {
       RealType q=species(0,species.addAttribute("charge"));
 
       //std::map<std::string,RadFuncType*> functorMap;
+      bool Opt(false);
       while (kids != NULL) 
       {
 	std::string kidsname((const char*)kids->name);
@@ -283,6 +286,7 @@ namespace qmcplusplus {
 
           J2->addFunc(ia,ib,functor);
           dJ2->addFunc(ia,ib,functor);
+          Opt=(!functor->notOpt or Opt);
 
           char fname[32];
           if(ReportLevel)
@@ -301,7 +305,7 @@ namespace qmcplusplus {
       //J2->setDiffOrbital(dJ2);
       J2->dPsi=dJ2;
       targetPsi.addOrbital(J2,"J2_bspline");
-      J2->setOptimizable(true);
+      J2->setOptimizable(Opt);
     }
 
     return true;

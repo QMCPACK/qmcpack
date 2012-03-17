@@ -513,6 +513,8 @@ namespace qmcplusplus
           if(StoreDerivInfo) {
             Walker_t::Buffer_t& tbuffer=thisWalker.DataSetForDerivatives;
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef,tbuffer);
+            wRef.G += *dLogPsi[iwg];
+            wRef.L += *d2LogPsi[iwg];
           }
           else  {
             logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
