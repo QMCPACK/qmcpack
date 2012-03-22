@@ -809,8 +809,8 @@ namespace qmcplusplus {
  *       -Fmat
  */     
  // Implementing the comments above 
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM); 
-    
+    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM); 
+
     //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
     psiMinv=psiM;
     // invert backflow matrix
@@ -824,7 +824,6 @@ namespace qmcplusplus {
     {
        Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
- 
 //    Phi->evaluateThirdDeriv(BFTrans->QP, FirstIndex, LastIndex, grad_grad_grad_psiM);
     int num = P.getTotalNum();
     const ValueType ConstZero(0.0);
@@ -1206,9 +1205,9 @@ namespace qmcplusplus {
 //    BackflowTransformation *BF = BFTrans->makeClone(); 
     // mmorales: particle set is only needed to get number of particles, so using QP set here 
     DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
+    dclone->resize(NumPtcls, NumOrbitals);
     dclone->Optimizable=Optimizable;
     dclone->set(FirstIndex,LastIndex-FirstIndex);
-    dclone->resize(NumPtcls, NumOrbitals);
     return dclone;
   }
 

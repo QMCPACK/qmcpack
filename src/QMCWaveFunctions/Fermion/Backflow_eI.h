@@ -49,17 +49,6 @@ namespace qmcplusplus
 
     ~Backflow_eI() {}; 
     
-    void resize(int NT, int NC)
-    {
-      NumTargets=NT; NumCenters=NC;
-      UIJ.resize(NumTargets,NumCenters);
-      AIJ.resize(NumTargets,NumCenters);
-      BIJ.resize(NumTargets,NumCenters);
-      UIJ_temp.resize(NumCenters);
-      AIJ_temp.resize(NumCenters);
-      BIJ_temp.resize(NumCenters);
-    }
-
     void resetTargetParticleSet(ParticleSet& P)
     {
       myTable = DistanceTable::add(CenterSys,P);

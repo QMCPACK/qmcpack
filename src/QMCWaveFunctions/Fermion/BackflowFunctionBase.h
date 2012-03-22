@@ -104,10 +104,21 @@ namespace qmcplusplus
       NumTargets=els.getTotalNum();
     }
 
-    BackflowFunctionBase(BackflowFunctionBase &fn):
-     CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam)//,uniqueFunctions(fn.uniqueFunctions)
+    //BackflowFunctionBase(BackflowFunctionBase &fn):
+    // CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam)//,uniqueFunctions(fn.uniqueFunctions)
+    //{
+    //  derivs.resize(fn.derivs.size());
+    //}
+
+    void resize(int NT, int NC)
     {
-      derivs.resize(fn.derivs.size());
+      NumTargets=NT; NumCenters=NC;
+      UIJ.resize(NumTargets,NumCenters); UIJ=0;
+      AIJ.resize(NumTargets,NumCenters); AIJ=0;
+      BIJ.resize(NumTargets,NumCenters); BIJ=0;
+      UIJ_temp.resize(NumCenters); UIJ_temp=0; 
+      AIJ_temp.resize(NumCenters); AIJ_temp=0;
+      BIJ_temp.resize(NumCenters); BIJ_temp=0;
     }
 
     virtual

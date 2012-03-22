@@ -163,7 +163,7 @@ namespace qmcplusplus
 //    }
     BackflowTransformation(ParticleSet& els):
       targetPtcl(els),QP(els),cutOff(0.0) {
-      myTable = DistanceTable::add(els,els);
+      myTable = DistanceTable::add(els);
       NumTargets=els.getTotalNum();
       Bmat.resize(NumTargets);
       Bmat_full.resize(NumTargets,NumTargets);
@@ -268,7 +268,7 @@ namespace qmcplusplus
     void resetTargetParticleSet(ParticleSet& P)
     {
       targetPtcl=P;
-      myTable = DistanceTable::add(P,P);
+      myTable = DistanceTable::add(P);
       for(int i=0; i<bfFuns.size(); i++)
         bfFuns[i]->resetTargetParticleSet(P);
     }

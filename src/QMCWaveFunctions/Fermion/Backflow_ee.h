@@ -39,8 +39,8 @@ namespace qmcplusplus
 
     Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),first(true) //,RadFun(0) 
     {
-      myTable = DistanceTable::add(els,els);
-      resize(NumTargets);
+      myTable = DistanceTable::add(els);
+      resize(NumTargets,NumTargets);
       NumGroups=els.groups();
       PairID.resize(NumTargets,NumTargets);
       for(int i=0; i<NumTargets; ++i)
@@ -56,16 +56,6 @@ namespace qmcplusplus
     //  resize(NumTargets);
     //}
     
-    void resize(int NT)
-    {
-      NumTargets=NT;
-      UIJ.resize(NumTargets,NumTargets);
-      AIJ.resize(NumTargets,NumTargets);
-      BIJ.resize(NumTargets,NumTargets);
-      UIJ_temp.resize(NumTargets);
-      AIJ_temp.resize(NumTargets);
-      BIJ_temp.resize(NumTargets);
-    }
 
     ~Backflow_ee() {}; 
  
@@ -76,11 +66,13 @@ namespace qmcplusplus
 
     BackflowFunctionBase* makeClone(ParticleSet& tqp)
     {
-       Backflow_ee<FT>* clone = new Backflow_ee<FT>(CenterSys,tqp);
-       first=true;
-       clone->resize(NumTargets);
+       Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp,tqp);
+       clone->first=false;
+       clone->resize(NumTargets,NumTargets);
        clone->offsetPrms=offsetPrms;
+       clone->numParams=numParams;
        clone->derivs=derivs;
+       clone->offsetPrms=offsetPrms;
 
        clone->uniqueRadFun.resize(uniqueRadFun.size());
        clone->RadFun.resize(RadFun.size());
