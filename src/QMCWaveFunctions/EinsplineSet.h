@@ -211,6 +211,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
     typedef typename OrbitalSetTraits<StorageType>::GradVector_t  StorageGradVector_t;
     typedef typename OrbitalSetTraits<StorageType>::HessVector_t  StorageHessVector_t;
+    typedef typename OrbitalSetTraits<StorageType>::GradHessVector_t  StorageGradHessVector_t;
     typedef Vector<double>                                        RealValueVector_t;
     typedef Vector<complex<double> >                              ComplexValueVector_t;
     typedef Vector<TinyVector<double,OHMMS_DIM> >                 RealGradVector_t;
@@ -256,6 +257,7 @@ namespace qmcplusplus {
     StorageValueVector_t StorageValueVector, StorageLaplVector;
     StorageGradVector_t  StorageGradVector;
     StorageHessVector_t  StorageHessVector;
+    StorageGradHessVector_t  StorageGradHessVector;
     // Temporary storage used when blending functions        
     StorageValueVector_t BlendValueVector, BlendLaplVector;   
     StorageGradVector_t BlendGradVector;

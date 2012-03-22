@@ -129,10 +129,15 @@ namespace qmcplusplus {
        for(int j=0; j<NumOrbitals; j++)
          TpsiM(j,i) = psiM(i,j);
       }
-      ValueType phaseValueRef; 
-      ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
+      RealType phaseValueRef; 
+      RealType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
       InverseTimer.stop();
-      ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logValueRef);
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
+#else
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef));
+#endif
       detValues[ReferenceDeterminant] = det0; 
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
       for(int iat=0; iat<NumPtcls; iat++)
@@ -219,10 +224,15 @@ namespace qmcplusplus {
        for(int j=0; j<NumOrbitals; j++)
          TpsiM(j,i) = psiM(i,j);
       }
-      ValueType phaseValueRef; 
-      ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
+      RealType phaseValueRef; 
+      RealType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
       InverseTimer.stop();
-      ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logValueRef);
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
+#else
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef));  
+#endif
       detValues[ReferenceDeterminant] = det0; 
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
       for(int iat=0; iat<NumPtcls; iat++)

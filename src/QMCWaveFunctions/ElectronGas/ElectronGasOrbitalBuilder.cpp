@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
 #if QMC_BUILD_LEVEL>2
+#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
@@ -82,8 +83,14 @@ namespace qmcplusplus
 // FIX FIX FIX !!!
         PtclPoolType dummy; 
         UseBackflow=true;
-        if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,dummy);
-        BFTrans->put(cur);     
+
+        if(BFTrans == 0) {
+          BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,dummy,targetPsi);
+          bfbuilder->put(cur);
+          BFTrans = bfbuilder->getBFTrans();
+        }
+        //  if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,dummy);
+        // BFTrans->put(cur);     
       }
       cur = cur->next; 
     }
@@ -210,6 +217,8 @@ namespace qmcplusplus
             downdet = new DiracDeterminantWithBackflow(targetPtcl,psid,BFTrans,nup);
             downdet->set(nup,ndn);
           }
+          if(BFTrans->isOptimizable()) sdet->Optimizable = true;
+
         } else 
 #endif
         {
@@ -228,12 +237,12 @@ namespace qmcplusplus
         if(ndn>0) sdet->add(downdet,1);
       }
 
-#if QMC_BUILD_LEVEL>2
-    // change DistanceTables if using backflow
-    if(UseBackflow)   {
-       sdet->resetTargetParticleSet(BFTrans->QP);
-    }
-#endif
+//#if QMC_BUILD_LEVEL>2
+//    // change DistanceTables if using backflow
+//    if(UseBackflow)   {
+//       sdet->resetTargetParticleSet(targetPtcl);
+//    }
+//#endif
 
     //add Slater determinant to targetPsi
     targetPsi.addOrbital(sdet,"SlaterDet");

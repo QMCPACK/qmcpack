@@ -41,10 +41,10 @@ namespace qmcplusplus
     void setBF(BackflowTransformation* bf) 
     {
       BFTrans = bf;
-      for(int i=0; i<Dets.size(); i++) Dets[i]->setBF(bf);
+      for(int i=0; i<Dets.size(); i++) Dets[i]->setBF(BFTrans);
     }
 
-
+    void resetTargetParticleSet(ParticleSet& P);
     void checkInVariables(opt_variables_type& active)
     {
       //if(Optimizable) {

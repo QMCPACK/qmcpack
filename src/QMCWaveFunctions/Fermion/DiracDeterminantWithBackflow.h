@@ -41,12 +41,12 @@ namespace qmcplusplus
       typedef SPOSetBase::GradVector_t  GradVector_t;
       typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
       typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
-      typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
+      typedef SPOSetBase::HessVector_t  HessVector_t;
       typedef SPOSetBase::HessType      HessType;
-      typedef TinyVector<HessType, OHMMS_DIM>   GGGType;
-      typedef Vector<GGGType>           GGGVector_t;           
-      typedef Matrix<GGGType>           GGGMatrix_t;           
-      typedef Array<HessType,OHMMS_DIM>         HessArray_t;
+      typedef SPOSetBase::GGGType       GGGType;
+      typedef SPOSetBase::GGGVector_t   GGGVector_t;           
+      typedef SPOSetBase::GGGMatrix_t   GGGMatrix_t;           
+      typedef SPOSetBase::HessArray_t HessArray_t;
       //typedef Array<GradType,3>       GradArray_t;
       //typedef Array<PosType,3>        PosArray_t;
 
@@ -214,7 +214,9 @@ namespace qmcplusplus
 
       void testDerivFjj(ParticleSet& P, int pa);
       void testGGG(ParticleSet& P);
+      void testGG(ParticleSet& P);
       void testDerivLi(ParticleSet& P, int pa);
+      void testL(ParticleSet& P);
       void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
 
     };

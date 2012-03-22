@@ -94,6 +94,14 @@ namespace qmcplusplus
       static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data()); }
 
+    /** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
+    */
+    template<typename PT, typename VT, typename GT, typename HT, typename GG>
+      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
+      { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
+
+
+
     /** create spline for complex<double> */
     template<typename VT, typename IT>
     static multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s

@@ -25,6 +25,15 @@ namespace qmcplusplus {
        0.0, 0.0, -3.0,  1.0,
        0.0, 0.0,  1.0,  0.0 };
 
+
+
+  template<>
+  const double BsplineFunctor<double>::d3A[16] =
+    {  0.0, 0.0, 0.0, -1.0, 
+       0.0, 0.0, 0.0,  3.0, 
+       0.0, 0.0, 0.0, -3.0, 
+       0.0, 0.0, 0.0,  1.0 };
+
 //   template<>
 //   const float  BsplineFunctor<float>::A[16] = 
 //     { -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
