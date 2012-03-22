@@ -152,7 +152,7 @@ namespace qmcplusplus {
 
   OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   {
-    BackflowTransformation *tr = BFTrans->makeClone();
+    BackflowTransformation *tr = BFTrans->makeClone(tqp);
 //    tr->resetTargetParticleSet(tqp);
 
     SlaterDetWithBackflow* myclone=new SlaterDetWithBackflow(tqp,tr);

@@ -68,7 +68,7 @@ namespace qmcplusplus
     };
 
     ///Reference to the center
-    const ParticleSet& CenterSys;
+    ParticleSet& CenterSys;
     ///number of centers, e.g., ions
     int NumCenters;
     ///number of quantum particles
@@ -111,7 +111,7 @@ namespace qmcplusplus
     }
 
     virtual
-    BackflowFunctionBase* makeClone()=0;
+    BackflowFunctionBase* makeClone(ParticleSet& tqp)=0;
 
     virtual ~BackflowFunctionBase() {}; 
  

@@ -176,32 +176,23 @@ namespace qmcplusplus
       numVarBefore=0;
     }
 
-    BackflowTransformation(BackflowTransformation &tr): 
-      NumTargets(tr.NumTargets),QP(tr.QP),cutOff(tr.cutOff), 
-      targetPtcl(tr.targetPtcl),/*ptclPool(tr.ptclPool),*/ numParams(tr.numParams) {
-      myTable = DistanceTable::add(targetPtcl,targetPtcl);
-      Bmat.resize(NumTargets);
-      Bmat_full.resize(NumTargets,NumTargets);
-      Amat.resize(NumTargets,NumTargets);
-      newQP.resize(NumTargets);
-      oldQP.resize(NumTargets);
-      indexQP.resize(NumTargets);
-      index=tr.index;
-      HESS_ID.diagonal(1.0);
-      DummyHess=0.0;
+    void copyFrom(BackflowTransformation &tr){ 
+      cutOff=tr.cutOff; 
+      numParams=tr.numParams;
       numVarBefore=tr.numVarBefore;
       optIndexMap=tr.optIndexMap; 
       bfFuns.resize((tr.bfFuns).size());
       vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
       for(int i=0; i<(tr.bfFuns).size() ; i++,it++)
-        bfFuns[i] = (*it)->makeClone();
+        bfFuns[i] = (*it)->makeClone(targetPtcl);
     }
     
 // FIX FIX FIX
-    BackflowTransformation* makeClone()
+    BackflowTransformation* makeClone(ParticleSet& tqp)
     {
-       BackflowTransformation *clone = new BackflowTransformation(*this);
-       vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
+       BackflowTransformation *clone = new BackflowTransformation(tqp);
+       clone->copyFrom(*this);
+//       vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
 //       for(int i=0; i<(bfFuns).size() ; i++,it++)
 //       {
 //         clone->bfFuns[i]->reportStatus(cerr);

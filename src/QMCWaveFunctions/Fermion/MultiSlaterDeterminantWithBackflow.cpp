@@ -29,7 +29,7 @@ namespace qmcplusplus {
   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
   { 
     // mmorales: the proxy classes read from the particle set inside BFTrans
-    BackflowTransformation *tr = BFTrans->makeClone();
+    BackflowTransformation *tr = BFTrans->makeClone(tqp);
     tr->resetTargetParticleSet(tqp);
 
     SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);

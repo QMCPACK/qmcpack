@@ -74,11 +74,17 @@ namespace qmcplusplus
       myTable = DistanceTable::add(P);
     }
 
-    BackflowFunctionBase* makeClone()
+    BackflowFunctionBase* makeClone(ParticleSet& tqp)
     {
-       Backflow_ee<FT>* clone = new Backflow_ee<FT>(*this);
+       Backflow_ee<FT>* clone = new Backflow_ee<FT>(CenterSys,tqp);
        first=true;
        clone->resize(NumTargets);
+       clone->offsetPrms=offsetPrms;
+       clone->derivs=derivs;
+
+       clone->uniqueRadFun.resize(uniqueRadFun.size());
+       clone->RadFun.resize(RadFun.size());
+
        for(int i=0; i<uniqueRadFun.size(); i++)
          clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
        for(int i=0; i<RadFun.size(); i++)

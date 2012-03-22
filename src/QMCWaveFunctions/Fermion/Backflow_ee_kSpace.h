@@ -87,11 +87,13 @@ namespace qmcplusplus
     {
     }
 
-    BackflowFunctionBase* makeClone()
+    BackflowFunctionBase* makeClone(ParticleSet& tqp)
     {
-       Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(*this);
+       Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys,tqp);
        first=true;
        clone->resize(NumTargets);
+//       clone->uniqueRadFun.resize(uniqueRadFun.size());
+//       clone->RadFun.resize(RadFun.size());
        /*
        for(int i=0; i<uniqueRadFun.size(); i++)
          clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
