@@ -69,8 +69,9 @@ namespace qmcplusplus
     {
        Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys,tqp);
        clone->resize(NumTargets,NumCenters);
-
+       clone->indexOfFirstParam=indexOfFirstParam;
        clone->offsetPrms=offsetPrms;
+       clone->numParams=numParams;
        clone->derivs=derivs;
        clone->uniqueRadFun.resize(uniqueRadFun.size());
        clone->RadFun.resize(RadFun.size());
