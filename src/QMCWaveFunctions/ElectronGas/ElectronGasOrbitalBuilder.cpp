@@ -72,25 +72,19 @@ namespace qmcplusplus
 
 #if QMC_BUILD_LEVEL>2
     xmlNodePtr curRoot=cur;
+    xmlNodePtr BFNode(NULL);
     string cname;
     cur = curRoot->children;
     while (cur != NULL)//check the basis set
     {
       getNodeName(cname,cur);
       if(cname == backflow_tag) {
-        app_log() <<"Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
 
 // FIX FIX FIX !!!
-        PtclPoolType dummy; 
         UseBackflow=true;
 
-        if(BFTrans == 0) {
-          BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,dummy,targetPsi);
-          bfbuilder->put(cur);
-          BFTrans = bfbuilder->getBFTrans();
-        }
-        //  if(BFTrans == 0) BFTrans = new BackflowTransformation(targetPtcl,dummy);
-        // BFTrans->put(cur);     
+        if(BFNode == NULL) 
+          BFNode=cur;
       }
       cur = cur->next; 
     }
@@ -106,8 +100,8 @@ namespace qmcplusplus
     
     if (nc == 0) nc = nc2 = egGrid.getShellIndex(nat/2);
     int nup= egGrid.getNumberOfKpoints(nc);
-    int ndn(nup);
-    if (nc2!=nc)
+    int ndn(0);
+    if (nc2!=-2)
       ndn = egGrid.getNumberOfKpoints(nc2);
     
     if (nc<0)
@@ -118,7 +112,7 @@ namespace qmcplusplus
 
     if (nat!=(nup+ndn))
       {
-        app_error() << "  The number of particles does not match to the shell." << endl;
+        app_error() << "  The number of particles "<<nup<<"/"<<ndn<< " does not match to the shell." << endl;
         app_error() << "  Suggested values for the number of particles " << endl;
         app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc) << " for shell "<< nc << endl;
         app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc-1) << " for shell "<< nc-1 << endl;
@@ -207,6 +201,8 @@ namespace qmcplusplus
         Det_t *updet, *downdet;
 #if QMC_BUILD_LEVEL>2
         if(UseBackflow) {
+          app_log() <<"Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
+
           //create up determinant
           updet = new DiracDeterminantWithBackflow(targetPtcl,psiu,BFTrans,0);
           updet->set(0,nup);
@@ -217,7 +213,17 @@ namespace qmcplusplus
             downdet = new DiracDeterminantWithBackflow(targetPtcl,psid,BFTrans,nup);
             downdet->set(nup,ndn);
           }
+          PtclPoolType dummy;
+          BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,dummy,targetPsi);
+          bfbuilder->put(BFNode);
+          BFTrans = bfbuilder->getBFTrans();
+
+          sdet->add(updet,0);
+          if(ndn>0) sdet->add(downdet,1);
+
+          sdet->setBF(BFTrans);
           if(BFTrans->isOptimizable()) sdet->Optimizable = true;
+          sdet->resetTargetParticleSet(targetPtcl);
 
         } else 
 #endif
@@ -232,9 +238,9 @@ namespace qmcplusplus
             downdet = new Det_t(psid);
             downdet->set(nup,ndn);
           }
-        }
         sdet->add(updet,0);
         if(ndn>0) sdet->add(downdet,1);
+        }
       }
 
 //#if QMC_BUILD_LEVEL>2
