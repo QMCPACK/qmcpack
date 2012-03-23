@@ -191,7 +191,16 @@ namespace qmcplusplus
       DiracDeterminantWithBackflow* makeCopy(SPOSetBase* spo) const;
 
       inline void setLogEpsilon(ValueType x) { }
-
+      inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
+      {
+        ValueType ret(0); for (int i(0);i<OHMMS_DIM;i++) ret+=lhs[i]*rhs[i]; return ret;
+      };
+#ifdef QMC_COMPLEX
+      inline ValueType rcdot(TinyVector<ValueType,OHMMS_DIM>& lhs, TinyVector<RealType,OHMMS_DIM>& rhs)
+      {
+        ValueType ret(0); for (int i(0);i<OHMMS_DIM;i++) ret+=lhs[i]*rhs[i]; return ret;
+      };
+#endif
       int NumParticles;
       GradMatrix_t dFa; 
       HessMatrix_t grad_grad_psiM; 
