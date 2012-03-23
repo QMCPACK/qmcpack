@@ -74,7 +74,7 @@ eval_multi_multi_UBspline_3d_z_kernel
     double val = 0.0;
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	double *base = coefs + (index.x+i)*strides.x + (index.y+j)*strides.y + index.z*strides.z;
+	const double *base = coefs + (index.x+i)*strides.x + (index.y+j)*strides.y + index.z*strides.z;
 	for (int k=0; k<4; k++) 
 	  val += abc[16*i+4*j+k] * base[off+k*strides.z];
       }
@@ -165,11 +165,11 @@ eval_multi_multi_UBspline_3d_z_vgh_kernel
     h00=0.0, h01=0.0, h02=0.0, h11=0.0, h12=0.0, h22=0.0;
 
   int n = 0;
-  double *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
+  const double *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
   if (off < 2*N) {
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	double *base = b0 + i*strides.x + j*strides.y;
+	const double *base = b0 + i*strides.x + j*strides.y;
 	for (int k=0; k<4; k++) {
 	  double c  = base[k*strides.z];
 	  v   += abc[n+0] * c;
@@ -359,11 +359,11 @@ eval_multi_multi_UBspline_3d_z_vgl_kernel
     h00=0.0, h01=0.0, h02=0.0, h11=0.0, h12=0.0, h22=0.0;
 
   int n = 0;
-  double *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
+  const double *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
   if (off < 2*N) {
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	double *base = b0 + i*strides.x + j*strides.y;
+	const double *base = b0 + i*strides.x + j*strides.y;
 	for (int k=0; k<4; k++) {
 	  double c  = base[k*strides.z];
 	  v   += abc[n+  0] * c;

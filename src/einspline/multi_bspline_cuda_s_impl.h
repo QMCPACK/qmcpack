@@ -39,7 +39,7 @@ eval_multi_multi_UBspline_1d_s_kernel
   __syncthreads();
 
   int numBlocks = N / SPLINE_BLOCK_SIZE;
-  float *c = coefs + index*stride + tid;
+  const float *c = coefs + index*stride + tid;
   float *myval = ourval + tid;
   int stride2 = 2*stride;
   int stride3 = 3*stride;
@@ -119,7 +119,7 @@ float **grads, float **lapl,
   __syncthreads();
 
   int numBlocks = N / SPLINE_BLOCK_SIZE;
-  float *c = coefs + index*stride + tid;
+  const float *c = coefs + index*stride + tid;
   float *myval  = ourval + tid;
   float *mygrad = ourgrad + tid;
   float *mylapl = ourlapl + tid;
@@ -243,7 +243,7 @@ eval_multi_multi_UBspline_3d_s_kernel
   if (off < N) {
     float val = 0.0;
     for (unsigned i=0; i<4; i++) {
-      float *base = coefs + (index.x+i)*strides.x + (index.y)*strides.y + index.z*strides.z + off;
+      const float *base = coefs + (index.x+i)*strides.x + (index.y)*strides.y + index.z*strides.z + off;
       for (unsigned j=0; j<4; j++) {
 	for (unsigned k=0; k<4; k++) 
 	  val += abc[16*i+4*j+k] * base[k*strides.z];
@@ -327,7 +327,7 @@ eval_multi_multi_UBspline_3d_s_sign_kernel
     float val = 0.0;
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	float *base = coefs + (index.x+i)*strides.x + (index.y+j)*strides.y + index.z*strides.z;
+	const float *base = coefs + (index.x+i)*strides.x + (index.y+j)*strides.y + index.z*strides.z;
 	for (int k=0; k<4; k++) 
 	  val += abc[16*i+4*j+k] * base[off+k*strides.z];
       }
@@ -419,11 +419,11 @@ eval_multi_multi_UBspline_3d_s_vgh_kernel
     h00=0.0, h01=0.0, h02=0.0, h11=0.0, h12=0.0, h22=0.0;
 
   int n = 0;
-  float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
+  const float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
   if (off < N) {
     for (unsigned i=0; i<4; i++) {
       for (unsigned j=0; j<4; j++) {
-	float *base = b0 + i*strides.x + j*strides.y;
+	const float *base = b0 + i*strides.x + j*strides.y;
 	float c0  = base[0*strides.z];
 	float c1  = base[1*strides.z];
 	float c2  = base[2*strides.z];
@@ -641,12 +641,12 @@ eval_multi_multi_UBspline_3d_s_vgl_kernel
     h00=0.0, h01=0.0, h02=0.0, h11=0.0, h12=0.0, h22=0.0;
 
   int n = 0;
-  float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
+  const float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
 
   if (off < N) {
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	float *base = b0 + i*strides.x + j*strides.y;
+	const float *base = b0 + i*strides.x + j*strides.y;
 	float c0  = base[0*strides.z];
 	float c1  = base[1*strides.z];
 	float c2  = base[2*strides.z];
@@ -839,11 +839,11 @@ eval_multi_multi_UBspline_3d_s_vgl_sign_kernel
     h00=0.0, h01=0.0, h02=0.0, h11=0.0, h12=0.0, h22=0.0;
 
   int n = 0;
-  float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
+  const float *b0 = coefs + index.x*strides.x + index.y*strides.y + index.z*strides.z + off;
   if (off < N) {
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-	float *base = b0 + i*strides.x + j*strides.y;
+	const float *base = b0 + i*strides.x + j*strides.y;
 	for (int k=0; k<4; k++) {
 	  float c  = base[k*strides.z];
 	  v   += abc[n+  0] * c;
