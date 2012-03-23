@@ -1588,26 +1588,26 @@ eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
     _mm_storel_pd((double*)(hess+18*n+8),  mhess [6*n+5]);
     _mm_storeh_pd((double*)(hess+18*n+17), mhess [6*n+5]);
 
-    _mm_storel_pd((double*)(hess+54*n+0),  mgradhess [10*n+0]);
-    _mm_storeh_pd((double*)(hess+54*n+27), mgradhess [10*n+0]);
-    _mm_storel_pd((double*)(hess+54*n+1),  mgradhess [10*n+1]);
-    _mm_storeh_pd((double*)(hess+54*n+28), mgradhess [10*n+1]);
-    _mm_storel_pd((double*)(hess+54*n+2),  mgradhess [10*n+2]);
-    _mm_storeh_pd((double*)(hess+54*n+29), mgradhess [10*n+2]);
-    _mm_storel_pd((double*)(hess+54*n+4),  mgradhess [10*n+3]);
-    _mm_storeh_pd((double*)(hess+54*n+31), mgradhess [10*n+3]);
-    _mm_storel_pd((double*)(hess+54*n+5),  mgradhess [10*n+4]);
-    _mm_storeh_pd((double*)(hess+54*n+32), mgradhess [10*n+4]);
-    _mm_storel_pd((double*)(hess+54*n+8),  mgradhess [10*n+5]);
-    _mm_storeh_pd((double*)(hess+54*n+35), mgradhess [10*n+5]);
-    _mm_storel_pd((double*)(hess+54*n+13), mgradhess [10*n+6]);
-    _mm_storeh_pd((double*)(hess+54*n+40), mgradhess [10*n+6]);
-    _mm_storel_pd((double*)(hess+54*n+14), mgradhess [10*n+7]);
-    _mm_storeh_pd((double*)(hess+54*n+41), mgradhess [10*n+7]);
-    _mm_storel_pd((double*)(hess+54*n+17), mgradhess [10*n+8]);
-    _mm_storeh_pd((double*)(hess+54*n+44), mgradhess [10*n+8]);
-    _mm_storel_pd((double*)(hess+54*n+26), mgradhess [10*n+9]);
-    _mm_storeh_pd((double*)(hess+54*n+53), mgradhess [10*n+9]);
+    _mm_storel_pd((double*)(gradhess+54*n+0),  mgradhess [10*n+0]);
+    _mm_storeh_pd((double*)(gradhess+54*n+27), mgradhess [10*n+0]);
+    _mm_storel_pd((double*)(gradhess+54*n+1),  mgradhess [10*n+1]);
+    _mm_storeh_pd((double*)(gradhess+54*n+28), mgradhess [10*n+1]);
+    _mm_storel_pd((double*)(gradhess+54*n+2),  mgradhess [10*n+2]);
+    _mm_storeh_pd((double*)(gradhess+54*n+29), mgradhess [10*n+2]);
+    _mm_storel_pd((double*)(gradhess+54*n+4),  mgradhess [10*n+3]);
+    _mm_storeh_pd((double*)(gradhess+54*n+31), mgradhess [10*n+3]);
+    _mm_storel_pd((double*)(gradhess+54*n+5),  mgradhess [10*n+4]);
+    _mm_storeh_pd((double*)(gradhess+54*n+32), mgradhess [10*n+4]);
+    _mm_storel_pd((double*)(gradhess+54*n+8),  mgradhess [10*n+5]);
+    _mm_storeh_pd((double*)(gradhess+54*n+35), mgradhess [10*n+5]);
+    _mm_storel_pd((double*)(gradhess+54*n+13), mgradhess [10*n+6]);
+    _mm_storeh_pd((double*)(gradhess+54*n+40), mgradhess [10*n+6]);
+    _mm_storel_pd((double*)(gradhess+54*n+14), mgradhess [10*n+7]);
+    _mm_storeh_pd((double*)(gradhess+54*n+41), mgradhess [10*n+7]);
+    _mm_storel_pd((double*)(gradhess+54*n+17), mgradhess [10*n+8]);
+    _mm_storeh_pd((double*)(gradhess+54*n+44), mgradhess [10*n+8]);
+    _mm_storel_pd((double*)(gradhess+54*n+26), mgradhess [10*n+9]);
+    _mm_storeh_pd((double*)(gradhess+54*n+53), mgradhess [10*n+9]);
   }
 
   if (N&1) {
@@ -1624,16 +1624,16 @@ eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
     _mm_storel_pd((double*)(hess+9*(N-1)+5),  mhess [6*(Nh-1)+4]);
     _mm_storel_pd((double*)(hess+9*(N-1)+8),  mhess [6*(Nh-1)+5]);
     
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+0),  mgradhess [10*(Nh-1)+0]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+1),  mgradhess [10*(Nh-1)+1]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+2),  mgradhess [10*(Nh-1)+2]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+4),  mgradhess [10*(Nh-1)+3]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+5),  mgradhess [10*(Nh-1)+4]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+8),  mgradhess [10*(Nh-1)+5]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+13), mgradhess [10*(Nh-1)+6]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+14), mgradhess [10*(Nh-1)+7]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+17), mgradhess [10*(Nh-1)+8]);
-    _mm_storel_pd((double*)(hess+27*(Nh-1)+26), mgradhess [10*(Nh-1)+9]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+0),  mgradhess [10*(Nh-1)+0]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+1),  mgradhess [10*(Nh-1)+1]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+2),  mgradhess [10*(Nh-1)+2]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+4),  mgradhess [10*(Nh-1)+3]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+5),  mgradhess [10*(Nh-1)+4]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+8),  mgradhess [10*(Nh-1)+5]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+13), mgradhess [10*(Nh-1)+6]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+14), mgradhess [10*(Nh-1)+7]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+17), mgradhess [10*(Nh-1)+8]);
+    _mm_storel_pd((double*)(gradhess+27*(Nh-1)+26), mgradhess [10*(Nh-1)+9]);
   }
 
   for (int n=0; n<N; n++) {

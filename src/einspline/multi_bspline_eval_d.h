@@ -108,4 +108,13 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
 			      double* restrict vals,
 			      double* restrict grads,
 			      double* restrict hess);
+
+void
+eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
+    double x, double y, double z,
+    double* restrict vals,
+    double* restrict grads,
+    double* restrict hess,
+    double* restrict gradhess);
+
 #endif

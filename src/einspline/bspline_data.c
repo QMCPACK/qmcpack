@@ -80,7 +80,7 @@ void init_sse_data()
 #endif
 #ifdef HAVE_SSE2
   if (A_d == 0) {
-    posix_memalign ((void**)&A_d, 16, (sizeof(__m128d)*24));
+    posix_memalign ((void**)&A_d, 16, (sizeof(__m128d)*32));
     A_d[ 0] = _mm_setr_pd (  3.0/6.0, -1.0/6.0 );	   
     A_d[ 1] = _mm_setr_pd (  1.0/6.0, -3.0/6.0 );	   
     A_d[ 2] = _mm_setr_pd ( -6.0/6.0,  3.0/6.0 );	   
@@ -105,6 +105,13 @@ void init_sse_data()
     A_d[21] = _mm_setr_pd (  1.0, -3.0 );		   
     A_d[22] = _mm_setr_pd (  0.0,  0.0 );		   
     A_d[23] = _mm_setr_pd (  0.0,  1.0 );   
+    A_d[25] = _mm_setr_pd ( -1.0,  0.0 );       
+    A_d[26] = _mm_setr_pd (  0.0,  0.0 );       
+    A_d[27] = _mm_setr_pd (  3.0,  0.0 );       
+    A_d[28] = _mm_setr_pd (  0.0,  0.0 );       
+    A_d[29] = _mm_setr_pd ( -3.0,  0.0 );       
+    A_d[30] = _mm_setr_pd (  0.0,  0.0 );       
+    A_d[31] = _mm_setr_pd (  1.0,  0.0 );
   }                
 #endif
 }
