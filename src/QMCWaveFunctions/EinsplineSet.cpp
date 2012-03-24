@@ -1817,7 +1817,7 @@ namespace qmcplusplus {
       }
       int psiIndex(0);
         for (int j=0; j<NumValenceOrbs; j++) {
-cerr<<psiIndex<<" "<<i<<" "<<j<<endl;
+//cerr<<psiIndex<<" "<<i<<" "<<j<<endl;
           psi(i,psiIndex)=real(StorageValueVector[j]);
           for (int n=0; n<OHMMS_DIM; n++)
             dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);

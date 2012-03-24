@@ -46,7 +46,6 @@ namespace qmcplusplus
 
   BackflowBuilder::~BackflowBuilder() 
   {
-    delete myHandler;
   } 
 
     bool BackflowBuilder::put(xmlNodePtr cur)
