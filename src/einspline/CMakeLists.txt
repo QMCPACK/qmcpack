@@ -60,14 +60,25 @@ endif()
 
 
 IF(HAVE_SSE2)
+  if(EINSPLINE_SSE_BUG)
+    set(SRCS ${SRCS}  
+      multi_bspline_eval_sse2_d.c    
+      multi_bspline_eval_sse2_d_cpp.cc 
+      )
+  else()
+    set(SRCS ${SRCS} 
+      multi_bspline_eval_sse_d.c    
+      multi_bspline_eval_sse_d_cpp.cc 
+      )
+  endif()
+
   SET(SRCS ${SRCS} 
-    multi_bspline_eval_sse_d.c   
     multi_bspline_eval_sse_z.c   
     multi_nubspline_eval_sse_z.c 
-    multi_bspline_eval_sse_d_cpp.cc       
     multi_bspline_eval_sse_z_cpp.cc       
     multi_nubspline_eval_sse_z_cpp.cc   
     )
+
 else()
   SET(SRCS ${SRCS} 
     multi_bspline_eval_std_d.c 
