@@ -5,10 +5,8 @@ set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
-#set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
-set(XT_FLAGS " -msse3 -D_CRAYMPI") 
-#interlogs bdver1 but without it better
-#set(XT_FLAGS "-march=bdver1  -msse3 -D_CRAYMPI") 
+set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
+#set(XT_FLAGS "-msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 
@@ -41,7 +39,6 @@ set(CMAKE_FIND_ROOT_PATH
   /ccs/proj/mat034/jnkim/xk6/gnu45/libxml2
 )
 
-set(EINSPLINE_HOME /ccs/proj/mat034/jnkim/share/einspline)
+set(EINSPLINE_SSE_BUG 1)
 set(HAVE_EINSPLINE 1)
 set(HAVE_EINSPLINE_EXT 0)
-#link_libraries(/opt/acml/5.0.0/gfortran64_int64/lib/libacml.a)
