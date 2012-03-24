@@ -51,6 +51,7 @@ namespace qmcplusplus {
    void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
    {
+     logdet=0;
      evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet,grad_grad_grad_logdet);
      transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
      //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);

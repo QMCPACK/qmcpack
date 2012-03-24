@@ -298,6 +298,7 @@ namespace qmcplusplus
        BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,ptclPool,targetPsi);
        bfbuilder->put(BFnode);
        BFTrans = bfbuilder->getBFTrans();
+       delete bfbuilder;
        if(multiDet) {
          if(FastMSD)  {
            multislaterdetfast_0->setBF(BFTrans);
