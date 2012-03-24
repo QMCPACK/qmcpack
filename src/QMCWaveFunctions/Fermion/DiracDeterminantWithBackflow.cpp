@@ -403,7 +403,7 @@ namespace qmcplusplus {
       temp=0.0;
       temp2=0.0;
       for(int j=0; j<NumPtcls; j++) {
-        temp2 += dot(BFTrans->Bmat_temp(i,FirstIndex+j),Fmat(j,j));
+        temp2 += rcdot(BFTrans->Bmat_temp(i,FirstIndex+j),Fmat(j,j));
         temp  += dot(BFTrans->Amat_temp(i,FirstIndex+j),Fmat(j,j));
       }
       myG_temp(i) += temp;
@@ -652,7 +652,7 @@ namespace qmcplusplus {
       for(int j=0; j<NumPtcls; j++) {
         for(int k=0; k<OHMMS_DIM; k++) temp2 += BFTrans->Bmat_full(i,FirstIndex+j)[k]*Fmat(j,j)[k];
         temp  += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
-//        temp2 += rcdot(BFTrans->Bmat_full(i,FirstIndex+j),Fmat(j,j));
+        //temp2 += rcdot(BFTrans->Bmat_full(i,FirstIndex+j),Fmat(j,j));
       }
       myG(i) += temp; 
       myL(i) += temp2;
@@ -860,7 +860,7 @@ namespace qmcplusplus {
           PosType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
-                   -  Fmat(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
+                   -  Fmat(k,j)*rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
           }
           dFa(i,j)=f_a;
         }
@@ -874,9 +874,9 @@ namespace qmcplusplus {
       for(int j=0; j<NumPtcls; j++) {
         GradType B_j;
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j);
-        dLa += (dot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
+        dLa += (rcdot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
-        dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
+        dpsia += rcdot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
      for(int j=0; j<NumPtcls; j++) {
 
@@ -893,7 +893,7 @@ namespace qmcplusplus {
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0]
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]
                        + cj[2]*grad_grad_grad_psiM(j,k)[2]) 
-                     - dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
+                     - rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
                        *Qmat(k,j) );
       }
 
@@ -1004,7 +1004,7 @@ namespace qmcplusplus {
           PosType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
-                   -  Fmat(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
+                   -  Fmat(k,j)*rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
           }
           dFa(i,j)=f_a;
         }
@@ -1018,9 +1018,9 @@ namespace qmcplusplus {
       for(int j=0; j<NumPtcls; j++) {
         GradType B_j;
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j);
-        dLa += (dot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
+        dLa += (rcdot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
-        dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
+        dpsia += rcdot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
 
      for(int j=0; j<NumPtcls; j++) {
@@ -1038,7 +1038,7 @@ namespace qmcplusplus {
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0]
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]
                        + cj[2]*grad_grad_grad_psiM(j,k)[2]) 
-                     - dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
+                     - rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
                        *Qmat(k,j) );
       }
 
@@ -1119,7 +1119,7 @@ namespace qmcplusplus {
           PosType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
-                   -  Fmat(k,j)*dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
+                   -  Fmat(k,j)*rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(i,k)));
           }
           dFa(i,j)=f_a;
         }
@@ -1133,9 +1133,9 @@ namespace qmcplusplus {
       for(int j=0; j<NumPtcls; j++) {
         GradType B_j;
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j); 
-        La1 += (dot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
+        La1 += (rcdot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
-        dpsia += dot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
+        dpsia += rcdot(Fmat(j,j),BFTrans->Cmat(pa,FirstIndex+j));
       }
 
      for(int j=0; j<NumPtcls; j++) {
@@ -1154,7 +1154,7 @@ namespace qmcplusplus {
       for(int k=0; k<NumPtcls; k++)  {
         tmp=ConstZero;
         for(int n=0; n<NumPtcls; n++) tmp+=psiMinv(k,n)*grad_grad_psiM(j,n);
-        tmp *= dot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k));
+        tmp *= rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k));
       
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0] 
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]  
@@ -1575,7 +1575,7 @@ namespace qmcplusplus {
     int num = BFTrans->QP.getTotalNum();
     for(int i=0; i<num; i++) {
       for(int j=0; j<NumPtcls; j++) 
-        L1 += dot(Fmat(j,j),BFTrans->Bmat_full(i,FirstIndex+j));
+        L1 += rcdot(Fmat(j,j),BFTrans->Bmat_full(i,FirstIndex+j));
     }
 
 
