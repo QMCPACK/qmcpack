@@ -33,7 +33,7 @@
 #include "multi_bspline_structs.h"
 
 extern __m128d *restrict A_d;
-extern double *restrict Ad, *restrict dAd, *restrict d2Ad;
+extern double *restrict Ad, *restrict dAd, *restrict d2Ad, *restrict d3Ad;
 
 #ifndef _MM_DDOT4_PD
 #ifdef HAVE_SSE3
