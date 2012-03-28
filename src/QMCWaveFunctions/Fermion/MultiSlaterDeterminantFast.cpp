@@ -61,7 +61,7 @@ namespace qmcplusplus {
     MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
     MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone); 
     if(usingBF) {
-      BackflowTransformation *tr = BFTrans->makeClone();
+      BackflowTransformation *tr = BFTrans->makeClone(tqp);
       clone->setBF(tr);
     } 
     clone->resetTargetParticleSet(tqp);

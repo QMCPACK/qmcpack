@@ -72,7 +72,7 @@ namespace qmcplusplus
 
     void reportStatus(ostream& os);
 
-    void resetTargetParticleSet(ParticleSet& P);
+    virtual void resetTargetParticleSet(ParticleSet& P);
 
     virtual
     ValueType evaluate(ParticleSet& P

@@ -51,7 +51,8 @@ namespace qmcplusplus {
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
     typedef Tensor<ValueType,DIM>          HessType;
-    typedef Tensor<RealType,DIM>           TensorType;
+    typedef Tensor<ValueType,DIM>          TensorType;
+    typedef TinyVector<Tensor<ValueType,DIM>,DIM> GradHessType;
     typedef Vector<IndexType>     IndexVector_t;
     typedef Vector<ValueType>     ValueVector_t;
     typedef Matrix<ValueType>     ValueMatrix_t;
@@ -59,6 +60,9 @@ namespace qmcplusplus {
     typedef Matrix<GradType>      GradMatrix_t;
     typedef Vector<HessType>      HessVector_t;
     typedef Matrix<HessType>      HessMatrix_t;
+    typedef Vector<GradHessType>  GradHessVector_t;
+    typedef Matrix<GradHessType>  GradHessMatrix_t;
+    
   };
 
   ///typedef for a set of variables that are varied during an optimization
@@ -99,9 +103,7 @@ namespace qmcplusplus {
     evaluateLogAndPhase(const std::complex<T>& psi, T& phase) {
       phase = std::arg(psi);
       if(phase<0.0) phase += 2.0*M_PI;
-
       return std::log( std::abs(psi) );
-//      underflow issue with psi.real() call
 //      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
       //return std::log(psi);
     }

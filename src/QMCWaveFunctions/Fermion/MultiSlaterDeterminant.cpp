@@ -613,11 +613,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
   OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,BufferType& buf)
   {
 
+    // Do I need to recalculate LogValue, it should be up to date...
     RealType logpsi=0.0;
     for (int i=0; i<dets_up.size(); i++)
-      logpsi += dets_up[i]->evaluateLog(P,buf);
+      logpsi = dets_up[i]->evaluateLog(P,buf);
     for (int i=0; i<dets_dn.size(); i++)
-      logpsi += dets_dn[i]->evaluateLog(P,buf);
+      logpsi = dets_dn[i]->evaluateLog(P,buf);
 
     int TotalDim = PosType::Size*P.getTotalNum();
     //buf.put(detValues_up.begin(),detValues_up.end());
@@ -632,7 +633,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
       buf.put(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
       buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
     }
-    return LogValue=logpsi; 
+    return LogValue; 
   }
 
   OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, BufferType& buf)
@@ -644,7 +645,7 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     myG = P.G;
     myL = P.L;
 
-    ValueType logpsi(0.0);
+    RealType logpsi(0.0);
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++)
     {
@@ -693,12 +694,17 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     myG = P.G;
     myL = P.L;
 
-    ValueType logpsi(0.0);
+    RealType logpsi(0.0);
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++) {
       spo_up->prepareFor(i);
       logpsi = dets_up[i]->updateBuffer(P,buf,fromscratch);
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logpsi);
+      detValues_up[i]= std::complex<OHMMS_PRECISION>(std::cos(dets_up[i]->PhaseValue)*ratioMag,std::sin(dets_up[i]->PhaseValue)*ratioMag);
+#else
       detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
+#endif
       grads_up[i]=dets_up[i]->myG; 
       lapls_up[i]=dets_up[i]->myL; 
       for(int k=FirstIndex_up; k<LastIndex_up; k++)
@@ -707,7 +713,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     for (int i=0; i<dets_dn.size(); i++) {
       spo_dn->prepareFor(i);
       logpsi = dets_dn[i]->updateBuffer(P,buf,fromscratch);
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logpsi);
+      detValues_dn[i]= std::complex<OHMMS_PRECISION>(std::cos(dets_dn[i]->PhaseValue)*ratioMag,std::sin(dets_dn[i]->PhaseValue)*ratioMag);
+#else
       detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
+#endif
       grads_dn[i]=dets_dn[i]->myG; 
       lapls_dn[i]=dets_dn[i]->myL; 
       for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
@@ -861,7 +872,13 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
     {
       if(usingCSF) {
         int n = P.getTotalNum();
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(LogValue);
+        ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag); 
+#else
         ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+#endif
+
         ValueType psiinv = 1.0/psi;;
         ValueType lapl_sum=0.0;
         ParticleSet::ParticleGradient_t g(n),gmP(n);
@@ -921,7 +938,12 @@ DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo
 
       } else {
         int n = P.getTotalNum();
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(LogValue);
+        ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
         ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+#endif
         ValueType psiinv = 1.0/psi;;
         ValueType lapl_sum=0.0;
         ParticleSet::ParticleGradient_t g(n),gmP(n);

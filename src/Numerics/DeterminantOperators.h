@@ -170,6 +170,8 @@ namespace qmcplusplus {
         phase += std::arg(x[ii]);
         if(pivot[i]!=i+1)  phase += M_PI;
         logdet+=std::log(x[ii].real()*x[ii].real()+x[ii].imag()*x[ii].imag());
+//slightly smaller error with the following
+//        logdet+=2.0*std::log(std::abs(x[ii]);
       }
       InvertLU(n, x, n, pivot, work, n);
       const double one_over_2pi=1.0/TWOPI;

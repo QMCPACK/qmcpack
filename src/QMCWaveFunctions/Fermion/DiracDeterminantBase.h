@@ -128,7 +128,7 @@ namespace qmcplusplus
       inline void reportStatus(ostream& os)
       {
       }
-      void resetTargetParticleSet(ParticleSet& P)
+      virtual void resetTargetParticleSet(ParticleSet& P)
       {
         Phi->resetTargetParticleSet(P); targetPtcl = &P;
       }

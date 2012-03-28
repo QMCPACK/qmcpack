@@ -61,7 +61,7 @@ void init_sse_data()
 {
 #ifdef HAVE_SSE
   if (A_s == 0) {
-    posix_memalign ((void**)&A_s, 16, (sizeof(__m128)*12));
+    posix_memalign ((void**)&A_s, 16, (sizeof(__m128)*16));
     A_s[0]  = _mm_setr_ps ( 1.0/6.0, -3.0/6.0,  3.0/6.0, -1.0/6.0 );
     A_s[0]  = _mm_setr_ps ( 1.0/6.0, -3.0/6.0,  3.0/6.0, -1.0/6.0 );	  
     A_s[1]  = _mm_setr_ps ( 4.0/6.0,  0.0/6.0, -6.0/6.0,  3.0/6.0 );	  
@@ -75,6 +75,11 @@ void init_sse_data()
     A_s[9]  = _mm_setr_ps ( -2.0,  3.0,  0.0, 0.0  );		  
     A_s[10] = _mm_setr_ps (  1.0, -3.0,  0.0, 0.0  );		  
     A_s[11] = _mm_setr_ps (  0.0,  1.0,  0.0, 0.0  );                  
+    A_s[12] = _mm_setr_ps ( -1.0,  0.0,  0.0, 0.0  );
+    A_s[13] = _mm_setr_ps (  3.0,  0.0,  0.0, 0.0  );
+    A_s[14] = _mm_setr_ps ( -3.0,  0.0,  0.0, 0.0  );
+    A_s[15] = _mm_setr_ps (  1.0,  0.0,  0.0, 0.0  );
+
   }
                  
 #endif
@@ -105,6 +110,7 @@ void init_sse_data()
     A_d[21] = _mm_setr_pd (  1.0, -3.0 );		   
     A_d[22] = _mm_setr_pd (  0.0,  0.0 );		   
     A_d[23] = _mm_setr_pd (  0.0,  1.0 );   
+    A_d[24] = _mm_setr_pd (  0.0,  0.0 );
     A_d[25] = _mm_setr_pd ( -1.0,  0.0 );       
     A_d[26] = _mm_setr_pd (  0.0,  0.0 );       
     A_d[27] = _mm_setr_pd (  3.0,  0.0 );       
@@ -138,6 +144,10 @@ vector float d2A0 = (vector float) ( 0.0,  0.0, -1.0,  1.0 );
 vector float d2A1 = (vector float) ( 0.0,  0.0,  3.0, -2.0 );
 vector float d2A2 = (vector float) ( 0.0,  0.0, -3.0,  1.0 );
 vector float d2A3 = (vector float) ( 0.0,  0.0,  1.0,  0.0 );
+vector float d3A0 = (vector float) ( 0.0,  0.0,  0.0, -1.0 );
+vector float d3A1 = (vector float) ( 0.0,  0.0,  0.0,  3.0 );
+vector float d3A2 = (vector float) ( 0.0,  0.0,  0.0, -3.0 );
+vector float d3A3 = (vector float) ( 0.0,  0.0,  0.0,  1.0 );
 #endif
 
 /*****************/

@@ -24,7 +24,7 @@ SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINO
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 1 CACHE INTEGER 
+SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
   "QMC Build Level: 1=bare, 2=developer, 3=experimental")
 
 ######################################################################
@@ -136,10 +136,10 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_SANDBOX    build test programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
-#SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
+#SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
-#SET(BUILD_QMCTOOLS 0)
+#SET(BUILD_QMCTOOLS 1)
 #SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
 
@@ -231,7 +231,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(PREFETCH_AHEAD 12)
   SET(HAVE_C_VARARRAYS 1)
 
-  SET(HAVE_EINSPLINE 0)
+  SET(HAVE_EINSPLINE 1)
   SET(HAVE_EINSPLINE_EXT 0)
 
   ######################################################
@@ -372,7 +372,6 @@ ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
-  #SET(Boost_INCLUDE_DIR /home/jnkim/share/boost_1_45_0/boost)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
 ELSE()

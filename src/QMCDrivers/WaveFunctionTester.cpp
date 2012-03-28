@@ -317,7 +317,13 @@ namespace qmcplusplus
 
     W.update();
     //ValueType psi = Psi.evaluate(W);
-    ValueType logpsi = Psi.evaluateLog(W);
+    RealType logpsi0 = Psi.evaluateLog(W);
+    RealType phase0=Psi.getPhase();
+#if defined(QMC_COMPLEX)
+    ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+#else
+    ValueType logpsi = logpsi0;
+#endif
     RealType eloc=H.evaluate(W);
 
     app_log() << "  Logpsi: " <<logpsi  << endl;
@@ -370,11 +376,23 @@ namespace qmcplusplus
 
             W.R[iat][idim] = r0[idim]+delta;
             W.update();
-            ValueType logpsi_p = Psi.evaluateLog(W);
+            RealType logpsi0_p = Psi.evaluateLog(W);
+            RealType phase_p=Psi.getPhase();
+#if defined(QMC_COMPLEX)
+            ValueType logpsi_p = std::complex<OHMMS_PRECISION>(logpsi0_p,phase_p);
+#else
+            ValueType logpsi_p = logpsi0_p;
+#endif
 
             W.R[iat][idim] = r0[idim]-delta;
             W.update();
-            ValueType logpsi_m = Psi.evaluateLog(W);
+            RealType logpsi0_m = Psi.evaluateLog(W);
+            RealType phase_m=Psi.getPhase();
+#if defined(QMC_COMPLEX)
+            ValueType logpsi_m = std::complex<OHMMS_PRECISION>(logpsi0_m,phase_m);
+#else
+            ValueType logpsi_m = logpsi0_m;
+#endif
             lap += logpsi_m+logpsi_p;
             g0[idim] = logpsi_p-logpsi_m;
 //#if defined(QMC_COMPLEX)
@@ -416,6 +434,7 @@ namespace qmcplusplus
         W.makeMove(iat,deltaR[iat]);
         //W.update();
         RealType aratio = Psi.ratio(W,iat);
+        RealType phaseDiff = Psi.getPhaseDiff();
         W.rejectMove(iat);
         Psi.rejectMove(iat);
 
@@ -425,8 +444,21 @@ namespace qmcplusplus
         RealType psi_m = Psi.evaluateLog(W);
         RealType phase_m=Psi.getPhase();
 
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(psi_m-psi_p); 
+        RealType dphase = phase_m-phase_p; 
+        if(phaseDiff < 0.0) phaseDiff += 2.0*M_PI;
+        if(phaseDiff > 2.0*M_PI) phaseDiff -= 2.0*M_PI;
+        if(dphase < 0.0) dphase += 2.0*M_PI;
+        if(dphase > 2.0*M_PI) dphase -= 2.0*M_PI;
+        ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
+        *fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << endl;
+        *fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << endl;
+        *fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << endl;
+#else
         RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p) ;
         *fout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
+#endif
       }
   }
 
@@ -493,6 +525,7 @@ namespace qmcplusplus
             RealType ratio_accum(1.0);
             for (int iat=0; iat<nat; iat++)
               {
+
                 PosType dr(Tau*deltaR[iat]);
 
                 PosType newpos(W.makeMove(iat,dr));
@@ -931,8 +964,15 @@ namespace qmcplusplus
       {
         W.R[0] = r1;
         fprintf(fzout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
-        ValueType log = Psi.evaluateLog(W);
+        RealType log = Psi.evaluateLog(W);
+//        ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(log);
+        ValueType psi=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(Psi.getPhase()),ratioMag*std::sin(Psi.getPhase())) ;
+#else
         ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+#endif
+
         double E = H.evaluate(W);
         //double KE = E - W.PropertyList[LOCALPOTENTIAL];
         double KE = -0.5*(Sum(W.L) + Dot(W.G,W.G));
@@ -973,7 +1013,7 @@ namespace qmcplusplus
     app_log()<<" Testing derivatives"<<endl;
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 0.00001;
+    RealType delta = 1e-6;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -1013,6 +1053,12 @@ namespace qmcplusplus
     for (int iat=0;iat<W.R.size();iat++)
       {
         for (int i=0; i<3 ; i++) *fout<<W.G[iat][i]<<"  ";
+        *fout<<endl;
+      }
+    *fout<<"Laplaians"<<endl;
+    for (int iat=0;iat<W.R.size();iat++)
+      {
+        *fout<<W.L[iat]<<"  ";
         *fout<<endl;
       }
 

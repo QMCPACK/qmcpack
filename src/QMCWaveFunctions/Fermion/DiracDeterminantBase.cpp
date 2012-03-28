@@ -771,8 +771,13 @@ namespace qmcplusplus {
 
 //       APP_ABORT("  DiracDeterminantBase::evaluate is disabled");
 
-      ValueType logval = evaluateLog(P, G, L);
+      RealType logval = evaluateLog(P, G, L);
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logval);
+      return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
       return std::cos(PhaseValue)*std::exp(logval);
+#endif
     }
 
 

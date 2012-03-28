@@ -33,6 +33,7 @@
 #include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/ParameterSet.h"
+#include "Numerics/LinearFit.h"
 
 namespace qmcplusplus
 {
@@ -45,7 +46,6 @@ namespace qmcplusplus
 
   BackflowBuilder::~BackflowBuilder() 
   {
-    delete myHandler;
   } 
 
     bool BackflowBuilder::put(xmlNodePtr cur)
@@ -55,7 +55,7 @@ namespace qmcplusplus
       xmlNodePtr curRoot=cur;
       string cname;      
 
-      BFTrans = new BackflowTransformation(targetPtcl,ptclPool); 
+      BFTrans = new BackflowTransformation(targetPtcl); 
 
       cur = curRoot->children;
       while (cur != NULL)
@@ -218,7 +218,7 @@ namespace qmcplusplus
       }
 
       BFTrans->bfFuns.push_back(tbf);
-
+//      tbf->reportStatus(cerr);
     }
 
     void BackflowBuilder::addTwoBody(xmlNodePtr cur)
@@ -279,16 +279,16 @@ namespace qmcplusplus
             tbf->addFunc(ia,ib,bsp);
             offsets.push_back(tbf->numParams); 
             tbf->numParams += bsp->NumParams;
-            if(OHMMS::Controller->rank()==0)
-            {   
-              char fname[16];
-              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
-              ofstream fout(fname);
-              fout.setf(ios::scientific, ios::floatfield);
-              fout << "# Backflow radial function \n"; 
-              bsp->print(fout);
-              fout.close();
-            }
+//            if(OHMMS::Controller->rank()==0)
+//            {   
+//              char fname[64];
+//              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
+//              ofstream fout(fname);
+//              fout.setf(ios::scientific, ios::floatfield);
+//              fout << "# Backflow radial function \n"; 
+//              bsp->print(fout);
+//              fout.close();
+//            }
           }
           cur = cur->next;
         }
@@ -331,10 +331,17 @@ namespace qmcplusplus
 
     Rs=-1.0;
     Kc=-1.0;
-    ParameterSet params;
-    params.add(Rs,"rs","double");
-    params.add(Kc,"kc","double");
-    params.put(cur);
+    RealType my_cusp=0.0;
+    OhmmsAttributeSet anAttrib0;
+    anAttrib0.add (Rs,"rs");
+    anAttrib0.add (Kc,"kc");
+    anAttrib0.put(cur);
+
+    //ParameterSet params;
+    //params.add(Rs,"rs","double");
+    //params.add(Kc,"kc","double");
+    //params.add(Kc,"Kc","double");
+    //params.put(cur);
 
     RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
 
@@ -554,34 +561,61 @@ namespace qmcplusplus
             cAttrib.add(type, "type");
             cAttrib.add(optimize, "optimize");
             cAttrib.put(xmlCoefs);
-
             if (type != "Array")
               {
                 APP_ABORT("Unknown correlation type " + type + " in Backflow.");
               }
-
             BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
-
             if(init == "true" || init == "yes") {
               app_log() <<"Initializing backflow radial functions with RPA.";
-              Rcut = myHandler->get_rc()-0.1;
+              Rcut = myHandler->get_rc()-0.01;
               GridType* myGrid = new GridType;
-              int npts=static_cast<int>(Rcut/0.01)+1;
-              myGrid->set(0,Rcut,npts);
+              int npts=static_cast<int>(Rcut/0.01)+3;
+              myGrid->set(0,Rcut-0.01,npts);
 
               //create the numerical functor
               vector<RealType> x(myGrid->size()),y(myGrid->size());
-              x[0]=(*myGrid)(0);
-              RealType x0=x[0];
-              if(x0 < 1.0e-6) x0 = 1.0e-6;
-              y[0]=-myHandler->srDf(x0,1.0/x0)/x0;
-              for  (int i = 1; i < myGrid->size(); i++) {
+//              x[0]=(*myGrid)(0);
+//              RealType x0=x[0];
+//              if(x0 < 1.0e-6) x0 = 1.0e-6;
+////              y[0]=-myHandler->srDf(x0,1.0/x0)/x0;
+//              y[0]=myHandler->evaluate(x0,1.0/x0);
+              for  (int i = 0; i < myGrid->size(); i++) {
                 x[i]=(*myGrid)(i);
-                y[i]=-myHandler->srDf(x[i],1.0/x[i])/x[i];
+//                y[i]=-myHandler->srDf(x[i],1.0/x[i])/x[i];
+                y[i]=myHandler->evaluate(x[i],0.0);
               }
-app_log() <<"Rcut,npts:" <<Rcut <<"  " <<npts <<"  " <<x[myGrid->size()-1] <<endl;
-
-              bsp->initialize(size,x,y,cusp,Rcut+1e-6,id,optimize);
+              app_log() <<"Rcut,npts:" <<Rcut <<"  " <<npts <<"  " <<x[myGrid->size()-1] <<endl;
+//fit potential to gaussians
+        int nfitgaussians(3);
+        Matrix<RealType> basis(myGrid->size(),nfitgaussians);
+        for (int i=0; i<npts; i++)
+          {
+            RealType r = x[i];
+            for (int j=0; j<nfitgaussians; j++)
+              basis(i,j) = std::exp(-r*r/((j+1)*Rcut*Rcut))-std::exp(-1/(j+1));
+          }
+         vector<RealType> gb(nfitgaussians);
+         LinearFit(y, basis, gb);
+//spline deriv of gaussian fit
+         for  (int i = 0; i < myGrid->size(); i++) {
+           RealType r = x[i];
+           y[i]=0;
+           for (int j=0; j<nfitgaussians; j++) y[i]+=gb[j]*(2.0/((j+1)*Rcut*Rcut)*std::exp(-r*r/((j+1)*Rcut*Rcut)));
+         }
+//              RealType y1_c(0),y2_c(0);
+//              for (int j=0; j<nfitgaussians; j++) y1_c+=gb[j]*(std::exp(-x[1]*x[1]/((j+1)*Rcut*Rcut)));
+//              for (int j=0; j<nfitgaussians; j++) y2_c+=gb[j]*(std::exp(-x[2]*x[2]/((j+1)*Rcut*Rcut)));
+//make a temp functor to ensure right BC's (Necessary?)
+              BsplineFunctor<double> *tmp_bsp = new BsplineFunctor<double>();
+              tmp_bsp->initialize(12,x,y,cusp,Rcut,id,optimize);
+//              tmp_bsp->print(app_log());
+              for  (int i = 0; i < myGrid->size(); i++) {
+                 y[i]=tmp_bsp->f(x[i]);
+              }
+              delete tmp_bsp;
+//make functor for backflow              
+              bsp->initialize(size,x,y,cusp,Rcut,id,optimize);
             } else {
               bsp->put(cur);
             }
@@ -591,16 +625,16 @@ app_log() <<"Rcut,npts:" <<Rcut <<"  " <<npts <<"  " <<x[myGrid->size()-1] <<end
             tbf->addFunc(ia,ib,bsp);
             offsets.push_back(tbf->numParams);
             tbf->numParams += bsp->NumParams;
-            if(OHMMS::Controller->rank()==0)
-            {
-              char fname[16];
-              sprintf(fname,"RPABFee-SR.%s.dat",(spA+spB).c_str());
-              ofstream fout(fname);
-              fout.setf(ios::scientific, ios::floatfield);
-              fout << "# Backflow radial function \n";
-              bsp->print(fout);
-              fout.close();
-            }
+//            if(OHMMS::Controller->rank()==0)
+//            {
+//              char fname[64];
+//              sprintf(fname,"RPABFee-SR.%s.dat",(spA+spB).c_str());
+//              ofstream fout(fname);
+//              fout.setf(ios::scientific, ios::floatfield);
+//              fout << "# Backflow radial function \n";
+//              bsp->print(fout);
+//              fout.close();
+//            }
         }  
         xmlCoefs=xmlCoefs->next;
     }

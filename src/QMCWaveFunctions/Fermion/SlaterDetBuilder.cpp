@@ -298,20 +298,21 @@ namespace qmcplusplus
        BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl,ptclPool,targetPsi);
        bfbuilder->put(BFnode);
        BFTrans = bfbuilder->getBFTrans();
+       delete bfbuilder;
        if(multiDet) {
          if(FastMSD)  {
            multislaterdetfast_0->setBF(BFTrans);
            multislaterdetfast_0->resetTargetParticleSet(BFTrans->QP); 
-           //if(BFTrans->Optimize) multislaterdetfast_0->Optimizable = true; 
+//           if(BFTrans->isOptimizable()) multislaterdetfast_0->Optimizable = true; 
          } else {
            multislaterdet_0->setBF(BFTrans);
            multislaterdet_0->resetTargetParticleSet(BFTrans->QP); 
-           //if(BFTrans->Optimize) multislaterdet_0->Optimizable = true; 
+//           if(BFTrans->isOptimizable()) multislaterdet_0->Optimizable = true; 
          }
        } else {
          slaterdet_0->setBF(BFTrans); 
-         slaterdet_0->resetTargetParticleSet(BFTrans->QP);
-         //if(BFTrans->Optimize) slaterdet_0->Optimizable = true; 
+         slaterdet_0->resetTargetParticleSet(targetPtcl);
+         if(BFTrans->isOptimizable()) slaterdet_0->Optimizable = true; 
        }
     }
     //only single slater determinant

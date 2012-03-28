@@ -49,28 +49,25 @@ namespace qmcplusplus
 
     ~Backflow_eI() {}; 
     
-    void resize(int NT, int NC)
-    {
-      NumTargets=NT; NumCenters=NC;
-      UIJ.resize(NumTargets,NumCenters);
-      AIJ.resize(NumTargets,NumCenters);
-      BIJ.resize(NumTargets,NumCenters);
-      UIJ_temp.resize(NumCenters);
-      AIJ_temp.resize(NumCenters);
-      BIJ_temp.resize(NumCenters);
-    }
-
     void resetTargetParticleSet(ParticleSet& P)
     {
       myTable = DistanceTable::add(CenterSys,P);
     }
 
-    BackflowFunctionBase* makeClone()
+    BackflowFunctionBase* makeClone(ParticleSet& tqp)
     {
-       Backflow_eI<FT>* clone = new Backflow_eI<FT>(*this);
+       Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys,tqp);
        clone->resize(NumTargets,NumCenters);
+       clone->indexOfFirstParam=indexOfFirstParam;
+       clone->offsetPrms=offsetPrms;
+       clone->numParams=numParams;
+       clone->derivs=derivs;
+       clone->uniqueRadFun.resize(uniqueRadFun.size());
+       clone->RadFun.resize(RadFun.size());
+
        for(int i=0; i<uniqueRadFun.size(); i++)
          clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+
        for(int i=0; i<RadFun.size(); i++)
        {
          bool done=false;
@@ -89,6 +86,10 @@ namespace qmcplusplus
 
     void reportStatus(ostream& os)
     {
+      cerr<<RadFun.size()<<endl;
+      cerr<<isOptimizable()<<endl;
+      cerr<<myTable<<endl;
+      for(int i=0; i<offsetPrms.size(); i++) cerr<<offsetPrms[i]<<endl;
       for(int i=0; i<uniqueRadFun.size(); i++) uniqueRadFun[i]->reportStatus(os);
     }
 
@@ -198,7 +199,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
+          RealType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
           QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));  // dr(ij) = r_j-r_i 
         }
       }
@@ -212,7 +213,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
+          RealType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
           //PosType u = uij*myTable->dr(nn);
           du *= myTable->rinv(nn);
           QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));
@@ -246,11 +247,7 @@ namespace qmcplusplus
           QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));
 
           HessType& hess = AIJ(j,i);
-#if defined(QMC_COMPLEX)
-          convert(du*outerProduct(myTable->dr(nn),myTable->dr(nn)),hess);
-#else
           hess = du*outerProduct(myTable->dr(nn),myTable->dr(nn));
-#endif
           hess[0] += uij;
           hess[4] += uij;
           hess[8] += uij;
@@ -274,8 +271,8 @@ namespace qmcplusplus
       int iat = index[0];
 
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
       }
     }
@@ -290,8 +287,8 @@ namespace qmcplusplus
       int maxI = myTable->size(SourceIndex);
 
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
       }
     }
@@ -305,8 +302,8 @@ namespace qmcplusplus
       int iat = index[0];
       
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
 
         HessType& hess = AIJ_temp(j);
@@ -327,16 +324,12 @@ namespace qmcplusplus
       int maxI = myTable->size(SourceIndex);
 
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
 
         HessType& hess = AIJ_temp(j);
-#if defined(QMC_COMPLEX)
-        convert((du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1),hess);
-#else
         hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
-#endif
         hess[0] += uij;
         hess[4] += uij;
         hess[8] += uij;
@@ -354,17 +347,13 @@ namespace qmcplusplus
       int iat = index[0];
 
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         du *= myTable->Temp[j].rinv1;
 
         HessType& hess = AIJ_temp(j);
-#if defined(QMC_COMPLEX)
-        convert(du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1),hess);
-#else
         hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
-#endif
         hess[0] += uij;
         hess[4] += uij;
         hess[8] += uij;
@@ -383,8 +372,8 @@ namespace qmcplusplus
       int maxI = myTable->size(SourceIndex);
 
       for(int j=0; j<maxI; j++) {
-        ValueType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-        GradType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+        RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
+        PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
         newQP[iat] += u;
         du *= myTable->Temp[j].rinv1;
 
@@ -410,7 +399,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
+          RealType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
           Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du*myTable->rinv(nn))*myTable->dr(nn));
         }
       }
@@ -426,7 +415,7 @@ namespace qmcplusplus
       for(int i=0; i<myTable->size(SourceIndex); i++) {
         for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++) {
           int j = myTable->J[nn];
-          ValueType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
+          RealType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
 //           std::fill(derivs.begin(),derivs.end(),0.0);
           
           int NPrms = RadFun[i]->NumParams;
@@ -437,12 +426,7 @@ namespace qmcplusplus
           //PosType u = uij*myTable->dr(nn); 
           QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn)); 
 
-#if defined(QMC_COMPLEX)
-          HessType op;
-          convert(outerProduct(myTable->dr(nn),myTable->dr(nn)),op);
-#else
           HessType op = outerProduct(myTable->dr(nn),myTable->dr(nn));
-#endif
           HessType& hess = AIJ(j,i);
           hess = du*op;
           hess[0] += uij;

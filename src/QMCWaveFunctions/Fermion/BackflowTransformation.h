@@ -34,14 +34,28 @@
 namespace qmcplusplus
 {
 
-  class BackflowTransformation: public OrbitalSetTraits<QMCTraits::ValueType> 
+  class BackflowTransformation  //: public OrbitalSetTraits<QMCTraits::ValueType> 
   {
 
     public:
 
+    // All BF quantities should be real, so eliminating complex (ValueType) possibility 
+    enum {DIM=OHMMS_DIM};
+    typedef OHMMS_PRECISION                RealType;
+    typedef int                            IndexType;
+    typedef TinyVector<RealType,DIM>       PosType;
+    typedef TinyVector<RealType,DIM>       GradType;
+    typedef Tensor<RealType,DIM>           HessType;
+    typedef Vector<IndexType>     IndexVector_t;
+    typedef Vector<GradType>      GradVector_t;
+    typedef Matrix<GradType>      GradMatrix_t;
+    typedef Vector<HessType>      HessVector_t;
+    typedef Matrix<HessType>      HessMatrix_t;
+
+    typedef Array<HessType,OHMMS_DIM>       HessArray_t;
+
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef map<string,ParticleSet*>   PtclPoolType;
-    typedef Array<HessType,OHMMS_DIM>       HessArray_t;
     //typedef Array<GradType,3>       GradArray_t;
     //typedef Array<PosType,3>        PosArray_t;
 
@@ -83,7 +97,7 @@ namespace qmcplusplus
     int numVarBefore; 
 
     ParticleSet& targetPtcl; 
-    PtclPoolType& ptclPool;
+//    PtclPoolType& ptclPool;
 
     // matrix of laplacians
     // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i} 
@@ -108,11 +122,11 @@ namespace qmcplusplus
     // \nabla_a x_i^{\alpha}   
     GradMatrix_t Cmat;
 
-    ValueType *FirstOfP, *LastOfP;
-    ValueType *FirstOfA, *LastOfA;
-    ValueType *FirstOfB, *LastOfB;
-    ValueType *FirstOfA_temp, *LastOfA_temp;
-    ValueType *FirstOfB_temp, *LastOfB_temp;
+    RealType *FirstOfP, *LastOfP;
+    RealType *FirstOfA, *LastOfA;
+    RealType *FirstOfB, *LastOfB;
+    RealType *FirstOfA_temp, *LastOfA_temp;
+    RealType *FirstOfB_temp, *LastOfB_temp;
 
     // Identity
     HessType HESS_ID;
@@ -128,14 +142,28 @@ namespace qmcplusplus
     ParticleSet::ParticlePos_t oldQP;
 
     //Vector<PosType> storeQP;
-    Vector<GradType> storeQP;
+    Vector<PosType> storeQP;
 
     /// store index of qp coordinates that changed during pbyp move
     std::vector<int> indexQP, index;
 
-    BackflowTransformation(ParticleSet& els, PtclPoolType& pool):
-      targetPtcl(els),QP(els),ptclPool(pool),cutOff(0.0) {
-      myTable = DistanceTable::add(els,els);
+//    BackflowTransformation(ParticleSet& els, PtclPoolType& pool):
+//      targetPtcl(els),QP(els),/*ptclPool(pool),*/cutOff(0.0) {
+//      myTable = DistanceTable::add(els,els);
+//      NumTargets=els.getTotalNum();
+//      Bmat.resize(NumTargets);
+//      Bmat_full.resize(NumTargets,NumTargets);
+//      Amat.resize(NumTargets,NumTargets);
+//      newQP.resize(NumTargets);
+//      oldQP.resize(NumTargets);
+//      indexQP.resize(NumTargets);
+//      HESS_ID.diagonal(1.0);
+//      DummyHess=0.0;
+//      numVarBefore=0;
+//    }
+    BackflowTransformation(ParticleSet& els):
+      targetPtcl(els),QP(els),cutOff(0.0) {
+      myTable = DistanceTable::add(els);
       NumTargets=els.getTotalNum();
       Bmat.resize(NumTargets);
       Bmat_full.resize(NumTargets,NumTargets);
@@ -148,30 +176,27 @@ namespace qmcplusplus
       numVarBefore=0;
     }
 
-    BackflowTransformation(BackflowTransformation &tr): 
-      NumTargets(tr.NumTargets),QP(tr.QP),cutOff(tr.cutOff), 
-      targetPtcl(tr.targetPtcl),ptclPool(tr.ptclPool), numParams(tr.numParams) {
-      myTable = DistanceTable::add(targetPtcl,targetPtcl);
-      Bmat.resize(NumTargets);
-      Bmat_full.resize(NumTargets,NumTargets);
-      Amat.resize(NumTargets,NumTargets);
-      newQP.resize(NumTargets);
-      oldQP.resize(NumTargets);
-      indexQP.resize(NumTargets);
-      HESS_ID.diagonal(1.0);
-      DummyHess=0.0;
+    void copyFrom(BackflowTransformation &tr){ 
+      cutOff=tr.cutOff; 
+      numParams=tr.numParams;
       numVarBefore=tr.numVarBefore;
       optIndexMap=tr.optIndexMap; 
       bfFuns.resize((tr.bfFuns).size());
       vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
       for(int i=0; i<(tr.bfFuns).size() ; i++,it++)
-        bfFuns[i] = (*it)->makeClone();
+        bfFuns[i] = (*it)->makeClone(targetPtcl);
     }
     
 // FIX FIX FIX
-    BackflowTransformation* makeClone()
+    BackflowTransformation* makeClone(ParticleSet& tqp)
     {
-       BackflowTransformation *clone = new BackflowTransformation(*this);
+       BackflowTransformation *clone = new BackflowTransformation(tqp);
+       clone->copyFrom(*this);
+//       vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
+//       for(int i=0; i<(bfFuns).size() ; i++,it++)
+//       {
+//         clone->bfFuns[i]->reportStatus(cerr);
+//       }
        return clone; 
     }
 
@@ -242,7 +267,8 @@ namespace qmcplusplus
      */
     void resetTargetParticleSet(ParticleSet& P)
     {
-      myTable = DistanceTable::add(P,P);
+      targetPtcl=P;
+      myTable = DistanceTable::add(P);
       for(int i=0; i<bfFuns.size(); i++)
         bfFuns[i]->resetTargetParticleSet(P);
     }
@@ -251,7 +277,7 @@ namespace qmcplusplus
     void resetParameters(const opt_variables_type& active)
     {
       //reset each unique basis functions
-      for(int i=0; i<bfFuns.size(); i++)
+      for(int i=0; i<bfFuns.size(); i++) if(bfFuns[i]->isOptimizable())
         bfFuns[i]->resetParameters(active);
     }    
 
@@ -271,7 +297,7 @@ namespace qmcplusplus
       LastOfA = FirstOfA + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
 
       FirstOfB = &(Bmat_full(0,0)[0]);
-      LastOfB = FirstOfB + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
+      LastOfB = FirstOfB + OHMMS_DIM*NumTargets*NumTargets;
 
       FirstOfA_temp = &(Amat_temp(0,0)[0]);
       LastOfA_temp = FirstOfA_temp + OHMMS_DIM*OHMMS_DIM*NumTargets*NumTargets;
@@ -372,6 +398,7 @@ namespace qmcplusplus
       activeParticle=iat;
       for(int i=0; i<NumTargets; i++) oldQP[i] = newQP[i] = QP.R[i];
       newQP[iat] += myTable->Temp[iat].dr1;  
+      indexQP.clear();
       std::copy(FirstOfA,LastOfA,FirstOfA_temp);
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,iat,newQP,Amat_temp);
       for(int jat=0; jat<NumTargets; jat++) {
@@ -393,6 +420,7 @@ namespace qmcplusplus
       activeParticle=iat;
       for(int i=0; i<NumTargets; i++) oldQP[i] = newQP[i] = QP.R[i];
       newQP[iat] += myTable->Temp[iat].dr1;
+      indexQP.clear();
       std::copy(FirstOfA,LastOfA,FirstOfA_temp);
       std::copy(FirstOfB,LastOfB,FirstOfB_temp);
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluatePbyP(P,iat,newQP,Bmat_temp,Amat_temp);
@@ -429,6 +457,30 @@ namespace qmcplusplus
         Amat(i,i).diagonal(1.0);
       } 
       for(int i=0; i<bfFuns.size(); i++) bfFuns[i]->evaluate(P,QP,Bmat_full,Amat);
+
+//      cerr<<"P.R \n";
+//      cerr<<P.R[0] <<endl;
+//      cerr<<"QP.R " <<endl;
+//      cerr<<QP.R[0] <<endl;
+//      cerr<<omp_get_thread_num()<<" "<<P.R[0]-QP.R[0] <<endl;
+//      APP_ABORT("TESTING BF \n");
+      
+      /*Bmat=0.0;
+      Amat=0.0;
+      Bmat_full=0.0;
+      for(int i=0; i<NumTargets; i++) {
+        Amat(i,i).diagonal(1.0);
+      }*/ 
+/*
+      // testing bf
+      for(int i=0; i<NumTargets; i++) {
+        cout<<"i: " <<i <<endl;
+        cout<<P.R[i] <<endl;
+        cout<<QP.R[i] <<endl;
+        cout<<P.R[i]-QP.R[i] <<endl;
+      }
+      // 
+*/
       QP.update(0);  // update distance tables
     } 
 
@@ -568,21 +620,17 @@ namespace qmcplusplus
                    <<"i, AvDiff, max: \n";
     
          //2011-07-17: what is the proper data type?
-         ValueType df,av=0.0,cnt=0.0;
+         RealType df,av=0.0,cnt=0.0;
          RealType maxD=-100.0;
 
-         const ValueType ConstOne(1.0);
+         const RealType ConstOne(1.0);
 
          for(int k=0; k<NumTargets; k++) { 
           for(int q=0; q<OHMMS_DIM; q++) {
            cnt += ConstOne;
            df=(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]);
            av+=df;
-#if defined(QMC_COMPLEX)
-           if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
-#else
            if( std::abs(df) > maxD ) maxD=std::abs(df); 
-#endif
            //app_log() <<k <<"  " <<q <<"   "
            //          <<( (qp_1[k])[q] - (qp_2[k])[0] )/(2.0*dh)   <<"  "
            //          <<Cmat(i,k)[q] <<"  " <<(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]) <<endl;
@@ -595,19 +643,11 @@ namespace qmcplusplus
          for(int k=0; k<NumTargets; k++) {
            for(int q=0; q<3; q++) {
              RealType dB=0.0;
-#if defined(QMC_COMPLEX)
-             for(int j=0; j<NumTargets; j++) dB+= (Bmat_full_1(j,k)[q] - Bmat_full_2(j,k)[q]).real();
-#else
              for(int j=0; j<NumTargets; j++) dB+= (Bmat_full_1(j,k)[q] - Bmat_full_2(j,k)[q]);
-#endif
              cnt+=ConstOne;
              df=(dB/(2.0*dh)-Ymat(i,k)[q]);
              av+=df;
-#if defined(QMC_COMPLEX)
-             if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
-#else
              if( std::abs(df) > maxD ) maxD=std::abs(df); 
-#endif
              //app_log() <<k <<"  " <<q <<"   "
              //        <<dB/(2.0*dh)   <<"  "
              //        <<Ymat(i,k)[q] <<"  " <<(dB/(2.0*dh)-Ymat(i,k)[q]) <<endl;
@@ -622,23 +662,13 @@ namespace qmcplusplus
           for(int k2=0; k2<NumTargets; k2++) {
            for(int q1=0; q1<3; q1++) {
             for(int q2=0; q2<3; q2++) {
-#if defined(QMC_COMPLEX)
-             RealType dB;
-             convert((Amat_1(k1,k2))(q1,q2) - (Amat_2(k1,k2))(q1,q2),dB);
-#else
              RealType dB=(Amat_1(k1,k2))(q1,q2) - (Amat_2(k1,k2))(q1,q2);
-#endif
              cnt+=ConstOne;
 
              df=(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2));
              av+=df;
-#if defined(QMC_COMPLEX)
-             if( std::abs(df.real()) > maxD ) maxD=std::abs(df.real()); 
-#else
              if( std::abs(df) > maxD ) maxD=std::abs(df); 
-#endif
              //app_log() <<k1 <<"  " <<k2 <<"  " <<q1 <<"  " <<q2 <<"   "
-             //        <<dB/(2.0*dh)   <<"  "
              //        <<(Xmat(i,k1,k2))(q1,q2) <<"  " <<(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2)) <<endl;
              }
             }
@@ -719,7 +749,7 @@ namespace qmcplusplus
       Amat_1 = Amat_0 - Amat;
       qp_1 = QP.R - qp_0;
       double qpdiff = Dot(qp_1,qp_1);
-      ValueType Amdiff = 0.0;
+      RealType Amdiff = 0.0;
       for(int i=0; i<NumTargets; i++)
        for(int k=0; k<NumTargets; k++)
         for(int j=0; j<OHMMS_DIM*OHMMS_DIM; j++)

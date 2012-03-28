@@ -1872,6 +1872,7 @@ else if (occ_format=="band"){
     orbitalSet->StorageLaplVector.resize(N);  orbitalSet->BlendLaplVector.resize(N);
     orbitalSet->StorageGradVector.resize(N);  orbitalSet->BlendGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
+    orbitalSet->StorageGradHessVector.resize(N);
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);
     orbitalSet->NumValenceOrbs = NumValenceOrbs;
@@ -2532,6 +2533,7 @@ void
     orbitalSet->StorageLaplVector.resize(N);  orbitalSet->BlendLaplVector.resize(N);
     orbitalSet->StorageGradVector.resize(N);  orbitalSet->BlendGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
+    orbitalSet->StorageGradHessVector.resize(N);
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);
     orbitalSet->NumValenceOrbs = NumValenceOrbs;

@@ -313,6 +313,10 @@ KContainer::BuildKLists(bool useSphere) {
     ++it;++ish;
   }
 
+  it=kpts_sorted.begin();
+  std::map<int,std::vector<int>*>::iterator e_it(kpts_sorted.end());
+  while(it != e_it) { delete it->second; it++; } 
+
   //Finished searching k-points. Copy list of maximum translations.
   mmax[DIM] = 0;
   for(int idim=0; idim<DIM; idim++) {

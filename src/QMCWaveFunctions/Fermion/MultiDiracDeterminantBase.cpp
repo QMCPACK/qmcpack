@@ -130,9 +130,14 @@ namespace qmcplusplus {
          TpsiM(j,i) = psiM(i,j);
       }
       RealType phaseValueRef; 
-      ValueType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
+      RealType logValueRef=InvertWithLog(psiMinv.data(),NumPtcls,NumPtcls,WorkSpace.data(),Pivot.data(),phaseValueRef);
       InverseTimer.stop();
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logValueRef);
+      ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
+#else
       ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef)); 
+#endif
       detValues[ReferenceDeterminant] = det0; 
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
       for(int iat=0; iat<NumPtcls; iat++)

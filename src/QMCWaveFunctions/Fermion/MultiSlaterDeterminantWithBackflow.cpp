@@ -29,7 +29,7 @@ namespace qmcplusplus {
   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
   { 
     // mmorales: the proxy classes read from the particle set inside BFTrans
-    BackflowTransformation *tr = BFTrans->makeClone();
+    BackflowTransformation *tr = BFTrans->makeClone(tqp);
     tr->resetTargetParticleSet(tqp);
 
     SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
@@ -668,12 +668,17 @@ namespace qmcplusplus {
     myG = P.G;
     myL = P.L;
 
-    ValueType logpsi(0.0);
+    RealType logpsi(0.0);
     PhaseValue=0.0;
     for (int i=0; i<dets_up.size(); i++) {
       spo_up->prepareFor(i);
       logpsi = dets_up[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logpsi);
+      detValues_up[i]= std::complex<OHMMS_PRECISION>(std::cos(dets_up[i]->PhaseValue)*ratioMag,std::sin(dets_up[i]->PhaseValue)*ratioMag);
+#else
       detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
+#endif
       grads_up[i]=dets_up[i]->myG; 
       lapls_up[i]=dets_up[i]->myL; 
       for(int k=FirstIndex_up; k<LastIndex_up; k++)
@@ -682,7 +687,12 @@ namespace qmcplusplus {
     for (int i=0; i<dets_dn.size(); i++) {
       spo_dn->prepareFor(i);
       logpsi = dets_dn[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
+#if defined(QMC_COMPLEX)
+      RealType ratioMag = std::exp(logpsi);
+      detValues_dn[i]= std::complex<OHMMS_PRECISION>(std::cos(dets_dn[i]->PhaseValue)*ratioMag,std::sin(dets_dn[i]->PhaseValue)*ratioMag);
+#else
       detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
+#endif
       grads_dn[i]=dets_dn[i]->myG; 
       lapls_dn[i]=dets_dn[i]->myL; 
       for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
@@ -836,7 +846,12 @@ namespace qmcplusplus {
     {
       if(usingCSF) {
         int n = P.getTotalNum();
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(LogValue);
+        ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
         ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+#endif
         ValueType psiinv = 1.0/psi;;
         ValueType lapl_sum=0.0;
         ParticleSet::ParticleGradient_t g(n),gmP(n);
@@ -895,7 +910,12 @@ namespace qmcplusplus {
        }
       } else {
         int n = P.getTotalNum();
+#if defined(QMC_COMPLEX)
+        RealType ratioMag = std::exp(LogValue);
+        ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
         ValueType psi = std::cos(PhaseValue)*std::exp(LogValue);
+#endif
         ValueType psiinv = 1.0/psi;;
         ValueType lapl_sum=0.0;
         ParticleSet::ParticleGradient_t g(n),gmP(n);

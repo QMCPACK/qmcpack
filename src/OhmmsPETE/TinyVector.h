@@ -250,6 +250,33 @@ outerProduct(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &rhs)
   return OuterProduct< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
 }
 
+template < class T1, unsigned D >
+inline TinyVector<Tensor<T1,D>,D>
+outerdot(const TinyVector<T1,D> &lhs, const TinyVector<T1,D> &mhs, const TinyVector<T1,D> &rhs)
+{
+  TinyVector<Tensor<T1,D>,D> ret;
+  Tensor<T1,D> tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T1,D> > :: apply(lhs,mhs);
+  for(unsigned i(0);i<D;i++) ret[i]=rhs[i]*tmp;
+  return ret;
+}
+
+template < class T1, class T2, class T3, unsigned D >
+inline TinyVector<Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>,D>
+symouterdot(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &mhs, const TinyVector<T3,D> &rhs)
+{
+  TinyVector<Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>,D> ret;
+  Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D> tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,mhs);
+  for(unsigned i(0);i<D;i++) ret[i]=rhs[i]*tmp;
+
+  tmp=OuterProduct< TinyVector<T2,D> , TinyVector<T3,D> > :: apply(mhs,rhs);
+  for(unsigned i(0);i<D;i++) ret[i]+=lhs[i]*tmp;
+
+  tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T3,D> > :: apply(lhs,rhs);
+  for(unsigned i(0);i<D;i++) ret[i]+=mhs[i]*tmp;
+
+  return ret;
+}
+
 //----------------------------------------------------------------------
 // I/O
 template<class T>
