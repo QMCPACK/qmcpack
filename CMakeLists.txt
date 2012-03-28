@@ -231,7 +231,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(PREFETCH_AHEAD 12)
   SET(HAVE_C_VARARRAYS 1)
 
-  SET(HAVE_EINSPLINE 0)
+  SET(HAVE_EINSPLINE 1)
   SET(HAVE_EINSPLINE_EXT 0)
 
   ######################################################
@@ -372,7 +372,6 @@ ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
-  #SET(Boost_INCLUDE_DIR /home/jnkim/share/boost_1_45_0/boost)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
 ELSE()
