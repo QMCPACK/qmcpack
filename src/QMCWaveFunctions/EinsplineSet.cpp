@@ -1768,31 +1768,55 @@ namespace qmcplusplus {
 
       EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
                           StorageGradVector, StorageHessVector,StorageGradHessVector);
+
       EinsplineTimer.stop();
-      Tensor<double,OHMMS_DIM> PG; PG=PrimLattice.G;
-      Tensor<double,OHMMS_DIM> TPG; TPG=transpose(PrimLattice.G);
+
       for (int j=0; j<NumValenceOrbs; j++) {
+             TinyVector<complex<double>,OHMMS_DIM> tmpg;
              Tensor<complex<double>,OHMMS_DIM> tmphs;
              TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs;
-              StorageGradVector[j]=dot(PG,StorageGradVector[j]);
 
-              tmphs=dot(TPG,StorageHessVector[j]);
-              StorageHessVector[j]=dot(PG,tmphs);
+             tmpg=dot(PrimLattice.G,StorageGradVector[j]);
+             StorageGradVector[j]=tmpg;
+
+             tmphs=dot(transpose(PrimLattice.G),StorageHessVector[j]);
+             StorageHessVector[j]=dot(tmphs,PrimLattice.G);
               
-              for (int n=0; n<OHMMS_DIM; n++) {
-                tmpghs[n]=dot(TPG,StorageGradHessVector[j][n]);
-                StorageGradHessVector[j][n]=dot(PG,tmpghs[n]);
-              }
-              StorageGradHessVector[j]=dot(PG,StorageGradHessVector[j]);
+             for (int n=0; n<OHMMS_DIM; n++) {
+               tmphs=dot(transpose(PrimLattice.G),StorageGradHessVector[j][n]);
+               tmpghs[n]=dot(tmphs,PrimLattice.G);
+             }
+             StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
       }
 
       complex<double> eye (0.0, 1.0);
+      StorageValueVector_t &valVec =
+         StorageValueVector;
+      StorageGradVector_t &gradVec =
+         StorageGradVector;
+      StorageHessVector_t &hessVec =
+         StorageHessVector;
+      Tensor<complex<double>,OHMMS_DIM> tmphs;
       for (int j=0; j<NumValenceOrbs; j++) {
 
-        complex<double> u(StorageValueVector[j]);
-        TinyVector<complex<double>,OHMMS_DIM> gradu(StorageGradVector[j]);
-        Tensor<complex<double>,OHMMS_DIM> tmphs(StorageHessVector[j]);
-        TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs(StorageGradHessVector[j]);
+//            complex<double> u = valVec[j];
+//            TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+//            tmphs = hessVec[j];
+//            PosType k = kPoints[j];
+//            TinyVector<complex<double>,OHMMS_DIM> ck;
+//            for (int n=0; n<OHMMS_DIM; n++)       ck[n] = k[n];
+//            double s,c;
+//            double phase = -dot(r, k);
+//            sincos (phase, &s, &c);
+//            complex<double> e_mikr (c,s);
+//            valVec[j]   = e_mikr*u;
+//            gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+//            hessVec[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
+
+        complex<double> u=(StorageValueVector[j]);
+        TinyVector<complex<double>,OHMMS_DIM> gradu=(StorageGradVector[j]);
+        Tensor<complex<double>,OHMMS_DIM> tmphs=(StorageHessVector[j]);
+//        TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs=(StorageGradHessVector[j]);
 
         PosType k = kPoints[j];
         TinyVector<complex<double>,OHMMS_DIM> ck;
@@ -1818,35 +1842,33 @@ namespace qmcplusplus {
       int psiIndex(0);
         for (int j=0; j<NumValenceOrbs; j++) {
 //cerr<<psiIndex<<" "<<i<<" "<<j<<endl;
-          psi(i,psiIndex)=real(StorageValueVector[j]);
+          psi(i,psiIndex)=imag(StorageValueVector[j])+real(StorageValueVector[j]);
           for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
+            dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]) + real(StorageGradVector[j][n]);
           for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-            grad_grad_psi(i,psiIndex)(n) = real(StorageHessVector[j](n));
+            grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n)) +real(StorageHessVector[j](n));
 
           for (int n=0; n<OHMMS_DIM; n++)
             for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-              grad_grad_grad_logdet(i,psiIndex)[n](m) = real(StorageGradHessVector[j][n](m));
+              grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m)) + real(StorageGradHessVector[j][n](m));
            psiIndex++;
 
           if (MakeTwoCopies[j]) {
-            psi(i,psiIndex)=imag(StorageValueVector[j]);
+            psi(i,psiIndex)=real(StorageValueVector[j])-imag(StorageValueVector[j]);
             for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]);
+              dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n])-imag(StorageGradVector[j][n]);
             for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)(n) = imag(StorageGradVector[j](n));
+              grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n))-imag(StorageHessVector[j](n));
 
             for (int n=0; n<OHMMS_DIM; n++)
               for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-                grad_grad_grad_logdet(i,psiIndex)[n](m) = imag(StorageGradHessVector[j][n](m));
+                grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m))-imag(StorageGradHessVector[j][n](m));
             psiIndex++;
           }
         }
     }
     VGLMatTimer.stop();
    }
-
-
 
 //   template<typename StorageType> void
 //  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
