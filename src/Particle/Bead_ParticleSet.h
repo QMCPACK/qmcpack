@@ -57,10 +57,11 @@ namespace qmcplusplus {
 	  Update_Particle ///move a particle by particle
     };
     
+    // Need to typedef Walker_t first
+    typedef Bead_ParticleSet::Walker_t Walker_t;
     ///container type of the Properties of a Walker
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     ///container type of Walkers
-    typedef Bead_ParticleSet::Walker_t Walker_t;
     typedef std::vector<Walker_t*>         WalkerList_t;
     ///iterator of Walker container
     typedef WalkerList_t::iterator         iterator;
