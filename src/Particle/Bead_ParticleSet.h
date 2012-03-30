@@ -60,6 +60,7 @@ namespace qmcplusplus {
     ///container type of the Properties of a Walker
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     ///container type of Walkers
+    typedef Bead_ParticleSet::Walker_t Walker_t;
     typedef std::vector<Walker_t*>         WalkerList_t;
     ///iterator of Walker container
     typedef WalkerList_t::iterator         iterator;
@@ -68,7 +69,6 @@ namespace qmcplusplus {
     typedef Walker_t::Buffer_t WBuffer_t; 
 
 
-    typedef Bead_ParticleSet::Walker_t Walker_t;
     typedef Bead_ParticleSet::RealType RealType;
     typedef Bead_ParticleSet::ParticlePos_t ParticlePos_t;
     typedef Bead_ParticleSet::Scalar_t Scalar_t;
