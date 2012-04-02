@@ -61,6 +61,7 @@
 #if QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/HardSphere.h"
 #include "QMCHamiltonians/GaussianPot.h"
+#include "QMCHamiltonians/HusePot.h"
 #include "QMCHamiltonians/OscillatoryPot.h"
 #include "QMCHamiltonians/SkPot.h"
 #include "QMCHamiltonians/ModPosTelPot.h"
@@ -205,6 +206,12 @@ namespace qmcplusplus {
           hs->put(cur);
           targetH->addOperator(hs,"GaussianPot",true);
         }
+        else if (potType == "huse")
+        {
+          HusePot* hs = new HusePot(*targetPtcl);
+          hs->put(cur);
+          targetH->addOperator(hs,"HusePot",true);
+        }        
         else if (potType == "modpostel")
         {
           ModPoschlTeller* hs = new ModPoschlTeller(*targetPtcl);
