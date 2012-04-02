@@ -115,7 +115,43 @@ namespace qmcplusplus
   };
 
 #else
-#error "DIMENSION!=3 is not implemented yet"
+  /** specialization with multi_UBspline_3d_d
+   */
+  template<>
+  struct bspline_engine_traits<multi_UBspline_2d_d>
+  {
+    enum {DIM=2};
+    typedef double real_type;
+    typedef double value_type;
+  };
+
+  ///specialization with multi_UBspline_3d_z
+  template<>
+  struct bspline_engine_traits<multi_UBspline_2d_z>
+  {
+    enum {DIM=2};
+    typedef double real_type;
+    typedef std::complex<double> value_type;
+  };
+
+  /** specialization with multi_UBspline_3d_d
+   */
+  template<>
+  struct bspline_engine_traits<multi_UBspline_2d_s>
+  {
+    enum {DIM=2};
+    typedef float real_type;
+    typedef float value_type;
+  };
+
+  ///specialization with multi_UBspline_3d_z
+  template<>
+  struct bspline_engine_traits<multi_UBspline_2d_c>
+  {
+    enum {DIM=2};
+    typedef float real_type;
+    typedef std::complex<float> value_type;
+  };
 #endif
 }
 #endif

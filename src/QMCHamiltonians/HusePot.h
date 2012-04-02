@@ -35,7 +35,7 @@ namespace qmcplusplus {
     RealType pf,K,L;
     RealType root3;
     
-    HusePot(ParticleSet& P) 
+    HusePot(ParticleSet& P):m(0),V(0),pf(0),K(0),L(0)
     {
       root3=std::sqrt(3);
       const DistanceTableData* d_table = DistanceTable::add(P);
@@ -104,7 +104,7 @@ namespace qmcplusplus {
     inline Return_t f(Return_t r)
     {
       Return_t x=r-root3;
-      if (x<0)
+      if (x>0)
         return 0;
       
       Return_t x3=x*x*x;
@@ -124,12 +124,13 @@ namespace qmcplusplus {
       app_log()<<"  m: "<<m<<endl;
       app_log()<<"  V: "<<V<<endl;
       if(m > 0.1*std::pow(root3-1,3))
-        APP_ABORT("m max is 0.1*std::pow(root3-1,3) ");
+        APP_ABORT("m max is 0.1*std::pow(root3-1,3) ~ 0.0392304845 ");
       
       L=4*m*std::pow((root3-1),-5)-std::pow(root3-1,-2);
       K=5*m*std::pow((root3-1),-4)-2.0/(root3-1);
-
-      Return_t f_rc=1/(f(root3-0.6*(root3-1)/(1-m*4*std::pow(root3-1,-3))));
+      
+      Return_t rc= root3-0.6*(root3-1)/(1-m*4*std::pow(root3-1,-3));
+      Return_t f_rc =1.0/f(rc);
       app_log()<<"  Huse H: "<<f(1)*f_rc<<endl;
       pf=V*f_rc;
       
@@ -146,7 +147,7 @@ namespace qmcplusplus {
     {
       
       HusePot* cl = new HusePot(qp);
-      cl->m=m; cl->V=V;
+      cl->pf=pf; cl->L=L; cl->K=K;
       return cl;
     }
     
