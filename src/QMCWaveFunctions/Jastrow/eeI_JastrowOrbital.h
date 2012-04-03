@@ -110,6 +110,7 @@ namespace qmcplusplus {
         eI_table=DistanceTable::add(ions, elecs);
         init(elecs);
         FirstTime = true;
+        NumVars=0;
       }
 
     ~eeI_JastrowOrbital(){ }
