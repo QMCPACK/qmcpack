@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
+#include "QMCWaveFunctions/Fermion/Backflow_eI_spin.h"
 #include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -103,11 +104,13 @@ namespace qmcplusplus
       string type("none");
       string funct("Gaussian");
       string unique("no");
+      string spin("no"); //add spin attribute, with default spin="no"
       spoAttrib.add (name, "name");
       spoAttrib.add (type, "type");
       spoAttrib.add (source, "source");
       spoAttrib.add (funct, "function");
       spoAttrib.add (unique, "unique");
+      spoAttrib.add (spin, "spin");
       spoAttrib.put(cur);
 
       ParticleSet* ions=0;
@@ -121,101 +124,168 @@ namespace qmcplusplus
       app_log() <<"Adding electron-Ion backflow for source:"
                 <<source <<" \n";
 
-      BackflowFunctionBase *tbf;
+      BackflowFunctionBase *tbf=0;
       int nIons = ions->getTotalNum();
       SpeciesSet &sSet = ions->getSpeciesSet();
+      SpeciesSet &tSet = targetPtcl.getSpeciesSet();
       int numSpecies = sSet.getTotalNum();
 
-      vector<xmlNodePtr> funs;
-      vector<int> ion2functor(nIons,-1);
-      vector<RealType> cusps; 
-      xmlNodePtr curRoot=cur;
-      string cname;
-      cur = curRoot->children;
-      while (cur != NULL)
+      if(spin=="yes")
       {
-        getNodeName(cname,cur);
-        if (cname == "correlation")
+        if(funct!="Bspline")
+          APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
+
+        Backflow_eI_spin<BsplineFunctor<RealType> >*  tbf1
+          =new Backflow_eI_spin<BsplineFunctor<RealType> >(*ions,targetPtcl);
+
+        tbf1->numParams=0;
+
+        xmlNodePtr cur1=cur->children;
+        string cname;
+        while (cur1 != NULL)
         {
-          RealType my_cusp=0.0;
-          string elementType("none");
-          OhmmsAttributeSet anAttrib;
-          anAttrib.add (elementType, "elementType");
-          anAttrib.add (my_cusp, "cusp");
-          anAttrib.put(cur);
-          funs.push_back(cur);
-          cusps.push_back(my_cusp);
-          if(unique == "yes") // look for <index> block, and map based on that
+          getNodeName(cname,cur1);
+
+          if(cname =="correlation")
           {
-            xmlNodePtr kids=cur;
-            string aname;    
-            kids = cur->children;
-            while (kids != NULL)
-            {
-              getNodeName(aname,kids);
-              if (aname == "index")
+            RealType my_cusp=0.0;
+            string speciesA("0");
+            string speciesB("e"); //assume electrons
+            OhmmsAttributeSet anAttrib;
+            anAttrib.add(speciesA, "elementType"); anAttrib.add (speciesA, "speciesA");
+            anAttrib.add(speciesB, "speciesB");
+            anAttrib.add(my_cusp, "cusp");
+            anAttrib.put(cur1);
+
+            BsplineFunctor<RealType> *afunc = new BsplineFunctor<RealType>(my_cusp);
+            afunc->elementType = speciesA;
+            int ig = sSet.findSpecies (speciesA);
+            afunc->cutoff_radius = ions->Lattice.WignerSeitzRadius;
+
+            int jg=-1;
+            if(speciesB.size()) jg=tSet.findSpecies(speciesB);
+
+            if (ig < numSpecies) 
+            {//ignore
+              afunc->put (cur1);
+              tbf1->addFunc (ig,afunc,jg);
+
+              //WHAT IS THIS
+              //afunc->myVars.setParameterType(optimise::SPO_P);
+
+              tbf1->numParams+=afunc->NumParams;
+              if(jg<0)
               {
-                vector<int> pos;
-                putContent(pos, kids);
-                for(int i=0; i<pos.size(); i++) {
-                  app_log() << "Adding backflow transformation of type " << funs.size()-1 << " for atom " << pos[i] << ".\n";
-                  ion2functor[pos[i]]=funs.size()-1;
-                }
+                for(int jjg=0; jjg<targetPtcl.groups(); ++jjg)
+                  tbf1->offsetPrms(ig,jjg)=tbf1->numParams;
               }
-              kids = kids->next;
+              else
+                tbf1->offsetPrms(ig,jg)=tbf1->numParams;
             }
-          } else {  // map based on elementType
-            int ig = sSet.findSpecies (elementType);
-            if (ig < numSpecies)
+          }
+          cur1 = cur1->next;
+        }
+
+        tbf1->derivs.resize(tbf1->numParams);
+
+        tbf=tbf1;
+      }
+      else //keep original implementation
+      {
+        vector<xmlNodePtr> funs;
+        vector<int> ion2functor(nIons,-1);
+
+        vector<RealType> cusps; 
+        xmlNodePtr curRoot=cur;
+        string cname;
+        cur = curRoot->children;
+        while (cur != NULL)
+        {
+          getNodeName(cname,cur);
+          if (cname == "correlation")
+          {
+            RealType my_cusp=0.0;
+            string elementType("none");
+            OhmmsAttributeSet anAttrib;
+            anAttrib.add (elementType, "elementType");
+            anAttrib.add (my_cusp, "cusp");
+            anAttrib.put(cur);
+            funs.push_back(cur);
+            cusps.push_back(my_cusp);
+            if(unique == "yes") // look for <index> block, and map based on that
             {
-              for (int i=0; i<ion2functor.size(); i++)
-                if (ions->GroupID[i] == ig)
+              xmlNodePtr kids=cur;
+              string aname;    
+              kids = cur->children;
+              while (kids != NULL)
+              {
+                getNodeName(aname,kids);
+                if (aname == "index")
                 {
-                  ion2functor[i]=funs.size()-1;
-                  app_log() << "Adding backflow transformation of element type " << elementType << " for atom " << i << ".\n";
+                  vector<int> pos;
+                  putContent(pos, kids);
+                  for(int i=0; i<pos.size(); i++) {
+                    app_log() << "Adding backflow transformation of type " << funs.size()-1 << " for atom " << pos[i] << ".\n";
+                    ion2functor[pos[i]]=funs.size()-1;
+                  }
                 }
-            } 
+                kids = kids->next;
+              }
+            } else {  // map based on elementType
+              int ig = sSet.findSpecies (elementType);
+              if (ig < numSpecies)
+              {
+                for (int i=0; i<ion2functor.size(); i++)
+                  if (ions->GroupID[i] == ig)
+                  {
+                    ion2functor[i]=funs.size()-1;
+                    app_log() << "Adding backflow transformation of element type " << elementType << " for atom " << i << ".\n";
+                  }
+              } 
+            }
           }
+          cur = cur->next;
         }
-        cur = cur->next;
-      }
 
-
-      if(funct == "Bspline")  {
-        app_log() <<"Using BsplineFunctor type. \n";
-
-        tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
-        Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
-        tbf->numParams=0;
-        vector<int> offsets;
-
-        for(int i=0; i<funs.size(); i++)
+        if(funct == "Bspline")  
         {
-//           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
-          BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
-          bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-          bsp->put(funs[i]);
-          if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
-          bsp->myVars.setParameterType(optimize::SPO_P);
-          bsp->print();
-          dum->uniqueRadFun.push_back(bsp);
-          offsets.push_back(tbf->numParams);
-          tbf->numParams += bsp->NumParams;
+          app_log() <<"Using BsplineFunctor type. \n";
+
+          tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
+          Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
+          tbf->numParams=0;
+          vector<int> offsets;
+
+          for(int i=0; i<funs.size(); i++)
+          {
+            //           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
+            BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+            bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+            bsp->put(funs[i]);
+            if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
+            bsp->myVars.setParameterType(optimize::SPO_P);
+            bsp->print();
+            dum->uniqueRadFun.push_back(bsp);
+            offsets.push_back(tbf->numParams);
+            tbf->numParams += bsp->NumParams;
+          } 
+          tbf->derivs.resize(tbf->numParams);
+          dum->offsetPrms.resize(nIons);
+          dum->RadFun.resize(nIons);
+          for(int i=0; i<ion2functor.size(); i++)
+          {
+            if(ion2functor[i] < 0 || ion2functor[i] >= funs.size()) {
+              APP_ABORT("backflowTransformation::put() ion not mapped to radial function.\n");
+            }
+            dum->RadFun[i] = dum->uniqueRadFun[ion2functor[i]];  
+            dum->offsetPrms[i] = offsets[ion2functor[i]];  
+          }
         } 
-        tbf->derivs.resize(tbf->numParams);
-        dum->offsetPrms.resize(nIons);
-        dum->RadFun.resize(nIons);
-        for(int i=0; i<ion2functor.size(); i++)
+        else 
         {
-          if(ion2functor[i] < 0 || ion2functor[i] >= funs.size()) {
-            APP_ABORT("backflowTransformation::put() ion not mapped to radial function.\n");
-          }
-          dum->RadFun[i] = dum->uniqueRadFun[ion2functor[i]];  
-          dum->offsetPrms[i] = offsets[ion2functor[i]];  
+          APP_ABORT("Unknown function type in e-I BF Transformation.\n");
         }
-      } else {
-        APP_ABORT("Unknown function type in e-I BF Transformation.\n");
-      }
+      }//spin="no"
 
       BFTrans->bfFuns.push_back(tbf);
 //      tbf->reportStatus(cerr);
