@@ -176,6 +176,7 @@ namespace qmcplusplus
               
               tbf1->myVars.insertFrom(afunc->myVars);
               tbf1->myVars.resetIndex();
+              afunc->myVars.getIndex(tbf1->myVars);
               tbf1->numParams=tbf1->myVars.size();
               
               int offset_a = tbf1->myVars.getIndex(afunc->myVars.name(0));
@@ -192,6 +193,10 @@ namespace qmcplusplus
           cur1 = cur1->next;
         }
 
+
+
+        //synch parameters
+        tbf1->resetParameters(tbf1->myVars);
         tbf1->derivs.resize(tbf1->numParams);
 
         tbf=tbf1;

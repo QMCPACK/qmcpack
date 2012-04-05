@@ -71,7 +71,10 @@ namespace optimize
         ParameterType.push_back(input.ParameterType[i]);
         Recompute.push_back(input.Recompute[i]);
       }
+      else
+        (*loc).second=input.NameAndValue[i].second;
     }
+    
     num_active_vars=input.num_active_vars;
   }
 
