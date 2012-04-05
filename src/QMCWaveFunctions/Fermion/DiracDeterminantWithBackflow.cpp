@@ -31,7 +31,7 @@ namespace qmcplusplus {
    */
   DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
   {
-    Optimizable=true;
+    Optimizable=true; usingDerivBuffer=false;
     OrbitalName="DiracDeterminantWithBackflow";
     registerTimers();
     BFTrans=BF;
@@ -687,6 +687,83 @@ namespace qmcplusplus {
     return LogValue;
   }
 
+  DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    usingDerivBuffer=true;
+    
+    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+
+    //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
+    psiMinv=psiM;
+
+    // invert backflow matrix
+    InverseTimer.start();
+    LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
+    InverseTimer.stop();
+
+    // calculate F matrix (gradients wrt bf coordinates)
+    // could use dgemv with increments of 3*nCols  
+    for(int i=0; i<NumPtcls; i++) {
+      for(int j=0; j<NumPtcls; j++)
+      {
+         Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
+      }
+      Fmatdiag(i) = Fmat(i,i);
+    }
+
+    // calculate gradients and first piece of laplacians 
+    GradType temp;
+    ValueType temp2;
+    myG=0.0;
+    myL=0.0;
+    int num = P.getTotalNum();
+    for(int i=0; i<num; i++) {
+      temp=0.0;
+      temp2=0.0;
+      for(int j=0; j<NumPtcls; j++) {
+        for(int k=0; k<OHMMS_DIM; k++) temp2 += BFTrans->Bmat_full(i,FirstIndex+j)[k]*Fmat(j,j)[k];
+        temp  += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
+        //temp2 += rcdot(BFTrans->Bmat_full(i,FirstIndex+j),Fmat(j,j));
+      }
+      myG(i) += temp; 
+      myL(i) += temp2;
+    }
+
+// NOTE: check derivatives of Fjj and Amat numerically here, the problem has to come from somewhere
+
+    for(int j=0; j<NumPtcls; j++) {
+      HessType q_j;
+      q_j=0.0;
+      for(int k=0; k<NumPtcls; k++)  q_j += psiMinv(j,k)*grad_grad_psiM(j,k);  
+      for(int i=0; i<num; i++) {
+        Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j));
+        myL(i) += traceAtB(AA,q_j);
+        //myL(i) += traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j)),q_j);
+      }
+
+      for(int k=0; k<NumPtcls; k++) {
+        for(int i=0; i<num; i++) {
+          Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)); 
+          HessType FF = outerProduct(Fmat(k,j),Fmat(j,k));  
+          myL(i) -= traceAtB(AA,FF);
+          //myL(i) -= traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)), outerProduct(Fmat(k,j),Fmat(j,k)));
+        }
+      }
+    }
+    for(int i=0; i<num; i++) {
+      P.L(i) += myL(i);
+      P.G(i) += myG(i); 
+    } 
+
+    return LogValue;
+  }
+  
+    DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    return evaluateLog(P,P.G,P.L);
+  }
+
+
   DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::logRatio(ParticleSet& P, int iat,
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL) {
@@ -809,22 +886,25 @@ namespace qmcplusplus {
  *       -psiM_inv
  *       -Fmat
  */     
- // Implementing the comments above 
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM); 
-    //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
-    psiMinv=psiM;
-    // invert backflow matrix
-    InverseTimer.start();
-    LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue); 
-    InverseTimer.stop();
-    // calculate F matrix (gradients wrt bf coordinates)
-    // could use dgemv with increments of 3*nCols  
-    for(int i=0; i<NumPtcls; i++)
-    for(int j=0; j<NumPtcls; j++)
+
+    if(!usingDerivBuffer)
     {
-       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
+//       must compute if didn;t call earlier function
+      Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM); 
+//       std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
+      psiMinv=psiM;
+//       invert backflow matrix
+      InverseTimer.start();
+      LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue); 
+      InverseTimer.stop();
+//       calculate F matrix (gradients wrt bf coordinates)
+//       could use dgemv with increments of 3*nCols  
+      for(int i=0; i<NumPtcls; i++)
+      for(int j=0; j<NumPtcls; j++)
+      {
+          Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
+      }
     }
-//    Phi->evaluateThirdDeriv(BFTrans->QP, FirstIndex, LastIndex, grad_grad_grad_psiM);
     int num = P.getTotalNum();
     const ValueType ConstZero(0.0);
 //mmorales: cheap trick for now     

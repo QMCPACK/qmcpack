@@ -168,6 +168,9 @@ namespace qmcplusplus
 
       RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
+      RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
+      
+      RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
       RealType
       evaluateLog(ParticleSet& P,
@@ -220,6 +223,7 @@ namespace qmcplusplus
       ValueType *LastAddressOfGGG;
       ValueType *FirstAddressOfFm;
       ValueType *LastAddressOfFm;
+      bool usingDerivBuffer;
 
       void testDerivFjj(ParticleSet& P, int pa);
       void testGGG(ParticleSet& P);
