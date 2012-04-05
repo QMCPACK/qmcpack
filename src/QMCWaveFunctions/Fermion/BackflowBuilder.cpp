@@ -171,16 +171,21 @@ namespace qmcplusplus
               tbf1->addFunc (ig,afunc,jg);
 
               //WHAT IS THIS
-              //afunc->myVars.setParameterType(optimise::SPO_P);
-
-              tbf1->numParams+=afunc->NumParams;
+              afunc->myVars.setParameterType(optimize::BACKFLOW_P);
+              
+              
+              tbf1->myVars.insertFrom(afunc->myVars);
+              tbf1->numParams=tbf1->myVars.size();
+              
+              int offset_a = tbf1->myVars.getIndex(afunc->myVars.name(0));
               if(jg<0)
               {
                 for(int jjg=0; jjg<targetPtcl.groups(); ++jjg)
-                  tbf1->offsetPrms(ig,jjg)=tbf1->numParams;
+                  tbf1->offsetPrms(ig,jjg)=offset_a;
               }
               else
-                tbf1->offsetPrms(ig,jg)=tbf1->numParams;
+                tbf1->offsetPrms(ig,jg)=offset_a;
+              
             }
           }
           cur1 = cur1->next;
@@ -263,7 +268,7 @@ namespace qmcplusplus
             bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
             bsp->put(funs[i]);
             if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
-            bsp->myVars.setParameterType(optimize::SPO_P);
+            bsp->myVars.setParameterType(optimize::BACKFLOW_P);
             bsp->print();
             dum->uniqueRadFun.push_back(bsp);
             offsets.push_back(tbf->numParams);
@@ -345,7 +350,7 @@ namespace qmcplusplus
             bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
             bsp->put(cur);
             if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
-            bsp->myVars.setParameterType(optimize::SPO_P);
+            bsp->myVars.setParameterType(optimize::BACKFLOW_P);
             tbf->addFunc(ia,ib,bsp);
             offsets.push_back(tbf->numParams); 
             tbf->numParams += bsp->NumParams;
@@ -570,7 +575,7 @@ namespace qmcplusplus
 
             tbfks->initialize(targetPtcl,yk);
 
-            tbfks->myVars.setParameterType(optimize::SPO_P);
+            tbfks->myVars.setParameterType(optimize::BACKFLOW_P);
             tbfks->addFunc(ia,ib);
             offsets.push_back(tbfks->numParams);
             if(OHMMS::Controller->rank()==0)
@@ -691,7 +696,7 @@ namespace qmcplusplus
             }
      
             if(bsp->cutoff_radius > cutOff) cutOff = bsp->cutoff_radius;
-            bsp->myVars.setParameterType(optimize::SPO_P);
+            bsp->myVars.setParameterType(optimize::BACKFLOW_P);
             tbf->addFunc(ia,ib,bsp);
             offsets.push_back(tbf->numParams);
             tbf->numParams += bsp->NumParams;

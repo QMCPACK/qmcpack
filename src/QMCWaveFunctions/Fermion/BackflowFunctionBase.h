@@ -96,6 +96,7 @@ namespace qmcplusplus
     RealType *FirstOfB, *LastOfB;
 
     bool uniqueFunctions;
+    opt_variables_type myVars;
 
     BackflowFunctionBase(ParticleSet& ions, ParticleSet& els):
      CenterSys(ions), myTable(0),numParams(0),indexOfFirstParam(-1),

@@ -146,6 +146,8 @@ namespace qmcplusplus
 
     /// store index of qp coordinates that changed during pbyp move
     std::vector<int> indexQP, index;
+    
+    opt_variables_type myVars;
 
 //    BackflowTransformation(ParticleSet& els, PtclPoolType& pool):
 //      targetPtcl(els),QP(els),/*ptclPool(pool),*/cutOff(0.0) {
