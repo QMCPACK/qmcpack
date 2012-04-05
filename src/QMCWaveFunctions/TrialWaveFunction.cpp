@@ -226,6 +226,8 @@ namespace qmcplusplus
           logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
           PhaseValue += (*it)->PhaseValue;
         }
+        else
+          (*it)->copyFromBuffer(P,buf);//keep buffer synched
       }
     convert(logpsi,LogValue);
     return LogValue;
