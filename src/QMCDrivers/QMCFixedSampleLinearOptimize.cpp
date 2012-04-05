@@ -211,34 +211,34 @@ bool QMCFixedSampleLinearOptimize::run()
             RealType XS(stabilityBase+od_largest*stability);
             int nms(0);
             for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
-            if (nms>=3)
-            {
-              RealType estval(0);
-              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval,100));
-              if (!SuccessfulFit)
-              {
-                if (stability==0)
-                  stabilityBase+=stabilizerScale;
-                else
-                {
-                  RealType maxXS(mappedStabilizers[0].second);
-                  RealType minXS(mappedStabilizers[0].second);
-                  for (int i=1; i<mappedStabilizers.size(); i++) 
-                    if (mappedStabilizers[i].second==mappedStabilizers[i].second)
-                    {
-                      maxXS=std::max(maxXS,mappedStabilizers[i].second);
-                      minXS=std::min(minXS,mappedStabilizers[i].second);
-                    }
-                  //resetting XS range
-                  od_largest=(maxXS-minXS)/(nstabilizers-stability+1);
-                  nstabilizers=nstabilizers-stability;
-                  stability=1;
-                  stabilityBase=minXS;
-                  app_log()<<" Resetting XS range new its:"<<stability<<"/"<<nstabilizers;
-                }
-                XS = stabilityBase+od_largest*stability;
-              }
-            }
+//            if (nms>=3)
+//            {
+//              RealType estval(0);
+//              bool SuccessfulFit(fitMappedStabilizers(mappedStabilizers,XS,estval,100));
+//              if (!SuccessfulFit)
+//              {
+//                if (stability==0)
+//                  stabilityBase+=stabilizerScale;
+//                else
+//                {
+//                  RealType maxXS(mappedStabilizers[0].second);
+//                  RealType minXS(mappedStabilizers[0].second);
+//                  for (int i=1; i<mappedStabilizers.size(); i++) 
+//                    if (mappedStabilizers[i].second==mappedStabilizers[i].second)
+//                    {
+//                      maxXS=std::max(maxXS,mappedStabilizers[i].second);
+//                      minXS=std::min(minXS,mappedStabilizers[i].second);
+//                    }
+//                  //resetting XS range
+//                  od_largest=(maxXS-minXS)/(nstabilizers-stability+1);
+//                  nstabilizers=nstabilizers-stability;
+//                  stability=1;
+//                  stabilityBase=minXS;
+//                  app_log()<<" Resetting XS range new its:"<<stability<<"/"<<nstabilizers;
+//                }
+//                XS = stabilityBase+od_largest*stability;
+//              }
+//            }
             for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
             app_log()<<"  Using XS:"<<XS<<endl;
             
