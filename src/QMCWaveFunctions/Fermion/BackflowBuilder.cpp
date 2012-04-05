@@ -175,6 +175,7 @@ namespace qmcplusplus
               
               
               tbf1->myVars.insertFrom(afunc->myVars);
+              tbf1->myVars.resetIndex();
               tbf1->numParams=tbf1->myVars.size();
               
               int offset_a = tbf1->myVars.getIndex(afunc->myVars.name(0));
