@@ -487,7 +487,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     m_param.add(GEVType,"GEVMethod","string");
     m_param.put(q);
 
-   if (nonlocalpp=="yes") nonlocalpp="NonLocalECP";
+   if (includeNonlocalH=="yes") includeNonlocalH="NonLocalECP";
     
    // app_log() << "  QMCCostFunctionBase::put " << endl;
    // m_param.get(app_log());
