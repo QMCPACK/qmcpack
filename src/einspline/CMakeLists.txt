@@ -101,6 +101,6 @@ else()
   ADD_LIBRARY(einspline ${SRCS})
 endif()
 
-ADD_EXECUTABLE(time_multi time_multi_new.c)
-target_link_libraries(time_multi einspline)
+#ADD_EXECUTABLE(time_multi time_multi_new.c)
+#target_link_libraries(time_multi einspline)
 #add_dependencies(time_multi ${PROJECT_BINARY_HOME}/include/einspline/bspline.h)
