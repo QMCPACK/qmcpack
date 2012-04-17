@@ -115,7 +115,7 @@ public:
     return &(X[0])+X.size();
   }
 
-  This_t& operator=(const T rhs) {
+  This_t& operator=(const T& rhs) {
     std::fill(X.begin(),X.end(),rhs);
     return *this;
   }

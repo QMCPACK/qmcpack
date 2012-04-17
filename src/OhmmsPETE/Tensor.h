@@ -440,25 +440,39 @@ dot(const Tensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 // Outer product.
 //----------------------------------------------------------------------
 
-/** Vector-vector outter product \f$ result(i,j)=v1(i)*v2(j)\f$
- * @param v1 a vector
- * @param v2 a vector
- */
-  template<class T1, class T2, unsigned int D>
-  inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::type,D >
-  outerProduct(const TinyVector<T1,D>& v1, const TinyVector<T2,D>& v2)
-  {
-    typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t T0;
-//    //#if (defined(POOMA_SGI_CC_721_TYPENAME_BUG) || defined(__MWERKS__))
-//    //Tensor<T0,D> ret = Tensor<T0,D>::DontInitialize();
-//    //#else
-    Tensor<T0,D> ret = typename Tensor<T0,D>::DontInitialize();
-//    //#endif // POOMA_SGI_CC_721_TYPENAME_BUG
-    for (unsigned int i=0; i<D; ++i)
-      for (unsigned int j=0; j<D; ++j)
-        ret(i,j) = v1[i]*v2[j];
-    return ret;
-  }
+///** Vector-vector outter product \f$ result(i,j)=v1(i)*v2(j)\f$
+// * @param v1 a vector
+// * @param v2 a vector
+// */
+//  template<class T1, class T2, unsigned int D>
+//  inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::type,D >
+//  outerProduct(const TinyVector<T1,D>& v1, const TinyVector<T2,D>& v2)
+//  {
+//    typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t T0;
+////    //#if (defined(POOMA_SGI_CC_721_TYPENAME_BUG) || defined(__MWERKS__))
+////    //Tensor<T0,D> ret = Tensor<T0,D>::DontInitialize();
+////    //#else
+//    Tensor<T0,D> ret = typename Tensor<T0,D>::DontInitialize();
+////    //#endif // POOMA_SGI_CC_721_TYPENAME_BUG
+//    for (unsigned int i=0; i<D; ++i)
+//      for (unsigned int j=0; j<D; ++j)
+//        ret(i,j) = v1[i]*v2[j];
+//    return ret;
+//  }
+//
+//  template<class T1, unsigned int D>
+//  inline Tensor<T1,D >
+//  outerProduct(const TinyVector<T1,D>& v1, const TinyVector<T1,D>& v2)
+//  {
+//    Tensor<T1,D> ret = typename Tensor<T1,D>::DontInitialize();
+////    //#endif // POOMA_SGI_CC_721_TYPENAME_BUG
+//    for (unsigned int i=0; i<D; ++i)
+//      for (unsigned int j=0; j<D; ++j)
+//        ret(i,j) = v1[i]*v2[j];
+//    return ret;
+//  }
+//
+
 
 //----------------------------------------------------------------------
 // I/O

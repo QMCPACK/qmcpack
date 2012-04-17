@@ -624,6 +624,18 @@ struct OuterProduct< TinyVector<T1,D> , TinyVector<T2,D> >
 };
 
 template<class T1, class T2>
+struct OuterProduct< TinyVector<T1,2> , TinyVector<T2,2> >
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  typedef Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,2> Return_t;
+  inline static Return_t
+  apply(const TinyVector<T1,2>& a, const TinyVector<T2,2>& b) {
+    return Return_t(a[0]*b[0],a[0]*b[1],
+                    a[1]*b[0],a[1]*b[1]);
+  }
+};
+
+template<class T1, class T2>
 struct OuterProduct< TinyVector<T1,3> , TinyVector<T2,3> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
