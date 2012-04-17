@@ -52,7 +52,7 @@ namespace qmcplusplus
     typedef Vector<HessType>      HessVector_t;
     typedef Matrix<HessType>      HessMatrix_t;
 
-    typedef Array<HessType,OHMMS_DIM>       HessArray_t;
+    typedef Array<HessType,3>       HessArray_t;
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef map<string,ParticleSet*>   PtclPoolType;
@@ -519,6 +519,7 @@ namespace qmcplusplus
         Cmat.resize(numParams,NumTargets);
         Xmat.resize(numParams,NumTargets,NumTargets);
         Ymat.resize(numParams,NumTargets);
+
       }
     
       // Uncomment to test calculation of Cmat,Xmat,Ymat
@@ -529,7 +530,7 @@ namespace qmcplusplus
       Bmat_full=0.0;
       Cmat=0.0;
       Ymat=0.0;
-      Xmat=DummyHess;
+      for(int i=0; i<Xmat.size();i++) Xmat(i)=0;
       for(int i=0; i<NumTargets; i++) {
         QP.R[i] = P.R[i];
         Amat(i,i).diagonal(1.0);
@@ -552,7 +553,8 @@ namespace qmcplusplus
        Bmat_full=0.0;
        Cmat=0.0;
        Ymat=0.0;
-       Xmat=DummyHess;
+//       Xmat=DummyHess;
+       for(int i=0; i<Xmat.size();i++) Xmat(i)=0;
        for(int i=0; i<NumTargets; i++) {
          QP.R[i] = P.R[i];
          Amat(i,i).diagonal(1.0);

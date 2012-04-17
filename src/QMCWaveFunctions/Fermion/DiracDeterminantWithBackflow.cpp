@@ -906,22 +906,20 @@ namespace qmcplusplus {
       }
     }
     int num = P.getTotalNum();
-    const ValueType ConstZero(0.0);
 //mmorales: cheap trick for now     
-    const ValueType ConstOne(1.0);
 
     for(int j=0; j<NumPtcls; j++)  
       for(int k=0; k<NumPtcls; k++) { 
 
         HessType& q_jk = Qmat(j,k);
-        q_jk=ConstZero;
+        q_jk=0;
         for(int n=0; n<NumPtcls; n++)  
           q_jk += psiMinv(j,n)*grad_grad_psiM(k,n);
       
         HessType& a_jk = Ajk_sum(j,k);
-        a_jk=ConstZero;
+        a_jk=0;
         for(int n=0; n<num; n++)  
-          a_jk += ConstOne*dot(transpose(BFTrans->Amat(n,FirstIndex+j)),BFTrans->Amat(n,FirstIndex+k));
+          a_jk += dot(transpose(BFTrans->Amat(n,FirstIndex+j)),BFTrans->Amat(n,FirstIndex+k));
 
       }
    // this is a mess, there should be a better way
@@ -929,14 +927,14 @@ namespace qmcplusplus {
    for (int pa=0; pa<BFTrans->optIndexMap.size(); ++pa)
    //for (int pa=0; pa<BFTrans->numParams; ++pa)
    {
-      ValueType dpsia=ConstZero;
-      Gtemp=ConstZero;
-      ValueType dLa=ConstZero;
-      GradType temp;
-      ValueType temp2;
+      ValueType dpsia=0;
+      Gtemp=0;
+      ValueType dLa=0;
+      GradType temp;temp=0;
+      ValueType temp2(0);
       for(int i=0; i<NumPtcls; i++)
         for(int j=0; j<NumPtcls; j++) {
-          GradType f_a;
+          GradType f_a; f_a=0;
           PosType& cj = BFTrans->Cmat(pa,FirstIndex+j);
           for(int k=0; k<NumPtcls; k++) {
              f_a += (psiMinv(i,k)*dot(grad_grad_psiM(j,k),cj)
@@ -945,14 +943,14 @@ namespace qmcplusplus {
           dFa(i,j)=f_a;
         }
       for(int i=0; i<num; i++) {
-        temp=ConstZero;
+        temp=0;
         for(int j=0; j<NumPtcls; j++)
           temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j))
                     + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
         Gtemp(i) += temp;
       }
       for(int j=0; j<NumPtcls; j++) {
-        GradType B_j;
+        GradType B_j; B_j=0;
         for(int i=0; i<num; i++) B_j += BFTrans->Bmat_full(i,FirstIndex+j);
         dLa += (rcdot(Fmat(j,j),BFTrans->Ymat(pa,FirstIndex+j)) +
                   dot(B_j,dFa(j,j)));
@@ -960,10 +958,10 @@ namespace qmcplusplus {
       }
      for(int j=0; j<NumPtcls; j++) {
 
-      HessType a_j_prime;
-      for(int i=0; i<num; i++) a_j_prime += ConstOne*( dot(transpose(BFTrans->Xmat(pa,i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j)) + dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Xmat(pa,i,FirstIndex+j)) );
+      HessType a_j_prime; a_j_prime=0;
+      for(int i=0; i<num; i++) a_j_prime += ( dot(transpose(BFTrans->Xmat(pa,i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j)) + dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Xmat(pa,i,FirstIndex+j)) );
 
-      HessType q_j_prime;
+      HessType q_j_prime; q_j_prime=0;
       PosType& cj = BFTrans->Cmat(pa,FirstIndex+j);
       for(int k=0; k<NumPtcls; k++)  {
         //tmp=0.0;
@@ -972,8 +970,10 @@ namespace qmcplusplus {
 
         q_j_prime += ( psiMinv(j,k)*(cj[0]*grad_grad_grad_psiM(j,k)[0]
                        + cj[1]*grad_grad_grad_psiM(j,k)[1]
-                       + cj[2]*grad_grad_grad_psiM(j,k)[2]) 
-                     - rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
+#if OHMMS_DIM==3
+                       + cj[2]*grad_grad_grad_psiM(j,k)[2]
+#endif
+                     ) - rcdot(BFTrans->Cmat(pa,FirstIndex+k),Fmat(j,k))
                        *Qmat(k,j) );
       }
 
@@ -982,7 +982,7 @@ namespace qmcplusplus {
      for(int j=0; j<NumPtcls; j++) {
       for(int k=0; k<NumPtcls; k++) {
 
-        HessType a_jk_prime;
+        HessType a_jk_prime; a_jk_prime=0;
         for(int i=0; i<num; i++) a_jk_prime += ( dot(transpose(BFTrans->Xmat(pa,i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)) + dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Xmat(pa,i,FirstIndex+k)) );
 
         dLa -= (traceAtB(a_jk_prime, outerProduct(Fmat(k,j),Fmat(j,k)))

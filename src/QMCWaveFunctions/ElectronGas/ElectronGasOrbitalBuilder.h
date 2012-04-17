@@ -256,23 +256,64 @@ namespace qmcplusplus {
           for(int la=0; la<OHMMS_DIM; la++) {
             (hess[j1])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la];
             (hess[j2])(la,la)=-sinkr*(K[ik])[la]*(K[ik])[la];
+            ((ggg[j1])[la])(la,la)=sinkr*(K[ik])[la]*(K[ik])[la]*(K[ik])[la];
+            ((ggg[j2])[la])(la,la)=-coskr*(K[ik])[la]*(K[ik])[la]*(K[ik])[la];
             for(int lb=la+1; lb<OHMMS_DIM; lb++) {
               (hess[j1])(la,lb)=-coskr*(K[ik])[la]*(K[ik])[lb];
               (hess[j2])(la,lb)=-sinkr*(K[ik])[la]*(K[ik])[lb];
               (hess[j1])(lb,la)=(hess[j1])(la,lb);
               (hess[j2])(lb,la)=(hess[j2])(la,lb);
-            }
-          }
-#if OHMMS_DIM ==3
-          for(int la=0; la<3; la++) {
-            for(int lb=0; lb<3; lb++) {
-              for(int lc=0; lc<3; lc++) {
+
+              ((ggg[j1])[la])(lb,la) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[la];
+              ((ggg[j2])[la])(lb,la) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[la];
+              ((ggg[j1])[la])(la,lb) = ((ggg[j1])[la])(lb,la);
+              ((ggg[j2])[la])(la,lb) = ((ggg[j2])[la])(lb,la);
+              ((ggg[j1])[lb])(la,la) = ((ggg[j1])[la])(lb,la);
+              ((ggg[j2])[lb])(la,la) = ((ggg[j2])[la])(lb,la);
+
+              ((ggg[j1])[la])(lb,lb) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lb];
+              ((ggg[j2])[la])(lb,lb) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lb];
+              ((ggg[j1])[lb])(la,lb) = ((ggg[j1])[la])(lb,lb);
+              ((ggg[j2])[lb])(la,lb) = ((ggg[j2])[la])(lb,lb);
+              ((ggg[j1])[lb])(lb,la) = ((ggg[j1])[la])(lb,lb);
+              ((ggg[j2])[lb])(lb,la) = ((ggg[j2])[la])(lb,lb);
+
+              for(int lc=lb+1; lc<OHMMS_DIM; lc++) {
                 ( (ggg[j1])[la] )(lb,lc) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
                 ( (ggg[j2])[la] )(lb,lc) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+                ( (ggg[j1])[la] )(lc,lb) = ( (ggg[j1])[la] )(lb,lc);
+                ( (ggg[j2])[la] )(lc,lb) = ( (ggg[j2])[la] )(lb,lc);
+                ( (ggg[j1])[lb] )(la,lc) = ( (ggg[j1])[la] )(lb,lc);
+                ( (ggg[j2])[lb] )(la,lc) = ( (ggg[j2])[la] )(lb,lc);
+                ( (ggg[j1])[lb] )(lc,la) = ( (ggg[j1])[la] )(lb,lc);
+                ( (ggg[j2])[lb] )(lc,la) = ( (ggg[j2])[la] )(lb,lc);
+                ( (ggg[j1])[lc] )(la,lb) = ( (ggg[j1])[la] )(lb,lc);
+                ( (ggg[j2])[lc] )(la,lb) = ( (ggg[j2])[la] )(lb,lc);
+                ( (ggg[j1])[lc] )(lb,la) = ( (ggg[j1])[la] )(lb,lc);
+                ( (ggg[j2])[lc] )(lb,la) = ( (ggg[j2])[la] )(lb,lc);
               }
             }
           }
-#endif
+//#if OHMMS_DIM ==3
+//          for(int la=0; la<3; la++) {
+//            for(int lb=0; lb<3; lb++) {
+//              for(int lc=0; lc<3; lc++) {
+//                ( (ggg[j1])[la] )(lb,lc) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+//                ( (ggg[j2])[la] )(lb,lc) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+//              }
+//            }
+//          }
+//#elif OHMMS_DIM ==2
+//          for(int la=0; la<2; la++) {
+//            for(int lb=0; lb<2; lb++) {
+//              for(int lc=0; lc<2; lc++) {
+//                ( (ggg[j1])[la] )(lb,lc) = sinkr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+//                ( (ggg[j2])[la] )(lb,lc) = -coskr*(K[ik])[la]*(K[ik])[lb]*(K[ik])[lc];
+//              }
+//            }
+//          }
+//#endif
+
 
         }
       }

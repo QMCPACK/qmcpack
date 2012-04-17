@@ -48,7 +48,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<T>::GradMatrix_t  GradMatrix_t;
     typedef typename OrbitalSetTraits<T>::HessVector_t  HessVector_t;
     typedef typename OrbitalSetTraits<T>::HessMatrix_t  HessMatrix_t;
-    typedef TinyVector<HessType, 3>                     GGGType;
+    typedef TinyVector<HessType, OHMMS_DIM>                     GGGType;
     typedef Vector<GGGType>                             GGGVector_t;
     typedef Matrix<GGGType>                             GGGMatrix_t;
 
