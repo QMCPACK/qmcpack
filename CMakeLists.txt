@@ -231,9 +231,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(PREFETCH_AHEAD 12)
   SET(HAVE_C_VARARRAYS 1)
 
-  SET(HAVE_EINSPLINE 1)
-  SET(HAVE_EINSPLINE_EXT 0)
-
   ######################################################
   # Try to identify CPU identity
   ######################################################
@@ -455,24 +452,23 @@ INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 # - if not found, build it from the source directory in $EINSPLINE_HOME
 # - if everything fails, do not use it
 ######################################################################
-if(HAVE_EINSPLINE)
+SET(HAVE_EINSPLINE 1)
+set(build_einspline 1)
+if(HAVE_EINSPLINE_EXT)
+  set(HAVE_EINSPLINE 0)
+  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
+  IF(EINSPLINE_FOUND)
+    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
+    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
+    set(build_einspline 0)
+  endif()
+endif()
+if(build_einspline)
   SUBDIRS(src/einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
-else()
-  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
-  if(EINSPLINE_FOUND)
-    set(HAVE_EINSPLINE 1)
-    IF(HAVE_EINSPLINE_EXT)
-      INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-      SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
-    ELSE(HAVE_EINSPLINE_EXT)
-      SUBDIRS(src/einspline)
-      INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-    ENDIF(HAVE_EINSPLINE_EXT)
-    MESSAGE(STATUS "EINSPLINE_INCLUDE_DIR="${EINSPLINE_INCLUDE_DIR})
-  endif()
 endif()
+
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
 #  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
@@ -486,7 +482,6 @@ endif()
 #    )
 #  find_package(einspline REQUIRED)
 #  set(HAVE_EINSPLINE 1)
-
 #######################################################################
 ## Manage GTK+ and GTKMM packages for GUI
 ## search headers and libraries
