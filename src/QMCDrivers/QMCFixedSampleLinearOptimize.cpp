@@ -192,14 +192,17 @@ bool QMCFixedSampleLinearOptimize::run()
           }
           
           
-          //Find largest off-diagonal element compared to diagonal element.
-          //This gives us an idea how well conditioned it is and can be used to stabilize.
-          RealType od_largest(0);
-          for (int i=0; i<N; i++) for (int j=0; j<N; j++)
-            od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-          app_log()<<"od_largest "<<od_largest<<endl;
-          if((nstabilizers>1)and (od_largest>0)) od_largest = std::log(od_largest)/(nstabilizers-1);
-          if (od_largest<=0) od_largest = stabilizerScale;
+//           //Find largest off-diagonal element compared to diagonal element.
+//           //This gives us an idea how well conditioned it is and can be used to stabilize.
+//           RealType od_largest(0);
+//           for (int i=0; i<N; i++) for (int j=0; j<N; j++)
+//             od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+//           app_log()<<"od_largest "<<od_largest<<endl;
+//           if((nstabilizers>1)and (od_largest>0)) od_largest = std::log(od_largest)/(nstabilizers-1);
+//           if (od_largest<=0) od_largest = stabilizerScale;
+    
+    app_log()<<"  stabilityBase "<<stabilityBase<<endl;
+    app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
 
           RealType safe = Left(0,0);
           for (int stability=0; stability<nstabilizers; stability++)
@@ -208,9 +211,9 @@ bool QMCFixedSampleLinearOptimize::run()
               for (int j=0; j<N; j++)
                   LeftT(i,j)= Left(j,i);
 
-            RealType XS(stabilityBase+od_largest*stability);
-            int nms(0);
-            for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
+//             RealType XS(stabilityBase+od_largest*stability);
+//             int nms(0);
+//             for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
 //            if (nms>=3)
 //            {
 //              RealType estval(0);
@@ -239,16 +242,31 @@ bool QMCFixedSampleLinearOptimize::run()
 //                XS = stabilityBase+od_largest*stability;
 //              }
 //            }
-            for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
-            app_log()<<"  Using XS:"<<XS<<endl;
-            
+//             for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
+//             app_log()<<"  Using XS:"<<XS<<endl;
+
+
+            RealType XS(stabilityBase+stabilizerScale*stability);
+            if (failedTries>0)
+            {
+              for (int i=1; i<N; i++) LeftT(i,i) += std::exp(XS);
+              app_log()<<"  Using XS:"<<XS<<endl;
+            }
+      
             RealType lowestEV(0);
+//             myTimers[2]->start();
+// //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
+//             lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
+//             myTimers[2]->stop();
+
             myTimers[2]->start();
-//                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
+      //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
             lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
-            myTimers[2]->stop();
+            Lambda = getNonLinearRescale(currentParameterDirections,Right);
+            myTimers[2]->stop();            
             
-            Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
+            
+//             Lambda = H2rescale*getNonLinearRescale(currentParameterDirections,S);
             RealType bigVec(0);
             for (int i=0; i<numParams; i++) bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
             if (std::abs(Lambda*bigVec)>bigChange)
@@ -303,7 +321,7 @@ bool QMCFixedSampleLinearOptimize::run()
               myTimers[3]->start();
               if (MinMethod=="quartic")
               {
-                int npts(5);
+                int npts(7);
                 quadstep = stepsize*Lambda;
                 LambdaMax = Lambda;
                 Valid=lineoptimization3(npts,startCost);
