@@ -129,11 +129,12 @@ namespace qmcplusplus {
   {
 
     
-    if(guideClones.size()) 
+    if(guideClones.size())
     {
-      delete_iter(guideClones.begin()+1,guideClones.end());
+      app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+      return;
     }
-    else
+       else
     {
       guideClones.resize(NumThreads,0);
     }
@@ -160,8 +161,8 @@ namespace qmcplusplus {
     
     if(guideClones.size()) 
     {
-      delete_iter(guideClones.begin()+1,guideClones.end());
-      delete_iter(wgClones.begin(),wgClones.end());
+      app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+      return;
     }
     else
     {
