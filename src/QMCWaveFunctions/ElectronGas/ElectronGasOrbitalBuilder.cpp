@@ -101,7 +101,7 @@ namespace qmcplusplus
     if (nc == 0) nc = nc2 = egGrid.getShellIndex(nat/2);
     int nup= egGrid.getNumberOfKpoints(nc);
     int ndn(0);
-    if (nc2!=-2)
+    if (nc2>-1)
       ndn = egGrid.getNumberOfKpoints(nc2);
     
     if (nc<0)
