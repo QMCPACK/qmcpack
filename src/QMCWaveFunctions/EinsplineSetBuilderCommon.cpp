@@ -251,7 +251,7 @@ namespace qmcplusplus {
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     qafm=0;
-    bool sortBands = true;
+    int sortBands(1);
     string sourceName;
 #if defined(QMC_CUDA)
     string useGPU="yes";
@@ -312,6 +312,7 @@ namespace qmcplusplus {
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
     iter = SPOSetMap.find (aset);
     if ((iter != SPOSetMap.end() ) && (!NewOcc) && (qafm==0)) {
+      qafm=0;
       app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
 		<< "cloning EinsplineSet object.\n";
       return iter->second->makeClone();
@@ -733,15 +734,15 @@ namespace qmcplusplus {
     for (int ki=0; ki<numPrimTwists; ki++)
       superSets[superIndex[ki]].push_back(ki);
 
-//     if (myComm->rank() == 0) 
-//       for (int si=0; si<numSuperTwists; si++) {
-// 	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
-// 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
-// 	fprintf (stderr, "  Using k-points: ");
-// 	for (int i=0; i<superSets[si].size(); i++) 
-// 	  fprintf (stderr, " %d", superSets[si][i]);
-// 	fprintf (stderr, "\n");
-//       }
+     if (myComm->rank() == 0) 
+       for (int si=0; si<numSuperTwists; si++) {
+ 	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
+ 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
+ 	fprintf (stderr, "  Using k-points: ");
+ 	for (int i=0; i<superSets[si].size(); i++) 
+ 	  fprintf (stderr, " %d", superSets[si][i]);
+ 	fprintf (stderr, "\n");
+       }
 
     // Check supertwist for this node
     if (!myComm->rank()) 
@@ -994,7 +995,7 @@ namespace qmcplusplus {
 
 
   void
-  EinsplineSetBuilder::OccupyBands(int spin, bool sortBands)
+  EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
   {
     if (myComm->rank() != 0) 
       return;

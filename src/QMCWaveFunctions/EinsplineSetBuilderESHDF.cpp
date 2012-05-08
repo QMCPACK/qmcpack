@@ -315,7 +315,7 @@ namespace qmcplusplus {
 
 
   void
-  EinsplineSetBuilder::OccupyBands_ESHDF(int spin, bool sortBands)
+  EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
   {
     //testing
     if (myComm->rank() != 0) 
@@ -363,7 +363,12 @@ namespace qmcplusplus {
     }
     
     // Now sort the bands by energy
-    if (sortBands) {
+    if (sortBands==2)
+    {
+      app_log() << "Sorting the bands by index now:\n";
+      sort (SortBands.begin(), SortBands.end(), sortByIndex);
+    }
+    else if (sortBands==1) {
       app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }

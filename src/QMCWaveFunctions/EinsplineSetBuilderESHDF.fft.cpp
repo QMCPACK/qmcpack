@@ -27,6 +27,21 @@
 
 namespace qmcplusplus {
 
+  bool sortByIndex(BandInfo leftB, BandInfo rightB)
+    {
+
+      if (leftB.BandIndex==rightB.BandIndex)
+      {
+        if  ((leftB.Energy < rightB.Energy+1e-6)&&(leftB.Energy > rightB.Energy-1e-6))
+          return leftB.TwistIndex < rightB.TwistIndex;
+        else
+          return leftB.Energy<rightB.Energy;
+      }
+      else
+        return (leftB.BandIndex<rightB.BandIndex);
+    };
+
+
   bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
     app_log() << "  Reading orbital file in ESHDF format.\n";
@@ -279,7 +294,7 @@ namespace qmcplusplus {
   }
 
 
-  void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, bool sortBands)
+  void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
   {
     if (myComm->rank() != 0) return;
 
@@ -323,7 +338,13 @@ namespace qmcplusplus {
       }
     }
 
-    if (sortBands) {
+    // Now sort the bands by energy
+    if (sortBands==2)
+    {
+      app_log() << "Sorting the bands by index now:\n";
+      sort (SortBands.begin(), SortBands.end(), sortByIndex);
+    }
+    else if (sortBands==1) {
       app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
@@ -347,68 +368,68 @@ namespace qmcplusplus {
       }
     }
 
-    if(qafm!=0)
-    {
-      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<<endl;
-
-      for (int ti=0; ti<ntoshift; ti++)
-      {
-        bool found(false);
-        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
-        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
-        for (int tj=0; tj<TwistAngles.size(); tj++) 
-        {
-          if(tj!=SortBands[ti].TwistIndex)
-          {
-            ku=TwistAngles[tj];
-            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-            double dkx = abs(k1[0] - k2[0]);
-            double dky = abs(k1[1] - k2[1]);
-            double dkz = abs(k1[2] - k2[2]);
-            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-            if(rightK)
-            {
-              SortBands[ti].TwistIndex = tj;
-              //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
-              found=true;
-              break;
-            }
-          }
-        }
-        if(!found)
-        {
-          if((abs(k1[1])<qafm+0.0001)&&(abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
-          else if((abs(k1[2])<qafm+0.0001)&&(abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
-
-          for (int tj=0; tj<TwistAngles.size(); tj++) 
-          {
-            if(tj!=SortBands[ti].TwistIndex)
-            {
-              ku=TwistAngles[tj];
-              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-              double dkx = abs(k1[0] - k2[0]);
-              double dky = abs(k1[1] - k2[1]);
-              double dkz = abs(k1[2] - k2[2]);
-              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-              if(rightK)
-              {
-                SortBands[ti].TwistIndex = tj;
-                //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
-                found=true;
-                break;
-              }
-            }
-          }
-        }
-
-        if(!found)
-        {
-          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
-          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
-          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-        }
-      }
-    }
+//    if(qafm!=0)
+//    {
+//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<<endl;
+//
+//      for (int ti=0; ti<ntoshift; ti++)
+//      {
+//        bool found(false);
+//        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
+//        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
+//        for (int tj=0; tj<TwistAngles.size(); tj++) 
+//        {
+//          if(tj!=SortBands[ti].TwistIndex)
+//          {
+//            ku=TwistAngles[tj];
+//            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+//            double dkx = abs(k1[0] - k2[0]);
+//            double dky = abs(k1[1] - k2[1]);
+//            double dkz = abs(k1[2] - k2[2]);
+//            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+//            if(rightK)
+//            {
+//              SortBands[ti].TwistIndex = tj;
+//              //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+//              found=true;
+//              break;
+//            }
+//          }
+//        }
+//        if(!found)
+//        {
+//          if((abs(k1[1])<qafm+0.0001)&&(abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
+//          else if((abs(k1[2])<qafm+0.0001)&&(abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
+//
+//          for (int tj=0; tj<TwistAngles.size(); tj++) 
+//          {
+//            if(tj!=SortBands[ti].TwistIndex)
+//            {
+//              ku=TwistAngles[tj];
+//              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
+//              double dkx = abs(k1[0] - k2[0]);
+//              double dky = abs(k1[1] - k2[1]);
+//              double dkz = abs(k1[2] - k2[2]);
+//              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
+//              if(rightK)
+//              {
+//                SortBands[ti].TwistIndex = tj;
+//                //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+//                found=true;
+//                break;
+//              }
+//            }
+//          }
+//        }
+//
+//        if(!found)
+//        {
+//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
+//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
+//          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
+//        }
+//      }
+//    }
 
 
 
