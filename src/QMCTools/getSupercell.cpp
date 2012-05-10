@@ -40,7 +40,7 @@ double SimCellRad(double* mat) {
   double B[3];
   double C[3];
   double BxC[3];
-  double radius = 5000000000000000;
+  double radius = 5000000000000000.0;
   for (int i = 0; i < 3; i++) {
     const int astart = i*3;
     const int bstart = ((i+1)%3)*3;
