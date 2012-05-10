@@ -381,7 +381,7 @@ namespace qmcplusplus
     //this is always ugly
     MeshSize = 0; 
     int hasPsig=1;
-#if defined(__bgp__)
+#if defined(__bgp__)||(__bgq__)
     if(root)
     {
       hid_t gid=H5Dopen(H5FileID,"/electrons/kpoint_0/spin_0/state_0/psi_g");
