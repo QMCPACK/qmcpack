@@ -125,7 +125,10 @@ namespace qmcplusplus
         {
           return PhaseValue;
         }
-        inline RealType getAlternatePhaseDiff()
+      void getLogs(std::vector<RealType>& lvals);
+      void getPhases(std::vector<RealType>& pvals);
+      
+      inline RealType getAlternatePhaseDiff()
         {
           RealType apd=0.0;
           for (int i=0; i<Z.size(); i++)
@@ -226,6 +229,7 @@ namespace qmcplusplus
 
       /** functions to handle particle-by-particle update */
       RealType ratio(ParticleSet& P, int iat);
+      RealType ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios);
       RealType alternateRatio(ParticleSet& P);
 
       void update(ParticleSet& P, int iat);

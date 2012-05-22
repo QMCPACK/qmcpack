@@ -227,7 +227,7 @@ namespace qmcplusplus
           PhaseValue += (*it)->PhaseValue;
         }
         else
-          (*it)->copyFromBuffer(P,buf);//keep buffer synched
+          (*it)->copyFromDerivativeBuffer(P,buf);//keep buffer synched
       }
     convert(logpsi,LogValue);
     return LogValue;
@@ -341,6 +341,32 @@ namespace qmcplusplus
     for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
       {
         r *= Z[i]->ratio(P,iat);
+      }
+#if defined(QMC_COMPLEX)
+    //return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    RealType logr=evaluateLogAndPhase(r,PhaseDiff);
+    return std::exp(logr);
+#else
+    if (r<0) PhaseDiff=M_PI;
+    //     else PhaseDiff=0.0;
+    return r;
+#endif
+  }
+
+  TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios)
+  {
+    //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
+    ratios.resize(Z.size(),0);
+    ValueType r(1.0);
+    for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
+      {
+        ValueType zr=Z[i]->ratio(P,iat);
+        r *= zr; 
+#if defined(QMC_COMPLEX)
+        ratios[i] = ans(zr);
+#else
+        ratios[i] = zr;
+#endif
       }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -529,6 +555,9 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
     for (int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
     PhaseValue += PhaseDiff;
     PhaseDiff=0.0;
+
+    LogValue=0;
+    for (int i=0; i<Z.size(); i++) LogValue+= Z[i]->LogValue;
   }
 
 //void TrialWaveFunction::resizeByWalkers(int nwalkers){
@@ -554,6 +583,25 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
   {
     for (int i=0; i<Z.size(); i++) Z[i]->reportStatus(os);
   }
+  
+  void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
+  {
+    lvals.resize(Z.size(),0);
+    for (int i=0; i<Z.size(); i++)
+    {
+      lvals[i] = Z[i]->LogValue;
+    }
+  }
+
+  void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
+  {
+    pvals.resize(Z.size(),0);
+    for (int i=0; i<Z.size(); i++)
+    {
+      pvals[i] = Z[i]->PhaseValue;
+    }
+  }
+
 
   TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
