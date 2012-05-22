@@ -97,6 +97,11 @@ namespace qmcplusplus
     {
        for (int i = 0; i < Dets.size(); ++i) Dets[i]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
     }
+    
+    virtual void  copyFromDerivativeBuffer(ParticleSet& P, BufferType& buf)
+    {
+      for (int i = 0; i < Dets.size(); ++i) Dets[i]->copyFromDerivativeBuffer(P,buf);
+    }
 
     ///return the total number of Dirac determinants
     inline int size() const
