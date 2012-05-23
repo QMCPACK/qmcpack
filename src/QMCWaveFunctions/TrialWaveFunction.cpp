@@ -363,7 +363,7 @@ namespace qmcplusplus
         ValueType zr=Z[i]->ratio(P,iat);
         r *= zr; 
 #if defined(QMC_COMPLEX)
-        ratios[i] = ans(zr);
+        ratios[i] = abs(zr);
 #else
         ratios[i] = zr;
 #endif

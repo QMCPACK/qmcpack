@@ -63,6 +63,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
     m_param.add(exp0,"exp0","double");
     m_param.add(MinMethod,"MinMethod","string");
     m_param.add(LambdaMax,"LambdaMax","double");
+    m_param.add(nstabilizers,"nstabilizers","int");
     //Set parameters for line minimization:
     this->add_timers(myTimers);
 }
