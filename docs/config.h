@@ -25,8 +25,8 @@
  * The code development is led by J. Kim and the main
  * contributors are the members of the electron structure group of Profs.
  * Martin and Ceperley at University of Illinois at Urbana-Champaign. 
- * - Active developers: J. Kim, K. Esler, J. McMinis, B. Clark, J. Gergely, C. Yang
- * - Past contributors: S. Chiesa, K. Delaney, J. Vincent 
+ * - Active developers: J. Kim, K. Esler, J. McMinis, M. A. Morales, B. Clark
+ * - Past contributors: J. Gergely, C. Yan,gS. Chiesa, K. Delaney, J. Vincent 
  *
  * The development of QMCPACK is supported by Materials Computation Center and
  * National Center for Supercomputing Applications at University of Illinois at
@@ -35,7 +35,10 @@
  *
  * \section change_secs Major changes
  * \htmlonly
- * <h2>2009-06-xx</h2>
+ * <h2>2012-06-01</h2>
+ <ul>
+  <li>Tutorials are added</li>
+ </ul>
  * <h2>2008-07-22</h2>
   <ul> 
   <li>Numerous bug fixes.

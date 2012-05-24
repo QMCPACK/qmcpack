@@ -4,8 +4,8 @@
 # General configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = QMCPACK
-PROJECT_NUMBER         = 0.4
-OUTPUT_DIRECTORY       = /Library/WebServer/apache2/htdocs/qmcpack/docs
+PROJECT_NUMBER         = 1.0
+OUTPUT_DIRECTORY       = /Users/jnkim/Sites/qmcpack
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
@@ -19,11 +19,11 @@ REPEAT_BRIEF           = YES
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
-STRIP_FROM_PATH        = /Users/jnkim/qmcpack-trunk/src /Users/jnkim/qmcpack-trunk/docs
+STRIP_FROM_PATH        = /Users/jnkim/svnwork/qmcpack-trunk/src /Users/jnkim/svnwork/qmcpack-trunk/docs
 INTERNAL_DOCS          = NO
 STRIP_CODE_COMMENTS    = NO
 CASE_SENSE_NAMES       = YES
-SHORT_NAMES            = NO
+SHORT_NAMES            = YES
 HIDE_SCOPE_NAMES       = YES
 VERBATIM_HEADERS       = NO
 SHOW_INCLUDE_FILES     = NO
@@ -32,6 +32,7 @@ MULTILINE_CPP_IS_BRIEF = NO
 DETAILS_AT_TOP         = NO
 INHERIT_DOCS           = YES
 INLINE_INFO            = YES
+CALL_GRAPH             = YES
 SORT_MEMBER_DOCS       = YES
 DISTRIBUTE_GROUP_DOC   = NO
 TAB_SIZE               = 2
@@ -82,6 +83,8 @@ FILE_PATTERNS          = *.h *.cpp
 RECURSIVE              = YES
 EXCLUDE                = \
 ../src/Numerics/SphericalTensorJS.h \
+../src/Lattice/Uniform2DGridLayout.h \
+../src/Lattice/Uniform2DGridLayout.cpp \
 ../src/Utilities/FortranString.h \
 ../src/Utilities/OhmmsBitset.h \
 ../src/Utilities/SpeciesCollection.cpp \
@@ -107,6 +110,14 @@ EXCLUDE                = \
 ../src/Numerics/CubicSpline3DSet.cpp \
 ../src/Numerics/CubicSpline3DGridSet.h \
 ../src/Numerics/CubicSpline3DGridSet.cpp \
+../src/Numerics/TricubicBsplineSet.h \
+../src/Numerics/TricubicBsplineLOSet.h \
+../src/Numerics/TricubicBsplineGridBC.h \
+../src/Numerics/TricubicBsplineGridBC.cpp \
+../src/Numerics/TricubicBsplineGrid.h \
+../src/Numerics/TricubicBsplineGrid.cpp \
+../src/Numerics/TriCubicSplineT.h \
+../src/Numerics/Transform2GridFunctor.h \
 ../src/Numerics/Spline3D \
 ../src/Numerics/Numerov.h \
 ../src/Message/ReplicaControl.h \
@@ -119,20 +130,35 @@ EXCLUDE                = \
 ../src/Particle/DistanceTableData.walker.h \
 ../src/Particle/DistanceTableData.walker.cpp \
 ../src/Particle/WalkerSetRef.h \
+../src/QMCHamiltonians/Experimental \
 ../src/QMCHamiltonians/GeCorePolPotential.cpp \
 ../src/QMCHamiltonians/GeCorePolPotential.h \
 ../src/QMCHamiltonians/WOS \
 ../src/QMCHamiltonians/test.cpp \
 ../src/QMCHamiltonians/QMCHamiltonianBase.cpp \
+../src/QMCDrivers/Experimental \
 ../src/QMCDrivers/DMCWOS.cpp \
 ../src/QMCDrivers/DMCWOS.h \
+../src/QMCWaveFunctions/Experimental \
 ../src/QMCWaveFunctions/SphericalOrbitalSet.iterator.h  \
 ../src/QMCWaveFunctions/SPOSetTemplate.h \
 ../src/QMCWaveFunctions/MolecularOrbitals/unsupported \
 ../src/QMCWaveFunctions/RadialOrbitalManager.cpp \
 ../src/QMCWaveFunctions/RadialOrbitalManager.h \
+../src/QMCWaveFunctions/Bspline3DSetTrunc.h \
+../src/QMCWaveFunctions/Bspline3DSetTrunc.cpp \
+../src/QMCWaveFunctions/Bspline3DSetTemp.h \
+../src/QMCWaveFunctions/Bspline3DSetBase.h \
+../src/QMCWaveFunctions/Bspline3DSetBase.cpp \
+../src/QMCWaveFunctions/Bspline3DSet.h \
+../src/QMCWaveFunctions/Bspline3DSet.cpp \
 ../src/QMCTools/GridMolecularOrbitals.cpp \
-../src/QMCTools/GridMolecularOrbitals.h  
+../src/QMCTools/GridMolecularOrbitals.h  \
+../src/QMCTools/BParser.h  \
+../src/QMCTools/BParser.cpp  \
+../src/QMCTools/BMakeFunc.h  \
+../src/QMCTools/BMakeFunc.cpp 
+
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       =  */Experimental/* */QMCTools/* */Spline3D/*
 EXAMPLE_PATH           = 
