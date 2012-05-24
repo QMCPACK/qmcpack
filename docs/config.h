@@ -1,114 +1,10 @@
-////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+/* src/ohmms-config.h.in.  Generated from configure.in by autoheader.  */
+// -*- c++  -*-
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/**\mainpage QMCPACK Documentation
- * \section intro_sec Summary
- *
- *
- * QMCPACK, framework for Quantum Monte Carlo simulations, implements advanced
- * QMC algorithms.  Generic programming enabled by templates in C++ is
- * extensively utilized to achieve high efficiency. It is designed for high
- * performance systems using MPI and OpenMP.
- *
- * The code development is led by J. Kim and the main
- * contributors are the members of the electron structure group of Profs.
- * Martin and Ceperley at University of Illinois at Urbana-Champaign. 
- * - Active developers: J. Kim, K. Esler, J. McMinis, M. A. Morales, B. Clark
- * - Past contributors: J. Gergely, C. Yan,gS. Chiesa, K. Delaney, J. Vincent 
- *
- * The development of QMCPACK is supported by Materials Computation Center and
- * National Center for Supercomputing Applications at University of Illinois at
- * Urbana-Champaign, and funded by the National Science Foundation and
- * Department of Energy.
- *
- * \section change_secs Major changes
- * \htmlonly
- * <h2>2012-06-01</h2>
- <ul>
-  <li>Tutorials are added</li>
- </ul>
- * <h2>2008-07-22</h2>
-  <ul> 
-  <li>Numerous bug fixes.
-  <li>Support TrialWaveFunction cloning for multi-threaded applications
-  <li>EinsplineOrbitalSet uses Einspline library 
-  <li>BsplinFunctor for One- and Two-Body Jastrow
-  </ul>
-  <h2> 2005-07-25</h2>
-  <ul> 
-    <li> updated doxygen documentations
-    <li> docs directory is added to cvs repository. 
-    <li> To generate doxygen documentation on a local host,
-      <ul>
-      <li> cd docs; doxygen Doxyfile
-      <li> doxygen/html/index.html is the main page
-      </ul>
-  <li> Introduced groups that follow the directory structure
-  <ul>
-   <li>Orbital group
-   <li>Orbital builder group
-   <li>Many-body wave function group
-   <li>Hamiltonian group
-   <li>QMC Driver group
-   <li>QMC Drivers using walker-by-walker update
-   <li>QMC Drivers using particle-by-particle update
-   <li>QMC Drivers for energy differences
-   <li>QMC Application group
-  </ul>
-  </ul>
- \endhtmlonly
-
- * \page license University of Illinois/NCSA Open Source License
-
-Copyright (c) 2003, University of Illinois Board of Trustees.
-All rights reserved.
-
-Developed by:   
-  Jeongnim Kim
-  Condensed Matter Physics,
-  National Center for Supercomputing Applications, University of Illinois
-  Materials computation Center, University of Illinois
-  http://www.mcc.uiuc.edu/qmc/
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the
-``Software''), to deal with the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-        * Redistributions of source code must retain the above copyright 
-          notice, this list of conditions and the following disclaimers.
-        * Redistributions in binary form must reproduce the above copyright 
-          notice, this list of conditions and the following disclaimers in 
-          the documentation and/or other materials provided with the 
-          distribution.
-        * Neither the names of the NCSA, the MCC, the University of Illinois, 
-          nor the names of its contributors may be used to endorse or promote 
-          products derived from this Software without specific prior written 
-          permission.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
-THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
-OTHER DEALINGS WITH THE SOFTWARE.
- */
+//Ohmms Configuration Header. Automatically Generated
+//
+//See the LICENSE file in the top-level directory for copyright notices
+//
 #ifndef QMCPLUSPLUS_CONFIGURATION_H
 #define QMCPLUSPLUS_CONFIGURATION_H
 
@@ -116,10 +12,10 @@ OTHER DEALINGS WITH THE SOFTWARE.
 #define QMCPLUSPLUS_VERSION_MAJOR  0
 
 /* define the minor version */
-#define QMCPLUSPLUS_VERSION_MINOR  5
+#define QMCPLUSPLUS_VERSION_MINOR  6
 
 /* define the patch version */
-#define QMCPLUSPLUS_VERSION_PATCH  0
+#define QMCPLUSPLUS_VERSION_PATCH  1
 
 /* define the release version */
 /* #undef QMCPLUSPLUS_RELEASE */
@@ -128,13 +24,13 @@ OTHER DEALINGS WITH THE SOFTWARE.
 /* #undef QMCPLUSPLUS_LINEARSCALE */
 
 /* define the subversion branch */
-#define QMCPLUSPLUS_BRANCH  3680
+#define QMCPLUSPLUS_BRANCH  5487
 
 /* define the subversion last changed date */
-#define QMCPLUSPLUS_LAST_CHANGED_DATE  "2009-03-13 14:48:19 -0500 (Fri, 13 Mar 2009)"
+#define QMCPLUSPLUS_LAST_CHANGED_DATE  "2012-04-22 10:24:14 -0400 (Sun, 22 Apr 2012)"
 
-/* define QMC_BUILD_COMPLETE */
-#define QMC_BUILD_COMPLETE 1
+/* define QMC_BUILD_LEVEL */
+#define QMC_BUILD_LEVEL 3
 
 /* define PRINT_DEBUG */
 /* #undef PRINT_DEBUG */
@@ -212,7 +108,7 @@ OTHER DEALINGS WITH THE SOFTWARE.
 #define HAVE_FLOOR 1
 
 /* Define if einspline lib exists */
-/* #undef HAVE_EINSPLINE */
+#define HAVE_EINSPLINE 1
 
 /* Define if external einspline is found */
 /* #undef HAVE_EINSPLINE_EXT */
@@ -220,7 +116,7 @@ OTHER DEALINGS WITH THE SOFTWARE.
 #ifndef HAVE_EINSPLINE_EXT
 
 /* Define if posix_memalign function exists */
-/* #undef HAVE_POSIX_MEMALIGN */
+#define HAVE_POSIX_MEMALIGN 1
 
 /* Define if pow function exists */
 #define HAVE_POW 1
@@ -259,36 +155,47 @@ OTHER DEALINGS WITH THE SOFTWARE.
 /* #undef HAVE_MMX */
 
 /* Define if sse support exists */
-/* #undef HAVE_SSE */
+#define HAVE_SSE 1
 
 /* Define if sse2 support exists */
-/* #undef HAVE_SSE2 */
+#define HAVE_SSE2 1
 
 /* Define if sse3 support exists */
-/* #undef HAVE_SSE3 */
+#define HAVE_SSE3 1
 
 /* Define if ssse3 support exists */
-/* #undef HAVE_SSSE3 */
+#define HAVE_SSSE3 1
 
 /* Define if c variable array support exists */
-#define HAVE_C_VARARRAYS 1
+/* #undef HAVE_C_VARARRAYS */
 
 /* Prefetch loop lead distance  */
-#define PREFETCH_AHEAD 12
+#define PREFETCH_AHEAD 10
 
 /* Use SSE prefetch  */
-/* #undef USE_PREFETCH */
+#define USE_PREFETCH 1
 
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Fund mkl library */
+/* Find mkl library */
 /* #undef HAVE_MKL */
 
-/* Fund mkl/vml library */
+/* Find mkl/vml library */
 /* #undef HAVE_MKL_VML */
+
+/* Find essl library */
+/* #undef HAVE_ESSL */
 
 /* Fund acml library */
 /* #undef HAVE_ACML */
+
+/* Using CUDA for GPU execution */
+/* #undef QMC_CUDA */
+
+/* Setting precision for CUDA core kernels */
+#define CUDA_PRECISION float
+
+/* #undef DEBUG_PSIBUFFER_ON */
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

@@ -1,0 +1,49 @@
+/**
+ * \page ug_sec User Guides
+ * \section build_sec Getting started
+ * - Download source via svn
+ *   - Developers' version: 
+   \code
+svn co https://subversion.assembla.com/svn/qmcdev/trunk qmcpack
+     \endcode
+ *   - Stable public version : 
+ *   \code
+ svn co http://qmcpack.googlecode.com/svn/trunk/ qmcpack
+     \endcode
+ * - Build where everything is installed in standard directores, /usr, /usr/local
+    \code
+cd qmcpack/build
+cmake ..
+make -j4
+    \endcode
+    <p>
+    Use any number of threads for parallel make. The example above used 4 threads with -j4 option.
+    More on how to build QMCPACK can be found at http://qmcpack.cmscc.org/getting-started/cmake-101
+    If everything goes well, then you should see \a qmcpack/build/bin/qmcapp. 
+    </p>
+
+  \section pre_sec Required tools and libraries
+
+  - C/C++ compilers
+  - cmake, build utility, http://www.cmake.org/
+  - blas/lapack, numerical library, use platform-optimized libraries
+  - libxml2, XML parser, http://xmlsoft.org/
+  - hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
+  - boost, peer-reviewed portable C++ source libraries, http://www.boost.org
+
+Optional but required for a complete build 
+  - einspline, 3D bspline library, http://einspline.sourceforge.net/
+  - fftw, FFT library, http://www.fftw.org/
+
+   \section extlib_sec External libraries
+   <p>
+   QMCPACK uses several third-party tools and libraries.  The selected packages
+   are widely adopted by open-source communities and are generally available on
+   HPC systems via module.  They are included in standard Linux/cygwin
+   distributions or can be installed by standard tools like yum.
+   Installing these libraries with the source codes is straightforward.  Because
+   the header files are included by QMCPACK, it is important to install
+   developers' version of each library.
+   </p>
+ *
+ */

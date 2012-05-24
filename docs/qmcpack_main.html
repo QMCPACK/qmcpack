@@ -1,0 +1,72 @@
+/**\mainpage QMCPACK Documentation
+\section intro_sec Summary
+
+QMCPACK, an open-source QMC simulation code written in C++, implements advanced
+QMC algorithms for large-scale parallel computers. Designed with the modularity
+afforded by object-oriented architecture, it makes extensive use of template
+metaprogramming to achieve high computational efficiency through inlined
+specializations. It utilizes a hybrid OpenMP/MPI approach to parallelization to
+take advantage of the growing number of cores per SMP node. Finally, it
+utilizes standard file formats for input and output, including XML and HDF5, to
+facilitate data exchange.
+
+QMCPACK development at the Materials Computation Center was supported by the
+National Science Foundation under grant no. DMR-03 25939 ITR, with additional
+support through the Frederick Seitz Materials Research Laboratory (U.S. Dept.
+of Energy grant no.  DEFG02-91ER45439) at the University of Illinois
+Urbana-Champaign and National Center for Supercomputing Applications.
+
+Currently, the principal authors are funded by
+- PetaApps, supported by the U. S. National Science Foundation
+- ORNL LDRD
+
+We also acknowledge the NCCS for help and support in accessing their resources,
+as part of a DOE INCITE allocation grant supported by US Department of Energy
+and  NCSA, TACC and NICS for providing resources as a part of NSF TeraGrid
+allocation grant
+
+Main contributing authors are Jeongnim Kim  and  the members of the electron
+structure group of Profs. Ceperley and Martin at University of Illinois. 
+ 
+Different parts of the code are written by different people, whose names are
+usually signed at the top of each file.  If you are interested in participating
+in QMCPACK development, contact Jeongnim Kim jeongnim.kim@gmail.com.  QMCPACK
+is available under University of Illinois/NCSA Open Source License (OSI
+approved) http://www.opensource.org/licenses/UoI-NCSA.php.
+
+ * \section history Major changes
+ * <h2>2012-06-01</h2>
+ <ul>
+  <li>Tutorials are added</li>
+ </ul>
+ * <h2>2008-07-22</h2>
+  <ul> 
+  <li>Numerous bug fixes.
+  <li>Support TrialWaveFunction cloning for multi-threaded applications
+  <li>EinsplineOrbitalSet uses Einspline library 
+  <li>BsplinFunctor for One- and Two-Body Jastrow
+  </ul>
+  <h2> 2005-07-25</h2>
+  <ul> 
+    <li> updated doxygen documentations
+    <li> docs directory is added to cvs repository. 
+    <li> To generate doxygen documentation on a local host,
+      <ul>
+      <li> cd docs; doxygen Doxyfile
+      <li> doxygen/html/index.html is the main page
+      </ul>
+  <li> Introduced groups that follow the directory structure
+  <ul>
+   <li>Orbital group
+   <li>Orbital builder group
+   <li>Many-body wave function group
+   <li>Hamiltonian group
+   <li>QMC Driver group
+   <li>QMC Drivers using walker-by-walker update
+   <li>QMC Drivers using particle-by-particle update
+   <li>QMC Drivers for energy differences
+   <li>QMC Application group
+  </ul>
+  </ul>
+
+ */
