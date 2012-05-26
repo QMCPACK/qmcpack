@@ -347,6 +347,9 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
           HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);   
         }
       }
+
+      QMCHamiltonianBase* nlpp = (includeNonlocalH =="no")?  0: hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+
       //set the optimization mode for the trial wavefunction
       psiClones[ip]->startOptimization();
       //    synchronize the random number generator with the node
@@ -389,10 +392,14 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
         Return_t x= hClones[ip]->evaluate(wRef);
         e0 += saved[ENERGY_TOT] = x;
         e2 += x*x;
-        if (includeNonlocalH!="no")
-          saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian(includeNonlocalH.c_str()))).Value;
-        else 
-          saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+
+        saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+        if(nlpp) saved[ENERGY_FIXED] -= nlpp->Value;
+
+        //if (includeNonlocalH!="no")
+        //  saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian(includeNonlocalH.c_str()))).Value;
+        //else 
+        //  saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
         //           ef += saved[ENERGY_FIXED];
         saved[REWEIGHT]=thisWalker.Weight=1.0;
 
