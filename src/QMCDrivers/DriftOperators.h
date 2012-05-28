@@ -73,7 +73,7 @@ namespace qmcplusplus {
   /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
    *
    * Using eq. 34 of JCP 99, 2865 (1993)
-   * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}{av^2\tau} v(i)\f$
+   * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}}{av^2\tau} v(i)\f$
    */
   template<class T, unsigned D>
   inline T getNodeCorrectionP(T tau, const ParticleAttrib<TinyVector<T,D> >& ga, T a=1) 
