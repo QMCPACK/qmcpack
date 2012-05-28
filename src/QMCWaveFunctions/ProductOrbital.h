@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file ProductOrbital.h
- * @brief Declaration of \f$\Psi^c=(\prod_i \Psi_i({\bf R})\f$
+ * @brief Declaration of \f$\Psi^c=\prod_i \psi_i({\bf R})\f$
  */
 #ifndef QMCPLUSPLUS_GENERIC_PRODUCT_WITHCONSTRAINTS_H
 #define QMCPLUSPLUS_GENERIC_PRODUCT_WITHCONSTRAINTS_H

@@ -91,7 +91,7 @@ namespace qmcplusplus
        *
        * Each builder class adds an object to compose a many-body wavefunction
        * targetPsi. The position of targetPtcl is related to targetPsi's
-       * capability to return a value and derivatives \f$\Psi = $[\{R\}]\f$ .
+       * capability to return a value and derivatives \f$\Psi[\{R\}]\f$ .
        */
       OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi);
 

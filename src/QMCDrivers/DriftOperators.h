@@ -70,7 +70,7 @@ namespace qmcplusplus {
   }
 
 
-  /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
+  /** evaluate \f$\gamma\f$ for \f$ \bar V= \gamma V\f$
    *
    * Using eq. 34 of JCP 99, 2865 (1993)
    * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}}{av^2\tau} v(i)\f$
@@ -90,11 +90,9 @@ namespace qmcplusplus {
     return std::sqrt(norm_scaled/norm);
   }
 
-  /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
+  /** evaluate \f$\gamma\f$ for \f$ \bar V= \gamma V\f$
    *
-   * Using eq. 33 of JCP 99, 2865 (1993)
-   * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}{av^2\tau} v(i)\f$
-   * Scale velocity for each particle
+   * Similar to getNodeCorrectionP but scale all the gradients with the same factor
    */
   template<class T, unsigned D>
   inline T getNodeCorrectionW(T tau, const ParticleAttrib<TinyVector<T,D> >& ga) 

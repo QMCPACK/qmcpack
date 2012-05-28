@@ -80,9 +80,7 @@ namespace qmcplusplus
    * @brief Class to represent a many-body trial wave function
    *
    *A many-body trial wave function is represented by
-   *\f[
-   *\Psi({\bf R}) = \prod_i \psi_i({\bf R}),
-   *\f]
+   *\f$\Psi({\bf R}) = \prod_i \psi_i({\bf R})\f$,
    *where each function \f$\psi_i({\bf R})\f$ is an OrbitalBase
    (see OrbitalComponent).
    *A Composite Pattern is used to handle \f$\prod\f$ operations.
