@@ -1,44 +1,58 @@
 # this module look for lapack/blas and other numerical library support
 # it will define the following values
 # Since lapack and blas are essential, link_liraries are called.
-# 1) search ENV MKL 
-# 2) search MKL in usual paths
-# 3) search ENV ATLAS
-# 4) search lapack/blas
-# 5) give up
 
 set(LAPACK_FOUND FALSE)
 set(BLAS_FOUND FALSE)
 set(MKL_FOUND FALSE)
 #
 #IF(NOT CMAKE_COMPILER_IS_GNUCXX)
-  IF($ENV{MKL} MATCHES "mkl")
-    MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
-    link_libraries($ENV{MKL})
+
+if(${CMAKE_C_COMPILER} MATCHES "icc")
+  # Intel composer has everything, 
+  if($ENV{MKLROOT} MATCHES "composer")
+    include_directories($ENV{MKLROOT}/include)
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+      link_libraries(-L$ENV{MKLROOT}/lib/intel64 -mkl=sequential)
+    else()
+      link_libraries(-L$ENV{MKLROOT}/lib/ia32 -mkl=sequential)
+    endif()
     set(LAPACK_FOUND TRUE)
     set(BLAS_FOUND TRUE)
     set(MKL_FOUND TRUE)
-  ENDIF($ENV{MKL} MATCHES "mkl")
+    set(HAVE_MKL TRUE)
+    set(HAVE_MKL_VML TRUE)
+  else()
 
-  if($ENV{MKL_HOME} MATCHES "mkl")
-    if(NOT MKL_FOUND)
+    set(mkl_home "")
+
+    if($ENV{MKLROOT} MATCHES "mkl")
+      set(mkl_home $ENV{MKLROOT})
+    else()
+      if($ENV{MKL_HOME} MATCHES "mkl")
+        set(mkl_home $ENV{MKL_HOME})
+      endif()
+    endif()
+
+    if(mkl_home MATCHES "mkl")
+
       #default MKL libraries 
       set(mkl_libs "mkl_lapack;mkl;guide")
-      STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" MKL_VERSION "$ENV{MKL_HOME}")
+      STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" MKL_VERSION ${mkl_home})
 
       if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-        SET(MKLPATH $ENV{MKL_HOME}/lib/em64t)
+        SET(MKLPATH ${mkl_home}}/lib/em64t)
         if(${MKL_VERSION} MATCHES "10\\.2\\.[0-4]")
           set(mkl_libs "mkl_intel_lp64;mkl_sequential;mkl_core;mkl_solver_lp64_sequential")
         endif(${MKL_VERSION} MATCHES "10\\.2\\.[0-4]")
       endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
       if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
-        SET(MKLPATH $ENV{MKL_HOME}/lib/32)
+        SET(MKLPATH ${mkl_home}/lib/32)
       endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
 
       if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
-        SET(MKLPATH $ENV{MKL_HOME}/lib/64)
+        SET(MKLPATH ${mkl_home}/lib/64)
       endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
 
       SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${MKLPATH}")
@@ -65,25 +79,11 @@ set(MKL_FOUND FALSE)
           set(HAVE_MKL_VML TRUE)
         endif(mkl_vml_file)
       endif(MKL_INCLUDE_DIR)
-    endif(NOT MKL_FOUND)
-  endif($ENV{MKL_HOME} MATCHES "mkl")
-  #ENDIF(NOT CMAKE_COMPILER_IS_GNUCXX)
 
-  if(MKL_FOUND)
-    FIND_PATH(MKL_INCLUDE_DIR mkl.h $ENV{MKL_HOME}/include)
-    if(MKL_INCLUDE_DIR)
-      MESSAGE(STATUS "Header files of MKL libraries are found at " ${MKL_INCLUDE_DIR})
-      INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIR})
-      set(HAVE_MKL TRUE)
-      find_file(mkl_vml_file mkl_vml.h $ENV{MKL_HOME}/include)
-      if(mkl_vml_file)
-        set(HAVE_MKL_VML TRUE)
-      endif(mkl_vml_file)
-    endif(MKL_INCLUDE_DIR)
-    MESSAGE(STATUS "MKL libraries are found")
-    set(LAPACK_FOUND TRUE)
-    set(BLAS_FOUND TRUE)
-else(MKL_FOUND)
+    endif()
+  endif()
+else()
+
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -framework vecLib")
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
@@ -111,7 +111,7 @@ else(MKL_FOUND)
     link_libraries($ENV{ATLAS})
   endif($ENV{ATLAS} MATCHES "atlas")
 
-endif(MKL_FOUND)
+endif()
 
 if(LAPACK_FOUND AND BLAS_FOUND)
   MESSAGE(STATUS "LAPACK and BLAS libraries are linked to all the applications")
