@@ -731,6 +731,8 @@ namespace qmcplusplus {
     } else {
       buf.get(psiM.first_address(),psiM.last_address());
     }
+    P.G += myG;
+    P.L += myL;
   }
   
   DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
@@ -748,8 +750,8 @@ namespace qmcplusplus {
   
     DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
-    P.G += myG;
-    P.L += myL;
+//    P.G += myG;
+//    P.L += myL;
     return LogValue;
   }
 
