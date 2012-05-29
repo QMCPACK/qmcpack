@@ -181,7 +181,7 @@ namespace qmcplusplus
     {
       app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << endl;
       //make H_KE_Node
-      H_KE_Node.resize(NumThreads);
+      H_KE_Node.resize(NumThreads,0);
       RecordsOnNode.resize(NumThreads);
       //DerivRecords.resize(NumThreads );
       //HDerivRecords.resize(NumThreads );
@@ -204,13 +204,13 @@ namespace qmcplusplus
       {
         H_KE_Node[ip]= new QMCHamiltonian;
         H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
-        if (includeNonlocalH!="no")
+        if (includeNonlocalH.c_str()!="no")
         {
-          QMCHamiltonianBase* a=hClones[ip]->getHamiltonian(includeNonlocalH);
+          QMCHamiltonianBase* a=hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
           if(a)
           {
             app_log()<<" Found non-local Hamiltonian element named "<<includeNonlocalH<<endl;
-            H_KE_Node[ip]->addOperator(a,includeNonlocalH);
+            H_KE_Node[ip]->addOperator(a,includeNonlocalH.c_str());
           }
           else
             app_log()<<" Did not find non-local Hamiltonian element named "<<includeNonlocalH<<endl;
