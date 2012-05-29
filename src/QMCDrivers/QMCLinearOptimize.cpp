@@ -792,6 +792,15 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
 {
     optNode=cur;
     m_param.put(cur);
+    delete optTarget;
+#if defined (QMC_CUDA)
+    if (useGPU == "yes")
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+    else
+#endif
+    optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+    optTarget->setStream(&app_log());
+
     optTarget->put(cur);
     vmcEngine->resetComponents(cur);
 }
