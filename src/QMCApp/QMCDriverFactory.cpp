@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h" 
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
+#include "QMCDrivers/EE/EEFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/DMC/RNFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
@@ -154,19 +155,11 @@ namespace qmcplusplus {
     }
     else
     {
-      if(qmc_mode.find("vmc")<nchars)
-      {
-        newRunType=VMC_RUN;
-      }
-      else if(qmc_mode.find("dmc")<nchars)
-      {
-        newRunType=DMC_RUN;
-      }
-      else if(qmc_mode.find("rn")<nchars)
-      {
-        newRunType=RN_RUN;
-      }
-      else if(qmc_mode.find("fw")<nchars) //number 9
+      if(qmc_mode.find("ptcl")<nchars) WhatToDo[UPDATE_MODE]=1;
+      if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
+      if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
+      
+      if(qmc_mode.find("fw")<nchars) //number 9
       {
         newRunType=FW_RUN;
         WhatToDo[UPDATE_MODE]=1;
@@ -182,13 +175,10 @@ namespace qmcplusplus {
         WhatToDo[SPACEWARP_MODE]=0;
         WhatToDo[ALTERNATE_MODE]=1;
       }
-      else if(qmc_mode.find("wfqmc")<nchars) //number 8
+      else if(qmc_mode.find("ee")<nchars) //number >8
       {
-        newRunType=WFMC_RUN;
-        WhatToDo[UPDATE_MODE]=0;
-        WhatToDo[MULTIPLE_MODE]=0;
-        WhatToDo[SPACEWARP_MODE]=0;
-        WhatToDo[ALTERNATE_MODE]=1;
+        newRunType=EE_RUN;
+        if(qmc_mode.find("cs")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       }
       else if (qmc_mode.find("rmcPbyP")<nchars)
       {
@@ -198,9 +188,18 @@ namespace qmcplusplus {
       {
         newRunType=RMC_RUN;
       }
-      if(qmc_mode.find("ptcl")<nchars) WhatToDo[UPDATE_MODE]=1;
-      if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
-      if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
+      else if(qmc_mode.find("vmc")<nchars)
+      {
+        newRunType=VMC_RUN;
+      }
+      else if(qmc_mode.find("dmc")<nchars)
+      {
+        newRunType=DMC_RUN;
+      }
+      else if(qmc_mode.find("rn")<nchars)
+      {
+        newRunType=RN_RUN;
+      }
     } 
 
     unsigned long newQmcMode=WhatToDo.to_ulong();
@@ -334,6 +333,14 @@ namespace qmcplusplus {
     {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       VMCFactory fac(curQmcModeBits.to_ulong(),cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
+      //TESTING CLONE
+      //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
+      //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
+    } 
+    else if(curRunType == EE_RUN) 
+    {
+      EEFactory fac(curQmcModeBits.to_ulong(),cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
       //TESTING CLONE
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);

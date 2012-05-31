@@ -51,7 +51,8 @@ namespace qmcplusplus {
       SH_RUN,
       FR_RUN,
       RN_RUN,
-      SET_PARAMS
+      SET_PARAMS,
+      EE_RUN
     };
 
     /*! enum to set the bit to determine the QMC mode */

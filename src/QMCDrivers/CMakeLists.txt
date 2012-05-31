@@ -60,6 +60,15 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
+IF(QMC_RENYI)
+   SET(QMCDRIVERS ${QMCDRIVERS}
+   EE/EEFactory.cpp
+   EE/VMCMultiRenyiOMP.cpp
+   EE/VMCRenyiOMP.cpp
+   EE/QMCRenyiUpdateBase.cpp
+   EE/RenyiUpdatePbyP.cpp
+   )
+ENDIF(QMC_RENYI)
 
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
