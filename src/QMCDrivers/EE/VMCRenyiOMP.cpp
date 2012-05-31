@@ -109,7 +109,7 @@ namespace qmcplusplus
         
       for (int ip=0; ip<NumThreads; ++ip)
         RenyiMovers[ip]->clear_stats();
-      
+      Estimators->stopBlock(estimatorClones);
     }
     hpmStop(QMC_VMC_0_EVENT);
 
