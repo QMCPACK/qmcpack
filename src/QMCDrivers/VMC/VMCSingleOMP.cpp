@@ -31,16 +31,16 @@ namespace qmcplusplus
   VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                              HamiltonianPool& hpool, WaveFunctionPool& ppool):
       QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-      myWarmupSteps(0),UseDrift("yes"), logoffset(2.0), logepsilon(0)
+      myWarmupSteps(0),UseDrift("yes") //, logoffset(2.0), logepsilon(0)
   {
     RootName = "vmc";
     QMCType ="VMCSingleOMP";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string"); m_param.add(UseDrift,"use_drift","string");
-    m_param.add(logepsilon,"logepsilon","double");
-    m_param.add(logoffset,"logoffset","double");
-    m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
+//    m_param.add(logepsilon,"logepsilon","double");
+//    m_param.add(logoffset,"logoffset","double");
+//    m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
     m_param.add(myWarmupSteps,"warmupSteps","int"); m_param.add(myWarmupSteps,"warmupsteps","int"); m_param.add(myWarmupSteps,"warmup_steps","int");
     m_param.add(nTargetSamples,"targetWalkers","int"); m_param.add(nTargetSamples,"targetwalkers","int"); m_param.add(nTargetSamples,"target_walkers","int");
   }
@@ -135,7 +135,7 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ++ip)
       app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
     app_log() << "  Warmup Steps " << myWarmupSteps << endl;
-    if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
+//    if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
     
     if (Movers.empty())
       {
@@ -179,14 +179,15 @@ namespace qmcplusplus
 //           else 
           if (QMCDriverMode[QMC_UPDATE_MODE])
           {
-            if (UseDrift == "rn")
-            {
-              os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
-              Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-              Movers[ip]->setLogEpsilon(logepsilon);
-              // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-            }
-            else if (UseDrift == "yes")
+//             if (UseDrift == "rn")
+//             {
+//               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
+//               Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
+//               Movers[ip]->setLogEpsilon(logepsilon);
+//               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+//             }
+//             else 
+            if (UseDrift == "yes")
             {
               os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
               Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -201,13 +202,14 @@ namespace qmcplusplus
           }
           else
           {
-            if (UseDrift == "rn")
-            {
-              os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
-              Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-              Movers[ip]->setLogEpsilon(logepsilon);
-            }
-            else if (UseDrift == "yes")
+//             if (UseDrift == "rn")
+//             {
+//               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
+//               Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
+//               Movers[ip]->setLogEpsilon(logepsilon);
+//             }
+//             else 
+            if (UseDrift == "yes")
             {
               os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<<endl;
               Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -238,62 +240,62 @@ namespace qmcplusplus
       else
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 
-      if (UseDrift != "rn")
-      {
+//       if (UseDrift != "rn")
+//       {
         for (int prestep=0; prestep<myWarmupSteps; ++prestep)
           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 
         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      }
+//       }
     }
 
-    //JNKIM: THIS IS BAD AND WRONG
-    if (UseDrift == "rn")
-    {
-      RealType avg_w(0);
-      RealType n_w(0);
-#pragma omp parallel 
-      {
-        int ip=omp_get_thread_num();
-        for (int step=0; step<myWarmupSteps; ++step)
-        {
-          avg_w=0;
-          n_w=0;
-          for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-          {
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-            #pragma omp single
-            {
-              MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-              while (wit!=wit_end)
-              {
-                avg_w += (*wit)->Weight;
-                n_w +=1;
-                wit++;
-              }
-            }
-            #pragma omp barrier
-           }
-           #pragma omp single
-           {
-             avg_w *= 1.0/n_w;
-             RealType w_m = avg_w/(1.0-avg_w);
-             w_m = std::log(0.5+0.5*w_m);
-             if (std::abs(w_m)>0.01)
-               logepsilon += w_m;
-           }
-           #pragma omp barrier
-           Movers[ip]->setLogEpsilon(logepsilon);
-          }
-        
-        for (int prestep=0; prestep<myWarmupSteps; ++prestep)
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-
-        if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      }
-    }
+//     //JNKIM: THIS IS BAD AND WRONG
+//     if (UseDrift == "rn")
+//     {
+//       RealType avg_w(0);
+//       RealType n_w(0);
+// #pragma omp parallel 
+//       {
+//         int ip=omp_get_thread_num();
+//         for (int step=0; step<myWarmupSteps; ++step)
+//         {
+//           avg_w=0;
+//           n_w=0;
+//           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
+//           {
+//             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+//             #pragma omp single
+//             {
+//               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
+//               while (wit!=wit_end)
+//               {
+//                 avg_w += (*wit)->Weight;
+//                 n_w +=1;
+//                 wit++;
+//               }
+//             }
+//             #pragma omp barrier
+//            }
+//            #pragma omp single
+//            {
+//              avg_w *= 1.0/n_w;
+//              RealType w_m = avg_w/(1.0-avg_w);
+//              w_m = std::log(0.5+0.5*w_m);
+//              if (std::abs(w_m)>0.01)
+//                logepsilon += w_m;
+//            }
+//            #pragma omp barrier
+//            Movers[ip]->setLogEpsilon(logepsilon);
+//           }
+//         
+//         for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+// 
+//         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//       }
+//     }
 
     for(int ip=0; ip<NumThreads; ++ip)
     {

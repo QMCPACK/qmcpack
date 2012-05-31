@@ -34,13 +34,16 @@ namespace qmcplusplus {
     ~VMCUpdatePbyP();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+//     void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
     
-    void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-    , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng
-    , vector<RealType>& ratio_i_0);
+//     void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+//     , vector<MCWalkerConfiguration*>& wclone
+//     , vector<QMCHamiltonian*>& hclone
+//     , vector<RandomGenerator_t*>& rng
+//     , vector<RealType>& ratio_i_0);
+
+    RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+//     RealType advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs );
 
   private:
     vector<NewTimer*> myTimers;
@@ -76,43 +79,62 @@ namespace qmcplusplus {
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 //     for linear opt CS
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
- 
+//     void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+    RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+//     RealType advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs );
   private:
     vector<NewTimer*> myTimers;
   };
 
     /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move. Samples |Psi| to increase number of walkers near nodes.
+   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation. 
    */
-  class VMCUpdatePbyPSampleRN: public QMCUpdateBase {
+  class VMCUpdateRenyiWithDriftFast: public QMCUpdateBase {
   public:
     /// Constructor.
-    VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, 
+    VMCUpdateRenyiWithDriftFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    ~VMCUpdatePbyPSampleRN();
+    ~VMCUpdateRenyiWithDriftFast();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
-    void setLogEpsilon(RealType eps) 
-    {
-      logEpsilon=eps; 
-//       app_log()<<eps<<endl;
-    }
-    void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
-
-    void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-    , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng
-    , vector<RealType>& ratio_i_0);
 
   private:
     vector<NewTimer*> myTimers;
-    //prefactor multiplying the guiding function
-    RealType logEpsilon;
   };
+  
+  
+    /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move. Samples |Psi| to increase number of walkers near nodes.
+   */
+//   class VMCUpdatePbyPSampleRN: public QMCUpdateBase {
+//   public:
+//     /// Constructor.
+//     VMCUpdatePbyPSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, 
+//         QMCHamiltonian& h, RandomGenerator_t& rg);
+// 
+//     ~VMCUpdatePbyPSampleRN();
+// 
+//     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+// //     void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+//     void setLogEpsilon(RealType eps) 
+//     {
+//       logEpsilon=eps; 
+// //       app_log()<<eps<<endl;
+//     }
+//     void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+// 
+// //     void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+// //     , vector<MCWalkerConfiguration*>& wclone
+// //     , vector<QMCHamiltonian*>& hclone
+// //     , vector<RandomGenerator_t*>& rng
+// //     , vector<RealType>& ratio_i_0);
+// 
+//   private:
+//     vector<NewTimer*> myTimers;
+//     //prefactor multiplying the guiding function
+//     RealType logEpsilon;
+//   };
 }
 
 #endif

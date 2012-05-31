@@ -35,12 +35,12 @@ namespace qmcplusplus
       ~VMCUpdateAll();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
-      void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-    , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng
-    , vector<RealType>& ratio_i_0);
+//       void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+//       void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+//     , vector<MCWalkerConfiguration*>& wclone
+//     , vector<QMCHamiltonian*>& hclone
+//     , vector<RandomGenerator_t*>& rng
+//     , vector<RealType>& ratio_i_0);
 
     private:
       /// Copy Constructor (disabled)
@@ -65,7 +65,9 @@ namespace qmcplusplus
       ~VMCUpdateAllWithDrift();
 
       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+//       void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
+      
+      RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
 
     private:
       /// Copy Constructor (disabled)
@@ -81,28 +83,28 @@ namespace qmcplusplus
   /** @ingroup QMCDrivers  ParticleByParticle
    *@brief Implements the VMC algorithm using particle-by-particle move.
    */
-  class VMCUpdateAllSampleRN: public QMCUpdateBase
-    {
-    public:
-      /// Constructor.
-      VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
-                            QMCHamiltonian& h, RandomGenerator_t& rg);
-
-      ~VMCUpdateAllSampleRN();
-
-      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void setLogEpsilon(RealType eps) { logEpsilon=eps; }
-
-    private:
-      /// Copy Constructor (disabled)
-      VMCUpdateAllSampleRN(const VMCUpdateAllSampleRN& a): QMCUpdateBase(a) { }
-      /// Copy operator (disabled).
-      VMCUpdateAllSampleRN& operator=(const VMCUpdateAllSampleRN&)
-      {
-        return *this;
-      }
-      RealType logEpsilon;
-    };
+//   class VMCUpdateAllSampleRN: public QMCUpdateBase
+//     {
+//     public:
+//       /// Constructor.
+//       VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
+//                             QMCHamiltonian& h, RandomGenerator_t& rg);
+// 
+//       ~VMCUpdateAllSampleRN();
+// 
+//       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+//       void setLogEpsilon(RealType eps) { logEpsilon=eps; }
+// 
+//     private:
+//       /// Copy Constructor (disabled)
+//       VMCUpdateAllSampleRN(const VMCUpdateAllSampleRN& a): QMCUpdateBase(a) { }
+//       /// Copy operator (disabled).
+//       VMCUpdateAllSampleRN& operator=(const VMCUpdateAllSampleRN&)
+//       {
+//         return *this;
+//       }
+//       RealType logEpsilon;
+//     };
 
 }
 

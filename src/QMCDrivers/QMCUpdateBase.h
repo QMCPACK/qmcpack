@@ -101,6 +101,12 @@ namespace qmcplusplus
         m_oneover2tau = 0.5/(m_tauovermass);
         m_sqrttau = std::sqrt(m_tauovermass);
       }
+      
+      inline void getLogs(std::vector<RealType>& logs){
+        Psi.getLogs(logs);
+      }
+      
+
 
       ///** start a run */
       void startRun(int blocks, bool record);
@@ -130,7 +136,7 @@ namespace qmcplusplus
 
       /** initalize Walker for walker update
        */
-      void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+      virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
       /** update Walker buffers for PbyP update
        */
@@ -155,15 +161,19 @@ namespace qmcplusplus
        * moves.
        */
       virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
-      
+      virtual RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios) {return 0.0;};
+//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs ) {return 0.0;};
       virtual void setLogEpsilon(RealType eps) {};
-      virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i){};
+//       virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i){};
       
-      virtual void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-    , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng
-    , vector<RealType>& ratio_i_0){};
+      ///normalization offset for cs type runs.
+      RealType csoffset;
+      
+//       virtual void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
+//     , vector<MCWalkerConfiguration*>& wclone
+//     , vector<QMCHamiltonian*>& hclone
+//     , vector<RandomGenerator_t*>& rng
+//     , vector<RealType>& ratio_i_0){};
 
     protected:
       ///update particle-by-particle
