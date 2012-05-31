@@ -29,18 +29,32 @@ namespace qmcplusplus {
 
     vector<Return_t> regions;
     string shape;
-    ParticleSet::ParticlePos_t* L;
+    ParticleSet::ParticlePos_t *L, *C;
     bool PBCType;
-    int nreg,grps,pwrs;
+    int nreg,grps,pwrs,ngrid;
+    vector<int> grp_v;
     vector<Return_t>  Values, voffsets;
+    DistanceTableData* d_table;
     
     
-    NumberFluctuations(ParticleSet& P) 
+    NumberFluctuations(ParticleSet& P): ngrid(2), pwrs(2), shape("sphere")
     {
+      
+//       C = new ParticleSet::ParticlePos_t(P.R.size());
+//       C->setUnit(PosUnit::LatticeUnit);
       L = new ParticleSet::ParticlePos_t(P.R.size());
-      L->setUnit(PosUnit::LatticeUnit);
+      L->setUnit(PosUnit::CartesianUnit);
       grps=P.groups();
+      grp_v.resize(P.R.size(),0);
+      int i(P.R.size()),g(grps-1);
+      while((i>0)&&(g>0))
+      {
+        if(i<P.first(g)) g--;
+        grp_v[i]=g;
+        i--;
+      }
       PBCType=(P.Lattice.SuperCellEnum>1);
+      d_table = DistanceTable::add(P);
     }
 
     ~NumberFluctuations() { }
@@ -48,43 +62,141 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P)  
     {
       grps=P.groups();
+      grp_v.resize(P.R.size(),0);
+      int i(P.R.size()),g(grps-1);
+      while((i>0)&&(g>0))
+      {
+        if(i<P.first(g)) g--;
+        grp_v[i]=g;
+        i--;
+      }
       Values.resize( (grps+1)*nreg*pwrs,0 );
     }
+    
+//     inline Return_t
+//     evaluateSphere(ParticleSet& P)
+//     {
+//      for (int g=0; g<Values.size(); ++g) Values[g]=0;
+// #if OHMMS_DIM==3     
+//      int npts=std::pow(ngrid,3);
+// #endif
+// #if  OHMMS_DIM==2    
+//      int npts=std::pow(ngrid,2);
+// #endif
+//      Return_t grdnrm=1.0/npts;
+//      for(int j(0);j<npts;j++)
+//      {
+//       C->setUnit(PosUnit::LatticeUnit);
+//       L->setUnit(PosUnit::CartesianUnit);
+//       int l(j);
+//       for(int k(DIM-1);k>0;k--)
+//       {
+//         int dvi=(std::pow(ngrid,k));
+//         C[k]=(l/dvi)*grdnrm;
+//         l-=(l/dvi)*std::pow(ngrid,k);
+//       }
+// //       for(int k(0);k<DIM;k++) app_log()<<C[k]<<" ";
+// //       app_log()<<endl;
+//       P.convert2Cart((*C));
+// //       for(int k(0);k<DIM;k++) app_log()<<C[k]<<" ";
+// //       app_log()<<endl;
+//       (*L)=P.R;
+//       for(int k(0);k<(*L).size();k++) (*L)[k]+= -1.0*(*C)[0];
+// //       for(int k(0);k<DIM;k++) app_log()<<L[0][k]<<" ";
+// //       app_log()<<endl;
+//       //       P.applyBC(*L);
+//       P.convert2CartInBox(*L, *C);
+//       Matrix<int> np(grps+1,nreg);
+//       np=0;
+//       for (int g=0; g<grps; ++g)
+//         for (int iat=P.first(g); iat<P.last(g); ++iat)
+//         {
+//           Return_t z=dot((*C)[iat],(*C)[iat]);
+//           int a(nreg-1);
+//           while((z<regions[a])&&(a>=0))
+//           {
+//             np(g,a)+=1;
+//             np(grps,a)+=1;
+//             a--;
+//           }
+//         }
+// 
+//       int indx(0);
+//       for (int g=0; g<grps+1; ++g) for (int h=0; h<nreg; h++)
+//       {
+//         Return_t vx=np(g,h)-voffsets[g*nreg+h];
+//         Return_t vy(1);
+//         for (int i=0; i<pwrs; i++,++indx)
+//           Values[indx]+=(vy*=vx);
+//       }
+//      }
+//       int indx(0);
+//       for (int g=0; g<grps+1; ++g) 
+//         for (int h=0; h<nreg; h++) 
+//           for (int i=0; i<pwrs; i++,++indx) 
+//             Values[indx]*=grdnrm;
+//        return 0;
+//     }
 
-    inline Return_t 
-    evaluateSphere(ParticleSet& P) 
-    { 
-      (*L)=P.R;
-//       P.applyBC(*L);
-      P.applyMinimumImage(*L);
-      Matrix<int> np(grps+1,nreg);
-      np=0;
-      for (int g=0; g<grps; ++g)
-        for (int iat=P.first(g); iat<P.last(g); ++iat)
-        { 
-          Return_t z=dot((*L)[iat],(*L)[iat]);
-          int a(nreg-1);
-          while((z<regions[a])&&(a>=0))
+    inline Return_t
+    evaluateSphere(ParticleSet& P)
+    {
+      for (int g=0; g<Values.size(); ++g) Values[g]=0;
+      Return_t nnrm(1.0/P.R.size());
+      Return_t pnrm(1.0/P.Lattice.Volume);
+
+      vector<Matrix<int> > np(P.R.size(), Matrix<int>(grps+1,nreg));
+      for(int i(0);i<P.R.size();i++) np[i]=0;
+      //Center
+      for(int i(0);i<P.R.size();i++) for (int h=0; h<nreg; h++)
+      {
+        np[i](grp_v[i],h)+=1;
+        np[i](grps,h)+=1;
+      }  
+
+     d_table=P.DistTables[0];
+     for (int g=0; g<grps; ++g)
+       for (int iat=P.first(g); iat<P.last(g); ++iat)
+       {      
+          for(int nn=0; nn<d_table->nadj(iat); ++nn)
           {
-            np(g,a)+=1;
-            np(grps,a)+=1;
-            a--;
+            int jat=d_table->iadj(iat,nn);
+            
+            Return_t z = d_table->r(d_table->loc(iat,nn)); 
+//             app_log()<<iat<<" "<<jat<<" "<<z<<endl;
+            z*=z;
+            int a(nreg-1);
+            while((z<regions[a])&&(a>=0))
+            {
+              np[iat](grp_v[jat],a)+=1;
+              np[iat](grps,a)+=1;
+              np[jat](grp_v[iat],a)+=1;
+              np[jat](grps,a)+=1;
+              a--;
+            }
           }
-        }
-       
-       for (int g=0; g<Values.size(); ++g) Values[g]=0;
-       
-       int indx(0);
-       for (int g=0; g<grps+1; ++g) for (int h=0; h<nreg; h++)
-       {
-         Return_t vx=np(g,h)-voffsets[g*nreg+h];
-         Return_t vy(1);
-         for (int i=0; i<pwrs; i++,++indx)
-           Values[indx]+=(vy*=vx);
        }
        
-       return 0;
+      
+      for(int i(0);i<P.R.size();i++) 
+      {
+        int indx(0);
+        for (int g=0; g<grps+1; ++g) for (int h=0; h<nreg; h++)
+        {
+          Return_t vx=np[i](g,h)-voffsets[g*nreg+h];
+          Return_t vy(1.0);
+          for (int k=0; k<pwrs; k++,++indx)
+            Values[indx]+=(vy*=vx);
+        }
+      }
+//       int indx(0);
+//       for (int g=0; g<grps+1; ++g) for (int h=0; h<nreg; h++) for (int k=0; k<pwrs; k++,++indx) Values[indx]*=pnrm;
+      for (int g=0; g<Values.size(); ++g) Values[g]*=nnrm;
+      
+      return 0;
     }
+
+
 
     inline Return_t 
     evaluateBox(ParticleSet& P) 
@@ -207,9 +319,9 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur) {
       OhmmsAttributeSet aAttrib;
       aAttrib.add(pwrs, "max");
+      aAttrib.add(ngrid,"grid"),
       aAttrib.put(cur);
-              
-      shape="sphere";
+        
       xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
       while (xmlCoefs != NULL)
         {
@@ -229,6 +341,7 @@ namespace qmcplusplus {
       nreg=regions.size();
       app_log()<<" Shape: "<<shape<<endl;
       app_log()<<" Max Power: "<<pwrs<<endl;
+      app_log()<<" Grid: "<<ngrid<<endl;
       app_log()<<" regions:";
       for(int i(0);i<nreg;i++) app_log()<<" "<<regions[i];
       app_log()<<endl;
@@ -255,6 +368,7 @@ namespace qmcplusplus {
       nf->nreg=nreg; nf->pwrs=pwrs; nf->grps=grps;
       nf->shape=shape; nf->myIndex=myIndex;
       nf->regions=regions; nf->voffsets=voffsets;
+      nf->ngrid=ngrid;
       nf->Values.resize( (grps+1)*nreg*pwrs,0 );
       
       return nf;
