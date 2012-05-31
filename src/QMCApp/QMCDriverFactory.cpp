@@ -23,7 +23,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h" 
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
-#include "QMCDrivers/EE/EEFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/DMC/RNFactory.h"
 #include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
@@ -36,6 +35,7 @@
 #include "QMCDrivers/ZeroVarianceOptimize.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCDrivers/QMCSHLinearOptimize.h"
+#include "QMCDrivers/EE/EEFactory.h"
 #endif
 //#include "QMCDrivers/RQMCMultiple.h"
 ////THESE ARE BROKEN
@@ -175,11 +175,13 @@ namespace qmcplusplus {
         WhatToDo[SPACEWARP_MODE]=0;
         WhatToDo[ALTERNATE_MODE]=1;
       }
+#if QMC_BUILD_LEVEL>2
       else if(qmc_mode.find("ee")<nchars) //number >8
       {
         newRunType=EE_RUN;
         if(qmc_mode.find("cs")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       }
+#endif
       else if (qmc_mode.find("rmcPbyP")<nchars)
       {
         newRunType=RMC_PBYP_RUN;
@@ -338,6 +340,7 @@ namespace qmcplusplus {
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
+#if QMC_BUILD_LEVEL>2
     else if(curRunType == EE_RUN) 
     {
       EEFactory fac(curQmcModeBits.to_ulong(),cur);
@@ -346,6 +349,7 @@ namespace qmcplusplus {
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
+#endif
     else if(curRunType == DMC_RUN) 
     {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],
