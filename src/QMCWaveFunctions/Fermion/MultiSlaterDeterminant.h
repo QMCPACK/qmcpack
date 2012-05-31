@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/FermionBase.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
@@ -49,7 +49,7 @@ namespace qmcplusplus
    (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
    \f]
    */
-  class MultiSlaterDeterminant: public OrbitalBase
+  class MultiSlaterDeterminant: public OrbitalBase, public FermionBase
     {
 
     public:

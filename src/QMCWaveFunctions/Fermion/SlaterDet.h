@@ -15,7 +15,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/FermionBase.h"
 #ifdef QMC_CUDA
   #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
@@ -33,7 +33,7 @@ namespace qmcplusplus
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them 
 
-  class SlaterDet: public OrbitalBase
+  class SlaterDet: public OrbitalBase, public FermionBase
   {
     public:
     typedef DiracDeterminantBase Determinant_t;

@@ -349,9 +349,6 @@ namespace qmcplusplus
       ///a list of OrbitalBases constituting many-body wave functions
       vector<OrbitalBase*> Z;
 
-      ///a list of single-particle-orbital set
-      //vector<OhmmsElementBase*> SPOSet;
-
       ///differential gradients
       ParticleSet::ParticleGradient_t delta_G;
 
