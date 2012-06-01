@@ -262,6 +262,7 @@ namespace qmcplusplus
                 {
                   z=0;
                   for (int x=0;x<DIM;x++) z+=std::pow( W[i]->R[iat][x]-L[0][x],2);
+                  z=std::pow(z,0.5);
                 }
                 else if(computeEE=="halfspace")
                 {
@@ -497,7 +498,6 @@ namespace qmcplusplus
               if (estimateN[EEN*j+i] !=0)
               {
                 estimateS[EEN*j+i]=estimateA[EEN*j+i]/estimateV[EEN*j+i];
-                estimateV[EEN*j+i]*=1.0/estimateN[EEN*j+i];
               }
             }
           }
