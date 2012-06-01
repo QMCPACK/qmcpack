@@ -68,7 +68,7 @@ namespace qmcplusplus
       typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
       typedef OrbitalSetTraits<ValueType>::HessType      HessType;
       typedef Array<HessType,3>                          HessArray_t;
-      typedef TinyVector<HessType, 3>                    GGGType;
+      typedef TinyVector<HessType, OHMMS_DIM>                    GGGType;
       typedef Vector<GGGType>                            GGGVector_t;
       typedef Matrix<GGGType>                            GGGMatrix_t;
       typedef ParticleSet::Walker_t                      Walker_t;
@@ -200,7 +200,7 @@ namespace qmcplusplus
       ParticleSet::ParticleGradient_t gmPG;
       Matrix<RealType> dpsia_up, dLa_up;
       Matrix<RealType> dpsia_dn, dLa_dn;
-      Array<GradType,3> dGa_up, dGa_dn;
+      Array<GradType,OHMMS_DIM> dGa_up, dGa_dn;
 
 // debug, erase later
 //      MultiSlaterDeterminant *msd;

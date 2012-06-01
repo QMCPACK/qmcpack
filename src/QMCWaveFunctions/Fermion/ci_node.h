@@ -41,16 +41,16 @@ namespace qmcplusplus
   {
     typedef typename scalar_traits<T>::real_type real_type;
     typedef typename scalar_traits<T>::value_type value_type;
-    typedef TinyVector<value_type,3>  GradType;
-    typedef TinyVector<real_type,3>   PosType;
-    typedef Tensor<value_type,3>      HessType;
+    typedef TinyVector<value_type,OHMMS_DIM>  GradType;
+    typedef TinyVector<real_type,OHMMS_DIM>   PosType;
+    typedef Tensor<value_type,OHMMS_DIM>      HessType;
     typedef Vector<value_type>        ValueVector;
     typedef Matrix<value_type>        ValueMatrix;
     typedef Vector<GradType>          GradVector;
     typedef Matrix<GradType>          GradMatrix;
     typedef Vector<HessType>          HessVector;
     typedef Matrix<HessType>          HessMatrix;
-    typedef TinyVector<HessType, 3>   GGGType;
+    typedef TinyVector<HessType, OHMMS_DIM>   GGGType;
     typedef Vector<GGGType>           GGGVector;
     typedef Matrix<GGGType>           GGGMatrix;
 
