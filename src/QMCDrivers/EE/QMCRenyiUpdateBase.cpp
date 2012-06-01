@@ -134,7 +134,7 @@ namespace qmcplusplus
     regions[NumPtcl+2]=1;
     
     mxN=maxN+1; mnN=minN;
-    n_region.resize(maxN-minN+1,0);
+    n_region.resize(maxN+1-minN,0);
     
 //     centering
     while (it!=it_end)
@@ -167,6 +167,7 @@ namespace qmcplusplus
       {
         z=0;
         for (int x=0;x<DIM;x++) z+=std::pow(bwalker.R[iat][x]-C[0][x],2);
+        z=std::sqrt(z);
       }
       else if(computeEE=="halfspace")
       {
@@ -180,7 +181,7 @@ namespace qmcplusplus
       
       regions[NumPtcl+regions[iat]]+=1;
     }
-    if((regions[NumPtcl+1]<mxN)and(regions[NumPtcl+1]>mnN))
+    if((regions[NumPtcl+1]<mxN)and(regions[NumPtcl+1]>=mnN))
       n_region[regions[NumPtcl+1]-mnN]+=1;
   }
   
@@ -203,6 +204,7 @@ namespace qmcplusplus
       {
         z=0;
         for (int x=0;x<DIM;x++) z+=std::pow(bwalker.R[iat][x]-C[0][x],2);
+        z=std::sqrt(z);
       }
       else if(computeEE=="halfspace")
       {
@@ -246,6 +248,7 @@ namespace qmcplusplus
     {
       z=0;
       for (int x=0;x<DIM;x++) z+=std::pow(tmpP[x]-C[0][x],2);
+      z=std::sqrt(z);
     }
     else if(computeEE=="halfspace")
     {

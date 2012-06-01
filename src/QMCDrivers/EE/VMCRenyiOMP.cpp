@@ -85,7 +85,7 @@ namespace qmcplusplus
       }
 #pragma omp barrier
       RealType avgsgn(0);
-      std::vector<RealType> n_stats(Nmax-Nmin+1,0);
+      std::vector<RealType> n_stats(Nmax+1-Nmin,0);
       for (int ip=0; ip<NumThreads; ++ip)
         avgsgn+=RenyiMovers[ip]->get_stats(n_stats);
       myComm->allreduce(avgsgn);
@@ -97,7 +97,7 @@ namespace qmcplusplus
         file_out.open(ee_dat.str().c_str(),fstream::out | fstream::app);
         file_out<<block<<" ";
         file_out<<avgsgn*nrm<<" ";
-        for(int i(0);i<Nmax+1-Nmin;i++)
+        for(int i(0);i<(Nmax+1-Nmin);i++)
           file_out<<n_stats[i]*nrm<<" ";
         file_out<<endl;
         file_out.close();
@@ -164,9 +164,6 @@ namespace qmcplusplus
         std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
         app_log() << endl;
 
-#if !defined(BGP_BUG)
-#pragma omp parallel for
-#endif
         for(int ip=0; ip<NumThreads; ++ip)
         {
           ostringstream os;
@@ -215,7 +212,7 @@ namespace qmcplusplus
           if(ip==0) app_log() << os.str() << endl;
         }
       }
-    
+      
     ParticleSet::ParticlePos_t L(1);
     L.setUnit(PosUnit::LatticeUnit);
     for (int i=0;i<DIM;i++) L[0][i]=1;
@@ -245,14 +242,14 @@ namespace qmcplusplus
       else
         RenyiMovers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
+#pragma omp barrier
+//     for(int ip=0; ip<NumThreads; ++ip)
+//     {
+//       wClones[ip]->clearEnsemble();
+//       wClones[ip]->setNumSamples(samples_th[ip]);
+//     }
 
-    for(int ip=0; ip<NumThreads; ++ip)
-    {
-      wClones[ip]->clearEnsemble();
-      wClones[ip]->setNumSamples(samples_th[ip]);
-    }
-
-    myWarmupSteps=0;
+//     myWarmupSteps=0;
     
   }
 
