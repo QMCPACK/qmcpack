@@ -23,7 +23,7 @@ SET(SANDBOX)
 
 IF(HAVE_EINSPLINE)
 
-  SET(ESTEST einspline_bench einspline_smp)
+  SET(ESTEST einspline_bench einspline_smp einspline_validation)
 
   FOREACH(p ${ESTEST})
     ADD_EXECUTABLE( ${p}  ${p}.cpp)

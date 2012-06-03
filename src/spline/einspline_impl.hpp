@@ -79,25 +79,25 @@ namespace qmcplusplus
     /** evaluate values and gradients using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad)
+      static inline void  evaluate_vg(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      static inline void  evaluate_vgl(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_d_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
-      { eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data()); }
+      static inline void  evaluate_vgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      { eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
 
     /** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT, typename HT, typename GG>
-      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
+      static inline void  evaluate_vghgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
       { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
 
 
@@ -131,20 +131,26 @@ namespace qmcplusplus
     /** evaluate values and gradients using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad)
+      static inline void  evaluate_vg(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      static inline void  evaluate_vgl(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_z_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      static inline void  evaluate_vgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
+
+    /** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
+    */
+    template<typename PT, typename VT, typename GT, typename HT, typename GG>
+      static inline void  evaluate_vghgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
+      { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
 
     /** create spline and initialized it */
     template<typename VT, typename IT>
@@ -175,19 +181,19 @@ namespace qmcplusplus
     /** evaluate values and gradients using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad)
-      { eval_multi_UBspline_3d_s_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
+      static inline void  evaluate_vg(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad)
+      { eval_multi_UBspline_3d_s_vg(spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      static inline void  evaluate_vgl(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_s_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      static inline void  evaluate_vgh(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_s_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data()); }
 
     /** create spline for complex<double> */
@@ -219,19 +225,19 @@ namespace qmcplusplus
     /** evaluate values and gradients using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad)
+      static inline void  evaluate_vg(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_c_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      static inline void  evaluate_vgl(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_c_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      static inline void  evaluate_vgh(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_c_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
   };
 }

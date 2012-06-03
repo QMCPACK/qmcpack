@@ -49,15 +49,31 @@ namespace qmcplusplus
         set(nx,ny,nz);
       }
 
-      void set(int nx, int ny, int nz, int num_splines)
+      /** return the spline engine */
+      ENGT* spliner()
+      {
+        return einspliner.spliner;
+      }
+
+      template<typename VT>
+        void assign(int i, VT& data)
+        {
+          einspliner.set(i,data);
+        }
+
+      void set(int nx, int ny, int nz, int num_splines, bool initialize=true)
       {
         TinyVector<int,3> ng(nx,ny,nz);
         einspliner.create(start,end,ng,PERIODIC,num_splines);
-        Array<value_type,3> data(nx,ny,nz);
-        for(int i=0; i<num_splines; ++i)
+
+        if(initialize)
         {
-          for(int j=0; j<data.size();++j) data(j) = Random();
-          einspliner.set(i,data);
+          Array<value_type,3> data(nx,ny,nz);
+          for(int i=0; i<num_splines; ++i)
+          {
+            for(int j=0; j<data.size();++j) data(j) = Random();
+            einspliner.set(i,data);
+          }
         }
 	psi.resize(num_splines);
         grad.resize(num_splines);
@@ -88,12 +104,12 @@ namespace qmcplusplus
 
       inline void test_vgl(const vector<pos_type>& coord)// const
       {
-        for(int i=0; i<coord.size(); ++i) einspliner.evaluate(coord[i],psi,grad,lap);
+        for(int i=0; i<coord.size(); ++i) einspliner.evaluate_vgl(coord[i],psi,grad,lap);
       }
 
       inline void test_vgh(const vector<pos_type>& coord) //const
       {
-        for(int i=0; i<coord.size(); ++i) einspliner.evaluate(coord[i],psi,grad,hess);
+        for(int i=0; i<coord.size(); ++i) einspliner.evaluate_vgh(coord[i],psi,grad,hess);
       }
 
     };

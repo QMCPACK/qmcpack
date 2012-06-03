@@ -66,15 +66,15 @@ namespace qmcplusplus
           }
 
         template<typename PT, typename VT, typename GT>
-          inline void evaluate(const PT& r, VT& psi, GT& grad, VT& lap)
+          inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, VT& lap)
           { 
-            einspline::evaluate(spliner,r,psi,grad,lap); 
+            einspline::evaluate_vgl(spliner,r,psi,grad,lap); 
           }
 
         template<typename PT, typename VT, typename GT, typename HT>
-          inline void evaluate(const PT& r, VT& psi, GT& grad, HT& hess)
+          inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
           { 
-            einspline::evaluate(spliner,r,psi,grad,hess); 
+            einspline::evaluate_vgh(spliner,r,psi,grad,hess); 
           }
       private:
         einspline_engine(const einspline_engine<ENGT>& rhs) {}
