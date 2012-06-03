@@ -86,7 +86,7 @@ namespace qmcplusplus
   //          all subsequent moves must cross or not cross as the first one
 //               psi(r_1)psi(r_2)...psi(r_0^a r_1^b)psi(r_1^a r_2^b)...)
 
-              int indx=th+RenyiOrder+regions[iat];
+              int indx=th+RenyiOrder+firstmove;
               indx=(indx==RenyiOrder*2?RenyiOrder:indx);
               dr = (*W_vec[th]).R[iat] - (*W_vec[indx]).R[iat];
               bool x=W_vec[indx]->makeMoveAndCheck(iat,dr);
