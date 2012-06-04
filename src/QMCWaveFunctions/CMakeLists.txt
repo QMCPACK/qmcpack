@@ -5,6 +5,7 @@ SET(WFBASE_SRCS
   ProductOrbital.cpp
   OrbitalConstraintsBase.cpp
   SPOSetBase.cpp
+  FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
   )
