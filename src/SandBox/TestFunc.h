@@ -1,119 +1,147 @@
-#include <cmath>
+/** @file TestFunc.h
+ *
+ * Test functor in a PW basis set
+ */
+#ifndef QCMPLUSPLUS_PW_COMPONENT_BENCH_H
+#define QCMPLUSPLUS_PW_COMPONENT_BENCH_H
+#include <type_traits/scalar_traits.h>
+#include <config/stdlib/math.h>
 
 namespace qmcplusplus 
 {
+  /** a PW function at K
+   */
   template<typename T>
-    inline T diff(const Tensor<T,3>& a, const Tensor<T,3>& b)
-    {
-      T res=0.0;
-      for(int i=0; i<9; ++i) res+=(a(i)-b(i))*(a(i)-b(i));
-      return res/9.0;
-    }
+    struct PWComponent {
 
-  template<typename T>
-    struct TestFunc {
+      TinyVector<T,3> K;
+      T kk;
 
-      T k0,k1,k2;
-      T d2factor;
-      Tensor<T,3> kk;
-
-      TestFunc(int nk0=1, int nk1=1, int nk2=1) {
-        const T twopi = 8.0*std::atan(1.0);
-        k0=twopi*static_cast<double>(nk0);
-        k1=twopi*static_cast<double>(nk1);
-        k2=twopi*static_cast<double>(nk2);
-        d2factor = -(k0*k0+k1*k1+k2*k2);
-        kk(0,0)=-k0*k0; kk(0,1)=-k0*k1; kk(0,2)=-k0*k2;
-        kk(1,0)=-k1*k0; kk(1,1)=-k1*k1; kk(1,2)=-k1*k2;
-        kk(2,0)=-k2*k0; kk(2,1)=-k2*k1; kk(2,2)=-k2*k2;
+      /** default constructor 
+       *
+       * Multiply 2pi
+       */
+      PWComponent(int nk0=1, int nk1=1, int nk2=1) 
+      {
+        K[0]=TWOPI*static_cast<T>(nk0);
+        K[1]=TWOPI*static_cast<T>(nk1);
+        K[2]=TWOPI*static_cast<T>(nk2);
+        kk=-(K[0]*K[0]+K[1]*K[1]+K[2]*K[2]);
       }
 
-      //inline double operator()(const TinyVector<double,3>& pos) {
-      //  return sin(k0*pos[0])*sin(k1*pos[1])*sin(k2*pos[2]);
-      //}
-      //inline double operator()(double x, double y, double z) {
-      //  return sin(k0*x)*sin(k1*y)*sin(k2*z);
-      //}
-      //
-      template<class PV>
-        inline T f(const PV& pos) {
-          return std::sin(k0*pos[0])*std::sin(k1*pos[1])*std::sin(k2*pos[2]);
-        }
-
-      template<class PV>
-        inline TinyVector<T,3> df(const PV& pos) {
-          return TinyVector<T,3>(k0*std::cos(k0*pos[0])*std::sin(k1*pos[1])*std::sin(k2*pos[2]),
-              k1*std::sin(k0*pos[0])*std::cos(k1*pos[1])*std::sin(k2*pos[2]),
-              k2*std::sin(k0*pos[0])*std::sin(k1*pos[1])*std::cos(k2*pos[2]));
-        }
-
-      template<class PV>
-        inline T d2f(const PV& pos) {
-          return d2factor*f(pos);
-        }
-
-      template<class PV>
-        inline void d2f(const PV& pos, Tensor<T,3>& hess) 
+      template<typename PV, typename VT>
+        inline void v(const PV& pos, VT& val) 
         {
-          hess=f(pos)*kk;
+          T kdotp=dot(K,pos);
+          complex<T> res(std::cos(kdotp),std::sin(kdotp));
+          convert(res,val);
         }
 
-      //inline T d2f(double x, double y, double z) {
-      //  return d2factor*f(x,y,z);
-      //}
+      template<class PV, typename VT, typename GT, typename LT>
+        inline void vgl(const PV& pos, VT& v, GT& g, LT& l)
+        {
+          T kdotp=dot(K,pos);
+          T sinx=std::sin(kdotp);
+          T cosx=std::cos(kdotp);
+          complex<T> eikr(cosx,sinx);
+          complex<T> ieikr(-sinx,cosx);
+          TinyVector<complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
 
+          convert(eikr,v);
+          convert(g1,g);
+          convert(kk*eikr,l);
+        }
+
+      template<class PV, typename VT, typename GT, typename HT>
+        inline void vgh(const PV& pos, VT& v, GT& g, HT& h)
+        {
+          T kdotp=dot(K,pos);
+          T sinx=std::sin(kdotp);
+          T cosx=std::cos(kdotp);
+          complex<T> eikr(cosx,sinx);
+          complex<T> ieikr(-sinx,cosx);
+          TinyVector<complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
+          Tensor<complex<T>,3> h1(-K[0]*K[0]*eikr,-K[0]*K[1]*eikr,-K[0]*K[2]*eikr
+              ,-K[1]*K[0]*eikr,-K[1]*K[1]*eikr,-K[1]*K[2]*eikr
+              ,-K[2]*K[0]*eikr,-K[2]*K[1]*eikr,-K[2]*K[2]*eikr
+              );
+          convert(eikr,v);
+          convert(g1,g);
+          convert(h1,h);
+        }
     };
+
   template<typename T>
-    struct ComboFunc {
+    struct PW {
 
-      std::vector<T> C;
-      std::vector<TestFunc<T>*> F;
+      typedef typename scalar_traits<T>::real_type real_type;
+      typedef typename scalar_traits<T>::value_type value_type;
+      typedef PWComponent<real_type> basis_type;
 
-      ComboFunc() {}
-      ~ComboFunc() 
+      std::vector<value_type> C;
+      std::vector<basis_type*> F;
+
+      PW() {}
+      ~PW() 
       {
         for(int i=0; i<F.size(); i++) delete F[i];
       }
 
-      void push_back(T c, TestFunc<T>* fn) { 
+      void push_back(value_type c, basis_type* fn) 
+      { 
         C.push_back(c); 
         F.push_back(fn);
       }
 
       template<typename PV>
-        inline T f(const PV& pos)
+        inline void v(const PV& pos,value_type& res)
         {
-          T res=0;
-          for(int i=0; i<C.size(); i++) res += C[i]*F[i]->f(pos);
-          return res;
+          value_type t;
+          res=value_type();
+          for(int i=0; i<C.size(); i++) 
+          {
+            F[i]->v(pos,t);
+            res+=C[i]*t;
+          }
         }
 
       template<typename PV>
-        inline TinyVector<T,3> df(const PV& pos) {
-          TinyVector<T,3> res(0.0,0.0,0.0);
-          for(int i=0; i<C.size(); i++) res += C[i]*F[i]->df(pos);
-          return res;
-        }
-
-      template<class PV>
-        inline T d2f(const PV& pos) {
-          T res=0;
-          for(int i=0; i<C.size(); i++) res += C[i]*F[i]->d2f(pos);
-          return res;
-        }
-
-      template<class PV>
-        inline void d2f(const PV& pos, Tensor<T,3>& hess) 
+        inline void vgl(const PV& pos, value_type& res, TinyVector<value_type,3>& grad, value_type& lap)
         {
-          hess=0.0;
-          Tensor<T,3> h;
+          res=0.0;
+          grad=0.0;
+          lap=0.0;
+          value_type v,l;
+          TinyVector<value_type,3> g;
           for(int i=0; i<C.size(); i++) 
           {
-            F[i]->d2f(pos,h);
+            F[i]->vgl(pos,v,g,l);
+            res+=C[i]*v;
+            grad+=C[i]*g;
+            lap+=C[i]*l;
+          }
+        }
+
+      template<typename PV>
+        inline void vgh(const PV& pos,value_type& res,TinyVector<value_type,3>& grad, Tensor<value_type,3>& hess)
+        {
+          res=0.0;
+          grad=0.0;
+          hess=0.0;
+          value_type v;
+          TinyVector<value_type,3> g;
+          Tensor<value_type,3> h;
+          for(int i=0; i<C.size(); i++) 
+          {
+            F[i]->vgh(pos,v,g,h);
+            res+=C[i]*v;
+            grad+=C[i]*g;
             hess+=C[i]*h;
           }
         }
 
     };
+
 }
+#endif
 

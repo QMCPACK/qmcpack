@@ -1,211 +1,269 @@
+/** @file einspline_validation.cpp
+ *
+ * Test code to check the correctness of the einspline
+ */
 #include <Configuration.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Numerics/OneDimGridBase.h>
-#include <SandBox/einspline_benchmark.h>
 #include <SandBox/TestFunc.h>
+#include <SandBox/einspline_benchmark.h>
 #include <Message/Communicate.h>
+#include <Estimators/accumulators.h>
 #include <mpi/collectives.h>
 #include <getopt.h>
-using namespace qmcplusplus;
+
+namespace qmcplusplus
+{
+  /** parameters for the test */
+  struct SplineTestBase
+  {
+    /** grid size */
+    int nx,ny,nz;
+    /** number of splines */
+    int num_splines;
+    /** number of samples for testing */
+    int nsamples;
+
+    /** default constructor */
+    SplineTestBase():nx(10),ny(10),nz(10),num_splines(4),nsamples(8)
+    { }
+
+    /** constructor using command line */
+    SplineTestBase(int argc, char** argv)
+      :nx(10),ny(10),nz(10),num_splines(4),nsamples(8)
+    {
+      initialize(argc,argv);
+    }
+
+    /** initialize the parameters */
+    inline int initialize(int argc, char** argv)
+    {
+      int opt;
+      while((opt = getopt(argc, argv, "hg:x:y:z:s:p:")) != -1) 
+      {
+        switch(opt) {
+          case 'h':
+            printf("[-g grid| -x grid_x -y grid_y -z grid_z | -s splines | -p particles\n");
+            return 1;
+          case 'g':
+            nx=ny=nz=atoi(optarg);
+            break;
+          case 'x':
+            nx=atoi(optarg);
+            break;
+          case 'y':
+            ny=atoi(optarg);
+            break;
+          case 'z':
+            nz=atoi(optarg);
+            break;
+          case 's':
+            num_splines=atoi(optarg);
+            break;
+          case 'p':
+            nsamples=atoi(optarg);
+            break;
+        }
+      }
+
+      app_log().setf(std::ios::scientific, std::ios::floatfield);
+      app_log().precision(6);
+      app_log() << "#einspline validation grid = " << nx << " " << ny << " " << nz << " num_splines = " << num_splines << " num_samples = " << nsamples <<endl;
+      app_log() << endl;
+      app_log().flush();
+      return 0;
+    }
+  };
+
+  /** initialize PW<T> function in TestFunc.h*/
+  template<typename T>
+    void initialize_pw(PW<T>& infunc)
+    {
+      typedef typename PW<T>::basis_type basis_type;
+      infunc.push_back( 0.50,new basis_type(1,2,1));
+      infunc.push_back( 0.45,new basis_type(0,1,0));
+      infunc.push_back(-0.25,new basis_type(1,1,1));
+      infunc.push_back( 0.10,new basis_type(2,4,2));
+      //infunc.push_back( 0.01,new basis_type(3,3,6));
+    }
+
+  /**  test class for ENGT 
+   * @tparam ENGT type of einspline engine
+   */
+  template<typename ENGT>
+    struct SplineTest:public SplineTestBase
+  {
+    typedef typename einspline3d_benchmark<ENGT>::real_type real_type;
+    typedef typename einspline3d_benchmark<ENGT>::value_type value_type;
+
+    /** analytic function */
+    PW<value_type> infunc;
+
+    /** storage for the data to be splined*/
+    Array<value_type,3> inData;
+
+    /** constructor 
+     * @param p parameter set 
+     */
+    SplineTest(const SplineTestBase& p):SplineTestBase(p)
+    {
+      inData.resize(nx,ny,nz);
+      initialize_pw(infunc);
+      find_coeff();
+    }
+
+    /** find bspline coefficient using infunc
+     */
+    inline void find_coeff()
+    {
+      real_type ri=0.0;
+      real_type rf=1.0;
+      typedef qmcplusplus::LinearGrid<real_type> GridType;
+      GridType gridX, gridY, gridZ;
+      gridX.set(ri,rf,nx+1);
+      gridY.set(ri,rf,ny+1);
+      gridZ.set(ri,rf,nz+1);
+
+      //Write to an array
+      for(int ix=0; ix<nx; ix++) {
+        real_type x(gridX(ix));
+        for(int iy=0; iy<ny; iy++) {
+          real_type y(gridY(iy));
+          for(int iz=0; iz<nz; iz++) {
+            TinyVector<real_type,3> pos(x,y,gridZ(iz));
+            infunc.v(pos,inData(ix,iy,iz));
+          }
+        }
+      }
+    }
+
+    inline real_type pow2(real_type x)
+    {
+      return x*x;
+    }
+
+    inline real_type pow2(complex<real_type> x)
+    {
+      return x.real()*x.real()+x.imag()*x.imag();
+    }
+
+    /** return \f$ \sqrt{\sum_{i,j} |a_{ij}-b_{ij}|^2}\f$
+     */
+    inline real_type diff(const Tensor<value_type,3>& a, const Tensor<value_type,3>& b)
+    {
+      real_type res=0.0;
+      for(int i=0; i<9; ++i) res+=pow2(a(i)-b(i));
+      return std::sqrt(res);
+    }
+
+    /** return \f$ \sqrt{\sum_{i} |a_{i}-b_{i}|^2}\f$
+     */
+    inline real_type diff(const TinyVector<value_type,3>& a, const TinyVector<value_type,3>& b)
+    {
+      return std::sqrt(pow2(a[0]-b[0])+pow2(a[1]-b[1])+pow2(a[2]-b[2]));
+    }
+
+    /** return \f$ \sqrt{(a-b)^2}\f$
+     */
+    inline real_type diff(value_type& a, value_type b)
+    {
+      return std::sqrt(pow2(a-b));
+    }
 
 
-int main(int argc, char** argv) {
+    /** test the functions of einspline */
+    void test(vector<TinyVector<real_type,3> >& coord)
+    {
 
+      typedef TinyVector<real_type,3> pos_type;
+      typedef TinyVector<value_type,3> grad_type;
+      typedef Tensor<value_type,3> hess_type;
+
+      Vector<value_type> psi(num_splines);
+      Vector<value_type> lap(num_splines);
+      Vector<TinyVector<value_type,3> > grad(num_splines);
+      Vector<Tensor<value_type,3> > hess(num_splines);
+
+      for(int k=0; k<hess.size(); ++k) hess[k]=hess_type(0.0);
+
+      accumulator_set<real_type> dv,dvgl_v,dvgl_g,dvgl_l,dvgh_v,dvgh_g,dvgh_h;
+
+      einspline3d_benchmark<ENGT> d_bench;
+      d_bench.set(nx,ny,nz,num_splines,false);
+      for(int i=0; i<num_splines; ++i) d_bench.assign(i,inData);
+
+      for(int i=0; i<nsamples; ++i)
+      {
+        value_type v,l;
+        grad_type g;
+        hess_type h;
+
+        //evaluate analytic solution
+        infunc.v(coord[i],v);
+        d_bench.einspliner.evaluate(coord[i],psi);
+        dv(diff(v,psi[0]));
+
+        infunc.vgl(coord[i],v,g,l);
+        d_bench.einspliner.evaluate_vgl(coord[i],psi,grad,lap);
+        dvgl_v(diff(v,psi[0]));
+        dvgl_g(diff(g,grad[0]));
+        dvgl_l(diff(l,lap[0]));
+
+        //for(int k=0; k<hess.size(); ++k)
+        //  hess[k]=hess_type(0.0);
+
+        infunc.vgh(coord[i],v,g,h);
+        d_bench.einspliner.evaluate_vgh(coord[i],psi,grad,hess);
+
+        dvgh_v(diff(v,psi[0]));
+        dvgh_g(diff(g,grad[0]));
+        dvgh_h(diff(h,hess[0]));
+
+        for(int k=1; k<hess.size(); ++k)
+          if(diff(hess[0],hess[k]) > numeric_limits<real_type>::epsilon())
+            app_log() << "Check multi evaluation = " << hess[0] << "\n"  << hess[k] << endl;
+      }
+
+      app_log() << "Average difference = " << dv.mean() << endl;
+      app_log() << "Average difference VGL = " << dvgl_v.mean() << " " << dvgl_g.mean() << " " << dvgl_l.mean()  <<  endl;
+      app_log() << "Average difference VGH = " << dvgh_v.mean() << " " << dvgh_g.mean() << " " << dvgh_h.mean()  <<  endl;
+    }
+  };
+}
+
+int main(int argc, char** argv) 
+{
+
+  using namespace qmcplusplus;
   OHMMS::Controller->initialize(argc,argv);
   Communicate* mycomm=OHMMS::Controller;
   OhmmsInfo Welcome("einspline",mycomm->rank());
   Random.init(0,1,-1);
-  //Random.init(0,1,11);
 
-  int nx=10,ny=10,nz=10;
-  int num_splines=4;
-  int nsamples=8;
-  int niters=10;
-  int opt;
+  SplineTestBase param(argc,argv);
 
-  while((opt = getopt(argc, argv, "hg:x:y:z:i:s:p:")) != -1) {
-    switch(opt) {
-      case 'h':
-        printf("[-g grid| -x grid_x -y grid_y -z grid_z] -s states -p particles -i iterations -t [d|s|z|c] \n");
-        return 1;
-      case 'g':
-        nx=ny=nz=atoi(optarg);
-        break;
-      case 'x':
-        nx=atoi(optarg);
-        break;
-      case 'y':
-        ny=atoi(optarg);
-        break;
-      case 'z':
-        nz=atoi(optarg);
-        break;
-      case 's':
-        num_splines=atoi(optarg);
-        break;
-      case 'p':
-        nsamples=atoi(optarg);
-        break;
-      case 'i':
-        niters=atoi(optarg);
-        break;
-    }
-  }
-
-  app_log().setf(std::ios::scientific, std::ios::floatfield);
-  app_log().precision(6);
-  app_log() << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
-    << " num_splines = " << num_splines << " num_samples = " << nsamples 
-    <<endl;
-  app_log().flush();
-
-  //grid is [0,1)
-  double ri=0.0;
-  double rf=1.0;
   typedef TinyVector<double,3> pos_type;
-  typedef TinyVector<double,3> grad_type;
-  typedef Tensor<double,3> hess_type;
-
-
-  //Create an analytic function for assignment
-  ComboFunc<double> infunc;
-  infunc.push_back(0.5,new TestFunc<double>(1,0,0));
-  infunc.push_back(0.5,new TestFunc<double>(0,1,0));
-  infunc.push_back(0.5,new TestFunc<double>(0,0,1));
-  infunc.push_back(0.1,new TestFunc<double>(1,1,1));
-  infunc.push_back(0.03,new TestFunc<double>(1,1,2));
-  //infunc.push_back(0.01,new TestFunc(5,3,2));
-  //infunc.push_back(0.01,new TestFunc(5,7,1));
-
-  typedef qmcplusplus::LinearGrid<double> GridType;
-  GridType gridX, gridY, gridZ;
-  gridX.set(ri,rf,nx+1);
-  gridY.set(ri,rf,ny+1);
-  gridZ.set(ri,rf,nz+1);
-
-  //Write to an array
-  Array<double,3> inData(nx,ny,nz);
-  for(int ix=0; ix<nx; ix++) {
-    double x(gridX(ix));
-    for(int iy=0; iy<ny; iy++) {
-      double y(gridY(iy));
-      for(int iz=0; iz<nz; iz++) {
-        pos_type pos(x,y,gridZ(iz));
-        inData(ix,iy,iz)=infunc.f(pos);
-      }
-    }
-  }
-
-  vector<pos_type> coord(nsamples);
-  for(int i=0; i<nsamples; ++i)
+  vector<pos_type> coord(param.nsamples);
+  for(int i=0; i<coord.size(); ++i)
     coord[i]=pos_type(Random(),Random(),Random());
 
-  Vector<double> psi(num_splines);
-  Vector<double> lap(num_splines);
-  Vector<TinyVector<double,3> > grad(num_splines);
-  Vector<Tensor<double,3> > hess(num_splines);
+  vector<TinyVector<float,3> > coord_s(coord.size());
+  for(int i=0; i<coord.size(); ++i) convert(coord[i],coord_s[i]);
 
-  for(int k=0; k<hess.size(); ++k) hess[k]=hess_type(0.0);
+  cout << "\n Testing double " << endl;
+  SplineTest<multi_UBspline_3d_d> test_d(param);
+  test_d.test(coord);
 
+  cout << "\n Testing complex<double> " << endl;
+  SplineTest<multi_UBspline_3d_z> test_z(param);
+  test_z.test(coord);
 
-  app_log() << endl;
-  {
-    einspline3d_benchmark<multi_UBspline_3d_d> d_bench;
-    d_bench.set(nx,ny,nz,num_splines,false);
-    for(int i=0; i<num_splines; ++i) d_bench.assign(i,inData);
-    double dv=0.0;
-    double dvgl_v=0.0, dvgl_g=0.0, dvgl_l=0.0;
-    double dvgh_v=0.0, dvgh_g=0.0, dvgh_h=0.0;
-    for(int i=0; i<nsamples; ++i)
-    {
-      //evaluate analytic solution
-      double v=infunc.f(coord[i]);
-      Tensor<double,3> h;
-      grad_type g=infunc.df(coord[i]);
-      double l=infunc.d2f(coord[i]);
-      infunc.d2f(coord[i],h);
+  cout << "\n Testing float " << endl;
+  SplineTest<multi_UBspline_3d_s> test_s(param);
+  test_s.test(coord_s);
 
-      d_bench.einspliner.evaluate(coord[i],psi);
-      dv+=(v-psi[0])*(v-psi[0]);
-
-
-      d_bench.einspliner.evaluate_vgl(coord[i],psi,grad,lap);
-      dvgl_v+=(v-psi[0])*(v-psi[0]);
-      dvgl_g += dot(g,grad[0]);
-      dvgl_l += (l-lap[0])*(l-lap[0]);
-
-      for(int k=0; k<hess.size(); ++k)
-        hess[k]=hess_type(0.0);
-
-      d_bench.einspliner.evaluate_vgh(coord[i],psi,grad,hess);
-      dvgh_v +=(v-psi[0])*(v-psi[0]);
-      dvgh_g += dot(g,grad[0]);
-      dvgh_h += diff(h,hess[0]);
-    }
-
-    app_log() << "Average difference = " << std::sqrt(dv)/nsamples << endl;
-    app_log() << "Average difference VGL = " << std::sqrt(dvgl_v)/nsamples << " " << std::sqrt(dvgl_g)/nsamples << " " << std::sqrt(dvgl_l)/nsamples  <<  endl;
-    app_log() << "Average difference VGH = " << std::sqrt(dvgh_v)/nsamples << " " << std::sqrt(dvgh_g)/nsamples << " " << std::sqrt(dvgh_h)/nsamples  <<  endl;
-  }
-
-  app_log() << endl;
-  {
-    // First, create splines the normal way
-    multi_UBspline_3d_d *multi_spline;
-
-    Ugrid x_grid, y_grid, z_grid;
-    x_grid.start = ri; x_grid.end = rf; x_grid.num = nx;
-    y_grid.start = ri; y_grid.end = rf; y_grid.num = ny;
-    z_grid.start = ri; z_grid.end = rf; z_grid.num = nz;
-
-    BCtype_d xBC, yBC, zBC;
-    xBC.lCode = xBC.rCode = PERIODIC;
-    yBC.lCode = yBC.rCode = PERIODIC;
-    zBC.lCode = zBC.rCode = PERIODIC;
-
-    // First, create multispline
-    multi_spline = create_multi_UBspline_3d_d (x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-
-    for(int i=0; i<num_splines; ++i) 
-      set_multi_UBspline_3d_d (multi_spline, i, inData.data());
-
-    double dv=0.0;
-    double dvgl_v=0.0, dvgl_g=0.0, dvgl_l=0.0;
-    double dvgh_v=0.0, dvgh_g=0.0, dvgh_h=0.0;
-    for(int i=0; i<nsamples; ++i)
-    {
-      double v=infunc.f(coord[i]);
-      eval_multi_UBspline_3d_d(multi_spline,coord[i][0],coord[i][1],coord[i][2],psi.data());
-      dv+=(v-psi[0])*(v-psi[0]);
-
-      Tensor<double,3> h;
-      grad_type g=infunc.df(coord[i]);
-      double l=infunc.d2f(coord[i]);
-      infunc.d2f(coord[i],h);
-
-      eval_multi_UBspline_3d_d_vgl(multi_spline,coord[i][0],coord[i][1],coord[i][2],psi.data(),&(grad[0][0]),lap.data());
-
-      dvgl_v+=(v-psi[0])*(v-psi[0]);
-      dvgl_g += dot(g,grad[0]);
-      dvgl_l += (l-lap[0])*(l-lap[0]);
-
-      for(int k=0; k<hess.size(); ++k)
-        hess[k]=hess_type(0.0);
-      eval_multi_UBspline_3d_d_vgh(multi_spline,coord[i][0],coord[i][1],coord[i][2],psi.data(),&(grad[0][0]),&(hess[0][0]));
-      dvgh_v +=(v-psi[0])*(v-psi[0]);
-      dvgh_g += dot(g,grad[0]);
-      dvgh_h += diff(h,hess[0]);
-
-    }
-
-    app_log() << "Average difference = " << std::sqrt(dv)/nsamples << endl;
-    app_log() << "Average difference VGL = " << std::sqrt(dvgl_v)/nsamples << " " << std::sqrt(dvgl_g)/nsamples << " " << std::sqrt(dvgl_l)/nsamples  <<  endl;
-    app_log() << "Average difference VGH = " << std::sqrt(dvgh_v)/nsamples << " " << std::sqrt(dvgh_g)/nsamples << " " << std::sqrt(dvgh_h)/nsamples  <<  endl;
-  }
-
-//  qmcplusplus::UBspline<double,3> einspline;
-
-
-
+  cout << "\n Testing complex<float> " << endl;
+  SplineTest<multi_UBspline_3d_c> test_c(param);
+  test_c.test(coord_s);
   return 0;
 }
