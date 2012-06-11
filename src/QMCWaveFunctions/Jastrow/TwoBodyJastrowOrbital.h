@@ -400,23 +400,25 @@ namespace qmcplusplus {
 
     void acceptMove(ParticleSet& P, int iat) { 
       DiffValSum += DiffVal;
-      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
-
-	//dU[ji]=-1.0*curGrad[jat];
-   if (iat==jat)
-   {
-     dU[ij]=0;
-     d2U[ij]=0;
-     U[ij] =0;
-   }
-   else
-   {
-   dU[ij]=curGrad[jat]; 
-	dU[ji]=curGrad[jat]*-1.0;
-	d2U[ij]=d2U[ji] = curLap[jat];
-	U[ij] =  U[ji] = curVal[jat];
-   }
+      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) 
+      {
+  
+  	//dU[ji]=-1.0*curGrad[jat];
+        if (iat==jat)
+        {
+          dU[ij]=0;
+          d2U[ij]=0;
+          U[ij] =0;
+        }
+        else
+        {
+          dU[ij]=curGrad[jat]; 
+          dU[ji]=curGrad[jat]*-1.0;
+          d2U[ij]=d2U[ji] = curLap[jat];
+          U[ij] =  U[ji] = curVal[jat];
+        }
       }
+      LogValue+=DiffVal;
     }
 
 
@@ -448,7 +450,8 @@ namespace qmcplusplus {
         }
       }
       dG[iat] += sumg;
-      dL[iat] += suml;     
+      dL[iat] += suml;
+      LogValue+=DiffVal;
     }
 
 
