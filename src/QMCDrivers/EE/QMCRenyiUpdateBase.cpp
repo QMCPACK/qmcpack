@@ -50,9 +50,14 @@ namespace qmcplusplus
       W_vec[i]->UseBoundBox=false;
       Psi_vec[i]=psi.makeClone(*W_vec[i]);
     }
+    
     NumPtcl = W.getTotalNum();
-    deltaR_vec.resize(RenyiOrder);
-    for(int i(0);i<RenyiOrder;i++) deltaR_vec[i]= new ParticleSet::ParticlePos_t(NumPtcl);
+    deltaR_vec.resize(2*RenyiOrder);
+    deltaR_vec[0]=&deltaR;
+    for(int i(1);i<2*RenyiOrder;i++) 
+      deltaR_vec[i]= new ParticleSet::ParticlePos_t(NumPtcl);
+    
+    r_map.resize(2*RenyiOrder,NumPtcl);
   }
   
   QMCRenyiUpdateBase::~QMCRenyiUpdateBase()
@@ -62,6 +67,8 @@ namespace qmcplusplus
     void QMCRenyiUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
   {
     UpdatePbyP=false;
+    sort_regions(true);
+    update_regions();
     for (;it != it_end; it++)
       {
         W_vec[0]->R = (*it)->R;
@@ -88,6 +95,7 @@ namespace qmcplusplus
   void QMCRenyiUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   {
     UpdatePbyP=true;
+    sort_regions_by_r();
 
     for (;it != it_end; it++)
     {
@@ -120,7 +128,7 @@ namespace qmcplusplus
     }
   }
   
-  void QMCRenyiUpdateBase::check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN)
+  void QMCRenyiUpdateBase::check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp)
   {
     computeEE=shape;
     vsize=v;
@@ -130,11 +138,18 @@ namespace qmcplusplus
     for (int x=0;x<DIM;x++) Edge[0][x]=ed[0][x];
     
     Walker_t& bwalker(**it);
-    regions.resize(NumPtcl+4,0);
-    regions[NumPtcl+2]=1;
+    int dim1(1);
+    if (!pbyp )
+      dim1=2*RenyiOrder;
+    
+    regions.resize(dim1,NumPtcl+4);
+    tmp_regions.resize(dim1,NumPtcl+4);
+    regions=0;
+    for(int d(0);d<dim1;d++)
+      regions(d,NumPtcl+2)=1;
     
     mxN=maxN+1; mnN=minN;
-    n_region.resize(maxN+1-minN,0);
+    n_region.resize(maxN-minN,0);
     
 //     centering
     while (it!=it_end)
@@ -175,21 +190,23 @@ namespace qmcplusplus
       }
       
       if (z<vsize)
-        regions[iat]=1;
+        regions[0][iat]=1;
       else
-        regions[iat]=0;
+        regions[0][iat]=0;
       
-      regions[NumPtcl+regions[iat]]+=1;
+      regions[0][NumPtcl+regions[0][iat]]+=1;
     }
-    if((regions[NumPtcl+1]<mxN)and(regions[NumPtcl+1]>=mnN))
-      n_region[regions[NumPtcl+1]-mnN]+=1;
+    if((regions[0][NumPtcl+1]<mxN)and(regions[0][NumPtcl+1]>=mnN))
+      n_region[regions[0][NumPtcl+1]-mnN]+=1;
+    
+    for(int d(1);d<dim1;d++)
+      for(int e(0);e<NumPtcl+4;e++)
+        regions(d,e)=regions(0,e);
   }
   
-  void QMCRenyiUpdateBase::double_check_region(WalkerIter_t it, WalkerIter_t it_end)
+  int QMCRenyiUpdateBase::get_region_all(ParticleSet::ParticlePos_t& Pos, int th)
   {
-    Walker_t& bwalker(**it);
-    std::vector<RealType> tregions;
-    tregions.resize(NumPtcl+2,0);
+    int region_alpha(0);
     for (int g=0; g<W.groups(); ++g)
     for (int iat=W.first(g); iat<W.last(g); ++iat)
     {
@@ -197,31 +214,29 @@ namespace qmcplusplus
       RealType z;
       if(computeEE=="square")
       {
-        z=(bwalker.R[iat][0]);
-        for (int x=0;x<DIM;x++) z=std::max(z,bwalker.R[iat][x]);
+        z=(Pos[iat][0]);
+        for (int x=0;x<DIM;x++) z=std::max(z,Pos[iat][x]);
       }
       else if(computeEE=="sphere")
       {
         z=0;
-        for (int x=0;x<DIM;x++) z+=std::pow(bwalker.R[iat][x]-C[0][x],2);
+        for (int x=0;x<DIM;x++) z+=std::pow(Pos[iat][x]-C[0][x],2);
         z=std::sqrt(z);
       }
       else if(computeEE=="halfspace")
       {
-        z=(bwalker.R[iat][DIM-1]);
+        z=(Pos[iat][DIM-1]);
       }
       
       if (z<vsize)
-        tregions[iat]=1;
+      {
+	tmp_regions[th][iat]=1;
+	region_alpha+=1;
+      }
       else
-        tregions[iat]=0;
-      
-      tregions[NumPtcl+regions[iat]]+=1;
+	tmp_regions[th][iat]=0;
     }
-    for(int i(0);i<NumPtcl+2;i++)
-      if(tregions[i]!=regions[i])
-        cerr<<"region mismatch in"<<i<<endl;
-    
+    return region_alpha;
   }
   
   void QMCRenyiUpdateBase::put_in_box(PosType& Pos)
@@ -261,16 +276,60 @@ namespace qmcplusplus
       return 0;
   }
   
+  int QMCRenyiUpdateBase::sort_regions_by_r( )
+  {
+    for(int i(0);i<2*RenyiOrder;i++)
+    {
+      std::vector<pair<RealType,int> > w_i_r(NumPtcl);
+      ParticleSet::ParticlePos_t Pos(W_vec[i]->R);
+      
+      for (int g=0; g<W.groups(); ++g)
+      for (int iat=W.first(g); iat<W.last(g); ++iat)
+      { 
+        PosType tmpP(Pos[iat]);
+        put_in_box(tmpP);
+      //several volumes we can integrate out
+        RealType z;
+        if(computeEE=="square")
+        {
+          z=(tmpP[0]);
+          for (int x=0;x<DIM;x++) z=std::max(z,tmpP[x]);
+        }
+        else if(computeEE=="sphere")
+        {
+          z=0;
+          for (int x=0;x<DIM;x++) z+=std::pow(tmpP[x]-C[0][x],2);
+          z=std::sqrt(z);
+        }
+        else if(computeEE=="halfspace")
+        {
+          z=(tmpP[DIM-1]);
+        }
+        w_i_r[iat].first=z;
+        w_i_r[iat].second=iat;
+      }
+      std::sort(w_i_r.begin(),w_i_r.end());
+      for (int iat(0);iat<NumPtcl;iat++)
+        r_map(i,iat)=w_i_r[iat].second;
+//       for (int iat(0);iat<NumPtcl;iat++)
+//         cerr<<r_map(i,iat)<<" ";
+//       cerr<<endl;
+    }
+      
+  }
+  
   void QMCRenyiUpdateBase::print_all()
   {
     for(int x(0);x<NumPtcl;x++)
     {
       for(int i(0);i<RenyiOrder*2;i++)
         cerr<<W_vec[i]->R[x]<<" ";
-      cerr<<regions[x]<<endl;
+      for(int i(0);i<regions.size1();i++)
+        cerr<<regions[i][x]<<" ";
+      cerr<<endl;
     }
-    cerr<<regions[NumPtcl+2]<<endl;
-    cerr<<regions[NumPtcl+3]<<endl;
+    cerr<<regions[0][NumPtcl+2]<<endl;
+    cerr<<regions[0][NumPtcl+3]<<endl;
   }
 
 }

@@ -269,7 +269,7 @@ namespace qmcplusplus
                   z=(W[i]->R[iat][DIM-1]);
                 }
                 for(int j(0);j<EENR;j++)
-                  if (z<(vsize+j*EEdR))
+                  if (z<(vsize+j*EEdR)) //only record smallest shell that it is in
                   {
                     EE_indices[j].g_w_pindex[g][i].push_back(iat);
                     EE_indices[j].g_w_num[g][i]++;

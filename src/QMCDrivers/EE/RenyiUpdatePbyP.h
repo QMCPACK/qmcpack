@@ -36,7 +36,38 @@ namespace qmcplusplus {
   private:
   };
 
-//   class VMCUpdatePbyPWithDrift: public QMCUpdateBase {
+//   class RenyiUpdateAll: public QMCRenyiUpdateBase {
+//   public:
+//     /// Constructor.
+//     RenyiUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+//         QMCHamiltonian& h, RandomGenerator_t& rg, int order);
+//         
+//     ~RenyiUpdateAll();
+// 
+//     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+//     
+// //     RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+// 
+//   private:
+//   };
+//   
+//   class RenyiUpdateAllWithDrift: public QMCRenyiUpdateBase {
+//   public:
+//     /// Constructor.
+//     RenyiUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+//         QMCHamiltonian& h, RandomGenerator_t& rg, int order);
+//         
+//     ~RenyiUpdateAllWithDrift();
+// 
+//     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+//     
+// //     RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+// 
+//   private:
+//     std::vector<ParticleSet::ParticlePos_t*> drifts;
+//   };
+  
+  //   class VMCUpdatePbyPWithDrift: public QMCUpdateBase {
 //   public:
 //     /// Constructor.
 //     VMCUpdatePbyPWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, 

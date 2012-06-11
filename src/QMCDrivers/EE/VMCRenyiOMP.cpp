@@ -104,8 +104,7 @@ namespace qmcplusplus
       }
       
 //       for (int ip=0; ip<NumThreads; ++ip)
-//         if(RenyiMovers[ip]->regions[W.getTotalNum()+1]==0)
-//           RenyiMovers[ip]->print_all();
+//         RenyiMovers[ip]->print_all();
         
       for (int ip=0; ip<NumThreads; ++ip)
         RenyiMovers[ip]->clear_stats();
@@ -180,33 +179,25 @@ namespace qmcplusplus
           {
             if (UseDrift != "yes")
             {
-              os <<"  PbyP moves with drift, using RenyiUpdatePbyP"<<endl;
+              os <<"  PbyP moves without drift, using RenyiUpdatePbyP"<<endl;
               RenyiMovers[ip]=new RenyiUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
-              // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             }
             else
               APP_ABORT("NOT IMPLEMENTED");
-//             else
-//             {
-//               os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
-//               Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-//             }
-            //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           }
           else
           {
-           APP_ABORT("NOT IMPLEMENTED");
-//             if (UseDrift == "yes")
+            APP_ABORT("NOT IMPLEMENTED");
+//             if (UseDrift != "yes")
 //             {
-//               os <<"  walker moves with drift, using VMCUpdateAllWithDrift"<<endl;
-//               Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+//               os <<"  Walkers moves, using RenyiUpdatePbyP"<<endl;
+//               RenyiMovers[ip]=new RenyiUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
 //             }
 //             else
 //             {
-//               os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
-//               Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-//             }
-            //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+//               os <<"  Walkers moves with drift, using RenyiUpdatePbyP"<<endl;
+//               RenyiMovers[ip]=new RenyiUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
+//             }              
           }
 
           if(ip==0) app_log() << os.str() << endl;
@@ -235,7 +226,7 @@ namespace qmcplusplus
       RenyiMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
     
       MCWalkerConfiguration::iterator  wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-      RenyiMovers[ip]->check_region(wit,wit_end,vsize,computeEE,L,C,Nmax,Nmin);
+      RenyiMovers[ip]->check_region(wit,wit_end,vsize,computeEE,L,C,Nmax,Nmin,QMCDriverMode[QMC_UPDATE_MODE]);
 
       if (QMCDriverMode[QMC_UPDATE_MODE])
         RenyiMovers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
