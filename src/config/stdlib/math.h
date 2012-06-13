@@ -48,6 +48,18 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
 }
 #endif
 
+namespace qmcplusplus
+{
+  /** return i^n
+   *
+   * std::pow(int,int) is not standard
+   */
+  inline int pow(int i, int n)
+  {
+    return static_cast<int>(std::pow(static_cast<double>(i),n));
+  }
+}
+
 #if defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 

@@ -23,7 +23,7 @@
 #include "tau/profiler.h"
 
 namespace qmcplusplus
-  {
+{
 
   /// Constructor.
   VMCMultiRenyiOMP::VMCMultiRenyiOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -505,11 +505,11 @@ namespace qmcplusplus
 
           Matrix<RealType> SpinN(W.groups()+1,10);
           for(int g(0);g<W.groups();g++) for(int i(0); i<nnode; i++) for(int n(1);n<11;n++)
-            SpinN(g,n-1) += std::pow(EE_indices[j].g_w_num[g][i],n);
+            SpinN(g,n-1) += pow(EE_indices[j].g_w_num[g][i],n);
           if(W.groups()>1)
           {
             for(int i(0); i<nnode; i++) for(int n(1);n<11;n++)
-              SpinN(W.groups(),n-1) += std::pow(EE_indices[j].g_w_num[W.groups()][i],n);
+              SpinN(W.groups(),n-1) += pow(EE_indices[j].g_w_num[W.groups()][i],n);
           }
           myComm->allreduce(SpinN); 
           

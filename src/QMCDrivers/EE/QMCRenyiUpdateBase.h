@@ -107,7 +107,8 @@ namespace qmcplusplus
       for(int i(0);i<RenyiOrder;i++)
         get_region_all(W_vec[i]->R,i);
       
-      return std::pow(-1,all_swaps);
+      return (all_swaps&1)?-1:1;
+      //return std::pow(-1,all_swaps);
     }
 
     int sort_regions_by_r();
@@ -154,7 +155,8 @@ namespace qmcplusplus
       for(int i(0);i<RenyiOrder;i++)
         get_region_all(W_vec[i]->R,i);
       
-      return std::pow(-1,all_swaps);
+      return (all_swaps&1)?-1:1;
+      //return std::pow(-1,all_swaps);
     }
     
     
