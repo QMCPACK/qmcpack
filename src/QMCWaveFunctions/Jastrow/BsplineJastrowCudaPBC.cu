@@ -781,10 +781,12 @@ two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
   __syncthreads();
   for (int s=(BS>>1); s>0; s>>=1) {
     if (tid < s)
+    {
       shared_sum[tid] += shared_sum[tid+s];
       shared_grad[tid][0] += shared_grad[tid+s][0];
       shared_grad[tid][1] += shared_grad[tid+s][1];
       shared_grad[tid][2] += shared_grad[tid+s][2];
+    }
     __syncthreads();
   }
 
