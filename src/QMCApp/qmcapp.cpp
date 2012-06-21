@@ -133,6 +133,8 @@ int main(int argc, char **argv) {
 
   //TAU_PROFILE("int main(int, char **)", " ", TAU_DEFAULT);
   //TAU_INIT(&argc, &argv);
+ 
+  using namespace qmcplusplus;
 
   OHMMS::Controller->initialize(argc,argv);
   // Write out free memory on each node on Linux.
@@ -140,7 +142,11 @@ int main(int argc, char **argv) {
   //check the options first
   int clones=1;
   vector<string> fgroup1,fgroup2;
+#ifdef QMC_CUDA
+  bool useGPU = true;
+#else
   bool useGPU = false;
+#endif
   int i=1;
   while(i<argc)
   {
@@ -216,7 +222,6 @@ int main(int argc, char **argv) {
   if(inputs.size()>1)
     qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
 
-  using namespace qmcplusplus;
   stringstream logname;
   // logname<<getDateAndTime("%Y%m%dT%H%M");
   int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;

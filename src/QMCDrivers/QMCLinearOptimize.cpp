@@ -790,6 +790,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
 
 void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
 {
+    string useGPU("no");
     optNode=cur;
     m_param.put(cur);
     delete optTarget;
