@@ -96,12 +96,8 @@ namespace qmcplusplus
             }
             
             RealType rate(1);
-//             std::vector<RealType> ratios(2*RenyiOrder,0);
             for (int th(0);th<2*RenyiOrder;th++)
               rate *= Psi_vec[th]->ratio((*W_vec[th]),r_map(th,iat));
-//             for (int th(0);th<2*RenyiOrder;th++) 
-//               cerr<<ratios[th]<<" "; 
-//             cerr<<rate<<endl;
             
             if (RandomGen() < std::abs(rate))
             {
@@ -183,6 +179,75 @@ namespace qmcplusplus
       myTimers[2]->stop();
     }
     myTimers[0]->stop();
+  }
+  
+  
+  void RenyiUpdatePbyP::plotSwapAmplitude(WalkerIter_t it, WalkerIter_t it_end, Matrix<RealType>& averageSwaps)
+  {
+    int ctr=(averageSwaps.size1())/2;
+    int N_A(0);    
+    while (it != it_end)
+    { 
+      for (int i(0);i<2*RenyiOrder;i++)
+      {
+        Walker_t& thisWalker(**it);
+        W_vec[i]->loadWalker(thisWalker,true);
+        Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+        Psi_vec[i]->copyFromBuffer((*W_vec[i]),w_buffer);
+        it++;
+      }
+      sort_regions_by_r();
+      
+      std::vector<RealType> rate_i(RenyiOrder,0);
+      for (int i(0);i<RenyiOrder;i++)
+      {
+        int indx=i+RenyiOrder+1;
+        indx=(indx==RenyiOrder*2?RenyiOrder:indx);
+        rate_i[i]=std::cos(Psi_vec[indx]->getPhase()+Psi_vec[i]->getPhase());
+      }
+
+      for (int th(0);th<RenyiOrder;th++)
+        for (int iat=0; iat<W.getTotalNum(); ++iat)
+        {
+//           all in region 1
+          if(get_region(W_vec[th]->R,r_map(th,iat))==1)
+          {
+            N_A++;
+            for (int i(0);i<averageSwaps.size1();i++)
+              for (int j(0);j<averageSwaps.size2();j++)
+              {
+                if((i-ctr)*(i-ctr)+(j-ctr)*(j-ctr)<=(ctr-1)*(ctr-1))
+                {
+                  PosType X;
+                  X[0]=(i-ctr)*vsize+C[0][0];
+                  X[1]=(j-ctr)*vsize+C[0][1];
+                  
+                  PosType dr = X - (*W_vec[th]).R[r_map(th,iat)];
+                  W_vec[th]->makeMoveAndCheck(r_map(th,iat),dr);
+                  double r=Psi_vec[th]->ratio((*W_vec[th]),r_map(th,iat));
+                  
+                  
+                  int indx=th+RenyiOrder+1;
+                  indx=(indx==RenyiOrder*2?RenyiOrder:indx);
+                  dr = X - (*W_vec[indx]).R[r_map(indx,iat)];
+                  bool x=W_vec[indx]->makeMoveAndCheck(r_map(indx,iat),dr);
+                  
+                  r*=Psi_vec[indx]->ratio((*W_vec[indx]),r_map(indx,iat));
+                  
+//                   averageSwaps(i,j)+=(rate_i[th]*r >0?1:-1);
+                  averageSwaps(i,j)+=regions[0][NumPtcl+2]*r;
+//                   averageSwaps(i,j)+=(avgtmp*rate_i[th]>0?1:-1);
+
+                  (*W_vec[th]).rejectMove(r_map(th,iat));
+                  (*W_vec[indx]).rejectMove(r_map(indx,iat));
+                  (*Psi_vec[th]).rejectMove(r_map(th,iat));
+                  (*Psi_vec[indx]).rejectMove(r_map(indx,iat));
+                }
+          }
+        }
+      }
+    }
+    averageSwaps*=1.0/N_A;
   }
 
   

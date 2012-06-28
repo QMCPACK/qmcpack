@@ -31,6 +31,7 @@ namespace qmcplusplus
     
     void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
     void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    virtual void plotSwapAmplitude(WalkerIter_t it, WalkerIter_t it_end,Matrix<RealType>& averageSwaps) {};
     
     virtual void check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp=true);
     virtual int get_region(ParticleSet::ParticlePos_t& Pos,int iat);
@@ -182,6 +183,8 @@ namespace qmcplusplus
     std::vector<RealType> n_region;
     Matrix<int> regions, tmp_regions;
     Matrix<int> r_map;
+    
+    std::vector<PosType> plottingGrid;
   };
   
 }

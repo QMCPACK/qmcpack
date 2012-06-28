@@ -30,7 +30,7 @@ namespace qmcplusplus
   VMCRenyiOMP::VMCRenyiOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                              HamiltonianPool& hpool, WaveFunctionPool& ppool):
       QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-      myWarmupSteps(0),UseDrift("yes"), computeEE("sphere"),vsize(1),EEN(2),Nmax(20),Nmin(0)
+      myWarmupSteps(0),UseDrift("yes"), computeEE("sphere"),vsize(1),EEN(2),Nmax(20),Nmin(0),plotSwapAmplitude(false),grid_spacing(0)
   {
     RootName = "vmc";
     QMCType ="VMCRenyiOMP";
@@ -42,6 +42,8 @@ namespace qmcplusplus
     m_param.add(EEN,"EEN","int");
     m_param.add(Nmin,"Nmin","int");
     m_param.add(Nmax,"Nmax","int");
+    m_param.add(plotSwapAmplitude,"plot","int");
+    m_param.add(grid_spacing,"grid","int");
     m_param.add(myWarmupSteps,"warmupSteps","int"); m_param.add(myWarmupSteps,"warmupsteps","int"); m_param.add(myWarmupSteps,"warmup_steps","int");
     m_param.add(nTargetSamples,"targetWalkers","int"); m_param.add(nTargetSamples,"targetwalkers","int"); m_param.add(nTargetSamples,"target_walkers","int");
   }
@@ -49,8 +51,13 @@ namespace qmcplusplus
   bool VMCRenyiOMP::run()
   {
     resetRun();
+    
+    int total_grid=2*grid_spacing+1;
+    int cntr=(total_grid+1)/2;
+    int n_grid_pe(grid_spacing*grid_spacing+1);
+
     if(myComm->rank()==0)
-      {   
+      {
         ee_dat.str("");
         ee_dat<<RootName.c_str()<<".ee.dat";
 
@@ -61,8 +68,20 @@ namespace qmcplusplus
           file_out<<"  N"<<i;
         file_out<<endl;
         file_out.close();
-      }
+        if(plotSwapAmplitude)
+        {
+          pe_dat.str("");
+          pe_dat<<RootName.c_str()<<".pe.dat";
 
+          file_out.open(pe_dat.str().c_str(),fstream::out | fstream::trunc);
+          file_out<<"# indx";
+          for(int i(0);i<n_grid_pe;i++)
+            file_out<<"  S_"<<i;
+          file_out<<endl;
+        }
+      }
+      
+    std::vector<Matrix<RealType> > averageSwaps(NumThreads,Matrix<RealType>(total_grid,total_grid));
     //start the main estimator
     Estimators->start(nBlocks);
     for (int ip=0; ip<NumThreads; ++ip) RenyiMovers[ip]->startRun(nBlocks,false);
@@ -81,6 +100,11 @@ namespace qmcplusplus
           RenyiMovers[ip]->advanceWalkers(wit,wit_end,false);
         wit=W.begin()+wPerNode[ip];
         RenyiMovers[ip]->accumulate(wit,wit_end);
+        if(plotSwapAmplitude)
+        {
+          wit=W.begin()+wPerNode[ip];
+          RenyiMovers[ip]->plotSwapAmplitude(wit,wit_end,averageSwaps[ip]);          
+        }
         RenyiMovers[ip]->stopBlock(false);
       }
 #pragma omp barrier
@@ -91,6 +115,45 @@ namespace qmcplusplus
       myComm->allreduce(avgsgn);
       myComm->allreduce(n_stats);
       RealType nrm=1.0/(NumThreads*myComm->size());
+      
+      if(plotSwapAmplitude)
+      {
+        for (int ip=1; ip<NumThreads; ++ip)
+          averageSwaps[0]+=averageSwaps[ip];
+        myComm->allreduce(averageSwaps[0]);
+        averageSwaps[0]*=nrm;
+        
+        
+        std::vector<RealType> pe_r(n_grid_pe,0);
+        std::vector<int> n_pe_r(n_grid_pe,0);
+        
+        for (int i(0);i<total_grid;i++)
+          for (int j(0);j<total_grid;j++)
+          {
+            int z=(i-cntr)*(i-cntr)+(j-cntr)*(j-cntr);
+            if (z<n_grid_pe)
+            {
+              pe_r[z]+=averageSwaps[0](i,j);
+              n_pe_r[z]+=1;
+            }
+          }
+        for (int i(0);i<n_grid_pe;i++)
+          if(n_pe_r[i]>0)
+            pe_r[i]*=1.0/n_pe_r[i];
+
+        if(myComm->rank()==0)
+        {
+          file_out.open(pe_dat.str().c_str(),fstream::out | fstream::app);
+          file_out<<block<<" ";
+          for(int i(0);i<n_grid_pe;i++)
+            file_out<<pe_r[i]<<" ";
+          file_out<<endl;
+          file_out.close();
+        }
+        for (int ip=0; ip<NumThreads; ++ip) averageSwaps[ip]=0;
+          
+          
+      }      
       
       if(myComm->rank()==0)
       {

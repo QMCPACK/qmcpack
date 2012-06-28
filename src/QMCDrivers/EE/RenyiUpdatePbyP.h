@@ -30,9 +30,8 @@ namespace qmcplusplus {
     ~RenyiUpdatePbyP();
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+    void plotSwapAmplitude(WalkerIter_t it, WalkerIter_t it_end,Matrix<RealType>& averageSwaps);
     
-//     RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
-
   private:
   };
 

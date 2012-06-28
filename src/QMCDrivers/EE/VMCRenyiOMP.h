@@ -53,9 +53,12 @@ namespace qmcplusplus
       vector<vector<int> > region;
       vector<RealType> stats_vec;
       
+      bool plotSwapAmplitude;
+      int grid_spacing;
+      
       fstream file_out;
       int Nmin,Nmax;
-      stringstream ee_dat;
+      stringstream ee_dat,pe_dat;
       ///check the run-time environments
       void resetRun();
       ///copy constructor
