@@ -1,10 +1,10 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 #2011-12-06
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.05/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
-set(GNU_FLAGS "-fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
+set(GNU_FLAGS "-ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
 #set(XT_FLAGS "-msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
