@@ -33,6 +33,7 @@ my $help;
 my (@inSuperCellTwist, @inSuperCellKGrid, @inSuperCellKShift);
 my @toptilingmatrix;
 my $targetSsize;
+my $isAe = 0;
 
 ## Wavefunction keywords
 my $wvfcnfile;
@@ -111,6 +112,7 @@ GetOptions('testwvfcn' => \$testwvfcn,
 	   'twobodysplinepts=i' => \$twoBodySplinePts,
 	   'optsamples=i' => \$optSamples,
 	   'optloops=i' => \$optLoops,
+	   'isAe=i' => \$isAe,
 	   'useGPU' => \$useGPU,
 	   'twistnum=i' => \$twistnum,
 	   'kpoint=f{3}' => \@inSuperCellTwist,
@@ -127,7 +129,7 @@ if (! @inSuperCellKShift) {
     @inSuperCellKShift = (0, 0, 0);
 }
 
-unless($testwvfcn || $getTilemat || $genNSCF || $genFSDFT || $convBspline || $optwvfcn || $dmcCalc || $convDMCTstep) {
+unless($genNSCF || $genFSDFT || $convBspline || $optwvfcn || $dmcCalc || $convDMCTstep || $getTilemat) {
     globalUsage();
 }
 
@@ -287,11 +289,13 @@ if ($genNSCF) {
     if ((@toptilingmatrix)) {
 	$targetSsize = abs(getDet(\@toptilingmatrix));
     } elsif ($targetSsize) {
-	my $getSupercell = $config{supercell};
-	my $out = `$getSupercell --ptvs @cell_ptv --target $targetSsize --maxentry 7`;
-	my @data = split(/\s+/, $out);
-	for (my $i = 1; $i < 10; $i++) {
-	    $toptilingmatrix[$i-1] = $data[$i];
+	if (!(@toptilingmatrix)) {
+	    my $getSupercell = $config{supercell};
+	    my $out = `$getSupercell --ptvs @cell_ptv --target $targetSsize --maxentry 7`;
+	    my @data = split(/\s+/, $out);
+	    for (my $i = 1; $i < 10; $i++) {
+		$toptilingmatrix[$i-1] = $data[$i];
+	    }
 	}
     } else {
 	@toptilingmatrix = (1, 0, 0, 0, 1, 0, 0, 0, 1);
@@ -402,11 +406,13 @@ if ($genFSDFT) {
     if ((@toptilingmatrix)) {
 	$targetSsize = abs(getDet(\@toptilingmatrix));
     } elsif ($targetSsize) {
-	my $getSupercell = $config{supercell};
-	my $out = `$getSupercell --ptvs @cell_ptv --target $targetSsize --maxentry 7`;
-	my @data = split(/\s+/, $out);
-	for (my $i = 1; $i < 10; $i++) {
-	    $toptilingmatrix[$i-1] = $data[$i];
+	if (!(@toptilingmatrix)) {
+	    my $getSupercell = $config{supercell};
+	    my $out = `$getSupercell --ptvs @cell_ptv --target $targetSsize --maxentry 7`;
+	    my @data = split(/\s+/, $out);
+	    for (my $i = 1; $i < 10; $i++) {
+		$toptilingmatrix[$i-1] = $data[$i];
+	    }
 	}
     } else {
 	@toptilingmatrix = (1, 0, 0, 0, 1, 0, 0, 0, 1);
@@ -545,7 +551,7 @@ if ($convBspline) {
 #########################################################################################
 # get the hamiltonian string
 #########################################################################################
-    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 0, 0, 0);
+    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 0, 0, 0, $isAe, \@atomsCharge);
 #########################################################################################
 
 #########################################################################################
@@ -619,7 +625,7 @@ if ($convBspline) {
 						\@dummyArr, \@dummyArr, \@atoms_name,
 						$numAts, \@ionIds, 0, 0, \@dummyArr, "../" . $wvfcnfile, 
 						\@toptilingmatrix, $twistnum, $useGPU, 1,
-						$splineFactor, $numUpElec, $numDownElec, $topSpinDependentWvfcn);
+						$splineFactor, $numUpElec, $numDownElec, $topSpinDependentWvfcn, $isAe, \@atomsCharge);
 	}
 	my $qmcHeaderString = getQmcpackHeader($jobid, 1, "Mesh Size Convergence Test for $baseName with factor = $splineFactor", 49154);
 	
@@ -727,7 +733,7 @@ if ($dmcCalc) {
 #########################################################################################
 # get the hamiltonian string
 #########################################################################################
-    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1);
+    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1, $isAe, \@atomsCharge);
 #########################################################################################
 
 #########################################################################################
@@ -882,7 +888,7 @@ if ($optwvfcn) {
 #########################################################################################
 # get the hamiltonian string
 #########################################################################################
-    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1);
+    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1, $isAe, \@atomsCharge);
 #########################################################################################
 
 #########################################################################################
@@ -919,7 +925,7 @@ if ($optwvfcn) {
 					    $oneBodySplinePts, -1.0, \@topJastrowStarts,
 					    "../" . $wvfcnfile, \@toptilingmatrix, $twistnum, $useGPU,
 					    1, $splfactor, $numUpElec, $numDownElec, 
-					    $topSpinDependentWvfcn);
+					    $topSpinDependentWvfcn, $isAe, \@atomsCharge);
 #########################################################################################
 # get the qmc header and footer
 #########################################################################################
@@ -1059,7 +1065,7 @@ if ($convDMCTstep) {
 #########################################################################################
 # get the hamiltonian string
 #########################################################################################
-    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1);
+    my $hamiltonianString = getHamiltonianString(0, \%atNameToPP, 1, 0, 1, $isAe, \@atomsCharge);
 #########################################################################################
 
 #########################################################################################
@@ -1194,7 +1200,7 @@ sub getSystemInformation {
 #  from input line.  If using a supercell, update relevant variables from above
 #####################################################################################
     if ($tss) {
-	unless ((@{$ttilmatref})) {
+	if (!(@{$ttilmatref})) {
 	    my $getSupercell = $config{supercell};
 	    my $out = `$getSupercell --ptvs @{$cptvref} --target $tss --maxentry 7`;
 	    my @data = split(/\s+/, $out);
@@ -1231,11 +1237,13 @@ sub getSystemInformation {
 	## Update the number of ions in the supercell
 	$$nats *= $tss;
 	## Set ptv to be the supercell's lattice vectors from the output of getSupercell
-	my @tmpptvs = @{$cptvref};
-	getSuperCell($cptvref, \@tmpptvs, $ttilmatref);
-        #for (my $i = 10; $i < 19; $i++) {
+	#for (my $i = 10; $i < 19; $i++) {
 	#    $$cptvref[$i-10] = $data[$i];
 	#}
+	my @tmpssptv;
+	getSuperCell(\@tmpssptv, $cptvref, $ttilmatref);
+	@{$cptvref} = @tmpssptv;
+	
     }
 
     if (!(@{$ttilmatref})) {
@@ -1443,7 +1451,17 @@ sub findLowestEnergyWvfcn {
     closedir DIR; 
    
 
-    # Figure out which files are output files from optimization runs
+    my $ofname = $prefix;
+    chop($ofname);
+    chop($ofname);
+    $ofname .= ".out";
+    $ofname = "$optDir/$ofname";
+#    print "outfile = $ofname\n";
+    my $rcutline = `grep rcut $ofname | head -n 1`;
+    my @arr = split(/\s+/, $rcutline);
+    my $rcutval = $arr[3];
+    print "rcut = $rcutval\n";
+
     my @rawfiles;
     foreach my $str (@files) {
 	if ($str =~  /$prefix\d\d\d$suffix/) {
@@ -1590,6 +1608,8 @@ sub getWvfcnStringFromOptDir {
     }
     $wvfcnString;
 	
+
+
 }
 #################################################################################################################
 
@@ -1642,6 +1662,9 @@ sub getWavefunctionString {
     my $locUpElecs = shift;
     my $locDownElecs = shift;
     my $locSpinDependentWvfcn = shift;
+
+    my $locIsAe = shift;
+    my $atomsChargeRef = shift;
 
     if ($standAlone) {
 	$outputString .= '<?xml version="1.0"?>';
@@ -1717,6 +1740,15 @@ sub getWavefunctionString {
 		$outputString .= "      </correlation>\n";
 	    }
 	    $outputString .= "    </jastrow>\n";
+	    if ($locIsAe) {
+		$outputString .= "    <jastrow name=\"J1S\" type=\"One-Body\" function=\"Bspline\" print\"yes\" source\"i\">\n";
+		for (my $j = 0; $j <= $#{$atomsNameRef}; $j++) {
+		    $outputString .= "      <correlation elementType=\"${$atomsNameRef}[$j]\" cusp=\"${$atomsChargeRef}[$j]\" size=\"$sizeOneBody\" rcut=\"0.5\">\n";
+		    $outputString .= "         <coefficients id=\"${$atomsNameRef}[$j]\" type=\"Array\"> -0.1 -0.05 -0.01 </coefficients>\n";
+		    $outputString .= "      </correlation>\n";
+		}
+		$outputString .= "    </jastrow>\n";
+	    }
 	} else {
 	    # In this case we have an independent jastrow for every ion
 	    $outputString .= "    <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"centers\">\n";
@@ -1774,7 +1806,6 @@ sub getPtclSetString {
     $#{$ionPosRef}+1 == $numIons*3 || die "Ion Positions array handed to writePtclset supposed to have\n 3 * $numIons (3 * \$numIons) entries, but it has $#{$ionPosRef}+1\n";
     my $ionIdsRef = shift;
     $#{$ionIdsRef}+1 == $numIons || die "Ion ids array handed to writePtclset supposed to have \n$numIons entries, but it has $#{$ionIdsRef}+1\n";
-
 
     if ($standAlone) {
 	$outputString .= "<?xml version=\"1.0\"?>\n";
@@ -1882,7 +1913,7 @@ sub getPtclSetString {
 
 
 #################################################################################################################
-# Subroutine to write qmcpack hamiltonian section
+# Subroutine to write qmcpack Hamiltonian section
 #################################################################################################################
 sub getHamiltonianString {
     my $standAlone = shift;
@@ -1890,6 +1921,8 @@ sub getHamiltonianString {
     my $locUseMPC = shift;
     my $locMPCIsPhysical = shift;
     my $locUseKECorr = shift;
+    my $locIsAe = shift;
+    my $atomsChargeRef = shift;
     my $ppName;
     my $ppFile;
 
@@ -1901,8 +1934,22 @@ sub getHamiltonianString {
     }
     $outputString .= '  <hamiltonian name="h0" type="generic" target="e">' . "\n";
     $outputString .= '    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">' ."\n";
-    while (($ppName, $ppFile) = each(%{$atNameToPPRef})) {
-	$outputString .= "      <pseudo elementType=\"$ppName\" href=\"$ppFile\"/>\n";
+    if (!$locIsAe) {
+	while (($ppName, $ppFile) = each(%{$atNameToPPRef})) {
+	    $outputString .= "      <pseudo elementType=\"$ppName\" href=\"$ppFile\"/>\n";
+	}
+    } else {
+	my $i = 0;
+	while (($ppName, $ppFile) = each(%{$atNameToPPRef})) {
+	    my $chg = ${$atomsChargeRef}[$i];
+	    $i++;
+	    $outputString .= "      <pseudo elementType=\"$ppName\">\n";
+            $outputString .= "        <header symbol=\"$ppName\" atomic-number=\"$chg\" zval=\"$chg\" />\n";
+            $outputString .= "        <local>\n";
+            $outputString .= "          <grid type\"linear\" ri=\"0.0\" rf=\"4.0\" npts=\"201\" />\n";
+            $outputString .= "        </local>\n";
+            $outputString .= "      </pseudo>\n";
+	}
     }
     $outputString .= '    </pairpot>' ."\n";
     $outputString .= '    <constant name="IonIon" type="coulomb" source="i" target="i"/>' . "\n";
@@ -2114,12 +2161,12 @@ sub getOptSection {
     $outputString .= "    <cost name=\"reweightedvariance\">       0.0 </cost>\n";
     $outputString .= "    <parameter name=\"MinMethod\">rescale</parameter>\n";
     $outputString .= "    <parameter name=\"GEVMethod\">mixed</parameter>\n";
-    $outputString .= "    <parameter name=\"beta\">  0.05 </parameter>\n";
+    $outputString .= "    <parameter name=\"beta\">  0.0 </parameter>\n";
     $outputString .= "    <parameter name=\"exp0\"> -16 </parameter>\n";
     $outputString .= "    <parameter name=\"nonlocalpp\">no</parameter>\n";
     $outputString .= "    <parameter name=\"useBuffer\">no</parameter>\n";
     $outputString .= "    <parameter name=\"bigchange\">9.0</parameter>\n";
-    $outputString .= "    <parameter name=\"alloweddifference\"> 1.0e-4 </parameter>\n";
+    $outputString .= "    <parameter name=\"alloweddifference\"> 1.0e-3 </parameter>\n";
     $outputString .= "    <parameter name=\"stepsize\">4.0e-1</parameter>\n";
     $outputString .= "    <parameter name=\"stabilizerscale\">  1.0 </parameter>\n";
     $outputString .= "    <parameter name=\"nstabilizers\"> 3 </parameter>\n";
@@ -2128,7 +2175,7 @@ sub getOptSection {
     if ($numOptLoops) {
 	$outputString .= "</loop>\n";
     }
-    $outputString .= "<loop max=\"2\">\n";
+    $outputString .= "<loop max=\"3\">\n";
     if ($useGPU) {
 	$outputString .= "  <qmc method=\"cslinear\" move=\"pbyp\" checkpoint=\"-1\" gpu=\"yes\">\n";
     } else {
@@ -2151,12 +2198,12 @@ sub getOptSection {
     $outputString .= "    <cost name=\"energy\">                   0.8 </cost>\n";
     $outputString .= "    <cost name=\"unreweightedvariance\">     0.0 </cost>\n";
     $outputString .= "    <cost name=\"reweightedvariance\">       0.2 </cost>\n";
-    $outputString .= "    <parameter name=\"MinMethod\">rescale</parameter>\n";
+    $outputString .= "    <parameter name=\"MinMethod\">quartic</parameter>\n";
     $outputString .= "    <parameter name=\"GEVMethod\">mixed</parameter>\n";
-    $outputString .= "    <parameter name=\"beta\">  0.05 </parameter>\n";
+    $outputString .= "    <parameter name=\"beta\">  0.0 </parameter>\n";
     $outputString .= "    <parameter name=\"exp0\"> -16 </parameter>\n";
-    $outputString .= "    <parameter name=\"nonlocalpp\">no</parameter>\n";
-    $outputString .= "    <parameter name=\"useBuffer\">no</parameter>\n";
+    $outputString .= "    <parameter name=\"nonlocalpp\">yes</parameter>\n";
+    $outputString .= "    <parameter name=\"useBuffer\">yes</parameter>\n";
     $outputString .= "    <parameter name=\"bigchange\">9.0</parameter>\n";
     $outputString .= "    <parameter name=\"alloweddifference\"> 1.0e-4 </parameter>\n";
     $outputString .= "    <parameter name=\"stepsize\">4.0e-1</parameter>\n";
@@ -2212,51 +2259,12 @@ sub getOptSectionNew {
 	$outputString .= "    <parameter name=\"useDrift\">   no </parameter>\n";
     }
     $outputString .= "    <estimator name=\"LocalEnergy\" hdf5=\"no\"/>\n";
-    $outputString .= "    <cost name=\"energy\">                   0.0 </cost>\n";
+    $outputString .= "    <cost name=\"energy\">                   0.05 </cost>\n";
     $outputString .= "    <cost name=\"unreweightedvariance\">     0.0 </cost>\n";
-    $outputString .= "    <cost name=\"reweightedvariance\">       1.0 </cost>\n";
-    $outputString .= "    <parameter name=\"MinMethod\">rescale</parameter>\n";
+    $outputString .= "    <cost name=\"reweightedvariance\">       0.95 </cost>\n";
+    $outputString .= "    <parameter name=\"MinMethod\">quartic</parameter>\n";
     $outputString .= "    <parameter name=\"GEVMethod\">mixed</parameter>\n";
-    $outputString .= "    <parameter name=\"beta\">  0.05 </parameter>\n";
-    $outputString .= "    <parameter name=\"exp0\"> -16 </parameter>\n";
-    $outputString .= "    <parameter name=\"nonlocalpp\">no</parameter>\n";
-    $outputString .= "    <parameter name=\"useBuffer\">no</parameter>\n";
-    $outputString .= "    <parameter name=\"bigchange\">9.0</parameter>\n";
-    $outputString .= "    <parameter name=\"alloweddifference\"> 1.0e-4 </parameter>\n";
-    $outputString .= "    <parameter name=\"stepsize\">4.0e-1</parameter>\n";
-    $outputString .= "    <parameter name=\"stabilizerscale\">  1.0 </parameter>\n";
-    $outputString .= "    <parameter name=\"nstabilizers\"> 3 </parameter>\n";
-    $outputString .= "    <parameter name=\"max_its\"> 1 </parameter>\n";
-    $outputString .= "  </qmc>\n";
-    if ($numOptLoops_) {
-	$outputString .= "</loop>\n";
-    }
-    $outputString .= "<loop max=\"2\">\n";
-    if ($useGPU_) {
-	$outputString .= "  <qmc method=\"cslinear\" move=\"pbyp\" checkpoint=\"-1\" gpu=\"yes\">\n";
-    } else {
-	$outputString .= "  <qmc method=\"cslinear\" move=\"pbyp\" checkpoint=\"-1\" gpu=\"no\">\n";
-    }
-    $outputString .= "    <parameter name=\"blocks\">   $vmcblocks_ </parameter>\n";
-    $outputString .= "    <parameter name=\"warmupsteps\"> $warmupSteps_ </parameter>\n";
-    $outputString .= "    <parameter name=\"stepsbetweensamples\">    $sbs_ </parameter>\n";
-    $outputString .= "    <parameter name=\"timestep\">  $vmctimestep_  </parameter>\n";
-    $outputString .= "    <parameter name=\"walkers\">  $walkers_ </parameter>\n";
-    $outputString .= "    <parameter name=\"samples\">  $numOptSamples_  </parameter>\n";
-    $outputString .= "    <parameter name=\"minwalkers\">  0.5 </parameter>\n";
-    $outputString .= "    <parameter name=\"maxWeight\">    1e9 </parameter>\n";
-    if ($useDrift_) {
-	$outputString .= "    <parameter name=\"useDrift\">  yes </parameter>\n";
-    } else {
-	$outputString .= "    <parameter name=\"useDrift\">   no </parameter>\n";
-    }
-    $outputString .= "    <estimator name=\"LocalEnergy\" hdf5=\"no\"/>\n";
-    $outputString .= "    <cost name=\"energy\">                   0.8 </cost>\n";
-    $outputString .= "    <cost name=\"unreweightedvariance\">     0.0 </cost>\n";
-    $outputString .= "    <cost name=\"reweightedvariance\">       0.2 </cost>\n";
-    $outputString .= "    <parameter name=\"MinMethod\">rescale</parameter>\n";
-    $outputString .= "    <parameter name=\"GEVMethod\">mixed</parameter>\n";
-    $outputString .= "    <parameter name=\"beta\">  0.05 </parameter>\n";
+    $outputString .= "    <parameter name=\"beta\">  0.0 </parameter>\n";
     $outputString .= "    <parameter name=\"exp0\"> -16 </parameter>\n";
     $outputString .= "    <parameter name=\"nonlocalpp\">no</parameter>\n";
     $outputString .= "    <parameter name=\"useBuffer\">no</parameter>\n";
@@ -2267,7 +2275,9 @@ sub getOptSectionNew {
     $outputString .= "    <parameter name=\"nstabilizers\"> 3 </parameter>\n";
     $outputString .= "    <parameter name=\"max_its\"> 1 </parameter>\n";
     $outputString .= "  </qmc>\n";
-    $outputString .= "</loop>\n";
+    if ($numOptLoops_) {
+	$outputString .= "</loop>\n";
+    }
     $outputString;
 }
 
@@ -2759,6 +2769,7 @@ sub getKVectors {
     my @supercell;
     my @ns;
     my @n;
+    my $eps = 0.00000000001;
     
     getSuperCell(\@supercell, $ptvref, $tilematref);
 #    print "supercell is:\n";
@@ -2784,7 +2795,7 @@ sub getKVectors {
 	
 		##Search through multiples of the supercell RLV's (with shifts)
 		## and find if they belong to the FBZ of the primitive cell
-		my $nmax = 10;
+		my $nmax = 14;
 		for ($n[0] = -$nmax; $n[0] <= $nmax; $n[0]++) { 
 		    for ($n[1] = -$nmax; $n[1] <= $nmax; $n[1]++) { 
 			for ($n[2] = -$nmax; $n[2] <= $nmax; $n[2]++) { 
@@ -2804,7 +2815,7 @@ sub getKVectors {
 				for (my $j = 0; $j < 3; $j++) {
 				    $dotval += $$ptvref[$i*3+$j]*$G[$j];
 				}
-				if ($dotval < -1 || $dotval > $eps) {
+				if ($dotval < -1-$eps || $dotval > $eps) {
 				    $inFBZ = 0;
 				}
 			    }
@@ -2835,7 +2846,7 @@ sub getKVectors {
 					$diff[$i] -= round($diff[$i]);
 					$diffsz += $diff[$i]*$diff[$i];
 				    }
-				    $found = $found || $diffsz < 1.0e-10;
+				    $found = $found || $diffsz < $eps;
 				}
 				if (! $found) {
 				    for (my $i = 0; $i < 3; $i++) {
@@ -2882,7 +2893,7 @@ sub getSupercellPos {
 #    print "$superrlvs[6]  $superrlvs[7]  $superrlvs[8]\n\n";
 
     my $size = -1;
-    while ($#{$posref} <= abs(getDet($tilematref))* ($#{$basisref}+1) && $size < 11) {
+    while ($#{$posref} <= abs(getDet($tilematref))* ($#{$basisref}+1) && $size < 13) {
 	$size++;
 	my @trial = (0, 0, 0);
 	
@@ -3037,28 +3048,6 @@ sub getTwoBodyRPAJastrow {
 	$$tudc[$i] = (0.5 / $wp / $r) * ( 1.0 - exp(-$r * sqrt($wp)) ) * exp(-($r*2.0/$locTwoBodyRcut)**2);
 	$i++;
     }
-}
-
-sub FracPart {
-    my $vecref = shift;
-    my @intpart = IntPart($vecref);
-    
-    my @outarr;
-    for (my $i = 0; $i <= $#{$vecref}; $i++) {
-	push(@outarr, $$vecref[$i] - $intpart[$i]);
-    }
-    return @outarr;
-}
-
-
-sub IntPart {
-    my $vecref = shift;
-    my @outarr;
-    
-    for (my $i = 0; $i <= $#{$vecref}; $i++) {
-	push(@outarr, round($$vecref[$i]-0.000001));
-    }
-    return @outarr;
 }
 
 sub round {
@@ -3282,8 +3271,6 @@ sub globalUsage {
     $usage .= "setup-qmc.pl is invoked as:\n";
     $usage .= "  setup-qmc.pl --Function [--suboptions] pwscf-infile.in\n\n";
     $usage .= "Where --Function is one of the following:\n";
-    $usage .= "   --testwvfcn (analyze eshdf wavefunction with regards to a particular supercell and twists)\n";
-    $usage .= "   --gettilemat (get a tilematrix with optimizes the supercell shape with respect to simulation cell radius)\n";
     $usage .= "   --genwfn (create input files to generate suitable trial wavefunctions for qmcpack)\n";
     $usage .= "   --genfsdft (create input files to get non-self consistent energy, pw2casino and kzk)\n";
     $usage .= "   --splconv (test convergence of spline spacing)\n";
@@ -3308,7 +3295,7 @@ sub NSCFUsage {
     $usage .= "the following keywords:\n";
     $usage .= "   --kpoint f f f (Do calculation at twist given by 3 floats (in reduced coordinates))\n";
     $usage .= "   --kshift f f f (Shift the grid of supercell k-points by f f f)\n";
-    $usage .= "   --kgrid i i i  (Generate wfn for ixixi mesh of k-points of the supercell)\n\n";
+    $usage .= "   --kmesh i i i  (Generate wfn for ixixi mesh of k-points of the supercell)\n\n";
     die ($usage);
 }
 
@@ -3328,7 +3315,7 @@ sub FSDFTUsage {
     $usage .= "the following keywords:\n";
     $usage .= "   --kpoint f f f (Do calculation at twist given by 3 floats (in reduced coordinates))\n";
     $usage .= "   --kshift f f f (Shift the grid of supercell k-points by f f f)\n";
-    $usage .= "   --kgrid i i i  (Generate wfn for ixixi mesh of k-points of the supercell)\n\n";
+    $usage .= "   --kmesh i i i  (Generate wfn for ixixi mesh of k-points of the supercell)\n\n";
     die ($usage);
 }
 
