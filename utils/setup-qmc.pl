@@ -1741,7 +1741,7 @@ sub getWavefunctionString {
 	    }
 	    $outputString .= "    </jastrow>\n";
 	    if ($locIsAe) {
-		$outputString .= "    <jastrow name=\"J1S\" type=\"One-Body\" function=\"Bspline\" print\"yes\" source\"i\">\n";
+		$outputString .= "    <jastrow name=\"J1S\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"i\">\n";
 		for (my $j = 0; $j <= $#{$atomsNameRef}; $j++) {
 		    $outputString .= "      <correlation elementType=\"${$atomsNameRef}[$j]\" cusp=\"${$atomsChargeRef}[$j]\" size=\"$sizeOneBody\" rcut=\"0.5\">\n";
 		    $outputString .= "         <coefficients id=\"${$atomsNameRef}[$j]\" type=\"Array\"> -0.1 -0.05 -0.01 </coefficients>\n";
@@ -1946,7 +1946,7 @@ sub getHamiltonianString {
 	    $outputString .= "      <pseudo elementType=\"$ppName\">\n";
             $outputString .= "        <header symbol=\"$ppName\" atomic-number=\"$chg\" zval=\"$chg\" />\n";
             $outputString .= "        <local>\n";
-            $outputString .= "          <grid type\"linear\" ri=\"0.0\" rf=\"4.0\" npts=\"201\" />\n";
+            $outputString .= "          <grid type=\"linear\" ri=\"0.0\" rf=\"4.0\" npts=\"201\" />\n";
             $outputString .= "        </local>\n";
             $outputString .= "      </pseudo>\n";
 	}
