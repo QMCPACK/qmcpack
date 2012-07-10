@@ -816,6 +816,7 @@ inverse_many_naive_pivot (T **A_list, T **work_list, int N, int stride)
     A[kbar*stride + tid] = colk[tid];
     __syncthreads();
     T pivInv = 1.0/rowk[k];
+    __syncthreads();
     if (tid == k) rowk[k] = T();
     // Column scaling
     colk[tid] = (tid==k) ? T() : -pivInv*A[tid*stride+k];
@@ -900,6 +901,7 @@ complex_inverse_many_naive_pivot (T **A_list, T **work_list, int N, int stride)
     T nrmInv = 1.0/(re*re + im*im);
     T pivInv_re =  nrmInv * re;
     T pivInv_im = -nrmInv * im;
+    __syncthreads();
     if (tid == k) {
       rowk[2*k+0] = T();
       rowk[2*k+1] = T();
