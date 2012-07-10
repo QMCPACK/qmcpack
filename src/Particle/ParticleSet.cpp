@@ -44,7 +44,7 @@ namespace qmcplusplus
   }
 
   ParticleSet::ParticleSet()
-    : UseBoundBox(true), UseSphereUpdate(true), sorted_ids(false), reordered_ids(false)
+    : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
       , ThreadID(0), SK(0), ParentTag(-1)
     {
       initParticleSet();
@@ -53,8 +53,7 @@ namespace qmcplusplus
     }
 
   ParticleSet::ParticleSet(const ParticleSet& p)
-      : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate)
-        ,sorted_ids(p.sorted_ids), reordered_ids(p.reordered_ids)
+      : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
       , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag())
   {
     initBase();
@@ -130,13 +129,17 @@ namespace qmcplusplus
     Mass.setObjName("mass");
     addAttribute(Mass);
 
-    orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-    orgID.setObjName("id0"); 
-    addAttribute(orgID);
-    
-    orgGroupID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-    orgGroupID.setObjName("gid0"); 
-    addAttribute(orgGroupID);
+    IndirectID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+    IndirectID.setObjName("id1"); 
+    addAttribute(IndirectID);
+
+    //orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+    //orgID.setObjName("id0"); 
+    //addAttribute(orgID);
+    //
+    //orgGroupID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+    //orgGroupID.setObjName("gid0"); 
+    //addAttribute(orgGroupID);
 
     myTwist=0.0;
 
@@ -146,13 +149,45 @@ namespace qmcplusplus
     //addAttribute(redR);
   }
 
-  void ParticleSet::resetGroups(const vector<int>& natpergroup)
+  void ParticleSet::resetGroups()
   {
-    SubPtcl.resize(natpergroup.size()+1);
+    int nspecies=mySpecies.getTotalNum();
+
+    if(nspecies==0)
+    {
+      APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
+    }
+    vector<int> ng(nspecies,0);
+    for(int iat=0; iat<GroupID.size(); iat++) 
+    { 
+      if(GroupID[iat]<nspecies)
+        ng[GroupID[iat]]++;
+      else
+        APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
+    }
+
+    SubPtcl.resize(nspecies+1);
     SubPtcl[0]=0;
-    for(int i=0; i<natpergroup.size(); ++i)
-      SubPtcl[i+1]=SubPtcl[i]+natpergroup[i];
-    sorted_ids=true;
+    for(int i=0; i<nspecies; ++i) SubPtcl[i+1]=SubPtcl[i]+ng[i];
+
+    int membersize= mySpecies.addAttribute("membersize");
+    for(int ig=0; ig<nspecies; ++ig)
+      mySpecies(membersize,ig)=ng[ig];
+
+    //orgID=ID;
+    //orgGroupID=GroupID;
+
+    int new_id=0;
+    for(int i=0; i<nspecies; ++i)
+      for(int iat=0; iat<GroupID.size(); ++iat) if(GroupID[iat]==i) IndirectID[new_id++]=ID[iat];
+
+    IsGrouped=true;
+    for(int iat=0; iat<ID.size(); ++iat) IsGrouped &= (IndirectID[iat]==ID[iat]);
+
+    if(IsGrouped)
+      app_log() << "Particles are grouped. Safe to use groups " << endl;
+    else
+      app_log() << "ID is not grouped. Need to use IndirectID for species-dependent operations " << endl;
   }
 
   void

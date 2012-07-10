@@ -188,6 +188,16 @@ namespace qmcplusplus {
 #ifdef QMC_CUDA
       return createOneBodyJastrow<OneBodyJastrowOrbitalBspline,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
 #else
+      //if(sourcePtcl->IsGrouped)
+      //{
+      //  app_log() << "Creating OneBodySpinJastrowOrbital<T> " << endl;
+      //  return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
+      //}
+      //else
+      //{
+      //  app_log() << "Creating OneBodyJastrowOrbital<T> " << endl;
+      //  return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
+      //}
       if(j1spin=="yes")
         return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
       else

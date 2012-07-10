@@ -172,7 +172,10 @@ namespace qmcplusplus {
 
       HDFAttribIO<ParticleSet::ParticleIndex_t> c(ref_.GroupID);
       c.read(hfile_id,"atoms/species_ids");
+
     }
+
+    ref_.resetGroups();
   }
 
   void ESHDFIonsParser::expand(Tensor<int,3>& tmat)
@@ -240,22 +243,10 @@ namespace qmcplusplus {
   //            }
   //    }
   //  }
+ 
+    ref_.resetGroups();
 
     ref_.createSK();
-
-
-    SpeciesSet& tspecies(ref_.getSpeciesSet());
-    vector<int> numPerGroup(tspecies.getTotalNum(),0);
-    for(int iat=0; iat<ref_.GroupID.size(); iat++) {
-      numPerGroup[ref_.GroupID[iat]]++;
-    }
-
-    ref_.resetGroups(numPerGroup);
-
-    int membersize= tspecies.addAttribute("membersize");
-    for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
-      tspecies(membersize,ig)=numPerGroup[ig];
-    }
 
 
     //char fname[8];

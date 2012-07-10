@@ -92,10 +92,11 @@ namespace qmcplusplus {
     ///current position after applying PBC in the Lattice Unit
     ParticlePos_t redR;
 
-    ///orginal ID before grouping
-    ParticleIndex_t orgID;
-    ///orginal GroupID before grouping
-    ParticleIndex_t orgGroupID;
+    /** ID map that reflects species group
+     *
+     * IsGrouped=true, if ID==IndirectID
+     */
+    ParticleIndex_t IndirectID;
     ///mass of each particle
     ParticleScalar_t Mass;
 
@@ -104,9 +105,7 @@ namespace qmcplusplus {
     ///true if fast update for sphere moves
     bool UseSphereUpdate;
     ///true if the particles are grouped
-    bool sorted_ids;
-    ///true if the particles are reordered
-    bool reordered_ids;
+    bool IsGrouped;
     ///threa id
     Index_t ThreadID;
     ///the indexp of the active particle for particle-by-particle moves
@@ -247,7 +246,7 @@ namespace qmcplusplus {
       return EnsembleProperty.Weight;
     }
 
-    void resetGroups(const vector<int>& ng);
+    void resetGroups();
 
     /**move a particle
      *@param iat the index of the particle to be moved
