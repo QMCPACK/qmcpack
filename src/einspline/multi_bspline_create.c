@@ -1432,6 +1432,7 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
   int zs = spline->z_stride;
   // First, solve in the X-direction 
   for (int iy=0; iy<My; iy++) 
+#pragma omp parallel for
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = 2*(iy*Mz+iz);
       intptr_t coffset = 2*(iy*Nz+iz)*zs;
@@ -1447,6 +1448,7 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
   
   // Now, solve in the Y-direction
   for (int ix=0; ix<Nx; ix++) 
+#pragma omp parallel for
     for (int iz=0; iz<Nz; iz++) {
       intptr_t doffset = 2*(ix*Ny*Nz + iz)*zs;
       intptr_t coffset = 2*(ix*Ny*Nz + iz)*zs;
@@ -1462,6 +1464,7 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
 
   // Now, solve in the Z-direction
   for (int ix=0; ix<Nx; ix++) 
+#pragma omp parallel for
     for (int iy=0; iy<Ny; iy++) {
       intptr_t doffset = 2*((ix*Ny+iy)*Nz)*zs;
       intptr_t coffset = 2*((ix*Ny+iy)*Nz)*zs;
