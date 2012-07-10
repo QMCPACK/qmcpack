@@ -506,7 +506,7 @@ bool QMCLinearOptimize::nonLinearRescale(std::vector<RealType>& dP, Matrix<RealT
     RealType rescale = getNonLinearRescale(dP,S);
     for (int i=1; i<dP.size(); i++) dP[i]*=rescale;
     return true;
-};
+}
 
 
 void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
@@ -538,7 +538,7 @@ void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
     }
 //     returns the number of non-linear parameters.
 //    app_log()<<"line params: "<<first<<" "<<last<<endl;
-};
+}
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
 {
@@ -555,7 +555,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<R
     rescale = 1.0/(1.0-rescale);
 //     app_log()<<"rescale: "<<rescale<<endl;
     return rescale;
-};
+}
 
 void QMCLinearOptimize::orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S)
 {
@@ -595,7 +595,7 @@ void QMCLinearOptimize::orthoScale(std::vector<RealType>& dP, Matrix<RealType>& 
 //     rescale = 1.0/(1.0-rescale);
 //     app_log()<<rescale<<endl;
 //     for (int i=0; i<dP.size(); i++) dP[i] *= rescale;
-};
+}
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled)
 {
@@ -713,7 +713,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, i
         returnValue=min(lowest_J_EV,lowest_CSF_EV);
     }
     return returnValue;
-};
+}
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
 * @param q current xmlNode
@@ -805,6 +805,74 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
     optTarget->put(cur);
     vmcEngine->resetComponents(cur);
 }
+    bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType> >&
+    mappedStabilizers, RealType& XS, RealType& val, RealType tooBig )
+    {
+      int nms(0);
+      for (int i=0; i<mappedStabilizers.size(); i++) if (mappedStabilizers[i].second==mappedStabilizers[i].second) nms++;
+      bool SuccessfulFit(false);
+      if (nms>=5)
+      {//Quartic fit the stabilizers we have tried and try to choose the best we can
+        vector<RealType>  Y(nms), Coefs(5);
+        Matrix<RealType> X(nms,5);
+        for (int i=0; i<nms; i++)
+          if(mappedStabilizers[i].second==mappedStabilizers[i].second)
+          {
+            X(i,0)=1.0;
+            X(i,1)=mappedStabilizers[i].first;
+            X(i,2)=std::pow(mappedStabilizers[i].first,2);
+            X(i,3)=std::pow(mappedStabilizers[i].first,3);
+            X(i,4)=std::pow(mappedStabilizers[i].first,4);
+            Y[i]=mappedStabilizers[i].second;
+          }
+        LinearFit(Y,X,Coefs);
+
+        RealType Xmin = QuarticMinimum(Coefs);
+        val=0;
+        for (int i=0; i<5; i++) val+=std::pow(Xmin,i)*Coefs[i];
+        app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val<<endl;;
+//         for (int i=0; i<5; i++) app_log()<<Coefs[i]<<" ";
+//         app_log()<<endl;
+        SuccessfulFit=true;
+        for (int i=0; i<nms; i++)
+          if(mappedStabilizers[i].second==mappedStabilizers[i].second)
+            if (val>mappedStabilizers[i].second) SuccessfulFit=false;
+        if(Xmin>tooBig) SuccessfulFit=false;
+        if (SuccessfulFit)
+          XS=Xmin;
+      }
+      else if (nms>=3)
+      {//Quadratic fit the stabilizers we have tried and try to choose the best we can
+        std::sort(mappedStabilizers.begin(),mappedStabilizers.end());
+        vector<RealType>  Y(nms), Coefs(3);
+        Matrix<RealType> X(nms,3);
+        for (int i=0; i<nms; i++)
+          if(mappedStabilizers[i].second==mappedStabilizers[i].second)
+          {
+            X(i,0)=1.0;
+            X(i,1)=mappedStabilizers[i].first;
+            X(i,2)=std::pow(mappedStabilizers[i].first,2);
+            Y[i]=mappedStabilizers[i].second;
+          }
+        LinearFit(Y,X,Coefs);
+        
+        //extremum really.
+        RealType Xmin = -0.5*Coefs[1]/Coefs[2];
+        val=0;
+        for (int i=0; i<3; i++) val+=std::pow(Xmin,i)*Coefs[i];
+        app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val<<endl;
+//         for (int i=0; i<3; i++) app_log()<<Coefs[i]<<" ";
+//         app_log()<<endl;
+        SuccessfulFit=true;
+        if(Xmin>tooBig) SuccessfulFit=false;
+        for (int i=0; i<nms; i++)
+          if(mappedStabilizers[i].second==mappedStabilizers[i].second)
+            if (val>mappedStabilizers[i].second) SuccessfulFit=false;
+        if (SuccessfulFit)
+          XS = Xmin;
+      }
+      return SuccessfulFit;
+    }
 }
 /***************************************************************************
 * $RCSfile$   $Author$

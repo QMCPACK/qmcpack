@@ -316,6 +316,7 @@ namespace qmcplusplus
 //       cerr<<endl;
     }
       
+    return 0;
   }
   
   void QMCRenyiUpdateBase::print_all()

@@ -89,12 +89,12 @@ namespace qmcplusplus
           else //reject illegal moves
             ++nReject;
         }
-
         if (stucked)
         {
           ++nAllRejected;
           H.rejectedMove(W,thisWalker);
         }
+        thisWalker.R=W.R;
       }
       myTimers[1]->stop();
 
@@ -484,6 +484,10 @@ namespace qmcplusplus
             Psi.rejectMove(iat);
           }
         }
+        //for subSteps must update thiswalker
+        thisWalker.R=W.R;
+        thisWalker.G=W.G;
+        thisWalker.L=W.L;
       }
       myTimers[1]->stop();
 

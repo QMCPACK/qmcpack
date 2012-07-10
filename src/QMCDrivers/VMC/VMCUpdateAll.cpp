@@ -276,6 +276,8 @@ namespace qmcplusplus
           break;
       }
     }
+
+    return 0.0;
   }
 
 // void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
