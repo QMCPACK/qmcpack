@@ -24,7 +24,7 @@ SET(MOSRCS
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
 
-set(QTOOLS convert4qmc MSDgenerator)
+set(QTOOLS convert4qmc MSDgenerator extract-eshdf-kvectors)
 ADD_EXECUTABLE(getSupercell getSupercell.cpp)
 
 FOREACH(p ${QTOOLS})
