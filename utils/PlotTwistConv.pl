@@ -4,7 +4,7 @@ use FileHandle;
 use Getopt::Long;
 
 
-my %config = do "/home/lshulen/maintenance/qmcpack-assembla/utils/setup-qmc-conf.pl";
+my %config = do "/gprojects/qmcpack/redsky/bin/setup-qmc-conf.pl";
 
 my $supercellsize;
 my $start;

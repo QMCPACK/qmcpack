@@ -1,9 +1,8 @@
-ppconvert => '/home/lshulen/maintenance/mywfconv/build/ppconvert',
-energytool => '/home/lshulen/maintenance/qmcpack-assembla/utils/energy.pl',
-supercell => '/home/lshulen/maintenance/qmcpack-assembla/build/bin/getSupercell',
-twenergytool => '/home/lshulen/maintenance/qmcpack-assembla/utils/TwistAvg.pl',
+ppconvert => '/gprojects/qmcpack/redsky/bin/ppconvert',
+energytool => '/gprojects/qmcpack/redsky/bin/energy.pl',
+supercell => '/gprojects/qmcpack/redsky/bin/getSupercell',
+twenergytool => '/gprojects/qmcpack/redsky/bin/TwistAvg.pl',
 gnuplot => '/usr/bin/gnuplot',
-kptlister => '/home/lshulen/maintenance/qmcpack-assembla/build/bin/extract-eshdf-kvectors',
 
 
  #**************************************************************************

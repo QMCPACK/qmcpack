@@ -3,7 +3,7 @@ use strict;
 use Getopt::Long;
 use POSIX qw/floor/;
 
-my %config = do '/remote/lshulen/sharedmaintenance/qmcpack/utils/setup-qmc-conf.pl';
+my %config = do "/gprojects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
 my $getSupercell = $config{supercell};
 
 print "Supercell command is at: $getSupercell\n";

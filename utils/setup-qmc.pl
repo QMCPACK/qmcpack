@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use strict;
-use Getopt::Long ;
+use Getopt::Long;
 use POSIX qw/floor fmod ceil pow/;
 
 
@@ -129,7 +129,7 @@ if (! @inSuperCellKShift) {
     @inSuperCellKShift = (0, 0, 0);
 }
 
-unless($genNSCF || $genFSDFT || $convBspline || $optwvfcn || $dmcCalc || $convDMCTstep || $getTilemat) {
+unless($testwvfcn || $genNSCF || $genFSDFT || $convBspline || $optwvfcn || $dmcCalc || $convDMCTstep || $getTilemat) {
     globalUsage();
 }
 
@@ -1345,11 +1345,16 @@ sub parsePwscfInput {
     my $ionsRef = shift;
     my $atnmtoppRef = shift;
     my $posarrRef = shift;
+    my $coadim;
     
     ${$cp} = getPwscfToken("prefix", $filedataRef);
     ${$psdir} = getPwscfToken("pseudo_dir", $filedataRef);
     ${$odir} = getPwscfToken("outdir", $filedataRef);
     ${$cdim} = getPwscfToken('celldm(1)', $filedataRef);
+    if (${$cdim} < 0) {
+	${$cdim} = 1.0;
+    }
+    $coadim = getPwscfToken('celldm(3)', $filedataRef);
     ${$numSp} = getPwscfToken("ntyp", $filedataRef);
     ${$numAt} = getPwscfToken("nat", $filedataRef);
     ${$numSpin} = getPwscfToken("nspin", $filedataRef);
@@ -1369,14 +1374,23 @@ sub parsePwscfInput {
     } elsif ($ibrav == 3) {
 	my $val = 0.5*${$cdim};
 	@{$cptvRef} = ($val, $val, $val, -$val, $val, $val, -$val, -$val, $val);
+    } elsif ($ibrav == 4) {
+	my $val = ${$cdim};
+	@{$cptvRef} = ($val, 0, 0, -$val*0.5, sqrt(3)*0.5*$val, 0, 0, 0, $val*$coadim);
     } else {
 	die "Ibrav $ibrav is not recognized, please recreate with ibrav = 0\n";
     }
 
+#    print "Primitive Translation Vectors:\n";
+#    print "${$cptvRef}[0] ${$cptvRef}[1] ${$cptvRef}[2]\n";
+#    print "${$cptvRef}[3] ${$cptvRef}[4] ${$cptvRef}[5]\n";
+#    print "${$cptvRef}[6] ${$cptvRef}[7] ${$cptvRef}[8]\n";
+
+
     # now try to read in the atomic species
     my $speciesString = getPwscfCard("ATOMIC_SPECIES", $filedataRef);
-    my @allSpecies = split(/\s+/, removeWhiteSpaceAtBeginning($speciesString));
-    $#allSpecies+1 == $$numSp * 3 || die "Number of species specified in pwscf file does not match with number of species specified in system section\n";
+     my @allSpecies = split(/\s+/, removeWhiteSpaceAtBeginning($speciesString));
+     $#allSpecies+1 == $$numSp * 3 || die "Number of species specified in pwscf file does not match with number of species specified in system section\n";
     for (my $i = 0; $i < $$numSp; $i++) {
 	$atnmtoppRef->{$allSpecies[$i*3]} = $$psdir . $allSpecies[$i*3+2];
 	$atNamRef->[$i] = $allSpecies[$i*3];
@@ -1568,7 +1582,9 @@ sub getWvfcnStringFromOptDir {
 
 	if ($start && !$stop) {
 	    if ($line =~ /<correlation/) {
-		$line =~ s/<correlation/<correlation rcut=\"$rcutval\"/;
+		unless ($line =~ /rcut/) {
+		    $line =~ s/<correlation/<correlation rcut=\"$rcutval\"/;
+		}
 	    }
 	    if ($line =~ /<determinantset/) {
 		if ($line =~ /href/) {
@@ -1744,7 +1760,7 @@ sub getWavefunctionString {
 		$outputString .= "    <jastrow name=\"J1S\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"i\">\n";
 		for (my $j = 0; $j <= $#{$atomsNameRef}; $j++) {
 		    $outputString .= "      <correlation elementType=\"${$atomsNameRef}[$j]\" cusp=\"${$atomsChargeRef}[$j]\" size=\"$sizeOneBody\" rcut=\"0.5\">\n";
-		    $outputString .= "         <coefficients id=\"${$atomsNameRef}[$j]\" type=\"Array\"> -0.1 -0.05 -0.01 </coefficients>\n";
+		    $outputString .= "         <coefficients id=\"${$atomsNameRef}[$j]-sr\" type=\"Array\"> -0.1 -0.05 -0.01 </coefficients>\n";
 		    $outputString .= "      </correlation>\n";
 		}
 		$outputString .= "    </jastrow>\n";
@@ -2291,7 +2307,7 @@ sub getPwscfToken {
     my $tokenName = shift;
     my $pwscfGetTokenFileDataRef = shift;
    
-    my $outval;
+    my $outval = -999999999999999;
     for (my $i = 0; $i <= $#{$pwscfGetTokenFileDataRef}; $i++) {
 	my $line = $pwscfGetTokenFileDataRef->[$i];
 	if (index($line, $tokenName) >= 0) {
@@ -2491,7 +2507,8 @@ sub getPwscfCard {
     foreach my $line (@{$dataref}) {
 	if ($line =~ /$secname/i) {
             $start = $i;
-	} elsif ($start != -1 && $set == 0 && ((!($line =~ /[a-z]/) && !($line =~ /[0-9]/) && !($line =~ /\//)) || $line =~ /\{/)) {
+#	} elsif ($start != -1 && $set == 0 && ( (!($line =~ /[a-z]/) && !($line =~ /[0-9]/) && !($line =~ /\//) ) || $line =~ /\{/)) {
+	} elsif ($start != -1 && $set == 0 && ( ( !($line =~ /[0-9]/) && !($line =~ /\//) ) || $line =~ /\{/)) {
             $stop = $i;
             $set = 1;
         }
@@ -3050,6 +3067,17 @@ sub getTwoBodyRPAJastrow {
     }
 }
 
+sub FracPart {
+    my $vecref = shift;
+    my @intpart = IntPart($vecref);
+    
+    my @outarr;
+    for (my $i = 0; $i <= $#{$vecref}; $i++) {
+	push(@outarr, $$vecref[$i] - $intpart[$i]);
+    }
+    return @outarr;
+}
+
 sub round {
     my $val = shift;
     
@@ -3271,6 +3299,8 @@ sub globalUsage {
     $usage .= "setup-qmc.pl is invoked as:\n";
     $usage .= "  setup-qmc.pl --Function [--suboptions] pwscf-infile.in\n\n";
     $usage .= "Where --Function is one of the following:\n";
+    $usage .= "   --testwvfcn (analyze eshdf wavefunction with regards to a particular supercell and twists)\n";
+    $usage .= "   --gettilemat (get a tilematrix with optimizes the supercell shape with respect to simulation cell radius)\n";
     $usage .= "   --genwfn (create input files to generate suitable trial wavefunctions for qmcpack)\n";
     $usage .= "   --genfsdft (create input files to get non-self consistent energy, pw2casino and kzk)\n";
     $usage .= "   --splconv (test convergence of spline spacing)\n";

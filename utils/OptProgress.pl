@@ -4,7 +4,7 @@ use strict;
 use FileHandle;
 use Getopt::Long;
 
-my %config = do "/home/lshulen/maintenance/qmcpack-assembla/utils/setup-qmc-conf.pl";
+my %config = do "/gprojects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
 
 my $gnuplot = $config{gnuplot};
 my $energytool = $config{energytool};
