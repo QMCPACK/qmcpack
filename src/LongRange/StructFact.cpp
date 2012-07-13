@@ -151,6 +151,31 @@ StructFact::FillRhok() {
       rhok_ref[ki]+= eikr_ref[ki];
     }
   }
+
+  //RealType s,c;//get sin and cos
+  //for(int i=0; i<npart; i++)
+  //{
+  //  const PosType& pos(PtclRef.R[i]);
+  //  ComplexType* restrict eikr_ref=eikr[i];
+  //  for(int ki=0; ki<KLists.numk; ki++)
+  //  {
+  //    sincos( dot(KLists.kpts_cart[ki],pos) , &s, &c);
+  //    eikr_ref[ki]=ComplexType(c,s);
+  //  }
+  //  accumulate_elements(eikr[i],eikr[i]+KLists.numk,rhok[PtclRef.GroupID[i]]);
+  //}
+
+  //RealType KdotP[KLists.numk];
+  //for(int ig=0; ig<PtclRef.groups(); ++ig)
+  //{
+  //  for(int i=PtclRef.first(ig); i<PtclRef.last(ig); ++i)
+  //  {
+  //    for(int ki=0; ki<KLists.numk; ki++)
+  //      KdotP[ki]=dot(KLists.kpts_cart[ki],PtclRef.R[i]);
+  //    eval_e2iphi(KLists.numk,KdotP,eikr[i]);
+  //    accumulate_elements(eikr[i],eikr[i]+KLists.numk,rhok[ig]);
+  //  }
+
 #endif
 }
 

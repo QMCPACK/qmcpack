@@ -42,6 +42,8 @@ namespace qmcplusplus {
     KContainer KLists;
     ///eikr[K] for a proposed move
     Vector<ComplexType> eikr_temp;
+    ///storage for kdotp
+    Vector<RealType> KdotP;
     /** Constructor - copy ParticleSet and init. k-shells
      * @param ref Reference particle set
      * @param kc cutoff for k
