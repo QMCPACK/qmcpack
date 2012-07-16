@@ -225,8 +225,8 @@ namespace qmcplusplus {
 //       for (int sp2=sp1; sp2<NumSpecies; sp2++) 
 //     	eval_vk_sum_cuda(RhoklistsGPU[sp1].data(), RhoklistsGPU[sp2].data(),
 //     			 FkGPU.data(), Numk, SumGPU.data(), nw);
+//    SumHost = SumGPU;
 
-    SumHost = SumGPU;
     for (int iw=0; iw<walkers.size(); iw++) {
       // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
       walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = 

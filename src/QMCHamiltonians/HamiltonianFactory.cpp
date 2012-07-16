@@ -703,7 +703,11 @@ namespace qmcplusplus {
         targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
 #endif
       } else {
+#ifdef QMC_CUDA
+        targetH->addOperator(new CoulombPotentialAB_CUDA(*source,*targetPtcl),title);
+#else
         targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
+#endif
       }
     }
   }

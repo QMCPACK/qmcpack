@@ -1049,8 +1049,8 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   // Subtract off gradient^2 from laplacian
   if (tid == 0) 
     ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-			 ratio_prod[1][0]*ratio_prod[1][0] +
-			 ratio_prod[1][0]*ratio_prod[1][0]);
+			 ratio_prod[2][0]*ratio_prod[2][0] +
+			 ratio_prod[3][0]*ratio_prod[3][0]);
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by 
   // ratio to make it w.r.t. new position
@@ -1120,8 +1120,8 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   // Subtract off gradient^2 from laplacian
   if (tid == 0) 
     ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-			 ratio_prod[1][0]*ratio_prod[1][0] +
-			 ratio_prod[1][0]*ratio_prod[1][0]);
+        ratio_prod[2][0]*ratio_prod[2][0] +
+        ratio_prod[3][0]*ratio_prod[3][0]);
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by 
   // ratio to make it w.r.t. new position
