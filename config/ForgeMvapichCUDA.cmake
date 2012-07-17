@@ -11,7 +11,8 @@ SET(CMAKE_SYSTEM_PROCESSOR "EMBER")
 #--------------------------------------------------------------------------
 # setting compilers, compiler options and MKL_HOME
 #--------------------------------------------------------------------------
-set(CMAKE_CXX_COMPILER /usr/local/mpi/mvapich2/mvapich2-1.8a1p1-intel-12.0.4-cuda-4.1.28/bin/mpicxx)
+#set(CMAKE_CXX_COMPILER /usr/local/mpi/mvapich2/mvapich2-1.8a1p1-intel-12.0.4-cuda-4.1.28/bin/mpicxx)
+set(CMAKE_CXX_COMPILER /usr/local/mpi/mvapich2/mvapich2-1.7rc1-intel-12.0.4/bin/mpicxx)
 set(CMAKE_C_COMPILER  icc)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 
