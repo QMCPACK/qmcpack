@@ -7,7 +7,8 @@
 set(INTEL_COMPILER 1)
 add_definitions(-DADD_ -DINLINE_ALL=inline)
 set(ENABLE_OPENMP 1)
-set(INTEL_OPTS "-g -restrict -unroll -ansi-alias -O3 -ip -openmp")
+#set(INTEL_OPTS "-g -restrict -unroll -ansi-alias -O3 -ip -openmp")
+set(INTEL_OPTS "-g -restrict -unroll -O3 -ip -openmp")
 
 #MESSAGE(STATUS "CPU_IDENTITY ${CPU_IDENTITY}")
 
