@@ -4,7 +4,7 @@ SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
-set(GNU_FLAGS "-ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
+set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
 #set(XT_FLAGS "-msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
@@ -39,6 +39,6 @@ set(CMAKE_FIND_ROOT_PATH
   /ccs/proj/mat034/jnkim/xk6/gnu45/libxml2
 )
 
-set(EINSPLINE_SSE_BUG 1)
+#set(EINSPLINE_SSE_BUG 1)
 set(HAVE_EINSPLINE 1)
 set(HAVE_EINSPLINE_EXT 0)
