@@ -23,10 +23,14 @@ namespace qmcplusplus
 {
 
   PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, string& sources)
-    :Dmax(10.), Delta(0.5)
+    :Dmax(10.), Delta(0.5), num_species(2)
   {
     UpdateMode.set(COLLECTABLE,1);
-    int num_species=elns.groups();
+    num_species=elns.groups();
+    n_vec.resize(num_species,0);
+    for(int i(0);i<num_species;i++)
+      n_vec[i]=1.0/(elns.last(i)-elns.first(i));
+    N_e=elns.getTotalNum();
 
     //use the simulation cell radius if any direction is periodic
     if(elns.Lattice.SuperCellEnum)
@@ -121,7 +125,7 @@ namespace qmcplusplus
         RealType r=dii.r(nn);
         if(r>=Dmax) continue;
         int loc=static_cast<int>(DeltaInv*r);
-        collectables[pair_ids[nn]*NumBins+loc+myIndex] += norm_factor[loc];
+        collectables[pair_ids[nn]*NumBins+loc+myIndex] += norm_factor(pair_ids[nn]+1,loc);
       }
     }
 
@@ -132,13 +136,14 @@ namespace qmcplusplus
       int koff=other_offsets[k];
       for(int iat=0; iat<d1.centers(); ++iat) 
       {
+        RealType overNI=1.0/d1.centers();
         int toff= (gid[iat]+koff)*NumBins;
         for(int nn=d1.M[iat]; nn<d1.M[iat+1]; ++nn)
         {
           RealType r=dii.r(nn);
           if(r>=Dmax) continue;
           int loc=static_cast<int>(DeltaInv*r);
-          collectables[toff+loc+myIndex] += norm_factor[loc];
+          collectables[toff+loc+myIndex] += norm_factor(0,loc)*overNI;
         }
       }
     }
@@ -159,10 +164,10 @@ namespace qmcplusplus
 
       h5o->addProperty(const_cast<RealType&>(Delta),"delta");
       h5o->addProperty(const_cast<RealType&>(Dmax),"cutoff");
-      h5o->addProperty(const_cast<vector<RealType>&>(norm_factor),"norm_factor");
+//       h5o->addProperty(const_cast<vector<RealType>&>(norm_factor),"norm_factor");
 
-      std::string blob("norm_factor[i]=1/r_m[i]^2 for r_m[i]=(r[i]+r[i+1])/2");
-      h5o->addProperty(blob,"dictionary");
+//       std::string blob("norm_factor[i]=1/r_m[i]^2 for r_m[i]=(r[i]+r[i+1])/2");
+//       h5o->addProperty(blob,"dictionary");
 
       h5list.push_back(h5o);
       offset+=NumBins;
@@ -219,9 +224,34 @@ namespace qmcplusplus
     DeltaInv=1.0/Delta;
 
     NumBins=nbins;
-    norm_factor.resize(NumBins);
+    
+    norm_factor.resize((num_species*num_species-num_species)/2+num_species+1,NumBins);
+
     RealType r=Delta*0.5;
-    for(int i=0; i<NumBins; ++i, r+=Delta) norm_factor[i]=1.0/r/r;
+    RealType pf=Volume*DeltaInv/(4*M_PI);
+    for(int i=0; i<NumBins; ++i, r+=Delta) 
+    {
+      RealType rm2=pf/r/r;
+      norm_factor(0,i)=rm2/N_e;
+      int indx(1);
+      for(int m(0);m<num_species;m++)
+        for(int n(m);n<num_species;n++)
+        {
+          norm_factor(indx,i)=(m==n?2:1)*rm2*n_vec[n]*n_vec[m];
+          indx++;
+        }
+    }
+    
+//     for(int m(0);m<norm_factor.size1();m++)
+//     {
+//       cerr<<m<<": ";
+//       for(int i=0; i<NumBins; ++i)
+//         cerr<<" "<<norm_factor(m,i);
+//       cerr<<endl;
+//     }
+        
+    
+      
 
     ////resize(nbins);
     //if(debug == "yes")
@@ -244,12 +274,25 @@ namespace qmcplusplus
 
   void  PairCorrEstimator::resize(int nbins)
   {
-    norm_factor.resize(nbins);
+    NumBins=nbins;
+    norm_factor.resize((num_species*num_species-num_species)/2+num_species+1,NumBins);
     RealType r=Delta*0.5;
-    for(int i=0; i<norm_factor.size(); ++i, r+=Delta)
+    RealType pf=Volume*DeltaInv/(4*3.14159265);
+    for(int i=0; i<NumBins; ++i, r+=Delta) 
     {
-      norm_factor[i]=1.0/r/r;
+      RealType rm2=pf/r/r;
+      norm_factor(0,i)=rm2/N_e;
+      int indx(1);
+      for(int m(0);m<num_species;m++)
+        for(int n(m);n<num_species;n++,indx++)
+          norm_factor(indx,i)=rm2*n_vec[n]*n_vec[m];
     }
+//     norm_factor.resize(nbins);
+//     RealType r=Delta*0.5;
+//     for(int i=0; i<norm_factor.size(); ++i, r+=Delta)
+//     {
+//       norm_factor[i]=1.0/r/r;
+//     }
   }
 }
 

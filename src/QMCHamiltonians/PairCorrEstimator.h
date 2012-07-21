@@ -76,7 +76,9 @@ namespace qmcplusplus
     /////save source indices
     //vector<int> source_ids;
     ///normalization factor
-    vector<RealType> norm_factor;
+    Matrix<RealType> norm_factor;
+    int num_species,N_e;
+    std::vector<RealType> n_vec;
     /////data
     //Matrix<RealType> gof_r;
     ///prefix of each gof_r
