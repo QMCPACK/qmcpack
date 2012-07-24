@@ -632,7 +632,7 @@ namespace qmcplusplus {
 
     RealType ChiesaKEcorrection()
     {
-      if ((!PtclRef->Lattice.SuperCellEnum)||(OHMMS_DIM!=3))
+      if ((!PtclRef->Lattice.SuperCellEnum))
 	return 0.0;
       const int numPoints = 1000;
       RealType vol = PtclRef->Lattice.Volume;
@@ -669,11 +669,16 @@ namespace qmcplusplus {
               {
 		RealType r = dr * (RealType)ir;
 		RealType u = ufunc.evaluate(r);
+#if(OHMMS_DIM==3)
 		aparam += (1.0/4.0)*k*k*
 		  4.0*M_PI*r*std::sin(k*r)/k*u*dr;
 		uk += 0.5*4.0*M_PI*r*std::sin(k*r)/k * u * dr *
 		  (RealType)Nj / (RealType)(Ni+Nj);
-		
+#endif
+#if(OHMMS_DIM==2)
+                uk += 0.5*2.0*M_PI*std::sin(k*r)/k * u * dr *
+                  (RealType)Nj / (RealType)(Ni+Nj);
+#endif		
 		//aparam += 0.25* 4.0*M_PI*r*r*u*dr;
 	      }
 	    }
