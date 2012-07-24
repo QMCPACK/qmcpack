@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_CREATE_GRID_FUNCTION_H
 #define QMCPLUSPLUS_CREATE_GRID_FUNCTION_H
 
+#include <cmath>
 /**Abstract class to perform a transformation from a function (analytic or grid)
  * to a grid function
  */
@@ -74,7 +75,7 @@ struct Transform2GridFunctor:
       }
     } else {
       for(int i=0; i<grid.size(); i++) {
-	out_(i) = in_.f(grid(i))*pow(grid(i),np);
+	out_(i) = in_.f(grid(i))*std::pow(grid(i),np);
       }
     }
 
@@ -125,14 +126,14 @@ struct Transform2GridFunctor:
       }
     } else {
       for(int i=0; i<grid.size(); i++) {
-	out_(i) = in_.f(grid(i))*pow(grid(i),np);
+	out_(i) = in_.f(grid(i))*std::pow(grid(i),np);
       }
     }
 
     result_t deriv= in_.df(grid(0));
     if(np>0) {
       point_type r = grid(0);
-      deriv = (deriv*pow(r,np)+static_cast<result_t>(np)*out_(0)*pow(r,np-1));
+      deriv = (deriv*std::pow(r,np)+static_cast<result_t>(np)*out_(0)*std::pow(r,np-1));
     }
     out_.spline(0,deriv,grid.size()-1,0.0);
   }
