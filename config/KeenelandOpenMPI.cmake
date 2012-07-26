@@ -28,11 +28,11 @@ SET(CMAKE_Fortran_FLAGS_RELEASE ${CMAKE_Fortran_FLAGS})
 # boost,hdf,szip,libxml2,fftw,essl
 #--------------------------------------------------------------------------
 set(CMAKE_FIND_ROOT_PATH
-  /nics/a/proj/qmc/keeneland/intel11.1/einspline
   /sw/keeneland/hdf5/1.8.6/centos5.5_intel11.1.073
   /sw/keeneland/fftw/3.2.1/centos5.4_gnu4.1.2_fPIC
 )
 
+set(CUDA_NVCC_FLAGS "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
 #--------------------------------------------------------------------------
 # below is common for INTEL compilers and MKL library
 #--------------------------------------------------------------------------
@@ -46,6 +46,8 @@ set(USE_PREFETCH 1)
 set(PREFETCH_AHEAD 10)
 set(HAVE_MKL 1)
 set(HAVE_MKL_VML 1)
+
+set(HAVE_EINSPLINE 1)
 
 include_directories(/opt/intel/composerxe/mkl/include)
 link_libraries(-L/opt/intel/composerxe/mkl/lib/intel64 -mkl=sequential)
