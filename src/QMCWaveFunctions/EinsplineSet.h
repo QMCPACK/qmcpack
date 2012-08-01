@@ -17,13 +17,12 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_H
 #define QMCPLUSPLUS_EINSPLINE_SET_H
 
+#include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
-#include "Configuration.h"
-#include "Numerics/e2iphi.h"
 #include <einspline/multi_bspline_structs.h>
 #ifdef QMC_CUDA
   #include <einspline/multi_bspline_create_cuda.h>
@@ -273,7 +272,7 @@ namespace qmcplusplus {
     ///////////////////
     Vector<double> phase;
     Vector<complex<double> > eikr;
-    inline void computePhaseFactors(TinyVector<double,OHMMS_DIM> r);
+    void computePhaseFactors(const TinyVector<double,OHMMS_DIM>& r);
     // For running at half G-vectors with real orbitals;  
     // 0 if the twist is zero, 1 if the twist is G/2.
     TinyVector<int,OHMMS_DIM> HalfG;
@@ -550,26 +549,26 @@ namespace qmcplusplus {
 
 #endif
 
-  template<typename StorageType>
-  inline void EinsplineSetExtended<StorageType>::computePhaseFactors
-  (TinyVector<RealType,OHMMS_DIM> r)
-  {
-    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
-    eval_e2iphi(phase,eikr);
-//#ifdef HAVE_MKL
-//    for (int i=0; i<kPoints.size(); i++) 
-//      phase[i] = -dot(r, kPoints[i]);
-//    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
-//#else
-//    double s, c;
-//    for (int i=0; i<kPoints.size(); i++) {
-//      phase[i] = -dot(r, kPoints[i]);
-//      sincos (phase[i], &s, &c);
-//      eikr[i] = complex<double>(c,s);
-//    }
-//#endif
-  }
-  
+//  template<typename StorageType>
+//  inline void EinsplineSetExtended<StorageType>::computePhaseFactors
+//  (TinyVector<RealType,OHMMS_DIM> r)
+//  {
+//    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
+//    eval_e2iphi(phase,eikr);
+////#ifdef HAVE_MKL
+////    for (int i=0; i<kPoints.size(); i++) 
+////      phase[i] = -dot(r, kPoints[i]);
+////    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
+////#else
+////    double s, c;
+////    for (int i=0; i<kPoints.size(); i++) {
+////      phase[i] = -dot(r, kPoints[i]);
+////      sincos (phase[i], &s, &c);
+////      eikr[i] = complex<double>(c,s);
+////    }
+////#endif
+//  }
+//  
 
   
 }

@@ -13,10 +13,14 @@
 #ifndef QMCPLUSPLUS_E2IPHI_H
 #define QMCPLUSPLUS_E2IPHI_H
 
-#include <vector>
-#include <complex>
 #include <config.h>
+#include <complex>
+#include <vector>
 #include <config/stdlib/math.h>
+
+#if defined(HAVE_MKL_VML)
+#include <mkl_vml_functions.h>
+#endif
 
 #if defined(HAVE_ACML)
 extern "C"
@@ -81,7 +85,6 @@ eval_e2iphi (int n, float* restrict phi, std::complex<float>* restrict z)
   for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
 }
 #elif defined(HAVE_MKL_VML)
-#include <mkl_vml_functions.h>
 inline void
 eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
 {
@@ -128,11 +131,11 @@ eval_e2iphi(std::vector<T>& phi, std::vector<std::complex<T> >& z)
   eval_e2iphi(phi.size(),&phi[0],&z[0]);
 }
 
-template<typename T>
-inline void
-eval_e2iphi(APPNAMESPACE::Vector<T>& phi, APPNAMESPACE::Vector<std::complex<T> >& z)
-{
-  eval_e2iphi(phi.size(),phi.data(),z.data());
-}
+//template<typename T>
+//inline void
+//eval_e2iphi(APPNAMESPACE::Vector<T>& phi, APPNAMESPACE::Vector<std::complex<T> >& z)
+//{
+//  eval_e2iphi(phi.size(),phi.data(),z.data());
+//}
 
 #endif

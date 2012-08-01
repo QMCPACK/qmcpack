@@ -13,14 +13,36 @@
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
 
+#include <Numerics/e2iphi.h>
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include <einspline/multi_bspline.h>
-#include "Configuration.h"
-#ifdef HAVE_MKL
-  #include <mkl_vml.h>
-#endif
 
 namespace qmcplusplus {
+
+  template<typename StorageType>
+  inline void EinsplineSetExtended<StorageType>::computePhaseFactors
+  (const TinyVector<RealType,OHMMS_DIM>& r)
+  {
+    APP_ABORT("EinsplineSetExtended<StorageType>::computePhaseFactors called");
+
+    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
+    eval_e2iphi(kPoints.size(),phase.data(),eikr.data());
+    //eval_e2iphi(phase,eikr);
+//#ifdef HAVE_MKL
+//    for (int i=0; i<kPoints.size(); i++) 
+//      phase[i] = -dot(r, kPoints[i]);
+//    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
+//#else
+//    double s, c;
+//    for (int i=0; i<kPoints.size(); i++) {
+//      phase[i] = -dot(r, kPoints[i]);
+//      sincos (phase[i], &s, &c);
+//      eikr[i] = complex<double>(c,s);
+//    }
+//#endif
+  }
+  
+
 
   EinsplineSet::UnitCellType
   EinsplineSet::GetLattice()
