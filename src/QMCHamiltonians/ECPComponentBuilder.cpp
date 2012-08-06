@@ -471,7 +471,7 @@ namespace qmcplusplus {
 	    double im = imag (sum);
 	    if ((l1==l2) && (m1==m2)) 
 	      re -= 1.0;
-	    if ((std::fabs(im) > 1.0e-14) || (std::fabs(re) > 1.0e-14)) {
+	    if ((std::abs(im) > 1.0e-14) || (std::abs(re) > 1.0e-14)) {
 	      app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << endl;
               APP_ABORT("Give up");
 	    }

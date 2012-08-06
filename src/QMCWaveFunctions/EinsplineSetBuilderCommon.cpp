@@ -519,7 +519,7 @@ namespace qmcplusplus {
 //#endif
 	}
       }
-      app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands" << mytimer.elapsed() << endl;
+      app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
     }
 
 #ifndef QMC_COMPLEX

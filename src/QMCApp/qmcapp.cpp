@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
     string c(argv[i]);
     if (c.find("--gpu") < c.size()) 
       useGPU = true;
-    if(c.find("clones")<c.size())
+    else if(c.find("clones")<c.size())
     {
       clones=atoi(argv[++i]);
     }
