@@ -46,6 +46,10 @@ namespace qmcplusplus
       typedef MCWalkerConfiguration::iterator WalkerIter_t;
       typedef SimpleFixedNodeBranch           BranchEngineType;
 
+      ///If true, terminate the simulation
+      bool BadState;
+      ///number of steps per measurement
+      int nSubSteps;
       ///MaxAge>0 indicates branch is done
       IndexType MaxAge;
       ///counter for number of moves accepted
@@ -58,6 +62,10 @@ namespace qmcplusplus
       IndexType nNodeCrossing;
       ///Total numer of non-local moves accepted
       IndexType NonLocalMoveAccepted;
+      ///timestep
+      RealType Tau;
+
+
       /// Constructor.
       QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                     RandomGenerator_t& rg);
@@ -182,10 +190,6 @@ namespace qmcplusplus
       bool UseTMove;
       ///number of particles
       IndexType NumPtcl;
-      ///number of steps per measurement
-      int nSubSteps;
-      ///timestep
-      RealType Tau;
       ///Time-step factor \f$ 1/(2\Tau)\f$
       RealType m_oneover2tau;
       ///Time-step factor \f$ \sqrt{\Tau}\f$

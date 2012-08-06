@@ -26,7 +26,7 @@ namespace qmcplusplus {
   /// Constructor.
   VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 		   QMCHamiltonian& h,WaveFunctionPool& ppool):
-    QMCDriver(w,psi,h,ppool), myWarmupSteps(0), UseDrift("yes"),    nSubSteps(1),
+    QMCDriver(w,psi,h,ppool),UseDrift("yes"),
     myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
   { 
     RootName = "vmc";
@@ -35,11 +35,7 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); 
     m_param.add(UseDrift,"usedrift","string");
-    m_param.add(myWarmupSteps,"warmupSteps","int");
-    m_param.add(myWarmupSteps,"warmupsteps","int");
     m_param.add(nTargetSamples,"targetWalkers","int");
-    m_param.add(nSubSteps, "substeps", "int");
-    m_param.add(nSubSteps, "subSteps", "int");
     m_param.add(w_beta,"beta","double");
     m_param.add(w_alpha,"alpha","double");
     m_param.add(GEVtype,"GEVMethod","string");
@@ -83,7 +79,7 @@ namespace qmcplusplus {
     double Esum;
 
     // First do warmup steps
-    for (int step=0; step<myWarmupSteps; step++) {
+    for (int step=0; step<nWarmupSteps; step++) {
       for(int iat=0; iat<nat; ++iat)  {
 	//create a 3N-Dimensional Gaussian with variance=1
 	makeGaussRandomWithEngine(delpos,Random);
@@ -263,7 +259,7 @@ namespace qmcplusplus {
 
 
     // First, do warmup steps
-    for (int step=0; step<myWarmupSteps; step++) {
+    for (int step=0; step<nWarmupSteps; step++) {
       for(int iat=0; iat<nat; iat++) {
 	Psi.getGradient (W, iat, oldG);
 	    

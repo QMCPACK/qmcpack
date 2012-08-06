@@ -238,6 +238,12 @@ namespace qmcplusplus {
     ///maximum number of steps
     IndexType nSteps;
 
+    ///number of steps between a step: VMCs do not evaluate energies
+    IndexType nSubSteps;
+
+    ///number of warmup steps
+    IndexType nWarmupSteps;
+
     ///counter for number of moves accepted
     IndexType nAccept;
 

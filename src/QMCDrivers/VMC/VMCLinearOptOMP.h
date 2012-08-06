@@ -64,8 +64,6 @@ namespace qmcplusplus
       }
 
     private:
-      ///number of warmup steps
-      int myWarmupSteps;
       ///number of RN warmup steps
 //       int myRNWarmupSteps;
       ///period for walker dump

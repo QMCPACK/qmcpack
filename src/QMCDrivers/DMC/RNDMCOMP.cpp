@@ -29,7 +29,7 @@ namespace qmcplusplus {
   /// Constructor.
   RNDMCOMP::RNDMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
     : QMCDriver(w,psi,h,ppool), CloneManager(hpool), Guide(guide)
-    , BranchInterval(-1),mover_MaxAge(-1), myRNWarmupSteps(0), myWarmupSteps(0)
+    , BranchInterval(-1),mover_MaxAge(-1), myRNWarmupSteps(0)
     {
       RootName = "dmc";
       QMCType ="RNDMCOMP";
@@ -40,7 +40,6 @@ namespace qmcplusplus {
       m_param.add(BranchInterval,"branchInterval","string");
       m_param.add(mover_MaxAge,"MaxAge","double");
       m_param.add(myRNWarmupSteps,"rnwarmupsteps", "int");
-      m_param.add(myWarmupSteps,"warmupsteps", "int");
     }
     
   void RNDMCOMP::resetComponents(xmlNodePtr cur)
@@ -145,7 +144,7 @@ namespace qmcplusplus {
 //       {
 //         int ip=omp_get_thread_num();
 //         
-//         for (int step=0; step<myWarmupSteps; ++step)
+//         for (int step=0; step<nWarmupSteps; ++step)
 //         {
 //           avg_w=0;
 //           n_w=0;

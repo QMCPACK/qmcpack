@@ -28,7 +28,7 @@ namespace qmcplusplus {
   /// Constructor.
   DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 		   QMCHamiltonian& h,WaveFunctionPool& ppool):
-    QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
+    QMCDriver(w,psi,h,ppool), Mover(0),
     ResizeTimer("DMCcuda::resize"),
     DriftDiffuseTimer("DMCcuda::Drift/Diffuse"),
     BranchTimer("DMCcuda::Branch"),
@@ -38,7 +38,6 @@ namespace qmcplusplus {
     QMCType ="DMCcuda";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_WARMUP,0);
-    m_param.add(myWarmupSteps,"warmupSteps","int");
     m_param.add(nTargetSamples,"targetWalkers","int");
     m_param.add(NonLocalMove,"nonlocalmove","string");
     m_param.add(NonLocalMove,"nonlocalmoves","string");

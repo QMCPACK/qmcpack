@@ -35,8 +35,6 @@ namespace qmcplusplus
       bool put(xmlNodePtr cur);
       //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
     private:
-      ///number of warmup steps
-      int myWarmupSteps;
       ///number of RN warmup steps
       int myRNWarmupSteps;
       ///period for walker dump

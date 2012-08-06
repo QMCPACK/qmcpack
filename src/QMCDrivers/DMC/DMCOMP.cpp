@@ -274,6 +274,13 @@ namespace qmcplusplus {
 
       Estimators->stopBlock(acceptRatio());
       block++;
+
+      if(DumpConfig &&block%Period4CheckPoint == 0)
+      {
+        for(int ip=0; ip<NumThreads; ip++) 
+          *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+      }
+
       recordBlock(block);
 
     } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);

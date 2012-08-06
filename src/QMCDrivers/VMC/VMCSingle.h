@@ -35,8 +35,6 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
  
   private:
-    ///number of warmup steps
-    int myWarmupSteps;
     ///period for walker dump
     int myPeriod4WalkerDump;
     ///update engine

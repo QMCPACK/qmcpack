@@ -22,14 +22,13 @@ namespace qmcplusplus {
 
   /// Constructor.
   VMCSingle::VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool):
-    QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0), UseDrift("yes")
+    QMCDriver(w,psi,h,ppool), Mover(0), UseDrift("yes")
   { 
     RootName = "vmc";
     QMCType ="VMPSingle";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string"); m_param.add(UseDrift,"use_drift","string");
-    m_param.add(myWarmupSteps,"warmupSteps","int"); m_param.add(myWarmupSteps,"warmupsteps","int"); m_param.add(myWarmupSteps,"warmup_steps","int");
     m_param.add(nTargetSamples,"targetWalkers","int"); m_param.add(nTargetSamples,"targetwalkers","int"); m_param.add(nTargetSamples,"target_walkers","int");
   }
   
@@ -118,13 +117,13 @@ namespace qmcplusplus {
     app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
     app_log() << "  Total Sample Size =" << nTargetSamples
       << "\n  Sample size per node per thread = " << samples_tot << endl;
-    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+    app_log() << "  Warmup Steps " << nWarmupSteps << endl;
 
 
     //do a warmup run
-    for(int prestep=0; prestep<myWarmupSteps; ++prestep)
+    for(int prestep=0; prestep<nWarmupSteps; ++prestep)
       Mover->advanceWalkers(W.begin(),W.end(),true); 
-    myWarmupSteps=0;
+    nWarmupSteps=0;
   }
 
   bool 

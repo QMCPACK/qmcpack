@@ -35,7 +35,8 @@ namespace qmcplusplus {
   MyCounter(0), RollBackBlocks(0),
   Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
   Period4CheckProperties(100), 
-  nBlocks(10), nSteps(0), nTargetWalkers(0), nTargetSamples(0),
+  nBlocks(10), nSteps(0), nSubSteps(1), nWarmupSteps(0),
+  nTargetWalkers(0), nTargetSamples(0),
   nStepsBetweenSamples(0), nSamplesPerThread(0),
   nAccept(0), nReject(0),  CurrentStep(0), 
   Tau(0.01), qmcNode(NULL),
@@ -48,6 +49,7 @@ namespace qmcplusplus {
 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
+
     m_param.add(nTargetWalkers,"walkers","int");
     m_param.add(CurrentStep,"current","int");
     m_param.add(Tau,"timeStep","AU"); m_param.add(Tau,"timestep","AU"); m_param.add(Tau,"time_step","AU");
@@ -62,6 +64,9 @@ namespace qmcplusplus {
 
     m_param.add(nSamplesPerThread,"samplesperthread","real");
     m_param.add(nStepsBetweenSamples,"stepsbetweensamples","int");
+
+    m_param.add(nSubSteps,"substeps","int"); m_param.add(nSubSteps,"subSteps","int"); m_param.add(nSubSteps,"sub_steps","int");
+    m_param.add(nWarmupSteps,"warmupsteps","int"); m_param.add(nWarmupSteps,"warmupSteps","int"); m_param.add(nWarmupSteps,"warmup_steps","int");
     
     
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
@@ -187,6 +192,7 @@ namespace qmcplusplus {
     {
       wOut->dump(W);
       branchEngine->write(RootName,true); //save energy_history
+      RandomNumberControl::write(RootName,myComm);
       if (storeConfigs) wOut->dump( ForwardWalkingHistory);
     }
 
@@ -371,6 +377,7 @@ namespace qmcplusplus {
     app_log() << "  timestep = " << Tau << endl;
     app_log() << "  blocks = " << nBlocks << endl;
     app_log() << "  steps = " << nSteps << endl;
+    app_log() << "  substeps = " << nSubSteps << endl;
 //     app_log() << "  mass = " << mass << endl;
     app_log() << "  current = " << CurrentStep << endl;
 

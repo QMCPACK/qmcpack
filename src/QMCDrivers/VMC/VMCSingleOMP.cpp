@@ -31,7 +31,7 @@ namespace qmcplusplus
   VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                              HamiltonianPool& hpool, WaveFunctionPool& ppool):
       QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-      myWarmupSteps(0),UseDrift("yes") //, logoffset(2.0), logepsilon(0)
+      UseDrift("yes") //, logoffset(2.0), logepsilon(0)
   {
     RootName = "vmc";
     QMCType ="VMCSingleOMP";
@@ -41,7 +41,6 @@ namespace qmcplusplus
 //    m_param.add(logepsilon,"logepsilon","double");
 //    m_param.add(logoffset,"logoffset","double");
 //    m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
-    m_param.add(myWarmupSteps,"warmupSteps","int"); m_param.add(myWarmupSteps,"warmupsteps","int"); m_param.add(myWarmupSteps,"warmup_steps","int");
     m_param.add(nTargetSamples,"targetWalkers","int"); m_param.add(nTargetSamples,"targetwalkers","int"); m_param.add(nTargetSamples,"target_walkers","int");
   }
 
@@ -129,12 +128,9 @@ namespace qmcplusplus
     if(samples_this_node%omp_get_max_threads())
       for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
     
-    app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
-    app_log() << "  Total Sample Size =" << nTargetSamples << endl;  
-    app_log() << "  Nodes Sample Size =" << samples_this_node << endl;  
-    for (int ip=0; ip<NumThreads; ++ip)
-      app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
-    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+    if(samples_this_node%omp_get_max_threads())
+      for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
+
 //    if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
     
     if (Movers.empty())
@@ -170,23 +166,23 @@ namespace qmcplusplus
           //           Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
           //         }
           //         else
-//           if (reweight=="psi")
-//           {
-//             os << "  Sampling Psi to increase number of walkers near nodes"<<endl;
-//             if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-//             else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-//           }
-//           else 
+          //           if (reweight=="psi")
+          //           {
+          //             os << "  Sampling Psi to increase number of walkers near nodes"<<endl;
+          //             if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+          //             else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+          //           }
+          //           else 
           if (QMCDriverMode[QMC_UPDATE_MODE])
           {
-//             if (UseDrift == "rn")
-//             {
-//               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
-//               Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//               Movers[ip]->setLogEpsilon(logepsilon);
-//               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-//             }
-//             else 
+            //             if (UseDrift == "rn")
+            //             {
+            //               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
+            //               Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
+            //               Movers[ip]->setLogEpsilon(logepsilon);
+            //               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+            //             }
+            //             else 
             if (UseDrift == "yes")
             {
               os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
@@ -202,13 +198,13 @@ namespace qmcplusplus
           }
           else
           {
-//             if (UseDrift == "rn")
-//             {
-//               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
-//               Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//               Movers[ip]->setLogEpsilon(logepsilon);
-//             }
-//             else 
+            //             if (UseDrift == "rn")
+            //             {
+            //               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
+            //               Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
+            //               Movers[ip]->setLogEpsilon(logepsilon);
+            //             }
+            //             else 
             if (UseDrift == "yes")
             {
               os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<<endl;
@@ -222,10 +218,19 @@ namespace qmcplusplus
             //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           }
 
+          Movers[ip]->nSubSteps=nSubSteps;
+
           if(ip==0) app_log() << os.str() << endl;
         }
       }
         
+    app_log() << "  Samples are dumped in memory every " << myPeriod4WalkerDump << " steps " << endl;
+    app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
+    app_log() << "  Sample Size per node=" << samples_this_node << endl;
+    for (int ip=0; ip<NumThreads; ++ip)
+      app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+
+    app_log().flush();
 #if !defined(BGP_BUG)
 #pragma omp parallel for
 #endif
@@ -242,10 +247,10 @@ namespace qmcplusplus
 
 //       if (UseDrift != "rn")
 //       {
-        for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+        for (int prestep=0; prestep<nWarmupSteps; ++prestep)
           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 
-        if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+        if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
     }
@@ -258,7 +263,7 @@ namespace qmcplusplus
 // #pragma omp parallel 
 //       {
 //         int ip=omp_get_thread_num();
-//         for (int step=0; step<myWarmupSteps; ++step)
+//         for (int step=0; step<nWarmupSteps; ++step)
 //         {
 //           avg_w=0;
 //           n_w=0;
@@ -289,10 +294,10 @@ namespace qmcplusplus
 //            Movers[ip]->setLogEpsilon(logepsilon);
 //           }
 //         
-//         for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+//         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
 //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 // 
-//         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
 //           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
 //     }
@@ -303,7 +308,7 @@ namespace qmcplusplus
       wClones[ip]->setNumSamples(samples_th[ip]);
     }
 
-    myWarmupSteps=0;
+    nWarmupSteps=0;
     //Used to debug and benchmark opnemp
     //#pragma omp parallel for
     //    for(int ip=0; ip<NumThreads; ip++)

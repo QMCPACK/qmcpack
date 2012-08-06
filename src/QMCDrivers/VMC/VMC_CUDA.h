@@ -39,8 +39,6 @@ namespace qmcplusplus {
     RealType m_tauovermass;
     /// Whether to use drift or not
     string UseDrift;
-    ///number of warmup steps
-    int myWarmupSteps, nSubSteps;
     ///period for walker dump
     int myPeriod4WalkerDump;
     /// Copy Constructor (disabled)

@@ -42,8 +42,6 @@ namespace qmcplusplus {
     string ScaleWeight;
     /// tau/mass
     RealType m_tauovermass;
-    ///number of warmup steps
-    int myWarmupSteps;
     ///period for walker dump
     int myPeriod4WalkerDump;
     ///update engine

@@ -30,7 +30,7 @@ namespace qmcplusplus
   VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool, WaveFunctionPool& ppool):
     QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-    myWarmupSteps(10),UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
+    UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
      w_alpha(0.0),printderivs("no")
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0), 
   {
@@ -39,12 +39,12 @@ namespace qmcplusplus
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_WARMUP,0);
     DumpConfig=false;
+
+    //default is 10
+    nWarmupSteps=10;
     m_param.add(UseDrift,"useDrift","string");
     m_param.add(UseDrift,"usedrift","string");
     m_param.add(UseDrift,"use_drift","string");
-    m_param.add(myWarmupSteps,"warmupSteps","int");
-    m_param.add(myWarmupSteps,"warmupsteps","int");
-    m_param.add(myWarmupSteps,"warmup_steps","int");
     m_param.add(nTargetSamples,"targetWalkers","int");
     m_param.add(nTargetSamples,"targetwalkers","int");
     m_param.add(nTargetSamples,"target_walkers","int");
@@ -186,7 +186,7 @@ namespace qmcplusplus
 //     }
 //     
 //     RealType overNT= 1.0/NumThreads;
-//     for (int step=0; step<myWarmupSteps; ++step)
+//     for (int step=0; step<nWarmupSteps; ++step)
 //     {
 //       CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
 //       estimateCS();
@@ -196,7 +196,7 @@ namespace qmcplusplus
 //       for (int ip=1; ip<NumThreads; ip++) if(Norms[ip]<Norms[min_i]) min_i=ip;
 //       if ((Norms[max_i]-Norms[min_i])< 0.1*overNT)
 //       {
-//         step=myWarmupSteps;
+//         step=nWarmupSteps;
 //         clearCSEstimators();
 //         continue;
 //       }
@@ -475,10 +475,10 @@ namespace qmcplusplus
     app_log() << "  Nodes Sample Size =" << samples_this_node << endl;  
     for (int ip=0; ip<NumThreads; ++ip)
       app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
-    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+    app_log() << "  Warmup Steps " << nWarmupSteps << endl;
     
 //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
-    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+//    app_log() << "  Warmup Steps " << nWarmupSteps << endl;
 
 
     if (Movers.empty())
@@ -575,10 +575,10 @@ namespace qmcplusplus
 
 //       if (UseDrift != "rn")
 //       {
-        for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+        for (int prestep=0; prestep<nWarmupSteps; ++prestep)
           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 
-        if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+        if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 
     #pragma omp critical
@@ -598,7 +598,7 @@ namespace qmcplusplus
 //       {
 //         int ip=omp_get_thread_num();
 // 
-//         for (int step=0; step<myWarmupSteps; ++step)
+//         for (int step=0; step<nWarmupSteps; ++step)
 //         {
 //           avg_w=0;
 //           n_w=0;
@@ -629,10 +629,10 @@ namespace qmcplusplus
 //           Movers[ip]->setLogEpsilon(logepsilon);
 //         }
 // 
-//         for (int prestep=0; prestep<myWarmupSteps; ++prestep)
+//         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
 //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 // 
-//         if (myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
 //           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 // 
 // #pragma omp critical

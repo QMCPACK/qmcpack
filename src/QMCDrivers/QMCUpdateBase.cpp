@@ -60,9 +60,9 @@ namespace qmcplusplus
     MaxAge=0;
     m_r2max=-1;
     myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
-    myParams.add(nSubSteps,"subSteps","int");
-    myParams.add(nSubSteps,"substeps","int");
-    myParams.add(nSubSteps,"sub_steps","int");
+    //myParams.add(nSubSteps,"subSteps","int");
+    //myParams.add(nSubSteps,"substeps","int");
+    //myParams.add(nSubSteps,"sub_steps","int");
   }
 
   bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -191,10 +191,13 @@ namespace qmcplusplus
   /** randomize a walker with a diffusion MC using gradients */
   void QMCUpdateBase::randomize(Walker_t& awalker)
   {
+
+    BadState=false;
     //Walker_t::Buffer_t& w_buffer(awalker.DataSet);
     //W.loadWalker(awalker,true);
     //Psi.copyFromBuffer(W,w_buffer);
 
+    RealType eloc_tot=0.0;
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
     for (int iat=0; iat<W.getTotalNum(); ++iat)
@@ -243,6 +246,8 @@ namespace qmcplusplus
     RealType logpsi = Psi.updateBuffer(W,awalker.DataSet,false);
     W.saveWalker(awalker);
     RealType eloc=H.evaluate(W);
+
+    BadState |= isnan(eloc);
 
     //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
     awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
