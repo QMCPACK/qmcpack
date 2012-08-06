@@ -149,14 +149,9 @@ namespace qmcplusplus
       virtual void getConfigurations(const string& aroot)=0;
 
       virtual void checkConfigurations()=0;
-      inline void setRng(vector<RandomGenerator_t*>& r) 
-      {
-       MoverRng.resize(r.size());
-       for(int ip=0; ip<r.size(); ++ip) MoverRng[ip]=r[ip];
-       // save the state of current generators
-       RngSaved.resize(r.size());
-       for(int ip=0; ip<r.size(); ++ip) RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
-      }
+
+      void setRng(vector<RandomGenerator_t*>& r); 
+
       inline void setneedGrads(bool tf){needGrads=tf;}
       inline void setDMC() {vmc_or_dmc=1.0;};
       

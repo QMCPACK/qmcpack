@@ -92,6 +92,7 @@ namespace qmcplusplus {
     //reset the rootname
     optTarget->setRootName(RootName);
     optTarget->setWaveFunctionNode(wfNode);
+    optTarget->setRng(vmcEngine->getRng());
 
     app_log() << "   Reading configurations from h5FileRoot " << endl;
     //get configuration from the previous run
@@ -150,6 +151,7 @@ namespace qmcplusplus {
 
     vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
     vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
+
 
     //vmcEngine->setValue("recordWalkers",1);//set record 
     vmcEngine->setValue("current",0);//reset CurrentStep
@@ -277,6 +279,7 @@ namespace qmcplusplus {
       optTarget->setStream(&app_log());
       success=optTarget->put(q);
     }
+
     return success;
   }
   }

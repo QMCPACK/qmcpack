@@ -64,6 +64,21 @@ namespace qmcplusplus
     if (debug_stream) delete debug_stream;
   }
 
+  void QMCCostFunctionBase::setRng(vector<RandomGenerator_t*>& r) 
+  {
+
+    if(MoverRng.size()<r.size())
+    {
+      delete_iter(MoverRng.begin(),MoverRng.end());
+      delete_iter(RngSaved.begin(),RngSaved.end());
+      MoverRng.resize(r.size());
+      RngSaved.resize(r.size());
+    }
+
+    for(int ip=0; ip<r.size(); ++ip) MoverRng[ip]=r[ip];
+    for(int ip=0; ip<r.size(); ++ip) RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
+  }
+
   void QMCCostFunctionBase::setTargetEnergy(Return_t et)
   {
 
