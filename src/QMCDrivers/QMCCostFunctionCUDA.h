@@ -47,6 +47,7 @@ namespace qmcplusplus {
     Return_t fillOverlapHamiltonianMatrices
     (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
     Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
+    Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap);
     
   protected:
     Matrix<Return_t> Records;

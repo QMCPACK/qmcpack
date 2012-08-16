@@ -814,7 +814,7 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
             //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
             //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
             Left(pm+1,pm2+1) +=  b2*(varij+V_avg*ovlij);
-            //                H2
+//                H2
             Right(pm+1,pm2+1) += b1*H2_avg*varij;
           }
         }
@@ -826,7 +826,7 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
 
 
     Left(0,0) = (1-b2)*curAvg_w + b2*V_avg;
-    Overlap(0,0) = Right(0,0) = 1.0;
+    Overlap(0,0) = Right(0,0) = 1.0+b1*H2_avg*V_avg;
 
     if (GEVType=="H2")
       return H2_avg;
