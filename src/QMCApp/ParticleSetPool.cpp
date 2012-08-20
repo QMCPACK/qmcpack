@@ -222,7 +222,7 @@ namespace qmcplusplus {
     //TinyVector<int,OHMMS_DIM> tilefactor;
     Tensor<int,OHMMS_DIM> eshdf_tilematrix(0);
     eshdf_tilematrix.diagonal(1);
-    double lr_cut=10;
+    double lr_cut=15;
     string h5name;
     string source("i");
     string bc("p p p");
