@@ -79,7 +79,7 @@ public:
    *Create 1x1x1 cubic view for a supercell assuming that no
    *parallelization is used.
    */
-  inline Uniform3DGridLayout():MaxConnections(0), LR_dim_cutoff(10.0), NCMax(0), Status(0),
+  inline Uniform3DGridLayout():MaxConnections(0), LR_dim_cutoff(15.0), NCMax(0), Status(0),
   LR_rc(1e6), LR_kc(0.0)
   {
     for(int i=0; i<GridLevel; i++) Grid[i] = SingleParticleIndex_t(1);
