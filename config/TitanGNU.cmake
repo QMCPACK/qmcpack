@@ -1,8 +1,8 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 #2011-12-06
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.11/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.11/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
 set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
@@ -33,7 +33,7 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
 ENDFOREACH(type)
 
 set(CMAKE_FIND_ROOT_PATH
-  /opt/cray/hdf5/1.8.6/gnu/46
+  /opt/cray/hdf5/1.8.8/gnu/47
   /opt/fftw/3.3.0.0/interlagos
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
   /ccs/proj/mat034/jnkim/xk6/gnu45/libxml2
