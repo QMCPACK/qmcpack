@@ -666,7 +666,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
     return true;
   }
   
-  void QMCCostFunctionBase::resetCostFunction(vector<xmlNodePtr> cset)
+  void QMCCostFunctionBase::resetCostFunction(vector<xmlNodePtr>& cset)
   {
     for (int i=0; i<cset.size(); i++)
     {

@@ -56,7 +56,7 @@ namespace qmcplusplus
 
       ///process xml node
       bool put(xmlNodePtr cur);
-      void resetCostFunction(vector<xmlNodePtr> cset);
+      void resetCostFunction(vector<xmlNodePtr>& cset);
       ///assign optimization parameter i
       Return_t& Params(int i)
       {
