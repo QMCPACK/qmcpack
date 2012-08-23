@@ -321,8 +321,7 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
       app_log() <<"Determinants:            " <<memdets/1.0e6 <<"      " <<memdets*numW/1.0e6 <<endl; 
     }   
 
-    //#pragma omp parallel reduction(+:et_tot,e2_tot)
-#pragma omp parallel
+#pragma omp parallel reduction(+:et_tot,e2_tot)
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
@@ -408,19 +407,17 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
 
         if (needGrads)
         {
-          vector<Return_t> Dsaved(NumOptimizables,0);
-          vector<Return_t> HDsaved(NumOptimizables,0);
+          //allocate vector
+          vector<Return_t> Dsaved(NumOptimizables,0.0);
+          vector<Return_t> HDsaved(NumOptimizables,0.0);
           psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
           std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
           std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
         }
       }
-      //add them all
-#pragma omp critical
-      {
-        et_tot+=e0;
-        e2_tot+=e2;
-      }
+      //add them all using reduction
+      et_tot+=e0;
+      e2_tot+=e2;
       // #pragma omp atomic
       //       eft_tot+=ef;
     }
@@ -502,7 +499,7 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
     //#pragma omp parallel reduction(+:wgt_tot)
     Return_t inv_n_samples=1.0/NumSamples;
     typedef MCWalkerConfiguration::Walker_t Walker_t;
-#pragma omp parallel
+#pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
@@ -558,9 +555,7 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
         wgt_node2+=inv_n_samples*weight*weight;
       }
 
-#pragma omp atomic
       wgt_tot += wgt_node;
-#pragma omp atomic
       wgt_tot2 += wgt_node2;
     }
 
@@ -729,7 +724,8 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
     return 1.0;
   }
 
-  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
+  QMCCostFunctionOMP::Return_t 
+    QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
   {
     RealType b1,b2;
     if (GEVType=="H2")
@@ -740,6 +736,10 @@ This implies that isOptimizable must be set to true, which is risky. Fix this so
     {
       b2=w_beta; b1=0;
     }
+
+    Right=0.0;
+    Left=0.0;
+    Overlap=0.0;
 
     //     resetPsi();
     //     Return_t NWE = NumWalkersEff=correlatedSampling(true);

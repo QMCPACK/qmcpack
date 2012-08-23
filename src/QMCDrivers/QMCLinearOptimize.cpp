@@ -790,10 +790,10 @@ QMCLinearOptimize::put(xmlNodePtr q)
 
 void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
 {
-    string useGPU("no");
+    string useGPU("yes");
     optNode=cur;
     m_param.put(cur);
-    delete optTarget;
+   if(optTarget)  delete optTarget;
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
       optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);

@@ -660,9 +660,8 @@ namespace qmcplusplus {
     Left=0.0;
     Overlap=0.0;
     //Is this really needed here?
-    resetPsi();
-
-    Return_t NWE = NumWalkersEff=correlatedSampling(true);
+    //resetPsi();
+    //Return_t NWE = NumWalkersEff=correlatedSampling(true);
 
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];

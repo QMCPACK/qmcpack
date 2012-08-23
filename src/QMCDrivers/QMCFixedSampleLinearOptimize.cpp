@@ -418,7 +418,7 @@ bool QMCFixedSampleLinearOptimize::run()
 bool
 QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
-    string useGPU("no");
+    string useGPU("yes");
     string vmcMove("pbyp");
     OhmmsAttributeSet oAttrib;
     oAttrib.add(useGPU,"gpu");
