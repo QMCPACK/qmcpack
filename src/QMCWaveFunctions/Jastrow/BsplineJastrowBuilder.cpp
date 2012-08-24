@@ -39,6 +39,13 @@ namespace qmcplusplus {
   {
     ReportEngine PRE(ClassName,"createOneBodyJastrow(xmlNodePtr)");
 
+    string j1name("J1");
+    {
+      OhmmsAttributeSet a;
+      a.add(j1name,"name");
+      a.put(cur);
+    }
+
     int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
     OBJT* J1 =new OBJT(*sourcePtcl,targetPtcl);
     DOBJT *dJ1 = new DOBJT(*sourcePtcl, targetPtcl);
@@ -89,15 +96,15 @@ namespace qmcplusplus {
           dJ1->addFunc(ig,functor,jg);
           
           Opt=(!functor->notOpt or Opt);
-          char fname[32];
+          char fname[128];
           if(ReportLevel)
           {
             if(taskid > -1)
             {
               if(speciesB.size())
-                sprintf(fname,"J1.%s%s.g%03d.dat",speciesA.c_str(),speciesB.c_str(),taskid);
+                sprintf(fname,"%s.%s%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
               else
-                sprintf(fname,"J1.%s.g%03d.dat",speciesA.c_str(),taskid);
+                sprintf(fname,"%s.%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),taskid);
             }
             else
               ReportLevel=0;
