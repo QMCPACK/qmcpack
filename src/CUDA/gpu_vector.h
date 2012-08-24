@@ -78,7 +78,7 @@ namespace gpu
     device_vector(size_t size) : data_pointer(NULL), current_size(0), 
 				 alloc_size(0), own_data(true)
     {
-      resize (size);
+      this->resize(size);
     }
 
     inline 
@@ -86,7 +86,7 @@ namespace gpu
       name(myName), data_pointer(NULL), current_size(0), 
       alloc_size(0), own_data(true)
     {
-      resize(size);
+      this->resize(size);
     }
   
     inline
@@ -307,7 +307,7 @@ namespace gpu
     operator=(const host_vector<T> &vec)
     {
       if (this->size() != vec.size())
-	resize(vec.size());
+	this->resize(vec.size());
 #ifdef QMC_CUDA
       cudaMemcpy (&((*this)[0]), &(vec[0]), this->size()*sizeof(T), 
 		  cudaMemcpyHostToDevice);
@@ -326,7 +326,7 @@ namespace gpu
     operator=(const device_vector<T> &vec)
     {
       if (this->size() != vec.size())
-	resize(vec.size());
+	this->resize(vec.size());
 #ifdef QMC_CUDA
       cudaMemcpy (&((*this)[0]), &(vec[0]), this->size()*sizeof(T), 
 		  cudaMemcpyDeviceToHost);
@@ -345,7 +345,7 @@ namespace gpu
   device_vector<T>::device_vector(const host_vector<T> &vec) :
     data_pointer(NULL), current_size(0), alloc_size(0), own_data(true)
   {
-    resize(vec.size());
+    this->resize(vec.size());
 #ifdef QMC_CUDA
     cudaMemcpy (&((*this)[0]), &(vec[0]), this->size()*sizeof(T), 
 		cudaMemcpyDeviceToHost);

@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Numerics/DeterminantOperators.h"
+#include <unistd.h>
 
 namespace qmcplusplus {
   DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first) :
