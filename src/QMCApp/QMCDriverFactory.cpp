@@ -412,7 +412,12 @@ namespace qmcplusplus {
     #endif
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
     {
+#if defined(QMC_CUDA)
+      app_log() << "cslinear is not supported. Switch to linear method. " << endl;
+      QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+#else
       QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+#endif
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
