@@ -287,6 +287,17 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       {
         int sid=tspecies.addSpecies(sname);
         setSpeciesProperty(tspecies,sid,cur);
+
+        xmlNodePtr tcur = cur->xmlChildrenNode;
+        while(tcur != NULL)
+        {
+          string tcname((const char*)tcur->name);
+          if(nat_group[ng] && tcname == attrib_tag)
+          {
+            getPtclAttrib(tcur,nat_group[ng],nloc);
+          }
+          tcur = tcur->next;
+        }
         for(int iat=0; iat<nat_group[ng]; iat++, nloc++)  ref_.GroupID[nloc] = sid;
         ng++;
       }
