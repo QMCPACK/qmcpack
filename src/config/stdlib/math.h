@@ -39,7 +39,6 @@ template<typename T> inline T round(T x)
 #endif
 
 #if !defined(HAVE_SINCOS)
-#include <cmath>
 template<typename T> 
 inline void sincos(T a, T* restrict s, T*  restrict c)
 {
@@ -59,66 +58,6 @@ namespace qmcplusplus
     return static_cast<int>(std::pow(static_cast<double>(i),n));
   }
 }
-
-#if defined(HAVE_MKL_VML)
-#include <mkl_vml_functions.h>
-
-inline void vec_sqrt(int n, const double* restrict in, double* restrict out)
-{
-  vdSqrt(n,in,out);
-}
-
-inline void vec_inv(int n, const double* restrict in, double* restrict out)
-{
-  vdInv(n,in,out);
-}
-
-inline void vec_inv_sqrt(int n, const double* restrict in, double* restrict out)
-{
-  vdInvSqrt(n,in,out);
-}
-
-inline void vec_sqrt(int n, const float* restrict in, float* restrict out)
-{
-  vsSqrt(n,in,out);
-}
-
-#else
-#if defined(HAVE_MASSV)
-#include <mass.h>
-#include <massv.h>
-inline void vec_sqrt(int n, double* restrict in, double* restrict out)
-{
-    vsqrt(out,in,&n);
-}
-inline void vec_sqrt(int n, float* restrict in, float* restrict out)
-{
-    vssqrt(out,in,&n);
-}
-
-inline void vec_inv_sqrt(int n, double* restrict in, double* restrict out)
-{
-  vrsqrt(out,in,&n);
-}
-
-inline void vec_inv_sqrt(int n, float* restrict in, float* restrict out)
-{
-  vsrsqrt(out,in,&n);
-}
-#else
-template<typename T>
-inline void vec_sqrt(int n, const T* restrict in, T* restrict out)
-{
-  for(int i=0; i<n; ++i) out[i]=sqrt(in[i]);
-}
-#endif
-template<typename T>
-inline void vec_inv(int n, const T* restrict in, T* restrict out)
-{
-  for(int i=0; i<n; ++i) out[i]=1.0/in[i];
-}
-
-#endif
 
 #endif
 /***************************************************************************
