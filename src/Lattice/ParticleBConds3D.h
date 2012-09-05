@@ -145,14 +145,19 @@ namespace APPNAMESPACE
         //for(int i=0; i<n*3;++i) drnew[i]-= round(drnew[i]);
         //convert2Cart(drnew,&dr[0][0],n);
         //for(int i=0; i<n; ++i) rinv[i]=get_min_distance(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,3> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=apply_bc(dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
 
@@ -194,14 +199,19 @@ namespace APPNAMESPACE
         const int n=r.size();
         //use rinv as temporary rr
         for(int i=0; i<n; ++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,3> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=dot(dr[i],dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
 
@@ -289,14 +299,19 @@ namespace APPNAMESPACE
       {
         const int n=dr.size();
         for(int i=0;i<n;++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,3> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=apply_bc(dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
 
@@ -335,14 +350,19 @@ namespace APPNAMESPACE
         const int n=r.size();
         //use rinv as temporary rr
         for(int i=0; i<n; ++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,3> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=dot(dr[i],dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
 
@@ -379,14 +399,19 @@ namespace APPNAMESPACE
         const int n=r.size();
         //use rinv as temporary rr
         for(int i=0; i<n; ++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,3> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=dot(dr[i],dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
 }

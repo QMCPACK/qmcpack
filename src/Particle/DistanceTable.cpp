@@ -77,18 +77,19 @@ namespace qmcplusplus
       dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
     }
 
-    dt->UseBoundBox= (sc!=SUPERCELL_OPEN);
+    dt->CellType=sc;
 
     ostringstream p;
     p << s.getName() << "_" << s.getName();
     dt->Name=p.str();//assign the table name
 
-    if(dt->UseBoundBox) 
-      o << " Using bonding box/reduced coordinates ";
+    if(sc != SUPERCELL_OPEN)
+      o << " Using bounding box/reduced coordinates with ";
     else
-      o << " using Cartesian coordinates ";
+      o << " using Cartesian coordinates with ";
 
     app_log() << o.str() << endl;
+    app_log().flush();
 
     return dt;
   }
@@ -145,16 +146,15 @@ namespace qmcplusplus
     {
       o << "    PBC=open Orthorhombic=NA\n";
       dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
-      dt->UseBoundBox=false;
     }
 
-    dt->UseBoundBox= (sc!=SUPERCELL_OPEN);
+    dt->CellType=sc;
 
     ostringstream p;
     p << s.getName() << "_" << t.getName();
     dt->Name=p.str();//assign the table name
 
-    if(dt->UseBoundBox) 
+    if(sc!=SUPERCELL_OPEN)
       o << " Using bonding box/reduced coordinates ";
     else
       o << " using Cartesian coordinates ";

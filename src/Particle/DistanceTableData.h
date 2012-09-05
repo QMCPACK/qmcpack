@@ -100,8 +100,10 @@ namespace qmcplusplus {
     typedef TempDisplacement<RealType,DIM> TempDistType;
     typedef PooledData<RealType>           BufferType;
 
-    ///true if bound box exists
-    bool UseBoundBox;
+    ///type of cell
+    int CellType;
+    ///ID of this table among many
+    int ID;
     ///Index of the particle  with a trial move
     IndexType activePtcl;
     ///size of indicies
@@ -134,6 +136,12 @@ namespace qmcplusplus {
     /** Locator of the pair  */
     std::vector<IndexType> IJ;
 
+    /** full distance for symmetrized table */
+    Matrix<RealType> r_full;
+
+    /** full dr_m for symmetrized table */
+    Matrix<PosType> dr_full;
+
     /** @brief A NN relation of all the source particles with respect to an activePtcl
      *
      * This data is for particle-by-particle move.
@@ -145,6 +153,7 @@ namespace qmcplusplus {
     std::vector<RealType> temp_r;
     std::vector<PosType> temp_dr;
 
+    ///name of the table
     std::string Name;
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
@@ -195,6 +204,12 @@ namespace qmcplusplus {
 
     //!< Returns the id of j-th neighbor for i-th ptcl
     inline IndexType loc(int i, int j) const { return M[i] + j;}
+
+    /** unfold dr_m  & r_m
+     *
+     * Default behavior : do nothing
+     */
+    virtual void fill() {}
 
     ///evaluate the Distance Table using ActiveWalkers
     //virtual void evaluate(const WalkerSetRef& W) = 0;

@@ -4,7 +4,7 @@
 // -*- C++ -*-
 /** @file ParticleSetProxy.cpp
  *
- * Helper classes to fine-grained or nested threading
+ * Helper classes for fine-grained or nested threading
  */
 #include <Particle/ParticleSetProxy.h>
 #include <Lattice/ParticleBConds.h>
@@ -81,7 +81,7 @@ namespace qmcplusplus {
         PosType* restrict dr_ptr=dr_m[jat];
         for(int k=0; k<nK; ++k) dr_ptr[k]=displs[k]-dr_iel[jat];
       }
-      myBconds.evaluate_rsq(dr_m.data(),r_m.data(), r_m.size());
+      myBconds.evaluate_rsquared(dr_m.data(),r_m.data(), r_m.size());
       simd::sqrt(r_m.data(), r_m.size());
     }
   };
@@ -106,22 +106,27 @@ namespace qmcplusplus {
         PosType* restrict dr_ptr=dr_m[iat];
         for(int k=0; k<nK; ++k) dr_ptr[k]=displs[k]+dr0;
       }
-      myBconds.evaluate_rsq(dr_m.data(),r_m.data(), r_m.size());
+      myBconds.evaluate_rsquared(dr_m.data(),r_m.data(), r_m.size());
       simd::sqrt(r_m.data(), r_m.size());
     }
   };
 
-  ParticleSetProxy::ParticleSetProxy(const ParticleSet* pt)
-    : myPtcl(pt), ActivePtcl(-1), GroupID(0)
+  /** constructor 
+   * @param pt MC ParticleSet
+   *
+   * Create DistTableOnSphere using the existing distance tables of pt
+   */
+  MultiMoveHandler::MultiMoveHandler(const ParticleSet& pt)
+    : ActivePtcl(-1), GroupID(0)
   {
-    myTables.reserve(pt->DistTables.size());
+    myTables.reserve(pt.DistTables.size());
 
-    myTables.push_back(new D2OnSphere<double,3,SUPERCELL_BULK>(*pt, *(pt->DistTables[0])));
-    for(int t=1; t<pt->DistTables.size(); ++t)
-      myTables.push_back(new D1OnSphere<double,3,SUPERCELL_BULK>(*pt, *(pt->DistTables[t])));
+    myTables.push_back(new D2OnSphere<double,3,SUPERCELL_BULK>(pt, *(pt.DistTables[0])));
+    for(int t=1; t<pt.DistTables.size(); ++t)
+      myTables.push_back(new D1OnSphere<double,3,SUPERCELL_BULK>(pt, *(pt.DistTables[t])));
   }
 
-  ParticleSetProxy::~ParticleSetProxy()
+  MultiMoveHandler::~MultiMoveHandler()
   {
     delete_iter(myTables.begin(), myTables.end());
   }

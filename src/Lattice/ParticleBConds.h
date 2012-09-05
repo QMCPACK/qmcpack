@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_PARTICLE_BCONDS_H
 
 #include <config.h>
+#include <simd/simd.hpp>
 #include <Lattice/CrystalLattice.h>
 
 namespace APPNAMESPACE 
@@ -59,6 +60,7 @@ namespace APPNAMESPACE
    * - apply_bc(TinyVector<T,D>& displ): apply BC on displ, Cartesian displacement vector, and returns |displ|^2
    * - apply_bc(dr,r,rinv): apply BC on displacements
    * - apply_bc(dr,r): apply BC without inversion calculations
+   * - evaluate_rsq(dr,rr,n): apply BC on dr, and compute r*r
    */
   template<class T, unsigned D, int SC>
     struct DTD_BConds 
@@ -89,14 +91,19 @@ namespace APPNAMESPACE
       {
         const int n=dr.size();
         for(int i=0; i<n; ++i) rinv[i]=dot(dr[i],dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,D> >& dr
           , std::vector<T>& r) const
       {
         for(int i=0;i<dr.size();++i) r[i]=std::sqrt(dot(dr[i],dr[i]));
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,D>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=dot(dr[i],dr[i]);
       }
     };
 

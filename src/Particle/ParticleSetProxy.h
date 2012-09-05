@@ -63,14 +63,12 @@ namespace qmcplusplus {
    * Used by Non-local PP 
    * This object cannot modify the target ParticleSet or its DistTables.
    */
-  struct ParticleSetProxy
+  struct MultiMoveHandler
   {
 
     typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef ParticleSet::SingleParticlePos_t PosType;
 
-    ///particleset
-    const ParticleSet* myPtcl;
     ///ID of the moved particle
     int ActivePtcl;
     ///species index for the active particle
@@ -80,8 +78,8 @@ namespace qmcplusplus {
     ///matching tables
     vector<DistTableOnSphere*>  myTables;
 
-    ParticleSetProxy(const ParticleSet* pt);
-    ~ParticleSetProxy();
+    MultiMoveHandler(const ParticleSet& pt);
+    ~MultiMoveHandler();
 
     inline void resize(int nknot)
     {

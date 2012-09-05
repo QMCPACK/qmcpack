@@ -360,6 +360,8 @@ namespace qmcplusplus
       myDistTableMap[ObjectTag]=0;
       app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
 
+      DistTables[0]->ID=0;
+
       if (psrc.tag() == ObjectTag) return 0;
     }
 
@@ -376,6 +378,7 @@ namespace qmcplusplus
       tid=DistTables.size();
       DistTables.push_back(createDistanceTable(psrc,*this));
       myDistTableMap[psrc.tag()]=tid;
+      DistTables[tid]->ID=tid;
       app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
     }
     else
