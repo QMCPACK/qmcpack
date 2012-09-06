@@ -106,8 +106,8 @@ namespace APPNAMESPACE
       {
         const int n=dr.size();
         for(int i=0;i<n;++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,2> >& dr
@@ -152,8 +152,8 @@ namespace APPNAMESPACE
         const int n=r.size();
         //use rinv as temporary rr
         for(int i=0; i<n; ++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,2> >& dr
@@ -195,8 +195,8 @@ namespace APPNAMESPACE
         const int n=r.size();
         //use rinv as temporary rr
         for(int i=0; i<n; ++i) rinv[i]=apply_bc(dr[i]);
-        vec_sqrt(n,&rinv[0],&r[0]);
-        vec_inv(n,&r[0],&rinv[0]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
       }
 
       inline void apply_bc(std::vector<TinyVector<T,2> >& dr
