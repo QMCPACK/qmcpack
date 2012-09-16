@@ -20,12 +20,13 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
+#include "OhmmsData/AttributeSet.h"
 
 
 namespace qmcplusplus {
 
   ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
-    : FirstForceIndex(-1),tries(0), Ions(ions)
+    : FirstForceIndex(-1),tries(0), Ions(ions), addionion(true)
     {
       ReportEngine PRE("ForceBase","ForceBase");
       myTableIndex=elns.addTable(ions);
@@ -41,6 +42,11 @@ namespace qmcplusplus {
       int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
       int NumSpeciesA = tspeciesA.TotalNum;
       int NumSpeciesB = tspeciesB.TotalNum;
+      
+      //Determines if ion-ion force will be added to electron-ion force in derived force estimators.  
+	  //If false, forces_IonIon=0.0 .
+      addionion=true;
+      
       //Store information about charges and number of each species
       Zat.resize(Nnuc);
       Qat.resize(Nel); 
@@ -60,7 +66,6 @@ namespace qmcplusplus {
   void ForceBase::addObservablesF(QMCTraits::PropertySetType& plist) {
     if(FirstForceIndex<0) 
       FirstForceIndex=plist.size();
-    //    cerr << "FirstForceIndex = " << FirstForceIndex << endl;
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
         ostringstream obsName;
@@ -87,23 +92,25 @@ namespace qmcplusplus {
     if(FirstTime) {
       FirstTime = false;
       forces_IonIon = 0.0;
-      DistanceTableData* d_aa=DistanceTable::add(Ions);
-      for(int iat=0; iat<Nnuc; iat++) {
-        for(int nn=d_aa->M[iat], jat=1; nn<d_aa->M[iat+1]; nn++,jat++) {
-          int jid = d_aa->J[nn];
-          real_type rinv=d_aa->rinv(nn);
-          real_type r3zz=Zat[jid]*Zat[iat]*rinv*rinv*rinv;
-          forces_IonIon[iat] -= r3zz*d_aa->dr(nn);
-          forces_IonIon[jid] += r3zz*d_aa->dr(nn);
-        }
+      DistanceTableData* d_aa=DistanceTable::add(Ions);    
+       
+      if(addionion==true){
+          for(int iat=0; iat<Nnuc; iat++) {
+            for(int nn=d_aa->M[iat], jat=1; nn<d_aa->M[iat+1]; nn++,jat++) {
+              int jid = d_aa->J[nn];
+              real_type rinv=d_aa->rinv(nn);
+              real_type r3zz=Zat[jid]*Zat[iat]*rinv*rinv*rinv;
+              forces_IonIon[iat] -= r3zz*d_aa->dr(nn);
+              forces_IonIon[jid] += r3zz*d_aa->dr(nn);
+            }
+      }
       }
     }
 
     int index = FirstForceIndex;
     for(int iat=0; iat<Nnuc; iat++) {
-      //      cerr << "Forces[iat] = " << forces[iat] << " index = " << index << endl;
       for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index] = forces[iat][x];// + forces_IonIon[iat][x];
+        plist[index] = forces[iat][x];
         index++;
       }
     }
@@ -114,7 +121,7 @@ namespace qmcplusplus {
     int index = FirstForceIndex + offset;
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index] = forces[iat][x];// + forces_IonIon[iat][x];
+        plist[index] = forces[iat][x];
         index++;
       }
     }
@@ -141,7 +148,7 @@ namespace qmcplusplus {
 
   BareForce::Return_t 
     BareForce::evaluate(ParticleSet& P) {
-      forces = 0.0;
+      forces = forces_IonIon;
       const DistanceTableData* d_ab=P.DistTables[myTableIndex];
 
       //Loop over distinct eln-ion pairs
@@ -157,7 +164,19 @@ namespace qmcplusplus {
       tries++;
       return 0.0;
     }
+  
+  bool BareForce::put(xmlNodePtr cur)
+  {
+     string ionionforce("yes");
+     OhmmsAttributeSet attr;
+     attr.add(prefix, "name");
+     attr.add(ionionforce, "addionion");
+     attr.put(cur);    
+     
+     addionion = (ionionforce=="yes" || ionionforce == "true");
 
+     return true;   
+  }
 
   void
   ForceBase::InitVarReduction (real_type rcut, int _m, int numFuncs)
@@ -193,12 +212,9 @@ namespace qmcplusplus {
     for (int i=0; i<numFuncs; i++) {
       for (int j=0; j<numFuncs; j++)
 	ck[i] += S(i,j)*h[j];
-      //  fprintf (stderr, "ck[%d] = %1.8f\n", i, ck[i]);
+
     }
 
-
-
-    //    MatrixOperators::product (S, h.data(), ck.data());
 
     FILE *fout = fopen ("g_r.dat", "w");
     for (double r=0.0; r<Rcut; r+=0.001)

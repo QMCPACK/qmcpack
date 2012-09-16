@@ -31,6 +31,8 @@ namespace qmcplusplus {
     int Nel;
     int tries;
     bool FirstTime;
+    bool addionion;
+    
     ParticleSet& Ions;
     ParticleSet::ParticlePos_t forces;
     ParticleSet::ParticlePos_t forces_IonIon;
@@ -104,9 +106,7 @@ namespace qmcplusplus {
     }
 
     /** Do nothing */
-    bool put(xmlNodePtr cur) {
-      return true;
-    }
+    bool put(xmlNodePtr cur);
 
     bool get(std::ostream& os) const {
       os << "Force Base Hamiltonian: " << pairName;
