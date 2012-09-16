@@ -87,6 +87,7 @@
   #include "QMCHamiltonians/SkEstimator_CUDA.h"
 #endif
 
+//#include <iostream>
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
       PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c)
@@ -123,7 +124,6 @@ namespace qmcplusplus {
     hAttrib.add(source,"source");
     hAttrib.add(defaultKE,"default");
     hAttrib.put(cur);
-
     renameProperty(source);
 
     bool attach2Node=false;
@@ -652,6 +652,7 @@ namespace qmcplusplus {
 
     string a("e"),title("ElecElec"),pbc("yes");
     bool physical = true;
+    bool doForce = false;
     OhmmsAttributeSet hAttrib;
     hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
     hAttrib.add(a,"source"); 
@@ -659,7 +660,6 @@ namespace qmcplusplus {
     hAttrib.add(physical,"physical");
     hAttrib.put(cur);
     
-
     renameProperty(a);
 
     PtclPoolType::iterator pit(ptclPool.find(a));
@@ -745,7 +745,7 @@ namespace qmcplusplus {
     OhmmsAttributeSet hAttrib;
     string mode("bare");
     //hAttrib.add(title,"id");
-    //hAttrib.add(title,"name"); 
+    hAttrib.add(title,"name"); 
     hAttrib.add(a,"source"); 
     hAttrib.add(targetName,"target"); 
     hAttrib.add(pbc,"pbc"); 
@@ -769,10 +769,16 @@ namespace qmcplusplus {
     ParticleSet* target = (*pit).second;
 
     //bool applyPBC= (PBCType && pbc=="yes");
-    if(mode=="bare") 
-      targetH->addOperator(new BareForce(*source, *target), title, false);
-    else if(mode=="cep") 
-      targetH->addOperator(new ForceCeperley(*source, *target), title, false);
+    if(mode=="bare"){
+      BareForce* bareforce = new BareForce(*source, *target);
+      bareforce->put(cur);
+      targetH->addOperator(bareforce, title, false);
+    }
+    else if(mode=="cep"){
+	  ForceCeperley* force_cep = new ForceCeperley(*source, *target);
+	  force_cep->put(cur);
+      targetH->addOperator(force_cep, title, false);
+    }
     else if(mode=="pulay") {
       OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
       if(psi_it == psiPool.end()) {
