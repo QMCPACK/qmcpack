@@ -20,6 +20,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
+#include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
@@ -30,16 +32,16 @@ namespace qmcplusplus {
       myName = "Ceperley_Force_Base";
       prefix="HFCep";
 
-      // hard wired parameters but these should be made user-defined
+      // Defaults
       Rcut = 0.4;
       m_exp = 2;
       N_basis = 4;
-      ///////////////////////////////////////////////////////////////
       
-      InitMatrix();
       forces = 0.0;
       forces_ShortRange.resize(Nnuc);
       forces_ShortRange = 0.0;
+      ///////////////////////////////////////////////////////////////
+
     }
 
   void ForceCeperley::InitMatrix() {
@@ -61,8 +63,8 @@ namespace qmcplusplus {
   ForceCeperley::Return_t 
     ForceCeperley::evaluate(ParticleSet& P) 
     {
-      forces = 0.0;
-      forces_ShortRange = 0.0;
+      forces = forces_IonIon;
+      forces_ShortRange = forces_IonIon;
       const DistanceTableData* d_ab=P.DistTables[myTableIndex];
 
       for(int iat=0; iat<Nnuc; iat++) {
@@ -89,19 +91,36 @@ namespace qmcplusplus {
         }
       }
 
-      //if(tries%100 == 0)
-      //{
-      //  for(int iat=0; iat<Nnuc; ++iat)
-      //    cout << forces_ShortRange[iat][2]/tries << " " << (forces[iat][2]-forces_ShortRange[iat][2])/tries << " " << (forces_IonIon[iat][2]) << " ";// << endl;
-      //  cout << endl;
-      //}
-      //tries++;
-      
+
       return 0.0;
     }
 
   bool ForceCeperley::put(xmlNodePtr cur) {
-    // do nothing
+    
+    string ionionforce("yes");
+    OhmmsAttributeSet attr;
+    attr.add(prefix, "name");
+    attr.add(ionionforce, "addionion");
+    attr.put(cur);    
+    
+    addionion = (ionionforce=="yes") || (ionionforce == "true");
+    app_log() << "ionionforce = "<<ionionforce<<endl;
+    app_log() << "addionion="<<addionion<<endl;
+    
+    ParameterSet fcep_param_set;
+			
+	fcep_param_set.add(Rcut, "rcut","real");
+	fcep_param_set.add(N_basis, "nbasis", "int");
+	fcep_param_set.add(m_exp, "weight_exp", "int");
+	fcep_param_set.put(cur);
+	
+	app_log() <<"    ForceCeperley Parameters"<<endl;
+	app_log() <<"        ForceCeperley::Rcut="<<Rcut<<endl;
+	app_log() <<"        ForceCeperley::N_basis="<<N_basis<<endl;
+	app_log() <<"        ForceCeperley::m_exp="<<m_exp<<endl;
+	
+	InitMatrix();
+	
     return true;
   }
 

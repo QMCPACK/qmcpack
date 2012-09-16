@@ -33,6 +33,7 @@ namespace qmcplusplus {
     Vector<double> h; // terms in fitting polynomial
     Vector<double> c; // polynomial coefficients
     // container for short-range force estimator
+    
     ParticleSet::ParticlePos_t forces_ShortRange;
 
     ForceCeperley(ParticleSet& ions, ParticleSet& elns);
@@ -71,7 +72,6 @@ namespace qmcplusplus {
     }
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-    /** Do nothing */
     bool put(xmlNodePtr cur) ;
 
     bool get(std::ostream& os) const {
