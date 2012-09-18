@@ -183,7 +183,7 @@ namespace qmcplusplus {
         t_fft+= c_fft.elapsed();
 
         c_phase.restart();
-        fix_phase_rotate(FFTbox,splineData,TwistAngles[ti]);
+        fix_phase_rotate_c2c(FFTbox,splineData,TwistAngles[ti]);
         t_phase+= c_phase.elapsed();
 
         c_spline.restart();
@@ -507,7 +507,7 @@ namespace qmcplusplus {
         myComm->bcast(cG);
         unpack4fftw(cG,Gvecs[ti],MeshSize,FFTbox);
         fftw_execute (FFTplan);
-        fix_phase_rotate(FFTbox,splineData,TwistAngles[ti]);
+        fix_phase_rotate_c2r(FFTbox,splineData,TwistAngles[ti]);
 	set_multi_UBspline_3d_d (orbitalSet->MultiSpline, ival, splineData.data());
       }
 
@@ -644,6 +644,89 @@ namespace qmcplusplus {
     
     ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
+
+  bool EinsplineSetBuilder::ReadGvectors_ESHDF()
+  {
+    bool root=myComm->rank() ==0;
+
+    //this is always ugly
+    MeshSize = 0; 
+    int hasPsig=1;
+#if defined(__bgp__)||(__bgq__)
+    if(root)
+    {
+      hid_t gid=H5Dopen(H5FileID,"/electrons/kpoint_0/spin_0/state_0/psi_g");
+      if(gid<0) hasPsig=0;
+      H5Dclose(gid);
+    }
+    myComm->bcast(hasPsig);
+#else
+    if(root)
+    {
+      HDFAttribIO<TinyVector<int,3> > h_mesh(MeshSize);
+      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
+      h_mesh.read (H5FileID, "/electrons/mesh");
+    }
+    myComm->bcast(MeshSize);
+    hasPsig = (MeshSize[0] == 0);
+#endif
+
+    if(hasPsig)
+    {
+      int numk=0;
+      MaxNumGvecs=0;
+      //    std::set<TinyVector<int,3> > Gset;
+      // Read k-points for all G-vectors and take the union
+      TinyVector<int,3> maxIndex(0,0,0);
+      Gvecs.resize(NumTwists);
+      //for (int ik=0; ik<numk; ik++) 
+      //{
+      for(int k=0; k<DistinctTwists.size(); ++k)
+      {
+        int ik=DistinctTwists[k];
+        // ostringstream numGpath;
+        // HDFAttribIO<int> h_numg(numG);
+        // int numG=0;
+        // numGpath << "/electrons/kpoint_" << ik << "/number_of_gvectors";
+        int numg=0;
+        if(root)
+        {
+          ostringstream Gpath;
+          Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
+          HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
+          h_Gvecs.read (H5FileID, Gpath.str().c_str());
+          numg=Gvecs[ik].size();
+        }
+        myComm->bcast(numg);
+
+        if(!root) Gvecs[ik].resize(numg);
+        myComm->bcast(Gvecs[ik]);
+
+        MaxNumGvecs=std::max(int(Gvecs[ik].size()),MaxNumGvecs);
+
+        for (int ig=0; ig<Gvecs[ik].size(); ig++) 
+        {
+          maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[ik][ig][0]));
+          maxIndex[1] = std::max(maxIndex[1], std::abs(Gvecs[ik][ig][1]));
+          maxIndex[2] = std::max(maxIndex[2], std::abs(Gvecs[ik][ig][2]));
+        }
+        // for (int ig=0; ig<Gvecs.size(); ig++)
+        // 	if (Gset.find(Gvecs[ig]) == Gset.end())
+        // 	  Gset.insert(Gvecs[ig]);
+      }
+      MeshSize[0] = (int)std::ceil(4.0*MeshFactor*maxIndex[0]);
+      MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
+      MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
+    }
+    app_log() << "B-spline mesh factor is " << MeshFactor << endl;
+    app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
+      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+    app_log() << "Maxmimum number of Gvecs " << MaxNumGvecs << endl;
+    app_log().flush();
+
+    return hasPsig;
+  }
+
 
 }
 

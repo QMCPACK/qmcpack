@@ -51,8 +51,8 @@ namespace qmcplusplus
    * @param out output real data
    * @param twist vector to correct phase
    */
-  template<typename T>
-    inline void fix_phase_c2r(const Array<std::complex<T>,3>& in, Array<T,3>& out
+  template<typename T, typename T1>
+    inline void fix_phase_c2r(const Array<std::complex<T>,3>& in, Array<T1,3>& out
         , const TinyVector<T,3>& twist
         )
   {
@@ -69,7 +69,7 @@ namespace qmcplusplus
     {
       T s, c;
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T* restrict out_ptr=out.data()+ix*ny*nz;
+      T1* restrict out_ptr=out.data()+ix*ny*nz;
 
       T rux=static_cast<T>(ix)*nx_i*twist[0];
       for (int iy=0; iy<ny; iy++) 
@@ -79,7 +79,7 @@ namespace qmcplusplus
         {
           T ruz=static_cast<T>(iz)*nz_i*twist[2];
           sincos(two_pi*(rux+ruy+ruz), &s, &c);
-          *out_ptr = c*in_ptr->real()-s*in_ptr->imag();
+          *out_ptr = static_cast<T1>(c*in_ptr->real()-s*in_ptr->imag());
           ++out_ptr;
           ++in_ptr;
         }
@@ -113,9 +113,9 @@ namespace qmcplusplus
    * zero.  This sometimes happens in crystals with high
    * symmetry at special k-points.
    */
-  template<typename T>
-    inline void fix_phase_rotate(Array<std::complex<T>,3>& in
-    , Array<T,3>& out, const TinyVector<T,3>& twist
+  template<typename T, typename T1>
+    inline void fix_phase_rotate_c2r(Array<std::complex<T>,3>& in
+    , Array<T1,3>& out, const TinyVector<T,3>& twist
     )
     {
       const T two_pi=-2.0*M_PI;
@@ -156,20 +156,20 @@ namespace qmcplusplus
       for (int ix=0; ix<nx; ix++)
       {
         const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-        T* restrict out_ptr=out.data()+ix*ny*nz;
+        T1* restrict out_ptr=out.data()+ix*ny*nz;
         for (int iy=0; iy<ny; iy++)
           for (int iz=0; iz<nz; iz++) 
           {
-            *out_ptr=phase_r*in_ptr->real()-phase_i*in_ptr->imag();
+            *out_ptr=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
             ++in_ptr;
             ++out_ptr;
           }
       }
     }
 
-  template<typename T>
-  inline void fix_phase_rotate(const Array<std::complex<T>,3>& in
-      , Array<std::complex<T>,3>& out, const TinyVector<T,3>& twist)
+  template<typename T, typename T1>
+  inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
+      , Array<std::complex<T1>,3>& out, const TinyVector<T,3>& twist)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
@@ -221,13 +221,13 @@ namespace qmcplusplus
     for (int ix=0; ix<nx; ++ix)
     {
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      std::complex<T>* restrict out_ptr=out.data()+ix*ny*nz;
+      std::complex<T1>* restrict out_ptr=out.data()+ix*ny*nz;
       for (int iy=0; iy<ny; ++iy)
         for (int iz=0; iz<nz; ++iz) 
         {
-          *out_ptr=std::complex<T>(
-              phase_r*in_ptr->real()-phase_i*in_ptr->imag()
-              , phase_i*in_ptr->real()+phase_r*in_ptr->imag());
+          *out_ptr=std::complex<T1>(
+              static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag())
+              , static_cast<T1>(phase_i*in_ptr->real()+phase_r*in_ptr->imag()));
           ++out_ptr;
           ++in_ptr;
         }
@@ -372,88 +372,6 @@ namespace qmcplusplus
     }
 
     return isCore;
-  }
-
-  bool EinsplineSetBuilder::ReadGvectors_ESHDF()
-  {
-    bool root=myComm->rank() ==0;
-
-    //this is always ugly
-    MeshSize = 0; 
-    int hasPsig=1;
-#if defined(__bgp__)||(__bgq__)
-    if(root)
-    {
-      hid_t gid=H5Dopen(H5FileID,"/electrons/kpoint_0/spin_0/state_0/psi_g");
-      if(gid<0) hasPsig=0;
-      H5Dclose(gid);
-    }
-    myComm->bcast(hasPsig);
-#else
-    if(root)
-    {
-      HDFAttribIO<TinyVector<int,3> > h_mesh(MeshSize);
-      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
-      h_mesh.read (H5FileID, "/electrons/mesh");
-    }
-    myComm->bcast(MeshSize);
-    hasPsig = (MeshSize[0] == 0);
-#endif
-
-    if(hasPsig)
-    {
-      int numk=0;
-      MaxNumGvecs=0;
-      //    std::set<TinyVector<int,3> > Gset;
-      // Read k-points for all G-vectors and take the union
-      TinyVector<int,3> maxIndex(0,0,0);
-      Gvecs.resize(NumTwists);
-      //for (int ik=0; ik<numk; ik++) 
-      //{
-      for(int k=0; k<DistinctTwists.size(); ++k)
-      {
-        int ik=DistinctTwists[k];
-        // ostringstream numGpath;
-        // HDFAttribIO<int> h_numg(numG);
-        // int numG=0;
-        // numGpath << "/electrons/kpoint_" << ik << "/number_of_gvectors";
-        int numg=0;
-        if(root)
-        {
-          ostringstream Gpath;
-          Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
-          HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
-          h_Gvecs.read (H5FileID, Gpath.str().c_str());
-          numg=Gvecs[ik].size();
-        }
-        myComm->bcast(numg);
-
-        if(!root) Gvecs[ik].resize(numg);
-        myComm->bcast(Gvecs[ik]);
-
-        MaxNumGvecs=std::max(int(Gvecs[ik].size()),MaxNumGvecs);
-
-        for (int ig=0; ig<Gvecs[ik].size(); ig++) 
-        {
-          maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[ik][ig][0]));
-          maxIndex[1] = std::max(maxIndex[1], std::abs(Gvecs[ik][ig][1]));
-          maxIndex[2] = std::max(maxIndex[2], std::abs(Gvecs[ik][ig][2]));
-        }
-        // for (int ig=0; ig<Gvecs.size(); ig++)
-        // 	if (Gset.find(Gvecs[ig]) == Gset.end())
-        // 	  Gset.insert(Gvecs[ig]);
-      }
-      MeshSize[0] = (int)std::ceil(4.0*MeshFactor*maxIndex[0]);
-      MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
-      MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
-    }
-    app_log() << "B-spline mesh factor is " << MeshFactor << endl;
-    app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
-      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
-    app_log() << "Maxmimum number of Gvecs " << MaxNumGvecs << endl;
-    app_log().flush();
-
-    return hasPsig;
   }
 
 }

@@ -23,7 +23,8 @@
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
-#include <einspline/multi_bspline_structs.h>
+#include <spline/einspline_engine.hpp>
+//#include <einspline/multi_bspline_structs.h>
 #ifdef QMC_CUDA
   #include <einspline/multi_bspline_create_cuda.h>
   #include "QMCWaveFunctions/AtomicOrbitalCuda.h"
@@ -119,14 +120,6 @@ namespace qmcplusplus {
 #endif
   };
 
-  template<> struct MultiOrbitalTraits<double,3>
-  {  
-    typedef multi_UBspline_3d_d SplineType;  
-#ifdef QMC_CUDA 
-    typedef multi_UBspline_3d_d_cuda CudaSplineType; 
-#endif
-  };
-
   template<> struct MultiOrbitalTraits<complex<double>,2>
   {  
     typedef multi_UBspline_2d_z SplineType;  
@@ -135,28 +128,11 @@ namespace qmcplusplus {
 #endif
   };
 
-  template<> struct MultiOrbitalTraits<complex<double>,3>
-  {  
-    typedef multi_UBspline_3d_z SplineType;  
-#ifdef QMC_CUDA 
-    typedef multi_UBspline_3d_z_cuda CudaSplineType;  
-#endif
-  };
-
-
   template<> struct MultiOrbitalTraits<float,2>
   {  
     typedef multi_UBspline_2d_s SplineType;  
 #ifdef QMC_CUDA 
     typedef multi_UBspline_2d_s_cuda CudaSplineType;  
-#endif
-  };
-
-  template<> struct MultiOrbitalTraits<float,3>
-  {  
-    typedef multi_UBspline_3d_s SplineType;  
-#ifdef QMC_CUDA 
-    typedef multi_UBspline_3d_s_cuda CudaSplineType;  
 #endif
   };
 
@@ -168,9 +144,42 @@ namespace qmcplusplus {
 #endif
   };
 
+  template<> struct MultiOrbitalTraits<double,3>
+  {  
+    typedef multi_UBspline_3d_d SplineType;  
+    typedef BCtype_d BCType;
+    typedef double DataType;
+#ifdef QMC_CUDA 
+    typedef multi_UBspline_3d_d_cuda CudaSplineType; 
+#endif
+  };
+
+  template<> struct MultiOrbitalTraits<complex<double>,3>
+  {  
+    typedef multi_UBspline_3d_z SplineType;  
+    typedef BCtype_z BCType;
+    typedef complex<double> DataType;
+#ifdef QMC_CUDA 
+    typedef multi_UBspline_3d_z_cuda CudaSplineType;  
+#endif
+  };
+
+
+  template<> struct MultiOrbitalTraits<float,3>
+  {  
+    typedef multi_UBspline_3d_s SplineType;  
+    typedef BCtype_s BCType;
+    typedef float DataType;
+#ifdef QMC_CUDA 
+    typedef multi_UBspline_3d_s_cuda CudaSplineType;  
+#endif
+  };
+
   template<> struct MultiOrbitalTraits<complex<float>,3>
   {  
     typedef multi_UBspline_3d_c SplineType;  
+    typedef BCtype_c BCType;
+    typedef complex<float> DataType;
 #ifdef QMC_CUDA 
     typedef multi_UBspline_3d_c_cuda CudaSplineType;  
 #endif
@@ -189,9 +198,6 @@ namespace qmcplusplus {
   {    typedef complex<double> CudaStorageType; };
 #endif
 
-  
-
-
 
   ////////////////////////////////////////////////////////////////////
   // Template class for evaluating multiple extended Bloch orbitals // 
@@ -207,6 +213,8 @@ namespace qmcplusplus {
     //////////////////////
     //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     typedef typename MultiOrbitalTraits<StorageType,OHMMS_DIM>::SplineType SplineType; 
+    typedef typename MultiOrbitalTraits<StorageType,OHMMS_DIM>::BCType     BCType; 
+
     typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
     typedef typename OrbitalSetTraits<StorageType>::GradVector_t  StorageGradVector_t;
     typedef typename OrbitalSetTraits<StorageType>::HessVector_t  StorageHessVector_t;
@@ -215,8 +223,8 @@ namespace qmcplusplus {
     typedef Vector<complex<double> >                              ComplexValueVector_t;
     typedef Vector<TinyVector<double,OHMMS_DIM> >                 RealGradVector_t;
     typedef Vector<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradVector_t;
-    typedef Tensor<double,OHMMS_DIM>                            RealHessType;
-    typedef Tensor<complex<double>,OHMMS_DIM>                   ComplexHessType;
+    typedef Tensor<double,OHMMS_DIM>                              RealHessType;
+    typedef Tensor<complex<double>,OHMMS_DIM>                     ComplexHessType;
     typedef Vector<RealHessType>                                  RealHessVector_t;
     typedef Matrix<RealHessType>                                  RealHessMatrix_t;
     typedef Vector<ComplexHessType>                               ComplexHessVector_t;
@@ -310,8 +318,31 @@ namespace qmcplusplus {
 #endif
 
   public:
-    void registerTimers();
-    PosType get_k(int orb) { return kPoints[orb]; }
+    /** create MultiSpline 
+     * @param xyz_g grid data
+     * @param xyz_bc boundary conditions
+     */
+    template<typename GT, typename BCT>
+      void allocate(GT& xyz_g, BCT& xyz_bc, int nv)
+      {
+        SplineType* dummy=0;
+        MultiSpline=einspline::create(dummy,xyz_g,xyz_bc,nv);
+      }
+
+    inline void resizeStorage(int n, int nvals, int ncores=0)
+    {
+      kPoints.resize(n);
+      MakeTwoCopies.resize(n);
+      StorageValueVector.resize(n); BlendValueVector.resize(n);
+      StorageLaplVector.resize(n);  BlendLaplVector.resize(n);
+      StorageGradVector.resize(n);  BlendGradVector.resize(n);
+      StorageHessVector.resize(n);
+      StorageGradHessVector.resize(n);
+      phase.resize(n);
+      eikr.resize(n);
+      NumValenceOrbs = nvals;
+      NumCoreOrbs    = ncores;
+    }
 
     // Real return values
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
@@ -391,6 +422,10 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
     string Type();
+
+    void registerTimers();
+    PosType get_k(int orb) { return kPoints[orb]; }
+
     
     SPOSetBase* makeClone() const;
     

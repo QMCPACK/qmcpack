@@ -117,7 +117,7 @@ namespace qmcplusplus {
     
     bool put (xmlNodePtr cur);
 
-        /** initialize the Antisymmetric wave function for electrons
+    /** initialize the Antisymmetric wave function for electrons
      *@param cur the current xml node
      */
     SPOSetBase* createSPOSet(xmlNodePtr cur);
@@ -137,6 +137,8 @@ namespace qmcplusplus {
     // This is true if we have the orbital derivatives w.r.t. the ion
     // positions 
     bool HaveOrbDerivs;
+    ///root XML node 
+    xmlNodePtr XMLRoot;
 
     // The name of the ion particleset
     void CreateIonParticleSet(string sourceName);
@@ -151,7 +153,6 @@ namespace qmcplusplus {
     static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
 
 
-    xmlNodePtr XMLRoot;
 
     //////////////////////////////////////
     // HDF5-related data  and functions //
@@ -169,10 +170,29 @@ namespace qmcplusplus {
     bool ReadOrbitalInfo_ESHDF ();
     void BroadcastOrbitalInfo();
     bool CheckLattice();
+
     /** read gvectors for each twist
      * @return true, if psi_g is found
      */
     bool ReadGvectors_ESHDF();
+
+    /** set tiling properties of oset
+     * @param oset spline-orbital engine to be initialized
+     * @param numOrbs number of orbitals that belong to oset
+     */
+    template<typename SPE>
+      inline void setTiling(SPE* oset, int numOrbs)
+      {
+        oset->TileFactor = TileFactor;
+        oset->Tiling = (TileFactor[0]*TileFactor[1]*TileFactor[2] != 1);
+        oset->PrimLattice  = Lattice;
+        oset->SuperLattice = SuperLattice;
+        oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
+        app_log() << "GGt = \n" << oset->GGt << endl;
+        oset->setOrbitalSetSize (numOrbs);
+        oset->BasisSetSize   = numOrbs;
+        TileIons();
+      }
 
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
@@ -221,6 +241,11 @@ namespace qmcplusplus {
     void ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
     void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
     void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
+
+    template<typename SPE>
+    void ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet);
+    template<typename SPE>
+    void ReadBands_ESHDF_Real(int spin, SPE* orbitalSet);
     void CopyBands(int numOrbs);
     
     /////////////////////////////
