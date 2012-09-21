@@ -21,6 +21,7 @@
 #ifndef MULTI_BSPLINE_STRUCTS_STD_H
 #define MULTI_BSPLINE_STRUCTS_STD_H
 
+#include <stdlib.h>
 #include <inttypes.h>
 
 ///////////////////////////
@@ -57,6 +58,7 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_s xBC, yBC, zBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_3d_s;
 
 
@@ -94,6 +96,7 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_d xBC, yBC, zBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_3d_d;
 
 
@@ -134,6 +137,7 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_c xBC, yBC, zBC;
   int num_splines;
+  size_t coefs_size;
   // temporary storage for laplacian components
   complex_float* restrict lapl3;
 } multi_UBspline_3d_c;
@@ -175,6 +179,7 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_z xBC, yBC, zBC;
   int num_splines;
+  size_t coefs_size;
   // temporary storage for laplacian components
   complex_double* restrict lapl3;
 } multi_UBspline_3d_z;

@@ -66,6 +66,10 @@ void
 set_multi_UBspline_3d_s (multi_UBspline_3d_s *spline, 
 			 int spline_num, float *data);
 
+void
+set_multi_UBspline_3d_s_d (multi_UBspline_3d_s *spline, 
+			 int spline_num, double *data);
+
 
 /////////////////////////////////////
 // Uniform, double precision, real //
@@ -133,6 +137,10 @@ set_multi_UBspline_2d_c (multi_UBspline_2d_c *spline, int spline_num,
 void
 set_multi_UBspline_3d_c (multi_UBspline_3d_c *spline, int spline_num, 
 			 complex_float *data);
+
+void
+set_multi_UBspline_3d_c_z (multi_UBspline_3d_c *spline, int spline_num, 
+			 complex_double *data);
 
 ///////////////////////////////////////
 // Uniform, double precision, complex//
