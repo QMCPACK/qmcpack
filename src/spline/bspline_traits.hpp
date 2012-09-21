@@ -63,6 +63,19 @@ namespace qmcplusplus
       static const bool value=true;
     };
 
+  template<typename T1, typename T2> struct is_same_precision
+  {
+    static const bool value=false;
+  };
+  template<> struct is_same_precision<double,double>
+  {
+    static const bool value=true;
+  };
+  template<> struct is_same_precision<float,float>
+  {
+    static const bool value=true;
+  };
+
   /** dummy traits class for bspline engine
    *
    * Should fail to instantiate invalid engines if the trait class is not implemented
