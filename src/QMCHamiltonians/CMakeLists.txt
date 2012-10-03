@@ -14,6 +14,7 @@ SET(HAMSRCS
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
+  DynSkEstimator.cpp
   MomentumEstimator.cpp
   ForceBase.cpp
 )

@@ -38,6 +38,7 @@
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
+#include "QMCHamiltonians/DynSkEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/LocalCorePolPotential.h"
@@ -349,7 +350,7 @@ namespace qmcplusplus {
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
         }
-   else if(potType == "localmoment")
+        else if(potType == "localmoment")
         {
           string SourceName = "ion0";
           OhmmsAttributeSet hAttrib;
@@ -383,7 +384,17 @@ namespace qmcplusplus {
             targetH->addOperator(apot,potName,false);
           }
         }
-	else if(potType == "sk")
+        else if(potType == "dynsk")
+        {
+          if(PBCType)//only if perioidic 
+          {
+            DynSkEstimator* apot=new DynSkEstimator(*targetPtcl);
+            apot->putSpecial(cur,*targetPtcl);
+            targetH->addOperator(apot,potName,false);
+            app_log()<<"Adding dynamic S(k) estimator"<<endl;
+          }
+        }
+        else if(potType == "sk")
         {
           if(PBCType)//only if perioidic 
           {
