@@ -918,7 +918,7 @@ solve_deriv_interp_1d_d (double bands[], double coefs[],
 // On exit, coefs with contain interpolating B-spline coefs
 void 
 solve_periodic_interp_1d_d (double bands[], double coefs[],
-			    int M, int cstride);
+			    int M, intptr_t cstride);
 
 void
 find_coefs_1d_d (Ugrid grid, BCtype_d bc, 
@@ -1612,7 +1612,7 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
 		       ((double*)data)+doffset+1,  (intptr_t)2*My*Mz,
 		       ((double*)coefs)+coffset+1, (intptr_t)2*Ny*Nz*zs);
     }
-  
+
   // Now, solve in the Y-direction
   for (int ix=0; ix<Nx; ix++) 
 #pragma omp parallel for

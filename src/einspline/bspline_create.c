@@ -1008,7 +1008,7 @@ solve_deriv_interp_1d_d (double bands[], double coefs[],
 // On exit, coefs with contain interpolating B-spline coefs
 void 
 solve_periodic_interp_1d_d (double bands[], double coefs[],
-			    int M, int cstride)
+			    int M, intptr_t cstride)
 {
   double lastCol[M];
   // Now solve:
