@@ -391,13 +391,15 @@ namespace qmcplusplus {
         void evaluate_v(const PointType& r, VV& psi)
         {
           PointType ru(PrimLattice.toUnit(r));
-          einspline::evaluate(MultiSpline,ru,myV);
           int sign=0;
           for (int i=0; i<D; i++) {
             ST img = std::floor(ru[i]);
             ru[i] -= img;
             sign += HalfG[i] * (int)img;
           }
+
+          einspline::evaluate(MultiSpline,ru,myV);
+
           if (sign & 1) 
             for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(-myV[j]);
           else
@@ -408,14 +410,15 @@ namespace qmcplusplus {
         void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
         {
           PointType ru(PrimLattice.toUnit(r));
-          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-      
+
           int sign=0;
           for (int i=0; i<D; i++) {
             ST img = std::floor(ru[i]);
             ru[i] -= img;
             sign += HalfG[i] * (int)img;
           }
+
+          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
           const ST minus_one=-1.0;
           if (sign & 1) 
             for (int j=0; j<psi.size(); j++) 
@@ -478,6 +481,11 @@ namespace qmcplusplus {
         SplineType* dummy=0;
         MultiSpline=einspline::create(dummy,xyz_g,xyz_bc,nv);
       }
+
+    SPOSetBase* makeClone() const
+    {
+      return new BsplineSet<SplineAdoptor>(*this);
+    }
 
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     {
