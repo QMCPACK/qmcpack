@@ -140,32 +140,32 @@ namespace APPNAMESPACE
       //}
     }
 
-  /*! \fn  CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs)
-   *  \param rhs a CrystalLattice to be copied
-   *  \brief Copy all the properties of the lattice, 
-   *   including boundary conditions and grid paritions.
-   */
-  template<class T, unsigned D,bool ORTHO>
-    CrystalLattice<T,D,ORTHO>& 
-    CrystalLattice<T,D,ORTHO>::operator=(const CrystalLattice<T,D,ORTHO>& rhs) 
-    {
-      BoxBConds = rhs.BoxBConds;
-      R = rhs.R;
-      reset();
-      return *this;
-    }
-
-  /*! \fn  CrystalLattice<T,D>::operator=(const Tensor<T,D>& rhs)
-   *  \param rhs a Tensor to be copied
-   */
-  template<class T, unsigned D,bool ORTHO>
-    CrystalLattice<T,D,ORTHO>& 
-    CrystalLattice<T,D,ORTHO>::operator=(const Tensor<T,D>& rhs) 
-    {
-      R = rhs;
-      reset();
-      return *this;
-    }
+//  /*! \fn  CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs)
+//   *  \param rhs a CrystalLattice to be copied
+//   *  \brief Copy all the properties of the lattice, 
+//   *   including boundary conditions and grid paritions.
+//   */
+//  template<class T, unsigned D,bool ORTHO>
+//    CrystalLattice<T,D,ORTHO>& 
+//    CrystalLattice<T,D,ORTHO>::operator=(const CrystalLattice<T,D,ORTHO>& rhs) 
+//    {
+//      BoxBConds = rhs.BoxBConds;
+//      R = rhs.R;
+//      reset();
+//      return *this;
+//    }
+//
+  ///*! \fn  CrystalLattice<T,D>::operator=(const Tensor<T,D>& rhs)
+  // *  \param rhs a Tensor to be copied
+  // */
+  //template<class T, unsigned D,bool ORTHO>
+  //  CrystalLattice<T,D,ORTHO>& 
+  //  CrystalLattice<T,D,ORTHO>::operator=(const Tensor<T,D>& rhs) 
+  //  {
+  //    R = rhs;
+  //    reset();
+  //    return *this;
+  //  }
 
   /*! \fn  CrystalLattice<T,D>::operator*=(T sc)
    *  \param sc A scaling factor.

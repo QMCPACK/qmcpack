@@ -38,12 +38,22 @@ template<typename T> inline T round(T x)
 }
 #endif
 
-#if !defined(HAVE_SINCOS)
+#if defined(HAVE_SINCOS)
+inline void sincos(float a, float* s, float* c)
+{
+  sincosf(a,s,c);
+}
+#else
 template<typename T> 
 inline void sincos(T a, T* restrict s, T*  restrict c)
 {
   *s=std::sin(a);
   *c=std::cos(a);
+}
+inline void sincos(float a, float* restrict s, float*  restrict c)
+{
+  *s=sinf(a);
+  *c=cosf(a);
 }
 #endif
 

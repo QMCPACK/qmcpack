@@ -268,12 +268,25 @@ struct CrystalLattice{
   }
 
   ///assignment operator
-  CrystalLattice<T,D,ORTHO>& operator=(const CrystalLattice<T,D,ORTHO>& rhs);
+  template<typename T1>
+  CrystalLattice<T,D,ORTHO>& operator=(const CrystalLattice<T1,D,ORTHO>& rhs)
+  {
+    BoxBConds = rhs.BoxBConds;
+    R = rhs.R;
+    reset();
+    return *this;
+  }
 
   /** assignment operator
    *@param rhs a tensor representing a unit cell
    */
-  CrystalLattice<T,D,ORTHO>& operator=(const Tensor<T,D>& rhs);
+  template<typename T1>
+  CrystalLattice<T,D,ORTHO>& operator=(const Tensor<T1,D>& rhs)
+  {
+    R=rhs;
+    reset();
+    return *this;
+  }
 
   /** scale the lattice vectors by sc. All the internal data are reset.
    *@param sc the scaling value
