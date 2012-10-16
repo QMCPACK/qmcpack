@@ -319,6 +319,14 @@ Communicate::bcast(double& g)
 }
 
 template<>
+inline void 
+Communicate::bcast(float& g) 
+{
+  MPI_Bcast(&g,1,MPI_FLOAT,0,myMPI);
+}
+
+
+template<>
 inline void
 Communicate::bcast(bool &g)
 {
@@ -360,6 +368,13 @@ inline void
 Communicate::bcast(APPNAMESPACE::TinyVector<double,3>& g) 
 {
   MPI_Bcast(g.begin(),3,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<float,3>& g) 
+{
+  MPI_Bcast(g.begin(),3,MPI_FLOAT,0,myMPI);
 }
 
 template<>
@@ -491,6 +506,13 @@ inline void
 Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,3> > &g)
 {
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<float,3> > &g)
+{
+  MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 
