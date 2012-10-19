@@ -50,9 +50,9 @@ namespace qmcplusplus {
     myComm->bcast (NumCoreOrbs);
     int N = NumDistinctOrbitals;
 
-    cout << "DEBUG distinct " << N << " valence " << NumValenceOrbs << endl;
     orbitalSet->resizeStorage(N,NumValenceOrbs);
 
+    vector<int> twist_id(N);
     //orbitalSet->kPoints.resize(N);
     //orbitalSet->MakeTwoCopies.resize(N);
     //orbitalSet->StorageValueVector.resize(N); orbitalSet->BlendValueVector.resize(N);
@@ -71,6 +71,7 @@ namespace qmcplusplus {
     if (root) {
       for (int iorb=0; iorb<N; iorb++) {
 	int ti = SortBands[iorb].TwistIndex;
+        twist_id[iorb]=ti;
 	PosType twist  = TwistAngles[ti];
 	orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
 	orbitalSet->MakeTwoCopies[iorb] = 
@@ -78,6 +79,8 @@ namespace qmcplusplus {
 	num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
     }
+
+    myComm->bcast(twist_id);
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
 
@@ -145,7 +148,7 @@ namespace qmcplusplus {
       {
         //Vector<complex<double> > cG;
         int ncg=0;
-        int ti=SortBands[iorb].TwistIndex;
+        int ti=twist_id[iorb];
         c_h5.restart();
 
         if(root)
@@ -158,6 +161,7 @@ namespace qmcplusplus {
           ncg=cG.size();
         }
         myComm->bcast(ncg);
+
         if(ncg != Gvecs[ti].size())
         {
           APP_ABORT("Failed : ncg != Gvecs[ti].size()");
@@ -257,9 +261,12 @@ namespace qmcplusplus {
     
     int numOrbs = orbitalSet->getOrbitalSetSize();
     int num = 0;
+    vector<int> twist_id(N);
+
     if (root) {
       for (int iorb=0; iorb<N; iorb++) {
 	int ti = SortBands[iorb].TwistIndex;
+        twist_id[iorb]=ti;
 	PosType twist  = TwistAngles[ti];
 	orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
 	orbitalSet->MakeTwoCopies[iorb] = 
@@ -277,6 +284,7 @@ namespace qmcplusplus {
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
     myComm->bcast(orbitalSet->HalfG);
+    myComm->bcast(twist_id);
 
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
@@ -332,7 +340,7 @@ namespace qmcplusplus {
         Array<complex<double>,3> rawData;
         for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
         {
-          int ti=SortBands[iorb].TwistIndex;
+          int ti=twist_id[iorb]; //int ti=SortBands[iorb].TwistIndex;
           if(root)
           {
             ostringstream path;
@@ -385,13 +393,13 @@ namespace qmcplusplus {
       {
         Vector<complex<double> > cG;
         int ncg=0;
-        int ti=SortBands[iorb].TwistIndex;
+        int ti=twist_id[iorb];
+        //int ti=SortBands[iorb].TwistIndex;
         if(root)
         {
           ostringstream path;
           path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-          cout << "FFT on " <<  path.str() << endl;
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
           ncg=cG.size();
