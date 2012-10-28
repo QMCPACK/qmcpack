@@ -37,7 +37,8 @@
 #include "QMCDrivers/QMCSHLinearOptimize.h"
 #include "QMCDrivers/EE/EEFactory.h"
 #endif
-//#include "QMCDrivers/RQMCMultiple.h"
+// #include "QMCDrivers/ReptationMC.h"
+#include "QMCDrivers/RQMCMultiple.h"
 ////THESE ARE BROKEN
 ////#if !defined(QMC_COMPLEX)
 ////#include "QMCDrivers/RQMCMultiWarp.h"
@@ -362,6 +363,14 @@ namespace qmcplusplus {
       RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*(psiPool->getWaveFunction("guide")),*primaryH,*hamPool,*psiPool);
     } 
+#endif
+#if QMC_BUILD_LEVEL>1
+   else if(curRunType == RMC_RUN)
+   {
+     app_log() << "Using ReptationMC: no warping, no pbyp" << endl;
+//      qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
+     qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
+   }
 #endif
 //#if QMC_BUILD_LEVEL>1
 //    else if(curRunType == RMC_RUN)
