@@ -176,7 +176,7 @@ namespace APPNAMESPACE
   {
     if(NeverBeenInitialized) {
       bool init_mpi = true;
-      uint_type offset_in = 0; // default is to generate by Wall-clock
+      int offset_in = -1; // default is to generate by Wall-clock
       if(cur != NULL) 
       {
         std::string pname("yes");
@@ -195,9 +195,10 @@ namespace APPNAMESPACE
         nprocs = OHMMS::Controller->size();
       }
 
-      if(offset_in==0)
+      if(offset_in<0)
       {
-        offset_in=static_cast<uint_type>(std::time(0))%1024;
+        offset_in=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
+        app_log() << "  Offset for the random number seeds based on time " << offset_in << endl;
         mpi::bcast(*OHMMS::Controller,offset_in);
       }
       else
