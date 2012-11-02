@@ -127,7 +127,7 @@ namespace qmcplusplus {
       tcur = tcur->next;
     }
     if (!FOUND) {
-      rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
+      rpajastrow->buildOrbital("P_dRPA","true", "true", "drpa", tlen, 10.0/tlen);
       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
     }
     dPsi.push_back(rpajastrow);

@@ -458,6 +458,7 @@ namespace qmcplusplus {
             BP-> put(cur);
             targetH->addOperator(BP,"HePress",false);
           } 
+#endif
 	  else if (estType=="RPAZVZB")
 	  {
             RPAPressure* BP= new RPAPressure(*targetPtcl);
@@ -496,7 +497,7 @@ namespace qmcplusplus {
 //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
 //             targetH->addOperator(DMCP,"PressureSum",false);
           }
-#endif
+
         }
 	else if(potType=="psi")
 	{

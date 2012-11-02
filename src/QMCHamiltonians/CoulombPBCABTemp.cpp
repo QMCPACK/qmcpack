@@ -206,11 +206,11 @@ namespace qmcplusplus {
     for(int iat=0; iat<NptclB; iat++) 
       totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
 
-    if(totQ>numeric_limits<RealType>::epsilon()) 
-    {
-      LOGMSG("PBCs not yet finished for non-neutral cells");
-      OHMMS::Controller->abort();
-    }
+//    if(totQ>numeric_limits<RealType>::epsilon()) 
+//    {
+//      LOGMSG("PBCs not yet finished for non-neutral cells");
+//      OHMMS::Controller->abort();
+//    }
 
     ////Test if the box sizes are same (=> kcut same for fixed dimcut)
     kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
