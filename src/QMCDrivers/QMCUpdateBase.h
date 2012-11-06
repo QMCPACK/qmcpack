@@ -163,6 +163,11 @@ namespace qmcplusplus
         Estimators->accumulate(W,it,it_end);
       }
 
+      ///move a walker, all-particle (waler) move, using drift
+      void advanceWalker(Walker_t& thisWalker);
+      ///move a walker, by particle-by-particle move using fast drift
+      void advancePbyP(Walker_t& thisWalker);
+
       /** advance walkers executed at each step
        *
        * Derived classes implement how to move walkers and accept/reject
