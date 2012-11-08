@@ -2,17 +2,17 @@
 // (c) Copyright 2007-  by Ken Esler and Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//   e-mail: jeongnim.kim@gmail.com
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file EinsplineSetBuilder.h
+ *
+ * Builder class for einspline-based SPOSet objects. 
+ */
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
@@ -21,7 +21,6 @@
 #include "QMCWaveFunctions/EinsplineSetLocal.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
-#include <fftw3.h>
 
 class Communicate;
 
@@ -55,10 +54,24 @@ namespace qmcplusplus {
   };
   
 
+  /** construct a name for spline SPO set
+   */
   struct H5OrbSet {
-    string FileName;
+    ///type of orbitals defined 
+    int OrbitalType;
+    ///index for the spin set
     int SpinSet;
+    ///number of orbitals that belong to this set
     int NumOrbs;
+    ///name of the HDF5 file
+    string FileName;
+    /** true if a < b
+     *
+     * The ordering
+     * - name
+     * - spin set
+     * - number of orbitals
+     */
     bool operator()(const H5OrbSet &a, const H5OrbSet &b) const
     {
       if (a.FileName == b.FileName) {
@@ -70,6 +83,7 @@ namespace qmcplusplus {
       else
 	return a.FileName < b.FileName;
     }
+
     H5OrbSet (const H5OrbSet &a) :
       FileName(a.FileName), SpinSet(a.SpinSet), NumOrbs(a.NumOrbs)
     { }
@@ -80,6 +94,8 @@ namespace qmcplusplus {
     { }
   };
 
+  /** helper class to sort bands according to the band and twist
+   */
   struct BandInfo {
     int TwistIndex, BandIndex, Spin;
     double Energy;
@@ -102,11 +118,11 @@ namespace qmcplusplus {
     }
   };
 
-  class EinsplineSetBuilder : public BasisSetBuilder {
+  /** EinsplineSet builder
+   */
+  class EinsplineSetBuilder : public BasisSetBuilder 
+  {
   public:
-    //////////////////////
-    // Type definitions //
-    //////////////////////
     typedef map<string,ParticleSet*> PtclPoolType;
     PtclPoolType &ParticleSets;
     ParticleSet &TargetPtcl;
@@ -121,7 +137,6 @@ namespace qmcplusplus {
      *@param cur the current xml node
      */
     SPOSetBase* createSPOSet(xmlNodePtr cur);
-
     
   protected:
     // Type definitions
@@ -147,11 +162,10 @@ namespace qmcplusplus {
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
     
-    static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
-    static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
-    static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
+    //static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
+    //static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
+    //static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
     static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
-
 
 
     //////////////////////////////////////

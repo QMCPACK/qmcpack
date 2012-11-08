@@ -514,7 +514,7 @@ namespace qmcplusplus {
       } // valence state
       iorb++;
     }
-    ExtendedMap_z[set] = orbitalSet->MultiSpline;
+    //ExtendedMap_z[set] = orbitalSet->MultiSpline;
   }
 
   void
@@ -858,7 +858,7 @@ namespace qmcplusplus {
       } // valence state
       iorb++;
     }
-    ExtendedMap_d[set] = orbitalSet->MultiSpline;
+    //ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
 
 

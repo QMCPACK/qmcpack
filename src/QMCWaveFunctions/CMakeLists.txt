@@ -100,6 +100,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetLocal.cpp
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
+      EinsplineSetBuilder_createSPOs.cpp
       MuffinTin.cpp
       AtomicOrbital.cpp
       EinsplineSetBuilderReadBands_ESHDF.cpp

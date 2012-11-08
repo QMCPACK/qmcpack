@@ -15,7 +15,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Message/CommOperators.h"
-
+#include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 
 namespace qmcplusplus {
@@ -290,7 +290,7 @@ namespace qmcplusplus {
     for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
       orbitalSet->AtomicOrbitals[i].registerTimers();
 
-    ExtendedMap_z[set] = orbitalSet->MultiSpline;
+    //ExtendedMap_z[set] = orbitalSet->MultiSpline;
   }
 
 
@@ -642,7 +642,7 @@ namespace qmcplusplus {
     for (int i=0; i<orbitalSet->AtomicOrbitals.size(); i++)
       orbitalSet->AtomicOrbitals[i].registerTimers();
     
-    ExtendedMap_d[set] = orbitalSet->MultiSpline;
+    //ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
 
   bool EinsplineSetBuilder::ReadGvectors_ESHDF()
