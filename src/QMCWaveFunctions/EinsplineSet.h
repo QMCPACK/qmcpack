@@ -37,7 +37,7 @@ namespace qmcplusplus {
   class EinsplineSet : public SPOSetBase
   {
     friend class EinsplineSetBuilder;
-  protected:
+    public: 
     //////////////////////
     // Type definitions //
     //////////////////////
@@ -76,23 +76,8 @@ namespace qmcplusplus {
         
   public:  
     UnitCellType GetLattice();
-
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, 
-		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int iat, 
-		  ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
-		  ValueMatrix_t& d2psi);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
-                  HessMatrix_t& grad_grad_logdet);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
-                  HessMatrix_t& grad_grad_logdet,
-                  GGGMatrix_t& grad_grad_grad_logdet);
-
+    virtual void resetParameters(const opt_variables_type& active)
+    {}
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
@@ -239,13 +224,6 @@ namespace qmcplusplus {
     typedef TinyVector<ComplexHessType, 3>                        ComplexGGGType;
     typedef Vector<ComplexGGGType>                                ComplexGGGVector_t;
     typedef Matrix<ComplexGGGType>                                ComplexGGGMatrix_t;
-//     typedef typename OrbitalSetTraits<ReturnType >::ValueVector_t ReturnValueVector_t;
-//     typedef typename OrbitalSetTraits<ReturnType >::GradVector_t  ReturnGradVector_t;
-//     typedef typename OrbitalSetTraits<ReturnType >::HessVector_t  ReturnHessVector_t;
-
-//     typedef typename OrbitalSetTraits<ReturnType >::ValueMatrix_t ReturnValueMatrix_t;
-//     typedef typename OrbitalSetTraits<ReturnType >::GradMatrix_t  ReturnGradMatrix_t;
-//     typedef typename OrbitalSetTraits<ReturnType >::HessMatrix_t  ReturnHessMatrix_t;
        
     /////////////////////////////
     /// Orbital storage object //
@@ -256,7 +234,6 @@ namespace qmcplusplus {
     // Radial/Ylm orbitals around atoms //
     //////////////////////////////////////
     vector<AtomicOrbital<StorageType> > AtomicOrbitals;
-
 
     // First-order derivative w.r.t. the ion positions
     vector<TinyVector<SplineType*,OHMMS_DIM> > FirstOrderSplines;

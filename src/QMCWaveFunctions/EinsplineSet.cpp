@@ -66,80 +66,6 @@ namespace qmcplusplus {
     OrbitalSetSize = norbs;
   }
   
-  void 
-  EinsplineSet::evaluate (const ParticleSet& P, int iat, ValueVector_t& psi)
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-
-  void 
-  EinsplineSet::evaluate (const ParticleSet& P, int iat, 
-			  ValueVector_t& psi, GradVector_t& dpsi, 
-			  ValueVector_t& d2psi)
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-
-  void 
-  EinsplineSet::evaluate (const ParticleSet& P, int iat, 
-			  ValueVector_t& psi, GradVector_t& dpsi, 
-			  HessVector_t& gg_psi)
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-  
-
-  void 
-  EinsplineSet::evaluate_notranspose (const ParticleSet& P, int first, int last,
-			  ValueMatrix_t& vals, GradMatrix_t& grads, 
-			  ValueMatrix_t& lapls)
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-
-  void
-  EinsplineSet::evaluate_notranspose (const ParticleSet& P, int first, int last,
-                          ValueMatrix_t& vals, GradMatrix_t& grads,
-                          HessMatrix_t& grad_grad_logdet)
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-
-  void
-  EinsplineSet::evaluate_notranspose (const ParticleSet& P, int first, int last,
-                          ValueMatrix_t& vals, GradMatrix_t& grads,
-                          HessMatrix_t& grad_grad_logdet,
-                          GGGMatrix_t& grad_grad_grad_logdet) 
-  {
-    APP_ABORT("Should never instantiate EinsplineSet.");
-  }
-
-
-  ///////////////////////////////////////////
-  // EinsplineSetExtended Member functions //
-  ///////////////////////////////////////////
-//  inline void
-//  convert (complex<double> a, complex<double> &b)
-//  { b = a;  }
-//
-//  inline void
-//  convert (complex<double> a, double &b)
-//  { b = a.real();  }
-//
-//  inline void
-//  convert (double a, complex<double>&b)
-//  { b = complex<double>(a,0.0); }
-//
-//  inline void
-//  convert (double a, double &b)
-//  { b = a; }
-//
-//  template<typename T1, typename T2> void
-//  convertVec (TinyVector<T1,3> a, TinyVector<T2,3> &b)
-//  {
-//    for (int i=0; i<3; i++)
-//      convert (a[i], b[i]);
-//  }
   // Real evaluation functions
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
@@ -2376,12 +2302,6 @@ namespace qmcplusplus {
     return "EinsplineSetHybrid<complex<double> >";
   }
   
-
-
-
-
-
-
   template<>
   EinsplineSetHybrid<double>::EinsplineSetHybrid() :
     CurrentWalkers(0)
