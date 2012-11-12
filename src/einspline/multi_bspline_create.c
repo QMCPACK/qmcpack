@@ -407,6 +407,7 @@ set_multi_UBspline_3d_s_d(multi_UBspline_3d_s* spline, int num, double *data)
   double *spline_tmp = malloc(sizeof(double)*Nx*Ny*Nz);
 
   // First, solve in the X-direction 
+#pragma omp parallel for
   for (int iy=0; iy<My; iy++)
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = iy*Mz+iz;
@@ -415,6 +416,7 @@ set_multi_UBspline_3d_s_d(multi_UBspline_3d_s* spline, int num, double *data)
     }
 
   // Now, solve in the Y-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++)
     for (int iz=0; iz<Nz; iz++) {
       intptr_t doffset = ix*Ny*Nz + iz;
@@ -423,6 +425,7 @@ set_multi_UBspline_3d_s_d(multi_UBspline_3d_s* spline, int num, double *data)
     }
 
   // Now, solve in the Z-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++)
     for (int iy=0; iy<Ny; iy++) {
       intptr_t doffset = (ix*Ny+iy)*Nz;
@@ -431,13 +434,17 @@ set_multi_UBspline_3d_s_d(multi_UBspline_3d_s* spline, int num, double *data)
     }
 
   {
-    const double* restrict i_ptr=spline_tmp;
+//    const double* restrict i_ptr=spline_tmp;
+#pragma omp parallel for
     for(int ix=0; ix<Nx; ++ix)
+    {
+      const double* restrict i_ptr=spline_tmp+ix*Ny*Nz;
       for(int iy=0; iy<Ny; ++iy)
         for(int iz=0; iz<Nz; ++iz)
           spline->coefs[ix*spline->x_stride +
                         iy*spline->y_stride +
                         iz*spline->z_stride + num] = (float)(*i_ptr++);
+    }
   }
 
  free (spline_tmp);
