@@ -61,7 +61,7 @@ namespace qmcplusplus
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
     bool putSpecial(xmlNodePtr cur, ParticleSet& P);
-    bool put(xmlNodePtr cur) {};
+    bool put(xmlNodePtr cur) {return true;}
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
