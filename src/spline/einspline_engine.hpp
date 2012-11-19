@@ -50,7 +50,7 @@ namespace qmcplusplus
 
         inline void set(int i, Array<value_type,D>& data)
         {
-          einspline::set(spliner,i,data);
+          einspline::set(spliner,i,data.data());
         }
 
         template<typename PT, typename VT> 

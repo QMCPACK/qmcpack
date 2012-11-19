@@ -11,13 +11,6 @@
 //   National Center for Supercomputing Applications, UIUC      //
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
-/** @file common.cpp
- *
- * Instantiates the static data
- * Implements member functions of EinsplineSetBuilder
- * - EinsplineSetBuilder
- * -
-*/
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -25,6 +18,11 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+//#if defined(USE_SPLINEADOPTOR)
+#include "QMCWaveFunctions/EinsplineAdoptor.h"
+#include "QMCWaveFunctions/EinsplineAdoptorPacked.h"
+#include "QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF2.cpp"
+//#endif
 
 namespace qmcplusplus {
 
@@ -35,6 +33,7 @@ namespace qmcplusplus {
     int numOrbs = 0;
     qafm=0;
     int sortBands(1);
+    string spo_prec("double");
     string sourceName;
 #if defined(QMC_CUDA)
     string useGPU="yes";
@@ -50,6 +49,7 @@ namespace qmcplusplus {
     attribs.add (sourceName, "source");
     attribs.add (MeshFactor, "meshfactor");
     attribs.add (useGPU,     "gpu");    
+    attribs.add (spo_prec,   "precision");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
@@ -168,46 +168,72 @@ namespace qmcplusplus {
     AnalyzeTwists2();
 
     //////////////////////////////////
-    // Create the OrbitalSet object //
+    // Create the OrbitalSet object
     //////////////////////////////////
     if (HaveLocalizedOrbs)
       OrbitalSet = new EinsplineSetLocal;
 #ifdef QMC_CUDA
-    else if (AtomicOrbitals.size() > 0) {
+    else if (AtomicOrbitals.size() > 0) 
+    {
       if (UseRealOrbitals) 
 	OrbitalSet = new EinsplineSetHybrid<double>;
       else
 	OrbitalSet = new EinsplineSetHybrid<complex<double> >;
     }
 #endif
-    else {
+    else 
+    {
       if (UseRealOrbitals) 
 	OrbitalSet = new EinsplineSetExtended<double>;
       else
 	OrbitalSet = new EinsplineSetExtended<complex<double> >;
     }
+    //set the internal parameters
+    setTiling(OrbitalSet,numOrbs);
 
-    /////////////////////////
-    // Setup internal data //
-    /////////////////////////
-    
-    // Lattice information
-    OrbitalSet->TileFactor = TileFactor;
-    OrbitalSet->Tiling = (TileFactor[0]*TileFactor[1]*TileFactor[2] != 1);
-    //OrbitalSet->Tiling = 
-    //  TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
+#if defined(USE_SPLINEADOPTOR)
+    if(HaveLocalizedOrbs ||  AtomicOrbitals.size())
+      APP_ABORT("Experimental!!! BsplineSet<SplineAdoptor> cannot handle Localized or Atomic orbitals");
 
-    OrbitalSet->PrimLattice  = Lattice;
-    OrbitalSet->SuperLattice = SuperLattice;
-    OrbitalSet->GGt=dot(transpose(OrbitalSet->PrimLattice.G),
-			OrbitalSet->PrimLattice.G);
-    app_log() << "GGt = \n"
-	      << OrbitalSet->GGt << endl;
-    OrbitalSet->setOrbitalSetSize (numOrbs);
-    OrbitalSet->BasisSetSize   = numOrbs;
-    TileIons();
-    
-    if (HaveLocalizedOrbs) {
+    OccupyBands(spinSet, sortBands);
+
+    if(UseRealOrbitals)
+    {
+      if(sizeof(double) == sizeof(SPLINE_PRECISION))
+        app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<double,double,3> <<<< " << endl;
+      else
+        app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<float,double,3> <<<< " << endl;
+
+      BsplineSet<SplineR2RAdoptor<SPLINE_PRECISION,double,3> >* bspline_zd
+        = new BsplineSet<SplineR2RAdoptor<SPLINE_PRECISION,double,3> >;
+      copy(OrbitalSet,bspline_zd);
+      ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
+      SPOSetMap[aset] = bspline_zd;
+      return bspline_zd; 
+    }
+    else
+    {
+#if defined(QMC_COMPLEX)
+#if defined(SPLINE_PACK_COMPLEX)
+      BsplineSet<SplineC2CAdoptorPacked<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2CAdoptorPacked<SPLINE_PRECISION,double,3> >;
+#else
+      BsplineSet<SplineC2CAdoptor<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2CAdoptor<SPLINE_PRECISION,double,3> >;
+#endif 
+#else 
+#if defined(SPLINE_PACK_COMPLEX)
+      BsplineSet<SplineC2RAdoptorPacked<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2RAdoptorPacked<SPLINE_PRECISION,double,3> >;
+#else
+      BsplineSet<SplineC2RAdoptor<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2RAdoptor<SPLINE_PRECISION,double,3> >;
+#endif 
+#endif 
+      copy(OrbitalSet,bspline_zd);
+      ReadBands_ESHDF_Complex(spinSet, bspline_zd);
+      SPOSetMap[aset] = bspline_zd;
+      return bspline_zd;
+    }
+#else // Back to the orginal
+    if (HaveLocalizedOrbs) 
+    {
       EinsplineSetLocal *restrict orbitalSet = 
 	dynamic_cast<EinsplineSetLocal*>(OrbitalSet);
 
@@ -226,81 +252,56 @@ namespace qmcplusplus {
       LastSpinSet = spinSet;
       NumOrbitalsRead = numOrbs;
     }
-    // Otherwise, use EinsplineSetExtended
-    else 
+    else // Otherwise, use EinsplineSetExtended
     {
       mytimer.restart();
       if (UseRealOrbitals) 
       { 
-	EinsplineSetExtended<double> *restrict orbitalSet =
-	  dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
 
         OccupyBands(spinSet, sortBands);
 
-	{ 
-	  if (Format == ESHDF)
-	    ReadBands_ESHDF(spinSet,orbitalSet);
-	  else
-	    ReadBands(spinSet, orbitalSet); 
+        if(spo_prec == "single" || spo_prec == "float")
+        {
+          app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<float,double,3> <<<< " << endl;
+          BsplineSet<SplineR2RAdoptor<float,double,3> >* bspline_zd
+            = new BsplineSet<SplineR2RAdoptor<float,double,3> >;
+          copy(OrbitalSet,bspline_zd);
+          ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
+          SPOSetMap[aset] = bspline_zd;
+          return bspline_zd; 
+        }
+        else
+        {
+          EinsplineSetExtended<double> *restrict orbitalSet =
+            dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
 
-          app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
+          //OccupyBands(spinSet, sortBands);
 
-//#ifdef QMC_CUDA
-//	  if (true || useGPU) {
-// 	    app_log() << "Copying einspline orbitals to GPU.\n";
-// 	    create_multi_UBspline_3d_cuda 
-// 	      (orbitalSet->MultiSpline, orbitalSet->CudaMultiSpline);
-// 	    app_log() << "Successful copy.\n";
-// 	    // Destroy original CPU spline
-// 	    // HACK HACK HACK
-// 	    //destroy_Bspline (orbitalSet->MultiSpline);
-// 	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
-// 	    orbitalSet->Linv_cuda.resize(9);
-// 	    orbitalSet->L_cuda.resize(9);
-// 	    for (int i=0; i<3; i++)
-// 	      for (int j=0; j<3; j++) {
-// 		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
-// 		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
-// 	      }
-// 	    orbitalSet->L_cuda    = L_host;
-// 	    orbitalSet->Linv_cuda = Linv_host;
-//	  }
-//#endif
-	}
+          if (Format == ESHDF)
+            ReadBands_ESHDF(spinSet,orbitalSet);
+          else
+            ReadBands(spinSet, orbitalSet); 
+        }
+
+
+        //DEBUG mixed precision: nothing wrong!
+        //typedef float mytype;
+        ////typedef double mytype;
+        //BsplineSet<SplineR2RAdoptor<mytype,double,3> >* bspline_zd= new BsplineSet<SplineR2RAdoptor<mytype,double,3> >;
+        //copy(OrbitalSet,bspline_zd);
+        //ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
+        //test_bspline(TargetPtcl,*OrbitalSet,*bspline_zd);
+        //APP_ABORT("DONE");
       }
       else 
       {
 	EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
 	  dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
 	OccupyBands(spinSet, sortBands);
-	{ 
-	  if (Format == ESHDF)
-	    ReadBands_ESHDF(spinSet,orbitalSet);
-	  else
-	    ReadBands(spinSet, orbitalSet); 
-//#ifdef QMC_CUDA
-// 	  if (useGPU) {
-// 	    app_log() << "Copying einspline orbitals to GPU.\n";
-// 	    create_multi_UBspline_3d_cuda (orbitalSet->MultiSpline,
-// 	    				   orbitalSet->CudaMultiSpline);
-// 	    app_log() << "Successful copy.\n";
-// 	    // Destroy original CPU spline
-// 	    // HACK HACK HACK
-// 	    //destroy_Bspline (orbitalSet->MultiSpline);
-
-// 	    gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
-// 	    orbitalSet->Linv_cuda.resize(9);
-// 	    orbitalSet->L_cuda.resize(9);
-// 	    for (int i=0; i<3; i++)
-// 	      for (int j=0; j<3; j++) {
-// 		L_host[i*3+j]    = (float)orbitalSet->PrimLattice.R(i,j);
-// 		Linv_host[i*3+j] = (float)orbitalSet->PrimLattice.G(i,j);
-// 	      }
-// 	    orbitalSet->L_cuda    = L_host;
-// 	    orbitalSet->Linv_cuda = Linv_host;
-// 	  }
-//#endif
-	}
+        if (Format == ESHDF)
+          ReadBands_ESHDF(spinSet,orbitalSet);
+        else
+          ReadBands(spinSet, orbitalSet); 
       }
       app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
     }
@@ -369,6 +370,7 @@ namespace qmcplusplus {
     }
 #endif
     return OrbitalSet;
+#endif
   }
 }
 

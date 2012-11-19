@@ -25,6 +25,17 @@
 #include <stdio.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
+#ifdef __cplusplus
+using std::min;
+using std::max;
+#else
+#ifndef max
+#define max(a,b) (((a)>(b))?(a):(b))
+#endif
+#ifndef min
+#define min(a,b) (((a)<(b))?(a):(b))
+#endif
+#endif
 
 extern const float* restrict   Af;
 extern const float* restrict  dAf;
@@ -471,14 +482,12 @@ eval_multi_UBspline_2d_s_vgh (const multi_UBspline_2d_s *spline,
 }
 
 
-
-
 /************************************************************/
 /* 3D double-precision, real evaulation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
-			  double x, double y, double z,
+			  float x, float y, float z,// double x, double y, double z,
 			  float* restrict vals)
 {
   x -= spline->x_grid.start;
@@ -488,10 +497,13 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   float uy = y*spline->y_grid.delta_inv;
   float uz = z*spline->z_grid.delta_inv;
   float ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modff (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modff (uy, &iparty);  int iy = (int) iparty;
-  tz = modff (uz, &ipartz);  int iz = (int) ipartz;
-  
+  //tx = modff (ux, &ipartx);  int ix = (int) ipartx;
+  //ty = modff (uy, &iparty);  int iy = (int) iparty;
+  //tz = modff (uz, &ipartz);  int iz = (int) ipartz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+
   float tpx[4], tpy[4], tpz[4], a[4], b[4], c[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
@@ -533,7 +545,7 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
 
 void
 eval_multi_UBspline_3d_s_vg (const multi_UBspline_3d_s *spline,
-			     double x, double y, double z,
+			     float x, float y, float z,// double x, double y, double z,
 			     float* restrict vals,
 			     float* restrict grads)
 {
@@ -623,7 +635,7 @@ eval_multi_UBspline_3d_s_vg (const multi_UBspline_3d_s *spline,
 
 void
 eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,// double x, double y, double z,
 			      float* restrict vals,
 			      float* restrict grads,
 			      float* restrict lapl)	  
@@ -738,7 +750,7 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
 
 void
 eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,// double x, double y, double z,
 			      float* restrict vals,
 			      float* restrict grads,
 			      float* restrict hess)	  
@@ -864,7 +876,7 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
 
 void
 eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
-               double x, double y, double z,
+               float x, float y, float z,// double x, double y, double z,
                float* restrict vals,
                float* restrict grads,
                float* restrict hess,

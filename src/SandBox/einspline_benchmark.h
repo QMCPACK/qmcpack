@@ -24,6 +24,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>
+#include <simd/simd.hpp>
 #include <spline/einspline_engine.hpp>
 namespace qmcplusplus
 {

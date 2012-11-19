@@ -56,28 +56,28 @@ namespace qmcplusplus
         , const TinyVector<T,3>& twist
         )
   {
-    const T two_pi=-2.0*M_PI;
+    const T1 two_pi=-2.0*M_PI;
     const int nx=in.size(0);
     const int ny=in.size(1);
     const int nz=in.size(2);
-    T nx_i=1.0/static_cast<T>(nx);
-    T ny_i=1.0/static_cast<T>(ny);
-    T nz_i=1.0/static_cast<T>(nz);
+    T1 nx_i=static_cast<T1>(twist[0])/static_cast<T1>(nx);
+    T1 ny_i=static_cast<T1>(twist[1])/static_cast<T1>(ny);
+    T1 nz_i=static_cast<T1>(twist[2])/static_cast<T1>(nz);
 
-//#pragma omp parallel for firstprivate(nx_i,ny_i,nz_i)
+#pragma omp parallel for firstprivate(nx_i,ny_i,nz_i)
     for (int ix=0; ix<nx; ix++) 
     {
-      T s, c;
+      T1 s, c;
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
       T1* restrict out_ptr=out.data()+ix*ny*nz;
 
-      T rux=static_cast<T>(ix)*nx_i*twist[0];
+      T1 rux=static_cast<T1>(ix)*nx_i;
       for (int iy=0; iy<ny; iy++) 
       {
-        T ruy=static_cast<T>(iy)*ny_i*twist[1];
+        T1 ruy=static_cast<T1>(iy)*ny_i;
         for (int iz=0; iz<nz; iz++) 
         {
-          T ruz=static_cast<T>(iz)*nz_i*twist[2];
+          T1 ruz=static_cast<T1>(iz)*nz_i;
           sincos(two_pi*(rux+ruy+ruz), &s, &c);
           *out_ptr = static_cast<T1>(c*in_ptr->real()-s*in_ptr->imag());
           ++out_ptr;
