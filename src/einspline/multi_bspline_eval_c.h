@@ -90,25 +90,25 @@ eval_multi_UBspline_2d_c_vgh (const multi_UBspline_2d_c *spline,
 /************************************************************/
 void
 eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
-			  double x, double y, double z,
+			  float x, float y, float z,
 			  complex_float* restrict vals);
 
 void
 eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,
 			      complex_float* restrict vals,
 			     complex_float* restrict grads);
 
 void
 eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,
 			      complex_float* restrict vals,
 			      complex_float* restrict grads,
 			      complex_float* restrict lapl);
 
 void
 eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,
 			      complex_float* restrict vals,
 			      complex_float* restrict grads,
 			      complex_float* restrict hess);

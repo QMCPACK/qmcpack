@@ -26,6 +26,7 @@
 #ifdef HAVE_SSE3
   #include <pmmintrin.h>
 #endif
+#include <smmintrin.h>
 #include <math.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
@@ -626,7 +627,7 @@ eval_multi_UBspline_2d_c_vgh (const multi_UBspline_2d_c *spline,
 /************************************************************/
 void
 eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
-			  double x, double y, double z,
+			  float x, float y, float z,
 			  complex_float* restrict vals)
 {
   _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
@@ -643,8 +644,13 @@ eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-  __m128i ixiyiz;
-  _mm_storeu_si128 (&ixiyiz, intpart);
+  //__m128i ixiyiz;
+  //_mm_storeu_si128 (&ixiyiz, intpart);
+  __m128i gmin = _mm_set_epi32(0,0,0,0);
+  __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
+  __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+
   // Store to memory for use in C expressions
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiyiz)[3];
@@ -725,7 +731,7 @@ eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
 
 void
 eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
-			     double x, double y, double z,
+			     float x, float y, float z,
 			     complex_float* restrict vals,
 			     complex_float* restrict grads)
 {
@@ -745,8 +751,13 @@ eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-  __m128i ixiyiz;
-  _mm_storeu_si128 (&ixiyiz, intpart);
+  //__m128i ixiyiz;
+  //_mm_storeu_si128 (&ixiyiz, intpart);
+  __m128i gmin = _mm_set_epi32(0,0,0,0);
+  __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
+  __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+
   // Store to memory for use in C expressions
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiyiz)[3];
@@ -854,7 +865,7 @@ eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
 
 void
 eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,
 			      complex_float* restrict vals,
 			      complex_float* restrict grads,
 			      complex_float* restrict lapl)
@@ -877,8 +888,13 @@ eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-  __m128i ixiyiz;
-  _mm_storeu_si128 (&ixiyiz, intpart);
+  //__m128i ixiyiz;
+  //_mm_storeu_si128 (&ixiyiz, intpart);
+  __m128i gmin = _mm_set_epi32(0,0,0,0);
+  __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
+  __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+
   // Store to memory for use in C expressions
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiyiz)[3];
@@ -1005,7 +1021,7 @@ eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
 
 void
 eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
-			      double x, double y, double z,
+			      float x, float y, float z,
 			      complex_float* restrict vals,
 			      complex_float* restrict grads,
 			      complex_float* restrict hess)
@@ -1028,8 +1044,13 @@ eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-  __m128i ixiyiz;
-  _mm_storeu_si128 (&ixiyiz, intpart);
+  //__m128i ixiyiz;
+  //_mm_storeu_si128 (&ixiyiz, intpart);
+  __m128i gmin = _mm_set_epi32(0,0,0,0);
+  __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
+  __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+
   // Store to memory for use in C expressions
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiyiz)[3];

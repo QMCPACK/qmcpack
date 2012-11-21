@@ -28,6 +28,9 @@
 #ifdef HAVE_SSE3
   #include <pmmintrin.h>
 #endif
+#ifdef HAVE_FMA4
+  #include <x86intrin.h>
+#endif
 #include <math.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
@@ -807,12 +810,22 @@ eval_multi_UBspline_3d_z (const multi_UBspline_3d_z *spline,
         __m128d abc = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
         __m128d* restrict coefs = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+k)*zs);
 	
+#ifdef HAVE_FMA4
+        for (int n=0; n<Nstop; n+=2) {
+          mvals[n+0] = _mm_macc_pd (abc, coefs[n+0], mvals[n+0]);
+          mvals[n+1] = _mm_macc_pd (abc, coefs[n+1], mvals[n+1]);
+        }
+        if (N&1)
+          mvals[N-1] = _mm_macc_pd (abc, coefs[N-1], mvals[N-1]);
+#else
         for (int n=0; n<Nstop; n+=2) {
           mvals[n+0] = _mm_add_pd (mvals[n+0], _mm_mul_pd (abc, coefs[n+0]));
           mvals[n+1] = _mm_add_pd (mvals[n+1], _mm_mul_pd (abc, coefs[n+1]));
 	}
 	if (N&1)
 	  mvals[N-1] = _mm_add_pd (mvals[N-1], _mm_mul_pd (abc, coefs[N-1]));
+#endif
+
       }
 #endif  
     }
@@ -1277,6 +1290,9 @@ eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
 	  
 	  for (int n=nstart; n<end; n++) 
 	    for (int s=0; s<10; s++) {
+#ifdef HAVE_FMA4
+              __m128d sum2 = _mm_macc_pd(abc[4*s+3], c3[n], _mm_macc_pd(abc[4*s+2], c2[n], _mm_macc_pd(abc[4*s+1], c1[n], _mm_mul_pd(abc[4*s+0], c0[n]))));
+#else
 	      __m128d p0 = _mm_mul_pd(abc[4*s+0], c0[n]);
 	      __m128d p1 = _mm_mul_pd(abc[4*s+1], c1[n]);
 	      __m128d p2 = _mm_mul_pd(abc[4*s+2], c2[n]);
@@ -1284,6 +1300,7 @@ eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
 	      __m128d sum0 = _mm_add_pd (p0, p1);
 	      __m128d sum1 = _mm_add_pd (p2, p3);
 	      __m128d sum2 = _mm_add_pd (sum0, sum1);
+#endif
 
 	      mpack[10*n+s] = _mm_add_pd (mpack[10*n+s], sum2);
 	      //					  mm_add_pd(_mm_mul_pd (   abc[s], c0[n])), _mm_mul_pd(abc[s], c1[n]))
