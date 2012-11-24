@@ -40,7 +40,7 @@ set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/default/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/default/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS "-fopenmp -O3 -ftemplate-depth-60 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
-set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
+set(XT_FLAGS "-march=amdfam10 -msse4.1 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 
