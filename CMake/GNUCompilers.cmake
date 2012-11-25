@@ -39,7 +39,17 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3")
   ENDIF(GNU_CC_FLAGS)
+
+  SET(CMAKE_TRY_GNU_CC_FLAGS "-msse4.1")
+  CHECK_C_COMPILER_FLAG(${CMAKE_TRY_GNU_CC_FLAGS} GNU_CC_FLAGS)
+  IF(GNU_CC_FLAGS)
+    SET(HAVE_SSE3 1)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.1")
+  ENDIF(GNU_CC_FLAGS)
   ENDIF(HAVE_POSIX_MEMALIGN)
+
+
 
   #  SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated -pg")
   #  SET(CMAKE_CXX_FLAGS "-g -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -Wno-deprecated")
