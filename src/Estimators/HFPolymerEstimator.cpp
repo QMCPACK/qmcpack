@@ -161,7 +161,8 @@ namespace qmcplusplus {
       {
         for(int obsi=1;obsi<SizeOfHamiltonians ;obsi++)
         {
-          scalars[oindx++]((*Bit)->getPropertyBase(i)[obsi+FirstHamiltonian], uw);
+          if(xi%stride==0)
+            scalars[oindx++]((*Bit)->getPropertyBase(i)[obsi+FirstHamiltonian], uw);
           ObsSumL(xi+1,obsi-1)=(*Bit)->getPropertyBase(i)[obsi+FirstHamiltonian] + ObsSumL(xi,obsi-1);
         }
       }
@@ -170,18 +171,26 @@ namespace qmcplusplus {
       Bit_first--;
       xi--;
       for( MultiChain::iterator Bit = Bit_last; Bit != Bit_first; Bit--,xi--)
-      {
         for(int obsi=1;obsi<SizeOfHamiltonians ;obsi++)
-        {
           ObsSumR(xi-1,obsi-1)=ObsSumR(xi,obsi-1)+(*Bit)->getPropertyBase(i)[obsi+FirstHamiltonian];
-//           E*D
-          scalars[oindx++](Tau*(TailProp[LOCALENERGY]*ObsSumL(xi,obsi-1)+HeadProp[LOCALENERGY]*ObsSumR(xi,obsi-1)), uw);
-//           L and R
-          scalars[oindx++](Tau*ObsSumL(xi,obsi-1), uw);
-          scalars[oindx++](Tau*ObsSumR(xi,obsi-1), uw);
+
+      xi=0;  
+      Bit_last++;
+      Bit_first++;
+      for( MultiChain::iterator Bit = Bit_first; Bit != Bit_last; Bit++,xi++)
+      {
+        if(xi%stride==0)
+        {
+          for(int obsi=1;obsi<SizeOfHamiltonians ;obsi++)
+          {
+  //           E*D
+              scalars[oindx++](Tau*(TailProp[LOCALENERGY]*ObsSumL(xi,obsi-1)+HeadProp[LOCALENERGY]*ObsSumR(xi,obsi-1)), uw);
+  //           L and R
+              scalars[oindx++](Tau*ObsSumL(xi,obsi-1), uw);
+              scalars[oindx++](Tau*ObsSumR(xi,obsi-1), uw);
+          }
         }
       }
-      
       
       
 //       //Center Pressure
