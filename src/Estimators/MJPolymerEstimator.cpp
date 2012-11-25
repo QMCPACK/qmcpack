@@ -62,13 +62,15 @@ namespace qmcplusplus {
     elocal_name.push_back("Etail");
     elocal_name.push_back("Edecorr");
     elocal_name.push_back("Vdecorr");
-    elocal_name.push_back("RMC_HFCep_1_0");
-    elocal_name.push_back("RMC_HFCep_1_1");
-
-    scalars.resize(SizeOfHamiltonians+23);
+//     elocal_name.push_back("RMC_HFCep_1_0");
+//     elocal_name.push_back("RMC_HFCep_1_1");
+// for(int i=0; i < elocal_name.size(); i++)
+//   app_log()<<elocal_name[i]<<" ";
+// app_log()<<endl;
+    scalars.resize(SizeOfHamiltonians+14);
     scalars_saved=scalars;
     pNorm=0.0;
-    Findex = h.getObservable("HFCep_1_0");
+//     Findex = h.getObservable("HFCep_1_0");
 //     app_log()<<"Force Index "<<Findex<<endl;
   };
 
@@ -94,6 +96,7 @@ namespace qmcplusplus {
   MJPolymerEstimator::add2Record(RecordNamedProperty<RealType>& record) {
     FirstIndex = record.add(elocal_name[0].c_str());
     for(int i=1; i<elocal_name.size(); i++) record.add(elocal_name[i].c_str());
+    
     LastIndex=FirstIndex + elocal_name.size();
     clear();
     char aname[32];
@@ -249,8 +252,8 @@ namespace qmcplusplus {
       }
       
       scalars[SizeOfHamiltonians+14](AC2,uw);
-      scalars[SizeOfHamiltonians+15](CenProp[Findex+FirstHamiltonian],uw);
-      scalars[SizeOfHamiltonians+16](CenProp[Findex+1+FirstHamiltonian],uw);
+//       scalars[SizeOfHamiltonians+15](CenProp[Findex+FirstHamiltonian],uw);
+//       scalars[SizeOfHamiltonians+16](CenProp[Findex+1+FirstHamiltonian],uw);
     }
   }
 

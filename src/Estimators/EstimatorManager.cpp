@@ -129,6 +129,7 @@ namespace qmcplusplus {
     BlockAverages.clear();//cleaup the records
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->add2Record(BlockAverages);
+    max4ascii+=BlockAverages.size();
 
     if(Collectables) Collectables->add2Record(BlockAverages);
   }

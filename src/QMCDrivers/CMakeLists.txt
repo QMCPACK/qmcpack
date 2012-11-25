@@ -97,6 +97,7 @@ IF(QMC_BUILD_LEVEL GREATER 1)
     ../Estimators/CSEnergyEstimator.cpp
     ../Estimators/CSPolymerEstimator.cpp
     ../Estimators/MJPolymerEstimator.cpp
+    ../Estimators/HFPolymerEstimator.cpp
     ../Estimators/HFDHE2PolymerEstimator.cpp
   )
 # REMOVE broken stuff

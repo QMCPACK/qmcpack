@@ -26,6 +26,7 @@
 #include "Estimators/CSPolymerEstimator.h"
 #include "Estimators/ComboPolymerEstimator.h"
 #include "Estimators/MJPolymerEstimator.h"
+#include "Estimators/HFPolymerEstimator.h"
 #include "Estimators/HFDHE2PolymerEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -522,8 +523,10 @@ bool RQMCMultiple::put(xmlNodePtr q)
     while(q2!=NULL){
       string cname((const char*)q2->name);
       string observ="NONE";
+      int fq(1);
       OhmmsAttributeSet Ettrib;
       Ettrib.add(observ,"observables" );
+      Ettrib.add(fq,"freq" );
       Ettrib.put(q2);
       if (cname=="Estimators"){
 // 	if (observ=="NONE"){
@@ -532,15 +535,24 @@ bool RQMCMultiple::put(xmlNodePtr q)
 // 	  FoundEstimatorBlock=true;
 // 	} else
       if (observ=="ZVZB"){
-	  cout<<"Using ZVZB observables"<<endl;
-	  //         multiEstimator = new MJPolymerEstimator(H,nPsi);
-	  MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
-	  MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
-	  MJp->setrLen(ReptileLength);
-	  
-	  multiEstimator = MJp;
-	  FoundEstimatorBlock=true;
-      } else if (observ=="HFDHE2"){
+          cout<<"Using ZVZB observables"<<endl;
+          //         multiEstimator = new MJPolymerEstimator(H,nPsi);
+          MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
+          MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+          MJp->setrLen(ReptileLength);
+          
+          multiEstimator = MJp;
+          FoundEstimatorBlock=true;
+      }
+      if (observ=="HF"){
+          cout<<"Using HF observables"<<endl;
+          HFPolymerEstimator* MJp = new HFPolymerEstimator(H,nPsi);
+          MJp->add_HF_Observables(ReptileLength,fq);
+          MJp->setTau(Tau);
+          multiEstimator = MJp;
+          FoundEstimatorBlock=true;
+      }
+      else if (observ=="HFDHE2"){
 	
 	cout<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
 	HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
