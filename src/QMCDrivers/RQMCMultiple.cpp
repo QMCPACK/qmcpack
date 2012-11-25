@@ -385,7 +385,7 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
     {
       Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
-      //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+      //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
     }
     
     while(bead != last_bead)
@@ -401,7 +401,7 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     { 
       Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
-      //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+      //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
     }
     
     //Compute Global Sign weight (need to be initialized somewhere)
@@ -530,12 +530,12 @@ bool RQMCMultiple::put(xmlNodePtr q)
       Ettrib.put(q2);
       if (cname=="Estimators"){
 // 	if (observ=="NONE"){
-// 	  cout<<"Using normal Observables"<<endl;
+// 	  app_log()<<"Using normal Observables"<<endl;
 // 	  multiEstimator = new CSPolymerEstimator(H,nPsi);
 // 	  FoundEstimatorBlock=true;
 // 	} else
       if (observ=="ZVZB"){
-          cout<<"Using ZVZB observables"<<endl;
+          app_log()<<"Using ZVZB observables"<<endl;
           //         multiEstimator = new MJPolymerEstimator(H,nPsi);
           MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
           MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
@@ -545,7 +545,7 @@ bool RQMCMultiple::put(xmlNodePtr q)
           FoundEstimatorBlock=true;
       }
       if (observ=="HF"){
-          cout<<"Using HF observables"<<endl;
+          app_log()<<"Using HF observables"<<endl;
           HFPolymerEstimator* MJp = new HFPolymerEstimator(H,nPsi);
           MJp->add_HF_Observables(ReptileLength,fq);
           MJp->setTau(Tau);
@@ -554,14 +554,14 @@ bool RQMCMultiple::put(xmlNodePtr q)
       }
       else if (observ=="HFDHE2"){
 	
-	cout<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
+	app_log()<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
 	HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
 	HFp->setrLen(ReptileLength);
 	HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
 	multiEstimator = HFp;
 	FoundEstimatorBlock=true;
       } else if (observ=="Combo"){
-	cout<<"Using Combo observables"<<endl;
+	app_log()<<"Using Combo observables"<<endl;
 	ComboPolymerEstimator* HFp = new ComboPolymerEstimator(H,nPsi);
 	HFp->put(q2,W,ReptileLength);
 	multiEstimator = HFp;
@@ -571,7 +571,7 @@ bool RQMCMultiple::put(xmlNodePtr q)
     q2=q2->next;
   }
     if (!FoundEstimatorBlock){
-      cout<<"Using normal Observables"<<endl;
+      app_log()<<"Using normal Observables"<<endl;
       multiEstimator = new CSPolymerEstimator(H,nPsi);
     }
     
