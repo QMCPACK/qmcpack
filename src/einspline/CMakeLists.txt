@@ -42,7 +42,7 @@ SET(SRCS ${SRCS}
   nugrid.c                
 )
 
-IF(HAVE_SSE)
+IF(HAVE_SSE41)
   SET(SRCS ${SRCS} 
     multi_bspline_eval_sse_s.c   
     multi_bspline_eval_sse_c.c   
