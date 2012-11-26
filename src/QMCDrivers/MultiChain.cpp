@@ -248,6 +248,10 @@ void MultiChain::record()
   HDFAttribIO<Buffer_t> mcout(chain_buffer);
   mcout.overwrite(h_config,"state");
 
+  int nc=Beads.size();
+  HDFAttribIO<int> c(nc);
+  c.write(h_config,"NumberOfBeads");
+  
   std::deque<Bead*>::iterator bead_it(this->begin());
   std::deque<Bead*>::iterator bead_end(this->end());
   char GrpName[128];

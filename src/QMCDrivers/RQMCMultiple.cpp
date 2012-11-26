@@ -102,7 +102,7 @@ namespace qmcplusplus {
     block++;
     
     //       Reptile->record();
-    //recordBlock(block);
+    recordBlock(block);
     } while(block<nBlocks);
     
     Estimators->stop();
@@ -181,8 +181,6 @@ namespace qmcplusplus {
     }
     
     multiEstimator->setPolymer(Reptile);
-    ///THis does not belong here!!
-    //     multiEstimator->pnorm = 1.0/( W.Lattice.DIM *  W.Lattice.Volume);
     
     if(!restartmode){
       if(reuseReptile)
