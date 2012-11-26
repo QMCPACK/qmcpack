@@ -33,8 +33,8 @@ namespace qmcplusplus {
     int numOrbs = 0;
     qafm=0;
     int sortBands(1);
-    string spo_prec("double");
     string sourceName;
+    string spo_prec("double");
 #if defined(QMC_CUDA)
     string useGPU="yes";
 #else
@@ -283,7 +283,6 @@ namespace qmcplusplus {
             ReadBands(spinSet, orbitalSet); 
         }
 
-
         //DEBUG mixed precision: nothing wrong!
         //typedef float mytype;
         ////typedef double mytype;
@@ -295,13 +294,41 @@ namespace qmcplusplus {
       }
       else 
       {
-	EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
-	  dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
 	OccupyBands(spinSet, sortBands);
-        if (Format == ESHDF)
-          ReadBands_ESHDF(spinSet,orbitalSet);
+        if(spo_prec == "single" || spo_prec == "float")
+        {
+          app_log() << ">>>> Creating BsplineSet<SplineC2XAdoptor<float,double,3> <<<< " << endl;
+#if defined(QMC_COMPLEX)
+#if defined(SPLINE_PACK_COMPLEX)
+          BsplineSet<SplineC2CAdoptorPacked<float,double,3> > *bspline_zd 
+            = new BsplineSet<SplineC2CAdoptorPacked<float,double,3> >;
+#else
+          BsplineSet<SplineC2CAdoptor<float,double,3> > *bspline_zd 
+            = new BsplineSet<SplineC2CAdoptor<float,double,3> >;
+#endif 
+#else 
+#if defined(SPLINE_PACK_COMPLEX)
+          BsplineSet<SplineC2RAdoptorPacked<float,double,3> > *bspline_zd 
+            = new BsplineSet<SplineC2RAdoptorPacked<float,double,3> >;
+#else
+          BsplineSet<SplineC2RAdoptor<float,double,3> > *bspline_zd 
+            = new BsplineSet<SplineC2RAdoptor<float,double,3> >;
+#endif 
+#endif 
+          copy(OrbitalSet,bspline_zd);
+          ReadBands_ESHDF_Complex(spinSet, bspline_zd);
+          SPOSetMap[aset] = bspline_zd;
+          return bspline_zd;
+        }
         else
-          ReadBands(spinSet, orbitalSet); 
+        {
+          EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
+            dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
+          if (Format == ESHDF)
+            ReadBands_ESHDF(spinSet,orbitalSet);
+          else
+            ReadBands(spinSet, orbitalSet); 
+        }
       }
       app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
     }
