@@ -14,19 +14,33 @@
 #define QMCPLUSPLUS_E2IPHI_H
 
 #include <config.h>
-#include <complex>
 #include <vector>
+#include <complex>
 #include <config/stdlib/math.h>
 
-#if defined(HAVE_MKL_VML)
-#include <mkl_vml_functions.h>
-#endif
+// #if defined(HAVE_ACML)
+// extern "C"
+// {
+// #include <acml_mv.h>
+// }
 
-#if defined(HAVE_ACML)
-extern "C"
-{
-#include <acml_mv.h>
+#if defined(HAVE_AMDLIBM)
+namespace std {
+#include <amdlibm.h>
 }
+using namespace std;
+
+/* additional translations for AMD libm */
+
+#undef vrda_sincos
+#define vrda_sincos amd_vrda_sincos
+
+#undef vrsa_sincosf
+#define vrsa_sincosf amd_vrsa_sincosf 
+
+#undef vrsa_sincos
+#define vrsa_sincos amd_vrsa_sincosf 
+
 inline void
 eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
 {
@@ -85,6 +99,7 @@ eval_e2iphi (int n, float* restrict phi, std::complex<float>* restrict z)
   for (int i=0; i<n; i++) z[i] = std::complex<float>(c[i],s[i]);
 }
 #elif defined(HAVE_MKL_VML)
+#include <mkl_vml_functions.h>
 inline void
 eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
 {
@@ -110,9 +125,9 @@ eval_e2iphi (int n, const float* restrict phi, std::complex<float>* restrict z)
 #else/* generic case */
 template<typename T>
 inline void
-eval_e2iphi (int n, const T* restrict phi, T* phase_r, T* phase_i)
+eval_e2iphi (int n, const T* restrict phi, T* restrict phase_r, T* restrict phase_i)
 {
-  for (int i=0; i<n; i++) sincos(phi[i],&phase_i,&phase_r);
+  for (int i=0; i<n; i++) sincos(*phi++,phase_i++,phase_r++);
 }
 template<typename T>
 inline void
