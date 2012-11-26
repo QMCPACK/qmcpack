@@ -117,6 +117,61 @@ namespace APPNAMESPACE
       }
     };
 
+  /** specialization for a periodic 2D cell
+  */
+  template<class T>
+    struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD+1>
+    {
+      T r00,r10,r01,r11;
+      T g00,g10,g01,g11;
+      T r2max;
+      std::vector<TinyVector<T,2> > nextcells;
+
+      DTD_BConds(const CrystalLattice<T,2>& lat)
+        : r00(lat.R(0)),r10(lat.R(2))
+         ,r01(lat.R(1)),r11(lat.R(3))
+         ,g00(lat.G(0)),g10(lat.G(2))
+         ,g01(lat.G(1)),g11(lat.G(3))
+         ,r2max(lat.CellRadiusSq)
+      { }
+
+      /** apply BC to a displacement vector a and return the minimum-image distance
+       * @param lat lattice 
+       * @param a displacement vector
+       * @return the minimum-image distance
+       */
+      inline T apply_bc(TinyVector<T,2>& displ)  const
+      {
+        //cart2unit
+        TinyVector<T,2> ar(displ[0]*g00+displ[1]*g10 ,displ[0]*g01+displ[1]*g11);
+
+        //put them in the box
+        ar[0]-=round(ar[0]); ar[1]-=round(ar[1]);
+
+        //unit2cart
+        displ[0]=ar[0]*r00+ar[1]*r10;
+        displ[1]=ar[0]*r01+ar[1]*r11;
+
+        return displ[0]*displ[0]+displ[1]*displ[1];
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,2> >& dr
+          , std::vector<T>& r
+          , std::vector<T>& rinv) const
+      {
+        const int n=dr.size();
+        for(int i=0;i<n;++i) rinv[i]=apply_bc(dr[i]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,2> >& dr
+          , std::vector<T>& r) const
+      {
+        for(int i=0;i<dr.size();++i) r[i]=apply_bc(dr[i]);
+      }
+    };
+
   /** specialization for a periodic 2D orthorombic cell
   */
   template<class T>

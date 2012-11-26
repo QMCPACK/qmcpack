@@ -47,9 +47,18 @@ namespace qmcplusplus
       }
       else
       {
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,s);
-        o << "    PBC=bulk Orthorhombic=no\n" 
-          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
+        o << "    PBC=bulk Orthorhombic=no ";
+        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+        {
+          o << "  Use image cells." << endl;
+          dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,s);
+        }
+        else
+        {
+          o << "  Ignore image cells." << endl;
+          dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD+1>(s,s);
+        }
+        o << "\n    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
     }
     else if(sc == SUPERCELL_SLAB)
@@ -118,9 +127,18 @@ namespace qmcplusplus
       }
       else
       {
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,t);
-        o << "    PBC=bulk Orthorhombic=no\n" 
-          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
+        o << "    PBC=bulk Orthorhombic=no ";
+        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+        {
+          o << "  Use image cells." << endl;
+          dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,t);
+        }
+        else
+        {
+          o << "  Ignore image cells." << endl;
+          dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD+1>(s,t);
+        }
+        o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
     }
     else if(sc == SUPERCELL_SLAB)

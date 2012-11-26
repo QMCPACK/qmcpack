@@ -18,6 +18,7 @@
 
 #include <config.h>
 #include <Lattice/CrystalLattice.h>
+#include <map>
 
 namespace APPNAMESPACE 
 {
@@ -71,7 +72,7 @@ namespace APPNAMESPACE
         {
           T d2min = d2;
           int ic=-1;
-          for(int i=0; i<26; ++i)
+          for(int i=0; i<nextcells.size(); ++i)
           {
             TinyVector<T,3> c(a+nextcells[i]);
             d2=c[0]*c[0]+c[1]*c[1]+c[2]*c[2];
@@ -145,6 +146,71 @@ namespace APPNAMESPACE
         //for(int i=0; i<n*3;++i) drnew[i]-= round(drnew[i]);
         //convert2Cart(drnew,&dr[0][0],n);
         //for(int i=0; i<n; ++i) rinv[i]=get_min_distance(dr[i]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,3> >& dr
+          , std::vector<T>& r) const
+      {
+        for(int i=0;i<dr.size();++i) r[i]=apply_bc(dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
+      }
+    };
+
+  /** specialization for a periodic 3D general cell with wigner-seitz==simulation cell
+   *
+   * Using enumeration: SUPERCELL_BULK+TwoPowerD+1 
+   * Skip image cells.
+   */
+  template<class T>
+    struct DTD_BConds<T,3,SUPERCELL_BULK+TwoPowerD+1> 
+    {
+      T r00,r10,r20,r01,r11,r21,r02,r12,r22;
+      T g00,g10,g20,g01,g11,g21,g02,g12,g22;
+      DTD_BConds(const CrystalLattice<T,3>& lat)
+        : r00(lat.R(0)),r10(lat.R(3)),r20(lat.R(6))
+         ,r01(lat.R(1)),r11(lat.R(4)),r21(lat.R(7))
+         ,r02(lat.R(2)),r12(lat.R(5)),r22(lat.R(8))
+         ,g00(lat.G(0)),g10(lat.G(3)),g20(lat.G(6))
+         ,g01(lat.G(1)),g11(lat.G(4)),g21(lat.G(7))
+         ,g02(lat.G(2)),g12(lat.G(5)),g22(lat.G(8))
+      { }
+
+      /** apply BC to a displacement vector a and return the minimum-image distance
+       * @param lat lattice 
+       * @param a displacement vector
+       * @return the minimum-image distance
+       */
+      inline T apply_bc(TinyVector<T,3>& displ)  const
+      {
+        //cart2unit
+        TinyVector<T,3> 
+          ar(displ[0]*g00+displ[1]*g10+displ[2]*g20
+            ,displ[0]*g01+displ[1]*g11+displ[2]*g21
+            ,displ[0]*g02+displ[1]*g12+displ[2]*g22);
+
+        //put them in the box
+        ar[0]-=round(ar[0]); ar[1]-=round(ar[1]); ar[2]-=round(ar[2]);
+
+        //unit2cart
+        displ[0]=ar[0]*r00+ar[1]*r10+ar[2]*r20;
+        displ[1]=ar[0]*r01+ar[1]*r11+ar[2]*r21;
+        displ[2]=ar[0]*r02+ar[1]*r12+ar[2]*r22;
+
+        return displ[0]*displ[0]+displ[1]*displ[1]+displ[2]*displ[2];
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,3> >& dr
+          , std::vector<T>& r
+          , std::vector<T>& rinv) const
+      {
+        const int n=dr.size();
+        for(int i=0;i<n;++i) rinv[i]=apply_bc(dr[i]);
         simd::sqrt(&rinv[0],&r[0],n);
         simd::inv(&r[0],&rinv[0],n);
       }
@@ -415,6 +481,7 @@ namespace APPNAMESPACE
       }
     };
 }
+
 #endif // OHMMS_PARTICLE_BCONDS_3D_H
 
 /***************************************************************************
