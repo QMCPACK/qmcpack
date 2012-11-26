@@ -1,6 +1,7 @@
 #ifndef QMCPLUSPLUS_STRUCTFACT_H
 #define QMCPLUSPLUS_STRUCTFACT_H
 
+//#define USE_REAL_STRUCT_FACTOR
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "LongRange/KContainer.h"
@@ -11,18 +12,16 @@ namespace qmcplusplus {
   /** @ingroup longrange
    *\brief Calculates the structure-factor for a particle set
    *
-   * \f[ rho_{\bf k} = \sum_{i} e^{i{\bf k}.{\bf r_i}}, \f]
-   *
-   * The structure-factor is species-dependent - access with GroupID
+   * Structure factor per species 
+   *   Rhok[alpha][k] \f$ \equiv \rho_{k}^{\alpha} = \sum_{i} e^{i{\bf k}\cdot{\bf r_i}}\f$
+   * Structure factor per particle
+   *   eikr[i][k] 
    */
   class StructFact: public QMCTraits {
-    //Type is hard-wired. Rhok must be complex
-    //First index: k-point (ordered as per kpts and kptscart)
-    //Second index: GroupID from PtclRef.
-  private:
+
+    public:
     typedef PooledData<RealType>  BufferType;
 
-  public:
     /** false, if the structure factor is not actively update
      *
      * Default is false. Particle-by-particle update functions, makeMove, acceptMove and rejectMove
@@ -31,6 +30,15 @@ namespace qmcplusplus {
     bool DoUpdate;
     ///reference particle set
     ParticleSet& PtclRef;
+    /// K-Vector List.
+    KContainer KLists;
+    Vector<RealType> phiV;
+    Matrix<RealType> phiM;
+#if defined(USE_REAL_STRUCT_FACTOR)
+    Matrix<RealType> rhok_r, rhok_i;
+    Matrix<RealType> eikr_r, eikr_i;
+    Vector<RealType> eikr_r_temp, eikr_i_temp;
+#else
     /** Rhok[alpha][k]
      *
      * Structure factor Rhok[alpha][k] \f$ \equiv \rho_{k}^{\alpha} = \sum_{i}e^{i{\bf k}\cdot{\bf r_i}}\f$
@@ -38,20 +46,15 @@ namespace qmcplusplus {
     Matrix<ComplexType> rhok;
     ///eikr[particle-index][K]
     Matrix<ComplexType> eikr;
-    /// K-Vector List.
-    KContainer KLists;
     ///eikr[K] for a proposed move
     Vector<ComplexType> eikr_temp;
-    ///storage for kdotp
-    Vector<RealType> KdotP;
+#endif
     /** Constructor - copy ParticleSet and init. k-shells
      * @param ref Reference particle set
      * @param kc cutoff for k
      */
     StructFact(ParticleSet& ref, RealType kc);
-    ////Copy Constructor
-    //StructFact(const StructFact& ref);
-    //Destructor
+
     ~StructFact();
     //Need to overload assignment operator.
     //Default doesn't work because we have non-static reference members.
@@ -91,8 +94,15 @@ namespace qmcplusplus {
      * to an anonymous buffer.
      */
     inline void registerData(BufferType& buf) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      buf.add(rhok_r.first_address(),rhok_r.last_address());
+      buf.add(rhok_i.first_address(),rhok_i.last_address());
+      buf.add(eikr_r.first_address(),eikr_r.last_address());
+      buf.add(eikr_i.first_address(),eikr_i.last_address());
+#else
       buf.add(rhok.first_address(),rhok.last_address());
       buf.add(eikr.first_address(),eikr.last_address());
+#endif
     }
 
     /** @brief put rhok data to buf
@@ -100,24 +110,45 @@ namespace qmcplusplus {
      * This function is used for particle-by-particle MC methods
      */
     inline void updateBuffer(BufferType& buf) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      buf.put(rhok_r.first_address(),rhok_r.last_address());
+      buf.put(rhok_i.first_address(),rhok_i.last_address());
+      buf.put(eikr_r.first_address(),eikr_r.last_address());
+      buf.put(eikr_i.first_address(),eikr_i.last_address());
+#else
       buf.put(rhok.first_address(),rhok.last_address());
       buf.put(eikr.first_address(),eikr.last_address());
+#endif
     }
     /** @brief copy the data to an anonymous buffer
      *
      * Any data that will be used by the next iteration will be copied to a buffer.
      */
     inline void copyToBuffer(BufferType& buf) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      buf.put(rhok_r.first_address(),rhok_r.last_address());
+      buf.put(rhok_i.first_address(),rhok_i.last_address());
+      buf.put(eikr_r.first_address(),eikr_r.last_address());
+      buf.put(eikr_i.first_address(),eikr_i.last_address());
+#else
       buf.put(rhok.first_address(),rhok.last_address());
       buf.put(eikr.first_address(),eikr.last_address());
+#endif
     }
     /** @brief copy the data from an anonymous buffer
      *
      * Any data that was used by the previous iteration will be copied from a buffer.
      */
     inline void copyFromBuffer(BufferType& buf) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      buf.get(rhok_r.first_address(),rhok_r.last_address());
+      buf.get(rhok_i.first_address(),rhok_i.last_address());
+      buf.get(eikr_r.first_address(),eikr_r.last_address());
+      buf.get(eikr_i.first_address(),eikr_i.last_address());
+#else
       buf.get(rhok.first_address(),rhok.last_address());
       buf.get(eikr.first_address(),eikr.last_address());
+#endif
     }
 
   private:

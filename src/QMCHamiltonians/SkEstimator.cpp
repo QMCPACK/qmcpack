@@ -50,6 +50,9 @@ namespace qmcplusplus
 
   SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
   {
+#if defined(USE_REAL_STRUCT_FACTOR)
+    APP_ABORT("SkEstimator::evaluate(ParticleSet& P)");
+#else
     //sum over species
     std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
     for(int i=1; i<NumSpecies; ++i)
@@ -68,6 +71,7 @@ namespace qmcplusplus
         values[i]=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
     }
     
+#endif
     return 0.0;
   }
 

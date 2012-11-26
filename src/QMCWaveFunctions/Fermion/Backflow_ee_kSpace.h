@@ -261,7 +261,9 @@ namespace qmcplusplus
     inline void 
     evaluate(const ParticleSet& P, ParticleSet& QP)
     {
-
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("Backflow_ee_kSpace::evaluate");
+#else
       //memcopy if necessary but this is not so critcal
       std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
       for(int spec1=1; spec1<NumGroups; spec1++)
@@ -285,6 +287,7 @@ namespace qmcplusplus
           }
         }
       }
+#endif
     }
 
     inline void
@@ -299,6 +302,9 @@ namespace qmcplusplus
     inline void
     evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
     {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("Backflow_ee_kSpace::evaluate");
+#else
       //memcopy if necessary but this is not so critcal
       std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
       for(int spec1=1; spec1<NumGroups; spec1++)
@@ -348,7 +354,7 @@ namespace qmcplusplus
           }
         }
       }
-
+#endif
     }
 
      /** calculate quasi-particle coordinates after pbyp move  

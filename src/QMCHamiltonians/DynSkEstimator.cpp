@@ -78,6 +78,9 @@ namespace qmcplusplus
   
   DynSkEstimator::Return_t DynSkEstimator::evaluate(ParticleSet& P)
   {
+#if defined(USE_REAL_STRUCT_FACTOR)
+    APP_ABORT(" DynSkEstimator::evaluate");
+#else
     //sum over species for t=0 (now)
     std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
     for(int i=1; i<NumSpecies; ++i)
@@ -89,6 +92,7 @@ namespace qmcplusplus
       tWalker->addPropertyHistoryPoint(pindx+2*i+1,  RhokTot[i].imag());
     }
     
+#endif
     calculate(P);
     
     return 0.0;

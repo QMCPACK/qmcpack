@@ -176,6 +176,9 @@ namespace qmcplusplus {
             sr+=dSR[iat]=(z*Zat[iat]*temp[iat].rinv1*rVs->splint(temp[iat].r1)- (*sr_ptr));
         }
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+        APP_ABORT("CoulombPBCAATemp::evaluatePbyP");
+#else
         const StructFact& PtclRhoK(*(P.SK));
         const ComplexType* restrict eikr_new=PtclRhoK.eikr_temp.data();
         const ComplexType* restrict eikr_old=PtclRhoK.eikr[active];
@@ -200,6 +203,7 @@ namespace qmcplusplus {
         //  if(iat!=active)
         //    sr += z*Zat[iat]*AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.eikr[iat],del_eikr.data());
         //}
+#endif
         return NewValue=Value+2.0*sr;
       }
       else
@@ -282,9 +286,11 @@ namespace qmcplusplus {
         for(int iat=0; iat<NumCenters; ++iat)
         {
           RealType u=0;
+#if !defined(USE_REAL_STRUCT_FACTOR)
           for(int nn=d_aa.M[iat], jat=iat+1; nn<d_aa.M[iat+1]; ++nn,++jat) 
             u += Zat[jat]*AA->evaluate_slab(d_aa.dr(nn)[slab_dir]
                 , PtclRhoK.KLists.kshell , PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+#endif
           res += Zat[iat]*u;
         }
       }
@@ -293,7 +299,13 @@ namespace qmcplusplus {
         for(int spec1=0; spec1<NumSpecies; spec1++) {
           RealType Z1 = Zspec[spec1];
           for(int spec2=spec1; spec2<NumSpecies; spec2++) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+            RealType temp=AA->evaluate(PtclRhoK.KLists.kshell
+                , PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1]
+                , PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+#else
             RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+#endif
             if(spec2==spec1) temp*=0.5;
             res += Z1*Zspec[spec2]*temp;
           } //spec2

@@ -71,6 +71,20 @@ namespace qmcplusplus {
       return vk;
     }
 
+    inline RealType evaluate(const vector<int>& kshell
+        , const RealType* restrict rk1_r, const RealType* restrict rk1_i
+        , const RealType* restrict rk2_r, const RealType* restrict rk2_i) 
+    {
+      RealType vk=0.0;
+      for(int ks=0,ki=0; ks<MaxKshell; ks++) 
+      {
+	RealType u=0;
+	for(;ki<kshell[ks+1]; ki++) u += ((*rk1_r++)*(*rk2_r++)+(*rk1_i++)*(*rk2_i++));
+        vk += Fk_symm[ks]*u;
+      }
+      return vk;
+    }
+
     /** Evaluate the long-range potential with the open BC for the D-1 direction */
     virtual  RealType evaluate_slab(RealType z, const vector<int>& kshell
         , const ComplexType* restrict eikr_i, const ComplexType* restrict eikr_j) 
@@ -82,6 +96,7 @@ namespace qmcplusplus {
         , int iat, const ComplexType* restrict rk2, ParticleSet &P) 
     {
       RealType vk=0.0;
+#if !defined(USE_REAL_STRUCT_FACTOR)
       for(int ks=0,ki=0; ks<MaxKshell; ks++) {
         RealType u=0;
         for(;ki<kshell[ks+1]; ki++,rk2++){
@@ -90,6 +105,25 @@ namespace qmcplusplus {
         }
         vk += Fk_symm[ks]*u;
       }
+#endif
+      return vk;
+    }
+
+    inline RealType evaluate(const vector<int>& kshell
+        , int iat, const RealType* restrict rk2_r, const RealType* restrict rk2_i, ParticleSet &P) 
+    {
+      RealType vk=0.0;
+#if defined(USE_REAL_STRUCT_FACTOR)
+      const RealType* restrict eikr_r=P.SK->eikr_r[iat];
+      const RealType* restrict eikr_i=P.SK->eikr_i[iat];
+      for(int ks=0,ki=0; ks<MaxKshell; ks++) 
+      {
+        RealType u=0;
+        for(;ki<kshell[ks+1]; ki++)
+          u += eikr_r[ki]*(*rk2_r++)+eikr_i[ki]*(*rk2_i++);
+        vk += Fk_symm[ks]*u;
+      }
+#endif
       return vk;
     }
 
@@ -105,6 +139,7 @@ namespace qmcplusplus {
          int specB, vector<RealType> &Zat,
          vector<TinyVector<RealType,DIM> > &grad1) 
      {
+#if !defined(USE_REAL_STRUCT_FACTOR)
        const Matrix<ComplexType> &e2ikrA = A.SK->eikr;
        const ComplexType *rhokB = B.SK->rhok[specB];
        const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
@@ -117,6 +152,7 @@ namespace qmcplusplus {
              (e2ikrA(iat,ki).real()*rhokB[ki].imag() - e2ikrA(iat,ki).imag()*rhokB[ki].real());
          }
        }
+#endif
      }
 
     /** evaluate \f$ v_{s}(k=0) = \frac{4\pi}{V}\int_0^{r_c} r^2 v_s(r) dr \f$

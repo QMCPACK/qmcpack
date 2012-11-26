@@ -87,6 +87,10 @@ namespace qmcplusplus {
 				      ParticleSet::ParticleGradient_t& G, 
 				      ParticleSet::ParticleLaplacian_t& L) 
     {
+      RealType sum(0.0);
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("LRTwoBodyJastrow::evaluateLog ");
+#else
       //memcopy if necessary but this is not so critcal
       std::copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
       for(int spec1=1; spec1<NumSpecies; spec1++)
@@ -100,8 +104,6 @@ namespace qmcplusplus {
       //}
       
       const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-
-      RealType sum(0.0);
       for(int iat=0; iat<NumPtcls; iat++) {
         RealType res(0.0),l(0.0);
         PosType g;
@@ -128,7 +130,7 @@ namespace qmcplusplus {
         G[iat]+=(dU[iat]=g);
         L[iat]+=(d2U[iat]=l);
       }
-
+#endif
       return 0.5*sum;
 //      const KContainer::SContainer_t& ksq(P.SK->KLists.ksq);
 //      ValueType sum(0.0);
@@ -164,7 +166,9 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
       //restore, if called should do nothing
       NeedToRestore=false;
-
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)");
+#else
       const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
       const ComplexType* restrict eikr_ptr(P.SK->eikr[iat]);
       const ComplexType* restrict rhok_ptr(Rhok.data());
@@ -195,6 +199,7 @@ namespace qmcplusplus {
 //        curVal +=  skp.real();
 //#endif
 //      }
+#endif
       return std::exp(curVal-U[iat]);
     }
   
@@ -361,8 +366,12 @@ namespace qmcplusplus {
       eikr_new.resize(MaxK);
       delta_eikr.resize(MaxK);
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("LRTwoBodyJastrow::registerData");
+#else
       for(int iat=0; iat<NumPtcls; iat++)
         std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+#endif
 
       buf.add(Rhok.first_address(), Rhok.last_address());
       buf.add(U.first_address(), U.last_address());
@@ -377,8 +386,12 @@ namespace qmcplusplus {
     {
       LogValue=evaluateLog(P,P.G,P.L); 
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("LRTwoBodyJastrow::updateBuffer");
+#else
       for(int iat=0; iat<NumPtcls; iat++)
         std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+#endif
 
       buf.put(Rhok.first_address(), Rhok.last_address());
       buf.put(U.first_address(), U.last_address());
@@ -393,8 +406,12 @@ namespace qmcplusplus {
     buf.get(d2U.first_address(), d2U.last_address());
     buf.get(FirstAddressOfdU,LastAddressOfdU);
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+    APP_ABORT("LRTwoBodyJastrow::copyFromBuffer");
+#else
     for(int iat=0; iat<NumPtcls; iat++)
       std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+#endif
   }
   
   LRTwoBodyJastrow::RealType 

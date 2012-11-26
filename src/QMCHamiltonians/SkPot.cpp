@@ -47,6 +47,9 @@ namespace qmcplusplus
 
   SkPot::Return_t SkPot::evaluate(ParticleSet& P)
   {
+#if defined(USE_REAL_STRUCT_FACTOR)
+    APP_ABORT("SkPot::evaluate(ParticleSet& P)");
+#else
     //sum over species
     std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
     for(int i=1; i<NumSpecies; ++i)
@@ -56,6 +59,7 @@ namespace qmcplusplus
     Value=0.0;
     for(int i=0;iit != iit_end;++iit,++i)
       Value+=Fk[i]*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
+#endif
     return Value;
   }
 

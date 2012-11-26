@@ -127,8 +127,10 @@ namespace qmcplusplus {
       for(int iat=0; iat<NptclA; ++iat)
       {
         RealType u=0;
+#if !defined(USE_REAL_STRUCT_FACTOR)
         for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat) 
           u += Qat[jat]*AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.KLists.kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
+#endif
         res += Zat[iat]*u;
       }
     }
@@ -137,7 +139,12 @@ namespace qmcplusplus {
       for(int i=0; i<NumSpeciesA; i++) {
         RealType esum=0.0;
         for(int j=0; j<NumSpeciesB; j++) {
+#if defined(USE_REAL_STRUCT_FACTOR)
+          esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell
+              , RhoKA.rhok_r[i],RhoKA.rhok_i[i] , RhoKB.rhok_r[j],RhoKB.rhok_i[i]);
+#else
           esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
+#endif
         } //speceln
         res += Zspec[i]*esum;
       }
@@ -336,9 +343,12 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluateForPyP(ParticleSet& P) 
     {
-      const DistanceTableData* d_ab=P.DistTables[myTableIndex];
       Return_t res=myConst;
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("CoulombPBCABTemp::evaluateForPyP(ParticleSet& P)");
+#else
       SRpart=0.0;
+      const DistanceTableData* d_ab=P.DistTables[myTableIndex];
       for(int iat=0; iat<NptclA; ++iat)
       {
         RealType z=Zat[iat];
@@ -364,6 +374,7 @@ namespace qmcplusplus {
           res+=e;
         }
       }
+#endif
       return res;
     }
 
@@ -371,6 +382,9 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)
     {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      APP_ABORT("CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)");
+#else
       const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[myTableIndex]->Temp);
       RealType q=Qat[active];
       SRtmp=0.0;
@@ -385,8 +399,9 @@ namespace qmcplusplus {
       const StructFact& RhoKB(*(P.SK));
       for(int i=0; i<NumSpeciesA; i++) 
         LRtmp+=Zspec[i]*q*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.eikr_temp.data());
+#endif
       return NewValue=Value+(SRtmp-SRpart[active])+(LRtmp-LRpart[active]);
-      return NewValue=Value+(SRtmp-SRpart[active]);
+      //return NewValue=Value+(SRtmp-SRpart[active]);
     }
 
   void CoulombPBCABTemp::acceptMove(int active)

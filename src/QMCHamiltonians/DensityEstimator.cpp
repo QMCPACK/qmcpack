@@ -119,7 +119,11 @@ namespace qmcplusplus
       for(int spec2=0; spec2<NumSpecies; spec2++) {
 	RealType Z2 = Zspec[spec2];
 	//RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+#if defined(USE_REAL_STRUCT_FACTOR)
+	RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, iat, PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2],P);
+#else
 	RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, iat, PtclRhoK.rhok[spec2],P);
+#endif
 	int spec1=spec2; ///BUG: REALLY NEED TO FIGURE OUT HOW TO GET SPEC OF IAT!
 	RealType Z1 = Zspec[spec1];
 	if(spec2==spec1)
