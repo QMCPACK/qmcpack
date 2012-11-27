@@ -114,7 +114,7 @@ namespace simd
         , zone
         , &(kpts[0][0]), 3
         , &(pos[0][0]), 3
-        , zero, phase.data(), nk);
+        , zero, phase.data(), phase.rows());
   }
 }
 
