@@ -25,17 +25,6 @@
 #include <stdio.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
-#ifdef __cplusplus
-using std::min;
-using std::max;
-#else
-#ifndef max
-#define max(a,b) (((a)>(b))?(a):(b))
-#endif
-#ifndef min
-#define min(a,b) (((a)<(b))?(a):(b))
-#endif
-#endif
 
 extern const float* restrict   Af;
 extern const float* restrict  dAf;

@@ -18,11 +18,8 @@
 #define QMCPLUSPLUS_BSPLINE_TRAITS_H
 
 #include <complex>
-extern "C"
-{
 #include <einspline/bspline.h>
 #include <einspline/multi_bspline.h>
-}
 namespace qmcplusplus
 {
   /** determine if EngT (e.g., einspline engine) handles real data or complex data

@@ -18,4 +18,7 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
+using std::min;
+using std::max;
 #include "multi_bspline_eval_std_c_impl.h"
