@@ -198,8 +198,12 @@ namespace qmcplusplus {
           for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate(MultiSpline,ru,myV);
 
-          const int N=kPoints.size();
-          for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
+          int N=kPoints.size();
+          
+          ST phase[N];
+          for(int j=0;j<N; ++j) phase[j]=-dot(r,kPoints[j]);
+          eval_e2iphi(N,phase,CosV.data(),SinV.data());
+          //for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
 
           int psiIndex = 0;
           for (int j=0,jr=0; j<N; j++,jr+=2) 

@@ -22,10 +22,11 @@ namespace qmcplusplus {
     public:
     typedef PooledData<RealType>  BufferType;
 
-    /** false, if the structure factor is not actively update
+    /** false, if the structure factor is not actively updated
      *
-     * Default is false. Particle-by-particle update functions, makeMove, acceptMove and rejectMove
-     * are costly and do not need to be performed unless Hamiltonian uses pbyp.
+     * Default is false. Particle-by-particle update functions, makeMove,
+     * acceptMove and rejectMove are costly and do not need to be performed
+     * unless Hamiltonian uses pbyp.
      */
     bool DoUpdate;
     ///reference particle set
@@ -39,10 +40,6 @@ namespace qmcplusplus {
     Matrix<RealType> eikr_r, eikr_i;
     Vector<RealType> eikr_r_temp, eikr_i_temp;
 #else
-    /** Rhok[alpha][k]
-     *
-     * Structure factor Rhok[alpha][k] \f$ \equiv \rho_{k}^{\alpha} = \sum_{i}e^{i{\bf k}\cdot{\bf r_i}}\f$
-     */
     Matrix<ComplexType> rhok;
     ///eikr[particle-index][K]
     Matrix<ComplexType> eikr;

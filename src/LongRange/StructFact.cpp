@@ -1,6 +1,7 @@
 #include <LongRange/StructFact.h>
 #include <config/stdlib/math.h>
 #include <Numerics/e2iphi.h>
+#include <simd/vmath.hpp>
 #include <Numerics/OhmmsBlas.h>
 
 namespace qmcplusplus
@@ -79,44 +80,45 @@ void StructFact::resize()
 //}
 
 void 
-StructFact::UpdateAllPart() {
+StructFact::UpdateAllPart() 
+{
   //if(!DoUpdate) FillRhok();
   FillRhok();
 }
 
-/** Experimental functions to support real storage for structure factor
- */
-namespace simd
-{
-  template<typename T>
-    inline void add(int n, const T* restrict in, T* restrict out)
-    {
-      for(int i=0; i<n; ++i) out[i]+=in[i];
-    }
-
-  template<typename T>
-    inline void get_phase(int n, const T* restrict kpts, const T* restrict xyz, T* restrict phi)
-    {
-      T x=xyz[0]; T y=xyz[1]; T z=xyz[2];
-      for(int i=0; i<n; ++i)
-        phi[i]=x*kpts[i*3]+y*kpts[i*3+1]+z*kpts[i*3+2];
-    }
-
-  template<typename AT, typename BT, typename CT>
-  inline void get_phase(const AT& kpts, const BT& pos, CT& phase)
-  {
-    const char transa = 'T';
-    const char transb = 'N';
-    const double zone(1.0);
-    const double zero(0.0);
-    dgemm(transa, transb
-        , phase.cols(), phase.rows(), 3
-        , zone
-        , &(kpts[0][0]), 3
-        , &(pos[0][0]), 3
-        , zero, phase.data(), phase.rows());
-  }
-}
+///** Experimental functions to support real storage for structure factor
+// */
+//namespace simd
+//{
+//  template<typename T>
+//    inline void add(int n, const T* restrict in, T* restrict out)
+//    {
+//      for(int i=0; i<n; ++i) out[i]+=in[i];
+//    }
+//
+//  template<typename T>
+//    inline void get_phase(int n, const T* restrict kpts, const T* restrict xyz, T* restrict phi)
+//    {
+//      T x=xyz[0]; T y=xyz[1]; T z=xyz[2];
+//      for(int i=0; i<n; ++i)
+//        phi[i]=x*kpts[i*3]+y*kpts[i*3+1]+z*kpts[i*3+2];
+//    }
+//
+//  template<typename AT, typename BT, typename CT>
+//  inline void get_phase(const AT& kpts, const BT& pos, CT& phase)
+//  {
+//    const char transa = 'T';
+//    const char transb = 'N';
+//    const double zone(1.0);
+//    const double zero(0.0);
+//    dgemm(transa, transb
+//        , phase.cols(), phase.rows(), 3
+//        , zone
+//        , &(kpts[0][0]), 3
+//        , &(pos[0][0]), 3
+//        , zero, phase.data(), phase.rows());
+//  }
+//}
 
 /** evaluate rok per species, eikr  per particle
  */
