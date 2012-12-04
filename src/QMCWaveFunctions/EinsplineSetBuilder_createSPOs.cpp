@@ -91,7 +91,13 @@ namespace qmcplusplus {
       NewOcc=true;
       Occ_Old = Occ;
     }
-    else NewOcc=false;
+    else 
+      NewOcc=false;
+
+#if defined(QMC_CUDA)
+    app_log() << "\t  QMC_CUDA=1 Overwriting the precision of the einspline storage on the host.\n";
+    spo_prec="double"; //overwrite
+#endif
 
     H5OrbSet aset(H5FileName, spinSet, numOrbs);
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
@@ -193,47 +199,6 @@ namespace qmcplusplus {
     //set the internal parameters
     setTiling(OrbitalSet,numOrbs);
 
-#if defined(USE_SPLINEADOPTOR)
-    if(HaveLocalizedOrbs ||  AtomicOrbitals.size())
-      APP_ABORT("Experimental!!! BsplineSet<SplineAdoptor> cannot handle Localized or Atomic orbitals");
-
-    OccupyBands(spinSet, sortBands);
-
-    if(UseRealOrbitals)
-    {
-      if(sizeof(double) == sizeof(SPLINE_PRECISION))
-        app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<double,double,3> <<<< " << endl;
-      else
-        app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<float,double,3> <<<< " << endl;
-
-      BsplineSet<SplineR2RAdoptor<SPLINE_PRECISION,double,3> >* bspline_zd
-        = new BsplineSet<SplineR2RAdoptor<SPLINE_PRECISION,double,3> >;
-      copy(OrbitalSet,bspline_zd);
-      ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
-      SPOSetMap[aset] = bspline_zd;
-      return bspline_zd; 
-    }
-    else
-    {
-#if defined(QMC_COMPLEX)
-#if defined(SPLINE_PACK_COMPLEX)
-      BsplineSet<SplineC2CAdoptorPacked<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2CAdoptorPacked<SPLINE_PRECISION,double,3> >;
-#else
-      BsplineSet<SplineC2CAdoptor<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2CAdoptor<SPLINE_PRECISION,double,3> >;
-#endif 
-#else 
-#if defined(SPLINE_PACK_COMPLEX)
-      BsplineSet<SplineC2RAdoptorPacked<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2RAdoptorPacked<SPLINE_PRECISION,double,3> >;
-#else
-      BsplineSet<SplineC2RAdoptor<SPLINE_PRECISION,double,3> > *bspline_zd = new BsplineSet<SplineC2RAdoptor<SPLINE_PRECISION,double,3> >;
-#endif 
-#endif 
-      copy(OrbitalSet,bspline_zd);
-      ReadBands_ESHDF_Complex(spinSet, bspline_zd);
-      SPOSetMap[aset] = bspline_zd;
-      return bspline_zd;
-    }
-#else // Back to the orginal
     if (HaveLocalizedOrbs) 
     {
       EinsplineSetLocal *restrict orbitalSet = 
@@ -276,27 +241,16 @@ namespace qmcplusplus {
         {
           EinsplineSetExtended<double> *restrict orbitalSet =
             dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
-
-          //OccupyBands(spinSet, sortBands);
-
           if (Format == ESHDF)
             ReadBands_ESHDF(spinSet,orbitalSet);
           else
             ReadBands(spinSet, orbitalSet); 
         }
-
-        //DEBUG mixed precision: nothing wrong!
-        //typedef float mytype;
-        ////typedef double mytype;
-        //BsplineSet<SplineR2RAdoptor<mytype,double,3> >* bspline_zd= new BsplineSet<SplineR2RAdoptor<mytype,double,3> >;
-        //copy(OrbitalSet,bspline_zd);
-        //ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
-        //test_bspline(TargetPtcl,*OrbitalSet,*bspline_zd);
-        //APP_ABORT("DONE");
       }
       else 
       {
 	OccupyBands(spinSet, sortBands);
+
         if(spo_prec == "single" || spo_prec == "float")
         {
           app_log() << ">>>> Creating BsplineSet<SplineC2XAdoptor<float,double,3> <<<< " << endl;
@@ -399,7 +353,6 @@ namespace qmcplusplus {
     }
 #endif
     return OrbitalSet;
-#endif
   }
 }
 
