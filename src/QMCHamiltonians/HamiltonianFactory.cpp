@@ -650,7 +650,7 @@ namespace qmcplusplus {
     renameProperty(a);
 
     VHXC *vhxc = new VHXC (*targetPtcl);
-    cerr << "physical = " << physical << endl;
+    app_log() << "physical = " << physical << endl;
     targetH->addOperator(vhxc, "VHXC", physical);
 #else
     APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
@@ -764,7 +764,7 @@ namespace qmcplusplus {
     hAttrib.add(mode,"mode"); 
     hAttrib.add(PsiName, "psi");
     hAttrib.put(cur);
-    cerr << "HamFac forceBase mode " << mode << endl;
+    app_log() << "HamFac forceBase mode " << mode << endl;
     renameProperty(a);
 
     PtclPoolType::iterator pit(ptclPool.find(a));
