@@ -19,9 +19,33 @@
 namespace qmcplusplus
 {
 
-  /** enumeration to clssify a CrystalLattice
-  */
-  enum {SUPERCELL_OPEN=0, SUPERCELL_WIRE=1, SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
+  /** enumeration to classify a CrystalLattice
+   *
+   * Use bitset<3> for all the dimension 
+   */
+  enum {SUPERCELL_OPEN=0, //nnn
+    SUPERCELL_WIRE=1,     //nnp
+    SUPERCELL_SLAB=3,     //npp
+    SUPERCELL_BULK=7};    //ppp
+
+  /** enumeration for DTD_BConds specialization 
+   *
+   * G = general cell with image-cell checks
+   * S = special treatment of a general cell with Wigner-cell radius == Simulation cell
+   * O = orthogonal cell
+   * X = exhaustive search (reference implementation)
+   */
+  enum {
+    PPPG=SUPERCELL_BULK,  
+    PPPS=SUPERCELL_BULK+1,    
+    PPPO=SUPERCELL_BULK+2,    
+    PPPX=SUPERCELL_BULK+3,    
+    PPNG=SUPERCELL_SLAB,      
+    PPNS=SUPERCELL_SLAB+1,   
+    PPNO=SUPERCELL_SLAB+2, 
+    PPNX=SUPERCELL_SLAB+3
+  };
+
 
   ///generic class to analyze a Lattice
   template<typename T,  unsigned D> struct LatticeAnalyzer { };
@@ -255,6 +279,55 @@ namespace qmcplusplus
         return a[0]*0.5;
       }
     };
+
+  template<typename T>
+    inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
+    {
+      const T eps=10*numeric_limits<T>::epsilon();
+      int imax=0;
+      T r2max=dot(rb[0],rb[0]);
+      for(int i=1; i<3; i++)
+      {
+        T r2=dot(rb[i],rb[i]);
+        if((r2-r2max)>eps)
+        {
+          r2max=r2; imax=i;
+        }
+      }
+      TinyVector<TinyVector<T,3>,4> rb_new;
+      rb_new[0]=rb[0]+rb[1]-rb[2];
+      rb_new[1]=rb[0]+rb[2]-rb[1];
+      rb_new[2]=rb[1]+rb[2]-rb[0];
+      rb_new[3]=rb[0]+rb[1]+rb[2];
+
+      for(int i=0; i<4; ++i)
+      {
+        T r2=dot(rb_new[i],rb_new[i]);
+        if((r2-r2max) < -eps)
+        {
+          rb[imax]=rb_new[i];
+          return true;
+        }
+      }
+      return false;
+    }
+  template<typename T>
+    inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
+    {
+      do
+      {
+        TinyVector<TinyVector<T,3>,3> saved(rb);
+        bool changed=false;
+        for(int i=0;i<3;++i)
+        {
+          rb[i]=0.0;
+          changed=found_shorter_base(rb);
+          rb[i]=saved[i];
+          if(changed) break;
+        }
+        if(!changed && !found_shorter_base(rb)) return;
+      }while(1);
+    }
 
 }
 #endif

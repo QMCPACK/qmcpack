@@ -155,15 +155,13 @@ namespace qmcplusplus {
 
 
     ///evaluate the temporary pair relations 
-    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) 
+    inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 
     {
-      //rinv1 is not useful
-      for(int iat=0, loc=jat; iat<N[SourceIndex]; ++iat,loc+=N[VisitorIndex]) 
-      {
-        PosType& drij=Temp[iat].dr1=dr_m[loc]+displ;
-        RealType sep(std::sqrt(dot(drij,drij)));
-        Temp[iat].r1=sep;
-        //Temp[iat].rinv1=1.0/sep;
+      activePtcl=jat;
+      for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex]) {
+	PosType drij(rnew-Origin.R[iat]);
+	Temp[iat].r1=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
+	Temp[iat].dr1=drij;
       }
     }
 

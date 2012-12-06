@@ -200,23 +200,16 @@ namespace qmcplusplus {
       //}
     }
 
-    ///evaluate the temporary pair relations
-    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType iat) 
+    inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 
     {
-      activePtcl=iat;
-      for(int jat=0; jat<iat; ++jat) {
-	PosType& drij=Temp[jat].dr1=-1.0*(displ+dr_m[IJ[jat*N[SourceIndex]+iat]]);
-	Temp[jat].r1=std::sqrt(dot(drij,drij));
-	//Temp[jat].rinv1=1.0/Temp[jat].r1;
-      }
-      Temp[iat].reset();
-      for(int jat=iat+1; jat< N[SourceIndex]; ++jat) {
-	PosType& drij=Temp[jat].dr1=dr_m[IJ[jat*N[SourceIndex]+iat]]-displ;
-	Temp[jat].r1=std::sqrt(dot(drij,drij));
-	//Temp[jat].rinv1=1.0/Temp[jat].r1;
+      activePtcl=jat;
+      for(int iat=0; iat<N[SourceIndex]; ++iat)
+      {
+        PosType drij(rnew - P.R[iat]);
+        Temp[iat].r1=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
+        Temp[iat].dr1=drij;
       }
     }
-
 
     ///update the stripe for jat-th particle
     inline void update(IndexType jat) {

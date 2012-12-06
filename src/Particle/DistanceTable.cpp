@@ -42,21 +42,23 @@ namespace qmcplusplus
     {
       if(s.Lattice.DiagonalOnly)
       {
-        o << "    PBC=bulk Orthorhombic=yes\n";
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD>(s,s);
+        o << "    PBC=bulk Orthorhombic=yes Using SymmetricDTD<T,DIM,PPPO> " << PPPO <<endl;
+        dt = new SymmetricDTD<RealType,DIM,PPPO>(s,s);
       }
       else
       {
         o << "    PBC=bulk Orthorhombic=no ";
         if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
         {
-          o << "  Use image cells." << endl;
-          dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,s);
+          o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG <<endl;
+          dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
+          //o << "    PBC=bulk Orthorhombic=no SymmetricDTD<T,DIM,PPPX> " << PPPX <<endl;
+          //dt = new  SymmetricDTD<RealType,DIM,PPPX>(s,s);
         }
         else
         {
-          o << "  Ignore image cells." << endl;
-          dt = new SymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD+1>(s,s);
+          o << "  Using SymmetricDTD<T,D,PPPS> " << PPPS <<endl;
+          dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
         }
         o << "\n    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
@@ -65,14 +67,13 @@ namespace qmcplusplus
     {
       if(s.Lattice.DiagonalOnly)
       {
-        o << "    PBC=slab Orthorhombic=yes\n";
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_SLAB+TwoPowerD>(s,s);
+        o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+        dt = new SymmetricDTD<RealType,DIM,PPNO>(s,s);
       }
       else
       {
-        o << "    PBC=slab Orthorhombic=no\n" 
-          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_SLAB>(s,s);
+        o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNG> " << PPNG <<endl;
+        dt = new SymmetricDTD<RealType,DIM,PPNG>(s,s);
       }
     }
     else if(sc == SUPERCELL_WIRE)
@@ -122,21 +123,21 @@ namespace qmcplusplus
     {
       if(s.Lattice.DiagonalOnly)
       {
-        o << "    PBC=bulk Orthorhombic=yes\n";
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD>(s,t);
+        o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO <<endl;
+        dt = new AsymmetricDTD<RealType,DIM,PPPO>(s,t);
       }
       else
       {
         o << "    PBC=bulk Orthorhombic=no ";
         if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
         {
-          o << "  Use image cells." << endl;
-          dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK>(s,t);
+          o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG <<endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPPG>(s,t);
         }
         else
         {
-          o << "  Ignore image cells." << endl;
-          dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_BULK+TwoPowerD+1>(s,t);
+          o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS <<endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPPS>(s,t);
         }
         o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
       }
@@ -145,14 +146,22 @@ namespace qmcplusplus
     {
       if(s.Lattice.DiagonalOnly)
       {
-        o << "    PBC=slab Orthorhombic=yes\n";
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_SLAB+TwoPowerD>(s,t);
+        o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+        dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
       }
       else
       {
-        o << "    PBC=slab Orthorhombic=no\n" 
-          << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_SLAB>(s,t);
+        o << "    PBC=slab Orthorhombic=no ";
+        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+        {
+          o << " Using AsymmetricDTD<T,DIM,PPNG> " << PPNG <<endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPNG>(s,t);
+        }
+        else
+        {
+          o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS <<endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
+        }
       }
     }
     else if(sc == SUPERCELL_WIRE)

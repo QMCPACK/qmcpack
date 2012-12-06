@@ -91,7 +91,10 @@ namespace qmcplusplus {
   NonLocalECPComponent::RealType 
   NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi) {
     RealType esum=0.0;
-    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
+    vector<PosType> deltarV(nknot);
+
+    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+    {
 
       register RealType r(myTable->r(nn));
       if(r>Rmax) continue;
@@ -102,8 +105,7 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-	//        W.makeMoveOnSphere(iel,deltar); 
-        W.makeMove(iel,deltar); 
+	W.makeMoveOnSphere(iel,deltar); 
 #if defined(QMC_COMPLEX)
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
@@ -120,9 +122,7 @@ namespace qmcplusplus {
       //for(int ip=0;ip< nchannel; ip++){
       //  vrad[ip]=nlpp_m[ip]->f(k,rfrac)*wgt_angpp_m[ip];
       //}
-      for(int ip=0;ip< nchannel; ip++){
-        vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
-      }
+      for(int ip=0;ip< nchannel; ip++) vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
 
       // Compute spherical harmonics on grid
       for (int j=0, jl=0; j<nknot ; j++){ 
@@ -183,8 +183,7 @@ namespace qmcplusplus {
       // psi.evalGrad(W,iat);
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        //W.makeMoveOnSphere(iel,deltar); 
-        W.makeMove(iel,deltar) ;
+        W.makeMoveOnSphere(iel,deltar); 
 	RealType ratio1 = psiratio[j] = psi.ratio(W,iel)*sgridweight_m[j];
         RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
  	if (std::fabs(ratio2 - ratio1) > 1.0e-8)
@@ -286,8 +285,7 @@ namespace qmcplusplus {
       // psi.evalGrad(W,iat);
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        //W.makeMoveOnSphere(iel,deltar); 
-        W.makeMove(iel,deltar) ;
+        W.makeMoveOnSphere(iel,deltar); 
 	RealType ratio1 = psiratio[j] = psi.ratio(W,iel)*sgridweight_m[j];
         RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
 
@@ -300,7 +298,7 @@ namespace qmcplusplus {
 	psigrad_source[j] = psiratio[j] * (psi.evalGradSource(W, ions, iat) - psi_alpha);
 	//psigrad_source[j] = (psi.evalGradSource(W, ions, iat) - psiratio[j] * psi_alpha);
 					   
-        W.makeMove(iel,-1.0*deltar) ;
+        W.makeMoveOnSphere(iel,-1.0*deltar) ;
 	psi.ratio(W,iel);
 	GradType junk;
 	psi.ratioGrad(W,iel,junk);
@@ -550,8 +548,7 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        //W.makeMoveOnSphere(iel,deltar); 
-        PosType newpos(W.makeMove(iel,deltar));
+        W.makeMoveOnSphere(iel,deltar); 
 #if defined(QMC_COMPLEX)
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
@@ -618,9 +615,7 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        //W.makeMoveOnSphere(iel,deltar); 
-        PosType newpos(W.makeMove(iel,deltar)); 
-        //psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+        W.makeMoveOnSphere(iel,deltar); 
 	psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
 	psigrad[j] *= psiratio[j];
         W.rejectMove(iel);

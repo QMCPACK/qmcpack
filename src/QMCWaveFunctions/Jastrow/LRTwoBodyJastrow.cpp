@@ -27,6 +27,7 @@ namespace qmcplusplus {
     NumSpecies=p.groups();
     skRef=p.SK;
     if(skRef) {
+      p.SK->DoUpdate=true; 
       CellVolume = p.Lattice.Volume;
       Rs =std::pow(3.0/4.0/M_PI*p.Lattice.Volume/static_cast<RealType>(p.getTotalNum()),1.0/3.0);
       NormConstant=4.0*M_PI*Rs*NumPtcls*(NumPtcls-1)*0.5;

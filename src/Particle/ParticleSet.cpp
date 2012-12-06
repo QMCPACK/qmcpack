@@ -511,21 +511,21 @@ namespace qmcplusplus
                                       , RealType dt)
   {
     if (UseBoundBox)
+    {
+      for (int iat=0; iat<deltaR.size(); ++iat)
       {
-        for (int iat=0; iat<deltaR.size(); ++iat)
-          {
-            SingleParticlePos_t displ(dt*deltaR[iat]+drift[iat]);
-            if (Lattice.outOfBound(Lattice.toUnit(displ))) return false;
-            SingleParticlePos_t newpos(awalker.R[iat]+displ);
-            if (!Lattice.isValid(Lattice.toUnit(newpos))) return false;
-            R[iat]=newpos;
-          }
+        SingleParticlePos_t displ(dt*deltaR[iat]+drift[iat]);
+        if (Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+        SingleParticlePos_t newpos(awalker.R[iat]+displ);
+        if (!Lattice.isValid(Lattice.toUnit(newpos))) return false;
+        R[iat]=newpos;
       }
+    }
     else
-      {
-        for (int iat=0; iat<deltaR.size(); ++iat)
-          R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
-      }
+    {
+      for (int iat=0; iat<deltaR.size(); ++iat)
+        R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
+    }
 
     for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
     if (SK) SK->UpdateAllPart();
@@ -534,26 +534,21 @@ namespace qmcplusplus
     return true;
   }
 
+  /** move the iat-th particle by displ
+   *
+   * @param iat the particle that is moved on a sphere
+   * @param displ displacement from the current position
+   */
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
   {
-    myTimers[1]->start();
-    if (UseSphereUpdate)
-      {
-        for (int i=0; i< DistTables.size(); ++i) DistTables[i]->moveOnSphere(*this,displ,iat);
-      }
-    else
-      {
-        PosType newpos=activePos+displ;
-        for (int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
-      }
     activePtcl=iat;
-    activePos=R[iat];
-    R[iat]=activePos+displ;
-
+    activePos=R[iat]; //save the current position
+    SingleParticlePos_t newpos(activePos+displ);
+    for (int i=0; i< DistTables.size(); ++i)
+      DistTables[i]->moveOnSphere(*this,newpos,iat);
+    R[iat]=newpos;
     if (SK && SK->DoUpdate) SK->makeMove(iat,R[iat]);
-    //SingleParticlePos_t dum=makeMove(iat,displ);
-    myTimers[1]->stop();
   }
 
   /** update the particle attribute by the proposed move
@@ -623,10 +618,11 @@ namespace qmcplusplus
 //    if(SK) SK->copyFromBuffer(buf);
 //#else
     if (pbyp)
-      {
-        for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-        if (SK) SK->UpdateAllPart();
-      }
+    {
+      for (int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+      //computed so that other objects can use them, e.g., kSpaceJastrow
+      if(SK && SK->DoUpdate) SK->UpdateAllPart();
+    }
 //#endif
   }
 

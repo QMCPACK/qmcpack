@@ -38,7 +38,6 @@ namespace APPNAMESPACE
          ,g01(lat.G(1)),g11(lat.G(3))
          ,r2max(lat.CellRadiusSq)
       {
-        cout << "DTD_BConds<T,2,SUPERCELL_BULK> " << endl;
         nextcells.resize(8);
         int ic=0;
         for(int i=-1;i<=1;++i)
@@ -117,10 +116,12 @@ namespace APPNAMESPACE
       }
     };
 
-  /** specialization for a periodic 2D cell
-  */
+  /** specialization for a periodic 2D general cell with wigner-seitz==simulation cell
+   *
+   * Skip image cells.
+   */
   template<class T>
-    struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD+1>
+    struct DTD_BConds<T,2,PPPS>
     {
       T r00,r10,r01,r11;
       T g00,g10,g01,g11;
@@ -175,7 +176,7 @@ namespace APPNAMESPACE
   /** specialization for a periodic 2D orthorombic cell
   */
   template<class T>
-    struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD> 
+    struct DTD_BConds<T,2,PPPO> 
     {
 
       T Linv0,L0,Linv1,L1;

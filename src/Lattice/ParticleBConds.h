@@ -34,8 +34,6 @@ namespace APPNAMESPACE
       enum {value=1};
     };
 
-  const int TwoPowerD=PowerOfN<2,OHMMS_DIM>::value;
-
   /** generic Boundary condition handler
    *
    * @tparam T real data type
