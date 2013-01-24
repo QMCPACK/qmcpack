@@ -40,6 +40,7 @@ SET(SRCS ${SRCS}
   nubspline_create.c      
   nubasis.c               
   nugrid.c                
+  multi_bspline_copy.c  
 )
 
 #do not compiler c functions
@@ -58,6 +59,7 @@ endif()
 
 IF(HAVE_SSE2)
   set(SRCS ${SRCS} 
+    multi_bspline_eval_std_d.c 
     multi_bspline_eval_sse_d_cpp.cc 
     multi_bspline_eval_sse_z_cpp.cc       
     multi_nubspline_eval_sse_z_cpp.cc   

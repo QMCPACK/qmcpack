@@ -1376,6 +1376,8 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   posix_memalign ((void**)&spline->coefs, 16, (sizeof(double)*Nx*Ny*Nz));
 #endif
 
+  if(data != NULL) // only data is provided
+  {
   // First, solve in the X-direction 
   for (int iy=0; iy<My; iy++) 
     for (int iz=0; iz<Mz; iz++) {
@@ -1402,7 +1404,7 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
       find_coefs_1d_d (spline->z_grid, zBC, spline->coefs+doffset, 1, 
 		       spline->coefs+coffset, 1);
     }
-
+  }
   init_sse_data();
   return spline;
 }
