@@ -6,7 +6,8 @@
 #--------------------------------------------------------------------------
 set(CMAKE_CXX_COMPILER mpiicpc)
 set(CMAKE_C_COMPILER  icc)
-set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER -DUSE_REAL_STRUCT_FACTOR")
+#set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER -DUSE_REAL_STRUCT_FACTOR")
+set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER")
 set(INTEL_OPTS "-g  -restrict -unroll  -O3 -ip  -xSSE4.2 -openmp -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${INTEL_OPTS} ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${INTEL_OPTS} -std=c99")
