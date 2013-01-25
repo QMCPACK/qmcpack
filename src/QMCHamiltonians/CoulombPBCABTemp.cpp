@@ -141,7 +141,7 @@ namespace qmcplusplus {
         for(int j=0; j<NumSpeciesB; j++) {
 #if defined(USE_REAL_STRUCT_FACTOR)
           esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell
-              , RhoKA.rhok_r[i],RhoKA.rhok_i[i] , RhoKB.rhok_r[j],RhoKB.rhok_i[i]);
+              , RhoKA.rhok_r[i],RhoKA.rhok_i[i] , RhoKB.rhok_r[j],RhoKB.rhok_i[j]);
 #else
           esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
 #endif
