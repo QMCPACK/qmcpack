@@ -1379,6 +1379,7 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   if(data != NULL) // only data is provided
   {
   // First, solve in the X-direction 
+#pragma omp parallel for
   for (int iy=0; iy<My; iy++) 
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = iy*Mz+iz;
@@ -1388,6 +1389,7 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
     }
   
   // Now, solve in the Y-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++) 
     for (int iz=0; iz<Nz; iz++) {
       intptr_t doffset = ix*Ny*Nz + iz;
@@ -1397,6 +1399,7 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
     }
 
   // Now, solve in the Z-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++) 
     for (int iy=0; iy<Ny; iy++) {
       intptr_t doffset = (ix*Ny+iy)*Nz;
@@ -1431,6 +1434,7 @@ recompute_UBspline_3d_d (UBspline_3d_d* spline, double *data)
     Nz = Mz+2;
 
   // First, solve in the X-direction 
+#pragma omp parallel for
   for (int iy=0; iy<My; iy++) 
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = iy*Mz+iz;
@@ -1440,6 +1444,7 @@ recompute_UBspline_3d_d (UBspline_3d_d* spline, double *data)
     }
   
   // Now, solve in the Y-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++) 
     for (int iz=0; iz<Nz; iz++) {
       intptr_t doffset = ix*Ny*Nz + iz;
@@ -1449,6 +1454,7 @@ recompute_UBspline_3d_d (UBspline_3d_d* spline, double *data)
     }
 
   // Now, solve in the Z-direction
+#pragma omp parallel for
   for (int ix=0; ix<Nx; ix++) 
     for (int iy=0; iy<Ny; iy++) {
       intptr_t doffset = (ix*Ny+iy)*Nz;
