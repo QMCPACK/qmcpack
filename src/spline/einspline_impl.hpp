@@ -13,7 +13,7 @@
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
 /** @file einspline_impl.hpp
- * @brief define einspline class with static functions
+ * @brief interface to hide types in einspline library
  *
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_IMPL_H
@@ -21,12 +21,13 @@
 
 #ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
 #error "einspline_impl.hpp is used only by einspline_engine.hpp"
-#else
+#endif
+
 namespace qmcplusplus
 {
-  /** class to handle functions
+  /** einspline name space to define functions to handle functions
    *
-   * static functions to handle einspline calls transparently
+   * functions to handle einspline calls transparently
    * For datatype (double,complex<double>,float,complex<float>)
    *  - create(spline,start,end,bc,num_splines)
    *  - set(spline,i,data)
@@ -41,33 +42,33 @@ namespace qmcplusplus
    * \tparam GT array of gradients, e.g. Vector<TinyVector<T,D> >
    * \tparam HT array of hessian tensors, e.g. Vector<Tensor<T,D> >
    */
-  struct einspline
+  namespace einspline
   {
 
     /** create spline for double */
     template<typename GT, typename BCT>
-    static multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s, GT& grid , BCT& bc, int num_splines)
     { 
       return create_multi_UBspline_3d_d(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
 
     /** create spline for complex<double> */
     template<typename GT, typename BCT>
-    static multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s, GT& grid , BCT& bc, int num_splines)
     { 
       return create_multi_UBspline_3d_z(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
 
     /** create spline for float */
     template<typename GT, typename BCT>
-    static multi_UBspline_3d_s*  create(multi_UBspline_3d_s* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_3d_s*  create(multi_UBspline_3d_s* s, GT& grid , BCT& bc, int num_splines)
     { 
       return create_multi_UBspline_3d_s(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
 
     /** create spline for complex<float> */
     template<typename GT, typename BCT>
-    static multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s, GT& grid , BCT& bc, int num_splines)
     { 
       return create_multi_UBspline_3d_c(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
@@ -77,37 +78,37 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_d* spline, int i, double* restrict indata)
+    inline void  set(multi_UBspline_3d_d* spline, int i, double* restrict indata)
     { set_multi_UBspline_3d_d(spline, i, indata); }                                                            
 
     /** evaluate values only using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT>
-      static inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi)
+      inline void  evaluate(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data()); }
 
     /** evaluate values and gradients using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vg(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad)
+      inline void  evaluate_vg(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vgl(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      inline void  evaluate_vgl(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_d_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate_vgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      inline void  evaluate_vgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
 
     /** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT, typename HT, typename GG>
-      static inline void  evaluate_vghgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
+      inline void  evaluate_vghgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
       { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
 
     /** set bspline for the i-th orbital for complex<double>-to-complex<double>
@@ -115,37 +116,37 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_z* spline, int i, complex<double>* restrict indata)
+    inline void  set(multi_UBspline_3d_z* spline, int i, complex<double>* restrict indata)
     { set_multi_UBspline_3d_z(spline, i, indata); }                                                            
 
     /** evaluate values only using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT>
-      static inline void  evaluate(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi)
+      inline void  evaluate(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data()); }
 
     /** evaluate values and gradients using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vg(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad)
+      inline void  evaluate_vg(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vgl(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      inline void  evaluate_vgl(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_z_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_z 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate_vgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      inline void  evaluate_vgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
 
     /** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
     */
     template<typename PT, typename VT, typename GT, typename HT, typename GG>
-      static inline void  evaluate_vghgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
+      inline void  evaluate_vghgh(multi_UBspline_3d_z *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
       { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
 
     /** set bspline for the i-th orbital for float-to-float
@@ -153,7 +154,7 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_s* spline, int i, float* restrict indata)
+    inline void  set(multi_UBspline_3d_s* spline, int i, float* restrict indata)
     { 
       set_multi_UBspline_3d_s(spline, i, indata); 
     }
@@ -163,7 +164,7 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_s* spline, int i, double* restrict indata)
+    inline void  set(multi_UBspline_3d_s* spline, int i, double* restrict indata)
     { 
       set_multi_UBspline_3d_s_d(spline, i, indata); 
     }                                                            
@@ -171,25 +172,25 @@ namespace qmcplusplus
     /** evaluate values only using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT>
-      static inline void  evaluate(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi)
+      inline void  evaluate(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_3d_s (spline, r[0], r[1], r[2], psi.data()); }
 
     /** evaluate values and gradients using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vg(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad)
+      inline void  evaluate_vg(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_s_vg(spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vgl(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      inline void  evaluate_vgl(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_s_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_s 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate_vgh(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      inline void  evaluate_vgh(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_s_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data()); }
 
     /** set bspline for the i-th orbital for complex<float>-to-complex<float>
@@ -197,7 +198,7 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_c* spline, int i, complex<float>* restrict indata)
+    inline void  set(multi_UBspline_3d_c* spline, int i, complex<float>* restrict indata)
     { set_multi_UBspline_3d_c(spline, i, indata); }                                                            
 
     /** set bspline for the i-th orbital for complex<double>-to-complex<float>
@@ -205,7 +206,7 @@ namespace qmcplusplus
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    static inline void  set(multi_UBspline_3d_c* spline, int i, complex<double>* restrict indata)
+    inline void  set(multi_UBspline_3d_c* spline, int i, complex<double>* restrict indata)
     { 
       set_multi_UBspline_3d_c_z(spline, i, indata); 
     }                                                            
@@ -213,31 +214,31 @@ namespace qmcplusplus
     /** evaluate values only using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT>
-      static inline void  evaluate(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi)
+      inline void  evaluate(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_3d_c (spline, r[0], r[1], r[2], psi.data()); }
 
     /** evaluate values and gradients using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vg(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad)
+      inline void  evaluate_vg(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad)
       { eval_multi_UBspline_3d_c_vg (spline, r[0], r[1], r[2], psi.data(), grad[0].data()); }
 
     /** evaluate values, gradients and laplacians using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT>
-      static inline void  evaluate_vgl(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
+      inline void  evaluate_vgl(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, VT& lap)
       { eval_multi_UBspline_3d_c_vgl (spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data()); }
 
     /** evaluate values, gradients and hessians using multi_UBspline_3d_c 
     */
     template<typename PT, typename VT, typename GT, typename HT>
-      static inline void  evaluate_vgh(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
+      inline void  evaluate_vgh(multi_UBspline_3d_c *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_c_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data());}
 
     /////another creation functions
     /** create spline and initialized it */
     template<typename VT, typename IT>
-    static multi_UBspline_3d_s*  create(multi_UBspline_3d_s* s
+    multi_UBspline_3d_s*  create(multi_UBspline_3d_s* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)
     { 
       Ugrid x_grid, y_grid, z_grid;
@@ -254,7 +255,7 @@ namespace qmcplusplus
 
     /** create spline for complex<double> */
     template<typename VT, typename IT>
-    static multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s
+    multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)
     { 
       Ugrid x_grid, y_grid, z_grid;
@@ -311,7 +312,7 @@ namespace qmcplusplus
      * @param num_splines number of splines to do 
      */
     template<typename VT, typename IT>
-    static multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s
+    multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)
     { 
       Ugrid x_grid, y_grid, z_grid;
@@ -326,7 +327,7 @@ namespace qmcplusplus
     }
 
     template<typename VT, typename IT>
-    static multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s
+    multi_UBspline_3d_d*  create(multi_UBspline_3d_d* s
         , VT& start , VT& end, IT& ng , bc_code xbc, bc_code ybc, bc_code zbc, int num_splines)
     { 
       Ugrid x_grid, y_grid, z_grid;
@@ -342,7 +343,7 @@ namespace qmcplusplus
 
     /** create spline for complex<double> */
     template<typename VT, typename IT>
-    static multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s
+    multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)
     { 
       Ugrid x_grid, y_grid, z_grid;
@@ -355,9 +356,6 @@ namespace qmcplusplus
       zBC.lCode=zBC.rCode=bc;
       return create_multi_UBspline_3d_z(x_grid,y_grid,z_grid, xBC, yBC, zBC, num_splines);
     }
-
-
-  };
+  }
 }
-#endif
 #endif
