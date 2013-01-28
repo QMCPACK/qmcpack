@@ -38,6 +38,7 @@ namespace qmcplusplus {
     struct einspline_traits<double,3>
     {
       typedef multi_UBspline_3d_d SplineType;  
+      typedef UBspline_3d_d       SingleSplineType;  
       typedef BCtype_d            BCType;
       typedef double              DataType;
     };
@@ -47,6 +48,7 @@ namespace qmcplusplus {
     struct einspline_traits<complex<double>,3>
     {
       typedef multi_UBspline_3d_z SplineType;  
+      typedef UBspline_3d_z       SingleSplineType;  
       typedef BCtype_z            BCType;
       typedef complex<double>     DataType;
     };
@@ -56,6 +58,7 @@ namespace qmcplusplus {
     struct einspline_traits<float,3>
     {
       typedef multi_UBspline_3d_s SplineType;  
+      typedef UBspline_3d_s       SingleSplineType;  
       typedef BCtype_s            BCType;
       typedef float               DataType;
     };
@@ -65,6 +68,7 @@ namespace qmcplusplus {
     struct einspline_traits<complex<float>,3>
     {
       typedef multi_UBspline_3d_c SplineType;  
+      typedef UBspline_3d_c       SingleSplineType;  
       typedef BCtype_c            BCType;
       typedef complex<float>      DataType;
     };

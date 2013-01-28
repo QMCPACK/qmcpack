@@ -46,7 +46,7 @@ namespace qmcplusplus {
            rmv[cnt++] = (((myBasisSet->LOBasis[i]->RnlID[myBasisSet->LOBasis[i]->NL[k]])[1]==0)&&(corrCenter[i]));
      }
 
-     BS* Eta;
+     BS* Eta=0;
 /* not used any more, restore if you want to test and propagate changes due to corrCenter 
      BS* Eta = new BS(*myBasisSet);
      for(int i=0; i<nUniqCenters; i++)

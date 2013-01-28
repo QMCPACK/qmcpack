@@ -260,6 +260,10 @@ namespace qmcplusplus {
     void ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet);
     template<typename SPE>
     void ReadBands_ESHDF_Real(int spin, SPE* orbitalSet);
+
+    template<typename SPE>
+    void ReadBands_ESHDF_Big(int spin, SPE* orbitalSet);
+
     void CopyBands(int numOrbs);
     
     /////////////////////////////

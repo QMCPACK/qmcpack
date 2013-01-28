@@ -23,7 +23,10 @@
 //#if defined(USE_SPLINEADOPTOR)
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/EinsplineAdoptorPacked.h"
+#include "QMCWaveFunctions/EinsplineMixedAdoptor.h"
 #include "QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF2.cpp"
+#include "QMCWaveFunctions/BigEinsplineSetBuilder.cpp"
+
 //#endif
 
 namespace qmcplusplus {
@@ -37,6 +40,7 @@ namespace qmcplusplus {
     int sortBands(1);
     string sourceName;
     string spo_prec("double");
+    string truncate("no");
 #if defined(QMC_CUDA)
     string useGPU="yes";
 #else
@@ -52,6 +56,7 @@ namespace qmcplusplus {
     attribs.add (MeshFactor, "meshfactor");
     attribs.add (useGPU,     "gpu");    
     attribs.add (spo_prec,   "precision");
+    attribs.add (truncate,   "truncate");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
@@ -227,6 +232,18 @@ namespace qmcplusplus {
 
         OccupyBands(spinSet, sortBands);
 
+        if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN && truncate == "yes")
+        {
+          app_log() << ">>>> Creating BsplineSet<SplineOpenAdoptor<float,double,3> <<<< " << endl;
+          app_log() << "     Ionic positions used to determine the bonding box " <<endl;
+          BsplineSet<SplineOpenAdoptor<float,double,3> >* bspline_zd
+            = new BsplineSet<SplineOpenAdoptor<float,double,3> >;
+          copy(OrbitalSet,bspline_zd);
+          ReadBands_ESHDF_Big(spinSet, bspline_zd);//pass OrbitalSet
+          SPOSetMap[aset] = bspline_zd;
+          return bspline_zd; 
+        }
+
         if(spo_prec == "single" || spo_prec == "float")
         {
           app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<float,double,3> <<<< " << endl;
@@ -239,6 +256,7 @@ namespace qmcplusplus {
         }
         else
         {
+          app_log() << ">>>> Creating EinsplineSetExtended<double> <<<< " << endl;
           EinsplineSetExtended<double> *restrict orbitalSet =
             dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
           if (Format == ESHDF)

@@ -717,10 +717,14 @@ namespace qmcplusplus {
       MeshSize[0] = (int)std::ceil(4.0*MeshFactor*maxIndex[0]);
       MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
       MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
+
+      //make it even so that we can use 1/2 
+      MeshSize[0]=MeshSize[0]+(MeshSize[0]%2);
+      MeshSize[1]=MeshSize[1]+(MeshSize[1]%2);
+      MeshSize[2]=MeshSize[2]+(MeshSize[2]%2);
     }
     app_log() << "B-spline mesh factor is " << MeshFactor << endl;
-    app_log() << "B-spline mesh size is (" << MeshSize[0] << ", "
-      << MeshSize[1] << ", " << MeshSize[2] << ")\n";
+    app_log() << "B-spline mesh size is (" << MeshSize[0] << ", " << MeshSize[1] << ", " << MeshSize[2] << ")\n";
     app_log() << "Maxmimum number of Gvecs " << MaxNumGvecs << endl;
     app_log().flush();
 
