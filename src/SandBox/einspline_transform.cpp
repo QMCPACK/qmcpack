@@ -6,6 +6,7 @@
 #include <einspline/multi_bspline_copy.h>
 #include <Message/Communicate.h>
 #include "Numerics/HDFNumericAttrib.h"
+#include <io/hdf_archive.h>
 #include <mpi/collectives.h>
 #include <getopt.h>
 
@@ -156,12 +157,10 @@ namespace qmcplusplus
 
       Array<double,3> big(ngx,ngy,ngz),small(ngx/2,ngy/2,ngz/2);
       {
-        hid_t h5f = H5Fopen("sample.h5",H5F_ACC_RDONLY,H5P_DEFAULT);
-        HDFAttribIO<Array<double,3> >  h_big(big);
-        h_big.read(h5f, "/big_40");
-        HDFAttribIO<Array<double,3> >  h_small(small);
-        h_small.read(h5f, "/small_40");
-        H5Fclose(h5f);
+        hdf_archive h5f;
+        h5f.open("sample.h5");
+        h5f.read(big,"big_40");
+        h5f.read(small,"small_40");
       }
 
       typedef TinyVector<real_type,3> pos_type;
@@ -183,6 +182,7 @@ namespace qmcplusplus
       //create/set multi_UBspline_3d as usual on the dense grid
       einspline_engine<ENGT> einspliner;
       einspliner.create(start,end,ng,PERIODIC,num_splines);
+
       for(int i=0; i<num_splines; ++i) einspliner.set(i,big);
 
       //create multi_UBspline_3d as usual on a truncated grid based on the dense grid
@@ -210,6 +210,7 @@ namespace qmcplusplus
         value_type v_dense, v_mixed;
 
         einspliner.evaluate(coord[i],psi);
+
         v_dense = einspline::evaluate(dense,coord[i]);
         ds(diff(v_dense,psi[0]));
 
@@ -238,6 +239,7 @@ namespace qmcplusplus
         }
       }
 
+
       app_log() << "Number of coords in the box       " << n_in << endl;
       app_log() << "Number of coords outside the box  " << n_out << endl;
       app_log() << "Average difference org-mixed grid " << dv.mean() 
@@ -254,7 +256,7 @@ int main(int argc, char** argv)
   OHMMS::Controller->initialize(argc,argv);
   Communicate* mycomm=OHMMS::Controller;
   OhmmsInfo Welcome("einspline",mycomm->rank());
-  Random.init(0,1,-1);
+  Random.init(0,1,11);
 
   SplineTestBase param(argc,argv);
 
@@ -268,7 +270,7 @@ int main(int argc, char** argv)
 //        , (upper[2]-lower[2])*Random()+lower[2]
 //        );
 //
-  vector<TinyVector<float,3> > coord_s(coord.size());
+  vector<TinyVector<double,3> > coord_s(coord.size());
   for(int i=0; i<coord.size(); ++i) convert(coord[i],coord_s[i]);
 
   cout << "\nTesting einspline transformation" << endl;
