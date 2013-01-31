@@ -11,8 +11,8 @@
 #include <getopt.h>
 
 //testing subgrid
-qmcplusplus::TinyVector<double,3> lower(0.25,0.25,0.25);
-qmcplusplus::TinyVector<double,3> upper(0.75,0.75,0.75);
+qmcplusplus::TinyVector<double,3> lower(0.0,0.0,0.0);
+qmcplusplus::TinyVector<double,3> upper(1.0,1.0,1.0);
 
 namespace qmcplusplus
 {
@@ -59,19 +59,21 @@ namespace qmcplusplus
       int ngy=160;
       int ngz=160;
 
-      Array<double,3> big(ngx,ngy,ngz),small(ngx/2,ngy/2,ngz/2);
+      Array<double,3> big(ngx,ngy,ngz);
+      Array<float,3> bigf(ngx,ngy,ngz);
       {
         hdf_archive h5f;
         h5f.open("sample.h5");
         h5f.read(big,"big_40");
-        h5f.read(small,"small_40");
       }
+
+      //convert double to float
+      simd::copy(bigf.data(), big.data(), big.size());
 
       typedef TinyVector<real_type,3> pos_type;
       pos_type start(0.0);
       pos_type end(1.0);
-      TinyVector<int,3> ng(ngx,ngy,ngz), ngh(ngx/2,ngy/2,ngz/2);
-
+      TinyVector<int,3> ng(ngx,ngy,ngz);
 
       //create/set multi_UBspline_3d as usual on the dense grid
       einspline_engine<ENGT> einspliner;
@@ -79,7 +81,7 @@ namespace qmcplusplus
 
       Timer clock;
       clock.restart();
-      for(int i=0; i<num_splines; ++i) einspliner.set(i,big);
+      for(int i=0; i<num_splines; ++i) einspliner.set(i,bigf);
       double t_spline=clock.elapsed();
 
 //#pragma omp parallel for 
@@ -109,6 +111,20 @@ namespace qmcplusplus
       }
       double t_read=clock.elapsed();
 
+      Vector<value_type> psi(num_splines);
+      Vector<real_type> psi_c(num_splines);
+      accumulator_set<real_type> dv;
+
+      for(int i=0; i<nsamples; ++i)
+      {
+        value_type v_dense, v_mixed;
+        einspliner.evaluate(coord[i],psi);
+        einspliner2.evaluate(coord[i],psi_c);
+        for(int k=0; k<num_splines; ++k)
+          dv(diff(psi[k],psi_c[k]));
+      }
+
+      cout << "Average diff " << dv.mean() << endl;
       app_log() << "Timing spline=" << t_spline << " write = " << t_write << " read = " << t_read 
         << "  saving = " << t_spline/t_read<< endl;
     }
@@ -134,12 +150,12 @@ int main(int argc, char** argv)
 //        , (upper[2]-lower[2])*Random()+lower[2]
 //        );
 //
-  vector<TinyVector<double,3> > coord_s(coord.size());
+  vector<TinyVector<float,3> > coord_s(coord.size());
   for(int i=0; i<coord.size(); ++i) convert(coord[i],coord_s[i]);
 
   cout << "\nTesting einspline transformation" << endl;
 
-  SplineTest<multi_UBspline_3d_d> test_d(param);
-  test_d.test(coord);
+  SplineTest<multi_UBspline_3d_s> test_d(param);
+  test_d.test(coord_s);
   return 0;
 }

@@ -26,6 +26,8 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <simd/simd.hpp>
 #include <spline/einspline_engine.hpp>
+//#include <SandBox/einspline_util.h>
+//#include <einspline/multi_bspline_copy.h>
 namespace qmcplusplus
 {
   template<typename ENGT>
@@ -35,6 +37,7 @@ namespace qmcplusplus
       typedef typename einspline_engine<ENGT>::value_type value_type;
       typedef TinyVector<real_type,3> pos_type;
       einspline_engine<ENGT> einspliner;
+
       pos_type start;
       pos_type end;
       Vector<value_type> psi;
@@ -48,6 +51,15 @@ namespace qmcplusplus
         : start(0.0),end(1.0)
       {
         set(nx,ny,nz);
+      }
+
+      einspline3d_benchmark(einspline3d_benchmark<ENGT>& in)
+      {
+        cout << "Calling copy constructor " << endl;
+        this->einspliner.spliner=copy_multi_UBspline_3d_d(in.einspliner.spliner);
+        //this->einspliner.spliner=(ENGT*)(malloc(sizeof(ENGT)));
+        //this->einspliner.spliner=new ENGT;
+        //copy_einspline(in.einspliner.spliner, this->einspliner.spliner);
       }
 
       /** return the spline engine */

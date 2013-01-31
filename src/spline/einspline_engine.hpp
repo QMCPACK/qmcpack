@@ -37,9 +37,12 @@ namespace qmcplusplus
         ///number of splines
         int num_splines;
         ///spline engine
-        ENGT* spliner;
+        ENGT* spliner; 
 
-        einspline_engine():num_splines(0),spliner(0) { }
+        einspline_engine(ENGT* s=0):num_splines(0),spliner(s)
+      { 
+        if(spliner) num_splines=spliner->num_splines;
+      }
 
         void create(TinyVector<real_type,D>& start, TinyVector<real_type,D>& end
             , TinyVector<int,D>& ng, bc_code bc, int nstates)
