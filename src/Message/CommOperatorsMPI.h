@@ -544,6 +544,13 @@ Communicate::bcast(double* restrict x, int n)
 
 template<>
 inline void
+Communicate::bcast(float* restrict x, int n) 
+{
+  MPI_Bcast(x,n,MPI_FLOAT,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(int* restrict x, int n) 
 {
   MPI_Bcast(x,n,MPI_INT,0,myMPI);
