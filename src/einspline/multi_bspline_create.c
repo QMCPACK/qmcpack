@@ -309,7 +309,7 @@ create_multi_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   posix_memalign ((void**)&spline->coefs, 64, 
 		  ((size_t)sizeof(float)*Nx*Ny*Nz*N));
 #endif
-  spline->coefs_size=Nx*Ny*Nz*N;
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz*(size_t)N;
 #ifdef HAVE_SSE
   init_sse_data();
 #endif
@@ -717,7 +717,7 @@ create_multi_UBspline_3d_c (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   posix_memalign ((void**)&spline->coefs, 64, (size_t)2*sizeof(float)*Nx*Ny*Nz*N);
   posix_memalign ((void**)&spline->lapl3, 64, 6*sizeof(float)*N);  
 #endif
-  spline->coefs_size=Nx*Ny*Nz*N;
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz*(size_t)N;
 #ifdef HAVE_SSE
   init_sse_data();
 #endif
@@ -1179,7 +1179,7 @@ create_multi_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   spline->coefs      = malloc ((size_t)sizeof(double)*Nx*Ny*Nz*N);
 #endif
 
-  spline->coefs_size=Nx*Ny*Nz*N;
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz*(size_t)N;
 
 #ifdef HAVE_SSE2
   init_sse_data();
@@ -1556,7 +1556,7 @@ create_multi_UBspline_3d_z (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   posix_memalign ((void**)&spline->lapl3, 64, 6*sizeof(double)*N);
 #endif
 
-  spline->coefs_size=Nx*Ny*Nz*N;
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz*(size_t)N;
 
 #ifdef HAVE_SSE2
   init_sse_data();
