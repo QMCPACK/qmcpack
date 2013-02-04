@@ -22,6 +22,7 @@
 #include "Message/CommOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/StructFact.h"
+#include "Particle/HDFWalkerOutput.h"
 #include <map>
 
 #ifdef QMC_CUDA
@@ -427,6 +428,30 @@ void MCWalkerConfiguration::loadEnsemble()
 //
 //  clearEnsemble();
 //}
+
+bool 
+MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
+    , HDFWalkerOutput* out, int np)
+{
+
+  MCWalkerConfiguration wtemp(*this);
+  wtemp.loadEnsemble(others);
+  int w=wtemp.getActiveWalkers();
+
+  if(w==0) 
+  {
+    cout << "No samples are collected. Did not write anything " << endl;
+    return false;
+  }
+
+  vector<int> nwoff(np+1,0);
+  for(int ip=0; ip<np; ++ip) nwoff[ip+1]=nwoff[ip]+w;
+  wtemp.setGlobalNumWalkers(nwoff[np]);
+  wtemp.setWalkerOffsets(nwoff);
+
+  out->dump(wtemp);
+  return true;
+}
 
 void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others)
 {

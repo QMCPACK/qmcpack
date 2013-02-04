@@ -108,8 +108,11 @@ namespace qmcplusplus
     for (int ip=0; ip<NumThreads; ++ip)
       *(RandomNumberControl::Children[ip])=*(Rng[ip]);
 
+    ///write samples to a file
+    bool wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size());
+
     //finalize a qmc section
-    return finalize(nBlocks);
+    return finalize(nBlocks,!wrotesamples);
   }
 
   void VMCSingleOMP::resetRun()

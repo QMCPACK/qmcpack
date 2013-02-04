@@ -343,11 +343,12 @@ namespace qmcplusplus {
 
     /** finalize a qmc section
      * @param block current block
+     * @param dumpwalkers if true, dump walkers
      *
      * Accumulate energy and weight is written to a hdf5 file.
      * Finialize the estimators
      */
-    bool finalize(int block);
+    bool finalize(int block, bool dumpwalkers=true);
     
     ForwardWalkingHistoryObject ForwardWalkingHistory;
 

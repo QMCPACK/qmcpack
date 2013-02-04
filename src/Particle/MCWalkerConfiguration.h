@@ -27,6 +27,7 @@ namespace qmcplusplus {
   //Forward declaration
   class MultiChain;
   class MCSample;
+  class HDFWalkerOutput;
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
@@ -280,6 +281,13 @@ namespace qmcplusplus {
     /** load SampleStack from others 
       */
     void loadEnsemble(vector<MCWalkerConfiguration*>& others);
+    /** dump Samples to a file
+     * @param others MCWalkerConfigurations whose samples will be collected
+     * @param out engine to write the samples to state_0/walkers
+     * @param np number of processors
+     * @return true with non-zero samples
+     */
+    bool dumpEnsemble(vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np);
     ///clear the ensemble
     void clearEnsemble();
     //@}

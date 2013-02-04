@@ -204,12 +204,12 @@ namespace qmcplusplus {
     //OhmmsInfo::flush();
   }
 
-  bool QMCDriver::finalize(int block) {
+  bool QMCDriver::finalize(int block, bool dumpwalkers) {
 
     TimerManager.print(myComm);
     TimerManager.reset();
 
-    if(DumpConfig) wOut->dump(W);
+    if(DumpConfig && dumpwalkers) wOut->dump(W);
     branchEngine->finalize(W);
     RandomNumberControl::write(RootName,myComm);
 
