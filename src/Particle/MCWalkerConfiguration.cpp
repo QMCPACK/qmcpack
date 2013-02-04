@@ -438,11 +438,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
   wtemp.loadEnsemble(others);
   int w=wtemp.getActiveWalkers();
 
-  if(w==0) 
-  {
-    cout << "No samples are collected. Did not write anything " << endl;
-    return false;
-  }
+  if(w==0) return false;
 
   vector<int> nwoff(np+1,0);
   for(int ip=0; ip<np; ++ip) nwoff[ip+1]=nwoff[ip]+w;
