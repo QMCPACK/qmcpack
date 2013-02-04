@@ -671,6 +671,7 @@ namespace qmcplusplus {
     hasPsig = (MeshSize[0] == 0);
 #endif
 
+
     if(hasPsig)
     {
       int numk=0;
@@ -718,10 +719,41 @@ namespace qmcplusplus {
       MeshSize[1] = (int)std::ceil(4.0*MeshFactor*maxIndex[1]);
       MeshSize[2] = (int)std::ceil(4.0*MeshFactor*maxIndex[2]);
 
-      //make it even so that we can use 1/2 
-      MeshSize[0]=MeshSize[0]+(MeshSize[0]%2);
-      MeshSize[1]=MeshSize[1]+(MeshSize[1]%2);
-      MeshSize[2]=MeshSize[2]+(MeshSize[2]%2);
+      //only use 2^a 3^b 5^c where a>=2  up to 65536 
+      int nallowed=201;
+      int allowed[] = {
+        4,8,12,16,20,24,32,36,40,48,
+        60,64,72,80,96,100,108,120,128,144,
+        160,180,192,200,216,240,256,288,300,320,
+        324,360,384,400,432,480,500,512,540,576,
+        600,640,648,720,768,800,864,900,960,972,
+        1000,1024,1080,1152,1200,1280,1296,1440,1500,1536,
+        1600,1620,1728,1800,1920,1944,2000,2048,2160,2304,
+        2400,2500,2560,2592,2700,2880,2916,3000,3072,3200,
+        3240,3456,3600,3840,3888,4000,4096,4320,4500,4608,
+        4800,4860,5000,5120,5184,5400,5760,5832,6000,6144,
+        6400,6480,6912,7200,7500,7680,7776,8000,8100,8192,
+        8640,8748,9000,9216,9600,9720,10000,10240,10368,10800,
+        11520,11664,12000,12288,12500,12800,12960,13500,13824,14400,
+        14580,15000,15360,15552,16000,16200,16384,17280,17496,18000,
+        18432,19200,19440,20000,20480,20736,21600,22500,23040,23328,
+        24000,24300,24576,25000,25600,25920,26244,27000,27648,28800,
+        29160,30000,30720,31104,32000,32400,32768,34560,34992,36000,
+        36864,37500,38400,38880,40000,40500,40960,41472,43200,43740,
+        45000,46080,46656,48000,48600,49152,50000,51200,51840,52488,
+        54000,55296,57600,58320,60000,61440,62208,62500,64000,64800,
+        65536};
+
+      int *ix=lower_bound(allowed,allowed+nallowed,MeshSize[0]);
+      int *iy=lower_bound(allowed,allowed+nallowed,MeshSize[1]);
+      int *iz=lower_bound(allowed,allowed+nallowed,MeshSize[2]);
+      MeshSize[0]=*ix;
+      MeshSize[1]=*iy;
+      MeshSize[2]=*iz;
+      ////make it even so that we can use 1/2 
+      //MeshSize[0]=MeshSize[0]+(MeshSize[0]%2);
+      //MeshSize[1]=MeshSize[1]+(MeshSize[1]%2);
+      //MeshSize[2]=MeshSize[2]+(MeshSize[2]%2);
     }
     app_log() << "B-spline mesh factor is " << MeshFactor << endl;
     app_log() << "B-spline mesh size is (" << MeshSize[0] << ", " << MeshSize[1] << ", " << MeshSize[2] << ")\n";

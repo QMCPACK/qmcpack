@@ -1,22 +1,12 @@
 /////////////////////////////////////////////////////////////////
 // (c) Copyright 2003-  by Ken Esler and Jeongnim Kim           //
 //////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &          //
-//   Materials Computation Center                               //
-//   University of Illinois, Urbana-Champaign                   //
-//   Urbana, IL 61801                                           //
-//   e-mail: jnkim@ncsa.uiuc.edu                                //
-//                                                              //
-// Supported by                                                 //
-//   National Center for Supercomputing Applications, UIUC      //
-//   Materials Computation Center, UIUC                         //
-//////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_EINSPLINE_BUILDER_ESHDF_BIG_H
 #define QMCPLUSPLUS_EINSPLINE_BUILDER_ESHDF_BIG_H
 #include "Utilities/ProgressReportEngine.h"
-#include "Message/CommOperators.h"
 #include <QMCWaveFunctions/einspline_helper.hpp>
+#include <spline/einspline_util.hpp>
 #include <fftw3.h>
 
 namespace qmcplusplus {
@@ -109,8 +99,49 @@ namespace qmcplusplus {
       << "\n  UpperBound " << upper << endl;
     orbitalSet->add_box(dense,lower,upper);
 
+    int foundspline=0;
+
+    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+
     Timer now;
+    if(root)
     {
+      hdf_archive h5f;
+      foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
+      if(foundspline)
+      {
+        TinyVector<double,3> lower_in(end);
+        TinyVector<double,3> upper_in(start);
+        h5f.read(lower_in,"lower_bound");
+        h5f.read(upper_in,"upper_bound");
+
+        lower_in-=lower; upper_in-=upper;
+        if(dot(lower_in,lower_in)<1e-12 &&dot(upper_in,upper_in)<1e-12)
+        {
+          einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+          einspline_engine<typename SPE::SplineType> smalltable(orbitalSet->smallBox);
+          foundspline=h5f.read(bigtable,"spline_0");
+          foundspline=h5f.read(smalltable,"spline_1");
+        }
+        else
+        {
+          app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
+          foundspline=0;
+        }
+      }
+    }
+
+    myComm->bcast(foundspline);
+
+    if(foundspline)
+    {
+      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      chunked_bcast(myComm, orbitalSet->MultiSpline); 
+      chunked_bcast(myComm, orbitalSet->smallBox); 
+    }
+    else
+    {
+      app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << endl;
       Array<ComplexType,3> FFTbox;
       FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
       fftw_plan FFTplan = fftw_plan_dft_3d 
@@ -164,6 +195,20 @@ namespace qmcplusplus {
       free(coarse);
       free(dense);
       fftw_destroy_plan(FFTplan);
+
+      if(root)
+      {
+        hdf_archive h5f;
+        h5f.create(splinefile);
+        einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+        einspline_engine<typename SPE::SplineType> smalltable(orbitalSet->smallBox);
+        string aname("EinsplineOpenAdoptor");
+        h5f.write(aname,"bspline_type");
+        h5f.write(lower,"lower_bound");
+        h5f.write(upper,"upper_bound");
+        h5f.write(bigtable,"spline_0");
+        h5f.write(smalltable,"spline_1");
+      }
     }
 
     app_log() << "TIME READBANDS " << now.elapsed() << endl;

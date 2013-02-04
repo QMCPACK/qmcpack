@@ -17,6 +17,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Message/CommOperators.h"
 #include <QMCWaveFunctions/einspline_helper.hpp>
+#include <spline/einspline_util.hpp>
 #include <fftw3.h>
 
 namespace qmcplusplus {
@@ -111,92 +112,119 @@ namespace qmcplusplus {
 #else
       orbitalSet->allocate(xyz_grid,xyz_bc,NumValenceOrbs);
 #endif
-    
-    int isComplex=1;
-    if (root) 
+
+    //app_log() << "  TEST TWIST " << TargetPtcl.getTwist() << endl;
+    //string splinefile=make_spline_filename(H5FileName,TwistNum,MeshSize);
+    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+
+    int foundspline=0;
+    Timer now;
+    if(root)
     {
-      HDFAttribIO<int> h_isComplex(isComplex);
-      h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+      hdf_archive h5f;
+      foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
+      if(foundspline)
+      {
+        einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+        foundspline=h5f.read(bigtable,"spline_0");
+      }
     }
-    myComm->bcast(isComplex);
-    if (!isComplex) 
+    myComm->bcast(foundspline);
+    t_h5 = now.elapsed();
+
+    if(foundspline)
     {
-      APP_ABORT("Expected complex orbitals in ES-HDF file, but found real ones.");
+      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      chunked_bcast(myComm, orbitalSet->MultiSpline); 
+      t_init+=now.elapsed();
     }
+    else
+    {
+      int isComplex=1;
+      if (root) 
+      {
+        HDFAttribIO<int> h_isComplex(isComplex);
+        h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+      }
+      myComm->bcast(isComplex);
+      if (!isComplex) 
+      {
+        APP_ABORT("Expected complex orbitals in ES-HDF file, but found real ones.");
+      }
 
-    //EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
+      //EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
 
-    t_prep += c_prep.elapsed();
+      t_prep += c_prep.elapsed();
 
-    /** For valence orbitals,
-     * - extended orbitals either in G or in R
-     * - localized orbitals
-     */
+      /** For valence orbitals,
+       * - extended orbitals either in G or in R
+       * - localized orbitals
+       */
 
 #if defined(SPLINE_PACK_COMPLEX)
-    Array<spline_real_type,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
+      Array<spline_real_type,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
 #else
-    Array<spline_value_type,3> splineData(nx,ny,nz);
+      Array<spline_value_type,3> splineData(nx,ny,nz);
 #endif
 
-    if(havePsig)//perform FFT using FFTW
-    {
-      c_init.restart();
-      Array<complex<double>,3> FFTbox;
-      FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
-      fftw_plan FFTplan = fftw_plan_dft_3d 
-        (MeshSize[0], MeshSize[1], MeshSize[2],
-         reinterpret_cast<fftw_complex*>(FFTbox.data()),
-         reinterpret_cast<fftw_complex*>(FFTbox.data()),
-         +1, FFTW_ESTIMATE);
-
-      Vector<complex<double> > cG(MaxNumGvecs);
-
-      //this will be parallelized with OpenMP
-      for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
+      if(havePsig)//perform FFT using FFTW
       {
-        //Vector<complex<double> > cG;
-        int ncg=0;
-        int ti=twist_id[iorb];
-        c_h5.restart();
+        c_init.restart();
+        Array<complex<double>,3> FFTbox;
+        FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
+        fftw_plan FFTplan = fftw_plan_dft_3d 
+          (MeshSize[0], MeshSize[1], MeshSize[2],
+           reinterpret_cast<fftw_complex*>(FFTbox.data()),
+           reinterpret_cast<fftw_complex*>(FFTbox.data()),
+           +1, FFTW_ESTIMATE);
 
-        if(root)
+        Vector<complex<double> > cG(MaxNumGvecs);
+
+        //this will be parallelized with OpenMP
+        for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
         {
-          ostringstream path;
-          path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
-            << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-          HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
-          h_cG.read (H5FileID, path.str().c_str());
-          ncg=cG.size();
-        }
-        myComm->bcast(ncg);
+          //Vector<complex<double> > cG;
+          int ncg=0;
+          int ti=twist_id[iorb];
+          c_h5.restart();
 
-        if(ncg != Gvecs[ti].size())
-        {
-          APP_ABORT("Failed : ncg != Gvecs[ti].size()");
-        }
+          if(root)
+          {
+            ostringstream path;
+            path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
+              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
+            HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+            h_cG.read (H5FileID, path.str().c_str());
+            ncg=cG.size();
+          }
+          myComm->bcast(ncg);
 
-        if(!root) cG.resize(ncg);
-        myComm->bcast(cG);
+          if(ncg != Gvecs[ti].size())
+          {
+            APP_ABORT("Failed : ncg != Gvecs[ti].size()");
+          }
 
-        t_h5 += c_h5.elapsed();
+          if(!root) cG.resize(ncg);
+          myComm->bcast(cG);
 
-        c_unpack.restart();
-        unpack4fftw(cG,Gvecs[ti],MeshSize,FFTbox);
-        t_unpack+= c_unpack.elapsed();
+          t_h5 += c_h5.elapsed();
 
-        c_fft.restart();
-        fftw_execute (FFTplan);
-        t_fft+= c_fft.elapsed();
+          c_unpack.restart();
+          unpack4fftw(cG,Gvecs[ti],MeshSize,FFTbox);
+          t_unpack+= c_unpack.elapsed();
 
-        c_phase.restart();
+          c_fft.restart();
+          fftw_execute (FFTplan);
+          t_fft+= c_fft.elapsed();
+
+          c_phase.restart();
 #if defined(SPLINE_PACK_COMPLEX)
           fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,TwistAngles[ti]);
 #else
           fix_phase_rotate_c2c(FFTbox,splineData,TwistAngles[ti]);
 #endif
-        t_phase+= c_phase.elapsed();
-        c_spline.restart();
+          t_phase+= c_phase.elapsed();
+          c_spline.restart();
 
 #if defined(SPLINE_PACK_COMPLEX)
           einspline::set(orbitalSet->MultiSpline, 2*ival, splineData_r.data());
@@ -204,41 +232,52 @@ namespace qmcplusplus {
 #else
           einspline::set(orbitalSet->MultiSpline, ival, splineData.data());
 #endif
-        t_spline+= c_spline.elapsed();
-      }
+          t_spline+= c_spline.elapsed();
+        }
 
-      fftw_destroy_plan(FFTplan);
-      t_init+=c_init.elapsed();
-    }
-    else
-    {
-      Array<complex<double>,3> rawData(nx,ny,nz);
-      //this will be parallelized with OpenMP
-      for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
+        fftw_destroy_plan(FFTplan);
+        t_init+=c_init.elapsed();
+      }
+      else
       {
-        //check dimension
-        if(root)
+        Array<complex<double>,3> rawData(nx,ny,nz);
+        //this will be parallelized with OpenMP
+        for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
         {
-          ostringstream path;
-          path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
-            << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
-          HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
-          h_splineData.read(H5FileID, path.str().c_str());
+          //check dimension
+          if(root)
+          {
+            ostringstream path;
+            path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
+              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
+            HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+            h_splineData.read(H5FileID, path.str().c_str());
 #if defined(SPLINE_PACK_COMPLEX)
-          simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
+            simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
 #else
-          simd::copy(splineData.data(),rawData.data(),rawData.size());
+            simd::copy(splineData.data(),rawData.data(),rawData.size());
+#endif
+          }
+#if defined(SPLINE_PACK_COMPLEX)
+          myComm->bcast(splineData_r);
+          myComm->bcast(splineData_i);
+          einspline::set(orbitalSet->MultiSpline, 2*ival, splineData_r.data());
+          einspline::set(orbitalSet->MultiSpline, 2*ival+1, splineData_i.data());
+#else
+          myComm->bcast(splineData);
+          einspline::set(orbitalSet->MultiSpline, ival, splineData.data());
 #endif
         }
-#if defined(SPLINE_PACK_COMPLEX)
-        myComm->bcast(splineData_r);
-        myComm->bcast(splineData_i);
-        einspline::set(orbitalSet->MultiSpline, 2*ival, splineData_r.data());
-        einspline::set(orbitalSet->MultiSpline, 2*ival+1, splineData_i.data());
-#else
-        myComm->bcast(splineData);
-        einspline::set(orbitalSet->MultiSpline, ival, splineData.data());
-#endif
+      }
+
+      if(root)
+      {
+        hdf_archive h5f;
+        h5f.create(splinefile);
+        einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+        string aname("EinsplineC2XAdoptor");
+        h5f.write(aname,"bspline_type");
+        h5f.write(bigtable,"spline_0");
       }
     }
 
@@ -314,86 +353,34 @@ namespace qmcplusplus {
 
     orbitalSet->allocate(MeshSize,NumValenceOrbs);
 
-    //Ugrid xyz_grid[3];
-    //typename SPE::BCType xyz_bc[3];
-    //xyz_grid[0].start = 0.0;  xyz_grid[0].end = 1.0;  xyz_grid[0].num = nx;
-    //xyz_grid[1].start = 0.0;  xyz_grid[1].end = 1.0;  xyz_grid[1].num = ny;
-    //xyz_grid[2].start = 0.0;  xyz_grid[2].end = 1.0;  xyz_grid[2].num = nz;
-    //
-    //for(int i=0; i<3; ++i)
-    //  xyz_bc[i].lCode=xyz_bc[i].rCode=(orbitalSet->HalfG[i])? ANTIPERIODIC:PERIODIC;
-    //orbitalSet->allocate(xyz_grid,xyz_bc,NumValenceOrbs);
-
-    //if (HaveOrbDerivs) {
-    //  orbitalSet->FirstOrderSplines.resize(IonPos.size());
-    //  for (int ion=0; ion<IonPos.size(); ion++)
-    //    for (int dir=0; dir<OHMMS_DIM; dir++)
-    //      orbitalSet->FirstOrderSplines[ion][dir] = 
-    //        create_multi_UBspline_3d_d (x_grid, y_grid, z_grid, xBC, yBC, zBC, NumValenceOrbs);
-    //}
-           
-    int isComplex;
-    if (root) {
-      HDFAttribIO<int> h_isComplex(isComplex);
-      h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
-    }
-    myComm->bcast(isComplex);
-
-    bool isCore = bcastSortBands(N,root);
-    if(isCore)
+    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+    int foundspline=0;
+    Timer now;
+    if(root)
     {
-      APP_ABORT("Core states not supported by ES-HDF yet.");
+      hdf_archive h5f;
+      foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
+      if(foundspline)
+      {
+        einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+        foundspline=h5f.read(bigtable,"spline_0");
+      }
     }
 
-    //this is common
-    if(havePsir)
+    myComm->bcast(foundspline);
+    if(foundspline)
     {
-      if(isComplex)
-      {
-        app_log() << "   Reading complex psi_r and convert to real" << endl;
-        Array<spline_data_type,3> splineData(nx,ny,nz);
-        Array<complex<double>,3> rawData;
-        for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
-        {
-          int ti=twist_id[iorb]; //int ti=SortBands[iorb].TwistIndex;
-          if(root)
-          {
-            ostringstream path;
-            path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
-              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
-            HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
-            h_splineData.read(H5FileID, path.str().c_str());
-          }
-          myComm->bcast(rawData);
-          //multiply twist factor and project on the real
-          fix_phase_c2r(rawData,splineData,TwistAngles[ti]);
-          einspline::set(orbitalSet->MultiSpline, ival,splineData.data());
-          //set_multi_UBspline_3d_d (orbitalSet->MultiSpline, ival, splineData.data());
-        }
-      }
-      else
-      {
-        app_log() << "   Reading real psi_r" << endl;
-        Array<spline_data_type,3> splineData(nx,ny,nz);
-        Array<double,3> rawData(nx,ny,nz);
-        for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
-        {
-          if(root)
-          {
-            ostringstream path;
-            path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
-              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
-            HDFAttribIO<Array<double,3> >  h_splineData(rawData);
-            h_splineData.read(H5FileID, path.str().c_str());
-            simd::copy(splineData.data(),rawData.data(),rawData.size());
-          }
-          myComm->bcast(splineData);
-          einspline::set(orbitalSet->MultiSpline, ival,splineData.data());
-        }
-      }
+      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      chunked_bcast(myComm, orbitalSet->MultiSpline); 
     }
     else
     {
+      bool isCore = bcastSortBands(N,root);
+      if(isCore)
+      {
+        APP_ABORT("Core states not supported by ES-HDF yet.");
+      }
+
       Array<ComplexType,3> FFTbox;
       FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
       fftw_plan FFTplan = fftw_plan_dft_3d 
@@ -435,7 +422,19 @@ namespace qmcplusplus {
       }
 
       fftw_destroy_plan(FFTplan);
+
+      if(root)
+      {
+        hdf_archive h5f;
+        h5f.create(splinefile);
+        einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
+        string aname("EinsplineR2RAdoptor");
+        h5f.write(aname,"bspline_type");
+        h5f.write(bigtable,"spline_0");
+      }
     }
+
+    app_log() << "TIME READBANDS " << now.elapsed() << endl;
 
     //ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }

@@ -90,5 +90,21 @@ namespace qmcplusplus
     return aname;
   }
 
+  template<typename T>
+  string make_spline_filename(const string& old,int spin, const TinyVector<T,3>& twistangle, const TinyVector<int,3>& mesh)
+  {
+    string aname(old);
+    if(getExtension(aname) == "h5")
+    {
+      aname.erase(aname.end()-3,aname.end());
+    }
+
+    char a[128];
+    sprintf(a,".spin_%d.k%5.3f_%5.3f_%5.3f.g%dx%dx%d.h5",
+        spin,twistangle[0],twistangle[1],twistangle[2],mesh[0],mesh[1],mesh[2]);
+    aname+=a;
+    return aname;
+  }
+
 }
 #endif

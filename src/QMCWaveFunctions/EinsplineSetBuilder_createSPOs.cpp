@@ -21,6 +21,7 @@
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 //#if defined(USE_SPLINEADOPTOR)
+#define SPLINE_PACK_COMPLEX
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/EinsplineAdoptorPacked.h"
 #include "QMCWaveFunctions/EinsplineMixedAdoptor.h"
