@@ -101,7 +101,7 @@ namespace qmcplusplus {
 
     int foundspline=0;
 
-    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+    string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
 
     Timer now;
     if(root)

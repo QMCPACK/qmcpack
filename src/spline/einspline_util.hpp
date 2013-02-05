@@ -77,7 +77,7 @@ namespace qmcplusplus
     }
   };
 
-  string make_spline_filename(const string& old, int twist, const TinyVector<int,3>& mesh)
+  string make_spline_filename(const string& old, int spin, int twist, const TinyVector<int,3>& mesh)
   {
     string aname(old);
     if(getExtension(aname) == "h5")
@@ -85,7 +85,7 @@ namespace qmcplusplus
       aname.erase(aname.end()-3,aname.end());
     }
     ostringstream oo;
-    oo<<".tw" << twist <<".g"<<mesh[0]<<"x"<<mesh[1]<<"x"<<mesh[2]<<".h5";
+    oo<<".spin_"<< spin << ".tw" << twist <<".g"<<mesh[0]<<"x"<<mesh[1]<<"x"<<mesh[2]<<".h5";
     aname+=oo.str();
     return aname;
   }

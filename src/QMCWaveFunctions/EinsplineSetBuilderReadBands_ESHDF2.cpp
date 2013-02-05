@@ -115,7 +115,7 @@ namespace qmcplusplus {
 
     //app_log() << "  TEST TWIST " << TargetPtcl.getTwist() << endl;
     //string splinefile=make_spline_filename(H5FileName,TwistNum,MeshSize);
-    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+    string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
 
     int foundspline=0;
     Timer now;
@@ -353,7 +353,7 @@ namespace qmcplusplus {
 
     orbitalSet->allocate(MeshSize,NumValenceOrbs);
 
-    string splinefile=make_spline_filename(H5FileName,spin,TargetPtcl.getTwist(),MeshSize);
+    string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
     int foundspline=0;
     Timer now;
     if(root)

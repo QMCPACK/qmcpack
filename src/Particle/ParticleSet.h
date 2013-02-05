@@ -373,8 +373,8 @@ namespace qmcplusplus {
       return Properties[i];
     }
     
-    inline void setTwist(SingleParticlePos_t t){myTwist=t;}
-    inline SingleParticlePos_t getTwist(){return myTwist;}
+    inline void setTwist(SingleParticlePos_t& t){myTwist=t;}
+    inline SingleParticlePos_t getTwist() const {return myTwist;}
 
     /** Initialize particles around another ParticleSet
      * Used to initialize an electron ParticleSet by an ion ParticleSet 
