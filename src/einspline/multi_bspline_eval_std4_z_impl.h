@@ -18,9 +18,6 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-
-
-
 #ifndef MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
 #define MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
 
