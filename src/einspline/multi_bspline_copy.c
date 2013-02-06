@@ -24,7 +24,7 @@
 #include "multi_bspline_copy.h"
 #include "multi_bspline_eval_d.h"
 #include "bspline_create.h"
-
+#include "multi_bspline_eval_std2_d_impl.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
