@@ -435,7 +435,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
 {
 
   MCWalkerConfiguration wtemp(*this);
-  wtemp.loadEnsemble(others);
+  wtemp.loadEnsemble(others,false);
   int w=wtemp.getActiveWalkers();
 
   if(w==0) return false;
@@ -449,7 +449,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
   return true;
 }
 
-void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others)
+void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean)
 {
 
   vector<int> off(others.size()+1,0);
@@ -475,11 +475,11 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
         astack[j]->get(*awalker);
         WalkerList[iw]=awalker;
       }
-      others[i]->clearEnsemble();
+      if(doclean) others[i]->clearEnsemble();
     }
   }
 
-  resizeWalkerHistories();
+  if(doclean) resizeWalkerHistories();
 }
 
 void MCWalkerConfiguration::clearEnsemble()

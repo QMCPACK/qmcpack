@@ -280,7 +280,7 @@ namespace qmcplusplus {
     //void loadEnsemble(const Walker_t& wcopy);
     /** load SampleStack from others 
       */
-    void loadEnsemble(vector<MCWalkerConfiguration*>& others);
+    void loadEnsemble(vector<MCWalkerConfiguration*>& others, bool doclean=true);
     /** dump Samples to a file
      * @param others MCWalkerConfigurations whose samples will be collected
      * @param out engine to write the samples to state_0/walkers
