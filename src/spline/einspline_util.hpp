@@ -89,6 +89,22 @@ namespace qmcplusplus
     aname+=oo.str();
     return aname;
   }
+  string make_spline_filename(const string& old, const Tensor<int,3>& tilematrix,int spin, int twist, const TinyVector<int,3>& mesh)
+  {
+    string aname(old);
+    if(getExtension(aname) == "h5")
+    {
+      aname.erase(aname.end()-3,aname.end());
+    }
+    ostringstream oo;
+    oo<<".tile_" 
+      << tilematrix(0,0) <<tilematrix(0,1) <<tilematrix(0,2)
+      << tilematrix(1,0) <<tilematrix(1,1) <<tilematrix(1,2)
+      << tilematrix(2,0) <<tilematrix(2,1) <<tilematrix(2,2)
+      << ".spin_"<< spin << ".tw" << twist <<".g"<<mesh[0]<<"x"<<mesh[1]<<"x"<<mesh[2]<<".h5";
+    aname+=oo.str();
+    return aname;
+  }
 
   template<typename T>
   string make_spline_filename(const string& old,int spin, const TinyVector<T,3>& twistangle, const TinyVector<int,3>& mesh)
