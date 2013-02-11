@@ -20,7 +20,7 @@ namespace qmcplusplus {
   template<typename ST, typename TT, unsigned D>
     struct SplineC2CAdoptorPacked
     {
-      static bool is_complex=true;
+      static const bool is_complex=true;
 
       typedef ST                                                      real_type;
       typedef complex<ST>                                             value_type;
@@ -64,9 +64,16 @@ namespace qmcplusplus {
         myH.resize(2*n);
       }
 
-      inline bool isready()
+    template<typename GT, typename BCT>
+      void create_spline(GT& xyz_g, BCT& xyz_bc)
       {
-        return true;
+        MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+      }
+
+      void set_spline(int ival,  ST* restrict psi_r, ST* restrict psi_i)
+      {
+        einspline::set(MultiSpline, 2*ival, psi_r);
+        einspline::set(MultiSpline, 2*ival+1, psi_i);
       }
 
       template<typename VV>
@@ -138,7 +145,7 @@ namespace qmcplusplus {
   template<typename ST, typename TT, unsigned D>
     struct SplineC2RAdoptorPacked
     {
-      static bool is_complex=true;
+      static const bool is_complex=true;
 
       typedef ST                                                    real_type;
       typedef complex<ST>                                           value_type;
@@ -190,11 +197,19 @@ namespace qmcplusplus {
         CosV.resize(n);SinV.resize(n);
       }
 
-      inline bool isready()
+    template<typename GT, typename BCT>
+      void create_spline(GT& xyz_g, BCT& xyz_bc)
       {
         mKK.resize(kPoints.size());
         for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
-        return true;
+        MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+      }
+
+
+      void set_spline(int ival,  ST* restrict psi_r, ST* restrict psi_i)
+      {
+        einspline::set(MultiSpline, 2*ival, psi_r);
+        einspline::set(MultiSpline, 2*ival+1, psi_i);
       }
 
       template<typename VV>
@@ -562,16 +577,9 @@ namespace qmcplusplus {
 
       BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
       init(orbitalSet,bspline);
-      //bool root = myComm->rank()==0;
-      //// bcast other stuff
-      //myComm->bcast (NumDistinctOrbitals);
-      //myComm->bcast (NumValenceOrbs);
-      //myComm->bcast (NumCoreOrbs);
 
       int N = mybuilder->NumDistinctOrbitals;
       int NumValenceOrbs = mybuilder->NumValenceOrbs;
-
-      cout << "NumDistinctOrbitals = " << N << " " << NumValenceOrbs <<endl;
 
       bspline->resizeStorage(N,NumValenceOrbs);
       int numOrbs=bspline->getOrbitalSetSize();
@@ -585,7 +593,7 @@ namespace qmcplusplus {
         int ti = SortBands[iorb].TwistIndex;
         bspline->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(mybuilder->TwistAngles[ti]); //twist);
         bspline->MakeTwoCopies[iorb] = 
-          (num < (numOrbs-1)) && mybuilder->SortBands[iorb].MakeTwoCopies;
+          (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
         num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
       }
 
@@ -611,12 +619,15 @@ namespace qmcplusplus {
       xyz_bc[1].lCode=PERIODIC; xyz_bc[1].rCode=PERIODIC;
       xyz_bc[2].lCode=PERIODIC; xyz_bc[2].rCode=PERIODIC;
 
-      bspline->allocate(xyz_grid,xyz_bc,NumValenceOrbs*2);
+      bspline->create_spline(xyz_grid,xyz_bc);
 
       int TwistNum = mybuilder->TwistNum;
+
+      cout << "WHAT IS GOING ON " << myComm->rank() << " " << TwistNum << endl;
+
       //app_log() << "  TEST TWIST " << TargetPtcl.getTwist() << endl;
       //string splinefile=make_spline_filename(H5FileName,TwistNum,MeshSize);
-      string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
+      string splinefile=make_spline_filename(H5FileName,mybuilder->TileMatrix,spin,TwistNum,MeshSize);
 
       bool root=(myComm->rank() == 0);
 
@@ -666,8 +677,8 @@ namespace qmcplusplus {
           //this will be parallelized with OpenMP
           for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
           {
-            int ti=mybuilder->SortBands[iorb].TwistIndex;
-            get_psi_g(ti,spin,mybuilder->SortBands[iorb].BandIndex,cG);
+            int ti=SortBands[iorb].TwistIndex;
+            get_psi_g(ti,spin,SortBands[iorb].BandIndex,cG);
 
             c_unpack.restart();
             unpack4fftw(cG,mybuilder->Gvecs[ti],MeshSize,FFTbox);
@@ -680,11 +691,9 @@ namespace qmcplusplus {
             c_phase.restart();
             fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti]);
             t_phase+= c_phase.elapsed();
+
             c_spline.restart();
-
-            einspline::set(bspline->MultiSpline, 2*ival, splineData_r.data());
-            einspline::set(bspline->MultiSpline, 2*ival+1, splineData_i.data());
-
+            bspline->set_spline(ival,splineData_r.data(),splineData_i.data());
             t_spline+= c_spline.elapsed();
           }
 
@@ -700,17 +709,14 @@ namespace qmcplusplus {
             //check dimension
             if(root)
             {
-              ostringstream path;
-              path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
-                << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
+              string path=psi_r_path(SortBands[iorb].TwistIndex,spin,SortBands[iorb].BandIndex);
               HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
-              h_splineData.read(mybuilder->H5FileID, path.str().c_str());
+              h_splineData.read(mybuilder->H5FileID, path.c_str());
               simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
             }
             myComm->bcast(splineData_r);
             myComm->bcast(splineData_i);
-            einspline::set(bspline->MultiSpline, 2*ival, splineData_r.data());
-            einspline::set(bspline->MultiSpline, 2*ival+1, splineData_i.data());
+            bspline->set_spline(ival,splineData_r.data(),splineData_i.data());
           }
         }
 
@@ -734,7 +740,6 @@ namespace qmcplusplus {
       app_log() << "    READBANDS::SUM    = " << t_init << endl;
 
       return bspline;
-      //ExtendedMap_z[set] = orbitalSet->MultiSpline;
     }
   };
 
