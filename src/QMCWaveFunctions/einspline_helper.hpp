@@ -403,11 +403,20 @@ namespace qmcplusplus
 
   inline bool EinsplineSetBuilder::bcastSortBands(int n, bool root)
   {
-    PooledData<RealType> misc(n*3+1);
+    myComm->bcast(n);
+
+    ///SortBands+NumValenceOrbs+NumCoreOrbs
+    PooledData<RealType> misc(n*5+2);
     bool isCore=false;
+
+    NumDistinctOrbitals=n;
+
     if(root)
     {
       misc.rewind();
+      misc.put(NumValenceOrbs);
+      misc.put(NumCoreOrbs);
+
       for(int i=0; i<n; ++i)
       {
         int ti   = SortBands[i].TwistIndex;
@@ -420,23 +429,39 @@ namespace qmcplusplus
         misc.put(ti);
 	misc.put(bi);
 	misc.put(e);
+        misc.put(SortBands[i].MakeTwoCopies);
+        misc.put(SortBands[i].IsCoreState);
+
         isCore |= SortBands[i].IsCoreState;
       }
-      misc.put(isCore);
     }
     myComm->bcast(misc);
+
     if(!root)
     {
       SortBands.resize(n);
       misc.rewind();
+      misc.get(NumValenceOrbs);
+      misc.get(NumCoreOrbs);
       for(int i=0; i<n; ++i)
       {
         misc.get(SortBands[i].TwistIndex);
 	misc.get(SortBands[i].BandIndex);
 	misc.get(SortBands[i].Energy);
+        misc.get(SortBands[i].MakeTwoCopies);
+        misc.get(SortBands[i].IsCoreState);
+
+        isCore |= SortBands[i].IsCoreState;
       }
-      misc.get(isCore);
     }
+
+    //char fname[64];
+    //sprintf(fname,"debug.%d",myComm->rank());
+    //ofstream fout(fname);
+    //fout.setf(std::ios::scientific, std::ios::floatfield);
+    //fout.precision(12);
+    //for(int i=0; i<misc.size();++i)
+    //  fout << misc[i] << endl;
 
     return isCore;
   }

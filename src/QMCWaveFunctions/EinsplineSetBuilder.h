@@ -123,6 +123,7 @@ namespace qmcplusplus {
   class EinsplineSetBuilder : public BasisSetBuilder 
   {
   public:
+
     typedef map<string,ParticleSet*> PtclPoolType;
     PtclPoolType &ParticleSets;
     ParticleSet &TargetPtcl;
@@ -138,7 +139,7 @@ namespace qmcplusplus {
      */
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
-  protected:
+  //protected:
     // Type definitions
     //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     typedef ParticleSet::ParticleLayout_t UnitCellType;
@@ -180,6 +181,7 @@ namespace qmcplusplus {
     string parameterGroup, ionsGroup, eigenstatesGroup;
     vector<int> Occ;
     bool HaveLocalizedOrbs;
+    bool HasCoreOrbs;
     bool ReadOrbitalInfo ();
     bool ReadOrbitalInfo_ESHDF ();
     void BroadcastOrbitalInfo();
