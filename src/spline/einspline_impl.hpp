@@ -22,6 +22,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
 #error "einspline_impl.hpp is used only by einspline_engine.hpp"
 #endif
+#include "einspline/multi_bspline_copy.h"
 
 namespace qmcplusplus
 {
@@ -356,6 +357,53 @@ namespace qmcplusplus
       zBC.lCode=zBC.rCode=bc;
       return create_multi_UBspline_3d_z(x_grid,y_grid,z_grid, xBC, yBC, zBC, num_splines);
     }
+
+    /** interfaces to use UBspline_3d_X 
+     *
+     * - create
+     * - set
+     * - evaluate
+     */
+    template<typename VT, typename IT>
+    UBspline_3d_d*  create(UBspline_3d_d* s
+        , VT& start , VT& end, IT& ng , bc_code bc, int n=1)
+    { 
+      Ugrid x_grid, y_grid, z_grid;
+      BCtype_d xBC,yBC,zBC;
+      x_grid.start=start[0]; x_grid.end=end[0]; x_grid.num=ng[0];
+      y_grid.start=start[1]; y_grid.end=end[1]; y_grid.num=ng[1];
+      z_grid.start=start[2]; z_grid.end=end[2]; z_grid.num=ng[2];
+      xBC.lCode=xBC.rCode=bc;
+      yBC.lCode=yBC.rCode=bc;
+      zBC.lCode=zBC.rCode=bc;
+      return create_UBspline_3d_d(x_grid,y_grid,z_grid, xBC, yBC, zBC,NULL);
+    }
+
+    inline void  set(UBspline_3d_d* s, double* restrict data)
+    { 
+      recompute_UBspline_3d_d(s,data);
+    }
+
+    inline void  set(multi_UBspline_3d_d* spline, int i, UBspline_3d_d* spline_in
+        , const int* offset, const int *N)
+    { 
+      copy_UBspline_3d_d(spline, i, spline_in,offset,N);
+    }
+
+    inline void  set(multi_UBspline_3d_s* spline, int i, UBspline_3d_d* spline_in
+        , const int* offset, const int *N)
+    { 
+      copy_UBspline_3d_d_s(spline, i, spline_in,offset,N);
+    }
+
+    template<typename PT>
+    inline double  evaluate(UBspline_3d_d *restrict spline, const PT& r)
+    {
+      double res;
+      eval_UBspline_3d_d(spline,r[0],r[1],r[2],&res);
+      return res;
+    }
+
   }
 }
 #endif

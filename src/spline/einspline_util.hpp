@@ -11,6 +11,7 @@
 #include <Message/CommOperators.h>
 #include <OhmmsData/FileUtility.h>
 #include <io/hdf_archive.h>
+#include <einspline/multi_bspline_copy.h>
 
 namespace qmcplusplus
 {
@@ -77,7 +78,7 @@ namespace qmcplusplus
     }
   };
 
-  string make_spline_filename(const string& old, int spin, int twist, const TinyVector<int,3>& mesh)
+  inline string make_spline_filename(const string& old, int spin, int twist, const TinyVector<int,3>& mesh)
   {
     string aname(old);
     if(getExtension(aname) == "h5")
@@ -89,7 +90,8 @@ namespace qmcplusplus
     aname+=oo.str();
     return aname;
   }
-  string make_spline_filename(const string& old, const Tensor<int,3>& tilematrix,int spin, int twist, const TinyVector<int,3>& mesh)
+
+  inline string make_spline_filename(const string& old, const Tensor<int,3>& tilematrix,int spin, int twist, const TinyVector<int,3>& mesh)
   {
     string aname(old);
     if(getExtension(aname) == "h5")
@@ -121,6 +123,77 @@ namespace qmcplusplus
     aname+=a;
     return aname;
   }
+
+  template<typename GT>
+    void print_grid(GT& grid)
+    {
+      std::cout << grid.start << " " << grid.end << " " 
+        << grid.num << " " 
+        << grid.delta <<  " " << grid.delta_inv << std::endl; 
+    }
+
+  template<typename ENGT>
+    void print_spliner(ENGT* spline)
+    {
+      cout << "xgrid       "; print_grid(spline->x_grid);
+      cout << "ygrid       "; print_grid(spline->y_grid);
+      cout << "zgrid       "; print_grid(spline->z_grid);
+    }
+
+
+  /** engine to create a einspline based on the input einspline
+   */
+  template <typename T>
+  struct GridConvert
+  {
+    ///number of points in each direction including BC
+    int N[3];
+    ///offset
+    int Offset[3];
+    ///number of points of the original grid
+    int BaseN[3];
+    ///offset of the original grid, always 0
+    int BaseOffset[3];
+    ///spacing to be added or removed from the buffer
+    TinyVector<T,3> Delta;
+
+    template<typename ENGT1, typename ENGT2, typename PT>
+      void create(ENGT1*& out, ENGT2* in, PT& lower, PT& upper, int num)
+      {
+
+        typedef typename bspline_engine_traits<ENGT1>::real_type real_type;
+
+        Ugrid agrid[3];
+        agrid[0]=in->x_grid;
+        agrid[1]=in->y_grid;
+        agrid[2]=in->z_grid;
+
+        typename bspline_engine_traits<ENGT1>::BCType xyz_bc[3];
+        xyz_bc[0].lCode=in->xBC.lCode;xyz_bc[0].rCode=in->xBC.rCode;
+        xyz_bc[1].lCode=in->yBC.lCode;xyz_bc[1].rCode=in->yBC.rCode;
+        xyz_bc[2].lCode=in->zBC.lCode;xyz_bc[2].rCode=in->zBC.rCode;
+        
+        for(int i=0; i<3; ++i)
+        {
+          int ngi=(int)(lower[i]*agrid[i].delta_inv);
+          int ngf=(int)(upper[i]*agrid[i].delta_inv)+1;
+          agrid[i].num  =std::min(agrid[i].num,ngf-ngi);
+          ngf=agrid[i].num+ngi;
+          agrid[i].start=static_cast<real_type>(ngi)*agrid[i].delta;
+          agrid[i].end  =static_cast<real_type>(ngf)*agrid[i].delta;
+
+          if (xyz_bc[i].lCode == PERIODIC || xyz_bc[i].lCode == ANTIPERIODIC)
+            N[i] = agrid[i].num+3;
+          else
+            N[i] = agrid[i].num+2;
+
+          Delta[i]=agrid[i].delta;
+          Offset[i]=ngi;
+        }
+        out=einspline::create(out,agrid,xyz_bc,num);
+      }
+  };
+
 
 }
 #endif
