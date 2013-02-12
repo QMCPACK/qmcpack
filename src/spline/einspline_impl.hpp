@@ -379,6 +379,21 @@ namespace qmcplusplus
       return create_UBspline_3d_d(x_grid,y_grid,z_grid, xBC, yBC, zBC,NULL);
     }
 
+    template<typename VT, typename IT>
+    UBspline_3d_d*  create(UBspline_3d_d* s
+        , VT& start , VT& end, IT& ng , IT& halfg, int n=1)
+    { 
+      Ugrid x_grid, y_grid, z_grid;
+      BCtype_d xBC,yBC,zBC;
+      x_grid.start=start[0]; x_grid.end=end[0]; x_grid.num=ng[0];
+      y_grid.start=start[1]; y_grid.end=end[1]; y_grid.num=ng[1];
+      z_grid.start=start[2]; z_grid.end=end[2]; z_grid.num=ng[2];
+      xBC.lCode=xBC.rCode=(halfg[0])?ANTIPERIODIC:PERIODIC;
+      yBC.lCode=yBC.rCode=(halfg[1])?ANTIPERIODIC:PERIODIC;
+      zBC.lCode=zBC.rCode=(halfg[2])?ANTIPERIODIC:PERIODIC;;
+      return create_UBspline_3d_d(x_grid,y_grid,z_grid, xBC, yBC, zBC,NULL);
+    }
+
     inline void  set(UBspline_3d_d* s, double* restrict data)
     { 
       recompute_UBspline_3d_d(s,data);
