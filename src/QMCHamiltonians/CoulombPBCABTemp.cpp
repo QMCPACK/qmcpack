@@ -121,7 +121,7 @@ namespace qmcplusplus {
     const StructFact& RhoKA(*(PtclA.SK));
     const StructFact& RhoKB(*(P.SK));
 
-    if(P.Lattice.SuperCellEnum==SUPERCELL_SLAB)
+    if(RhoKA.SuperCellEnum==SUPERCELL_SLAB)
     {
       const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
       for(int iat=0; iat<NptclA; ++iat)

@@ -279,7 +279,7 @@ namespace qmcplusplus {
       const int slab_dir=OHMMS_DIM-1;
       RealType res=0.0;
       const StructFact& PtclRhoK(*(P.SK));
-      if(P.Lattice.SuperCellEnum==SUPERCELL_SLAB)
+      if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
       {
         const DistanceTableData &d_aa(*P.DistTables[0]);
         //distance table handles jat>iat
