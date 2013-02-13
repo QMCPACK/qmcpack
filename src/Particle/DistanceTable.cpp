@@ -72,8 +72,16 @@ namespace qmcplusplus
       }
       else
       {
-        o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNG> " << PPNG <<endl;
-        dt = new SymmetricDTD<RealType,DIM,PPNG>(s,s);
+        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+        {
+          o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNX> " << PPNX <<endl;
+          dt = new SymmetricDTD<RealType,DIM,PPNX>(s,s);
+        }
+        else
+        {
+          o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNS> " << PPNS <<endl;
+          dt = new SymmetricDTD<RealType,DIM,PPNS>(s,s);
+        }
       }
     }
     else if(sc == SUPERCELL_WIRE)
@@ -154,8 +162,8 @@ namespace qmcplusplus
         o << "    PBC=slab Orthorhombic=no ";
         if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
         {
-          o << " Using AsymmetricDTD<T,DIM,PPNG> " << PPNG <<endl;
-          dt = new AsymmetricDTD<RealType,DIM,PPNG>(s,t);
+          o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX <<endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
         }
         else
         {
