@@ -123,8 +123,8 @@ KContainer::FindApproxMMax() {
 
   //overwrite the non-periodic directon to be zero
 #if OHMMS_DIM==3
-  if(Lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
-  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
+//  if(Lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
+//  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
 #elif OHMMS_DIM==2
   if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=0;
 #endif

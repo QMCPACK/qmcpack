@@ -29,6 +29,12 @@ namespace qmcplusplus {
      * unless Hamiltonian uses pbyp.
      */
     bool DoUpdate;
+    /** enumeration for the methods  
+     *
+     * Allow overwriting Lattice::SuperCellEnum to use D-dim k-point sets
+     * with mixed BC
+     */
+    int SuperCellEnum;
     ///reference particle set
     ParticleSet& PtclRef;
     /// K-Vector List.

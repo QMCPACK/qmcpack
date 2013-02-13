@@ -9,7 +9,8 @@ namespace qmcplusplus
 
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& ref, RealType kc): 
-  DoUpdate(false),PtclRef(ref), KLists(ref.Lattice) 
+  DoUpdate(false),SuperCellEnum(SUPERCELL_BULK)
+  ,PtclRef(ref), KLists(ref.Lattice) 
 {
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);

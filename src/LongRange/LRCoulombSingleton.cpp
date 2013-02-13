@@ -127,16 +127,16 @@ namespace qmcplusplus {
       if(CoulombHandler ==0) 
       {
 #if OHMMS_DIM==3  
-        if(ref.Lattice.SuperCellEnum == SUPERCELL_BULK)
+//        if(ref.Lattice.SuperCellEnum == SUPERCELL_BULK)
         {
           app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
           CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
         }
-        else if(ref.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-        {
-          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
-          CoulombHandler= new EwaldHandler(ref);
-        }
+//        else if(ref.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+//        {
+//          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+//          CoulombHandler= new EwaldHandler(ref);
+//        }
 #elif OHMMS_DIM==2
           app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << endl;
           CoulombHandler= new TwoDEwaldHandler(ref);
