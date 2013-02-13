@@ -193,8 +193,12 @@ namespace qmcplusplus {
   bool ParticleSetPool::get(std::ostream& os) const 
   {
     os << "ParticleSetPool has: " << endl;
+    os.setf(std::ios::scientific, std::ios::floatfield);
+    os.precision(14);
     PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-    while(it != it_end) {
+
+    while(it != it_end) 
+    {
       os << endl;
       (*it).second->get(os);
       ++it;

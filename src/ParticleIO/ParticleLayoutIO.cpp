@@ -73,10 +73,10 @@ namespace qmcplusplus {
               boxsum++;
             }
           }
-          if(boxsum>0 && boxsum<DIM)
-          {
-            APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
-          }
+          //if(boxsum>0 && boxsum<DIM)
+          //{
+          //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
+          //}
 	} else if(aname == "LR_dim_cutoff") {
 	  putContent(ref_.LR_dim_cutoff,cur);
 	} else if(aname == "rs") {
