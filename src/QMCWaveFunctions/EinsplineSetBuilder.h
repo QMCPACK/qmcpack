@@ -216,6 +216,7 @@ namespace qmcplusplus {
     int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
     int MaxNumGvecs;
     RealType MeshFactor;
+    RealType BufferLayer;
     TinyVector<int,3> MeshSize;
     vector<vector<TinyVector<int,3> > > Gvecs;
 

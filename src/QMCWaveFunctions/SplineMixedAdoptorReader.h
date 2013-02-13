@@ -19,8 +19,7 @@ namespace qmcplusplus {
       SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet)
       {
         ReportEngine PRE("SplineOpenAdoptorReader","create_spline_set(int, EinsplineSet*)");
-
-        typedef typename adoptor_type::value_type spline_data_ype;
+        //typedef typename adoptor_type::real_type spline_data_type;
 
         BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
         init(orbitalSet,bspline);
@@ -28,18 +27,28 @@ namespace qmcplusplus {
 
         bspline->resizeStorage(N,N);
 
+        TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
+
+        bspline->HalfG=0;
+        if(!bspline->is_complex)
+        {//no k-point folding, single special k point (G, L ...)
+          int ti=mybuilder->SortBands[0].TwistIndex;
+          TinyVector<double,3> twist0 = mybuilder->TwistAngles[mybuilder->SortBands[0].TwistIndex];
+          for (int i=0; i<3; i++)
+            if (bconds[i] && std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+              bspline->HalfG[i] = 1;
+            else
+              bspline->HalfG[i] = 0;
+          app_log() << "  TwistIndex = " << mybuilder->SortBands[0].TwistIndex << " TwistAngle " << twist0 << endl;
+          app_log() <<"   HalfG = " << bspline->HalfG << endl;
+        }
+
         string H5FileName(mybuilder->H5FileName);
         H5OrbSet set(H5FileName, spin, N);
     
         bool havePsir=!(mybuilder->ReadGvectors_ESHDF());
 
-        bool fullgrid=false;
-
-        TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
-
         bool use_cartesian= (mybuilder->TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN);
-
-        cout << "Box Condition = " << bconds << endl;
 
         TinyVector<int,3> MeshSize=mybuilder->MeshSize;
         TinyVector<int,3> coarse_mesh;
@@ -59,12 +68,12 @@ namespace qmcplusplus {
 
         //create dense and coarse UBspline_3d_d 
         UBspline_3d_d* dense=0;
-        dense=einspline::create(dense,start,end,MeshSize,PERIODIC);
+        dense=einspline::create(dense,start,end,MeshSize,bspline->HalfG);//PERIODIC);
         UBspline_3d_d* coarse=0;
-        coarse=einspline::create(coarse,start,end,coarse_mesh,PERIODIC);
+        coarse=einspline::create(coarse,start,end,coarse_mesh,bspline->HalfG);//PERIODIC);
 
         //determine the bonding box
-        double buffer=2.0; //this has to be option
+        double buffer=mybuilder->BufferLayer; //this has to be option
         TinyVector<double,3> lower=end;
         TinyVector<double,3> upper=start;
         const Vector<TinyVector<double,3> >& IonPos(mybuilder->IonPos);;
@@ -114,15 +123,18 @@ namespace qmcplusplus {
           }
         }
 
-        bspline->create_spline(MeshSize,N,fullgrid);
+        //bspline->create_spline(MeshSize,N,fullgrid);
+        bspline->create_spline(MeshSize,coarse_mesh,N);
 
-        app_log() << "Original Mesh " << MeshSize << endl;
-        app_log() << "Coarse Mesh " << coarse_mesh << endl;
+        app_log() << "  Original Mesh " << MeshSize << endl;
+        app_log() << "  Coarse Mesh " << coarse_mesh << endl;
 
         if(use_cartesian)
           app_log() << "  Using Cartesian grids for open systems. " << endl;
         else
           app_log() << "  Using Primitive-cell grids for open systems. " << endl;
+
+        app_log() << "  Using buffer layer for the small box= " << buffer << " bohr " << endl;
         app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << endl;
 
         app_log().flush();
@@ -131,7 +143,7 @@ namespace qmcplusplus {
 
         int foundspline=0;
 
-        string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
+        string splinefile=make_spline_filename(H5FileName,spin,mybuilder->TwistNum,MeshSize);
 
         Timer now;
 
@@ -187,30 +199,59 @@ namespace qmcplusplus {
              reinterpret_cast<fftw_complex*>(FFTbox.data()),
              +1, FFTW_ESTIMATE);
 
-          Array<double,3> bigD(MeshSize[0],MeshSize[1],MeshSize[2]);
-          Array<double,3> smallD(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
+          Array<double,3> bigD_r(MeshSize[0],MeshSize[1],MeshSize[2]);
+          Array<double,3> smallD_r(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
+          Array<double,3> bigD_i, smallD_i;
+          if(bspline->is_complex)
+          {
+            bigD_i.resize(MeshSize[0],MeshSize[1],MeshSize[2]);
+            smallD_i.resize(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
+          }
 
-          TinyVector<double,3> TwistAngle(0.0,0.0,0.0);
-          int ti=0;
-          int ncg=mybuilder->Gvecs[ti].size();
+          //TinyVector<double,3> TwistAngle(0.0,0.0,0.0);
+          int ncg=mybuilder->Gvecs[0].size();
           Vector<complex<double> > cG(ncg);
 
+          const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
           for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
           {
+            int ti=SortBands[iorb].TwistIndex;
             get_psi_g(ti,spin,mybuilder->SortBands[iorb].BandIndex,cG);
             unpack4fftw(cG,mybuilder->Gvecs[ti],MeshSize,FFTbox);
             fftw_execute (FFTplan);
-            fix_phase_rotate_c2r(FFTbox,bigD,TwistAngle);
+
+            //fix_phase_rotate_c2r(FFTbox,bigD,TwistAngle);
+            if(bspline->is_complex)
+              fix_phase_rotate_c2c(FFTbox,bigD_r, bigD_i,mybuilder->TwistAngles[ti]);
+            else
+              fix_phase_rotate_c2r(FFTbox,bigD_r,mybuilder->TwistAngles[ti]);
 
             for(int i=0,i2=0; i<coarse_mesh[0]; ++i,i2+=coarse_stride[0])
               for(int j=0,j2=0; j<coarse_mesh[1]; ++j,j2+=coarse_stride[1])
                 for(int k=0,k2=0; k<coarse_mesh[2]; ++k,k2+=coarse_stride[2])
-                  smallD(i,j,k)=bigD(i2,j2,k2);
+                  smallD_r(i,j,k)=bigD_r(i2,j2,k2);
 
-            einspline::set(dense,bigD.data());
-            einspline::set(coarse,smallD.data());
+            if(bspline->is_complex)
+            {
+              einspline::set(dense,bigD_r.data());
+              einspline::set(coarse,smallD_r.data());
+              bspline->set_spline(dense,coarse,2*ival);
 
-            bspline->init_spline(dense,coarse,ival);
+              for(int i=0,i2=0; i<coarse_mesh[0]; ++i,i2+=coarse_stride[0])
+                for(int j=0,j2=0; j<coarse_mesh[1]; ++j,j2+=coarse_stride[1])
+                  for(int k=0,k2=0; k<coarse_mesh[2]; ++k,k2+=coarse_stride[2])
+                    smallD_i(i,j,k)=bigD_i(i2,j2,k2);
+
+              einspline::set(dense,bigD_i.data());
+              einspline::set(coarse,smallD_i.data());
+              bspline->set_spline(dense,coarse,2*ival+1);
+            }
+            else
+            {
+              einspline::set(dense,bigD_r.data());
+              einspline::set(coarse,smallD_r.data());
+              bspline->set_spline(dense,coarse,ival);
+            }
           }
 
           free(coarse);
@@ -223,8 +264,7 @@ namespace qmcplusplus {
             h5f.create(splinefile);
             einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
             einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
-            string aname("EinsplineOpenAdoptor");
-            h5f.write(aname,"adoptor_name");
+            h5f.write(bspline->AdoptorName,"adoptor_name");
             h5f.write(lower,"lower_bound");
             h5f.write(upper,"upper_bound");
             h5f.write(bigtable,"spline_0");

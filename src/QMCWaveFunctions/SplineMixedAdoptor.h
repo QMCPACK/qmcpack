@@ -20,8 +20,9 @@ namespace qmcplusplus {
    * @tparam D dimension
    */
   template<typename ST, typename TT, unsigned D>
-    struct SplineMixedAdoptor
+    struct SplineMixedAdoptor: public SplineAdoptorBase<ST,D>
     {
+      static const bool is_complex=false;
       typedef ST value_type;
       typedef typename einspline_traits<ST,D>::SplineType SplineType;
       typedef typename einspline_traits<ST,D>::BCType     BCType;
@@ -33,16 +34,15 @@ namespace qmcplusplus {
       typedef typename OrbitalSetTraits<ST>::HessVector_t       StorageHessVector_t;
       typedef typename OrbitalSetTraits<ST>::GradHessVector_t   StorageGradHessVector_t;
 
+      using SplineAdoptorBase<ST,D>::HalfG;
+      using SplineAdoptorBase<ST,D>::GGt;
+      using SplineAdoptorBase<ST,D>::PrimLattice;
       SplineType *MultiSpline;
       SplineType *smallBox;
 
       TinyVector<ST,D> Lower;
       TinyVector<ST,D> Upper;
-      Tensor<ST,D> GGt;
-      UnitCellType PrimLattice;
       GridConvert<ST> gTransform;
-      //these are not needed for R2R adoptor and will be removed
-      UnitCellType SuperLattice;
 
       ///used for testing only, to be removed
       bool UseFullGrid;
@@ -58,8 +58,8 @@ namespace qmcplusplus {
 
       SplineMixedAdoptor(): MultiSpline(0), smallBox(0)
       {
-        AdoptorName="SplineMixedAdoptor";
-        AdoptorName="Mixed";
+        AdoptorName="SplineR2RMixedAdoptor";
+        AdoptorName="R2RMixed";
       }
 
       void resizeStorage(int n, int nv)
@@ -71,16 +71,18 @@ namespace qmcplusplus {
         myGH.resize(n);
       }
 
-      void create_spline(TinyVector<int,D>& mesh, int n, bool samegrid)
+      void create_spline(TinyVector<int,D>& mesh_0, TinyVector<int,D>& mesh_1, int n)
       {
-        UseFullGrid=samegrid;
+        UseFullGrid=(mesh_0[0]==mesh_1[0]);
+        for(int i=1; i<D; ++i) UseFullGrid &= (mesh_0[i]==mesh_1[i]);
+
         GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
         Ugrid xyz_grid[D];
         BCType xyz_bc[D];
         for(int i=0; i<D; ++i)
         {
           xyz_grid[i].start = 0.0;  xyz_grid[i].end = 1.0;  
-          xyz_grid[i].num = (samegrid)?mesh[i]:mesh[i]/2;
+          xyz_grid[i].num = mesh_1[i]; //(samegrid)?mesh[i]:mesh[i]/2;
           xyz_bc[i].lCode=xyz_bc[i].rCode=PERIODIC;
           gTransform.BaseOffset[i]=0;
           gTransform.BaseN[i]=xyz_grid[i].num+3;
@@ -94,12 +96,10 @@ namespace qmcplusplus {
       {
         if(smallBox==0)
           gTransform.create(smallBox,dense,lower,upper,MultiSpline->num_splines);
-        Lower=lower+2.0*gTransform.Delta;
-        Upper=upper-2.0*gTransform.Delta;
       }
 
       template <typename UBspline>
-        void init_spline(UBspline* dense, UBspline* coarse, int ival)
+        void set_spline(UBspline* dense, UBspline* coarse, int ival)
         {
           if(UseFullGrid)
             einspline::set(MultiSpline,ival,dense, gTransform.BaseOffset,  gTransform.BaseN);
@@ -118,8 +118,12 @@ namespace qmcplusplus {
       inline void convertPos(const PointType& r, PointType& ru, int& sign)
       {
         ru=PrimLattice.toUnit(r);
-        for (int i=0; i<D; i++) ru[i]-=std::floor(ru[i]);
-        sign=0; //need to add ANTIPERIODIC
+        sign=0;
+        for (int i=0; i<D; i++) {
+          ST img = std::floor(ru[i]);
+          ru[i] -= img;
+          sign += HalfG[i] * (int)img;
+        }
       }
 
       template<typename VV>
@@ -133,8 +137,11 @@ namespace qmcplusplus {
             einspline::evaluate(smallBox,ru,myV);
           else
             einspline::evaluate(MultiSpline,ru,myV);
-
-          for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(myV[j]);
+          
+          if(phase&1)
+            for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(-myV[j]);
+          else
+            for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(myV[j]);
         }
 
       template<typename VV, typename GV>
@@ -151,16 +158,26 @@ namespace qmcplusplus {
 
           const int N=psi.size();
           const Tensor<ST,D> gConv(PrimLattice.G);
-          for(int j=0; j<N; ++j) psi[j]=myV[j];
-          for(int j=0; j<N; ++j) dpsi[j]=dot(gConv,myG[j]);
-          for(int j=0; j<N; ++j) d2psi[j]=trace(myH[j],GGt);
+
+          if (phase & 1) 
+          {
+            const ST minus_one=-1.0;
+            for(int j=0; j<N; ++j) psi[j]=-myV[j];
+            for(int j=0; j<N; ++j) dpsi[j]=minus_one*dot(gConv,myG[j]);
+            for(int j=0; j<N; ++j) d2psi[j]=-trace(myH[j],GGt);
+          }
+          else
+          {
+            for(int j=0; j<N; ++j) psi[j]=myV[j];
+            for(int j=0; j<N; ++j) dpsi[j]=dot(gConv,myG[j]);
+            for(int j=0; j<N; ++j) d2psi[j]=trace(myH[j],GGt);
+          }
         }
 
       template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
         {}
     };
-
 
   /** adoptor class for the non-periodic systems
    *
@@ -170,8 +187,9 @@ namespace qmcplusplus {
    * No coordinate transform is needed for the open BC with a orthorhombic cell
    */
   template<typename ST, typename TT, unsigned D>
-    struct SplineOpenAdoptor
+    struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
     {
+      static const bool is_complex=false;
       typedef ST                                              value_type;
       typedef typename einspline_traits<ST,D>::SplineType     SplineType;
       typedef typename einspline_traits<ST,D>::BCType         BCType;
@@ -183,6 +201,8 @@ namespace qmcplusplus {
       typedef typename OrbitalSetTraits<ST>::HessVector_t     StorageHessVector_t;
       typedef typename OrbitalSetTraits<ST>::GradHessVector_t StorageGradHessVector_t;
 
+      using SplineAdoptorBase<ST,D>::SuperLattice;
+
       SplineType *MultiSpline;
       SplineType *smallBox;
 
@@ -191,9 +211,6 @@ namespace qmcplusplus {
       TinyVector<ST,D> L;
       TinyVector<ST,D> InvL;
 
-      Tensor<ST,D> GGt;
-      UnitCellType PrimLattice;
-      UnitCellType SuperLattice;
 
       ///used for testing only 
       bool UseFullGrid;
@@ -216,8 +233,9 @@ namespace qmcplusplus {
 
       void resizeStorage(int n, int nv)
       {
-        for(int i=0; i<D; ++i) L[i]=SuperLattice.R(i,i);
-        for(int i=0; i<D; ++i) InvL[i]=1.0/L[i];
+        SplineAdoptorBase<ST,D>::init_base(n);
+        //for(int i=0; i<D; ++i) L[i]=SuperLattice.R(i,i);
+        //for(int i=0; i<D; ++i) InvL[i]=1.0/L[i];
         myV.resize(n);
         myL.resize(n);
         myG.resize(n);
@@ -228,18 +246,20 @@ namespace qmcplusplus {
        * @param n number of states
        * @param samegrid if true, use full grid
        */
-      void create_spline(TinyVector<int,D>& mesh, int n, bool samegrid)
+      void create_spline(TinyVector<int,D>& mesh_0, TinyVector<int,D>& mesh_1, int n)
       {
-        UseFullGrid=samegrid;
+        UseFullGrid=(mesh_0[0]==mesh_1[0]);
+        for(int i=1; i<D; ++i) UseFullGrid &= (mesh_0[i]==mesh_1[i]);
+
         Ugrid xyz_grid[D];
         BCType xyz_bc[D];
         for(int i=0; i<D; ++i)
         {
-          L[i]=PrimLattice.R(i,i);
+          L[i]=SuperLattice.R(i,i);
           InvL[i]=1.0/L[i];
 
           xyz_grid[i].start = 0.0;  xyz_grid[i].end = L[i]; //1.0;  
-          xyz_grid[i].num = (samegrid)?mesh[i]:mesh[i]/2; 
+          xyz_grid[i].num = mesh_1[i];
           xyz_bc[i].lCode=xyz_bc[i].rCode=PERIODIC;
           gTransform.BaseOffset[i]=0;
           gTransform.BaseN[i]=xyz_grid[i].num+3;
@@ -268,7 +288,7 @@ namespace qmcplusplus {
        * @param ival the state to be initialized
        */
       template <typename UBspline>
-        void init_spline(UBspline* dense, UBspline* coarse, int ival)
+        void set_spline(UBspline* dense, UBspline* coarse, int ival)
         {
           if(UseFullGrid)
             einspline::set(MultiSpline,ival,dense,  gTransform.BaseOffset,gTransform.BaseN);

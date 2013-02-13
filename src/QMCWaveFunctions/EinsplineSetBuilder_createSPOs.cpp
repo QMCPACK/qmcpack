@@ -20,20 +20,23 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-//#if defined(USE_SPLINEADOPTOR)
-#define SPLINE_PACK_COMPLEX
+#include <fftw3.h>                                              
+#include <Utilities/ProgressReportEngine.h>
+#include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
-#include "QMCWaveFunctions/EinsplineAdoptorPacked.h"
-#include "QMCWaveFunctions/EinsplineMixedAdoptor.h"
-#include "QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF2.cpp"
-#include "QMCWaveFunctions/BigEinsplineSetBuilder.cpp"
-
-//#endif
+#include "QMCWaveFunctions/SplineC2XAdoptor.h"
+#include "QMCWaveFunctions/SplineR2RAdoptor.h"
+#include "QMCWaveFunctions/SplineAdoptorReader.h"
+#include "QMCWaveFunctions/SplineMixedAdoptor.h"
+#include "QMCWaveFunctions/SplineMixedAdoptorReader.h"
 
 namespace qmcplusplus {
 
   SPOSetBase*
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
+
+    //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
+    BufferLayer=2.0;
 
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
@@ -58,6 +61,7 @@ namespace qmcplusplus {
     attribs.add (useGPU,     "gpu");    
     attribs.add (spo_prec,   "precision");
     attribs.add (truncate,   "truncate");
+    attribs.add (BufferLayer, "buffer");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
@@ -228,32 +232,45 @@ namespace qmcplusplus {
     else // Otherwise, use EinsplineSetExtended
     {
       mytimer.restart();
+      bool use_single= (spo_prec == "single" || spo_prec == "float");
+
       if (UseRealOrbitals) 
       { 
 
         OccupyBands(spinSet, sortBands);
 
-        if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN && truncate == "yes")
+        //check if a matching BsplineReaderBase exists
+        BsplineReaderBase* spline_reader=0;
+        if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
         {
-          app_log() << ">>>> Creating BsplineSet<SplineOpenAdoptor<float,double,3> <<<< " << endl;
-          app_log() << "     Ionic positions used to determine the bonding box " <<endl;
-          BsplineSet<SplineOpenAdoptor<float,double,3> >* bspline_zd
-            = new BsplineSet<SplineOpenAdoptor<float,double,3> >;
-          copy(OrbitalSet,bspline_zd);
-          ReadBands_ESHDF_Big(spinSet, bspline_zd);//pass OrbitalSet
-          SPOSetMap[aset] = bspline_zd;
-          return bspline_zd; 
+          if(use_single)
+          {
+            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+              spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
+            else
+              spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
+          }
+          else
+          {
+            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+              spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
+            else
+              spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
+          }
+        }
+        else
+        {
+          if(use_single)
+            spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
         }
 
-        if(spo_prec == "single" || spo_prec == "float")
+        if(spline_reader)
         {
-          app_log() << ">>>> Creating BsplineSet<SplineR2RAdoptor<float,double,3> <<<< " << endl;
-          BsplineSet<SplineR2RAdoptor<float,double,3> >* bspline_zd
-            = new BsplineSet<SplineR2RAdoptor<float,double,3> >;
-          copy(OrbitalSet,bspline_zd);
-          ReadBands_ESHDF_Real(spinSet, bspline_zd);//pass OrbitalSet
-          SPOSetMap[aset] = bspline_zd;
-          return bspline_zd; 
+          HasCoreOrbs=bcastSortBands(NumDistinctOrbitals,myComm->rank()==0);
+          SPOSetBase* bspline_zd=spline_reader->create_spline_set(spinSet,OrbitalSet);
+          delete spline_reader;
+          if(bspline_zd) SPOSetMap[aset] = bspline_zd;
+          return bspline_zd;
         }
         else
         {
@@ -270,29 +287,29 @@ namespace qmcplusplus {
       {
 	OccupyBands(spinSet, sortBands);
 
-        if(spo_prec == "single" || spo_prec == "float")
+        BsplineReaderBase* spline_reader=0;
+
+        if(truncate == "yes")
         {
-          app_log() << ">>>> Creating BsplineSet<SplineC2XAdoptor<float,double,3> <<<< " << endl;
+          app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << endl;
+        }
+
+        if(use_single)
+        {
 #if defined(QMC_COMPLEX)
-#if defined(SPLINE_PACK_COMPLEX)
-          BsplineSet<SplineC2CAdoptorPacked<float,double,3> > *bspline_zd 
-            = new BsplineSet<SplineC2CAdoptorPacked<float,double,3> >;
+          spline_reader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,double,3> >(this);
 #else
-          BsplineSet<SplineC2CAdoptor<float,double,3> > *bspline_zd 
-            = new BsplineSet<SplineC2CAdoptor<float,double,3> >;
-#endif 
-#else 
-#if defined(SPLINE_PACK_COMPLEX)
-          BsplineSet<SplineC2RAdoptorPacked<float,double,3> > *bspline_zd 
-            = new BsplineSet<SplineC2RAdoptorPacked<float,double,3> >;
-#else
-          BsplineSet<SplineC2RAdoptor<float,double,3> > *bspline_zd 
-            = new BsplineSet<SplineC2RAdoptor<float,double,3> >;
-#endif 
-#endif 
-          copy(OrbitalSet,bspline_zd);
-          ReadBands_ESHDF_Complex(spinSet, bspline_zd);
-          SPOSetMap[aset] = bspline_zd;
+          spline_reader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,double,3> >(this);
+#endif
+        }
+
+        if(spline_reader)
+        {
+          RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet));
+          HasCoreOrbs=bcastSortBands(NumDistinctOrbitals,myComm->rank()==0);
+          SPOSetBase* bspline_zd=spline_reader->create_spline_set(spinSet,OrbitalSet);
+          delete spline_reader;
+          if(bspline_zd) SPOSetMap[aset] = bspline_zd;
           return bspline_zd;
         }
         else

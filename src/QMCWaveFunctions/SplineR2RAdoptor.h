@@ -23,7 +23,7 @@ namespace qmcplusplus {
    * @tparam D dimension
    */
   template<typename ST, typename TT, unsigned D>
-    struct SplineR2RAdoptor
+    struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
     {
       static const bool is_complex=false;
 
@@ -37,19 +37,12 @@ namespace qmcplusplus {
       typedef typename OrbitalSetTraits<ST>::HessVector_t       StorageHessVector_t;
       typedef typename OrbitalSetTraits<ST>::GradHessVector_t   StorageGradHessVector_t;
 
-      typedef CrystalLattice<ST,D>                        UnitCellType;
       typedef TinyVector<ST,D>                            PointType;
 
-
+      using SplineAdoptorBase<ST,D>::HalfG;
+      using SplineAdoptorBase<ST,D>::GGt;
+      using SplineAdoptorBase<ST,D>::PrimLattice;
       SplineType *MultiSpline;
-      Tensor<ST,D> GGt;
-      TinyVector<int,D> HalfG;
-      UnitCellType PrimLattice;
-
-      //these are not needed for R2R adoptor and will be removed
-      UnitCellType SuperLattice;
-      vector<TinyVector<ST,D> > kPoints;
-      vector<bool>      MakeTwoCopies;
 
       // Temporary storage for Eispline calls
       StorageValueVector_t myV, myL;
@@ -64,8 +57,9 @@ namespace qmcplusplus {
       {
         AdoptorName="SplineR2RAdoptor";
         KeyWord="R2R";
-        kPoints.resize(n);
-        MakeTwoCopies.resize(n);
+        SplineAdoptorBase<ST,D>::init_base(n);
+        //kPoints.resize(n);
+        //MakeTwoCopies.resize(n);
         myV.resize(n);
         myL.resize(n);
         myG.resize(n);

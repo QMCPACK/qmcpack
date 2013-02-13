@@ -33,7 +33,6 @@ namespace qmcplusplus {
       BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
       init(orbitalSet,bspline);
 
-
       int N = mybuilder->NumDistinctOrbitals;
       int NumValenceOrbs = mybuilder->NumValenceOrbs;
 
