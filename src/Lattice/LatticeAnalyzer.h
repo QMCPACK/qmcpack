@@ -19,15 +19,6 @@
 namespace qmcplusplus
 {
 
-  /** enumeration to classify a CrystalLattice
-   *
-   * Use bitset<3> for all the dimension 
-   */
-  enum {SUPERCELL_OPEN=0, //nnn
-    SUPERCELL_WIRE=1,     //nnp
-    SUPERCELL_SLAB=3,     //npp
-    SUPERCELL_BULK=7};    //ppp
-
   /** enumeration for DTD_BConds specialization 
    *
    * G = general cell with image-cell checks

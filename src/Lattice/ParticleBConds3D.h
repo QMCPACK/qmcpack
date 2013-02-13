@@ -239,17 +239,9 @@ namespace APPNAMESPACE
 
       DTD_BConds(const CrystalLattice<T,3>& lat)
       {
-        rb[0]=lat.a(0); rb[1]=lat.a(1); rb[2]=0.0;
-        find_reduced_basis(rb);
-        rb[2]=lat.a(2);
-        Tensor<T,3> rbt;
-        for(int i=0; i<3; ++i)
-          for(int j=0; j<3; ++j) rbt(i,j)=rb[i][j];
-
-        Tensor<T,3> g=inverse(rbt);
-
-        g00=g(0);g10=g(3);
-        g01=g(1);g11=g(4);
+        rb[0]=lat.a(0); rb[1]=lat.a(1); rb[2]=lat.a(2); //rb[2]=0.0;
+        g00=lat.G(0);g10=lat.G(3);
+        g01=lat.G(1);g11=lat.G(4);
 
         T minusone=-1.0;
         corners.resize(4);
@@ -262,7 +254,10 @@ namespace APPNAMESPACE
       inline T apply_bc(TinyVector<T,3>& displ)  const
       {
         //cart2unit
-        TinyVector<T,2> ar(displ[0]*g00+displ[1]*g10, displ[0]*g01+displ[1]*g11);
+        TinyVector<T,2> 
+          ar(displ[0]*g00+displ[1]*g10
+            ,displ[0]*g01+displ[1]*g11);
+
         //put them in the box
         ar[0]-=std::floor(ar[0]); ar[1]-=std::floor(ar[1]);
         displ+=ar[0]*rb[0]+ar[1]*rb[1];
@@ -349,6 +344,63 @@ namespace APPNAMESPACE
         for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
       }
     };
+
+  template<class T>
+    struct DTD_BConds<T,3,PPNS>
+    {
+      T r00,r10,r01,r11;
+      T g00,g10,g01,g11;
+      DTD_BConds(const CrystalLattice<T,3>& lat)
+        : r00(lat.R(0)),r10(lat.R(3))
+         ,r01(lat.R(1)),r11(lat.R(4))
+         ,g00(lat.G(0)),g10(lat.G(3))
+         ,g01(lat.G(1)),g11(lat.G(4))
+      { }
+
+      /** apply BC to a displacement vector a and return the minimum-image distance
+       * @param lat lattice 
+       * @param a displacement vector
+       * @return the minimum-image distance
+       */
+      inline T apply_bc(TinyVector<T,3>& displ)  const
+      {
+        //cart2unit
+        TinyVector<T,2> 
+          ar(displ[0]*g00+displ[1]*g10
+            ,displ[0]*g01+displ[1]*g11);
+
+        //put them in the box
+        ar[0]-=round(ar[0]); ar[1]-=round(ar[1]); 
+
+        //unit2cart
+        displ[0]=ar[0]*r00+ar[1]*r10;
+        displ[1]=ar[0]*r01+ar[1]*r11;
+
+        return displ[0]*displ[0]+displ[1]*displ[1]+displ[2]*displ[2];
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,3> >& dr
+          , std::vector<T>& r
+          , std::vector<T>& rinv) const
+      {
+        const int n=dr.size();
+        for(int i=0;i<n;++i) rinv[i]=apply_bc(dr[i]);
+        simd::sqrt(&rinv[0],&r[0],n);
+        simd::inv(&r[0],&rinv[0],n);
+      }
+
+      inline void apply_bc(std::vector<TinyVector<T,3> >& dr
+          , std::vector<T>& r) const
+      {
+        for(int i=0;i<dr.size();++i) r[i]=apply_bc(dr[i]);
+      }
+
+      inline void evaluate_rsquared(TinyVector<T,3>* restrict dr, T* restrict rr, int n)
+      {
+        for(int i=0;i<n;++i) rr[i]=apply_bc(dr[i]);
+      }
+    };
+
 
   /** specialization for a wire
   */

@@ -26,7 +26,17 @@
 #include <Lattice/LatticeOperations.h>
 
 using namespace std;
-namespace APPNAMESPACE {
+namespace APPNAMESPACE 
+{
+
+  /** enumeration to classify a CrystalLattice
+   *
+   * Use bitset<3> for all the dimension 
+   */
+  enum {SUPERCELL_OPEN=0, //nnn
+    SUPERCELL_WIRE=1,     //nnp
+    SUPERCELL_SLAB=3,     //npp
+    SUPERCELL_BULK=7};    //ppp
 
   /** class to assist copy and unit conversion operations on position vectors
   */
