@@ -34,6 +34,11 @@ namespace qmcplusplus
 
     ///return ptcl_pool 
     static ParticleSetPool* getParticleSetPool(Communicate* mycomm);
+
+    ///store the name of the main eshd file name
+    static string master_eshd_name;
+
+    static bool use_density;
   };
 }
 

@@ -70,6 +70,7 @@ ENDIF(OHMMS_DIM MATCHES 2)
 # create libqmcbase 
 ####################################
 SET(PARTICLE ${PARTICLE}
+  qmc_common.cpp
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 

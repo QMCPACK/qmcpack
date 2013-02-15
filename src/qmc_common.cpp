@@ -20,6 +20,8 @@ namespace qmcplusplus
 {
   ///initialize static data
   ParticleSetPool* qmc_common::ptcl_pool=0;
+  string qmc_common::master_eshd_name="none";
+  bool qmc_common::use_density=false;
 
   ParticleSetPool* qmc_common::getParticleSetPool(Communicate* mycomm)
   {
