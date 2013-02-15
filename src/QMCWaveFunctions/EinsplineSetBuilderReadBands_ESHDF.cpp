@@ -58,16 +58,11 @@ namespace qmcplusplus {
 	orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
 	orbitalSet->MakeTwoCopies[iorb] = 
 	  (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
-        cout << "MAKETWO" << iorb << " " <<  orbitalSet->MakeTwoCopies[iorb]  <<endl;
 	num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
     }
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
-
-    cout << "NumDistinctOrbitals = " << N << " " << NumValenceOrbs <<endl;
-    cout << "Primitive cell " << orbitalSet->PrimLattice.R << endl;
-    cout << "Super cell " << orbitalSet->SuperLattice.R << endl;
 
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
@@ -497,7 +492,6 @@ namespace qmcplusplus {
           ostringstream path;
           path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-          cout << "FFT on " <<  path.str() << endl;
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
           ncg=cG.size();
