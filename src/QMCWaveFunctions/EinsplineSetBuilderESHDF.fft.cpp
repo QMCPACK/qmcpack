@@ -24,6 +24,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "qmc_common.h"
 
 namespace qmcplusplus {
 
@@ -188,106 +189,113 @@ namespace qmcplusplus {
       //       app_log() << buff;
     }
 
-    //////////////////////////////////////////////////////////
-    // Only if it is bulk: If the density has not been set in TargetPtcl, and   //
-    // the density is available, read it in and save it     //
-    // in TargetPtcl.                                       //
-    //////////////////////////////////////////////////////////
-    if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+    if(qmc_common::use_density)
     {
-      // FIXME:  add support for more than one spin density
-      if (!TargetPtcl.Density_G.size()) 
-      {
-        HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > 
-          h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
-        HDFAttribIO<Array<RealType,OHMMS_DIM> > 
-          h_density_r (TargetPtcl.Density_r);
-        TinyVector<int,3> mesh;
-        h_reduced_gvecs.read (H5FileID, "/electrons/density/gvectors");
-
-        int numG = TargetPtcl.DensityReducedGvecs.size();
-        // Convert primitive G-vectors to supercell G-vectors
-        // Also, flip sign since ESHDF format uses opposite sign convention
-#pragma omp parallel for
-        for (int iG=0; iG < numG; iG++) 
-          TargetPtcl.DensityReducedGvecs[iG] = 
-            -1 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
-        app_log() << "  Read " << numG << " density G-vectors.\n";
-
-        for (int ispin=0; ispin<NumSpins; ispin++) {
-          ostringstream density_r_path, density_g_path;
-          density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
-          density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
-          h_density_r.read (H5FileID, density_r_path.str().c_str());
-
-          if (TargetPtcl.DensityReducedGvecs.size()) {
-            app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-            vector<ComplexType> density_G;
-            HDFAttribIO<vector<ComplexType > > h_density_G (density_G);
-            h_density_G.read (H5FileID, density_g_path.str().c_str());
-            if (!density_G.size()) {
-              app_error() << "  Density reduced G-vectors defined, but not the"
-                << " density.\n";
-              abort();
-            }
-            else {
-              if (ispin == 0)
-                TargetPtcl.Density_G = density_G;
-              else
-                for (int iG=0; iG<density_G.size(); iG++)
-                  TargetPtcl.Density_G[iG] += density_G[iG];
-            }
-          }
-        }
-      }
-
       //////////////////////////////////////////////////////////
-      // If the density has not been set in TargetPtcl, and   //
+      // Only if it is bulk: If the density has not been set in TargetPtcl, and   //
       // the density is available, read it in and save it     //
       // in TargetPtcl.                                       //
       //////////////////////////////////////////////////////////
-
-      // FIXME:  add support for more than one spin potential
-      if (!TargetPtcl.VHXC_r[0].size()) {
-        HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > 
-          h_reduced_gvecs(TargetPtcl.VHXCReducedGvecs);
-        TinyVector<int,3> mesh;
-        h_reduced_gvecs.read (H5FileID, "/electrons/VHXC/gvectors");
-
-        int numG = TargetPtcl.VHXCReducedGvecs.size();
-        // Convert primitive G-vectors to supercell G-vectors
-        // Also, flip sign since ESHDF format uses opposite sign convention
-#pragma omp parallel for
-        for (int iG=0; iG < numG; iG++) 
-          TargetPtcl.VHXCReducedGvecs[iG] = 
-            -1 * dot(TileMatrix, TargetPtcl.VHXCReducedGvecs[iG]);
-
-        app_log() << "  Read " << numG << " VHXC G-vectors.\n";
-
-        for (int ispin=0; ispin<NumSpins; ispin++) {
+      if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+      {
+        // FIXME:  add support for more than one spin density
+        if (!TargetPtcl.Density_G.size()) 
+        {
+          HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > 
+            h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
           HDFAttribIO<Array<RealType,OHMMS_DIM> > 
-            h_VHXC_r (TargetPtcl.VHXC_r[ispin]);
+            h_density_r (TargetPtcl.Density_r);
+          TinyVector<int,3> mesh;
+          h_reduced_gvecs.read (H5FileID, "/electrons/density/gvectors");
 
-          ostringstream VHXC_r_path, VHXC_g_path;
-          VHXC_r_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_r";
-          VHXC_g_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_g";
-          h_VHXC_r.read (H5FileID, VHXC_r_path.str().c_str());
+          int numG = TargetPtcl.DensityReducedGvecs.size();
+          // Convert primitive G-vectors to supercell G-vectors
+          // Also, flip sign since ESHDF format uses opposite sign convention
+#pragma omp parallel for
+          for (int iG=0; iG < numG; iG++) 
+            TargetPtcl.DensityReducedGvecs[iG] = 
+              -1 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
+          app_log() << "  Read " << numG << " density G-vectors.\n";
 
-          if (TargetPtcl.VHXCReducedGvecs.size()) {
-            app_log() << "  EinsplineSetBuilder found VHXC in the HDF5 file.\n";
-            vector<ComplexType> VHXC_G;
-            HDFAttribIO<vector<ComplexType > > h_VHXC_G (VHXC_G);
-            h_VHXC_G.read (H5FileID, VHXC_g_path.str().c_str());
-            if (!VHXC_G.size()) {
-              app_error() << "  VHXC reduced G-vectors defined, but not the"
-                << " VHXC.\n";
-              abort();
+          for (int ispin=0; ispin<NumSpins; ispin++) {
+            ostringstream density_r_path, density_g_path;
+            density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
+            density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
+            h_density_r.read (H5FileID, density_r_path.str().c_str());
+
+            if (TargetPtcl.DensityReducedGvecs.size()) {
+              app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
+              vector<ComplexType> density_G;
+              HDFAttribIO<vector<ComplexType > > h_density_G (density_G);
+              h_density_G.read (H5FileID, density_g_path.str().c_str());
+              if (!density_G.size()) {
+                app_error() << "  Density reduced G-vectors defined, but not the"
+                  << " density.\n";
+                abort();
+              }
+              else {
+                if (ispin == 0)
+                  TargetPtcl.Density_G = density_G;
+                else
+                  for (int iG=0; iG<density_G.size(); iG++)
+                    TargetPtcl.Density_G[iG] += density_G[iG];
+              }
             }
-            else 
-              TargetPtcl.VHXC_G[ispin] = VHXC_G;
+          }
+        }
+
+        //////////////////////////////////////////////////////////
+        // If the density has not been set in TargetPtcl, and   //
+        // the density is available, read it in and save it     //
+        // in TargetPtcl.                                       //
+        //////////////////////////////////////////////////////////
+
+        // FIXME:  add support for more than one spin potential
+        if (!TargetPtcl.VHXC_r[0].size()) {
+          HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > 
+            h_reduced_gvecs(TargetPtcl.VHXCReducedGvecs);
+          TinyVector<int,3> mesh;
+          h_reduced_gvecs.read (H5FileID, "/electrons/VHXC/gvectors");
+
+          int numG = TargetPtcl.VHXCReducedGvecs.size();
+          // Convert primitive G-vectors to supercell G-vectors
+          // Also, flip sign since ESHDF format uses opposite sign convention
+#pragma omp parallel for
+          for (int iG=0; iG < numG; iG++) 
+            TargetPtcl.VHXCReducedGvecs[iG] = 
+              -1 * dot(TileMatrix, TargetPtcl.VHXCReducedGvecs[iG]);
+
+          app_log() << "  Read " << numG << " VHXC G-vectors.\n";
+
+          for (int ispin=0; ispin<NumSpins; ispin++) {
+            HDFAttribIO<Array<RealType,OHMMS_DIM> > 
+              h_VHXC_r (TargetPtcl.VHXC_r[ispin]);
+
+            ostringstream VHXC_r_path, VHXC_g_path;
+            VHXC_r_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_r";
+            VHXC_g_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_g";
+            h_VHXC_r.read (H5FileID, VHXC_r_path.str().c_str());
+
+            if (TargetPtcl.VHXCReducedGvecs.size()) {
+              app_log() << "  EinsplineSetBuilder found VHXC in the HDF5 file.\n";
+              vector<ComplexType> VHXC_G;
+              HDFAttribIO<vector<ComplexType > > h_VHXC_G (VHXC_G);
+              h_VHXC_G.read (H5FileID, VHXC_g_path.str().c_str());
+              if (!VHXC_G.size()) {
+                app_error() << "  VHXC reduced G-vectors defined, but not the"
+                  << " VHXC.\n";
+                abort();
+              }
+              else 
+                TargetPtcl.VHXC_G[ispin] = VHXC_G;
+            }
           }
         }
       }
+    }
+    else
+    {
+      app_log() << "   Skip initialization of the density" << endl;
     }
     HaveLocalizedOrbs = false;
     return true;
