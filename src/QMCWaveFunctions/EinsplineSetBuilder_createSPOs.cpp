@@ -241,21 +241,26 @@ namespace qmcplusplus {
 
         //check if a matching BsplineReaderBase exists
         BsplineReaderBase* spline_reader=0;
-        if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
+        //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
+        if(truncate=="yes")
         {
           if(use_single)
           {
             if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
               spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
-            else
+            else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
               spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
+            else
+              spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
           }
           else
           {
             if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
               spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
-            else
+            else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
               spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
+            else
+              spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
           }
         }
         else

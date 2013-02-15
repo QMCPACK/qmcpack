@@ -1,12 +1,17 @@
 /////////////////////////////////////////////////////////////////
 // (c) Copyright 2003-  by Ken Esler and Jeongnim Kim           //
 //////////////////////////////////////////////////////////////////
+/** @file SplineMixedAdoptorReader.h
+ */
 
 #ifndef QMCPLUSPLUS_EINSPLINE_SPLINE_MIXED_ADOPTOR_READER_H
 #define QMCPLUSPLUS_EINSPLINE_SPLINE_MIXED_ADOPTOR_READER_H
 
 namespace qmcplusplus {
 
+  /** reader for a EinsplineAdoptor with truncation 
+   * @tparam SA spline adoptor, SplineMixedAdoptor, SplineOpenAdoptor
+   */
   template<typename SA>
     struct SplineMixedAdoptorReader: BsplineReaderBase
     {
@@ -22,32 +27,24 @@ namespace qmcplusplus {
         //typedef typename adoptor_type::real_type spline_data_type;
 
         BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
-        init(orbitalSet,bspline);
-        int N=bspline->getOrbitalSetSize();
+        app_log() << "  AdoptorName = " << bspline->AdoptorName << endl;
 
-        bspline->resizeStorage(N,N);
+        if(bspline->is_complex)
+          app_log() << "  Using complex einspline table" << endl;
+        else
+          app_log() << "  Using real einspline table" << endl;
 
-        TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
-
-        bspline->HalfG=0;
-        if(!bspline->is_complex)
-        {//no k-point folding, single special k point (G, L ...)
-          int ti=mybuilder->SortBands[0].TwistIndex;
-          TinyVector<double,3> twist0 = mybuilder->TwistAngles[mybuilder->SortBands[0].TwistIndex];
-          for (int i=0; i<3; i++)
-            if (bconds[i] && std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
-              bspline->HalfG[i] = 1;
-            else
-              bspline->HalfG[i] = 0;
-          app_log() << "  TwistIndex = " << mybuilder->SortBands[0].TwistIndex << " TwistAngle " << twist0 << endl;
-          app_log() <<"   HalfG = " << bspline->HalfG << endl;
-        }
-
-        string H5FileName(mybuilder->H5FileName);
-        H5OrbSet set(H5FileName, spin, N);
+        check_twists(orbitalSet,bspline);
     
-        bool havePsir=!(mybuilder->ReadGvectors_ESHDF());
+        Ugrid xyz_grid[3];
+        typename adoptor_type::BCType xyz_bc[3];
+        bool havePsig=set_grid(bspline->HalfG,xyz_grid, xyz_bc);
 
+        if(!havePsig)
+        {
+          APP_ABORT("Need psi_g with truncate=\"yes\"");
+        }
+        TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
         bool use_cartesian= (mybuilder->TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN);
 
         TinyVector<int,3> MeshSize=mybuilder->MeshSize;
@@ -124,7 +121,8 @@ namespace qmcplusplus {
         }
 
         //bspline->create_spline(MeshSize,N,fullgrid);
-        bspline->create_spline(MeshSize,coarse_mesh,N);
+        int N = mybuilder->NumDistinctOrbitals;
+        bspline->create_spline(MeshSize,coarse_mesh,N,N);
 
         app_log() << "  Original Mesh " << MeshSize << endl;
         app_log() << "  Coarse Mesh " << coarse_mesh << endl;
@@ -132,7 +130,7 @@ namespace qmcplusplus {
         if(use_cartesian)
           app_log() << "  Using Cartesian grids for open systems. " << endl;
         else
-          app_log() << "  Using Primitive-cell grids for open systems. " << endl;
+          app_log() << "  Using Primitive-cell grids for mixed systems. " << endl;
 
         app_log() << "  Using buffer layer for the small box= " << buffer << " bohr " << endl;
         app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << endl;
@@ -143,7 +141,7 @@ namespace qmcplusplus {
 
         int foundspline=0;
 
-        string splinefile=make_spline_filename(H5FileName,spin,mybuilder->TwistNum,MeshSize);
+        string splinefile=make_spline_filename(mybuilder->H5FileName,spin,mybuilder->TwistNum,MeshSize);
 
         Timer now;
 
@@ -157,6 +155,13 @@ namespace qmcplusplus {
             foundspline = h5f.read(aname,"adoptor_name");
             foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
           }
+          if(foundspline)
+          {
+            int sizeD=0;
+            foundspline=h5f.read(sizeD,"sizeof");
+            foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
+          }
+
           if(foundspline)
           {
             TinyVector<double,3> lower_in(end);
@@ -265,6 +270,8 @@ namespace qmcplusplus {
             einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
             einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
             h5f.write(bspline->AdoptorName,"adoptor_name");
+            int sizeD=sizeof(typename adoptor_type::DataType);
+            h5f.write(sizeD,"sizeof");
             h5f.write(lower,"lower_bound");
             h5f.write(upper,"upper_bound");
             h5f.write(bigtable,"spline_0");

@@ -20,39 +20,29 @@ namespace qmcplusplus {
   template<typename ST, typename TT, unsigned D>
     struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     {
-      static const bool is_complex=true;
-
-      typedef ST                                                      real_type;
-      typedef complex<ST>                                             value_type;
-      typedef typename einspline_traits<real_type,D>::SplineType      SplineType;
-      typedef typename einspline_traits<real_type,D>::BCType          BCType;
-      typedef typename OrbitalSetTraits<real_type>::ValueVector_t     StorageValueVector_t;
-      typedef typename OrbitalSetTraits<real_type>::GradVector_t      StorageGradVector_t;
-      typedef typename OrbitalSetTraits<real_type>::HessVector_t      StorageHessVector_t;
-      typedef typename OrbitalSetTraits<real_type>::GradHessVector_t  StorageGradHessVector_t;
-      typedef TinyVector<ST,D>     PointType;
+      typedef typename einspline_traits<ST,D>::SplineType  SplineType;
+      typedef typename einspline_traits<ST,D>::BCType      BCType;
+      typedef typename SplineAdoptorBase<ST,D>::PointType  PointType;
 
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
       using SplineAdoptorBase<ST,D>::kPoints;
+
+      using SplineAdoptorBase<ST,D>::myV;
+      using SplineAdoptorBase<ST,D>::myL;
+      using SplineAdoptorBase<ST,D>::myG;
+      using SplineAdoptorBase<ST,D>::myH;
+      using SplineAdoptorBase<ST,D>::myGH;
+
       SplineType *MultiSpline;
 
-      vector<real_type> phase;
-      vector<value_type> eikr;
-
-      StorageValueVector_t     myV;
-      StorageValueVector_t     myL;
-      StorageGradVector_t      myG;
-      StorageHessVector_t      myH;
-      StorageGradHessVector_t  myGH;
-
-      string AdoptorName;
-      string KeyWord;
+      //vector<ST> phase;
 
       SplineC2CPackedAdoptor():MultiSpline(0) 
       {
-        AdoptorName="SplineC2CPackedAdoptor";
-        KeyWord="C2CPacked";
+        this->is_complex=true;
+        this->AdoptorName="SplineC2CPackedAdoptor";
+        this->KeyWord="C2CPacked";
       }
 
       inline void resizeStorage(int n, int nvals)
@@ -77,12 +67,18 @@ namespace qmcplusplus {
         einspline::set(MultiSpline, 2*ival+1, psi_i);
       }
 
+      inline int convertPos(const PointType& r, PointType& ru)
+      {
+        ru=PrimLattice.toUnit(r);
+        for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+        return 0;
+      }
       /** assign myV to psi
        *
        * Taken out for the derived classes
        */
       template<typename VV>
-        inline void assign_v(const PointType& r, VV& psi)
+        inline void assign_v(const PointType& r, int bc_sign, VV& psi) 
         {
           register ST s,c;
           TT* restrict t_ptr=reinterpret_cast<TT*>(psi.data());
@@ -97,10 +93,12 @@ namespace qmcplusplus {
       template<typename VV>
         inline void evaluate_v(const PointType& r, VV& psi)
         {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+          TinyVector<ST,D> ru;
+          int sign=convertPos(r,ru);
+          //PointType ru(PrimLattice.toUnit(r));
+          //for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate(MultiSpline,ru,myV);
-          assign_v(r,psi);
+          assign_v(r,sign,psi);
           ////computePhases(r);
           ////simd::multiadd(psi.size(),eikr.data(),psi.data());
         }
@@ -108,7 +106,7 @@ namespace qmcplusplus {
       /** assign internal data to psi,dpsi,d2psi
        */
       template<typename VV, typename GV>
-        inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+        inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
         {
           const int N=kPoints.size();
           for (int j=0; j<2*N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
@@ -116,7 +114,7 @@ namespace qmcplusplus {
 
           const ST two=2.0;
           ST s,c;
-          TinyVector<ST,D> g_r, g_i;
+          PointType g_r, g_i;
           //can easily make three independent loops
           for (int j=0,jr=0,ji=1; j<N; j++,jr+=2,ji+=2) 
           {
@@ -140,10 +138,12 @@ namespace qmcplusplus {
       template<typename VV, typename GV>
         inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
         {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          //PointType ru(PrimLattice.toUnit(r));
+          //for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-          assign_vgl(r,psi,dpsi,d2psi);
+          assign_vgl(r,bc_sign,psi,dpsi,d2psi);
         }
 
       template<typename VV, typename GV, typename GGV>
@@ -162,43 +162,32 @@ namespace qmcplusplus {
   template<typename ST, typename TT, unsigned D>
     struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
     {
-      static const bool is_complex=true;
-
-      typedef ST                                                     real_type;
-      typedef complex<ST>                                            value_type;
-
-      typedef typename einspline_traits<real_type,D>::SplineType     SplineType;
-      typedef typename einspline_traits<real_type,D>::BCType         BCType;
-      typedef typename OrbitalSetTraits<real_type>::ValueVector_t    StorageValueVector_t;
-      typedef typename OrbitalSetTraits<real_type>::GradVector_t     StorageGradVector_t;
-      typedef typename OrbitalSetTraits<real_type>::HessVector_t     StorageHessVector_t;
-      typedef typename OrbitalSetTraits<real_type>::GradHessVector_t StorageGradHessVector_t;
-      typedef TinyVector<ST,D> PointType;
+      typedef typename einspline_traits<ST,D>::SplineType  SplineType;
+      typedef typename einspline_traits<ST,D>::BCType      BCType;
+      typedef typename SplineAdoptorBase<ST,D>::PointType         PointType;
 
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
       using SplineAdoptorBase<ST,D>::kPoints;
       using SplineAdoptorBase<ST,D>::MakeTwoCopies;
+
+      using SplineAdoptorBase<ST,D>::myV;
+      using SplineAdoptorBase<ST,D>::myL;
+      using SplineAdoptorBase<ST,D>::myG;
+      using SplineAdoptorBase<ST,D>::myH;
+      using SplineAdoptorBase<ST,D>::myGH;
       SplineType *MultiSpline;
 
-      vector<real_type>   CosV;
-      vector<real_type>   SinV;
-      vector<real_type>   mKK;
+      vector<ST>   CosV;
+      vector<ST>   SinV;
+      vector<ST>   mKK;
 
-      // Temporary storage for Eispline calls
-      StorageValueVector_t     myV;
-      StorageValueVector_t     myL;
-      StorageGradVector_t      myG;
-      StorageHessVector_t      myH;
-      StorageGradHessVector_t  myGH;
-
-      string AdoptorName;
-      string KeyWord;
 
       SplineC2RPackedAdoptor():MultiSpline(0) 
       { 
-        AdoptorName="SplineC2RPackedAdoptor";
-        KeyWord="C2RPacked";
+        this->is_complex=true;
+        this->AdoptorName="SplineC2RPackedAdoptor";
+        this->KeyWord="C2RPacked";
       }
 
       virtual ~SplineC2RPackedAdoptor(){}
@@ -229,10 +218,17 @@ namespace qmcplusplus {
         einspline::set(MultiSpline, 2*ival+1, psi_i);
       }
 
+      inline int convertPos(const PointType& r, PointType& ru)
+      {
+        ru=PrimLattice.toUnit(r);
+        for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+        return 0;
+      }
+
       template<typename VV>
-        inline void assign_v(const PointType& r, VV& psi)
+        inline void assign_v(const PointType& r, int bc_sign, VV& psi) 
         {
-          int N=kPoints.size();
+          const int N=kPoints.size();
           ST phase[N];
           for(int j=0;j<N; ++j) phase[j]=-dot(r,kPoints[j]);
           eval_e2iphi(N,phase,CosV.data(),SinV.data());
@@ -254,14 +250,16 @@ namespace qmcplusplus {
       template<typename VV>
         inline void evaluate_v(const PointType& r, VV& psi)
         {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          //PointType ru(PrimLattice.toUnit(r));
+          //for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate(MultiSpline,ru,myV);
-          assign_v(r,psi);
+          assign_v(r,bc_sign,psi);
         }
 
       template<typename VV, typename GV>
-      inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+      inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
       {
         const int N=kPoints.size();
         for (int j=0; j<2*N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
@@ -295,127 +293,14 @@ namespace qmcplusplus {
       }
 
       template<typename VV, typename GV>
-      inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
-        {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
-          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-          assign_vgl(r,psi,dpsi,d2psi);
-        }
-
-      template<typename VV, typename GV, typename GGV>
-        void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-        {
-        }
-    };
-
-  //inline void computePhases(const PointType& r)
-  //{
-  //  for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
-  //  eval_e2iphi(kPoints.size(),phase.data(),eikr.data());
-  //}
-
-  /** adoptor class to match complex<ST> spline with complex<TT> SPOs
-   * @tparam ST precision of spline
-   * @tparam TT precision of SPOs
-   * @tparam D dimension
-   *
-   * This is a reference implementation but NOT USED. Use Packed version
-   */
-  template<typename ST, typename TT, unsigned D>
-    struct SplineC2CAdoptor
-    {
-      typedef ST                                                       real_type;
-      typedef complex<ST>                                              value_type;
-      typedef typename einspline_traits<value_type,D>::SplineType      SplineType;
-      typedef typename einspline_traits<value_type,D>::BCType          BCType;
-      typedef typename OrbitalSetTraits<value_type>::ValueVector_t     StorageValueVector_t;
-      typedef typename OrbitalSetTraits<value_type>::GradVector_t      StorageGradVector_t;
-      typedef typename OrbitalSetTraits<value_type>::HessVector_t      StorageHessVector_t;
-      typedef typename OrbitalSetTraits<value_type>::GradHessVector_t  StorageGradHessVector_t;
-
-      typedef CrystalLattice<ST,D> UnitCellType;
-      typedef TinyVector<ST,D>     PointType;
-
-      SplineType          *MultiSpline;
-      UnitCellType        SuperLattice;
-      UnitCellType        PrimLattice;
-      vector<PointType>   kPoints;
-      TinyVector<int,D>   HalfG;
-      vector<bool>        MakeTwoCopies;
-      Tensor<real_type,D> GGt;
-
-      vector<real_type> phase;
-      vector<value_type> eikr;
-
-      StorageValueVector_t     myV;
-      StorageValueVector_t     myL;
-      StorageGradVector_t      myG;
-      StorageHessVector_t      myH;
-      StorageGradHessVector_t  myGH;
-
-      inline void resizeStorage(int n, int nvals)
-      {
-        GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
-
-        kPoints.resize(n);
-        MakeTwoCopies.resize(n);
-        myV.resize(n);
-        myL.resize(n);
-        myG.resize(n);
-        myH.resize(n);
-        myH.resize(n);
-      }
-
-      inline bool isready()
-      {
-        return true;
-      }
-
-      template<typename VV>
-        inline void evaluate_v(const PointType& r, VV& psi)
-        {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
-          einspline::evaluate(MultiSpline,ru,myV);
-
-          const int N=myV.size();
-          //computePhases(r);
-          //simd::multiadd(psi.size(),eikr.data(),psi.data());
-          register ST s,c;
-          for(int j=0; j<psi.size(); ++j)
-          {
-            sincos(-dot(r,kPoints[j]),&s,&c);
-            psi[j]=complex<TT>(static_cast<TT>(c*myV[j].real()-s*myV[j].imag()),
-                static_cast<TT>(c*myV[j].imag()+s*myV[j].real()));
-          }
-
-        }
-
-      template<typename VV, typename GV>
         inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
         {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          //PointType ru(PrimLattice.toUnit(r));
+          //for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-
-          const int N=kPoints.size();
-          for (int j=0; j<N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
-          for (int j=0; j<N; j++) myL[j] = trace(myH[j],GGt);
-
-          const ST two=2.0;
-          TinyVector<complex<ST>,D> ck;
-          register ST s,c;
-          for (int j=0; j<psi.size(); j++) 
-          {
-            ST kk=dot(kPoints[j],kPoints[j]);
-            for(int i=0; i<D; ++i) ck[i]=complex<ST>(0.0,kPoints[j][i]);
-            sincos(-dot(r,kPoints[j]),&s,&c);
-            complex<ST> e_mikr(c,s);
-            convert(e_mikr * myV[j], psi[j]);
-            convert(e_mikr*(-myV[j]*ck + myG[j]), dpsi[j]);
-            convert(e_mikr*(-myV[j]*kk - two*dot(ck,myG[j]) + myL[j]), d2psi[j]);
-          }
+          assign_vgl(r,bc_sign,psi,dpsi,d2psi);
         }
 
       template<typename VV, typename GV, typename GGV>
@@ -424,163 +309,272 @@ namespace qmcplusplus {
         }
     };
 
-  /** adoptor class to match complex<ST> spline with TT real SPOs
-   * @tparam ST precision of spline
-   * @tparam TT precision of SPOs
-   * @tparam D dimension
-   *
-   * Requires temporage storage and multiplication of phase vectors
-   */
-  template<typename ST, typename TT, unsigned D>
-    struct SplineC2RAdoptor
-    {
-      typedef ST                                                    real_type;
-      typedef complex<ST>                                           value_type;
-
-      typedef typename einspline_traits<value_type,D>::SplineType  SplineType;
-      typedef typename einspline_traits<value_type,D>::BCType      BCType;
-      typedef typename OrbitalSetTraits<value_type>::ValueVector_t          StorageValueVector_t;
-      typedef typename OrbitalSetTraits<value_type>::GradVector_t           StorageGradVector_t;
-      typedef typename OrbitalSetTraits<value_type>::HessVector_t           StorageHessVector_t;
-      typedef typename OrbitalSetTraits<value_type>::GradHessVector_t       StorageGradHessVector_t;
-
-      typedef CrystalLattice<ST,D> UnitCellType;
-      typedef TinyVector<ST,D> PointType;
-
-      SplineType*         MultiSpline;
-      UnitCellType        SuperLattice;
-      UnitCellType        PrimLattice;
-      TinyVector<int,D>   HalfG;
-      Tensor<real_type,D> GGt;
-      vector<PointType>   kPoints;
-      vector<bool>        MakeTwoCopies;
-      vector<real_type>   CosV;
-      vector<real_type>   SinV;
-      vector<value_type>  mKK;
-
-      // Temporary storage for Eispline calls
-      StorageValueVector_t     myV;
-      StorageValueVector_t     myL;
-      StorageGradVector_t      myG;
-      StorageHessVector_t      myH;
-      StorageGradHessVector_t  myGH;
-
-      SplineC2RAdoptor():MultiSpline(0) { }
-
-      virtual ~SplineC2RAdoptor(){}
-
-      inline void resizeStorage(int n, int nvals)
-      {
-
-        GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
-
-        HalfG=0;
-        kPoints.resize(n);
-        MakeTwoCopies.resize(n);
-      
-        myV.resize(n);
-        myL.resize(n);
-        myG.resize(n);
-        myH.resize(n);
-        CosV.resize(n);
-        SinV.resize(n);
-      }
-
-      inline bool isready()
-      {
-        mKK.resize(kPoints.size());
-        for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
-        return true;
-      }
-
-      template<typename VV>
-        inline void evaluate_v(const PointType& r, VV& psi)
-        {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
-          einspline::evaluate(MultiSpline,ru,myV);
-          const int N=kPoints.size();
-          for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
-
-          int psiIndex = 0;
-          for (int j=0; j<N; j++) 
-          {
-            psi[psiIndex] = static_cast<TT>(myV[j].real()*CosV[j]-myV[j].imag()*SinV[j]);
-            //psi[psiIndex] = static_cast<TT>(myV[j].real());
-            psiIndex++;
-            if (MakeTwoCopies[j]) 
-            {
-              //psi[psiIndex] = static_cast<TT>(myV[j].imag());
-              psi[psiIndex] = static_cast<TT>(myV[j].imag()*CosV[j]+myV[j].real()*SinV[j]);
-              psiIndex++;
-            }
-          }
-        }
-
-      template<typename VV, typename GV>
-      inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
-        {
-          PointType ru(PrimLattice.toUnit(r));
-          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
-
-          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-          const int N=kPoints.size();
-          for (int j=0; j<N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
-          for (int j=0; j<N; j++) myL[j] = trace(myH[j],GGt);
-
-          const ST zero=0.0;
-          const ST two=2.0;
-          TinyVector<complex<ST>,D> ck;
-          ST s,c;
-          for(int j=0; j<N; ++j)
-          {
-            for (int n=0; n<D; n++)ck[n] = complex<ST>(zero,-kPoints[j][n]);
-            sincos (-dot(r,kPoints[j]), &s, &c);
-            complex<ST> e_mikr(c,s);
-            myV[j]  = e_mikr*myV[j];
-            myL[j]  = -dot(kPoints[j],kPoints[j])*myV[j]+e_mikr*(two*dot(ck,myG[j]) + myL[j]);
-            myG[j]  = myV[j]*ck+e_mikr*myG[j];
-          }
-
-          //const complex<ST> eye (0.0, 1.0);
-          //ST s,c;
-          //for(int j=0; j<N; ++j)
-          //{
-          //  complex<ST> u = myV[j];
-          //  TinyVector<complex<ST>,D> gradu = myG[j];
-          //  complex<ST> laplu = myL[j];
-          //  PointType k = kPoints[j];
-          //  TinyVector<complex<ST>,D> ck;
-          //  for (int n=0; n<D; n++)	  ck[n] = k[n];
-          //  sincos (-dot(r,k), &s, &c);
-          //  complex<ST> e_mikr (c,s);
-          //  myV[j]  = e_mikr*u;
-          //  myG[j]  = e_mikr*(-eye*u*ck + gradu);
-          //  myL[j]  = e_mikr*(-dot(k,k)*u - two*eye*dot(ck,gradu) + laplu);
-          //}
-
-          int psiIndex=0;
-          for(int j=0; j<N; ++j)
-          {
-            psi[psiIndex]=static_cast<TT>(myV[j].real());
-            for(int n=0; n<D; ++n) dpsi[psiIndex][n]=static_cast<TT>(myG[j][n].real());
-            d2psi[psiIndex]=static_cast<TT>(myL[j].real());
-            ++psiIndex;
-            if(MakeTwoCopies[j])
-            {
-              psi[psiIndex]=static_cast<TT>(myV[j].imag());
-              for(int n=0; n<D; ++n) dpsi[psiIndex][n]=static_cast<TT>(myG[j][n].imag());
-              d2psi[psiIndex]=static_cast<TT>(myL[j].imag());
-              ++psiIndex;
-            }
-          }
-        }
-
-      template<typename VV, typename GV, typename GGV>
-        void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-        {
-        }
-    };
-
+//  /** adoptor class to match complex<ST> spline with complex<TT> SPOs, just references
+//   * @tparam ST precision of spline
+//   * @tparam TT precision of SPOs
+//   * @tparam D dimension
+//   *
+//   * This is a reference implementation but NOT USED. Use Packed version
+//   */
+//  template<typename ST, typename TT, unsigned D>
+//    struct SplineC2CAdoptor
+//    {
+//      typedef ST                                                       real_type;
+//      typedef complex<ST>                                              value_type;
+//      typedef typename einspline_traits<value_type,D>::SplineType      SplineType;
+//      typedef typename einspline_traits<value_type,D>::BCType          BCType;
+//      typedef typename OrbitalSetTraits<value_type>::ValueVector_t     StorageValueVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::GradVector_t      StorageGradVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::HessVector_t      StorageHessVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::GradHessVector_t  StorageGradHessVector_t;
+//
+//      typedef CrystalLattice<ST,D> UnitCellType;
+//      typedef TinyVector<ST,D>     PointType;
+//
+//      SplineType          *MultiSpline;
+//      UnitCellType        SuperLattice;
+//      UnitCellType        PrimLattice;
+//      vector<PointType>   kPoints;
+//      TinyVector<int,D>   HalfG;
+//      vector<bool>        MakeTwoCopies;
+//      Tensor<real_type,D> GGt;
+//
+//      vector<real_type> phase;
+//      vector<value_type> eikr;
+//
+//      StorageValueVector_t     myV;
+//      StorageValueVector_t     myL;
+//      StorageGradVector_t      myG;
+//      StorageHessVector_t      myH;
+//      StorageGradHessVector_t  myGH;
+//
+//      inline void resizeStorage(int n, int nvals)
+//      {
+//        GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
+//
+//        kPoints.resize(n);
+//        MakeTwoCopies.resize(n);
+//        myV.resize(n);
+//        myL.resize(n);
+//        myG.resize(n);
+//        myH.resize(n);
+//        myH.resize(n);
+//      }
+//
+//      inline bool isready()
+//      {
+//        return true;
+//      }
+//
+//      template<typename VV>
+//        inline void evaluate_v(const PointType& r, VV& psi)
+//        {
+//          PointType ru(PrimLattice.toUnit(r));
+//          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+//          einspline::evaluate(MultiSpline,ru,myV);
+//
+//          const int N=myV.size();
+//          //computePhases(r);
+//          //simd::multiadd(psi.size(),eikr.data(),psi.data());
+//          register ST s,c;
+//          for(int j=0; j<psi.size(); ++j)
+//          {
+//            sincos(-dot(r,kPoints[j]),&s,&c);
+//            psi[j]=complex<TT>(static_cast<TT>(c*myV[j].real()-s*myV[j].imag()),
+//                static_cast<TT>(c*myV[j].imag()+s*myV[j].real()));
+//          }
+//
+//        }
+//
+//      template<typename VV, typename GV>
+//        inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+//        {
+//          PointType ru(PrimLattice.toUnit(r));
+//          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+//          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+//
+//          const int N=kPoints.size();
+//          for (int j=0; j<N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
+//          for (int j=0; j<N; j++) myL[j] = trace(myH[j],GGt);
+//
+//          const ST two=2.0;
+//          TinyVector<complex<ST>,D> ck;
+//          register ST s,c;
+//          for (int j=0; j<psi.size(); j++) 
+//          {
+//            ST kk=dot(kPoints[j],kPoints[j]);
+//            for(int i=0; i<D; ++i) ck[i]=complex<ST>(0.0,kPoints[j][i]);
+//            sincos(-dot(r,kPoints[j]),&s,&c);
+//            complex<ST> e_mikr(c,s);
+//            convert(e_mikr * myV[j], psi[j]);
+//            convert(e_mikr*(-myV[j]*ck + myG[j]), dpsi[j]);
+//            convert(e_mikr*(-myV[j]*kk - two*dot(ck,myG[j]) + myL[j]), d2psi[j]);
+//          }
+//        }
+//
+//      template<typename VV, typename GV, typename GGV>
+//        void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+//        {
+//        }
+//    };
+//
+//  /** adoptor class to match complex<ST> spline with TT real SPOs
+//   * @tparam ST precision of spline
+//   * @tparam TT precision of SPOs
+//   * @tparam D dimension
+//   *
+//   * Requires temporage storage and multiplication of phase vectors
+//   */
+//  template<typename ST, typename TT, unsigned D>
+//    struct SplineC2RAdoptor
+//    {
+//      typedef ST                                                    real_type;
+//      typedef complex<ST>                                           value_type;
+//
+//      typedef typename einspline_traits<value_type,D>::SplineType  SplineType;
+//      typedef typename einspline_traits<value_type,D>::BCType      BCType;
+//      typedef typename OrbitalSetTraits<value_type>::ValueVector_t          StorageValueVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::GradVector_t           StorageGradVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::HessVector_t           StorageHessVector_t;
+//      typedef typename OrbitalSetTraits<value_type>::GradHessVector_t       StorageGradHessVector_t;
+//
+//      typedef CrystalLattice<ST,D> UnitCellType;
+//      typedef TinyVector<ST,D> PointType;
+//
+//      SplineType*         MultiSpline;
+//      UnitCellType        SuperLattice;
+//      UnitCellType        PrimLattice;
+//      TinyVector<int,D>   HalfG;
+//      Tensor<real_type,D> GGt;
+//      vector<PointType>   kPoints;
+//      vector<bool>        MakeTwoCopies;
+//      vector<real_type>   CosV;
+//      vector<real_type>   SinV;
+//      vector<value_type>  mKK;
+//
+//      // Temporary storage for Eispline calls
+//      StorageValueVector_t     myV;
+//      StorageValueVector_t     myL;
+//      StorageGradVector_t      myG;
+//      StorageHessVector_t      myH;
+//      StorageGradHessVector_t  myGH;
+//
+//      SplineC2RAdoptor():MultiSpline(0) { }
+//
+//      virtual ~SplineC2RAdoptor(){}
+//
+//      inline void resizeStorage(int n, int nvals)
+//      {
+//
+//        GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
+//
+//        HalfG=0;
+//        kPoints.resize(n);
+//        MakeTwoCopies.resize(n);
+//      
+//        myV.resize(n);
+//        myL.resize(n);
+//        myG.resize(n);
+//        myH.resize(n);
+//        CosV.resize(n);
+//        SinV.resize(n);
+//      }
+//
+//      inline bool isready()
+//      {
+//        mKK.resize(kPoints.size());
+//        for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
+//        return true;
+//      }
+//
+//      template<typename VV>
+//        inline void evaluate_v(const PointType& r, VV& psi)
+//        {
+//          PointType ru(PrimLattice.toUnit(r));
+//          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+//          einspline::evaluate(MultiSpline,ru,myV);
+//          const int N=kPoints.size();
+//          for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
+//
+//          int psiIndex = 0;
+//          for (int j=0; j<N; j++) 
+//          {
+//            psi[psiIndex] = static_cast<TT>(myV[j].real()*CosV[j]-myV[j].imag()*SinV[j]);
+//            //psi[psiIndex] = static_cast<TT>(myV[j].real());
+//            psiIndex++;
+//            if (MakeTwoCopies[j]) 
+//            {
+//              //psi[psiIndex] = static_cast<TT>(myV[j].imag());
+//              psi[psiIndex] = static_cast<TT>(myV[j].imag()*CosV[j]+myV[j].real()*SinV[j]);
+//              psiIndex++;
+//            }
+//          }
+//        }
+//
+//      template<typename VV, typename GV>
+//      inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+//        {
+//          PointType ru(PrimLattice.toUnit(r));
+//          for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
+//
+//          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+//          const int N=kPoints.size();
+//          for (int j=0; j<N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
+//          for (int j=0; j<N; j++) myL[j] = trace(myH[j],GGt);
+//
+//          const ST zero=0.0;
+//          const ST two=2.0;
+//          TinyVector<complex<ST>,D> ck;
+//          ST s,c;
+//          for(int j=0; j<N; ++j)
+//          {
+//            for (int n=0; n<D; n++)ck[n] = complex<ST>(zero,-kPoints[j][n]);
+//            sincos (-dot(r,kPoints[j]), &s, &c);
+//            complex<ST> e_mikr(c,s);
+//            myV[j]  = e_mikr*myV[j];
+//            myL[j]  = -dot(kPoints[j],kPoints[j])*myV[j]+e_mikr*(two*dot(ck,myG[j]) + myL[j]);
+//            myG[j]  = myV[j]*ck+e_mikr*myG[j];
+//          }
+//
+//          //const complex<ST> eye (0.0, 1.0);
+//          //ST s,c;
+//          //for(int j=0; j<N; ++j)
+//          //{
+//          //  complex<ST> u = myV[j];
+//          //  TinyVector<complex<ST>,D> gradu = myG[j];
+//          //  complex<ST> laplu = myL[j];
+//          //  PointType k = kPoints[j];
+//          //  TinyVector<complex<ST>,D> ck;
+//          //  for (int n=0; n<D; n++)	  ck[n] = k[n];
+//          //  sincos (-dot(r,k), &s, &c);
+//          //  complex<ST> e_mikr (c,s);
+//          //  myV[j]  = e_mikr*u;
+//          //  myG[j]  = e_mikr*(-eye*u*ck + gradu);
+//          //  myL[j]  = e_mikr*(-dot(k,k)*u - two*eye*dot(ck,gradu) + laplu);
+//          //}
+//
+//          int psiIndex=0;
+//          for(int j=0; j<N; ++j)
+//          {
+//            psi[psiIndex]=static_cast<TT>(myV[j].real());
+//            for(int n=0; n<D; ++n) dpsi[psiIndex][n]=static_cast<TT>(myG[j][n].real());
+//            d2psi[psiIndex]=static_cast<TT>(myL[j].real());
+//            ++psiIndex;
+//            if(MakeTwoCopies[j])
+//            {
+//              psi[psiIndex]=static_cast<TT>(myV[j].imag());
+//              for(int n=0; n<D; ++n) dpsi[psiIndex][n]=static_cast<TT>(myG[j][n].imag());
+//              d2psi[psiIndex]=static_cast<TT>(myL[j].imag());
+//              ++psiIndex;
+//            }
+//          }
+//        }
+//
+//      template<typename VV, typename GV, typename GGV>
+//        void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+//        {
+//        }
+//    };
+//
 }
 #endif

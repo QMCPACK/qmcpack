@@ -84,11 +84,12 @@ namespace qmcplusplus {
  
   /** base class any SplineAdoptor
    *
-   * This handles SC and twist
+   * This handles SC and twist and declare storage for einspline
    */
   template<typename ST, unsigned D>
     struct SplineAdoptorBase
     {
+      typedef TinyVector<ST,D>   PointType;
       TinyVector<int,D>          HalfG;
       vector<bool>               MakeTwoCopies;
       Tensor<ST,D>               GGt;
@@ -96,12 +97,25 @@ namespace qmcplusplus {
       CrystalLattice<ST,D>       SuperLattice;
       CrystalLattice<ST,D>       PrimLattice;
 
+      ///true, if this for complex, each derived class has to set this
+      bool is_complex;
       ///first index of the SPOs this Spline handles
       int FirstIndex;
       ///last index of the SPOs this Spline handles
       int LastIndex;
+      ///name of the adoptor
+      string AdoptorName;
+      ///keyword used to match hdf5
+      string KeyWord;
 
-      SplineAdoptorBase():FirstIndex(0),LastIndex(0)
+      typedef typename einspline_traits<ST,D>::DataType   DataType;
+      typename OrbitalSetTraits<ST>::ValueVector_t     myV;
+      typename OrbitalSetTraits<ST>::ValueVector_t     myL;
+      typename OrbitalSetTraits<ST>::GradVector_t      myG;
+      typename OrbitalSetTraits<ST>::HessVector_t      myH;
+      typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
+
+      SplineAdoptorBase():is_complex(false),FirstIndex(0),LastIndex(0)
       {
       }
 
@@ -210,82 +224,6 @@ namespace qmcplusplus {
         SplineAdoptor::evaluate_vgl(P.R[iat],v,g,l);
       }
     }
-  };
-
-  /** base class to read data and manage spline tables
-   *
-   * Each SplineAdoptor needs a reader
-   */
-  struct BsplineReaderBase
-  {
-    EinsplineSetBuilder* mybuilder;
-    Communicate* myComm;
-
-    BsplineReaderBase(EinsplineSetBuilder* e):mybuilder(e)
-    { 
-      myComm=mybuilder->getCommunicator();
-    }
-
-    /** copy minimal informatino from EinsplineSet to manage SplineAdoptor
-     */
-    template<typename SPE>
-      void init(EinsplineSet* in, SPE* out)
-      {
-        out->PrimLattice=in->PrimLattice;
-        out->SuperLattice=in->SuperLattice;
-        out->GGt=in->GGt;
-        out->setOrbitalSetSize(in->getOrbitalSetSize());
-      }
-
-    /** return the path name in hdf5
-     */
-    inline string psi_g_path(int ti, int spin, int ib)
-    {
-      ostringstream path;
-      path << "/electrons/kpoint_" << ti   
-        << "/spin_" << spin << "/state_" << ib << "/psi_g";
-      return path.str();
-    }
-
-    /** return the path name in hdf5
-     */
-    inline string psi_r_path(int ti, int spin, int ib)
-    {
-      ostringstream path;
-      path << "/electrons/kpoint_" << ti   
-        << "/spin_" << spin << "/state_" << ib << "/psi_r";
-      return path.str();
-    }
-
-    /** read/bcast psi_g 
-     * @param ti twist index
-     * @param spin spin index
-     * @param ib band index
-     * @param cG psi_g as stored in hdf5
-     */
-    void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG)
-    {
-      int ncg=0;
-      if(myComm->rank()==0)
-      {
-        string path=psi_g_path(ti,spin,ib);
-        HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
-        h_cG.read (mybuilder->H5FileID, path.c_str());
-        ncg=cG.size();
-      }
-      myComm->bcast(ncg);
-      if(ncg != mybuilder->Gvecs[ti].size())
-      {
-        APP_ABORT("Failed : ncg != Gvecs[ti].size()");
-      }
-      myComm->bcast(cG);
-    }
-
-    virtual ~BsplineReaderBase(){}
-
-    /** create the actual spline sets
-     */
-    virtual SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalset)=0;
   };
 
 }
