@@ -41,30 +41,30 @@ public:
   Array(const Array<T,D>& rhs);// copy contructor
 
   // specialized for 1-Dim
-  Array(unsigned n) { 
+  Array(size_t n) { 
     resize(n);
   }
 
   // specialized for 2-Dim
-  Array(unsigned n, unsigned m) {
+  Array(size_t n, size_t m) {
     resize(n,m);
   }
 
   // specialized for 3-Dim
-  Array(unsigned l, unsigned m, unsigned n) {
+  Array(size_t l, size_t m, size_t n) {
     resize(l,m,n);
   }
 
   // specialized for 4-Dim
-  Array(unsigned l, unsigned m, unsigned n, unsigned o) {
+  Array(size_t l, size_t m, size_t n, size_t o) {
     resize(l,m,n,o);
   }
 
   // Destructor 
   ~Array() {}
 
-  inline unsigned size() const { return X.size();}
-  int size(int i) const { return Length[i];}
+  inline size_t size() const { return X.size();}
+  size_t size(int i) const { return Length[i];}
 
   Container_t& storage()
   {
@@ -81,10 +81,10 @@ public:
   }
 
   // resize is specialized for D-dimensional
-  void resize(unsigned );          
-  void resize(unsigned, unsigned);  
-  void resize(unsigned, unsigned, unsigned); 
-  void resize(unsigned, unsigned, unsigned, unsigned);
+  void resize(size_t );          
+  void resize(size_t, size_t);  
+  void resize(size_t, size_t, size_t); 
+  void resize(size_t, size_t, size_t, size_t);
 
   inline typename Container_t::iterator begin() { return X.begin();}
   inline typename Container_t::iterator end() { return X.end();}
@@ -121,36 +121,36 @@ public:
   }
 
   // Get and Set Operations
-  inline Type_t& operator()(unsigned int i) { 
+  inline Type_t& operator()(size_t i) { 
     return X[i];
   }
 
-  inline Type_t operator()(unsigned int i) const { 
+  inline Type_t operator()(size_t i) const { 
     return X[i];
   }
-  inline Type_t& operator() (unsigned int i, unsigned int j) { 
+  inline Type_t& operator() (size_t i, size_t j) { 
     return X[j+Length[1]*i];
   }
-  inline Type_t operator() (unsigned int i, unsigned int j) const { 
+  inline Type_t operator() (size_t i, size_t j) const { 
     return X[j+Length[1]*i];
   }
-  inline Type_t& operator()(unsigned int i, unsigned int j, unsigned int k) { 
+  inline Type_t& operator()(size_t i, size_t j, size_t k) { 
     return X[k+Length[2]*(j+Length[1]*i)];
   }
-  inline Type_t operator()(unsigned int i, unsigned int j, unsigned int k) const { 
+  inline Type_t operator()(size_t i, size_t j, size_t k) const { 
     return X[k+Length[2]*(j+Length[1]*i)];
   }
-  inline Type_t& operator()(unsigned int i, unsigned int j, 
-                            unsigned int k, unsigned int l) { 
+  inline Type_t& operator()(size_t i, size_t j, 
+                            size_t k, size_t l) { 
     return X[l+Length[3]*(k+Length[2]*(j+Length[1]*i))];
   }
-  inline Type_t operator() (unsigned int i, unsigned int j, 
-                            unsigned int k, unsigned int l) const { 
+  inline Type_t operator() (size_t i, size_t j, 
+                            size_t k, size_t l) const { 
     return X[l+Length[3]*(k+Length[2]*(j+Length[1]*i))];
   }
 
 private:
-  int Length[D];
+  size_t Length[D];
   Container_t X;
 };
 
@@ -170,24 +170,24 @@ Array<T,D>::Array(const Array<T,D>& rhs) {
 }
 
 template<class T, unsigned D>
-void Array<T,D>::resize(unsigned n) { 
+void Array<T,D>::resize(size_t n) { 
   Length[0] = n;
   X.resize(n,T());
 }
 
 template<class T, unsigned D>
-void Array<T,D>::resize(unsigned n, unsigned m) {
+void Array<T,D>::resize(size_t n, size_t m) {
   Length[0] = n;
   Length[1] = m;
   X.resize(n*m,T());
 }
 
 template<class T, unsigned D>
-void Array<T,D>::resize(unsigned l, unsigned m, unsigned n) {
+void Array<T,D>::resize(size_t l, size_t m, size_t n) {
   Length[0] = l;
   Length[1] = m;
   Length[2] = n;
-  X.resize(l*m*n,T());
+  X.resize(l*m*n);//,T());
 }
 #endif //OHMMS_PETE_ARRAY_H
 

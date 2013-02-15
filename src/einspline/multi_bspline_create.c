@@ -344,15 +344,15 @@ set_multi_UBspline_3d_s (multi_UBspline_3d_s* spline, int num, float *data)
 
   float *coefs = spline->coefs + num;
 
-  int zs = spline->z_stride;
+  intptr_t zs = spline->z_stride;
   // First, solve in the X-direction 
 #pragma omp parallel for
   for (int iy=0; iy<My; iy++) 
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = iy*Mz+iz;
       intptr_t coffset = (iy*Nz+iz)*zs;
-      find_coefs_1d_s (spline->x_grid, spline->xBC, data+doffset, (intptr_t)My*Mz,
-		       coefs+coffset, (intptr_t)Ny*Nz*zs);
+      find_coefs_1d_s (spline->x_grid, spline->xBC, data+doffset, (intptr_t)(My*Mz),
+		       coefs+coffset, (intptr_t)(Ny*Nz)*zs);
     }
   
   // Now, solve in the Y-direction
@@ -372,7 +372,7 @@ set_multi_UBspline_3d_s (multi_UBspline_3d_s* spline, int num, float *data)
       intptr_t doffset = ((ix*Ny+iy)*Nz)*zs;
       intptr_t coffset = ((ix*Ny+iy)*Nz)*zs;
       find_coefs_1d_s (spline->z_grid, spline->zBC, coefs+doffset, 
-		       (intptr_t)zs, coefs+coffset, (intptr_t)zs);
+		       zs, coefs+coffset, zs);
     }
 }
 

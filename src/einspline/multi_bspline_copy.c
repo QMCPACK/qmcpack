@@ -64,7 +64,7 @@ extern "C" {
   }
 
 
-// Create 3D uniform single-precision, real Bspline
+  // Create 3D uniform single-precision, real Bspline
   multi_UBspline_3d_s *
     copy_multi_UBspline_3d_s (multi_UBspline_3d_s* spline)
     {
@@ -80,100 +80,103 @@ extern "C" {
   multi_UBspline_3d_d *
     copy_multi_UBspline_3d_d (multi_UBspline_3d_d* spline)
     {
-      //first copy the grid
-      Ugrid x_grid=spline->x_grid;
-      Ugrid y_grid=spline->y_grid;
-      Ugrid z_grid=spline->z_grid;
-      
-      int ngy_i=(int)(0.21*y_grid.delta_inv);
-      int ngy_f=(int)(0.46*y_grid.delta_inv)+1;
-      y_grid.start=(double)(ngy_i)*y_grid.delta;
-      y_grid.end=(double)(ngy_f)*y_grid.delta;
-      y_grid.num=ngy_f-ngy_i;
-
-      int ngz_i=(int)(0.2*z_grid.delta_inv);
-      int ngz_f=(int)(0.5*z_grid.delta_inv)+1;
-      z_grid.start=(double)(ngz_i)*z_grid.delta;
-      z_grid.end=(double)(ngz_f)*z_grid.delta;
-      z_grid.num=ngz_f-ngz_i;
-
-      //check the boundary condition
-      int Nx_f=x_grid.num+3;
-      int Ny_f=y_grid.num+3;
-      int Nz_f=z_grid.num+3;
-
-      printf("start=%16.8f end=%16.8f delta=%16.8f ngz=%d\n"
-          ,spline->z_grid.start, spline->z_grid.end, spline->z_grid.delta, spline->z_grid.num);
-
-      printf("start=%16.8f end=%16.8f delta=%16.8f ngz=%d\n"
-          ,z_grid.start, z_grid.end, z_grid.delta, z_grid.num);
-
-      multi_UBspline_3d_d *clone=create_multi_UBspline_3d_d(
-          spline->x_grid, spline->y_grid, spline->z_grid
-          ,spline->xBC, spline->yBC, spline->zBC
-          ,spline->num_splines);
-
-      multi_UBspline_3d_d *small=create_multi_UBspline_3d_d(
-          x_grid, y_grid, z_grid
-          ,spline->xBC, spline->yBC, spline->zBC
-          ,spline->num_splines);
-
-
-      for(int ix=0; ix<Nx_f; ++ix)
-        for(int iy=0; iy<Ny_f; ++iy)
-          for(int iz=0; iz<Nz_f; ++iz)
-          {
-            intptr_t p_out=ix*small->x_stride+iy*small->y_stride+iz*small->z_stride;
-            intptr_t p_in =ix*spline->x_stride+(iy+ngy_i)*spline->y_stride+(iz+ngz_i)*spline->z_stride;
-            for(int i=0; i<spline->num_splines; ++i) small->coefs[p_out++]=spline->coefs[p_in++];
+      fprintf (stderr, "Who is using copy_multi_UBspline_3d_s?\n");
+      abort();
+      return NULL;
+//      //first copy the grid
+//      Ugrid x_grid=spline->x_grid;
+//      Ugrid y_grid=spline->y_grid;
+//      Ugrid z_grid=spline->z_grid;
+//      
+//      int ngy_i=(int)(0.21*y_grid.delta_inv);
+//      int ngy_f=(int)(0.46*y_grid.delta_inv)+1;
+//      y_grid.start=(double)(ngy_i)*y_grid.delta;
+//      y_grid.end=(double)(ngy_f)*y_grid.delta;
+//      y_grid.num=ngy_f-ngy_i;
 //
-//            small->coeffs[ix*small->x_stride+iy*small->y_stride+iz]=
-//            spline->coeffs[ix*spline->x_stride+iy*spline->y_stride+iz];
-//            intptr_t offset = small->iy*Mz+iz;
-          }
-
-
-      memcpy(clone->coefs,spline->coefs,sizeof(double)*clone->coefs_size);
-
-      int num=spline->num_splines;
-      double vorg[num];
-      double vnew[num];
-
-      double x=0.001;
-      int ok=1;
-      int ntest=0;
-      while(x<1.0)
-      {
-        double y=y_grid.start+0.001;
-        while(y<y_grid.end)
-        {
-          double z=z_grid.start+1e-12;
-          while(z<z_grid.end)
-          {
-            eval_multi_UBspline_3d_d(spline,x,y,0.3,vorg);
-            eval_multi_UBspline_3d_d(small,x,y,0.3,vnew);
-
-            for(int i=0; i<num; ++i)
-              if(fabs(vorg[i]-vnew[i])>1e-12)
-              {
-                printf("%d %16.12f %16.12f %16.12f\n",i,vorg[i],vnew[i],vorg[i]-vnew[i]);
-                ok=0;
-              }
-            //  printf("%d %16.12f %16.12f %16.12f\n",i,vorg[i],vnew[i],vorg[i]-vnew[i]);
-            z+=0.02;
-            ntest++;
-          }
-          y+=0.07;
-        }
-        x += 0.03;
-      }
-
-      if(ok) 
-        printf("Everything is good with %d points\n",ntest);
-      else
-        printf("Something is wrong\n");
-      free(small);
-      return clone;
+//      int ngz_i=(int)(0.2*z_grid.delta_inv);
+//      int ngz_f=(int)(0.5*z_grid.delta_inv)+1;
+//      z_grid.start=(double)(ngz_i)*z_grid.delta;
+//      z_grid.end=(double)(ngz_f)*z_grid.delta;
+//      z_grid.num=ngz_f-ngz_i;
+//
+//      //check the boundary condition
+//      int Nx_f=x_grid.num+3;
+//      int Ny_f=y_grid.num+3;
+//      int Nz_f=z_grid.num+3;
+//
+//      printf("start=%16.8f end=%16.8f delta=%16.8f ngz=%d\n"
+//          ,spline->z_grid.start, spline->z_grid.end, spline->z_grid.delta, spline->z_grid.num);
+//
+//      printf("start=%16.8f end=%16.8f delta=%16.8f ngz=%d\n"
+//          ,z_grid.start, z_grid.end, z_grid.delta, z_grid.num);
+//
+//      multi_UBspline_3d_d *clone=create_multi_UBspline_3d_d(
+//          spline->x_grid, spline->y_grid, spline->z_grid
+//          ,spline->xBC, spline->yBC, spline->zBC
+//          ,spline->num_splines);
+//
+//      multi_UBspline_3d_d *small=create_multi_UBspline_3d_d(
+//          x_grid, y_grid, z_grid
+//          ,spline->xBC, spline->yBC, spline->zBC
+//          ,spline->num_splines);
+//
+//
+//      for(int ix=0; ix<Nx_f; ++ix)
+//        for(int iy=0; iy<Ny_f; ++iy)
+//          for(int iz=0; iz<Nz_f; ++iz)
+//          {
+//            intptr_t p_out=ix*small->x_stride+iy*small->y_stride+iz*small->z_stride;
+//            intptr_t p_in =ix*spline->x_stride+(iy+ngy_i)*spline->y_stride+(iz+ngz_i)*spline->z_stride;
+//            for(int i=0; i<spline->num_splines; ++i) small->coefs[p_out++]=spline->coefs[p_in++];
+////
+////            small->coeffs[ix*small->x_stride+iy*small->y_stride+iz]=
+////            spline->coeffs[ix*spline->x_stride+iy*spline->y_stride+iz];
+////            intptr_t offset = small->iy*Mz+iz;
+//          }
+//
+//
+//      memcpy(clone->coefs,spline->coefs,sizeof(double)*clone->coefs_size);
+//
+//      int num=spline->num_splines;
+//      double vorg[num];
+//      double vnew[num];
+//
+//      double x=0.001;
+//      int ok=1;
+//      int ntest=0;
+//      while(x<1.0)
+//      {
+//        double y=y_grid.start+0.001;
+//        while(y<y_grid.end)
+//        {
+//          double z=z_grid.start+1e-12;
+//          while(z<z_grid.end)
+//          {
+//            eval_multi_UBspline_3d_d(spline,x,y,0.3,vorg);
+//            eval_multi_UBspline_3d_d(small,x,y,0.3,vnew);
+//
+//            for(int i=0; i<num; ++i)
+//              if(fabs(vorg[i]-vnew[i])>1e-12)
+//              {
+//                printf("%d %16.12f %16.12f %16.12f\n",i,vorg[i],vnew[i],vorg[i]-vnew[i]);
+//                ok=0;
+//              }
+//            //  printf("%d %16.12f %16.12f %16.12f\n",i,vorg[i],vnew[i],vorg[i]-vnew[i]);
+//            z+=0.02;
+//            ntest++;
+//          }
+//          y+=0.07;
+//        }
+//        x += 0.03;
+//      }
+//
+//      if(ok) 
+//        printf("Everything is good with %d points\n",ntest);
+//      else
+//        printf("Something is wrong\n");
+//      free(small);
+//      return clone;
     }
 
 #ifdef __cplusplus
