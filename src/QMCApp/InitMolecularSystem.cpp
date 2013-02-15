@@ -121,7 +121,10 @@ namespace qmcplusplus {
     vector<LoneElectron> loneQ;
 
     double rmin=cutoff; 
+
+    ParticleSet::SingleParticlePos_t cm;
     for(int iat=0; iat<Centers; iat++) { 
+      cm += ions->R[iat];
       for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){
         rmin = std::min(rmin,d_ii->r(nn));
       }
@@ -146,6 +149,29 @@ namespace qmcplusplus {
     while(it != it_end) {
       els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
       ++it;
+    }
+
+    //extra electrons around the geometric center
+    double cnorm=1.0/static_cast<double>(Centers);
+    cm=cnorm*cm;
+    if(nup_tot<numUp)
+    {
+      double sep=rmin*2;
+      int iu=0;
+      while(nup_tot<numUp)
+      {
+        els->R[nup_tot++]=cm+sep*chi[iu++];
+      }
+    }
+
+    if(ndown_tot<numDown)
+    {
+      double sep=rmin*2;
+      int iu=0;
+      while(ndown_tot<numDown)
+      {
+        els->R[ndown_tot++]=cm+sep*chi[iu++];
+      }
     }
 
     //put all the electrons in a unit box
