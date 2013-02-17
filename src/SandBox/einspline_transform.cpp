@@ -3,7 +3,7 @@
  * Test code to check the correctness of the einspline
  */
 #include <SandBox/SplineTestBase.h>
-#include <einspline/multi_bspline_copy.h>
+#include <spline/einspline_util.hpp>
 #include <Message/Communicate.h>
 #include "Numerics/HDFNumericAttrib.h"
 #include <io/hdf_archive.h>
@@ -16,127 +16,6 @@ qmcplusplus::TinyVector<double,3> upper(0.75,0.75,0.75);
 
 namespace qmcplusplus
 {
-  template<typename GT>
-    void print_grid(GT& grid)
-    {
-      std::cout << grid.start << " " << grid.end << " " 
-        << grid.num << " " 
-        << grid.delta <<  " " << grid.delta_inv << std::endl; 
-    }
-
-  template<typename ENGT>
-    void print_spliner(ENGT* spline)
-    {
-      cout << "xgrid       "; print_grid(spline->x_grid);
-      cout << "ygrid       "; print_grid(spline->y_grid);
-      cout << "zgrid       "; print_grid(spline->z_grid);
-      //cout << "num_splines " << spline->num_splines << endl;
-      //cout << "coefs_size  " << spline->coefs_size << endl;
-      //cout << "xstride     " << spline->x_stride << endl;
-      //cout << "ystride     " << spline->y_stride << endl;
-    }
-
-  namespace einspline
-  {
-    /** interfaces to use UBspline_3d_X 
-     *
-     * - create
-     * - set
-     * - evaluate
-     */
-    template<typename VT, typename IT>
-    UBspline_3d_d*  create(UBspline_3d_d* s
-        , VT& start , VT& end, IT& ng , bc_code bc, int n=1)
-    { 
-      Ugrid x_grid, y_grid, z_grid;
-      BCtype_d xBC,yBC,zBC;
-      x_grid.start=start[0]; x_grid.end=end[0]; x_grid.num=ng[0];
-      y_grid.start=start[1]; y_grid.end=end[1]; y_grid.num=ng[1];
-      z_grid.start=start[2]; z_grid.end=end[2]; z_grid.num=ng[2];
-      xBC.lCode=xBC.rCode=bc;
-      yBC.lCode=yBC.rCode=bc;
-      zBC.lCode=zBC.rCode=bc;
-      return create_UBspline_3d_d(x_grid,y_grid,z_grid, xBC, yBC, zBC,NULL);
-    }
-
-
-    void  set(UBspline_3d_d* s, double* restrict data)
-    { 
-      recompute_UBspline_3d_d(s,data);
-    }
-
-    inline void  set(multi_UBspline_3d_d* spline, int i, UBspline_3d_d* spline_in
-        , const int* offset, const int *N)
-    { 
-      copy_UBspline_3d_d(spline, i, spline_in,offset,N);
-    }
-
-    inline void  set(multi_UBspline_3d_s* spline, int i, UBspline_3d_d* spline_in
-        , const int* offset, const int *N)
-    { 
-      copy_UBspline_3d_d_s(spline, i, spline_in,offset,N);
-    }
-
-    template<typename PT>
-    inline double  evaluate(UBspline_3d_d *restrict spline, const PT& r)
-    {
-      double res;
-      eval_UBspline_3d_d(spline,r[0],r[1],r[2],&res);
-      return res;
-    }
-
-  }
-
-  struct GridConvert
-  {
-    int N[3];
-    int Offset[3];
-
-    template<typename ENGT1, typename ENGT2, typename PT>
-      void create(ENGT1*& out, ENGT2* in, PT& lower, PT& upper, int num)
-      {
-
-        typedef typename bspline_engine_traits<ENGT1>::real_type real_type;
-
-        Ugrid agrid[3];
-        agrid[0]=in->x_grid;
-        agrid[1]=in->y_grid;
-        agrid[2]=in->z_grid;
-
-        for(int i=0; i<3; ++i)
-        {
-          int ngi=(int)(lower[i]*agrid[i].delta_inv);
-          int ngf=(int)(upper[i]*agrid[i].delta_inv)+1;
-          agrid[i].start=(real_type)(ngi)*agrid[i].delta;
-          agrid[i].end  =std::min((real_type)(ngf)*agrid[i].delta,agrid[i].end);
-          agrid[i].num=std::min(agrid[i].num,ngf-ngi);
-          Offset[i]=ngi;
-        }
-
-        typename bspline_engine_traits<ENGT1>::BCType xyz_bc[3];
-        xyz_bc[0].lCode=in->xBC.lCode; xyz_bc[0].rCode=in->xBC.rCode;
-        xyz_bc[1].lCode=in->yBC.lCode; xyz_bc[1].rCode=in->yBC.rCode;
-        xyz_bc[2].lCode=in->zBC.lCode; xyz_bc[2].rCode=in->zBC.rCode;
-
-        if (in->xBC.lCode == PERIODIC || in->xBC.lCode == ANTIPERIODIC)
-          N[0] = agrid[0].num+3;
-        else
-          N[0] = agrid[0].num+2;
-
-        if (in->yBC.lCode == PERIODIC || in->yBC.lCode == ANTIPERIODIC)
-          N[1] = agrid[1].num+3;
-        else
-          N[1] = agrid[1].num+2;
-
-        if (in->zBC.lCode == PERIODIC || in->zBC.lCode == ANTIPERIODIC)
-          N[2] = agrid[2].num+3;
-        else
-          N[2] = agrid[2].num+2;
-
-        out=einspline::create(out,agrid,xyz_bc,num);
-      }
-  };
-
   template<typename PT>
   inline bool inbox(const PT& pos)
   {
@@ -187,7 +66,7 @@ namespace qmcplusplus
 
       //create multi_UBspline_3d as usual on a truncated grid based on the dense grid
       einspline_engine<multi_UBspline_3d_d> newspline;
-      GridConvert gconv;
+      GridConvert<real_type> gconv;
       gconv.create(newspline.spliner,dense,lower,upper,num_splines);
       for(int i=0; i<num_splines; ++i) 
         einspline::set(newspline.spliner,i,dense,gconv.Offset,gconv.N);

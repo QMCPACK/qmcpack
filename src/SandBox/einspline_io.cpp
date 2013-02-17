@@ -8,6 +8,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
+#include <spline/einspline_util.hpp>
 #include <getopt.h>
 
 //testing subgrid
@@ -16,40 +17,6 @@ qmcplusplus::TinyVector<double,3> upper(1.0,1.0,1.0);
 
 namespace qmcplusplus
 {
-  template<typename ENGT>
-    struct h5data_proxy<einspline_engine<ENGT> >
-    : public h5_space_type<typename einspline_engine<ENGT>::value_type,4>
-  {
-    typedef typename einspline_engine<ENGT>::value_type value_type;
-    using h5_space_type<value_type,4>::dims;
-    using h5_space_type<value_type,4>::get_address;
-    typedef einspline_engine<ENGT> data_type;
-
-    data_type& ref_;
-
-    inline h5data_proxy(data_type& a): ref_(a)
-    {
-      dims[0]=a.spliner->x_grid.num+3;
-      dims[1]=a.spliner->y_grid.num+3;
-      dims[2]=a.spliner->z_grid.num+3;
-      dims[3]=a.spliner->z_stride;
-    }
-
-    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
-    {
-      //if(!h5d_getspace(grp,aname,this->size(),dims)) ref_.resize(dims[0]);
-      if(ref_.spliner) 
-        return h5d_read(grp,aname,get_address(ref_.spliner->coefs),xfer_plist);
-      else
-        return false;
-    }
-
-    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
-    {
-      return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(ref_.spliner->coefs),xfer_plist);
-    }
-  };
-
   template<typename ENGT>
     void SplineTest<ENGT>
     ::test(vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
