@@ -30,7 +30,12 @@ namespace qmcplusplus
     OneOverN=1.0/static_cast<RealType>(source.getTotalNum());
     Kshell=source.SK->KLists.kshell;
     MaxKshell=Kshell.size()-1;
+#if defined(USE_REAL_STRUCT_FACTOR)
+    RhokTot_r.resize(NumK);
+    RhokTot_i.resize(NumK);
+#else    
     RhokTot.resize(NumK);
+#endif    
     values.resize(NumK);
 
     Kmag.resize(MaxKshell);
@@ -51,7 +56,29 @@ namespace qmcplusplus
   SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("SkEstimator::evaluate(ParticleSet& P)");
+    //sum over species
+    std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
+    std::copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+NumK,RhokTot_i.begin());
+    for(int i=1; i<NumSpecies; ++i)
+      accumulate_elements(P.SK->rhok_r[i],P.SK->rhok_r[i]+NumK,RhokTot_r.begin());
+    
+    for(int i=1; i<NumSpecies; ++i)
+      accumulate_elements(P.SK->rhok_i[i],P.SK->rhok_i[i]+NumK,RhokTot_i.begin());
+
+    if(hdf5_out)
+    {
+      Vector<RealType>::const_iterator iit_r(RhokTot_r.begin()),iit_r_end(RhokTot_r.end());
+      Vector<RealType>::const_iterator iit_i(RhokTot_i.begin()),iit_i_end(RhokTot_i.end());
+      for(int i=myIndex;iit_r != iit_r_end;++iit_r,++iit_i,++i)
+        P.Collectables[i]+=OneOverN*((*iit_r)*(*iit_r)+(*iit_i)*(*iit_i));
+    }
+    else
+    {
+      Vector<RealType>::const_iterator iit_r(RhokTot_r.begin()),iit_r_end(RhokTot_r.end());
+      Vector<RealType>::const_iterator iit_i(RhokTot_i.begin()),iit_i_end(RhokTot_i.end());
+      for(int i=0;iit_r != iit_r_end;++iit_r,++iit_i,++i)
+        values[i]=OneOverN*((*iit_r)*(*iit_r)+(*iit_i)*(*iit_i));
+    }
 #else
     //sum over species
     std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
