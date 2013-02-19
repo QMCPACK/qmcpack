@@ -1,12 +1,12 @@
-SET(CMAKE_SYSTEM_PROCESSOR "XK6")
+SET(CMAKE_SYSTEM_PROCESSOR "XK7")
 #2011-12-06
 
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/default/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/default/bin/CC)
-set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER=1 ") 
+set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR") 
 #set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DUSE_REAL_STRUCT_FACTOR -DDISABLE_TIMER=1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1")
 set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
-set(XT_FLAGS "-march=bdver1 -D_CRAYMPI -DHAVE_FMA4=1")
+set(XT_FLAGS "-march=bdver1 -D_CRAYMPI -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1")
 #set(XT_FLAGS "-msse3 -D_CRAYMPI")
 set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS}")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
