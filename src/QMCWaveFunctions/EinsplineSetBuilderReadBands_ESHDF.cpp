@@ -145,7 +145,7 @@ namespace qmcplusplus {
          +1, FFTW_ESTIMATE);
 
       Vector<complex<double> > cG(MaxNumGvecs);
-
+        
       //this will be parallelized with OpenMP
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
@@ -157,7 +157,8 @@ namespace qmcplusplus {
         if(root)
         {
           ostringstream path;
-          path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
+	  //only twist zero has the gvectors!!!	
+          path << "/electrons/kpoint_" << 0    //SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
@@ -490,7 +491,7 @@ namespace qmcplusplus {
         if(root)
         {
           ostringstream path;
-          path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex 
+          path << "/electrons/kpoint_" << 0    //SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());

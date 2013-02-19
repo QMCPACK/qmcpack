@@ -406,6 +406,11 @@ namespace qmcplusplus {
             apot->put(cur);
             targetH->addOperator(apot,potName,false);
             app_log()<<"Adding S(k) estimator"<<endl;
+
+#if defined(USE_REAL_STRUCT_FACTOR)	    
+	    app_log()<<"S(k) estimator using Real S(k)"<<endl;
+#endif
+	    
           }
         }
 #if OHMMS_DIM==3
