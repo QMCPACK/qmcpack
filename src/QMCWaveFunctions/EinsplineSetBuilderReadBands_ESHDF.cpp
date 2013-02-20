@@ -165,9 +165,9 @@ namespace qmcplusplus {
           ncg=cG.size();
         }
         myComm->bcast(ncg);
-        if(ncg != Gvecs[ti].size())
+        if(ncg != Gvecs[0].size())
         {
-          APP_ABORT("Failed : ncg != Gvecs[ti].size()");
+          APP_ABORT("Failed : ncg != Gvecs[0].size()");
         }
 
         if(!root) cG.resize(ncg);
@@ -176,7 +176,7 @@ namespace qmcplusplus {
         t_h5 += c_h5.elapsed();
 
         c_unpack.restart();
-        unpack4fftw(cG,Gvecs[ti],MeshSize,FFTbox);
+        unpack4fftw(cG,Gvecs[0],MeshSize,FFTbox);
         t_unpack+= c_unpack.elapsed();
 
         c_fft.restart();
@@ -498,14 +498,14 @@ namespace qmcplusplus {
           ncg=cG.size();
         }
         myComm->bcast(ncg);
-        if(ncg != Gvecs[ti].size())
+        if(ncg != Gvecs[0].size())
         {
-          APP_ABORT("Failed : ncg != Gvecs[ti].size()");
+          APP_ABORT("Failed : ncg != Gvecs[0].size()");
         }
 
         if(!root) cG.resize(ncg);
         myComm->bcast(cG);
-        unpack4fftw(cG,Gvecs[ti],MeshSize,FFTbox);
+        unpack4fftw(cG,Gvecs[0],MeshSize,FFTbox);
         fftw_execute (FFTplan);
         fix_phase_rotate_c2r(FFTbox,splineData,TwistAngles[ti]);
 	set_multi_UBspline_3d_d (orbitalSet->MultiSpline, ival, splineData.data());
@@ -704,31 +704,31 @@ namespace qmcplusplus {
       //    std::set<TinyVector<int,3> > Gset;
       // Read k-points for all G-vectors and take the union
       TinyVector<int,3> maxIndex(0,0,0);
+
       Gvecs.resize(NumTwists);
 
       {
-        int ik=0;
         int numg=0;
         if(root)
         {
           ostringstream Gpath;
-          Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
-          HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
+          Gpath    << "/electrons/kpoint_0/gvectors";
+          HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[0]);
           h_Gvecs.read (H5FileID, Gpath.str().c_str());
-          numg=Gvecs[ik].size();
+          numg=Gvecs[0].size();
         }
         myComm->bcast(numg);
 
-        if(!root) Gvecs[ik].resize(numg);
-        myComm->bcast(Gvecs[ik]);
+        if(!root) Gvecs[0].resize(numg);
+        myComm->bcast(Gvecs[0]);
 
-        MaxNumGvecs=std::max(int(Gvecs[ik].size()),MaxNumGvecs);
+        MaxNumGvecs=Gvecs[0].size();
 
-        for (int ig=0; ig<Gvecs[ik].size(); ig++) 
+        for (int ig=0; ig<Gvecs[0].size(); ig++) 
         {
-          maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[ik][ig][0]));
-          maxIndex[1] = std::max(maxIndex[1], std::abs(Gvecs[ik][ig][1]));
-          maxIndex[2] = std::max(maxIndex[2], std::abs(Gvecs[ik][ig][2]));
+          maxIndex[0] = std::max(maxIndex[0], std::abs(Gvecs[0][ig][0]));
+          maxIndex[1] = std::max(maxIndex[1], std::abs(Gvecs[0][ig][1]));
+          maxIndex[2] = std::max(maxIndex[2], std::abs(Gvecs[0][ig][2]));
         }
         // for (int ig=0; ig<Gvecs.size(); ig++)
         // 	if (Gset.find(Gvecs[ig]) == Gset.end())
@@ -747,38 +747,43 @@ namespace qmcplusplus {
       MeshSize[1]=(MeshSize[1]>128)? *iy:(MeshSize[1]+MeshSize[1]%2);
       MeshSize[2]=(MeshSize[2]>128)? *iz:(MeshSize[2]+MeshSize[2]%2);
 
-      //get the map for each twist, but use the MeshSize from kpoint_0
-      for(int k=0; k<DistinctTwists.size(); ++k)
+      if(Version[0]<2)
       {
-        int ik=DistinctTwists[k];
-        if(ik==0) continue; //already done
-
-        int numg=0;
-        if(root)
+        //get the map for each twist, but use the MeshSize from kpoint_0
+        app_log() << "  ESHDF::Version " << Version << endl;
+        app_log() << "  Assumes distinct Gvecs set for different twists. Regenerate orbital files using updated QE." << endl;
+        for(int k=0; k<DistinctTwists.size(); ++k)
         {
-          ostringstream Gpath;
-          Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
-          HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
-          h_Gvecs.read (H5FileID, Gpath.str().c_str());
-          numg=Gvecs[ik].size();
-        }
-        myComm->bcast(numg);
+          int ik=DistinctTwists[k];
+          if(ik==0) continue; //already done
 
-        if(numg==0) 
-        {//copy kpoint_0, default
-          Gvecs[ik]=Gvecs[0];
-        }
-        else
-        {
-          if(numg !=  MaxNumGvecs)
+          int numg=0;
+          if(root)
           {
-            ostringstream o;
-            o<< "Twist " << ik << ": The number of Gvecs is different from kpoint_0."
-              << " This is not supported anymore. Rerun pw2qmcpack.x or equivalent";
-            APP_ABORT(o.str());
+            ostringstream Gpath;
+            Gpath    << "/electrons/kpoint_" << ik << "/gvectors";
+            HDFAttribIO<vector<TinyVector<int,3> > > h_Gvecs(Gvecs[ik]);
+            h_Gvecs.read (H5FileID, Gpath.str().c_str());
+            numg=Gvecs[ik].size();
           }
-          if(!root) Gvecs[ik].resize(numg);
-          myComm->bcast(Gvecs[ik]);
+          myComm->bcast(numg);
+
+          if(numg==0) 
+          {//copy kpoint_0, default
+            Gvecs[ik]=Gvecs[0];
+          }
+          else
+          {
+            if(numg !=  MaxNumGvecs)
+            {
+              ostringstream o;
+              o<< "Twist " << ik << ": The number of Gvecs is different from kpoint_0."
+                << " This is not supported anymore. Rerun pw2qmcpack.x or equivalent";
+              APP_ABORT(o.str());
+            }
+            if(!root) Gvecs[ik].resize(numg);
+            myComm->bcast(Gvecs[ik]);
+          }
         }
       }
     }

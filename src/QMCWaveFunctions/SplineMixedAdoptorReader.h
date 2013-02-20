@@ -213,16 +213,14 @@ namespace qmcplusplus {
             smallD_i.resize(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
           }
 
-          //TinyVector<double,3> TwistAngle(0.0,0.0,0.0);
-          int ncg=mybuilder->Gvecs[0].size();
-          Vector<complex<double> > cG(ncg);
+          Vector<complex<double> > cG(mybuilder->MaxNumGvecs);
 
           const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
           for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
           {
             int ti=SortBands[iorb].TwistIndex;
             get_psi_g(ti,spin,mybuilder->SortBands[iorb].BandIndex,cG);
-            unpack4fftw(cG,mybuilder->Gvecs[ti],MeshSize,FFTbox);
+            unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
             fftw_execute (FFTplan);
 
             //fix_phase_rotate_c2r(FFTbox,bigD,TwistAngle);

@@ -155,9 +155,9 @@ namespace qmcplusplus {
         ncg=cG.size();
       }
       myComm->bcast(ncg);
-      if(ncg != mybuilder->Gvecs[ti].size())
+      if(ncg != mybuilder->MaxNumGvecs)
       {
-        APP_ABORT("Failed : ncg != Gvecs[ti].size()");
+        APP_ABORT("Failed : ncg != MaxNumGvecs");
       }
       myComm->bcast(cG);
     }
@@ -285,7 +285,7 @@ namespace qmcplusplus {
             get_psi_g(ti,spin,SortBands[iorb].BandIndex,cG);
 
             c_unpack.restart();
-            unpack4fftw(cG,mybuilder->Gvecs[ti],mybuilder->MeshSize,FFTbox);
+            unpack4fftw(cG,mybuilder->Gvecs[0],mybuilder->MeshSize,FFTbox);
             t_unpack+= c_unpack.elapsed();
 
             c_fft.restart();
