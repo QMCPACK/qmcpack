@@ -157,8 +157,7 @@ namespace qmcplusplus {
         if(root)
         {
           ostringstream path;
-	  //only twist zero has the gvectors!!!	
-          path << "/electrons/kpoint_" << 0    //SortBands[iorb].TwistIndex 
+          path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
@@ -491,7 +490,7 @@ namespace qmcplusplus {
         if(root)
         {
           ostringstream path;
-          path << "/electrons/kpoint_" << 0    //SortBands[iorb].TwistIndex 
+          path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex 
             << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
           HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
