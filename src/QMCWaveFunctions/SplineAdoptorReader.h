@@ -279,7 +279,7 @@ namespace qmcplusplus {
           Vector<complex<double> > cG(mybuilder->MaxNumGvecs);
 
           //this will be parallelized with OpenMP
-          for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
+          for(int iorb=0; iorb<N; ++iorb)
           {
             int ti=SortBands[iorb].TwistIndex;
             get_psi_g(ti,spin,SortBands[iorb].BandIndex,cG);
@@ -300,32 +300,32 @@ namespace qmcplusplus {
             t_phase+= c_phase.elapsed();
 
             c_spline.restart();
-            bspline->set_spline(ival,splineData_r.data(),splineData_i.data());
+            bspline->set_spline(splineData_r.data(),splineData_i.data(),iorb);
             t_spline+= c_spline.elapsed();
           }
 
           fftw_destroy_plan(FFTplan);
           t_init+=c_init.elapsed();
         }
-        else
-        {
-          Array<complex<double>,3> rawData(nx,ny,nz);
-          //this will be parallelized with OpenMP
-          for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
-          {
-            //check dimension
-            if(root)
-            {
-              string path=psi_r_path(SortBands[iorb].TwistIndex,spin,SortBands[iorb].BandIndex);
-              HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
-              h_splineData.read(mybuilder->H5FileID, path.c_str());
-              simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
-            }
-            myComm->bcast(splineData_r);
-            myComm->bcast(splineData_i);
-            bspline->set_spline(ival,splineData_r.data(),splineData_i.data());
-          }
-        }
+        //else
+        //{
+        //  Array<complex<double>,3> rawData(nx,ny,nz);
+        //  //this will be parallelized with OpenMP
+        //  for(int iorb=0; iorb<N; ++iorb)
+        //  {
+        //    //check dimension
+        //    if(root)
+        //    {
+        //      string path=psi_r_path(SortBands[iorb].TwistIndex,spin,SortBands[iorb].BandIndex);
+        //      HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+        //      h_splineData.read(mybuilder->H5FileID, path.c_str());
+        //      simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
+        //    }
+        //    myComm->bcast(splineData_r);
+        //    myComm->bcast(splineData_i);
+        //    bspline->set_spline(splineData_r.data(),splineData_i.data(),iorb);
+        //  }
+        //}
 
         if(root)
         {

@@ -90,6 +90,7 @@ namespace qmcplusplus {
     struct SplineAdoptorBase
     {
       typedef TinyVector<ST,D>   PointType;
+      typedef UBspline_3d_d      SingleSplineType;  
       TinyVector<int,D>          HalfG;
       vector<bool>               MakeTwoCopies;
       Tensor<ST,D>               GGt;

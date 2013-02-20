@@ -23,6 +23,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::SplineType  SplineType;
       typedef typename einspline_traits<ST,D>::BCType      BCType;
       typedef typename SplineAdoptorBase<ST,D>::PointType  PointType;
+      typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
@@ -34,7 +35,12 @@ namespace qmcplusplus {
       using SplineAdoptorBase<ST,D>::myH;
       using SplineAdoptorBase<ST,D>::myGH;
 
+      ///Actual spline table, multi_bspline_3d_(d,s)
       SplineType *MultiSpline;
+      ///number of points of the original grid
+      int BaseN[3];
+      ///offset of the original grid, always 0
+      int BaseOffset[3];
 
       //vector<ST> phase;
 
@@ -59,12 +65,23 @@ namespace qmcplusplus {
       void create_spline(GT& xyz_g, BCT& xyz_bc)
       {
         MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+        for(int i=0; i<D; ++i)
+        {
+          BaseOffset[i]=0;
+          BaseN[i]=xyz_g[i].num+3;
+        }
       }
 
-      void set_spline(int ival,  ST* restrict psi_r, ST* restrict psi_i)
+      void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
       {
         einspline::set(MultiSpline, 2*ival, psi_r);
         einspline::set(MultiSpline, 2*ival+1, psi_i);
+      }
+
+      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
+      {
+        einspline::set(MultiSpline, 2*ival,spline_r, BaseOffset, BaseN);
+        einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
       }
 
       inline int convertPos(const PointType& r, PointType& ru)
@@ -165,6 +182,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::SplineType  SplineType;
       typedef typename einspline_traits<ST,D>::BCType      BCType;
       typedef typename SplineAdoptorBase<ST,D>::PointType         PointType;
+      typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
@@ -176,7 +194,12 @@ namespace qmcplusplus {
       using SplineAdoptorBase<ST,D>::myG;
       using SplineAdoptorBase<ST,D>::myH;
       using SplineAdoptorBase<ST,D>::myGH;
+      ///Actual spline table, multi_bspline_3d_(d,s)
       SplineType *MultiSpline;
+      ///number of points of the original grid
+      int BaseN[3];
+      ///offset of the original grid, always 0
+      int BaseOffset[3];
 
       vector<ST>   CosV;
       vector<ST>   SinV;
@@ -209,13 +232,24 @@ namespace qmcplusplus {
         mKK.resize(kPoints.size());
         for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
         MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+        for(int i=0; i<D; ++i)
+        {
+          BaseOffset[i]=0;
+          BaseN[i]=xyz_g[i].num+3;
+        }
       }
 
 
-      void set_spline(int ival,  ST* restrict psi_r, ST* restrict psi_i)
+      void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
       {
         einspline::set(MultiSpline, 2*ival, psi_r);
         einspline::set(MultiSpline, 2*ival+1, psi_i);
+      }
+
+      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
+      {
+        einspline::set(MultiSpline, 2*ival,spline_r, BaseOffset, BaseN);
+        einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
       }
 
       inline int convertPos(const PointType& r, PointType& ru)

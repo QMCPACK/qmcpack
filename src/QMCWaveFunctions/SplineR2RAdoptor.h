@@ -1,17 +1,6 @@
-/////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 // (c) Copyright 2003-  by Ken Esler and Jeongnim Kim           //
 //////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &          //
-//   Materials Computation Center                               //
-//   University of Illinois, Urbana-Champaign                   //
-//   Urbana, IL 61801                                           //
-//   e-mail: jnkim@ncsa.uiuc.edu                                //
-//                                                              //
-// Supported by                                                 //
-//   National Center for Supercomputing Applications, UIUC      //
-//   Materials Computation Center, UIUC                         //
-//////////////////////////////////////////////////////////////////
-
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 
@@ -28,6 +17,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::SplineType SplineType;
       typedef typename einspline_traits<ST,D>::BCType     BCType;
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
+      typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
       using SplineAdoptorBase<ST,D>::HalfG;
       using SplineAdoptorBase<ST,D>::GGt;
@@ -39,6 +29,11 @@ namespace qmcplusplus {
       using SplineAdoptorBase<ST,D>::myH;
       using SplineAdoptorBase<ST,D>::myGH;
       SplineType *MultiSpline;
+
+      ///number of points of the original grid
+      int BaseN[3];
+      ///offset of the original grid, always 0
+      int BaseOffset[3];
 
       SplineR2RAdoptor(): MultiSpline(0)
       {
@@ -60,9 +55,13 @@ namespace qmcplusplus {
     template<typename GT, typename BCT>
       void create_spline(GT& xyz_g, BCT& xyz_bc)
       {
-        cout << this->AdoptorName << ":create_spline(xyz_g,xyz_bc)" << endl;
         GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
         MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+        for(int i=0; i<D; ++i)
+        {
+          BaseOffset[i]=0;
+          BaseN[i]=xyz_g[i].num+3;
+        }
       }
 
       void create_spline(TinyVector<int,D>& mesh, int n)
@@ -74,6 +73,8 @@ namespace qmcplusplus {
           xyz_grid[i].start = 0.0;  xyz_grid[i].end = 1.0;  
           xyz_grid[i].num = mesh[i];
           xyz_bc[i].lCode=xyz_bc[i].rCode=(HalfG[i])? ANTIPERIODIC:PERIODIC;
+          BaseOffset[i]=0;
+          BaseN[i]=xyz_grid[i].num+3;
         }
 
         SplineType* dummy=0;
@@ -85,10 +86,16 @@ namespace qmcplusplus {
         return true;
       }
 
-      inline void set_spline(int ival, ST* psi_r, ST* psi_i)
+      inline void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
       {
         einspline::set(MultiSpline, ival,psi_r);
       }
+
+      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
+      {
+        einspline::set(MultiSpline, ival,spline_r, BaseOffset,BaseN);
+      }
+
       /** convert postion in PrimLattice unit and return sign */
       inline int convertPos(const PointType& r, PointType& ru)
       {
@@ -159,128 +166,6 @@ namespace qmcplusplus {
         {}
     };
 
-//  template<typename T>
-//    struct SplineR2RAdoptorReader: BsplineReaderBase
-//  {
-//    typedef SplineR2RAdoptor<T,double,3> adoptor_type;
-//    SplineR2RAdoptorReader(EinsplineSetBuilder* e): BsplineReaderBase(e)
-//      {}
-//
-//    SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet)
-//    {
-//      ReportEngine PRE("SplineR2RAdoptorReader","create_spline_set(int,EinsplineSet*)");
-//
-//      typedef T spline_data_type;
-//
-//      BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
-//
-//      init(orbitalSet,bspline);
-//
-//      int N=bspline->getOrbitalSetSize();
-//      bspline->resizeStorage(N,N);
-//
-//      int num = 0;
-//      bool root=myComm->rank()==0;
-//
-//      int ti=mybuilder->SortBands[0].TwistIndex;
-//      TinyVector<double,3> twist0 = mybuilder->TwistAngles[mybuilder->SortBands[0].TwistIndex];
-//      for (int i=0; i<3; i++)
-//        if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
-//          bspline->HalfG[i] = 1;
-//        else
-//          bspline->HalfG[i] = 0;
-//
-//      app_log() << "  TwistIndex = " << mybuilder->SortBands[0].TwistIndex << " TwistAngle " << twist0 << endl;
-//      app_log() <<"   HalfG = " << bspline->HalfG << endl;
-//
-//      string H5FileName(mybuilder->H5FileName);
-//
-//      H5OrbSet set(H5FileName, spin, N);
-//
-//      bool havePsir=!(mybuilder->ReadGvectors_ESHDF());
-//
-//      TinyVector<int,3> MeshSize=mybuilder->MeshSize;
-//
-//      app_log() << "MeshSize = (" << MeshSize[0] << ", " << MeshSize[1] << ", " << MeshSize[2] << ")\n";
-//
-//      int nx, ny, nz;
-//      nx=MeshSize[0]; ny=MeshSize[1]; nz=MeshSize[2];
-//
-//      bspline->allocate(MeshSize,N);
-//
-//      string splinefile=make_spline_filename(H5FileName,spin,mybuilder->TwistNum,MeshSize);
-//      int foundspline=0;
-//      Timer now;
-//      if(root)
-//      {
-//        hdf_archive h5f;
-//        foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
-//        if(foundspline)
-//        {
-//          string aname("none");
-//          foundspline = h5f.read(aname,"adoptor_name");
-//          foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
-//        }
-//        if(foundspline)
-//        {
-//          einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-//          foundspline=h5f.read(bigtable,"spline_0");
-//        }
-//      }
-//
-//      myComm->bcast(foundspline);
-//      if(foundspline)
-//      {
-//        app_log() << "Use existing bspline tables in " << splinefile << endl;
-//        chunked_bcast(myComm, bspline->MultiSpline); 
-//      }
-//      else
-//      {
-//        Array<complex<double>,3> FFTbox;
-//        FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
-//        fftw_plan FFTplan = fftw_plan_dft_3d 
-//          (MeshSize[0], MeshSize[1], MeshSize[2],
-//           reinterpret_cast<fftw_complex*>(FFTbox.data()),
-//           reinterpret_cast<fftw_complex*>(FFTbox.data()),
-//           +1, FFTW_ESTIMATE);
-//        //Array<spline_data_type,3> splineData(nx,ny,nz);
-//        Array<spline_data_type,3> splineData(nx,ny,nz);
-//
-//        int ncg=mybuilder->Gvecs[ti].size();
-//        Vector<complex<double> > cG(ncg);
-//
-//        for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
-//        {
-//          int ti=mybuilder->SortBands[iorb].TwistIndex;
-//
-//          get_psi_g(ti,spin,mybuilder->SortBands[iorb].BandIndex,cG);
-//          unpack4fftw(cG,mybuilder->Gvecs[ti],MeshSize,FFTbox);
-//          fftw_execute (FFTplan);
-//          fix_phase_rotate_c2r(FFTbox,splineData,twist0);
-//          bspline->set_spline(ival,splineData.data(),0);
-//          //einspline::set(bspline->MultiSpline, ival,splineData.data());
-//        }
-//
-//        fftw_destroy_plan(FFTplan);
-//
-//        if(root)
-//        {
-//          hdf_archive h5f;
-//          h5f.create(splinefile);
-//          einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-//          string aname("EinsplineR2RAdoptor");
-//          h5f.write(aname,"adoptor_name");
-//          h5f.write(bigtable,"spline_0");
-//        }
-//      }
-//
-//      app_log() << "TIME READBANDS " << now.elapsed() << endl;
-//
-//      return bspline;
-//    }
-//
-//    //ExtendedMap_d[set] = orbitalSet->MultiSpline;
-//  };
 }
 #endif
 
