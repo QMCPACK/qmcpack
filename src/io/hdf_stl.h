@@ -37,7 +37,7 @@ namespace qmcplusplus
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
     {
-      if(!h5d_getspace(grp,aname,this->size(),dims)) ref_.resize(dims[0]);
+      if(!get_space(grp,aname,this->size(),dims)) ref_.resize(dims[0]);
       return h5d_read(grp,aname,get_address(&ref_[0]),xfer_plist);
     }
 
@@ -47,15 +47,14 @@ namespace qmcplusplus
     }
   };
 
+  /** specialization for bitset<N>
+   */
   template<std::size_t N>
     struct h5data_proxy<std::bitset<N> >
     {
-      //NOTE: This specialization assumes each complex number was/will be saved
-      // as a pair of doubles. This is checked.
       typedef std::bitset<N> ArrayType_t;
       ArrayType_t& ref;
 
-      //Assumes complex stored as a pair of floats/doubles.
       h5data_proxy<ArrayType_t>(ArrayType_t& a): ref(a)
       { 
       }

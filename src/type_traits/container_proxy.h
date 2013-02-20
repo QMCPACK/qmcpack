@@ -16,7 +16,7 @@ namespace APPNAMESPACE {
       T& ref;
       inline container_proxy(T& a):ref(a){}
       inline size_t size() const {return DIM;}
-      inline pointer data() { return &ref;}
+      inline pointer data() { return scalar_traits<T>::get_address(&ref);}
     };
 
   template<typename T, unsigned D>
@@ -27,7 +27,7 @@ namespace APPNAMESPACE {
       TinyVector<T,D>& ref;
       inline container_proxy(TinyVector<T,D>& a):ref(a) { }
       inline size_t size() const {return DIM;}
-      inline pointer data() { return ref.data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref.data());}
     };
 
   template<typename T, unsigned D>
@@ -38,7 +38,7 @@ namespace APPNAMESPACE {
       Tensor<T,D>& ref;
       inline container_proxy(Tensor<T,D>& a):ref(a){}
       inline size_t size() const {return DIM;}
-      inline pointer data() { return ref.data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref.data());}
     };
 
   template<typename T>
@@ -49,7 +49,7 @@ namespace APPNAMESPACE {
       std::vector<T>& ref;
       inline container_proxy(std::vector<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
-      inline pointer data() { return &ref[0];}
+      inline pointer data() { return scalar_traits<T>::get_address(&ref[0]);}
       template<typename I>
       inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
@@ -83,7 +83,7 @@ namespace APPNAMESPACE {
       data_type& ref;
       inline container_proxy(data_type& a):ref(a) { }
       inline size_t size() const {return ref.size()*DIM;}
-      inline pointer data() { return ref[0].data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref[0].data());}
     };
 
 
@@ -108,7 +108,7 @@ namespace APPNAMESPACE {
       Vector<T>& ref;
       inline container_proxy(Vector<T>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
-      inline pointer data() { return ref.data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref.data());}
       template<typename I>
       inline void resize(I* n) {ref.resize(static_cast<size_t>(n[0]));}
     };
@@ -122,7 +122,7 @@ namespace APPNAMESPACE {
       data_type& ref;
       inline container_proxy(data_type& a):ref(a) { }
       inline size_t size() const {return ref.size()*DIM;}
-      inline pointer data() { return ref[0].data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref[0].data());}
     };
 
   template<typename T, unsigned D>
@@ -132,7 +132,7 @@ namespace APPNAMESPACE {
       Array<T,D>& ref;
       inline container_proxy(Array<T,D>& a):ref(a){}
       inline size_t size() const {return ref.size()*container_proxy<T>::DIM;}
-      inline pointer data() { return ref.data();}
+      inline pointer data() { return scalar_traits<T>::get_address(ref.data());}
     };
 }
 #endif

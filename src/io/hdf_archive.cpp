@@ -65,7 +65,10 @@ namespace qmcplusplus
       }
       //true, if this task does not need to participate in I/O
       Mode.set(IS_PARALLEL,use_collective);
-      Mode.set(NOIO,comm->rank()&&!use_collective);
+      if(use_collective)
+        Mode.set(NOIO,comm->rank());
+      else
+        Mode.set(NOIO,false);
     }
     else
     {

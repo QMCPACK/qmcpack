@@ -27,13 +27,16 @@ namespace qmcplusplus {
     enum {DIM=1};
     typedef T real_type;
     typedef T value_type;
+    static inline T* get_address(T* a) { return a;}
   };
 
-  template<typename T> struct scalar_traits<std::complex<T> > 
+  template<typename T> 
+    struct scalar_traits<std::complex<T> > 
   {
     enum {DIM=2};
     typedef T          real_type;
     typedef std::complex<T> value_type;
+    static inline T* get_address(complex<T>* a) { return reinterpret_cast<T*>(a);}
   };
 
   /** generic conversion from type T1 to type T2 using implicit conversion
