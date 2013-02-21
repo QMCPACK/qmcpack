@@ -155,7 +155,8 @@ namespace qmcplusplus {
     // orbitals themselves.                                        //
     /////////////////////////////////////////////////////////////////
     if (myComm->rank() == 0) 
-      if (!ReadOrbitalInfo()) {
+      if (!ReadOrbitalInfo()) 
+      {
 	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
         APP_ABORT("EinsplineSetBuilder::createSPOSet");
       }

@@ -43,6 +43,12 @@ namespace qmcplusplus {
     std::string format;
     HDFAttribIO<string> h_format(format);
     h_format.read(H5FileID, "/format");
+
+    HDFAttribIO<TinyVector<int,3> > h_Version(Version);
+    h_Version.read (H5FileID, "/version");
+    app_log() << "  HDF5 orbital file version " 
+	      << Version[0] << "." << Version[1] << "\n";
+
     if (format.find("ES")<format.size())
     {
       Format = ESHDF;
@@ -54,10 +60,6 @@ namespace qmcplusplus {
     // Read basic parameters from the orbital file. //
     //////////////////////////////////////////////////
     // Check the version
-    HDFAttribIO<TinyVector<int,2> > h_Version(Version);
-    h_Version.read (H5FileID, "/version");
-    app_log() << "  HDF5 orbital file version " 
-	      << Version[0] << "." << Version[1] << "\n";
     if (Version[0]==0 && Version[1]== 11) {
       parameterGroup  = "/parameters_0";
       ionsGroup       = "/ions_2";
