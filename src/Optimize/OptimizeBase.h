@@ -50,7 +50,7 @@ public:
 
   virtual Return_t Cost(bool needGrad=true) = 0;
   
-  virtual void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0) = 0;
+  virtual void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0) = 0;
 
   virtual void Report() = 0;
 

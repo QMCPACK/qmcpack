@@ -42,7 +42,7 @@ namespace qmcplusplus
   }
 
 
-  void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff)
+  void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
   {
     if (FiniteDiff != 0)
     {

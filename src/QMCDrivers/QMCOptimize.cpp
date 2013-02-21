@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -24,7 +23,7 @@
 #include "Optimize/testDerivOptimization.h"
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
-#include "QMCDrivers/QMCCostFunctionSingle.h"
+//#include "QMCDrivers/QMCCostFunctionSingle.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
@@ -267,14 +266,15 @@ namespace qmcplusplus {
 	optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
       else
 #endif
-#if defined(ENABLE_OPENMP)
-	if(true /*omp_get_max_threads()>1*/)
-      {
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-      }
-      else
-#endif
-        optTarget = new QMCCostFunctionSingle(W,Psi,H);
+//#if defined(ENABLE_OPENMP)
+//	if(true /*omp_get_max_threads()>1*/)
+//      {
+//        optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+//      }
+//      else
+//#endif
+//        optTarget = new QMCCostFunctionSingle(W,Psi,H);
 
       optTarget->setStream(&app_log());
       success=optTarget->put(q);
