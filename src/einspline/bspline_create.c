@@ -492,12 +492,11 @@ create_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   spline->x_stride = Ny*Nz;
   spline->y_stride = Nz;
 
-
-  size_t Nxyz=(size_t)Nx*(size_t)Ny*(size_t)Nz;
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz;
 #ifndef HAVE_SSE2
-  spline->coefs      = malloc (sizeof(float)*Nxyz);
+  spline->coefs      = malloc (sizeof(float)*spline->coefs_size);
 #else
-  posix_memalign ((void**)&spline->coefs, 16, (sizeof(float)*Nxyz));
+  posix_memalign ((void**)&spline->coefs, 16, (sizeof(float)*spline->coefs_size));
 #endif
 
   // First, solve in the X-direction 
@@ -1372,10 +1371,12 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   spline->x_stride = Ny*Nz;
   spline->y_stride = Nz;
 
+  spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz;
+
 #ifndef HAVE_SSE2
-  spline->coefs      = malloc (sizeof(double)*Nx*Ny*Nz);
+  spline->coefs      = malloc (sizeof(double)*spline->coefs_size);
 #else
-  posix_memalign ((void**)&spline->coefs, 16, (sizeof(double)*Nx*Ny*Nz));
+  posix_memalign ((void**)&spline->coefs, 16, (sizeof(double)*spline->coefs_size)); 
 #endif
 
   if(data != NULL) // only data is provided

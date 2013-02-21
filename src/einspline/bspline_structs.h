@@ -20,6 +20,7 @@
 
 #ifndef BSPLINE_STRUCTS_STD_H
 #define BSPLINE_STRUCTS_STD_H
+#include <stdlib.h>
 
 ///////////////////////////
 // Single precision real //
@@ -51,6 +52,7 @@ typedef struct
   int x_stride, y_stride;
   Ugrid x_grid, y_grid, z_grid;
   BCtype_s xBC, yBC, zBC;
+  size_t coefs_size;
 } UBspline_3d_s;
 
 
@@ -84,6 +86,7 @@ typedef struct
   int x_stride, y_stride;
   Ugrid x_grid, y_grid, z_grid;
   BCtype_d xBC, yBC, zBC;
+  size_t coefs_size;
 } UBspline_3d_d;
 
 
