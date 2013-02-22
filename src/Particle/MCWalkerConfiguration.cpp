@@ -433,7 +433,7 @@ bool
 MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
     , HDFWalkerOutput* out, int np)
 {
-
+#if !(defined(__bgp__)||(__bgq__))
   MCWalkerConfiguration wtemp(*this);
   wtemp.loadEnsemble(others,false);
   int w=wtemp.getActiveWalkers();
@@ -446,6 +446,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
   wtemp.setWalkerOffsets(nwoff);
 
   out->dump(wtemp);
+#endif
   return true;
 }
 
