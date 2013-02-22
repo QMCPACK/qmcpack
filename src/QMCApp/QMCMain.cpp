@@ -36,6 +36,7 @@
 #include "HDFVersion.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
+#include "qmc_common.h"
 
 namespace qmcplusplus {
 
@@ -265,6 +266,39 @@ namespace qmcplusplus {
     myProject.get(app_log());
     app_log() << endl;
 
+    OhmmsXPathObject ham("//hamiltonian",m_context);
+    if(ham.empty())
+    {
+      qmc_common::use_density=true;
+    }
+    else
+    {
+      for(int i=0; i<ham.size(); ++i)
+      {
+        xmlNodePtr cur=ham[i]->children;
+        while(cur != NULL)
+        {
+          string aname="0";
+          OhmmsAttributeSet a;
+          a.add(aname,"type");
+          a.put(cur);
+          if(aname == "mpc" || aname == "MPC")
+          {
+            qmc_common::use_density=true;
+          }
+          cur = cur->next;
+        }
+      }
+    }
+
+    if(qmc_common::use_density)
+    {
+      app_log() << "  hamiltonian has MPC. Will read density if it is found." << endl;
+    }
+    else
+    {
+      app_log() << "  DO NOT READ DENSITY" << endl;
+    }
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
