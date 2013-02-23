@@ -111,6 +111,15 @@ namespace qmcplusplus {
       app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
         << "x" << TileFactor[2] << " tiling factor.\n";
 
+    if(NumTwists<=TwistNum)
+    {
+
+      ostringstream o;
+      o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
+        << "Requested TwistNum=" << TwistNum << " does not exist. "
+        << H5FileName << " has " << NumTwists << " twists.";
+      APP_ABORT(o.str());
+    }
     //////////////////////////////////
     // Read ion types and locations //
     //////////////////////////////////
