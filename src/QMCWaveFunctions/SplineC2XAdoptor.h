@@ -84,6 +84,18 @@ namespace qmcplusplus {
         einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
       }
 
+      bool read_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.read(bigtable,"spline_0");
+      }
+
+      bool write_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.write(bigtable,"spline_0");
+      }
+
       inline int convertPos(const PointType& r, PointType& ru)
       {
         ru=PrimLattice.toUnit(r);
@@ -239,7 +251,6 @@ namespace qmcplusplus {
         }
       }
 
-
       void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
       {
         einspline::set(MultiSpline, 2*ival, psi_r);
@@ -250,6 +261,18 @@ namespace qmcplusplus {
       {
         einspline::set(MultiSpline, 2*ival,spline_r, BaseOffset, BaseN);
         einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
+      }
+      
+      bool read_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.read(bigtable,"spline_0");
+      }
+
+      bool write_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.write(bigtable,"spline_0");
       }
 
       inline int convertPos(const PointType& r, PointType& ru)

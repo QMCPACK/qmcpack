@@ -236,10 +236,7 @@ namespace qmcplusplus {
           foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
         }
         if(foundspline)
-        {
-          einspline_engine<SplineType> bigtable(bspline->MultiSpline);
-          foundspline=h5f.read(bigtable,"spline_0");
-        }
+          bspline->read_splines(h5f);
       }
       myComm->bcast(foundspline);
       t_h5 = now.elapsed();
@@ -331,11 +328,10 @@ namespace qmcplusplus {
         {
           hdf_archive h5f;
           h5f.create(splinefile);
-          einspline_engine<SplineType> bigtable(bspline->MultiSpline);
           h5f.write(bspline->AdoptorName,"adoptor_name");
           int sizeD=sizeof(typename adoptor_type::DataType);
           h5f.write(sizeD,"sizeof");
-          h5f.write(bigtable,"spline_0");
+          bspline->write_splines(h5f);
         }
       }
 

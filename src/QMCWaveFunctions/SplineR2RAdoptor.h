@@ -96,6 +96,18 @@ namespace qmcplusplus {
         einspline::set(MultiSpline, ival,spline_r, BaseOffset,BaseN);
       }
 
+      bool read_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.read(bigtable,"spline_0");
+      }
+
+      bool write_splines(hdf_archive& h5f)
+      {
+        einspline_engine<SplineType> bigtable(MultiSpline);
+        return h5f.write(bigtable,"spline_0");
+      }
+
       /** convert postion in PrimLattice unit and return sign */
       inline int convertPos(const PointType& r, PointType& ru)
       {

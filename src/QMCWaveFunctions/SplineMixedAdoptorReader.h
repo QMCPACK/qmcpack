@@ -163,26 +163,7 @@ namespace qmcplusplus {
           }
 
           if(foundspline)
-          {
-            TinyVector<double,3> lower_in(end);
-            TinyVector<double,3> upper_in(start);
-            h5f.read(lower_in,"lower_bound");
-            h5f.read(upper_in,"upper_bound");
-
-            lower_in-=lower; upper_in-=upper;
-            if(dot(lower_in,lower_in)<1e-12 &&dot(upper_in,upper_in)<1e-12)
-            {
-              einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-              einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
-              foundspline=h5f.read(bigtable,"spline_0");
-              foundspline=h5f.read(smalltable,"spline_1");
-            }
-            else
-            {
-              app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
-              foundspline=0;
-            }
-          }
+            foundspline=bspline->read_splines(h5f);
         }
 
         myComm->bcast(foundspline);
@@ -265,15 +246,10 @@ namespace qmcplusplus {
           {
             hdf_archive h5f;
             h5f.create(splinefile);
-            einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-            einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
             h5f.write(bspline->AdoptorName,"adoptor_name");
             int sizeD=sizeof(typename adoptor_type::DataType);
             h5f.write(sizeD,"sizeof");
-            h5f.write(lower,"lower_bound");
-            h5f.write(upper,"upper_bound");
-            h5f.write(bigtable,"spline_0");
-            h5f.write(smalltable,"spline_1");
+            bspline->write_splines(h5f);
           }
         }
 

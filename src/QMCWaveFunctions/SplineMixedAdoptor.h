@@ -14,6 +14,48 @@
 
 namespace qmcplusplus {
 
+  template<typename SMA>
+    struct hdf_dual_grid
+    {
+      static bool read(SMA* bspline, hdf_archive& h5f)
+      {
+        TinyVector<double,3> lower_in;
+        TinyVector<double,3> upper_in;
+        h5f.read(lower_in,"lower_bound");
+        h5f.read(upper_in,"upper_bound");
+
+        bool foundspline=true;
+        lower_in-=bspline->Lower; upper_in-=bspline->Upper;
+        if(dot(lower_in,lower_in)<1e-12 &&dot(upper_in,upper_in)<1e-12)
+        {
+          einspline_engine<typename SMA::SplineType> bigtable(bspline->MultiSpline);
+          einspline_engine<typename SMA::SplineType> smalltable(bspline->smallBox);
+          foundspline=h5f.read(bigtable,"spline_0");
+          foundspline=h5f.read(smalltable,"spline_1");
+        }
+        else
+        {
+          app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
+          foundspline=0;
+        }
+        return foundspline;
+      }
+
+      static bool write(SMA* bspline, hdf_archive& h5f)
+      {
+        einspline_engine<typename SMA::SplineType> bigtable(bspline->MultiSpline);
+        einspline_engine<typename SMA::SplineType> smalltable(bspline->smallBox);
+        TinyVector<double,3> lower(bspline->Lower);
+        TinyVector<double,3> upper(bspline->Upper);
+        int doneit=1;
+        doneit=h5f.write(lower,"lower_bound");
+        doneit=h5f.write(upper,"upper_bound");
+        doneit=h5f.write(bigtable,"spline_0");
+        doneit=h5f.write(smalltable,"spline_1");
+        return doneit;
+      }
+
+    };
   /** adoptor class to match ST real spline with TT real SPOs
    * @tparam ST precision of spline
    * @tparam TT precision of SPOs
@@ -26,6 +68,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::BCType     BCType;
       typedef typename einspline_traits<ST,D>::DataType   DataType;
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
+      typedef SplineMixedAdoptor<ST,TT,D> ThisType;
 
       using SplineAdoptorBase<ST,D>::HalfG;
       using SplineAdoptorBase<ST,D>::GGt;
@@ -77,6 +120,16 @@ namespace qmcplusplus {
           MultiSpline=einspline::create(dummy,xyz_grid,xyz_bc,2*n);
         else
           MultiSpline=einspline::create(dummy,xyz_grid,xyz_bc,n);
+      }
+
+      bool read_splines(hdf_archive& h5f)
+      {
+        return hdf_dual_grid<ThisType>::read(this,h5f);
+      }
+
+      bool write_splines(hdf_archive& h5f)
+      {
+        return hdf_dual_grid<ThisType>::write(this,h5f);
       }
 
       template <typename UBspline, typename PT>
@@ -147,6 +200,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::BCType     BCType;
       typedef typename einspline_traits<ST,D>::DataType   DataType;
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
+      typedef SplineOpenAdoptor<ST,TT,D> ThisType;
 
       using SplineAdoptorBase<ST,D>::SuperLattice;
 
@@ -241,6 +295,16 @@ namespace qmcplusplus {
 
           einspline::set(smallBox,ival,dense,gTransform.Offset,gTransform.N);
         }
+
+      bool read_splines(hdf_archive& h5f)
+      {
+        return hdf_dual_grid<ThisType>::read(this,h5f);
+      }
+
+      bool write_splines(hdf_archive& h5f)
+      {
+        return hdf_dual_grid<ThisType>::write(this,h5f);
+      }
 
       inline bool isready()
       {
