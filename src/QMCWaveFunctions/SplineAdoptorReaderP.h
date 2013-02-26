@@ -239,7 +239,7 @@ namespace qmcplusplus {
       if(root)
       {
         now.restart();
-        hdf_archive h5f;
+        hdf_archive h5f(myComm);
         foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
         if(foundspline)
         {
@@ -254,10 +254,8 @@ namespace qmcplusplus {
           foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
         }
         if(foundspline)
-        {
-          einspline_engine<SplineType> bigtable(bspline->MultiSpline);
-          foundspline=h5f.read(bigtable,"spline_0");
-        }
+          bspline->read_splines(h5f);
+
         app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << endl;;
       }
       myComm->bcast(foundspline);
@@ -310,17 +308,23 @@ namespace qmcplusplus {
              reinterpret_cast<fftw_complex*>(FFTbox.data()),
              +1, FFTW_ESTIMATE);
 
-          now.restart();
-          initialize_spline_pio_bcast(spin);
-          app_log() << "  SplineAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << endl;
+          //now.restart();
+          //initialize_spline_pio_bcast(spin);
+          //app_log() << "  SplineAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << endl;
 
-          now.restart();
-          initialize_spline_pio(spin);
-          app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << endl;
-
-          now.restart();
-          initialize_spline_slow(spin);
-          app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << endl;
+          size_t ntot=size_t(nx*ny*nz)*size_t(N);
+          if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
+          {
+            now.restart();
+            initialize_spline_pio(spin);
+            app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << endl;
+          }
+          else
+          {
+            now.restart();
+            initialize_spline_slow(spin);
+            app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << endl;
+          }
         }
         else//why, don't know
           initialize_spline_psi_r(spin);
@@ -330,11 +334,10 @@ namespace qmcplusplus {
           now.restart();
           hdf_archive h5f;
           h5f.create(splinefile);
-          einspline_engine<SplineType> bigtable(bspline->MultiSpline);
           h5f.write(bspline->AdoptorName,"adoptor_name");
           int sizeD=sizeof(typename adoptor_type::DataType);
           h5f.write(sizeD,"sizeof");
-          h5f.write(bigtable,"spline_0");
+          bspline->write_splines(h5f);
           app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << endl;
         }
       }
@@ -395,7 +398,8 @@ namespace qmcplusplus {
           fix_phase_rotate_c2c(FFTbox,data_r, data_i,mybuilder->TwistAngles[ti]);
         else
           fix_phase_rotate_c2r(FFTbox,data_r, mybuilder->TwistAngles[ti]);
-        bspline->set_spline(data_r.data(),data_i.data(),iorb);
+
+        bspline->set_spline(data_r.data(),data_i.data(),ti,iorb,0);
       }
     }
 
@@ -417,21 +421,21 @@ namespace qmcplusplus {
         for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
         {
           int ti=SortBands[iorb].TwistIndex;
-          string s=psi_g_path(ti,spin,iorb);
+          string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
           foundit &= h5f.read(cG,s);
           fft_spline(cG,ti,ib);
         }
         if(root)
         {
           for(int iorb=OrbGroups[0],ib=0; iorb<OrbGroups[1]; ++iorb,++ib)
-            bspline->set_spline(spline_r[ib],spline_i[ib],iorb);
+            bspline->set_spline(spline_r[ib],spline_i[ib],SortBands[iorb].TwistIndex,iorb,0);
         }
       }//root put splines to the big table
 
       myComm->barrier();
       myComm->bcast(foundit);
 
-      if(!foundit) APP_ABORT("SplineMixedAdoptorReader Failed to read band(s)");
+      if(!foundit) APP_ABORT("SplineAdoptorReader Failed to read band(s)");
 
       //mpi needs int
       int ng_big=static_cast<int>(spline_r[0]->coefs_size);
@@ -458,9 +462,10 @@ namespace qmcplusplus {
               mpi::recv(*myComm,spline_i[ib]->coefs,ng_big,ip,iorb+N);
           }
 
+          const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
           for(int iorb=OrbGroups[ip],ib=0; iorb<OrbGroups[ip+1]; ++iorb,++ib)
           {
-            bspline->set_spline(spline_r[ib],spline_i[ib],iorb);
+            bspline->set_spline(spline_r[ib],spline_i[ib],SortBands[iorb].TwistIndex,iorb,0);
           }
         }
       }
@@ -489,7 +494,7 @@ namespace qmcplusplus {
         for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
         {
           int ti=SortBands[iorb].TwistIndex;
-          string s=psi_g_path(ti,spin,iorb);
+          string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
           foundit &= h5f.read(cG,s);
           fft_spline(cG,ti,ib);
         }
@@ -497,7 +502,7 @@ namespace qmcplusplus {
 
       myComm->barrier();
       myComm->bcast(foundit);
-      if(!foundit) APP_ABORT("SplineMixedAdoptorReader Failed to read band(s)");
+      if(!foundit) APP_ABORT("SplineAdoptorReader Failed to read band(s)");
 
       int ng_big=static_cast<int>(spline_r[0]->coefs_size);
 
@@ -508,6 +513,7 @@ namespace qmcplusplus {
 
       for(int ip=0; ip<np; ++ip)
       {
+        const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
         for(int iorb=OrbGroups[ip], ib=0; iorb<OrbGroups[ip+1]; ++iorb, ++ib)
         {
           if(ip==myComm->rank())
@@ -525,7 +531,7 @@ namespace qmcplusplus {
           if(bspline->is_complex)
             mpi::bcast(*myComm,dense_i->coefs,ng_big,ip);
 
-          bspline->set_spline(dense_r,dense_i,iorb);
+          bspline->set_spline(dense_r,dense_i,SortBands[iorb].TwistIndex,iorb,0);
         }
       }
     }
@@ -554,9 +560,7 @@ namespace qmcplusplus {
         }
         mpi::bcast(*myComm,splineData_r);
         if(bspline->is_complex) mpi::bcast(*myComm,splineData_i);
-        //myComm->bcast(splineData_r);
-        //myComm->bcast(splineData_i);
-        bspline->set_spline(splineData_r.data(),splineData_i.data(),iorb);
+        bspline->set_spline(splineData_r.data(),splineData_i.data(),SortBands[iorb].TwistIndex,iorb,0);
       }
     }
   };

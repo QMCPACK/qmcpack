@@ -100,10 +100,12 @@ namespace qmcplusplus {
 
       ///true, if this for complex, each derived class has to set this
       bool is_complex;
+      ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
+      int MyIndex;
       ///first index of the SPOs this Spline handles
-      int FirstIndex;
+      int first_spo;
       ///last index of the SPOs this Spline handles
-      int LastIndex;
+      int last_spo;
       ///name of the adoptor
       string AdoptorName;
       ///keyword used to match hdf5
@@ -116,7 +118,7 @@ namespace qmcplusplus {
       typename OrbitalSetTraits<ST>::HessVector_t      myH;
       typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
 
-      SplineAdoptorBase():is_complex(false),FirstIndex(0),LastIndex(0)
+      SplineAdoptorBase():is_complex(false),first_spo(0),last_spo(0)
       {
       }
 
@@ -147,8 +149,11 @@ namespace qmcplusplus {
   /** BsplineSet<SplineAdoptor>, a SPOSetBase
    * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
    *
-   * Equivalent to EinsplineSetExtended<Storage>
+   * Equivalent to EinsplineSetExtended<Storage> 
    * Storage is now handled by SplineAdoptor class that is specialized for precision, storage etc.
+   * @todo Make SplineAdoptor be a member not the base class. This is needed
+   * to make MultiBsplineSet (TBD) which has multiple SplineAdoptors for distributed
+   * cases.
    */
   template<typename SplineAdoptor>
     struct BsplineSet: public SPOSetBase, public SplineAdoptor
@@ -156,30 +161,27 @@ namespace qmcplusplus {
     typedef typename SplineAdoptor::SplineType SplineType;
     typedef typename SplineAdoptor::PointType  PointType;
 
-    using SplineAdoptor::MultiSpline;
-
     /** default constructor */
     BsplineSet() { }
-
-    void allocate(TinyVector<int,DIM>& mesh, int nv)
-    {
-      SplineAdoptor::create_spline(mesh,nv);
-    }
-
-    /** allocate einspline 
-     *
-     * A general allocation scheme for a spline
-     */
-    template<typename GT, typename BCT>
-      void allocate(GT& xyz_g, BCT& xyz_bc, int nv)
-      {
-        SplineType* dummy=0;
-        MultiSpline=einspline::create(dummy,xyz_g,xyz_bc,nv);
-      }
 
     SPOSetBase* makeClone() const
     {
       return new BsplineSet<SplineAdoptor>(*this);
+    }
+
+    /** set_spline to the big table
+     * @param psi_r starting address of real part of psi(ispline)
+     * @param psi_i starting address of imaginary part of psi(ispline)
+     * @param twist twist id, reserved to sorted adoptor, ignored
+     * @param ispline index of this spline function
+     * @param level refinement level
+     *
+     * Each adoptor handles the map with respect to the twist, state index and refinement level
+     */
+    template<typename CT>
+    void set_spline(CT* spline_r, CT* spline_i, int twist, int ispline, int level)
+    {
+      SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
     }
 
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
@@ -208,6 +210,8 @@ namespace qmcplusplus {
     {
       OrbitalSetSize = norbs;
       BasisSetSize=norbs;
+      SplineAdoptor::first_spo=0;
+      SplineAdoptor::last_spo=norbs;
     }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last
@@ -215,8 +219,6 @@ namespace qmcplusplus {
     {
       typedef ValueMatrix_t::value_type value_type;
       typedef GradMatrix_t::value_type grad_type;
-      //const int N=last-first;
-
       for(int iat=first, i=0; iat<last; ++iat,++i)
       {
         VectorViewer<value_type> v(logdet[i],OrbitalSetSize);

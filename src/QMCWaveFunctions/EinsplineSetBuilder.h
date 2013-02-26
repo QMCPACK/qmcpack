@@ -54,6 +54,7 @@ namespace qmcplusplus {
   };
   
 
+
   /** construct a name for spline SPO set
    */
   struct H5OrbSet {
@@ -90,6 +91,7 @@ namespace qmcplusplus {
     H5OrbSet (string name, int spinSet, int numOrbs) :
       FileName(name), SpinSet(spinSet), NumOrbs(numOrbs)
     { }
+
     H5OrbSet() 
     { }
   };
@@ -140,18 +142,18 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   //protected:
-    // Type definitions
-    //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     typedef ParticleSet::ParticleLayout_t UnitCellType;
 
-    // Helper vector for sorting bands
+    /**  Helper vector for sorting bands
+     */
     std::vector<BandInfo> SortBands;
 
-    // The actual orbital set we're building
+    /** The actual orbital set we're building
+     */
     EinsplineSet *OrbitalSet, *LastOrbitalSet;
 
-    // This is true if we have the orbital derivatives w.r.t. the ion
-    // positions 
+    /** true, if the orbital derivatives w.r.t. the ion positions  exists
+     */
     bool HaveOrbDerivs;
     ///root XML node 
     xmlNodePtr XMLRoot;
@@ -163,9 +165,6 @@ namespace qmcplusplus {
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
     
-    //static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
-    //static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
-    //static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
     static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
 
 

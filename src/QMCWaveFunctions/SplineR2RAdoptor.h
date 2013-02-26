@@ -19,6 +19,8 @@ namespace qmcplusplus {
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
       typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
+      using SplineAdoptorBase<ST,D>::first_spo;
+      using SplineAdoptorBase<ST,D>::last_spo;
       using SplineAdoptorBase<ST,D>::HalfG;
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
@@ -86,14 +88,14 @@ namespace qmcplusplus {
         return true;
       }
 
-      inline void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
+      inline void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
       {
-        einspline::set(MultiSpline, ival,psi_r);
+        einspline::set(MultiSpline, ispline,psi_r);
       }
 
-      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
+      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
       {
-        einspline::set(MultiSpline, ival,spline_r, BaseOffset,BaseN);
+        einspline::set(MultiSpline, ispline,spline_r, BaseOffset,BaseN);
       }
 
       bool read_splines(hdf_archive& h5f)
@@ -127,9 +129,9 @@ namespace qmcplusplus {
         inline void assign_v(const PointType& r, int bc_sign, VV& psi) 
         {
           if (bc_sign & 1) 
-            for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(-myV[j]);
+            for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=static_cast<TT>(-myV[j]);
           else
-            for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(myV[j]);
+            for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=static_cast<TT>(myV[j]);
         }
 
       template<typename VV>
@@ -146,20 +148,19 @@ namespace qmcplusplus {
       template<typename VV, typename GV>
         inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi) 
         {
-          const int N=psi.size();
           const Tensor<ST,D> gConv(PrimLattice.G);
           if (bc_sign & 1) 
           {
             const ST minus_one=-1.0;
-            for(int j=0; j<N; ++j) psi[j]=-myV[j];
-            for(int j=0; j<N; ++j) dpsi[j]=minus_one*dot(gConv,myG[j]);
-            for(int j=0; j<N; ++j) d2psi[j]=-trace(myH[j],GGt);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=-myV[j];
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) dpsi[psiIndex]=minus_one*dot(gConv,myG[j]);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) d2psi[psiIndex]=-trace(myH[j],GGt);
           }
           else
           {
-            for(int j=0; j<N; ++j) psi[j]=myV[j];
-            for(int j=0; j<N; ++j) dpsi[j]=dot(gConv,myG[j]);
-            for(int j=0; j<N; ++j) d2psi[j]=trace(myH[j],GGt);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=myV[j];
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) dpsi[psiIndex]=dot(gConv,myG[j]);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) d2psi[psiIndex]=trace(myH[j],GGt);
           }
         }
 
@@ -184,5 +185,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jeongnim.kim $
  * $Revision: 5260 $   $Date: 2011-06-18 07:45:58 -0400 (Sat, 18 Jun 2011) $
- * $Id: EinsplineSetBuilderESHDF.cpp 5260 2011-06-18 11:45:58Z jeongnim.kim $
+ * $Id: SplineR2RAdoptor.h 5260 2011-06-18 11:45:58Z jeongnim.kim $
  ***************************************************************************/

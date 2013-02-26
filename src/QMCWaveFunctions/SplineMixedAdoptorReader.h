@@ -64,10 +64,18 @@ namespace qmcplusplus {
         if(use_cartesian) end=maxL;
 
         //create dense and coarse UBspline_3d_d 
-        UBspline_3d_d* dense=0;
-        dense=einspline::create(dense,start,end,MeshSize,bspline->HalfG);//PERIODIC);
-        UBspline_3d_d* coarse=0;
-        coarse=einspline::create(coarse,start,end,coarse_mesh,bspline->HalfG);//PERIODIC);
+        UBspline_3d_d* dense_r=0;
+        UBspline_3d_d* dense_i=0;
+        dense_r=einspline::create(dense_r,start,end,MeshSize,bspline->HalfG);//PERIODIC);
+        UBspline_3d_d* coarse_r=0;
+        UBspline_3d_d* coarse_i=0;
+        coarse_r=einspline::create(coarse_r,start,end,coarse_mesh,bspline->HalfG);//PERIODIC);
+
+        if(bspline->is_complex)
+        {
+          dense_i=einspline::create(dense_i,start,end,MeshSize,bspline->HalfG);//PERIODIC);
+          coarse_i=einspline::create(coarse_i,start,end,coarse_mesh,bspline->HalfG);//PERIODIC);
+        }
 
         //determine the bonding box
         double buffer=mybuilder->BufferLayer; //this has to be option
@@ -137,7 +145,7 @@ namespace qmcplusplus {
 
         app_log().flush();
 
-        bspline->add_box(dense,lower,upper);
+        bspline->add_box(dense_r,lower,upper);
 
         int foundspline=0;
 
@@ -214,32 +222,31 @@ namespace qmcplusplus {
               for(int j=0,j2=0; j<coarse_mesh[1]; ++j,j2+=coarse_stride[1])
                 for(int k=0,k2=0; k<coarse_mesh[2]; ++k,k2+=coarse_stride[2])
                   smallD_r(i,j,k)=bigD_r(i2,j2,k2);
+            einspline::set(dense_r,bigD_r.data());
+            einspline::set(coarse_r,smallD_r.data());
 
             if(bspline->is_complex)
             {
-              einspline::set(dense,bigD_r.data());
-              einspline::set(coarse,smallD_r.data());
-              bspline->set_spline(dense,coarse,2*ival);
-
               for(int i=0,i2=0; i<coarse_mesh[0]; ++i,i2+=coarse_stride[0])
                 for(int j=0,j2=0; j<coarse_mesh[1]; ++j,j2+=coarse_stride[1])
                   for(int k=0,k2=0; k<coarse_mesh[2]; ++k,k2+=coarse_stride[2])
                     smallD_i(i,j,k)=bigD_i(i2,j2,k2);
+              einspline::set(dense_i,bigD_i.data());
+              einspline::set(coarse_i,smallD_i.data());
+            }
 
-              einspline::set(dense,bigD_i.data());
-              einspline::set(coarse,smallD_i.data());
-              bspline->set_spline(dense,coarse,2*ival+1);
-            }
-            else
-            {
-              einspline::set(dense,bigD_r.data());
-              einspline::set(coarse,smallD_r.data());
-              bspline->set_spline(dense,coarse,ival);
-            }
+            bspline->set_spline(coarse_r,coarse_i,ti,ival,0);//level=0, full grid
+            bspline->set_spline(dense_r, dense_i, ti,ival,1);//level=1, box grid
           }
 
-          free(coarse);
-          free(dense);
+          free(coarse_r);
+          free(dense_r);
+          if(bspline->is_complex)
+          {
+            free(coarse_i);
+            free(dense_i);
+          }
+
           fftw_destroy_plan(FFTplan);
 
           if(myComm->rank()==0)

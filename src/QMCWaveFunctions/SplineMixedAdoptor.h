@@ -36,7 +36,7 @@ namespace qmcplusplus {
         else
         {
           app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
-          foundspline=0;
+          foundspline=false;
         }
         return foundspline;
       }
@@ -68,6 +68,7 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::BCType     BCType;
       typedef typename einspline_traits<ST,D>::DataType   DataType;
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
+      typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
       typedef SplineMixedAdoptor<ST,TT,D> ThisType;
 
       using SplineAdoptorBase<ST,D>::HalfG;
@@ -132,8 +133,8 @@ namespace qmcplusplus {
         return hdf_dual_grid<ThisType>::write(this,h5f);
       }
 
-      template <typename UBspline, typename PT>
-      void add_box(UBspline* dense, PT& lower, PT& upper)
+      template <typename PT>
+      void add_box(SingleSplineType* dense, PT& lower, PT& upper)
       {
         if(smallBox==0)
         {
@@ -143,16 +144,13 @@ namespace qmcplusplus {
         Upper=upper;
       }
 
-      template <typename UBspline>
-        void set_spline(UBspline* dense, UBspline* coarse, int ival)
-        {
-          if(UseFullGrid)
-            einspline::set(MultiSpline,ival,dense, gTransform.BaseOffset,  gTransform.BaseN);
-          else
-            einspline::set(MultiSpline,ival,coarse, gTransform.BaseOffset,  gTransform.BaseN);
-
-          einspline::set(smallBox,   ival,dense,  gTransform.Offset,gTransform.N);
-        }
+      void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
+      {
+        if(level==0)
+          einspline::set(MultiSpline,ispline,spline_r, gTransform.BaseOffset,gTransform.BaseN);
+        else 
+          einspline::set(smallBox,   ispline,spline_r, gTransform.Offset, gTransform.N);
+      }
 
       template<typename VV>
         inline void evaluate_v(const PointType& r, VV& psi)
@@ -200,8 +198,11 @@ namespace qmcplusplus {
       typedef typename einspline_traits<ST,D>::BCType     BCType;
       typedef typename einspline_traits<ST,D>::DataType   DataType;
       typedef typename SplineAdoptorBase<ST,D>::PointType PointType;
+      typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
       typedef SplineOpenAdoptor<ST,TT,D> ThisType;
 
+      using SplineAdoptorBase<ST,D>::first_spo;
+      using SplineAdoptorBase<ST,D>::last_spo;
       using SplineAdoptorBase<ST,D>::SuperLattice;
 
       using SplineAdoptorBase<ST,D>::myV;
@@ -271,13 +272,13 @@ namespace qmcplusplus {
        * @param lower Cartesian lower bound
        * @param upper Cartesian upper bound
        */
-      template <typename UBspline, typename PT>
-      void add_box(UBspline* dense, PT& lower, PT& upper)
+      template <typename PT>
+      void add_box(SingleSplineType* dense, PT& lower, PT& upper)
       {
         if(smallBox==0)
           gTransform.create(smallBox,dense,lower,upper,MultiSpline->num_splines);
-        Lower=lower;//+2.0*gTransform.Delta;
-        Upper=upper;//-2.0*gTransform.Delta;
+        Lower=lower;
+        Upper=upper;
       }
 
       /** set ival-th state 
@@ -285,16 +286,23 @@ namespace qmcplusplus {
        * @param coarse a single-spline on the half grid
        * @param ival the state to be initialized
        */
-      template <typename UBspline>
-        void set_spline(UBspline* dense, UBspline* coarse, int ival)
-        {
-          if(UseFullGrid)
-            einspline::set(MultiSpline,ival,dense,  gTransform.BaseOffset,gTransform.BaseN);
-          else
-            einspline::set(MultiSpline,ival,coarse, gTransform.BaseOffset,gTransform.BaseN);
+      //template <typename UBspline>
+      //  void set_spline(UBspline* dense, UBspline* coarse, int ival)
+      //  {
+      //    if(UseFullGrid)
+      //      einspline::set(MultiSpline,ival,dense,  gTransform.BaseOffset,gTransform.BaseN);
+      //    else
+      //      einspline::set(MultiSpline,ival,coarse, gTransform.BaseOffset,gTransform.BaseN);
 
-          einspline::set(smallBox,ival,dense,gTransform.Offset,gTransform.N);
-        }
+      //    einspline::set(smallBox,ival,dense,gTransform.Offset,gTransform.N);
+      //  }
+      void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
+      {
+        if(level==0)
+          einspline::set(MultiSpline,ispline,spline_r, gTransform.BaseOffset,gTransform.BaseN);
+        else
+          einspline::set(smallBox,ispline,spline_r,gTransform.Offset,gTransform.N);
+      }
 
       bool read_splines(hdf_archive& h5f)
       {
@@ -328,7 +336,7 @@ namespace qmcplusplus {
           else
             einspline::evaluate(MultiSpline,ru,myV);
 
-          for (int j=0; j<psi.size(); j++) psi[j]=static_cast<TT>(myV[j]);
+          for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=static_cast<TT>(myV[j]);
         }
 
       template<typename VV, typename GV>
@@ -342,10 +350,9 @@ namespace qmcplusplus {
           else
             einspline::evaluate_vgl(MultiSpline,ru,myV,myG,myL);
 
-          const int N=psi.size();
-          for(int j=0; j<N; ++j) psi[j]=myV[j];
-          for(int j=0; j<N; ++j) dpsi[j]=myG[j];
-          for(int j=0; j<N; ++j) d2psi[j]=myL[j];
+          for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=myV[j];
+          for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) dpsi[psiIndex]=myG[j];
+          for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) d2psi[psiIndex]=myL[j];
         }
 
       template<typename VV, typename GV, typename GGV>

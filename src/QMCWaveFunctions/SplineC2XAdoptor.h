@@ -25,6 +25,8 @@ namespace qmcplusplus {
       typedef typename SplineAdoptorBase<ST,D>::PointType  PointType;
       typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
+      using SplineAdoptorBase<ST,D>::first_spo;
+      using SplineAdoptorBase<ST,D>::last_spo;
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
       using SplineAdoptorBase<ST,D>::kPoints;
@@ -72,16 +74,16 @@ namespace qmcplusplus {
         }
       }
 
-      void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
+      inline void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
       {
-        einspline::set(MultiSpline, 2*ival, psi_r);
-        einspline::set(MultiSpline, 2*ival+1, psi_i);
+        einspline::set(MultiSpline, 2*ispline, psi_r);
+        einspline::set(MultiSpline, 2*ispline+1, psi_i);
       }
 
-      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
+      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
       {
-        einspline::set(MultiSpline, 2*ival,spline_r, BaseOffset, BaseN);
-        einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
+        einspline::set(MultiSpline, 2*ispline,  spline_r, BaseOffset, BaseN);
+        einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
       }
 
       bool read_splines(hdf_archive& h5f)
@@ -111,10 +113,11 @@ namespace qmcplusplus {
         {
           register ST s,c;
           TT* restrict t_ptr=reinterpret_cast<TT*>(psi.data());
-          for(int j=0,jr=0; j<psi.size(); ++j, jr+=2)
+          for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
           {
+            int jr=j<<1;
             sincos(-dot(r,kPoints[j]),&s,&c);
-            t_ptr[jr]  =c*myV[jr]-s*myV[jr+1];
+            t_ptr[jr  ]=c*myV[jr]-s*myV[jr+1];
             t_ptr[jr+1]=s*myV[jr]+c*myV[jr+1];
           }
         }
@@ -145,18 +148,20 @@ namespace qmcplusplus {
           ST s,c;
           PointType g_r, g_i;
           //can easily make three independent loops
-          for (int j=0,jr=0,ji=1; j<N; j++,jr+=2,ji+=2) 
+          for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) 
           {
+            int jr=j<<1;
+            int ji=jr+1;
             g_r=myG[jr]+myV[ji]*kPoints[j]; // \f$\nabla \psi_r + {\bf k}\psi_i\f$
             g_i=myG[ji]-myV[jr]*kPoints[j]; // \f$\nabla \psi_i - {\bf k}\psi_r\f$
             ST kk=-dot(kPoints[j],kPoints[j]);
             myL[jr]+=kk*myV[jr]+two*dot(kPoints[j],myG[ji]);
             myL[ji]+=kk*myV[ji]-two*dot(kPoints[j],myG[jr]);
             sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
-            psi[j]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
-            d2psi[j]=complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
+            psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
+            d2psi[psiIndex]=complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
             for(int idim=0; idim<D; ++idim)
-              dpsi[j][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
+              dpsi[psiIndex][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
           }
           //complex<ST> e_mikr(c,s);
           //convert(e_mikr * myV[j], psi[j]);
@@ -196,6 +201,8 @@ namespace qmcplusplus {
       typedef typename SplineAdoptorBase<ST,D>::PointType         PointType;
       typedef typename SplineAdoptorBase<ST,D>::SingleSplineType SingleSplineType;
 
+      using SplineAdoptorBase<ST,D>::first_spo;
+      using SplineAdoptorBase<ST,D>::last_spo;
       using SplineAdoptorBase<ST,D>::GGt;
       using SplineAdoptorBase<ST,D>::PrimLattice;
       using SplineAdoptorBase<ST,D>::kPoints;
@@ -213,6 +220,7 @@ namespace qmcplusplus {
       ///offset of the original grid, always 0
       int BaseOffset[3];
 
+      vector<ST>   KdotR;
       vector<ST>   CosV;
       vector<ST>   SinV;
       vector<ST>   mKK;
@@ -235,7 +243,7 @@ namespace qmcplusplus {
         myL.resize(2*n);
         myG.resize(2*n);
         myH.resize(2*n);
-        CosV.resize(n);SinV.resize(n);
+        CosV.resize(n);SinV.resize(n);KdotR.resize(n);
       }
 
     template<typename GT, typename BCT>
@@ -251,19 +259,19 @@ namespace qmcplusplus {
         }
       }
 
-      void set_spline(ST* restrict psi_r, ST* restrict psi_i, int ival)
-      {
-        einspline::set(MultiSpline, 2*ival, psi_r);
-        einspline::set(MultiSpline, 2*ival+1, psi_i);
-      }
+    void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
+    {
+      einspline::set(MultiSpline, 2*ispline, psi_r);
+      einspline::set(MultiSpline, 2*ispline+1, psi_i);
+    }
 
-      inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int ival)
-      {
-        einspline::set(MultiSpline, 2*ival,spline_r, BaseOffset, BaseN);
-        einspline::set(MultiSpline, 2*ival+1,spline_i, BaseOffset, BaseN);
-      }
-      
-      bool read_splines(hdf_archive& h5f)
+    inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
+    {
+      einspline::set(MultiSpline, 2*ispline,spline_r, BaseOffset, BaseN);
+      einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
+    }
+
+    bool read_splines(hdf_archive& h5f)
       {
         einspline_engine<SplineType> bigtable(MultiSpline);
         return h5f.read(bigtable,"spline_0");
@@ -286,12 +294,11 @@ namespace qmcplusplus {
         inline void assign_v(const PointType& r, int bc_sign, VV& psi) 
         {
           const int N=kPoints.size();
-          ST phase[N];
-          for(int j=0;j<N; ++j) phase[j]=-dot(r,kPoints[j]);
-          eval_e2iphi(N,phase,CosV.data(),SinV.data());
+          for(int j=0;j<N; ++j) KdotR[j]=-dot(r,kPoints[j]);
+          eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
           //for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
 
-          int psiIndex = 0;
+          int psiIndex = first_spo;
           for (int j=0,jr=0; j<N; j++,jr+=2) 
           {
             psi[psiIndex] = static_cast<TT>(myV[jr]*CosV[j]-myV[jr+1]*SinV[j]);
@@ -324,8 +331,10 @@ namespace qmcplusplus {
 
         const ST zero=0.0;
         const ST two=2.0;
-        for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
-        int psiIndex=0;
+        for(int j=0;j<N; ++j) KdotR[j]=-dot(r,kPoints[j]);
+        eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
+        //for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
+        int psiIndex=first_spo;
         TinyVector<ST,D> g_r, g_i;
         for (int j=0,jr=0,ji=1; j<N; j++,jr+=2,ji+=2) 
         {

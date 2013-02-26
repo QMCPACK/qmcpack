@@ -32,15 +32,16 @@ namespace qmcplusplus {
       BsplineSet<adoptor_type>* bspline;
       vector<int> OrbGroups;
       fftw_plan FFTplan;
+      bool use_imaginary;
 
       SplineMixedAdoptorReader(EinsplineSetBuilder* e)
-        : BsplineReaderBase(e),bspline(0),FFTplan(NULL)
+        : BsplineReaderBase(e),bspline(0),FFTplan(NULL),use_imaginary(false)
       {}
 
       ~SplineMixedAdoptorReader()
       {
         for(int i=0; i<spline_r.size(); ++i) free(spline_r[i]);
-        for(int i=0; i<spline_i.size(); ++i) free(spline_i[i]);
+        if(use_imaginary) for(int i=0; i<spline_i.size(); ++i) free(spline_i[i]);
         fftw_destroy_plan(FFTplan);
       }
 
@@ -182,15 +183,16 @@ namespace qmcplusplus {
         int norbs_n=(ip<np)?OrbGroups[ip+1]-OrbGroups[ip]:0;
 
         UBspline_3d_d* dummy=0;
-        spline_r.resize(norbs_n*2+2);
+        spline_r.resize(norbs_n*2+2,0);
         for(int i=0; i<spline_r.size()/2; ++i)
         {
           spline_r[2*i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
           spline_r[2*i+1]=einspline::create(dummy,start,end,coarse_mesh,bspline->HalfG);
         }
+        spline_i.resize(norbs_n*2+2,0);
         if(bspline->is_complex)
         {
-          spline_i.resize(norbs_n*2+2);
+          use_imaginary=true;
           for(int i=0; i<spline_i.size()/2; ++i)
           {
             spline_i[2*i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
@@ -237,26 +239,7 @@ namespace qmcplusplus {
           }
 
           if(foundspline)
-          {
-            TinyVector<double,3> lower_in(end);
-            TinyVector<double,3> upper_in(start);
-            h5f.read(lower_in,"lower_bound");
-            h5f.read(upper_in,"upper_bound");
-
-            lower_in-=lower; upper_in-=upper;
-            if(dot(lower_in,lower_in)<1e-12 &&dot(upper_in,upper_in)<1e-12)
-            {
-              einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-              einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
-              foundspline=h5f.read(bigtable,"spline_0");
-              foundspline=h5f.read(smalltable,"spline_1");
-            }
-            else
-            {
-              app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
-              foundspline=0;
-            }
-          }
+            foundspline=bspline->read_splines(h5f);
         }
 
         myComm->bcast(foundspline);
@@ -291,13 +274,13 @@ namespace qmcplusplus {
           initialize_spline_pio(spin);
           app_log() << "Time with PIO " << clock.elapsed() <<endl;
 
-          clock.restart();
-          initialize_spline_pio_bcast(spin);
-          app_log() << "Time with PIO/Bcast " << clock.elapsed() <<endl;
+          //clock.restart();
+          //initialize_spline_pio_bcast(spin);
+          //app_log() << "Time with PIO/Bcast " << clock.elapsed() <<endl;
 
-          clock.restart();
-          initialize_spline_slow(spin);
-          app_log() << "Time slow method " << clock.elapsed() <<endl;
+          //clock.restart();
+          //initialize_spline_slow(spin);
+          //app_log() << "Time slow method " << clock.elapsed() <<endl;
 
           clock.restart();
           if(myComm->rank()==1)
@@ -305,15 +288,10 @@ namespace qmcplusplus {
             clock.restart();
             hdf_archive h5f;
             h5f.create(splinefile);
-            einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
-            einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
             h5f.write(bspline->AdoptorName,"adoptor_name");
             int sizeD=sizeof(typename adoptor_type::DataType);
             h5f.write(sizeD,"sizeof");
-            h5f.write(lower,"lower_bound");
-            h5f.write(upper,"upper_bound");
-            h5f.write(bigtable,"spline_0");
-            h5f.write(smalltable,"spline_1");
+            bspline->write_splines(h5f);
             app_log() << "Time write TABLE " << clock.elapsed() <<endl;
           }
         }
@@ -335,13 +313,8 @@ namespace qmcplusplus {
 
           fft_spline(cG,ti,0);
 
-          if(bspline->is_complex)
-          {
-            bspline->set_spline(spline_r[0],spline_r[1],2*ival);
-            bspline->set_spline(spline_i[0],spline_i[1],2*ival+1);
-          }
-          else
-            bspline->set_spline(spline_r[0],spline_r[1],ival);
+          bspline->set_spline(spline_r[1],spline_i[1],ti,ival,0);//level0
+          bspline->set_spline(spline_r[0],spline_i[0],ti,ival,1);//level1
         }
       }
 
@@ -373,7 +346,7 @@ namespace qmcplusplus {
           for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
           {
             int ti=SortBands[iorb].TwistIndex;
-            string s=psi_g_path(ti,spin,iorb);
+            string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
             foundit &= h5f.read(cG,s);
             fft_spline(cG,ti,ib);
           }
@@ -381,15 +354,8 @@ namespace qmcplusplus {
           {
             for(int iorb=OrbGroups[0],ib2=0; iorb<OrbGroups[1]; ++iorb,ib2+=2)
             {
-              if(bspline->is_complex)
-              {
-                bspline->set_spline(spline_r[ib2],spline_r[ib2+1],2*iorb);
-                bspline->set_spline(spline_i[ib2],spline_i[ib2+1],2*iorb+1);
-              }
-              else
-              {
-                bspline->set_spline(spline_r[ib2],spline_r[ib2+1],iorb);
-              }
+              bspline->set_spline(spline_r[ib2],  spline_i[ib2],  SortBands[iorb].TwistIndex, iorb,1);
+              bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],SortBands[iorb].TwistIndex, iorb,0);
             }
           }
         }//root put splines to the big table
@@ -432,17 +398,11 @@ namespace qmcplusplus {
                 mpi::recv(*myComm,spline_i[ib2+1]->coefs,ng_small,ip,iorb+3*N);
               }
             }
+            const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
             for(int iorb=OrbGroups[ip],ib2=0; iorb<OrbGroups[ip+1]; ++iorb,ib2+=2)
             {
-              if(bspline->is_complex)
-              {
-                bspline->set_spline(spline_r[ib2],spline_r[ib2+1],2*iorb);
-                bspline->set_spline(spline_i[ib2],spline_i[ib2+1],2*iorb+1);
-              }
-              else
-              {
-                bspline->set_spline(spline_r[ib2],spline_r[ib2+1],iorb);
-              }
+              bspline->set_spline(spline_r[ib2],  spline_i[ib2],  SortBands[iorb].TwistIndex, iorb,1);
+              bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],SortBands[iorb].TwistIndex, iorb,0);
             }
           }
         }
@@ -473,7 +433,7 @@ namespace qmcplusplus {
           for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
           {
             int ti=SortBands[iorb].TwistIndex;
-            string s=psi_g_path(ti,spin,iorb);
+            string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
             foundit &= h5f.read(cG,s);
             fft_spline(cG,ti,ib);
           }
@@ -487,13 +447,14 @@ namespace qmcplusplus {
         int ng_small=static_cast<int>(spline_r[1]->coefs_size);
 
         //pointers to UBspline_3d_d for bcast without increaing mem
-        UBspline_3d_d *dense_r, *dense_i;
-        UBspline_3d_d *coarse_r, *coarse_i;
+        UBspline_3d_d *dense_r=0, *dense_i=0;
+        UBspline_3d_d *coarse_r=0, *coarse_i=0;
 
         int iorb_target=(myComm->rank()<np)?(OrbGroups[myComm->rank()+1]-OrbGroups[myComm->rank()])*2:0;
 
         for(int ip=0; ip<np; ++ip)
         {
+          const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
           for(int iorb=OrbGroups[ip], ib2=0; iorb<OrbGroups[ip+1]; ++iorb, ib2+=2)
           {
             if(ip==myComm->rank())
@@ -521,13 +482,8 @@ namespace qmcplusplus {
 
             myComm->barrier();
 
-            if(bspline->is_complex)
-            {
-              bspline->set_spline(dense_r,coarse_r,2*iorb);
-              bspline->set_spline(dense_i,coarse_i,2*iorb+1);
-            }
-            else
-              bspline->set_spline(dense_r,coarse_r,iorb);
+            bspline->set_spline(coarse_r,coarse_i,SortBands[iorb].TwistIndex, iorb,0);
+            bspline->set_spline(dense_r,dense_i,  SortBands[iorb].TwistIndex, iorb,1);
           }
         }
       }

@@ -297,7 +297,7 @@ namespace qmcplusplus {
             t_phase+= c_phase.elapsed();
 
             c_spline.restart();
-            bspline->set_spline(splineData_r.data(),splineData_i.data(),iorb);
+            bspline->set_spline(splineData_r.data(),splineData_i.data(),ti,iorb,0);
             t_spline+= c_spline.elapsed();
           }
 
