@@ -172,7 +172,7 @@ namespace qmcplusplus {
   /** General SplineAdoptorReader to handle any unitcell
    */
   template<typename SA>
-    struct SplineAdoptorReader: BsplineReaderBase
+    struct SplineAdoptorReader: public BsplineReaderBase
   {
     typedef SA adoptor_type;
     typedef typename adoptor_type::DataType    DataType;

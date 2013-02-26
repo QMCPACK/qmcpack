@@ -16,7 +16,7 @@ namespace qmcplusplus {
    * @tparam SA spline adoptor, SplineMixedAdoptor, SplineOpenAdoptor
    */
   template<typename SA>
-    struct SplineMixedAdoptorReader: BsplineReaderBase
+    struct SplineMixedAdoptorReader: public BsplineReaderBase
     {
       typedef SA adoptor_type;
       typedef typename adoptor_type::SplineType SplineType;
