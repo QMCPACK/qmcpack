@@ -64,6 +64,9 @@
 /* Define if sse3 support exists */
 #cmakedefine HAVE_SSE3 @HAVE_SSE3@
 
+/* Define if sse41 support exists */
+#cmakedefine HAVE_SSE41 @HAVE_SSE41@
+
 /* Define if ssse3 support exists */
 #cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
 

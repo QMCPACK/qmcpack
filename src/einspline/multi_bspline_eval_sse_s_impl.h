@@ -21,6 +21,7 @@
 #ifndef MULTI_BSPLINE_EVAL_SSE_S_IMPL_H
 #define MULTI_BSPLINE_EVAL_SSE_S_IMPL_H
 
+#include <config.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
 #ifdef HAVE_SSE3
