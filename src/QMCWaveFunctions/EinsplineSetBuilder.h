@@ -54,7 +54,6 @@ namespace qmcplusplus {
   };
   
 
-
   /** construct a name for spline SPO set
    */
   struct H5OrbSet {
@@ -91,7 +90,6 @@ namespace qmcplusplus {
     H5OrbSet (string name, int spinSet, int numOrbs) :
       FileName(name), SpinSet(spinSet), NumOrbs(numOrbs)
     { }
-
     H5OrbSet() 
     { }
   };
@@ -142,18 +140,18 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   //protected:
+    // Type definitions
+    //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     typedef ParticleSet::ParticleLayout_t UnitCellType;
 
-    /**  Helper vector for sorting bands
-     */
+    // Helper vector for sorting bands
     std::vector<BandInfo> SortBands;
 
-    /** The actual orbital set we're building
-     */
+    // The actual orbital set we're building
     EinsplineSet *OrbitalSet, *LastOrbitalSet;
 
-    /** true, if the orbital derivatives w.r.t. the ion positions  exists
-     */
+    // This is true if we have the orbital derivatives w.r.t. the ion
+    // positions 
     bool HaveOrbDerivs;
     ///root XML node 
     xmlNodePtr XMLRoot;
@@ -165,6 +163,9 @@ namespace qmcplusplus {
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
     
+    //static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
+    //static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
+    //static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
     static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
 
 
@@ -176,7 +177,7 @@ namespace qmcplusplus {
     // HDF5 orbital file version
     typedef enum {QMCPACK, ESHDF} FormatType;
     FormatType Format;
-    TinyVector<int,3> Version;
+    TinyVector<int,2> Version;
     string parameterGroup, ionsGroup, eigenstatesGroup;
     vector<int> Occ;
     bool HaveLocalizedOrbs;
@@ -230,6 +231,11 @@ namespace qmcplusplus {
     // This stores which "true" twist number I am using
     int TwistNum;
     std::vector<PosType> TwistAngles;
+//     integer index of sym operation from the irreducible brillion zone
+    std::vector<int> TwistSymmetry;
+//     number of twists equivalent to this one in the big DFT grid
+    std::vector<int> TwistWeight;
+    
     TinyVector<int,OHMMS_DIM> TileFactor;
     Tensor<int,OHMMS_DIM> TileMatrix;
     TinyVector<int,OHMMS_DIM> TwistMesh;

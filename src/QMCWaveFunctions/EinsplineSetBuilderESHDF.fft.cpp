@@ -46,11 +46,10 @@ namespace qmcplusplus {
   bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
     app_log() << "  Reading orbital file in ESHDF format.\n";
-    TinyVector<int,3> version;
-    HDFAttribIO<TinyVector<int,3> > h_version(version);
+    HDFAttribIO<TinyVector<int,2> > h_version(Version);
     h_version.read (H5FileID, "/version");
     app_log() << "  ESHDF orbital file version " 
-      << version[0] << "." << version[1] << "." << version[2] << endl;
+      << Version[0] << "." << Version[1] << endl;
 
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice);
     h_Lattice.read      (H5FileID, "/supercell/primitive_vectors");
@@ -111,15 +110,6 @@ namespace qmcplusplus {
       app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
         << "x" << TileFactor[2] << " tiling factor.\n";
 
-    if(NumTwists<=TwistNum)
-    {
-
-      ostringstream o;
-      o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
-        << "Requested TwistNum=" << TwistNum << " does not exist. "
-        << H5FileName << " has " << NumTwists << " twists.";
-      APP_ABORT(o.str());
-    }
     //////////////////////////////////
     // Read ion types and locations //
     //////////////////////////////////
@@ -182,15 +172,30 @@ namespace qmcplusplus {
     // Read the twist angles //
     ///////////////////////////
     TwistAngles.resize(NumTwists);
+    TwistSymmetry.resize(NumTwists);
+    TwistWeight.resize(NumTwists);
     for (int ti=0; ti<NumTwists; ti++) {
       ostringstream path;
       path << "/electrons/kpoint_" << ti << "/reduced_k";
       HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
       h_Twist.read (H5FileID, path.str().c_str());
+      
+if ((Version[0] >= 2) and (Version[1] >= 1))
+{
+      ostringstream sym_path;
+      sym_path << "/electrons/kpoint_" << ti << "/symgroup";
+      HDFAttribIO<int> h_Sym(TwistSymmetry[ti]);
+      h_Sym.read (H5FileID, sym_path.str().c_str());
+      
+      ostringstream nsym_path;
+      nsym_path << "/electrons/kpoint_" << ti << "/numsym";
+      HDFAttribIO<int> h_Nsym(TwistWeight[ti]);
+      h_Nsym.read (H5FileID, nsym_path.str().c_str());      
+}     
       // Early versions from wfconv had wrong sign convention for
       // k-points.  EinsplineSet uses the opposite sign convention
       // from most DFT codes.
-      if (version[0] >= 2)
+      if (Version[0] >= 2)
         for (int dim=0; dim<OHMMS_DIM; dim++)
           TwistAngles[ti][dim] *= -1.0;
       //       snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",

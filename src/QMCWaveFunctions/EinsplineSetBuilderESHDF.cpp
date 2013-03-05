@@ -195,11 +195,26 @@ namespace qmcplusplus {
     // Read the twist angles //
     ///////////////////////////
     TwistAngles.resize(NumTwists);
+    TwistSymmetry.resize(NumTwists);
+    TwistWeight.resize(NumTwists);
     for (int ti=0; ti<NumTwists; ti++) {
       ostringstream path;
       path << "/electrons/kpoint_" << ti << "/reduced_k";
       HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
       h_Twist.read (H5FileID, path.str().c_str());
+
+      ostringstream sym_path;
+      sym_path << "/electrons/kpoint_" << ti << "/symgroup";
+      HDFAttribIO<int> h_Sym(TwistSymmetry[ti]);
+      h_Sym.read (H5FileID, sym_path.str().c_str());
+      
+      ostringstream nsym_path;
+      nsym_path << "/electrons/kpoint_" << ti << "/numsym";
+      HDFAttribIO<int> h_Nsym(TwistWeight[ti]);
+      h_Nsym.read (H5FileID, nsym_path.str().c_str());
+      
+      app_log()<<"HERE I AM"<< TwistSymmetry[ti]<<"  "<<TwistWeight[ti] <<endl;
+      
       // Early versions from wfconv had wrong sign convention for
       // k-points.  EinsplineSet uses the opposite sign convention
       // from most DFT codes.

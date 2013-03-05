@@ -172,6 +172,13 @@ namespace qmcplusplus {
     if (TwistAngles.size() != NumTwists) TwistAngles.resize(NumTwists);
     bbuffer.add(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
     //myComm->bcast(TwistAngles);
+
+
+    if (TwistSymmetry.size() != NumTwists) TwistSymmetry.resize(NumTwists);
+    bibuffer.add(&TwistSymmetry[0],&TwistSymmetry[0]+NumTwists); 
+    if (TwistWeight.size() != NumTwists) TwistWeight.resize(NumTwists);
+    bibuffer.add(&TwistWeight[0],&TwistWeight[0]+NumTwists);    
+    
     
     bibuffer.add(HaveLocalizedOrbs);
     //myComm->bcast(HaveLocalizedOrbs);
@@ -211,6 +218,8 @@ namespace qmcplusplus {
       for(int i=0; i<numIons; ++i) bibuffer.get(IonTypes[i]);
       bbuffer.get(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
       bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
+      bibuffer.get(&TwistSymmetry[0],&TwistSymmetry[0]+NumTwists);
+      bibuffer.get(&TwistWeight[0],&TwistWeight[0]+NumTwists);
       bibuffer.get(HaveLocalizedOrbs);
       bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
       bibuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
@@ -381,18 +390,43 @@ namespace qmcplusplus {
     // belong to it.
     vector<vector<int> > superSets;
     superSets.resize(numSuperTwists);
+    
     for (int ki=0; ki<numPrimTwists; ki++)
       superSets[superIndex[ki]].push_back(ki);
+    
+    app_log()<<"number of things"<<endl;
+    app_log()<<TwistSymmetry.size()<<endl;
+    app_log()<<TwistWeight.size()<<endl;
+//     for (int ki=0; ki<TwistSymmetry.size(); ki++)
+//       fprintf (stderr, "%d %d %d\n",ki,TwistSymmetry[ki],TwistWeight[ki]);
+    
 
      if (myComm->rank() == 0) 
+     {
+       int n_tot_irred(0);
        for (int si=0; si<numSuperTwists; si++) {
+	 bool irreducible(false);
+	 int irrep_wgt(0);
+// 	 for (int i=0; i<superSets[si].size(); i++) 
+	   if(TwistSymmetry[superSets[si][0]]==1)
+	   {
+	     irrep_wgt=TwistWeight[superSets[si][0]];
+	     irreducible=true;
+	     n_tot_irred++;
+	   }
+	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))
+	  fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]  IRREDUCIBLE-K %d  %d \n",
+ 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2], si, irrep_wgt);
+	else  
  	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
  		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
- 	fprintf (stderr, "  Using k-points: ");
- 	for (int i=0; i<superSets[si].size(); i++) 
- 	  fprintf (stderr, " %d", superSets[si][i]);
- 	fprintf (stderr, "\n");
+//  	fprintf (stderr, "  Using k-points: ");
+//  	for (int i=0; i<superSets[si].size(); i++) 
+//  	  fprintf (stderr, " %d", superSets[si][i]);
+//  	fprintf (stderr, "\n");
        }
+       fprintf (stderr, "Number in irredicible twist grid: %d \n", n_tot_irred);
+     }
 
     // Check supertwist for this node
     if (!myComm->rank()) 
