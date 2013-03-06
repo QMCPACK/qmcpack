@@ -177,7 +177,7 @@ namespace qmcplusplus {
     // HDF5 orbital file version
     typedef enum {QMCPACK, ESHDF} FormatType;
     FormatType Format;
-    TinyVector<int,2> Version;
+    TinyVector<int,3> Version;
     string parameterGroup, ionsGroup, eigenstatesGroup;
     vector<int> Occ;
     bool HaveLocalizedOrbs;

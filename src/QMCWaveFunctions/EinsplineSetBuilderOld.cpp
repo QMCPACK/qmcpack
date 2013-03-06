@@ -44,10 +44,10 @@ namespace qmcplusplus {
     HDFAttribIO<string> h_format(format);
     h_format.read(H5FileID, "/format");
 
-    HDFAttribIO<TinyVector<int,2> > h_Version(Version);
+    HDFAttribIO<TinyVector<int,3> > h_Version(Version);
     h_Version.read (H5FileID, "/version");
     app_log() << "  HDF5 orbital file version " 
-	      << Version[0] << "." << Version[1] << "\n";
+	      << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
 
     if (format.find("ES")<format.size())
     {
@@ -72,7 +72,7 @@ namespace qmcplusplus {
     }
     else {
       ostringstream o;
-      o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "\n";
+      o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
       APP_ABORT(o.str());
       //abort();
     }

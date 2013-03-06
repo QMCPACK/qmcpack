@@ -46,10 +46,10 @@ namespace qmcplusplus {
   bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
     app_log() << "  Reading orbital file in ESHDF format.\n";
-    HDFAttribIO<TinyVector<int,2> > h_version(Version);
+    HDFAttribIO<TinyVector<int,3> > h_version(Version);
     h_version.read (H5FileID, "/version");
     app_log() << "  ESHDF orbital file version " 
-      << Version[0] << "." << Version[1] << endl;
+      << Version[0] << "." << Version[1] <<"." << Version[2] << endl;
 
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice);
     h_Lattice.read      (H5FileID, "/supercell/primitive_vectors");
