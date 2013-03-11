@@ -4,8 +4,8 @@ SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 #  module swap PrgEnv-pgi PrgEnv-gnu
 #  module load xtpe-accel-nvidia20
 #  module load cudatools
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/5.09/bin/CC)
+set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/default/bin/cc)
+set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/default/bin/CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS " -fomit-frame-pointer -malign-double  -fopenmp -O3 -Drestrict=__restrict__  -finline-limit=1000 -fstrict-aliasing -funroll-all-loops ")
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
@@ -25,6 +25,7 @@ SET(HAVE_SSE 1)
 SET(HAVE_SSE2 1)
 SET(HAVE_SSE3 1)
 SET(HAVE_SSSE3 1)
+SET(HAVE_SSE41 1)
 SET(USE_PREFETCH 1)
 SET(PREFETCH_AHEAD 12)
 
@@ -34,25 +35,22 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_SHARED_LINKER_FLAGS "")
 
 set(CMAKE_FIND_ROOT_PATH
-  /opt/cray/hdf5/1.8.6/gnu/46
-  /opt/fftw/3.3.0.0/interlagos
+  /opt/cray/hdf5/1.8.9/gnu/47
+  /opt/fftw/3.3.0.1/interlagos
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
-  /ccs/proj/mat034/jnkim/xk6/gnu45/libxml2
+  /ccs/home/jnkim/mat034/xk6/gnu45/libxml2
 )
 
 # bypass einspline search
 #set(EINSPLINE_HOME /lustre/widow3/scratch/jnkim/einspline)
-set(HAVE_EINSPLINE 1)
+#set(HAVE_EINSPLINE 1)
 #set(HAVE_EINSPLINE_EXT 0)
 
-#include_directories(/opt/nvidia/cuda/4.0.17a/include )
-#SET(CUDA_NVCC_FLAGS "-arch;sm_20;-Drestrict=__restrict__")
-#set(CUDA_NVCC_FLAGS "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-set(CUDA_NVCC_FLAGS "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-v")
+set(CUDA_NVCC_FLAGS "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
 set(CUDA_CUDART_LIBRARY /opt/cray/nvidia/default/lib64/libcuda.so)
 set(CUDA_CUDA_LIBRARY /opt/cray/nvidia/default/lib64/libcuda.so)
-set(CUDA_TOOLKIT_ROOT_DIR /opt/nvidia/cudatools/4.1.28)
-set(CUDA_TOOLKIT_INCLUDE /opt/nvidia/cudatools/4.1.28/include)
+set(CUDA_TOOLKIT_ROOT_DIR /opt/nvidia/cudatools/5.0.35.102)
+set(CUDA_TOOLKIT_INCLUDE /opt/nvidia/cudatools/5.0.35.102/include)
 set(CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY})
 set(CUDA_make2cmake ${CMAKE_ROOT}/Modules/FindCUDA/make2cmake.cmake)
 set(CUDA_parse_cubin ${CMAKE_ROOT}/Modules/FindCUDA/parse_cubin.cmake)
