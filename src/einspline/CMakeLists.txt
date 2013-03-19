@@ -44,7 +44,8 @@ SET(SRCS ${SRCS}
 )
 
 #do not compiler c functions
-IF(HAVE_SSE41)
+#IF(HAVE_SSE41)
+IF(HAVE_SSE)
   SET(SRCS ${SRCS} 
     multi_bspline_eval_sse_s_cpp.cc       
     multi_bspline_eval_sse_c_cpp.cc       

@@ -283,7 +283,7 @@ namespace qmcplusplus {
           //app_log() << "Time slow method " << clock.elapsed() <<endl;
 
           clock.restart();
-          if(myComm->rank()==1)
+          if(qmc_common::save_wfs && myComm->rank()==0)
           {
             clock.restart();
             hdf_archive h5f;

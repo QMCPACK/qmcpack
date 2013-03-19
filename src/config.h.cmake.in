@@ -169,6 +169,9 @@
 /* Define if ssse3 support exists */
 #cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
 
+/* Define if AVX support exists */
+#cmakedefine HAVE_AVX @HAVE_AVX@
+
 /* Define if c variable array support exists */
 #cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
 
@@ -177,6 +180,12 @@
 
 /* Use SSE prefetch  */
 #cmakedefine USE_PREFETCH @USE_PREFETCH@
+
+/* Define the alignment of SIMD in byte*/
+#cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
+
+/* Define if FMA4 on x86 is supported */
+#cmakedefine HAVE_FMA4 @HAVE_FMA4@
 
 #endif /* HAVE_EINSPLINE_EXT */
 

@@ -1,3 +1,4 @@
+
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
                ${qmcpack_BINARY_DIR}/src/config.h)
 
@@ -5,6 +6,7 @@ CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
 # create libqmcutil
 ####################################
 SET(UTILITIES
+  qmc_common.cpp
   Utilities/RandRandom.cpp 
   Utilities/RandomGenerator.cpp 
   Utilities/OhmmsObject.cpp 
@@ -70,7 +72,6 @@ ENDIF(OHMMS_DIM MATCHES 2)
 # create libqmcbase 
 ####################################
 SET(PARTICLE ${PARTICLE}
-  qmc_common.cpp
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 

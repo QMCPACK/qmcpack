@@ -249,7 +249,7 @@ namespace qmcplusplus {
 
           fftw_destroy_plan(FFTplan);
 
-          if(myComm->rank()==0)
+          if(qmc_common::save_wfs && myComm->rank()==0)
           {
             hdf_archive h5f;
             h5f.create(splinefile);

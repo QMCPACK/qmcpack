@@ -17,6 +17,7 @@
 // -*- C++ -*-
 
 #include <Configuration.h>
+#include "qmc_common.h"
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 #include <iostream>
@@ -41,6 +42,7 @@ myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)
 
 Communicate::Communicate(int argc, char **argv)
 {
+  qmcplusplus::qmc_common::initialize(argc,argv);
   initialize(argc,argv);
 }
 
