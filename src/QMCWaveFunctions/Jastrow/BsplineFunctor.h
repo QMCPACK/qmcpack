@@ -374,6 +374,7 @@ namespace qmcplusplus
 
                 vector<real_type> params;
                 putContent(params, xmlCoefs);
+                
                 if (params.size() == NumParams)
                   Parameters = params;
                 else
@@ -405,25 +406,19 @@ namespace qmcplusplus
                       app_log() << "   " << Parameters[i] << endl;
                   }
 
-                if(optimize == "yes") {   
-                  // Setup parameter names
-                  for (int i=0; i< NumParams; i++)
-                    {
-                      std::stringstream sstr;
-                      sstr << id << "_" << i;
-                    myVars.insert(sstr.str(),Parameters[i],true,optimize::LOGLINEAR_P);
-                    }
+                if(optimize == "yes") { notOpt=false;}
+                else { notOpt=true;}  
 
-                  app_log() << "Parameter     Name      Value\n";
-                  myVars.print(app_log());
-                } else {
-                  notOpt=true;
-                  app_log() << "Parameters of BsplineFunctor id:"
-                             <<id <<" are not being optimized.\n";
-                }
-                //for (int i=0; i<ParameterNames.size(); i++)
-                //  app_log() << "    " << i << "         " << ParameterNames[i]
-                //    << "       " << Parameters[i] << endl;
+                for (int i=0; i< NumParams; i++)
+                  {
+                    std::stringstream sstr;
+                    sstr << id << "_" << i;
+					myVars.insert(sstr.str(),Parameters[i],!notOpt,optimize::LOGLINEAR_P);
+                  }
+                
+                app_log() << "Parameter     Name      Value\n";
+                myVars.print(app_log());
+
               }
             xmlCoefs = xmlCoefs->next;
           }
