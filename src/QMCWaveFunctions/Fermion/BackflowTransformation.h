@@ -91,7 +91,7 @@ namespace qmcplusplus
     map<int,int> optIndexMap;
 
     // cutoff of radial funtions
-    double cutOff;
+    RealType cutOff;
 
     // pos of first optimizable variable in global array
     int numVarBefore; 
@@ -568,7 +568,7 @@ namespace qmcplusplus
        HessMatrix_t Amat_1;
        GradMatrix_t Bmat_full_2;
        HessMatrix_t Amat_2;
-       double dh = 0.00001;
+       RealType dh = 0.00001;
 
        qp_0.resize(NumTargets);
        qp_1.resize(NumTargets);
@@ -752,7 +752,7 @@ namespace qmcplusplus
 
       Amat_1 = Amat_0 - Amat;
       qp_1 = QP.R - qp_0;
-      double qpdiff = Dot(qp_1,qp_1);
+      RealType qpdiff = Dot(qp_1,qp_1);
       RealType Amdiff = 0.0;
       for(int i=0; i<NumTargets; i++)
        for(int k=0; k<NumTargets; k++)

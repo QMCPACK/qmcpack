@@ -230,6 +230,7 @@ namespace qmcplusplus {
     /////////////////////////////
     // This stores which "true" twist number I am using
     int TwistNum;
+    TinyVector<double,OHMMS_DIM> givenTwist;
     std::vector<PosType> TwistAngles;
 //     integer index of sym operation from the irreducible brillion zone
     std::vector<int> TwistSymmetry;

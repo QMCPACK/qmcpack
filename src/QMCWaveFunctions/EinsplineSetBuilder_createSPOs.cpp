@@ -57,6 +57,7 @@ namespace qmcplusplus {
     attribs.add (qafm,  "afmshift");
     attribs.add (TileMatrix, "tilematrix");
     attribs.add (TwistNum,   "twistnum");
+    attribs.add (givenTwist,   "twist");
     attribs.add (sourceName, "source");
     attribs.add (MeshFactor, "meshfactor");
     attribs.add (useGPU,     "gpu");    
