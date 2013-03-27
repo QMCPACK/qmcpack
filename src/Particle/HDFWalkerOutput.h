@@ -48,8 +48,8 @@ namespace qmcplusplus {
     int currentConfigNumber;
     ///rootname
     string RootName;
-    ///handle for the storeConfig.h5
-    hdf_archive fw_out;
+//     ///handle for the storeConfig.h5
+//     hdf_archive fw_out;
   public:
     ///constructor
     HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname, Communicate* c);
