@@ -6,12 +6,10 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "qmc_common.h"
-#include <QMCApp/ParticleSetPool.h>
+//#include <QMCApp/ParticleSetPool.h>
 
 namespace qmcplusplus 
 {
-  ///initialize static data
-  ParticleSetPool* qmc_common::ptcl_pool=0;
   string qmc_common::master_eshd_name="none";
   bool qmc_common::use_density=false;
   bool qmc_common::dryrun=false;
@@ -35,13 +33,6 @@ namespace qmcplusplus
       }
       ++i;
     }
-  }
-
-  ParticleSetPool* qmc_common::getParticleSetPool(Communicate* mycomm)
-  {
-    if(ptcl_pool==0)
-      ptcl_pool=new ParticleSetPool(mycomm);
-    return ptcl_pool;
   }
 }
 /***************************************************************************

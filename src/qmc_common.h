@@ -16,17 +16,8 @@
 
 namespace qmcplusplus 
 {
-  class ParticleSetPool;
-
   struct qmc_common
   {
-    ///@ global objects
-    static ParticleSetPool* ptcl_pool;
-    ///@}
-
-    ///return ptcl_pool 
-    static ParticleSetPool* getParticleSetPool(Communicate* mycomm);
-
     ///store the name of the main eshd file name
     static string master_eshd_name;
     ///true, if density is used, e.g. MPC
@@ -37,7 +28,6 @@ namespace qmcplusplus
     static bool save_wfs;
     ///initialize options from the command-line
     static void initialize(int argc, char **argv);
-
   };
 }
 
