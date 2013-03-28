@@ -535,10 +535,10 @@ eval_NUBspline_3d_z_vgh (NUBspline_3d_z * restrict spline,
   // d2x
   hess[0] = (d2a[0]*bcP[0] + d2a[1]*bcP[1] + d2a[2]*bcP[2] + d2a[3]*bcP[3]);
   // dx dy
-  hess[1] = (da[0]*dbcP[0] + da[1]*dbcP[1] + da[1]*dbcP[1] + da[1]*dbcP[1]);
+  hess[1] = (da[0]*dbcP[0] + da[1]*dbcP[1] + da[2]*dbcP[2] + da[3]*dbcP[3]);
   hess[3] = hess[1];
   // dx dz;
-  hess[2] = (da[0]*bdcP[0] + da[1]*bdcP[1] + da[1]*bdcP[1] + da[1]*bdcP[1]);
+  hess[2] = (da[0]*bdcP[0] + da[1]*bdcP[1] + da[2]*bdcP[2] + da[3]*bdcP[3]);
   hess[6] = hess[2];
   // d2y
   hess[4] = (a[0]*d2bcP[0] + a[1]*d2bcP[1] + a[2]*d2bcP[2] + a[3]*d2bcP[3]);
