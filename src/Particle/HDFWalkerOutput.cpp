@@ -55,7 +55,7 @@ namespace qmcplusplus
       , number_of_backups(0), max_number_of_backups(4), myComm(c), RootName(aroot)
 //       , fw_out(myComm)
   {
-//     number_of_particles=W.getTotalNum();
+     number_of_particles=W.getTotalNum();
 //     //FileName=myComm->getName()+hdf::config_ext;
 //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
 //     string ConfigFileName=myComm->getName()+".storeConfig.h5";
