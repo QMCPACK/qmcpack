@@ -293,7 +293,7 @@ namespace qmcplusplus
   {
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 1e-4;
+    RealType delta = 1e-2;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -324,12 +324,13 @@ namespace qmcplusplus
 #else
     ValueType logpsi = logpsi0;
 #endif
-    RealType eloc=H.evaluate(W);
+    RealType eloc(0);
+//     =H.evaluate(W);
 
     app_log() << "  Logpsi: " <<logpsi  << endl;
-    app_log() << "  HamTest " << "  Total " <<  eloc << endl;
-    for (int i=0; i<H.sizeOfObservables(); i++)
-      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+//     app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+//     for (int i=0; i<H.sizeOfObservables(); i++)
+//       app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
 
     //RealType psi = Psi.evaluateLog(W);
     ParticleSet::ParticleGradient_t G(nat), G1(nat);

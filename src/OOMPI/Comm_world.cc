@@ -138,21 +138,7 @@ OOMPI_Comm_world::Init(int& argc, char**& argv, bool call_init)
       MPI_Initialized(&flag);
       if (!flag) 
       {
-#if defined(ENABLE_OPENMP)
-        int provided, claimed;
-        MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-        MPI_Query_thread(&claimed);
-        if (claimed != provided) 
-        {
-          std::ostringstream o;
-	  o << "OOMPI_Comm_world::init"
-           << "\n  MPI_Query_thread thread level " << claimed
-	   << "\n  MPI_Init_threadthread level " << provided;
-          APP_ABORT(o.str());
-        }
-#else
 	MPI_Init(&argc, &argv);
-#endif
       }
     }
 
