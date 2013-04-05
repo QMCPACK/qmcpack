@@ -15,7 +15,7 @@ struct PrimeConstants {};
 template<>
 struct PrimeConstants<uint32_t> 
 {
-  enum {max_prime=11863285, min_num_primes=4096, max_prime_offset=779156};
+  enum {max_prime=49979687, min_num_primes=4096, max_prime_offset=779156};
 };
 
 ///specialization for uint64_t
