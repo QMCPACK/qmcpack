@@ -20,103 +20,10 @@
 #include "Utilities/SimpleParser.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
+#include "Platforms/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
 //#include "tau/profiler.h"
-
-
-#ifdef QMC_CUDA
-  #include "Message/CommOperators.h"
-  #include <cuda_runtime_api.h>
-  #include <unistd.h>
-
-int get_device_num()
-{
-  const int MAX_LEN = 200;
-  int size = OHMMS::Controller->size();
-  int rank = OHMMS::Controller->rank();
-  
-  vector<char> myname(MAX_LEN);
-
-  gethostname(&myname[0], MAX_LEN);
-  std::vector<char> host_list(MAX_LEN*size);
-  for (int i=0; i<MAX_LEN; i++) 
-    host_list[rank*MAX_LEN+i] = myname[i];
-
-  OHMMS::Controller->allgather(myname, host_list, MAX_LEN);
-  std::vector<std::string> hostnames;
-  for (int i=0; i<size; i++) 
-    hostnames.push_back(&(host_list[i*MAX_LEN]));
-
-  string myhostname = &myname[0];
-  int devnum = 0;
-  for (int i=0; i<rank; i++)
-    if (hostnames[i] == myhostname)
-      devnum++;
-  return devnum;
-}
-
-int 
-get_num_appropriate_devices()
-{
-  
-  int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
-  int num_appropriate=0;
-  for (int device=0; device < deviceCount; ++device) {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
-    if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
-	deviceProp.major >= 2)
-      num_appropriate++;
-  }
-  return num_appropriate;
-}
-
-void
-set_appropriate_device_num(int num)
-{
-  int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
-  int num_appropriate=0, device=0;
-  for (device = 0; device < deviceCount; ++device) {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
-    if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
-	deviceProp.major >= 2) {
-      num_appropriate++;
-      if (num_appropriate == num+1)
-	cudaSetDevice (device);
-    }
-  }
-}
-
-
-void Init_CUDA(int rank, int size)
-{
-  int devNum = get_device_num();
-  cerr << "Rank = " << rank 
-       << "  My device number = " << devNum << endl;
-  int num_appropriate = get_num_appropriate_devices();
-  if (devNum >= num_appropriate) {
-    cerr << "Not enough double-precision capable GPUs for MPI rank "
-	 << rank << ".\n";
-    abort();
-  }
-  set_appropriate_device_num (devNum);
-  return;
-
-  int numGPUs;
-  cudaGetDeviceCount(&numGPUs);
-  cerr << "There are " << numGPUs << " GPUs.";
-  cerr << "Size = " << size << endl;
-  int chunk = size/numGPUs;
-  //  int device_num = rank % numGPUs;
-  int device_num = rank * numGPUs / size;
-  cerr << "My device number is " << device_num << endl;
-  cudaSetDevice (device_num);
-}
-#endif
 
 
 /** @file qmcapp.cpp
@@ -128,25 +35,25 @@ void Init_CUDA(int rank, int size)
  *Actual works are done by QMCAppBase and its derived classe.
  *For other simulations, one can derive a class from QMCApps, similarly to MolecuApps.
  */
-int main(int argc, char **argv) {
-  ///done with the option
+int main(int argc, char **argv) 
+{
 
   //TAU_PROFILE("int main(int, char **)", " ", TAU_DEFAULT);
   //TAU_INIT(&argc, &argv);
  
   using namespace qmcplusplus;
 
+  //qmc_common  and MPI is initialized
   OHMMS::Controller->initialize(argc,argv);
-  // Write out free memory on each node on Linux.
 
-  //check the options first
   int clones=1;
   vector<string> fgroup1,fgroup2;
-#ifdef QMC_CUDA
-  bool useGPU = true;
+#if defined(QMC_CUDA)
+  bool useGPU=true;
 #else
-  bool useGPU = false;
+  bool useGPU=false;
 #endif
+
   int i=1;
   while(i<argc)
   {
@@ -198,24 +105,15 @@ int main(int argc, char **argv) {
   {
     if(OHMMS::Controller->rank()==0)
     {
-      cerr << "No input file is given" << endl;
-      cerr << "usage: qmcapp [--clones int] input-files " << endl;
+      cerr << "No input file is given." << endl;
+      cerr << "usage: qmcapp input-files " << endl;
     }
     APP_ABORT("Missing input file");
     return 1;
   }
 
   if (useGPU) 
-#ifdef QMC_CUDA
-    Init_CUDA(OHMMS::Controller->rank(),
-	      OHMMS::Controller->size());
-#else
-  {
-    cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
-	 << "GPU code.\nPlease use cmake -DQMC_CUDA=1.\n";
-    abort();
-  }
-#endif
+    Init_CUDA(OHMMS::Controller->rank(), OHMMS::Controller->size());
 
   //safe to move on
   Communicate* qmcComm=OHMMS::Controller;
@@ -223,11 +121,9 @@ int main(int argc, char **argv) {
     qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
 
   stringstream logname;
-  // logname<<getDateAndTime("%Y%m%dT%H%M");
   int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
   string myinput = inputs[qmcComm->getGroupID()];
   myinput = myinput.substr(0,myinput.size()-4);
-  //int pos = myinput.rfind(".xml");
   logname << myinput;
   OhmmsInfo Welcome(logname.str(),qmcComm->rank(),qmcComm->getGroupID(),inputs.size());
 

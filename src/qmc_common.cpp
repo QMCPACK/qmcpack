@@ -5,18 +5,22 @@
 // jnkim@ornl.gov
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "qmc_common.h"
+#include <qmc_common.h>
+#include <Platforms/sysutil.h>
 //#include <QMCApp/ParticleSetPool.h>
 
 namespace qmcplusplus 
 {
-  string qmc_common::master_eshd_name="none";
   bool qmc_common::use_density=false;
   bool qmc_common::dryrun=false;
   bool qmc_common::save_wfs=false;
+  bool qmc_common::async_swap=false;
+  string qmc_common::master_eshd_name="none";
 
   void qmc_common::initialize(int argc, char **argv)
   {
+
+    bool stopit=(argc<2);
     //going to use better option library
     int i=1;
     while(i<argc)
@@ -28,12 +32,47 @@ namespace qmcplusplus
       }
       else if(c.find("save_wfs") < c.size())
       {
-        //--save_wfs=yes|no
-        if(!c.find("no")) save_wfs=true;
+        save_wfs=(c.find("no")>=c.size());
+      }
+      else if(c.find("async_swap") < c.size())
+      {
+        async_swap=(c.find("no")>=c.size());
+      }
+      else if(c.find("help")< c.size())
+      {
+        stopit=true;
+      }
+      else if(c.find("version")<c.size())
+      {
+        stopit=true;
       }
       ++i;
     }
+
+    if(stopit)
+    {
+      cerr<<endl << "QMCPACK version "<< QMCPLUSPLUS_VERSION_MAJOR <<"." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH
+                 << " subversion " << QMCPLUSPLUS_BRANCH 
+                 << " build on " << getDateAndTime("%Y%m%d_%H%M") << endl;
+      cerr << "Usage: qmcapp input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << endl << endl;
+      abort();
+    }
   }
+
+  void qmc_common::print_options(ostream& os)
+  {
+    os << "  Global options " << endl;
+    if(dryrun)
+      os << "  dryrun : qmc sections will be ignored." << endl;
+    if(save_wfs)
+      os << "  save_wfs=1 : save wavefunctions in hdf5. " << endl;
+
+    if(async_swap)
+      os << "  async_swap=1 : using async isend/irecv for walker swaps " << endl;
+    else
+      os << "  async_swap=0 : using blocking send/recv for walker swaps " << endl;
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

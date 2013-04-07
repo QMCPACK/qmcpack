@@ -18,16 +18,20 @@ namespace qmcplusplus
 {
   struct qmc_common
   {
-    ///store the name of the main eshd file name
-    static string master_eshd_name;
     ///true, if density is used, e.g. MPC
     static bool use_density;
     ///true, if it is a dryrun
     static bool dryrun;
     ///true, if wave functions are stored for next runs
     static bool save_wfs;
+    ///true, if walker swap is done by async
+    static bool async_swap;
+    ///store the name of the main eshd file name
+    static string master_eshd_name;
     ///initialize options from the command-line
     static void initialize(int argc, char **argv);
+    ///print command-line options
+    static void print_options(ostream& os);
   };
 }
 

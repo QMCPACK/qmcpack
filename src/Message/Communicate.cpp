@@ -42,7 +42,6 @@ myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)
 
 Communicate::Communicate(int argc, char **argv)
 {
-  qmcplusplus::qmc_common::initialize(argc,argv);
   initialize(argc,argv);
 }
 
@@ -136,6 +135,8 @@ Communicate::~Communicate()
 
 void Communicate::initialize(int argc, char **argv)
 {
+
+  qmcplusplus::qmc_common::initialize(argc,argv);
 
   OOMPI_COMM_WORLD.Init(argc, argv);
   myComm = OOMPI_COMM_WORLD;

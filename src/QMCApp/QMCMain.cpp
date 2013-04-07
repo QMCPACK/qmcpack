@@ -55,6 +55,8 @@ namespace qmcplusplus {
 #endif
       << "\n=====================================================\n";
 
+    qmc_common::print_options(app_log());
+
     app_log() 
       << "\n  MPI Nodes            = " << OHMMS::Controller->size() 
       << "\n  MPI Nodes per group  = " << myComm->size() 
