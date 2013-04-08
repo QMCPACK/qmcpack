@@ -26,7 +26,9 @@
 #ifdef HAVE_SSE3
   #include <pmmintrin.h>
 #endif
+#ifdef HAVE_SSE41
 #include <smmintrin.h>
+#endif
 #include <math.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
@@ -646,16 +648,23 @@ eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
+#if defined(HAVE_SSE41)
   __m128i gmin = _mm_set_epi32(0,0,0,0);
   __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
   __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
   _mm_storeu_si128 (&intpart, ixiyiz);
-
   // Store to memory for use in C expressions
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
+#else
+  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+#endif
 
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
@@ -753,6 +762,7 @@ eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
+#if defined(HAVE_SSE41)
   __m128i gmin = _mm_set_epi32(0,0,0,0);
   __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
   __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
@@ -763,7 +773,13 @@ eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
-
+#else
+  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+#endif
   intptr_t xs = spline->x_stride;
   intptr_t ys = spline->y_stride;
   intptr_t zs = spline->z_stride;
@@ -890,6 +906,7 @@ eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
+#if defined(HAVE_SSE41)
   __m128i gmin = _mm_set_epi32(0,0,0,0);
   __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
   __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
@@ -900,6 +917,13 @@ eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
+#else
+  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+#endif
 
   intptr_t xs = spline->x_stride;
   intptr_t ys = spline->y_stride;
@@ -1046,6 +1070,7 @@ eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
+#if defined(HAVE_SSE41)
   __m128i gmin = _mm_set_epi32(0,0,0,0);
   __m128i gmax = _mm_set_epi32(spline->x_grid.num-1, spline->y_grid.num-1,spline->z_grid.num-1,0);
   __m128i ixiyiz=_mm_min_epi32(_mm_max_epi32(intpart,gmin),gmax);
@@ -1056,6 +1081,13 @@ eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
+#else
+  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
+  _mm_storeu_si128 (&intpart, ixiyiz);
+#endif
 
   intptr_t xs = spline->x_stride;
   intptr_t ys = spline->y_stride;
