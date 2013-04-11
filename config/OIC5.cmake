@@ -2,7 +2,7 @@ SET(CMAKE_SYSTEM_PROCESSOR "XK7")
 #2011-12-06
 
 set(CMAKE_C_COMPILER  gcc)
-set(CMAKE_CXX_COMPILER  /opt/openmpi/1.4.5/gcc4/bin/mpicxx)
+set(CMAKE_CXX_COMPILER  /opt/openmpi/1.6.4/gcc4/bin/mpicxx)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR") 
 #set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DUSE_REAL_STRUCT_FACTOR -DDISABLE_TIMER=1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1")
 set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
