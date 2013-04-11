@@ -127,7 +127,8 @@ namespace qmcplusplus {
   }
 
   bool 
-  VMCSingle::put(xmlNodePtr q){
+  VMCSingle::put(xmlNodePtr q)
+  {
     //nothing to add
     return true;
   }

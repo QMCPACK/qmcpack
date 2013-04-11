@@ -46,6 +46,9 @@ namespace qmcplusplus {
       m_param.add(NonLocalMove,"nonlocalmoves","string");
       m_param.add(mover_MaxAge,"MaxAge","double");
       m_param.add(UseFastGrad,"fastgrad", "string");
+
+      //DMC overwrites ConstPopulation
+      ConstPopulation=false;
     }
     
   void DMCOMP::resetComponents(xmlNodePtr cur)

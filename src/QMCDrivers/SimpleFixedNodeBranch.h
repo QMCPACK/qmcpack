@@ -45,10 +45,10 @@ namespace qmcplusplus {
    * load balancing among multiple MPI tasks.
    * \see {http://qmcpack.cmscc.org/qmc-basics}
    */
-  class SimpleFixedNodeBranch: public QMCTraits 
+  struct SimpleFixedNodeBranch: public QMCTraits 
   {
 
-    friend class BranchIO;
+    typedef SimpleFixedNodeBranch ThisType;
 
     /*! enum for booleans 
      * \since 2008-05-05
@@ -144,14 +144,9 @@ namespace qmcplusplus {
     ///string parameters
     vector<string> sParam;
 
-    // Used for the average scaling
+    /// Used for the average scaling
     RealType ScaleSum;
     unsigned long ScaleNum;
-
-    public:
-
-    typedef SimpleFixedNodeBranch ThisType;
-
     //@TODO move these to private
     ///LogJacob
     RealType LogJacobRef;
@@ -169,8 +164,6 @@ namespace qmcplusplus {
     
     ~SimpleFixedNodeBranch(){}
     
-    
-
     inline bool phaseChanged(RealType psi0) const 
     {
 #if defined(QMC_COMPLEX)

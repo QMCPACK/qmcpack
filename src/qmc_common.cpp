@@ -7,14 +7,20 @@
 // -*- C++ -*-
 #include <qmc_common.h>
 #include <Platforms/sysutil.h>
-//#include <QMCApp/ParticleSetPool.h>
 
 namespace qmcplusplus 
 {
+  bool qmc_common::is_restart=false;
   bool qmc_common::use_density=false;
   bool qmc_common::dryrun=false;
   bool qmc_common::save_wfs=false;
   bool qmc_common::async_swap=false;
+#if defined(QMC_CUDA)
+  int qmc_common::compute_device=1;
+#else
+  int qmc_common::compute_device=0;
+#endif
+
   string qmc_common::master_eshd_name="none";
 
   void qmc_common::initialize(int argc, char **argv)

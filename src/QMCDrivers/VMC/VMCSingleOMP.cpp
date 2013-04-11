@@ -109,7 +109,13 @@ namespace qmcplusplus
       *(RandomNumberControl::Children[ip])=*(Rng[ip]);
 
     ///write samples to a file
-    bool wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size());
+    bool wrotesamples=DumpConfig;
+    if(DumpConfig)
+    {
+      wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size());
+      if(wrotesamples)
+        app_log() << "  samples are written to the config.h5" << endl;
+    }
 
     //finalize a qmc section
     return finalize(nBlocks,!wrotesamples);
@@ -117,6 +123,10 @@ namespace qmcplusplus
 
   void VMCSingleOMP::resetRun()
   {
+    //only VMC can overwrite this
+    if(nTargetPopulation>0)
+      branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS]=static_cast<int>(std::ceil(nTargetPopulation));
+       
     makeClones(W,Psi,H);
 
     std::vector<IndexType> samples_th(omp_get_max_threads(),0);
@@ -323,7 +333,6 @@ namespace qmcplusplus
   bool
   VMCSingleOMP::put(xmlNodePtr q)
   {
-    //nothing to add
     return true;
   }
 }

@@ -32,8 +32,8 @@ namespace qmcplusplus
   ///enum to yes/no options saved in sParam 
   enum {COMBOPT, USETAUOPT, MIXDMCOPT,DUMMYOPT};
 
-  SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-    vParam(1.0), WalkerController(0), BackupWalkerController(0),
+  SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
+    : vParam(1.0), WalkerController(0), BackupWalkerController(0),
     MyEstimator(0)//, PopHist(5), DMCEnergyHist(5)
   {
 

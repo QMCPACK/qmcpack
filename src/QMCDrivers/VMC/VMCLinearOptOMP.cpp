@@ -454,6 +454,10 @@ namespace qmcplusplus
 
   void VMCLinearOptOMP::resetRun()
   {
+    //only VMC can overwrite this
+    if(nTargetPopulation>0)
+      branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS]=static_cast<int>(std::ceil(nTargetPopulation));
+
     //     firstWalker=(*W[0]);
     makeClones(W,Psi,H);
 //     clearCSEstimators();

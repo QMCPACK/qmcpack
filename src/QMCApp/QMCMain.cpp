@@ -101,9 +101,14 @@ namespace qmcplusplus {
 
     OHMMS::Controller->barrier();
 
+    if(qmc_common::dryrun)
+    {
+      app_log() << "  dryrun == 1 Ignore qmc/loop elements " << endl;
+      APP_ABORT("QMCMain::execute");
+    }
+
     Timer t1;
     curMethod = string("invalid");
-    //xmlNodePtr cur=m_root->children;
     for(int qa=0; qa<m_qmcaction.size(); qa++)
     {
       xmlNodePtr cur=m_qmcaction[qa].first;
@@ -116,33 +121,12 @@ namespace qmcplusplus {
       {
         executeLoop(cur);
       }
-      //external node, need to free
-      //if(m_qmcaction[qa].second) xmlFreeNode(cur); 
     }
 
     m_qmcaction.clear();
 
-    //xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
-    //while(cur != NULL) 
-    //{
-    //  string cname((const char*)cur->name);
-    //  if(cname == "qmc" || cname == "optimize")
-    //  {
-    //    if(firstqmc == NULL) firstqmc=cur;
-    //    executeQMCSection(cur);
-    //  }
-    //  else if(cname == "loop")
-    //  {
-    //    if(firstqmc == NULL) firstqmc=cur;
-    //    executeLoop(cur);
-    //  }
-    //  cur=cur->next;
-    //}
-
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
-    //if(OHMMS::Controller->master()) {
-    //if(firstqmc != NULL && myComm->master()) { //generate multiple files
     if(is_manager()) 
     { //generate multiple files
 
@@ -469,6 +453,7 @@ namespace qmcplusplus {
       a.add(fname,"fileroot"); a.add(fname,"href"); a.add(fname,"src");
       a.put(result[result.size()-1]);
       if(fname.size()) RandomNumberControl::read(fname,myComm);
+      qmc_common::is_restart=true;
     }
     return true;
   }

@@ -195,6 +195,8 @@ namespace qmcplusplus {
     bool AppendRun;
     ///flag to turn off dumping configurations
     bool DumpConfig;
+    ///true, if the size of population is fixed. 
+    bool ConstPopulation;
     /** the number of times this QMCDriver is executed
      *
      * MyCounter is initialized to zero by the constructor and is incremented 
@@ -254,10 +256,12 @@ namespace qmcplusplus {
     IndexType nTargetWalkers;
     ///the number of saved samples
     IndexType nTargetSamples;
-    
     ///alternate method of setting QMC run parameters
     IndexType nStepsBetweenSamples;
+    ///samples per thread
     RealType nSamplesPerThread;
+    ///target population
+    RealType nTargetPopulation;
     
     ///timestep
     RealType Tau;

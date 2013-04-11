@@ -16,8 +16,14 @@
 
 namespace qmcplusplus 
 {
+  ///enumeration for main computing devices
+  enum {SMP=0, CUDA=1, PHI=2};
+
+  ///class to definte global variables
   struct qmc_common
   {
+    ///true, if a run is a restart with <mcwalkerset/>
+    static bool is_restart;
     ///true, if density is used, e.g. MPC
     static bool use_density;
     ///true, if it is a dryrun
@@ -26,6 +32,8 @@ namespace qmcplusplus
     static bool save_wfs;
     ///true, if walker swap is done by async
     static bool async_swap;
+    ///int for compute_device 
+    static int compute_device;
     ///store the name of the main eshd file name
     static string master_eshd_name;
     ///initialize options from the command-line

@@ -83,7 +83,7 @@ namespace qmcplusplus {
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0),
-  MaxSamples(10),CurSampleCount(0)
+  MaxSamples(10),CurSampleCount(0),GlobalNumWalkers(0)
 #ifdef QMC_CUDA
   ,RList_GPU("MCWalkerConfiguration::RList_GPU"),
   GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
@@ -165,9 +165,11 @@ void MCWalkerConfiguration::createWalkers(int n)
 }
 
 
-void MCWalkerConfiguration::resize(int numWalkers, int numPtcls) {
+void MCWalkerConfiguration::resize(int numWalkers, int numPtcls) 
+{
 
-  WARNMSG("MCWalkerConfiguration::resize cleans up the walker list.")
+  if(GlobalNum && WalkerList.size()) 
+    app_warning() << "MCWalkerConfiguration::resize cleans up the walker list." << endl;
 
   ParticleSet::resize(unsigned(numPtcls));
 
@@ -434,7 +436,9 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
     , HDFWalkerOutput* out, int np)
 {
 #if !(defined(__bgp__)||(__bgq__))
-  MCWalkerConfiguration wtemp(*this);
+  MCWalkerConfiguration wtemp;
+  wtemp.resize(0,GlobalNum);
+
   wtemp.loadEnsemble(others,false);
   int w=wtemp.getActiveWalkers();
 

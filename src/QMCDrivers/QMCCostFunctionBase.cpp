@@ -699,8 +699,8 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 
       xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
-      //check parameter
-      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
+      //check var
+      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var",acontext);
       for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
       {
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];

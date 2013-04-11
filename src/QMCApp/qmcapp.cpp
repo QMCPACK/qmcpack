@@ -23,6 +23,7 @@
 #include "Platforms/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
+#include "qmc_common.h"
 //#include "tau/profiler.h"
 
 
@@ -47,50 +48,48 @@ int main(int argc, char **argv)
   OHMMS::Controller->initialize(argc,argv);
 
   int clones=1;
+  bool useGPU=(qmc_common::compute_device == 1);
   vector<string> fgroup1,fgroup2;
-#if defined(QMC_CUDA)
-  bool useGPU=true;
-#else
-  bool useGPU=false;
-#endif
 
   int i=1;
   while(i<argc)
   {
     string c(argv[i]);
-    if (c.find("--gpu") < c.size()) 
-      useGPU = true;
-    else if(c.find("clones")<c.size())
+    if(c.find("-")<c.size())
     {
-      clones=atoi(argv[++i]);
+      if (c.find("gpu") < c.size()) 
+        useGPU = true;
+      else if(c.find("clones")<c.size())
+        clones=atoi(argv[++i]);
     }
-    else if(c.find("xml")<c.size())
+    else
     {
-      fgroup1.push_back(argv[i]);
-    }
-    else 
-    {
-      ifstream fin(argv[i]);
-      bool valid=true;
-      do 
+      if(c.find("xml")<c.size())
+        fgroup1.push_back(argv[i]);
+      else 
       {
-        vector<string> words;
-        getwords(words,fin);
-        if(words.size())
+        ifstream fin(argv[i],ifstream::in);
+        bool valid= !fin.fail();
+        while(valid)
         {
-          if(words[0].find("xml")<words[0].size())
+          vector<string> words;
+          getwords(words,fin);
+          if(words.size())
           {
-            int nc=1;
-            if(words.size()>1) nc=atoi(words[1].c_str());
-            while(nc)
+            if(words[0].find("xml")<words[0].size())
             {
-              fgroup2.push_back(words[0]);--nc;
+              int nc=1;
+              if(words.size()>1) nc=atoi(words[1].c_str());
+              while(nc)
+              {
+                fgroup2.push_back(words[0]);--nc;
+              }
             }
           }
-        }
-        else
-          valid=false;
-      } while(valid);
+          else
+            valid=false;
+        } 
+      }
     }
     ++i;
   }
@@ -108,7 +107,7 @@ int main(int argc, char **argv)
       cerr << "No input file is given." << endl;
       cerr << "usage: qmcapp input-files " << endl;
     }
-    APP_ABORT("Missing input file");
+    APP_ABORT("qmcapp");
     return 1;
   }
 
