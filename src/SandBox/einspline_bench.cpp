@@ -94,22 +94,22 @@ int main(int argc, char** argv)
     }
   }
 
-#pragma omp parallel
-  {
-    einspline3d_benchmark<multi_UBspline_3d_z> d_bench;
-    d_bench.set(nx,ny,nz,num_splines);
-    random_position_generator<double> d_pos(nsamples,omp_get_thread_num());
-    timer_type d_timer(0.0);
-    for(int i=0; i<niters; ++i)
-    {
-      d_pos.randomize();
-      d_timer+=d_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
-    }
-#pragma omp critical
-    {
-      z_timer_t += d_timer;
-    }
-  }
+//#pragma omp parallel
+//  {
+//    einspline3d_benchmark<multi_UBspline_3d_z> d_bench;
+//    d_bench.set(nx,ny,nz,num_splines);
+//    random_position_generator<double> d_pos(nsamples,omp_get_thread_num());
+//    timer_type d_timer(0.0);
+//    for(int i=0; i<niters; ++i)
+//    {
+//      d_pos.randomize();
+//      d_timer+=d_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
+//    }
+//#pragma omp critical
+//    {
+//      z_timer_t += d_timer;
+//    }
+//  }
 
 #pragma omp parallel
   {
@@ -128,22 +128,22 @@ int main(int argc, char** argv)
     }
   }
 
-#pragma omp parallel
-  {
-    einspline3d_benchmark<multi_UBspline_3d_c> d_bench;
-    d_bench.set(nx,ny,nz,num_splines);
-    random_position_generator<float> d_pos(nsamples,omp_get_thread_num());
-    timer_type d_timer(0.0);
-    for(int i=0; i<niters; ++i)
-    {
-      d_pos.randomize();
-      d_timer+=d_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
-    }
-#pragma omp critical
-    {
-      c_timer_t += d_timer;
-    }
-  }
+//#pragma omp parallel
+//  {
+//    einspline3d_benchmark<multi_UBspline_3d_c> d_bench;
+//    d_bench.set(nx,ny,nz,num_splines);
+//    random_position_generator<float> d_pos(nsamples,omp_get_thread_num());
+//    timer_type d_timer(0.0);
+//    for(int i=0; i<niters; ++i)
+//    {
+//      d_pos.randomize();
+//      d_timer+=d_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
+//    }
+//#pragma omp critical
+//    {
+//      c_timer_t += d_timer;
+//    }
+//  }
 
   mpi::reduce(*mycomm,d_timer_t);
   mpi::reduce(*mycomm,z_timer_t);

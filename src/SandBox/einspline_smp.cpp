@@ -70,8 +70,8 @@ int main(int argc, char** argv)
   timer_type d_timer_t,s_timer_t,z_timer_t,c_timer_t;
   Timer big_clock;
 
-  einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
-  z_bench.set(nx,ny,nz,num_splines);
+  //einspline3d_benchmark<multi_UBspline_3d_z> z_bench;
+  //z_bench.set(nx,ny,nz,num_splines);
 
   einspline3d_benchmark<multi_UBspline_3d_d> d_bench;
   d_bench.set(nx,ny,nz,num_splines);
@@ -79,8 +79,8 @@ int main(int argc, char** argv)
   einspline3d_benchmark<multi_UBspline_3d_s> s_bench;
   s_bench.set(nx,ny,nz,num_splines);
 
-  einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
-  c_bench.set(nx,ny,nz,num_splines);
+  //einspline3d_benchmark<multi_UBspline_3d_c> c_bench;
+  //c_bench.set(nx,ny,nz,num_splines);
 
   double t_init=big_clock.elapsed();
   app_log() << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
@@ -104,10 +104,10 @@ int main(int argc, char** argv)
       d_timer+=d_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
       s_pos.randomize();
       s_timer+=s_bench.test_all(s_pos.Vpos, s_pos.VGLpos, s_pos.VGHpos);
-      d_pos.randomize();
-      z_timer+=z_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
-      s_pos.randomize();
-      c_timer+=c_bench.test_all(s_pos.Vpos, s_pos.VGLpos, s_pos.VGHpos);
+      //d_pos.randomize();
+      //z_timer+=z_bench.test_all(d_pos.Vpos, d_pos.VGLpos, d_pos.VGHpos);
+      //s_pos.randomize();
+      //c_timer+=c_bench.test_all(s_pos.Vpos, s_pos.VGLpos, s_pos.VGHpos);
     }
 #pragma omp critical
     {
