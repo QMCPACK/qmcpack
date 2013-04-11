@@ -235,7 +235,7 @@ namespace qmcplusplus {
       dJ2Type *dJ2 = new dJ2Type(targetPtcl);
 
       SpeciesSet& species(targetPtcl.getSpeciesSet());
-      RealType q=species(0,species.addAttribute("charge"));
+      int chargeInd=species.addAttribute("charge");
 
       //std::map<std::string,RadFuncType*> functorMap;
       bool Opt(false);
@@ -265,6 +265,7 @@ namespace qmcplusplus {
             spA=pairType[0]; spB=pairType[1];
           }
 
+
           int ia = species.findSpecies(spA);
           int ib = species.findSpecies(spB);
           if(ia==species.size() || ib == species.size())
@@ -274,10 +275,8 @@ namespace qmcplusplus {
 
           if(cusp<-1e6)
           { 
-            if(ia==ib) 
-              cusp=-0.25*q*q;
-            else 
-              cusp=-0.5*q*q;
+            RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
+            cusp = (ia==ib)? -0.25*qq:-0.5*qq;
           }
 
           app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << endl;

@@ -17,13 +17,15 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#if QMC_BUILD_LEVEL>2
+#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BesselZeroFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OpenGaussianSlaterFunctor.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
@@ -124,6 +126,7 @@ namespace qmcplusplus
       {
         success = createJAB<Pade2ndOrderFunctor<RealType> >(cur,jastfunction);
       }
+#if QMC_BUILD_LEVEL>2
     else if (jastfunction == "short")
       {
         success = createJAB<ModPadeFunctor<RealType> >(cur,jastfunction);
@@ -149,10 +152,10 @@ namespace qmcplusplus
       {
         success = createJAB<BsplineFunctor<RealType> >(cur,jastfunction);
       }
+#endif
     else
       {
-        app_error() << "Unknown one body function: "
-        << jastfunction << ".\n";
+        app_error() << "Unknown one body function: " << jastfunction << ".\n";
       }
     return success;
   }

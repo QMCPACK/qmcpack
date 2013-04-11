@@ -20,8 +20,9 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-//#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-//#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+#include "OhmmsData/ParameterSet.h"
+#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
 namespace qmcplusplus 
 {
@@ -35,12 +36,11 @@ namespace qmcplusplus
 
   bool PadeJastrowBuilder::put(xmlNodePtr cur) 
   {
-
     ReportEngine PRE(ClassName,"put()");
 
     string sourceOpt=targetPtcl.getName();
     string jname="PadeJastrow";
-    string spin="no";
+    string spin="yes";
     string id_b="jee_b";
     RealType pade_b=1.0;
     OhmmsAttributeSet pattrib;
@@ -49,122 +49,212 @@ namespace qmcplusplus
     pattrib.add(sourceOpt,"source");
     pattrib.put(cur);
 
-    cur=cur->children;
-    while(cur != NULL)
-    {
-      {//just to hide this
-        string pname="0";
-        OhmmsAttributeSet aa;
-        aa.add(pname,"name");
-        aa.add(id_b,"id");
-        aa.put(cur);
-        if(pname[0]=='B') putContent(pade_b,cur);
-      }
-
-      xmlNodePtr cur1=cur->children;
-      while(cur1!= NULL)
-      {
-        string pname="0";
-        OhmmsAttributeSet aa;
-        aa.add(pname,"name");
-        aa.add(id_b,"id");
-        aa.put(cur1);
-        if(pname[0]=='B') putContent(pade_b,cur1);
-        cur1=cur1->next;
-      }
-      cur=cur->next;
-    }
-
-    app_log() << "PadeJastrowBuilder " << id_b << " = " << pade_b << endl;
-
-    typedef PadeFunctor<RealType> FuncType;
-
-    typedef TwoBodyJastrowOrbital<FuncType> JeeType;
-    JeeType *J2 = new JeeType(targetPtcl,targetPsi.is_manager());
+    //bool spindep=(spin=="yes");
 
     SpeciesSet& species(targetPtcl.getSpeciesSet());
-    RealType q=species(0,species.addAttribute("charge"));
+    int chargeInd=species.addAttribute("charge");
 
-    if(spin == "no") 
-    {
-      RealType cusp=-0.5*q*q;
-      FuncType *func=new FuncType(cusp,pade_b);
-      func->setIDs("jee_cusp",id_b);//set the ID's
+    typedef PadeFunctor<RealType> RadFuncType;
 
-      J2->addFunc(0,0,func);
+    if(sourceOpt == targetPtcl.getName())
+    {//two-body
+      typedef TwoBodyJastrowOrbital<RadFuncType> J2Type;
+      typedef DiffTwoBodyJastrowOrbital<RadFuncType> dJ2Type;
 
-      //DerivFuncType *dfunc=new DerivFuncType(cusp,B);
-      //dJ2->addFunc("pade_uu",0,0,dfunc);
-      //dFuncList.push_back(dfunc);
-      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< "\n";
-    } 
-    else 
-    {
-      //build uu functor
-      RealType cusp_uu=-0.25*q*q;
-      FuncType *funcUU=new FuncType(cusp_uu,pade_b);
-      funcUU->setIDs("pade_uu",id_b);//set the ID's
+      int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
 
-      //build ud functor
-      RealType cusp_ud=-0.5*q*q;
-      FuncType *funcUD=new FuncType(cusp_ud,pade_b);
-      funcUD->setIDs("pade_ud",id_b);//set the ID's
+      J2Type *J2 = new J2Type(targetPtcl,taskid);
+      dJ2Type *dJ2 = new dJ2Type(targetPtcl);
 
-      J2->addFunc(0,0,funcUU);
-
-      //DerivFuncType *dfuncUU=new DerivFuncType(cusp_uu,B);
-      //DerivFuncType *dfuncUD=new DerivFuncType(cusp_ud,B);
-      //dJ2->addFunc("pade_uu",0,0,dfuncUU);
-      //dJ2->addFunc("pade_ud",0,1,dfuncUD);
-      app_log() << "    Adding Spin-dependent Pade Two-Body Jastrow " << "\n";
-      app_log() << "      parallel spin     " << cusp_uu << "\n";
-      app_log() << "      antiparallel spin " << cusp_ud << "\n";
-    }
-
-    targetPsi.addOrbital(J2,"J2_pade");
-
-    if(sourceOpt != targetPtcl.getName())
-    {
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
-      if(pa_it == ptclPool.end()) 
+      cur= cur->xmlChildrenNode;
+      while(cur!=NULL)
       {
-        PRE.warning("PadeJastrowBuilder::put failed. "+sourceOpt+" does not exist.");
-        return true;
+        std::string cname((const char*)cur->name);
+        if (cname == "correlation") 
+        {
+          OhmmsAttributeSet rAttrib;
+          RealType cusp=-1e10;
+          string spA(species.speciesName[0]);
+          string spB(species.speciesName[0]);
+          rAttrib.add(spA,"speciesA");
+          rAttrib.add(spB,"speciesB");
+          rAttrib.add(cusp,"cusp");
+          rAttrib.put(cur);
+          int ia = species.findSpecies(spA);
+          int ib = species.findSpecies(spB);
+          if(ia==species.size() || ib == species.size())
+          {
+            PRE.error("Failed. Species are incorrect.",true);
+          }
+
+          if(cusp<-1e6)
+          {
+            RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
+            cusp = (ia==ib)? -0.25*qq:-0.5*qq;
+          }
+
+          ostringstream o;
+          o<<"j2"<<ia<<ib;
+	  RadFuncType *functor = new RadFuncType(cusp,o.str());
+          functor->put(cur);
+          J2->addFunc(ia,ib,functor);
+          dJ2->addFunc(ia,ib,functor);
+          //{
+          //  ostringstream o;
+          //  o<< "pade"<<ia<<"-"<<ib;
+          //  ofstream fstream(o.str().c_str());
+          //  int n=100;
+          //  RealType d=10/100.,r=0.001;
+          //  RealType u,du,d2du;
+          //  for (int i=0; i<n; ++i)
+          //  {
+          //    u=functor->evaluate(r,du,d2du);
+          //    fstream << setw(22) << r << setw(22) << u << setw(22) << du
+          //      << setw(22) << d2du << std::endl;
+          //    r+=d;
+          //  }
+          //}
+        }
+        cur=cur->next;
       }
-      ParticleSet& sourcePtcl= (*(*pa_it).second);
-
-      app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
-      typedef OneBodyJastrowOrbital<FuncType> JneType;
-      JneType* J1 = new JneType(sourcePtcl,targetPtcl);
-
-      //typedef OneBodyJastrowOrbital<DerivFuncType> DerivJneType;
-      //DerivJneType* dJ1=new DerivJneType(sourcePtcl,targetPtcl);
-
-      SpeciesSet& Species(sourcePtcl.getSpeciesSet());
-      int ng=Species.getTotalNum();
-      int icharge = Species.addAttribute("charge");
-      for(int ig=0; ig<ng; ++ig) 
-      {
-        RealType zeff=Species(icharge,ig);
-        ostringstream j1id;
-        j1id<<"pade_"<<Species.speciesName[ig];
-
-        RealType sc=std::pow(2*zeff,0.25);
-        FuncType *func=new FuncType(-zeff,pade_b,sc);
-        func->setIDs(j1id.str(),id_b);
-
-        J1->addFunc(ig,func);
-
-        //DerivFuncType *dfunc=new DerivFuncType(-zeff,B,sc);
-        //dJ1->addFunc(ig,dfunc);
-        //dFuncList.push_back(dfunc);
-
-        app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << pade_b*sc << endl;
-      }
-      targetPsi.addOrbital(J1,"J1_pade");
+      J2->dPsi=dJ2;
+      targetPsi.addOrbital(J2,"J2_pade");
+      J2->setOptimizable(true);
     }
     return true;
   }
+//  bool PadeJastrowBuilder::put(xmlNodePtr cur) 
+//  {
+//
+//    ReportEngine PRE(ClassName,"put()");
+//
+//    string sourceOpt=targetPtcl.getName();
+//    string jname="PadeJastrow";
+//    string spin="no";
+//    string id_b="jee_b";
+//    RealType pade_b=1.0;
+//    OhmmsAttributeSet pattrib;
+//    pattrib.add(jname,"name");
+//    pattrib.add(spin,"spin");
+//    pattrib.add(sourceOpt,"source");
+//    pattrib.put(cur);
+//
+//    cur=cur->children;
+//    while(cur != NULL)
+//    {
+//      {//just to hide this
+//        string pname="0";
+//        OhmmsAttributeSet aa;
+//        aa.add(pname,"name");
+//        aa.add(id_b,"id");
+//        aa.put(cur);
+//        if(pname[0]=='B') putContent(pade_b,cur);
+//      }
+//
+//      xmlNodePtr cur1=cur->children;
+//      while(cur1!= NULL)
+//      {
+//        string pname="0";
+//        OhmmsAttributeSet aa;
+//        aa.add(pname,"name");
+//        aa.add(id_b,"id");
+//        aa.put(cur1);
+//        if(pname[0]=='B') putContent(pade_b,cur1);
+//        cur1=cur1->next;
+//        cout << "TESTING " << pade_b << endl;
+//      }
+//      cur=cur->next;
+//    }
+//
+//    app_log() << "PadeJastrowBuilder " << id_b << " = " << pade_b << endl;
+//
+//    typedef PadeFunctor<RealType> FuncType;
+//
+//    typedef TwoBodyJastrowOrbital<FuncType> JeeType;
+//    JeeType *J2 = new JeeType(targetPtcl,targetPsi.is_manager());
+//
+//    SpeciesSet& species(targetPtcl.getSpeciesSet());
+//    RealType q=species(0,species.addAttribute("charge"));
+//
+//    if(spin == "no") 
+//    {//
+//      RealType cusp=-0.5*q*q;
+//      FuncType *func=new FuncType(cusp,pade_b);
+//      func->setIDs("jee_cusp",id_b,false,true);//set the ID's, fixed cusp
+//      J2->addFunc(0,0,func);
+//      //DerivFuncType *dfunc=new DerivFuncType(cusp,B);
+//      //dJ2->addFunc("pade_uu",0,0,dfunc);
+//      //dFuncList.push_back(dfunc);
+//      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< "\n";
+//    } 
+//    else 
+//    {
+//      //build uu functor
+//      RealType cusp_uu=-0.25*q*q;
+//      FuncType *funcUU=new FuncType(cusp_uu,pade_b);
+//      funcUU->setIDs("pade_uu",id_b);//set the ID's
+//
+//      //build ud functor
+//      RealType cusp_ud=-0.5*q*q;
+//      FuncType *funcUD=new FuncType(cusp_ud,pade_b);
+//      funcUD->setIDs("pade_ud",id_b);//set the ID's
+//
+//      J2->addFunc(0,0,funcUU);
+//      J2->addFunc(0,1,funcUD);
+//
+//      //DerivFuncType *dfuncUU=new DerivFuncType(cusp_uu,B);
+//      //DerivFuncType *dfuncUD=new DerivFuncType(cusp_ud,B);
+//      //dJ2->addFunc("pade_uu",0,0,dfuncUU);
+//      //dJ2->addFunc("pade_ud",0,1,dfuncUD);
+//      app_log() << "    Adding Spin-dependent Pade Two-Body Jastrow " << "\n";
+//      app_log() << "      parallel spin     " << cusp_uu << "\n";
+//      app_log() << "      antiparallel spin " << cusp_ud << "\n";
+//    }
+//
+//    targetPsi.addOrbital(J2,"J2_pade");
+//
+//    if(sourceOpt != targetPtcl.getName())
+//    {
+//      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+//      if(pa_it == ptclPool.end()) 
+//      {
+//        PRE.warning("PadeJastrowBuilder::put failed. "+sourceOpt+" does not exist.");
+//        return true;
+//      }
+//      ParticleSet& sourcePtcl= (*(*pa_it).second);
+//
+//      app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
+//      typedef OneBodyJastrowOrbital<FuncType> JneType;
+//      JneType* J1 = new JneType(sourcePtcl,targetPtcl);
+//
+//      //typedef OneBodyJastrowOrbital<DerivFuncType> DerivJneType;
+//      //DerivJneType* dJ1=new DerivJneType(sourcePtcl,targetPtcl);
+//
+//      SpeciesSet& Species(sourcePtcl.getSpeciesSet());
+//      int ng=Species.getTotalNum();
+//      int icharge = Species.addAttribute("charge");
+//      for(int ig=0; ig<ng; ++ig) 
+//      {
+//        RealType zeff=Species(icharge,ig);
+//        ostringstream j1id;
+//        j1id<<"pade_"<<Species.speciesName[ig];
+//
+//        RealType sc=std::pow(2*zeff,0.25);
+//        FuncType *func=new FuncType(-zeff,pade_b,sc);
+//        func->setIDs(j1id.str(),id_b);
+//
+//        J1->addFunc(ig,func);
+//
+//        //DerivFuncType *dfunc=new DerivFuncType(-zeff,B,sc);
+//        //dJ1->addFunc(ig,dfunc);
+//        //dFuncList.push_back(dfunc);
+//
+//        app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << pade_b*sc << endl;
+//      }
+//      targetPsi.addOrbital(J1,"J1_pade");
+//    }
+//    return true;
+//  }
 
 }
 /***************************************************************************

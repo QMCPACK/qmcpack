@@ -113,11 +113,7 @@ namespace qmcplusplus
       void addFunc(int source_type, FT* afunc, int target_type=-1)
       {
         for (int i=0; i<Fs.size(); i++)
-          if (CenterRef.GroupID[i] == source_type)
-            {
-              Fs[i]=afunc;
-              app_log() << "Adding function of type " << source_type << " for atom " << i << ".\n";
-            }
+          if (CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
         Funique[source_type]=afunc;
       }
 

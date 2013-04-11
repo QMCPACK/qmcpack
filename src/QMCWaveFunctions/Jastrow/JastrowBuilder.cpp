@@ -25,11 +25,7 @@
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #endif
-#if QMC_BUILD_LEVEL>2
-#include "QMCWaveFunctions/Jastrow/WMJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
-#endif
-
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 
 #include "Utilities/ProgressReportEngine.h"
@@ -140,21 +136,15 @@ namespace qmcplusplus {
       BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
       success=jb.put(cur);
     } 
-#if OHMMS_DIM ==3
     else if (funcOpt == "rpa" )
     {
+#if OHMMS_DIM ==3
       app_log() << "\n  Using RPA for one-body jastrow" << endl;
       singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
       success= jb.put(cur);
-    }
+#else
+      APP_ABORT("RPA for one-body jastrow is only available for 3D");
 #endif
-
-#if QMC_BUILD_LEVEL>2
-    else if(funcOpt == "any")
-    {
-      app_log() << "\n  Using WMJastrowBuilder for one-body jastrow with WM functions" << endl;
-      WMJastrowBuilder jb(targetPtcl,targetPsi,sourcePtcl);
-      success=jb.put(cur);
     }
     else
     {
@@ -162,7 +152,6 @@ namespace qmcplusplus {
       JABBuilder jb(targetPtcl,targetPsi,ptclPool);
       success=jb.put(cur);
     }
-#endif
 
     return success;
   }
@@ -228,14 +217,8 @@ namespace qmcplusplus {
       BsplineJastrowBuilder bbuilder(targetPtcl,targetPsi);
       return bbuilder.put(cur);
     }
-// #if defined(QMC_BUILD_COMPLETE)
-//     else if(funcOpt == "any")
-//     {
-//       WMJastrowBuilder jb(targetPtcl,targetPsi);
-//       return jb.put(cur);
-//     }
 #if QMC_BUILD_LEVEL>2
-    else //try analytic functions
+    else //try other special analytic functions
     {
       app_log() << "\n  Using JAABuilder for two-body jastrow with analytic functions" << endl;
       JAABuilder jb(targetPtcl,targetPsi);

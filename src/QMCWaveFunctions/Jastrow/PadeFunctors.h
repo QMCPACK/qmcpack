@@ -33,6 +33,10 @@ namespace qmcplusplus {
    */
   template<class T>
     struct PadeFunctor:public OptimizableFunctorBase {
+      ///true, if A is optimizable
+      bool Opt_A;
+      ///true, if B is optimizable
+      bool Opt_B;
       ///input A
       real_type A;
       ///input B
@@ -54,27 +58,25 @@ namespace qmcplusplus {
 
       ///default constructor
       PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0") { }
+
       ///constructor
       explicit PadeFunctor(real_type a, real_type b, real_type s=1.0): 
-        A(a),B0(b),Scale(s)
+        A(a),B0(b),Scale(s),Opt_A(true),Opt_B(true)
       {
         reset();
       }
 
-
-      /** set ID_A and ID_B
-       * @param id_a ID of A
-       * @param id_b ID of B
-       * @param free_a if true, A is optimizable
-       * @param free_b if true, B is optimizable
+      /** constructor with A
+       * @param a value of A
+       * @param ida id of A
+       *
+       * Special constructor for two-body Jastrow for Coulomb interactions
+       * Automatically fix the cusp conditions
        */
-      inline void setIDs(const std::string& id_a, const std::string& id_b, bool free_a=false, bool free_b=true)
+      explicit PadeFunctor(real_type a, const std::string& ida) 
+        :A(a),B0(1.0),Scale(1.0),ID_A(ida),Opt_A(false),Opt_B(true)
       {
-        ID_A=id_a;
-        ID_B=id_b;
-        myVars.clear();
-        myVars.insert(ID_A,A,free_a);
-        myVars.insert(ID_B,B0,free_b);
+        reset();
       }
 
       OptimizableFunctorBase* makeClone() const
@@ -82,7 +84,9 @@ namespace qmcplusplus {
         return new PadeFunctor(*this);
       }
 
-      void reset() {
+      void reset() 
+      {
+        cutoff_radius=1.0e4; //some big range
         //A=a; B0=b; Scale=s;
         B = B0*Scale;
         AB = A*B; B2=2.0*B;
@@ -102,11 +106,11 @@ namespace qmcplusplus {
         }
 
       inline real_type 
-      evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type d3udr3) {
+      evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) {
           real_type u = 1.0/(1.0+B*r);
           dudr = A*u*u;
           d2udr2 = -B2*dudr*u;
-	  std::cerr << "Third derivative not imlemented for Pade functor.\n";
+          d3udr3 = -3.0*B*d2udr2*u;
           return A*u*r;
         }
 
@@ -121,27 +125,36 @@ namespace qmcplusplus {
         return dudr;
       }
       
+      /// compute derivatives with respect to A and B
       inline bool evaluateDerivatives (real_type r, std::vector<TinyVector<real_type,3> >& derivs)
-    {
-      real_type u = 1.0/(1.0+B*r);
-      derivs[0][0]= r*u;
-      derivs[1][0]= -A*r*r*u*u;
-      derivs[0][1]= u*u;
-      derivs[1][1]= -2.0*A*r*u*u*u;
-      derivs[0][2]= -B2*u*u*u;
-      derivs[1][2]= 2*A*(B2*r-1)*u*u*u*u;
-      return true; 
-    }
+      {
+        int i=0;
+        real_type u = 1.0/(1.0+B*r);
+        if(Opt_A)
+        { 
+          derivs[i][0]= r*u; //du/da
+          derivs[i][1]= u*u; //d(du/da)/dr
+          derivs[i][2]= -B2*u*u*u; //d^2 (du/da)/dr
+          ++i;
+        }
 
-      bool put(xmlNodePtr cur) {
+        if(Opt_B)
+        {
+          derivs[i][0]= -A*r*r*u*u; //du/db
+          derivs[i][1]= -2.0*A*r*u*u*u; //d(du/db)/dr
+          derivs[i][2]=  2.0*A*(B2*r-1)*u*u*u*u; //d^2(du/db)/dr^2
+        }
+        return true; 
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
         real_type Atemp(A),Btemp(B0);
         cur = cur->xmlChildrenNode;
-        bool renewed=false;
         while(cur != NULL) 
         {
-          //@todo Var -> <param(eter) role="opt"/>
           std::string cname((const char*)(cur->name));
-          if(cname == "parameter" || cname == "Var") 
+          if(cname == "var") //only accept var
           {
             std::string id_in("0");
             std::string p_name("B");
@@ -153,31 +166,29 @@ namespace qmcplusplus {
             {
               ID_A = id_in;
               putContent(Atemp,cur);
-              renewed=true;
+              Opt_A=true;
             } else if(p_name == "B"){
               ID_B = id_in;
               putContent(Btemp,cur);
-              renewed=true;
+              Opt_B=true;
             }
           }
           cur = cur->next;
         }
-        if(renewed)
-        {
-          A=Atemp;
-          B0=Btemp;
-          reset();
-          myVars.clear();
-          myVars.insert(ID_A,A, ID_A != "0");
-          myVars.insert(ID_B,B0,ID_B != "0");
-        }
+
+        A=Atemp;
+        B0=Btemp;
+        reset();
+
+        myVars.clear();
+        if(Opt_A) myVars.insert(ID_A,A, Opt_A,optimize::LOGLINEAR_P);
+        if(Opt_B) myVars.insert(ID_B,B0,Opt_B,optimize::OTHER_P);
         return true;
       }
 
       void checkInVariables(opt_variables_type& active)
       {
         active.insertFrom(myVars);
-        //std::cout << "Checking variables by PadeFunctor" << endl;
         //myVars.print(std::cout);
       }
 
@@ -189,13 +200,17 @@ namespace qmcplusplus {
 
       void resetParameters(const opt_variables_type& active) 
       {
-        int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];
-        int ib=myVars.where(1); if(ib>-1) B0=myVars[1]=active[ib];
-        reset();
-        //B = B0*Scale;
-        //AB = A*B; 
-        //B2=2.0*B;
-        //AoverB=A/B;
+        if(myVars.size())
+        {
+          int ia=myVars.where(0);
+          if(ia>-1)
+          {
+            int i=0;
+            if(Opt_A) A=myVars[i++]=active[ia++];
+            if(Opt_B) B0=myVars[i]=active[ia];
+          }
+          reset();
+        }
       }
     };
 
@@ -217,7 +232,8 @@ namespace qmcplusplus {
       std::string ID_C;
 
       ///constructor
-      Pade2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0): A(a),B(b),C(c)
+      Pade2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0)
+        : A(a),B(b),C(c),ID_A("0"),ID_B("0"),ID_C("0")
       {
         reset();
       }
@@ -311,9 +327,6 @@ namespace qmcplusplus {
        */
       bool put(xmlNodePtr cur){
         real_type Atemp,Btemp, Ctemp;
-        ID_A="pade2A";
-        ID_B="pade2B";
-        ID_C="pade2C";
         //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
         xmlNodePtr tcur = cur->xmlChildrenNode;
         bool renewed=false;
@@ -329,15 +342,15 @@ namespace qmcplusplus {
             rAttrib.put(tcur);
             if(p_name=="A")
             {
-              if (id_in!="0") ID_A = id_in;
+              ID_A=id_in;
               putContent(Atemp,tcur);
               renewed=true;
             } else if(p_name == "B"){
-              if (id_in!="0") ID_B = id_in;
+              ID_B = id_in;
               putContent(Btemp,tcur);
               renewed=true;
             } else if(p_name == "C"){
-              if (id_in!="0") ID_C = id_in;
+              ID_C = id_in;
               putContent(Ctemp,tcur);
               renewed=true;
             }
@@ -351,9 +364,9 @@ namespace qmcplusplus {
         reset();
         //these are always active 
         myVars.clear();
-        myVars.insert(ID_A,A,ID_A!="pade2A");
-        myVars.insert(ID_B,B,ID_B!="pade2B");
-        myVars.insert(ID_C,C,ID_C!="pade2C");
+        if(ID_A[0]!='0') myVars.insert(ID_A,A,true,optimize::LOGLINEAR_P);
+        if(ID_B[0]!='0') myVars.insert(ID_B,B,true,optimize::OTHER_P);
+        if(ID_C[0]!='0') myVars.insert(ID_C,C,true,optimize::LOGLINEAR_P);
         }
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
         return true;
@@ -370,9 +383,10 @@ namespace qmcplusplus {
       }
       void resetParameters(const opt_variables_type& active) 
       {
-        if (ID_A!="0") {int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];}
-        if (ID_B!="0") {int ib=myVars.where(1); if(ib>-1) B=myVars[1]=active[ib];}
-        if (ID_C!="0") {int ic=myVars.where(2); if(ic>-1) C=myVars[2]=active[ic];}
+        int i=0; 
+        if (ID_A!="0") {int ia=myVars.where(i); if(ia>-1) A=myVars[i]=active[ia]; i++;}
+        if (ID_B!="0") {int ib=myVars.where(i); if(ib>-1) B=myVars[i]=active[ib]; i++;}
+        if (ID_C!="0") {int ic=myVars.where(i); if(ic>-1) C=myVars[i]=active[ic]; i++;}
         C2 = 2.0*C;
       }
     };
@@ -396,7 +410,8 @@ namespace qmcplusplus {
       std::string ID_D;
       
       ///constructor
-      PadeTwo2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0, real_type d=1.0): A(a),B(b),C(c),D(d)
+      PadeTwo2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0, real_type d=1.0)
+        : A(a),B(b),C(c),D(d),ID_A("0"),ID_B("0"),ID_C("0"),ID_D("0")
       {
         reset();
       }
@@ -505,10 +520,6 @@ namespace qmcplusplus {
 
 
         real_type Atemp,Btemp, Ctemp, Dtemp;
-        ID_A="pade2A";
-        ID_B="pade2B";
-        ID_C="pade2C";
-        ID_D="pade2D";
         //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
         xmlNodePtr tcur = cur->xmlChildrenNode;
         bool renewed=false;
@@ -524,19 +535,19 @@ namespace qmcplusplus {
             rAttrib.put(tcur);
             if(p_name=="A")
             {
-              if (id_in!="0") ID_A = id_in;
+              ID_A = id_in;
               putContent(Atemp,tcur);
               renewed=true;
             } else if(p_name == "B"){
-              if (id_in!="0") ID_B = id_in;
+              ID_B = id_in;
               putContent(Btemp,tcur);
               renewed=true;
             } else if(p_name == "C"){
-              if (id_in!="0") ID_C = id_in;
+              ID_C = id_in;
               putContent(Ctemp,tcur);
               renewed=true;
             } else if(p_name == "D"){
-              if (id_in!="0") ID_D = id_in;
+              ID_D = id_in;
               putContent(Dtemp,tcur);
               renewed=true;
             }
@@ -551,9 +562,10 @@ namespace qmcplusplus {
         //these are always active 
         myVars.clear();
         
-        myVars.insert(ID_B,B,ID_B!="pade2B");
-        myVars.insert(ID_C,C,ID_C!="pade2C");
-        myVars.insert(ID_D,D,ID_D!="pade2D");
+        if(ID_A[0]!='0') myVars.insert(ID_A,B,true,optimize::LOGLINEAR_P);
+        if(ID_B[0]!='0') myVars.insert(ID_B,B,true,optimize::LOGLINEAR_P);
+        if(ID_C[0]!='0') myVars.insert(ID_C,C,true,optimize::OTHER_P);
+        if(ID_D[0]!='0') myVars.insert(ID_D,D,true,optimize::OTHER_P);
         //myVars.insert(ID_A,A,fcup!="yes");
         }
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
@@ -571,9 +583,11 @@ namespace qmcplusplus {
       }
       void resetParameters(const opt_variables_type& active) 
       {
-        int ib=myVars.where(0); if(ib>-1) B=myVars[0]=active[ib];
-        int ic=myVars.where(1); if(ic>-1) C=myVars[1]=active[ic];
-        int id=myVars.where(2); if(id>-1) D=myVars[2]=active[id]; 
+        int i=0;
+        if(ID_A[0]!='0'){int ia=myVars.where(i); if(ia>-1) B=myVars[i]=active[ia]; i++;}
+        if(ID_B[0]!='0'){int ib=myVars.where(i); if(ib>-1) B=myVars[i]=active[ib]; i++;}
+        if(ID_C[0]!='0'){int ic=myVars.where(i); if(ic>-1) C=myVars[i]=active[ic]; i++;}
+        if(ID_D[0]!='0'){int id=myVars.where(i); if(id>-1) D=myVars[i]=active[id]; i++;} 
         //int ia=myVars.where(3); if(ia>-1) A=myVars[3]=active[ia];
       }
     };
@@ -590,8 +604,8 @@ namespace qmcplusplus {
       real_type OneOverC, B2;
 
       ///constructor
-      explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) :
-        A(a),B(b),C(c)
+      explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) 
+        : A(a),B(b),C(c)
       {reset();}
 
       OptimizableFunctorBase* makeClone() const
