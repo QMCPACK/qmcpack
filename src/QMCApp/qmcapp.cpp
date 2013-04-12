@@ -55,7 +55,7 @@ int main(int argc, char **argv)
   while(i<argc)
   {
     string c(argv[i]);
-    if(c.find("-")<c.size())
+    if(c[0]=='-')
     {
       if (c.find("gpu") < c.size()) 
         useGPU = true;
@@ -69,8 +69,7 @@ int main(int argc, char **argv)
       else 
       {
         ifstream fin(argv[i],ifstream::in);
-        bool valid= !fin.fail();
-        while(valid)
+        if(!fin.fail())
         {
           vector<string> words;
           getwords(words,fin);
@@ -86,8 +85,6 @@ int main(int argc, char **argv)
               }
             }
           }
-          else
-            valid=false;
         } 
       }
     }
