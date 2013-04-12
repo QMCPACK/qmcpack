@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_LOCALENERGYESTIMATOR_H
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include <QMCHamiltonians/observable_helper.h>
 
 namespace qmcplusplus {
 
@@ -32,6 +33,7 @@ namespace qmcplusplus {
 
     int FirstHamiltonian;
     int SizeOfHamiltonians;
+    bool UseHDF5;
     const QMCHamiltonian& refH;
 
   public:
@@ -39,7 +41,7 @@ namespace qmcplusplus {
     /** constructor
      * @param h QMCHamiltonian to define the components
      */
-    LocalEnergyEstimator(QMCHamiltonian& h);
+    LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5);
 
     /** accumulation per walker
      * @param awalker current walker
@@ -66,7 +68,7 @@ namespace qmcplusplus {
       for(; first != last; ++first) accumulate(**first,wgt);
     }
     void add2Record(RecordListType& record);
-    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) {}
+    void registerObservables(vector<observable_helper*>& h5desc, hid_t gid);
     ScalarEstimatorBase* clone();
     /*@}*/
   };

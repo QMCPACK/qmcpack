@@ -25,7 +25,6 @@
 #include "Estimators/AlternateReleasedNodeEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/WFMCOnlyEstimator.h"
-#include "Estimators/LocalEnergyEstimatorHDF.h"
 #include "Estimators/FWEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -503,16 +502,8 @@ namespace qmcplusplus {
         hAttrib.put(cur);
         if( (est_name == MainEstimatorName) || (est_name=="elocal") )
         {
-          if(use_hdf5 == "yes")
-          {
-            max4ascii=H.size()+3;//write only physical energies
-            add(new LocalEnergyEstimatorHDF(H),MainEstimatorName);
-          }
-          else
-          {//fall back to the ascii file
-            max4ascii=H.sizeOfObservables()+3;
-            add(new LocalEnergyEstimator(H),MainEstimatorName);
-          }
+          max4ascii=H.sizeOfObservables()+3;
+          add(new LocalEnergyEstimator(H,use_hdf5=="yes"),MainEstimatorName);
         }
         else if (est_name=="WFMConly")
         {
@@ -552,8 +543,7 @@ namespace qmcplusplus {
     {
       app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << endl;
       max4ascii=H.sizeOfObservables()+3;
-      add(new LocalEnergyEstimator(H),MainEstimatorName);
-      //add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
+      add(new LocalEnergyEstimator(H,true),MainEstimatorName);
     } 
 
     //Collectables is special and should not be added to Estimators
