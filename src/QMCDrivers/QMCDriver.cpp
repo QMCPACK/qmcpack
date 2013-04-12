@@ -79,7 +79,7 @@ namespace qmcplusplus {
     nAccept=0;
     nReject=0; 
 
-    nTargetWalkers=0;
+    nTargetWalkers=W.getActiveWalkers();
     m_param.add(nTargetWalkers,"walkers","int");
 
     //sample-related parameters
@@ -411,6 +411,7 @@ namespace qmcplusplus {
     else
     {
       Period4WalkerDump = nStepsBetweenSamples=(nBlocks+1)*nSteps; //some positive number, not used
+      nTargetPopulation = nTargetWalkers*Nprocs;
     }
 
     DumpConfig=(Period4CheckPoint>=0);
