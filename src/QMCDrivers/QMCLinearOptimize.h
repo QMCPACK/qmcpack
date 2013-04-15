@@ -159,7 +159,9 @@ public:
       }
     }
     
+    ///common operation to start optimization, used by the derived classes
     void start();
+    ///common operation to finish optimization, used by the derived classes
     void finish();
     //asymmetric generalized EV
     RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);

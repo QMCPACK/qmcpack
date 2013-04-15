@@ -123,28 +123,14 @@ namespace qmcplusplus
 
   void VMCSingleOMP::resetRun()
   {
-    //only VMC can overwrite this
+    ////only VMC can overwrite this
     if(nTargetPopulation>0)
       branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS]=static_cast<int>(std::ceil(nTargetPopulation));
        
     makeClones(W,Psi,H);
 
-    std::vector<IndexType> samples_th(omp_get_max_threads(),0);
+    //std::vector<IndexType> samples_th(omp_get_max_threads(),0);
     myPeriod4WalkerDump=(Period4WalkerDump>0)?Period4WalkerDump:(nBlocks+1)*nSteps;
-    
-    int samples_this_node = nTargetSamples/myComm->size();
-    if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
-    
-    int samples_each_thread = samples_this_node/omp_get_max_threads();
-    for (int ip=0; ip<omp_get_max_threads(); ++ip) samples_th[ip]=samples_each_thread; 
-    
-    if(samples_this_node%omp_get_max_threads())
-      for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
-    
-    if(samples_this_node%omp_get_max_threads())
-      for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip) samples_th[ip] +=1;
-
-//    if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
     
     if (Movers.empty())
       {
@@ -152,9 +138,8 @@ namespace qmcplusplus
         branchClones.resize(NumThreads,0);
         estimatorClones.resize(NumThreads,0);
         Rng.resize(NumThreads,0);
-        int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
-        FairDivideLow(nwtot,NumThreads,wPerNode);
-
+        //int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
+        FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
         app_log() << "  Initial partition of walkers ";
         std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
         app_log() << endl;
@@ -239,9 +224,13 @@ namespace qmcplusplus
         
     app_log() << "  Samples are dumped in memory every " << myPeriod4WalkerDump << " steps " << endl;
     app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
-    app_log() << "  Sample Size per node=" << samples_this_node << endl;
-    for (int ip=0; ip<NumThreads; ++ip)
-      app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+    app_log() << "  Walker distribution on root = ";
+    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
+    app_log() << endl;
+
+    //app_log() << "  Sample Size per node=" << samples_this_node << endl;
+    //for (int ip=0; ip<NumThreads; ++ip)
+    //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
 
     app_log().flush();
 #if !defined(BGP_BUG)
@@ -315,11 +304,10 @@ namespace qmcplusplus
 //       }
 //     }
 
-    for(int ip=0; ip<NumThreads; ++ip)
-    {
-      wClones[ip]->clearEnsemble();
-      wClones[ip]->setNumSamples(samples_th[ip]);
-    }
+    for(int ip=0; ip<NumThreads; ++ip) wClones[ip]->clearEnsemble();
+    if(nSamplesPerThread)
+      for(int ip=0; ip<NumThreads; ++ip) 
+        wClones[ip]->setNumSamples(nSamplesPerThread);
 
     nWarmupSteps=0;
     //Used to debug and benchmark opnemp

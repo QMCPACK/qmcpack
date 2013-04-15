@@ -89,6 +89,9 @@ void QMCLinearOptimize::start()
     generateSamples();
     myTimers[0]->stop();
 
+    //store active number of walkers
+    NumOfVMCWalkers=W.getActiveWalkers();
+
     app_log() << "<opt stage=\"setup\">" << endl;
     app_log() << "  <log>"<<endl;
 
@@ -125,6 +128,11 @@ void QMCLinearOptimize::finish()
     TimerManager.reset();
     app_log() << "  </log>" << endl;
     optTarget->reportParameters();
+
+    int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
+    app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." <<endl;
+    W.destroyWalkers(nw_removed);
+
     app_log() << "</opt>" << endl;
     app_log() << "</optimization-report>" << endl;
 }

@@ -337,11 +337,6 @@ namespace qmcplusplus {
 
     //set the default walker to the number of threads times 10
     int defaultw = omp_get_max_threads();
-    int targetw = 0;
-
-    //these options are reset for each block
-    Period4WalkerDump=0;
-    Period4CheckPoint=-1;
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(Period4CheckPoint,"checkpoint");
@@ -384,35 +379,46 @@ namespace qmcplusplus {
     //set the minimum blocks
     if (nBlocks<1) nBlocks=1;
     
-    //compute samples and overwrite steps for the given samples
-    int Nthreads = omp_get_max_threads();
-    int Nprocs=myComm->size();
-
-    //nTargetWalkers is a local quantity, always set to multiple of number of threads
-    nTargetWalkers=(std::max(Nthreads,nTargetWalkers)/Nthreads)*Nthreads;
-    //target samples set by samples or samplesperthread/dmcwalkersperthread
-    nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
-    nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
-
-    if(nTargetSamples)
-    {//only when <parameter name="samples"> positive-integer </parameter>
-      if(nStepsBetweenSamples == 0)  //use minimum 10/nSubsteps for the interval
-        nStepsBetweenSamples=std::max(static_cast<int>(2.0/Tau),5/nSubSteps); 
-      int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
-
-      nTargetSamples=std::max(nwtot,nTargetSamples);
-      nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
-
-      int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
-      int ns_per_step=Nprocs*nTargetWalkers;  //total samples per step
-      nSteps=(ns_target/ns_per_step+nBlocks-1)/nBlocks;
-      Period4WalkerDump = nStepsBetweenSamples;
+    if(MyCounter && !ConstPopulation)
+    {
+      app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
     }
     else
     {
-      Period4WalkerDump = nStepsBetweenSamples=(nBlocks+1)*nSteps; //some positive number, not used
-      nTargetPopulation = nTargetWalkers*Nprocs;
+      //compute samples and overwrite steps for the given samples
+      int Nthreads = omp_get_max_threads();
+      int Nprocs=myComm->size();
+
+      //nTargetWalkers is a local quantity, always set to multiple of number of threads
+      nTargetWalkers=(std::max(Nthreads,nTargetWalkers)/Nthreads)*Nthreads;
+      //target samples set by samples or samplesperthread/dmcwalkersperthread
+      nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
+      nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
+
+      if(nTargetSamples)
+      {//only when <parameter name="samples"> positive-integer </parameter>
+        if(nStepsBetweenSamples == 0)  //use minimum 10/nSubsteps for the interval
+          nStepsBetweenSamples=std::max(static_cast<int>(2.0/Tau),5/nSubSteps); 
+        int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
+
+        nTargetSamples=std::max(nwtot,nTargetSamples);
+        nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
+
+        nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;
+
+        int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
+        int ns_per_step=Nprocs*nTargetWalkers;  //total samples per step
+        nSteps=(ns_target/ns_per_step+nBlocks-1)/nBlocks;
+        Period4WalkerDump = nStepsBetweenSamples;
+      }
+      else
+      {
+        Period4WalkerDump = nStepsBetweenSamples=(nBlocks+1)*nSteps; //some positive number, not used
+        nSamplesPerThread=0;
+        //nTargetPopulation = nTargetWalkers*Nprocs;
+      }
     }
+
 
     DumpConfig=(Period4CheckPoint>=0);
     if(Period4CheckPoint<1) Period4CheckPoint=nBlocks;
@@ -421,12 +427,7 @@ namespace qmcplusplus {
     if(!AppendRun) CurrentStep=0;
 
     //if walkers are initialized via <mcwalkerset/>, use the existing one
-    //if(W.getGlobalNumWalkers() == 0)
-    if(qmc_common::is_restart)
-    {
-      app_log() << "  Restarting with Walkers via <mcwalkerset/>. Using " << W.getGlobalNumWalkers() << " walkers." << endl;
-    }
-    else
+    if(MyCounter==0)
     { //always reset the walkers
       int nw  = W.getActiveWalkers();
       int ndiff = 0;
