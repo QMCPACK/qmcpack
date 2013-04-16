@@ -39,6 +39,10 @@ namespace qmcplusplus
   {
     delete_iter(H_KE_Node.begin(),H_KE_Node.end());
     delete_iter(RngSaved.begin(),RngSaved.end());
+
+    //remove walkers of the clones
+    for (int ip=1; ip<NumThreads; ++ip) 
+      wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers());
   }
 
 
