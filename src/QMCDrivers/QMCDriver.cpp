@@ -40,7 +40,7 @@ namespace qmcplusplus {
     ResetRandom=false;
     AppendRun=false;
     DumpConfig=false;
-    ConstPopulation=false;
+    ConstPopulation=true; //default is a fixed population method
     MyCounter=0;
 
     //<parameter name=" "> value </parameter>
@@ -378,7 +378,7 @@ namespace qmcplusplus {
 
     //set the minimum blocks
     if (nBlocks<1) nBlocks=1;
-    
+
     if(MyCounter && !ConstPopulation)
     {
       app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
@@ -418,7 +418,6 @@ namespace qmcplusplus {
         //nTargetPopulation = nTargetWalkers*Nprocs;
       }
     }
-
 
     DumpConfig=(Period4CheckPoint>=0);
     if(Period4CheckPoint<1) Period4CheckPoint=nBlocks;
