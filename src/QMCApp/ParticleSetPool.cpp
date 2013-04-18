@@ -339,21 +339,14 @@ namespace qmcplusplus {
     qp->setName(target);
 
     //assign non-trivial positions for the quanmtum particles
-    if(qp->Lattice.SuperCellEnum)
-    {
-      makeUniformRandom(qp->R);
-      qp->R.setUnit(PosUnit::LatticeUnit);
-      qp->convert2Cart(qp->R);
-      qp->createSK();
-    }
+    InitMolecularSystem mole(this);
+    if(ions->getTotalNum()>1)
+      mole.initMolecule(ions,qp);
     else
-    {
-      InitMolecularSystem mole(this);
-      if(ions->getTotalNum()>1)
-        mole.initMolecule(ions,qp);
-      else
-        mole.initAtom(ions,qp);
-    }
+      mole.initAtom(ions,qp);
+    qp->R.setUnit(PosUnit::CartesianUnit);
+
+    if(qp->Lattice.SuperCellEnum) qp->createSK();
 
     //for(int i=0; i<qp->getTotalNum(); ++i)
     //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
