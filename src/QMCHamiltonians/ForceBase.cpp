@@ -34,27 +34,11 @@ namespace qmcplusplus {
 
       Nnuc = ions.getTotalNum();
       Nel = elns.getTotalNum();
-      SpeciesSet& tspeciesA(ions.getSpeciesSet());
-      SpeciesSet& tspeciesB(elns.getSpeciesSet());
-      int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-      int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
-      int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-      int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
-      int NumSpeciesA = tspeciesA.TotalNum;
-      int NumSpeciesB = tspeciesB.TotalNum;
       
       //Determines if ion-ion force will be added to electron-ion force in derived force estimators.  
-	  //If false, forces_IonIon=0.0 .
+      //If false, forces_IonIon=0.0 .
       addionion=true;
       
-      //Store information about charges and number of each species
-      Zat.resize(Nnuc);
-      Qat.resize(Nel); 
-      for(int iat=0; iat<Nnuc; iat++)
-        Zat[iat] = tspeciesA(ChargeAttribIndxA,ions.GroupID[iat]);
-      for(int iat=0; iat<Nel; iat++)
-        Qat[iat] = tspeciesB(ChargeAttribIndxB,elns.GroupID[iat]);
-
       pairName=elns.getName()+"-"+ions.getName();
 
       forces.resize(Nnuc);
@@ -95,6 +79,7 @@ namespace qmcplusplus {
       DistanceTableData* d_aa=DistanceTable::add(Ions);    
        
       if(addionion==true){
+        const real_type* restrict Zat=Ions.Z.first_address();
           for(int iat=0; iat<Nnuc; iat++) {
             for(int nn=d_aa->M[iat], jat=1; nn<d_aa->M[iat+1]; nn++,jat++) {
               int jid = d_aa->J[nn];
@@ -150,6 +135,9 @@ namespace qmcplusplus {
     BareForce::evaluate(ParticleSet& P) {
       forces = forces_IonIon;
       const DistanceTableData* d_ab=P.DistTables[myTableIndex];
+
+      const real_type* restrict Zat=Ions.Z.first_address();
+      const real_type* restrict Qat=P.Z.first_address();
 
       //Loop over distinct eln-ion pairs
       for(int iat=0; iat<Nnuc; iat++)

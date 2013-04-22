@@ -21,7 +21,6 @@
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
-#include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
@@ -143,24 +142,11 @@ namespace qmcplusplus {
       }
     }
 
-    if(targetH==0) {
+    if(targetH==0) 
+    {
       targetH  = new QMCHamiltonian;
       targetH->setName(myName);
-      
-      if(defaultKE == "yes"){
-        targetH->addOperator(new BareKineticEnergy ,"Kinetic");
-      } else if(defaultKE == "multi"){
-        //Multicomponent wavefunction. Designed for 2 species.
-	app_log()<<" Multicomponent system. You must add the Kinetic energy term first!"<<endl;
-      } else  {
-        double mass(1.0);
-        string tgt("mass");
-        int indx1 = targetPtcl->mySpecies.findSpecies(defaultKE);
-        int indx2 = targetPtcl->mySpecies.addAttribute(tgt);
-        mass = targetPtcl->mySpecies(indx2,indx1);
-        app_log()<<"  Kinetic energy operator:: Mass "<<mass<<endl;
-        targetH->addOperator(new BareKineticEnergy(mass),"Kinetic");
-      }
+      targetH->addOperator(new BareKineticEnergy<double>(*targetPtcl),"Kinetic");
     }
 
     xmlNodePtr cur_saved(cur);
@@ -189,10 +175,7 @@ namespace qmcplusplus {
       {
         if(potType == "coulomb") 
         {
-          if(targetInp == targetPtcl->getName())
-            addCoulombPotential(cur);
-          else 
-            addConstCoulombPotential(cur,sourceInp);
+          addCoulombPotential(cur);
         }
 #if QMC_BUILD_LEVEL>2
         else if (potType == "hardsphere")
@@ -327,8 +310,8 @@ namespace qmcplusplus {
         }
       } 
       else if(cname == "constant") 
-      { //ugly!!!
-        if(potType == "coulomb")  addConstCoulombPotential(cur,sourceInp);
+      { //just to support old input
+        if(potType == "coulomb")  addCoulombPotential(cur);
       } 
       else if(cname == "modInsKE") 
       {
@@ -665,65 +648,81 @@ namespace qmcplusplus {
 
 
   void 
-  HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) {
-
-    string a("e"),title("ElecElec"),pbc("yes");
+  HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) 
+  {
+    string targetInp(targetPtcl->getName());
+    string sourceInp(targetPtcl->getName());
+    string title("ElecElec"),pbc("yes");
+    string forces("no");
     bool physical = true;
     bool doForce = false;
     OhmmsAttributeSet hAttrib;
     hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
-    hAttrib.add(a,"source"); 
+    hAttrib.add(targetInp,"target"); 
+    hAttrib.add(sourceInp,"source"); 
     hAttrib.add(pbc,"pbc"); 
     hAttrib.add(physical,"physical");
+    hAttrib.add(forces,"forces");
     hAttrib.put(cur);
     
-    renameProperty(a);
+    bool applyPBC= (PBCType && pbc=="yes");
+    bool doForces = (forces == "yes") || (forces == "true");
 
-    PtclPoolType::iterator pit(ptclPool.find(a));
-    if(pit == ptclPool.end()) 
+    ParticleSet *ptclA=targetPtcl;
+    if(sourceInp != targetPtcl->getName())
     {
-      ERRORMSG("Missing source ParticleSet" << a)
-      return;
+      //renameProperty(sourceInp);
+      PtclPoolType::iterator pit(ptclPool.find(sourceInp));
+      if(pit == ptclPool.end()) 
+      {
+        ERRORMSG("Missing source ParticleSet" << sourceInp);
+        APP_ABORT("HamiltonianFactory::addCoulombPotential");
+        return;
+      }
+      ptclA = (*pit).second;
     }
 
-    ParticleSet* source = (*pit).second;
+    if(sourceInp == targetInp) // AA type
+    {
+      if(ptclA->getTotalNum() == 1)  
+      {
+        app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1" << endl;
+        return;
+      }
 
-    bool applyPBC= (PBCType && pbc=="yes");
+      bool quantum = (sourceInp==targetPtcl->getName());
 
-    //CHECK PBC and create CoulombPBC for el-el
-    if(source == targetPtcl) {
       if(applyPBC) 
       {
-        //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
 #ifdef QMC_CUDA
-	targetH->addOperator(new CoulombPBCAA_CUDA(*targetPtcl,true),title,physical);
+        targetH->addOperator(new CoulombPBCAA_CUDA(*ptclA,quantum,doForces),title,physical);
 #else
-	targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title,physical);
+        targetH->addOperator(new CoulombPBCAATemp(*ptclA,quantum,doForces),title,physical);
 #endif
       } 
       else 
       {
-        if(source->getTotalNum()>1) 
 #ifdef QMC_CUDA
-          targetH->addOperator(new CoulombPotentialAA_CUDA(*targetPtcl), title,physical);
+        targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA), title, physical);
 #else
-          targetH->addOperator(new CoulombPotentialAA(*targetPtcl), title,physical);
+        targetH->addOperator(new CoulombPotential<double>(ptclA,0,quantum), title, physical);
 #endif
-
       }
-    } else {
-      if(applyPBC) {
-        //targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
+    }
+    else //X-e type, for X=some other source
+    {
+      if(applyPBC) 
+      {
 #ifdef QMC_CUDA
-        targetH->addOperator(new CoulombPBCAB_CUDA(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPBCAB_CUDA(*ptclA,*targetPtcl),title);
 #else
-        targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPBCABTemp(*ptclA,*targetPtcl),title);
 #endif
       } else {
 #ifdef QMC_CUDA
-        targetH->addOperator(new CoulombPotentialAB_CUDA(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPotentialAB_CUDA(*ptclA,*targetPtcl),title);
 #else
-        targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPotential<double>(ptclA,targetPtcl,true),title);
 #endif
       }
     }
@@ -900,35 +899,36 @@ namespace qmcplusplus {
 #endif
   }
 
-  void 
-  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei)
-  {
-    OhmmsAttributeSet hAttrib;
-    string hname("IonIon");
-    string forces("no");
-    hAttrib.add(forces,"forces");
-    hAttrib.add(hname,"name");
-    hAttrib.put(cur);
-    bool doForces = (forces == "yes") || (forces == "true");
-
-    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
-    renameProperty(nuclei);
-    PtclPoolType::iterator pit(ptclPool.find(nuclei));
-    if(pit != ptclPool.end()) {
-      ParticleSet* ion=(*pit).second;
-      if(PBCType)
-      {
-#ifdef QMC_CUDA
-	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
-#else
-	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
-#endif
-      } else {
-        if(ion->getTotalNum()>1) 
-          targetH->addOperator(new IonIonPotential(*ion),hname);
-      }
-    }
-  }
+//  void 
+//  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei)
+//  {
+//    OhmmsAttributeSet hAttrib;
+//    string hname("IonIon");
+//    string forces("no");
+//    hAttrib.add(forces,"forces");
+//    hAttrib.add(hname,"name");
+//    hAttrib.put(cur);
+//    bool doForces = (forces == "yes") || (forces == "true");
+//
+//    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
+//    renameProperty(nuclei);
+//    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+//    if(pit != ptclPool.end()) {
+//      ParticleSet* ion=(*pit).second;
+//      if(PBCType)
+//      {
+//#ifdef QMC_CUDA
+//	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
+//#else
+//	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
+//#endif
+//      } else {
+//        if(ion->getTotalNum()>1) 
+//          targetH->addOperator(new CoulombPotential<double>(ion),hname);
+//          //targetH->addOperator(new IonIonPotential(*ion),hname);
+//      }
+//    }
+//  }
 
   void
   HamiltonianFactory::addModInsKE(xmlNodePtr cur) {

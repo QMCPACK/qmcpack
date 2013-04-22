@@ -1,17 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
-//
-// Supported by 
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_COULOMBPOTENTIAL_H
@@ -25,95 +13,97 @@
 
 namespace qmcplusplus {
 
-  /** @ingroup hamiltonian
-   *@brief CoulombPotential for the different source and target particle sets.
+  /** CoulombPotential
+   * @tparam T type of the elementary data
    *
-   * \f[ H = \sum_i \frac{Z(i)q}{r} \f] 
-   * where \f$ Z(i) \f$ is the effective charge of the Ith 
-   * ion and \f$ q \f$ is the charge of the set of quantum particles.
-   * For instance, \f$ q = -1 \f$ for electrons and 
-   * \f$ q = 1 \f$ for positrons.
-   *
-   * @warning need to be generalized by checking visitor.Species.
+   * Hamiltonian operator for the Coulomb interaction for both AA and AB type for open systems.
    */
-  struct CoulombPotentialAB: public QMCHamiltonianBase {
+  template<typename T>
+  struct CoulombPotential: public QMCHamiltonianBase 
+  {
+    ///true, if CoulombAA for quantum particleset
+    bool is_active;
+    ///distance table index, 0 indicate AA type
+    int myTableIndex;
+    ///number of centers
+    int nCenters;
+    ///source particle set
+    ParticleSet* PtclA;
 
-    ///number of ions
-    int Centers;
-    ParticleSet& sourcePtcl;
-    DistanceTableData* d_table;
-    ///container for the ion charges
-    vector<RealType> Z;
+    /** constructor
+     * @param s source particleset
+     * @param t target particleset
+     * @param quantum if true, new Value is computed whenver evaluate is used.
+     *
+     * if t==0, t=s and AA interaction is used.
+     */
+    inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool quantum)
+      : PtclA(s),is_active(quantum)
+    { 
+      nCenters=s->getTotalNum();
+      if(t) // add source particle to target distance table
+        myTableIndex=t->addTable(*s);//add source to the target distance table list
+      else // a-a
+        myTableIndex=s->addTable(*s);
 
-    CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): 
-      sourcePtcl(ions), d_table(0) { 
-      d_table = DistanceTable::add(ions,els);
-      //index for attribute charge
-      SpeciesSet& tspecies(ions.getSpeciesSet());
-      int iz = tspecies.addAttribute("charge");
-      Centers = ions.getTotalNum();
-      Z.resize(Centers);
-      RealType C = -1.0; 
-      for(int iat=0; iat<Centers;iat++) {
-        Z[iat] = tspecies(iz,ions.GroupID[iat])*C;
+      if(!is_active) //precompute the value
+      {
+        s->DistTables[0]->evaluate(*s);
+        Value=evaluateAA(s->DistTables[0],s->Z.first_address());
       }
     }
-    
+
+    /** evaluate AA-type interactions */
+    inline T evaluateAA(const DistanceTableData* d, const T* restrict Z)
+    {
+      const int* restrict M=d->M.data();
+      const int* restrict J=d->J.data();
+      T res=0.0;
+      for(int iat=0; iat<nCenters; ++iat) 
+      {
+        T q=Z[iat];
+        for(int nn=M[iat]; nn<M[iat+1]; ++nn)
+          res+=static_cast<RealType>(q*Z[J[nn]]*d->rinv(nn));
+      }
+      return res;
+    }
+
+    inline T evaluateAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
+    {
+      const int* restrict M=d->M.data();
+      const int* restrict J=d->J.data();
+      T res=0.0;
+      for(int iat=0; iat<nCenters; ++iat) 
+      {
+        T q=Za[iat];
+        for(int nn=M[iat]; nn<M[iat+1]; ++nn)
+          res+=static_cast<RealType>(q*Zb[J[nn]]*d->rinv(nn));
+      }
+      return res;
+    }
+
     void resetTargetParticleSet(ParticleSet& P)  
     {
-      d_table = DistanceTable::add(sourcePtcl,P);
+      //myTableIndex is the same
     }
 
-    ~CoulombPotentialAB() { }
+    ~CoulombPotential() { }
 
-    inline Return_t evaluate(ParticleSet& P) {
-      Value=0.0;
-      for(int iat=0; iat<Centers; ++iat) {
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; ++nn)
-          Value+=Z[iat]*d_table->rinv(nn);
+    inline Return_t evaluate(ParticleSet& P) 
+    {
+      if(is_active)
+      {
+        if(myTableIndex)
+          Value=evaluateAB(P.DistTables[myTableIndex],PtclA->Z.first_address(),P.Z.first_address());
+        else
+          Value=evaluateAA(P.DistTables[myTableIndex],P.Z.first_address());
       }
       return Value;
     }
 
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
+    {
       return evaluate(P);
-    }
-
-    inline Return_t 
-    registerData(ParticleSet& P, BufferType& buffer) 
-    {
-      NewValue=evaluate(P);
-      buffer.add(Value);
-      return Value;
-    }
-
-    inline Return_t 
-    updateBuffer(ParticleSet& P, BufferType& buffer) 
-    {
-      NewValue=evaluate(P);
-      buffer.put(Value);
-      return Value;
-    }
-
-    inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
-    {
-      buffer.get(Value);
-    }
-
-    inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
-    {
-      buffer.put(Value);
-    }
-
-    inline Return_t 
-    evaluatePbyP(ParticleSet& P, int active)
-    {
-      APP_ABORT("CoulombPotential::evaluatePbyP");
-      return 0.0;
-      //const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
-      //Return_t del=0.0;
-      //for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
-      //return NewValue=Value+del;
     }
 
     bool put(xmlNodePtr cur) 
@@ -123,173 +113,27 @@ namespace qmcplusplus {
 
     bool get(std::ostream& os) const 
     {
-      os << "CoulombPotentialAB potential: " << sourcePtcl.getName();
+      if(myTableIndex)
+        os << "CoulombAB source=" << PtclA->getName() << endl;
+      else
+        os << "CoulombAA source/target " << PtclA->getName() << endl;
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      return new CoulombPotentialAB(sourcePtcl, qp); 
+      if(myTableIndex)
+        return new CoulombPotential(PtclA,&qp,true);
+      else
+      {
+        if(is_active) 
+          return new CoulombPotential(&qp,0,true);
+        else
+          return new CoulombPotential(PtclA,0,false);
+      }
     }
-
-    //#ifdef USE_FASTWALKER
-    //    inline void 
-    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    //      register int nw = W.walkers();
-    //      ValueVectorType e(nw);
-    //      for(int iat=0; iat<Centers; iat++) {
-    //        e=0.0;
-    //        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-    //          for(int iw=0; iw<nw; iw++) {
-    //	    e[iw] += d_table->rinv(iw,nn);
-    //	  }
-    //	}
-    //        ValueType z=Z[iat];
-    //        for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += z*e[iw];} 
-    //      }
-    //    }
-    //#else
-    //    inline void 
-    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    //      for(int iat=0; iat<Centers; iat++) {
-    //        RealType z=Z[iat];
-    //        for(int iw=0; iw<W.walkers(); iw++) {
-    //	  RealType esub = 0.0;
-    //	  for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-    //	    esub += d_table->rinv(iw,nn);
-    //	  }
-    //	  LE[iw] += z*esub; ///multiply z
-    //	}
-    //      }
-    //    }
-    //#endif
   };
 
-  /** @ingroup hamiltonian
-   *@brief CoulombPotential for the indentical source and target particle sets. 
-   *
-   * \f[ H = \sum_i \frac{q^2}{r} \f] 
-   * where \f$ q \f$ is the charge of the set of quantum 
-   * particles.  For instance, \f$ q = -1 \f$ for electrons 
-   * and \f$ q = 1 \f$ for positrons.
-   */
-  struct CoulombPotentialAA: public QMCHamiltonianBase {
-
-    ///number of particle
-    int Centers;
-    ///Charge factor=q*q
-    RealType Q;
-    //DistanceTableData* d_table;
-    //ParticleSet* PtclRef;
-    //ElecElecPotential(RealType c=1.0): C(c){}
-    //CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
-    CoulombPotentialAA(ParticleSet& P) 
-    {
-      Centers=P.getTotalNum();
-      Q = 1.0;//cheating, need to fix this
-      const DistanceTableData* d_table = DistanceTable::add(P);
-    }
-
-    ~CoulombPotentialAA() { }
-
-    void resetTargetParticleSet(ParticleSet& P)  
-    {
-      //d_table = DistanceTable::add(P);
-      //PtclRef=&P;
-    }
-
-    inline Return_t 
-    evaluate(ParticleSet& P) 
-    {
-      const DistanceTableData* d_table=P.DistTables[0];
-      Value = 0.0;
-      for(int nn=0; nn<d_table->getTotNadj(); ++nn) { Value += d_table->rinv(nn); }
-      return Value*=Q;
-      //return C*std::accumulate(d_table->rinv.data(), 
-      //	  	       d_table->rinv.data()+d_table->getTotNadj(),
-      //		       0.0);
-    }
-
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
-      return evaluate(P);
-    }
-
-    inline Return_t 
-    registerData(ParticleSet& P, BufferType& buffer) 
-    {
-      NewValue=evaluate(P);
-      buffer.add(Value);
-      return Value;
-    }
-
-    inline Return_t 
-    updateBuffer(ParticleSet& P, BufferType& buffer) 
-    {
-      NewValue=evaluate(P);
-      buffer.put(Value);
-      return Value;
-    }
-
-    inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
-    {
-      buffer.get(Value);
-      NewValue=Value;
-    }
-
-    inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
-    {
-      buffer.put(Value);
-    }
-
-    inline Return_t 
-    evaluatePbyP(ParticleSet& P, int active)
-    {
-      APP_ABORT("CoulombAA::evaluatePbyP");
-      return 0.0;
-      //const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
-      //Return_t del=0.0;
-      //for(int iat=0; iat<Centers; ++iat) del+=(temp[iat].rinv1-temp[iat].rinv0);
-      //return NewValue=Value+Q*del;
-    }
-
-    /** Do nothing */
-    bool put(xmlNodePtr cur) {
-      return true;
-    }
-
-    bool get(std::ostream& os) const {
-      //os << "CoulombPotentialAA: " << PtclRef->getName();
-      return true;
-    }
-
-    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-    {
-      return new CoulombPotentialAA(qp);
-    }
-    
-    //#ifdef USE_FASTWALKER
-    //    inline void 
-    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    //      std::vector<ValueType> e(W.walkers(),0.0);
-    //      for(int nn = 0; nn< d_table->getTotNadj(); nn++) {
-    //	for(int iw=0; iw<W.walkers(); iw++) {
-    //	  e[iw] += d_table->rinv(iw,nn);
-    //	}
-    //      }
-    //      for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += C*e[iw];} 
-    //    }
-    //#else
-    //    inline void 
-    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    //      for(int iw=0; iw<W.walkers(); iw++) {
-    //	RealType e =0.0;
-    //	for(int nn = 0; nn< d_table->getTotNadj(); nn++)  
-    //      e += d_table->rinv(iw,nn);
-    //	LE[iw] += C*e; 
-    //      }
-    //    }
-    //#endif
-  };
 }
 #endif
 

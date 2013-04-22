@@ -66,6 +66,8 @@ namespace qmcplusplus {
       forces = forces_IonIon;
       forces_ShortRange = forces_IonIon;
       const DistanceTableData* d_ab=P.DistTables[myTableIndex];
+      const real_type* restrict Zat=Ions.Z.first_address();
+      const real_type* restrict Qat=P.Z.first_address();
 
       for(int iat=0; iat<Nnuc; iat++) {
         RealType esum = 0.0;

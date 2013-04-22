@@ -36,8 +36,6 @@ namespace qmcplusplus {
     ParticleSet& Ions;
     ParticleSet::ParticlePos_t forces;
     ParticleSet::ParticlePos_t forces_IonIon;
-    vector<real_type> Zat; 
-    vector<real_type> Qat;
     string prefix;
     string pairName;
 

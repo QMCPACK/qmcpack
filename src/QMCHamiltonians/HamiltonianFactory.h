@@ -71,7 +71,6 @@ namespace qmcplusplus {
     void addForceHam(xmlNodePtr cur);
     void addPseudoPotential(xmlNodePtr cur);
     void addCorePolPotential(xmlNodePtr cur);
-    void addConstCoulombPotential(xmlNodePtr cur, string& nuclei);
     void addModInsKE(xmlNodePtr cur);
     void addMPCPotential(xmlNodePtr cur, bool physical=false);
     void addVHXCPotential(xmlNodePtr cur);
