@@ -53,6 +53,9 @@ namespace qmcplusplus {
     bool Identity;
     ///true if C is an identity matrix
     bool Optimizable;
+    
+    ///flag to calculate ionic derivatives
+    bool ionDerivs;
     ///total number of orbitals 
     IndexType TotalOrbitalSize;
     ///number of Single-particle orbtials
@@ -82,7 +85,7 @@ namespace qmcplusplus {
     //SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) 
     SPOSetBase()
       :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1),
-       Optimizable(false)
+       Optimizable(false),ionDerivs(false)
     {
       className="invalid";
     }

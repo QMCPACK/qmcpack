@@ -105,6 +105,10 @@ namespace qmcplusplus
       /** define the level of storage in derivative buffer **/
       int DerivStorageType;
       bool derivsDone;
+      
+      /** flag to calculate and return ionic derivatives */
+      bool ionDerivs;
+      
       int parameterType;
       /** current update mode */
       int UpdateMode;
@@ -142,6 +146,11 @@ namespace qmcplusplus
       {
         Optimizable = optimizeit;
       }
+      
+      inline void setIonDerivs(bool calcionderiv)
+      {
+        ionDerivs=calcionderiv;
+	  }
       
       virtual RealType getAlternatePhaseDiff(){return 0.0;}
       virtual RealType getAlternatePhaseDiff(int iat){return 0.0;}
