@@ -58,7 +58,11 @@ namespace qmcplusplus
   {
     initBase();
     initParticleSet();
-    assign(p);
+    assign(p); //obly the base is copied, assumes that other properties are not assignable
+
+    //need explicit copy:
+    Mass=p.Mass;
+    Z=p.Z;
 
     ostringstream o;
     o<<p.getName()<<ObjectTag;
@@ -129,6 +133,10 @@ namespace qmcplusplus
     Mass.setObjName("mass");
     addAttribute(Mass);
 
+    Z.setTypeName(ParticleTags::scalartype_tag);
+    Z.setObjName("charge");
+    addAttribute(Z);
+
     IndirectID.setTypeName(ParticleTags::indextype_tag); //add ID tags
     IndirectID.setObjName("id1"); 
     addAttribute(IndirectID);
@@ -152,11 +160,34 @@ namespace qmcplusplus
   void ParticleSet::resetGroups()
   {
     int nspecies=mySpecies.getTotalNum();
-
     if(nspecies==0)
     {
       APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
     }
+
+    int natt=mySpecies.numAttributes();
+    int qind=mySpecies.addAttribute("charge");
+    if(natt==qind)
+    {
+      app_log() << " Missing charge attribute of the SpeciesSet " << myName << " particleset" << endl;
+      app_log() << " Assume neutral particles Z=0.0 " << endl;
+      for(int ig=0; ig<nspecies; ig++) mySpecies(qind,ig)=0.0;
+    }
+
+    for(int iat=0; iat<Z.size(); iat++) 
+      Z[iat]=mySpecies(qind,GroupID[iat]);
+
+
+    natt=mySpecies.numAttributes();
+    int massind=mySpecies.addAttribute("mass");
+    if(massind==natt)
+    {
+      for(int ig=0; ig<nspecies; ig++) mySpecies(massind,ig)=1.0;
+    }
+
+    for(int iat=0; iat<Mass.size(); iat++) 
+      Mass[iat]=mySpecies(massind,GroupID[iat]);
+
     vector<int> ng(nspecies,0);
     for(int iat=0; iat<GroupID.size(); iat++) 
     { 

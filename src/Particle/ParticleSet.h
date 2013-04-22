@@ -99,6 +99,8 @@ namespace qmcplusplus {
     ParticleIndex_t IndirectID;
     ///mass of each particle
     ParticleScalar_t Mass;
+    ///charge of each particle
+    ParticleScalar_t Z;
 
     ///true, if a physical or local bounding box is used
     bool UseBoundBox;

@@ -363,7 +363,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     //}
   }
 
+  //this sets Mass, Z
   ref_.resetGroups();
+
   //vector<int> numPerGroup(tspecies.getTotalNum(),0);
   //for(int iat=0; iat<ref_.GroupID.size(); iat++) 
   //  numPerGroup[ref_.GroupID[iat]]++;
@@ -409,11 +411,15 @@ bool XMLParticleParser::reset(xmlNodePtr cur) {
     cur = cur->next;
   }
 
-  //@todo Will add a member function to ParticleSet to handle these
-  int massind=tspecies.addAttribute("mass");
-  for(int iat=0; iat<ref_.getTotalNum(); iat++) 
-    ref_.Mass[iat]=tspecies(massind,ref_.GroupID[iat]);
-
+//  //@todo Will add a member function to ParticleSet to handle these
+//  int massind=tspecies.addAttribute("mass");
+//  for(int iat=0; iat<ref_.getTotalNum(); iat++) 
+//    ref_.Mass[iat]=tspecies(massind,ref_.GroupID[iat]);
+//
+//  int qind=tspecies.addAttribute("charge");
+//  for(int iat=0; iat<ref_.getTotalNum(); iat++) 
+//    ref_.Z[iat]=tspecies(qind,ref_.GroupID[iat]);
+//
   return true;
 }
 

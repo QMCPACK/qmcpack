@@ -358,6 +358,9 @@ namespace qmcplusplus {
       APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
       return 0;
     }
+
+    qp->resetGroups();
+
     return qp;
 #else
     APP_ABORT("ESHDF is not valid for OHMMS_DIM != 3");
