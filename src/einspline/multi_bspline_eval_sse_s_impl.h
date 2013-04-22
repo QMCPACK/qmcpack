@@ -696,6 +696,7 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
   _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
 
+#if defined(HAVE_SSE41)
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
   __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
@@ -707,7 +708,6 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-#if defined(HAVE_SSE41)
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
   __m128i gmin = _mm_set_epi32(0,0,0,0);
@@ -720,11 +720,15 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
-  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
-  _mm_storeu_si128 (&intpart, ixiyiz);
+  float ux = x*spline->x_grid.delta_inv;
+  float uy = y*spline->y_grid.delta_inv;
+  float uz = z*spline->z_grid.delta_inv;
+  float ipartx, iparty, ipartz, tx, ty, tz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);    
+  __m128  uxuyuz= _mm_set_ps (ux, uy, uz, 0.0);
+  __m128i intpart=_mm_set_epi32(ix,iy,iz,0);
 #endif
 
 
@@ -812,6 +816,7 @@ eval_multi_UBspline_3d_s_vg (const multi_UBspline_3d_s *spline,
   _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
   _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
 
+#if defined(HAVE_SSE41)
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
   __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
@@ -823,7 +828,6 @@ eval_multi_UBspline_3d_s_vg (const multi_UBspline_3d_s *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-#if defined(HAVE_SSE41)
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
   __m128i gmin = _mm_set_epi32(0,0,0,0);
@@ -836,11 +840,15 @@ eval_multi_UBspline_3d_s_vg (const multi_UBspline_3d_s *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
-  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
-  _mm_storeu_si128 (&intpart, ixiyiz);
+  float ux = x*spline->x_grid.delta_inv;
+  float uy = y*spline->y_grid.delta_inv;
+  float uz = z*spline->z_grid.delta_inv;
+  float ipartx, iparty, ipartz, tx, ty, tz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);    
+  __m128  uxuyuz= _mm_set_ps (ux, uy, uz, 0.0);
+  __m128i intpart=_mm_set_epi32(ix,iy,iz,0);
 #endif
 
   intptr_t xs = spline->x_stride;
@@ -957,6 +965,7 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
   _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
   _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
 
+#if defined(HAVE_SSE41)
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
   __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
@@ -968,7 +977,6 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-#if defined(HAVE_SSE41)
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
   __m128i gmin = _mm_set_epi32(0,0,0,0);
@@ -981,11 +989,15 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
-  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
-  _mm_storeu_si128 (&intpart, ixiyiz);
+  float ux = x*spline->x_grid.delta_inv;
+  float uy = y*spline->y_grid.delta_inv;
+  float uz = z*spline->z_grid.delta_inv;
+  float ipartx, iparty, ipartz, tx, ty, tz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);    
+  __m128  uxuyuz= _mm_set_ps (ux, uy, uz, 0.0);
+  __m128i intpart=_mm_set_epi32(ix,iy,iz,0);
 #endif
 
   intptr_t xs = spline->x_stride;
@@ -1124,6 +1136,7 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
   _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
   _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
 
+#if defined(HAVE_SSE41)
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
   __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
@@ -1133,9 +1146,7 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
   xyz = _mm_sub_ps (xyz, x0y0z0);
   // ux = (x - x0)/delta_x and same for y and z
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
-  // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-#if defined(HAVE_SSE41)
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
   __m128i gmin = _mm_set_epi32(0,0,0,0);
@@ -1148,13 +1159,16 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
-  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
-  _mm_storeu_si128 (&intpart, ixiyiz);
+  float ux = x*spline->x_grid.delta_inv;
+  float uy = y*spline->y_grid.delta_inv;
+  float uz = z*spline->z_grid.delta_inv;
+  float ipartx, iparty, ipartz, tx, ty, tz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);    
+  __m128  uxuyuz= _mm_set_ps (ux, uy, uz, 0.0);
+  __m128i intpart=_mm_set_epi32(ix,iy,iz,0);
 #endif
-
 
   intptr_t xs = spline->x_stride;
   intptr_t ys = spline->y_stride;
@@ -1373,6 +1387,7 @@ eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
   _mm_prefetch ((const char*)  &A_s[12],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[13],_MM_HINT_T0);  
   _mm_prefetch ((const char*)  &A_s[14],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[15],_MM_HINT_T0);  
 
+#if defined(HAVE_SSE41)
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
   __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
@@ -1384,7 +1399,6 @@ eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
   // intpart = trunc (ux, uy, uz)
   __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-#if defined(HAVE_SSE41)
   //__m128i ixiyiz;
   //_mm_storeu_si128 (&ixiyiz, intpart);
   __m128i gmin = _mm_set_epi32(0,0,0,0);
@@ -1397,11 +1411,15 @@ eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
-  __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
-  _mm_storeu_si128 (&intpart, ixiyiz);
+  float ux = x*spline->x_grid.delta_inv;
+  float uy = y*spline->y_grid.delta_inv;
+  float uz = z*spline->z_grid.delta_inv;
+  float ipartx, iparty, ipartz, tx, ty, tz;
+  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);    
+  __m128  uxuyuz= _mm_set_ps (ux, uy, uz, 0.0);
+  __m128i intpart=_mm_set_epi32(ix,iy,iz,0);
 #endif
 
   intptr_t xs = spline->x_stride;
