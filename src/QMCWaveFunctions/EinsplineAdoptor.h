@@ -76,6 +76,23 @@ namespace qmcplusplus {
       typedef complex<float>      DataType;
     };
 
+  /** symmetric outer product
+   * @param v a vector
+   * @param w a vector
+   * @return \f$v^w+w^v\f$
+   *
+   * Used for the gradient coming from the phase and gradient
+   */
+  template<typename T, unsigned D>
+    inline Tensor<T,D> outerProductSymm(const TinyVector<T,D>& v, const TinyVector<T,D>& w)
+    {
+      Tensor<T,D> res;
+      for(int i=0; i<D; ++i)
+        for(int j=0; j<D; ++j)
+          res(i,j)=v(i)*w(j)+v(j)*w(i);
+      return res;
+    }
+
   //inline void computePhases(const PointType& r)
   //{
   //  for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
@@ -93,6 +110,7 @@ namespace qmcplusplus {
       typedef UBspline_3d_d      SingleSplineType;  
       TinyVector<int,D>          HalfG;
       vector<bool>               MakeTwoCopies;
+      ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
       Tensor<ST,D>               GGt;
       vector<TinyVector<ST,D> >  kPoints;
       CrystalLattice<ST,D>       SuperLattice;
@@ -227,6 +245,22 @@ namespace qmcplusplus {
         SplineAdoptor::evaluate_vgl(P.R[iat],v,g,l);
       }
     }
+
+   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+   {
+      typedef ValueMatrix_t::value_type value_type;
+      typedef GradMatrix_t::value_type grad_type;
+      typedef HessMatrix_t::value_type hess_type;
+      for(int iat=first, i=0; iat<last; ++iat,++i)
+      {
+        VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
+        VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
+        VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
+        SplineAdoptor::evaluate_vgh(P.R[iat],v,g,h);
+      }
+   }
+
   };
 
 }

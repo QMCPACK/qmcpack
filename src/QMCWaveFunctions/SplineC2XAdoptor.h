@@ -11,6 +11,21 @@
 #include <spline/einspline_engine.hpp>
 
 namespace qmcplusplus {
+  //template<typename T, unsigned D>
+  //  inline Tensor<T,D> dot(const Tensor<T,D>& a, const Tensor<T,D>& b)
+  //  {
+  //    Tensor<T,D> res;
+  //    for(int i=0; i<D; ++i)
+  //      for(int j=0; j<D; ++j)
+  //      {
+  //        T s=0;
+  //        for(int k=0; k<D; ++k)
+  //            s+=a(i,k)*b(k,j);
+  //        res(i,j)=s;
+  //      }
+  //    return res;
+  //  }
+
 
   /** adoptor class to match complex<ST> spline stored in a packed array with complex<TT> SPOs
    * @tparam ST precision of spline
@@ -174,15 +189,51 @@ namespace qmcplusplus {
         {
           PointType ru;
           int bc_sign=convertPos(r,ru);
-          //PointType ru(PrimLattice.toUnit(r));
-          //for (int i=0; i<D; i++) ru[i] -= std::floor (ru[i]);
           einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
           assign_vgl(r,bc_sign,psi,dpsi,d2psi);
         }
 
       template<typename VV, typename GV, typename GGV>
+        void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+        {
+
+          //convert to Cartesian G and Hess
+          const int N=kPoints.size();
+          for (int j=0; j<2*N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
+          for (int j=0; j<2*N; j++) myH[j] = dot(myH[j],GGt);
+
+          ST s,c;
+          PointType g_r, g_i;
+          Tensor<ST,D> kk,h_r,h_i;
+          //can easily make three independent loops
+          for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) 
+          {
+            int jr=j<<1;
+            int ji=jr+1;
+            g_r=myG[jr]+myV[ji]*kPoints[j]; // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+            g_i=myG[ji]-myV[jr]*kPoints[j]; // \f$\nabla \psi_i - {\bf k}\psi_r\f$
+
+            sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
+            psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
+
+            for(int idim=0; idim<D; ++idim)
+              dpsi[psiIndex][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
+
+            kk=outerProduct(kPoints[j],kPoints[j]); // \f$kk=k^k \f$
+            h_r=myH[jr]-myV[jr]*kk+outerProductSymm(kPoints[j],myG[ji]); //kdotg_i;
+            h_i=myH[ji]-myV[ji]*kk-outerProductSymm(kPoints[j],myG[jr]); //kdotg_r;
+            for(int t=0; t<D*D; ++t)
+                grad_grad_psi[psiIndex](t)=complex<TT>(c*h_r(t)-s*h_i(t), c*h_i(t)+s*h_r(t));
+          }
+        }
+
+      template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
         {
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+          assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
         }
     };
 
@@ -224,7 +275,7 @@ namespace qmcplusplus {
       vector<ST>   CosV;
       vector<ST>   SinV;
       vector<ST>   mKK;
-
+      vector<Tensor<ST,D> >  KK; //k^k 
 
       SplineC2RPackedAdoptor():MultiSpline(0) 
       { 
@@ -250,7 +301,10 @@ namespace qmcplusplus {
       void create_spline(GT& xyz_g, BCT& xyz_bc)
       {
         mKK.resize(kPoints.size());
-        for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
+         for(int i=0; i<kPoints.size(); ++i) mKK[i]=-dot(kPoints[i],kPoints[i]);
+        KK.resize(kPoints.size());
+        for(int i=0; i<kPoints.size(); ++i) KK[i]=outerProduct(kPoints[i],kPoints[i]);
+
         MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
         for(int i=0; i<D; ++i)
         {
@@ -370,8 +424,55 @@ namespace qmcplusplus {
         }
 
       template<typename VV, typename GV, typename GGV>
+        void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+        {
+
+          //convert to Cartesian G and Hess
+          const int N=kPoints.size();
+          for (int j=0; j<2*N; j++) myG[j] = dot(PrimLattice.G, myG[j]);
+          for (int j=0; j<2*N; j++) myH[j] = dot(myH[j],GGt);
+
+          ST s,c;
+          PointType g_r, g_i;
+          Tensor<ST,D> h_r,h_i;
+          //can easily make three independent loops
+          int psiIndex=first_spo;
+          for (int j=0,jr=0,ji=1; j<N; j++,jr+=2,ji+=2) 
+          {
+            g_r=myG[jr]+myV[ji]*kPoints[j]; // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+            g_i=myG[ji]-myV[jr]*kPoints[j]; // \f$\nabla \psi_i - {\bf k}\psi_r\f$
+
+            //kk=outerProduct(kPoints[j],kPoints[j]); // \f$kk=k^k \f$
+            h_r=myH[jr]-myV[jr]*KK[j]+outerProductSymm(kPoints[j],myG[ji]);
+            h_i=myH[ji]-myV[ji]*KK[j]-outerProductSymm(kPoints[j],myG[jr]);
+
+            sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
+            psi[psiIndex]=c*myV[jr]-s*myV[ji];
+            for(int idim=0; idim<D; ++idim)
+              dpsi[psiIndex][idim]=c*g_r[idim]-s*g_i[idim];
+            for(int t=0; t<D*D; ++t)
+                grad_grad_psi[psiIndex](t)=c*h_r(t)-s*h_i(t);
+
+            ++psiIndex;
+            if(MakeTwoCopies[j])
+            {
+              psi[psiIndex]=s*myV[jr]+c*myV[ji];
+              for(int idim=0; idim<D; ++idim)
+                dpsi[psiIndex][idim]=c*g_i[idim]+s*g_r[idim];
+              for(int t=0; t<D*D; ++t)
+                  grad_grad_psi[psiIndex](t)=s*h_r(t)+c*h_i(t);
+              ++psiIndex;
+            }
+          }
+        }
+
+      template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
         {
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+          assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
         }
     };
 

@@ -175,8 +175,32 @@ namespace qmcplusplus {
         }
 
       template<typename VV, typename GV, typename GGV>
+        void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+        {
+          const Tensor<ST,D>& gConv(PrimLattice.G);
+          if (bc_sign & 1) 
+          {
+            const ST minus_one=-1.0;
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=-myV[j];
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) dpsi[psiIndex]=minus_one*dot(gConv,myG[j]);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) grad_grad_psi[psiIndex]=minus_one*dot(myH[j],GGt);
+          }
+          else
+          {
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) psi[psiIndex]=myV[j];
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) dpsi[psiIndex]=dot(gConv,myG[j]);
+            for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j) grad_grad_psi[psiIndex]=dot(myH[j],GGt);
+          }
+        }
+
+      template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-        {}
+        {
+          PointType ru;
+          int bc_sign=convertPos(r,ru);
+          einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+          assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
+        }
     };
 
 }

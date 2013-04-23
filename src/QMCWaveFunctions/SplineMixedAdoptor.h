@@ -181,7 +181,15 @@ namespace qmcplusplus {
 
       template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-        {}
+        {
+          PointType ru;
+          int bc_sign=this->convertPos(r,ru);
+          if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
+            einspline::evaluate_vgh(smallBox,ru,myV,myG,myH);
+          else
+            einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+          this->assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
+        }
     };
 
   /** adoptor class for the non-periodic systems
@@ -208,7 +216,7 @@ namespace qmcplusplus {
       using SplineAdoptorBase<ST,D>::myV;
       using SplineAdoptorBase<ST,D>::myL;
       using SplineAdoptorBase<ST,D>::myG;
-      using SplineAdoptorBase<ST,D>::myGH;
+      using SplineAdoptorBase<ST,D>::myH;
 
       SplineType *MultiSpline;
       SplineType *smallBox;
@@ -236,6 +244,7 @@ namespace qmcplusplus {
         myV.resize(n);
         myL.resize(n);
         myG.resize(n);
+        myH.resize(n);
       }
 
       /** create MultiSpline for the full cell with a coarse grid
@@ -357,7 +366,20 @@ namespace qmcplusplus {
 
       template<typename VV, typename GV, typename GGV>
         void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-        {}
+        {
+          TinyVector<ST,D> ru;
+          convertPos(r,ru);
+
+          if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
+            einspline::evaluate_vgh(smallBox,ru,myV,myG,myH);
+          else
+            einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
+
+          const int N=psi.size();
+          for(int j=0; j<N; ++j) psi[j]=myV[j];
+          for(int j=0; j<N; ++j) dpsi[j]=myG[j];
+          for(int j=0; j<N; ++j) grad_grad_psi[j]=myH[j];
+        }
     };
 
 }

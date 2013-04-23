@@ -847,9 +847,11 @@ namespace qmcplusplus {
       Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
       u = StorageValueVector[j];
       gradu = dot(PrimLattice.G, StorageGradVector[j]);
-      //laplu = trace(StorageHessVector[j], GGt);
-      tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-      hs = dot(tmphs,PrimLattice.G);
+
+      ////laplu = trace(StorageHessVector[j], GGt);
+      //tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+      //hs = dot(tmphs,PrimLattice.G);
+      hs=dot(StorageHessVector[j],GGt);
 
       PosType k = kPoints[j];
       TinyVector<complex<double>,OHMMS_DIM> ck;
