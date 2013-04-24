@@ -324,7 +324,7 @@ namespace qmcplusplus {
         //  }
         //}
 
-        if(qmc_common::save_wfs && root)
+        if(qmc_common.save_wfs && root)
         {
           hdf_archive h5f;
           h5f.create(splinefile);

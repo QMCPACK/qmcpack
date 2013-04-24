@@ -55,7 +55,7 @@ namespace qmcplusplus {
 #endif
       << "\n=====================================================\n";
 
-    qmc_common::print_options(app_log());
+    qmc_common.print_options(app_log());
 
     app_log() 
       << "\n  MPI Nodes            = " << OHMMS::Controller->size() 
@@ -101,7 +101,7 @@ namespace qmcplusplus {
 
     OHMMS::Controller->barrier();
 
-    if(qmc_common::dryrun)
+    if(qmc_common.dryrun)
     {
       app_log() << "  dryrun == 1 Ignore qmc/loop elements " << endl;
       APP_ABORT("QMCMain::execute");
@@ -109,6 +109,7 @@ namespace qmcplusplus {
 
     Timer t1;
     curMethod = string("invalid");
+    qmc_common.qmc_counter=0;
     for(int qa=0; qa<m_qmcaction.size(); qa++)
     {
       xmlNodePtr cur=m_qmcaction[qa].first;
@@ -116,6 +117,7 @@ namespace qmcplusplus {
       if(cname == "qmc" || cname == "optimize")
       {
         executeQMCSection(cur);
+        qmc_common.qmc_counter++; // increase the counter
       }
       else if(cname == "loop")
       {
@@ -177,6 +179,9 @@ namespace qmcplusplus {
     a.add(niter,"max");
     a.put(cur);
 
+    //reset qmc_counter
+    qmc_common.qmc_counter=0;
+
     app_log() << "Loop execution max-interations = " << niter << endl;
     for(int iter=0; iter<niter; iter++)
     {
@@ -193,6 +198,7 @@ namespace qmcplusplus {
             app_warning() << "  Terminated loop execution. A sub section returns false." << endl;
             return;
           }
+          qmc_common.qmc_counter++; // increase the counter
         }
         tcur=tcur->next;
       }
@@ -255,7 +261,7 @@ namespace qmcplusplus {
     OhmmsXPathObject ham("//hamiltonian",m_context);
     if(ham.empty())
     {
-      qmc_common::use_density=true;
+      qmc_common.use_density=true;
     }
     else
     {
@@ -270,14 +276,14 @@ namespace qmcplusplus {
           a.put(cur);
           if(aname == "mpc" || aname == "MPC")
           {
-            qmc_common::use_density=true;
+            qmc_common.use_density=true;
           }
           cur = cur->next;
         }
       }
     }
 
-    if(qmc_common::use_density)
+    if(qmc_common.use_density)
     {
       app_log() << "  hamiltonian has MPC. Will read density if it is found." << endl;
     }
@@ -453,7 +459,7 @@ namespace qmcplusplus {
       a.add(fname,"fileroot"); a.add(fname,"href"); a.add(fname,"src");
       a.put(result[result.size()-1]);
       if(fname.size()) RandomNumberControl::read(fname,myComm);
-      qmc_common::is_restart=true;
+      qmc_common.is_restart=true;
     }
     return true;
   }

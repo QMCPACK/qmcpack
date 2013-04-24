@@ -48,7 +48,7 @@ int main(int argc, char **argv)
   OHMMS::Controller->initialize(argc,argv);
 
   int clones=1;
-  bool useGPU=(qmc_common::compute_device == 1);
+  bool useGPU=(qmc_common.compute_device == 1);
   vector<string> fgroup1,fgroup2;
 
   int i=1;

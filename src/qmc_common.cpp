@@ -10,23 +10,26 @@
 
 namespace qmcplusplus 
 {
-  bool qmc_common::is_restart=false;
-  bool qmc_common::use_density=false;
-  bool qmc_common::dryrun=false;
-  bool qmc_common::save_wfs=false;
-  bool qmc_common::async_swap=false;
+  QMCState::QMCState()
+  {
+    is_restart=false;
+    use_density=false;
+    dryrun=false;
+    save_wfs=false;
+    async_swap=false;
+    qmc_counter=0;
 #if defined(QMC_CUDA)
-  int qmc_common::compute_device=1;
+    compute_device=1;
 #else
-  int qmc_common::compute_device=0;
+    compute_device=0;
 #endif
+    master_eshd_name="none";
+  }
 
-  string qmc_common::master_eshd_name="none";
-
-  void qmc_common::initialize(int argc, char **argv)
+  void QMCState::initialize(int argc, char **argv)
   {
 
-    bool stopit=(argc<2);
+    bool stopit=false;
     //going to use better option library
     int i=1;
     while(i<argc)
@@ -65,7 +68,7 @@ namespace qmcplusplus
     }
   }
 
-  void qmc_common::print_options(ostream& os)
+  void QMCState::print_options(ostream& os)
   {
     os << "  Global options " << endl;
     if(dryrun)

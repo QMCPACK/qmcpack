@@ -203,7 +203,7 @@ if ((Version[0] >= 2) and (Version[1] >= 1))
       //       app_log() << buff;
     }
 
-    if(qmc_common::use_density)
+    if(qmc_common.use_density)
     {
       //////////////////////////////////////////////////////////
       // Only if it is bulk: If the density has not been set in TargetPtcl, and   //

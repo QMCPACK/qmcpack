@@ -136,7 +136,7 @@ Communicate::~Communicate()
 void Communicate::initialize(int argc, char **argv)
 {
 
-  qmcplusplus::qmc_common::initialize(argc,argv);
+  qmcplusplus::qmc_common.initialize(argc,argv);
 
   OOMPI_COMM_WORLD.Init(argc, argv);
   myComm = OOMPI_COMM_WORLD;

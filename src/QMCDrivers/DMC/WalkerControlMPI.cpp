@@ -111,7 +111,7 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   myTimers[1]->stop();
 
   myTimers[2]->start();
-  if(qmc_common::async_swap)
+  if(qmc_common.async_swap)
       swapWalkersAsync(W); 
   else
       swapWalkersSimple(W); 

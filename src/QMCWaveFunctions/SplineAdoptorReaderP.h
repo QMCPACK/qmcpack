@@ -329,7 +329,7 @@ namespace qmcplusplus {
         else//why, don't know
           initialize_spline_psi_r(spin);
 
-        if(qmc_common::save_wfs && root)
+        if(qmc_common.save_wfs && root)
         {
           now.restart();
           hdf_archive h5f;

@@ -19,28 +19,37 @@ namespace qmcplusplus
   ///enumeration for main computing devices
   enum {SMP=0, CUDA=1, PHI=2};
 
-  ///class to definte global variables
-  struct qmc_common
+  /** class to definte global variables to keep track a run
+   */
+  struct QMCState
   {
     ///true, if a run is a restart with <mcwalkerset/>
-    static bool is_restart;
+    bool is_restart;
     ///true, if density is used, e.g. MPC
-    static bool use_density;
+    bool use_density;
     ///true, if it is a dryrun
-    static bool dryrun;
+    bool dryrun;
     ///true, if wave functions are stored for next runs
-    static bool save_wfs;
+    bool save_wfs;
     ///true, if walker swap is done by async
-    static bool async_swap;
+    bool async_swap;
     ///int for compute_device 
-    static int compute_device;
+    int compute_device;
+    ///init for <qmc/> section
+    int qmc_counter;
     ///store the name of the main eshd file name
-    static string master_eshd_name;
+    string master_eshd_name;
+
+    ///constructor
+    QMCState();
     ///initialize options from the command-line
-    static void initialize(int argc, char **argv);
+    void initialize(int argc, char **argv);
     ///print command-line options
-    static void print_options(ostream& os);
+    void print_options(ostream& os);
   };
+
+  ///a unique QMCState during a run
+  static QMCState qmc_common;
 }
 
 #endif

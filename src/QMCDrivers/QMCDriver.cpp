@@ -379,8 +379,8 @@ namespace qmcplusplus {
     //set the minimum blocks
     if (nBlocks<1) nBlocks=1;
 
-    if(MyCounter && !ConstPopulation)
-    {
+    if(qmc_common.is_restart && !ConstPopulation)
+    { 
       app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
     }
     else
@@ -426,7 +426,7 @@ namespace qmcplusplus {
     if(!AppendRun) CurrentStep=0;
 
     //if walkers are initialized via <mcwalkerset/>, use the existing one
-    if(MyCounter==0)
+    if(!(qmc_common.qmc_counter || qmc_common.is_restart))
     { //always reset the walkers
       int nw  = W.getActiveWalkers();
       int ndiff = 0;
