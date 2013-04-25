@@ -22,6 +22,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include <numeric>
+#include <OhmmsData/AttributeSet.h>
 
 namespace qmcplusplus {
 
@@ -316,7 +317,8 @@ namespace qmcplusplus {
     }
 
     /** Do nothing */
-    bool put(xmlNodePtr cur) {
+    bool put(xmlNodePtr cur) 
+    {
       OhmmsAttributeSet aAttrib;
       aAttrib.add(pwrs, "max");
       aAttrib.add(ngrid,"grid"),

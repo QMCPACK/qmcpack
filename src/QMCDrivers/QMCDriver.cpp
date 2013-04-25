@@ -235,7 +235,7 @@ namespace qmcplusplus {
       wOut->dump(W);
       branchEngine->write(RootName,true); //save energy_history
       RandomNumberControl::write(RootName,myComm);
-      if (storeConfigs) wOut->dump( ForwardWalkingHistory);
+//       if (storeConfigs) wOut->dump( ForwardWalkingHistory);
     }
 
     //save positions for optimization: this is done within VMC

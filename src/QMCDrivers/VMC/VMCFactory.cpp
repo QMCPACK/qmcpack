@@ -17,7 +17,6 @@
 #include "QMCDrivers/VMC/VMCFactory.h" 
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #if defined(QMC_BUILD_COMPLETE)
-#include "QMCDrivers/WFMC/WFMCSingleOMP.h"
 //REMOVE Broken warping
 //#if !defined(QMC_COMPLEX)
 //#include "QMCDrivers/VMC/VMCMultipleWarp.h"
@@ -71,10 +70,10 @@ namespace qmcplusplus {
 //      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
 //    }
 //#endif
-    else if(VMCMode == 8) //(only possible for WFMC run)
-    {
-      qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
-    }
+//     else if(VMCMode == 8) //(only possible for WFMC run)
+//     {
+//       qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
+//     }
 #endif
     qmc->setUpdateMode(VMCMode&1);
     return qmc;

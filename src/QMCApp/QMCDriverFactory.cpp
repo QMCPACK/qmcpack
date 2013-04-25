@@ -21,23 +21,11 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h" 
-#include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
-#include "QMCDrivers/DMC/RNFactory.h"
-#include "QMCDrivers/ForwardWalking/FWSingleMPI.h"
-#include "QMCDrivers/ForwardWalking/FWSingleOMP.h"
-#include "QMCDrivers/ForwardWalking/FRSingleOMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
-#include "QMCDrivers/QMCChooseBestParameters.h"    
-#include "QMCDrivers/ZeroVarianceOptimize.h"
-#if QMC_BUILD_LEVEL>2
-#include "QMCDrivers/QMCSHLinearOptimize.h"
-#include "QMCDrivers/EE/EEFactory.h"
-#endif
-// #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
 ////THESE ARE BROKEN
 ////#if !defined(QMC_COMPLEX)
@@ -137,18 +125,8 @@ namespace qmcplusplus {
     {
       if (qmc_mode.find("cslinear") < nchars)
         newRunType=CS_LINEAR_OPTIMIZE_RUN;
-      #if QMC_BUILD_LEVEL>1
-      else if(qmc_mode.find("shlinear") < nchars)
-      {
-        newRunType=SH_RUN;
-      }
-      #endif
       else
         newRunType=LINEAR_OPTIMIZE_RUN;
-    }
-    else if(qmc_mode.find("set") < nchars)
-    {
-      newRunType=SET_PARAMS;
     }
     else if(qmc_mode.find("opt") < nchars)
     {
@@ -160,30 +138,7 @@ namespace qmcplusplus {
       if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
       
-      if(qmc_mode.find("fw")<nchars) //number 9
-      {
-        newRunType=FW_RUN;
-        WhatToDo[UPDATE_MODE]=1;
-        WhatToDo[MULTIPLE_MODE]=0;
-        WhatToDo[SPACEWARP_MODE]=0;
-        WhatToDo[ALTERNATE_MODE]=1;
-      }
-      else if(qmc_mode.find("density")<nchars) //number 8
-      {
-        newRunType=FR_RUN;
-        WhatToDo[UPDATE_MODE]=0;
-        WhatToDo[MULTIPLE_MODE]=0;
-        WhatToDo[SPACEWARP_MODE]=0;
-        WhatToDo[ALTERNATE_MODE]=1;
-      }
-#if QMC_BUILD_LEVEL>2
-      else if(qmc_mode.find("ee")<nchars) //number >8
-      {
-        newRunType=EE_RUN;
-        if(qmc_mode.find("cs")<nchars) WhatToDo[MULTIPLE_MODE]=1;
-      }
-#endif
-      else if (qmc_mode.find("rmcPbyP")<nchars)
+      if (qmc_mode.find("rmcPbyP")<nchars)
       {
         newRunType=RMC_PBYP_RUN;
       }
@@ -198,10 +153,6 @@ namespace qmcplusplus {
       else if(qmc_mode.find("dmc")<nchars)
       {
         newRunType=DMC_RUN;
-      }
-      else if(qmc_mode.find("rn")<nchars)
-      {
-        newRunType=RN_RUN;
       }
     } 
 
@@ -332,38 +283,12 @@ namespace qmcplusplus {
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
       //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
-    else if(curRunType == WFMC_RUN) 
-    {
-      //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      VMCFactory fac(curQmcModeBits.to_ulong(),cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
-      //TESTING CLONE
-      //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
-      //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
-    } 
-#if QMC_BUILD_LEVEL>2
-    else if(curRunType == EE_RUN) 
-    {
-      EEFactory fac(curQmcModeBits.to_ulong(),cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
-      //TESTING CLONE
-      //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
-      //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
-    } 
-#endif
     else if(curRunType == DMC_RUN) 
     {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],
 		     curQmcModeBits[GPU_MODE], cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
     } 
-#if !defined(QMC_COMPLEX)
-    else if(curRunType == RN_RUN) 
-    {
-      RNFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*(psiPool->getWaveFunction("guide")),*primaryH,*hamPool,*psiPool);
-    } 
-#endif
 #if QMC_BUILD_LEVEL>1
    else if(curRunType == RMC_RUN)
    {
@@ -410,15 +335,6 @@ namespace qmcplusplus {
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
     } 
-    #if QMC_BUILD_LEVEL>2
-    else if(curRunType == SH_RUN)
-    {
-      QMCSHLinearOptimize *opt = new QMCSHLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
-      qmcDriver=opt;
-    } 
-    #endif
     else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
     {
 #if defined(QMC_CUDA)
@@ -429,26 +345,6 @@ namespace qmcplusplus {
 #endif
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
       qmcDriver=opt;
-    } 
-    else if(curRunType == SET_PARAMS)
-    {
-      QMCChooseBestParameters *opt = new QMCChooseBestParameters(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
-      qmcDriver=opt;
-    }
-    else if(curRunType == FR_RUN)
-    { 
-      qmcDriver = new FRSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool, *ptclPool,*psiPool);
-    } 
-    else if(curRunType == FW_RUN)
-    {
-//       qmcDriver = new FWSingle(*qmcSystem,*primaryPsi,*primaryH);
-
-#if defined(HAVE_MPI)
-      qmcDriver = new FWSingleMPI(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-#else
-      qmcDriver = new FWSingleOMP(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-#endif
     } 
     else 
     {

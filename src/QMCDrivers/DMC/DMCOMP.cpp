@@ -234,10 +234,10 @@ namespace qmcplusplus {
 
       for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
       {
-        if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-          ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-          W.resetWalkerParents();
-        }
+//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+//           W.resetWalkerParents();
+//         }
 #pragma omp parallel 
         {
           int ip=omp_get_thread_num();

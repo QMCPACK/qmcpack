@@ -44,15 +44,8 @@ namespace qmcplusplus {
       RMC_PBYP_RUN, /**< RMC type: rmc, rmc-ptcl */
       OPTIMIZE_RUN,/*!< Optimization */
       VMC_OPT_RUN, /*!< Optimization with vmc blocks */
-      WFMC_RUN,
-      FW_RUN,
       LINEAR_OPTIMIZE_RUN,
       CS_LINEAR_OPTIMIZE_RUN,
-      SH_RUN,
-      FR_RUN,
-      RN_RUN,
-      SET_PARAMS,
-      EE_RUN
     };
 
     /*! enum to set the bit to determine the QMC mode */

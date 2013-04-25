@@ -6,15 +6,12 @@ SET(HAMSRCS
   HamiltonianFactory.cpp
   NonLocalTOperator.cpp
   NumericalRadialPotential.cpp
-  RPAPressure.cpp
   ForwardWalking.cpp
-  trialDMCcorrection.cpp
   PairCorrEstimator.cpp
   LocalMomentEstimator.cpp
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
-  DynSkEstimator.cpp
   MomentumEstimator.cpp
   ForceBase.cpp
 )

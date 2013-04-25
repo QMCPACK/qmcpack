@@ -20,12 +20,12 @@
 #ifndef QMCPLUSPLUS_CLONEMANAGER_H
 #define QMCPLUSPLUS_CLONEMANAGER_H
 #include "QMCDrivers/QMCUpdateBase.h" 
-#include "QMCDrivers/EE/QMCRenyiUpdateBase.h"
+// #include "QMCDrivers/EE/QMCRenyiUpdateBase.h"
 
 namespace qmcplusplus {
 
   class HamiltonianPool;
-  class QMCRenyiUpdateBase;
+//   class QMCRenyiUpdateBase;
 
   /** Manager clones for threaded applications
    *
@@ -71,8 +71,8 @@ namespace qmcplusplus {
     static vector<QMCHamiltonian*> hClones;
     ///update engines
     vector<QMCUpdateBase*> Movers;
-    ///update engines
-    vector<QMCRenyiUpdateBase*> RenyiMovers;
+//     ///update engines
+//     vector<QMCRenyiUpdateBase*> RenyiMovers;
     ///update engines
     vector<EstimatorManager*> estimatorClones;;
     ///Brnach engines

@@ -21,11 +21,7 @@
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
-#include "Estimators/ReleasedNodeEnergyEstimator.h"
-#include "Estimators/AlternateReleasedNodeEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
-#include "Estimators/WFMCOnlyEstimator.h"
-#include "Estimators/FWEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "Utilities/IteratorUtility.h"
@@ -423,14 +419,6 @@ namespace qmcplusplus {
       Collectables->accumulate_all(W.Collectables,1.0);
   }
 
-  void EstimatorManager::accumulate( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
-  {
-    BlockWeight=1;
-    for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate_fw(OBS,WGTS,Dims);
-  }
-
-
   void EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w, RealType& var) 
   {
     if(Options[COLLECT])//need to broadcast the value
@@ -505,35 +493,36 @@ namespace qmcplusplus {
           max4ascii=H.sizeOfObservables()+3;
           add(new LocalEnergyEstimator(H,use_hdf5=="yes"),MainEstimatorName);
         }
-        else if (est_name=="WFMConly")
-        {
-          max4ascii=H.sizeOfObservables()+10;
-          app_log() << "  Using WFMConly for the MainEstimator " << endl;
-          add(new WFMCOnlyEstimator(H),MainEstimatorName);
-          est_name=MainEstimatorName;
-        }
-        else if (est_name=="releasednode")
-        { 
-          int Smax(100);
-          int primary(1);
-          OhmmsAttributeSet hAttrib;
-          hAttrib.add(Smax, "Smax");
-          hAttrib.add(primary, "primary");
-          hAttrib.put(cur);
-        
-          max4ascii=H.sizeOfObservables()+ 4 + 3*(Smax+1);
-          app_log() << "  Using ReleasedNode for the MainEstimator with Smax="<<Smax<<" and max4ascii="<<max4ascii << endl;
-          if (primary==2) add(new ReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
-          else add(new AlternateReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
-          est_name=MainEstimatorName;
-        }
-        else if (est_name=="forwardwalking")
-        {
-          max4ascii=2*H.sizeOfObservables()+4;
-          app_log() << "  Doing forwardwalking on hdf5 " << endl;
-          add(new ForwardWalkingEstimator(H),MainEstimatorName);
-          est_name=MainEstimatorName;
-        }        else 
+//         else if (est_name=="WFMConly")
+//         {
+//           max4ascii=H.sizeOfObservables()+10;
+//           app_log() << "  Using WFMConly for the MainEstimator " << endl;
+//           add(new WFMCOnlyEstimator(H),MainEstimatorName);
+//           est_name=MainEstimatorName;
+//         }
+//         else if (est_name=="releasednode")
+//         { 
+//           int Smax(100);
+//           int primary(1);
+//           OhmmsAttributeSet hAttrib;
+//           hAttrib.add(Smax, "Smax");
+//           hAttrib.add(primary, "primary");
+//           hAttrib.put(cur);
+//         
+//           max4ascii=H.sizeOfObservables()+ 4 + 3*(Smax+1);
+//           app_log() << "  Using ReleasedNode for the MainEstimator with Smax="<<Smax<<" and max4ascii="<<max4ascii << endl;
+//           if (primary==2) add(new ReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
+//           else add(new AlternateReleasedNodeEnergyEstimator(H,Smax),MainEstimatorName);
+//           est_name=MainEstimatorName;
+//         }
+//         else if (est_name=="forwardwalking")
+//         {
+//           max4ascii=2*H.sizeOfObservables()+4;
+//           app_log() << "  Doing forwardwalking on hdf5 " << endl;
+//           add(new ForwardWalkingEstimator(H),MainEstimatorName);
+//           est_name=MainEstimatorName;
+//         }        
+        else 
           extra.push_back(est_name);
       } 
       cur = cur->next;

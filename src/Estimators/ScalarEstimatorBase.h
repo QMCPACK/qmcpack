@@ -21,7 +21,6 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
-#include "QMCDrivers/ForwardWalking/HDF5_FW.h" 
 #include <Estimators/accumulators.h>
 
 namespace qmcplusplus {
@@ -64,10 +63,6 @@ namespace qmcplusplus {
     ///retrun mean and variance
     inline pair<RealType,RealType> operator[](int i) const
     { return scalars[i].mean_and_variance();}
-    
-    ///for passing forward walking data
-    virtual void accumulate_fw( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
-    {}
     
     ///return the size of scalars it manages
     inline int size() const 

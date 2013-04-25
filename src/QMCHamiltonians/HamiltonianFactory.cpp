@@ -18,27 +18,20 @@
  */
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
+#include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "QMCHamiltonians/Pressure.h"
-#include "QMCHamiltonians/RPAPressure.h"
-#include "QMCHamiltonians/PsiValue.h"
-#include "QMCHamiltonians/DMCPsiValue.h"
-#include "QMCHamiltonians/PsiOverlap.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/NumberFluctuations.h"
-#include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/DynSkEstimator.h"
-#include "QMCHamiltonians/MomentumEstimator.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
@@ -350,8 +343,8 @@ namespace qmcplusplus {
           LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,*source);
           apot->put(cur);
           targetH->addOperator(apot,potName,false);
-        }  
-         else if(potType == "numberfluctuations")
+        }
+        else if(potType == "numberfluctuations")
         {
           app_log()<<" Adding Number Fluctuation estimator"<<endl;
           NumberFluctuations* apot=new NumberFluctuations(*targetPtcl);
@@ -367,16 +360,16 @@ namespace qmcplusplus {
             targetH->addOperator(apot,potName,false);
           }
         }
-        else if(potType == "dynsk")
-        {
-          if(PBCType)//only if perioidic 
-          {
-            DynSkEstimator* apot=new DynSkEstimator(*targetPtcl);
-            apot->putSpecial(cur,*targetPtcl);
-            targetH->addOperator(apot,potName,false);
-            app_log()<<"Adding dynamic S(k) estimator"<<endl;
-          }
-        }
+//         else if(potType == "dynsk")
+//         {
+//           if(PBCType)//only if perioidic 
+//           {
+//             DynSkEstimator* apot=new DynSkEstimator(*targetPtcl);
+//             apot->putSpecial(cur,*targetPtcl);
+//             targetH->addOperator(apot,potName,false);
+//             app_log()<<"Adding dynamic S(k) estimator"<<endl;
+//           }
+//         }
         else if(potType == "sk")
         {
           if(PBCType)//only if perioidic 
@@ -447,73 +440,74 @@ namespace qmcplusplus {
             targetH->addOperator(BP,"HePress",false);
           } 
 #endif
-	  else if (estType=="RPAZVZB")
-	  {
-            RPAPressure* BP= new RPAPressure(*targetPtcl);
-            
-            ParticleSet* Isource;
-            bool withSource=false;
-            xmlNodePtr tcur = cur->children;
-            while(tcur != NULL) {
-              string cname((const char*)tcur->name);
-              if(cname == "OneBody") 
-              {
-                string PsiName="psi0";
-                withSource=true;
-//                 string in0("ion0");
-                OhmmsAttributeSet hAttrib;
-//                 hAttrib.add(in0,"source");
-                hAttrib.add(PsiName,"psi"); 
-                hAttrib.put(tcur);
-//                 renameProperty(a);
-                PtclPoolType::iterator pit(ptclPool.find(sourceInp));
-                if(pit == ptclPool.end()) 
-		{
-                  ERRORMSG("Missing source ParticleSet" << sourceInp)
-                }
-                Isource = (*pit).second;
-                BP-> put(cur, *targetPtcl,*Isource,*(psiPool[PsiName]->targetPsi));
-              }
-              tcur = tcur->next; 
-            }
-            if (!withSource) BP-> put(cur, *targetPtcl);
-            targetH->addOperator(BP,BP->MyName,false);
-            
-            int nlen(100);
-            attrib.add(nlen,"truncateSum");
-            attrib.put(cur);
-//             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-//             targetH->addOperator(DMCP,"PressureSum",false);
-          }
-
+// 	  else if (estType=="RPAZVZB")
+// 	  {
+//             RPAPressure* BP= new RPAPressure(*targetPtcl);
+//             
+//             ParticleSet* Isource;
+//             bool withSource=false;
+//             xmlNodePtr tcur = cur->children;
+//             while(tcur != NULL) {
+//               string cname((const char*)tcur->name);
+//               if(cname == "OneBody") 
+//               {
+//                 string PsiName="psi0";
+//                 withSource=true;
+// //                 string in0("ion0");
+//                 OhmmsAttributeSet hAttrib;
+// //                 hAttrib.add(in0,"source");
+//                 hAttrib.add(PsiName,"psi"); 
+//                 hAttrib.put(tcur);
+// //                 renameProperty(a);
+//                 PtclPoolType::iterator pit(ptclPool.find(sourceInp));
+//                 if(pit == ptclPool.end()) 
+// 		{
+//                   ERRORMSG("Missing source ParticleSet" << sourceInp)
+//                 }
+//                 Isource = (*pit).second;
+//                 BP-> put(cur, *targetPtcl,*Isource,*(psiPool[PsiName]->targetPsi));
+//               }
+//               tcur = tcur->next; 
+//             }
+//             if (!withSource) BP-> put(cur, *targetPtcl);
+//             targetH->addOperator(BP,BP->MyName,false);
+//             
+//             int nlen(100);
+//             attrib.add(nlen,"truncateSum");
+//             attrib.put(cur);
+// //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+// //             targetH->addOperator(DMCP,"PressureSum",false);
+//           }
+// 
+//         }
+// 	else if(potType=="psi")
+// 	{
+// 	  int pwr=2;
+// 	  OhmmsAttributeSet hAttrib;
+// 	  hAttrib.add(pwr,"power"); 
+// 	  hAttrib.put(cur);
+// 	  PsiValue* PV = new PsiValue(pwr);
+// 	  PV->put(cur,targetPtcl,ptclPool,myComm);
+// 	  targetH->addOperator(PV,"PsiValue",false);
+// 	}
+// 	else if(potType=="overlap")
+// 	{
+// 	  int pwr=1;
+// 	  OhmmsAttributeSet hAttrib;
+// 	  hAttrib.add(pwr,"power"); 
+// 	  hAttrib.put(cur);
+// 	  
+// 	  PsiOverlapValue* PV = new PsiOverlapValue(pwr);
+// 	  PV->put(cur,targetPtcl,ptclPool,myComm);
+// 	  targetH->addOperator(PV,"PsiRatio",false);
+// 	}
+// 	else if(potType=="DMCoverlap")
+// 	{
+// 	  DMCPsiValue* PV = new DMCPsiValue( );
+// 	  PV->put(cur,targetPtcl,ptclPool,myComm);
+// 	  targetH->addOperator(PV,"DMCPsiRatio",false);
+// 	}
         }
-	else if(potType=="psi")
-	{
-	  int pwr=2;
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(pwr,"power"); 
-	  hAttrib.put(cur);
-	  PsiValue* PV = new PsiValue(pwr);
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"PsiValue",false);
-	}
-	else if(potType=="overlap")
-	{
-	  int pwr=1;
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(pwr,"power"); 
-	  hAttrib.put(cur);
-	  
-	  PsiOverlapValue* PV = new PsiOverlapValue(pwr);
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"PsiRatio",false);
-	}
-	else if(potType=="DMCoverlap")
-	{
-	  DMCPsiValue* PV = new DMCPsiValue( );
-	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"DMCPsiRatio",false);
-	}
 	else if(potType=="momentum")
 	{
 	  app_log()<<"  Adding Momentum Estimator"<<endl;
@@ -565,18 +559,18 @@ namespace qmcplusplus {
       {
         if(potType=="ZeroVarObs")
         {
-          app_log()<<"  Adding ZeroVarObs Operator"<<endl;
+          app_log()<<"  Not Adding ZeroVarObs Operator"<<endl;
           //         ZeroVarObs* FW=new ZeroVarObs();
           //         FW->put(cur,*targetH,*targetPtcl);
           //         targetH->addOperator(FW,"ZeroVarObs",false);
         }
-        else if(potType == "DMCCorrection")
-        {
-          TrialDMCCorrection* TE = new TrialDMCCorrection();
-          TE->putSpecial(cur,*targetH,*targetPtcl);
-          targetH->addOperator(TE,"DMC_CORR",false);
-          dmc_correction=true;
-        }
+//         else if(potType == "DMCCorrection")
+//         {
+//           TrialDMCCorrection* TE = new TrialDMCCorrection();
+//           TE->putSpecial(cur,*targetH,*targetPtcl);
+//           targetH->addOperator(TE,"DMC_CORR",false);
+//           dmc_correction=true;
+//         }
         else if(potType == "ForwardWalking")
         {
           app_log()<<"  Adding Forward Walking Operator"<<endl;

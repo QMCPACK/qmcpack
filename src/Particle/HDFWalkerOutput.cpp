@@ -72,7 +72,6 @@ namespace qmcplusplus
   {
 //     fw_out.close();
     delete_iter(RemoteData.begin(),RemoteData.end());
-    delete_iter(FWData.begin(),FWData.end());
   }
 
   /** Write the set of walker configurations to the HDF5 file.
@@ -168,7 +167,7 @@ namespace qmcplusplus
     //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
     //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
   }
-
+/*
 bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 {
 //     string ConfigFileName=myComm->getName()+".storeConfig.h5";
@@ -262,7 +261,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //     FWO.clearConfigsForForwardWalking();
 //     
     return true;
-}
+}*/
 
 }
 /***************************************************************************

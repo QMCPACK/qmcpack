@@ -24,6 +24,7 @@ SET(JASTROW_SRCS
   Jastrow/RPAJastrow.cpp
   Jastrow/singleRPAJastrowBuilder.cpp
   Jastrow/JAABuilder.cpp
+  Jastrow/JABBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
@@ -43,11 +44,6 @@ ELSE(QMC_COMPLEX)
 
 ENDIF(QMC_COMPLEX)
 
-
-#specialized jastrows: extremely taxing for some compilers
-IF(QMC_BUILD_LEVEL GREATER 1)
-  SET(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/JABBuilder.cpp)
-ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
 # wavefunctions only availbale to 3-dim problems
 IF(OHMMS_DIM MATCHES 3)

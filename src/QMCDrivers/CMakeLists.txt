@@ -6,7 +6,6 @@ SET(QMCDRIVERS
   BranchIO.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
-  QMCChooseBestParameters.cpp
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
@@ -19,11 +18,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCSingle.cpp
-  ForwardWalking/FWSingleOMP.cpp
-  ForwardWalking/FWSingleMPI.cpp
-  ForwardWalking/FRSingleOMP.cpp
   VMC/VMCFactory.cpp
-  WFMC/WFMCUpdateAll.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
@@ -32,26 +27,11 @@ SET(QMCDRIVERS
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
   ../Estimators/LocalEnergyEstimator.cpp
-  ../Estimators/ReleasedNodeEnergyEstimator.cpp
-  ../Estimators/AlternateReleasedNodeEnergyEstimator.cpp
-  ../Estimators/WFMCOnlyEstimator.cpp
-  ../Estimators/FWEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
-
-#  QMCCostFunctionSingle.cpp
-IF(NOT QMC_COMPLEX)
-  SET(QMCDRIVERS  ${QMCDRIVERS}
-    DMC/RNDMCOMP.cpp
-    DMC/RNDMCUpdatePbyPCeperley.cpp
-    DMC/RNDMCUpdatePbyPFast.cpp
-    DMC/RNFactory.cpp
-    )
-ENDIF(NOT QMC_COMPLEX)
-
 
 IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}
@@ -60,21 +40,20 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
-IF(QMC_BUILD_LEVEL GREATER 2)
-   SET(QMCDRIVERS ${QMCDRIVERS}
-   EE/EEFactory.cpp
-   EE/VMCMultiRenyiOMP.cpp
-   EE/VMCRenyiOMP.cpp
-   EE/QMCRenyiUpdateBase.cpp
-   EE/RenyiUpdatePbyP.cpp
-   )
-ENDIF(QMC_BUILD_LEVEL GREATER 2)
+# IF(QMC_BUILD_LEVEL GREATER 2)
+#    SET(QMCDRIVERS ${QMCDRIVERS}
+#    EE/EEFactory.cpp
+#    EE/VMCMultiRenyiOMP.cpp
+#    EE/VMCRenyiOMP.cpp
+#    EE/QMCRenyiUpdateBase.cpp
+#    EE/RenyiUpdatePbyP.cpp
+#    )
+# ENDIF(QMC_BUILD_LEVEL GREATER 2)
 
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
       VMC/VMCLinearOptOMP.cpp
-      WFMC/WFMCSingleOMP.cpp
       QMCCostFunctionOMP.cpp
      )
 ENDIF(ENABLE_OPENMP) 
@@ -88,8 +67,6 @@ ENDIF(HAVE_MPI)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
-    DMC/DMCOMPOPT.cpp
-    QMCSHLinearOptimize.cpp
     PolymerEstimator.cpp
     MultiChain.cpp
     RQMCMultiple.cpp

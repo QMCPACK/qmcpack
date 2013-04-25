@@ -21,7 +21,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/ForwardWalkingStructure.h"
+// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
 //#include <boost/archive/binary_oarchive.hpp>
 

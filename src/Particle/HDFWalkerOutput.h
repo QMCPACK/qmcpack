@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_WALKER_OUTPUT_H
 
 #include <Particle/MCWalkerConfiguration.h>
-#include <QMCDrivers/ForwardWalkingStructure.h>
+// #include <QMCDrivers/ForwardWalking/ForwardWalkingStructure.h>
 #include <utility>
 #include <io/hdf_archive.h>
 
@@ -60,7 +60,7 @@ namespace qmcplusplus {
      * @param w walkers
      */
     bool dump(MCWalkerConfiguration& w);
-    bool dump(ForwardWalkingHistoryObject& FWO);
+//     bool dump(ForwardWalkingHistoryObject& FWO);
 
   private:
 
@@ -69,10 +69,10 @@ namespace qmcplusplus {
     vector<Communicate::request> myRequest;
     vector<BufferType*> RemoteData;
     
-    //define some types for the FW collection
-    typedef vector<ForwardWalkingData> FWBufferType;
-    vector<FWBufferType*> FWData;
-    vector<vector<int> > FWCountData;
+//     //define some types for the FW collection
+//     typedef vector<ForwardWalkingData> FWBufferType;
+//     vector<FWBufferType*> FWData;
+//     vector<vector<int> > FWCountData;
 
     void write_configuration(MCWalkerConfiguration& W, hdf_archive& hout);
   };

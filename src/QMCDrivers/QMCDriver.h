@@ -30,7 +30,6 @@
 #include "Estimators/EstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/ForwardWalkingStructure.h"
 
 class Communicate;
 
@@ -354,7 +353,6 @@ namespace qmcplusplus {
      */
     bool finalize(int block, bool dumpwalkers=true);
     
-    ForwardWalkingHistoryObject ForwardWalkingHistory;
 
 
   };

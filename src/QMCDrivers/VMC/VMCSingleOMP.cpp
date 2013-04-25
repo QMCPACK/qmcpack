@@ -17,7 +17,6 @@
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
-#include "QMCDrivers/WFMC/WFMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
@@ -85,8 +84,8 @@ namespace qmcplusplus
           //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
           if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);                
 
-          if(storeConfigs && (now_loc%storeConfigs == 0)) 
-            ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
+//           if(storeConfigs && (now_loc%storeConfigs == 0)) 
+//             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
         }
 
         Movers[ip]->stopBlock(false);
