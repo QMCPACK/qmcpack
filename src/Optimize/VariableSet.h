@@ -124,7 +124,7 @@ namespace optimize
       {
         iterator loc=find(vname);
         int ind_loc=loc-NameAndValue.begin();
-        if(loc==NameAndValue.end())
+        if(loc==NameAndValue.end() && enable==true)
         {
           Index.push_back(ind_loc);
           NameAndValue.push_back(pair_type(vname,v));

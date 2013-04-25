@@ -113,7 +113,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
+ * $RCSfile$   $Author: jmcminis $
+ * $Revision: 5069 $   $Date: 2010-11-30 21:46:30 -0600 (Tue, 30 Nov 2010) $
+ * $Id: RQMCMultiple.h 5069 2010-12-01 03:46:30Z jmcminis $ 
  ***************************************************************************/

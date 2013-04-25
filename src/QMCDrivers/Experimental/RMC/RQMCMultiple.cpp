@@ -518,56 +518,56 @@ bool RQMCMultiple::put(xmlNodePtr q)
     xmlNodePtr q2(q);
     q2=q2->children;
     bool FoundEstimatorBlock=false;
-    while(q2!=NULL){
-      string cname((const char*)q2->name);
-      string observ="NONE";
-      int fq(1);
-      OhmmsAttributeSet Ettrib;
-      Ettrib.add(observ,"observables" );
-      Ettrib.add(fq,"freq" );
-      Ettrib.put(q2);
-      if (cname=="Estimators"){
-// 	if (observ=="NONE"){
-// 	  app_log()<<"Using normal Observables"<<endl;
-// 	  multiEstimator = new CSPolymerEstimator(H,nPsi);
-// 	  FoundEstimatorBlock=true;
-// 	} else
-      if (observ=="ZVZB"){
-          app_log()<<"Using ZVZB observables"<<endl;
-          //         multiEstimator = new MJPolymerEstimator(H,nPsi);
-          MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
-          MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
-          MJp->setrLen(ReptileLength);
-          
-          multiEstimator = MJp;
-          FoundEstimatorBlock=true;
-      }
-      if (observ=="HF"){
-          app_log()<<"Using HF observables"<<endl;
-          HFPolymerEstimator* MJp = new HFPolymerEstimator(H,nPsi);
-          MJp->add_HF_Observables(ReptileLength,fq);
-          MJp->setTau(Tau);
-          multiEstimator = MJp;
-          FoundEstimatorBlock=true;
-      }
-      else if (observ=="HFDHE2"){
-	
-	app_log()<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
-	HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
-	HFp->setrLen(ReptileLength);
-	HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
-	multiEstimator = HFp;
-	FoundEstimatorBlock=true;
-      } else if (observ=="Combo"){
-	app_log()<<"Using Combo observables"<<endl;
-	ComboPolymerEstimator* HFp = new ComboPolymerEstimator(H,nPsi);
-	HFp->put(q2,W,ReptileLength);
-	multiEstimator = HFp;
-	FoundEstimatorBlock=true;
-      }
-    }
-    q2=q2->next;
-  }
+//     while(q2!=NULL){
+//       string cname((const char*)q2->name);
+//       string observ="NONE";
+//       int fq(1);
+//       OhmmsAttributeSet Ettrib;
+//       Ettrib.add(observ,"observables" );
+//       Ettrib.add(fq,"freq" );
+//       Ettrib.put(q2);
+//       if (cname=="Estimators"){
+// // 	if (observ=="NONE"){
+// // 	  app_log()<<"Using normal Observables"<<endl;
+// // 	  multiEstimator = new CSPolymerEstimator(H,nPsi);
+// // 	  FoundEstimatorBlock=true;
+// // 	} else
+// //       if (observ=="ZVZB"){
+// //           app_log()<<"Using ZVZB observables"<<endl;
+// //           //         multiEstimator = new MJPolymerEstimator(H,nPsi);
+// //           MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
+// //           MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+// //           MJp->setrLen(ReptileLength);
+// //           
+// //           multiEstimator = MJp;
+// //           FoundEstimatorBlock=true;
+// //       }
+// //       if (observ=="HF"){
+// //           app_log()<<"Using HF observables"<<endl;
+// //           HFPolymerEstimator* MJp = new HFPolymerEstimator(H,nPsi);
+// //           MJp->add_HF_Observables(ReptileLength,fq);
+// //           MJp->setTau(Tau);
+// //           multiEstimator = MJp;
+// //           FoundEstimatorBlock=true;
+// //       }
+// //       else if (observ=="HFDHE2"){
+// // 	
+// // 	app_log()<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
+// // 	HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
+// // 	HFp->setrLen(ReptileLength);
+// // 	HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+// // 	multiEstimator = HFp;
+// // 	FoundEstimatorBlock=true;
+// //       } else if (observ=="Combo"){
+// // 	app_log()<<"Using Combo observables"<<endl;
+// // 	ComboPolymerEstimator* HFp = new ComboPolymerEstimator(H,nPsi);
+// // 	HFp->put(q2,W,ReptileLength);
+// // 	multiEstimator = HFp;
+// // 	FoundEstimatorBlock=true;
+// //       }
+//     }
+//     q2=q2->next;
+//   }
     if (!FoundEstimatorBlock){
       app_log()<<"Using normal Observables"<<endl;
       multiEstimator = new CSPolymerEstimator(H,nPsi);
@@ -773,7 +773,8 @@ void RQMCMultiple::moveReptile(){
    if(totbeadwgt!=0){
      for(int ipsi=0; ipsi<nPsi; ipsi++) {
        
-       DeltaG[ipsi]= - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
+       DeltaG[ipsi]= 
+       - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
        + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
        - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
        + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
@@ -840,7 +841,7 @@ void RQMCMultiple::moveReptile(){
 }
 }
 /***************************************************************************
-* $RCSfile$   $Author$
-* $Revision$   $Date$
-* $Id$ 
+* $RCSfile$   $Author: jmcminis $
+* $Revision: 5628 $   $Date: 2012-11-26 09:19:42 -0800 (Mon, 26 Nov 2012) $
+* $Id: RQMCMultiple.cpp 5628 2012-11-26 17:19:42Z jmcminis $ 
 ***************************************************************************/

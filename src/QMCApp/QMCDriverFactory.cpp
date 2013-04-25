@@ -23,16 +23,10 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h" 
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
+#include "QMCDrivers/RMC/RMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
-#include "QMCDrivers/RQMCMultiple.h"
-////THESE ARE BROKEN
-////#if !defined(QMC_COMPLEX)
-////#include "QMCDrivers/RQMCMultiWarp.h"
-////#include "QMCDrivers/RQMCMultiplePbyP.h"
-////#endif
-//#endif
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
 #include <queue>
@@ -138,11 +132,12 @@ namespace qmcplusplus {
       if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
       
-      if (qmc_mode.find("rmcPbyP")<nchars)
-      {
-        newRunType=RMC_PBYP_RUN;
-      }
-      else if(qmc_mode.find("rmc")<nchars)
+//       if (qmc_mode.find("rmcPbyP")<nchars)
+//       {
+//         newRunType=RMC_PBYP_RUN;
+//       }
+//       else 
+      if(qmc_mode.find("rmc")<nchars)
       {
         newRunType=RMC_RUN;
       }
@@ -292,9 +287,8 @@ namespace qmcplusplus {
 #if QMC_BUILD_LEVEL>1
    else if(curRunType == RMC_RUN)
    {
-     app_log() << "Using ReptationMC: no warping, no pbyp" << endl;
-//      qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
-     qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH,*psiPool);
+      RMCFactory fac(curQmcModeBits[UPDATE_MODE], cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
    }
 #endif
 //#if QMC_BUILD_LEVEL>1

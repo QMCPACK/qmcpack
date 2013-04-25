@@ -26,7 +26,12 @@ SET(QMCDRIVERS
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  RMC/RMCSingleOMP.cpp
+  RMC/RMCUpdatePbyP.cpp
+  RMC/RMCUpdateAll.cpp
+  RMC/RMCFactory.cpp
   ../Estimators/LocalEnergyEstimator.cpp
+  ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
@@ -67,15 +72,11 @@ ENDIF(HAVE_MPI)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
-    PolymerEstimator.cpp
-    MultiChain.cpp
-    RQMCMultiple.cpp
-    ../Estimators/ComboPolymerEstimator.cpp
+#     PolymerEstimator.cpp
+#     MultiChain.cpp
+#     RQMCMultiple.cpp
     ../Estimators/CSEnergyEstimator.cpp
-    ../Estimators/CSPolymerEstimator.cpp
-    ../Estimators/MJPolymerEstimator.cpp
-    ../Estimators/HFPolymerEstimator.cpp
-    ../Estimators/HFDHE2PolymerEstimator.cpp
+#     ../Estimators/CSPolymerEstimator.cpp
   )
 # REMOVE broken stuff
 #    ../Estimators/RQMCMultipleEstimator.cpp

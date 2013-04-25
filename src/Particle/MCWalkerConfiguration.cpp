@@ -83,7 +83,8 @@ namespace qmcplusplus {
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0),
-  MaxSamples(10),CurSampleCount(0),GlobalNumWalkers(0)
+
+  MaxSamples(10),CurSampleCount(0),GlobalNumWalkers(0),reptile(0)
 #ifdef QMC_CUDA
   ,RList_GPU("MCWalkerConfiguration::RList_GPU"),
   GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
@@ -114,6 +115,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 {
   GlobalNumWalkers=mcw.GlobalNumWalkers;
   WalkerOffsets=mcw.WalkerOffsets;
+  Properties=mcw.Properties;
   //initPropertyList();
 }
 

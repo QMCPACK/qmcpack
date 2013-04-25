@@ -21,6 +21,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
 #include "Utilities/IteratorUtility.h"
+//#include "Particle/Reptile.h"
 
 namespace qmcplusplus {
 
@@ -28,6 +29,7 @@ namespace qmcplusplus {
   class MultiChain;
   class MCSample;
   class HDFWalkerOutput;
+  class Reptile;
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
@@ -331,6 +333,8 @@ namespace qmcplusplus {
   public:
     ///a collection of walkers
     WalkerList_t WalkerList;
+    ///a collection of reptiles contained in MCWalkerConfiguration.  
+    Reptile *reptile;
 
    private:
 

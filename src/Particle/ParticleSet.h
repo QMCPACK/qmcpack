@@ -112,6 +112,10 @@ namespace qmcplusplus {
     Index_t ThreadID;
     ///the indexp of the active particle for particle-by-particle moves
     Index_t activePtcl;
+    ///the index of the active bead for particle-by-particle moves
+    Index_t activeBead;
+    ///the direction reptile traveling
+    Index_t direction;
 
     /** the position of the active particle for particle-by-particle moves
      *

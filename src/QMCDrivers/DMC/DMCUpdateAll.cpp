@@ -208,7 +208,7 @@ namespace qmcplusplus {
       else 
       {
         enew=H.evaluate(W);
-	RealType logGf = -0.5*Dot(deltaR,deltaR);
+		RealType logGf = -0.5*Dot(deltaR,deltaR);
         nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         
         deltaR = thisWalker.R - W.R - drift;

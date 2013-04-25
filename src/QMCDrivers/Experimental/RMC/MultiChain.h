@@ -354,7 +354,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
+ * $RCSfile$   $Author: jeongnim.kim $
+ * $Revision: 4337 $   $Date: 2009-10-27 14:08:16 -0700 (Tue, 27 Oct 2009) $
+ * $Id: MultiChain.h 4337 2009-10-27 21:08:16Z jeongnim.kim $ 
  ***************************************************************************/

@@ -57,7 +57,7 @@ namespace qmcplusplus
     UseTMove=false;
     NumPtcl=0;
     nSubSteps=1;
-    MaxAge=0;
+    MaxAge=10;
     m_r2max=-1;
     myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
     //myParams.add(nSubSteps,"subSteps","int");
@@ -158,9 +158,12 @@ namespace qmcplusplus
         W.R = (*it)->R;
         W.update();
         RealType logpsi(Psi.evaluateLog(W));
+        (*it)->G=W.G;
+        (*it)->L=W.L;
         //setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
         RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         RealType ene = H.evaluate(W);
+        H.auxHevaluate(W);
         (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
         (*it)->Weight=1;
         H.saveProperty((*it)->getPropertyBase());
@@ -183,6 +186,8 @@ namespace qmcplusplus
       awalker.DataSet.rewind();
       RealType logpsi=Psi.registerData(W,awalker.DataSet);
       RealType logpsi2=Psi.updateBuffer(W,awalker.DataSet,false);
+      awalker.G=W.G;
+      awalker.L=W.L;
 
       randomize(awalker);
     }

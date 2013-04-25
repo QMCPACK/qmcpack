@@ -31,6 +31,7 @@
 namespace qmcplusplus
   {
 
+
   /** @ingroup QMC
    * @brief Base class for update methods for each step
    *
@@ -187,6 +188,23 @@ namespace qmcplusplus
 //     , vector<QMCHamiltonian*>& hclone
 //     , vector<RandomGenerator_t*>& rng
 //     , vector<RealType>& ratio_i_0){};
+      int RMC_checkIndex(int N, int NMax)
+      {
+        if(N<0)
+          return N+NMax;
+        else if (N>=NMax)
+          return N-NMax;
+        else 
+          return N;
+      }
+
+      void RMC_checkWalkerBounds(WalkerIter_t& it, WalkerIter_t first, WalkerIter_t last)
+      {
+        if (it>=last)
+          it-=(last-first);
+        else if (it<first)
+          it+=(last-first);
+      }      
 
     protected:
       ///update particle-by-particle
