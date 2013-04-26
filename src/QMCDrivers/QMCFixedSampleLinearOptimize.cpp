@@ -198,23 +198,22 @@ bool QMCFixedSampleLinearOptimize::run()
       RealType bigVec(0);
       for (int i=0; i<numParams; i++)
         bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-      
-      if (std::abs(Lambda*bigVec)>bigChange)
-      {
-        goodStep=false;
-        app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<<endl;
-        if (stability==0)
-        {
-          failedTries++;
-          stability--;
-        }
-        else
-          stability=nstabilizers;
-        continue;
-//                 mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
-      }
+
       if (MinMethod=="rescale")
       {
+        if (std::abs(Lambda*bigVec)>bigChange)
+        {
+          goodStep=false;
+          app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<<endl;
+          if (stability==0)
+          {
+            failedTries++;
+            stability--;
+          }
+          else
+            stability=nstabilizers;
+          continue;
+        }
         for (int i=0; i<numParams; i++)
           optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
         optTarget->IsValid = true;
