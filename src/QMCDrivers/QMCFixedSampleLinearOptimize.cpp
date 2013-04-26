@@ -173,7 +173,7 @@ bool QMCFixedSampleLinearOptimize::run()
       RealType XS(stabilityBase+stabilizerScale*(failedTries+stability));
       for (int i=1; i<N; i++)
         Right(i,i) += std::exp(XS);
-      app_log()<<"  Using XS:"<<XS<<endl;
+      app_log()<<"  Using XS:"<<XS<<" "<<failedTries<<" "<<stability<<endl;
       RealType lowestEV(0);
       myTimers[2]->start();
       lowestEV = getLowestEigenvector(Right,currentParameterDirections);
@@ -196,7 +196,6 @@ bool QMCFixedSampleLinearOptimize::run()
           }
           else
             stability=nstabilizers;
-          continue;
         }
         for (int i=0; i<numParams; i++)
           optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
@@ -233,7 +232,6 @@ bool QMCFixedSampleLinearOptimize::run()
             stability--;
           else
             stability=nstabilizers;
-          continue;
         }
         else
         {
@@ -242,45 +240,46 @@ bool QMCFixedSampleLinearOptimize::run()
           app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
         }
       }
-      //get cost at new minimum
-      newCost = optTarget->Cost(false);
-      app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
-      optTarget->printEstimates();
-//                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
-      // mmorales
-      Valid=optTarget->IsValid;
-      if (!ValidCostFunction(Valid))
+      if (goodStep)
       {
-        goodStep=false;
-        app_log()<<"  Good Step, but cost function invalid"<<endl;
-        failedTries++;
-        if(stability>0)
-          stability=nstabilizers;
-        else
-          stability--;
-        continue;
-      }
-      if (newCost < lastCost)
-      {
-        //Move was acceptable
-        for (int i=0; i<numParams; i++)
-          bestParameters[i] = optTarget->Params(i);
-        lastCost=newCost;
-        acceptedOneMove=true;
-        if(abs(newCost-lastCost)<1e-4)
+        //get cost at new minimum
+        newCost = optTarget->Cost(false);
+        app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
+        optTarget->printEstimates();
+        //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
+        // mmorales
+        Valid=optTarget->IsValid;
+        if (!ValidCostFunction(Valid))
+        {
+          goodStep=false;
+          app_log()<<"  Good Step, but cost function invalid"<<endl;
+          failedTries++;
+          if(stability>0)
+            stability=nstabilizers;
+          else
+            stability--;
+        }
+        if (newCost < lastCost)
+        {
+          //Move was acceptable
+          for (int i=0; i<numParams; i++)
+            bestParameters[i] = optTarget->Params(i);
+          lastCost=newCost;
+          acceptedOneMove=true;
+          if(abs(newCost-lastCost)<1e-4)
+          {
+            failedTries++;
+            stability=nstabilizers;
+            continue;
+          }
+        }
+        else if (stability>0)
         {
           failedTries++;
           stability=nstabilizers;
           continue;
         }
       }
-      else
-        if (stability>0)
-        {
-          failedTries++;
-          stability=nstabilizers;
-          continue;
-        }
     }
     if (acceptedOneMove)
     {
