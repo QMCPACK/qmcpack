@@ -177,6 +177,7 @@ bool QMCFixedSampleLinearOptimize::run()
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
     {
+      bool goodStep(true);
 //       store the Hamiltonian matrix in Right
       for (int i=0; i<N; i++)
         for (int j=0; j<N; j++)
@@ -200,6 +201,7 @@ bool QMCFixedSampleLinearOptimize::run()
       
       if (std::abs(Lambda*bigVec)>bigChange)
       {
+        goodStep=false;
         app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<<endl;
         if (stability==0)
         {
@@ -244,12 +246,15 @@ bool QMCFixedSampleLinearOptimize::run()
         RealType biggestParameterChange = bigVec*std::abs(Lambda);
         if (biggestParameterChange>bigChange)
         {
+          goodStep=false;
           app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
-          failedTries++;
-          if (stability>0)
-            stability=nstabilizers;
-          else
+          if (stability==0)
+          {
+            failedTries++;
             stability--;
+          }
+          else
+            stability=nstabilizers;
           
           continue;
         }
@@ -269,12 +274,14 @@ bool QMCFixedSampleLinearOptimize::run()
       Valid=optTarget->IsValid;
       if (!ValidCostFunction(Valid))
       {
+        goodStep=false;
         app_log()<<"  Good Step, but cost function invalid"<<endl;
         failedTries++;
         if(stability>0)
           stability=nstabilizers;
         else
           stability--;
+        continue;
       }
       if (newCost < lastCost)
       {
@@ -283,13 +290,22 @@ bool QMCFixedSampleLinearOptimize::run()
           bestParameters[i] = optTarget->Params(i);
         lastCost=newCost;
         acceptedOneMove=true;
-      }
-      else
-        if (stability>0)
+        if(abs(newCost-lastCost)<1e-4)
+        {
           stability=nstabilizers;
+          continue;
+        }          
+      }
+      else if (stability>0)
+      {
+        stability=nstabilizers;
+        continue;
+      }
     }
+    
     if (acceptedOneMove)
     {
+      app_log()<<"Setting new Parameters"<<std::endl;
       for (int i=0; i<numParams; i++)
         optTarget->Params(i) = bestParameters[i];
     }
