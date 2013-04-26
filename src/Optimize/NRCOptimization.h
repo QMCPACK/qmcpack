@@ -361,8 +361,7 @@ struct NRCOptimization
       qmcplusplus::app_log()<<"Problems bracketing minimum.\n";
       return false;
     }
-    else
-      if(!success && validFuncVal)
+    else if(!success && validFuncVal)
       {
 // in case the function is unable to bracket the minimum but
 // still finds a point with lower cost and validFuncVal, take this point

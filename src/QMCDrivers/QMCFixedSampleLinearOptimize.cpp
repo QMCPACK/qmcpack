@@ -44,7 +44,7 @@ namespace qmcplusplus
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
-  Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(2.0), bigChange(1), eigCG(1), TotalCGSteps(1), w_beta(0.0),
+  Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(2.0), bigChange(5), eigCG(1), TotalCGSteps(1), w_beta(0.0),
   MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
 {
   //set the optimization flag
@@ -60,8 +60,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 //   m_param.add(eigCG,"eigcg","int");
 //   m_param.add(TotalCGSteps,"cgsteps","int");
 //   m_param.add(w_beta,"beta","double");
-  quadstep=-1.0;
-  stepsize=0.75;
+//   quadstep=-1.0;
+  stepsize=0.25;
 //   m_param.add(quadstep,"quadstep","double");
   m_param.add(stepsize,"stepsize","double");
   m_param.add(exp0,"exp0","double");
@@ -150,6 +150,7 @@ bool QMCFixedSampleLinearOptimize::run()
       Matrix<RealType> RightT(Left);
       invert_matrix(RightT,false);
       MatrixOperators MO;
+      Left=0;
       MO.product(RightT,Right,Left);
 //       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
     }
@@ -167,7 +168,7 @@ bool QMCFixedSampleLinearOptimize::run()
     if (od_largest<stabilityBase) 
       stabilityBase=od_largest;
     else
-      stabilizerScale = max( (od_largest-stabilityBase)/nstabilizers, stabilizerScale);
+      stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
