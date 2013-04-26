@@ -58,19 +58,20 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(nstabilizers,"nstabilizers","int");
   m_param.add(stabilizerScale,"stabilizerscale","double");
   m_param.add(bigChange,"bigchange","double");
+  m_param.add(MinMethod,"MinMethod","string");
+  m_param.add(exp0,"exp0","double");
+  stepsize=0.25;
+//   stale parameters
 //   m_param.add(eigCG,"eigcg","int");
 //   m_param.add(TotalCGSteps,"cgsteps","int");
 //   m_param.add(w_beta,"beta","double");
 //   quadstep=-1.0;
-  stepsize=0.25;
 //   m_param.add(quadstep,"quadstep","double");
-  m_param.add(stepsize,"stepsize","double");
-  m_param.add(exp0,"exp0","double");
+//   m_param.add(stepsize,"stepsize","double");
 //   m_param.add(exp1,"exp1","double");
-  m_param.add(MinMethod,"MinMethod","string");
-  m_param.add(GEVtype,"GEVMethod","string");
+//   m_param.add(GEVtype,"GEVMethod","string");
 //   m_param.add(GEVSplit,"GEVSplit","string");
-  m_param.add(StabilizerMethod,"StabilizerMethod","string");
+//   m_param.add(StabilizerMethod,"StabilizerMethod","string");
 //   m_param.add(LambdaMax,"LambdaMax","double");
   //Set parameters for line minimization:
   this->add_timers(myTimers);
@@ -183,6 +184,8 @@ bool QMCFixedSampleLinearOptimize::run()
       RealType bigVec(0);
       for (int i=0; i<numParams; i++)
         bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
+//       this can be overwritten during the line minimization
+      RealType evaluated_cost(startCost);
       if (MinMethod=="rescale")
       {
         if (std::abs(Lambda*bigVec)>bigChange)
@@ -217,7 +220,7 @@ bool QMCFixedSampleLinearOptimize::run()
           int npts(7);
           quadstep = stepsize*Lambda;
           largeQuarticStep=bigChange/bigVec;
-          Valid=lineoptimization3(npts,startCost);
+          Valid=lineoptimization3(npts,evaluated_cost);
         }
         else
           Valid=lineoptimization2();
@@ -242,6 +245,8 @@ bool QMCFixedSampleLinearOptimize::run()
       }
       if (goodStep)
       {
+// 	this may have been evaluated allready
+// 	newCost=evaluated_cost;
         //get cost at new minimum
         newCost = optTarget->Cost(false);
         app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
