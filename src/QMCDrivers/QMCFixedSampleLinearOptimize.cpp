@@ -43,9 +43,10 @@ namespace qmcplusplus
 {
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
-  Max_iterations(1), exp0(-16), exp1(0),  nstabilizers(3), stabilizerScale(2.0), bigChange(5), eigCG(1), TotalCGSteps(1), w_beta(0.0),
-  MinMethod("quartic"), GEVtype("mixed"), StabilizerMethod("best"), GEVSplit("no")
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
+  QMCLinearOptimize(w,psi,h,hpool,ppool), Max_iterations(1), exp0(-16), nstabilizers(3),
+  stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
+  StabilizerMethod("best"), GEVSplit("no")
 {
   //set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -99,51 +100,40 @@ bool QMCFixedSampleLinearOptimize::run()
 //size of matrix
   numParams = optTarget->NumParams();
   N = numParams + 1;
-
 //   where we are and where we are pointing
   vector<RealType> currentParameterDirections(N,0);
   vector<RealType> currentParameters(numParams,0);
-  vector<RealType> bestParameters(numParams,0);  
+  vector<RealType> bestParameters(numParams,0);
   for (int i=0; i<numParams; i++)
     bestParameters[i] = currentParameters[i] = optTarget->Params(i);
-
 //   proposed direction and new parameters
   optdir.resize(numParams,0);
   optparm.resize(numParams,0);
-
   while (Total_iterations < Max_iterations)
   {
     Total_iterations+=1;
     app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
-
     if (!ValidCostFunction(Valid))
       continue;
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
     RealType stabilityBase(exp0);
-
 //     reset params if necessary
     for (int i=0; i<numParams; i++)
-        optTarget->Params(i) = currentParameters[i];
-
+      optTarget->Params(i) = currentParameters[i];
     myTimers[4]->start();
     RealType lastCost(optTarget->Cost(true));
     myTimers[4]->start();
-
 //     if cost function is currently invalid continue
     Valid=optTarget->IsValid;
     if (!ValidCostFunction(Valid))
       continue;
-    
-    
     RealType newCost(lastCost);
     RealType startCost(lastCost);
-    
     Matrix<RealType> Left(N,N);
     Matrix<RealType> Right(N,N);
     Matrix<RealType> S(N,N);
 //     stick in wrong matrix to reduce the number of matrices we need by 1.( Left is actually stored in Right, & vice-versa)
     optTarget->fillOverlapHamiltonianMatrices(Right,Left,S);
-
     bool apply_inverse(true);
     if(apply_inverse)
     {
@@ -154,25 +144,23 @@ bool QMCFixedSampleLinearOptimize::run()
       MO.product(RightT,Right,Left);
 //       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
     }
-
     //Find largest off-diagonal element compared to diagonal element.
     //This gives us an idea how well conditioned it is, used to stabilize.
     RealType od_largest(0);
-    for (int i=0; i<N; i++) for (int j=0; j<N; j++)
-      od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+    for (int i=0; i<N; i++)
+      for (int j=0; j<N; j++)
+        od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
     app_log()<<"od_largest "<<od_largest<<endl;
     if(od_largest>0)
       od_largest = std::log(od_largest);
     else
       od_largest = -1e16;
-    if (od_largest<stabilityBase) 
+    if (od_largest<stabilityBase)
       stabilityBase=od_largest;
     else
       stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
-    
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
-    
     int failedTries(0);
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
@@ -182,23 +170,19 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i=0; i<N; i++)
         for (int j=0; j<N; j++)
           Right(i,j)= Left(j,i);
-        
       RealType XS(stabilityBase+stabilizerScale*(failedTries+stability));
       for (int i=1; i<N; i++)
         Right(i,i) += std::exp(XS);
       app_log()<<"  Using XS:"<<XS<<endl;
       RealType lowestEV(0);
-
       myTimers[2]->start();
       lowestEV = getLowestEigenvector(Right,currentParameterDirections);
       Lambda = getNonLinearRescale(currentParameterDirections,S);
       myTimers[2]->stop();
-
 //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i=0; i<numParams; i++)
         bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
-
       if (MinMethod=="rescale")
       {
         if (std::abs(Lambda*bigVec)>bigChange)
@@ -224,12 +208,10 @@ bool QMCFixedSampleLinearOptimize::run()
           optparm[i] = currentParameters[i];
         for (int i=0; i<numParams; i++)
           optdir[i] = currentParameterDirections[i+1];
-        
         TOL = param_tol/bigVec;
         AbsFuncTol=true;
         largeQuarticStep=bigChange/bigVec;
-        LambdaMax = 0.5*Lambda; 
-
+        LambdaMax = 0.5*Lambda;
         myTimers[3]->start();
         if (MinMethod=="quartic")
         {
@@ -240,21 +222,17 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         else
           Valid=lineoptimization2();
-        
         myTimers[3]->stop();
         RealType biggestParameterChange = bigVec*std::abs(Lambda);
         if (biggestParameterChange>bigChange)
         {
           goodStep=false;
+          failedTries++;
           app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
           if (stability==0)
-          {
-            failedTries++;
             stability--;
-          }
           else
             stability=nstabilizers;
-          
           continue;
         }
         else
@@ -291,17 +269,19 @@ bool QMCFixedSampleLinearOptimize::run()
         acceptedOneMove=true;
         if(abs(newCost-lastCost)<1e-4)
         {
+          failedTries++;
           stability=nstabilizers;
           continue;
-        }          
+        }
       }
-      else if (stability>0)
-      {
-        stability=nstabilizers;
-        continue;
-      }
+      else
+        if (stability>0)
+        {
+          failedTries++;
+          stability=nstabilizers;
+          continue;
+        }
     }
-    
     if (acceptedOneMove)
     {
       app_log()<<"Setting new Parameters"<<std::endl;
@@ -313,9 +293,7 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i=0; i<numParams; i++)
         optTarget->Params(i) = currentParameters[i];
     }
-    
   }
-
   finish();
   return (optTarget->getReportCounter() > 0);
 }
@@ -357,7 +335,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool);
     else
 #endif
-    vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
@@ -371,7 +349,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
     else
 #endif
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }
