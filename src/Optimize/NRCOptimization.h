@@ -222,7 +222,7 @@ struct NRCOptimization
     // END HACK HACK HACK
   }
 
-  bool lineoptimization3(int points, Return_t zeroCost)
+  bool lineoptimization3(int points, Return_t& zeroCost)
   {
     // quartic fit with variable number of points for input.
     //  least squares solver
@@ -309,11 +309,11 @@ struct NRCOptimization
       qmcplusplus::LinearFit(y,S,coefs);
       Lambda = QuarticMinimum (coefs);
       if (abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
-        return lineoptimization2();
-      cost = Func(Lambda);
+        return lineoptimization2(largeQuarticStep);
+      zeroCost = Func(Lambda);
 //       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
-      if (isnan(cost) || cost > start_cost)
-        return lineoptimization2();
+      if (isnan(zeroCost) || zeroCost > start_cost)
+        return lineoptimization2(largeQuarticStep);
     }
     else
     {
@@ -338,7 +338,7 @@ struct NRCOptimization
     // END HACK HACK HACK
   }
 
-  bool lineoptimization2()
+  bool lineoptimization2(Return_t maxStep=1e9)
   {
     Return_t ax = 0;
     Return_t bx(0), fa, fx, fb;
@@ -354,7 +354,7 @@ struct NRCOptimization
     bool success=true;
     validFuncVal=true;
     qmcplusplus::app_log()<<"Before:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
-    success=mnbrakNRC(ax,xx,bx,fa,fx,fb);
+    success=mnbrakNRC(ax,xx,bx,fa,fx,fb,maxStep);
     if((!success && !validFuncVal) || (success && !validFuncVal))
     {
       Lambda = 0.0;
@@ -399,7 +399,7 @@ struct NRCOptimization
   T brentNRC(Return_t ax, Return_t bx, Return_t cx, Return_t & xmin);
 
   bool mnbrakNRC(Return_t& ax,Return_t& bx,Return_t& cx,
-                 Return_t& fa,Return_t& fb,Return_t& fc );
+                 Return_t& fa,Return_t& fb,Return_t& fc, Return_t maxStep=1e9);
 
 };
 
@@ -502,9 +502,8 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
 }
 
 template<class T>
-bool
-NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
-                              Return_t& fa, Return_t& fb, Return_t& fc)
+bool NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
+                              Return_t& fa, Return_t& fb, Return_t& fc, Return_t maxStep)
 {
   Return_t ulim,u,r,q,fu,dum = 0.0e0;
   validFuncVal=true;
@@ -555,8 +554,7 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
         fb=fu;
         return true;
       }
-      else
-        if (fu > fb)
+      else if (fu > fb)
         {
           cx=u;
           fc=fu;
@@ -571,8 +569,7 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
         return false;
       }
     }
-    else
-      if ((cx-u)*(u-ulim) > 0.0)
+    else if ((cx-u)*(u-ulim) > 0.0)
       {
         fu = Func(u);//fu=(*func)(u);
         if(!validFuncVal)
@@ -593,8 +590,7 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
           }
         }
       }
-      else
-        if ((u-ulim)*(ulim-cx) >= 0.0)
+      else if ((u-ulim)*(ulim-cx) >= 0.0)
         {
           u=ulim;
           fu = Func(u);//fu=(*func)(u);
@@ -618,6 +614,9 @@ NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
         }
     shift(ax,bx,cx,u);
     shift(fa,fb,fc,fu);
+//     if we are out of bounds totally then return false
+    if((abs(ax)>maxStep) and (abs(bx)>maxStep) and (abs(cx)>maxStep))
+      return false;
   }
   return true;
 }
