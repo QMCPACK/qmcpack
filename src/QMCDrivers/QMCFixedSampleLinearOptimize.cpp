@@ -160,11 +160,14 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i=0; i<N; i++) for (int j=0; j<N; j++)
       od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
     app_log()<<"od_largest "<<od_largest<<endl;
-    if((nstabilizers>1)and (od_largest>0)) od_largest = std::log(od_largest)/(nstabilizers-1);
-    if (od_largest<stabilizerScale) 
-      od_largest = stabilizerScale;
+    if(od_largest>0)
+      od_largest = std::log(od_largest);
     else
-      stabilizerScale = od_largest;
+      od_largest = -1e16;
+    if (od_largest<stabilityBase) 
+      stabilityBase=od_largest;
+    else
+      stabilizerScale = max( (od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
@@ -294,7 +297,9 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i=0; i<numParams; i++)
         optTarget->Params(i) = currentParameters[i];
     }
+    
   }
+
   finish();
   return (optTarget->getReportCounter() > 0);
 }
