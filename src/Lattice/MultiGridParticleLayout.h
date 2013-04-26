@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -33,22 +33,25 @@ template<class T, unsigned D> class MakeMultiGrid;
  *  \brief A class for grid layout
  */
 template<class T, unsigned D>
-struct MultiGridParticleLayout {
+struct MultiGridParticleLayout
+{
 
   typedef UniformCartesianGrid<T,D> PtclGrid_t;
 
   vector<PtclGrid_t*> dGrid;
 
-  MultiGridParticleLayout(){ }
-  ~MultiGridParticleLayout() {
-    for(int i=0; i<dGrid.size(); i++) 
+  MultiGridParticleLayout() { }
+  ~MultiGridParticleLayout()
+  {
+    for(int i=0; i<dGrid.size(); i++)
       delete dGrid[i];
   }
 
-  inline const PtclGrid_t* getGrid(int level) const { 
+  inline const PtclGrid_t* getGrid(int level) const
+  {
     return dGrid[level]; // return a grid at level
   }
-  
+
 
   /*! \fn makeGrid(int *grid, int igrid=-1)
    *  \param grid[D] a grid partition
@@ -57,31 +60,38 @@ struct MultiGridParticleLayout {
    *  \note if(igrid == -1) a new grid is created
    *        else  a new subgrid based on igrid-th grid is created
    */
-  int makeGrid(int *grid, int igrid=-1) {
+  int makeGrid(int *grid, int igrid=-1)
+  {
     int n=dGrid.size();
     dGrid.push_back(new PtclGrid_t);
-    if(igrid >= 0  && n>0) 
+    if(igrid >= 0  && n>0)
       MakeMultiGrid<T,D>::refineGrid(*dGrid[n],*dGrid[igrid],grid);
     else
       MakeMultiGrid<T,D>::makeGrid(*dGrid[n],grid);
     return n;
   }
 
-  void resetGrid(int igrid, int* grid) {
-
-    if(igrid == dGrid.size()) {//need to create a new grid
+  void resetGrid(int igrid, int* grid)
+  {
+    if(igrid == dGrid.size())
+      //need to create a new grid
+    {
       dGrid.push_back(new PtclGrid_t);
     }
-
-    if(igrid > 0) {
+    if(igrid > 0)
+    {
       MakeMultiGrid<T,D>::refineGrid(*dGrid[igrid],*dGrid[igrid-1],grid);
-    } else {
+    }
+    else
+    {
       MakeMultiGrid<T,D>::makeGrid(*dGrid[igrid],grid);
     }
   }
 
-  void printGrid(ostream& os) {
-    for(int i=0; i<dGrid.size(); i++) dGrid[i]->print(os);
+  void printGrid(ostream& os)
+  {
+    for(int i=0; i<dGrid.size(); i++)
+      dGrid[i]->print(os);
   }
 
   template<class P>  void update(P*, int);
@@ -92,88 +102,87 @@ template<class T, unsigned D>
 struct MakeMultiGrid {};
 
 template<class T>
-struct MakeMultiGrid<T,3> {
+struct MakeMultiGrid<T,3>
+{
 
   typedef UniformCartesianGrid<T,3> ThisGrid_t;
 
-  static void makeGrid(ThisGrid_t& grid, int* ng) {
-
+  static void makeGrid(ThisGrid_t& grid, int* ng)
+  {
     int ngtot=ng[0]*ng[1]*ng[2];
     grid.set(ng);
     grid.NodeID.resize(ngtot);
     grid.NodeDist.resize(ngtot+1);
     grid.Node.resize(ngtot);
-
-    for(int i=0; i<=ngtot; i++) grid.NodeDist[i] = i;
+    for(int i=0; i<=ngtot; i++)
+      grid.NodeDist[i] = i;
     T ri[3];
     int ig=0;
-    for(int ic=0; ic<grid.NP[0]; ic++) {
+    for(int ic=0; ic<grid.NP[0]; ic++)
+    {
       ri[0] = grid.Delta[0]*static_cast<T>(ic);
-      for(int jc=0; jc<grid.NP[1]; jc++) {
-	ri[1] = grid.Delta[1]*static_cast<T>(jc);
-	for(int kc=0; kc<grid.NP[2]; kc++) {
-	  ri[2] = grid.Delta[2]*static_cast<T>(kc);
-
-	  grid.NodeID[grid.key(ic,jc,kc)] = ig;
-	  grid.Node[ig].set(ri,grid.Delta);
-	  ig++;
-	}
+      for(int jc=0; jc<grid.NP[1]; jc++)
+      {
+        ri[1] = grid.Delta[1]*static_cast<T>(jc);
+        for(int kc=0; kc<grid.NP[2]; kc++)
+        {
+          ri[2] = grid.Delta[2]*static_cast<T>(kc);
+          grid.NodeID[grid.key(ic,jc,kc)] = ig;
+          grid.Node[ig].set(ri,grid.Delta);
+          ig++;
+        }
       }
     }
   }
 
-  static void 
-  refineGrid(ThisGrid_t& subgrid, const ThisGrid_t& biggrid, int *ng) {
-
+  static void
+  refineGrid(ThisGrid_t& subgrid, const ThisGrid_t& biggrid, int *ng)
+  {
     int ngbig = biggrid.NP[0]*biggrid.NP[1]*biggrid.NP[2];
     int ngsub = ng[0]*ng[1]*ng[2];
     int ngtot = ngbig*ngsub;
     int ngnew[3];
-
     ngnew[0] = ng[0]*biggrid.NP[0];
     ngnew[1] = ng[1]*biggrid.NP[1];
     ngnew[2] = ng[2]*biggrid.NP[2];
-
     subgrid.set(ngnew);
     subgrid.NodeID.resize(ngtot);
     subgrid.Node.resize(ngtot);
-
     T ri[3],orig[3];
-
     subgrid.NodeDist.resize(ngbig+1);
     subgrid.NodeDist[0] = 0;
     int igrid=0;
-
-    for(int ig=0; ig<biggrid.Node.size(); ig++) {
-
+    for(int ig=0; ig<biggrid.Node.size(); ig++)
+    {
       //origin of a mesh
-      orig[0] = biggrid.Node[ig].Ri[0];      
-      orig[1] = biggrid.Node[ig].Ri[1];      
-      orig[2] = biggrid.Node[ig].Ri[2];      
-
+      orig[0] = biggrid.Node[ig].Ri[0];
+      orig[1] = biggrid.Node[ig].Ri[1];
+      orig[2] = biggrid.Node[ig].Ri[2];
       //integer indices of a mesh
       subgrid.getcoord(orig,ngnew);
-
       //ngnew[0]*=ng[0]; ngnew[1]*=ng[1]; ngnew[2]*=ng[2];
-      for(int isub=0; isub<ng[0]; isub++) {
-	ri[0] = subgrid.Delta[0]*static_cast<T>(isub)+orig[0]; 
-	for(int jsub=0; jsub<ng[1]; jsub++) {
-	  ri[1] = subgrid.Delta[1]*static_cast<T>(jsub)+orig[1]; 
-	  for(int ksub=0; ksub<ng[2]; ksub++) {
-	    ri[2] = subgrid.Delta[2]*static_cast<T>(ksub)+orig[2];
-	    subgrid.NodeID[subgrid.key(ngnew[0]+isub, 
-				       ngnew[1]+jsub, 
-				       ngnew[2]+ksub)] = igrid;
-	    subgrid.Node[igrid].set(ri,subgrid.Delta);
-	    igrid++;
-	  }
-	}
+      for(int isub=0; isub<ng[0]; isub++)
+      {
+        ri[0] = subgrid.Delta[0]*static_cast<T>(isub)+orig[0];
+        for(int jsub=0; jsub<ng[1]; jsub++)
+        {
+          ri[1] = subgrid.Delta[1]*static_cast<T>(jsub)+orig[1];
+          for(int ksub=0; ksub<ng[2]; ksub++)
+          {
+            ri[2] = subgrid.Delta[2]*static_cast<T>(ksub)+orig[2];
+            subgrid.NodeID[subgrid.key(ngnew[0]+isub,
+                                       ngnew[1]+jsub,
+                                       ngnew[2]+ksub)] = igrid;
+            subgrid.Node[igrid].set(ri,subgrid.Delta);
+            igrid++;
+          }
+        }
       }
       subgrid.NodeDist[ig+1] = subgrid.NodeDist[ig]+ngsub;
     }
   }
 
-//    //Intended for MPI_Cartesian functions but 
+//    //Intended for MPI_Cartesian functions but
 //  #ifdef USE_MPI
 //    static void makeMPIGrid(ThisGrid_t& grid, const int* ng, const int* period) {
 //      int ngtot=ng[0]*ng[1]*ng[2];
@@ -195,7 +204,7 @@ struct MakeMultiGrid<T,3> {
 //      Comm->setNodeID(newnode);
 //      Comm->setCommID(cartcomm);
 //      int MyID = newnode;
-//      int coord[3],ii=0; 
+//      int coord[3],ii=0;
 //      double ri[3];
 //      for(int i=0;i<ng[0]; i++) {
 //        ri[0] = grid.Delta[0]*static_cast<double>(i);
@@ -215,20 +224,16 @@ struct MakeMultiGrid<T,3> {
 };
 
 template<class T, unsigned D>
-template<class P>  
-void MultiGridParticleLayout<T,D>::update(P* ptcl, int imode) {
-
-
+template<class P>
+void MultiGridParticleLayout<T,D>::update(P* ptcl, int imode)
+{
 //  cout << "Calling MultiGridParticleLayout::update" << endl;
 //    typedef P::ParticlePos_t ParticlePos_t;
 //    typedef P::ParticleIndex_t ParticleIndex_t;
-
 //    ParticlePos_t r;
 //    ParticlePos_t id;
-
-//    r.resize(ptcl->getLocalNum());  
-//    id.resize(ptcl->getLocalNum());  
-
+//    r.resize(ptcl->getLocalNum());
+//    id.resize(ptcl->getLocalNum());
 //    r = ptcl->R;
 //    id = ptcl->IonID;
 }
@@ -237,5 +242,5 @@ void MultiGridParticleLayout<T,D>::update(P* ptcl, int imode) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

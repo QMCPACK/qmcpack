@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -18,36 +18,38 @@
 #define QMCPLUSPLUS_NUMERICAL_MOLECULARORBITALS_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class GridMolecularOrbitals;
+class GridMolecularOrbitals;
 
-  class NumericalMolecularOrbitals: public OrbitalBuilderBase {
+class NumericalMolecularOrbitals: public OrbitalBuilderBase
+{
 
-    GridMolecularOrbitals *Original;
+  GridMolecularOrbitals *Original;
 
-    public:
+public:
 
-    /** constructor
-     * \param wfs reference to the wavefunction
-     * \param ions reference to the ions
-     * \param els reference to the electrons
-     */
-    NumericalMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
+  /** constructor
+   * \param wfs reference to the wavefunction
+   * \param ions reference to the ions
+   * \param els reference to the electrons
+   */
+  NumericalMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
 
-    /** initialize the Antisymmetric wave function for electrons
-     *@param cur the current xml node
-     *
-     */
-    bool put(xmlNodePtr cur);
+  /** initialize the Antisymmetric wave function for electrons
+   *@param cur the current xml node
+   *
+   */
+  bool put(xmlNodePtr cur);
 
-  private:
+private:
 
-  };
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

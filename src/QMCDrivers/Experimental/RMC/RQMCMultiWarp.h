@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -17,123 +17,128 @@
 #ifndef QMCPLUSPLUS_REPMULTIWARP_H
 #define QMCPLUSPLUS_REPMULTIWARP_H
 
-#include "QMCDrivers/QMCDriver.h" 
-#include "OhmmsPETE/OhmmsVector.h" 
-#include "QMCDrivers/SpaceWarp.h" 
+#include "QMCDrivers/QMCDriver.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "QMCDrivers/SpaceWarp.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class Bead;
-  class MultiChain;
-  class ParticleSetPool;
-  class CSPolymerEstimator;
+class Bead;
+class MultiChain;
+class ParticleSetPool;
+class CSPolymerEstimator;
 
-  /** @ingroup QMCDrivers MultiplePsi
-   * @brief Implements the RMC algorithm for energy differences
+/** @ingroup QMCDrivers MultiplePsi
+ * @brief Implements the RMC algorithm for energy differences
+ */
+class RQMCMultiWarp: public QMCDriver
+{
+
+  typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
+
+
+public:
+
+  /// Constructor.
+  RQMCMultiWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+                ParticleSetPool& ptclPool);
+
+  /// Destructor
+  ~RQMCMultiWarp();
+
+  bool run();
+  bool put(xmlNodePtr q);
+
+protected:
+  ParticleSetPool& PtclPool;
+
+  /** boolean for initialization
+   *
+   *\if true,
+   *use clones for a chain.
+   *\else
+   *use drift-diffusion to form a chain
+   *\endif
    */
-  class RQMCMultiWarp: public QMCDriver {
-  
-    typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
 
+  ///The length of polymers
+  int ReptileLength;
 
-  public:
+  ///
+  int MinusDirection,PlusDirection,Directionless;
+  ///
+  int forward,backward,itail,inext;
 
-    /// Constructor.
-    RQMCMultiWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        ParticleSetPool& ptclPool);
+  ///the number of turns per block
+  int NumTurns;
 
-    /// Destructor
-    ~RQMCMultiWarp();
+  int nptcl;
 
-    bool run();
-    bool put(xmlNodePtr q);
+  ///the number of H/Psi pairs
+  int nPsi;
 
-  protected:
-    ParticleSetPool& PtclPool;
+  //index of the log-jacobian in Properties
+  int LOGJACOB;
 
-    /** boolean for initialization
-     *
-     *\if true,
-     *use clones for a chain.
-     *\else
-     *use drift-diffusion to form a chain
-     *\endif
-     */
+  string refSetName;
 
-    ///The length of polymers
-    int ReptileLength;
+  vector<RealType> Jacobian;
 
-    ///
-    int MinusDirection,PlusDirection,Directionless;
-    ///
-    int forward,backward,itail,inext;
+  SpaceWarp PtclWarp;
 
-    ///the number of turns per block
-    int NumTurns;
+  ///The Reptile: a chain of beads
+  MultiChain* Reptile;
 
-    int nptcl;
+  ///The new bead
+  Bead *NewBead;
 
-    ///the number of H/Psi pairs
-    int nPsi;
+  //Warped position of head bead
+  vector<ParticlePos_t> Warped_R,Warped_deltaR;
 
-    //index of the log-jacobian in Properties
-    int LOGJACOB;
+  //Auxiliary array to compute properties of freshly warped ptcls
+  vector<ParticleSet*> WW;
 
-    string refSetName;
+  ///move polymers
+  void moveReptile();
 
-    vector<RealType> Jacobian;
+  ///initialize polymers
+  void initReptile();
 
-    SpaceWarp PtclWarp;
+  ///for the first run starting with a point, set reference properties (sign)
+  void setReptileProperties();
 
-    ///The Reptile: a chain of beads
-    MultiChain* Reptile;
+  ///for the first run starting with a point, set reference properties (sign)
+  void checkReptileProperties();
 
-    ///The new bead
-    Bead *NewBead;
+  ///Working arrays
+  Vector<RealType> NewGlobalAction,DeltaG;
+  Vector<int>NewGlobalSignWgt,WeightSign;
 
-    //Warped position of head bead
-    vector<ParticlePos_t> Warped_R,Warped_deltaR;
+  void resizeArrays(int n);
 
-    //Auxiliary array to compute properties of freshly warped ptcls
-    vector<ParticleSet*> WW;
+  ///overwrite recordBlock
+  void recordBlock(int block);
 
-    ///move polymers
-    void moveReptile();
+private:
 
-    ///initialize polymers
-    void initReptile();
+  /// Copy Constructor (disabled)
+  RQMCMultiWarp(const RQMCMultiWarp& a, ParticleSetPool& ptclPool):
+    QMCDriver(a), PtclPool(ptclPool) { }
 
-    ///for the first run starting with a point, set reference properties (sign)
-    void setReptileProperties();
+  /// Copy operator (disabled).
+  RQMCMultiWarp& operator=(const RQMCMultiWarp&)
+  {
+    return *this;
+  }
 
-    ///for the first run starting with a point, set reference properties (sign)
-    void checkReptileProperties();
+  ParticleSet::ParticlePos_t gRand;
 
-    ///Working arrays
-    Vector<RealType> NewGlobalAction,DeltaG;
-    Vector<int>NewGlobalSignWgt,WeightSign;
-    
-    void resizeArrays(int n);
-
-    ///overwrite recordBlock
-    void recordBlock(int block);
-
-  private:
-
-    /// Copy Constructor (disabled)
-    RQMCMultiWarp(const RQMCMultiWarp& a, ParticleSetPool& ptclPool): 
-      QMCDriver(a), PtclPool(ptclPool) { }
-
-    /// Copy operator (disabled).
-    RQMCMultiWarp& operator=(const RQMCMultiWarp&) { return *this;}
-
-    ParticleSet::ParticlePos_t gRand;
-
-  };
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2437 $   $Date: 2007-12-07 08:22:22 -0600 (Fri, 07 Dec 2007) $
- * $Id: RQMCMultiWarp.h 2437 2007-12-07 14:22:22Z jnkim $ 
+ * $Id: RQMCMultiWarp.h 2437 2007-12-07 14:22:22Z jnkim $
  ***************************************************************************/

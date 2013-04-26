@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -30,12 +30,14 @@
 
 class BMakeFuncBase;
 
-struct AGPLambda {
+struct AGPLambda
+{
   int I;
   int J;
   double X;
-  AGPLambda(int i, int j, double x): I(i), J(j), X(x){}
-  AGPLambda(vector<string>& w) {
+  AGPLambda(int i, int j, double x): I(i), J(j), X(x) {}
+  AGPLambda(vector<string>& w)
+  {
     I=atoi(w[0].c_str());
     J=atoi(w[1].c_str());
     X=atof(w[2].c_str());
@@ -43,8 +45,9 @@ struct AGPLambda {
   xmlNodePtr createNode();
 };
 
-class BParser: public QMCGaussianParserBase, 
-                    public OhmmsAsciiParser {
+class BParser: public QMCGaussianParserBase,
+  public OhmmsAsciiParser
+{
 
 public:
 
@@ -97,9 +100,9 @@ public:
 
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createJ3();
-  xmlNodePtr createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset, 
-     vector<int>& basisPerAtom, vector<int>& occ,
-     bool jastrow);
+  xmlNodePtr createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset,
+                            vector<int>& basisPerAtom, vector<int>& occ,
+                            bool jastrow);
 };
 #endif
 /***************************************************************************

@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -12,7 +12,7 @@
 //
 // OOMPI Class library
 // Status class
-// 
+//
 
 
 #ifndef _OOMPI_STATUS_H_
@@ -33,8 +33,9 @@ class OOMPI_Status_array;
 //
 // OOMPI_Status
 //
-                                                                       
-class OOMPI_Status {
+
+class OOMPI_Status
+{
 public:
 
   //
@@ -47,7 +48,7 @@ public:
   OOMPI_Status &operator=(const OOMPI_Status &a);
   OOMPI_Status &operator=(const MPI_Status &a);
   ~OOMPI_Status(void);
-  
+
   //
   // Access functions
   //
@@ -57,14 +58,17 @@ public:
   int Get_tag(void);
   int Get_source(void);
   int Get_error(void);
-  bool Test_cancelled(void); 
+  bool Test_cancelled(void);
 
   //
   // Compatibility
   //
 
-  inline MPI_Status &Get_mpi(void) { return mpi_status; }
-  
+  inline MPI_Status &Get_mpi(void)
+  {
+    return mpi_status;
+  }
+
 protected:
   MPI_Status mpi_status;
 
@@ -78,7 +82,8 @@ private:
 //
 
 
-class OOMPI_Status_array {
+class OOMPI_Status_array
+{
 public:
 
   //
@@ -90,7 +95,7 @@ public:
   OOMPI_Status_array(const OOMPI_Status_array &a);
   OOMPI_Status_array& operator=(const OOMPI_Status_array &a);
   ~OOMPI_Status_array(void);
-  
+
   //
   // Operators
   //
@@ -103,7 +108,10 @@ public:
 
   MPI_Status *Get_mpi(void);
   void Set_mpi(MPI_Status a[], int num);
-  inline int Get_size(void) { return size; }; 
+  inline int Get_size(void)
+  {
+    return size;
+  };
   bool Set_size(int newsize);
 
 protected:

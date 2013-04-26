@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,71 +19,74 @@
  */
 #ifndef QMCPLUSPLUS_CLONEMANAGER_H
 #define QMCPLUSPLUS_CLONEMANAGER_H
-#include "QMCDrivers/QMCUpdateBase.h" 
+#include "QMCDrivers/QMCUpdateBase.h"
 // #include "QMCDrivers/EE/QMCRenyiUpdateBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class HamiltonianPool;
+class HamiltonianPool;
 //   class QMCRenyiUpdateBase;
 
-  /** Manager clones for threaded applications
-   *
-   * Clones for the ParticleSet, TrialWaveFunction and QMCHamiltonian
-   * are static to ensure only one set of clones persist during a run.
-   */
-  class CloneManager: public QMCTraits {
-  public:
-    /// Constructor.
-    CloneManager(HamiltonianPool& hpool);
-    ///virtual destructor
-    virtual ~CloneManager();
+/** Manager clones for threaded applications
+ *
+ * Clones for the ParticleSet, TrialWaveFunction and QMCHamiltonian
+ * are static to ensure only one set of clones persist during a run.
+ */
+class CloneManager: public QMCTraits
+{
+public:
+  /// Constructor.
+  CloneManager(HamiltonianPool& hpool);
+  ///virtual destructor
+  virtual ~CloneManager();
 
-    void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
-    void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
-    void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
-    void makeClones(TrialWaveFunction& guide);
-    
-    inline RealType acceptRatio() const 
+  void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+  void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+  void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
+  void makeClones(TrialWaveFunction& guide);
+
+  inline RealType acceptRatio() const
+  {
+    IndexType nAcceptTot=0;
+    IndexType nRejectTot=0;
+    for(int ip=0; ip<NumThreads; ip++)
     {
-      IndexType nAcceptTot=0;
-      IndexType nRejectTot=0;
-      for(int ip=0; ip<NumThreads; ip++) {
-        nAcceptTot+=Movers[ip]->nAccept;
-        nRejectTot+=Movers[ip]->nReject;
-      }
-      return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
+      nAcceptTot+=Movers[ip]->nAccept;
+      nRejectTot+=Movers[ip]->nReject;
     }
-    
-  protected:
-    ///reference to HamiltonianPool to clone everything
-    HamiltonianPool& cloneEngine;
-    ///number of threads
-    IndexType NumThreads;
-    ///walkers
-    static vector<MCWalkerConfiguration*> wClones;
-    static vector<MCWalkerConfiguration*> wgClones;
-    ///trial wavefunctions
-    static vector<TrialWaveFunction*> psiClones;
-    ///guide wavefunctions
-    static vector<TrialWaveFunction*> guideClones;
-    ///Hamiltonians
-    static vector<QMCHamiltonian*> hClones;
-    ///update engines
-    vector<QMCUpdateBase*> Movers;
+    return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
+  }
+
+protected:
+  ///reference to HamiltonianPool to clone everything
+  HamiltonianPool& cloneEngine;
+  ///number of threads
+  IndexType NumThreads;
+  ///walkers
+  static vector<MCWalkerConfiguration*> wClones;
+  static vector<MCWalkerConfiguration*> wgClones;
+  ///trial wavefunctions
+  static vector<TrialWaveFunction*> psiClones;
+  ///guide wavefunctions
+  static vector<TrialWaveFunction*> guideClones;
+  ///Hamiltonians
+  static vector<QMCHamiltonian*> hClones;
+  ///update engines
+  vector<QMCUpdateBase*> Movers;
 //     ///update engines
 //     vector<QMCRenyiUpdateBase*> RenyiMovers;
-    ///update engines
-    vector<EstimatorManager*> estimatorClones;;
-    ///Brnach engines
-    vector<SimpleFixedNodeBranch*> branchClones;
-    ///Walkers per node
-    vector<int> wPerNode;
-  };
+  ///update engines
+  vector<EstimatorManager*> estimatorClones;;
+  ///Brnach engines
+  vector<SimpleFixedNodeBranch*> branchClones;
+  ///Walkers per node
+  vector<int> wPerNode;
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile: CloneManager.h,v $   $Author: jnkim $
  * $Revision: 1.2 $   $Date: 2006/02/26 17:41:10 $
- * $Id: CloneManager.h,v 1.2 2006/02/26 17:41:10 jnkim Exp $ 
+ * $Id: CloneManager.h,v 1.2 2006/02/26 17:41:10 jnkim Exp $
  ***************************************************************************/

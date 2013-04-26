@@ -85,20 +85,21 @@ do {                                                                \
 
 /* Value only */
 inline void
-eval_UBspline_1d_s (UBspline_1d_s * restrict spline, 
-		    double x, float* restrict val)
+eval_UBspline_1d_s (UBspline_1d_s * restrict spline,
+                    double x, float* restrict val)
 {
   x -= spline->x_grid.start;
   float u = x*spline->x_grid.delta_inv;
   float ipart, t;
   t = modff (u, &ipart);
   int i = (int) ipart;
-  
   float tp[4];
-  tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
+  tp[0] = t*t*t;
+  tp[1] = t*t;
+  tp[2] = t;
+  tp[3] = 1.0;
   float* restrict coefs = spline->coefs;
-
-  *val = 
+  *val =
     (coefs[i+0]*(Af[ 0]*tp[0] + Af[ 1]*tp[1] + Af[ 2]*tp[2] + Af[ 3]*tp[3])+
      coefs[i+1]*(Af[ 4]*tp[0] + Af[ 5]*tp[1] + Af[ 6]*tp[2] + Af[ 7]*tp[3])+
      coefs[i+2]*(Af[ 8]*tp[0] + Af[ 9]*tp[1] + Af[10]*tp[2] + Af[11]*tp[3])+
@@ -107,46 +108,48 @@ eval_UBspline_1d_s (UBspline_1d_s * restrict spline,
 
 /* Value and first derivative */
 inline void
-eval_UBspline_1d_s_vg (UBspline_1d_s * restrict spline, double x, 
-		     float* restrict val, float* restrict grad)
+eval_UBspline_1d_s_vg (UBspline_1d_s * restrict spline, double x,
+                       float* restrict val, float* restrict grad)
 {
   x -= spline->x_grid.start;
   float u = x*spline->x_grid.delta_inv;
   float ipart, t;
   t = modff (u, &ipart);
   int i = (int) ipart;
-  
   float tp[4];
-  tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
+  tp[0] = t*t*t;
+  tp[1] = t*t;
+  tp[2] = t;
+  tp[3] = 1.0;
   float* restrict coefs = spline->coefs;
-
-  *val = 
+  *val =
     (coefs[i+0]*(Af[ 0]*tp[0] + Af[ 1]*tp[1] + Af[ 2]*tp[2] + Af[ 3]*tp[3])+
      coefs[i+1]*(Af[ 4]*tp[0] + Af[ 5]*tp[1] + Af[ 6]*tp[2] + Af[ 7]*tp[3])+
      coefs[i+2]*(Af[ 8]*tp[0] + Af[ 9]*tp[1] + Af[10]*tp[2] + Af[11]*tp[3])+
      coefs[i+3]*(Af[12]*tp[0] + Af[13]*tp[1] + Af[14]*tp[2] + Af[15]*tp[3]));
-  *grad = spline->x_grid.delta_inv * 
-    (coefs[i+0]*(dAf[ 1]*tp[1] + dAf[ 2]*tp[2] + dAf[ 3]*tp[3])+
-     coefs[i+1]*(dAf[ 5]*tp[1] + dAf[ 6]*tp[2] + dAf[ 7]*tp[3])+
-     coefs[i+2]*(dAf[ 9]*tp[1] + dAf[10]*tp[2] + dAf[11]*tp[3])+
-     coefs[i+3]*(dAf[13]*tp[1] + dAf[14]*tp[2] + dAf[15]*tp[3]));
+  *grad = spline->x_grid.delta_inv *
+          (coefs[i+0]*(dAf[ 1]*tp[1] + dAf[ 2]*tp[2] + dAf[ 3]*tp[3])+
+           coefs[i+1]*(dAf[ 5]*tp[1] + dAf[ 6]*tp[2] + dAf[ 7]*tp[3])+
+           coefs[i+2]*(dAf[ 9]*tp[1] + dAf[10]*tp[2] + dAf[11]*tp[3])+
+           coefs[i+3]*(dAf[13]*tp[1] + dAf[14]*tp[2] + dAf[15]*tp[3]));
 }
 /* Value, first derivative, and second derivative */
 inline void
-eval_UBspline_1d_s_vgl (UBspline_1d_s * restrict spline, double x, 
-			float* restrict val, float* restrict grad,
-			float* restrict lapl)
+eval_UBspline_1d_s_vgl (UBspline_1d_s * restrict spline, double x,
+                        float* restrict val, float* restrict grad,
+                        float* restrict lapl)
 {
   x -= spline->x_grid.start;
   float u = x*spline->x_grid.delta_inv;
   float ipart, t;
   t = modff (u, &ipart);
   int i = (int) ipart;
-
   float* restrict coefs = spline->coefs;
   float tp[4];
-  tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
-
+  tp[0] = t*t*t;
+  tp[1] = t*t;
+  tp[2] = t;
+  tp[3] = 1.0;
   // It turns out that std version is faster than SSE in 1D
 //   __m128 tp = _mm_set_ps (t*t*t, t*t, t, 1.0);
 //   __m128 a, da, d2a;
@@ -154,33 +157,30 @@ eval_UBspline_1d_s_vgl (UBspline_1d_s * restrict spline, double x,
 //   _MM_MATVEC4_PS ( A_s[4],  A_s[5],  A_s[6],  A_s[7], tp,  da);
 //   _MM_MATVEC4_PS (A_s[8], A_s[9], A_s[10], A_s[11], tp, d2a);
 //   __m128 cf  = _mm_loadu_ps (&(coefs[i]));
-
 //   _MM_DOT4_PS (  a, cf, *val);
 //   _MM_DOT4_PS ( da, cf, *grad);
 //   _MM_DOT4_PS (d2a, cf, *lapl);
-
-
-  *val = 
+  *val =
     (coefs[i+0]*(Af[ 0]*tp[0] + Af[ 1]*tp[1] + Af[ 2]*tp[2] + Af[ 3]*tp[3])+
      coefs[i+1]*(Af[ 4]*tp[0] + Af[ 5]*tp[1] + Af[ 6]*tp[2] + Af[ 7]*tp[3])+
      coefs[i+2]*(Af[ 8]*tp[0] + Af[ 9]*tp[1] + Af[10]*tp[2] + Af[11]*tp[3])+
      coefs[i+3]*(Af[12]*tp[0] + Af[13]*tp[1] + Af[14]*tp[2] + Af[15]*tp[3]));
-  *grad = spline->x_grid.delta_inv * 
-    (coefs[i+0]*(dAf[ 1]*tp[1] + dAf[ 2]*tp[2] + dAf[ 3]*tp[3])+
-     coefs[i+1]*(dAf[ 5]*tp[1] + dAf[ 6]*tp[2] + dAf[ 7]*tp[3])+
-     coefs[i+2]*(dAf[ 9]*tp[1] + dAf[10]*tp[2] + dAf[11]*tp[3])+
-     coefs[i+3]*(dAf[13]*tp[1] + dAf[14]*tp[2] + dAf[15]*tp[3]));
-  *lapl = spline->x_grid.delta_inv * spline->x_grid.delta_inv * 
-    (coefs[i+0]*(d2Af[ 2]*tp[2] + d2Af[ 3]*tp[3])+
-     coefs[i+1]*(d2Af[ 6]*tp[2] + d2Af[ 7]*tp[3])+
-     coefs[i+2]*(d2Af[10]*tp[2] + d2Af[11]*tp[3])+
-     coefs[i+3]*(d2Af[14]*tp[2] + d2Af[15]*tp[3]));
+  *grad = spline->x_grid.delta_inv *
+          (coefs[i+0]*(dAf[ 1]*tp[1] + dAf[ 2]*tp[2] + dAf[ 3]*tp[3])+
+           coefs[i+1]*(dAf[ 5]*tp[1] + dAf[ 6]*tp[2] + dAf[ 7]*tp[3])+
+           coefs[i+2]*(dAf[ 9]*tp[1] + dAf[10]*tp[2] + dAf[11]*tp[3])+
+           coefs[i+3]*(dAf[13]*tp[1] + dAf[14]*tp[2] + dAf[15]*tp[3]));
+  *lapl = spline->x_grid.delta_inv * spline->x_grid.delta_inv *
+          (coefs[i+0]*(d2Af[ 2]*tp[2] + d2Af[ 3]*tp[3])+
+           coefs[i+1]*(d2Af[ 6]*tp[2] + d2Af[ 7]*tp[3])+
+           coefs[i+2]*(d2Af[10]*tp[2] + d2Af[11]*tp[3])+
+           coefs[i+3]*(d2Af[14]*tp[2] + d2Af[15]*tp[3]));
 }
 
 inline void
-eval_UBspline_1d_s_vgh (UBspline_1d_s * restrict spline, double x, 
-			float* restrict val, float* restrict grad,
-			float* restrict hess)
+eval_UBspline_1d_s_vgh (UBspline_1d_s * restrict spline, double x,
+                        float* restrict val, float* restrict grad,
+                        float* restrict hess)
 {
   eval_UBspline_1d_s_vgl (spline, x, val, grad, hess);
 }
@@ -191,11 +191,13 @@ eval_UBspline_1d_s_vgh (UBspline_1d_s * restrict spline, double x,
 
 /* Value only */
 inline void
-eval_UBspline_2d_s (UBspline_2d_s * restrict spline, 
-		    double x, double y, float* restrict val)
+eval_UBspline_2d_s (UBspline_2d_s * restrict spline,
+                    double x, double y, float* restrict val)
 {
-  _mm_prefetch ((const char*)  &A_s[0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[3],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xy        = _mm_set_ps (x, y, 0.0, 0.0);
   __m128 x0y0      = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 0.0, 0.0);
@@ -211,7 +213,6 @@ eval_UBspline_2d_s (UBspline_2d_s * restrict spline,
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiy)[3];
   int iy = ((int *)&ixiy)[2];
-
   int xs = spline->x_stride;
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
@@ -223,7 +224,6 @@ eval_UBspline_2d_s (UBspline_2d_s * restrict spline,
   _mm_prefetch ((const char*)P(1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -238,7 +238,6 @@ eval_UBspline_2d_s (UBspline_2d_s * restrict spline,
   __m128 tpz    = txty;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
@@ -263,14 +262,18 @@ eval_UBspline_2d_s (UBspline_2d_s * restrict spline,
 
 /* Value and gradient */
 inline void
-eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline, 
-		       double x, double y, 
-		       float* restrict val, float* restrict grad)
+eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline,
+                       double x, double y,
+                       float* restrict val, float* restrict grad)
 {
-  _mm_prefetch ((const char*)  &A_s[0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[7],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[7],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xy        = _mm_set_ps (x, y, 0.0, 0.0);
   __m128 x0y0      = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 0.0, 0.0);
@@ -286,7 +289,6 @@ eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline,
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiy)[3];
   int iy = ((int *)&ixiy)[2];
-
   int xs = spline->x_stride;
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
@@ -298,7 +300,6 @@ eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline,
   _mm_prefetch ((const char*)P(1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -313,7 +314,6 @@ eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline,
   __m128 tpz    = txty;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
@@ -348,16 +348,22 @@ eval_UBspline_2d_s_vg (UBspline_2d_s * restrict spline,
 
 /* Value, gradient, and laplacian */
 inline void
-eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline, 
-			double x, double y, float* restrict val, 
-			float* restrict grad, float* restrict lapl)
+eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
+                        double x, double y, float* restrict val,
+                        float* restrict grad, float* restrict lapl)
 {
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xy        = _mm_set_ps (x, y, 0.0, 0.0);
   __m128 x0y0      = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 0.0, 0.0);
@@ -373,7 +379,6 @@ eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiy)[3];
   int iy = ((int *)&ixiy)[2];
-
   int xs = spline->x_stride;
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
@@ -385,7 +390,6 @@ eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
   _mm_prefetch ((const char*)P(1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -400,12 +404,11 @@ eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
   __m128 tpz    = txty;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
-  __m128 a, b, da, db, d2a, d2b, bP, dbP, d2bP, 
-    tmp0, tmp1, tmp2, tmp3;
+  __m128 a, b, da, db, d2a, d2b, bP, dbP, d2bP,
+         tmp0, tmp1, tmp2, tmp3;
   // x-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[ 2], A_s[ 3], tpx,   a);
   _MM_MATVEC4_PS (A_s[4], A_s[5], A_s[ 6], A_s[ 7], tpx,  da);
@@ -433,7 +436,6 @@ eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
   // Compute laplacian
   _MM_DOT4_PS (d2a, bP, sec_derivs[0]);
   _MM_DOT4_PS (a, d2bP, sec_derivs[1]);
-
   // Multiply gradients and hessians by appropriate grid inverses
   float dxInv = spline->x_grid.delta_inv;
   float dyInv = spline->y_grid.delta_inv;
@@ -448,16 +450,22 @@ eval_UBspline_2d_s_vgl (UBspline_2d_s * restrict spline,
 
 /* Value, gradient, and Hessian */
 inline void
-eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline, 
-			double x, double y, float* restrict val, 
-			float* restrict grad, float* restrict hess)
+eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
+                        double x, double y, float* restrict val,
+                        float* restrict grad, float* restrict hess)
 {
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xy        = _mm_set_ps (x, y, 0.0, 0.0);
   __m128 x0y0      = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 0.0, 0.0);
@@ -473,7 +481,6 @@ eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
   // xmm registers are stored to memory in reverse order
   int ix = ((int *)&ixiy)[3];
   int iy = ((int *)&ixiy)[2];
-
   int xs = spline->x_stride;
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
@@ -485,7 +492,6 @@ eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
   _mm_prefetch ((const char*)P(1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -500,14 +506,11 @@ eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
   __m128 tpz    = txty;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
-  __m128 a, b, da, db, d2a, d2b, bP, dbP, d2bP, 
-    tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-  
+  __m128 a, b, da, db, d2a, d2b, bP, dbP, d2bP,
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   // x-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[ 2], A_s[ 3], tpx,   a);
   _MM_MATVEC4_PS (A_s[4], A_s[5], A_s[ 6], A_s[ 7], tpx,  da);
@@ -535,7 +538,6 @@ eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
   _MM_DOT4_PS (d2a, bP, hess[0]);
   _MM_DOT4_PS (a, d2bP, hess[3]);
   _MM_DOT4_PS (da, dbP, hess[1]);
-
   // Multiply gradients and hessians by appropriate grid inverses
   float dxInv = spline->x_grid.delta_inv;
   float dyInv = spline->y_grid.delta_inv;
@@ -558,19 +560,20 @@ eval_UBspline_2d_s_vgh (UBspline_2d_s * restrict spline,
 
 /* Value only */
 inline void
-eval_UBspline_3d_s (UBspline_3d_s * restrict spline, 
-		    double x, double y, double z,
-		    float* restrict val)
+eval_UBspline_3d_s (UBspline_3d_s * restrict spline,
+                    double x, double y, double z,
+                    float* restrict val)
 {
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
-  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
-				 spline->z_grid.start, 0.0);
-  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv, 
-				 spline->z_grid.delta_inv, 0.0);
+  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start,
+                                 spline->z_grid.start, 0.0);
+  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv,
+                                 spline->z_grid.delta_inv, 0.0);
   xyz = _mm_sub_ps (xyz, x0y0z0);
   // ux = (x - x0)/delta_x and same for y and z
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
@@ -583,10 +586,8 @@ eval_UBspline_3d_s (UBspline_3d_s * restrict spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
-
   int xs = spline->x_stride;
   int ys = spline->y_stride;
-
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
   // at a time, so no k value is needed.
@@ -609,7 +610,6 @@ eval_UBspline_3d_s (UBspline_3d_s * restrict spline,
   _mm_prefetch ((const char*)P(3,1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -624,65 +624,70 @@ eval_UBspline_3d_s (UBspline_3d_s * restrict spline,
   __m128 tpz    = txtytz;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
   __m128 a, b, c, cP[4],bcP,
-    tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   // x-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[2], A_s[3], tpx,   a);
   // y-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[2], A_s[3], tpy,   b);
   // z-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[2], A_s[3], tpz,   c);
-
   // Compute cP, dcP, and d2cP products 1/4 at a time to maximize
   // register reuse and avoid rerereading from memory or cache.
   // 1st quarter
-  tmp0 = _mm_loadu_ps (P(0,0));  tmp1 = _mm_loadu_ps (P(0,1));
-  tmp2 = _mm_loadu_ps (P(0,2));  tmp3 = _mm_loadu_ps (P(0,3));
+  tmp0 = _mm_loadu_ps (P(0,0));
+  tmp1 = _mm_loadu_ps (P(0,1));
+  tmp2 = _mm_loadu_ps (P(0,2));
+  tmp3 = _mm_loadu_ps (P(0,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[0]);
   // 2nd quarter
-  tmp0 = _mm_loadu_ps (P(1,0));  tmp1 = _mm_loadu_ps (P(1,1));
-  tmp2 = _mm_loadu_ps (P(1,2));  tmp3 = _mm_loadu_ps (P(1,3));
+  tmp0 = _mm_loadu_ps (P(1,0));
+  tmp1 = _mm_loadu_ps (P(1,1));
+  tmp2 = _mm_loadu_ps (P(1,2));
+  tmp3 = _mm_loadu_ps (P(1,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[1]);
   // 3rd quarter
-  tmp0 = _mm_loadu_ps (P(2,0));  tmp1 = _mm_loadu_ps (P(2,1));
-  tmp2 = _mm_loadu_ps (P(2,2));  tmp3 = _mm_loadu_ps (P(2,3));
+  tmp0 = _mm_loadu_ps (P(2,0));
+  tmp1 = _mm_loadu_ps (P(2,1));
+  tmp2 = _mm_loadu_ps (P(2,2));
+  tmp3 = _mm_loadu_ps (P(2,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[2]);
   // 4th quarter
-  tmp0 = _mm_loadu_ps (P(3,0));  tmp1 = _mm_loadu_ps (P(3,1));
-  tmp2 = _mm_loadu_ps (P(3,2));  tmp3 = _mm_loadu_ps (P(3,3));
+  tmp0 = _mm_loadu_ps (P(3,0));
+  tmp1 = _mm_loadu_ps (P(3,1));
+  tmp2 = _mm_loadu_ps (P(3,2));
+  tmp3 = _mm_loadu_ps (P(3,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[3]);
-  
   // Now compute bcP, dbcP, bdcP, d2bcP, bd2cP, and dbdc products
   _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],   b,   bcP);
-
   // Compute value
   _MM_DOT4_PS (a, bcP, *val);
-
 #undef P
 }
 
 /* Value and gradient */
 inline void
-eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline, 
-			double x, double y, double z,
-			float* restrict val, float* restrict grad)
+eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
+                       double x, double y, double z,
+                       float* restrict val, float* restrict grad)
 {
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
-
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
-  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
-				 spline->z_grid.start, 0.0);
-  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv, 
-				 spline->z_grid.delta_inv, 0.0);
+  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start,
+                                 spline->z_grid.start, 0.0);
+  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv,
+                                 spline->z_grid.delta_inv, 0.0);
   xyz = _mm_sub_ps (xyz, x0y0z0);
   // ux = (x - x0)/delta_x and same for y and z
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
@@ -695,10 +700,8 @@ eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
-
   int xs = spline->x_stride;
   int ys = spline->y_stride;
-
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
   // at a time, so no k value is needed.
@@ -721,7 +724,6 @@ eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
   _mm_prefetch ((const char*)P(3,1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -736,15 +738,12 @@ eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
   __m128 tpz    = txtytz;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
   __m128 a, b, c, da, db, dc,
-    cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP,
-    tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-  
+         cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP,
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   // x-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[2], A_s[3], tpx,   a);
   _MM_MATVEC4_PS (A_s[4], A_s[5], A_s[6], A_s[7], tpx,  da);
@@ -754,42 +753,46 @@ eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
   // z-dependent vectors
   _MM_MATVEC4_PS (A_s[0], A_s[1], A_s[2], A_s[3], tpz,   c);
   _MM_MATVEC4_PS (A_s[4], A_s[5], A_s[6], A_s[7], tpz,  dc);
-
   // Compute cP, dcP, and d2cP products 1/4 at a time to maximize
   // register reuse and avoid rerereading from memory or cache.
   // 1st quarter
-  tmp0 = _mm_loadu_ps (P(0,0));  tmp1 = _mm_loadu_ps (P(0,1));
-  tmp2 = _mm_loadu_ps (P(0,2));  tmp3 = _mm_loadu_ps (P(0,3));
+  tmp0 = _mm_loadu_ps (P(0,0));
+  tmp1 = _mm_loadu_ps (P(0,1));
+  tmp2 = _mm_loadu_ps (P(0,2));
+  tmp3 = _mm_loadu_ps (P(0,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[0]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[0]);
   // 2nd quarter
-  tmp0 = _mm_loadu_ps (P(1,0));  tmp1 = _mm_loadu_ps (P(1,1));
-  tmp2 = _mm_loadu_ps (P(1,2));  tmp3 = _mm_loadu_ps (P(1,3));
+  tmp0 = _mm_loadu_ps (P(1,0));
+  tmp1 = _mm_loadu_ps (P(1,1));
+  tmp2 = _mm_loadu_ps (P(1,2));
+  tmp3 = _mm_loadu_ps (P(1,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[1]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[1]);
   // 3rd quarter
-  tmp0 = _mm_loadu_ps (P(2,0));  tmp1 = _mm_loadu_ps (P(2,1));
-  tmp2 = _mm_loadu_ps (P(2,2));  tmp3 = _mm_loadu_ps (P(2,3));
+  tmp0 = _mm_loadu_ps (P(2,0));
+  tmp1 = _mm_loadu_ps (P(2,1));
+  tmp2 = _mm_loadu_ps (P(2,2));
+  tmp3 = _mm_loadu_ps (P(2,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[2]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[2]);
   // 4th quarter
-  tmp0 = _mm_loadu_ps (P(3,0));  tmp1 = _mm_loadu_ps (P(3,1));
-  tmp2 = _mm_loadu_ps (P(3,2));  tmp3 = _mm_loadu_ps (P(3,3));
+  tmp0 = _mm_loadu_ps (P(3,0));
+  tmp1 = _mm_loadu_ps (P(3,1));
+  tmp2 = _mm_loadu_ps (P(3,2));
+  tmp3 = _mm_loadu_ps (P(3,3));
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[3]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[3]);
-  
   // Now compute bcP, dbcP, bdcP, d2bcP, bd2cP, and dbdc products
   _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],   b,   bcP);
   _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],  db,  dbcP);
   _MM_MATVEC4_PS ( dcP[0],  dcP[1],  dcP[2],  dcP[3],   b,  bdcP);
-
   // Compute value
   _MM_DOT4_PS (a, bcP, *val);
   // Compute gradient
   _MM_DOT4_PS (da, bcP, grad[0]);
   _MM_DOT4_PS (a, dbcP, grad[1]);
   _MM_DOT4_PS (a, bdcP, grad[2]);
-  
   // Multiply gradients and hessians by appropriate grid inverses
   float dxInv = spline->x_grid.delta_inv;
   float dyInv = spline->y_grid.delta_inv;
@@ -804,23 +807,28 @@ eval_UBspline_3d_s_vg (UBspline_3d_s * restrict spline,
 
 /* Value, gradient, and laplacian */
 inline void
-eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline, 
-			double x, double y, double z,
-			float* restrict val, float* restrict grad, float* restrict lapl)
+eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline,
+                        double x, double y, double z,
+                        float* restrict val, float* restrict grad, float* restrict lapl)
 {
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
-
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);
   /// SSE mesh point determination
   __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
-  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
-				 spline->z_grid.start, 0.0);
-  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv, 
-				 spline->z_grid.delta_inv, 0.0);
+  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start,
+                                 spline->z_grid.start, 0.0);
+  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv,
+                                 spline->z_grid.delta_inv, 0.0);
   xyz = _mm_sub_ps (xyz, x0y0z0);
   // ux = (x - x0)/delta_x and same for y and z
   __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
@@ -833,10 +841,8 @@ eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline,
   int ix = ((int *)&ixiyiz)[3];
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
-
   int xs = spline->x_stride;
   int ys = spline->y_stride;
-
   // This macro is used to give the pointer to coefficient data.
   // i and j should be in the range [0,3].  Coefficients are read four
   // at a time, so no k value is needed.
@@ -859,7 +865,6 @@ eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline,
   _mm_prefetch ((const char*)P(3,1), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,2), _MM_HINT_T0);
   _mm_prefetch ((const char*)P(3,3), _MM_HINT_T0);
-
   // Now compute the vectors:
   // tpx = [t_x^3 t_x^2 t_x 1]
   // tpy = [t_y^3 t_y^2 t_y 1]
@@ -874,15 +879,12 @@ eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline,
   __m128 tpz    = txtytz;
   __m128 zero   = one;
   _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
   // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
   // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
   __m128 a, b, c, da, db, dc, d2a, d2b, d2c,
-    cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP, d2bcP, dbdcP, bd2cP,
-    tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-  
+         cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP, d2bcP, dbdcP, bd2cP,
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   // x-dependent vectors
   _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpx,   a);
   _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpx,  da);
@@ -895,166 +897,6 @@ eval_UBspline_3d_s_vgl (UBspline_3d_s * restrict spline,
   _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpz,   c);
   _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpz,  dc);
   _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpz, d2c);
-
-  // Compute cP, dcP, and d2cP products 1/4 at a time to maximize
-  // register reuse and avoid rerereading from memory or cache.
-  // 1st quarter
-  tmp0 = _mm_loadu_ps (P(0,0));  tmp1 = _mm_loadu_ps (P(0,1));
-  tmp2 = _mm_loadu_ps (P(0,2));  tmp3 = _mm_loadu_ps (P(0,3));
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[0]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[0]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[0]);
-  // 2nd quarter
-  tmp0 = _mm_loadu_ps (P(1,0));  tmp1 = _mm_loadu_ps (P(1,1));
-  tmp2 = _mm_loadu_ps (P(1,2));  tmp3 = _mm_loadu_ps (P(1,3));
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[1]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[1]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[1]);
-  // 3rd quarter
-  tmp0 = _mm_loadu_ps (P(2,0));  tmp1 = _mm_loadu_ps (P(2,1));
-  tmp2 = _mm_loadu_ps (P(2,2));  tmp3 = _mm_loadu_ps (P(2,3));
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[2]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[2]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[2]);
-  // 4th quarter
-  tmp0 = _mm_loadu_ps (P(3,0));
-  tmp1 = _mm_loadu_ps (P(3,1));
-  tmp2 = _mm_loadu_ps (P(3,2));
-  tmp3 = _mm_loadu_ps (P(3,3));
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[3]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[3]);
-  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[3]);
-  
-  // Now compute bcP, dbcP, bdcP, d2bcP, bd2cP, and dbdc products
-  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],   b,   bcP);
-  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],  db,  dbcP);
-  _MM_MATVEC4_PS ( dcP[0],  dcP[1],  dcP[2],  dcP[3],   b,  bdcP);
-  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3], d2b, d2bcP);
-  _MM_MATVEC4_PS (d2cP[0], d2cP[1], d2cP[2], d2cP[3],   b, bd2cP);
-  _MM_MATVEC4_PS ( dcP[0],  dcP[1],  dcP[2],  dcP[3],  db, dbdcP);
-
-  // Compute value
-  _MM_DOT4_PS (a, bcP, *val);
-  // Compute gradient
-  _MM_DOT4_PS (da, bcP, grad[0]);
-  _MM_DOT4_PS (a, dbcP, grad[1]);
-  _MM_DOT4_PS (a, bdcP, grad[2]);
-  // Compute laplacian
-  float lx, ly, lz;
-  _MM_DOT4_PS (d2a, bcP, lx);
-  _MM_DOT4_PS (a, d2bcP, ly);
-  _MM_DOT4_PS (a, bd2cP, lz);
-  
-  // Multiply gradients and hessians by appropriate grid inverses
-  float dxInv = spline->x_grid.delta_inv;
-  float dyInv = spline->y_grid.delta_inv;
-  float dzInv = spline->z_grid.delta_inv;
-  grad[0] *= dxInv;
-  grad[1] *= dyInv;
-  grad[2] *= dzInv;
-  lx *= dxInv*dxInv;
-  ly *= dyInv*dyInv;
-  lz *= dzInv*dzInv;
-  *lapl = lx + ly + lz;	       
-#undef P
-}
-
-
-/* Value, gradient, and Hessian */
-inline void
-eval_UBspline_3d_s_vgh (UBspline_3d_s * restrict spline, 
-			double x, double y, double z,
-			float* restrict val, float* restrict grad, 
-			float* restrict hess)
-{
-  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
-  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);  
-  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);  
-
-  /// SSE mesh point determination
-  __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
-  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start, 
-				 spline->z_grid.start, 0.0);
-  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv, 
-				 spline->z_grid.delta_inv, 0.0);
-  xyz = _mm_sub_ps (xyz, x0y0z0);
-  // ux = (x - x0)/delta_x and same for y and z
-  __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
-  // intpart = trunc (ux, uy, uz)
-  __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
-  __m128i ixiyiz;
-  _mm_storeu_si128 (&ixiyiz, intpart);
-  // Store to memory for use in C expressions
-  // xmm registers are stored to memory in reverse order
-  int ix = ((int *)&ixiyiz)[3];
-  int iy = ((int *)&ixiyiz)[2];
-  int iz = ((int *)&ixiyiz)[1];
-
-  int xs = spline->x_stride;
-  int ys = spline->y_stride;
-
-  // This macro is used to give the pointer to coefficient data.
-  // i and j should be in the range [0,3].  Coefficients are read four
-  // at a time, so no k value is needed.
-#define P(i,j) (spline->coefs+(ix+(i))*xs+(iy+(j))*ys+(iz))
-  // Prefetch the data from main memory into cache so it's available
-  // when we need to use it.
-  _mm_prefetch ((const char*)P(0,0), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(0,1), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(0,2), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(0,3), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(1,0), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(1,1), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(1,2), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(1,3), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(2,0), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(2,1), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(2,2), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(2,3), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(3,0), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(3,1), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(3,2), _MM_HINT_T0);
-  _mm_prefetch ((const char*)P(3,3), _MM_HINT_T0);
-
-  // Now compute the vectors:
-  // tpx = [t_x^3 t_x^2 t_x 1]
-  // tpy = [t_y^3 t_y^2 t_y 1]
-  // tpz = [t_z^3 t_z^2 t_z 1]
-  __m128 ipart  = _mm_cvtepi32_ps (intpart);
-  __m128 txtytz = _mm_sub_ps (uxuyuz, ipart);
-  __m128 one    = _mm_set_ps (1.0, 1.0, 1.0, 1.0);
-  __m128 t2     = _mm_mul_ps (txtytz, txtytz);
-  __m128 t3     = _mm_mul_ps (t2, txtytz);
-  __m128 tpx    = t3;
-  __m128 tpy    = t2;
-  __m128 tpz    = txtytz;
-  __m128 zero   = one;
-  _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
-
-  // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
-  // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
-  // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
-  __m128 a, b, c, da, db, dc, d2a, d2b, d2c,
-    cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP, d2bcP, dbdcP, bd2cP,
-    tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-  
-  // x-dependent vectors
-  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpx,   a);
-  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpx,  da);
-  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpx, d2a);
-  // y-dependent vectors
-  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpy,   b);
-  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpy,  db);
-  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpy, d2b);
-  // z-dependent vectors
-  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpz,   c);
-  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpz,  dc);
-  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpz, d2c);
-
   // Compute cP, dcP, and d2cP products 1/4 at a time to maximize
   // register reuse and avoid rerereading from memory or cache.
   // 1st quarter
@@ -1089,7 +931,166 @@ eval_UBspline_3d_s_vgh (UBspline_3d_s * restrict spline,
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[3]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[3]);
   _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[3]);
-  
+  // Now compute bcP, dbcP, bdcP, d2bcP, bd2cP, and dbdc products
+  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],   b,   bcP);
+  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],  db,  dbcP);
+  _MM_MATVEC4_PS ( dcP[0],  dcP[1],  dcP[2],  dcP[3],   b,  bdcP);
+  _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3], d2b, d2bcP);
+  _MM_MATVEC4_PS (d2cP[0], d2cP[1], d2cP[2], d2cP[3],   b, bd2cP);
+  _MM_MATVEC4_PS ( dcP[0],  dcP[1],  dcP[2],  dcP[3],  db, dbdcP);
+  // Compute value
+  _MM_DOT4_PS (a, bcP, *val);
+  // Compute gradient
+  _MM_DOT4_PS (da, bcP, grad[0]);
+  _MM_DOT4_PS (a, dbcP, grad[1]);
+  _MM_DOT4_PS (a, bdcP, grad[2]);
+  // Compute laplacian
+  float lx, ly, lz;
+  _MM_DOT4_PS (d2a, bcP, lx);
+  _MM_DOT4_PS (a, d2bcP, ly);
+  _MM_DOT4_PS (a, bd2cP, lz);
+  // Multiply gradients and hessians by appropriate grid inverses
+  float dxInv = spline->x_grid.delta_inv;
+  float dyInv = spline->y_grid.delta_inv;
+  float dzInv = spline->z_grid.delta_inv;
+  grad[0] *= dxInv;
+  grad[1] *= dyInv;
+  grad[2] *= dzInv;
+  lx *= dxInv*dxInv;
+  ly *= dyInv*dyInv;
+  lz *= dzInv*dzInv;
+  *lapl = lx + ly + lz;
+#undef P
+}
+
+
+/* Value, gradient, and Hessian */
+inline void
+eval_UBspline_3d_s_vgh (UBspline_3d_s * restrict spline,
+                        double x, double y, double z,
+                        float* restrict val, float* restrict grad,
+                        float* restrict hess)
+{
+  _mm_prefetch ((const char*)  &A_s[ 0],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 1],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 2],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 3],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 4],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 5],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 6],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 7],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 8],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[ 9],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[10],_MM_HINT_T0);
+  _mm_prefetch ((const char*)  &A_s[11],_MM_HINT_T0);
+  /// SSE mesh point determination
+  __m128 xyz       = _mm_set_ps (x, y, z, 0.0);
+  __m128 x0y0z0    = _mm_set_ps (spline->x_grid.start,  spline->y_grid.start,
+                                 spline->z_grid.start, 0.0);
+  __m128 delta_inv = _mm_set_ps (spline->x_grid.delta_inv,spline->y_grid.delta_inv,
+                                 spline->z_grid.delta_inv, 0.0);
+  xyz = _mm_sub_ps (xyz, x0y0z0);
+  // ux = (x - x0)/delta_x and same for y and z
+  __m128 uxuyuz    = _mm_mul_ps (xyz, delta_inv);
+  // intpart = trunc (ux, uy, uz)
+  __m128i intpart  = _mm_cvttps_epi32(uxuyuz);
+  __m128i ixiyiz;
+  _mm_storeu_si128 (&ixiyiz, intpart);
+  // Store to memory for use in C expressions
+  // xmm registers are stored to memory in reverse order
+  int ix = ((int *)&ixiyiz)[3];
+  int iy = ((int *)&ixiyiz)[2];
+  int iz = ((int *)&ixiyiz)[1];
+  int xs = spline->x_stride;
+  int ys = spline->y_stride;
+  // This macro is used to give the pointer to coefficient data.
+  // i and j should be in the range [0,3].  Coefficients are read four
+  // at a time, so no k value is needed.
+#define P(i,j) (spline->coefs+(ix+(i))*xs+(iy+(j))*ys+(iz))
+  // Prefetch the data from main memory into cache so it's available
+  // when we need to use it.
+  _mm_prefetch ((const char*)P(0,0), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(0,1), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(0,2), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(0,3), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(1,0), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(1,1), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(1,2), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(1,3), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(2,0), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(2,1), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(2,2), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(2,3), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(3,0), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(3,1), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(3,2), _MM_HINT_T0);
+  _mm_prefetch ((const char*)P(3,3), _MM_HINT_T0);
+  // Now compute the vectors:
+  // tpx = [t_x^3 t_x^2 t_x 1]
+  // tpy = [t_y^3 t_y^2 t_y 1]
+  // tpz = [t_z^3 t_z^2 t_z 1]
+  __m128 ipart  = _mm_cvtepi32_ps (intpart);
+  __m128 txtytz = _mm_sub_ps (uxuyuz, ipart);
+  __m128 one    = _mm_set_ps (1.0, 1.0, 1.0, 1.0);
+  __m128 t2     = _mm_mul_ps (txtytz, txtytz);
+  __m128 t3     = _mm_mul_ps (t2, txtytz);
+  __m128 tpx    = t3;
+  __m128 tpy    = t2;
+  __m128 tpz    = txtytz;
+  __m128 zero   = one;
+  _MM_TRANSPOSE4_PS(zero, tpz, tpy, tpx);
+  // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
+  // da = dA * tpx,  db = dA * tpy,  dc = dA * tpz, etc.
+  // A is 4x4 matrix given by the rows A_s[0], A_s[1], A_s[ 2], A_s[ 3]
+  __m128 a, b, c, da, db, dc, d2a, d2b, d2c,
+         cP[4], dcP[4], d2cP[4], bcP, dbcP, bdcP, d2bcP, dbdcP, bd2cP,
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+  // x-dependent vectors
+  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpx,   a);
+  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpx,  da);
+  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpx, d2a);
+  // y-dependent vectors
+  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpy,   b);
+  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpy,  db);
+  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpy, d2b);
+  // z-dependent vectors
+  _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpz,   c);
+  _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpz,  dc);
+  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpz, d2c);
+  // Compute cP, dcP, and d2cP products 1/4 at a time to maximize
+  // register reuse and avoid rerereading from memory or cache.
+  // 1st quarter
+  tmp0 = _mm_loadu_ps (P(0,0));
+  tmp1 = _mm_loadu_ps (P(0,1));
+  tmp2 = _mm_loadu_ps (P(0,2));
+  tmp3 = _mm_loadu_ps (P(0,3));
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[0]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[0]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[0]);
+  // 2nd quarter
+  tmp0 = _mm_loadu_ps (P(1,0));
+  tmp1 = _mm_loadu_ps (P(1,1));
+  tmp2 = _mm_loadu_ps (P(1,2));
+  tmp3 = _mm_loadu_ps (P(1,3));
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[1]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[1]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[1]);
+  // 3rd quarter
+  tmp0 = _mm_loadu_ps (P(2,0));
+  tmp1 = _mm_loadu_ps (P(2,1));
+  tmp2 = _mm_loadu_ps (P(2,2));
+  tmp3 = _mm_loadu_ps (P(2,3));
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[2]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[2]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[2]);
+  // 4th quarter
+  tmp0 = _mm_loadu_ps (P(3,0));
+  tmp1 = _mm_loadu_ps (P(3,1));
+  tmp2 = _mm_loadu_ps (P(3,2));
+  tmp3 = _mm_loadu_ps (P(3,3));
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,   c,   cP[3]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3,  dc,  dcP[3]);
+  _MM_MATVEC4_PS (tmp0, tmp1, tmp2, tmp3, d2c, d2cP[3]);
   // Now compute bcP, dbcP, bdcP, d2bcP, bd2cP, and dbdc products
   _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],   b,   bcP);
   _MM_MATVEC4_PS (  cP[0],   cP[1],   cP[2],   cP[3],  db,  dbcP);
@@ -1110,7 +1111,6 @@ eval_UBspline_3d_s_vgh (UBspline_3d_s * restrict spline,
   _MM_DOT4_PS (da, dbcP, hess[1]);
   _MM_DOT4_PS (da, bdcP, hess[2]);
   _MM_DOT4_PS (a, dbdcP, hess[5]);
-
   // Multiply gradients and hessians by appropriate grid inverses
   float dxInv = spline->x_grid.delta_inv;
   float dyInv = spline->y_grid.delta_inv;
@@ -1128,10 +1128,7 @@ eval_UBspline_3d_s_vgh (UBspline_3d_s * restrict spline,
   hess[3] = hess[1];
   hess[6] = hess[2];
   hess[7] = hess[5];
-
 #undef P
-
-
 }
 
 #undef _MM_MATVEC4_PS

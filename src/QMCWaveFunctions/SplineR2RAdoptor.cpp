@@ -17,6 +17,6 @@
 #include <QMCWaveFunctions/SplineAdoptorReader.h>
 namespace qmcplusplus
 {
-  template class SplineR2RAdoptor<float,double,3>;
-  template class SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >;
+template class SplineR2RAdoptor<float,double,3>;
+template class SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >;
 }

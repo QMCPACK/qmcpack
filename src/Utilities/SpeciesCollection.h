@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -28,13 +28,14 @@ using namespace std;
 #endif
 
 /*! \class SpeciesCollection
- *  \brief Responsible for instatiating singleton SpeciesBase 
-(Singleton Pattern). For a simulation, only one set of species should exist. 
- *  
+ *  \brief Responsible for instatiating singleton SpeciesBase
+(Singleton Pattern). For a simulation, only one set of species should exist.
+ *
  *  Any object can request a pointer to the SpeciesBase by calling SpeciesCollection::getSpecies().
 */
 
-class SpeciesCollection{
+class SpeciesCollection
+{
 
 public:
 
@@ -43,15 +44,16 @@ public:
 
   static SpeciesBase* getSpecies();//!< Returns singleton SpeciesBase*
   static int addAttrib(const char* name);//!< Adds an attribute
-  static unsigned int addSpecies(const char* name) {    
+  static unsigned int addSpecies(const char* name)
+  {
     return mySpecies->getSpeciesID(name);
   }//!< Adds a species
 
   static void print(ostream& );
 
-protected:  
+protected:
 
-  SpeciesCollection(){}
+  SpeciesCollection() {}
   ~SpeciesCollection();
 
 private:
@@ -65,5 +67,5 @@ private:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

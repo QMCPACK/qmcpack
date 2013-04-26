@@ -24,37 +24,38 @@
 
 class Communicate;
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  struct ESHDFElectronsParser
-  {
+struct ESHDFElectronsParser
+{
 
-    ESHDFElectronsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
+  ESHDFElectronsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-    ParticleSet& ref_;
-    hid_t hfile_id;
-    Communicate* myComm;
-  };
+  ParticleSet& ref_;
+  hid_t hfile_id;
+  Communicate* myComm;
+};
 
-  struct ESHDFIonsParser
-  {
+struct ESHDFIonsParser
+{
 
-    ESHDFIonsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
+  ESHDFIonsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
 
-    bool put(xmlNodePtr cur);
-    void readESHDF();
-    //expand the ionic systems
-    void expand(Tensor<int,3>& tilematrix);
+  bool put(xmlNodePtr cur);
+  void readESHDF();
+  //expand the ionic systems
+  void expand(Tensor<int,3>& tilematrix);
 
-    ParticleSet& ref_;
-    hid_t hfile_id;
-    Communicate* myComm;
-    string atomic_number_tag;
-    string charge_tag;
-    string mass_tag;
-  };
+  ParticleSet& ref_;
+  hid_t hfile_id;
+  Communicate* myComm;
+  string atomic_number_tag;
+  string charge_tag;
+  string mass_tag;
+};
 
 }
 

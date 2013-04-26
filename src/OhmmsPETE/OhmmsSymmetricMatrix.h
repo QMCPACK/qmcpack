@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -27,8 +27,9 @@ using namespace std;
 
 template<class T, class C = vector<T> >
 
-class SymmetricMatrix {
-  public:
+class SymmetricMatrix
+{
+public:
 
   typedef T           Type_t;
   typedef C           Container_t;
@@ -36,83 +37,124 @@ class SymmetricMatrix {
   typedef typename Container_t::iterator iterator;
   typedef typename Container_t::const_iterator const_iterator;
 
-  SymmetricMatrix():D1(0),D2(0){ } // Default Constructor initializes to zero.
+  SymmetricMatrix():D1(0),D2(0) { } // Default Constructor initializes to zero.
 
-  SymmetricMatrix(unsigned n) { 
+  SymmetricMatrix(unsigned n)
+  {
     resize(n,n);
     //assign(*this, T());
   }
 
-  SymmetricMatrix(unsigned n, unsigned m) { 
+  SymmetricMatrix(unsigned n, unsigned m)
+  {
     resize(n,m);
     //assign(*this, T());
   }
 
-  // Copy Constructor 
-  SymmetricMatrix(const SymmetricMatrix<T,C> &rhs){
+  // Copy Constructor
+  SymmetricMatrix(const SymmetricMatrix<T,C> &rhs)
+  {
     resize(rhs.D1, rhs.D2);
     //assign(*this, rhs);
   }
 
-  // Destructor 
+  // Destructor
   ~SymmetricMatrix() { }
 
-  inline unsigned size() const { return X.size();}
-  inline unsigned size(int i) const { return (i == 0)? D1: D2;}
-  inline unsigned nrows() const { return D1;}
-  inline unsigned ncols() const { return D2;}
+  inline unsigned size() const
+  {
+    return X.size();
+  }
+  inline unsigned size(int i) const
+  {
+    return (i == 0)? D1: D2;
+  }
+  inline unsigned nrows() const
+  {
+    return D1;
+  }
+  inline unsigned ncols() const
+  {
+    return D2;
+  }
 
-  void clear() {std::fill(X.begin(), X.end(),T());}
+  void clear()
+  {
+    std::fill(X.begin(), X.end(),T());
+  }
 
-  inline const_iterator begin() const { return X.begin();}
-  inline iterator begin() { return X.begin();}
-  inline const_iterator end() const { return X.end();}
+  inline const_iterator begin() const
+  {
+    return X.begin();
+  }
+  inline iterator begin()
+  {
+    return X.begin();
+  }
+  inline const_iterator end() const
+  {
+    return X.end();
+  }
 
-  inline const T* data() const { return &(X[0]);}
-  inline T* data() { return &(X[0]);}
+  inline const T* data() const
+  {
+    return &(X[0]);
+  }
+  inline T* data()
+  {
+    return &(X[0]);
+  }
 
   void resize(unsigned n, unsigned m); // resize to n x m
 
   // Assignment Operators
-  This_t& operator=(const SymmetricMatrix<T,C> &rhs) {
+  This_t& operator=(const SymmetricMatrix<T,C> &rhs)
+  {
     X = rhs.X;
     //return assign(*this,rhs);
   }
 
-  const This_t &operator=(const SymmetricMatrix<T, C> &rhs) const {
+  const This_t &operator=(const SymmetricMatrix<T, C> &rhs) const
+  {
     X = rhs.X;
     return *this;
   }
 
   // Get and Set Operations for assignment operators
-  // returns a pointer of i-th row 
-  inline Type_t* operator[](unsigned int i) { 
+  // returns a pointer of i-th row
+  inline Type_t* operator[](unsigned int i)
+  {
     //return X.begin() + i*D2;
     return &(X[i*D2]);
   }
 
-  // returns a const pointer of i-th row 
-  inline const Type_t* operator[](unsigned int i) const { 
+  // returns a const pointer of i-th row
+  inline const Type_t* operator[](unsigned int i) const
+  {
     //return X.begin() + i*D2;
     return &(X[(2*D2-i-1)*i/2]);
   }
 
   // returns the i-th value to be assigned in D1*D2 vector
-  inline Type_t& operator()(unsigned int i) { 
+  inline Type_t& operator()(unsigned int i)
+  {
     return X[i];
   }
   // returns the i-th value in D1*D2 vector
-  inline Type_t operator()(unsigned int i) const { 
+  inline Type_t operator()(unsigned int i) const
+  {
     return X[i];
   }
 
   // returns val(i,j)
-  inline Type_t& operator()(unsigned int i, unsigned int j) { 
+  inline Type_t& operator()(unsigned int i, unsigned int j)
+  {
     return X[(2*D2-i-1)*i/2+j];
   }
 
   // returns val(i,j)
-  inline Type_t operator()( unsigned int i, unsigned int j) const { 
+  inline Type_t operator()( unsigned int i, unsigned int j) const
+  {
     return X[(2*D2-i-1)*i/2+j];
   }
 
@@ -123,8 +165,10 @@ protected:
 };
 
 template<class T, class C>
-void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m){
-  D1 = n; D2 = m;
+void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m)
+{
+  D1 = n;
+  D2 = m;
   X = C(D2*(D2+1)/2);
 }
 
@@ -151,17 +195,17 @@ void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m){
 //  public:
 
 //    SizeLeaf2(int s, int p) : size_m(s), size_n(p) { }
-//    SizeLeaf2(const SizeLeaf2 &model) 
+//    SizeLeaf2(const SizeLeaf2 &model)
 //    : size_m(model.size_m), size_n(model.size_n) { }
 
-//    bool operator()(int s, int p) const { 
-//      return ((size_m == s) && (size_n ==p)); 
+//    bool operator()(int s, int p) const {
+//      return ((size_m == s) && (size_n ==p));
 //    }
-  
+
 //  private:
-  
+
 //    int size_m, size_n;
-  
+
 //  };
 
 //  template<class T>
@@ -169,7 +213,7 @@ void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m){
 //  {
 //    typedef bool Type_t;
 //    inline static
-//    bool apply(const Scalar<T> &, const SizeLeaf2 &) 
+//    bool apply(const Scalar<T> &, const SizeLeaf2 &)
 //    {
 //      // Scalars always conform.
 //      return true;
@@ -181,7 +225,7 @@ void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m){
 //  {
 //    typedef bool Type_t;
 //    inline static
-//    bool apply(const SymmetricMatrix<T, C> &v, const SizeLeaf2 &s) 
+//    bool apply(const SymmetricMatrix<T, C> &v, const SizeLeaf2 &s)
 //    {
 //      return s(v.nrows(), v.ncols());
 //    }
@@ -222,27 +266,27 @@ void SymmetricMatrix<T,C>::resize(unsigned n, unsigned m){
 // LOOP is done by evaluate function
 ///////////////////////////////////////////////////////////////////////////////
 template<class T, class C, class Op, class RHS>
-inline void evaluate(SymmetricMatrix<T, C> &lhs, const Op &op, 
-const Expression<RHS> &rhs)
+inline void evaluate(SymmetricMatrix<T, C> &lhs, const Op &op,
+                     const Expression<RHS> &rhs)
 {
   if (forEach(rhs, SizeLeaf2(lhs.nrows(), lhs.ncols()), AndCombine()))
+  {
+    // We get here if the vectors on the RHS are the same size as those on
+    // the LHS.
+    int ii=0;
+    for(int i=0; i<lhs.nrows(); ++i)
     {
-      // We get here if the vectors on the RHS are the same size as those on
-      // the LHS.
-      int ii=0;
-      for(int i=0; i<lhs.nrows(); ++i) 
-	{ 
-        for (int j = 0; j < lhs.ncols(); ++j)
-	  {
-            op(lhs(ii++), forEach(rhs, EvalLeaf2(i,j), OpCombine()));
-	  }
-	}
+      for (int j = 0; j < lhs.ncols(); ++j)
+      {
+        op(lhs(ii++), forEach(rhs, EvalLeaf2(i,j), OpCombine()));
+      }
     }
+  }
   else
-    {
-      cerr << "Error: LHS and RHS don't conform." << endl;
-      exit(1);
-    }
+  {
+    cerr << "Error: LHS and RHS don't conform." << endl;
+    exit(1);
+  }
 }
 
 // I/O
@@ -250,9 +294,12 @@ template<class T, class C>
 ostream& operator<<(ostream& out, const SymmetricMatrix<T,C>& rhs)
 {
   int ii=0;
-  for(int i=0; i<rhs.nrows(); i++) {
-    for(int j=0; j<i; j++)            out << rhs(j,i) << " ";
-    for(int j=i; j<rhs.ncols(); j++)  out << rhs(i,j) << " ";
+  for(int i=0; i<rhs.nrows(); i++)
+  {
+    for(int j=0; j<i; j++)
+      out << rhs(j,i) << " ";
+    for(int j=i; j<rhs.ncols(); j++)
+      out << rhs(i,j) << " ";
     out << endl;
   }
   return out;
@@ -263,5 +310,5 @@ ostream& operator<<(ostream& out, const SymmetricMatrix<T,C>& rhs)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

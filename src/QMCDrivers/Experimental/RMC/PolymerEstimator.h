@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -22,60 +22,66 @@
 #include "QMCDrivers/PolymerChain.h"
 #include "OhmmsPETE/OhmmsVector.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class PolymerEstimator {
+class PolymerEstimator
+{
 
-    PolymerChain& Reptile;
-    int Middle;
-    int Counter;
+  PolymerChain& Reptile;
+  int Middle;
+  int Counter;
 
-    int ReptileLength;
-    int nPsi;
-    int EpotLength;
-    int EpotSize;
-    int ElocSize;
-    ofstream* fout;
-    ofstream* OutLocEn;
-    ofstream* OutPotEn;
+  int ReptileLength;
+  int nPsi;
+  int EpotLength;
+  int EpotSize;
+  int ElocSize;
+  ofstream* fout;
+  ofstream* OutLocEn;
+  ofstream* OutPotEn;
 
-    Vector<double> AvgLocalEnergy;
-    Vector<double> AvgPotentialEnergy;
-    Vector<double> TotalWeight;
+  Vector<double> AvgLocalEnergy;
+  Vector<double> AvgPotentialEnergy;
+  Vector<double> TotalWeight;
 
-    std::vector<double> PEavg;
-    std::vector<double> PE2;
+  std::vector<double> PEavg;
+  std::vector<double> PE2;
 
-  public:
-  
-    PolymerEstimator(PolymerChain& reptile, int npsi=1);
+public:
 
-    ~PolymerEstimator() {
-      clean();
-    }
+  PolymerEstimator(PolymerChain& reptile, int npsi=1);
 
-    void clean();
+  ~PolymerEstimator()
+  {
+    clean();
+  }
 
-    void resetReportSettings(const string& aname);
+  void clean();
 
-    inline void reset() { 
-      Counter = 0;
-      for(int i=0; i<PEavg.size(); i++) PEavg[i]=0.0;
-      for(int i=0; i<PE2.size(); i++) PE2[i]=0.0;
-      AvgLocalEnergy=0.0;
-      AvgPotentialEnergy=0.0;
-      TotalWeight=0.0;
-    }
+  void resetReportSettings(const string& aname);
 
-    void report(int iter);
+  inline void reset()
+  {
+    Counter = 0;
+    for(int i=0; i<PEavg.size(); i++)
+      PEavg[i]=0.0;
+    for(int i=0; i<PE2.size(); i++)
+      PE2[i]=0.0;
+    AvgLocalEnergy=0.0;
+    AvgPotentialEnergy=0.0;
+    TotalWeight=0.0;
+  }
 
-    void accumulate();
+  void report(int iter);
 
-  };
+  void accumulate();
+
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 759 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: PolymerEstimator.h 759 2005-10-31 16:10:28Z jnkim $ 
+ * $Id: PolymerEstimator.h 759 2005-10-31 16:10:28Z jnkim $
  ***************************************************************************/

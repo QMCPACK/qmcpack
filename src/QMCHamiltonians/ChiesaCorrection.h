@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,41 +19,45 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class ChiesaCorrection : public QMCHamiltonianBase {
-  private:
-    const TrialWaveFunction &psi_ref;
-    ParticleSet &ptcl_ref;
+class ChiesaCorrection : public QMCHamiltonianBase
+{
+private:
+  const TrialWaveFunction &psi_ref;
+  ParticleSet &ptcl_ref;
 
-  public:
-    ChiesaCorrection (ParticleSet& ptcl, const TrialWaveFunction &psi) :
-      psi_ref(psi), ptcl_ref(ptcl)
-    {
-    }
+public:
+  ChiesaCorrection (ParticleSet& ptcl, const TrialWaveFunction &psi) :
+    psi_ref(psi), ptcl_ref(ptcl)
+  {
+  }
 
-    void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P);
 
-    Return_t evaluate(ParticleSet& P);
-    
+  Return_t evaluate(ParticleSet& P);
+
 #ifdef QMC_CUDA
-    void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
 #endif
 
 
-     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
-      return evaluate(P);
-    }
+  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  {
+    return evaluate(P);
+  }
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-     bool get(std::ostream& os) const {
-      os << "Chiesa correction: " << ptcl_ref.getName();
-      return true;
-    }
+  bool get(std::ostream& os) const
+  {
+    os << "Chiesa correction: " << ptcl_ref.getName();
+    return true;
+  }
 
-    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-  };
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+};
 
 }
 

@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -26,33 +26,33 @@
  *
  * Using MO2Grid3D as the engine to transform MolecularOrbitals
  */
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
   OHMMS::Controller->initialize(argc,argv);
-
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
-
   qmcplusplus::MO2Grid3D qmc(argc,argv);
-
-  if(argc>1) {
-    if(qmc.parse(argv[1])) {
+  if(argc>1)
+  {
+    if(qmc.parse(argv[1]))
+    {
       qmc.execute();
       //qmc.saveXml();
     }
     //xmlFreeDoc(m_doc);
-  } else {
+  }
+  else
+  {
     ERRORMSG("No input file is given.")
     ERRORMSG("usage: mo2grid3d input-file")
   }
   LOGMSG("Bye")
-
   OHMMS::Controller->finalize();
   return 0;
 }
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 
 

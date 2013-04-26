@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -18,32 +18,34 @@
 #define QMCPLUSPLUS_ORIGINAL_JASTROW_AB_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  //forward declaration
-  class ParticleSet;
+//forward declaration
+class ParticleSet;
 
-  /** Generic two-body Jastrow builder
-   * 
-   * Replacement of JastrowBuilder::createTwoBodySpin and JastrowBuilder::createTwoBodyNoSpin
-   */
-  struct JABBuilder: public OrbitalBuilderBase {
+/** Generic two-body Jastrow builder
+ *
+ * Replacement of JastrowBuilder::createTwoBodySpin and JastrowBuilder::createTwoBodyNoSpin
+ */
+struct JABBuilder: public OrbitalBuilderBase
+{
 
-    JABBuilder(ParticleSet& p, TrialWaveFunction& psi,
-        PtclPoolType& psets):OrbitalBuilderBase(p,psi), ptclPool(psets) {}
+  JABBuilder(ParticleSet& p, TrialWaveFunction& psi,
+             PtclPoolType& psets):OrbitalBuilderBase(p,psi), ptclPool(psets) {}
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-    template<class FN> bool createJAB(xmlNodePtr cur, const string& jname);
+  template<class FN> bool createJAB(xmlNodePtr cur, const string& jname);
 
 
-    PtclPoolType& ptclPool;
-  };
+  PtclPoolType& ptclPool;
+};
 
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

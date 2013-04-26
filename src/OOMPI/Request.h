@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -26,13 +26,14 @@ class OOMPI_Request_array;
 #include "Message.h"
 
 
-class OOMPI_Request {
+class OOMPI_Request
+{
 public:
-  
+
   //
   // Constructor/Destructors
   //
-  
+
   OOMPI_Request(MPI_Request a = MPI_REQUEST_NULL);
   OOMPI_Request(const OOMPI_Request &a);
   OOMPI_Request &operator=(const OOMPI_Request &a);
@@ -42,7 +43,7 @@ public:
   //
   // Single Request functions
   //
-  
+
   OOMPI_Status Wait(void);
 
   OOMPI_Status Test(bool &flag);
@@ -55,13 +56,13 @@ public:
   bool Is_null(void);
   bool operator==(const OOMPI_Request &a);
   bool operator!=(const OOMPI_Request &a);
-  
+
   //
   // Compatibilty
   //
-    
+
   MPI_Request& Get_mpi(void);
-  
+
 protected:
   MPI_Request mpi_request;
 
@@ -69,9 +70,10 @@ private:
 };
 
 
-class OOMPI_Request_array {
+class OOMPI_Request_array
+{
 public:
-  
+
   //
   // Constructor/Destructors
   //
@@ -87,7 +89,7 @@ public:
   //
 
   OOMPI_Request& operator[](int i);
-  
+
   //
   // Multiple Request_array functions
   //
@@ -97,26 +99,26 @@ public:
 
   OOMPI_Status_array Waitall(void);
   void Waitall(OOMPI_Status_array &status);
-  
+
   OOMPI_Status_array Waitsome(int &outcount, int array_of_indices[]);
   int Waitsome(OOMPI_Status_array &status, int array_of_indices[]);
-  
+
   OOMPI_Status Testany(int &index, bool &flag);
   bool Testany(OOMPI_Status &status, int &index);
-  
+
   OOMPI_Status_array Testall(bool &flag);
   bool Testall(OOMPI_Status_array &status);
-  
+
   OOMPI_Status_array Testsome(int &outcount, int array_of_indices[]);
   int Testsome(OOMPI_Status_array &status, int array_of_indices[]);
-  
+
   void Startall(void);
 
   void Freeall(void);
-  
+
   bool operator==(const OOMPI_Request_array &a);
   bool operator!=(const OOMPI_Request_array &a);
-  
+
   //
   // Compatibility
   //

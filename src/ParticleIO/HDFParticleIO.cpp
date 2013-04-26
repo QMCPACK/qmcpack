@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -31,124 +31,137 @@ using namespace std;
 
 #if defined(HAVE_LIBHDF5)
 #include "ParticleIO/HDFParticleAttrib.h"
-namespace qmcplusplus {
-bool HDFParticleParser::put(const char* fname) {
-
+namespace qmcplusplus
+{
+bool HDFParticleParser::put(const char* fname)
+{
   xmlDocPtr doc;
   xmlNsPtr ns;
   xmlNodePtr cur;
-    
   // build an XML tree from a the file;
   doc = xmlParseFile(fname);
-  if (doc == NULL) {
+  if (doc == NULL)
+  {
     ERRORMSG(fname << " does not exist")
-      return false;
+    return false;
   }
-
   ///using XPath instead of recursive search
   xmlXPathContextPtr context;
   xmlXPathObjectPtr result;
   context = xmlXPathNewContext(doc);
   result = xmlXPathEvalExpression((const xmlChar*)"//particleset",context);
-
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
+  {
     cur = result->nodesetval->nodeTab[0];
     put(cur);
   }
-
   xmlXPathFreeObject(result);
   return true;
-
 }
 
-bool 
-HDFParticleParser::put(xmlNodePtr cur) {
-
+bool
+HDFParticleParser::put(xmlNodePtr cur)
+{
   typedef Particle_t::ParticleIndex_t ParticleIndex_t;
   typedef Particle_t::ParticleScalar_t ParticleScalar_t;
   typedef Particle_t::ParticlePos_t ParticlePos_t;
-
   string hfile;
-  if(xmlHasProp(cur, (const xmlChar *) "href")) {
+  if(xmlHasProp(cur, (const xmlChar *) "href"))
+  {
     hfile = (const char*)(xmlGetProp(cur, (const xmlChar *) "href"));
   }
-  if(xmlHasProp(cur, (const xmlChar *) "src")) {
+  if(xmlHasProp(cur, (const xmlChar *) "src"))
+  {
     hfile = (const char*)(xmlGetProp(cur, (const xmlChar *) "src"));
   }
-
   hid_t dataset, dataspace, ret;
   hid_t hdfFile = H5Fopen(hfile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-      
   int natom = 0;
   dataset = H5Dopen(hdfFile, "atnum");
   ret = H5Dread(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &natom);
   H5Dclose(dataset);
   ref_.create(natom);
-
   cur = cur->xmlChildrenNode;
-  while(cur!=NULL) {
+  while(cur!=NULL)
+  {
     string cname((const char*)(cur->name));
     /**@warning transition from UnitCell -> unitcell */
-    if (cname == "UnitCell" || cname == "unitcell") {
+    if (cname == "UnitCell" || cname == "unitcell")
+    {
       LatticeParser lat(ref_.Lattice);
       lat.put(cur);
-    } else if (cname == "attrib"){
-      string oname(null_tag), otype(null_tag);
-      int utype = 0;
-      ///process attributes: type or format
-      xmlAttrPtr att = cur->properties;
-      while(att != NULL) {
-	string aname((const char*)(att->name));
-	if(aname == "name") {
-	  oname = (const char*)(att->children->content);
-	} else if(aname == datatype_tag) {
-	  otype = (const char*)(att->children->content);
-	} else if(aname == condition_tag) {
-	  utype = atoi( (const char*)(att->children->content));
-
-	}
-	att = att->next;
-      }
-
-      if(oname == null_tag || otype == null_tag) break;
-
-      if(otype == scalartype_tag) { 
-	ParticleScalar_t& stmp = *(ref_.getScalarAttrib(oname.c_str()));
-	stmp.setUnit(utype);
-	HDFAttribIO<ParticleScalar_t> hdf_s(stmp);
-	hdf_s.read(hdfFile,oname.c_str());
-      } else if(otype == postype_tag) {
-	ParticlePos_t& ptmp = *(ref_.getVectorAttrib(oname.c_str()));
-	ptmp.setUnit(utype);
-	HDFAttribIO<ParticlePos_t> hdf_p(ptmp);
-	hdf_p.read(hdfFile,oname.c_str());
-      } else if(otype == indextype_tag) { 
-	ParticleIndex_t& itmp = *(ref_.getIndexAttrib(oname.c_str()));
-	itmp.setUnit(utype);
-	HDFAttribIO<ParticleIndex_t> hdf_i(itmp);
-	hdf_i.read(hdfFile,oname.c_str());
-      }
     }
+    else
+      if (cname == "attrib")
+      {
+        string oname(null_tag), otype(null_tag);
+        int utype = 0;
+        ///process attributes: type or format
+        xmlAttrPtr att = cur->properties;
+        while(att != NULL)
+        {
+          string aname((const char*)(att->name));
+          if(aname == "name")
+          {
+            oname = (const char*)(att->children->content);
+          }
+          else
+            if(aname == datatype_tag)
+            {
+              otype = (const char*)(att->children->content);
+            }
+            else
+              if(aname == condition_tag)
+              {
+                utype = atoi( (const char*)(att->children->content));
+              }
+          att = att->next;
+        }
+        if(oname == null_tag || otype == null_tag)
+          break;
+        if(otype == scalartype_tag)
+        {
+          ParticleScalar_t& stmp = *(ref_.getScalarAttrib(oname.c_str()));
+          stmp.setUnit(utype);
+          HDFAttribIO<ParticleScalar_t> hdf_s(stmp);
+          hdf_s.read(hdfFile,oname.c_str());
+        }
+        else
+          if(otype == postype_tag)
+          {
+            ParticlePos_t& ptmp = *(ref_.getVectorAttrib(oname.c_str()));
+            ptmp.setUnit(utype);
+            HDFAttribIO<ParticlePos_t> hdf_p(ptmp);
+            hdf_p.read(hdfFile,oname.c_str());
+          }
+          else
+            if(otype == indextype_tag)
+            {
+              ParticleIndex_t& itmp = *(ref_.getIndexAttrib(oname.c_str()));
+              itmp.setUnit(utype);
+              HDFAttribIO<ParticleIndex_t> hdf_i(itmp);
+              hdf_i.read(hdfFile,oname.c_str());
+            }
+      }
     cur = cur->next;
   }
-
   H5Fclose(hdfFile);
-  
   ref_.update(-1);
-
   return true;
 }
 
-HDFSaveParticle::~HDFSaveParticle() { 
+HDFSaveParticle::~HDFSaveParticle()
+{
 }
 
-void HDFSaveParticle::reset(const char* fileroot, bool append){
+void HDFSaveParticle::reset(const char* fileroot, bool append)
+{
   FileRoot = fileroot;
 }
 
 
-void HDFSaveParticle::report(int iter) {
-
+void HDFSaveParticle::report(int iter)
+{
 //  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
 //  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
 //  typedef Particle_t::ParticlePos_t ParticlePos_t;
@@ -179,15 +192,15 @@ void HDFSaveParticle::report(int iter) {
 //  ftbmd.close();
 //
 //  // creat HDF file handler
-//  hid_t hdfFile = 
+//  hid_t hdfFile =
 //    H5Fcreate(hfile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 //
 //  hsize_t dim = 1;
 //  int natom = ref_.getLocalNum();
 //  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-//  hid_t dataset =  
+//  hid_t dataset =
 //  H5Dcreate(hdfFile, "atnum", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-//  hid_t ret = 
+//  hid_t ret =
 //      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&natom);
 //  H5Dclose(dataset);
 //  H5Sclose(dataspace);
@@ -215,26 +228,33 @@ void HDFSaveParticle::report(int iter) {
 //  H5Fclose(hdfFile);
 }
 
-bool HDFSaveParticle::put(xmlNodePtr cur) {
+bool HDFSaveParticle::put(xmlNodePtr cur)
+{
   return true;
 }
 }
 #else
-bool HDFParticleParser::put(const char* fname) {
-	return false;
+bool HDFParticleParser::put(const char* fname)
+{
+  return false;
 }
-bool 
-HDFParticleParser::put(xmlNodePtr cur) {
-	return false;
+bool
+HDFParticleParser::put(xmlNodePtr cur)
+{
+  return false;
 }
 
-HDFSaveParticle::~HDFSaveParticle() { 
+HDFSaveParticle::~HDFSaveParticle()
+{
 }
-void HDFSaveParticle::reset(const char* fileroot, bool append){
+void HDFSaveParticle::reset(const char* fileroot, bool append)
+{
 }
-void HDFSaveParticle::report(int iter) {
+void HDFSaveParticle::report(int iter)
+{
 }
-bool HDFSaveParticle::put(xmlNodePtr cur) {
+bool HDFSaveParticle::put(xmlNodePtr cur)
+{
   return true;
 }
 }
@@ -243,5 +263,5 @@ bool HDFSaveParticle::put(xmlNodePtr cur) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

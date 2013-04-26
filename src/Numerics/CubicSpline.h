@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@
 
 //template<class T>
 template<class T, unsigned GRIDTYPE, unsigned BC>
-struct CubicSpline 
+struct CubicSpline
 {
   typedef CubicSplineGrid<T,GRIDTYPE,BC> GridType;
   typedef CubicSplineEngine<T,GRIDTYPE,BC> SplineEngineType;
@@ -46,7 +46,7 @@ struct CubicSpline
   inline CubicSpline():ConstValue(0.0) { }
 
   void Init(point_type start, point_type end, const container_type& datain,  bool closed,
-      value_type yp1, value_type ypn)
+            value_type yp1, value_type ypn)
   {
     myEngine.setGrid(&myGrid);
     int n=datain.size();
@@ -56,7 +56,6 @@ struct CubicSpline
     P=datain;
     auxP.resize(datain.size(),0.0);
     myEngine.spline(yp1,ypn,P,auxP);
-
   }
 
   void Init(point_type start, point_type end, const container_type& datain,  bool closed)
@@ -78,15 +77,16 @@ struct CubicSpline
     int i0=myEngine.getLowerGridBound(x);
     if(i0>EndIndex)
     {
-      dy=0.0; d2y=0.0;
+      dy=0.0;
+      d2y=0.0;
       return ConstValue;
     }
-    else 
+    else
     {
       return myEngine.interpolate(P[i0],P[i0+1],auxP[i0],auxP[i0+1],dy,d2y);
     }
   }
-  
+
 };
 #endif
 /***************************************************************************

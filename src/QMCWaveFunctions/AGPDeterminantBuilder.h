@@ -18,41 +18,42 @@
  *@brief declaration of a builder class for AGPDeterminant
  */
 #ifndef QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
-#define QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H 
+#define QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class AGPDeterminant;
+class AGPDeterminant;
 
-  /**@ingroup WFSBuilder
-   * @brief An abstract class for wave function builders
-   */
-  class AGPDeterminantBuilder: public OrbitalBuilderBase  
-  {
-    
-  public:
+/**@ingroup WFSBuilder
+ * @brief An abstract class for wave function builders
+ */
+class AGPDeterminantBuilder: public OrbitalBuilderBase
+{
 
-    AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset);
+public:
 
-    /// process a xml node at cur
-    bool put(xmlNodePtr cur);
+  AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset);
 
-  protected:
+  /// process a xml node at cur
+  bool put(xmlNodePtr cur);
 
-    ///reference to a PtclPoolType
-    PtclPoolType& ptclPool;
-    ///basiset Factory
-    BasisSetFactory* myBasisSetFactory;
-    ///AGPDeterminant
-    AGPDeterminant* agpDet;
-    string funcOpt;
-    string transformOpt;
+protected:
 
-    template <typename BasisBuilderT> 
-    bool createAGP(BasisBuilderT* abuilder, xmlNodePtr cur);
-    
-  };
+  ///reference to a PtclPoolType
+  PtclPoolType& ptclPool;
+  ///basiset Factory
+  BasisSetFactory* myBasisSetFactory;
+  ///AGPDeterminant
+  AGPDeterminant* agpDet;
+  string funcOpt;
+  string transformOpt;
+
+  template <typename BasisBuilderT>
+  bool createAGP(BasisBuilderT* abuilder, xmlNodePtr cur);
+
+};
 }
 #endif
 /***************************************************************************

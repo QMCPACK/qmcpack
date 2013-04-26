@@ -8,8 +8,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class GamesXmlParser: public QMCGaussianParserBase, 
-                    public OhmmsAsciiParser {
+class GamesXmlParser: public QMCGaussianParserBase,
+  public OhmmsAsciiParser
+{
 
 
   void getGeometry(vector<xmlNodePtr>&);

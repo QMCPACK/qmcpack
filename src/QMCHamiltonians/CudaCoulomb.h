@@ -23,106 +23,106 @@ CoulombAA_Sum(float *R[], int N, float sum[], int numWalkers);
 
 void
 CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex, int texNum,
-		 float lattice[], float latticeInv[], float sum[],
-		 int numWalkers);
+                 float lattice[], float latticeInv[], float sum[],
+                 int numWalkers);
 
 void
 CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
-	      float sum[], int numWalkers);
+              float sum[], int numWalkers);
 
 void
 CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
-	      double sum[], int numWalkers);
+              double sum[], int numWalkers);
 
 void
 CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,
-		 float rMax, int Ntex, int textureNum, 
-		 float lattice[], float latticeInv[], 
-		 float sum[], int numWalkers);
+                 float rMax, int Ntex, int textureNum,
+                 float lattice[], float latticeInv[],
+                 float sum[], int numWalkers);
 
 void
-eval_rhok_cuda(float *R[], int numr, float kpoints[], 
-	       int numk, float* rhok[], int numWalkers);
+eval_rhok_cuda(float *R[], int numr, float kpoints[],
+               int numk, float* rhok[], int numWalkers);
 
 void
 eval_vk_sum_cuda (float *rhok[], float vk[], int numk, float sum[],
-		  int numWalkers);
+                  int numWalkers);
 
 void
-eval_rhok_cuda(float *R[], int first, int last, float kpoints[], 
-	       int numk, float* rhok[], int numWalkers);
+eval_rhok_cuda(float *R[], int first, int last, float kpoints[],
+               int numk, float* rhok[], int numWalkers);
 
 void
-eval_vk_sum_cuda (float *rhok1[], float *rhok2[], 
-		  float vk[], int numk, float sum[],
-		  int numWalkers);
+eval_vk_sum_cuda (float *rhok1[], float *rhok2[],
+                  float vk[], int numk, float sum[],
+                  int numWalkers);
 
 // In this case, the rhok2 is the same for all walkers
 void
-eval_vk_sum_cuda (float *rhok1[], float rhok2[], 
-		  float vk[], int numk, float sum[],
-		  int numWalkers);
+eval_vk_sum_cuda (float *rhok1[], float rhok2[],
+                  float vk[], int numk, float sum[],
+                  int numWalkers);
 
 
 
 // Double-precision
 void
 CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex, int texNum,
-		 double lattice[], double latticeInv[], double sum[],
-		 int numWalkers);
+                 double lattice[], double latticeInv[], double sum[],
+                 int numWalkers);
 
 void
 CoulombAB_SR_Sum(double *R[], int Nelec, double I[], int Ifirst, int Ilast,
-		 double rMax, int Ntex, int textureNum, 
-		 double lattice[], double latticeInv[], 
-		 double sum[], int numWalkers);
+                 double rMax, int Ntex, int textureNum,
+                 double lattice[], double latticeInv[],
+                 double sum[], int numWalkers);
 
 void
-eval_rhok_cuda(double *R[], int numr, double kpoints[], 
-	       int numk, double* rhok[], int numWalkers);
+eval_rhok_cuda(double *R[], int numr, double kpoints[],
+               int numk, double* rhok[], int numWalkers);
 
 void
 eval_vk_sum_cuda (double *rhok[], double vk[], int numk, double sum[],
-		  int numWalkers);
+                  int numWalkers);
 
 void
-eval_rhok_cuda(double *R[], int first, int last, double kpoints[], 
-	       int numk, double* rhok[], int numWalkers);
+eval_rhok_cuda(double *R[], int first, int last, double kpoints[],
+               int numk, double* rhok[], int numWalkers);
 
 void
-eval_vk_sum_cuda (double *rhok1[], double *rhok2[], 
-		  double vk[], int numk, double sum[],
-		  int numWalkers);
+eval_vk_sum_cuda (double *rhok1[], double *rhok2[],
+                  double vk[], int numk, double sum[],
+                  int numWalkers);
 
 // In this case, the rhok2 is the same for all walkers
 void
-eval_vk_sum_cuda (double *rhok1[], double rhok2[], 
-		  double vk[], int numk, double sum[],
-		  int numWalkers);
+eval_vk_sum_cuda (double *rhok1[], double rhok2[],
+                  double vk[], int numk, double sum[],
+                  int numWalkers);
 
 
 
 void
-MPC_SR_Sum(float *R[], int N, float lattice[], float latticeInv[], 
-	   float sum[], int numWalkers);
+MPC_SR_Sum(float *R[], int N, float lattice[], float latticeInv[],
+           float sum[], int numWalkers);
 void
-MPC_SR_Sum(double *R[], int N, double lattice[], double latticeInv[], 
-	   double sum[], int numWalkers);
+MPC_SR_Sum(double *R[], int N, double lattice[], double latticeInv[],
+           double sum[], int numWalkers);
 void
-MPC_LR_Sum(float *R[], int N, UBspline_3d_s_cuda *spline, 
-	   float latticeInv[], float sum[], int numWalkers);
+MPC_LR_Sum(float *R[], int N, UBspline_3d_s_cuda *spline,
+           float latticeInv[], float sum[], int numWalkers);
 void
 MPC_LR_Sum(double *R[], int N, UBspline_3d_d_cuda *spline,
-	   double latticeInv[], double sum[], int numWalkers);
+           double latticeInv[], double sum[], int numWalkers);
 void init_Acuda();
 
 
 void
 local_ecp_sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
-	      float rMax, int Ntex, int textureNum, 
-	      float sum[], int numWalkers);
+              float rMax, int Ntex, int textureNum,
+              float sum[], int numWalkers);
 void
 local_ecp_sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
-	      double rMax, int Ntex, int textureNum, 
-	      double sum[], int numWalkers);
+              double rMax, int Ntex, int textureNum,
+              double sum[], int numWalkers);
 #endif

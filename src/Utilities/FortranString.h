@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -30,26 +30,35 @@ using std::string;
  *\brief A wrapper class to pass a string to fortran codes
  */
 template<int N>
-struct FortranString {
+struct FortranString
+{
 
   char m_data[N];
 
-  FortranString() { 
-    for(int i=0; i<N; i++) m_data[i] = ' ';
+  FortranString()
+  {
+    for(int i=0; i<N; i++)
+      m_data[i] = ' ';
   }
 
-  FortranString(const char* c) { 
-    for(int i=0; i<N; i++) m_data[i] = ' ';
+  FortranString(const char* c)
+  {
+    for(int i=0; i<N; i++)
+      m_data[i] = ' ';
     set(c);
   }
 
 
-  void set(const char* c) {    
+  void set(const char* c)
+  {
     sprintf(m_data,"%s",c);
   }
 
   //!< returns the pointer of the first element (same interface as std::string::c_str())
-  const char* c_str() const { return  m_data;}
+  const char* c_str() const
+  {
+    return  m_data;
+  }
 
 };
 
@@ -59,49 +68,64 @@ struct FortranString {
  * Simply remove "\n" so that fortran character manipulations work
  */
 template<int N>
-struct FortranStringArray {
+struct FortranStringArray
+{
 
   vector<char> m_data;
 
-  FortranStringArray(){}
+  FortranStringArray() {}
 
-  explicit FortranStringArray(int num) {
+  explicit FortranStringArray(int num)
+  {
     resize(num);
   }
 
   ~FortranStringArray() { }
 
-  int size() const { return m_data.size()/N;}
+  int size() const
+  {
+    return m_data.size()/N;
+  }
 
-  void resize(int num) {
+  void resize(int num)
+  {
     m_data.resize(num*N,' ');
   }
 
-  void set(const vector<string>& a) { 
+  void set(const vector<string>& a)
+  {
     resize(a.size());
-    for(int i=0; i<a.size(); ++i) {
+    for(int i=0; i<a.size(); ++i)
+    {
       it ii=i*N;
-      for(int j=0; j<a[i].size(); j++) m_data[ii] = a[i][j];
-    } 
+      for(int j=0; j<a[i].size(); j++)
+        m_data[ii] = a[i][j];
+    }
   }
 
-  void add(const string& c) {
+  void add(const string& c)
+  {
     int num=m_data.size();
     m_data.insert(m_data.end(), N, ' ');
-    for(int j=0; j<c.size(); j++,num++) m_data[num] = c[j];
+    for(int j=0; j<c.size(); j++,num++)
+      m_data[num] = c[j];
   }
 
-  void add(const char* c) {
+  void add(const char* c)
+  {
     string ctmp(c);
-    add(ctmp); 
+    add(ctmp);
   }
 
-  const char* c_str() const { return  &(m_data[0]);}
+  const char* c_str() const
+  {
+    return  &(m_data[0]);
+  }
 
 };
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

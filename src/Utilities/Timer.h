@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,15 +22,23 @@
 
 #include <Utilities/Clock.h>
 
-namespace qmcplusplus  {
-  struct Timer
+namespace qmcplusplus
+{
+struct Timer
+{
+  double start_time;
+  inline Timer()
   {
-    double start_time;
-    inline Timer() { start_time=cpu_clock();}
-    inline void restart() {start_time=cpu_clock();}
-    inline double elapsed() const {
-      return cpu_clock()-start_time;
-    }
-  };
+    start_time=cpu_clock();
+  }
+  inline void restart()
+  {
+    start_time=cpu_clock();
+  }
+  inline double elapsed() const
+  {
+    return cpu_clock()-start_time;
+  }
+};
 }
 #endif

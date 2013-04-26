@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -23,31 +23,36 @@
 
 class Communicate;
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class HDFWalkerInputManager {
+class HDFWalkerInputManager
+{
 
-    MCWalkerConfiguration& targetW;
-    Communicate* myComm;
-    std::string CurrentFileRoot;
+  MCWalkerConfiguration& targetW;
+  Communicate* myComm;
+  std::string CurrentFileRoot;
 
-    public:
+public:
 
-      HDFWalkerInputManager(MCWalkerConfiguration& w, Communicate* c);
-      ~HDFWalkerInputManager();
-      bool put(xmlNodePtr cur);
-      //bool put(std::vector<xmlNodePtr>& mset, int pid);
-      //bool put(std::vector<xmlNodePtr>& mset, Communicate* comm);
-      std::string getFileRoot() { return CurrentFileRoot;}
+  HDFWalkerInputManager(MCWalkerConfiguration& w, Communicate* c);
+  ~HDFWalkerInputManager();
+  bool put(xmlNodePtr cur);
+  //bool put(std::vector<xmlNodePtr>& mset, int pid);
+  //bool put(std::vector<xmlNodePtr>& mset, Communicate* comm);
+  std::string getFileRoot()
+  {
+    return CurrentFileRoot;
+  }
 
-      void rewind(const std::string& h5root, int blocks);
-    
-  };
+  void rewind(const std::string& h5root, int blocks);
+
+};
 }
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

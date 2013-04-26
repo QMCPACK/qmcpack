@@ -11,7 +11,7 @@ public:
   float *A, *Atran, *Ainv;
   float *Ainv_delta, *Ainv_colk;
   float *new_row, *delta;
-  
+
   void resize(int N);
   cuda_determinant(int N);
   cuda_determinant();
@@ -38,7 +38,7 @@ private:
   float *ratios_d;
   float *pos_d;
   std::vector<float*> A_vec, Ainv_vec, delta_vec,
-    Ainv_delta_vec, Ainv_colk_vec;
+      Ainv_delta_vec, Ainv_colk_vec;
   std::vector<float> ratio_vec, pos_vec;
   vector<cuda_walker> walkers;
   // Number of up and down electrons

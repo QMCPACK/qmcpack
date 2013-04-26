@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -25,103 +25,99 @@
 namespace qmcplusplus
 {
 
-  HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const string &aroot):
-    targetW(W), version(0,0)
-    {
-      FileName = aroot;
-      string ext=getExtension(aroot);
-      if(ext != "h5") { //if the filename does not h5 extension, add the extension
-        FileName.append(".config.h5");
-      }
-    }
+HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const string &aroot):
+  targetW(W), version(0,0)
+{
+  FileName = aroot;
+  string ext=getExtension(aroot);
+  if(ext != "h5")
+    //if the filename does not h5 extension, add the extension
+  {
+    FileName.append(".config.h5");
+  }
+}
 
-  HDFWalkerInput_0_0::~HDFWalkerInput_0_0() { }
+HDFWalkerInput_0_0::~HDFWalkerInput_0_0() { }
 
-  bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
-    {
-      hid_t h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      hid_t h_config = H5Gopen(h_file,"config_collection");
-      if(h_config<0)
-      {
-        app_error() << " HDFWalkerInput_0_0::put  config_collection is not found in " << FileName << "." << endl;
-        H5Fclose(h_file);
-        return false;
-      }
+bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
+{
+  hid_t h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  hid_t h_config = H5Gopen(h_file,"config_collection");
+  if(h_config<0)
+  {
+    app_error() << " HDFWalkerInput_0_0::put  config_collection is not found in " << FileName << "." << endl;
+    H5Fclose(h_file);
+    return false;
+  }
+  int NumSets=0;
+  hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
+  if(h1>-1)
+  {
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
+    H5Dclose(h1);
+  }
+  if(!NumSets)
+  {
+    //resolve the integer and long problem with 64bit
+    hsize_t nset;
+    H5Gget_num_objs(h_config,&nset);
+    NumSets=nset;
+  }
+  if(!NumSets)
+  {
+    app_error() << " HDFWalkerInput_0_0::put  " << FileName << " does not contain walkers!" << endl;
+    H5Gclose(h_config);
+    H5Gclose(h_file);
+    return false;
+  }
+  //select the last block
+  int selected=NumSets-1;
+  typedef MCWalkerConfiguration::PosType PosType;
+  typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
+  typedef Matrix<PosType>  PosContainer_t;
+  int nwt = 0;
+  int npt = 0;
+  //2D array of PosTypes (x,y,z) indexed by (walker,particle)
+  PosContainer_t Pos_temp;
+  //open the group
+  char GrpName[128];
+  sprintf(GrpName,"config%04d",selected);
+  hid_t group_id = H5Gopen(h_config,GrpName);
+  HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
+  //read the dataset
+  Pos_in.read(group_id,"coord");
+  //close groups
+  H5Gclose(group_id);
+  H5Gclose(h_config);
+  H5Fclose(h_file);
+  /*check to see if the number of walkers and particles is  consistent with W */
+  int nptcl = Pos_temp.cols();
+  nwt = Pos_temp.rows();
+  int curWalker = targetW.getActiveWalkers();
+  if(curWalker)
+  {
+    app_log() << "HDFWalkerInput_0_0::put Adding " << nwt << " walkers to " << curWalker << endl;
+    targetW.createWalkers(nwt);
+  }
+  else
+  {
+    app_log() << "HDFWalkerInput_0_0::put Creating " << nwt << " walkers." << endl;
+    targetW.resize(nwt,nptcl);
+  }
+  //assign configurations to W
+  int iw=0;
+  MCWalkerConfiguration::iterator it = targetW.begin()+curWalker;
+  MCWalkerConfiguration::iterator it_end = targetW.end();
+  while(it != it_end)
+  {
+    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    ++it;
+    ++iw;
+  }
+  return true;
+}
 
-      int NumSets=0;
-      hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
-      if(h1>-1) {
-        H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
-        H5Dclose(h1);
-      }
-
-      if(!NumSets) {
-        //resolve the integer and long problem with 64bit
-        hsize_t nset;
-        H5Gget_num_objs(h_config,&nset);
-        NumSets=nset;
-      }
-
-      if(!NumSets)
-      {
-        app_error() << " HDFWalkerInput_0_0::put  " << FileName << " does not contain walkers!" << endl;
-        H5Gclose(h_config);
-        H5Gclose(h_file);
-        return false;
-      }
-
-      //select the last block
-      int selected=NumSets-1;
-
-      typedef MCWalkerConfiguration::PosType PosType;
-      typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
-      typedef Matrix<PosType>  PosContainer_t;
-
-      int nwt = 0;
-      int npt = 0;
-      //2D array of PosTypes (x,y,z) indexed by (walker,particle)
-      PosContainer_t Pos_temp;
-
-      //open the group
-      char GrpName[128];
-      sprintf(GrpName,"config%04d",selected);
-      hid_t group_id = H5Gopen(h_config,GrpName);
-
-      HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
-      //read the dataset
-      Pos_in.read(group_id,"coord");
-
-      //close groups
-      H5Gclose(group_id);
-      H5Gclose(h_config);
-      H5Fclose(h_file);
-
-      /*check to see if the number of walkers and particles is  consistent with W */
-      int nptcl = Pos_temp.cols();
-      nwt = Pos_temp.rows();
-
-      int curWalker = targetW.getActiveWalkers();
-      if(curWalker) {
-        app_log() << "HDFWalkerInput_0_0::put Adding " << nwt << " walkers to " << curWalker << endl;
-        targetW.createWalkers(nwt);
-      } else {
-        app_log() << "HDFWalkerInput_0_0::put Creating " << nwt << " walkers." << endl;
-        targetW.resize(nwt,nptcl); 
-      }
-
-      //assign configurations to W
-      int iw=0;
-      MCWalkerConfiguration::iterator it = targetW.begin()+curWalker; 
-      MCWalkerConfiguration::iterator it_end = targetW.end(); 
-      while(it != it_end) {
-        std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
-        ++it;++iw;
-      }
-
-      return true;
-    }
-
-//bool  
+//bool
 //HDFWalkerInput_0_0::append(MCWalkerConfiguration& W, int blocks){
 //
 //  if(Counter<0) return false;
@@ -151,12 +147,12 @@ namespace qmcplusplus
 //    int nwt = Pos_temp.rows();
 //    int curWalker=0;
 //    if(nptcl != W.getParticleNum()) {
-//      W.resize(nwt,nptcl); 
+//      W.resize(nwt,nptcl);
 //    } else {
 //      curWalker=W.getActiveWalkers();
 //      W.createWalkers(nwt);
 //    }
-//    MCWalkerConfiguration::iterator it = W.begin()+curWalker; 
+//    MCWalkerConfiguration::iterator it = W.begin()+curWalker;
 //    for(int iw=0; iw<nwt; iw++) {
 //      //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
 //      for(int iat=0; iat < nptcl; iat++){
@@ -164,7 +160,7 @@ namespace qmcplusplus
 //      }
 //      ++it;
 //    }
-//    nw_in += nwt; 
+//    nw_in += nwt;
 //  }
 //
 //  LOGMSG("Total " << nw_in << " walkers are loaded using " << NumSets-firstConf << " blocks.")
@@ -186,5 +182,5 @@ namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1911 $   $Date: 2007-04-17 10:19:35 -0500 (Tue, 17 Apr 2007) $
- * $Id: HDFWalkerInput_0_0.cpp 1911 2007-04-17 15:19:35Z jnkim $ 
+ * $Id: HDFWalkerInput_0_0.cpp 1911 2007-04-17 15:19:35Z jnkim $
  ***************************************************************************/

@@ -8,9 +8,9 @@ namespace qmcplusplus
 {
 
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(ParticleSet& ref, RealType kc): 
+StructFact::StructFact(ParticleSet& ref, RealType kc):
   DoUpdate(false),SuperCellEnum(SUPERCELL_BULK)
-  ,PtclRef(ref), KLists(ref.Lattice) 
+  ,PtclRef(ref), KLists(ref.Lattice)
 {
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);
@@ -20,10 +20,13 @@ StructFact::StructFact(ParticleSet& ref, RealType kc):
 StructFact::~StructFact() { }
 
 //Overload the assignment operator
-StructFact& 
-StructFact::operator=(const StructFact &ref) {
-  if(this != &ref){
-    if(&PtclRef != &ref.PtclRef){
+StructFact&
+StructFact::operator=(const StructFact &ref)
+{
+  if(this != &ref)
+  {
+    if(&PtclRef != &ref.PtclRef)
+    {
       LOGMSG("ERROR: tried to copy SK with different PtclRef");
       return *this;
     }
@@ -31,12 +34,13 @@ StructFact::operator=(const StructFact &ref) {
     KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
     resize();
 #if defined(USE_REAL_STRUCT_FACTOR)
-    rhok_r=ref.rhok_r; rhok_i=ref.rhok_i;
+    rhok_r=ref.rhok_r;
+    rhok_i=ref.rhok_i;
 #else
     rhok = ref.rhok;
 #endif
   }
-  return *this; //Allows assignment chaining 
+  return *this; //Allows assignment chaining
 }
 
 //Public Methods:
@@ -44,12 +48,13 @@ StructFact::operator=(const StructFact &ref) {
 // Update1Part - update Rhok if 1 particle moved
 // UpdateAllPart - update Rhok if all particles moved
 void
-StructFact::UpdateNewCell(RealType kc) {
+StructFact::UpdateNewCell(RealType kc)
+{
   //Generate the lists of k-vectors
   KLists.UpdateKLists(PtclRef.Lattice,kc);
   //resize any arrary
   resize();
-  //Compute the entire Rhok 
+  //Compute the entire Rhok
   FillRhok();
 }
 
@@ -75,13 +80,13 @@ void StructFact::resize()
   C.resize(DIM,2*maxdim+1);
 }
 
-//void 
+//void
 //StructFact::Update1Part(const PosType& rold,const PosType& rnew,int iat,int GroupID) {
 //  UpdateRhok(rold,rnew,iat,GroupID);
 //}
 
-void 
-StructFact::UpdateAllPart() 
+void
+StructFact::UpdateAllPart()
 {
   //if(!DoUpdate) FillRhok();
   FillRhok();
@@ -123,8 +128,9 @@ StructFact::UpdateAllPart()
 
 /** evaluate rok per species, eikr  per particle
  */
-void 
-StructFact::FillRhok() {
+void
+StructFact::FillRhok()
+{
   int npart = PtclRef.getTotalNum();
 #if defined(QMC_SK_USE_RECURSIVE)
   rhok=0.0;
@@ -137,7 +143,8 @@ StructFact::FillRhok() {
       RealType phi=TWOPI*tau_red[idim];
       ComplexType ctemp(std::cos(phi),std::sin(phi));
       C(idim,KLists.mmax[idim])=1.0;
-      for(int n=1; n<=KLists.mmax[idim]; n++){
+      for(int n=1; n<=KLists.mmax[idim]; n++)
+      {
         C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
         C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
       }
@@ -146,7 +153,7 @@ StructFact::FillRhok() {
     for(int ki=0; ki<KLists.numk; ki++)
     {
       eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0]);
-      for(idim=1;idim<DIM; id++)
+      for(idim=1; idim<DIM; id++)
         eikr_ref[ki] *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     }
     accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[PtclRef.GroupID[i]]);
@@ -165,18 +172,16 @@ StructFact::FillRhok() {
     //  }
     //Now add the contribution to Rhok for this particle
     //for(int ki=0; ki<KLists.numk; ki++){
-    //  eikr(i,ki) = ComplexType(1.0,0.0); //Initialize 
+    //  eikr(i,ki) = ComplexType(1.0,0.0); //Initialize
     //  for(int idim=0; idim<3; idim++)
     //    eikr(i,ki) *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     //  rhok(PtclRef.GroupID[i],ki) += eikr(i,ki);
     //}
   } //End particle loop
 #else
-
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r=0.0;
   rhok_i=0.0;
-
   //algorithmA
   const int nk=KLists.numk;
   for(int i=0; i<npart; ++i)
@@ -191,7 +196,6 @@ StructFact::FillRhok() {
     simd::add(nk,eikr_r[i],rhok_r[PtclRef.GroupID[i]]);
     simd::add(nk,eikr_i[i],rhok_i[PtclRef.GroupID[i]]);
   }
-
   //use dgemm: vtune shows algorithmA is better
   //simd::get_phase(KLists.kpts_cart,PtclRef.R,phiM);
   //eval_e2iphi(phiM.size(), phiM.data(), eikr_r.data(), eikr_i.data());
@@ -199,7 +203,6 @@ StructFact::FillRhok() {
   //  simd::add(nk,eikr_r[i],rhok_r[PtclRef.GroupID[i]]);
   //for(int i=0; i<npart; ++i)
   //  simd::add(nk,eikr_i[i],rhok_i[PtclRef.GroupID[i]]);
-
 #else
   rhok=0.0;
   for(int i=0; i<npart; i++)
@@ -222,60 +225,64 @@ StructFact::FillRhok() {
 }
 
 
-void 
-StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID){
+void
+StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID)
+{
 #if defined(USE_REAL_STRUCT_FACTOR)
   APP_ABORT("WHO IS USING UpdateRhok");
 #else
   TinyVector<double,DIM> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian
-  
-  for(int idim=0; idim<DIM; idim++){
+  for(int idim=0; idim<DIM; idim++)
+  {
     k111[idim] = 0.0;
-    for(int idir=0; idir<DIM; idir++){
+    for(int idir=0; idir<DIM; idir++)
+    {
       k111[idim] += PtclRef.Lattice.b(idir)[idim];
     }
     k111[idim] *= TWOPI;
   }
-
   //Prepare for subtracting old position
-  for(unsigned int idim=0; idim<DIM; idim++){
+  for(unsigned int idim=0; idim<DIM; idim++)
+  {
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rold[idim] * k111[idim];
     Ctemp = complex<double>(std::cos(phi), std::sin(phi));
     C(idim,KLists.mmax[idim]) = 1.0; // K=0
     //Recursively generate all Cs.
-    for(int n=1; n<=KLists.mmax[idim]; n++){
+    for(int n=1; n<=KLists.mmax[idim]; n++)
+    {
       C(idim,KLists.mmax[idim]+n) = Ctemp*C(idim,KLists.mmax[idim]+n-1);
       C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
     }
   }
-
   //Subtract old position
-  for(int ki=0; ki<KLists.numk; ki++){
+  for(int ki=0; ki<KLists.numk; ki++)
+  {
     complex<double> temp = 1.0;
     for(int idim=0; idim<DIM; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     rhok(GroupID,ki) -= temp;
   }
-
   //Prepare for adding new position
-  for(unsigned int idim=0; idim<DIM; idim++){
+  for(unsigned int idim=0; idim<DIM; idim++)
+  {
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rnew[idim] * k111[idim];
     Ctemp = complex<double>(std::cos(phi), std::sin(phi));
     C(idim,KLists.mmax[idim]) = 1.0; // K=0
     //Recursively generate all Cs.
-    for(int n=1; n<=KLists.mmax[idim]; n++){
+    for(int n=1; n<=KLists.mmax[idim]; n++)
+    {
       C(idim,KLists.mmax[idim]+n) = Ctemp*C(idim,KLists.mmax[idim]+n-1);
       C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
     }
   }
-
   //Add new position
-  for(int ki=0; ki<KLists.numk; ki++){
+  for(int ki=0; ki<KLists.numk; ki++)
+  {
     complex<double> temp = 1.0;
     for(int idim=0; idim<DIM; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
@@ -285,7 +292,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 #endif
 }
 
-void StructFact::makeMove(int active, const PosType& pos) 
+void StructFact::makeMove(int active, const PosType& pos)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   for(int ki=0; ki<KLists.numk; ki++)
@@ -301,7 +308,7 @@ void StructFact::makeMove(int active, const PosType& pos)
 #endif
 }
 
-void StructFact::acceptMove(int active) 
+void StructFact::acceptMove(int active)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   APP_ABORT("NOT DONE WITH StructFact::acceptMove");
@@ -321,7 +328,8 @@ void StructFact::acceptMove(int active)
 #endif
 }
 
-void StructFact::rejectMove(int active) {
+void StructFact::rejectMove(int active)
+{
   //APP_ABORT("StructFact::rejectMove should not be used yet");
   //do nothing
 }

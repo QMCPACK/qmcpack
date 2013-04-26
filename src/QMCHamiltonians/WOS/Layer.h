@@ -6,7 +6,8 @@
 #include <algorithm>
 
 
-struct Layer{
+struct Layer
+{
 
   /// layer number
   int id_m;
@@ -24,34 +25,39 @@ struct Layer{
   posvec_t r_min, r_max;
 
   /// Constructor :: initialise data members
-  Layer(double dielectric, 
-	 double BandOffset,
-	 const posvec_t& bot_corner,
-	 const posvec_t& top_corner){
+  Layer(double dielectric,
+        double BandOffset,
+        const posvec_t& bot_corner,
+        const posvec_t& top_corner)
+  {
     eps_d = dielectric;
     offset_d = BandOffset;
     r_min = bot_corner;
     r_max = top_corner;
   }
 
-  
-  void setid(int i){ id_m = i; }
+
+  void setid(int i)
+  {
+    id_m = i;
+  }
 
   /// if point r is in the layer
-  inline bool find(const posvec_t r) const{
+  inline bool find(const posvec_t r) const
+  {
     return (r[2] > r_min[2] && r[2] < r_max[2] );
   }
 
-  inline bool find( const Domain& domain ) const {
+  inline bool find( const Domain& domain ) const
+  {
     return find( domain.runner );
   }
 
 
   /// create spherical domain within layer
-  void makeSphere(Domain& domain) const{
-    
+  void makeSphere(Domain& domain) const
+  {
     double d[6];       /// six faces of a parallelopiped
-
     /// setup distances to all six faces
     d[0] = domain.runner[0] - r_min[0];
     d[1] = r_max[0]-domain.runner[0];
@@ -59,22 +65,18 @@ struct Layer{
     d[3] = r_max[1]-domain.runner[1];
     d[4] = domain.runner[2]-r_min[2];
     d[5] = r_max[2]-domain.runner[2];
-    
     /// find minimum distance to side
     double* it = std::min_element(d,d+6);
-
     /// domain radius is distance to nearest side
     domain.radius = (*it);
-
   };
 
   /// get sampling probability
-  void sample_prob(const Domain& domain, 
-		   double dfrac1, 
-		   double dfrac2){
-
+  void sample_prob(const Domain& domain,
+                   double dfrac1,
+                   double dfrac2)
+  {
     prob_d = 0.5 * eps_d * ( dfrac1 - dfrac2 ) / domain.eps_d;
-
   } ;
 
 

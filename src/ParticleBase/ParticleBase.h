@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -25,18 +25,20 @@
 #include <map>
 #include "ParticleTags.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 /**@file ParticleBase.h
  *@brief Declaration of ParticleBase<PT>
  */
 
-/** Container class for particle attributes. 
+/** Container class for particle attributes.
  *
- * The template parameter PT is a trait class which provides typedefs. 
+ * The template parameter PT is a trait class which provides typedefs.
  * See, ParticleTraits.h
  */
 template<class PT>
-class ParticleBase: public ParticleTags {
+class ParticleBase: public ParticleTags
+{
 
 public:
 
@@ -79,22 +81,23 @@ public:
    * and its derived classes.
    */
   //!< ParticleLayout
-  ParticleLayout_t  Lattice, PrimitiveLattice; 
+  ParticleLayout_t  Lattice, PrimitiveLattice;
   //!< unique, persistent ID for each particle
-  ParticleIndex_t   ID;  
+  ParticleIndex_t   ID;
   //!< Species ID
-  ParticleIndex_t   GroupID;  
+  ParticleIndex_t   GroupID;
 
   //!< Position
-  ParticlePos_t    R;    
- 
+  ParticlePos_t    R;
+
   //!< Instantaneous Position in unit used by layout/nnlist engines, not added to myAttribList
-  ParticlePos_t    curR;    
+  ParticlePos_t    curR;
 
   //!< Default constructor
   ParticleBase();
 
-  ParticleBase(const ParticleBase<PT>& P): Counter(0), LocalNum(0), GlobalNum(0) {
+  ParticleBase(const ParticleBase<PT>& P): Counter(0), LocalNum(0), GlobalNum(0)
+  {
     initBase();
     assign(P);
   }
@@ -102,13 +105,23 @@ public:
   virtual ~ParticleBase();
 
   ///return a type id: one of the enum values
-  inline int getAttribType(const string& tname) {
+  inline int getAttribType(const string& tname)
+  {
     return AttribTypeMap[tname];
   }
 
-  inline int getNumAttrib() const { return AttribList.size();}
-  inline PAListIterator first_attrib() { return AttribList.begin(); } 
-  inline PAListIterator last_attrib() { return AttribList.end(); } 
+  inline int getNumAttrib() const
+  {
+    return AttribList.size();
+  }
+  inline PAListIterator first_attrib()
+  {
+    return AttribList.begin();
+  }
+  inline PAListIterator last_attrib()
+  {
+    return AttribList.end();
+  }
 
   bool hasAttrib(const std::string& attrib_name);
 
@@ -118,19 +131,43 @@ public:
   int addAttribute(ParticlePos_t& pa);
   int addAttribute(ParticleTensor_t& pa);
 
-  ParticleIndex_t*  getIndexAttrib(const std::string& aname); 
+  ParticleIndex_t*  getIndexAttrib(const std::string& aname);
   ParticleScalar_t* getScalarAttrib(const std::string& aname);
   ParticlePos_t*    getVectorAttrib(const std::string& aname);
   ParticleTensor_t* getTensorAttrib(const std::string& aname);
 
-  inline const ParticleIndex_t*  getIndexAttrib(int i) const { return INDEX[i];}
-  inline const ParticleScalar_t* getScalarAttrib(int i) const { return VAL[i];}
-  inline const ParticlePos_t*    getVectorAttrib(int i) const { return POS[i];}
-  inline const ParticleTensor_t* getTensorAttrib(int i) const { return TENZOR[i];}
-  inline ParticleIndex_t*  getIndexAttrib(int i)  { return INDEX[i];}
-  inline ParticleScalar_t* getScalarAttrib(int i) { return VAL[i];}
-  inline ParticlePos_t*    getVectorAttrib(int i) { return POS[i];}
-  inline ParticleTensor_t* getTensorAttrib(int i) { return TENZOR[i];}
+  inline const ParticleIndex_t*  getIndexAttrib(int i) const
+  {
+    return INDEX[i];
+  }
+  inline const ParticleScalar_t* getScalarAttrib(int i) const
+  {
+    return VAL[i];
+  }
+  inline const ParticlePos_t*    getVectorAttrib(int i) const
+  {
+    return POS[i];
+  }
+  inline const ParticleTensor_t* getTensorAttrib(int i) const
+  {
+    return TENZOR[i];
+  }
+  inline ParticleIndex_t*  getIndexAttrib(int i)
+  {
+    return INDEX[i];
+  }
+  inline ParticleScalar_t* getScalarAttrib(int i)
+  {
+    return VAL[i];
+  }
+  inline ParticlePos_t*    getVectorAttrib(int i)
+  {
+    return POS[i];
+  }
+  inline ParticleTensor_t* getTensorAttrib(int i)
+  {
+    return TENZOR[i];
+  }
 
 #if defined(QMC_COMPLEX)
   int addAttribute(ParticleGradient_t& pa);
@@ -143,7 +180,8 @@ public:
   void resize(unsigned m);
   void clear();
 
-  virtual void assign(const ParticleBase<PT>& ptclin) {
+  virtual void assign(const ParticleBase<PT>& ptclin)
+  {
     resize(ptclin.getLocalNum());
     Lattice = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
@@ -151,38 +189,63 @@ public:
     R = ptclin.R;
     ID = ptclin.ID;
     GroupID = ptclin.GroupID;
-    if(ptclin.SubPtcl.size()) {
+    if(ptclin.SubPtcl.size())
+    {
       SubPtcl.resize(ptclin.SubPtcl.size());
       SubPtcl =ptclin.SubPtcl;
     }
   }
 
-  inline int getLocalNum() const { return LocalNum;}
-  inline int getTotalNum() const { return GlobalNum;}
+  inline int getLocalNum() const
+  {
+    return LocalNum;
+  }
+  inline int getTotalNum() const
+  {
+    return GlobalNum;
+  }
 
   ///return the number of groups
-  inline int groups() const { return SubPtcl.size()-1;}
-  
+  inline int groups() const
+  {
+    return SubPtcl.size()-1;
+  }
+
   ///return the first index of a group i
-  inline int first(int igroup) const { return SubPtcl[igroup];}
-  
+  inline int first(int igroup) const
+  {
+    return SubPtcl[igroup];
+  }
+
   ///return the last index of a group i
-  inline int last(int igroup) const { return SubPtcl[igroup+1];}
-  
+  inline int last(int igroup) const
+  {
+    return SubPtcl[igroup+1];
+  }
+
   /// Returns the current counter
-  inline int  current() const { return Counter;}
+  inline int  current() const
+  {
+    return Counter;
+  }
 
   /// Increments the counter
-  inline void advance() { Counter++;}
+  inline void advance()
+  {
+    Counter++;
+  }
 
   /// Sets the counter
-  inline void setCounter(int i = 0) { Counter = i;}
+  inline void setCounter(int i = 0)
+  {
+    Counter = i;
+  }
 
 protected:
 
   void initBase();
-  
-  //!< Internal counter  
+
+  //!< Internal counter
   int Counter;
   int LocalNum;
   int GlobalNum;
@@ -205,13 +268,13 @@ protected:
 };
 
 template<class T, unsigned D>
-inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) 
+inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a)
 {
   return &(a[0][0]);
 }
 
 template<class T, unsigned D>
-inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) 
+inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
 {
   return &(a[0][0])+D*a.size();
 }
@@ -223,5 +286,5 @@ inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

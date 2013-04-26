@@ -11,35 +11,37 @@
 /**class Clebsch_Gordan
  *\brief Calculates the Clebsch-Gordan coefficients
  */
-class Clebsch_Gordan {
- public:
+class Clebsch_Gordan
+{
+public:
 
   Clebsch_Gordan(const int lmax);
   ///destructor
   ~Clebsch_Gordan();
-  
-  ///maximum angular momentum	
+
+  ///maximum angular momentum
   int Lmax;
   ///array to store the Clebsch-Gordan coefficients
   blitz::Array<double,5> cg;
   ///returns \f$c_g(l1,l2,l3,m1,m2) \f$
-    inline double operator()(int l1, int l2, int l3, int m1, int m2) const {
-      return cg(l1,l2,l3,m1+Lmax,m2+Lmax);
-   }
+  inline double operator()(int l1, int l2, int l3, int m1, int m2) const
+  {
+    return cg(l1,l2,l3,m1+Lmax,m2+Lmax);
+  }
 
-private: 
+private:
   /// default constructor not implemented
   Clebsch_Gordan() { }
-  
+
   void build_coefficients();
 };
 
 #endif
- 
+
 
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

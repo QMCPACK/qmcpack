@@ -7,13 +7,11 @@ int main(int argc, char** argv)
     int d = 44;
     h5ar << alps::make_pvp("/int", d);
   }
-
   {
     alps::hdf5::oarchive h5ar("bela.h5");
     std::vector<int> d(length, 42);
     h5ar << alps::make_pvp("/foo/bar2", d);
   }
-
   {
     alps::hdf5::iarchive h5ar("bela.h5");
     std::vector<int> d;

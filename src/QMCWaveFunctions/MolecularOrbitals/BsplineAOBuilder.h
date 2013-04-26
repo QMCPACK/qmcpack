@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,39 +20,45 @@
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class BsplineAOBuilder: public QMCTraits {
+class BsplineAOBuilder: public QMCTraits
+{
 
-  public:
+public:
 
-    typedef BsplineFunctor<RealType>                 RadialOrbitalType;
-    typedef SphericalBasisSet<RadialOrbitalType>     CenteredOrbitalType;
+  typedef BsplineFunctor<RealType>                 RadialOrbitalType;
+  typedef SphericalBasisSet<RadialOrbitalType>     CenteredOrbitalType;
 
-    ///the radial orbitals
-    CenteredOrbitalType* m_orbitals;
-    ///the species
-    std::string m_species;
-    ///constructor
-    BsplineAOBuilder(xmlNodePtr cur=NULL);
+  ///the radial orbitals
+  CenteredOrbitalType* m_orbitals;
+  ///the species
+  std::string m_species;
+  ///constructor
+  BsplineAOBuilder(xmlNodePtr cur=NULL);
 
-    ///assign a CenteredOrbitalType to work on
-    void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter) { 
-      m_orbitals = oset;
-      m_species = acenter;
-    }
+  ///assign a CenteredOrbitalType to work on
+  void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
+  {
+    m_orbitals = oset;
+    m_species = acenter;
+  }
 
-    bool addGrid(xmlNodePtr cur) { return true;}
+  bool addGrid(xmlNodePtr cur)
+  {
+    return true;
+  }
 
-    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms, bool useSphericalHarmonicsNormalization=true);
+  bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms, bool useSphericalHarmonicsNormalization=true);
 
-    bool putCommon(xmlNodePtr cur);
+  bool putCommon(xmlNodePtr cur);
 
-  };
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1253 $   $Date: 2006-08-13 10:15:48 -0500 (Sun, 13 Aug 2006) $
- * $Id: BsplineAOBuilder.h 1253 2006-08-13 15:15:48Z jnkim $ 
+ * $Id: BsplineAOBuilder.h 1253 2006-08-13 15:15:48Z jnkim $
  ***************************************************************************/

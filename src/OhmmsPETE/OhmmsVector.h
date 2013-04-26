@@ -8,20 +8,20 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** A one-dimensional vector class based on PETE 
+/** A one-dimensional vector class based on PETE
  *
- *  Closely related to PETE STL vector example. 
- *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>. 
+ *  Closely related to PETE STL vector example.
+ *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>.
  *  class C is a container class. Default is vector<T>
  *  \todo Implement openMP compatible container class or evaluate function.
- *  \todo Implement get/put member functions for MPI-like parallelism 
+ *  \todo Implement get/put member functions for MPI-like parallelism
  */
 #ifndef OHMMS_PETE_VECTOR_H
 #define OHMMS_PETE_VECTOR_H
@@ -33,9 +33,11 @@
 #include <iostream>
 //using namespace std;
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 template<class T, class C = std::vector<T> >
-class Vector {
+class Vector
+{
 public:
 
   typedef T           Type_t;
@@ -44,54 +46,92 @@ public:
   typedef typename Container_t::iterator iterator;
   typedef typename Container_t::const_iterator const_iterator;
 
-  Vector(){ } // Default Constructor initializes to zero.
+  Vector() { } // Default Constructor initializes to zero.
 
-  Vector(unsigned n) { 
+  Vector(unsigned n)
+  {
     resize(n);
     assign(*this, T());
   }
 
-  // Copy Constructor 
-  Vector(const Vector<T,C> &rhs){
+  // Copy Constructor
+  Vector(const Vector<T,C> &rhs)
+  {
     resize(rhs.size());
     assign(*this,rhs);
   }
 
-  // Destructor 
+  // Destructor
   ~Vector() { }
 
-  inline unsigned size() const { return X.size();}
+  inline unsigned size() const
+  {
+    return X.size();
+  }
   void resize(unsigned n); // resize to n
   void create(unsigned n); // add n elements
 
   // Assignment Operators
-  This_t& operator=(const Vector<T,C> &rhs) {
+  This_t& operator=(const Vector<T,C> &rhs)
+  {
     return assign(*this,rhs);
   }
 
-  const This_t &operator=(const Vector<T, C> &rhs) const {
+  const This_t &operator=(const Vector<T, C> &rhs) const
+  {
     return assign(*this, rhs);
   }
 
   template<class RHS>
-  This_t& operator=(const RHS& rhs) {
+  This_t& operator=(const RHS& rhs)
+  {
     return assign(*this,rhs);
   }
 
-  inline Type_t* data() { return &(X[0]);}
-  inline const Type_t* data() const { return &(X[0]);}
+  inline Type_t* data()
+  {
+    return &(X[0]);
+  }
+  inline const Type_t* data() const
+  {
+    return &(X[0]);
+  }
 
-  inline Type_t* first_address() { return &(X[0]);}
-  inline const Type_t* first_address() const { return &(X[0]);}
+  inline Type_t* first_address()
+  {
+    return &(X[0]);
+  }
+  inline const Type_t* first_address() const
+  {
+    return &(X[0]);
+  }
 
-  inline Type_t* last_address() { return &(X[0])+size();}
-  inline const Type_t* last_address() const { return &(X[0])+size();}
+  inline Type_t* last_address()
+  {
+    return &(X[0])+size();
+  }
+  inline const Type_t* last_address() const
+  {
+    return &(X[0])+size();
+  }
 
-  inline iterator begin() { return X.begin();}
-  inline const_iterator begin() const { return X.begin();}
+  inline iterator begin()
+  {
+    return X.begin();
+  }
+  inline const_iterator begin() const
+  {
+    return X.begin();
+  }
 
-  inline iterator end() { return X.end();}
-  inline const_iterator end() const { return X.end();}
+  inline iterator end()
+  {
+    return X.end();
+  }
+  inline const_iterator end() const
+  {
+    return X.end();
+  }
 
   //inline Type_t* begin() { return X.begin();}
   //inline const Type_t* begin() const { return X.begin();}
@@ -100,19 +140,23 @@ public:
   //inline const Type_t* end() const { return X.end();}
 
   // Get and Set Operations
-  inline Type_t& operator[](unsigned int i) { 
+  inline Type_t& operator[](unsigned int i)
+  {
     return X[i];
   }
 
-  inline Type_t operator[](unsigned int i) const { 
+  inline Type_t operator[](unsigned int i) const
+  {
     return X[i];
   }
 
-  inline Type_t& operator()(unsigned int i) { 
+  inline Type_t& operator()(unsigned int i)
+  {
     return X[i];
   }
 
-  inline Type_t operator()( unsigned int i) const { 
+  inline Type_t operator()( unsigned int i) const
+  {
     return X[i];
   }
 
@@ -136,19 +180,22 @@ private:
 };
 
 template<class T, class C>
-void Vector<T,C>::resize(unsigned n){
+void Vector<T,C>::resize(unsigned n)
+{
   X = C(n,T());
 }
 
 template<class T, class C>
-void Vector<T,C>::create(unsigned n) {
+void Vector<T,C>::create(unsigned n)
+{
   X.insert(X.end(), n, T());
 }
 }
- 
+
 #include "OhmmsPETE/OhmmsVectorOperators.h"
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 //-----------------------------------------------------------------------------
 // We need to specialize CreateLeaf<T> for our class, so that operators
 // know what to stick in the leaves of the expression tree.
@@ -158,7 +205,10 @@ struct CreateLeaf<Vector<T, C> >
 {
   typedef Reference<Vector<T, C> > Leaf_t;
   inline static
-  Leaf_t make(const Vector<T, C> &a) { return Leaf_t(a); }
+  Leaf_t make(const Vector<T, C> &a)
+  {
+    return Leaf_t(a);
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -172,12 +222,15 @@ public:
 
   SizeLeaf(int s) : size_m(s) { }
   SizeLeaf(const SizeLeaf &model) : size_m(model.size_m) { }
-  bool operator()(int s) const { return size_m == s; }
-  
+  bool operator()(int s) const
+  {
+    return size_m == s;
+  }
+
 private:
-  
+
   int size_m;
-  
+
 };
 
 template<class T>
@@ -185,7 +238,7 @@ struct LeafFunctor<Scalar<T>, SizeLeaf>
 {
   typedef bool Type_t;
   inline static
-  bool apply(const Scalar<T> &, const SizeLeaf &) 
+  bool apply(const Scalar<T> &, const SizeLeaf &)
   {
     // Scalars always conform.
     return true;
@@ -197,7 +250,7 @@ struct LeafFunctor<Vector<T, C>, SizeLeaf>
 {
   typedef bool Type_t;
   inline static
-  bool apply(const Vector<T, C> &v, const SizeLeaf &s) 
+  bool apply(const Vector<T, C> &v, const SizeLeaf &s)
   {
     return s(v.size());
   }
@@ -226,33 +279,31 @@ template<class T, class C, class Op, class RHS>
 inline void evaluate(Vector<T, C> &lhs, const Op &op, const Expression<RHS> &rhs)
 {
   if (forEach(rhs, SizeLeaf(lhs.size()), AndCombine()))
+  {
+    // We get here if the vectors on the RHS are the same size as those on
+    // the LHS.
+    for (int i = 0; i < lhs.size(); ++i)
     {
-      // We get here if the vectors on the RHS are the same size as those on
-      // the LHS.
-      for (int i = 0; i < lhs.size(); ++i)
-        {
-          // The actual assignment operation is performed here.
-          // PETE operator tags all define operator() to perform the operation.
-          // (In this case op performs an assignment.) forEach is used
-          // to compute the rhs value.  EvalLeaf1 gets the
-          // values at each node using random access, and the tag
-          // OpCombine tells forEach to use the operator tags in the expression
-          // to combine values together.
-
-          op(lhs[i], forEach(rhs, EvalLeaf1(i), OpCombine()));
-        }
+      // The actual assignment operation is performed here.
+      // PETE operator tags all define operator() to perform the operation.
+      // (In this case op performs an assignment.) forEach is used
+      // to compute the rhs value.  EvalLeaf1 gets the
+      // values at each node using random access, and the tag
+      // OpCombine tells forEach to use the operator tags in the expression
+      // to combine values together.
+      op(lhs[i], forEach(rhs, EvalLeaf1(i), OpCombine()));
     }
+  }
   else
-    {
-      std::cerr << "Error: LHS and RHS don't conform." << std::endl;
-      abort();
-    }
+  {
+    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
+    abort();
+  }
 }
 // I/O
 template<class T, class C>
 std::ostream& operator<<(std::ostream& out, const Vector<T,C>& rhs)
 {
-
   for(int i=0; i<rhs.size(); i++)
     out << rhs[i] << std::endl;
   return out;
@@ -262,7 +313,8 @@ template<class T, class C>
 std::istream& operator>>(std::istream& is, Vector<T,C>& rhs)
 {
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
-  for(int i=0; i<rhs.size(); i++)  is >> rhs[i];
+  for(int i=0; i<rhs.size(); i++)
+    is >> rhs[i];
   return is;
 }
 
@@ -272,5 +324,5 @@ std::istream& operator>>(std::istream& is, Vector<T,C>& rhs)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

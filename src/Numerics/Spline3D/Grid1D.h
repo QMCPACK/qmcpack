@@ -4,7 +4,8 @@
 
 #include <vector>
 
-class Grid1D{
+class Grid1D
+{
 
 public:
 
@@ -28,11 +29,11 @@ public:
   std::vector<double> m_h;
 
   /// Constructor
-  Grid1D(){}
+  Grid1D() {}
 
   /// initialise with the entire data from input
   void init(int, int, double, const std::vector<int>&,
-	    const std::vector<double>&);
+            const std::vector<double>&);
 
   /// initialise from part of a supplied Grid
   void init(int, int, const Grid1D&);
@@ -45,13 +46,22 @@ public:
   int xn(double);
 
   /// the Grid width for coordinate x
-  inline double h(double x){ return h(xl(x)); }
+  inline double h(double x)
+  {
+    return h(xl(x));
+  }
 
   /// the Grid width for some Grid point i
-  inline double h(int i) { return m_coord[i+1] - m_coord[i];}
+  inline double h(int i)
+  {
+    return m_coord[i+1] - m_coord[i];
+  }
 
-  /// the size of the Grid : 
-  inline int Size() { return m_size; }
+  /// the size of the Grid :
+  inline int Size()
+  {
+    return m_size;
+  }
 
 };
 #endif

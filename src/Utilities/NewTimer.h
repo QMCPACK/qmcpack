@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -26,77 +26,92 @@
 
 class Communicate;
 
-namespace qmcplusplus  {
+namespace qmcplusplus
+{
 
-  /* Timer using omp_get_wtime  */
-  class NewTimer
-  {
-  protected:
-    double start_time;
-    double total_time;
-    long num_calls;
-    std::string name;
-  public:
+/* Timer using omp_get_wtime  */
+class NewTimer
+{
+protected:
+  double start_time;
+  double total_time;
+  long num_calls;
+  std::string name;
+public:
 #if defined(DISABLE_TIMER)
-    inline void start(){}
-    inline void stop(){}
+  inline void start() {}
+  inline void stop() {}
 #else
-    inline void start() 
-    { start_time = cpu_clock(); }
-    
-    inline void stop()  
-    { total_time += cpu_clock() - start_time;  num_calls++;   }
+  inline void start()
+  {
+    start_time = cpu_clock();
+  }
+
+  inline void stop()
+  {
+    total_time += cpu_clock() - start_time;
+    num_calls++;
+  }
 #endif
 
-    inline double    get_total() const  
-    { return total_time;             }
-    
-    inline long  get_num_calls() const  
-    { return num_calls;              }
-    
-    inline std::string get_name() const 
-    { return name;                   }
-
-    inline void reset()           
-    { num_calls = 0; total_time=0.0; }
-        
-    NewTimer(const std::string& myname) : 
-      total_time(0.0), num_calls(0), name(myname)
-    { }
-
-    void set_name(const std::string& myname)
-    {
-      name=myname;
-    }
-  };
-
-  struct TimerComparator
+  inline double    get_total() const
   {
-    inline bool operator()(const NewTimer *a, const NewTimer *b)
-    {
-      return a->get_name() < b->get_name();
-    }
-  };
+    return total_time;
+  }
 
-
-  class TimerManagerClass
+  inline long  get_num_calls() const
   {
-  protected:
-    std::vector<NewTimer*> TimerList;
-  public:
-    inline void addTimer (NewTimer* t)
+    return num_calls;
+  }
+
+  inline std::string get_name() const
+  {
+    return name;
+  }
+
+  inline void reset()
+  {
+    num_calls = 0;
+    total_time=0.0;
+  }
+
+  NewTimer(const std::string& myname) :
+    total_time(0.0), num_calls(0), name(myname)
+  { }
+
+  void set_name(const std::string& myname)
+  {
+    name=myname;
+  }
+};
+
+struct TimerComparator
+{
+  inline bool operator()(const NewTimer *a, const NewTimer *b)
+  {
+    return a->get_name() < b->get_name();
+  }
+};
+
+
+class TimerManagerClass
+{
+protected:
+  std::vector<NewTimer*> TimerList;
+public:
+  inline void addTimer (NewTimer* t)
+  {
+    #pragma omp critical
     {
-#pragma omp critical
-      {
-        TimerList.push_back(t);
-      }
+      TimerList.push_back(t);
     }
+  }
 
-    void reset();
-    void print (Communicate* comm);
-  };
+  void reset();
+  void print (Communicate* comm);
+};
 
-  extern TimerManagerClass TimerManager;
+extern TimerManagerClass TimerManager;
 }
 
 #endif

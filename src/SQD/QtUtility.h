@@ -2,53 +2,66 @@
 #define OHMMS_SIMPLETREEBUILDER_H
 
 // template<class NP>
-// void 
+// void
 // SimpleTreeBuilder(QListViewItem *parentItem, NP parentNode){}
-void SimpleTreeBuilder(QListViewItem *parentItem, xmlNodePtr parentNode) {
-
+void SimpleTreeBuilder(QListViewItem *parentItem, xmlNodePtr parentNode)
+{
   QListViewItem *thisItem = 0;
   xmlNodePtr cur=parentNode->children;
-  while(cur != NULL) {
+  while(cur != NULL)
+  {
     QString cname((const char*)(cur->name));
-    if(cname != "comment") {
-      if(parentItem != 0) {
-	if(cname == "text") {
-	  parentItem->setText(1,(const char*)(cur->content));
-	} else 
-	  if(cname == "PARAMETER"){
-	    thisItem = new QListViewItem(parentItem,thisItem);
-	    ///process attributes: type or format
-	    xmlAttrPtr att = cur->properties;
-	    while(att != NULL) {
-	      QString aname((const char*)(att->name));
-	      if(aname == "name") {
-		thisItem->setText(0,(const char*)(att->children->content));
-	      } else if(aname == "InUnit") {
-		thisItem->setText(2,(const char*)(att->children->content));
-	      }
-	      att = att->next;
-	    }
-	    thisItem->setText(1,(const char*)(cur->children->content));
-	  } else {
-
-	    thisItem = new QListViewItem(parentItem,thisItem);
-	    thisItem->setText(0,cname);
-
-	    SimpleTreeBuilder(thisItem,cur);
-
-	    ///process attributes: type or format
-	    xmlAttrPtr att = cur->properties;
-	    while(att != NULL) {
-	      QString aname((const char*)(att->name));
-	      if(aname == "name") {
-		thisItem->setText(1,(const char*)(att->children->content));
-	      } else {
-		new QListViewItem(thisItem,aname,(const char*)(att->children->content));
-	      }
-	      att = att->next;
-	    }
-	    
-	  }
+    if(cname != "comment")
+    {
+      if(parentItem != 0)
+      {
+        if(cname == "text")
+        {
+          parentItem->setText(1,(const char*)(cur->content));
+        }
+        else
+          if(cname == "PARAMETER")
+          {
+            thisItem = new QListViewItem(parentItem,thisItem);
+            ///process attributes: type or format
+            xmlAttrPtr att = cur->properties;
+            while(att != NULL)
+            {
+              QString aname((const char*)(att->name));
+              if(aname == "name")
+              {
+                thisItem->setText(0,(const char*)(att->children->content));
+              }
+              else
+                if(aname == "InUnit")
+                {
+                  thisItem->setText(2,(const char*)(att->children->content));
+                }
+              att = att->next;
+            }
+            thisItem->setText(1,(const char*)(cur->children->content));
+          }
+          else
+          {
+            thisItem = new QListViewItem(parentItem,thisItem);
+            thisItem->setText(0,cname);
+            SimpleTreeBuilder(thisItem,cur);
+            ///process attributes: type or format
+            xmlAttrPtr att = cur->properties;
+            while(att != NULL)
+            {
+              QString aname((const char*)(att->name));
+              if(aname == "name")
+              {
+                thisItem->setText(1,(const char*)(att->children->content));
+              }
+              else
+              {
+                new QListViewItem(thisItem,aname,(const char*)(att->children->content));
+              }
+              att = att->next;
+            }
+          }
       }
     }
     cur = cur->next;
@@ -70,9 +83,9 @@ void SimpleTreeBuilder(QListViewItem *parentItem, const QDomElement& parentNode)
 	    QDomNamedNodeMap att_map=node.attributes();
 	    for(int i=0; i<att_map.count(); i++) {
 	      QDomNode att=att_map.item(i);
-	      if(att.nodeName() == "name") 
+	      if(att.nodeName() == "name")
 		thisItem->setText(0,att.nodeValue());
-	      else if(att.nodeName() == "Unit") 
+	      else if(att.nodeName() == "Unit")
 		thisItem->setText(2,att.nodeValue());
 	    }
 	    if(!node.firstChild().isNull())
@@ -85,7 +98,7 @@ void SimpleTreeBuilder(QListViewItem *parentItem, const QDomElement& parentNode)
 	    for(int i=0; i<att_map.count(); i++) {
 	      QDomAttr att=att_map.item(i).toAttr(); //QDomNode att=att_map.item(i);
 	      thisItem->setText(1,att.nodeValue());
-	      
+
 	    }
 	  }
 	}

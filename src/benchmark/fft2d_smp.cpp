@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -46,18 +46,15 @@ inline void print_help(const string& msg)
 
 int main(int argc, char** argv)
 {
-
   using namespace qmcplusplus;
   OHMMS::Controller->initialize(argc,argv);
   Communicate* mycomm=OHMMS::Controller;
   OhmmsInfo Welcome(argc,argv,mycomm->rank());
   qmcplusplus::Random.init(0,1,11);
-
   int howmany=1;
   int niters=10;
   int nx=6;
   int ny=6;
-
   //accepted: r2c  or c2c
   string fft_type("r2c");
   string fft_eng("fftw");
@@ -65,86 +62,77 @@ int main(int argc, char** argv)
   bool single_precision=false;
   bool debug=false;
   int opt;
-  while((opt = getopt(argc, argv, "hdp:x:y:m:i:e:t:s:")) != -1) {
-    switch(opt) {
-      case 'h':
-        print_help("Help Message");
-        return 1;
-      case 'd':
-        debug=true;
-        break;
-      case 'x':
-        nx=atoi(optarg);
-        break;
-      case 'y':
-        ny=atoi(optarg);
-        break;
-      case 'm':
-        howmany=atoi(optarg);
-        break;
-      case 'i':
-        niters=atoi(optarg);
-        break;
-      case 'p':
-        if(optarg[0]=='s') single_precision=true;
-        break;
-      case 'e':
-        fft_eng=optarg;
-        break;
-      case 't':
-        fft_type=optarg;
-        break;
-      default:
-        print_help("Unknown options");
-        return 1;
+  while((opt = getopt(argc, argv, "hdp:x:y:m:i:e:t:s:")) != -1)
+  {
+    switch(opt)
+    {
+    case 'h':
+      print_help("Help Message");
+      return 1;
+    case 'd':
+      debug=true;
+      break;
+    case 'x':
+      nx=atoi(optarg);
+      break;
+    case 'y':
+      ny=atoi(optarg);
+      break;
+    case 'm':
+      howmany=atoi(optarg);
+      break;
+    case 'i':
+      niters=atoi(optarg);
+      break;
+    case 'p':
+      if(optarg[0]=='s')
+        single_precision=true;
+      break;
+    case 'e':
+      fft_eng=optarg;
+      break;
+    case 't':
+      fft_type=optarg;
+      break;
+    default:
+      print_help("Unknown options");
+      return 1;
     }
   }
-
-
   typedef double real_type;
   typedef complex<real_type> complex_type;
   typedef fft1d_engine<complex_type, complex_type, TEST_FFT_ENG> fft1d_engine_t;
   typedef Matrix<complex_type> matrix_type;
-
   int np=omp_get_max_threads();
   vector<matrix_type*> in(omp_get_max_threads())
-    ,in_t(omp_get_max_threads()) ,in_copy(omp_get_max_threads());
+  ,in_t(omp_get_max_threads()) ,in_copy(omp_get_max_threads());
   vector<fft1d_engine_t*> fft_xy(np);
   vector<fft1d_engine_t*> fft_yx(np);
-
   int nx_thread=nx/np;
   int ny_thread=ny/np;
-
-#pragma omp parallel
+  #pragma omp parallel
   {
     int ip=omp_get_thread_num();
     in[ip]=new matrix_type(nx_thread,ny);
     in_copy[ip]=new matrix_type(nx_thread,ny);
     in_t[ip]=new matrix_type(ny_thread,nx);
-
     fft_xy[ip]=new fft1d_engine_t;
     fft_xy[ip]->set_defaults(ny,nx_thread);
-
     fft_yx[ip]=new fft1d_engine_t;
     fft_yx[ip]->set_defaults(nx,ny_thread);
-
-#pragma omp critical
+    #pragma omp critical
     {
       fft_xy[ip]->create(in[ip]->data());
       fft_yx[ip]->create(in_t[ip]->data());
     }
-
     //for(int i=0,ii=ip*nx_thread; i<nx_thread; ++i,++ii)
     //  for(int jp=0; jp<np; ++jp)
     //    for(int jj=jp*ny_thread; jj<(jp+1)*ny_thread; ++jj)
     //    (*in_copy[ip])(i,jj)=complex_type(ii,jj);
-
     init_array(*in_copy[ip]);
     *in[ip]=*in_copy[ip];
-
   }
-
-//#pragma omp parallel 
+//#pragma omp parallel
 //  {
 //    int ip=omp_get_thread_num();
 //    transpose_block(in_copy,*in_t[ip],ip);
@@ -161,7 +149,7 @@ int main(int argc, char** argv)
 //    cout << *in_t[ip];
 //  }
 //
-//#pragma omp parallel 
+//#pragma omp parallel
 //  {
 //    int ip=omp_get_thread_num();
 //    transpose_block(in_t,*in[ip],ip);
@@ -169,7 +157,7 @@ int main(int argc, char** argv)
 //
 //  for(int ip=0; ip<np; ++ip)
 //  {
-//    if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0)) 
+//    if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0))
 //      cout << "We are good with 1D FFT+t(1D FFT)" << endl;
 //  }
 //  return 0;
@@ -180,32 +168,28 @@ int main(int argc, char** argv)
   for(int iter=0; iter<niters; ++iter)
   {
     clock.restart();
-#pragma omp parallel
+    #pragma omp parallel
     {
       int ip=omp_get_thread_num();
       fft_xy[ip]->fft_forward(in[ip]->data());
-
-#pragma omp barrier
+      #pragma omp barrier
       transpose_block(in,*in_t[ip],ip);
       fft_yx[ip]->fft_forward(in_t[ip]->data());
-
       fft_yx[ip]->fft_backward(in_t[ip]->data());
-#pragma omp barrier
+      #pragma omp barrier
       transpose_block(in_t,*in[ip],ip);
       fft_xy[ip]->fft_backward(in[ip]->data());
     }
     if(debug && !iter)
       for(int ip=0; ip<np; ++ip)
-        if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0/static_cast<double>(nx*ny))) 
+        if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0/static_cast<double>(nx*ny)))
           cout << "We are good with 1D FFT+t(1D FFT) "<< ip << endl;
   }
-
   double dt_t=clock_big.elapsed();
   double factor=1.0/static_cast<double>(niters);
-  
   printf("tag nX  nY  M  OMP tot  \n");
   printf("fft2d_smp %d %d %d %d %12.4e\n"
-      , nx, ny, howmany, omp_get_max_threads(),dt_t*factor);
+         , nx, ny, howmany, omp_get_max_threads(),dt_t*factor);
   OHMMS::Controller->finalize();
   return 0;
 }
@@ -213,5 +197,5 @@ int main(int argc, char** argv)
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1770 $   $Date: 2007-02-17 17:45:38 -0600 (Sat, 17 Feb 2007) $
- * $Id: fft2d.cpp 1770 2007-02-17 23:45:38Z jnkim $ 
+ * $Id: fft2d.cpp 1770 2007-02-17 23:45:38Z jnkim $
  ***************************************************************************/

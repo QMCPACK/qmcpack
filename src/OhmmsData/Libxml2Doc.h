@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -18,9 +18,10 @@
 #define LIBXML2_DOCUMENT_H
 #include "OhmmsData/libxmldefs.h"
 #include <string>
-/** class to handle xmlXPathObject 
+/** class to handle xmlXPathObject
  */
-struct OhmmsXPathObject {
+struct OhmmsXPathObject
+{
 
   //default constructor
   OhmmsXPathObject();
@@ -39,14 +40,24 @@ struct OhmmsXPathObject {
    */
   void put(const char* expression, xmlXPathContextPtr context);
 
-  inline bool empty() { return NumObjects == 0;}
+  inline bool empty()
+  {
+    return NumObjects == 0;
+  }
 
-  inline int size() {return NumObjects;}
+  inline int size()
+  {
+    return NumObjects;
+  }
 
-  inline xmlNodePtr operator[](int i) { 
-    if(result != NULL && i < NumObjects) {
+  inline xmlNodePtr operator[](int i)
+  {
+    if(result != NULL && i < NumObjects)
+    {
       return result->nodesetval->nodeTab[i];
-    } else {
+    }
+    else
+    {
       return NULL;
     }
   }
@@ -57,7 +68,8 @@ struct OhmmsXPathObject {
 
 /** class that handles xmlDoc
  */
-struct Libxml2Document {
+struct Libxml2Document
+{
 
   Libxml2Document();
   Libxml2Document(const std::string& fname);
@@ -65,8 +77,14 @@ struct Libxml2Document {
 
   bool parse(const std::string& fname);
 
-  inline xmlDocPtr getDocument() { return m_doc;}
-  inline xmlNodePtr getRoot() { return m_root;}
+  inline xmlDocPtr getDocument()
+  {
+    return m_doc;
+  }
+  inline xmlNodePtr getRoot()
+  {
+    return m_root;
+  }
   xmlXPathContextPtr getXPathContext();
 
   void dump(const std::string& newxml);
@@ -84,5 +102,5 @@ struct Libxml2Document {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -12,7 +12,8 @@
 
 using namespace qmcplusplus;
 
-struct QMCGaussianParserBase {
+struct QMCGaussianParserBase
+{
 
   typedef double value_type;
   typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
@@ -34,13 +35,13 @@ struct QMCGaussianParserBase {
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
-  int numMO, readNO, readGuess;   
+  int numMO, readNO, readGuess;
   std::string Title;
   std::string basisType;
   std::string basisName;
   std::string Normalized;
   std::string CurrentCenter;
-  std::string outputFile; 
+  std::string outputFile;
   std::string angular_type;
 
   ParticleSet IonSystem;
@@ -92,7 +93,7 @@ struct QMCGaussianParserBase {
   virtual void parse(const std::string& fname) = 0;
 
   virtual void dump(const string& psi_tag,
-      const string& ion_tag);
+                    const string& ion_tag);
 
   //static std::vector<std::string> IonName;
   static std::map<int,std::string> IonName;

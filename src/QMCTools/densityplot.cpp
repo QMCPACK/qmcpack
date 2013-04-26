@@ -18,7 +18,8 @@ int print_help()
   return 1;
 }
 
-struct DensityObserver {
+struct DensityObserver
+{
   typedef TinyVector<double,3> PosType;
   int npts;
   int nsamples;
@@ -58,7 +59,6 @@ struct DensityObserver {
     fout.setf(ios::scientific, ios::floatfield);
     fout.setf(ios::left,ios::adjustfield);
     fout.precision(6);
-
     double norm=1.0/static_cast<double>(nsamples);
     double x=rmin;
     for(int ix=0; ix<npts; ix++,x+=delta)
@@ -72,10 +72,10 @@ struct DensityObserver {
 
 };
 
-int main(int argc, char** argv) {
-
-  if(argc<2) return print_help();
-
+int main(int argc, char** argv)
+{
+  if(argc<2)
+    return print_help();
   int iargc=0;
   int nproc=1;
   vector<string> fnamein(2);
@@ -84,27 +84,29 @@ int main(int argc, char** argv) {
   while(iargc<argc)
   {
     string c(argv[iargc]);
-    if(c == "--fileroot") 
+    if(c == "--fileroot")
     {
       h5fileroot=argv[++iargc];
     }
-    else if(c == "--diff")
-    {
-      fnamein[0]=argv[++iargc];
-      fnamein[1]=argv[++iargc];
-      getdiff=true;
-    }
-    else if(c == "--np")
-    {
-      nproc=atoi(argv[++iargc]);
-    }
-    else if(c == "--help" || c == "-h")
-    {
-      return print_help();
-    }
+    else
+      if(c == "--diff")
+      {
+        fnamein[0]=argv[++iargc];
+        fnamein[1]=argv[++iargc];
+        getdiff=true;
+      }
+      else
+        if(c == "--np")
+        {
+          nproc=atoi(argv[++iargc]);
+        }
+        else
+          if(c == "--help" || c == "-h")
+          {
+            return print_help();
+          }
     ++iargc;
   }
-
   if(getdiff)
   {
     cout << "Going to compare two density " <<  fnamein[0] << " " << fnamein[1] << endl;
@@ -112,10 +114,9 @@ int main(int argc, char** argv) {
     recorder1.getData(fnamein[0].c_str(),nproc);
     DensityObserver recorder2;
     recorder2.getData(fnamein[1].c_str(),nproc);
-
     recorder1.value -= recorder2.value;
     recorder1.print("rho_diff.dat");
-  } 
+  }
   else
   {
     DensityObserver recorder;
@@ -135,18 +136,16 @@ void DensityObserver::getData(const char* froot, int nproc)
       sprintf(fname,"%s.p%03d.config.h5",froot,ip);
     else
       sprintf(fname,"%s.config.h5",froot);
-
     hid_t fileID =  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
     int nconf=1;
     hid_t mastercf = H5Gopen(fileID,"config_collection");
     hid_t h1=H5Dopen(mastercf,"NumOfConfigurations");
     H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(nconf));
     H5Dclose(h1);
-
     cout << "Adding data in " << fname << " number of configurations = " << nconf << endl;
-
-    for(int iconf=0; iconf<nconf; iconf++) { 
-      sprintf(coordname,"config%04d/coord",iconf); 
+    for(int iconf=0; iconf<nconf; iconf++)
+    {
+      sprintf(coordname,"config%04d/coord",iconf);
       hid_t dataset = H5Dopen(mastercf,coordname);
       hid_t dataspace = H5Dget_space(dataset);
       int rank = H5Sget_simple_extent_ndims(dataspace);
@@ -158,7 +157,6 @@ void DensityObserver::getData(const char* froot, int nproc)
       accumulate(pos,dimTot[0]*dimTot[1]);
     }
   }
-
   string outfname(froot);
   outfname.append(".den.dat");
   print(outfname.c_str());

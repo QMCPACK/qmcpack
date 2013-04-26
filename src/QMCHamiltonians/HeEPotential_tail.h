@@ -7,53 +7,61 @@
 // #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 ///Using Kelvin and Angstrom
-namespace qmcplusplus {
-  /** @ingroup hamiltonian
-   *@brief HFDHE2Potential for the indentical source and target particle sets. 
-   */
-  struct HeePotential_tail: public QMCHamiltonianBase {
-    ParticleSet* PtclRef;
+namespace qmcplusplus
+{
+/** @ingroup hamiltonian
+ *@brief HFDHE2Potential for the indentical source and target particle sets.
+ */
+struct HeePotential_tail: public QMCHamiltonianBase
+{
+  ParticleSet* PtclRef;
 
-    HeePotential_tail(ParticleSet& P): PtclRef(&P) {
-    }
+  HeePotential_tail(ParticleSet& P): PtclRef(&P)
+  {
+  }
 
-    ~HeePotential_tail() { }
+  ~HeePotential_tail() { }
 
-    void resetTargetParticleSet(ParticleSet& P)  {
+  void resetTargetParticleSet(ParticleSet& P)
+  {
+  }
 
-    }
+  inline Return_t evaluate(ParticleSet& P)
+  {
+    return Value;
+  }
 
-    inline Return_t evaluate(ParticleSet& P) {
-      return Value;
-    }
-    
-    inline void set_TC(Return_t TCorr){
-      Value = TCorr;
-    }
+  inline void set_TC(Return_t TCorr)
+  {
+    Value = TCorr;
+  }
 
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
-      return evaluate(P);
-    }
+  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  {
+    return evaluate(P);
+  }
 
-    /** Do nothing */
-    bool put(xmlNodePtr cur) {
-      return true;
-    }
+  /** Do nothing */
+  bool put(xmlNodePtr cur)
+  {
+    return true;
+  }
 
-    bool get(std::ostream& os) const {
-      os << "HeePotentialTailcorr: " << PtclRef->getName();
-      return true;
-    }
+  bool get(std::ostream& os) const
+  {
+    os << "HeePotentialTailcorr: " << PtclRef->getName();
+    return true;
+  }
 
-    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-    {
-      return 0;
-    }
-    
-    void addObservables(PropertySetType& plist)
-    {
-      myIndex=plist.add("Heetail");
-    }
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    return 0;
+  }
+
+  void addObservables(PropertySetType& plist)
+  {
+    myIndex=plist.add("Heetail");
+  }
 
 //     void setObservables(PropertySetType& plist)
 //     {
@@ -63,6 +71,6 @@ namespace qmcplusplus {
 //     {
 //       plist[myIndex+offset]=Value;
 //     }
-  };
+};
 }
 #endif

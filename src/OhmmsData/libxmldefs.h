@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -28,9 +28,11 @@
 #include <algorithm>
 
 template<typename _CharT>
-inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
+inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
+{
   cname=(const char*)cur->name;
-  for(int i=0; i<cname.size(); i++) cname[i]=tolower(cname[i]);
+  for(int i=0; i<cname.size(); i++)
+    cname[i]=tolower(cname[i]);
   //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
 }
 
@@ -38,7 +40,7 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
  *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.
  *
  */
-/*!\brief assign a value from a node. Use specialization for classes. 
+/*!\brief assign a value from a node. Use specialization for classes.
  *\param a reference to a value to be assigned
  *\param cur current node
  *\return ture if successful
@@ -61,25 +63,28 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
  \endcode
  */
 template<class T>
-bool putContent(T& a, xmlNodePtr cur) {
-  std::istringstream 
-    stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+bool putContent(T& a, xmlNodePtr cur)
+{
+  std::istringstream
+  stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   return stream >> a;
 }
 
 template<class IT>
-bool putContent(IT first, IT last, xmlNodePtr cur) {
-  std::istringstream 
-    stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+bool putContent(IT first, IT last, xmlNodePtr cur)
+{
+  std::istringstream
+  stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   bool success=true;
-  while(success && first!=last) {
+  while(success && first!=last)
+  {
     success=(stream >> *first++);
   }
   return success;
 }
 
 /*!\fn bool getContent(const T& a, xmlNodePtr cur)
- *\brief write a value to a node. 
+ *\brief write a value to a node.
  *\param a reference to a value to be copied to a node
  *\param cur current node to which a content is copied
  *\return ture if successful
@@ -89,7 +94,8 @@ bool putContent(IT first, IT last, xmlNodePtr cur) {
  *specialization is necessary for intrinsic data types.
   */
 template<class T>
-bool getContent(const T& a, xmlNodePtr cur) {
+bool getContent(const T& a, xmlNodePtr cur)
+{
   std::stringstream s;
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(10);
@@ -99,7 +105,7 @@ bool getContent(const T& a, xmlNodePtr cur) {
 }
 
 /** assign vector<T> from a node. Create a temporary vector and make assignment.
- *\param a reference vector<T> 
+ *\param a reference vector<T>
  *\param cur current node to which a content is copied
  *\return ture if successful
  *
@@ -107,20 +113,25 @@ bool getContent(const T& a, xmlNodePtr cur) {
  *e.g., std::vector<double>
  */
 template<class T>
-inline bool 
-putContent(std::vector<T>& a, xmlNodePtr cur){
-  std::istringstream 
-    stream((const char*)
-	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+inline bool
+putContent(std::vector<T>& a, xmlNodePtr cur)
+{
+  std::istringstream
+  stream((const char*)
+         (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   std::vector<T> b;
   T t;
-  while(!stream.eof()){ if(stream >> t) b.push_back(t);}
+  while(!stream.eof())
+  {
+    if(stream >> t)
+      b.push_back(t);
+  }
   a = b;
   return true;
 }
 
 /** write std::vector<T> to node. Each element is separated by a space.
- *\param a reference vector<T> 
+ *\param a reference vector<T>
  *\param cur current node to which a content is copied
  *\return ture if successful
  *
@@ -129,11 +140,13 @@ putContent(std::vector<T>& a, xmlNodePtr cur){
  *well for large vectors. Use HDF5 library for the real data.
  */
 template<class T>
-inline bool 
-getContent(const std::vector<T>& a, xmlNodePtr cur) {
+inline bool
+getContent(const std::vector<T>& a, xmlNodePtr cur)
+{
   std::stringstream s;
   s.precision(10);
-  for(int i=0; i<a.size(); i++) s << ' ' <<  a[i];
+  for(int i=0; i<a.size(); i++)
+    s << ' ' <<  a[i];
   //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;
@@ -144,5 +157,5 @@ getContent(const std::vector<T>& a, xmlNodePtr cur) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

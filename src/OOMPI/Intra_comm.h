@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -27,22 +27,23 @@ class OOMPI_Cart_comm;
 class OOMPI_Graph_comm;
 
 
-class OOMPI_Intra_comm : public OOMPI_Comm { 
+class OOMPI_Intra_comm : public OOMPI_Comm
+{
 
-friend class OOMPI_Inter_comm;
-friend class OOMPI_Graph_comm;
-friend class OOMPI_Cart_comm;
+  friend class OOMPI_Inter_comm;
+  friend class OOMPI_Graph_comm;
+  friend class OOMPI_Cart_comm;
 
-public:  
+public:
   // default constructor.
   inline OOMPI_Intra_comm(MPI_Comm mpi_comm = MPI_COMM_NULL);
 
   // Shallow copy
   OOMPI_Intra_comm(const OOMPI_Intra_comm &a);
-  
+
   // Shallow copy
   OOMPI_Intra_comm &operator=(const OOMPI_Intra_comm &a);
-  
+
   // destructor
   virtual ~OOMPI_Intra_comm(void);
 
@@ -69,74 +70,74 @@ public:
   // Intercomm_create
   //
 
-  OOMPI_Inter_comm Intercomm_create(int local_leader, 
-				    OOMPI_Intra_comm &peer_comm,
-				    int remote_leader, 
-				    int tag = OOMPI_INTERCOMM_CREATE_TAG);
-  
-  OOMPI_Inter_comm Intercomm_create(int local_leader, 
-				    OOMPI_Port &peer_port,
-				    int tag = OOMPI_INTERCOMM_CREATE_TAG);
-  
+  OOMPI_Inter_comm Intercomm_create(int local_leader,
+                                    OOMPI_Intra_comm &peer_comm,
+                                    int remote_leader,
+                                    int tag = OOMPI_INTERCOMM_CREATE_TAG);
+
+  OOMPI_Inter_comm Intercomm_create(int local_leader,
+                                    OOMPI_Port &peer_port,
+                                    int tag = OOMPI_INTERCOMM_CREATE_TAG);
+
   //
   // Test_inter
   //
 
   virtual bool Test_inter(void);
-  
+
   //
   // Collective communication
   // Allgather
   //
 
   void Allgather(OOMPI_Message sendbuf, OOMPI_Message recvbuf);
-  void Allgather(OOMPI_Message sendbuf, 
-		 OOMPI_Array_message recvbuf, int recvcount);
+  void Allgather(OOMPI_Message sendbuf,
+                 OOMPI_Array_message recvbuf, int recvcount);
   void Allgather(OOMPI_Array_message sendbuf, int sendcount,
-		 OOMPI_Message recvbuf);
+                 OOMPI_Message recvbuf);
   void Allgather(OOMPI_Array_message sendbuf, int sendcount,
-		 OOMPI_Array_message recvbuf, int recvcount);
+                 OOMPI_Array_message recvbuf, int recvcount);
 
   //
   // Allgatherv
   //
 
   void Allgatherv(OOMPI_Message sendbuf,
-		  OOMPI_Array_message recvbuf, int recvcounts[],
-		  int displs[]);
+                  OOMPI_Array_message recvbuf, int recvcounts[],
+                  int displs[]);
   void Allgatherv(OOMPI_Array_message sendbuf, int sendcount,
-		  OOMPI_Array_message recvbuf, int recvcounts[],
-		  int displs[]);
-  
-  // 
+                  OOMPI_Array_message recvbuf, int recvcounts[],
+                  int displs[]);
+
+  //
   // Allreduce
   //
 
-  void Allreduce(OOMPI_Message sendbuf, 
-		 OOMPI_Message recvbuf, const OOMPI_Op& op);
+  void Allreduce(OOMPI_Message sendbuf,
+                 OOMPI_Message recvbuf, const OOMPI_Op& op);
   void Allreduce(OOMPI_Array_message sendbuf, int sendcount,
-		 OOMPI_Array_message recvbuf, const OOMPI_Op& op);
+                 OOMPI_Array_message recvbuf, const OOMPI_Op& op);
 
   //
   // Alltoall
   //
-  
+
   void Alltoall(OOMPI_Message sendbuf, OOMPI_Message recvbuf);
-  void Alltoall(OOMPI_Message sendbuf, 
-		OOMPI_Array_message recvbuf, int recvcount);
+  void Alltoall(OOMPI_Message sendbuf,
+                OOMPI_Array_message recvbuf, int recvcount);
   void Alltoall(OOMPI_Array_message sendbuf, int sendcount,
-		OOMPI_Message recvbuf);
+                OOMPI_Message recvbuf);
   void Alltoall(OOMPI_Array_message sendbuf, int sendcount,
-		OOMPI_Array_message recvbuf, int recvcount);
-  
+                OOMPI_Array_message recvbuf, int recvcount);
+
   //
   // Alltoallv
   //
-  
-  void Alltoallv(OOMPI_Array_message sendbuf, int sendcounts[], 
-		 int sdispls[], OOMPI_Array_message recvbuf, 
-		 int recvcounts[], int rdispls[]);
-  
+
+  void Alltoallv(OOMPI_Array_message sendbuf, int sendcounts[],
+                 int sdispls[], OOMPI_Array_message recvbuf,
+                 int recvcounts[], int rdispls[]);
+
   //
   // Barrier
   //
@@ -147,21 +148,21 @@ public:
   // Reduce_scatter
   //
 
-  void Reduce_scatter(OOMPI_Message sendbuf, 
-		      OOMPI_Array_message recvbuf, int recvcounts[],
-		      const OOMPI_Op& op);
+  void Reduce_scatter(OOMPI_Message sendbuf,
+                      OOMPI_Array_message recvbuf, int recvcounts[],
+                      const OOMPI_Op& op);
   void Reduce_scatter(OOMPI_Array_message sendbuf,
-		      OOMPI_Array_message recvbuf, int recvcounts[],
-		      const OOMPI_Op& op);
-  
+                      OOMPI_Array_message recvbuf, int recvcounts[],
+                      const OOMPI_Op& op);
+
   //
   // Scan
   //
 
-  void Scan(OOMPI_Message sendbuf, 
-	    OOMPI_Array_message recvbuf, const OOMPI_Op& op);
-  void Scan(OOMPI_Array_message sendbuf, 
-	    OOMPI_Array_message recvbuf, int count, const OOMPI_Op& op);
+  void Scan(OOMPI_Message sendbuf,
+            OOMPI_Array_message recvbuf, const OOMPI_Op& op);
+  void Scan(OOMPI_Array_message sendbuf,
+            OOMPI_Array_message recvbuf, int count, const OOMPI_Op& op);
 
   //
   // Receives on any port
@@ -175,24 +176,24 @@ public:
   //
 
   OOMPI_Status Recv(OOMPI_Message buf, int tag = OOMPI_NO_TAG);
-  OOMPI_Status Recv(OOMPI_Array_message buf, int count, 
-		    int tag = OOMPI_NO_TAG);
-  
+  OOMPI_Status Recv(OOMPI_Array_message buf, int count,
+                    int tag = OOMPI_NO_TAG);
+
   //
   // Irecv
   //
 
   OOMPI_Request Irecv(OOMPI_Message buf, int tag = OOMPI_NO_TAG);
-  OOMPI_Request Irecv(OOMPI_Array_message buf, int count, 
-		      int tag = OOMPI_NO_TAG);
-  
+  OOMPI_Request Irecv(OOMPI_Array_message buf, int count,
+                      int tag = OOMPI_NO_TAG);
+
   //
   // Recv_init
   //
 
   OOMPI_Request Recv_init(OOMPI_Message buf, int tag = OOMPI_NO_TAG);
-  OOMPI_Request Recv_init(OOMPI_Array_message buf, int count, 
-			  int tag = OOMPI_NO_TAG);
+  OOMPI_Request Recv_init(OOMPI_Array_message buf, int count,
+                          int tag = OOMPI_NO_TAG);
 
   //
   // Probe
@@ -242,14 +243,14 @@ extern OOMPI_Intra_comm OOMPI_COMM_SELF;
 
 // MPI and default constructor
 inline OOMPI_Intra_comm::OOMPI_Intra_comm(MPI_Comm mpi_comm)
-: OOMPI_Comm(MPI_COMM_NULL)
+  : OOMPI_Comm(MPI_COMM_NULL)
 {
   do_full_init(mpi_comm, false);
 }
 
 // Standard constructor
 inline OOMPI_Intra_comm::OOMPI_Intra_comm(MPI_Comm mpi_comm, bool needs_to_be_freed)
-: OOMPI_Comm(MPI_COMM_NULL)
+  : OOMPI_Comm(MPI_COMM_NULL)
 {
   do_full_init(mpi_comm, needs_to_be_freed);
 }

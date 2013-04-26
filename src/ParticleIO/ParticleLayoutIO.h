@@ -23,30 +23,33 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Configuration.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class LatticeParser {
+class LatticeParser
+{
 
-    typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-    ParticleLayout_t& ref_;
+  typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
+  ParticleLayout_t& ref_;
 
-    public:
+public:
 
-    LatticeParser(ParticleLayout_t& lat): ref_(lat){ }
-    bool put(xmlNodePtr cur);
-  };
+  LatticeParser(ParticleLayout_t& lat): ref_(lat) { }
+  bool put(xmlNodePtr cur);
+};
 
 
-  class LatticeXMLWriter {
+class LatticeXMLWriter
+{
 
-    typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-    ParticleLayout_t& ref_;
-    public:
+  typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
+  ParticleLayout_t& ref_;
+public:
 
-    LatticeXMLWriter(ParticleLayout_t& lat): ref_(lat){ }
-    bool get(ostream& ) const;
-    xmlNodePtr createNode();
-  };
+  LatticeXMLWriter(ParticleLayout_t& lat): ref_(lat) { }
+  bool get(ostream& ) const;
+  xmlNodePtr createNode();
+};
 
 
 }

@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,35 +20,37 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class ParticleSet;
+class ParticleSet;
 
-  /** Builder class to create Fermi wavefunctions using MO Basis.
-   *
-   * Any molecular orbital has to use the distance table between the ions and electrons.
-   * The traits of MO Basis is that each basis function is
-   * \f$ \phi_{nlm} =  \frac{R_{nl}}{r^l} r^{l}\Re (Y_{lm}) \f$
-   * where \f$ \frac{R_{nl}}{r^l} \f$ is any radial grid function and 
-   * \f$ \Re (Y_{lm}) \f$ is a real spherical harmonic and \f$ r^l \Re (Y_{lm})\f$ handled by 
-   * SphericalTensor object.
-   * Depending upon the input, one can convert the functions on the radial
-   * grids or can carry on the calculations using the input functions.
-   */
-  struct MolecularOrbitalBuilder: public OrbitalBuilderBase {
+/** Builder class to create Fermi wavefunctions using MO Basis.
+ *
+ * Any molecular orbital has to use the distance table between the ions and electrons.
+ * The traits of MO Basis is that each basis function is
+ * \f$ \phi_{nlm} =  \frac{R_{nl}}{r^l} r^{l}\Re (Y_{lm}) \f$
+ * where \f$ \frac{R_{nl}}{r^l} \f$ is any radial grid function and
+ * \f$ \Re (Y_{lm}) \f$ is a real spherical harmonic and \f$ r^l \Re (Y_{lm})\f$ handled by
+ * SphericalTensor object.
+ * Depending upon the input, one can convert the functions on the radial
+ * grids or can carry on the calculations using the input functions.
+ */
+struct MolecularOrbitalBuilder: public OrbitalBuilderBase
+{
 
-    typedef map<string,ParticleSet*> PtclPoolType;
-    
-    MolecularOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
-       PtclPoolType& psets):OrbitalBuilderBase(p,psi),ptclPool(psets){ }
-  
-    bool put(xmlNodePtr cur);
-    bool putSpecial(xmlNodePtr cur);
-    bool putOpen(const string& fname_in);
+  typedef map<string,ParticleSet*> PtclPoolType;
 
-    ///need ParticleSetPool
-    PtclPoolType& ptclPool;
-  };
+  MolecularOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
+                          PtclPoolType& psets):OrbitalBuilderBase(p,psi),ptclPool(psets) { }
+
+  bool put(xmlNodePtr cur);
+  bool putSpecial(xmlNodePtr cur);
+  bool putOpen(const string& fname_in);
+
+  ///need ParticleSetPool
+  PtclPoolType& ptclPool;
+};
 
 
 }
@@ -56,5 +58,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@
 
 /** Base class for any functor with optimizable parameters
  *
- * Derived classes from OptimizableFunctorBase are called "functor"s and 
- * can be used as a template signature for  Jastrow functions. 
+ * Derived classes from OptimizableFunctorBase are called "functor"s and
+ * can be used as a template signature for  Jastrow functions.
  * - OneBodyJastroOrbital<FUNC>
  * - TwoBodyJastroOrbital<FUNC>
  * Functor in qmcpack denotes any function which returns a value at a point, e.g.,
@@ -34,8 +34,8 @@
  * are executed infrequently during optimizations.
  *
  * This class handles myVars of opt_variables_type (Optimize/VariableSet.h). A derived class
- * can insert any number of variables it handles during optimizations, by calling 
- * myVars.insert(name,value); 
+ * can insert any number of variables it handles during optimizations, by calling
+ * myVars.insert(name,value);
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
  * to insert calls.
  */
@@ -43,7 +43,7 @@ struct OptimizableFunctorBase
 {
   ///typedef for real values
   typedef optimize::VariableSet::real_type real_type;
-  ///typedef for variableset: this is going to be replaced 
+  ///typedef for variableset: this is going to be replaced
   typedef optimize::VariableSet opt_variables_type;
   ///typedef for name-value lists
   typedef optimize::VariableSet::variable_map_type variable_map_type;
@@ -52,9 +52,9 @@ struct OptimizableFunctorBase
   ///set of variables to be optimized
   opt_variables_type myVars;
   ///default constructor
-  inline OptimizableFunctorBase(){}
+  inline OptimizableFunctorBase() {}
   ///virtual destrutor
-  virtual ~OptimizableFunctorBase(){}
+  virtual ~OptimizableFunctorBase() {}
 
   inline void getIndex(const opt_variables_type& active)
   {
@@ -73,7 +73,7 @@ struct OptimizableFunctorBase
    */
   virtual OptimizableFunctorBase* makeClone() const =0;
 
-  /** reset function 
+  /** reset function
    */
   virtual void reset()=0;
 
@@ -84,7 +84,7 @@ struct OptimizableFunctorBase
    */
   virtual real_type f(real_type r)=0;
 
-  /** evaluate the first derivate 
+  /** evaluate the first derivate
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
@@ -99,22 +99,22 @@ struct OptimizableFunctorBase
   /** empty virtual function to help builder classes
   */
   virtual void setDensity(real_type n) { }
-  
-  virtual inline bool evaluateDerivatives (real_type r, std::vector<APPNAMESPACE::TinyVector<real_type,3> >& derivs)
-    {
-      return false;
-    }
 
-// mmorales: don't know how to solve a template problem for cusp correction, 
-//           so for now I do this 
-    virtual void setGridManager(bool willmanage) { }
-      
+  virtual inline bool evaluateDerivatives (real_type r, std::vector<APPNAMESPACE::TinyVector<real_type,3> >& derivs)
+  {
+    return false;
+  }
+
+// mmorales: don't know how to solve a template problem for cusp correction,
+//           so for now I do this
+  virtual void setGridManager(bool willmanage) { }
+
 };
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

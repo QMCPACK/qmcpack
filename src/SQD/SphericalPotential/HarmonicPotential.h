@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,28 +19,30 @@
 
 #include "SQD/SphericalPotential/RadialPotential.h"
 
-namespace ohmmshf {
+namespace ohmmshf
+{
 
-  /**
-     @ingroup RadialPotential
-     @class HarmonicPotential
-     @brief implements the Harmonic potential of 
-     \f[ 
-     V_{Harmonic}(r) = \frac{1}{2}\omega^2 r^2 
-     \f]
-   */
-  struct HarmonicPotential: public RadialPotentialBase {
-    value_type Omega;
-    HarmonicPotential(value_type omega);
-    value_type evaluate(const BasisSetType& psi, 
-			RadialOrbitalSet_t& V, int norb);
-    ///return \f$ n \f$
-    int getNumOfNodes(int n, int l);
-  };
+/**
+   @ingroup RadialPotential
+   @class HarmonicPotential
+   @brief implements the Harmonic potential of
+   \f[
+   V_{Harmonic}(r) = \frac{1}{2}\omega^2 r^2
+   \f]
+ */
+struct HarmonicPotential: public RadialPotentialBase
+{
+  value_type Omega;
+  HarmonicPotential(value_type omega);
+  value_type evaluate(const BasisSetType& psi,
+                      RadialOrbitalSet_t& V, int norb);
+  ///return \f$ n \f$
+  int getNumOfNodes(int n, int l);
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

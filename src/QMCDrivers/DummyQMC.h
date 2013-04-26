@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -19,32 +19,37 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DUMMY_H
 #define QMCPLUSPLUS_DUMMY_H
-#include "QMCDrivers/QMCDriver.h" 
-namespace qmcplusplus {
+#include "QMCDrivers/QMCDriver.h"
+namespace qmcplusplus
+{
 
-  /** @ingroup QMCDrivers 
-   *@brief A dummy QMCDriver for testing
-   */
-  class DummyQMC: public QMCDriver {
-  public:
-    /// Constructor.
-    DummyQMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+/** @ingroup QMCDrivers
+ *@brief A dummy QMCDriver for testing
+ */
+class DummyQMC: public QMCDriver
+{
+public:
+  /// Constructor.
+  DummyQMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
-    bool run();
-    bool put(xmlNodePtr cur);
- 
-  private:
-    /// Copy Constructor (disabled)
-    DummyQMC(const DummyQMC& a): QMCDriver(a) { }
-    /// Copy operator (disabled).
-    DummyQMC& operator=(const DummyQMC&) { return *this;}
+  bool run();
+  bool put(xmlNodePtr cur);
 
-  };
+private:
+  /// Copy Constructor (disabled)
+  DummyQMC(const DummyQMC& a): QMCDriver(a) { }
+  /// Copy operator (disabled).
+  DummyQMC& operator=(const DummyQMC&)
+  {
+    return *this;
+  }
+
+};
 }
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

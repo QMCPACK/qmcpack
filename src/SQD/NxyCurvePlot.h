@@ -20,10 +20,10 @@ public:
 
   virtual QSize sizeHint() const;
 
-  virtual void appendCurveData(long curveId, 
-			       double *x, 
-			       double *y, 
-			       int size);
+  virtual void appendCurveData(long curveId,
+                               double *x,
+                               double *y,
+                               int size);
 
 public slots:
 
@@ -43,5 +43,5 @@ private:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

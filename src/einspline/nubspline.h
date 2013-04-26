@@ -24,17 +24,17 @@
 #include "nubspline_create.h"
 
 #ifdef HAVE_SSE2
-  #include "nubspline_structs.h"
-  #include "nubspline_eval_sse_s.h"
-  #include "nubspline_eval_sse_c.h"
-  #include "nubspline_eval_sse_d.h"
-  #include "nubspline_eval_sse_z.h"
+#include "nubspline_structs.h"
+#include "nubspline_eval_sse_s.h"
+#include "nubspline_eval_sse_c.h"
+#include "nubspline_eval_sse_d.h"
+#include "nubspline_eval_sse_z.h"
 #else
-  #include "nubspline_structs.h"
-  #include "nubspline_eval_std_s.h"
-  #include "nubspline_eval_std_c.h"
-  #include "nubspline_eval_std_d.h"
-  #include "nubspline_eval_std_z.h"
+#include "nubspline_structs.h"
+#include "nubspline_eval_std_s.h"
+#include "nubspline_eval_std_c.h"
+#include "nubspline_eval_std_d.h"
+#include "nubspline_eval_std_z.h"
 #endif
 
 #endif

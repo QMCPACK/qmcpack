@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -32,10 +32,11 @@
  *@brief Concrete uniform grid layout for 3D
  */
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 /** A concrete, specialized class equivalent to UniformGridLayout<T,3>
  *
- *This class represents a supercell and is one of the layout classes 
+ *This class represents a supercell and is one of the layout classes
  *to define a trait class PT for ParticleBase<PT> (as a matter of fact,
  *the only layout class implemented in ohmms).
  *
@@ -48,12 +49,12 @@ namespace APPNAMESPACE {
  *
  *The additional interfaces of UniformGridLayout class are primarily
  *for NNEngine classes, which use the parition information to evaluate
- *the neighbor lists efficiently. 
+ *the neighbor lists efficiently.
  *
  */
 class Uniform3DGridLayout: public CrystalLattice<OHMMS_PRECISION,3,OHMMS_ORTHO>,
-			   public UniformCartesianGrid<OHMMS_PRECISION,3>
-{ 
+  public UniformCartesianGrid<OHMMS_PRECISION,3>
+{
 
 public:
 
@@ -61,10 +62,10 @@ public:
 
   /**enumeration for grid levels*/
   enum {MPI_GRID = 0, /*!< mpi level */
-	OMP_GRID,     /*!< open mp level */
-	SPATIAL_GRID, /*!< spatial level */
-	GridLevel = 3 /*!< counter used to tell the number of levels */
-  };
+        OMP_GRID,     /*!< open mp level */
+        SPATIAL_GRID, /*!< spatial level */
+        GridLevel = 3 /*!< counter used to tell the number of levels */
+       };
 
   typedef OHMMS_PRECISION                          value_type;
   typedef CrystalLattice<value_type,3,OHMMS_ORTHO> Base_t;
@@ -80,99 +81,143 @@ public:
    *parallelization is used.
    */
   inline Uniform3DGridLayout():MaxConnections(0), LR_dim_cutoff(15.0), NCMax(0), Status(0),
-  LR_rc(1e6), LR_kc(0.0)
+    LR_rc(1e6), LR_kc(0.0)
   {
-    for(int i=0; i<GridLevel; i++) Grid[i] = SingleParticleIndex_t(1);
+    for(int i=0; i<GridLevel; i++)
+      Grid[i] = SingleParticleIndex_t(1);
     SuperGrid.reserve(GridLevel);
-    for(int i=0; i<GridLevel; i++) SuperGrid.push_back(NULL);
-  } 
+    for(int i=0; i<GridLevel; i++)
+      SuperGrid.push_back(NULL);
+  }
 
   ///**copy constructor
   // */
   //inline Uniform3DGridLayout(const Uniform3DGridLayout& pl){
   //  copy(pl);
-  //} 
+  //}
 
 
   /** copy function
    */
-  inline void copy(const Uniform3DGridLayout& pl){
+  inline void copy(const Uniform3DGridLayout& pl)
+  {
     MaxConnections=0;
     LR_dim_cutoff=pl.LR_dim_cutoff;
     LR_kc=pl.LR_kc;
     LR_rc=pl.LR_rc;
     Base_t::set(pl);
     Grid_t::makeCopy(pl);
-  } 
+  }
 
-  inline ~Uniform3DGridLayout(){
-    for(int i=0; i<SuperGrid.size(); i++) 
-      if(SuperGrid[i]) delete SuperGrid[i];
-  } 
+  inline ~Uniform3DGridLayout()
+  {
+    for(int i=0; i<SuperGrid.size(); i++)
+      if(SuperGrid[i])
+        delete SuperGrid[i];
+  }
 
   ///return the first cell connected to the ig cell
-  inline int first_connected(int ig) const { return c_offset[ig];}
-    
+  inline int first_connected(int ig) const
+  {
+    return c_offset[ig];
+  }
+
   ///return the last cell connected by the interaction radius to the ig cell
-  inline int last_connected(int ig) const { return c_max[ig];}
+  inline int last_connected(int ig) const
+  {
+    return c_max[ig];
+  }
 
   ///return the last cell connected by the connectivity to the ig cell
-  inline int max_connected(int ig) const { return c_offset[ig+1];}
-    
+  inline int max_connected(int ig) const
+  {
+    return c_offset[ig+1];
+  }
+
   /// return the cell index
-  inline int id_connected(int j) const { return c_id[j];}
-    
+  inline int id_connected(int j) const
+  {
+    return c_id[j];
+  }
+
   /// return the correction vector according to the boundary conditions
-  inline SingleParticlePos_t bc(int j) const { return c_bc[j];}
+  inline SingleParticlePos_t bc(int j) const
+  {
+    return c_bc[j];
+  }
 
   /// return the total number of paritions
-  inline int ncontexts() const { return c_offset.size()-1;}
-    
+  inline int ncontexts() const
+  {
+    return c_offset.size()-1;
+  }
+
   /// return the maximum number of connected cells
   int connectGrid(value_type int_rad, value_type con_rad=-1);
 
   void makeShell(std::vector<SingleParticleIndex_t>& RS,
-		 std::vector<bool>& FS,
-		 const SingleParticleIndex_t& nc,
-		 value_type rr);
-    
+                 std::vector<bool>& FS,
+                 const SingleParticleIndex_t& nc,
+                 value_type rr);
+
   template<class GIM>
-  inline void makeGrid(const GIM& mgrid) {
-    if(mgrid.size() < GridLevel) {
+  inline void makeGrid(const GIM& mgrid)
+  {
+    if(mgrid.size() < GridLevel)
+    {
       Grid[SPATIAL_GRID] = mgrid.back();
-    } else {
-      for(int ig=0; ig<GridLevel; ig++)  Grid[ig] = mgrid[ig];
+    }
+    else
+    {
+      for(int ig=0; ig<GridLevel; ig++)
+        Grid[ig] = mgrid[ig];
     }
     ///first build the spatial grid
     setGrid(Grid[SPATIAL_GRID]);
   }
 
-  inline Grid_t* 
-  addGrid(int glevel, const SingleParticleIndex_t& agrid) {
-    if(SuperGrid[glevel]) {
+  inline Grid_t*
+  addGrid(int glevel, const SingleParticleIndex_t& agrid)
+  {
+    if(SuperGrid[glevel])
+    {
       SuperGrid[glevel]->setGrid(agrid);
       return SuperGrid[glevel];
-    } else {
-      Grid_t* g = new Grid_t(agrid);    
+    }
+    else
+    {
+      Grid_t* g = new Grid_t(agrid);
       SuperGrid[glevel] = g;
       return g;
     }
   }
 
-  inline Grid_t* getGrid(int glevel) { return SuperGrid[glevel];}
-  inline const Grid_t* getGrid(int glevel) const { 
+  inline Grid_t* getGrid(int glevel)
+  {
+    return SuperGrid[glevel];
+  }
+  inline const Grid_t* getGrid(int glevel) const
+  {
     return SuperGrid[glevel];
   }
   void initGrid(Grid_t& agrid, const Grid_t& subgrid);
 
   void checkGrid(value_type int_rad);
 
-  inline int ngrid(int ig) const { return Grid[SPATIAL_GRID][ig];}
-  inline int ngrid(int glevel, int ig) const { return Grid[glevel][ig];}
+  inline int ngrid(int ig) const
+  {
+    return Grid[SPATIAL_GRID][ig];
+  }
+  inline int ngrid(int glevel, int ig) const
+  {
+    return Grid[glevel][ig];
+  }
   void print(std::ostream& os) const;
 
-  inline void update() {
-    for(int i=0; i<u_bc.size(); i++)  c_bc[i]=toCart(u_bc[i]);
+  inline void update()
+  {
+    for(int i=0; i<u_bc.size(); i++)
+      c_bc[i]=toCart(u_bc[i]);
   }
 
   ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
@@ -181,10 +226,11 @@ public:
   /** set the lattice vector with a tensor
    *@param lat a tensor representing a supercell
    *
-   *In addition to setting the internal parameters, 
+   *In addition to setting the internal parameters,
    *it updates the Cartesian displacement vectors.
    */
-  inline void update(const Tensor<value_type,3>& lat) {
+  inline void update(const Tensor<value_type,3>& lat)
+  {
     Base_t::set(lat);
     connectGrid(InteractionRadius,ConnectionRadius);
   }
@@ -200,7 +246,7 @@ public:
 
   ///The interaction radius
   value_type InteractionRadius;
- 
+
   ///The radius to define a connected cell
   value_type ConnectionRadius;
 
@@ -237,9 +283,9 @@ public:
   //std::vector<CCContainer_t*> Connections;
 };
 }
-#endif  
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

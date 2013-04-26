@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -25,11 +25,13 @@ SpeciesCollection::SpeciesAttribMap_t SpeciesCollection::attribMap;
 SpeciesCollection::~SpeciesCollection()
 {
   DEBUGMSG("Calling SpeciesCollection::~SpeciesCollection()");
-  if(mySpecies) delete mySpecies;
+  if(mySpecies)
+    delete mySpecies;
 }
-SpeciesBase* SpeciesCollection::getSpecies() {
-
-  if(!mySpecies) {
+SpeciesBase* SpeciesCollection::getSpecies()
+{
+  if(!mySpecies)
+  {
     mySpecies = new SpeciesBase;
   }
   return mySpecies;
@@ -38,23 +40,27 @@ SpeciesBase* SpeciesCollection::getSpecies() {
 /*! \fn SpeciesCollecton::addAttrib(const char* name)
  *  \param name Unique name of the species to be added.
  */
-int SpeciesCollection::addAttrib(const char* name){
-  for(int i=0; i<attribMap.size(); i++) {
-    if(attribMap[i] == name) return i;
+int SpeciesCollection::addAttrib(const char* name)
+{
+  for(int i=0; i<attribMap.size(); i++)
+  {
+    if(attribMap[i] == name)
+      return i;
   }
-  attribMap.push_back(name);  
+  attribMap.push_back(name);
   mySpecies->addAttrib();
   return attribMap.size() -1;
 }
 
-void SpeciesCollection::print(ostream& os) {
-
+void SpeciesCollection::print(ostream& os)
+{
   os << "Total Number of Species Attributes = " << mySpecies->numAttributes() << endl;
   os << "Total Number of Species  = " << mySpecies->getTotalNum() << endl;
-
-  for(int isp=0; isp<mySpecies->getTotalNum(); isp++)  {
+  for(int isp=0; isp<mySpecies->getTotalNum(); isp++)
+  {
     os  << mySpecies->Name[isp] << " " ;
-    for(int id=0; id< mySpecies->numAttributes(); id++) {
+    for(int id=0; id< mySpecies->numAttributes(); id++)
+    {
       os << mySpecies->operator()(id,isp) << " ";
     }
     os << endl;
@@ -79,7 +85,7 @@ int SpeciesCollection::addSpecies(vector<string>& argv) {
   do { // first check the the species id
     if(argv[i] == "species") {
       id = mySpecies->getSpeciesID(argv[++i].c_str());
-    } 
+    }
   } while(id<0);
   return id;
 }
@@ -88,5 +94,5 @@ int SpeciesCollection::addSpecies(vector<string>& argv) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

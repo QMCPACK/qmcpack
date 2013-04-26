@@ -13,7 +13,6 @@ std::map<long,QColor> NxyCurvePlot::ColorList;
 NxyCurvePlot::NxyCurvePlot(QWidget *parent, const char* aname):
   QwtPlot(parent,aname)
 {
-
   ColorList[0] = black;
   ColorList[1] = black;
   ColorList[2] = red;
@@ -21,22 +20,18 @@ NxyCurvePlot::NxyCurvePlot(QWidget *parent, const char* aname):
   ColorList[4] = blue;
   ColorList[5] = cyan;
   ColorList[6] = magenta;
-
   setFrameStyle(QFrame::Box);
   setLineWidth(0);
   setCanvasLineWidth(2);
   setCanvasBackground(white);
-
   enableGridX(TRUE);
   enableGridY(TRUE);
   setGridMajPen(QPen(gray, 0, DotLine));
-
   //setAutoLegend(TRUE);
   //setLegendPos(Qwt::Right);
   initCurve();
-
   connect(this, SIGNAL(plotMousePressed(const QMouseEvent&)),
-	  this, SLOT(modifyCurves(const QMouseEvent&)));
+          this, SLOT(modifyCurves(const QMouseEvent&)));
 }
 
 QSize NxyCurvePlot::sizeHint() const
@@ -58,25 +53,22 @@ void NxyCurvePlot::clear()
 /*!
  *\brief append a dataset to a QwtplotCurve curveId
  */
-void NxyCurvePlot::appendCurveData(long curveId, 
-				   double *x, 
-				   double *y, 
-				   int size)
+void NxyCurvePlot::appendCurveData(long curveId,
+                                   double *x,
+                                   double *y,
+                                   int size)
 {
-	
   QwtPlotCurve *curve = NxyCurvePlot::curve(curveId);
   //curve->setPen(darkRed);
   curve->setPen(QPen(ColorList[curveId],2));
   curve->setStyle(QwtCurve::Spline);
-
   ///attach a curve to the specifies arrays without copyings
   //curve->setRawData(x,y,size);
   setCurveData(curveId,x,y,size);
-
   //d_legend->setPen(curveId,ColorList[curveId]);
 }
 
-void NxyCurvePlot::modifyCurves(const QMouseEvent &e) {
-
+void NxyCurvePlot::modifyCurves(const QMouseEvent &e)
+{
 }
 

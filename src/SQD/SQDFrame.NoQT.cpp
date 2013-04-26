@@ -20,7 +20,8 @@ SQDFrame::SQDFrame()
  */
 SQDFrame::~SQDFrame()
 {
-    // no need to delete child widgets, Qt does it all for us
-  if(HFSolver) delete HFSolver;
+  // no need to delete child widgets, Qt does it all for us
+  if(HFSolver)
+    delete HFSolver;
 }
 

@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -62,8 +62,8 @@ std::string ParticleTags::velocity_tag="v";
 std::string ParticleTags::energy_tag="e";
 std::string ParticleTags::sumbc_tag="sumbc";
 
-std::string ParticleTags::root_tag="particleset";    
-std::string ParticleTags::attrib_tag="attrib";    
+std::string ParticleTags::root_tag="particleset";
+std::string ParticleTags::attrib_tag="attrib";
 std::string ParticleTags::name_tag="name";
 std::string ParticleTags::datatype_tag="datatype";
 std::string ParticleTags::condition_tag="condition";
@@ -74,5 +74,5 @@ std::string ParticleTags::role_tag="role";
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@
 #include <vector>
 
 template<typename CONT>
-class PointerPool 
+class PointerPool
 {
 public:
   typedef CONT buffer_type;
@@ -27,22 +27,25 @@ public:
 
   // Local data routines
   pointer getPointer (int index, buffer_type &buffer)
-  { return &(buffer[offsets[index]]);  }
+  {
+    return &(buffer[offsets[index]]);
+  }
 
   void allocate (buffer_type &buffer)
   {
     buffer.resize(totalSize);
   }
-  
+
   // Shared-data routines
 
-  // Reserves size elements and returns the offset to the member 
+  // Reserves size elements and returns the offset to the member
   // in the buffer
   size_t reserve (size_t size)
   {
-    if (size % 32) {
+    if (size % 32)
+    {
       cerr << "Unaligned reservation in PointerPool.  size = "
-	   << size << endl;
+           << size << endl;
       size += 32 - (size % 32);
     }
     size_t off = totalSize;
@@ -51,13 +54,16 @@ public:
     return off;
   }
 
-  void reset() {
+  void reset()
+  {
     offsets.resize(0);
     totalSize = 0;
   }
 
   size_t getTotalSize()
-  { return totalSize; }
+  {
+    return totalSize;
+  }
 
   PointerPool() : totalSize(0)
   { }
@@ -65,7 +71,7 @@ public:
 protected:
   size_t totalSize;
   vector<size_t> offsets;
-  
+
 };
 
 #endif

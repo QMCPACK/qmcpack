@@ -5,26 +5,27 @@
 #include "Numerics/Spline3D/uGrid1D.h"
 #include <vector>
 
-class NRCubicSpline{
+class NRCubicSpline
+{
 
 
   /// default value of y1max
   double y1max;
 
-  /// initial first derivative 
-  double y1i;  
+  /// initial first derivative
+  double y1i;
 
-  /// final first derivative 
+  /// final first derivative
   double y1f;
 
   /// function value
-  std::vector<double> y;  
+  std::vector<double> y;
 
   /// second derivative
   std::vector<double> y2;
 
   void update();
-  
+
 public:
 
   typedef double value_type;
@@ -33,24 +34,27 @@ public:
   uGrid1D* m_grid;
 
   /// Constructor
-  CubicSpline(uGrid1D* agrid){
-
+  CubicSpline(uGrid1D* agrid)
+  {
     m_grid = agrid;
     n_x = agrid->m_size;
     h = agrid->m_h;
     hin = 1.0/h;
-
-    y.resize(n_x); y2.resize(n_x);
-
-    y1max = 1.e30; y1i = y1max; y1f = y1max;
-
+    y.resize(n_x);
+    y2.resize(n_x);
+    y1max = 1.e30;
+    y1i = y1max;
+    y1f = y1max;
     UpToDate = false;
-
   }
 
   /// set boundary conditions on first derivatives
-  inline void set_bc(double ypi, double ypf){ y1i = ypi; y1f = ypf; }
-  
+  inline void set_bc(double ypi, double ypf)
+  {
+    y1i = ypi;
+    y1f = ypf;
+  }
+
 
   inline evaluate(const double, double&);
 

@@ -20,21 +20,21 @@
 #include "QMCDrivers/QMCUpdateBase.h"
 
 namespace qmcplusplus
-  {
+{
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move.
-   */
-  class VMCUpdateAll: public QMCUpdateBase
-    {
-    public:
-      /// Constructor.
-      VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                   QMCHamiltonian& h, RandomGenerator_t& rg);
+/** @ingroup QMCDrivers  ParticleByParticle
+ *@brief Implements the VMC algorithm using particle-by-particle move.
+ */
+class VMCUpdateAll: public QMCUpdateBase
+{
+public:
+  /// Constructor.
+  VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+               QMCHamiltonian& h, RandomGenerator_t& rg);
 
-      ~VMCUpdateAll();
+  ~VMCUpdateAll();
 
-      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 //       void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
 //       void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
 //     , vector<MCWalkerConfiguration*>& wclone
@@ -42,59 +42,59 @@ namespace qmcplusplus
 //     , vector<RandomGenerator_t*>& rng
 //     , vector<RealType>& ratio_i_0);
 
-    private:
-      /// Copy Constructor (disabled)
-      VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
-      /// Copy operator (disabled).
-      VMCUpdateAll& operator=(const VMCUpdateAll&)
-      {
-        return *this;
-      }
-    };
+private:
+  /// Copy Constructor (disabled)
+  VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  VMCUpdateAll& operator=(const VMCUpdateAll&)
+  {
+    return *this;
+  }
+};
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
-   */
-  class VMCUpdateAllWithDrift: public QMCUpdateBase
-    {
-    public:
-      /// Constructor.
-      VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                            QMCHamiltonian& h, RandomGenerator_t& rg);
+/** @ingroup QMCDrivers  ParticleByParticle
+ *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
+ */
+class VMCUpdateAllWithDrift: public QMCUpdateBase
+{
+public:
+  /// Constructor.
+  VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                        QMCHamiltonian& h, RandomGenerator_t& rg);
 
-      ~VMCUpdateAllWithDrift();
+  ~VMCUpdateAllWithDrift();
 
-      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 //       void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i);
-      
-      RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
 
-    private:
-      /// Copy Constructor (disabled)
-      VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
-      /// Copy operator (disabled).
-      VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
-      {
-        return *this;
-      }
-    };
+  RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+
+private:
+  /// Copy Constructor (disabled)
+  VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
+  {
+    return *this;
+  }
+};
 
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move.
-   */
+/** @ingroup QMCDrivers  ParticleByParticle
+ *@brief Implements the VMC algorithm using particle-by-particle move.
+ */
 //   class VMCUpdateAllSampleRN: public QMCUpdateBase
 //     {
 //     public:
 //       /// Constructor.
 //       VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
 //                             QMCHamiltonian& h, RandomGenerator_t& rg);
-// 
+//
 //       ~VMCUpdateAllSampleRN();
-// 
+//
 //       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 //       void setLogEpsilon(RealType eps) { logEpsilon=eps; }
-// 
+//
 //     private:
 //       /// Copy Constructor (disabled)
 //       VMCUpdateAllSampleRN(const VMCUpdateAllSampleRN& a): QMCUpdateBase(a) { }

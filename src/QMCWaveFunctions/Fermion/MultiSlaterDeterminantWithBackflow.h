@@ -25,79 +25,80 @@
 #include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
+{
+
+/** @ingroup OrbitalComponent
+ *  @brief MultiSlaterDeterminantWithBackflow
+ */
+class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant
+{
+
+public:
+
+  ///constructor
+  MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *tr);
+
+  ///destructor
+  ~MultiSlaterDeterminantWithBackflow();
+
+  void checkInVariables(opt_variables_type& active);
+  void checkOutVariables(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active);
+  void reportStatus(ostream& os);
+
+  ///set BF pointers
+  void setBF(BackflowTransformation* bf)
   {
+    BFTrans=bf;
+    for(int i=0; i<dets_up.size(); i++)
+      dets_up[i]->setBF(bf);
+    for(int i=0; i<dets_dn.size(); i++)
+      dets_dn[i]->setBF(bf);
+  }
 
-  /** @ingroup OrbitalComponent
-   *  @brief MultiSlaterDeterminantWithBackflow
-   */
-  class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant 
-    {
+  ValueType
+  evaluate(ParticleSet& P
+           ,ParticleSet::ParticleGradient_t& G
+           ,ParticleSet::ParticleLaplacian_t& L);
 
-    public:
+  RealType
+  evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
+              , ParticleSet::ParticleGradient_t& G
+              , ParticleSet::ParticleLaplacian_t& L);
 
-      ///constructor
-      MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *tr);
+  GradType evalGrad(ParticleSet& P, int iat);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType ratio(ParticleSet& P, int iat
+                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
 
-      ///destructor
-      ~MultiSlaterDeterminantWithBackflow();
+  ValueType ratio(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat);
+  void restore(int iat);
 
-      void checkInVariables(opt_variables_type& active);
-      void checkOutVariables(const opt_variables_type& active);
-      void resetParameters(const opt_variables_type& active);
-      void reportStatus(ostream& os); 
+  void update(ParticleSet& P
+              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
+              , int iat);
+  RealType evaluateLog(ParticleSet& P,BufferType& buf);
+  RealType registerData(ParticleSet& P, BufferType& buf);
+  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-      ///set BF pointers
-      void setBF(BackflowTransformation* bf) {
-        BFTrans=bf;
-        for(int i=0; i<dets_up.size(); i++)
-          dets_up[i]->setBF(bf);
-        for(int i=0; i<dets_dn.size(); i++)
-          dets_dn[i]->setBF(bf);
-      } 
+  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           vector<RealType>& dlogpsi,
+                           vector<RealType>& dhpsioverpsi);
 
-      ValueType
-      evaluate(ParticleSet& P
-               ,ParticleSet::ParticleGradient_t& G
-               ,ParticleSet::ParticleLaplacian_t& L);
+  void resize(int,int);
 
-      RealType
-      evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                  , ParticleSet::ParticleGradient_t& G
-                  , ParticleSet::ParticleLaplacian_t& L);
+  // transformation
+  BackflowTransformation *BFTrans;
 
-      GradType evalGrad(ParticleSet& P, int iat);
-      ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-      ValueType ratio(ParticleSet& P, int iat
-                      , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
-      ValueType ratio(ParticleSet& P, int iat);
-      void acceptMove(ParticleSet& P, int iat);
-      void restore(int iat);
-
-      void update(ParticleSet& P
-                  , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                  , int iat);
-      RealType evaluateLog(ParticleSet& P,BufferType& buf);
-      RealType registerData(ParticleSet& P, BufferType& buf);
-      RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-      void copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-      OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-      void evaluateDerivatives(ParticleSet& P,
-                               const opt_variables_type& optvars,
-                               vector<RealType>& dlogpsi,
-                               vector<RealType>& dhpsioverpsi);
-
-      void resize(int,int);
-
-      // transformation 
-      BackflowTransformation *BFTrans;
-
-      // temporary storage for evaluateDerivatives
-      Matrix<RealType> dpsia_up, dLa_up;
-      Matrix<RealType> dpsia_dn, dLa_dn;
-      Array<GradType,3> dGa_up, dGa_dn; 
-    };
+  // temporary storage for evaluateDerivatives
+  Matrix<RealType> dpsia_up, dLa_up;
+  Matrix<RealType> dpsia_dn, dLa_dn;
+  Array<GradType,3> dGa_up, dGa_dn;
+};
 
 }
 #endif

@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,18 +20,20 @@
 #include "Numerics/OneDimGridFunctor.h"
 //#define USE_MEMORYSAVEMODE
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 /** Perform One-Dimensional linear spline Interpolation.
  *
  * Only valid with linear grid.
  * @todo Have to prevent OneDimLinearSpline<T> being used with other than
  * linear grid!!
  */
-template <class Td, 
-	  class Tg = Td, 
-	  class CTd= Vector<Td>,
-	  class CTg= Vector<Tg> >
-class OneDimLinearSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg> {
+template <class Td,
+         class Tg = Td,
+         class CTd= Vector<Td>,
+         class CTg= Vector<Tg> >
+class OneDimLinearSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg>
+{
 
 public:
 
@@ -53,14 +55,14 @@ public:
   int Last;
   value_type ConstValue;
   point_type r_min;
-  point_type r_max; 
-  point_type delta; 
+  point_type r_max;
+  point_type delta;
   point_type delta_inv;
   data_type m_Y1;
 
   OneDimLinearSpline(grid_type* gt = 0): base_type(gt),r_min(0),r_max(0)
-  { 
-    if(gt) 
+  {
+    if(gt)
     {
       r_min=gt->rmin();
       r_max=gt->rmax();
@@ -68,7 +70,7 @@ public:
   }
 
   OneDimLinearSpline(point_type ri, point_type rf): base_type(0), r_min(ri), r_max(rf)
-  { 
+  {
   }
 
   template<class VV>
@@ -112,8 +114,10 @@ public:
    * Performance may be tunned: define USE_MEMORYSAVEMODE
    * to evaluate the coefficients instead of using aux. arrays
    */
-  inline value_type splint(point_type r) {
-    if(r>=r_max) return ConstValue;
+  inline value_type splint(point_type r)
+  {
+    if(r>=r_max)
+      return ConstValue;
     int k = static_cast<int>((r-r_min)*delta_inv);
 #if defined(USE_MEMORYSAVEMODE)
     return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
@@ -141,7 +145,7 @@ public:
 //  inline value_type splintNG(point_type r) const
 //  {
 //    if(r>=r_max) return ConstValue;
-//    int k=m_grid->getIndex(r); 
+//    int k=m_grid->getIndex(r);
 //    //int k = static_cast<int>((r-r_min)*delta_inv);
 //#if defined(USE_MEMORYSAVEMODE)
 //    return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
@@ -174,23 +178,26 @@ public:
    * @param d2u second derivative (assigned)
    * @return value obtained by cubic-spline
    */
-  inline value_type 
-  splint(point_type r, value_type& du, value_type& d2u) {
+  inline value_type
+  splint(point_type r, value_type& du, value_type& d2u)
+  {
     cerr << "  OneDimLinearSpline cannot be used for derivates." << endl;
     return 0.0;
   }
 
-  /** evaluate the spline coefficients 
+  /** evaluate the spline coefficients
    * @param imin index of the first valid grid
    * @param yp1 first derivative at imin grid point
    * @param imax index of the last valid grid
    * @param ypn first derivative at imax grid point
    *
    */
-  inline 
-  void spline(int imin, value_type yp1, int imax, value_type ypn) {
+  inline
+  void spline(int imin, value_type yp1, int imax, value_type ypn)
+  {
     int npts(imax-imin+1);
-    First=imin; Last=imax;
+    First=imin;
+    Last=imax;
     m_Y1.resize(npts);
     //r_min=m_grid->r(imin);
     //r_max=m_grid->r(imax);
@@ -203,7 +210,8 @@ public:
     ConstValue=m_Y[imax];
   }
 
-  inline void spline() {
+  inline void spline()
+  {
     spline(0,0.0,this->size()-1,0.0);
   }
 };
@@ -213,5 +221,5 @@ public:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

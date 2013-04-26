@@ -23,51 +23,51 @@
   *tags defined here.
   */
 namespace qmcplusplus
-  {
+{
 
-  //int OrbitalBuilderBase::print_level=1;
+//int OrbitalBuilderBase::print_level=1;
 
-  string OrbitalBuilderBase::wfs_tag="wavefunction";
+string OrbitalBuilderBase::wfs_tag="wavefunction";
 
-  string OrbitalBuilderBase::param_tag="parameter";
+string OrbitalBuilderBase::param_tag="parameter";
 
-  string OrbitalBuilderBase::dtable_tag="distancetable";
+string OrbitalBuilderBase::dtable_tag="distancetable";
 
-  string OrbitalBuilderBase::jastrow_tag="jastrow";
+string OrbitalBuilderBase::jastrow_tag="jastrow";
 
-  string OrbitalBuilderBase::detset_tag="determinantset";
+string OrbitalBuilderBase::detset_tag="determinantset";
 
-  string OrbitalBuilderBase::sd_tag="slaterdeterminant";
+string OrbitalBuilderBase::sd_tag="slaterdeterminant";
 
-  string OrbitalBuilderBase::det_tag="determinant";
+string OrbitalBuilderBase::det_tag="determinant";
 
-  string OrbitalBuilderBase::rn_tag="determinant_rn";
+string OrbitalBuilderBase::rn_tag="determinant_rn";
 
-  string OrbitalBuilderBase::spo_tag="psi";
+string OrbitalBuilderBase::spo_tag="psi";
 
-  string OrbitalBuilderBase::sposet_tag="sposet";
+string OrbitalBuilderBase::sposet_tag="sposet";
 
-  string OrbitalBuilderBase::basisset_tag="basisset";
+string OrbitalBuilderBase::basisset_tag="basisset";
 
-  string OrbitalBuilderBase::basis_tag="basis";
+string OrbitalBuilderBase::basis_tag="basis";
 
-  string OrbitalBuilderBase::basisfunc_tag="phi";
+string OrbitalBuilderBase::basisfunc_tag="phi";
 
-  string OrbitalBuilderBase::ionorb_tag="ionwf";
+string OrbitalBuilderBase::ionorb_tag="ionwf";
 
-  string OrbitalBuilderBase::backflow_tag="backflow";
+string OrbitalBuilderBase::backflow_tag="backflow";
 
-  string OrbitalBuilderBase::multisd_tag="multideterminant";
+string OrbitalBuilderBase::multisd_tag="multideterminant";
 
-  OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
-      MPIObjectBase(psi.getCommunicator()),
-      targetPtcl(p), targetPsi(psi), myNode(NULL)
-  {
-  }
+OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
+  MPIObjectBase(psi.getCommunicator()),
+  targetPtcl(p), targetPsi(psi), myNode(NULL)
+{
+}
 
-  OrbitalBuilderBase::~OrbitalBuilderBase()
-  {
-  }
+OrbitalBuilderBase::~OrbitalBuilderBase()
+{
+}
 }
 /***************************************************************************
  * $RCSfile$   $Author$

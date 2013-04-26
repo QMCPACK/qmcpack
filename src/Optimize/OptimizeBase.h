@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002,2003- by Jeongnim Kim 
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -49,7 +49,7 @@ public:
   virtual Return_t Params(int i) const = 0;
 
   virtual Return_t Cost(bool needGrad=true) = 0;
-  
+
   virtual void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0) = 0;
 
   virtual void Report() = 0;
@@ -64,9 +64,9 @@ public:
    *
    * Default implementation returns false to perform a simple method
    */
-  virtual bool lineoptimization(const std::vector<T>& x0, const std::vector<T>& gr, 
-      Return_t val0,
-      Return_t& dl, Return_t& vopt, Return_t& lambda_max)
+  virtual bool lineoptimization(const std::vector<T>& x0, const std::vector<T>& gr,
+                                Return_t val0,
+                                Return_t& dl, Return_t& vopt, Return_t& lambda_max)
   {
     return false;
   }
@@ -78,18 +78,19 @@ public:
    * Default implementation returns false to perform a finite-difference method
    * for gradients.
    */
-  virtual bool evaluateGradients(std::vector<T>& gr) 
+  virtual bool evaluateGradients(std::vector<T>& gr)
   {
     return false;
   }
 };
 
-/** base class for optimization(minimization) classes 
+/** base class for optimization(minimization) classes
  *
  * Template parameter T is the numerical type
  */
 template<class T=double>
-struct MinimizerBase {
+struct MinimizerBase
+{
 
   /** stream to write intermediate message
    */
@@ -103,12 +104,13 @@ struct MinimizerBase {
   MinimizerBase():msg_stream(0) {}
 
   /** virtual destructor */
-  virtual ~MinimizerBase(){}
+  virtual ~MinimizerBase() {}
 
-  /** set msg_stream 
+  /** set msg_stream
    * @param os_ptr pointer to ostream
    */
-  void setOstream(ostream* os_ptr) { 
+  void setOstream(ostream* os_ptr)
+  {
     msg_stream = os_ptr;
   }
 
@@ -125,5 +127,5 @@ struct MinimizerBase {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

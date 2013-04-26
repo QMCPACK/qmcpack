@@ -10,26 +10,24 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/TricubicBsplineSet.h"
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv)
+{
   double ri = 0.0;
   double rf = 1.0;
   std::vector<int> npts(3);
-  npts[0]=101;npts[1]=101;npts[2]=101;
-
+  npts[0]=101;
+  npts[1]=101;
+  npts[2]=101;
   double xcut=0.23;
   double ycut=0.67;
-
   const int nk0=1;
   const int nk1=1;
   const int nk2=1;
-
   typedef qmcplusplus::LinearGrid<double> GridType;
   GridType gridX, gridY, gridZ;
   gridX.set(ri,rf,npts[0]);
   gridY.set(ri,rf,npts[1]);
   gridZ.set(ri,rf,npts[2]);
-
   //Create an analytic function for assignment
   ComboFunc infunc;
   infunc.push_back(0.5,new TestFunc(1,1,1));
@@ -45,32 +43,29 @@ int main(int argc, char** argv) {
   //infunc.push_back(-0.3,new TestFunc(7,2,3));
   //infunc.push_back(0.01,new TestFunc(7,7,7));
   //infunc.push_back(0.001,new TestFunc(5,5,5));
-
   //Write to an array
   Array<double,3> inData(npts[0]-1,npts[1]-1,npts[2]-1);
-
-  for(int ix=0; ix<npts[0]-1; ix++) {
+  for(int ix=0; ix<npts[0]-1; ix++)
+  {
     double x(gridX(ix));
-    for(int iy=0; iy<npts[1]-1; iy++) {
+    for(int iy=0; iy<npts[1]-1; iy++)
+    {
       double y(gridY(iy));
-      for(int iz=0; iz<npts[2]-1; iz++) {
+      for(int iz=0; iz<npts[2]-1; iz++)
+      {
         inData(ix,iy,iz)=infunc.f(x,y,gridZ(iz));
       }
     }
   }
-
   qmcplusplus::TricubicBspline<double> aorb;
   aorb.setGrid(ri,rf,ri,rf,ri,rf,npts[0]-1,npts[1]-1,npts[2]-1);
   aorb.Init(inData);
-
   double lap,val,lap0,val0,g;
   typedef qmcplusplus::TinyVector<double,3> PosType;
   PosType grad,grad0;
-
   double x0=xcut;
   double y0=ycut;
   double z=-0.5, dz=0.01;
-
   std::ofstream fout("bsq.value.dat");
   std::ofstream dfout("bsq.grad.dat");
   std::ofstream d2fout("bsq.lap.dat");
@@ -92,6 +87,5 @@ int main(int argc, char** argv) {
     d2fout << z << std::setw(20) << lap0 <<std::setw(20) <<  lap << std::setw(20) << (lap-lap0) << std::endl;
     z+=dz;
   }
-
   return 0;
 }

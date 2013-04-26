@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim 
+// (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -24,79 +24,84 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** constructor
-   * @param h QMCHamiltonian to define the components
-   * @param hcopy number of copies of QMCHamiltonians
-   */
-  RQMCEstimator::RQMCEstimator(QMCHamiltonian& h, int hcopy) : CurrentWalker(0) {
-
-    NumCopies=hcopy;
-    NumOperators = h.sizeOfObservables();
-    FirstHamiltonian=h.startIndex();
-
-    esum.resize(NumCopies,LE_INDEX);
-    esum_name.resize(LE_INDEX,NumCopies);
-
-    elocal.resize(NumCopies,NumOperators);
-    elocal_name.resize(NumCopies,NumOperators);
-
-    char aname[32];
-    //make the name tables
-    //(localenergy, variance, weight)* + (each hamiltonian term)*
-    for(int i=0; i<NumCopies; i++) {
-      sprintf(aname,"LE%i",i);   esum_name(ENERGY_INDEX,i)=aname;
-      sprintf(aname,"Var%i",i);  esum_name(ENERGY_SQ_INDEX,i)=aname;
-      sprintf(aname,"WPsi%i",i); esum_name(WEIGHT_INDEX,i)=aname;
-
-      for(int j=0; j<NumOperators; j++) {
-        //sprintf(aname,"%s%i",h.getName(j).c_str(),i);
-        sprintf(aname,"%s%i",h.getObservableName(j).c_str(),i);
-        elocal_name(i,j)=aname;
-      }
-    }
-
-    int ipair=0;
-    for(int i=0; i<NumCopies-1; i++) {
-      for(int j=i+1; j<NumCopies; j++) {
-        sprintf(aname,"DiffS%iS%i",i,j); ediff_name.push_back(aname);
-      }
+/** constructor
+ * @param h QMCHamiltonian to define the components
+ * @param hcopy number of copies of QMCHamiltonians
+ */
+RQMCEstimator::RQMCEstimator(QMCHamiltonian& h, int hcopy) : CurrentWalker(0)
+{
+  NumCopies=hcopy;
+  NumOperators = h.sizeOfObservables();
+  FirstHamiltonian=h.startIndex();
+  esum.resize(NumCopies,LE_INDEX);
+  esum_name.resize(LE_INDEX,NumCopies);
+  elocal.resize(NumCopies,NumOperators);
+  elocal_name.resize(NumCopies,NumOperators);
+  char aname[32];
+  //make the name tables
+  //(localenergy, variance, weight)* + (each hamiltonian term)*
+  for(int i=0; i<NumCopies; i++)
+  {
+    sprintf(aname,"LE%i",i);
+    esum_name(ENERGY_INDEX,i)=aname;
+    sprintf(aname,"Var%i",i);
+    esum_name(ENERGY_SQ_INDEX,i)=aname;
+    sprintf(aname,"WPsi%i",i);
+    esum_name(WEIGHT_INDEX,i)=aname;
+    for(int j=0; j<NumOperators; j++)
+    {
+      //sprintf(aname,"%s%i",h.getName(j).c_str(),i);
+      sprintf(aname,"%s%i",h.getObservableName(j).c_str(),i);
+      elocal_name(i,j)=aname;
     }
   }
+  int ipair=0;
+  for(int i=0; i<NumCopies-1; i++)
+  {
+    for(int j=i+1; j<NumCopies; j++)
+    {
+      sprintf(aname,"DiffS%iS%i",i,j);
+      ediff_name.push_back(aname);
+    }
+  }
+}
 
-  RQMCEstimator::RQMCEstimator(const RQMCEstimator& rest): 
-    ScalarEstimatorBase(rest),
+RQMCEstimator::RQMCEstimator(const RQMCEstimator& rest):
+  ScalarEstimatorBase(rest),
   NumCopies(rest.NumCopies), NumOperators(rest.NumOperators),
   FirstHamiltonian(rest.FirstHamiltonian), esum(rest.esum),
   elocal(rest.elocal),elocal_name(rest.elocal_name)
-  {
-  }
+{
+}
 
-  ScalarEstimatorBase* RQMCEstimator::clone()
+ScalarEstimatorBase* RQMCEstimator::clone()
+{
+  return new RQMCEstimator(*this);
+}
+// new initialize
+void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double setTau, int setSteps)
+{
+  Reptile = reptileRef;
+  AveEloc.resize(NumCopies);
+  AveWeight.resize(NumCopies);
+  for(int ipsi=0; ipsi<NumCopies; ipsi++)
   {
-    return new RQMCEstimator(*this);
+    AveEloc[ipsi]=0.0;
+    AveWeight[ipsi]=0.0;
   }
-  // new initialize
-  void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double setTau, int setSteps) 
-  {
-    Reptile = reptileRef;
-    AveEloc.resize(NumCopies);
-    AveWeight.resize(NumCopies);
-    for(int ipsi=0; ipsi<NumCopies; ipsi++){
-      AveEloc[ipsi]=0.0;
-      AveWeight[ipsi]=0.0;
-    }
-    Tau = setTau;
-    Directionless = setDirect;
-    nSteps = setSteps;
-  }
+  Tau = setTau;
+  Directionless = setDirect;
+  nSteps = setSteps;
+}
 
 //OLD and BROKEN
-//  void 
+//  void
 //    RQMCEstimator
-//    ::initialize(MCWalkerConfiguration& W, 
-//        vector<QMCHamiltonian*>& h, 
+//    ::initialize(MCWalkerConfiguration& W,
+//        vector<QMCHamiltonian*>& h,
 //        vector<TrialWaveFunction*>& psi,
 //        RealType tau,vector<RealType>& Norm,
 //        bool require_register) {
@@ -106,8 +111,8 @@ namespace qmcplusplus {
 //      int numPtcls(W.getTotalNum());
 //      RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 //
-//      MCWalkerConfiguration::iterator it(W.begin()); 
-//      MCWalkerConfiguration::iterator it_end(W.end()); 
+//      MCWalkerConfiguration::iterator it(W.begin());
+//      MCWalkerConfiguration::iterator it_end(W.end());
 //
 //      vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
 //      int iw(0);
@@ -134,27 +139,27 @@ namespace qmcplusplus {
 //            logpsi[ipsi]=psi[ipsi]->registerData(W,(*it)->DataSet);
 //          } else {
 //            if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(W,(*it)->DataSet);
-//            else logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
+//            else logpsi[ipsi]=psi[ipsi]->evaluateLog(W);
 //          }
 //          psi[ipsi]->G=W.G;
 //          thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
 //          thisWalker.Properties(ipsi,LOCALENERGY)=h[ipsi]->evaluate(W);
 //          h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 //          sumratio[ipsi]=1.0;
-//        } 							
+//        }
 //
 //        //Check SIMONE's note
 //        //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
 //        int indexij(0);
 //        RealType *rPtr=RatioIJ[iw];
-//        for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
-//          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-//            RealType r= std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+//        for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {
+//          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){
+//            RealType r= std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
 //            rPtr[indexij++]=r*Norm[ipsi]/Norm[jpsi];
-//            sumratio[ipsi] += r;                            
-//            sumratio[jpsi] += 1.0/r;		
-//          }                                              
-//        }                                               
+//            sumratio[ipsi] += r;
+//            sumratio[jpsi] += 1.0/r;
+//          }
+//        }
 //
 //        //Re-use Multiplicity as the sumratio
 //        thisWalker.Multiplicity=sumratio[0];
@@ -173,11 +178,11 @@ namespace qmcplusplus {
 //      }
 //    }
 //
-//  void 
+//  void
 //    RQMCEstimator
 //    ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,
 //        SpaceWarp& Warp,
-//        vector<QMCHamiltonian*>& h, 
+//        vector<QMCHamiltonian*>& h,
 //        vector<TrialWaveFunction*>& psi,
 //        RealType tau,vector<RealType>& Norm,
 //        bool require_register) {
@@ -191,8 +196,8 @@ namespace qmcplusplus {
 //      vector<RealType> invsumratio(NumCopies);
 //      MCWalkerConfiguration::ParticlePos_t drift(numPtcls);
 //
-//      MCWalkerConfiguration::iterator it(W.begin()); 
-//      MCWalkerConfiguration::iterator it_end(W.end()); 
+//      MCWalkerConfiguration::iterator it(W.begin());
+//      MCWalkerConfiguration::iterator it_end(W.end());
 //
 //      vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
 //      vector<RealType> Jacobian(NumCopies);
@@ -229,7 +234,7 @@ namespace qmcplusplus {
 //
 //        //update distance table and bufferize it if necessary
 //        if(require_register) {
-//          for(int ipsi=0; ipsi<NumCopies; ipsi++){ 
+//          for(int ipsi=0; ipsi<NumCopies; ipsi++){
 //            WW[ipsi]->registerData((*it)->DataSet);
 //          }
 //          Warp.registerData(WW,(*it)->DataSet);
@@ -244,7 +249,7 @@ namespace qmcplusplus {
 //
 //
 //        //evalaute the wavefunction and hamiltonian
-//        for(int ipsi=0; ipsi< NumCopies;ipsi++) {			  
+//        for(int ipsi=0; ipsi< NumCopies;ipsi++) {
 //          psi[ipsi]->G.resize(numPtcls);
 //          psi[ipsi]->L.resize(numPtcls);
 //          //Need to modify the return value of OrbitalBase::registerData
@@ -252,29 +257,29 @@ namespace qmcplusplus {
 //            logpsi[ipsi]=psi[ipsi]->registerData(*WW[ipsi],(*it)->DataSet);
 //          }else{
 //            if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(*WW[ipsi],(*it)->DataSet);
-//            else logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]); 		 
+//            else logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]);
 //          }
 //          psi[ipsi]->G=WW[ipsi]->G;
 //          thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
 //          thisWalker.Properties(ipsi,LOCALENERGY)=h[ipsi]->evaluate(*WW[ipsi]);
 //          h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 //          sumratio[ipsi]=1.0;
-//        } 							
+//        }
 //
 //        //Check SIMONE's note
 //        //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
 //        int indexij(0);
 //        RealType *rPtr=RatioIJ[iw];
-//        for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
-//          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
+//        for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {
+//          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){
 //            RealType r= std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]))*Norm[ipsi]/Norm[jpsi];
 //            //BEWARE: RatioIJ DOES NOT INCLUDE THE JACOBIANS!
 //            rPtr[indexij++]=r;
 //            r*=(Jacobian[jpsi]/Jacobian[ipsi]);
-//            sumratio[ipsi] += r;                            
-//            sumratio[jpsi] += 1.0/r;		
-//          }                                              
-//        }                                               
+//            sumratio[ipsi] += r;
+//            sumratio[jpsi] += 1.0/r;
+//          }
+//        }
 //
 //        //Re-use Multiplicity as the sumratio
 //        thisWalker.Multiplicity=sumratio[0];
@@ -282,7 +287,7 @@ namespace qmcplusplus {
 //        /*START COMMENT
 //          QMCTraits::PosType WarpDrift;
 //          RealType denom(0.e0),wgtpsi;
-//          thisWalker.Drift=0.e0; 
+//          thisWalker.Drift=0.e0;
 //          for(int ipsi=0; ipsi< NumCopies; ipsi++) {
 //          wgtpsi=1.e0/sumratio[ipsi];
 //          thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgtpsi;
@@ -302,7 +307,7 @@ namespace qmcplusplus {
 //        }
 //        setScaledDrift(tau,psi[0]->G,drift);
 //        thisWalker.Drift=invsumratio[0]*drift;
-//        for(int ipsi=1; ipsi< NumCopies ;ipsi++) {               		
+//        for(int ipsi=1; ipsi< NumCopies ;ipsi++) {
 //          setScaledDrift(tau,psi[ipsi]->G,drift);
 //          thisWalker.Drift += (invsumratio[ipsi]*drift);
 //        }
@@ -310,86 +315,92 @@ namespace qmcplusplus {
 //      }
 //    }
 //
-  /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
-   *@param record storage of scalar records (name,value)
-   */
-  void 
-    RQMCEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-      if(ediff_name.size()) {
-        FirstColumnIndex = record.add(ediff_name[0].c_str());
-        for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
-        for(int i=0; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
-      } else {
-        FirstColumnIndex = record.add(esum_name(0).c_str());
-        for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
-      }
-      for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
-
-      //FirstColumnIndex = record.add(esum_name(0).c_str());
-      //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
-      //for(int i=0; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
-      //for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
-    }
-
-  void 
-    RQMCEstimator::accumulate(const Walker_t& awalker, RealType wgt) {
-      // taken from RQMCMultiple.cpp
-      for(int ipsi=0; ipsi<NumCopies; ipsi++){
-        //cerr << "  " << ipsi+1 << " of " << NumCopies;
-        double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
-          ( Reptile->front()->Action(ipsi,Directionless)
-            +Reptile->back()->Action(ipsi,Directionless) );
-        AveEloc[ipsi]+=WeightedEloc;
-        AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
-        //cerr << "  Estim8 " << ipsi << " " << AveEloc[ipsi] << " " << AveWeight[ipsi] << endl;
-      }
-
-      ////const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
-      ////const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
-      //int iloc=0;
-      //RealType *restrict esumPtr = esum.data();
-
-      //for(int i=0; i<NumCopies; i++) {
-      //  //get the pointer to the i-th row
-      //  const RealType* restrict prop=awalker.getPropertyBase(i);
-      //  RealType invr = prop[UMBRELLAWEIGHT];
-      //  RealType e = prop[LOCALENERGY];
-      //  *esumPtr++ += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
-      //  *esumPtr++ += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
-      //  *esumPtr++ += invr;     //esum(i,WEIGHT_INDEX)    += invr;
-      //  //accumulate elocal(i,j) with the weight,
-      //  //The content the Walker::DynProperties other than LOCALENERGY are NOT weighted.
-      //  //const RealType *t= awalker.getEnergyBase(i);
-      //  //for(int j=0; j<NumOperators; j++) {
-      //  //  *elocPtr++ += invr*(*t++);
-      //  //}
-      //  
-      //  //const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
-      //  for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
-      //    elocal(iloc++) += invr*prop[h];
-      //  }
-      //}
-
-      ++CurrentWalker;
-
-      //reset to zero 
-      if(CurrentWalker == NumWalkers) CurrentWalker=0;
-      //cerr << "Leaving accumulate" << endl;
-    }
-
-  void RQMCEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+/**  add the local energy, variance and all the Hamiltonian components to the scalar record container
+ *@param record storage of scalar records (name,value)
+ */
+void
+RQMCEstimator::add2Record(RecordNamedProperty<RealType>& record)
+{
+  if(ediff_name.size())
   {
-    //IMPLEMENT for hdf5
+    FirstColumnIndex = record.add(ediff_name[0].c_str());
+    for(int i=1; i<ediff_name.size(); i++)
+      record.add(ediff_name[i].c_str());
+    for(int i=0; i<esum_name.size(); i++)
+      record.add(esum_name(i).c_str());
   }
+  else
+  {
+    FirstColumnIndex = record.add(esum_name(0).c_str());
+    for(int i=1; i<esum_name.size(); i++)
+      record.add(esum_name(i).c_str());
+  }
+  for(int i=0; i<elocal_name.size(); i++)
+    record.add(elocal_name(i).c_str());
+  //FirstColumnIndex = record.add(esum_name(0).c_str());
+  //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+  //for(int i=0; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
+  //for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
+}
+
+void
+RQMCEstimator::accumulate(const Walker_t& awalker, RealType wgt)
+{
+  // taken from RQMCMultiple.cpp
+  for(int ipsi=0; ipsi<NumCopies; ipsi++)
+  {
+    //cerr << "  " << ipsi+1 << " of " << NumCopies;
+    double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
+                        ( Reptile->front()->Action(ipsi,Directionless)
+                          +Reptile->back()->Action(ipsi,Directionless) );
+    AveEloc[ipsi]+=WeightedEloc;
+    AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
+    //cerr << "  Estim8 " << ipsi << " " << AveEloc[ipsi] << " " << AveWeight[ipsi] << endl;
+  }
+  ////const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
+  ////const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
+  //int iloc=0;
+  //RealType *restrict esumPtr = esum.data();
+  //for(int i=0; i<NumCopies; i++) {
+  //  //get the pointer to the i-th row
+  //  const RealType* restrict prop=awalker.getPropertyBase(i);
+  //  RealType invr = prop[UMBRELLAWEIGHT];
+  //  RealType e = prop[LOCALENERGY];
+  //  *esumPtr++ += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
+  //  *esumPtr++ += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
+  //  *esumPtr++ += invr;     //esum(i,WEIGHT_INDEX)    += invr;
+  //  //accumulate elocal(i,j) with the weight,
+  //  //The content the Walker::DynProperties other than LOCALENERGY are NOT weighted.
+  //  //const RealType *t= awalker.getEnergyBase(i);
+  //  //for(int j=0; j<NumOperators; j++) {
+  //  //  *elocPtr++ += invr*(*t++);
+  //  //}
+  //
+  //  //const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
+  //  for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
+  //    elocal(iloc++) += invr*prop[h];
+  //  }
+  //}
+  ++CurrentWalker;
+  //reset to zero
+  if(CurrentWalker == NumWalkers)
+    CurrentWalker=0;
+  //cerr << "Leaving accumulate" << endl;
+}
+
+void RQMCEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+{
+  //IMPLEMENT for hdf5
+}
 
 //  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
-//  void RQMCEstimator::reset() { 
+//  void RQMCEstimator::reset() {
 //    CurrentWalker=0;
 //    elocal=0.0; esum=0.0;
 //  }
 
-//  void RQMCEstimator::copy2Buffer(BufferType& msg) 
-//  { 
+//  void RQMCEstimator::copy2Buffer(BufferType& msg)
+//  {
 //    msg.put(esum.begin(),esum.end());
 //  }
 //
@@ -431,7 +442,7 @@ namespace qmcplusplus {
 //    //  RealType e = esum(i,ENERGY_INDEX)*r;
 //    //  esum(i,ENERGY_INDEX)=e;
 //    //  esum(i,ENERGY_SQ_INDEX)=esum(i,ENERGY_SQ_INDEX)*r-e*e;
-//    //  esum(i,WEIGHT_INDEX)*=wgtinv; 
+//    //  esum(i,WEIGHT_INDEX)*=wgtinv;
 //    //}
 //
 //    //ediff
@@ -442,10 +453,10 @@ namespace qmcplusplus {
 //    //    record[ir++]=AveEloc[i];
 //    //  }
 //    //}
-//    //+(localenergy, variance, weight)* 
+//    //+(localenergy, variance, weight)*
 //    //swap the row/column indices for (localenergy*, variance*, weight*)
 //    //for(int l=0; l<LE_INDEX;l++) {
-//    //  for(int i=0; i<NumCopies; i++) 
+//    //  for(int i=0; i<NumCopies; i++)
 //    //    record[ir++]=esum(i,l);
 //    //}
 //

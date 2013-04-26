@@ -30,30 +30,30 @@
 /************************************************************/
 void
 eval_multi_UBspline_1d_c (const multi_UBspline_1d_c *spline,
-			  double x,
-			  complex_float* restrict vals);
+                          double x,
+                          complex_float* restrict vals);
 
 void
 eval_multi_UBspline_1d_c_vg (const multi_UBspline_1d_c *spline,
-			     double x,
-			     complex_float* restrict vals,
-			     complex_float* restrict grads);
+                             double x,
+                             complex_float* restrict vals,
+                             complex_float* restrict grads);
 
 
 void
 eval_multi_UBspline_1d_c_vgl (const multi_UBspline_1d_c *spline,
-			      double x,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict lapl);
+                              double x,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict lapl);
 
 
 void
 eval_multi_UBspline_1d_c_vgh (const multi_UBspline_1d_c *spline,
-			      double x,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict hess);
+                              double x,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict hess);
 
 
 /************************************************************/
@@ -61,28 +61,28 @@ eval_multi_UBspline_1d_c_vgh (const multi_UBspline_1d_c *spline,
 /************************************************************/
 void
 eval_multi_UBspline_2d_c (const multi_UBspline_2d_c *spline,
-			  double x, double y,
-			  complex_float* restrict vals);
+                          double x, double y,
+                          complex_float* restrict vals);
 
 void
 eval_multi_UBspline_2d_c_vg (const multi_UBspline_2d_c *spline,
-			     double x, double y,
-			     complex_float* restrict vals,
-			     complex_float* restrict grads);
+                             double x, double y,
+                             complex_float* restrict vals,
+                             complex_float* restrict grads);
 
 void
 eval_multi_UBspline_2d_c_vgl (const multi_UBspline_2d_c *spline,
-			      double x, double y,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict lapl);
+                              double x, double y,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict lapl);
 
 void
 eval_multi_UBspline_2d_c_vgh (const multi_UBspline_2d_c *spline,
-			      double x, double y,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict hess);
+                              double x, double y,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict hess);
 
 
 /************************************************************/
@@ -90,26 +90,26 @@ eval_multi_UBspline_2d_c_vgh (const multi_UBspline_2d_c *spline,
 /************************************************************/
 void
 eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
-			  float x, float y, float z,
-			  complex_float* restrict vals);
+                          float x, float y, float z,
+                          complex_float* restrict vals);
 
 void
 eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
-			      float x, float y, float z,
-			      complex_float* restrict vals,
-			     complex_float* restrict grads);
+                             float x, float y, float z,
+                             complex_float* restrict vals,
+                             complex_float* restrict grads);
 
 void
 eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
-			      float x, float y, float z,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict lapl);
+                              float x, float y, float z,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict lapl);
 
 void
 eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
-			      float x, float y, float z,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads,
-			      complex_float* restrict hess);
+                              float x, float y, float z,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads,
+                              complex_float* restrict hess);
 #endif

@@ -20,55 +20,55 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
-  {
+{
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   * @brief Implements a VMC using particle-by-particle move. Threaded execution.
-   */
-  class VMCRenyiOMP: public QMCDriver, public CloneManager
-    {
-    public:
-      /// Constructor.
-      VMCRenyiOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                   HamiltonianPool& hpool, WaveFunctionPool& ppool);
-      bool run();
-      bool put(xmlNodePtr cur);
-      //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
-    private:
-      ///number of warmup steps
-      int myWarmupSteps;
-      ///number of RN warmup steps
-      int myRNWarmupSteps;
-      ///period for walker dump
-      int myPeriod4WalkerDump;
-      ///option to enable/disable drift equation or RN for VMC
-      string UseDrift;
-      ///order or renyi to compute
-      int EEN;
-      ///patch geometry (sphere,...
-      string computeEE;
-      ///patch size (sphere:r^2,...
-      RealType vsize;
-      ///index of particles in region a and b for threads
-      vector<vector<int> > region;
-      vector<RealType> stats_vec;
-      
-      bool plotSwapAmplitude;
-      int grid_spacing;
-      
-      fstream file_out;
-      int Nmin,Nmax;
-      stringstream ee_dat,pe_dat;
-      ///check the run-time environments
-      void resetRun();
-      ///copy constructor
-      VMCRenyiOMP(const VMCRenyiOMP& a): QMCDriver(a),CloneManager(a){ }
-      /// Copy operator (disabled).
-      VMCRenyiOMP& operator=(const VMCRenyiOMP&)
-      {
-        return *this;
-      }
-    };
+/** @ingroup QMCDrivers  ParticleByParticle
+ * @brief Implements a VMC using particle-by-particle move. Threaded execution.
+ */
+class VMCRenyiOMP: public QMCDriver, public CloneManager
+{
+public:
+  /// Constructor.
+  VMCRenyiOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+              HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  bool run();
+  bool put(xmlNodePtr cur);
+  //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+private:
+  ///number of warmup steps
+  int myWarmupSteps;
+  ///number of RN warmup steps
+  int myRNWarmupSteps;
+  ///period for walker dump
+  int myPeriod4WalkerDump;
+  ///option to enable/disable drift equation or RN for VMC
+  string UseDrift;
+  ///order or renyi to compute
+  int EEN;
+  ///patch geometry (sphere,...
+  string computeEE;
+  ///patch size (sphere:r^2,...
+  RealType vsize;
+  ///index of particles in region a and b for threads
+  vector<vector<int> > region;
+  vector<RealType> stats_vec;
+
+  bool plotSwapAmplitude;
+  int grid_spacing;
+
+  fstream file_out;
+  int Nmin,Nmax;
+  stringstream ee_dat,pe_dat;
+  ///check the run-time environments
+  void resetRun();
+  ///copy constructor
+  VMCRenyiOMP(const VMCRenyiOMP& a): QMCDriver(a),CloneManager(a) { }
+  /// Copy operator (disabled).
+  VMCRenyiOMP& operator=(const VMCRenyiOMP&)
+  {
+    return *this;
+  }
+};
 }
 
 #endif

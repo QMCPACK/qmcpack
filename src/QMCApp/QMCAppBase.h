@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -31,58 +31,60 @@
  * The classes in this group are responsble for handling of major xml elements
  * under \<simulation\>.
  */
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** @ingroup qmcapp
-   * @brief Base class for QMC applications and utilities
+/** @ingroup qmcapp
+ * @brief Base class for QMC applications and utilities
+ */
+class QMCAppBase
+{
+
+public:
+
+  ///constructor
+  QMCAppBase();
+
+  ///destructor
+  ~QMCAppBase();
+
+  /** parse an input file
+   * @param infile file to be parsed.
+   * @return true if the input file is a valid xml file
    */
-  class QMCAppBase {
+  bool parse(const string& infile);
 
-  public:
+  /** save the xml document
+   *
+   */
+  void saveXml();
 
-    ///constructor
-    QMCAppBase();
+  /** validate the input file */
+  virtual bool validateXML() = 0;
 
-    ///destructor
-    ~QMCAppBase();
+  /** execute the main function */
+  virtual bool execute() = 0;
 
-    /** parse an input file
-     * @param infile file to be parsed. 
-     * @return true if the input file is a valid xml file
-     */
-    bool parse(const string& infile);
+protected:
 
-    /** save the xml document
-     *
-     */
-    void saveXml();
+  ///stack of xml document
+  std::stack<Libxml2Document*> XmlDocStack;
 
-    /** validate the input file */
-    virtual bool validateXML() = 0;
+  ///project description
+  ProjectData myProject;
 
-    /** execute the main function */
-    virtual bool execute() = 0;
+  ///random number controller
+  RandomNumberControl myRandomControl;
 
-  protected:
-
-    ///stack of xml document
-    std::stack<Libxml2Document*> XmlDocStack;
-
-    ///project description
-    ProjectData myProject;
-
-    ///random number controller
-    RandomNumberControl myRandomControl;
-
-    ///open a new document
-    bool pushDocument(const string& infile);
-    ///close the current document
-    void popDocument();
-  };
+  ///open a new document
+  bool pushDocument(const string& infile);
+  ///close the current document
+  void popDocument();
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

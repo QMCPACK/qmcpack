@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,96 +22,99 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** A composite Orbital
+/** A composite Orbital
+ */
+struct ProductOrbital: public OrbitalBase
+{
+
+  ///A list of OrbitalBase*
+  vector<OrbitalBase*> Psi;
+  /** Contraints on Psi
+   *
+   * Constraints reset optimizable variables that may be shared by Psi.
    */
-  struct ProductOrbital: public OrbitalBase 
+  OrbitalConstraintsBase* Constraints;
+
+  ProductOrbital(OrbitalConstraintsBase* control):
+    Constraints(control)
   {
+    Optimizable=true;
+    OrbitalName="ProductOrbital";
+  }
 
-    ///A list of OrbitalBase* 
-    vector<OrbitalBase*> Psi;
-    /** Contraints on Psi
-     *
-     * Constraints reset optimizable variables that may be shared by Psi. 
-     */
-    OrbitalConstraintsBase* Constraints;
+  ~ProductOrbital();
 
-    ProductOrbital(OrbitalConstraintsBase* control):
-      Constraints(control) {
-        Optimizable=true;
-        OrbitalName="ProductOrbital";
-      }
+  void setContraints(OrbitalConstraintsBase* control)
+  {
+    Constraints=control;
+  }
 
-    ~ProductOrbital();
+  /** check out optimizable variables
+   */
+  void checkOutVariables(const opt_variables_type& o);
 
-    void setContraints(OrbitalConstraintsBase* control) {
-      Constraints=control;
-    }
+  /** check in an optimizable parameter
+   * @param o a super set of optimizable variables
+   */
+  void checkInVariables(opt_variables_type& o);
 
-    /** check out optimizable variables
-     */
-    void checkOutVariables(const opt_variables_type& o);
+  /** print the state, e.g., optimizables */
+  void reportStatus(ostream& os);
 
-    /** check in an optimizable parameter
-     * @param o a super set of optimizable variables
-     */
-    void checkInVariables(opt_variables_type& o);
+  /** reset the parameters during optimizations
+   */
+  void resetParameters(const opt_variables_type& active);
 
-    /** print the state, e.g., optimizables */
-    void reportStatus(ostream& os);
+  void resetTargetParticleSet(ParticleSet& P);
 
-    /** reset the parameters during optimizations
-     */
-    void resetParameters(const opt_variables_type& active);
+  ValueType
+  evaluate(ParticleSet& P,
+           ParticleSet::ParticleGradient_t& G,
+           ParticleSet::ParticleLaplacian_t& L)
+  {
+    return std::exp(evaluateLog(P,G,L));
+  }
 
-    void resetTargetParticleSet(ParticleSet& P);
+  RealType evaluateLog(ParticleSet& P,
+                       ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-    ValueType
-      evaluate(ParticleSet& P, 
-          ParticleSet::ParticleGradient_t& G, 
-          ParticleSet::ParticleLaplacian_t& L) 
-      {
-        return std::exp(evaluateLog(P,G,L));
-      }
+  ValueType ratio(ParticleSet& P, int iat,
+                  ParticleSet::ParticleGradient_t& dG,
+                  ParticleSet::ParticleLaplacian_t& dL);
 
-    RealType evaluateLog(ParticleSet& P, 
-        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  ValueType ratio(ParticleSet& P, int iat);
 
-    ValueType ratio(ParticleSet& P, int iat,
-          ParticleSet::ParticleGradient_t& dG,
-          ParticleSet::ParticleLaplacian_t& dL);
+  void acceptMove(ParticleSet& P, int iat);
 
-    ValueType ratio(ParticleSet& P, int iat);
+  void restore(int iat);
 
-    void acceptMove(ParticleSet& P, int iat);
+  void update(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& dG,
+              ParticleSet::ParticleLaplacian_t& dL,
+              int iat);
 
-    void restore(int iat);
+  RealType
+  registerData(ParticleSet& P, BufferType& buf);
 
-    void update(ParticleSet& P, 
-        ParticleSet::ParticleGradient_t& dG, 
-        ParticleSet::ParticleLaplacian_t& dL,
-        int iat);
+  RealType
+  updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
-    RealType 
-      registerData(ParticleSet& P, BufferType& buf);
+  void
+  copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-    RealType 
-      updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+  RealType
+  evaluateLog(ParticleSet& P,BufferType& buf);
 
-    void 
-      copyFromBuffer(ParticleSet& P, BufferType& buf);
+  OrbitalBase* makeClone(ParticleSet& tqp) const;
 
-    RealType 
-      evaluateLog(ParticleSet& P,BufferType& buf);
-
-    OrbitalBase* makeClone(ParticleSet& tqp) const;
-
-  };
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

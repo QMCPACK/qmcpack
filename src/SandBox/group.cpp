@@ -9,30 +9,25 @@
 #include "Message/CommunicateGroup.h"
 using namespace qmcplusplus;
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv)
+{
   OHMMS::Controller->initialize(argc,argv);
-
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Random.init(OHMMS::Controller->rank(),OHMMS::Controller->size(),-1);
-
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
   std::cout.precision(12);
-
   double sumL=0.0,sumG=0.0;
-  for(int i=0; i<1000; i++) sumL += Random();
-
+  for(int i=0; i<1000; i++)
+    sumL += Random();
   int ndiv=atoi(argv[1]);
   cout << "Group = " << ndiv << endl;
   Communicate newComm(*OHMMS::Controller,ndiv);
-  std::cout << OHMMS::Controller->rank() << " Rank = " 
-    << newComm.rank() << " Size = " << newComm.size() << " " << sumL << std::endl;
+  std::cout << OHMMS::Controller->rank() << " Rank = "
+            << newComm.rank() << " Size = " << newComm.size() << " " << sumL << std::endl;
   sumG=sumL;
   newComm.allreduce(sumG);
-
   //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, newComm.getMPI());
-
   //int p=OHMMS::Controller->mycontext()/ndiv;
   //int q=OHMMS::Controller->mycontext()%ndiv;
   //MPI_Comm row;
@@ -42,7 +37,6 @@ int main(int argc, char** argv) {
   //MPI_Comm_size(row,&new_size);
   //std::cout << OHMMS::Controller->mycontext() << " Rank = " << new_rank << " Size = " << new_size << " " << sumL << std::endl;
   //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, row);
- 
   std::cout << OHMMS::Controller->rank() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
   //const int ndims=2;
   //int dims[]={2,2};
@@ -58,8 +52,6 @@ int main(int argc, char** argv) {
   //THIS DOES NOT WORK NO IDEA
   //c.Split(p,q);
   //std::cout << c.Get_mpi() << " Rank = " << c.Rank() << " Size = " << c.Size() << std::endl;
-
-
   //alternatively, use group
   //CommunicateGroup testGroup(*(OHMMS::Controller),ndiv);
   //sumL=0.0;
@@ -67,8 +59,6 @@ int main(int argc, char** argv) {
   //std::cout << OHMMS::Controller->mycontext() << " Rank = " << testGroup.mycontext() << " Size = " << testGroup.ncontexts() << " " << sumL << std::endl;
   //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, testGroup.getID());
   //std::cout << OHMMS::Controller->mycontext() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
-
   OHMMS::Controller->finalize();
-
   return 0;
 }

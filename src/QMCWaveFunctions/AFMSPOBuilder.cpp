@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: esler@uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -17,26 +17,25 @@
 
 namespace qmcplusplus
 {
-  
-  AFMSPOBuilder::AFMSPOBuilder
-  (ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) :
-    targetPtcl (&p)
-  {
 
-  }
-  
-  bool 
-  AFMSPOBuilder::put (xmlNodePtr cur)
-  {
-    return true;
-  }
-  
+AFMSPOBuilder::AFMSPOBuilder
+(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) :
+  targetPtcl (&p)
+{
+}
 
-  SPOSetBase* 
-  AFMSPOBuilder::createSPOSet(xmlNodePtr cur)
-  {
-    AFMSPOSet *spo =  new AFMSPOSet();
-    return spo;
-  }
+bool
+AFMSPOBuilder::put (xmlNodePtr cur)
+{
+  return true;
+}
+
+
+SPOSetBase*
+AFMSPOBuilder::createSPOSet(xmlNodePtr cur)
+{
+  AFMSPOSet *spo =  new AFMSPOSet();
+  return spo;
+}
 
 }

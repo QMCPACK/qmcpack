@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -18,69 +18,82 @@
 #ifndef QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class DMCNonLocalUpdate: public QMCUpdateBase {
+class DMCNonLocalUpdate: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCNonLocalUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCNonLocalUpdate();
+  /// Constructor.
+  DMCNonLocalUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                    QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCNonLocalUpdate();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
-    /// Copy Constructor (disabled)
-    DMCNonLocalUpdate(const DMCNonLocalUpdate& a): QMCUpdateBase(a){ }
-    /// Copy operator (disabled).
-    DMCNonLocalUpdate& operator=(const DMCNonLocalUpdate&) { return *this;}
+private:
+  /// Copy Constructor (disabled)
+  DMCNonLocalUpdate(const DMCNonLocalUpdate& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  DMCNonLocalUpdate& operator=(const DMCNonLocalUpdate&)
+  {
+    return *this;
+  }
 
-  };
+};
 
-  class DMCNonLocalUpdatePbyP: public QMCUpdateBase {
+class DMCNonLocalUpdatePbyP: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCNonLocalUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCNonLocalUpdatePbyP();
+  /// Constructor.
+  DMCNonLocalUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                        QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCNonLocalUpdatePbyP();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
-    /// Copy Constructor (disabled)
-    DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
-    /// Copy operator (disabled).
-    DMCNonLocalUpdatePbyP& operator=(const DMCNonLocalUpdatePbyP&) { return *this;}
-    vector<NewTimer*> myTimers;
+private:
+  /// Copy Constructor (disabled)
+  DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  DMCNonLocalUpdatePbyP& operator=(const DMCNonLocalUpdatePbyP&)
+  {
+    return *this;
+  }
+  vector<NewTimer*> myTimers;
 
-  };
+};
 
-  class DMCNonLocalUpdatePbyPFast: public QMCUpdateBase {
+class DMCNonLocalUpdatePbyPFast: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCNonLocalUpdatePbyPFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCNonLocalUpdatePbyPFast();
+  /// Constructor.
+  DMCNonLocalUpdatePbyPFast(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                            QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCNonLocalUpdatePbyPFast();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
-    /// Copy Constructor (disabled)
-    DMCNonLocalUpdatePbyPFast(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
-    /// Copy operator (disabled).
-    DMCNonLocalUpdatePbyPFast& operator=(const DMCNonLocalUpdatePbyP&) { return *this;}
-    vector<NewTimer*> myTimers;
+private:
+  /// Copy Constructor (disabled)
+  DMCNonLocalUpdatePbyPFast(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  DMCNonLocalUpdatePbyPFast& operator=(const DMCNonLocalUpdatePbyP&)
+  {
+    return *this;
+  }
+  vector<NewTimer*> myTimers;
 
-  };
+};
 
 }
 
@@ -88,5 +101,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile: DMCNonLocalUpdate.h,v $   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

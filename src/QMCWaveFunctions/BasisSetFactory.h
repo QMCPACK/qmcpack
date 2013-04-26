@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,49 +19,50 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** derived class from OrbitalBuilderBase
+/** derived class from OrbitalBuilderBase
+ */
+class BasisSetFactory: public OrbitalBuilderBase
+{
+
+public:
+
+  /** constructor
+   * \param els reference to the electrons
+   * \param psi reference to the wavefunction
+   * \param ions reference to the ions
    */
-  class BasisSetFactory: public OrbitalBuilderBase 
+  BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+
+  ~BasisSetFactory();
+  bool put(xmlNodePtr cur);
+
+  void createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
+
+  SPOSetBase* createSPOSet(xmlNodePtr cur);
+
+  BasisSetBase<RealType>* getBasisSet()
   {
+    string bname=basisBuilder.rbegin()->first;
+    if(basisBuilder.size())
+      return basisBuilder[bname]->myBasisSet;
+    else
+      return 0;
+  }
 
-  public:
-
-    /** constructor
-     * \param els reference to the electrons
-     * \param psi reference to the wavefunction
-     * \param ions reference to the ions
-     */
-    BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
-
-    ~BasisSetFactory();
-    bool put(xmlNodePtr cur);
-
-    void createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
-
-    SPOSetBase* createSPOSet(xmlNodePtr cur);
-
-    BasisSetBase<RealType>* getBasisSet()
-    {
-      string bname=basisBuilder.rbegin()->first;
-      if(basisBuilder.size())
-        return basisBuilder[bname]->myBasisSet;
-      else
-        return 0;
-    } 
-
-  private:
-    ///set of basis set: potential static data
-    map<string,BasisSetBuilder*> basisBuilder;
+private:
+  ///set of basis set: potential static data
+  map<string,BasisSetBuilder*> basisBuilder;
 //     map<string,int> basissets;
-    ///reference to the particle pool
-    PtclPoolType& ptclPool;
-  };
+  ///reference to the particle pool
+  PtclPoolType& ptclPool;
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

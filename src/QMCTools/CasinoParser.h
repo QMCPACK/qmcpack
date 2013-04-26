@@ -8,8 +8,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class CasinoParser: public QMCGaussianParserBase, 
-                    public OhmmsAsciiParser {
+class CasinoParser: public QMCGaussianParserBase,
+  public OhmmsAsciiParser
+{
 
   std::vector<double> BasisCorrection;
 

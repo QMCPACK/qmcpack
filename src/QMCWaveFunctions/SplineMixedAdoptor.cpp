@@ -17,9 +17,9 @@
 #include <QMCWaveFunctions/SplineMixedAdoptorReader.h>
 namespace qmcplusplus
 {
-  template class SplineMixedAdoptor<float,double,3>;
-  template class SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >;
+template class SplineMixedAdoptor<float,double,3>;
+template class SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >;
 
-  template class SplineOpenAdoptor<float,double,3>;
-  template class SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >;
+template class SplineOpenAdoptor<float,double,3>;
+template class SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >;
 }

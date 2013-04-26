@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -18,7 +18,7 @@
 /***************************************************************************
  *
  * The POOMA Framework
- * 
+ *
  * This program was prepared by the Regents of the University of
  * California at Los Alamos National Laboratory (the University) under
  * Contract No.  W-7405-ENG-36 with the U.S. Department of Energy (DOE).
@@ -44,7 +44,8 @@
 
 #include <iostream>
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -67,44 +68,57 @@ public:
   enum { ElemDim = 2 };
   enum { Size = D*(D+1)/2 };
 
-  // Default Constructor 
-  SymTensor() {
+  // Default Constructor
+  SymTensor()
+  {
     OTAssign<SymTensor<T,D>,T,OpAssign>::apply(*this,T(0),OpAssign());
-  } 
+  }
 
   // A noninitializing ctor.
   class DontInitialize {};
   SymTensor(DontInitialize) {}
 
   // construct a SymTensor from a single T
-  SymTensor(const T& x00) {
+  SymTensor(const T& x00)
+  {
     OTAssign< SymTensor<T,D>,T,OpAssign>::apply(*this,x00, OpAssign());
   }
 
   // construct a 2D SymTensor
-  SymTensor(const T& x00, const T& x10, const T& x11) {
-    X[0] = x00; X[1] = x10; X[2] = x11; 
+  SymTensor(const T& x00, const T& x10, const T& x11)
+  {
+    X[0] = x00;
+    X[1] = x10;
+    X[2] = x11;
   }
   // construct a 3D SymTensor
   SymTensor(const T& x00, const T& x10, const T& x11, const T& x20,
-            const T& x21, const T& x22) { 
-    X[0]= x00; X[1]= x10; X[2]= x11;
-    X[3]= x20; X[4]= x21; X[5]= x22;
+            const T& x21, const T& x22)
+  {
+    X[0]= x00;
+    X[1]= x10;
+    X[2]= x11;
+    X[3]= x20;
+    X[4]= x21;
+    X[5]= x22;
   }
 
-  // Copy Constructor 
-  SymTensor(const SymTensor<T,D> &rhs) {
-    OTAssign< SymTensor<T,D> , SymTensor<T,D> ,OpAssign > :: 
-      apply(*this,rhs, OpAssign());
+  // Copy Constructor
+  SymTensor(const SymTensor<T,D> &rhs)
+  {
+    OTAssign< SymTensor<T,D> , SymTensor<T,D> ,OpAssign > ::
+    apply(*this,rhs, OpAssign());
   }
 
   // Construct from a Tensor.
   // Extract the symmetric part.
-  SymTensor(const Tensor<T,D>& t) {
-    for (int i=0; i<D; ++i) {
+  SymTensor(const Tensor<T,D>& t)
+  {
+    for (int i=0; i<D; ++i)
+    {
       (*this)(i,i) = t(i,i);
       for (int j=i+1; j<D; ++j)
-	(*this)(i,j) = (t(i,j)+t(j,i))*0.5;
+        (*this)(i,j) = (t(i,j)+t(j,i))*0.5;
     }
   }
 
@@ -112,26 +126,31 @@ public:
   ~SymTensor() { };
 
   // assignment operators
-  const SymTensor<T,D>& operator= (const SymTensor<T,D> &rhs) {
+  const SymTensor<T,D>& operator= (const SymTensor<T,D> &rhs)
+  {
     OTAssign< SymTensor<T,D> , SymTensor<T,D> ,OpAssign >
     ::apply(*this,rhs, OpAssign());
     return *this;
   }
   template<class T1>
-  const SymTensor<T,D>& operator= (const SymTensor<T1,D> &rhs) {
-    OTAssign< SymTensor<T,D> , SymTensor<T1,D> ,OpAssign > :: 
-      apply(*this,rhs, OpAssign());
+  const SymTensor<T,D>& operator= (const SymTensor<T1,D> &rhs)
+  {
+    OTAssign< SymTensor<T,D> , SymTensor<T1,D> ,OpAssign > ::
+    apply(*this,rhs, OpAssign());
     return *this;
   }
-  const SymTensor<T,D>& operator= (const T& rhs) {
+  const SymTensor<T,D>& operator= (const T& rhs)
+  {
     OTAssign< SymTensor<T,D> , T ,OpAssign > :: apply(*this,rhs, OpAssign());
     return *this;
   }
-  const SymTensor<T,D>& operator= (const Tensor<T,D> &rhs) {
-    for (int i=0; i<D; ++i) {
+  const SymTensor<T,D>& operator= (const Tensor<T,D> &rhs)
+  {
+    for (int i=0; i<D; ++i)
+    {
       (*this)(i,i) = rhs(i,i);
       for (int j=i+1; j<D; ++j)
-	(*this)(i,j) = (rhs(i,j)+rhs(j,i))*0.5;
+        (*this)(i,j) = (rhs(i,j)+rhs(j,i))*0.5;
     }
     return *this;
   }
@@ -140,8 +159,8 @@ public:
   template<class T1>
   SymTensor<T,D>& operator+=(const SymTensor<T1,D> &rhs)
   {
-    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpAddAssign > :: 
-      apply(*this,rhs, OpAddAssign());
+    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpAddAssign > ::
+    apply(*this,rhs, OpAddAssign());
     return *this;
   }
   SymTensor<T,D>& operator+=(const T& rhs)
@@ -153,65 +172,78 @@ public:
   template<class T1>
   SymTensor<T,D>& operator-=(const SymTensor<T1,D> &rhs)
   {
-    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpSubtractAssign > :: 
-      apply(*this,rhs, OpSubtractAssign());
+    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpSubtractAssign > ::
+    apply(*this,rhs, OpSubtractAssign());
     return *this;
   }
   SymTensor<T,D>& operator-=(const T& rhs)
   {
-    OTAssign< SymTensor<T,D> , T , OpSubtractAssign > :: 
-      apply(*this,rhs, OpSubtractAssign());
+    OTAssign< SymTensor<T,D> , T , OpSubtractAssign > ::
+    apply(*this,rhs, OpSubtractAssign());
     return *this;
   }
 
   template<class T1>
   SymTensor<T,D>& operator*=(const SymTensor<T1,D> &rhs)
   {
-    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpMultiplyAssign > :: 
-      apply(*this,rhs, OpMultiplyAssign());
+    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpMultiplyAssign > ::
+    apply(*this,rhs, OpMultiplyAssign());
     return *this;
   }
   SymTensor<T,D>& operator*=(const T& rhs)
   {
-    OTAssign< SymTensor<T,D> , T , OpMultiplyAssign > :: 
-      apply(*this,rhs, OpMultiplyAssign());
+    OTAssign< SymTensor<T,D> , T , OpMultiplyAssign > ::
+    apply(*this,rhs, OpMultiplyAssign());
     return *this;
   }
 
   template<class T1>
   SymTensor<T,D>& operator/=(const SymTensor<T1,D> &rhs)
   {
-    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpDivideAssign > :: 
-      apply(*this,rhs, OpDivideAssign());
+    OTAssign< SymTensor<T,D> , SymTensor<T1,D> , OpDivideAssign > ::
+    apply(*this,rhs, OpDivideAssign());
     return *this;
   }
   SymTensor<T,D>& operator/=(const T& rhs)
   {
-    OTAssign< SymTensor<T,D> , T , OpDivideAssign > :: 
-      apply(*this,rhs, OpDivideAssign());
+    OTAssign< SymTensor<T,D> , T , OpDivideAssign > ::
+    apply(*this,rhs, OpDivideAssign());
     return *this;
   }
 
   // Methods
-  void diagonal(const T& rhs) {
-    for ( int i = 0 ; i < D ; i++ ) {
+  void diagonal(const T& rhs)
+  {
+    for ( int i = 0 ; i < D ; i++ )
+    {
       X[((i+1)*i/2) + i] = rhs;
     }
   }
 
-  int len(void)  const { return Size; }
-  int size(void) const { return sizeof(*this); }
-  int get_Size(void) const { return Size; }
+  int len(void)  const
+  {
+    return Size;
+  }
+  int size(void) const
+  {
+    return sizeof(*this);
+  }
+  int get_Size(void) const
+  {
+    return Size;
+  }
 
   // Operators
-  
-  Type_t operator()(unsigned int i, unsigned int j) const {
+
+  Type_t operator()(unsigned int i, unsigned int j) const
+  {
     int lo = i < j ? i : j;
     int hi = i > j ? i : j;
     return X[((hi+1)*hi/2) + lo];
   }
 
-  Type_t& operator()(unsigned int i, unsigned int j) {
+  Type_t& operator()(unsigned int i, unsigned int j)
+  {
     int lo = i < j ? i : j;
     int hi = i > j ? i : j;
     return X[((hi+1)*hi/2) + lo];
@@ -233,25 +265,29 @@ public:
 //      return X[((hi+1)*hi/2) + lo];
 //    }
 
-  Type_t HL(unsigned int hi, unsigned int lo) const {
+  Type_t HL(unsigned int hi, unsigned int lo) const
+  {
     PAssert( hi >= lo );
     PAssert( hi<D );
     PAssert( lo<D );
     return X[hi*(hi+1)/2 + lo];
   }
-  Type_t& HL(unsigned int hi, unsigned int lo) {
+  Type_t& HL(unsigned int hi, unsigned int lo)
+  {
     PAssert( hi >= lo );
     PAssert( hi<D );
     PAssert( lo<D );
     return X[hi*(hi+1)/2 + lo];
   }
 
-  Type_t& operator[](unsigned int i) { 
+  Type_t& operator[](unsigned int i)
+  {
     PAssert (i < Size);
     return X[i];
   }
 
-  Type_t operator[](unsigned int i) const { 
+  Type_t operator[](unsigned int i) const
+  {
     PAssert (i < Size);
     return X[i];
   }
@@ -259,12 +295,14 @@ public:
   //TJW: add these 12/16/97 to help with NegReflectAndZeroFace BC:
   // These are the same as operator[] but with () instead:
 
-  Type_t& operator()(unsigned int i) { 
+  Type_t& operator()(unsigned int i)
+  {
     PAssert (i < Size);
     return X[i];
   }
 
-  Type_t operator()(unsigned int i) const { 
+  Type_t operator()(unsigned int i) const
+  {
     PAssert (i < Size);
     return X[i];
   }
@@ -307,15 +345,17 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template <class T, unsigned D>
-T trace(const SymTensor<T,D> &rhs) {
+T trace(const SymTensor<T,D> &rhs)
+{
   T result = 0.0;
-  for (int i = 0 ; i < D ; i++ ) 
+  for (int i = 0 ; i < D ; i++ )
     result += rhs(i,i);
   return result;
 }
 
 template <class T, unsigned D>
-SymTensor<T,D> transpose(const SymTensor<T,D> &rhs) {
+SymTensor<T,D> transpose(const SymTensor<T,D> &rhs)
+{
   return rhs;
 }
 
@@ -373,35 +413,35 @@ TSV_ELEMENTWISE_OPERATOR2(Tensor,SymTensor,operator/,OpDivide)
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const SymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+dot(const SymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 {
   return OTDot< SymTensor<T1,D> , SymTensor<T2,D> > :: apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs) 
+dot(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs)
 {
   return OTDot< SymTensor<T1,D> , Tensor<T2,D> > :: apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+dot(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 {
   return OTDot< Tensor<T1,D> , SymTensor<T2,D> > :: apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const TinyVector<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+dot(const TinyVector<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 {
   return OTDot< TinyVector<T1,D> , SymTensor<T2,D> > :: apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const SymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs) 
+dot(const SymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 {
   return OTDot< SymTensor<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
 }
@@ -412,37 +452,44 @@ dot(const SymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const SymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+//dotdot(const SymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 //{
 //  return MetaDotDot< SymTensor<T1,D> , SymTensor<T2,D> > :: apply(lhs,rhs);
 //}
 //
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs) 
+//dotdot(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs)
 //{
 //  return MetaDotDot< SymTensor<T1,D> , Tensor<T2,D> > :: apply(lhs,rhs);
 //}
 //
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+//dotdot(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 //{
 //  return MetaDotDot< Tensor<T1,D> , SymTensor<T2,D> > :: apply(lhs,rhs);
 //}
 //----------------------------------------------------------------------
 // I/O
 template<class T, unsigned D>
-std::ostream& operator<<(std::ostream& out, const SymTensor<T,D>& rhs) {
-  if (D >= 1) {
-    for (int i=0; i<D; i++) {
-      for (int j=0; j<D-1; j++) {
-	out << rhs(i,j) << " ";
+std::ostream& operator<<(std::ostream& out, const SymTensor<T,D>& rhs)
+{
+  if (D >= 1)
+  {
+    for (int i=0; i<D; i++)
+    {
+      for (int j=0; j<D-1; j++)
+      {
+        out << rhs(i,j) << " ";
       }
       out << rhs(i,D-1) << " ";
-      if (i < D - 1) out << std::endl;
+      if (i < D - 1)
+        out << std::endl;
     }
-  } else {
+  }
+  else
+  {
     out << " " << rhs(0,0) << " ";
   }
   return out;
@@ -455,5 +502,5 @@ std::ostream& operator<<(std::ostream& out, const SymTensor<T,D>& rhs) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

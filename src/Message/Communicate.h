@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -24,7 +24,8 @@
 
 #ifdef HAVE_OOMPI
 #include "oompi.h"
-struct CommunicatorTraits {
+struct CommunicatorTraits
+{
   typedef MPI_Comm         mpi_comm_type;
   typedef MPI_Status       status;
   typedef MPI_Request      request;
@@ -34,7 +35,8 @@ struct CommunicatorTraits {
 {std::cerr << "Fatal Error. Aborting at " << msg << endl; OOMPI_COMM_WORLD.Abort();}
 
 #else
-struct CommunicatorTraits {
+struct CommunicatorTraits
+{
   typedef int  mpi_comm_type;
   typedef int  status;
   typedef int  request;
@@ -53,13 +55,14 @@ struct CommunicatorTraits {
 
 /**@class Communicate
  * @ingroup Message
- * @brief 
+ * @brief
  *  Wrapping information on parallelism.
- *  Very limited in functions. Currently, only single-mode or mpi-mode 
+ *  Very limited in functions. Currently, only single-mode or mpi-mode
  *  is available (mutually exclusive).
  * @todo Possibly, make it a general manager class for mpi+openmp, mpi+mpi
  */
-class Communicate: public CommunicatorTraits {
+class Communicate: public CommunicatorTraits
+{
 
 public:
 
@@ -92,34 +95,70 @@ public:
 
 #if defined(HAVE_MPI)
   ///operator for implicit conversion to MPI_Comm
-  inline operator MPI_Comm() const { return myMPI; }
+  inline operator MPI_Comm() const
+  {
+    return myMPI;
+  }
 #endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline mpi_comm_type getMPI() const { return myMPI;}
+  inline mpi_comm_type getMPI() const
+  {
+    return myMPI;
+  }
 
-  inline intra_comm_type& getComm() { return myComm;}
-  inline const intra_comm_type& getComm() const { return myComm;}
+  inline intra_comm_type& getComm()
+  {
+    return myComm;
+  }
+  inline const intra_comm_type& getComm() const
+  {
+    return myComm;
+  }
 
-  ///return the rank 
-  inline int rank() const {return d_mycontext;}
+  ///return the rank
+  inline int rank() const
+  {
+    return d_mycontext;
+  }
   ///return the number of tasks
-  inline int size() const {return d_ncontexts;}
+  inline int size() const
+  {
+    return d_ncontexts;
+  }
 
   ///return the group id
-  inline int getGroupID() const {return d_groupid;}
+  inline int getGroupID() const
+  {
+    return d_groupid;
+  }
   ///return the number of intra_comms which belong to the same group
-  inline int getGroupSize() const { return d_ngroups;}
+  inline int getGroupSize() const
+  {
+    return d_ngroups;
+  }
   //inline bool master() const { return (d_mycontext == 0);}
   //intra_comm_type split(int n);
   void cleanupMessage(void*);
-  inline void setNodeID(int i) { d_mycontext = i;}
-  inline void setNumNodes(int n) { d_ncontexts = n;}
+  inline void setNodeID(int i)
+  {
+    d_mycontext = i;
+  }
+  inline void setNumNodes(int n)
+  {
+    d_ncontexts = n;
+  }
 
   void barrier();
 
-  inline void setName(const std::string& aname) { myName=aname;}
-  inline const std::string& getName() const { return myName;}
+  inline void setName(const std::string& aname)
+  {
+    myName=aname;
+  }
+  inline const std::string& getName() const
+  {
+    return myName;
+  }
 
   template<typename T> void allreduce(T&);
   template<typename T> void reduce(T&);
@@ -143,17 +182,18 @@ protected:
   mpi_comm_type myMPI;
   intra_comm_type myComm;
   std::string myName;
-  int d_mycontext; 
+  int d_mycontext;
   int d_ncontexts;
   int d_groupid;
   int d_ngroups;
 };
 
 
-namespace OHMMS {
-  /** Global Communicator for a process 
-   */
-  extern Communicate* Controller;
+namespace OHMMS
+{
+/** Global Communicator for a process
+ */
+extern Communicate* Controller;
 }
 
 
@@ -161,5 +201,5 @@ namespace OHMMS {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

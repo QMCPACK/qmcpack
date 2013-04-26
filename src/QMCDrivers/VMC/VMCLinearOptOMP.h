@@ -22,25 +22,25 @@
 namespace qmcplusplus
 {
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   * @brief Implements a VMC using particle-by-particle move. Threaded execution.
-   */
-  class VMCLinearOptOMP: public QMCDriver, public CloneManager
-  {
-    public:
-      /// Constructor.
-      VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-          HamiltonianPool& hpool, WaveFunctionPool& ppool);
+/** @ingroup QMCDrivers  ParticleByParticle
+ * @brief Implements a VMC using particle-by-particle move. Threaded execution.
+ */
+class VMCLinearOptOMP: public QMCDriver, public CloneManager
+{
+public:
+  /// Constructor.
+  VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+                  HamiltonianPool& hpool, WaveFunctionPool& ppool);
 
-      ~VMCLinearOptOMP()
-      {
+  ~VMCLinearOptOMP()
+  {
 //         if (UseDrift == "rn")
 //           delete_iter(CSMovers.begin(),CSMovers.end());
-      }
-      bool run();
+  }
+  bool run();
 //       RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
 //       int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
-      bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
 //       inline void getDeltaCosts(std::vector<RealType>& cstVec)
 //       {
@@ -48,73 +48,70 @@ namespace qmcplusplus
 //       }
 
 //       void fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap);
-      RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
+  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
 
-      inline void clearComponentMatrices()
-      {
-        
-        Ham2=0.0;
-        Ham=0.0;
-        Olp=0.0;
-        m_vec=0.0;
-        DerivRecords=0.0;
-        HDerivRecords=0.0;
+  inline void clearComponentMatrices()
+  {
+    Ham2=0.0;
+    Ham=0.0;
+    Olp=0.0;
+    m_vec=0.0;
+    DerivRecords=0.0;
+    HDerivRecords=0.0;
+    for(int i=0; i<s_vec.size(); i++)
+      s_vec[i]=0;
+  }
 
-        for(int i=0;i<s_vec.size();i++) s_vec[i]=0;
-      }
-
-    private:
-      ///number of RN warmup steps
+private:
+  ///number of RN warmup steps
 //       int myRNWarmupSteps;
-      ///period for walker dump
-      int myPeriod4WalkerDump;
-      ///option to enable/disable drift equation for VMC
-      string UseDrift;
-      ///target errorbars to use to determine when to stop for filling matrix and line minimization
+  ///period for walker dump
+  int myPeriod4WalkerDump;
+  ///option to enable/disable drift equation for VMC
+  string UseDrift;
+  ///target errorbars to use to determine when to stop for filling matrix and line minimization
 //       RealType alpha_errorbars, beta_errorbars;
-      ///check the run-time environments
-      void resetRun();
-      ///copy constructor
-      VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
-      /// Copy operator (disabled).
-      VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
-      {
-        return *this;
-      }
-      ///Ways to set rn constant
+  ///check the run-time environments
+  void resetRun();
+  ///copy constructor
+  VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
+  /// Copy operator (disabled).
+  VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
+  {
+    return *this;
+  }
+  ///Ways to set rn constant
 //       RealType logoffset,logepsilon;
 
-      int NumOptimizables;
-      RealType w_beta,w_alpha;
-      RealType E_avg, V_avg;
-      string GEVtype;
-      vector<RandomGenerator_t> RngSaved;
+  int NumOptimizables;
+  RealType w_beta,w_alpha;
+  RealType E_avg, V_avg;
+  string GEVtype;
+  vector<RandomGenerator_t> RngSaved;
 
-      ///These are the values we collect to build the Matrices GLOBAL
-      Matrix<RealType> Ham, Ham2, Olp, m_vec;
-      std::vector<RealType> s_vec;
+  ///These are the values we collect to build the Matrices GLOBAL
+  Matrix<RealType> Ham, Ham2, Olp, m_vec;
+  std::vector<RealType> s_vec;
 //       std::vector<RealType> D_E, HD2, HD, D;
 //       RealType sE,sE2,sE4,sW,sN;
-      string printderivs;
-      ///Temp matrices
-      Matrix<RealType> DerivRecords, HDerivRecords;
+  string printderivs;
+  ///Temp matrices
+  Matrix<RealType> DerivRecords, HDerivRecords;
 
 
 //       void initCS();
 
-      void resizeForOpt(int n)
-      {
-        Ham2.resize(n,n);
-        Ham.resize(n,n);
-        Olp.resize(n,n);
-        m_vec.resize(6,n);
-        DerivRecords.resize(NumThreads,n);
-        HDerivRecords.resize(NumThreads,n);
-
-        s_vec.resize(5,0);
-
-        clearComponentMatrices();
-      }
+  void resizeForOpt(int n)
+  {
+    Ham2.resize(n,n);
+    Ham.resize(n,n);
+    Olp.resize(n,n);
+    m_vec.resize(6,n);
+    DerivRecords.resize(NumThreads,n);
+    HDerivRecords.resize(NumThreads,n);
+    s_vec.resize(5,0);
+    clearComponentMatrices();
+  }
 
 //       void clearCSEstimators()
 //       {
@@ -122,9 +119,9 @@ namespace qmcplusplus
 //         gCorrelatedH.resize(NumThreads,NumThreads);
 //         Norm2s.resize(NumThreads+1,NumThreads+1);
 //         gNorm2s.resize(NumThreads+1,NumThreads+1);
-//         Norms.resize(NumThreads+1); 
+//         Norms.resize(NumThreads+1);
 //         Energies.resize(NumThreads);
-//         gNorms.resize(NumThreads+1); 
+//         gNorms.resize(NumThreads+1);
 //         gEnergies.resize(NumThreads);
 //         NE_i.resize(NumThreads);
 //         gCorrelatedH=CorrelatedH=0;
@@ -140,12 +137,12 @@ namespace qmcplusplus
 //         {
 //           (*W[ip]).makeCopy(firstWalker);
 //         }
-// 
+//
 //         for (int ip=0; ip<NumThreads; ++ip)
 //         {
 //           Walker_t& thisWalker(*W[ip]);
 //           wClones[ip]->loadWalker(thisWalker,true);
-// 
+//
 //           Walker_t::Buffer_t tbuffer;
 //           RealType logpsi=psiClones[ip]->evaluateLog(*wClones[ip]);
 //           logpsi=psiClones[ip]->registerData(*wClones[ip],tbuffer);
@@ -162,7 +159,7 @@ namespace qmcplusplus
 //       }
 
 
-      RealType fillComponentMatrices();
+  RealType fillComponentMatrices();
 //       Walker_t firstWalker;
 //       Matrix<RealType> CorrelatedH, Norm2s;
 //       vector<RealType> Norms;
@@ -183,7 +180,7 @@ namespace qmcplusplus
 //       bool bracketing(vector<RealType>& lambdas, RealType errorbars);
 //       //     weights for correlated sampling
 //       vector<RealType> w_i;
-  };
+};
 
 }
 #endif

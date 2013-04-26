@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,7 +19,8 @@
 
 #include "Particle/ParticleSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
 //  struct BasisSetBase {
 //    virtual void resize(int ntpcl) = 0;
@@ -47,17 +48,18 @@ namespace qmcplusplus {
 //    }
 //  };
 //
-  /** DummyBasisSet class which implements functions
-   *
-   * Any S(ingle)P(article)O(rbital)Set can contain
-   * typedef DummyBasisSet BasisSet_t
-   * so that SlaterDeterminant<SPOSet> can call the dummy function.
-   *
-   */
-  struct DummyBasisSet {
-    inline void resetTargetParticleSet(ParticleSet& P) { }
-    inline void evaluate(ParticleSet& P) { }
-  };
+/** DummyBasisSet class which implements functions
+ *
+ * Any S(ingle)P(article)O(rbital)Set can contain
+ * typedef DummyBasisSet BasisSet_t
+ * so that SlaterDeterminant<SPOSet> can call the dummy function.
+ *
+ */
+struct DummyBasisSet
+{
+  inline void resetTargetParticleSet(ParticleSet& P) { }
+  inline void evaluate(ParticleSet& P) { }
+};
 
 
 }

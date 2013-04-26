@@ -8,50 +8,75 @@
 #include <blitz/array.h>
 
 /// This is Cubic Splines with natural boundary conditions, i.e.
-/// the second derivative vanishes at the boundary, not suitable for 
+/// the second derivative vanishes at the boundary, not suitable for
 /// functions like sines and cosines.
 
 /// Each point of F contains:
 /// 0) F(x,y,z)
 /// 1) dF/dx
 
-class CubicSpline{
+class CubicSpline
+{
 
   /// functions which depend on the point where the interpolated value
   /// is required. t = (x - xi)/h
   inline double p1(double t)
-  { return ((t-1.0)*(t-1.0)*(1.0+2.0*t)); }
+  {
+    return ((t-1.0)*(t-1.0)*(1.0+2.0*t));
+  }
   inline double p2(double t)
-  { return (t*t*(3.0-2.0*t)); }
+  {
+    return (t*t*(3.0-2.0*t));
+  }
   inline double q1(double t)
-  { return (t*(t-1.0)*(t-1.0)); }
+  {
+    return (t*(t-1.0)*(t-1.0));
+  }
   inline double q2(double t)
-  { return (t*t*(t-1.0)); }
+  {
+    return (t*t*(t-1.0));
+  }
   inline double dp1(double t)
-  { return (6.0*t*(t-1.0)); }
+  {
+    return (6.0*t*(t-1.0));
+  }
   inline double dq1(double t)
-  { return ((t-1.0)*(3.0*t-1.0)); }
+  {
+    return ((t-1.0)*(3.0*t-1.0));
+  }
   inline double dp2(double t)
-  { return (-dp1(t)); }
+  {
+    return (-dp1(t));
+  }
   inline double dq2 (double t)
-  { return ((3.0*t - 2.0)*t); }
+  {
+    return ((3.0*t - 2.0)*t);
+  }
   inline double d2p1(double t)
-  { return (12.0*t-6.0); }
+  {
+    return (12.0*t-6.0);
+  }
   inline double d2q1 (double t)
-  { return (6.0*t - 4.0); }
+  {
+    return (6.0*t - 4.0);
+  }
   inline double d2p2 (double t)
-  { return (-d2p1(t)); }
+  {
+    return (-d2p1(t));
+  }
   inline double d2q2 (double t)
-  { return (6.0*t - 2.0); } 
+  {
+    return (6.0*t - 2.0);
+  }
 
   // dim:     Dimension to calculate derivative w.r.t
   // source:  Function to differentiate
   // dest:    where to put result
   void UpdateX (int source, int dest);
 
-  /// whether the first derivatives have been calculated using the 
-  /// m-relations. 
-  bool UpToDate; 
+  /// whether the first derivatives have been calculated using the
+  /// m-relations.
+  bool UpToDate;
 
 
 
@@ -62,7 +87,7 @@ class CubicSpline{
   double invh;
 
 
-public: 
+public:
 
   typedef double value_type;
 
@@ -72,23 +97,20 @@ public:
   uGrid1D* m_grid;
 
   /// constructor
-  CubicSpline(uGrid1D* agrid){
-    
+  CubicSpline(uGrid1D* agrid)
+  {
     m_grid = agrid;
-
     n_x = agrid->m_size;
     h = agrid->m_h;
     invh = 1.0/h;
-
     d2i = 0.0;
     d2f = 0.0;
-    
     F.resize(n_x);
     UpToDate = false;
-
   }
 
-  inline void set_bc(double ad2i, double ad2f){
+  inline void set_bc(double ad2i, double ad2f)
+  {
     d2i = ad2i;
     d2f = ad2f;
     return;
@@ -98,7 +120,7 @@ public:
   {
     return (F(ix)[0]);
   }
-  
+
   inline double& operator()(int ix)
   {
     UpToDate = false;
@@ -110,33 +132,23 @@ public:
   void Update(double,double);
 
   inline double evaluate(const double x,
-			 double& gradf,
-			 double& lapf){
-
+                         double& gradf,
+                         double& lapf)
+  {
     double val;
-
     //if( !UpToDate )      Update();              /// m-relations
-    
     int ix = m_grid->xl(x);  /// get the lowest grid-point
-
     double u = (x-m_grid->m_coord[ix])*invh;
-
     double& Y00 = F(ix)[0];
     double& Y01 = F(ix)[1];
     double& Y10 = F(ix+1)[0];
     double& Y11 = F(ix+1)[1];
-
     val = Y00 * p1(u) + Y10 * p2(u) + h* ( Y01 * q1(u) + Y11 * q2(u) );
-
     gradf = invh * ( Y00 * dp1(u) + Y10 * dp2(u) )
-      + Y01 * dq1(u) + Y11 * dq2(u) ;
-
+            + Y01 * dq1(u) + Y11 * dq2(u) ;
     lapf = invh * ( invh * ( Y00 * d2p1(u) + Y10 * d2p2(u) )
-		    + Y01 * d2q1(u) + Y11 * d2q2(u) );
-    
-
+                    + Y01 * d2q1(u) + Y11 * d2q2(u) );
     return val;
-
   }
 
 };

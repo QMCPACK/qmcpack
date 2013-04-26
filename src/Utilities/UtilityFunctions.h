@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -19,7 +19,7 @@
 #ifndef OHMMS_UTILITYFUNCTIONS_H
 #define OHMMS_UTILITYFUNCTIONS_H
 /**@file UtilityFunctions.h
- *@brief A collection of utility functions. 
+ *@brief A collection of utility functions.
  */
 
 /** Partition ntot over npart
@@ -28,21 +28,24 @@
  *\param adist an index array
  *
  *Simply divide ntot data among npart partitions so that the size of
- *each group cannot differ by more than 1.  
+ *each group cannot differ by more than 1.
  *
- *The array adist contains the offset for the i-th group, 
+ *The array adist contains the offset for the i-th group,
  *i.e., adist[i+1]-adist[i] is the number of elements for the i-th group.
  */
 template<class IV>
-inline void FairDivide(int ntot, int npart, IV& adist) {
-  if(adist.size() != npart+1) adist.resize(npart+1);
+inline void FairDivide(int ntot, int npart, IV& adist)
+{
+  if(adist.size() != npart+1)
+    adist.resize(npart+1);
   int bat=ntot/npart;
   int residue = ntot%npart;
   adist[0] = 0;
-  for(int i=1; i<npart; i++) {
-    if(i<residue) 
+  for(int i=1; i<npart; i++)
+  {
+    if(i<residue)
       adist[i] = adist[i-1] + bat+1;
-    else 
+    else
       adist[i] = adist[i-1] + bat;
   }
   adist[npart]=ntot;
@@ -52,18 +55,21 @@ inline void FairDivide(int ntot, int npart, IV& adist) {
 /** partition ntot elements among npart
  * @param ntot total number of elements
  * @param npart number of partitions
- * @param adist distribution offset 
+ * @param adist distribution offset
  *
  * adist[ip-1]-adist[ip] is the number of elements of ip partition
  * This method makes the zero-th node equal to or less than 1.
  */
 template<class IV>
-inline void FairDivideLow(int ntot, int npart, IV& adist) {
-  if(adist.size() != npart+1) adist.resize(npart+1);
+inline void FairDivideLow(int ntot, int npart, IV& adist)
+{
+  if(adist.size() != npart+1)
+    adist.resize(npart+1);
   int bat=ntot/npart;
   int residue = npart-ntot%npart;
   adist[0] = 0;
-  for(int i=0; i<npart; i++) {
+  for(int i=0; i<npart; i++)
+  {
     if(i<residue)
       adist[i+1] = adist[i] + bat;
     else
@@ -75,25 +81,28 @@ inline void FairDivideLow(int ntot, int npart, IV& adist) {
  * @param me rank [0,ntot)
  * @param ntot total number of elements
  * @param npart number of partitions
- * @param adist distribution offset 
- * @return partition id to which me belongs 
+ * @param adist distribution offset
+ * @return partition id to which me belongs
  *
  * mypart satisfies adist[mypart] <= me < adist[mypart+1]
  */
 template<class IV>
-inline int FairDivideHigh(int me, int ntot, int npart, IV& adist) 
+inline int FairDivideHigh(int me, int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1) adist.resize(npart+1);
+  if(adist.size() != npart+1)
+    adist.resize(npart+1);
   int bat=ntot/npart;
   int residue = ntot%npart;
   int mypart=0;
   adist[0] = 0;
-  for(int i=1; i<npart; i++) {
-    if(i<residue) 
+  for(int i=1; i<npart; i++)
+  {
+    if(i<residue)
       adist[i] = adist[i-1] + bat+1;
-    else 
+    else
       adist[i] = adist[i-1] + bat;
-    if(me>= adist[i] && me<adist[i+1]) mypart=i;
+    if(me>= adist[i] && me<adist[i+1])
+      mypart=i;
   }
   adist[npart]=ntot;
   return mypart;
@@ -103,26 +112,28 @@ inline int FairDivideHigh(int me, int ntot, int npart, IV& adist)
  * @param me rank [0,ntot)
  * @param ntot total number of elements
  * @param npart number of partitions
- * @param adist distribution offset 
- * @return partition id to which me belongs 
+ * @param adist distribution offset
+ * @return partition id to which me belongs
  *
  * mypart satisfies adist[mypart] <= me < adist[mypart+1]
  */
 template<class IV>
-inline int FairDivideLow(int me, int ntot, int npart, IV& adist) 
+inline int FairDivideLow(int me, int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1) adist.resize(npart+1);
+  if(adist.size() != npart+1)
+    adist.resize(npart+1);
   int bat=ntot/npart;
   int residue = npart-ntot%npart;
   int mypart=0;
   adist[0] = 0;
-  for(int i=0; i<npart; i++) 
+  for(int i=0; i<npart; i++)
   {
     if(i<residue)
       adist[i+1] = adist[i] + bat;
     else
       adist[i+1] = adist[i] + bat+1;
-    if(me>= adist[i] && me<adist[i+1]) mypart=i;
+    if(me>= adist[i] && me<adist[i+1])
+      mypart=i;
   }
   return mypart;
 }
@@ -131,5 +142,5 @@ inline int FairDivideLow(int me, int ntot, int npart, IV& adist)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

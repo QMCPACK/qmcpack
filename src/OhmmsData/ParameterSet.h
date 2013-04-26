@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -25,7 +25,8 @@
  *
  *This may become an inherited class from OhmmsElementBase.
  */
-struct ParameterSet: public OhmmsElementBase {
+struct ParameterSet: public OhmmsElementBase
+{
 //  public std::map<std::string, OhmmsElementBase*> {
 
   typedef std::map<std::string, OhmmsElementBase*>  Container_t;
@@ -35,52 +36,71 @@ struct ParameterSet: public OhmmsElementBase {
   Container_t m_param;
 
   ParameterSet(const char* aname="parameter"):
-    OhmmsElementBase(aname) {
+    OhmmsElementBase(aname)
+  {
   }
 
-  ~ParameterSet() {
+  ~ParameterSet()
+  {
     iterator it(m_param.begin());
     iterator it_end(m_param.end());
-    while(it!=it_end) { delete (*it).second; ++it;}
+    while(it!=it_end)
+    {
+      delete (*it).second;
+      ++it;
+    }
   }
 
-  inline bool get(std::ostream& os) const {
+  inline bool get(std::ostream& os) const
+  {
     const_iterator it(m_param.begin());
     const_iterator it_end(m_param.end());
-    while(it != it_end) {
-      (*it).second->get(os);++it;
+    while(it != it_end)
+    {
+      (*it).second->get(os);
+      ++it;
     }
     return true;
   }
 
-  inline bool put(std::istream& is) {
+  inline bool put(std::istream& is)
+  {
     return true;
   }
 
-  /** assign parameters to the set 
+  /** assign parameters to the set
    *@param cur the xml node to work on
    *@return true, if any valid parameter is processed.
    */
-  inline bool put(xmlNodePtr cur) {
-    if(cur == NULL) return true;//handle empty node
+  inline bool put(xmlNodePtr cur)
+  {
+    if(cur == NULL)
+      return true;//handle empty node
     cur = cur->xmlChildrenNode;
     bool something = false;
-    while(cur != NULL) {
+    while(cur != NULL)
+    {
       std::string cname((const char*)(cur->name));
       iterator it_tag = m_param.find(cname);
-      if(it_tag == m_param.end()) {
-        if(cname == myName) {
+      if(it_tag == m_param.end())
+      {
+        if(cname == myName)
+        {
           const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
-          if(aptr) {
+          if(aptr)
+          {
             //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
             iterator it = m_param.find((const char*)aptr);
-            if(it != m_param.end()) {
+            if(it != m_param.end())
+            {
               something =true;
               (*it).second->put(cur);
-            } 
+            }
           }
         }
-      } else {
+      }
+      else
+      {
         something =true;
         (*it_tag).second->put(cur);
       }
@@ -102,27 +122,31 @@ struct ParameterSet: public OhmmsElementBase {
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
- // INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
-  inline void add(PDT& aparam, const char* aname, const char* uname) {
+// INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
+  inline void add(PDT& aparam, const char* aname, const char* uname)
+  {
     iterator it = m_param.find(aname);
-    if(it == m_param.end()) {
+    if(it == m_param.end())
+    {
       m_param[aname] = new OhmmsParameter<PDT>(aparam,aname,uname);
     }
   }
 
   template<class PDT>
   //INLINE_ALL void setValue(const std::string& aname, PDT aval){
-  inline void setValue(const std::string& aname, PDT aval){
+  inline void setValue(const std::string& aname, PDT aval)
+  {
     iterator it = m_param.find(aname);
-    if(it != m_param.end()) {
-       (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
+    if(it != m_param.end())
+    {
+      (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
     }
   }
 
-}; 
+};
 #endif /*OHMMS_OHMMSPARAMETERSET_H*/
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

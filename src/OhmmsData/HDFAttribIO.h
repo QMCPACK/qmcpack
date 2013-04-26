@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -32,11 +32,13 @@ const int H5P_DEFAULT=0;
 #include <string>
 
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 /*\class HDFParticleAttribBase
  *\brief Base class to write/read ParticleAttrib using hdf5
  */
-struct HDFAttribIOBase {
+struct HDFAttribIOBase
+{
 
   ///hdf node to which a dataset belongs
   hid_t my_loc;
@@ -45,7 +47,7 @@ struct HDFAttribIOBase {
   hid_t xfer_plist;
 
   ///default constructor
-  HDFAttribIOBase():my_loc(-1),xfer_plist(H5P_DEFAULT){}
+  HDFAttribIOBase():my_loc(-1),xfer_plist(H5P_DEFAULT) {}
 
   virtual ~HDFAttribIOBase() { }
 
@@ -67,8 +69,9 @@ struct HDFAttribIOBase {
 
 
 // generic templated class for type T and is not used in reality
-template<class T> 
-struct HDFAttribIO: public HDFAttribIOBase {
+template<class T>
+struct HDFAttribIO: public HDFAttribIOBase
+{
 
   void write(hid_t, const char*) { }
   void read(hid_t, const char*) { }
@@ -79,5 +82,5 @@ struct HDFAttribIO: public HDFAttribIOBase {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -17,68 +17,78 @@
 #include "Configuration.h"
 #include "QMCApp/QMCAppBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  QMCAppBase::QMCAppBase()
+QMCAppBase::QMCAppBase()
+{
+}
+
+QMCAppBase::~QMCAppBase()
+{
+  while(!XmlDocStack.empty())
   {
+    popDocument();
   }
+}
 
-  QMCAppBase::~QMCAppBase() 
+bool QMCAppBase::pushDocument(const string& infile)
+{
+  Libxml2Document* adoc= new Libxml2Document();
+  bool success = adoc->parse(infile);
+  if(success)
   {
-    while(!XmlDocStack.empty()) { popDocument(); }
+    XmlDocStack.push(adoc);
   }
-
-  bool QMCAppBase::pushDocument(const string& infile) 
+  else
   {
-    Libxml2Document* adoc= new Libxml2Document();
-    bool success = adoc->parse(infile);
-
-    if(success) {
-      XmlDocStack.push(adoc);
-    }  else {
-      app_error() << "File " << infile << " is invalid" << endl;
-      delete adoc;
-    }
-    return success;
+    app_error() << "File " << infile << " is invalid" << endl;
+    delete adoc;
   }
+  return success;
+}
 
-  void QMCAppBase::popDocument() {
-    if(!XmlDocStack.empty()) { //Check if the stack is empty
-      Libxml2Document* adoc=XmlDocStack.top();
-      delete adoc;
-      XmlDocStack.pop();
-    }
+void QMCAppBase::popDocument()
+{
+  if(!XmlDocStack.empty())
+    //Check if the stack is empty
+  {
+    Libxml2Document* adoc=XmlDocStack.top();
+    delete adoc;
+    XmlDocStack.pop();
   }
+}
 
-  /** parse an input file
-   * @param infile name of an input file
-   * @return true, if the document is a valid xml file.
-   *
-   * The data members m_doc and m_root point to the "current" document and 
-   * root element.
-   */
-  bool QMCAppBase::parse(const string& infile) {
+/** parse an input file
+ * @param infile name of an input file
+ * @return true, if the document is a valid xml file.
+ *
+ * The data members m_doc and m_root point to the "current" document and
+ * root element.
+ */
+bool QMCAppBase::parse(const string& infile)
+{
+  app_log() << "  Input XML = " << infile << endl;
+  return pushDocument(infile);
+}
 
-    app_log() << "  Input XML = " << infile << endl;
-    return pushDocument(infile);
+void QMCAppBase::saveXml()
+{
+  if(!XmlDocStack.empty())
+  {
+    string newxml(myProject.CurrentMainRoot());
+    //string newxml(myProject.CurrentRoot());
+    //myProject.PreviousRoot(newxml);
+    //myProject.rewind();
+    newxml.append(".cont.xml");
+    app_log() << "\n========================================================="
+              << "\n  A new xml input file : " << newxml << endl;
+    XmlDocStack.top()->dump(newxml);
   }
-
-  void QMCAppBase::saveXml() {
-
-    if(!XmlDocStack.empty()) {
-      string newxml(myProject.CurrentMainRoot());
-      //string newxml(myProject.CurrentRoot());
-      //myProject.PreviousRoot(newxml);
-      //myProject.rewind();
-      newxml.append(".cont.xml");
-      app_log() << "\n========================================================="
-                << "\n  A new xml input file : " << newxml << endl;
-      XmlDocStack.top()->dump(newxml);
-    }
-  }
+}
 }
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

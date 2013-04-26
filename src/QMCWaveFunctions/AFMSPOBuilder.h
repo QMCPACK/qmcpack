@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: esler@uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,26 +19,27 @@
 #include "QMCWaveFunctions/AFMSPOSet.h"
 
 
-namespace qmcplusplus {
-  class AFMSPOBuilder : public BasisSetBuilder 
-  {
-  protected:
-    typedef map<string,ParticleSet*> PtclPoolType;
-    typedef map<string,SPOSetBase*>  SPOPoolType;
-    ParticleSet *targetPtcl;
-  public:
-    AFMSPOBuilder(ParticleSet& p, PtclPoolType& psets, 
-			  xmlNodePtr cur);
+namespace qmcplusplus
+{
+class AFMSPOBuilder : public BasisSetBuilder
+{
+protected:
+  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef map<string,SPOSetBase*>  SPOPoolType;
+  ParticleSet *targetPtcl;
+public:
+  AFMSPOBuilder(ParticleSet& p, PtclPoolType& psets,
+                xmlNodePtr cur);
 
-    bool put (xmlNodePtr cur);
+  bool put (xmlNodePtr cur);
 
-    /** initialize the Antisymmetric wave function for electrons
-     *@param cur the current xml node
-     */
-    SPOSetBase* createSPOSet(xmlNodePtr cur);
-    //    SPOSetBase* createSPOSet(xmlNodePtr cur, SPOPool_t& spo_pool);
+  /** initialize the Antisymmetric wave function for electrons
+   *@param cur the current xml node
+   */
+  SPOSetBase* createSPOSet(xmlNodePtr cur);
+  //    SPOSetBase* createSPOSet(xmlNodePtr cur, SPOPool_t& spo_pool);
 
-  };
+};
 }
 
 #endif

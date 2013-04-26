@@ -17,7 +17,8 @@ int print_help()
   return 1;
 }
 
-struct GofRObserver {
+struct GofRObserver
+{
   int NumSamples;
   int NumNodes;
   string DataSetName;
@@ -63,7 +64,6 @@ struct GofRObserver {
     fout.setf(ios::scientific, ios::floatfield);
     fout.setf(ios::left,ios::adjustfield);
     fout.precision(6);
-
     //double norm=static_cast<double>(NumNodes)/static_cast<double>(NumSamples);
     double norm=1.0/static_cast<double>(NumSamples);
     double sqrtnorm=sqrt(norm);
@@ -76,10 +76,10 @@ struct GofRObserver {
   }
 };
 
-int main(int argc, char** argv) {
-
-  if(argc<2) return print_help();
-
+int main(int argc, char** argv)
+{
+  if(argc<2)
+    return print_help();
   int iargc=0;
   int nproc=1;
   vector<string> gofr_name;
@@ -87,25 +87,27 @@ int main(int argc, char** argv) {
   while(iargc<argc)
   {
     string c(argv[iargc]);
-    if(c == "--fileroot") 
+    if(c == "--fileroot")
     {
       h5fileroot=argv[++iargc];
     }
-    else if(c == "--np" || c == "-np")
-    {
-      nproc=atoi(argv[++iargc]);
-    }
-    else if(c == "--help" || c == "-h")
-    {
-      return print_help();
-    }
-    else if(c == "--dataset" || c == "-d")
-    {
-      gofr_name.push_back(argv[++iargc]);
-    }
+    else
+      if(c == "--np" || c == "-np")
+      {
+        nproc=atoi(argv[++iargc]);
+      }
+      else
+        if(c == "--help" || c == "-h")
+        {
+          return print_help();
+        }
+        else
+          if(c == "--dataset" || c == "-d")
+          {
+            gofr_name.push_back(argv[++iargc]);
+          }
     ++iargc;
   }
-
   for(int i=0; i<gofr_name.size(); i++)
   {
     GofRObserver recorder(gofr_name[i]);
@@ -125,17 +127,13 @@ void GofRObserver::getData(const char* froot, int nproc)
       sprintf(fname,"%s.p%03d.config.h5",froot,ip);
     else
       sprintf(fname,"%s.config.h5",froot);
-
     cout << "Getting data from " << fname << endl;
-
     hid_t fileid =  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
     hid_t obsid = H5Gopen(fileid,"observables");
-
     int count=0;
     HDFAttribIO<int> i(count);
     i.read(obsid,"count");
     count_max = std::min(count_max,count);
-
     string gname(DataSetName);
     gname.append("/value");
     //check dimension
@@ -145,20 +143,17 @@ void GofRObserver::getData(const char* froot, int nproc)
     int rank = H5Sget_simple_extent_ndims(dataspace);
     int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
     H5Dclose(h1);
-
-    if(gofr_dat.size() ==0) {
+    if(gofr_dat.size() ==0)
+    {
       resize(dims_out[0],dims_out[1]);
     }
-
     Matrix<double> tmp(dims_out[0],dims_out[1]);
     HDFAttribIO<Matrix<double> > o(tmp);
     o.read(obsid,gname.c_str());
     gofr_dat += tmp;
-
     H5Gclose(obsid);
     H5Fclose(fileid);
   }
-
   cout << "Number of blocks " << count_max << endl;
   accumulate(count_max);
   string outfname(froot);

@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -19,7 +19,8 @@
 #ifndef OHMMS_PARTICLEUTILITY_H
 #define OHMMS_PARTICLEUTILITY_H
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 //////////////////////////////////////////////////////////
 // functors to generate vectors with each element [-0.5,0.5)
 //////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ namespace qmcplusplus {
 //////////////////////////////////////////////////////////
 
 // template<class T, unsigned D, class RNG>
-// struct 
+// struct
 // RandomVector<TinyVector<T,D>, RNG> {
 
 //   typedef TinyVector<T,D> Return_t;
@@ -101,10 +102,10 @@ namespace qmcplusplus {
 // // specialization of RandomSqence with ParticleAttrib<T>
 // ///////////////////////////////////////////////////////////
 // template<class T, class RNG>
-// struct RandomSequence<ParticleAttrib<T>, RNG> { 
+// struct RandomSequence<ParticleAttrib<T>, RNG> {
 
 //   static void apply(ParticleAttrib<T>& v, RandomVector<T,RNG>& rnd) {
-//     for(int i=0; i<v.size(); i++) v[i] = rnd(); 
+//     for(int i=0; i<v.size(); i++) v[i] = rnd();
 //   }
 // };
 
@@ -117,10 +118,10 @@ namespace qmcplusplus {
 // struct RandomNormSequence { };
 
 // template<class T, class RNG>
-// struct RandomNormSequence<ParticleAttrib<T>, RNG> { 
+// struct RandomNormSequence<ParticleAttrib<T>, RNG> {
 
 //   static void apply(ParticleAttrib<T>& v, RandomVector<T,RNG>& rnd) {
-//     for(int i=0; i<v.size(); i++) v[i] = rnd.norm(); 
+//     for(int i=0; i<v.size(); i++) v[i] = rnd.norm();
 //   }
 // };
 
@@ -128,17 +129,23 @@ namespace qmcplusplus {
 // Iterator is exposed. Parallel Implementation requires special care
 ////////////////////////////////////////////////////////////////
 template<class PL, class PV>
-void convert(const PL& lat, const PV& pin, PV& pout) {
-
-  if(pin.InUnit == pout.InUnit)   {
+void convert(const PL& lat, const PV& pin, PV& pout)
+{
+  if(pin.InUnit == pout.InUnit)
+  {
     pout = pin;
     return;
   }
-  if(pin.InUnit) {
-    for(int i=0; i<pin.size(); i++)  pout[i] = lat.toCart(pin[i]);
+  if(pin.InUnit)
+  {
+    for(int i=0; i<pin.size(); i++)
+      pout[i] = lat.toCart(pin[i]);
     return;
-  } else {
-    for(int i=0; i<pin.size(); i++)  pout[i] = lat.toUnit(pin[i]);
+  }
+  else
+  {
+    for(int i=0; i<pin.size(); i++)
+      pout[i] = lat.toUnit(pin[i]);
     return;
   }
 }
@@ -147,22 +154,28 @@ void convert(const PL& lat, const PV& pin, PV& pout) {
 // Iterator is exposed. Parallel Implementation requires special care
 ////////////////////////////////////////////////////////////////
 template<class PL, class PV>
-void convert2Cart(const PL& lat, PV& pin) {
-  if(pin.InUnit) {
+void convert2Cart(const PL& lat, PV& pin)
+{
+  if(pin.InUnit)
+  {
     PV tmp(pin.size());
     tmp = pin;
     pin.InUnit = false;
-    for(int i=0; i<pin.size(); i++)  pin[i] = lat.toCart(pin[i]);
+    for(int i=0; i<pin.size(); i++)
+      pin[i] = lat.toCart(pin[i]);
   }
 }
 
 template<class PL, class PV>
-void convert2Unit(const PL& lat, PV& pin) {
-  if(!pin.InUnit) {
+void convert2Unit(const PL& lat, PV& pin)
+{
+  if(!pin.InUnit)
+  {
     PV tmp(pin.size());
     tmp = pin;
     pin.InUnit = true;
-    for(int i=0; i<pin.size(); i++)  pin[i] = lat.toUnit(pin[i]);
+    for(int i=0; i<pin.size(); i++)
+      pin[i] = lat.toUnit(pin[i]);
   }
 }
 
@@ -170,24 +183,34 @@ void convert2Unit(const PL& lat, PV& pin) {
 // Apply BC conditions to put the position type in lattice box [0,1)
 ////////////////////////////////////////////////////////////////
 template<class PL, class PV>
-void wrapAroundBox(const PL& lat, const PV& pin, PV& pout) {
-
-  if(pin.InUnit) {
-    if(pout.InUnit) {
-      for(int i=0; i<pin.size(); i++) {
-	pout[i] = lat.BConds.wrap(pin[i]);            //unit -> unit
+void wrapAroundBox(const PL& lat, const PV& pin, PV& pout)
+{
+  if(pin.InUnit)
+  {
+    if(pout.InUnit)
+    {
+      for(int i=0; i<pin.size(); i++)
+      {
+        pout[i] = lat.BConds.wrap(pin[i]);            //unit -> unit
       }
-    } else {
-      for(int i=0; i<pin.size(); i++)
-	pout[i] = lat.toCart(lat.BConds.wrap(pin[i]));//unit -> cart
     }
-  } else {
-    if(pout.InUnit) {
+    else
+    {
       for(int i=0; i<pin.size(); i++)
-	pout[i] = lat.BConds.wrap(lat.toUnit(pin[i]));//cart -> unit
-    } else {
+        pout[i] = lat.toCart(lat.BConds.wrap(pin[i]));//unit -> cart
+    }
+  }
+  else
+  {
+    if(pout.InUnit)
+    {
       for(int i=0; i<pin.size(); i++)
-	pout[i] = lat.toCart(lat.BConds.wrap(lat.toUnit(pin[i])));//cart -> cart
+        pout[i] = lat.BConds.wrap(lat.toUnit(pin[i]));//cart -> unit
+    }
+    else
+    {
+      for(int i=0; i<pin.size(); i++)
+        pout[i] = lat.toCart(lat.BConds.wrap(lat.toUnit(pin[i])));//cart -> cart
     }
   }
 }
@@ -195,24 +218,28 @@ void wrapAroundBox(const PL& lat, const PV& pin, PV& pout) {
 /////////////////////////////////////////////////////////////////
 /*\fn template<class T, unsigned D>
  *    T Dot(const ParticleAttrib<TinyVector<T, D> >& pa,
- *      const ParticleAttrib<TinyVector<T, D> >& pb) 
+ *      const ParticleAttrib<TinyVector<T, D> >& pb)
  * \return a dot product of an array
  */
 /////////////////////////////////////////////////////////////////
 template<unsigned D>
 inline double Dot(const ParticleAttrib<TinyVector<double, D> >& pa,
-      const ParticleAttrib<TinyVector<double, D> >& pb) {
+                  const ParticleAttrib<TinyVector<double, D> >& pb)
+{
   double sum = 0;
-  for(int i=0; i<pa.size(); i++) {
+  for(int i=0; i<pa.size(); i++)
+  {
     sum += dot(pa[i],pb[i]);
   }
   return sum;
 }
 
 
-inline double Sum (const ParticleAttrib<double>& pa) {
+inline double Sum (const ParticleAttrib<double>& pa)
+{
   double sum = 0;
-  for(int i=0; i<pa.size(); i++) {
+  for(int i=0; i<pa.size(); i++)
+  {
     sum += pa[i];
   }
   return sum;
@@ -232,5 +259,5 @@ void  normalize(ParticleAttrib<TinyVector<T, D> >& pa)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

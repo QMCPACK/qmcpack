@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -25,536 +25,517 @@ using namespace std;
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  ThreeBodyGeminal::ThreeBodyGeminal(const ParticleSet& ions, ParticleSet& els): 
-    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3")
+ThreeBodyGeminal::ThreeBodyGeminal(const ParticleSet& ions, ParticleSet& els):
+  CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3")
+{
+  d_table = DistanceTable::add(ions,els);
+  NumPtcls=els.getTotalNum();
+  NormFac=1.0/static_cast<RealType>(NumPtcls*NumPtcls);
+  Optimizable=true;
+}
+
+ThreeBodyGeminal::~ThreeBodyGeminal()
+{
+  //clean up
+}
+
+void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P)
+{
+  d_table = DistanceTable::add(CenterRef,P);
+  GeminalBasis->resetTargetParticleSet(P);
+}
+
+void ThreeBodyGeminal::checkInVariables(opt_variables_type& active)
+{
+  active.insertFrom(myVars);
+  int ncur=active.size();
+  GeminalBasis->checkInVariables(active);
+  if(ncur!= active.size())
+    GeminalBasis->checkInVariables(myVars);
+}
+
+void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
+{
+  myVars.getIndex(active);
+  GeminalBasis->checkOutVariables(active);
+  app_log() << "<j3-variables>"<<endl;
+  myVars.print(app_log());
+  app_log() << "</j3-variables>"<<endl;
+}
+
+///reset the value of all the Two-Body Jastrow functions
+void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
+{
+  int ii=0; //counter for (i,j) pairs for i<j<BasisSize
+  int aii=0;//counter for the variables that are meant to be optimized
+  for(int ib=0; ib<BasisSize; ib++)
+  {
+    if(FreeLambda(ii++))
     {
-      d_table = DistanceTable::add(ions,els);
-      NumPtcls=els.getTotalNum();
-      NormFac=1.0/static_cast<RealType>(NumPtcls*NumPtcls);
-      Optimizable=true;
+      int loc=myVars.where(aii++);
+      if(loc>=0)
+        Lambda(ib,ib)=active[loc];
     }
-
-  ThreeBodyGeminal::~ThreeBodyGeminal() 
-  {
-    //clean up
-  }
-
-  void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P) 
-  {
-    d_table = DistanceTable::add(CenterRef,P);
-    GeminalBasis->resetTargetParticleSet(P);
-  }
-
-  void ThreeBodyGeminal::checkInVariables(opt_variables_type& active) 
-  {
-    active.insertFrom(myVars);
-    int ncur=active.size();
-    GeminalBasis->checkInVariables(active);
-    if(ncur!= active.size())
-      GeminalBasis->checkInVariables(myVars);
-  }
-
-  void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
-  {
-    myVars.getIndex(active);
-    GeminalBasis->checkOutVariables(active);
-
-    app_log() << "<j3-variables>"<<endl;
-    myVars.print(app_log());
-    app_log() << "</j3-variables>"<<endl;
-  }
-
-  ///reset the value of all the Two-Body Jastrow functions
-  void ThreeBodyGeminal::resetParameters(const opt_variables_type& active) 
-  {
-    int ii=0; //counter for (i,j) pairs for i<j<BasisSize 
-    int aii=0;//counter for the variables that are meant to be optimized
-    for(int ib=0; ib<BasisSize; ib++) {
+    for(int jb=ib+1; jb<BasisSize; jb++)
+    {
       if(FreeLambda(ii++))
       {
         int loc=myVars.where(aii++);
-        if(loc>=0) Lambda(ib,ib)=active[loc];
-      }
-      for(int jb=ib+1; jb<BasisSize; jb++) 
-      {
-        if(FreeLambda(ii++))
-        {
-          int loc=myVars.where(aii++);
-          if(loc>=0) Lambda(jb,ib)=Lambda(ib,jb)=active[loc];
-        }
+        if(loc>=0)
+          Lambda(jb,ib)=Lambda(ib,jb)=active[loc];
       }
     }
-    GeminalBasis->resetParameters(active);
-    
-    for(int i=0; i<myVars.size(); ++i)
-      if(myVars.where(i)>=0) myVars[i]=active[myVars.where(i)];
-
-    //app_log() << "ThreeBodyGeminal::resetParameters" << endl;
-    //app_log() << Lambda << endl;
   }
+  GeminalBasis->resetParameters(active);
+  for(int i=0; i<myVars.size(); ++i)
+    if(myVars.where(i)>=0)
+      myVars[i]=active[myVars.where(i)];
+  //app_log() << "ThreeBodyGeminal::resetParameters" << endl;
+  //app_log() << Lambda << endl;
+}
 
-  void ThreeBodyGeminal::reportStatus(ostream& os)
+void ThreeBodyGeminal::reportStatus(ostream& os)
+{
+  myVars.print(os);
+}
+
+OrbitalBase::RealType
+ThreeBodyGeminal::evaluateLog(ParticleSet& P,
+                              ParticleSet::ParticleGradient_t& G,
+                              ParticleSet::ParticleLaplacian_t& L)
+{
+  //this is necessary to handle ratio for pseudopotentials
+  evaluateLogAndStore(P);
+  ////GeminalBasis->evaluate(P);
+  //GeminalBasis->evaluateForWalkerMove(P);
+  //
+  //MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+  ////Rewrite with gemm
+  ////for(int i=0; i<NumPtcls; i++) {
+  ////  for(int k=0; k<BasisSize; k++) {
+  ////    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
+  ////  }
+  ////}
+  //Uk=0.0;
+  //LogValue=ValueType();
+  //for(int i=0; i< NumPtcls-1; i++) {
+  //  const RealType* restrict yptr=GeminalBasis->Y[i];
+  //  for(int j=i+1; j<NumPtcls; j++) {
+  //    RealType x= dot(V[j],yptr,BasisSize);
+  //    LogValue += x;
+  //    Uk[i]+= x;
+  //    Uk[j]+= x;
+  //  }
+  //}
+  //for(int i=0; i<NumPtcls; i++)  {
+  //  const PosType* restrict dptr=GeminalBasis->dY[i];
+  //  const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+  //  const RealType* restrict vptr=V[0];
+  //  GradType grad(0.0);
+  //  ValueType lap(0.0);
+  //  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
+  //    if(j!=i) {
+  //      grad += dot(vptr,dptr,BasisSize);
+  //      lap +=  dot(vptr,d2ptr,BasisSize);
+  //    }
+  //  }
+  //  G(i)+=grad;
+  //  L(i)+=lap;
+  //}
+  return LogValue;
+}
+
+OrbitalBase::ValueType
+ThreeBodyGeminal::ratio(ParticleSet& P, int iat)
+{
+  UpdateMode=ORB_PBYP_RATIO;
+  GeminalBasis->evaluateForPtclMove(P,iat);
+  const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
+  for(int k=0; k<BasisSize; k++)
   {
-    myVars.print(os);
+    //curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+    curV[k] = simd::dot(y_ptr,Lambda[k],BasisSize);
+    delV[k] = curV[k]-V[iat][k];
   }
-
-  OrbitalBase::RealType 
-  ThreeBodyGeminal::evaluateLog(ParticleSet& P,
-		                 ParticleSet::ParticleGradient_t& G, 
-		                 ParticleSet::ParticleLaplacian_t& L) {
-    //this is necessary to handle ratio for pseudopotentials
-    evaluateLogAndStore(P);
-    ////GeminalBasis->evaluate(P);
-    //GeminalBasis->evaluateForWalkerMove(P);
-    //
-    //MatrixOperators::product(GeminalBasis->Y, Lambda, V);
-    ////Rewrite with gemm
-    ////for(int i=0; i<NumPtcls; i++) {
-    ////  for(int k=0; k<BasisSize; k++) {
-    ////    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
-    ////  }
-    ////}
-    //Uk=0.0;
-    //LogValue=ValueType();
-    //for(int i=0; i< NumPtcls-1; i++) {
-    //  const RealType* restrict yptr=GeminalBasis->Y[i];
-    //  for(int j=i+1; j<NumPtcls; j++) {
-    //    RealType x= dot(V[j],yptr,BasisSize);
-    //    LogValue += x;
-    //    Uk[i]+= x;
-    //    Uk[j]+= x;
-    //  }
-    //}
-    //for(int i=0; i<NumPtcls; i++)  {
-    //  const PosType* restrict dptr=GeminalBasis->dY[i];
-    //  const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
-    //  const RealType* restrict vptr=V[0];
-    //  GradType grad(0.0);
-    //  ValueType lap(0.0);
-    //  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
-    //    if(j!=i) {
-    //      grad += dot(vptr,dptr,BasisSize);
-    //      lap +=  dot(vptr,d2ptr,BasisSize);
-    //    }
-    //  }
-    //  G(i)+=grad;
-    //  L(i)+=lap;
-    //}
-
-    return LogValue;
-  }
-
-  OrbitalBase::ValueType 
-  ThreeBodyGeminal::ratio(ParticleSet& P, int iat) 
+  diffVal=0.0;
+  const RealType* restrict vptr=V[0];
+  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize)
   {
-    UpdateMode=ORB_PBYP_RATIO;
-    GeminalBasis->evaluateForPtclMove(P,iat);
-    const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
-    for(int k=0; k<BasisSize; k++) 
-    {
-      //curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
-      curV[k] = simd::dot(y_ptr,Lambda[k],BasisSize);
-      delV[k] = curV[k]-V[iat][k];
-    }
-    diffVal=0.0;
-    const RealType* restrict vptr=V[0];
-    for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) 
-    {
-      if(j==iat) continue;
-      diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
-    }
-    curVal[iat]=diffVal;
-    return std::exp(diffVal);
+    if(j==iat)
+      continue;
+    diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
   }
+  curVal[iat]=diffVal;
+  return std::exp(diffVal);
+}
 
-    /** later merge the loop */
-  OrbitalBase::ValueType 
-  ThreeBodyGeminal::ratio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL) 
+/** later merge the loop */
+OrbitalBase::ValueType
+ThreeBodyGeminal::ratio(ParticleSet& P, int iat,
+                        ParticleSet::ParticleGradient_t& dG,
+                        ParticleSet::ParticleLaplacian_t& dL)
+{
+  UpdateMode=ORB_PBYP_ALL;
+  return std::exp(logRatio(P,iat,dG,dL));
+}
+
+/** later merge the loop */
+OrbitalBase::ValueType
+ThreeBodyGeminal::logRatio(ParticleSet& P, int iat,
+                           ParticleSet::ParticleGradient_t& dG,
+                           ParticleSet::ParticleLaplacian_t& dL)
+{
+  //GeminalBasis->evaluateAll(P,iat);
+  GeminalBasis->evaluateAllForPtclMove(P,iat);
+  //const ValueType* restrict y_ptr=GeminalBasis->y(0);
+  //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
+  //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
+  const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
+  const BasisSetType::GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
+  const BasisSetType::RealType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
+  for(int k=0; k<BasisSize; k++)
   {
-    UpdateMode=ORB_PBYP_ALL;
-    return std::exp(logRatio(P,iat,dG,dL));
+    curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+    delV[k] = curV[k]-V[iat][k];
   }
-
-    /** later merge the loop */
-  OrbitalBase::ValueType 
-  ThreeBodyGeminal::logRatio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL) {
-
-    //GeminalBasis->evaluateAll(P,iat);
-    GeminalBasis->evaluateAllForPtclMove(P,iat);
-
-    //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-    //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
-    //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
-    const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
-    const BasisSetType::GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
-    const BasisSetType::RealType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
-
-    for(int k=0; k<BasisSize; k++) {
-      curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
-      delV[k] = curV[k]-V[iat][k];
-    }
-
-    diffVal=0.0;
-    BasisSetType::GradType dg_acc(0.0);
-    BasisSetType::ValueType dl_acc(0.0);
-    const RealType* restrict vptr=V[0];
-    for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
-      if(j == iat) {
-        curLap[j]=0.0;
-        curGrad[j]=0.0;
-        tLap[j]=0.0;
-        tGrad[j]=0.0;
-      } else {
-        diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
-        dG[j] += (tGrad[j]=simd::dot(delV.data(),dY[j],BasisSize));
-        dL[j] += (tLap[j]=simd::dot(delV.data(),d2Y[j],BasisSize));
-
-        curGrad[j]= simd::dot(vptr,dy_ptr,BasisSize);
-        curLap[j] = simd::dot(vptr,d2y_ptr,BasisSize);
-
-        dg_acc += curGrad[j]-dUk(iat,j);
-        dl_acc += curLap[j]-d2Uk(iat,j);
-      }
-    }
-    
-    dG[iat] += dg_acc;
-    dL[iat] += dl_acc;
-
-    curVal[iat]=diffVal;
-
-    return diffVal;
-  }
-
-  void ThreeBodyGeminal::restore(int iat) {
-    //nothing to do here
-  }
-
-  void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat) {
-    //add the differential
-    LogValue += diffVal;
-    Uk+=curVal; //accumulate the differences
-
-    if(UpdateMode == ORB_PBYP_RATIO) 
+  diffVal=0.0;
+  BasisSetType::GradType dg_acc(0.0);
+  BasisSetType::ValueType dl_acc(0.0);
+  const RealType* restrict vptr=V[0];
+  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize)
+  {
+    if(j == iat)
     {
-      Y.replaceRow(GeminalBasis->Phi.data(),iat);
-      V.replaceRow(curV.begin(),iat);
+      curLap[j]=0.0;
+      curGrad[j]=0.0;
+      tLap[j]=0.0;
+      tGrad[j]=0.0;
     }
     else
     {
-      dUk.replaceRow(curGrad.begin(),iat);
-      d2Uk.replaceRow(curLap.begin(),iat);
-
-      dUk.add2Column(tGrad.begin(),iat);
-      d2Uk.add2Column(tLap.begin(),iat);
-
-      //Y.replaceRow(GeminalBasis->y(0),iat);
-      //dY.replaceRow(GeminalBasis->dy(0),iat);
-      //d2Y.replaceRow(GeminalBasis->d2y(0),iat);
-      Y.replaceRow(GeminalBasis->Phi.data(),iat);
-      dY.replaceRow(GeminalBasis->dPhi.data(),iat);
-      d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
-      V.replaceRow(curV.begin(),iat);
-    }
-
-  }
-
-  void ThreeBodyGeminal::update(ParticleSet& P, 		
-		       ParticleSet::ParticleGradient_t& dG, 
-		       ParticleSet::ParticleLaplacian_t& dL,
-		       int iat) {
-    cout << "****  This is to be removed " << endl;
-    //dG[iat]+=curGrad-dUk[iat]; 
-    //dL[iat]+=curLap-d2Uk[iat]; 
-    acceptMove(P,iat);
-  }
-
-  OrbitalBase::RealType 
-  ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf) {
-
-    evaluateLogAndStore(P);
-    FirstAddressOfdY=&(dY(0,0)[0]);
-    LastAddressOfdY=FirstAddressOfdY+NumPtcls*BasisSize*DIM;
-
-    FirstAddressOfgU=&(dUk(0,0)[0]);
-    LastAddressOfgU = FirstAddressOfgU + NumPtcls*NumPtcls*DIM;
-
-    buf.add(LogValue);
-    buf.add(V.begin(), V.end());
-
-    buf.add(Y.begin(), Y.end());
-    buf.add(FirstAddressOfdY,LastAddressOfdY);
-    buf.add(d2Y.begin(),d2Y.end());
-
-    buf.add(Uk.begin(), Uk.end());
-    buf.add(FirstAddressOfgU,LastAddressOfgU);
-    buf.add(d2Uk.begin(), d2Uk.end());
-
-    return LogValue;
-  }
-
-  void 
-  ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P) {
-    GeminalBasis->evaluateForWalkerMove(P);
-
-    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
-    
-    Y=GeminalBasis->Y;
-    dY=GeminalBasis->dY;
-    d2Y=GeminalBasis->d2Y;
-
-    Uk=0.0;
-    LogValue=RealType();
-    for(int i=0; i< NumPtcls-1; i++) {
-      const RealType* restrict yptr=GeminalBasis->Y[i];
-      for(int j=i+1; j<NumPtcls; j++) {
-        RealType x= simd::dot(V[j],yptr,BasisSize);
-        LogValue += x;
-        Uk[i]+= x;
-        Uk[j]+= x;
-      }
-    }
-
-    for(int i=0; i<NumPtcls; i++)  {
-      const PosType* restrict dptr=GeminalBasis->dY[i];
-      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
-      const RealType* restrict vptr=V[0];
-      BasisSetType::GradType grad(0.0);
-      BasisSetType::ValueType lap(0.0);
-      for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
-        if(j==i) {
-          dUk(i,j) = 0.0;
-          d2Uk(i,j)= 0.0;
-        } else {
-          grad+= (dUk(i,j) = simd::dot(vptr,dptr,BasisSize));
-          lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
-        }
-      }
-      P.G(i)+=grad;
-      P.L(i)+=lap;
+      diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
+      dG[j] += (tGrad[j]=simd::dot(delV.data(),dY[j],BasisSize));
+      dL[j] += (tLap[j]=simd::dot(delV.data(),d2Y[j],BasisSize));
+      curGrad[j]= simd::dot(vptr,dy_ptr,BasisSize);
+      curLap[j] = simd::dot(vptr,d2y_ptr,BasisSize);
+      dg_acc += curGrad[j]-dUk(iat,j);
+      dl_acc += curLap[j]-d2Uk(iat,j);
     }
   }
+  dG[iat] += dg_acc;
+  dL[iat] += dl_acc;
+  curVal[iat]=diffVal;
+  return diffVal;
+}
 
-  void 
-  ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-    buf.get(LogValue);
-    buf.get(V.begin(), V.end());
+void ThreeBodyGeminal::restore(int iat)
+{
+  //nothing to do here
+}
 
-    buf.get(Y.begin(), Y.end());
-    buf.get(FirstAddressOfdY,LastAddressOfdY);
-    buf.get(d2Y.begin(),d2Y.end());
-
-    buf.get(Uk.begin(), Uk.end());
-    buf.get(FirstAddressOfgU,LastAddressOfgU);
-    buf.get(d2Uk.begin(), d2Uk.end());
-  }
-
-  OrbitalBase::RealType 
-  ThreeBodyGeminal::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
-    buf.put(LogValue);
-    buf.put(V.begin(), V.end());
-
-    buf.put(Y.begin(), Y.end());
-    buf.put(FirstAddressOfdY,LastAddressOfdY);
-    buf.put(d2Y.begin(),d2Y.end());
-
-    buf.put(Uk.begin(), Uk.end());
-    buf.put(FirstAddressOfgU,LastAddressOfgU);
-    buf.put(d2Uk.begin(), d2Uk.end());
-
-    return LogValue;
-    //return std::exp(LogValue);
-  }
-
-  OrbitalBase::RealType 
-  ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
-      bool fromscratch) {
-    evaluateLogAndStore(P);
-    buf.put(LogValue);
-    buf.put(V.begin(), V.end());
-
-    buf.put(Y.begin(), Y.end());
-    buf.put(FirstAddressOfdY,LastAddressOfdY);
-    buf.put(d2Y.begin(),d2Y.end());
-
-    buf.put(Uk.begin(), Uk.end());
-    buf.put(FirstAddressOfgU,LastAddressOfgU);
-    buf.put(d2Uk.begin(), d2Uk.end());
-    return LogValue;
-  }
-    
-  bool ThreeBodyGeminal::put(xmlNodePtr cur) 
+void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat)
+{
+  //add the differential
+  LogValue += diffVal;
+  Uk+=curVal; //accumulate the differences
+  if(UpdateMode == ORB_PBYP_RATIO)
   {
+    Y.replaceRow(GeminalBasis->Phi.data(),iat);
+    V.replaceRow(curV.begin(),iat);
+  }
+  else
+  {
+    dUk.replaceRow(curGrad.begin(),iat);
+    d2Uk.replaceRow(curLap.begin(),iat);
+    dUk.add2Column(tGrad.begin(),iat);
+    d2Uk.add2Column(tLap.begin(),iat);
+    //Y.replaceRow(GeminalBasis->y(0),iat);
+    //dY.replaceRow(GeminalBasis->dy(0),iat);
+    //d2Y.replaceRow(GeminalBasis->d2y(0),iat);
+    Y.replaceRow(GeminalBasis->Phi.data(),iat);
+    dY.replaceRow(GeminalBasis->dPhi.data(),iat);
+    d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
+    V.replaceRow(curV.begin(),iat);
+  }
+}
 
-    //BasisSize = GeminalBasis->TotalBasis;
-    BasisSize = GeminalBasis->getBasisSetSize();
+void ThreeBodyGeminal::update(ParticleSet& P,
+                              ParticleSet::ParticleGradient_t& dG,
+                              ParticleSet::ParticleLaplacian_t& dL,
+                              int iat)
+{
+  cout << "****  This is to be removed " << endl;
+  //dG[iat]+=curGrad-dUk[iat];
+  //dL[iat]+=curLap-d2Uk[iat];
+  acceptMove(P,iat);
+}
 
-    app_log() << "  The number of Geminal functions "
-      <<"for Three-body Jastrow " << BasisSize << endl;
-    app_log() << "  The number of particles " << NumPtcls << endl;
+OrbitalBase::RealType
+ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf)
+{
+  evaluateLogAndStore(P);
+  FirstAddressOfdY=&(dY(0,0)[0]);
+  LastAddressOfdY=FirstAddressOfdY+NumPtcls*BasisSize*DIM;
+  FirstAddressOfgU=&(dUk(0,0)[0]);
+  LastAddressOfgU = FirstAddressOfgU + NumPtcls*NumPtcls*DIM;
+  buf.add(LogValue);
+  buf.add(V.begin(), V.end());
+  buf.add(Y.begin(), Y.end());
+  buf.add(FirstAddressOfdY,LastAddressOfdY);
+  buf.add(d2Y.begin(),d2Y.end());
+  buf.add(Uk.begin(), Uk.end());
+  buf.add(FirstAddressOfgU,LastAddressOfgU);
+  buf.add(d2Uk.begin(), d2Uk.end());
+  return LogValue;
+}
 
-    Lambda.resize(BasisSize,BasisSize);
+void
+ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P)
+{
+  GeminalBasis->evaluateForWalkerMove(P);
+  MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+  Y=GeminalBasis->Y;
+  dY=GeminalBasis->dY;
+  d2Y=GeminalBasis->d2Y;
+  Uk=0.0;
+  LogValue=RealType();
+  for(int i=0; i< NumPtcls-1; i++)
+  {
+    const RealType* restrict yptr=GeminalBasis->Y[i];
+    for(int j=i+1; j<NumPtcls; j++)
+    {
+      RealType x= simd::dot(V[j],yptr,BasisSize);
+      LogValue += x;
+      Uk[i]+= x;
+      Uk[j]+= x;
+    }
+  }
+  for(int i=0; i<NumPtcls; i++)
+  {
+    const PosType* restrict dptr=GeminalBasis->dY[i];
+    const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+    const RealType* restrict vptr=V[0];
+    BasisSetType::GradType grad(0.0);
+    BasisSetType::ValueType lap(0.0);
+    for(int j=0; j<NumPtcls; j++, vptr+=BasisSize)
+    {
+      if(j==i)
+      {
+        dUk(i,j) = 0.0;
+        d2Uk(i,j)= 0.0;
+      }
+      else
+      {
+        grad+= (dUk(i,j) = simd::dot(vptr,dptr,BasisSize));
+        lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
+      }
+    }
+    P.G(i)+=grad;
+    P.L(i)+=lap;
+  }
+}
 
-    //disable lambda's so that element-by-element input can be handled
-    FreeLambda.resize(BasisSize*(BasisSize+1)/2);
-    FreeLambda=false;
+void
+ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+{
+  buf.get(LogValue);
+  buf.get(V.begin(), V.end());
+  buf.get(Y.begin(), Y.end());
+  buf.get(FirstAddressOfdY,LastAddressOfdY);
+  buf.get(d2Y.begin(),d2Y.end());
+  buf.get(Uk.begin(), Uk.end());
+  buf.get(FirstAddressOfgU,LastAddressOfgU);
+  buf.get(d2Uk.begin(), d2Uk.end());
+}
 
-    //zero is default
-    Lambda=0.0;
-    //for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=NormFac;
-    //for(int ib=0; ib<BasisSize; ib++) 
-    //  for(int jb=ib; jb<BasisSize; ++jb)
-    //  {
-    //    Lambda(ib,jb)=Random();
-    //    if(jb!=ib) Lambda(jb,ib)=Lambda(ib,jb);
-    //  }
+OrbitalBase::RealType
+ThreeBodyGeminal::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
+{
+  buf.put(LogValue);
+  buf.put(V.begin(), V.end());
+  buf.put(Y.begin(), Y.end());
+  buf.put(FirstAddressOfdY,LastAddressOfdY);
+  buf.put(d2Y.begin(),d2Y.end());
+  buf.put(Uk.begin(), Uk.end());
+  buf.put(FirstAddressOfgU,LastAddressOfgU);
+  buf.put(d2Uk.begin(), d2Uk.end());
+  return LogValue;
+  //return std::exp(LogValue);
+}
 
-    if(cur == NULL) 
-    { 
+OrbitalBase::RealType
+ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+                               bool fromscratch)
+{
+  evaluateLogAndStore(P);
+  buf.put(LogValue);
+  buf.put(V.begin(), V.end());
+  buf.put(Y.begin(), Y.end());
+  buf.put(FirstAddressOfdY,LastAddressOfdY);
+  buf.put(d2Y.begin(),d2Y.end());
+  buf.put(Uk.begin(), Uk.end());
+  buf.put(FirstAddressOfgU,LastAddressOfgU);
+  buf.put(d2Uk.begin(), d2Uk.end());
+  return LogValue;
+}
+
+bool ThreeBodyGeminal::put(xmlNodePtr cur)
+{
+  //BasisSize = GeminalBasis->TotalBasis;
+  BasisSize = GeminalBasis->getBasisSetSize();
+  app_log() << "  The number of Geminal functions "
+            <<"for Three-body Jastrow " << BasisSize << endl;
+  app_log() << "  The number of particles " << NumPtcls << endl;
+  Lambda.resize(BasisSize,BasisSize);
+  //disable lambda's so that element-by-element input can be handled
+  FreeLambda.resize(BasisSize*(BasisSize+1)/2);
+  FreeLambda=false;
+  //zero is default
+  Lambda=0.0;
+  //for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=NormFac;
+  //for(int ib=0; ib<BasisSize; ib++)
+  //  for(int jb=ib; jb<BasisSize; ++jb)
+  //  {
+  //    Lambda(ib,jb)=Random();
+  //    if(jb!=ib) Lambda(jb,ib)=Lambda(ib,jb);
+  //  }
+  if(cur == NULL)
+  {
+    FreeLambda=true;
+  }
+  else
+  {
+    //read from an input nodes
+    string aname("j3");
+    string datatype("no");
+    int sizeIn(0);
+    IndexOffSet=1;
+    OhmmsAttributeSet attrib;
+    attrib.add(aname,"id");
+    attrib.add(sizeIn,"size");
+    attrib.add(aname,"name");
+    attrib.add(datatype,"type");
+    attrib.add(IndexOffSet,"offset");
+    attrib.put(cur);
+    ID_Lambda=aname;
+    if(datatype.find("rray")<datatype.size())
+    {
+      if (sizeIn==Lambda.rows())
+      {
+        putContent(Lambda,cur);
+      }
       FreeLambda=true;
+      //addOptimizables(varlist);
+      //symmetrize it
+      //for(int ib=0; ib<BasisSize; ib++) {
+      //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+      //  varlist[coeffname]=Lambda(ib,ib);
+      //  for(int jb=ib+1; jb<BasisSize; jb++) {
+      //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+      //    Lambda(jb,ib) = Lambda(ib,jb);
+      //    varlist[coeffname]=Lambda(ib,jb);
+      //  }
+      //}
     }
-    else 
-    {//read from an input nodes
-      string aname("j3");
-      string datatype("no");
-      int sizeIn(0);
-      IndexOffSet=1;
-      OhmmsAttributeSet attrib;
-      attrib.add(aname,"id");
-      attrib.add(sizeIn,"size");
-      attrib.add(aname,"name");
-      attrib.add(datatype,"type");
-      attrib.add(IndexOffSet,"offset");
-      attrib.put(cur);
-
-      ID_Lambda=aname;
-
-      if(datatype.find("rray")<datatype.size())
+    else
+    {
+      xmlNodePtr tcur=cur->xmlChildrenNode;
+      while(tcur != NULL)
       {
-        if (sizeIn==Lambda.rows())
+        if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda"))
         {
-          putContent(Lambda,cur);
+          int iIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+          int jIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+          int i=iIn-IndexOffSet;
+          int j=jIn-IndexOffSet;
+          double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
+          Lambda(i,j)=c;
+          FreeLambda(i*BasisSize+j)=true;
+          if(i != j)
+            Lambda(j,i)=c;
+          //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
+          //varlist[coeffname]=c;
         }
-        FreeLambda=true; 
-        //addOptimizables(varlist);
-        //symmetrize it
-        //for(int ib=0; ib<BasisSize; ib++) {
-        //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-        //  varlist[coeffname]=Lambda(ib,ib);
-        //  for(int jb=ib+1; jb<BasisSize; jb++) {
-        //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-        //    Lambda(jb,ib) = Lambda(ib,jb);
-        //    varlist[coeffname]=Lambda(ib,jb);
-        //  }
-        //}
-      }
-      else 
-      {
-        xmlNodePtr tcur=cur->xmlChildrenNode;
-        while(tcur != NULL) {
-          if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
-            int iIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
-            int jIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
-            int i=iIn-IndexOffSet;
-            int j=jIn-IndexOffSet;
-            double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
-            Lambda(i,j)=c;
-            FreeLambda(i*BasisSize+j)=true;
-            if(i != j) Lambda(j,i)=c;
-            //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
-            //varlist[coeffname]=c;
-          }
-          tcur=tcur->next;
-        }
+        tcur=tcur->next;
       }
     }
-
-    //myVars are set
-    myVars.clear();
-    char coeffname[16];
-    int ii=0;
-    for(int ib=0; ib<BasisSize; ib++) {
+  }
+  //myVars are set
+  myVars.clear();
+  char coeffname[16];
+  int ii=0;
+  for(int ib=0; ib<BasisSize; ib++)
+  {
+    if(FreeLambda(ii++))
+    {
+      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
+      myVars.insert(coeffname,Lambda(ib,ib));
+    }
+    for(int jb=ib+1; jb<BasisSize; jb++)
+    {
       if(FreeLambda(ii++))
       {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
-        myVars.insert(coeffname,Lambda(ib,ib));
-      }
-      for(int jb=ib+1; jb<BasisSize; jb++) 
-      {
-        if(FreeLambda(ii++))
-        {
-          sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
-          myVars.insert(coeffname,Lambda(ib,jb));
-        }
+        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
+        myVars.insert(coeffname,Lambda(ib,jb));
       }
     }
-
-    //app_log() << "  Lambda Variables " << endl;
-    //myVars.print(app_log());
-    //app_log() << endl;
-
-    V.resize(NumPtcls,BasisSize);
-    Y.resize(NumPtcls,BasisSize);
-    dY.resize(NumPtcls,BasisSize);
-    d2Y.resize(NumPtcls,BasisSize);
-
-    curGrad.resize(NumPtcls);
-    curLap.resize(NumPtcls);
-    curVal.resize(NumPtcls);
-
-    tGrad.resize(NumPtcls);
-    tLap.resize(NumPtcls);
-    curV.resize(BasisSize);
-    delV.resize(BasisSize);
-
-    Uk.resize(NumPtcls);
-    dUk.resize(NumPtcls,NumPtcls);
-    d2Uk.resize(NumPtcls,NumPtcls);
-
-
-    //app_log() << "  Three-body Geminal coefficients " << endl;
-    //app_log() << Lambda << endl;
-
-    //GeminalBasis->resize(NumPtcls);
-
-    return true;
   }
+  //app_log() << "  Lambda Variables " << endl;
+  //myVars.print(app_log());
+  //app_log() << endl;
+  V.resize(NumPtcls,BasisSize);
+  Y.resize(NumPtcls,BasisSize);
+  dY.resize(NumPtcls,BasisSize);
+  d2Y.resize(NumPtcls,BasisSize);
+  curGrad.resize(NumPtcls);
+  curLap.resize(NumPtcls);
+  curVal.resize(NumPtcls);
+  tGrad.resize(NumPtcls);
+  tLap.resize(NumPtcls);
+  curV.resize(BasisSize);
+  delV.resize(BasisSize);
+  Uk.resize(NumPtcls);
+  dUk.resize(NumPtcls,NumPtcls);
+  d2Uk.resize(NumPtcls,NumPtcls);
+  //app_log() << "  Three-body Geminal coefficients " << endl;
+  //app_log() << Lambda << endl;
+  //GeminalBasis->resize(NumPtcls);
+  return true;
+}
 
-  OrbitalBasePtr ThreeBodyGeminal::makeClone(ParticleSet& tqp) const
-  {
-    ThreeBodyGeminal* myclone=new ThreeBodyGeminal(CenterRef,tqp);
-    myclone->GeminalBasis=GeminalBasis->makeClone();
-    myclone->GeminalBasis->resetTargetParticleSet(tqp);
-    myclone->put(NULL);
-    myclone->myVars=myVars;
-    myclone->Lambda=Lambda;
-    myclone->ID_Lambda=ID_Lambda;
-    myclone->FreeLambda=FreeLambda;
-    return myclone;
-  }
+OrbitalBasePtr ThreeBodyGeminal::makeClone(ParticleSet& tqp) const
+{
+  ThreeBodyGeminal* myclone=new ThreeBodyGeminal(CenterRef,tqp);
+  myclone->GeminalBasis=GeminalBasis->makeClone();
+  myclone->GeminalBasis->resetTargetParticleSet(tqp);
+  myclone->put(NULL);
+  myclone->myVars=myVars;
+  myclone->Lambda=Lambda;
+  myclone->ID_Lambda=ID_Lambda;
+  myclone->FreeLambda=FreeLambda;
+  return myclone;
+}
 
-  //void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 
-  //{
-  //  char coeffname[16];
-  //  for(int ib=0; ib<BasisSize; ib++) {
-  //    sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-  //    varlist[coeffname]=Lambda(ib,ib);
-  //    for(int jb=ib+1; jb<BasisSize; jb++) {
-  //      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-  //      Lambda(jb,ib) = Lambda(ib,jb);
-  //      varlist[coeffname]=Lambda(ib,jb);
-  //    }
-  //  }
-  //}
+//void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist)
+//{
+//  char coeffname[16];
+//  for(int ib=0; ib<BasisSize; ib++) {
+//    sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+//    varlist[coeffname]=Lambda(ib,ib);
+//    for(int jb=ib+1; jb<BasisSize; jb++) {
+//      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+//      Lambda(jb,ib) = Lambda(ib,jb);
+//      varlist[coeffname]=Lambda(ib,jb);
+//    }
+//  }
+//}
 }
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

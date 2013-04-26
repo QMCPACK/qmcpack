@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -19,13 +19,14 @@
 #define OHMMS_TINY_META_H
 
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 /* \note
  *  For optimization, operators for TinyVector and Tensor classes are specalized for D.
  *  Instead of using PETE generated operators, the operators for TinyVector, Tensor and TinyMatrix
  *  classes are explicitly implemented in several files.
  *  The collections are rather arbitrary but follow the r1/src/AppTypes pattern closely.
- *  This file is included by TinyVector.h, Tensor.h, and TinyMatrix.h. 
+ *  This file is included by TinyVector.h, Tensor.h, and TinyMatrix.h.
  *  Therefore, users do not have to include this file.
  */
 
@@ -57,8 +58,8 @@ template<class T1, class T2> struct OTDot {};
 #include "OhmmsPETE/TinyMatrixOps.h"
 
 // macros to generate a set of binary and unary combintions for each operator
-// e.g., OHMMS_META_BINARY_OPERATORS(TinyVector,operator+,OpAdd) 
-// generates 
+// e.g., OHMMS_META_BINARY_OPERATORS(TinyVector,operator+,OpAdd)
+// generates
 // a) TinyVector + TinyVector
 // b) TinyVector + scalar
 // c) scalar     + TinyVector
@@ -107,7 +108,7 @@ FUNC( const T1& x, const TENT<T2,D>& v2)                                      \
 {                                                                             \
   return OTBinary<T1,TENT<T2,D>,TAG>::apply(x,v2,TAG());                      \
 }                                                                             \
-
+ 
 #define OHMMS_META_ACCUM_OPERATORS(TENT,FUNC,TAG)                             \
                                                                               \
 template <class T1, class T2, unsigned D>                                     \
@@ -125,7 +126,7 @@ FUNC( TENT<T1,D>& v1, const T2& v2 )                                          \
   OTAssign<TENT<T1,D>,T2,TAG>::apply(v1,v2,TAG());                            \
   return v1;                                                                  \
 }                                                                             \
-
+ 
 #define OHMMS_TINYMAT_BINARY_OPERATORS(TENT,FUNC,TAG)                         \
                                                                               \
 template <class T1, class T2, unsigned D1, unsigned D2>                       \
@@ -169,7 +170,7 @@ FUNC( const T1& x, const TENT<T2,D1,D2>& v2)                                  \
 {                                                                             \
   return OTBinary<T1,TENT<T2,D1,D2>,TAG>::apply(x,v2,TAG());                  \
 }                                                                             \
-
+ 
 #define OHMMS_TINYMAT_ACCUM_OPERATORS(TENT,FUNC,TAG)                          \
                                                                               \
 template <class T1, class T2, unsigned D1, unsigned D2>                       \
@@ -187,11 +188,11 @@ FUNC( TENT<T1,D1,D2>& v1, const T2& v2 )                                      \
   OTAssign<TENT<T1,D1,D2>,T2,TAG>::apply(v1,v2,TAG());                        \
   return v1;                                                                  \
 }                                                                             \
-
+ 
 #endif // OHMMS_TINY_META_H
 
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

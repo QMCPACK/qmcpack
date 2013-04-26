@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim 
+// (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,27 +19,29 @@
 
 #include "Estimators/PolymerEstimator.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  struct CSPolymerEstimator: public PolymerEstimator {
+struct CSPolymerEstimator: public PolymerEstimator
+{
 
-    CSPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0); 
-    //probably not needed
-    CSPolymerEstimator(const CSPolymerEstimator& mest);
+  CSPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0);
+  //probably not needed
+  CSPolymerEstimator(const CSPolymerEstimator& mest);
 
-    /*@{*/
-    void accumulate(const MCWalkerConfiguration& W
-        , WalkerIterator first, WalkerIterator last, RealType wgt);
-    void add2Record(RecordNamedProperty<RealType>& record);
-    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
-    ScalarEstimatorBase* clone();
-    /*@}*/
-  };
+  /*@{*/
+  void accumulate(const MCWalkerConfiguration& W
+                  , WalkerIterator first, WalkerIterator last, RealType wgt);
+  void add2Record(RecordNamedProperty<RealType>& record);
+  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  ScalarEstimatorBase* clone();
+  /*@}*/
+};
 
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: CSPolymerEstimator.h 1926 2007-04-20 17:30:26Z jnkim $ 
+ * $Id: CSPolymerEstimator.h 1926 2007-04-20 17:30:26Z jnkim $
  ***************************************************************************/

@@ -27,12 +27,12 @@ class QTextEdit;
  */
 class SQDFrame : public QWidget
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
 
-    SQDFrame( QWidget* parent = 0, const char* name = 0, WFlags fl = 0 );
-    ~SQDFrame();
+  SQDFrame( QWidget* parent = 0, const char* name = 0, WFlags fl = 0 );
+  ~SQDFrame();
 
   /**
      @param fname the name of an input file
@@ -40,21 +40,21 @@ public:
   */
   bool solve(const char* fname);
 
- public slots:
+public slots:
 
- void slotSave();
+  void slotSave();
 
 protected:
 
   /**
     @brief Show the potential and wave functions
   */
-  void showEvent ( QShowEvent * );  
+  void showEvent ( QShowEvent * );
 
 protected slots:
 
-virtual void languageChange();
-  
+  virtual void languageChange();
+
 private:
   QLabel* potLabel;
   QLabel* wfsLabel;
@@ -83,13 +83,13 @@ private:
 /** A main application to solve Hartree-Fock equation in a spherical
     potential.
  */
-class SQDFrame 
+class SQDFrame
 {
 
 public:
 
-    SQDFrame();
-    ~SQDFrame();
+  SQDFrame();
+  ~SQDFrame();
 
   /**
      @param fname the name of an input file

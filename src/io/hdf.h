@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -29,5 +29,5 @@
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf.h 894 2006-02-03 16:52:38Z jnkim $ 
+ * $Id: hdf.h 894 2006-02-03 16:52:38Z jnkim $
  ***************************************************************************/

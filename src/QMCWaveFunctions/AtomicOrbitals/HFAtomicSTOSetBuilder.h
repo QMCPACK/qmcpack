@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,42 +20,44 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** OrbitalBuilder with HFAtomicSTOSet
-   */
-  class HFAtomicSTOSetBuilder: public OrbitalBuilderBase {
+/** OrbitalBuilder with HFAtomicSTOSet
+ */
+class HFAtomicSTOSetBuilder: public OrbitalBuilderBase
+{
 
-  private:
+private:
 
-    typedef HFAtomicSTOSet::RadialOrbital_t RadialOrbital_t;
-    typedef HFAtomicSTOSet::SPO_t           SPO_t;
-    DistanceTableData* d_table;
+  typedef HFAtomicSTOSet::RadialOrbital_t RadialOrbital_t;
+  typedef HFAtomicSTOSet::SPO_t           SPO_t;
+  DistanceTableData* d_table;
 
-    /// Maximum Angular Momentum
-    int Lmax;
+  /// Maximum Angular Momentum
+  int Lmax;
 
-    /// mapping function for Rnl[ RnlID[name] ]
-    map<string,int> RnlID;         
+  /// mapping function for Rnl[ RnlID[name] ]
+  map<string,int> RnlID;
 
-    ///temporary storage of radial functions
-    vector<RadialOrbital_t*> Rnl;            
+  ///temporary storage of radial functions
+  vector<RadialOrbital_t*> Rnl;
 
-    ///single-particle wave functions
-    map<string, SPO_t*>   OrbSet;
+  ///single-particle wave functions
+  map<string, SPO_t*>   OrbSet;
 
-    bool getBasis(xmlNodePtr cur);
-    HFAtomicSTOSet* getOrbital(xmlNodePtr cur);
+  bool getBasis(xmlNodePtr cur);
+  HFAtomicSTOSet* getOrbital(xmlNodePtr cur);
 
-  public:
+public:
 
-    HFAtomicSTOSetBuilder(ParticleSet& els, TrialWaveFunction& psi, ParticleSet& ions);
-    bool put(xmlNodePtr);
-  };
+  HFAtomicSTOSetBuilder(ParticleSet& els, TrialWaveFunction& psi, ParticleSet& ions);
+  bool put(xmlNodePtr);
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

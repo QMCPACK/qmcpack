@@ -8,8 +8,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class GamesAsciiParser: public QMCGaussianParserBase, 
-                    public OhmmsAsciiParser {
+class GamesAsciiParser: public QMCGaussianParserBase,
+  public OhmmsAsciiParser
+{
 
 public:
 

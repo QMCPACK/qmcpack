@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -43,10 +43,11 @@ class OOMPI_Comm;
 //    hidden in the OOMPI_Comm object
 //
 
-class OOMPI_Packed : public OOMPI_Tag {
-friend class OOMPI_Message;
-friend class OOMPI_Port;
-  
+class OOMPI_Packed : public OOMPI_Tag
+{
+  friend class OOMPI_Message;
+  friend class OOMPI_Port;
+
 public:
 
   //
@@ -55,9 +56,9 @@ public:
   //
 
   OOMPI_Packed(int size, OOMPI_Comm &c,
-	       int tag = OOMPI_PACKED_TAG);
+               int tag = OOMPI_PACKED_TAG);
   OOMPI_Packed(void *ptr, int size, OOMPI_Comm &c,
-	       int tag = OOMPI_PACKED_TAG);
+               int tag = OOMPI_PACKED_TAG);
   OOMPI_Packed(const OOMPI_Packed &a);
   OOMPI_Packed &operator=(const OOMPI_Packed &a);
   virtual ~OOMPI_Packed();
@@ -97,7 +98,7 @@ public:
   void Unpack(OOMPI_Array_message data, int count);
 
   void End(void);
-	     
+
 private:
 
   // comm is the OOMPI_Comm that we are operating on

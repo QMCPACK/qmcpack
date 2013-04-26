@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -25,11 +25,13 @@ template<class Vec, class RNG>
 class RandomUniformPos {};
 
 template<class RNG>
-class RandomUniformPos<TinyVector<double,3>,RNG> {
+class RandomUniformPos<TinyVector<double,3>,RNG>
+{
 public:
   typedef TinyVector<double,3> Return_t;
-  RandomUniformPos(RNG& rg): d_engine(rg){ }
-  inline Return_t operator()(){
+  RandomUniformPos(RNG& rg): d_engine(rg) { }
+  inline Return_t operator()()
+  {
     return Return_t(d_engine(), d_engine(), d_engine());
   }
 private:
@@ -38,11 +40,13 @@ private:
 
 
 template<class RNG>
-class RandomUniformPos<TinyVector<double,2>,RNG> {
+class RandomUniformPos<TinyVector<double,2>,RNG>
+{
 public:
   typedef TinyVector<double,2> Return_t;
-  RandomUniformPos(RNG& rg): d_engine(rg){ }
-  inline Return_t operator()(){
+  RandomUniformPos(RNG& rg): d_engine(rg) { }
+  inline Return_t operator()()
+  {
     return Return_t(d_engine(), d_engine());
   }
 private:
@@ -58,11 +62,14 @@ struct NormRandomSeq { };
 
 // specialized for TinyVector<T,D>
 template<class T, unsigned D, class RNG>
-struct NormRandomSeq<TinyVector<T,D>,RNG > {
+struct NormRandomSeq<TinyVector<T,D>,RNG >
+{
   typedef TinyVector<double,D> Return_t;
-  static inline Return_t get(RNG& rng) {
+  static inline Return_t get(RNG& rng)
+  {
     Return_t res;
-    for(int i=0; i<D; i++) res[i] = rng();
+    for(int i=0; i<D; i++)
+      res[i] = rng();
     T norm = 1.0/sqrt(dot(res,res));
     return norm*res;
   }
@@ -70,17 +77,20 @@ struct NormRandomSeq<TinyVector<T,D>,RNG > {
 
 //
 // specialized for TinyVector<double,3>
-// 
+//
 template<class RNG>
-struct NormRandomSeq<TinyVector<double,3>, RNG> {
+struct NormRandomSeq<TinyVector<double,3>, RNG>
+{
   typedef TinyVector<double,3> Return_t;
-  static inline Return_t get(RNG& rng) {
+  static inline Return_t get(RNG& rng)
+  {
     double x,y,s;
     s = 2.0e0;
-    while(s > 1.0e0) {
+    while(s > 1.0e0)
+    {
       x = 2.0e0*rng() - 1.0e0;  // [-0.5,0.5)
       y = 2.0e0*rng() - 1.0e0;  // [-0.5,0.5)
-     s = x*x + y*y;
+      s = x*x + y*y;
     }
     double z = 2.0e0*sqrt(1.0e0-s);
     return Return_t(z*x, z*y, 1.0e0-2.0e0*s);
@@ -89,7 +99,7 @@ struct NormRandomSeq<TinyVector<double,3>, RNG> {
 
 
 //////////////////////////////////////////////////////////
-// generic RandomSeq 
+// generic RandomSeq
 // ceterned at zero [-0.5,0.5)
 //////////////////////////////////////////////////////////
 template<class VT, class RNG>
@@ -97,21 +107,26 @@ struct RandomSeq { };
 
 // specialized for TinyVector<T,D>
 template<class T, unsigned D, class RNG>
-struct RandomSeq<TinyVector<T,D>,RNG > {
+struct RandomSeq<TinyVector<T,D>,RNG >
+{
   typedef TinyVector<double,D> Return_t;
-  static inline Return_t get(RNG& rng) {
+  static inline Return_t get(RNG& rng)
+  {
     Return_t res(0);
-    for(int i=0; i<D; i++) res[i] = 2*rng()-1;
+    for(int i=0; i<D; i++)
+      res[i] = 2*rng()-1;
     return res;
   }
 };
 
 // specialized for TinyVector<double,3>
 template<class RNG>
-struct RandomSeq<TinyVector<double,3>, RNG> {
+struct RandomSeq<TinyVector<double,3>, RNG>
+{
   typedef TinyVector<double,3> Return_t;
-  static inline Return_t get(RNG& rng) {
-    return Return_t(2*rng()-1, 2*rng()-1, 2*rng()-1); 
+  static inline Return_t get(RNG& rng)
+  {
+    return Return_t(2*rng()-1, 2*rng()-1, 2*rng()-1);
   }
 };
 
@@ -157,24 +172,32 @@ struct RandomSequence { };
 
 // specialized for vector<T> to generate a random sequence of type T
 template<class T, class RNG>
-struct RandomSequence<vector<T>, RNG> { 
+struct RandomSequence<vector<T>, RNG>
+{
 
-  static void apply(vector<T>& v, RandomVector<T,RNG>& rnd) {
+  static void apply(vector<T>& v, RandomVector<T,RNG>& rnd)
+  {
     typename vector<T>::iterator it= v.begin();
-    while(it != v.end()) {
-      (*it) = rnd(); it++;
+    while(it != v.end())
+    {
+      (*it) = rnd();
+      it++;
     }
   }
 };
 
 // specialized for vector<double> to generate a random sequence of type T
 template<class RNG>
-struct RandomSequence<vector<double>, RNG> {
+struct RandomSequence<vector<double>, RNG>
+{
 
-  static void apply(vector<double>& s, RNG& rnd) {
+  static void apply(vector<double>& s, RNG& rnd)
+  {
     typename vector<double>::iterator it= s.begin();
-    while(it != s.end()) {
-      (*it) = rnd(); it++;
+    while(it != s.end())
+    {
+      (*it) = rnd();
+      it++;
     }
   }
 };
@@ -184,5 +207,5 @@ struct RandomSequence<vector<double>, RNG> {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

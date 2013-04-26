@@ -30,30 +30,30 @@
 /************************************************************/
 void
 eval_multi_NUBspline_1d_c (multi_NUBspline_1d_c *spline,
-			   double x,
-			   complex_float* restrict vals);
+                           double x,
+                           complex_float* restrict vals);
 
 void
 eval_multi_NUBspline_1d_c_vg (multi_NUBspline_1d_c *spline,
-			      double x,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads);
+                              double x,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads);
 
 
 void
 eval_multi_NUBspline_1d_c_vgl (multi_NUBspline_1d_c *spline,
-			       double x,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict lapl);
+                               double x,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict lapl);
 
 
 void
 eval_multi_NUBspline_1d_c_vgh (multi_NUBspline_1d_c *spline,
-			       double x,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict hess);
+                               double x,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict hess);
 
 
 /************************************************************/
@@ -61,28 +61,28 @@ eval_multi_NUBspline_1d_c_vgh (multi_NUBspline_1d_c *spline,
 /************************************************************/
 void
 eval_multi_NUBspline_2d_c (multi_NUBspline_2d_c *spline,
-			   double x, double y,
-			   complex_float* restrict vals);
+                           double x, double y,
+                           complex_float* restrict vals);
 
 void
 eval_multi_NUBspline_2d_c_vg (multi_NUBspline_2d_c *spline,
-			      double x, double y,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads);
+                              double x, double y,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads);
 
 void
 eval_multi_NUBspline_2d_c_vgl (multi_NUBspline_2d_c *spline,
-			       double x, double y,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict lapl);
+                               double x, double y,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict lapl);
 
 void
 eval_multi_NUBspline_2d_c_vgh (multi_NUBspline_2d_c *spline,
-			       double x, double y,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict hess);
+                               double x, double y,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict hess);
 
 
 /************************************************************/
@@ -90,26 +90,26 @@ eval_multi_NUBspline_2d_c_vgh (multi_NUBspline_2d_c *spline,
 /************************************************************/
 void
 eval_multi_NUBspline_3d_c (multi_NUBspline_3d_c *spline,
-			   double x, double y, double z,
-			   complex_float* restrict vals);
+                           double x, double y, double z,
+                           complex_float* restrict vals);
 
 void
 eval_multi_NUBspline_3d_c_vg (multi_NUBspline_3d_c *spline,
-			      double x, double y, double z,
-			      complex_float* restrict vals,
-			      complex_float* restrict grads);
+                              double x, double y, double z,
+                              complex_float* restrict vals,
+                              complex_float* restrict grads);
 
 void
 eval_multi_NUBspline_3d_c_vgl (multi_NUBspline_3d_c *spline,
-			       double x, double y, double z,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict lapl);
+                               double x, double y, double z,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict lapl);
 
 void
 eval_multi_NUBspline_3d_c_vgh (multi_NUBspline_3d_c *spline,
-			       double x, double y, double z,
-			       complex_float* restrict vals,
-			       complex_float* restrict grads,
-			       complex_float* restrict hess);
+                               double x, double y, double z,
+                               complex_float* restrict vals,
+                               complex_float* restrict grads,
+                               complex_float* restrict hess);
 #endif

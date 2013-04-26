@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -44,7 +44,8 @@ extern void OOMPI_Error_handler(MPI_Comm *mpi_comm, int *err, ...);
 // Structure used for entries in the error lookup table
 //
 
-struct OOMPI_Error_entry {
+struct OOMPI_Error_entry
+{
   MPI_Comm mpi_comm;
   OOMPI_Comm *oompi_comm;
   OOMPI_Error_action action;
@@ -54,25 +55,35 @@ struct OOMPI_Error_entry {
 
 //
 // OOMPI error table class
-// Maintains communications and actions to be performed when something 
-// Bad happens 
+// Maintains communications and actions to be performed when something
+// Bad happens
 //
-class OOMPI_Error_table {
+class OOMPI_Error_table
+{
   friend void OOMPI_Error_handler(MPI_Comm *mpi_comm, int *err, ...);
 
 public:
   OOMPI_Error_table();
   inline OOMPI_Error_table(const OOMPI_Error_table &t)
     : valid(false), root(0)
-  { t.do_nothing(); };
+  {
+    t.do_nothing();
+  };
   inline OOMPI_Error_table &operator=(const OOMPI_Error_table &t)
-  { valid = false; root = 0; t.do_nothing(); return *this; };
+  {
+    valid = false;
+    root = 0;
+    t.do_nothing();
+    return *this;
+  };
   ~OOMPI_Error_table();
 
   // Convenience routines
 
   inline void Handler(MPI_Comm comm, int err)
-  { OOMPI_Error_handler(&comm, &err); };
+  {
+    OOMPI_Error_handler(&comm, &err);
+  };
   // Unfortunately cannot be inline because of .h loop
   void Handler(OOMPI_Comm *comm, int err);
 
@@ -84,7 +95,7 @@ public:
   void Delete(MPI_Comm comm);
   OOMPI_Comm *Get_oompi(MPI_Comm comm);
   OOMPI_Error_action Get_action(MPI_Comm comm);
-  
+
 protected:
   static bool init;
   bool valid;

@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,15 +22,16 @@
 /**@namespace ohmmshf
  *@brief Define basic data types for the applications.
  * In order to reduce complier-time complexity and to enable switching
- * between C++ libraries for array and expression template, 
+ * between C++ libraries for array and expression template,
  * basic data types are defined.
  */
-namespace ohmmshf {
-  typedef YlmRnlSet<double> HFAtomicOrbitals;
+namespace ohmmshf
+{
+typedef YlmRnlSet<double> HFAtomicOrbitals;
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

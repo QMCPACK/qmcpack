@@ -11,9 +11,11 @@
 #include "Numerics/Spline3D/SetSplinePoint.h"
 #include "Numerics/Spline3D/TriCubicSpline.h"
 
-namespace ohmmsqmc {
+namespace ohmmsqmc
+{
 
-class TriCubicSplineSet {
+class TriCubicSplineSet
+{
 
   bool OwnGrid;
 
@@ -40,7 +42,7 @@ class TriCubicSplineSet {
 
   std::map<string,int> orbital_map;
 
- public:
+public:
 
   /// constructor
   TriCubicSplineSet();
@@ -52,32 +54,45 @@ class TriCubicSplineSet {
   bool put(xmlNodePtr, Grid3D*);
 
 
-  /// a function to set the two grid pointers 
-  inline void set(Grid3D* fg, Grid3D* Sg) {
-    DeviceGrid = fg; Schr_Grid = Sg;
+  /// a function to set the two grid pointers
+  inline void set(Grid3D* fg, Grid3D* Sg)
+  {
+    DeviceGrid = fg;
+    Schr_Grid = Sg;
   }
 
-  inline int size() const { return m_psi.size();}
+  inline int size() const
+  {
+    return m_psi.size();
+  }
 
   /// return the fullGrid
-  Grid3D* get_DeviceGrid() { return DeviceGrid;}
+  Grid3D* get_DeviceGrid()
+  {
+    return DeviceGrid;
+  }
 
   /// return an orbital
-  TriCubicSpline* getOrbital(int i) {return m_psi[i];}
+  TriCubicSpline* getOrbital(int i)
+  {
+    return m_psi[i];
+  }
 
   /// setting the point r parameters
-  inline void set_point(const posvec_t& r){
+  inline void set_point(const posvec_t& r)
+  {
     m_set->set_point(r,Schr_Grid);
   }
 
   /// initialising the padded function
   void finit(int);
 
-  inline TriCubicSpline* getOrbital(const string& orbname) {
+  inline TriCubicSpline* getOrbital(const string& orbname)
+  {
     std::map<string,int>::iterator it = orbital_map.find(orbname);
-    if(it == orbital_map.end()) 
+    if(it == orbital_map.end())
       return NULL;
-    else 
+    else
       return m_psi[(*it).second];
   }
 
@@ -87,13 +102,16 @@ class TriCubicSplineSet {
   /// more esoteric evaluation
   template<class PTCL, class VM, class GM>
   inline void evaluate(const PTCL& P, int first, int last,
-		       VM& logdet, GM& dlogdet, VM& d2logdet) {
+                       VM& logdet, GM& dlogdet, VM& d2logdet)
+  {
     int n = last-first;
     int iat = first;
-    for(int i=0; i < n; i++,iat++) {
+    for(int i=0; i < n; i++,iat++)
+    {
       set_point(P.R[iat],Schr_Grid);   /// set the r-point parameters
-      for(int j=0; j < n; j++) {
-	logdet(j,i)= m_psi[j]->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
+      for(int j=0; j < n; j++)
+      {
+        logdet(j,i)= m_psi[j]->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
       }
     }
   }

@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -21,12 +21,19 @@
 /*!\class TagMaker
  * \brief Assign a unique tag whenver TagMaker::TagMaker() is called.
  */
-class TagMaker {
+class TagMaker
+{
 public:
 
-  TagMaker(){  MyTag = (++CurrentTag);} 
+  TagMaker()
+  {
+    MyTag = (++CurrentTag);
+  }
   ~TagMaker() {}
-  int operator()()const { return MyTag;}
+  int operator()()const
+  {
+    return MyTag;
+  }
 private:
   int MyTag;
   static int CurrentTag;
@@ -36,5 +43,5 @@ private:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

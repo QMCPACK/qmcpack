@@ -31,43 +31,42 @@
 /************************************************************/
 void
 eval_multi_NUBspline_1d_z (multi_NUBspline_1d_z *spline,
-			  double x,
-			  complex_double* restrict vals)
+                           double x,
+                           complex_double* restrict vals)
 {
   double a[4];
-
   int ix = get_NUBasis_funcs_d (spline->x_basis, x, a);
   int xs = spline->x_stride;
-
   complex_double* restrict coefs0 = spline->coefs +(ix+0)*xs;
   complex_double* restrict coefs1 = spline->coefs +(ix+1)*xs;
   complex_double* restrict coefs2 = spline->coefs +(ix+2)*xs;
   complex_double* restrict coefs3 = spline->coefs +(ix+3)*xs;
-  for (int n=0; n<spline->num_splines; n++) 
-    vals[n] = (a[0]*coefs0[n] + a[1]*coefs1[n] + 
-	       a[2]*coefs2[n] + a[3]*coefs3[n]);
+  for (int n=0; n<spline->num_splines; n++)
+    vals[n] = (a[0]*coefs0[n] + a[1]*coefs1[n] +
+               a[2]*coefs2[n] + a[3]*coefs3[n]);
 }
 
 
 
 void
 eval_multi_NUBspline_1d_z_vg (multi_NUBspline_1d_z *spline,
-			     double x,
-			     complex_double* restrict vals,
-			     complex_double* restrict grads)
+                              double x,
+                              complex_double* restrict vals,
+                              complex_double* restrict grads)
 {
   double a[4], da[4];
   int ix = get_NUBasis_dfuncs_d (spline->x_basis, x, a, da);
   int xs = spline->x_stride;
-
-  for (int n=0; n<spline->num_splines; n++) {
+  for (int n=0; n<spline->num_splines; n++)
+  {
     vals[n]  = 0.0;
     grads[n] = 0.0;
   }
-
-  for (int i=0; i<4; i++) { 
+  for (int i=0; i<4; i++)
+  {
     complex_double* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) {
+    for (int n=0; n<spline->num_splines; n++)
+    {
       vals[n]  +=   a[i] * coefs[n];
       grads[n] +=  da[i] * coefs[n];
     }
@@ -77,24 +76,25 @@ eval_multi_NUBspline_1d_z_vg (multi_NUBspline_1d_z *spline,
 
 void
 eval_multi_NUBspline_1d_z_vgl (multi_NUBspline_1d_z *spline,
-			       double x,
-			       complex_double* restrict vals,
-			       complex_double* restrict grads,
-			       complex_double* restrict lapl)	  
+                               double x,
+                               complex_double* restrict vals,
+                               complex_double* restrict grads,
+                               complex_double* restrict lapl)
 {
   double a[4], da[4], d2a[4];
   int ix = get_NUBasis_d2funcs_d (spline->x_basis, x, a, da, d2a);
   int xs = spline->x_stride;
-
-  for (int n=0; n<spline->num_splines; n++) {
+  for (int n=0; n<spline->num_splines; n++)
+  {
     vals[n]  = 0.0;
     grads[n] = 0.0;
     lapl[n]  = 0.0;
   }
-
-  for (int i=0; i<4; i++) {      
+  for (int i=0; i<4; i++)
+  {
     complex_double* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) {
+    for (int n=0; n<spline->num_splines; n++)
+    {
       vals[n]  +=   a[i] * coefs[n];
       grads[n] +=  da[i] * coefs[n];
       lapl[n]  += d2a[i] * coefs[n];
@@ -105,10 +105,10 @@ eval_multi_NUBspline_1d_z_vgl (multi_NUBspline_1d_z *spline,
 
 void
 eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
-			      double x,
-			      complex_double* restrict vals,
-			      complex_double* restrict grads,
-			      complex_double* restrict hess)
+                               double x,
+                               complex_double* restrict vals,
+                               complex_double* restrict grads,
+                               complex_double* restrict hess)
 {
   eval_multi_NUBspline_1d_z_vgl (spline, x, vals, grads, hess);
 }
@@ -123,13 +123,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			   double x, double y,
 // 			   complex_double* restrict vals)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
@@ -137,7 +137,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ipartx, iparty, tx, ty;
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int N  = spline->num_splines;
@@ -149,7 +149,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23,
-//     a01  ,   b01,   a23,    b23;  
+//     a01  ,   b01,   a23,    b23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
 //   tpx23 = _mm_set_pd (tx, 1.0);
@@ -166,31 +166,31 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 
 //   // Zero-out values
 //   __m128d mvals[N];
-//   for (int n=0; n<N; n++) 
+//   for (int n=0; n<N; n++)
 //     mvals[n] = _mm_sub_pd (mvals[n], mvals[n]);
-  
+
 //   __m128d a[4], b[4];
 //   a[0]=_mm_unpacklo_pd(a01,a01);
 //   a[1]=_mm_unpackhi_pd(a01,a01);
 //   a[2]=_mm_unpacklo_pd(a23,a23);
 //   a[3]=_mm_unpackhi_pd(a23,a23);
-				
+
 //   b[0]=_mm_unpacklo_pd(b01,b01);
 //   b[1]=_mm_unpackhi_pd(b01,b01);
 //   b[2]=_mm_unpacklo_pd(b23,b23);
 //   b[3]=_mm_unpackhi_pd(b23,b23);
-				 				   				  
+
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
 //     for (int j=0; j<4; j++) {
 //       __m128d ab              = _mm_mul_pd(  a[i],  b[j]);
 //       __m128d* restrict coefs = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys);
 
-//       for (int n=0; n<N; n++) 
+//       for (int n=0; n<N; n++)
 // 	mvals[n]      = _mm_add_pd (mvals[n],      _mm_mul_pd (   ab   , coefs[n]));
 //     }
-  
-//   for (int n=0; n<N; n++) 
+
+//   for (int n=0; n<N; n++)
 //     _mm_storeu_pd((double*)(vals+n),mvals[n]);
 // }
 
@@ -202,17 +202,17 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			     complex_double* restrict vals,
 // 			     complex_double* restrict grads)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
@@ -220,7 +220,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ipartx, iparty, tx, ty;
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int N  = spline->num_splines;
@@ -232,7 +232,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23,
-//     a01  ,   b01,   a23,    b23,  
+//     a01  ,   b01,   a23,    b23,
 //     da01 ,  db01,  da23,   db23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -256,26 +256,26 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   __m128d mvals[N], mgrads[2*N];
 //   for (int n=0; n<N; n++) {
 //     mvals[n] = _mm_sub_pd (mvals[n], mvals[n]);
-//     for (int i=0; i<2; i++) 
+//     for (int i=0; i<2; i++)
 //       mgrads[2*n+i] = _mm_sub_pd (mgrads[2*n+i],mgrads[2*n+i]);
-//   }   
-  
+//   }
+
 //   __m128d a[4], b[4], da[4], db[4];
 //   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01);
 //   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01);
 //   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23);
 //   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23);
-				 				  
+
 //   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01);
 //   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01);
 //   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23);
 //   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23);
-				 				   				  
+
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
 //     for (int j=0; j<4; j++) {
 //       __m128d ab, d_ab[2];
-	
+
 // 	ab         = _mm_mul_pd(  a[i],  b[j]);
 // 	d_ab[0]    = _mm_mul_pd(da[i],   b[j]);
 // 	d_ab[1]    = _mm_mul_pd(  a[i], db[j]);
@@ -288,7 +288,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  mgrads[2*n+1] = _mm_add_pd (mgrads[2*n+1], _mm_mul_pd ( d_ab[1], coefs[n]));
 // 	}
 //       }
-  
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
 //   complex_double lapl2[2*N];
@@ -312,21 +312,21 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			      complex_double* restrict grads,
 // 			      complex_double* restrict lapl)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
@@ -334,7 +334,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ipartx, iparty, tx, ty;
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int N  = spline->num_splines;
@@ -346,8 +346,8 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23,
-//     a01  ,   b01,   a23,    b23,  
-//     da01 ,  db01,  da23,   db23,  
+//     a01  ,   b01,   a23,    b23,
+//     da01 ,  db01,  da23,   db23,
 //     d2a01, d2b01, d2a23,  d2b23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -379,24 +379,24 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //       mgrads[2*n+i] = _mm_sub_pd (mgrads[2*n+i],mgrads[2*n+i]);
 //       mlapl [2*n+i]  = _mm_sub_pd (mlapl[2*n+i], mlapl[2*n+i]);
 //     }
-//   }   
-  
+//   }
+
 //   __m128d a[4], b[4], da[4], db[4], d2a[4], d2b[4];
 //   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01); d2a[0]=_mm_unpacklo_pd(d2a01,d2a01);
 //   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01); d2a[1]=_mm_unpackhi_pd(d2a01,d2a01);
 //   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23); d2a[2]=_mm_unpacklo_pd(d2a23,d2a23);
 //   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23); d2a[3]=_mm_unpackhi_pd(d2a23,d2a23);
-				 				   				  
+
 //   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01); d2b[0]=_mm_unpacklo_pd(d2b01,d2b01);
 //   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01); d2b[1]=_mm_unpackhi_pd(d2b01,d2b01);
 //   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23); d2b[2]=_mm_unpacklo_pd(d2b23,d2b23);
 //   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23); d2b[3]=_mm_unpackhi_pd(d2b23,d2b23);
-				 				   				  
+
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
 //     for (int j=0; j<4; j++) {
 //       __m128d ab, d_ab[2], d2_ab[2];
-	
+
 // 	ab         = _mm_mul_pd(  a[i],  b[j]);
 // 	d_ab[0]    = _mm_mul_pd(da[i],   b[j]);
 // 	d_ab[1]    = _mm_mul_pd(  a[i], db[j]);
@@ -413,7 +413,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  mlapl [2*n+1] = _mm_add_pd (mlapl [2*n+1], _mm_mul_pd (d2_ab[1], coefs[n]));
 // 	}
 //       }
-  
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
 //   complex_double lapl2[2*N];
@@ -443,21 +443,21 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			      complex_double* restrict grads,
 // 			      complex_double* restrict hess)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
@@ -465,7 +465,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ipartx, iparty, tx, ty;
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int N  = spline->num_splines;
@@ -477,8 +477,8 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23,
-//     a01  ,   b01,   a23,    b23,  
-//     da01 ,  db01,  da23,   db23,  
+//     a01  ,   b01,   a23,    b23,
+//     da01 ,  db01,  da23,   db23,
 //     d2a01, d2b01, d2a23,  d2b23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -510,24 +510,24 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //       mgrads[2*n+i] = _mm_sub_pd (mgrads[2*n+i],mgrads[2*n+i]);
 //     for (int i=0; i<3; i++)
 //       mhess[3*n+i]  = _mm_sub_pd (mhess[3*n+i], mhess[3*n+i]);
-//   }   
+//   }
 
 //   __m128d a[4], b[4], da[4], db[4], d2a[4], d2b[4];
 //   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01); d2a[0]=_mm_unpacklo_pd(d2a01,d2a01);
 //   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01); d2a[1]=_mm_unpackhi_pd(d2a01,d2a01);
 //   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23); d2a[2]=_mm_unpacklo_pd(d2a23,d2a23);
 //   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23); d2a[3]=_mm_unpackhi_pd(d2a23,d2a23);
-				 				   				  
+
 //   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01); d2b[0]=_mm_unpacklo_pd(d2b01,d2b01);
 //   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01); d2b[1]=_mm_unpackhi_pd(d2b01,d2b01);
 //   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23); d2b[2]=_mm_unpacklo_pd(d2b23,d2b23);
 //   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23); d2b[3]=_mm_unpackhi_pd(d2b23,d2b23);
-				 				   				  
+
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
 //     for (int j=0; j<4; j++) {
 //       __m128d ab, d_ab[2], d2_ab[3];
-	
+
 // 	ab         = _mm_mul_pd(  a[i],  b[j]);
 // 	d_ab[0]    = _mm_mul_pd(da[i],   b[j]);
 // 	d_ab[1]    = _mm_mul_pd(  a[i], db[j]);
@@ -546,10 +546,10 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  mhess[3*n+2]  = _mm_add_pd (mhess[3*n+2],  _mm_mul_pd (d2_ab[2], coefs[n]));
 // 	}
 //       }
-  
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
-  
+
 //   for (int n=0; n<N; n++) {
 //     _mm_storeu_pd((double*)(vals+n),mvals[n]);
 //     _mm_storeu_pd((double*)(grads+2*n+0),mgrads[2*n+0]);
@@ -578,13 +578,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			  double x, double y, double z,
 // 			  complex_double* restrict vals)
 // {
-//   _mm_prefetch ((const char*) &A_d[0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[7],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[7],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   z -= spline->z_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
@@ -596,7 +596,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
 //   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int zs = spline->z_stride;
@@ -610,9 +610,9 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23, tpz01, tpz23,
-//     a01, b01, c01, a23, b23, c23,  
+//     a01, b01, c01, a23, b23, c23,
 //     tmp0, tmp1, r0, r1, i0, i1, val_r, val_i;
-  
+
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
 //   tpx23 = _mm_set_pd (tx, 1.0);
 //   tpy01 = _mm_set_pd (ty*ty*ty, ty*ty);
@@ -632,7 +632,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 
 //   // Zero-out values
 //   __m128d mvals[N];
-//   for (int n=0; n<N; n++) 
+//   for (int n=0; n<N; n++)
 //     mvals[n] = _mm_sub_pd (mvals[n], mvals[n]);
 
 //   __m128d a[4], b[4], c[4];
@@ -657,24 +657,24 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   const int offset = 0;
 // #endif
 //   int Nstop = N - offset;
-//   if (Nstop & 1) 
+//   if (Nstop & 1)
 //     Nstop--;
 //   if (Nstop < 0)
 //     Nstop = 0;
 
 //   for (int i=0; i<4; i++)
 //     for (int j=0; j<4; j++) {
-      
+
 // #ifdef USE_PREFETCH
 //       __m128d abc[4];
-//       for (int k=0; k<4; k++) 
+//       for (int k=0; k<4; k++)
 // 	abc[k] = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
 //       __m128d* restrict coefs0 = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+0)*zs);
 //       __m128d* restrict coefs1 = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+1)*zs);
 //       __m128d* restrict coefs2 = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+2)*zs);
 //       __m128d* restrict coefs3 = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+3)*zs);
-      
-//       for (int n=0; n<Nstop; n+=2) { 
+
+//       for (int n=0; n<Nstop; n+=2) {
 // 	//	_mm_prefetch ((const char*)&(mvals[n+offset]), _MM_HINT_NTA);
 // 	_mm_prefetch ((const char*)&(coefs0[n+offset]), _MM_HINT_NTA);
 // 	mvals[n+0] = _mm_add_pd(mvals[n+0], _mm_mul_pd (abc[0], coefs0[n+0]));
@@ -699,7 +699,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //       for (int k=0; k<4; k++) {
 //         __m128d abc = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
 //         __m128d* restrict coefs = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+k)*zs);
-	
+
 //         for (int n=0; n<Nstop; n+=2) {
 //           mvals[n+0] = _mm_add_pd (mvals[n+0], _mm_mul_pd (abc, coefs[n+0]));
 //           mvals[n+1] = _mm_add_pd (mvals[n+1], _mm_mul_pd (abc, coefs[n+1]));
@@ -707,12 +707,12 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	if (N&1)
 // 	  mvals[N-1] = _mm_add_pd (mvals[N-1], _mm_mul_pd (abc, coefs[N-1]));
 //       }
-// #endif  
+// #endif
 //     }
-  
+
 //   for (int n=0; n<N; n++)
 //     _mm_storeu_pd((double*)(vals+n),mvals[n]);
-  
+
 // }
 
 
@@ -723,17 +723,17 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			     complex_double* restrict vals,
 // 			     complex_double* restrict grads)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   z -= spline->z_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
@@ -745,7 +745,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
 //   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int zs = spline->z_stride;
@@ -759,7 +759,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23, tpz01, tpz23,
-//     a01  ,   b01,   c01,   a23,    b23,   c23,  
+//     a01  ,   b01,   c01,   a23,    b23,   c23,
 //     da01 ,  db01,  dc01,  da23,   db23,  dc23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -793,32 +793,32 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   __m128d mvals[N], mgrads[3*N];
 //   for (int n=0; n<N; n++) {
 //     mvals[n] = _mm_sub_pd (mvals[n], mvals[n]);
-//     for (int i=0; i<3; i++) 
+//     for (int i=0; i<3; i++)
 //       mgrads[3*n+i] = _mm_sub_pd (mgrads[3*n+i],mgrads[3*n+i]);
-//   }   
+//   }
 
 //   __m128d a[4], b[4], c[4], da[4], db[4], dc[4];
-//   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01); 
-//   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01); 
-//   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23); 
-//   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23); 
-				 				   
-//   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01); 
-//   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01); 
-//   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23); 
-//   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23); 
-				 				   
-//   c[0]=_mm_unpacklo_pd(c01,c01); dc[0]=_mm_unpacklo_pd(dc01,dc01); 
-//   c[1]=_mm_unpackhi_pd(c01,c01); dc[1]=_mm_unpackhi_pd(dc01,dc01); 
-//   c[2]=_mm_unpacklo_pd(c23,c23); dc[2]=_mm_unpacklo_pd(dc23,dc23); 
-//   c[3]=_mm_unpackhi_pd(c23,c23); dc[3]=_mm_unpackhi_pd(dc23,dc23); 
+//   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01);
+//   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01);
+//   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23);
+//   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23);
+
+//   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01);
+//   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01);
+//   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23);
+//   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23);
+
+//   c[0]=_mm_unpacklo_pd(c01,c01); dc[0]=_mm_unpacklo_pd(dc01,dc01);
+//   c[1]=_mm_unpackhi_pd(c01,c01); dc[1]=_mm_unpackhi_pd(dc01,dc01);
+//   c[2]=_mm_unpacklo_pd(c23,c23); dc[2]=_mm_unpacklo_pd(dc23,dc23);
+//   c[3]=_mm_unpackhi_pd(c23,c23); dc[3]=_mm_unpackhi_pd(dc23,dc23);
 
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
-//     for (int j=0; j<4; j++) 
+//     for (int j=0; j<4; j++)
 //       for (int k=0; k<4; k++) {
 // 	__m128d abc, d_abc[3];
-	
+
 // 	abc         = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
 // 	d_abc[0]    = _mm_mul_pd (_mm_mul_pd(da[i],  b[j]),  c[k]);
 // 	d_abc[1]    = _mm_mul_pd (_mm_mul_pd( a[i], db[j]),  c[k]);
@@ -833,18 +833,18 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  mgrads[3*n+2] = _mm_add_pd (mgrads[3*n+2], _mm_mul_pd ( d_abc[2], coefs[n]));
 // 	}
 //       }
-  
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
-//   double dzInv = spline->z_grid.delta_inv; 
-  
+//   double dzInv = spline->z_grid.delta_inv;
+
 //   for (int n=0; n<N; n++) {
 //     complex_double lapl3[3];
 //     _mm_storeu_pd((double*)(vals+n),mvals[n]);
 //     _mm_storeu_pd((double*)(grads+3*n+0), mgrads[3*n+0]);
 //     _mm_storeu_pd((double*)(grads+3*n+1), mgrads[3*n+1]);
 //     _mm_storeu_pd((double*)(grads+3*n+2), mgrads[3*n+2]);
-   
+
 //     grads[3*n+0] *= dxInv;
 //     grads[3*n+1] *= dyInv;
 //     grads[3*n+2] *= dzInv;
@@ -860,21 +860,21 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			      complex_double* restrict grads,
 // 			      complex_double* restrict lapl)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   z -= spline->z_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
@@ -886,7 +886,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
 //   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int zs = spline->z_stride;
@@ -900,8 +900,8 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23, tpz01, tpz23,
-//     a01  ,   b01,   c01,   a23,    b23,   c23,  
-//     da01 ,  db01,  dc01,  da23,   db23,  dc23,  
+//     a01  ,   b01,   c01,   a23,    b23,   c23,
+//     da01 ,  db01,  dc01,  da23,   db23,  dc23,
 //     d2a01, d2b01, d2c01, d2a23,  d2b23, d2c23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -945,19 +945,19 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //       mgrads[3*n+i] = _mm_sub_pd (mgrads[3*n+i],mgrads[3*n+i]);
 //       mlapl [3*n+i] = _mm_sub_pd (mlapl [3*n+i],mlapl [3*n+i]);
 //     }
-//   }   
+//   }
 
 //   __m128d a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 //   a[0]=_mm_unpacklo_pd(a01,a01); da[0]=_mm_unpacklo_pd(da01,da01); d2a[0]=_mm_unpacklo_pd(d2a01,d2a01);
 //   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01); d2a[1]=_mm_unpackhi_pd(d2a01,d2a01);
 //   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23); d2a[2]=_mm_unpacklo_pd(d2a23,d2a23);
 //   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23); d2a[3]=_mm_unpackhi_pd(d2a23,d2a23);
-				 				   				  
+
 //   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01); d2b[0]=_mm_unpacklo_pd(d2b01,d2b01);
 //   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01); d2b[1]=_mm_unpackhi_pd(d2b01,d2b01);
 //   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23); d2b[2]=_mm_unpacklo_pd(d2b23,d2b23);
 //   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23); d2b[3]=_mm_unpackhi_pd(d2b23,d2b23);
-				 				   				  
+
 //   c[0]=_mm_unpacklo_pd(c01,c01); dc[0]=_mm_unpacklo_pd(dc01,dc01); d2c[0]=_mm_unpacklo_pd(d2c01,d2c01);
 //   c[1]=_mm_unpackhi_pd(c01,c01); dc[1]=_mm_unpackhi_pd(dc01,dc01); d2c[1]=_mm_unpackhi_pd(d2c01,d2c01);
 //   c[2]=_mm_unpacklo_pd(c23,c23); dc[2]=_mm_unpacklo_pd(dc23,dc23); d2c[2]=_mm_unpacklo_pd(d2c23,d2c23);
@@ -965,10 +965,10 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 
 //   // Main computation loop
 //   for (int i=0; i<4; i++)
-//     for (int j=0; j<4; j++) 
+//     for (int j=0; j<4; j++)
 //       for (int k=0; k<4; k++) {
 // 	__m128d abc, d_abc[3], d2_abc[3];
-	
+
 // 	abc         = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
 
 // 	d_abc[0]    = _mm_mul_pd (_mm_mul_pd(da[i],  b[j]),  c[k]);
@@ -978,7 +978,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	d2_abc[0]   = _mm_mul_pd (_mm_mul_pd(d2a[i],   b[j]),   c[k]);
 // 	d2_abc[1]   = _mm_mul_pd (_mm_mul_pd(  a[i], d2b[j]),   c[k]);
 // 	d2_abc[2]   = _mm_mul_pd (_mm_mul_pd(  a[i],   b[j]), d2c[k]);
-				  
+
 
 // 	__m128d* restrict coefs = (__m128d*)(spline->coefs + (ix+i)*xs + (iy+j)*ys + (iz+k)*zs);
 
@@ -992,11 +992,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  mlapl[3*n+2]  = _mm_add_pd (mlapl[3*n+2],  _mm_mul_pd (d2_abc[2], coefs[n]));
 // 	}
 //       }
-  
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
-//   double dzInv = spline->z_grid.delta_inv; 
-  
+//   double dzInv = spline->z_grid.delta_inv;
+
 //   for (int n=0; n<N; n++) {
 //     complex_double lapl3[3];
 //     _mm_storeu_pd((double*)(vals+n),mvals[n]);
@@ -1006,7 +1006,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //     _mm_storeu_pd((double*)(lapl3+0), mlapl[3*n+0]);
 //     _mm_storeu_pd((double*)(lapl3+1), mlapl[3*n+1]);
 //     _mm_storeu_pd((double*)(lapl3+2), mlapl[3*n+2]);
-   
+
 //     grads[3*n+0] *= dxInv;
 //     grads[3*n+1] *= dyInv;
 //     grads[3*n+2] *= dzInv;
@@ -1025,21 +1025,21 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 			      complex_double* restrict grads,
 // 			      complex_double* restrict hess)
 // {
-//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);  
-//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);  
+//   _mm_prefetch ((const char*) &A_d[ 0],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 1],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 2],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 3],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 4],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 5],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 6],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 7],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[ 8],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[ 9],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[10],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[11],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[12],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[13],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[14],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[15],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[16],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[17],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[18],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[19],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[20],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[21],_MM_HINT_T0);
+//   _mm_prefetch ((const char*) &A_d[22],_MM_HINT_T0); _mm_prefetch ((const char*) &A_d[23],_MM_HINT_T0);
 
 //   x -= spline->x_grid.start;
-//   y -= spline->y_grid.start;  
+//   y -= spline->y_grid.start;
 //   z -= spline->z_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
@@ -1051,7 +1051,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
 //   ty = modf (uy, &iparty);  int iy = (int) iparty;
 //   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
 //   int zs = spline->z_stride;
@@ -1065,8 +1065,8 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // a  =  A * tpx,   b =  A * tpy,   c =  A * tpz
 //   // A is 4x4 matrix given by the rows A0, A1, A2, A3
 //   __m128d tpx01, tpx23, tpy01, tpy23, tpz01, tpz23,
-//     a01  ,   b01,   c01,   a23,    b23,   c23,  
-//     da01 ,  db01,  dc01,  da23,   db23,  dc23,  
+//     a01  ,   b01,   c01,   a23,    b23,   c23,
+//     da01 ,  db01,  dc01,  da23,   db23,  dc23,
 //     d2a01, d2b01, d2c01, d2a23,  d2b23, d2c23;
 
 //   tpx01 = _mm_set_pd (tx*tx*tx, tx*tx);
@@ -1105,7 +1105,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   // Zero-out values
 //   //__m128d mvals[N], mgrads[3*N], mhess[6*N];
 //   __m128d mpack[10*N];
-//   for (int n=0; n<10*N; n++) 
+//   for (int n=0; n<10*N; n++)
 //     mpack[n] = _mm_setzero_pd();
 
 //   __m128d a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
@@ -1113,17 +1113,17 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   a[1]=_mm_unpackhi_pd(a01,a01); da[1]=_mm_unpackhi_pd(da01,da01); d2a[1]=_mm_unpackhi_pd(d2a01,d2a01);
 //   a[2]=_mm_unpacklo_pd(a23,a23); da[2]=_mm_unpacklo_pd(da23,da23); d2a[2]=_mm_unpacklo_pd(d2a23,d2a23);
 //   a[3]=_mm_unpackhi_pd(a23,a23); da[3]=_mm_unpackhi_pd(da23,da23); d2a[3]=_mm_unpackhi_pd(d2a23,d2a23);
-				 				   				  
+
 //   b[0]=_mm_unpacklo_pd(b01,b01); db[0]=_mm_unpacklo_pd(db01,db01); d2b[0]=_mm_unpacklo_pd(d2b01,d2b01);
 //   b[1]=_mm_unpackhi_pd(b01,b01); db[1]=_mm_unpackhi_pd(db01,db01); d2b[1]=_mm_unpackhi_pd(d2b01,d2b01);
 //   b[2]=_mm_unpacklo_pd(b23,b23); db[2]=_mm_unpacklo_pd(db23,db23); d2b[2]=_mm_unpacklo_pd(d2b23,d2b23);
 //   b[3]=_mm_unpackhi_pd(b23,b23); db[3]=_mm_unpackhi_pd(db23,db23); d2b[3]=_mm_unpackhi_pd(d2b23,d2b23);
-				 				   				  
+
 //   c[0]=_mm_unpacklo_pd(c01,c01); dc[0]=_mm_unpacklo_pd(dc01,dc01); d2c[0]=_mm_unpacklo_pd(d2c01,d2c01);
 //   c[1]=_mm_unpackhi_pd(c01,c01); dc[1]=_mm_unpackhi_pd(dc01,dc01); d2c[1]=_mm_unpackhi_pd(d2c01,d2c01);
 //   c[2]=_mm_unpacklo_pd(c23,c23); dc[2]=_mm_unpacklo_pd(dc23,dc23); d2c[2]=_mm_unpacklo_pd(d2c23,d2c23);
 //   c[3]=_mm_unpackhi_pd(c23,c23); dc[3]=_mm_unpackhi_pd(dc23,dc23); d2c[3]=_mm_unpackhi_pd(d2c23,d2c23);
- 
+
 //   // Main computation loop
 //   const int bs = 32;
 //   for (int nstart=0; nstart<N; nstart += bs) {
@@ -1137,7 +1137,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 
 // #ifdef USE_PREFETCH_VGH
 // 	  int nextIndex = i<<4 + j<<2 + k + 1;
-// 	  int iNext = nextIndex >> 4; 
+// 	  int iNext = nextIndex >> 4;
 // 	  int jNext = (nextIndex >> 2) & 3;
 // 	  int kNext = nextIndex & 3;
 // 	  if (nextIndex < 64) {
@@ -1153,11 +1153,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  _mm_prefetch((const char*) &(c3[0]), _MM_HINT_T0);
 // 	  for (int k=0; k<4; k++) {
 // 	    abc[k+4*0]   = _mm_mul_pd (_mm_mul_pd(a[i], b[j]), c[k]);
-	    
+
 // 	    abc[k+4*1]   = _mm_mul_pd (_mm_mul_pd(da[i],  b[j]),  c[k]);
 // 	    abc[k+4*2]   = _mm_mul_pd (_mm_mul_pd( a[i], db[j]),  c[k]);
 // 	    abc[k+4*3]   = _mm_mul_pd (_mm_mul_pd( a[i],  b[j]), dc[k]);
-	    
+
 // 	    abc[k+4*4]   = _mm_mul_pd (_mm_mul_pd(d2a[i],   b[j]),   c[k]);
 // 	    abc[k+4*5]   = _mm_mul_pd (_mm_mul_pd( da[i],  db[j]),   c[k]);
 // 	    abc[k+4*6]   = _mm_mul_pd (_mm_mul_pd( da[i],   b[j]),  dc[k]);
@@ -1165,10 +1165,10 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	    abc[k+4*8]   = _mm_mul_pd (_mm_mul_pd(  a[i],  db[j]),  dc[k]);
 // 	    abc[k+4*9]   = _mm_mul_pd (_mm_mul_pd(  a[i],   b[j]), d2c[k]);
 // 	  }
-// 	  int end; 
+// 	  int end;
 // 	  if (N < nstart+bs)   end = N; else end = nstart+bs;
-	  
-// 	  for (int n=nstart; n<end; n++) 
+
+// 	  for (int n=nstart; n<end; n++)
 // 	    for (int s=0; s<10; s++) {
 // 	      __m128d p0 = _mm_mul_pd(abc[4*s+0], c0[n]);
 // 	      __m128d p1 = _mm_mul_pd(abc[4*s+1], c1[n]);
@@ -1183,20 +1183,20 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // 	  //mpack[n+s*N] = _mm_add_pd (mpack[n+s*N], _mm_mul_pd (
 // 	  //abc[s], coefs[n]));
 // 	    }
-	  
+
 //       }
 //   }
-    
+
 //   double dxInv = spline->x_grid.delta_inv;
 //   double dyInv = spline->y_grid.delta_inv;
-//   double dzInv = spline->z_grid.delta_inv; 
-  
+//   double dzInv = spline->z_grid.delta_inv;
+
 //   for (int n=0; n<N; n++) {
 //     _mm_storeu_pd((double*)(vals+n)     , mpack[10*n+0]);
 //     _mm_storeu_pd((double*)(grads+3*n+0), mpack[10*n+1]);
 //     _mm_storeu_pd((double*)(grads+3*n+1), mpack[10*n+2]);
 //     _mm_storeu_pd((double*)(grads+3*n+2), mpack[10*n+3]);
- 
+
 //     _mm_storeu_pd((double*)(hess+9*n+0),  mpack[10*n+4]);
 
 //     _mm_storeu_pd((double*)(hess+9*n+1),  mpack[10*n+5]);

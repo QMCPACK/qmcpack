@@ -4,7 +4,8 @@
 
 #include <vector>
 
-class uGrid1D{
+class uGrid1D
+{
 
 public:
 
@@ -22,61 +23,81 @@ public:
   std::vector<double> m_coord;
 
   /// Constructor
-  uGrid1D(){}
+  uGrid1D() {}
 
   /// initialise with  intervals
-  void init(int npts, double dx, double x0){
+  void init(int npts, double dx, double x0)
+  {
     m_size = npts;
     m_h = dx;
     m_start = x0;
-
-    m_coord.resize(m_size); m_coord[0] = m_start;
+    m_coord.resize(m_size);
+    m_coord[0] = m_start;
     for(int i = 1; i < m_size; i++)
       m_coord[i] = m_coord[i-1] + m_h;
-
     m_end = m_coord[m_size-1];
   }
 
   /// initialise with start and end.
-  void init(double xi, double xf, int npts){
+  void init(double xi, double xf, int npts)
+  {
     m_size = npts;
     m_start = xi;
     m_end = xf;
     m_h = ( m_end - m_start )/ ( m_size - 1 );
-    m_coord.resize(m_size); m_coord[0] = m_start;
+    m_coord.resize(m_size);
+    m_coord[0] = m_start;
     for(int i = 1; i < m_size; i++)
       m_coord[i] = m_coord[i-1] + m_h;
   }
 
   /// initialise from part of a supplied Grid
-  void init(int ix, int fx, const uGrid1D& agrid){
+  void init(int ix, int fx, const uGrid1D& agrid)
+  {
     m_size = fx - ix + 1;
     m_h = agrid.m_h;
     m_start = agrid.m_coord[ix];
     m_end = agrid.m_coord[fx];
-    m_coord.resize(m_size); m_coord[0] = m_start;
+    m_coord.resize(m_size);
+    m_coord[0] = m_start;
     for(int i = 1; i < m_size; i++)
       m_coord[i] = m_coord[i-1] + m_h;
   }
 
   /// the lowest Grid-point for coordinate x
-  int xl(double x){ return int((x - m_start)/m_h); }
+  int xl(double x)
+  {
+    return int((x - m_start)/m_h);
+  }
 
   /// the nearest Grid-point for coordinate x
-  int xn(double x){
+  int xn(double x)
+  {
     int ipt = xl(x);
-    if( x - m_coord[ipt] > 0.5 * m_h ) { return ipt + 1; }
+    if( x - m_coord[ipt] > 0.5 * m_h )
+    {
+      return ipt + 1;
+    }
     return ipt;
   }
 
   /// the Grid width for coordinate x
-  inline double h(double x){ return m_h; }
+  inline double h(double x)
+  {
+    return m_h;
+  }
 
   /// the Grid width for some Grid point i
-  inline double h(int i) { return m_h; }
+  inline double h(int i)
+  {
+    return m_h;
+  }
 
-  /// the size of the Grid : 
-  inline int Size() { return m_size; }
+  /// the size of the Grid :
+  inline int Size()
+  {
+    return m_size;
+  }
 
 };
 #endif

@@ -25,49 +25,49 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  ThreeBodyGeminalBuilder::ThreeBodyGeminalBuilder(ParticleSet& els, 
-      TrialWaveFunction& wfs, 
-      ParticleSet& ions):
-    OrbitalBuilderBase(els,wfs), sourcePtcl(ions), basisBuilder(0)
+ThreeBodyGeminalBuilder::ThreeBodyGeminalBuilder(ParticleSet& els,
+    TrialWaveFunction& wfs,
+    ParticleSet& ions):
+  OrbitalBuilderBase(els,wfs), sourcePtcl(ions), basisBuilder(0)
+{
+}
+
+bool ThreeBodyGeminalBuilder::put(xmlNodePtr cur)
+{
+  ThreeBodyGeminal::BasisSetType *basisSet=0;
+  bool foundBasisSet=false;
+  xmlNodePtr basisPtr=NULL;
+  xmlNodePtr coeffPtr=NULL;
+  cur = cur->xmlChildrenNode;
+  while(cur != NULL)
+  {
+    string cname((const char*)(cur->name));
+    if(cname == basisset_tag)
     {
+      basisPtr=cur;
     }
-
-  bool ThreeBodyGeminalBuilder::put(xmlNodePtr cur) {
-
-    ThreeBodyGeminal::BasisSetType *basisSet=0;
-    bool foundBasisSet=false;
-
-    xmlNodePtr basisPtr=NULL;
-    xmlNodePtr coeffPtr=NULL;
-    cur = cur->xmlChildrenNode;
-    while(cur != NULL) 
-    {
-      string cname((const char*)(cur->name));
-      if(cname == basisset_tag) 
-      {
-        basisPtr=cur;
-      } 
-      else if(cname == "coefficient" || cname == "coefficients") 
+    else
+      if(cname == "coefficient" || cname == "coefficients")
       {
         coeffPtr=cur;
       }
-      cur=cur->next;
-    }
-
-    if(basisPtr != NULL)
-    {
-      ThreeBodyGeminal* J3 = new ThreeBodyGeminal(sourcePtcl, targetPtcl);
-      basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl,"gto",false);
-      basisBuilder->put(basisPtr);
-      J3->setBasisSet(basisBuilder->myBasisSet);
-      J3->put(coeffPtr,targetPsi.VarList);
-      targetPsi.addOrbital(J3);
-      return true;
-    }
-    return false;
+    cur=cur->next;
   }
+  if(basisPtr != NULL)
+  {
+    ThreeBodyGeminal* J3 = new ThreeBodyGeminal(sourcePtcl, targetPtcl);
+    basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl,"gto",false);
+    basisBuilder->put(basisPtr);
+    J3->setBasisSet(basisBuilder->myBasisSet);
+    J3->put(coeffPtr,targetPsi.VarList);
+    targetPsi.addOrbital(J3);
+    return true;
+  }
+  return false;
+}
 }
 /***************************************************************************
  * $RCSfile$   $Author$

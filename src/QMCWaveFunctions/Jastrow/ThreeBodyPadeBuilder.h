@@ -18,32 +18,34 @@
  *@brief declaration of three-body jastrow of Pade functions
  */
 #ifndef QMCPLUSPLUS_THREEBODY_PADE_BUILDER_H
-#define QMCPLUSPLUS_THREEBODY_PADE_BUILDER_H 
+#define QMCPLUSPLUS_THREEBODY_PADE_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  //class GTOMolecularOrbitals;
-  class ThreeBodyPade;
- // class GridMolecularOrbitals;
+//class GTOMolecularOrbitals;
+class ThreeBodyPade;
+// class GridMolecularOrbitals;
 
-  /**@ingroup WFSBuilder
-   * @brief An abstract class for wave function builders
-   */
-  class ThreeBodyPadeBuilder: public OrbitalBuilderBase  {
-    
-  public:
+/**@ingroup WFSBuilder
+ * @brief An abstract class for wave function builders
+ */
+class ThreeBodyPadeBuilder: public OrbitalBuilderBase
+{
 
-    ThreeBodyPadeBuilder(ParticleSet& els, TrialWaveFunction& wfs,
-      ParticleSet& ions);
+public:
 
-    /// process a xml node at cur
-    bool put(xmlNodePtr cur);
+  ThreeBodyPadeBuilder(ParticleSet& els, TrialWaveFunction& wfs,
+                       ParticleSet& ions);
 
-  protected:
+  /// process a xml node at cur
+  bool put(xmlNodePtr cur);
+
+protected:
 
 //    GridMolecularOrbitals* gtoBuilder;
-    ThreeBodyPade* J3;
-  };
+  ThreeBodyPade* J3;
+};
 }
 #endif
 /***************************************************************************

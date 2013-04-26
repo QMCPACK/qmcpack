@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,88 +24,100 @@
 using namespace std;
 #include "Message/Communicate.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /**class ProjectData
-   *\brief Encapsulate data for a project
-   *
-   * Default: myName = "Project"
-   * Should not modify the name, since composite types, such as MDRunData, use the name.
-   *
+/**class ProjectData
+ *\brief Encapsulate data for a project
+ *
+ * Default: myName = "Project"
+ * Should not modify the name, since composite types, such as MDRunData, use the name.
+ *
+ */
+struct ProjectData: public OhmmsElementBase
+{
+
+  /// constructor
+  ProjectData(const char* aname=0);
+
+  bool get(ostream& os) const;
+  bool put(istream& is);
+  bool put(xmlNodePtr cur);
+  void reset();
+
+  ///increment a series number and reset m_projectroot
+  void advance();
+
+  ///roll-back a series number and reset m_projectroot by one
+  void rewind();
+
+  ///set the title
+  inline void setTitle(const string& atitle)
+  {
+    m_title=atitle;
+    reset();
+  }
+
+  void  setCommunicator(Communicate* c);
+
+  ///returns the name of the project
+  inline const char* CurrentMainRoot() const
+  {
+    return m_projectmain.c_str();
+  }
+
+  ///returns the name of the project
+  inline const char* CurrentRoot() const
+  {
+    return m_projectroot.c_str();
+  }
+
+  ///returns the name of the project
+  inline const char* NextRoot() const
+  {
+    return m_nextroot.c_str();
+  }
+
+  /** return the root of the previous sequence
+   * @param oldroot is composed by the m_title and m_series
    */
-  struct ProjectData: public OhmmsElementBase {
+  bool PreviousRoot(string& oldroot) const;
 
-    /// constructor
-    ProjectData(const char* aname=0);
-    
-    bool get(ostream& os) const;
-    bool put(istream& is);
-    bool put(xmlNodePtr cur);
-    void reset();
-    
-    ///increment a series number and reset m_projectroot
-    void advance();
-    
-    ///roll-back a series number and reset m_projectroot by one
-    void rewind();
+  ///title of the project
+  string m_title;
 
-    ///set the title
-    inline void setTitle(const string& atitle) {
-      m_title=atitle;
-      reset();
-    }
+  ///user name
+  string m_user;
 
-    void  setCommunicator(Communicate* c);
+  ///name of the host where the job is running
+  string m_host;
 
-    ///returns the name of the project
-    inline const char* CurrentMainRoot() const { return m_projectmain.c_str();}
+  ///date when the job is executed
+  string m_date;
 
-    ///returns the name of the project
-    inline const char* CurrentRoot() const { return m_projectroot.c_str();}
+  ///main root for all the output engines
+  string m_projectmain;
 
-    ///returns the name of the project
-    inline const char* NextRoot() const { return m_nextroot.c_str();}
+  ///processor-dependent root for all the output engines
+  string m_projectroot;
 
-    /** return the root of the previous sequence
-     * @param oldroot is composed by the m_title and m_series
-     */
-    bool PreviousRoot(string& oldroot) const;
+  ///root for the next run
+  string m_nextroot;
 
-    ///title of the project
-    string m_title;
+  ///series index
+  int m_series;
 
-    ///user name
-    string m_user;
+  ///communicator
+  Communicate* myComm;
 
-    ///name of the host where the job is running
-    string m_host;
-
-    ///date when the job is executed
-    string m_date;
-
-    ///main root for all the output engines
-    string m_projectmain;
-
-    ///processor-dependent root for all the output engines
-    string m_projectroot;
-
-    ///root for the next run
-    string m_nextroot;
-
-    ///series index
-    int m_series;
-
-    ///communicator
-    Communicate* myComm;
-
-    ///the xml node for <Project/>
-    xmlNodePtr m_cur;
-  };
+  ///the xml node for <Project/>
+  xmlNodePtr m_cur;
+};
 }
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -5,9 +5,10 @@
 #include "Numerics/Spline3D/Grid1D.h"
 
 
-class MatGrid1D{
+class MatGrid1D
+{
 
- public:
+public:
 
   /// number of different grid density sections (regions)
   int nsecs_m;
@@ -23,29 +24,29 @@ class MatGrid1D{
   std::vector<int> prior_m;
   std::vector<double> prop_m;
   std::vector<double> dx_ivals;
-  
+
 
   /// the constructor
-  MatGrid1D(int nsections){
-
+  MatGrid1D(int nsections)
+  {
     nsecs_m = nsections;
     d_ivals.resize(nsecs_m+1);
     dx_ivals.resize(nsecs_m+1);
     prop_m.resize(nsecs_m);
     prior_m.resize(nsecs_m);
-
     cout << "material Grid:" << nsecs_m << endl;
-
   }
 
   /// initialise with the entire data from input
-  inline void init(const Grid1D& aGrid1D, 
-		   const std::vector<int>& ix,
-		   const std::vector<int>& prior,
-		   const std::vector<double>& props){
-
-    d_ivals[0] = 0; dx_ivals[0] = aGrid1D.d_x[d_ivals[0]];
-    for( int isec = 0; isec < prop_m.size(); isec++){
+  inline void init(const Grid1D& aGrid1D,
+                   const std::vector<int>& ix,
+                   const std::vector<int>& prior,
+                   const std::vector<double>& props)
+  {
+    d_ivals[0] = 0;
+    dx_ivals[0] = aGrid1D.d_x[d_ivals[0]];
+    for( int isec = 0; isec < prop_m.size(); isec++)
+    {
       d_ivals[isec+1] = ix[isec+1];
       dx_ivals[isec+1] = aGrid1D.d_x[d_ivals[isec+1]];
       prop_m[isec] = props[isec];
@@ -54,23 +55,27 @@ class MatGrid1D{
   }
 
   /// get the property of the material
-  inline double prop(double x){
-
-    double property; bool flag=true;
-    for(int isec = 0; isec < nsecs_m; isec++){
+  inline double prop(double x)
+  {
+    double property;
+    bool flag=true;
+    for(int isec = 0; isec < nsecs_m; isec++)
+    {
       double xsec = dx_ivals[isec+1];
-      if( flag && x < xsec ){
-	property = prop_m[isec]; flag = false;
-      }  else if( flag && x == xsec ){ 
-	int jsec = (prior_m[isec+1] > prior_m[isec]) ? isec + 1 : isec;
-	property = prop_m[jsec];
-	flag = false;
+      if( flag && x < xsec )
+      {
+        property = prop_m[isec];
+        flag = false;
       }
+      else
+        if( flag && x == xsec )
+        {
+          int jsec = (prior_m[isec+1] > prior_m[isec]) ? isec + 1 : isec;
+          property = prop_m[jsec];
+          flag = false;
+        }
     }
-
     return property;
-    
-    
   }
 
 };

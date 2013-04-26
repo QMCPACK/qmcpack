@@ -9,9 +9,10 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 
-int main(int argc, char **argv) {
-
-  if(argc<2) {
+int main(int argc, char **argv)
+{
+  if(argc<2)
+  {
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii] filename ";
     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -NaturalOrbitals NumToRead]"
               << std::endl;
@@ -20,19 +21,13 @@ int main(int argc, char **argv) {
     std::cout << " *.Fchk -> gaussian; *.out -> gamessAscii; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
-
-
   OHMMS::Controller->initialize(argc,argv);
-
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Random.init(0,1,-1);
-
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
   std::cout.precision(12);
-
   QMCGaussianParserBase::init();
-
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   string in_file(argv[1]);
@@ -44,86 +39,138 @@ int main(int argc, char **argv) {
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
-  while(iargc<argc) {
+  while(iargc<argc)
+  {
     std::string a(argv[iargc]);
-    if(a == "-gaussian") {
+    if(a == "-gaussian")
+    {
       parser = new GaussianFCHKParser(argc,argv);
       in_file =argv[++iargc];
     }
-    else if(a == "-gamesxml") {
-      parser = new GamesXmlParser(argc,argv);
-      in_file =argv[++iargc];
-    }
-    else if(a == "-gamessAscii") {
-      parser = new GamesAsciiParser(argc,argv);
-      in_file =argv[++iargc];
-    }
-    else if(a == "-casino") {
-      parser = new CasinoParser(argc,argv);
-      in_file =argv[++iargc];
-    }
-    else if(a == "-b") {
-      parser = new BParser(argc,argv);
-      in_file =argv[++iargc];
-    } else if(a == "-hdf5") {
-      usehdf5=true;
-    } else if(a == "-psi_tag") {
-      psi_tag=argv[++iargc];
-    } else if(a == "-ion_tag") {
-      ion_tag=argv[++iargc];
-    } else if(a == "-ci") {
-      ci=true; 
-      punch_file = argv[++iargc];
-    } else if(a == "-threshold" ) {
-      thres = atof(argv[++iargc]);
-    } else if(a == "-NaturalOrbitals") { 
-      readNO = atoi(argv[++iargc]);
-    } else if(a == "-readInitialGuess") { 
-      readGuess = atoi(argv[++iargc]);
-    } else if(a == "-zeroCI") { 
-      zeroCI = true;
-    } else if(a == "-orderByExcitation") { 
-      orderByExcitation = true;
-    } else if(a == "-cutoff") { 
-      orderByExcitation = true;
-    }
+    else
+      if(a == "-gamesxml")
+      {
+        parser = new GamesXmlParser(argc,argv);
+        in_file =argv[++iargc];
+      }
+      else
+        if(a == "-gamessAscii")
+        {
+          parser = new GamesAsciiParser(argc,argv);
+          in_file =argv[++iargc];
+        }
+        else
+          if(a == "-casino")
+          {
+            parser = new CasinoParser(argc,argv);
+            in_file =argv[++iargc];
+          }
+          else
+            if(a == "-b")
+            {
+              parser = new BParser(argc,argv);
+              in_file =argv[++iargc];
+            }
+            else
+              if(a == "-hdf5")
+              {
+                usehdf5=true;
+              }
+              else
+                if(a == "-psi_tag")
+                {
+                  psi_tag=argv[++iargc];
+                }
+                else
+                  if(a == "-ion_tag")
+                  {
+                    ion_tag=argv[++iargc];
+                  }
+                  else
+                    if(a == "-ci")
+                    {
+                      ci=true;
+                      punch_file = argv[++iargc];
+                    }
+                    else
+                      if(a == "-threshold" )
+                      {
+                        thres = atof(argv[++iargc]);
+                      }
+                      else
+                        if(a == "-NaturalOrbitals")
+                        {
+                          readNO = atoi(argv[++iargc]);
+                        }
+                        else
+                          if(a == "-readInitialGuess")
+                          {
+                            readGuess = atoi(argv[++iargc]);
+                          }
+                          else
+                            if(a == "-zeroCI")
+                            {
+                              zeroCI = true;
+                            }
+                            else
+                              if(a == "-orderByExcitation")
+                              {
+                                orderByExcitation = true;
+                              }
+                              else
+                                if(a == "-cutoff")
+                                {
+                                  orderByExcitation = true;
+                                }
     ++iargc;
   }
-
-  if(readNO > 0 && readGuess > 0) {
-    cerr<<"Can only use one of: -NaturalOrbitals or -readInitialGuess. \n"; 
+  if(readNO > 0 && readGuess > 0)
+  {
+    cerr<<"Can only use one of: -NaturalOrbitals or -readInitialGuess. \n";
     abort();
-  } 
-
+  }
   //Failed to create a parser. Try with the extension
-  if(parser == 0) {
+  if(parser == 0)
+  {
     string ext= getExtension(in_file);
-    if(ext == "data") {
+    if(ext == "data")
+    {
       WARNMSG("Creating CasinoParser")
       parser = new CasinoParser(argc,argv);
-    } else if(ext == "Fchk") {
-      WARNMSG("Creating GaussianFCHKParser")
-      parser = new GaussianFCHKParser(argc,argv);
-    } else if(ext == "xml") {
-      WARNMSG("Creating GamesXmlParser")
-      parser = new GamesXmlParser(argc,argv);
-    } else if(ext == "10") {
-      WARNMSG("Creating BParser")
-      parser = new BParser(argc,argv);
-    } else if(ext == "out") {
-      WARNMSG("Creating GamesAsciiParser")
-      parser = new GamesAsciiParser(argc,argv);
-    } 
+    }
+    else
+      if(ext == "Fchk")
+      {
+        WARNMSG("Creating GaussianFCHKParser")
+        parser = new GaussianFCHKParser(argc,argv);
+      }
+      else
+        if(ext == "xml")
+        {
+          WARNMSG("Creating GamesXmlParser")
+          parser = new GamesXmlParser(argc,argv);
+        }
+        else
+          if(ext == "10")
+          {
+            WARNMSG("Creating BParser")
+            parser = new BParser(argc,argv);
+          }
+          else
+            if(ext == "out")
+            {
+              WARNMSG("Creating GamesAsciiParser")
+              parser = new GamesAsciiParser(argc,argv);
+            }
   }
-
   parser->UseHDF5=usehdf5;
   parser->IonSystem.setName(ion_tag);
   parser->multideterminant=ci;
   parser->ci_threshold=thres;
-  parser->readNO=readNO;  
-  parser->orderByExcitation=orderByExcitation;  
+  parser->readNO=readNO;
+  parser->orderByExcitation=orderByExcitation;
   parser->zeroCI = zeroCI;
-  parser->readGuess=readGuess;  
+  parser->readGuess=readGuess;
   parser->outputFile=punch_file;
   parser->parse(in_file);
   parser->dump(psi_tag, ion_tag);

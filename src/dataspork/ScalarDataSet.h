@@ -6,7 +6,8 @@ class ScalarObservable;
 
 /** container for an input file
 */
-struct ScalarDataSet {
+struct ScalarDataSet
+{
 
   typedef std::map<std::string, ScalarObservable*> RawDataSetType;
   bool Grouped;
@@ -15,15 +16,18 @@ struct ScalarDataSet {
   int NumRows;
   RawDataSetType Data;
 
-  ScalarDataSet():Grouped(false){}
+  ScalarDataSet():Grouped(false) {}
   ScalarDataSet(const std::string& fname, int first, int last);
   ~ScalarDataSet();
 
-  inline int rows() const { return NumRows;}
+  inline int rows() const
+  {
+    return NumRows;
+  }
 
   /** Clone itself
    * @param nc number of columns
-   * @return ScalarDataSet* 
+   * @return ScalarDataSet*
    */
   ScalarDataSet* clone(int nc=-1);
 

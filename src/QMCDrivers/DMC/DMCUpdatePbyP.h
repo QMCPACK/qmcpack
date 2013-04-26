@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -20,75 +20,83 @@
 #ifndef QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class DMCUpdatePbyPWithRejection: public QMCUpdateBase {
+class DMCUpdatePbyPWithRejection: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCUpdatePbyPWithRejection();
+  /// Constructor.
+  DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                             QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCUpdatePbyPWithRejection();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
-    vector<NewTimer*> myTimers;
-  };
+private:
+  vector<NewTimer*> myTimers;
+};
 
-  class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase {
+class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCUpdatePbyPWithRejectionFast();
+  /// Constructor.
+  DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                                 QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCUpdatePbyPWithRejectionFast();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
-    vector<NewTimer*> myTimers;
-  };
+private:
+  vector<NewTimer*> myTimers;
+};
 
 
-  class DMCUpdatePbyPWithKill: public QMCUpdateBase {
+class DMCUpdatePbyPWithKill: public QMCUpdateBase
+{
 
-  public:
+public:
 
-    /// Constructor.
-    DMCUpdatePbyPWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
-    ///destructor
-    ~DMCUpdatePbyPWithKill();
+  /// Constructor.
+  DMCUpdatePbyPWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                        QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~DMCUpdatePbyPWithKill();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  private:
+private:
 
-    /// Copy Constructor (disabled)
-    DMCUpdatePbyPWithKill(const DMCUpdatePbyPWithKill& a): QMCUpdateBase(a){ }
-    /// Copy operator (disabled).
-    DMCUpdatePbyPWithKill& operator=(const DMCUpdatePbyPWithKill&) { return *this;}
-    vector<NewTimer*> myTimers;
+  /// Copy Constructor (disabled)
+  DMCUpdatePbyPWithKill(const DMCUpdatePbyPWithKill& a): QMCUpdateBase(a) { }
+  /// Copy operator (disabled).
+  DMCUpdatePbyPWithKill& operator=(const DMCUpdatePbyPWithKill&)
+  {
+    return *this;
+  }
+  vector<NewTimer*> myTimers;
 
-  };
-  
-  class RNDMCUpdatePbyPFast: public QMCUpdateBase {
+};
 
-  public:
+class RNDMCUpdatePbyPFast: public QMCUpdateBase
+{
 
-    RNDMCUpdatePbyPFast(MCWalkerConfiguration& w, MCWalkerConfiguration& wg, TrialWaveFunction& psi, TrialWaveFunction& guide, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
+public:
 
-    ~RNDMCUpdatePbyPFast();
+  RNDMCUpdatePbyPFast(MCWalkerConfiguration& w, MCWalkerConfiguration& wg, TrialWaveFunction& psi, TrialWaveFunction& guide,
+                      QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    
-    void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+  ~RNDMCUpdatePbyPFast();
+
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
 //     void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
 //     , vector<MCWalkerConfiguration*>& wclone
@@ -96,40 +104,41 @@ namespace qmcplusplus {
 //     , vector<RandomGenerator_t*>& rng
 //     , vector<RealType>& ratio_i_0);
 
-  private:
-    MCWalkerConfiguration W_G;
-    vector<NewTimer*> myTimers;
-    int maxS;
-    RealType efn;
-    int estimateCrossings, maxcopy;
-    
-  };
-  
-  
-  class RNDMCUpdatePbyPCeperley: public QMCUpdateBase {
-    
-    public:
-      
-      /// Constructor.
-      RNDMCUpdatePbyPCeperley(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-                              QMCHamiltonian& h, RandomGenerator_t& rg);
-                                       ///destructor
-      ~RNDMCUpdatePbyPCeperley();
-                                       
-      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-      void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
-      
-    private:
-      vector<NewTimer*> myTimers;
-      int maxS;
-      RealType efn;
-      int estimateCrossings;
-  };  
+private:
+  MCWalkerConfiguration W_G;
+  vector<NewTimer*> myTimers;
+  int maxS;
+  RealType efn;
+  int estimateCrossings, maxcopy;
+
+};
+
+
+class RNDMCUpdatePbyPCeperley: public QMCUpdateBase
+{
+
+public:
+
+  /// Constructor.
+  RNDMCUpdatePbyPCeperley(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                          QMCHamiltonian& h, RandomGenerator_t& rg);
+  ///destructor
+  ~RNDMCUpdatePbyPCeperley();
+
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+
+private:
+  vector<NewTimer*> myTimers;
+  int maxS;
+  RealType efn;
+  int estimateCrossings;
+};
 }
 
 #endif
 /***************************************************************************
  * $RCSfile: DMCUpdatePbyP.h,v $   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -38,11 +38,14 @@ struct CubicSplineEngine<T,GRIDTYPE,PBC_CONSTRAINTS>
   point_type dp1,dq1,dq2;
   point_type d2p1,d2q1,d2q2;
 
-  inline CubicSplineEngine(GridType* agrid=0):myGrid(0) { 
-    if(agrid) setGrid(agrid);
+  inline CubicSplineEngine(GridType* agrid=0):myGrid(0)
+  {
+    if(agrid)
+      setGrid(agrid);
   }
 
-  inline void setGrid(GridType* agrid) { 
+  inline void setGrid(GridType* agrid)
+  {
     myGrid=agrid;
   }
 
@@ -55,12 +58,10 @@ struct CubicSplineEngine<T,GRIDTYPE,PBC_CONSTRAINTS>
     p2=cL*cL*(3.0-2.0*cL);
     q1=cL*cR*cR;
     q2=cL*cL*cR;
-
     point_type GridDeltaInv(myGrid->GridDeltaInv);
     dp1=6.0*cL*cR*GridDeltaInv;
     dq1=1.0-4.0*cL+3.0*cL*cL;
     dq2=cL*(3.0*cL-2.0);
-
     d2p1=(12.0*cL-6.0)*GridDeltaInv*GridDeltaInv;
     d2q1=(6.0*cL-4.0)*GridDeltaInv;
     d2q2=(6.0*cL-2.0)*GridDeltaInv;
@@ -80,7 +81,7 @@ struct CubicSplineEngine<T,GRIDTYPE,PBC_CONSTRAINTS>
   }
 
   inline value_type interpolate(value_type a, value_type b, value_type a1, value_type b1,
-      value_type& du, value_type& d2u)
+                                value_type& du, value_type& d2u)
   {
     du = dp1*(a-b)+dq1*a1+dq2*b1;
     d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
@@ -97,7 +98,8 @@ struct CubicSplineEngine<T,GRIDTYPE,PBC_CONSTRAINTS>
     int n=p.size();
     std::vector<point_type> gr(n);
     container_type d2p(n);
-    for(int i=0; i<n; i++) gr[i]=myGrid->getGridValue(i);
+    for(int i=0; i<n; i++)
+      gr[i]=myGrid->getGridValue(i);
     NRCubicSplinePBC(&(gr[0]), &(p[0]),n,&(auxp[0]),&(d2p[0]));
   }
 
@@ -115,12 +117,15 @@ struct CubicSplineEngine<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
   point_type cL, cR;
   point_type q1,q2;
   point_type dq1,dq2;
-  
-  inline CubicSplineEngine(GridType* agrid=0):myGrid(0) { 
-    if(agrid) setGrid(agrid);
+
+  inline CubicSplineEngine(GridType* agrid=0):myGrid(0)
+  {
+    if(agrid)
+      setGrid(agrid);
   }
 
-  inline void setGrid(GridType* agrid) { 
+  inline void setGrid(GridType* agrid)
+  {
     myGrid=agrid;
   }
 
@@ -153,10 +158,10 @@ struct CubicSplineEngine<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
   }
 
   inline value_type interpolate(value_type y1, value_type y2, value_type d2y1, value_type d2y2,
-      value_type& du, value_type& d2u)
+                                value_type& du, value_type& d2u)
   {
     du = myGrid->GridDeltaInv*(y2-y1)+dq1*d2y1+dq2*d2y2;
-    d2u = cR*d2y1+cL*d2y2; 
+    d2u = cR*d2y1+cL*d2y2;
     return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
   }
 
@@ -169,7 +174,8 @@ struct CubicSplineEngine<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
   {
     int n=p.size();
     std::vector<point_type> gr(n);
-    for(int i=0; i<n; i++) gr[i]=myGrid->getGridValue(i);
+    for(int i=0; i<n; i++)
+      gr[i]=myGrid->getGridValue(i);
     NRCubicSpline(&gr[0],&p[0],n,yp1,ypn,&d2p[0]);
   }
 };

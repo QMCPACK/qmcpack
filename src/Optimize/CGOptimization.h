@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002,2003- by Jeongnim Kim 
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -26,8 +26,9 @@
 
 template<class T>
 class CGOptimization: public MinimizerBase<T>,
-                      private NRCOptimization<T> {
-  public:
+  private NRCOptimization<T>
+{
+public:
 
   typedef T Return_t;
   typedef typename MinimizerBase<T>::ObjectFuncType ObjectFuncType;
@@ -69,7 +70,8 @@ class CGOptimization: public MinimizerBase<T>,
   /** optimize an object function
    * @param fn object function
    */
-  bool optimize(ObjectFuncType* fn) {
+  bool optimize(ObjectFuncType* fn)
+  {
     setTarget(fn);
     return optimize();
   }
@@ -83,18 +85,18 @@ class CGOptimization: public MinimizerBase<T>,
   ///read from istream
   bool put(std::istream& );
 
-  ///read from an xmlNode 
+  ///read from an xmlNode
   bool put(xmlNodePtr cur);
 
   ///reset member data
   void reset();
 
-  /** evaluate the gradients numerically 
+  /** evaluate the gradients numerically
    * @param grad container for the gradients
    */
   void evaluateGradients(std::vector<Return_t>& grad);
 
- protected:
+protected:
 
   bool RestartCG;
   int CurStep;
@@ -105,7 +107,7 @@ class CGOptimization: public MinimizerBase<T>,
   std::vector<Return_t> Y;
   std::vector<Return_t> gY, cgY, gY0;
 
-  /** evaluate the value for y+dl*cg 
+  /** evaluate the value for y+dl*cg
    *
    * Lineminimization uses this function to find the minimum along the CG direction
    */
@@ -114,10 +116,12 @@ class CGOptimization: public MinimizerBase<T>,
 };
 
 template<class T>
-inline T 
-dotProduct(const std::vector<T>& a, const std::vector<T>& b) {
+inline T
+dotProduct(const std::vector<T>& a, const std::vector<T>& b)
+{
   T res=0.0;
-  for(int i=0; i<a.size(); i++) res += a[i]*b[i];
+  for(int i=0; i<a.size(); i++)
+    res += a[i]*b[i];
   return res;
 }
 
@@ -131,23 +135,28 @@ CGOptimization<T>::CGOptimization(ObjectFuncType* atarget):
 }
 
 template<class T>
-void CGOptimization<T>::setTarget(ObjectFuncType* fn) {
+void CGOptimization<T>::setTarget(ObjectFuncType* fn)
+{
   TargetFunc=fn;
   NumParams=TargetFunc->NumParams();
   Y.resize(NumParams);
   gY.resize(NumParams,0);
   cgY.resize(NumParams,0);
-  for(int i=0;i<NumParams; i++) {
+  for(int i=0; i<NumParams; i++)
+  {
     Y[i]=TargetFunc->Params(i);
   }
 }
 
 template<class T>
-bool CGOptimization<T>::optimize() {
-
+bool CGOptimization<T>::optimize()
+{
   CurStep=0;
-  do {
-    if(RestartCG) { //first time
+  do
+  {
+    if(RestartCG)
+      //first time
+    {
       evaluateGradients(gY);
       gdotg = dotProduct(gY,gY);
       gdotg0 = gdotg;
@@ -157,7 +166,6 @@ bool CGOptimization<T>::optimize() {
       gY0=gY;
       RestartCG=false;
     }
-
     T lambda_a, val_proj, lambda_max=this->LambdaMax;
     bool success=TargetFunc->lineoptimization(Y,cgY,curCost,lambda_a,val_proj,lambda_max);
     if(success)
@@ -175,20 +183,26 @@ bool CGOptimization<T>::optimize() {
     {
       success = this->lineoptimization();
       success &= (TargetFunc->IsValid && std::abs(this->Lambda)>0.0);
-      if(success) curCost= Func(this->Lambda);
+      if(success)
+        curCost= Func(this->Lambda);
     }
-
-    if(success) 
-    { //successful lineminimization
-      for(int i=0; i<NumParams; i++){ Y[i]+=this->Lambda*cgY[i]; }
-    } else {
-      if(msg_stream) {
+    if(success)
+    {
+      //successful lineminimization
+      for(int i=0; i<NumParams; i++)
+      {
+        Y[i]+=this->Lambda*cgY[i];
+      }
+    }
+    else
+    {
+      if(msg_stream)
+      {
         *msg_stream << "Stop CGOptimization due to the failure of line optimization" << std::endl;
         *msg_stream << "Total number of steps = " << CurStep << std::endl;
       }
       return false;
     }
-
     evaluateGradients(gY);
     Return_t fx= abs(*(std::max_element(gY.begin(), gY.end())));
     gdotg0=gdotg;
@@ -196,64 +210,65 @@ bool CGOptimization<T>::optimize() {
     //Do not check the component yet
     //gdotg=Dot(dY,dY,fx);
     //if(fx<GradMaxTol) {
-    if(fx<GradTol) {
-      if(msg_stream) *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << endl;
+    if(fx<GradTol)
+    {
+      if(msg_stream)
+        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << endl;
       return false;
     }
     //if(gdotg < GradTol) {
     //  *msg_stream << " CGOptimization::Converged gradients" << endl;
-    //  return false; 
+    //  return false;
     //}
-
     gdoth = dotProduct(gY,gY0);
     gamma = (gdotg-gdoth)/gdotg0;
-    gY0=gY; //save the current gradient 
-
-    if(abs(gamma) < GammaTol){
-      if(msg_stream) 
-      *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << endl;
-      return false; 
+    gY0=gY; //save the current gradient
+    if(abs(gamma) < GammaTol)
+    {
+      if(msg_stream)
+        *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << endl;
+      return false;
     }
-
-    if(gamma > 1.0e2) {
-      if(msg_stream) 
-      *msg_stream << " CGOptimization restart: " << gamma << " is too big." << endl;
+    if(gamma > 1.0e2)
+    {
+      if(msg_stream)
+        *msg_stream << " CGOptimization restart: " << gamma << " is too big." << endl;
       RestartCG = true;
     }
-
     Return_t dx=abs((curCost-prevCost)/curCost);
-    if(dx <= CostTol) {
-      if(msg_stream) 
-      *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
+    if(dx <= CostTol)
+    {
+      if(msg_stream)
+        *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
       return false; //
     }
-
     prevCost=curCost;
-    for(int i=0; i<NumParams; i++) cgY[i]=gY[i]+gamma*cgY[i];
-
+    for(int i=0; i<NumParams; i++)
+      cgY[i]=gY[i]+gamma*cgY[i];
     CurStep++;
-
-    if(TargetFunc->IsValid) {
+    if(TargetFunc->IsValid)
+    {
       TargetFunc->Report();
-    } else {
+    }
+    else
+    {
       if(msg_stream)
         *msg_stream << " CGOptimization stopped due to invalid cost values " << endl;
       return false;
     }
-
-  } while(CurStep<NumSteps);
-
-  if(msg_stream) *msg_stream << " Failed to converged after " << CurStep << " steps." << std::endl;
+  }
+  while(CurStep<NumSteps);
+  if(msg_stream)
+    *msg_stream << " Failed to converged after " << CurStep << " steps." << std::endl;
   return false;
 }
 
 template<class T>
-void 
-CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
-
+void
+CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad)
+{
   //use targetFunc evaluateGradients if it does it better
   TargetFunc->GradCost(grad, Y, Displacement);
- 
 //   //do the finite difference method
 //   Return_t dh=1.0/(2.0*Displacement);
 //   for(int i=0; i<TargetFunc->NumParams() ; i++) {
@@ -264,47 +279,57 @@ CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
 //     Return_t CostMinus = TargetFunc->Cost();
 //     grad[i]=(CostMinus-CostPlus)*dh;
 //   }
-
 }
 
 template<class T>
-typename CGOptimization<T>::Return_t 
-CGOptimization<T>::Func(Return_t dl) {
-  for(int i=0; i<NumParams; i++) TargetFunc->Params(i)=Y[i]+dl*cgY[i];
+typename CGOptimization<T>::Return_t
+CGOptimization<T>::Func(Return_t dl)
+{
+  for(int i=0; i<NumParams; i++)
+    TargetFunc->Params(i)=Y[i]+dl*cgY[i];
   return TargetFunc->Cost();
 }
 
 
 template<class T>
-bool CGOptimization<T>::get(std::ostream& os) const {
+bool CGOptimization<T>::get(std::ostream& os) const
+{
   return true;
 }
 
 template<class T>
-bool CGOptimization<T>::put(std::istream& is) {
+bool CGOptimization<T>::put(std::istream& is)
+{
   return true;
 }
 
 template<class T>
-void CGOptimization<T>::reset() {
+void CGOptimization<T>::reset()
+{
 }
 
 template<class T>
-bool CGOptimization<T>::put(xmlNodePtr cur) {
+bool CGOptimization<T>::put(xmlNodePtr cur)
+{
   ParameterSet p;
-  p.add(NumSteps,"max_steps","none"); p.add(NumSteps,"maxSteps","none");
+  p.add(NumSteps,"max_steps","none");
+  p.add(NumSteps,"maxSteps","none");
   p.add(CostTol,"tolerance","none");
-  p.add(GradTol,"tolerance_g","none"); p.add(GradTol,"toleranceG","none");
-  p.add(GammaTol,"tolerance_cg","none"); p.add(GammaTol,"toleranceCG","none");
+  p.add(GradTol,"tolerance_g","none");
+  p.add(GradTol,"toleranceG","none");
+  p.add(GammaTol,"tolerance_cg","none");
+  p.add(GammaTol,"toleranceCG","none");
   p.add(Displacement,"epsilon","none");
-  p.add(this->LambdaMax,"stepsize","none"); p.add(this->LambdaMax,"stepSize","none");
-  p.add(this->ITMAX,"max_linemin","none"); p.add(this->ITMAX,"maxLinemin","none");
+  p.add(this->LambdaMax,"stepsize","none");
+  p.add(this->LambdaMax,"stepSize","none");
+  p.add(this->ITMAX,"max_linemin","none");
+  p.add(this->ITMAX,"maxLinemin","none");
   p.put(cur);
   return true;
 }
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 #endif

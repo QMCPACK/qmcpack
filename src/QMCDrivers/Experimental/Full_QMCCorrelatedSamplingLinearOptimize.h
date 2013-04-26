@@ -43,31 +43,31 @@ class QMCCSLinearOptimize: public QMCLinearOptimize
 {
 public:
 
-    ///Constructor.
-    QMCCSLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  ///Constructor.
+  QMCCSLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                       QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
 
-    ///Destructor
-    ~QMCCSLinearOptimize();
+  ///Destructor
+  ~QMCCSLinearOptimize();
 
-    ///Run the Optimization algorithm.
-    bool run();
-    ///process xml node
-    bool put(xmlNodePtr cur);
+  ///Run the Optimization algorithm.
+  bool run();
+  ///process xml node
+  bool put(xmlNodePtr cur);
 
 private:
-    VMCLinearOptOMP* vmcCSEngine;
-    int NumOfVMCWalkers;
-    ///Number of iterations maximum before generating new configurations.
-    int Max_iterations;
-    /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
-    string MinMethod, GEVtype;
+  VMCLinearOptOMP* vmcCSEngine;
+  int NumOfVMCWalkers;
+  ///Number of iterations maximum before generating new configurations.
+  int Max_iterations;
+  /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
+  string MinMethod, GEVtype;
 
-    RealType stabilizerScale, bigChange, exp0, stepsize;
-    RealType Lambda;
-    int nstabilizers;
-    /// percent variance or H2 to mix in
-    RealType w_beta;
+  RealType stabilizerScale, bigChange, exp0, stepsize;
+  RealType Lambda;
+  int nstabilizers;
+  /// percent variance or H2 to mix in
+  RealType w_beta;
 
 };
 }

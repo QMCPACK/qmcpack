@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: esler@uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -15,13 +15,14 @@
 #define QMCPLUSPLUS_SK_ESTIMATOR_CUDA_H
 #include "QMCHamiltonians/SkEstimator.h"
 
-namespace qmcplusplus {
-  class SkEstimator_CUDA : public SkEstimator
-  {
-  public:
-    SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
-    void addEnergy(MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
-  };
+namespace qmcplusplus
+{
+class SkEstimator_CUDA : public SkEstimator
+{
+public:
+  SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
+  void addEnergy(MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
+};
 }
 
 #endif

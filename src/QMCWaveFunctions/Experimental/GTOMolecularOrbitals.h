@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -22,51 +22,53 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
 #include "Numerics/GaussianBasisSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /**Class to add a set of Gaussian Type atomic orbital basis functions 
-   *to the collection of basis functions.
-   *
-   @brief Example of a ROT (Radial Orbital Type)
-  */
-  class GTOMolecularOrbitals: public OrbitalBuilderBase {
-  public:
+/**Class to add a set of Gaussian Type atomic orbital basis functions
+ *to the collection of basis functions.
+ *
+ @brief Example of a ROT (Radial Orbital Type)
+*/
+class GTOMolecularOrbitals: public OrbitalBuilderBase
+{
+public:
 
-    typedef GaussianCombo<RealType>                    RadialOrbitalType;
-    typedef SphericalOrbitalSet<RadialOrbitalType>     CenteredOrbitalType;
-    typedef MolecularOrbitalBasis<CenteredOrbitalType> BasisSetType;
+  typedef GaussianCombo<RealType>                    RadialOrbitalType;
+  typedef SphericalOrbitalSet<RadialOrbitalType>     CenteredOrbitalType;
+  typedef MolecularOrbitalBasis<CenteredOrbitalType> BasisSetType;
 
-    ///constructor
-    GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
+  ///constructor
+  GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
 
-    ///implement vritual function
-    bool put(xmlNodePtr cur);
+  ///implement vritual function
+  bool put(xmlNodePtr cur);
 
-    ///returns a BasisSet
-    BasisSetType* addBasisSet(xmlNodePtr cur);
+  ///returns a BasisSet
+  BasisSetType* addBasisSet(xmlNodePtr cur);
 
-  private:
+private:
 
-    enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
+  enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
 
-    bool Normalized;
-    ParticleSet& IonSys;
-    BasisSetType*      BasisSet;
-    DistanceTableData* d_table;
-    map<string,int>    RnlID;
-    map<string,int>    CenterID;
-    ///map for (n,l,m,s) to its quantum number index
-    map<string,int> nlms_id;
-   
-    int expandYlm(const string& rnl, const QuantumNumberType& nlms, 
-                  int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
-                  int expandlm);
+  bool Normalized;
+  ParticleSet& IonSys;
+  BasisSetType*      BasisSet;
+  DistanceTableData* d_table;
+  map<string,int>    RnlID;
+  map<string,int>    CenterID;
+  ///map for (n,l,m,s) to its quantum number index
+  map<string,int> nlms_id;
 
-  };
+  int expandYlm(const string& rnl, const QuantumNumberType& nlms,
+                int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
+                int expandlm);
+
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

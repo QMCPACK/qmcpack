@@ -18,32 +18,33 @@
  *@brief declaration of three-body jastrow of Geminal functions
  */
 #ifndef QMCPLUSPLUS_THREEBODY_GEMINALBUILDER_H
-#define QMCPLUSPLUS_THREEBODY_GEMINALBUILDER_H 
+#define QMCPLUSPLUS_THREEBODY_GEMINALBUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class ThreeBodyGeminal;
-  class BasisSetBuilder;
+class ThreeBodyGeminal;
+class BasisSetBuilder;
 
-  /**@ingroup WFSBuilder
-   * @brief An abstract class for wave function builders
-   */
-  class ThreeBodyGeminalBuilder: public OrbitalBuilderBase  
-  {
-    
-  public:
+/**@ingroup WFSBuilder
+ * @brief An abstract class for wave function builders
+ */
+class ThreeBodyGeminalBuilder: public OrbitalBuilderBase
+{
 
-    ThreeBodyGeminalBuilder(ParticleSet& els, TrialWaveFunction& wfs,
-      ParticleSet& ions);
+public:
 
-    /// process a xml node at cur
-    bool put(xmlNodePtr cur);
+  ThreeBodyGeminalBuilder(ParticleSet& els, TrialWaveFunction& wfs,
+                          ParticleSet& ions);
 
-  protected:
+  /// process a xml node at cur
+  bool put(xmlNodePtr cur);
 
-    ParticleSet& sourcePtcl;
-    BasisSetBuilder* basisBuilder;
-  };
+protected:
+
+  ParticleSet& sourcePtcl;
+  BasisSetBuilder* basisBuilder;
+};
 }
 #endif
 /***************************************************************************

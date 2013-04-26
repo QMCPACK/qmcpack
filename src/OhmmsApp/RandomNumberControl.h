@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -24,57 +24,57 @@
 
 class Communicate;
 
-namespace APPNAMESPACE 
+namespace APPNAMESPACE
 {
 
-  /**class RandomNumberControl
-   *\brief Encapsulate data to initialize and save the status of the random number generator
-   *
-   * Default:  myName = "random"
-   * 2007-12-01
-   *   Use PrimeNumbers to generate random seeds.
+/**class RandomNumberControl
+ *\brief Encapsulate data to initialize and save the status of the random number generator
+ *
+ * Default:  myName = "random"
+ * 2007-12-01
+ *   Use PrimeNumbers to generate random seeds.
+ */
+class RandomNumberControl : public OhmmsElementBase
+{
+
+public:
+
+  typedef RandomGenerator_t::uint_type uint_type;
+  static PrimeNumberSet<uint_type> PrimeNumbers;
+  //children random number generator
+  static std::vector<RandomGenerator_t*>  Children;
+
+  /// constructors and destructors
+  RandomNumberControl(const char* aname="random");
+
+  bool get(std::ostream& os) const;
+  bool put(std::istream& is);
+  bool put(xmlNodePtr cur);
+  void reset();
+  static void test();
+
+  static void make_seeds();
+  static void make_children();
+
+  xmlNodePtr initialize(xmlXPathContextPtr);
+
+  /** read random state from a hdf file
+   * @param fname file name
+   * @param comm communicator so that everyone reads its own data
    */
-  class RandomNumberControl : public OhmmsElementBase 
-  {
+  static void read(const string& fname, Communicate* comm);
+  /** write random state to a hdf file
+   * @param fname file name
+   * @param comm communicator so that everyone writes its own data
+   */
+  static void write(const string& fname, Communicate* comm);
 
-    public:
+private:
 
-      typedef RandomGenerator_t::uint_type uint_type;
-      static PrimeNumberSet<uint_type> PrimeNumbers;
-      //children random number generator
-      static std::vector<RandomGenerator_t*>  Children;
-
-      /// constructors and destructors
-      RandomNumberControl(const char* aname="random");
-
-      bool get(std::ostream& os) const;
-      bool put(std::istream& is);
-      bool put(xmlNodePtr cur);
-      void reset();
-      static void test();
-
-      static void make_seeds();
-      static void make_children();
-
-      xmlNodePtr initialize(xmlXPathContextPtr);
-
-      /** read random state from a hdf file 
-       * @param fname file name 
-       * @param comm communicator so that everyone reads its own data
-       */
-      static void read(const string& fname, Communicate* comm);
-      /** write random state to a hdf file 
-       * @param fname file name 
-       * @param comm communicator so that everyone writes its own data
-       */
-      static void write(const string& fname, Communicate* comm);
-
-    private:
-
-      bool NeverBeenInitialized;
-      xmlNodePtr myCur;
-      static uint_type Offset;
-  };
+  bool NeverBeenInitialized;
+  xmlNodePtr myCur;
+  static uint_type Offset;
+};
 }
 
 #endif
@@ -82,5 +82,5 @@ namespace APPNAMESPACE
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

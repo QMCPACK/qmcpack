@@ -25,37 +25,40 @@
 #include "QMCDrivers/QMCCSLinearOptimizeWFmanagerOMP.h"
 
 namespace qmcplusplus
+{
+
+/** @ingroup QMCDrivers
+ * @brief Implements wave-function optimization
+ *
+ * Optimization by correlated sampling method with configurations
+ * generated from VMC.
+ */
+class HamiltonianPool;
+
+class QMCChooseBestParameters: public QMCDriver, public CloneManager
+{
+public:
+
+  ///Constructor.
+  QMCChooseBestParameters(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+
+  ///Destructor
+  ~QMCChooseBestParameters();
+
+  ///Run the algorithm.
+  bool run();
+  ///process xml node
+  bool put(xmlNodePtr cur);
+  void setWaveFunctionNode(xmlNodePtr cur)
   {
+    wfNode=cur;
+  };
 
-  /** @ingroup QMCDrivers
-   * @brief Implements wave-function optimization
-   *
-   * Optimization by correlated sampling method with configurations
-   * generated from VMC.
-   */
-  class HamiltonianPool;
-  
-  class QMCChooseBestParameters: public QMCDriver, public CloneManager
-    {
-    public:
-
-      ///Constructor.
-      QMCChooseBestParameters(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
-
-      ///Destructor
-      ~QMCChooseBestParameters();
-
-      ///Run the algorithm.
-      bool run();
-      ///process xml node
-      bool put(xmlNodePtr cur);
-      void setWaveFunctionNode(xmlNodePtr cur){ wfNode=cur;};
-
-    private:
-      QMCCSLinearOptimizeWFmanagerOMP optTarget;
-      int naverage;
-      xmlNodePtr wfNode;
-    };
+private:
+  QMCCSLinearOptimizeWFmanagerOMP optTarget;
+  int naverage;
+  xmlNodePtr wfNode;
+};
 }
 #endif
 /***************************************************************************

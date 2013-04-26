@@ -25,58 +25,60 @@
 #else
 #include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
 #endif
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class PWParameterSet;
-  class SlaterDet;
+class PWParameterSet;
+class SlaterDet;
 
-  /** OrbitalBuilder for Slater determinants in PW basis
-  */
-  class PWOrbitalBuilder: public OrbitalBuilderBase {
+/** OrbitalBuilder for Slater determinants in PW basis
+*/
+class PWOrbitalBuilder: public OrbitalBuilderBase
+{
 
-  private:
+private:
 
-#if defined(QMC_COMPLEX)    
-    typedef PWOrbitalSet             SPOSetType;
-    typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
-#else
-    typedef PWRealOrbitalSet             SPOSetType;
-    typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
-#endif
-
-    ///Read routine for HDF wavefunction file version 0.10
-    void ReadHDFWavefunction(hid_t hfile);
-
-    ///hdf5 handler to clean up
-    hid_t hfileID;
-    ///xml node for determinantset
-    xmlNodePtr rootNode;
-    ///input twist angle
-    PosType TwistAngle;
-    ///parameter set
-    PWParameterSet* myParam;
-    //will do something for twist
-    PWBasisPtr myBasisSet;
-    ////Storage for the orbitals and basis is created in PWOSet.
-    //std::map<std::string,SPOSetBasePtr> PWOSet;
-  public:
-
-    ///constructor
-    PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
-    ~PWOrbitalBuilder();
-
-    ///implement vritual function
-    bool put(xmlNodePtr cur);
-
-  private:
-    hid_t getH5(xmlNodePtr cur, const char* aname);
-    bool putSlaterDet(xmlNodePtr cur);
-    bool createPWBasis(xmlNodePtr cur);
-    SPOSetBase* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)
-    void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
+  typedef PWOrbitalSet             SPOSetType;
+  typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
+#else
+  typedef PWRealOrbitalSet             SPOSetType;
+  typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
-  };
+
+  ///Read routine for HDF wavefunction file version 0.10
+  void ReadHDFWavefunction(hid_t hfile);
+
+  ///hdf5 handler to clean up
+  hid_t hfileID;
+  ///xml node for determinantset
+  xmlNodePtr rootNode;
+  ///input twist angle
+  PosType TwistAngle;
+  ///parameter set
+  PWParameterSet* myParam;
+  //will do something for twist
+  PWBasisPtr myBasisSet;
+  ////Storage for the orbitals and basis is created in PWOSet.
+  //std::map<std::string,SPOSetBasePtr> PWOSet;
+public:
+
+  ///constructor
+  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ~PWOrbitalBuilder();
+
+  ///implement vritual function
+  bool put(xmlNodePtr cur);
+
+private:
+  hid_t getH5(xmlNodePtr cur, const char* aname);
+  bool putSlaterDet(xmlNodePtr cur);
+  bool createPWBasis(xmlNodePtr cur);
+  SPOSetBase* createPW(xmlNodePtr cur, int spinIndex);
+#if defined(QMC_COMPLEX)
+  void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
+#endif
+};
 }
 #endif
 /***************************************************************************

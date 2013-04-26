@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -27,7 +27,8 @@
  *
  * Similar class to PoomaInfo  of Pooma with very limited functions
  */
-class OhmmsInfo {
+class OhmmsInfo
+{
 
 public:
 
@@ -40,13 +41,13 @@ public:
   static void initialize(const char* froot, int master);
   static void die(const char*);
   static void flush();
-  
-  /** constructor using command-line arguments 
+
+  /** constructor using command-line arguments
    * @param argc number of arguments
    * @param argv arguments
    * @param master selects an ostream that does writing
    */
-  OhmmsInfo(int argc, char** argv, int master=-1); 
+  OhmmsInfo(int argc, char** argv, int master=-1);
   /** constructor
    * @param fin_name input file name
    * @param rank node rank
@@ -54,9 +55,9 @@ public:
    * @param multi_run true, open one ostream per group
    */
   OhmmsInfo(const std::string& fin_name, int rank=0, int gid=0, int num_groups=1);
-  ~OhmmsInfo(); 
+  ~OhmmsInfo();
 private:
-  OhmmsInfo(){ }
+  OhmmsInfo() { }
 };
 
 //extern std::ostream& app_log();
@@ -71,9 +72,9 @@ private:
  * - DEBUGMSG debug message
  */
 #ifdef DONOTUSEOHMMSINFO
-#define LOGMSG(msg) 
-#define ERRORMSG(msg) 
-#define WARNMSG(msg) 
+#define LOGMSG(msg)
+#define ERRORMSG(msg)
+#define WARNMSG(msg)
 #define DEBUGMSG(msg)
 #define XMLReport(msg)
 #else
@@ -98,5 +99,5 @@ private:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

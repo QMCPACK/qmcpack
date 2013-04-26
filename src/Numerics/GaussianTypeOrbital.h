@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -27,12 +27,13 @@
  *@f]
  */
 template<class T>
-struct RadialGaussian {
+struct RadialGaussian
+{
   int L;
   T Sigma;
   T Norm;
-  RadialGaussian(): L(0), Sigma(1.0), Norm(1.0) { } 
-  RadialGaussian(int l, T sig, T norm=1.0): L(l), Sigma(sig),Norm(norm) { } 
+  RadialGaussian(): L(0), Sigma(1.0), Norm(1.0) { }
+  RadialGaussian(int l, T sig, T norm=1.0): L(l), Sigma(sig),Norm(norm) { }
 
   inline void setgrid(T r) { }
 
@@ -40,15 +41,19 @@ struct RadialGaussian {
   //  //Y = evaluate(r,rinv,dY,d2Y);
   //}
 
-  inline T evaluate(T r, T rinv, T& drnl, T& d2rnl) {
-    if(L) {	
+  inline T evaluate(T r, T rinv, T& drnl, T& d2rnl)
+  {
+    if(L)
+    {
       T oneoverrl = pow(rinv,L);
       T rnl = Norm*exp(-Sigma*r*r)*oneoverrl;
       T x = 2.0*Sigma*r+L*rinv;
       drnl = -rnl*x;
       d2rnl = rnl*(x*x-2.0*Sigma+L*rinv*rinv);
       return rnl;
-    } else {
+    }
+    else
+    {
       T rnl = Norm*exp(-Sigma*r*r);
       T x = 2.0*Sigma*r;
       drnl = -rnl*x;
@@ -62,5 +67,5 @@ struct RadialGaussian {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

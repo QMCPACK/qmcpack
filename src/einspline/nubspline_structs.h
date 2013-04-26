@@ -166,7 +166,7 @@ typedef struct
 {
   spline_code sp_code;
   type_code    t_code;
- complex_double* restrict coefs;
+  complex_double* restrict coefs;
   NUgrid  *restrict x_grid;
   NUBasis *restrict x_basis;
   BCtype_z xBC;

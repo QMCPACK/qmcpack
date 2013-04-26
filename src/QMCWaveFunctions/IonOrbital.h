@@ -9,7 +9,7 @@
 //   e-mail: esler@uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -23,104 +23,105 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** A composite Orbital
+/** A composite Orbital
+ */
+struct IonOrbital : public OrbitalBase
+{
+private:
+  ParticleAttrib<RealType> U,d2U;
+  ParticleAttrib<PosType> dU;
+  RealType *FirstAddressOfdU, *LastAddressOfdU;
+  DistanceTableData* d_table;
+  ParticleSet &CenterRef, &PtclRef;
+  int NumTargetPtcls, NumCenters;
+  RealType curVal, curLap;
+  PosType curGrad;
+public:
+  vector<RealType> ParticleAlpha;
+  vector<int> ParticleCenter;
+
+  IonOrbital(ParticleSet &centers, ParticleSet &ptcls);
+
+  ~IonOrbital();
+
+  /** check out optimizable variables
    */
-  struct IonOrbital : public OrbitalBase 
-  {
-  private:
-    ParticleAttrib<RealType> U,d2U;
-    ParticleAttrib<PosType> dU;
-    RealType *FirstAddressOfdU, *LastAddressOfdU;
-    DistanceTableData* d_table;
-    ParticleSet &CenterRef, &PtclRef;
-    int NumTargetPtcls, NumCenters;
-    RealType curVal, curLap;
-    PosType curGrad;
-  public:
-    vector<RealType> ParticleAlpha;
-    vector<int> ParticleCenter;
+  void checkOutVariables(const opt_variables_type& o);
 
-    IonOrbital(ParticleSet &centers, ParticleSet &ptcls);
-    
-    ~IonOrbital();
+  /** check in an optimizable parameter
+   * @param o a super set of optimizable variables
+   */
+  void checkInVariables(opt_variables_type& o);
 
-    /** check out optimizable variables
-     */
-    void checkOutVariables(const opt_variables_type& o);
+  /** print the state, e.g., optimizables */
+  void reportStatus(ostream& os);
 
-    /** check in an optimizable parameter
-     * @param o a super set of optimizable variables
-     */
-    void checkInVariables(opt_variables_type& o);
+  /** reset the parameters during optimizations
+   */
+  void resetParameters(const opt_variables_type& active);
 
-    /** print the state, e.g., optimizables */
-    void reportStatus(ostream& os);
+  void resetTargetParticleSet(ParticleSet& P);
 
-    /** reset the parameters during optimizations
-     */
-    void resetParameters(const opt_variables_type& active);
+  ValueType
+  evaluate(ParticleSet& P,
+           ParticleSet::ParticleGradient_t& G,
+           ParticleSet::ParticleLaplacian_t& L);
 
-    void resetTargetParticleSet(ParticleSet& P);
+  RealType evaluateLog(ParticleSet& P,
+                       ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-    ValueType
-      evaluate(ParticleSet& P, 
-	       ParticleSet::ParticleGradient_t& G, 
-	       ParticleSet::ParticleLaplacian_t& L);
+  ValueType ratio(ParticleSet& P, int iat,
+                  ParticleSet::ParticleGradient_t& dG,
+                  ParticleSet::ParticleLaplacian_t& dL);
 
-    RealType evaluateLog(ParticleSet& P, 
-        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  ValueType ratio(ParticleSet& P, int iat);
 
-    ValueType ratio(ParticleSet& P, int iat,
-          ParticleSet::ParticleGradient_t& dG,
-          ParticleSet::ParticleLaplacian_t& dL);
+  void acceptMove(ParticleSet& P, int iat);
 
-    ValueType ratio(ParticleSet& P, int iat);
+  void restore(int iat);
 
-    void acceptMove(ParticleSet& P, int iat);
+  void update(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& dG,
+              ParticleSet::ParticleLaplacian_t& dL,
+              int iat);
 
-    void restore(int iat);
+  RealType
+  registerData(ParticleSet& P, BufferType& buf);
 
-    void update(ParticleSet& P, 
-        ParticleSet::ParticleGradient_t& dG, 
-        ParticleSet::ParticleLaplacian_t& dL,
-        int iat);
+  RealType
+  updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch);
 
-    RealType 
-      registerData(ParticleSet& P, BufferType& buf);
+  void
+  copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-    RealType 
-      updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch);
+  RealType
+  evaluateLog(ParticleSet& P,BufferType& buf);
 
-    void 
-      copyFromBuffer(ParticleSet& P, BufferType& buf);
+  GradType evalGrad(ParticleSet& P, int iat);
 
-    RealType 
-      evaluateLog(ParticleSet& P,BufferType& buf);
-
-    GradType evalGrad(ParticleSet& P, int iat);
-
-    ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
-    OrbitalBase* makeClone(ParticleSet& tqp) const;
+  OrbitalBase* makeClone(ParticleSet& tqp) const;
 
-    ValueType 
-    logRatio(ParticleSet& P, int iat,
-	     ParticleSet::ParticleGradient_t& dG,
-	     ParticleSet::ParticleLaplacian_t& dL);
+  ValueType
+  logRatio(ParticleSet& P, int iat,
+           ParticleSet::ParticleGradient_t& dG,
+           ParticleSet::ParticleLaplacian_t& dL);
 
-    void evaluateLogAndStore(ParticleSet& P,
-			     ParticleSet::ParticleGradient_t& dG,
-			     ParticleSet::ParticleLaplacian_t& dL);
+  void evaluateLogAndStore(ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& dG,
+                           ParticleSet::ParticleLaplacian_t& dL);
 
 
-  };
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: esler $
  * $Revision: 3848 $   $Date: 2009-05-20 12:38:03 -0500 (Wed, 20 May 2009) $
- * $Id: IonOrbital.h 3848 2009-05-20 17:38:03Z jnkim $ 
+ * $Id: IonOrbital.h 3848 2009-05-20 17:38:03Z jnkim $
  ***************************************************************************/

@@ -37,28 +37,29 @@ class QMCSHLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMC
 {
 public:
 
-    ///Constructor.
-    QMCSHLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  ///Constructor.
+  QMCSHLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                       QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
 
-    ///Destructor
-    ~QMCSHLinearOptimize();
+  ///Destructor
+  ~QMCSHLinearOptimize();
 
-    ///Run the Optimization algorithm.
-    bool run();
-    ///process xml node
-    bool put(xmlNodePtr cur);
-    RealType Func(Return_t dl);
+  ///Run the Optimization algorithm.
+  bool run();
+  ///process xml node
+  bool put(xmlNodePtr cur);
+  RealType Func(Return_t dl);
 
 private:
-   inline bool ValidCostFunction(bool valid)
-   {
-    if (!valid) app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
+  inline bool ValidCostFunction(bool valid)
+  {
+    if (!valid)
+      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
     return valid;
-   }
-   DMCOMPOPT* dmcEngine;
-   string MinMethod;
-   RealType bigChange, w_beta, stepsize;
+  }
+  DMCOMPOPT* dmcEngine;
+  string MinMethod;
+  RealType bigChange, w_beta, stepsize;
 
 };
 }

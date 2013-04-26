@@ -8,29 +8,31 @@
 #include "Numerics/Spline3D/TriCubicSpline.h"
 #include "Numerics/Spline3D/TriCubicSplineSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class TriCubicSplineBuilder: public OrbitalBuilderBase {
+class TriCubicSplineBuilder: public OrbitalBuilderBase
+{
 
-    //typedef AnalyticOrbitalSet<TriCubicSpline> TriCubicSplineSet_t;
-    typedef SingleParticleOrbitalSet<TriCubicSpline> SPOSet_t;
-    //static TriCubicSplineSet orbitals;
-    //typedef TriCubicSplineSet SPOSet_t;
-    TriCubicSplineSet* m_orbitals;
-    Grid3D* grid_ref;
+  //typedef AnalyticOrbitalSet<TriCubicSpline> TriCubicSplineSet_t;
+  typedef SingleParticleOrbitalSet<TriCubicSpline> SPOSet_t;
+  //static TriCubicSplineSet orbitals;
+  //typedef TriCubicSplineSet SPOSet_t;
+  TriCubicSplineSet* m_orbitals;
+  Grid3D* grid_ref;
 
-  public:
+public:
 
-    TriCubicSplineBuilder(TrialWaveFunction& a,
-			  Grid3D* agrid): OrbitalBuilderBase(a),
-					  m_orbitals(NULL), 
-					  grid_ref(agrid)
-    { }
+  TriCubicSplineBuilder(TrialWaveFunction& a,
+                        Grid3D* agrid): OrbitalBuilderBase(a),
+    m_orbitals(NULL),
+    grid_ref(agrid)
+  { }
 
-    //bool put(xmlNodePtr, Grid3D*);
-    bool put(xmlNodePtr);
+  //bool put(xmlNodePtr, Grid3D*);
+  bool put(xmlNodePtr);
 
-    //    Grid3D* getFullGrid() { return m_orbitals->getFullGrid();}
-  };
+  //    Grid3D* getFullGrid() { return m_orbitals->getFullGrid();}
+};
 }
 #endif

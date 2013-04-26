@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -28,20 +28,22 @@
  */
 enum {LINEAR_1DGRID, LOG_1DGRID, LOGZERO_1DGRID, CUSTOM_1DGRID};
 
-/** enumeration of boundary conditions 
+/** enumeration of boundary conditions
  */
 enum {PBC_CONSTRAINTS, FIRSTDERIV_CONSTRAINTS, NATURAL_CONSTRAINTS};
 
 template <class T> struct GridTraits {};
 
 template<>
-struct GridTraits<double> {
+struct GridTraits<double>
+{
   typedef double          point_type;
   typedef double          value_type;
 };
 
 template<>
-struct GridTraits<std::complex<double> > {
+struct GridTraits<std::complex<double> >
+{
   typedef double               point_type;
   typedef std::complex<double> value_type;
 };

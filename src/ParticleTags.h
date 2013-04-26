@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -35,21 +35,22 @@
  *- the name of an attribute (object name)
  *- xml node and attribute names
  */
-struct ParticleTags {
+struct ParticleTags
+{
 
-  /** enumeraton for datatypes for particle attributes 
+  /** enumeraton for datatypes for particle attributes
    *
    *Each attribute of type T is stored in a container ParticleAttrib<T>.
    *ParticleBase::AttribTypeMap is used to map the string and the enumeration.
    */
   enum {PA_IndexType=0, /*!< index (int) type */
-	PA_ScalarType,  /*!< scalar (float|double) type */
-	PA_StringType,  /*!< string type */
-	PA_PositionType,/*!< position (D-dim vector) type */
-	PA_TensorType /*!< tensor type */
-  };
+        PA_ScalarType,  /*!< scalar (float|double) type */
+        PA_StringType,  /*!< string type */
+        PA_PositionType,/*!< position (D-dim vector) type */
+        PA_TensorType /*!< tensor type */
+       };
 
-  /** @ingroup XMLTags 
+  /** @ingroup XMLTags
    *@{
    * @brief type names of particle attributes, e.g., posArray
    */
@@ -81,7 +82,7 @@ struct ParticleTags {
   static std::string xmoltype_tag;
   /*@}*/
 
-  /** @ingroup XMLTags 
+  /** @ingroup XMLTags
    *@{
    * @brief names of particle attributes, e.g., position
    */
@@ -110,18 +111,18 @@ struct ParticleTags {
   static std::string sumbc_tag;
   /*@}*/
 
-  /** @ingroup XMLTags 
+  /** @ingroup XMLTags
    *@{
-   * @brief xml element names 
+   * @brief xml element names
    */
   ///the name of particle node
-  static std::string root_tag;    
+  static std::string root_tag;
   ///the name of particle attribute node
-  static std::string attrib_tag;    
+  static std::string attrib_tag;
   ///the attribute name of name
-  static std::string name_tag;    
+  static std::string name_tag;
   ///the attribute name of datatype
-  static std::string datatype_tag;    
+  static std::string datatype_tag;
   ///the attribute name of condition
   static std::string condition_tag;
   ///the attribute name of size
@@ -136,5 +137,5 @@ struct ParticleTags {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

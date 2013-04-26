@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,17 +20,19 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/NRSplineFunctions.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
 /*
- * Perform One-Dimensional Quintic Spline Interpolation. 
+ * Perform One-Dimensional Quintic Spline Interpolation.
  */
 
-template <class Td, 
-	  class Tg = Td, 
-	  class CTd= Vector<Td>,
-	  class CTg= Vector<Tg> >
-class OneDimQuinticSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg> {
+template <class Td,
+         class Tg = Td,
+         class CTd= Vector<Td>,
+         class CTg= Vector<Tg> >
+class OneDimQuinticSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg>
+{
 
 public:
 
@@ -93,8 +95,8 @@ public:
   {
     return new OneDimQuinticSpline<Td,Tg,CTd,CTg>(*this);
   }
-  
-  OneDimQuinticSpline<Td,Tg,CTd,CTg>(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a) 
+
+  OneDimQuinticSpline<Td,Tg,CTd,CTg>(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
     : OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
   {
     m_Y2.resize(a.m_Y2.size());
@@ -114,12 +116,12 @@ public:
     F           = a.F;
   }
 
-  const OneDimQuinticSpline<Td,Tg,CTd,CTg>& 
-    operator=(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a) 
-    {
-      shallow_copy(a);
-      return *this;
-    }
+  const OneDimQuinticSpline<Td,Tg,CTd,CTg>&
+  operator=(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
+  {
+    shallow_copy(a);
+    return *this;
+  }
 
   void shallow_copy(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
   {
@@ -145,55 +147,68 @@ public:
     F           = a.F;
   }
 
-  inline value_type splint(point_type r) {
-    if(r<r_min) {
+  inline value_type splint(point_type r)
+  {
+    if(r<r_min)
+    {
       return m_Y[0]+first_deriv*(r-r_min);
-    }  else if(r>=r_max) {
-      return ConstValue;
     }
-
-    if(GridManager) {
+    else
+      if(r>=r_max)
+      {
+        return ConstValue;
+      }
+    if(GridManager)
+    {
       m_grid->updateForQuintic(r,false);
     }
-
     int Loc(m_grid->currentIndex());
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
   }
 
-  inline value_type 
-  splint(point_type r, value_type& du, value_type& d2u) {
-    if(r<r_min) {
+  inline value_type
+  splint(point_type r, value_type& du, value_type& d2u)
+  {
+    if(r<r_min)
+    {
       return m_Y[0]+first_deriv*(r-r_min);
-    }  else if(r>=r_max) {
-      return ConstValue;
     }
-
-    if(GridManager) {
+    else
+      if(r>=r_max)
+      {
+        return ConstValue;
+      }
+    if(GridManager)
+    {
       m_grid->updateForQuintic(r,true);
     }
-
     int Loc(m_grid->currentIndex());
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
   }
 
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) {
-    if(r<r_min) {
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
+  {
+    if(r<r_min)
+    {
       return m_Y[0]+first_deriv*(r-r_min);
-    }  else if(r>=r_max) {
-      return ConstValue;
     }
-
-    if(GridManager) {
+    else
+      if(r>=r_max)
+      {
+        return ConstValue;
+      }
+    if(GridManager)
+    {
       m_grid->updateForQuintic(r,true);
     }
-
     int Loc(m_grid->currentIndex());
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u,d3u);
   }
 
-  inline 
-  void spline(int imin, value_type yp1, int imax, value_type ypn) {
+  inline
+  void spline(int imin, value_type yp1, int imax, value_type ypn)
+  {
     first_deriv = yp1;
     last_deriv = ypn;
     r_min = m_grid->r(imin);
@@ -209,13 +224,14 @@ public:
     D = 0.0;
     E = 0.0;
     F = 0.0;
-    QuinticSplineSolve(npts-imin,m_grid->data()+imin, m_Y.data()+imin, 
-		  B.data()+imin, m_Y2.data()+imin,D.data()+imin,E.data()+imin,F.data()+imin);
+    QuinticSplineSolve(npts-imin,m_grid->data()+imin, m_Y.data()+imin,
+                       B.data()+imin, m_Y2.data()+imin,D.data()+imin,E.data()+imin,F.data()+imin);
     ConstValue=m_Y[imax];
   }
 
   inline
-  void spline() {
+  void spline()
+  {
     spline(0,0.0,m_grid->size()-1,0.0);
   }
 };
@@ -226,5 +242,5 @@ public:
 /***************************************************************************
  * $RCSfile$   $Author: jeongnim.kim $
  * $Revision: 4522 $   $Date: 2010-01-14 18:57:25 -0800 (Thu, 14 Jan 2010) $
- * $Id: OneDimQuinticSpline.h 4522 2010-01-15 02:57:25Z jeongnim.kim $ 
+ * $Id: OneDimQuinticSpline.h 4522 2010-01-15 02:57:25Z jeongnim.kim $
  ***************************************************************************/

@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c): 
-WalkerControlBase(c), TotalWalkers(0) 
+WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
+  WalkerControlBase(c), TotalWalkers(0)
 {
   SwapMode=1;
   UnitZeta=Random();
@@ -33,61 +33,54 @@ WalkerControlBase(c), TotalWalkers(0)
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 }
 
-int 
-WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
-
+int
+WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+{
   int nwkept = swapWalkers(W);
-
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-
   //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
   //accumData[WALKERSIZE_INDEX] += nwkept;
   ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
-
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-  while(it != it_end) 
+  while(it != it_end)
   {
     (*it)->Weight= 1.0;
     (*it)->Multiplicity=1.0;
     ++it;
   }
-
   return nwkept;
 }
 
-int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
+int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
+{
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str(),ios::app);
-
   int nw=W.getActiveWalkers();
-  if(TotalWalkers ==0) 
+  if(TotalWalkers ==0)
   {
     FirstWalker=nw*MyContext;
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
     nwInv = 1.0/static_cast<RealType>(TotalWalkers);
     DeltaStep = UnitZeta*nwInv;
-
     ncopy_w.resize(nw);
     wConf.resize(nw);
     //wSum.resize(NumContexts);
     wOffset.resize(NumContexts+1);
     dN.resize(NumContexts+4);
   }
-
   //std::fill(wSum.begin(),wSum.end(),0.0);
-
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   int iw=0;
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   RealType r2_accepted=0.0,r2_proposed=0.0;
-  while(it != it_end) 
+  while(it != it_end)
   {
     r2_accepted+=(*it)->Properties(R2ACCEPTED);
     r2_proposed+=(*it)->Properties(R2PROPOSED);
@@ -108,74 +101,75 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   curData[EREF_INDEX]=ecum;
   curData[R2ACCEPTED_INDEX]=r2_accepted;
   curData[R2PROPOSED_INDEX]=r2_proposed;
-
   std::fill(curData.begin()+LE_MAX,curData.end(),0.0);
   curData[LE_MAX+MyContext]=wtot;
-
   //collect everything
   myComm->allreduce(curData);
-
   //update EnsembleProperty
   W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
   W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
   //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
-  for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++) 
+  for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++)
     wOffset[ip+1]=wOffset[ip]+curData[jp];
-
   wtot=wOffset[NumContexts]; //wtot is the total weight
-
   //find the lower and upper bound of index
   int minIndex=static_cast<int>((wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))-1;
   int maxIndex=static_cast<int>((wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))+1;
   int nb=maxIndex-minIndex+1;
   vector<RealType> Zeta(nb);
-
-  for(int i=minIndex, ii=0; i<maxIndex; i++,ii++) 
+  for(int i=minIndex, ii=0; i<maxIndex; i++,ii++)
   {
     Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv);
   }
-
   RealType wCur=wOffset[MyContext];
   int ind=0;
-  while(Zeta[ind]<wCur) {ind++;} 
-
+  while(Zeta[ind]<wCur)
+  {
+    ind++;
+  }
   //surviving walkers
   int icdiff=0;
-  for(iw=0; iw<nw; iw++) {
+  for(iw=0; iw<nw; iw++)
+  {
     RealType tryp=wCur+abs(wConf[iw]);
     int ni=0;
-    while(Zeta[ind]<tryp && Zeta[ind] >= wCur) {
+    while(Zeta[ind]<tryp && Zeta[ind] >= wCur)
+    {
       ind++;
       ni++;
     }
     wCur+=abs(wConf[iw]);
-    if(ni) {
+    if(ni)
+    {
       icdiff++;
-    } 
+    }
     ncopy_w[iw]=ni;
   }
-
   //plus: a list of walkers to be duplicated
   //minus: a list of walkers to be removed
   vector<int> plus, minus;
-  for(iw=0;iw<nw; iw++) {
+  for(iw=0; iw<nw; iw++)
+  {
     int m=ncopy_w[iw];
-    if(m>1) {// add the index of this walker to plus, duplicate m-1 times
+    if(m>1)
+      // add the index of this walker to plus, duplicate m-1 times
+    {
       plus.insert(plus.end(),m-1,iw);
-    } else if(m==0) { // add the walker index to be killed/overwritten
-      minus.push_back(iw);
     }
+    else
+      if(m==0)
+        // add the walker index to be killed/overwritten
+      {
+        minus.push_back(iw);
+      }
   }
-
   //save the number of local walkers to be removed. This will be collected later.
   int nw_removed=minus.size();
-
   //copy within the local node
-  int lower=std::min(plus.size(),minus.size()); 
-  while(lower>0) 
+  int lower=std::min(plus.size(),minus.size());
+  while(lower>0)
   {
     --lower;
     int im=minus[lower]; //walker index to be replaced
@@ -186,89 +180,100 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     minus.pop_back();//remove it
     plus.pop_back();//remove it
   }
-
   std::fill(dN.begin(),dN.end(),0);
-
   //dN[ip] extra/missing walkers
-  if(plus.size()) { dN[MyContext]=plus.size();}
-  if(minus.size()) { dN[MyContext]=-minus.size();}
-
+  if(plus.size())
+  {
+    dN[MyContext]=plus.size();
+  }
+  if(minus.size())
+  {
+    dN[MyContext]=-minus.size();
+  }
   //dN[NumContexts] contains the number of surviving walkers
   dN[NumContexts]=icdiff;
-
   //other data to compute survival rate and how many walkers are swapped
   dN[NumContexts+1]=nw_removed;
   dN[NumContexts+2]=plus.size();
   dN[NumContexts+3]=minus.size();
-
   //collect the data
   myComm->allreduce(dN);
-
   //Each task will send or recv not both.
-  if(plus.size()) sendWalkers(W,plus);
-  if(minus.size()) recvWalkers(W,minus);
-
+  if(plus.size())
+    sendWalkers(W,plus);
+  if(minus.size())
+    recvWalkers(W,minus);
   //app_log() << "RECONFIGURATION  plus= " << dN[NumContexts+2] << " minus= " << dN[NumContexts+3] << endl;
   //app_log() << "RECONFIGURATION ";
   //for(int i=0; i<NumContexts; ++i) app_log() << dN[i] << " ";
   //app_log() << endl;
-
   //record the number of walkers created/destroyed
   curData[RNONESIZE_INDEX]=dN[NumContexts+1];
   curData[FNSIZE_INDEX]=curData[WEIGHT_INDEX]-curData[RNONESIZE_INDEX];
   curData[SENTWALKERS_INDEX]=dN[NumContexts+2];
-
   //collect surviving walkers
   return dN[NumContexts];
 }
 
 void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
-    const vector<IndexType>& plus) {
+    const vector<IndexType>& plus)
+{
   vector<int> minusN, plusN;
-  for(int ip=0; ip<NumContexts; ip++) {
-    if(dN[ip]>0) {
+  for(int ip=0; ip<NumContexts; ip++)
+  {
+    if(dN[ip]>0)
+    {
       plusN.insert(plusN.end(),dN[ip],ip);
-    } else if(dN[ip]<0) {
-      minusN.insert(minusN.end(),-dN[ip],ip);
     }
+    else
+      if(dN[ip]<0)
+      {
+        minusN.insert(minusN.end(),-dN[ip],ip);
+      }
   }
-
   int wbuffer_size=W[0]->byteSize();
-
   int nswap=plusN.size();
   int last = abs(dN[MyContext])-1;
   int ic=0;
-  while(ic<nswap && last>=0) {
-    if(plusN[ic]==MyContext) {
+  while(ic<nswap && last>=0)
+  {
+    if(plusN[ic]==MyContext)
+    {
       //OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
       OOMPI_Packed sendBuffer(wbuffer_size,myComm->getComm());
       W[plus[last]]->putMessage(sendBuffer);
       //OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
       myComm->getComm()[minusN[ic]].Send(sendBuffer);
-      --last; 
-    } 
+      --last;
+    }
     ++ic;
   }
 }
 
 void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
-    const vector<IndexType>& minus) {
+    const vector<IndexType>& minus)
+{
   vector<IndexType> minusN, plusN;
-  for(int ip=0; ip<NumContexts; ip++) {
-    if(dN[ip]>0) {
+  for(int ip=0; ip<NumContexts; ip++)
+  {
+    if(dN[ip]>0)
+    {
       plusN.insert(plusN.end(),dN[ip],ip);
-    } else if(dN[ip]<0) {
-      minusN.insert(minusN.end(),-dN[ip],ip);
     }
+    else
+      if(dN[ip]<0)
+      {
+        minusN.insert(minusN.end(),-dN[ip],ip);
+      }
   }
-
   int wbuffer_size=W[0]->byteSize();
-
   int nswap=plusN.size();
   int last = abs(dN[MyContext])-1;
   int ic=0;
-  while(ic<nswap && last>=0) {
-    if(minusN[ic]==MyContext) {
+  while(ic<nswap && last>=0)
+  {
+    if(minusN[ic]==MyContext)
+    {
       //OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
       //OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
       OOMPI_Packed recvBuffer(wbuffer_size,myComm->getComm());
@@ -287,5 +292,5 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
 /***************************************************************************
  * $RCSfile: WalkerReconfigurationMPI.cpp,v $   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

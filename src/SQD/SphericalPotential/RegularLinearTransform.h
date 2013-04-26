@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -21,10 +21,10 @@
 #include "Numerics/OneDimGridFunctor.h"
 
 /**@ingroup NumerovTransform
- *\brief Transform function for the radial Schroedinger equation on a 
+ *\brief Transform function for the radial Schroedinger equation on a
  *linear grid with a regular potential.
  *
- *For regular potentials, the asymptotic approximation for \f$u_{l}\f$ 
+ *For regular potentials, the asymptotic approximation for \f$u_{l}\f$
  *near the origin follows\f[\lim_{r\rightarrow 0} u(r) \approx r^{(l+1)}. \f]
  *An example for Regular potentials is a Harmonic potential,
  \f[
@@ -32,17 +32,18 @@
  \f]
  *
  *Implements a transformation for the Numerov algorithm:
- \f[ 
- \frac{d^2u_{nl}}{dr^2}+k^2(r) u_{nl} = 0, 
- \f] 
- *where 
  \f[
- k^2(r)=2[\varepsilon-\frac{L(L+1)}{2r^2}-V(r)]. 
+ \frac{d^2u_{nl}}{dr^2}+k^2(r) u_{nl} = 0,
+ \f]
+ *where
+ \f[
+ k^2(r)=2[\varepsilon-\frac{L(L+1)}{2r^2}-V(r)].
  \f]
  *
  */
 template<class SourceType>
-struct RegularLinearTransform {
+struct RegularLinearTransform
+{
 
   typedef SourceType Source_t;
   typedef typename SourceType::value_type value_type;
@@ -53,7 +54,7 @@ struct RegularLinearTransform {
   ///number of nodes for given quantum numbers
   int NumNodes;
 
-  ///reference energy \f$\varepsilon\f$ 
+  ///reference energy \f$\varepsilon\f$
   value_type E;
 
   ///parameter to determine the cusp condition
@@ -68,32 +69,36 @@ struct RegularLinearTransform {
   ///LL \f$=l(l+1)/(2m_{eff})\f$
   value_type LL;
 
-  /** Constructor for \f$u_{nl}\f$ 
+  /** Constructor for \f$u_{nl}\f$
    * \param v the source function on a grid
    * \param n the principal quantum number
    * \param cusparam parameter used to calculate cusp conditions
    * \param meff the effective mass
    * \note For the Harmonic potential \f$V(r) = \frac{1}{2}\omega^2r^2\f$
-   * the number of nodes for the radial function with quantum numbers 
-   * \f$n\f$ and \f$l\f$ is \f$n\f$. 
+   * the number of nodes for the radial function with quantum numbers
+   * \f$n\f$ and \f$l\f$ is \f$n\f$.
    *\todo The argument cuspparam should be removed and the source
    * object should encapsulate the cusp conditions.
   */
-  RegularLinearTransform(Source_t& v, 
-			 int n, 
-			 int l,
+  RegularLinearTransform(Source_t& v,
+                         int n,
+                         int l,
                          value_type cuspparam,
-			 value_type meff=1.0):
-    V(v), E(0.0), N(n), CuspParam(cuspparam) {
+                         value_type meff=1.0):
+    V(v), E(0.0), N(n), CuspParam(cuspparam)
+  {
     NumNodes = v.getNumOfNodes();
     L = static_cast<value_type>(l);
-    LL = 0.5*L*(L+1)/meff;  
+    LL = 0.5*L*(L+1)/meff;
   }
 
   ///returns the starting valid index
-  inline int first() const { return 1;}
+  inline int first() const
+  {
+    return 1;
+  }
 
-  /** 
+  /**
    *\param i index of the first value of the linear grid
    *\param z0 \f$u_{nl}(r_0)\f$
    *\param z1 \f$u_{nl}(r_0 + dr)\f$
@@ -102,7 +107,8 @@ struct RegularLinearTransform {
    *
    In the limit \f$r\rightarrow 0 \f$ \f[u(r) \approx r^{(l+1)}.\f]
    */
-  value_type setCusp(int i, value_type& z0, value_type& z1) {
+  value_type setCusp(int i, value_type& z0, value_type& z1)
+  {
     value_type deriv;
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
@@ -113,33 +119,41 @@ struct RegularLinearTransform {
       deriv = 1.0;
     z1 = z0 + deriv*dr;
     return deriv;
-  }  
+  }
 
   ///returns the number of nodes
-  inline int nodes() const { return NumNodes;}
+  inline int nodes() const
+  {
+    return NumNodes;
+  }
 
   ///return \f$k^2(r_i)=2[\varepsilon-L(L+1)/2r_i^2-V(r_i)]\f$
-  inline value_type k2(int i) {
+  inline value_type k2(int i)
+  {
     value_type rinv = 1.0/V.r(i);
     return 2.0*(E-LL*rinv*rinv-V(i));
   }
-  
+
   /*!\fn value_type convert(value_type y, value_type r)
-   *\param y the value of \f$u_{nl}(r)\f$ 
+   *\param y the value of \f$u_{nl}(r)\f$
    *\param r the grid value
    *\return the same value: no transformation is needed.
    */
-  inline value_type convert(value_type y, value_type r) {
+  inline value_type convert(value_type y, value_type r)
+  {
     return y;
   }
-  
+
   ///reset the reference energy and turning point
-  inline void reset(value_type e) { E = e;}
+  inline void reset(value_type e)
+  {
+    E = e;
+  }
 };
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

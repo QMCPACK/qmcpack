@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -18,7 +18,7 @@
 /***************************************************************************
  *
  * The POOMA Framework
- * 
+ *
  * This program was prepared by the Regents of the University of
  * California at Los Alamos National Laboratory (the University) under
  * Contract No.  W-7405-ENG-36 with the U.S. Department of Energy (DOE).
@@ -45,7 +45,8 @@
 
 #include <iostream>
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -68,10 +69,11 @@ public:
   enum { ElemDim = 2 };
   enum { Size = D*(D-1)/2 };
 
-  // Default Constructor 
-  AntiSymTensor() {
+  // Default Constructor
+  AntiSymTensor()
+  {
     OTAssign< AntiSymTensor<T,D>,T,OpAssign>::apply(*this,T(0),OpAssign());
-  } 
+  }
 
   // A noninitializing ctor.
   class DontInitialize {};
@@ -79,46 +81,56 @@ public:
 
   // Construct an AntiSymTensor from a single T.
   // This doubles as the 2D AntiSymTensor initializer.
-  AntiSymTensor(const T& x00) {
+  AntiSymTensor(const T& x00)
+  {
     OTAssign< AntiSymTensor<T,D>,T,OpAssign>::apply(*this,x00,OpAssign());
   }
   // construct a 3D AntiSymTensor
-  AntiSymTensor(const T& x10, const T& x20, const T& x21) { 
-    X[0]= x10; X[1]= x20; X[2]= x21;
+  AntiSymTensor(const T& x10, const T& x20, const T& x21)
+  {
+    X[0]= x10;
+    X[1]= x20;
+    X[2]= x21;
   }
 
-  // Copy Constructor 
-  AntiSymTensor(const AntiSymTensor<T,D> &rhs) {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T,D> ,OpAssign > :: 
-      apply(*this,rhs,OpAssign());
+  // Copy Constructor
+  AntiSymTensor(const AntiSymTensor<T,D> &rhs)
+  {
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T,D> ,OpAssign > ::
+    apply(*this,rhs,OpAssign());
   }
 
   // Construct from a Tensor.
   // Extract the antisymmetric part.
-  AntiSymTensor( const Tensor<T,D>& t ) {
-    for (int i=1; i<D; ++i) {
+  AntiSymTensor( const Tensor<T,D>& t )
+  {
+    for (int i=1; i<D; ++i)
+    {
       for (int j=0; j<i; ++j)
-	(*this)[((i-1)*i/2)+j] = (t(i,j)-t(j,i))*0.5;
+        (*this)[((i-1)*i/2)+j] = (t(i,j)-t(j,i))*0.5;
     }
   }
 
   ~AntiSymTensor() { };
 
   // assignment operators
-  const AntiSymTensor<T,D>& operator= (const AntiSymTensor<T,D> &rhs) {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T,D> ,OpAssign > :: 
-      apply(*this,rhs,OpAssign());
+  const AntiSymTensor<T,D>& operator= (const AntiSymTensor<T,D> &rhs)
+  {
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T,D> ,OpAssign > ::
+    apply(*this,rhs,OpAssign());
     return *this;
   }
   template<class T1>
-  const AntiSymTensor<T,D>& operator= (const AntiSymTensor<T1,D> &rhs) {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> ,OpAssign > :: 
-      apply(*this,rhs,OpAssign());
+  const AntiSymTensor<T,D>& operator= (const AntiSymTensor<T1,D> &rhs)
+  {
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> ,OpAssign > ::
+    apply(*this,rhs,OpAssign());
     return *this;
   }
-  const AntiSymTensor<T,D>& operator= (const T& rhs) {
-    OTAssign< AntiSymTensor<T,D> , T ,OpAssign > :: 
-      apply(*this,rhs,OpAssign());
+  const AntiSymTensor<T,D>& operator= (const T& rhs)
+  {
+    OTAssign< AntiSymTensor<T,D> , T ,OpAssign > ::
+    apply(*this,rhs,OpAssign());
     return *this;
   }
 
@@ -126,76 +138,86 @@ public:
   template<class T1>
   AntiSymTensor<T,D>& operator+=(const AntiSymTensor<T1,D> &rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> , OpAddAssign > 
-      :: apply(*this,rhs,OpAddAssign());
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> , OpAddAssign >
+    :: apply(*this,rhs,OpAddAssign());
     return *this;
   }
 
   template<class T1>
   AntiSymTensor<T,D>& operator-=(const AntiSymTensor<T1,D> &rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> , 
-      OpSubtractAssign > :: apply(*this,rhs,OpSubtractAssign());
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> ,
+              OpSubtractAssign > :: apply(*this,rhs,OpSubtractAssign());
     return *this;
   }
 
   template<class T1>
   AntiSymTensor<T,D>& operator*=(const AntiSymTensor<T1,D> &rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> , 
-      OpMultiplyAssign > :: apply(*this,rhs,OpMultiplyAssign());
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> ,
+              OpMultiplyAssign > :: apply(*this,rhs,OpMultiplyAssign());
     return *this;
   }
   AntiSymTensor<T,D>& operator*=(const T& rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , T , OpMultiplyAssign > :: 
-      apply(*this,rhs,OpMultiplyAssign());
+    OTAssign< AntiSymTensor<T,D> , T , OpMultiplyAssign > ::
+    apply(*this,rhs,OpMultiplyAssign());
     return *this;
   }
 
   template<class T1>
   AntiSymTensor<T,D>& operator/=(const AntiSymTensor<T1,D> &rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> , 
-      OpDivideAssign > :: apply(*this,rhs,OpDivideAssign());
+    OTAssign< AntiSymTensor<T,D> , AntiSymTensor<T1,D> ,
+              OpDivideAssign > :: apply(*this,rhs,OpDivideAssign());
     return *this;
   }
   AntiSymTensor<T,D>& operator/=(const T& rhs)
   {
-    OTAssign< AntiSymTensor<T,D> , T , OpDivideAssign > :: 
-      apply(*this,rhs,OpDivideAssign());
+    OTAssign< AntiSymTensor<T,D> , T , OpDivideAssign > ::
+    apply(*this,rhs,OpDivideAssign());
     return *this;
   }
 
   // Methods
 
-  int len(void)  const { return Size; }
-  int size(void) const { return sizeof(*this); }
-  int get_Size(void) const { return Size; }
+  int len(void)  const
+  {
+    return Size;
+  }
+  int size(void) const
+  {
+    return sizeof(*this);
+  }
+  int get_Size(void) const
+  {
+    return Size;
+  }
 
-  class AssignProxy {
+  class AssignProxy
+  {
   public:
     AssignProxy(Type_t &elem, int where)
       : elem_m(elem), where_m(where) { }
     AssignProxy(const AssignProxy &model)
       : elem_m(model.elem_m), where_m(where_m) { }
     const AssignProxy &operator=(const AssignProxy &a)
-      {
-	PAssert(where_m != 0 || a.elem_m == -a.elem_m);
-	elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
-	return *this;
-      }
+    {
+      PAssert(where_m != 0 || a.elem_m == -a.elem_m);
+      elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
+      return *this;
+    }
     const AssignProxy &operator=(const Type_t &e)
-      {
-	PAssert(where_m != 0 || e == -e);
-	elem_m = where_m < 0 ? -e : e;
-	return *this;
-      }
+    {
+      PAssert(where_m != 0 || e == -e);
+      elem_m = where_m < 0 ? -e : e;
+      return *this;
+    }
 
     operator Type_t() const
-      {
-	return (where_m < 0 ? -elem_m : elem_m);
-      }
+    {
+      return (where_m < 0 ? -elem_m : elem_m);
+    }
 
   private:
 
@@ -206,14 +228,16 @@ public:
   };
 
   // Operators
-  
-  Type_t operator()(unsigned int i, unsigned int j) const {
+
+  Type_t operator()(unsigned int i, unsigned int j) const
+  {
     if (i == j)
       return T(0.0);
-    else if (i < j)
-      return -X[((j-1)*j/2) + i];
     else
-      return X[((i-1)*i/2) + j];
+      if (i < j)
+        return -X[((j-1)*j/2) + i];
+      else
+        return X[((i-1)*i/2) + j];
   }
 
 //    Type_t operator()( pair<int,int> a) const {
@@ -222,15 +246,16 @@ public:
 //      return (*this)(i, j);
 //    }
 
-  AssignProxy operator()(unsigned int i, unsigned int j) {
+  AssignProxy operator()(unsigned int i, unsigned int j)
+  {
     if (i == j)
       return AssignProxy(AntiSymTensor<T,D>::Zero, 0);
     else
-      {
-	int lo = i < j ? i : j;
-	int hi = i > j ? i : j;
-	return AssignProxy(X[((hi-1)*hi/2) + lo], i - j);
-      }
+    {
+      int lo = i < j ? i : j;
+      int hi = i > j ? i : j;
+      return AssignProxy(X[((hi-1)*hi/2) + lo], i - j);
+    }
   }
 
 //    AssignProxy operator()(pair<int,int> a) {
@@ -239,24 +264,28 @@ public:
 //      return (*this)(i, j);
 //    }
 
-  Type_t& operator[](unsigned int i) { 
+  Type_t& operator[](unsigned int i)
+  {
     PAssert (i < Size);
     return X[i];
   }
 
-  Type_t operator[](unsigned int i) const { 
+  Type_t operator[](unsigned int i) const
+  {
     PAssert (i < Size);
     return X[i];
   }
 
   // These are the same as operator[] but with () instead:
 
-  Type_t& operator()(unsigned int i) { 
+  Type_t& operator()(unsigned int i)
+  {
     PAssert (i < Size);
     return X[i];
   }
 
-  Type_t operator()(unsigned int i) const { 
+  Type_t operator()(unsigned int i) const
+  {
     PAssert (i < Size);
     return X[i];
   }
@@ -309,82 +338,101 @@ public:
   typedef T Type_t;
   enum { ElemDim = 2 };
 
-  // Default Constructor 
-  AntiSymTensor() {} 
+  // Default Constructor
+  AntiSymTensor() {}
 
-  // Copy Constructor 
+  // Copy Constructor
   AntiSymTensor(const AntiSymTensor<T,1>&) {}
 
   ~AntiSymTensor() {}
 
   // assignment operators
-  const AntiSymTensor<T,1>& operator=(const AntiSymTensor<T,1>&) {
+  const AntiSymTensor<T,1>& operator=(const AntiSymTensor<T,1>&)
+  {
     return *this;
   }
   template <class T1>
-  const AntiSymTensor<T,1>& operator=(const AntiSymTensor<T1,1>&) {
+  const AntiSymTensor<T,1>& operator=(const AntiSymTensor<T1,1>&)
+  {
     return *this;
   }
-  const AntiSymTensor<T,1>& operator=(const T& rhs) {
+  const AntiSymTensor<T,1>& operator=(const T& rhs)
+  {
     return *this;
   }
 
   // accumulation operators
   template <class T1>
-  AntiSymTensor<T,1>& operator+=(const AntiSymTensor<T1,1>&) {
+  AntiSymTensor<T,1>& operator+=(const AntiSymTensor<T1,1>&)
+  {
     return *this;
   }
 
   template <class T1>
-  AntiSymTensor<T,1>& operator-=(const AntiSymTensor<T1,1>&) {
+  AntiSymTensor<T,1>& operator-=(const AntiSymTensor<T1,1>&)
+  {
     return *this;
   }
 
   template <class T1>
-  AntiSymTensor<T,1>& operator*=(const AntiSymTensor<T1,1>&) {
+  AntiSymTensor<T,1>& operator*=(const AntiSymTensor<T1,1>&)
+  {
     return *this;
   }
-  AntiSymTensor<T,1>& operator*=(const T&) {
+  AntiSymTensor<T,1>& operator*=(const T&)
+  {
     return *this;
   }
 
   template <class T1>
-  AntiSymTensor<T,1>& operator/=(const AntiSymTensor<T1,1>&) {
+  AntiSymTensor<T,1>& operator/=(const AntiSymTensor<T1,1>&)
+  {
     return *this;
   }
-  AntiSymTensor<T,1>& operator/=(const T&) {
+  AntiSymTensor<T,1>& operator/=(const T&)
+  {
     return *this;
   }
 
   // Methods
 
-  int len(void)  const { return Size; }
-  int size(void) const { return sizeof(*this); }
-  int get_Size(void) const { return Size; }
+  int len(void)  const
+  {
+    return Size;
+  }
+  int size(void) const
+  {
+    return sizeof(*this);
+  }
+  int get_Size(void) const
+  {
+    return Size;
+  }
 
-  class AssignProxy {
+  class AssignProxy
+  {
   public:
     AssignProxy(Type_t &elem, int where)
       : elem_m(elem), where_m(where) {}
     AssignProxy(const AssignProxy& model)
       : elem_m(model.elem_m), where_m(where_m) {}
     const AssignProxy& operator=(const AssignProxy& a)
-      {
-	PAssert(where_m != 0 || a.elem_m == -a.elem_m);
-	elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
-	return *this;
-      }
+    {
+      PAssert(where_m != 0 || a.elem_m == -a.elem_m);
+      elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
+      return *this;
+    }
     const AssignProxy& operator=(const Type_t& e)
-      {
-	PAssert(where_m != 0 || e == -e);
-	elem_m = where_m < 0 ? -e : e;
-	return *this;
-      }
+    {
+      PAssert(where_m != 0 || e == -e);
+      elem_m = where_m < 0 ? -e : e;
+      return *this;
+    }
 
     operator Type_t() const
-      {
-	return (where_m < 0 ? -elem_m : elem_m);
-      }
+    {
+      return (where_m < 0 ? -elem_m : elem_m);
+    }
 
   private:
 
@@ -395,8 +443,9 @@ public:
   };
 
   // Operators
-  
-  Type_t operator()(unsigned int i, unsigned int j) const {
+
+  Type_t operator()(unsigned int i, unsigned int j) const
+  {
     PAssert(i==j);
     return T(0.0);
   }
@@ -407,7 +456,8 @@ public:
 //      return (*this)(i, j);
 //    }
 
-  AssignProxy operator()(unsigned int i, unsigned int j) {
+  AssignProxy operator()(unsigned int i, unsigned int j)
+  {
     PAssert(i==j);
     return AssignProxy(AntiSymTensor<T,1>::Zero, 0);
   }
@@ -418,24 +468,28 @@ public:
 //      return (*this)(i, j);
 //    }
 
-  Type_t operator[](unsigned int i) const { 
+  Type_t operator[](unsigned int i) const
+  {
     PAssert (i == 0);
     return AntiSymTensor<T,1>::Zero;
   }
 
   // These are the same as operator[] but with () instead:
 
-  Type_t operator()(unsigned int i) const { 
+  Type_t operator()(unsigned int i) const
+  {
     PAssert (i == 0);
     return AntiSymTensor<T,1>::Zero;
   }
 
   //----------------------------------------------------------------------
   // Comparison operators.
-  bool operator==(const AntiSymTensor<T,1>& that) const {
+  bool operator==(const AntiSymTensor<T,1>& that) const
+  {
     return true;
   }
-  bool operator!=(const AntiSymTensor<T,1>& that) const {
+  bool operator!=(const AntiSymTensor<T,1>& that) const
+  {
     return !(*this == that);
   }
 
@@ -474,12 +528,14 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template <class T, unsigned D>
-T trace(const AntiSymTensor<T,D>&) {
+T trace(const AntiSymTensor<T,D>&)
+{
   return T(0.0);
 }
 
 template <class T, unsigned D>
-AntiSymTensor<T,D> transpose(const AntiSymTensor<T,D>& rhs) {
+AntiSymTensor<T,D> transpose(const AntiSymTensor<T,D>& rhs)
+{
   return -rhs;
 }
 //////////////////////////////////////////////////////////////////////
@@ -525,54 +581,54 @@ OHMMS_META_BINARY_OPERATORS(AntiSymTensor,operator/,OpDivide)
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const AntiSymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+dot(const AntiSymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 {
-  return OTDot< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> > :: 
-    apply(lhs,rhs);
+  return OTDot< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> > ::
+         apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const AntiSymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs) 
+dot(const AntiSymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs)
 {
-  return OTDot< Tensor<T1,D> , Tensor<T2,D> > :: 
-    apply(Tensor<T1,D>(lhs),rhs);
+  return OTDot< Tensor<T1,D> , Tensor<T2,D> > ::
+         apply(Tensor<T1,D>(lhs),rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const Tensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+dot(const Tensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 {
-  return OTDot< Tensor<T1,D> , Tensor<T2,D> > :: 
-    apply(lhs,Tensor<T2,D>(rhs));
+  return OTDot< Tensor<T1,D> , Tensor<T2,D> > ::
+         apply(lhs,Tensor<T2,D>(rhs));
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const AntiSymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+dot(const AntiSymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 {
-  return OTDot< Tensor<T1,D> , Tensor<T2,D> > :: 
-    apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
+  return OTDot< Tensor<T1,D> , Tensor<T2,D> > ::
+         apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
 }
 
 template < class T1, class T2, unsigned D >
 inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const SymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+dot(const SymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 {
-  return OTDot< Tensor<T1,D> , Tensor<T2,D> > :: 
-    apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
+  return OTDot< Tensor<T1,D> , Tensor<T2,D> > ::
+         apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
 }
 
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const TinyVector<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+dot(const TinyVector<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 {
   return OTDot< TinyVector<T1,D> , AntiSymTensor<T2,D> > :: apply(lhs,rhs);
 }
 
 template < class T1, class T2, unsigned D >
 inline TinyVector<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
-dot(const AntiSymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs) 
+dot(const AntiSymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 {
   return OTDot< AntiSymTensor<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
 }
@@ -583,57 +639,64 @@ dot(const AntiSymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const AntiSymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+//dotdot(const AntiSymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 //{
-//  return MetaDotDot< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> > :: 
+//  return MetaDotDot< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> > ::
 //    apply(lhs,rhs);
 //}
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const AntiSymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs) 
+//dotdot(const AntiSymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs)
 //{
-//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > :: 
+//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > ::
 //    apply(Tensor<T1,D>(lhs),rhs);
 //}
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const Tensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+//dotdot(const Tensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 //{
-//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > :: 
+//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > ::
 //    apply(lhs,Tensor<T2,D>(rhs));
 //}
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const AntiSymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs) 
+//dotdot(const AntiSymTensor<T1,D> &lhs, const SymTensor<T2,D> &rhs)
 //{
-//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > :: 
+//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > ::
 //    apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
 //}
 
 //template < class T1, class T2, unsigned D >
 //inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
-//dotdot(const SymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs) 
+//dotdot(const SymTensor<T1,D> &lhs, const AntiSymTensor<T2,D> &rhs)
 //{
-//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > :: 
+//  return MetaDotDot< Tensor<T1,D> , Tensor<T2,D> > ::
 //    apply(Tensor<T1,D>(lhs),Tensor<T2,D>(rhs));
 //}
 
 //----------------------------------------------------------------------
 // I/O
 template<class T, unsigned D>
-std::ostream& operator<<(std::ostream& out, const AntiSymTensor<T,D>& rhs) {
-  if (D >= 1) {
-    for (int i=0; i<D; i++) {
-      for (int j=0; j<D-1; j++) {
-	out << rhs(i,j) << " ";
+std::ostream& operator<<(std::ostream& out, const AntiSymTensor<T,D>& rhs)
+{
+  if (D >= 1)
+  {
+    for (int i=0; i<D; i++)
+    {
+      for (int j=0; j<D-1; j++)
+      {
+        out << rhs(i,j) << " ";
       }
       out << rhs(i,D-1) << " ";
-      if (i < D - 1) out << std::endl;
+      if (i < D - 1)
+        out << std::endl;
     }
-  } else {
+  }
+  else
+  {
     out << " " << rhs(0,0) << " ";
   }
   return out;
@@ -651,5 +714,5 @@ T AntiSymTensor<T,D>::Zero = 0;
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -29,8 +29,8 @@
 #if defined(PROFILING_ON)
 #include <TAU.h>
 #else
-#define TAU_PROFILE(a,b,c) 
-#define TAU_INIT(argc,argv) 
+#define TAU_PROFILE(a,b,c)
+#define TAU_INIT(argc,argv)
 #endif
 
 //provide minimal IBM HPCT interface
@@ -80,5 +80,5 @@
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 3727 $   $Date: 2009-04-03 11:49:36 -0400 (Fri, 03 Apr 2009) $
- * $Id: profiler.h 3727 2009-04-03 15:49:36Z jnkim $ 
+ * $Id: profiler.h 3727 2009-04-03 15:49:36Z jnkim $
  ***************************************************************************/

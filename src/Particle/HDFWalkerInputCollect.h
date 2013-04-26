@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,71 +20,73 @@
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** Reads a set of walker configurations from an HDF5 file. */
+/** Reads a set of walker configurations from an HDF5 file. */
 
-  class HDFWalkerInputCollect {
+class HDFWalkerInputCollect
+{
 
-    hid_t fileID;
-    int prevNContexts;
-    int curNContexts;
-    bool CollectMode;
-    bool RewindMode;
+  hid_t fileID;
+  int prevNContexts;
+  int curNContexts;
+  bool CollectMode;
+  bool RewindMode;
 
-    vector<hsize_t> OffSet;
+  vector<hsize_t> OffSet;
 
-    /** distribute nw among the processors */
-    void distribute(hsize_t nw);
+  /** distribute nw among the processors */
+  void distribute(hsize_t nw);
 
-  public:
+public:
 
-    HDFWalkerInputCollect(const std::string& aroot);
-    ~HDFWalkerInputCollect();
+  HDFWalkerInputCollect(const std::string& aroot);
+  ~HDFWalkerInputCollect();
 
-    /** open a hdf5 file to read in a collective mode 
-     * @param arrot root name
-     * @return true if the file can be open
-     */
-    bool open(const string& aroot);
-    /** read walkers
-     * @param W walker set to which new walkers will be added
-     * @param rollback number of blocks to read
-     * @return true if successful
-     */
-    bool put(MCWalkerConfiguration& W, int rollback=1);
+  /** open a hdf5 file to read in a collective mode
+   * @param arrot root name
+   * @return true if the file can be open
+   */
+  bool open(const string& aroot);
+  /** read walkers
+   * @param W walker set to which new walkers will be added
+   * @param rollback number of blocks to read
+   * @return true if successful
+   */
+  bool put(MCWalkerConfiguration& W, int rollback=1);
 
-    /** read all the walkers
-     *
-     * A special put function to read entire configurations without sharing
-     */
-    bool putSingle(MCWalkerConfiguration& W);
+  /** read all the walkers
+   *
+   * A special put function to read entire configurations without sharing
+   */
+  bool putSingle(MCWalkerConfiguration& W);
 
-    /** read walkers for rollback blocks
-     * @param W walker set to which new walkers will be added
-     * @param rollback number of blocks to read
-     */
-    bool rewind(MCWalkerConfiguration& W, int rollback);
+  /** read walkers for rollback blocks
+   * @param W walker set to which new walkers will be added
+   * @param rollback number of blocks to read
+   */
+  bool rewind(MCWalkerConfiguration& W, int rollback);
 
-    /** read walkers within the blocks [firstConf,lastConf)
-     * @param W walker set to which new walkers will be added
-     * @param firstConf first block to read
-     * @param lastConf last block to read
-     */
-    bool read(MCWalkerConfiguration& W, int firstConf, int lastConf);
+  /** read walkers within the blocks [firstConf,lastConf)
+   * @param W walker set to which new walkers will be added
+   * @param firstConf first block to read
+   * @param lastConf last block to read
+   */
+  bool read(MCWalkerConfiguration& W, int firstConf, int lastConf);
 
 
-    /** read random state when RewindMode=false
-     */
-    void readRandomState();
+  /** read random state when RewindMode=false
+   */
+  void readRandomState();
 
-    bool close();
-  };
+  bool close();
+};
 
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

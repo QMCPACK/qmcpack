@@ -3,7 +3,8 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-struct DataSporkAnalysis {
+struct DataSporkAnalysis
+{
 
   po::variables_map vm;
 
@@ -26,8 +27,8 @@ struct DataSporkAnalysis {
   std::map<std::string, int> Collectables;
 
   DataSporkAnalysis():include_dir("include-dir"),input_file("input-file"),
-                      observable("observable"),
-                      collectable("collectable"){}
+    observable("observable"),
+    collectable("collectable") {}
 
   int getOptions(int ac, char* av[]);
 

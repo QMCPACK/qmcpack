@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -44,7 +44,8 @@ class OOMPI_Comm_world;
 // Class definition
 //
 
-class OOMPI_Datatype : public OOMPI_Tag {
+class OOMPI_Datatype : public OOMPI_Tag
+{
   friend class OOMPI_Message;
   friend class OOMPI_Array_message;
   friend class OOMPI_Comm_world;
@@ -52,8 +53,8 @@ class OOMPI_Datatype : public OOMPI_Tag {
 
 public:
 
-  OOMPI_Datatype(MPI_Datatype a = MPI_DATATYPE_NULL, 
-		 int tag = OOMPI_MPI_DATATYPE_TAG);
+  OOMPI_Datatype(MPI_Datatype a = MPI_DATATYPE_NULL,
+                 int tag = OOMPI_MPI_DATATYPE_TAG);
   OOMPI_Datatype(const OOMPI_Datatype& a);
   OOMPI_Datatype& operator=(const OOMPI_Datatype& a);
   virtual ~OOMPI_Datatype(void);
@@ -75,14 +76,19 @@ public:
   // Get the type
   //
 
-  inline MPI_Datatype& Get_mpi(void) { return type_wrapper->Get(); };
+  inline MPI_Datatype& Get_mpi(void)
+  {
+    return type_wrapper->Get();
+  };
 
   //
   // MPI_DATATYPE_NULL?
   //
 
-  inline bool Is_null(void) 
-  { return (bool) (type_wrapper->Get() == MPI_DATATYPE_NULL); };
+  inline bool Is_null(void)
+  {
+    return (bool) (type_wrapper->Get() == MPI_DATATYPE_NULL);
+  };
 
   //
   // Have we been built already?
@@ -98,34 +104,34 @@ public:
   void Contiguous(OOMPI_Array_message type, int count);
   void Contiguous_type(OOMPI_Datatype type, int count);
 
-  void Vector(int blocklength, int stride, 
-	      OOMPI_Message type, int count);
-  void Vector(int blocklength, int stride, 
-	      OOMPI_Array_message type, int count);
-  void Vector_type(int blocklength, int stride, 
-	      OOMPI_Datatype type, int count);
+  void Vector(int blocklength, int stride,
+              OOMPI_Message type, int count);
+  void Vector(int blocklength, int stride,
+              OOMPI_Array_message type, int count);
+  void Vector_type(int blocklength, int stride,
+                   OOMPI_Datatype type, int count);
 
-  void Hvector(int blocklength, int stride, 
-	       OOMPI_Message type, int count);
-  void Hvector(int blocklength, int stride, 
-	       OOMPI_Array_message type, int count);
-  void Hvector_type(int blocklength, int stride, 
-	       OOMPI_Datatype type, int count);
+  void Hvector(int blocklength, int stride,
+               OOMPI_Message type, int count);
+  void Hvector(int blocklength, int stride,
+               OOMPI_Array_message type, int count);
+  void Hvector_type(int blocklength, int stride,
+                    OOMPI_Datatype type, int count);
 
-  void Indexed(int blocklengths[], int disps[], 
-	       OOMPI_Message type, int count);
-  void Indexed(int blocklengths[], int disps[], 
-	       OOMPI_Array_message type, int count);
-  void Indexed_type(int blocklengths[], int disps[], 
-	       OOMPI_Datatype type, int count);
+  void Indexed(int blocklengths[], int disps[],
+               OOMPI_Message type, int count);
+  void Indexed(int blocklengths[], int disps[],
+               OOMPI_Array_message type, int count);
+  void Indexed_type(int blocklengths[], int disps[],
+                    OOMPI_Datatype type, int count);
 
-  void Hindexed(int blocklengths[], OOMPI_Aint disps[], 
-		OOMPI_Message type, int count);
-  void Hindexed(int blocklengths[], OOMPI_Aint disps[], 
-		OOMPI_Array_message type, int count);
-  void Hindexed_type(int blocklengths[], OOMPI_Aint disps[], 
-		OOMPI_Datatype type, int count);
-  
+  void Hindexed(int blocklengths[], OOMPI_Aint disps[],
+                OOMPI_Message type, int count);
+  void Hindexed(int blocklengths[], OOMPI_Aint disps[],
+                OOMPI_Array_message type, int count);
+  void Hindexed_type(int blocklengths[], OOMPI_Aint disps[],
+                     OOMPI_Datatype type, int count);
+
   //
   // Get type info
   //
@@ -178,21 +184,26 @@ protected:
 
 
 private:
-  void inline Release(void) { OOMPI_Util a; a.Release_sem(SEM_DATATYPE); };
+  void inline Release(void)
+  {
+    OOMPI_Util a;
+    a.Release_sem(SEM_DATATYPE);
+  };
 
   //
   // Linked list of datatype info
   //
 
-  class Type_info {
+  class Type_info
+  {
   public:
     Type_info(void);
-    Type_info(int blocklen, MPI_Aint disp, MPI_Datatype type, 
-	      Type_info *next);
+    Type_info(int blocklen, MPI_Aint disp, MPI_Datatype type,
+              Type_info *next);
     virtual ~Type_info();
 
-    int MakeArrays(MPI_Aint top, int *&blocks, MPI_Aint *&disps, 
-		   MPI_Datatype *&types);
+    int MakeArrays(MPI_Aint top, int *&blocks, MPI_Aint *&disps,
+                   MPI_Datatype *&types);
 
   private:
     int blocklen;

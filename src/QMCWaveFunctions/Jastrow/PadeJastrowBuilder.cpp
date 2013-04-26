@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,106 +24,97 @@
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
-namespace qmcplusplus 
+namespace qmcplusplus
 {
 
-  PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, 
-      PtclPoolType& psets):
-    OrbitalBuilderBase(target,psi),ptclPool(psets)
+PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+                                       PtclPoolType& psets):
+  OrbitalBuilderBase(target,psi),ptclPool(psets)
+{
+  ClassName="PadeJastrowBuilder";
+}
+
+bool PadeJastrowBuilder::put(xmlNodePtr cur)
+{
+  ReportEngine PRE(ClassName,"put()");
+  string sourceOpt=targetPtcl.getName();
+  string jname="PadeJastrow";
+  string spin="yes";
+  string id_b="jee_b";
+  RealType pade_b=1.0;
+  OhmmsAttributeSet pattrib;
+  pattrib.add(jname,"name");
+  pattrib.add(spin,"spin");
+  pattrib.add(sourceOpt,"source");
+  pattrib.put(cur);
+  //bool spindep=(spin=="yes");
+  SpeciesSet& species(targetPtcl.getSpeciesSet());
+  int chargeInd=species.addAttribute("charge");
+  typedef PadeFunctor<RealType> RadFuncType;
+  if(sourceOpt == targetPtcl.getName())
   {
-    ClassName="PadeJastrowBuilder";
-  }
-
-  bool PadeJastrowBuilder::put(xmlNodePtr cur) 
-  {
-    ReportEngine PRE(ClassName,"put()");
-
-    string sourceOpt=targetPtcl.getName();
-    string jname="PadeJastrow";
-    string spin="yes";
-    string id_b="jee_b";
-    RealType pade_b=1.0;
-    OhmmsAttributeSet pattrib;
-    pattrib.add(jname,"name");
-    pattrib.add(spin,"spin");
-    pattrib.add(sourceOpt,"source");
-    pattrib.put(cur);
-
-    //bool spindep=(spin=="yes");
-
-    SpeciesSet& species(targetPtcl.getSpeciesSet());
-    int chargeInd=species.addAttribute("charge");
-
-    typedef PadeFunctor<RealType> RadFuncType;
-
-    if(sourceOpt == targetPtcl.getName())
-    {//two-body
-      typedef TwoBodyJastrowOrbital<RadFuncType> J2Type;
-      typedef DiffTwoBodyJastrowOrbital<RadFuncType> dJ2Type;
-
-      int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
-
-      J2Type *J2 = new J2Type(targetPtcl,taskid);
-      dJ2Type *dJ2 = new dJ2Type(targetPtcl);
-
-      cur= cur->xmlChildrenNode;
-      while(cur!=NULL)
+    //two-body
+    typedef TwoBodyJastrowOrbital<RadFuncType> J2Type;
+    typedef DiffTwoBodyJastrowOrbital<RadFuncType> dJ2Type;
+    int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
+    J2Type *J2 = new J2Type(targetPtcl,taskid);
+    dJ2Type *dJ2 = new dJ2Type(targetPtcl);
+    cur= cur->xmlChildrenNode;
+    while(cur!=NULL)
+    {
+      std::string cname((const char*)cur->name);
+      if (cname == "correlation")
       {
-        std::string cname((const char*)cur->name);
-        if (cname == "correlation") 
+        OhmmsAttributeSet rAttrib;
+        RealType cusp=-1e10;
+        string spA(species.speciesName[0]);
+        string spB(species.speciesName[0]);
+        rAttrib.add(spA,"speciesA");
+        rAttrib.add(spB,"speciesB");
+        rAttrib.add(cusp,"cusp");
+        rAttrib.put(cur);
+        int ia = species.findSpecies(spA);
+        int ib = species.findSpecies(spB);
+        if(ia==species.size() || ib == species.size())
         {
-          OhmmsAttributeSet rAttrib;
-          RealType cusp=-1e10;
-          string spA(species.speciesName[0]);
-          string spB(species.speciesName[0]);
-          rAttrib.add(spA,"speciesA");
-          rAttrib.add(spB,"speciesB");
-          rAttrib.add(cusp,"cusp");
-          rAttrib.put(cur);
-          int ia = species.findSpecies(spA);
-          int ib = species.findSpecies(spB);
-          if(ia==species.size() || ib == species.size())
-          {
-            PRE.error("Failed. Species are incorrect.",true);
-          }
-
-          if(cusp<-1e6)
-          {
-            RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
-            cusp = (ia==ib)? -0.25*qq:-0.5*qq;
-          }
-
-          ostringstream o;
-          o<<"j2"<<ia<<ib;
-	  RadFuncType *functor = new RadFuncType(cusp,o.str());
-          functor->put(cur);
-          J2->addFunc(ia,ib,functor);
-          dJ2->addFunc(ia,ib,functor);
-          //{
-          //  ostringstream o;
-          //  o<< "pade"<<ia<<"-"<<ib;
-          //  ofstream fstream(o.str().c_str());
-          //  int n=100;
-          //  RealType d=10/100.,r=0.001;
-          //  RealType u,du,d2du;
-          //  for (int i=0; i<n; ++i)
-          //  {
-          //    u=functor->evaluate(r,du,d2du);
-          //    fstream << setw(22) << r << setw(22) << u << setw(22) << du
-          //      << setw(22) << d2du << std::endl;
-          //    r+=d;
-          //  }
-          //}
+          PRE.error("Failed. Species are incorrect.",true);
         }
-        cur=cur->next;
+        if(cusp<-1e6)
+        {
+          RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
+          cusp = (ia==ib)? -0.25*qq:-0.5*qq;
+        }
+        ostringstream o;
+        o<<"j2"<<ia<<ib;
+        RadFuncType *functor = new RadFuncType(cusp,o.str());
+        functor->put(cur);
+        J2->addFunc(ia,ib,functor);
+        dJ2->addFunc(ia,ib,functor);
+        //{
+        //  ostringstream o;
+        //  o<< "pade"<<ia<<"-"<<ib;
+        //  ofstream fstream(o.str().c_str());
+        //  int n=100;
+        //  RealType d=10/100.,r=0.001;
+        //  RealType u,du,d2du;
+        //  for (int i=0; i<n; ++i)
+        //  {
+        //    u=functor->evaluate(r,du,d2du);
+        //    fstream << setw(22) << r << setw(22) << u << setw(22) << du
+        //      << setw(22) << d2du << std::endl;
+        //    r+=d;
+        //  }
+        //}
       }
-      J2->dPsi=dJ2;
-      targetPsi.addOrbital(J2,"J2_pade");
-      J2->setOptimizable(true);
+      cur=cur->next;
     }
-    return true;
+    J2->dPsi=dJ2;
+    targetPsi.addOrbital(J2,"J2_pade");
+    J2->setOptimizable(true);
   }
-//  bool PadeJastrowBuilder::put(xmlNodePtr cur) 
+  return true;
+}
+//  bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //  {
 //
 //    ReportEngine PRE(ClassName,"put()");
@@ -176,7 +167,7 @@ namespace qmcplusplus
 //    SpeciesSet& species(targetPtcl.getSpeciesSet());
 //    RealType q=species(0,species.addAttribute("charge"));
 //
-//    if(spin == "no") 
+//    if(spin == "no")
 //    {//
 //      RealType cusp=-0.5*q*q;
 //      FuncType *func=new FuncType(cusp,pade_b);
@@ -186,8 +177,8 @@ namespace qmcplusplus
 //      //dJ2->addFunc("pade_uu",0,0,dfunc);
 //      //dFuncList.push_back(dfunc);
 //      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< "\n";
-//    } 
-//    else 
+//    }
+//    else
 //    {
 //      //build uu functor
 //      RealType cusp_uu=-0.25*q*q;
@@ -216,7 +207,7 @@ namespace qmcplusplus
 //    if(sourceOpt != targetPtcl.getName())
 //    {
 //      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
-//      if(pa_it == ptclPool.end()) 
+//      if(pa_it == ptclPool.end())
 //      {
 //        PRE.warning("PadeJastrowBuilder::put failed. "+sourceOpt+" does not exist.");
 //        return true;
@@ -233,7 +224,7 @@ namespace qmcplusplus
 //      SpeciesSet& Species(sourcePtcl.getSpeciesSet());
 //      int ng=Species.getTotalNum();
 //      int icharge = Species.addAttribute("charge");
-//      for(int ig=0; ig<ng; ++ig) 
+//      for(int ig=0; ig<ng; ++ig)
 //      {
 //        RealType zeff=Species(icharge,ig);
 //        ostringstream j1id;
@@ -260,5 +251,5 @@ namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2930 $   $Date: 2008-07-31 10:30:42 -0500 (Thu, 31 Jul 2008) $
- * $Id: PadeConstraints.cpp 2930 2008-07-31 15:30:42Z jnkim $ 
+ * $Id: PadeConstraints.cpp 2930 2008-07-31 15:30:42Z jnkim $
  ***************************************************************************/

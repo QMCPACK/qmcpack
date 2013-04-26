@@ -1,8 +1,9 @@
 #ifndef QMCPLUSPLUS_DATASETTYPE_H
 #define QMCPLUSPLUS_DATASETTYPE_H
 
-struct ScalarObservable {
-  
+struct ScalarObservable
+{
+
   typedef double                  value_type;
   typedef std::vector<value_type> Base_t;
   typedef Base_t::iterator        iterator;
@@ -25,32 +26,53 @@ struct ScalarObservable {
   value_type NumEffData;
 
   ScalarObservable(int ncut=1):
-    Modified(true), NumCuts(ncut), Average(0.0),Variance(-1),CorrTime(-1){} 
+    Modified(true), NumCuts(ncut), Average(0.0),Variance(-1),CorrTime(-1) {}
 
   template<class IT>
-  inline void copy(IT first, IT last) {
+  inline void copy(IT first, IT last)
+  {
     Self.clear();
     Self.insert(Self.end(), first, last);
     Modified=true;
   }
 
   template<class IT>
-  inline void append(IT first, IT last) {
+  inline void append(IT first, IT last)
+  {
     Self.insert(Self.end(), first, last);
     Modified=true;
   }
 
 
-  inline void push_back(value_type x) {
+  inline void push_back(value_type x)
+  {
     Self.push_back(x);
   }
 
-  inline void resize(int n, value_type val=0.0) { Self.resize(n,val);}
-  inline iterator begin() { return Self.begin();}
-  inline iterator end() { return Self.end();}
-  inline const_iterator begin() const { return Self.begin();}
-  inline const_iterator end() const { return Self.end();}
-  inline size_type size() const { return Self.size();}
+  inline void resize(int n, value_type val=0.0)
+  {
+    Self.resize(n,val);
+  }
+  inline iterator begin()
+  {
+    return Self.begin();
+  }
+  inline iterator end()
+  {
+    return Self.end();
+  }
+  inline const_iterator begin() const
+  {
+    return Self.begin();
+  }
+  inline const_iterator end() const
+  {
+    return Self.end();
+  }
+  inline size_type size() const
+  {
+    return Self.size();
+  }
 
 
   /** get statistic data of this observable
@@ -59,7 +81,7 @@ struct ScalarObservable {
    */
   void get_stat();
 
-  /** get the average and variance 
+  /** get the average and variance
    * @return average
    */
   value_type get_average();
@@ -94,7 +116,7 @@ struct ScalarObservable {
   value_type get_corrtime(ScalarObservable* other);
 
   /** covariance of (Self,*other)
-   * @param other ScalarObservable* 
+   * @param other ScalarObservable*
    * @return pair<doulbe,double>
    *
    * CoVarType::first correlation time
@@ -103,7 +125,7 @@ struct ScalarObservable {
   CoVarType get_covariance(ScalarObservable* other);
 
   /** correlation of (Self,*other+ic)
-   * @param other ScalarObservable* 
+   * @param other ScalarObservable*
    * @param ic offset for the correlation function
    */
   value_type get_correlation(ScalarObservable* other, int ic);

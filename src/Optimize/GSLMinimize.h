@@ -8,7 +8,7 @@
 //   Oct 28 08:25:53 CDT 2005
 //     Modified by Jeongnim Kim to comply with the other optimization tools
 //     Renamed ConjugateGradient as GSLGSLConjugateGradient
-//     Added function put to take the input from xml 
+//     Added function put to take the input from xml
 //
 // Contact:
 //   Jeongnim Kim
@@ -34,13 +34,13 @@
  *
  * @authors K. Esler, J. Vincent and J. Kim
  *
- * This class is only available for internal use by the developers 
+ * This class is only available for internal use by the developers
  * and cannot be distributed with other codes.
  */
 class GSLConjugateGradient : public MinimizerBase<double>
 {
 public:
-  typedef double Return_t; 
+  typedef double Return_t;
   int MaxCGStep;
   Return_t epsilon;
   Return_t Tolerance;
@@ -55,7 +55,7 @@ public:
 //class AnnealingSchedule
 //{
 //public:
-//  typedef double scalar; 
+//  typedef double scalar;
 //  scalar StartTemp, EndTemp;
 //  int NumTemps;
 //  int StepsPerTemp;
@@ -65,7 +65,7 @@ public:
 //class ExponentialSchedule : public AnnealingSchedule
 //{
 //public:
-//  typedef double scalar; 
+//  typedef double scalar;
 //  scalar Chi;
 //  scalar Temp(int TempNum);
 //};
@@ -74,7 +74,7 @@ public:
 //class LinearSchedule : public AnnealingSchedule
 //{
 //public:
-//  typedef double scalar; 
+//  typedef double scalar;
 //  scalar Temp(int TempNum);
 //};
 
@@ -82,7 +82,7 @@ public:
 //class VanderbiltAnnealer : public Minimizer
 //{
 //public:
-//  typedef double scalar; 
+//  typedef double scalar;
 //  AnnealingSchedule *Schedule;
 //  // The Q matrix gives the step for a random uniform vector, u.
 //  // \Delta x = Q*u
@@ -114,7 +114,7 @@ public:
 //
 //  void Minimize (MinimizeFunction &MinimFunc);
 //  VanderbiltAnnealer(AnnealingSchedule &ASchedule)
-//  {    
+//  {
 //    Schedule = &ASchedule;
 //  }
 //};
@@ -123,5 +123,5 @@ public:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

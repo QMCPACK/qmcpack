@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -30,8 +30,9 @@
 #include "Tag.h"
 
 
-class OOMPI_Message : public OOMPI_Tag {
-friend class OOMPI_Datatype;
+class OOMPI_Message : public OOMPI_Tag
+{
+  friend class OOMPI_Datatype;
 
 public:
 
@@ -39,19 +40,19 @@ public:
   // Direct constructor
   //
 
-  inline OOMPI_Message(const OOMPI_Datatype& type, 
-				      void* d, int cnt = 1) 
-    : OOMPI_Tag(type.Get_tag()), 
-      type_wrapper(type.type_wrapper), 
+  inline OOMPI_Message(const OOMPI_Datatype& type,
+                       void* d, int cnt = 1)
+    : OOMPI_Tag(type.Get_tag()),
+      type_wrapper(type.type_wrapper),
       native_type(MPI_DATATYPE_NULL),
       wrapped(true), top(d), count(cnt)
   {}
-  
-  inline OOMPI_Message(const OOMPI_Datatype& type, void* d, 
-				      int cnt, int tag)
+
+  inline OOMPI_Message(const OOMPI_Datatype& type, void* d,
+                       int cnt, int tag)
     : OOMPI_Tag(tag),
       type_wrapper(type.type_wrapper),
-      native_type(MPI_DATATYPE_NULL), 
+      native_type(MPI_DATATYPE_NULL),
       wrapped(true), top(d), count(cnt)
   {}
 
@@ -61,7 +62,7 @@ public:
 
   inline OOMPI_Message(const OOMPI_Message& m)
     : OOMPI_Tag(m.Get_tag()),
-      type_wrapper(m.type_wrapper), 
+      type_wrapper(m.type_wrapper),
       native_type(m.native_type),
       wrapped(m.wrapped), top(m.top), count(m.count)
   {};
@@ -72,7 +73,8 @@ public:
 
   inline OOMPI_Message& operator=(OOMPI_Message& m)
   {
-    if (&m != this) {
+    if (&m != this)
+    {
       type_wrapper = m.type_wrapper;
       native_type = m.native_type;
       wrapped = m.wrapped;
@@ -80,7 +82,6 @@ public:
       count = m.count;
       Set_tag(m.Get_tag());
     }
-
     return *this;
   };
 
@@ -104,59 +105,59 @@ public:
 
   inline OOMPI_Message(char& i)
     : OOMPI_Tag(OOMPI_CHAR_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(short& i)
     : OOMPI_Tag(OOMPI_SHORT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(int& i)
     : OOMPI_Tag(OOMPI_INT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long& i)
     : OOMPI_Tag(OOMPI_LONG_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned char& i)
     : OOMPI_Tag(OOMPI_UNSIGNED_CHAR_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned short& i)
     : OOMPI_Tag(OOMPI_UNSIGNED_SHORT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT), 
-      wrapped(false), top(&i), count(1) 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT),
+      wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned& i)
     : OOMPI_Tag(OOMPI_UNSIGNED_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned long& i)
     : OOMPI_Tag(OOMPI_UNSIGNED_LONG_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(float& i)
     : OOMPI_Tag(OOMPI_FLOAT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(double& i)
     : OOMPI_Tag(OOMPI_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE),
       wrapped(false), top(&i), count(1)
   {}
 
 #if OOMPI_HAVE_LONG_LONG_INT
   inline OOMPI_Message(long long int& i)
     : OOMPI_Tag(OOMPI_LONG_LONG_INT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), type(oompi_long_long_int_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), type(oompi_long_long_int_type),
       wrapped(false), top(&i), count(1)
   {}
 #endif
@@ -164,7 +165,7 @@ public:
 #if OOMPI_HAVE_LONG_DOUBLE
   inline OOMPI_Message(long double& i)
     : OOMPI_Tag(OOMPI_LONG_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), type(long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), type(long_double_type),
       wrapped(false), top(&i), count(1)
   {}
 #endif
@@ -172,17 +173,17 @@ public:
 #if OOMPI_HAVE_ANSI_COMPLEX
   inline OOMPI_Message(float_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_FLOAT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_float_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_float_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(double_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_double_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long_double_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), type(complex_long_double_type),
       wrapped(false), top(&i), count(1)
   {}
 #endif
@@ -194,179 +195,179 @@ public:
 
   inline OOMPI_Message(char& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(char* i, int cnt)
     : OOMPI_Tag(OOMPI_CHAR_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(char* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_CHAR),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(short& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(short* i, int cnt)
     : OOMPI_Tag(OOMPI_SHORT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(short* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_SHORT),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(int& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(int* i, int cnt)
     : OOMPI_Tag(OOMPI_INT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(int* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_INT),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(long& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long* i, int cnt)
     : OOMPI_Tag(OOMPI_LONG_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(long* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_LONG),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(unsigned char& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned char* i, int cnt)
     : OOMPI_Tag(OOMPI_UNSIGNED_CHAR_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(unsigned char* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_CHAR),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(unsigned short& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned short* i, int cnt)
     : OOMPI_Tag(OOMPI_UNSIGNED_SHORT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(unsigned short* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_SHORT),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(unsigned& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned* i, int cnt)
     : OOMPI_Tag(OOMPI_UNSIGNED_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(unsigned* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(unsigned long& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(unsigned long* i, int cnt)
     : OOMPI_Tag(OOMPI_UNSIGNED_LONG_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(unsigned long* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_UNSIGNED_LONG),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(float& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(float* i, int cnt)
     : OOMPI_Tag(OOMPI_FLOAT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(float* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_FLOAT),
       wrapped(false), top(i), count(cnt)
   {}
 
   inline OOMPI_Message(double& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(double* i, int cnt)
     : OOMPI_Tag(OOMPI_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(double* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(MPI_DOUBLE),
       wrapped(false), top(i), count(cnt)
   {}
 
 #if OOMPI_HAVE_LONG_LONG_INT
   inline OOMPI_Message(long long int& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long long int* i, int cnt)
     : OOMPI_Tag(OOMPI_LONG_LONG_INT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(long long int* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_long_int_type),
       wrapped(false), top(i), count(cnt)
   {}
 #endif
@@ -374,17 +375,17 @@ public:
 #if OOMPI_HAVE_LONG_DOUBLE
   inline OOMPI_Message(long double& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long double* i, int cnt)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long double* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(long_double_type),
       wrapped(false), top(i), count(cnt)
   {}
 #endif
@@ -392,52 +393,52 @@ public:
 #if OOMPI_HAVE_ANSI_COMPLEX
   inline OOMPI_Message(float_complex* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(float_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_FLOAT_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(float_complex& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_float_type),
       wrapped(false), top(&i), count(1)
   {}
 
   inline OOMPI_Message(double_complex* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(double_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(double_complex& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0), native_type(complex_double_type),
       wrapped(false), top(&i), count(1)
   {}
 
   inline OOMPI_Message(long_double_complex* i, int cnt, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), 
-      native_type(complex_long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0),
+      native_type(complex_long_double_type),
       wrapped(false), top(i), count(cnt)
   {}
   inline OOMPI_Message(long_double_complex& i)
     : OOMPI_Tag(OOMPI_COMPLEX_LONG_DOUBLE_TAG),
-      type_wrapper(MPI_DATATYPE_NULL, 0), 
-      native_type(complex_long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0),
+      native_type(complex_long_double_type),
       wrapped(false), top(&i), count(1)
   {}
   inline OOMPI_Message(long_double_complex& i, int tag)
     : OOMPI_Tag(tag),
-      type_wrapper(MPI_DATATYPE_NULL, 0), 
-      native_type(complex_long_double_type), 
+      type_wrapper(MPI_DATATYPE_NULL, 0),
+      native_type(complex_long_double_type),
       wrapped(false), top(&i), count(1)
   {}
 #endif
@@ -454,11 +455,19 @@ public:
   //
   // Access functions
   //
-  
-  inline MPI_Datatype Get_type(void) 
-  { return (wrapped) ? type_wrapper->Get() : native_type; };
-  inline void* Get_top(void) { return top; };
-  inline int Get_count(void) { return count; };
+
+  inline MPI_Datatype Get_type(void)
+  {
+    return (wrapped) ? type_wrapper->Get() : native_type;
+  };
+  inline void* Get_top(void)
+  {
+    return top;
+  };
+  inline int Get_count(void)
+  {
+    return count;
+  };
 
 protected:
 
@@ -481,7 +490,8 @@ private:
 // Same class, but for arrays
 //
 
-class OOMPI_Array_message : public OOMPI_Tag {
+class OOMPI_Array_message : public OOMPI_Tag
+{
 public:
   //
   // Promotions from base types
@@ -547,8 +557,14 @@ public:
   // Access functions
   //
 
-  inline MPI_Datatype Get_type(void) { return type; };
-  inline void* Get_top(void) { return top; };
+  inline MPI_Datatype Get_type(void)
+  {
+    return type;
+  };
+  inline void* Get_top(void)
+  {
+    return top;
+  };
 
 protected:
 

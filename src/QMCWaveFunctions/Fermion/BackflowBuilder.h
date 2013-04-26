@@ -39,53 +39,57 @@
 namespace qmcplusplus
 {
 
-  class BackflowBuilder: public OrbitalBuilderBase { 
+class BackflowBuilder: public OrbitalBuilderBase
+{
 
-    typedef LRHandlerBase HandlerType;
-    typedef LinearGrid<RealType> GridType;
-    typedef map<string,ParticleSet*>   PtclPoolType;
+  typedef LRHandlerBase HandlerType;
+  typedef LinearGrid<RealType> GridType;
+  typedef map<string,ParticleSet*>   PtclPoolType;
 
-    public:
+public:
 
-    BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction& psi);
-   
-    ~BackflowBuilder();
+  BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction& psi);
 
-    bool put(xmlNodePtr cur);
+  ~BackflowBuilder();
 
-    BackflowTransformation* getBFTrans() {return BFTrans; }
+  bool put(xmlNodePtr cur);
 
-    RealType cutOff;
+  BackflowTransformation* getBFTrans()
+  {
+    return BFTrans;
+  }
 
-    private:
-  
-    PtclPoolType& ptclPool;
-    BackflowTransformation* BFTrans;
-    bool IgnoreSpin;
-    RealType Rs;
-    RealType Kc;
-    RealType Rcut;
-    bool OneBody;
-    bool TwoBody;
+  RealType cutOff;
 
-    HandlerType* myHandler;
+private:
 
-    void addOneBody(xmlNodePtr cur);
+  PtclPoolType& ptclPool;
+  BackflowTransformation* BFTrans;
+  bool IgnoreSpin;
+  RealType Rs;
+  RealType Kc;
+  RealType Rcut;
+  bool OneBody;
+  bool TwoBody;
 
-    void addTwoBody(xmlNodePtr cur);
+  HandlerType* myHandler;
 
-    void addRPA(xmlNodePtr cur);
+  void addOneBody(xmlNodePtr cur);
 
-    void makeShortRange_oneBody();
+  void addTwoBody(xmlNodePtr cur);
 
-    void makeLongRange_oneBody();
+  void addRPA(xmlNodePtr cur);
 
-    void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, vector<int>& offsets);
+  void makeShortRange_oneBody();
 
-    void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbf, vector<int>& offsets);
-    
+  void makeLongRange_oneBody();
 
-  };
+  void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, vector<int>& offsets);
+
+  void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbf, vector<int>& offsets);
+
+
+};
 
 }
 

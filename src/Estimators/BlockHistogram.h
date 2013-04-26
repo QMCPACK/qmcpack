@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@
 #include <deque>
 
 template<class T>
-struct BlockHistogram 
+struct BlockHistogram
 {
   int           maxSize;
   T             mySum;
@@ -76,18 +76,17 @@ struct BlockHistogram
     return mySum;
   }
 
-  inline size_type size() const 
+  inline size_type size() const
   {
     return myData.size();
   }
 
-  /** add a value x 
+  /** add a value x
    */
   inline void operator()(const T& x)
   {
     //add to the end
     myData.push_back(x);
-    
     if(myData.size()<maxSize)
       mySum +=x;
     else
@@ -95,7 +94,6 @@ struct BlockHistogram
       mySum += x - myData.front();
       myData.pop_front();
     }
-
     myWeightInv=1/static_cast<T>(myData.size());
   }
 
@@ -104,5 +102,5 @@ struct BlockHistogram
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2521 $   $Date: 2008-03-05 10:37:41 -0600 (Wed, 05 Mar 2008) $
- * $Id: PooledData.h 2521 2008-03-05 16:37:41Z jnkim $ 
+ * $Id: PooledData.h 2521 2008-03-05 16:37:41Z jnkim $
  ***************************************************************************/

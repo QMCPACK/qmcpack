@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -35,7 +35,7 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate():
-myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)
+  myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)
 {
 }
 
@@ -63,7 +63,7 @@ Communicate::set_world()
 Communicate::Communicate(const Communicate& comm, int nparts)
 {
   //this is a workaround due to the OOMPI bug with split
-  if(nparts>1) 
+  if(nparts>1)
   {
     std::vector<int> nplist(nparts+1);
     int p=FairDivideLow(comm.rank(), comm.size(), nparts, nplist); //group
@@ -75,13 +75,12 @@ Communicate::Communicate(const Communicate& comm, int nparts)
     MPI_Comm_split(comm.getMPI(),p,q,&row);
     myComm=OOMPI_Intra_comm(row);
     d_groupid=p;
-  } 
-  else 
+  }
+  else
   {
     myComm=OOMPI_Intra_comm(comm.getComm());
     d_groupid=0;
   }
-
   myMPI = myComm.Get_mpi();
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
@@ -91,7 +90,7 @@ Communicate::Communicate(const Communicate& comm, int nparts)
 Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 {
   //this is a workaround due to the OOMPI bug with split
-  if(jobs.size()>1) 
+  if(jobs.size()>1)
   {
     MPI_Comm row;
     std::vector<int> nplist(jobs.size()+1);
@@ -100,23 +99,23 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
     for(int i=0; i<jobs.size(); ++i)
     {
       nplist[i+1]=nplist[i]+jobs[i];
-      if(comm.rank()>=nplist[i] && comm.rank()<nplist[i+1]) p=i;
+      if(comm.rank()>=nplist[i] && comm.rank()<nplist[i+1])
+        p=i;
     }
-
     if(nplist[comm.size()] != comm.size())
     {
       APP_ABORT("Communicate::Communicate(comm,jobs) Cannot group MPI tasks. Mismatch of the tasks");
     }
-
     int q=comm.rank()-nplist[p];//rank within a group
     MPI_Comm_split(comm.getMPI(),p,q,&row);
     myComm=OOMPI_Intra_comm(row);
     d_groupid=p;
-  } else {
+  }
+  else
+  {
     myComm=OOMPI_Intra_comm(comm.getComm());
     d_groupid=0;
   }
-
   myMPI = myComm.Get_mpi();
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
@@ -129,15 +128,12 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 // Implements Communicate with OOMPI library
 //================================================================
 Communicate::~Communicate()
-{ 
-
+{
 }
 
 void Communicate::initialize(int argc, char **argv)
 {
-
   qmcplusplus::qmc_common.initialize(argc,argv);
-
   OOMPI_COMM_WORLD.Init(argc, argv);
   myComm = OOMPI_COMM_WORLD;
   myMPI = myComm.Get_mpi();
@@ -145,28 +141,28 @@ void Communicate::initialize(int argc, char **argv)
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   d_groupid=0;
   d_ngroups=1;
-
 #ifdef __linux__
-  for (int proc=0; proc<OHMMS::Controller->size(); proc++) {
-    if (OHMMS::Controller->rank() == proc) {
+  for (int proc=0; proc<OHMMS::Controller->size(); proc++)
+  {
+    if (OHMMS::Controller->rank() == proc)
+    {
       fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n", proc, freemem());
     }
     barrier();
   }
   barrier();
 #endif
-
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
   hpmInit(QMC_MAIN_EVENT,when.c_str());
 }
 
-void Communicate::finalize() 
+void Communicate::finalize()
 {
   OOMPI_COMM_WORLD.Finalize();
 }
 
-void Communicate::cleanupMessage(void*) 
-{ 
+void Communicate::cleanupMessage(void*)
+{
 }
 
 void Communicate::abort()
@@ -180,7 +176,7 @@ void Communicate::barrier()
 }
 
 void Communicate::abort(const char* msg)
-{ 
+{
   std::cerr << msg << std::endl;
   OOMPI_COMM_WORLD.Abort();
 }
@@ -188,29 +184,30 @@ void Communicate::abort(const char* msg)
 
 #else
 
-Communicate::~Communicate(){}
+Communicate::~Communicate() {}
 
 void Communicate::initialize(int argc, char **argv)
-{ 
+{
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
   hpmInit(QMC_MAIN_EVENT,when.c_str());
 }
 
 void Communicate::set_world()
-{ 
+{
 }
 
 void Communicate::finalize()
-{ 
+{
   hpmTerminate(QMC_MAIN_EVENT);
 }
 
 void Communicate::abort()
-{ 
+{
   abort();
 }
 
-void Communicate::abort(const char* msg){ 
+void Communicate::abort(const char* msg)
+{
   std::cerr << msg << std::endl;
   abort();
 }
@@ -219,8 +216,8 @@ void Communicate::barrier()
 {
 }
 
-void Communicate::cleanupMessage(void*) 
-{ 
+void Communicate::cleanupMessage(void*)
+{
 }
 
 Communicate::Communicate(const Communicate& comm, int nparts)
@@ -237,5 +234,5 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

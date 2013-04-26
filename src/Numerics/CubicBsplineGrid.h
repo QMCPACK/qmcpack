@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,7 +20,7 @@
 #include "Numerics/BsplineOneDimSolvers.h"
 #include <limits>
 
-/** CubicBsplineGrid 
+/** CubicBsplineGrid
  *
  * Empty declaration to be specialized. Three template parameters are
  * - T data type
@@ -42,7 +42,7 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
   point_type curPoint;
   point_type tp[4];
 
-  inline CubicBsplineGrid():curPoint(-10000){}
+  inline CubicBsplineGrid():curPoint(-10000) {}
 
   inline bool getGridPoint(point_type x, int &i)
   {
@@ -62,21 +62,19 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
     return true;
   }
 
-  void spline(point_type start, point_type end, const container_type& data, container_type& p, bool closed) 
+  void spline(point_type start, point_type end, const container_type& data, container_type& p, bool closed)
   {
     GridStart=start;
     GridEnd=end;
-
     int N =data.size();
-    if(closed) N--;
-
+    if(closed)
+      N--;
     p.resize(N+3);
     L=end-start;
     Linv=1.0/L;
     GridDelta=L/static_cast<T>(N);
     GridDeltaInv=1.0/GridDelta;
     GridDeltaInv2=1.0/GridDelta/GridDelta;
-
     SolvePeriodicInterp1D<T>::apply(data,p,N);
     p[0]=p[N];
     p[N+1]=p[1];
@@ -92,16 +90,17 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
   typedef typename GridTraits<T>::value_type value_type;
   typedef std::vector<T>                     container_type;
   typedef std::size_t    size_t;
-  ///number of points 
+  ///number of points
   int Npts;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;
   point_type tp[4];
 
-  inline CubicBsplineGrid(){}
+  inline CubicBsplineGrid() {}
 
   inline bool getGridPoint(point_type x, int &i)
   {
-    if(x<GridStart || x>GridEnd) return false;
+    if(x<GridStart || x>GridEnd)
+      return false;
     point_type delta = x - GridStart;
     delta -= std::floor(delta*Linv)*L;
     i = static_cast<int>(delta*GridDeltaInv);
@@ -131,28 +130,28 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
   }
 
   void spline(point_type start, point_type end, const container_type& data, container_type& p,
-      bool closed) 
+              bool closed)
   {
     setGrid(start,end,data.size());
     p.resize(Npts+2);
-    point_type bcLower[]={-3.0,0.0,3.0,0.0};
-    point_type bcUpper[]={-3.0,0.0,3.0,0.0};
+    point_type bcLower[]= {-3.0,0.0,3.0,0.0};
+    point_type bcUpper[]= {-3.0,0.0,3.0,0.0};
     bcLower[3]=data[1]-data[0];
     bcUpper[3]=data[Npts-1]-data[Npts-2];
-    SolveFirstDerivInterp1D<point_type>::apply(data,p,Npts,bcLower,bcUpper); 
+    SolveFirstDerivInterp1D<point_type>::apply(data,p,Npts,bcLower,bcUpper);
   }
 
-  void spline(point_type start, point_type end, 
-      value_type startDeriv, value_type endDeriv,
-      const container_type& data, container_type& p) 
+  void spline(point_type start, point_type end,
+              value_type startDeriv, value_type endDeriv,
+              const container_type& data, container_type& p)
   {
     setGrid(start,end,data.size());
     p.resize(Npts+2);
-    point_type bcLower[]={-3.0,0.0,3.0,0.0};
-    point_type bcUpper[]={-3.0,0.0,3.0,0.0};
+    point_type bcLower[]= {-3.0,0.0,3.0,0.0};
+    point_type bcUpper[]= {-3.0,0.0,3.0,0.0};
     bcLower[3]=startDeriv*GridDelta;
     bcUpper[3]=endDeriv*GridDelta;
-    SolveFirstDerivInterp1D<point_type>::apply(data,p,Npts,bcLower,bcUpper); 
+    SolveFirstDerivInterp1D<point_type>::apply(data,p,Npts,bcLower,bcUpper);
   }
 
 };

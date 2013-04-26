@@ -8,98 +8,98 @@
 
 int umfpack_di_symbolic
 (
-        int n_row,
-        int n_col,
-        const int Ap [ ],
-        const int Ai [ ],
-        const double Ax [ ],
-        void **Symbolic,
-        const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]
+  int n_row,
+  int n_col,
+  const int Ap [ ],
+  const int Ai [ ],
+  const double Ax [ ],
+  void **Symbolic,
+  const double Control [UMFPACK_CONTROL],
+  double Info [UMFPACK_INFO]
 ) ;
 
 int umfpack_di_numeric
 (
-    const int Ap [ ],
-    const int Ai [ ],
-    const double Ax [ ],
-    void *Symbolic,
-    void **Numeric,
-    const double Control [UMFPACK_CONTROL],
-    double Info [UMFPACK_INFO]
+  const int Ap [ ],
+  const int Ai [ ],
+  const double Ax [ ],
+  void *Symbolic,
+  void **Numeric,
+  const double Control [UMFPACK_CONTROL],
+  double Info [UMFPACK_INFO]
 ) ;
 
 void umfpack_di_free_symbolic
 (
-    void **Symbolic
+  void **Symbolic
 ) ;
 
 int umfpack_di_solve
 (
-    int sys,
-    const int Ap [ ],
-    const int Ai [ ],
-    const double Ax [ ],
-    double X [ ],
-    const double B [ ],
-    void *Numeric,
-    const double Control [UMFPACK_CONTROL],
-    double Info [UMFPACK_INFO]
+  int sys,
+  const int Ap [ ],
+  const int Ai [ ],
+  const double Ax [ ],
+  double X [ ],
+  const double B [ ],
+  void *Numeric,
+  const double Control [UMFPACK_CONTROL],
+  double Info [UMFPACK_INFO]
 ) ;
 
 void umfpack_di_free_numeric
 (
-    void **Numeric
+  void **Numeric
 ) ;
 
 int umfpack_di_get_lunz
 (
-    int *lnz,
-    int *unz,
-    int *n_row,
-    int *n_col,
-    int *nz_udiag,
-    void *Numeric
+  int *lnz,
+  int *unz,
+  int *n_row,
+  int *n_col,
+  int *nz_udiag,
+  void *Numeric
 ) ;
 
 int umfpack_di_get_numeric
 (
-    int Lp [ ],
-    int Lj [ ],
-    double Lx [ ],
-    int Up [ ],
-    int Ui [ ],
-    double Ux [ ],
-    int P [ ],
-    int Q [ ],
-    double Dx [ ],
-    int *do_recip,
-    double Rs [ ],
-    void *Numeric
+  int Lp [ ],
+  int Lj [ ],
+  double Lx [ ],
+  int Up [ ],
+  int Ui [ ],
+  double Ux [ ],
+  int P [ ],
+  int Q [ ],
+  double Dx [ ],
+  int *do_recip,
+  double Rs [ ],
+  void *Numeric
 ) ;
 
 int umfpack_di_transpose
 (
-    int n_row,
-    int n_col,
-    const int Ap [ ],
-    const int Ai [ ],
-    const double Ax [ ],
-    const int P [ ],
-    const int Q [ ],
-    int Rp [ ],
-    int Ri [ ],
-    double Rx [ ]
+  int n_row,
+  int n_col,
+  const int Ap [ ],
+  const int Ai [ ],
+  const double Ax [ ],
+  const int P [ ],
+  const int Q [ ],
+  int Rp [ ],
+  int Ri [ ],
+  double Rx [ ]
 ) ;
 //extern "C" {
 int gmresm(int, int, int, double, double *,
-            double *, int *, int *,
-            double *, int *, int *, double *, double *,
-            double *, int *, int *, FILE *);
+           double *, int *, int *,
+           double *, int *, int *, double *, double *,
+           double *, int *, int *, FILE *);
 
 void ilutp_(int *, double *, int *, int *, int *, double *,
-             double *, int *, double *, int *, int *, int *,
-             double *, double *, int *, int *, int *, int *, int *);
+            double *, int *, double *, int *, int *, int *,
+            double *, double *, int *, int *, int *, int *, int *);
 
 void lusol_(int *, double *, double *, double *, int *, int *);
 //}

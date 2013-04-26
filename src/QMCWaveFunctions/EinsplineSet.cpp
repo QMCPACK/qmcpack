@@ -17,19 +17,20 @@
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include <einspline/multi_bspline.h>
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  template<typename StorageType>
-  inline void EinsplineSetExtended<StorageType>::computePhaseFactors
-  (const TinyVector<RealType,OHMMS_DIM>& r)
-  {
-    APP_ABORT("EinsplineSetExtended<StorageType>::computePhaseFactors called");
-
-    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
-    eval_e2iphi(kPoints.size(),phase.data(),eikr.data());
-    //eval_e2iphi(phase,eikr);
+template<typename StorageType>
+inline void EinsplineSetExtended<StorageType>::computePhaseFactors
+(const TinyVector<RealType,OHMMS_DIM>& r)
+{
+  APP_ABORT("EinsplineSetExtended<StorageType>::computePhaseFactors called");
+  for (int i=0; i<kPoints.size(); i++)
+    phase[i] = -dot(r, kPoints[i]);
+  eval_e2iphi(kPoints.size(),phase.data(),eikr.data());
+  //eval_e2iphi(phase,eikr);
 //#ifdef HAVE_MKL
-//    for (int i=0; i<kPoints.size(); i++) 
+//    for (int i=0; i<kPoints.size(); i++)
 //      phase[i] = -dot(r, kPoints[i]);
 //    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
 //#else
@@ -40,1086 +41,578 @@ namespace qmcplusplus {
 //      eikr[i] = complex<double>(c,s);
 //    }
 //#endif
+}
+
+
+
+EinsplineSet::UnitCellType
+EinsplineSet::GetLattice()
+{
+  return SuperLattice;
+}
+
+void
+EinsplineSet::resetTargetParticleSet(ParticleSet& e)
+{
+}
+
+void
+EinsplineSet::resetSourceParticleSet(ParticleSet& ions)
+{
+}
+
+void
+EinsplineSet::setOrbitalSetSize(int norbs)
+{
+  OrbitalSetSize = norbs;
+}
+
+// Real evaluation functions
+inline void
+EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<double> &psi)
+{
+  eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+                    TinyVector<double,3> r,
+                    vector<double> &psi)
+{
+  eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], &(psi[0]));
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<double> &psi,
+                    Vector<TinyVector<double,3> > &grad)
+{
+  eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
+                               psi.data(),
+                               (double*)grad.data());
+}
+
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<double> &psi,
+                    Vector<TinyVector<double,3> > &grad,
+                    Vector<Tensor<double,3> > &hess)
+{
+  eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2],
+                                psi.data(),
+                                (double*)grad.data(),
+                                (double*)hess.data());
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<double> &psi,
+                    Vector<TinyVector<double,3> > &grad,
+                    Vector<Tensor<double,3> > &hess,
+                    Vector<TinyVector<Tensor<double,3>,3> > &gradhess)
+{
+  eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2],
+                                 psi.data(),
+                                 (double*)grad.data(),
+                                 (double*)hess.data(),
+                                 (double*)gradhess.data());
+}
+
+
+
+//////////////////////////////////
+// Complex evaluation functions //
+//////////////////////////////////
+inline void
+EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<complex<double> > &psi)
+{
+  eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<complex<double> > &psi,
+                    Vector<TinyVector<complex<double>,3> > &grad)
+{
+  eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2],
+                               psi.data(),
+                               (complex<double>*)grad.data());
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<complex<double> > &psi,
+                    Vector<TinyVector<complex<double>,3> > &grad,
+                    Vector<Tensor<complex<double>,3> > &hess)
+{
+  eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2],
+                                psi.data(),
+                                (complex<double>*)grad.data(),
+                                (complex<double>*)hess.data());
+}
+
+inline void
+EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+                    const TinyVector<double,3>& r,
+                    Vector<complex<double> > &psi,
+                    Vector<TinyVector<complex<double>,3> > &grad,
+                    Vector<Tensor<complex<double>,3> > &hess,
+                    Vector<TinyVector<Tensor<complex<double>,3>,3> > &gradhess)
+{
+  eval_multi_UBspline_3d_z_vghgh(spline, r[0], r[1], r[2],
+                                 psi.data(),
+                                 (complex<double>*)grad.data(),
+                                 (complex<double>*)hess.data(),
+                                 (complex<double>*)gradhess.data());
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
+{
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::resetTargetParticleSet(ParticleSet& e)
+{
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
+{
+  OrbitalSetSize = norbs;
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, RealValueVector_t& psi)
+{
+  ValueTimer.start();
+  PosType r (P.R[iat]);
+  // Do core states first
+  int icore = NumValenceOrbs;
+  for (int tin=0; tin<MuffinTins.size(); tin++)
+  {
+    MuffinTins[tin].evaluateCore(r, StorageValueVector, icore);
+    icore += MuffinTins[tin].get_num_core();
   }
-  
-
-
-  EinsplineSet::UnitCellType
-  EinsplineSet::GetLattice()
+  // Add phase to core orbitals
+  for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++)
   {
-    return SuperLattice;
+    PosType k = kPoints[j];
+    double s,c;
+    double phase = -dot(r, k);
+    sincos (phase, &s, &c);
+    complex<double> e_mikr (c,s);
+    StorageValueVector[j] *= e_mikr;
   }
-  
-  void
-  EinsplineSet::resetTargetParticleSet(ParticleSet& e)
+  // Check if we are inside a muffin tin.  If so, compute valence
+  // states in the muffin tin.
+  bool inTin = false;
+  bool need2blend = false;
+  double b(0.0);
+  for (int tin=0; tin<MuffinTins.size() && !inTin; tin++)
   {
-  }
-
-  void
-  EinsplineSet::resetSourceParticleSet(ParticleSet& ions)
-  {
-  }
-  
-  void
-  EinsplineSet::setOrbitalSetSize(int norbs)
-  {
-    OrbitalSetSize = norbs;
-  }
-  
-  // Real evaluation functions
-  inline void 
-  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<double> &psi)
-  {
-    eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      TinyVector<double,3> r, 
-		      vector<double> &psi)
-  {
-    eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], &(psi[0]));
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<double> &psi,
-		      Vector<TinyVector<double,3> > &grad)
-  {
-    eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
-				 psi.data(),
-				 (double*)grad.data());
-  }
-
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<double> &psi,
-		      Vector<TinyVector<double,3> > &grad,
-		      Vector<Tensor<double,3> > &hess)
-  {
-    eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2],
-				  psi.data(), 
-				  (double*)grad.data(), 
-				  (double*)hess.data());
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
-                      const TinyVector<double,3>& r,
-                      Vector<double> &psi,
-                      Vector<TinyVector<double,3> > &grad,
-                      Vector<Tensor<double,3> > &hess,
-                      Vector<TinyVector<Tensor<double,3>,3> > &gradhess)
-  {
-
-    eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2],
-                                  psi.data(),
-                                  (double*)grad.data(),
-                                  (double*)hess.data(),
-                                  (double*)gradhess.data());
-  }
-
-
-
-  //////////////////////////////////
-  // Complex evaluation functions //
-  //////////////////////////////////
-  inline void 
-  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<complex<double> > &psi)
-  {
-    eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<complex<double> > &psi,
-		      Vector<TinyVector<complex<double>,3> > &grad)
-  {
-    eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2],
-				 psi.data(), 
-				 (complex<double>*)grad.data());
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-		      const TinyVector<double,3>& r,
-		      Vector<complex<double> > &psi,
-		      Vector<TinyVector<complex<double>,3> > &grad,
-		      Vector<Tensor<complex<double>,3> > &hess)
-  {
-    eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2],
-				  psi.data(), 
-				  (complex<double>*)grad.data(), 
-				  (complex<double>*)hess.data());
-  }
-
-  inline void
-  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
-                      const TinyVector<double,3>& r,
-                      Vector<complex<double> > &psi,
-                      Vector<TinyVector<complex<double>,3> > &grad,
-                      Vector<Tensor<complex<double>,3> > &hess,
-                      Vector<TinyVector<Tensor<complex<double>,3>,3> > &gradhess)
-  {
-    eval_multi_UBspline_3d_z_vghgh(spline, r[0], r[1], r[2],
-                                  psi.data(),
-                                  (complex<double>*)grad.data(),
-                                  (complex<double>*)hess.data(),
-                                  (complex<double>*)gradhess.data());
-  }			   
-
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
-  {
-
-  }
-
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::resetTargetParticleSet(ParticleSet& e)
-  {
-  }
-
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
-  {
-    OrbitalSetSize = norbs;
-  }
-  
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, RealValueVector_t& psi)
-  {
-    ValueTimer.start();
-    PosType r (P.R[iat]);
-
-    // Do core states first
-    int icore = NumValenceOrbs;
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
-      MuffinTins[tin].evaluateCore(r, StorageValueVector, icore);
-      icore += MuffinTins[tin].get_num_core();
+    MuffinTins[tin].inside(r, inTin, need2blend);
+    if (inTin)
+    {
+      MuffinTins[tin].evaluate (r, StorageValueVector);
+      if (need2blend)
+      {
+        PosType disp = MuffinTins[tin].disp(r);
+        double dr = std::sqrt(dot(disp, disp));
+        MuffinTins[tin].blend_func(dr, b);
+      }
+      break;
     }
-    // Add phase to core orbitals
-    for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++) {
-      PosType k = kPoints[j];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      StorageValueVector[j] *= e_mikr;
-    }
-
-    // Check if we are inside a muffin tin.  If so, compute valence
-    // states in the muffin tin.
-    bool inTin = false;
-    bool need2blend = false;
-    double b(0.0);
-    for (int tin=0; tin<MuffinTins.size() && !inTin; tin++) {
-      MuffinTins[tin].inside(r, inTin, need2blend);
-      if (inTin) {
-	MuffinTins[tin].evaluate (r, StorageValueVector);
-	if (need2blend) {
-	  PosType disp = MuffinTins[tin].disp(r);
-	  double dr = std::sqrt(dot(disp, disp));
-	  MuffinTins[tin].blend_func(dr, b);
-	}
-	break;
+  }
+  // Check atomic orbitals
+  bool inAtom = false;
+  for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+  {
+    inAtom = AtomicOrbitals[jat].evaluate (r, StorageValueVector);
+    if (inAtom)
+      break;
+  }
+  StorageValueVector_t &valVec =
+    need2blend ? BlendValueVector : StorageValueVector;
+  if (!inTin || need2blend)
+  {
+    if (!inAtom)
+    {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      for (int i=0; i<OHMMS_DIM; i++)
+        ru[i] -= std::floor (ru[i]);
+      EinsplineTimer.start();
+      EinsplineMultiEval (MultiSpline, ru, valVec);
+      EinsplineTimer.stop();
+      // Add e^ikr phase to B-spline orbitals
+      for (int j=0; j<NumValenceOrbs; j++)
+      {
+        PosType k = kPoints[j];
+        double s,c;
+        double phase = -dot(r, k);
+        sincos (phase, &s, &c);
+        complex<double> e_mikr (c,s);
+        valVec[j] *= e_mikr;
       }
     }
+  }
+  int N = StorageValueVector.size();
+  // If we are in a muffin tin, don't add the e^ikr term
+  // We should add it to the core states, however
+  if (need2blend)
+  {
+    int psiIndex = 0;
+    for (int j=0; j<N; j++)
+    {
+      complex<double> psi1 = StorageValueVector[j];
+      complex<double> psi2 =   BlendValueVector[j];
+      complex<double> psi_val = b * psi1 + (1.0-b) * psi2;
+      psi[psiIndex] = real(psi_val);
+      psiIndex++;
+      if (MakeTwoCopies[j])
+      {
+        psi[psiIndex] = imag(psi_val);
+        psiIndex++;
+      }
+    }
+  }
+  else
+  {
+    int psiIndex = 0;
+    for (int j=0; j<N; j++)
+    {
+      complex<double> psi_val = StorageValueVector[j];
+      psi[psiIndex] = real(psi_val);
+      psiIndex++;
+      if (MakeTwoCopies[j])
+      {
+        psi[psiIndex] = imag(psi_val);
+        psiIndex++;
+      }
+    }
+  }
+  ValueTimer.stop();
+}
 
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+{
+  ValueTimer.start();
+  PosType r (P.R[iat]);
+  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  for (int i=0; i<OHMMS_DIM; i++)
+    ru[i] -= std::floor (ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  for (int i=0; i<psi.size(); i++)
+  {
+    PosType k = kPoints[i];
+    double s,c;
+    double phase = -dot(r, k);
+    sincos (phase, &s, &c);
+    complex<double> e_mikr (c,s);
+    convert (e_mikr*StorageValueVector[i], psi[i]);
+  }
+  ValueTimer.stop();
+}
+
+// This is an explicit specialization of the above for real orbitals
+// with a real return value, i.e. simulations at the gamma or L
+// point.
+template<> void
+EinsplineSetExtended<double>::evaluate
+(const ParticleSet &P, int iat, RealValueVector_t& psi)
+{
+  ValueTimer.start();
+  PosType r (P.R[iat]);
+  bool inAtom = false;
+  for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+  {
+    inAtom = AtomicOrbitals[jat].evaluate (r, psi);
+    if (inAtom)
+      break;
+  }
+  if (!inAtom)
+  {
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    int sign=0;
+    for (int i=0; i<OHMMS_DIM; i++)
+    {
+      RealType img = std::floor(ru[i]);
+      ru[i] -= img;
+      sign += HalfG[i] * (int)img;
+    }
     // Check atomic orbitals
-    bool inAtom = false;
-    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-      inAtom = AtomicOrbitals[jat].evaluate (r, StorageValueVector);
-      if (inAtom) break;
-    }
-      
-    StorageValueVector_t &valVec = 
-      need2blend ? BlendValueVector : StorageValueVector;
-
-    if (!inTin || need2blend) {
-      if (!inAtom) {
-	PosType ru(PrimLattice.toUnit(P.R[iat]));
-	for (int i=0; i<OHMMS_DIM; i++)
-	  ru[i] -= std::floor (ru[i]);
-	EinsplineTimer.start();
-	EinsplineMultiEval (MultiSpline, ru, valVec);
-	EinsplineTimer.stop();
-      
-	// Add e^ikr phase to B-spline orbitals
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  PosType k = kPoints[j];
-	  double s,c;
-	  double phase = -dot(r, k);
-	  sincos (phase, &s, &c);
-	  complex<double> e_mikr (c,s);
-	  valVec[j] *= e_mikr;
-	}
-      }
-    }
-    int N = StorageValueVector.size();
-
-    // If we are in a muffin tin, don't add the e^ikr term
-    // We should add it to the core states, however
-
-    if (need2blend) {
-      int psiIndex = 0;
-      for (int j=0; j<N; j++) {
-	complex<double> psi1 = StorageValueVector[j];
-	complex<double> psi2 =   BlendValueVector[j];
-	
-	complex<double> psi_val = b * psi1 + (1.0-b) * psi2;
-
-	psi[psiIndex] = real(psi_val);
-	psiIndex++;
-	if (MakeTwoCopies[j]) {
-	  psi[psiIndex] = imag(psi_val);
-	  psiIndex++;
-	}
-      }
-
-    }
-    else {
-      int psiIndex = 0;
-      for (int j=0; j<N; j++) {
-	complex<double> psi_val = StorageValueVector[j];
-	psi[psiIndex] = real(psi_val);
-	psiIndex++;
-	if (MakeTwoCopies[j]) {
-	  psi[psiIndex] = imag(psi_val);
-	  psiIndex++;
-	}
-      }
-    }
-    ValueTimer.stop();
-  }
-
-
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, ComplexValueVector_t& psi)
-  {
-    ValueTimer.start();
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
     EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+    EinsplineMultiEval (MultiSpline, ru, psi);
     EinsplineTimer.stop();
-    //computePhaseFactors(r);
-    for (int i=0; i<psi.size(); i++) {
-      PosType k = kPoints[i];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      convert (e_mikr*StorageValueVector[i], psi[i]);
-    }
-    ValueTimer.stop();
+    if (sign & 1)
+      for (int j=0; j<psi.size(); j++)
+        psi[j] *= -1.0;
   }
+  ValueTimer.stop();
+}
 
-  // This is an explicit specialization of the above for real orbitals
-  // with a real return value, i.e. simulations at the gamma or L 
-  // point.
-  template<> void
-  EinsplineSetExtended<double>::evaluate
-  (const ParticleSet &P, int iat, RealValueVector_t& psi)
+// template<> void
+// EinsplineSetExtended<double>::evaluate
+// (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
+// {
+//   ValueTimer.start();
+//   PosType ru(PrimLattice.toUnit(r));
+//   int image[OHMMS_DIM];
+//   for (int i=0; i<OHMMS_DIM; i++) {
+//     RealType img = std::floor(ru[i]);
+//     ru[i] -= img;
+//     image[i] = (int) img;
+//   }
+//   EinsplineTimer.start();
+//   EinsplineMultiEval (MultiSpline, ru, psi);
+//   EinsplineTimer.stop();
+//   int sign=0;
+//   for (int i=0; i<OHMMS_DIM; i++)
+//     sign += HalfG[i]*image[i];
+//   if (sign & 1)
+//     for (int j=0; j<psi.size(); j++)
+// 	psi[j] *= -1.0;
+//   ValueTimer.stop();
+// }
+
+
+// template<> void
+// EinsplineSetExtended<complex<double> >::evaluate
+// (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
+// {
+//   cerr << "Not Implemented.\n";
+// }
+
+
+// Value, gradient, and laplacian
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, RealValueVector_t& psi,
+ RealGradVector_t& dpsi, RealValueVector_t& d2psi)
+{
+  VGLTimer.start();
+  PosType r (P.R[iat]);
+  complex<double> eye (0.0, 1.0);
+  // Do core states first
+  int icore = NumValenceOrbs;
+  for (int tin=0; tin<MuffinTins.size(); tin++)
   {
-    ValueTimer.start();
-    PosType r (P.R[iat]);
-
-    bool inAtom = false;
-    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-      inAtom = AtomicOrbitals[jat].evaluate (r, psi);
-      if (inAtom) 
-	break;
+    MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
+                                 StorageLaplVector, icore);
+    icore += MuffinTins[tin].get_num_core();
+  }
+  // Add phase to core orbitals
+  for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++)
+  {
+    complex<double> u = StorageValueVector[j];
+    TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+    complex<double> laplu = StorageLaplVector[j];
+    PosType k = kPoints[j];
+    TinyVector<complex<double>,OHMMS_DIM> ck;
+    for (int n=0; n<OHMMS_DIM; n++)
+      ck[n] = k[n];
+    double s,c;
+    double phase = -dot(r, k);
+    sincos (phase, &s, &c);
+    complex<double> e_mikr (c,s);
+    StorageValueVector[j] = e_mikr*u;
+    StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+    StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+  }
+  // Check muffin tins;  if inside evaluate the orbitals
+  bool inTin = false;
+  bool need2blend = false;
+  PosType disp;
+  double b, db, d2b;
+  for (int tin=0; tin<MuffinTins.size(); tin++)
+  {
+    MuffinTins[tin].inside(r, inTin, need2blend);
+    if (inTin)
+    {
+      MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+      if (need2blend)
+      {
+        disp = MuffinTins[tin].disp(r);
+        double dr = std::sqrt(dot(disp, disp));
+        MuffinTins[tin].blend_func(dr, b, db, d2b);
+      }
+      break;
     }
-
-    if (!inAtom) {
+  }
+  bool inAtom = false;
+  for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+  {
+    inAtom = AtomicOrbitals[jat].evaluate
+             (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+    if (inAtom)
+      break;
+  }
+  StorageValueVector_t &valVec =
+    need2blend ? BlendValueVector : StorageValueVector;
+  StorageGradVector_t &gradVec =
+    need2blend ? BlendGradVector : StorageGradVector;
+  StorageValueVector_t &laplVec =
+    need2blend ? BlendLaplVector : StorageLaplVector;
+  // Otherwise, evaluate the B-splines
+  if (!inTin || need2blend)
+  {
+    if (!inAtom)
+    {
       PosType ru(PrimLattice.toUnit(P.R[iat]));
-      int sign=0;
-      for (int i=0; i<OHMMS_DIM; i++) {
-	RealType img = std::floor(ru[i]);
-	ru[i] -= img;
-	sign += HalfG[i] * (int)img;
-      }
-      // Check atomic orbitals
+      for (int i=0; i<OHMMS_DIM; i++)
+        ru[i] -= std::floor (ru[i]);
       EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, psi);
+      EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
       EinsplineTimer.stop();
-    
-      if (sign & 1) 
-	for (int j=0; j<psi.size(); j++)
-	  psi[j] *= -1.0;
-    }
-    ValueTimer.stop();
-  }
-
-  // template<> void
-  // EinsplineSetExtended<double>::evaluate
-  // (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
-  // {
-  //   ValueTimer.start();
-  //   PosType ru(PrimLattice.toUnit(r));
-  //   int image[OHMMS_DIM];
-  //   for (int i=0; i<OHMMS_DIM; i++) {
-  //     RealType img = std::floor(ru[i]);
-  //     ru[i] -= img;
-  //     image[i] = (int) img;
-  //   }
-  //   EinsplineTimer.start();
-  //   EinsplineMultiEval (MultiSpline, ru, psi);
-  //   EinsplineTimer.stop();
-  //   int sign=0;
-  //   for (int i=0; i<OHMMS_DIM; i++) 
-  //     sign += HalfG[i]*image[i];
-  //   if (sign & 1) 
-  //     for (int j=0; j<psi.size(); j++)
-  // 	psi[j] *= -1.0;
-  //   ValueTimer.stop();
-  // }
-
-
-  // template<> void
-  // EinsplineSetExtended<complex<double> >::evaluate
-  // (const ParticleSet &P, const PosType& r, vector<RealType> &psi)
-  // {
-  //   cerr << "Not Implemented.\n";
-  // }
-
-
-  // Value, gradient, and laplacian
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, RealValueVector_t& psi, 
-   RealGradVector_t& dpsi, RealValueVector_t& d2psi)
-  {
-    VGLTimer.start();
-    PosType r (P.R[iat]);
-    complex<double> eye (0.0, 1.0);
-    
-    // Do core states first
-    int icore = NumValenceOrbs;
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
-      MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector, 
-				   StorageLaplVector, icore);
-      icore += MuffinTins[tin].get_num_core();
-    }
-    
-    // Add phase to core orbitals
-    for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++) {
-      complex<double> u = StorageValueVector[j];
-      TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
-      complex<double> laplu = StorageLaplVector[j];
-      PosType k = kPoints[j];
-      TinyVector<complex<double>,OHMMS_DIM> ck;
-      for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      StorageValueVector[j] = e_mikr*u;
-      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-      StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-    }
-
-    // Check muffin tins;  if inside evaluate the orbitals
-    bool inTin = false;
-    bool need2blend = false;
-    PosType disp;
-    double b, db, d2b;
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
-      MuffinTins[tin].inside(r, inTin, need2blend);
-      if (inTin) {
-	MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-	if (need2blend) {
-	  disp = MuffinTins[tin].disp(r);
-	  double dr = std::sqrt(dot(disp, disp));
-	  MuffinTins[tin].blend_func(dr, b, db, d2b);
-	}
-	break;
+      for (int j=0; j<NumValenceOrbs; j++)
+      {
+        gradVec[j] = dot (PrimLattice.G, gradVec[j]);
+        laplVec[j] = trace (StorageHessVector[j], GGt);
       }
-    }
-
-
-    bool inAtom = false;
-    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-      inAtom = AtomicOrbitals[jat].evaluate 
-	(r, StorageValueVector, StorageGradVector, StorageLaplVector);
-      if (inAtom) break;
-    }
-
-    StorageValueVector_t &valVec =  
-      need2blend ? BlendValueVector : StorageValueVector;
-    StorageGradVector_t &gradVec =  
-      need2blend ? BlendGradVector : StorageGradVector;
-    StorageValueVector_t &laplVec =  
-      need2blend ? BlendLaplVector : StorageLaplVector;
-
-    // Otherwise, evaluate the B-splines
-    if (!inTin || need2blend) {
-      if (!inAtom) {
-	PosType ru(PrimLattice.toUnit(P.R[iat]));
-	for (int i=0; i<OHMMS_DIM; i++)
-	  ru[i] -= std::floor (ru[i]);
-	EinsplineTimer.start();
-	EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
-	EinsplineTimer.stop();
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-	  laplVec[j] = trace (StorageHessVector[j], GGt);
-	}
-      
-	// Add e^-ikr phase to B-spline orbitals
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  complex<double> u = valVec[j];
-	  TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
-	  complex<double> laplu = laplVec[j];
-	  PosType k = kPoints[j];
-	  TinyVector<complex<double>,OHMMS_DIM> ck;
-	  for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-	  double s,c;
-	  double phase = -dot(r, k);
-	  sincos (phase, &s, &c);
-	  complex<double> e_mikr (c,s);
-	  valVec[j]   = e_mikr*u;
-	  gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
-	  laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-	}
-      }
-    }
-
-    // Finally, copy into output vectors
-    int psiIndex = 0;
-    int N = StorageValueVector.size();
-    if (need2blend) {
-      for (int j=0; j<NumValenceOrbs; j++) {
-	complex<double> psi_val, psi_lapl;
-	TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
-	complex<double> psi1 = StorageValueVector[j];
-	complex<double> psi2 =   BlendValueVector[j];
-	TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
-	TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
-	complex<double> d2psi1 = StorageLaplVector[j];
-	complex<double> d2psi2 =   BlendLaplVector[j];
-	
-	TinyVector<complex<double>,OHMMS_DIM> zrhat;
-	for (int i=0; i<OHMMS_DIM; i++)
-	  zrhat[i] = rhat[i];
-
-	psi_val  = b * psi1 + (1.0-b)*psi2;
-	psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
-	psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
-	  2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
-	  d2b * (psi1 - psi2);
-	
-	psi[psiIndex] = real(psi_val);
-	for (int n=0; n<OHMMS_DIM; n++)
-	  dpsi[psiIndex][n] = real(psi_grad[n]);
-	d2psi[psiIndex] = real(psi_lapl);
-	psiIndex++;
-	if (MakeTwoCopies[j]) {
-	  psi[psiIndex] = imag(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi[psiIndex][n] = imag(psi_grad[n]);
-	  d2psi[psiIndex] = imag(psi_lapl);
-	  psiIndex++;
-	}
-      } 
-      for (int j=NumValenceOrbs; j<N; j++) {
-	complex<double> psi_val, psi_lapl;
-	TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	psi_val  = StorageValueVector[j];
-	psi_grad = StorageGradVector[j];
-	psi_lapl = StorageLaplVector[j];
-	
-	psi[psiIndex] = real(psi_val);
-	for (int n=0; n<OHMMS_DIM; n++)
-	  dpsi[psiIndex][n] = real(psi_grad[n]);
-	d2psi[psiIndex] = real(psi_lapl);
-	psiIndex++;
-	if (MakeTwoCopies[j]) {
-	  psi[psiIndex] = imag(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi[psiIndex][n] = imag(psi_grad[n]);
-	  d2psi[psiIndex] = imag(psi_lapl);
-	  psiIndex++;
-	}
-      }
-    }
-    else {
-      for (int j=0; j<N; j++) {
-	complex<double> psi_val, psi_lapl;
-	TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	psi_val  = StorageValueVector[j];
-	psi_grad = StorageGradVector[j];
-	psi_lapl = StorageLaplVector[j];
-	
-	psi[psiIndex] = real(psi_val);
-	for (int n=0; n<OHMMS_DIM; n++)
-	  dpsi[psiIndex][n] = real(psi_grad[n]);
-	d2psi[psiIndex] = real(psi_lapl);
-	psiIndex++;
-	if (MakeTwoCopies[j]) {
-	  psi[psiIndex] = imag(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi[psiIndex][n] = imag(psi_grad[n]);
-	  d2psi[psiIndex] = imag(psi_lapl);
-	  psiIndex++;
-	}
-      }
-    }
-    VGLTimer.stop();
-  }
-
-
-  // Value, gradient, and laplacian
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, RealValueVector_t& psi,
-   RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi)
-  {
-    APP_ABORT("need specialization for HessVector in EinsplineSet");
-// something is wrong below
-/*
-    VGLTimer.start();
-    PosType r (P.R[iat]);
-    complex<double> eye (0.0, 1.0);
-
-    // Do core states first
-    int icore = NumValenceOrbs;
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
-      //APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-      MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector, 
-                                   StorageLaplVector, icore);
-      icore += MuffinTins[tin].get_num_core();
-    }
-
-    // Add phase to core orbitals
-    for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++) {
-      complex<double> u = StorageValueVector[j];
-      TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
-      complex<double> laplu = StorageLaplVector[j];
-      PosType k = kPoints[j];
-      TinyVector<complex<double>,OHMMS_DIM> ck;
-      for (int n=0; n<OHMMS_DIM; n++)     ck[n] = k[n];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      StorageValueVector[j] = e_mikr*u;
-      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-      StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-    }
-
-    // Check muffin tins;  if inside evaluate the orbitals
-    bool inTin = false;
-    bool need2blend = false;
-    PosType disp;
-    double b, db, d2b;
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
-      APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-      MuffinTins[tin].inside(r, inTin, need2blend);
-      if (inTin) {
-        MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-        if (need2blend) {
-          disp = MuffinTins[tin].disp(r);
-          double dr = std::sqrt(dot(disp, disp));
-          MuffinTins[tin].blend_func(dr, b, db, d2b);
-        }
-        break;
-      }
-    }
-
-
-    bool inAtom = false;
-    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-      inAtom = AtomicOrbitals[jat].evaluate
-        (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-      if (inAtom) break;
-    }
-
-    StorageValueVector_t &valVec =
-      need2blend ? BlendValueVector : StorageValueVector;
-    StorageGradVector_t &gradVec =
-      need2blend ? BlendGradVector : StorageGradVector;
-    StorageHessVector_t &hessVec =
-      need2blend ? BlendHessVector : StorageHessVector;
-    Tensor<complex<double>,OHMMS_DIM> tmphs;
-    // Otherwise, evaluate the B-splines
-    if (!inTin || need2blend) {
-      if (!inAtom) {
-        PosType ru(PrimLattice.toUnit(P.R[iat]));
-        for (int i=0; i<OHMMS_DIM; i++)
-          ru[i] -= std::floor (ru[i]);
-        EinsplineTimer.start();
-        EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
-        EinsplineTimer.stop();
-        for (int j=0; j<NumValenceOrbs; j++) {
-          gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-// FIX FIX FIX: store transpose(PrimLattice.G)
-          tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-          hessVec[j] = dot(tmphs,PrimLattice.G);
-        }
-
-        // Add e^-ikr phase to B-spline orbitals
-        for (int j=0; j<NumValenceOrbs; j++) {
-          complex<double> u = valVec[j];
-          TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
-          tmphs = hessVec[j];
-          PosType k = kPoints[j];
-          TinyVector<complex<double>,OHMMS_DIM> ck;
-          for (int n=0; n<OHMMS_DIM; n++)         ck[n] = k[n];
-          double s,c;
-          double phase = -dot(r, k);
-          sincos (phase, &s, &c);
-          complex<double> e_mikr (c,s);
-          valVec[j]   = e_mikr*u;
-          gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
-          hessVec[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)); 
-        }
-      }
-    }
-
-    // Finally, copy into output vectors
-    int psiIndex = 0;
-    int N = StorageValueVector.size();
-    if (need2blend) {
-      APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
-      for (int j=0; j<NumValenceOrbs; j++) {
-        complex<double> psi_val, psi_lapl;
-        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-        PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
-        complex<double> psi1 = StorageValueVector[j];
-        complex<double> psi2 =   BlendValueVector[j];
-        TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
-        TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
-        complex<double> d2psi1 = StorageLaplVector[j];
-        complex<double> d2psi2 =   BlendLaplVector[j];
-
-        TinyVector<complex<double>,OHMMS_DIM> zrhat;
-        for (int i=0; i<OHMMS_DIM; i++)
-          zrhat[i] = rhat[i];
-
-        psi_val  = b * psi1 + (1.0-b)*psi2;
-        psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
-        psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
-          2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
-          d2b * (psi1 - psi2);
-
-        psi[psiIndex] = real(psi_val);
+      // Add e^-ikr phase to B-spline orbitals
+      for (int j=0; j<NumValenceOrbs; j++)
+      {
+        complex<double> u = valVec[j];
+        TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+        complex<double> laplu = laplVec[j];
+        PosType k = kPoints[j];
+        TinyVector<complex<double>,OHMMS_DIM> ck;
         for (int n=0; n<OHMMS_DIM; n++)
-          dpsi[psiIndex][n] = real(psi_grad[n]);
-        //d2psi[psiIndex] = real(psi_lapl);
-        psiIndex++;
-        if (MakeTwoCopies[j]) {
-          psi[psiIndex] = imag(psi_val);
-          for (int n=0; n<OHMMS_DIM; n++)
-            dpsi[psiIndex][n] = imag(psi_grad[n]);
-          //d2psi[psiIndex] = imag(psi_lapl);
-          psiIndex++;
-        }
-      }
-      for (int j=NumValenceOrbs; j<N; j++) {
-        complex<double> psi_val, psi_lapl;
-        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-        psi_val  = StorageValueVector[j];
-        psi_grad = StorageGradVector[j];
-        psi_lapl = StorageLaplVector[j];
-
-        psi[psiIndex] = real(psi_val);
-        for (int n=0; n<OHMMS_DIM; n++)
-          dpsi[psiIndex][n] = real(psi_grad[n]);
-        //d2psi[psiIndex] = real(psi_lapl);
-        psiIndex++;
-        if (MakeTwoCopies[j]) {
-          psi[psiIndex] = imag(psi_val);
-          for (int n=0; n<OHMMS_DIM; n++)
-            dpsi[psiIndex][n] = imag(psi_grad[n]);
-          //d2psi[psiIndex] = imag(psi_lapl);
-          psiIndex++;
-        }
+          ck[n] = k[n];
+        double s,c;
+        double phase = -dot(r, k);
+        sincos (phase, &s, &c);
+        complex<double> e_mikr (c,s);
+        valVec[j]   = e_mikr*u;
+        gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+        laplVec[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
       }
     }
-    else {
-      for (int j=0; j<N; j++) {
-        complex<double> psi_val;
-        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-        psi_val  = StorageValueVector[j];
-        psi_grad = StorageGradVector[j];
-        tmphs = StorageHessVector[j];
-
-        psi[psiIndex] = real(psi_val);
-        for (int n=0; n<OHMMS_DIM; n++)
-          dpsi[psiIndex][n] = real(psi_grad[n]);
-        //d2psi[psiIndex] = real(psi_lapl);
-// FIX FIX FIX
-        for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-          grad_grad_psi[psiIndex][n] = real(tmphs(n));
-        psiIndex++;
-        if (MakeTwoCopies[j]) {
-          psi[psiIndex] = imag(psi_val);
-          for (int n=0; n<OHMMS_DIM; n++)
-            dpsi[psiIndex][n] = imag(psi_grad[n]);
-          //d2psi[psiIndex] = imag(psi_lapl);
-          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-            grad_grad_psi[psiIndex][n] = imag(tmphs(n));
-          psiIndex++;
-        }
-      }
-    }
-    VGLTimer.stop();
-*/
   }
-
-  
-  // Value, gradient, and laplacian
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, ComplexValueVector_t& psi, 
-   ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi)
+  // Finally, copy into output vectors
+  int psiIndex = 0;
+  int N = StorageValueVector.size();
+  if (need2blend)
   {
-    VGLTimer.start();
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
-
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-			StorageGradVector, StorageHessVector);
-    EinsplineTimer.stop();
-    //computePhaseFactors(r);
-    complex<double> eye (0.0, 1.0);
-    for (int j=0; j<psi.size(); j++) {
-      complex<double> u, laplu;
-      TinyVector<complex<double>, OHMMS_DIM> gradu;
-      u = StorageValueVector[j];
-      gradu = dot(PrimLattice.G, StorageGradVector[j]);
-      laplu = trace(StorageHessVector[j], GGt);
-      
-      PosType k = kPoints[j];
-      TinyVector<complex<double>,OHMMS_DIM> ck;
-      for (int n=0; n<OHMMS_DIM; n++)	
-	ck[n] = k[n];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      convert(e_mikr * u, psi[j]);
-      convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
-    }
-    VGLTimer.stop();
-  }
-  
-  // Value, gradient, and laplacian
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate
-  (const ParticleSet& P, int iat, ComplexValueVector_t& psi,
-   ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi)
-  {
-    VGLTimer.start();
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
-
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-                        StorageGradVector, StorageHessVector);
-    EinsplineTimer.stop();
-    //computePhaseFactors(r);
-    complex<double> eye (0.0, 1.0);
-    for (int j=0; j<psi.size(); j++) {
-      complex<double> u;
-      TinyVector<complex<double>, OHMMS_DIM> gradu;
-      Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
-      u = StorageValueVector[j];
-      gradu = dot(PrimLattice.G, StorageGradVector[j]);
-
-      ////laplu = trace(StorageHessVector[j], GGt);
-      //tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-      //hs = dot(tmphs,PrimLattice.G);
-      hs=dot(StorageHessVector[j],GGt);
-
-      PosType k = kPoints[j];
-      TinyVector<complex<double>,OHMMS_DIM> ck;
+    for (int j=0; j<NumValenceOrbs; j++)
+    {
+      complex<double> psi_val, psi_lapl;
+      TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+      PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
+      complex<double> psi1 = StorageValueVector[j];
+      complex<double> psi2 =   BlendValueVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
+      complex<double> d2psi1 = StorageLaplVector[j];
+      complex<double> d2psi2 =   BlendLaplVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> zrhat;
+      for (int i=0; i<OHMMS_DIM; i++)
+        zrhat[i] = rhat[i];
+      psi_val  = b * psi1 + (1.0-b)*psi2;
+      psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
+      psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
+                 2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
+                 d2b * (psi1 - psi2);
+      psi[psiIndex] = real(psi_val);
       for (int n=0; n<OHMMS_DIM; n++)
-        ck[n] = k[n];
-      double s,c;
-      double phase = -dot(r, k);
-      sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
-      convert(e_mikr * u, psi[j]);
-      convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      //convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
-      convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(j));
+        dpsi[psiIndex][n] = real(psi_grad[n]);
+      d2psi[psiIndex] = real(psi_lapl);
+      psiIndex++;
+      if (MakeTwoCopies[j])
+      {
+        psi[psiIndex] = imag(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi[psiIndex][n] = imag(psi_grad[n]);
+        d2psi[psiIndex] = imag(psi_lapl);
+        psiIndex++;
+      }
     }
-    VGLTimer.stop();
+    for (int j=NumValenceOrbs; j<N; j++)
+    {
+      complex<double> psi_val, psi_lapl;
+      TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+      psi_val  = StorageValueVector[j];
+      psi_grad = StorageGradVector[j];
+      psi_lapl = StorageLaplVector[j];
+      psi[psiIndex] = real(psi_val);
+      for (int n=0; n<OHMMS_DIM; n++)
+        dpsi[psiIndex][n] = real(psi_grad[n]);
+      d2psi[psiIndex] = real(psi_lapl);
+      psiIndex++;
+      if (MakeTwoCopies[j])
+      {
+        psi[psiIndex] = imag(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi[psiIndex][n] = imag(psi_grad[n]);
+        d2psi[psiIndex] = imag(psi_lapl);
+        psiIndex++;
+      }
+    }
   }
-
-  
-  template<> void
-  EinsplineSetExtended<double>::evaluate
-  (const ParticleSet& P, int iat, RealValueVector_t& psi, 
-   RealGradVector_t& dpsi, RealValueVector_t& d2psi)
+  else
   {
-    VGLTimer.start();
-    PosType r (P.R[iat]);
-
-    bool inAtom = false;
-    for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-      inAtom = AtomicOrbitals[jat].evaluate (r, psi, dpsi, d2psi);
-      if (inAtom) 
-	break;
-    }
-    if (!inAtom) {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-      
-      int sign=0;
-      for (int i=0; i<OHMMS_DIM; i++) {
-	RealType img = std::floor(ru[i]);
-	ru[i] -= img;
-	sign += HalfG[i] * (int)img;
-      }
-      
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector, 
-			  StorageHessVector);
-      EinsplineTimer.stop();
-    
-      if (sign & 1) 
-	for (int j=0; j<psi.size(); j++) {
-	  psi[j] *= -1.0;
-	  StorageGradVector[j] *= -1.0;
-	  StorageHessVector[j] *= -1.0;
-	}
-      for (int i=0; i<psi.size(); i++) {
-	dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
-	d2psi[i] = trace(StorageHessVector[i], GGt);
+    for (int j=0; j<N; j++)
+    {
+      complex<double> psi_val, psi_lapl;
+      TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+      psi_val  = StorageValueVector[j];
+      psi_grad = StorageGradVector[j];
+      psi_lapl = StorageLaplVector[j];
+      psi[psiIndex] = real(psi_val);
+      for (int n=0; n<OHMMS_DIM; n++)
+        dpsi[psiIndex][n] = real(psi_grad[n]);
+      d2psi[psiIndex] = real(psi_lapl);
+      psiIndex++;
+      if (MakeTwoCopies[j])
+      {
+        psi[psiIndex] = imag(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi[psiIndex][n] = imag(psi_grad[n]);
+        d2psi[psiIndex] = imag(psi_lapl);
+        psiIndex++;
       }
     }
-    VGLTimer.stop();
   }
-  
-  
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose
-  (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
-   RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
-  {
-    complex<double> eye(0.0,1.0);
-    VGLMatTimer.start();
-    for (int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
-      
-      // Do core states first
-      int icore = NumValenceOrbs;
-      for (int tin=0; tin<MuffinTins.size(); tin++) {
-	MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
-				     StorageLaplVector, icore);
-	icore += MuffinTins[tin].get_num_core();
-      }
-      
-      // Add phase to core orbitals
-      for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++) {
-	complex<double> u = StorageValueVector[j];
-	TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
-	complex<double> laplu = StorageLaplVector[j];
-	PosType k = kPoints[j];
-	TinyVector<complex<double>,OHMMS_DIM> ck;
-	for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-	double s,c;
-	double phase = -dot(r, k);
-	sincos (phase, &s, &c);
-	complex<double> e_mikr (c,s);
-	StorageValueVector[j] = e_mikr*u;
-	StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-	StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-      }
-      
-      // Check if we are in the muffin tin;  if so, evaluate
-      bool inTin = false, need2blend = false;
-      PosType disp;
-      double b, db, d2b;
-      for (int tin=0; tin<MuffinTins.size(); tin++) {
-	MuffinTins[tin].inside(r, inTin, need2blend);
-	if (inTin) {
-	  MuffinTins[tin].evaluate (r, StorageValueVector, 
-				    StorageGradVector, StorageLaplVector);
-	  if (need2blend) {
-	    disp = MuffinTins[tin].disp(r);
-	    double dr = std::sqrt(dot(disp, disp));
-	    MuffinTins[tin].blend_func(dr, b, db, d2b);
-	  }
-	  break;
-	}
-      }
-      bool inAtom = false;
-      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-	inAtom = AtomicOrbitals[jat].evaluate 
-	  (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-	if (inAtom) break;
-      }
-      
-      StorageValueVector_t &valVec =  
-	need2blend ? BlendValueVector : StorageValueVector;
-      StorageGradVector_t &gradVec =  
-	need2blend ? BlendGradVector : StorageGradVector;
-      StorageValueVector_t &laplVec =  
-	need2blend ? BlendLaplVector : StorageLaplVector;
-      
-      // Otherwise, evaluate the B-splines
-      if (!inTin || need2blend) {
-	if (!inAtom) {
-	  PosType ru(PrimLattice.toUnit(P.R[iat]));
-	  for (int i=0; i<OHMMS_DIM; i++)
-	    ru[i] -= std::floor (ru[i]);
-	  EinsplineTimer.start();
-	  EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
-	  EinsplineTimer.stop();
-	  for (int j=0; j<NumValenceOrbs; j++) {
-	    gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-	    laplVec[j] = trace (StorageHessVector[j], GGt);
-	  }
-	  
-	  // Add e^-ikr phase to B-spline orbitals
-	  for (int j=0; j<NumValenceOrbs; j++) {
-	    complex<double> u = valVec[j];
-	    TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
-	    complex<double> laplu = laplVec[j];
-	    PosType k = kPoints[j];
-	    TinyVector<complex<double>,OHMMS_DIM> ck;
-	    for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-	    double s,c;
-	    double phase = -dot(r, k);
-	    sincos (phase, &s, &c);
-	    complex<double> e_mikr (c,s);
-	    valVec[j]   = e_mikr*u;
-	    gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
-	    laplVec[j]  = e_mikr*(-dot(k,k)*u - eye*dot(ck,gradu) -eye*dot(gradu,ck) + laplu);
-	  }
-	}
-      }
-      
-      // Finally, copy into output vectors
-      int psiIndex = 0;
-      int N = StorageValueVector.size();
-      if (need2blend) {
-	for (int j=0; j<NumValenceOrbs; j++) {
-	  complex<double> psi_val, psi_lapl;
-	  TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	  PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
-	  complex<double> psi1 = StorageValueVector[j];
-	  complex<double> psi2 =   BlendValueVector[j];
-	  TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
-	  TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
-	  complex<double> d2psi1 = StorageLaplVector[j];
-	  complex<double> d2psi2 =   BlendLaplVector[j];
-	  
-	  TinyVector<complex<double>,OHMMS_DIM> zrhat;
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    zrhat[n] = rhat[n];
-	  
-	  psi_val  = b * psi1 + (1.0-b)*psi2;
-	  psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
-	  psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
-	    2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
-	    d2b * (psi1 - psi2);
-	  
-	  psi(i,psiIndex) = real(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-	  d2psi(i,psiIndex) = real(psi_lapl);
-	  psiIndex++;
-	  if (MakeTwoCopies[j]) {
-	    psi(i,psiIndex) = imag(psi_val);
-	    for (int n=0; n<OHMMS_DIM; n++)
-	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-	    d2psi(i,psiIndex) = imag(psi_lapl);
-	    psiIndex++;
-	  }
-	} 
-	// Copy core states
-	for (int j=NumValenceOrbs; j<N; j++) {
-	  complex<double> psi_val, psi_lapl;
-	  TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	  psi_val  = StorageValueVector[j];
-	  psi_grad = StorageGradVector[j];
-	  psi_lapl = StorageLaplVector[j];
-	  
-	  psi(i,psiIndex) = real(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-	  d2psi(i,psiIndex) = real(psi_lapl);
-	  psiIndex++;
-	  if (MakeTwoCopies[j]) {
-	    psi(i,psiIndex) = imag(psi_val);
-	    for (int n=0; n<OHMMS_DIM; n++)
-	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-	    d2psi(i,psiIndex) = imag(psi_lapl);
-	    psiIndex++;
-	  }
-	}
-      }
-      else { // No blending needed
-	for (int j=0; j<N; j++) {
-	  complex<double> psi_val, psi_lapl;
-	  TinyVector<complex<double>, OHMMS_DIM> psi_grad;
-	  psi_val  = StorageValueVector[j];
-	  psi_grad = StorageGradVector[j];
-	  psi_lapl = StorageLaplVector[j];
-	  
-	  psi(i,psiIndex) = real(psi_val);
-	  for (int n=0; n<OHMMS_DIM; n++)
-	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-	  d2psi(i,psiIndex) = real(psi_lapl);
-	  psiIndex++;
-	  // if (psiIndex >= dpsi.cols()) {
-	  //   cerr << "Error:  out of bounds writing in EinsplineSet::evalate.\n"
-	  // 	 << "psiIndex = " << psiIndex << "  dpsi.cols() = " << dpsi.cols() << endl;
-	  // }
-	  if (MakeTwoCopies[j]) {
-	    psi(i,psiIndex) = imag(psi_val);
-	    for (int n=0; n<OHMMS_DIM; n++)
-	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-	    d2psi(i,psiIndex) = imag(psi_lapl);
-	    psiIndex++;
-	  }
-	}
-      }
-    }
-    VGLMatTimer.stop();
-  }
+  VGLTimer.stop();
+}
 
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose
-  (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi,
-   RealGradMatrix_t& dpsi, RealHessMatrix_t& grad_grad_psi)
-   {
-    complex<double> eye(0.0,1.0);
-    VGLMatTimer.start();
-    for (int iat=first,i=0; iat<last; iat++,i++) {
+
+// Value, gradient, and laplacian
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, RealValueVector_t& psi,
+ RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi)
+{
+  APP_ABORT("need specialization for HessVector in EinsplineSet");
+// something is wrong below
+  /*
+      VGLTimer.start();
       PosType r (P.R[iat]);
+      complex<double> eye (0.0, 1.0);
 
       // Do core states first
       int icore = NumValenceOrbs;
       for (int tin=0; tin<MuffinTins.size(); tin++) {
-        APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
+        //APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
         MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
-                                     StorageHessVector, icore);
+                                     StorageLaplVector, icore);
         icore += MuffinTins[tin].get_num_core();
       }
 
@@ -1127,41 +620,43 @@ namespace qmcplusplus {
       for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++) {
         complex<double> u = StorageValueVector[j];
         TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
-        Tensor<complex<double>,OHMMS_DIM> hs = StorageHessVector[j];
+        complex<double> laplu = StorageLaplVector[j];
         PosType k = kPoints[j];
         TinyVector<complex<double>,OHMMS_DIM> ck;
-        for (int n=0; n<OHMMS_DIM; n++)   ck[n] = k[n];
+        for (int n=0; n<OHMMS_DIM; n++)     ck[n] = k[n];
         double s,c;
         double phase = -dot(r, k);
         sincos (phase, &s, &c);
         complex<double> e_mikr (c,s);
         StorageValueVector[j] = e_mikr*u;
         StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-        StorageHessVector[j]  = e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
+        StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
       }
-      // Check if we are in the muffin tin;  if so, evaluate
-      bool inTin = false, need2blend = false;
+
+      // Check muffin tins;  if inside evaluate the orbitals
+      bool inTin = false;
+      bool need2blend = false;
       PosType disp;
       double b, db, d2b;
       for (int tin=0; tin<MuffinTins.size(); tin++) {
         APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
         MuffinTins[tin].inside(r, inTin, need2blend);
         if (inTin) {
-          MuffinTins[tin].evaluate (r, StorageValueVector,
-                                    StorageGradVector, StorageHessVector);
+          MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
           if (need2blend) {
             disp = MuffinTins[tin].disp(r);
             double dr = std::sqrt(dot(disp, disp));
-            //MuffinTins[tin].blend_func(dr, b, db, d2b);
+            MuffinTins[tin].blend_func(dr, b, db, d2b);
           }
           break;
         }
       }
 
+
       bool inAtom = false;
       for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
         inAtom = AtomicOrbitals[jat].evaluate
-          (r, StorageValueVector, StorageGradVector, StorageHessVector);
+          (r, StorageValueVector, StorageGradVector, StorageLaplVector);
         if (inAtom) break;
       }
 
@@ -1183,7 +678,7 @@ namespace qmcplusplus {
           EinsplineTimer.stop();
           for (int j=0; j<NumValenceOrbs; j++) {
             gradVec[j] = dot (PrimLattice.G, gradVec[j]);
-// FIX FIX FIX: store transpose(PrimLattice.G)
+  // FIX FIX FIX: store transpose(PrimLattice.G)
             tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
             hessVec[j] = dot(tmphs,PrimLattice.G);
           }
@@ -1195,7 +690,7 @@ namespace qmcplusplus {
             tmphs = hessVec[j];
             PosType k = kPoints[j];
             TinyVector<complex<double>,OHMMS_DIM> ck;
-            for (int n=0; n<OHMMS_DIM; n++)       ck[n] = k[n];
+            for (int n=0; n<OHMMS_DIM; n++)         ck[n] = k[n];
             double s,c;
             double phase = -dot(r, k);
             sincos (phase, &s, &c);
@@ -1206,13 +701,12 @@ namespace qmcplusplus {
           }
         }
       }
+
       // Finally, copy into output vectors
       int psiIndex = 0;
       int N = StorageValueVector.size();
       if (need2blend) {
-
         APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
-
         for (int j=0; j<NumValenceOrbs; j++) {
           complex<double> psi_val, psi_lapl;
           TinyVector<complex<double>, OHMMS_DIM> psi_grad;
@@ -1225,8 +719,8 @@ namespace qmcplusplus {
           complex<double> d2psi2 =   BlendLaplVector[j];
 
           TinyVector<complex<double>,OHMMS_DIM> zrhat;
-          for (int n=0; n<OHMMS_DIM; n++)
-            zrhat[n] = rhat[n];
+          for (int i=0; i<OHMMS_DIM; i++)
+            zrhat[i] = rhat[i];
 
           psi_val  = b * psi1 + (1.0-b)*psi2;
           psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
@@ -1234,20 +728,19 @@ namespace qmcplusplus {
             2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
             d2b * (psi1 - psi2);
 
-          psi(i,psiIndex) = real(psi_val);
+          psi[psiIndex] = real(psi_val);
           for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-          //d2psi(i,psiIndex) = real(psi_lapl);
+            dpsi[psiIndex][n] = real(psi_grad[n]);
+          //d2psi[psiIndex] = real(psi_lapl);
           psiIndex++;
           if (MakeTwoCopies[j]) {
-            psi(i,psiIndex) = imag(psi_val);
+            psi[psiIndex] = imag(psi_val);
             for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-            //d2psi(i,psiIndex) = imag(psi_lapl);
+              dpsi[psiIndex][n] = imag(psi_grad[n]);
+            //d2psi[psiIndex] = imag(psi_lapl);
             psiIndex++;
           }
         }
-        // Copy core states
         for (int j=NumValenceOrbs; j<N; j++) {
           complex<double> psi_val, psi_lapl;
           TinyVector<complex<double>, OHMMS_DIM> psi_grad;
@@ -1255,21 +748,21 @@ namespace qmcplusplus {
           psi_grad = StorageGradVector[j];
           psi_lapl = StorageLaplVector[j];
 
-          psi(i,psiIndex) = real(psi_val);
+          psi[psiIndex] = real(psi_val);
           for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-          //d2psi(i,psiIndex) = real(psi_lapl);
+            dpsi[psiIndex][n] = real(psi_grad[n]);
+          //d2psi[psiIndex] = real(psi_lapl);
           psiIndex++;
           if (MakeTwoCopies[j]) {
-            psi(i,psiIndex) = imag(psi_val);
+            psi[psiIndex] = imag(psi_val);
             for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-            //d2psi(i,psiIndex) = imag(psi_lapl);
+              dpsi[psiIndex][n] = imag(psi_grad[n]);
+            //d2psi[psiIndex] = imag(psi_lapl);
             psiIndex++;
           }
         }
       }
-      else { // No blending needed
+      else {
         for (int j=0; j<N; j++) {
           complex<double> psi_val;
           TinyVector<complex<double>, OHMMS_DIM> psi_grad;
@@ -1277,495 +770,1048 @@ namespace qmcplusplus {
           psi_grad = StorageGradVector[j];
           tmphs = StorageHessVector[j];
 
-          psi(i,psiIndex) = real(psi_val);
+          psi[psiIndex] = real(psi_val);
           for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-          //d2psi(i,psiIndex) = real(psi_lapl);
-// FIX FIX FIX
+            dpsi[psiIndex][n] = real(psi_grad[n]);
+          //d2psi[psiIndex] = real(psi_lapl);
+  // FIX FIX FIX
           for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-            grad_grad_psi(i,psiIndex)[n] = real(tmphs(n));
+            grad_grad_psi[psiIndex][n] = real(tmphs(n));
           psiIndex++;
-          // if (psiIndex >= dpsi.cols()) {
-          //   cerr << "Error:  out of bounds writing in EinsplineSet::evalate.\n"
-          //     << "psiIndex = " << psiIndex << "  dpsi.cols() = " << dpsi.cols() << endl;
-          // }
           if (MakeTwoCopies[j]) {
-            psi(i,psiIndex) = imag(psi_val);
+            psi[psiIndex] = imag(psi_val);
             for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-            //d2psi(i,psiIndex) = imag(psi_lapl);
+              dpsi[psiIndex][n] = imag(psi_grad[n]);
+            //d2psi[psiIndex] = imag(psi_lapl);
             for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)[n] = imag(tmphs(n));
+              grad_grad_psi[psiIndex][n] = imag(tmphs(n));
             psiIndex++;
           }
         }
       }
+      VGLTimer.stop();
+  */
+}
+
+
+// Value, gradient, and laplacian
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
+ ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi)
+{
+  VGLTimer.start();
+  PosType r (P.R[iat]);
+  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  for (int i=0; i<OHMMS_DIM; i++)
+    ru[i] -= std::floor (ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                      StorageGradVector, StorageHessVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  complex<double> eye (0.0, 1.0);
+  for (int j=0; j<psi.size(); j++)
+  {
+    complex<double> u, laplu;
+    TinyVector<complex<double>, OHMMS_DIM> gradu;
+    u = StorageValueVector[j];
+    gradu = dot(PrimLattice.G, StorageGradVector[j]);
+    laplu = trace(StorageHessVector[j], GGt);
+    PosType k = kPoints[j];
+    TinyVector<complex<double>,OHMMS_DIM> ck;
+    for (int n=0; n<OHMMS_DIM; n++)
+      ck[n] = k[n];
+    double s,c;
+    double phase = -dot(r, k);
+    sincos (phase, &s, &c);
+    complex<double> e_mikr (c,s);
+    convert(e_mikr * u, psi[j]);
+    convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
+  }
+  VGLTimer.stop();
+}
+
+// Value, gradient, and laplacian
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate
+(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
+ ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi)
+{
+  VGLTimer.start();
+  PosType r (P.R[iat]);
+  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  for (int i=0; i<OHMMS_DIM; i++)
+    ru[i] -= std::floor (ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                      StorageGradVector, StorageHessVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  complex<double> eye (0.0, 1.0);
+  for (int j=0; j<psi.size(); j++)
+  {
+    complex<double> u;
+    TinyVector<complex<double>, OHMMS_DIM> gradu;
+    Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
+    u = StorageValueVector[j];
+    gradu = dot(PrimLattice.G, StorageGradVector[j]);
+    ////laplu = trace(StorageHessVector[j], GGt);
+    //tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+    //hs = dot(tmphs,PrimLattice.G);
+    hs=dot(StorageHessVector[j],GGt);
+    PosType k = kPoints[j];
+    TinyVector<complex<double>,OHMMS_DIM> ck;
+    for (int n=0; n<OHMMS_DIM; n++)
+      ck[n] = k[n];
+    double s,c;
+    double phase = -dot(r, k);
+    sincos (phase, &s, &c);
+    complex<double> e_mikr (c,s);
+    convert(e_mikr * u, psi[j]);
+    convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    //convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
+    convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(j));
+  }
+  VGLTimer.stop();
+}
+
+
+template<> void
+EinsplineSetExtended<double>::evaluate
+(const ParticleSet& P, int iat, RealValueVector_t& psi,
+ RealGradVector_t& dpsi, RealValueVector_t& d2psi)
+{
+  VGLTimer.start();
+  PosType r (P.R[iat]);
+  bool inAtom = false;
+  for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+  {
+    inAtom = AtomicOrbitals[jat].evaluate (r, psi, dpsi, d2psi);
+    if (inAtom)
+      break;
+  }
+  if (!inAtom)
+  {
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    int sign=0;
+    for (int i=0; i<OHMMS_DIM; i++)
+    {
+      RealType img = std::floor(ru[i]);
+      ru[i] -= img;
+      sign += HalfG[i] * (int)img;
     }
-    VGLMatTimer.stop();
-   }
-  
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector,
+                        StorageHessVector);
+    EinsplineTimer.stop();
+    if (sign & 1)
+      for (int j=0; j<psi.size(); j++)
+      {
+        psi[j] *= -1.0;
+        StorageGradVector[j] *= -1.0;
+        StorageHessVector[j] *= -1.0;
+      }
+    for (int i=0; i<psi.size(); i++)
+    {
+      dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
+      d2psi[i] = trace(StorageHessVector[i], GGt);
+    }
+  }
+  VGLTimer.stop();
+}
+
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose
+(const ParticleSet& P, int first, int last, RealValueMatrix_t& psi,
+ RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
+{
+  complex<double> eye(0.0,1.0);
+  VGLMatTimer.start();
+  for (int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    // Do core states first
+    int icore = NumValenceOrbs;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
+                                   StorageLaplVector, icore);
+      icore += MuffinTins[tin].get_num_core();
+    }
+    // Add phase to core orbitals
+    for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++)
+    {
+      complex<double> u = StorageValueVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+      complex<double> laplu = StorageLaplVector[j];
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      StorageValueVector[j] = e_mikr*u;
+      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+      StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+    }
+    // Check if we are in the muffin tin;  if so, evaluate
+    bool inTin = false, need2blend = false;
+    PosType disp;
+    double b, db, d2b;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      MuffinTins[tin].inside(r, inTin, need2blend);
+      if (inTin)
+      {
+        MuffinTins[tin].evaluate (r, StorageValueVector,
+                                  StorageGradVector, StorageLaplVector);
+        if (need2blend)
+        {
+          disp = MuffinTins[tin].disp(r);
+          double dr = std::sqrt(dot(disp, disp));
+          MuffinTins[tin].blend_func(dr, b, db, d2b);
+        }
+        break;
+      }
+    }
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+    {
+      inAtom = AtomicOrbitals[jat].evaluate
+               (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+      if (inAtom)
+        break;
+    }
+    StorageValueVector_t &valVec =
+      need2blend ? BlendValueVector : StorageValueVector;
+    StorageGradVector_t &gradVec =
+      need2blend ? BlendGradVector : StorageGradVector;
+    StorageValueVector_t &laplVec =
+      need2blend ? BlendLaplVector : StorageLaplVector;
+    // Otherwise, evaluate the B-splines
+    if (!inTin || need2blend)
+    {
+      if (!inAtom)
+      {
+        PosType ru(PrimLattice.toUnit(P.R[iat]));
+        for (int i=0; i<OHMMS_DIM; i++)
+          ru[i] -= std::floor (ru[i]);
+        EinsplineTimer.start();
+        EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
+        EinsplineTimer.stop();
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          gradVec[j] = dot (PrimLattice.G, gradVec[j]);
+          laplVec[j] = trace (StorageHessVector[j], GGt);
+        }
+        // Add e^-ikr phase to B-spline orbitals
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          complex<double> u = valVec[j];
+          TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+          complex<double> laplu = laplVec[j];
+          PosType k = kPoints[j];
+          TinyVector<complex<double>,OHMMS_DIM> ck;
+          for (int n=0; n<OHMMS_DIM; n++)
+            ck[n] = k[n];
+          double s,c;
+          double phase = -dot(r, k);
+          sincos (phase, &s, &c);
+          complex<double> e_mikr (c,s);
+          valVec[j]   = e_mikr*u;
+          gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+          laplVec[j]  = e_mikr*(-dot(k,k)*u - eye*dot(ck,gradu) -eye*dot(gradu,ck) + laplu);
+        }
+      }
+    }
+    // Finally, copy into output vectors
+    int psiIndex = 0;
+    int N = StorageValueVector.size();
+    if (need2blend)
+    {
+      for (int j=0; j<NumValenceOrbs; j++)
+      {
+        complex<double> psi_val, psi_lapl;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
+        complex<double> psi1 = StorageValueVector[j];
+        complex<double> psi2 =   BlendValueVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
+        complex<double> d2psi1 = StorageLaplVector[j];
+        complex<double> d2psi2 =   BlendLaplVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> zrhat;
+        for (int n=0; n<OHMMS_DIM; n++)
+          zrhat[n] = rhat[n];
+        psi_val  = b * psi1 + (1.0-b)*psi2;
+        psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
+        psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
+                   2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
+                   d2b * (psi1 - psi2);
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        d2psi(i,psiIndex) = real(psi_lapl);
+        psiIndex++;
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          d2psi(i,psiIndex) = imag(psi_lapl);
+          psiIndex++;
+        }
+      }
+      // Copy core states
+      for (int j=NumValenceOrbs; j<N; j++)
+      {
+        complex<double> psi_val, psi_lapl;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        psi_val  = StorageValueVector[j];
+        psi_grad = StorageGradVector[j];
+        psi_lapl = StorageLaplVector[j];
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        d2psi(i,psiIndex) = real(psi_lapl);
+        psiIndex++;
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          d2psi(i,psiIndex) = imag(psi_lapl);
+          psiIndex++;
+        }
+      }
+    }
+    else
+      // No blending needed
+    {
+      for (int j=0; j<N; j++)
+      {
+        complex<double> psi_val, psi_lapl;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        psi_val  = StorageValueVector[j];
+        psi_grad = StorageGradVector[j];
+        psi_lapl = StorageLaplVector[j];
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        d2psi(i,psiIndex) = real(psi_lapl);
+        psiIndex++;
+        // if (psiIndex >= dpsi.cols()) {
+        //   cerr << "Error:  out of bounds writing in EinsplineSet::evalate.\n"
+        // 	 << "psiIndex = " << psiIndex << "  dpsi.cols() = " << dpsi.cols() << endl;
+        // }
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          d2psi(i,psiIndex) = imag(psi_lapl);
+          psiIndex++;
+        }
+      }
+    }
+  }
+  VGLMatTimer.stop();
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose
+(const ParticleSet& P, int first, int last, RealValueMatrix_t& psi,
+ RealGradMatrix_t& dpsi, RealHessMatrix_t& grad_grad_psi)
+{
+  complex<double> eye(0.0,1.0);
+  VGLMatTimer.start();
+  for (int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    // Do core states first
+    int icore = NumValenceOrbs;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
+      MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
+                                   StorageHessVector, icore);
+      icore += MuffinTins[tin].get_num_core();
+    }
+    // Add phase to core orbitals
+    for (int j=NumValenceOrbs; j<StorageValueVector.size(); j++)
+    {
+      complex<double> u = StorageValueVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+      Tensor<complex<double>,OHMMS_DIM> hs = StorageHessVector[j];
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      StorageValueVector[j] = e_mikr*u;
+      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+      StorageHessVector[j]  = e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
+    }
+    // Check if we are in the muffin tin;  if so, evaluate
+    bool inTin = false, need2blend = false;
+    PosType disp;
+    double b, db, d2b;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
+      MuffinTins[tin].inside(r, inTin, need2blend);
+      if (inTin)
+      {
+        MuffinTins[tin].evaluate (r, StorageValueVector,
+                                  StorageGradVector, StorageHessVector);
+        if (need2blend)
+        {
+          disp = MuffinTins[tin].disp(r);
+          double dr = std::sqrt(dot(disp, disp));
+          //MuffinTins[tin].blend_func(dr, b, db, d2b);
+        }
+        break;
+      }
+    }
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+    {
+      inAtom = AtomicOrbitals[jat].evaluate
+               (r, StorageValueVector, StorageGradVector, StorageHessVector);
+      if (inAtom)
+        break;
+    }
+    StorageValueVector_t &valVec =
+      need2blend ? BlendValueVector : StorageValueVector;
+    StorageGradVector_t &gradVec =
+      need2blend ? BlendGradVector : StorageGradVector;
+    StorageHessVector_t &hessVec =
+      need2blend ? BlendHessVector : StorageHessVector;
+    Tensor<complex<double>,OHMMS_DIM> tmphs;
+    // Otherwise, evaluate the B-splines
+    if (!inTin || need2blend)
+    {
+      if (!inAtom)
+      {
+        PosType ru(PrimLattice.toUnit(P.R[iat]));
+        for (int i=0; i<OHMMS_DIM; i++)
+          ru[i] -= std::floor (ru[i]);
+        EinsplineTimer.start();
+        EinsplineMultiEval (MultiSpline, ru, valVec, gradVec, StorageHessVector);
+        EinsplineTimer.stop();
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          gradVec[j] = dot (PrimLattice.G, gradVec[j]);
+// FIX FIX FIX: store transpose(PrimLattice.G)
+          tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+          hessVec[j] = dot(tmphs,PrimLattice.G);
+        }
+        // Add e^-ikr phase to B-spline orbitals
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          complex<double> u = valVec[j];
+          TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
+          tmphs = hessVec[j];
+          PosType k = kPoints[j];
+          TinyVector<complex<double>,OHMMS_DIM> ck;
+          for (int n=0; n<OHMMS_DIM; n++)
+            ck[n] = k[n];
+          double s,c;
+          double phase = -dot(r, k);
+          sincos (phase, &s, &c);
+          complex<double> e_mikr (c,s);
+          valVec[j]   = e_mikr*u;
+          gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
+          hessVec[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
+        }
+      }
+    }
+    // Finally, copy into output vectors
+    int psiIndex = 0;
+    int N = StorageValueVector.size();
+    if (need2blend)
+    {
+      APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
+      for (int j=0; j<NumValenceOrbs; j++)
+      {
+        complex<double> psi_val, psi_lapl;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        PosType rhat = 1.0/std::sqrt(dot(disp,disp)) * disp;
+        complex<double> psi1 = StorageValueVector[j];
+        complex<double> psi2 =   BlendValueVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> dpsi1 = StorageGradVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> dpsi2 = BlendGradVector[j];
+        complex<double> d2psi1 = StorageLaplVector[j];
+        complex<double> d2psi2 =   BlendLaplVector[j];
+        TinyVector<complex<double>,OHMMS_DIM> zrhat;
+        for (int n=0; n<OHMMS_DIM; n++)
+          zrhat[n] = rhat[n];
+        psi_val  = b * psi1 + (1.0-b)*psi2;
+        psi_grad = b * dpsi1 + (1.0-b)*dpsi2 + db * (psi1 - psi2)* zrhat;
+        psi_lapl = b * d2psi1 + (1.0-b)*d2psi2 +
+                   2.0*db * (dot(zrhat,dpsi1) - dot(zrhat, dpsi2)) +
+                   d2b * (psi1 - psi2);
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        //d2psi(i,psiIndex) = real(psi_lapl);
+        psiIndex++;
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          //d2psi(i,psiIndex) = imag(psi_lapl);
+          psiIndex++;
+        }
+      }
+      // Copy core states
+      for (int j=NumValenceOrbs; j<N; j++)
+      {
+        complex<double> psi_val, psi_lapl;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        psi_val  = StorageValueVector[j];
+        psi_grad = StorageGradVector[j];
+        psi_lapl = StorageLaplVector[j];
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        //d2psi(i,psiIndex) = real(psi_lapl);
+        psiIndex++;
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          //d2psi(i,psiIndex) = imag(psi_lapl);
+          psiIndex++;
+        }
+      }
+    }
+    else
+      // No blending needed
+    {
+      for (int j=0; j<N; j++)
+      {
+        complex<double> psi_val;
+        TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+        psi_val  = StorageValueVector[j];
+        psi_grad = StorageGradVector[j];
+        tmphs = StorageHessVector[j];
+        psi(i,psiIndex) = real(psi_val);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+        //d2psi(i,psiIndex) = real(psi_lapl);
+// FIX FIX FIX
+        for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+          grad_grad_psi(i,psiIndex)[n] = real(tmphs(n));
+        psiIndex++;
+        // if (psiIndex >= dpsi.cols()) {
+        //   cerr << "Error:  out of bounds writing in EinsplineSet::evalate.\n"
+        //     << "psiIndex = " << psiIndex << "  dpsi.cols() = " << dpsi.cols() << endl;
+        // }
+        if (MakeTwoCopies[j])
+        {
+          psi(i,psiIndex) = imag(psi_val);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+          //d2psi(i,psiIndex) = imag(psi_lapl);
+          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+            grad_grad_psi(i,psiIndex)[n] = imag(tmphs(n));
+          psiIndex++;
+        }
+      }
+    }
+  }
+  VGLMatTimer.stop();
+}
+
 #if !defined(QMC_COMPLEX)
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluateGradSource
-  (const ParticleSet& P, int first, int last,
-   const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluateGradSource
+(const ParticleSet& P, int first, int last,
+ const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+{
+  if (ionDerivs)
   {
-	 if (ionDerivs)
-	 {
-	    complex<double> eye(0.0,1.0);
-		
-		// Loop over dimensions
-		for (int dim=0; dim<OHMMS_DIM; dim++) {
-		  // Loop over electrons
-		  for(int iel=first,i=0; iel<last; iel++,i++) {
-		PosType r (P.R[iel]);
-		PosType ru(PrimLattice.toUnit(P.R[iel]));
-
-		assert (FirstOrderSplines[iat][dim]);
-		EinsplineMultiEval (FirstOrderSplines[iat][dim], ru, 
-					StorageValueVector);
-		int dpsiIndex=0;
-		for (int j=0; j<NumValenceOrbs; j++) {
-		  PosType k = kPoints[j];
-		  double s,c;
-		  double phase = -dot(r, k);
-		  sincos (phase, &s, &c);
-		  complex<double> e_mikr (c,s);
-		  StorageValueVector[j] *= e_mikr;
-		  dpsi(i,dpsiIndex)[dim] = real(StorageValueVector[j]);
-		  dpsiIndex++;
-		  if (MakeTwoCopies[j]) {
-			dpsi(i,dpsiIndex)[dim] = imag(StorageValueVector[j]);
-			dpsiIndex++;
-		  }
-		}
-		  }
-		}
-		for (int i=0; i<(last-first); i++)
-		  for (int j=0; j<(last-first); j++) 
-		dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
-	 } 
-
+    complex<double> eye(0.0,1.0);
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++)
+      {
+        PosType r (P.R[iel]);
+        PosType ru(PrimLattice.toUnit(P.R[iel]));
+        assert (FirstOrderSplines[iat][dim]);
+        EinsplineMultiEval (FirstOrderSplines[iat][dim], ru,
+                            StorageValueVector);
+        int dpsiIndex=0;
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          PosType k = kPoints[j];
+          double s,c;
+          double phase = -dot(r, k);
+          sincos (phase, &s, &c);
+          complex<double> e_mikr (c,s);
+          StorageValueVector[j] *= e_mikr;
+          dpsi(i,dpsiIndex)[dim] = real(StorageValueVector[j]);
+          dpsiIndex++;
+          if (MakeTwoCopies[j])
+          {
+            dpsi(i,dpsiIndex)[dim] = imag(StorageValueVector[j]);
+            dpsiIndex++;
+          }
+        }
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++)
+        dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
   }
+}
 
 
-  // Evaluate the gradient w.r.t. to ion iat of the gradient and
-  // laplacian of the orbitals w.r.t. the electrons
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluateGradSource 
-  (const ParticleSet &P, int first, int last, 
-   const ParticleSet &source, int iat_src,
-   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, RealGradMatrix_t &dlapl_phi)
+// Evaluate the gradient w.r.t. to ion iat of the gradient and
+// laplacian of the orbitals w.r.t. the electrons
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluateGradSource
+(const ParticleSet &P, int first, int last,
+ const ParticleSet &source, int iat_src,
+ RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, RealGradMatrix_t &dlapl_phi)
+{
+  if (ionDerivs)
   {
-     if (ionDerivs)
-     {
-		complex<double> eye(0.0,1.0);
-		
-		// Loop over dimensions
-		for (int dim=0; dim<OHMMS_DIM; dim++) 
-		{
-		  // Loop over electrons
-		  for(int iel=first,i=0; iel<last; iel++,i++) 
-		  {
-			PosType r (P.R[iel]);
-			PosType ru(PrimLattice.toUnit(P.R[iel]));
-
-			assert (FirstOrderSplines[iat_src][dim]);
-			EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru, 
-						StorageValueVector, StorageGradVector,
-						StorageHessVector);
-			int dphiIndex=0;
-			
-			for (int j=0; j<NumValenceOrbs; j++) 
-			{
-			  StorageGradVector[j] = dot (PrimLattice.G, StorageGradVector[j]);
-			  StorageLaplVector[j] = trace (StorageHessVector[j], GGt);
-
-			  complex<double> u = StorageValueVector[j];
-			  TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
-			  complex<double> laplu = StorageLaplVector[j];
-			  PosType k = kPoints[j];
-			  TinyVector<complex<double>,OHMMS_DIM> ck;
-			  for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
-			  double s,c;
-			  double phase = -dot(r, k);
-			  sincos (phase, &s, &c);
-			  complex<double> e_mikr (c,s);
-			  StorageValueVector[j]   = e_mikr*u;
-			  StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-			  StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-
-			  dphi(i,dphiIndex)[dim]    = real(StorageValueVector[j]);
-				for (int k=0; k<OHMMS_DIM; k++)
-				  dgrad_phi(dphiIndex)[dim] = real(StorageGradVector[j][k]);
-			  dlapl_phi(dphiIndex)[dim] = real(StorageLaplVector[j]);
-			  dphiIndex++;
-			  if (MakeTwoCopies[j]) {
-				dphi(i,dphiIndex)[dim] = imag(StorageValueVector[j]);
-				for (int k=0; k<OHMMS_DIM; k++)
-				  dgrad_phi(i,dphiIndex)(dim,k) = imag(StorageGradVector[j][k]);
-				dlapl_phi(i,dphiIndex)[dim]     = imag(StorageLaplVector[j]);
-				dphiIndex++;
-			  }
-			}
-		  }
-		}
-		
-		for (int i=0; i<(last-first); i++)
-		  for (int j=0; j<(last-first); j++) 
-		  {
-			dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
-			// Check this one!
-			dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
-			dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
-		  }
-	 }
-
+    complex<double> eye(0.0,1.0);
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++)
+      {
+        PosType r (P.R[iel]);
+        PosType ru(PrimLattice.toUnit(P.R[iel]));
+        assert (FirstOrderSplines[iat_src][dim]);
+        EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru,
+                            StorageValueVector, StorageGradVector,
+                            StorageHessVector);
+        int dphiIndex=0;
+        for (int j=0; j<NumValenceOrbs; j++)
+        {
+          StorageGradVector[j] = dot (PrimLattice.G, StorageGradVector[j]);
+          StorageLaplVector[j] = trace (StorageHessVector[j], GGt);
+          complex<double> u = StorageValueVector[j];
+          TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+          complex<double> laplu = StorageLaplVector[j];
+          PosType k = kPoints[j];
+          TinyVector<complex<double>,OHMMS_DIM> ck;
+          for (int n=0; n<OHMMS_DIM; n++)
+            ck[n] = k[n];
+          double s,c;
+          double phase = -dot(r, k);
+          sincos (phase, &s, &c);
+          complex<double> e_mikr (c,s);
+          StorageValueVector[j]   = e_mikr*u;
+          StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+          StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+          dphi(i,dphiIndex)[dim]    = real(StorageValueVector[j]);
+          for (int k=0; k<OHMMS_DIM; k++)
+            dgrad_phi(dphiIndex)[dim] = real(StorageGradVector[j][k]);
+          dlapl_phi(dphiIndex)[dim] = real(StorageLaplVector[j]);
+          dphiIndex++;
+          if (MakeTwoCopies[j])
+          {
+            dphi(i,dphiIndex)[dim] = imag(StorageValueVector[j]);
+            for (int k=0; k<OHMMS_DIM; k++)
+              dgrad_phi(i,dphiIndex)(dim,k) = imag(StorageGradVector[j][k]);
+            dlapl_phi(i,dphiIndex)[dim]     = imag(StorageLaplVector[j]);
+            dphiIndex++;
+          }
+        }
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++)
+      {
+        dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
+        // Check this one!
+        dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
+        dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
+      }
   }
+}
 
 
 
-  template<> void
-  EinsplineSetExtended<double>::evaluateGradSource 
-  (const ParticleSet &P, int first, int last, 
-   const ParticleSet &source, int iat_src,
-   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, 
-   RealGradMatrix_t &dlapl_phi)
+template<> void
+EinsplineSetExtended<double>::evaluateGradSource
+(const ParticleSet &P, int first, int last,
+ const ParticleSet &source, int iat_src,
+ RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi,
+ RealGradMatrix_t &dlapl_phi)
+{
+  if (ionDerivs)
   {
-	 if (ionDerivs)
-	 {
-		// Loop over dimensions
-		for (int dim=0; dim<OHMMS_DIM; dim++) {
-		  assert (FirstOrderSplines[iat_src][dim]);
-		  // Loop over electrons
-		  for(int iel=first,i=0; iel<last; iel++,i++) {
-		PosType r (P.R[iel]);
-		PosType ru(PrimLattice.toUnit(r));
-		int sign=0;
-		for (int n=0; n<OHMMS_DIM; n++) {
-		  RealType img = std::floor(ru[n]);
-		  ru[n] -= img;
-		  sign += HalfG[n] * (int)img;
-		}
-		for (int n=0; n<OHMMS_DIM; n++)
-		  ru[n] -= std::floor (ru[n]);
-
-		EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru, 
-					StorageValueVector, StorageGradVector,
-					StorageHessVector);
-		if (sign & 1) 
-		  for (int j=0; j<OrbitalSetSize; j++) {
-			dphi(i,j)[dim]      = -1.0 * StorageValueVector[j];
-			PosType g = -1.0*dot(PrimLattice.G, StorageGradVector[j]);
-			for (int k=0; k<OHMMS_DIM; k++)  dgrad_phi(i,j)(dim,k) = g[k];
-			dlapl_phi(i,j)[dim] = -1.0*trace (StorageHessVector[j], GGt);
-		  }
-		else 
-		  for (int j=0; j<OrbitalSetSize; j++)  {
-			dphi(i,j)[dim] = StorageValueVector[j];
-			PosType g = dot(PrimLattice.G, StorageGradVector[j]);
-			for (int k=0; k<OHMMS_DIM; k++) dgrad_phi(i,j)(dim,k) = g[k];
-			dlapl_phi(i,j)[dim] = trace (StorageHessVector[j], GGt);
-		  }
-		  }
-		}
-		for (int i=0; i<(last-first); i++)
-		  for (int j=0; j<(last-first); j++)  {
-		dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
-		// Check this one!
-		dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
-		dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
-		  }
-		  
-	} 
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      assert (FirstOrderSplines[iat_src][dim]);
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++)
+      {
+        PosType r (P.R[iel]);
+        PosType ru(PrimLattice.toUnit(r));
+        int sign=0;
+        for (int n=0; n<OHMMS_DIM; n++)
+        {
+          RealType img = std::floor(ru[n]);
+          ru[n] -= img;
+          sign += HalfG[n] * (int)img;
+        }
+        for (int n=0; n<OHMMS_DIM; n++)
+          ru[n] -= std::floor (ru[n]);
+        EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru,
+                            StorageValueVector, StorageGradVector,
+                            StorageHessVector);
+        if (sign & 1)
+          for (int j=0; j<OrbitalSetSize; j++)
+          {
+            dphi(i,j)[dim]      = -1.0 * StorageValueVector[j];
+            PosType g = -1.0*dot(PrimLattice.G, StorageGradVector[j]);
+            for (int k=0; k<OHMMS_DIM; k++)
+              dgrad_phi(i,j)(dim,k) = g[k];
+            dlapl_phi(i,j)[dim] = -1.0*trace (StorageHessVector[j], GGt);
+          }
+        else
+          for (int j=0; j<OrbitalSetSize; j++)
+          {
+            dphi(i,j)[dim] = StorageValueVector[j];
+            PosType g = dot(PrimLattice.G, StorageGradVector[j]);
+            for (int k=0; k<OHMMS_DIM; k++)
+              dgrad_phi(i,j)(dim,k) = g[k];
+            dlapl_phi(i,j)[dim] = trace (StorageHessVector[j], GGt);
+          }
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++)
+      {
+        dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
+        // Check this one!
+        dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
+        dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
+      }
   }
-  template<> void
-  EinsplineSetExtended<double>::evaluateGradSource
-  (const ParticleSet& P, int first, int last,
-   const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+}
+template<> void
+EinsplineSetExtended<double>::evaluateGradSource
+(const ParticleSet& P, int first, int last,
+ const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+{
+  if (ionDerivs)
   {
-	 if (ionDerivs)
-	 {
-	 	// Loop over dimensions
-		for (int dim=0; dim<OHMMS_DIM; dim++) {
-		  assert (FirstOrderSplines[iat][dim]);
-		  // Loop over electrons
-		  for(int iel=first,i=0; iel<last; iel++,i++) {
-		PosType r (P.R[iel]);
-		PosType ru(PrimLattice.toUnit(r));
-		int sign=0;
-		for (int n=0; n<OHMMS_DIM; n++) {
-		  RealType img = std::floor(ru[n]);
-		  ru[n] -= img;
-		  sign += HalfG[n] * (int)img;
-		}
-		for (int n=0; n<OHMMS_DIM; n++)
-		  ru[n] -= std::floor (ru[n]);
-		
-		EinsplineMultiEval (FirstOrderSplines[iat][dim], ru, 
-					StorageValueVector);
-		if (sign & 1) 
-		  for (int j=0; j<OrbitalSetSize; j++) 
-			dpsi(i,j)[dim] = -1.0 * StorageValueVector[j];
-		else
-		  for (int j=0; j<OrbitalSetSize; j++) 
-			dpsi(i,j)[dim] = StorageValueVector[j];
-		  }
-		}
-		for (int i=0; i<(last-first); i++)
-		  for (int j=0; j<(last-first); j++) {
-		dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
-		  }
-	}
-		
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      assert (FirstOrderSplines[iat][dim]);
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++)
+      {
+        PosType r (P.R[iel]);
+        PosType ru(PrimLattice.toUnit(r));
+        int sign=0;
+        for (int n=0; n<OHMMS_DIM; n++)
+        {
+          RealType img = std::floor(ru[n]);
+          ru[n] -= img;
+          sign += HalfG[n] * (int)img;
+        }
+        for (int n=0; n<OHMMS_DIM; n++)
+          ru[n] -= std::floor (ru[n]);
+        EinsplineMultiEval (FirstOrderSplines[iat][dim], ru,
+                            StorageValueVector);
+        if (sign & 1)
+          for (int j=0; j<OrbitalSetSize; j++)
+            dpsi(i,j)[dim] = -1.0 * StorageValueVector[j];
+        else
+          for (int j=0; j<OrbitalSetSize; j++)
+            dpsi(i,j)[dim] = StorageValueVector[j];
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++)
+      {
+        dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
+      }
   }
-  
+}
+
 #endif
 
-  
-  
-  
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose
-  (const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi, 
-   ComplexGradMatrix_t& dpsi, ComplexValueMatrix_t& d2psi)
-  {
-    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-      for (int n=0; n<OHMMS_DIM; n++)
-	ru[n] -= std::floor (ru[n]);
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-			  StorageGradVector, StorageHessVector);
-      EinsplineTimer.stop();
-      //computePhaseFactors(r);
-      complex<double> eye (0.0, 1.0);
-      for (int j=0; j<OrbitalSetSize; j++) {
-	complex<double> u, laplu;
-	TinyVector<complex<double>, OHMMS_DIM> gradu;
-	u = StorageValueVector[j];
-	gradu = dot(PrimLattice.G, StorageGradVector[j]);
-	laplu = trace(StorageHessVector[j], GGt);
-	
-	PosType k = kPoints[j];
-	TinyVector<complex<double>,OHMMS_DIM> ck;
-	for (int n=0; n<OHMMS_DIM; n++)	
-	  ck[n] = k[n];
-	double s,c;
-	double phase = -dot(r, k);
-	sincos (phase, &s, &c);
-	complex<double> e_mikr (c,s);
-	convert(e_mikr * u, psi(i,j));
-	//convert(e_mikr * u, psi(j,i));
-	convert(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-	//convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
-      } 
-    }
-    VGLMatTimer.stop();
-  }
 
-   template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose
-  (const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi,
-   ComplexGradMatrix_t& dpsi, ComplexHessMatrix_t& grad_grad_psi)
+
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose
+(const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi,
+ ComplexGradMatrix_t& dpsi, ComplexValueMatrix_t& d2psi)
+{
+  VGLMatTimer.start();
+  for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int n=0; n<OHMMS_DIM; n++)
+      ru[n] -= std::floor (ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                        StorageGradVector, StorageHessVector);
+    EinsplineTimer.stop();
+    //computePhaseFactors(r);
+    complex<double> eye (0.0, 1.0);
+    for (int j=0; j<OrbitalSetSize; j++)
+    {
+      complex<double> u, laplu;
+      TinyVector<complex<double>, OHMMS_DIM> gradu;
+      u = StorageValueVector[j];
+      gradu = dot(PrimLattice.G, StorageGradVector[j]);
+      laplu = trace(StorageHessVector[j], GGt);
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      convert(e_mikr * u, psi(i,j));
+      //convert(e_mikr * u, psi(j,i));
+      convert(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
+    }
+  }
+  VGLMatTimer.stop();
+}
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose
+(const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi,
+ ComplexGradMatrix_t& dpsi, ComplexHessMatrix_t& grad_grad_psi)
+{
+  VGLMatTimer.start();
+  for(int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int n=0; n<OHMMS_DIM; n++)
+      ru[n] -= std::floor (ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                        StorageGradVector, StorageHessVector);
+    EinsplineTimer.stop();
+    //computePhaseFactors(r);
+    complex<double> eye (0.0, 1.0);
+    for (int j=0; j<OrbitalSetSize; j++)
+    {
+      complex<double> u;
+      TinyVector<complex<double>, OHMMS_DIM> gradu;
+      Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
+      u = StorageValueVector[j];
+      gradu = dot(PrimLattice.G, StorageGradVector[j]);
+      tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+      hs = dot(tmphs,PrimLattice.G);
+      //laplu = trace(StorageHessVector[j], GGt);
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      convert(e_mikr * u, psi(i,j));
+      //convert(e_mikr * u, psi(j,i));
+      convert(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));
+    }
+  }
+  VGLMatTimer.stop();
+}
+
+template<> void
+EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
+    , int first, int last, RealValueMatrix_t& psi
+    , RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
+{
+  VGLMatTimer.start();
+  for(int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+    {
+      inAtom = AtomicOrbitals[jat].evaluate
+               (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+      if (inAtom)
+      {
+        for (int j=0; j<OrbitalSetSize; j++)
+        {
+          psi(i,j)   = StorageValueVector[j];
+          dpsi(i,j)  = StorageGradVector[j];
+          d2psi(i,j) = StorageLaplVector[j];
+        }
+        break;
+      }
+    }
+    if (!inAtom)
+    {
       PosType ru(PrimLattice.toUnit(P.R[iat]));
+      int sign=0;
+      for (int n=0; n<OHMMS_DIM; n++)
+      {
+        RealType img = std::floor(ru[n]);
+        ru[n] -= img;
+        sign += HalfG[n] * (int)img;
+      }
       for (int n=0; n<OHMMS_DIM; n++)
         ru[n] -= std::floor (ru[n]);
       EinsplineTimer.start();
       EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
                           StorageGradVector, StorageHessVector);
       EinsplineTimer.stop();
-      //computePhaseFactors(r);
-      complex<double> eye (0.0, 1.0);
-      for (int j=0; j<OrbitalSetSize; j++) {
-        complex<double> u;
-        TinyVector<complex<double>, OHMMS_DIM> gradu;
-        Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
-        u = StorageValueVector[j];
-        gradu = dot(PrimLattice.G, StorageGradVector[j]);
-        tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-        hs = dot(tmphs,PrimLattice.G);
-        //laplu = trace(StorageHessVector[j], GGt);
-
-        PosType k = kPoints[j];
-        TinyVector<complex<double>,OHMMS_DIM> ck;
-        for (int n=0; n<OHMMS_DIM; n++)
-          ck[n] = k[n];
-        double s,c;
-        double phase = -dot(r, k);
-        sincos (phase, &s, &c);
-        complex<double> e_mikr (c,s);
-        convert(e_mikr * u, psi(i,j));
-        //convert(e_mikr * u, psi(j,i));
-        convert(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-        //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-        convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));
+      if (sign & 1)
+        for (int j=0; j<OrbitalSetSize; j++)
+        {
+          StorageValueVector[j] *= -1.0;
+          StorageGradVector[j]  *= -1.0;
+          StorageHessVector[j]  *= -1.0;
+        }
+      for (int j=0; j<OrbitalSetSize; j++)
+      {
+        psi(i,j)   = StorageValueVector[j];
+        dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
+        d2psi(i,j) = trace(StorageHessVector[j], GGt);
       }
     }
-    VGLMatTimer.stop();
   }
-  
-  template<> void
-    EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
-        , int first, int last, RealValueMatrix_t& psi
-        , RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
-  {
-    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
+  VGLMatTimer.stop();
+}
 
-      bool inAtom = false;
-      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-	inAtom = AtomicOrbitals[jat].evaluate 
-	  (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-	if (inAtom) {
-	  for (int j=0; j<OrbitalSetSize; j++) {
-	    psi(i,j)   = StorageValueVector[j];
-	    dpsi(i,j)  = StorageGradVector[j];
-	    d2psi(i,j) = StorageLaplVector[j];
-	  }  
-	  break;
-	}
-      }
-      if (!inAtom) {
-	PosType ru(PrimLattice.toUnit(P.R[iat]));
-	int sign=0;
-	for (int n=0; n<OHMMS_DIM; n++) {
-	  RealType img = std::floor(ru[n]);
-	  ru[n] -= img;
-	  sign += HalfG[n] * (int)img;
-	}
-	for (int n=0; n<OHMMS_DIM; n++)
-	  ru[n] -= std::floor (ru[n]);
-	EinsplineTimer.start();
-	EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-			    StorageGradVector, StorageHessVector);
-	EinsplineTimer.stop();
-	
-	if (sign & 1) 
-	  for (int j=0; j<OrbitalSetSize; j++) {
-	    StorageValueVector[j] *= -1.0;
-	    StorageGradVector[j]  *= -1.0;
-	    StorageHessVector[j]  *= -1.0;
-	  }
-	for (int j=0; j<OrbitalSetSize; j++) {
-	  psi(i,j)   = StorageValueVector[j];
-	  dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
-	  d2psi(i,j) = trace(StorageHessVector[j], GGt);
-	}
-      }
-    }
-    
-    VGLMatTimer.stop();
-  }
- 
-  template<> void
-    EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
-        , int first, int last, RealValueMatrix_t& psi
-        , RealGradMatrix_t& dpsi, RealHessMatrix_t& grad_grad_psi)
+template<> void
+EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
+    , int first, int last, RealValueMatrix_t& psi
+    , RealGradMatrix_t& dpsi, RealHessMatrix_t& grad_grad_psi)
+{
+  VGLMatTimer.start();
+  for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
-
-      bool inAtom = false;
-      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
-        inAtom = AtomicOrbitals[jat].evaluate
-          (r, StorageValueVector, StorageGradVector, StorageHessVector);
-        if (inAtom) {
-          for (int j=0; j<OrbitalSetSize; j++) {
-            psi(i,j)   = StorageValueVector[j];
-            dpsi(i,j)  = StorageGradVector[j];
-            grad_grad_psi(i,j) = StorageHessVector[j];
-          }
-          break;
-        }
-      }
-      if (!inAtom) {
-        PosType ru(PrimLattice.toUnit(P.R[iat]));
-        int sign=0;
-        for (int n=0; n<OHMMS_DIM; n++) {
-          RealType img = std::floor(ru[n]);
-        ru[n] -= img;
-        sign += HalfG[n] * (int)img;
-        }
-        for (int n=0; n<OHMMS_DIM; n++)
-          ru[n] -= std::floor (ru[n]);
-        EinsplineTimer.start();
-        EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-                            StorageGradVector, StorageHessVector);
-        EinsplineTimer.stop();
-        if (sign & 1)
-          for (int j=0; j<OrbitalSetSize; j++) {
-            StorageValueVector[j] *= -1.0;
-            StorageGradVector[j]  *= -1.0;
-            StorageHessVector[j]  *= -1.0;
-          }
-        for (int j=0; j<OrbitalSetSize; j++) {
+    PosType r (P.R[iat]);
+    bool inAtom = false;
+    for (int jat=0; jat<AtomicOrbitals.size(); jat++)
+    {
+      inAtom = AtomicOrbitals[jat].evaluate
+               (r, StorageValueVector, StorageGradVector, StorageHessVector);
+      if (inAtom)
+      {
+        for (int j=0; j<OrbitalSetSize; j++)
+        {
           psi(i,j)   = StorageValueVector[j];
-          dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
+          dpsi(i,j)  = StorageGradVector[j];
           grad_grad_psi(i,j) = StorageHessVector[j];
         }
+        break;
       }
     }
-    VGLMatTimer.stop();
-   }
-
-   template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
-                  RealHessMatrix_t& grad_grad_psi,
-                  RealGGGMatrix_t& grad_grad_grad_logdet)
+    if (!inAtom)
     {
-//      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
-    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
       PosType ru(PrimLattice.toUnit(P.R[iat]));
+      int sign=0;
+      for (int n=0; n<OHMMS_DIM; n++)
+      {
+        RealType img = std::floor(ru[n]);
+        ru[n] -= img;
+        sign += HalfG[n] * (int)img;
+      }
       for (int n=0; n<OHMMS_DIM; n++)
         ru[n] -= std::floor (ru[n]);
       EinsplineTimer.start();
-
       EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-                          StorageGradVector, StorageHessVector,StorageGradHessVector);
-
+                          StorageGradVector, StorageHessVector);
       EinsplineTimer.stop();
-
-      for (int j=0; j<NumValenceOrbs; j++) {
-             TinyVector<complex<double>,OHMMS_DIM> tmpg;
-             Tensor<complex<double>,OHMMS_DIM> tmphs;
-             TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs;
-
-             tmpg=dot(PrimLattice.G,StorageGradVector[j]);
-             StorageGradVector[j]=tmpg;
-
-             tmphs=dot(transpose(PrimLattice.G),StorageHessVector[j]);
-             StorageHessVector[j]=dot(tmphs,PrimLattice.G);
-              
-             for (int n=0; n<OHMMS_DIM; n++) {
-               tmphs=dot(transpose(PrimLattice.G),StorageGradHessVector[j][n]);
-               tmpghs[n]=dot(tmphs,PrimLattice.G);
-             }
-             StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
+      if (sign & 1)
+        for (int j=0; j<OrbitalSetSize; j++)
+        {
+          StorageValueVector[j] *= -1.0;
+          StorageGradVector[j]  *= -1.0;
+          StorageHessVector[j]  *= -1.0;
+        }
+      for (int j=0; j<OrbitalSetSize; j++)
+      {
+        psi(i,j)   = StorageValueVector[j];
+        dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
+        grad_grad_psi(i,j) = StorageHessVector[j];
       }
+    }
+  }
+  VGLMatTimer.stop();
+}
 
-      complex<double> eye (0.0, 1.0);
-      StorageValueVector_t &valVec =
-         StorageValueVector;
-      StorageGradVector_t &gradVec =
-         StorageGradVector;
-      StorageHessVector_t &hessVec =
-         StorageHessVector;
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+    RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
+    RealHessMatrix_t& grad_grad_psi,
+    RealGGGMatrix_t& grad_grad_grad_logdet)
+{
+//      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+  VGLMatTimer.start();
+  for(int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int n=0; n<OHMMS_DIM; n++)
+      ru[n] -= std::floor (ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                        StorageGradVector, StorageHessVector,StorageGradHessVector);
+    EinsplineTimer.stop();
+    for (int j=0; j<NumValenceOrbs; j++)
+    {
+      TinyVector<complex<double>,OHMMS_DIM> tmpg;
       Tensor<complex<double>,OHMMS_DIM> tmphs;
-      for (int j=0; j<NumValenceOrbs; j++) {
-
+      TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs;
+      tmpg=dot(PrimLattice.G,StorageGradVector[j]);
+      StorageGradVector[j]=tmpg;
+      tmphs=dot(transpose(PrimLattice.G),StorageHessVector[j]);
+      StorageHessVector[j]=dot(tmphs,PrimLattice.G);
+      for (int n=0; n<OHMMS_DIM; n++)
+      {
+        tmphs=dot(transpose(PrimLattice.G),StorageGradHessVector[j][n]);
+        tmpghs[n]=dot(tmphs,PrimLattice.G);
+      }
+      StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
+    }
+    complex<double> eye (0.0, 1.0);
+    StorageValueVector_t &valVec =
+      StorageValueVector;
+    StorageGradVector_t &gradVec =
+      StorageGradVector;
+    StorageHessVector_t &hessVec =
+      StorageHessVector;
+    Tensor<complex<double>,OHMMS_DIM> tmphs;
+    for (int j=0; j<NumValenceOrbs; j++)
+    {
 //            complex<double> u = valVec[j];
 //            TinyVector<complex<double>,OHMMS_DIM> gradu = gradVec[j];
 //            tmphs = hessVec[j];
@@ -1779,95 +1825,92 @@ namespace qmcplusplus {
 //            valVec[j]   = e_mikr*u;
 //            gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
 //            hessVec[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
-
-        complex<double> u=(StorageValueVector[j]);
-        TinyVector<complex<double>,OHMMS_DIM> gradu=(StorageGradVector[j]);
-        Tensor<complex<double>,OHMMS_DIM> tmphs=(StorageHessVector[j]);
+      complex<double> u=(StorageValueVector[j]);
+      TinyVector<complex<double>,OHMMS_DIM> gradu=(StorageGradVector[j]);
+      Tensor<complex<double>,OHMMS_DIM> tmphs=(StorageHessVector[j]);
 //        TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs=(StorageGradHessVector[j]);
-
-        PosType k = kPoints[j];
-        TinyVector<complex<double>,OHMMS_DIM> ck;
-        for (int n=0; n<OHMMS_DIM; n++)       ck[n] = k[n];
-        double s,c;
-        double phase = -dot(r, k);
-        sincos (phase, &s, &c);
-        complex<double> e_mikr (c,s);
-
-        StorageValueVector[j] = e_mikr*u;
-        StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
-        StorageHessVector[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
-              //Is this right?
-              StorageGradHessVector[j] *= e_mikr;
-              for(unsigned a0(0);a0<OHMMS_DIM;a0++)
-                for(unsigned a1(0);a1<OHMMS_DIM;a1++)
-                  for(unsigned a2(0);a2<OHMMS_DIM;a2++)
-                    StorageGradHessVector[j][a0](a1,a2) +=
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      StorageValueVector[j] = e_mikr*u;
+      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+      StorageHessVector[j]  = e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck));
+      //Is this right?
+      StorageGradHessVector[j] *= e_mikr;
+      for(unsigned a0(0); a0<OHMMS_DIM; a0++)
+        for(unsigned a1(0); a1<OHMMS_DIM; a1++)
+          for(unsigned a2(0); a2<OHMMS_DIM; a2++)
+            StorageGradHessVector[j][a0](a1,a2) +=
               e_mikr*(-1.0*eye*(ck[a0]*tmphs(a1,a2) + ck[a1]*tmphs(a0,a2) + ck[a2]*tmphs(a0,a1))
-                    -(ck[a0]*ck[a1]*gradu[a2] +ck[a0]*ck[a2]*gradu[a1] + ck[a1]*ck[a2]*gradu[a0])
-                    +eye*ck[a0]*ck[a1]*ck[a2]*u);
+                      -(ck[a0]*ck[a1]*gradu[a2] +ck[a0]*ck[a2]*gradu[a1] + ck[a1]*ck[a2]*gradu[a0])
+                      +eye*ck[a0]*ck[a1]*ck[a2]*u);
+    }
+    int psiIndex(0);
+    for (int j=0; j<NumValenceOrbs; j++)
+    {
+      bool trs(true);
+      for(unsigned a0(0); a0<OHMMS_DIM; a0++)
+      {
+        double olp= abs((PrimLattice.R[a0]*kPoints[j][a0])/M_PI +1e-6);
+        olp -= (int)olp;
+        if (olp>1e-4)
+          trs=false;
       }
-      int psiIndex(0);
-      for (int j=0; j<NumValenceOrbs; j++) {
-         bool trs(true);
-         for(unsigned a0(0);a0<OHMMS_DIM;a0++){
-            double olp= abs((PrimLattice.R[a0]*kPoints[j][a0])/M_PI +1e-6); olp -= (int)olp;
-            if (olp>1e-4) trs=false;
-         }
-          if (MakeTwoCopies[j]) {
-            psi(i,psiIndex)=imag(StorageValueVector[j]);
-            for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]);
-            for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n));
-
-            for (int n=0; n<OHMMS_DIM; n++)
-              for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-                grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m));
-             psiIndex++;
-
-            psi(i,psiIndex)=real(StorageValueVector[j]);
-            for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
-            for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
-
-            for (int n=0; n<OHMMS_DIM; n++)
-              for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-                grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
-            psiIndex++;
-          } 
-          else if (trs)
-          {
-            psi(i,psiIndex)=real(StorageValueVector[j]);
-            for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
-            for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
-
-            for (int n=0; n<OHMMS_DIM; n++)
-              for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-                grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
-             psiIndex++;
-          }
-          else
-          {
-            psi(i,psiIndex)=imag(StorageValueVector[j])-real(StorageValueVector[j]);
-            for (int n=0; n<OHMMS_DIM; n++)
-              dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]) - real(StorageGradVector[j][n]);
-            for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-              grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n)) -real(StorageHessVector[j](n));
-  
-            for (int n=0; n<OHMMS_DIM; n++)
-              for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-                grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m)) - real(StorageGradHessVector[j][n](m));
-             psiIndex++;
-          }
-
-
+      if (MakeTwoCopies[j])
+      {
+        psi(i,psiIndex)=imag(StorageValueVector[j]);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]);
+        for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+          grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n));
+        for (int n=0; n<OHMMS_DIM; n++)
+          for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
+            grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m));
+        psiIndex++;
+        psi(i,psiIndex)=real(StorageValueVector[j]);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
+        for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+          grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
+        for (int n=0; n<OHMMS_DIM; n++)
+          for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
+            grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
+        psiIndex++;
+      }
+      else
+        if (trs)
+        {
+          psi(i,psiIndex)=real(StorageValueVector[j]);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
+          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+            grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
+          for (int n=0; n<OHMMS_DIM; n++)
+            for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
+              grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
+          psiIndex++;
+        }
+        else
+        {
+          psi(i,psiIndex)=imag(StorageValueVector[j])-real(StorageValueVector[j]);
+          for (int n=0; n<OHMMS_DIM; n++)
+            dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]) - real(StorageGradVector[j][n]);
+          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+            grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n)) -real(StorageHessVector[j](n));
+          for (int n=0; n<OHMMS_DIM; n++)
+            for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
+              grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m)) - real(StorageGradHessVector[j][n](m));
+          psiIndex++;
         }
     }
-    VGLMatTimer.stop();
-   }
+  }
+  VGLMatTimer.stop();
+}
 
 //   template<typename StorageType> void
 //  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
@@ -1876,7 +1919,7 @@ namespace qmcplusplus {
 //                  RealGGGMatrix_t& grad_grad_grad_logdet)
 //    {
 ////      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
-//    
+//
 //    complex<double> eye(0.0,1.0);
 //    VGLMatTimer.start();
 //    for (int iat=first,i=0; iat<last; iat++,i++) {
@@ -1895,7 +1938,7 @@ namespace qmcplusplus {
 //      for (int tin=0; tin<MuffinTins.size(); tin++) {
 //        APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
 //        }
-//     
+//
 //
 //      bool inAtom = false;
 //      for (int jat=0; jat<AtomicOrbitals.size(); jat++) {
@@ -1982,10 +2025,10 @@ namespace qmcplusplus {
 ////Is this right?
 //            for(unsigned a0(0);a0<OHMMS_DIM;a0++)
 //              for(unsigned a1(0);a1<OHMMS_DIM;a1++)
-//                for(unsigned a2(0);a2<OHMMS_DIM;a2++) 
+//                for(unsigned a2(0);a2<OHMMS_DIM;a2++)
 //                  hvdot[a0](a1,a2) = eye*(tmphs(a0,a1)*ck[a2] + tmphs(a1,a2)*ck[a0] + tmphs(a0,a2)*ck[a1]);
 //
-//            gradhessVec[j]=e_mikr*(tmpghs +eye*u*outerdot(ck,ck,ck) - symouterdot(gradu,ck,ck) -hvdot ); 
+//            gradhessVec[j]=e_mikr*(tmpghs +eye*u*outerdot(ck,ck,ck) - symouterdot(gradu,ck,ck) -hvdot );
 //          }
 //        }
 //      }
@@ -2037,13 +2080,13 @@ namespace qmcplusplus {
 //    VGLMatTimer.stop();
 //    }
 
-   template<> void
-  EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
-                  ComplexHessMatrix_t& grad_grad_psi,
-                  ComplexGGGMatrix_t& grad_grad_grad_logdet)
-    {
-     APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+template<> void
+EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+    ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
+    ComplexHessMatrix_t& grad_grad_psi,
+    ComplexGGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
 //    VGLMatTimer.start();
 //    for(int iat=first,i=0; iat<last; iat++,i++) {
 //      PosType r (P.R[iat]);
@@ -2095,267 +2138,270 @@ namespace qmcplusplus {
 //      }
 //    }
 //    VGLMatTimer.stop();
-   }
+}
 
-   template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
-                  ComplexHessMatrix_t& grad_grad_psi,
-                  ComplexGGGMatrix_t& grad_grad_grad_logdet)
-    {
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+    ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
+    ComplexHessMatrix_t& grad_grad_psi,
+    ComplexGGGMatrix_t& grad_grad_grad_logdet)
+{
 //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
 //    VGLMatTimer.start();
-    for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
+  for(int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int n=0; n<OHMMS_DIM; n++)
+      ru[n] -= std::floor (ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+                        StorageGradVector, StorageHessVector,StorageGradHessVector);
+    EinsplineTimer.stop();
+    Tensor<double,OHMMS_DIM> PG;
+    PG=PrimLattice.G;
+    Tensor<double,OHMMS_DIM> TPG;
+    TPG=transpose(PrimLattice.G);
+    Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
+    TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs,hvdot;
+    for (int j=0; j<NumValenceOrbs; j++)
+    {
+      convert(dot(PG,StorageGradVector[j]),StorageGradVector[j]);
+      convert(dot(TPG,StorageHessVector[j]),tmphs);
+      convert(dot(PG,tmphs),StorageHessVector[j]);
       for (int n=0; n<OHMMS_DIM; n++)
-        ru[n] -= std::floor (ru[n]);
-      EinsplineTimer.start();
-      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-                          StorageGradVector, StorageHessVector,StorageGradHessVector);
-      EinsplineTimer.stop();
-
-      Tensor<double,OHMMS_DIM> PG; PG=PrimLattice.G;
-      Tensor<double,OHMMS_DIM> TPG; TPG=transpose(PrimLattice.G);
-      Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
-      TinyVector<Tensor<complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs,hvdot;
-      for (int j=0; j<NumValenceOrbs; j++) {
-              convert(dot(PG,StorageGradVector[j]),StorageGradVector[j]);
-
-              convert(dot(TPG,StorageHessVector[j]),tmphs);
-              convert(dot(PG,tmphs),StorageHessVector[j]);
-
-              for (int n=0; n<OHMMS_DIM; n++) {
-                convert(dot(TPG,StorageGradHessVector[j][n]),tmpghs[n]);
-                convert(dot(PG,tmpghs[n]),StorageGradHessVector[j][n]);
-              }
-              convert(dot(PG,StorageGradHessVector[j]),StorageGradHessVector[j]);
-
+      {
+        convert(dot(TPG,StorageGradHessVector[j][n]),tmpghs[n]);
+        convert(dot(PG,tmpghs[n]),StorageGradHessVector[j][n]);
+      }
+      convert(dot(PG,StorageGradHessVector[j]),StorageGradHessVector[j]);
 //              grad_grad_grad_logdet(i,j)=StorageGradHessVector[j];
 //              grad_grad_psi(i,j)=StorageHessVector[j];
 //              dpsi(i,j)=StorageGradVector[j];
 //              psi(i,j)=StorageValueVector[j];
-      }
-
-
-      const complex<double> eye (0.0, 1.0);
-      const complex<double> meye (0.0, -1.0);
-      for (int j=0; j<NumValenceOrbs; j++) {
-        complex<double> u(StorageValueVector[j]);
-        TinyVector<complex<double>,OHMMS_DIM> gradu(StorageGradVector[j]);
-        tmphs = StorageHessVector[j];
-        tmpghs = StorageGradHessVector[j];
-  
-        PosType k = kPoints[j];
-        TinyVector<double,OHMMS_DIM> ck;
-        for (int n=0; n<OHMMS_DIM; n++) ck[n] = k[n];
-        double s,c;
-        double phase = -dot(r, k);
-        sincos (phase, &s, &c);
-        complex<double> e_mikr (c,s);
-
-        convert(e_mikr*u,psi(i,j));
-        convert(e_mikr*(-eye*u*ck + gradu),dpsi(i,j));
-        convert(e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));
-
-      //Is this right?
-        StorageGradHessVector[j] *= e_mikr;
-        for(unsigned a0(0);a0<OHMMS_DIM;a0++)
-          for(unsigned a1(0);a1<OHMMS_DIM;a1++)
-            for(unsigned a2(0);a2<OHMMS_DIM;a2++)
-              StorageGradHessVector[j][a0](a1,a2) +=
-              e_mikr*(meye*(ck[a0]*tmphs(a1,a2) + ck[a1]*tmphs(a0,a2) + ck[a2]*tmphs(a0,a1))
-                    -(ck[a0]*ck[a1]*gradu[a2] +ck[a0]*ck[a2]*gradu[a1] + ck[a1]*ck[a2]*gradu[a0])
-                    +eye*ck[a0]*ck[a1]*ck[a2]*u);
-  
-            convert(StorageGradHessVector[j],grad_grad_grad_logdet(i,j));
-       }
-     }
-   }
-
-  
-   
-
-   template<> void
-  EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
-                  RealHessMatrix_t& grad_grad_psi,
-                  RealGGGMatrix_t& grad_grad_grad_logdet)
+    }
+    const complex<double> eye (0.0, 1.0);
+    const complex<double> meye (0.0, -1.0);
+    for (int j=0; j<NumValenceOrbs; j++)
     {
-//      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
-    VGLMatTimer.start();
-    for (int iat=first,i=0; iat<last; iat++,i++) {
-      PosType r (P.R[iat]);
+      complex<double> u(StorageValueVector[j]);
+      TinyVector<complex<double>,OHMMS_DIM> gradu(StorageGradVector[j]);
+      tmphs = StorageHessVector[j];
+      tmpghs = StorageGradHessVector[j];
+      PosType k = kPoints[j];
+      TinyVector<double,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      convert(e_mikr*u,psi(i,j));
+      convert(e_mikr*(-eye*u*ck + gradu),dpsi(i,j));
+      convert(e_mikr*(tmphs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));
+      //Is this right?
+      StorageGradHessVector[j] *= e_mikr;
+      for(unsigned a0(0); a0<OHMMS_DIM; a0++)
+        for(unsigned a1(0); a1<OHMMS_DIM; a1++)
+          for(unsigned a2(0); a2<OHMMS_DIM; a2++)
+            StorageGradHessVector[j][a0](a1,a2) +=
+              e_mikr*(meye*(ck[a0]*tmphs(a1,a2) + ck[a1]*tmphs(a0,a2) + ck[a2]*tmphs(a0,a1))
+                      -(ck[a0]*ck[a1]*gradu[a2] +ck[a0]*ck[a2]*gradu[a1] + ck[a1]*ck[a2]*gradu[a0])
+                      +eye*ck[a0]*ck[a1]*ck[a2]*u);
+      convert(StorageGradHessVector[j],grad_grad_grad_logdet(i,j));
+    }
+  }
+}
 
-      // Do core states first
-      int icore = NumValenceOrbs;
-      for (int tin=0; tin<MuffinTins.size(); tin++) {
-        APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
+
+
+
+template<> void
+EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+    RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
+    RealHessMatrix_t& grad_grad_psi,
+    RealGGGMatrix_t& grad_grad_grad_logdet)
+{
+//      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+  VGLMatTimer.start();
+  for (int iat=first,i=0; iat<last; iat++,i++)
+  {
+    PosType r (P.R[iat]);
+    // Do core states first
+    int icore = NumValenceOrbs;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
 //        MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
 //                                     StorageHessVector, icore);
-        icore += MuffinTins[tin].get_num_core();
-      }
-      // Check if we are in the muffin tin;  if so, evaluate
-      bool inTin = false, need2blend = false;
-      PosType disp;
-      double b, db, d2b;
-      for (int tin=0; tin<MuffinTins.size(); tin++) {
-        APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-      }
-
-      bool inAtom = false;
-
-      // Otherwise, evaluate the B-splines
-      if (!inTin || need2blend) {
-        if (!inAtom) {
-          PosType ru(PrimLattice.toUnit(r));
-          int sign=0;
-          for (int n=0; n<OHMMS_DIM; n++) {
-            RealType img = std::floor(ru[n]);
+      icore += MuffinTins[tin].get_num_core();
+    }
+    // Check if we are in the muffin tin;  if so, evaluate
+    bool inTin = false, need2blend = false;
+    PosType disp;
+    double b, db, d2b;
+    for (int tin=0; tin<MuffinTins.size(); tin++)
+    {
+      APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
+    }
+    bool inAtom = false;
+    // Otherwise, evaluate the B-splines
+    if (!inTin || need2blend)
+    {
+      if (!inAtom)
+      {
+        PosType ru(PrimLattice.toUnit(r));
+        int sign=0;
+        for (int n=0; n<OHMMS_DIM; n++)
+        {
+          RealType img = std::floor(ru[n]);
           ru[n] -= img;
           sign += HalfG[n] * (int)img;
-          }
-          for (int n=0; n<OHMMS_DIM; n++)
+        }
+        for (int n=0; n<OHMMS_DIM; n++)
           ru[n] -= std::floor (ru[n]);
-
-          EinsplineTimer.start();
-          EinsplineMultiEval (MultiSpline, ru,  StorageValueVector, StorageGradVector,
-                                              StorageHessVector,StorageGradHessVector);
+        EinsplineTimer.start();
+        EinsplineMultiEval (MultiSpline, ru,  StorageValueVector, StorageGradVector,
+                            StorageHessVector,StorageGradHessVector);
         EinsplineTimer.stop();
         if (sign & 1)
-         for (int j=0; j<NumValenceOrbs; j++) {
+          for (int j=0; j<NumValenceOrbs; j++)
+          {
             StorageValueVector[j] *= -1.0;
             StorageGradVector[j]  *= -1.0;
             StorageHessVector[j]  *= -1.0;
             StorageGradHessVector[j]*= -1.0;
           }
-        }
-      }
-      // Finally, copy into output vectors
-      int psiIndex = 0;
-      int N = StorageValueVector.size();
-      if (need2blend) {
-        APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
-      }
-      else { // No blending needed
-        for (int j=0; j<N; j++) {
-          psi(i,psiIndex) = StorageValueVector[j];
-          dpsi(i,psiIndex)= dot(StorageGradVector[j],PrimLattice.G); 
-          grad_grad_psi(i,psiIndex) = StorageHessVector[j];
-          grad_grad_grad_logdet(i,psiIndex) = dot(StorageGradHessVector[j],PrimLattice.G);
-          psiIndex++;
-        }
       }
     }
-    VGLMatTimer.stop();
-
+    // Finally, copy into output vectors
+    int psiIndex = 0;
+    int N = StorageValueVector.size();
+    if (need2blend)
+    {
+      APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
     }
-
- 
-  template<typename StorageType> string
-  EinsplineSetExtended<StorageType>::Type()
-  {
-    return "EinsplineSetExtended";
+    else
+      // No blending needed
+    {
+      for (int j=0; j<N; j++)
+      {
+        psi(i,psiIndex) = StorageValueVector[j];
+        dpsi(i,psiIndex)= dot(StorageGradVector[j],PrimLattice.G);
+        grad_grad_psi(i,psiIndex) = StorageHessVector[j];
+        grad_grad_grad_logdet(i,psiIndex) = dot(StorageGradHessVector[j],PrimLattice.G);
+        psiIndex++;
+      }
+    }
   }
+  VGLMatTimer.stop();
+}
 
 
-  template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::registerTimers()
-  {
-    ValueTimer.reset();
-    VGLTimer.reset();
-    VGLMatTimer.reset();
-    EinsplineTimer.reset();
-    TimerManager.addTimer (&ValueTimer);
-    TimerManager.addTimer (&VGLTimer);
-    TimerManager.addTimer (&VGLMatTimer);
-    TimerManager.addTimer (&EinsplineTimer);
-  }
+template<typename StorageType> string
+EinsplineSetExtended<StorageType>::Type()
+{
+  return "EinsplineSetExtended";
+}
+
+
+template<typename StorageType> void
+EinsplineSetExtended<StorageType>::registerTimers()
+{
+  ValueTimer.reset();
+  VGLTimer.reset();
+  VGLMatTimer.reset();
+  EinsplineTimer.reset();
+  TimerManager.addTimer (&ValueTimer);
+  TimerManager.addTimer (&VGLTimer);
+  TimerManager.addTimer (&VGLMatTimer);
+  TimerManager.addTimer (&EinsplineTimer);
+}
 
 
 
-  template<typename StorageType> SPOSetBase*
-  EinsplineSetExtended<StorageType>::makeClone() const
-  {
-    EinsplineSetExtended<StorageType> *clone = 
-      new EinsplineSetExtended<StorageType> (*this);
-    clone->registerTimers();
-    for (int iat=0; iat<clone->AtomicOrbitals.size(); iat++)
-      clone->AtomicOrbitals[iat].registerTimers();
-    return clone;
-  }
+template<typename StorageType> SPOSetBase*
+EinsplineSetExtended<StorageType>::makeClone() const
+{
+  EinsplineSetExtended<StorageType> *clone =
+    new EinsplineSetExtended<StorageType> (*this);
+  clone->registerTimers();
+  for (int iat=0; iat<clone->AtomicOrbitals.size(); iat++)
+    clone->AtomicOrbitals[iat].registerTimers();
+  return clone;
+}
 
-  template class EinsplineSetExtended<complex<double> >;
-  template class EinsplineSetExtended<        double  >;
+template class EinsplineSetExtended<complex<double> >;
+template class EinsplineSetExtended<        double  >;
 
 
 #ifdef QMC_CUDA
-  ///////////////////////////////
-  // Real StorageType versions //
-  ///////////////////////////////
-  template<> string
-  EinsplineSetHybrid<double>::Type()
-  {
-    return "EinsplineSetHybrid<double>";
-  }
-  
-  
-  template<typename StorageType> SPOSetBase*
-  EinsplineSetHybrid<StorageType>::makeClone() const
-  {
-    EinsplineSetHybrid<StorageType> *clone = 
-      new EinsplineSetHybrid<StorageType> (*this);
-    clone->registerTimers();
-    return clone;
-  }
-  
+///////////////////////////////
+// Real StorageType versions //
+///////////////////////////////
+template<> string
+EinsplineSetHybrid<double>::Type()
+{
+  return "EinsplineSetHybrid<double>";
+}
 
-  //////////////////////////////////
-  // Complex StorageType versions //
-  //////////////////////////////////
 
-  
-  template<> string
-  EinsplineSetHybrid<complex<double> >::Type()
-  {
-    return "EinsplineSetHybrid<complex<double> >";
-  }
-  
-  template<>
-  EinsplineSetHybrid<double>::EinsplineSetHybrid() :
-    CurrentWalkers(0)
-  {
-    ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
-    VGLTimer.set_name ("EinsplineSetHybrid::VGL");
-    ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
-    EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
-    className = "EinsplineSeHybrid";
-    TimerManager.addTimer (&ValueTimer);
-    TimerManager.addTimer (&VGLTimer);
-    TimerManager.addTimer (&VGLMatTimer);
-    TimerManager.addTimer (&EinsplineTimer);
-    for (int i=0; i<OHMMS_DIM; i++)
-      HalfG[i] = 0;
-  }
+template<typename StorageType> SPOSetBase*
+EinsplineSetHybrid<StorageType>::makeClone() const
+{
+  EinsplineSetHybrid<StorageType> *clone =
+    new EinsplineSetHybrid<StorageType> (*this);
+  clone->registerTimers();
+  return clone;
+}
 
-  template<>
-  EinsplineSetHybrid<complex<double > >::EinsplineSetHybrid() :
-    CurrentWalkers(0)
-  {
-    ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
-    VGLTimer.set_name ("EinsplineSetHybrid::VGL");
-    ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
-    EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
-    className = "EinsplineSeHybrid";
-    TimerManager.addTimer (&ValueTimer);
-    TimerManager.addTimer (&VGLTimer);
-    TimerManager.addTimer (&VGLMatTimer);
-    TimerManager.addTimer (&EinsplineTimer);
-    for (int i=0; i<OHMMS_DIM; i++)
-      HalfG[i] = 0;
-  }
 
-  template class EinsplineSetHybrid<complex<double> >;
-  template class EinsplineSetHybrid<        double  >;
+//////////////////////////////////
+// Complex StorageType versions //
+//////////////////////////////////
+
+
+template<> string
+EinsplineSetHybrid<complex<double> >::Type()
+{
+  return "EinsplineSetHybrid<complex<double> >";
+}
+
+template<>
+EinsplineSetHybrid<double>::EinsplineSetHybrid() :
+  CurrentWalkers(0)
+{
+  ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
+  VGLTimer.set_name ("EinsplineSetHybrid::VGL");
+  ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
+  EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
+  className = "EinsplineSeHybrid";
+  TimerManager.addTimer (&ValueTimer);
+  TimerManager.addTimer (&VGLTimer);
+  TimerManager.addTimer (&VGLMatTimer);
+  TimerManager.addTimer (&EinsplineTimer);
+  for (int i=0; i<OHMMS_DIM; i++)
+    HalfG[i] = 0;
+}
+
+template<>
+EinsplineSetHybrid<complex<double > >::EinsplineSetHybrid() :
+  CurrentWalkers(0)
+{
+  ValueTimer.set_name ("EinsplineSetHybrid::ValueOnly");
+  VGLTimer.set_name ("EinsplineSetHybrid::VGL");
+  ValueTimer.set_name ("EinsplineSetHybrid::VGLMat");
+  EinsplineTimer.set_name ("EinsplineSetHybrid::Einspline");
+  className = "EinsplineSeHybrid";
+  TimerManager.addTimer (&ValueTimer);
+  TimerManager.addTimer (&VGLTimer);
+  TimerManager.addTimer (&VGLMatTimer);
+  TimerManager.addTimer (&EinsplineTimer);
+  for (int i=0; i<OHMMS_DIM; i++)
+    HalfG[i] = 0;
+}
+
+template class EinsplineSetHybrid<complex<double> >;
+template class EinsplineSetHybrid<        double  >;
 #endif
 }

@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,39 +20,40 @@
 
 #include "QMCDrivers/QMCCostFunctionBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  /** @ingroup QMCDrivers
-   * @brief Implements wave-function optimization
-   *
-   * Optimization by correlated sampling method with configurations 
-   * generated from VMC running on a single thread.
-   */
-  class QMCCostFunctionSingle: public QMCCostFunctionBase
-  {
-  public:
+/** @ingroup QMCDrivers
+ * @brief Implements wave-function optimization
+ *
+ * Optimization by correlated sampling method with configurations
+ * generated from VMC running on a single thread.
+ */
+class QMCCostFunctionSingle: public QMCCostFunctionBase
+{
+public:
 
-    ///Constructor.
-    QMCCostFunctionSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
-    
-    ///Destructor
-    ~QMCCostFunctionSingle();
+  ///Constructor.
+  QMCCostFunctionSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
-    void getConfigurations(const string& aroot);
-    void checkConfigurations();
-    void GradCost(vector<QMCTraits::RealType>& PGradient, const vector<QMCTraits::RealType>& PM, QMCTraits::RealType FiniteDiff=0) ;
-    Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
-  protected:
-    vector<vector<Return_t> > TempDerivRecords;
-    vector<vector<Return_t> > TempHDerivRecords;
-    Return_t CSWeight;
-    void resetPsi(bool final_reset=false);
-    Return_t correlatedSampling(bool needGrad=true);
-  };
+  ///Destructor
+  ~QMCCostFunctionSingle();
+
+  void getConfigurations(const string& aroot);
+  void checkConfigurations();
+  void GradCost(vector<QMCTraits::RealType>& PGradient, const vector<QMCTraits::RealType>& PM, QMCTraits::RealType FiniteDiff=0) ;
+  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
+protected:
+  vector<vector<Return_t> > TempDerivRecords;
+  vector<vector<Return_t> > TempHDerivRecords;
+  Return_t CSWeight;
+  void resetPsi(bool final_reset=false);
+  Return_t correlatedSampling(bool needGrad=true);
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

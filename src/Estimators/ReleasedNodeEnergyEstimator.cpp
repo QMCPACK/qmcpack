@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim 
+// (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -9,61 +9,63 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Estimators/ReleasedNodeEnergyEstimator.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  ReleasedNodeEnergyEstimator::ReleasedNodeEnergyEstimator(QMCHamiltonian& h, int Sm)
-    :refH(h), Smax(Sm)
-  { 
-    N_rn = Smax+1;
-    SizeOfHamiltonians = h.sizeOfObservables();
-    FirstHamiltonian = h.startIndex();
-    scalars.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
-    scalars_saved.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
-  }
+ReleasedNodeEnergyEstimator::ReleasedNodeEnergyEstimator(QMCHamiltonian& h, int Sm)
+  :refH(h), Smax(Sm)
+{
+  N_rn = Smax+1;
+  SizeOfHamiltonians = h.sizeOfObservables();
+  FirstHamiltonian = h.startIndex();
+  scalars.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
+  scalars_saved.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
+}
 
-  ScalarEstimatorBase* ReleasedNodeEnergyEstimator::clone()
+ScalarEstimatorBase* ReleasedNodeEnergyEstimator::clone()
+{
+  ReleasedNodeEnergyEstimator* myClone = new ReleasedNodeEnergyEstimator(*this);
+  return myClone;
+}
+
+/**  add the local energy, variance and all the Hamiltonian components to the scalar record container
+ * @param record storage of scalar records (name,value)
+ */
+void ReleasedNodeEnergyEstimator::add2Record(RecordListType& record)
+{
+  FirstIndex = record.size();
+  int dumy=record.add("LocalEnergy");
+  dumy=record.add("LocalEnergy_sq");
+  dumy=record.add("LocalPotential");
+  dumy=record.add("FermionEnergy");
+  for(int i=0; i<N_rn; ++i)
   {
-    ReleasedNodeEnergyEstimator* myClone = new ReleasedNodeEnergyEstimator(*this);
-    return myClone;
+    ostringstream o;
+    o << "EW_RN_" << i;
+    ostringstream p;
+    p << "E2W_RN_" << i;
+    ostringstream q;
+    q << "W_RN_" << i;
+    record.add(o.str());
+    record.add(p.str());
+    record.add(q.str());
   }
-
-  /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
-   * @param record storage of scalar records (name,value)
-   */
-  void ReleasedNodeEnergyEstimator::add2Record(RecordListType& record) 
-  {
-    FirstIndex = record.size();
-    int dumy=record.add("LocalEnergy");
-    dumy=record.add("LocalEnergy_sq");
-    dumy=record.add("LocalPotential");
-    dumy=record.add("FermionEnergy");
-    for(int i=0;i<N_rn;++i) 
-    {
-      ostringstream o;
-      o << "EW_RN_" << i;
-      ostringstream p;
-      p << "E2W_RN_" << i;
-      ostringstream q;
-      q << "W_RN_" << i;
-      record.add(o.str());
-      record.add(p.str());
-      record.add(q.str());
-    }
-    for(int i=0; i<SizeOfHamiltonians; ++i) record.add(refH.getObservableName(i));
-    LastIndex=record.size();
-    clear();
-  }
+  for(int i=0; i<SizeOfHamiltonians; ++i)
+    record.add(refH.getObservableName(i));
+  LastIndex=record.size();
+  clear();
+}
 
 }
 /***************************************************************************
  * $RCSfile$   $Author: jmcminis $
  * $Revision: 4163 $   $Date: 2009-08-31 05:47:46 -0500 (Mon, 31 Aug 2009) $
- * $Id: ReleasedNodeEnergyEstimator.cpp 4163 2009-08-31 10:47:46Z jmcminis $ 
+ * $Id: ReleasedNodeEnergyEstimator.cpp 4163 2009-08-31 10:47:46Z jmcminis $
  ***************************************************************************/

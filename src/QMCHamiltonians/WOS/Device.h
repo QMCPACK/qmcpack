@@ -7,7 +7,8 @@
 
 using namespace qmcplusplus;
 
-class Device {
+class Device
+{
 
 public:
 
@@ -33,22 +34,20 @@ public:
 
   /// initialise and construct the Device
   Device(double delta,
-	 double eps,
-	 double qdensity,
-	 const std::vector<double>& appV,
-	 const posvec_t& min,
-	 const posvec_t& max){
-
+         double eps,
+         double qdensity,
+         const std::vector<double>& appV,
+         const posvec_t& min,
+         const posvec_t& max)
+  {
     m_skin = delta;
     m_eps = eps;
     rho0 = qdensity;
     r_min = min;
     r_max = max;
-
     q_fac = rho0 / ( 6.0 * m_eps );
-
-    Vapp.resize(appV.size()); Vapp = appV;
-
+    Vapp.resize(appV.size());
+    Vapp = appV;
     //    flush();
   }
 
@@ -58,16 +57,17 @@ public:
   /// check for first passage out of the boundary
   double passage( Domain& );
   double OC_passage( const double,
-		     Domain&,
-		     WOSParticles*);
+                     Domain&,
+                     WOSParticles*);
 
   double contrib0( int, const Domain&, WOSParticles* );
   double contribk( const Domain&, const WOSParticles* );
-  double OC_contrib0( double, 
-		      const posvec_t&,
-		      WOSParticles*);
+  double OC_contrib0( double,
+                      const posvec_t&,
+                      WOSParticles*);
 
-  void flush(){
+  void flush()
+  {
     cout << m_skin << '\t' << m_eps << '\t' << rho0 << endl;
     cout << r_min << endl;
     cout << r_max << endl;

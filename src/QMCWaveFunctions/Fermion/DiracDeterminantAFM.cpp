@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: esler@uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -20,38 +20,38 @@
 namespace qmcplusplus
 {
 
-  DiracDeterminantAFM::DiracDeterminantAFM
-  (ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
-    DiracDeterminantBase(gs_spos, first)
-  {
-    targetPtcl = &ptcl;
-    NumOrbitals = gs_spos->OrbitalSetSize;
-    resize(NumOrbitals,NumOrbitals);
-    BasisVals.resize(NumOrbitals,NumOrbitals);
-    BasisGrad.resize(NumOrbitals,NumOrbitals);
-    BasisLapl.resize(NumOrbitals,NumOrbitals);
-    dlogdet_dC.resize(NumOrbitals, NumOrbitals);
-    G_gamma.resize(NumOrbitals, NumOrbitals);
-    L_gamma.resize(NumOrbitals, NumOrbitals);
-    dgrad_dC.resize(NumOrbitals,NumOrbitals);
-    dlapl_dC.resize(NumOrbitals,NumOrbitals);
-    Gamma.resize(NumOrbitals,NumOrbitals);
-    MyG.resize(NumOrbitals);
-    Optimizable = gs_spos->Optimizable;
+DiracDeterminantAFM::DiracDeterminantAFM
+(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
+  DiracDeterminantBase(gs_spos, first)
+{
+  targetPtcl = &ptcl;
+  NumOrbitals = gs_spos->OrbitalSetSize;
+  resize(NumOrbitals,NumOrbitals);
+  BasisVals.resize(NumOrbitals,NumOrbitals);
+  BasisGrad.resize(NumOrbitals,NumOrbitals);
+  BasisLapl.resize(NumOrbitals,NumOrbitals);
+  dlogdet_dC.resize(NumOrbitals, NumOrbitals);
+  G_gamma.resize(NumOrbitals, NumOrbitals);
+  L_gamma.resize(NumOrbitals, NumOrbitals);
+  dgrad_dC.resize(NumOrbitals,NumOrbitals);
+  dlapl_dC.resize(NumOrbitals,NumOrbitals);
+  Gamma.resize(NumOrbitals,NumOrbitals);
+  MyG.resize(NumOrbitals);
+  Optimizable = gs_spos->Optimizable;
 //    if (first==0) Phi->setpm(+1);
 //    else Phi->setpm(-1);
-  }
+}
 
-  DiracDeterminantBase* 
-  DiracDeterminantAFM::makeCopy(SPOSetBasePtr spo) const
-  {
-    DiracDeterminantBase* dclone= new DiracDeterminantAFM(*targetPtcl, spo, FirstIndex);
-    dclone->set(FirstIndex,LastIndex-FirstIndex);
-    return dclone;
-  }
+DiracDeterminantBase*
+DiracDeterminantAFM::makeCopy(SPOSetBasePtr spo) const
+{
+  DiracDeterminantBase* dclone= new DiracDeterminantAFM(*targetPtcl, spo, FirstIndex);
+  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  return dclone;
+}
 
 
-  
+
 //   // Note:  Currently, this calls Phi-evaluate.  This should not be
 //   // necessary if the GS orbitals and basis orbitals are cacheed.
 //   void
@@ -59,11 +59,11 @@ namespace qmcplusplus
 //   {
 //     if(Optimizable) Phi->resetParameters(optvars);
 //     // Update the direct matrices
-//     
+//
 //     Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-// 
+//
 //     // Invert PsiM
-//     if(NumPtcls==1) 
+//     if(NumPtcls==1)
 //       psiM(0,0) = 1.0/psiM(0,0);
 //     else {
 //       InverseTimer.start();
@@ -74,79 +74,77 @@ namespace qmcplusplus
 //     psiM_temp = psiM;
 //   }
 
-  void
-  DiracDeterminantAFM::evaluateDerivatives(ParticleSet& P,
-					   const opt_variables_type& active,
-					   vector<RealType>& dlogpsi,
-					   vector<RealType>& dhpsioverpsi)
-  {
-    if(!Optimizable) return;
-    resetParameters(active);
-    int loc=Phi->myVars.where(0);
-    
-     Phi->evaluateForDeriv(P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
-    
-    BLAS::gemm ('N', 'T', NumOrbitals, NumOrbitals, NumOrbitals, 1.0, 
-      BasisVals.data(), NumOrbitals, psiM.data(), NumOrbitals,
-      0.0, dlogdet_dC.data(), NumOrbitals);
-         
+void
+DiracDeterminantAFM::evaluateDerivatives(ParticleSet& P,
+    const opt_variables_type& active,
+    vector<RealType>& dlogpsi,
+    vector<RealType>& dhpsioverpsi)
+{
+  if(!Optimizable)
+    return;
+  resetParameters(active);
+  int loc=Phi->myVars.where(0);
+  Phi->evaluateForDeriv(P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
+  BLAS::gemm ('N', 'T', NumOrbitals, NumOrbitals, NumOrbitals, 1.0,
+              BasisVals.data(), NumOrbitals, psiM.data(), NumOrbitals,
+              0.0, dlogdet_dC.data(), NumOrbitals);
 #ifdef QMC_COMPLEX
-    for (int i=0; i<NumOrbitals; i++) dlogpsi[loc]+=dlogdet_dC(i,i).real();
+  for (int i=0; i<NumOrbitals; i++)
+    dlogpsi[loc]+=dlogdet_dC(i,i).real();
 #else
-    for (int i=0; i<NumOrbitals; i++) dlogpsi[loc]+=dlogdet_dC(i,i);
-#endif    
-    L_gamma = BasisLapl;
-    BLAS::gemm ('N', 'N', NumOrbitals, NumOrbitals, NumOrbitals, -1.0,
-      dlogdet_dC.data(), NumOrbitals, d2psiM.data(), NumOrbitals, 
-      1.0, L_gamma.data(), NumOrbitals);
-      
-    for (int l=0; l<NumOrbitals; l++)
-      for (int j=0; j<NumOrbitals; j++) 
-      {
-        G_gamma(l,j) = BasisGrad(l,j);
-        for (int n=0; n<NumOrbitals; n++) 
-          G_gamma(l,j) -=  dpsiM(l,n)*dlogdet_dC(n,j);
-      }
-      
-    dlapl_dC=0;
-    for (int i=0; i<NumOrbitals; i++) for (int j=0; j<NumOrbitals; j++)
-      dlapl_dC(i,i) += -0.5*L_gamma(i,j)*psiM(i,j);
-          
-
-    for (int ptcl=0; ptcl<NumOrbitals; ptcl++) 
+  for (int i=0; i<NumOrbitals; i++)
+    dlogpsi[loc]+=dlogdet_dC(i,i);
+#endif
+  L_gamma = BasisLapl;
+  BLAS::gemm ('N', 'N', NumOrbitals, NumOrbitals, NumOrbitals, -1.0,
+              dlogdet_dC.data(), NumOrbitals, d2psiM.data(), NumOrbitals,
+              1.0, L_gamma.data(), NumOrbitals);
+  for (int l=0; l<NumOrbitals; l++)
+    for (int j=0; j<NumOrbitals; j++)
     {
-      MyG[ptcl] = PosType();
-      for (int orb=0; orb<NumOrbitals; orb++)
-        MyG[ptcl] += dpsiM(ptcl,orb)*psiM(ptcl,orb);
+      G_gamma(l,j) = BasisGrad(l,j);
+      for (int n=0; n<NumOrbitals; n++)
+        G_gamma(l,j) -=  dpsiM(l,n)*dlogdet_dC(n,j);
     }
-    
-
-    for (int i=0; i<NumOrbitals; i++)
-      for (int l=0; l<NumOrbitals; l++) 
-      {
-        GradType g = P.G[FirstIndex+l]-MyG[l];
-        GradType dg = psiM(l,i)*G_gamma(l,i);
-        dlapl_dC(i,i) -= dot(g, dg);
-      }
-   
+  dlapl_dC=0;
+  for (int i=0; i<NumOrbitals; i++)
+    for (int j=0; j<NumOrbitals; j++)
+      dlapl_dC(i,i) += -0.5*L_gamma(i,j)*psiM(i,j);
+  for (int ptcl=0; ptcl<NumOrbitals; ptcl++)
+  {
+    MyG[ptcl] = PosType();
+    for (int orb=0; orb<NumOrbitals; orb++)
+      MyG[ptcl] += dpsiM(ptcl,orb)*psiM(ptcl,orb);
+  }
+  for (int i=0; i<NumOrbitals; i++)
+    for (int l=0; l<NumOrbitals; l++)
+    {
+      GradType g = P.G[FirstIndex+l]-MyG[l];
+      GradType dg = psiM(l,i)*G_gamma(l,i);
+      dlapl_dC(i,i) -= dot(g, dg);
+    }
 #ifdef QMC_COMPLEX
-    for (int i=0; i<NumOrbitals; i++) dhpsioverpsi[loc] += dlapl_dC(i,i).real();
+  for (int i=0; i<NumOrbitals; i++)
+    dhpsioverpsi[loc] += dlapl_dC(i,i).real();
 #else
-    for (int i=0; i<NumOrbitals; i++) dhpsioverpsi[loc] += dlapl_dC(i,i);
-#endif    
-  }
+  for (int i=0; i<NumOrbitals; i++)
+    dhpsioverpsi[loc] += dlapl_dC(i,i);
+#endif
+}
 
-  void
-  DiracDeterminantAFM::checkInVariables(opt_variables_type& active)
-  {
-    if(Optimizable) Phi->checkInVariables(active);
-  }
+void
+DiracDeterminantAFM::checkInVariables(opt_variables_type& active)
+{
+  if(Optimizable)
+    Phi->checkInVariables(active);
+}
 
 
-  void
-  DiracDeterminantAFM::checkOutVariables(const opt_variables_type& active)
-  {
-    if(Optimizable) Phi->checkOutVariables(active);
-  }
+void
+DiracDeterminantAFM::checkOutVariables(const opt_variables_type& active)
+{
+  if(Optimizable)
+    Phi->checkOutVariables(active);
+}
 
 }

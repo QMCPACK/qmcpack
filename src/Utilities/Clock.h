@@ -11,10 +11,10 @@ namespace qmcplusplus
 {
 #if defined(__bgp__)
 
-  inline double cpu_clock()
-  {
-    return DCMF_Timer();
-  }
+inline double cpu_clock()
+{
+  return DCMF_Timer();
+}
 //  __inline__ unsigned long long getticks(void)
 //  {
 //    unsigned long long int result=0;
@@ -42,19 +42,19 @@ namespace qmcplusplus
 //    return static_cast<double>(getticks())*SEC_PER_TICKS;
 //  }
 
-#else 
-#if defined(ENABLE_OPENMP)
-  inline double cpu_clock() 
-  {
-    return omp_get_wtime();
-  }
 #else
-  inline double cpu_clock()
-  {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec+(1.e-6)*tv.tv_usec;
-  }
+#if defined(ENABLE_OPENMP)
+inline double cpu_clock()
+{
+  return omp_get_wtime();
+}
+#else
+inline double cpu_clock()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (double)tv.tv_sec+(1.e-6)*tv.tv_usec;
+}
 #endif //
 #endif
 }

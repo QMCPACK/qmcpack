@@ -1,5 +1,5 @@
 
-#ifndef _CUSPCORR_ 
+#ifndef _CUSPCORR_
 #define _CUSPCORR_
 
 #include<cmath>
@@ -17,18 +17,20 @@
 //#include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
 template<class BS>
-class CuspCorr : public QMCTraits {
+class CuspCorr : public QMCTraits
+{
 
- typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
- typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
- typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
- typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
- typedef SPOSetBase*        SPOSetBasePtr; 
+  typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
+  typedef SPOSetBase*        SPOSetBasePtr;
 
- public:
+public:
 
   CuspCorr(RealType r, int nIntPnts, ParticleSet* targetP, ParticleSet* sourceP, bool print=true): Rc_init(r),Rc(r),Rc_max(r),printOrbs(print)
   {
@@ -43,7 +45,8 @@ class CuspCorr : public QMCTraits {
     coeff[4] = 31.2276;
     coeff[5] = -12.1316;
     coeff[6] = 1.94692;
-    for(int i=0; i<10; i++) alpha[i]=0.0;
+    for(int i=0; i<10; i++)
+      alpha[i]=0.0;
     C=0.0;
     sg=1.0;
     nElms=nIntPnts;
@@ -79,31 +82,37 @@ class CuspCorr : public QMCTraits {
     Psi->evaluate(*targetPtcl,0,val,grad,lapl);
   }
 
-  RealType phi( RealType r) 
+  RealType phi( RealType r)
   {
-     TinyVector<RealType,3> dr=0;
-     dr[0]=r; 
-     evaluate(Psi1,dr,val1,grad1,lapl1);
-     return val1[curOrb];
+    TinyVector<RealType,3> dr=0;
+    dr[0]=r;
+    evaluate(Psi1,dr,val1,grad1,lapl1);
+    return val1[curOrb];
   }
 
 
-  RealType idealEL(RealType r) 
+  RealType idealEL(RealType r)
   {
-     RealType r1=r*r,res=coeff[0]*r1;
-     r1*=r;res+=coeff[1]*r1;
-     r1*=r;res+=coeff[2]*r1;
-     r1*=r;res+=coeff[3]*r1;
-     r1*=r;res+=coeff[4]*r1;
-     r1*=r;res+=coeff[5]*r1;
-     r1*=r;res+=coeff[6]*r1;
-     return (res+beta0)*Z*Z;
-  } 
- 
-  RealType getELorig() 
+    RealType r1=r*r,res=coeff[0]*r1;
+    r1*=r;
+    res+=coeff[1]*r1;
+    r1*=r;
+    res+=coeff[2]*r1;
+    r1*=r;
+    res+=coeff[3]*r1;
+    r1*=r;
+    res+=coeff[4]*r1;
+    r1*=r;
+    res+=coeff[5]*r1;
+    r1*=r;
+    res+=coeff[6]*r1;
+    return (res+beta0)*Z*Z;
+  }
+
+  RealType getELorig()
   {
     RealType dx = Rc*1.2/nElms;
-     TinyVector<RealType,3> ddr=0;
+    TinyVector<RealType,3> ddr=0;
     evaluate(Psi2,ddr,val2,grad2,lapl2);  // eta(0)
     evaluate(Psi1,ddr,val1,grad1,lapl1);  // phi(0)
     RealType Zeff = Z*(1.0+ val2[curOrb]/val1[curOrb]);
@@ -112,12 +121,12 @@ class CuspCorr : public QMCTraits {
       ddr[0]=(i+1.0)*dx;
       pos[i]=(i+1.0)*dx;
       evaluate(Psi1,ddr,val1,grad1,lapl1);
-      ELorig[i] = -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/pos[i]; 
+      ELorig[i] = -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/pos[i];
     }
     ddr[0]=Rc;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
     return -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/Rc;
-  } 
+  }
 
   void getELideal(RealType el)
   {
@@ -130,7 +139,7 @@ class CuspCorr : public QMCTraits {
       pos[i]=(i+1.0)*dx;
       ELideal[i] = idealEL(pos[i]);
     }
-  } 
+  }
 
   void getELcurr()
   {
@@ -140,14 +149,17 @@ class CuspCorr : public QMCTraits {
     TinyVector<RealType,3> ddr=0;
     ddr[0]=Rc;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
-    RealType dE = ELorigAtRc - (-0.5*lapl1[curOrb]/val1[curOrb]-Zeff/Rc); 
+    RealType dE = ELorigAtRc - (-0.5*lapl1[curOrb]/val1[curOrb]-Zeff/Rc);
     for( int i=0; i<nElms; i++)
     {
       pos[i]=(i+1.0)*dx;
-      if(pos[i] <= Rc) {
+      if(pos[i] <= Rc)
+      {
         dp=dpr(pos[i]);
         ELcurr[i] = -0.5*Rr(pos[i])*(2.0*dp/pos[i]+d2pr(pos[i])+dp*dp)/phiBar(pos[i])-Zeff/pos[i] + dE;
-      } else {
+      }
+      else
+      {
         ddr[0]=pos[i];
         evaluate(Psi1,ddr,val1,grad1,lapl1);
         ELcurr[i] = -0.5*lapl1[curOrb]/val1[curOrb]-Zeff/pos[i] + dE;
@@ -155,51 +167,58 @@ class CuspCorr : public QMCTraits {
     }
   }
 
-  RealType getchi2() 
+  RealType getchi2()
   {
-     RealType res=0.0;
-     for(int i=0; i<nElms; i++)
-       res+=(ELcurr[i]-ELideal[i])*(ELcurr[i]-ELideal[i]);
-     return res;
+    RealType res=0.0;
+    for(int i=0; i<nElms; i++)
+      res+=(ELcurr[i]-ELideal[i])*(ELcurr[i]-ELideal[i]);
+    return res;
   }
 
-  inline RealType pr(RealType r) {
-    return alpha[0] + alpha[1]*r + alpha[2]*r*r 
-        + alpha[3]*r*r*r + alpha[4]*r*r*r*r;
+  inline RealType pr(RealType r)
+  {
+    return alpha[0] + alpha[1]*r + alpha[2]*r*r
+           + alpha[3]*r*r*r + alpha[4]*r*r*r*r;
   }
 
-  inline RealType dpr(RealType r) {
+  inline RealType dpr(RealType r)
+  {
     return  alpha[1] + 2.0*alpha[2]*r
-        + 3.0*alpha[3]*r*r + 4.0*alpha[4]*r*r*r;
+            + 3.0*alpha[3]*r*r + 4.0*alpha[4]*r*r*r;
   }
 
-  inline RealType d2pr(RealType r) {
+  inline RealType d2pr(RealType r)
+  {
     return  2.0*alpha[2] + 6.0*alpha[3]*r + 12.0*alpha[4]*r*r;
   }
 
-  inline RealType Rr(RealType r) {
+  inline RealType Rr(RealType r)
+  {
     return sg*std::exp(pr(r));
   }
 
-  inline RealType phiBar(RealType r) {
+  inline RealType phiBar(RealType r)
+  {
     if(r <= Rc)
-     return C + Rr(r);
+      return C + Rr(r);
     else
-     return phi(r);
+      return phi(r);
   }
 
-  RealType numDeriv(RealType r) {
+  RealType numDeriv(RealType r)
+  {
     TinyVector<RealType,3> ddr=0;
     ddr[0]=r+0.0001;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
-    RealType res = val1[curOrb]; 
+    RealType res = val1[curOrb];
     ddr[0]=r;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
     res -= val2[curOrb];
     return res/0.0001;
   }
 
-  RealType num2Deriv(RealType r) {
+  RealType num2Deriv(RealType r)
+  {
     TinyVector<RealType,3> ddr=0;
     ddr[0]=r+0.0001;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
@@ -214,8 +233,9 @@ class CuspCorr : public QMCTraits {
   }
 
 
-  void evalX(ValueVector_t &X) {
-    TinyVector<RealType,3> ddr=0;     
+  void evalX(ValueVector_t &X)
+  {
+    TinyVector<RealType,3> ddr=0;
     ddr[0]=Rc;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
     X[0] = std::log(std::fabs(val1[curOrb]-C));
@@ -225,20 +245,21 @@ class CuspCorr : public QMCTraits {
     X[4] = std::log(std::fabs(valAtZero-C));
   }
 
-  void X2alpha(const ValueVector_t X) {
+  void X2alpha(const ValueVector_t X)
+  {
     RealType RcInv=1.0/Rc, RcInv2=RcInv*RcInv;
     alpha[0] = X[4];
     alpha[1] = X[3];
     alpha[2] = 6.0*X[0]*RcInv2 - 3.0*X[1]*RcInv + X[2]*0.5
-       - 3.0*X[3]*RcInv - 6.0*X[4]*RcInv2 - 0.5*X[1]*X[1];
+               - 3.0*X[3]*RcInv - 6.0*X[4]*RcInv2 - 0.5*X[1]*X[1];
     alpha[3] = -8.0*X[0]*RcInv2*RcInv + 5.0*X[1]*RcInv2 - X[2]*RcInv
-       + 3.0*X[3]*RcInv2 + 8.0*X[4]*RcInv2*RcInv + X[1]*X[1]*RcInv;
-    alpha[4] = 3.0*X[0]*RcInv2*RcInv2 - 2.0*X[1]*RcInv2*RcInv 
-       + 0.5*X[2]*RcInv2 - X[3]*RcInv2*RcInv - 3.0*X[4]*RcInv2*RcInv2 
-       - 0.5*X[1]*X[1]*RcInv2;
+               + 3.0*X[3]*RcInv2 + 8.0*X[4]*RcInv2*RcInv + X[1]*X[1]*RcInv;
+    alpha[4] = 3.0*X[0]*RcInv2*RcInv2 - 2.0*X[1]*RcInv2*RcInv
+               + 0.5*X[2]*RcInv2 - X[3]*RcInv2*RcInv - 3.0*X[4]*RcInv2*RcInv2
+               - 0.5*X[1]*X[1]*RcInv2;
   }
 
- private:
+private:
   ///target ParticleSet
   ParticleSet *targetPtcl;
   ///source ParticleSet

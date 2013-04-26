@@ -3,7 +3,7 @@
 // Copyright (c) 2002-2003 Indiana University.  All rights reserved.
 // Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
 //                         All rights reserved.
-// 
+//
 // This file is part of the OOMPI software package.  For license
 // information, see the LICENSE file in the top level directory of the
 // OOMPI source distribution.
@@ -19,7 +19,8 @@
 
 class OOMPI_Linked_list_node;
 
-class OOMPI_Linked_list {
+class OOMPI_Linked_list
+{
   // This class defines a linked list of MPI datatypes, and a method to
   // delete all of them.  This should be replaced by an STL set when we
   // get STL enabled in OOMPI.  The list is unsorted, and all list
@@ -49,7 +50,8 @@ private:
   OOMPI_Linked_list_node *head;
 };
 
-struct OOMPI_Linked_list_node {
+struct OOMPI_Linked_list_node
+{
   // This class contains one node of the linked list.  This is for internal
   // use of the OOMPI_Linked_list class only.
 

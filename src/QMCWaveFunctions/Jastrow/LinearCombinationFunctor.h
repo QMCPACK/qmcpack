@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@
  *
  * \f$ \phi(r) = \sum_i C_i f_i(r) \f$ where  \f$ f_i(r)\f$ is an one-dimensional
  * functor. Each one-dmensional functor is represented by a derived class from
- * OptimizableFunctorBase<T>. 
+ * OptimizableFunctorBase<T>.
  */
 template<class T>
 struct LinearCombinationFunctor: public OptimizableFunctorBase
@@ -42,20 +42,24 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase
   std::vector<ComponentType*> Phi;
 
   LinearCombinationFunctor(): NumComponents(0)
-  { 
+  {
     CanNotChange.reserve(8);
     C.reserve(8);
     Phi.reserve(8);
   }
 
-  OptimizableFunctorBase* makeClone() const 
+  OptimizableFunctorBase* makeClone() const
   {
     LinearCombinationFunctor<T>* myclone=new LinearCombinationFunctor<T>(*this);
-    for(int i=0; i<NumComponents; ++i) myclone->Phi[i]=Phi[i]->makeClone();
+    for(int i=0; i<NumComponents; ++i)
+      myclone->Phi[i]=Phi[i]->makeClone();
     return myclone;
   }
 
-  int size() const { return NumComponents;}
+  int size() const
+  {
+    return NumComponents;
+  }
 
   void addComponent(ComponentType* func, real_type c,  std::string& id, bool fixit=false)
   {
@@ -64,29 +68,35 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase
     Phi.push_back(func);
     int loc=myVars.size();
     myVars.insert(id,c);
-    if(fixit) myVars.Index[loc]=-1;//freeze this
+    if(fixit)
+      myVars.Index[loc]=-1;//freeze this
     NumComponents++;
   }
 
   inline void reset()
   {
-    for(int i=0; i<NumComponents; ++i) Phi[i]->reset();
+    for(int i=0; i<NumComponents; ++i)
+      Phi[i]->reset();
   }
 
 
-  inline real_type f(real_type r) {
+  inline real_type f(real_type r)
+  {
     real_type res=0;
-    for(int i=0; i<NumComponents; i++) res += C[i]*Phi[i]->f(r);
+    for(int i=0; i<NumComponents; i++)
+      res += C[i]*Phi[i]->f(r);
     return res;
   }
 
-  inline real_type df(real_type r) {
+  inline real_type df(real_type r)
+  {
     real_type res(0);
-    for(int i=0; i<NumComponents; i++) res += C[i]*Phi[i]->df(r);
+    for(int i=0; i<NumComponents; i++)
+      res += C[i]*Phi[i]->df(r);
     return res;
   }
 
-  bool put(xmlNodePtr cur) 
+  bool put(xmlNodePtr cur)
   {
     return true;
   }
@@ -112,16 +122,16 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase
    * - update C[i] if optVariables contains the ID[i]
    * - call resetParameters of the component functors
    */
-  void resetParameters(const opt_variables_type& active) 
+  void resetParameters(const opt_variables_type& active)
   {
-    for(int i=0; i<NumComponents; ++i) 
+    for(int i=0; i<NumComponents; ++i)
     {
-      if(CanNotChange[i]) continue;
+      if(CanNotChange[i])
+        continue;
       int loc=myVars.where(i);
-      if(loc>=0) C[i]=myVars[i]=active[loc];
+      if(loc>=0)
+        C[i]=myVars[i]=active[loc];
     }
-
-
     //for(int i=0; i<NumComponents; i++) Phi[i]->resetParameters(active);
   }
 
@@ -131,6 +141,6 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1697 $   $Date: 2007-02-04 15:12:32 -0600 (Sun, 04 Feb 2007) $
- * $Id: OptimizableFunctorBase.h 1697 2007-02-04 21:12:32Z jnkim $ 
+ * $Id: OptimizableFunctorBase.h 1697 2007-02-04 21:12:32Z jnkim $
  ***************************************************************************/
 

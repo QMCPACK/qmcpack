@@ -3,109 +3,140 @@
 #include <complex>
 #include <fftw3.h>
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 
 // dummy class to be specialized
 template<unsigned dimensions, typename precision> class FFTWEngine { };
 
 // partial specialization for std::complex<double>
 template<unsigned dimensions>
-class FFTWEngine<dimensions, std::complex<double> > {
+class FFTWEngine<dimensions, std::complex<double> >
+{
 private:
   fftw_plan forwardPlan;
   fftw_plan backwardPlan;
-  inline fftw_complex* mangle(std::complex<double>* p) { return (fftw_complex*)p; } 
+  inline fftw_complex* mangle(std::complex<double>* p)
+  {
+    return (fftw_complex*)p;
+  }
   FFTWEngine(const FFTWEngine&);
 public:
   FFTWEngine() { }
-  ~FFTWEngine() {
-    if (forwardPlan) {
+  ~FFTWEngine()
+  {
+    if (forwardPlan)
+    {
       fftw_destroy_plan(forwardPlan);
       forwardPlan = 0;
     }
-    if (backwardPlan) {
+    if (backwardPlan)
+    {
       fftw_destroy_plan(backwardPlan);
       backwardPlan = 0;
     }
   }
-  void initialize(const int* DimSizes, std::complex<double>* DataArray) {
+  void initialize(const int* DimSizes, std::complex<double>* DataArray)
+  {
     forwardPlan = fftw_plan_dft(dimensions, DimSizes, mangle(DataArray),
                                 mangle(DataArray), FFTW_FORWARD, FFTW_PATIENT);
     backwardPlan = fftw_plan_dft(dimensions, DimSizes, mangle(DataArray),
-                                mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
+                                 mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
   }
-  inline void transformForward(std::complex<double>* DataArray) {
+  inline void transformForward(std::complex<double>* DataArray)
+  {
     fftw_execute_dft(forwardPlan, mangle(DataArray), mangle(DataArray));
   }
-  inline void transformBackward(std::complex<double>* DataArray) {
+  inline void transformBackward(std::complex<double>* DataArray)
+  {
     fftw_execute_dft(backwardPlan, mangle(DataArray), mangle(DataArray));
   }
 };
 
 // partial specialization for std::complex<long double>
 template<unsigned dimensions>
-class FFTWEngine<dimensions, std::complex<long double> > {
+class FFTWEngine<dimensions, std::complex<long double> >
+{
 private:
   fftwl_plan forwardPlan;
   fftwl_plan backwardPlan;
-  inline fftwl_complex* mangle(std::complex<long double>* p) { return (fftwl_complex*)p; } 
+  inline fftwl_complex* mangle(std::complex<long double>* p)
+  {
+    return (fftwl_complex*)p;
+  }
   FFTWEngine(const FFTWEngine&);
 public:
   FFTWEngine() { }
-  ~FFTWEngine() {
-    if (forwardPlan) {
+  ~FFTWEngine()
+  {
+    if (forwardPlan)
+    {
       fftwl_destroy_plan(forwardPlan);
       forwardPlan = 0;
     }
-    if (backwardPlan) {
+    if (backwardPlan)
+    {
       fftwl_destroy_plan(backwardPlan);
       backwardPlan = 0;
     }
   }
-  void initialize(const int* DimSizes, std::complex<long double>* DataArray) {
+  void initialize(const int* DimSizes, std::complex<long double>* DataArray)
+  {
     forwardPlan = fftwl_plan_dft(dimensions, DimSizes, mangle(DataArray),
-                                mangle(DataArray), FFTW_FORWARD, FFTW_PATIENT);
+                                 mangle(DataArray), FFTW_FORWARD, FFTW_PATIENT);
     backwardPlan = fftwl_plan_dft(dimensions, DimSizes, mangle(DataArray),
-                                mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
+                                  mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
   }
-  inline void transformForward(std::complex<long double>* DataArray) {
+  inline void transformForward(std::complex<long double>* DataArray)
+  {
     fftwl_execute_dft(forwardPlan, mangle(DataArray), mangle(DataArray));
   }
-  inline void transformBackward(std::complex<long double>* DataArray) {
+  inline void transformBackward(std::complex<long double>* DataArray)
+  {
     fftwl_execute_dft(backwardPlan, mangle(DataArray), mangle(DataArray));
   }
-};  
-    
+};
+
 // partial specialization for std::complex<float>
 template<unsigned dimensions>
-class FFTWEngine<dimensions, std::complex<float> > {
+class FFTWEngine<dimensions, std::complex<float> >
+{
 private:
   fftwf_plan forwardPlan;
   fftwf_plan backwardPlan;
-  inline fftwf_complex* mangle(std::complex<float>* p) { return (fftwf_complex*)p; } 
+  inline fftwf_complex* mangle(std::complex<float>* p)
+  {
+    return (fftwf_complex*)p;
+  }
   FFTWEngine(const FFTWEngine&);
 public:
   FFTWEngine() { }
-  ~FFTWEngine() {
-    if (forwardPlan) {
+  ~FFTWEngine()
+  {
+    if (forwardPlan)
+    {
       fftwf_destroy_plan(forwardPlan);
       forwardPlan = 0;
     }
-    if (backwardPlan) {
+    if (backwardPlan)
+    {
       fftwf_destroy_plan(backwardPlan);
       backwardPlan = 0;
     }
   }
-  void initialize(const int* DimSizes, std::complex<float>* DataArray) {
+  void initialize(const int* DimSizes, std::complex<float>* DataArray)
+  {
     forwardPlan = fftwf_plan_dft(dimensions, DimSizes, mangle(DataArray),
-                                mangle(DataArray), FFTW_FORWARD, FFTW_PATIENT);
+                                 mangle(DataArray), FFTW_FORWARD, FFTW_PATIENT);
     backwardPlan = fftwf_plan_dft(dimensions, DimSizes, mangle(DataArray),
-                                mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
+                                  mangle(DataArray), FFTW_BACKWARD, FFTW_PATIENT);
   }
-  inline void transformForward(std::complex<float>* DataArray) {
+  inline void transformForward(std::complex<float>* DataArray)
+  {
     fftwf_execute_dft(forwardPlan, mangle(DataArray), mangle(DataArray));
   }
-  inline void transformBackward(std::complex<float>* DataArray) {
+  inline void transformBackward(std::complex<float>* DataArray)
+  {
     fftwf_execute_dft(backwardPlan, mangle(DataArray), mangle(DataArray));
   }
 };

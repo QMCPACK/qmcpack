@@ -6,19 +6,21 @@
 #include "QMCWaveFunctions/SingleParticleOrbitalSet.h"
 #include "QMCWaveFunctions/QDwf.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class QDwfBuilder: public OrbitalBuilderBase {
+class QDwfBuilder: public OrbitalBuilderBase
+{
 
-    typedef SingleParticleOrbitalSet<QDwf> SPOSet_t;
+  typedef SingleParticleOrbitalSet<QDwf> SPOSet_t;
 
-  public :
+public :
 
-    QDwfBuilder(TrialWaveFunction& a) : OrbitalBuilderBase(a){}
+  QDwfBuilder(TrialWaveFunction& a) : OrbitalBuilderBase(a) {}
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-  };
+};
 
 }
 #endif

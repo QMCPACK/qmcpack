@@ -5,22 +5,22 @@
 // called PETE (Portable Expression Template Engine) is
 // made available under the terms described here.  The SOFTWARE has been
 // approved for release with associated LA-CC Number LA-CC-99-5.
-// 
+//
 // Unless otherwise indicated, this SOFTWARE has been authored by an
 // employee or employees of the University of California, operator of the
 // Los Alamos National Laboratory under Contract No.  W-7405-ENG-36 with
 // the U.S. Department of Energy.  The U.S. Government has rights to use,
 // reproduce, and distribute this SOFTWARE. The public may copy, distribute,
-// prepare derivative works and publicly display this SOFTWARE without 
-// charge, provided that this Notice and any statement of authorship are 
-// reproduced on all copies.  Neither the Government nor the University 
-// makes any warranty, express or implied, or assumes any liability or 
+// prepare derivative works and publicly display this SOFTWARE without
+// charge, provided that this Notice and any statement of authorship are
+// reproduced on all copies.  Neither the Government nor the University
+// makes any warranty, express or implied, or assumes any liability or
 // responsibility for the use of this SOFTWARE.
-// 
+//
 // If SOFTWARE is modified to produce derivative works, such modified
 // SOFTWARE should be clearly marked, so as not to confuse it with the
 // version available from LANL.
-// 
+//
 // For more information about PETE, send e-mail to pete@acl.lanl.gov,
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
@@ -29,7 +29,8 @@
 #ifndef PETE_PETE_COMBINERS_H
 #define PETE_PETE_COMBINERS_H
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
@@ -62,7 +63,7 @@ namespace APPNAMESPACE {
 //   Combine2 requires the user to define:
 //      typedef ... Type_t;
 //         - the return type of the combination
-//      static Type_t combine(const A &a, const B &b, const Op &op, 
+//      static Type_t combine(const A &a, const B &b, const Op &op,
 //         const Tag &t) {}
 //         - a function that combines a and b
 //
@@ -86,7 +87,10 @@ struct Combine1
 {
   typedef A Type_t;
   inline static
-  Type_t combine(const A &a, const Op &, const Tag &) { return a; }
+  Type_t combine(const A &a, const Op &, const Tag &)
+  {
+    return a;
+  }
 };
 
 template<class A, class B, class Op, class Tag>
@@ -187,8 +191,8 @@ struct Combine2<A, B, Op, TreeCombine >
 {
   typedef BinaryNode<Op, A, B> Type_t;
   inline static
-  Type_t combine(const A &a, const B &b, const Op &op, 
-    const TreeCombine &t) 
+  Type_t combine(const A &a, const B &b, const Op &op,
+                 const TreeCombine &t)
   {
     return Type_t(op, a, b);
   }
@@ -200,8 +204,8 @@ struct Combine3<A, B, C, Op, TreeCombine >
   typedef TrinaryNode<Op, A, B, C> Type_t;
   inline static
   Type_t combine(const A &a, const B &b, const C &c, const Op &op,
-    const TreeCombine &t) 
-  {    
+                 const TreeCombine &t)
+  {
     return Type_t(op, a, b, c);
   }
 };
@@ -227,7 +231,10 @@ struct Combine1<A, Op, OpCombine>
 {
   typedef typename UnaryReturn<A, Op>::Type_t Type_t;
   inline static
-  Type_t combine(A a, Op op, OpCombine) { return op(a); }
+  Type_t combine(A a, Op op, OpCombine)
+  {
+    return op(a);
+  }
 };
 
 template<class A,class B,class Op>

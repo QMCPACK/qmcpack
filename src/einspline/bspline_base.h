@@ -34,7 +34,7 @@ typedef complex double complex_double;
 #endif
 
 // Conventions:
-// Postfixes:  
+// Postfixes:
 // s:  single precision real
 // d:  double precision real
 // c:  single precision complex
@@ -47,32 +47,33 @@ typedef complex double complex_double;
 ////////////////////////////////////////////////////////////
 
 typedef enum { PERIODIC, DERIV1, DERIV2, FLAT, NATURAL, ANTIPERIODIC } bc_code;
-typedef enum { U1D       , U2D       , U3D      , 
-	       NU1D      , NU2D      , NU3D     ,
+typedef enum { U1D       , U2D       , U3D      ,
+               NU1D      , NU2D      , NU3D     ,
                MULTI_U1D , MULTI_U2D , MULTI_U3D,
-               MULTI_NU1D, MULTI_NU2D, MULTI_NU3D } spline_code;
+               MULTI_NU1D, MULTI_NU2D, MULTI_NU3D
+             } spline_code;
 typedef enum { SINGLE_REAL, DOUBLE_REAL, SINGLE_COMPLEX, DOUBLE_COMPLEX }
-  type_code;
+type_code;
 
-typedef struct 
+typedef struct
 {
   bc_code lCode, rCode;
   float lVal, rVal;
 } BCtype_s;
 
-typedef struct 
+typedef struct
 {
   bc_code lCode, rCode;
   double lVal, rVal;
 } BCtype_d;
 
-typedef struct 
+typedef struct
 {
   bc_code lCode, rCode;
   float lVal_r, lVal_i, rVal_r, rVal_i;
 } BCtype_c;
 
-typedef struct 
+typedef struct
 {
   bc_code lCode, rCode;
   double lVal_r, lVal_i, rVal_r, rVal_i;
@@ -95,8 +96,8 @@ typedef struct
   void *restrict coefs;
 } Bspline;
 
-#ifdef __cplusplus 
-extern "C" 
+#ifdef __cplusplus
+extern "C"
 #endif
 void
 destroy_Bspline (void *spline);

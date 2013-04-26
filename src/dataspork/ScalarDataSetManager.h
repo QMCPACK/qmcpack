@@ -4,7 +4,8 @@
 ///forward declation of ScalarObservable
 class ScalarDataSet;
 
-class ScalarDataSetManager {
+class ScalarDataSetManager
+{
 
   std::vector<std::string> Observables;
   std::vector<std::string> Collectables;
@@ -12,13 +13,13 @@ class ScalarDataSetManager {
 
   std::map<std::string,ScalarDataSet*> Files;
 
-  public:
+public:
 
   ScalarDataSetManager();
   ~ScalarDataSetManager();
-  
-  void addDataSet(const std::vector<std::string>& flist, 
-      const std::string& gname, int first, int last);
+
+  void addDataSet(const std::vector<std::string>& flist,
+                  const std::string& gname, int first, int last);
   void addDataSet(const std::string& fname, int first, int last);
 
   void registerObservables(std::map<std::string, int>& olist);

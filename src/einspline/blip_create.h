@@ -32,24 +32,24 @@
 ////////////////////////////////////////////////////////////
 
 UBspline_3d_s*
-create_blip_3d_s (double *lattice, double *Gvecs, 
-		  complex_float *coefs, int numG,
-		  double factor, bool useReal);
+create_blip_3d_s (double *lattice, double *Gvecs,
+                  complex_float *coefs, int numG,
+                  double factor, bool useReal);
 
 UBspline_3d_d*
-create_blip_3d_d (double *lattice, double *Gvecs, 
-		  complex_double *coefs, int numG,
-		  double factor, bool useReal);
+create_blip_3d_d (double *lattice, double *Gvecs,
+                  complex_double *coefs, int numG,
+                  double factor, bool useReal);
 
 UBspline_3d_c*
-create_blip_3d_c (double *lattice, double *Gvecs, 
-		  complex_float *coefs, int numG,
-		  double factor);
+create_blip_3d_c (double *lattice, double *Gvecs,
+                  complex_float *coefs, int numG,
+                  double factor);
 
 UBspline_3d_z*
-create_blip_3d_z (double *lattice, double *Gvecs, 
-		  complex_double *coefs, int numG,
-		  double factor);
+create_blip_3d_z (double *lattice, double *Gvecs,
+                  complex_double *coefs, int numG,
+                  double factor);
 
 
 

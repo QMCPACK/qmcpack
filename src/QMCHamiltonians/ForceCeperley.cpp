@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -23,113 +23,108 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns): 
-    ForceBase(ions, elns)
-    {
-      ReportEngine PRE("ForceCeperley","ForceCeperley");
-      myName = "Ceperley_Force_Base";
-      prefix="HFCep";
+ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns):
+  ForceBase(ions, elns)
+{
+  ReportEngine PRE("ForceCeperley","ForceCeperley");
+  myName = "Ceperley_Force_Base";
+  prefix="HFCep";
+  // Defaults
+  Rcut = 0.4;
+  m_exp = 2;
+  N_basis = 4;
+  forces = 0.0;
+  forces_ShortRange.resize(Nnuc);
+  forces_ShortRange = 0.0;
+  ///////////////////////////////////////////////////////////////
+}
 
-      // Defaults
-      Rcut = 0.4;
-      m_exp = 2;
-      N_basis = 4;
-      
-      forces = 0.0;
-      forces_ShortRange.resize(Nnuc);
-      forces_ShortRange = 0.0;
-      ///////////////////////////////////////////////////////////////
-
-    }
-
-  void ForceCeperley::InitMatrix() {
-    Sinv.resize(N_basis, N_basis);
-    h.resize(N_basis);
-    c.resize(N_basis);
-    for(int k=0; k<N_basis; k++) {
-      h[k] = std::pow(Rcut, (k+2))/static_cast<double>(k+2);
-      for(int j=0; j<N_basis; j++) {
-       Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<double>(m_exp+k+j+3);
-      }
-    }
-    // in Numerics/DeterminantOperators.h
-    invert_matrix(Sinv, false);
-    // in Numerics/MatrixOperators.h
-    MatrixOperators::product(Sinv, h.data(), c.data());
-  }
-
-  ForceCeperley::Return_t 
-    ForceCeperley::evaluate(ParticleSet& P) 
-    {
-      forces = forces_IonIon;
-      forces_ShortRange = forces_IonIon;
-      const DistanceTableData* d_ab=P.DistTables[myTableIndex];
-      const real_type* restrict Zat=Ions.Z.first_address();
-      const real_type* restrict Qat=P.Z.first_address();
-
-      for(int iat=0; iat<Nnuc; iat++) {
-        RealType esum = 0.0;
-        // electron contribution (special treatment if distance is inside cutoff!)
-        for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
-          RealType zoverr3=Qat[jat]*Zat[iat]*std::pow(d_ab->rinv(nn),3);
-          if(d_ab->r(nn)>=Rcut) 
-          {
-            forces[iat] -= zoverr3*d_ab->dr(nn);
-          }
-          else 
-          {
-            RealType r = d_ab->r(nn);
-            RealType g_q=0.0;
-            for(int q=0; q<N_basis; q++) {
-              g_q += c[q] * std::pow(r, m_exp+q+1);
-            }
-            g_q *= zoverr3;
-            // negative sign accounts for definition of target as electrons
-            forces[iat] -= g_q*d_ab->dr(nn);
-            forces_ShortRange[iat] -= g_q*d_ab->dr(nn);
-          }
-        }
-      }
-
-
-      return 0.0;
-    }
-
-  bool ForceCeperley::put(xmlNodePtr cur) {
-    
-    string ionionforce("yes");
-    OhmmsAttributeSet attr;
-    attr.add(prefix, "name");
-    attr.add(ionionforce, "addionion");
-    attr.put(cur);    
-    
-    addionion = (ionionforce=="yes") || (ionionforce == "true");
-    app_log() << "ionionforce = "<<ionionforce<<endl;
-    app_log() << "addionion="<<addionion<<endl;
-    
-    ParameterSet fcep_param_set;
-			
-	fcep_param_set.add(Rcut, "rcut","real");
-	fcep_param_set.add(N_basis, "nbasis", "int");
-	fcep_param_set.add(m_exp, "weight_exp", "int");
-	fcep_param_set.put(cur);
-	
-	app_log() <<"    ForceCeperley Parameters"<<endl;
-	app_log() <<"        ForceCeperley::Rcut="<<Rcut<<endl;
-	app_log() <<"        ForceCeperley::N_basis="<<N_basis<<endl;
-	app_log() <<"        ForceCeperley::m_exp="<<m_exp<<endl;
-	
-	InitMatrix();
-	
-    return true;
-  }
-
-  QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+void ForceCeperley::InitMatrix()
+{
+  Sinv.resize(N_basis, N_basis);
+  h.resize(N_basis);
+  c.resize(N_basis);
+  for(int k=0; k<N_basis; k++)
   {
-    return new ForceCeperley(*this);
+    h[k] = std::pow(Rcut, (k+2))/static_cast<double>(k+2);
+    for(int j=0; j<N_basis; j++)
+    {
+      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<double>(m_exp+k+j+3);
+    }
   }
+  // in Numerics/DeterminantOperators.h
+  invert_matrix(Sinv, false);
+  // in Numerics/MatrixOperators.h
+  MatrixOperators::product(Sinv, h.data(), c.data());
+}
+
+ForceCeperley::Return_t
+ForceCeperley::evaluate(ParticleSet& P)
+{
+  forces = forces_IonIon;
+  forces_ShortRange = forces_IonIon;
+  const DistanceTableData* d_ab=P.DistTables[myTableIndex];
+  const real_type* restrict Zat=Ions.Z.first_address();
+  const real_type* restrict Qat=P.Z.first_address();
+  for(int iat=0; iat<Nnuc; iat++)
+  {
+    RealType esum = 0.0;
+    // electron contribution (special treatment if distance is inside cutoff!)
+    for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++)
+    {
+      RealType zoverr3=Qat[jat]*Zat[iat]*std::pow(d_ab->rinv(nn),3);
+      if(d_ab->r(nn)>=Rcut)
+      {
+        forces[iat] -= zoverr3*d_ab->dr(nn);
+      }
+      else
+      {
+        RealType r = d_ab->r(nn);
+        RealType g_q=0.0;
+        for(int q=0; q<N_basis; q++)
+        {
+          g_q += c[q] * std::pow(r, m_exp+q+1);
+        }
+        g_q *= zoverr3;
+        // negative sign accounts for definition of target as electrons
+        forces[iat] -= g_q*d_ab->dr(nn);
+        forces_ShortRange[iat] -= g_q*d_ab->dr(nn);
+      }
+    }
+  }
+  return 0.0;
+}
+
+bool ForceCeperley::put(xmlNodePtr cur)
+{
+  string ionionforce("yes");
+  OhmmsAttributeSet attr;
+  attr.add(prefix, "name");
+  attr.add(ionionforce, "addionion");
+  attr.put(cur);
+  addionion = (ionionforce=="yes") || (ionionforce == "true");
+  app_log() << "ionionforce = "<<ionionforce<<endl;
+  app_log() << "addionion="<<addionion<<endl;
+  ParameterSet fcep_param_set;
+  fcep_param_set.add(Rcut, "rcut","real");
+  fcep_param_set.add(N_basis, "nbasis", "int");
+  fcep_param_set.add(m_exp, "weight_exp", "int");
+  fcep_param_set.put(cur);
+  app_log() <<"    ForceCeperley Parameters"<<endl;
+  app_log() <<"        ForceCeperley::Rcut="<<Rcut<<endl;
+  app_log() <<"        ForceCeperley::N_basis="<<N_basis<<endl;
+  app_log() <<"        ForceCeperley::m_exp="<<m_exp<<endl;
+  InitMatrix();
+  return true;
+}
+
+QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return new ForceCeperley(*this);
+}
 }
 
 //  void ForceCeperley::addObservables(PropertySetType& plist) {
@@ -214,5 +209,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: ForceCeperley.cpp 3015 2008-08-18 21:08:06Z jnkim $ 
+ * $Id: ForceCeperley.cpp 3015 2008-08-18 21:08:06Z jnkim $
  ***************************************************************************/

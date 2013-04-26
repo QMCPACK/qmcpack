@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@
 #define OHMMS_XMLTREEBUILDER_H
 
 /*!\class OhmmsQt
- * \brief A generic application. 
+ * \brief A generic application.
  */
 #include <map>
 #include <string>
@@ -32,29 +32,30 @@ class QListView;
 class QScrollView;
 
 
-class XmlTreeBuilder: public QMainWindow {
-    
+class XmlTreeBuilder: public QMainWindow
+{
+
   Q_OBJECT
-  
+
 public:
 
   ///constructor
   XmlTreeBuilder();
-  
+
   ///destructor
   ~XmlTreeBuilder();
-  
+
   ///parse a file
   bool parse(const char* fname);
-  
+
 protected:
-  
+
   void closeEvent( QCloseEvent* );
 
 protected slots:
 
-void resizeEvent(QResizeEvent *);
-  
+  void resizeEvent(QResizeEvent *);
+
 private slots:
 
   void load( const QString &fileName );
@@ -65,18 +66,18 @@ private slots:
 
 private:
 
-    xmlDocPtr m_doc;
-    xmlXPathContextPtr m_context;
+  xmlDocPtr m_doc;
+  xmlXPathContextPtr m_context;
 
-    QTextEdit *e;
-    QString d_filename;
-    QListView* nodeView;
-    QWidget* d_view;
-  };
+  QTextEdit *e;
+  QString d_filename;
+  QListView* nodeView;
+  QWidget* d_view;
+};
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

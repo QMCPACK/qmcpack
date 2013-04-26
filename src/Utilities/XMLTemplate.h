@@ -8,7 +8,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -21,10 +21,12 @@
 #include <iostream>
 using namespace std;
 
-namespace OHMMS {
-  template<class T>
-  void printXML(const T&, ostream&) {
-  }
+namespace OHMMS
+{
+template<class T>
+void printXML(const T&, ostream&)
+{
+}
 
 }
 
@@ -33,5 +35,5 @@ namespace OHMMS {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

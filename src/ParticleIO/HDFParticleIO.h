@@ -25,51 +25,54 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class HDFParticleParser: public ParticleTags {
+class HDFParticleParser: public ParticleTags
+{
 
-  public:
+public:
 
-    typedef ParticleSet Particle_t;
+  typedef ParticleSet Particle_t;
 
-    HDFParticleParser(Particle_t& aptcl):ref_(aptcl) { }
+  HDFParticleParser(Particle_t& aptcl):ref_(aptcl) { }
 
-    ///reading from a file
-    bool put(const char*);
+  ///reading from a file
+  bool put(const char*);
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-  private:
-    Particle_t& ref_;
-  };
+private:
+  Particle_t& ref_;
+};
 
-  class HDFSaveParticle:  
-    public ParticleTags,
-    public RecordProperty {
+class HDFSaveParticle:
+  public ParticleTags,
+  public RecordProperty
+{
 
-  public:
+public:
 
-    typedef ParticleSet Particle_t;
+  typedef ParticleSet Particle_t;
 
-    HDFSaveParticle(Particle_t& pin): ref_(pin){ }
+  HDFSaveParticle(Particle_t& pin): ref_(pin) { }
 
-    ~HDFSaveParticle();
+  ~HDFSaveParticle();
 
-    void reset(const char* fileroot, bool append=false);
+  void reset(const char* fileroot, bool append=false);
 
-    void report(int iter);
+  void report(int iter);
 
-    void finalize() { }
+  void finalize() { }
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-  private:
+private:
 
-    Particle_t& ref_;
-    string FileRoot;
+  Particle_t& ref_;
+  string FileRoot;
 
-  };
+};
 }
 
 #endif

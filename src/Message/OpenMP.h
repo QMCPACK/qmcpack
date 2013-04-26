@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -27,13 +27,22 @@
 #include <omp.h>
 #else
 typedef int omp_int_t;
-inline omp_int_t omp_get_thread_num() { return 0;}
-inline omp_int_t omp_get_max_threads() { return 1;}
-inline omp_int_t omp_get_num_threads() { return 1;}
+inline omp_int_t omp_get_thread_num()
+{
+  return 0;
+}
+inline omp_int_t omp_get_max_threads()
+{
+  return 1;
+}
+inline omp_int_t omp_get_num_threads()
+{
+  return 1;
+}
 #endif
 #endif // OHMMS_COMMUNICATE_H
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

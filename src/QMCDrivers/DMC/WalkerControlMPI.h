@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -21,42 +21,42 @@
 #include "QMCDrivers/WalkerControlBase.h"
 
 
-namespace qmcplusplus 
+namespace qmcplusplus
 {
 
-  class NewTimer;
+class NewTimer;
 
-  /** Class to handle walker controls with simple global sum
+/** Class to handle walker controls with simple global sum
+ *
+ * Base class to handle serial mode with branching only
+ */
+struct WalkerControlMPI: public WalkerControlBase
+{
+  int Cur_pop;
+  int Cur_max;
+  int Cur_min;
+  vector<NewTimer*> myTimers;
+  /** default constructor
    *
-   * Base class to handle serial mode with branching only
+   * Set the SwapMode to zero so that instantiation can be done
    */
-  struct WalkerControlMPI: public WalkerControlBase 
-  {
-    int Cur_pop;
-    int Cur_max;
-    int Cur_min;
-    vector<NewTimer*> myTimers;
-    /** default constructor
-     *
-     * Set the SwapMode to zero so that instantiation can be done
-     */
-    WalkerControlMPI(Communicate* c=0);
+  WalkerControlMPI(Communicate* c=0);
 
-    /** perform branch and swap walkers as required */
-    int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
+  /** perform branch and swap walkers as required */
+  int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
-    void swapWalkersSimple(MCWalkerConfiguration& W);
+  void swapWalkersSimple(MCWalkerConfiguration& W);
 
-    //old implementations
-    void swapWalkersAsync(MCWalkerConfiguration& W);
-    void swapWalkersBlocked(MCWalkerConfiguration& W);
-    void swapWalkersMap(MCWalkerConfiguration& W);
-  };
+  //old implementations
+  void swapWalkersAsync(MCWalkerConfiguration& W);
+  void swapWalkersBlocked(MCWalkerConfiguration& W);
+  void swapWalkersMap(MCWalkerConfiguration& W);
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile: WalkerControlMPI.h,v $   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

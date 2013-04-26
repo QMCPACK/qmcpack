@@ -28,7 +28,8 @@ aligned_alloc (size_t size, size_t alignment)
   void *ptr = malloc (size);
   if (ptr == NULL)
     return NULL;
-  else {
+  else
+  {
     void *shifted = ptr + sizeof(void*);
     size_t offset = alignment - (size_t)shifted%(size_t)alignment;
     void *aligned = shifted + offset;
@@ -37,7 +38,7 @@ aligned_alloc (size_t size, size_t alignment)
   }
 }
 
-inline void 
+inline void
 aligned_free (void *aligned)
 {
   void *ptr = *((void**)aligned-1);

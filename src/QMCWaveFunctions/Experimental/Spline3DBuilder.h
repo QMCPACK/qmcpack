@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -23,32 +23,37 @@
 #include "Numerics/Spline3D/Spline3D.h"
 #include "Numerics/Spline3D/Spline3DSet.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class Spline3DBuilder: public OrbitalBuilderBase {
+class Spline3DBuilder: public OrbitalBuilderBase
+{
 
-    //typedef AnalyticOrbitalSet<Spline3D> Spline3DSet_t;
-    typedef SingleParticleOrbitalSet<Spline3D> SPOSet_t;
-    //static Spline3DSet orbitals;
+  //typedef AnalyticOrbitalSet<Spline3D> Spline3DSet_t;
+  typedef SingleParticleOrbitalSet<Spline3D> SPOSet_t;
+  //static Spline3DSet orbitals;
 
-    Spline3DSet *d_orbitals;
-    Grid3D* grid_ref;
+  Spline3DSet *d_orbitals;
+  Grid3D* grid_ref;
 
-  public:
+public:
 
-    Spline3DBuilder(TrialWaveFunction& a): OrbitalBuilderBase(a),
-					   d_orbitals(NULL), 
-					   grid_ref(NULL)
-    { }
+  Spline3DBuilder(TrialWaveFunction& a): OrbitalBuilderBase(a),
+    d_orbitals(NULL),
+    grid_ref(NULL)
+  { }
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-    Grid3D* getFullGrid() { return d_orbitals->getFullGrid();}
-  };
+  Grid3D* getFullGrid()
+  {
+    return d_orbitals->getFullGrid();
+  }
+};
 }
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

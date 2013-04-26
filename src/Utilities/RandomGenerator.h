@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@
 #include "config.h"
 #endif
 #include <cmath>
-#include <ctime>        
+#include <ctime>
 
 #include <stdint.h>
 
@@ -43,23 +43,26 @@ inline uint32_t make_seed(int i, int n)
 #ifdef HAVE_LIBBOOST
 
 #include "Utilities/BoostRandom.h"
-namespace qmcplusplus {
-  typedef BoostRandom<OHMMS_PRECISION> RandomGenerator_t;
-  extern RandomGenerator_t Random;
+namespace qmcplusplus
+{
+typedef BoostRandom<OHMMS_PRECISION> RandomGenerator_t;
+extern RandomGenerator_t Random;
 }
 #else
 
 #ifdef USE_SPRNG
 #include "Utilities/SprngRandom.h"
-namespace qmcplusplus {
-  typedef SprngRandom<0> RandomGenerator_t;
-  extern RandomGenerator_t Random;
+namespace qmcplusplus
+{
+typedef SprngRandom<0> RandomGenerator_t;
+extern RandomGenerator_t Random;
 }
 #else
 #include "Utilities/SimpleRandom.h"
-namespace qmcplusplus {
-  typedef SimpleRandom<MTRand> RandomGenerator_t;
-  extern RandomGenerator_t Random;
+namespace qmcplusplus
+{
+typedef SimpleRandom<MTRand> RandomGenerator_t;
+extern RandomGenerator_t Random;
 }
 #endif
 #endif
@@ -68,5 +71,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

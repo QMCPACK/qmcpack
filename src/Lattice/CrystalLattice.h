@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -26,28 +26,29 @@
 #include <Lattice/LatticeOperations.h>
 
 using namespace std;
-namespace APPNAMESPACE 
+namespace APPNAMESPACE
 {
 
-  /** enumeration to classify a CrystalLattice
-   *
-   * Use bitset<3> for all the dimension 
-   */
-  enum {SUPERCELL_OPEN=0, //nnn
-    SUPERCELL_WIRE=1,     //nnp
-    SUPERCELL_SLAB=3,     //npp
-    SUPERCELL_BULK=7};    //ppp
+/** enumeration to classify a CrystalLattice
+ *
+ * Use bitset<3> for all the dimension
+ */
+enum {SUPERCELL_OPEN=0, //nnn
+      SUPERCELL_WIRE=1,     //nnp
+      SUPERCELL_SLAB=3,     //npp
+      SUPERCELL_BULK=7
+     };    //ppp
 
-  /** class to assist copy and unit conversion operations on position vectors
+/** class to assist copy and unit conversion operations on position vectors
+*/
+struct PosUnit
+{
+  /** enumeraton for the unit of position types.
   */
-  struct PosUnit 
-  {
-    /** enumeraton for the unit of position types.
-    */
-    enum {CartesianUnit=0,/*!< indicates that the values are in Cartesian units*/
-      LatticeUnit/*!< indicates that the values are in Lattice units*/
-    };
-  };
+  enum {CartesianUnit=0,/*!< indicates that the values are in Cartesian units*/
+        LatticeUnit/*!< indicates that the values are in Lattice units*/
+       };
+};
 
 
 /** a class that defines a supercell in D-dimensional Euclean space.
@@ -63,16 +64,17 @@ namespace APPNAMESPACE
  *
  */
 template<class T, unsigned D, bool ORTHO=false>
-struct CrystalLattice{
+struct CrystalLattice
+{
 
   ///enumeration for the dimension of the lattice
   enum {DIM = D};
   //@{
   ///the type of scalar
   typedef T                            Scalar_t;
-  ///the type of a D-dimensional position vector 
+  ///the type of a D-dimensional position vector
   typedef TinyVector<T,D>              SingleParticlePos_t;
-  ///the type of a D-dimensional index vector 
+  ///the type of a D-dimensional index vector
   typedef TinyVector<int,D>            SingleParticleIndex_t;
   ///the type of a D-dimensional Tensor
   typedef Tensor<T,D>                  Tensor_t;
@@ -84,10 +86,10 @@ struct CrystalLattice{
   int SuperCellEnum;
   ///The boundary condition in each direction.
   TinyVector<int,D> BoxBConds;
-  //@{ 
+  //@{
   /**@brief Physcial properties of a supercell*/
   /// Volume of a supercell
-  Scalar_t Volume; 
+  Scalar_t Volume;
   /// Wigner-Seitz cell radius
   Scalar_t WignerSeitzRadius;
   /// simulation cell radii
@@ -106,13 +108,13 @@ struct CrystalLattice{
   SingleParticlePos_t Length;
   ///OneOverLength[idim] 1/length of the idim-th lattice vector
   SingleParticlePos_t OneOverLength;
-  /**@brief Real-space unit vectors. 
+  /**@brief Real-space unit vectors.
    *
    *Introduced to efficiently return one vector at a time.
-   *Rv[i] is D-dim vector of the ith direction. 
+   *Rv[i] is D-dim vector of the ith direction.
    */
   TinyVector<SingleParticlePos_t,D> Rv;
-  /**@brief Reciprocal unit vectors. 
+  /**@brief Reciprocal unit vectors.
    *
    *Introduced to efficiently return one vector at a time.
    *Gv[i] is D-dim vector of the ith direction.
@@ -130,15 +132,16 @@ struct CrystalLattice{
   //    @param rhs An existing SC object is copied to this SC.
   //*/
   //CrystalLattice(const CrystalLattice<T,D>& rhs);
-  
+
   ///destructor
-  virtual ~CrystalLattice(){ }
+  virtual ~CrystalLattice() { }
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The lattice vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t a(int i) const {
+  inline SingleParticlePos_t a(int i) const
+  {
     return Rv[i];
   }
 
@@ -146,11 +149,12 @@ struct CrystalLattice{
    *@return The reciprocal vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t b(int i) const {
+  inline SingleParticlePos_t b(int i) const
+  {
     return Gv[i];
   }
 
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const 
+  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const
   //{
   //  T rMin = 1.0e50;
   //  for (int i=-1; i<=1; i++)
@@ -163,12 +167,12 @@ struct CrystalLattice{
   //      }
   //  return rMin;
   //}
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const 
+  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const
   //{
   //  T rMin = 1.0e50;
   //  for (int i=-1; i<=1; i++)
   //    for (int j=-1; j<=1; j++)
-  //      for (int k=-1; k<=1; k++) 
+  //      for (int k=-1; k<=1; k++)
   //        if ((i!=0) || (j!=0) || (k!=0)) {
   //          SingleParticlePos_t L = ((double)i * a[0] +
   //      			     (double)j * a[1] +
@@ -178,15 +182,16 @@ struct CrystalLattice{
   //        }
   //  return rMin;
   //}
-	  
-	    
+
+
   /** Convert a cartesian vector to a unit vector.
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toUnit(const TinyVector<T1,D> &r) const {
+  inline SingleParticlePos_t toUnit(const TinyVector<T1,D> &r) const
+  {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(r,G);    
+    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(r,G);
 #else
     return dot(r,G);
 #endif
@@ -196,9 +201,10 @@ struct CrystalLattice{
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toCart(const TinyVector<T1,D> &c) const {
+  inline SingleParticlePos_t toCart(const TinyVector<T1,D> &c) const
+  {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(c,R);    
+    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(c,R);
 #else
     return dot(c,R);
 #endif
@@ -206,17 +212,17 @@ struct CrystalLattice{
 
   inline bool isValid(const TinyVector<T,D>& u) const
   {
-    if(SuperCellEnum) 
+    if(SuperCellEnum)
       return true;
-    else 
+    else
       return CheckBoxConds<T,D>::inside(u);
   }
 
   inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
   {
-    if(SuperCellEnum) 
+    if(SuperCellEnum)
       return CheckBoxConds<T,D>::inside(u,ubox);
-    else 
+    else
     {
       ubox=u;
       return CheckBoxConds<T,D>::inside(u);
@@ -225,14 +231,17 @@ struct CrystalLattice{
 
   inline bool outOfBound(const TinyVector<T,D>& u) const
   {
-    for(int i=0; i<D; ++i) if(abs(u[i])>0.5) return true;
+    for(int i=0; i<D; ++i)
+      if(abs(u[i])>0.5)
+        return true;
     return false;
   }
 
 
   inline void applyMinimumImage(TinyVector<T,D>& c) const
   {
-    if(SuperCellEnum) MinimumImageBConds<T,D>::apply(R,G,c);
+    if(SuperCellEnum)
+      MinimumImageBConds<T,D>::apply(R,G,c);
   }
 
   /** evaluate the cartesian distance
@@ -240,11 +249,12 @@ struct CrystalLattice{
    *@param rb a vector in the supercell unit
    *@return Cartesian distance with two vectors in SC unit
    *
-   @note The distance between two cartesian vectors are handled 
+   @note The distance between two cartesian vectors are handled
    *by dot function defined in OhmmsPETE/TinyVector.h
    */
-  inline T Dot(const SingleParticlePos_t &ra, 
-	       const SingleParticlePos_t &rb) const {
+  inline T Dot(const SingleParticlePos_t &ra,
+               const SingleParticlePos_t &rb) const
+  {
 #ifdef OHMMS_LATTICEOPERATORS_H
     return CartesianNorm2<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(ra,M,rb);
 #else
@@ -252,11 +262,12 @@ struct CrystalLattice{
 #endif
   }
 
-  /** conversion of a reciprocal-vector 
+  /** conversion of a reciprocal-vector
    *@param kin an input reciprocal vector in the Reciprocal-vector unit
    *@return k(reciprocal vector) in cartesian unit
   */
-  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const {
+  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
+  {
 #ifdef OHMMS_LATTICEOPERATORS_H
     return TWOPI*DotProduct<SingleParticlePos_t,Tensor_t,ORTHO>::apply(G,kin);
 #else
@@ -267,9 +278,10 @@ struct CrystalLattice{
   /** evaluate \f$k^2\f$
    *
    *@param kin an input reciprocal vector in reciprocal-vector unit
-   *@return \f$k_{in}^2\f$ 
+   *@return \f$k_{in}^2\f$
    */
-  inline T ksq(const SingleParticlePos_t& kin) const {
+  inline T ksq(const SingleParticlePos_t& kin) const
+  {
 #ifdef OHMMS_LATTICEOPERATORS_H
     return CartesianNorm2<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(kin,Mg,kin);
 #else
@@ -303,7 +315,7 @@ struct CrystalLattice{
    *@return a new CrystalLattice
    */
   CrystalLattice<T,D,ORTHO>& operator*=(T sc);
-  
+
   /** set the lattice vector from the command-line options
    *@param argc the number of arguments
    *@param argv the argument lists
@@ -311,7 +323,7 @@ struct CrystalLattice{
    *This function is to provide a simple interface for testing.
    */
   void set(int argc, char **argv);
-  
+
   /** set the lattice vector from the command-line options stored in a vector
    *@param argv the argument lists
    *
@@ -362,11 +374,11 @@ struct CrystalLattice{
 #include "Lattice/CrystalLattice.cpp"
 
 #endif
-  
+
 
 
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

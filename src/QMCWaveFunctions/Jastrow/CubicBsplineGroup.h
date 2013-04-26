@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,13 +19,14 @@
 #include "Numerics/CubicBspline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
 template<class T, unsigned GRIDTYPE>
 class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
 {
 
-  public:
+public:
 
   typedef OptimizableFunctorBase<T>                                                FNIN;
   typedef CubicBsplineGroup<T,GRIDTYPE>                                            ThisType;
@@ -45,15 +46,16 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
    * Initialize linear coefficients
    */
   inline CubicBsplineGroup(): GridManager(true),numSiblings(1),OffSet(0.0), InFunc(0)
-  { 
+  {
     Siblings.push_back(this);//add itself to the Siblings
   }
 
   /** evaluate value at x to perform SphericalBasisSet::evaluateForWalkerMove
    */
-  inline value_type evaluate(point_type x, point_type xinv) 
+  inline value_type evaluate(point_type x, point_type xinv)
   {
-    if(GridManager) getValuesOnly(x);
+    if(GridManager)
+      getValuesOnly(x);
     return Y;
   }
 
@@ -61,14 +63,15 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
    */
   inline value_type evaluateAll(point_type x, point_type xin)
   {
-    if(GridManager) getValues(x);
+    if(GridManager)
+      getValues(x);
     return Y;
   }
 
   /** Initialize the spline function
    */
   void initialize(point_type start, point_type end, const container_type& datain, bool closed,
-      T yp1, T ypn)
+                  T yp1, T ypn)
   {
     this->spline(start,end,yp1,ypn,datain,P);
     OffSet=datain.back();
@@ -76,16 +79,16 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
 
   /** Initialize the spline function with an input functor
    */
-  void  initialize(FNIN* in_, point_type rmax, int npts) 
+  void  initialize(FNIN* in_, point_type rmax, int npts)
   {
-    if(in_==0) APP_ABORT("Cannot initialize with null functor");
+    if(in_==0)
+      APP_ABORT("Cannot initialize with null functor");
     InFunc=in_;
     this->setGrid(0.0,rmax,npts);
     reset();
-
   }
 
-  /** set GridManager 
+  /** set GridManager
    */
   void setGridManager(bool manage)
   {
@@ -110,14 +113,15 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
       InFunc->reset();
       container_type datain(Npts);
       point_type r=GridStart;
-      for(int i=0; i<Npts; i++, r+=GridDelta) datain[i] = InFunc->f(r);
+      for(int i=0; i<Npts; i++, r+=GridDelta)
+        datain[i] = InFunc->f(r);
       this->spline(GridStart,GridEnd,InFunc->df(GridStart),InFunc->df(GridEnd),datain,P);
       OffSet=datain.back();
     }
   }
 
 
-  private:
+private:
   using CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>::Npts;
   using CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>::GridStart;
   using CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>::GridEnd;
@@ -172,15 +176,17 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
   inline void getValuesOnly(point_type x)
   {
     int i0;
-    if(this->getGridPoint(x,i0)) {
-      for(int j=0; j<numSiblings; j++) 
+    if(this->getGridPoint(x,i0))
+    {
+      for(int j=0; j<numSiblings; j++)
       {
         Siblings[j]->Y = interpolate(Sinblings[j]->P.data()+i0);
       }
     }
     else
     {
-      for(int j=0; j<numSiblings; j++) Siblings[j]->Y=Siblings[j]->OffSet;
+      for(int j=0; j<numSiblings; j++)
+        Siblings[j]->Y=Siblings[j]->OffSet;
     }
   }
 
@@ -189,43 +195,44 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
   inline void getValues(point_type x)
   {
     int i0;
-    if(this->getGridPoint(x,i0)) {
-      for(int j=0; j<numSiblings; j++) Siblings[j]->getValue(i0);
-        Siblings[j]->Y = interpolate(Sinblings[j]->P.data()+i0);
+    if(this->getGridPoint(x,i0))
+    {
+      for(int j=0; j<numSiblings; j++)
+        Siblings[j]->getValue(i0);
+      Siblings[j]->Y = interpolate(Sinblings[j]->P.data()+i0);
     }
     else
     {
-      for(int j=0; j<numSiblings; j++) Siblings[j]->getDefaultValue();
+      for(int j=0; j<numSiblings; j++)
+        Siblings[j]->getDefaultValue();
     }
   }
 
   inline value_type interpolate(value_type p0, value_type p1, value_type p2, value_type p3,
-      value_type& dy, value_type& d2y)
+                                value_type& dy, value_type& d2y)
   {
     dy= GridDeltaInv*
-      (tp[1]*(-0.5*p0+1.5*p1-1.5*p2+0.5*p3)+
-       tp[2]*(     p0-2.0*p1+    p2)+
-       tp[3]*(-0.5*p0       +0.5*p2));
+        (tp[1]*(-0.5*p0+1.5*p1-1.5*p2+0.5*p3)+
+         tp[2]*(     p0-2.0*p1+    p2)+
+         tp[3]*(-0.5*p0       +0.5*p2));
     d2y=GridDeltaInv2*
-      (tp[2]*(-p0+3.0*p1-3.0*p2+p3)+ tp[3]*(p0-2.0*p1+p2));
-
+        (tp[2]*(-p0+3.0*p1-3.0*p2+p3)+ tp[3]*(p0-2.0*p1+p2));
     const point_type onesixth=1.0/6.0;
-
     return onesixth*
-      (tp[0]*(    -p0+3.0*p1-3.0*p2+p3)+
-       tp[1]*( 3.0*p0-6.0*p1+3.0*p2)+
-       tp[2]*(-3.0*p0+3.0*p2)+
-       tp[3]*(     p0+4.0*p1+p2));
+           (tp[0]*(    -p0+3.0*p1-3.0*p2+p3)+
+            tp[1]*( 3.0*p0-6.0*p1+3.0*p2)+
+            tp[2]*(-3.0*p0+3.0*p2)+
+            tp[3]*(     p0+4.0*p1+p2));
   }
 
   inline value_type interpolate(value_type p0, value_type p1, value_type p2, value_type p3)
   {
     const point_type onesixth=1.0/6.0;
     return onesixth*
-      (tp[0]*(    -p0+3.0*p1-3.0*p2+p3)+
-       tp[1]*( 3.0*p0-6.0*p1+3.0*p2)+
-       tp[2]*(-3.0*p0+3.0*p2)+
-       tp[3]*(     p0+4.0*p1+p2));
+           (tp[0]*(    -p0+3.0*p1-3.0*p2+p3)+
+            tp[1]*( 3.0*p0-6.0*p1+3.0*p2)+
+            tp[2]*(-3.0*p0+3.0*p2)+
+            tp[3]*(     p0+4.0*p1+p2));
   }
 
 };
@@ -235,5 +242,5 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1672 $   $Date: 2007-01-30 14:45:16 -0600 (Tue, 30 Jan 2007) $
- * $Id: NumericalJastrowFunctor.h 1672 2007-01-30 20:45:16Z jnkim $ 
+ * $Id: NumericalJastrowFunctor.h 1672 2007-01-30 20:45:16Z jnkim $
  ***************************************************************************/

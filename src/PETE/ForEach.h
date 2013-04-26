@@ -5,22 +5,22 @@
 // called PETE (Portable Expression Template Engine) is
 // made available under the terms described here.  The SOFTWARE has been
 // approved for release with associated LA-CC Number LA-CC-99-5.
-// 
+//
 // Unless otherwise indicated, this SOFTWARE has been authored by an
 // employee or employees of the University of California, operator of the
 // Los Alamos National Laboratory under Contract No.  W-7405-ENG-36 with
 // the U.S. Department of Energy.  The U.S. Government has rights to use,
 // reproduce, and distribute this SOFTWARE. The public may copy, distribute,
-// prepare derivative works and publicly display this SOFTWARE without 
-// charge, provided that this Notice and any statement of authorship are 
-// reproduced on all copies.  Neither the Government nor the University 
-// makes any warranty, express or implied, or assumes any liability or 
+// prepare derivative works and publicly display this SOFTWARE without
+// charge, provided that this Notice and any statement of authorship are
+// reproduced on all copies.  Neither the Government nor the University
+// makes any warranty, express or implied, or assumes any liability or
 // responsibility for the use of this SOFTWARE.
-// 
+//
 // If SOFTWARE is modified to produce derivative works, such modified
 // SOFTWARE should be clearly marked, so as not to confuse it with the
 // version available from LANL.
-// 
+//
 // For more information about PETE, send e-mail to pete@acl.lanl.gov,
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
@@ -29,7 +29,8 @@
 #ifndef PETE_PETE_FOREACH_H
 #define PETE_PETE_FOREACH_H
 
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
@@ -96,12 +97,12 @@ struct ForEach<UnaryNode<Op, A>, FTag, CTag>
   typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
   typedef typename Combine1<TypeA_t, Op, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const UnaryNode<Op, A> &expr, const FTag &f, 
-    const CTag &c) 
+  Type_t apply(const UnaryNode<Op, A> &expr, const FTag &f,
+               const CTag &c)
   {
     return Combine1<TypeA_t, Op, CTag>::
-      combine(ForEach<A, FTag, CTag>::apply(expr.child(), f, c),
-              expr.operation(), c);
+           combine(ForEach<A, FTag, CTag>::apply(expr.child(), f, c),
+                   expr.operation(), c);
   }
 };
 
@@ -113,12 +114,12 @@ struct ForEach<BinaryNode<Op, A, B>, FTag, CTag >
   typedef typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t Type_t;
   inline static
   Type_t apply(const BinaryNode<Op, A, B> &expr, const FTag &f,
-	       const CTag &c) 
+               const CTag &c)
   {
     return Combine2<TypeA_t, TypeB_t, Op, CTag>::
-      combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
-              ForEach<B, FTag, CTag>::apply(expr.right(), f, c),
-	      expr.operation(), c);
+           combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
+                   ForEach<B, FTag, CTag>::apply(expr.right(), f, c),
+                   expr.operation(), c);
   }
 };
 
@@ -128,17 +129,17 @@ struct ForEach<TrinaryNode<Op, A, B, C>, FTag, CTag >
   typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
   typedef typename ForEach<B, FTag, CTag>::Type_t TypeB_t;
   typedef typename ForEach<C, FTag, CTag>::Type_t TypeC_t;
-  typedef typename Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::Type_t 
-    Type_t;
+  typedef typename Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::Type_t
+  Type_t;
   inline static
   Type_t apply(const TrinaryNode<Op, A, B, C> &expr, const FTag &f,
-	       const CTag &c) 
+               const CTag &c)
   {
     return Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::
-      combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
-	      ForEach<B, FTag, CTag>::apply(expr.middle(), f, c),
-	      ForEach<C, FTag, CTag>::apply(expr.right(), f, c),
-	      expr.operation(), c);
+           combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
+                   ForEach<B, FTag, CTag>::apply(expr.middle(), f, c),
+                   ForEach<C, FTag, CTag>::apply(expr.right(), f, c),
+                   expr.operation(), c);
   }
 };
 
@@ -151,8 +152,8 @@ struct ForEach<Expression<T>, FTag, CTag>
 {
   typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const Expression<T> &expr, const FTag &f, 
-	       const CTag &c) 
+  Type_t apply(const Expression<T> &expr, const FTag &f,
+               const CTag &c)
   {
     return ForEach<T, FTag, CTag>::apply(expr.expression(), f, c);
   }
@@ -167,8 +168,8 @@ struct ForEach<Reference<T>, FTag, CTag>
 {
   typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const Reference<T> &ref, const FTag &f, 
-	       const CTag &c) 
+  Type_t apply(const Reference<T> &ref, const FTag &f,
+               const CTag &c)
   {
     return ForEach<T, FTag, CTag>::apply(ref.reference(), f, c);
   }

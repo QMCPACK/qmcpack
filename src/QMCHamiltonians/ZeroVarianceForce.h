@@ -7,7 +7,7 @@
 //   Urbana, IL 61801
 //   e-mail: esler@.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
@@ -18,50 +18,57 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
+struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
+{
+  ParticleSet& Ions;
+  ParticleSet& Electrons;
+  TrialWaveFunction& Psi;
+
+  ParticleSet::ParticlePos_t F_ZV1, F_ZV2;
+  TinyVector<ParticleSet::ParticleGradient_t,OHMMS_DIM>  grad_grad_psi;
+  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_psi;
+
+  ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
+                    TrialWaveFunction &psi);
+
+  void resetTargetParticleSet(ParticleSet& P);
+
+  Return_t evaluate(ParticleSet& P);
+
+  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
   {
-    ParticleSet& Ions;
-    ParticleSet& Electrons;
-    TrialWaveFunction& Psi;
+    return evaluate(P);
+  }
 
-    ParticleSet::ParticlePos_t F_ZV1, F_ZV2;
-    TinyVector<ParticleSet::ParticleGradient_t,OHMMS_DIM>  grad_grad_psi;
-    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_psi;
-    
-    ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
-	       TrialWaveFunction &psi);
+  bool put(xmlNodePtr cur)
+  {
+    return true;
+  }
 
-    void resetTargetParticleSet(ParticleSet& P);
+  bool get(std::ostream& os) const
+  {
+    return true;
+  }
 
-    Return_t evaluate(ParticleSet& P);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    ZeroVarianceForce *myClone = new ZeroVarianceForce (Ions, qp, psi);
+    myClone->FirstForceIndex = FirstForceIndex;
+    return myClone;
+  }
 
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
-    { return evaluate(P); }
+  void addObservables(PropertySetType& plist, BufferType& collectables);
 
-    bool put(xmlNodePtr cur) 
-    { return true; }
+  void setObservables(PropertySetType& plist);
 
-    bool get(std::ostream& os) const 
-    { return true;    }
+  void setParticlePropertyList(PropertySetType& plist, int offset);
 
-    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-    { 
-      ZeroVarianceForce *myClone = new ZeroVarianceForce (Ions, qp, psi);
-      myClone->FirstForceIndex = FirstForceIndex;
-      return myClone;
-    }
-
-    void addObservables(PropertySetType& plist, BufferType& collectables);
-
-    void setObservables(PropertySetType& plist);
-
-    void setParticlePropertyList(PropertySetType& plist, int offset);
-
-    void registerObservables(vector<observable_helper*>& h5list,
-			     hid_t gid) const;
-  };
+  void registerObservables(vector<observable_helper*>& h5list,
+                           hid_t gid) const;
+};
 
 }
 #endif

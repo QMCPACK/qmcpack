@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -21,43 +21,45 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  class QMCHamiltonian;
-  class ParticleSet;
-  class TrialWaveFunction;
+class QMCHamiltonian;
+class ParticleSet;
+class TrialWaveFunction;
 
-  struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits {
+struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
+{
 
-    typedef LocalECPotential::RadialPotentialType RadialPotentialType;
-    typedef LocalECPotential::GridType GridType;
-    bool hasLocalPot;
-    bool hasNonLocalPot;
+  typedef LocalECPotential::RadialPotentialType RadialPotentialType;
+  typedef LocalECPotential::GridType GridType;
+  bool hasLocalPot;
+  bool hasNonLocalPot;
 
-    QMCHamiltonian&  targetH;
-    ParticleSet& IonConfig;
-    ParticleSet& targetPtcl;
-    TrialWaveFunction& targetPsi;
+  QMCHamiltonian&  targetH;
+  ParticleSet& IonConfig;
+  ParticleSet& targetPtcl;
+  TrialWaveFunction& targetPsi;
 
-    vector<RealType>  localZeff;
-    vector<RadialPotentialType*>  localPot;
-    vector<NonLocalECPComponent*>  nonLocalPot;
+  vector<RealType>  localZeff;
+  vector<RadialPotentialType*>  localPot;
+  vector<NonLocalECPComponent*>  nonLocalPot;
 
-    ECPotentialBuilder(QMCHamiltonian& h, 
-        ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
-        Communicate* c);
+  ECPotentialBuilder(QMCHamiltonian& h,
+                     ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
+                     Communicate* c);
 
-    bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 
-    void useSimpleTableFormat();
-    void useXmlFormat(xmlNodePtr cur);
-  };
+  void useSimpleTableFormat();
+  void useXmlFormat(xmlNodePtr cur);
+};
 }
 #endif
 
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

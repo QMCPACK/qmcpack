@@ -8,7 +8,7 @@ Communicate::allreduce(CppType& g)                       \
 {                                                        \
   CppType gt(g);                                         \
   MPI_Allreduce(&(gt), &(g), 1, MPIType, MPI_SUM, myMPI);\
-}                                                                                
+}
 
 QMCPP_ALLREDUCE(double,MPI_DOUBLE);
 
@@ -22,7 +22,7 @@ Communicate::allreduce(Container& g)                       \
   Container gt(g)                                          \
   MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPIType, MPI_SUM, myMPI);\
   g=gt;                                                               \
-}                                                                                
+}
 
 QMCPP_ALLREDUCE_C(vector<double>,MPI_DOUBLE);
 
@@ -37,7 +37,7 @@ inline void                                                                     
 Communicate::gather(CONTAINER< CppType >&sb, CONTAINER< CppType >& rb, int dest)     \
 {                                                                                    \
   MPI_Gather(&(sb[0]),sb.size(),MPI_UNSIGNED, &(rb[0]),sb.size(),MPIType,dest,myMPI);\
-}                                                                                
+}
 
 QMCPP_GATHER(vector,uint32_t,MPI_UNSIGNED);
 QMCPP_GATHER(vector,double,MPI_DOUBLE);
@@ -50,12 +50,12 @@ inline void                                                                     
 Communicate::gather(CONTAINER< CppType >&sb, CONTAINER< CppType >& rb, int dest)     \
 {                                                                                    \
   MPI_Scatter(&(sb[0]),sb.size(),MPI_UNSIGNED, &(rb[0]),sb.size(),MPIType,dest,myMPI);\
-}                                                                                
+}
 
 QMCPP_SCATTER(vector,uint32_t,MPI_UNSIGNED);
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 2458 $   $Date: 2008-02-20 10:45:51 -0500 (Wed, 20 Feb 2008) $
- * $Id: CommOperators.h 2458 2008-02-20 15:45:51Z jnkim $ 
+ * $Id: CommOperators.h 2458 2008-02-20 15:45:51Z jnkim $
  ***************************************************************************/

@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -18,7 +18,7 @@
 
 #include "Numerics/GridTraits.h"
 #include "Numerics/NRSplineFunctions.h"
-/** CubicSplineGrid 
+/** CubicSplineGrid
  *
  * Empty declaration to be specialized. Three template parameters are
  * - T data type
@@ -37,7 +37,7 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
   typedef std::vector<T>                     container_type;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;
 
-  inline CubicSplineGrid(){}
+  inline CubicSplineGrid() {}
 
   inline point_type getGridValue(int i)
   {
@@ -66,18 +66,18 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
     GridDelta=L/static_cast<point_type>(n);
     GridDeltaInv=1.0/GridDelta;
   }
-  void spline(point_type start, point_type end, 
-      const container_type& datain, container_type& p, container_type& dp, bool closed) 
+  void spline(point_type start, point_type end,
+              const container_type& datain, container_type& p, container_type& dp, bool closed)
   {
     int n(datain.size());
     setGrid(start,end,(closed)?n-1:n);
-
     p.resize(n);
     std::copy(datain.begin(),datain.end(),p.begin());
     dp.resize(n);
     container_type gr(n),d2p(n);
     //don't forget to include the end point
-    for(int i=0; i<n; i++) gr[i]=i*GridDelta+GridStart;
+    for(int i=0; i<n; i++)
+      gr[i]=i*GridDelta+GridStart;
     p.back()=p.front();
     NRCubicSplinePBC(&(gr[0]), &(p[0]),n,&(dp[0]),&(d2p[0]));
   }
@@ -96,7 +96,7 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
   value_type StartDeriv;
   value_type EndDeriv;
 
-  inline CubicSplineGrid():StartDeriv(0.0),EndDeriv(0.0){}
+  inline CubicSplineGrid():StartDeriv(0.0),EndDeriv(0.0) {}
 
   inline point_type getGridValue(int i)
   {
@@ -118,7 +118,7 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
 
   inline int checkGrid(point_type xIn, int& i, point_type& dl)
   {
-    if(xIn>GridStart && xIn<GridEnd) 
+    if(xIn>GridStart && xIn<GridEnd)
     {
       point_type delta = xIn - GridStart;
       delta -= std::floor(delta*Linv)*L;
@@ -130,8 +130,8 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
       return false;
   }
 
-  /** set linear grid 
-   * @param start starting grid point 
+  /** set linear grid
+   * @param start starting grid point
    * @param end ending grid point
    * @param n number of bins
    */
@@ -150,14 +150,14 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
    * @param end ending grid point
    * @param p data on the grid
    * @param d2p coefficients for 2nd derivate
-   * @param closed 
+   * @param closed
    *
-   * \if closed == true 
+   * \if closed == true
    * p is valid in [start,end].
    * \else
    * p is valid in [start,end)
    */
-  void spline(point_type start, point_type end, container_type& p, container_type& d2p, bool closed) 
+  void spline(point_type start, point_type end, container_type& p, container_type& d2p, bool closed)
   {
     int n=p.size();
     setGrid(start,end,(closed)?n-1:n);
@@ -171,15 +171,15 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
    * @param ypn first derivative at end
    * @param p data on the grid
    * @param d2p coefficients for 2nd derivate
-   * @param closed 
+   * @param closed
    *
-   * \if closed == true 
+   * \if closed == true
    * p is valid in [start,end].
    * \else
    * p is valid in [start,end)
    */
   void spline(point_type start, point_type end, value_type yp1, value_type ypn,
-      container_type& p, container_type& d2p, bool closed) 
+              container_type& p, container_type& d2p, bool closed)
   {
     int n=p.size();
     setGrid(start,end,(closed)?n-1:n);
@@ -198,7 +198,8 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
     EndDeriv=ypn;
     int n=p.size();
     std::vector<point_type> gr(n);
-    for(int i=0; i<n; i++) gr[i]=GridStart+static_cast<point_type>(i)*GridDelta;
+    for(int i=0; i<n; i++)
+      gr[i]=GridStart+static_cast<point_type>(i)*GridDelta;
     NRCubicSpline(&gr[0],&p[0],n,StartDeriv,EndDeriv,&d2p[0]);
   }
 };
@@ -207,5 +208,5 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1528 $   $Date: 2006-11-23 16:57:19 -0600 (Thu, 23 Nov 2006) $
- * $Id: OneDimCubicSpline.h 1528 2006-11-23 22:57:19Z jnkim $ 
+ * $Id: OneDimCubicSpline.h 1528 2006-11-23 22:57:19Z jnkim $
  ***************************************************************************/

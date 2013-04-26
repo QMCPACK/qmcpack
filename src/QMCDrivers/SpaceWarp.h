@@ -12,7 +12,7 @@
 //    int ncenter;
 //    PosType nusum;
 //
-//    //quantities depending on nuclear position 
+//    //quantities depending on nuclear position
 //    vector<RealType> r,rinv,omega,g;
 //    vector<PosType>  dr,d_omega,nu;
 //    vector<TensorType> d2omega;
@@ -75,7 +75,7 @@
 //
 //
 //    void update_warp_jacob(){
-//      //compute d_omega_I/d_r for each nucleus 
+//      //compute d_omega_I/d_r for each nucleus
 //      nusum=0.e0;
 //      for(int iat=0; iat<ncenter; iat++){
 //        nu[iat]=(omega[iat]*g[iat]*rinv[iat])*dr[iat];
@@ -156,61 +156,64 @@
 //  };
 //}
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
 
-  struct SinglePtclWarp;
+struct SinglePtclWarp;
 
-  struct SpaceWarp : public QMCTraits {
-   
-    DistanceTableData* dtPrimary;
+struct SpaceWarp : public QMCTraits
+{
 
-    int nptcl,ncenter,npsi,SizeOfR;
+  DistanceTableData* dtPrimary;
 
-    vector<RealType> r,rinv;
+  int nptcl,ncenter,npsi,SizeOfR;
 
-    vector<PosType> dr;
+  vector<RealType> r,rinv;
 
-    vector<vector<PosType> > Delta;
+  vector<PosType> dr;
 
-    vector<ParticleSet*> PtclRefs;
+  vector<vector<PosType> > Delta;
 
-    vector<SinglePtclWarp*> WarpVector;
+  vector<ParticleSet*> PtclRefs;
 
-    Matrix<RealType> one_ptcl_Jacob;
+  vector<SinglePtclWarp*> WarpVector;
 
-    inline void resize_one_ptcl_Jacob(){
-      one_ptcl_Jacob.resize(npsi,nptcl);
-    }
+  Matrix<RealType> one_ptcl_Jacob;
 
-    void update_one_ptcl_Jacob(int iel);
-    //inline void update_one_ptcl_Jacob(int iel){
-    //  for(int ipsi=0; ipsi< npsi; ipsi++)
-    //    one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
-    //}
+  inline void resize_one_ptcl_Jacob()
+  {
+    one_ptcl_Jacob.resize(npsi,nptcl);
+  }
 
-    void initialize(vector<ParticleSet*>& IonSets, DistanceTableData* dtprime);
-    
-    void warp_one(int iel, bool require_register );
+  void update_one_ptcl_Jacob(int iel);
+  //inline void update_one_ptcl_Jacob(int iel){
+  //  for(int ipsi=0; ipsi< npsi; ipsi++)
+  //    one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
+  //}
 
-    PosType get_displacement(int iptcl, int ipsi);
+  void initialize(vector<ParticleSet*>& IonSets, DistanceTableData* dtprime);
 
-    RealType get_Jacobian(int iptcl, int ipsi);
-    
-    TensorType get_Jacob_matrix(int iptcl, int ipsi);
+  void warp_one(int iel, bool require_register );
 
-    TensorType get_Jacob_cofactor(int iptcl, int ipsi);
-    
-    PosType get_grad_ln_Jacob(int iptcl, int ipsi);
+  PosType get_displacement(int iptcl, int ipsi);
 
-    PosType get_grad_ln_Jacob_num(int iptcl, int ipsi);
+  RealType get_Jacobian(int iptcl, int ipsi);
 
-    void registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf);
+  TensorType get_Jacob_matrix(int iptcl, int ipsi);
+
+  TensorType get_Jacob_cofactor(int iptcl, int ipsi);
+
+  PosType get_grad_ln_Jacob(int iptcl, int ipsi);
+
+  PosType get_grad_ln_Jacob_num(int iptcl, int ipsi);
+
+  void registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf);
 
 
-    void updateBuffer(PooledData<RealType>& buf);
-    void copyToBuffer(PooledData<RealType>& buf);
-    void copyFromBuffer(PooledData<RealType>& buf);
-    
-  };
+  void updateBuffer(PooledData<RealType>& buf);
+  void copyToBuffer(PooledData<RealType>& buf);
+  void copyFromBuffer(PooledData<RealType>& buf);
+
+};
 }
 #endif

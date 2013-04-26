@@ -4,25 +4,23 @@
 using namespace std;
 
 
-void CubicSpline::Update(){
-
+void CubicSpline::Update()
+{
   blitz::Array<double,1> mu(n_x);
-
   F(0)[1] = 1.5 * ( F(1)[0] - F(0)[0] ) * invh;
   F(n_x-1)[1] = 1.5 * ( F(n_x-1)[0] - F(n_x-2)[0] ) * invh;
   mu(0) = 0.5;
-
-  for(int i = 1; i < n_x-1; i++){
+  for(int i = 1; i < n_x-1; i++)
+  {
     double lambda = 0.25;
     mu(i) = 0.5 - lambda;
     F(i)[1] = 3.0* invh * ( lambda * ( F(i)[0] - F(i-1)[0] ) +
-			    mu(i) * ( F(i+1)[0] - F(i)[0] ) );
+                            mu(i) * ( F(i+1)[0] - F(i)[0] ) );
     double ci = 1.0 - lambda * mu(i-1);
     F(i)[1] -= lambda * F(i-1)[1];
     mu(i) /= ci;
     F(i)[1] /= ci;
   }
-
   int i = n_x - 1;
   double lambda = 0.5;
   mu(i) = 0.5 - lambda;
@@ -31,48 +29,36 @@ void CubicSpline::Update(){
   F(i)[1] -= lambda * F(i-1)[1];
   mu(i) /= ci;
   F(i)[1] /= ci;
-
- for( i = n_x - 2; i >= 0; i-- )
+  for( i = n_x - 2; i >= 0; i-- )
     F(i)[1] -= mu(i) * F(i+1)[1];
-
- for(int j = 0; j < n_x; j++)
-   cout << F(j)[0] << '\t' << F(j)[1] << endl;
- exit(-1);
-
+  for(int j = 0; j < n_x; j++)
+    cout << F(j)[0] << '\t' << F(j)[1] << endl;
+  exit(-1);
   UpToDate = true;
-
-
-
   return;
-
 }
 
-void CubicSpline::Update(double dfi, double dff){
-
+void CubicSpline::Update(double dfi, double dff)
+{
   blitz::Array<double,1> mu(n_x);
-
   F(0)[1] = dfi;
   F(n_x-1)[1] = dff;
   mu(0) = 0.5;
-
-  for(int i = 1; i < n_x-1; i++){
+  for(int i = 1; i < n_x-1; i++)
+  {
     double lambda = 0.25;
     mu(i) = 0.5 - lambda;
     F(i)[1] = 3.0* invh * ( lambda * ( F(i)[0] - F(i-1)[0] ) +
-			    mu(i) * ( F(i+1)[0] - F(i)[0] ) );
+                            mu(i) * ( F(i+1)[0] - F(i)[0] ) );
     double ci = 1.0 - lambda * mu(i-1);
     F(i)[1] -= lambda * F(i-1)[1];
     mu(i) /= ci;
     F(i)[1] /= ci;
   }
-
   for( int i = n_x - 2; i > 0; i-- )
     F(i)[1] -= mu(i) * F(i+1)[1];
-
   UpToDate = true;
-
   return;
-
 }
 
 
@@ -84,13 +70,13 @@ void CubicSpline::Update(double dfi, double dff){
 void CubicSpline::Update(){
 
   blitz::Array<double,1> a(n_x),b(n_x),c(n_x),r(n_x);
-  
+
   /// initilaise the coefficient matrix
   a(0) = 0.0; b(0) = 2.0; b(n_x-1) = 2; c(n_x-1) = 0.0;
   for(int i = 1; i < n_x-1; i++){
     a(i) = 1.0; b(i) = 4.0; c(i) = 1.0;
   }
-  
+
   /// initialise the right hand side
   double fac = 3* invh ;
   r(0) = fac*(F(1)[0] - F(0)[0]) - 0.5*d2i;

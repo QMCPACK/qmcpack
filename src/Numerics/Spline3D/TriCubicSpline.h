@@ -8,7 +8,7 @@
 #include <blitz/array.h>
 
 /// This is tri-cubic Splines with natural boundary conditions, i.e.
-/// the second derivative vanishes at the boundary, not suitable for 
+/// the second derivative vanishes at the boundary, not suitable for
 /// functions like sines and cosines.
 
 /// Each point of F contains:
@@ -21,34 +21,59 @@
 /// 6) d2F/dydz
 /// 7) d3F/dxdydz
 
-class TriCubicSpline{
+class TriCubicSpline
+{
 
   /// functions which depend on the point where the interpolated value
   /// is required. t = (x - xi)/h
   inline double p1(double t)
-  { return ((t-1.0)*(t-1.0)*(1.0+2.0*t)); }
+  {
+    return ((t-1.0)*(t-1.0)*(1.0+2.0*t));
+  }
   inline double p2(double t)
-  { return (t*t*(3.0-2.0*t)); }
+  {
+    return (t*t*(3.0-2.0*t));
+  }
   inline double q1(double t)
-  { return (t*(t-1.0)*(t-1.0)); }
+  {
+    return (t*(t-1.0)*(t-1.0));
+  }
   inline double q2(double t)
-  { return (t*t*(t-1.0)); }
+  {
+    return (t*t*(t-1.0));
+  }
   inline double dp1(double t)
-  { return (6.0*t*(t-1.0)); }
+  {
+    return (6.0*t*(t-1.0));
+  }
   inline double dq1(double t)
-  { return ((t-1.0)*(3.0*t-1.0)); }
+  {
+    return ((t-1.0)*(3.0*t-1.0));
+  }
   inline double dp2(double t)
-  { return (-dp1(t)); }
+  {
+    return (-dp1(t));
+  }
   inline double dq2 (double t)
-  { return ((3.0*t - 2.0)*t); }
+  {
+    return ((3.0*t - 2.0)*t);
+  }
   inline double d2p1(double t)
-  { return (12.0*t-6.0); }
+  {
+    return (12.0*t-6.0);
+  }
   inline double d2q1 (double t)
-  { return (6.0*t - 4.0); }
+  {
+    return (6.0*t - 4.0);
+  }
   inline double d2p2 (double t)
-  { return (-d2p1(t)); }
+  {
+    return (-d2p1(t));
+  }
   inline double d2q2 (double t)
-  { return (6.0*t - 2.0); } 
+  {
+    return (6.0*t - 2.0);
+  }
 
   // dim:     Dimension to calculate derivative w.r.t
   // source:  Function to differentiate
@@ -65,21 +90,24 @@ class TriCubicSpline{
   double delsqf(const gridvec_t&, int);
 
 
-  /// whether the first derivatives have been calculated using the 
-  /// m-relations. 
-  bool UpToDate; 
+  /// whether the first derivatives have been calculated using the
+  /// m-relations.
+  bool UpToDate;
 
   int h,k,l;
   double u,v,w;
 
-  inline double dx(int dir, int i){ return m_grid->m_axis[dir].h(i); }
+  inline double dx(int dir, int i)
+  {
+    return m_grid->m_axis[dir].h(i);
+  }
 
   /// function and derivatives at each point
   blitz::Array<blitz::TinyVector<double,8>,3> F;
   blitz::Array<blitz::TinyVector<double,8>,3> D2F;
 
 
-public: 
+public:
 
   typedef double value_type;
 
@@ -94,32 +122,27 @@ public:
 
   /// constructor
   TriCubicSpline(SetSplinePoint* aset,
-		 Grid3D* agrid){
-    
+                 Grid3D* agrid)
+  {
     m_grid = agrid;
     m_set = aset;
-
     n_x = agrid->n_x;
     n_y = agrid->n_y;
     n_z = agrid->n_z;
-
     F.resize(n_x,n_y,n_z);
     UpToDate = false;
-
   }
 
-  TriCubicSpline(Grid3D* agrid){
-
+  TriCubicSpline(Grid3D* agrid)
+  {
     m_grid = agrid;
-    if(!m_set) m_set = new SetSplinePoint;
-
+    if(!m_set)
+      m_set = new SetSplinePoint;
     n_x = agrid->n_x;
     n_y = agrid->n_y;
     n_z = agrid->n_z;
-
     F.resize(n_x,n_y,n_z);
     UpToDate = false;
-
   }
 
 
@@ -129,14 +152,15 @@ public:
   {
     return (F(ix,iy,iz)[0]);
   }
-  
-  inline double& operator()(int ix, int iy, int iz) 
+
+  inline double& operator()(int ix, int iy, int iz)
   {
     UpToDate = false;
     return (F(ix,iy,iz)[0]);
   }
 
-  inline void set_point(const posvec_t& r){
+  inline void set_point(const posvec_t& r)
+  {
     m_set->set_point(r,m_grid);
     return;
   }
@@ -144,37 +168,31 @@ public:
   /// update the derivatives using the m-relations
   void Update(bool);
 
-  inline double evaluate(const posvec_t& r){
-
-    if( !UpToDate )      Update(false);              /// m-relations
-    
+  inline double evaluate(const posvec_t& r)
+  {
+    if( !UpToDate )
+      Update(false);              /// m-relations
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
-
-    double h = m_set->h; 
-    double k = m_set->k; 
-    double l = m_set->l; 
-
+    double h = m_set->h;
+    double k = m_set->k;
+    double l = m_set->l;
     double u = m_set->u;
     double v = m_set->v;
     double w = m_set->w;
-
     double a0 = p1(u);
     double a1 = p2(u);
     double a2 = h*q1(u);
     double a3 = h*q2(u);
-
     register double b0 = p1(v);
     register double b1 = p2(v);
     register double b2 = k*q1(v);
     register double b3 = k*q2(v);
-    
     register double c0 = p1(w);
     register double c1 = p2(w);
     register double c2 = l*q1(w);
     register double c3 = l*q2(w);
-    
     double& Y000 = F(ix,iy,iz)[0];      //   F
     double& Y002 = F(ix,iy,iz)[3];      //  dF/dz
     double& Y001 = F(ix,iy,iz+1)[0];    //   F
@@ -191,7 +209,6 @@ public:
     double& Y031 = F(ix,iy+1,iz+1)[2];  //  dF/dy
     double& Y032 = F(ix,iy+1,iz)[6];    // d2F/dydz
     double& Y033 = F(ix,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y100 = F(ix+1,iy,iz)[0];      //   F
     double& Y101 = F(ix+1,iy,iz+1)[0];    //   F
     double& Y102 = F(ix+1,iy,iz)[3];      //  dF/dz
@@ -208,7 +225,6 @@ public:
     double& Y131 = F(ix+1,iy+1,iz+1)[2];  //  dF/dy
     double& Y132 = F(ix+1,iy+1,iz)[6];    // d2F/dydz
     double& Y133 = F(ix+1,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y200 = F(ix,iy,iz)[1];      //  dF/dx
     double& Y201 = F(ix,iy,iz+1)[1];    //  dF/dx
     double& Y202 = F(ix,iy,iz)[5];      // d2F/dxdz
@@ -225,7 +241,6 @@ public:
     double& Y231 = F(ix,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y232 = F(ix,iy+1,iz)[7];    // d3F/dxdydz
     double& Y233 = F(ix,iy+1,iz+1)[7];  // d3F/dxdydz
-    
     double& Y300 = F(ix+1,iy,iz)[1];      //  dF/dx
     double& Y301 = F(ix+1,iy,iz+1)[1];    //  dF/dx
     double& Y302 = F(ix+1,iy,iz)[5];      // d2F/dxdz
@@ -242,8 +257,7 @@ public:
     double& Y331 = F(ix+1,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y332 = F(ix+1,iy+1,iz)[7];    // d3F/dxdydz
     double& Y333 = F(ix+1,iy+1,iz+1)[7];  // d3F/dxdydz
-  
-    double val = 
+    double val =
       a0*
       (b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -264,63 +278,50 @@ public:
        b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3));
-    
-
     return val;
-
   }
 
-  inline double evaluate(const posvec_t& r, 
-			 posvec_t& gradf){
-    
-    if( !UpToDate ) Update(true);              /// m-relations
-
+  inline double evaluate(const posvec_t& r,
+                         posvec_t& gradf)
+  {
+    if( !UpToDate )
+      Update(true);              /// m-relations
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
-
-    double h = m_set->h; 
-    double k = m_set->k; 
-    double l = m_set->l; 
-
+    double h = m_set->h;
+    double k = m_set->k;
+    double l = m_set->l;
     double u = m_set->u;
     double v = m_set->v;
     double w = m_set->w;
-
     double hinv = m_set->hinv;
     double kinv = m_set->kinv;
     double linv = m_set->linv;
-
     double a0 = p1(u);
     double a1 = p2(u);
     double a2 = h*q1(u);
     double a3 = h*q2(u);
-
     double b0 = p1(v);
     double b1 = p2(v);
     double b2 = k*q1(v);
     double b3 = k*q2(v);
-    
     double c0 = p1(w);
     double c1 = p2(w);
     double c2 = l*q1(w);
     double c3 = l*q2(w);
-    
     double da0 = hinv*dp1(u);
     double da1 = hinv*dp2(u);
     double da2 = dq1(u);
     double da3 = dq2(u);
-    
     double db0 = kinv*dp1(v);
     double db1 = kinv*dp2(v);
     double db2 = dq1(v);
     double db3 = dq2(v);
-    
     double dc0 = linv*dp1(w);
     double dc1 = linv*dp2(w);
     double dc2 = dq1(w);
     double dc3 = dq2(w);
-
     double& Y000 = F(ix,iy,iz)[0];      //   F
     double& Y001 = F(ix,iy,iz+1)[0];    //   F
     double& Y002 = F(ix,iy,iz)[3];      //  dF/dz
@@ -337,7 +338,6 @@ public:
     double& Y031 = F(ix,iy+1,iz+1)[2];  //  dF/dy
     double& Y032 = F(ix,iy+1,iz)[6];    // d2F/dydz
     double& Y033 = F(ix,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y100 = F(ix+1,iy,iz)[0];      //   F
     double& Y101 = F(ix+1,iy,iz+1)[0];    //   F
     double& Y102 = F(ix+1,iy,iz)[3];      //  dF/dz
@@ -354,7 +354,6 @@ public:
     double& Y131 = F(ix+1,iy+1,iz+1)[2];  //  dF/dy
     double& Y132 = F(ix+1,iy+1,iz)[6];    // d2F/dydz
     double& Y133 = F(ix+1,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y200 = F(ix,iy,iz)[1];      //  dF/dx
     double& Y201 = F(ix,iy,iz+1)[1];    //  dF/dx
     double& Y202 = F(ix,iy,iz)[5];      // d2F/dxdz
@@ -371,7 +370,6 @@ public:
     double& Y231 = F(ix,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y232 = F(ix,iy+1,iz)[7];    // d3F/dxdydz
     double& Y233 = F(ix,iy+1,iz+1)[7];  // d3F/dxdydz
-    
     double& Y300 = F(ix+1,iy,iz)[1];      //  dF/dx
     double& Y301 = F(ix+1,iy,iz+1)[1];    //  dF/dx
     double& Y302 = F(ix+1,iy,iz)[5];      // d2F/dxdz
@@ -388,36 +386,29 @@ public:
     double& Y331 = F(ix+1,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y332 = F(ix+1,iy+1,iz)[7];    // d3F/dxdydz
     double& Y333 = F(ix+1,iy+1,iz+1)[7];  // d3F/dxdydz
-  
-    double term0 = 
+    double term0 =
       b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
       b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
       b2*(Y020*c0+Y021*c1+Y022*c2+Y023*c3) +
       b3*(Y030*c0+Y031*c1+Y032*c2+Y033*c3);
-
-    double term1 = 
+    double term1 =
       b0*(Y100*c0+Y101*c1+Y102*c2+Y103*c3) +
       b1*(Y110*c0+Y111*c1+Y112*c2+Y113*c3) +
       b2*(Y120*c0+Y121*c1+Y122*c2+Y123*c3) +
       b3*(Y130*c0+Y131*c1+Y132*c2+Y133*c3);
-
-    double term2 = 
+    double term2 =
       b0*(Y200*c0+Y201*c1+Y202*c2+Y203*c3) +
       b1*(Y210*c0+Y211*c1+Y212*c2+Y213*c3) +
       b2*(Y220*c0+Y221*c1+Y222*c2+Y223*c3) +
       b3*(Y230*c0+Y231*c1+Y232*c2+Y233*c3);
-
     double term3 =
       b0*(Y300*c0+Y301*c1+Y302*c2+Y303*c3) +
       b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
       b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
       b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3);
-    
     double val = a0*term0 + a1*term1 + a2*term2 + a3*term3;
-
     gradf[0] = da0*term0 + da1*term1 + da2*term2 + da3*term3;
-
-    gradf[1] = 
+    gradf[1] =
       a0*
       (db0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        db1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -438,8 +429,7 @@ public:
        db1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        db2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        db3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3));
-    
-    gradf[2] = 
+    gradf[2] =
       a0*
       (b0*(Y000*dc0+Y001*dc1+Y002*dc2+Y003*dc3) +
        b1*(Y010*dc0+Y011*dc1+Y012*dc2+Y013*dc3) +
@@ -460,96 +450,82 @@ public:
        b1*(Y310*dc0+Y311*dc1+Y312*dc2+Y313*dc3) +
        b2*(Y320*dc0+Y321*dc1+Y322*dc2+Y323*dc3) +
        b3*(Y330*dc0+Y331*dc1+Y332*dc2+Y333*dc3));
-    
     return val;
-
   }
 
-  inline double evaluate_all(const posvec_t& r, 
-			     posvec_t& gradf,
-			     double& lapf){
-    
-    if( !UpToDate ) Update(false);              /// m-relations
-
+  inline double evaluate_all(const posvec_t& r,
+                             posvec_t& gradf,
+                             double& lapf)
+  {
+    if( !UpToDate )
+      Update(false);              /// m-relations
     /// if the point is out of bounds, return small number
-    if( m_set->ifout ){
+    if( m_set->ifout )
+    {
       m_set->ifout = false;
       /*
-      cout << r[0] << '\t' << m_grid->m_axis[0].m_start << '\t' 
-	   << m_grid->m_axis[0].m_end << endl;
-      cout << r[1] << '\t' << m_grid->m_axis[1].m_start << '\t' 
-	   << m_grid->m_axis[1].m_end << endl;
-      cout << r[2] << '\t' << m_grid->m_axis[2].m_start << '\t' 
-	   << m_grid->m_axis[2].m_end << endl;
+      cout << r[0] << '\t' << m_grid->m_axis[0].m_start << '\t'
+      << m_grid->m_axis[0].m_end << endl;
+      cout << r[1] << '\t' << m_grid->m_axis[1].m_start << '\t'
+      << m_grid->m_axis[1].m_end << endl;
+      cout << r[2] << '\t' << m_grid->m_axis[2].m_start << '\t'
+      << m_grid->m_axis[2].m_end << endl;
       */
-      gradf[0] = 1e-40; gradf[1] = 1e-40; gradf[2] = 1e-40;
+      gradf[0] = 1e-40;
+      gradf[1] = 1e-40;
+      gradf[2] = 1e-40;
       lapf = 1e-40;
       return 1e-20;
     }
-
     //    cout << "pointr: " << r << endl;
-
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
-
-    double h = m_set->h; 
-    double k = m_set->k; 
-    double l = m_set->l; 
-
+    double h = m_set->h;
+    double k = m_set->k;
+    double l = m_set->l;
     double u = m_set->u;
     double v = m_set->v;
     double w = m_set->w;
-
     double hinv = m_set->hinv;
     double kinv = m_set->kinv;
     double linv = m_set->linv;
-
     double a0 = p1(u);
     double a1 = p2(u);
     double a2 = h*q1(u);
     double a3 = h*q2(u);
-
     double b0 = p1(v);
     double b1 = p2(v);
     double b2 = k*q1(v);
     double b3 = k*q2(v);
-    
     double c0 = p1(w);
     double c1 = p2(w);
     double c2 = l*q1(w);
     double c3 = l*q2(w);
-    
     double da0 = hinv*dp1(u);
     double da1 = hinv*dp2(u);
     double da2 = dq1(u);
     double da3 = dq2(u);
-    
     double db0 = kinv*dp1(v);
     double db1 = kinv*dp2(v);
     double db2 = dq1(v);
     double db3 = dq2(v);
-    
     double dc0 = linv*dp1(w);
     double dc1 = linv*dp2(w);
     double dc2 = dq1(w);
     double dc3 = dq2(w);
-
     double d2a0 = hinv*hinv*d2p1(u);
     double d2a1 = hinv*hinv*d2p2(u);
     double d2a2 = hinv*d2q1(u);
     double d2a3 = hinv*d2q2(u);
-
     double d2b0 = kinv*kinv*d2p1(v);
     double d2b1 = kinv*kinv*d2p2(v);
     double d2b2 = kinv*d2q1(v);
     double d2b3 = kinv*d2q2(v);
-
     double d2c0 = linv*linv*d2p1(w);
     double d2c1 = linv*linv*d2p2(w);
     double d2c2 = linv*d2q1(w);
     double d2c3 = linv*d2q2(w);
-
     double& Y000 = F(ix,iy,iz)[0];      //   F
     double& Y001 = F(ix,iy,iz+1)[0];    //   F
     double& Y002 = F(ix,iy,iz)[3];      //  dF/dz
@@ -566,7 +542,6 @@ public:
     double& Y031 = F(ix,iy+1,iz+1)[2];  //  dF/dy
     double& Y032 = F(ix,iy+1,iz)[6];    // d2F/dydz
     double& Y033 = F(ix,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y100 = F(ix+1,iy,iz)[0];      //   F
     double& Y101 = F(ix+1,iy,iz+1)[0];    //   F
     double& Y102 = F(ix+1,iy,iz)[3];      //  dF/dz
@@ -583,7 +558,6 @@ public:
     double& Y131 = F(ix+1,iy+1,iz+1)[2];  //  dF/dy
     double& Y132 = F(ix+1,iy+1,iz)[6];    // d2F/dydz
     double& Y133 = F(ix+1,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y200 = F(ix,iy,iz)[1];      //  dF/dx
     double& Y201 = F(ix,iy,iz+1)[1];    //  dF/dx
     double& Y202 = F(ix,iy,iz)[5];      // d2F/dxdz
@@ -600,7 +574,6 @@ public:
     double& Y231 = F(ix,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y232 = F(ix,iy+1,iz)[7];    // d3F/dxdydz
     double& Y233 = F(ix,iy+1,iz+1)[7];  // d3F/dxdydz
-    
     double& Y300 = F(ix+1,iy,iz)[1];      //  dF/dx
     double& Y301 = F(ix+1,iy,iz+1)[1];    //  dF/dx
     double& Y302 = F(ix+1,iy,iz)[5];      // d2F/dxdz
@@ -617,36 +590,29 @@ public:
     double& Y331 = F(ix+1,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y332 = F(ix+1,iy+1,iz)[7];    // d3F/dxdydz
     double& Y333 = F(ix+1,iy+1,iz+1)[7];  // d3F/dxdydz
-  
-    double term0 = 
+    double term0 =
       b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
       b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
       b2*(Y020*c0+Y021*c1+Y022*c2+Y023*c3) +
       b3*(Y030*c0+Y031*c1+Y032*c2+Y033*c3);
-
-    double term1 = 
+    double term1 =
       b0*(Y100*c0+Y101*c1+Y102*c2+Y103*c3) +
       b1*(Y110*c0+Y111*c1+Y112*c2+Y113*c3) +
       b2*(Y120*c0+Y121*c1+Y122*c2+Y123*c3) +
       b3*(Y130*c0+Y131*c1+Y132*c2+Y133*c3);
-
-    double term2 = 
+    double term2 =
       b0*(Y200*c0+Y201*c1+Y202*c2+Y203*c3) +
       b1*(Y210*c0+Y211*c1+Y212*c2+Y213*c3) +
       b2*(Y220*c0+Y221*c1+Y222*c2+Y223*c3) +
       b3*(Y230*c0+Y231*c1+Y232*c2+Y233*c3);
-
     double term3 =
       b0*(Y300*c0+Y301*c1+Y302*c2+Y303*c3) +
       b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
       b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
       b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3);
-    
     double val = a0*term0 + a1*term1 + a2*term2 + a3*term3;
-
     gradf[0] = da0*term0 + da1*term1 + da2*term2 + da3*term3;
-
-    gradf[1] = 
+    gradf[1] =
       a0*
       (db0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        db1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -667,8 +633,7 @@ public:
        db1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        db2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        db3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3));
-    
-    gradf[2] = 
+    gradf[2] =
       a0*
       (b0*(Y000*dc0+Y001*dc1+Y002*dc2+Y003*dc3) +
        b1*(Y010*dc0+Y011*dc1+Y012*dc2+Y013*dc3) +
@@ -689,8 +654,7 @@ public:
        b1*(Y310*dc0+Y311*dc1+Y312*dc2+Y313*dc3) +
        b2*(Y320*dc0+Y321*dc1+Y322*dc2+Y323*dc3) +
        b3*(Y330*dc0+Y331*dc1+Y332*dc2+Y333*dc3));
-    
-    lapf = 
+    lapf =
       d2a0*
       (b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -711,7 +675,6 @@ public:
        b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3))+
-
       a0*
       (d2b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        d2b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -732,7 +695,6 @@ public:
        d2b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        d2b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        d2b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3)) +
-
       a0*
       (b0*(Y000*d2c0+Y001*d2c1+Y002*d2c2+Y003*d2c3) +
        b1*(Y010*d2c0+Y011*d2c1+Y012*d2c2+Y013*d2c3) +
@@ -753,55 +715,44 @@ public:
        b1*(Y310*d2c0+Y311*d2c1+Y312*d2c2+Y313*d2c3) +
        b2*(Y320*d2c0+Y321*d2c1+Y322*d2c2+Y323*d2c3) +
        b3*(Y330*d2c0+Y331*d2c1+Y332*d2c2+Y333*d2c3));
-    
-
     return val;
-
   }
 
-  inline double evaluate(const posvec_t& r, 
-			 posvec_t& gradf,
-			 double& lapf){
-
+  inline double evaluate(const posvec_t& r,
+                         posvec_t& gradf,
+                         double& lapf)
+  {
     double val = evaluate_all(r,gradf,lapf);
     //double val = evaluate(r,gradf);
     //    lapf = evaluateD2F(r);
-
     return val;
-
   }
 
-  inline double evaluateD2F(const posvec_t& r){
-
-    if( !UpToDate ) Update(false);              /// m-relations
-    
+  inline double evaluateD2F(const posvec_t& r)
+  {
+    if( !UpToDate )
+      Update(false);              /// m-relations
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
-
-    double h = m_set->h; 
-    double k = m_set->k; 
-    double l = m_set->l; 
-
+    double h = m_set->h;
+    double k = m_set->k;
+    double l = m_set->l;
     double u = m_set->u;
     double v = m_set->v;
     double w = m_set->w;
-
     double a0 = p1(u);
     double a1 = p2(u);
     double a2 = h*q1(u);
     double a3 = h*q2(u);
-
     register double b0 = p1(v);
     register double b1 = p2(v);
     register double b2 = k*q1(v);
     register double b3 = k*q2(v);
-    
     register double c0 = p1(w);
     register double c1 = p2(w);
     register double c2 = l*q1(w);
     register double c3 = l*q2(w);
-    
     double& Y000 = D2F(ix,iy,iz)[0];      //   D2F
     double& Y001 = D2F(ix,iy,iz+1)[0];    //   D2F
     double& Y002 = D2F(ix,iy,iz)[3];      //  dD2F/dz
@@ -818,7 +769,6 @@ public:
     double& Y031 = D2F(ix,iy+1,iz+1)[2];  //  dD2F/dy
     double& Y032 = D2F(ix,iy+1,iz)[6];    // d2D2F/dydz
     double& Y033 = D2F(ix,iy+1,iz+1)[6];  // d2D2F/dydz
-    
     double& Y100 = D2F(ix+1,iy,iz)[0];      //   D2F
     double& Y101 = D2F(ix+1,iy,iz+1)[0];    //   D2F
     double& Y102 = D2F(ix+1,iy,iz)[3];      //  dD2F/dz
@@ -835,7 +785,6 @@ public:
     double& Y131 = D2F(ix+1,iy+1,iz+1)[2];  //  dD2F/dy
     double& Y132 = D2F(ix+1,iy+1,iz)[6];    // d2D2F/dydz
     double& Y133 = D2F(ix+1,iy+1,iz+1)[6];  // d2D2F/dydz
-    
     double& Y200 = D2F(ix,iy,iz)[1];      //  dD2F/dx
     double& Y201 = D2F(ix,iy,iz+1)[1];    //  dD2F/dx
     double& Y202 = D2F(ix,iy,iz)[5];      // d2D2F/dxdz
@@ -852,7 +801,6 @@ public:
     double& Y231 = D2F(ix,iy+1,iz+1)[4];  // d2D2F/dxdy
     double& Y232 = D2F(ix,iy+1,iz)[7];    // d3D2F/dxdydz
     double& Y233 = D2F(ix,iy+1,iz+1)[7];  // d3D2F/dxdydz
-    
     double& Y300 = D2F(ix+1,iy,iz)[1];      //  dD2F/dx
     double& Y301 = D2F(ix+1,iy,iz+1)[1];    //  dD2F/dx
     double& Y302 = D2F(ix+1,iy,iz)[5];      // d2D2F/dxdz
@@ -869,8 +817,7 @@ public:
     double& Y331 = D2F(ix+1,iy+1,iz+1)[4];  // d2D2F/dxdy
     double& Y332 = D2F(ix+1,iy+1,iz)[7];    // d3D2F/dxdydz
     double& Y333 = D2F(ix+1,iy+1,iz+1)[7];  // d3D2F/dxdydz
-  
-    double val = 
+    double val =
       a0*
       (b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -891,79 +838,68 @@ public:
        b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3));
-    
     return val;
-
   }
 
 
-  void read_data(const char* data_file, const double ufac){
-
+  void read_data(const char* data_file, const double ufac)
+  {
     std::ifstream infile(data_file,ios_base::in);
-    for(int iz = 0; iz < n_z; iz++){
-      for(int iy = 0; iy < n_y; iy++){
-	for(int ix = 0; ix < n_x; ix++){
-	  infile >> F(ix,iy,iz)[0];
-	  F(ix,iy,iz)[0] *= ufac;
-	}
+    for(int iz = 0; iz < n_z; iz++)
+    {
+      for(int iy = 0; iy < n_y; iy++)
+      {
+        for(int ix = 0; ix < n_x; ix++)
+        {
+          infile >> F(ix,iy,iz)[0];
+          F(ix,iy,iz)[0] *= ufac;
+        }
       }
     }
-
     return;
-
   }
-  
-  inline double laplacian(const posvec_t& r){
 
-    if( !UpToDate ) Update(false);              /// m-relations
+  inline double laplacian(const posvec_t& r)
+  {
+    if( !UpToDate )
+      Update(false);              /// m-relations
     m_set->set_point(r,m_grid);
-    
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
-
-    double h = m_set->h; 
-    double k = m_set->k; 
-    double l = m_set->l; 
-
+    double h = m_set->h;
+    double k = m_set->k;
+    double l = m_set->l;
     double u = m_set->u;
     double v = m_set->v;
     double w = m_set->w;
-
     double hinv = m_set->hinv;
     double kinv = m_set->kinv;
     double linv = m_set->linv;
-
     double a0 = p1(u);
     double a1 = p2(u);
     double a2 = h*q1(u);
     double a3 = h*q2(u);
-
     double b0 = p1(v);
     double b1 = p2(v);
     double b2 = k*q1(v);
     double b3 = k*q2(v);
-    
     double c0 = p1(w);
     double c1 = p2(w);
     double c2 = l*q1(w);
     double c3 = l*q2(w);
-    
     double d2a0 = hinv*hinv*d2p1(u);
     double d2a1 = hinv*hinv*d2p2(u);
     double d2a2 = hinv*d2q1(u);
     double d2a3 = hinv*d2q2(u);
-
     double d2b0 = kinv*kinv*d2p1(v);
     double d2b1 = kinv*kinv*d2p2(v);
     double d2b2 = kinv*d2q1(v);
     double d2b3 = kinv*d2q2(v);
-
     double d2c0 = linv*linv*d2p1(w);
     double d2c1 = linv*linv*d2p2(w);
     double d2c2 = linv*d2q1(w);
     double d2c3 = linv*d2q2(w);
-
     double& Y000 = F(ix,iy,iz)[0];      //   F
     double& Y001 = F(ix,iy,iz+1)[0];    //   F
     double& Y002 = F(ix,iy,iz)[3];      //  dF/dz
@@ -980,7 +916,6 @@ public:
     double& Y031 = F(ix,iy+1,iz+1)[2];  //  dF/dy
     double& Y032 = F(ix,iy+1,iz)[6];    // d2F/dydz
     double& Y033 = F(ix,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y100 = F(ix+1,iy,iz)[0];      //   F
     double& Y101 = F(ix+1,iy,iz+1)[0];    //   F
     double& Y102 = F(ix+1,iy,iz)[3];      //  dF/dz
@@ -997,7 +932,6 @@ public:
     double& Y131 = F(ix+1,iy+1,iz+1)[2];  //  dF/dy
     double& Y132 = F(ix+1,iy+1,iz)[6];    // d2F/dydz
     double& Y133 = F(ix+1,iy+1,iz+1)[6];  // d2F/dydz
-    
     double& Y200 = F(ix,iy,iz)[1];      //  dF/dx
     double& Y201 = F(ix,iy,iz+1)[1];    //  dF/dx
     double& Y202 = F(ix,iy,iz)[5];      // d2F/dxdz
@@ -1014,7 +948,6 @@ public:
     double& Y231 = F(ix,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y232 = F(ix,iy+1,iz)[7];    // d3F/dxdydz
     double& Y233 = F(ix,iy+1,iz+1)[7];  // d3F/dxdydz
-    
     double& Y300 = F(ix+1,iy,iz)[1];      //  dF/dx
     double& Y301 = F(ix+1,iy,iz+1)[1];    //  dF/dx
     double& Y302 = F(ix+1,iy,iz)[5];      // d2F/dxdz
@@ -1031,8 +964,7 @@ public:
     double& Y331 = F(ix+1,iy+1,iz+1)[4];  // d2F/dxdy
     double& Y332 = F(ix+1,iy+1,iz)[7];    // d3F/dxdydz
     double& Y333 = F(ix+1,iy+1,iz+1)[7];  // d3F/dxdydz
-  
-    double lapf = 
+    double lapf =
       d2a0*
       (b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -1053,7 +985,6 @@ public:
        b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3))+
-
       a0*
       (d2b0*(Y000*c0+Y001*c1+Y002*c2+Y003*c3) +
        d2b1*(Y010*c0+Y011*c1+Y012*c2+Y013*c3) +
@@ -1074,7 +1005,6 @@ public:
        d2b1*(Y310*c0+Y311*c1+Y312*c2+Y313*c3) +
        d2b2*(Y320*c0+Y321*c1+Y322*c2+Y323*c3) +
        d2b3*(Y330*c0+Y331*c1+Y332*c2+Y333*c3)) +
-
       a0*
       (b0*(Y000*d2c0+Y001*d2c1+Y002*d2c2+Y003*d2c3) +
        b1*(Y010*d2c0+Y011*d2c1+Y012*d2c2+Y013*d2c3) +
@@ -1095,9 +1025,7 @@ public:
        b1*(Y310*d2c0+Y311*d2c1+Y312*d2c2+Y313*d2c3) +
        b2*(Y320*d2c0+Y321*d2c1+Y322*d2c2+Y323*d2c3) +
        b3*(Y330*d2c0+Y331*d2c1+Y332*d2c2+Y333*d2c3));
-
     return lapf;
-
   }
 
 

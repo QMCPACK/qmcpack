@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, UIUC
@@ -20,34 +20,36 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
-  #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/MCWalkerConfiguration.h"
 #endif
 
 namespace qmcplusplus
 {
 
-  /** constructor
-  */
-  QMCHamiltonian::QMCHamiltonian()
-    :myIndex(0),numCollectables(0)
-  { }
+/** constructor
+*/
+QMCHamiltonian::QMCHamiltonian()
+  :myIndex(0),numCollectables(0)
+{ }
 
 ///// copy constructor is distable by declaring it as private
 //QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
 
 /** destructor
  */
-QMCHamiltonian::~QMCHamiltonian() 
+QMCHamiltonian::~QMCHamiltonian()
 {
   //@todo clean up H and auxH
 }
 
-bool QMCHamiltonian::get(std::ostream& os) const 
+bool QMCHamiltonian::get(std::ostream& os) const
 {
-  for(int i=0; i<H.size(); i++) {
+  for(int i=0; i<H.size(); i++)
+  {
     os.setf(ios::left);
-    os << "  " << setw(16) << H[i]->myName; 
-    H[i]->get(os); os << "\n";
+    os << "  " << setw(16) << H[i]->myName;
+    H[i]->get(os);
+    os << "\n";
   }
   return true;
 }
@@ -57,17 +59,16 @@ bool QMCHamiltonian::get(std::ostream& os) const
  * @param aname name of h
  * @param physical if true, a physical operator
  */
-void 
-QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool physical) 
+void
+QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool physical)
 {
   //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
   h->UpdateMode[QMCHamiltonianBase::PHYSICAL]=physical;
-
   if(physical)
   {
     for(int i=0; i<H.size(); ++i)
     {
-      if(H[i]->myName == aname) 
+      if(H[i]->myName == aname)
       {
         app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
         return;
@@ -82,16 +83,16 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
     TimerManager.addTimer(atimer);
   }
   else
-  {//ignore timers for now
+  {
+    //ignore timers for now
     for(int i=0; i<auxH.size(); ++i)
     {
-      if(auxH[i]->myName == aname) 
+      if(auxH[i]->myName == aname)
       {
         app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
         return;
       }
     }
-
     app_log() << "  QMCHamiltonian::addOperator " << aname << " to auxH " << endl;
     h->myName=aname;
     auxH.push_back(h);
@@ -102,22 +103,22 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
 // *@param aname the name of the Hamiltonian
 // *@return true, if the request hamiltonian exists and is removed.
 // */
-//bool 
-//QMCHamiltonian::remove(const string& aname) 
+//bool
+//QMCHamiltonian::remove(const string& aname)
 //{
 //  return false;
 //}
 
 /** add a number of properties to the ParticleSet
  * @param P ParticleSet to which multiple columns to be added
- * 
+ *
  * QMCHamiltonian can add any number of properties to a ParticleSet.
  * Hindex contains the index map to the ParticleSet::PropertyList.
  * This enables assigning the properties evaluated by each QMCHamiltonianBase
  * object to the correct property column.
  */
-//void 
-//QMCHamiltonian::addObservables(PropertySetType& plist) 
+//void
+//QMCHamiltonian::addObservables(PropertySetType& plist)
 //{
 //  //first add properties to Observables
 //  Observables.clear();
@@ -138,21 +139,20 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
   //ParticleSet::mcObservables (large data, e.g. density) are accumulated while evaluations
   P.Collectables.clear();
   P.Collectables.rewind();
-  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,P.Collectables);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,P.Collectables);
-
+  for(int i=0; i<H.size(); ++i)
+    H[i]->addObservables(Observables,P.Collectables);
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->addObservables(Observables,P.Collectables);
   int last_obs;
   myIndex=P.PropertyList.add(Observables.Names[0]);
-  for(int i=1; i<Observables.size(); ++i) 
+  for(int i=1; i<Observables.size(); ++i)
     last_obs=P.PropertyList.add(Observables.Names[i]);
-
   numCollectables=P.Collectables.size();
-  app_log() << "\n  QMCHamiltonian::add2WalkerProperty added" 
-    << "\n    " << Observables.size()  << " to P::PropertyList " 
-    << "\n    " <<  P.Collectables.size() << " to P::Collectables "
-    << "\n    starting Index of the observables in P::PropertyList = " << myIndex << endl;
-
-  return Observables.size(); 
+  app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
+            << "\n    " << Observables.size()  << " to P::PropertyList "
+            << "\n    " <<  P.Collectables.size() << " to P::Collectables "
+            << "\n    starting Index of the observables in P::PropertyList = " << myIndex << endl;
+  return Observables.size();
 }
 
 void QMCHamiltonian::resetObservables(int start, int ncollects)
@@ -160,9 +160,10 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
   Observables.clear();
   BufferType collectables;
   collectables.rewind();
-  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,collectables);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,collectables);
-
+  for(int i=0; i<H.size(); ++i)
+    H[i]->addObservables(Observables,collectables);
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->addObservables(Observables,collectables);
   if(collectables.size() != ncollects)
   {
     APP_ABORT("  QMCHamiltonian::resetObservables numCollectables != ncollects");
@@ -171,28 +172,31 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
   numCollectables=ncollects;
 }
 
-void 
+void
 QMCHamiltonian::registerObservables(vector<observable_helper*>& h5desc
-    , hid_t gid)  const
+                                    , hid_t gid)  const
 {
-  for(int i=0; i<H.size(); ++i) H[i]->registerObservables(h5desc,gid);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerObservables(h5desc,gid);
+  for(int i=0; i<H.size(); ++i)
+    H[i]->registerObservables(h5desc,gid);
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->registerObservables(h5desc,gid);
 }
 
-void 
+void
 QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
-    , hid_t gid)  const
+                                     , hid_t gid)  const
 {
   //The physical operators cannot add to collectables
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerCollectables(h5desc,gid);
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->registerCollectables(h5desc,gid);
 }
 
 /** Evaluate all the Hamiltonians for the N-particle  configuration
  *@param P input configuration containing N particles
  *@return the local energy
  */
-QMCHamiltonian::Return_t 
-    QMCHamiltonian::evaluate(ParticleSet& P) 
+QMCHamiltonian::Return_t
+QMCHamiltonian::evaluate(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
@@ -207,7 +211,6 @@ QMCHamiltonian::Return_t
   P.PropertyList[LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
   // auxHevaluate(P);
-
   return LocalEnergy;
 }
 
@@ -243,8 +246,8 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
   }
 }
 
-QMCHamiltonian::Return_t 
-QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
+QMCHamiltonian::Return_t
+QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 {
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
@@ -262,10 +265,11 @@ QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 }
 
 
-QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage() 
+QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
 {
   Return_t sum=0.0;
-  for(int i=0; i<H.size(); i++) sum += H[i]->getEnsembleAverage();
+  for(int i=0; i<H.size(); i++)
+    sum += H[i]->getEnsembleAverage();
   return sum;
 }
 
@@ -275,49 +279,48 @@ QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
  *
  * If not found, return 0
  */
-QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const string& aname) 
+QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const string& aname)
 {
-
   for(int i=0; i<H.size(); ++i)
-    if(H[i]->myName == aname) return H[i];
-
+    if(H[i]->myName == aname)
+      return H[i];
   for(int i=0; i<auxH.size(); ++i)
-    if(auxH[i]->myName == aname) return auxH[i];
-
+    if(auxH[i]->myName == aname)
+      return auxH[i];
   return 0;
 }
 
-void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) 
+void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
 {
-  for(int i=0; i<H.size(); i++) H[i]->resetTargetParticleSet(P);
-  for(int i=0; i<auxH.size(); i++) auxH[i]->resetTargetParticleSet(P);
+  for(int i=0; i<H.size(); i++)
+    H[i]->resetTargetParticleSet(P);
+  for(int i=0; i<auxH.size(); i++)
+    auxH[i]->resetTargetParticleSet(P);
 }
 
-void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng) 
+void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 {
-  for(int i=0; i<H.size(); i++) H[i]->setRandomGenerator(rng);
-  for(int i=0; i<auxH.size(); i++) auxH[i]->setRandomGenerator(rng);
+  for(int i=0; i<H.size(); i++)
+    H[i]->setRandomGenerator(rng);
+  for(int i=0; i<auxH.size(); i++)
+    auxH[i]->setRandomGenerator(rng);
 }
 
-QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
+QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
   for(int i=0; i<H.size(); ++i)
     H[i]->add2Hamiltonian(qp,psi,*myclone);
-
   for(int i=0; i<auxH.size(); ++i)
     auxH[i]->add2Hamiltonian(qp,psi,*myclone);
-
   //sync indices
   myclone->resetObservables(myIndex,numCollectables);
-
   //Hamiltonian needs to make sure qp.Collectables are the same as defined by the original Hamiltonian
   if(numCollectables)
   {
     qp.Collectables.clear();
     qp.Collectables.resize(numCollectables);
   }
-
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
   //Return_t tau = H[0]->Tau;
   //myclone->setTau(tau);
@@ -327,7 +330,7 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
 QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)
 {
   LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i) 
+  for(int i=0; i<H.size(); ++i)
   {
     LocalEnergy+=H[i]->registerData(P,buffer);
     H[i]->setObservables(Observables);
@@ -339,7 +342,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType
 QMCHamiltonian::Return_t QMCHamiltonian::updateBuffer(ParticleSet& P, BufferType& buffer)
 {
   LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i) 
+  for(int i=0; i<H.size(); ++i)
   {
     LocalEnergy+=H[i]->updateBuffer(P,buffer);
     H[i]->setObservables(Observables);
@@ -350,7 +353,8 @@ QMCHamiltonian::Return_t QMCHamiltonian::updateBuffer(ParticleSet& P, BufferType
 
 void QMCHamiltonian::copyFromBuffer(ParticleSet& P, BufferType& buffer)
 {
-  for(int i=0; i<H.size(); ++i) H[i]->copyFromBuffer(P,buffer);
+  for(int i=0; i<H.size(); ++i)
+    H[i]->copyFromBuffer(P,buffer);
   buffer.get(LocalEnergy);
 }
 
@@ -370,8 +374,8 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& bu
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
   }
-
-  for(int i=0; i<H.size(); ++i) H[i]->copyToBuffer(P,buffer);
+  for(int i=0; i<H.size(); ++i)
+    H[i]->copyToBuffer(P,buffer);
   buffer.put(LocalEnergy);
   return LocalEnergy;
 }
@@ -379,44 +383,43 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& bu
 QMCHamiltonian::Return_t QMCHamiltonian::evaluatePbyP(ParticleSet& P, int active)
 {
   NewLocalEnergy = 0.0;
-  for(int i=0; i<H.size(); ++i) NewLocalEnergy +=H[i]->evaluatePbyP(P,active);
+  for(int i=0; i<H.size(); ++i)
+    NewLocalEnergy +=H[i]->evaluatePbyP(P,active);
   return NewLocalEnergy;
 }
 void QMCHamiltonian::acceptMove(int active)
 {
-  for(int i=0; i<H.size(); ++i) H[i]->acceptMove(active);
+  for(int i=0; i<H.size(); ++i)
+    H[i]->acceptMove(active);
   LocalEnergy=NewLocalEnergy;
   for(int i=0; i<H.size(); ++i)
     H[i]->setObservables(Observables);
-
 }
 
 void QMCHamiltonian::rejectMove(int active)
 {
-  for(int i=0; i<H.size(); ++i) H[i]->rejectMove(active);
+  for(int i=0; i<H.size(); ++i)
+    H[i]->rejectMove(active);
 }
 
 
 #ifdef QMC_CUDA
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-			 vector<RealType> &energyVector)
+                         vector<RealType> &energyVector)
 {
   vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
-  if (LocalEnergyVector.size() != nw) {
+  if (LocalEnergyVector.size() != nw)
+  {
     LocalEnergyVector.resize(nw);
     KineticEnergyVector.resize(nw);
     AuxEnergyVector.resize(nw);
   }
-
   if (energyVector.size() != nw)
     energyVector.resize(nw);
-    
-    
   for (int i=0; i<LocalEnergyVector.size(); i++)
     LocalEnergyVector[i] = 0.0;
-
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
@@ -425,15 +428,13 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
     myTimers[i]->stop();
   }
   //KineticEnergyVector=H[0]->ValueVector;
-
-  for (int iw=0; iw<walkers.size(); iw++) {
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
     walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
     walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
       LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
   }
-
   energyVector = LocalEnergyVector;
-
   // P.PropertyList[LOCALENERGY]=LocalEnergy;
   // P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
   for(int i=0; i<auxH.size(); ++i)
@@ -447,38 +448,35 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-			 vector<RealType> &energyVector,
-			 vector<vector<NonLocalData> > &Txy)
+                         vector<RealType> &energyVector,
+                         vector<vector<NonLocalData> > &Txy)
 {
   vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
-  if (LocalEnergyVector.size() != nw) {
+  if (LocalEnergyVector.size() != nw)
+  {
     LocalEnergyVector.resize(nw);
     KineticEnergyVector.resize(nw);
     AuxEnergyVector.resize(nw);
   }
-
   if (energyVector.size() != nw)
     energyVector.resize(nw);
-    
   for (int i=0; i<LocalEnergyVector.size(); i++)
     LocalEnergyVector[i] = 0.0;
-
-  for(int i=0; i<H.size(); ++i)  {
+  for(int i=0; i<H.size(); ++i)
+  {
     myTimers[i]->start();
     H[i]->addEnergy(W, LocalEnergyVector, Txy);
     myTimers[i]->stop();
   }
   KineticEnergyVector=H[0]->ValueVector;
-
-  for (int iw=0; iw<walkers.size(); iw++) {
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
     walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
     walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
       LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
   }
-
   energyVector = LocalEnergyVector;
-
   for(int i=0; i<auxH.size(); ++i)
     auxH[i]->addEnergy(W, AuxEnergyVector);
 }
@@ -491,6 +489,6 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 

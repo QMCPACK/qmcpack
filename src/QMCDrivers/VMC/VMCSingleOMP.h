@@ -20,39 +20,39 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
-  {
+{
 
-  /** @ingroup QMCDrivers  ParticleByParticle
-   * @brief Implements a VMC using particle-by-particle move. Threaded execution.
-   */
-  class VMCSingleOMP: public QMCDriver, public CloneManager
-    {
-    public:
-      /// Constructor.
-      VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                   HamiltonianPool& hpool, WaveFunctionPool& ppool);
-      bool run();
-      bool put(xmlNodePtr cur);
-      //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
-    private:
-      ///number of RN warmup steps
-      int myRNWarmupSteps;
-      ///period for walker dump
-      int myPeriod4WalkerDump;
-      ///option to enable/disable drift equation or RN for VMC
-      string UseDrift;
-      ///Ways to set rn constant
-      RealType logoffset,logepsilon;
-      ///check the run-time environments
-      void resetRun();
-      ///copy constructor
-      VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a){ }
-      /// Copy operator (disabled).
-      VMCSingleOMP& operator=(const VMCSingleOMP&)
-      {
-        return *this;
-      }
-    };
+/** @ingroup QMCDrivers  ParticleByParticle
+ * @brief Implements a VMC using particle-by-particle move. Threaded execution.
+ */
+class VMCSingleOMP: public QMCDriver, public CloneManager
+{
+public:
+  /// Constructor.
+  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+               HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  bool run();
+  bool put(xmlNodePtr cur);
+  //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+private:
+  ///number of RN warmup steps
+  int myRNWarmupSteps;
+  ///period for walker dump
+  int myPeriod4WalkerDump;
+  ///option to enable/disable drift equation or RN for VMC
+  string UseDrift;
+  ///Ways to set rn constant
+  RealType logoffset,logepsilon;
+  ///check the run-time environments
+  void resetRun();
+  ///copy constructor
+  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+  /// Copy operator (disabled).
+  VMCSingleOMP& operator=(const VMCSingleOMP&)
+  {
+    return *this;
+  }
+};
 }
 
 #endif

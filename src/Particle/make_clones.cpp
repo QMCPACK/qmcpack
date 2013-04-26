@@ -25,59 +25,61 @@
 namespace qmcplusplus
 {
 
-  void ParticleSet::make_clones(int n)
+void ParticleSet::make_clones(int n)
+{
+  //if(myClones.size()>n) return;
+  if(myClones.empty())
   {
-    //if(myClones.size()>n) return; 
-    if(myClones.empty())
-    {
-      myClones.resize(n,0);
+    myClones.resize(n,0);
 //#pragma omp parallel for
-      for(int i=0; i<n;++i)
-        if(i) myClones[i]=new ParticleSet(*this);
-    }
-    else
+    for(int i=0; i<n; ++i)
+      if(i)
+        myClones[i]=new ParticleSet(*this);
+  }
+  else
+  {
+    n -= myClones.size();
+    while(n>0)
     {
-      n -= myClones.size();
-      while(n>0)
-      {
-        myClones.push_back(new ParticleSet(*this));
-        n--;
-      }
-    }
-    this->ThreadID=0;
-    for(int i=1; i<myClones.size(); ++i) 
-    {
-      myClones[i]->ThreadID=i;
-      myClones[i]->ObjectTag=ObjectTag;
-      myClones[i]->setName(this->getName());
+      myClones.push_back(new ParticleSet(*this));
+      n--;
     }
   }
+  this->ThreadID=0;
+  for(int i=1; i<myClones.size(); ++i)
+  {
+    myClones[i]->ThreadID=i;
+    myClones[i]->ObjectTag=ObjectTag;
+    myClones[i]->setName(this->getName());
+  }
+}
 
-  void MCWalkerConfiguration::make_clones(int n)
+void MCWalkerConfiguration::make_clones(int n)
+{
+  if(myClones.empty())
   {
-    if(myClones.empty())
-    {
-      myClones.resize(n,0);
+    myClones.resize(n,0);
 //#pragma omp parallel for
-      for(int i=0; i<n;++i)
-        if(i) myClones[i]=new MCWalkerConfiguration(*this);
-    }
-    else
+    for(int i=0; i<n; ++i)
+      if(i)
+        myClones[i]=new MCWalkerConfiguration(*this);
+  }
+  else
+  {
+    n -= myClones.size();
+    while(n>0)
     {
-      n -= myClones.size();
-      while(n>0)
-      {
-        myClones.push_back(new MCWalkerConfiguration(*this));
-        n--;
-      }
-    }
-    this->ThreadID=0;
-    for(int i=1; i<myClones.size(); ++i) 
-    {
-      myClones[i]->ThreadID=i;
-      myClones[i]->setName(this->getName());
+      myClones.push_back(new MCWalkerConfiguration(*this));
+      n--;
     }
   }
+  this->ThreadID=0;
+  for(int i=1; i<myClones.size(); ++i)
+  {
+    myClones[i]->ThreadID=i;
+    myClones[i]->setName(this->getName());
+  }
+}
 }
 
 /***************************************************************************

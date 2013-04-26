@@ -9,7 +9,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -19,20 +19,28 @@
 #ifndef OHMMS_ITERATOR_UTILITIES_H
 #define OHMMS_ITERATOR_UTILITIES_H
 
-namespace qmcplusplus {
-  /** delete the pointers in [first,last)
-  */
-  template<class IT>
-    inline void delete_iter(IT first, IT last) {
-      while(first != last) { if(*first) delete *first; ++first;}
-    }
+namespace qmcplusplus
+{
+/** delete the pointers in [first,last)
+*/
+template<class IT>
+inline void delete_iter(IT first, IT last)
+{
+  while(first != last)
+  {
+    if(*first)
+      delete *first;
+    ++first;
+  }
+}
 
 
-  template<typename IT1, typename IT2>
-    inline void accumulate_elements(IT1 first, IT1 last, IT2 res)
-    {
-      while(first != last) *res++ += *first++;
-    }
+template<typename IT1, typename IT2>
+inline void accumulate_elements(IT1 first, IT1 last, IT2 res)
+{
+  while(first != last)
+    *res++ += *first++;
+}
 
 //  template<typename IT1, typename IT2, typename INT>
 //    inline void accumulate_elements(IT1 first, IT2 res, INT n)
@@ -45,5 +53,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -20,14 +20,17 @@
 
 /*** Tenor operators.  Generic operators are specialized for 1,2 and 3 D
  */
-namespace APPNAMESPACE {
+namespace APPNAMESPACE
+{
 
 template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< Tensor<T1,D> , Tensor<T2,D> , OP >
 {
   inline static void
-  apply( Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs, OP op) {
-    for (unsigned d=0; d<D*D; ++d)  op(lhs[d] , rhs[d]);
+  apply( Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs, OP op)
+  {
+    for (unsigned d=0; d<D*D; ++d)
+      op(lhs[d] , rhs[d]);
   }
 };
 
@@ -35,8 +38,10 @@ template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< Tensor<T1,D> , T2 , OP >
 {
   inline static void
-  apply( Tensor<T1,D>& lhs, T2 rhs, OP op) {
-    for (unsigned d=0; d<D*D; ++d)   op(lhs[d] , rhs);
+  apply( Tensor<T1,D>& lhs, T2 rhs, OP op)
+  {
+    for (unsigned d=0; d<D*D; ++d)
+      op(lhs[d] , rhs);
   }
 };
 
@@ -50,7 +55,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,1> , Tensor<T2,1> , OP >
 {
   inline static void
-  apply( Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs, OP op) {
+  apply( Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
   }
 };
@@ -59,7 +65,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,1> , T2 , OP >
 {
   inline static void
-  apply( Tensor<T1,1>& lhs, T2 rhs, OP op ) {
+  apply( Tensor<T1,1>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
   }
 };
@@ -74,7 +81,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,2> , Tensor<T2,2> , OP >
 {
   inline static void
-  apply( Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs, OP op) {
+  apply( Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
@@ -86,7 +94,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,2> , T2 , OP >
 {
   inline static void
-  apply( Tensor<T1,2>& lhs, T2 rhs, OP op ) {
+  apply( Tensor<T1,2>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
     op(lhs[1] , rhs );
     op(lhs[2] , rhs );
@@ -104,7 +113,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,3> , Tensor<T2,3> , OP >
 {
   inline static void
-  apply( Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs, OP op) {
+  apply( Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
@@ -121,7 +131,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< Tensor<T1,3> , T2 , OP >
 {
   inline static void
-  apply( Tensor<T1,3>& lhs, T2 rhs, OP op ) {
+  apply( Tensor<T1,3>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
     op(lhs[1] , rhs );
     op(lhs[2] , rhs );
@@ -145,7 +156,8 @@ template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< SymTensor<T1,D> , SymTensor<T2,D> , OP >
 {
   inline static void
-  apply( SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs, OP op) {
+  apply( SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs, OP op)
+  {
     for (unsigned d=0; d<D*(D+1)/2; ++d)
       op(lhs[d] , rhs[d]);
   }
@@ -155,7 +167,8 @@ template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< SymTensor<T1,D> , T2 , OP >
 {
   inline static void
-  apply( SymTensor<T1,D>& lhs, T2 rhs, OP op ) {
+  apply( SymTensor<T1,D>& lhs, T2 rhs, OP op )
+  {
     for (unsigned d=0; d<D*(D+1)/2; ++d)
       op(lhs[d] , rhs);
   }
@@ -171,7 +184,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,1> , SymTensor<T2,1> , OP >
 {
   inline static void
-  apply( SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs, OP op) {
+  apply( SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
   }
 };
@@ -180,7 +194,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,1> , T2 , OP>
 {
   inline static void
-  apply( SymTensor<T1,1>& lhs, T2 rhs, OP op ) {
+  apply( SymTensor<T1,1>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
   }
 };
@@ -195,7 +210,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,2> , SymTensor<T2,2> , OP >
 {
   inline static void
-  apply( SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs, OP op) {
+  apply( SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
@@ -206,7 +222,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,2> , T2 , OP >
 {
   inline static void
-  apply( SymTensor<T1,2>& lhs, T2 rhs, OP op ) {
+  apply( SymTensor<T1,2>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
     op(lhs[1] , rhs );
     op(lhs[2] , rhs );
@@ -223,7 +240,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,3> , SymTensor<T2,3> , OP >
 {
   inline static void
-  apply( SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs, OP op) {
+  apply( SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
@@ -237,7 +255,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< SymTensor<T1,3> , T2 , OP >
 {
   inline static void
-  apply( SymTensor<T1,3>& lhs, T2 rhs, OP op ) {
+  apply( SymTensor<T1,3>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
     op(lhs[1] , rhs );
     op(lhs[2] , rhs );
@@ -257,7 +276,8 @@ template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,D>& lhs, const AntiSymTensor<T2,D>& rhs, OP op) {
+  apply( AntiSymTensor<T1,D>& lhs, const AntiSymTensor<T2,D>& rhs, OP op)
+  {
     for (unsigned d=0; d<D*(D-1)/2; ++d)
       op(lhs[d] , rhs[d]);
   }
@@ -267,7 +287,8 @@ template<class T1, class T2, class OP, unsigned D>
 struct  OTAssign< AntiSymTensor<T1,D> , T2 , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,D>& lhs, T2 rhs, OP op ) {
+  apply( AntiSymTensor<T1,D>& lhs, T2 rhs, OP op )
+  {
     for (unsigned d=0; d<D*(D-1)/2; ++d)
       op(lhs[d] , rhs);
   }
@@ -283,7 +304,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,1> , AntiSymTensor<T2,1> , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,1>& lhs, const AntiSymTensor<T2,1>& rhs, OP op) {
+  apply( AntiSymTensor<T1,1>& lhs, const AntiSymTensor<T2,1>& rhs, OP op)
+  {
   }
 };
 
@@ -291,7 +313,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,1> , T2 , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,1>& lhs, T2 rhs, OP op ) {
+  apply( AntiSymTensor<T1,1>& lhs, T2 rhs, OP op )
+  {
   }
 };
 
@@ -305,7 +328,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,2> , AntiSymTensor<T2,2> , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,2>& lhs, const AntiSymTensor<T2,2>& rhs, OP op) {
+  apply( AntiSymTensor<T1,2>& lhs, const AntiSymTensor<T2,2>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
   }
 };
@@ -314,7 +338,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,2> , T2 , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,2>& lhs, T2 rhs, OP op ) {
+  apply( AntiSymTensor<T1,2>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
   }
 };
@@ -329,7 +354,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,3> , AntiSymTensor<T2,3> , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,3>& lhs, const AntiSymTensor<T2,3>& rhs, OP op) {
+  apply( AntiSymTensor<T1,3>& lhs, const AntiSymTensor<T2,3>& rhs, OP op)
+  {
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
@@ -340,7 +366,8 @@ template<class T1, class T2, class OP>
 struct  OTAssign< AntiSymTensor<T1,3> , T2 , OP >
 {
   inline static void
-  apply( AntiSymTensor<T1,3>& lhs, T2 rhs, OP op ) {
+  apply( AntiSymTensor<T1,3>& lhs, T2 rhs, OP op )
+  {
     op(lhs[0] , rhs );
     op(lhs[1] , rhs );
     op(lhs[2] , rhs );
@@ -358,7 +385,8 @@ struct OTBinary< Tensor<T1,D> , Tensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs, OP op) {
+  apply(const Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs, OP op)
+  {
     Tensor<Type_t,D> ret;
     for (unsigned d=0; d<D*D; ++d)
       ret[d] = op( lhs[d] , rhs[d]);
@@ -371,7 +399,8 @@ struct OTBinary< Tensor<T1,D> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const Tensor<T1,D>& lhs, T2 rhs, OP op) {
+  apply(const Tensor<T1,D>& lhs, T2 rhs, OP op)
+  {
     Tensor<Type_t,D> ret;
     for (unsigned d=0; d<D*D; ++d)
       ret[d] = op(lhs[d] , rhs );
@@ -384,7 +413,8 @@ struct OTBinary< T1, Tensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(T1 lhs, const Tensor<T2,D>& rhs, OP op) {
+  apply(T1 lhs, const Tensor<T2,D>& rhs, OP op)
+  {
     Tensor<Type_t,D> ret;
     for (unsigned d=0; d<D*D; ++d)
       ret[d] = op(lhs , rhs[d]);
@@ -403,7 +433,8 @@ struct OTBinary< Tensor<T1,1> , Tensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,1>
-  apply(const Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs, OP op) {
+  apply(const Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs, OP op)
+  {
     return Tensor<Type_t,1>( op( lhs[0], rhs[0] ) );
   }
 };
@@ -413,7 +444,8 @@ struct OTBinary< Tensor<T1,1> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,1>
-  apply(const Tensor<T1,1>& lhs, T2 rhs, OP op) {
+  apply(const Tensor<T1,1>& lhs, T2 rhs, OP op)
+  {
     return Tensor<Type_t,1>( op(lhs[0], rhs ) );
   }
 };
@@ -423,7 +455,8 @@ struct OTBinary< T1, Tensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,1>
-  apply(T1 lhs, const Tensor<T2,1>& rhs, OP op) {
+  apply(T1 lhs, const Tensor<T2,1>& rhs, OP op)
+  {
     return Tensor<Type_t,1>( op( lhs, rhs[0] ) );
   }
 };
@@ -439,11 +472,12 @@ struct OTBinary< Tensor<T1,2> , Tensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,2>
-  apply(const Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs, OP op) {
+  apply(const Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs, OP op)
+  {
     return Tensor<Type_t,2>( op( lhs[0], rhs[0] ) ,
-			     op( lhs[1], rhs[1] ) ,
-			     op( lhs[2], rhs[2] ) ,
-			     op( lhs[3], rhs[3] ) );
+                             op( lhs[1], rhs[1] ) ,
+                             op( lhs[2], rhs[2] ) ,
+                             op( lhs[3], rhs[3] ) );
   }
 };
 
@@ -452,11 +486,12 @@ struct OTBinary< Tensor<T1,2> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,2>
-  apply(const Tensor<T1,2>& lhs, T2 rhs, OP op) {
+  apply(const Tensor<T1,2>& lhs, T2 rhs, OP op)
+  {
     return Tensor<Type_t,2>( op( lhs[0], rhs ) ,
-			     op( lhs[1], rhs ) ,
-			     op( lhs[2], rhs ) ,
-			     op( lhs[3], rhs ) );
+                             op( lhs[1], rhs ) ,
+                             op( lhs[2], rhs ) ,
+                             op( lhs[3], rhs ) );
   }
 };
 
@@ -465,11 +500,12 @@ struct OTBinary< T1, Tensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,2>
-  apply(T1 lhs, const Tensor<T2,2>& rhs, OP op) {
+  apply(T1 lhs, const Tensor<T2,2>& rhs, OP op)
+  {
     return Tensor<Type_t,2>( op( lhs, rhs[0] ) ,
-			     op( lhs, rhs[1] ) ,
-			     op( lhs, rhs[2] ) ,
-			     op( lhs, rhs[3] ) );
+                             op( lhs, rhs[1] ) ,
+                             op( lhs, rhs[2] ) ,
+                             op( lhs, rhs[3] ) );
   }
 };
 
@@ -484,16 +520,17 @@ struct OTBinary< Tensor<T1,3> , Tensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,3>
-  apply(const Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs, OP op) {
+  apply(const Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs, OP op)
+  {
     return Tensor<Type_t,3>( op( lhs[0], rhs[0] ) ,
-			     op( lhs[1], rhs[1] ) ,
-			     op( lhs[2], rhs[2] ) ,
-			     op( lhs[3], rhs[3] ) ,
-			     op( lhs[4], rhs[4] ) ,
-			     op( lhs[5], rhs[5] ) ,
-			     op( lhs[6], rhs[6] ) ,
-			     op( lhs[7], rhs[7] ) ,
-			     op( lhs[8], rhs[8] ) );
+                             op( lhs[1], rhs[1] ) ,
+                             op( lhs[2], rhs[2] ) ,
+                             op( lhs[3], rhs[3] ) ,
+                             op( lhs[4], rhs[4] ) ,
+                             op( lhs[5], rhs[5] ) ,
+                             op( lhs[6], rhs[6] ) ,
+                             op( lhs[7], rhs[7] ) ,
+                             op( lhs[8], rhs[8] ) );
   }
 };
 
@@ -502,16 +539,17 @@ struct OTBinary< Tensor<T1,3> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,3>
-  apply(const Tensor<T1,3>& lhs, T2 rhs, OP op) {
+  apply(const Tensor<T1,3>& lhs, T2 rhs, OP op)
+  {
     return Tensor<Type_t,3>( op( lhs[0], rhs ) ,
-			     op( lhs[1], rhs ) ,
-			     op( lhs[2], rhs ) ,
-			     op( lhs[3], rhs ) ,
-			     op( lhs[4], rhs ) ,
-			     op( lhs[5], rhs ) ,
-			     op( lhs[6], rhs ) ,
-			     op( lhs[7], rhs ) ,
-			     op( lhs[8], rhs ) );
+                             op( lhs[1], rhs ) ,
+                             op( lhs[2], rhs ) ,
+                             op( lhs[3], rhs ) ,
+                             op( lhs[4], rhs ) ,
+                             op( lhs[5], rhs ) ,
+                             op( lhs[6], rhs ) ,
+                             op( lhs[7], rhs ) ,
+                             op( lhs[8], rhs ) );
   }
 };
 
@@ -520,16 +558,17 @@ struct OTBinary< T1, Tensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,3>
-  apply(T1 lhs, const Tensor<T2,3>& rhs, OP op) {
+  apply(T1 lhs, const Tensor<T2,3>& rhs, OP op)
+  {
     return Tensor<Type_t,3>( op( lhs, rhs[0] ) ,
-			     op( lhs, rhs[1] ) ,
-			     op( lhs, rhs[2] ) ,
-			     op( lhs, rhs[3] ) ,
-			     op( lhs, rhs[4] ) ,
-			     op( lhs, rhs[5] ) ,
-			     op( lhs, rhs[6] ) ,
-			     op( lhs, rhs[7] ) ,
-			     op( lhs, rhs[8] ) );
+                             op( lhs, rhs[1] ) ,
+                             op( lhs, rhs[2] ) ,
+                             op( lhs, rhs[3] ) ,
+                             op( lhs, rhs[4] ) ,
+                             op( lhs, rhs[5] ) ,
+                             op( lhs, rhs[6] ) ,
+                             op( lhs, rhs[7] ) ,
+                             op( lhs, rhs[8] ) );
   }
 };
 
@@ -544,7 +583,8 @@ struct OTBinary< SymTensor<T1,D> , SymTensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,D>
-  apply(const SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs, OP op) {
+  apply(const SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs, OP op)
+  {
     SymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D+1)/2; ++d)
       ret[d] = op(lhs[d] , rhs[d]);
@@ -557,7 +597,8 @@ struct OTBinary< SymTensor<T1,D> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,D>
-  apply(const SymTensor<T1,D>& lhs, T2 rhs, OP op) {
+  apply(const SymTensor<T1,D>& lhs, T2 rhs, OP op)
+  {
     SymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D+1)/2; ++d)
       ret[d] = op( lhs[d] , rhs );
@@ -570,7 +611,8 @@ struct OTBinary< T1, SymTensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,D>
-  apply(T1 lhs, const SymTensor<T2,D>& rhs, OP op) {
+  apply(T1 lhs, const SymTensor<T2,D>& rhs, OP op)
+  {
     SymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D+1)/2; ++d)
       ret[d] = op( lhs , rhs[d]);
@@ -589,7 +631,8 @@ struct OTBinary< SymTensor<T1,1> , SymTensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,1>
-  apply(const SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs, OP op) {
+  apply(const SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs, OP op)
+  {
     return SymTensor<Type_t,1>( op( lhs[0], rhs[0] ) );
   }
 };
@@ -599,7 +642,8 @@ struct OTBinary< SymTensor<T1,1> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,1>
-  apply(const SymTensor<T1,1>& lhs, T2 rhs, OP op) {
+  apply(const SymTensor<T1,1>& lhs, T2 rhs, OP op)
+  {
     return SymTensor<Type_t,1>( op( lhs[0], rhs ) );
   }
 };
@@ -609,7 +653,8 @@ struct OTBinary< T1, SymTensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,1>
-  apply(T1 lhs, const SymTensor<T2,1>& rhs, OP op) {
+  apply(T1 lhs, const SymTensor<T2,1>& rhs, OP op)
+  {
     return SymTensor<Type_t,1>( op( lhs, rhs[0] ) );
   }
 };
@@ -625,10 +670,11 @@ struct OTBinary< SymTensor<T1,2> , SymTensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,2>
-  apply(const SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs, OP op) {
+  apply(const SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs, OP op)
+  {
     return SymTensor<Type_t,2>( op( lhs[0], rhs[0] ) ,
-			        op( lhs[1], rhs[1] ) ,
-			        op( lhs[2], rhs[2] ) );
+                                op( lhs[1], rhs[1] ) ,
+                                op( lhs[2], rhs[2] ) );
   }
 };
 
@@ -637,10 +683,11 @@ struct OTBinary< SymTensor<T1,2> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,2>
-  apply(const SymTensor<T1,2>& lhs, T2 rhs, OP op) {
+  apply(const SymTensor<T1,2>& lhs, T2 rhs, OP op)
+  {
     return SymTensor<Type_t,2>( op( lhs[0], rhs ) ,
-			        op( lhs[1], rhs ) ,
-			        op( lhs[2], rhs ) );
+                                op( lhs[1], rhs ) ,
+                                op( lhs[2], rhs ) );
   }
 };
 
@@ -649,10 +696,11 @@ struct OTBinary< T1, SymTensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,2>
-  apply(T1 lhs, const SymTensor<T2,2>& rhs, OP op) {
+  apply(T1 lhs, const SymTensor<T2,2>& rhs, OP op)
+  {
     return SymTensor<Type_t,2>( op( lhs, rhs[0] ) ,
-			        op( lhs, rhs[1] ) ,
-			        op( lhs, rhs[2] ) );
+                                op( lhs, rhs[1] ) ,
+                                op( lhs, rhs[2] ) );
   }
 };
 
@@ -667,13 +715,14 @@ struct OTBinary< SymTensor<T1,3> , SymTensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,3>
-  apply(const SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs, OP op) {
+  apply(const SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs, OP op)
+  {
     return SymTensor<Type_t,3>( op( lhs[0], rhs[0] ) ,
-			        op( lhs[1], rhs[1] ) ,
-				op( lhs[2], rhs[2] ) ,
-				op( lhs[3], rhs[3] ) ,
-				op( lhs[4], rhs[4] ) ,
-				op( lhs[5], rhs[5] ) );
+                                op( lhs[1], rhs[1] ) ,
+                                op( lhs[2], rhs[2] ) ,
+                                op( lhs[3], rhs[3] ) ,
+                                op( lhs[4], rhs[4] ) ,
+                                op( lhs[5], rhs[5] ) );
   }
 };
 
@@ -682,13 +731,14 @@ struct OTBinary< SymTensor<T1,3> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,3>
-  apply(const SymTensor<T1,3>& lhs, T2 rhs, OP op) {
+  apply(const SymTensor<T1,3>& lhs, T2 rhs, OP op)
+  {
     return SymTensor<Type_t,3>( op( lhs[0], rhs ) ,
-				op( lhs[1], rhs ) ,
-				op( lhs[2], rhs ) ,
-				op( lhs[3], rhs ) ,
-				op( lhs[4], rhs ) ,
-				op( lhs[5], rhs ) );
+                                op( lhs[1], rhs ) ,
+                                op( lhs[2], rhs ) ,
+                                op( lhs[3], rhs ) ,
+                                op( lhs[4], rhs ) ,
+                                op( lhs[5], rhs ) );
   }
 };
 
@@ -697,13 +747,14 @@ struct OTBinary< T1, SymTensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static SymTensor<Type_t,3>
-  apply(T1 lhs, const SymTensor<T2,3>& rhs, OP op) {
+  apply(T1 lhs, const SymTensor<T2,3>& rhs, OP op)
+  {
     return SymTensor<Type_t,3>( op( lhs, rhs[0] ) ,
-				op( lhs, rhs[1] ) ,
-				op( lhs, rhs[2] ) ,
-				op( lhs, rhs[3] ) ,
-				op( lhs, rhs[4] ) ,
-				op( lhs, rhs[5] ) );
+                                op( lhs, rhs[1] ) ,
+                                op( lhs, rhs[2] ) ,
+                                op( lhs, rhs[3] ) ,
+                                op( lhs, rhs[4] ) ,
+                                op( lhs, rhs[5] ) );
   }
 };
 
@@ -718,11 +769,12 @@ struct OTBinary< SymTensor<T1,D>, Tensor<T2,D>, OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs, OP op) {
+  apply(const SymTensor<T1,D> &lhs, const Tensor<T2,D> &rhs, OP op)
+  {
     Tensor<Type_t,D> ret;
     for (unsigned i = 0; i < D; i++)
       for (unsigned j = 0; j < D; j++)
-	ret(i, j) = op(lhs(i, j), rhs(i, j));
+        ret(i, j) = op(lhs(i, j), rhs(i, j));
     return ret;
   }
 };
@@ -738,11 +790,12 @@ struct OTBinary< Tensor<T1,D>, SymTensor<T2,D>, OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs, OP op) {
+  apply(const Tensor<T1,D> &lhs, const SymTensor<T2,D> &rhs, OP op)
+  {
     Tensor<Type_t,D> ret;
     for (unsigned i = 0; i < D; i++)
       for (unsigned j = 0; j < D; j++)
-	ret(i, j) = op( lhs(i, j), rhs(i, j));
+        ret(i, j) = op( lhs(i, j), rhs(i, j));
     return ret;
   }
 };
@@ -758,7 +811,8 @@ struct OTBinary< AntiSymTensor<T1,D> , AntiSymTensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,D>
-  apply(const AntiSymTensor<T1,D>& lhs, const AntiSymTensor<T2,D>& rhs, OP op) {
+  apply(const AntiSymTensor<T1,D>& lhs, const AntiSymTensor<T2,D>& rhs, OP op)
+  {
     AntiSymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D-1)/2; ++d)
       ret[d] = op(lhs[d] , rhs[d]);
@@ -771,7 +825,8 @@ struct OTBinary< AntiSymTensor<T1,D> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,D>
-  apply(const AntiSymTensor<T1,D>& lhs, T2 rhs, OP op) {
+  apply(const AntiSymTensor<T1,D>& lhs, T2 rhs, OP op)
+  {
     AntiSymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D-1)/2; ++d)
       ret[d] = op( lhs[d] , rhs );
@@ -784,7 +839,8 @@ struct OTBinary< T1, AntiSymTensor<T2,D> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,D>
-  apply(T1 lhs, const AntiSymTensor<T2,D>& rhs, OP op) {
+  apply(T1 lhs, const AntiSymTensor<T2,D>& rhs, OP op)
+  {
     AntiSymTensor<Type_t,D> ret;
     for (unsigned d=0; d<D*(D-1)/2; ++d)
       ret[d] = op( lhs , rhs[d]);
@@ -803,7 +859,8 @@ struct OTBinary< AntiSymTensor<T1,1> , AntiSymTensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,1>
-  apply(const AntiSymTensor<T1,1>& lhs, const AntiSymTensor<T2,1>& rhs, OP op) {
+  apply(const AntiSymTensor<T1,1>& lhs, const AntiSymTensor<T2,1>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,1>( AntiSymTensor<Type_t,1>::DontInitialize() );
   }
 };
@@ -813,7 +870,8 @@ struct OTBinary< AntiSymTensor<T1,1> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,1>
-  apply(const AntiSymTensor<T1,1>& lhs, T2 rhs, OP op) {
+  apply(const AntiSymTensor<T1,1>& lhs, T2 rhs, OP op)
+  {
     return AntiSymTensor<Type_t,1>( AntiSymTensor<Type_t,1>::DontInitialize() );
   }
 };
@@ -823,7 +881,8 @@ struct OTBinary< T1, AntiSymTensor<T2,1> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,1>
-  apply(T1 lhs, const AntiSymTensor<T2,1>& rhs, OP op) {
+  apply(T1 lhs, const AntiSymTensor<T2,1>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,1>( AntiSymTensor<Type_t,1>::DontInitialize() );
   }
 };
@@ -839,7 +898,8 @@ struct OTBinary< AntiSymTensor<T1,2> , AntiSymTensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,2>
-  apply(const AntiSymTensor<T1,2>& lhs, const AntiSymTensor<T2,2>& rhs, OP op) {
+  apply(const AntiSymTensor<T1,2>& lhs, const AntiSymTensor<T2,2>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,2>( op( lhs[0], rhs[0] ) );
   }
 };
@@ -849,7 +909,8 @@ struct OTBinary< AntiSymTensor<T1,2> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,2>
-  apply(const AntiSymTensor<T1,2>& lhs, T2 rhs, OP op) {
+  apply(const AntiSymTensor<T1,2>& lhs, T2 rhs, OP op)
+  {
     return AntiSymTensor<Type_t,2>( op( lhs[0], rhs ) );
   }
 };
@@ -859,7 +920,8 @@ struct OTBinary< T1, AntiSymTensor<T2,2> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,2>
-  apply(T1 lhs, const AntiSymTensor<T2,2>& rhs, OP op) {
+  apply(T1 lhs, const AntiSymTensor<T2,2>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,2>( op( lhs, rhs[0] ) );
   }
 };
@@ -875,10 +937,11 @@ struct OTBinary< AntiSymTensor<T1,3> , AntiSymTensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,3>
-  apply(const AntiSymTensor<T1,3>& lhs, const AntiSymTensor<T2,3>& rhs, OP op) {
+  apply(const AntiSymTensor<T1,3>& lhs, const AntiSymTensor<T2,3>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,3>( op( lhs[0], rhs[0] ) ,
-				    op( lhs[1], rhs[1] ) ,
-				    op( lhs[2], rhs[2] ) );
+                                    op( lhs[1], rhs[1] ) ,
+                                    op( lhs[2], rhs[2] ) );
   }
 };
 
@@ -887,10 +950,11 @@ struct OTBinary< AntiSymTensor<T1,3> , T2 , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,3>
-  apply(const AntiSymTensor<T1,3>& lhs, T2 rhs, OP op) {
+  apply(const AntiSymTensor<T1,3>& lhs, T2 rhs, OP op)
+  {
     return AntiSymTensor<Type_t,3>( op( lhs[0], rhs ) ,
-				    op( lhs[1], rhs ) ,
-				    op( lhs[2], rhs ) );
+                                    op( lhs[1], rhs ) ,
+                                    op( lhs[2], rhs ) );
   }
 };
 
@@ -899,10 +963,11 @@ struct OTBinary< T1, AntiSymTensor<T2,3> , OP >
 {
   typedef typename BinaryReturn<T1,T2,OP>::Type_t Type_t;
   inline static AntiSymTensor<Type_t,3>
-  apply(T1 lhs, const AntiSymTensor<T2,3>& rhs, OP op) {
+  apply(T1 lhs, const AntiSymTensor<T2,3>& rhs, OP op)
+  {
     return AntiSymTensor<Type_t,3>( op( lhs, rhs[0] ) ,
-				    op( lhs, rhs[1] ) ,
-				    op( lhs, rhs[2] ) );
+                                    op( lhs, rhs[1] ) ,
+                                    op( lhs, rhs[2] ) );
   }
 };
 
@@ -913,16 +978,18 @@ struct OTBinary< T1, AntiSymTensor<T2,3> , OP >
 //
 //////////////////////////////////////////////////////
 template <class T, unsigned D>
-inline typename Tensor<T,D>::Type_t det(const Tensor<T,D>& a) {
+inline typename Tensor<T,D>::Type_t det(const Tensor<T,D>& a)
+{
   // to implement the general case here
   return  0;
-} 
+}
 
 //////////////////////////////////////////////////////
 // specialized for D=1
 //////////////////////////////////////////////////////
 template <class T>
-inline typename Tensor<T,1>::Type_t det(const Tensor<T,1>& a) {
+inline typename Tensor<T,1>::Type_t det(const Tensor<T,1>& a)
+{
   return  a(0,0);
 }
 
@@ -930,19 +997,21 @@ inline typename Tensor<T,1>::Type_t det(const Tensor<T,1>& a) {
 // specialized for D=2
 //////////////////////////////////////////////////////
 template <class T>
-inline typename Tensor<T,2>::Type_t det(const Tensor<T,2>& a) {
+inline typename Tensor<T,2>::Type_t det(const Tensor<T,2>& a)
+{
   return  a(0,0)*a(1,1)-a(0,1)*a(1,0);
-} 
+}
 
 //////////////////////////////////////////////////////
 // specialized for D=3
 //////////////////////////////////////////////////////
 template <class T>
-inline typename Tensor<T,3>::Type_t det(const Tensor<T,3>& a) {
+inline typename Tensor<T,3>::Type_t det(const Tensor<T,3>& a)
+{
   return  a(0,0)*(a(1,1)*a(2,2)-a(1,2)*a(2,1))
-         +a(0,1)*(a(1,2)*a(2,0)-a(1,0)*a(2,2))
-         +a(0,2)*(a(1,0)*a(2,1)-a(1,1)*a(2,0));
-} 
+          +a(0,1)*(a(1,2)*a(2,0)-a(1,0)*a(2,2))
+          +a(0,2)*(a(1,0)*a(2,1)-a(1,1)*a(2,0));
+}
 
 //////////////////////////////////////////////////////
 //
@@ -951,7 +1020,8 @@ inline typename Tensor<T,3>::Type_t det(const Tensor<T,3>& a) {
 //
 //////////////////////////////////////////////////////
 template <class T, unsigned D>
-inline Tensor<T,D> inverse(const Tensor<T,D>& a) {
+inline Tensor<T,D> inverse(const Tensor<T,D>& a)
+{
   return Tensor<T,D>();
 }
 
@@ -959,7 +1029,8 @@ inline Tensor<T,D> inverse(const Tensor<T,D>& a) {
 // specialized for D=1
 //////////////////////////////////////////////////////
 template <class T>
-inline Tensor<T,1> inverse(const Tensor<T,1>& a) {
+inline Tensor<T,1> inverse(const Tensor<T,1>& a)
+{
   return Tensor<T,1>(1.0/a(0,0));
 }
 
@@ -967,7 +1038,8 @@ inline Tensor<T,1> inverse(const Tensor<T,1>& a) {
 // specialized for D=2
 //////////////////////////////////////////////////////
 template <class T>
-inline Tensor<T,2> inverse(const Tensor<T,2>& a) {
+inline Tensor<T,2> inverse(const Tensor<T,2>& a)
+{
   T vinv=1/det(a);
   return Tensor<T,2>(vinv*a(1,1), -vinv*a(0,1), -vinv*a(1,0), vinv*a(0,0));
 }
@@ -976,7 +1048,8 @@ inline Tensor<T,2> inverse(const Tensor<T,2>& a) {
 // specialized for D=3
 //////////////////////////////////////////////////////
 template <class T>
-inline Tensor<T,3> inverse(const Tensor<T,3>& a) {
+inline Tensor<T,3> inverse(const Tensor<T,3>& a)
+{
   T vinv=1/det(a);
 //   return Tensor<T,3>(vinv*(a(1,1)*a(2,2)-a(1,2)*a(2,1)),
 //                      vinv*(a(1,2)*a(2,0)-a(1,0)*a(2,2)),
@@ -1023,14 +1096,16 @@ struct OTDot< Tensor<T1,D> , Tensor<T2,D> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs) {
+  apply(const Tensor<T1,D>& lhs, const Tensor<T2,D>& rhs)
+  {
     Tensor<Type_t,D> res = Tensor<Type_t,D>::DontInitialize();
     for (unsigned int i=0; i<D; ++i)
-      for (unsigned int j=0; j<D; ++j) {
-	Type_t sum = lhs(i,0) * rhs(0,j);
-	for (unsigned int k=1; k<D; ++k)
-	  sum += lhs(i,k) * rhs(k,j);
-	res(i,j) = sum;
+      for (unsigned int j=0; j<D; ++j)
+      {
+        Type_t sum = lhs(i,0) * rhs(0,j);
+        for (unsigned int k=1; k<D; ++k)
+          sum += lhs(i,k) * rhs(k,j);
+        res(i,j) = sum;
       }
     return res;
   }
@@ -1041,7 +1116,8 @@ struct OTDot< Tensor<T1,1> , Tensor<T2,1> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,1>
-  apply(const Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs) {
+  apply(const Tensor<T1,1>& lhs, const Tensor<T2,1>& rhs)
+  {
     return Tensor<Type_t,1>(lhs[0]*rhs[0]);
   }
 };
@@ -1051,11 +1127,12 @@ struct OTDot< Tensor<T1,2> , Tensor<T2,2> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,2>
-  apply(const Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs) {
+  apply(const Tensor<T1,2>& lhs, const Tensor<T2,2>& rhs)
+  {
     return Tensor<Type_t,2>(lhs(0,0)*rhs(0,0) + lhs(0,1)*rhs(1,0),
-			    lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1),
-			    lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0),
-			    lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1));
+                            lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1),
+                            lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0),
+                            lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1));
   }
 };
 
@@ -1064,17 +1141,17 @@ struct OTDot< Tensor<T1,3> , Tensor<T2,3> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,3>
-  apply(const Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs) {
+  apply(const Tensor<T1,3>& lhs, const Tensor<T2,3>& rhs)
+  {
     return Tensor<Type_t,3>( lhs(0,0)*rhs(0,0) + lhs(0,1)*rhs(1,0) + lhs(0,2)*rhs(2,0) ,
-			     lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1) + lhs(0,2)*rhs(2,1) ,
-			     lhs(0,0)*rhs(0,2) + lhs(0,1)*rhs(1,2) + lhs(0,2)*rhs(2,2) ,
-			     lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0) + lhs(1,2)*rhs(2,0) ,
-			     lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1) + lhs(1,2)*rhs(2,1) ,
-			     lhs(1,0)*rhs(0,2) + lhs(1,1)*rhs(1,2) + lhs(1,2)*rhs(2,2) ,
-			     lhs(2,0)*rhs(0,0) + lhs(2,1)*rhs(1,0) + lhs(2,2)*rhs(2,0) ,
-			     lhs(2,0)*rhs(0,1) + lhs(2,1)*rhs(1,1) + lhs(2,2)*rhs(2,1) ,
-			     lhs(2,0)*rhs(0,2) + lhs(2,1)*rhs(1,2) + lhs(2,2)*rhs(2,2) );
-			
+                             lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1) + lhs(0,2)*rhs(2,1) ,
+                             lhs(0,0)*rhs(0,2) + lhs(0,1)*rhs(1,2) + lhs(0,2)*rhs(2,2) ,
+                             lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0) + lhs(1,2)*rhs(2,0) ,
+                             lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1) + lhs(1,2)*rhs(2,1) ,
+                             lhs(1,0)*rhs(0,2) + lhs(1,1)*rhs(1,2) + lhs(1,2)*rhs(2,2) ,
+                             lhs(2,0)*rhs(0,0) + lhs(2,1)*rhs(1,0) + lhs(2,2)*rhs(2,0) ,
+                             lhs(2,0)*rhs(0,1) + lhs(2,1)*rhs(1,1) + lhs(2,2)*rhs(2,1) ,
+                             lhs(2,0)*rhs(0,2) + lhs(2,1)*rhs(1,2) + lhs(2,2)*rhs(2,2) );
   }
 };
 
@@ -1089,19 +1166,21 @@ struct OTDot< SymTensor<T1,D> , SymTensor<T2,D> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,D>
-  apply(const SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs) {
+  apply(const SymTensor<T1,D>& lhs, const SymTensor<T2,D>& rhs)
+  {
     Tensor<Type_t,D> res = Tensor<Type_t,D>::DontInitialize();
     for (unsigned int i=0; i<D; ++i)
-      for (unsigned int j=i; j<D; ++j) {
-	Type_t sum = lhs.HL(i,0) * rhs.HL(j,0);
-	int k=1;
-	for ( ; k<i; ++k )
-	  sum += lhs.HL(i,k) * rhs.HL(j,k);
-	for ( ; k<j; ++k )
-	  sum += lhs.HL(k,i) * rhs.HL(j,k);
-	for ( ; k<D; ++k )
-	  sum += lhs.HL(k,i) * rhs.HL(k,j);
-	res(i,j) = sum;
+      for (unsigned int j=i; j<D; ++j)
+      {
+        Type_t sum = lhs.HL(i,0) * rhs.HL(j,0);
+        int k=1;
+        for ( ; k<i; ++k )
+          sum += lhs.HL(i,k) * rhs.HL(j,k);
+        for ( ; k<j; ++k )
+          sum += lhs.HL(k,i) * rhs.HL(j,k);
+        for ( ; k<D; ++k )
+          sum += lhs.HL(k,i) * rhs.HL(k,j);
+        res(i,j) = sum;
       }
     return res;
   }
@@ -1112,7 +1191,8 @@ struct OTDot< SymTensor<T1,1> , SymTensor<T2,1> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,1>
-  apply(const SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs) {
+  apply(const SymTensor<T1,1>& lhs, const SymTensor<T2,1>& rhs)
+  {
     return Tensor<Type_t,1>(lhs[0]*rhs[0]);
   }
 };
@@ -1122,11 +1202,12 @@ struct OTDot< SymTensor<T1,2> , SymTensor<T2,2> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,2>
-  apply(const SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs) {
+  apply(const SymTensor<T1,2>& lhs, const SymTensor<T2,2>& rhs)
+  {
     return Tensor<Type_t,2>(lhs(0,0)*rhs(0,0) + lhs(0,1)*rhs(1,0),
-			    lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1),
-			    lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0),
-			    lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1));
+                            lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1),
+                            lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0),
+                            lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1));
   }
 };
 
@@ -1135,17 +1216,17 @@ struct OTDot< SymTensor<T1,3> , SymTensor<T2,3> >
 {
   typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
   inline static Tensor<Type_t,3>
-  apply(const SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs) {
+  apply(const SymTensor<T1,3>& lhs, const SymTensor<T2,3>& rhs)
+  {
     return Tensor<Type_t,3>( lhs(0,0)*rhs(0,0) + lhs(0,1)*rhs(1,0) + lhs(0,2)*rhs(2,0) ,
-			     lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1) + lhs(0,2)*rhs(2,1) ,
-			     lhs(0,0)*rhs(0,2) + lhs(0,1)*rhs(1,2) + lhs(0,2)*rhs(2,2) ,
-			     lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0) + lhs(1,2)*rhs(2,0) ,
-			     lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1) + lhs(1,2)*rhs(2,1) ,
-			     lhs(1,0)*rhs(0,2) + lhs(1,1)*rhs(1,2) + lhs(1,2)*rhs(2,2) ,
-			     lhs(2,0)*rhs(0,0) + lhs(2,1)*rhs(1,0) + lhs(2,2)*rhs(2,0) ,
-			     lhs(2,0)*rhs(0,1) + lhs(2,1)*rhs(1,1) + lhs(2,2)*rhs(2,1) ,
-			     lhs(2,0)*rhs(0,2) + lhs(2,1)*rhs(1,2) + lhs(2,2)*rhs(2,2) );
-			
+                             lhs(0,0)*rhs(0,1) + lhs(0,1)*rhs(1,1) + lhs(0,2)*rhs(2,1) ,
+                             lhs(0,0)*rhs(0,2) + lhs(0,1)*rhs(1,2) + lhs(0,2)*rhs(2,2) ,
+                             lhs(1,0)*rhs(0,0) + lhs(1,1)*rhs(1,0) + lhs(1,2)*rhs(2,0) ,
+                             lhs(1,0)*rhs(0,1) + lhs(1,1)*rhs(1,1) + lhs(1,2)*rhs(2,1) ,
+                             lhs(1,0)*rhs(0,2) + lhs(1,1)*rhs(1,2) + lhs(1,2)*rhs(2,2) ,
+                             lhs(2,0)*rhs(0,0) + lhs(2,1)*rhs(1,0) + lhs(2,2)*rhs(2,0) ,
+                             lhs(2,0)*rhs(0,1) + lhs(2,1)*rhs(1,1) + lhs(2,2)*rhs(2,1) ,
+                             lhs(2,0)*rhs(0,2) + lhs(2,1)*rhs(1,2) + lhs(2,2)*rhs(2,2) );
   }
 };
 }
@@ -1156,5 +1237,5 @@ struct OTDot< SymTensor<T1,3> , SymTensor<T2,3> >
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

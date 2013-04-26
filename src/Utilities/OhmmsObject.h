@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, Ohio State University
@@ -28,7 +28,7 @@
  */
 
 /** An OhmmsElementBase with extra members to keep track the object/type.
- * 
+ *
  *Additional data members of OhmmsObject are
  * - TypeName: the name of a type, e.g., PositionType
  * - ObjectID: an ID for this object assigned by a constructor
@@ -39,12 +39,13 @@
  *class that has an object counter for garbage collections and other
  *functions.  This base class is not that smart but enables keeping
  *track the list unique for a process and makes it easy to retrieve an
- *object with a name. 
+ *object with a name.
  *
  *@todo This class should be integrated into OhmmsElementBase or
  *an equivalent base class.
  */
-class OhmmsObject: public OhmmsElementBase {
+class OhmmsObject: public OhmmsElementBase
+{
 public:
 
   OhmmsObject();
@@ -52,25 +53,46 @@ public:
   virtual ~OhmmsObject();
 
   ///return the ObjectID which is unique to each object
-  int id() const { return ObjectID;}
+  int id() const
+  {
+    return ObjectID;
+  }
 
   ///overwrite ObjectID
-  void setID(int i) { ObjectID=i;}
+  void setID(int i)
+  {
+    ObjectID=i;
+  }
 
   ///returns the byte size of the object
-  int elementByteSize() const { return ElementByteSize;}
+  int elementByteSize() const
+  {
+    return ElementByteSize;
+  }
 
   ///set the type name
-  void setTypeName(const std::string& tname) { TypeName = tname;}
+  void setTypeName(const std::string& tname)
+  {
+    TypeName = tname;
+  }
 
   ///set the object name
-  void setObjName(const std::string& oname) { myName = oname;}
+  void setObjName(const std::string& oname)
+  {
+    myName = oname;
+  }
 
   ///return the type name
-  const std::string& typeName() const { return TypeName;}
+  const std::string& typeName() const
+  {
+    return TypeName;
+  }
 
   ///return the object name
-  const std::string& objName() const { return myName;}
+  const std::string& objName() const
+  {
+    return myName;
+  }
 
 protected:
 
@@ -91,5 +113,5 @@ private:
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

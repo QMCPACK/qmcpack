@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -37,27 +37,32 @@ string getHostName()
 #include <sys/utsname.h>
 #include <pwd.h>
 
-string getUserName() {
+string getUserName()
+{
   struct passwd *who;
-  if((who = getpwuid(getuid())) != NULL) {
+  if((who = getpwuid(getuid())) != NULL)
+  {
     return who->pw_name;
   }
   return "auser";
 }
 
-string getHostName() {
+string getHostName()
+{
   utsname mysys;
   uname(&mysys);
   return string(mysys.nodename);
 }
 #endif
-string getDateAndTime() {
+string getDateAndTime()
+{
   time_t now;
   time(&now);
   return ctime(&now);
 }
 
-string getDateAndTime(const char* format) {
+string getDateAndTime(const char* format)
+{
   time_t now;
   time(&now);
   tm* now_c = localtime(&now);
@@ -69,5 +74,5 @@ string getDateAndTime(const char* format) {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/

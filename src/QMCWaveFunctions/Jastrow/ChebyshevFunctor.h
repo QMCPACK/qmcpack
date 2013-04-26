@@ -9,7 +9,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -24,7 +24,8 @@
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct ChebyshevFunctor {
+struct ChebyshevFunctor
+{
 
   ///coefficients
   T B, L;
@@ -40,7 +41,8 @@ struct ChebyshevFunctor {
    */
   inline void reset() { }
 
-  void reset(vector<T> a) {
+  void reset(vector<T> a)
+  {
     alpha = a;
   }
 
@@ -49,8 +51,8 @@ struct ChebyshevFunctor {
      @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
      @return \f$ u(r) = a*r/(1+b*r) \f$
   */
-  inline T evaluate(T r, T& dudr, T& d2udr2) {
-
+  inline T evaluate(T r, T& dudr, T& d2udr2)
+  {
     T rbar = (2.0*r-L)/L;
     T drbardr = 2.0/L;
     TT[0] = 1.0;
@@ -59,12 +61,11 @@ struct ChebyshevFunctor {
     TT[1] = rbar;
     dTT[1] = r;
     d2TT[1] = 0.0;
-
     T Tsum = alpha[0]*TT[0] + alpha[1]*TT[1];
     T dTsum = alpha[1]*dTT[1]*drbardr;
     T d2Tsum = 0.0;
-   
-    for(int l=1; l<=lmax-1; l++){
+    for(int l=1; l<=lmax-1; l++)
+    {
       TT[l+1] = 2*rbar*TT[l]-TT[l-1];
       Tsum += alpha[l+1]*TT[l+1];
       dTT[l+1] = 2*TT[l]+2*r*dTT[l]-d2TT[l-1];
@@ -72,7 +73,6 @@ struct ChebyshevFunctor {
       d2TT[l+1] = 4*dTT[l]+2*r*d2TT[l]-d2TT[l-1];
       d2Tsum += alpha[l+1]*d2TT[l+1]*drbardr*drbardr;
     }
-
     T rsq = r*r;
     T r_minus_L = r-L;
     T r_minus_Lsq = r_minus_L*r_minus_L;
@@ -80,60 +80,69 @@ struct ChebyshevFunctor {
     T fact1 = r_minus_Lsq*rsq;
     T fact2 = 2.0*(r_minus_L*rsq+r_minus_Lsq*r);
     T fact3 = 2.0*(rsq+4.0*r*r_minus_L+r_minus_Lsq);
-
-
     T u = fact1*Tsum + B*r_minus_Lsq*r_half_L;
     dudr = fact2*Tsum + fact1*dTsum + 2.0*B*r_minus_L*r_half_L+B*r_minus_Lsq;
-    d2udr2 = fact3*Tsum + 2.0*fact2*dTsum + 
-      2.0*fact1*dTsum+fact1*d2Tsum + 2.0*B*r_half_L+4.0*B*r_minus_L;
+    d2udr2 = fact3*Tsum + 2.0*fact2*dTsum +
+             2.0*fact1*dTsum+fact1*d2Tsum + 2.0*B*r_half_L+4.0*B*r_minus_L;
     return u;
   }
 
   /**@param cur current xmlNode from which the data members are reset
      @param vlist VarRegistry<T1> to which the Pade variables A and B
      are added for optimization
-     @brief T1 is the type of VarRegistry, typically double.  Read 
+     @brief T1 is the type of VarRegistry, typically double.  Read
      in the Pade parameters from the xml input file.
   */
   template<class T1>
-  void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
-
+  void put(xmlNodePtr cur, VarRegistry<T1>& vlist)
+  {
     string idalpha, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
-    while(tcur != NULL) {
+    while(tcur != NULL)
+    {
       //@todo Var -> <param(eter) role="opt"/>
       string cname((const char*)(tcur->name));
-      if(cname == "parameter" || cname == "Var") {
-	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
-	if(aname == "alpha") {
-	  idalpha = idname;
-	  putContent(alpha,tcur);
-	} else if(aname == "L"){
-	  putContent(L,tcur);
-	} else if(aname == "lmax"){
-	  putContent(lmax,tcur);
-	} else if(aname == "B"){
-	  idb = idname;
-	  putContent(B,tcur);
-	}
+      if(cname == "parameter" || cname == "Var")
+      {
+        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        if(aname == "alpha")
+        {
+          idalpha = idname;
+          putContent(alpha,tcur);
+        }
+        else
+          if(aname == "L")
+          {
+            putContent(L,tcur);
+          }
+          else
+            if(aname == "lmax")
+            {
+              putContent(lmax,tcur);
+            }
+            else
+              if(aname == "B")
+              {
+                idb = idname;
+                putContent(B,tcur);
+              }
       }
       tcur = tcur->next;
     }
-
     vlist.add(idalpha,&alpha[0],alpha.size());
     vlist.add(idb,&B,1);
     XMLReport("Jastrow Parameters = (")
-      for(int i=0; i<alpha.size(); i++)
-	XMLReport(alpha[i] << ", ")
-      XMLReport(")") 
-  }
+    for(int i=0; i<alpha.size(); i++)
+      XMLReport(alpha[i] << ", ")
+      XMLReport(")")
+    }
 };
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
 
