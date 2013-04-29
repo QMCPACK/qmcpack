@@ -368,7 +368,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //set the minimum blocks
   if (nBlocks<1)
     nBlocks=1;
-  if(qmc_common.is_restart && !ConstPopulation)
+  if(qmc_common.is_restart  || qmc_common.qmc_counter || !ConstPopulation)
   {
     app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
   }
