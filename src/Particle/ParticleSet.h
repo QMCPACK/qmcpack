@@ -292,12 +292,17 @@ public:
    * If all good, R = awalker.R + dt* deltaR
    */
   bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+
+  bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const vector<RealType>& dt);
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
   bool makeMoveWithDrift(const Walker_t& awalker
                          , const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
+
+  bool makeMoveWithDrift(const Walker_t& awalker
+                         , const ParticlePos_t& drift, const ParticlePos_t& deltaR, const vector<RealType>& dt);
 
   void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 

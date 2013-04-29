@@ -509,6 +509,35 @@ bool ParticleSet::makeMove(const Walker_t& awalker
   return true;
 }
 
+bool ParticleSet::makeMove(const Walker_t& awalker
+                           , const ParticlePos_t& deltaR, const vector<RealType>& dt)
+{
+  if (UseBoundBox)
+  {
+    for (int iat=0; iat<deltaR.size(); ++iat)
+    {
+      SingleParticlePos_t displ(dt[iat]*deltaR[iat]);
+      if (Lattice.outOfBound(Lattice.toUnit(displ)))
+        return false;
+      SingleParticlePos_t newpos(awalker.R[iat]+displ);
+      if (!Lattice.isValid(Lattice.toUnit(newpos)))
+        return false;
+      R[iat]=newpos;
+    }
+  }
+  else
+  {
+    for (int iat=0; iat<deltaR.size(); ++iat)
+      R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat];
+  }
+  for (int i=0; i< DistTables.size(); i++)
+    DistTables[i]->evaluate(*this);
+  if (SK)
+    SK->UpdateAllPart();
+  //every move is valid
+  return true;
+}
+
 /** move a walker by dt*deltaR + drift
  * @param awalker initial walker configuration
  * @param drift drift vector
@@ -545,6 +574,37 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
   //every move is valid
   return true;
 }
+
+bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
+                                    , const ParticlePos_t& drift , const ParticlePos_t& deltaR
+                                    , const vector<RealType>& dt)
+{
+  if (UseBoundBox)
+  {
+    for (int iat=0; iat<deltaR.size(); ++iat)
+    {
+      SingleParticlePos_t displ(dt[iat]*deltaR[iat]+drift[iat]);
+      if (Lattice.outOfBound(Lattice.toUnit(displ)))
+        return false;
+      SingleParticlePos_t newpos(awalker.R[iat]+displ);
+      if (!Lattice.isValid(Lattice.toUnit(newpos)))
+        return false;
+      R[iat]=newpos;
+    }
+  }
+  else
+  {
+    for (int iat=0; iat<deltaR.size(); ++iat)
+      R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat]+drift[iat];
+  }
+  for (int i=0; i< DistTables.size(); i++)
+    DistTables[i]->evaluate(*this);
+  if (SK)
+    SK->UpdateAllPart();
+  //every move is valid
+  return true;
+}
+
 
 /** move the iat-th particle by displ
  *
