@@ -17,7 +17,6 @@ SET(QMCDRIVERS
   QMCUpdateBase.cpp
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
-  VMC/VMCSingle.cpp
   VMC/VMCFactory.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
@@ -55,13 +54,11 @@ ENDIF(QMC_CUDA)
 #    )
 # ENDIF(QMC_BUILD_LEVEL GREATER 2)
 
-IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
       VMC/VMCLinearOptOMP.cpp
       QMCCostFunctionOMP.cpp
      )
-ENDIF(ENABLE_OPENMP) 
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 

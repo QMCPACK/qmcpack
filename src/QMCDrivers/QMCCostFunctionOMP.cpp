@@ -79,31 +79,28 @@ void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Retu
     vector<Return_t> HD_avg(NumOptimizables,0.0);
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];
     Return_t delE_bar=0;
-    for (int ip=0, wn=0; ip<NumThreads; ip++)
+    for (int ip=0; ip<NumThreads; ip++)
     {
       int nw=wClones[ip]->getActiveWalkers();
-      for (int iw=0; iw<nw; iw++,wn++)
+      for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         Return_t weight=saved[REWEIGHT]*wgtinv;
         Return_t eloc_new=saved[ENERGY_NEW];
         delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
-        const Return_t* Dsaved= (*DerivRecords[ip])[iw];
         const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
         for (int pm=0; pm<NumOptimizables; pm++)
-        {
           HD_avg[pm]+= HDsaved[pm];
-        }
       }
     }
     myComm->allreduce(HD_avg);
     myComm->allreduce(delE_bar);
     for (int pm=0; pm<NumOptimizables; pm++)
       HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
-    for (int ip=0, wn=0; ip<NumThreads; ip++)
+    for (int ip=0; ip<NumThreads; ip++)
     {
       int nw=wClones[ip]->getActiveWalkers();
-      for (int iw=0; iw<nw; iw++,wn++)
+      for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         Return_t weight=saved[REWEIGHT]*wgtinv;
@@ -131,10 +128,10 @@ void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Retu
     myComm->allreduce(EDtotals_w);
     myComm->allreduce(URV);
     Return_t smpinv=1.0/static_cast<Return_t>(NumSamples);
-    for (int ip=0, wn=0; ip<NumThreads; ip++)
+    for (int ip=0; ip<NumThreads; ip++)
     {
       int nw=wClones[ip]->getActiveWalkers();
-      for (int iw=0; iw<nw; iw++,wn++)
+      for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         Return_t weight=saved[REWEIGHT]*wgtinv;
@@ -619,10 +616,10 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
   Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
   vector<Return_t> D_avg(NumParams(),0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-  for (int ip=0, wn=0; ip<NumThreads; ip++)
+  for (int ip=0; ip<NumThreads; ip++)
   {
     int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++,wn++)
+    for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_t weight=saved[REWEIGHT]*wgtinv;
@@ -645,10 +642,10 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(
       Variance(pm,pm2)=0;
     }
   }
-  for (int ip=0, wn=0; ip<NumThreads; ip++)
+  for (int ip=0; ip<NumThreads; ip++)
   {
     int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++,wn++)
+    for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_t weight=saved[REWEIGHT]*wgtinv;
@@ -718,10 +715,10 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
   vector<Return_t> D_avg(NumParams(),0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-  for (int ip=0, wn=0; ip<NumThreads; ip++)
+  for (int ip=0; ip<NumThreads; ip++)
   {
     int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++,wn++)
+    for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_t weight=saved[REWEIGHT]*wgtinv;
@@ -733,10 +730,10 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
     }
   }
   myComm->allreduce(D_avg);
-  for (int ip=0, wn=0; ip<NumThreads; ip++)
+  for (int ip=0; ip<NumThreads; ip++)
   {
     int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++,wn++)
+    for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_t weight=saved[REWEIGHT]*wgtinv;

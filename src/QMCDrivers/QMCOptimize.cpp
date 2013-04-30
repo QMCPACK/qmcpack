@@ -22,12 +22,9 @@
 #include "Optimize/CGOptimization.h"
 #include "Optimize/testDerivOptimization.h"
 #include "Optimize/DampedDynamics.h"
-#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
-#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
-#endif
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
