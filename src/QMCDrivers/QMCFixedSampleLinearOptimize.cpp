@@ -162,6 +162,8 @@ bool QMCFixedSampleLinearOptimize::run()
       stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
+    app_log().flush();
+    app_error().flush();
     int failedTries(0);
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
@@ -285,6 +287,8 @@ bool QMCFixedSampleLinearOptimize::run()
           continue;
         }
       }
+      app_log().flush();
+      app_error().flush();
     }
     if (acceptedOneMove)
     {
@@ -298,6 +302,8 @@ bool QMCFixedSampleLinearOptimize::run()
         optTarget->Params(i) = currentParameters[i];
     }
   }
+  app_log().flush();
+  app_error().flush();
   finish();
   return (optTarget->getReportCounter() > 0);
 }

@@ -39,9 +39,9 @@ QMCCostFunctionOMP::~QMCCostFunctionOMP()
 {
   delete_iter(H_KE_Node.begin(),H_KE_Node.end());
   delete_iter(RngSaved.begin(),RngSaved.end());
-  //remove walkers of the clones
-  for (int ip=1; ip<NumThreads; ++ip)
-    wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers());
+//  //remove walkers of the clones
+//  for (int ip=1; ip<NumThreads; ++ip)
+//    wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers());
 }
 
 
@@ -215,7 +215,13 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
       }
     }
   }
-  #pragma omp parallel for
+
+  app_log() << "    number of walkers before load: ";
+  for (int ip=0; ip<NumThreads; ++ip)
+    app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
+  app_log() << endl;
+
+#pragma omp parallel for
   for (int ip=0; ip<NumThreads; ++ip)
   {
     wClones[ip]->loadEnsemble();
@@ -228,6 +234,7 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
     app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
   app_log() << endl;
   FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
+
   if (dLogPsi.size() != wPerNode[NumThreads])
   {
     delete_iter(dLogPsi.begin(),dLogPsi.end());
@@ -317,7 +324,10 @@ void QMCCostFunctionOMP::checkConfigurations()
     app_log() <<"Inverse:                 " <<meminv/1.0e6 <<"      " <<meminv*numW/1.0e6 <<endl;
     app_log() <<"Determinants:            " <<memdets/1.0e6 <<"      " <<memdets*numW/1.0e6 <<endl;
   }
-  #pragma omp parallel reduction(+:et_tot,e2_tot)
+
+  app_log().flush();
+
+#pragma omp parallel reduction(+:et_tot,e2_tot)
   {
     int ip = omp_get_thread_num();
     MCWalkerConfiguration& wRef(*wClones[ip]);
@@ -422,6 +432,9 @@ void QMCCostFunctionOMP::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << endl;
   app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
   app_log() << "  Total weights = " << etemp[1] << endl;
+
+  app_log().flush();
+
   setTargetEnergy(Etarget);
   ReportCounter=0;
 }
