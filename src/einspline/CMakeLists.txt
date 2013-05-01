@@ -51,7 +51,8 @@ IF(HAVE_SSE)
     )
 else()
   SET(SRCS ${SRCS} 
-    multi_bspline_eval_std_s_cpp.cc       
+    #multi_bspline_eval_std_s_cpp.cc       
+    multi_bspline_eval_std2_s_cpp.cc       
     )
 endif()
 #    multi_bspline_eval_sse_c_cpp.cc       
@@ -70,6 +71,7 @@ else()
   SET(SRCS ${SRCS} 
     multi_bspline_eval_std2_d_cpp.cc       
     multi_bspline_eval_std2_z_cpp.cc       
+    multi_bspline_eval_std2_s_cpp.cc       
     multi_nubspline_eval_std_z_cpp.cc   
     )
 endif()
