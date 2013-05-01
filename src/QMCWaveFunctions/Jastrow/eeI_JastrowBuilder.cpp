@@ -99,19 +99,18 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
       J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
       putkids (kids, J3);
     }
+    else if (ftype == "polynomial")
+    {
+      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
+      J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+      putkids (kids, J3);
+    }
     else
-      if (ftype == "polynomial")
-      {
-        typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-        J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
-        putkids (kids, J3);
-      }
-      else
-      {
-        app_error() << "Unknown function \"" << ftype << "\" in"
-                    << " eeI_JastrowBuilder.  Aborting.\n";
-        abort();
-      }
+    {
+      app_error() << "Unknown function \"" << ftype << "\" in"
+        << " eeI_JastrowBuilder.  Aborting.\n";
+      abort();
+    }
     // 	// Find the number of the source species
     // 	bool success=false;
     // 	while (kids != NULL) {
