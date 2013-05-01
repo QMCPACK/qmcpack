@@ -98,7 +98,7 @@ struct PadeFunctor:public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r)
   {
-    return A*r/(1.0+B*r);
+    return A*r/(1.0+B*r)-AoverB;
   }
 
   inline real_type
@@ -107,7 +107,7 @@ struct PadeFunctor:public OptimizableFunctorBase
     real_type u = 1.0/(1.0+B*r);
     dudr = A*u*u;
     d2udr2 = -B2*dudr*u;
-    return A*u*r;
+    return A*u*r-AoverB;
   }
 
   inline real_type
@@ -117,7 +117,7 @@ struct PadeFunctor:public OptimizableFunctorBase
     dudr = A*u*u;
     d2udr2 = -B2*dudr*u;
     d3udr3 = -3.0*B*d2udr2*u;
-    return A*u*r;
+    return A*u*r-AoverB;
   }
 
 
@@ -140,14 +140,14 @@ struct PadeFunctor:public OptimizableFunctorBase
     real_type u = 1.0/(1.0+B*r);
     if(Opt_A)
     {
-      derivs[i][0]= r*u; //du/da
+      derivs[i][0]= r*u-1/B; //du/da
       derivs[i][1]= u*u; //d(du/da)/dr
       derivs[i][2]= -B2*u*u*u; //d^2 (du/da)/dr
       ++i;
     }
     if(Opt_B)
     {
-      derivs[i][0]= -A*r*r*u*u; //du/db
+      derivs[i][0]= -A*r*r*u*u+AoverB/B; //du/db
       derivs[i][1]= -2.0*A*r*u*u*u; //d(du/db)/dr
       derivs[i][2]=  2.0*A*(B2*r-1)*u*u*u*u; //d^2(du/db)/dr^2
     }
@@ -175,13 +175,12 @@ struct PadeFunctor:public OptimizableFunctorBase
           putContent(Atemp,cur);
           Opt_A=true;
         }
-        else
-          if(p_name == "B")
-          {
-            ID_B = id_in;
-            putContent(Btemp,cur);
-            Opt_B=true;
-          }
+        else if(p_name == "B")
+        {
+          ID_B = id_in;
+          putContent(Btemp,cur);
+          Opt_B=true;
+        }
       }
       cur = cur->next;
     }
@@ -364,20 +363,18 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
           putContent(Atemp,tcur);
           renewed=true;
         }
-        else
-          if(p_name == "B")
-          {
-            ID_B = id_in;
-            putContent(Btemp,tcur);
-            renewed=true;
-          }
-          else
-            if(p_name == "C")
-            {
-              ID_C = id_in;
-              putContent(Ctemp,tcur);
-              renewed=true;
-            }
+        else if(p_name == "B")
+        {
+          ID_B = id_in;
+          putContent(Btemp,tcur);
+          renewed=true;
+        }
+        else if(p_name == "C")
+        {
+          ID_C = id_in;
+          putContent(Ctemp,tcur);
+          renewed=true;
+        }
       }
       tcur = tcur->next;
     }
@@ -588,27 +585,24 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
           putContent(Atemp,tcur);
           renewed=true;
         }
-        else
-          if(p_name == "B")
-          {
-            ID_B = id_in;
-            putContent(Btemp,tcur);
-            renewed=true;
-          }
-          else
-            if(p_name == "C")
-            {
-              ID_C = id_in;
-              putContent(Ctemp,tcur);
-              renewed=true;
-            }
-            else
-              if(p_name == "D")
-              {
-                ID_D = id_in;
-                putContent(Dtemp,tcur);
-                renewed=true;
-              }
+        else if(p_name == "B")
+        {
+          ID_B = id_in;
+          putContent(Btemp,tcur);
+          renewed=true;
+        }
+        else if(p_name == "C")
+        {
+          ID_C = id_in;
+          putContent(Ctemp,tcur);
+          renewed=true;
+        }
+        else if(p_name == "D")
+        {
+          ID_D = id_in;
+          putContent(Dtemp,tcur);
+          renewed=true;
+        }
       }
       tcur = tcur->next;
     }
