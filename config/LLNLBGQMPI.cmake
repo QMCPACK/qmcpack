@@ -44,7 +44,7 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
 ENDFOREACH(type)
 
 set(LAPACK_LIBRARY /usr/local/tools/lapack/lib/liblapack.a) 
-set(BLAS_LIBRARY /usr/local/tools/essl/5.1/lib/libesslbg.a)
+set(BLAS_LIBRARY /usr/local/tools/essl/5.1/lib/libesslsmpbg.a)
 set(FORTRAN_LIBRARIES 
 /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlf90_r.a
 #/opt/ibmcmp/xlf/bg/14.1/bglib64/libxlfmath.a
