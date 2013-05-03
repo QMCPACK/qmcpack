@@ -33,6 +33,10 @@ int TagMaker::CurrentTag = 1000;
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;
 
+namespace qmcplusplus{
+QMCState qmc_common;
+}
+
 //default constructor: ready for a serial execution
 Communicate::Communicate():
   myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)

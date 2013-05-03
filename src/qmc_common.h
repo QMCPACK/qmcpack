@@ -49,7 +49,7 @@ struct QMCState
 };
 
 ///a unique QMCState during a run
-static QMCState qmc_common;
+extern QMCState qmc_common;
 }
 
 #endif
