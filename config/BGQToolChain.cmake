@@ -29,7 +29,7 @@ set(Boost_INCLUDE_DIR /home/projects/qmcpack/boost_1_45_0)
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/boost_1_45_0
      /home/projects/qmcpack/LIBXML2-2.9
-     /home/abenali/hdf5-1.8.8
+     /soft/libraries/unsupported/hdf5-1.8.8
      /soft/libraries/alcf/current/xl/FFTW3
 )
 
