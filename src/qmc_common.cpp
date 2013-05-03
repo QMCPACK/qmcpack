@@ -83,6 +83,8 @@ void QMCState::print_options(ostream& os)
     os << "  async_swap=0 : using blocking send/recv for walker swaps " << endl;
 }
 
+QMCState qmc_common;
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
