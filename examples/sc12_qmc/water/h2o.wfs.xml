@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?iotk version="1.2.0"?>
+<?iotk file_version="1.0"?>
+<?iotk binary="F"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<!-- Uncomment this out to use plane-wave basis functions
+    <determinantset type="PW" href="h2o.pwscf.h5" version="1.10">
+--> 
+      <determinantset type="bspline" href="h2o.pwscf.h5" sort="1" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
+version="0.10" LR_dim_cutoff="15">
+        <slaterdeterminant>
+          <determinant id="updet" size="32">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+          <determinant id="downdet" size="32">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+        </slaterdeterminant>
+      </determinantset>
+     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+        <correlation speciesA="u" speciesB="u" pairType="uu" cusp="-0.25" size="8" rcut="5.5">
+          <coefficients id="uu" type="Array"> 0.312701 0.195252 0.118921 0.0660886 0.0338155 0.016896 0.0066215 0.00242154</coefficients>
+        </correlation>
+        <correlation speciesA="u" speciesB="d" pairType="ud" cusp="-0.5" size="8" rcut="5.5">
+          <coefficients id="ud" type="Array"> 0.47442 0.275109 0.160539 0.0891313 0.0455875 0.0211108 0.00997919 0.00348615</coefficients>
+        </correlation>
+      </jastrow>
+      <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+        <correlation elementType="O" cusp="0" size="8" rcut="5.5">
+          <coefficients id="eo" type="Array"> -0.853857 -0.724549 -0.510945 -0.29603 -0.136171 -0.0425358 -0.0130438 -0.00590682</coefficients>
+        </correlation>
+        <correlation elementType="H" cusp="1" size="8" rcut="5.5">
+          <coefficients id="eh" type="Array"> -0.00223682 -0.145754 -0.109361 -0.0810236 -0.0531499 -0.0294821 -0.0139924 -0.00552208</coefficients>
+        </correlation>
+      </jastrow>
+    </wavefunction>
+  </qmcsystem>
+ 

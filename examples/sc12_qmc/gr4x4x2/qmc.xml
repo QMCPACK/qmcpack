@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="bench" series="0"/>
+  <random seed="-1"/>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="bspline" href="lda.pwscf.h5" sort="1" 
+      tilematrix="4 0 0 0 4 0 0 0 2" twistnum="0" source="ion0" version="0.10" gpu="yes" precision="float">
+      <slaterdeterminant>
+        <determinant id="updet" size="256">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="256">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+      <correlation elementType="C" cusp="0.0" size="10">
+        <coefficients id="ce" type="Array"> -1.149179954 -0.9958552288 -0.7897830739 -0.5796946835 -0.4138837993 -0.2544161918 -0.1271174215 -0.05168277969 -0.01748935991 -0.004587891964</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10">
+        <coefficients id="uu" type="Array"> 0.5016557447 0.3276257892 0.2029066039 0.126324936 0.07951783331 0.04976650255 0.02984351473 0.01677904382 0.00821948028 0.00324539597</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10">
+        <coefficients id="ud" type="Array"> 0.6981365902 0.3957419525 0.226339547 0.1367974203 0.08624065841 0.05369079121 0.03216490437 0.01814681466 0.00902917787 0.003523143131</coefficients>
+      </correlation>
+    </jastrow> 
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml" format="xml"/>
+    </pairpot>
+  </hamiltonian>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="-1" move="pbyp" gpu="yes">
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">10</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="walkers">VMCWALKERS</parameter>
+    <parameter name="samples">DMCSAMPLES</parameter>
+    <parameter name="stepsbetweensamples">5</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="-1"  move="pbyp" gpu="yes">
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">50</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+    <parameter name="nonlocalmoves"> yes </parameter>
+  </qmc>
+</simulation>

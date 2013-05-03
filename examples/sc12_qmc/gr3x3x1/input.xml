@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="ref" series="0"/>
+  <random seed="11"/>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="bspline" href="lda.pwscf.h5" sort="1" tilematrix="3 0 0 0 3 0 0 0 1" 
+      twistnum="0" source="ion0" version="0.10" gpu="yes" LR_dim_cutoff="15">
+      <slaterdeterminant>
+        <determinant id="updet" size="72">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="72">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="8">
+        <coefficients id="uu" type="Array"> 0.4733624685 0.3211249039 0.2092322955 0.1309323998 0.07945263393 0.04610358353 0.02334017812 0.009377732289</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="8">
+        <coefficients id="ud" type="Array"> 0.6689003572 0.403606454 0.2400785985 0.1422242647 0.08386189425 0.04809711252 0.02406774346 0.01030826968</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation elementType="C" size="8">
+        <coefficients id="eC" type="Array"> -0.8180912636 -0.6861867666 -0.5252400797 -0.3433298209 -0.2120687475 -0.119929026 -0.0528524441 -0.01515197638</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml" format="xml"/>
+    </pairpot>
+  </hamiltonian>
+  <init source="ion0"/>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="-1" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">8</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samples">8192</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="-1"  move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+</simulation>

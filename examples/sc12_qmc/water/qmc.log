@@ -1,0 +1,727 @@
+  Input file(s): input.xml 
+
+=====================================================
+                    QMCPACK 0.6.1 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 5535
+  Last modified     2012-06-21 09:08:24 -0500 (Thu, 21 Jun 2012)
+=====================================================
+
+  MPI Nodes            = 128
+  MPI Nodes per group  = 128
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 8
+  Input XML = input.xml
+
+  Project = bench
+  date    = 2012-10-22 08:16:35 CDT
+  host    = jaguar
+  user    = auser
+
+  Random number offset = 13  seeds = 47-8287
+Particles are grouped. Safe to use groups 
+Particles are grouped. Safe to use groups 
+	Long-range breakup parameters:
+	rc*kc = 15; rc = 5.89197; kc = 2.54584
+
+	WignerSeitzRadius = 5.89197
+
+	SimulationCellRadius = 5.89197
+
+
+  Creating Structure Factor for periodic systems.
+  KContainer initialised with cutoff 2.54584
+  Simulation cell radius = 5.89197
+  Wigner-Seitz    radius = 5.89197
+<unitcell>
+<parameter name="lattice">
+       11.78394999                 0                 0
+                 0       11.78394999                 0
+                 0                 0       11.78394999
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 1636.336705
+Reciprocal vectors without 2*pi.
+g_1 =      0.08486118838                 0                 0
+g_2 =                  0     0.08486118838                 0
+g_3 =                  0                 0     0.08486118838
+Metric tensor in real-space.
+h_1 = 138.8614774 0 0 
+h_2 = 0 138.8614774 0 
+h_3 = 0 0 138.8614774 
+Metric tensor in g-space.
+h_1 = 0.2843007172 0 0 
+h_2 = 0 0.2843007172 0 
+h_3 = 0 0 0.2843007172 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 15; rc = 5.891974995; kc = 2.545835651
+
+</note>
+</unitcell>
+	Long-range breakup parameters:
+	rc*kc = 15; rc = 5.891974995; kc = 2.545835651
+
+	WignerSeitzRadius = 5.891974995
+
+	SimulationCellRadius = 5.891974995
+
+
+  Creating Structure Factor for periodic systems.
+  KContainer initialised with cutoff 2.545835651
+ [  1  0  0
+    0  1  0
+    0  0  1 ]
+  WaveFunctionFactory::build
+  WaveFunctionFactory::addFermionTerm
+  SlaterDetBuilder::put(xmlNodePtr)
+  BasisSetFactory::createBasisSet
+EinsplineSetBuilder:  using libeinspline for B-spline orbitals.
+
+ Built basis bspline
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  BasisSetFactory::createBasisSet
+
+ Building SPOset  with bspline basis set.
+  Reading 32 orbitals from HDF5 file.
+  Reading orbital file in ESHDF format.
+  ESHDF orbital file version 2.0.0
+  Lattice = 
+    [ 11.783950  0.000000  0.000000
+       0.000000 11.783950  0.000000
+       0.000000  0.000000 11.783950 ]
+  SuperLattice = 
+    [ 11.783950  0.000000  0.000000
+       0.000000 11.783950  0.000000
+       0.000000  0.000000 11.783950 ]
+bands=32, elecs=64, spins=1, twists=1, muffin tins=0, core states=0
+atomic orbital=0
+Atom type(0) = 8
+Atom type(1) = 8
+Atom type(2) = 8
+Atom type(3) = 8
+Atom type(4) = 8
+Atom type(5) = 8
+Atom type(6) = 8
+Atom type(7) = 8
+Atom type(8) = 1
+Atom type(9) = 1
+Atom type(10) = 1
+Atom type(11) = 1
+Atom type(12) = 1
+Atom type(13) = 1
+Atom type(14) = 1
+Atom type(15) = 1
+Atom type(16) = 1
+Atom type(17) = 1
+Atom type(18) = 1
+Atom type(19) = 1
+Atom type(20) = 1
+Atom type(21) = 1
+Atom type(22) = 1
+Atom type(23) = 1
+  Read 1147917 density G-vectors.
+  EinsplineSetBuilder found density in the HDF5 file.
+  Read 0 VHXC G-vectors.
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.07514962199
+Super twist #0:  [   0.00000   0.00000   0.00000 ]
+  Using k-points:  0
+  Using supercell twist 0:  [   0.00000   0.00000   0.00000]
+Using 1 copies of twist angle [-0.000, -0.000, -0.000]
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.121749835
+Found 1 distinct supercell twists.
+Using real orbitals.
+GGt = 
+0.007201421294  0  0 
+0  0.007201421294  0 
+0  0  0.007201421294 
+Supercell reduced ion positions = 
+     0.8559320056   0.9126051346   0.9736689870
+     0.3676924640   0.9127744805   0.9155529334
+     0.8091761817   0.3630284054   0.4950020321
+     0.8857058147   0.9074435412   0.4666366430
+     0.8621190743   0.4359133207   0.0060299448
+     0.3666868491   0.4325399368   0.9530278175
+     0.3539138309   0.9928439745   0.4248615808
+     0.3485830833   0.5016780875   0.4307881423
+     0.7082431449   0.9720074971   0.9756359723
+     0.2146124178   0.9450074573   0.9450833237
+     0.6545074741   0.4001300805   0.5017522807
+     0.0422646227   0.9285330278   0.4469114697
+     0.9648105355   0.5393322164   0.0700885515
+     0.3375886703   0.2761508144   0.9593719218
+     0.5000495091   0.9584799174   0.3718711628
+     0.3319199950   0.6505225925   0.3768236717
+     0.8897971893   0.8844304562   0.1266521432
+     0.3694484793   0.7581915954   0.8775324477
+     0.8115952721   0.2073544669   0.4617712908
+     0.8740193065   0.7781890348   0.5588386352
+     0.9068645222   0.4242037128   0.8536972850
+     0.4911896119   0.4540623690   0.0498800567
+     0.3457601859   0.1517481146   0.4196173849
+     0.2408099541   0.4890212503   0.5472753363
+Sorting the bands now:
+We will read 32 distinct orbitals.
+There are 0 core states and 32 valence states.
+  EinsplineSetBuilder::ReadBands_ESHDF(EinsplineSetExtended<double>*
+ No rotations defined
+B-spline mesh factor is 1
+B-spline mesh size is (128, 128, 128)
+Maxmimum number of Gvecs 143665
+MeshSize = (128, 128, 128)
+  Valence state:  ti=  0  bi=  0 energy=-0.78595 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  1 energy=-0.77748 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  2 energy=-0.77157 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  3 energy=-0.75902 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  4 energy=-0.74867 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  5 energy=-0.74160 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  6 energy=-0.73989 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  7 energy=-0.72853 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  8 energy=-0.36160 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi=  9 energy=-0.34772 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 10 energy=-0.33665 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 11 energy=-0.32702 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 12 energy=-0.31492 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 13 energy=-0.30425 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 14 energy=-0.29996 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 15 energy=-0.29025 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 16 energy=-0.25372 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 17 energy=-0.21349 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 18 energy=-0.20867 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 19 energy=-0.19861 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 20 energy=-0.18439 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 21 energy=-0.17363 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 22 energy=-0.17224 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 23 energy=-0.15689 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 24 energy=-0.14527 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 25 energy=-0.13464 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 26 energy=-0.12658 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 27 energy=-0.11406 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 28 energy=-0.10208 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 29 energy=-0.09665 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 30 energy=-0.09307 k=(-0.0000, -0.0000, -0.0000) rank=0
+  Valence state:  ti=  0  bi= 31 energy=-0.06909 k=(-0.0000, -0.0000, -0.0000) rank=0
+FFT on /electrons/kpoint_0/spin_0/state_0/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_1/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_2/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_3/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_4/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_5/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_6/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_7/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_8/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_9/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_10/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_11/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_12/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_13/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_14/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_15/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_16/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_17/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_18/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_19/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_20/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_21/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_22/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_23/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_24/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_25/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_26/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_27/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_28/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_29/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_30/psi_g
+FFT on /electrons/kpoint_0/spin_0/state_31/psi_g
+TIMER  EinsplineSetBuilder::ReadBands 26.20095455
+TIMER  EinsplineSetBuilder::ReadBands 26.20097897
+   Using Identity for the LCOrbitalSet 
+  Creating a new SPO set updet
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  BasisSetFactory::createBasisSet
+
+ Building SPOset  with bspline basis set.
+SPOSet parameters match in EinsplineSetBuilder:  cloning EinsplineSet object.
+   Using Identity for the LCOrbitalSet 
+  Creating a new SPO set downdet
+  JastrowBuilder::addTwoBody(xmlNodePtr)
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  Distance table for AA: source/target = e
+    PBC=bulk Orthorhombic=yes
+ Using bounding box/reduced coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  ... ParticleSet::addTable Reuse Table #0 e_e
+<warning>pairType is deprecated. Use speciesA/speciesB</warning>
+  BsplineJastrowBuilder adds a functor with cusp = -0.25
+  BsplineFunctor::put(xmlNodePtr)
+ size = 8 parameters 
+ cusp = -0.25
+ rcut = 5.5
+Parameter     Name      Value
+uu_0 0.312701 1 1  ON 0
+uu_1 0.195252 1 1  ON 1
+uu_2 0.118921 1 1  ON 2
+uu_3 0.0660886 1 1  ON 3
+uu_4 0.0338155 1 1  ON 4
+uu_5 0.016896 1 1  ON 5
+uu_6 0.0066215 1 1  ON 6
+uu_7 0.00242154 1 1  ON 7
+<warning>pairType is deprecated. Use speciesA/speciesB</warning>
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+  BsplineFunctor::put(xmlNodePtr)
+ size = 8 parameters 
+ cusp = -0.5
+ rcut = 5.5
+Parameter     Name      Value
+ud_0 0.47442 1 1  ON 0
+ud_1 0.275109 1 1  ON 1
+ud_2 0.160539 1 1  ON 2
+ud_3 0.0891313 1 1  ON 3
+ud_4 0.0455875 1 1  ON 4
+ud_5 0.0211108 1 1  ON 5
+ud_6 0.00997919 1 1  ON 6
+ud_7 0.00348615 1 1  ON 7
+  JastrowBuilder::addOneBody(xmlNodePtr)
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr)
+  Distance table for AB: source = ion0 target = e
+    PBC=bulk Orthorhombic=yes
+ Using bonding box/reduced coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  BsplineFunctor::put(xmlNodePtr)
+ size = 8 parameters 
+ cusp = 0
+ rcut = 5.5
+Parameter     Name      Value
+eo_0 -0.853857 1 1  ON 0
+eo_1 -0.724549 1 1  ON 1
+eo_2 -0.510945 1 1  ON 2
+eo_3 -0.29603 1 1  ON 3
+eo_4 -0.136171 1 1  ON 4
+eo_5 -0.0425358 1 1  ON 5
+eo_6 -0.0130438 1 1  ON 6
+eo_7 -0.00590682 1 1  ON 7
+Adding function of type 0 for atom 0.
+Adding function of type 0 for atom 1.
+Adding function of type 0 for atom 2.
+Adding function of type 0 for atom 3.
+Adding function of type 0 for atom 4.
+Adding function of type 0 for atom 5.
+Adding function of type 0 for atom 6.
+Adding function of type 0 for atom 7.
+  BsplineFunctor::put(xmlNodePtr)
+ size = 8 parameters 
+ cusp = 1
+ rcut = 5.5
+Parameter     Name      Value
+eh_0 -0.00223682 1 1  ON 0
+eh_1 -0.145754 1 1  ON 1
+eh_2 -0.109361 1 1  ON 2
+eh_3 -0.0810236 1 1  ON 3
+eh_4 -0.0531499 1 1  ON 4
+eh_5 -0.0294821 1 1  ON 5
+eh_6 -0.0139924 1 1  ON 6
+eh_7 -0.00552208 1 1  ON 7
+Adding function of type 1 for atom 8.
+Adding function of type 1 for atom 9.
+Adding function of type 1 for atom 10.
+Adding function of type 1 for atom 11.
+Adding function of type 1 for atom 12.
+Adding function of type 1 for atom 13.
+Adding function of type 1 for atom 14.
+Adding function of type 1 for atom 15.
+Adding function of type 1 for atom 16.
+Adding function of type 1 for atom 17.
+Adding function of type 1 for atom 18.
+Adding function of type 1 for atom 19.
+Adding function of type 1 for atom 20.
+Adding function of type 1 for atom 21.
+Adding function of type 1 for atom 22.
+Adding function of type 1 for atom 23.
+  HamiltonianPool::put
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ForceBase::ForceBase
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  CoulombPBCAATemp::CoulombPBCAATemp
+  ... ParticleSet::addTable Reuse Table #0 e_e
+
+  Creating CoulombHandler with the optimal breakup. 
+  KContainer initialised with cutoff 15.99595716
+ finding kc:  2.545835651 , -1
+  LRBreakp parameter Kc =2.545835651
+    Continuum approximation in k = [15.99595716,1018.334261)
+   PBCAA self-interaction term -16.64357785
+   PBCAA total constant -34.24015692
+  Maximum K shell 20
+  Number of k vectors 460
+  Fixed Coulomb potential for e
+    e-e Madelung Const. =-0.1160921753
+    Vtot     =0
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+  Creating Coulomb potential ion0-ion0
+  ForceBase::ForceBase
+  Distance table for AA: source/target = ion0
+    PBC=bulk Orthorhombic=yes
+ Using bounding box/reduced coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  CoulombPBCAATemp::CoulombPBCAATemp
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+  Clone CoulombHandler. 
+   PBCAA self-interaction term -79.05699478
+   PBCAA total constant -96.65357385
+  Maximum K shell 20
+  Number of k vectors 460
+  Fixed Coulomb potential for ion0
+    e-e Madelung Const. =-0.1160921753
+    Vtot     =-65.0102653
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 3
+   Maximum angular momentum channel 2
+   Creating a Linear Grid Rmax=0.99
+  Using global grid with delta = 0.001
+   Making L=2 a local potential with a radial cutoff of 9.998
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 1
+    Number of non-local channels = 2
+       l(0)=0
+       l(1)=1
+    Cutoff radius = 0.99
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 0.99
+
+  Adding pseudopotential for H
+  Local pseudopotential format = V
+   Linear grid  ri=0 rf=1 npts = 101
+   Bare Coulomb potential is used.
+  ForceBase::ForceBase
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  CoulombPBCABTemp::CoulombPBCABTemp
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  Clone CoulombHandler. 
+   Constant of PBCAB 35.19315814
+  Maximum K shell 20
+  Number of k vectors 460
+    CoulombPBCABTemp::add 
+ Setting a linear grid=[0,5.891974995) number of grid =5892
+    Creating the short-range pseudopotential for species 0
+    Creating the short-range pseudopotential for species 1
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ForceBase::ForceBase
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 32 64 
+
+    64
+
+    u       9.364162231       10.95263133       11.52118175
+    u       9.484031498       10.75478827      0.1374002188
+    u       10.41658045       11.27701875      0.1146136732
+    u       4.612346683       10.06073019       10.82715855
+    u       3.945232472        10.3145478       10.32205474
+    u       4.865103146       10.38215636        10.4146614
+    u       9.731082077       3.625528903       5.518171209
+    u        9.48098139        3.67741247       5.386363416
+    u        9.74697792       4.033651072       5.155858873
+    u       10.20819252       11.28379538        5.90128345
+    u       10.12826186       11.02793516       4.902408673
+    u       10.88600198       10.95772473       6.038880449
+    u       10.50265782       4.874600751       11.24151118
+    u       10.06712059       4.844669573      0.7561101942
+    u       9.857744095       5.158942843       11.16816407
+    u       3.654952577       4.752214737       11.20680673
+    u       4.407998964       5.487463764     0.08138010627
+    u       4.236818836       4.667636654       10.62081535
+    u       3.477695825       0.203697267        5.01923601
+    u       3.895766618       11.59155261       5.696432229
+    u       3.498290282      0.1270431611       5.264526983
+    u       4.381773368       6.609659432       5.046422841
+    u       4.677579734       6.386116216       5.191698861
+    u       4.351087364       5.858394792       5.784205836
+    u       8.706722886      0.3139658636       11.36122228
+    u       2.729792279       11.43880105    0.009400111723
+    u       7.124945479       4.342595614       6.193506795
+    u       11.53630504       10.92997834       5.349499232
+    u       11.37693678       6.943605498      0.3599468749
+    u       4.588940387       3.619349802       11.54317309
+    u       5.665158176       11.71463547       4.960925666
+    u        3.61693223       7.031982221       4.713967426
+    d       9.621270125       10.22365221       11.21770393
+    d       10.25145315        10.7693006       10.74183327
+    d       9.591866148       10.39086805      0.1218536438
+    d       4.981428255       10.80927177       11.16251891
+    d       3.693248269       11.08813375       10.57971069
+    d       5.021513518       10.45943229        10.7594255
+    d       9.698187927        4.85147831       6.288691661
+    d       9.089601053       4.060095822       6.396122395
+    d       9.453016736       4.821789818       6.343494894
+    d       10.13478341       11.33308196       5.748496107
+    d       10.86306099       11.13800271       5.070009743
+    d       10.75890309       10.02337978       5.394902985
+    d       9.887325003       5.289594624       11.17247492
+    d       10.23242737       5.861708614       0.250535971
+    d        10.2002396       5.251659954       11.11459042
+    d       4.338044467       5.639348621        10.7120696
+    d       4.045207952       4.654681271       11.77020677
+    d       3.611599526       4.854387704       11.19963148
+    d         3.9487192       10.98473277       5.059867983
+    d       4.182681349       11.66971533        4.25684279
+    d       3.633054309       11.75261034       5.527548206
+    d       4.302143574        6.60092143       5.300725638
+    d       3.803664958       6.501068778       5.427632814
+    d       3.541361642        5.43301973       5.191255955
+    d       9.793874061       10.71291299       1.512799845
+    d       4.000327802       9.591935543       10.41885781
+    d       10.11545507       1.935494619        5.41407931
+    d       10.81272021       8.929489292       6.093707545
+    d       10.84392946       4.297409301       9.844619811
+    d       6.464473512       5.535456471       0.320318661
+    d       3.660286924       2.411544793       4.889751374
+    d       3.419861194       5.534189994       6.034327088
+
+  ParticleSet ion0 : 0 8 24 
+
+    24
+
+    O       10.08625995       10.75409327       11.47366665
+    O       4.332869607       10.75608883       10.78882998
+    O       9.535291658       4.277908574       5.833079191
+    O       10.43711303       10.69326931       5.498822865
+    O       10.15916806       5.136780771     0.07105656791
+    O       4.321019492       5.097028983       11.23043214
+    O       4.170502884       11.69962374        5.00654762
+    O       4.107685621       5.911749494       5.076385925
+    H       8.345901801       11.45408774       11.49684551
+    H       2.528981999       11.13592062       11.13681462
+    H       7.712683343       4.715112858       5.912623784
+    H      0.4980442004       10.94178676       5.266382409
+    H        11.3692791       6.355463866      0.8259199857
+    H       3.978128008       3.254147386       11.30519075
+    H       5.892558408       11.29467941       4.382111186
+    H       3.911328622       7.665725698       4.440471303
+    H       10.48532558       10.42208427       1.492462522
+    H       4.353562403       8.934491844       10.34079848
+    H       9.563798098       2.443454669       5.441489798
+    H        10.2993998       9.170140669        6.58532653
+    H       10.68644618       4.998795338       10.05992611
+    H       5.788153823       5.350648248      0.5877840941
+    H        4.07442074       1.788192194       4.944750279
+    H       2.837692457       5.762601958       6.449065193
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombPBCAA potential: e_e
+  IonIon          CoulombPBCAA potential: ion0_ion0
+  LocalECP        CoulombPBCAB potential source: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+
+=========================================================
+  Start VMCSingleOMP
+  File Root bench.s000 append = no 
+=========================================================
+  Walker Check Points are dumped every 90 block.
+  Walker Samples are dumped every 10 steps.
+  timestep = 2
+  blocks = 8
+  steps = 10
+  substeps = 1
+  current = 0
+  walkers = 0
+  Adding 8 walkers to 0 existing sets
+  Total number of walkers: 1024
+  Total weight: 1024
+  Resetting Properties of the walkers 1 x 14
+  CloneManager::makeClones makes 8 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Samples are dumped in memory every 10 steps 
+  Total Sample Size   =8192
+  Sample Size per node=64
+    Sample size for thread 0 = 8
+    Sample size for thread 1 = 8
+    Sample size for thread 2 = 8
+    Sample size for thread 3 = 8
+    Sample size for thread 4 = 8
+    Sample size for thread 5 = 8
+    Sample size for thread 6 = 8
+    Sample size for thread 7 = 8
+DiracDeterminantBase::buffer                 8.4348         374784       0.000022506      0.008237 TIMER
+DiracDeterminantBase::inverse                0.4371           4096       0.000106713      0.000427 TIMER
+DiracDeterminantBase::ratio                 15.3356       37901817       0.000000405      0.014976 TIMER
+DiracDeterminantBase::spoval               158.3230       25974024       0.000006095      0.154612 TIMER
+DiracDeterminantBase::spovgl               140.2970        5964017       0.000023524      0.137009 TIMER
+DiracDeterminantBase::update                 6.4957        1586215       0.000004095      0.006343 TIMER
+EinsplineSetExtended::VGL                  133.7682        5959921       0.000022445      0.130633 TIMER
+EinsplineSetExtended::VGLMatrix              2.7902           4096       0.000681197      0.002725 TIMER
+EinsplineSetExtended::ValueOnly            142.2706       25974024       0.000005477      0.138936 TIMER
+Hamiltonian::ElecElec                        9.8077          93184       0.000105251      0.009578 TIMER
+Hamiltonian::IonIon                          0.0521          93184       0.000000559      0.000051 TIMER
+Hamiltonian::Kinetic                         0.1432          93184       0.000001537      0.000140 TIMER
+Hamiltonian::LocalECP                       11.9178          93184       0.000127895      0.011638 TIMER
+Hamiltonian::NonLocalECP                   316.7002          93184       0.003398655      0.309278 TIMER
+ParticleSet::makeMove                       15.9485        5959921       0.000002676      0.015575 TIMER
+ParticleSet::makeMoveOnSphere                0.0000              0       0.000000000      0.000000 TIMER
+VMCUpdatePbyP::advance                    1065.2945          92160       0.011559185      1.040327 TIMER
+VMCUpdatePbyP::energy                      333.2940          92160       0.003616472      0.325482 TIMER
+VMCUpdatePbyP::movePbyP                    222.2426          92160       0.002411487      0.217034 TIMER
+VMCUpdatePbyP::updateMBO                   260.4191          92160       0.002825728      0.254316 TIMER
+libeinspline                               252.6759       32065017       0.000007880      0.246754 TIMER
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 2
+    reference energy   = -137.397
+    reference variance = 2.12333
+====================================================
+  QMC Execution time = 2.660097616 secs 
+Creating DMCMP for the qmc driver
+
+=========================================================
+  Start DMCOMP
+  File Root bench.s001 append = no 
+=========================================================
+  Walker Check Points are dumped every 2010 block.
+  Walker Samples are dumped every 2010 steps.
+  timestep = 0.02
+  blocks = 200
+  steps = 10
+  substeps = 1
+  current = 0
+  walkers = 8
+  Using the current 8 walkers.
+  Total number of walkers: 1024
+  Total weight: 1024
+  Resetting Properties of the walkers 1 x 14
+  EstimatorManager::add replace LocalEnergy estimator.
+  DMCOMP::resetUpdateEngines
+  Cannot make clones again. Use existing 8 clones
+  Creating WalkerController: target  number of walkers = 8192
+  Using WalkerControlMPI for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+  QMC counter      = 1
+  time step        = 0.02
+  effective time step = 0.02
+  trial energy     = -137.3965731
+  reference energy = -137.3965731
+  Feedback = 1
+  reference variance = 2.123329853
+  target walkers = 8192
+  branch cutoff = 50 75
+  Max and mimum walkers per node= 129 13
+  QMC Status (BranchMode) = 00001101
+  Initial partition of walkers on a node: 0 8 16 24 32 40 48 56 64 
+  Updates by particle-by-particle moves using fast gradient version 
+  DMC moves are rejected when a node crossing is detected
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -137.434
+  Energy Variance = 2.21651
+
+  Fluctuating population
+  Persisent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 10
+  Number of blocks = 200
+
+  DMC Engine Initialization = 0.136040202 secs 
+
+ Warmup is completed after 100
+
+  TauEff     = 0.01945562379
+ TauEff/Tau = 0.9727811897
+  Etrial     = -137.8052595
+ Running average of energy = -137.7593381
+                  Variance = 4.525830062
+branch cutoff = 45.25830062 67.88745092
+DMCUpdatePbyP::advance                    202457.5557        2048000       0.098856228    197.712457 TIMER
+DMCUpdatePbyP::energy                     56681.5414       16403148       0.003455528     55.353068 TIMER
+DMCUpdatePbyP::movePbyP                   44609.5122       16403148       0.002719570     43.563977 TIMER
+DMCUpdatePbyP::updateMBO                  56588.2185       20433747       0.002769351     55.261932 TIMER
+DiracDeterminantBase::buffer              1525.8365       65973244       0.000023128      1.490075 TIMER
+DiracDeterminantBase::inverse               22.6312         344268       0.000065737      0.022101 TIMER
+DiracDeterminantBase::ratio               2615.5294     6430733818       0.000000407      2.554228 TIMER
+DiracDeterminantBase::spoval              26689.3874     4321676832       0.000006176     26.063855 TIMER
+DiracDeterminantBase::spovgl              24007.3641     1054717010       0.000022762     23.444692 TIMER
+DiracDeterminantBase::update              3775.6903     1075220657       0.000003512      3.687198 TIMER
+EinsplineSetExtended::VGL                 23112.4786     1054356359       0.000021921     22.570780 TIMER
+EinsplineSetExtended::VGLMatrix            230.5145         360651       0.000639162      0.225112 TIMER
+EinsplineSetExtended::ValueOnly           24070.5542     4321676832       0.000005570     23.506401 TIMER
+Hamiltonian::ElecElec                     1734.9242       16411340       0.000105715      1.694262 TIMER
+Hamiltonian::IonIon                          8.6440       16411340       0.000000527      0.008441 TIMER
+Hamiltonian::Kinetic                        26.3384       16411340       0.000001605      0.025721 TIMER
+Hamiltonian::LocalECP                     2097.4251       16411340       0.000127803      2.048267 TIMER
+Hamiltonian::NonLocalECP                  52800.3077       16411340       0.003217306     51.562800 TIMER
+ParticleSet::makeMove                     2822.0413     1054356359       0.000002677      2.755900 TIMER
+ParticleSet::makeMoveOnSphere                0.0000              0       0.000000000      0.000000 TIMER
+VMCUpdatePbyP::advance                       0.0000              0       0.000000000      0.000000 TIMER
+VMCUpdatePbyP::energy                        0.0000              0       0.000000000      0.000000 TIMER
+VMCUpdatePbyP::movePbyP                      0.0000              0       0.000000000      0.000000 TIMER
+VMCUpdatePbyP::updateMBO                     0.0000              0       0.000000000      0.000000 TIMER
+WalkerControlMPI::branch                  2180.2530         255872       0.008520874      2.129153 TIMER
+WalkerControlMPI::loadbalance               94.2382         255872       0.000368302      0.092029 TIMER
+WalkerControlMPI::pre-loadbalance         2085.3259         255872       0.008149879      2.036451 TIMER
+libeinspline                              43037.5099     5387574023       0.000007988     42.028818 TIMER
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.02
+    effective time step           = 0.0194552
+    trial energy                  = -137.822
+    reference energy              = -137.815
+    reference variance            = 4.52583
+    target walkers                = 8192
+    branch cutoff                 = 45.2583 67.8875
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 00001111
+====================================================
+  QMC Execution time = 227.7226118 secs 
+  Total Execution time = 230.3890546 secs
+
+=========================================================
+  A new xml input file : bench.s001.cont.xml
+Application 75555 resources: utime ~201417s, stime ~9758s
