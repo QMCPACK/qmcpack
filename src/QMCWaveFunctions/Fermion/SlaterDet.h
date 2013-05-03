@@ -312,9 +312,29 @@ public:
     Dets[DetID[iat]]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
+  void
+  calcRatio (MCWalkerConfiguration &W, int iat
+             , vector<ValueType> &psi_ratios,vector<GradType>  &grad, vector<ValueType> &lapl)
+  {
+    Dets[DetID[iat]]->calcRatio(W, iat, psi_ratios, grad, lapl);
+  }
+
+  void
+  addRatio (MCWalkerConfiguration &W, int iat
+            , vector<ValueType> &psi_ratios,vector<GradType>  &grad, vector<ValueType> &lapl)
+  {
+    Dets[DetID[iat]]->addRatio(W, iat, psi_ratios, grad, lapl);
+  }
+
+
   void ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
               vector<PosType> &rNew, vector<ValueType> &psi_ratios,
               vector<GradType>  &grad, vector<ValueType> &lapl);
+
+  void calcGradient(MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
+  {
+    Dets[DetID[iat]]->calcGradient(W, iat, grad);
+  }
 
   void addGradient(MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
   {

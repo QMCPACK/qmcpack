@@ -187,6 +187,81 @@ OneBodyJastrowOrbitalBspline::ratio
 #endif
 }
 
+void
+OneBodyJastrowOrbitalBspline::calcRatio
+(MCWalkerConfiguration &W, int iat,
+ vector<ValueType> &psi_ratios, vector<GradType>  &grad,
+ vector<ValueType> &lapl)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  bool zero = true;
+  if (SumGPU.size() < 4*walkers.size())
+    SumGPU.resize(4*walkers.size());
+  for (int group=0; group<NumCenterGroups; group++)
+  {
+    int first = CenterFirst[group];
+    int last  = CenterLast[group];
+    if (GPUSplines[group])
+    {
+      CudaSpline<CudaReal> &spline = *(GPUSplines[group]);
+      if (UsePBC)
+      {
+        bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+        one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last,
+                                 (CudaReal*)W.Rnew_GPU.data(), iat,
+                                 spline.coefs.data(), spline.coefs.size(),
+                                 spline.rMax, L.data(), Linv.data(), zero,
+                                 SumGPU.data(), walkers.size(), use_fast_image);
+      }
+      else
+        one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last,
+                             (CudaReal*)W.Rnew_GPU.data(), iat,
+                             spline.coefs.data(), spline.coefs.size(),
+                             spline.rMax, zero, SumGPU.data(), walkers.size());
+      zero = false;
+    }
+  }
+  // Copy data back to CPU memory
+  gpu::streamsSynchronize();
+  SumHost.asyncCopy(SumGPU);
+  cudaEventRecord(gpu::ratioSyncOneBodyEvent, gpu::memoryStream);
+}
+
+void
+OneBodyJastrowOrbitalBspline::addRatio
+(MCWalkerConfiguration &W, int iat,
+ vector<ValueType> &psi_ratios, vector<GradType>  &grad,
+ vector<ValueType> &lapl)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  cudaEventSynchronize(gpu::ratioSyncOneBodyEvent);
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
+    psi_ratios[iw] *= std::exp(-SumHost[4*iw+0]);
+    grad[iw][0] -= SumHost[4*iw+1];
+    grad[iw][1] -= SumHost[4*iw+2];
+    grad[iw][2] -= SumHost[4*iw+3];
+  }
+#ifdef CUDA_DEBUG
+  DTD_BConds<double,3,SUPERCELL_BULK> bconds;
+  int iw = 0;
+  Walker_t &walker = *(walkers[iw]);
+  double host_sum = 0.0;
+  for (int cptcl=0; cptcl<CenterRef.getTotalNum(); cptcl++)
+  {
+    FT* func = Fs[cptcl];
+    PosType disp = new_pos[iw] - CenterRef.R[cptcl];
+    double dist = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
+    host_sum += func->evaluate(dist);
+    disp = walkers[iw]->R[iat] - CenterRef.R[cptcl];
+    dist = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
+    host_sum -= func->evaluate(dist);
+  }
+  fprintf (stderr, "Host sum = %18.12e\n", host_sum);
+  fprintf (stderr, "CUDA sum = %18.12e\n", SumHost[0]);
+#endif
+}
+
 
 void
 OneBodyJastrowOrbitalBspline::NLratios
@@ -258,7 +333,7 @@ OneBodyJastrowOrbitalBspline::NLratios
 }
 
 
-void OneBodyJastrowOrbitalBspline::addGradient
+void OneBodyJastrowOrbitalBspline::calcGradient
 (MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
@@ -289,7 +364,16 @@ void OneBodyJastrowOrbitalBspline::addGradient
     }
   }
   // Copy data back to CPU memory
-  OneGradHost = OneGradGPU;
+  gpu::streamsSynchronize();
+  OneGradHost.asyncCopy(OneGradGPU);
+  cudaEventRecord(gpu::gradientSyncOneBodyEvent, gpu::memoryStream);
+}
+
+void OneBodyJastrowOrbitalBspline::addGradient
+(MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  cudaEventSynchronize(gpu::gradientSyncOneBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
     for (int dim=0; dim<OHMMS_DIM; dim++)
       grad[iw][dim] -= OneGradHost[OHMMS_DIM*iw+dim];

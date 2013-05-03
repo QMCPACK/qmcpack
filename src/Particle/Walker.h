@@ -433,22 +433,22 @@ struct Walker
     m.Pack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    gpu::host_vector<CUDA_PRECISION> host_data, host_rhok;
-    gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    gpu::host_vector<CUDA_PRECISION> host_lapl;
-    host_data = cuda_DataSet;
-    R_host = R_GPU;
+    std::vector<CUDA_PRECISION> host_data, host_rhok;
+    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+    std::vector<CUDA_PRECISION> host_lapl;
+    cuda_DataSet.copyFromGPU(host_data);
+    R_GPU.copyFromGPU(R_host);
     int size = host_data.size();
     int N = R_host.size();
     m.Pack(size);
     m.Pack(N);
     m.Pack(&(host_data[0]), host_data.size());
     m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-    R_host = Grad_GPU;
+    Grad_GPU.copyFromGPU(R_host);
     m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-    host_lapl = Lap_GPU;
+    Lap_GPU.copyFromGPU(host_lapl);
     m.Pack(&(host_lapl[0]), host_lapl.size());
-    host_rhok = Rhok_GPU;
+    Rhok_GPU.copyFromGPU(host_rhok);
     int M = host_rhok.size();
     m.Pack(M);
     m.Pack(&(host_rhok[0]), host_rhok.size());
@@ -478,9 +478,9 @@ struct Walker
     m.Unpack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    gpu::host_vector<CUDA_PRECISION> host_data, host_rhok;
-    gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    gpu::host_vector<CUDA_PRECISION> host_lapl;
+    std::vector<CUDA_PRECISION> host_data, host_rhok;
+    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+    std::vector<CUDA_PRECISION> host_lapl;
     int size, N;
     m.Unpack(size);
     m.Unpack(N);

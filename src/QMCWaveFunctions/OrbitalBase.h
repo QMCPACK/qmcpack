@@ -511,6 +511,23 @@ struct OrbitalBase: public QMCTraits
     abort();
   }
 
+  virtual void
+  calcRatio (MCWalkerConfiguration &W, int iat,
+             vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             vector<ValueType> &lapl)
+  {
+    app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
+    abort();
+  }
+
+  virtual void
+  addRatio (MCWalkerConfiguration &W, int iat,
+            vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            vector<ValueType> &lapl)
+  {
+    app_error() << "Need specialization of OrbitalBase::addRatio.\n";
+    abort();
+  }
 
   virtual void
   ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
@@ -527,6 +544,15 @@ struct OrbitalBase: public QMCTraits
               vector<GradType> &grad)
   {
     app_error() << "Need specialization of OrbitalBase::addGradient for "
+                << OrbitalName << ".\n";
+    abort();
+  }
+
+  virtual void
+  calcGradient(MCWalkerConfiguration &W, int iat,
+               vector<GradType> &grad)
+  {
+    app_error() << "Need specialization of OrbitalBase::calcGradient for "
                 << OrbitalName << ".\n";
     abort();
   }

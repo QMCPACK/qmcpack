@@ -241,8 +241,7 @@ QMCHamiltonianBase*
 CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAB_CUDA* myclone=new CoulombPBCAB_CUDA(PtclA, qp, true);
-  if(myGrid)
-    myclone->myGrid=new GridType(*myGrid);
+  if(myGrid) myclone->myGrid=new GridType(*myGrid);
   for(int ig=0; ig<Vspec.size(); ++ig)
   {
     if(Vspec[ig])
@@ -251,8 +250,7 @@ CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
       myclone->Vspec[ig]=apot;
       for(int iat=0; iat<PtclA.getTotalNum(); ++iat)
       {
-        if(PtclA.GroupID[iat]==ig)
-          myclone->Vat[iat]=apot;
+        if(PtclA.GroupID[iat]==ig) myclone->Vat[iat]=apot;
       }
     }
     myclone->V0Spline = V0Spline;

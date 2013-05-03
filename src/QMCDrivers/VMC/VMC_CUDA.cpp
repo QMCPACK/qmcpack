@@ -256,9 +256,10 @@ bool VMCcuda::runWithDrift()
   {
     for(int iat=0; iat<nat; iat++)
     {
-      Psi.getGradient (W, iat, oldG);
+      Psi.calcGradient (W, iat, oldG);
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(delpos,Random);
+      Psi.addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
         oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
@@ -267,23 +268,30 @@ bool VMCcuda::runWithDrift()
         ratios[iw] = 1.0;
       }
       W.proposeMove_GPU(newpos, iat);
-      Psi.ratio(W,iat,ratios,newG, newL);
+      Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
       vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
+      std::vector<RealType> logGf_v(nw);
+      std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
         PosType drOld =
           newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-        RealType logGf = -m_oneover2tau * dot(drOld, drOld);
+        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+        rand_v[iw] = Random();
+      }
+      Psi.addRatio(W,iat,ratios,newG, newL);
+      for(int iw=0; iw<nw; ++iw)
+      {
         newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
         PosType drNew  =
           (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
         RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
-        RealType x = logGb - logGf;
+        RealType x = logGb - logGf_v[iw];
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-        if(acc[iw] && Random() < prob)
+        if(acc[iw] && rand_v[iw] < prob)
         {
           accepted.push_back(W[iw]);
           nAccept++;
@@ -315,9 +323,10 @@ bool VMCcuda::runWithDrift()
       {
         for(int iat=0; iat<nat; iat++)
         {
-          Psi.getGradient (W, iat, oldG);
+          Psi.calcGradient (W, iat, oldG);
           //create a 3N-Dimensional Gaussian with variance=1
           makeGaussRandomWithEngine(delpos,Random);
+          Psi.addGradient(W, iat, oldG);
           for(int iw=0; iw<nw; iw++)
           {
             oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
@@ -326,27 +335,32 @@ bool VMCcuda::runWithDrift()
             ratios[iw] = 1.0;
           }
           W.proposeMove_GPU(newpos, iat);
-          Psi.ratio(W,iat,ratios,newG, newL);
+          Psi.calcRatio(W,iat,ratios,newG, newL);
           accepted.clear();
           vector<bool> acc(nw, true);
           if (W.UseBoundBox)
             checkBounds (newpos, acc);
+          std::vector<RealType> logGf_v(nw);
+          std::vector<RealType> rand_v(nw);
           for(int iw=0; iw<nw; ++iw)
           {
             PosType drOld =
               newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-            // if (dot(drOld, drOld) > 25.0)
-            //   cerr << "Large drift encountered!  Old drift = " << drOld << endl;
-            RealType logGf = -m_oneover2tau * dot(drOld, drOld);
+            logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+            rand_v[iw] = Random();
+          }
+          Psi.addRatio(W, iat, ratios, newG, newL);
+          for(int iw=0; iw<nw; ++iw)
+          {
             newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
             PosType drNew  =
               (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
             // if (dot(drNew, drNew) > 25.0)
             //   cerr << "Large drift encountered!  Drift = " << drNew << endl;
             RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
-            RealType x = logGb - logGf;
+            RealType x = logGb - logGf_v[iw];
             RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-            if(acc[iw] && Random() < prob)
+            if(acc[iw] && rand_v[iw] < prob)
             {
               accepted.push_back(W[iw]);
               nAccept++;
@@ -488,8 +502,7 @@ void VMCcuda::resetRun()
   }
   W.clearEnsemble();
   int samples_this_node = nTargetSamples/myComm->size();
-  if (nTargetSamples%myComm->size() > myComm->rank())
-    samples_this_node+=1;
+  if (nTargetSamples%myComm->size() > myComm->rank()) samples_this_node+=1;
   app_log() << "  Node zero will generate " << samples_this_node << " samples.\n";
   W.setNumSamples(samples_this_node);
   if(forOpt)

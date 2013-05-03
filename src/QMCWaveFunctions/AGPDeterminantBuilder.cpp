@@ -47,54 +47,52 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT *abuilder, xmlNodePtr cur)
       if(!basisSet)
         return false;
     }
-    else
-      if(cname == "coefficient" || cname == "coefficients")
+    else if(cname == "coefficient" || cname == "coefficients")
+    {
+      if(agpDet == 0)
       {
-        if(agpDet == 0)
-        {
-          int nup=targetPtcl.first(1), ndown=0;
-          if(targetPtcl.groups()>1)
-            ndown = targetPtcl.first(2)-nup;
-          basisSet->resize(nup+ndown);
-          agpDet = new AGPDeterminant(basisSet);
-          agpDet->resize(nup,ndown);
-        }
-        int offset=1;
-        xmlNodePtr tcur=cur->xmlChildrenNode;
-        while(tcur != NULL)
-        {
-          if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda"))
-          {
-            int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
-            int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
-            double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
-            agpDet->Lambda(i-offset,j-offset)=c;
-            if(i != j)
-            {
-              agpDet->Lambda(j-offset,i-offset)=c;
-            }
-          }
-          tcur=tcur->next;
-        }
+        int nup=targetPtcl.first(1), ndown=0;
+        if(targetPtcl.groups()>1)
+          ndown = targetPtcl.first(2)-nup;
+        basisSet->resize(nup+ndown);
+        agpDet = new AGPDeterminant(basisSet);
+        agpDet->resize(nup,ndown);
       }
-      else
-        if(cname == "unpaired")
+      int offset=1;
+      xmlNodePtr tcur=cur->xmlChildrenNode;
+      while(tcur != NULL)
+      {
+        if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda"))
         {
-          spinpolarized=true;
-          int offset=1;
-          xmlNodePtr tcur=cur->xmlChildrenNode;
-          while(tcur != NULL)
+          int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+          int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+          double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
+          agpDet->Lambda(i-offset,j-offset)=c;
+          if(i != j)
           {
-            if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda"))
-            {
-              int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
-              int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
-              double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
-              agpDet->LambdaUP(j-offset,i-offset)=c;
-            }
-            tcur=tcur->next;
+            agpDet->Lambda(j-offset,i-offset)=c;
           }
         }
+        tcur=tcur->next;
+      }
+    }
+    else if(cname == "unpaired")
+    {
+      spinpolarized=true;
+      int offset=1;
+      xmlNodePtr tcur=cur->xmlChildrenNode;
+      while(tcur != NULL)
+      {
+        if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda"))
+        {
+          int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+          int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+          double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
+          agpDet->LambdaUP(j-offset,i-offset)=c;
+        }
+        tcur=tcur->next;
+      }
+    }
     cur=cur->next;
   }
   //app_log() << agpDet->Lambda << endl;
@@ -133,16 +131,14 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
     {
       bPtr=cur;
     }
-    else
-      if(cname.find("coeff")<cname.size())
-      {
-        cPtr=cur;
-      }
-      else
-        if(cname.find("un")<cname.size())
-        {
-          uPtr=cur;
-        }
+    else if(cname.find("coeff")<cname.size())
+    {
+      cPtr=cur;
+    }
+    else if(cname.find("un")<cname.size())
+    {
+      uPtr=cur;
+    }
     cur=cur->next;
   }
   if(bPtr == NULL || cPtr == NULL)
@@ -158,7 +154,7 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
   }
 // mmorales: this needs to be fixed after changes to BasisSetfactory
 //    BasisSetBase<RealType>* myBasisSet=myBasisSetFactory->getBasisSet();
-  BasisSetBase<RealType>* myBasisSet; //=myBasisSetFactory->getBasisSet();
+  BasisSetBase<RealType>* myBasisSet=0; //=myBasisSetFactory->getBasisSet();
   int nup=targetPtcl.first(1), ndown=0;
   if(targetPtcl.groups()>1)
     ndown = targetPtcl.first(2)-nup;

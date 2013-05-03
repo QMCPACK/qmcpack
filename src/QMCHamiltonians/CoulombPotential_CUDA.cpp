@@ -17,11 +17,11 @@
 
 namespace qmcplusplus
 {
-CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet& ref) :
-  CoulombPotentialAA(ref), PtclRef(ref),
+CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet* s, bool quantum):
+  CoulombPotential<OHMMS_PRECISION>(s,0,quantum),
   SumGPU("CoulombPotentialAA_CUDA::SumGPU")
 {
-  NumElecs = ref.getTotalNum();
+  NumElecs = s->getTotalNum();
 }
 
 void
@@ -43,25 +43,23 @@ CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration &W,
   }
 }
 
-
 QMCHamiltonianBase*
 CoulombPotentialAA_CUDA::makeClone (ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new CoulombPotentialAA_CUDA(qp);
+  return new CoulombPotentialAA_CUDA(&qp,true);
 }
 
 
-
-CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet& ref, ParticleSet &ions) :
-  CoulombPotentialAB(ref, ions), PtclRef(ref),
-  SumGPU("CoulombPotentialAB_CUDA::SumGPU"),
-  IGPU("CoulombPotentialAB_CUDA::IGPU"),
-  ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU")
+CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t)
+  : CoulombPotential<OHMMS_PRECISION>(s,t,true),
+    SumGPU("CoulombPotentialAB_CUDA::SumGPU"),
+    IGPU("CoulombPotentialAB_CUDA::IGPU"),
+    ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU")
 {
-  SpeciesSet &sSet = ions.getSpeciesSet();
+  SpeciesSet &sSet = s->getSpeciesSet();
   NumIonSpecies = sSet.getTotalNum();
-  NumIons  = ions.getTotalNum();
-  NumElecs = ref.getTotalNum();
+  NumIons  = s->getTotalNum();
+  NumElecs = t->getTotalNum();
   // Copy center positions to GPU, sorting by GroupID
   gpu::host_vector<CUDA_PRECISION> I_host(OHMMS_DIM*NumIons);
   int index=0;
@@ -70,11 +68,11 @@ CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet& ref, ParticleSet &
     IonFirst.push_back(index);
     for (int i=0; i<NumIons; i++)
     {
-      if (ions.GroupID[i] == cgroup)
+      if (s->GroupID[i] == cgroup)
       {
         for (int dim=0; dim<OHMMS_DIM; dim++)
-          I_host[OHMMS_DIM*index+dim] = ions.R[i][dim];
-        SortedIons.push_back(ions.R[i]);
+          I_host[OHMMS_DIM*index+dim] = s->R[i][dim];
+        SortedIons.push_back(s->R[i]);
         index++;
       }
     }
@@ -94,6 +92,7 @@ CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration &W,
   // Evaluate sum on GPU
   CoulombAB_Sum (W.RList_GPU.data(), NumElecs,
                  IGPU.data(), ZionGPU.data(), NumIons, SumGPU.data(), nw);
+  SumHost = SumGPU;
   for (int iw=0; iw<walkers.size(); iw++)
   {
     walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = SumHost[iw];
@@ -104,8 +103,7 @@ CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration &W,
 QMCHamiltonianBase*
 CoulombPotentialAB_CUDA::makeClone (ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new CoulombPotentialAB_CUDA(qp, sourcePtcl);
+  return new CoulombPotentialAB_CUDA(PtclA,&qp);
 }
-
 
 }

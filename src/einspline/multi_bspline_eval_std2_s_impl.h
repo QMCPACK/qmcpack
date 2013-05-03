@@ -578,7 +578,7 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
 #else
 
 
-eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
+void eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
 			  float x, float y, float z,// double x, double y, double z,
 			  float* restrict vals)
 {

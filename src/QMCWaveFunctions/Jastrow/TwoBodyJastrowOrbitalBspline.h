@@ -63,6 +63,13 @@ public:
   void ratio (MCWalkerConfiguration &W, int iat,
               vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
               vector<ValueType> &lapl);
+
+  void calcRatio (MCWalkerConfiguration &W, int iat,
+                  vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  vector<ValueType> &lapl);
+  void addRatio (MCWalkerConfiguration &W, int iat,
+                 vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 vector<ValueType> &lapl);
   void ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
               vector<PosType> &rNew, vector<ValueType> &psi_ratios,
               vector<GradType>  &grad, vector<ValueType> &lapl)
@@ -70,6 +77,8 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
+  void calcGradient(MCWalkerConfiguration &W, int iat,
+                    vector<GradType> &grad);
   void addGradient(MCWalkerConfiguration &W, int iat,
                    vector<GradType> &grad);
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,

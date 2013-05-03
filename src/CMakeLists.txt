@@ -32,6 +32,7 @@ IF(QMC_CUDA)
    SET(UTILITIES ${UTILITIES} 
        Numerics/CUDA/cuda_inverse.cu 
        CUDA/gpu_vector.cpp
+       CUDA/gpu_misc.cpp
        Particle/accept_kernel.cu)
 ENDIF(QMC_CUDA)
 

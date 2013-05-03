@@ -37,6 +37,12 @@ protected:
   gpu::device_vector<CUDA_PRECISION*> Distlist_GPU;
   gpu::device_vector<int> NumPairs_GPU;
   gpu::host_vector<int> NumPairs_host;
+  gpu::host_vector<int*> Eleclist_host;
+  gpu::host_vector<CUDA_PRECISION*> Distlist_host;
+  gpu::host_vector<CUDA_PRECISION*> RatioPoslist_host;
+  gpu::host_vector<CUDA_PRECISION*> Ratiolist_host;
+  gpu::host_vector<CUDA_PRECISION*> CosThetalist_host;
+
   int NumElecs;
   // The maximum number of quadrature points over all the ions species
   int MaxKnots, MaxPairs, RatiosPerWalker;

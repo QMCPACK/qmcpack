@@ -5,9 +5,13 @@
 #define QMCPLUSPLUS_CUDA_INIT_H
 
 #ifdef QMC_CUDA
+#include "Configuration.h"
+#include "Message/Communicate.h"
+#include "Utilities/OhmmsInfo.h"
 #include "Message/CommOperators.h"
 #include <cuda_runtime_api.h>
 #include <unistd.h>
+#include <CUDA/gpu_misc.h>
 
 inline int get_device_num()
 {
@@ -80,6 +84,9 @@ inline void Init_CUDA(int rank, int size)
     abort();
   }
   set_appropriate_device_num (devNum);
+  cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
+  gpu::initCUDAStreams();
+  gpu::initCUDAEvents();
   return;
   int numGPUs;
   cudaGetDeviceCount(&numGPUs);

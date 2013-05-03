@@ -536,7 +536,7 @@ void MCWalkerConfiguration::updateLists_GPU()
     LapList_GPU.resize(nw);
     DataList_GPU.resize(nw);
   }
-  gpu::host_vector<CUDA_PRECISION*> hostlist(nw);
+  hostlist.resize(nw);
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
@@ -588,8 +588,7 @@ MCWalkerConfiguration::allocateGPU(size_t buffersize)
 
 void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 {
-  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> >
-  R_host(WalkerList[0]->R.size());
+  R_host.resize(WalkerList[0]->R.size());
   for (int iw=0; iw<WalkerList.size(); iw++)
   {
     for (int i=0; i<WalkerList[iw]->size(); i++)
@@ -604,8 +603,7 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 
 void MCWalkerConfiguration::copyWalkerGradToGPU()
 {
-  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> >
-  R_host(WalkerList[0]->R.size());
+  R_host.resize(WalkerList[0]->R.size());
   for (int iw=0; iw<WalkerList.size(); iw++)
   {
     for (int i=0; i<WalkerList[iw]->size(); i++)
@@ -624,7 +622,7 @@ void MCWalkerConfiguration::proposeMove_GPU
   for (int i=0; i<newPos.size(); i++)
     for (int dim=0; dim<OHMMS_DIM; dim++)
       Rnew_host[i][dim] = newPos[i][dim];
-  Rnew_GPU = Rnew_host;
+  Rnew_GPU.asyncCopy(Rnew_host);
   Rnew = newPos;
   CurrentParticle = iat;
 }
@@ -636,7 +634,7 @@ void MCWalkerConfiguration::acceptMove_GPU(vector<bool> &toAccept)
     AcceptList_host.resize(toAccept.size());
   for (int i=0; i<toAccept.size(); i++)
     AcceptList_host[i] = (int)toAccept[i];
-  AcceptList_GPU = AcceptList_host;
+  AcceptList_GPU.asyncCopy(AcceptList_host);
 //   app_log() << "toAccept.size()        = " << toAccept.size() << endl;
 //   app_log() << "AcceptList_host.size() = " << AcceptList_host.size() << endl;
 //   app_log() << "AcceptList_GPU.size()  = " << AcceptList_GPU.size() << endl;

@@ -16,19 +16,21 @@
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 
-class MCWalkerConfiguration;
 
 namespace qmcplusplus
 {
-struct CoulombPotentialAA_CUDA : public CoulombPotentialAA
+
+class MCWalkerConfiguration;
+
+/** CoulombPotential for el-el
+ *
+ * Derived from CoulombPotential<T>
+ */
+struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
 {
   int NumElecs;
-  //////////////////////////////////
-  // Vectorized evaluation on GPU //
-  //////////////////////////////////
-  CoulombPotentialAA_CUDA(ParticleSet& ref);
+  CoulombPotentialAA_CUDA(ParticleSet* s, bool quantum);
 
-  ParticleSet &PtclRef;
   gpu::device_vector<CUDA_PRECISION> SumGPU;
   gpu::host_vector<CUDA_PRECISION>  SumHost;
   void addEnergy(MCWalkerConfiguration &W,
@@ -37,17 +39,17 @@ struct CoulombPotentialAA_CUDA : public CoulombPotentialAA
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
-struct CoulombPotentialAB_CUDA : public CoulombPotentialAB
+/** CoulombPotential for ion-el
+ *
+ * Derived from CoulombPotential<T>
+ */
+struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
 {
-  ParticleSet &PtclRef;
   int NumElecs, NumIons, NumIonSpecies;
   vector<int> IonFirst, IonLast;
   vector<PosType> SortedIons;
 
-  //////////////////////////////////
-  // Vectorized evaluation on GPU //
-  //////////////////////////////////
-  CoulombPotentialAB_CUDA(ParticleSet& ref, ParticleSet &ions);
+  CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t);
 
   gpu::host_vector<CUDA_PRECISION>   SumHost;
   gpu::device_vector<CUDA_PRECISION>  SumGPU;

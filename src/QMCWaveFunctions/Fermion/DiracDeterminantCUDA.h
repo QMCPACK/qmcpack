@@ -68,19 +68,19 @@ protected:
   gpu::device_vector<CudaRealType*> SplineRowList_d;
   gpu::host_vector<CudaRealType*> SplineRowList_host;
   gpu::device_vector<CudaRealType*> RatioRowList_d;
-  gpu::host_vector<CudaRealType*> RatioRowList_host;
+  gpu::host_vector<CudaRealType*> RatioRowList_host[2];
   gpu::device_vector<CudaRealType> NLposBuffer_d;
   gpu::host_vector<CudaRealType> NLposBuffer_host;
   gpu::device_vector<CudaRealType*> NLAinvList_d;
-  gpu::host_vector<CudaRealType*> NLAinvList_host;
+  gpu::host_vector<CudaRealType*> NLAinvList_host[2];
   gpu::device_vector<int> NLnumRatioList_d;
-  gpu::host_vector<int> NLnumRatioList_host;
+  gpu::host_vector<int> NLnumRatioList_host[2];
   gpu::device_vector<int> NLelecList_d;
-  gpu::host_vector<int> NLelecList_host;
-  gpu::device_vector<CudaRealType> NLratios_d;
+  gpu::host_vector<int> NLelecList_host[2];
+  gpu::device_vector<CudaRealType> NLratios_d[2];
   gpu::host_vector<CudaRealType> NLratios_host;
   gpu::device_vector<CudaRealType*> NLratioList_d;
-  gpu::host_vector<CudaRealType*> NLratioList_host;
+  gpu::host_vector<CudaRealType*> NLratioList_host[2];
 
   void resizeLists(int numWalkers)
   {
@@ -120,7 +120,8 @@ protected:
     SplineRowList_d = SplineRowList_host;
     NLposBuffer_d.resize   (OHMMS_DIM * NLrowBufferRows);
     NLposBuffer_host.resize(OHMMS_DIM * NLrowBufferRows);
-    NLratios_d.resize(NLrowBufferRows);
+    for(int i = 0; i < 2; ++i)
+      NLratios_d[i].resize(NLrowBufferRows);
     NLratios_host.resize(NLrowBufferRows);
   }
 
@@ -172,6 +173,9 @@ public:
   void addGradient(MCWalkerConfiguration &W, int iat,
                    vector<GradType> &grad);
 
+  void calcGradient(MCWalkerConfiguration &W, int iat,
+                    vector<GradType> &grad);
+
   void ratio (MCWalkerConfiguration &W, int iat,
               vector<ValueType> &psi_ratios);
 
@@ -182,6 +186,12 @@ public:
   void ratio (MCWalkerConfiguration &W, int iat,
               vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
               vector<ValueType> &lapl);
+  void calcRatio (MCWalkerConfiguration &W, int iat,
+                  vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  vector<ValueType> &lapl);
+  void addRatio (MCWalkerConfiguration &W, int iat,
+                 vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 vector<ValueType> &lapl);
 
   void ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
               vector<PosType> &rNew, vector<ValueType> &psi_ratios,

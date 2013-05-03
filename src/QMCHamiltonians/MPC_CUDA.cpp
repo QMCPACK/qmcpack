@@ -67,14 +67,12 @@ MPC_CUDA::addEnergy(MCWalkerConfiguration &W,
   MPC_SR_Sum (W.RList_GPU.data(), N,
               L.data(), Linv.data(), SumGPU.data(), nw);
   SumHost = SumGPU;
-  for (int iw=0; iw<nw; iw++)
-    esum[iw] += SumHost[iw];
+  for (int iw=0; iw<nw; iw++)  esum[iw] += SumHost[iw];
   // Now, do long-range part:
   MPC_LR_Sum (W.RList_GPU.data(), N, CudaSpline,
               Linv.data(), SumGPU.data(), nw);
   SumHost = SumGPU;
-  for (int iw=0; iw<nw; iw++)
-    esum[iw] += SumHost[iw];
+  for (int iw=0; iw<nw; iw++)   esum[iw] += SumHost[iw];
   for (int iw=0; iw<nw; iw++)
   {
     walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = esum[iw] + Vconst;

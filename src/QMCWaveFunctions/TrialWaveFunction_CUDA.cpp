@@ -63,6 +63,24 @@ TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
     Z[i]->addLog (W, logPsi);
 }
 
+void
+TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
+                                 vector<GradType> &grad)
+{
+  for (int iw=0; iw<grad.size(); iw++)
+    grad[iw] = GradType();
+  for(int i=0; i<Z.size(); i++)
+    Z[i]->calcGradient(W, iat, grad);
+}
+
+void
+TrialWaveFunction::addGradient (MCWalkerConfiguration &W, int iat,
+                                vector<GradType> &grad)
+{
+  for(int i=0; i<Z.size()-1; i++)
+    Z[i]->addGradient(W, iat, grad);
+  Z[Z.size()-1]->addGradient(W,iat,grad);
+}
 
 void
 TrialWaveFunction::getGradient (MCWalkerConfiguration &W, int iat,
@@ -111,6 +129,42 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
     myTimers[ii]->stop();
   }
 }
+void
+TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
+                              vector<ValueType> &psi_ratios,
+                              vector<GradType> &newG, vector<ValueType> &newL)
+{
+  for (int iw=0; iw<W.WalkerList.size(); iw++)
+  {
+    psi_ratios[iw] = 1.0;
+    newG[iw] = GradType();
+    newL[iw] = ValueType();
+  }
+  for (int i=0,ii=1; i<Z.size(); i++,ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    Z[i]->calcRatio (W, iat, psi_ratios, newG, newL);
+    myTimers[ii]->stop();
+  }
+}
+void
+TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
+                             vector<ValueType> &psi_ratios,
+                             vector<GradType> &newG, vector<ValueType> &newL)
+{
+  for (int i=0,ii=1; i<Z.size()-1; i++,ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    Z[i]->addRatio (W, iat, psi_ratios, newG, newL);
+    myTimers[ii]->stop();
+  }
+  gpu::synchronize();
+  myTimers[1+TIMER_SKIP*(Z.size()-1)]->start();
+  Z[Z.size()-1]->addRatio (W, iat, psi_ratios, newG, newL);
+  myTimers[1+TIMER_SKIP*(Z.size()-1)]->stop();
+}
+
+
 
 void
 TrialWaveFunction::ratio (vector<Walker_t*> &walkers, vector<int> &iatList,

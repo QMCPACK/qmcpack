@@ -50,9 +50,10 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first)
   NLAinvList_d("DiracDeterminantBase::NLAinvList_d"),
   NLnumRatioList_d("DiracDeterminantBase::NLnumRatioList_d"),
   NLelecList_d("DiracDeterminantBase::NLelecList_d"),
-  NLratios_d("DiracDeterminantBase::NLratios_d"),
   NLratioList_d("DiracDeterminantBase::NLratioList_d")
 {
+  for(int i = 0; i < 2; ++i)
+    NLratios_d[i] = gpu::device_vector<CudaRealType>("DiracDeterminantBase::NLratios_d");
 }
 
 DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
@@ -79,9 +80,10 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
   NLAinvList_d("DiracDeterminantBase::NLAinvList_d"),
   NLnumRatioList_d("DiracDeterminantBase::NLnumRatioList_d"),
   NLelecList_d("DiracDeterminantBase::NLelecList_d"),
-  NLratios_d("DiracDeterminantBase::NLratios_d"),
   NLratioList_d("DiracDeterminantBase::NLratioList_d")
 {
+  for(int i = 0; i < 2; ++i)
+    NLratios_d[i] = gpu::device_vector<CudaRealType>("DiracDeterminantBase::NLratios_d");
 }
 
 
@@ -103,7 +105,7 @@ DiracDeterminantCUDA::update (vector<Walker_t*> &walkers, int iat)
     UpdateList.resize(walkers.size());
   for (int iw=0; iw<walkers.size(); iw++)
     UpdateList[iw] =  walkers[iw]->cuda_DataSet.data();
-  UpdateList_d = UpdateList;
+  UpdateList_d.asyncCopy(UpdateList);
   update_inverse_cuda (UpdateList_d.data(), iat-FirstIndex, AOffset,
                        AinvOffset, newRowOffset, AinvDeltaOffset,
                        AinvColkOffset, NumPtcls, RowStride, walkers.size());
@@ -194,11 +196,10 @@ DiracDeterminantCUDA::update (vector<Walker_t*> &walkers, int iat)
           cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << endl;
-        else
-          if ((i!=j) && (std::fabs(val) > 1.0e-2))
-            cerr << "Error in inverse at (i,j) = (" << i << ", " << j
-                 << ")  val = " << val << "  walker = " << iw
-                 << " of " << walkers.size() << endl;
+        else if ((i!=j) && (std::fabs(val) > 1.0e-2))
+          cerr << "Error in inverse at (i,j) = (" << i << ", " << j
+               << ")  val = " << val << "  walker = " << iw
+               << " of " << walkers.size() << endl;
       }
   }
 #endif
@@ -210,14 +211,10 @@ DiracDeterminantCUDA::update (const vector<Walker_t*> &walkers,
                               const vector<int> &iat_list)
 {
   int N = walkers.size();
-  if (UpdateList.size() < N)
-    UpdateList.resize(N);
-  if (iatList.size()    < N)
-    iatList.resize(N);
-  if (srcList.size()    < N)
-    srcList.resize(N);
-  if (destList.size()    < N)
-    destList.resize(N);
+  if (UpdateList.size() < N) UpdateList.resize(N);
+  if (iatList.size()    < N)    iatList.resize(N);
+  if (srcList.size()    < N)    srcList.resize(N);
+  if (destList.size()    < N)  destList.resize(N);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     UpdateList[iw] =  walkers[iw]->cuda_DataSet.data();
@@ -315,11 +312,10 @@ DiracDeterminantCUDA::update (const vector<Walker_t*> &walkers,
           cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << endl;
-        else
-          if ((i!=j) && (std::fabs(val) > 1.0e-2))
-            cerr << "Error in inverse at (i,j) = (" << i << ", " << j
-                 << ")  val = " << val << "  walker = " << iw
-                 << " of " << walkers.size() << endl;
+        else if ((i!=j) && (std::fabs(val) > 1.0e-2))
+          cerr << "Error in inverse at (i,j) = (" << i << ", " << j
+               << ")  val = " << val << "  walker = " << iw
+               << " of " << walkers.size() << endl;
       }
   }
 #endif
@@ -517,8 +513,8 @@ DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi
 }
 
 void
-DiracDeterminantCUDA::addGradient(MCWalkerConfiguration &W, int iat,
-                                  vector<GradType> &grad)
+DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat,
+                                   vector<GradType> &grad)
 {
   vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
@@ -529,15 +525,27 @@ DiracDeterminantCUDA::addGradient(MCWalkerConfiguration &W, int iat,
     AinvList[iw]        =  &(data.data()[AinvOffset]);
     GLList[iw]    =  &(data.data()[gradLaplOffset]);
   }
-  AinvList_d      = AinvList;
-  GLList_d = GLList;
+  AinvList_d.asyncCopy(AinvList);
+  GLList_d.asyncCopy(GLList);
   calc_gradient (AinvList_d.data(), GLList_d.data(),
                  ratio_d.data(), NumOrbitals, RowStride,
                  iat-FirstIndex, walkers.size());
-  ratio_host = ratio_d;
+  gpu::streamsSynchronize();
+  ratio_host.asyncCopy(ratio_d);
+  cudaEventRecord(gpu::gradientSyncDiracEvent, gpu::memoryStream);
+}
+
+void
+DiracDeterminantCUDA::addGradient(MCWalkerConfiguration &W, int iat,
+                                  vector<GradType> &grad)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  cudaEventSynchronize(gpu::gradientSyncDiracEvent);
   for (int iw=0; iw<walkers.size(); iw++)
     for (int dim=0; dim<OHMMS_DIM; dim++)
+    {
       grad[iw][dim] += ratio_host[3*iw+dim];
+    }
 #ifdef CUDA_DEBUG3
   if (NumOrbitals == 31)
   {
@@ -616,9 +624,9 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
         ((unsigned long)newGradLaplList[iw] %64))
       app_log() << "**** CUDA misalignment!!!! ***\n";
   }
-  newRowList_d = newRowList;
-  newGradLaplList_d = newGradLaplList;
-  AinvList_d   = AinvList;
+  newRowList_d.asyncCopy(newRowList);
+  newGradLaplList_d.asyncCopy(newGradLaplList);
+  AinvList_d.asyncCopy(AinvList);
   //    }
   Phi->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
 #ifdef CUDA_DEBUG2
@@ -695,6 +703,110 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
   }
 #endif
 }
+void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
+                                      vector<ValueType> &psi_ratios,
+                                      vector<GradType>  &grad,
+                                      vector<ValueType> &lapl)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  if (AList.size() < walkers.size())
+    resizeLists(walkers.size());
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
+    Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
+    AinvList[iw]        =  &(data.data()[AinvOffset]);
+    newRowList[iw]      =  &(data.data()[newRowOffset]);
+    newGradLaplList[iw] =  &(data.data()[newGradLaplOffset]);
+    if (((unsigned long)AinvList[iw] %64) ||
+        ((unsigned long)newRowList[iw] % 64) ||
+        ((unsigned long)newGradLaplList[iw] %64))
+      app_log() << "**** CUDA misalignment!!!! ***\n";
+  }
+  newRowList_d.asyncCopy(newRowList);
+  newGradLaplList_d.asyncCopy(newGradLaplList);
+  AinvList_d.asyncCopy(AinvList);
+  Phi->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
+#ifdef CUDA_DEBUG2
+  Vector<ValueType> testPhi(NumOrbitals), testLapl(NumOrbitals);
+  Vector<GradType> testGrad(NumOrbitals);
+  ParticleSet P;
+  P.R.resize(NumPtcls);
+  gpu::host_vector<CudaValueType> host_vec;
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
+    host_vec = walkers[iw]->cuda_DataSet;
+    P.R[iat-FirstIndex] = W.Rnew[iw];
+    Phi->evaluate(P, iat-FirstIndex, testPhi, testGrad, testLapl);
+    for (int iorb=0; iorb<NumOrbitals; iorb++)
+    {
+      fprintf (stderr, "CUDA = %1.8e    CPU = %1.8e\n",
+               host_vec[newGradLaplOffset+2*NumOrbitals+iorb], testGrad[iorb][2]);
+    }
+  }
+#endif
+  determinant_ratios_grad_lapl_cuda
+  (AinvList_d.data(), newRowList_d.data(), newGradLaplList_d.data(),
+   ratio_d.data(), NumPtcls, RowStride, iat-FirstIndex, walkers.size());
+  gpu::streamsSynchronize();
+  // Copy back to host
+  ratio_host.asyncCopy(ratio_d);
+  cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream);
+#ifdef CUDA_DEBUG
+  // Now, check against CPU
+  gpu::host_vector<CudaRealType> host_data;
+  vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
+    host_data = walkers[iw]->cuda_DataSet;
+    for (int iorb=0; iorb<NumOrbitals; iorb++)
+    {
+      cpu_ratios[iw] += host_data[AinvOffset+RowStride*iorb+iat-FirstIndex] *
+                        host_data[newRowOffset + iorb];
+    }
+    fprintf (stderr, "CPU ratio = %10.6e   GPU ratio = %10.6e\n",
+             cpu_ratios[iw], ratio_host[5*iw+0]);
+  }
+#endif
+}
+
+void DiracDeterminantCUDA::addRatio (MCWalkerConfiguration &W, int iat,
+                                     vector<ValueType> &psi_ratios,
+                                     vector<GradType>  &grad,
+                                     vector<ValueType> &lapl)
+{
+  vector<Walker_t*> &walkers = W.WalkerList;
+  cudaEventSynchronize(gpu::ratioSyncDiracEvent);
+  // Calculate ratio, gradient and laplacian
+  for (int iw=0; iw<walkers.size(); iw++)
+  {
+    psi_ratios[iw] *= ratio_host[5*iw+0];
+    GradType g(ratio_host[5*iw+1],
+               ratio_host[5*iw+2],
+               ratio_host[5*iw+3]);
+    grad[iw] += g;
+    lapl[iw] += ratio_host[5*iw+0];
+  }
+#ifdef CUDA_DEBUG
+  if (NumOrbitals == 31)
+  {
+    gpu::host_vector<CudaRealType> host_data;
+    vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
+    for (int iw=0; iw<walkers.size(); iw++)
+    {
+      host_data = walkers[iw]->cuda_DataSet;
+      for (int iorb=0; iorb<NumOrbitals; iorb++)
+      {
+        cpu_ratios[iw] += host_data[AinvOffset+RowStride*iorb+iat-FirstIndex] *
+                          host_data[newGradLaplOffset + iorb] / ratio_host[5*iw+0];
+      }
+      fprintf (stderr, "ratio CPU grad = %10.6e   GPU grad = %10.6e\n",
+               cpu_ratios[iw], grad[iw][0]);
+    }
+  }
+#endif
+}
+
+
 
 
 // The gradient is (\nabla psi(Rnew))/psi(Rnew)
@@ -907,17 +1019,24 @@ DiracDeterminantCUDA::NLratios (MCWalkerConfiguration &W,
   // NLratios_CPU (W, jobList, quadPoints, cpu_ratios);
   vector<Walker_t*> &walkers = W.WalkerList;
   int posIndex=0, numJobs=0;
-  vector<PosType> posBuffer;
+  vector<PosType> posBuffer[2];
   int rowIndex = 0;
-  vector<ValueType*> ratio_pointers;
-  posBuffer.clear();
-  ratio_pointers.clear();
-  NLAinvList_host.clear();
-  NLnumRatioList_host.clear();
-  NLelecList_host.clear();
-  NLratioList_host.clear();
-  RatioRowList_host.clear();
-  for (int ijob=0; ijob < jobList.size(); ijob++)
+  vector<ValueType*> ratio_pointers[2];
+  bool hasResults = false;
+  for(int i = 0; i < 2; ++i)
+  {
+    posBuffer[i].clear();
+    ratio_pointers[i].clear();
+    NLAinvList_host[i].clear();
+    NLnumRatioList_host[i].clear();
+    NLelecList_host[i].clear();
+    NLratioList_host[i].clear();
+    RatioRowList_host[i].clear();
+  }
+  int ijob = 0;
+  int counter = 0;
+  //First batch of data (PT)
+  for (; ijob < jobList.size(); ++ijob)
   {
     NLjob &job = jobList[ijob];
     int numQuad = job.numQuadPoints;
@@ -931,67 +1050,123 @@ DiracDeterminantCUDA::NLratios (MCWalkerConfiguration &W,
     // Check to see if the buffer is full
     if (rowIndex + numQuad > NLrowBufferRows)
     {
-      // Compute orbital rows
-      Phi->evaluate (posBuffer, SplineRowList_d);
-      // Compute ratios
-      NLAinvList_d     = NLAinvList_host;
-      NLnumRatioList_d = NLnumRatioList_host;
-      NLelecList_d     = NLelecList_host;
-      NLratioList_d    = NLratioList_host;
-      RatioRowList_d   = RatioRowList_host;
-      calc_many_ratios (NLAinvList_d.data(), RatioRowList_d.data(),
-                        NLratioList_d.data(), NLnumRatioList_d.data(),
-                        NumOrbitals, RowStride, NLelecList_d.data(),
-                        numJobs);
-      // Write ratios out output vector
-      NLratios_host = NLratios_d;
-      for (int i=0; i<ratio_pointers.size(); i++)
-        *(ratio_pointers[i]) *= NLratios_host[i];
-      // Reset counters
-      posBuffer.clear();
-      ratio_pointers.clear();
-      NLAinvList_host.clear();
-      NLnumRatioList_host.clear();
-      NLelecList_host.clear();
-      NLratioList_host.clear();
-      RatioRowList_host.clear();
-      rowIndex=0;
-      numJobs=0;
+      break;
     }
     int iw = job.walker;
-    NLAinvList_host.push_back(&(walkers[iw]->cuda_DataSet.data()[AinvOffset]));
-    NLnumRatioList_host.push_back(numQuad);
-    NLelecList_host.push_back(job.elec-FirstIndex);
-    NLratioList_host.push_back(&(NLratios_d.data()[rowIndex]));
-    RatioRowList_host.push_back(&(NLrowBuffer_d.data()[rowIndex*RowStride]));
+    NLAinvList_host[counter].push_back(&(walkers[iw]->cuda_DataSet.data()[AinvOffset]));
+    NLnumRatioList_host[counter].push_back(numQuad);
+    NLelecList_host[counter].push_back(job.elec-FirstIndex);
+    NLratioList_host[counter].push_back(&(NLratios_d[counter].data()[rowIndex]));
+    RatioRowList_host[counter].push_back(&(NLrowBuffer_d.data()[rowIndex*RowStride]));
     for (int iq=0; iq < numQuad; iq++)
     {
-      posBuffer.push_back(quadPoints[posIndex]);
-      ratio_pointers.push_back(&(psi_ratios[posIndex]));
+      posBuffer[counter].push_back(quadPoints[posIndex]);
+      ratio_pointers[counter].push_back(&(psi_ratios[posIndex]));
       posIndex++;
     }
     rowIndex += numQuad;
     numJobs++;
   }
-  if (posBuffer.size())
+  //Next batches (PT)
+  while(ijob < jobList.size())
+  {
+    NLjob &job = jobList[ijob];
+    int numQuad = job.numQuadPoints;
+    int elec    = job.elec;
+    if(rowIndex + numQuad > NLrowBufferRows)
+    {
+      // Compute orbital rows
+      Phi->evaluate (posBuffer[counter], SplineRowList_d);
+      // Compute ratios
+      NLAinvList_d.asyncCopy(NLAinvList_host[counter]);
+      NLnumRatioList_d.asyncCopy(NLnumRatioList_host[counter]);
+      NLelecList_d.asyncCopy(NLelecList_host[counter]);
+      NLratioList_d.asyncCopy(NLratioList_host[counter]);
+      RatioRowList_d.asyncCopy(RatioRowList_host[counter]);
+      calc_many_ratios (NLAinvList_d.data(), RatioRowList_d.data(),
+                        NLratioList_d.data(), NLnumRatioList_d.data(),
+                        NumOrbitals, RowStride, NLelecList_d.data(),
+                        numJobs);
+      // Write ratios out output vector
+      rowIndex=0;
+      numJobs=0;
+      counter = (counter+1)%2;
+    }
+    if(hasResults)
+    {
+      cudaStreamSynchronize(gpu::memoryStream);
+      for (int i=0; i<ratio_pointers[counter].size(); i++)
+        *(ratio_pointers[counter][i]) *= NLratios_host[i];
+      hasResults = false;
+      ratio_pointers[counter].clear();
+    }
+    for (; ijob < jobList.size(); ijob++)
+    {
+      NLjob &job = jobList[ijob];
+      int numQuad = job.numQuadPoints;
+      int elec    = job.elec;
+      // Check if this electron belongs to this determinant
+      if (elec < FirstIndex || elec >= LastIndex)
+      {
+        posIndex += numQuad;
+        continue;
+      }
+      // Check to see if the buffer is full
+      if (rowIndex + numQuad > NLrowBufferRows)
+      {
+        break;
+      }
+      int iw = job.walker;
+      NLAinvList_host[counter].push_back(&(walkers[iw]->cuda_DataSet.data()[AinvOffset]));
+      NLnumRatioList_host[counter].push_back(numQuad);
+      NLelecList_host[counter].push_back(job.elec-FirstIndex);
+      NLratioList_host[counter].push_back(&(NLratios_d[counter].data()[rowIndex]));
+      RatioRowList_host[counter].push_back(&(NLrowBuffer_d.data()[rowIndex*RowStride]));
+      for (int iq=0; iq < numQuad; iq++)
+      {
+        posBuffer[counter].push_back(quadPoints[posIndex]);
+        ratio_pointers[counter].push_back(&(psi_ratios[posIndex]));
+        posIndex++;
+      }
+      rowIndex += numQuad;
+      numJobs++;
+    }
+    NLratios_host.asyncCopy(NLratios_d[(counter+1)%2]);
+    hasResults = true;
+    // Reset counters
+    posBuffer[(counter+1)%2].clear();
+    //ratio_pointers[(counter+1)%2].clear();
+    NLAinvList_host[(counter+1)%2].clear();
+    NLnumRatioList_host[(counter+1)%2].clear();
+    NLelecList_host[(counter+1)%2].clear();
+    NLratioList_host[(counter+1)%2].clear();
+    RatioRowList_host[(counter+1)%2].clear();
+  }
+  if(hasResults)
+  {
+    cudaStreamSynchronize(gpu::memoryStream);
+    for (int i=0; i<ratio_pointers[(counter+1)%2].size(); i++)
+      *(ratio_pointers[(counter+1)%2][i]) *= NLratios_host[i];
+  }
+  if (posBuffer[counter].size())
   {
     // Compute whatever remains in the buffer
     // Compute orbital rows
-    Phi->evaluate (posBuffer, SplineRowList_d);
+    Phi->evaluate (posBuffer[counter], SplineRowList_d);
     // Compute ratios
-    NLAinvList_d     = NLAinvList_host;
-    NLnumRatioList_d = NLnumRatioList_host;
-    NLelecList_d     = NLelecList_host;
-    NLratioList_d    = NLratioList_host;
-    RatioRowList_d   = RatioRowList_host;
+    NLAinvList_d.asyncCopy(NLAinvList_host[counter]);
+    NLnumRatioList_d.asyncCopy(NLnumRatioList_host[counter]);
+    NLelecList_d.asyncCopy(NLelecList_host[counter]);
+    NLratioList_d.asyncCopy(NLratioList_host[counter]);
+    RatioRowList_d.asyncCopy(RatioRowList_host[counter]);
     calc_many_ratios (NLAinvList_d.data(), RatioRowList_d.data(),
                       NLratioList_d.data(), NLnumRatioList_d.data(),
                       NumOrbitals, RowStride, NLelecList_d.data(),
                       numJobs);
     // Write ratios out output vector
-    NLratios_host = NLratios_d;
-    for (int i=0; i<ratio_pointers.size(); i++)
-      *(ratio_pointers[i]) *= NLratios_host[i];
+    NLratios_host = NLratios_d[counter];
+    for (int i=0; i<ratio_pointers[counter].size(); i++)
+      *(ratio_pointers[counter][i]) *= NLratios_host[i];
   }
   // DEBUG DEBUG DEBUG
   // for (int i=0; i<psi_ratios.size(); i++) {

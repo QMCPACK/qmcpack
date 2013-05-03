@@ -29,7 +29,7 @@ namespace qmcplusplus
 /// Constructor.
 DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                  QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), Mover(0),
+  QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
   ResizeTimer("DMCcuda::resize"),
   DriftDiffuseTimer("DMCcuda::Drift/Diffuse"),
   BranchTimer("DMCcuda::Branch"),
@@ -39,6 +39,7 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   QMCType ="DMCcuda";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   QMCDriverMode.set(QMC_WARMUP,0);
+  m_param.add(myWarmupSteps,"warmupSteps","int");
   m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(NonLocalMove,"nonlocalmove","string");
   m_param.add(NonLocalMove,"nonlocalmoves","string");
@@ -145,9 +146,10 @@ bool DMCcuda::run()
       DriftDiffuseTimer.start();
       for(int iat=0; iat<nat; iat++)
       {
-        Psi.getGradient (W, iat, oldG);
+        Psi.calcGradient (W, iat, oldG);
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(delpos,Random);
+        Psi.addGradient(W, iat, oldG);
         for(int iw=0; iw<nw; iw++)
         {
           delpos[iw] *= m_sqrttau;
@@ -158,23 +160,30 @@ bool DMCcuda::run()
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
         W.proposeMove_GPU(newpos, iat);
-        Psi.ratio(W,iat,ratios,newG, newL);
+        Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         vector<bool> acc(nw, true);
         if (W.UseBoundBox)
           checkBounds (newpos, acc);
+        std::vector<RealType> logGf_v(nw);
+        std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
         {
           PosType drOld =
             newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-          RealType logGf = -m_oneover2tau * dot(drOld, drOld);
+          logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+          rand_v[iw] = Random();
+        }
+        Psi.addRatio(W,iat,ratios, newG, newL);
+        for(int iw=0; iw<nw; ++iw)
+        {
           newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
           PosType drNew  =
             (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
           RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
-          RealType x = logGb - logGf;
+          RealType x = logGb - logGf_v[iw];
           RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-          if(acc[iw] && Random() < prob && ratios[iw] > 0.0)
+          if(acc[iw] && rand_v[iw] < prob && ratios[iw] > 0.0)
           {
             accepted.push_back(W[iw]);
             nAccept++;
@@ -201,10 +210,8 @@ bool DMCcuda::run()
       //	Psi.recompute(W, false);
       Psi.gradLapl(W, grad, lapl);
       HTimer.start();
-      if (NLmove)
-        H.evaluate (W, LocalEnergy, Txy);
-      else
-        H.evaluate (W, LocalEnergy);
+      if (NLmove)	  H.evaluate (W, LocalEnergy, Txy);
+      else    	  H.evaluate (W, LocalEnergy);
       HTimer.stop();
 // 	for (int iw=0; iw<nw; iw++) {
 // 	  branchEngine->clampEnergy(LocalEnergy[iw]);
@@ -383,9 +390,10 @@ bool DMCcuda::runWithNonlocal()
       }
       for(int iat=0; iat<nat; iat++)
       {
-        Psi.getGradient (W, iat, oldG);
+        Psi.calcGradient (W, iat, oldG);
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(delpos,Random);
+        Psi.addGradient(W, iat, oldG);
         for(int iw=0; iw<nw; iw++)
         {
           delpos[iw] *= m_sqrttau;
@@ -396,21 +404,28 @@ bool DMCcuda::runWithNonlocal()
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
         W.proposeMove_GPU(newpos, iat);
-        Psi.ratio(W,iat,ratios,newG, newL);
+        Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         vector<bool> acc(nw, false);
+        std::vector<RealType> logGf_v(nw);
+        std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
         {
           PosType drOld =
             newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-          RealType logGf = -m_oneover2tau * dot(drOld, drOld);
+          logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+          rand_v[iw] = Random();
+        }
+        Psi.addRatio(W,iat,ratios,newG, newL);
+        for(int iw=0; iw<nw; ++iw)
+        {
           newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
           PosType drNew  =
             (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
           RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
-          RealType x = logGb - logGf;
+          RealType x = logGb - logGf_v[iw];
           RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-          if(Random() < prob && ratios[iw] > 0.0)
+          if(rand_v[iw] < prob && ratios[iw] > 0.0)
           {
             accepted.push_back(W[iw]);
             nAccept++;

@@ -95,6 +95,8 @@ public:
   vector<PosType>                                    Rnew;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
+  gpu::host_vector<CUDA_PRECISION*> hostlist;
+  gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
   void allocateGPU(size_t buffersize);
   void copyWalkersToGPU(bool copyGrad=false);
   void copyWalkerGradToGPU();

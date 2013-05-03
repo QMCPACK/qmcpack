@@ -39,12 +39,6 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
   m_param.add(UseDrift,"useDrift","string");
   m_param.add(UseDrift,"usedrift","string");
   m_param.add(UseDrift,"use_drift","string");
-//    m_param.add(logepsilon,"logepsilon","double");
-//    m_param.add(logoffset,"logoffset","double");
-//    m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
-  m_param.add(nTargetSamples,"targetWalkers","int");
-  m_param.add(nTargetSamples,"targetwalkers","int");
-  m_param.add(nTargetSamples,"target_walkers","int");
 }
 
 bool VMCSingleOMP::run()

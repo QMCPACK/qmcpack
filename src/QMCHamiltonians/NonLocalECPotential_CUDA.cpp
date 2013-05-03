@@ -49,15 +49,13 @@ NonLocalECPotential_CUDA::makeClone
     new NonLocalECPotential_CUDA(IonConfig,qp,psi,UsePBC);
   for(int ig=0; ig<PPset.size(); ++ig)
   {
-    if(PPset[ig])
-      myclone->add(ig,PPset[ig]->makeClone());
+    if(PPset[ig]) myclone->add(ig,PPset[ig]->makeClone());
   }
   //resize sphere
   qp.resizeSphere(IonConfig.getTotalNum());
   for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
   {
-    if(PP[ic] && PP[ic]->nknot)
-      qp.Sphere[ic]->resize(PP[ic]->nknot);
+    if(PP[ic] && PP[ic]->nknot) qp.Sphere[ic]->resize(PP[ic]->nknot);
   }
   return myclone;
 }
@@ -110,8 +108,8 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
   // the cores overlap
   Elecs_GPU.resize(MaxPairs*nw);
   Dist_GPU.resize(MaxPairs*nw);
-  gpu::host_vector<int*> Eleclist_host(nw);
-  gpu::host_vector<CUDA_PRECISION*> Distlist_host(nw);
+  Eleclist_host.resize(nw);
+  Distlist_host.resize(nw);
   Eleclist_GPU.resize(nw);
   Distlist_GPU.resize(nw);
   NumPairs_GPU.resize(nw);
@@ -120,7 +118,7 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
     Eleclist_host[iw] = &(Elecs_GPU.data()[MaxPairs*iw]);
     Distlist_host[iw] = &(Dist_GPU.data()[MaxPairs*iw]);
   }
-  Eleclist_GPU = Eleclist_host;
+  Eleclist_GPU.asyncCopy(Eleclist_host);
   Distlist_GPU = Distlist_host;
   // Resize ratio positions vector
   // Compute maximum number of knots
@@ -131,16 +129,16 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
   RatiosPerWalker = MaxPairs * MaxKnots;
   RatioPos_GPU.resize(OHMMS_DIM * RatiosPerWalker * nw);
   CosTheta_GPU.resize(RatiosPerWalker * nw);
-  gpu::host_vector<CUDA_PRECISION*> RatioPoslist_host(nw);
-  gpu::host_vector<CUDA_PRECISION*> Ratiolist_host(nw);
-  gpu::host_vector<CUDA_PRECISION*> CosThetalist_host(nw);
+  RatioPoslist_host.resize(nw);
+  Ratiolist_host.resize(nw);
+  CosThetalist_host.resize(nw);
   for (int iw=0; iw<nw; iw++)
   {
     RatioPoslist_host[iw] =
       RatioPos_GPU.data() + OHMMS_DIM * RatiosPerWalker * iw;
     CosThetalist_host[iw] = CosTheta_GPU.data()+RatiosPerWalker*iw;
   }
-  RatioPoslist_GPU = RatioPoslist_host;
+  RatioPoslist_GPU.asyncCopy(RatioPoslist_host);
   CosThetalist_GPU = CosThetalist_host;
   QuadPoints_GPU.resize(NumIonGroups);
   QuadPoints_host.resize(NumIonGroups);

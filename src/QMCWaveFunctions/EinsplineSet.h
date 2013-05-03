@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
 #include <spline/einspline_engine.hpp>
-//#include <einspline/multi_bspline_structs.h>
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
 #include "QMCWaveFunctions/AtomicOrbitalCuda.h"
@@ -294,13 +293,15 @@ protected:
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
                           gpu::device_vector<CudaRealType*> &phi);
   // Data for vectorized evaluations
-  gpu::host_vector<CudaPosType> hostPos, NLhostPos;
+  std::vector<CudaPosType> hostPos;
+  gpu::host_vector<CudaPosType> NLhostPos;
   gpu::device_vector<CudaPosType> cudapos, NLcudapos;
   gpu::host_vector<CudaRealType> hostSign, NLhostSign;
   gpu::device_vector<CudaRealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in
   // GPU memory.
   gpu::device_vector<CudaRealType> Linv_cuda, L_cuda;
+  gpu::host_vector<CudaRealType> L_host, Linv_host;
 #endif
 
 public:

@@ -909,58 +909,57 @@ EinsplineSetHybrid<double>::evaluate (vector<Walker_t*> &walkers, vector<PosType
         }
       }
     }
-    else
-      if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
+    else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
+    {
+      cerr << "HalfG = " << HalfG << endl;
+      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector_t CPUgrad(NumOrbitals);
+      PosType ru(PrimLattice.toUnit(newpos[iw]));
+      PosType img;
+      int sign = 0;
+      for (int i=0; i<3; i++)
       {
-        cerr << "HalfG = " << HalfG << endl;
-        ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-        GradVector_t CPUgrad(NumOrbitals);
-        PosType ru(PrimLattice.toUnit(newpos[iw]));
-        PosType img;
-        int sign = 0;
-        for (int i=0; i<3; i++)
+        img[i] = std::floor(ru[i]);
+        ru[i] -= img[i];
+        sign += HalfG[i]*(int)img[i];
+      }
+      EinsplineMultiEval (MultiSpline, ru, CPUvals, CPUgrad,
+                          StorageHessVector);
+      cudaMemcpy (&vals_CPU[0], phi_CPU[iw], NumOrbitals*sizeof(float),
+                  cudaMemcpyDeviceToHost);
+      cudaMemcpy (&GL_CPU[0], grad_lapl_CPU[iw], 4*row_stride*sizeof(float),
+                  cudaMemcpyDeviceToHost);
+      for (int j=0; j<NumOrbitals; j++)
+      {
+        CPUgrad[j] = dot (PrimLattice.G, CPUgrad[j]);
+        CPUlapl[j] = trace (StorageHessVector[j], GGt);
+        if (sign & 1)
         {
-          img[i] = std::floor(ru[i]);
-          ru[i] -= img[i];
-          sign += HalfG[i]*(int)img[i];
+          CPUvals[j] *= -1.0;
+          CPUgrad[j] *= -1.0;
+          CPUlapl[j] *= -1.0;
         }
-        EinsplineMultiEval (MultiSpline, ru, CPUvals, CPUgrad,
-                            StorageHessVector);
-        cudaMemcpy (&vals_CPU[0], phi_CPU[iw], NumOrbitals*sizeof(float),
-                    cudaMemcpyDeviceToHost);
-        cudaMemcpy (&GL_CPU[0], grad_lapl_CPU[iw], 4*row_stride*sizeof(float),
-                    cudaMemcpyDeviceToHost);
-        for (int j=0; j<NumOrbitals; j++)
+        fprintf (stderr, "\nGPU=%10.6f  %10.6f %10.6f %10.6f  %10.6f\n",
+                 vals_CPU[j], GL_CPU[0*row_stride+j], GL_CPU[1*row_stride+j],
+                 GL_CPU[2*row_stride+j], GL_CPU[3*row_stride+j]);
+        fprintf (stderr, "CPU=%10.6f  %10.6f %10.6f %10.6f  %10.6f sign = %d\n",
+                 CPUvals[j], CPUgrad[j][0], CPUgrad[j][1], CPUgrad[j][2],
+                 CPUlapl[j], sign);
+        if (std::isnan(GL_CPU[0*row_stride+j]))
         {
-          CPUgrad[j] = dot (PrimLattice.G, CPUgrad[j]);
-          CPUlapl[j] = trace (StorageHessVector[j], GGt);
-          if (sign & 1)
-          {
-            CPUvals[j] *= -1.0;
-            CPUgrad[j] *= -1.0;
-            CPUlapl[j] *= -1.0;
-          }
-          fprintf (stderr, "\nGPU=%10.6f  %10.6f %10.6f %10.6f  %10.6f\n",
-                   vals_CPU[j], GL_CPU[0*row_stride+j], GL_CPU[1*row_stride+j],
-                   GL_CPU[2*row_stride+j], GL_CPU[3*row_stride+j]);
-          fprintf (stderr, "CPU=%10.6f  %10.6f %10.6f %10.6f  %10.6f sign = %d\n",
-                   CPUvals[j], CPUgrad[j][0], CPUgrad[j][1], CPUgrad[j][2],
-                   CPUlapl[j], sign);
-          if (std::isnan(GL_CPU[0*row_stride+j]))
-          {
-            cerr << "r[" << iw << "] = " << newpos[iw] << endl;
-            cerr << "iw = " << iw << endl;
-            fprintf (stderr, "3D val[%2d]  = %10.5e %10.5e\n",
-                     j, vals_CPU[j], CPUvals[j]);
-            fprintf (stderr, "3D grad[%2d] = %10.5e %10.5e  %10.5e %10.5e  %10.5e %10.5e\n", j,
-                     GL_CPU[0*row_stride+j], CPUgrad[j][0],
-                     GL_CPU[1*row_stride+j], CPUgrad[j][1],
-                     GL_CPU[2*row_stride+j], CPUgrad[j][2]);
-            fprintf (stderr, "3D lapl[%2d] = %10.5e %10.5e\n",
-                     j, GL_CPU[3*row_stride+j], CPUlapl[j]);
-          }
+          cerr << "r[" << iw << "] = " << newpos[iw] << endl;
+          cerr << "iw = " << iw << endl;
+          fprintf (stderr, "3D val[%2d]  = %10.5e %10.5e\n",
+                   j, vals_CPU[j], CPUvals[j]);
+          fprintf (stderr, "3D grad[%2d] = %10.5e %10.5e  %10.5e %10.5e  %10.5e %10.5e\n", j,
+                   GL_CPU[0*row_stride+j], CPUgrad[j][0],
+                   GL_CPU[1*row_stride+j], CPUgrad[j][1],
+                   GL_CPU[2*row_stride+j], CPUgrad[j][2]);
+          fprintf (stderr, "3D lapl[%2d] = %10.5e %10.5e\n",
+                   j, GL_CPU[3*row_stride+j], CPUlapl[j]);
         }
       }
+    }
   gpu::host_vector<float> Ylm_CPU(Ylm_GPU.size());
   Ylm_CPU = Ylm_GPU;
   rhats_CPU = rhats_GPU;
@@ -1370,105 +1369,103 @@ EinsplineSetHybrid<complex<double> >::evaluate
         }
       }
     }
-    else
-      if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
+    else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
+    {
+      ComplexValueVector_t CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
+      ComplexGradVector_t CPUzgrad(NumOrbitals);
+      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector_t CPUgrad(NumOrbitals);
+      PosType ru(PrimLattice.toUnit(newpos[iw]));
+      for (int i=0; i<3; i++)
+        ru[i] -= std::floor(ru[i]);
+      EinsplineMultiEval (MultiSpline, ru, CPUzvals, CPUzgrad,
+                          StorageHessVector);
+      for (int j=0; j<MakeTwoCopies.size(); j++)
       {
-        ComplexValueVector_t CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
-        ComplexGradVector_t CPUzgrad(NumOrbitals);
-        ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-        GradVector_t CPUgrad(NumOrbitals);
-        PosType ru(PrimLattice.toUnit(newpos[iw]));
-        for (int i=0; i<3; i++)
-          ru[i] -= std::floor(ru[i]);
-        EinsplineMultiEval (MultiSpline, ru, CPUzvals, CPUzgrad,
-                            StorageHessVector);
-        for (int j=0; j<MakeTwoCopies.size(); j++)
+        CPUzgrad[j] = dot (PrimLattice.G, CPUzgrad[j]);
+        CPUzlapl[j] = trace (StorageHessVector[j], GGt);
+      }
+      // Add e^-ikr phase to B-spline orbitals
+      complex<double> eye(0.0, 1.0);
+      for (int j=0; j<MakeTwoCopies.size(); j++)
+      {
+        complex<double> u = CPUzvals[j];
+        TinyVector<complex<double>,OHMMS_DIM> gradu = CPUzgrad[j];
+        complex<double> laplu = CPUzlapl[j];
+        PosType k = kPoints[j];
+        TinyVector<complex<double>,OHMMS_DIM> ck;
+        for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
+        double s,c;
+        double phase = -dot(newpos[iw], k);
+        sincos (phase, &s, &c);
+        complex<double> e_mikr (c,s);
+        CPUzvals[j]   = e_mikr*u;
+        CPUzgrad[j]  = e_mikr*(-eye*u*ck + gradu);
+        CPUzlapl[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+      }
+      int index=0;
+      for (int i=0; i<MakeTwoCopies.size(); i++)
+      {
+        CPUvals[index] = CPUzvals[i].real();
+        CPUlapl[index] = CPUzlapl[i].real();
+        for (int j=0; j<OHMMS_DIM; j++)
+          CPUgrad[index][j] = CPUzgrad[i][j].real();
+        index++;
+        if (MakeTwoCopies[i])
         {
-          CPUzgrad[j] = dot (PrimLattice.G, CPUzgrad[j]);
-          CPUzlapl[j] = trace (StorageHessVector[j], GGt);
-        }
-        // Add e^-ikr phase to B-spline orbitals
-        complex<double> eye(0.0, 1.0);
-        for (int j=0; j<MakeTwoCopies.size(); j++)
-        {
-          complex<double> u = CPUzvals[j];
-          TinyVector<complex<double>,OHMMS_DIM> gradu = CPUzgrad[j];
-          complex<double> laplu = CPUzlapl[j];
-          PosType k = kPoints[j];
-          TinyVector<complex<double>,OHMMS_DIM> ck;
-          for (int n=0; n<OHMMS_DIM; n++)
-            ck[n] = k[n];
-          double s,c;
-          double phase = -dot(newpos[iw], k);
-          sincos (phase, &s, &c);
-          complex<double> e_mikr (c,s);
-          CPUzvals[j]   = e_mikr*u;
-          CPUzgrad[j]  = e_mikr*(-eye*u*ck + gradu);
-          CPUzlapl[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-        }
-        int index=0;
-        for (int i=0; i<MakeTwoCopies.size(); i++)
-        {
-          CPUvals[index] = CPUzvals[i].real();
-          CPUlapl[index] = CPUzlapl[i].real();
+          CPUvals[index] = CPUzvals[i].imag();
+          CPUlapl[index] = CPUzlapl[i].imag();
           for (int j=0; j<OHMMS_DIM; j++)
-            CPUgrad[index][j] = CPUzgrad[i][j].real();
+            CPUgrad[index][j] = CPUzgrad[i][j].imag();
           index++;
-          if (MakeTwoCopies[i])
-          {
-            CPUvals[index] = CPUzvals[i].imag();
-            CPUlapl[index] = CPUzlapl[i].imag();
-            for (int j=0; j<OHMMS_DIM; j++)
-              CPUgrad[index][j] = CPUzgrad[i][j].imag();
-            index++;
-          }
-        }
-        cudaMemcpy (&vals_CPU[0], phi_CPU[iw], NumOrbitals*sizeof(float),
-                    cudaMemcpyDeviceToHost);
-        cudaMemcpy (&GL_CPU[0], grad_lapl_CPU[iw], 4*row_stride*sizeof(float),
-                    cudaMemcpyDeviceToHost);
-        // for (int i=0; i<4*row_stride; i++)
-        //   fprintf (stderr, "%d %10.5e\n", i, GL_CPU[i]);
-        static long int numgood=0, numbad=0;
-        for (int j=0; j<NumOrbitals; j++)
-        {
-          double lap_ratio = GL_CPU[3*row_stride+j] /  CPUlapl[j];
-          if (std::fabs(GL_CPU[3*row_stride+j] - CPUlapl[j]) > 1.0e-4)
-          {
-            fprintf (stderr, "Error:  CPU laplacian = %1.8e  GPU = %1.8e\n",
-                     CPUlapl[j],  GL_CPU[3*row_stride+j]);
-            fprintf (stderr, "        CPU value     = %1.8e  GPU = %1.8e\n",
-                     CPUvals[j],  vals_CPU[j]);
-            fprintf (stderr, "u = %1.8f %1.8f %1.8f \n", ru[0], ru[1], ru[2]);
-            cerr << "iw = " << iw << endl;
-            numbad++;
-          }
-          else
-            numgood++;
-          if (numbad + numgood >= 100000)
-          {
-            double percent_bad = 100.0*(double)numbad / (double)(numbad + numgood);
-            fprintf (stderr, "Percent bad = %1.8f\n", percent_bad);
-            numbad = numgood = 0;
-          }
-          // if (true || isnan(GL_CPU[0*row_stride+j])) {
-          //   // cerr << "r[" << iw << "] = " << newpos[iw] << endl;
-          //   // cerr << "iw = " << iw << endl;
-          //   fprintf (stderr, "\n3D      val[%2d]  = %10.5e %10.5e\n",
-          // 	     j, vals_CPU[j], CPUvals[j]);
-          //   fprintf (stderr, "3D GPU grad[%2d] = %10.5e %10.5e %10.5e\n", j,
-          // 	     GL_CPU[0*row_stride+j],
-          // 	     GL_CPU[1*row_stride+j],
-          // 	     GL_CPU[2*row_stride+j]);
-          //   fprintf (stderr, "3D CPU grad[%2d] = %10.5e %10.5e %10.5e\n", j,
-          // 	     CPUgrad[j][0],
-          // 	     CPUgrad[j][1],
-          // 	     CPUgrad[j][2]);
-          //   fprintf (stderr, "3D     lapl[%2d] = %10.5e %10.5e\n",
-          // 	     j, GL_CPU[3*row_stride+j], CPUlapl[j]);
-          // }
         }
       }
+      cudaMemcpy (&vals_CPU[0], phi_CPU[iw], NumOrbitals*sizeof(float),
+                  cudaMemcpyDeviceToHost);
+      cudaMemcpy (&GL_CPU[0], grad_lapl_CPU[iw], 4*row_stride*sizeof(float),
+                  cudaMemcpyDeviceToHost);
+      // for (int i=0; i<4*row_stride; i++)
+      //   fprintf (stderr, "%d %10.5e\n", i, GL_CPU[i]);
+      static long int numgood=0, numbad=0;
+      for (int j=0; j<NumOrbitals; j++)
+      {
+        double lap_ratio = GL_CPU[3*row_stride+j] /  CPUlapl[j];
+        if (std::fabs(GL_CPU[3*row_stride+j] - CPUlapl[j]) > 1.0e-4)
+        {
+          fprintf (stderr, "Error:  CPU laplacian = %1.8e  GPU = %1.8e\n",
+                   CPUlapl[j],  GL_CPU[3*row_stride+j]);
+          fprintf (stderr, "        CPU value     = %1.8e  GPU = %1.8e\n",
+                   CPUvals[j],  vals_CPU[j]);
+          fprintf (stderr, "u = %1.8f %1.8f %1.8f \n", ru[0], ru[1], ru[2]);
+          cerr << "iw = " << iw << endl;
+          numbad++;
+        }
+        else
+          numgood++;
+        if (numbad + numgood >= 100000)
+        {
+          double percent_bad = 100.0*(double)numbad / (double)(numbad + numgood);
+          fprintf (stderr, "Percent bad = %1.8f\n", percent_bad);
+          numbad = numgood = 0;
+        }
+        // if (true || isnan(GL_CPU[0*row_stride+j])) {
+        //   // cerr << "r[" << iw << "] = " << newpos[iw] << endl;
+        //   // cerr << "iw = " << iw << endl;
+        //   fprintf (stderr, "\n3D      val[%2d]  = %10.5e %10.5e\n",
+        // 	     j, vals_CPU[j], CPUvals[j]);
+        //   fprintf (stderr, "3D GPU grad[%2d] = %10.5e %10.5e %10.5e\n", j,
+        // 	     GL_CPU[0*row_stride+j],
+        // 	     GL_CPU[1*row_stride+j],
+        // 	     GL_CPU[2*row_stride+j]);
+        //   fprintf (stderr, "3D CPU grad[%2d] = %10.5e %10.5e %10.5e\n", j,
+        // 	     CPUgrad[j][0],
+        // 	     CPUgrad[j][1],
+        // 	     CPUgrad[j][2]);
+        //   fprintf (stderr, "3D     lapl[%2d] = %10.5e %10.5e\n",
+        // 	     j, GL_CPU[3*row_stride+j], CPUlapl[j]);
+        // }
+      }
+    }
   gpu::host_vector<float> Ylm_CPU(Ylm_GPU.size());
   Ylm_CPU = Ylm_GPU;
   rhats_CPU = rhats_GPU;
@@ -1630,7 +1627,8 @@ EinsplineSetExtended<complex<double> >::initGPU()
   // Destroy original CPU spline
   // HACK HACK HACK
   //destroy_Bspline (MultiSpline);
-  gpu::host_vector<CudaRealType> L_host(9), Linv_host(9);
+  L_host.resize(9);
+  Linv_host.resize(9);
   Linv_cuda.resize(9);
   L_cuda.resize(9);
   for (int i=0; i<3; i++)
@@ -1712,7 +1710,7 @@ EinsplineSetHybrid<double>::initGPU()
       for (int n=0; n<atom.PolyOrder; n++)
         for (int orb=0; orb<NumOrbitals; orb++)
           poly_coefs[n*atom_cuda.poly_stride + lm*atom_cuda.lm_stride + orb]
-          = atom.get_poly_coefs()(n,orb,lm);
+            = atom.get_poly_coefs()(n,orb,lm);
     AtomicPolyCoefs_GPU[iat] = poly_coefs;
     AtomicOrbitals_CPU.push_back(atom_cuda);
   }

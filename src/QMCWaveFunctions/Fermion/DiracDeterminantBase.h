@@ -358,6 +358,24 @@ public:
     cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
     abort();
   }
+  virtual void
+  addRatio (MCWalkerConfiguration &W, int iat,
+            vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            vector<ValueType> &lapl)
+  {
+    cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
+    abort();
+  }
+  virtual void
+  calcRatio (MCWalkerConfiguration &W, int iat,
+             vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             vector<ValueType> &lapl)
+  {
+    cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";
+    abort();
+  }
+
+
 
   virtual void
   ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
@@ -375,6 +393,14 @@ public:
     cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";
     abort();
   }
+  virtual void
+  calcGradient(MCWalkerConfiguration &W, int iat,
+               vector<GradType> &grad)
+  {
+    cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
+    abort();
+  }
+
 
   virtual void update (vector<Walker_t*> &walkers, int iat)
   {

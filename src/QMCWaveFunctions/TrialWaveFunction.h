@@ -388,6 +388,10 @@ public:
 
   void getGradient (MCWalkerConfiguration &W, int iat,
                     vector<GradType> &grad);
+  void calcGradient (MCWalkerConfiguration &W, int iat,
+                     vector<GradType> &grad);
+  void addGradient (MCWalkerConfiguration &W, int iat,
+                    vector<GradType> &grad);
   void evaluateLog (MCWalkerConfiguration &W,
                     vector<RealType> &logPsi);
   void ratio (MCWalkerConfiguration &W, int iat,
@@ -399,6 +403,15 @@ public:
               vector<ValueType> &psi_ratios,
               vector<GradType> &newG,
               vector<ValueType> &newL);
+  void calcRatio (MCWalkerConfiguration &W, int iat,
+                  vector<ValueType> &psi_ratios,
+                  vector<GradType> &newG,
+                  vector<ValueType> &newL);
+  void addRatio (MCWalkerConfiguration &W, int iat,
+                 vector<ValueType> &psi_ratios,
+                 vector<GradType> &newG,
+                 vector<ValueType> &newL);
+
   void ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
               vector<PosType> &rNew,
               vector<ValueType> &psi_ratios,
