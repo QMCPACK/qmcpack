@@ -65,7 +65,8 @@ int main(int argc, char **argv)
       else
       {
         ifstream fin(argv[i],ifstream::in);
-        if(!fin.fail())
+        bool valid=!fin.fail();
+        while(valid)
         {
           vector<string> words;
           getwords(words,fin);
@@ -83,6 +84,8 @@ int main(int argc, char **argv)
               }
             }
           }
+          else
+            valid=false;
         }
       }
     }
