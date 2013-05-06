@@ -91,6 +91,8 @@ public:
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
+  ///reset Walkers before loadEnsemble
+  virtual void resetWalkers()=0;
 
   inline void getParameterTypes(std::vector<int>& types)
   {
@@ -154,7 +156,7 @@ public:
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 1;
-  };
+  }
 
   virtual void getConfigurations(const string& aroot)=0;
 
@@ -169,7 +171,7 @@ public:
   inline void setDMC()
   {
     vmc_or_dmc=1.0;
-  };
+  }
 
 protected:
 
