@@ -30,6 +30,7 @@
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
+#include "qmc_common.h"
 #include <iostream>
 #include <fstream>
 
@@ -82,7 +83,7 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 {
   for (int i=0; i<optparm.size(); i++)
     optTarget->Params(i) = optparm[i] + dl*optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
 //    if (validFuncVal)
   validFuncVal = optTarget->IsValid;
@@ -91,7 +92,8 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-  start();
+  start_optimize();
+
   bool Valid(true);
   int Total_iterations(0);
 //size of matrix
@@ -106,6 +108,12 @@ bool QMCFixedSampleLinearOptimize::run()
 //   proposed direction and new parameters
   optdir.resize(numParams,0);
   optparm.resize(numParams,0);
+
+  Matrix<RealType> Left(N,N);
+  Matrix<RealType> Right(N,N);
+  Matrix<RealType> S(N,N);
+  Matrix<RealType> RightT(N,N);
+
   while (Total_iterations < Max_iterations)
   {
     Total_iterations+=1;
@@ -114,11 +122,13 @@ bool QMCFixedSampleLinearOptimize::run()
       continue;
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
     RealType stabilityBase(exp0);
+
 //     reset params if necessary
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     myTimers[4]->start();
     RealType lastCost(optTarget->Cost(true));
+
     myTimers[4]->start();
 //     if cost function is currently invalid continue
     Valid=optTarget->IsValid;
@@ -126,32 +136,35 @@ bool QMCFixedSampleLinearOptimize::run()
       continue;
     RealType newCost(lastCost);
     RealType startCost(lastCost);
-    Matrix<RealType> Left(N,N);
-    Matrix<RealType> Right(N,N);
-    Matrix<RealType> S(N,N);
 //     stick in wrong matrix to reduce the number of matrices we need by 1.( Left is actually stored in Right, & vice-versa)
     optTarget->fillOverlapHamiltonianMatrices(Right,Left,S);
     bool apply_inverse(true);
     if(apply_inverse)
     {
-      Matrix<RealType> RightT(Left);
+      RightT=Left;
       invert_matrix(RightT,false);
       MatrixOperators MO;
       Left=0;
       MO.product(RightT,Right,Left);
-//       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
+      //Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
     }
     //Find largest off-diagonal element compared to diagonal element.
     //This gives us an idea how well conditioned it is, used to stabilize.
     RealType od_largest(0);
     for (int i=0; i<N; i++)
       for (int j=0; j<N; j++)
+      {
+        //app_log() << std::abs(Left(i,j)) << " " << std::abs(Left(i,i)) << " " << std::abs(Left(i,j)) << " " << std::abs(Left(j,j)) <<endl;
         od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
+      }
     app_log()<<"od_largest "<<od_largest<<endl;
+    app_log().flush();
+
     if(od_largest>0)
       od_largest = std::log(od_largest);
     else
       od_largest = -1e16;
+
     if (od_largest<stabilityBase)
       stabilityBase=od_largest;
     else
@@ -300,66 +313,20 @@ bool QMCFixedSampleLinearOptimize::run()
   }
   app_log().flush();
   app_error().flush();
-  finish();
+  finish_optimize();
   return (optTarget->getReportCounter() > 0);
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
 * @param q current xmlNode
 * @return true if successful
+*
+* Use QMCLinearOptimize::put
 */
 bool
 QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("yes");
-  string vmcMove("pbyp");
-  OhmmsAttributeSet oAttrib;
-  oAttrib.add(useGPU,"gpu");
-  oAttrib.add(vmcMove,"move");
-  oAttrib.put(q);
-  xmlNodePtr qsave=q;
-  xmlNodePtr cur=qsave->children;
-  int pid=OHMMS::Controller->rank();
-  while (cur != NULL)
-  {
-    string cname((const char*)(cur->name));
-    if (cname == "mcwalkerset")
-    {
-      mcwalkerNodePtr.push_back(cur);
-    }
-    cur=cur->next;
-  }
-  //no walkers exist, add 10
-  if (W.getActiveWalkers() == 0)
-    addWalkers(omp_get_max_threads());
-  NumOfVMCWalkers=W.getActiveWalkers();
-  //create VMC engine
-  if (vmcEngine ==0)
-  {
-#if defined (QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W,Psi,H,psiPool);
-    else
-#endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->initCommunicator(myComm);
-  }
-  vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
-  vmcEngine->process(qsave);
-  bool success=true;
-  if (optTarget == 0)
-  {
-#if defined (QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
-    else
-#endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-    optTarget->setStream(&app_log());
-    success=optTarget->put(q);
-  }
-  return success;
+  return QMCLinearOptimize::put(q);
 }
 
 }

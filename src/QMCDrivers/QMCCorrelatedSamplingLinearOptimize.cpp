@@ -82,7 +82,7 @@ QMCCorrelatedSamplingLinearOptimize::RealType QMCCorrelatedSamplingLinearOptimiz
 
 bool QMCCorrelatedSamplingLinearOptimize::run()
 {
-  start();
+  start_optimize();
 //size of matrix
   numParams = optTarget->NumParams();
   N = numParams + 1;
@@ -277,7 +277,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   else
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters[i];
-  finish();
+  finish_optimize();
   return (optTarget->getReportCounter() > 0);
 }
 

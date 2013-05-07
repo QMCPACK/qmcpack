@@ -39,15 +39,25 @@ QMCCostFunctionOMP::~QMCCostFunctionOMP()
 {
   delete_iter(H_KE_Node.begin(),H_KE_Node.end());
   delete_iter(RngSaved.begin(),RngSaved.end());
-//  //remove walkers of the clones
-//  for (int ip=1; ip<NumThreads; ++ip)
-//    wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers());
+  delete_iter(RecordsOnNode.begin(),RecordsOnNode.end());
+  delete_iter(DerivRecords.begin(),DerivRecords.end());
+  delete_iter(HDerivRecords.begin(),HDerivRecords.end());
 }
 
 
+void QMCCostFunctionOMP::resetWalkers()
+{
+  //remove walkers of the clones
+  for (int ip=0; ip<NumThreads; ++ip)
+  {
+    int nw_diff=wClones[ip]->getActiveWalkers()-nVMCWalkers[ip];
+    if(nw_diff>0) wClones[ip]->destroyWalkers(nw_diff);
+  }
+}
+
 void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
 {
-  if (FiniteDiff != 0)
+  if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
     for (int i=0; i<NumOptimizables ; i++)
@@ -181,11 +191,9 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
     app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << endl;
     //make H_KE_Node
     H_KE_Node.resize(NumThreads,0);
-    RecordsOnNode.resize(NumThreads);
-    //DerivRecords.resize(NumThreads );
-    //HDerivRecords.resize(NumThreads );
-    DerivRecords.resize(NumThreads);
-    HDerivRecords.resize(NumThreads);
+    RecordsOnNode.resize(NumThreads,0);
+    DerivRecords.resize(NumThreads,0);
+    HDerivRecords.resize(NumThreads,0);
   }
   app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
   app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
@@ -214,8 +222,12 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
   }
 
   app_log() << "    number of walkers before load: ";
+  nVMCWalkers.resize(NumThreads);
   for (int ip=0; ip<NumThreads; ++ip)
+  {
+    nVMCWalkers[ip]=wClones[ip]->getActiveWalkers();
     app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
+  }
   app_log() << endl;
 
 #pragma omp parallel for
@@ -223,14 +235,19 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
   {
     wClones[ip]->loadEnsemble();
   }
+
   //load walkers from SampleStack
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
   app_log() << "    number of walkers after load: ";
+  wPerNode[0]=0;
   for (int ip=0; ip<NumThreads; ++ip)
+  {
+    wPerNode[ip+1]=wPerNode[ip]+wClones[ip]->getActiveWalkers();
     app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
+  }
   app_log() << endl;
-  FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
+  app_log().flush();
 
   if (dLogPsi.size() != wPerNode[NumThreads])
   {
@@ -257,11 +274,6 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
 /** evaluate everything before optimization */
 void QMCCostFunctionOMP::checkConfigurations()
 {
-  RealType et_tot=0.0;
-  RealType eft_tot=0.0;
-  RealType e2_tot=0.0;
-  RealType enl_tot=0.0;
-  RealType TotLogPsi=0.0;
   /* mmorales:
      Since there are cases when memory is an issue (too many dets), the use of a buffer
      is decoupled from the use of includeNonlocalH in the cost function. Without a buffer,
@@ -284,26 +296,24 @@ void QMCCostFunctionOMP::checkConfigurations()
       DerivStorageLevel=1;
     app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" <<endl;
   }
+  else if (usebuffer == "minimum")
+  {
+    StoreDerivInfo=true;
+    // in this case the use of nonlocalH is irrelevant, since the same inf is enough for both cases
+    DerivStorageLevel=2;
+    app_log() <<"Using minimum storage for determinant evaluation. \n";
+  }
   else
-    if (usebuffer == "minimum")
+  {
+    if(includeNonlocalH!="no")
     {
-      StoreDerivInfo=true;
-      // in this case the use of nonlocalH is irrelevant, since the same inf is enough for both cases
-      DerivStorageLevel=2;
-      app_log() <<"Using minimum storage for determinant evaluation. \n";
+      APP_ABORT("Need to enable the use of includeNonlocalH=='name' without a buffer.");
     }
-    else
-    {
-      if(includeNonlocalH!="no")
-      {
-        APP_ABORT("Need to enable the use of includeNonlocalH=='name' without a buffer.");
-      }
-    }
+  }
   int numW = 0;
   for(int i=0; i<wClones.size(); i++)
     numW += wClones[i]->getActiveWalkers();
   app_log() <<"Memory usage: " <<endl;
-  // Jeremy!!! can you fix these numbers???
   app_log() <<"Linear method (approx matrix usage: 4*N^2): " <<NumParams()*NumParams()*sizeof(QMCTraits::RealType)*4.0/1.0e6  <<" MB" <<endl; // assuming 4 matrices
   app_log() <<"Deriv,HDerivRecord:      " <<numW*NumOptimizables*sizeof(QMCTraits::RealType)*3.0/1.0e6 <<" MB" <<endl;
   if(StoreDerivInfo)
@@ -324,6 +334,8 @@ void QMCCostFunctionOMP::checkConfigurations()
 
   app_log().flush();
 
+  RealType et_tot=0.0;
+  RealType e2_tot=0.0;
 #pragma omp parallel reduction(+:et_tot,e2_tot)
   {
     int ip = omp_get_thread_num();
@@ -340,16 +352,15 @@ void QMCCostFunctionOMP::checkConfigurations()
         HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
       }
     }
-    else
-      if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
+    else if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
+    {
+      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+      if (needGrads)
       {
-        RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
-        if (needGrads)
-        {
-          DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
-          HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
-        }
+        DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
       }
+    }
     QMCHamiltonianBase* nlpp = (includeNonlocalH =="no")?  0: hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
@@ -362,12 +373,9 @@ void QMCCostFunctionOMP::checkConfigurations()
     Return_t e0=0.0;
     //       Return_t ef=0.0;
     Return_t e2=0.0;
-    MCWalkerConfiguration::iterator it(wRef.begin());
-    MCWalkerConfiguration::iterator it_end(wRef.end());
-    int iw=0,iwg=wPerNode[ip];
-    for (; it!=it_end; ++it,++iw,++iwg)
+    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.getActiveWalkers(); ++iw,++iwg)
     {
-      ParticleSet::Walker_t& thisWalker(**it);
+      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
       wRef.update();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
@@ -473,23 +481,22 @@ void QMCCostFunctionOMP::resetPsi(bool final_reset)
 
 QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGrad)
 {
-  Return_t wgt_tot=0.0;
-  Return_t wgt_tot2=0.0;
-  Return_t NSm1 = 1.0/NumSamples;
   for(int ip=0; ip<NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
-  //#pragma omp parallel reduction(+:wgt_tot)
+
+  Return_t wgt_tot=0.0;
+  Return_t wgt_tot2=0.0;
+  Return_t NSm1 = 1.0/NumSamples;
   Return_t inv_n_samples=1.0/NumSamples;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  #pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
+#pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
   {
     int ip = omp_get_thread_num();
     MCWalkerConfiguration& wRef(*wClones[ip]);
-    Return_t eloc_new;
     Return_t wgt_node=0.0, wgt_node2=0.0;
     //int totalElements=W.getTotalNum()*OHMMS_DIM;
     MCWalkerConfiguration::iterator it(wRef.begin());
@@ -702,9 +709,11 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
     b2=w_beta;
     b1=0;
   }
+
   Right=0.0;
   Left=0.0;
   Overlap=0.0;
+
   //     resetPsi();
   //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
@@ -713,7 +722,7 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   RealType H2_avg = 1.0/(curAvg_w*curAvg_w);
   //    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
   RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
-  vector<Return_t> D_avg(NumParams(),0);
+  vector<Return_t> D_avg(NumParams(),0.0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
   for (int ip=0; ip<NumThreads; ip++)
   {
@@ -729,7 +738,9 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
       }
     }
   }
+
   myComm->allreduce(D_avg);
+
   for (int ip=0; ip<NumThreads; ip++)
   {
     int nw=wClones[ip]->getActiveWalkers();
@@ -781,6 +792,7 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   Overlap(0,0) = Right(0,0) = 1.0+b1*H2_avg*V_avg;
   if (GEVType=="H2")
     return H2_avg;
+
   return 1.0;
 }
 }

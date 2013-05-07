@@ -36,6 +36,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
   StoreDerivInfo(true),DerivStorageLevel(-1)
 {
+  GEVType="mixed";
   //paramList.resize(10);
   //costList.resize(10,0.0);
   //default: don't check fo MinNumWalkers

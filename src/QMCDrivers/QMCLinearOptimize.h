@@ -63,7 +63,6 @@ public:
     wfNode=cur;
   }
 
-  vector<RealType> optdir, optparm;
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons
@@ -74,22 +73,29 @@ public:
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+  ///Dimension of matrix 
+  int N;
+  ///number of parameters
+  int numParams;
+  ///tolerance
+  RealType param_tol;
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize
   QMCCostFunctionBase* optTarget;
-  ///Dimension of matrix and number of parameters
-  int N,numParams;
   ///vmc engine
   QMCDriver* vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
   xmlNodePtr optNode;
+  ///direction of optimizables
+  vector<RealType> optdir;
+  ///values of optimizables
+  vector<RealType> optparm;
   ///list of files storing configurations
   vector<string> ConfigFile;
 
-  RealType param_tol;
 
   inline bool tooLow(RealType safeValue, RealType CurrentValue)
   {
@@ -163,9 +169,9 @@ public:
   }
 
   ///common operation to start optimization, used by the derived classes
-  void start();
+  void start_optimize();
   ///common operation to finish optimization, used by the derived classes
-  void finish();
+  void finish_optimize();
   //asymmetric generalized EV
   RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
   //asymmetric EV
