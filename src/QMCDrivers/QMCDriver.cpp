@@ -340,28 +340,24 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4WalkerDump,"period");
         rAttrib.put(tcur);
       }
-      else
-        if(cname == "checkpoint")
+      else if(cname == "checkpoint")
+      {
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(Period4CheckPoint,"stride");
+        rAttrib.add(Period4CheckPoint,"period");
+        rAttrib.put(tcur);
+        //DumpConfig=(Period4CheckPoint>0);
+      }
+      else if(cname == "dumpconfig")
+      {
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(Period4ConfigDump,"stride");
+        rAttrib.add(Period4ConfigDump,"period");
+        rAttrib.put(tcur);
+      } else if(cname == "random")
         {
-          OhmmsAttributeSet rAttrib;
-          rAttrib.add(Period4CheckPoint,"stride");
-          rAttrib.add(Period4CheckPoint,"period");
-          rAttrib.put(tcur);
-          //DumpConfig=(Period4CheckPoint>0);
+          ResetRandom = true;
         }
-        else
-          if(cname == "dumpconfig")
-          {
-            OhmmsAttributeSet rAttrib;
-            rAttrib.add(Period4ConfigDump,"stride");
-            rAttrib.add(Period4ConfigDump,"period");
-            rAttrib.put(tcur);
-          }
-          else
-            if(cname == "random")
-            {
-              ResetRandom = true;
-            }
       tcur=tcur->next;
     }
   }
