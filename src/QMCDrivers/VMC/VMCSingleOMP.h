@@ -35,10 +35,6 @@ public:
   bool put(xmlNodePtr cur);
   //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
 private:
-  ///number of RN warmup steps
-  int myRNWarmupSteps;
-  ///period for walker dump
-  int myPeriod4WalkerDump;
   ///option to enable/disable drift equation or RN for VMC
   string UseDrift;
   ///Ways to set rn constant

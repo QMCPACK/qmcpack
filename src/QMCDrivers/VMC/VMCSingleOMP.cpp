@@ -75,7 +75,7 @@ bool VMCSingleOMP::run()
         Movers[ip]->accumulate(wit,wit_end);
         ++now_loc;
         //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
-        if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0)
+        if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
@@ -113,19 +113,18 @@ void VMCSingleOMP::resetRun()
   if(nTargetPopulation>0)
     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS]=static_cast<int>(std::ceil(nTargetPopulation));
   makeClones(W,Psi,H);
-  //std::vector<IndexType> samples_th(omp_get_max_threads(),0);
-  myPeriod4WalkerDump=(Period4WalkerDump>0)?Period4WalkerDump:(nBlocks+1)*nSteps;
+
+  FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+  app_log() << "  Initial partition of walkers ";
+  std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
+  app_log() << endl;
+
   if (Movers.empty())
   {
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
-    //int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
-    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-    app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
 #if !defined(BGP_BUG)
     #pragma omp parallel for
 #endif
@@ -200,7 +199,6 @@ void VMCSingleOMP::resetRun()
         app_log() << os.str() << endl;
     }
   }
-  app_log() << "  Samples are dumped in memory every " << myPeriod4WalkerDump << " steps " << endl;
   app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
   app_log() << "  Walker distribution on root = ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
