@@ -85,7 +85,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   //sample-related parameters
   //samples will set nTargetPopulation
   nTargetSamples=0;
-  nStepsBetweenSamples=0;
+  nStepsBetweenSamples=1;
   m_param.add(nStepsBetweenSamples,"stepsbetweensamples","int");
   nSamplesPerThread=0;
   m_param.add(nSamplesPerThread,"samplesperthread","real");
@@ -361,6 +361,8 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
       tcur=tcur->next;
     }
   }
+
+  int oldStepsBetweenSamples=nStepsBetweenSamples;
   //set the minimum blocks
   if (nBlocks<1)
     nBlocks=1;
@@ -380,17 +382,14 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
     if(nTargetSamples)
     {
-      //only when <parameter name="samples"> positive-integer </parameter>
-      if(nStepsBetweenSamples == 0)  //use minimum 10/nSubsteps for the interval
-        nStepsBetweenSamples=std::max(static_cast<int>(2.0/Tau),5/nSubSteps);
       int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
       nTargetSamples=std::max(nwtot,nTargetSamples);
       nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
       nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;
       int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
       int ns_per_step=Nprocs*nTargetWalkers;  //total samples per step
-      nSteps=(ns_target/ns_per_step+nBlocks-1)/nBlocks;
-      Period4WalkerDump = nStepsBetweenSamples;
+      nSteps=std::max(nSteps,(ns_target/ns_per_step+nBlocks-1)/nBlocks);
+      Period4WalkerDump=nStepsBetweenSamples=ns_per_step*nSteps*nBlocks/nTargetSamples;
     }
     else
     {
@@ -431,6 +430,11 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   app_log() << "  current        = " << CurrentStep << endl;
   app_log() << "  target samples = " << nTargetPopulation << endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
+  if(nStepsBetweenSamples != oldStepsBetweenSamples)
+    app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << "  (input="<<oldStepsBetweenSamples<<")" << endl;
+  else
+    app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
+  
   if(DumpConfig)
     app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
   else
