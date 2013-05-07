@@ -233,17 +233,22 @@ void MCWalkerConfiguration::createWalkers(iterator first, iterator last)
 void
 MCWalkerConfiguration::destroyWalkers(int nw)
 {
-  if(WalkerList.size() == 1 || nw >= WalkerList.size())
+  if(nw > WalkerList.size())
   {
     app_warning() << "  Cannot remove walkers. Current Walkers = " << WalkerList.size() << endl;
     return;
   }
   nw=WalkerList.size()-nw;
-  iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
-  while(it != it_end)
+  int iw=nw;
+  while(iw<WalkerList.size())
   {
-    delete *it++;
+    delete WalkerList[iw++];
   }
+  //iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
+  //while(it != it_end)
+  //{
+  //  delete *it++;
+  //}
   WalkerList.erase(WalkerList.begin()+nw,WalkerList.end());
 }
 
@@ -332,6 +337,7 @@ void MCWalkerConfiguration::reset()
 //  return true;
 //}
 
+
 /** reset the Property container of all the walkers
  */
 void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
@@ -347,6 +353,20 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
     ++it;
   }
   resizeWalkerHistories();
+}
+
+void MCWalkerConfiguration::resizeWalkerHistories()
+{
+  //using vector<vector<RealType> > is too costly. 
+  int np=PropertyHistory.size();
+  if(np)
+    for(int iw=0; iw<WalkerList.size(); ++iw)
+      WalkerList[iw]->PropertyHistory=PropertyHistory;
+
+  np=PHindex.size();
+  if(np)
+    for(int iw=0; iw<WalkerList.size(); ++iw)
+      WalkerList[iw]->PHindex=PHindex;;
 }
 
 /** allocate the SampleStack
@@ -399,8 +419,7 @@ void MCWalkerConfiguration::loadEnsemble()
   if(SampleStack.empty() || nsamples==0)
     return;
   Walker_t::PropertyContainer_t prop(1,PropertyList.size());
-  while(WalkerList.size())
-    pop_back();
+  delete_iter(WalkerList.begin(),WalkerList.end());
   WalkerList.resize(nsamples);
   for(int i=0; i<nsamples; ++i)
   {

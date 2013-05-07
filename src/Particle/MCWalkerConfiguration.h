@@ -252,18 +252,8 @@ public:
     WalkerList.push_back(awalker);
   }
 
-  inline void resizeWalkerHistories()
-  {
-    for(iterator Wit=WalkerList.begin(); Wit!=WalkerList.end(); Wit++)
-    {
-      if ((*Wit)->PropertyHistory.size()!=PropertyHistory.size())
-        (*Wit)->PropertyHistory=PropertyHistory;
-      if ((*Wit)->PHindex.size()!=PHindex.size())
-        (*Wit)->PHindex=PHindex;
-    }
-  }
-
-
+  ///resize Walker::PropertyHistory and Walker::PHindex:
+  void resizeWalkerHistories();
 
   /** delete the last Walker_t*
    *
