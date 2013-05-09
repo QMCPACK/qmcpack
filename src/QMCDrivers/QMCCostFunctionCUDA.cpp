@@ -34,7 +34,18 @@ QMCCostFunctionCUDA::QMCCostFunctionCUDA
 /** Clean up the vector */
 QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 {
+  delete_iter(RecordsOnNode.begin(),RecordsOnNode.end());
+  delete_iter(DerivRecords.begin(),DerivRecords.end());
+  delete_iter(HDerivRecords.begin(),HDerivRecords.end());
 }
+
+void QMCCostFunctionCUDA::resetWalkers()
+{
+  if(W.getActiveWalkers()>nVMCWalkers) 
+    W.destroyWalkers(W.getActiveWalkers()-nVMCWalkers);
+  nVMCWalkers=0;
+}
+
 
 /**  Perform the correlated sampling algorthim.
  */
@@ -175,6 +186,9 @@ QMCCostFunctionCUDA::getConfigurations(const string& aroot)
     }
     H_KE.addObservables(W);
   }
+
+  nVMCWalkers=W.getActiveWalkers();
+
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
   W.loadEnsemble();
@@ -545,7 +559,8 @@ QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices
   return NWE;
 }
 
-QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
+QMCCostFunctionCUDA::Return_t 
+QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
 {
   RealType b1,b2;
   if (GEVType=="H2")

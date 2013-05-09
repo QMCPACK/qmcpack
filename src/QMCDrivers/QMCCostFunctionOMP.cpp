@@ -50,8 +50,9 @@ void QMCCostFunctionOMP::resetWalkers()
   //remove walkers of the clones
   for (int ip=0; ip<NumThreads; ++ip)
   {
-    int nw_diff=wClones[ip]->getActiveWalkers()-nVMCWalkers[ip];
-    if(nw_diff>0) wClones[ip]->destroyWalkers(nw_diff);
+    if(wClones[ip]->getActiveWalkers()>nVMCWalkers[ip])
+      wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers()-nVMCWalkers[ip]);
+    nVMCWalkers[ip]=0;
   }
 }
 

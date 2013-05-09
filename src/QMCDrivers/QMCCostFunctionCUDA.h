@@ -44,6 +44,7 @@ public:
 
   void getConfigurations(const string& aroot);
   void checkConfigurations();
+  void resetWalkers();   
   void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0);
   Return_t fillOverlapHamiltonianMatrices
   (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
@@ -66,6 +67,8 @@ protected:
   vector<Matrix<Return_t>* > DerivRecords;
   vector<Matrix<Return_t>* > HDerivRecords;
 
+  ///number of vmc walkers
+  int nVMCWalkers;
   Return_t CSWeight;
   void resetPsi(bool final_reset=false);
   Return_t correlatedSampling(bool needDerivs);
