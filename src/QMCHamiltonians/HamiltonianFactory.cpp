@@ -23,8 +23,8 @@
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
-#include "QMCHamiltonians/CoulombPBCAATemp.h"
-#include "QMCHamiltonians/CoulombPBCABTemp.h"
+#include "QMCHamiltonians/CoulombPBCAA.h"
+#include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/NumberFluctuations.h"
@@ -599,7 +599,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     }
 #else
     if(applyPBC)
-      targetH->addOperator(new CoulombPBCAATemp(*ptclA,quantum,doForces),title,physical);
+      targetH->addOperator(new CoulombPBCAA(*ptclA,quantum,doForces),title,physical);
     else
       targetH->addOperator(new CoulombPotential<double>(ptclA,0,quantum), title, physical);
 #endif
@@ -613,7 +613,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       targetH->addOperator(new CoulombPotentialAB_CUDA(ptclA,targetPtcl),title);
 #else
     if(applyPBC)
-      targetH->addOperator(new CoulombPBCABTemp(*ptclA,*targetPtcl),title);
+      targetH->addOperator(new CoulombPBCAB(*ptclA,*targetPtcl),title);
     else
       targetH->addOperator(new CoulombPotential<double>(ptclA,targetPtcl,true),title);
 #endif
