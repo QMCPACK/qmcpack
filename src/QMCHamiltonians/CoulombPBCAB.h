@@ -31,7 +31,7 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCABTemp: public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 {
 
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
@@ -97,12 +97,12 @@ struct CoulombPBCABTemp: public QMCHamiltonianBase, public ForceBase
   bool kcdifferent;
   RealType minkc;
 
-  CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
+  CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
 
   ///// copy constructor
-  //CoulombPBCABTemp(const CoulombPBCABTemp& c);
+  //CoulombPBCAB(const CoulombPBCAB& c);
 
-  ~CoulombPBCABTemp();
+  ~CoulombPBCAB();
 
   void resetTargetParticleSet(ParticleSet& P);
 

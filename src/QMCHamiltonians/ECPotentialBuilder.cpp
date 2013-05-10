@@ -17,7 +17,7 @@
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCHamiltonians/CoulombPBCABTemp.h"
+#include "QMCHamiltonians/CoulombPBCAB.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
 #ifdef QMC_CUDA
@@ -94,13 +94,13 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else
     {
       if (doForces)
-        app_log() << "  Will compute forces in CoulombPBCABTemp.\n" << endl;
+        app_log() << "  Will compute forces in CoulombPBCAB.\n" << endl;
 #ifdef QMC_CUDA
       CoulombPBCAB_CUDA* apot=
         new CoulombPBCAB_CUDA(IonConfig,targetPtcl, doForces);
 #else
-      CoulombPBCABTemp* apot =
-        new CoulombPBCABTemp(IonConfig,targetPtcl, doForces);
+      CoulombPBCAB* apot =
+        new CoulombPBCAB(IonConfig,targetPtcl, doForces);
 #endif
       for(int i=0; i<localPot.size(); i++)
       {
@@ -110,7 +110,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       targetH.addOperator(apot,"LocalECP");
     }
     //if(IonConfig.Lattice.BoxBConds[0]) {
-    //  CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
+    //  CoulombPBCAB* apot=new CoulombPBCAB(IonConfig,targetPtcl);
     //  for(int i=0; i<localPot.size(); i++) {
     //    if(localPot[i]) apot->add(i,localPot[i]);
     //  }

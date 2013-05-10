@@ -28,7 +28,7 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAA but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAATemp: public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 {
 
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
@@ -61,10 +61,10 @@ struct CoulombPBCAATemp: public QMCHamiltonianBase, public ForceBase
 
 
   /** constructor */
-  CoulombPBCAATemp(ParticleSet& ref, bool active,
+  CoulombPBCAA(ParticleSet& ref, bool active,
                    bool computeForces=false);
 
-  ~CoulombPBCAATemp();
+  ~CoulombPBCAA();
 
   void resetTargetParticleSet(ParticleSet& P);
 

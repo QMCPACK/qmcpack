@@ -13,7 +13,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCHamiltonians/CoulombPBCABTemp.h"
+#include "QMCHamiltonians/CoulombPBCAB.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
@@ -22,14 +22,14 @@
 namespace qmcplusplus
 {
 
-CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns,
+CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
                                    bool computeForces):
   PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000)
 {
   // if (ComputeForces)
   // 	InitVarReduction (0.5, 0, 3);
-  ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
+  ReportEngine PRE("CoulombPBCAB","CoulombPBCAB");
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions);
@@ -39,9 +39,9 @@ CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns,
   app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
 }
 
-QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCABTemp* myclone=new CoulombPBCABTemp(PtclA,qp,ComputeForces);
+  CoulombPBCAB* myclone=new CoulombPBCAB(PtclA,qp,ComputeForces);
   myclone->FirstForceIndex = FirstForceIndex;
   if(myGrid)
     myclone->myGrid=new GridType(*myGrid);
@@ -61,30 +61,30 @@ QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFuncti
   return myclone;
 }
 
-CoulombPBCABTemp:: ~CoulombPBCABTemp()
+CoulombPBCAB:: ~CoulombPBCAB()
 {
   //probably need to clean up
 }
 
-void CoulombPBCABTemp::resetTargetParticleSet(ParticleSet& P)
+void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 {
   int tid=P.addTable(PtclA);
   if(tid != myTableIndex)
   {
-    APP_ABORT("CoulombPBCABTemp::resetTargetParticleSet found inconsistent table index");
+    APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");
   }
   AB->resetTargetParticleSet(P);
 }
 
-void CoulombPBCABTemp::addObservables(PropertySetType& plist, BufferType& collectables)
+void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   myIndex=plist.add(myName.c_str());
   if (ComputeForces)
     addObservablesF(plist);
 }
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evaluate(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evaluate(ParticleSet& P)
 {
   if (ComputeForces)
   {
@@ -96,8 +96,8 @@ CoulombPBCABTemp::evaluate(ParticleSet& P)
   return Value;
 }
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evalSR(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalSR(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   RealType res=0.0;
@@ -118,8 +118,8 @@ CoulombPBCABTemp::evalSR(ParticleSet& P)
 }
 
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evalLR(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalLR(ParticleSet& P)
 {
   const int slab_dir=OHMMS_DIM-1;
   RealType res=0.0;
@@ -163,8 +163,8 @@ CoulombPBCABTemp::evalLR(ParticleSet& P)
  * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$
  * @todo Here is where the charge system has to be handled.
  */
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evalConsts()
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalConsts()
 {
   RealType Consts=0.0;
   RealType vs_k0 = AB->evaluateSR_k0();
@@ -180,7 +180,7 @@ CoulombPBCABTemp::evalConsts()
   return Consts;
 }
 
-void CoulombPBCABTemp::initBreakup(ParticleSet& P)
+void CoulombPBCAB::initBreakup(ParticleSet& P)
 {
   SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
@@ -246,13 +246,13 @@ void CoulombPBCABTemp::initBreakup(ParticleSet& P)
  * @param groupID species index
  * @param ppot radial functor for \f$rV_{loc}\f$ on a grid
  */
-void CoulombPBCABTemp::add(int groupID, RadFunctorType* ppot)
+void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
 {
   if(myGrid ==0)
   {
     myGrid = new LinearGrid<RealType>;
     int ng = min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
-    app_log() << "    CoulombPBCABTemp::add \n Setting a linear grid=[0,"
+    app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0,"
               << myRcut << ") number of grid =" << ng << endl;
     myGrid->set(0,myRcut,ng);
   }
@@ -298,8 +298,8 @@ void CoulombPBCABTemp::add(int groupID, RadFunctorType* ppot)
   }
 }
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::registerData(ParticleSet& P, BufferType& buffer)
+CoulombPBCAB::Return_t
+CoulombPBCAB::registerData(ParticleSet& P, BufferType& buffer)
 {
   P.SK->DoUpdate=true;
   SRpart.resize(NptclB);
@@ -312,8 +312,8 @@ CoulombPBCABTemp::registerData(ParticleSet& P, BufferType& buffer)
 }
 
 /** The functions for PbyP move for reptation */
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::updateBuffer(ParticleSet& P, BufferType& buffer)
+CoulombPBCAB::Return_t
+CoulombPBCAB::updateBuffer(ParticleSet& P, BufferType& buffer)
 {
   Value=evaluateForPyP(P);
   buffer.put(SRpart.begin(),SRpart.end());
@@ -322,26 +322,26 @@ CoulombPBCABTemp::updateBuffer(ParticleSet& P, BufferType& buffer)
   return Value;
 }
 
-void CoulombPBCABTemp::copyFromBuffer(ParticleSet& P, BufferType& buffer)
+void CoulombPBCAB::copyFromBuffer(ParticleSet& P, BufferType& buffer)
 {
   buffer.get(SRpart.begin(),SRpart.end());
   buffer.get(LRpart.begin(),LRpart.end());
   buffer.get(Value);
 }
 
-void CoulombPBCABTemp::copyToBuffer(ParticleSet& P, BufferType& buffer)
+void CoulombPBCAB::copyToBuffer(ParticleSet& P, BufferType& buffer)
 {
   buffer.put(SRpart.begin(),SRpart.end());
   buffer.put(LRpart.begin(),LRpart.end());
   buffer.put(Value);
 }
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evaluateForPyP(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evaluateForPyP(ParticleSet& P)
 {
   Return_t res=myConst;
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("CoulombPBCABTemp::evaluateForPyP(ParticleSet& P)");
+  APP_ABORT("CoulombPBCAB::evaluateForPyP(ParticleSet& P)");
 #else
   SRpart=0.0;
   const DistanceTableData* d_ab=P.DistTables[myTableIndex];
@@ -375,11 +375,11 @@ CoulombPBCABTemp::evaluateForPyP(ParticleSet& P)
 }
 
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evaluatePbyP(ParticleSet& P, int active)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)");
+  APP_ABORT("CoulombPBCAB::evaluatePbyP(ParticleSet& P, int active)");
 #else
   const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[myTableIndex]->Temp);
   RealType q=Qat[active];
@@ -399,7 +399,7 @@ CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)
   //return NewValue=Value+(SRtmp-SRpart[active]);
 }
 
-void CoulombPBCABTemp::acceptMove(int active)
+void CoulombPBCAB::acceptMove(int active)
 {
   SRpart[active]=SRtmp;
   LRpart[active]=LRtmp;
@@ -407,8 +407,8 @@ void CoulombPBCABTemp::acceptMove(int active)
 }
 
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evalLRwithForces(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
@@ -424,8 +424,8 @@ CoulombPBCABTemp::evalLRwithForces(ParticleSet& P)
   return evalLR(P);
 }
 
-CoulombPBCABTemp::Return_t
-CoulombPBCABTemp::evalSRwithForces(ParticleSet& P)
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   RealType res=0.0;

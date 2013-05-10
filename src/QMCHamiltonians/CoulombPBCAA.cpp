@@ -12,7 +12,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCHamiltonians/CoulombPBCAATemp.h"
+#include "QMCHamiltonians/CoulombPBCAA.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -21,13 +21,13 @@
 namespace qmcplusplus
 {
 
-CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active,
+CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
                                    bool computeForces) :
   AA(0), myGrid(0), rVs(0),
   is_active(active), FirstTime(true), myConst(0.0),
   ComputeForces(computeForces), ForceBase(ref,ref)
 {
-  ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
+  ReportEngine PRE("CoulombPBCAA","CoulombPBCAA");
   //create a distance table: just to get the table name
   DistanceTableData *d_aa = DistanceTable::add(ref);
   PtclRefName=d_aa->Name;
@@ -62,16 +62,16 @@ CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active,
             << "\n    Vtot     =" << Value << endl;
 }
 
-CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
+CoulombPBCAA:: ~CoulombPBCAA() { }
 
-void CoulombPBCAATemp::addObservables(PropertySetType& plist, BufferType& collectables)
+void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   addValue(plist);
   if (ComputeForces)
     addObservablesF(plist);
 }
 
-void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P)
+void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
   if(is_active)
   {
@@ -80,16 +80,16 @@ void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evaluate(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evaluate(ParticleSet& P)
 {
   if(is_active)
     Value = evalLR(P)+evalSR(P)+myConst;
   return Value;
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::registerData(ParticleSet& P, BufferType& buffer)
+CoulombPBCAA::Return_t
+CoulombPBCAA::registerData(ParticleSet& P, BufferType& buffer)
 {
   if(is_active)
   {
@@ -104,8 +104,8 @@ CoulombPBCAATemp::registerData(ParticleSet& P, BufferType& buffer)
   return Value;
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::updateBuffer(ParticleSet& P, BufferType& buffer)
+CoulombPBCAA::Return_t
+CoulombPBCAA::updateBuffer(ParticleSet& P, BufferType& buffer)
 {
   if(is_active)
   {
@@ -116,7 +116,7 @@ CoulombPBCAATemp::updateBuffer(ParticleSet& P, BufferType& buffer)
   return Value;
 }
 
-void CoulombPBCAATemp::copyFromBuffer(ParticleSet& P, BufferType& buffer)
+void CoulombPBCAA::copyFromBuffer(ParticleSet& P, BufferType& buffer)
 {
   if(is_active)
   {
@@ -125,7 +125,7 @@ void CoulombPBCAATemp::copyFromBuffer(ParticleSet& P, BufferType& buffer)
   }
 }
 
-void CoulombPBCAATemp::copyToBuffer(ParticleSet& P, BufferType& buffer)
+void CoulombPBCAA::copyToBuffer(ParticleSet& P, BufferType& buffer)
 {
   if(is_active)
   {
@@ -134,8 +134,8 @@ void CoulombPBCAATemp::copyToBuffer(ParticleSet& P, BufferType& buffer)
   }
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evaluateForPbyP(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evaluateForPbyP(ParticleSet& P)
 {
   if(is_active)
   {
@@ -159,8 +159,8 @@ CoulombPBCAATemp::evaluateForPbyP(ParticleSet& P)
     return Value;
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evaluatePbyP(ParticleSet& P, int active)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evaluatePbyP(ParticleSet& P, int active)
 {
   if(is_active)
   {
@@ -176,7 +176,7 @@ CoulombPBCAATemp::evaluatePbyP(ParticleSet& P, int active)
         sr+=dSR[iat]=(z*Zat[iat]*temp[iat].rinv1*rVs->splint(temp[iat].r1)- (*sr_ptr));
     }
 #if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("CoulombPBCAATemp::evaluatePbyP");
+    APP_ABORT("CoulombPBCAA::evaluatePbyP");
 #else
     const StructFact& PtclRhoK(*(P.SK));
     const ComplexType* restrict eikr_new=PtclRhoK.eikr_temp.data();
@@ -209,7 +209,7 @@ CoulombPBCAATemp::evaluatePbyP(ParticleSet& P, int active)
     return Value;
 }
 
-void CoulombPBCAATemp::acceptMove(int active)
+void CoulombPBCAA::acceptMove(int active)
 {
   if(is_active)
   {
@@ -221,7 +221,7 @@ void CoulombPBCAATemp::acceptMove(int active)
   }
 }
 
-void CoulombPBCAATemp::initBreakup(ParticleSet& P)
+void CoulombPBCAA::initBreakup(ParticleSet& P)
 {
   //SpeciesSet& tspecies(PtclRef->getSpeciesSet());
   SpeciesSet& tspecies(P.getSpeciesSet());
@@ -254,8 +254,8 @@ void CoulombPBCAATemp::initBreakup(ParticleSet& P)
   }
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evalSR(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalSR(ParticleSet& P)
 {
   const DistanceTableData &d_aa(*P.DistTables[0]);
   RealType SR=0.0;
@@ -274,8 +274,8 @@ CoulombPBCAATemp::evalSR(ParticleSet& P)
   return SR;
 }
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evalLR(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalLR(ParticleSet& P)
 {
   const int slab_dir=OHMMS_DIM-1;
   RealType res=0.0;
@@ -319,8 +319,8 @@ CoulombPBCAATemp::evalLR(ParticleSet& P)
 }
 
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evalLRwithForces(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 {
   RealType LR=0.0;
   const StructFact& PtclRhoK(*(P.SK));
@@ -339,8 +339,8 @@ CoulombPBCAATemp::evalLRwithForces(ParticleSet& P)
 
 
 
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evalSRwithForces(ParticleSet& P)
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData *d_aa = P.DistTables[0];
   RealType SR=0.0;
@@ -375,8 +375,8 @@ CoulombPBCAATemp::evalSRwithForces(ParticleSet& P)
  * \endhtmlonly
  * CoulombPBCABTemp contributes additional background term which completes the background term
  */
-CoulombPBCAATemp::Return_t
-CoulombPBCAATemp::evalConsts()
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalConsts()
 {
   //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
   //const Vector<RealType> &coefs(AA->coefs);
@@ -414,12 +414,12 @@ CoulombPBCAATemp::evalConsts()
   return Consts;
 }
 
-QMCHamiltonianBase* CoulombPBCAATemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   if(is_active)
-    return new CoulombPBCAATemp(qp,is_active,ComputeForces);
+    return new CoulombPBCAA(qp,is_active,ComputeForces);
   else
-    return new CoulombPBCAATemp(*this);//nothing needs to be re-evaluated
+    return new CoulombPBCAA(*this);//nothing needs to be re-evaluated
 }
 }
 
