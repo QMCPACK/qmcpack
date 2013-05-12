@@ -47,81 +47,67 @@ int main(int argc, char **argv)
       parser = new GaussianFCHKParser(argc,argv);
       in_file =argv[++iargc];
     }
-    else
-      if(a == "-gamesxml")
-      {
-        parser = new GamesXmlParser(argc,argv);
-        in_file =argv[++iargc];
-      }
-      else
-        if(a == "-gamessAscii")
-        {
-          parser = new GamesAsciiParser(argc,argv);
-          in_file =argv[++iargc];
-        }
-        else
-          if(a == "-casino")
-          {
-            parser = new CasinoParser(argc,argv);
-            in_file =argv[++iargc];
-          }
-          else
-            if(a == "-b")
-            {
-              parser = new BParser(argc,argv);
-              in_file =argv[++iargc];
-            }
-            else
-              if(a == "-hdf5")
-              {
-                usehdf5=true;
-              }
-              else
-                if(a == "-psi_tag")
-                {
-                  psi_tag=argv[++iargc];
-                }
-                else
-                  if(a == "-ion_tag")
-                  {
-                    ion_tag=argv[++iargc];
-                  }
-                  else
-                    if(a == "-ci")
-                    {
-                      ci=true;
-                      punch_file = argv[++iargc];
-                    }
-                    else
-                      if(a == "-threshold" )
-                      {
-                        thres = atof(argv[++iargc]);
-                      }
-                      else
-                        if(a == "-NaturalOrbitals")
-                        {
-                          readNO = atoi(argv[++iargc]);
-                        }
-                        else
-                          if(a == "-readInitialGuess")
-                          {
-                            readGuess = atoi(argv[++iargc]);
-                          }
-                          else
-                            if(a == "-zeroCI")
-                            {
-                              zeroCI = true;
-                            }
-                            else
-                              if(a == "-orderByExcitation")
-                              {
-                                orderByExcitation = true;
-                              }
-                              else
-                                if(a == "-cutoff")
-                                {
-                                  orderByExcitation = true;
-                                }
+    else if(a == "-gamesxml")
+    {
+      parser = new GamesXmlParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-gamessAscii")
+    {
+      parser = new GamesAsciiParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-casino")
+    {
+      parser = new CasinoParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-b")
+    {
+      parser = new BParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-hdf5")
+    {
+      usehdf5=true;
+    }
+    else if(a == "-psi_tag")
+    {
+      psi_tag=argv[++iargc];
+    }
+    else if(a == "-ion_tag")
+    {
+      ion_tag=argv[++iargc];
+    }
+    else if(a == "-ci")
+    {
+      ci=true;
+      punch_file = argv[++iargc];
+    }
+    else if(a == "-threshold" )
+    {
+      thres = atof(argv[++iargc]);
+    }
+    else if(a == "-NaturalOrbitals")
+    {
+      readNO = atoi(argv[++iargc]);
+    }
+    else if(a == "-readInitialGuess")
+    {
+      readGuess = atoi(argv[++iargc]);
+    }
+    else if(a == "-zeroCI")
+    {
+      zeroCI = true;
+    }
+    else if(a == "-orderByExcitation")
+    {
+      orderByExcitation = true;
+    }
+    else if(a == "-cutoff")
+    {
+      orderByExcitation = true;
+    }
     ++iargc;
   }
   if(readNO > 0 && readGuess > 0)
@@ -138,30 +124,26 @@ int main(int argc, char **argv)
       WARNMSG("Creating CasinoParser")
       parser = new CasinoParser(argc,argv);
     }
-    else
-      if(ext == "Fchk")
-      {
-        WARNMSG("Creating GaussianFCHKParser")
-        parser = new GaussianFCHKParser(argc,argv);
-      }
-      else
-        if(ext == "xml")
-        {
-          WARNMSG("Creating GamesXmlParser")
-          parser = new GamesXmlParser(argc,argv);
-        }
-        else
-          if(ext == "10")
-          {
-            WARNMSG("Creating BParser")
-            parser = new BParser(argc,argv);
-          }
-          else
-            if(ext == "out")
-            {
-              WARNMSG("Creating GamesAsciiParser")
-              parser = new GamesAsciiParser(argc,argv);
-            }
+    else if(ext == "Fchk")
+    {
+      WARNMSG("Creating GaussianFCHKParser")
+      parser = new GaussianFCHKParser(argc,argv);
+    }
+    else if(ext == "xml")
+    {
+      WARNMSG("Creating GamesXmlParser")
+      parser = new GamesXmlParser(argc,argv);
+    }
+    else if(ext == "10")
+    {
+      WARNMSG("Creating BParser")
+      parser = new BParser(argc,argv);
+    }
+    else if(ext == "out")
+    {
+      WARNMSG("Creating GamesAsciiParser")
+      parser = new GamesAsciiParser(argc,argv);
+    }
   }
   parser->UseHDF5=usehdf5;
   parser->IonSystem.setName(ion_tag);
