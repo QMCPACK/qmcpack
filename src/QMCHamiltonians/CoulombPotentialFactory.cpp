@@ -127,9 +127,9 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   }
   if(sourceInp == targetInp) // AA type
   {
-    if(ptclA->getTotalNum() == 1)
+    if(!applyPBC && ptclA->getTotalNum() == 1)
     {
-      app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1" << endl;
+      app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic" << endl;
       return;
     }
     bool quantum = (sourceInp==targetPtcl->getName());
@@ -147,7 +147,9 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA,quantum,doForces),title,physical);
     else
+    {
       targetH->addOperator(new CoulombPotential<double>(ptclA,0,quantum), title, physical);
+    }
 #endif
   }
   else //X-e type, for X=some other source
