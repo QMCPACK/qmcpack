@@ -52,6 +52,8 @@ void QMCCostFunctionOMP::resetWalkers()
   {
     if(wClones[ip]->getActiveWalkers()>nVMCWalkers[ip])
       wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers()-nVMCWalkers[ip]);
+    else
+      wClones[ip]->createWalkers(nVMCWalkers[ip]-wClones[ip]->getActiveWalkers());
     nVMCWalkers[ip]=0;
   }
 }
