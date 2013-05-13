@@ -217,8 +217,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
     if(!W.makeMoveAndCheck(iat,dr))
     {
       ++nRejectTemp;
-      W.reptile->flip();
-      return;
+     // W.reptile->flip();
+     // return;
     }
     PosType newpos(W.R[iat]);
     RealType ratio=Psi.ratio(W,iat,dG,dL);
@@ -231,8 +231,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       ++nNodeCrossing;
       W.rejectMove(iat);
       Psi.rejectMove(iat);
-      W.reptile->flip();
-      return;
     }
     else
     {
@@ -270,6 +268,15 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
         // return;
       }
     }
+  }
+// In the rare case that all proposed moves fail, we bounce. 
+  if(nAcceptTemp==0)
+  {
+    
+    ++nReject;
+    H.rejectedMove(W,curhead);
+    curhead.Age+=1;
+    W.reptile->flip();
   }
 //   RealType driftscaleold=getDriftScale(m_tauovermass,curhead.G);
 //   assignDrift(driftscaleold, curhead.G, drift);
