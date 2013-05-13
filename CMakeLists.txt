@@ -25,7 +25,7 @@ SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINO
 # Build level
 ######################################################################
 SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
-  "QMC Build Level: 1=bare, 2=developer, 3=experimental")
+  "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
 
 ######################################################################
 #define the paths for library and executable for out-of-soruce compilation
@@ -215,6 +215,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 IF(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 ELSE(CMAKE_TOOLCHAIN_FILE)
+  MESSAGE(STATUS "Trying to figure out .....")
   SET(QMC_BUILD_STATIC 0)
   SET(FOUND_CXXENV 0)
   SET(ENABLE_OPENMP 0)
@@ -364,7 +365,9 @@ IF(HDF5_FOUND)
     SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
   ENDIF(SZLIB_FOUND)
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
+  if(NOT QMC_PHI)
+    MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
+  endif()
 ENDIF(HDF5_FOUND)
 
 IF(Boost_FOUND)
@@ -372,7 +375,8 @@ IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
 ELSE()
-  MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
+  MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
+  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF()
 
 #set(HAVE_CUDA 0)
@@ -515,6 +519,7 @@ MESSAGE(STATUS "Ready to build qmcpack")
 #  -DH5_USE_16_API for HDF5
 #  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
 ####################################################################
+
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
 if(HAVE_MPI)
   ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)

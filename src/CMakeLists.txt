@@ -2,6 +2,9 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
                ${qmcpack_BINARY_DIR}/src/config.h)
 
+if(QMC_PHI)
+  MESSAGE(STATUS "Minimal build to test codelets on phi")
+else()
 ####################################
 # create libqmcutil
 ####################################
@@ -148,3 +151,4 @@ ENDIF(BUILD_BENCHMARK)
 IF(BUILD_SQD)
   SUBDIRS(SQD)
 ENDIF(BUILD_SQD)
+endif()
