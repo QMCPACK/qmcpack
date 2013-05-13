@@ -13,7 +13,7 @@ SET(CMAKE_SYSTEM_PROCESSOR "EMBER")
 # setting compilers, compiler options and MKL_HOME
 #--------------------------------------------------------------------------
 set(CMAKE_CXX_COMPILER /sw/keeneland/mvapich2/1.6rc2/centos5.5_intel2011.1.107/bin/mpicxx)
-set(CMAKE_C_COMPILER  icc)
+set(CMAKE_C_COMPILER  /opt/intel/composerxe-2011.1.107/bin/intel64/icc)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 
 #set(INTEL_OPTS "-g -unroll -ansi-alias -O3 -ip -openmp -opt-prefetch -ftz -xSSE4.2")

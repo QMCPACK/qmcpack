@@ -32,7 +32,6 @@ set(CMAKE_FIND_ROOT_PATH
   /sw/keeneland/fftw/3.2.1/centos5.4_gnu4.1.2_fPIC
 )
 
-set(CUDA_NVCC_FLAGS "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
 #--------------------------------------------------------------------------
 # below is common for INTEL compilers and MKL library
 #--------------------------------------------------------------------------

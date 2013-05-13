@@ -11,7 +11,7 @@ SET(CMAKE_SYSTEM_PROCESSOR "EMBER")
 #--------------------------------------------------------------------------
 # setting compilers, compiler options and MKL_HOME
 #--------------------------------------------------------------------------
-set(CMAKE_CXX_COMPILER /sw/keeneland/mvapich2/1.6rc2/centos5.5_intel2011.1.107/bin/mpicxx)
+set(CMAKE_CXX_COMPILER /sw/keeneland/mvapich2/1.7/centos5.5_intel12.1.2/bin/mpicxx)
 set(CMAKE_C_COMPILER  icc)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 
@@ -28,7 +28,6 @@ SET(CMAKE_Fortran_FLAGS_RELEASE ${CMAKE_Fortran_FLAGS})
 # boost,hdf,szip,libxml2,fftw,essl
 #--------------------------------------------------------------------------
 set(CMAKE_FIND_ROOT_PATH
-  /nics/a/proj/qmc/keeneland/intel11.1/einspline
   /sw/keeneland/hdf5/1.8.6/centos5.5_intel11.1.073
   /sw/keeneland/fftw/3.2.1/centos5.4_gnu4.1.2_fPIC
 )
