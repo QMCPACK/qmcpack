@@ -210,10 +210,10 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
   //clear the walker set
   wset.clear();
 
-  int nw=W.getActiveWalkers();
-  myComm->bcast(nw);
+  int nwtot=W.getActiveWalkers();
+  myComm->bcast(nwtot);
 
-  if(nw)
+  if(nwtot)
   {
     int np=myComm->size();
     vector<int> nw(np,0), nwoff(np+1,0);
