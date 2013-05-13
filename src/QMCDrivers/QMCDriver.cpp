@@ -209,14 +209,24 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
       h5FileRoot = W_in.getFileRoot();
   //clear the walker set
   wset.clear();
-  int np=myComm->size();
-  vector<int> nw(np,0), nwoff(np+1,0);
-  nw[myComm->rank()]=W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for(int ip=0; ip<np; ++ip)
-    nwoff[ip+1]=nwoff[ip]+nw[ip];
-  W.setGlobalNumWalkers(nwoff[np]);
-  W.setWalkerOffsets(nwoff);
+
+  int nw=W.getActiveWalkers();
+  myComm->bcast(nw);
+
+  if(nw)
+  {
+    int np=myComm->size();
+    vector<int> nw(np,0), nwoff(np+1,0);
+    nw[myComm->rank()]=W.getActiveWalkers();
+    myComm->allreduce(nw);
+    for(int ip=0; ip<np; ++ip)
+      nwoff[ip+1]=nwoff[ip]+nw[ip];
+    W.setGlobalNumWalkers(nwoff[np]);
+    W.setWalkerOffsets(nwoff);
+    qmc_common.is_restart=true;
+  }
+  else
+    qmc_common.is_restart=false;
 }
 
 void QMCDriver::recordBlock(int block)

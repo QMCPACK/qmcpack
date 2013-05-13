@@ -452,7 +452,6 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
     a.put(result[result.size()-1]);
     if(fname.size())
       RandomNumberControl::read(fname,myComm);
-    qmc_common.is_restart=true;
   }
   return true;
 }
