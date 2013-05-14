@@ -110,11 +110,11 @@ bool QMCMain::execute()
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
     }
-    else
-      if(cname == "loop")
-      {
-        executeLoop(cur);
-      }
+    else if(cname == "loop")
+    {
+      executeLoop(cur);
+      qmc_common.qmc_counter=0;
+    }
   }
   m_qmcaction.clear();
   app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
