@@ -20,6 +20,9 @@ public:
   ~RMCUpdateAllWithDrift();
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   void checkReptile(WalkerIter_t it, WalkerIter_t it_end);
+  void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void put(xmlNodePtr cur);
+
 private:
   /// Copy Constructor (disabled)
   RMCUpdateAllWithDrift(const RMCUpdateAllWithDrift& a): QMCUpdateBase(a), Action(a.Action), TransProb(a.TransProb) { }

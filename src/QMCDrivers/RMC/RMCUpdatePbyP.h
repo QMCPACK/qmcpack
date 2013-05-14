@@ -16,8 +16,13 @@ public:
   RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                          QMCHamiltonian& h, RandomGenerator_t& rg,std::vector<int> act, std::vector<int> tp);
   ~RMCUpdatePbyPWithDrift();
+
+  enum {SYM_ACTION, DMC_ACTION};
+
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+  void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void put(xmlNodePtr cur);
 private:
   /// Copy Constructor (disabled)
   RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift& a): QMCUpdateBase(a), Action(a.Action), TransProb(a.TransProb) { }
@@ -27,6 +32,8 @@ private:
     return *this;
   }
   std::vector<int> Action, TransProb;
+  bool scaleDrift;
+  IndexType actionType;
 };
 
 

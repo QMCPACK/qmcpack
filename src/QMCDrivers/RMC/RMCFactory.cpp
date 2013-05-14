@@ -13,9 +13,9 @@ QMCDriver* RMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   QMCDriver* qmc=0;
   if(RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
-  {
-    qmc = new RMCSingleOMP(w,psi,h,hpool,ppool);
-  }
+    {
+      qmc = new RMCSingleOMP(w,psi,h,hpool,ppool);
+    }
 #if defined(QMC_BUILD_COMPLETE)
 //else if(RMCMode == 2) //(0,1,0)
 //{
