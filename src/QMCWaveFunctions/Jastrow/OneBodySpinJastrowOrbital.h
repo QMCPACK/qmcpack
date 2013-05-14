@@ -257,6 +257,37 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
+  /** evaluate the ratio
+   */
+  inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  {
+    std::fill(ratios.begin(),ratios.end(),0.0);
+    for(int sg=0; sg<F.rows(); ++sg)
+    {
+      for(int iat=s_offset[sg]; iat< s_offset[sg+1]; ++iat)
+      {
+        int nn=d_table->M[iat];//starting nn for the iat-th source
+        for(int tg=0; tg<F.cols(); ++tg)
+        {
+          FT* func=F(sg,tg);
+          if(func)
+	  {
+	    RealType up=func->evaluate(d_table->Temp[iat].r1);
+            for(int jat=t_offset[tg]; jat< t_offset[tg+1]; ++jat,++nn)
+              ratios[jat]+=func->evaluate(d_table->r(nn))-up;
+	  }
+          else
+            nn+=t_offset[tg+1]-t_offset[tg];//move forward by the number of particles in the group tg
+	  }
+        }
+      }  
+    
+    
+    for(int i=0; i<ratios.size(); ++i)
+      ratios[i] = std::exp(ratios[i]);
+  }  
+  
+  
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
    * @param P active particle set
    * @param iat particle that has been moved.
