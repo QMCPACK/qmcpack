@@ -298,13 +298,13 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  void setMassTerm(ParticleSet& P)
-  {
-    SpeciesSet tspecies(P.getSpeciesSet());
-    int massind=tspecies.addAttribute("mass");
-    RealType mass = tspecies(massind,0);
-    OneOverM = 1.0/mass;
-  }
+//   void setMassTerm(ParticleSet& P)
+//   {
+//     SpeciesSet tspecies(P.getSpeciesSet());
+//     int massind=tspecies.addAttribute("mass");
+//     RealType mass = tspecies(massind,0);
+//     OneOverM = 1.0/mass;
+//   }
 
   vector<OrbitalBase*>& getOrbitals()
   {
@@ -316,12 +316,27 @@ public:
   {
     myTwist=t;
   }
+  
   const vector<RealType> twist()
   {
     return myTwist;
   }
 
   CoefficientHolder coefficientHistory;
+  
+  void setMassTerm(ParticleSet& P)
+  {
+    SpeciesSet tspecies(P.getSpeciesSet());
+    OverM.resize(P.R.size(),1.0);
+    
+    int massind = tspecies.addAttribute("mass");
+    int membersize = tspecies.addAttribute("membersize");
+    
+    int indx=0;
+    for(int i=0; i<tspecies.size(); ++i)
+      for(int j=0;j<tspecies(membersize,i);j++,indx++)
+        OverM[indx]=1.0/(tspecies(massind,i));
+  }
 
 
 private:
@@ -350,7 +365,7 @@ private:
   RealType LogValue;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives
-  RealType OneOverM;
+  vector<RealType> OverM;
 
   ///a list of OrbitalBases constituting many-body wave functions
   vector<OrbitalBase*> Z;
