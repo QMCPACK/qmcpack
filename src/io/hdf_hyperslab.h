@@ -22,11 +22,9 @@ struct hyperslab_proxy: public container_proxy<CT>
   ///offset of the hyperslab
   TinyVector<hsize_t,MAXDIM+1> slab_offset;
   ///1D
-  hyperslab_proxy(CT& a): container_proxy<CT>(a)
+  hyperslab_proxy(CT& a): container_proxy<CT>(a), slab_rank(a.slab_rank),
+    slab_dims(a.slab_dims), slab_offset(a.slab_offset)
   {
-    slab_dims[0]=this->size();
-    if(element_size>1)
-      slab_dims[1]=element_size;
   }
 
   template<typename IC>
@@ -52,7 +50,7 @@ struct hyperslab_proxy: public container_proxy<CT>
 
   inline void change_shape()
   {
-    this->resize(slab_dims.data());
+    this->resize(slab_dims.data(),MAXDIM+1);
   }
 
 };

@@ -75,10 +75,18 @@ struct container_proxy<std::vector<T> >
   {
     return scalar_traits<T>::get_address(&ref[0]);
   }
-  template<typename I>
-  inline void resize(I* n)
+
+  inline void resize(size_t n)
   {
-    ref.resize(static_cast<size_t>(n[0]));
+    ref.resize(nt);
+  }
+
+  template<typename I>
+  inline void resize(I* n, int d)
+  {
+    size_t nt=n[0];
+    for(int i=1;i<d;++i) nt *=n[i];
+    ref.resize(nt);
   }
 };
 

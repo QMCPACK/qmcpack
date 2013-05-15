@@ -232,7 +232,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 void RandomNumberControl::read(const string& fname, Communicate* comm)
 {
   int nthreads=omp_get_max_threads();
-  vector<uint_type> vt_tot(comm->size()*nthreads*Random.state_size()), vt;
+  vector<uint_type> vt_tot, vt;
   TinyVector<int,2> shape(0);
   {
     //read it
@@ -244,22 +244,27 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
     hout.push(hdf::main_state);
     hout.push("random");
     TinyVector<hsize_t,2> shape_t(0);
-    hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
+    shape_t[1]=Random.state_size();
+    yperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
     hout.read(slab,Random.EngineName);
-    shape[0]=slab.size(0);
-    shape[1]=slab.size(1);
+    shape[0]=static_cast<int>(slab.size(0));
+    shape[1]=static_cast<int>(slab.size(1));
   }
+
   //bcast of hsize_t is not working
   mpi::bcast(*comm,shape);
+
   if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
   {
-    app_warning() << "Mismatched random number generators."
+    app_log() << "Mismatched random number generators."
                   << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
                   << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
                   << "\n  Using the random streams generated at the initialization." << endl;
     return;
   }
+
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
+  vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
   if(comm->size()>1)
     mpi::scatter(*comm,vt_tot,vt);
