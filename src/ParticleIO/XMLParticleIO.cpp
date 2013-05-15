@@ -186,10 +186,8 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
   string randomizeR("no");
-  //string randomsrc("");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(randomizeR,"random");
-  //pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(nat,"size");
   pAttrib.add(pname,"name");
   pAttrib.put(cur);
@@ -209,35 +207,33 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       ntot++;
       atom_ptr.push_back(cur0);
     }
-    else
-      if(cname == "group")
+    else if(cname == "group")
+    {
+      int nat_per_group=0;
+      OhmmsAttributeSet gAttrib;
+      gAttrib.add(nat_per_group,"size");
+      gAttrib.put(cur0);
+      nat_group.push_back(nat_per_group);
+      ng_in += nat_per_group;
+      ntot += nat_per_group;
+      ng++;
+    }
+    else if(cname == attrib_tag)
+    {
+      int size_att = 0;
+      OhmmsAttributeSet aAttrib;
+      aAttrib.add(size_att,"size");
+      aAttrib.put(cur0);
+      if(size_att)
       {
-        int nat_per_group=0;
-        OhmmsAttributeSet gAttrib;
-        gAttrib.add(nat_per_group,"size");
-        gAttrib.put(cur0);
-        nat_group.push_back(nat_per_group);
-        ng_in += nat_per_group;
-        ntot += nat_per_group;
-        ng++;
-      }
-      else
-        if(cname == attrib_tag)
+        if(size_att != nat)
         {
-          int size_att = 0;
-          OhmmsAttributeSet aAttrib;
-          aAttrib.add(size_att,"size");
-          aAttrib.put(cur0);
-          if(size_att)
-          {
-            if(size_att != nat)
-            {
-              app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size="
-                            << size_att << endl;
-              nat = size_att;
-            }
-          }
+          app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size="
+            << size_att << endl;
+          nat = size_att;
         }
+      }
+    }
     cur0 = cur0->next;
   }
   ntot += nat;
@@ -365,23 +361,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
     }
-    //else if (randomsrc == "") {
-    //  ostringstream o;
-    //  o << "Not know how to randomize R of an open system.\n"
-    //    << "Use randomsrc=\"ion\" instead.\n";
-    //  APP_ABORT(o.str());
-    //}
   }
   //this sets Mass, Z
   ref_.resetGroups();
-  //vector<int> numPerGroup(tspecies.getTotalNum(),0);
-  //for(int iat=0; iat<ref_.GroupID.size(); iat++)
-  //  numPerGroup[ref_.GroupID[iat]]++;
-  //int membersize= tspecies.addAttribute("membersize");
-  //for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
-  //  tspecies(membersize,ig)=numPerGroup[ig];
-  //}
-  //Check the unit of ParticleSet::R and PBC
   ref_.createSK();
   return true;
 }

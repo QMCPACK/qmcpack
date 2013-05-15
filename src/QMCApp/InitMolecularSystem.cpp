@@ -35,10 +35,11 @@ InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset,
 
 bool InitMolecularSystem::put(xmlNodePtr cur)
 {
-  string target("e"), source("i");
+  string target("e"), source("i"), volume("no");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(target,"target");
   hAttrib.add(source,"source");
+  hAttrib.add(volume,"use_volume");
   hAttrib.put(cur);
   ParticleSet* els=ptclPool->getParticleSet(target);
   if(els == 0)
@@ -52,14 +53,17 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
     ERRORMSG("No target particle " << target << " exists.")
     return false;
   }
-  if(ions->getTotalNum()>1)
-  {
-    initMolecule(ions,els);
-  }
+
+  app_log() << "<init source=\"" << source << "\" target=\""<< target << "\">" << endl;
+
+  if(volume=="yes")
+    initWithVolume(ions,els);
   else
-  {
-    initAtom(ions,els);
-  }
+    initMolecule(ions,els);
+
+  app_log() << "</init>" << endl;
+  app_log().flush();
+
   return true;
 }
 
@@ -89,6 +93,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 {
   if(ions->getTotalNum()==1)
     return initAtom(ions,els);
+
   DistanceTableData* d_ii = DistanceTable::add(*ions);
   //d_ii->create(1);
   d_ii->evaluate(*ions);
@@ -169,69 +174,81 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   //put all the electrons in a unit box
   if(els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
+    els->R.setUnit(PosUnit::CartesianUnit);
     els->applyBC(els->R);
     els->update(0);
   }
-  /*
-  //Overwrite the valence charge
-  int iz = Species.addAttribute("atomicnumber");
-  int nattrib=Species.numAttributes();
-  int ival=Species.addAttribute("valence");
-  //store the max distance from atom
-  if(ival<nattrib) {
-    for(int iat=0; iat<Centers; iat++) {
-      Qval[iat]=static_cast<int>(Species(ival,grID[iat]));
-  //Probably charge is missing: valence becomes charge
-  if(Qval[iat]>Qtot[iat]) Qtot[iat]=Qval[iat];
-  Qcore[iat]=Qtot[iat]-Qval[iat];
-    }
-  } else {
-    for(int iat=0; iat<Centers; iat++) {
-  Qcore[iat] = Qtot[iat];
-  Qval[iat] = 0;
-    }
+}
+
+///helper function to determine the lower bound of a domain (need to move up)
+template<typename T>
+inline TinyVector<T,3> lower_bound(const TinyVector<T,3>& a, const TinyVector<T,3>& b)
+{
+  return TinyVector<T,3>(std::min(a[0],b[0]),std::min(a[1],b[1]),std::min(a[2],b[2]));
+}
+
+///helper function to determine the upper bound of a domain (need to move up)
+template<typename T>
+inline TinyVector<T,3> upper_bound(const TinyVector<T,3>& a, const TinyVector<T,3>& b)
+{
+  return TinyVector<T,3>(std::max(a[0],b[0]),std::max(a[1],b[1]),std::max(a[2],b[2]));
+}
+
+void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
+{
+  TinyVector<double,3> start(1.0);
+  TinyVector<double,3> end(0.0);
+
+  ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
+  Ru.setUnit(PosUnit::LatticeUnit);
+  ions->applyBC(ions->R,Ru);
+
+  for(int iat=0; iat<Ru.size(); iat++)
+  {
+    start=lower_bound(Ru[iat],start);
+    end=upper_bound(Ru[iat],end);
   }
 
-  //3N-dimensional Gaussian
-  //assign the core
-  int ncoreUp(0), items(0);
-  for(int iat=0; iat<Centers; iat++) {
-    double sep=sqrt(static_cast<double>(Qcore[iat]))*0.5;
-    for(int iel=0; iel<Qcore[iat]/2; iel++) {
-      els->R[ncoreUp]=ions->R[iat]+sep*chi[items++];
-      els->R[ncoreUp+numUp]=ions->R[iat]+sep*chi[items++];
-      ++ncoreUp;
-    }
-  }
+  TinyVector<double,3> shift;
+  Tensor<double,3> newbox(ions->Lattice.R);
 
-  int vup=numUp-ncoreUp;
-  int vdown=numDown-ncoreUp;
-  int vtot=vup+vdown;
-  int valIndex = ncoreUp;
-  int ic=0;
-  while(vtot && ic<Centers) {
-    for(int nn=d_ii->M[ic]; nn<d_ii->M[ic+1]; nn++){
-      double bl = d_ii->r(nn);
-      int jc = d_ii->J[nn];
-      //only assign if the half bond-length < cutoff
-  //assign pairs of electrons (up and down)
-      if(vtot && bl < 2.0*cutoff){
-        ParticleSet::SingleParticlePos_t displ= ions->R[ic]+0.5*d_ii->dr(nn);
-        bl*=0.1;
-        if(vup) {
-          els->R[ncoreUp] = displ+bl*chi[items];
-    --vup;--vtot;++items;
-        }
-        if(vdown) {
-          els->R[ncoreUp+numUp]=displ+bl*chi[items];
-          --vdown;--vtot;++items;
-        }
-  ++ncoreUp;
+  double buffer=2.0; //buffer 2 bohr
+  for(int idim=0; idim<3; ++idim)
+  {
+    //if(ions->Lattice.BoxBConds[idim]) 
+    //{
+    //  start[idim]=0.0; 
+    //  end[idim]=1.0;
+    //  shift[idim]=0.0;
+    //}
+    //else
+    {
+      double buffer_r=buffer*ions->Lattice.OneOverLength[idim];
+      start[idim]=max(0.0,(start[idim]-buffer_r));
+      end[idim]  =min(1.0,(end[idim]  +buffer_r));
+      shift[idim]=start[idim]*ions->Lattice.Length[idim];
+      if(std::abs(end[idim]=start[idim])<buffer)
+      {//handle singular case
+        start[idim]=max(0.0,start[idim]-buffer_r/2.0);
+        end[idim]  =min(1.0,end[idim]  +buffer_r/2.0);
       }
+
+      newbox(idim,idim)=(end[idim]-start[idim])*ions->Lattice.Length[idim];
     }
-    ++ic;
   }
-  */
+
+  ParticleSet::ParticleLayout_t slattice(ions->Lattice);
+  slattice.set(newbox);
+
+  app_log() << "  InitMolecularSystem::initWithVolume " << endl;
+  app_log() << "  Effective Lattice shifted by  " << shift << endl;
+  app_log() <<newbox<< endl;
+
+  Ru.resize(els->getTotalNum());
+  makeUniformRandom(Ru);
+  for(int iat=0; iat<Ru.size(); ++iat)
+    els->R[iat]=slattice.toCart(Ru[iat])+shift;
+  els->R.setUnit(PosUnit::CartesianUnit);
 }
 
 bool InitMolecularSystem::put(std::istream& is)
@@ -247,7 +264,7 @@ bool InitMolecularSystem::get(std::ostream& os) const
 void InitMolecularSystem::reset()
 {
 }
-}
+}//namespace
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

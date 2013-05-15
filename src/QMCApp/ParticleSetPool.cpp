@@ -178,6 +178,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
 void ParticleSetPool::randomize()
 {
+  app_log()<<"ParticleSetPool::randomize " << endl;
   for(int i=0; i<randomize_nodes.size(); ++i)
   {
     InitMolecularSystem moinit(this);
@@ -330,17 +331,6 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
   }
   //name it with the target
   qp->setName(target);
-  //assign non-trivial positions for the quanmtum particles
-  InitMolecularSystem mole(this);
-  if(ions->getTotalNum()>1)
-    mole.initMolecule(ions,qp);
-  else
-    mole.initAtom(ions,qp);
-  qp->R.setUnit(PosUnit::CartesianUnit);
-  if(qp->Lattice.SuperCellEnum)
-    qp->createSK();
-  //for(int i=0; i<qp->getTotalNum(); ++i)
-  //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
   if(qp->getTotalNum() == 0 || ions->getTotalNum() == 0)
   {
     delete qp;
@@ -348,49 +338,30 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
     APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
     return 0;
   }
+  //for PPP, use uniform random
+  if(qp->Lattice.SuperCellEnum == SUPERCELL_BULK)
+  {
+    makeUniformRandom(qp->R);
+    qp->R.setUnit(PosUnit::LatticeUnit);
+    qp->convert2Cart(qp->R);
+  }
+  else
+  {
+    //assign non-trivial positions for the quanmtum particles
+    InitMolecularSystem mole(this);
+    mole.initMolecule(ions,qp);
+    qp->R.setUnit(PosUnit::CartesianUnit);
+  }
+  //for(int i=0; i<qp->getTotalNum(); ++i)
+  //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
+  if(qp->Lattice.SuperCellEnum)
+    qp->createSK();
   qp->resetGroups();
   return qp;
 #else
   APP_ABORT("ESHDF is not valid for OHMMS_DIM != 3");
 #endif
 }
-// Experimental implementation of cloning ParticleSet*
-// All taken care by HamiltonianPool
-//  std::vector<ParticleSet*>
-//  ParticleSetPool::clone(const string& pname, int np) {
-//    ParticleSet* pRef=getParticleSet(pname);
-//    vector<ParticleSet*> newPtclSets;
-//    if(pRef == 0) return newPtclSets;
-//
-//    newPtclSets.resize(np,0);
-//    newPtclSets[0]=pRef;
-//    char pnameIP[128];
-//
-//    for(int ip=1; ip<np; ip++) {
-//      sprintf(pnameIP,"%s.c%i",pname.c_str(),ip);
-//      map<string,ParticleSet*>::iterator pit(myPool.find(pname));
-//      if(pit == myPool.end())  {
-//        myPool[pnameIP]=0;//add to the pool
-//      } else {
-//        newPtclSets[ip]=(*pit).second;
-//      }
-//    }
-//
-//#pragma omp parallel for
-//    for(int ip=0; ip<np; ip++) {
-//      if(newPtclSets[ip] == 0) {
-//        newPtclSets[ip]=new ParticleSet(*pRef);
-//      }
-//    }
-//
-//    //add the cloned particle sets to myPool
-//    for(int ip=1; ip<np; ip++) {
-//      sprintf(pnameIP,"%s%i",pname.c_str(),ip);
-//      myPool[pnameIP]=newPtclSets[ip];
-//    }
-//
-//    return newPtclSets;
-//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -46,8 +46,19 @@ public:
   bool put(xmlNodePtr cur);
   void reset();
 
+  /** initialize els for an atom
+   */
   void initAtom(ParticleSet* ions, ParticleSet* els);
+  /** initialize els position for a molecule
+   *
+   * Use the valence of each ionic species on a sphere
+   */
   void initMolecule(ParticleSet* ions, ParticleSet* els);
+  /** initialize els for the systems with a mixed boundary
+   *
+   * Use the bound of the ionic systems and uniform random positions within a reduced box
+   */
+  void initWithVolume(ParticleSet* ions, ParticleSet* els);
 
 private:
 
