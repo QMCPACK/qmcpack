@@ -245,7 +245,7 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
     hout.push("random");
     TinyVector<hsize_t,2> shape_t(0);
     shape_t[1]=Random.state_size();
-    yperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
+    hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
     hout.read(slab,Random.EngineName);
     shape[0]=static_cast<int>(slab.size(0));
     shape[1]=static_cast<int>(slab.size(1));

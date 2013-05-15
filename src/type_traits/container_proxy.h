@@ -78,7 +78,7 @@ struct container_proxy<std::vector<T> >
 
   inline void resize(size_t n)
   {
-    ref.resize(nt);
+    ref.resize(n);
   }
 
   template<typename I>
