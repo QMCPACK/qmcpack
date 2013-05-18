@@ -97,7 +97,7 @@ struct NonLocalECPComponent: public QMCTraits
   void add(int l, RadialPotentialType* pp);
 
   ///add knots to the spherical grid
-  void addknot(PosType xyz, RealType weight)
+  void addknot(const PosType& xyz, RealType weight)
   {
     sgridxyz_m.push_back(xyz);
     sgridweight_m.push_back(weight);

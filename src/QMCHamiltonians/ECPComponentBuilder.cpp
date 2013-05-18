@@ -377,16 +377,16 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
           }
         }
   // Now, construct rule
-  if (std::fabs(A) > 1.0e-10)
+  if (std::abs(A) > 1.0e-10)
     for (int i=0; i<a.size(); i++)
       pp_nonloc->addknot(a[i], A);
-  if (std::fabs(B) > 1.0e-10)
+  if (std::abs(B) > 1.0e-10)
     for (int i=0; i<b.size(); i++)
       pp_nonloc->addknot(b[i], B);
-  if (std::fabs(C) > 1.0e-10)
+  if (std::abs(C) > 1.0e-10)
     for (int i=0; i<c.size(); i++)
       pp_nonloc->addknot(c[i], C);
-  if (std::fabs(D) > 1.0e-10)
+  if (std::abs(D) > 1.0e-10)
     for (int i=0; i<d.size(); i++)
       pp_nonloc->addknot(d[i], D);
   // Allocate storage for wave function ratios
@@ -399,11 +399,11 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   {
     PosType r = pp_nonloc->sgridxyz_m[k];
     double nrm = dot(r,r);
-    assert (std::fabs(nrm-1.0) < 1.0e-14);
+    assert (std::abs(nrm-1.0) < 1.0e-14);
     wSum += pp_nonloc->sgridweight_m[k];
     //cout << pp_nonloc->sgridxyz_m[k] << " " << pp_nonloc->sgridweight_m[k] << endl;
   }
-  assert (std::fabs(wSum - 1.0) < 1.0e-14);
+  assert (std::abs(wSum - 1.0) < 1.0e-14);
   // Check the quadrature rule
   CheckQuadratureRule(lexact);
 }
