@@ -29,7 +29,7 @@
 #ifndef PETE_PETE_COMBINERS_H
 #define PETE_PETE_COMBINERS_H
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 ///////////////////////////////////////////////////////////////////////////////
 //

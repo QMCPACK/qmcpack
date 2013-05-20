@@ -21,7 +21,7 @@
 #include "Message/OpenMP.h"
 #include <limits>
 
-using namespace APPNAMESPACE;
+using namespace qmcplusplus;
 
 ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
 void Uniform3DGridLayout::SetLRCutoffs()

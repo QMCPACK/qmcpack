@@ -28,7 +28,7 @@ QMCPP_ALLREDUCE_C(vector<double>,MPI_DOUBLE);
 
 QMCPP_ALLREDUCE_C(vector<int>,MPI_INT);
 
-QMCPP_ALLREDUCE_C(APPNAMESPACE::Matrix<double>,MPI_DOUBLE);
+QMCPP_ALLREDUCE_C(qmcplusplus::Matrix<double>,MPI_DOUBLE);
 
 /** gather operations **/
 #define QMCPP_GATHER(CONTAINER,CppType, MPIType)                                     \

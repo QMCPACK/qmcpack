@@ -100,7 +100,7 @@ struct OptimizableFunctorBase
   */
   virtual void setDensity(real_type n) { }
 
-  virtual inline bool evaluateDerivatives (real_type r, std::vector<APPNAMESPACE::TinyVector<real_type,3> >& derivs)
+  virtual inline bool evaluateDerivatives (real_type r, std::vector<qmcplusplus::TinyVector<real_type,3> >& derivs)
   {
     return false;
   }

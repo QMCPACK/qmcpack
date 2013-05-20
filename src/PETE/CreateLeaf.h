@@ -29,7 +29,7 @@
 #ifndef PETE_PETE_CREATELEAF_H
 #define PETE_PETE_CREATELEAF_H
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //-----------------------------------------------------------------------------
 // Expression<T> - a class that wraps the contents of an expression

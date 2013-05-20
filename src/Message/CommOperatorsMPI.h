@@ -124,11 +124,11 @@ inline void gsum(int& g, int gid)
 }
 
 template<unsigned N>
-inline void gsum(APPNAMESPACE::TinyVector<double,N>& g, int gid)
+inline void gsum(qmcplusplus::TinyVector<double,N>& g, int gid)
 {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  APPNAMESPACE::TinyVector<double,N> gt(g);
+  qmcplusplus::TinyVector<double,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
@@ -149,11 +149,11 @@ inline void gsum(double& g, int gid)
 }
 
 template<unsigned N>
-inline void gsum(APPNAMESPACE::TinyVector<int,N>& g, int gid)
+inline void gsum(qmcplusplus::TinyVector<int,N>& g, int gid)
 {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  APPNAMESPACE::TinyVector<int,N> gt(g);
+  qmcplusplus::TinyVector<int,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
@@ -167,7 +167,7 @@ inline void gsum(std::vector<double>& g, int gid)
 }
 
 template<>
-inline void gsum(APPNAMESPACE::Matrix<double>& g, int gid)
+inline void gsum(qmcplusplus::Matrix<double>& g, int gid)
 {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -210,22 +210,22 @@ Communicate::allreduce(double& g)
 
 template<>
 inline void
-Communicate::allreduce(APPNAMESPACE::TinyVector<double,OHMMS_DIM>& g)
+Communicate::allreduce(qmcplusplus::TinyVector<double,OHMMS_DIM>& g)
 {
   if(d_ncontexts==1)
     return;
-  APPNAMESPACE::TinyVector<double,OHMMS_DIM> gt(g);
+  qmcplusplus::TinyVector<double,OHMMS_DIM> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
 template<>
 inline void
-Communicate::allreduce(APPNAMESPACE::TinyVector<int,OHMMS_DIM>& g)
+Communicate::allreduce(qmcplusplus::TinyVector<int,OHMMS_DIM>& g)
 {
   if(d_ncontexts==1)
     return;
-  APPNAMESPACE::TinyVector<int,OHMMS_DIM> gt(g);
+  qmcplusplus::TinyVector<int,OHMMS_DIM> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_INT, MPI_SUM, myMPI);
   g = gt;
 }
@@ -284,7 +284,7 @@ Communicate::reduce(std::vector<double>& g)
 
 template<>
 inline void
-Communicate::allreduce(APPNAMESPACE::Matrix<double>& g)
+Communicate::allreduce(qmcplusplus::Matrix<double>& g)
 {
   std::vector<double> gt(g.size());
   std::copy(g.begin(),g.end(),gt.begin());
@@ -348,77 +348,77 @@ Communicate::bcast(bool &g)
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<double,2>& g)
+Communicate::bcast(qmcplusplus::TinyVector<double,2>& g)
 {
   MPI_Bcast(g.begin(),2,MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<int,2>& g)
+Communicate::bcast(qmcplusplus::TinyVector<int,2>& g)
 {
   MPI_Bcast(g.begin(),2,MPI_INT,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<int,3>& g)
+Communicate::bcast(qmcplusplus::TinyVector<int,3>& g)
 {
   MPI_Bcast(g.begin(),3,MPI_INT,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(vector<APPNAMESPACE::TinyVector<int,3> >& g)
+Communicate::bcast(vector<qmcplusplus::TinyVector<int,3> >& g)
 {
   MPI_Bcast(&g[0][0],3*g.size(),MPI_INT,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<double,3>& g)
+Communicate::bcast(qmcplusplus::TinyVector<double,3>& g)
 {
   MPI_Bcast(g.begin(),3,MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<float,3>& g)
+Communicate::bcast(qmcplusplus::TinyVector<float,3>& g)
 {
   MPI_Bcast(g.begin(),3,MPI_FLOAT,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::TinyVector<double,4>& g)
+Communicate::bcast(qmcplusplus::TinyVector<double,4>& g)
 {
   MPI_Bcast(g.begin(),4,MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Tensor<double,3>& g)
+Communicate::bcast(qmcplusplus::Tensor<double,3>& g)
 {
   MPI_Bcast(&(g[0]),9,MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<double>& g)
+Communicate::bcast(qmcplusplus::Vector<double>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<complex<double> >& g)
+Communicate::bcast(qmcplusplus::Vector<complex<double> >& g)
 {
   MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<int>& g)
+Communicate::bcast(qmcplusplus::Vector<int>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_INT,0,myMPI);
 }
@@ -426,21 +426,21 @@ Communicate::bcast(APPNAMESPACE::Vector<int>& g)
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<APPNAMESPACE::TinyVector<double,2> >& g)
+Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double,2> >& g)
 {
   MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<APPNAMESPACE::TinyVector<double,3> >& g)
+Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double,3> >& g)
 {
   MPI_Bcast(&(g[0]),3*g.size(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(APPNAMESPACE::Vector<APPNAMESPACE::TinyVector<float,3> >& g)
+Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<float,3> >& g)
 {
   MPI_Bcast(&(g[0]),3*g.size(),MPI_FLOAT,0,myMPI);
 }
@@ -507,21 +507,21 @@ Communicate::bcast(PooledData<int>& g)
 
 template<>
 inline void
-Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,2> > &g)
+Communicate::bcast(std::vector<qmcplusplus::TinyVector<double,2> > &g)
 {
   MPI_Bcast(&(g[0][0]), 2*g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,3> > &g)
+Communicate::bcast(std::vector<qmcplusplus::TinyVector<double,3> > &g)
 {
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void
-Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<float,3> > &g)
+Communicate::bcast(std::vector<qmcplusplus::TinyVector<float,3> > &g)
 {
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_FLOAT, 0, myMPI);
 }

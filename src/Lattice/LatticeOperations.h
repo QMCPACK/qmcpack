@@ -21,7 +21,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 /** Dot product between a vector and tensor

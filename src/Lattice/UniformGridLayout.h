@@ -26,7 +26,7 @@
 /**@file UniformGridLayout.h
  *@brief Declaration of UniformGridLayout<T,D>
  */
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 //forward declaration for generic evaluation

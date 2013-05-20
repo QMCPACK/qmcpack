@@ -206,7 +206,7 @@ public:
   */
   void setDensity(real_type n) { }
 
-  inline bool evaluateDerivatives (real_type r, std::vector<APPNAMESPACE::TinyVector<real_type,3> >& derivs)
+  inline bool evaluateDerivatives (real_type r, std::vector<qmcplusplus::TinyVector<real_type,3> >& derivs)
   {
     return false;
   }

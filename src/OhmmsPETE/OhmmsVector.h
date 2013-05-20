@@ -33,7 +33,7 @@
 #include <iostream>
 //using namespace std;
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 template<class T, class C = std::vector<T> >
 class Vector
@@ -194,7 +194,7 @@ void Vector<T,C>::create(unsigned n)
 
 #include "OhmmsPETE/OhmmsVectorOperators.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //-----------------------------------------------------------------------------
 // We need to specialize CreateLeaf<T> for our class, so that operators

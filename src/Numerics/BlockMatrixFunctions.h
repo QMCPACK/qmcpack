@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_BLOCKMATRIXFUNCTIONS_H
 #define QMCPLUSPLUS_BLOCKMATRIXFUNCTIONS_H
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 template<typename T, unsigned D>
 struct GEMV

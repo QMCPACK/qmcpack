@@ -156,7 +156,7 @@ eval_e2iphi(std::vector<T>& phi, std::vector<std::complex<T> >& z)
 
 //template<typename T>
 //inline void
-//eval_e2iphi(APPNAMESPACE::Vector<T>& phi, APPNAMESPACE::Vector<std::complex<T> >& z)
+//eval_e2iphi(qmcplusplus::Vector<T>& phi, qmcplusplus::Vector<std::complex<T> >& z)
 //{
 //  eval_e2iphi(phi.size(),phi.data(),z.data());
 //}

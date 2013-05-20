@@ -97,7 +97,7 @@ SQDFrame::solve(const char* fname)
     return false;
   }
   //project description, assign id and series
-  APPNAMESPACE::ProjectData myProject;
+  qmcplusplus::ProjectData myProject;
   xmlXPathObjectPtr result
   = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
   if(xmlXPathNodeSetIsEmpty(result->nodesetval))

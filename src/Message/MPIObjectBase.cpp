@@ -17,7 +17,7 @@
 #include "Configuration.h"
 #include "Message/MPIObjectBase.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 MPIObjectBase::MPIObjectBase(Communicate* c): ReportLevel(1),

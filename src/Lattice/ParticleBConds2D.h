@@ -19,7 +19,7 @@
 #include <config.h>
 #include <Lattice/CrystalLattice.h>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 /** specialization for a periodic 2D cell
 */

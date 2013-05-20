@@ -18,7 +18,7 @@
 #ifndef OHMMS_TINYVECTORTENSOR_OPERATORS_H
 #define OHMMS_TINYVECTORTENSOR_OPERATORS_H
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //////////////////////////////////////////////////////////////////////
 // Definition of the struct OTDot.

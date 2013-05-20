@@ -22,7 +22,7 @@
 #include <hdf5.h>
 #endif
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 #if defined(HAVE_LIBHDF5)
 template <typename T>

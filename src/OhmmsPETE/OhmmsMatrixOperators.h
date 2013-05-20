@@ -13,7 +13,7 @@
 // MatrixDefs.in
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<class T1, class C1>

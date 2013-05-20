@@ -24,7 +24,7 @@
 
 class Communicate;
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 /**class RandomNumberControl

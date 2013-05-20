@@ -3,7 +3,7 @@
 #include <complex>
 #include <fftw3.h>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 // dummy class to be specialized

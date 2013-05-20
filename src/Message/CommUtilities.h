@@ -20,7 +20,7 @@
 #define OHMMS_COMMUNICATION_UTILITY_FUNCTIONS_H
 #include "Message/Communicate.h"
 #if defined(HAVE_MPI)
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 template<typename IT> inline void wait_all(IT first, IT last)
 {
@@ -67,7 +67,7 @@ inline void bcast(T& a, Communicate* comm)
 
 }
 #else
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 template<typename CT>
 inline void cancel(CT& r) { }

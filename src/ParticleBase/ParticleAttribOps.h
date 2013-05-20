@@ -38,7 +38,7 @@
 
 #include "ParticleBase/ParticleUtility.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<class T1, class T2, unsigned D>

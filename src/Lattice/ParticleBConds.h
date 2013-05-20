@@ -20,7 +20,7 @@
 #include <simd/simd.hpp>
 #include <Lattice/CrystalLattice.h>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 template<int N,unsigned D>
 struct PowerOfN

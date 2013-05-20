@@ -25,7 +25,7 @@
 #include "Utilities/Timer.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 /**
  *

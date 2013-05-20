@@ -19,7 +19,7 @@
 #define OHMMS_TINY_META_H
 
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 /* \note
  *  For optimization, operators for TinyVector and Tensor classes are specalized for D.

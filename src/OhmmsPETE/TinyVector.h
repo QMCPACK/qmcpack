@@ -45,7 +45,7 @@
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //////////////////////////////////////////////////////////////////////
 //

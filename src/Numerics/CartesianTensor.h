@@ -30,7 +30,7 @@
  * Array ordered as [S,X,Y,Z,XX,YY,ZZ,XY,XZ,YZ,...]
  *    (following Gamess order)
  */
-template<class T, class Point_t, class Tensor_t = APPNAMESPACE::Tensor<T,3> , class GGG_t = APPNAMESPACE::TinyVector<Tensor_t, 3> >
+template<class T, class Point_t, class Tensor_t = qmcplusplus::Tensor<T,3> , class GGG_t = qmcplusplus::TinyVector<Tensor_t, 3> >
 class CartesianTensor
 {
 public :

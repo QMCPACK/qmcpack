@@ -29,7 +29,7 @@
  */
 template<class T>
 inline bool
-putContent(APPNAMESPACE::Vector<T>& a, xmlNodePtr cur)
+putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
 {
   std::istringstream
   stream((const char*)
@@ -45,7 +45,7 @@ putContent(APPNAMESPACE::Vector<T>& a, xmlNodePtr cur)
 
 template<typename T>
 inline bool
-putContent(APPNAMESPACE::Matrix<T>& a, xmlNodePtr cur)
+putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur)
 {
   std::istringstream
   stream((const char*)

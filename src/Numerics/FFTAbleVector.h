@@ -12,7 +12,7 @@
 // also in the future move everything to the base class and just have
 // an FFTEngine handed to this by some builder
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 // dummy base

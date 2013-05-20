@@ -24,7 +24,7 @@
 #include <vector>
 #include <iostream>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<class T, class C = std::vector<T> >

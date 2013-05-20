@@ -41,7 +41,7 @@
 
 #include <iterator>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //-----------------------------------------------------------------------------
 //

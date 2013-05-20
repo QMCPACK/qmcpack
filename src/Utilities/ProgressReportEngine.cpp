@@ -17,7 +17,7 @@
 #include "Configuration.h"
 #include "Utilities/ProgressReportEngine.h"
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 void ReportEngine::echo(xmlNodePtr cur, bool recursive)
 {

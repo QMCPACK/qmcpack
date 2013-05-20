@@ -23,7 +23,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include <strstream>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 /** Base class for any object which needs to know about a MPI communicator.

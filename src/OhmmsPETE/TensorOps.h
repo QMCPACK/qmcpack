@@ -20,7 +20,7 @@
 
 /*** Tenor operators.  Generic operators are specialized for 1,2 and 3 D
  */
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<class T1, class T2, class OP, unsigned D>

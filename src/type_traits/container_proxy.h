@@ -6,7 +6,7 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/PooledData.h>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<typename T>

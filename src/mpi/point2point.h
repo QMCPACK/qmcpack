@@ -7,7 +7,7 @@
 //#include <boost/mpi/operations.hpp>
 //#endif
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 namespace mpi

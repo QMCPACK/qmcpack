@@ -26,7 +26,7 @@
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 ///initialize the static data members
 PrimeNumberSet<RandomGenerator_t::uint_type> RandomNumberControl::PrimeNumbers;

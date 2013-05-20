@@ -26,7 +26,7 @@
 #include <Lattice/LatticeOperations.h>
 
 using namespace std;
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 /** enumeration to classify a CrystalLattice

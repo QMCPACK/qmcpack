@@ -32,7 +32,7 @@
  *@brief Concrete uniform grid layout for 3D
  */
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 /** A concrete, specialized class equivalent to UniformGridLayout<T,3>
  *

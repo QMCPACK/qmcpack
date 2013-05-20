@@ -25,7 +25,7 @@
 
 #include <cstdlib>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 /** dummy template class to be specialized */
 template<class CL>

@@ -20,7 +20,7 @@
 #include <mpi.h>
 #endif
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 namespace mpi
 {

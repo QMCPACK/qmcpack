@@ -27,7 +27,7 @@
 #include "OhmmsPETE/TinyVector.h"
 
 using namespace std;
-using namespace APPNAMESPACE;
+using namespace qmcplusplus;
 /**@defgroup QuantumNumber
    @brief quantum numbers n, l, m and s
    *

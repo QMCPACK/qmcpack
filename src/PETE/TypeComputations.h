@@ -29,7 +29,7 @@
 #ifndef PETE_PETE_TYPECOMPUTATIONS_H
 #define PETE_PETE_TYPECOMPUTATIONS_H
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 //-----------------------------------------------------------------------------
 //

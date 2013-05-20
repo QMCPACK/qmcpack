@@ -33,7 +33,7 @@
  * can be accessed by index(l,m) which returns the
  * locator of the combination for l and m.
  */
-template<class T, class Point_t, class Tensor_t = APPNAMESPACE::Tensor<T,3>, class GGG_t = APPNAMESPACE::TinyVector<Tensor_t, 3>  >
+template<class T, class Point_t, class Tensor_t = qmcplusplus::Tensor<T,3>, class GGG_t = qmcplusplus::TinyVector<Tensor_t, 3>  >
 class SphericalTensor
 {
 public :

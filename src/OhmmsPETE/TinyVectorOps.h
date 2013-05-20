@@ -19,7 +19,7 @@
 #define OHMMS_TINYVECTOR_OPERATORS_H
 #include <complex>
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 
 template<class T1>

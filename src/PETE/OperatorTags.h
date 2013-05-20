@@ -29,7 +29,7 @@
 #ifndef PETE_PETE_OPERATORTAGS_H
 #define PETE_PETE_OPERATORTAGS_H
 
-namespace APPNAMESPACE
+namespace qmcplusplus
 {
 ///////////////////////////////////////////////////////////////////////////////
 //
