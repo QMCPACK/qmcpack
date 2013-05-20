@@ -20,7 +20,7 @@ namespace qmcplusplus
 
 CoulombPBCAA_CUDA::CoulombPBCAA_CUDA
 (ParticleSet& ref, bool active, bool cloning) :
-  CoulombPBCAATemp(ref,active,cloning),
+  CoulombPBCAA(ref,active,cloning),
   PtclRef(ref),
   SumGPU("CoulombPBCAATemp::SumGPU"),
   kpointsGPU("CoulombPBCAATemp::kpointsGPU"),

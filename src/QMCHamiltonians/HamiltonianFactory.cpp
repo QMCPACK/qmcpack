@@ -56,8 +56,10 @@
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
 #endif
-
 #include "OhmmsData/AttributeSet.h"
+#ifdef QMC_CUDA
+#include "QMCHamiltonians/SkEstimator_CUDA.h"
+#endif
 
 namespace qmcplusplus
 {

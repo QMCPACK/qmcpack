@@ -20,7 +20,7 @@ namespace qmcplusplus
 
 CoulombPBCAB_CUDA::CoulombPBCAB_CUDA
 (ParticleSet& ions, ParticleSet& elns, bool cloning) :
-  CoulombPBCABTemp(ions,elns,cloning),
+  CoulombPBCAB(ions,elns,cloning),
   ElecRef(elns), IonRef(ions),
   SumGPU("CoulombPBCABTemp::SumGPU"),
   IGPU("CoulombPBCABTemp::IGPU"),
@@ -74,7 +74,7 @@ CoulombPBCAB_CUDA::CoulombPBCAB_CUDA
 void
 CoulombPBCAB_CUDA::initBreakup(ParticleSet& P)
 {
-  CoulombPBCABTemp::initBreakup(P);
+  CoulombPBCAB::initBreakup(P);
 #ifdef QMC_CUDA
   V0Spline = new TextureSpline;
   V0Spline->set(V0->data(), V0->size(), V0->grid().rmin(),
@@ -87,7 +87,7 @@ void
 CoulombPBCAB_CUDA::add(int groupID, RadFunctorType* ppot)
 {
   RadFunctorType* savefunc = Vspec[groupID];
-  CoulombPBCABTemp::add(groupID, ppot);
+  CoulombPBCAB::add(groupID, ppot);
   RadFunctorType* rfunc = Vspec[groupID];
   if (rfunc != savefunc)
   {

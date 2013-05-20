@@ -13,13 +13,13 @@
 //////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
 #define QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
-#include "QMCHamiltonians/CoulombPBCAATemp.h"
+#include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 
 
 namespace qmcplusplus
 {
-struct CoulombPBCAA_CUDA : public CoulombPBCAATemp
+struct CoulombPBCAA_CUDA : public CoulombPBCAA
 {
   //////////////////////////////////
   // Vectorized evaluation on GPU //
