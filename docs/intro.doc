@@ -1,0 +1,56 @@
+/*! \page qmc_intro Introduction to QMCPACK
+
+ This guide is not meant to discuss Quantum Monte Carlo methods and is
+written on the assumption that the users are familiar with various QMC
+algorithms. There are many excellent tutorials and talks on QMC methods
+and numerous published works. A short list includes 
+
+- <a href="http://www.physics.uiuc.edu/people/Ceperley/">Home page of Prof. David M Ceperley</a>
+- <a href="http://cms.mcc.uiuc.edu/wiki/display/ss2007qmc/Home">
+Quantum Monte Carlo from Minerals and Materials to Molecules,
+2007 Summer School on Computational Materials Science</a>
+
+\section start_sec Getting and building QMCPACK
+
+Consult wiki for the updated instructions and helps on advanced topics.
+
+\subsection pre_sec Prerequisite
+
+QMCPACK can be installed on any Unix/Linux distribution with recent gnu
+compilers (4.1 and higher). Other tested compilers are Intel compilers and IBM
+VisualAge C++.  boost provides current status of C++ compilers. Please check
+if your compiler can support boost/random library, which is the minimum
+requirement to compile QMCPACK and associated packages.
+
+In order to install QMCPACK, the users have to install cmake and several
+required packages. These packages are included in the standard Linux/cygwin
+distributions or can be downloaded by following the links. If these libraries
+are installed in standard directories, /usr, /usr/local, no action
+is necessary.  Alternatively, the users can set environment variables 
+XYZ_HOME where XYZ stands for the name of package; the build utility
+can locate the libraries and use them.
+
+The build utility cmake will look for XYZ_HOME/include for the header
+files and XYZ_HOME/lib for the library files in addition to the 
+standard paths.  When multiple environment variables apply to a library, e.g., 
+blas/lapack, the search is done according to the given  order.  On many HPC
+centers, these packages are managed by utilities like module and
+softenv. Consult the documentations on each site. 
+
+\subsection cmake_sec Building using  cmake
+
+For bash users,
+-  Download the source code using subversion:
+
+    <code>svn co http://cms.mcc.uiuc.edu/svn/qmcpack-dev/trunk qmcpack</code>
+
+- Move to a build directory:
+    cd qmcpack/build`
+- Set compilers and XYZ_HOME for the required external packages:
+    export CXX=g++
+    export CC=gcc
+- Run cmake to create \nolinkurl{Makefile}s:
+    cmake ..
+- Build everything:
+    make
+*/
