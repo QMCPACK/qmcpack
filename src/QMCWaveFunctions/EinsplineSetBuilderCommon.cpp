@@ -39,6 +39,7 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p,
     Format(QMCPACK), makeRotations(false), MeshFactor(1.0),
     MeshSize(0,0,0)
 {
+  MatchingTol=1.0e-8;
 //     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -65,14 +66,12 @@ EinsplineSetBuilder::put(xmlNodePtr cur)
 bool
 EinsplineSetBuilder::CheckLattice()
 {
-  bool match=true;
+  double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
-    {
-      RealType diff = SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j);
-      match = match && (std::fabs(diff) < 1.0e-6);
-    }
-  if(!match)
+      diff+=std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j));
+
+  if(diff>MatchingTol)
   {
     ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);
@@ -87,7 +86,7 @@ EinsplineSetBuilder::CheckLattice()
     o << SuperLattice-TargetPtcl.Lattice.R << endl;
     APP_ABORT(o.str());
   }
-  return match;
+  return true;
 }
 
 void
@@ -332,7 +331,7 @@ bool EinsplineSetBuilder::TwistPair (PosType a, PosType b)
   for (int n=0; n<OHMMS_DIM; n++)
   {
     double d = a[n] + b[n];
-    if (std::fabs(d - round(d)) > 1.0e-8)
+    if (std::abs(d - round(d)) > MatchingTol)
       pair = false;
   }
   return pair;
@@ -358,7 +357,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     if (dot(ks-kp, ks-kp) > 1.0e-12)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
-      abort();
+      APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
     PosType frac = FracPart (superTwist);
     bool found = false;
@@ -436,11 +435,11 @@ EinsplineSetBuilder::AnalyzeTwists2()
   for (int dim=0; dim<OHMMS_DIM; dim++)
   {
     double t = 2.0*superFracs[TwistNum][dim];
-    if (std::fabs(t - round(t)) > 1.0e-10)
+    if (std::abs(t - round(t)) > MatchingTol)
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
-      abort();
+      APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
   }
 #endif
@@ -454,7 +453,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     {
       fprintf (stderr, "Super twist %d should own %d k-points, but owns %d.\n",
                si, numTwistsNeeded, static_cast<int>(superSets[si].size()));
-      abort();
+      APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
     // Now, make sure they are all distinct
     int N = superSets[si].size();
@@ -472,7 +471,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
         {
           app_error() << "Identical k-points detected in super twist set "
                       << si << endl;
-          abort();
+          APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
         }
       }
     }
@@ -538,9 +537,9 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int ti = DistinctTwists[i];
     PosType twist = TwistAngles[ti];
     for (int j=0; j<OHMMS_DIM; j++)
-      if (std::fabs(twist[j]-0.0) > 1.0e-8 &&
-          std::fabs(twist[j]-0.5) > 1.0e-8 &&
-          std::fabs(twist[j]+0.5) > 1.0e-8)
+      if (std::abs(twist[j]-0.0) > MatchingTol &&
+          std::abs(twist[j]-0.5) > MatchingTol &&
+          std::abs(twist[j]+0.5) > MatchingTol)
         UseRealOrbitals = false;
   }
   if (UseRealOrbitals && (DistinctTwists.size() > 1))
@@ -589,14 +588,14 @@ EinsplineSetBuilder::AnalyzeTwists()
   nf[2] = -1.0/((maxTwist[2]-minTwist[2]) -1.0);
   bool meshOK = true;
   // Make sure they are close to integers
-  meshOK = meshOK && (std::fabs(nf[0] - round(nf[0]))<1.0e-6);
-  meshOK = meshOK && (std::fabs(nf[1] - round(nf[1]))<1.0e-6);
-  meshOK = meshOK && (std::fabs(nf[2] - round(nf[2]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[0] - round(nf[0]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[1] - round(nf[1]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[2] - round(nf[2]))<1.0e-6);
   if (!meshOK)
   {
     app_error() << "It appears that the twist angles in file "
                 << H5FileName << " do not form a valid mesh.  Aborting.\n";
-    abort();
+    APP_ABORT("EinsplineSetBuilder::AnalyzeTwists()");
   }
   TinyVector<int,3> n((int)round(nf[0]), (int)round(nf[1]), (int)round(nf[2]));
   TwistMesh = n;

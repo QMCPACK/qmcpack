@@ -230,6 +230,7 @@ public:
   int MaxNumGvecs;
   RealType MeshFactor;
   RealType BufferLayer;
+  RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   vector<vector<TinyVector<int,3> > > Gvecs;
 
