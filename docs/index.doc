@@ -6,8 +6,8 @@ applications are electronic structure calculatinos of molecular, quasi-2D and
 solid-state systems. Designed with the modularity afforded by object-oriented
 architecture, it makes extensive use of template metaprogramming to achieve
 high computational efficiency through inlined specializations. It utilizes a
-hybrid OpenMP/MPI approach to parallelization to take advantage of the growing
-number of cores per SMP node. Finally, it utilizes standard file formats for
+hybrid (OpenMP,CUDA)/MPI approach to parallelization to take advantage of the growing
+number of cores per SMP node or GPUs. Finally, it utilizes standard file formats for
 input and output in XML and HDF5 to facilitate data exchange.
 
 \section qmcpack_about About Development
@@ -47,7 +47,7 @@ resources, as part of a DOE INCITE allocation grant supported by US Department
 of Energy and  NCSA, TACC and NICS for providing resources as a part of NSF
 TeraGrid allocation grant.
 
-\subsection history Major changes
+\section history Major changes
 \htmlonly
 2012-06-01
 <ul>

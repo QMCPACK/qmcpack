@@ -1,11 +1,14 @@
-/*! \page qmc_intro Introduction to QMCPACK
+/*! \mainpage User Guide
 
- This guide is not meant to discuss Quantum Monte Carlo methods and is
+This guide is not meant to discuss Quantum Monte Carlo methods and is
 written on the assumption that the users are familiar with various QMC
 algorithms. There are many excellent tutorials and talks on QMC methods
 and numerous published works. A short list includes 
 
 - <a href="http://www.physics.uiuc.edu/people/Ceperley/">Home page of Prof. David M Ceperley</a>
+- <a href="http://www.mcc.illinois.edu/summerschool/2012/">2012 Summer School on
+  Computational Materials Science: Quantum Monte Carlo: Theory and
+  Fundamentals</a>
 - <a href="http://cms.mcc.uiuc.edu/wiki/display/ss2007qmc/Home">
 Quantum Monte Carlo from Minerals and Materials to Molecules,
 2007 Summer School on Computational Materials Science</a>
@@ -43,14 +46,20 @@ For bash users,
 -  Download the source code using subversion:
 
     <code>svn co http://cms.mcc.uiuc.edu/svn/qmcpack-dev/trunk qmcpack</code>
-
 - Move to a build directory:
-    cd qmcpack/build`
+
+    <code>cd qmcpack/build</code>
+
 - Set compilers and XYZ_HOME for the required external packages:
-    export CXX=g++
-    export CC=gcc
-- Run cmake to create \nolinkurl{Makefile}s:
-    cmake ..
+
+    <code>export CXX=g++</code>
+    <code>export CC=gcc</code>
+
+- Run cmake to create <c>Makefile</c>s:
+
+    <code>cmake ..</code>
+
 - Build everything:
-    make
+
+    <code>make</code>
 */

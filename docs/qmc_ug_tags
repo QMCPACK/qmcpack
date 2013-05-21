@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<tagfile>
+  <compound kind="page">
+    <name>index</name>
+    <title>User Guide</title>
+    <filename>index</filename>
+    <docanchor file="index" title="Getting and building QMCPACK">start_sec</docanchor>
+    <docanchor file="index" title="Prerequisite">pre_sec</docanchor>
+    <docanchor file="index" title="Building using  cmake">cmake_sec</docanchor>
+  </compound>
+</tagfile>
