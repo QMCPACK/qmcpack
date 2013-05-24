@@ -216,7 +216,7 @@ Project Suite:
 \begin{shaded}
 \begin{verbatim}
 cd /your_download_path
-svn https://subversion.assembla.com/svn/qmcdev/project_suite ./project_suite
+svn co https://subversion.assembla.com/svn/qmcdev/trunk/project_suite
 \end{verbatim}
 \end{shaded}
 If you do not have access to the Assembla SVN repository, please make an 
@@ -291,6 +291,9 @@ directory in your Project Suite installation:
 /your_download_path/project_suite/examples
 \end{verbatim}
 \end{shaded}
+The examples assume that you have working versions of \texttt{pw.x}, 
+\texttt{pw2qmcpack.x}, \texttt{qmcapp} (real version), and 
+\texttt{qmcapp\_complex} (complex version) installed and in your \texttt{PATH}. 
 A brief description of each example is given below.  
 
 \begin{description}
@@ -1057,95 +1060,103 @@ results
 
 \pagebreak
 \chapter{Project Suite \\User Reference} \label{reference}
-%\condense{
+Pending.
 
-
-\section{Working with objects}
-\subsection{\bu{General properties of objects}}
-At a conceptual level, objects are a generalization of normal variables.  
-They are really collections of variables taking integer, real, string, or 
-even object values.  An object is also more than structured data, as it 
-makes available operations, or functions, that act on that data.  The data 
-(member data) and functions (member functions) of an object are accessed with 
-a ``.'' following the object's name.  So when you see code like
-\begin{shaded}
-\begin{verbatim}
-   from mymod import MyObj  # make MyObj available from the mymod module
-   i = 5                    # make an integer
-   s = 'abc'                # make a string
-   o = MyObj()              # make a MyObj called o
-   j = i + o.an_int         # access member data an_int, created with MyObj() 
-   r = o.create_real()      # access member function create_real
-   take_action()            # a normal function call
-   o.a = i                  # create a new member data field called a
-\end{verbatim}
-\end{shaded}
-it should be clear what is happening.
-
-\subsection{\bu{Interacting with Project Suite objects}}
-All objects in the Project Suite behave and can be interacted with in a 
-similar way.  Each object you encounter that is made by the Project Suite 
-can be used in the same way as \texttt{obj} objects from the \texttt{generic} 
-module
-
-\section{Project Suite settings: global state and user-specific information}
-\subsection{\bu{How to use the \texttt{settings} function}}
-\subsection{\bu{Accessing settings data}}
-
-
-\section{Objects describing matter}
-\subsection{\bu{Structure}}
-\subsection{\bu{PhysicalSystem}}
-
-
-\section{Objects describing simulations}
-\subsection{\bu{General properties of \texttt{Simulation} objects}}
-\subsection{\bu{Sqd}}
-\subsection{\bu{Pwscf}}
-\subsection{\bu{Pw2casino}}
-\subsection{\bu{Pw2qmcpack}}
-\subsection{\bu{Wfconvert}}
-\subsection{\bu{Qmcpack}}
-
-
-\section{Objects describing simulation input files}
-\subsection{\bu{SqdInput}}
-\subsection{\bu{PwscfInput}}
-\subsection{\bu{Pw2casinoInput}}
-\subsection{\bu{Pw2qmcpackInput}}
-\subsection{\bu{WfconvertInput}}
-\subsection{\bu{QmcpackInput}}
-
-
-\section{Objects describing machines}
-\subsection{\bu{Workstation}}
-\subsection{\bu{Supercomputer} }
-
-
-\section{Objects describing/affecting jobs and job submission}
-\subsection{\bu{Job}}
-\subsection{\bu{bundle}}
-\subsection{\bu{ProjectManager}}
-
-
-\section{Objects and functions for data analysis}
-\subsection{\bu{Unit conversion: convert}}
-\subsection{\bu{PWCSF data analysis: PwscfAnalyzer}}
-\subsection{\bu{QMCPACK data analysis: QmcpackAnalyzer}}
-\subsection{\bu{Fitting equation of state data: eos\_fit}}
-\subsection{\bu{Making plots: plotting}}
-
-
-\section{Runtime behavior of the ProjectManager}
-\subsection{\bu{Analysis of simulation dependencies and workflow}}
-\subsection{\bu{Loading saved data about simulations}}
-\subsection{\bu{Frequent traversal of simulation dependency tree (cascades)}}
-\subsection{\bu{Modifying runtime behavior}}
-
-\section{Command line tools}
-\subsection{\bu{sim}}
-
-
+%\section{Project Suite settings: global state and user-specific information}
+%\subsection{\bu{How to use the \texttt{settings} function}}
+%\subsection{\bu{Accessing settings data}}
+%
+%\section{Making structures}
+%
+%\section{Making simulations}
+%
+%\section{Linking simulations to form cascades}
+%
+%
+%
+%\section{Working with objects}
+%\subsection{\bu{General properties of objects}}
+%At a conceptual level, objects are a generalization of normal variables.  
+%They are really collections of variables taking integer, real, string, or 
+%even object values.  An object is also more than structured data, as it 
+%makes available operations, or functions, that act on that data.  The data 
+%(member data) and functions (member functions) of an object are accessed with 
+%a ``.'' following the object's name.  So when you see code like
+%\begin{shaded}
+%\begin{verbatim}
+%   from mymod import MyObj  # make MyObj available from the mymod module
+%   i = 5                    # make an integer
+%   s = 'abc'                # make a string
+%   o = MyObj()              # make a MyObj called o
+%   j = i + o.an_int         # access member data an_int, created with MyObj() 
+%   r = o.create_real()      # access member function create_real
+%   o.a = i                  # create a new member data field called a
+%   take_action(             # a normal function call
+%      a = 3,                #   with keyword arguments
+%      i = i,                #   left i is argument, right i is variable above
+%      more = True           #   and more function arguments
+%      )                     #   closing the function call ()
+%\end{verbatim}
+%\end{shaded}
+%it should be clear what is happening.
+%
+%\subsection{\bu{Interacting with Project Suite objects}}
+%All objects in the Project Suite behave and can be interacted with in a 
+%similar way.  Each object you encounter that is made by the Project Suite 
+%can be used in the same way as \texttt{obj} objects from the \texttt{generic} 
+%module
+%
+%
+%\section{Objects describing matter}
+%\subsection{\bu{Structure}}
+%\subsection{\bu{PhysicalSystem}}
+%
+%
+%\section{Objects describing simulations}
+%\subsection{\bu{General properties of \texttt{Simulation} objects}}
+%\subsection{\bu{Sqd}}
+%\subsection{\bu{Pwscf}}
+%\subsection{\bu{Pw2casino}}
+%\subsection{\bu{Pw2qmcpack}}
+%\subsection{\bu{Wfconvert}}
+%\subsection{\bu{Qmcpack}}
+%
+%
+%\section{Objects describing simulation input files}
+%\subsection{\bu{SqdInput}}
+%\subsection{\bu{PwscfInput}}
+%\subsection{\bu{Pw2casinoInput}}
+%\subsection{\bu{Pw2qmcpackInput}}
+%\subsection{\bu{WfconvertInput}}
+%\subsection{\bu{QmcpackInput}}
+%
+%
+%\section{Objects describing machines}
+%\subsection{\bu{Workstation}}
+%\subsection{\bu{Supercomputer} }
+%
+%
+%\section{Objects describing/affecting jobs and job submission}
+%\subsection{\bu{Job}}
+%\subsection{\bu{bundle}}
+%\subsection{\bu{ProjectManager}}
+%
+%
+%\section{Objects and functions for data analysis}
+%\subsection{\bu{Unit conversion: convert}}
+%\subsection{\bu{PWCSF data analysis: PwscfAnalyzer}}
+%\subsection{\bu{QMCPACK data analysis: QmcpackAnalyzer}}
+%\subsection{\bu{Fitting equation of state data: eos\_fit}}
+%\subsection{\bu{Making plots: plotting}}
+%
+%
+%\section{Runtime behavior of the ProjectManager}
+%\subsection{\bu{Analysis of simulation dependencies and workflow}}
+%\subsection{\bu{Loading saved data about simulations}}
+%\subsection{\bu{Frequent traversal of simulation dependency tree (cascades)}}
+%\subsection{\bu{Modifying runtime behavior}}
+%
+%
 %\section{Supporting classes}
 %\subsection{\bu{Particles}}
 %\subsection{\bu{PeriodicTable}}
@@ -1153,8 +1164,6 @@ module
 %\subsection{\bu{Generator}}
 %\subsection{\bu{HDFreader}}
 %\subsection{\bu{XMLreader}}
-
-%}%end condense
 
 
 

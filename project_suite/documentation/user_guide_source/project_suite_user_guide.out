@@ -8,16 +8,6 @@
 \BOOKMARK [0][-]{chapter.4}{Complete Examples}{}
 \BOOKMARK [1][-]{section.4.1}{Simple QMC Calculations}{chapter.4}
 \BOOKMARK [0][-]{chapter.5}{Project Suite User Reference}{}
-\BOOKMARK [1][-]{section.5.1}{Working with objects}{chapter.5}
-\BOOKMARK [1][-]{section.5.2}{Project Suite settings: global state and user-specific information}{chapter.5}
-\BOOKMARK [1][-]{section.5.3}{Objects describing matter}{chapter.5}
-\BOOKMARK [1][-]{section.5.4}{Objects describing simulations}{chapter.5}
-\BOOKMARK [1][-]{section.5.5}{Objects describing simulation input files}{chapter.5}
-\BOOKMARK [1][-]{section.5.6}{Objects describing machines}{chapter.5}
-\BOOKMARK [1][-]{section.5.7}{Objects describing/affecting jobs and job submission}{chapter.5}
-\BOOKMARK [1][-]{section.5.8}{Objects and functions for data analysis}{chapter.5}
-\BOOKMARK [1][-]{section.5.9}{Runtime behavior of the ProjectManager}{chapter.5}
-\BOOKMARK [1][-]{section.5.10}{Command line tools}{chapter.5}
 \BOOKMARK [0][-]{chapter.6}{QMC Practice in a Nutshell}{}
 \BOOKMARK [1][-]{section.6.1}{VMC and DMC in the abstract}{chapter.6}
 \BOOKMARK [1][-]{section.6.2}{From expectation values to random walks}{chapter.6}
@@ -34,4 +24,4 @@
 \BOOKMARK [1][-]{section.7.2}{Helpful Links for Installing Electronic Structure Codes}{chapter.7}
 \BOOKMARK [1][-]{section.7.3}{Brushing Up On Python}{chapter.7}
 \BOOKMARK [1][-]{section.7.4}{Quantum Monte Carlo: Theory and Practice}{chapter.7}
-\BOOKMARK [0][-]{section*.47}{Index}{}
+\BOOKMARK [0][-]{section*.13}{Index}{}

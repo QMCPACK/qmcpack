@@ -10,73 +10,29 @@
 \contentsline {subsection}{Example: Graphene Sheet DMC}{8}{section*.2}
 \contentsline {subsection}{Example: C 20 Molecule DMC}{16}{section*.3}
 \contentsline {chapter}{\chapternumberline {5}Project Suite \\User Reference}{23}{chapter.5}
-\contentsline {section}{\numberline {5.1}Working with objects}{23}{section.5.1}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {General properties of objects}}\mathsurround \z@ $\relax }}{23}{section*.4}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Interacting with Project Suite objects}}\mathsurround \z@ $\relax }}{23}{section*.5}
-\contentsline {section}{\numberline {5.2}Project Suite settings: global state and user-specific information}{25}{section.5.2}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {How to use the \texttt {settings} function}}\mathsurround \z@ $\relax }}{25}{section*.6}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Accessing settings data}}\mathsurround \z@ $\relax }}{25}{section*.7}
-\contentsline {section}{\numberline {5.3}Objects describing matter}{25}{section.5.3}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Structure}}\mathsurround \z@ $\relax }}{25}{section*.8}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {PhysicalSystem}}\mathsurround \z@ $\relax }}{25}{section*.9}
-\contentsline {section}{\numberline {5.4}Objects describing simulations}{25}{section.5.4}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {General properties of \texttt {Simulation} objects}}\mathsurround \z@ $\relax }}{25}{section*.10}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Sqd}}\mathsurround \z@ $\relax }}{25}{section*.11}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Pwscf}}\mathsurround \z@ $\relax }}{25}{section*.12}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Pw2casino}}\mathsurround \z@ $\relax }}{25}{section*.13}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Pw2qmcpack}}\mathsurround \z@ $\relax }}{25}{section*.14}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Wfconvert}}\mathsurround \z@ $\relax }}{25}{section*.15}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Qmcpack}}\mathsurround \z@ $\relax }}{25}{section*.16}
-\contentsline {section}{\numberline {5.5}Objects describing simulation input files}{25}{section.5.5}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {SqdInput}}\mathsurround \z@ $\relax }}{25}{section*.17}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {PwscfInput}}\mathsurround \z@ $\relax }}{25}{section*.18}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Pw2casinoInput}}\mathsurround \z@ $\relax }}{25}{section*.19}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Pw2qmcpackInput}}\mathsurround \z@ $\relax }}{25}{section*.20}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {WfconvertInput}}\mathsurround \z@ $\relax }}{25}{section*.21}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {QmcpackInput}}\mathsurround \z@ $\relax }}{25}{section*.22}
-\contentsline {section}{\numberline {5.6}Objects describing machines}{25}{section.5.6}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Workstation}}\mathsurround \z@ $\relax }}{25}{section*.23}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Supercomputer}}\mathsurround \z@ $\relax } }{25}{section*.24}
-\contentsline {section}{\numberline {5.7}Objects describing/affecting jobs and job submission}{25}{section.5.7}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Job}}\mathsurround \z@ $\relax }}{25}{section*.25}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {bundle}}\mathsurround \z@ $\relax }}{25}{section*.26}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {ProjectManager}}\mathsurround \z@ $\relax }}{25}{section*.27}
-\contentsline {section}{\numberline {5.8}Objects and functions for data analysis}{25}{section.5.8}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Unit conversion: convert}}\mathsurround \z@ $\relax }}{25}{section*.28}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {PWCSF data analysis: PwscfAnalyzer}}\mathsurround \z@ $\relax }}{25}{section*.29}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {QMCPACK data analysis: QmcpackAnalyzer}}\mathsurround \z@ $\relax }}{25}{section*.30}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Fitting equation of state data: eos\_fit}}\mathsurround \z@ $\relax }}{25}{section*.31}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Making plots: plotting}}\mathsurround \z@ $\relax }}{25}{section*.32}
-\contentsline {section}{\numberline {5.9}Runtime behavior of the ProjectManager}{25}{section.5.9}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Analysis of simulation dependencies and workflow}}\mathsurround \z@ $\relax }}{25}{section*.33}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Loading saved data about simulations}}\mathsurround \z@ $\relax }}{25}{section*.34}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Frequent traversal of simulation dependency tree (cascades)}}\mathsurround \z@ $\relax }}{25}{section*.35}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Modifying runtime behavior}}\mathsurround \z@ $\relax }}{25}{section*.36}
-\contentsline {section}{\numberline {5.10}Command line tools}{25}{section.5.10}
-\contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {sim}}\mathsurround \z@ $\relax }}{25}{section*.37}
-\contentsline {chapter}{\chapternumberline {6}QMC Practice \\in a Nutshell}{26}{chapter.6}
-\contentsline {section}{\numberline {6.1}VMC and DMC in the abstract}{26}{section.6.1}
-\contentsline {section}{\numberline {6.2}From expectation values to random walks}{27}{section.6.2}
-\contentsline {section}{\numberline {6.3}Quality orbitals: planewaves, cutoffs, splines, and meshes}{27}{section.6.3}
-\contentsline {section}{\numberline {6.4}Quality Jastrows: less variance = more efficient}{28}{section.6.4}
-\contentsline {section}{\numberline {6.5}Finite size effects: k-points, supercells, and corrections}{29}{section.6.5}
-\contentsline {section}{\numberline {6.6}Imaginary time discretization: the DMC timestep}{30}{section.6.6}
-\contentsline {section}{\numberline {6.7}Population control bias: safety in numbers}{30}{section.6.7}
-\contentsline {section}{\numberline {6.8}The fixed node/phase approximation: varying the nodes/phase}{31}{section.6.8}
-\contentsline {section}{\numberline {6.9}Pseudopotentials: theoretical dissonance, the locality approximation, and T-moves}{32}{section.6.9}
-\contentsline {section}{\numberline {6.10}Other approximations: what else is missing?}{33}{section.6.10}
-\contentsline {chapter}{\chapternumberline {7}Recommended Reading}{34}{chapter.7}
-\contentsline {section}{\numberline {7.1}Helpful Links for Installing Python Modules}{34}{section.7.1}
-\contentsline {section}{\numberline {7.2}Helpful Links for Installing Electronic Structure Codes}{34}{section.7.2}
-\contentsline {subsection}{PWSCF: pw.x, pw2qmcpack.x, pw2casino.x}{34}{section*.38}
-\contentsline {subsubsection}{Publicly available version}{34}{section*.39}
-\contentsline {subsubsection}{Developer's version:}{34}{section*.40}
-\contentsline {subsection}{Wfconvert: wfconvert}{35}{section*.41}
-\contentsline {subsection}{QMCPACK: sqd, qmcapp, qmcapp\_complex}{35}{section*.42}
-\contentsline {section}{\numberline {7.3}Brushing Up On Python}{35}{section.7.3}
-\contentsline {subsection}{Python}{35}{section*.43}
-\contentsline {subsection}{NumPy}{35}{section*.44}
-\contentsline {subsection}{Matplotlib}{35}{section*.45}
-\contentsline {subsection}{Scipy and H5Py}{36}{section*.46}
-\contentsline {section}{\numberline {7.4}Quantum Monte Carlo: Theory and Practice}{36}{section.7.4}
-\contentsline {chapter}{Index}{37}{section*.47}
+\contentsline {chapter}{\chapternumberline {6}QMC Practice \\in a Nutshell}{24}{chapter.6}
+\contentsline {section}{\numberline {6.1}VMC and DMC in the abstract}{24}{section.6.1}
+\contentsline {section}{\numberline {6.2}From expectation values to random walks}{25}{section.6.2}
+\contentsline {section}{\numberline {6.3}Quality orbitals: planewaves, cutoffs, splines, and meshes}{25}{section.6.3}
+\contentsline {section}{\numberline {6.4}Quality Jastrows: less variance = more efficient}{26}{section.6.4}
+\contentsline {section}{\numberline {6.5}Finite size effects: k-points, supercells, and corrections}{27}{section.6.5}
+\contentsline {section}{\numberline {6.6}Imaginary time discretization: the DMC timestep}{28}{section.6.6}
+\contentsline {section}{\numberline {6.7}Population control bias: safety in numbers}{28}{section.6.7}
+\contentsline {section}{\numberline {6.8}The fixed node/phase approximation: varying the nodes/phase}{29}{section.6.8}
+\contentsline {section}{\numberline {6.9}Pseudopotentials: theoretical dissonance, the locality approximation, and T-moves}{30}{section.6.9}
+\contentsline {section}{\numberline {6.10}Other approximations: what else is missing?}{31}{section.6.10}
+\contentsline {chapter}{\chapternumberline {7}Recommended Reading}{32}{chapter.7}
+\contentsline {section}{\numberline {7.1}Helpful Links for Installing Python Modules}{32}{section.7.1}
+\contentsline {section}{\numberline {7.2}Helpful Links for Installing Electronic Structure Codes}{32}{section.7.2}
+\contentsline {subsection}{PWSCF: pw.x, pw2qmcpack.x, pw2casino.x}{32}{section*.4}
+\contentsline {subsubsection}{Publicly available version}{32}{section*.5}
+\contentsline {subsubsection}{Developer's version:}{32}{section*.6}
+\contentsline {subsection}{Wfconvert: wfconvert}{33}{section*.7}
+\contentsline {subsection}{QMCPACK: sqd, qmcapp, qmcapp\_complex}{33}{section*.8}
+\contentsline {section}{\numberline {7.3}Brushing Up On Python}{33}{section.7.3}
+\contentsline {subsection}{Python}{33}{section*.9}
+\contentsline {subsection}{NumPy}{33}{section*.10}
+\contentsline {subsection}{Matplotlib}{33}{section*.11}
+\contentsline {subsection}{Scipy and H5Py}{34}{section*.12}
+\contentsline {section}{\numberline {7.4}Quantum Monte Carlo: Theory and Practice}{34}{section.7.4}
+\contentsline {chapter}{Index}{35}{section*.13}
