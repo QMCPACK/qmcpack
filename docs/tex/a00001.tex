@@ -1,0 +1,76 @@
+\section{Download source via svn}\label{a00001_download}
+
+\begin{DoxyItemize}
+\item Developers' version\-: 
+\begin{DoxyCode}
+svn co https:\textcolor{comment}{//subversion.assembla.com/svn/qmcdev/trunk qmcpack}
+\end{DoxyCode}
+
+\item Stable public version \-: 
+\begin{DoxyCode}
+svn co http:\textcolor{comment}{//qmcpack.googlecode.com/svn/trunk/ qmcpack}
+\end{DoxyCode}
+
+\end{DoxyItemize}\section{Quick build with make}\label{a00001_quicky}
+\begin{DoxyNote}{Note}
+From this point, we assume that you are working in qmcpack directory.
+\end{DoxyNote}
+When everything is installed in standard directores, {\ttfamily /usr}, {\ttfamily /usr/local} with default compilers 
+\begin{DoxyCode}
+cd build
+cmake ..
+make -j8
+\end{DoxyCode}
+ This will create a binary with {\bfseries real trial wavefunctions}. Use as many threads as you can with {\ttfamily make}.
+
+On L\-I\-N\-U\-X, G\-N\-U compilers are the default. More on how to build Q\-M\-C\-P\-A\-C\-K can be found at {\tt http\-://qmcpack.\-cmscc.\-org/getting-\/started/cmake-\/101} If everything goes well, then you should see {\itshape qmcpack/build/bin/qmcapp}.
+
+In addition, one has to build a binary with {\bfseries complex trial wavefunctions}. 
+\begin{DoxyCode}
+mkdir build\_complex
+cd build\_complex
+cmake -DQMC\_COMPLEX=1 ..
+make -j8
+\end{DoxyCode}
+
+
+To build C\-U\-D\-A version, 
+\begin{DoxyCode}
+mkdir build\_cuda
+cd build\_cuda
+cmake -DQMC\_CUDA=1 ..
+make -j8
+\end{DoxyCode}
+\section{Required tools and libraries}\label{a00001_pre_sec}
+
+\begin{DoxyItemize}
+\item C/\-C++ compilers
+\item cmake, build utility, {\tt http\-://www.\-cmake.\-org/}
+\item blas/lapack, numerical library, use platform-\/optimized libraries
+\item libxml2, X\-M\-L parser, {\tt http\-://xmlsoft.\-org/}
+\item hdf5, portable I/\-O library, {\tt http\-://www.\-hdfgroup.\-org/\-H\-D\-F5/}
+\item boost, peer-\/reviewed portable C++ source libraries, {\tt http\-://www.\-boost.\-org}
+\end{DoxyItemize}
+
+Optional but required for a complete build
+\begin{DoxyItemize}
+\item fftw, F\-F\-T library, {\tt http\-://www.\-fftw.\-org/}
+\end{DoxyItemize}
+
+Einspline is distributed with Q\-M\-C\-P\-A\-C\-K. This is the official U\-R\-L for einspline library.
+\begin{DoxyItemize}
+\item einspline, 3\-D bspline library, {\tt http\-://einspline.\-sourceforge.\-net/}
+\end{DoxyItemize}\section{External libraries}\label{a00001_extlib_sec}
+Q\-M\-C\-P\-A\-C\-K uses several third-\/party tools and libraries. The selected packages are widely adopted by open-\/source communities and are generally available on H\-P\-C systems via module. They are included in standard Linux/cygwin distributions or can be installed by standard tools like yum. Installing these libraries with the source codes is straightforward. Because the header files are included by Q\-M\-C\-P\-A\-C\-K, it is important to install developers’ version of each library. If these libraries are installed in standard directories, /usr /usr/local and /sw (Mac), no action is necessary.
+
+Alternatively, environment variables X\-Y\-Z\-\_\-\-H\-O\-M\-E should be set. Here, X\-Y\-Z stands for the name of package; the build utility can locate the libraries and use them. With few exceptions, the build utility cmake will look for {\ttfamily X\-Y\-Z\-\_\-\-H\-O\-M\-E/include} for the header files and {\ttfamily X\-Y\-Z\-\_\-\-H\-O\-M\-E/lib} for the library files. When multiple environment variables apply to a library, e.\-g., blas/lapack, the library is searched according to the listed order.
+
+\begin{TabularC}{3}
+\hline
+\rowcolor{lightgray}{\bf Name }&{\bf Environment variables }&{\bf Comments}\\\cline{1-3}
+blas/lapack&{\ttfamily M\-K\-L\-\_\-\-H\-O\-M\-E}, {\ttfamily L\-A\-P\-A\-C\-K}, {\ttfamily A\-T\-L\-A\-S}&Alternatives\-: vendor-\/provided blas, e.\-g., E\-S\-S\-L \\\cline{1-3}
+hdf5 &{\ttfamily H\-D\-F5\-\_\-\-H\-O\-M\-E}, {\ttfamily H\-D\-F\-\_\-\-H\-O\-M\-E} &phdf5 is not necessary \\\cline{1-3}
+libxml2 &{\ttfamily L\-I\-B\-X\-M\-L2\-\_\-\-H\-O\-M\-E} &Configure with {\ttfamily --disable-\/shared --enable-\/static --without-\/python --without-\/http --without-\/ftp} \\\cline{1-3}
+boost &{\ttfamily B\-O\-O\-S\-T\-\_\-\-H\-O\-M\-E} &Using only the header files. No need to compile the library. Simply download and unpack the package, if not installed on the system. \\\cline{1-3}
+fftw &{\ttfamily F\-F\-T\-W\-\_\-\-H\-O\-M\-E} &double precision only \\\cline{1-3}
+\end{TabularC}

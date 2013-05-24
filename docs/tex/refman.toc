@@ -1,0 +1,34 @@
+\contentsline {chapter}{\numberline {1}User Guide}{1}{chapter.1}
+\contentsline {chapter}{\numberline {2}Getting started}{3}{chapter.2}
+\contentsline {section}{\numberline {2.1}Download source via svn}{3}{section.2.1}
+\contentsline {section}{\numberline {2.2}Quick build with make}{3}{section.2.2}
+\contentsline {section}{\numberline {2.3}Required tools and libraries}{4}{section.2.3}
+\contentsline {section}{\numberline {2.4}External libraries}{4}{section.2.4}
+\contentsline {chapter}{\numberline {3}Short introduction to cmake}{5}{chapter.3}
+\contentsline {section}{\numberline {3.1}Our-\/of-\/source compilation}{5}{section.3.1}
+\contentsline {section}{\numberline {3.2}Building Q\discretionary {-}{}{}M\discretionary {-}{}{}C\discretionary {-}{}{}P\discretionary {-}{}{}A\discretionary {-}{}{}C\discretionary {-}{}{}K}{6}{section.3.2}
+\contentsline {section}{\numberline {3.3}How to overwrite the default build variables}{6}{section.3.3}
+\contentsline {section}{\numberline {3.4}Building with environment variables}{7}{section.3.4}
+\contentsline {section}{\numberline {3.5}Building with a toolchain file}{8}{section.3.5}
+\contentsline {chapter}{\numberline {4}How to run Q\discretionary {-}{}{}M\discretionary {-}{}{}C\discretionary {-}{}{}P\discretionary {-}{}{}A\discretionary {-}{}{}C\discretionary {-}{}{}K}{9}{chapter.4}
+\contentsline {chapter}{\numberline {5}Q\discretionary {-}{}{}M\discretionary {-}{}{}C X\discretionary {-}{}{}M\discretionary {-}{}{}L}{11}{chapter.5}
+\contentsline {section}{\numberline {5.1}attrib}{11}{section.5.1}
+\contentsline {section}{\numberline {5.2}simulation\discretionary {-}{}{}: Root element}{12}{section.5.2}
+\contentsline {section}{\numberline {5.3}Generic X\discretionary {-}{}{}M\discretionary {-}{}{}L elements}{12}{section.5.3}
+\contentsline {subsection}{\numberline {5.3.1}parameter}{13}{subsection.5.3.1}
+\contentsline {subsection}{\numberline {5.3.2}include}{13}{subsection.5.3.2}
+\contentsline {subsection}{\numberline {5.3.3}attrib}{14}{subsection.5.3.3}
+\contentsline {section}{\numberline {5.4}System elements}{14}{section.5.4}
+\contentsline {subsection}{\numberline {5.4.1}qmcsystem}{14}{subsection.5.4.1}
+\contentsline {subsection}{\numberline {5.4.2}particleset}{15}{subsection.5.4.2}
+\contentsline {subsection}{\numberline {5.4.3}group}{16}{subsection.5.4.3}
+\contentsline {subsection}{\numberline {5.4.4}simulationcell}{17}{subsection.5.4.4}
+\contentsline {subsection}{\numberline {5.4.5}Restrictions for boundary conditions}{18}{subsection.5.4.5}
+\contentsline {subsection}{\numberline {5.4.6}hamiltonian}{18}{subsection.5.4.6}
+\contentsline {subsubsection}{\numberline {5.4.6.1}pairpot}{19}{subsubsection.5.4.6.1}
+\contentsline {subsection}{\numberline {5.4.7}wavefunction}{20}{subsection.5.4.7}
+\contentsline {subsubsection}{\numberline {5.4.7.1}jastrow}{20}{subsubsection.5.4.7.1}
+\contentsline {section}{\numberline {5.5}Execution of Q\discretionary {-}{}{}M\discretionary {-}{}{}C methods}{22}{section.5.5}
+\contentsline {subsection}{\numberline {5.5.1}Q\discretionary {-}{}{}M\discretionary {-}{}{}C element}{22}{subsection.5.5.1}
+\contentsline {subsection}{\numberline {5.5.2}Loop element}{22}{subsection.5.5.2}
+\contentsline {part}{Index}{22}{subsection.5.5.2}
