@@ -1,0 +1,38 @@
+\contentsline {chapter}{Contents}{ii}{section*.1}
+\contentsline {chapter}{\chapternumberline {1}Using this document}{1}{chapter.1}
+\contentsline {chapter}{\chapternumberline {2}Overview of the \\Project Suite}{2}{chapter.2}
+\contentsline {section}{\numberline {2.1}What the Project Suite is}{2}{section.2.1}
+\contentsline {section}{\numberline {2.2}What the Project Suite can do}{2}{section.2.2}
+\contentsline {section}{\numberline {2.3}How the Project Suite is used}{2}{section.2.3}
+\contentsline {chapter}{\chapternumberline {3}Project Suite Installation}{4}{chapter.3}
+\contentsline {chapter}{\chapternumberline {4}Complete Examples}{6}{chapter.4}
+\contentsline {section}{\numberline {4.1}Simple QMC Calculations}{7}{section.4.1}
+\contentsline {subsection}{Example: Graphene Sheet DMC}{8}{section*.2}
+\contentsline {subsection}{Example: C 20 Molecule DMC}{16}{section*.3}
+\contentsline {chapter}{\chapternumberline {5}Project Suite \\User Reference}{23}{chapter.5}
+\contentsline {chapter}{\chapternumberline {6}QMC Practice \\in a Nutshell}{24}{chapter.6}
+\contentsline {section}{\numberline {6.1}VMC and DMC in the abstract}{24}{section.6.1}
+\contentsline {section}{\numberline {6.2}From expectation values to random walks}{25}{section.6.2}
+\contentsline {section}{\numberline {6.3}Quality orbitals: planewaves, cutoffs, splines, and meshes}{25}{section.6.3}
+\contentsline {section}{\numberline {6.4}Quality Jastrows: less variance = more efficient}{26}{section.6.4}
+\contentsline {section}{\numberline {6.5}Finite size effects: k-points, supercells, and corrections}{27}{section.6.5}
+\contentsline {section}{\numberline {6.6}Imaginary time discretization: the DMC timestep}{28}{section.6.6}
+\contentsline {section}{\numberline {6.7}Population control bias: safety in numbers}{28}{section.6.7}
+\contentsline {section}{\numberline {6.8}The fixed node/phase approximation: varying the nodes/phase}{29}{section.6.8}
+\contentsline {section}{\numberline {6.9}Pseudopotentials: theoretical dissonance, the locality approximation, and T-moves}{30}{section.6.9}
+\contentsline {section}{\numberline {6.10}Other approximations: what else is missing?}{31}{section.6.10}
+\contentsline {chapter}{\chapternumberline {7}Recommended Reading}{32}{chapter.7}
+\contentsline {section}{\numberline {7.1}Helpful Links for Installing Python Modules}{32}{section.7.1}
+\contentsline {section}{\numberline {7.2}Helpful Links for Installing Electronic Structure Codes}{32}{section.7.2}
+\contentsline {subsection}{PWSCF: pw.x, pw2qmcpack.x, pw2casino.x}{32}{section*.4}
+\contentsline {subsubsection}{Publicly available version}{32}{section*.5}
+\contentsline {subsubsection}{Developer's version:}{32}{section*.6}
+\contentsline {subsection}{Wfconvert: wfconvert}{33}{section*.7}
+\contentsline {subsection}{QMCPACK: sqd, qmcapp, qmcapp\_complex}{33}{section*.8}
+\contentsline {section}{\numberline {7.3}Brushing Up On Python}{33}{section.7.3}
+\contentsline {subsection}{Python}{33}{section*.9}
+\contentsline {subsection}{NumPy}{33}{section*.10}
+\contentsline {subsection}{Matplotlib}{33}{section*.11}
+\contentsline {subsection}{Scipy and H5Py}{34}{section*.12}
+\contentsline {section}{\numberline {7.4}Quantum Monte Carlo: Theory and Practice}{34}{section.7.4}
+\contentsline {chapter}{Index}{35}{section*.13}
