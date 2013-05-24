@@ -1,12 +1,10 @@
-%\documentclass[letterpaper,amsmath,amssymb,nofootinbib,12pt]{revtex4}
 \documentclass[oneside,11pt]{memoir}
 
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-%\usepackage{framed,xcolor}
 \usepackage[usenames,dvipsnames]{color}
-\usepackage[pdftex, pdfstartview = {FitH}]{hyperref} %in some tutorials it says that this command must be placed in the last line of the preamble
+\usepackage[pdftex, pdfstartview = {FitH}]{hyperref}
 
 \usepackage{anyfontsize}
 
@@ -28,7 +26,6 @@
 
 
 \hypersetup{
-    %colorlinks=false,
     colorlinks=true,
     citecolor = Blue,
     linkcolor = Blue,
@@ -60,6 +57,10 @@
 
 \newcommand{\hide}[1]{}
 %\newcommand{\hide}[1]{{#1}}
+
+%\newcommand{\condense}[1]{This content has been temporarily redacted to produce a shorter document.}
+\newcommand{\condense}[1]{{#1}}
+
 
   \newcommand{\abs}[1]{\lvert #1 \rvert}
   \newcommand{\norm}[1]{\lVert #1 \rVert}
@@ -103,7 +104,6 @@
 
 
 \thispagestyle{empty}
-%\begin{titlepage}
 \begin{changemargin}{-1cm}{-1cm}
   \begin{center}
     \hspace{1cm}\\
@@ -130,10 +130,10 @@
     22 May 2013
   \end{center}
 \end{changemargin}
-%\end{titlepage}
 \pagebreak
 
 \tableofcontents
+
 
 
 \mainmatter
@@ -1057,7 +1057,104 @@ results
 
 \pagebreak
 \chapter{Project Suite \\User Reference} \label{reference}
-Pending.
+%\condense{
+
+
+\section{Working with objects}
+\subsection{\bu{General properties of objects}}
+At a conceptual level, objects are a generalization of normal variables.  
+They are really collections of variables taking integer, real, string, or 
+even object values.  An object is also more than structured data, as it 
+makes available operations, or functions, that act on that data.  The data 
+(member data) and functions (member functions) of an object are accessed with 
+a ``.'' following the object's name.  So when you see code like
+\begin{shaded}
+\begin{verbatim}
+   from mymod import MyObj  # make MyObj available from the mymod module
+   i = 5                    # make an integer
+   s = 'abc'                # make a string
+   o = MyObj()              # make a MyObj called o
+   j = i + o.an_int         # access member data an_int, created with MyObj() 
+   r = o.create_real()      # access member function create_real
+   take_action()            # a normal function call
+   o.a = i                  # create a new member data field called a
+\end{verbatim}
+\end{shaded}
+it should be clear what is happening.
+
+\subsection{\bu{Interacting with Project Suite objects}}
+All objects in the Project Suite behave and can be interacted with in a 
+similar way.  Each object you encounter that is made by the Project Suite 
+can be used in the same way as \texttt{obj} objects from the \texttt{generic} 
+module
+
+\section{Project Suite settings: global state and user-specific information}
+\subsection{\bu{How to use the \texttt{settings} function}}
+\subsection{\bu{Accessing settings data}}
+
+
+\section{Objects describing matter}
+\subsection{\bu{Structure}}
+\subsection{\bu{PhysicalSystem}}
+
+
+\section{Objects describing simulations}
+\subsection{\bu{General properties of \texttt{Simulation} objects}}
+\subsection{\bu{Sqd}}
+\subsection{\bu{Pwscf}}
+\subsection{\bu{Pw2casino}}
+\subsection{\bu{Pw2qmcpack}}
+\subsection{\bu{Wfconvert}}
+\subsection{\bu{Qmcpack}}
+
+
+\section{Objects describing simulation input files}
+\subsection{\bu{SqdInput}}
+\subsection{\bu{PwscfInput}}
+\subsection{\bu{Pw2casinoInput}}
+\subsection{\bu{Pw2qmcpackInput}}
+\subsection{\bu{WfconvertInput}}
+\subsection{\bu{QmcpackInput}}
+
+
+\section{Objects describing machines}
+\subsection{\bu{Workstation}}
+\subsection{\bu{Supercomputer} }
+
+
+\section{Objects describing/affecting jobs and job submission}
+\subsection{\bu{Job}}
+\subsection{\bu{bundle}}
+\subsection{\bu{ProjectManager}}
+
+
+\section{Objects and functions for data analysis}
+\subsection{\bu{Unit conversion: convert}}
+\subsection{\bu{PWCSF data analysis: PwscfAnalyzer}}
+\subsection{\bu{QMCPACK data analysis: QmcpackAnalyzer}}
+\subsection{\bu{Fitting equation of state data: eos\_fit}}
+\subsection{\bu{Making plots: plotting}}
+
+
+\section{Runtime behavior of the ProjectManager}
+\subsection{\bu{Analysis of simulation dependencies and workflow}}
+\subsection{\bu{Loading saved data about simulations}}
+\subsection{\bu{Frequent traversal of simulation dependency tree (cascades)}}
+\subsection{\bu{Modifying runtime behavior}}
+
+\section{Command line tools}
+\subsection{\bu{sim}}
+
+
+%\section{Supporting classes}
+%\subsection{\bu{Particles}}
+%\subsection{\bu{PeriodicTable}}
+%\subsection{\bu{Pseudopotential}}
+%\subsection{\bu{Generator}}
+%\subsection{\bu{HDFreader}}
+%\subsection{\bu{XMLreader}}
+
+%}%end condense
 
 
 
