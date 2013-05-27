@@ -1,4 +1,6 @@
 \contentsline {chapter}{\numberline {1}User Guide}{1}{chapter.1}
+\contentsline {section}{\numberline {1.1}About Development}{1}{section.1.1}
+\contentsline {section}{\numberline {1.2}Acknowledgements}{2}{section.1.2}
 \contentsline {chapter}{\numberline {2}Getting started}{3}{chapter.2}
 \contentsline {section}{\numberline {2.1}Download source via svn}{3}{section.2.1}
 \contentsline {section}{\numberline {2.2}Quick build with make}{3}{section.2.2}
@@ -12,23 +14,56 @@
 \contentsline {section}{\numberline {3.5}Building with a toolchain file}{8}{section.3.5}
 \contentsline {chapter}{\numberline {4}How to run Q\discretionary {-}{}{}M\discretionary {-}{}{}C\discretionary {-}{}{}P\discretionary {-}{}{}A\discretionary {-}{}{}C\discretionary {-}{}{}K}{9}{chapter.4}
 \contentsline {chapter}{\numberline {5}Q\discretionary {-}{}{}M\discretionary {-}{}{}C X\discretionary {-}{}{}M\discretionary {-}{}{}L}{11}{chapter.5}
-\contentsline {section}{\numberline {5.1}attrib}{11}{section.5.1}
+\contentsline {section}{\numberline {5.1}Reserved attributes and their implicit relationships}{12}{section.5.1}
 \contentsline {section}{\numberline {5.2}simulation\discretionary {-}{}{}: Root element}{12}{section.5.2}
-\contentsline {section}{\numberline {5.3}Generic X\discretionary {-}{}{}M\discretionary {-}{}{}L elements}{12}{section.5.3}
+\contentsline {section}{\numberline {5.3}Generic X\discretionary {-}{}{}M\discretionary {-}{}{}L elements}{13}{section.5.3}
 \contentsline {subsection}{\numberline {5.3.1}parameter}{13}{subsection.5.3.1}
-\contentsline {subsection}{\numberline {5.3.2}include}{13}{subsection.5.3.2}
+\contentsline {subsection}{\numberline {5.3.2}include}{14}{subsection.5.3.2}
 \contentsline {subsection}{\numberline {5.3.3}attrib}{14}{subsection.5.3.3}
 \contentsline {section}{\numberline {5.4}System elements}{14}{section.5.4}
-\contentsline {subsection}{\numberline {5.4.1}qmcsystem}{14}{subsection.5.4.1}
+\contentsline {subsection}{\numberline {5.4.1}qmcsystem}{15}{subsection.5.4.1}
 \contentsline {subsection}{\numberline {5.4.2}particleset}{15}{subsection.5.4.2}
-\contentsline {subsection}{\numberline {5.4.3}group}{16}{subsection.5.4.3}
-\contentsline {subsection}{\numberline {5.4.4}simulationcell}{17}{subsection.5.4.4}
-\contentsline {subsection}{\numberline {5.4.5}Restrictions for boundary conditions}{18}{subsection.5.4.5}
-\contentsline {subsection}{\numberline {5.4.6}hamiltonian}{18}{subsection.5.4.6}
-\contentsline {subsubsection}{\numberline {5.4.6.1}pairpot}{19}{subsubsection.5.4.6.1}
-\contentsline {subsection}{\numberline {5.4.7}wavefunction}{20}{subsection.5.4.7}
-\contentsline {subsubsection}{\numberline {5.4.7.1}jastrow}{20}{subsubsection.5.4.7.1}
-\contentsline {section}{\numberline {5.5}Execution of Q\discretionary {-}{}{}M\discretionary {-}{}{}C methods}{22}{section.5.5}
-\contentsline {subsection}{\numberline {5.5.1}Q\discretionary {-}{}{}M\discretionary {-}{}{}C element}{22}{subsection.5.5.1}
-\contentsline {subsection}{\numberline {5.5.2}Loop element}{22}{subsection.5.5.2}
-\contentsline {part}{Index}{22}{subsection.5.5.2}
+\contentsline {subsection}{\numberline {5.4.3}group}{17}{subsection.5.4.3}
+\contentsline {subsection}{\numberline {5.4.4}simulationcell}{18}{subsection.5.4.4}
+\contentsline {subsection}{\numberline {5.4.5}Restrictions for boundary conditions}{19}{subsection.5.4.5}
+\contentsline {subsection}{\numberline {5.4.6}hamiltonian}{19}{subsection.5.4.6}
+\contentsline {subsubsection}{\numberline {5.4.6.1}pairpot}{21}{subsubsection.5.4.6.1}
+\contentsline {subsection}{\numberline {5.4.7}wavefunction}{21}{subsection.5.4.7}
+\contentsline {subsubsection}{\numberline {5.4.7.1}jastrow}{22}{subsubsection.5.4.7.1}
+\contentsline {section}{\numberline {5.5}Execution of Q\discretionary {-}{}{}M\discretionary {-}{}{}C methods}{24}{section.5.5}
+\contentsline {subsection}{\numberline {5.5.1}Q\discretionary {-}{}{}M\discretionary {-}{}{}C element}{24}{subsection.5.5.1}
+\contentsline {subsection}{\numberline {5.5.2}Loop element}{24}{subsection.5.5.2}
+\contentsline {chapter}{\numberline {6}Q\discretionary {-}{}{}M\discretionary {-}{}{}C Practice in a Nutshell}{25}{chapter.6}
+\contentsline {section}{\numberline {6.1}V\discretionary {-}{}{}M\discretionary {-}{}{}C and D\discretionary {-}{}{}M\discretionary {-}{}{}C in the abstract}{25}{section.6.1}
+\contentsline {section}{\numberline {6.2}From expectation values to random walks}{26}{section.6.2}
+\contentsline {section}{\numberline {6.3}Quality orbitals\discretionary {-}{}{}: planewaves, cutoffs, splines, and meshes}{26}{section.6.3}
+\contentsline {section}{\numberline {6.4}Quality Jastrows\discretionary {-}{}{}: less variance = more efficient}{27}{section.6.4}
+\contentsline {section}{\numberline {6.5}Finite size effects\discretionary {-}{}{}: k-\/points, supercells, and corrections}{27}{section.6.5}
+\contentsline {section}{\numberline {6.6}Imaginary time discretization\discretionary {-}{}{}: the D\discretionary {-}{}{}M\discretionary {-}{}{}C timestep}{28}{section.6.6}
+\contentsline {section}{\numberline {6.7}Population control bias\discretionary {-}{}{}: safety in numbers}{28}{section.6.7}
+\contentsline {section}{\numberline {6.8}The fixed node/phase approximation\discretionary {-}{}{}: varying the nodes/phase}{29}{section.6.8}
+\contentsline {section}{\numberline {6.9}Pseudopotentials\discretionary {-}{}{}: theoretical dissonance, the locality approximation, and T-\/moves}{29}{section.6.9}
+\contentsline {section}{\numberline {6.10}Other approximations\discretionary {-}{}{}: what else is missing?}{30}{section.6.10}
+\contentsline {chapter}{\numberline {7}3\discretionary {-}{}{}D Electron Gas\discretionary {-}{}{}: A Q\discretionary {-}{}{}M\discretionary {-}{}{}C Tutorial}{31}{chapter.7}
+\contentsline {section}{\numberline {7.1}Introduction}{31}{section.7.1}
+\contentsline {section}{\numberline {7.2}H\discretionary {-}{}{}E\discretionary {-}{}{}G Calculation\discretionary {-}{}{}: The Code}{31}{section.7.2}
+\contentsline {section}{\numberline {7.3}H\discretionary {-}{}{}E\discretionary {-}{}{}G Calculation\discretionary {-}{}{}: The System}{31}{section.7.3}
+\contentsline {subsection}{\numberline {7.3.1}Setting up the System\discretionary {-}{}{}: Technical and Job Related Details}{32}{subsection.7.3.1}
+\contentsline {subsection}{\numberline {7.3.2}Setting up the System\discretionary {-}{}{}: The Simulation Cell}{32}{subsection.7.3.2}
+\contentsline {subsection}{\numberline {7.3.3}Setting up the System\discretionary {-}{}{}: The Particle Sets}{33}{subsection.7.3.3}
+\contentsline {subsection}{\numberline {7.3.4}Setting up the System\discretionary {-}{}{}: The Trial Wavefunction}{33}{subsection.7.3.4}
+\contentsline {subsection}{\numberline {7.3.5}Setting up the System\discretionary {-}{}{}: The Hamiltonian}{34}{subsection.7.3.5}
+\contentsline {section}{\numberline {7.4}H\discretionary {-}{}{}E\discretionary {-}{}{}G Calculation\discretionary {-}{}{}: The Algorithms}{35}{section.7.4}
+\contentsline {subsection}{\numberline {7.4.1}Variational Quantum Monte Carlo}{35}{subsection.7.4.1}
+\contentsline {subsection}{\numberline {7.4.2}Running the Optimization}{36}{subsection.7.4.2}
+\contentsline {subsection}{\numberline {7.4.3}Diffusion Quantum Monte Carlo}{37}{subsection.7.4.3}
+\contentsline {section}{\numberline {7.5}H\discretionary {-}{}{}E\discretionary {-}{}{}G Calculation\discretionary {-}{}{}: Data Analysis}{37}{section.7.5}
+\contentsline {subsection}{\numberline {7.5.1}Files Generated}{37}{subsection.7.5.1}
+\contentsline {subsection}{\numberline {7.5.2}Optimization}{38}{subsection.7.5.2}
+\contentsline {subsection}{\numberline {7.5.3}Thermalization}{38}{subsection.7.5.3}
+\contentsline {subsection}{\numberline {7.5.4}Auto-\/correlation}{38}{subsection.7.5.4}
+\contentsline {subsection}{\numberline {7.5.5}Extrapolations}{39}{subsection.7.5.5}
+\contentsline {section}{\numberline {7.6}References}{39}{section.7.6}
+\contentsline {section}{\numberline {7.7}Problems for Fun}{39}{section.7.7}
+\contentsline {section}{\numberline {7.8}What Next?}{40}{section.7.8}
+\contentsline {part}{Index}{40}{section.7.8}

@@ -1,0 +1,115 @@
+/*! \page firstp Getting started
+
+\section download Download source via svn
+
+- Developers' version: 
+\code
+svn co https://subversion.assembla.com/svn/qmcdev/trunk qmcpack
+\endcode
+- Stable public version : 
+\code
+svn co http://qmcpack.googlecode.com/svn/trunk/ qmcpack
+\endcode
+
+\section quicky Quick build with make
+
+@note From this point, we assume that you are working in qmcpack directory.
+
+When everything is installed in standard directores, <c>/usr</c>, <c>/usr/local</c> with default compilers
+\code
+cd build
+cmake ..
+make -j8
+\endcode
+This will create a binary with <b>real trial wavefunctions</b>.  Use as many threads as you can with <c>make</c>.
+
+On LINUX, GNU compilers are the default.  More on how to build QMCPACK can be
+found at http://qmcpack.cmscc.org/getting-started/cmake-101 If everything goes
+well, then you should see \a qmcpack/build/bin/qmcapp. 
+
+In addition, one has to build a binary with <b>complex trial wavefunctions</b>.
+\code
+mkdir build_complex
+cd build_complex
+cmake -DQMC_COMPLEX=1 ..
+make -j8
+\endcode
+
+To build CUDA version, 
+\code
+mkdir build_cuda
+cd build_cuda
+cmake -DQMC_CUDA=1 ..
+make -j8
+\endcode
+
+<!--
+<c>qmcpack (topdir)</c> has
+- CMakeLists.txt  : main cmake configuration file
+- CMake  : customized cmake modules for QMCPACK
+- config  : cmake toolchain files for target systems
+- docs  : documentation-related materials
+- utils  : utility scripts (python, perl, shell scripts)
+- build  : empty diretory for a build
+- src  : source directory
+  - CMakeLists.txt
+  - Message
+  - Numerics
+  - OhmmsApp
+  - OhmmsData
+  - OhmmsPETE
+  - Utilities
+  - Lattice
+  - ParticleBase
+  - Particle
+  - ParticleIO
+  - QMCWaveFunctions
+  - QMCDrivers
+  - Estimators
+  - QMCApp
+-->
+
+
+\section pre_sec Required tools and libraries
+
+- C/C++ compilers
+- cmake, build utility, http://www.cmake.org/
+- blas/lapack, numerical library, use platform-optimized libraries
+- libxml2, XML parser, http://xmlsoft.org/
+- hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
+- boost, peer-reviewed portable C++ source libraries, http://www.boost.org
+
+Optional but required for a complete build 
+- fftw, FFT library, http://www.fftw.org/
+
+Einspline is distributed with QMCPACK. This is the official
+URL for einspline library.
+- einspline, 3D bspline library, http://einspline.sourceforge.net/
+
+\section extlib_sec External libraries
+QMCPACK uses several third-party tools and libraries. The selected packages are
+widely adopted by open-source communities and are generally available on HPC
+systems via module. They are included in standard Linux/cygwin distributions or
+can be installed by standard tools like yum. Installing these libraries with
+the source codes is straightforward. Because the header files are included by
+QMCPACK, it is important to install developers’ version of each library.  If
+these libraries are installed in standard directories, /usr /usr/local and /sw
+(Mac), no action is necessary. 
+
+Alternatively, environment variables XYZ_HOME should be set. Here, XYZ stands
+for the name of package; the build utility can locate the libraries and use
+them. With few exceptions, the build utility cmake will look for
+<c>XYZ_HOME/include</c> for the header files and <c>XYZ_HOME/lib</c> for the library files.
+When multiple environment variables apply to a library, e.g., blas/lapack, the
+library is searched according to the listed order. 
+
+
+Name       | Environment variables                      | Comments
+---------- | ------------------------------------------ | ----------------------------------
+blas/lapack|<c>MKL_HOME</c>, <c>LAPACK</c>, <c>ATLAS</c>| Alternatives: vendor-provided blas, e.g., ESSL
+hdf5       |<c>HDF5_HOME</c>, <c>HDF_HOME</c>           | phdf5 is not necessary
+libxml2    |<c>LIBXML2_HOME</c>                            | Configure with <c>--disable-shared --enable-static --without-python --without-http --without-ftp</c>
+boost      |<c>BOOST_HOME</c>                           | Using only the header files. No need to compile the library.  Simply download and unpack the package, if not installed on the system.
+fftw       |<c>FFTW_HOME</c>                            | double precision only
+
+*/

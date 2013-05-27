@@ -1,13 +1,13 @@
 The hierarchical nature of X\-M\-L is ideally suited to the object-\/oriented design of Q\-M\-C\-P\-A\-C\-K. Throughout this document, we will use a graphical notation to represent a X\-M\-L node and its relationship with other X\-M\-L nodes shown as 
 \begin{DoxyImage}
-\includegraphics[width=0.5\textwidth,height=\textheight/2,keepaspectratio=true]{dot_xmlsymbols}
+\includegraphics[width=\textwidth,height=\textheight/2,keepaspectratio=true]{dot_xmlsymbols}
 \caption{Graphical notations for a X\-M\-L node}
 \end{DoxyImage}
  The opendiamond denotes the owndership\-: node\-A owns node\-B and node\-C. The multiplicity of child nodes is specificed at the child-\/node end.
 
 Q\-M\-C\-P\-A\-C\-K uses D\-O\-M parser of {\tt libxml2} library. The entire input X\-M\-L file is parsed and stored in a tree which is processed recursively. Parsing a X\-M\-L file is similar to running a shell script. Each X\-M\-L element (node) is mapped to a factory or builder function to instantiate the main computational objects or to execute a class member function to initialize of the object which owns the node. The order of X\-M\-L nodes is critical to instantiate objects with proper ownerships and roles. All these features are exploited by the developers at the design stage of a particular class and algorithm in Q\-M\-C\-P\-A\-C\-K.
 
-X\-M\-L files can be manipulated by standard editors and tools including web browsers. New features can be easily added without breaking the logical structure of the existing input files in X\-M\-L. Q\-M\-C\-P\-A\-C\-K requires a validating X\-M\-L but does not enforce correctness with a schema. This is mainly because Q\-M\-C\-P\-A\-C\-K is evolving quite rapidly and the input file is subject to change when new capabilities are added. A schema for the tested and accepted features is presented in this document and will be updated so that the new features can be utilized by the users as soon as they become available.\section{attrib}\label{a00004_attribX}
+X\-M\-L files can be manipulated by standard editors and tools including web browsers. New features can be easily added without breaking the logical structure of the existing input files in X\-M\-L. Q\-M\-C\-P\-A\-C\-K requires a validating X\-M\-L but does not enforce correctness with a schema. This is mainly because Q\-M\-C\-P\-A\-C\-K is evolving quite rapidly and the input file is subject to change when new capabilities are added. A schema for the tested and accepted features is presented in this document and will be updated so that the new features can be utilized by the users as soon as they become available.\section{Reserved attributes and their implicit relationships}\label{a00004_attributeX}
 These attributes are reserved to define the relationship between X\-M\-L nodes.
 
 
@@ -128,7 +128,7 @@ qmcsystem =
 
 
 \begin{DoxyImage}
-\includegraphics[width=0.75\textwidth,height=\textheight/2,keepaspectratio=true]{dot_qmcsys}
+\includegraphics[width=\textwidth,height=\textheight/2,keepaspectratio=true]{dot_qmcsys}
 \caption{qmcsystem element}
 \end{DoxyImage}
  Synopsis
@@ -148,7 +148,7 @@ particleset=
 
 
 \begin{DoxyImage}
-\includegraphics[width=0.5\textwidth,height=\textheight/2,keepaspectratio=true]{dot_particleset}
+\includegraphics[width=\textwidth,height=\textheight/2,keepaspectratio=true]{dot_particleset}
 \caption{particleset element}
 \end{DoxyImage}
  Attributes of {\ttfamily particleset} are
@@ -294,17 +294,17 @@ hamiltonian =
 
 
 \begin{DoxyImage}
-\includegraphics[width=0.4\textwidth,height=\textheight/2,keepaspectratio=true]{dot_hamiltonian}
+\includegraphics[width=\textwidth,height=\textheight/2,keepaspectratio=true]{dot_hamiltonian}
 \caption{hamiltonian element}
 \end{DoxyImage}
-
-The attributes are \begin{TabularC}{4}
+ The attributes are \begin{TabularC}{4}
 \hline
 \rowcolor{lightgray}{\bf name }&{\bf definition }&{\bf default }&{\bf comments}\\\cline{1-4}
 name &Name of this Hamiltonian &h0 &{\ttfamily hamiltonian/@name} is used when multiple {\ttfamily hamiltonian}s are used. \\\cline{1-4}
 target &Target {\ttfamily particleset} &e &The default for quantum {\ttfamily particleset/@name=\char`\"{}e\char`\"{}} \\\cline{1-4}
 wavefunction &Target {\ttfamily wavefunction} &psi0 &Non-\/local P\-P needs {\ttfamily wavefunction} \\\cline{1-4}
 \end{TabularC}
+
 
 Synopsis
 \begin{DoxyItemize}
@@ -364,7 +364,7 @@ wavefunction =
 
 
 \begin{DoxyImage}
-\includegraphics[width=0.8\textwidth,height=\textheight/2,keepaspectratio=true]{dot_wfs}
+\includegraphics[width=\textwidth,height=\textheight/2,keepaspectratio=true]{dot_wfs}
 \caption{wavefunction element}
 \end{DoxyImage}
  The attributes are \begin{TabularC}{4}

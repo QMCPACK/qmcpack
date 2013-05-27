@@ -3,6 +3,7 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="user" url="http://users.nccs.gov/~jnkim/qmcpack/doxy/index.html" title="Main Page"/>
+    <tab type="user" url="http://qmcpack.cmscc.org" title="Wiki"/>
     <tab type="mainpage" visible="yes" title="Documentation"/>
     <tab type="pages" visible="yes" title="" intro=""/>
     <tab type="examples" visible="yes" title="" intro=""/>  

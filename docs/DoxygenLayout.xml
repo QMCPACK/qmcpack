@@ -3,7 +3,8 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="user" url="http://users.nccs.gov/~jnkim/qmcpack/ug/index.html" title="Documentation"/>
+    <tab type="user" url="http://qmcpack.cmscc.org" title="Wiki"/>
+    <tab type="user" url="http://users.nccs.gov/~jnkim/qmcpack/ug/index.html" title="Documentation" intro="userguide, developers guide etc"/>
     <tab type="pages" visible="yes" title="Others" intro=""/>
     <tab type="modules" visible="no" title="" intro=""/>
     <tab type="namespaces" visible="no" title="">

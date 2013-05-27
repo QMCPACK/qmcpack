@@ -52,7 +52,7 @@ PROJECT_LOGO           =
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = /home/ihk/sshfs/olcf/www/qmcpack
+OUTPUT_DIRECTORY       = /Users/ihk/public_html/qmcpack
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -130,8 +130,8 @@ FULL_PATH_NAMES        = YES
 # relative paths, which will be relative from the directory where doxygen is
 # started.
 
-STRIP_FROM_PATH        = /home/ihk/svnwork/qmcpack-trunk/src \
-                         /home/ihk/svnwork/qmcpack-trunk/docs
+STRIP_FROM_PATH        = /Users/ihk/svnwork/qmcpack-trunk/src \
+                         /Users/ihk/svnwork/qmcpack-trunk/docs
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
 # the path mentioned in the documentation of a class, which tells
@@ -596,7 +596,7 @@ FILE_VERSION_FILTER    =
 # You can optionally specify a file name after the option, if omitted
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            = DoxygenLayout.xml 
+LAYOUT_FILE            = DoxygenLayout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files
 # containing the references data. This must be a list of .bib files. The
@@ -693,7 +693,7 @@ INPUT                  = config.h \
                          ../src/Estimators \
                          ../src/QMCDrivers \
                          ../src/QMCApp \
-                         index.doc 
+                         index.doc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -711,7 +711,9 @@ INPUT_ENCODING         = UTF-8
 # *.hxx *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.dox *.py
 # *.f90 *.f *.for *.vhd *.vhdl
 
-FILE_PATTERNS          = *.h *.cpp  *.doc
+FILE_PATTERNS          = *.h \
+                         *.cpp \
+                         *.doc
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.
@@ -885,7 +887,7 @@ FILTER_SOURCE_PATTERNS =
 # This can be useful if you have a project on for instance GitHub and want reuse
 # the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = 
+USE_MDFILE_AS_MAINPAGE =
 
 #---------------------------------------------------------------------------
 # configuration options related to source browsing
@@ -1714,8 +1716,7 @@ SKIP_FUNCTION_MACROS   = YES
 # NOT include the path). If a tag file is not located in the directory in which
 # doxygen is run, you must also specify the path to the tagfile here.
 
-#TAGFILES               = qmc_ug_tags=../ug
-TAGFILES               = 
+TAGFILES               =
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create
 # a tag file that is based on the input files it reads.

@@ -1,0 +1,570 @@
+/*! \page xmldocp QMC XML
+
+\tableofcontents
+
+The hierarchical nature of XML is ideally suited to the object-oriented design
+of QMCPACK.  Throughout this document, we will use a graphical notation to
+represent a XML node and its relationship with other XML nodes shown as
+\dotfile xmlsymbols.dot "Graphical notations for a XML node"
+
+The opendiamond denotes the owndership: nodeA owns nodeB and nodeC.  The
+multiplicity of child nodes is specificed at the child-node end. 
+
+QMCPACK uses DOM parser of <a href="http://xmlsoft.org/">libxml2</a> library. The
+entire input XML file is parsed and stored in a tree which is processed
+recursively.  Parsing a XML file is similar to running a shell script.  Each
+XML element (node) is mapped to a factory or builder function to instantiate
+the main computational objects or to execute a class member function to
+initialize of the object which owns the node.  The order of XML nodes is
+critical to instantiate objects with proper ownerships and roles.  All these
+features are exploited by the developers at the design stage of a particular
+class and algorithm in QMCPACK. 
+
+XML files can be manipulated by standard editors and tools including web
+browsers.  New features can be easily added without breaking the logical
+structure of the existing input files in XML.  QMCPACK requires a validating
+XML but does not enforce correctness with a schema. This is mainly because
+QMCPACK is evolving quite rapidly and the input file is subject to change when
+new capabilities are added.  A schema for the tested and accepted features is
+presented in this document and will be updated so that the new features can be
+utilized by the users as soon as they become available. 
+
+\section attributeX Reserved attributes and their implicit relationships
+
+These attributes are reserved to define the relationship between XML nodes.
+
+- <c>id</c> has to be unique in a given XML file.
+- <c>name</c> is used as the name of an object. If <c>id</c> is not provided, <c>name</c> is used as the ID of the object.
+- <c>type</c> means the object or engine to be used at the run time. 
+- <c>target</c> denotes the name (ID) of the quantum <c>particleset</c> (e.g., electrons).
+- <c>source</c> denotes the name (ID) of the source <c>particleset</c> (any fixed set of particles).
+
+
+A XML element has a well-defined scope. Child nodes inherit the property of a
+parent node.  When a XML node is referred by <c>ref</c>, <c>source</c> and
+<c>target</c>, the named XML node has to be defined before using it.
+
+
+\section simX-ele simulation: Root element
+
+<c>simulation</c> is the root element of the main input file and contains everything about
+a QMC run.
+\code
+simulation = 
+  children : project,
+             (qmcsystem,particleset,wavefunction,hamiltonian,include)*,
+             init?,
+             loop?,
+             qmc?
+\endcode
+
+\dotfile simulation.dot "simulation element"
+
+\section gen-xml Generic XML elements
+These elements are used by other elements.
+
+\subsection parameterX parameter
+This is a generic way to define a property of a XML element and contains
+\code
+parameter = 
+  children  : text for the value
+  attribute : name
+\endcode
+
+For example, <c>parameter</c>s define how a VMC will be executed:
+\code
+<qmc method="vmc">
+  <parameter name="timestep">0.5</parameter>
+  <parameter name="blocks">10</parameter>
+  <parameter name="steps">10</parameter>
+  <parameter name="warmupsteps">10</parameter>
+</qmc>
+\endcode
+
+Synopsis
+- <c>parameter/\@name</c> is the key of the parameter map in the application.
+The allowed <c>parameter</c>s and their usage are determined by their parent
+element.
+- Attribute <c>units</c> is reserved.
+
+@warning The type checking is handled by C++ `static_cast<T>` and does not report
+nor abort the execution upon failure. 
+
+\subsection includeX include
+
+<c>include</c> is used to include an external file:
+\code
+include = attribute : href
+\endcode
+
+The main input file can contain complete information about a QMC simulation.
+However, it is often convenient to have multiple files to define different
+entities to manage multiple runs without needing to edit files and to automate
+the bulk of a workflow.
+
+An example below includes three external files.  Typically, conversion tools
+generate <c>ptcl.xml</c> and <c>wfs.xml</c>. The actual names may differ.
+
+\code
+<simulation>
+  <include href="ptcl.xml"> <!-- define  ions and electrons -->
+  <include href="wfs.xml"> <!-- trial wavefunction -->
+  <include href="ham.xml">  <!-- hamiltonian -->
+  <!-- now do QMC -->
+
+</simulation>
+\endcode
+
+Synopsis
+- The included file has to be valid XML with <c>qmcsystem</c> as its
+root element.  
+- The order of <c>include</c> is strict and only one level
+of include is allowed, i.e., the external files cannot have any
+<c>include</c> element.
+
+name | definition | default | comments
+----- | --------- | -------- | -------------
+href | Name of an external xml | node | A valid xml file
+
+\subsection attribX attrib
+
+This is a generic way to define an attribute of a <c>particleset</c>, such as
+positions. 
+
+\code
+attrib = 
+  children  : text for the value 
+  attribute : name, datatype, size
+\endcode
+
+The data (text node) of each attrib corresponds to an array of various types.
+<c>attrib/\@size</c> determines the size of the array and the allowed
+<c>attrib/\@datatype</c>s are
+- intArray :  integers
+- realArray : reals
+- posArray : D-dim vectors
+- stringArray : strings
+
+\section systemX System elements
+
+These elements are used to define a physical system, such as <c>particleset</c>
+for a set of particles and <c>wavefunction</c> for a trial wave function and
+must proceed any <c>qmc</c> or <c>loop</c> elements that define how the QMC
+calculations are carried out.
+
+\subsection qmcsystemX qmcsystem
+
+A <c>qmcsystem</c> defines a system for a QMC simulation and contains
+\code
+qmcsystem = 
+  children : (simulationcell,particleset,wavefunction,hamiltonian)*
+\endcode
+It is also the root of an external XML included by the main XML file by 
+<c>include/\@href</c>
+
+\dotfile qmcsys.dot "qmcsystem element"
+
+Synopsis
+- <c>qmcsystem</c> in the main input xml is not necessary but makes the
+input file more readable by grouping a number of elements to define a physical
+problem.
+- It defines a local scope. For example, <c>simulationcell</c> applies to all the
+<c>particleset</c>s in a <c>qmcsystem</c>
+
+\subsection particlesetX particleset
+
+A <c>particleset</c> defines a set of particles and contains
+
+\code
+particleset= 
+  children  : group+, attrib*
+  attribute : name, size, random, random_source 
+\endcode
+
+\dotfile particleset.dot "particleset element"
+
+Attributes of <c>particleset</c> are
+
+name | datatype | default  | definition
+---- | -------- | -------- | -----------
+name | string | None | Name of this particle set. Referenced by other elements
+size | integer | 0 | Number of particles, when size is missing, <c>group/\@size</c> is used
+random | yes/no | no | Randomize  the initial position.
+random_source | string | None | See the note on randomization of particle position
+
+If random==yes, the initial position of a <c>particleset</c> is randomonly
+assigned. The additional attribute <c>random_source</c> can be provided to
+randomize the initial position with respect to a center <c>particleset</c>,
+typically an ionic system.  The initialization attemps to use the
+<c>valence</c> charge of each ion set by either
+<c>particleset/group/param/\@name</c> or by pseudopotentials.  If
+<c>random_source</c> is not given, positions are random values \f$[0,1)^D\f$ with
+respect to a simulationcell.
+
+Synopsis
+- It is seldom necessary for the users to prepare <c>particleset</c> from
+scratch. The conversion tools from other packages will generate
+<c>particleset</c> elements. 
+- The HDF5 wavefunction file in ES-HDF format contains everything. It is possible
+to omit <c>particleset</c> See the section on ES-HDF. 
+
+The example below defines \f$H_2O\f$ with i) an ionic system called
+<c>particleset/\@name='ion0'</c> and ii) an electronic system
+<c>particleset/\@name='e'</c>. The positions of electrons are randomly assigned
+around the ions.
+
+\code
+<qmcsystem>
+  <particleset name="ion0">
+    <group name="O" size="1">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+      <attrib name="position" datatype="posArray">
+      0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+      </attrib>
+    </group>
+    <group name="H" size="2">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+      <attrib name="position" datatype="posArray">
+      0.0000000000e+00 -1.4304287043e+00  1.1071569627e+00
+      0.0000000000e+00  1.4304287043e+00  1.1071569627e+00
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="e" random="yes" random_source="ion0">
+    <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="4">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</qmcsystem>
+\endcode
+
+\subsection groupX group
+
+Defines a group of particles or species. 
+\code
+group =
+  children  : parameter+, attrib*
+  attribute : name, size
+\endcode
+
+The properties of each group are defined by <c>parameter</c>.
+The parameters below  are predefined in QMCPACK and their uses are restricted. 
+
+
+Attributes of <c>attrib</c>
+
+name | datatype | default  | definition
+---- | -------- | -------- | -----------
+charge | real |  0 |  Charge in atomic unit. q=-1 for the electrons
+valence | real |  0 | valence charge in AU
+atomicnumber | integer | 0 | Atomic number in the periodic table
+
+Synopsis
+- Default <c>group/\@size='0'</c> 
+- When <c>group/\@size</c> is provided, the <c>attrib</c>s within this group
+have the same size.
+
+\subsection simulationcellX simulationcell
+
+A <c>simulationcell</c> defines the supercell of a QMC simulation and
+contains
+\code
+simulationcell = children : parameter+
+\endcode
+
+As the name implies, <c>simulationcell</c> is only needed for bulk systems with
+periodic boundary conditions.  One exception is when the single-particle
+orbitals (<c>SPOSet</c>) are represented by 3D tricubic bspline. Then,
+<c>simulationcell</c> should match the bounding box of the <c>SPOSet</c>.
+
+<c>parameter</c>s provide the specific properties of a supercell as listed below.
+
+name | definition | default | comments
+----- | --------- | -------- | -------------
+lattice | supercell vectors | \f$a(i,j)=\delta_{ij} 10^{10}\f$ | \f$a(i,j)\f$ denotes the i-th vector and the j-th component
+scale | scaling factor to lattice | 1.0 | Multiplied to <c>lattice</c>
+bconds | boundary condition | p p p | Required For each lattice vector. p for Periodic and n for non-periodic
+LR_dim_cutoff | cutoff radius | 15 | Used for the optimized method (Natoli et al, JCP) for long-range potentials and Jastrow functions
+rs | HEG density | 1 |  used to set the supercell for a homegenous electron gas.
+
+This is an example how to define a <c>simulationcell</c> and two <c>particleset</c>s.
+\code
+<qmcsystem>
+  <simulationcell name="global">
+    <!-- 3D Lattice 0x 0y 0z 1x 1y 1z 2x 2y 2z -->
+    <parameter name="lattice" units="bohr"> 
+    20.521733294552881    0.000000000000000    0.000000000000000
+     0.000000000000000   20.521733294552881    0.000000000000000
+     0.000000000000000    0.000000000000000   20.521733294552881
+    </parameter>
+    <!-- periodic boundary conditions -->
+    <parameter name="bconds">p p p</parameter> 
+    <parameter name="LR_dim_cutoff">15</parameter> 
+  </simulationcell>
+  <particleset name="ion0"/> <!-- ionic system -->
+  <particleset name="e"/>    <!-- electronic system -->
+</qmcsystem>
+\endcode
+
+Synopsis
+<ul>
+<li>When <c>simulationcell</c>  is not provided, open boundary conditions
+are assumed. This is the default mode for the molecular systems. The
+wavefunction conversion tools for Quantum Chemistry codes using Gaussian-type
+orbitals do not insert <c>simulationcell</c> element.
+</li>
+<li>
+Specialized methods to evaluate the distance relationship between
+<c>particleset</c>s are selected based on the lattice type and boundary
+conditions.
+</li>
+<!--
+<li>
+Only the images in the periodic directions are included in evaluating
+long-range interactions.
+</li>
+-->
+<li>
+Particle moves outside of the supercell in the open direction(s) are rejected
+with bspline SPOs.  For instance, the z coordinate of an electron is restricted
+to \f$[0,L_z)\f$ in a slab geomtry of Fig. ZZZ.
+</ul>
+
+\subsection bcondsR Restrictions for boundary conditions
+
+For the electronic structure calculations in the PW basis, the gemoetric center
+of the ionic coordinates in the open-boundary directions has to be close to the
+center as illustrated in Fig. ZZZ.  It is because the values of
+the SPOs are not defined beyond the supercell.  Since QMC uses the values and
+the gradients of the SPOs  which are normally represented by bsplines on a
+grid, it is important to apply strick convergence conditions on the vacuum
+region for the PW calculations to minimize the contributions from image cells.
+Not only the total energy should be converged with respect to the supercell,
+all the SPOs should decay to zero at the open boundaries.
+
+\subsection hamiltonianX hamiltonian
+
+It defines a many-body Hamiltonian \f$\hat{H}=\sum_i \hat{h}\f$ for the target
+<c>particleset</c> to evaluate the local energy, 
+\f[
+E_L({\bf R})=\frac{\hat{H}\Psi_T({\bf R})}{\Psi_T({\bf R})}.
+\f]
+
+<b>R</b> denotes the configuration of the target <c>particleset</c>
+It contains
+\code
+hamiltonian = 
+  children  : pairpot*, estimator*
+  attribute : name, target, wavefunction
+\endcode
+
+\dotfile hamiltonian.dot "hamiltonian element"
+
+The attributes are
+name | definition | default | comments
+----- | --------- | -------- | -------------
+name | Name of this Hamiltonian | h0 | <c>hamiltonian/\@name</c> is used when multiple <c>hamiltonian</c>s are used.
+target | Target <c>particleset</c> | e | The default for quantum <c>particleset/\@name="e"</c>
+wavefunction | Target <c>wavefunction</c> | psi0 | Non-local PP needs <c>wavefunction</c>
+
+Synopsis
+- The children of <c>hamiltonian</c> are divided into
+ - Physical operator, \f$\hat{h}\f$,  whose value is added to the local energy.
+ - Estimators for an operator \f$O = \hat O\Psi_T/\Psi_T\f$
+- The kinetic operator is automatically added to the total \f$\hat{H}\f$.
+- <b>Advanced</b> It is possible to overwrite the kinetic operator with a specialized kinetic operator.
+
+A typical <c>hamiltonian</c> with pseudopotentials is
+\code
+<hamiltonian name="h0" type="generic" target="e">
+ <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+ <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+ <pairpot name="PseudoPot" type="pseudo" source="ion0" 
+          wavefunction="psi0" format="xml">
+   <pseudo elementType="C" href="C.BFD.xml" format="xml"/>
+ </pairpot>
+ <!-- finite-size correction -->
+ <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/> 
+</hamiltonian>
+\endcode
+
+\subsubsection pairpotX pairpot
+
+It defines a pair potential and contains
+\code
+pairpot = attribute : name, type, source, target, wavefunction
+\endcode
+
+The names of <c>source</c>, <c>target</c> and <c>wavefunction</c> must be those
+of the existing objects. <c>wavefunction</c> is necessary with non-local
+pseudopotentials.
+
+The attributes are
+name | definition | default | comments
+----- | --------- | -------- | -------------
+type | Potential type | None | Choose: coulomb, pseudo
+source | Source <c>particleset</c> | None | Required
+target | Target <c>particleset</c> | <c>target</c> of the parent element | Optional, inherited from <c>hamiltonian</c>
+
+Synopsis
+- Any operator expressed as
+\f$ V=\sum_{i}^{source}\sum_{j}^{target} \phi({\bf r}_j,{\bf r}_i)\f$
+is a candidate of <c>pairopot</c>, where each \f$\sum\f$ is over a <c>particleset</c>.
+- <c>pairpot/\@type='coulomb'</c> is reserved for Coulomb potential. See section coulombsec.
+- <c>pairpot/\@type='pseudo'</c> is reserved for pseudo potential. See section pseudosec.
+
+\subsection wfsX wavefunction
+
+It defines a trial wavefunction \f[\Psi_T=\prod_i \psi_i\f] where \f$\psi_i\f$
+is a many-body wavefunction component, e.g. a Slater-Jastrow orbital is 
+\f[\Psi_T = e^{J} \sum_k^{M} C_k D_{k}^{\uparrow}(\phi)D_k^{\downarrow}(\phi).\f]
+Here, \f$\{\phi\}\f$ denotes a set of single-particle orbitals (<c>SPOs</c>).
+It contains
+\code
+wavefunction = 
+  chidren : jastrow*, determinantset
+  attribute : name, target
+\endcode
+
+\dotfile wfs.dot "wavefunction element"
+
+The attributes are
+name | definition | default | comments
+----- | --------- | -------- | -------------
+name | Name of this wavefunction | psi0 | <c>wavefunction/\@name</c> is used when multiple <c>wavefunction</c>s are used.
+target | Target <c>particleset</c> | e | The default for quantum <c>particleset/\@name="e"</c>
+
+<c>wavefunction</c> is the most important element in QMC calculations. Except
+for very simple toy problems, it is seldom possible to prepare a
+<c>wavefunction</c> from scratch. Also, it is highly propblem and theory
+depdenent and changing constantly. 
+
+\subsubsection jastrowX jastrow
+
+\code
+jastrow = attribute : name, type, function, source
+\endcode
+
+The attributes are
+name | definition | default | comments
+---- | ---------- | ------- | -------------
+name | Name of this Jastrow | None | Unique value in an input
+type | Type of this Jastrow | None | OneBody, TwoBody, ThreeBody
+function | Scaling functor of this Jastrow | None | Bspline, pade
+source | source <c>particleset</c> | None | Any <c>particleset</c> that can provide the centers.
+
+\anchor j2def Two-Body Jastrow
+
+\f[J2=\sum_i^{e}\sum_{j>i}^{e} u_{ab}(|{\bf r}_i-{\bf r}_j|)\f]
+
+Here, <i>a</i> and <i>b</i> denote u(p) electrons or d(own) electrons.
+The use of u for up electrons and d for down electrons are generally adopted by
+the users.
+
+<ul>
+ <li>The scale function \f$u(r)\f$ is defined for species pairs, uu, ud.  </li>
+ <li>There is no need to define, du and dd, since uu==dd and ud==du.</li>
+ <li>cusp condition is computed internally based on the charge of the quantum particles.
+ <li>The type of scaling functions of this jastrow is ginve by <c>jastrow/\@function</c>. The example
+ selects <c>Bspline</c> (1D tricubic spline function on a linear grid).
+ </li>
+</ul>
+
+These are common use cases.
+<ul>
+ <li>Two-body Jastrow with <c>Bspline</c> functor
+ \code
+ <jastrow name="J2" type="Two-Body" function="Bspline" source="ion0" spin="yes">
+   <correlation speciesA="u" speciesB="u" size="7" rcut="6">
+     <coefficients id="uu" type="Array"> 
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0
+     </coefficients>
+   </correlation>
+   <correlation speciesA="u" speciesB="d" size="7" rcut="6">
+     <coefficients id="ud" type="Array"> 
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0
+     </coefficients>
+   </correlation>
+ </jastrow>
+\endcode
+ </li>
+</ul>
+
+\anchor j1def One-Body Jastrow
+
+\f[J1=\sum_I^{ion0}\sum_i^{e} u_{ab}(|{\bf r}_i-{\bf R}_I|)\f]
+
+<ul>
+ <li><c>jastrow/\@source</c> is the source <c>particleset</c>, typically an ionic system.</li>
+ <li>The scale function \f$u_{ab}(r)\f$ is can be spin-independent when <i>b</i> applies to both spins
+ or spin-dependent.
+ </li>
+ <li>The type of scaling functions of this jastrow is ginve by <c>jastrow/\@function</c>. The example
+ selects <c>Bspline</c> (1D tricubic spline function on a linear grid).
+ </li>
+</ul>
+
+These are common use cases.
+<ul>
+ <li>Spin-independent one-body Jastrow with <c>Bspline</c> functor
+ \code
+ <jastrow name="J1" type="One-Body" function="Bspline" source="ion0">
+   <correlation elementType="C" size="7" rcut="6">
+     <coefficients id="eC" type="Array"> 
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0
+     </coefficients>
+   </correlation>
+ </jastrow>
+ \endcode
+ </li>
+ <li>Spin-dependent one-body Jastrow with <c>Bspline</c> functor
+ \code
+ <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" spin="yes">
+   <correlation speciesA="C" speciesB="u" size="7" rcut="6">
+     <coefficients id="eCu" type="Array"> 
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0
+     </coefficients>
+   </correlation>
+   <correlation speciesA="C" speciesB="d" size="7" rcut="6">
+     <coefficients id="eCd" type="Array"> 
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0
+     </coefficients>
+   </correlation>
+ </jastrow>
+\endcode
+ </li>
+</ul>
+
+\note Both <c>correlation\@elementType</c> and <c>correlation\@speciesA</c> are
+accepted.
+
+\section actionX Execution of QMC methods
+
+\subsection qmcX QMC element
+
+It defines a QMC run using various QMC methods, e.g., variational Monte
+Carlo (vmc) or diffusion Monte Carlo (dmc). Any number of <c>qmc</c>
+can be given in an input file and each section is executed sequentially.
+\code
+qmc = 
+  children  : parameter+ 
+  attribute : name, target
+\endcode
+
+\subsection loopX Loop element
+
+It defines a loop for the execution of executes the included <c>qmc</c> sections and contains
+\code
+loop = 
+  children : qmc+
+  attribute : max
+\endcode
+
+*/

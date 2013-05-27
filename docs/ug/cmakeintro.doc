@@ -1,0 +1,224 @@
+/*! \page cmakep Short introduction to cmake
+
+<c>cmake</c> is a portable build system and is widely used for large-scale software
+development projects such as VTK.  How <c>cmake</c> works is similar to
+<c>autoconfig/automake</c>. <c>cmake</c> uses <c>CMakeLists.txt</c>
+files (<c>cmake</c> scripts) to generate <c>Makefile</c>s with complete
+dependency analysis.  <c>CMakeLists.txt</c>s are equivalent to
+<c>Makefile.am</c>. 
+
+The <c>cmake</c> command
+\code
+cmake ..
+\endcode
+starts processing <c>CMakeLists.txt</c> in <c>qmcpack</c> (the parent directory
+in this case) and the <c>CMakeLists.txt</c>s in <c>src</c> directories and
+below, recursively.  In the <c>build</c> directory, <c>cmake</c> creates a
+directory tree which mirrors the <c>qmcpack</c> and <c>Makefile</c>s for each
+subdirectory:
+
+\code
+$ls
+-rw-r--r--  ...  cmake_install.cmake
+drwxr-xr-x  ...  bin
+drwxr-xr-x  ...  lib
+drwxr-xr-x  ...  src
+-rw-r--r--  ...  Makefile
+drwxr-xr-x  ...  CMakeFiles
+-rw-r--r--  ...  CMakeCache.txt
+\endcode
+
+<c>qmcpack/CMake</c> directory contains customized cmake modules by QMCPACK
+developers to locate libraries and tools that are not fully supported by
+<c>cmake</c>. The list includes
+- <c>FindLapack.cmake</c> to locate blas/lapack library
+- <c>FindEinspline.cmake</c> to locate einspline library
+
+These modules function as m4 files for autoconf.
+
+<c>qmcpack/CMakeLists.txt</c> is a main file (text file) to build QMCPACK
+project. It 
+- defines how to build QMCPACK: dimensionality, precision, real/complex, mpi, openmp, .....
+- selects compilers
+- enables/disables advanced or developing features
+
+\section ooscomp Our-of-source compilation
+
+Always use out-of-source compilation with cmake. The
+procedure above, using <c>build</c> directory (empty) and running
+<c>camke</c> in <c>build</c>, is an example. We can further
+separate the source (development) and build. Let's assume that the
+QMCPACK <c>topdir</c> is <c>/home/foo/src/qmcpack</c>. Then, one
+can build multiple executables in different locations by creating new
+directories and build QMCPACK in each directory.
+
+\code
+/home/foo/build/gcc-real
+/home/foo/build/gcc-complex
+/home/foo/build/mpi-real
+\endcode
+
+In each directory, e.g., <c>/home/foo/build/gcc-real</c> (after secodeing
+the environments properly), execute
+\code
+cd /home/foo/build/gcc-real
+cmake /home/foo/src/qmcpack
+make 
+\endcode
+There is no need to change sources or cmake files. 
+
+If something did not work, simply remove the directory (e.g., <c>rm -rf
+gcc-real</c>) and start again.
+
+\section cmakebuild Building QMCPACK
+
+When <c>cmake</c> is issued, it generates <c>Makefile</c>s to build
+libraries and executables in the <c>build</c> directory.
+<c>build/lib</c> contains several libraries and <c>build/bin</c> has the
+executables including <c>qmcapp</c>, the main QMCPACK application.
+
+The default build of QMCPACK is to perform QMC simulations in the
+three-dimensional space with real trial wavefunction in double precision.
+These are set by the cmake variables in <c>CMakeLists.txt</c>:
+\code
+SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension"
+SET(OHMMS_INDEXTYPE int)
+SET(OHMMS_PRECISION double)
+SET(APP_PRECISION double)
+
+SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
+SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
+SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
+SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
+\endcode
+
+- <c>OHMMS_xyz</c> s are old macros and will be replaced by <c>APP</c>.
+<c>APP</c> stands for APPlication so that other application can
+    use it without feeling constrained by the name OHMMS.
+-<c>QMC_COMPLEX=1</c> is for complex wavefunctions and fixed-phase
+  DMC/RMC methods.
+- The "cached" parameters can be modified by users manually
+  during a build by editing CMakeCache.txt.
+
+Note that the available variables and their default values are subject to
+change.  cmake files (CMakeLists.txt, CMakeCache.txt and those with cmake
+extension) are text files; you can read them, make sense out of them and modify
+them.
+
+\section cmakeadv1 How to overwrite the default build variables
+
+The build variables can be overwritten at
+<c>cmake</c> step by passing arguments to <c>cmake</c>.  A general method
+to overwrite the build variables is
+\code
+cmake -DQMC_MPI=0 -DQMC_OMP=0 -DBUILD_SANDBOX=1 ..
+\endcode
+
+Alternatively, <c>CMakeLists.txt</c> can be edited before <c>cmake</c> step.
+- This is the only way to change <c>OHMMS\_PRECISION</c> and <c>OHMMS\_INDEXTYPE</c> 
+- single-precision has not been debugged (probably compilers will give up). 
+- There is NO NEED to use long for <c>OHMMS\_INDEXTYPE</c> 
+
+<c>cmake</c> variables and their defaults are
+
+variable| type| default| comment
+------- | ------- | -------- | -------
+QMC_BUILD_LEVEL    | int | 1 | QMC Build Level: 1=bare, 2=developer, 3=experimental
+OHMMS_DIM          | int | 3 | physical dimension of the build
+QMC_MPI            | bool | 1 | Eanble/disable MPI
+QMC_OMP            | bool | 1 | Eanble/disable OpenMP
+QMC_COMPLEX        | bool | 0 | Eanble/disable complex build
+BUILD_QMCTOOLS     | bool | 0 |Build tools for QMCPACK
+BUILD_SANDBOX      | bool | 0 |Build sandbox for testing for the developers
+ENABLE_PHDF5       | bool | 0 |Enable use of phdf5
+ENABLE_TAU_PROFILE | bool | 0 | Enable tau for profiling
+
+In addition to QMCPACK-defined variables, there are many <c>cmake</c>
+variables that can be manipulated the same way. Check out 
+<a href="http://www.cmake.org/Wiki/CMake_Useful_Variables">cmake wiki</a>.
+
+During <c>cmake</c> step, <c>CMakeCache.txt</c> file is created in the
+<c>build</c> directory. As the name implies, it contains cached
+variables that are used during the build stage. This file can be edited
+to modify the cached variables above.
+
+\section buildenv Building with environment variables
+
+This method works with GNU, Intel, and IBM XLC compilers. When
+the libraries are installed in standard locations, e.g., <c>/usr,
+/usr/local</c>, there is no need to set the <c>XYZ_HOME </c>for XYZ package.
+In this example of using Intel compilers, we set the environment variables in bash as
+
+\code
+export CXX=icpc
+export CC=icc
+export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
+export LIBXML2_HOME=/usr/local
+export HDF5_HOME=/usr/local
+export BOOST_HOME=/usr/local/boost
+export EINSPLINE_HOME=/usr/local/einspline
+export FFTW_HOME=/usr/local/fftw
+\endcode
+
+<c>cmake</c> uses the default compilers on each platform. 
+On most *NIX systems, GNU compilers are used when <c>CXX</c> and <c>CC</c>
+environment variables are not set. 
+
+The compiler options are automatically selected based on the name of compilers.
+For GNU, Intel and IBM compilers, customized <c>cmake</c> modules to set
+compiler options on target CPU are provided in <c>qmcpack/CMake</c>
+directory as summarized below.
+
+CXX |CC    | cmake module file    | comments
+----|------|--------------------  | ----------
+g++ |gcc   | GNUCompilers.cmake   | GNU compilers
+icpc|icc   | IntelCompilers.cmake | Intel compilers
+xlC |xlc   | IBMCompilers.cmake   | IBM VisualAge compilers
+
+Enabling MPI typically requires special compilers, e.g., <c>mpicxx</c>.  The
+parallel programming environments on HPC systems are not standardized and it is
+hard to make a simple build system work for all the possible MPI varients.
+The build system provided with QMCPACK will try to figure out the best build
+options but the users should modify cmake files to meet their needs.
+
+Development and testing are done mostly on LINUX systems using Intel 10.x or
+GNU 4.2 and higher compilers. Older compilers will work but supports for OpenMP
+both at the compiler and run time may not be good. We strongly encourage people
+to move on to new compilers whenever possible: they are usually getting better
+with few exceptions, which will be posted on this wiki whenever such cases are
+encountered.
+
+\section toolbuild Building with a toolchain file
+
+Using a toolchain file can be convenient when the libraries cannot be easily
+located or cross-compilation is needed. This method is recommended on a HPC
+system to manage multiple versions of libraries and programming environment
+(compiler verions etc).  
+
+Several toolchain files used by the developers are available in <c>config</c>
+directory. They are used on large-scale parallel machines where setting up all
+the necessary packages can be tricky. 
+- <c>TitanGNU.cmake</c> for Cray XK7 system at OLCF, using only CPUs
+- <c>XC30Intel.cmake</c> for Cray XC30 system at NERSC
+- <c>BGQToolChain.cmake</c> for IBM BGQ at ALCF
+- <c>PsiIntelMPI.cmake</c> for generic x86 systems with Intel Composer XE v13
+
+Once a suitable toolchain file is found, follow these step (example on titan\@OLCF):
+\code
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/TitanGNU.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/TitanGNU.cmake ..
+make -j16
+\endcode
+<c>build</c> should be empty. Repeat <c>cmake</c> several times,  until
+this message appears
+\code
+...
+-- Generating done
+-- Build files have been written to: your-build-directory
+\endcode
+
+For more information on build, consult <a href="http://qmcpack.cmscc.org/">QMCPACK wiki</a>.
+
+*/
