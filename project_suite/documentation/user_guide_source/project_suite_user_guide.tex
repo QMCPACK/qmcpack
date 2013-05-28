@@ -1062,15 +1062,64 @@ results
 \chapter{Project Suite \\User Reference} \label{reference}
 Pending.
 
-%\section{Project Suite settings: global state and user-specific information}
-%\subsection{\bu{How to use the \texttt{settings} function}}
-%\subsection{\bu{Accessing settings data}}
+\section{Reading what you wrote}
+
+\section{Project Suite settings: global state and user-specific information}
+The first section of a project script is often dedicated to providing 
+information regarding the local machine, the location of various files, and 
+the desired behavior of the \texttt{ProjectManager}.  This information is 
+communicated to the Project Suite through the \texttt{settings} function. 
+The settings function is available in the \texttt{project} module.  To make 
+\texttt{settings} available in your project script, use the following import 
+statement:
+\HRule
+\begin{minted}{python}
+from project import settings
+\end{minted}
+\HRule
+
+\subsection{\bu{How to use the \texttt{settings} function}}
+In most cases, it is sufficient to supply only four pieces of information 
+through the \texttt{settings} function: whether to run all jobs or just create 
+the input files, how often to check jobs for completion, the location of 
+pseudopotential files, and a description of the local machine.
+\HRule
+\begin{minted}{python}
+settings(
+    generate_only = True,                 # only write input files, do not run
+    sleep         = 3,                    # check on jobs every 3 seconds
+    pseudo_dir    = './pseudopotentials', # path to PP file collection
+    machine       = 'node8'               # local machine is an 8 core workstation
+    )
+\end{minted}
+\HRule
+
+A few additional parameters are available in \texttt{settings} to control where 
+runs are performed, where output data is gathered, and whether to print job 
+status information.  More detailed information about both local and target 
+machines can be provided, such as allocation account numbers, filesystem 
+structure, and where executables are located.
+\HRule
+\begin{minted}{python}
+settings(
+    generate_only = True,                 # only write input files, do not run
+    sleep         = 3,                    # check on jobs every 3 seconds
+    pseudo_dir    = './pseudopotentials', # path to PP file collection
+    machine       = 'node8'               # local machine is an 8 core workstation
+    )
+\end{minted}
+\HRule
+
+
+\subsection{\bu{Accessing settings data}}
+
+
 %
 %\section{Making structures}
 %
 %\section{Making simulations}
 %
-%\section{Linking simulations to form cascades}
+%\section{Linking simulations together in cascades}
 %
 %
 %
