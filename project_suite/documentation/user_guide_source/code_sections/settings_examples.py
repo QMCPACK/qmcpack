@@ -23,8 +23,11 @@ settings(
     account         = 'MAT123',             # allocation account on Titan
     machine_info    = dict(
         oic5 = dict(
-            local_directory = '/home/myid',
+            local_directory = '/home/your_id',
             
+            ),
+        kraken = dict(
+            local_directory = '/nics/b/home/your_id'
             )
         )
     )
