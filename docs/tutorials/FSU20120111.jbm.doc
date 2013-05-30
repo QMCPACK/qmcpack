@@ -1,0 +1,620 @@
+/*! \page fsu2012 3D Electron Gas: A QMC Tutorial
+
+  \author    Jeremy B McMinis
+  \author    David M Ceperley
+  \date      2011 Jan 11
+
+\copyright
+  \htmlonly
+  <a rel="license"
+  href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img
+  alt="Creative Commons License" style="border-width:0"
+  src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png" /></a><br />This
+  work is licensed under a <a rel="license"
+  href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative
+  Commons Attribution-ShareAlike 3.0 Unported License</a>.
+  \endhtmlonly
+  \latexonly
+  Creative Commons Attribution-ShareAlike 3.0 Unported License
+  \endlatexonly
+
+
+\section fsuintro Introduction
+
+In this tutorial we will show you how to run a diffusion Quantum Monte Carlo
+calculation. We will be using a multi-purpose QMC code developed at UIUC,
+QMCPACK, to investigate a system, the 3D HEG, covered during the lectures.
+During the tutorial we will optimize a trial wave function, run VMC, then DMC
+and analyze the results. The goal is to familiarize you with running a
+production level code. The lab will be purposefully kept short to allow
+interested students the opportunity to ask questions about QMC, the algorithms,
+wave functions, observables, and potentials coded in QMCPACK, and for
+developers, how to add things to the code.
+
+\section hegA HEG Calculation: The Code
+QMCPACK is an open source continuum quantum Monte Carlo code. It has been
+scaled to run on the largest machines using both OpenMP and MPI. It can also be
+built and compiled for GPU machines using the CUDA compiler. It is built using
+cmake and several external libraries including Boost, Lapack/ACML, XML, FFTW,
+and hdf5. Einspline is also a suggested package. Pre-made tool chains exist for
+most large machines, where binaries are also available. More information and
+tutorials are available at http://qmcpack.cmscc.org
+
+\section hegB HEG Calculation: The System
+
+For this tutorial we will calculating the energy of the 3D paramagnetic
+(spin-balanced) electron gas for a smallish cell using a Slater-Jastrow wave
+function. In atomic units, the Hamiltonian for this system is,
+\f[
+ \hat H = -\frac{1}{2}\sum_{i}\nabla^2 + \sum_{i<j}\frac{1}{r_{ij}} + C(r_s)
+\f]
+where the \f$\nabla^2\f$ term is the usual kinetic energy operator,
+\f$\sum_{i<j}\frac{1}{r_{ij}}\f$ is the usual Coulomb potential,
+\f$r_s=(\frac{3\rho}{4\pi})^{1/3}\f$ is the Wigner-Seitz radius, the density is
+\f$\rho\f$, and \f$C(r_s)\f$ is an overall offset coming from the compensating
+background charge.
+
+\subsection hegBa Setting up the System: Technical and Job Related Details
+
+We'll start From the top of the input file and work our way through it.
+\code
+<simulation>
+ <project id="rs5.tut" series="0"/>
+ <random seed="-1"/>
+ <include href="heg.ptcl.xml"/>
+ <include href="heg.wfs.xml"/>
+... OTHER SECTIONS ...
+</simulation>
+\endcode
+
+<ul>
+<li>
+\code
+<simulation>
+...
+</simulation>
+\endcode
+The structure of XML is hierarchical. The code knows to look in the <c>simulation</c>  
+bracket to find the information for running the calculation.
+</li>
+<li>
+\code
+  <project id="rs5.tut" series="0"/>
+\endcode
+Here we name the project <c>id="rs5.tut"</c>. All the output files with data in
+them will begin with this prefix. The <c>series="0"</c>  parameter allows us to
+start indexing blocks at some other number.
+</li>
+<li>
+\code
+ <random seed="-1"/>
+\endcode
+For debugging purposes it is possible to run with the same pseudo-random number
+seed. Setting it to <c>seed="-1"</c>  generates a seed from the clock.
+</li>
+<li>
+\code
+ <include href="heg.ptcl.xml"/>
+ <include href="heg.wfs.xml"/>
+\endcode
+Here we can include other xml input files. This is useful when some parts of
+the input grow large (as the wavefunction and particle sets can).
+</li>
+<li>
+\code
+... OTHER SECTIONS ...
+\endcode
+The following sections are either included in the main xml file, or included as
+separate ones (as shown above).
+</li>
+</ul>
+
+\subsection hegBb Setting up the System: The Simulation Cell
+First we'll define the cell the calculation lives in. This is located in the
+<c>heg.ptcl.xml</c>  file.
+
+\code
+<simulationcell name="global">
+  <parameter name="rs" condition="54">5.0</parameter>
+  <parameter name="bconds">p p p</parameter>
+  <parameter name="LR_dim_cutoff">15</parameter>
+</simulationcell>
+\endcode
+
+Let's consider each of these lines separately to describe what they control.
+<ul>
+<li>
+\code
+<simulationcell>
+...
+</simulationcell>
+\endcode
+The code knows to look in this section to find the information about the
+simulation cell we will proceed to define.
+</li>
+<li>
+\code
+  <parameter name="rs" condition="54">5.0</parameter>
+\endcode
+Here we define the Wigner-Seitz radius <c>rs</c> to be 5.0 and tell the cell
+that it should expect 54 electrons. This allows the code to size the cell
+correctly.
+</li>
+<li>
+\code
+  <parameter name="bconds">p p p</parameter>
+\endcode
+We are working in 3D here so we must define each dimension as periodic <c>p</c>
+or non-periodic <c>n</c>.
+</li>
+<li>
+\code
+  <parameter name="LR_dim_cutoff">15</parameter>
+\endcode
+Finally we define the long range cut-off. This parameter sets the k-space cut
+off for Ewald sums and other operators that live in momentum space. With \f$r_c\f$
+the real space cutoff (typically half the box side), the k-space cutoff \f$k_c =
+r_c^{-1}\times\f$ <c>LR_dim_cutoff</c> . For <c>LR_dim_cutoff</c>  too small we get
+errors in long range sums, while for too large <c>LR_dim_cutoff</c>  our
+calculations are slow. The choice above, \f$15\f$ is a reasonable one and need not
+be changed.
+</li>
+</ul>
+
+\subsection hegBc Setting up the System: The Particle Sets
+
+Next we need to define our electronic species. This is also located in the
+<c>heg.ptcl.xml</c>  file.
+
+\code
+<particleset name="e" random="yes">
+  <group name="u" size="27">
+    <parameter name="charge">-1</parameter>
+  </group>
+  <group name="d" size="27">
+    <parameter name="charge">-1</parameter>
+  </group>
+</particleset>
+\endcode
+
+<ul>
+ <li> 
+\code
+<particleset name="e" random="yes">
+...
+</particleset>
+\endcode
+Here we define a set of particles we'll call <c>e</c> , short for electrons. we
+indicate that their starting positions are random using the <c>random="yes"</c>
+tag. 
+</li>
+<li> 
+\code
+  <group name="u" size="27">
+    <parameter name="charge">-1</parameter>
+  </group>
+\endcode
+We name each group and define some characteristics for it including the number
+of particles and their charge. We name these two species <c>name="u"</c>  and
+<c>name="d"</c>  anticipating that we will use a spin-\f$\frac{1}{2}\f$ trial
+function. At this point the particles have no statistics.
+</li>
+</ul>
+
+\subsection hegBd Setting up the System: The Trial Wavefunction
+We are using a trial wave function of the Slater-Jastrow form. This is a
+product state with a determinant of plane waves multiplied by a bosonic two
+body correlation factor. This input block is to be found in the <c>heg.wfs.xml</c>  file.
+
+\code
+<wavefunction name="psi0" target="e">
+  <determinantset type="electron-gas" shell="3" randomize="true">
+  </determinantset>
+  <jastrow name="J2" type="Two-Body" function="Bspline">
+    <correlation speciesA="u" speciesB="u" size="6" >
+      <coefficients id="uu" type="Array" optimize="yes"> 
+        0 0 0 0 0 0 
+      </coefficients>
+    </correlation>
+    <correlation speciesA="u" speciesB="d" size="6" >
+      <coefficients id="ud" type="Array" optimize="yes"> 
+        0 0 0 0 0 0 
+      </coefficients>
+    </correlation>
+  </jastrow>
+</wavefunction>
+\endcode
+
+<ul>
+ <li> 
+\code
+<wavefunction name="psi0" target="e">
+...
+</wavefunction>
+\endcode
+We name the trial wave function and assign a previously named particle set to it.
+</li>
+ <li> 
+\code
+  <determinantset type="electron-gas" shell="3">
+  </determinantset>
+\endcode
+For a paramagnetic electron gas calculation we use a determinant of plane
+waves. The <c>"shell"=3</c>  tag allows the code to determine how many plane
+wave states to build. This number is indexed the ``c'' way, starting from zero
+(e.g. shell:\f$N_e\f$ 0:1, 1:7, 2:19, 3:27, 4:33, etc.) It assumes that there are
+as many spin up particles as there are spin down particles if only one shell is
+given. Additional information is required for spin polarized calculations.
+Currently, only filled shell states are allowed for the simple Slater-Jastrow
+case.
+</li>
+<li> 
+\code
+  <jastrow name="J2" type="Two-Body" function="Bspline">
+...
+  </jastrow>
+\endcode
+Here is the block for the spin dependent B-Spline Jastrow. It is a two body
+term as indicated by <c>type="Two-Body"</c> . This provides correlation for like
+and not like spin electrons. 
+</li>
+<li> 
+\code
+    <correlation speciesA="u" speciesB="d" size="6" >
+...
+    </correlation>
+\endcode
+The <c>speciesA="u"</c>  and <c>speciesB="d" </c> tags identify which groups are
+being correlated. There are <c>size="6" </c> parameters for each <c>
+correlation </c> type which corresponds to <c>size </c>\f$3\f$ knots on each B-spline
+(the extras ensure the cusp and boundary conditions).The default cusp and
+boundary conditions for our calculation are the same as the codes defaults, so
+they do not need to be changed.
+</li>
+<li> 
+\code
+      <coefficients id="ud" optimize="yes"> 
+        0 0 0 0 0 0 
+      </coefficients>
+\endcode
+The <c>id="ud"</c> tag identifies the parameters by name and by setting <c>optimize="yes"</c>  
+they are visible to the optimization algorithm. The default is
+that the <c>"uu"</c> parameters are identical to the <c>"dd"</c>  ones, and the
+latter need not be specified in the input. The string of zeros are the starting
+parameters.
+</li>
+</ul>
+
+\subsection hegBe Setting up the System: The Hamiltonian
+
+\code
+<hamiltonian name="h0" type="generic" target="e">
+  <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+</hamiltonian>
+\endcode
+The kinetic energy term is included by default. The only additional term
+required is the electron electron potential. It is defined as
+<c>type="coulomb"</c>  and both the target and source particles are identified,
+<c>source="e"</c> and  <c>target="e"</c> .
+
+
+\section hegC HEG Calculation: The Algorithms
+In the following sections we will outline the input file structure for the
+various algorithms we'll be utilizing to compute the energy of the HEG. Time
+does not permit detailed descriptions of the algorithms. For the curious or
+motivated several references are listed at the end of the tutorial for further
+consideration.
+
+
+\subsection hegCa Variational Quantum Monte Carlo
+In VMC we sample the square of the trial wave function and average observables
+over it. We also use it to generate initial configurations for a DMC
+calculation.
+
+\code
+<qmc method="vmc" move="pbyp">
+  <parameter name="walkers">8</parameter>
+  <parameter name="blocks">100</parameter>
+  <parameter name="steps">6</parameter>
+  <parameter name="timestep">5.0</parameter>
+  <parameter name="samples">800</parameter>
+  <estimator name="LocalEnergy" hdf5="no"/>
+</qmc>
+\endcode
+
+<ul>
+<li>  
+\code
+<qmc method="vmc" move="pbyp">
+...
+</qmc>
+\endcode
+Here we define the algorithm that we are going to be using, <c>method="vmc"</c>
+and how particle moves are going to be made, <c>move="pbyp"</c>. It is also
+possible to make <c>move="walker"</c> moves in which all electrons are moved at
+the same time. Most of the time it is more efficient to move one particle at a
+time.
+</li>
+ <li>  
+\code
+<parameter name="walkers">8</parameter>
+\endcode
+The number of <c>walkers</c>  you use must be evenly divisible by the number of
+threads you are running on your machine (usually set by <c>OMP_NUM_THREADS</c>
+). This is the number of independent random walks you are performing on your
+trial wave function. For the machine on the FSU HPC cluster we'll have 8
+threads.
+</li>
+ <li>  
+\code
+<parameter name="blocks">     200  </parameter>
+<parameter name="warmupsteps"> 10 </parameter>
+<parameter name="steps"> 6 </parameter>
+\endcode
+The total number of steps the walkers will be evolved though is <c>blocks*steps+warmupsteps</c>.
+Statistics will not be kept during the warm up.
+</li>
+ <li>  
+\code
+<parameter name="timestep"> 5 </parameter>
+\endcode
+This is the timestep used to evolve the walkers in imaginary time. We typically
+choose a time step where the accept rate is about 50%. The optimal chose is
+the one that maximizes the diffusion of the walkers through phase space, and
+thus minimizes the autocorrelation time. The total amount of imaginary time the
+system is evolved through will then be <c>(blocks*steps+warmupsteps)*timestep</c>.
+</li>
+<li>
+\code
+  <parameter name="samples">800</parameter>
+\endcode
+<c>samples</c>  are generated to use for the following step (usually DMC).
+</li>
+
+ <li>  
+\code
+<estimator name="LocalEnergy" hdf5="no"/>
+\endcode
+This line tells the code to write the output to a text file. It will be called
+[PROJECT NAME].s000.scalar.dat and contain all the observables in the
+Hamiltonian plus some additional information. If we want the output written to
+hdf5 then we simply change the <c>hdf5="no"</c>  label.
+
+</li>
+</ul>
+
+
+\subsection hegCb Running the Optimization
+
+QMCPACK uses the linearized method adapted to QMC by Umrigar and co-workers.
+This algorithm works by expanding the trial wave function in the basis of the
+derivatives of the trial wave function with respect to its parameters. After
+computing the overlap and Hamiltonian matrices during a VMC run, we solve a
+linear system to find the direction the best parameters lie in. We can choose
+to minimize the energy, variance, or some linear combination of them both.
+Following is an example code block for the optimization. In fact, there are
+many other parameters in the algorithm, however their use requires a fair
+amount of knowledge of exactly how the calculation is performed.
+
+\code
+<loop max="2">
+  <qmc method="linear" move="pbyp">
+  <!-- VMC parameters -->
+    <parameter name="walkers">8</parameter>
+    <parameter name="blocks">     200  </parameter>
+    <parameter name="warmupsteps"> 10 </parameter>
+    <parameter name="steps"> 6 </parameter>
+    <parameter name="timestep"> 5 </parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  <!-- VMC parameters -->
+  <!-- Optimization Parameters -->
+    <cost name="energy">                   0.0 </cost>
+    <cost name="unreweightedvariance">     0.0 </cost>
+    <cost name="reweightedvariance">       1.0 </cost>
+    <parameter name="samples">     48000  </parameter>
+    <parameter name="beta">  0.0 </parameter>
+    <parameter name="bigchange">2.0</parameter>
+    <parameter name="nstabilizers"> 6 </parameter>
+    <parameter name="max_its"> 2 </parameter>
+  <!-- Optimization Parameters -->
+  </qmc>
+</loop>
+\endcode
+
+<ul>
+ <li>  
+\code
+ <loop max="2">
+...
+</loop>
+\endcode
+This sets up the code to loop over the optimization routine <c>max="2"</c> times.
+</li>
+<li>  
+\code
+<qmc method="linear" move="pbyp">
+...
+</qmc>
+\endcode
+Again, we define the algorithm that we are going to be using, <c>
+method="linear"</c> and how particle moves are going to be made.
+</li>
+ <li>  
+\code
+<!-- VMC parameters -->
+\endcode
+Comments are included in XML blocks through the use of 
+\code
+ <!--   your comments --> 
+\endcode
+The VMC parameters in this section are identical to the ones we previously discussed.
+</li>
+<li>  
+\code
+<cost name="energy">                   0.0 </cost>
+<cost name="unreweightedvariance">     0.0 </cost>
+<cost name="reweightedvariance">       1.0 </cost>
+<parameter name="samples">     48000  </parameter>
+\endcode
+These parameters control the line minimization part of the optimization
+algorithm. Once the parameter directions are obtained from the eigenvalue
+equation, we perform a line minimization  on <c>name="samples"</c>  generated
+during the VMC run and minimize a cost function containing a linear combination
+of <c>energy</c> ,<c>unreweightedvariance</c> , and <c>reweightedvariance</c>.
+</li>
+<li>  
+\code
+<parameter name="beta">  0.0 </parameter>
+\endcode
+By changing <c>beta</c> we change the Hamiltonian matrix to include some of the
+variance. This allows the eigenvalue problem to lead us in the right direction
+for the line search. Typical values of this are 0.0 - 0.1.
+</li>
+<li>  
+\code
+<parameter name="bigchange">2.0</parameter>
+\endcode
+It is possible for the eigenvalue equation or the lineminimization to fail.
+Sometimes when it does so a very large step is taken. <c>name="bigchange"</c>
+prevents parameter changes larger than it's value from being accepted.
+</li>
+<li>  
+\code
+<parameter name="max_its"> 2 </parameter>
+\endcode
+<c>name="max_its"</c> controls the maximum number of iterations a set of
+samples is used to optimize the parameters before the new parameters are
+accepted and the next block is begun.
+</li>
+</ul>
+
+\subsection hegCc Diffusion Quantum Monte Carlo
+\code
+<qmc method="dmc" move="pbyp">
+  <estimator name="LocalEnergy" hdf5="no"/>
+  <parameter name="warmupsteps"> 10 </parameter>
+  <parameter name="blocks">100</parameter>
+  <parameter name="steps">100</parameter>
+  <parameter name="targetWalkers">48000</parameter>
+  <parameter name="timestep">0.01</parameter>
+</qmc>
+\endcode
+The DMC block structure is the same as the VMC one, only now we have the
+additional parameter <c>targetWalkers</c>  which controls the size of the target
+population through the branching control loop. Branching is done differently
+for the first <c>warmupsteps</c>  steps due to the energy transient.  There is
+also a conceptual difference between the VMC and DMC walkers. In VMC we sample
+a stream of <c>independent</c> random walkers. In DMC these random walks are
+correlated through branching/death process.
+
+\section hegD HEG Calculation: Data Analysis
+Once the code starts to produce data, we can begin to analyze the results. If
+you have your own favorite data tool, feel free to use it. Otherwise you can
+use the <c>stats</c>  program provided in the QMCPACK folder. It is a command
+line c++ code to compute averages, variances, and errors. Data correlations are
+taken care of by blocking. It's use is illustrated as follows,
+\code
+ stats FILENAME [START BLOCKING]
+\endcode
+<c>START</c>  is indexed like c++, starting from 0. <c>BLOCKING</c>  tells the
+code how many adjacent data points to average together before computing
+statistics. Both these parameters are optional and default to 0, and 1.
+
+\subsection hegDa Files Generated
+The code generates a [<c>project</c> <c>id</c> ].s[block number].scalar.dat file
+for each block and an additional [<c>project</c>  <c>id</c> ].s[block
+number].dmc.dat for each DMC block.  Each file has a header that begins with a
+<c>#</c>  and the column titles. Column 1 is always the block index and column 2
+is always the energy. If you want to plot the trace of the first blocks data
+you would be able to do so in gnuplot as,
+\code
+ > plot `rs5.tut.s000.scalar.dat' u 1:2
+\endcode
+
+\subsection hegDb Optimization
+We can tell the optimization is working when the wave function energy/variance
+improves from step to step. Typically, we see the biggest improvement on the
+first step with additional steps gaining less and less. After several
+iterations the parameters will jitter back and forth due to the statistical
+noise inherit in the optimization and the QMC run. You can plot the energy and
+variance as a function of optimization step and observe how it converges to a
+minimum.
+
+\subsection hegDc Thermalization
+The DMC data will have a transient period where the energy decays from the VMC
+to the DMC data. This period depends on the quality of the trial wave function
+and the gap from the ground to first excited state. It is necessary to truncate
+it when averaging energies or other observables. An example transient is shown
+in @ref trtime "Fig. 6.1". When doing a time step extrapolation to zero time step it
+is important to take this into account.
+
+\anchor trtime
+\image html e_trace.png "Trace of the energy during a DMC run. The transient is clearly visible on the left"
+\image latex e_trace.pdf "Trace of the energy during a DMC run. The transient is clearly visible on the left" width=10cm
+
+\subsection hegDd Auto-correlation
+The error bars computed using <c>stats</c>  do not compute autocorrelation
+times. It is necessary to perform the blocking analysis to determine when
+correlations have been eliminated from the data. You can automatically do a
+blocking analysis on the energy trace using the stats program provided as,
+\code
+ stats FILENAME [START BLOCKING NBLOCKS]
+\endcode
+It should produce a .png file with the energy blocking analysis as illustrated
+in @ref actime "Fig. 6.2". The error bars should grow to some value and then level
+off. If you look at the data you are doing the blocking analysis, how does the
+number of blocks compare to what you think the autocorrelation time is?
+
+\anchor actime 
+\image html e_block.png "Blocking analysis of the energy during a DMC run."
+\image latex e_block.pdf "Blocking analysis of the energy during a DMC run." width=10cm
+
+
+\subsection hegDe Extrapolations
+Although time does not permit it, there are other extrapolations that should be
+performed for high quality results. The results must be finite size, and finite
+time step extrapolated. You must also be sure you are using enough walkers that
+finite population size is not an issue. The issues are addressed in the
+literature listed at the end of the tutorial.
+
+
+\section hegE References
+<ul>
+<li> "Ground State of the Electron Gas by a Stochastic Method," <a
+href="http://dx.doi.org/10.1103/PhysRevLett.45.566">Phys. Rev. Lett. 45,
+566–569 (1980)</a>
+</li>
+<li> "Quantum Monte Carlo simulations of solids,", <a href="http://link.aps.org/doi/10.1103/RevModPhys.73.33">
+Rev. Mod. Phys. 73, 33–83 (2001)</a>
+</li>
+<li> "Optimization of quantum Monte Carlo wave functions by energy minimization,"
+<a href="http://dx.doi.org/10.1063/1.2437215"> J. Chem. Phys.Phys. 126, 084102 (2007)</a>
+</li>
+<li> "Strategies for improving the efficiency of quantum Monte Carlo calculations," 
+<a href="http://link.aps.org/doi/10.1103/PhysRevE.83.066706">Phys. Rev. E 83, 066706 (2011)</a>
+</li>
+<li> QMCPACK code suite, http://qmcpack.cmscc.org
+</li>
+</ul>
+
+
+\section hegF Problems for Fun
+<ul>
+ <li> If you have a fixed amount of computing time, what is the optimal balance of time spent on optimization, and on computing quantities?
+ </li>
+ <li> How does the energy error in VMC depend on the trial wave function?
+ </li>
+ <li> How does an observable's error in DMC depend on the trial wave function?
+ </li>
+</ul>
+\section hegG What Next?
+<ul>
+ <li> Change the potential from coulomb to modified poschl-teller. How do the optimized trial functions change?
+ </li>
+ <li> Add a k-space Jastrow and re-optimize. How does the VMC energy change? The variance? How about those two things in DMC?
+ </li>
+ <li> Comment out the determinant part of the wave function. Now you are using bosonic statistics. How does the Jastrow change? How do the energies change?
+ </li>
+</ul>
+
+*/
