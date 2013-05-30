@@ -32,12 +32,13 @@ class Pobj(DevBase):
     trace         = False
     load_images   = True
 
-    sleep = 5*60
+    sleep = 3
     local_directory  = './'
     remote_directory = local_directory
     file_locations   = [local_directory]
     runs     = 'runs'
     results  = 'results'
+    pseudo_dir = os.path.join(local_directory,'pseudopotentials')
     pseudopotentials = None
 
     modes = modes

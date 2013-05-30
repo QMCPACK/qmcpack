@@ -315,6 +315,138 @@ A brief description of each example is given below.
     setting up the wavefunction.)
 \end{description}
 
+
+%\pagebreak
+%\section{DFT Calculations with PWSCF}
+%
+%\pagebreak
+%\subsection{Example: Converging Ge T interstitial structure w.r.t. k-points}
+%
+%  Pseudopotentials                                     # read in pseudopotentials
+%    reading pp:  ./pseudopotentials/Ge.pbe-kjpaw.UPF
+%upfPP Warning:                                         # ignore this warning
+%    ability to read new UPF format has not yet been implemented
+%      attempted to read ./pseudopotentials/Ge.pbe-kjpaw.UPF
+%
+%Project starting                              # start the project
+%  checking for file collisions                # ensure files don't overlap   
+%  loading cascade images                      # load simulation cascades
+%    cascade 0 checking in
+%  checking cascade dependencies               # check simulation dependencies 
+%    all simulation dependencies satisfied
+%
+%  starting runs:                              # run all project jobs
+%  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%  poll 0  memory 56.40 MB
+%    Entering ./runs/relax/kgrid_111 0         # 1x1x1 mesh relaxation starts
+%      writing input files  0 relax            # write input files
+%    Entering ./runs/relax/kgrid_111 0
+%      sending required files  0 relax         # copy PP files
+%      submitting job  0 relax
+%    Entering ./runs/relax/kgrid_111 0
+%      Executing:                              # run the job
+%        export OMP_NUM_THREADS=1              # with 1 thread
+%        mpirun -np 16 pw.x -input relax.in    # for each of 16 mpi tasks
+%
+%  poll 1  memory 56.51 MB                     # check on the jobs 
+%  poll 2  memory 56.52 MB                     # every 3 seconds
+%  poll 3  memory 56.52 MB                     # to see if they are finished
+%  ...
+%  ...
+%  poll 101  memory 56.77 MB                   # 1x1x1 mesh relaxation finishes
+%  poll 102  memory 56.77 MB                   # a couple of minutes later
+%    Entering ./runs/relax/kgrid_111 0
+%      copying results  0 relax                # save output files
+%    Entering ./runs/relax/kgrid_111 0
+%      analyzing  0 relax                      # get relaxed structure
+%
+%  poll 103  memory 57.54 MB
+%    Entering ./runs/relax/kgrid_222 1         # 2x2x2 mesh relaxation starts
+%      writing input files  1 relax            # write input files
+%    Entering ./runs/relax/kgrid_222 1
+%      sending required files  1 relax         # copy PP files
+%      submitting job  1 relax
+%    Entering ./runs/relax/kgrid_222 1
+%      Executing:                              # run the job on 16 cores
+%        export OMP_NUM_THREADS=1
+%        mpirun -np 16 pw.x -input relax.in
+%
+%  poll 104  memory 57.55 MB
+%  poll 105  memory 57.55 MB
+%  ...
+%  ...
+%  poll 373  memory 63.80 MB                   # 2x2x2 mesh relaxation finishes 
+%  poll 374  memory 63.80 MB                   # about 5 minutes later
+%    Entering ./runs/relax/kgrid_222 1
+%      copying results  1 relax                # save output files
+%    Entering ./runs/relax/kgrid_222 1
+%      analyzing  1 relax                      # get relaxed structure
+%
+%  poll 376  memory 63.80 MB
+%    Entering ./runs/relax/kgrid_444 2         # 4x4x4 mesh relaxation starts
+%      writing input files  2 relax
+%      ...
+%
+%  poll 377  memory 63.80 MB
+%  poll 378  memory 63.80 MB
+%  ...
+%  ...
+%  poll 1539  memory 63.80 MB                  # 4x4x4 mesh relaxation finishes
+%  poll 1540  memory 63.80 MB                  # about an hour later
+%    Entering ./runs/relax/kgrid_444 2
+%      copying results  2 relax
+%      ...
+%
+%  poll 1541  memory 63.80 MB
+%    Entering ./runs/relax/kgrid_666 3         # 6x6x6 mesh relaxation starts
+%      writing input files  3 relax
+%      ...
+%
+%  poll 1542  memory 63.80 MB
+%  poll 1543  memory 63.80 MB
+%  ...
+%  ...
+%  poll 2322  memory 63.80 MB                  # 6x6x6 mesh relaxation finishes
+%  poll 2323  memory 63.80 MB                  # about 40 minutes later
+%    Entering ./runs/relax/kgrid_666 3
+%      copying results  3 relax
+%    Entering ./runs/relax/kgrid_666 3
+%      analyzing  3 relax                      # final structure is obtained
+%
+%Project finished                              # all jobs in the project are done
+%
+%
+%Relaxation results:                           # display relaxation results
+%-------------------
+%    kgrid     starting force   max force    # of cycles
+%  (1, 1, 1)     0.127915       0.127915        35
+%  (2, 2, 2)      0.09733        0.09733        34
+%  (4, 4, 4)     0.054516       0.143809        24
+%  (6, 6, 6)     0.005833       0.036184         5
+%
+%
+%The final structure is:                       # display the final structure
+%
+%[[  5.30732311   5.30835278   5.30189172]
+% [ -2.18761868  -2.18873545  -2.18155455]
+% [  1.57188665   1.57140679   1.57407291]
+% [  5.03674643   5.03702837   0.35598249]
+% [  8.79869042   8.79878175   2.76635262]
+% [  0.35901756   5.0430751    5.04141008]
+% [  2.76298517   8.79651294   8.79649574]
+% [  5.5816783   10.89440134   5.58336983]
+% [  8.2739258   13.61486785   8.27247705]
+% [  5.04404696   0.35961504   5.04266772]
+% [  8.79625105   2.76242822   8.79631982]
+% [ 10.8938261    5.58159787   5.58361909]
+% [ 13.61461938   8.27385039   8.27211794]
+% [  5.58357278   5.58324177  10.89167699]
+% [  8.27223497   8.27251628  13.6138305 ]
+% [ 10.96556729  10.96540859  10.96610725]
+% [ 13.63167079  13.63207444  13.62958692]]
+%
+
+
 \pagebreak
 \section{Simple QMC Calculations} \label{simple_qmc}
 The simplest QMC calculations that can be performed with the Project Suite 
@@ -368,7 +500,7 @@ Reference'' (section \ref{reference}).
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/project_suite/examples/graphene_example
+/your_download_path/project_suite/examples/simple_qmc/graphene_example
 \end{verbatim}
 \end{shaded}
 
@@ -736,7 +868,7 @@ or similar.
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/project_suite/examples/c20_example
+/your_download_path/project_suite/examples/simple_qmc/c20_example
 \end{verbatim}
 \end{shaded}
 

@@ -590,7 +590,7 @@ class Structure(Sobj):
 
     
     def replace(self,identifiers,elem=None,pos=None):
-        indices = locate(identifiers)
+        indices = self.locate(identifiers)
         if isinstance(elem,Structure):
             cell = elem
             elem = cell.elem

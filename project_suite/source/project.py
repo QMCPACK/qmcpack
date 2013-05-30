@@ -1,10 +1,4 @@
 
-#
-#  compare to/integrate with ASE
-#    https://wiki.fysik.dtu.dk/ase/overview.html
-#
-
-
 import os
 
 from generic import obj

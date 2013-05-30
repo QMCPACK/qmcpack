@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.1.11)  24 MAY 2013 09:44
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.1.11)  30 MAY 2013 12:52
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -722,12 +722,6 @@ Package xcolor Warning: Incompatible color definition on input line 13.
 Package xcolor Warning: Incompatible color definition on input line 14.
 
 
-Package xcolor Warning: Incompatible color definition on input line 15.
-
-
-Package xcolor Warning: Incompatible color definition on input line 16.
-
-
 Package xcolor Warning: Incompatible color definition on input line 17.
 
 
@@ -758,14 +752,26 @@ Package xcolor Warning: Incompatible color definition on input line 25.
 Package xcolor Warning: Incompatible color definition on input line 26.
 
 
-Package xcolor Warning: Incompatible color definition on input line 32.
+Package xcolor Warning: Incompatible color definition on input line 27.
 
 
-Package xcolor Warning: Incompatible color definition on input line 37.
+Package xcolor Warning: Incompatible color definition on input line 28.
+
+
+Package xcolor Warning: Incompatible color definition on input line 29.
+
+
+Package xcolor Warning: Incompatible color definition on input line 30.
 
 [2]
 
-Package xcolor Warning: Incompatible color definition on input line 38.
+Package xcolor Warning: Incompatible color definition on input line 36.
+
+
+Package xcolor Warning: Incompatible color definition on input line 41.
+
+
+Package xcolor Warning: Incompatible color definition on input line 42.
 
 ) [3]
 
@@ -848,39 +854,39 @@ Package xcolor Warning: Incompatible color definition on input line 282.
 
 ]
 
-Package xcolor Warning: Incompatible color definition on input line 331.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 333.
+Package xcolor Warning: Incompatible color definition on input line 465.
 
 
-Package xcolor Warning: Incompatible color definition on input line 339.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 340.
+Package xcolor Warning: Incompatible color definition on input line 472.
 
 
-Overfull \hbox (43.77945pt too wide) in paragraph at lines 337--344
+Overfull \hbox (43.77945pt too wide) in paragraph at lines 469--476
 \OT1/cmr/m/n/10.95 PWSCF and QM-C-PACK in-put pa-ram-e-ters, and job de-tails, 
 like how many nodes/cores/threads
  []
 
 
-Package xcolor Warning: Incompatible color definition on input line 363.
+Package xcolor Warning: Incompatible color definition on input line 495.
 
 [7]
 
-Package xcolor Warning: Incompatible color definition on input line 377.
+Package xcolor Warning: Incompatible color definition on input line 509.
 
 \openout4 = `project_suite_user_guide.pyg'.
 
 
-Overfull \hbox (17.0pt too wide) in paragraph at lines 381--383
+Overfull \hbox (17.0pt too wide) in paragraph at lines 513--515
 [][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 381--383
+Underfull \hbox (badness 10000) in paragraph at lines 513--515
 
  []
 
@@ -897,19 +903,19 @@ runsystem(rm project_suite_user_guide.out.pyg)...executed.
 runsystem(rm project_suite_user_guide.pyg)...executed.
 
  [11]
-Underfull \vbox (badness 10000) detected at line 665
+Underfull \vbox (badness 10000) detected at line 797
  []
 
 
-Underfull \vbox (badness 10000) detected at line 665
+Underfull \vbox (badness 10000) detected at line 797
  []
 
 [12]
-Underfull \vbox (badness 10000) detected at line 665
+Underfull \vbox (badness 10000) detected at line 797
  []
 
 
-Underfull \vbox (badness 10000) detected at line 665
+Underfull \vbox (badness 10000) detected at line 797
  []
 
 [13]
@@ -1263,12 +1269,12 @@ Missing character: There is no € in font cmtt10!
 \openout4 = `project_suite_user_guide.pyg'.
 
 
-Overfull \hbox (17.0pt too wide) in paragraph at lines 753--755
+Overfull \hbox (17.0pt too wide) in paragraph at lines 885--887
 [][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 753--755
+Underfull \hbox (badness 10000) in paragraph at lines 885--887
 
  []
 
@@ -1282,15 +1288,15 @@ runsystem(rm project_suite_user_guide.out.pyg)...executed.
 runsystem(rm project_suite_user_guide.pyg)...executed.
 
  [19]
-Overfull \vbox (1.63206pt too high) detected at line 1021
+Overfull \vbox (1.63206pt too high) detected at line 1153
  []
 
 [20]
-Underfull \vbox (badness 10000) detected at line 1021
+Underfull \vbox (badness 10000) detected at line 1153
  []
 
 
-Underfull \vbox (badness 10000) detected at line 1021
+Underfull \vbox (badness 10000) detected at line 1153
  []
 
 [21]
@@ -1510,25 +1516,82 @@ Missing character: There is no € in font cmtt10!
  [22]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\\' on input line 1062.
+(hyperref)                removing `\\' on input line 1194.
+
+\openout4 = `project_suite_user_guide.pyg'.
+
+
+Overfull \hbox (238.67987pt too wide) in paragraph at lines 1200--1209
+\OT1/cmr/m/n/10.95 project script, use the fol-low-ing im-port state-ment: []
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1200--1209
+
+ []
+
+runsystem(pygmentize -l python -f latex -F tokenmerge             -P "verboptio
+ns= " -o project_suite_user_guide.out.pyg project_suite_user_guide.pyg)...execu
+ted.
+
+(./project_suite_user_guide.out.pyg)
+runsystem(rm project_suite_user_guide.out.pyg)...executed.
+
+runsystem(rm project_suite_user_guide.pyg)...executed.
+
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <12> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 1213.
+
+\openout4 = `project_suite_user_guide.pyg'.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1214--1220
+
+ []
+
+runsystem(pygmentize -l python -f latex -F tokenmerge             -P "verboptio
+ns= " -o project_suite_user_guide.out.pyg project_suite_user_guide.pyg)...execu
+ted.
+
+(./project_suite_user_guide.out.pyg)
+runsystem(rm project_suite_user_guide.out.pyg)...executed.
+
+runsystem(rm project_suite_user_guide.pyg)...executed.
+
+\openout4 = `project_suite_user_guide.pyg'.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1229--1236
+
+ []
 
 [23
 
 ]
+runsystem(pygmentize -l python -f latex -F tokenmerge             -P "verboptio
+ns= " -o project_suite_user_guide.out.pyg project_suite_user_guide.pyg)...execu
+ted.
 
-Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\\' on input line 1171.
+ (./project_suite_user_guide.out.pyg)
+runsystem(rm project_suite_user_guide.out.pyg)...executed.
+
+runsystem(rm project_suite_user_guide.pyg)...executed.
 
 
-Package xcolor Warning: Incompatible color definition on input line 1178.
-
-[24
-
-]
 Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
-[25]
+[24]
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `\\' on input line 1352.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1359.
+
+[25
+
+]
 Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
@@ -1537,7 +1600,11 @@ Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
 [27]
-Overfull \hbox (1.56487pt too wide) in paragraph at lines 1401--1406
+Overfull \vbox (11.56252pt too high) has occurred while \output is active []
+
+
+[28]
+Overfull \hbox (1.56487pt too wide) in paragraph at lines 1582--1587
 \OT1/cmr/m/n/10.95 ter of the \OT1/cmtt/m/n/10.95 dmc \OT1/cmr/m/n/10.95 con-ve
 -nience func-tion (which is of-ten used in con-juc-tion with the \OT1/cmtt/m/n/
 10.95 standard[]qmc\OT1/cmr/m/n/10.95 ,
@@ -1547,136 +1614,136 @@ Overfull \hbox (1.56487pt too wide) in paragraph at lines 1401--1406
 Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
-[28]
-Overfull \vbox (11.56252pt too high) has occurred while \output is active []
-
-
 [29]
-
-Package xcolor Warning: Incompatible color definition on input line 1496.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1502.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1504.
-
-
 Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
 [30]
-Overfull \vbox (11.56252pt too high) has occurred while \output is active []
+
+Package xcolor Warning: Incompatible color definition on input line 1677.
 
 
-[31]
-
-Package xcolor Warning: Incompatible color definition on input line 1563.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1566.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1568.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1569.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1571.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1579.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1578--1580
-
- []
-
-
-Package xcolor Warning: Incompatible color definition on input line 1588.
-
-[32
-
-]
-
-Package xcolor Warning: Incompatible color definition on input line 1590.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1591.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1605.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1606.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1607.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1622.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1623.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1624.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1625.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1637.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1638.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1639.
-
-[33]
-
-Package xcolor Warning: Incompatible color definition on input line 1656.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1657.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1658.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1659.
-
-
-Overfull \hbox (37.6332pt too wide) in paragraph at lines 1654--1661
- [] 
- []
-
-
-Package xcolor Warning: Incompatible color definition on input line 1679.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1680.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1681.
-
-
-Package xcolor Warning: Incompatible color definition on input line 1682.
+Package xcolor Warning: Incompatible color definition on input line 1683.
 
 
 Package xcolor Warning: Incompatible color definition on input line 1685.
 
 
-Package xcolor Warning: Incompatible color definition on input line 1686.
+Overfull \vbox (11.56252pt too high) has occurred while \output is active []
 
 
-Overfull \hbox (33.53888pt too wide) in paragraph at lines 1676--1688
+[31]
+Overfull \vbox (11.56252pt too high) has occurred while \output is active []
+
+
+[32]
+
+Package xcolor Warning: Incompatible color definition on input line 1744.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1747.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1749.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1750.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1752.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1760.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1759--1761
+
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 1769.
+
+[33
+
+]
+
+Package xcolor Warning: Incompatible color definition on input line 1771.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1772.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1786.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1787.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1788.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1803.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1804.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1805.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1806.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1818.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1819.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1820.
+
+[34]
+
+Package xcolor Warning: Incompatible color definition on input line 1837.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1838.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1839.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1840.
+
+
+Overfull \hbox (37.6332pt too wide) in paragraph at lines 1835--1842
  [] 
  []
 
-[34] (./project_suite_user_guide.ind
+
+Package xcolor Warning: Incompatible color definition on input line 1860.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1861.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1862.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1863.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1866.
+
+
+Package xcolor Warning: Incompatible color definition on input line 1867.
+
+
+Overfull \hbox (33.53888pt too wide) in paragraph at lines 1857--1869
+ [] 
+ []
+
+[35] (./project_suite_user_guide.ind
 
 Package xcolor Warning: Incompatible color definition on input line 3.
 
@@ -1698,7 +1765,7 @@ Package xcolor Warning: Incompatible color definition on input line 20.
 
 Package xcolor Warning: Incompatible color definition on input line 21.
 
-[35
+[36
 
 
 
@@ -1709,11 +1776,11 @@ Package xcolor Warning: Incompatible color definition on input line 21.
 
  (./project_suite_user_guide.aux) ) 
 Here is how much of TeX's memory you used:
- 9442 strings out of 495061
- 130167 string characters out of 1182621
+ 9462 strings out of 495061
+ 130530 string characters out of 1182621
  272431 words of memory out of 3000000
- 12407 multiletter control sequences out of 15000+50000
- 11125 words of font info for 40 fonts, out of 3000000 for 9000
+ 12414 multiletter control sequences out of 15000+50000
+ 12133 words of font info for 44 fonts, out of 3000000 for 9000
  28 hyphenation exceptions out of 8191
  43i,18n,38p,254b,480s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/share/texmf-texlive/fonts/type1/public
@@ -1729,10 +1796,11 @@ usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsl10.pfb></usr/share/t
 exmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texliv
 e/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texmf-texlive/fonts/type
 1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf-texlive/fonts/type1/public/am
-sfonts/cm/cmtt10.pfb>
-Output written on project_suite_user_guide.pdf (38 pages, 321693 bytes).
+sfonts/cm/cmtt10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/c
+mtt12.pfb>
+Output written on project_suite_user_guide.pdf (39 pages, 330098 bytes).
 PDF statistics:
- 477 PDF objects out of 1000 (max. 8388607)
- 91 named destinations out of 1000 (max. 500000)
- 217 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 497 PDF objects out of 1000 (max. 8388607)
+ 96 named destinations out of 1000 (max. 500000)
+ 233 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -63,6 +63,7 @@ class Pwscf(Simulation):
         return calculating_result
     #end def check_result
 
+
     def get_result(self,result_name,sim):
         result = obj()        
         input = self.input
@@ -86,9 +87,8 @@ class Pwscf(Simulation):
             pa = self.load_analyzer_image()
             structs = pa.structures
             pos,atoms = structs[len(structs)-1].tuple('positions','atoms')
-            structure = self.system.structure
-            structure.change_units('B')
-            pos   = structure.scale*array(pos)
+            scale = self.input.system['celldm(1)']
+            pos   = scale*array(pos)
             atoms = array(atoms)
             result.structure = obj(
                 positions = pos,

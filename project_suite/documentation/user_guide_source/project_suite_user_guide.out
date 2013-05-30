@@ -8,6 +8,8 @@
 \BOOKMARK [0][-]{chapter.4}{Complete Examples}{}
 \BOOKMARK [1][-]{section.4.1}{Simple QMC Calculations}{chapter.4}
 \BOOKMARK [0][-]{chapter.5}{Project Suite User Reference}{}
+\BOOKMARK [1][-]{section.5.1}{Reading what you wrote}{chapter.5}
+\BOOKMARK [1][-]{section.5.2}{Project Suite settings: global state and user-specific information}{chapter.5}
 \BOOKMARK [0][-]{chapter.6}{QMC Practice in a Nutshell}{}
 \BOOKMARK [1][-]{section.6.1}{VMC and DMC in the abstract}{chapter.6}
 \BOOKMARK [1][-]{section.6.2}{From expectation values to random walks}{chapter.6}
@@ -24,4 +26,4 @@
 \BOOKMARK [1][-]{section.7.2}{Helpful Links for Installing Electronic Structure Codes}{chapter.7}
 \BOOKMARK [1][-]{section.7.3}{Brushing Up On Python}{chapter.7}
 \BOOKMARK [1][-]{section.7.4}{Quantum Monte Carlo: Theory and Practice}{chapter.7}
-\BOOKMARK [0][-]{section*.13}{Index}{}
+\BOOKMARK [0][-]{section*.15}{Index}{}

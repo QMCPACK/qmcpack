@@ -521,7 +521,8 @@ class Machine(Pobj):
 
 
     allowed_user_info = set(['account','local_directory','app_directory','app_directories'])
-    def incorporate_user_info(self,info):
+    def incorporate_user_info(self,infoin):
+        info = obj(**infoin)
         vars = set(info.keys())
         invalid = vars-self.allowed_user_info
         if len(invalid)>0:
