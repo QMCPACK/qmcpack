@@ -1,10 +1,26 @@
 #GNU compilers
 IF(CMAKE_COMPILER_IS_GNUCXX) 
+
+  exec_program(${CMAKE_C_COMPILER} ARGS "-dumpversion" OUTPUT_VARIABLE _gcc_version_info)
+  string(REGEX REPLACE "^([0-9]+).*$"                   "\\1" GCC_MAJOR ${_gcc_version_info})
+  string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$"          "\\1" GCC_MINOR ${_gcc_version_info})
+  string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*$" "\\1" GCC_PATCH ${_gcc_version_info})
+
+
+  if(${GCC_MAJOR} LESS 4)
+    MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
+  endif()
+  if(${GCC_MINOR} LESS 4)
+    MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
+  endif()
+
+  SET(ENABLE_OPENMP 1)
+
   ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
 #  SET(CMAKE_CXX_FLAGS "-O3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 #  SET(CMAKE_CXX_FLAGS "-g -O3 -ftemplate-depth-60 -Drestrict=__restrict__ -funroll-all-loops   -finline-limit=1000 -Wno-deprecated ")
   set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
-  SET(CMAKE_CXX_FLAGS "${GNU_FLAGS} -ftemplate-depth=60")
+  SET(CMAKE_CXX_FLAGS "${GNU_FLAGS}") # -ftemplate-depth=60")
   SET(CMAKE_C_FLAGS "${GNU_FLAGS} -std=c99")
 
   IF(HAVE_POSIX_MEMALIGN)
@@ -63,16 +79,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(F77 g77)
     SET(F77FLAGS  -funroll-loops -O3)
   ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  
-  #  INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
-  #IF(QMC_OMP)
-    SET(CMAKE_TRY_OPENMP_CXX_FLAGS "-fopenmp")
-    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_OPENMP_CXX_FLAGS} GNU_OPENMP_FLAGS)
-    IF(GNU_OPENMP_FLAGS)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_TRY_OPENMP_CXX_FLAGS}")
-      SET(ENABLE_OPENMP 1)
-    ENDIF(GNU_OPENMP_FLAGS)
-    #ENDIF(QMC_OMP)
 
   IF(QMC_BUILD_STATIC)
     SET(CMAKE_CXX_LINK_FLAGS " -static")
