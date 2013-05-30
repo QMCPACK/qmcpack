@@ -564,7 +564,7 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
     if (fcup=="true")
       fcup="yes";
     // if (fcup=="yes") app_log()<<" fixing cusp conditions"<<endl;
-    real_type Atemp,Btemp, Ctemp, Dtemp;
+    real_type Atemp=A,Btemp=B, Ctemp=C, Dtemp=D;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     bool renewed=false;
@@ -575,31 +575,33 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
       {
         std::string id_in("0");
         std::string p_name("B");
+        std::string doopt("yes");
         OhmmsAttributeSet rAttrib;
         rAttrib.add(id_in, "id");
         rAttrib.add(p_name, "name");
+        rAttrib.add(doopt, "optimize");
         rAttrib.put(tcur);
         if(p_name=="A")
         {
-          ID_A = id_in;
+          ID_A = (doopt=="yes")? id_in:"0";
           putContent(Atemp,tcur);
           renewed=true;
         }
         else if(p_name == "B")
         {
-          ID_B = id_in;
+          ID_B = (doopt=="yes")? id_in:"0";
           putContent(Btemp,tcur);
           renewed=true;
         }
         else if(p_name == "C")
         {
-          ID_C = id_in;
+          ID_C = (doopt=="yes")? id_in:"0";
           putContent(Ctemp,tcur);
           renewed=true;
         }
         else if(p_name == "D")
         {
-          ID_D = id_in;
+          ID_D = (doopt=="yes")? id_in:"0";
           putContent(Dtemp,tcur);
           renewed=true;
         }

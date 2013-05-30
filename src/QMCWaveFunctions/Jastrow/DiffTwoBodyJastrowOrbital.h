@@ -41,9 +41,9 @@ class DiffTwoBodyJastrowOrbital: public DiffOrbitalBase
   const DistanceTableData* d_table;
   ///variables handled by this orbital
   opt_variables_type myVars;
-  ///container for the Jastrow functions  for all tghe pairs
+  ///container for the Jastrow functions  for all the pairs
   vector<FT*> F;
-
+  ///offset for the optimizable variables
   vector<pair<int,int> > OffSet;
   Vector<RealType> dLogPsi;
   vector<GradVectorType*> gradLogPsi;
@@ -134,8 +134,11 @@ public:
       int varoffset=myVars.Index[0];
       for (int i=0; i<F.size(); ++i)
       {
-        OffSet[i].first=F[i]->myVars.Index.front()-varoffset;
-        OffSet[i].second=F[i]->myVars.Index.size()+OffSet[i].first;
+        if(F[i] && F[i]->myVars.Index.size())
+        {
+          OffSet[i].first=F[i]->myVars.Index.front()-varoffset;
+          OffSet[i].second=F[i]->myVars.Index.size()+OffSet[i].first;
+        }
       }
     }
   }
