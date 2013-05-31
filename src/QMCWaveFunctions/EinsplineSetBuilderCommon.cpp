@@ -354,7 +354,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     PosType superTwist = dot (S, primTwist);
     PosType kp = PrimCell.k_cart(primTwist);
     PosType ks = SuperCell.k_cart(superTwist);
-    if (dot(ks-kp, ks-kp) > 1.0e-12)
+    if (dot(ks-kp, ks-kp) > 1.0e-6)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
@@ -364,7 +364,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     for (int j=0; j<superFracs.size(); j++)
     {
       PosType diff = frac - superFracs[j];
-      if (dot(diff,diff)<1.0e-12)
+      if (dot(diff,diff)<1.0e-6)
       {
         found = true;
         superIndex.push_back(j);
@@ -435,7 +435,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
   for (int dim=0; dim<OHMMS_DIM; dim++)
   {
     double t = 2.0*superFracs[TwistNum][dim];
-    if (std::abs(t - round(t)) > MatchingTol)
+    if (std::abs(t - round(t)) > MatchingTol*100)
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
