@@ -196,8 +196,8 @@ inline TinyVector<T,3> upper_bound(const TinyVector<T,3>& a, const TinyVector<T,
 
 void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
 {
-  TinyVector<double,3> start(1.0);
-  TinyVector<double,3> end(0.0);
+  TinyVector<double,OHMMS_DIM> start(1.0);
+  TinyVector<double,OHMMS_DIM> end(0.0);
 
   ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
   Ru.setUnit(PosUnit::LatticeUnit);
@@ -209,11 +209,11 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     end=upper_bound(Ru[iat],end);
   }
 
-  TinyVector<double,3> shift;
-  Tensor<double,3> newbox(ions->Lattice.R);
+  TinyVector<double,OHMMS_DIM> shift;
+  Tensor<double,OHMMS_DIM> newbox(ions->Lattice.R);
 
   double buffer=2.0; //buffer 2 bohr
-  for(int idim=0; idim<3; ++idim)
+  for(int idim=0; idim<OHMMS_DIM; ++idim)
   {
     //if(ions->Lattice.BoxBConds[idim]) 
     //{
