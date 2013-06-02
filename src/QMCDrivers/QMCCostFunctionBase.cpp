@@ -31,7 +31,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   MPIObjectBase(0),
   W(w),H(h),Psi(psi),  Write2OneXml(true),
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),
-  w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0),
+  w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
   SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
   StoreDerivInfo(true),DerivStorageLevel(-1)
