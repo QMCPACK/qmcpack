@@ -390,6 +390,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
     nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
+    if(nBlocks==1) nBlocks=nSamplesPerThread;
     if(nTargetSamples)
     {
       int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
@@ -421,7 +422,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     int nw  = W.getActiveWalkers();
     int ndiff = 0;
     if(nw)
-      // walkers exist
     {
       // nTargetWalkers == 0, if it is not set by the input file
       ndiff = (nTargetWalkers)? nTargetWalkers-nw: 0;
