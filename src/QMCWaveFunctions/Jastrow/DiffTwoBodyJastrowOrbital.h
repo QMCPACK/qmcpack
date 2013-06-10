@@ -119,7 +119,9 @@ public:
     }
     myVars.getIndex(active);
     NumVars=myVars.size();
+
     //myVars.print(cout);
+
     if (NumVars && dLogPsi.size()==0)
     {
       dLogPsi.resize(NumVars);
@@ -139,6 +141,10 @@ public:
           OffSet[i].first=F[i]->myVars.Index.front()-varoffset;
           OffSet[i].second=F[i]->myVars.Index.size()+OffSet[i].first;
         }
+        else
+        {
+          OffSet[i].first=OffSet[i].second=-1;
+        }
       }
     }
   }
@@ -148,6 +154,7 @@ public:
                            vector<RealType>& dlogpsi,
                            vector<RealType>& dhpsioverpsi)
   {
+    if(myVars.size()==0) return;
     bool recalculate(false);
     vector<bool> rcsingles(myVars.size(),false);
     for (int k=0; k<myVars.size(); ++k)
@@ -172,15 +179,14 @@ public:
         for (int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn)
         {
           int ptype=d_table->PairID[nn];
+          if(OffSet[ptype].first<0) continue; // nothing to optimize
           bool recalcFunc(false);
           for (int rcs=OffSet[ptype].first; rcs<OffSet[ptype].second; rcs++)
-            if (rcsingles[rcs]==true)
-              recalcFunc=true;
+            if (rcsingles[rcs]==true) recalcFunc=true;
           if (recalcFunc)
           {
             std::fill(derivs.begin(),derivs.end(),0.0);
-            if (!F[ptype]->evaluateDerivatives(d_table->r(nn),derivs))
-              continue;
+            if (!F[ptype]->evaluateDerivatives(d_table->r(nn),derivs)) continue;
             int j = d_table->J[nn];
             RealType rinv(d_table->rinv(nn));
             PosType dr(d_table->dr(nn));

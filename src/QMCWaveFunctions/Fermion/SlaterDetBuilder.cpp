@@ -104,51 +104,49 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       }
       myBasisSetFactory->createBasisSet(cur,curRoot);
     }
-    else
-      if ( cname == sposet_tag )
+    else if ( cname == sposet_tag )
+    {
+      app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
+      string spo_name;
+      OhmmsAttributeSet spoAttrib;
+      spoAttrib.add (spo_name, "name");
+      spoAttrib.put(cur);
+      app_log() << "spo_name = " << spo_name << endl;
+      if (myBasisSetFactory == 0)
       {
-        app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
-        string spo_name;
-        OhmmsAttributeSet spoAttrib;
-        spoAttrib.add (spo_name, "name");
-        spoAttrib.put(cur);
-        app_log() << "spo_name = " << spo_name << endl;
-        if (myBasisSetFactory == 0)
-        {
-          myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
-          myBasisSetFactory->setReportLevel(ReportLevel);
-        }
-//     myBasisSetFactory->createBasisSet(cur,cur);
-        SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
-        spo->put(cur, spomap);
-        if (spomap.find(spo_name) != spomap.end())
-        {
-          app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
-          abort();
-        }
-        spomap[spo_name] = spo;
-        assert(spomap.find(spo_name) != spomap.end());
-        //	slaterdet_0->add(spo,spo_name);
+        myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+        myBasisSetFactory->setReportLevel(ReportLevel);
       }
-      else
-        if(cname == backflow_tag)
-        {
-          app_log() <<"Creating Backflow transformation in SlaterDetBuilder::put(xmlNodePtr cur).\n";
-          // to simplify the logic inside DiracDeterminantWithBackflow,
-          // I'm requiring that only a single <backflow> block appears
-          // in the xml file
-          if(BFTrans != 0)
-          {
-            APP_ABORT("Only a single backflow block is allowed in the xml. Please collect all transformations into a single block. \n");
-          }
-          UseBackflow=true;
-          // creating later due to problems with ParticleSets
-          //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-          BFTrans = NULL;
-          BFnode=cur;
-// read xml later, in case some ParticleSets are read from hdf5 file.
-          //BFTrans->put(cur);
-        }
+      //     myBasisSetFactory->createBasisSet(cur,cur);
+      SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
+      spo->put(cur, spomap);
+      if (spomap.find(spo_name) != spomap.end())
+      {
+        app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
+        abort();
+      }
+      spomap[spo_name] = spo;
+      assert(spomap.find(spo_name) != spomap.end());
+      //	slaterdet_0->add(spo,spo_name);
+    }
+    else if(cname == backflow_tag)
+    {
+      app_log() <<"Creating Backflow transformation in SlaterDetBuilder::put(xmlNodePtr cur).\n";
+      // to simplify the logic inside DiracDeterminantWithBackflow,
+      // I'm requiring that only a single <backflow> block appears
+      // in the xml file
+      if(BFTrans != 0)
+      {
+        APP_ABORT("Only a single backflow block is allowed in the xml. Please collect all transformations into a single block. \n");
+      }
+      UseBackflow=true;
+      // creating later due to problems with ParticleSets
+      //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
+      BFTrans = NULL;
+      BFnode=cur;
+      // read xml later, in case some ParticleSets are read from hdf5 file.
+      //BFTrans->put(cur);
+    }
     cur = cur->next;
   }
   //missing basiset, e.g. einspline
@@ -179,7 +177,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::map<string,SPOSetBasePtr>::iterator iter;
       for (iter=spomap.begin(); iter!=spomap.end(); iter++)
       {
-        cerr << "Adding SPO \"" << iter->first << "\" to slaterdet_0.\n";
         slaterdet_0->add(iter->second,iter->first);
       }
       int spin_group = 0;
@@ -195,90 +192,89 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         tcur = tcur->next;
       }
     }
-    else
-      if(cname == multisd_tag)
+    else if(cname == multisd_tag)
+    {
+      multiDet=true;
+      if(slaterdet_0)
       {
-        multiDet=true;
-        if(slaterdet_0)
+        APP_ABORT("can't combine slaterdet with multideterminant.");
+      }
+      if(multislaterdet_0 || multislaterdetfast_0)
+      {
+        APP_ABORT("multideterminant is already instantiated.");
+      }
+      string spo_alpha;
+      string spo_beta;
+      string fastAlg("yes");
+      OhmmsAttributeSet spoAttrib;
+      spoAttrib.add (spo_alpha, "spo_up");
+      spoAttrib.add (spo_beta, "spo_dn");
+      spoAttrib.add (fastAlg, "Fast");
+      spoAttrib.put(cur);
+      if(spo_alpha == spo_beta)
+      {
+        app_error() << "In SlaterDetBuilder: In MultiSlaterDeterminant construction, SPO sets must be different. spo_up: " <<spo_alpha <<"  spo_dn: " <<spo_beta <<"\n";
+        abort();
+      }
+      if (spomap.find(spo_alpha) == spomap.end())
+      {
+        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha << "\" is not found. Expected for MultiSlaterDeterminant.\n";
+        abort();
+      }
+      if (spomap.find(spo_beta) == spomap.end())
+      {
+        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta << "\" is not found. Expected for MultiSlaterDeterminant.\n";
+        abort();
+      }
+      FastMSD = (fastAlg=="yes");
+      if(FastMSD)
+      {
+        if(UseBackflow)
         {
-          APP_ABORT("can't combine slaterdet with multideterminant.");
+          APP_ABORT("Backflow is not implemented with multi determinants.");
         }
-        if(multislaterdet_0 || multislaterdetfast_0)
+        app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
+        MultiDiracDeterminantBase* up_det=0;
+        MultiDiracDeterminantBase* dn_det=0;
+        app_log() <<"Creating base determinant (up) for MSD expansion. \n";
+        up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
+        app_log() <<"Creating base determinant (down) for MSD expansion. \n";
+        dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
+        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
+        //          up_det->usingBF = UseBackflow;
+        //          dn_det->usingBF = UseBackflow;
+        //          multislaterdetfast_0->usingBF = UseBackflow;
+        success = createMSDFast(multislaterdetfast_0,cur);
+        // debug, erase later
+        //          SPOSetProxyForMSD* spo_up;
+        //          SPOSetProxyForMSD* spo_dn;
+        //          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
+        //          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
+        //
+        //          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
+        //          success = createMSD(multislaterdetfast_0->msd,cur);
+      }
+      else
+      {
+        SPOSetProxyForMSD* spo_up;
+        SPOSetProxyForMSD* spo_dn;
+        spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
+        spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
+        if(UseBackflow)
         {
-          APP_ABORT("multideterminant is already instantiated.");
-        }
-        string spo_alpha;
-        string spo_beta;
-        string fastAlg("yes");
-        OhmmsAttributeSet spoAttrib;
-        spoAttrib.add (spo_alpha, "spo_up");
-        spoAttrib.add (spo_beta, "spo_dn");
-        spoAttrib.add (fastAlg, "Fast");
-        spoAttrib.put(cur);
-        if(spo_alpha == spo_beta)
-        {
-          app_error() << "In SlaterDetBuilder: In MultiSlaterDeterminant construction, SPO sets must be different. spo_up: " <<spo_alpha <<"  spo_dn: " <<spo_beta <<"\n";
-          abort();
-        }
-        if (spomap.find(spo_alpha) == spomap.end())
-        {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-          abort();
-        }
-        if (spomap.find(spo_beta) == spomap.end())
-        {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-          abort();
-        }
-        FastMSD = (fastAlg=="yes");
-        if(FastMSD)
-        {
-          if(UseBackflow)
-          {
-            APP_ABORT("Backflow is not implemented with multi determinants.");
-          }
-          app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
-          MultiDiracDeterminantBase* up_det=0;
-          MultiDiracDeterminantBase* dn_det=0;
-          app_log() <<"Creating base determinant (up) for MSD expansion. \n";
-          up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
-          app_log() <<"Creating base determinant (down) for MSD expansion. \n";
-          dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
-          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-//          up_det->usingBF = UseBackflow;
-//          dn_det->usingBF = UseBackflow;
-//          multislaterdetfast_0->usingBF = UseBackflow;
-          success = createMSDFast(multislaterdetfast_0,cur);
-// debug, erase later
-//          SPOSetProxyForMSD* spo_up;
-//          SPOSetProxyForMSD* spo_dn;
-//          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
-//          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
-//
-//          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-//          success = createMSD(multislaterdetfast_0->msd,cur);
+          app_log() <<"Multi-Slater Determinant expansion with Backflow. \n";
+          app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
+          multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl,spo_up,spo_dn,BFTrans);
+          success = createMSD(multislaterdet_0,cur);
         }
         else
         {
-          SPOSetProxyForMSD* spo_up;
-          SPOSetProxyForMSD* spo_dn;
-          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
-          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
-          if(UseBackflow)
-          {
-            app_log() <<"Multi-Slater Determinant expansion with Backflow. \n";
-            app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
-            multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl,spo_up,spo_dn,BFTrans);
-            success = createMSD(multislaterdet_0,cur);
-          }
-          else
-          {
-            app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
-            multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-            success = createMSD(multislaterdet_0,cur);
-          }
+          app_log() <<"Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
+          multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
+          success = createMSD(multislaterdet_0,cur);
         }
       }
+    }
     cur = cur->next;
   }
   if (!multiDet && !slaterdet_0)
@@ -339,8 +335,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 }
 
 
+/** process determiment element
+ */
 bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 {
+  int spin_in=spin_group;
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
   string basisName("invalid");
   string detname("0"), refname("0");
@@ -361,7 +360,10 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   aAttrib.add(s_smallnumber,"smallnumber");
   aAttrib.add(s_smallnumber,"eps");
   aAttrib.add(rntype,"primary");
+  aAttrib.add(spin_group,"group");
   aAttrib.put(cur);
+
+  app_log() << "  Creating a determinant for " << spin_group << " group." << endl;
   map<string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
   map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(detname));
   SPOSetBasePtr psi;

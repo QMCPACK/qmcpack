@@ -236,6 +236,7 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
 
   ///coefficients
   real_type A, B, C, C2;
+  bool Opt_A, Opt_B, Opt_C;
   ///id for A
   std::string ID_A;
   ///id for B
@@ -319,15 +320,30 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
     real_type u2 = u*u;
     real_type u3 = u*u*u;
     real_type u4 = u*u*u*u;
-    derivs[0][0]= r*u;
-    derivs[1][0]= -r*r*(A+C*r)*u2;
-    derivs[2][0]= r*r*u;
-    derivs[0][1]= u2;
-    derivs[1][1]= -r*(2.0*A+C*r*(3.0+B*r))*u3;
-    derivs[2][1]= r*(2.0+B*r)*u2;
-    derivs[0][2]= -2.0*B*u3;
-    derivs[1][2]= -2.0*u4*(A-2.0*A*B*r+3.0*C*r);
-    derivs[2][2]= 2.0*u3;
+    int i=0;
+    if(Opt_A)
+    {
+      derivs[i][0]= r*u;
+      derivs[i][1]= u2;
+      derivs[i][2]= -2.0*B*u3;
+      i++;
+    }
+
+    if(Opt_B)
+    {
+      derivs[i][0]= -r*r*(A+C*r)*u2;
+      derivs[i][1]= -r*(2.0*A+C*r*(3.0+B*r))*u3;
+      derivs[i][2]= -2.0*u4*(A-2.0*A*B*r+3.0*C*r);
+      i++;
+    }
+
+    if(Opt_C)
+    {
+      derivs[i][0]= r*r*u;
+      derivs[i][1]= r*(2.0+B*r)*u2;
+      derivs[i][2]= 2.0*u3;
+      i++;
+    }
     return true;
   }
 
@@ -351,27 +367,32 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
       std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
+        std::string doopt("yes");
         std::string id_in("0");
         std::string p_name("B");
         OhmmsAttributeSet rAttrib;
         rAttrib.add(id_in, "id");
         rAttrib.add(p_name, "name");
+        rAttrib.add(doopt, "optimize");
         rAttrib.put(tcur);
         if(p_name=="A")
         {
           ID_A=id_in;
+          Opt_A=(doopt != "no");
           putContent(Atemp,tcur);
           renewed=true;
         }
         else if(p_name == "B")
         {
           ID_B = id_in;
+          Opt_B=(doopt != "no");
           putContent(Btemp,tcur);
           renewed=true;
         }
         else if(p_name == "C")
         {
           ID_C = id_in;
+          Opt_C=(doopt != "no");
           putContent(Ctemp,tcur);
           renewed=true;
         }
@@ -386,11 +407,11 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
       reset();
       //these are always active
       myVars.clear();
-      if(ID_A[0]!='0')
+      if(Opt_A)
         myVars.insert(ID_A,A,true,optimize::LOGLINEAR_P);
-      if(ID_B[0]!='0')
+      if(Opt_B)
         myVars.insert(ID_B,B,true,optimize::OTHER_P);
-      if(ID_C[0]!='0')
+      if(Opt_C)
         myVars.insert(ID_C,C,true,optimize::LOGLINEAR_P);
     }
     //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
@@ -444,6 +465,7 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
 
   ///coefficients
   real_type A, B, C, D;
+  bool Opt_A, Opt_B, Opt_C, Opt_D;
   ///id for A
   std::string ID_A;
   ///id for B
@@ -455,7 +477,8 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
 
   ///constructor
   PadeTwo2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0, real_type d=1.0)
-    : A(a),B(b),C(c),D(d),ID_A("0"),ID_B("0"),ID_C("0"),ID_D("0")
+    : A(a),B(b),C(c),D(d), Opt_A(false),Opt_B(false),Opt_C(false),Opt_D(false),
+    ID_A("0"),ID_B("0"),ID_C("0"),ID_D("0")
   {
     reset();
   }
@@ -479,11 +502,6 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
     return (A*r+br*r)/(1.0+C*C*r+dr*dr);
   }
 
-  /** evaluate the value at r
-   * @param r the distance
-   @param dudr return value
-   @param d2udr2 return value
-   */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
   {
     real_type ar(A*r);
@@ -534,15 +552,30 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
     real_type bttm2(bttm*bttm);
     real_type bttm3(bttm*bttm2);
     real_type bttm4(bttm2*bttm2);
-    derivs[0][0]= r2*bttm;
-    derivs[1][0]= -2.0*cr*tp*bttm2;
-    derivs[2][0]= -2.0*dr2*tp*bttm2;
-    derivs[0][1]= r*(2.0+c2r)*bttm2;
-    derivs[1][1]= -2*cr*(A*(2.0 - 2.0*d2r2) + br*(3.0 + c2r - d2r2))*bttm3;
-    derivs[2][1]= -2.0*dr2*(2.0*br*(2.0 + c2r) + A*(3.0 + c2r - d2r2))*bttm3;
-    derivs[0][2]= (2.0 - 2.0*d2r2*(3.0+c2r))*bttm3;
-    derivs[1][2]= 4.0*C*(A*(-1.0 + 2.0*c2r + 8.0*d2r2 - 3.0*d4r4) + br*(-3.0 - d4r4 + 2.0*d2r2 *(4.0 + c2r)))*bttm4;
-    derivs[2][2]= -4.0*dr*(br*(6.0 + 4.0* c2r + c2*c2r2 - 6.0*d2r2 - 2.0*c2r*d2r2) + A*(3.0 + d4r4 - 2.0 *d2r2 *(4.0 + c2r))) *bttm4;
+    int i=0;
+    if(Opt_A)
+    {
+      derivs[i][0]= r2*bttm;
+      derivs[i][1]= r*(2.0+c2r)*bttm2;
+      derivs[i][2]= (2.0 - 2.0*d2r2*(3.0+c2r))*bttm3;
+      i++;
+    }
+
+    if(Opt_B)
+    {
+      derivs[i][0]= -2.0*cr*tp*bttm2;
+      derivs[i][1]= -2*cr*(A*(2.0 - 2.0*d2r2) + br*(3.0 + c2r - d2r2))*bttm3;
+      derivs[i][2]= 4.0*C*(A*(-1.0 + 2.0*c2r + 8.0*d2r2 - 3.0*d4r4) + br*(-3.0 - d4r4 + 2.0*d2r2 *(4.0 + c2r)))*bttm4;
+      i++;
+    }
+
+    if(Opt_C)
+    {
+      derivs[i][0]= -2.0*dr2*tp*bttm2;
+      derivs[i][1]= -2.0*dr2*(2.0*br*(2.0 + c2r) + A*(3.0 + c2r - d2r2))*bttm3;
+      derivs[i][2]= -4.0*dr*(br*(6.0 + 4.0* c2r + c2*c2r2 - 6.0*d2r2 - 2.0*c2r*d2r2) + A*(3.0 + d4r4 - 2.0 *d2r2 *(4.0 + c2r))) *bttm4;
+      i++;
+    }
     return true;
   }
 
@@ -583,25 +616,29 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
         rAttrib.put(tcur);
         if(p_name=="A")
         {
-          ID_A = (doopt=="yes")? id_in:"0";
+          ID_A=id_in;
+          Opt_A=(doopt!="no");
           putContent(Atemp,tcur);
           renewed=true;
         }
         else if(p_name == "B")
         {
-          ID_B = (doopt=="yes")? id_in:"0";
+          ID_B=id_in;
+          Opt_B=(doopt!="no");
           putContent(Btemp,tcur);
           renewed=true;
         }
         else if(p_name == "C")
         {
-          ID_C = (doopt=="yes")? id_in:"0";
+          ID_C=id_in;
+          Opt_C=(doopt!="no");
           putContent(Ctemp,tcur);
           renewed=true;
         }
         else if(p_name == "D")
         {
-          ID_D = (doopt=="yes")? id_in:"0";
+          ID_D=id_in;
+          Opt_D=(doopt!="no");
           putContent(Dtemp,tcur);
           renewed=true;
         }
@@ -617,13 +654,13 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
       reset();
       //these are always active
       myVars.clear();
-      if(ID_A[0]!='0')
+      if(Opt_A)
         myVars.insert(ID_A,B,true,optimize::LOGLINEAR_P);
-      if(ID_B[0]!='0')
+      if(Opt_B)
         myVars.insert(ID_B,B,true,optimize::LOGLINEAR_P);
-      if(ID_C[0]!='0')
+      if(Opt_C)
         myVars.insert(ID_C,C,true,optimize::OTHER_P);
-      if(ID_D[0]!='0')
+      if(Opt_D)
         myVars.insert(ID_D,D,true,optimize::OTHER_P);
       //myVars.insert(ID_A,A,fcup!="yes");
     }
@@ -642,36 +679,22 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
   }
   void resetParameters(const opt_variables_type& active)
   {
+    if(myVars.size()==0) return;
+
+    int ia=myVars.where(0);
+    if(ia<0) return;
+
     int i=0;
-    if(ID_A[0]!='0')
-    {
-      int ia=myVars.where(i);
-      if(ia>-1)
-        B=myVars[i]=active[ia];
-      i++;
-    }
-    if(ID_B[0]!='0')
-    {
-      int ib=myVars.where(i);
-      if(ib>-1)
-        B=myVars[i]=active[ib];
-      i++;
-    }
-    if(ID_C[0]!='0')
-    {
-      int ic=myVars.where(i);
-      if(ic>-1)
-        C=myVars[i]=active[ic];
-      i++;
-    }
-    if(ID_D[0]!='0')
-    {
-      int id=myVars.where(i);
-      if(id>-1)
-        D=myVars[i]=active[id];
-      i++;
-    }
-    //int ia=myVars.where(3); if(ia>-1) A=myVars[3]=active[ia];
+    if(Opt_A)
+      A=myVars[i++]=active[ia++];
+    if(Opt_B)
+      B=myVars[i++]=active[ia++];
+    if(Opt_C)
+      C=myVars[i++]=active[ia++];
+    if(Opt_D)
+      D=myVars[i++]=active[ia++];
+
+    reset();
   }
 };
 
