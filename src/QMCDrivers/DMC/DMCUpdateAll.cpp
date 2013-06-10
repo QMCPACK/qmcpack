@@ -29,7 +29,9 @@ namespace qmcplusplus
 DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
-{ }
+{ 
+  UpdatePbyP=false;
+}
 
 /// destructor
 DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
@@ -54,9 +56,11 @@ void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
     Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
     //create a 3N-Dimensional Gaussian with variance=1
+    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+    //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-    if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+    //if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
       continue;
@@ -83,13 +87,13 @@ void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
         enew=H.evaluate(W,nonLocalOps.Txy);
       else
         enew=H.evaluate(W);
+
       RealType logGf = -0.5*Dot(deltaR,deltaR);
-      //converting gradients to drifts, D = tau*G (reuse G)
-      //RealType scale=getDriftScale(Tau,W.G);
-      //drift = scale*W.G;
-      RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
       deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+      RealType logGb=logBackwardGF(deltaR);
+      //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
       //calculate rr_proposed here
       deltaR = W.R-thisWalker.R;
@@ -144,7 +148,9 @@ void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
 /// Constructor.
 DMCUpdateAllWithKill::DMCUpdateAllWithKill(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
-{ }
+{ 
+  UpdatePbyP=false;
+}
 
 /// destructor
 DMCUpdateAllWithKill::~DMCUpdateAllWithKill() { }
@@ -163,10 +169,12 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
   {
     Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
+    //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-    if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+    //if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
       continue;
@@ -175,11 +183,6 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     RealType eold = thisWalker.Properties(LOCALENERGY);
     RealType enew = eold;
     RealType signold = thisWalker.Properties(SIGN);
-    //W.R = m_sqrttau*deltaR + thisWalker.Drift;
-    //RealType rr_proposed = Dot(W.R,W.R);
-    //W.R += thisWalker.R;
-    //W.update();
-    //evaluate wave function
     RealType logpsi(Psi.evaluateLog(W));
     bool accepted=false;
     RealType rr_accepted = 0.0;
@@ -193,9 +196,11 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     {
       enew=H.evaluate(W);
       RealType logGf = -0.5*Dot(deltaR,deltaR);
-      nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      //nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+      nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
       deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+      RealType logGb=logBackwardGF(deltaR);
+      //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
       //calculate rr_proposed here
       deltaR = W.R-thisWalker.R;

@@ -60,9 +60,20 @@ void QMCUpdateBase::setDefaults()
   MaxAge=10;
   m_r2max=-1;
   myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
-  //myParams.add(nSubSteps,"subSteps","int");
-  //myParams.add(nSubSteps,"substeps","int");
-  //myParams.add(nSubSteps,"sub_steps","int");
+
+  //store 1/mass per species
+  SpeciesSet tspecies(W.getSpeciesSet());
+  int massind=tspecies.addAttribute("mass");
+  MassInvS.resize(tspecies.getTotalNum());
+  for(int ig=0; ig<tspecies.getTotalNum(); ++ig)
+    MassInvS[ig]=1.0/tspecies(massind,ig);
+
+  MassInvP.resize(W.getTotalNum());
+  for(int ig=0; ig<W.groups(); ++ig)
+  {
+    for(int iat=W.first(ig); iat<W.last(ig); ++iat)
+      MassInvP[iat]=MassInvS[ig];
+  }
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -87,25 +98,19 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
   dG.resize(NumPtcl);
   L.resize(NumPtcl);
   dL.resize(NumPtcl);
-  ////Tau=brancher->getTau();
-  ////m_oneover2tau = 0.5/Tau;
-  ////m_sqrttau = std::sqrt(Tau);
-  SpeciesSet tspecies(W.getSpeciesSet());
-  int massind=tspecies.addAttribute("mass");
-  RealType mass = tspecies(massind,0);
-  //if(mass<numeric_limits<RealType>::epsilon())
-  //{
-  //  mass=1.0;
-  //  tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
-  //}
-  //oneovermass is NOT a data member and used only here!!!
-  //use m_ if using all lowercase for the variables
-  RealType oneovermass = 1.0/mass;
-  RealType oneoversqrtmass = std::sqrt(oneovermass);
+
+  //set the default tau-mass related values with electrons
   Tau=brancher->getTau();
-  m_tauovermass = Tau/mass;
+  m_tauovermass = Tau*MassInvS[0];
   m_oneover2tau = 0.5/(m_tauovermass);
   m_sqrttau = std::sqrt(m_tauovermass);
+
+  if(!UpdatePbyP)
+  {// store sqrt(tau/mass)
+    SqrtTauOverMass.resize(W.getTotalNum());
+    for(int iat=0; iat<W.getTotalNum(); ++iat)
+      SqrtTauOverMass[iat]=std::sqrt(Tau*MassInvP[iat]);
+  }
   //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << endl;
   if (m_r2max<0)
     m_r2max =  W.Lattice.LR_rc* W.Lattice.LR_rc;
@@ -147,6 +152,8 @@ void QMCUpdateBase::stopBlock(bool collectall)
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=false;
+  //ignore different mass
+  //RealType tauovermass = Tau*MassInv[0];
   for (; it != it_end; ++it)
   {
     W.R = (*it)->R;
@@ -154,8 +161,7 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
     RealType logpsi(Psi.evaluateLog(W));
     (*it)->G=W.G;
     (*it)->L=W.L;
-    //setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
-    RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     RealType ene = H.evaluate(W);
     H.auxHevaluate(W);
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
@@ -195,38 +201,44 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
   RealType eloc_tot=0.0;
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR,RandomGen);
-  for (int iat=0; iat<W.getTotalNum(); ++iat)
+  for(int ig=0; ig<W.groups(); ++ig) //loop over species
   {
-    GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-    PosType dr;
-    getScaledDrift(m_tauovermass,grad_now,dr);
-    dr += m_sqrttau*deltaR[iat];
-    if (!W.makeMoveAndCheck(iat,dr))
-      continue;
-    //PosType newpos = W.makeMove(iat,dr);
-    RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-    RealType prob = ratio*ratio;
-    //zero is always rejected
-    if (prob<numeric_limits<RealType>::epsilon())
+    RealType tauovermass = Tau*MassInvS[ig];
+    RealType oneover2tau = 0.5/(tauovermass);
+    RealType sqrttau = std::sqrt(tauovermass);
+    for (int iat=W.first(ig); iat<W.last(ig); ++iat)
     {
-      ++nReject;
-      W.rejectMove(iat);
-      Psi.rejectMove(iat);
-      continue;
-    }
-    RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-    getScaledDrift(m_tauovermass,grad_new,dr);
-    dr = awalker.R[iat]-W.R[iat]-dr;
-    RealType logGb = -m_oneover2tau*dot(dr,dr);
-    if (RandomGen() < prob*std::exp(logGb-logGf))
-    {
-      W.acceptMove(iat);
-      Psi.acceptMove(W,iat);
-    }
-    else
-    {
-      W.rejectMove(iat);
-      Psi.rejectMove(iat);
+      GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+      PosType dr;
+      getScaledDrift(tauovermass,grad_now,dr);
+      dr += sqrttau*deltaR[iat];
+      if (!W.makeMoveAndCheck(iat,dr))
+        continue;
+      //PosType newpos = W.makeMove(iat,dr);
+      RealType ratio = Psi.ratioGrad(W,iat,grad_new);
+      RealType prob = ratio*ratio;
+      //zero is always rejected
+      if (prob<numeric_limits<RealType>::epsilon())
+      {
+        ++nReject;
+        W.rejectMove(iat);
+        Psi.rejectMove(iat);
+        continue;
+      }
+      RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+      getScaledDrift(tauovermass,grad_new,dr);
+      dr = awalker.R[iat]-W.R[iat]-dr;
+      RealType logGb = -oneover2tau*dot(dr,dr);
+      if (RandomGen() < prob*std::exp(logGb-logGf))
+      {
+        W.acceptMove(iat);
+        Psi.acceptMove(W,iat);
+      }
+      else
+      {
+        W.rejectMove(iat);
+        Psi.rejectMove(iat);
+      }
     }
   }
   //for subSteps must update thiswalker
@@ -249,23 +261,11 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
 QMCUpdateBase::RealType
 QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled)
 {
-//       PAOps<RealType,OHMMS_DIM>::copy(g,gscaled);
-  //// DriftOperators.h getNodeCorrectionP
-  //RealType norm=0.0, norm_scaled=0.0;
-  //for(int i=0; i<g.size(); ++i)
-  //{
-  //  RealType vsq=dot(g[i],g[i]);
-  //  RealType x=vsq*Tau;
-  //  RealType scale= (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
-  //  norm_scaled+=vsq*scale*scale;
-  //  norm+=vsq;
-  //}
-  //return std::sqrt(norm_scaled/norm);
-  // DriftOperators.h getNodeCorrectionW
-  setScaledDrift(m_tauovermass,g,gscaled);
-  RealType vsq=Dot(g,g);
-  RealType x=m_tauovermass*vsq;
-  return (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+  //setScaledDrift(m_tauovermass,g,gscaled);
+  //RealType vsq=Dot(g,g);
+  //RealType x=m_tauovermass*vsq;
+  //return (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+  return  setScaledDriftPbyPandNodeCorr(Tau,MassInvP,g,gscaled);
 }
 
 void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
@@ -276,21 +276,7 @@ void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
     W.loadWalker(thisWalker,UpdatePbyP);
     Walker_t::Buffer_t& w_buffer((*it)->DataSet);
     RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
-    //needed to copy R/L/G
     W.saveWalker(thisWalker);
-//         thisWalker.Weight=1;
-    //thisWalker.Properties(DRIFTSCALE)=getNodeCorrection(W.G,(*it)->Drift);
-    //RealType enew= H.evaluate(W);
-    //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
-    //H.saveProperty(thisWalker.getPropertyBase());
-    //(*it)->Drift=W.G;//copy gradients to drift
-    //scaling factor per particle
-    //setScaledDriftPbyP(Tau,W.G,(*it)->Drift);
-    ////calculate the scaling factor
-    //RealType scale=getDriftScale(Tau,W.G);
-    //assignDrift(scale,W.G,(*it)->Drift);
-    ////This is the original
-    //setScaledDrift(Tau,W.G,(*it)->Drift);
   }
 }
 
@@ -347,7 +333,7 @@ void QMCUpdateBase::advanceWalker(Walker_t& thisWalker)
   RealType phase0=thisWalker.Properties(SIGN);
   for (int iter=0; iter<nSubSteps; ++iter)
   {
-    RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
     if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
     {
@@ -357,7 +343,7 @@ void QMCUpdateBase::advanceWalker(Walker_t& thisWalker)
     RealType logpsi(Psi.evaluateLog(W));
     RealType logGf = -0.5*Dot(deltaR,deltaR);
     // setScaledDrift(m_tauovermass,W.G,drift);
-    nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
     deltaR = thisWalker.R - W.R - drift;
     RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
@@ -399,45 +385,51 @@ void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
   {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    for (int iat=0; iat<W.getTotalNum(); ++iat)
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
     {
-      GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-      PosType dr;
-      getScaledDrift(m_tauovermass,grad_now,dr);
-      dr += m_sqrttau*deltaR[iat];
-      if (!W.makeMoveAndCheck(iat,dr))
+      RealType tauovermass = Tau*MassInvS[ig];
+      RealType oneover2tau = 0.5/(tauovermass);
+      RealType sqrttau = std::sqrt(tauovermass);
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
-        ++nReject;
-        continue;
-      }
-      //PosType newpos = W.makeMove(iat,dr);
-      RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-      RealType prob = ratio*ratio;
-      //zero is always rejected
-      if (prob<numeric_limits<RealType>::epsilon())
-      {
-        ++nReject;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-        continue;
-      }
-      RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-      getScaledDrift(m_tauovermass,grad_new,dr);
-      dr = thisWalker.R[iat]-W.R[iat]-dr;
-      RealType logGb = -m_oneover2tau*dot(dr,dr);
-      //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
-      if (RandomGen() < prob*std::exp(logGb-logGf))
-      {
-        moved = true;
-        ++nAccept;
-        W.acceptMove(iat);
-        Psi.acceptMove(W,iat);
-      }
-      else
-      {
-        ++nReject;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
+        GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+        PosType dr;
+        getScaledDrift(tauovermass,grad_now,dr);
+        dr += sqrttau*deltaR[iat];
+        if (!W.makeMoveAndCheck(iat,dr))
+        {
+          ++nReject;
+          continue;
+        }
+        //PosType newpos = W.makeMove(iat,dr);
+        RealType ratio = Psi.ratioGrad(W,iat,grad_new);
+        RealType prob = ratio*ratio;
+        //zero is always rejected
+        if (prob<numeric_limits<RealType>::epsilon())
+        {
+          ++nReject;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
+          continue;
+        }
+        RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+        getScaledDrift(tauovermass,grad_new,dr);
+        dr = thisWalker.R[iat]-W.R[iat]-dr;
+        RealType logGb = -oneover2tau*dot(dr,dr);
+        //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
+        if (RandomGen() < prob*std::exp(logGb-logGf))
+        {
+          moved = true;
+          ++nAccept;
+          W.acceptMove(iat);
+          Psi.acceptMove(W,iat);
+        }
+        else
+        {
+          ++nReject;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
+        }
       }
     }
     //for subSteps must update thiswalker

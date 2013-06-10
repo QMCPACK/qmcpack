@@ -77,63 +77,68 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
     RealType rr_accepted=0.0;
     RealType gf_acc=1.0;
     myTimers[1]->start();
-    for(int iat=0; iat<NumPtcl; ++iat)
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
     {
-      //get the displacement
-      GradType grad_iat=Psi.evalGrad(W,iat);
-      PosType dr;
-      //RealType sc=getDriftScale(m_tauovermass,grad_iat);
-      //PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_iat));
-      getScaledDrift(m_tauovermass, grad_iat, dr);
-      dr += m_sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
-      RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
-      rr_proposed+=rr;
-      if(rr>m_r2max)
+      RealType tauovermass = Tau*MassInvS[ig];
+      RealType oneover2tau = 0.5/(tauovermass);
+      RealType sqrttau = std::sqrt(tauovermass);
+
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
-        ++nRejectTemp;
-        continue;
-      }
-      //PosType newpos(W.makeMove(iat,dr));
-      if(!W.makeMoveAndCheck(iat,dr))
-        continue;
-      PosType newpos(W.R[iat]);
-      RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
-      bool valid_move=false;
-      //node is crossed reject the move
-      //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
-      //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
-      if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
-      {
-        ++nRejectTemp;
-        ++nNodeCrossing;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-      }
-      else
-      {
-        RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-        //Use the force of the particle iat
-        //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
-        getScaledDrift(m_tauovermass, grad_iat, dr);
-        dr = thisWalker.R[iat] - newpos - dr;
-        RealType logGb = -m_oneover2tau*dot(dr,dr);
-        RealType prob = ratio*ratio*std::exp(logGb-logGf);
-        if(RandomGen() < prob)
+        //get the displacement
+        GradType grad_iat=Psi.evalGrad(W,iat);
+        PosType dr;
+        getScaledDrift(tauovermass, grad_iat, dr);
+        dr += sqrttau * deltaR[iat];
+        //RealType rr=dot(dr,dr);
+        RealType rr=tauovermass*dot(deltaR[iat],deltaR[iat]);
+        rr_proposed+=rr;
+        if(rr>m_r2max)
         {
-          valid_move=true;
-          ++nAcceptTemp;
-          W.acceptMove(iat);
-          Psi.acceptMove(W,iat);
-          rr_accepted+=rr;
-          gf_acc *=prob;//accumulate the ratio
+          ++nRejectTemp;
+          continue;
+        }
+        //PosType newpos(W.makeMove(iat,dr));
+        if(!W.makeMoveAndCheck(iat,dr))
+          continue;
+        PosType newpos(W.R[iat]);
+        RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
+        bool valid_move=false;
+        //node is crossed reject the move
+        //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+        //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
+        if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
+        {
+          ++nRejectTemp;
+          ++nNodeCrossing;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
         }
         else
         {
-          ++nRejectTemp;
-          W.rejectMove(iat);
-          Psi.rejectMove(iat);
+          RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+          //Use the force of the particle iat
+          //RealType scale=getDriftScale(m_tauovermass,grad_iat);
+          //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
+          getScaledDrift(tauovermass, grad_iat, dr);
+          dr = thisWalker.R[iat] - newpos - dr;
+          RealType logGb = -oneover2tau*dot(dr,dr);
+          RealType prob = ratio*ratio*std::exp(logGb-logGf);
+          if(RandomGen() < prob)
+          {
+            valid_move=true;
+            ++nAcceptTemp;
+            W.acceptMove(iat);
+            Psi.acceptMove(W,iat);
+            rr_accepted+=rr;
+            gf_acc *=prob;//accumulate the ratio
+          }
+          else
+          {
+            ++nRejectTemp;
+            W.rejectMove(iat);
+            Psi.rejectMove(iat);
+          }
         }
       }
     }

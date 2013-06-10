@@ -113,35 +113,31 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
         targetPsi->setTwist(tsts);
       }
     }
-    else
-      if (cname ==  OrbitalBuilderBase::jastrow_tag)
-      {
-        OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-        jbuilder->setReportLevel(ReportLevel);
-        success = jbuilder->put(cur);
-        addNode(jbuilder,cur);
-      }
-      else
-        if (cname == OrbitalBuilderBase::ionorb_tag)
-        {
-          IonOrbitalBuilder *builder = new IonOrbitalBuilder
-          (*targetPtcl, *targetPsi, ptclPool);
-          success = builder->put(cur);
-          addNode(builder,cur);
-        }
-        else
-          if ((cname ==  "Molecular") || (cname =="molecular"))
-          {
-            APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
-          }
+    else if (cname ==  OrbitalBuilderBase::jastrow_tag)
+    {
+      OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+      jbuilder->setReportLevel(ReportLevel);
+      success = jbuilder->put(cur);
+      addNode(jbuilder,cur);
+    }
+    else if (cname == OrbitalBuilderBase::ionorb_tag)
+    {
+      IonOrbitalBuilder *builder = new IonOrbitalBuilder
+        (*targetPtcl, *targetPsi, ptclPool);
+      success = builder->put(cur);
+      addNode(builder,cur);
+    }
+    else if ((cname ==  "Molecular") || (cname =="molecular"))
+    {
+      APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
+    }
 #if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX) && OHMMS_DIM==3
-          else
-            if(cname == "agp")
-            {
-              AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
-              success = agpbuilder->put(cur);
-              addNode(agpbuilder,cur);
-            }
+    else if(cname == "agp")
+    {
+      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
+      success = agpbuilder->put(cur);
+      addNode(agpbuilder,cur);
+    }
 #endif
     if(attach2Node)
       xmlAddChild(myNode,xmlCopyNode(cur,1));

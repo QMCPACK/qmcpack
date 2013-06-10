@@ -90,22 +90,25 @@ public:
 
   inline RealType getTau()
   {
-    SpeciesSet tspecies(W.getSpeciesSet());
-    int massind=tspecies.addAttribute("mass");
-    RealType mass = tspecies(massind,0);
-    return m_tauovermass*mass;
+    //SpeciesSet tspecies(W.getSpeciesSet());
+    //int massind=tspecies.addAttribute("mass");
+    //RealType mass = tspecies(massind,0);
+    //return m_tauovermass*mass;
+    return Tau;
   }
 
-  inline void setTau(RealType i)
+  inline void setTau(RealType t)
   {
-    SpeciesSet tspecies(W.getSpeciesSet());
-    int massind=tspecies.addAttribute("mass");
-    RealType mass = tspecies(massind,0);
-    RealType oneovermass = 1.0/mass;
-    RealType oneoversqrtmass = std::sqrt(oneovermass);
-//       Tau=brancher->getTau();
-//       assert (Tau==i);
-    m_tauovermass = i/mass;
+    //SpeciesSet tspecies(W.getSpeciesSet());
+    //int massind=tspecies.addAttribute("mass");
+    //RealType mass = tspecies(massind,0);
+    //RealType oneovermass = 1.0/mass;
+    //RealType oneoversqrtmass = std::sqrt(oneovermass);
+//  //     Tau=brancher->getTau();
+//  //     assert (Tau==i);
+    //m_tauovermass = i/mass;
+    Tau=t;
+    m_tauovermass = t*MassInvS[0];
     m_oneover2tau = 0.5/(m_tauovermass);
     m_sqrttau = std::sqrt(m_tauovermass);
   }
@@ -211,6 +214,15 @@ public:
         it+=(last-first);
   }
 
+  inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
+  {
+    RealType t=0.5/Tau;
+    RealType logGb=0.0;
+    for(int iat=0; iat<W.getTotalNum();++iat)
+      logGb += t*MassInvP[iat]*dot(displ[iat],displ[iat]);
+    return -logGb;
+  }
+
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
@@ -218,9 +230,9 @@ protected:
   bool UseTMove;
   ///number of particles
   IndexType NumPtcl;
-  ///Time-step factor \f$ 1/(2\tau)\f$
+  ///Time-step factor \f$ 1/(2\Tau)\f$
   RealType m_oneover2tau;
-  ///Time-step factor \f$ \sqrt{\tau}\f$
+  ///Time-step factor \f$ \sqrt{\Tau}\f$
   RealType m_sqrttau;
   ///tau/mass
   RealType m_tauovermass;
@@ -242,6 +254,12 @@ protected:
   EstimatorManager* Estimators;
   ///parameters
   ParameterSet myParams;
+  ///1/Mass per species
+  vector<RealType> MassInvS;
+  ///1/Mass per particle
+  vector<RealType> MassInvP;
+  ///sqrt(tau/Mass) per particle
+  vector<RealType> SqrtTauOverMass;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///temporary storage for drift

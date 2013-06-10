@@ -298,14 +298,6 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-//   void setMassTerm(ParticleSet& P)
-//   {
-//     SpeciesSet tspecies(P.getSpeciesSet());
-//     int massind=tspecies.addAttribute("mass");
-//     RealType mass = tspecies(massind,0);
-//     OneOverM = 1.0/mass;
-//   }
-
   vector<OrbitalBase*>& getOrbitals()
   {
     return Z;
@@ -326,16 +318,9 @@ public:
   
   void setMassTerm(ParticleSet& P)
   {
-    SpeciesSet tspecies(P.getSpeciesSet());
     OverM.resize(P.R.size(),1.0);
-    
-    int massind = tspecies.addAttribute("mass");
-    int membersize = tspecies.addAttribute("membersize");
-    
-    int indx=0;
-    for(int i=0; i<tspecies.size(); ++i)
-      for(int j=0;j<tspecies(membersize,i);j++,indx++)
-        OverM[indx]=1.0/(tspecies(massind,i));
+    for(int i=0; i<OverM.size(); ++i)
+      OverM[i]=1.0/P.Mass[i];
   }
 
 

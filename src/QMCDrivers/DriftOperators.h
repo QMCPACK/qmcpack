@@ -140,6 +140,31 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
   return std::sqrt(norm_scaled/norm);
 }
 
+/** scale drift
+ * @param tau_au timestep au
+ * @param massinv 1/m per particle
+ * @param qf quantum forces
+ * @param drift scaled quantum forces
+ * @param return correction term
+ */
+template<class T, unsigned D>
+inline T setScaledDriftPbyPandNodeCorr(T tau_au, const vector<T>& massinv,
+                                       const ParticleAttrib<TinyVector<T,D> >& qf,
+                                       ParticleAttrib<TinyVector<T,D> >& drift)
+{
+  T norm=0.0, norm_scaled=0.0;
+  for(int iat=0; iat<massinv.size(); ++iat)
+  {
+    T tau=tau_au*massinv[iat];
+    T vsq=dot(qf[iat],qf[iat]);
+    T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    norm_scaled+=vsq*sc*sc;
+    norm+=vsq*tau*tau;
+    drift[iat]=sc*qf[iat];
+  }
+  return std::sqrt(norm_scaled/norm);
+}
+
 template<class T, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau,
                                        const ParticleAttrib<TinyVector<complex<T>,D> >& qf,

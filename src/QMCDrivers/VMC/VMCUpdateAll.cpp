@@ -25,6 +25,7 @@ VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                            QMCHamiltonian& h, RandomGenerator_t& rg)
   : QMCUpdateBase(w,psi,h,rg)
 {
+  UpdatePbyP=false;
 }
 
 VMCUpdateAll::~VMCUpdateAll()
@@ -37,7 +38,8 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
   {
     MCWalkerConfiguration::Walker_t& thisWalker(**it);
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
+    //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
+    if (!W.makeMove(thisWalker,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
       continue;
@@ -174,6 +176,7 @@ VMCUpdateAllWithDrift::VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWave
     QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
 {
+  UpdatePbyP=false;
 }
 
 VMCUpdateAllWithDrift::~VMCUpdateAllWithDrift()
@@ -186,23 +189,25 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
   {
     MCWalkerConfiguration::Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
-    RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+    //RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
+    //if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
+    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
       continue;
     }
-    //
-    //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-    //W.update();
     RealType logpsi(Psi.evaluateLog(W));
     RealType logGf = -0.5*Dot(deltaR,deltaR);
-    // setScaledDrift(m_tauovermass,W.G,drift);
-    nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-    //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
+    //nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
+    nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+
     deltaR = thisWalker.R - W.R - drift;
-    RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+
+    RealType logGb=logBackwardGF(deltaR);
+    //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+
     RealType g= std::exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI)));
     if (RandomGen() > g)
     {
