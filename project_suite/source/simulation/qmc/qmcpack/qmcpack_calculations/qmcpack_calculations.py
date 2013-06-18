@@ -14,6 +14,7 @@ from qmcpack import generate_qmcpack,BundledQmcpack
 from qmcpack_input import loop,vmc,dmc,linear,cslinear
 from structure import kmesh
 
+
 def error(msg):
     print 'Error: '+msg
     exit()

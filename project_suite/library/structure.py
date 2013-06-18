@@ -2181,6 +2181,8 @@ class Crystal(Structure):
                 a1=[   a,              0,   0]
                 a2=[ a/2,   a*sqrt(3.)/2,   0]
                 a3=[-a/6, a/(2*sqrt(3.)), c/3]
+            else:
+                self.error('the variable centering must be specified\n  valid options are: P,A,B,C,I,F,R')
             #end if
             axes_prim = array([a1,a2,a3])
             if cell=='primitive':

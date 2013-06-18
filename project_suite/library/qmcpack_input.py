@@ -2426,24 +2426,26 @@ class QmcpackInput(SimulationInput,Names):
         elem = structure.elem
         pos  = structure.pos
 
-        #setting the 'lattice' (cell axes) requires some delicate care
-        #  qmcpack will fail if this is even 1e-10 off of what is in 
-        #  the wavefunction hdf5 file from pwscf
-        if structure.folded_structure!=None:
-            fs = structure.folded_structure
-            axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
-            axes.shape = fs.axes.shape
-            axes = dot(axes,structure.tmatrix)
-            if abs(axes-structure.axes).sum()>1e-5:
-                self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
+        if len(structure.axes)>0: #exclude systems with open boundaries
+            #setting the 'lattice' (cell axes) requires some delicate care
+            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  the wavefunction hdf5 file from pwscf
+            if structure.folded_structure!=None:
+                fs = structure.folded_structure
+                axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
+                axes.shape = fs.axes.shape
+                axes = dot(axes,structure.tmatrix)
+                if abs(axes-structure.axes).sum()>1e-5:
+                    self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
+                #end if
+            else:
+                axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
+                axes.shape = structure.axes.shape
             #end if
-        else:
-            axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
-            axes.shape = structure.axes.shape
-        #end if
-        structure.adjust_axes(axes)
+            structure.adjust_axes(axes)
 
-        sc.lattice = axes
+            sc.lattice = axes
+        #end if    
 
         elns = particles.get_electrons()
         ions = particles.get_ions()

@@ -56,9 +56,23 @@ class SqdAnalyzer(SimulationAnalyzer):
         outfiles = self.info.input.get_output_info(list=False)
         path = self.info.path
 
+        log_file      = os.path.join(path,outfiles.log)
         exchange_file = os.path.join(path,outfiles.exchange)
         hartree_file  = os.path.join(path,outfiles.hartree)
         orbital_file  = os.path.join(path,outfiles.orb)
+
+        #read log file
+        lgcont = open(log_file).read()
+        for line in lgcont.splitlines():
+            if line.count('=')==1:
+                name,value = line.split('=',1)
+                name = name.strip()
+                value = float(value.strip())
+                self[name]=value
+            #end if
+        #end for
+        self.E_potential = self.V_External+self.V_Hartree+self.V_Exchange
+        self.E_kinetic = self.E_tot - self.E_potential
 
         #read exchange file
         exchange = self.exchange

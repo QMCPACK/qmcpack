@@ -509,7 +509,7 @@ def generate_qmcpack(**kwargs):
     for kw in inp_kw:
         inp_args[kw] = kwargs[kw]
     #end for    
-    if 'pseudos' in inp_args:
+    if 'pseudos' in inp_args and inp_args['pseudos']!=None:
         if 'files' in sim_args:
             sim_args['files'] = list(sim_args['files'])
         else:
