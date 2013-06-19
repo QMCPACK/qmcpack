@@ -3,7 +3,7 @@
 
 import os
 from copy import deepcopy
-from numpy import array,empty
+from numpy import array,empty,identity
 
 from generic import obj
 from project import generate_physical_system
@@ -160,11 +160,11 @@ class ValidationStage(ValidatePPBase):
 
     def check_inputs(self,inputs):
         inkeys = set(inputs.keys())
-        if not self.stage_inputs < inkeys:
-            self.error('stage inputs are missing\n  inputs required: {0}\n  inputs provided: {1}\n  key: {2}'.format(list(self.stage_inputs),list(inkeys)),key)
+        if not self.stage_inputs <= inkeys:
+            self.error('stage inputs are missing\n  inputs required: {0}\n  inputs provided: {1}'.format(list(self.stage_inputs),list(inkeys)))
         #end if
-        if not self.stage_dependencies < inkeys:
-            self.error('stage dependencies are missing\n  dependencies required: {0}\n  dependencies provided: {1}\n  key: {2}'.format(list(self.stage_dependencies),list(inkeys)),key)
+        if not self.stage_dependencies <= inkeys:
+            self.error('stage dependencies are missing\n  dependencies required: {0}\n  dependencies provided: {1}'.format(list(self.stage_dependencies),list(inkeys)))
         #end if
     #end def check_inputs
 
@@ -202,19 +202,9 @@ class ValidationStage(ValidatePPBase):
     #end def get_result_sim
 
 
-    def make_all_sims(self,basepath):
-        self.not_implemented()
-    #end def make_all_sims
-
-
     def sim_list(self):
         return self.simlist
     #end def sim_list
-
-
-    def get_results(self):
-        self.not_implemented()
-    #end def get_results
 
 
     def status(self,pad=' ',n=0,*args):
@@ -235,6 +225,16 @@ class ValidationStage(ValidatePPBase):
             #end for
         #end if        
     #end def status
+
+
+    def make_all_sims(self,basepath):
+        self.not_implemented()
+    #end def make_all_sims
+
+
+    def get_results(self):
+        self.not_implemented()
+    #end def get_results
 #end class ValidationStage
 
 
@@ -316,25 +316,22 @@ class ValidationProcess(ValidatePPBase):
             if not functional in self.known_functionals:
                 unknown_functionals.append(functional)
             else:
-                for pseudo_prefix in pseudos:
-                    pp_found  = []
-                    for pp_ext in self.pp_extensions:
-                        pp_prefix = pseudo_prefix.lower()
-                        for ppfile in ppfiles:
-                            prefix,ext = ppfile.rsplit('.',1)
-                            prefix = prefix.lower()
-                            ext = ext.lower()
-                            if prefix==pp_prefix and ext in pp_ext:
-                                pp_found.append(ppfile)
-                                break
-                            #end if
+                for pseudo_key in pseudos:
+                    if isinstance(pseudo_key,str):
+                        pseudo_prefix = pseudo_key
+                        pp_found,pp_missing = self.findpp(pseudo_prefix,ppfiles)
+                    elif isinstance(pseudo_key,tuple):
+                        pseudo_tuple = pseudo_key
+                        pp_found = []
+                        pp_missing = []
+                        for pseudo_prefix in pseudo_tuple:
+                            ppf,ppm = self.findpp(pseudo_prefix,ppfiles)
+                            pp_found.extend(ppf)
+                            pp_missing.extend(ppm)
                         #end for
-                    #end for
-                    if len(pp_found)!=len(self.pp_extensions):
-                        missing_pp_files.append(pseudo_prefix)
-                    else:
-                        ppmap[pseudo_prefix] = pp_found
                     #end if
+                    ppmap[pseudo_key] = pp_found
+                    #end for
                 #end for
             #end if
         #end for
@@ -353,6 +350,27 @@ class ValidationProcess(ValidatePPBase):
         self.ppmap       = ppmap
     #end def check_funcs_pseudos
 
+
+    def findpp(self,pseudo_prefix,ppfiles):
+        pp_found   = []
+        pp_missing = []
+        for pp_ext in self.pp_extensions:
+            pp_prefix = pseudo_prefix.lower()
+            for ppfile in ppfiles:
+                prefix,ext = ppfile.rsplit('.',1)
+                prefix = prefix.lower()
+                ext = ext.lower()
+                if prefix==pp_prefix and ext in pp_ext:
+                    pp_found.append(ppfile)
+                    break
+                #end if
+            #end for
+        #end for
+        if len(pp_found)!=len(self.pp_extensions):
+            pp_missing.append(pseudo_prefix)
+        #end if
+        return pp_found,pp_missing
+    #end def findpp
 
     def pseudo_list(self):
         return list(self.ppmap.keys())
@@ -615,23 +633,6 @@ class ValidationProcesses(ValidatePPBase):
                     #end if    
                     stage = process.stages[sname] 
 
-                    #get simulation data from stage
-                    #  simulation data as a function of keys
-                    #  sort keys and cycle through colors, one per key
-                    #  print or plot data for each key
-                    #  stage should have default title info
-
-                        
-                    #  
-                    #  title: x vs y
-                    #               x (xu)    y (yu)  yerr (yu)
-                    #  
-                    #    k0
-                    #      k1
-                    #        k2     x         y       yerr
-                    #               :         :        :
-
-
                     res = stage.get_results(quantity=qname)
                     rkeys = res.keys()
                     rkeys.sort()
@@ -652,7 +653,6 @@ class ValidationProcesses(ValidatePPBase):
                     else:
                         pylabel = ylabelt
                     #end if
-                    
 
                     rtypes = {
                         ('value','scalar'):'y',
@@ -697,7 +697,6 @@ class ValidationProcesses(ValidatePPBase):
                         keylen = max(keylen,len(str(key)))
                     #end for
                     keylen+=4
-
 
                     if printing:
                         p = '  '
@@ -789,7 +788,6 @@ class ValidationProcesses(ValidatePPBase):
                         del x,y,yerr
                     #end for
 
-
                     if printing:
                         print pad+'end '+pname
                     #end if
@@ -824,7 +822,6 @@ class AtomicValidationStage(ValidationStage):
     data_type  = 'stat'
     yunit      = 'Ha'
 
-
     def __init__(self,**vars):
         if not self.systype in self.systypes:
             self.error('system type {0} is unrecognized\n  valid system types are: {1}'.format(systype,self.systypes))
@@ -854,49 +851,6 @@ class AtomicValidationStage(ValidationStage):
             #end if
         #end for
     #end def __init__
-
-
-    def make_system(self,v):
-        atom = self.system_info.atom
-        if not 'q' in v:
-            self.error('charge is not present, physical system cannot be made')
-        #end if
-        if self.systype=='ae':
-            system = generate_physical_system(
-                type       = 'atom',
-                atom       =  atom,
-                net_charge = v.q,
-                net_spin   = v.q%2
-                )
-        elif self.systype=='pp':
-            if not 'L' in v:
-                self.error('box size is not present, physical system cannot be made')
-            #end if
-            L = v.L
-            system = generate_physical_system(
-                lattice    = 'orthorhombic',
-                cell       = 'primitive',
-                centering  = 'P',
-                constants  = (L,1.0000001*L,1.0000002*L),
-                units      = 'A',
-                atoms      = atom,
-                net_charge = v.q,
-                net_spin   = v.q%2,
-                kgrid      = (1,1,1),
-                kshift     = (0,0,0)
-                )
-            s = system.structure
-            s.slide(s.axes.sum(0)/2)
-        #end if
-        return system
-    #end def make_system
-
-
-    def checkv(self,v,required,tag):
-        if len(set(required)-set(v.keys()))>0:
-            self.error('cannot {0}, required variables are not present\n  variables required: {1}\n  variables present: {2}'.format(tag,required,v.keys()))
-        #end if
-    #end def checkv
 
 
     def get_ae_inputs(self,iq):
@@ -977,6 +931,42 @@ class AtomicValidationStage(ValidationStage):
             #end for
         #end if
     #end def make_all_sims
+
+
+    def make_system(self,v):
+        atom = self.system_info.atom
+        if not 'q' in v:
+            self.error('charge is not present, physical system cannot be made')
+        #end if
+        if self.systype=='ae':
+            system = generate_physical_system(
+                type       = 'atom',
+                atom       =  atom,
+                net_charge = v.q,
+                net_spin   = 'low'
+                )
+        elif self.systype=='pp':
+            if not 'L' in v:
+                self.error('box size is not present, physical system cannot be made')
+            #end if
+            L = v.L
+            system = generate_physical_system(
+                lattice    = 'orthorhombic',
+                cell       = 'primitive',
+                centering  = 'P',
+                constants  = (L,1.0000001*L,1.0000002*L),
+                units      = 'A',
+                atoms      = atom,
+                net_charge = v.q,
+                net_spin   = 'low',
+                kgrid      = (1,1,1),
+                kshift     = (0,0,0)
+                )
+            s = system.structure
+            s.slide(s.axes.sum(0)/2)
+        #end if
+        return system
+    #end def make_system
 
 
     def get_result_sim(self,v,name):
@@ -1156,7 +1146,7 @@ class AtomicDFTBoxScan(AtomicValidationStage):
                 units      = 'A',
                 atoms      = self.system_info.atom,
                 net_charge = v.q,
-                net_spin   = v.q%2,
+                net_spin   = 'low',
                 kgrid      = (1,1,1),
                 kshift     = (0,0,0)
                 )
@@ -1351,6 +1341,7 @@ class AtomicOptJ1RcutScan(AtomicValidationStage):
                 job        = v.optjob,
                 input_type = 'opt_jastrow',
                 system     = atom,
+                bconds     = 'nnn',
                 pseudos    = qmcpp,
                 jastrows   = jastrows,
                 opt_calcs  = v.opt_calcs
@@ -1414,6 +1405,7 @@ class AtomicOptCalc(AtomicValidationStage):
             job        = v.optjob,
             input_type = 'opt_jastrow',
             system     = atom,
+            bconds     = 'nnn',
             pseudos    = qmcpp,
             jastrows   = jastrows,
             opt_calcs  = v.opt_calcs
@@ -1490,6 +1482,7 @@ class AtomicVMCCalc(AtomicValidationStage):
             job          = v.vmcjob,
             input_type   = 'basic',
             system       = atom,
+            bconds       = 'nnn',
             pseudos      = qmcpp,
             calculations = v.vmc_calcs
             )
@@ -1570,6 +1563,7 @@ class AtomicDMCPopulationScan(AtomicValidationStage):
                 job          = v.dmcjob,
                 input_type   = 'basic',
                 system       = atom,
+                bconds       = 'nnn',
                 pseudos      = qmcpp,
                 calculations = calcs
                 )
@@ -1665,6 +1659,7 @@ class AtomicDMCTimestepScan(AtomicValidationStage):
             job          = v.dmcjob,
             input_type   = 'basic',
             system       = atom,
+            bconds       = 'nnn',
             pseudos      = qmcpp,
             calculations = calcs
             )
@@ -1736,10 +1731,17 @@ class AtomicDMCCalc(AtomicValidationStage):
                 calc.samples = v.population
                 found_vmc = True
             elif isinstance(calc,dmc):
-                calc.timestep = v.timestep
+                dmc_calc = calc
                 found_dmc = True
             #end if
         #end for
+        if found_dmc:
+            stepfac = calc.timestep/v.timestep
+            dmc_calc.warmupsteps = int(round(dmc_calc.warmupsteps*stepfac))
+            dmc_calc.steps = int(round(dmc_calc.steps*stepfac))
+            dmc_calc.timestep = v.timestep
+        #end if
+
         if not found_vmc or not found_dmc:
             self.error('vmc and dmc blocks must be present in dmc_calcs')
         #end if
@@ -1790,13 +1792,13 @@ class AtomicPPDMCCalc(AtomicDMCCalc):
 
 class ValidateAtomPP(ValidationProcess):
 
-    allowed_stage_inputs = set(\
+    allowed_stage_inputs = set(
         ['ae_occupations', 'ae_opt_calcs', 'ae_vmc_calcs', 'ae_dmc_calcs', 
          'ae_populations', 'ae_timesteps', 
          'pp_Ls', 'pp_Ecuts', 'pp_opt_calcs', 'pp_J1_rcuts', 
          'pp_vmc_calcs', 'pp_populations', 'pp_timesteps', 'pp_dmc_calcs'])
 
-    allowed_stage_results = set(\
+    allowed_stage_results = set(
         ['ae_hfjob', 'ae_optjob', 'ae_vmcjob', 'ae_dmcjob', 'ae_pade_b',
          'ae_occupation','ae_orbitals','ae_jastrow','ae_population','ae_timestep',
          'pp_dftjob', 'pp_optjob', 'pp_vmcjob', 'pp_dmcjob', 'pp_pade_b',
@@ -1853,65 +1855,15 @@ class ValidateAtomPP(ValidationProcess):
             q = self.q,
             ppmap = self.ppmap,
             func_pp = self.func_pp,
-            functionals = self.functionals
+            functionals = self.functionals,
+            atom = self.name
             )
-        for atom,stage in self.stages.iteritems():
-            info.atom = self.name
+        for stage in self.stages:
             stage.system_info = info.copy()
         #end for
 
     #end def initialize
 #end class ValidateAtomPP
-
-
-
-
-class ValidateDimerPP(ValidationProcess):
-    def initialize(self,**func_pp):
-        self.check_funcs_pseudos(**func_pp)
-    #end def __init__
-
-
-    def dft_box(self):
-        self.not_implemented()
-    #end def dft_box
-
-
-    def kinetic_ecut(self):
-        self.not_implemented()
-    #end def kinetic_ecut
-
-
-    def kinetic_meshfactor(self):
-        self.not_implemented()
-    #end def kinetic_meshfactor
-
-
-    def vmc_noJ(self):
-        self.not_implemented()
-    #end def vmc_noJ
-
-
-    def opt_J1J2_rcut(self):
-        self.not_implemented()
-    #end def opt_J1J2_rcut
-
-
-    def opt_J1J2J3(self):
-        self.not_implemented()
-    #end def opt_J1J2J3
-
-
-    def dmc_population(self):
-        self.not_implemented()
-    #end def dmc_population
-
-
-    def dmc_timestep(self):
-        self.not_implemented()
-    #end def dmc_timestep
-
-#end class ValidateDimerPP
 
 
 
@@ -1975,9 +1927,6 @@ class ValidateAtomPPs(ValidationProcesses):
                 self.error('invalid stage result variable encountered\n  variable encountered {0}\n  variable must be prefixed with ae_ or pp_'.format(name))
             #end if
         #end for
-
-        #ae_comb = self.combine_ae_stage_results(ae_res)
-        #pp_comb = self.combine_pp_stage_results(pp_res)
 
         for atom,process in self.processes.iteritems():
             res = obj()
@@ -2137,48 +2086,6 @@ class ValidateAtomPPs(ValidationProcesses):
 
         return r
     #end def expand_pp_stage_result
-
-
-    def combine_ae_stage_results(self,res):
-        # transpose the data
-        comb = obj()
-        for atom in self.atoms:
-            acomb = obj()
-            comb[atom] = acomb
-            for iq in range(self.nq[atom]):
-                q = self.charges[atom][iq]
-                qcomb = obj()
-                acomb[q] = qcomb
-                for name,rcoll in res.iteritems():
-                    qcomb[name.replace('ae_','')] = rcoll[atom][iq]
-                #end for
-            #end for
-        #end for
-        return comb
-    #end def combine_ae_stage_results
-
-
-    def combine_pp_stage_results(self,res):
-        # transpose the data
-        comb = obj()
-        for atom in self.atoms:
-            acomb = obj()
-            comb[atom] = acomb
-            for pp in self.pseudos[atom]:
-                ppcomb = obj()
-                acomb[pp] = ppcomb
-                for iq in range(self.nq[atom]):
-                    q = self.charges[atom][iq]
-                    qcomb = obj()
-                    ppcomb[q] = qcomb
-                    for name,rcoll in res.iteritems():
-                        qcomb[name.replace('pp_','')] = rcoll[atom][pp][iq]
-                    #end for
-                #end for
-            #end for
-        #end for
-        return comb
-    #end def combine_pp_stage_results
         
 #end class ValidateAtomPPs
 ValidateAtomPPs.set_process_type(ValidateAtomPP)
@@ -2186,10 +2093,503 @@ ValidateAtomPPs.set_process_type(ValidateAtomPP)
 
 
 
+class DimerValidationStage(ValidationStage):
+    stage_type = 'scan'
+    data_type  = 'stat'
+
+
+    def get_pp_inputs(self,pp):
+        inputs = obj()
+        for name,value in self.results.iteritems():
+            inputs[name] = value[pp]
+        #end for
+        return inputs
+    #end def get_pp_inputs
+
+
+    def make_all_sims(self,basepath):
+        print '    make_all_sims',self.__class__.__name__
+        sinfo = self.system_info
+        for functional,pplist in sinfo.func_pp.iteritems():
+            for pp in pplist:
+                if not isinstance(pp,tuple) or not len(pp)==2:
+                    self.error('expected length 2 tuple key for pseudopotentials\n  received: {0}'.format(pp))
+                #end if
+                pseudos = sinfo.ppmap[pp]
+                path = os.path.join(basepath,functional,pp[0]+'_'+pp[1])
+                v = self.get_pp_inputs(pp)
+                self.check_inputs(v)
+                v.path       = path
+                v.pseudos    = pseudos
+                v.functional = functional
+                v.pp         = pp
+                sims = self.make_sims(v)
+                self.save_sims(sims,(functional,pp[0],pp[1]),v)
+            #end for
+        #end for
+    #end def make_all_sims
+
+
+    def make_system(self,v,bond_length=None):
+        if bond_length is None:
+            if not 'bond_length' in v:
+                self.error('bond length is not present, physical system cannot be made')
+            #end if
+            bond_length = v.bond_length
+        #end if
+        if not 'L' in v:
+            self.error('box size is not present, physical system cannot be made')
+        #end if
+        L = v.L
+        system = generate_physical_system(
+            lattice       = 'orthorhombic',
+            cell          = 'primitive',
+            centering     = 'P',
+            constants     = (L,1.0000001*L,1.0000002*L),
+            units         = 'A',
+            atoms         = self.system_info.dimer_atoms,
+            basis         = [[0,0,0],[bond_length,0,0]],
+            basis_vectors = identity(3),
+            net_charge    = 0,
+            net_spin      = 'low',
+            kgrid         = (1,1,1),
+            kshift        = (0,0,0)
+            )
+        s = system.structure
+        s.slide(s.axes.sum(0)/2-s.pos.mean(0))
+        return system
+    #end def make_system
+
+
+    def get_result_sim(self,v,name):
+        key = v.functional,v.pp[0],v.pp[1]
+        sim = ValidationStage.get_result_sim(self,(name,key))
+        return sim
+    #end def get_result_sim
+
+
+    def get_results(self,quantity=None):
+        res = obj()
+        sinfo = self.system_info
+        for functional,pplist in sinfo.func_pp.iteritems():
+            for pp in pplist:
+                key = (functional,pp[0],pp[1])
+                v = self.saved_inputs[key]
+                sims = self.sims[key]
+                res[key] = self.get_result(v,sims,quantity)
+            #end for
+        #end for
+        return res
+    #end def get_results
+
+
+    def insert_pop_tau_dmc(self,v):
+        calcs = deepcopy(v.dmc_calcs)
+        found_vmc = False
+        found_dmc = False
+        for calc in calcs:
+            if isinstance(calc,vmc):
+                if 'samplesperthread' in calc:
+                    del calc.samplesperthread
+                #end if
+                calc.samples = v.population
+                found_vmc = True
+            elif isinstance(calc,dmc):
+                dmc_calc = calc
+                found_dmc = True
+            #end if
+        #end for
+        if found_dmc:
+            stepfac = calc.timestep/v.timestep
+            dmc_calc.warmupsteps = int(round(dmc_calc.warmupsteps*stepfac))
+            dmc_calc.steps = int(round(dmc_calc.steps*stepfac))
+            dmc_calc.timestep = v.timestep
+        #end if
+        return calcs
+    #end def insert_pop_tau_dmc
+
+
+    def make_sims(self,v):
+        self.not_implemented()
+    #end def make_sims
+
+
+    def get_result(self,v,sims,name):
+        self.not_implemented()
+    #end def get_result
+        
+#end class DimerValidationStage
+
+
+
+
+class DimerBondLengthScan(DimerValidationStage):
+
+    stage_dependencies = set(['bond_lengths','vmc_calcs','opt_calcs','dmc_calcs',
+                              'dftjob','optjob','vmcjob','dmcjob',
+                              'L','Ecut','population','timestep','J1_rcut','pade_b'])
+
+    stage_type = 'scan'
+    xlabel     = 'Bond length'
+    xunit      = 'A'
+
+    tag_sets = obj(
+        Edft = obj(
+            data_type = 'scalar',
+            title     = 'DFT energy vs bond length',
+            ylabel    = 'DFT energy',
+            yunit     = 'Ry'
+            ),
+        Ekin_pw = obj(
+            data_type = 'scalar',
+            title     = 'PW kinetic energy vs bond length',
+            ylabel    = 'PW kinetic energy',
+            yunit     = 'Ha'
+            ),
+        Ekin_vmc = obj(
+            data_type = 'stat',
+            title     = 'VMC kinetic energy vs bond length',
+            ylabel    = 'VMC kinetic energy',
+            yunit     = 'Ha'
+            ),
+        Evmc_noJ = obj(
+            data_type = 'stat',
+            title     = 'Jastrowless VMC energy vs bond length',
+            ylabel    = 'Jastrowless VMC energy',
+            yunit     = 'Ha'
+            ),
+        Evmc = obj(
+            data_type = 'stat',
+            title     = 'VMC energy vs bond length',
+            ylabel    = 'VMC energy',
+            yunit     = 'Ha'
+            ),
+        Edmc = obj(
+            data_type = 'stat',
+            title     = 'DMC energy vs bond length',
+            ylabel    = 'DMC energy',
+            yunit     = 'Ha'
+            )
+        )
+
+
+    def make_sims(self,v):
+        sims = obj()
+        dftpp,qmcpp = sort_pseudos(v.pseudos)
+        rcut  = v.J1_rcut
+        bu,bd = v.pade_b
+        dmc_calcs = self.insert_pop_tau_dmc(v)
+        for bond_length in v.bond_lengths:
+            bpath = os.path.join(v.path,'bond_length_{0}'.format(bond_length))
+            dftpath    = os.path.join(bpath,'dft')
+            vmcnoJpath = os.path.join(bpath,'vmc_noJ')
+            optJ12path = os.path.join(bpath,'opt_J12')
+            optJ3path  = os.path.join(bpath,'opt_J3')
+            vmcpath    = os.path.join(bpath,'vmc')
+            dmcpath    = os.path.join(bpath,'dmc')
+
+            dimer = self.make_system(v,bond_length)
+
+            scf = generate_pwscf(
+                identifier   = 'scf',
+                path         = dftpath,
+                job          = v.dftjob,
+                input_type   = 'scf',
+                input_dft    = v.functional,
+                ecut         = v.Ecut,
+                conv_thr     = 1e-8,
+                mixing_beta  = .7,
+                nosym        = True,
+                pseudos      = dftpp,
+                system       = dimer,
+                use_folded   = False
+                )
+            p2q = generate_pw2qmcpack(
+                identifier   = 'p2q',
+                path         = dftpath,
+                job          = Job(cores=1),
+                write_psir   = False
+                )
+            p2c = generate_pw2casino(
+                identifier   = 'p2c',
+                path         = dftpath,
+                job          = Job(cores=1)
+                )
+            vmc_noJ = generate_qmcpack(
+                identifier   = 'vmc',
+                path         = vmcnoJpath,
+                job          = v.vmcjob,
+                input_type   = 'basic',
+                system       = dimer,
+                bconds       = 'nnn',
+                pseudos      = qmcpp,
+                jastrows     = [],
+                calculations = v.vmc_calcs
+                )
+            optJ12 = generate_qmcpack(
+                identifier = 'opt',
+                path       = optJ12path,
+                job        = v.optjob,
+                input_type = 'opt_jastrow',
+                system     = dimer,
+                bconds     = 'nnn',
+                pseudos    = qmcpp,
+                jastrows   = [
+                    generate_jastrow('J1','bspline',8,rcut,system=dimer),
+                    generate_jastrow('J2','pade',bu,bd,system=dimer)
+                    ],
+                opt_calcs  = v.opt_calcs
+                )
+            optJ3 = generate_qmcpack(
+                identifier = 'opt',
+                path       = optJ3path,
+                job        = v.optjob,
+                input_type = 'opt_jastrow',
+                system     = dimer,
+                bconds     = 'nnn',
+                pseudos    = qmcpp,
+                jastrows   = [
+                    generate_jastrow('J3','polynomial',4,4,5.0,system=dimer)
+                    ],
+                opt_calcs  = v.opt_calcs
+                )
+            vmc = generate_qmcpack(
+                identifier   = 'vmc',
+                path         = vmcpath,
+                job          = v.vmcjob,
+                input_type   = 'basic',
+                system       = dimer,
+                bconds       = 'nnn',
+                pseudos      = qmcpp,
+                calculations = v.vmc_calcs
+                )
+            qmc = generate_qmcpack(
+                identifier   = 'dmc',
+                path         = dmcpath,
+                job          = v.dmcjob,
+                input_type   = 'basic',
+                system       = dimer,
+                bconds       = 'nnn',
+                pseudos      = qmcpp,
+                calculations = dmc_calcs
+                )
+            p2q.depends(    scf,'orbitals')
+            p2c.depends(    scf,'orbitals')
+            vmc_noJ.depends(scf,'orbitals')
+            optJ12.depends( scf,'orbitals')
+            optJ3.depends( (scf,'orbitals'),(optJ12,'jastrow'))
+            vmc.depends(   (scf,'orbitals'),(optJ3, 'jastrow'))
+            qmc.depends(   (scf,'orbitals'),(optJ3, 'jastrow'))
+            
+            sims[bond_length,'scf'    ] = scf
+            sims[bond_length,'p2q'    ] = p2q
+            sims[bond_length,'p2c'    ] = p2c
+            sims[bond_length,'vmc_noJ'] = vmc_noJ
+            sims[bond_length,'optJ12' ] = optJ12
+            sims[bond_length,'optJ3'  ] = optJ3
+            sims[bond_length,'vmc'    ] = vmc
+            sims[bond_length,'dmc'    ] = qmc
+        #end for
+        return sims
+    #end def make_sims
+
+
+    def get_result(self,v,sims,name='Edmc'):
+        if not name in self.tag_sets:
+            self.error('requested unrecognized result\n  you requested: {0}\n  valid options are: {1}'.format(name,self.tag_sets.keys()))
+        #end if
+        tags = self.tag_sets[name]
+        self.transfer_from(tags)
+        bond_lengths = []
+        energies = []
+        for bond_length in v.bond_lengths:
+            if name=='Edft':
+                a = sims[bond_length,'scf'].load_analyzer_image()
+                energy = a.E
+            elif name=='Ekin_pw':
+                a = sims[bond_length,'p2c'].load_analyzer_image()
+                energy = a.energies.Kinetic
+            elif name=='Ekin_vmc':
+                a = sims[bond_length,'vmc_noJ'].load_analyzer_image()
+                ke = a.vmc.last().scalar.Kinetic
+                energy = ke.mean,ke.error
+            elif name=='Evmc_noJ':
+                a = sims[bond_length,'vmc_noJ'].load_analyzer_image()
+                le = a.vmc.last().scalar.LocalEnergy
+                energy = le.mean,le.error
+            elif name=='Evmc':
+                a = sims[bond_length,'vmc'].load_analyzer_image()
+                le = a.vmc.last().scalar.LocalEnergy
+                energy = le.mean,le.error
+            elif name=='Edmc':
+                a = sims[bond_length,'dmc'].load_analyzer_image()
+                le = a.dmc.last().dmc.LocalEnergy
+                energy = le.mean,le.error
+            #end if
+            bond_lengths.append(bond_length)
+            energies.append(energy)
+        #end for
+        return bond_lengths,energies
+    #end def get_result
+#end class DimerBondLengthScan
+
+
+
+
+class ValidateDimerPP(ValidationProcess):
+
+    allowed_stage_results = set(
+        ['bond_lengths','vmc_calcs','opt_calcs','dmc_calcs',
+         'dftjob','optjob','vmcjob','dmcjob','L','Ecut',
+         'population','timestep','J1_rcut','pade_b']
+        )
+
+    def initialize(self,**func_pp):
+        if 'name' in func_pp:
+            self.name = func_pp['name']
+            del func_pp['name']
+        #end if
+        self.check_funcs_pseudos(**func_pp)
+
+        self.add_stages(
+            bond_length_scan = DimerBondLengthScan()
+            )
+
+        self.set_stage_order(
+            ['bond_length_scan']
+            )
+
+        info = obj(
+            ppmap = self.ppmap,
+            func_pp = self.func_pp,
+            functionals = self.functionals,
+            dimer = self.name,
+            dimer_atoms = self.read_dimer_atoms()
+            )
+
+        for stage in self.stages:
+            stage.system_info = info.copy()
+        #end for
+    #end def initialize
+
+
+    def read_dimer_atoms(self):
+        dimer = self.name
+        atoms = []
+        i=0
+        while i<len(dimer):
+            if dimer[i].isupper():
+                if i+1<len(dimer) and dimer[i+1].islower():
+                    atoms.append(dimer[i:i+2])
+                    i+=2
+                else:
+                    atoms.append(dimer[i:i+1])
+                    i+=1
+                #end if
+            else:
+                self.error('cannot read dimer string: '+dimer)
+            #end if
+        #end for
+        if len(atoms)!=2:
+            self.error('dimer string {0} contains {1} atoms ({2}), but should contain exactly 2'.format(dimer,len(atoms),atoms))
+        #end if
+        return tuple(atoms)
+    #end def read_dimer_atoms
+
+#end class ValidateDimerPP
+
+
+
+
 class ValidateDimerPPs(ValidationProcesses):
-    def sim_list(self):
-        return []
-    #end def sim_list
+    def initialize(self):
+        dimers = list(self.processes.keys())
+        pseudos = obj()
+        for dimer,process in self.processes.iteritems():
+            pseudos[dimer] = process.pseudo_list()
+        #end for
+        self.dimers = dimers
+        self.pseudos = pseudos
+    #end def initialize
+
+
+    def set_stage_inputs(self,**kwargs):
+        self.set_stage_results(**kwargs)
+    #end def set_stage_inputs
+
+
+    def set_stage_results(self,**kwargs):
+        results = obj()
+        for name,result in kwargs.iteritems():
+            results[name] = self.expand_stage_result(result)
+        #end for
+
+        for dimer,process in self.processes.iteritems():
+            res = obj()
+            for name,rcoll in results.iteritems():
+                res[name] = deepcopy(rcoll[dimer])
+            #end for
+            process.check_stage_results(res.keys())
+            process.set_stage_results(**res)
+        #end for
+    #end def set_stage_results
+
+
+    def expand_stage_result(self,rin):
+        r = obj()
+        single_types = (str,int,float,tuple,list,dict,type(None),Job)
+        wrong_type = False
+        wrong_class = None
+        if isinstance(rin,single_types):
+            for dimer in self.dimers:
+                dres = obj()
+                for pp in self.pseudos[dimer]:
+                    dres[pp] = deepcopy(rin)
+                #end for
+                r[dimer] = dres
+            #end for
+        elif isinstance(rin,obj):
+            dimers = set(rin.keys())
+            if len(set(self.dimers)-dimers)>0:
+                self.error('cannot expand stage result\n  information is required for all requested dimers\n  dimers requested: {0}\n  information provided:\n{1}'.format(self.dimers,rin))
+            #end if
+            for dimer,dinfo in rin.iteritems():
+                if dimer in self.dimers:
+                    dres = obj()
+                    if isinstance(dinfo,dict):
+                        pps = set(dinfo.keys())
+                        if len(set(self.pseudos[dimer])-pps)>0:
+                            self.error('cannot expand stage result\n  information is required for all requested pseudopotentials\n  pseudopotentials requested: {0}\n  information provided:\n{1}'.format(self.pseudos[dimer],rin))
+                        #end if
+                        for pp,ppinfo in dinfo.iteritems():
+                            if isinstance(ppinfo,single_types):
+                                dres[pp] = deepcopy(ppinfo)
+                            else:
+                                wrong_type = True
+                                wrong_class = ppinfo.__class__.__name__
+                            #end if
+                        #end for
+                    elif isinstance(dinfo,single_types) or isinstance(dinfo,obj):
+                        for pp in self.pseudos[dimer]:
+                            dres[pp] = deepcopy(dinfo)
+                        #end for
+                    else:
+                        wrong_type  = True
+                        wrong_class = dinfo.__class__.__name__ 
+                    #end if
+                    r[dimer] = dres
+                #end if
+            #end for
+        else:
+            wrong_type = True
+            wrong_class =rin.__class__.__name__
+        #end if
+        if wrong_type:
+            self.error('cannot expand stage result\n  received type: {0}\n  allowed_types: {1}'.format(wrong_class,single_types))
+        #end if
+        return r
+    #end def expand_stage_result
+
 #end class ValidateDimerPPs
 ValidateDimerPPs.set_process_type(ValidateDimerPP)
 
@@ -2197,6 +2597,8 @@ ValidateDimerPPs.set_process_type(ValidateDimerPP)
 
 
 class ValidatePPs(ValidatePPBase):
+    test_order = ['atoms','dimers']
+
     def __init__(self,settings=None,atoms=None,dimers=None):
         if not isinstance(settings,Pobj):
             self.error('input variable settings must be the settings object from the Project Suite')
@@ -2248,8 +2650,10 @@ class ValidatePPs(ValidatePPBase):
         n=0
         print 
         print n*pad+'ValidatePPs status'
-        for test in self.tests:
-            test.status(pad,n+1,*args)
+        for name in self.test_order:
+            if name in self.tests:
+                self.tests[name].status(pad,n+1,*args)
+            #end if
         #end for
         print n*pad+'end ValidatePPs status'
         print
@@ -2269,338 +2673,468 @@ def validate_qmc_pp(**kwargs):
 
 
 
-settings(
-    pseudo_dir    = './pseudopotentials',
-    status_only   = 0,
-    generate_only = 0,
-    sleep         = .3,
-    machine       = 'node32'
-    )
+if __name__=='__main__':
+
+    settings(
+        pseudo_dir    = './pseudopotentials',
+        status_only   = 0,
+        generate_only = 1,
+        sleep         = .3,
+        machine       = 'node32'
+        )
+ 
+
+
+    v = ValidatePPs(
+        settings = settings,
+        atoms = obj(
+            #C = obj(
+            #    q   = [0,1,2],
+            #    lda = ['C.BFD'],
+            #    pbe = ['C.BFD']
+            #    ),
+            O = obj(
+                q   = [0,1],
+                lda = ['O.6_lda']
+                ),
+            ),
+        dimers = obj(
+            CO = obj(
+                lda = [('C.BFD','O.6_lda')],
+                pbe = [('C.BFD','O.6_lda')]
+                ),
+            CuO = obj(
+                lda = [('Cu.17_lda'    ,'O.6_lda'),
+                       ('Cu.19_lda_opt','O.6_lda')]
+                )
+            )
+        )
 
 
 
-v = ValidatePPs(
-    settings = settings,
-    atoms = obj(
-        #C = obj(
-        #    q   = [0,1,2],
-        #    lda = ['C.BFD'],
-        #    pbe = ['C.BFD']
+    v.atoms.set_stage_inputs(
+        ae_occupations = obj(     #varies w/ a,q
+            C  = [[('He2s2p(-1,0)','He2s'),  # 0
+                   ('He2s2p(-1,1)','He2s'),
+                   ('He2s2p( 0,1)','He2s'),
+                   ('He2s2p(-1)'  ,'He2s2p(-1)'),
+                   ('He2s2p( 0)'  ,'He2s2p( 0)'),
+                   ('He2s2p( 1)'  ,'He2s2p( 1)'),
+                   ('He2s2p(-1)'  ,'He2s2p( 0)'),
+                   ('He2s2p(-1)'  ,'He2s2p( 1)')
+                   ],
+                  [('He2s2p(-1)'  ,'He2s'),  # 1
+                   ('He2s2p( 0)'  ,'He2s'),
+                   ('He2s2p( 1)'  ,'He2s'),
+                   ('He2s2p(-1,0)','He'),
+                   ('He2s2p(-1)'  ,'He2p(-1)')
+                   ],
+                  [('He2s'      ,'He2s'),    # 2
+                   ('He2s2p(-1)','He'),
+                   ('He2s'      ,'He2p(-1)')
+                   ]
+                  ],
+            O  = [#[('He2s2p','He2s2p'),      # -2
+                  # ('He2s2p','He2s2p(-1,0)3s'),
+                  # ],
+                  #[('He2s2p','He2s2p(-1,0)'),# -1
+                  # ('He2s2p','He2s2p(-1,1)'),
+                  # ('He2s2p','He2s2p( 0,1)'),
+                  # ('He2s2p','He2p')
+                  # ],
+                  [('He2s2p','He2s2p(-1)'),  # 0
+                   ('He2s2p','He2s2p( 0)'),
+                   ('He2s2p','He2s2p( 1)'),
+                   ('He2s2p(-1,0)','He2s2p(-1,1)'),
+                   ('He2s2p(-1,1)','He2s2p(-1,0)'),
+                   ('He2s2p(-1,0)','He2s2p( 0,1)'),
+                   ('He2s2p( 0,1)','He2s2p(-1,0)'),
+                   ('He2s2p(-1,1)','He2s2p( 0,1)'),
+                   ('He2s2p( 0,1)','He2s2p(-1,1)')
+                   ],
+                  [('He2s2p','He2s'),        # 1
+                   ('He2s2p(-1,1)','He2s2p(0)'   ),
+                   ('He2s2p(-1,0)','He2s2p(1)'   ),
+                   ('He2s2p(-1)'  ,'He2s2p(0,1)' ),
+                   ('He2s2p(-1,0)','He2s2p(-1)'  ),
+                   ('He2s2p(-1,1)','He2s2p(-1)'  ),
+                   ('He2s2p(-1)'  ,'He2s2p(-1,0)'),
+                   ('He2s2p(-1)'  ,'He2s2p(-1,1)'),
+                   ]
+                  #[('He2s2p(-1,0)','He2s'),  # 2
+                  # ('He2s2p(-1,1)','He2s'),
+                  # ('He2s2p( 0,1)','He2s'),
+                  # ('He2s2p(-1)'  ,'He2s2p(-1)'),
+                  # ('He2s2p( 0)'  ,'He2s2p( 0)'),
+                  # ('He2s2p( 1)'  ,'He2s2p( 1)'),
+                  # ('He2s2p(-1)'  ,'He2s2p( 0)'),
+                  # ('He2s2p(-1)'  ,'He2s2p( 1)')
+                  # ]
+                  ]
+            ),
+        pp_Ls          = [10,15,20],             #same for all a,q,pp
+        pp_Ecuts       = [100,150,200,250,300],  #same for all a,q,pp
+        pp_J1_rcuts    = [3,4,5,6,7],            #same for all a,q,pp
+        ae_populations = [500,1000,2000],        #same for all a,q
+        pp_populations = [500,1000,2000],        #same for all a,q,pp
+        ae_timesteps   = [.008,.004,.002,.001],  #same for all a,q
+        pp_timesteps   = [.08,.04,.02,.01,.005], #same for all a,q,pp
+        ae_opt_calcs   = [
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.0,
+                    unreweightedvariance = 1.0,
+                    reweightedvariance   = 0.0,
+                    walkers              = 1,
+                    warmupsteps          = 200,
+                    blocks               = 500,
+                    timestep             = 0.1,
+                    usedrift             = True,
+                    samples              = 16000,
+                    stepsbetweensamples  = 100,
+                    minwalkers           = 0.0,
+                    bigchange            = 15.0,
+                    alloweddifference    = 1e-4
+                    )
+                 ),
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.5,
+                    unreweightedvariance = 0.0,
+                    reweightedvariance   = 0.5,
+                    walkers              = 1,
+                    warmupsteps          = 200,
+                    blocks               = 500,
+                    timestep             = 0.1,
+                    usedrift             = True,
+                    samples              = 32000,
+                    stepsbetweensamples  = 100,
+                    minwalkers           = 0.0,
+                    bigchange            = 15.0,
+                    alloweddifference    = 1e-4
+                    )
+                 )
+            ],
+        ae_vmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 50,
+                blocks      = 1000,
+                steps       = 10,
+                substeps    = 10,
+                timestep    = 0.1,
+                usedrift    = True
+                )
+            ],
+        ae_dmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 20,
+                blocks      = 100,
+                steps       = 10,
+                substeps    = 10,
+                timestep    = 0.1,
+                usedrift    = True,
+                samples     = 1000
+                ),
+            dmc(
+                warmupsteps = 24,
+                blocks      = 1000,
+                steps       = 12,
+                timestep    = 0.004
+                ) 
+            ],
+        pp_opt_calcs   = [
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.0,
+                    unreweightedvariance = 1.0,
+                    reweightedvariance   = 0.0,
+                    walkers              = 1,
+                    warmupsteps          =  50,
+                    blocks               = 500,
+                    timestep             = 0.4,
+                    usedrift             = True,
+                    samples              = 16000,
+                    stepsbetweensamples  = 10,
+                    minmethod            = 'quartic',
+                    minwalkers           = 0.5,
+                    bigchange            = 2.0,
+                    alloweddifference    = 1e-4,
+                    maxweight            = 1e9,
+                    beta                 = 0.025,
+                    exp0                 = -16,
+                    stepsize             = 0.2,
+                    stabilizerscale      = 1.0,
+                    nstabilizers         = 3,
+                    nonlocalpp           = True,
+                    usebuffer            = True
+                    )
+                 ),
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.5,
+                    unreweightedvariance = 0.0,
+                    reweightedvariance   = 0.5,
+                    walkers              = 1,
+                    warmupsteps          =  50,
+                    blocks               = 500,
+                    timestep             = 0.4,
+                    usedrift             = True,
+                    samples              = 32000,
+                    stepsbetweensamples  = 10,
+                    minmethod            = 'quartic',
+                    minwalkers           = 0.5,
+                    bigchange            = 2.0,
+                    alloweddifference    = 1e-4,
+                    maxweight            = 1e9,
+                    beta                 = 0.025,
+                    exp0                 = -16,
+                    stepsize             = 0.2,
+                    stabilizerscale      = 1.0,
+                    nstabilizers         = 3,
+                    nonlocalpp           = True,
+                    usebuffer            = True
+                    )
+                 )
+            ],
+        pp_vmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 50,
+                blocks      = 1000,
+                steps       = 20,
+                substeps    =  3,
+                timestep    = 0.4,
+                usedrift    = True
+                )
+            ],
+        pp_dmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 50,
+                blocks      = 1000,
+                steps       = 20,
+                substeps    =  3,
+                timestep    = 0.4,
+                usedrift    = True,
+                samples     = 1000,
+                ),
+            dmc(
+                warmupsteps = 12,
+                blocks      = 1000,
+                steps       = 4,
+                timestep    = 0.04,
+                nonlocalmoves = True
+                ) 
+            ] 
+        )
+
+
+    v.atoms.set_stage_results(
+        ae_hfjob      = Job(cores=1),
+        ae_optjob     = Job(cores=16),
+        ae_vmcjob     = Job(cores=16),
+        ae_dmcjob     = Job(cores=16),
+        pp_dftjob     = Job(cores=16), 
+        pp_optjob     = Job(cores=16),
+        pp_vmcjob     = Job(cores=16),
+        pp_dmcjob     = Job(cores=16),
+        pp_Ecut0      = 150,   
+        #ae_occupation = obj(   
+        #    C         = [('He2s2p(-1,0)','He2s'        ),
+        #                 ('He2s2p(-1)'  ,'He2s'        ),
+        #                 ('He2s'        ,'He2s'        )],
+        #    O         = [('He2s2p'      ,'He2s2p(-1,0)'),
+        #                 ('He2s2p'      ,'He2s2p(-1)'  ),
+        #                 ('He2s2p'      ,'He2s'        ),
+        #                 ('He2s2p(-1,0)','He2s'        )]
         #    ),
-        O = obj(
-            q   = [0,1],
-            lda = ['O.6_lda']
+        #pp_L          = 20,    
+        #pp_Ecut = obj(
+        #    C         = 150,
+        #    O         = 200
+        #    ),   
+        #ae_orbitals   = 'finished',
+        #pp_orbitals   = 'finished',
+        #ae_pade_b     = (4.,4.),
+        #pp_pade_b     = (4.,4.),
+        #pp_J1_rcut = obj( 
+        #    C         = {'C.BFD' : [5, 4, 3]},
+        #    O         = 4
+        #    ),
+        #ae_jastrow    = 'finished',
+        #pp_jastrow    = 'finished',
+        #ae_population = obj(
+        #    C         = 1000,  
+        #    O         = 2000
+        #    ),
+        #pp_population = obj(
+        #    C         = [2000,3000,4000], 
+        #    O         = [1500,2500,3500,4500]
+        #    ),
+        #ae_timestep   = 1e-3, 
+        #pp_timestep = {     
+        #    'C.BFD'   : .01,
+        #    'O.6_lda' : .02
+        #    }
+        )
+
+
+
+    v.dimers.set_stage_inputs(
+        bond_lengths = obj(
+            CO  = [2,3,4,5,6],
+            #CuO = [2.5,3.5,4.5,5.5] 
             ),
-        ),
-    #dimers = obj(
-    #    CO = obj(
-    #        lda = ['C.BFD','O.6_lda'],
-    #        pbe = ['C.BFD','O.6_lda']
-    #        )
+        dftjob = Job(cores=16),
+        optjob = Job(cores=16),
+        vmcjob = Job(cores=16),
+        dmcjob = Job(cores=16),
+        L = obj(
+            CO  = 20,
+            CuO = 20,
+            ),
+        Ecut = obj(
+            CO  = 200,
+            CuO = {
+                ('Cu.17_lda'    ,'O.6_lda') : 200,
+                ('Cu.19_lda_opt','O.6_lda') : 300
+                }
+            ),
+        population = obj(
+            CO  = 1000,
+            CuO = 1500
+            ),
+        timestep = obj(
+            CO  = .02,
+            CuO = {
+                ('Cu.17_lda'    ,'O.6_lda') : .01,
+                ('Cu.19_lda_opt','O.6_lda') : .005
+                }
+            ),
+        J1_rcut = obj(
+            CO  = obj(C =4,O=4.5),
+            CuO = obj(Cu=5,O=4.5)
+            ),
+        pade_b = obj(
+            CO  = (3,4),
+            CuO = (5,6)
+            ),
+        opt_calcs   = [
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.0,
+                    unreweightedvariance = 1.0,
+                    reweightedvariance   = 0.0,
+                    walkers              = 1,
+                    warmupsteps          =  50,
+                    blocks               = 500,
+                    timestep             = 0.4,
+                    usedrift             = True,
+                    samples              = 16000,
+                    stepsbetweensamples  = 10,
+                    minmethod            = 'quartic',
+                    minwalkers           = 0.5,
+                    bigchange            = 2.0,
+                    alloweddifference    = 1e-4,
+                    maxweight            = 1e9,
+                    beta                 = 0.025,
+                    exp0                 = -16,
+                    stepsize             = 0.2,
+                    stabilizerscale      = 1.0,
+                    nstabilizers         = 3,
+                    nonlocalpp           = True,
+                    usebuffer            = True
+                    )
+                 ),
+            loop(max=4,
+                 qmc = linear(
+                    energy               = 0.5,
+                    unreweightedvariance = 0.0,
+                    reweightedvariance   = 0.5,
+                    walkers              = 1,
+                    warmupsteps          =  50,
+                    blocks               = 500,
+                    timestep             = 0.4,
+                    usedrift             = True,
+                    samples              = 32000,
+                    stepsbetweensamples  = 10,
+                    minmethod            = 'quartic',
+                    minwalkers           = 0.5,
+                    bigchange            = 2.0,
+                    alloweddifference    = 1e-4,
+                    maxweight            = 1e9,
+                    beta                 = 0.025,
+                    exp0                 = -16,
+                    stepsize             = 0.2,
+                    stabilizerscale      = 1.0,
+                    nstabilizers         = 3,
+                    nonlocalpp           = True,
+                    usebuffer            = True
+                    )
+                 )
+            ],
+        vmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 50,
+                blocks      = 1000,
+                steps       = 20,
+                substeps    =  3,
+                timestep    = 0.4,
+                usedrift    = True
+                )
+            ],
+        dmc_calcs   = [
+            vmc(
+                walkers     = 1,   
+                warmupsteps = 50,
+                blocks      = 1000,
+                steps       = 20,
+                substeps    =  3,
+                timestep    = 0.4,
+                usedrift    = True,
+                samples     = 1000,
+                ),
+            dmc(
+                warmupsteps = 12,
+                blocks      = 1000,
+                steps       = 4,
+                timestep    = 0.04,
+                nonlocalmoves = True
+                ) 
+            ]
+        )
+
+
+    # make the simulations
+    sims = v.make_sims()
+
+
+
+    #v.status()
+
+
+    pm = ProjectManager()
+
+    pm.add_simulations(sims)
+
+    pm.run_project()
+
+
+    #v.atoms.show_results(
+    #    stages = 'pp_box_scan',
+    #    mode   = 'print',
+    #    units  = 'eV',
+    #    xunits = 'B'
     #    )
-    )
-
-v.atoms.set_stage_inputs(
-    ae_occupations = obj(     #varies w/ a,q
-        C  = [[('He2s2p(-1,0)','He2s'),  # 0
-               ('He2s2p(-1,1)','He2s'),
-               ('He2s2p( 0,1)','He2s'),
-               ('He2s2p(-1)'  ,'He2s2p(-1)'),
-               ('He2s2p( 0)'  ,'He2s2p( 0)'),
-               ('He2s2p( 1)'  ,'He2s2p( 1)'),
-               ('He2s2p(-1)'  ,'He2s2p( 0)'),
-               ('He2s2p(-1)'  ,'He2s2p( 1)')
-               ],
-              [('He2s2p(-1)'  ,'He2s'),  # 1
-               ('He2s2p( 0)'  ,'He2s'),
-               ('He2s2p( 1)'  ,'He2s'),
-               ('He2s2p(-1,0)','He'),
-               ('He2s2p(-1)'  ,'He2p(-1)')
-               ],
-              [('He2s'      ,'He2s'),    # 2
-               ('He2s2p(-1)','He'),
-               ('He2s'      ,'He2p(-1)')
-               ]
-              ],
-        O  = [#[('He2s2p','He2s2p'),      # -2
-              # ('He2s2p','He2s2p(-1,0)3s'),
-              # ],
-              #[('He2s2p','He2s2p(-1,0)'),# -1
-              # ('He2s2p','He2s2p(-1,1)'),
-              # ('He2s2p','He2s2p( 0,1)'),
-              # ('He2s2p','He2p')
-              # ],
-              [('He2s2p','He2s2p(-1)'),  # 0
-               ('He2s2p','He2s2p( 0)'),
-               ('He2s2p','He2s2p( 1)'),
-               ('He2s2p(-1,0)','He2s2p(-1,1)'),
-               ('He2s2p(-1,1)','He2s2p(-1,0)'),
-               ('He2s2p(-1,0)','He2s2p( 0,1)'),
-               ('He2s2p( 0,1)','He2s2p(-1,0)'),
-               ('He2s2p(-1,1)','He2s2p( 0,1)'),
-               ('He2s2p( 0,1)','He2s2p(-1,1)')
-               ],
-              [('He2s2p','He2s'),        # 1
-               ('He2s2p(-1,1)','He2s2p(0)'   ),
-               ('He2s2p(-1,0)','He2s2p(1)'   ),
-               ('He2s2p(-1)'  ,'He2s2p(0,1)' ),
-               ('He2s2p(-1,0)','He2s2p(-1)'  ),
-               ('He2s2p(-1,1)','He2s2p(-1)'  ),
-               ('He2s2p(-1)'  ,'He2s2p(-1,0)'),
-               ('He2s2p(-1)'  ,'He2s2p(-1,1)'),
-               ]
-              #[('He2s2p(-1,0)','He2s'),  # 2
-              # ('He2s2p(-1,1)','He2s'),
-              # ('He2s2p( 0,1)','He2s'),
-              # ('He2s2p(-1)'  ,'He2s2p(-1)'),
-              # ('He2s2p( 0)'  ,'He2s2p( 0)'),
-              # ('He2s2p( 1)'  ,'He2s2p( 1)'),
-              # ('He2s2p(-1)'  ,'He2s2p( 0)'),
-              # ('He2s2p(-1)'  ,'He2s2p( 1)')
-              # ]
-              ]
-        ),
-    pp_Ls          = [10,15,20],             #same for all a,q,pp
-    pp_Ecuts       = [100,150,200,250,300],  #same for all a,q,pp
-    pp_J1_rcuts    = [3,4,5,6,7],            #same for all a,q,pp
-    ae_populations = [500,1000,2000],        #same for all a,q
-    pp_populations = [500,1000,2000],        #same for all a,q,pp
-    ae_timesteps   = [.008,.004,.002,.001],  #same for all a,q
-    pp_timesteps   = [.08,.04,.02,.01,.005], #same for all a,q,pp
-    ae_opt_calcs   = [
-        loop(max=4,
-             qmc = linear(
-                energy               = 0.0,
-                unreweightedvariance = 1.0,
-                reweightedvariance   = 0.0,
-                walkers              = 1,
-                warmupsteps          = 200,
-                blocks               = 500,
-                timestep             = 0.1,
-                usedrift             = True,
-                samples              = 16000,
-                stepsbetweensamples  = 100,
-                minwalkers           = 0.0,
-                bigchange            = 15.0,
-                alloweddifference    = 1e-4
-                )
-             ),
-        loop(max=4,
-             qmc = linear(
-                energy               = 0.5,
-                unreweightedvariance = 0.0,
-                reweightedvariance   = 0.5,
-                walkers              = 1,
-                warmupsteps          = 200,
-                blocks               = 500,
-                timestep             = 0.1,
-                usedrift             = True,
-                samples              = 32000,
-                stepsbetweensamples  = 100,
-                minwalkers           = 0.0,
-                bigchange            = 15.0,
-                alloweddifference    = 1e-4
-                )
-             )
-        ],
-    ae_vmc_calcs   = [
-        vmc(
-            walkers     = 1,   
-            warmupsteps = 50,
-            blocks      = 1000,
-            steps       = 10,
-            substeps    = 10,
-            timestep    = 0.1,
-            usedrift    = True
-            )
-        ],
-    ae_dmc_calcs   = [
-        vmc(
-            walkers     = 1,   
-            warmupsteps = 20,
-            blocks      = 100,
-            steps       = 10,
-            substeps    = 10,
-            timestep    = 0.1,
-            usedrift    = True,
-            samples     = 1000
-            ),
-        dmc(
-            warmupsteps = 24,
-            blocks      = 1000,
-            steps       = 12,
-            timestep    = 0.004
-            ) 
-        ],
-    pp_opt_calcs   = [
-        loop(max=4,
-             qmc = linear(
-                energy               = 0.0,
-                unreweightedvariance = 1.0,
-                reweightedvariance   = 0.0,
-                walkers              = 1,
-                warmupsteps          =  50,
-                blocks               = 500,
-                timestep             = 0.4,
-                usedrift             = True,
-                samples              = 16000,
-                stepsbetweensamples  = 10,
-                minmethod            = 'quartic',
-                minwalkers           = 0.5,
-                bigchange            = 2.0,
-                alloweddifference    = 1e-4,
-                maxweight            = 1e9,
-                beta                 = 0.025,
-                exp0                 = -16,
-                stepsize             = 0.2,
-                stabilizerscale      = 1.0,
-                nstabilizers         = 3,
-                nonlocalpp           = True,
-                usebuffer            = True
-                )
-             ),
-        loop(max=4,
-             qmc = linear(
-                energy               = 0.5,
-                unreweightedvariance = 0.0,
-                reweightedvariance   = 0.5,
-                walkers              = 1,
-                warmupsteps          =  50,
-                blocks               = 500,
-                timestep             = 0.4,
-                usedrift             = True,
-                samples              = 32000,
-                stepsbetweensamples  = 10,
-                minmethod            = 'quartic',
-                minwalkers           = 0.5,
-                bigchange            = 2.0,
-                alloweddifference    = 1e-4,
-                maxweight            = 1e9,
-                beta                 = 0.025,
-                exp0                 = -16,
-                stepsize             = 0.2,
-                stabilizerscale      = 1.0,
-                nstabilizers         = 3,
-                nonlocalpp           = True,
-                usebuffer            = True
-                )
-             )
-        ],
-    pp_vmc_calcs   = [
-        vmc(
-            walkers     = 1,   
-            warmupsteps = 50,
-            blocks      = 1000,
-            steps       = 20,
-            substeps    =  3,
-            timestep    = 0.4,
-            usedrift    = True
-            )
-        ],
-    pp_dmc_calcs   = [
-        vmc(
-            walkers     = 1,   
-            warmupsteps = 50,
-            blocks      = 1000,
-            steps       = 20,
-            substeps    =  3,
-            timestep    = 0.4,
-            usedrift    = True,
-            samples     = 1000,
-            ),
-        dmc(
-            warmupsteps = 12,
-            blocks      = 1000,
-            steps       = 4,
-            timestep    = 0.04,
-            nonlocalmoves = True
-            ) 
-        ] 
-    )
 
 
-v.atoms.set_stage_results(
-    ae_hfjob      = Job(cores=1),
-    ae_optjob     = Job(cores=16),
-    ae_vmcjob     = Job(cores=16),
-    ae_dmcjob     = Job(cores=16),
-    pp_dftjob     = Job(cores=16), 
-    pp_optjob     = Job(cores=16),
-    pp_vmcjob     = Job(cores=16),
-    pp_dmcjob     = Job(cores=16),
-    pp_Ecut0      = 150,   
-    #ae_occupation = obj(   
-    #    C         = [('He2s2p(-1,0)','He2s'        ),
-    #                 ('He2s2p(-1)'  ,'He2s'        ),
-    #                 ('He2s'        ,'He2s'        )],
-    #    O         = [('He2s2p'      ,'He2s2p(-1,0)'),
-    #                 ('He2s2p'      ,'He2s2p(-1)'  ),
-    #                 ('He2s2p'      ,'He2s'        ),
-    #                 ('He2s2p(-1,0)','He2s'        )]
-    #    ),
-    #pp_L          = 20,    
-    #pp_Ecut = obj(
-    #    C         = 150,
-    #    O         = 200
-    #    ),   
-    #ae_orbitals   = 'finished',
-    #pp_orbitals   = 'finished',
-    #ae_pade_b     = (4.,4.),
-    #pp_pade_b     = (4.,4.),
-    #pp_J1_rcut = obj( 
-    #    C         = {'C.BFD' : [5, 4, 3]},
-    #    O         = 4
-    #    ),
-    #ae_jastrow    = 'finished',
-    #pp_jastrow    = 'finished',
-    #ae_population = obj(
-    #    C         = 1000,  
-    #    O         = 2000
-    #    ),
-    #pp_population = obj(
-    #    C         = [2000,3000,4000], 
-    #    O         = [1500,2500,3500,4500]
-    #    ),
-    #ae_timestep   = 1e-3, 
-    #pp_timestep = {     
-    #    'C.BFD'   : .01,
-    #    'O.6_lda' : .02
-    #    }
-    )
-
-
-
-
-
-
-
-# make the simulations
-sims = v.make_sims()
-
-
-
-#v.status()
-
-
-pm = ProjectManager()
-
-pm.add_simulations(sims)
-
-pm.run_project()
-
-
-#v.atoms.show_results(
-#    stages = 'pp_box_scan',
-#    mode   = 'print',
-#    units  = 'eV',
-#    xunits = 'B'
-#    )
-
-
-v.atoms.show_results(
-    stages = 'ae_occupation_scan',
-    mode   = 'print'
-    )
+    v.atoms.show_results(
+        stages = 'ae_occupation_scan',
+        mode   = 'print'
+        )
 
 
 
@@ -2611,146 +3145,126 @@ v.atoms.show_results(
 
 
 
-#v = ValidatePPs(
-#    settings = settings,
-#    atoms = obj(
-#        Cu = obj(
-#            ref = (0,'lda','Cu.pz'),
-#            q   = [0,1,2],
-#            lda = ['Cu.17_lda','Cu.17_lda_f','Cu.19_lda_opt'],
-#            pbe = ['Cu.17_lda']
-#            ),
-#        Zn = obj(
-#            q   = [0,1,2],
-#            lda = ['Zn.lda.pp5','Zn.lda.pp6'],
-#            pbe = ['Zn.lda.pp6']
-#            ),
-#        #Co = obj(
-#        #    q = [0,1,2],
-#        #    pbe = ['Co.pbe'],
-#        #    hse = ['Co.pbe','Co.pbe2']
-#        #    )
-#        ),
-#    #dimers = obj(
-#    #    CuO = obj(
-#    #        lda = ['Cu.pz','O.pz'],
-#    #        pbe = ['Cu.pbe','O.pbe']
-#    #        ),
-#    #    ZnO = obj(
-#    #        lda = ['Zn.pz','Zn.pz']
-#    #        ),
-#    #    CoO = obj(
-#    #        lda = ['Co.pz','O.pz'],
-#    #        pbe = ['Co.pbe','O.pbe']
-#    #        )
-#    #    )
-#    )
-#
-#v.atoms.set_stage_inputs(
-#    hfjob  = Job(cores=1),
-#    dftjob = Job(cores=16), 
-#    optjob = Job(cores=16),
-#    vmcjob = Job(cores=16),
-#    dmcjob = Job(cores=16),
-#    ae_occupations = obj(     #varies w/ a,q
-#        Cu = [('abc1','def')],
-#        Zn = [('abc2','def')],
-#        Co = [('abc3','def')]
-#        ),
-#    ae_opt_calcs       = [],    #same for all a,q
-#    ae_vmc_calcs       = [],    #same for all a,q
-#    ae_populations     = [],    #same for all a,q
-#    ae_timesteps       = [],    #same for all a,q
-#    ae_dmc_calcs       = [],    #same for all a,q
-#    pp_Ls              = [],    #same for all a,q,pp
-#    pp_Ecuts           = [],    #same for all a,q,pp
-#    pp_opt_calcs       = [],    #same for all a,q,pp
-#    pp_J1_rcuts        = [],    #same for all a,q,pp
-#    pp_vmc_calcs       = [],    #same for all a,q,pp
-#    pp_dmc_populations = [],    #same for all a,q,pp
-#    pp_dmc_timesteps   = [],    #same for all a,q,pp
-#    pp_dmc_calcs       = []     #same for all a,q,pp
-#    )
-#
-##v.atoms.set_stage_results(
-##    ae_occupation = obj(      #varies w/ a,q
-##        Cu = [],
-##        Zn = [],
-##        Co = []
-##        ),
-##    ae_population = 1000,     #can vary or be same
-##    ae_timestep   = .0001,    #can vary or be same
-##    pp_L          = 20,       #can vary or be same
-##    pp_Ecut       = 300,      #will vary w/ a,pp
-##    pp_J1_rcut    = obj(      #will vary w/ a,q,pp
-##        Cu = {'Cu.pz' : [3.4, 4.5, 3.6],
-##              'Cu.pbe': [3.5, 3.4, 4.2]},
-##        Co = {}
-##        ),
-##    pp_population = 2000,     #can vary or be same
-##    pp_timestep   = .01       #can vary or be same
-##    )
-#
-#v.atoms.set_stage_results(
-#    ae_occupation = obj(      #varies w/ a,q
-#        Cu = [('up','down'),('up','down'),('up','down')],
-#        Zn = [('up','down'),('up','down'),('up','down')],
-#        Co = []
-#        ),
-#    ae_orbitals = 'finished',
-#    ae_jastrow  = 'finished',
-#    ae_population = obj(
-#        Cu = 1000,     #can vary or be same
-#        Zn = 2000
-#        ),
-#    ae_timestep   = [1e-4,2e-4,3e-4],    #can vary or be same
-#    pp_Ecut0      = 200,   #same for all a,q,pp
-#    pp_L          = 20,       #can vary or be same
-#    pp_Ecut       = obj(
-#        Cu = 150,
-#        Zn = 200
-#        ),      #will vary w/ a,pp
-#    pp_orbitals = 'finished',
-#    pp_jastrow  = 'finished',
-#    pp_J1_rcut    = obj(      #will vary w/ a,q,pp
-#        Cu = {'Cu.17_lda'    : [3.4, 4.5, 3.6],
-#              'Cu.17_lda_f'  : [3.5, 3.4, 4.2],
-#              'Cu.19_lda_opt': 5.0  },
-#        Zn = 2.7,
-#        Co = {}
-#        ),
-#    pp_population = obj(
-#        Cu = [2000,3000,4000],     #can vary or be same
-#        Zn = [2500,3500,4500]
-#        ),
-#    pp_timestep   = {       #can vary or be same
-#        'Cu.17_lda'    :.01,
-#        'Cu.17_lda_f'  :.02,
-#        'Cu.19_lda_opt':.001,
-#        'Zn.lda.pp5':.005,
-#        'Zn.lda.pp6':.006
-#        }
-#    )
-#
+    #v = ValidatePPs(
+    #    settings = settings,
+    #    atoms = obj(
+    #        Cu = obj(
+    #            ref = (0,'lda','Cu.pz'),
+    #            q   = [0,1,2],
+    #            lda = ['Cu.17_lda','Cu.17_lda_f','Cu.19_lda_opt'],
+    #            pbe = ['Cu.17_lda']
+    #            ),
+    #        Zn = obj(
+    #            q   = [0,1,2],
+    #            lda = ['Zn.lda.pp5','Zn.lda.pp6'],
+    #            pbe = ['Zn.lda.pp6']
+    #            ),
+    #        #Co = obj(
+    #        #    q = [0,1,2],
+    #        #    pbe = ['Co.pbe'],
+    #        #    hse = ['Co.pbe','Co.pbe2']
+    #        #    )
+    #        ),
+    #    #dimers = obj(
+    #    #    CuO = obj(
+    #    #        lda = ['Cu.pz','O.pz'],
+    #    #        pbe = ['Cu.pbe','O.pbe']
+    #    #        ),
+    #    #    ZnO = obj(
+    #    #        lda = ['Zn.pz','Zn.pz']
+    #    #        ),
+    #    #    CoO = obj(
+    #    #        lda = ['Co.pz','O.pz'],
+    #    #        pbe = ['Co.pbe','O.pbe']
+    #    #        )
+    #    #    )
+    #    )
+    #
+    #v.atoms.set_stage_inputs(
+    #    hfjob  = Job(cores=1),
+    #    dftjob = Job(cores=16), 
+    #    optjob = Job(cores=16),
+    #    vmcjob = Job(cores=16),
+    #    dmcjob = Job(cores=16),
+    #    ae_occupations = obj(     #varies w/ a,q
+    #        Cu = [('abc1','def')],
+    #        Zn = [('abc2','def')],
+    #        Co = [('abc3','def')]
+    #        ),
+    #    ae_opt_calcs       = [],    #same for all a,q
+    #    ae_vmc_calcs       = [],    #same for all a,q
+    #    ae_populations     = [],    #same for all a,q
+    #    ae_timesteps       = [],    #same for all a,q
+    #    ae_dmc_calcs       = [],    #same for all a,q
+    #    pp_Ls              = [],    #same for all a,q,pp
+    #    pp_Ecuts           = [],    #same for all a,q,pp
+    #    pp_opt_calcs       = [],    #same for all a,q,pp
+    #    pp_J1_rcuts        = [],    #same for all a,q,pp
+    #    pp_vmc_calcs       = [],    #same for all a,q,pp
+    #    pp_dmc_populations = [],    #same for all a,q,pp
+    #    pp_dmc_timesteps   = [],    #same for all a,q,pp
+    #    pp_dmc_calcs       = []     #same for all a,q,pp
+    #    )
+    #
+    ##v.atoms.set_stage_results(
+    ##    ae_occupation = obj(      #varies w/ a,q
+    ##        Cu = [],
+    ##        Zn = [],
+    ##        Co = []
+    ##        ),
+    ##    ae_population = 1000,     #can vary or be same
+    ##    ae_timestep   = .0001,    #can vary or be same
+    ##    pp_L          = 20,       #can vary or be same
+    ##    pp_Ecut       = 300,      #will vary w/ a,pp
+    ##    pp_J1_rcut    = obj(      #will vary w/ a,q,pp
+    ##        Cu = {'Cu.pz' : [3.4, 4.5, 3.6],
+    ##              'Cu.pbe': [3.5, 3.4, 4.2]},
+    ##        Co = {}
+    ##        ),
+    ##    pp_population = 2000,     #can vary or be same
+    ##    pp_timestep   = .01       #can vary or be same
+    ##    )
+    #
+    #v.atoms.set_stage_results(
+    #    ae_occupation = obj(      #varies w/ a,q
+    #        Cu = [('up','down'),('up','down'),('up','down')],
+    #        Zn = [('up','down'),('up','down'),('up','down')],
+    #        Co = []
+    #        ),
+    #    ae_orbitals = 'finished',
+    #    ae_jastrow  = 'finished',
+    #    ae_population = obj(
+    #        Cu = 1000,     #can vary or be same
+    #        Zn = 2000
+    #        ),
+    #    ae_timestep   = [1e-4,2e-4,3e-4],    #can vary or be same
+    #    pp_Ecut0      = 200,   #same for all a,q,pp
+    #    pp_L          = 20,       #can vary or be same
+    #    pp_Ecut       = obj(
+    #        Cu = 150,
+    #        Zn = 200
+    #        ),      #will vary w/ a,pp
+    #    pp_orbitals = 'finished',
+    #    pp_jastrow  = 'finished',
+    #    pp_J1_rcut    = obj(      #will vary w/ a,q,pp
+    #        Cu = {'Cu.17_lda'    : [3.4, 4.5, 3.6],
+    #              'Cu.17_lda_f'  : [3.5, 3.4, 4.2],
+    #              'Cu.19_lda_opt': 5.0  },
+    #        Zn = 2.7,
+    #        Co = {}
+    #        ),
+    #    pp_population = obj(
+    #        Cu = [2000,3000,4000],     #can vary or be same
+    #        Zn = [2500,3500,4500]
+    #        ),
+    #    pp_timestep   = {       #can vary or be same
+    #        'Cu.17_lda'    :.01,
+    #        'Cu.17_lda_f'  :.02,
+    #        'Cu.19_lda_opt':.001,
+    #        'Zn.lda.pp5':.005,
+    #        'Zn.lda.pp6':.006
+    #        }
+    #    )
+    #
+#end if
 
-
-
-
-#  
-# todo list 
-#   qmcpack.py
-#     don't add pp files to transfer files if pseudos is None
-#   sqd_analyzer.py
-#     needs to read log file for kinetic and total energies
-#   ensure all pps are requested properly
-#   update stage_dependencies
-#   update stage initialization PP/AE in AtomicValidationProcess
-#   update allowed stage results 
-#   try out with generate_only
-#   add dimer code
-#   try w/ generate_only
-#   walk through C,O and CO
-#     make sure qmcpack was made w/ buildlevel=2
-#   add tools directory
-#     pseudopotential testing
-#  

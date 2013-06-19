@@ -228,6 +228,9 @@ class PhysicalSystem(Matter):
 
     def generate_electrons(self,net_charge=0,net_spin=0):
         nelectrons = -net_charge + self.net_charge
+        if net_spin=='low':
+            net_spin = nelectrons%2
+        #end if
         nup   = float(nelectrons + net_spin - self.net_spin)/2
         ndown = float(nelectrons - net_spin + self.net_spin)/2        
         if abs(nup-int(nup))>1e-3:
