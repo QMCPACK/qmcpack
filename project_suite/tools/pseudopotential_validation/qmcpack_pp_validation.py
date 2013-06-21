@@ -25,6 +25,22 @@ from debug import *
 
 
 
+def remove(o,*names):
+    m = o.copy()
+    keys = list(m.keys())
+    for key in keys:
+        for name in names:
+            if name in key:
+                del m[key]
+                break
+            #end if
+        #end for
+    #end for
+    return m
+#end def remove
+
+
+
 def sort_pseudos(pps,dext=set(['ncpp','upf']),qext=set(['xml'])):
     dpp = []
     qpp = []
@@ -858,9 +874,8 @@ class AtomicValidationStage(ValidationStage):
         pinputs = obj()
         for name,value in self.inputs.iteritems():
             if name.startswith('ae_'):
-                val = value[iq]
-                inputs[name.replace('ae_','')] = val
-                pinputs[name] = val
+                inputs[name.replace('ae_','')] = value[iq]
+                pinputs[name] = value[iq]
             #end if
         #end for
         for name,value in self.results.iteritems():
@@ -878,9 +893,8 @@ class AtomicValidationStage(ValidationStage):
         pinputs = obj()
         for name,value in self.inputs.iteritems():
             if name.startswith('pp_'):
-                val = value[iq]
-                inputs[name.replace('pp_','')] = val
-                pinputs[name] = val
+                inputs[name.replace('pp_','')] = value[iq]
+                pinputs[name] = value[iq]
             #end if
         #end for
         for name,value in self.results.iteritems():
@@ -955,7 +969,6 @@ class AtomicValidationStage(ValidationStage):
                 #end if
                 spin = v.spin
             #end if
-            print spin
             system = generate_physical_system(
                 lattice    = 'orthorhombic',
                 cell       = 'primitive',
@@ -1144,7 +1157,7 @@ class AtomicDFTBoxScan(AtomicValidationStage):
         sims = obj()
         dftpp,qmcpp = sort_pseudos(v.pseudos)
         for L in v.Ls:
-            atom = self.make_system(v,L=v.L,spin=v.spin0)
+            atom = self.make_system(v,L=L,spin=v.spin0)
             s = atom.structure
             s.slide(s.axes.sum(0)/2)
             path = os.path.join(v.path,'L_'+str(L))
@@ -1368,7 +1381,7 @@ class AtomicDFTCalc(AtomicValidationStage):
 class AtomicOptJ1RcutScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_J1_rcuts','pp_opt_calcs'])
-    stage_dependencies = set(['pp_optjob','pp_orbitals','pp_pade_b'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_optjob','pp_orbitals','pp_pade_b'])
     stage_result       = 'pp_J1_jastrow'
 
     title  = 'Optimal VMC Energy vs. J1 rcut'
@@ -1509,7 +1522,7 @@ class AtomicAEOptCalc(AtomicOptCalc):
 class AtomicPPOptCalc(AtomicOptCalc):
     systype = 'pp'
     stage_inputs = set(['pp_opt_calcs'])
-    stage_dependencies = set(['pp_optjob','pp_orbitals','pp_J1_rcut'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_optjob','pp_orbitals','pp_J1_rcut'])
     stage_result = 'pp_jastrow'
 #end class AtomicPPOptCalc
 
@@ -1572,7 +1585,7 @@ class AtomicAEVMCCalc(AtomicVMCCalc):
 class AtomicPPVMCCalc(AtomicVMCCalc):
     systype = 'pp'
     stage_inputs = set(['pp_vmc_calcs'])
-    stage_dependencies = set(['pp_vmcjob','pp_orbitals','pp_jastrow'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_vmcjob','pp_orbitals','pp_jastrow'])
     final_result = 'Evmc_pp'
 #end class AtomicPPVMCCalc
 
@@ -1658,7 +1671,7 @@ class AtomicAEDMCPopulationScan(AtomicDMCPopulationScan):
 class AtomicPPDMCPopulationScan(AtomicDMCPopulationScan):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs','pp_populations'])
-    stage_dependencies = set(['pp_dmcjob','pp_orbitals','pp_jastrow'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow'])
 #end class AtomicPPDMCPopulationScan
 
 
@@ -1757,7 +1770,7 @@ class AtomicAEDMCTimestepScan(AtomicDMCTimestepScan):
 class AtomicPPDMCTimestepScan(AtomicDMCTimestepScan):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs'])
-    stage_dependencies = set(['pp_dmcjob','pp_orbitals','pp_jastrow','pp_population'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population'])
 #end class AtomicPPDMCTimestepScan
 
 
@@ -1843,7 +1856,7 @@ class AtomicAEDMCCalc(AtomicDMCCalc):
 class AtomicPPDMCCalc(AtomicDMCCalc):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs'])
-    stage_dependencies = set(['pp_dmcjob','pp_orbitals','pp_jastrow','pp_population','pp_timestep'])
+    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population','pp_timestep'])
     final_result = 'Edmc_pp'
 #end class AtomicPPDMCCalc
 
@@ -1979,6 +1992,13 @@ class ValidateAtomPPs(ValidationProcesses):
             pinputs = obj()
             for name,input in inputs.iteritems():
                 pinputs[name] = inputs[name][atom]
+            #end for
+            pi = pinputs.copy()
+            pkeys = list(pi.keys())
+            for key in pkeys:
+                if key.endswith('job') or key.endswith('calcs'):
+                    del pi[key]
+                #end if
             #end for
             process.set_stage_inputs(**pinputs)
         #end for
