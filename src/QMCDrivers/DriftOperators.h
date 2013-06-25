@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #define QMCPLUSPLUS_QMCDRIFTOPERATORS_H
+#include "type_traits/scalar_traits.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 namespace qmcplusplus
@@ -131,15 +132,16 @@ inline void setScaledDriftPbyP(T tau,
  *
  * Assume, mass=1
  */
-template<class T, unsigned D>
+template<class T, class T1, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau,
-                                       const ParticleAttrib<TinyVector<T,D> >& qf,
+                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T norm=0.0, norm_scaled=0.0, tau2=tau*tau;
+  T norm=0.0, norm_scaled=0.0, tau2=tau*tau, vsq;
   for(int iat=0; iat<qf.size(); ++iat)
   {
-    T vsq=dot(qf[iat],qf[iat]);
+    convert(dot(qf[iat],qf[iat]),vsq);
+    //T vsq=dot(qf[iat],qf[iat]);
     T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau2;
@@ -155,16 +157,17 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * @param drift scaled quantum forces
  * @param return correction term
  */
-template<class T, unsigned D>
+template<class T, class T1, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau_au, const vector<T>& massinv,
-                                       const ParticleAttrib<TinyVector<T,D> >& qf,
+                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T norm=0.0, norm_scaled=0.0;
+  T norm=0.0, norm_scaled=0.0, vsq;
   for(int iat=0; iat<massinv.size(); ++iat)
   {
     T tau=tau_au*massinv[iat];
-    T vsq=dot(qf[iat],qf[iat]);
+    convert(dot(qf[iat],qf[iat]),vsq);
+    //T vsq=dot(qf[iat],qf[iat]);
     T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau*tau;
