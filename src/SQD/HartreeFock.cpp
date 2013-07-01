@@ -116,32 +116,29 @@ bool HartreeFock::solve()
     {
       run<NuclearLinearTransform<RadialOrbital_t> >(norb);
     }
-    else
-      if(GridType == "log")
-      {
-        run<NuclearLogTransform<RadialOrbital_t> >(norb);
-      }
+    else if(GridType == "log")
+    {
+      run<NuclearLogTransform<RadialOrbital_t> >(norb);
+    }
+  }
+  else if(PotType == "nuclear_scalar_rel")
+  {
+    if(GridType == "log")
+    {
+      run<NuclearRelLogTransform<RadialOrbital_t> >(norb);
+    }
   }
   else
-    if(PotType == "nuclear_scalar_rel")
+  {
+    if(GridType == "linear")
     {
-      if(GridType == "log")
-      {
-        run<NuclearRelLogTransform<RadialOrbital_t> >(norb);
-      }
+      run<RegularLinearTransform<RadialOrbital_t> >(norb);
     }
-    else
+    else if(GridType == "log")
     {
-      if(GridType == "linear")
-      {
-        run<RegularLinearTransform<RadialOrbital_t> >(norb);
-      }
-      else
-        if(GridType == "log")
-        {
-          run<RegularLogTransform<RadialOrbital_t> >(norb);
-        }
+      run<RegularLogTransform<RadialOrbital_t> >(norb);
     }
+  }
   return true;
 }
 

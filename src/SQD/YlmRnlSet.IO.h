@@ -283,7 +283,8 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
     xmlNodePtr p2 = xmlNewNode(NULL,(const xmlChar*)"group");
     xmlNewProp(p2,(const xmlChar*)"name",(const xmlChar*)elementName.c_str());
     std::ostringstream c;
-    c<<Nup+Ndown;
+    //c<<Nup+Ndown;
+    c << Charge; //use charge
     xmlNodePtr p3 =xmlNewTextChild(p2,NULL,
                                    (const xmlChar*)"parameter", (const xmlChar*)c.str().c_str());
     xmlNewProp(p3,(const xmlChar*)"name",(const xmlChar*)"charge");

@@ -217,7 +217,8 @@ struct YlmRnlSet
   int Nup;
   ///number of spin-down orbitals
   int Ndown;
-
+  ///charge of the nuclei
+  int Charge;
   ///parameter for calculating orbital cusp conditions
   value_type CuspParam;
 

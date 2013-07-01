@@ -90,11 +90,10 @@ bool HartreeFock::put(xmlNodePtr d_root)
       {
         AtomName = avalue;
       }
-      else
-        if (aname == "num_closed_shells")
-        {
-          num_closed_shells = atoi(avalue);
-        }
+      else if (aname == "num_closed_shells")
+      {
+        num_closed_shells = atoi(avalue);
+      }
       att = att->next;
     }
     XMLReport("Atom name = " << AtomName);
@@ -108,19 +107,17 @@ bool HartreeFock::put(xmlNodePtr d_root)
       {
         grid_ptr = cur1;
       }
-      else
-        if(cname1 == "orbitalset")
-        {
-          orb_ptr = cur1;
-        }
-        else
-          if(cname1 == "hamiltonian")
-          {
-            pot_ptr = cur1;
-            OhmmsAttributeSet aAttrib;
-            aAttrib.add(PotType,"type");
-            aAttrib.put(cur1);
-          }
+      else if(cname1 == "orbitalset")
+      {
+        orb_ptr = cur1;
+      }
+      else if(cname1 == "hamiltonian")
+      {
+        pot_ptr = cur1;
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(PotType,"type");
+        aAttrib.put(cur1);
+      }
       cur1 = cur1->next;
     }
   }
@@ -219,19 +216,18 @@ bool HartreeFock::initGrid()
     rmax/=sqrt(scale);
     myGrid->set(rmin,rmax,npts);
   }
+  else if(GridType == "linear")
+  {
+    myGrid = new LinearGrid<double>;
+    rmin/=scale;
+    rmax/=sqrt(scale);
+    myGrid->set(rmin,rmax,npts);
+  }
   else
-    if(GridType == "linear")
-    {
-      myGrid = new LinearGrid<double>;
-      rmin/=scale;
-      rmax/=sqrt(scale);
-      myGrid->set(rmin,rmax,npts);
-    }
-    else
-    {
-      ERRORMSG("Grid Type Options: Log or Linear.");
-      return false;
-    }
+  {
+    ERRORMSG("Grid Type Options: Log or Linear.");
+    return false;
+  }
   XMLReport("Radial Grid: type " << GridType << " rmin = "
             << rmin << ", rmax = " << rmax << ", npts = " << npts);
   //     << ", dh = " << myGrid->dh() << ", npts = " << npts)
@@ -302,6 +298,9 @@ bool HartreeFock::initOrbitalSet()
  */
 bool HartreeFock::initHamiltonian()
 {
+  //set charge to zero
+  Psi.Charge=0;
+
   if(PotType.find("nuclear")<PotType.size())
   {
     XMLReport("Creating a Nuclear Potential.");
@@ -312,59 +311,57 @@ bool HartreeFock::initHamiltonian()
     XMLReport("Potential Paramter: Z = " << Z);
     Pot.add(new ZOverRPotential(Z), true);
     Psi.CuspParam = Z;
+    Psi.Charge=Z;
   } // Z/r potential
+  else if(PotType=="heg")
+  {
+    XMLReport("Creating a Spherical Jellium potential.");
+    SHEGPotential* ap=new SHEGPotential(Psi.size());
+    ap->put(pot_ptr);
+    Pot.add(ap);
+    Psi.CuspParam = 0.0;//set cusp to zero
+  }//spherical Jellium
+  else if(PotType == "harmonic")
+  {
+    XMLReport("Creating a Harmonic Potential.");
+    double Omega=0.5;
+    ParameterSet params;
+    params.add(Omega,"z","double");
+    params.add(Omega,"omega","double");
+    params.put(pot_ptr);
+    XMLReport("Potential Parameter: Omega = " << Omega);
+    Pot.add(new HarmonicPotential(Omega),true);
+    Psi.CuspParam = 0.0;
+  } //Harmonic
+  else if(PotType == "step")
+  {
+    XMLReport("Creating a Step-Function Potential.");
+    StepPotential* apot = new StepPotential;
+    apot->put(pot_ptr);
+    Pot.add(apot,true);
+    Psi.CuspParam = 0.0;
+  } //step potential
+  else if(PotType == "pseudo")
+  {
+    XMLReport("Creating a Starkloff-Joannopoulos Pseudo-Potential.");
+    double rc, lambda, Zeff;
+    ParameterSet params;
+    params.add(rc,"rc","double");
+    params.add(lambda,"lambda","double");
+    params.add(Zeff,"zeff","double");
+    params.put(pot_ptr);
+    XMLReport("Potential Parameter: Effective Charge = " << Zeff);
+    XMLReport("Potential Parameter: Core Radius = " << rc);
+    XMLReport("Potential Parameter: Lambda = " << lambda);
+    Pot.add(new SJPseudoPotential(Zeff,rc,lambda));
+    Psi.CuspParam = 0.0;
+    Psi.Charge=Zeff;
+  } // if Pseudo
   else
-    if(PotType=="heg")
-    {
-      XMLReport("Creating a Spherical Jellium potential.");
-      SHEGPotential* ap=new SHEGPotential(Psi.size());
-      ap->put(pot_ptr);
-      Pot.add(ap);
-      Psi.CuspParam = 0.0;//set cusp to zero
-    }//spherical Jellium
-    else
-      if(PotType == "harmonic")
-      {
-        XMLReport("Creating a Harmonic Potential.");
-        double Omega=0.5;
-        ParameterSet params;
-        params.add(Omega,"z","double");
-        params.add(Omega,"omega","double");
-        params.put(pot_ptr);
-        XMLReport("Potential Parameter: Omega = " << Omega);
-        Pot.add(new HarmonicPotential(Omega),true);
-        Psi.CuspParam = 0.0;
-      } //Harmonic
-      else
-        if(PotType == "step")
-        {
-          XMLReport("Creating a Step-Function Potential.");
-          StepPotential* apot = new StepPotential;
-          apot->put(pot_ptr);
-          Pot.add(apot,true);
-          Psi.CuspParam = 0.0;
-        } //step potential
-        else
-          if(PotType == "pseudo")
-          {
-            XMLReport("Creating a Starkloff-Joannopoulos Pseudo-Potential.");
-            double rc, lambda, Zeff;
-            ParameterSet params;
-            params.add(rc,"rc","double");
-            params.add(lambda,"lambda","double");
-            params.add(Zeff,"zeff","double");
-            params.put(pot_ptr);
-            XMLReport("Potential Parameter: Effective Charge = " << Zeff);
-            XMLReport("Potential Parameter: Core Radius = " << rc);
-            XMLReport("Potential Parameter: Lambda = " << lambda);
-            Pot.add(new SJPseudoPotential(Zeff,rc,lambda));
-            Psi.CuspParam = 0.0;
-          } // if Pseudo
-          else
-          {
-            ERRORMSG("Unknown potential type" << PotType);
-            return false;
-          }
+  {
+    ERRORMSG("Unknown potential type" << PotType);
+    return false;
+  }
   //determine maximum angular momentum
   int lmax = 0;
   int norb = Psi.size();
