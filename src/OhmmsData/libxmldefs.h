@@ -96,6 +96,7 @@ bool putContent(IT first, IT last, xmlNodePtr cur)
 template<class T>
 bool getContent(const T& a, xmlNodePtr cur)
 {
+  if(cur->children == NULL) return false;
   std::stringstream s;
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(10);
@@ -116,6 +117,7 @@ template<class T>
 inline bool
 putContent(std::vector<T>& a, xmlNodePtr cur)
 {
+  if(cur->children == NULL) return false;
   std::istringstream
   stream((const char*)
          (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
