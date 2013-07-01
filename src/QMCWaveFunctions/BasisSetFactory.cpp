@@ -97,65 +97,61 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
     app_log()<<"Electron gas SPO set"<<endl;
     bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
   }
-  else
-    if (typeOpt == "linearopt")
+  else if (typeOpt == "linearopt")
+  {
+    //app_log()<<"Optimizable SPO set"<<endl;
+    bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+  }
+  else if (typeOpt == "AFM")
+  {
+    //       app_log()<<"AFM SPO set"<<endl;
+    bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
+  }
+#if OHMMS_DIM ==3
+  else if(typeOpt.find("spline")<typeOpt.size())
+  {
+    name=typeOpt;
+#if defined(HAVE_EINSPLINE)
+    PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
+    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+#else
+    PRE.error("Einspline is missing for B-spline orbitals",true);
+#endif
+  }
+#if !defined(QMC_COMPLEX)
+  else if(typeOpt == "MolecularOrbital" || typeOpt == "MO")
+  {
+    ParticleSet* ions=0;
+    //do not use box to check the boundary conditions
+    if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN)
+      targetPtcl.setBoundBox(false);
+    //initialize with the source tag
+    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    if(pit == ptclPool.end())
+      PRE.error("Missing basisset/@source.",true);
+    else
+      ions=(*pit).second;
+    if(transformOpt == "yes")
     {
-      //app_log()<<"Optimizable SPO set"<<endl;
-      bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+      app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << endl;
+#if QMC_BUILD_LEVEL>2
+      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
+#else
+      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
+#endif
     }
     else
-      if (typeOpt == "AFM")
-      {
-//       app_log()<<"AFM SPO set"<<endl;
-        bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
-      }
-#if OHMMS_DIM ==3
-      else
-        if(typeOpt.find("spline")<typeOpt.size())
-        {
-          name=typeOpt;
-#if defined(HAVE_EINSPLINE)
-          PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-          bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
-#else
-          PRE.error("Einspline is missing for B-spline orbitals",true);
-#endif
-        }
-#if !defined(QMC_COMPLEX)
-        else
-          if(typeOpt == "MolecularOrbital" || typeOpt == "MO")
-          {
-            ParticleSet* ions=0;
-            //do not use box to check the boundary conditions
-            if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN)
-              targetPtcl.setBoundBox(false);
-            //initialize with the source tag
-            PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-            if(pit == ptclPool.end())
-              PRE.error("Missing basisset/@source.",true);
-            else
-              ions=(*pit).second;
-            if(transformOpt == "yes")
-            {
+    {
 #if QMC_BUILD_LEVEL>2
-              bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
-#else
-              bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
+      if(cuspC == "yes")
+        app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
 #endif
-            }
-            else
-            {
-#if QMC_BUILD_LEVEL>2
-              if(cuspC == "yes")
-                app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
-#endif
-              if(keyOpt == "GTO")
-                bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
-              else
-                if(keyOpt == "STO")
-                  bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
-            }
-          }
+      if(keyOpt == "GTO")
+        bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
+      else if(keyOpt == "STO")
+        bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
+    }
+  }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3
   PRE.flush();
@@ -168,11 +164,11 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
 //       basissets[name]=basisBuilder.size();
     basisBuilder[name]=(bb);
   }
-  else
-  {
-    //fatal error
-//       PRE.error("Failed to create a basis set.",true);
-  }
+//  else
+//  {
+//    //fatal error
+////       PRE.error("Failed to create a basis set.",true);
+//  }
 }
 
 SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
@@ -192,18 +188,16 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
     getNodeName(cname,cur);
   if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
     createBasisSet(tcur,cur);
-  else
-    if (basisBuilder.count(bsname))
-    {
-      createBasisSet(cur,cur);
-      bname=sname;
-    }
-    else
-      if (bname=="")
-      {
-        createBasisSet(cur,cur);
-        bname=basisBuilder.rbegin()->first;
-      }
+  else if (basisBuilder.count(bsname))
+  {
+    createBasisSet(cur,cur);
+    bname=sname;
+  }
+  else if (bname=="")
+  {
+    createBasisSet(cur,cur);
+    bname=basisBuilder.rbegin()->first;
+  }
   if(basisBuilder.size())
   {
     app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<<endl;

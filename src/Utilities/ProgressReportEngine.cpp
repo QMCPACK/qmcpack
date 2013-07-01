@@ -25,7 +25,7 @@ void ReportEngine::echo(xmlNodePtr cur, bool recursive)
     return;
   app_log()<< "<input node=\""<<(const char*)(cur->name) << "\"";
   xmlAttrPtr att = cur->properties;
-  char atext[32];
+  char atext[1024];
   while(att != NULL)
   {
     sprintf(atext,"  %s=\"%s\"",(const char*)(att->name),(const char*)(att->children->content));

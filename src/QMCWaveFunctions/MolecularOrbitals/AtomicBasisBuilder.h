@@ -93,16 +93,14 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   {
     expandlm = GAUSSIAN_EXPAND;
   }
-  else
-    if(Morder == "natural")
-    {
-      expandlm = NATURAL_EXPAND;
-    }
-    else
-      if(Morder == "no")
-      {
-        expandlm = DONOT_EXPAND;
-      }
+  else if(Morder == "natural")
+  {
+    expandlm = NATURAL_EXPAND;
+  }
+  else if(Morder == "no")
+  {
+    expandlm = DONOT_EXPAND;
+  }
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
