@@ -1460,9 +1460,11 @@ class AtomicOptCalc(AtomicValidationStage):
         if self.systype=='ae':
             qmcpp = None
             bu,bd = v.pade_b
+            J3 = generate_jastrow('J3','polynomial',4,4,5.0,system=atom)
+            J3.source = 'atom'
             jastrows = [
                 generate_jastrow('J2','pade',bu,bd,system=atom),
-                generate_jastrow('J3','polynomial',4,4,5.0,system=atom)
+                J3
                 ]
         elif self.systype=='pp':
             dftpp,qmcpp = sort_pseudos(v.pseudos)

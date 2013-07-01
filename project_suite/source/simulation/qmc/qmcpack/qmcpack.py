@@ -3,6 +3,7 @@ import os
 from numpy import array,dot,pi
 from numpy.linalg import inv,norm
 from generic import obj
+from periodic_table import periodic_table
 from physical_system import PhysicalSystem
 from simulation import Simulation
 from qmcpack_input import QmcpackInput,generate_qmcpack_input
@@ -152,6 +153,16 @@ class Qmcpack(Simulation):
 
                 sqdxml_loc = os.path.join(result.dir,result.qmcfile)
                 sqdxml = QmcpackInput(sqdxml_loc)
+
+                #sqd sometimes puts the wrong ionic charge
+                #  rather than setting Z to the number of electrons
+                #  set it to the actual atomic number
+                g = sqdxml.qmcsystem.particlesets.atom.group
+                elem = g.name
+                if not elem in periodic_table.elements:
+                    self.error(elem+' is not an element in the periodic table')
+                #end if
+                g.charge = periodic_table.elements[elem].atomic_number
 
                 input = self.input
                 s = input.simulation

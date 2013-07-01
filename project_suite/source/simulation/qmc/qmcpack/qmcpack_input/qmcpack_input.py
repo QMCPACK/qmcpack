@@ -2013,6 +2013,7 @@ class QmcpackInput(SimulationInput,Names):
         return c
     #end def write_contents
 
+
     def unroll_calculations(self,modify=True):
         qmc = []
         sim = self.simulation
