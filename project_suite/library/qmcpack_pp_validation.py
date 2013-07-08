@@ -969,6 +969,7 @@ class AtomicValidationStage(ValidationStage):
                 #end if
                 spin = v.spin
             #end if
+            valency = {atom:v.Zeff}
             system = generate_physical_system(
                 lattice    = 'orthorhombic',
                 cell       = 'primitive',
@@ -979,7 +980,8 @@ class AtomicValidationStage(ValidationStage):
                 net_charge = v.q,
                 net_spin   = spin,
                 kgrid      = (1,1,1),
-                kshift     = (0,0,0)
+                kshift     = (0,0,0),
+                **valency
                 )
             s = system.structure
             s.slide(s.axes.sum(0)/2)
@@ -1144,7 +1146,7 @@ class AtomicHFCalc(AtomicValidationStage):
 class AtomicDFTBoxScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_Ls'])
-    stage_dependencies = set(['pp_dftjob','pp_Ecut0','pp_spin0'])
+    stage_dependencies = set(['pp_dftjob','pp_Ecut0','pp_spin0','pp_Zeff'])
 
     data_type = 'scalar'
     title  = 'DFT energy vs. box size'
@@ -1201,7 +1203,7 @@ class AtomicDFTBoxScan(AtomicValidationStage):
 class AtomicDFTEcutScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_Ecuts'])
-    stage_dependencies = set(['pp_dftjob','pp_L','pp_spin0'])
+    stage_dependencies = set(['pp_dftjob','pp_L','pp_spin0','pp_Zeff'])
 
     data_type = 'scalar'
     title  = 'DFT energy vs. planewave energy cutoff'
@@ -1270,7 +1272,7 @@ class AtomicDFTEcutScan(AtomicValidationStage):
 class AtomicDFTSpinScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_spins'])
-    stage_dependencies = set(['pp_dftjob','pp_L','pp_Ecut','pp_spin0'])
+    stage_dependencies = set(['pp_dftjob','pp_L','pp_Ecut','pp_spin0','pp_Zeff'])
 
     data_type = 'scalar'
     title  = 'DFT energy vs. spin state'
@@ -1323,7 +1325,7 @@ class AtomicDFTSpinScan(AtomicValidationStage):
 
 class AtomicDFTCalc(AtomicValidationStage):
     systype = 'pp'
-    stage_dependencies = set(['pp_dftjob','pp_L','pp_Ecut','pp_spin'])
+    stage_dependencies = set(['pp_dftjob','pp_Zeff','pp_L','pp_Ecut','pp_spin'])
     stage_result = 'pp_orbitals'
     final_result = 'Edft_pp'
 
@@ -1381,7 +1383,7 @@ class AtomicDFTCalc(AtomicValidationStage):
 class AtomicOptJ1RcutScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_J1_rcuts','pp_opt_calcs'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_optjob','pp_orbitals','pp_pade_b'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_optjob','pp_orbitals','pp_pade_b'])
     stage_result       = 'pp_J1_jastrow'
 
     title  = 'Optimal VMC Energy vs. J1 rcut'
@@ -1524,7 +1526,7 @@ class AtomicAEOptCalc(AtomicOptCalc):
 class AtomicPPOptCalc(AtomicOptCalc):
     systype = 'pp'
     stage_inputs = set(['pp_opt_calcs'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_optjob','pp_orbitals','pp_J1_rcut'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_optjob','pp_orbitals','pp_J1_rcut'])
     stage_result = 'pp_jastrow'
 #end class AtomicPPOptCalc
 
@@ -1587,7 +1589,7 @@ class AtomicAEVMCCalc(AtomicVMCCalc):
 class AtomicPPVMCCalc(AtomicVMCCalc):
     systype = 'pp'
     stage_inputs = set(['pp_vmc_calcs'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_vmcjob','pp_orbitals','pp_jastrow'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_vmcjob','pp_orbitals','pp_jastrow'])
     final_result = 'Evmc_pp'
 #end class AtomicPPVMCCalc
 
@@ -1673,7 +1675,7 @@ class AtomicAEDMCPopulationScan(AtomicDMCPopulationScan):
 class AtomicPPDMCPopulationScan(AtomicDMCPopulationScan):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs','pp_populations'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow'])
 #end class AtomicPPDMCPopulationScan
 
 
@@ -1772,7 +1774,7 @@ class AtomicAEDMCTimestepScan(AtomicDMCTimestepScan):
 class AtomicPPDMCTimestepScan(AtomicDMCTimestepScan):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population'])
 #end class AtomicPPDMCTimestepScan
 
 
@@ -1858,7 +1860,7 @@ class AtomicAEDMCCalc(AtomicDMCCalc):
 class AtomicPPDMCCalc(AtomicDMCCalc):
     systype = 'pp'
     stage_inputs = set(['pp_dmc_calcs'])
-    stage_dependencies = set(['pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population','pp_timestep'])
+    stage_dependencies = set(['pp_Zeff','pp_L','pp_spin','pp_dmcjob','pp_orbitals','pp_jastrow','pp_population','pp_timestep'])
     final_result = 'Edmc_pp'
 #end class AtomicPPDMCCalc
 
@@ -1878,7 +1880,7 @@ class ValidateAtomPP(ValidationProcess):
         ['ae_hfjob', 'ae_optjob', 'ae_vmcjob', 'ae_dmcjob', 'ae_pade_b',
          'ae_occupation','ae_orbitals','ae_jastrow','ae_population','ae_timestep',
          'pp_dftjob', 'pp_optjob', 'pp_vmcjob', 'pp_dmcjob', 'pp_pade_b',
-         'pp_Ecut0','pp_spin0','pp_L','pp_Ecut','pp_spin','pp_orbitals','pp_J1_rcut','pp_jastrow',
+         'pp_Ecut0','pp_spin0','pp_Zeff','pp_L','pp_Ecut','pp_spin','pp_orbitals','pp_J1_rcut','pp_jastrow',
          'pp_population','pp_timestep'])
         
 
@@ -2249,6 +2251,7 @@ class DimerValidationStage(ValidationStage):
             self.error('box size is not present, physical system cannot be made')
         #end if
         L = v.L
+        self.error('varied pseudopotential Zeff has not yet been accounted for\n  please contact the developer')
         system = generate_physical_system(
             lattice       = 'orthorhombic',
             cell          = 'primitive',

@@ -284,6 +284,12 @@ class Structure(Sobj):
         return ds
     #end def upcast
 
+    
+    def incorporate(self,other):
+        self.elem = array(list(self.elem)+list(other.elem))
+        self.pos  = array(list(self.pos )+list(other.pos ))
+    #end def incorporate
+
 
     def distances(self,pos1=None,pos2=None):
         if isinstance(pos1,Structure):
