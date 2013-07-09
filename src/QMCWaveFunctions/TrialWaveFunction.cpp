@@ -22,7 +22,7 @@ namespace qmcplusplus
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
-  , PhaseValue(0.0),LogValue(0.0), PhaseDiff(0.0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
   myName="psi0";
@@ -32,7 +32,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 TrialWaveFunction::TrialWaveFunction()
   : MPIObjectBase(0)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
-  ,  PhaseValue(0.0),LogValue(0.0) , PhaseDiff(0.0)
+  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
   myName="psi0";
@@ -809,10 +809,14 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
   myclone->BufferCursor=BufferCursor;
   for (int i=0; i<Z.size(); ++i)
     myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
-  myclone->OverM=OverM;
+  myclone->OneOverM=OneOverM;
   return myclone;
 }
 
+/** evaluate derivatives of KE wrt optimizable varibles
+ *
+ * @todo OrbitalBase objects should take the mass into account.
+ */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
     vector<RealType>& dlogpsi,
@@ -832,8 +836,8 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
   //orbitals do not know about mass of particle.
   for (int i=0; i<dhpsioverpsi.size(); i++)
-    dhpsioverpsi[i]*=OverM[i];
-  
+    dhpsioverpsi[i]*=OneOverM;
+
   if (project)
   {
     for (int i=0; i<Z.size(); i++)

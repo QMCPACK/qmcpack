@@ -84,13 +84,13 @@ struct CoefficientHolder
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
- * A many-body trial wave function is represented by
- * \f$\Psi({\bf R}) = \prod_i \psi_i({\bf R})\f$, where each function
- * \f$\psi_i({\bf R})\f$ is an OrbitalBase (see OrbitalComponent).
- * A Composite Pattern is used to handle \f$\prod\f$ operations.
- * Each OrbitalBase should provide proper evaluate functions for the value,
- * gradient and laplacian values using \f$\ln\Psi({\bf R}) = \sum_i \ln
- * \psi_i({\bf R})\f$.
+ *A many-body trial wave function is represented by
+ *\f$\Psi({\bf R}) = \prod_i \psi_i({\bf R})\f$,
+ *where each function \f$\psi_i({\bf R})\f$ is an OrbitalBase
+ (see OrbitalComponent).
+ *A Composite Pattern is used to handle \f$\prod\f$ operations.
+ *Each OrbitalBase should provide proper evaluate functions
+ *for the value, gradient and laplacian values.
  */
 class TrialWaveFunction: public MPIObjectBase
 {
@@ -291,10 +291,10 @@ public:
 
   void reverse();
 
-  void resizeTempP(ParticleSet& P)
+  inline void resizeTempP(ParticleSet& P)
   {
     tempP = new ParticleSet(P);
-  };
+  }
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
@@ -308,20 +308,22 @@ public:
   {
     myTwist=t;
   }
-  
   const vector<RealType> twist()
   {
     return myTwist;
   }
 
   CoefficientHolder coefficientHistory;
-  
-  void setMassTerm(ParticleSet& P)
+
+  inline void setMassTerm(ParticleSet& P)
   {
-    OverM.resize(P.R.size(),1.0);
-    for(int i=0; i<OverM.size(); ++i)
-      OverM[i]=1.0/P.Mass[i];
+    OneOverM=1.0/P.Mass[0];
+    //SpeciesSet tspecies(P.getSpeciesSet());
+    //int massind=tspecies.addAttribute("mass");
+    //RealType mass = tspecies(massind,0);
+    //OneOverM = 1.0/mass;
   }
+
 
 
 private:
@@ -350,7 +352,7 @@ private:
   RealType LogValue;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives
-  vector<RealType> OverM;
+  RealType OneOverM;
 
   ///a list of OrbitalBases constituting many-body wave functions
   vector<OrbitalBase*> Z;
