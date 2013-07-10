@@ -20,8 +20,12 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
+#endif
+//#include "QMCDrivers/VMC/VMCSingle.h"
+//#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -82,7 +86,7 @@ QMCCorrelatedSamplingLinearOptimize::RealType QMCCorrelatedSamplingLinearOptimiz
 
 bool QMCCorrelatedSamplingLinearOptimize::run()
 {
-  start_optimize();
+  start();
 //size of matrix
   numParams = optTarget->NumParams();
   N = numParams + 1;
@@ -277,7 +281,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   else
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters[i];
-  finish_optimize();
+  finish();
   return (optTarget->getReportCounter() > 0);
 }
 
