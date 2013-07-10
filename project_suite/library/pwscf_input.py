@@ -978,6 +978,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        smearing     = 'fermi-dirac',
                        degauss      = 0.0001,
                        nosym        = False,
+                       assume_isolated = None,
                        wf_collect   = True,
                        restart_mode = 'from_scratch',
                        tstress      = True,
@@ -1027,6 +1028,9 @@ def generate_scf_input(prefix       = 'pwscf',
         ecutrho     = ecutrho,
         nosym       = nosym
         )
+    if assume_isolated!=None:
+        pw.system.assume_isolated = assume_isolated
+    #end if
     if occupations!=None:
         if occupations=='smearing':
             pw.system.set(
@@ -1157,6 +1161,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
                          nosym        = True,
+                         assume_isolated = None,
                          upscale      = 100,
                          pot_extrapolation = 'second_order',
                          wfc_extrapolation = 'second_order',
@@ -1200,6 +1205,9 @@ def generate_relax_input(prefix       = 'pwscf',
         ecutrho     = ecutrho,
         nosym       = nosym
         )
+    if assume_isolated!=None:
+        pw.system.assume_isolated = assume_isolated
+    #end if
     if occupations!=None:
         if occupations=='smearing':
             pw.system.set(
