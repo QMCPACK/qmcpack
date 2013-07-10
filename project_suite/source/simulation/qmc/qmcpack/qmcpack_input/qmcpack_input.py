@@ -2921,7 +2921,7 @@ def generate_jastrow(descriptor,*args,**kwargs):
 
 
 
-def generate_jastrows(jastrows,system):
+def generate_jastrows(jastrows,system=None,return_list=False):
     jin = []
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
@@ -2974,55 +2974,94 @@ def generate_jastrows(jastrows,system):
             #end if
         #end for
     #end if
-    wf = wavefunction(jastrows=jin)
-    wf.pluralize()
-    return wf.jastrows
+    if return_list:
+        return jin
+    else:
+        wf = wavefunction(jastrows=jin)
+        wf.pluralize()
+        return wf.jastrows
+    #end if
 #end def generate_jastrows
 
 
 
 
-def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None):
-    if elements is None and system is None:
-        QmcpackInput.class_error('must specify elements or system to generate jastrow1')
-    elif elements is None:
-        elements = list(set(system.structure.elem))
+def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None,**elemargs):
+    noelements = elements is None
+    nosystem   = system is None
+    noelemargs = len(elemargs)==0
+    isopen = False
+    if noelements and nosystem and noelemargs:
+        QmcpackInput.class_error('must specify elements or system','generate_jastrow1')
     #end if
-    if coeff is None:
-        coeff = []
-        for e in elements:
-            coeff.append(size*[0])
-        #end if
+    if noelements:
+        elements = []
     #end if
+    if not nosystem:
+        elements.extend(list(set(system.structure.elem)))
+        isopen = system.structure.volume() is None
+    #end if
+    if not noelemargs:
+        elements.extend(elemargs.keys())
+    #end if
+    # remove duplicate elements
+    eset = set()
+    elements = [ e for e in elements if e not in eset and not eset.add(e) ]     
     corrs = []
     for i in range(len(elements)):
         element = elements[i]
-        if element in coeff:
-            cff = coeff[element]
+        if cusp is 'Z':
+            QmcpackInput.class_error('need to implement Z cusp','generate_jastrow1')
         else:
-            cff     = coeff[i]
+            lcusp  = cusp
+        #end if
+        lrcut  = rcut
+        lcoeff = size*[0]
+        if coeff!=None:
+            if element in coeff:
+                lcoeff = coeff[element]
+            else:
+                lcoeff = coeff[i]
+            #end if
+        #end if
+        if element in elemargs:
+            v = elemargs[element]
+            if 'cusp' in v:
+                lcusp = v['cusp']
+            #end if
+            if 'rcut' in v:
+                lrcut = v['rcut']
+            #end if
+            if 'size' in v and not 'coeff' in v:
+                lcoeff = v['size']*[0]
+            #end if
+            if 'coeff' in v:
+                lcoeff = v['coeff']
+            #end if
         #end if
         corr = correlation(
             elementtype = element,
-            size=len(cff),
-            cusp=cusp,
+            size        = len(lcoeff),
+            cusp        = cusp,
             coefficients=section(
-                id = ename+element,
-                type='Array',
-                coeff = cff
+                id    = ename+element,
+                type  = 'Array',
+                coeff = lcoeff
                 )
             )            
-        if rcut!=None:
-            corr.rcut = rcut
+        if lrcut!=None:
+            corr.rcut = lrcut
+        elif isopen:
+            QmcpackInput.class_error('rcut must be provided for an open system','generate_jastrow1')
         #end if
         corrs.append(corr)
     #end for
     j1 = jastrow1(
-        name = 'J1',
-        type = 'One-Body',
-        function = function,
-        source = iname,
-        print_ = True,
+        name         = 'J1',
+        type         = 'One-Body',
+        function     = function,
+        source       = iname,
+        print_       = True,
         correlations = corrs
         )
     return j1
@@ -3030,33 +3069,44 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
 
 
 
-def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None):
-    if coeff is None and system is None and (density is None or rcut is None):
+def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,init='rpa'):
+    if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
         QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
     #end if
     set_rcut = rcut!=None
     if system!=None:
         cell = system.structure
         volume = cell.volume()
-        if volume is None: #assume it is an atom
-            L = 18.        #fake L to get OK rpa guess, hopefully better than 0 coeff
-            volume = L**3  
+        if volume is None: #assume it is an open system
             if rcut is None:
-                rcut = L/2
+                QmcpackInput.class_error('rcut must be provided for an open system','generate_bspline_jastrow2')
             #end if
-        elif rcut is None:
-            rcut = cell.rmin()
+            if init=='rpa':
+                init = 'zero'
+            #end if
+        else:
+            if rcut is None:
+                rcut = cell.rmin()
+            #end if
+            nelectrons = system.particles.count_electrons()
+            density = nelectrons/volume
         #end if
-        nelectrons = system.particles.count_electrons()
-        density = nelectrons/volume
+    elif init=='rpa':
+        init = 'zero'
     #end if
     if coeff is None:
-        wp = sqrt(4*pi*density)
-        dr = rcut/size
-        r = .02 + dr*arange(size)
-        uuc = .5/(wp*r)*(1.-exp(-r*sqrt(wp/2)))*exp(-(2*r/rcut)**2)
-        udc = .5/(wp*r)*(1.-exp(-r*sqrt(wp))  )*exp(-(2*r/rcut)**2)
-        coeff = [uuc,udc]
+        if init=='rpa':
+            wp = sqrt(4*pi*density)
+            dr = rcut/size
+            r = .02 + dr*arange(size)
+            uuc = .5/(wp*r)*(1.-exp(-r*sqrt(wp/2)))*exp(-(2*r/rcut)**2)
+            udc = .5/(wp*r)*(1.-exp(-r*sqrt(wp))  )*exp(-(2*r/rcut)**2)
+            coeff = [uuc,udc]
+        elif init=='zero' or init==0:
+            coeff = [size*[0],size*[0]]
+        else:
+            QmcpackInput.class_error(str(init)+' is not a valid value for parameter init\n  valid options are: rpa, zero','generate_bspline_jastrow2')
+        #end if
     elif len(coeff)!=2:
         QmcpackInput.class_error('must provide 2 sets of coefficients (uu,ud)','generate_bspline_jastrow2')
     #end if

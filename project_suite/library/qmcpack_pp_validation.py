@@ -1136,7 +1136,14 @@ class AtomicHFCalc(AtomicValidationStage):
 
     def get_result(self,v,sims,name='E'):
         ha = sims.hf.load_analyzer_image()
-        return ha.E
+        if name=='E':
+            res = ha.E
+        elif name=='B':
+            res = 1./ha.moment(n=1)
+        else:
+            self.error(name+' is not a valid quantity\n valid options are E, B')
+        #end if
+        return res
     #end def get_result
 #end class AtomicHFCalc
 

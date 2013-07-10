@@ -98,7 +98,8 @@ class Pobj(DevBase):
         #end if
         pad = n*cls.indent
         text=pad+source+' Error: '+msg
-        cls.logfile.write(text.replace('\n','\n'+pad)+'\n')
+        text = '\n'+text.replace('\n','\n'+pad)+'\n\n'
+        cls.logfile.write(text)
         if trace:
             traceback.print_stack()
         #end if
