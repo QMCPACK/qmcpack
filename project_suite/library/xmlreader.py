@@ -88,7 +88,8 @@ class XMLelement(obj):
         self._ntexts=0
 
         self._escape_names=None
-        self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
+        #self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
+        self._escape_names=set(keyword.kwlist)
         return
     #end def __init__
 

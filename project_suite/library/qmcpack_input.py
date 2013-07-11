@@ -13,6 +13,7 @@ from structure import Structure
 from physical_system import PhysicalSystem
 from simulation import SimulationInput
 from pwscf_input import array_to_string as pwscf_array_string
+from debug import *
 
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -1282,7 +1283,7 @@ param = Param()
 
 
 class simulation(QIxml):
-    elements   = ['project','random','qmcsystem','particleset','wavefunction','hamiltonian','init','qmc','loop']
+    elements   = ['project','random','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -1431,7 +1432,7 @@ jastrow = QIxmlFactory(
 
 
 class hamiltonian(QIxml):
-    attributes = ['name','type','target']
+    attributes = ['name','type','target'] 
     elements   = ['pairpot','constant','estimator']
     identifier = 'name'
 #end class hamiltonian
@@ -1528,6 +1529,27 @@ class init(QIxml):
 #end class
 
 
+class scalar_traces(QIxml):
+    attributes  = ['defaults']
+    text        = 'quantities'
+    write_types = obj(defaults=yesno)
+#end class scalar_traces
+
+class particle_traces(QIxml):
+    attributes  = ['defaults']
+    text        = 'quantities'
+    write_types = obj(defaults=yesno)
+#end class particle_traces
+
+class traces(QIxml):
+    attributes = ['write','format','verbose','scalar','particle',
+                  'scalar_defaults','particle_defaults']
+    elements = ['scalar_traces','particle_traces']
+    write_types = obj(write=yesno,verbose=yesno,scalar=yesno,particle=yesno,
+                      scalar_defaults=yesno,particle_defaults=yesno)
+#end class
+
+
 class loop(QIxml):
     attributes = ['max']
     elements = ['qmc']
@@ -1550,7 +1572,7 @@ class loop(QIxml):
 
 class linear(QIxml):
     tag = 'qmc'
-    attributes = ['method','move','checkpoint','gpu']
+    attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
     parameters = ['blocks','warmupsteps','stepsbetweensamples','timestep',
                   'samples','minwalkers','maxweight','usedrift','minmethod',
@@ -1563,7 +1585,7 @@ class linear(QIxml):
 
 class cslinear(QIxml):
     tag = 'qmc'
-    attributes = ['method','move','checkpoint','gpu']
+    attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
     parameters = ['blocks','warmupsteps','stepsbetweensamples','steps','samples','timestep','usedrift',
                   'minmethod','gevmethod','exp0','nstabilizers','stabilizerscale',
@@ -1575,7 +1597,7 @@ class cslinear(QIxml):
 
 class vmc(QIxml):
     tag = 'qmc'
-    attributes = ['method','multiple','warp','move','gpu','checkpoint']
+    attributes = ['method','multiple','warp','move','gpu','checkpoint','trace']
     elements   = ['estimator']
     parameters = ['walkers','blocks','steps','substeps','timestep','usedrift','warmupsteps','samples','nonlocalpp','stepsbetweensamples','samplesperthread']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno)
@@ -1583,7 +1605,7 @@ class vmc(QIxml):
 
 class dmc(QIxml):
     tag = 'qmc'
-    attributes = ['method','move','gpu','multiple','warp','checkpoint']
+    attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']
     parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control']
     write_types = obj(gpu=yesno,nonlocalmoves=yesno)
@@ -1610,7 +1632,7 @@ classes = [   #standard classes
     determinantset,slaterdeterminant,basisset,grid,determinant,occupation,
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
-    atomicbasisset,basisgroup,init,var
+    atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces
     ]
 types = dict( #simple types and factories
     host      = param,
