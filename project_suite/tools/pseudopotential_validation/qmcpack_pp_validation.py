@@ -1994,7 +1994,7 @@ class ValidateAtomPPs(ValidationProcesses):
         atoms = set(self.processes.keys())
         errors = False
         for name,inp in kwargs.iteritems():
-            input = self.expand_stage_input(inp)
+            input = self.expand_stage_input(inp,name)
             if not atoms<=set(input.keys()):
                 self.error('all atoms must be specified in input variable {0}\n  atoms required: {1}\n  atoms specified: {2}'.format(name,list(atoms),input.keys()),exit=False,trace=False)
                 errors = True
@@ -2048,17 +2048,46 @@ class ValidateAtomPPs(ValidationProcesses):
     #end def set_stage_results
 
 
-    def expand_stage_input(self,iin):
+    def expand_stage_input(self,iin,name=None):
         i = obj()
         if isinstance(iin,obj):
-            i.transfer_from(iin)
+            atoms = set(iin.keys())
+            if len(set(self.atoms)-atoms)>0:
+                self.error('cannot expand stage input {0}\n  information is required for all requested atoms\n  atoms requested: {1}\n  information provided:\n{2}'.format(name,self.atoms,iin))
+            #end if
+            for atom in self.atoms:
+                ainfo = iin[atom]
+                nq = len(self.charges[atom])
+                if isinstance(ainfo,list):
+                    nlists = 0
+                    for elem in ainfo:
+                        if isinstance(elem,list):
+                            nlists+=1
+                        #end if
+                    #end if
+                    nelem = len(ainfo)
+                    if nlists==0:
+                        i[atom] = nq*[ainfo]
+                    elif nlists==nelem:
+                        if nelem==nq:
+                            i[atom] = ainfo
+                        else:
+                            self.error('cannot expand stage input {0}\n  number of elements provided for atom {1} does not match the number of charge states\n  number of elements provided: {2}\n  number of charge states: {3}'.format(name,atom,nelem,nq))
+                        #end if
+                    else:
+                        self.error('cannot expand stage input {0}\n  some elements in the list provided for atom {1} are lists and some are not\n  if all are lists, it is assumed that each list corresponds to a different charge state\n  if none are lists, the elments are taken to be scan parameters applied the same to every charge state'.format(name,element))
+                    #end if
+                else:
+                    self.error('invalid type for stage input {0} atom {1}\n  type encountered: {2}\n  valid types are: list'.format(name,atom,ainfo.__class__.__name__))
+                #end if
+            #end for
         elif isinstance(iin,list):
             for atom in self.atoms:
                 nq = len(self.charges[atom])
                 i[atom] = nq*[iin]
             #end for
         else:
-            self.error('invalid type for stage input\n  type encountered: {0}\n  valid types are: obj,list'.format(iin.__class__.__name__))
+            self.error('invalid type for stage input {0}\n  type encountered: {1}\n  valid types are: obj,list'.format(name,iin.__class__.__name__))
         #end if
         return i
     #end def expand_stage_input
