@@ -1,7 +1,5 @@
 # tool chain for Kraken, Cray XT5  using PrgEnv-gnu
-# - switch the prog. env to use GNU compilers PrgEnv-gnu
-# - remove acml
-# Here is the module used by jnkim on 2012-09-06
+#Currently Loaded Modulefiles:
 #  1) modules/3.2.6.6
 #  2) portals/2.2.0-1.0301.26633.6.9.ss
 #  3) nodestat/2.2-1.0301.25918.4.1.ss
@@ -10,27 +8,28 @@
 #  6) lustre-cray_ss_s/1.8.4_2.6.27.48_0.12.1_1.0301.5943.18.1-1.0301.27524.1.24
 #  7) Base-opts/1.0.2-1.0301.25878.4.1.ss
 #  8) xtpe-network-seastar
-#  9) torque/2.5.11
-# 10) moab/6.1.6
-# 11) xtpe-istanbul
-# 12) gold
-# 13) hsi
-# 14) tgusage/3.0-r3
-# 15) altd/1.0
-# 16) globus/5.0.4
-# 17) DefApps
-# 18) gcc/4.6.2
-# 19) xt-libsci/11.0.04
-# 20) xt-mpich2/5.3.5
-# 21) pmi/2.1.4-1.0000.8596.15.1.ss
-# 22) xt-asyncpe/5.11
-# 23) atp/1.4.1
-# 24) PrgEnv-gnu/3.1.72
-# 25) subversion/1.6.9
-# 26) numpy/1.6.1
-# 27) cmake/2.8.2
-# 28) hdf5/1.8.6
-# 29) fftw/3.3.0.0
+#  9) PrgEnv-gnu/3.1.72
+# 10) atp/1.4.1
+# 11) xt-asyncpe/5.11
+# 12) pmi/2.1.4-1.0000.8596.15.1.ss
+# 13) xt-mpich2/5.3.5
+# 14) xt-libsci/11.0.04
+# 15) gcc/4.6.2
+# 16) torque/2.5.11
+# 17) moab/6.1.6
+# 18) xtpe-istanbul
+# 19) gold
+# 20) hsi
+# 21) tgusage/3.0-r3
+# 22) altd/1.0
+# 23) globus/5.0.4
+# 24) xdusage/1.0-r7
+# 25) DefApps
+# 26) hdf5/1.8.6
+# 27) fftw/3.3.0.0
+# 28) cmake/2.8.7
+# 29) boost/1.44.0
+# 30) subversion/1.6.9
 
 
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
@@ -61,14 +60,15 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
   SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-Wl,-Bstatic")
 ENDFOREACH(type)
 
-set(ACML_HOME /opt/acml/4.4.0/gfortran64/)
+#set(ACML_HOME /opt/acml/4.4.0/gfortran64/)
 
 set(CMAKE_FIND_ROOT_PATH
   /opt/cray/hdf5/1.8.6/gnu/46
   /opt/fftw/3.3.0.0/x86_64/
-  /nics/a/proj/qmc/boost_1_38_0
-  /nics/a/proj/qmc
+  /sw/xt-cle3.1/boost/1.44.0/cnl3.1_gnu4.6.1/include
   )
+
+set(BOOST_HOME /sw/xt-cle3.1/boost/1.44.0/cnl3.1_gnu4.6.1)
 
 #uncomment this if external build to be used
 #set(HAVE_EINSPLINE_EXT 1)
