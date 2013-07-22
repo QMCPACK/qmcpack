@@ -122,7 +122,10 @@ void QMCLinearOptimize::finish()
   optTarget->reportParameters();
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
   app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." <<endl;
-  W.destroyWalkers(nw_removed);
+  if(nw_removed>0)
+    W.destroyWalkers(nw_removed);
+  else
+    W.createWalkers(-nw_removed);
   app_log() << "</opt>" << endl;
   app_log() << "</optimization-report>" << endl;
 }
