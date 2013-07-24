@@ -1569,6 +1569,7 @@ class AtomicVMCCalc(AtomicValidationStage):
             system       = atom,
             bconds       = 'nnn',
             pseudos      = qmcpp,
+            jastrows     = [],
             corrections  = [],
             calculations = v.vmc_calcs
             )
@@ -1651,6 +1652,7 @@ class AtomicDMCPopulationScan(AtomicValidationStage):
                 system       = atom,
                 bconds       = 'nnn',
                 pseudos      = qmcpp,
+                jastrows     = [],
                 corrections  = [],
                 calculations = calcs
                 )
@@ -1748,6 +1750,7 @@ class AtomicDMCTimestepScan(AtomicValidationStage):
             system       = atom,
             bconds       = 'nnn',
             pseudos      = qmcpp,
+            jastrows     = [],
             corrections  = [],
             calculations = calcs
             )
@@ -1840,6 +1843,7 @@ class AtomicDMCCalc(AtomicValidationStage):
             input_type   = 'basic',
             system       = atom,
             pseudos      = qmcpp,
+            jastrows     = [],
             corrections  = [],
             calculations = calcs
             )
