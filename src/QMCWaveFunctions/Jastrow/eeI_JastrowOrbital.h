@@ -177,13 +177,10 @@ public:
   void addFunc(int iSpecies,
                int eSpecies1, int eSpecies2, FT* j)
   {
-    // cerr << "iSpecies = " << iSpecies << "   eSpecies1 = " << eSpecies1
-    // 	   << "   eSpecies2 = " << eSpecies2 << endl;
-    // cerr << "eGroups = " << eGroups << endl;
     if(eSpecies1==eSpecies2)
     {
+      //if only up-up is specified, assume spin-unpolarized correlations
       if(eSpecies1==0)
-        //first time, assign everything
       {
         int ijk = iSpecies * eGroups*eGroups;
         for (int eG1=0; eG1<eGroups; eG1++)
@@ -195,32 +192,73 @@ public:
     else
     {
       F(iSpecies,eSpecies1,eSpecies2) = j;
-      //if (eSpecies1 < eSpecies2)
       F(iSpecies, eSpecies2, eSpecies1) = j;
-      // F[ia*NumGroups+ib]=j;
-      // if(ia<ib) F[ib*NumGroups+ia]=j;
     }
-    // Make sure cutoff radii are the same for all functors with the same
-    // iSpecies
-    double rcut = 0.5 * F(iSpecies,0,0)->cutoff_radius;
-    for (int i=0; i<Nion; i++)
-      if (IRef->GroupID[i] == iSpecies)
-        IonDataList[i].cutoff_radius = rcut;
-    for (int eG1=0; eG1<eGroups; eG1++)
-      for (int eG2=0; eG2<eGroups; eG2++)
-        if (0.5*F(iSpecies,eG1,eG2)->cutoff_radius != rcut)
-        {
-          app_error() << "eeI functors for ion species " << iSpecies
-                      << " have different radii.  Aborting.\n";
-          abort();
-        }
     strstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique[aname.str()]=j;
     initUnique();
-    //      ChiesaKEcorrection();
     FirstTime = false;
   }
+
+
+  /** check that correlation information is complete
+   */
+  void check_complete()
+  {
+    //check that correlation pointers are either all 0 or all assigned
+    bool complete = true;
+    int ni = F.size(0);
+    int ne = F.size(1);
+    int ne2 = ne*ne;
+    for(int i=0; i<ni; ++i)
+    {
+      int nfilled = 0;
+      bool partial;
+      for(int e1=0; e1<ne; ++e1)
+        for(int e2=0; e2<ne; ++e2)
+          if(F(i,e1,e2)!=0)
+            nfilled++;
+      partial = nfilled>0 && nfilled<ne2;
+      if(partial)
+        app_log() << "J3 eeI is missing correlation for ion "<<i<<endl;
+      complete = complete && !partial;
+    }
+    if(!complete)
+    {
+      APP_ABORT("eeI_JastrowOrbital::check_complete  J3 eeI is missing correlation components\n  see preceding messages for details");
+    }
+    //first set radii
+    for(int i=0; i<Nion; ++i)
+    {
+      FT* f = F(IRef->GroupID[i],0,0);
+      if(f!=0)
+        IonDataList[i].cutoff_radius = .5*f->cutoff_radius;
+    }
+    //then check radii
+    bool all_radii_match = true;
+    for(int i=0; i<ni; ++i)
+    {
+      if(F(i,0,0)!=0)
+      {
+        bool radii_match = true;
+        double rcut = F(i,0,0)->cutoff_radius;
+        for(int e1=0; e1<ne; ++e1)
+          for(int e2=0; e2<ne; ++e2)
+            radii_match = radii_match && F(i,e1,e2)->cutoff_radius==rcut;
+        if(!radii_match)
+          app_log() << "eeI functors for ion species " << i
+                    << " have different radii"<<endl;
+        all_radii_match = all_radii_match && radii_match;
+      }
+    }
+    if(!all_radii_match)
+    {
+      APP_ABORT("eeI_JastrowOrbital::check_radii  J3 eeI are inconsistent for some ion species\n  see preceding messages for details");
+    }
+  }
+
+
 
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P)
