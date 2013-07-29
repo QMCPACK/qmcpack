@@ -109,6 +109,8 @@ public:
   bool UseSphereUpdate;
   ///true if the particles are grouped
   bool IsGrouped;
+  ///true if the particles have the same mass
+  bool SameMass;
   ///threa id
   Index_t ThreadID;
   ///the indexp of the active particle for particle-by-particle moves

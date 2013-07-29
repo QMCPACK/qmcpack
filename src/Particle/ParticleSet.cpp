@@ -121,6 +121,7 @@ void ParticleSet::initParticleSet()
   addAttribute(dL);
   Mass.setTypeName(ParticleTags::scalartype_tag);
   Mass.setObjName("mass");
+  SameMass=true; //default is SameMass
   addAttribute(Mass);
   Z.setTypeName(ParticleTags::scalartype_tag);
   Z.setObjName("charge");
@@ -167,6 +168,16 @@ void ParticleSet::resetGroups()
     for(int ig=0; ig<nspecies; ig++)
       mySpecies(massind,ig)=1.0;
   }
+  SameMass=true;
+  double m0=mySpecies(massind,0);
+  for(int ig=1; ig<nspecies; ig++)
+    SameMass &= (mySpecies(massind,ig)== m0);
+
+  if(SameMass)
+    app_log() << "  All the species have the same mass " << m0 << endl;
+  else
+    app_log() << "  Distinctive masses for each species " << endl;
+
   for(int iat=0; iat<Mass.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
   vector<int> ng(nspecies,0);
