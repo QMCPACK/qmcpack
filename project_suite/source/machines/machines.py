@@ -1234,11 +1234,16 @@ class OIC5(Supercomputer):
             job.queue = 'mstqmc13q'
         #end if
 
+        ppn = 32/job.threads
+        if ppn*job.threads!=32:
+            self.error('ppn is not being set properly for OIC5\n  perhaps the number of threads requested does not evenly divide the 32 cores\n  you requested {0} threads'.format(job.threads))
+        #end if
+
         c='#!/bin/bash\n'
         c+='#PBS -q '+job.queue+'\n'
         c+='#PBS -N '+str(job.name)+'\n'
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
-        c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,job.ppn)
+        c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,ppn)
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
         c+='''#PBS -V
