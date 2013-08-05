@@ -86,6 +86,9 @@ private:
    * @return true, if a section is successfully executed.
    */
   bool executeQMCSection(xmlNodePtr cur, bool noloop=true);
+  ///execute <cmc/> element
+  bool executeCMCSection(xmlNodePtr cur);
+
 };
 }
 #endif

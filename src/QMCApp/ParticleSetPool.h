@@ -98,6 +98,10 @@ public:
    */
   void randomize();
 
+  /** make clones for the ParticleSets of this pool
+   *    */
+  void make_clones(int n);
+
 private:
   /** global SimulationCell
    *

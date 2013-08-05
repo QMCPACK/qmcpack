@@ -11,6 +11,7 @@ SET(QMCAPPDIR
     QMCAppBase.cpp
     QMCDriverFactory.cpp
     QMCMain.cpp
+    CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
 

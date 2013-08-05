@@ -115,6 +115,10 @@ bool QMCMain::execute()
       executeLoop(cur);
       qmc_common.qmc_counter=0;
     }
+    else if(cname == "cmc")
+    {
+      executeCMCSection(cur);
+    }
   }
   m_qmcaction.clear();
   app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
@@ -280,50 +284,44 @@ bool QMCMain::validateXML()
     {
       putCommunicator(cur);
     }
-    else
-      if(cname == "particleset")
+    else if(cname == "particleset")
+    {
+      ptclPool->put(cur);
+    }
+    else if(cname == "wavefunction")
+    {
+      psiPool->put(cur);
+    }
+    else if(cname == "hamiltonian")
+    {
+      hamPool->put(cur);
+    }
+    else if(cname == "include")
+    {
+      //file is provided
+      const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
+      if(a)
       {
-        ptclPool->put(cur);
+        pushDocument((const char*)a);
+        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        popDocument();
       }
-      else
-        if(cname == "wavefunction")
-        {
-          psiPool->put(cur);
-        }
-        else
-          if(cname == "hamiltonian")
-          {
-            hamPool->put(cur);
-          }
-          else
-            if(cname == "include")
-            {
-              //file is provided
-              const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
-              if(a)
-              {
-                pushDocument((const char*)a);
-                inputnode = processPWH(XmlDocStack.top()->getRoot());
-                popDocument();
-              }
-            }
-            else
-              if(cname == "qmcsystem")
-              {
-                processPWH(cur);
-              }
-              else
-                if(cname == "init")
-                {
-                  InitMolecularSystem moinit(ptclPool);
-                  moinit.put(cur);
-                }
-                else
-                {
-                  //everything else goes to m_qmcaction
-                  m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
-                  inputnode=false;
-                }
+    }
+    else if(cname == "qmcsystem")
+    {
+      processPWH(cur);
+    }
+    else if(cname == "init")
+    {
+      InitMolecularSystem moinit(ptclPool);
+      moinit.put(cur);
+    }
+    else
+    {
+      //everything else goes to m_qmcaction
+      m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
+      inputnode=false;
+    }
     if(inputnode)
       lastInputNode=cur;
     cur=cur->next;
@@ -373,28 +371,25 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     {
       ptclPool->putLattice(cur);
     }
+    else if(cname == "particleset")
+    {
+      ptclPool->putTileMatrix(cur_root);
+      ptclPool->put(cur);
+    }
+    else if(cname == "wavefunction")
+    {
+      psiPool->put(cur);
+    }
+    else if(cname == "hamiltonian")
+    {
+      hamPool->put(cur);
+    }
     else
-      if(cname == "particleset")
-      {
-        ptclPool->putTileMatrix(cur_root);
-        ptclPool->put(cur);
-      }
-      else
-        if(cname == "wavefunction")
-        {
-          psiPool->put(cur);
-        }
-        else
-          if(cname == "hamiltonian")
-          {
-            hamPool->put(cur);
-          }
-          else
-            //add to m_qmcaction
-          {
-            inputnode=false;
-            m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
-          }
+      //add to m_qmcaction
+    {
+      inputnode=false;
+      m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
+    }
     cur=cur->next;
   }
   //flush
