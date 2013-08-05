@@ -16,7 +16,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/Timer.h"
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCDrivers/CMC/DummyIonMove.h"
+//#include "QMCDrivers/CMC/DummyIonMove.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "qmc_common.h"
