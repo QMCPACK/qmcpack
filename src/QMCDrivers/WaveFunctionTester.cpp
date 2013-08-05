@@ -91,32 +91,25 @@ WaveFunctionTester::run()
     runRatioTest();
     runRatioTest2();
   }
+  else if (checkClone == "yes")
+    runCloneTest();
+  else if(checkEloc != "no")
+    printEloc();
+  else if (sourceName.size() != 0)
+  {
+    runGradSourceTest();
+    runZeroVarianceTest();
+  }
+  else if (checkRatio =="deriv")
+    runDerivTest();
+  else if (checkRatio =="derivclone")
+    runDerivCloneTest();
+  else if (wftricks =="rotate")
+    runwftricks();
+  else if (wftricks =="plot")
+    runNodePlot();
   else
-    if (checkClone == "yes")
-      runCloneTest();
-    else
-      if(checkEloc != "no")
-        printEloc();
-      else
-        if (sourceName.size() != 0)
-        {
-          runGradSourceTest();
-          runZeroVarianceTest();
-        }
-        else
-          if (checkRatio =="deriv")
-            runDerivTest();
-          else
-            if (checkRatio =="derivclone")
-              runDerivCloneTest();
-            else
-              if (wftricks =="rotate")
-                runwftricks();
-              else
-                if (wftricks =="plot")
-                  runNodePlot();
-                else
-                  runBasicTest();
+    runBasicTest();
   RealType ene = H.evaluate(W);
   *fout << " Energy " << ene << endl;
   return true;
