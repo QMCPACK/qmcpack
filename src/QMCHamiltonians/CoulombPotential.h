@@ -89,6 +89,14 @@ struct CoulombPotential: public QMCHamiltonianBase
 
   ~CoulombPotential() { }
 
+  void update_source(ParticleSet& s)
+  {
+    if(myTableIndex == 0 && (s.tag() == PtclA->tag() || s.parent() == PtclA->tag()))
+    {
+      Value=evaluateAA(s.DistTables[myTableIndex],s.Z.first_address());
+    }
+  }
+
   inline Return_t evaluate(ParticleSet& P)
   {
     if(is_active)

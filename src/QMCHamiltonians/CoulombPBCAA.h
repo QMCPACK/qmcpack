@@ -40,6 +40,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   bool is_active;
   bool FirstTime;
+  int SourceID;
   int NumSpecies;
   int ChargeAttribIndx;
   int MemberAttribIndx;
@@ -69,6 +70,8 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
+
+  void update_source(ParticleSet& s);
 
   inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
   {

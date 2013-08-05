@@ -28,6 +28,10 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   ComputeForces(computeForces), ForceBase(ref,ref)
 {
   ReportEngine PRE("CoulombPBCAA","CoulombPBCAA");
+
+  //save source tag
+  SourceID=ref.tag();
+
   //create a distance table: just to get the table name
   DistanceTableData *d_aa = DistanceTable::add(ref);
   PtclRefName=d_aa->Name;
@@ -38,21 +42,22 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   if(!is_active)
   {
     d_aa->evaluate(ref);
-    RealType eL(0.0), eS(0.0);
-    if (computeForces)
-    {
-      forces = 0.0;
-      eS=evalSRwithForces(ref);
-      // 1.3978248322
-      eL=evalLRwithForces(ref);
-      // 2.130267378
-    }
-    else
-    {
-      eL=evalLR(ref);
-      eS=evalSR(ref);
-    }
-    NewValue=Value = eL+eS+myConst;
+    update_source(ref);
+    //RealType eL(0.0), eS(0.0);
+    //if (computeForces)
+    //{
+    //  forces = 0.0;
+    //  eS=evalSRwithForces(ref);
+    //  // 1.3978248322
+    //  eL=evalLRwithForces(ref);
+    //  // 2.130267378
+    //}
+    //else
+    //{
+    //  eL=evalLR(ref);
+    //  eS=evalSR(ref);
+    //}
+    //NewValue=Value = eL+eS+myConst;
     //app_log() << "  Fixed Coulomb potential for " << ref.getName();
     //app_log() << "\n    e-e Madelung Const. =" << MC0
     //          << "\n    Vtot     =" << Value << endl;
@@ -69,6 +74,26 @@ void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectabl
   addValue(plist);
   if (ComputeForces)
     addObservablesF(plist);
+}
+
+void CoulombPBCAA::update_source(ParticleSet& s)
+{
+  if(s.tag() == SourceID || s.parent() == SourceID)
+  {
+    RealType eL(0.0), eS(0.0);
+    if (ComputeForces)
+    {
+      forces = 0.0;
+      eS=evalSRwithForces(s);
+      eL=evalLRwithForces(s);
+    }
+    else
+    {
+      eL=evalLR(s);
+      eS=evalSR(s);
+    }
+    NewValue=Value = eL+eS+myConst;
+  }
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)

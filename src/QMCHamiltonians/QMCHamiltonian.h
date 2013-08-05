@@ -151,6 +151,7 @@ public:
 //       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
     std::copy(first+myIndex,first+myIndex+Observables.size(),Observables.begin());
   }
+  void update_source(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
   inline Return_t getLocalEnergy()

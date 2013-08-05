@@ -188,6 +188,13 @@ struct QMCHamiltonianBase: public QMCTraits
   }
   virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0;
 
+  /** update data associated with a particleset
+   * @param s source particle set
+   *
+   * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
+   */
+  virtual void update_source(ParticleSet& s) { }
+
   /*@{
    * @brief Functions to handle particle-by-particle move
    *

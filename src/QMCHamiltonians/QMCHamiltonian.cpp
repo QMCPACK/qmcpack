@@ -108,6 +108,13 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
 //{
 //  return false;
 //}
+void QMCHamiltonian::update_source(ParticleSet& s)
+{
+  for(int i=0; i<H.size(); ++i)
+    H[i]->update_source(s);
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->update_source(s);
+}
 
 /** add a number of properties to the ParticleSet
  * @param P ParticleSet to which multiple columns to be added
