@@ -431,6 +431,18 @@ public:
     return (ip)? myClones[ip]:this;
   }
 
+  inline const ParticleSet* get_clone(int ip) const
+  {
+    if(ip >= myClones.size())
+      return 0;
+    return (ip)? myClones[ip]:this;
+  }
+
+  inline int clones_size() const
+  {
+    return myClones.size();
+  }
+
   /** update R of its own and its clones
    * @param rnew new position array of N
    */

@@ -49,7 +49,6 @@ void ParticleSet::make_clones(int n)
   for(int i=1; i<myClones.size(); ++i)
   {
     myClones[i]->ThreadID=i;
-    myClones[i]->ObjectTag=ObjectTag;
     myClones[i]->setName(this->getName());
   }
 }
