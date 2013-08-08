@@ -1146,6 +1146,7 @@ def generate_scf_input(prefix       = 'pwscf',
             PwscfInput.class_error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = hubbard_u
+        pw.system.lda_plus_u = True
     #end if
 
     system.check_folded_system()
