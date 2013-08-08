@@ -1142,7 +1142,7 @@ def generate_scf_input(prefix       = 'pwscf',
         pw.system.ecutfock = ecutfock
     #end if
     if hubbard_u!=None:
-        if not isinstance(hubbard_u,[dict,obj]):
+        if not isinstance(hubbard_u,(dict,obj)):
             PwscfInput.class_error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = hubbard_u
