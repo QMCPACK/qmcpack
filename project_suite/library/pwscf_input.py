@@ -163,7 +163,7 @@ class Section(Element):
         #end for
     #end def read
 
-    def write(self):
+    def write(self,parent):
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
@@ -268,6 +268,58 @@ class system(Section):
          'angle2','constrained_magnetization','fixed_magnetization','lambda',
          'report','lspinorb','assume_isolated','do_ee','london','london_s6',
          'london_rcut','exx_fraction','ecutfock'])
+
+    # specialized write for odd handling of hubbard U
+    def write(self,parent):
+        c='&'+self.name.upper()+'\n'
+        vars = list(self.keys())
+        vars.sort()
+        for var in vars:
+            val = self[var]
+            if var=='hubbard_u':
+                if 'atomic_species' in parent:
+                    atoms = parent.atomic_species.atoms
+                    for i in range(len(atoms)):
+                        index = i+1
+                        vname = 'Hubbard_U({0})'.format(index)
+                        atom = atoms[i]
+                        if atom in val:
+                            sval = writeval[float](val[atom])
+                            c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
+                        #end if
+                    #end for
+                #end if
+            else:
+                #vtype = type(val)
+                #sval = writeval[vtype](val)
+
+                vtype = None
+                if isinstance(val,str):
+                    vtype = str
+                elif isinstance(val,float):
+                    vtype = float
+                #elif isinstance(val,bool):
+                #    vtype = bool
+                elif var in self.bools:
+                    vtype = bool
+                elif isinstance(val,int):
+                    vtype = int
+                #end if
+                sval = writeval[vtype](val)
+
+                if var in self.section_aliases.keys():
+                    vname = self.section_aliases[var]
+                else:
+                    vname = var
+                #end if
+                #c+='   '+vname+' = '+sval+'\n'
+                c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
+            #end if
+        #end for
+        c+='/'+'\n\n'
+        return c
+    #end def write
+
 #end class system
 
 
@@ -748,6 +800,35 @@ class PwscfInput(SimulationInput):
             #end if
             self[elem_name].read(c)
         #end if
+        #post-process hubbard u
+        if 'system' in self and 'atomic_species' in self:
+            keys = self.system.keys()
+            has_hubbard_u = False
+            huvals = obj()
+            hukeys = []
+            for key in keys:
+                if key.startswith('Hubbard_U'):
+                    has_hubbard_u = True
+                    hukeys.append(key)
+                    index = int(key.replace('Hubbard_U','').strip('()'))
+                    huvals[index] = self.system[key]
+                #end if
+            #end for
+            if has_hubbard_u:
+                for key in hukeys:
+                    del self.system[key]
+                #end for
+                atoms = self.atomic_species.atoms
+                hu = obj()
+                for i in range(len(atoms)):
+                    index = i+1
+                    if index in huvals:
+                        hu[atoms[i]] = huvals[i+1]
+                    #end if
+                #end for
+                self.system.hubbard_u = hu
+            #end if
+        #end if
     #end def read_contents
 
 
@@ -755,7 +836,7 @@ class PwscfInput(SimulationInput):
         contents = ''
         for s in self.sections:
             if s in self:
-                contents += self[s].write()
+                contents += self[s].write(self)
             #end if
         #end for
         contents+='\n'
@@ -978,6 +1059,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        smearing     = 'fermi-dirac',
                        degauss      = 0.0001,
                        nosym        = False,
+                       hubbard_u    = None,
                        assume_isolated = None,
                        wf_collect   = True,
                        restart_mode = 'from_scratch',
@@ -1058,6 +1140,12 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if ecutfock!=None:
         pw.system.ecutfock = ecutfock
+    #end if
+    if hubbard_u!=None:
+        if not isinstance(hubbard_u,[dict,obj]):
+            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+        #end if
+        pw.system.hubbard_u = hubbard_u
     #end if
 
     system.check_folded_system()
