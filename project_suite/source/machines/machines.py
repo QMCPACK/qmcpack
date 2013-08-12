@@ -1244,6 +1244,7 @@ class OIC5(Supercomputer):
         c+='#PBS -N '+str(job.name)+'\n'
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
         c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,ppn)
+        c+='#PBS -W x=\"NACCESSPOLICY:SINGLEJOB\"\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
         c+='''#PBS -V
