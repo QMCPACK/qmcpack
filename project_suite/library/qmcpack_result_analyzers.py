@@ -93,8 +93,14 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #find the optimal coefficients
         #jtk mark
         #  for now just do energy minimization for comparison
-        ew = 1.0
-        vw = 0.0
+        variance_present = 'LocalEnergyVariance' in opts.list()[0].scalars
+        if variance_present:
+            ew = 0.0
+            vw = 1.0
+        else:
+            ew = 1.0
+            vw = 0.0
+        #end if
 
         mincost = 1e99
         index   = -1

@@ -4,8 +4,10 @@ import re
 from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt
 from extended_numpy import ndgrid,simstats,simplestats,equilibration_length
 from generic import obj
+from hdfreader import HDFreader
 from qaobject import QAobject
 from qmcpack_analyzer_base import QAanalyzer,QAdata,QAHDFdata
+from debug import *
 
 
 class QuantityAnalyzer(QAanalyzer):
@@ -65,7 +67,7 @@ class DatAnalyzer(QuantityAnalyzer):
     def analyze_local(self):
         self.not_implemented()
     #end def load_data_local
-#end class ScalarsDatAnalyzer
+#end class DatAnalyzer
 
 
 class ScalarsDatAnalyzer(DatAnalyzer):
@@ -790,6 +792,297 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
 
 #end class EnergyDensityAnalyzer
+
+
+
+
+class TracesFileHDF(QAobject):
+    def __init__(self,filepath):
+        hr = HDFreader(filepath)
+        if not hr._success:
+            self.warn('  hdf file seems to be corrupted, skipping contents:\n    '+filepath)
+        #end if
+        hdf = hr.obj
+        hdf._remove_hidden()
+        for name,buffer in hdf.iteritems():
+            self.init_trace(name,buffer)
+        #end for
+    #end def __init__
+
+
+    def init_trace(self,name,fbuffer):
+        trace = obj()
+        if 'traces' in fbuffer:
+            ftrace = fbuffer.traces
+            nrows = len(ftrace)
+            for dname,fdomain in fbuffer.layout.iteritems():
+                domain = obj()
+                for qname,fquantity in fdomain.iteritems():
+                    q = obj()
+                    for vname,value in fquantity.iteritems():
+                        q[vname] = value[0]
+                    #end for
+                    quantity = ftrace[:,q.row_start:q.row_end]
+                    if q.unit_size==1:
+                        shape = [nrows]+list(fquantity.shape[0:q.dimension])
+                    else:
+                        shape = [nrows]+list(fquantity.shape[0:q.dimension])+[q.unit_size]
+                    #end if
+                    quantity.shape = tuple(shape)
+                    #if len(fquantity.shape)==q.dimension:
+                    #    quantity.shape = tuple([nrows]+list(fquantity.shape))
+                    ##end if
+                    domain[qname] = quantity
+                #end for
+                trace[dname] = domain
+            #end for
+        #end if
+        self[name.replace('data','traces')] = trace
+    #end def init_trace
+
+#end class TracesFileHDF
+
+
+
+class TracesAnalyzer(QAanalyzer):
+    def __init__(self,path,files):
+        QAanalyzer.__init__(self)
+        self.info.path = path
+        self.info.files = files
+        self.method_info = QAanalyzer.method_info
+    #end def __init__
+
+
+    def load_data_local(self):
+        path = self.info.path
+        files = self.info.files
+        if len(files)>1:
+            self.error('ability to read multiple trace files has not yet been implemented')
+        #end if
+        filepath = os.path.join(path,files[0])
+        self.data = TracesFileHDF(filepath)
+    #end def load_data_local
+
+
+    def analyze_local(self):
+        None
+    #end def analyze_local
+
+
+    def check_particle_sums(self,tol=1e-8):
+        t = self.data.real_traces
+        scalar_names = set(t.scalars.keys())
+        other_names = []
+        for dname,domain in t.iteritems():
+            if dname!='scalars':
+                other_names.extend(domain.keys())
+            #end if
+        #end for
+        other_names = set(other_names)
+        sum_names = scalar_names & other_names
+        same = True
+        for qname in sum_names:
+            q = t.scalars[qname]
+            qs = 0*q
+            for dname,domain in t.iteritems():
+                if dname!='scalars' and qname in domain:
+                    qs[:,0] += domain[qname].sum(1)
+                #end if
+            #end for
+            same = same and (abs(q-qs)<tol).all()
+        #end for
+        return same
+    #end def check_particle_sums
+
+
+    def check_scalars(self,scalars=None,scalars_hdf=None,tol=1e-8):
+        blocks = None
+        steps_per_block = None
+        steps = None
+        method_input = self.method_info.method_input
+        if 'blocks' in method_input:
+            blocks = method_input.blocks
+        #end if
+        if 'steps' in method_input:
+            steps_per_block = method_input.steps
+        #end if
+        if blocks!=None and steps_per_block!=None:
+            steps = blocks*steps_per_block
+        #end if
+        if steps is None:
+            return None,None
+        #end if
+        # real and int traces
+        tr = self.data.real_traces
+        ti = self.data.int_traces
+        # names shared by traces and scalar files
+        scalar_names = set(tr.scalars.keys())
+        # step and weight traces
+        st = ti.scalars.step
+        wt = tr.scalars.weight
+        if len(st)!=len(wt):
+            self.error('weight and steps traces have different lengths')
+        #end if
+        #recompute steps (can vary for vmc w/ samples/samples_per_thread)
+        steps = st.max()+1
+        steps_per_block = steps/blocks
+        # accumulate weights into steps and blocks
+        ws   = zeros((steps,))
+        qs   = zeros((steps,))
+        q2s  = zeros((steps,))
+        wb   = zeros((blocks,))
+        qb   = zeros((blocks,))
+        q2b  = zeros((blocks,))
+        for t in xrange(len(wt)):
+            ws[st[t]] += wt[t]
+        #end for
+        s = 0
+        for b in xrange(blocks):
+            wb[b] = ws[s:s+steps_per_block].sum()
+            s+=steps_per_block
+        #end for
+        # check scalar.dat
+        if scalars is None:
+            scalars_valid = None
+        else:
+            dat_names = set(scalars.keys())     & scalar_names
+            same = True
+            for qname in dat_names:
+                qt = tr.scalars[qname]
+                if len(qt)!=len(wt):
+                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                #end if
+                qs[:] = 0
+                for t in xrange(len(qt)):
+                    qs[st[t]] += wt[t]*qt[t]
+                #end for
+                qb[:] = 0
+                s=0
+                for b in xrange(blocks):
+                    qb[b] = qs[s:s+steps_per_block].sum()
+                    s+=steps_per_block
+                #end for
+                qb = qb/wb
+                qs = qs/ws
+                qscalar = scalars[qname]
+                qsame = (abs(qb-qscalar)<tol).all()
+                #if not qsame and qname=='LocalEnergy':
+                #    print '    scalar.dat LocalEnergy'
+                #    print qscalar
+                #    print qb
+                ##end if
+                same = same and qsame
+            #end for
+            scalars_valid = same
+        #end if
+        # check scalars from stat.h5
+        if scalars_hdf is None:
+            scalars_hdf_valid = None
+        else:
+            hdf_names = set(scalars_hdf.keys()) & scalar_names
+            same = True
+            for qname in dat_names:
+                qt = tr.scalars[qname]
+                if len(qt)!=len(wt):
+                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                #end if
+                qs[:] = 0
+                q2s[:] = 0
+                for t in xrange(len(qt)):
+                    s = st[t]
+                    w = wt[t]
+                    q = qt[t]
+                    qs[s]  += w*q
+                    q2s[s] += w*q*q
+                #end for
+                qb[:] = 0
+                s=0
+                for b in xrange(blocks):
+                    qb[b]  = qs[s:s+steps_per_block].sum()
+                    q2b[b] = q2s[s:s+steps_per_block].sum()
+                    s+=steps_per_block
+                #end for
+                qb  = qb/wb
+                q2b = q2b/wb
+                qs  = qs/ws
+                q2s = q2s/ws
+                qhdf = scalars_hdf[qname]
+                qscalar  = qhdf.value.ravel()
+                q2scalar = qhdf.value_squared.ravel()
+                qsame  = (abs(qb -qscalar )<tol).all()
+                q2same = (abs(q2b-q2scalar)<tol).all()
+                #if not qsame and qname=='LocalEnergy':
+                #    print '    stat.h5 LocalEnergy'
+                #    print qscalar
+                #    print qb
+                ##end if
+                same = same and qsame and q2same
+            #end for
+            scalars_hdf_valid = same
+        #end if
+        return scalars_valid,scalars_hdf_valid
+    #end def check_scalars
+
+
+    def check_dmc(self,dmc,tol=1e-8):
+        if dmc is None:
+            dmc_valid = None
+        else:
+            #dmc data
+            ene  = dmc.LocalEnergy
+            wgt  = dmc.Weight
+            pop  = dmc.NumOfWalkers
+            # real and int traces
+            tr = self.data.real_traces
+            ti = self.data.int_traces
+            # names shared by traces and scalar files
+            scalar_names = set(tr.scalars.keys())
+            # step and weight traces
+            st = ti.scalars.step
+            wt = tr.scalars.weight
+            et = tr.scalars.LocalEnergy
+            if len(st)!=len(wt):
+                self.error('weight and steps traces have different lengths')
+            #end if
+            #recompute steps (can vary for vmc w/ samples/samples_per_thread)
+            steps = st.max()+1
+            # accumulate weights into steps
+            ws  = zeros((steps,))
+            es  = zeros((steps,))
+            ps  = zeros((steps,))
+            for t in xrange(len(wt)):
+                ws[st[t]] += wt[t]
+            #end for
+            for t in xrange(len(wt)):
+                es[st[t]] += wt[t]*et[t]
+            #end for
+            for t in xrange(len(wt)):
+                ps[st[t]] += 1
+            #end for
+            es/=ws
+            psame = (abs(ps-pop)<tol).all()
+            wsame = (abs(ws-wgt)<tol).all()
+            esame = (abs(es-ene)<tol).all()
+            dmc_valid = psame and wsame and esame
+        #end if
+        return dmc_valid
+    #end def check_dmc
+    
+
+    #methods that do not apply
+    def init_sub_analyzers(self):
+        None
+    def zero_data(self):
+        None
+    def minsize_data(self,other):
+        None
+    def accumulate_data(self,other):
+        None
+    def normalize_data(self,normalization):
+        None
+#end class TracesAnalyzer
+
+
 
 
 

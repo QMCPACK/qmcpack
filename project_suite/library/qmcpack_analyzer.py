@@ -1,69 +1,3 @@
-##############################################################################
-#
-#   QmcpackAnalyzer plans
-#     -input is a QmcpackAnalysisRequest object which specifies
-#      -source(s) of qmcpack output data
-#       -a single qmcpack input xml file by name/path
-#        -input xml file is read and estimator data is determined
-#        -this is checked against qmcpack capabilities
-#        -hdf data should be loaded only once at instantiation
-#       -a regular expression which selects a set of filepaths
-#        -in this case, the QA gets information about the host machine
-#         -amount of free ram & cores, submission system based on machine name
-#        -a single QA subjob (to analyze a single filepath) is submitted and
-#          amount of memory used is measured
-#        -QA subjobs are submitted to fill cores/memory until all are done
-#        -pickled QA data is then aggregated for collective analysis
-#      -which estimators to analyze
-#       -by name, type, or by group (ie collectables, all scalars, etc)
-#       -searches by name, then type, then group
-#       -these are screened through capabilities, ie what QA is able to calculate
-#      -name/path of output file
-#      -what to save in output
-#       -averages and original data
-#       -just averages
-#      -possibly what figures to generate
-#       -this is probably best done in a user written script, 
-#          by pulling of pieces of QA
-#     -output is stored within QA itself in the form of other analyzers
-#       which in turn store results and analyzers within themselves
-#      -analyzers store non-results attributes in an object called _internal
-#        to avoid namespace collisions
-#
-#    -overall process
-#     -load process
-#      -checks if saved analysis file exists
-#       -loads from it if there
-#       -otherwise
-#        -input xml file is read and estimator/method data is determined
-#          -estimators are checked against qmcpack & QA capabilities
-#        -a subobject is created for each method
-#          -hdf data is loaded only once at instantiation of each method object
-#          -a selective load may be defined so that HDFreader is not used
-#          -estimator type objects are instantiated in each method object
-#           -estimator analyzer objects are instantiated in each estimator type ob
-#             ex. QA.vmc.EnergyDensity may contain Edens_atom, Edens_cell
-#                 which are two different instances of energy density
-#     -analysis process
-#      -for each method object in QA
-#       -for each analyzer object in method object
-#        -call analyze function
-#
-#     -probably need 2 types of analysis function
-#      -one to do 'complete' analysis after load
-#      -one to do analysis on data to be saved/that was loaded
-#
-#    -spacegrid hdf == spacegrid xml
-#     -save/load functions
-#    -spacegrid point to cell index
-#    -spacegrid interpolate
-#    -spacegrid plots, plot objects, unify mayavi and matplotlib
-#    -spacegrid integrate, int syntax, int grid must subdivide existing grid
-#    -pwscf on fermion
-#    -neon-argon, Si-C
-#    -Si defect, density difference from bulk, '-' operator for spacegrids
-#
-##############################################################################
 
 #
 # bugs
@@ -96,7 +30,7 @@ from qmcpack_analyzer_base import QAanalyzer,QAanalyzerCollection
 from qmcpack_property_analyzers \
     import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers \
-    import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,EnergyDensityAnalyzer
+    import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,EnergyDensityAnalyzer,TracesAnalyzer
 from qmcpack_method_analyzers \
     import OptAnalyzer,VmcAnalyzer,DmcAnalyzer
 from qmcpack_result_analyzers \
@@ -119,7 +53,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
     def __init__(self):
 
         self.methods=set(['opt','vmc','dmc','rmc'])
-        self.data_sources = set(['scalar','stat','dmc','storeconfig','opt'])
+        self.data_sources = set(['scalar','stat','dmc','storeconfig','opt','traces'])
         self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight'])
         self.fields=set(['energydensity','density'])
 
@@ -134,6 +68,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
             scalars_dat   = ScalarsDatAnalyzer,
             scalars_hdf   = ScalarsHDFAnalyzer,
             dmc_dat       = DmcDatAnalyzer,
+            traces        = TracesAnalyzer,
             energydensity = EnergyDensityAnalyzer
         )
         
@@ -158,7 +93,7 @@ QAanalyzer.capabilities = QmcpackAnalyzerCapabilities()
 
 
 class QmcpackAnalysisRequest(QAobject):
-    def __init__(self,source=None,destination=None,savefile='',
+    def __init__(self,source=None,destination=None,savefile='QmcpackAnalyzer.p',
                  methods=None,calculations=None,data_sources=None,quantities=None,
                  warmup_calculations=None,
                  output=set(['averages','samples']),
@@ -434,6 +369,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     #end def init_sub_analyzers
 
+
     def set_global_info(self):
         QAanalyzer.request  = self.info.request
         QAanalyzer.run_info = self.info
@@ -636,9 +572,12 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
 
-    def save(self,filepath=None):
+    def save(self,filepath=None,overwrite=True):
         if filepath==None:
             filepath = self.info.savefilepath
+        #end if
+        if not overwrite and os.path.exists(filepath):
+            return
         #end if
         self._unlink_dynamic_methods()
         self.saved_global = QAobject._global
@@ -657,6 +596,32 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         self._relink_dynamic_methods()
         return
     #end def load
+
+
+
+
+    def check_traces(self,verbose=False,pad=None,header=None):
+        if pad is None:
+            pad = ''
+        #end if
+        if header is None:
+            header = '\nChecking traces'
+        #end if
+        if 'qmc' in self:
+            if verbose:
+                self.log(pad+header)
+                pad += '  '
+            #end if
+            for method in self.qmc:
+                method.check_traces(pad)
+            #end for
+        else:
+            if verbose:
+                self.log(pad+'\nNo traces to check')
+            #end if
+            return None
+        #end if
+    #end def check_traces
           
 #end class QmcpackAnalyzer
 

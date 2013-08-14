@@ -84,6 +84,22 @@ class HDFgroup(DevBase):
     #end def __init__
 
 
+    def _remove_hidden(self):
+        if '_parent' in self:
+            del self._parent
+        #end if
+        for name,value in self.iteritems():
+            if isinstance(value,HDFgroup):
+                value._remove_hidden()
+            #end if
+        #end for
+        for name in list(self.keys()):
+            if name[0]=='_':
+                del self[name]
+            #end if
+        #end for
+    #end def _remove_hidden
+
 
     #project interface methods
 

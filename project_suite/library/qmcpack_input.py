@@ -1486,9 +1486,14 @@ class localenergy(QIxml):
 class energydensity(QIxml):
     tag = 'estimator'
     attributes = ['type','name','dynamic','static']
-    elements   = ['spacegrid']
+    elements   = ['reference_points','spacegrid']
     identifier  = 'name'
 #end class energydensity
+
+class reference_points(QIxml):
+    attributes = ['coord']
+    text = 'points'
+#end class reference_points
 
 class spacegrid(QIxml):
     attributes = ['coord','min_part','max_part']
@@ -1516,11 +1521,27 @@ class density(QIxml):
     identifier = 'type'
 #end class density
 
+class nearestneighbors(QIxml):
+    tag = 'estimator'
+    attributes = ['type']
+    elements   = ['neighbor_trace']
+    identifier = 'type'
+#end class nearestneighbors
+
+class neighbor_trace(QIxml):
+    attributes = ['count','neighbors','centers']
+    identifier = 'neighbors','centers'
+#end class neighbor_trace
+
 estimator = QIxmlFactory(
-    name = 'estimator',
-    types   = dict(localenergy=localenergy,energydensity=energydensity,chiesa=chiesa,density=density),
-    typekey = 'type',
-    typekey2= 'name'
+    name  = 'estimator',
+    types = dict(localenergy      = localenergy,
+                 energydensity    = energydensity,
+                 chiesa           = chiesa,
+                 density          = density,
+                 nearestneighbors = nearestneighbors),
+    typekey  = 'type',
+    typekey2 = 'name'
     )
 
 
@@ -1632,7 +1653,8 @@ classes = [   #standard classes
     determinantset,slaterdeterminant,basisset,grid,determinant,occupation,
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
-    atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces
+    atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
+    reference_points,nearestneighbors,neighbor_trace
     ]
 types = dict( #simple types and factories
     host      = param,
@@ -1644,56 +1666,58 @@ types = dict( #simple types and factories
     qmc       = qmc
     )
 plurals = obj(
-    particlesets  = 'particleset',
-    groups        = 'group',    
-    hamiltonians  = 'hamiltonian',
-    pairpots      = 'pairpot',
-    pseudos       = 'pseudo',
-    estimators    = 'estimator',
-    spacegrids    = 'spacegrid',
-    axes          = 'axis',
-    wavefunctions = 'wavefunction',
-    grids         = 'grid',
-    determinants  = 'determinant',
-    correlations  = 'correlation',
-    jastrows      = 'jastrow',
-    basisgroups   = 'basisgroup',
-    calculations  = 'qmc',
-    vars          = 'var'
+    particlesets    = 'particleset',
+    groups          = 'group',    
+    hamiltonians    = 'hamiltonian',
+    pairpots        = 'pairpot',
+    pseudos         = 'pseudo',
+    estimators      = 'estimator',
+    spacegrids      = 'spacegrid',
+    axes            = 'axis',
+    wavefunctions   = 'wavefunction',
+    grids           = 'grid',
+    determinants    = 'determinant',
+    correlations    = 'correlation',
+    jastrows        = 'jastrow',
+    basisgroups     = 'basisgroup',
+    calculations    = 'qmc',
+    vars            = 'var',
+    neighbor_traces = 'neighbor_trace'
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
 single_names = set(plurals.values())
 Names.set_expanded_names(
-    elementtype     = 'elementType',
-    energydensity   = 'EnergyDensity',
-    gevmethod       = 'GEVMethod',
-    localenergy     = 'LocalEnergy',
-    lr_dim_cutoff   = 'LR_dim_cutoff',
-    minmethod       = 'MinMethod',
-    one_body        = 'One-Body',
-    speciesa        = 'speciesA',
-    speciesb        = 'speciesB',
-    substeps        = 'subSteps',
-    two_body        = 'Two-Body',
-    usedrift        = 'useDrift',
-    maxweight       = 'maxWeight',
-    warmupsteps     = 'warmupSteps',
-    twistindex      = 'twistIndex',
-    twistangle      = 'twistAngle',
-    usebuffer       = 'useBuffer',
-    mpc             = 'MPC',
-    kecorr          = 'KEcorr',
-    ionion          = 'IonIon',
-    elecelec        = 'ElecElec',
-    pseudopot       = 'PseudoPot',
-    posarray        = 'posArray',
-    array           = 'Array',
-    atomicbasisset  = 'atomicBasisSet',
-    basisgroup      = 'basisGroup',
-    expandylm       = 'expandYlm',
-    mo              = 'MO',
-    numerical       = 'Numerical'
+    elementtype      = 'elementType',
+    energydensity    = 'EnergyDensity',
+    gevmethod        = 'GEVMethod',
+    localenergy      = 'LocalEnergy',
+    lr_dim_cutoff    = 'LR_dim_cutoff',
+    minmethod        = 'MinMethod',
+    one_body         = 'One-Body',
+    speciesa         = 'speciesA',
+    speciesb         = 'speciesB',
+    substeps         = 'subSteps',
+    two_body         = 'Two-Body',
+    usedrift         = 'useDrift',
+    maxweight        = 'maxWeight',
+    warmupsteps      = 'warmupSteps',
+    twistindex       = 'twistIndex',
+    twistangle       = 'twistAngle',
+    usebuffer        = 'useBuffer',
+    mpc              = 'MPC',
+    kecorr           = 'KEcorr',
+    ionion           = 'IonIon',
+    elecelec         = 'ElecElec',
+    pseudopot        = 'PseudoPot',
+    posarray         = 'posArray',
+    array            = 'Array',
+    atomicbasisset   = 'atomicBasisSet',
+    basisgroup       = 'basisGroup',
+    expandylm        = 'expandYlm',
+    mo               = 'MO',
+    numerical        = 'Numerical',
+    nearestneighbors = 'NearestNeighbors'
     )
 for c in classes:
     c.init_class()

@@ -3,9 +3,11 @@ import os
 import re
 from generic import obj
 from hdfreader import HDFreader
+from qaobject import Checks
 from qmcpack_analyzer_base import QAanalyzer,QAdata,QAHDFdata
 from qmcpack_property_analyzers import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers import HDFAnalyzer
+from debug import *
 
 
 class MethodAnalyzer(QAanalyzer):
@@ -39,6 +41,11 @@ class MethodAnalyzer(QAanalyzer):
                     files.opt    = file
                 elif file.endswith('dmc.dat'):
                     files.dmc    = file
+                elif '.traces.' in file:
+                    if not 'traces' in files:
+                        files.traces = []
+                    #end if
+                    files.traces.append(file)
                 #end if
             #end if
         #end for
@@ -126,6 +133,9 @@ class MethodAnalyzer(QAanalyzer):
             filepath = os.path.join(source_path,files.dmc)
             self.dmc = analyzers.dmc_dat(filepath)
         #end if
+        if 'traces' in data_sources and 'traces' in files:
+            self.traces = analyzers.traces(source_path,files.traces)
+        #end if
         
         self.unset_global_info()
 
@@ -171,6 +181,56 @@ class MethodAnalyzer(QAanalyzer):
     def unset_global_info(self):
         QAanalyzer.method_info = None
     #end def unset_global_info
+
+
+    def check_traces(self,pad=None):
+        verbose = pad!=None
+        method = self.info.method
+        series = self.info.series
+        if verbose:
+            desc = 'method {0} series {1}'.format(method,series)
+        #end if
+        if 'traces' in self:
+            check = {None:True,False:False,True:True}
+            if verbose:
+                self.log(pad+'Checking traces in '+desc)
+            #end if
+            scalars     = None
+            scalars_hdf = None
+            dmc         = None
+            if 'scalars' in self and 'data' in self.scalars:
+                scalars = self.scalars.data
+            #end if
+            if 'scalars_hdf' in self and 'data' in self.scalars_hdf:
+                scalars_hdf = self.scalars_hdf.data
+            #end if
+            if 'dmc' in self and 'data' in self.dmc:
+                dmc = self.dmc.data
+            #end if
+            checks = Checks('traces')
+            checks.exclude(None)
+            traces = self.traces
+            checks.psums   = traces.check_particle_sums()
+            if method=='dmc':
+                checks.dmc = traces.check_dmc(dmc)
+            else:
+                svalid,shvalid = traces.check_scalars(scalars,scalars_hdf)
+                checks.scalars     = svalid
+                checks.scalars_hdf = shvalid
+            #end if
+            valid = checks.valid()
+            if verbose:
+                checks.write(pad+'  ')
+            #end if
+            return valid
+        else:
+            if verbose:
+                self.log(pad+'No traces in '+desc)
+            #end if
+            return None
+        #end if
+    #end def check_traces
+
 #end class MethodAnalyzer
 
 

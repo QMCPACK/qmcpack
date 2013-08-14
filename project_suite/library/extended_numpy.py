@@ -247,11 +247,14 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
     nx = len(x)
     xt = x[int((1.-tail)*nx+.5):]
     nxt = len(xt)
+    if nxt<10:
+        return eqlen
+    #end if
     #mean  = xh.mean()
     #sigma = sqrt(xh.var())
     xs = array(xt)
     xs.sort()
-    mean  = xs[int(.5*nxt+.5)]
+    mean  = xs[int(.5*(nxt-1)+.5)]
     sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
     crossings = bounces*[0,0]
     if abs(x[0]-mean)>sigma:
