@@ -62,6 +62,16 @@ class obj(AllAbilities):
         o.transfer_from(self,keys=names,copy=False)
         return o
     #end def obj
+
+    def first(self):
+        key = min(self.keys(), key=operator.itemgetter(1))
+        return self[key]
+    #end def first
+
+    def last(self):
+        key = max(self.keys(), key=operator.itemgetter(1))
+        return self[key]
+    #end def last
     
     def open_log(self,filepath):
         self.logfile = open(filepath,'w')

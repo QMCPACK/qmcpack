@@ -5,14 +5,50 @@ from generic import obj
 from developer import DevBase
 from unit_converter import convert
 from structure import Structure
+from debug import *
 
 class Matter(DevBase):
     particle_collection = None
 
     @classmethod
-    def new_particles(*particles,**named_particles):
-        self.particle_collection.add_particles(*particles,**named_particles)
+    def set_elements(cls,elements):
+        cls.elements = set(elements)
+    #end def set_elements
+
+    @classmethod
+    def set_particle_collection(cls,pc):
+        cls.particle_collection = pc
+    #end def set_particle_collection
+
+    @classmethod
+    def new_particles(cls,*particles,**named_particles):
+        cls.particle_collection.add_particles(*particles,**named_particles)
     #end def new_particles
+
+    def is_element(self,name,symbol=False):
+        s = None
+        iselem = name in self.elements
+        if not iselem and isinstance(name,str):
+            nlen = len(name)
+            if name.find('_')!=-1:
+                s,n = name.split('_',1)
+                iselem = n.isdigit() and s in self.elements
+            elif nlen>1 and name[1:].isdigit():
+                s = name[0:1]
+                iselem = s in self.elements
+            elif nlen>2 and name[2:].isdigit():
+                s = name[0:2]
+                iselem = s in self.elements
+            #end if
+        else:
+            s = name
+        #end if
+        if symbol:
+            return iselem,s
+        else:
+            return iselem
+        #end if
+    #end def is_element
 #end class Matter
 
 
@@ -74,6 +110,21 @@ class Particles(Matter):
         #end for
     #end def add_particles
 
+    def get_particle(self,name):
+        p = None
+        if name in self:
+            p = self[name]
+        else:
+            iselem,symbol = self.is_element(name,symbol=True)
+            if iselem and symbol in self:
+                p = self[symbol].copy()
+                p.name = name
+                self[name] = p
+            #end if
+        #end if
+        return p
+    #end def get_particle
+
     def get(self,quantity):
         q = obj()
         for name,particle in self.iteritems():
@@ -82,10 +133,24 @@ class Particles(Matter):
         return q
     #end def get
 
+    def rename(self,**name_pairs):
+        for old,new in name_pairs.iteritems():
+            if old in self:
+                o = self[old]
+                del self[old]
+                if new in self:
+                    self[new].count += o.count
+                else:
+                    self[new] = o
+                #end if
+            #end if
+        #end for
+    #end def rename
+
     def get_ions(self):
         ions = obj()
         for name,particle in self.iteritems():
-            if name in self.elements:
+            if self.is_element(name):
                 ions[name] = particle
             #end if
         #end for
@@ -96,7 +161,7 @@ class Particles(Matter):
         nions = 0
         nspecies = 0
         for name,particle in self.iteritems():
-            if name in self.elements:
+            if self.is_element(name):
                 nspecies += 1
                 nions += particle.count
             #end if
@@ -106,7 +171,7 @@ class Particles(Matter):
 
     def get_electrons(self):
         electrons = obj()
-        for electron in ['up_electron','down_electron']:
+        for electron in ('up_electron','down_electron'):
             if electron in self:
                 electrons[electron] = self[electron]
             #end if
@@ -116,7 +181,7 @@ class Particles(Matter):
 
     def count_electrons(self):
         nelectrons = 0
-        for electron in ['up_electron','down_electron']:
+        for electron in ('up_electron','down_electron'):
             if electron in self:
                 nelectrons += self[electron].count
             #end if
@@ -150,8 +215,8 @@ for name,iso in pt.isotopes.iteritems():
     #end for
 #end for
 
-Matter.elements = pt.elements.keys()
-Matter.particle_collection = Particles(plist)
+Matter.set_elements(pt.elements.keys())
+Matter.set_particle_collection(Particles(plist))
 
 del plist
 del pt
@@ -215,9 +280,15 @@ class PhysicalSystem(Matter):
 
 
     def add_particles(self,**particle_counts):
+        pc = self.particle_collection # all known particles
         plist = []
         for name,count in particle_counts.iteritems():
-            particle = self.particle_collection[name].copy()
+            particle = pc.get_particle(name)
+            if particle is None:
+                self.error('particle {0} is unknown'.format(name))
+            else:
+                particle = particle.copy()
+            #end if
             particle.set_count(count)
             plist.append(particle)
         #end for
@@ -278,7 +349,7 @@ class PhysicalSystem(Matter):
 
 
     def change_units(self,units):
-        self.structure.change_units(units)
+        self.structure.change_units(units,folded=False)
         if self.folded_system!=None:
             self.folded_system.change_units(units)
         #end if
@@ -286,11 +357,20 @@ class PhysicalSystem(Matter):
 
 
     def group_atoms(self):
-        self.structure.group_atoms()
+        self.structure.group_atoms(folded=False)
         if self.folded_system!=None:
             self.folded_system.group_atoms()
         #end if
     #end def group_atoms
+
+
+    def rename(self,folded=True,**name_pairs):
+        self.particles.rename(**name_pairs)
+        self.structure.rename(folded=False,**name_pairs)
+        if self.folded_system!=None and folded:
+            self.folded_system.rename(folded=folded,**name_pairs)
+        #end if
+    #end def rename
 
 
     def copy(self):
@@ -341,6 +421,19 @@ class PhysicalSystem(Matter):
         self.folded_system = None
         self.structure.remove_folded_structure()
     #end def remove_folded_system
+
+
+    def get_primitive(self):
+        if self.folded_system is None:
+            fs = self
+        else:
+            fs = self.folded_system
+            while fs.folded_system!=None:
+                fs = fs.folded_system
+            #end while
+        #end if
+        return fs
+    #end def get_primitive
 
 
     def folded_representation(self,arg0,arg1=None):

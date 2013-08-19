@@ -1211,7 +1211,7 @@ class AtomicDFTBoxScan(AtomicValidationStage):
 class AtomicDFTEcutScan(AtomicValidationStage):
     systype = 'pp'
     stage_inputs       = set(['pp_Ecuts'])
-    stage_dependencies = set(['pp_dftjob','pp_L','pp_assume_isolated','pp_spin0','pp_Zeff'])
+    stage_dependencies = set(['pp_dftjob','pp_p2cjob','pp_L','pp_assume_isolated','pp_spin0','pp_Zeff'])
 
     data_type = 'scalar'
     title  = 'DFT energy vs. planewave energy cutoff'
@@ -1246,7 +1246,7 @@ class AtomicDFTEcutScan(AtomicValidationStage):
             p2c = generate_pw2casino(
                 identifier   = 'p2c',
                 path         = path,
-                job          = Job(cores=1)
+                job          = v.p2cjob
                 )
             p2c.depends(scf,'orbitals')
             sims[ecut,'E'] = scf
@@ -1335,7 +1335,7 @@ class AtomicDFTSpinScan(AtomicValidationStage):
 
 class AtomicDFTCalc(AtomicValidationStage):
     systype = 'pp'
-    stage_dependencies = set(['pp_dftjob','pp_Zeff','pp_L','pp_assume_isolated','pp_Ecut','pp_spin'])
+    stage_dependencies = set(['pp_dftjob','pp_p2qjob','pp_Zeff','pp_L','pp_assume_isolated','pp_Ecut','pp_spin'])
     stage_result = 'pp_orbitals'
     final_result = 'Edft_pp'
 
@@ -1369,7 +1369,7 @@ class AtomicDFTCalc(AtomicValidationStage):
         p2q = generate_pw2qmcpack(
             identifier   = 'p2q',
             path         = v.path,
-            job          = Job(cores=1),
+            job          = v.p2qjob,
             write_psir   = False
             )
         p2q.depends(scf,'orbitals')
@@ -1895,6 +1895,7 @@ class ValidateAtomPP(ValidationProcess):
         ['ae_hfjob', 'ae_optjob', 'ae_vmcjob', 'ae_dmcjob', 'ae_pade_b',
          'ae_occupation','ae_orbitals','ae_jastrow','ae_population','ae_timestep',
          'pp_dftjob', 'pp_optjob', 'pp_vmcjob', 'pp_dmcjob', 'pp_pade_b',
+         'pp_p2cjob','pp_p2qjob',
          'pp_Ecut0','pp_spin0','pp_Zeff','pp_L','pp_Ecut','pp_spin','pp_orbitals',
          'pp_assume_isolated0','pp_assume_isolated','pp_J1_rcut','pp_jastrow',
          'pp_population','pp_timestep'])
@@ -2382,7 +2383,7 @@ class DimerValidationStage(ValidationStage):
 class DimerBondLengthScan(DimerValidationStage):
 
     stage_dependencies = set(['bond_lengths','vmc_calcs','opt_calcs','dmc_calcs',
-                              'dftjob','optjob','vmcjob','dmcjob',
+                              'dftjob','p2cjob','p2qjob','optjob','vmcjob','dmcjob',
                               'L','Ecut','population','timestep','J1_rcut','pade_b'])
 
     stage_type = 'scan'
@@ -2465,13 +2466,13 @@ class DimerBondLengthScan(DimerValidationStage):
             p2q = generate_pw2qmcpack(
                 identifier   = 'p2q',
                 path         = dftpath,
-                job          = Job(cores=1),
+                job          = v.p2qjob,
                 write_psir   = False
                 )
             p2c = generate_pw2casino(
                 identifier   = 'p2c',
                 path         = dftpath,
-                job          = Job(cores=1)
+                job          = v.p2cjob
                 )
             vmc_noJ = generate_qmcpack(
                 identifier   = 'vmc',
@@ -3104,6 +3105,8 @@ if __name__=='__main__':
         ae_vmcjob     = Job(cores=16),
         ae_dmcjob     = Job(cores=16),
         pp_dftjob     = Job(cores=16), 
+        pp_p2cjob     = Job(cores=1), 
+        pp_p2qjob     = Job(cores=1), 
         pp_optjob     = Job(cores=16),
         pp_vmcjob     = Job(cores=16),
         pp_dmcjob     = Job(cores=16),

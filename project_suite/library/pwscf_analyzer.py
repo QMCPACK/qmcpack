@@ -5,6 +5,8 @@ from unit_converter import convert
 from periodic_table import PeriodicTable
 from simulation import SimulationAnalyzer,Simulation
 from pwscf_input import PwscfInput
+from debug import *
+import code
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
@@ -104,27 +106,51 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.energies = array(energies)
 
 
-        found = False
+        # get bands and occupations
+        nfound = 0
+        bands = obj()
         for i in range(len(lines)):
             l = lines[i]
-            if l.find(' bands')!=-1:
-                lb = lines[i+2]
-                ls = lb.split()
-                all_number = True
-                for sval in ls:
-                    all_number = all_number and is_number(sval)
+            if 'bands (ev)' in l:
+                nfound+=1
+                i_occ = -1
+                j = i
+                while i_occ==-1:
+                    j+=1
+                    if 'occupation numbers' in lines[j]:
+                        i_occ = j
+                    #end if
+                #end while
+                seigs = ''
+                for j in range(i+1,i_occ):
+                    seigs+=lines[j]
                 #end for
-                if all_number:
-                    bands = array(ls,float)
-                else:
-                    bands = None
+                seigs = seigs.strip()
+                eigs = array(seigs.split(),dtype=float)
+
+                soccs = ''
+                for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                    soccs+= lines[j]
+                #end for
+                occs = array(soccs.split(),dtype=float)
+                
+                if nfound==1:
+                    bands.up = obj(
+                        eigs = eigs,
+                        occs = occs
+                        )
+                elif nfound==2:
+                    bands.down = obj(
+                        eigs = eigs,
+                        occs = occs
+                        )
                 #end if
-                found = True
             #end if
         #end for
-        if found:
+        if nfound>0:
             self.bands = bands
         #end if
+
 
         structures = obj()
         i=0

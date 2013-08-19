@@ -115,7 +115,8 @@ class Simulation(Pobj):
     application_results    = set()
     allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
                           'input','job','files','dependencies','analysis_request',
-                          'block','block_subcascade','app_name','app_props','system','skip_submit','force_write'])
+                          'block','block_subcascade','app_name','app_props','system',
+                          'skip_submit','force_write'])
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -124,10 +125,14 @@ class Simulation(Pobj):
     updatable = set(['block','block_subcascade','force_write'])
     preserve  = set(['simid','got_dependencies','dependencies',
                      'ordered_dependencies','dependents','dependency_ids',
-                     'wait_ids','input','locdir','remdir','resdir','imlocdir',
-                     'imremdir','imresdir','skip_submit','job','system'])
+                     'wait_ids','input','locdir','remdir','resdir',
+                     'imlocdir','imremdir','imresdir',
+                     'skip_submit','job','system'])
     sim_count = 0
 
+
+    sim_directories = dict()
+    
 
     def __init__(self,**kwargs):
         #user specified variables
@@ -231,9 +236,22 @@ class Simulation(Pobj):
         self.locdir = os.path.join(self.local_directory,self.runs,self.path)
         self.remdir = os.path.join(self.remote_directory,self.runs,self.path)
         self.resdir = os.path.join(self.local_directory,self.results,self.runs,self.path)
-        self.imlocdir = self.locdir 
-        self.imremdir = self.remdir 
-        self.imresdir = self.resdir 
+        
+        if not self.locdir in self.sim_directories:
+            self.sim_directories[self.locdir] = set([self.identifier])
+        else:
+            idset = self.sim_directories[self.locdir]
+            if not self.identifier in idset:
+                idset.add(self.identifier)
+            else:
+                self.error('multiple simulations in a single directory have the same identifier\n  please assign unique identifiers to each simulation\n  simulation directory: {0}\n  repeated identifier: {1}\n  other identifiers: {2}\n  between the directory shown and the identifiers listed, it should be clear which simulations are involved\n  most likely, you described two simulations with identifier {3}'.format(self.locdir,self.identifier,list(idset),self.identifier))
+            #end if
+        #end if
+
+        self.image_dir = self.image_dir+'_'+self.identifier
+        self.imlocdir = os.path.join(self.locdir,self.image_dir) 
+        self.imremdir = os.path.join(self.remdir,self.image_dir) 
+        self.imresdir = os.path.join(self.resdir,self.image_dir) 
     #end def set_directories
 
 
@@ -367,7 +385,7 @@ class Simulation(Pobj):
                 if result_name!='other':
                     calculating_result = sim.check_result(result_name,self)
                     if not calculating_result:
-                        self.error('simulation '+sim.identifier+' id '+str(sim.simid)+' is not calculating result '+result_name,exit=False)
+                        self.error('simulation {0} id {1} is not calculating result {2}\nrequired by simulation {3} id {4}\n{5} {6} directory: {7}\n{8} {9} directory: {10}'.format(sim.identifier,sim.simid,result_name,self.identifier,self.simid,sim.identifier,sim.simid,sim.locdir,self.identifier,self.simid,self.locdir),exit=False)
                 else:
                     calculating_result = True
                 #end if
@@ -473,6 +491,7 @@ class Simulation(Pobj):
     def load_analyzer_image(self,imagepath=None):
         if imagepath==None:
             imagepath = os.path.join(self.imresdir,self.analyzer_image)
+        #end if
         analyzer = self.analyzer_type(self)
         analyzer.load(imagepath)
         return analyzer

@@ -136,6 +136,7 @@ class Job(Pobj):
         self.account     = account
         self.internal_id = None
         self.system_id   = None
+        self.tot_cores   = None
         self.submitted   = False
         self.status      = self.states.none
         self.crashed     = False
@@ -887,7 +888,7 @@ class Supercomputer(Machine):
             job.cores = min(job.cores,job.nodes*self.cores_per_node)
         #end if
         job.processes = max(1,int(float(job.cores)/job.threads))
-        job.cores = job.nodes*self.cores_per_node
+        job.tot_cores = job.nodes*self.cores_per_node
         job.procs = job.nodes*self.procs_per_node
 
         if mod(job.processes,job.nodes)!=0:
@@ -1106,7 +1107,7 @@ class Kraken(Supercomputer):
         c+='#PBS -A '+str(job.account)+'\n'
         c+='#PBS -N '+str(job.name)+'\n'
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
-        c+='#PBS -l size='+str(job.cores)+'\n'
+        c+='#PBS -l size='+str(job.tot_cores)+'\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
         c+='''#PBS -V
@@ -1144,7 +1145,7 @@ class Jaguar(Supercomputer):
         c+='#PBS -q '+job.queue+'\n'
         c+='#PBS -N '+str(job.name)+'\n'
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
-        c+='#PBS -l size='+str(job.cores)+'\n'
+        c+='#PBS -l size='+str(job.tot_cores)+'\n'
         c+='#PBS -l gres=widow2%widow3\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
@@ -1234,10 +1235,11 @@ class OIC5(Supercomputer):
             job.queue = 'mstqmc13q'
         #end if
 
-        ppn = 32/job.threads
-        if ppn*job.threads!=32:
-            self.error('ppn is not being set properly for OIC5\n  perhaps the number of threads requested does not evenly divide the 32 cores\n  you requested {0} threads'.format(job.threads))
-        #end if
+        ppn = job.processes
+        #ppn = 32/job.threads
+        #if ppn*job.threads!=32:
+        #    self.error('ppn is not being set properly for OIC5\n  perhaps the number of threads requested does not evenly divide the 32 cores\n  you requested {0} threads'.format(job.threads))
+        ##end if
 
         c='#!/bin/bash\n'
         c+='#PBS -q '+job.queue+'\n'
@@ -1257,11 +1259,6 @@ cd $PBS_O_WORKDIR
 
 
     def read_process_id(self,output):
-        print
-        print 'in read_process_id'
-        print '  output:'
-        print output
-
         pid = None
         lines = output.splitlines()
         for line in lines:
@@ -1272,8 +1269,7 @@ cd $PBS_O_WORKDIR
                 #end if
             #end if
         #end for
-
-        print '  pid:',pid
+        print '      pid:',pid
         return pid
     #end def read_process_id
 #end class OIC5
@@ -1313,7 +1309,7 @@ class Edison(Supercomputer):
         c+='#PBS -q '+job.queue+'\n'
         c+='#PBS -N '+str(job.name)+'\n'
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
-        c+='#PBS -l mppwidth={0}\n'.format(job.cores)
+        c+='#PBS -l mppwidth={0}\n'.format(job.tot_cores)
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
         c+='''#PBS -V

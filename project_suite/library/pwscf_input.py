@@ -1,5 +1,6 @@
 import os
 import types
+from copy import deepcopy
 from superstring import string2val
 from numpy import fromstring,empty,array,float64,ones,pi,dot
 from numpy.linalg import inv
@@ -9,6 +10,7 @@ from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from project_base import Pobj
 from simulation import SimulationInput
+from debug import *
 
 
 def read_str(sv):
@@ -137,9 +139,13 @@ class Element(PwscfInputBase):
         self.not_implemented()
     #end def read
 
-    def write(self,lines):
+    def write(self,parent):
         self.not_implemented()
     #end def write
+
+    def post_process_read(self,parent):
+        None
+    #end def post_process_read
 #end class Element
 
 
@@ -220,7 +226,7 @@ class Card(Element):
         self.read_contents(lines[1:])
     #end def read
 
-    def write(self):
+    def write(self,parent):
         c = self.name.upper()+' '+self.specifier+'\n'
         c += self.write_contents()+'\n'
         return c
@@ -269,6 +275,46 @@ class system(Section):
          'report','lspinorb','assume_isolated','do_ee','london','london_s6',
          'london_rcut','exx_fraction','ecutfock'])
 
+    atomic_variables = obj(
+        hubbard_u = 'Hubbard_U',
+        start_mag = 'starting_magnetization'
+        )
+
+    # specialized read for partial array variables (hubbard U, starting mag, etc)
+    def post_process_read(self,parent):
+        if 'atomic_species' in parent:
+            keys = self.keys()
+            for alias,name in self.atomic_variables.iteritems():
+                has_var = False
+                avals = obj()
+                akeys = []
+                for key in keys:
+                    if key.startswith(name):
+                        has_hubbard_u = True
+                        akeys.append(key)
+                        index = int(key.replace(name,'').strip('()'))
+                        avals[index] = self[key]
+                    #end if
+                #end for
+                if has_var:
+                    for key in akeys:
+                        del self[key]
+                    #end for
+                    atoms = parent.atomic_species.atoms
+                    value = obj()
+                    for i in range(len(atoms)):
+                        index = i+1
+                        if index in avals:
+                            value[atoms[i]] = avals[i+1]
+                        #end if
+                    #end for
+                    self[alias] = value
+                #end if
+            #end for
+        #end if
+    #end def post_process_read
+
+
     # specialized write for odd handling of hubbard U
     def write(self,parent):
         c='&'+self.name.upper()+'\n'
@@ -276,18 +322,21 @@ class system(Section):
         vars.sort()
         for var in vars:
             val = self[var]
-            if var=='hubbard_u':
+            if var in self.atomic_variables:
                 if 'atomic_species' in parent:
                     atoms = parent.atomic_species.atoms
+                    avar = self.atomic_variables[var]
                     for i in range(len(atoms)):
                         index = i+1
-                        vname = 'Hubbard_U({0})'.format(index)
+                        vname = '{0}({1})'.format(avar,index)
                         atom = atoms[i]
                         if atom in val:
                             sval = writeval[float](val[atom])
                             c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
                         #end if
                     #end for
+                else:
+                    self.error('cannot write {0}, atomic_species is not present'.format(var))
                 #end if
             else:
                 #vtype = type(val)
@@ -800,35 +849,10 @@ class PwscfInput(SimulationInput):
             #end if
             self[elem_name].read(c)
         #end if
-        #post-process hubbard u
-        if 'system' in self and 'atomic_species' in self:
-            keys = self.system.keys()
-            has_hubbard_u = False
-            huvals = obj()
-            hukeys = []
-            for key in keys:
-                if key.startswith('Hubbard_U'):
-                    has_hubbard_u = True
-                    hukeys.append(key)
-                    index = int(key.replace('Hubbard_U','').strip('()'))
-                    huvals[index] = self.system[key]
-                #end if
-            #end for
-            if has_hubbard_u:
-                for key in hukeys:
-                    del self.system[key]
-                #end for
-                atoms = self.atomic_species.atoms
-                hu = obj()
-                for i in range(len(atoms)):
-                    index = i+1
-                    if index in huvals:
-                        hu[atoms[i]] = huvals[i+1]
-                    #end if
-                #end for
-                self.system.hubbard_u = hu
-            #end if
-        #end if
+        #post-process hubbard u and related variables
+        for element in self:
+            element.post_process_read(self)
+        #end for
     #end def read_contents
 
 
@@ -842,7 +866,7 @@ class PwscfInput(SimulationInput):
         contents+='\n'
         for c in self.cards:
             if c in self:
-                contents += self[c].write()
+                contents += self[c].write(self)
             #end if
         #end for
         contents+='\n'
@@ -931,8 +955,18 @@ class PwscfInput(SimulationInput):
         for name,a in atoms.iteritems():
             masses[name] = a.mass
         #end for
-        self.atomic_species.atoms  = atoms.keys()
+        self.atomic_species.atoms  = list(atoms.keys())
         self.atomic_species.masses = masses
+        # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
+        pp = self.atomic_species.pseudopotentials
+        for atom in self.atomic_species.atoms:
+            if not atom in pp:
+                iselem,symbol = p.is_element(atom,symbol=True)
+                if iselem and symbol in pp:
+                    pp[atom] = str(pp[symbol])
+                #end if
+            #end if
+        #end for
 
         self.atomic_positions.specifier = 'alat'
         self.atomic_positions.positions = s.pos.copy()
@@ -1060,6 +1094,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        degauss      = 0.0001,
                        nosym        = False,
                        hubbard_u    = None,
+                       start_mag    = None,
                        assume_isolated = None,
                        wf_collect   = True,
                        restart_mode = 'from_scratch',
@@ -1145,8 +1180,20 @@ def generate_scf_input(prefix       = 'pwscf',
         if not isinstance(hubbard_u,(dict,obj)):
             PwscfInput.class_error('input hubbard_u must be of type dict or obj')
         #end if
-        pw.system.hubbard_u = hubbard_u
+        pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
+    #end if
+    if start_mag!=None:
+        if not isinstance(start_mag,(dict,obj)):
+            PwscfInput.class_error('input start_mag must be of type dict or obj')
+        #end if
+        pw.system.start_mag = deepcopy(start_mag)
+        if 'tot_magnetization' in pw.system:
+            del pw.system.tot_magnetization
+        #end if
+        if 'multiplicity' in pw.system:
+            del pw.system.multiplicity
+        #end if
     #end if
 
     system.check_folded_system()
@@ -1159,9 +1206,9 @@ def generate_scf_input(prefix       = 'pwscf',
         fs = s.folded_structure
         axes = array(array_to_string(fs.axes).split(),dtype=float)
         axes.shape = fs.axes.shape
-        axes = dot(axes,s.tmatrix)
+        axes = dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
-            self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
+            PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
         #end if
     else:
         axes = array(array_to_string(s.axes).split(),dtype=float)
@@ -1169,8 +1216,8 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     s.adjust_axes(axes)
 
-    if system.folded_system!=None and use_folded:
-        system = system.folded_system
+    if use_folded:
+        system = system.get_primitive()
     #end if
 
     if system!=None:

@@ -331,16 +331,17 @@ class ProjectManager(Pobj):
         collpath = ''
         for path,simlist in entry_order.iteritems():
             if len(simlist)>1:
-                #resolve image directory collisions
-                for i in range(len(simlist)):
-                    sim = simlist[i]
-                    imagedir = sim.image_dir+str(i+1)
-                    if os.path.basename(sim.imlocdir)!=imagedir:
-                        sim.imlocdir = os.path.join(sim.imlocdir,imagedir)
-                        sim.imremdir = os.path.join(sim.imremdir,imagedir)
-                        sim.imresdir = os.path.join(sim.imresdir,imagedir)
-                    #end if
-                #end for
+                #this is handled by Simulation now
+                ##resolve image directory collisions
+                #for i in range(len(simlist)):
+                #    sim = simlist[i]
+                #    imagedir = sim.image_dir+str(i+1)
+                #    if os.path.basename(sim.imlocdir)!=imagedir:
+                #        sim.imlocdir = os.path.join(sim.imlocdir,imagedir)
+                #        sim.imremdir = os.path.join(sim.imremdir,imagedir)
+                #        sim.imresdir = os.path.join(sim.imresdir,imagedir)
+                #    #end if
+                ##end for
                 #raise an error if any in/out/err files will collide
                 filespace = dict()
                 for sim in simlist:

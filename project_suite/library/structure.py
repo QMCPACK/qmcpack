@@ -164,6 +164,7 @@ class Structure(Sobj):
         #end if
     #end def __init__
 
+
     def remove_folded_structure(self):
         #print 'removing folded structure',self.folded_structure.__class__.__name__
         self.folded_structure = None
@@ -171,16 +172,31 @@ class Structure(Sobj):
     #end def remove_folded_structure
 
             
-    def group_atoms(self):
+    def group_atoms(self,folded=True):
         if len(self.elem)>0:
             order = self.elem.argsort()
             self.elem = self.elem[order]
             self.pos  = self.pos[order]
         #end if
-        if self.folded_structure!=None:
-            self.folded_structure.group_atoms()
+        if self.folded_structure!=None and folded:
+            self.folded_structure.group_atoms(folded)
         #end if
     #end def group_atoms
+
+
+    def rename(self,folded=True,**name_pairs):
+        elem = self.elem
+        for old,new in name_pairs.iteritems():
+            for i in xrange(len(self.elem)):
+                if old==elem[i]:
+                    elem[i] = new
+                #end if
+            #end for
+        #end for
+        if self.folded_structure!=None and folded:
+            self.folded_structure.rename(folded=folded,**name_pairs)
+        #end if
+    #end def rename
 
 
     def reset_axes(self,axes=None):
@@ -263,12 +279,7 @@ class Structure(Sobj):
             self.kpoints = dot(self.kpoints,P)
         #end if
         if self.folded_structure!=None:
-            T = self.tmatrix
-            if abs(T-diag(T)).sum()>1e-6:
-                self.remove_folded_structure()
-            else:
-                self.folded_structure.permute(permutation)
-            #end if
+            self.folded_structure.permute(permutation)
         #end if
     #end def permute
                 
@@ -403,14 +414,12 @@ class Structure(Sobj):
         self.axes  = axnew
         self.kaxes = kaxnew
         if self.folded_structure!=None:
-            T = self.tmatrix
-            fskew = dot(T,dot(skew,inv(T)))
-            self.folded_structure.skew(fskew)
+            self.folded_structure.skew(skew)
         #end if
     #end def skew
         
     
-    def change_units(self,units):
+    def change_units(self,units,folded=True):
         if units!=self.units:
             scale = convert(1,self.units,units)
             self.scale  *= scale
@@ -421,8 +430,8 @@ class Structure(Sobj):
             self.kpoints/= scale
             self.units  = units
         #end if
-        if self.folded_structure!=None:
-            self.folded_structure.change_units(units)
+        if self.folded_structure!=None and folded:
+            self.folded_structure.change_units(units,folded=folded)
         #end if
     #end def change_units
                               
@@ -1004,7 +1013,7 @@ class Structure(Sobj):
         ts.recenter()
         ts.unique_kpoints()
         if self.folded_structure!=None:
-            ts.tmatrix = dot(self.tmatrix,tilematrix)
+            ts.tmatrix = dot(tilematrix,self.tmatrix)
             ts.folded_structure = self.folded_structure.copy()
         elif ncells>1:
             ts.tmatrix = tilematrix
@@ -1050,6 +1059,19 @@ class Structure(Sobj):
         kw = array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
     #end def kfold
+
+
+    def get_primitive(self):
+        if self.folded_structure is None:
+            fs = self
+        else:
+            fs = self.folded_structure
+            while fs.folded_structure!=None:
+                fs = fs.folded_structure
+            #end while
+        #end if
+        return fs
+    #end def get_primitive
 
 
     def fold(self,small,*requests):
@@ -1143,13 +1165,20 @@ class Structure(Sobj):
     #end def fold
 
 
-    def tilematrix(self,small,tol=1e-6):
-        tm = dot(inv(small.axes),self.axes)
+    def tilematrix(self,small=None,tol=1e-6):
+        if small==None:
+            if self.folded_structure!=None:
+                small = self.folded_structure
+            else:
+                self.error('must provide small cell to compute tiling matrix')
+            #end if
+        #end if
+        tm = dot(self.axes,inv(small.axes))
         tilemat = array(around(tm),dtype=int)
         error = abs(tilemat-tm).sum()
         non_integer_elements = error > tol
         if non_integer_elements:
-            self.error('large cell cannot be constructed as an integer tiling of the small cell\n  large cell axes:  \n'+str(self.axes)+'\n  small cell axes:  \n'+str(small.axes)+'\n  tiling matrix:  \n'+str(tm)+'\n  integerized tiling matrix:  \n'+str(tilemat)+'\n  error: '+str(error)+'\n  tolerance: '+str(tol))
+            self.error('large cell cannot be constructed as an integer tiling of the small cell\n  large cell axes:  \n'+str(self.axes)+'\n  small cell axes:  \n'+str(small.axes)+'\n  large/small:  \n'+str(self.axes/small.axes)+'\n  tiling matrix:  \n'+str(tm)+'\n  integerized tiling matrix:  \n'+str(tilemat)+'\n  error: '+str(error)+'\n  tolerance: '+str(tol))
         #end if
         return tilemat
     #end def tilematrix

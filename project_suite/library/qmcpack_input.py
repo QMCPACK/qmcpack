@@ -2481,7 +2481,7 @@ class QmcpackInput(SimulationInput,Names):
                 fs = structure.folded_structure
                 axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
                 axes.shape = fs.axes.shape
-                axes = dot(axes,structure.tmatrix)
+                axes = dot(structure.tmatrix,axes)
                 if abs(axes-structure.axes).sum()>1e-5:
                     self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
                 #end if
