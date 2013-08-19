@@ -47,7 +47,7 @@ static __constant__ float CMC_Linv[3][3];
 
 template<typename T>
 __device__ __forceinline__
-T CMC_min_dist_fast (T x, T y, T z)
+T CMC_min_dist_fast(T& __restrict__ x, T& __restrict__ y, T& __restrict__ z)
 {
   T u0 = CMC_Linv[0][0]*x + CMC_Linv[1][0]*y + CMC_Linv[2][0]*z;
   T u1 = CMC_Linv[0][1]*x + CMC_Linv[1][1]*y + CMC_Linv[2][1]*z;
