@@ -200,6 +200,11 @@ class Simulation(Pobj):
     #end def init_job
 
 
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+
     def set(self,**kw):
         if 'dependencies' in kw:
             self.depends(kw['dependencies'])

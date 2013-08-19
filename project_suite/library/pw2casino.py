@@ -303,8 +303,7 @@ class Pw2casino(Simulation):
 
 
     def app_command(self):
-        ac = self.app_name+'<'+self.infile
-        return ac
+        return self.app_name+'<'+self.infile
     #end def app_command
 #end class Pw2casino
 

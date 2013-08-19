@@ -149,13 +149,7 @@ class Pwscf(Simulation):
     #end def get_output_files
 
     def app_command(self):
-        if self.job.app_name is None:
-            app_name = self.app_name
-        else:
-            app_name = self.job.app_name
-        #end if
-        ac = app_name+' -input '+self.infile
-        return ac
+        return self.app_name+' -input '+self.infile
     #end def app_command
 #end class Pwscf
 

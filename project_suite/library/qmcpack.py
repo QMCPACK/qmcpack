@@ -341,12 +341,7 @@ class Qmcpack(Simulation):
 
 
     def app_command(self):
-        if self.job.app_name is None:
-            app_name = self.app_name
-        else:
-            app_name = self.job.app_name
-        #end if
-        return app_name+' '+self.infile      
+        return self.app_name+' '+self.infile      
     #end def app_command
 
 

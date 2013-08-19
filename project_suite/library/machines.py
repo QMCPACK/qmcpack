@@ -221,6 +221,7 @@ class Job(Pobj):
                 self.app_name = new_app_name
             #end if
         #end if
+        sim.set_app_name(app_name)
         self.set(
             name        = sim.identifier,
             simid       = sim.simid,

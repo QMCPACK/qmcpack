@@ -6,7 +6,8 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
 class WfconvertInput(SimulationInput):
-    def __init__(self,h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
+    def __init__(self,app_name='wfconvert',h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
+        self.app_name = app_name
         self.h5in = h5in
         self.h5out= h5out
         self.spline = spline
@@ -15,8 +16,12 @@ class WfconvertInput(SimulationInput):
     #end def __init__
 
 #wfconvert --nospline --eshdf diamond.h5 out/diamond.pwscf.h5 >& diamond-wfconvert.out 
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
     def app_command(self):
-        c = 'wfconvert '
+        c = self.app_name+' '
         if not self.spline:
             c+= '--nospline '
         #end if
@@ -35,8 +40,9 @@ class WfconvertInput(SimulationInput):
 #end class WfconvertInput
 
 
-def generate_wfconvert_input(h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
+def generate_wfconvert_input(app_name='wfconvert',h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
     wi = WfconvertInput(
+        app_name = app_name,
         h5in   = h5in,
         h5out  = h5out,
         spline = spline,
@@ -90,6 +96,10 @@ class Wfconvert(Simulation):
     application_properties = set(['serial'])
     application_results    = set(['orbitals'])
 
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+        self.input.set_app_name(app_name)
+    #end def set_app_name
 
     def check_result(self,result_name,sim):
         calculating_result = False
@@ -156,8 +166,8 @@ class Wfconvert(Simulation):
     #end def get_output_files
 
     def app_command(self):
-        ac = self.input.app_command()
-        return ac
+        # app_name is passed along in post_init
+        return self.input.app_command()
     #end def app_command
 #end class Wfconvert
 

@@ -313,8 +313,7 @@ class Pw2qmcpack(Simulation):
     #end def get_output_files
 
     def app_command(self):
-        ac = self.app_name+'<'+self.infile
-        return ac
+        return self.app_name+'<'+self.infile
     #end def app_command
 #end class Pw2qmcpack
 
