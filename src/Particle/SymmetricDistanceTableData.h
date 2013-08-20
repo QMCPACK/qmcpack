@@ -45,7 +45,7 @@ struct SymmetricDTD
   void create(int walkers)
   {
     int nw = (walkers>0)? walkers:1;
-    reset(Origin.getTotalNum(),nw);
+    reset(Origin->getTotalNum(),nw);
   }
 
   inline void reset(int m, int nactive)
@@ -61,14 +61,14 @@ struct SymmetricDTD
       PairID.resize(m*m);
       resize(nn,nactive);
       M[0] = 0;
-      int nsp = Origin.groups();
+      int nsp = Origin->groups();
       int ij = 0;
       for(int i=0; i<m; i++)
       {
         for(int j=i+1; j<m; j++, ij++)
         {
           J[ij] = j;
-          PairID[ij] = Origin.GroupID[j]+nsp*Origin.GroupID[i];
+          PairID[ij] = Origin->GroupID[j]+nsp*Origin->GroupID[i];
           IJ[i*m+j] = ij;
           IJ[j*m+i] = ij;
           //@warning: using a simple pair scheme

@@ -21,6 +21,7 @@
  */
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -49,8 +50,32 @@ void ParticleSet::make_clones(int n)
   for(int i=1; i<myClones.size(); ++i)
   {
     myClones[i]->ThreadID=i;
-    myClones[i]->setName(this->getName());
+    //myClones[i]->setName(this->getName());
   }
+}
+
+void ParticleSet::reset_clones()
+{
+  //if(myClones.empty()) return;
+  int nt=myClones.size();
+  for(int t=1;t<DistTables.size(); ++t)
+  {
+    const ParticleSet& other=DistTables[t]->origin();
+    if(nt == other.clones_size())
+    {
+      for(int tid=1; tid<nt; ++tid)
+      {
+        myClones[tid]->DistTables[t]->reset(other.get_clone(tid));
+      }
+    }
+  }
+
+  //for(int tid=0; tid<nt; ++tid)
+  //{
+  //  cout << "Thread ID = " << get_clone(tid)->getName() << endl;
+  //  for(int t=0; t<DistTables.size(); ++t)
+  //    cout << get_clone(tid)->DistTables[t]->origin().getName() << endl;
+  //}
 }
 
 void MCWalkerConfiguration::make_clones(int n)

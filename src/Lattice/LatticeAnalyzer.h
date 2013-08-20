@@ -89,23 +89,21 @@ struct LatticeAnalyzer<T,3>
               rMin=std::min(rMin,dot(L,L));
             }
     }
-    else
-      if(mySC == SUPERCELL_SLAB)//slab type
-      {
-        for (int i=-1; i<=1; i++)
-          for (int j=-1; j<=1; j++)
-            if (i || j)
-            {
-              SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
-              rMin=std::min(rMin,dot(L,L));
-            }
-        cout << " calcWignerSeitzRadius for Slab" << endl;
-      }
-      else
-        if(mySC == SUPERCELL_WIRE)//wire
-        {
-          rMin=dot(a[0],a[0]);
-        }
+    else if(mySC == SUPERCELL_SLAB)//slab type
+    {
+      for (int i=-1; i<=1; i++)
+        for (int j=-1; j<=1; j++)
+          if (i || j)
+          {
+            SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
+            rMin=std::min(rMin,dot(L,L));
+          }
+      cout << " calcWignerSeitzRadius for Slab" << endl;
+    }
+    else if(mySC == SUPERCELL_WIRE)//wire
+    {
+      rMin=dot(a[0],a[0]);
+    }
     return 0.5*std::sqrt(rMin);
   }
 
@@ -160,28 +158,26 @@ struct LatticeAnalyzer<T,3>
             nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);
           }
     }
-    else
-      if(mySC == SUPERCELL_SLAB)
-      {
-        nextcells.resize(8);
-        int k=0;
-        for(int i=-1; i<=1; ++i)
-          for(int j=-1; j<=1; ++j)
-            if(i||j)
-            {
-              SingleParticlePos_t u(i,j,k);
-              nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);
-            }
-      }
-      else
-        if(mySC == SUPERCELL_WIRE)
-        {
-          nextcells.resize(2);
-          SingleParticlePos_t um(-1,0,0);
-          nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(um,lat);
-          SingleParticlePos_t up(1,0,0);
-          nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(up,lat);
-        }
+    else if(mySC == SUPERCELL_SLAB)
+    {
+      nextcells.resize(8);
+      int k=0;
+      for(int i=-1; i<=1; ++i)
+        for(int j=-1; j<=1; ++j)
+          if(i||j)
+          {
+            SingleParticlePos_t u(i,j,k);
+            nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(u,lat);
+          }
+    }
+    else if(mySC == SUPERCELL_WIRE)
+    {
+      nextcells.resize(2);
+      SingleParticlePos_t um(-1,0,0);
+      nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(um,lat);
+      SingleParticlePos_t up(1,0,0);
+      nextcells[ic++]=DotProduct<SingleParticlePos_t,Tensor_t,false>::apply(up,lat);
+    }
   }
 };
 

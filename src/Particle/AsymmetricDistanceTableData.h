@@ -43,7 +43,7 @@ struct AsymmetricDTD
   void create(int walkers)
   {
     int nw = (walkers>0)? walkers:1;
-    reset(Origin.getTotalNum(),Target.getTotalNum(),nw);
+    reset(Origin->getTotalNum(),Target.getTotalNum(),nw);
   }
 
   /*!\fn  void reset(int n1, int n2, int nactive){
@@ -73,7 +73,7 @@ struct AsymmetricDTD
           for(int j=0; j<n2; j++, ij++)
           {
             J[ij] = j;
-            PairID[ij] = Origin.GroupID[i];
+            PairID[ij] = Origin->GroupID[i];
           }
           M[i+1] = M[i]+n2;
         }
@@ -115,7 +115,7 @@ struct AsymmetricDTD
   {
     for(int i=0,ij=0; i<N[SourceIndex]; i++)
       for(int j=0; j<N[VisitorIndex]; j++,ij++)
-        dr_m[ij]=P.R[j]-Origin.R[i];
+        dr_m[ij]=P.R[j]-Origin->R[i];
     //BC::apply(Origin.Lattice,dr_m,r_m,rinv_m);
     DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
     ////reset(Origin.getTotalNum(),P.getTotalNum(),1);
@@ -140,7 +140,7 @@ struct AsymmetricDTD
     activePtcl=jat;
     for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex])
     {
-      PosType drij(rnew-Origin.R[iat]);
+      PosType drij(rnew-Origin->R[iat]);
       //RealType sep2(BC::apply(Origin.Lattice,drij));
       RealType sep(std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij)));
       Temp[iat].r1=sep;
@@ -169,7 +169,7 @@ struct AsymmetricDTD
     activePtcl=jat;
     for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex])
     {
-      PosType drij(rnew-Origin.R[iat]);
+      PosType drij(rnew-Origin->R[iat]);
       Temp[iat].r1=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
       Temp[iat].dr1=drij;
     }

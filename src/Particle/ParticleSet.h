@@ -456,6 +456,10 @@ public:
       myClones[ip]->R=rnew;
   }
 
+  /** reset internal data of clones including itself
+   */
+  void reset_clones();
+
 protected:
   ///the number of particle objects
   static Index_t PtclObjectCounter;

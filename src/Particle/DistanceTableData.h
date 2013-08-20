@@ -172,7 +172,7 @@ public:
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(source), N(0)//, Rmax(1e6), Rmax2(1e12)
+    : Origin(&source), N(0)//, Rmax(1e6), Rmax2(1e12)
   {  }
 
   ///virutal destructor
@@ -190,12 +190,16 @@ public:
   }
   /////set the maximum radius
   //inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
-  ///returns the reference the origin
+  ///returns the reference the origin particleset
   const ParticleSet& origin() const
   {
-    return Origin;
+    return *Origin;
   }
 
+  inline void reset(const ParticleSet* newcenter)
+  {
+    Origin=newcenter;
+  }
   //@{access functions to the distance, inverse of the distance and directional consine vector
 #ifdef USE_FASTWALKER
   inline PosType dr(int iw, int iat) const
@@ -241,7 +245,7 @@ public:
   ///returns the number of centers
   inline IndexType centers() const
   {
-    return Origin.getTotalNum();
+    return Origin->getTotalNum();
   }
 
   ///returns the size of each dimension using enum
@@ -353,7 +357,7 @@ public:
 
   inline void print(std::ostream& os)
   {
-    os << "Table " << Origin.getName() << endl;
+    os << "Table " << Origin->getName() << endl;
     for(int i=0; i<r_m.size(); i++)
       os << r_m[i] << " ";
     os << endl;
@@ -361,7 +365,7 @@ public:
 
 protected:
 
-  const ParticleSet& Origin;
+  const ParticleSet* Origin;
 
   ///number of pairs
   int npairs_m;

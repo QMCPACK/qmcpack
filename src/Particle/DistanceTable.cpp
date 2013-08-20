@@ -34,7 +34,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
   DistanceTableData* dt=0;
   ostringstream o;
   o << "  Distance table for AA: source/target = " << s.getName() << "\n";
-  if(sc == SUPERCELL_BULK)
+  if(sc != SUPERCELL_OPEN)
   {
     if(s.Lattice.DiagonalOnly)
     {
@@ -59,39 +59,37 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
       o << "\n    Setting Rmax = " << s.Lattice.SimulationCellRadius;
     }
   }
-  else
-    if(sc == SUPERCELL_SLAB)
-    {
-      if(s.Lattice.DiagonalOnly)
-      {
-        o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNO> " << PPNO <<endl;
-        dt = new SymmetricDTD<RealType,DIM,PPNO>(s,s);
-      }
-      else
-      {
-        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
-        {
-          o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNX> " << PPNX <<endl;
-          dt = new SymmetricDTD<RealType,DIM,PPNX>(s,s);
-        }
-        else
-        {
-          o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNS> " << PPNS <<endl;
-          dt = new SymmetricDTD<RealType,DIM,PPNS>(s,s);
-        }
-      }
-    }
-    else
-      if(sc == SUPERCELL_WIRE)
-      {
-        o << "    PBC=wire Orthorhombic=NA\n";
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,s);
-      }
-      else  //open boundary condition
-      {
-        o << "    PBC=open Orthorhombic=NA\n";
-        dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
-      }
+  //else if(sc == SUPERCELL_SLAB)
+  //{
+  //  if(s.Lattice.DiagonalOnly)
+  //  {
+  //    o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+  //    dt = new SymmetricDTD<RealType,DIM,PPNO>(s,s);
+  //  }
+  //  else
+  //  {
+  //    if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+  //    {
+  //      o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNX> " << PPNX <<endl;
+  //      dt = new SymmetricDTD<RealType,DIM,PPNX>(s,s);
+  //    }
+  //    else
+  //    {
+  //      o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNS> " << PPNS <<endl;
+  //      dt = new SymmetricDTD<RealType,DIM,PPNS>(s,s);
+  //    }
+  //  }
+  //}
+  //else if(sc == SUPERCELL_WIRE)
+  //{
+  //  o << "    PBC=wire Orthorhombic=NA\n";
+  //  dt = new SymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,s);
+  //}
+  else  //open boundary condition
+  {
+    o << "    PBC=open Orthorhombic=NA\n";
+    dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
+  }
   dt->CellType=sc;
   ostringstream p;
   p << s.getName() << "_" << s.getName();
@@ -118,7 +116,8 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
   int sc=t.Lattice.SuperCellEnum;
   ostringstream o;
   o << "  Distance table for AB: source = " << s.getName() << " target = " << t.getName() << "\n";
-  if(sc == SUPERCELL_BULK)
+  //if(sc == SUPERCELL_BULK)
+  if(sc != SUPERCELL_OPEN)
   {
     if(s.Lattice.DiagonalOnly)
     {
@@ -141,40 +140,39 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
       o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
     }
   }
-  else
-    if(sc == SUPERCELL_SLAB)
-    {
-      if(s.Lattice.DiagonalOnly)
-      {
-        o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO <<endl;
-        dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
-      }
-      else
-      {
-        o << "    PBC=slab Orthorhombic=no ";
-        if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
-        {
-          o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX <<endl;
-          dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
-        }
-        else
-        {
-          o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS <<endl;
-          dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
-        }
-      }
-    }
-    else
-      if(sc == SUPERCELL_WIRE)
-      {
-        o << "    PBC=wire Orthorhombic=NA\n";
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,t);
-      }
-      else  //open boundary condition
-      {
-        o << "    PBC=open Orthorhombic=NA\n";
-        dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
-      }
+  //else if(sc == SUPERCELL_SLAB)
+  //{
+  //  if(s.Lattice.DiagonalOnly)
+  //  {
+  //    o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+  //    dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
+  //  }
+  //  else
+  //  {
+  //    o << "    PBC=slab Orthorhombic=no ";
+  //    if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+  //    {
+  //      o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX <<endl;
+  //      dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
+  //    }
+  //    else
+  //    {
+  //      o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS <<endl;
+  //      dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
+  //    }
+  //  }
+  //}
+  //else if(sc == SUPERCELL_WIRE)
+  //{
+  //  o << "    PBC=wire Orthorhombic=NA\n";
+  //  dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,t);
+  //}
+  else  //open boundary condition
+  {
+    o << "    PBC=open Orthorhombic=NA\n";
+    dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
+  }
+
   dt->CellType=sc;
   ostringstream p;
   p << s.getName() << "_" << t.getName();
