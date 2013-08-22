@@ -71,9 +71,13 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   PropertyHistory=p.PropertyHistory;
   Collectables=p.Collectables;
   //construct the distance tables with the same order
-  //first is always for this-this paier
-  for (int i=1; i<p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin());
+  if(p.DistTables.size())
+  {
+    app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << endl;
+    addTable(*this); //first is always for this-this paier
+    for (int i=1; i<p.DistTables.size(); ++i)
+      addTable(p.DistTables[i]->origin());
+  }
   if(p.SK)
   {
     R.InUnit=p.R.InUnit;
