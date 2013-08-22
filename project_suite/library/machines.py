@@ -1236,7 +1236,7 @@ class OIC5(Supercomputer):
             job.queue = 'mstqmc13q'
         #end if
 
-        ppn = job.processes
+        ppn = job.processes_per_node
         #ppn = 32/job.threads
         #if ppn*job.threads!=32:
         #    self.error('ppn is not being set properly for OIC5\n  perhaps the number of threads requested does not evenly divide the 32 cores\n  you requested {0} threads'.format(job.threads))
