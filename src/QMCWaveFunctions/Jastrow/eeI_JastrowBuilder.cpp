@@ -35,6 +35,7 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
   SpeciesSet &eSet = targetPtcl.getSpeciesSet();
   int numiSpecies = iSet.getTotalNum();
   bool success=false;
+  //read in xml
   while (kids != NULL)
   {
     std::string kidsname = (char*)kids->name;
@@ -71,6 +72,8 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
     }
     kids = kids->next;
   }
+  //check that each ion species has up and down components
+  J3.check_complete();
   targetPsi.addOrbital(&J3,"eeI");
   J3.setOptimizable(true);
   return true;
@@ -99,18 +102,19 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
       J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
       putkids (kids, J3);
     }
-    else if (ftype == "polynomial")
-    {
-      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-      J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
-      putkids (kids, J3);
-    }
     else
-    {
-      app_error() << "Unknown function \"" << ftype << "\" in"
-        << " eeI_JastrowBuilder.  Aborting.\n";
-      abort();
-    }
+      if (ftype == "polynomial")
+      {
+        typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
+        J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+        putkids (kids, J3);
+      }
+      else
+      {
+        app_error() << "Unknown function \"" << ftype << "\" in"
+                    << " eeI_JastrowBuilder.  Aborting.\n";
+        abort();
+      }
     // 	// Find the number of the source species
     // 	bool success=false;
     // 	while (kids != NULL) {
