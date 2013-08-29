@@ -1305,6 +1305,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          kshift       = None,
                          pseudos      = None,
                          system       = None,
+                         use_folded   = False,
                          group_atoms  = True):
     if pseudos is None:
         pseudos = []
@@ -1379,6 +1380,9 @@ def generate_relax_input(prefix       = 'pwscf',
         pw.system.ecutfock = ecutfock
     #end if
     if system!=None:
+        if use_folded:
+            system = system.get_primitive()
+        #end if
         pw.incorporate_system(system)
     #end if
 

@@ -100,6 +100,8 @@ class Queryable(Iterable):
                 #end if
             #end if
         #end for
+        normal.sort()
+        qable.sort()
         for k in normal:
             v = self[k]
             indent = npad+18*' '

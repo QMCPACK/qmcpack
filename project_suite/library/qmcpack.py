@@ -14,6 +14,7 @@ from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
 from converters import Pw2qmcpack,Wfconvert
 from sqd import Sqd
+from debug import ci,ls,gs
 from developer import unavailable
 try:
     import h5py
@@ -49,7 +50,10 @@ class Qmcpack(Simulation):
         else:
             self.system.group_atoms()
             self.system.change_units('B')
-            self.should_twist_average = len(self.system.structure.kpoints)>1
+            ds = self.input.get('determinantset')
+            user_twist_given = ds!=None and ds.twistnum!=None
+            many_kpoints = len(self.system.structure.kpoints)>1
+            self.should_twist_average = many_kpoints and not user_twist_given
         #end if
     #end def post_init
 
@@ -140,9 +144,9 @@ class Qmcpack(Simulation):
                     dsnew.tilematrix = array(system.tilematrix)
                 #end if
                 twistnums = range(len(structure.kpoints))
-                if len(twistnums)>1:
+                if self.should_twist_average:
                     self.twist_average(twistnums)
-                else:
+                elif dsnew.twistnum is None:
                     dsnew.twistnum = twistnums[0]
                 #end if
 
@@ -346,6 +350,7 @@ class Qmcpack(Simulation):
 
 
     def twist_average(self,twistnums):
+        self.error('twist averaging!')
         br = obj()
         br.quantity = 'twistnum'
         br.values   = list(twistnums)

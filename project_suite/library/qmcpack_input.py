@@ -1339,7 +1339,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff']
     elements   = ['basisset','slaterdeterminant']
     h5tags     = ['twistindex','twistangle']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno)
@@ -1745,7 +1745,7 @@ wavefunction.defaults.set(
     name='psi0',target='e'
     )
 determinantset.defaults.set(
-    type='einspline',tilematrix=lambda:eye(3,dtype=int),twistnum=0,meshfactor=1.,gpu=False,precision='double'
+    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
     )
 occupation.defaults.set(
     mode='ground',spindataset=0
@@ -3422,7 +3422,8 @@ def generate_basic_input(id           = 'qmc',
                          bconds       = None,
                          remove_cell  = False,
                          meshfactor   = 1.0,
-                         twistnum     = 0, 
+                         twistnum     = None, 
+                         twist        = None,
                          orbitals_h5  = 'MISSING.h5',
                          system       = None,
                          pseudos      = None,
@@ -3554,6 +3555,10 @@ def generate_basic_input(id           = 'qmc',
     wf = qi.get('wavefunction')
     wf.jastrows = generate_jastrows(jastrows,system)
 
+    if twist!=None:
+        wf.determinantset.twist = tuple(twist)
+    #end if
+
     for calculation in calculations:
         if isinstance(calculation,loop):
             calc = calculation.qmc
@@ -3598,7 +3603,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                bconds           = None,
                                remove_cell      = False,
                                meshfactor       = 1.0,
-                               twistnum         = 0, 
+                               twistnum         = None, 
+                               twist            = None,
                                orbitals_h5      = 'MISSING.h5',
                                system           = None,
                                pseudos          = None,
@@ -3659,6 +3665,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
         remove_cell  = remove_cell  ,
         meshfactor   = meshfactor   ,
         twistnum     = twistnum     ,
+        twist        = twist        ,
         orbitals_h5  = orbitals_h5  ,
         system       = system       ,
         pseudos      = pseudos      ,

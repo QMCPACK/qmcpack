@@ -7,12 +7,13 @@ from developer import unavailable
 try:
     from scipy.special import betainc
     from scipy.optimize import fmin
-    from scipy.spatial import KDTree
+    from scipy.spatial import KDTree,Delaunay
     scipy_unavailable = False
 except ImportError:
     betainc = unavailable('scipy.special' ,'betainc')
     fmin    = unavailable('scipy.optimize','fmin')
     KDTree  = unavailable('scipy.special' ,'KDTree')
+    Delaunay  = unavailable('scipy.special' ,'Delaunay')
     scipy_unavailable = True
 #end try
 
@@ -595,3 +596,41 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         return nn,dist
     #end if
 #end def nearest_neighbors
+
+
+def convex_hull(points,dimension=None,tol=None):
+    if dimension is None:
+        np,dimension = points.shape
+    #end if
+    d1 = dimension+1
+    tri = Delaunay(points)
+    all_inds = empty((d1,),dtype=bool)
+    all_inds[:] = True
+    verts = []
+    have_tol = tol!=None
+    for ni in range(len(tri.neighbors)):
+        n = tri.neighbors[ni]
+        ns = list(n)
+        if -1 in ns:
+            i = ns.index(-1)
+            inds = all_inds.copy()
+            inds[i] = False
+            v = tri.vertices[ni]
+            if have_tol:
+                iv = range(d1)
+                iv.pop(i)
+                c = points[v[iv[1]]]
+                a = points[v[i]]-c
+                b = points[v[iv[0]]]-c
+                bn = norm(b)
+                d = norm(a-dot(a,b)/(bn*bn)*b)
+                if d<tol:
+                    inds[i]=True
+                #end if
+            #end if
+            verts.extend(v[inds])
+        #end if
+    #end for
+    verts = list(set(verts))
+    return verts
+#end def convex_hull

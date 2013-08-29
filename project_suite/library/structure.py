@@ -2,12 +2,13 @@
 
 import os
 from copy import deepcopy
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros
 from numpy.linalg import inv,det,norm
 from unit_converter import convert
-from extended_numpy import nearest_neighbors
+from extended_numpy import nearest_neighbors,convex_hull
 from generic import obj
 from developer import DevBase,unavailable
+from debug import ci,ls,gs
 
 
 try:
@@ -34,6 +35,9 @@ def negate(expr):
 
 
 def kmesh(kaxes,dim,shift=None):
+    '''
+    Create a Monkhorst-Pack k-point mesh 
+    '''
     if shift is None:
         shift = (0.,0,0)
     #end if
@@ -516,7 +520,7 @@ class Structure(Sobj):
     #end def
 
     
-    def locate(self,identifiers,radii=None,negate=False):
+    def locate(self,identifiers,radii=None,exterior=False):
         indices = None
         if isinstance(identifiers,Structure):
             cell = identifiers
@@ -552,26 +556,41 @@ class Structure(Sobj):
                 #end for
             #end if
         #end if
-        if negate:
+        if exterior:
             indices = list(set(range(len(self.pos)))-set(indices))
         #end if
         return indices
     #end def locate
 
     
-    def freeze(self,identifiers,radii=None,negate=False,directions='xyz'):
-        indices = self.locate(identifiers,radii,negate)
+    def freeze(self,identifiers,radii=None,exterior=False,negate=False,directions='xyz'):
+        indices = self.locate(identifiers,radii,exterior)
+        if len(indices)==0:
+            self.error('failed to select any atoms to freeze')
+        #end if
         if isinstance(directions,str):
             directions = len(indices)*[directions]
-        #dnd if
-        frozen = obj()
+        #end if
+        if not 'frozen' in self:
+            self.frozen = obj()
+        #end if
+        frozen = self.frozen
         i=-1
-        for index in indices:
-            i+=1
-            frozen[index] = str(directions[i])
-        #end for
-        if len(frozen)>0:
-            self.frozen = frozen
+        if not negate:
+            for index in indices:
+                i+=1
+                d = str(directions[i])
+                if index in frozen:
+                    d += frozen[index]
+                #end if
+                frozen[index] = d
+            #end for
+        else:
+            for index in indices:
+                if index in frozen:
+                    del frozen[index]
+                #end if
+            #end for
         #end if
     #end def freeze
 
@@ -685,6 +704,132 @@ class Structure(Sobj):
         self.remove_folded_structure()
     #end def replace_nearest
 
+
+    def point_defect(self,identifiers=None,elem=None,dr=None):
+        if isinstance(elem,str):
+            elem = [elem]
+            if dr!=None:
+                dr = [dr]
+            #end if
+        #end if
+        if not 'point_defects' in self:
+            self.point_defects = obj()
+        #end if
+        point_defects = self.point_defects
+        ncenters = len(point_defects)
+        if identifiers is None:
+            index = ncenters
+            if index>=len(self.pos):
+                self.error('attempted to add a point defect at index {0}, which does not exist\n  for reference there are {1} atoms in the structure'.format(index,len(self.pos)))
+            #end if
+        else:
+            indices = self.locate(identifiers)
+            if len(indices)>1:
+                self.error('{0} atoms were located by identifiers provided\n  a point defect replaces only a single atom\n  atom indices located: {1}'.format(len(indices),indices))
+            #end if
+            index = indices[0]
+        #end if
+        if elem is None:
+            self.error('must supply substitutional elements comprising the point defect\n  expected a list or similar for input argument elem')
+        elif len(elem)>1 and dr is None:
+            self.error('must supply displacements (dr) since many atoms comprise the point defect')
+        elif dr!=None and len(elem)!=len(dr):
+            self.error('elem and dr must have the same length')
+        #end if
+        r = self.pos[index]
+        e = self.elem[index]
+        elem = array(elem)
+        pos = zeros((len(elem),len(r)))
+        if dr is None:
+            for i in range(len(elem)):
+                pos[i] = r
+            #end for
+        else:
+            dr = array(dr)
+            for i in range(len(elem)):
+                pos[i] = r + dr[i]
+            #end for
+        #end if
+        point_defect = obj(
+            center = r,
+            elem_replaced = e,
+            elem = elem,
+            pos  = pos
+            )
+        point_defects.append(point_defect)
+        elist = list(self.elem)
+        plist = list(self.pos)
+        if len(elem)==0 or len(elem)==1 and elem[0]=='':
+            elist.pop(index)
+            plist.pop(index)
+        else:
+            elist[index] = elem[0]
+            plist[index] = pos[0]
+            for i in range(1,len(elem)):
+                elist.append(elem[i])
+                plist.append(pos[i])
+            #end for
+        #end if
+        self.elem = array(elist)
+        self.pos  = array(plist)
+        self.remove_folded_structure()
+    #end def point_defect
+
+
+    def shells(self,identifiers,radii=None,exterior=False,cumshells=False,dtol=1e-6):
+        if identifiers=='point_defects':
+            if not 'point_defects' in self:
+                self.error('requested shells around point defects, but structure has no point defects')
+            #end if
+            core = []
+            for pd in self.point_defects:
+                core.append(pd.center)
+            #end for
+            core = array(core)
+            bulk_ind = self.locate(core,radii=dtol,exterior=True)
+            core_ind = self.locate(bulk_ind,exterior=True)
+            bulk = self.pos[bulk_ind]
+        else:
+            core_ind = self.locate(identifiers,radii,exterior)
+            bulk_ind = self.locate(core_ind,exterior=True)
+            core = self.pos[core_ind]
+            bulk = self.pos[bulk_ind]
+        #end if
+        dtable = self.distance_table(bulk,core)
+        dist = dtable.min(1)
+        ind  = arange(len(bulk))
+        order = dist.argsort()
+        dist = dist[order]
+        ind  = ind[order]
+        ns = 0
+        ds = -1
+        shells = obj()
+        shells[ns] = list(core_ind)
+        dshells = [0.]
+        for n in xrange(len(dist)):
+            if abs(dist[n]-ds)>dtol:
+                shell = [ind[n]]
+                ns+=1
+                shells[ns] = shell
+                ds = dist[n]
+                dshells.append(ds)
+            else:
+                shell.append(ind[n])
+            #end if
+        #end for
+        dshells = array(dshells)
+        if not cumshells:
+            return shells,dshells
+        else:
+            cumshells = obj()
+            cumshells[0] = list(shells[0])
+            for ns in xrange(1,len(shells)):
+                cumshells[ns] = shells[ns-1]+shells[ns]
+            #end for
+            return shells,dshells,cumshells
+        #end if
+    #end def shells
+
     
     def min_image_vectors(self,points,points2=None,axes=None):
         points = array(points)
@@ -712,33 +857,59 @@ class Structure(Sobj):
                 vtable[i,j] = dot(u-floor(u+.5),axes)
             #end for
         #end for
-        if single:
-            vtable = vtable[0]
-        #end if
+        #if single:
+        #    vtable = vtable[0]
+        ##end if
         return vtable
     #end def min_image_vectors
 
 
-    def min_image_distances(self,points,points2=None,axes=None):
+    def min_image_distances(self,points,points2=None,axes=None,vectors=False):
         vtable = self.min_image_vectors(points,points2,axes)
         rdim = len(vtable.shape)-1
-        return sqrt((vtable**2).sum(rdim))
+        dtable = sqrt((vtable**2).sum(rdim))
+        if not vectors:
+            return dtable
+        else:
+            return dtable,vtable
+        #end if
     #end def min_image_distances
 
+
+    def distance_table(self,points,points2=None,axes=None,vectors=False):
+        return self.min_image_distances(points,points2,axes,vectors)
+    #end def distance_table
+
+
+    def vector_table(self,points,points2=None,axes=None):
+        return self.min_image_vectors(points,points2,axes)
+    #end def vector_table
+
     
-    def neighbor_table(self,points,points2=None,axes=None,distances=False):
-        dtable = self.min_image_distances(points,points2,axes)
+    def neighbor_table(self,points,points2=None,axes=None,distances=False,vectors=False):
+        dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
         ntable = empty(dtable.shape,dtype=int)
         for i in range(len(dtable)):
             ntable[i] = dtable[i].argsort()
         #end for
-        if not distances:
-            return ntable
-        else:
+        if distances:
             for i in range(len(dtable)):
                 dtable[i] = dtable[i][ntable[i]]
             #end for
+        #end if
+        if vectors:
+            for i in range(len(vtable)):
+                vtable[i] = vtable[i][ntable[i]]
+            #end for
+        #end if
+        if distances and vectors:
+            return ntable,dtable,vtable
+        elif distances:
             return ntable,dtable
+        elif vectors:
+            return ntable,vtable
+        else:
+            return ntable
         #end if
     #end def neighbor_table
 
@@ -1442,6 +1613,56 @@ class Structure(Sobj):
     #end def bond_compression
 
 
+    def boundary(self,dims=(0,1,2),dtol=1e-6):
+        dim_eff = len(dims)
+        natoms,dim = self.pos.shape
+        bdims = array(dim*[False])
+        for d in dims:
+            bdims[d] = True
+        #end for
+        p = self.pos[:,bdims]
+        indices = convex_hull(p,dim_eff,dtol)
+        return indices
+    #end def boundary
+
+
+    def embed(self,small,dims=(0,1,2),dtol=1e-6):
+        bind = small.boundary(dims,dtol)
+        bpos = small.pos[bind]
+        nn = nearest_neighbors(1,self.pos,bpos)
+        mpos = self.pos[nn.ravel()]
+        dr = (mpos-bpos).mean(0)
+        for i in xrange(len(bpos)):
+            bpos[i]+=dr
+        #end for
+        dmax = sqrt(((mpos-bpos)**2).sum(1)).max()
+        replaced = empty((len(self.pos),),dtype=bool)
+        replaced[:] = False
+        elem = small.elem
+        pos  = small.pos.copy()
+        for i in xrange(len(pos)):
+            pos[i]+=dr
+        #end for
+        nn = nearest_neighbors(1,self.pos,pos)
+        elist = list(self.elem)
+        plist = list(self.pos)
+        for i in xrange(len(pos)):
+            n = nn[i,0]
+            if not replaced[n]:
+                elist[n] = elem[i]
+                plist[n] = pos[i]
+                replaced[n] = True
+            else:
+                elist.append(elem[i])
+                plist.append(pos[i])
+            #end if
+        #end for
+        self.elem = array(elist)
+        self.pos  = array(plist)
+        return dmax
+    #end def embed
+
+
     def shell(self,cell,neighbors,direction='in'):
         if self.dim!=3:
             self.error('shell is currently only implemented for 3 dimensions')
@@ -1970,7 +2191,25 @@ class Crystal(Structure):
             cscale    = (1,2),
             atoms     = ('C','C','C','C'),
             basis     = [[0,0,0],[2./3,1./3,0],[0,0,1./2],[1./3,2./3,1./2]]
-            )        
+            ),
+        ('graphene','prim'):obj(
+            lattice   = 'hexagonal',
+            cell      = 'primitive',
+            centering = 'P',
+            constants = (2.462,15.0),
+            units     = 'A',
+            atoms     = ('C','C'),
+            basis     = [[0,0,0],[2./3,1./3,0]]
+            ),
+        ('graphene','rect'):obj(
+            lattice   = 'orthorhombic',
+            cell      = 'conventional',
+            centering = 'C',
+            constants = (2.462,sqrt(3.)*2.462,15.0),
+            units     = 'A',
+            atoms     = ('C','C'),
+            basis     = [[0,0,0],[1./2,1./6,0]]
+            )
         }
 
     kc_keys = list(known_crystals.keys())
