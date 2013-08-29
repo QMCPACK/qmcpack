@@ -295,9 +295,15 @@ QMCDriver::addWalkers(int nwalkers)
     {
       app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  endl;
     }
-  //update the global number of walkers
-  //int nw=W.getActiveWalkers();
-  //myComm->allreduce(nw);
+
+  setWalkerOffsets();
+  ////update the global number of walkers
+  ////int nw=W.getActiveWalkers();
+  ////myComm->allreduce(nw);
+}
+
+void QMCDriver::setWalkerOffsets()
+{
   vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
   nw[myComm->rank()]=W.getActiveWalkers();
   myComm->allreduce(nw);

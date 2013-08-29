@@ -514,8 +514,22 @@ void DMCcuda::resetUpdateEngine()
     Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
     Mover->resetRun(branchEngine,Estimators);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
-    branchEngine->checkParameters(W);
   }
+  else
+  {
+    int nw_multi=branchEngine->resetRun(cur);
+    if(nw_multi>1)
+    {
+      app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
+      app_log() << " The target population has changed. Multiply walkers by " << nw_multi << endl;
+      W.createWalkers((nw_multi-1)*W.getActiveWalkers());
+      setWalkerOffsets();
+      app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
+    }
+  }
+
+  branchEngine->checkParameters(W);
+
   //    Mover->updateWalkers(W.begin(),W.end());
   app_log() << "  DMC PbyP Update with a fluctuating population" << endl;
   Mover->MaxAge=1;

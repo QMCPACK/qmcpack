@@ -183,6 +183,10 @@ public:
     qmcNode=cur;
     m_param.put(cur);
   }
+
+  ///set global offsets of the walkers
+  void setWalkerOffsets();
+
   //virtual vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager

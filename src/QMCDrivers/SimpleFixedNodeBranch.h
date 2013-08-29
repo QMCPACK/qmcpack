@@ -335,8 +335,10 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /** reset the internal parameters */
   void reset();
 
-  /** reset the internal parameters */
-  void resetRun(xmlNodePtr cur);
+  /** reset the internal parameters 
+   * @return new target population over old target population
+   */ 
+  int resetRun(xmlNodePtr cur);
 
   bool put(xmlNodePtr cur);
 

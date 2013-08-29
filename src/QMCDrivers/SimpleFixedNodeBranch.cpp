@@ -360,7 +360,7 @@ void SimpleFixedNodeBranch::setRN (bool rn)
 }
 
 
-void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
+int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   //estimator is always reset
   MyEstimator->reset();
@@ -369,6 +369,10 @@ void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   IParamType iparam_old(iParam);
   VParamType vparam_old(vParam);
   myNode=cur;
+
+  //store old target
+  int nw_target=iParam[B_TARGETWALKERS];
+
   m_param.put(cur);
   //everything is the same, do nothing
   if(bmode==BranchMode
@@ -378,8 +382,9 @@ void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     app_log() << "  Continue with the same input as the previous block." << endl;
     app_log().flush();
-    return;
+    return 1;
   }
+
   app_log() << " SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s " << endl;
   app_log() << " BranchMode : " << bmode << " " << BranchMode << endl;
   app_log() << " iParam (old): "  <<iparam_old << endl;
@@ -389,7 +394,7 @@ void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   app_log().flush();
   //vmc does not need to do anything with WalkerController
   if(!BranchMode[B_DMC])
-    return;
+    return 1;
   if(WalkerController==0)
   {
     APP_ABORT("SimpleFixedNodeBranch::resetRun cannot initialize WalkerController");
@@ -414,8 +419,11 @@ void SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   WalkerController->put(myNode);
   WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
   WalkerController->reset();
+
   if(BackupWalkerController)
     BackupWalkerController->reset();
+
+  return iParam[B_TARGETWALKERS]/nw_target;
 }
 
 void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)

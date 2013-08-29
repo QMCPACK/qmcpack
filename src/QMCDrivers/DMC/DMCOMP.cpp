@@ -56,7 +56,18 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   put(cur);
   //app_log()<<"DMCOMP::resetComponents"<<endl;
   Estimators->reset();
-  branchEngine->resetRun(cur);
+
+  int nw_multi=branchEngine->resetRun(cur);
+  if(nw_multi>1)
+  {
+    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
+    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << endl;
+    W.createWalkers((nw_multi-1)*W.getActiveWalkers());
+    setWalkerOffsets();
+    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+    app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
+  }
+
   branchEngine->checkParameters(W);
   //delete Movers[0];
   for(int ip=0; ip<NumThreads; ++ip)
