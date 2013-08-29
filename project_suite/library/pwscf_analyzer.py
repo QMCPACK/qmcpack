@@ -121,19 +121,27 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         i_occ = j
                     #end if
                 #end while
-                seigs = ''
-                for j in range(i+1,i_occ):
-                    seigs+=lines[j]
-                #end for
-                seigs = seigs.strip()
-                eigs = array(seigs.split(),dtype=float)
+                try:
+                    seigs = ''
+                    for j in range(i+1,i_occ):
+                        seigs+=lines[j]
+                    #end for
+                    seigs = seigs.strip()
+                    eigs = array(seigs.split(),dtype=float)
+                except Exception:
+                    eigs = array([])
+                #end try
 
-                soccs = ''
-                for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
-                    soccs+= lines[j]
-                #end for
-                occs = array(soccs.split(),dtype=float)
-                
+                try:
+                    soccs = ''
+                    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                        soccs+= lines[j]
+                    #end for
+                    occs = array(soccs.split(),dtype=float)
+                except Exception:
+                    occs = array([])
+                #end try
+
                 if nfound==1:
                     bands.up = obj(
                         eigs = eigs,
