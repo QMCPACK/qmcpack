@@ -238,10 +238,17 @@ class PhysicalSystem(Matter):
 
         self.folded_system = None
         if self.structure.folded_structure!=None:
+            ncells = structure.volume()/structure.folded_structure.volume()
+            if net_charge%ncells!=0:
+                self.error('net charge of system does not divide evenly into folded systems')
+            #end if
+            if net_spin%ncells!=0:
+                self.error('net_spin of system does not divide evenly into folded systems')
+            #end if
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
-                net_charge = net_charge,
-                net_spin   = net_spin,
+                net_charge = net_charge/ncells,
+                net_spin   = net_spin/ncells,
                 particles  = particles,
                 **valency
                 )
