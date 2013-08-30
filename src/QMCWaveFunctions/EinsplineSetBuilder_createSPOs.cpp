@@ -27,9 +27,9 @@
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/SplineC2XAdoptor.h"
 #include "QMCWaveFunctions/SplineR2RAdoptor.h"
-#include "QMCWaveFunctions/SplineAdoptorReader.h"
+#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/SplineMixedAdoptor.h"
-#include "QMCWaveFunctions/SplineMixedAdoptorReader.h"
+#include "QMCWaveFunctions/SplineMixedAdoptorReaderP.h"
 
 namespace qmcplusplus
 {
@@ -242,21 +242,19 @@ EinsplineSetBuilder::createSPOSet(xmlNodePtr cur)
         {
           if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
             spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
+          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+            spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
           else
-            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-              spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
-            else
-              spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
+            spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
         }
         else
         {
           if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
             spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
+          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+            spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
           else
-            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-              spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
-            else
-              spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
+            spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
         }
       }
       else
