@@ -22,7 +22,7 @@ namespace qmcplusplus
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
-  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
 {
   ClassName="TrialWaveFunction";
   myName="psi0";
@@ -73,13 +73,20 @@ void TrialWaveFunction::stopOptimization()
 }
 
 /** add an ObritalBase
-*@param aterm a many-body wavefunction
-*/
+ * @param aterm an OrbitalBase
+ * @param aname  name of aterm
+ * @param fermion if true, set aterm to FermionWF
+ */
 void
-//TrialWaveFunction::addOrbital(OrbitalBase* aterm)
-TrialWaveFunction::addOrbital(OrbitalBase* aterm, const string& aname)
+TrialWaveFunction::addOrbital(OrbitalBase* aterm, const string& aname, bool fermion)
 {
   Z.push_back(aterm);
+  if(fermion) 
+  {
+    app_log() << "  FermionWF=" << aname << endl;
+    FermionWF=dynamic_cast<FermionBase*>(aterm);
+  }
+
 #if defined(QMC_CUDA)
   char name1[64],name2[64],name3[64],name4[64], name5[64], name6[64];
   sprintf(name1,"WaveFunction::%s_V",aname.c_str());

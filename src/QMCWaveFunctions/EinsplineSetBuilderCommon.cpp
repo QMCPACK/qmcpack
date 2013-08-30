@@ -71,7 +71,7 @@ EinsplineSetBuilder::CheckLattice()
     for (int j=0; j<OHMMS_DIM; j++)
       diff+=std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j));
 
-  if(diff>MatchingTol)
+  if(diff>MatchingTol*10.)
   {
     ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);

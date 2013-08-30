@@ -21,6 +21,7 @@
 
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/FermionBase.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
@@ -170,7 +171,7 @@ public:
 
   ///Add an OrbitalBase
   //void addOrbital(OrbitalBase* aterm);
-  void addOrbital(OrbitalBase* aterm, const string& aname);
+  void addOrbital(OrbitalBase* aterm, const string& aname, bool fermion=false);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -324,7 +325,10 @@ public:
     //OneOverM = 1.0/mass;
   }
 
-
+  FermionBase* getFermionWF()
+  {
+    return FermionWF;
+  }
 
 private:
 
@@ -356,6 +360,9 @@ private:
 
   ///a list of OrbitalBases constituting many-body wave functions
   vector<OrbitalBase*> Z;
+
+  ///fermionic wavefunction
+  FermionBase* FermionWF;
 
   ///differential gradients
   ParticleSet::ParticleGradient_t delta_G;

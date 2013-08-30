@@ -126,6 +126,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         abort();
       }
       spomap[spo_name] = spo;
+      spo->objectName=spo_name;
       assert(spomap.find(spo_name) != spomap.end());
       //	slaterdet_0->add(spo,spo_name);
     }
@@ -323,12 +324,12 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if(multiDet)
   {
     if(FastMSD)
-      targetPsi.addOrbital(multislaterdetfast_0,"MultiSlaterDeterminantFast");
+      targetPsi.addOrbital(multislaterdetfast_0,"MultiSlaterDeterminantFast",true);
     else
-      targetPsi.addOrbital(multislaterdet_0,"MultiSlaterDeterminant");
+      targetPsi.addOrbital(multislaterdet_0,"MultiSlaterDeterminant",true);
   }
   else
-    targetPsi.addOrbital(slaterdet_0,"SlaterDet");
+    targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
   delete myBasisSetFactory;
   myBasisSetFactory=0;
   return success;
