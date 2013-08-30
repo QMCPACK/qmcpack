@@ -81,6 +81,7 @@ void
 TrialWaveFunction::addOrbital(OrbitalBase* aterm, const string& aname, bool fermion)
 {
   Z.push_back(aterm);
+  aterm->IsFermionWF=fermion;
   if(fermion) 
   {
     app_log() << "  FermionWF=" << aname << endl;
@@ -815,7 +816,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
   TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
   myclone->BufferCursor=BufferCursor;
   for (int i=0; i<Z.size(); ++i)
-    myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
+    myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",Z[i]->IsFermionWF);
   myclone->OneOverM=OneOverM;
   return myclone;
 }
