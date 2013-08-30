@@ -2,7 +2,7 @@
 
 import os
 from copy import deepcopy
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
 from numpy.linalg import inv,det,norm
 from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull
@@ -491,6 +491,7 @@ class Structure(Sobj):
 
                               
     def slide(self,v,recenter=True):
+        v = array(v)
         pos = self.pos
         for i in range(len(pos)):
             pos[i]+=v
@@ -531,6 +532,23 @@ class Structure(Sobj):
             indices = [identifiers]
         elif len(identifiers)>0 and isinstance(identifiers[0],int):
             indices = identifiers
+        elif isinstance(identifiers,str):
+            atom = identifiers
+            indices = []
+            for i in xrange(len(self.elem)):
+                if self.elem[i]==atom:
+                    indices.append(i)
+                #end if
+            #end for
+        elif len(identifiers)>0 and isinstance(identifiers[0],str):
+            indices = []
+            for atom in identifiers:
+                for i in xrange(len(self.elem)):
+                    if self.elem[i]==atom:
+                        indices.append(i)
+                    #end if
+                #end for
+            #end for
         #end if
         if radii!=None or indices==None:
             if indices is None:
@@ -623,8 +641,8 @@ class Structure(Sobj):
     #end def remove
 
     
-    def replace(self,identifiers,elem=None,pos=None):
-        indices = self.locate(identifiers)
+    def replace(self,identifiers,elem=None,pos=None,radii=None,exterior=False):
+        indices = self.locate(identifiers,radii,exterior)
         if isinstance(elem,Structure):
             cell = elem
             elem = cell.elem
@@ -776,7 +794,7 @@ class Structure(Sobj):
     #end def point_defect
 
 
-    def shells(self,identifiers,radii=None,exterior=False,cumshells=False,dtol=1e-6):
+    def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
         if identifiers=='point_defects':
             if not 'point_defects' in self:
                 self.error('requested shells around point defects, but structure has no point defects')
@@ -818,16 +836,22 @@ class Structure(Sobj):
             #end if
         #end for
         dshells = array(dshells)
-        if not cumshells:
-            return shells,dshells
-        else:
+        results = [shells]
+        if cumshells:
             cumshells = obj()
             cumshells[0] = list(shells[0])
             for ns in xrange(1,len(shells)):
                 cumshells[ns] = shells[ns-1]+shells[ns]
             #end for
-            return shells,dshells,cumshells
+            results.append(cumshells)
         #end if
+        if distances:
+            results.append(dshells)
+        #end if
+        if len(results)==1:
+            results = results[0]
+        #end if
+        return results
     #end def shells
 
     
@@ -839,6 +863,8 @@ class Structure(Sobj):
         #end if
         if points2 is None:
             points2 = self.pos
+        elif points2.shape==(self.dim,):
+            points2 = [points2]
         #end if
         npoints  = len(points)
         npoints2 = len(points2)
@@ -892,25 +918,23 @@ class Structure(Sobj):
         for i in range(len(dtable)):
             ntable[i] = dtable[i].argsort()
         #end for
+        results = [ntable]
         if distances:
             for i in range(len(dtable)):
                 dtable[i] = dtable[i][ntable[i]]
             #end for
+            results.append(dtable)
         #end if
         if vectors:
             for i in range(len(vtable)):
                 vtable[i] = vtable[i][ntable[i]]
             #end for
+            results.append(vtable)
         #end if
-        if distances and vectors:
-            return ntable,dtable,vtable
-        elif distances:
-            return ntable,dtable
-        elif vectors:
-            return ntable,vtable
-        else:
-            return ntable
+        if len(results)==1:
+            results = results[0]
         #end if
+        return results
     #end def neighbor_table
 
 
@@ -1030,7 +1054,7 @@ class Structure(Sobj):
     #end def recenter_k
 
 
-    def inside(self,pos,axes=None,center=None,tol=1e-8):
+    def inside(self,pos,axes=None,center=None,tol=1e-8,separate=False):
         if axes==None:
             axes=self.axes
         #end if
@@ -1043,7 +1067,7 @@ class Structure(Sobj):
         surface = []
         su = []
         axinv = inv(axes)
-        for i in range(len(pos)):
+        for i in xrange(len(pos)):
             u = dot(pos[i]-center,axinv)
             umax = abs(u).max()
             if abs(umax-.5)<tol:
@@ -1077,8 +1101,12 @@ class Structure(Sobj):
             #end while
             i+=1
         #end while
-        inside+=surface
-        return inside
+        if not separate:
+            inside+=surface
+            return inside
+        else:
+            return inside,surface
+        #end if
     #end def inside
 
 
@@ -1626,28 +1654,36 @@ class Structure(Sobj):
     #end def boundary
 
 
-    def embed(self,small,dims=(0,1,2),dtol=1e-6):
+    def embed(self,small,dims=(0,1,2),dtol=1e-6,utol=1e-6):
+        small = small.copy()
+        small.recenter()
+        center = array(self.center)
+        self.recenter(small.center)
         bind = small.boundary(dims,dtol)
         bpos = small.pos[bind]
-        nn = nearest_neighbors(1,self.pos,bpos)
-        mpos = self.pos[nn.ravel()]
+        belem= small.elem[bind]
+        nn = nearest_neighbors(1,self.pos,bpos).ravel()
+        mpos = self.pos[nn]
         dr = (mpos-bpos).mean(0)
         for i in xrange(len(bpos)):
             bpos[i]+=dr
         #end for
         dmax = sqrt(((mpos-bpos)**2).sum(1)).max()
+        for i in xrange(len(small.pos)):
+            small.pos[i]+=dr
+        #end for
+        ins,surface = small.inside(self.pos,tol=utol,separate=True)
         replaced = empty((len(self.pos),),dtype=bool)
         replaced[:] = False
-        elem = small.elem
-        pos  = small.pos.copy()
-        for i in xrange(len(pos)):
-            pos[i]+=dr
-        #end for
-        nn = nearest_neighbors(1,self.pos,pos)
+        inside = replaced.copy()
+        inside[ins] = True
+        nn = nearest_neighbors(1,self.pos,small.pos).ravel()
         elist = list(self.elem)
         plist = list(self.pos)
+        pos  = small.pos
+        elem = small.elem
         for i in xrange(len(pos)):
-            n = nn[i,0]
+            n = nn[i]
             if not replaced[n]:
                 elist[n] = elem[i]
                 plist[n] = pos[i]
@@ -1657,8 +1693,16 @@ class Structure(Sobj):
                 plist.append(pos[i])
             #end if
         #end for
+        remove = arange(len(self.pos))[inside & logical_not(replaced)]
+        remove.sort()
+        remove = flipud(remove)
+        for i in remove:
+            elist.pop(i)
+            plist.pop(i)
+        #end for
         self.elem = array(elist)
         self.pos  = array(plist)
+        self.recenter(center)
         return dmax
     #end def embed
 
