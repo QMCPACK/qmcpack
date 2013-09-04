@@ -108,6 +108,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   addionion = (ionionforce=="yes") || (ionionforce == "true");
   app_log() << "ionionforce = "<<ionionforce<<endl;
   app_log() << "addionion="<<addionion<<endl;
+  app_log() << "FirstTime= "<<FirstTime<<endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut","real");
   fcep_param_set.add(N_basis, "nbasis", "int");

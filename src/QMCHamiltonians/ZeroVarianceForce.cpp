@@ -34,6 +34,10 @@ void ZeroVarianceForce::addObservables(PropertySetType& plist
 {
   if(FirstForceIndex<0)
     FirstForceIndex=plist.size();
+    
+ //   app_log() << "ionionforce = "<<ionionforce<<endl;
+  app_log() << "addionion="<<addionion<<endl;
+  app_log() << "FirstTime= "<<FirstTime<<endl;
   for(int iat=0; iat<Nnuc; iat++)
   {
     for(int x=0; x<OHMMS_DIM; x++)
@@ -70,7 +74,8 @@ ZeroVarianceForce::registerObservables(vector<observable_helper*>& h5list,
 void
 ZeroVarianceForce::setObservables(QMCTraits::PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
+  //QMCHamiltonianBase::setObservables(plist);
+  setObservablesF(plist);
   int index = FirstForceIndex;
   for(int iat=0; iat<Nnuc; iat++)
   {
@@ -100,21 +105,44 @@ ZeroVarianceForce::setParticlePropertyList
       // ZV = min (ZV, 50.0);
       // ZV = max (ZV, -50.0);
       plist[index++] = F_ZV1[iat][x];
-      //plist[index++] = F_ZV2[iat][x];
-      plist[index++] = ZV - F_ZV1[iat][x];
+      plist[index++] = F_ZV2[iat][x];
+    //  plist[index++] = ZV - F_ZV1[iat][x];
+	//	plist[index++]= forces[iat][x];
+	//	plist[index++]=ZV;
     }
 }
 
 ZeroVarianceForce::Return_t
 ZeroVarianceForce::evaluate(ParticleSet& P)
 {
+  forces = forces_IonIon;
+  const DistanceTableData* d_ab=P.DistTables[myTableIndex];
+  const real_type* restrict Zat=Ions.Z.first_address();
+  const real_type* restrict Qat=P.Z.first_address();
+  //Loop over distinct eln-ion pairs
+  for(int iat=0; iat<Nnuc; iat++)
+  {
+    for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++)
+    {
+      real_type rinv=d_ab->rinv(nn);
+      real_type r3zz=Qat[jat]*Zat[iat]*rinv*rinv*rinv;
+      forces[iat] -= r3zz*d_ab->dr(nn);
+    }
+    
+    F_ZV1[iat]=forces[iat];
+  }
+  
   for (int ion=0; ion < Nnuc; ion++)
   {
     GradType grad = Psi.evalGradSource(P, Ions, ion, grad_grad_psi, lapl_grad_psi);
     for (int dim=0; dim < OHMMS_DIM; dim++)
     {
-      F_ZV1[ion][dim] = 0.5*(Sum(lapl_grad_psi[dim]));
-      F_ZV2[ion][dim] = Dot(grad_grad_psi[dim], P.G);
+    //  F_ZV1[ion][dim] = -0.5*(Sum(lapl_grad_psi[dim]));
+      //F_ZV1[ion][dim]=0.0; //forces[ion][dim];
+     // F_ZV2[ion][dim] = -Dot(grad_grad_psi[dim], P.G);
+		double ZV = -0.5*(Sum(lapl_grad_psi[dim]))-Dot(grad_grad_psi[dim], P.G);
+		F_ZV1[ion][dim]-=ZV;
+		F_ZV2[ion][dim]=ZV;
     }
   }
   return Value=0.0;
