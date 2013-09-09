@@ -1,5 +1,6 @@
 import os
 import shutil
+import string
 from generic import obj
 from physical_system import PhysicalSystem
 from machines import Job
@@ -976,3 +977,107 @@ class NullSimulationAnalyzer(SimulationAnalyzer):
         None
     #end def analyze
 #end class NullSimulationAnalyzer
+
+
+
+
+class SimulationInputTemplate(SimulationInput):
+    name_characters = set(string.ascii_letters+string.digits+'_')
+
+    def __init__(self,filepath=None,delimiter='.',has_keywords=True):
+        self.has_keywords = has_keywords
+        self.delimiter = delimiter
+        self.keywords  = obj()
+        self.values    = obj()
+        self.template  = ''
+        if filepath!=None:
+            self.read(filepath)
+        #end if
+    #end def __init__
+
+
+    def set_delimiter(self,delimiter):
+        if not isinstance(delimiter,str):
+            self.error('delimiter must be a character, received '+str(delimiter))
+        elif len(delimiter)!=1:
+            self.error('delimiter must be a single character, received'+str([delimiter]))
+        #end if
+        self.delimiter = delimiter
+    #end def set_delimiter
+
+
+    def read_contents(self,contents):
+        delimiter = self.delimiter
+        dlocs = []
+        i=0
+        for c in contents:
+            if c==delimiter:
+                dlocs.append(i)
+            #end if
+            i+=1
+        #end for
+        klocs=[]
+        keywords = []
+        for i in range(len(dlocs)-1):
+            d1 = dlocs[i]
+            d2 = dlocs[i+1]
+            word = contents[d1+1:d2]
+            if set(word)<=self.name_characters:
+                keywords.append(word)
+                klocs.append(i)
+            #end if
+        #end for
+        for i in range(len(klocs)-1):
+            if klocs[i+1]-klocs[i]==1:
+                self.error('keywords cannot be adjacent\n  offending text: {0}{1}{0}{2}{0}'.format(delimiter,keywords[i],keywords[i+1]))
+            #end if
+        #end for
+        keywords = set(keywords)
+        for keyword in keywords:
+            kw = keyword.lower()
+            self.keywords[kw] = keyword
+        #end for
+        self.template = contents
+    #end def read_contents
+
+
+    def write_contents(self):
+        kw_rem = self.keywords_remaining()
+        if len(kw_rem)>0:
+            kw_rem = list(kw_rem)
+            kw_rem.sort()
+            self.error('not all keywords for this template have been assigned\n  keywords remaining: '+str(kw_rem))
+        #end if
+        contents = self.fillout()
+        return contents
+    #end def write_contents
+
+
+    def keywords_remaining(self):
+        return set(self.keywords.values())-set(self.values.keys())
+    #end def keywords_remaining
+
+
+    def assign(self,**values):
+        for keyword,value in values.iteritems():
+            kw = keyword.lower()
+            if not kw in self.keywords:
+                self.error('cannot assign {0} because it is not a valid keyword for this template\n  valid options are: {1}'.format(kw,self.keywords.keys))
+#end class SimulationInputTemplate
+            #end if
+            kw = self.keywords[kw]
+            self.values[kw] = value
+        #end for
+    #end def assign
+
+
+    def fillout(self):
+        template = str(self.template)
+        for keyword,value in self.values.iteritems():
+            template = template.replace(keyword,value)
+        #end for
+        return template
+    #end def fillout
+#end class SimulationInputTemplate
+
+

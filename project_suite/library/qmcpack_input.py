@@ -11,7 +11,7 @@ from xmlreader import XMLreader,XMLelement
 from project_base import Pobj
 from structure import Structure
 from physical_system import PhysicalSystem
-from simulation import SimulationInput
+from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
 from debug import *
 
@@ -2906,6 +2906,14 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.filenames.append(prefix+'.in')
     #end def generate_filenames
 #end class TracedQmcpackInput
+
+
+
+
+class QmcpackInputTemplate(SimulationInputTemplate):
+    None
+#end class QmcpackInputTemplate
+
 
 
 

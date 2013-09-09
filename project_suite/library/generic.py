@@ -64,13 +64,11 @@ class obj(AllAbilities):
     #end def obj
 
     def first(self):
-        key = min(self.keys(), key=operator.itemgetter(1))
-        return self[key]
+        return self[min(self.keys())]
     #end def first
 
     def last(self):
-        key = max(self.keys(), key=operator.itemgetter(1))
-        return self[key]
+        return self[max(self.keys())]
     #end def last
     
     def open_log(self,filepath):
