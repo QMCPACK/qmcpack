@@ -26,6 +26,14 @@ using namespace std;
 namespace qmcplusplus
 {
 
+bool QMCMain::executeDebugSection(xmlNodePtr cur)
+{
+  app_log() << "QMCMain::executeDebugSection " << endl;
+  app_log() << "  Use this to debug new features with <debug/> in the input file " << endl;
+
+  return true;
+}
+
 bool QMCMain::executeCMCSection(xmlNodePtr cur)
 {
   bool success=true;

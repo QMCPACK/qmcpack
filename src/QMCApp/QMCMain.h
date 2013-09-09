@@ -88,6 +88,8 @@ private:
   bool executeQMCSection(xmlNodePtr cur, bool noloop=true);
   ///execute <cmc/> element
   bool executeCMCSection(xmlNodePtr cur);
+  ///execute <debug/> element
+  bool executeDebugSection(xmlNodePtr cur);
 
 };
 }

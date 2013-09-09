@@ -119,6 +119,12 @@ bool QMCMain::execute()
     {
       executeCMCSection(cur);
     }
+    else if(cname == "debug")
+    {
+      executeDebugSection(cur);
+      app_log() << "  Debug is done. Skip the rest of the input " << endl;
+      break;
+    }
   }
   m_qmcaction.clear();
   app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
