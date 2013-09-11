@@ -160,7 +160,7 @@ public:
 
   /**  process options
    */
-  bool put(xmlNodePtr cur);
+  virtual bool put(xmlNodePtr cur);
 
   inline void accumulate(WalkerIter_t it, WalkerIter_t it_end)
   {

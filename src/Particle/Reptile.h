@@ -40,7 +40,7 @@ public:
   RealType r2accept;
   IndexType r2samp;
   IndexType maxSamp;
-  RealType tauscale;
+ RealType tauscale;
   RealType tau;
 
   RealType erun;
@@ -55,13 +55,13 @@ public:
   WalkerIter_t repstart, repend;
 
   inline Reptile(MCWalkerConfiguration& W, WalkerIter_t start, WalkerIter_t end):
-    w(W),repstart(start),repend(end),direction(1),headindex(0),prophead(0), r2prop(0.0), r2accept(0.0),tau(0.0)
+    w(W),repstart(start),repend(end),direction(1),headindex(0),prophead(0) //, r2prop(0.0), r2accept(0.0),tau(0.0)
   {
-    //w=W;
-    //repstart(start);
-    //repend(end);
-    //direction(1);
-    //headindex(0);
+    w=W;
+   // repstart(start);
+   // repend(end);
+   // direction(1);
+   // headindex(0);
     maxSamp=10000;
     erun=0.0;
     erun2=0.0;
@@ -86,10 +86,16 @@ public:
   }
 
   ~Reptile() {}
-
+	
+	
+  inline Walker_t& operator[](IndexType i)
+  {
+    return getWalker(getBeadIndex(i)) ;
+  }
+  
   inline IndexType wrapIndex(IndexType repindex)
   {
-    return (repindex%nbeads + nbeads)%nbeads ;
+    return (repindex%nbeads + nbeads)%nbeads;
   }
 
   inline Walker_t& getWalker(IndexType i)
@@ -157,6 +163,52 @@ public:
     //overwrite last element.
     headindex = getBeadIndex(nbeads-1);  //sets to position of tail.
     return getWalker(headindex);
+  }
+  
+  void saveAction(Walker_t& walker, IndexType d, RealType val, IndexType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType actionindex= 2;
+	if (direction!=0) actionindex=(1-d*direction)/2;
+	walker.Properties(nPsi,Action[actionindex])=val;
+  }
+  
+  RealType getDirectionalAction(Walker_t& walker, IndexType d, IndexType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType actionindex= 2;
+	if (d!=0) actionindex=(1-direction*d)/2;
+	
+	return walker.Properties(nPsi,Action[actionindex]);
+  }
+
+ RealType getLinkAction(Walker_t& new_walker, Walker_t& old_walker, IndexType d, IndexType nPsi=0)
+  {
+	  RealType af=getDirectionalAction(old_walker, +1, nPsi);
+	  RealType ab=getDirectionalAction(new_walker, -1, nPsi);
+	  RealType a0=getDirectionalAction(old_walker, 0, nPsi) + getDirectionalAction(new_walker,0,nPsi);
+	  return af+ab+a0;
+
+  }
+  
+  void saveTransProb(Walker_t& walker, IndexType d, RealType val,IndexType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType transindex =(1-d*direction)/2;
+	walker.Properties(nPsi,TransProb[transindex])=val;
+  }
+  
+  void saveTransProb(ParticleSet& W, IndexType d, RealType val,IndexType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType transindex =(1-d*direction)/2;
+	W.Properties(nPsi,TransProb[transindex])=val;
+  }
+  RealType getTransProb(Walker_t& walker, IndexType d, RealType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType transindex =(1-d*direction)/2;
+	return walker.Properties(nPsi,TransProb[transindex]);
+  }
+  RealType getTransProb(ParticleSet& W, IndexType d, RealType nPsi=0){
+	//IndexType repdirection=circbuffer.get_direction();
+	IndexType transindex =(1-d*direction)/2;
+	return W.Properties(nPsi,TransProb[transindex]);
   }
 
   inline void printState()

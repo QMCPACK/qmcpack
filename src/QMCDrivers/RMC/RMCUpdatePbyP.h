@@ -22,7 +22,7 @@ public:
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
   void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  void put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur);
 private:
   /// Copy Constructor (disabled)
   RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift& a): QMCUpdateBase(a), Action(a.Action), TransProb(a.TransProb) { }

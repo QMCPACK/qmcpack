@@ -63,11 +63,13 @@ void RMCUpdatePbyPWithDrift::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it
     }
 }
 
-void RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
+bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
 {
-
+  
+  QMCUpdateBase::put(cur); 
+  
   ParameterSet m_param;
-  bool usedrift=false;
+  bool usedrift=true;
   string action="SLA";
   m_param.add(usedrift,"useDrift", "bool");
   m_param.add(action,"Action","string");
@@ -91,7 +93,8 @@ void RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
     {
       app_log()<<"  Using Symmetrized Link-Action\n";
     }
-
+	
+	return true;
 }
 
 void RMCUpdatePbyPWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
@@ -218,84 +221,17 @@ void RMCUpdatePbyPWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
           //  curhead.Age+=1;
 //   W.reptile->flip();
         }
-//   RealType driftscaleold=getDriftScale(m_tauovermass,curhead.G);
-//   assignDrift(driftscaleold, curhead.G, drift);
-      //  RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,curhead.G,drift);
-      //RealType nodecorr=1;
-      //assignDrift(m_tauovermass,curhead.G,drift);
-      //app_log()<<"Sign head = "<<curhead.Properties(SIGN)<<endl;
-      //app_log()<<"Old phase = "<<Psi.getPhase()<<endl;
-      //  makeGaussRandomWithEngine(deltaR,RandomGen);
-      //  RealType r2proposed=rr_proposed;
-      //  RealType r2accept=0.0;
-//  if (W.reptile->r2prop < 0) app_log()<<"r2prop = "<<W.reptile->r2prop<<endl;
-      //if (W.reptile->r2samp < 0) app_log()<<"r2samp = "<<W.reptile->r2samp<<endl;
-      //if (W.reptile->r2accept < 0) app_log()<<"r2samp = "<<W.reptile->r2accept<<endl;
-      W.reptile->r2prop += rr_proposed;
-      W.reptile->r2samp++;
+
       logpsi = std::log(ratio_acc)+logpsiold;
-      // 	 RealType logpsi(Psi.evaluateLog(W));
-      // 	 if (logpsi2 != logpsi) app_log()<<"no match. "<<logpsi2<<"  vs exact "<<logpsi<<endl;
-      // app_log()<<"Sign newhead = "<<W.Properties(SIGN)<<endl;
-      RealType tauscale = W.reptile->tauscale;
-      RealType tau_eff = Tau*tauscale;
-      //RealType* restrict old_headProp ((*it)->getPropertyBase());
-      //old_headProp[TransProb[forward]]= 0.5*Dot(deltaR,deltaR);
-//     curhead.Properties(W.reptile->TransProb[forward])=-0.5*Dot(deltaR,deltaR);
-//	  curhead.Properties(W.reptile->Action[forward])= 0.5*0.5*Dot(deltaR,deltaR);
-//	  Walker_t::ParticlePos_t fromdeltaR(deltaR);
-      //  RealType driftscalenew=getDriftScale(m_tauovermass,W.G);
-      // assignDrift(driftscalenew, W.G, drift);
-      //app_log()<<"Driftscalenew="<<driftscalenew<<endl;
-      // RealType nodecorrnew = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-      // assignDrift(m_tauovermass,W.G,drift);
-      //  RealType nodecorrnew = 1.0;
-//	  fromdeltaR = curhead.R - W.R - drift;
-//	  RealType* restrict new_headProp (W.getPropertyBase());
-//	  W.Properties(W.reptile->TransProb[backward])= -m_oneover2tau*Dot(fromdeltaR,fromdeltaR);
-//	  W.Properties(W.reptile->Action[backward])= 0.5*m_oneover2tau*Dot(fromdeltaR,fromdeltaR);
+
       Walker_t& lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
-      //Implementing the fixed-node approximation.  If phase difference is not a multiple of 2pi, bounce away from node.
-      //  RealType newphase = Psi.getPhase();
-      // RealType phasediff = newphase - curhead.Properties(SIGN);
+
       RealType eloc=H.evaluate(W);
-      //This is going to calculate how many standard deviations eloc is away from the current estimate.  Lets say 10 and it rejects automatically.
-      RealType eest = W.reptile->eest;
-      RealType stddev = std::fabs(eloc - W.reptile->eest)/std::sqrt(W.reptile->evar);
-      RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
-      //  app_log()<<"eval = "<<eest<<" estdev="<<stddev<<endl;
-      RealType rawcutoff=10*std::sqrt(W.reptile->evar);
-      RealType cutoffmax = 1.5*rawcutoff;
-      RealType cutoff=1;
-      if (fbet > rawcutoff)
-        cutoff = 1-(fbet - rawcutoff)/(rawcutoff*0.5);
-      if( fbet > cutoffmax )
-        cutoff=0;
-      /*  if( stddev > 10 )
-        {
-      	++nReject;
-      	H.rejectedMove(W,curhead);
-      	curhead.Age+=1;
-      	W.reptile->flip();
-      	app_log()<<"Rejecting cause of large change in E\n";
-      	app_log()<<"\teloc="<<eloc<<" eavg,var = "<<W.reptile->eest<<" , "<<std::sqrt(W.reptile->evar)<<endl;
-      	app_log()<<"\t\tDe="<<std::fabs(eloc - W.reptile->eest)<<"  Drel="<<stddev<<endl;
 
-
-      	return;
-        }*/
-      //new_headProp[Action[2]]= 0.5*Tau*eloc;
-      // W.Properties(W.reptile->Action[2])= 0.5*eloc*tau_eff*driftscalenew/Tau;
-      //app_log()<<nodecorrnew<<endl;
-      //   RealType scaledaction=eest + (eloc - eest)*nodecorrnew;
-      // W.Properties(W.reptile->Action[2])= 0.5*eloc*tau_eff;
-      W.Properties(W.reptile->Action[2])=0.5*eloc*tau_eff*cutoff;
 
 
       RealType acceptProb=1.0;
-//For initialization, we acccept every configuration...
-      // r2accept=r2proposed;
-      W.reptile->r2accept+=rr_accepted;
+
       MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 
       Walker_t::Buffer_t& o_buffer(overwriteWalker.DataSet);
@@ -303,16 +239,16 @@ void RMCUpdatePbyPWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
       logpsi = Psi.updateBuffer(W,o_buffer,false);
       W.saveWalker(overwriteWalker);
       overwriteWalker.Properties(LOCALENERGY)=eloc;
-      overwriteWalker.Properties(W.reptile->Action[forward])=0;
-      overwriteWalker.Properties(W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
-      overwriteWalker.Properties(W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
-      overwriteWalker.Properties(W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
-      overwriteWalker.Properties(W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
+      overwriteWalker.Properties(0,W.reptile->Action[forward])=0;
+      overwriteWalker.Properties(0,W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
+      overwriteWalker.Properties(0,W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
+      overwriteWalker.Properties(0,W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
+      overwriteWalker.Properties(0,W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
       overwriteWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       //H.auxHevaluate(W,overwriteWalker);
       H.saveProperty(overwriteWalker.getPropertyBase());
       overwriteWalker.Age=0;
-      W.reptile->accumulateE(eloc);
+      //W.reptile->accumulateE(eloc);
       ++nAccept;
     }
 }
@@ -547,14 +483,14 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
 //  if (W.reptile->r2prop < 0) app_log()<<"r2prop = "<<W.reptile->r2prop<<endl;
   //if (W.reptile->r2samp < 0) app_log()<<"r2samp = "<<W.reptile->r2samp<<endl;
   //if (W.reptile->r2accept < 0) app_log()<<"r2samp = "<<W.reptile->r2accept<<endl;
-  W.reptile->r2prop += rr_proposed;
-  W.reptile->r2samp++;
+ // W.reptile->r2prop += rr_proposed;
+ // W.reptile->r2samp++;
   logpsi = std::log(ratio_acc)+logpsiold;
   // 	 RealType logpsi(Psi.evaluateLog(W));
   // 	 if (logpsi2 != logpsi) app_log()<<"no match. "<<logpsi2<<"  vs exact "<<logpsi<<endl;
   // app_log()<<"Sign newhead = "<<W.Properties(SIGN)<<endl;
-  RealType tauscale = W.reptile->tauscale;
-  RealType tau_eff = Tau*tauscale;
+ // RealType tauscale = W.reptile->tauscale;
+ // RealType tau_eff = Tau*tauscale;
   //RealType* restrict old_headProp ((*it)->getPropertyBase());
   //old_headProp[TransProb[forward]]= 0.5*Dot(deltaR,deltaR);
 //     curhead.Properties(W.reptile->TransProb[forward])=-0.5*Dot(deltaR,deltaR);
@@ -576,17 +512,17 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
   // RealType phasediff = newphase - curhead.Properties(SIGN);
   RealType eloc=H.evaluate(W);
   //This is going to calculate how many standard deviations eloc is away from the current estimate.  Lets say 10 and it rejects automatically.
-  RealType eest = W.reptile->eest;
-  RealType stddev = std::fabs(eloc - W.reptile->eest)/std::sqrt(W.reptile->evar);
-  RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
+ // RealType eest = W.reptile->eest;
+ // RealType stddev = std::fabs(eloc - W.reptile->eest)/std::sqrt(W.reptile->evar);
+ // RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
   //  app_log()<<"eval = "<<eest<<" estdev="<<stddev<<endl;
-  RealType rawcutoff=10*std::sqrt(W.reptile->evar);
-  RealType cutoffmax = 1.5*rawcutoff;
-  RealType cutoff=1;
-  if (fbet > rawcutoff)
-    cutoff = 1-(fbet - rawcutoff)/(rawcutoff*0.5);
-  if( fbet > cutoffmax )
-    cutoff=0;
+//  RealType rawcutoff=10*std::sqrt(W.reptile->evar);
+////  RealType cutoffmax = 1.5*rawcutoff;
+ // RealType cutoff=1;
+ // if (fbet > rawcutoff)
+ //   cutoff = 1-(fbet - rawcutoff)/(rawcutoff*0.5);
+//  if( fbet > cutoffmax )
+ //   cutoff=0;
   /*  if( stddev > 10 )
     {
   	++nReject;
@@ -605,7 +541,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
   //app_log()<<nodecorrnew<<endl;
   //   RealType scaledaction=eest + (eloc - eest)*nodecorrnew;
   // W.Properties(W.reptile->Action[2])= 0.5*eloc*tau_eff;
-  W.Properties(W.reptile->Action[2])=0.5*eloc*tau_eff*cutoff;
+ // W.Properties(W.reptile->Action[2])=0.5*eloc*tau_eff*cutoff;
   //W.Properties(W.reptile->Action[2])= 0.5*scaledaction*tau_eff*cutoff;
   //app_log()<<"\tDriftscalenew="<<driftscalenew<<endl;
   //H.evaluate()
@@ -620,13 +556,17 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
 //						-(lastbead.Properties(W.reptile->Action[2]) + nextlastbead.Properties(W.reptile->Action[2]));
 //
   //RealType acceptProb=std::min(1.0,std::exp(-dS + (nextlastbead.Properties(W.reptile->TransProb[backward]) - curhead.Properties(W.reptile->TransProb[forward]))));
-  RealType dS = curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
-                - (lastbead.Properties(W.reptile->Action[2]) + nextlastbead.Properties(W.reptile->Action[2]));
+ // RealType dS = curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
+      //          - (lastbead.Properties(W.reptile->Action[2]) + nextlastbead.Properties(W.reptile->Action[2]));
+  RealType dS = branchEngine->DMCLinkAction(eloc,curhead.Properties(LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY),nextlastbead.Properties(LOCALENERGY));          
+ // W.reptile->TransProb[backward]
+  
   RealType acceptProb=std::min(1.0,std::exp(-dS ));
   if ((RandomGen() <= acceptProb ) || (curhead.Age>=MaxAge))
     {
       // r2accept=r2proposed;
-      W.reptile->r2accept+=rr_accepted;
+    //  W.reptile->r2accept+=rr_accepted;
+   
       MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
       if (curhead.Age>=MaxAge)
         app_log()<<"\tForce Acceptance...\n";
@@ -635,22 +575,29 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       RealType logpsi = Psi.updateBuffer(W,o_buffer,false);
       W.saveWalker(overwriteWalker);
       overwriteWalker.Properties(LOCALENERGY)=eloc;
-      overwriteWalker.Properties(W.reptile->Action[forward])=0;
-      overwriteWalker.Properties(W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
-      overwriteWalker.Properties(W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
-      overwriteWalker.Properties(W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
-      overwriteWalker.Properties(W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
+	  overwriteWalker.Properties(R2ACCEPTED)=rr_accepted;
+	  overwriteWalker.Properties(R2PROPOSED)=rr_proposed;
+      
+    //  W.reptile->saveTransProb(overwriteWalker, +1, 0.0);
+    //  W.reptile->saveTransProb(overwriteWalker, -1, 
+    //  overwriteWalker.Properties(W.reptile->Action[forward])=0;
+      //overwriteWalker.Properties(W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
+      //overwriteWalker.Properties(W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
+     // overwriteWalker.Properties(W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
+     // overwriteWalker.Properties(W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
       overwriteWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       H.auxHevaluate(W,overwriteWalker);
       H.saveProperty(overwriteWalker.getPropertyBase());
       overwriteWalker.Age=0;
-      W.reptile->accumulateE(eloc);
+     
       ++nAccept;
     }
   else
     {
       ++nReject;
       H.rejectedMove(W,curhead);
+      curhead.Properties(R2ACCEPTED)=0;
+      curhead.Properties(R2PROPOSED)=rr_proposed;
       curhead.Age+=1;
       W.reptile->flip();
       // return;

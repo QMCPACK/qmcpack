@@ -9,6 +9,7 @@
 #include "tau/profiler.h"
 #include "Particle/Reptile.h"
 
+
 namespace qmcplusplus
 {
 
@@ -25,6 +26,13 @@ RMCSingleOMP::RMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
   m_param.add(beta,"beta","double");
   m_param.add(beads,"beads","int");
   m_param.add(resizeReptile,"resize","int");
+  
+ // if (w.reptile_new==0){w.reptile_new = new Reptile_new(&w);};
+  
+ // w.reptile_new->loadFromWalkerList(w.WalkerList);
+//  app_log()<<"  reptile_new.size()="<<w.reptile_new->size()<<endl;
+//  app_log()<<"  WalkerList.size()="<<w.WalkerList.size()<<endl;
+  
   Action.resize(3);
   Action[0]=w.addProperty("ActionBackward");
   Action[1]=w.addProperty("ActionForward");
@@ -72,14 +80,18 @@ bool RMCSingleOMP::run()
               wClones[ip]->Collectables *= cnorm;
 //           wit=first;
             Movers[ip]->accumulate(wit,wit_end);
+            
             ++now_loc;
             //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
             if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0)
               wClones[ip]->saveEnsemble(wit,wit_end);
+              
+             if (ip==0) branchEngine->collect(CurrentStep, W, branchClones);  //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
           }
-        wClones[ip]->reptile->calcTauScaling();
-        wClones[ip]->reptile->calcERun();
-        //wClones[ip]->reptile->resetR2Avg();
+       // wClones[ip]->reptile->calcTauScaling();
+       // wClones[ip]->reptile->calcERun();
+		//branchEngine->collect(CurrentStep, W, branchClones);
+       // wClones[ip]->reptile->resetR2Avg();
         Movers[ip]->stopBlock(false);
         //  if (block > 2*wClones[ip]->reptile->nbeads){
         //	 wClones[ip]->reptile->printState();
@@ -91,6 +103,7 @@ bool RMCSingleOMP::run()
       }//end-of-parallel for
       //Estimators->accumulateCollectables(wClones,nSteps);
       CurrentStep+=nSteps;
+     // branchEngine->collect(CurrentStep, W, branchClones);
       Estimators->stopBlock(estimatorClones);
       //why was this commented out? Are checkpoints stored some other way?
       if(storeConfigs)
@@ -120,6 +133,10 @@ void RMCSingleOMP::resetRun()
       FairDivideLow(nwtot,NumThreads,wPerNode);
       if(W.getActiveWalkers()-nwtot !=0)
         addWalkers(nwtot-W.getActiveWalkers());
+        
+       //   W.reptile_new->loadFromWalkerList(W.WalkerList);
+ // app_log()<<"  reptile_new.size()="<<W.reptile_new->size()<<endl;
+  //app_log()<<"  WalkerList.size()="<<W.WalkerList.size()<<endl;
     }
   else
     {
@@ -135,7 +152,7 @@ void RMCSingleOMP::resetRun()
       estimatorClones.resize(NumThreads,0);
       Rng.resize(NumThreads,0);
       //   W.loadEnsemble(wClones);
-      //	branchEngine->initWalkerController(W,true,false);
+      branchEngine->initReptile(W);
 #if !defined(BGP_BUG)
       #pragma omp parallel for
 #endif
@@ -148,7 +165,7 @@ void RMCSingleOMP::resetRun()
           Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
           hClones[ip]->setRandomGenerator(Rng[ip]);
           branchClones[ip] = new BranchEngineType(*branchEngine);
-          //   branchEngine->initWalkerController(W,fixW,false);
+            // branchClones[ip]->initReptile(W);
           if (QMCDriverMode[QMC_UPDATE_MODE])
             {
               os <<"  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast"<<endl;
@@ -170,10 +187,13 @@ void RMCSingleOMP::resetRun()
   #pragma omp parallel for
 #endif
   for(int ip=0; ip<NumThreads; ++ip)
-    {
+    { 
       Movers[ip]->put(qmcNode);
       Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
       wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      //app_log()<<"Thread # "<<ip<<endl;
+     // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
+	  
       // wClones[ip]->reptile->printState();
       wClones[ip]->activeBead= 0;
       wClones[ip]->direction = +1;

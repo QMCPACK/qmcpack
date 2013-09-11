@@ -63,7 +63,9 @@ struct SimpleFixedNodeBranch: public QMCTraits
     , B_CLEARHISTORY=4 /**< 1 to clear the history */
     , B_KILLNODES=5    /**< 1 to kill walkers when a node crossing is detected */
     , B_RESTART=6      /**< 1 if restarting */
-    , B_MODE_MAX=8     /**< size of BranchMode */
+    , B_RMC=7          /**< 1 for rmc, 0 for anything else */
+    , B_RMCSTAGE=8    /**< 1 for main, 0 for warmup */
+    , B_MODE_MAX=10     /**< size of BranchMode */
   };
 
   /** booleans to set the branch modes
@@ -101,7 +103,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
     B_TAU=0, B_TAUEFF , B_ETRIAL , B_EREF
     , B_ENOW, B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER
     , B_SIGMA, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
-    , B_VPARAM_MAX=16
+    , B_FILTERSCALE, B_VPARAM_MAX=17
   };
 
   /** controlling parameters of real type
@@ -134,6 +136,8 @@ struct SimpleFixedNodeBranch: public QMCTraits
   accumulator_set<RealType> R2Accepted;
   ///a simple accumulator for energy
   accumulator_set<RealType> R2Proposed;
+  ///a simple accumulator for reptation's center slice
+  accumulator_set<RealType> R2Center;
   /////histogram of populations
   //BlockHistogram<RealType> PopHist;
   /////histogram of populations
@@ -208,6 +212,12 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
   void initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
   //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
+  
+  /** initialize reptile stats
+   * 
+   * 
+   */
+  void initReptile(MCWalkerConfiguration& w);
 
   /** determine trial and reference energies
    */
@@ -245,7 +255,49 @@ struct SimpleFixedNodeBranch: public QMCTraits
         taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
     return std::exp(taueff_*(vParam[B_ETRIAL]*2.0-enew-eold));
   }
-
+  
+  inline RealType symLinkAction(RealType logGf, RealType logGb, RealType enew, RealType eold) const
+  {
+    RealType driftaction = -0.5*(logGf+logGb);
+	//RealType energyaction = 
+	
+	RealType taueff_=vParam[B_TAUEFF]*0.5;
+    RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
+    if(x>vParam[B_BRANCHMAX])
+      taueff_=0.0;
+    else
+      if(x>vParam[B_BRANCHCUTOFF])
+        taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
+    
+    RealType energyaction = taueff_*(enew+eold);
+    
+    return driftaction+energyaction;    
+  }
+  
+  inline RealType symLinkActionBare(RealType logGf, RealType logGb, RealType enew, RealType eold) const
+  {
+	RealType driftaction = -0.5*(logGf+logGb);
+	
+	RealType taueff_=vParam[B_TAUEFF]*0.5;
+   
+    RealType energyaction = taueff_*(enew+eold);
+    
+   // RealType wavefunctionaction= -psinew + psiold;
+    
+    return driftaction+energyaction;      
+  }
+  
+  inline RealType DMCLinkAction(RealType enew, RealType eold) const
+  {
+	RealType taueff_=vParam[B_TAUEFF]*0.5;
+	RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
+    if(x>vParam[B_BRANCHMAX])
+      taueff_=0.0;
+    else
+      if(x>vParam[B_BRANCHCUTOFF])
+        taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
+    return taueff_*(enew+eold);
+  }
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
    * @param enew new energy
    * @param eold old energy
@@ -326,7 +378,16 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param clones of the branch engine for OpenMP threads
    */
   void branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
-
+  
+  /** update RMC counters and running averages.
+   * @param iter the iteration
+   * @param w the walker ensemble
+   * @param clones of the branch engine for OpenMP threads
+   */
+   
+  void collect(int iter, MCWalkerConfiguration& w);
+  void collect(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
+  
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.
    */
