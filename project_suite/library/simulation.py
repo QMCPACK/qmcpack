@@ -163,6 +163,7 @@ class Simulation(Pobj):
         self.failed         = False
         self.got_output     = False
         self.analyzed       = False
+        self.succeeded      = False
         self.subcascade_finished = False
         self.dependency_ids = set()
         self.wait_ids       = set()
@@ -982,14 +983,35 @@ class NullSimulationAnalyzer(SimulationAnalyzer):
 
 
 class SimulationInputTemplate(SimulationInput):
-    name_characters = set(string.ascii_letters+string.digits+'_')
+    name_chars = string.ascii_letters+string.digits+'_'
+    name_characters = set(name_chars)
 
-    def __init__(self,filepath=None,delimiter='.',has_keywords=True):
-        self.has_keywords = has_keywords
+    comparators = obj()
+    comparators.transfer_from({
+            '==':' == ',
+            '!=':' != ',
+            '<=':' <= ',
+            '>=':' >= ',
+            '<' :' < ',
+            '>' :' > ',
+            })
+
+    def __init__(self,filepath=None,delimiter='|',conditionals=None,defaults=None):
         self.delimiter = delimiter
         self.keywords  = obj()
         self.values    = obj()
+        self.use_default_value = obj()
         self.template  = ''
+        if defaults is None:
+            self.default_values = obj()
+        else:
+            self.default_values = obj(**defaults)
+        #end if
+        if conditionals is None:
+            self.conditional_variables = obj()
+        else:
+            self.conditional_variables = obj(**conditionals)
+        #end if
         if filepath!=None:
             self.read(filepath)
         #end if
@@ -1006,7 +1028,27 @@ class SimulationInputTemplate(SimulationInput):
     #end def set_delimiter
 
 
-    def read_contents(self,contents):
+    def read(self,filepath):
+        tokens = filepath.split(None,1)
+        if len(tokens)>1:
+            contents = filepath
+            self.read_contents(contents)
+        else:
+            if os.path.exists(filepath):
+                self.read_contents(open(filepath,'r').read(),filepath)
+            else:
+                self.error('failed read for filepath below\n    '+filepath)
+            #end if
+        #end if
+    #end def read
+
+
+    def preprocess(self,contents,filepath=None):
+        return contents
+    #end def preprocess
+
+    def read_contents(self,contents,filepath=None):
+        contents = self.preprocess(contents,filepath)
         delimiter = self.delimiter
         dlocs = []
         i=0
@@ -1018,13 +1060,26 @@ class SimulationInputTemplate(SimulationInput):
         #end for
         klocs=[]
         keywords = []
+        nconditionals = len(self.conditional_variables)
+        conditional_expressions = obj()
+        conditional_words = []
         for i in range(len(dlocs)-1):
             d1 = dlocs[i]
             d2 = dlocs[i+1]
             word = contents[d1+1:d2]
+            expressions = None
+            if nconditionals>0 and ':' in word:
+                old_word = word
+                word,expressions = word.split(':')
+                conditional_words.append((old_word,word))
+            #end if
             if set(word)<=self.name_characters:
                 keywords.append(word)
                 klocs.append(i)
+                if expressions!=None:
+                    self.screen_conditional_expressions(expressions)
+                    conditional_expressions[word] = expressions
+                #end if
             #end if
         #end for
         for i in range(len(klocs)-1):
@@ -1034,19 +1089,39 @@ class SimulationInputTemplate(SimulationInput):
         #end for
         keywords = set(keywords)
         for keyword in keywords:
+            self.use_default_value[keyword] = False
+        #end for
+        for keyword in keywords:
             kw = keyword.lower()
             self.keywords[kw] = keyword
+        #end for
+        defaults = self.default_values
+        for keyword in list(defaults.keys()):
+            kw = keyword.lower()
+            if kw in self.keywords:
+                value = defaults[keyword]
+                del defaults[keyword]
+                defaults[self.keywords[kw]] = value
+            else:
+                self.error('default value provided for non-existent template keyword\n  non-existent keyword: {0}\n  default value provided: {1}\n  valid keywords are:\n    {2}'.format(keyword,value,self.keywords.keys()))
+            #end if
+        #end for
+        self.evaluate_conditional_expressions(conditional_expressions)
+        for old_word,word in conditional_words:
+            old_word = delimiter+old_word+delimiter
+            word = delimiter+word+delimiter
+            contents = contents.replace(old_word,word)
         #end for
         self.template = contents
     #end def read_contents
 
 
     def write_contents(self):
-        kw_rem = self.keywords_remaining()
+        kw_rem = self.required_keywords_remaining()
         if len(kw_rem)>0:
             kw_rem = list(kw_rem)
             kw_rem.sort()
-            self.error('not all keywords for this template have been assigned\n  keywords remaining: '+str(kw_rem))
+            self.error('not all keywords for this template have been assigned\n  keywords remaining:\n  '+str(kw_rem))
         #end if
         contents = self.fillout()
         return contents
@@ -1058,11 +1133,16 @@ class SimulationInputTemplate(SimulationInput):
     #end def keywords_remaining
 
 
+    def required_keywords_remaining(self):
+        return self.keywords_remaining()-set(self.default_values.keys())
+    #end def required_keywords_remaining
+
+
     def assign(self,**values):
         for keyword,value in values.iteritems():
             kw = keyword.lower()
             if not kw in self.keywords:
-                self.error('cannot assign {0} because it is not a valid keyword for this template\n  valid options are: {1}'.format(kw,self.keywords.keys))
+                self.error('cannot assign {0} because it is not a valid keyword for this template\n  valid options are: {1}'.format(kw,self.keywords.keys()))
 #end class SimulationInputTemplate
             #end if
             kw = self.keywords[kw]
@@ -1072,12 +1152,68 @@ class SimulationInputTemplate(SimulationInput):
 
 
     def fillout(self):
+        d = self.delimiter
         template = str(self.template)
-        for keyword,value in self.values.iteritems():
-            template = template.replace(keyword,value)
+        for keyword in self.values.keys():
+            if self.use_default_value[keyword]:
+                value = self.default_values[keyword]
+            else:
+                value = self.values[keyword]
+            #end if
+            template = template.replace(d+keyword+d,str(value))
+        #end for
+        for keyword,value in self.default_values.iteritems():
+            template = template.replace(d+keyword+d,str(value))
         #end for
         return template
     #end def fillout
+
+
+    def screen_conditional_expressions(self,expressions):
+        es = str(expressions)
+        for comp,compspace in self.comparators.iteritems():
+            es = es.replace(comp,compspace)
+        #end for
+        es = es.replace('not ','').replace(' or ',':').replace(' and ',':')
+        es = es.split(':')
+        for e in es:
+            tokens = e.split()
+            if not len(tokens)==3:
+                self.error('invalid sentinel expression encountered for template keyword {0}\n  invalid expression: {1}\n  this expression must be of the form "name [comparator] value" or a boolean combination of them "expr1 and expr2 or expr3 ..."'.format(word,expressions))
+            #end if
+            name,comparator,value = tokens
+            if not name in self.conditional_variables:
+                self.error('conditional variable {0} has not been provided\n  valid options are: {1}'.format(name,self.conditional_variables.keys()))
+            #end if
+            if not comparator in self.comparators:
+                self.error('invalid comparator encountered in conditional expression for template keyword {0}\n  invalid comparator encountered: {1}\n  valid options are: {2}'.format(word,comparator,self.comparators.keys()))
+            #end if
+        #end for
+    #end def screen_conditional_expressions
+
+
+    def evaluate_conditional_expressions(self,conditional_expressions):
+        if len(conditional_expressions)>0:
+            for _name,_value in self.conditional_variables.iteritems():
+                try:
+                    exec('{0}=_value'.format(_name,_value))
+                except Exception,e:
+                    self.error('assignment of conditional variable failed\n  conditional variable: {0}\n  error message: {1}'.format(_name,e))
+                #end try
+            #end for
+            for _keyword,_expression in conditional_expressions.iteritems():
+                if not _keyword in self.default_values:
+                    self.error('a default value must be provided for template keyword {0} because it has a conditional expression:\n  {1}'.format(_keyword,_expression))
+                #end if
+                try:
+                    exec('_passes = '+_expression)
+                except Exception,e:
+                    self.error('evaluation of conditional expression for template keyword failed\n  template_keyword: {0}\n  conditional expression: {1}\n  error message: {2}'.format(_keyword,_expression,e))
+                #end try
+                self.use_default_value[_keyword] = not _passes
+            #end for
+        #end for
+    #end if
 #end class SimulationInputTemplate
 
 

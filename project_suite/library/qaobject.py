@@ -4,7 +4,13 @@ from developer import DevBase
 from project_base import Pobj
 from plotter import Plotter
 
-class QAobject(Pobj):
+
+class QAobj_base(Pobj):
+    None
+#end class QAobj_base
+
+
+class QAobject(QAobj_base):
 
     _global = obj()
     _global.dynamic_methods_objects=[]
@@ -41,6 +47,31 @@ class QAobject(Pobj):
         #end for
         return
     #end def _relink_dynamic_methods
+
+
+    _allowed_settings = set(['optimize'])
+    _default_settings = obj(
+        optimize = 'variance'
+        )
+    for var,val in _default_settings.iteritems():
+        QAobj_base.__dict__[var] = val
+    #end for
+
+    @classmethod
+    def settings(cls,**kwargs):
+        vars = set(kwargs.keys())
+        invalid = vars-cls._allowed_settings
+        if len(invalid)>0:
+            allowed = list(cls._allowed_settings)
+            allowed.sort()
+            invalid = list(invalid)
+            invalid.sort()
+            cls.class_error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
+        #end if
+        for var,val in kwargs.iteritems():
+            QAobj_base.__dict__[var] = val
+        #end for
+    #end settings
 #end class QAobject
 
 

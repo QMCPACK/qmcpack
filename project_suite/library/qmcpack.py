@@ -8,6 +8,7 @@ from physical_system import PhysicalSystem
 from simulation import Simulation
 from qmcpack_input import QmcpackInput,generate_qmcpack_input
 from qmcpack_input import BundledQmcpackInput,TracedQmcpackInput
+from qmcpack_input import QmcpackInputTemplate
 from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
@@ -45,7 +46,9 @@ class Qmcpack(Simulation):
         #    self.error('system must be specified to determine type of run')
         ##end if
         if self.system is None:
-            self.warn('system must be specified to determine whether to twist average\n  proceeding under the assumption of no twist averaging')
+            if not isinstance(self.input,QmcpackInputTemplate):
+                self.warn('system must be specified to determine whether to twist average\n  proceeding under the assumption of no twist averaging')
+            #end if
             self.should_twist_average = False
         else:
             self.system.group_atoms()
@@ -59,7 +62,9 @@ class Qmcpack(Simulation):
 
 
     def propagate_identifier(self):
-        self.input.simulation.project.id = self.identifier
+        if not isinstance(self.input,QmcpackInputTemplate):
+            self.input.simulation.project.id = self.identifier
+        #end if
     #end def propagate_identifier
 
 
@@ -311,8 +316,9 @@ class Qmcpack(Simulation):
 
         aborted = 'Fatal Error' in errors
 
-        self.failed   = aborted
-        self.finished = files_exist and self.job.finished and not aborted 
+        self.succeeded = ran_to_end
+        self.failed    = aborted
+        self.finished  = files_exist and self.job.finished and not aborted 
 
 
 

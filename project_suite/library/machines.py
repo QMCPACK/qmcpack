@@ -566,7 +566,11 @@ class Workstation(Machine):
         if job.serial_only():
             job.cores=1
         elif job.cores==None:
-            job.cores = self.cores
+            if job.processes!=None:
+                job.cores = job.processes*job.threads
+            else:
+                job.cores = self.cores
+            #end if
         #end if
         job.processes = max(1,int(floor(float(job.cores)/job.threads)))
         grains = int(ceil(float(job.cores)/self.process_granularity))

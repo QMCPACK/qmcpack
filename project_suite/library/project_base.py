@@ -38,7 +38,8 @@ class Pobj(DevBase):
     file_locations   = [local_directory]
     runs     = 'runs'
     results  = 'results'
-    pseudo_dir = os.path.join(local_directory,'pseudopotentials')
+    #pseudo_dir = os.path.join(local_directory,'pseudopotentials')
+    pseudo_dir = None
     pseudopotentials = None
 
     modes = modes

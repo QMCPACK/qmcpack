@@ -91,15 +91,18 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
 
         #find the optimal coefficients
-        #jtk mark
-        #  for now just do energy minimization for comparison
         variance_present = 'LocalEnergyVariance' in opts.list()[0].scalars
-        if variance_present:
+        optimize = self.optimize
+        if variance_present and optimize=='variance':
             ew = 0.0
             vw = 1.0
-        else:
+        elif optimize=='energy':
             ew = 1.0
             vw = 0.0
+        elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
+            ew,vw = optimize
+        else:
+            self.error('selection for optimization is invalid\n  optimize setting: {0}\n  valid options are: energy, variance, or a length 2 tuple containing the cost of each, e.g. (.5,.5)'.format(optimize))
         #end if
 
         mincost = 1e99

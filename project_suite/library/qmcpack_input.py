@@ -2911,7 +2911,41 @@ class TracedQmcpackInput(BundledQmcpackInput):
 
 
 class QmcpackInputTemplate(SimulationInputTemplate):
-    None
+    def preprocess(self,contents,filepath=None):
+        if filepath!=None:
+            basepath,filename = os.path.split(filepath)
+            c = contents
+            contents=''
+            for line in c.splitlines():
+                if '<include' in line and '/>' in line:
+                    tokens = line.replace('<include','').replace('/>','').split()
+                    for token in tokens:
+                        if token.startswith('href'):
+                            include_file = token.replace('href','').replace('=','').replace('"','').strip()
+                            include_path = os.path.join(basepath,include_file)
+                            if os.path.exists(include_path):
+                                icont = open(include_path,'r').read()+'\n'
+                                line = ''
+                                for iline in icont.splitlines():
+                                    if not '<?' in iline:
+                                        line+=iline+'\n'
+                                    #end if
+                                #end for
+                            #end if
+                        #end if
+                    #end for
+                #end if
+                contents+=line+'\n'
+            #end for
+        #end if
+        return contents
+    #end def preprocess
+
+
+    def get_output_info(self,*args,**kwargs):
+        # just pretend
+        return []
+    #end def get_output_info
 #end class QmcpackInputTemplate
 
 

@@ -104,12 +104,12 @@ class obj(AllAbilities):
         self.logfile.write(s)
     #end def log
 
-    def error(self,message,header=None,exit=True,trace=True):
+    def error(self,message,header=None,exit=True,trace=True,post_header=' Error:'):
         pad = 4*' '
         if header==None:
             header = self.__class__.__name__
         #end if
-        self.log(header+' Error:')
+        self.log(header+post_header)
         self.log(pad+message.replace('\n','\n'+pad))
         if exit:
             self.log('  exiting.\n')
@@ -120,22 +120,22 @@ class obj(AllAbilities):
         #end if
     #end def error
 
-    def warn(self,message,header=None):
+    def warn(self,message,header=None,post_header=' Warning:'):
         pad = 4*' '
         if header==None:
             header=self.__class__.__name__
         #end if
-        self.log(header+' Warning:')
+        self.log(header+post_header)
         self.log(pad+message.replace('\n','\n'+pad))
     #end def error
 
     @classmethod
-    def class_error(cls,message,header=None,exit=True,trace=True):
+    def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):
         pad = 4*' '
         if header==None:
             header = cls.__name__
         #end if
-        cls.logfile.write(header+' Error:\n')
+        cls.logfile.write(header+post_header)
         cls.logfile.write(pad+message.replace('\n','\n'+pad)+'\n')
         if exit:
             cls.logfile.write('  exiting.\n\n')
