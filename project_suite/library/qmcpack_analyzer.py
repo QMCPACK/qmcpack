@@ -57,7 +57,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
         self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight'])
         self.fields=set(['energydensity','density'])
 
-        hdf_data_sources = set(['stat','storeconfig'])
+        hdf_data_sources = set(['stat','storeconfig','traces'])
         if h5py_unavailable:
             self.data_sources -= hdf_data_sources
         #end if
