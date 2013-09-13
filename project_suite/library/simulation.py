@@ -986,15 +986,7 @@ class SimulationInputTemplate(SimulationInput):
     name_chars = string.ascii_letters+string.digits+'_'
     name_characters = set(name_chars)
 
-    comparators = obj()
-    comparators.transfer_from({
-            '==':' == ',
-            '!=':' != ',
-            '<=':' <= ',
-            '>=':' >= ',
-            '<' :' < ',
-            '>' :' > ',
-            })
+    comparators = '== != <= >= < >'.split()
 
     def __init__(self,filepath=None,delimiter='|',conditionals=None,defaults=None):
         self.delimiter = delimiter
@@ -1077,7 +1069,7 @@ class SimulationInputTemplate(SimulationInput):
                 keywords.append(word)
                 klocs.append(i)
                 if expressions!=None:
-                    self.screen_conditional_expressions(expressions)
+                    self.screen_conditional_expressions(word,expressions)
                     conditional_expressions[word] = expressions
                 #end if
             #end if
@@ -1169,25 +1161,25 @@ class SimulationInputTemplate(SimulationInput):
     #end def fillout
 
 
-    def screen_conditional_expressions(self,expressions):
+    def screen_conditional_expressions(self,word,expressions):
         es = str(expressions)
-        for comp,compspace in self.comparators.iteritems():
-            es = es.replace(comp,compspace)
+        for comp in self.comparators:
+            es = es.replace(comp,'@')
         #end for
         es = es.replace('not ','').replace(' or ',':').replace(' and ',':')
         es = es.split(':')
         for e in es:
-            tokens = e.split()
-            if not len(tokens)==3:
+            tokens = e.split('@')
+            if not len(tokens)==2:
                 self.error('invalid sentinel expression encountered for template keyword {0}\n  invalid expression: {1}\n  this expression must be of the form "name [comparator] value" or a boolean combination of them "expr1 and expr2 or expr3 ..."'.format(word,expressions))
             #end if
-            name,comparator,value = tokens
-            if not name in self.conditional_variables:
+            name,value = tokens
+            if not name.strip() in self.conditional_variables:
                 self.error('conditional variable {0} has not been provided\n  valid options are: {1}'.format(name,self.conditional_variables.keys()))
             #end if
-            if not comparator in self.comparators:
-                self.error('invalid comparator encountered in conditional expression for template keyword {0}\n  invalid comparator encountered: {1}\n  valid options are: {2}'.format(word,comparator,self.comparators.keys()))
-            #end if
+            #if not comparator in self.comparators:
+            #    self.error('invalid comparator encountered in conditional expression for template keyword {0}\n  invalid comparator encountered: {1}\n  valid options are: {2}'.format(word,comparator,list(self.comparators)))
+            ##end if
         #end for
     #end def screen_conditional_expressions
 
