@@ -34,23 +34,23 @@ void QMCState::initialize(int argc, char **argv)
   while(i<argc)
   {
     string c(argv[i]);
-    if(c.find("dryrun") < c.size())
+    if(c.find("--dryrun") < c.size())
     {
       dryrun=true;
     }
-    else if(c.find("save_wfs") < c.size())
+    else if(c.find("--save_wfs") < c.size())
     {
       save_wfs=(c.find("no")>=c.size());
     }
-    else if(c.find("async_swap") < c.size())
+    else if(c.find("--async_swap") < c.size())
     {
       async_swap=(c.find("no")>=c.size());
     }
-    else if(c.find("help")< c.size())
+    else if(c.find("--help")< c.size())
     {
       stopit=true;
     }
-    else if(c.find("version")<c.size())
+    else if(c.find("--version")<c.size())
     {
       stopit=true;
     }
