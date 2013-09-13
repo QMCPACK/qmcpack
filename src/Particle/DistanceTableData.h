@@ -111,9 +111,10 @@ public:
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
 
-  typedef std::vector<IndexType>       IndexVectorType;
+  typedef std::vector<IndexType>         IndexVectorType;
   typedef TempDisplacement<RealType,DIM> TempDistType;
   typedef PooledData<RealType>           BufferType;
+  typedef pair<RealType,IndexType>       ripair;
 
   ///type of cell
   int CellType;
@@ -304,6 +305,23 @@ public:
 
   ///create storage for nwalkers
   virtual void create(int walkers) = 0;
+
+  /// find indices and distances of nearest neighbors particles to particle n
+  virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
+  {
+    APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
+  }
+
+  inline void check_neighbor_size(vector<ripair>& ri,bool transposed=false)
+  {
+    int m;
+    if(transposed)
+      m = N[SourceIndex];
+    else
+      m = N[VisitorIndex];
+    if(ri.size()!=m)
+      APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of neighbor particles");
+  }
 
   /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
    *

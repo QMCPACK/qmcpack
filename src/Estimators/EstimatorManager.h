@@ -183,6 +183,15 @@ public:
    */
   void stop(const vector<EstimatorManager*> m);
 
+
+  /** initialize trace data
+   */
+  void initialize_traces(TraceManager& tm);
+  /** finalize trace data
+   */
+  void finalize_traces();
+
+
   /** start  a block
    * @param steps number of steps in a block
    */

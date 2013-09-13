@@ -27,6 +27,7 @@
 //#define ENABLE_COMPOSITE_ESTIMATOR
 //#include "Estimators/CompositeEstimators.h"
 #include "Estimators/EstimatorManager.h"
+#include "Estimators/TraceManager.h"
 
 namespace qmcplusplus
 {
@@ -88,6 +89,8 @@ public:
    */
   void resetRun(BranchEngineType* brancher, EstimatorManager* est);
 
+  void resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces);
+
   inline RealType getTau()
   {
     //SpeciesSet tspecies(W.getSpeciesSet());
@@ -118,12 +121,18 @@ public:
     Psi.getLogs(logs);
   }
 
+  inline void set_step(int step)
+  {
+    W.current_step = step;
+  }
+
 
 
   ///** start a run */
   void startRun(int blocks, bool record);
   /** stop a run */
   void stopRun();
+  void stopRun2();
   /** reset the trial energy */
   void resetEtrial(RealType et);
 
@@ -218,11 +227,14 @@ public:
   {
     RealType t=0.5/Tau;
     RealType logGb=0.0;
-    for(int iat=0; iat<W.getTotalNum();++iat)
+    for(int iat=0; iat<W.getTotalNum(); ++iat)
       logGb += t*MassInvP[iat]*dot(displ[iat],displ[iat]);
     return -logGb;
   }
 
+public:
+  ///traces
+  TraceManager* Traces;
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;

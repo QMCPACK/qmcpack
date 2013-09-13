@@ -43,6 +43,8 @@ void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
     h5desc[loc]->open(gid);
   }
 }
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

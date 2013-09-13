@@ -30,6 +30,7 @@
 #include "Estimators/EstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "Estimators/TraceManager.h"
 
 class Communicate;
 
@@ -82,6 +83,10 @@ public:
    */
   bitset<4> QMCDriverMode;
 
+  /// whether to allow traces
+  bool allow_traces;
+  /// traces xml
+  xmlNodePtr traces_xml;
 
   /// Constructor.
   QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
@@ -131,6 +136,11 @@ public:
   xmlNodePtr getQMCNode();
 
   void putWalkers(vector<xmlNodePtr>& wset);
+
+  inline void putTraces(xmlNodePtr txml)
+  {
+    traces_xml=txml;
+  };
 
   virtual bool run() = 0;
 
@@ -191,6 +201,9 @@ public:
 
   ///Observables manager
   EstimatorManager* Estimators;
+
+  ///Traces manager
+  TraceManager* Traces;
 
   ///return the random generators
   inline vector<RandomGenerator_t*>& getRng()

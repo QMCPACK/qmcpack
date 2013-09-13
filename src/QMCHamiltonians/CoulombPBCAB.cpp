@@ -23,9 +23,9 @@ namespace qmcplusplus
 {
 
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
-                                   bool computeForces):
+                           bool computeForces):
   PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
-  ForceBase (ions, elns), MaxGridPoints(10000)
+  ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
   // if (ComputeForces)
   // 	InitVarReduction (0.5, 0, 3);
@@ -83,6 +83,22 @@ void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectabl
     addObservablesF(plist);
 }
 
+
+
+void CoulombPBCAB::checkout_particle_arrays(TraceManager& tm)
+{
+  Ve_sample = tm.checkout_real<1>(myName,Peln);
+  Vi_sample = tm.checkout_real<1>(myName,Pion);
+}
+
+void CoulombPBCAB::delete_particle_arrays()
+{
+  delete Ve_sample;
+  delete Vi_sample;
+}
+
+
+
 CoulombPBCAB::Return_t
 CoulombPBCAB::evaluate(ParticleSet& P)
 {
@@ -92,9 +108,209 @@ CoulombPBCAB::evaluate(ParticleSet& P)
     Value = evalLRwithForces(P) + evalSRwithForces(P) +myConst;
   }
   else
-    Value = evalLR(P) + evalSR(P) +myConst;
+    if(tracing_particle_quantities)
+      Value = spevaluate(P);
+    else
+      Value = evalLR(P) + evalSR(P) +myConst;
   return Value;
 }
+
+
+
+CoulombPBCAB::Return_t
+CoulombPBCAB::spevaluate(ParticleSet& P)
+{
+  RealType  Vsr = 0.0;
+  RealType  Vlr = 0.0;
+  RealType& Vc  = myConst;
+  Array<RealType,1>& Ve_samp = *Ve_sample;
+  Array<RealType,1>& Vi_samp = *Vi_sample;
+  Ve_samp = 0.0;
+  Vi_samp = 0.0;
+  {
+    //SR
+    const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+    RealType pairpot;
+    RealType z;
+    //Loop over distinct eln-ion pairs
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      z = .5*Zat[iat];
+      RadFunctorType* rVs=Vat[iat];
+      for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+      {
+        pairpot = z*Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));
+        Vi_samp(iat)+=pairpot;
+        Ve_samp(jat)+=pairpot;
+        Vsr+=pairpot;
+      }
+    }
+    Vsr *= 2.0;
+  }
+  {
+    //LR
+    const StructFact& RhoKA(*(PtclA.SK));
+    const StructFact& RhoKB(*(P.SK));
+    if(RhoKA.SuperCellEnum==SUPERCELL_SLAB)
+    {
+      APP_ABORT("CoulombPBCAB::spevaluate single particle traces have not been implemented for slab geometry");
+    }
+    else
+    {
+      //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
+      //          will likely require new function definitions
+      RealType v1; //single particle energy
+      RealType q;
+      for(int i=0; i<P.getTotalNum(); ++i)
+      {
+        q=.5*Qat[i];
+        v1=0.0;
+        for(int s=0; s<NumSpeciesA; s++)
+#if defined(USE_REAL_STRUCT_FACTOR)
+          v1+=Zspec[s]*q*AB->evaluate(RhoKA.KLists.kshell,RhoKA.rhok_r[s],RhoKA.rhok_i[s],RhoKB.eikr_r[i],RhoKB.eikr_i[i]);
+#else
+          v1+=Zspec[s]*q*AB->evaluate(RhoKA.KLists.kshell,RhoKA.rhok[s],RhoKB.eikr[i]);
+#endif
+        Ve_samp(i)+=v1;
+        Vlr+=v1;
+      }
+      for(int i=0; i<PtclA.getTotalNum(); ++i)
+      {
+        q=.5*Zat[i];
+        v1=0.0;
+        for(int s=0; s<NumSpeciesB; s++)
+#if defined(USE_REAL_STRUCT_FACTOR)
+          v1+=Qspec[s]*q*AB->evaluate(RhoKB.KLists.kshell,RhoKB.rhok_r[s],RhoKB.rhok_i[s],RhoKA.eikr_r[i],RhoKA.eikr_i[i]);
+#else
+          v1+=Qspec[s]*q*AB->evaluate(RhoKB.KLists.kshell,RhoKB.rhok[s],RhoKA.eikr[i]);
+#endif
+        Vi_samp(i)+=v1;
+        Vlr+=v1;
+      }
+    }
+  }
+  for(int i=0; i<Ve_samp.size(); ++i)
+    Ve_samp(i)+=Ve_const(i);
+  for(int i=0; i<Vi_samp.size(); ++i)
+    Vi_samp(i)+=Vi_const(i);
+  Value = Vsr + Vlr + Vc;
+#if defined(TRACE_CHECK)
+  RealType Vlrnow  = evalLR(P);
+  RealType Vsrnow  = evalSR(P);
+  RealType Vcnow   = myConst;
+  RealType Vnow    = Vlrnow+Vsrnow+Vcnow;
+  RealType Vesum    = Ve_samp.sum();
+  RealType Vecsum   = Ve_const.sum();
+  RealType Visum    = Vi_samp.sum();
+  RealType Vicsum   = Vi_const.sum();
+  RealType Vsum    = Vesum+Visum;
+  RealType Vcsum   = Vecsum+Vicsum;
+  RealType Vsrold  = evalSR_old(P);
+  RealType Vlrold  = evalLR_old(P);
+  RealType Vcold   = evalConsts_old(false);
+  RealType Vcorig  = evalConsts_orig(false);
+  if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<<endl;
+    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
+    app_log()<<"accumtest:   sum:"<< Vsum  <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<<endl;
+    app_log()<<"accumtest:   tot:"<< Vcnow <<endl;
+    app_log()<<"accumtest:   sum:"<< Vcsum  <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vesum-Visum)>TraceManager::trace_tol)
+  {
+    app_log()<<"sharetest: CoulombPBCAB::evaluate()"<<endl;
+    app_log()<<"sharetest:   e share:"<< Vesum  <<endl;
+    app_log()<<"sharetest:   i share:"<< Visum  <<endl;
+  }
+  if(abs(Vecsum-Vicsum)>TraceManager::trace_tol)
+  {
+    app_log()<<"sharetest: CoulombPBCAB::evalConsts()"<<endl;
+    app_log()<<"sharetest:   e share:"<< Vecsum  <<endl;
+    app_log()<<"sharetest:   i share:"<< Vicsum <<endl;
+  }
+  if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vsrold <<endl;
+    app_log()<<"versiontest:    mod:"<< Vsrnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vlrold <<endl;
+    app_log()<<"versiontest:    mod:"<< Vlrnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
+      abs(Vcnow-Vcorig)>TraceManager::trace_tol )
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vcold <<endl;
+    app_log()<<"versiontest:   orig:"<< Vcorig <<endl;
+    app_log()<<"versiontest:    mod:"<< Vcnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+#endif
+  return Value;
+}
+
+
+
+
+
+
+/** Evaluate the background term. Other constants are handled by AA potentials.
+ *
+ * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$
+ * @todo Here is where the charge system has to be handled.
+ */
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalConsts(bool report)
+{
+  int nelns = Peln.getTotalNum();
+  int nions = Pion.getTotalNum();
+  Ve_const.resize(nelns);
+  Vi_const.resize(nions);
+  Ve_const = 0.0;
+  Vi_const = 0.0;
+  RealType Consts=0.0;
+  RealType vs_k0 = AB->evaluateSR_k0();
+  RealType v1; //single particle energy
+  for(int i=0; i<nelns; ++i)
+  {
+    v1=0.0;
+    for(int s=0; s<NumSpeciesA; s++)
+      v1 += NofSpeciesA[s]*Zspec[s];
+    v1 *= -.5*Qat[i]*vs_k0;
+    Ve_const(i) = v1;
+    Consts += v1;
+  }
+  for(int i=0; i<nions; ++i)
+  {
+    v1=0.0;
+    for(int s=0; s<NumSpeciesB; s++)
+      v1 += NofSpeciesB[s]*Qspec[s];
+    v1 *= -.5*Zat[i]*vs_k0;
+    Vi_const(i) = v1;
+    Consts += v1;
+  }
+  if(report)
+    app_log() << "   Constant of PBCAB " << Consts << endl;
+  return Consts;
+}
+
+
+
+
+
 
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSR(ParticleSet& P)
@@ -164,7 +380,7 @@ CoulombPBCAB::evalLR(ParticleSet& P)
  * @todo Here is where the charge system has to be handled.
  */
 CoulombPBCAB::Return_t
-CoulombPBCAB::evalConsts()
+CoulombPBCAB::evalConsts_orig(bool report)
 {
   RealType Consts=0.0;
   RealType vs_k0 = AB->evaluateSR_k0();
@@ -176,9 +392,82 @@ CoulombPBCAB::evalConsts()
       Consts -= vs_k0*Qspec[j]*NofSpeciesB[j]*q;
     }
   }
-  app_log() << "   Constant of PBCAB " << Consts << endl;
+  if(report)
+    app_log() << "   Constant of PBCAB " << Consts << endl;
   return Consts;
 }
+
+
+
+
+
+
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalLR_old(ParticleSet& P)
+{
+  RealType res=0.0;
+  const StructFact& RhoKA(*(PtclA.SK));
+  const StructFact& RhoKB(*(P.SK));
+  for(int i=0; i<NumSpeciesA; i++)
+  {
+    RealType esum=0.0;
+    for(int j=0; j<NumSpeciesB; j++)
+    {
+#if defined(USE_REAL_STRUCT_FACTOR)
+      esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell,RhoKA.rhok_r[i],RhoKA.rhok_i[i],RhoKB.rhok_r[j],RhoKB.rhok_i[j]);
+#else
+      esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell,RhoKA.rhok[i],RhoKB.rhok[j]);
+#endif
+    } //speceln
+    res += Zspec[i]*esum;
+  }//specion
+  return res;
+}
+
+
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalSR_old(ParticleSet& P)
+{
+  const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+  RealType res=0.0;
+  //Loop over distinct eln-ion pairs
+  for(int iat=0; iat<NptclA; iat++)
+  {
+    RealType esum = 0.0;
+    RadFunctorType* rVs=Vat[iat];
+    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+    {
+      // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
+      esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));;
+    }
+    //Accumulate pair sums...species charge for atom i.
+    res += Zat[iat]*esum;
+  }
+  return res;
+}
+
+CoulombPBCAB::Return_t
+CoulombPBCAB::evalConsts_old(bool report)
+{
+  RealType v0_;
+  v0_ = AB->evaluateSR_k0();
+  //Can simplify this if we know a way to get number of particles with each
+  //groupID.
+  RealType Consts=0.0;
+  for(int i=0; i<NumSpeciesA; i++)
+  {
+    RealType q=Zspec[i]*NofSpeciesA[i];
+    for(int j=0; j<NumSpeciesB; j++)
+    {
+      Consts += -v0_*Qspec[j]*NofSpeciesB[j]*q;
+    }
+  }
+  if(report)
+    app_log() << "   Constant of PBCAB " << Consts << endl;
+  return Consts;
+}
+
+
 
 void CoulombPBCAB::initBreakup(ParticleSet& P)
 {

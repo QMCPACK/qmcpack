@@ -62,6 +62,8 @@ private:
   vector<xmlNodePtr> m_walkerset;
   ///xml mcwalkerset read-in elements
   vector<xmlNodePtr> m_walkerset_in;
+  ///traces xml
+  xmlNodePtr traces_xml;
   ///qmc sections
   vector<pair<xmlNodePtr,bool> > m_qmcaction;
   ///pointer to the last node of the main inputfile
@@ -90,7 +92,7 @@ private:
   bool executeCMCSection(xmlNodePtr cur);
   ///execute <debug/> element
   bool executeDebugSection(xmlNodePtr cur);
-
+   
 };
 }
 #endif

@@ -22,16 +22,14 @@ namespace qmcplusplus
 {
 
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
-                                   bool computeForces) :
+                           bool computeForces) :
   AA(0), myGrid(0), rVs(0),
   is_active(active), FirstTime(true), myConst(0.0),
-  ComputeForces(computeForces), ForceBase(ref,ref)
+  ComputeForces(computeForces), ForceBase(ref,ref), Ps(ref)
 {
   ReportEngine PRE("CoulombPBCAA","CoulombPBCAA");
-
   //save source tag
   SourceID=ref.tag();
-
   //create a distance table: just to get the table name
   DistanceTableData *d_aa = DistanceTable::add(ref);
   PtclRefName=d_aa->Name;
@@ -105,13 +103,143 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
+
+void CoulombPBCAA::checkout_particle_arrays(TraceManager& tm)
+{
+  V_sample = tm.checkout_real<1>(myName,Ps);
+  if(!is_active)
+    spevaluate(Ps);
+}
+
+void CoulombPBCAA::delete_particle_arrays()
+{
+  delete V_sample;
+}
+
+
 CoulombPBCAA::Return_t
 CoulombPBCAA::evaluate(ParticleSet& P)
 {
   if(is_active)
-    Value = evalLR(P)+evalSR(P)+myConst;
+  {
+    if(tracing_particle_quantities)
+      Value = spevaluate(P);
+    else
+      Value = evalLR(P)+evalSR(P)+myConst;
+  }
   return Value;
 }
+
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::spevaluate(ParticleSet& P)
+{
+  RealType  Vsr = 0.0;
+  RealType  Vlr = 0.0;
+  RealType& Vc  = myConst;
+  Array<RealType,1>& V_samp = *V_sample;
+  V_samp = 0.0;
+  {
+    //SR
+    const DistanceTableData &d_aa(*P.DistTables[0]);
+    RealType pairpot; //energy for single pair
+    RealType z;
+    for(int ipart=0; ipart<NumCenters; ipart++)
+    {
+      z = .5*Zat[ipart];
+      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      {
+        pairpot = z*Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
+        V_samp(ipart)+=pairpot;
+        V_samp(jpart)+=pairpot;
+        Vsr += pairpot;
+      }
+    }
+    Vsr *= 2.0;
+  }
+  {
+    //LR
+    const StructFact& PtclRhoK(*(P.SK));
+    if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
+    {
+      APP_ABORT("CoulombPBCAA::spevaluate single particle traces have not been implemented for slab geometry");
+    }
+    else
+    {
+      //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
+      RealType v1; //single particle energy
+      RealType z;
+      for(int i=0; i<NumCenters; i++)
+      {
+        z  = .5*Zat[i];
+        v1 = 0.0;
+        for(int s=0; s<NumSpecies; ++s){
+#if defined(USE_REAL_STRUCT_FACTOR)
+          v1 += z*Zspec[s]*AA->evaluate(PtclRhoK.KLists.kshell,PtclRhoK.rhok_r[s],PtclRhoK.rhok_i[s],PtclRhoK.eikr_r[i],PtclRhoK.eikr_i[i]);
+#else
+          v1 += z*Zspec[s]*AA->evaluate(PtclRhoK.KLists.kshell,PtclRhoK.rhok[s],PtclRhoK.eikr[i]);
+#endif
+        }
+        V_samp(i)+=v1;
+        Vlr += v1;
+      }
+    }
+  }
+  for(int i=0; i<V_sample->size(); ++i)
+    V_samp(i)+=V_const(i);
+  Value = Vsr + Vlr + Vc;
+#if defined(TRACE_CHECK)
+  RealType Vlrnow  = evalLR(P);
+  RealType Vsrnow  = evalSR(P);
+  RealType Vcnow   = myConst;
+  RealType Vnow    = Vlrnow+Vsrnow+Vcnow;
+  RealType Vsum    = V_samp.sum();
+  RealType Vcsum   = V_const.sum();
+  RealType Vsrold  = evalSR_old(P);
+  RealType Vlrold  = evalLR_old(P);
+  RealType Vcold   = evalConsts_old(false);
+  RealType Vcorig  = evalConsts_orig(false);
+  if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<<endl;
+    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
+    app_log()<<"accumtest:   sum:"<< Vsum  <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<<endl;
+    app_log()<<"accumtest:   tot:"<< Vcnow <<endl;
+    app_log()<<"accumtest:   sum:"<< Vcsum  <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vsrold <<endl;
+    app_log()<<"versiontest:    mod:"<< Vsrnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vlrold <<endl;
+    app_log()<<"versiontest:    mod:"<< Vlrnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+  if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
+      abs(Vcnow-Vcorig)>TraceManager::trace_tol )
+  {
+    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<<endl;
+    app_log()<<"versiontest:    old:"<< Vcold <<endl;
+    app_log()<<"versiontest:   orig:"<< Vcorig <<endl;
+    app_log()<<"versiontest:    mod:"<< Vcnow <<endl;
+    APP_ABORT("Trace check failed");
+  }
+#endif
+  return Value;
+}
+
 
 CoulombPBCAA::Return_t
 CoulombPBCAA::registerData(ParticleSet& P, BufferType& buffer)
@@ -255,6 +383,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   MemberAttribIndx = tspecies.addAttribute("membersize");
   NumCenters = P.getTotalNum();
   NumSpecies = tspecies.TotalNum;
+  V_const.resize(NumCenters);
   Zat.resize(NumCenters);
   Zspec.resize(NumSpecies);
   NofSpecies.resize(NumSpecies);
@@ -278,6 +407,105 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
   }
 }
+
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalLRwithForces(ParticleSet& P)
+{
+  RealType LR=0.0;
+  const StructFact& PtclRhoK(*(P.SK));
+  vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
+  for(int spec2=0; spec2<NumSpecies; spec2++)
+  {
+    RealType Z2 = Zspec[spec2];
+    for (int iat=0; iat<grad.size(); iat++)
+      grad[iat] = TinyVector<RealType,DIM>(0.0);
+    AA->evaluateGrad(P, P, spec2, Zat, grad);
+    for (int iat=0; iat<grad.size(); iat++)
+      forces[iat] += Z2*grad[iat];
+  } //spec2
+  return evalLR(P);
+}
+
+
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalSRwithForces(ParticleSet& P)
+{
+  const DistanceTableData *d_aa = P.DistTables[0];
+  RealType SR=0.0;
+  for(int ipart=0; ipart<NumCenters; ipart++)
+  {
+    RealType esum = 0.0;
+    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
+    {
+      RealType rV, d_rV_dr, d2_rV_dr2;
+      rV = rVs->splint(d_aa->r(nn), d_rV_dr, d2_rV_dr2);
+      RealType V = rV *d_aa->rinv(nn);
+      esum += Zat[jpart]*d_aa->rinv(nn)*rV;
+      PosType grad = Zat[jpart]*Zat[ipart]*
+                     (d_rV_dr - V)*d_aa->rinv(nn)*d_aa->rinv(nn)*d_aa->dr(nn);
+      forces[ipart] += grad;
+      forces[jpart] -= grad;
+    }
+    //Accumulate pair sums...species charge for atom i.
+    SR += Zat[ipart]*esum;
+  }
+  return SR;
+}
+
+
+/** evaluate the constant term that does not depend on the position
+ *
+ * \htmlonly
+ * <ul>
+ * <li> self-energy: \f$ -\frac{1}{2}\sum_{i} v_l(r=0) q_i^2 = -\frac{1}{2}v_l(r=0) \sum_{alpha} N^{\alpha} q^{\alpha}^2\f$
+ * <li> background term \f$ V_{bg} = -\frac{1}{2}\sum_{\alpha}\sum_{\beta} N^{\alpha}q^{\alpha}N^{\beta}q^{\beta} v_s(k=0)\f$
+ * </ul>
+ * \endhtmlonly
+ * CoulombPBCABTemp contributes additional background term which completes the background term
+ */
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalConsts(bool report)
+{
+  RealType Consts=0.0; // constant term
+  RealType v1; //single particle energy
+  V_const = 0.0;
+  //v_l(r=0) including correction due to the non-periodic direction
+  RealType vl_r0 = AA->evaluateLR_r0();
+  for(int ipart=0; ipart<NumCenters; ipart++)
+  {
+    v1 =  -.5*Zat[ipart]*Zat[ipart]*vl_r0;
+    V_const(ipart) += v1;
+    Consts += v1;
+  }
+  if(report)
+    app_log() << "   PBCAA self-interaction term " << Consts << endl;
+  //Compute Madelung constant: this is not correct for general cases
+  MC0 = 0.0;
+  for(int i=0; i<AA->Fk.size(); i++)
+    MC0 += AA->Fk[i];
+  MC0 = 0.5*(MC0 - vl_r0);
+  //Neutraling background term
+  RealType vs_k0=AA->evaluateSR_k0(); //v_s(k=0)
+  for(int ipart=0; ipart<NumCenters; ipart++)
+  {
+    v1 = 0.0;
+    for(int spec=0; spec<NumSpecies; spec++)
+      v1 += NofSpecies[spec]*Zspec[spec];
+    v1 *= -.5*Zat[ipart]*vs_k0;
+    V_const(ipart) += v1;
+    Consts += v1;
+  }
+  if(report)
+    app_log() << "   PBCAA total constant " << Consts << endl;
+  //app_log() << "   MC0 of PBCAA " << MC0 << endl;
+  return Consts;
+}
+
+
+
+
 
 CoulombPBCAA::Return_t
 CoulombPBCAA::evalSR(ParticleSet& P)
@@ -345,63 +573,7 @@ CoulombPBCAA::evalLR(ParticleSet& P)
 
 
 CoulombPBCAA::Return_t
-CoulombPBCAA::evalLRwithForces(ParticleSet& P)
-{
-  RealType LR=0.0;
-  const StructFact& PtclRhoK(*(P.SK));
-  vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
-  for(int spec2=0; spec2<NumSpecies; spec2++)
-  {
-    RealType Z2 = Zspec[spec2];
-    for (int iat=0; iat<grad.size(); iat++)
-      grad[iat] = TinyVector<RealType,DIM>(0.0);
-    AA->evaluateGrad(P, P, spec2, Zat, grad);
-    for (int iat=0; iat<grad.size(); iat++)
-      forces[iat] += Z2*grad[iat];
-  } //spec2
-  return evalLR(P);
-}
-
-
-
-CoulombPBCAA::Return_t
-CoulombPBCAA::evalSRwithForces(ParticleSet& P)
-{
-  const DistanceTableData *d_aa = P.DistTables[0];
-  RealType SR=0.0;
-  for(int ipart=0; ipart<NumCenters; ipart++)
-  {
-    RealType esum = 0.0;
-    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
-    {
-      RealType rV, d_rV_dr, d2_rV_dr2;
-      rV = rVs->splint(d_aa->r(nn), d_rV_dr, d2_rV_dr2);
-      RealType V = rV *d_aa->rinv(nn);
-      esum += Zat[jpart]*d_aa->rinv(nn)*rV;
-      PosType grad = Zat[jpart]*Zat[ipart]*
-                     (d_rV_dr - V)*d_aa->rinv(nn)*d_aa->rinv(nn)*d_aa->dr(nn);
-      forces[ipart] += grad;
-      forces[jpart] -= grad;
-    }
-    //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart]*esum;
-  }
-  return SR;
-}
-
-
-/** evaluate the constant term that does not depend on the position
- *
- * \htmlonly
- * <ul>
- * <li> self-energy: \f$ -\frac{1}{2}\sum_{i} v_l(r=0) q_i^2 = -\frac{1}{2}v_l(r=0) \sum_{alpha} N^{\alpha} q^{\alpha}^2\f$
- * <li> background term \f$ V_{bg} = -\frac{1}{2}\sum_{\alpha}\sum_{\beta} N^{\alpha}q^{\alpha}N^{\beta}q^{\beta} v_s(k=0)\f$
- * </ul>
- * \endhtmlonly
- * CoulombPBCABTemp contributes additional background term which completes the background term
- */
-CoulombPBCAA::Return_t
-CoulombPBCAA::evalConsts()
+CoulombPBCAA::evalConsts_orig(bool report)
 {
   //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
   //const Vector<RealType> &coefs(AA->coefs);
@@ -414,7 +586,8 @@ CoulombPBCAA::evalConsts()
     RealType n = NofSpecies[spec];
     Consts -= 0.5*vl_r0*z*z*n;
   }
-  app_log() << "   PBCAA self-interaction term " << Consts << endl;
+  if(report)
+    app_log() << "   PBCAA self-interaction term " << Consts << endl;
   //Compute Madelung constant: this is not correct for general cases
   MC0 = 0.0;
   for(int i=0; i<AA->Fk.size(); i++)
@@ -434,10 +607,108 @@ CoulombPBCAA::evalConsts()
       Consts -= vs_k0*za*zb*na*nb;
     }
   }
-  app_log() << "   PBCAA total constant " << Consts << endl;
+  if(report)
+    app_log() << "   PBCAA total constant " << Consts << endl;
   //app_log() << "   MC0 of PBCAA " << MC0 << endl;
   return Consts;
 }
+
+
+
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalSR_old(ParticleSet& P)
+{
+  const DistanceTableData *d_aa = P.DistTables[0];
+  RealType SR=0.0;
+  for(int ipart=0; ipart<NumCenters; ipart++)
+  {
+    RealType esum = 0.0;
+    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
+    {
+      //if(d_aa->r(nn)>=myRcut) continue;
+      //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
+      esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
+    }
+    //Accumulate pair sums...species charge for atom i.
+    SR += Zat[ipart]*esum;
+  }
+  return SR;
+}
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalLR_old(ParticleSet& P)
+{
+  RealType LR=0.0;
+  const StructFact& PtclRhoK(*(P.SK));
+  for(int spec1=0; spec1<NumSpecies; spec1++)
+  {
+    RealType Z1 = Zspec[spec1];
+    for(int spec2=spec1; spec2<NumSpecies; spec2++)
+    {
+      RealType Z2 = Zspec[spec2];
+#if defined(USE_REAL_STRUCT_FACTOR)
+      RealType temp=AA->evaluate(PtclRhoK.KLists.kshell,PtclRhoK.rhok_r[spec1],PtclRhoK.rhok_i[spec1],PtclRhoK.rhok_r[spec2],PtclRhoK.rhok_i[spec2]);
+#else
+      RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+#endif
+      if(spec2==spec1)
+        LR += 0.5*Z1*Z2*temp;
+      else
+        LR += Z1*Z2*temp;
+    } //spec2
+  }//spec1
+  //LR*=0.5;
+  return LR;
+}
+
+CoulombPBCAA::Return_t
+CoulombPBCAA::evalConsts_old(bool report)
+{
+  //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
+  //const Vector<RealType> &coefs(AA->coefs);
+  RealType Consts=0.0, V0=0.0;
+  //for(int n=0; n<coefs.size(); n++)
+  //  V0 += coefs[n]*Basis.h(n,0.0); //For charge q1=q2=1
+  V0 = AA->evaluateLR_r0();
+  for(int spec=0; spec<NumSpecies; spec++)
+  {
+    RealType z = Zspec[spec];
+    RealType n = NofSpecies[spec];
+    Consts += -V0*0.5*z*z*n;
+  }
+  //V0 = Basis.get_rc()*Basis.get_rc()*0.5;
+  //for(int n=0; n<Basis.NumBasisElem(); n++)
+  //  V0 -= coefs[n]*Basis.hintr2(n);
+  //V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
+  V0 = AA->evaluateSR_k0();
+  for(int spec=0; spec<NumSpecies; spec++)
+  {
+    RealType z = Zspec[spec];
+    int n = NofSpecies[spec];
+    Consts += -V0*z*z*0.5*n*n;
+  }
+  //If we have more than one species in this particleset then there is also a
+  //single AB term that should be added to the last constant...
+  //=-Na*Nb*V0*Za*Zb
+  //This accounts for the partitioning of the neutralizing background...
+  for(int speca=0; speca<NumSpecies; speca++)
+  {
+    RealType za = Zspec[speca];
+    int na = NofSpecies[speca];
+    for(int specb=speca+1; specb<NumSpecies; specb++)
+    {
+      RealType zb = Zspec[specb];
+      int nb = NofSpecies[specb];
+      Consts += -V0*za*zb*na*nb;
+    }
+  }
+  if(report)
+    app_log() << "   Constant of PBCAA " << Consts << endl;
+  return Consts;
+}
+
+
 
 QMCHamiltonianBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {

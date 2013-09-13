@@ -86,6 +86,12 @@ struct NonLocalECPComponent: public QMCTraits
 
   DistanceTableData* myTable;
 
+  ///pointers to trace data of containing NonLocalECPotential object
+  Array<TraceReal,1>* Ve_sample;
+  Array<TraceReal,1>* Vi_sample;
+  bool tracing_particle_quantities;
+
+
   NonLocalECPComponent();
 
   ///destructor
@@ -108,8 +114,7 @@ struct NonLocalECPComponent: public QMCTraits
   void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
   template<typename T> void randomize_grid(vector<T> &sphere);
 
-  RealType
-  evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
+  RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
 
   RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
                     PosType &force_iat);

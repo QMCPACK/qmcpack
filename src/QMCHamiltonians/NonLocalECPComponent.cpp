@@ -22,7 +22,9 @@ namespace qmcplusplus
 
 NonLocalECPComponent::NonLocalECPComponent():
   lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random)
-{ }
+{
+  tracing_particle_quantities = false;
+}
 
 NonLocalECPComponent::~NonLocalECPComponent()
 {
@@ -99,6 +101,7 @@ NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
 {
   RealType esum=0.0;
+  RealType pairpot;
   vector<PosType> deltarV(nknot);
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
@@ -151,13 +154,19 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
     }
     if(nchannel==1)
     {
-      esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+      pairpot = vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
     }
     else
     {
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-      esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
+    if(tracing_particle_quantities)
+    {
+      (*Vi_sample)(iat) += .5*pairpot;
+      (*Ve_sample)(iel) += .5*pairpot;
+    }
+    esum += pairpot;
     ////////////////////////////////////
     //Original implmentation by S. C.
     //const char TRANS('T');
@@ -182,6 +191,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
   return 0.0;
 #else
   RealType esum=0.0;
+  RealType pairpot;
   force_iat = PosType();
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
@@ -256,13 +266,19 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
     }
     if(nchannel==1)
     {
-      esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+      pairpot = vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
     }
     else
     {
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-      esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
+    if(tracing_particle_quantities)
+    {
+      (*Vi_sample)(iat) += .5*pairpot;
+      (*Ve_sample)(iel) += .5*pairpot;
+    }
+    esum += pairpot;
     ////////////////////////////////////
     //Original implmentation by S. C.
     //const char TRANS('T');
@@ -287,6 +303,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
   return 0.0;
 #else
   RealType esum=0.0;
+  RealType pairpot;
   force_iat = PosType();
   pulay_iat = PosType();
   PosType psi_alpha = psi.evalGradSource(W, ions, iat);
@@ -374,13 +391,19 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
     }
     if(nchannel==1)
     {
-      esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+      pairpot = vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
     }
     else
     {
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-      esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
+    if(tracing_particle_quantities)
+    {
+      (*Vi_sample)(iat) += .5*pairpot;
+      (*Ve_sample)(iel) += .5*pairpot;
+    }
+    esum += pairpot;
     ////////////////////////////////////
     //Original implmentation by S. C.
     //const char TRANS('T');
@@ -551,6 +574,7 @@ NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy)
 {
   RealType esum=0.0;
+  RealType pairpot;
   //int iel=0;
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
@@ -601,7 +625,13 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
       RealType lsum=0;
       for(int l=0; l <nchannel; l++)
         lsum += vrad[l]*lpol[ angpp_m[l] ];
-      esum += Txy[txyCounter++].Weight *= lsum;
+      pairpot = Txy[txyCounter++].Weight *= lsum;
+      if(tracing_particle_quantities)
+      {
+        (*Vi_sample)(iat) += .5*pairpot;
+        (*Ve_sample)(iel) += .5*pairpot;
+      }
+      esum += pairpot;
     }
     //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
     //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
@@ -617,6 +647,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
   return 0.0;
 #else
   RealType esum=0.0;
+  RealType pairpot;
   force_iat = PosType();
   //int iel=0;
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
@@ -673,7 +704,13 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
       RealType lsum=0;
       for(int l=0; l <nchannel; l++)
         lsum += vrad[l]*lpol[ angpp_m[l] ];
-      esum += Txy[txyCounter++].Weight *= lsum;
+      pairpot = Txy[txyCounter++].Weight *= lsum;
+      if(tracing_particle_quantities)
+      {
+        (*Vi_sample)(iat) += .5*pairpot;
+        (*Ve_sample)(iel) += .5*pairpot;
+      }
+      esum += pairpot;
     }
     // Force calculation
     for (int j=0,jl=0; j<nknot; j++)

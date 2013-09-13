@@ -97,6 +97,14 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   bool kcdifferent;
   RealType minkc;
 
+  //particle trace samples
+  Array<TraceReal,1>* Ve_sample;
+  Array<TraceReal,1>* Vi_sample;
+  Array<TraceReal,1>  Ve_const;
+  Array<TraceReal,1>  Vi_const;
+  ParticleSet& Peln;
+  ParticleSet& Pion;
+
   CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
 
   ///// copy constructor
@@ -106,12 +114,17 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
+  virtual void checkout_particle_arrays(TraceManager& tm);
+  virtual void delete_particle_arrays();
+
   Return_t evaluate(ParticleSet& P);
 
   inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
+
+  Return_t spevaluate(ParticleSet& P);
 
   Return_t registerData(ParticleSet& P, BufferType& buffer);
   Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
@@ -136,11 +149,17 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
   void initBreakup(ParticleSet& P);
 
+  Return_t evalConsts_orig(bool report=true);
+  Return_t evalSR_old(ParticleSet& P);
+  Return_t evalLR_old(ParticleSet& P);
+  Return_t evalConsts_old(bool report=true);
+
+
   Return_t evalSR(ParticleSet& P);
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
-  Return_t evalConsts();
+  Return_t evalConsts(bool report=true);
   Return_t evaluateForPyP(ParticleSet& P);
   void add(int groupID, RadFunctorType* ppot);
 

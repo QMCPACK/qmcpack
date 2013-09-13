@@ -45,7 +45,7 @@ void add_p_timer(vector<NewTimer*>& timers)
 
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
-  , ThreadID(0), SK(0), ParentTag(-1)
+  , ThreadID(0), SK(0), ParentTag(-1), ParentName("")
 {
   initParticleSet();
   initPropertyList();
@@ -54,7 +54,7 @@ ParticleSet::ParticleSet()
 
 ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
-  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag())
+  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag()), ParentName(p.parentName())
 {
   initBase();
   initParticleSet();
@@ -176,12 +176,10 @@ void ParticleSet::resetGroups()
   double m0=mySpecies(massind,0);
   for(int ig=1; ig<nspecies; ig++)
     SameMass &= (mySpecies(massind,ig)== m0);
-
   if(SameMass)
     app_log() << "  All the species have the same mass " << m0 << endl;
   else
     app_log() << "  Distinctive masses for each species " << endl;
-
   for(int iat=0; iat<Mass.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
   vector<int> ng(nspecies,0);
@@ -403,6 +401,25 @@ int ParticleSet::addTable(const ParticleSet& psrc)
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
   }
   app_log().flush();
+  return tid;
+}
+
+int ParticleSet::getTable(const ParticleSet& psrc)
+{
+  int tid;
+  if (DistTables.empty())
+    tid = -1;
+  else
+    if (psrc.tag() == ObjectTag)
+      tid = 0;
+    else
+    {
+      map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+      if (tit == myDistTableMap.end())
+        tid = -1;
+      else
+        tid = (*tit).second;
+    }
   return tid;
 }
 

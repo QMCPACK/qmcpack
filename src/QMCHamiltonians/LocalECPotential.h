@@ -53,6 +53,11 @@ struct LocalECPotential: public QMCHamiltonianBase
   vector<RealType> gZeff;
   ///energy per particle
   Vector<RealType> PPart;
+  ///single particle trace samples
+  Array<TraceReal,1>* Ve_sample;
+  Array<TraceReal,1>* Vi_sample;
+  const ParticleSet& Peln;
+  const ParticleSet& Pion;
 
   LocalECPotential(const ParticleSet& ions, ParticleSet& els);
 
@@ -60,12 +65,19 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
+  virtual void checkout_particle_arrays(TraceManager& tm);
+  virtual void delete_particle_arrays();
+
   Return_t evaluate(ParticleSet& P);
 
   inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
+
+  Return_t spevaluate(ParticleSet& P);
+  Return_t evaluate_orig(ParticleSet& P);
+
   Return_t registerData(ParticleSet& P, BufferType& buffer);
   Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);

@@ -23,6 +23,7 @@
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {
@@ -61,6 +62,15 @@ inline T laplacian(const TinyVector<complex<T>,D>& g, const complex<T>& l)
  \f}
  */
 
+
+inline string int2string(const int& i)
+{
+  stringstream ss;
+  ss<<i;
+  return ss.str();
+}
+
+
 template<typename T>
 struct BareKineticEnergy: public QMCHamiltonianBase
 {
@@ -77,6 +87,11 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   ParticleSet::ParticleGradient_t Gtmp;
   ParticleSet::ParticleLaplacian_t Ltmp;
 
+  ///single particle trace samples
+  Array<TraceReal,1>* T_sample;
+  Array<TraceComp,2>* p_sample;
+  ParticleSet& Ps;
+
   /** constructor
    *
    * Kinetic operators need to be re-evaluated during optimization.
@@ -92,7 +107,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p)
+  BareKineticEnergy(ParticleSet& p) : Ps(p)
   {
     UpdateMode.set(OPTIMIZABLE,1);
     SpeciesSet& tspecies(p.getSpeciesSet());
@@ -112,7 +127,112 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P) { }
 
+
+  virtual void checkout_particle_arrays(TraceManager& tm)
+  {
+    T_sample = tm.checkout_real<1>(myName,Ps);
+    p_sample = tm.checkout_complex<2>("momentum",Ps,DIM);
+  }
+
+  virtual void delete_particle_arrays()
+  {
+    delete T_sample;
+    delete p_sample;
+  }
+
+
+
   inline Return_t evaluate(ParticleSet& P)
+  {
+    if(tracing_particle_quantities)
+    {
+      Value = spevaluate(P);
+    }
+    else
+      if(SameMass)
+      {
+        Value = Dot(P.G,P.G) + Sum(P.L);
+        Value*=-OneOver2M;
+      }
+      else
+      {
+        Value=0.0;
+        for(int i=0; i<MinusOver2M.size(); ++i)
+        {
+          T x=0.0;
+          for(int j=P.first(i); j<P.last(i); ++j)
+            x += laplacian(P.G[j],P.L[j]);
+          Value += x*MinusOver2M[i];
+        }
+      }
+    return Value;
+  }
+
+
+  inline Return_t
+  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  {
+    return evaluate(P);
+  }
+
+
+  inline Return_t spevaluate(ParticleSet& P)
+  {
+    Array<RealType,1>&          T_samp = *T_sample;
+    Array<complex<RealType>,2>& p_samp = *p_sample;
+    T t1=0.0;
+    Value = 0.0;
+    if(SameMass)
+    {
+      for(int i=0; i<P.getTotalNum(); i++)
+      {
+        t1 = -OneOver2M*( real(P.L[i]) + dot_real(P.G[i],P.G[i]) );
+        T_samp(i) = (RealType)t1;
+        for(int d=0; d<DIM; ++d)
+          p_samp(i,d) = P.G[i][d];
+        Value += t1;
+      }
+    }
+    else
+    {
+      for(int s=0; s<MinusOver2M.size(); ++s)
+      {
+        T mlambda = MinusOver2M[s];
+        for(int i=P.first(s); i<P.last(s); ++i)
+        {
+          t1 = mlambda*( real(P.L[i]) + dot_real(P.G[i],P.G[i]) );
+          T_samp(i) = t1;
+          for(int d=0; d<DIM; ++d)
+            p_samp(i,d) = P.G[i][d];
+          Value += t1;
+        }
+      }
+    }
+#if defined(TRACE_CHECK)
+    RealType Vnow = Value;
+    RealType Vsum = T_samp.sum();
+    RealType Vold = evaluate_orig(P);
+    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    {
+      app_log()<<"accumtest: BareKineticEnergy::evaluate()"<<endl;
+      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
+      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      APP_ABORT("Trace check failed");
+    }
+    if(abs(Vold-Vnow)>TraceManager::trace_tol)
+    {
+      app_log()<<"versiontest: BareKineticEnergy::evaluate()"<<endl;
+      app_log()<<"versiontest:   orig:"<< Vold <<endl;
+      app_log()<<"versiontest:    mod:"<< Vnow <<endl;
+      APP_ABORT("Trace check failed");
+    }
+#endif
+    return Value;
+  }
+
+
+
+  inline Return_t evaluate_orig(ParticleSet& P)
   {
     if(SameMass)
     {
@@ -133,11 +253,6 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
 
   inline Return_t
   registerData(ParticleSet& P, BufferType& buffer)

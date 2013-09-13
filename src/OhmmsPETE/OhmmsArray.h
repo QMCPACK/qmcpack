@@ -65,14 +65,29 @@ public:
     resize(l,m,n,o);
   }
 
+  // specialized for something like TinyVector
+  template<typename ST1>
+  Array(ST1* dims)
+  {
+    resize(dims);
+  }
+
   // Destructor
   ~Array() {}
 
+  inline unsigned dim() const
+  {
+    return D;
+  }
+  inline size_t* shape() const
+  {
+    return &Length[0];
+  }
   inline size_t size() const
   {
     return X.size();
   }
-  size_t size(int i) const
+  inline size_t size(int i) const
   {
     return Length[i];
   }
@@ -187,6 +202,14 @@ public:
                             size_t k, size_t l) const
   {
     return X[l+Length[3]*(k+Length[2]*(j+Length[1]*i))];
+  }
+
+  inline Type_t sum()
+  {
+    Type_t s=0;
+    for(int i=0; i<X.size(); ++i)
+      s+=X[i];
+    return s;
   }
 
 private:

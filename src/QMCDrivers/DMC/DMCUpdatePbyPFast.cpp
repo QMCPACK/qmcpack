@@ -82,7 +82,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
       RealType tauovermass = Tau*MassInvS[ig];
       RealType oneover2tau = 0.5/(tauovermass);
       RealType sqrttau = std::sqrt(tauovermass);
-
       for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
         //get the displacement
@@ -178,12 +177,18 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
       advanced=false;
       thisWalker.Age++;
       thisWalker.Properties(R2ACCEPTED)=0.0;
+      //weight is set to 0 for traces
+      // consistent w/ no evaluate/auxHevaluate
+      RealType wtmp = thisWalker.Weight;
+      thisWalker.Weight = 0.0;
       H.rejectedMove(W,thisWalker);
+      thisWalker.Weight = wtmp;
       ++nAllRejected;
       enew=eold;//copy back old energy
       gf_acc=1.0;
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     }
+    Traces->buffer_sample();
     if(UseTMove)
     {
       int ibar = nonLocalOps.selectMove(RandomGen());

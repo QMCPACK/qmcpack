@@ -33,14 +33,15 @@ namespace qmcplusplus
 {
 
 QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
-  : MPIObjectBase(0), branchEngine(0)
-  , W(w), Psi(psi), H(h), psiPool(ppool), Estimators(0), qmcNode(NULL), wOut(0)
+  : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
+    Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {
   //set defaults
   ResetRandom=false;
   AppendRun=false;
   DumpConfig=false;
   ConstPopulation=true; //default is a fixed population method
+  allow_traces = false;
   MyCounter=0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
@@ -159,6 +160,12 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
+  //create and initialize traces
+  if(Traces==0)
+  {
+    Traces = new TraceManager(myComm);
+  }
+  Traces->put(traces_xml,allow_traces,RootName);
   branchEngine->put(cur);
   Estimators->put(W,H,cur);
   if(wOut==0)
@@ -209,10 +216,8 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
       h5FileRoot = W_in.getFileRoot();
   //clear the walker set
   wset.clear();
-
   int nwtot=W.getActiveWalkers();
   myComm->bcast(nwtot);
-
   if(nwtot)
   {
     int np=myComm->size();
@@ -295,13 +300,12 @@ QMCDriver::addWalkers(int nwalkers)
     {
       app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  endl;
     }
-
   setWalkerOffsets();
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
   ////myComm->allreduce(nw);
 }
-
+   
 void QMCDriver::setWalkerOffsets()
 {
   vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
@@ -311,6 +315,12 @@ void QMCDriver::setWalkerOffsets()
     nwoff[ip+1]=nwoff[ip]+nw[ip];
   W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
+  long id=nwoff[myComm->rank()];
+  for(int iw=0; iw<nw[myComm->rank()]; ++iw,++id)
+  {
+    W[iw]->ID       = id;
+    W[iw]->ParentID = id;
+  }
   app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;
   app_log() << "  Total weight: " << W.EnsembleProperty.Weight  <<  endl;
 }
@@ -356,28 +366,31 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4WalkerDump,"period");
         rAttrib.put(tcur);
       }
-      else if(cname == "checkpoint")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(Period4CheckPoint,"stride");
-        rAttrib.add(Period4CheckPoint,"period");
-        rAttrib.put(tcur);
-        //DumpConfig=(Period4CheckPoint>0);
-      }
-      else if(cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(Period4ConfigDump,"stride");
-        rAttrib.add(Period4ConfigDump,"period");
-        rAttrib.put(tcur);
-      } else if(cname == "random")
+      else
+        if(cname == "checkpoint")
         {
-          ResetRandom = true;
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4CheckPoint,"stride");
+          rAttrib.add(Period4CheckPoint,"period");
+          rAttrib.put(tcur);
+          //DumpConfig=(Period4CheckPoint>0);
         }
+        else
+          if(cname == "dumpconfig")
+          {
+            OhmmsAttributeSet rAttrib;
+            rAttrib.add(Period4ConfigDump,"stride");
+            rAttrib.add(Period4ConfigDump,"period");
+            rAttrib.put(tcur);
+          }
+          else
+            if(cname == "random")
+            {
+              ResetRandom = true;
+            }
       tcur=tcur->next;
     }
   }
-
   int oldStepsBetweenSamples=nStepsBetweenSamples;
   //set the minimum blocks
   if (nBlocks<1)
@@ -396,7 +409,8 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
     nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
-    if(nBlocks==1) nBlocks=nSamplesPerThread;
+    if(nBlocks==1)
+      nBlocks=nSamplesPerThread;
     if(nTargetSamples)
     {
       int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
@@ -450,7 +464,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << "  (input="<<oldStepsBetweenSamples<<")" << endl;
   else
     app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
-  
   if(DumpConfig)
     app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
   else

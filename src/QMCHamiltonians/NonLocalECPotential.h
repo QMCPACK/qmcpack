@@ -43,6 +43,11 @@ struct NonLocalECPotential: public QMCHamiltonianBase,
   ///true if we should compute forces
   bool ComputeForces;
   ParticleSet::ParticlePos_t PulayTerm;
+  ///single particle trace samples
+  Array<TraceReal,1>* Ve_sample;
+  Array<TraceReal,1>* Vi_sample;
+  ParticleSet& Peln;
+  ParticleSet& Pion;
 
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
                       TrialWaveFunction& psi, bool computeForces=false);
@@ -50,6 +55,9 @@ struct NonLocalECPotential: public QMCHamiltonianBase,
   ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P);
+
+  virtual void checkout_particle_arrays(TraceManager& tm);
+  virtual void delete_particle_arrays();
 
   Return_t evaluate(ParticleSet& P);
 

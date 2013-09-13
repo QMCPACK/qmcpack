@@ -15,6 +15,7 @@ SET(HAMSRCS
   ForceBase.cpp
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
+  ../Estimators/TraceManager.cpp
 )
 #  FSAtomPseudoPot.cpp
 
@@ -32,6 +33,9 @@ IF(OHMMS_DIM MATCHES 3)
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
     ECPComponentBuilder.2.cpp
+    ReferencePoints.cpp
+    SpaceGrid.cpp
+    EnergyDensityEstimator.cpp
     )
 
   IF(HAVE_LIBFFTW)

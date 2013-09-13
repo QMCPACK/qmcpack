@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <Estimators/TraceManager.h>
 
 namespace qmcplusplus
 {
@@ -41,6 +42,8 @@ public:
   typedef QMCHamiltonianBase::PropertySetType  PropertySetType;
   typedef QMCHamiltonianBase::BufferType  BufferType;
   typedef QMCHamiltonianBase::Walker_t  Walker_t;
+
+  enum {DIM=OHMMS_DIM};
 
   ///constructor
   QMCHamiltonian();
@@ -69,6 +72,18 @@ public:
   {
     return H[i];
   }
+
+  ///initialize trace data
+  void initialize_traces(TraceManager& tm,ParticleSet& P);
+
+  // ///collect scalar trace data
+  //void collect_scalar_traces();
+
+  ///collect walker trace data
+  void collect_walker_traces(Walker_t& walker,int step);
+
+  ///finalize trace data
+  void finalize_traces();
 
   /**
    * \defgroup Functions to get/put observables
@@ -151,6 +166,7 @@ public:
 //       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
     std::copy(first+myIndex,first+myIndex+Observables.size(),Observables.begin());
   }
+
   void update_source(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
@@ -299,6 +315,14 @@ private:
    * @param ncollects number of collectables
    */
   void resetObservables(int start, int ncollects);
+
+  ///traces variables
+  bool tracing;
+  bool tracing_positions;
+  Array<TraceInt,1>*  id_sample;
+  Array<TraceInt,1>*  step_sample;
+  Array<TraceReal,1>* weight_sample;
+  Array<TraceReal,2>* position_sample;
 };
 }
 #endif

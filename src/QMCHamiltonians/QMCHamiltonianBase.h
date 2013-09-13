@@ -23,6 +23,7 @@
 #include <OhmmsData/RecordProperty.h>
 #include <Utilities/RandomGenerator.h>
 #include <QMCHamiltonians/observable_helper.h>
+#include <Estimators/TraceManager.h>
 #include <bitset>
 
 namespace qmcplusplus
@@ -89,10 +90,23 @@ struct QMCHamiltonianBase: public QMCTraits
   string myName;
   ///name of dependent object: to be removed
   string depName;
+  ///whether traces are being collected
+  TraceRequest trace_request;
+  bool tracing;
+  bool tracing_scalar_quantities;
+  bool tracing_particle_quantities;
+  bool have_required_traces;
+  ///array to store sample value
+  Array<RealType,1>* value_sample;
 
   ///constructor
-  QMCHamiltonianBase():myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
+  QMCHamiltonianBase()
+    :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
   {
+    tracing = false;
+    tracing_scalar_quantities = false;
+    tracing_particle_quantities = false;
+    have_required_traces = false;
     UpdateMode.set(PRIMARY,1);
   }
 
@@ -194,6 +208,7 @@ struct QMCHamiltonianBase: public QMCTraits
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
    */
   virtual void update_source(ParticleSet& s) { }
+   
 
   /*@{
    * @brief Functions to handle particle-by-particle move
@@ -262,6 +277,68 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     // empty
   }
+
+
+
+  ///request that traces be made available
+  inline void request_traces(TraceManager& tm)
+  {
+    tm.add_trace_request(trace_request);
+  }
+
+
+  ///checkout trace arrays
+  inline void initialize_traces(TraceManager& tm)
+  {
+    TraceRequest& traces_requested = tm.get_trace_request(myName);
+    tracing_scalar_quantities   = traces_requested.scalars;
+    tracing_particle_quantities = traces_requested.particles;
+    tracing = tracing_scalar_quantities || tracing_particle_quantities;
+    if(tracing_scalar_quantities)
+      checkout_scalar_arrays(tm);
+    if(tracing_particle_quantities)
+      checkout_particle_arrays(tm);
+  }
+
+  ///collect scalar trace data
+  inline void collect_scalar_traces()
+  {
+    //app_log()<<"QMCHamiltonianBase::collect_scalar_traces"<<endl;
+    if(tracing_scalar_quantities)
+      collect_scalar_samples();
+  }
+
+  ///delete trace arrays
+  inline void finalize_traces()
+  {
+    if(tracing_scalar_quantities)
+      delete_scalar_arrays();
+    if(tracing_particle_quantities)
+      delete_particle_arrays();
+    tracing_scalar_quantities = false;
+    tracing_particle_quantities = false;
+    have_required_traces = false;
+  }
+
+  virtual void checkout_scalar_arrays(TraceManager& tm)
+  {
+    value_sample = tm.checkout_real<1>(myName);
+  }
+
+  virtual void collect_scalar_samples()
+  {
+    (*value_sample)(0) = Value;
+  }
+
+  virtual void delete_scalar_arrays()
+  {
+    delete value_sample;
+  }
+
+  virtual void checkout_particle_arrays(TraceManager& tm) {};
+  virtual void delete_particle_arrays() {};
+  virtual void get_required_traces(TraceManager& tm) {};
+
 
   ////////////////////////////////////
   // Vectorized evaluation on GPUs  //

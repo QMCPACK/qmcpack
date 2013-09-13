@@ -29,7 +29,8 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectables(0)
+  :myIndex(0),numCollectables(0),tracing(false),tracing_positions(false),
+   id_sample(0),weight_sample(0),position_sample(0)
 { }
 
 ///// copy constructor is distable by declaring it as private
@@ -108,14 +109,15 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
 //{
 //  return false;
 //}
-void QMCHamiltonian::update_source(ParticleSet& s)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->update_source(s);
-  for(int i=0; i<auxH.size(); ++i)
-    auxH[i]->update_source(s);
-}
 
+  void QMCHamiltonian::update_source(ParticleSet& s)
+  {
+    for(int i=0; i<H.size(); ++i)
+      H[i]->update_source(s);
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->update_source(s);
+  }
+  
 /** add a number of properties to the ParticleSet
  * @param P ParticleSet to which multiple columns to be added
  *
@@ -198,6 +200,91 @@ QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
     auxH[i]->registerCollectables(h5desc,gid);
 }
 
+
+void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
+{
+  // some observables require trace data
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->request_traces(tm);
+  // see if traces are requested explicitly by user or implicitly by other observables
+  TraceRequest& traces_requested = tm.get_trace_request("position");
+  tracing = traces_requested.any;
+  tracing_positions = traces_requested.particles;
+  // setup traces, if requested
+  if(tracing)
+  {
+    //checkout walker trace samples
+    id_sample     = tm.checkout_int<1>("id");
+    step_sample   = tm.checkout_int<1>("step");
+    weight_sample = tm.checkout_real<1>("weight");
+    if(tracing_positions)
+      position_sample = tm.checkout_real<2>("position",P,DIM);
+    //initialize traces
+    for(int i=0; i<H.size(); ++i)
+      H[i]->initialize_traces(tm);
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->initialize_traces(tm);
+    //setup combined traces that depend on H information
+    //  LocalEnergy, LocalPotential
+    tm.set_requests();
+    vector<string>   names;
+    vector<RealType> weights;
+    if(H.size()>1)
+    {
+      for(int i=1; i<H.size(); ++i)
+      {
+        names.push_back(H[i]->myName);
+        weights.push_back(1.0);
+      }
+      tm.make_combined_trace("LocalPotential",names,weights);
+    }
+    if(H.size()>0)
+    {
+      names.push_back(H[0]->myName);
+      weights.push_back(1.0);
+      tm.make_combined_trace("LocalEnergy",names,weights);
+    }
+    //observables that depend on traces check them out
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->get_required_traces(tm);
+  }
+}
+
+
+void QMCHamiltonian::collect_walker_traces(Walker_t& walker,int step)
+{
+  if(tracing)
+  {
+    (*id_sample)(0)     = walker.ID;
+    (*step_sample)(0)   = step;
+    (*weight_sample)(0) = walker.Weight;
+    if(tracing_positions)
+      for(int i=0; i<walker.R.size(); ++i)
+        for(int d=0; d<DIM; ++d)
+          (*position_sample)(i,d) = walker.R[i][d];
+  }
+}
+
+
+void QMCHamiltonian::finalize_traces()
+{
+  if(tracing)
+  {
+    delete id_sample;
+    delete step_sample;
+    delete weight_sample;
+    if(tracing_positions)
+      delete position_sample;
+    for(int i=0; i<H.size(); ++i)
+      H[i]->finalize_traces();
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->finalize_traces();
+  }
+  tracing = false;
+  tracing_positions = false;
+}
+
+
 /** Evaluate all the Hamiltonians for the N-particle  configuration
  *@param P input configuration containing N particles
  *@return the local energy
@@ -211,6 +298,7 @@ QMCHamiltonian::evaluate(ParticleSet& P)
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P);
     H[i]->setObservables(Observables);
+    H[i]->collect_scalar_traces();
     myTimers[i]->stop();
     H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
@@ -227,6 +315,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    auxH[i]->collect_scalar_traces();
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
     //H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
@@ -235,16 +324,23 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
 ///This is more efficient. Only calculate auxH elements if moves are accepted.
 void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
 {
+  collect_walker_traces(ThisWalker,P.current_step);
   for(int i=0; i<auxH.size(); ++i)
   {
     auxH[i]->setHistories(ThisWalker);
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    auxH[i]->collect_scalar_traces();
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
+
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {
+  // weight should be 0 from DMC
+  //   since other traced properties will be invalid
+  //   (they will be from the walker moved before this one)
+  collect_walker_traces(ThisWalker,P.current_step);
 //   ThisWalker.rejectedMove();
   for(int i=0; i<auxH.size(); ++i)
   {
@@ -262,6 +358,7 @@ QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P,Txy);
     H[i]->setObservables(Observables);
+    H[i]->collect_scalar_traces();
     myTimers[i]->stop();
   }
   KineticEnergy=H[0]->Value;
@@ -372,6 +469,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& bu
   {
     LocalEnergy += H[i]->Value;
     H[i]->setObservables(Observables);
+    H[i]->collect_scalar_traces();
   }
   KineticEnergy=H[0]->Value;
   P.PropertyList[LOCALENERGY]=LocalEnergy;
@@ -380,6 +478,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& bu
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    auxH[i]->collect_scalar_traces();
   }
   for(int i=0; i<H.size(); ++i)
     H[i]->copyToBuffer(P,buffer);

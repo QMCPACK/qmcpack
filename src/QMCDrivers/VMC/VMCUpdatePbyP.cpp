@@ -93,7 +93,7 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
       if (stucked)
       {
         ++nAllRejected;
-        H.rejectedMove(W,thisWalker);
+        //H.rejectedMove(W,thisWalker);
       }
       thisWalker.R=W.R;
     }
@@ -700,7 +700,6 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
       thisWalker.L=W.L;
     }
     myTimers[1]->stop();
-
     myTimers[2]->start();
     RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
     W.saveWalker(thisWalker);
@@ -712,7 +711,9 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
-    if(!moved) ++nAllRejected;
+    Traces->buffer_sample();
+    if(!moved)
+      ++nAllRejected;
   }
   myTimers[0]->stop();
 }

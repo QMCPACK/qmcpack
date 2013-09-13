@@ -60,10 +60,15 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 //     madelung constant
   RealType MC0;
 
+  //single particle trace sample
+  Array<TraceReal,1>* V_sample;
+  Array<TraceReal,1>  V_const;
+  ParticleSet& Ps;
+
 
   /** constructor */
   CoulombPBCAA(ParticleSet& ref, bool active,
-                   bool computeForces=false);
+               bool computeForces=false);
 
   ~CoulombPBCAA();
 
@@ -77,6 +82,9 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   {
     return evaluate(P);
   }
+
+  Return_t spevaluate(ParticleSet& P);
+
   Return_t registerData(ParticleSet& P, BufferType& buffer);
   Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
@@ -100,11 +108,19 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   void initBreakup(ParticleSet& P);
 
+  virtual void checkout_particle_arrays(TraceManager& tm);
+  virtual void delete_particle_arrays();
+
+  Return_t evalConsts_orig(bool report=true);
+  Return_t evalSR_old(ParticleSet& P);
+  Return_t evalLR_old(ParticleSet& P);
+  Return_t evalConsts_old(bool report=true);
+
   Return_t evalSR(ParticleSet& P);
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
-  Return_t evalConsts();
+  Return_t evalConsts(bool report=true);
   Return_t evaluateForPbyP(ParticleSet& P);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);

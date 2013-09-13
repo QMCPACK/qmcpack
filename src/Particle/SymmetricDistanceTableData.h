@@ -86,6 +86,28 @@ struct SymmetricDTD
     r_full=0.0;
   }
 
+
+  inline virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
+  {
+    int m = N[VisitorIndex];
+    int shift = n*m;
+    for(int i=0; i<n; ++i)
+    {
+      ri[i].first  = r_m[IJ[shift+i]];
+      ri[i].second = i;
+    }
+    ri[n].first  = 1e99;
+    ri[n].second = n;
+    shift = M[n];
+    for(int i=n+1; i<m; ++i)
+    {
+      ri[i].first  = r_m[shift+i];
+      ri[i].second = i;
+    }
+    partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
+  }
+
+
   /** unsymmetrize dr */
   inline void fill()
   {

@@ -182,6 +182,9 @@ public:
   vector<int> PHindex;
   ///@}
 
+  ///current MC step
+  int current_step;
+
   ///default constructor
   ParticleSet();
 
@@ -217,6 +220,11 @@ public:
    * Ensure that the distance for this-this is always created first.
    */
   int  addTable(const ParticleSet& psrc);
+
+  /** returns index of a distance table, -1 if not present
+   * @param psrc source particle set
+   */
+  int getTable(const ParticleSet& psrc);
 
   /** reset all the collectable quantities during a MC iteration
    */
@@ -260,6 +268,20 @@ public:
   inline int parent() const
   {
     return ParentTag;
+  }
+
+  ///return parent's name
+  inline const string& parentName() const
+  {
+    return ParentName;
+  }
+  inline void setName(const string& aname)
+  {
+    myName     = aname;
+    if(ParentName=="")
+    {
+      ParentName = aname;
+    }
   }
 
   inline RealType getTotalWeight() const
@@ -437,12 +459,12 @@ public:
       return 0;
     return (ip)? myClones[ip]:this;
   }
-
+   
   inline int clones_size() const
   {
     return myClones.size();
   }
-
+   
   /** update R of its own and its clones
    * @param rnew new position array of N
    */
@@ -455,7 +477,7 @@ public:
     for(int ip=1; ip<myClones.size(); ++ip)
       myClones[ip]->R=rnew;
   }
-
+   
   /** reset internal data of clones including itself
    */
   void reset_clones();
@@ -480,6 +502,8 @@ protected:
 
   vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;
+
+  string ParentName;
 };
 }
 #endif

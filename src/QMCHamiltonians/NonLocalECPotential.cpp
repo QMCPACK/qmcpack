@@ -35,7 +35,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
     TrialWaveFunction& psi,
     bool computeForces):
   IonConfig(ions), d_table(0), Psi(psi),
-  ComputeForces(computeForces), ForceBase(ions,els)
+  ComputeForces(computeForces), ForceBase(ions,els),Peln(els),Pion(ions)
 {
   d_table = DistanceTable::add(ions,els);
   NumIons=ions.getTotalNum();
@@ -56,10 +56,47 @@ NonLocalECPotential::~NonLocalECPotential()
   //}
 }
 
+
+void NonLocalECPotential::checkout_particle_arrays(TraceManager& tm)
+{
+  Ve_sample = tm.checkout_real<1>(myName,Peln);
+  Vi_sample = tm.checkout_real<1>(myName,Pion);
+  for(int iat=0; iat<NumIons; iat++)
+  {
+    if(PP[iat])
+    {
+      PP[iat]->tracing_particle_quantities = tracing_particle_quantities;
+      PP[iat]->Ve_sample = Ve_sample;
+      PP[iat]->Vi_sample = Vi_sample;
+    }
+  }
+}
+
+void NonLocalECPotential::delete_particle_arrays()
+{
+  for(int iat=0; iat<NumIons; iat++)
+  {
+    if(PP[iat])
+    {
+      PP[iat]->tracing_particle_quantities = false;
+      PP[iat]->Ve_sample = NULL;
+      PP[iat]->Vi_sample = NULL;
+    }
+  }
+  delete Ve_sample;
+  delete Vi_sample;
+}
+
+
 NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P)
 {
   Value=0.0;
+  if(tracing_particle_quantities)
+  {
+    (*Ve_sample) = 0.0;
+    (*Vi_sample) = 0.0;
+  }
   //loop over all the ions
   if (ComputeForces)
   {
@@ -81,6 +118,29 @@ NonLocalECPotential::evaluate(ParticleSet& P)
         Value += PP[iat]->evaluate(P,iat,Psi);
       }
   }
+#if defined(TRACE_CHECK)
+  if(tracing_particle_quantities)
+  {
+    Return_t Vnow = Value;
+    RealType Visum = Vi_sample->sum();
+    RealType Vesum = Ve_sample->sum();
+    RealType Vsum  = Vesum+Visum;
+    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    {
+      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<<endl;
+      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
+      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      APP_ABORT("Trace check failed");
+    }
+    if(abs(Vesum-Visum)>TraceManager::trace_tol)
+    {
+      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<<endl;
+      app_log()<<"sharetest:   e share:"<< Vesum <<endl;
+      app_log()<<"sharetest:   i share:"<< Visum <<endl;
+      APP_ABORT("Trace check failed");
+    }
+  }
+#endif
   return Value;
 }
 
@@ -88,6 +148,11 @@ NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 {
   Value=0.0;
+  if(tracing_particle_quantities)
+  {
+    (*Ve_sample) = 0.0;
+    (*Vi_sample) = 0.0;
+  }
   //loop over all the ions
   if (ComputeForces)
   {
@@ -109,6 +174,29 @@ NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
       }
     }
   }
+#if defined(TRACE_CHECK)
+  if(tracing_particle_quantities)
+  {
+    Return_t Vnow = Value;
+    RealType Visum = Vi_sample->sum();
+    RealType Vesum = Ve_sample->sum();
+    RealType Vsum  = Vesum+Visum;
+    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    {
+      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<<endl;
+      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
+      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      APP_ABORT("Trace check failed");
+    }
+    if(abs(Vesum-Visum)>TraceManager::trace_tol)
+    {
+      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<<endl;
+      app_log()<<"sharetest:   e share:"<< Vesum <<endl;
+      app_log()<<"sharetest:   i share:"<< Visum <<endl;
+      APP_ABORT("Trace check failed");
+    }
+  }
+#endif
   return Value;
 }
 

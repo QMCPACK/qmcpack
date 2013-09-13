@@ -69,9 +69,9 @@ EinsplineSetBuilder::CheckLattice()
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
-      diff+=std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j));
+      diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j)));
 
-  if(diff>MatchingTol*10.)
+  if(diff>MatchingTol)
   {
     ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);
@@ -84,6 +84,8 @@ EinsplineSetBuilder::CheckLattice()
     o << TargetPtcl.Lattice.R << endl;
     o << " Difference " << endl;
     o << SuperLattice-TargetPtcl.Lattice.R << endl;
+    o << " Max difference = "<<diff<<endl;
+    o << " Tolerance      = "<<MatchingTol<<endl;
     APP_ABORT(o.str());
   }
   return true;
@@ -354,7 +356,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     PosType superTwist = dot (S, primTwist);
     PosType kp = PrimCell.k_cart(primTwist);
     PosType ks = SuperCell.k_cart(superTwist);
-    if (dot(ks-kp, ks-kp) > 1.0e-4)
+    if (dot(ks-kp, ks-kp) > 1.0e-6)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
@@ -364,7 +366,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     for (int j=0; j<superFracs.size(); j++)
     {
       PosType diff = frac - superFracs[j];
-      if (dot(diff,diff)<1.0e-5)
+      if (dot(diff,diff)<1.0e-6)
       {
         found = true;
         superIndex.push_back(j);
@@ -423,20 +425,6 @@ EinsplineSetBuilder::AnalyzeTwists2()
       if((abs(givenTwist[0]-superFracs[si][0])<eps) and (abs(givenTwist[1]-superFracs[si][1])<eps) and (abs(givenTwist[2]-superFracs[si][2])<eps))
         TwistNum=si;
   }
-  if(TwistNum<0)
-  {
-//    check for -K
-    float eps=1e-4;
-    for (int si=0; si<numSuperTwists; si++)
-      if((abs(givenTwist[0]+superFracs[si][0])<eps) and (abs(givenTwist[1]+superFracs[si][1])<eps) and (abs(givenTwist[2]+superFracs[si][2])<eps))
-        TwistNum=si;
-  }
-  if(TwistNum<0)
-  {
-    app_error()<<" Bad Kpoint. Not found in h5 file."<<std::endl;
-    app_error()<<" Kx Ky Kz: "<<givenTwist[0]<<" "<<givenTwist[1]<<" "<<givenTwist[2]<<std::endl;
-    APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
-  }
   // Check supertwist for this node
   if (!myComm->rank())
     fprintf (stderr, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]\n",
@@ -481,7 +469,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
         PosType twistPrim_j  = TwistAngles[superSets[si][j]];
         PosType twistSuper_j = dot (S, twistPrim_j);
         PosType superInt_j   = IntPart (twistSuper_j);
-        if (dot(superInt_i-superInt_j, superInt_i-superInt_j) < 1.0e-4)
+        if (dot(superInt_i-superInt_j, superInt_i-superInt_j) < 1.0e-6)
         {
           app_error() << "Identical k-points detected in super twist set "
                       << si << endl;
@@ -602,9 +590,9 @@ EinsplineSetBuilder::AnalyzeTwists()
   nf[2] = -1.0/((maxTwist[2]-minTwist[2]) -1.0);
   bool meshOK = true;
   // Make sure they are close to integers
-  meshOK = meshOK && (std::abs(nf[0] - round(nf[0]))<1.0e-4);
-  meshOK = meshOK && (std::abs(nf[1] - round(nf[1]))<1.0e-4);
-  meshOK = meshOK && (std::abs(nf[2] - round(nf[2]))<1.0e-4);
+  meshOK = meshOK && (std::abs(nf[0] - round(nf[0]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[1] - round(nf[1]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[2] - round(nf[2]))<1.0e-6);
   if (!meshOK)
   {
     app_error() << "It appears that the twist angles in file "
@@ -629,7 +617,7 @@ EinsplineSetBuilder::AnalyzeTwists()
         for (int ti=0; ti<NumTwists; ti++)
         {
           PosType diff = TwistAngles[ti]-twist;
-          if (dot(diff,diff)<1.0e-4)
+          if (dot(diff,diff)<1.0e-8)
           {
             twistFound = true;
             TinyVector<int,3> tindex (ix, iy, iz);

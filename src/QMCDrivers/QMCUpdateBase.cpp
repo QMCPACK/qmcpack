@@ -26,14 +26,14 @@ namespace qmcplusplus
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),Guide(guide),H(h), RandomGen(rg), branchEngine(0), Estimators(0), csoffset(0)
+  : W(w),Psi(psi),Guide(guide),H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),H(h),Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), csoffset(0)
+  : W(w),Psi(psi),H(h),Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
@@ -41,7 +41,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
 ///copy constructor
 QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
   : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), RandomGen(a.RandomGen)
-  , branchEngine(0), Estimators(0)
+  , branchEngine(0), Estimators(0), Traces(0)
 {
   APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
 }
@@ -60,14 +60,12 @@ void QMCUpdateBase::setDefaults()
   MaxAge=10;
   m_r2max=-1;
   myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
-
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
   int massind=tspecies.addAttribute("mass");
   MassInvS.resize(tspecies.getTotalNum());
   for(int ig=0; ig<tspecies.getTotalNum(); ++ig)
     MassInvS[ig]=1.0/tspecies(massind,ig);
-
   MassInvP.resize(W.getTotalNum());
   for(int ig=0; ig<W.groups(); ++ig)
   {
@@ -98,15 +96,14 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
   dG.resize(NumPtcl);
   L.resize(NumPtcl);
   dL.resize(NumPtcl);
-
   //set the default tau-mass related values with electrons
   Tau=brancher->getTau();
   m_tauovermass = Tau*MassInvS[0];
   m_oneover2tau = 0.5/(m_tauovermass);
   m_sqrttau = std::sqrt(m_tauovermass);
-
   if(!UpdatePbyP)
-  {// store sqrt(tau/mass)
+  {
+    // store sqrt(tau/mass)
     SqrtTauOverMass.resize(W.getTotalNum());
     for(int iat=0; iat<W.getTotalNum(); ++iat)
       SqrtTauOverMass[iat]=std::sqrt(Tau*MassInvP[iat]);
@@ -116,6 +113,14 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
     m_r2max =  W.Lattice.LR_rc* W.Lattice.LR_rc;
   //app_log() << "  Setting the bound for the displacement max(r^2) = " <<  m_r2max << endl;
 }
+
+
+void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces)
+{
+  resetRun(brancher,est);
+  Traces = traces;
+}
+
 
 void QMCUpdateBase::resetEtrial(RealType et)
 {
@@ -127,6 +132,9 @@ void QMCUpdateBase::resetEtrial(RealType et)
 void QMCUpdateBase::startRun(int blocks, bool record)
 {
   Estimators->start(blocks,record);
+  H.initialize_traces(*Traces,W);
+  Estimators->initialize_traces(*Traces);
+  Traces->initialize_traces();
 }
 
 void QMCUpdateBase::stopRun()
@@ -134,9 +142,19 @@ void QMCUpdateBase::stopRun()
   Estimators->stop();
 }
 
+//ugly, but will use until general usage of stopRun is clear
+//  DMCOMP and VMCSingleOMP do not use stopRun anymore
+void QMCUpdateBase::stopRun2()
+{
+  H.finalize_traces();
+  Estimators->finalize_traces();
+  Traces->finalize_traces();
+}
+
 void QMCUpdateBase::startBlock(int steps)
 {
   Estimators->startBlock(steps);
+  Traces->startBlock(steps);
   nAccept = 0;
   nReject=0;
   nAllRejected=0;
@@ -147,6 +165,7 @@ void QMCUpdateBase::startBlock(int steps)
 void QMCUpdateBase::stopBlock(bool collectall)
 {
   Estimators->stopBlock(acceptRatio(),collectall);
+  Traces->stopBlock();
 }
 
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)

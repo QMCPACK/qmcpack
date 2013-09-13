@@ -94,6 +94,123 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const 
   return ret != -1;
 }
 
+template<typename T>
+inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
+                       hsize_t ndims, const hsize_t* dims, const T* first,
+                       hsize_t chunk_size=1,hid_t xfer_plist=H5P_DEFAULT)
+{
+  //app_log()<<omp_get_thread_num()<<"  h5d_append  group = "<<grp<<"  name = "<<aname.c_str()<<endl;
+  if(grp<0)
+    return true;
+  hid_t h5d_type_id=get_h5_datatype(*first);
+  hid_t dataspace;
+  hid_t memspace;
+  hid_t dataset = H5Dopen(grp, aname.c_str());
+  hsize_t max_dims[ndims];
+  max_dims[0]   = H5S_UNLIMITED;
+  for(int d=1; d<ndims; ++d)
+    max_dims[d] = dims[d];
+  herr_t ret=-1;
+  if(dataset<0) //missing create one
+  {
+    //set file pointer
+    current = 0;
+    // set max and chunk dims
+    hsize_t chunk_dims[ndims];
+    chunk_dims[0] = chunk_size;
+    for(int d=1; d<ndims; ++d)
+      chunk_dims[d] = dims[d];
+    // create a dataspace sized to the current buffer
+    dataspace = H5Screate_simple(ndims, dims, max_dims);
+    // create dataset property list
+    hid_t p = H5Pcreate(H5P_DATASET_CREATE);
+    // set layout (chunked, contiguous)
+    hid_t sl = H5Pset_layout(p, H5D_CHUNKED);
+    // set chunk size
+    hid_t cs = H5Pset_chunk(p, ndims, chunk_dims);
+    // create the dataset
+    dataset = H5Dcreate2(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, p, H5P_DEFAULT);
+    // create memory dataspace, size of current buffer
+    memspace = H5Screate_simple(ndims, dims, NULL);
+    // write the data for the first time
+    ret = H5Dwrite(dataset, h5d_type_id, memspace, dataspace, xfer_plist, first);
+    // update the "file pointer"
+    current = dims[0];
+
+    //app_log()<<"  creating dataset"<<endl;
+    //if(dataspace<0) app_log()<<"    dataspace could not be created"<<endl;
+    //else            app_log()<<"    dataspace creation successful"<<endl;
+    //if(p<0)         app_log()<<"    property list could not be created"<<endl;
+    //else            app_log()<<"    property list creation successful"<<endl;
+    //if(sl<0)        app_log()<<"    layout could not be set"<<endl;
+    //else            app_log()<<"    layout set successfully"<<endl;
+    //if(cs<0)        app_log()<<"    chunk size could not be set"<<endl;
+    //else            app_log()<<"    chunk size set successfully"<<endl;
+    //if(dataset<0)   app_log()<<"    dataset could not be created"<<endl;
+    //else            app_log()<<"    dataset creation successful"<<endl;
+    //if(memspace<0)  app_log()<<"    memspace could not be created"<<endl;
+    //else            app_log()<<"    memspace creation successful"<<endl;
+    //if(ret<0)       app_log()<<"    data could not be written"<<endl;
+    //else            app_log()<<"    data write successful"<<endl;
+    //H5Eprint(NULL);
+
+    // close the property list
+    H5Pclose(p);
+  }
+  else
+  {
+    // new end of file
+    hsize_t start[ndims];
+    hsize_t end[ndims];
+    for(int d=1; d<ndims; ++d)
+    {
+      start[d] = 0;
+      end[d]   = dims[d];
+    }
+    start[0] = current;
+    end[0] = start[0]+dims[0];
+    //extend the dataset (file)
+    herr_t he  = H5Dextend(dataset, end);
+    //get the corresponding dataspace (filespace)
+    dataspace  = H5Dget_space(dataset);
+    //set the extent
+    herr_t hse = H5Sset_extent_simple(dataspace, ndims, end, max_dims);
+    //select hyperslab/slice of multidimensional data for appended write
+    herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, dims, NULL);
+    //create memory space describing current data block
+    memspace   = H5Screate_simple(ndims, dims, NULL);
+    //append the datablock to the dataset
+    ret = H5Dwrite(dataset, h5d_type_id, memspace, dataspace, H5P_DEFAULT, first);
+    // update the "file pointer"
+    current = end[0];
+
+    //app_log()<<"  appending to dataset"<<endl;
+    //app_log()<<"      ndims = "<<ndims<<endl;
+    //app_log()<<"      dims  = "<<dims[0]<<" "<<dims[1]<<endl;
+    //app_log()<<"      start = "<<start[0]<<" "<<start[1]<<endl;
+    //app_log()<<"      end   = "<<end[0]<<" "<<end[1]<<endl;
+    //app_log()<<"      current = "<<current<<" "<<&current<<endl;
+    //if(hse<0)       app_log()<<"    set_extent failed"<<endl;
+    //else            app_log()<<"    set_extent successful"<<endl;
+    //if(hsh<0)       app_log()<<"    select_hyperslab failed"<<endl;
+    //else            app_log()<<"    select_hyperslab successful"<<endl;
+    //if(he<0)        app_log()<<"    extend failed"<<endl;
+    //else            app_log()<<"    extend successful"<<endl;
+    //if(dataspace<0) app_log()<<"    dataspace could not be gotten"<<endl;
+    //else            app_log()<<"    dataspace get successful"<<endl;
+    //if(memspace<0)  app_log()<<"    memspace could not be created"<<endl;
+    //else            app_log()<<"    memspace creation successful"<<endl;
+    //if(ret<0)       app_log()<<"    data could not be written"<<endl;
+    //else            app_log()<<"    data write successful"<<endl;
+    //H5Eprint(NULL);
+  }
+  // cleanup
+  H5Sclose(memspace);
+  H5Sclose(dataspace);
+  H5Dclose(dataset);
+  return ret != -1;
+}
+
 
 /** generic h5data_proxy<T> for hdf5 native type T
 */

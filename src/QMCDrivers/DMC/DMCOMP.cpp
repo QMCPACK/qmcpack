@@ -56,7 +56,6 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   put(cur);
   //app_log()<<"DMCOMP::resetComponents"<<endl;
   Estimators->reset();
-
   int nw_multi=branchEngine->resetRun(cur);
   if(nw_multi>1)
   {
@@ -67,7 +66,6 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
   }
-
   branchEngine->checkParameters(W);
   //delete Movers[0];
   for(int ip=0; ip<NumThreads; ++ip)
@@ -75,9 +73,11 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     delete Movers[ip];
     delete estimatorClones[ip];
     delete branchClones[ip];
+    delete traceClones[ip];
     estimatorClones[ip]= new EstimatorManager(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
     branchClones[ip] = new BranchEngineType(*branchEngine);
+    traceClones[ip] = Traces->makeClone();
   }
 #if !defined(BGP_BUG)
   #pragma omp parallel for
@@ -91,7 +91,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
       else
         Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
     else
@@ -101,7 +101,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
       else
         Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
   }
@@ -123,6 +123,7 @@ void DMCOMP::resetUpdateEngines()
     branchClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
+    traceClones.resize(NumThreads,0);
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     {
       //log file
@@ -151,6 +152,7 @@ void DMCOMP::resetUpdateEngines()
     {
       estimatorClones[ip]= new EstimatorManager(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
+      traceClones[ip] = Traces->makeClone();
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -161,7 +163,7 @@ void DMCOMP::resetUpdateEngines()
         else
           Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
       else
@@ -171,9 +173,19 @@ void DMCOMP::resetUpdateEngines()
         else
           Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
+    }
+  }
+  else
+  {
+#if !defined(BGP_BUG)
+    #pragma omp parallel for
+#endif
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      traceClones[ip]->transfer_state_from(*Traces);
     }
   }
   branchEngine->checkParameters(W);
@@ -219,9 +231,11 @@ bool DMCOMP::run()
   Estimators->start(nBlocks);
   for(int ip=0; ip<NumThreads; ip++)
     Movers[ip]->startRun(nBlocks,false);
+  Traces->startRun(nBlocks,traceClones);
   Timer myclock;
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+  int sample = 0;
   do // block
   {
     Estimators->startBlock(nSteps);
@@ -238,6 +252,7 @@ bool DMCOMP::run()
       {
         int ip=omp_get_thread_num();
         int now=CurrentStep;
+        Movers[ip]->set_step(sample);
         MCWalkerConfiguration::iterator
         wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
         for(int interval = 0; interval<BranchInterval-1; ++interval,++now)
@@ -262,9 +277,11 @@ bool DMCOMP::run()
 //         }
       if(variablePop)
         FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+      sample++;
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
+    Traces->write_buffers(traceClones);
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
@@ -278,8 +295,12 @@ bool DMCOMP::run()
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
   Estimators->stop();
+  for (int ip=0; ip<NumThreads; ++ip)
+    Movers[ip]->stopRun2();
+  Traces->stopRun();
   return finalize(block);
 }
+
 
 void DMCOMP::benchMark()
 {

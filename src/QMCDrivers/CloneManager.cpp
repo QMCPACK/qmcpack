@@ -44,13 +44,14 @@ CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
   wPerNode.resize(NumThreads+1,0);
 }
 
-///clenup non-static data members
+///cleanup non-static data members
 CloneManager::~CloneManager()
 {
   // delete_iter(CSMovers.begin(),CSMovers.end());
   delete_iter(Movers.begin(),Movers.end());
   delete_iter(branchClones.begin(),branchClones.end());
   delete_iter(estimatorClones.begin(),estimatorClones.end());
+  delete_iter(traceClones.begin(),traceClones.end());
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,

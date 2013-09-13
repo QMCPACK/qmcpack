@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_ASYMMETRICDISTANCETABLEDATAIMPL_H
-#define QMCPLUSPLUS_ASYMMETROCDISTANCETABLEDATAIMPL_H
+#define QMCPLUSPLUS_ASYMMETRICDISTANCETABLEDATAIMPL_H
 
 namespace qmcplusplus
 {
@@ -81,6 +81,34 @@ struct AsymmetricDTD
       }
     }
   }
+
+
+  inline virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
+  {
+    if(transposed)
+    {
+      int m = N[SourceIndex];
+      int shift = 0;
+      for(int i=0; i<m; ++i)
+      {
+        ri[i].first  = r_m[shift+n];
+        ri[i].second = i;
+        shift+=N[VisitorIndex];
+      }
+    }
+    else
+    {
+      int m = N[VisitorIndex];
+      int shift = M[n];
+      for(int i=0; i<m; ++i)
+      {
+        ri[i].first  = r_m[shift+i];
+        ri[i].second = i;
+      }
+    }
+    partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
+  }
+
 
   ///evaluate the Distance Table using a set of Particle Positions
   //inline void evaluate(const WalkerSetRef& W) {

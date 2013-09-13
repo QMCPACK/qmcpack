@@ -48,6 +48,7 @@ bool VMCSingleOMP::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
+  Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   hpmStart(QMC_VMC_0_EVENT,"vmc::main");
   for (int block=0; block<nBlocks; ++block)
@@ -67,6 +68,7 @@ bool VMCSingleOMP::run()
 
       for (int step=0; step<nSteps; ++step)
       {
+        Movers[ip]->set_step(now_loc);
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
         Movers[ip]->advanceWalkers(wit,wit_end,false);
@@ -86,12 +88,16 @@ bool VMCSingleOMP::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
+    Traces->write_buffers(traceClones);
     //why was this commented out? Are checkpoints stored some other way?
     if(storeConfigs)
       recordBlock(block);
   }//block
   hpmStop(QMC_VMC_0_EVENT);
   Estimators->stop(estimatorClones);
+  for (int ip=0; ip<NumThreads; ++ip)
+    Movers[ip]->stopRun2();
+  Traces->stopRun();
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -113,17 +119,16 @@ void VMCSingleOMP::resetRun()
   if(nTargetPopulation>0)
     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS]=static_cast<int>(std::ceil(nTargetPopulation));
   makeClones(W,Psi,H);
-
   FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
   app_log() << "  Initial partition of walkers ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
   app_log() << endl;
-
   if (Movers.empty())
   {
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
+    traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
 #if !defined(BGP_BUG)
     #pragma omp parallel for
@@ -134,6 +139,7 @@ void VMCSingleOMP::resetRun()
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
+      traceClones[ip] = Traces->makeClone();
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -199,6 +205,16 @@ void VMCSingleOMP::resetRun()
         app_log() << os.str() << endl;
     }
   }
+  else
+  {
+#if !defined(BGP_BUG)
+    #pragma omp parallel for
+#endif
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      traceClones[ip]->transfer_state_from(*Traces);
+    }
+  }
   app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
   app_log() << "  Walker distribution on root = ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
@@ -214,7 +230,7 @@ void VMCSingleOMP::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else

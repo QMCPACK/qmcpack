@@ -20,6 +20,7 @@
 #include <OhmmsPETE/Tensor.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/TinyVector.h>
+#include "ParticleBase/ParticleAttribOps.h"
 namespace qmcplusplus
 {
 
@@ -127,6 +128,147 @@ inline void convert(const Tensor<T1,3>& in, Tensor<T2,3>& out)
 {
   convert(in.data(),out.data(),in.size());
 }
+
+
+
+
+
+///real part of a scalar
+template<typename T>
+inline T real(const T& c)
+{
+  return c;
+}
+
+
+///imaginary part of a scalar
+template<typename T>
+inline T imag(const T& c)
+{
+  return static_cast<T>(0);
+}
+
+using std::real;
+using std::imag;
+
+///real part of product of scalars
+template<typename T>
+inline T prod_real(const T& a, const T& b)
+{
+  return a*b;
+}
+
+template<typename T>
+inline T prod_real(const T& a, const std::complex<T>& b)
+{
+  return a*b.real();
+}
+
+template<typename T>
+inline T prod_real(const std::complex<T>& a, const T& b)
+{
+  return a.real()*b;
+}
+
+template<typename T>
+inline T prod_real(const std::complex<T>& a, const std::complex<T>& b)
+{
+  return a.real()*b.real()-a.imag()*b.imag();
+}
+
+///imaginary part of product of scalars
+template<typename T>
+inline T prod_imag(const T& a, const T& b)
+{
+  return static_cast<T>(0);
+}
+
+template<typename T>
+inline T prod_imag(const T& a, const std::complex<T>& b)
+{
+  return a*b.imag();
+}
+
+template<typename T>
+inline T prod_imag(const std::complex<T>& a, const T& b)
+{
+  return a.imag()*b;
+}
+
+template<typename T>
+inline T prod_imag(const std::complex<T>& a, const std::complex<T>& b)
+{
+  return a.real()*b.imag()+a.imag()*b.real();
+}
+
+
+///real part of dot product
+template<typename T, unsigned D>
+inline T dot_real(const TinyVector<T,D>& v1, const TinyVector<T,D>& v2)
+{
+  return dot(v1,v2);
+}
+
+template<typename T, unsigned D>
+inline T dot_real(const TinyVector<std::complex<T>,D>& v1, const TinyVector<std::complex<T>,D>& v2)
+{
+  return OTCDot<T,T,D>::apply(v1,v2);
+}
+
+template<typename T, unsigned D>
+inline T dot_real(const TinyVector<T,D>& v1, const TinyVector<std::complex<T>,D>& v2)
+{
+  T res = prod_real(v1[0],v2[0]);
+  for(unsigned d=1; d<D; ++d)
+    res += prod_real(v1[d],v2[d]);
+  return res;
+}
+
+template<typename T, unsigned D>
+inline T dot_real(const TinyVector<std::complex<T>,D>& v1, const TinyVector<T,D>& v2)
+{
+  T res = prod_real(v1[0],v2[0]);
+  for(unsigned d=1; d<D; ++d)
+    res += prod_real(v1[d],v2[d]);
+  return res;
+}
+
+
+///imaginary part of dot product
+template<typename T, unsigned D>
+inline T dot_imag(const TinyVector<T,D>& v1, const TinyVector<T,D>& v2)
+{
+  return dot(v1,v2);
+}
+
+template<typename T, unsigned D>
+inline T dot_imag(const TinyVector<std::complex<T>,D>& v1, const TinyVector<std::complex<T>,D>& v2)
+{
+  T res = prod_imag(v1[0],v2[0]);
+  for(unsigned d=1; d<D; ++d)
+    res += prod_imag(v1[d],v2[d]);
+  return res;
+}
+
+template<typename T, unsigned D>
+inline T dot_imag(const TinyVector<T,D>& v1, const TinyVector<std::complex<T>,D>& v2)
+{
+  T res = prod_imag(v1[0],v2[0]);
+  for(unsigned d=1; d<D; ++d)
+    res += prod_imag(v1[d],v2[d]);
+  return res;
+}
+
+template<typename T, unsigned D>
+inline T dot_imag(const TinyVector<std::complex<T>,D>& v1, const TinyVector<T,D>& v2)
+{
+  T res = prod_imag(v1[0],v2[0]);
+  for(unsigned d=1; d<D; ++d)
+    res += prod_imag(v1[d],v2[d]);
+  return res;
+}
+
+
 
 
 }

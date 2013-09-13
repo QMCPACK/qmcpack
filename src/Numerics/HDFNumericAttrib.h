@@ -618,6 +618,52 @@ struct HDFAttribIO<Vector<TinyVector<double,D> > >: public HDFAttribIOBase
 };
 
 
+/** Specialization for Matrix<int> */
+template<>
+struct HDFAttribIO<Matrix<int> >: public HDFAttribIOBase
+{
+
+  typedef Matrix<int> ArrayType_t;
+  ArrayType_t&  ref;
+  bool replace;
+
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false):ref(a),replace(reuse) { }
+
+  inline void write(hid_t grp, const char* name)
+  {
+    if(replace)
+      //  herr_t status = H5Eset_auto(NULL, NULL);
+      //  status = H5Gget_objinfo (grp, name, 0, NULL);
+      //  if(status == 0)
+    {
+      hid_t h1 = H5Dopen(grp, name);
+      hid_t ret= H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Dclose(h1);
+    }
+    else
+    {
+      hsize_t dims[2];
+      dims[0]=ref.rows();
+      dims[1]=ref.cols();
+      hid_t dataspace  = H5Screate_simple(2, dims, NULL);
+      hid_t dataset =
+        H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+      hid_t ret =
+        H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+  }
+
+  inline void read(hid_t grp, const char* name)
+  {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+    H5Dclose(h1);
+  }
+};
+
+
 /** Specialization for Matrix<double> */
 template<>
 struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase
