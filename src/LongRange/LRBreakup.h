@@ -195,7 +195,7 @@ typename LRBreakup<BreakupBasis>::IndexType
 LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
 {
   //Add low |k| ( < kcont) k-points with exact degeneracy
-  KContainer kexact(Basis.get_Lattice());
+  KContainer kexact;
   kexact.UpdateKLists(Basis.get_Lattice(),kcont);
   bool findK=true;
   RealType kc2=kc*kc;

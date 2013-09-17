@@ -8,12 +8,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup longrange
- *\brief A handler class for generating and storing lists of
- * k-points that are unit-translations of the reciprocal-space
- * cell. K-points are generated within a spherical cutoff, kc
+/** Container for k-points
+ *
+ * It generates a set of k-points that are unit-translations of the reciprocal-space
+ * cell. K-points are generated within a spherical cutoff set by the supercell
  */
-
 class KContainer: public QMCTraits
 {
 private:
@@ -34,9 +33,10 @@ private:
     return inpv[0];
   }
 
-  //The cutoff up to which k-vectors are generated.
+  /// The cutoff up to which k-vectors are generated. 
   RealType kcutoff;
-  RealType kcut2; //kcutoff*kcutoff
+  /// kcutoff*kcutoff
+  RealType kcut2; 
 
 public:
   //Typedef for the lattice-type. We don't need the full particle-set.
@@ -49,8 +49,10 @@ public:
   ///number of k-points
   int numk;
 
-  //Maximum integer translations of reciprocal cell within kc.
-  //Last index is max. of first dimension+1
+  /** maximum integer translations of reciprocal cell within kc.
+   *
+   * Last index is max. of first dimension+1
+   */
   TinyVector<int,DIM+1> mmax;
 
   /** K-vector in reduced coordinates
@@ -75,29 +77,20 @@ public:
    */
   //std::map<int,std::vector<int>*>  kpts_sorted;
 
-  //A copy of the lattice, so that we have the cell-vectors
-  ParticleLayout_t& Lattice;
-
-  //Constructor
-  KContainer(ParticleLayout_t& ref);
-  //Copy Constructor
-  //    KContainer(const KContainer& ref);
-  //Destructor
-  ~KContainer();
-  //Overloaded assignment operator
-  KContainer& operator=(const KContainer&);
-
-  //Public Methods:
-  // UpdateKLists() - call for new k or when lattice changed.
-  void UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere=true);
-  void UpdateKLists(RealType kc, bool useSphere=true);
+  /** update k-vectors 
+   * @param sc supercell
+   * @param kc cutoff radius in the K
+   * @param useSphere if true, use the |K|
+   */
+  void UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere=true);
 
 private:
-  //Private Methods:
-  // FindApproxMMax - compute approximate parallelpiped that surrounds kc
-  // BuildKLists - Correct mmax and fill lists of k-vectors.
-  void FindApproxMMax();
-  void BuildKLists(bool useSphere);
+  /** compute approximate parallelpiped that surrounds kc
+   * @param lattice supercell
+   */
+  void FindApproxMMax(ParticleLayout_t& lattice);
+  /** construct the container for k-vectors */
+  void BuildKLists(ParticleLayout_t& lattice, bool useSphere);
 };
 
 }

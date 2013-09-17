@@ -31,17 +31,16 @@ public:
    * unless Hamiltonian uses pbyp.
    */
   bool DoUpdate;
-  /** enumeration for the methods
+  /** enumeration for the methods to handle mixed bconds
    *
-   * Allow overwriting Lattice::SuperCellEnum to use D-dim k-point sets
-   * with mixed BC
+   * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  ///reference particle set
-  ParticleSet& PtclRef;
   /// K-Vector List.
   KContainer KLists;
+  ///1-D container for the phase
   Vector<RealType> phiV;
+  ///2-D container for the phase
   Matrix<RealType> phiM;
 #if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;
@@ -55,23 +54,20 @@ public:
   Vector<ComplexType> eikr_temp;
 #endif
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param ref Reference particle set
+   * @param P Reference particle set
    * @param kc cutoff for k
    */
-  StructFact(ParticleSet& ref, RealType kc);
-
+  StructFact(ParticleSet& P, RealType kc);
+  /// desructor 
   ~StructFact();
-  //Need to overload assignment operator.
-  //Default doesn't work because we have non-static reference members.
-  StructFact& operator=(const StructFact& ref);
 
   /** Recompute Rhok if lattice changed
    * @param kc cut-off K
    */
-  void UpdateNewCell(RealType kc);
+  void UpdateNewCell(ParticleSet& P, RealType kc);
   /**  Update Rhok if all particles moved
    */
-  void UpdateAllPart();
+  void UpdateAllPart(ParticleSet& P);
 
   /** evaluate eikr_temp for eikr for the proposed move
    * @param active index of the moved particle
@@ -80,14 +76,16 @@ public:
   void makeMove(int active, const PosType& pos);
   /** update eikr and rhok with eikr_temp
    * @param active index of the moved particle
+   * @param gid group id of the active particle
    */
-  void acceptMove(int active);
+  void acceptMove(int active, int gid);
   /** discard any temporary data
    * @param active index of the moved particle
+   * @param gid group id of the active particle
    *
    * Do nothing
    */
-  void rejectMove(int active);
+  void rejectMove(int active, int gid);
   /// Update Rhok if 1 particle moved
   //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
 
@@ -164,12 +162,16 @@ private:
   ///data for recursive evaluation for a given position
   Matrix<ComplexType> C;
   ///Compute all rhok elements from the start
-  void FillRhok();
+  void FillRhok(ParticleSet& P);
   ///Smart update of rhok for 1-particle move. Simply supply old+new position
   void UpdateRhok(const PosType& rold,
                   const PosType& rnew,int iat,int GroupID);
-  ///resize the internal data
-  void resize();
+  /** resize the internal data
+   * @param np number of species
+   * @param nptcl number of particles
+   * @param nkpts
+   */
+  void resize(int ns, int nptcl, int nkpts);
 };
 }
 

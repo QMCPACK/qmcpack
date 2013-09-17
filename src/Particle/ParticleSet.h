@@ -103,6 +103,8 @@ public:
   ///charge of each particle
   ParticleScalar_t Z;
 
+  ///Long-range box
+  ParticleLayout_t LRBox;
   ///true, if a physical or local bounding box is used
   bool UseBoundBox;
   ///true if fast update for sphere moves

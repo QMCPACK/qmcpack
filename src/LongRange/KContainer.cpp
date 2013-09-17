@@ -1,96 +1,43 @@
 #include "Message/Communicate.h"
 #include "LongRange/KContainer.h"
+#include <qmc_common.h>
 #include <map>
 
-using namespace qmcplusplus;
-
-/*** Constructor
- * @param ref reference lattice
- */
-KContainer::KContainer(ParticleLayout_t& ref): Lattice(ref),kcutoff(0.0) { }
-
-/*** Destructor
- */
-KContainer::~KContainer() { }
-
-/** Overloaded assignment operator
- */
-KContainer&
-KContainer::operator=(const KContainer& ref)
+namespace qmcplusplus
 {
-  //Lattices should be equal.
-  if(&Lattice != &ref.Lattice)
-  {
-    APP_ABORT("KContainer cannot assign itself");
-  }
-  //Now, if kcutoffs are the same then we can be sure that the lists are identical.
-  //otherwise the STL containers must have contents copied.
-  if(this!=&ref && kcutoff!=ref.kcutoff)
-  {
-    //All components have a valid '=' defined
-    kcutoff = ref.kcutoff;
-    kcut2 = ref.kcut2;
-    mmax = ref.mmax;
-    kpts = ref.kpts;
-    kpts_cart = ref.kpts_cart;
-    minusk = ref.minusk;
-    numk = ref.numk;
-  }
-  return *this;
-}
 
-//Public Methods
-// UpdateKLists - call for new k or when lattice changed.
 void
-KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere)
-{
-  kcutoff = kc;
-  kcut2 = kc*kc;
-  Lattice = ref;
-  LOGMSG("  KContainer initialised with cutoff " << kcutoff);
-  if(kcutoff <= 0.0)
-  {
-    OHMMS::Controller->abort();
-  }
-  FindApproxMMax();
-  BuildKLists(useSphere);
-}
-
-// UpdateKLists - call for new k or when lattice changed.
-void
-KContainer::UpdateKLists(RealType kc, bool useSphere)
+KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere)
 {
   kcutoff = kc;
   kcut2 = kc*kc;
   if(kcutoff <= 0.0)
   {
-    APP_ABORT("KContainer::UpdateKLists cannot have a negative Kcut");
+    APP_ABORT("  Illegal cutoff for KContainer");
   }
-  FindApproxMMax();
-  BuildKLists(useSphere);
+  FindApproxMMax(lattice);
+  BuildKLists(lattice,useSphere);
+
   app_log() << "  KContainer initialised with cutoff " << kcutoff << endl;
   app_log() << "   # of K-shell  = " << kshell.size() << endl;
   app_log() << "   # of K points = " << kpts.size() << endl;
 }
 
-//Private Methods:
-// FindApproxMMax - compute approximate parallelpiped that surrounds kcutoff
-// BuildKLists - Correct mmax and fill lists of k-vectors.
 void
-KContainer::FindApproxMMax()
+KContainer::FindApproxMMax(ParticleLayout_t& lattice)
 {
   //Estimate the size of the parallelpiped that encompases a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
   //Does not require an orthorhombic cell.
   /* Old method.
-  //2pi is not included in Lattice.b
+  //2pi is not included in lattice.b
   Matrix<RealType> mmat;
   mmat.resize(3,3);
   for(int j=0;j<3;j++)
     for(int i=0;i<3;i++){
       mmat[i][j] = 0.0;
       for(int k=0;k<3;k++)
-  mmat[i][j] = mmat[i][j] + 4.0*M_PI*M_PI*Lattice.b(k)[i]*Lattice.b(j)[k];
+  mmat[i][j] = mmat[i][j] + 4.0*M_PI*M_PI*lattice.b(k)[i]*lattice.b(j)[k];
     }
 
   TinyVector<RealType,3> x,temp;
@@ -117,19 +64,28 @@ KContainer::FindApproxMMax()
   */
   // see rmm, Electronic Structure, p. 85 for details
   for (int i = 0; i < DIM; i++)
-    mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
-  //overwrite the non-periodic directon to be zero
+    mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i),lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
+
+
+//overwrite the non-periodic directon to be zero
+if(qmc_common.use_ewald)
+{
+  app_log() << "  Using Ewald sum for the slab " << endl;
 #if OHMMS_DIM==3
-//  if(Lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
-//  if(Lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
-#elif OHMMS_DIM==2
-  if(Lattice.SuperCellEnum == SUPERCELL_WIRE)
-    mmax[1]=0;
+  if(lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
+//  if(lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
+//#elif OHMMS_DIM==2
+//  if(lattice.SuperCellEnum == SUPERCELL_WIRE)
+//    mmax[1]=0;
 #endif
 }
 
+  mmax[DIM]=mmax[0];
+  for(int i=1; i<DIM; ++i) mmax[DIM]=std::max(mmax[i],mmax[DIM]);
+}
+
 void
-KContainer::BuildKLists(bool useSphere)
+KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
 {
   TinyVector<int,DIM+1> TempActualMax;
   TinyVector<int,DIM> kvec;
@@ -157,7 +113,7 @@ KContainer::BuildKLists(bool useSphere)
           if(i==0 && j==0 && k==0)
             continue;
           //Convert kvec to Cartesian
-          kvec_cart = Lattice.k_cart(kvec);
+          kvec_cart = lattice.k_cart(kvec);
           //Find modk
           modk2 = dot(kvec_cart,kvec_cart);
           if(modk2>kcut2)
@@ -199,7 +155,7 @@ KContainer::BuildKLists(bool useSphere)
           if (kvec[2] > mmax[2])
             kvec[2] -= kdimsize;
           // get cartesian location and modk2
-          kvec_cart = Lattice.k_cart(kvec);
+          kvec_cart = lattice.k_cart(kvec);
           modk2 = dot(kvec_cart, kvec_cart);
           // add k-point to lists
           kpts_tmp.push_back(kvec);
@@ -228,7 +184,7 @@ KContainer::BuildKLists(bool useSphere)
         if(i==0 && j==0)
           continue;
         //Convert kvec to Cartesian
-        kvec_cart = Lattice.k_cart(kvec);
+        kvec_cart = lattice.k_cart(kvec);
         //Find modk
         modk2 = dot(kvec_cart,kvec_cart);
         if(modk2>kcut2)
@@ -263,7 +219,7 @@ KContainer::BuildKLists(bool useSphere)
         if (kvec[1] > mmax[1])
           kvec[1] -= jdimsize;
         // get cartesian location and modk2
-        kvec_cart = Lattice.k_cart(kvec);
+        kvec_cart = lattice.k_cart(kvec);
         modk2 = dot(kvec_cart, kvec_cart);
         // add k-point to lists
         kpts_tmp.push_back(kvec);
@@ -351,3 +307,4 @@ KContainer::BuildKLists(bool useSphere)
   }
 }
 
+}

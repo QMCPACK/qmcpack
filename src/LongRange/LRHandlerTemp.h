@@ -51,12 +51,12 @@ public:
 
   //Constructor
   LRHandlerTemp(ParticleSet& ref, RealType kc_in=-1.0):
-    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
+    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox)
   {
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+  //LRHandlerTemp(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -69,7 +69,7 @@ public:
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref):
-    LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
+    LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {
     myFunc.reset(ref);
     fillFk(ref.SK->KLists);
@@ -82,17 +82,17 @@ public:
 
   void initBreakup(ParticleSet& ref)
   {
-    InitBreakup(ref.Lattice,1);
+    InitBreakup(ref.LRBox,1);
     fillFk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
   }
 
   void Breakup(ParticleSet& ref, RealType rs_ext)
   {
-    //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+    //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs=rs_ext;
     myFunc.reset(ref,rs);
-    InitBreakup(ref.Lattice,1);
+    InitBreakup(ref.LRBox,1);
     fillFk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
   }

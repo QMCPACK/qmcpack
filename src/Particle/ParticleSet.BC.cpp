@@ -22,6 +22,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "LongRange/StructFact.h"
+#include "qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -69,20 +70,38 @@ void ParticleSet::createSK()
   //int membersize= mySpecies.addAttribute("membersize");
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
+  
   convert2Cart(R); //make sure that R is in Cartesian coordinates
-  //if(Lattice.BoxBConds[0] && SK == 0)
+
   if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
     Lattice.SetLRCutoffs();
+    LRBox=Lattice;
+    if(Lattice.SuperCellEnum == SUPERCELL_SLAB)
+    {
+      LRBox.R(2,2)*=qmc_common.vacuum;
+    }
+    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE)
+    {
+      LRBox.R(1,1)*=qmc_common.vacuum;
+      LRBox.R(2,2)*=qmc_common.vacuum;
+    }
+    LRBox.reset();
+    LRBox.SetLRCutoffs();
+
+    app_log() << "--------------------------------------- " << endl;
+    LRBox.print(app_log());
+    app_log() << "--------------------------------------- " << endl;
+
     if(SK)
     {
       app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << endl;
-      SK->UpdateNewCell(Lattice.LR_kc);
+      SK->UpdateNewCell(*this,LRBox.LR_kc);
     }
     else
     {
-      app_log() << "\n  Creating Structure Factor for periodic systems." <<endl;
-      SK = new StructFact(*this,Lattice.LR_kc);
+      app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc <<endl;
+      SK = new StructFact(*this,LRBox.LR_kc);
     }
     //Lattice.print(app_log());
     //This uses the copy constructor to avoid recomputing the data.
@@ -99,6 +118,7 @@ void ParticleSet::createSK()
   }
   for(int iat=0; iat<GroupID.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
+
 }
 
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)

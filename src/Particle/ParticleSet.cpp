@@ -45,7 +45,7 @@ void add_p_timer(vector<NewTimer*>& timers)
 
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
-  , ThreadID(0), SK(0), ParentTag(-1), ParentName("")
+  , ThreadID(0), SK(0), ParentTag(-1), ParentName("0")
 {
   initParticleSet();
   initPropertyList();
@@ -80,9 +80,11 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   }
   if(p.SK)
   {
-    R.InUnit=p.R.InUnit;
-    createSK();
-    SK->DoUpdate=p.SK->DoUpdate;
+    LRBox=p.LRBox; //copy LRBox
+    SK=new StructFact(*p.SK); //safe to use the copy constructor
+    //R.InUnit=p.R.InUnit;
+    //createSK();
+    //SK->DoUpdate=p.SK->DoUpdate;
   }
   if (p.Sphere.size())
     resizeSphere(p.Sphere.size());
@@ -428,7 +430,7 @@ void ParticleSet::update(int iflag)
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
 }
 
 void ParticleSet::update(const ParticlePos_t& pos)
@@ -437,7 +439,7 @@ void ParticleSet::update(const ParticlePos_t& pos)
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK && !SK->DoUpdate)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
 }
 
 
@@ -536,7 +538,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -565,7 +567,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -602,7 +604,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -632,7 +634,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -673,7 +675,7 @@ void ParticleSet::acceptMove(Index_t iat)
     }
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
-      SK->acceptMove(iat);
+      SK->acceptMove(iat,GroupID[iat]);
   }
   else
   {
@@ -730,7 +732,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
       DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
-      SK->UpdateAllPart();
+      SK->UpdateAllPart(*this);
   }
 //#endif
 }
@@ -742,7 +744,7 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   awalker.L=L;
   //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
   if (SK)
-    SK->UpdateAllPart();
+    SK->UpdateAllPart(*this);
   //awalker.DataSet.rewind();
 }
 

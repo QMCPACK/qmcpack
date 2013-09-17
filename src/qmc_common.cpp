@@ -17,12 +17,14 @@ QMCState::QMCState()
   dryrun=false;
   save_wfs=false;
   async_swap=false;
+  use_ewald=false;
   qmc_counter=0;
 #if defined(QMC_CUDA)
   compute_device=1;
 #else
   compute_device=0;
 #endif
+  vacuum=1.0;
   master_eshd_name="none";
 }
 
@@ -54,6 +56,14 @@ void QMCState::initialize(int argc, char **argv)
     {
       stopit=true;
     }
+    else if(c.find("--vacuum")<c.size())
+    {
+      vacuum=atof(argv[++i]);
+    }
+    //else if(c.find("--use_ewald")<c.size())
+    //{
+    //  use_ewald=true;
+    //}
     ++i;
   }
   if(stopit)
@@ -62,7 +72,6 @@ void QMCState::initialize(int argc, char **argv)
         << " subversion " << QMCPLUSPLUS_BRANCH
         << " build on " << getDateAndTime("%Y%m%d_%H%M") << endl;
     cerr << "Usage: qmcapp input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << endl << endl;
-    abort();
   }
 }
 

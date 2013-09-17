@@ -98,7 +98,6 @@ struct LatticeAnalyzer<T,3>
             SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
             rMin=std::min(rMin,dot(L,L));
           }
-      cout << " calcWignerSeitzRadius for Slab" << endl;
     }
     else if(mySC == SUPERCELL_WIRE)//wire
     {

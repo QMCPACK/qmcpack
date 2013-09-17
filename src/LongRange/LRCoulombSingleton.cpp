@@ -24,7 +24,6 @@
 #include "LongRange/TwoDEwaldHandler.h"
 #endif
 #include <numeric>
-
 namespace qmcplusplus
 {
 
@@ -47,11 +46,11 @@ struct CoulombFunctor
   inline CoulombFunctor() {}
   void reset(ParticleSet& ref)
   {
-    NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    NormFactor=4.0*M_PI/ref.LRBox.Volume;
   }
   void reset(ParticleSet& ref, T rs)
   {
-    NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    NormFactor=4.0*M_PI/ref.LRBox.Volume;
   }
   inline T operator()(T r, T rinv)
   {
@@ -83,11 +82,11 @@ struct CoulombFunctor
   inline CoulombFunctor() {}
   void reset(ParticleSet& ref)
   {
-    NormFactor=2.0*M_PI/ref.Lattice.Volume;
+    NormFactor=2.0*M_PI/ref.LRBox.Volume;
   }
   void reset(ParticleSet& ref, T rs)
   {
-    NormFactor=2.0*M_PI/ref.Lattice.Volume;
+    NormFactor=2.0*M_PI/ref.LRBox.Volume;
   }
   inline T operator()(T r, T rinv)
   {
@@ -123,7 +122,7 @@ struct PseudoCoulombFunctor
   inline PseudoCoulombFunctor(RadialFunctorType& rfunc):radFunc(rfunc) {}
   void reset(ParticleSet& ref)
   {
-    NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    NormFactor=4.0*M_PI/ref.LRBox.Volume;
   }
   inline T operator()(T r, T rinv)
   {
@@ -157,12 +156,17 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
   if(CoulombHandler ==0)
   {
 #if OHMMS_DIM==3
-//        if(ref.Lattice.SuperCellEnum == SUPERCELL_BULK)
+    if(ref.SK->SuperCellEnum == SUPERCELL_SLAB)
+    {
+      app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+      CoulombHandler= new EwaldHandler(ref);
+    }
+    else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
     {
       app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
       CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
     }
-//        else if(ref.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+//        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
 //        {
 //          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
 //          CoulombHandler= new EwaldHandler(ref);

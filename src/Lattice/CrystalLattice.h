@@ -25,6 +25,8 @@
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LatticeOperations.h>
 
+#define USE_BOXBCONDS
+
 using namespace std;
 namespace qmcplusplus
 {
@@ -212,22 +214,26 @@ struct CrystalLattice
 
   inline bool isValid(const TinyVector<T,D>& u) const
   {
+#if defined(USE_BOXBCONDS)
+    return CheckBoxConds<T,D>::inside(u,BoxBConds);
+#else
     if(SuperCellEnum)
       return true;
     else
       return CheckBoxConds<T,D>::inside(u);
+#endif
   }
 
-  inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
-  {
-    if(SuperCellEnum)
-      return CheckBoxConds<T,D>::inside(u,ubox);
-    else
-    {
-      ubox=u;
-      return CheckBoxConds<T,D>::inside(u);
-    }
-  }
+//  inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
+//  {
+//    if(SuperCellEnum)
+//      return CheckBoxConds<T,D>::inside(u,ubox);
+//    else
+//    {
+//      ubox=u;
+//      return CheckBoxConds<T,D>::inside(u);
+//    }
+//  }
 
   inline bool outOfBound(const TinyVector<T,D>& u) const
   {
