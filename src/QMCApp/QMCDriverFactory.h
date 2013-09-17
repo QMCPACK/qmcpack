@@ -40,6 +40,7 @@ struct QMCDriverFactory: public MPIObjectBase
   {
     DUMMY_RUN, /*!< dummy */
     VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+    CSVMC_RUN,
     DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
     RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
     OPTIMIZE_RUN,/*!< Optimization */

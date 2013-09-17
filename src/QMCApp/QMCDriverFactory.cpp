@@ -270,7 +270,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   //  primaryH->remove("Flux");
   //}
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  if(curRunType == VMC_RUN)
+  if(curRunType == VMC_RUN || curRunType == CSVMC_RUN)
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
     VMCFactory fac(curQmcModeBits.to_ulong(),cur);
