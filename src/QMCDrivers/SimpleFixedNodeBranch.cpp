@@ -410,7 +410,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
  // app_log()<<"\tvParam[B_EREF]="<<vParam[B_EREF]<<endl;
   
   //Update the energy variance and R2 for effective timestep and filtering.
-  VarianceHist(std::pow(vParam[B_ENOW],2));
+  VarianceHist(std::pow(vParam[B_ENOW]-vParam[B_EREF],2));
   R2Accepted(head.Properties(R2ACCEPTED));
   R2Proposed(head.Properties(R2PROPOSED));
  // app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<<endl;
@@ -419,10 +419,10 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
  // app_log()<<"\tR2Proposed="<<R2Proposed.result()<<endl;
 //  app_log()<<"\tR2Accept/R2Prop="<<R2Accepted.result()/R2Proposed.result()<<endl;
  // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
-//  app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
+ // app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
 //  app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
-//  app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<<endl;
-//  app_log()<<"--------------\n";
+ // app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<<endl;
+ // app_log()<<"--------------\n";
   //current mean
   if(BranchMode[B_USETAUEFF]){
 	//app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<<endl;  
@@ -451,6 +451,13 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
     if(BranchMode[B_USETAUEFF])
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
 	
+	
+	 // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
+ // app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
+ // app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
+  //app_log()<<"\t var = "<<VarianceHist.mean()-std::pow(EnergyHist.mean(),2)<<endl;
+ // app_log()<<"\t var = "<<VarianceHist.mean()<<endl;
+//  app_log()<<"----\n";
 	//app_log()<<"ToDoSteps="<<ToDoSteps<<endl;
 	 
     vParam[B_ETRIAL]=vParam[B_EREF];
@@ -461,7 +468,8 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       //RealType sigma_eq=std::sqrt(EnergyHist.variance());
       //RealType sigma_eq=VarianceHist.mean();//use the variance
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-      vParam[B_SIGMA]=std::sqrt(VarianceHist.mean()-std::pow(EnergyHist.mean(),2));
+      //vParam[B_SIGMA]=std::sqrt(VarianceHist.mean()-std::pow(EnergyHist.mean(),2));
+      vParam[B_SIGMA]=VarianceHist.mean();
       RealType sigma=std::max(vParam[B_SIGMA]*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;

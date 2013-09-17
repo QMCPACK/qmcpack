@@ -50,7 +50,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
     W.R = thisWalker.R;
     w_buffer.rewind();
     // Copy walker info in W
-    W.copyFromBuffer(w_buffer);
+    //W.copyFromBuffer(w_buffer);
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       // Copy wave function info in W and Psi1
@@ -154,7 +154,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
       (*it)->Age=0;
       (*it)->R = W.R;
       w_buffer.rewind();
-      W.copyToBuffer(w_buffer);
+     // W.copyToBuffer(w_buffer);
       for(int ipsi=0; ipsi< nPsi; ipsi++)
       {
         W.G=Psi1[ipsi]->G;

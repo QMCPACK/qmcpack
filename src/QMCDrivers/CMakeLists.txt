@@ -29,6 +29,11 @@ SET(QMCDRIVERS
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
   RMC/RMCFactory.cpp
+  CorrelatedSampling/CSVMC.cpp
+  CorrelatedSampling/CSVMCUpdateAll.cpp
+  CorrelatedSampling/CSVMCUpdatePbyP.cpp
+  CorrelatedSampling/CSUpdateBase.cpp
+  ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp

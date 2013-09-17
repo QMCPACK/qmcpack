@@ -125,13 +125,13 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
-    thisWalker.Drift=0.0;
-    if(useDrift)
-    {
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
-      setScaledDrift(Tau,thisWalker.Drift);
-    }
+  //  thisWalker.Drift=0.0;
+  //  if(useDrift)
+  //  {
+  //    for(int ipsi=0; ipsi< nPsi; ipsi++)
+  //      PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+ //     setScaledDrift(Tau,thisWalker.Drift);
+  //  }
     ++it;
     ++iw;
   }
@@ -159,7 +159,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
     Walker_t& thisWalker(**it);
     thisWalker.DataSet.clear();
     thisWalker.DataSet.rewind();
-    W.registerData(thisWalker,(*it)->DataSet);
+   // W.registerData(thisWalker,(*it)->DataSet);
     //evalaute the wavefunction and hamiltonian
     for(int ipsi=0; ipsi< nPsi; ipsi++)
     {
@@ -194,13 +194,13 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
-    thisWalker.Drift=0.0;
-    if(useDrift)
-    {
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
-      setScaledDrift(Tau,thisWalker.Drift);
-    }
+ //   thisWalker.Drift=0.0;
+ //   if(useDrift)
+ //   {
+ //     for(int ipsi=0; ipsi< nPsi; ipsi++)
+//        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+ //     setScaledDrift(Tau,thisWalker.Drift);
+ //   }
     ++it;
     ++iw;
   }
@@ -214,7 +214,7 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
     Walker_t& thisWalker(**it);
     Walker_t::Buffer_t& w_buffer((*it)->DataSet);
     w_buffer.rewind();
-    W.updateBuffer(**it,w_buffer);
+ //   W.updateBuffer(**it,w_buffer);
     //evalaute the wavefunction and hamiltonian
     for(int ipsi=0; ipsi< nPsi; ipsi++)
     {
@@ -246,13 +246,13 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
-    thisWalker.Drift=0.0;
-    if(useDrift)
-    {
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
-      setScaledDrift(Tau,thisWalker.Drift);
-    }
+  //  thisWalker.Drift=0.0;
+ //   if(useDrift)
+ //   {
+  //    for(int ipsi=0; ipsi< nPsi; ipsi++)
+  //      PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+  //    setScaledDrift(Tau,thisWalker.Drift);
+ //   }
     ++it;
     ++iw;
   }

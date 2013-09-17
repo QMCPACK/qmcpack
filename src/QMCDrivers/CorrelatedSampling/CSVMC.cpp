@@ -47,8 +47,10 @@ bool CSVMC::put(xmlNodePtr q)
   //for(int ipsi=0; ipsi<nPsi; ipsi++)
   //  H1[ipsi]->add2WalkerProperty(W);
   Estimators = branchEngine->getEstimatorManager();
+  app_log()<<"nPsi ="<<H1.size();
   if(Estimators == 0)
   {
+    app_log()<<"PUT CSVMC.  REGISTERING ESTIMATOR.\n";
     Estimators = new EstimatorManager(myComm);
     multiEstimator = new CSEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);

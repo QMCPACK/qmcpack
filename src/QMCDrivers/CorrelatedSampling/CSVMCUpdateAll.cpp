@@ -41,7 +41,7 @@ CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
  */
 void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
-  int iwlk(0);
+/*  int iwlk(0);
   int nPsi_minus_one(nPsi-1);
   while(it != it_end)
   {
@@ -127,7 +127,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     }
     ++it;
     ++iwlk;
-  }
+  }*/
 }
 }
 
