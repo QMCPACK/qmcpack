@@ -170,7 +170,6 @@ class Structure(Sobj):
 
 
     def remove_folded_structure(self):
-        #print 'removing folded structure',self.folded_structure.__class__.__name__
         self.folded_structure = None
         self.tmatrix = None
     #end def remove_folded_structure
@@ -2209,6 +2208,22 @@ class Crystal(Structure):
                          [  0,    0, -.182],
                          [  0,    0,  .362],
                          [  0,    0, -.362]]
+            ),
+        ('Cl2Ca2CuO2','prim'):obj(
+            lattice   = 'tetragonal',
+            cell      = 'primitive',
+            centering = 'I',
+            constants = (3.869,15.05),
+            units     = 'A',
+            atoms     = ('Cu','O','O','Ca','Ca','Cl','Cl'),
+            basis     = [[   0,   0,    0 ],
+                         [  .5,   0,    0 ],
+                         [   0,  .5,    0 ],
+                         [  .5,  .5,  .104],
+                         [   0,   0,  .396],
+                         [   0,   0,  .183],
+                         [  .5,  .5,  .317]],
+            basis_vectors = 'conventional'
             ),
         ('CuO2_plane','prim'):obj( 
             lattice   = 'tetragonal',

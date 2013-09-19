@@ -1,5 +1,5 @@
 
-from numpy import dot
+from numpy import dot,array
 from numpy.linalg import inv
 from generic import obj
 from developer import DevBase
@@ -492,7 +492,8 @@ ps_defaults = dict(
     type='crystal',
     kshift = (0,0,0),
     net_charge=0,
-    net_spin=0
+    net_spin=0,
+    pretile=None
     )
 def generate_physical_system(**kwargs):
 
@@ -522,6 +523,8 @@ def generate_physical_system(**kwargs):
     else:
         generation_info.particles = None
     #end if
+    pretile = kwargs['pretile']
+    del kwargs['pretile']
     valency = dict()
     remove = []
     for var in kwargs:
@@ -535,8 +538,24 @@ def generate_physical_system(**kwargs):
         del kwargs[var]
     #end for
 
+    if pretile is None:
+        structure = generate_structure(**kwargs),
+    else:
+        tiling = kwargs['tiling']
+        for d in range(len(pretile)):
+            if tiling[d]%pretile[d]!=0:
+                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile))
+            #end if
+        #end for
+        tiling = tuple(array(tiling)/array(pretile))
+        kwargs['tiling'] = pretile
+        pre = generate_structure(**kwargs)
+        pre.remove_folded_structure()
+        structure = pre.tile(tiling)
+    #end if
+
     ps = PhysicalSystem(
-        structure  = generate_structure(**kwargs),
+        structure  = structure,
         net_charge = net_charge,
         net_spin   = net_spin,
         **valency
