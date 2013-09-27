@@ -280,7 +280,7 @@ public:
   inline void setName(const string& aname)
   {
     myName     = aname;
-    if(ParentName=="")
+    if(ParentName=="0")
     {
       ParentName = aname;
     }
