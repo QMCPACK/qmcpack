@@ -17,7 +17,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
-#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -238,28 +237,29 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur):targetPtcl (&p)
+ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur)
+  :egGrid(p.Lattice)
 {
 }
 
 bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
 {
-  int nc=-1;
+  return true;
+}
+  
+SPOSetBase* ElectronGasBasisBuilder::createSPOSet(xmlNodePtr cur)
+{
+  app_log() << "ElectronGasBasisBuilder::createSPOSet " << endl;
+  int nc=0;
   int ns=0;
-  ValueType bosonic_eps(-999999);
-  ValueType rntype(0);
   PosType twist(0.0);
+  string spo_name("heg");
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(nc,"shell");
-  aAttrib.add(ns,"states");
-  aAttrib.add(bosonic_eps,"eps");
-  aAttrib.add(rntype,"primary");
+  aAttrib.add(ns,"size");
   aAttrib.add(twist,"twist");
+  aAttrib.add(spo_name,"name");
+  aAttrib.add(spo_name,"id");
   aAttrib.put(cur);
-//     int nat=targetPtcl->getTotalNum();
-//     int nup=nat/2;
-  HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl->Lattice);
-//     if (nc == 0) nc = egGrid.getShellIndex(nup);
   if (ns>0)
     nc=egGrid.getShellFromStates(ns);
   if (nc<0)
@@ -267,23 +267,8 @@ bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
     app_error() << "  HEG Invalid Shell." << endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
-//     if (nup!=egGrid.getNumberOfKpoints(nc))
-//     {
-//       app_error() << "  The number of particles does not match to the shell." << endl;
-//       app_error() << "  Suggested values for the number of particles " << endl;
-//       app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc) << " for shell "<< nc << endl;
-//       app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc-1) << " for shell "<< nc-1 << endl;
-//       APP_ABORT("ElectronGasOrbitalBuilder::put");
-//       return false;
-//     }
-  int nup = egGrid.n_within_shell[nc];
-  int nkpts=(nup-1)/2;
-  //create a E(lectron)G(as)O(rbital)Set
-  egGrid.createGrid(nc,nkpts);
-  myBasis=new RealEGOSet(egGrid.kpt,egGrid.mk2);
-//     myBasis->OrbitalSetSize=
-//     myBasis->BasisSetSize=
-  return true;
+  egGrid.createGrid(nc,(ns-1)/2);
+  return new RealEGOSet(egGrid.kpt,egGrid.mk2);
 }
 
 }
