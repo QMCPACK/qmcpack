@@ -19,7 +19,8 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-//#include "QMCWaveFunctions/DummyBasisSet.h"
+#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+
 
 namespace qmcplusplus
 {
@@ -118,23 +119,18 @@ public:
 class ElectronGasBasisBuilder: public BasisSetBuilder
 {
 protected:
-  typedef map<string,ParticleSet*> PtclPoolType;
-  typedef map<string,SPOSetBase*>  SPOPoolType;
-  ParticleSet *targetPtcl;
-  EGOSet* myBasis;
+  HEGGrid<RealType,OHMMS_DIM> egGrid;
+  xmlNodePtr spo_node;
 public:
   ///constructor
   ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
 
-  ///implement vritual function
+  ///implement virtual function
   bool put(xmlNodePtr cur);
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSetBase* createSPOSet(xmlNodePtr cur)
-  {
-    return myBasis;
-  };
+  SPOSetBase* createSPOSet(xmlNodePtr cur);
 
 };
 }

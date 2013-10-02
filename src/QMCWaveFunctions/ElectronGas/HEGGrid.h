@@ -13,6 +13,10 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
+
+#ifndef QMCPLUSPLUS_HEGGRID_H
+#define QMCPLUSPLUS_HEGGRID_H
+
 #include "Lattice/CrystalLattice.h"
 #include <map>
 
@@ -649,6 +653,9 @@ struct HEGGrid<T,2>
   }
 };
 }
+
+#endif
+
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
