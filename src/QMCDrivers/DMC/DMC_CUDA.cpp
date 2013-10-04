@@ -517,7 +517,7 @@ void DMCcuda::resetUpdateEngine()
   }
   else
   {
-    int nw_multi=branchEngine->resetRun(cur);
+    int nw_multi=branchEngine->resetRun(qmcNode);
     if(nw_multi>1)
     {
       app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;

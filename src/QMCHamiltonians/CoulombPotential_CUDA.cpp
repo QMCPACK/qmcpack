@@ -103,7 +103,7 @@ CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration &W,
 QMCHamiltonianBase*
 CoulombPotentialAB_CUDA::makeClone (ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new CoulombPotentialAB_CUDA(PtclA,&qp);
+  return new CoulombPotentialAB_CUDA(Pa,&qp);
 }
 
 }
