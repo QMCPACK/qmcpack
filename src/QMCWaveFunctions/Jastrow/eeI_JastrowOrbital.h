@@ -332,13 +332,18 @@ public:
       VarOffset.resize(Nion, Nelec, Nelec);
       int varoffset=myVars.Index[0];
       for (int i=0; i<Nion; i++)
-        for (int j=0; j<Nelec; j++)
-          for (int k=0; k<Nelec; k++)
-          {
-            FT &func_ijk = *F.data()[TripletID(i, j, k)];
-            VarOffset(i,j,k).first  = func_ijk.myVars.Index.front()-varoffset;
-            VarOffset(i,j,k).second = func_ijk.myVars.Index.size()+VarOffset(i,j,k).first;
-          }
+      {
+        if(IonDataList[i].cutoff_radius>0.0)
+        {
+          for (int j=0; j<Nelec; j++)
+            for (int k=0; k<Nelec; k++)
+            {
+              FT &func_ijk = *F.data()[TripletID(i, j, k)];
+              VarOffset(i,j,k).first  = func_ijk.myVars.Index.front()-varoffset;
+              VarOffset(i,j,k).second = func_ijk.myVars.Index.size()+VarOffset(i,j,k).first;
+            }
+        }
+      }
     }
   }
 
