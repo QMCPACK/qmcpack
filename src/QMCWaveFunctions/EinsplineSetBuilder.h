@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include "QMCWaveFunctions/EinsplineSetLocal.h"
 #include "Numerics/HDFNumericAttrib.h"
@@ -104,31 +105,6 @@ struct H5OrbSet
   { }
   H5OrbSet()
   { }
-};
-
-/** helper class to sort bands according to the band and twist
- */
-struct BandInfo
-{
-  int TwistIndex, BandIndex, Spin;
-  double Energy;
-  // This is true if we should make distinct copies
-  // represeninting a +k, -k pair
-  bool MakeTwoCopies;
-  // True if this state is a core state
-  bool IsCoreState;
-  inline bool operator<(BandInfo other) const
-  {
-    if  ((Energy < other.Energy+1e-6)&&(Energy > other.Energy-1e-6))
-    {
-      if (TwistIndex == other.TwistIndex)
-        return BandIndex<other.BandIndex;
-      else
-        return TwistIndex < other.TwistIndex;
-    }
-    else
-      return Energy < other.Energy;
-  }
 };
 
 /** EinsplineSet builder
@@ -278,14 +254,6 @@ public:
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
-
-  template<typename SPE>
-  void ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet);
-  template<typename SPE>
-  void ReadBands_ESHDF_Real(int spin, SPE* orbitalSet);
-
-  template<typename SPE>
-  void ReadBands_ESHDF_Big(int spin, SPE* orbitalSet);
 
   void CopyBands(int numOrbs);
 
