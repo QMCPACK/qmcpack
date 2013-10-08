@@ -41,12 +41,25 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 
   ~SplineMixedAdoptorReader()
   {
+    clear();
+  }
+
+  void clear()
+  {
     for(int i=0; i<spline_r.size(); ++i)
+    {
+      free(spline_r[i]->coefs);
       free(spline_r[i]);
-    if(use_imaginary)
-      for(int i=0; i<spline_i.size(); ++i)
-        free(spline_i[i]);
-    fftw_destroy_plan(FFTplan);
+    }
+    for(int i=0; i<spline_i.size(); ++i)
+    {
+      free(spline_i[i]->coefs);
+      free(spline_i[i]);
+    }
+    spline_r.clear();
+    spline_i.clear();
+    if(FFTplan!=NULL) fftw_destroy_plan(FFTplan);
+    FFTplan=NULL;
   }
 
   /** fft and spline a band
@@ -177,9 +190,9 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       spline_r[2*i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
       spline_r[2*i+1]=einspline::create(dummy,start,end,coarse_mesh,bspline->HalfG);
     }
-    spline_i.resize(norbs_n*2+2,0);
     if(bspline->is_complex)
     {
+      spline_i.resize(norbs_n*2+2,0);
       use_imaginary=true;
       for(int i=0; i<spline_i.size()/2; ++i)
       {
@@ -268,6 +281,8 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       }
     }
     app_log() << "TIME READBANDS " << now.elapsed() << endl;
+
+    clear();
     return bspline;
   }
 

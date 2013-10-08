@@ -195,13 +195,26 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
   ~SplineAdoptorReader()
   {
-    for(int i=0; i<spline_r.size(); ++i)
-      free(spline_r[i]);
-    for(int i=0; i<spline_i.size(); ++i)
-      free(spline_i[i]);
-    fftw_destroy_plan(FFTplan);
+    clear();
   }
 
+  void clear()
+  {
+    for(int i=0; i<spline_r.size(); ++i)
+    {
+      free(spline_r[i]->coefs);
+      free(spline_r[i]);
+    }
+    for(int i=0; i<spline_i.size(); ++i)
+    {
+      free(spline_i[i]->coefs);
+      free(spline_i[i]);
+    }
+    spline_r.clear();
+    spline_i.clear();
+    if(FFTplan!=NULL) fftw_destroy_plan(FFTplan);
+    FFTplan=NULL;
+  }
   SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet)
   {
     ReportEngine PRE("SplineC2XAdoptorReader","create_spline_set(spin,SPE*)");
@@ -326,6 +339,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
         app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << endl;
       }
     }
+
+    clear();
     return bspline;
   }
 
