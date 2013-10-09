@@ -114,7 +114,7 @@ class MethodAnalyzer(QAanalyzer):
             not_scalars = set(analyzer_quants.keys())
 
             self.scalars_hdf = analyzers.scalars_hdf(not_scalars)
-        
+
             analyzer_quantities = analyzer_quantities & request.quantities
             for name,type in analyzer_quants.iteritems():
                 if type in analyzer_quantities:

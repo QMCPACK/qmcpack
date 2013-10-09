@@ -1312,7 +1312,7 @@ class qmcsystem(QIxml):
 
 class simulationcell(QIxml):
     attributes = ['name']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff']
+    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','rs']
 #end class simulationcell
 
 class particleset(QIxml):
@@ -1339,10 +1339,10 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize']
     elements   = ['basisset','slaterdeterminant']
     h5tags     = ['twistindex','twistangle']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
 #end class determinantset
 
 class basisset(QIxml):
@@ -1533,13 +1533,22 @@ class neighbor_trace(QIxml):
     identifier = 'neighbors','centers'
 #end class neighbor_trace
 
+class density_matrices_1b(QIxml):
+    tag = 'estimator'
+    attributes = ['type']
+    parameters  = ['energy_matrix','basis_size','integrator','points']
+    write_types = obj(energy_matrix=yesno)
+    identifier  = 'type'
+#end class density_matrices_1b
+
 estimator = QIxmlFactory(
     name  = 'estimator',
-    types = dict(localenergy      = localenergy,
-                 energydensity    = energydensity,
-                 chiesa           = chiesa,
-                 density          = density,
-                 nearestneighbors = nearestneighbors),
+    types = dict(localenergy         = localenergy,
+                 energydensity       = energydensity,
+                 chiesa              = chiesa,
+                 density             = density,
+                 nearestneighbors    = nearestneighbors,
+                 density_matrices_1b = density_matrices_1b),
     typekey  = 'type',
     typekey2 = 'name'
     )
@@ -1654,7 +1663,7 @@ classes = [   #standard classes
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
-    reference_points,nearestneighbors,neighbor_trace
+    reference_points,nearestneighbors,neighbor_trace,density_matrices_1b
     ]
 types = dict( #simple types and factories
     host      = param,
@@ -1717,8 +1726,8 @@ Names.set_expanded_names(
     expandylm        = 'expandYlm',
     mo               = 'MO',
     numerical        = 'Numerical',
-    nearestneighbors = 'NearestNeighbors'
-    )
+    nearestneighbors = 'NearestNeighbors' 
+   )
 for c in classes:
     c.init_class()
     types[c.__name__] = c
@@ -2577,6 +2586,7 @@ class QmcpackInput(SimulationInput,Names):
             return None
         #end if
 
+        have_ions = True
         ions = None
         elns = None
         ion_list = []
@@ -2604,48 +2614,66 @@ class QmcpackInput(SimulationInput,Names):
         elif len(ion_list)>1:
             self.error('ability to handle multiple ion particlesets has not been implemented')
         #end if
+        if ions is None and elns!=None and 'groups' in elns:
+            simcell = input.get('simulationcell')
+            if simcell!=None and 'rs' in simcell:
+                N = 0
+                for g in elns.groups:
+                    N+=g.size
+                #end for
+                a = (4./3*pi*N)**(1./3)*simcell.rs
+                axes = a*identity(3)
+                have_ions = False
+            #end if
+        #end if
+
 
         if elns==None:
             self.error('could not find electron particleset')
         #end if
-        if ions==None:
+        if ions==None and have_ions:
             self.error('could not find ion particleset')
         #end if
 
-        elem = None
-        if 'ionid' in ions:
-            if isinstance(ions.ionid,str):
-                elem = [ions.ionid]
-            else:
-                elem = list(ions.ionid)
-            #end if
-            pos  = ions.position
-        elif 'size' in ions and ions.size==1:
-            elem = [ions.groups.list()[0].name]
-            pos  = [[0,0,0]]
-        elif 'groups' in ions:
+        if not have_ions:
             elem = []
             pos  = []
-            for group in ions.groups:
-                if 'position' in group:
-                    nions = len(group.position)
-                    elem.extend(nions*[group.name])
-                    pos.extend(list(group.position))
+        else:
+            elem = None
+            if 'ionid' in ions:
+                if isinstance(ions.ionid,str):
+                    elem = [ions.ionid]
+                else:
+                    elem = list(ions.ionid)
                 #end if
-            #end for
-            if len(elem)==1:
-                elem = None
-                pos  = None
-            else:
-                elem = array(elem)
-                pos  = array(pos)
-                order = elem.argsort()
-                elem = elem[order]
-                pos  = pos[order]
+                pos  = ions.position
+            elif 'size' in ions and ions.size==1:
+                elem = [ions.groups.list()[0].name]
+                pos  = [[0,0,0]]
+            elif 'groups' in ions:
+                elem = []
+                pos  = []
+                for group in ions.groups:
+                    if 'position' in group:
+                        nions = len(group.position)
+                        elem.extend(nions*[group.name])
+                        pos.extend(list(group.position))
+                    #end if
+                #end for
+                if len(elem)==1:
+                    elem = None
+                    pos  = None
+                else:
+                    elem = array(elem)
+                    pos  = array(pos)
+                    order = elem.argsort()
+                    elem = elem[order]
+                    pos  = pos[order]
+                #end if
             #end if
-        #end if
-        if elem is None:
-            self.error('could not read ions from ion particleset')
+            if elem is None:
+                self.error('could not read ions from ion particleset')
+            #end if
         #end if
 
         if axes==None:
@@ -2660,22 +2688,24 @@ class QmcpackInput(SimulationInput,Names):
         
         structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
         
-        valency = dict()
         ion_charge = 0
-        for name,element in ions.groups.iteritems():
-            if 'charge' in element:
-                valence = element.charge
-            elif 'valence' in element:
-                valence = element.valence
-            elif 'atomic_number' in element:
-                valence = element.atomic_number
-            else:
-                self.error('could not identify valency of '+name)
-            #end if
-            valency[name] = valence
-            count = list(elem).count(name)
-            ion_charge += valence*count
-        #end for
+        valency = dict()
+        if have_ions:
+            for name,element in ions.groups.iteritems():
+                if 'charge' in element:
+                    valence = element.charge
+                elif 'valence' in element:
+                    valence = element.valence
+                elif 'atomic_number' in element:
+                    valence = element.atomic_number
+                else:
+                    self.error('could not identify valency of '+name)
+                #end if
+                valency[name] = valence
+                count = list(elem).count(name)
+                ion_charge += valence*count
+            #end for
+        #end if
 
         net_spin = 0
         eln_charge = 0
@@ -3445,6 +3475,12 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 def generate_qmcpack_input(selector,*args,**kwargs):
+    if 'system' in kwargs:
+        system = kwargs['system']
+        if isinstance(system,PhysicalSystem):
+            system.update_particles()
+        #end if
+    #end if
     if selector=='basic':
         return generate_basic_input(**kwargs)
     elif selector=='opt_jastrow':
@@ -3457,23 +3493,30 @@ def generate_qmcpack_input(selector,*args,**kwargs):
 
 
 
-def generate_basic_input(id           = 'qmc',
-                         series       = 0,
-                         purpose      = '',
-                         seed         = None,
-                         bconds       = None,
-                         remove_cell  = False,
-                         meshfactor   = 1.0,
-                         twistnum     = None, 
-                         twist        = None,
-                         orbitals_h5  = 'MISSING.h5',
-                         system       = None,
-                         pseudos      = None,
-                         jastrows     = None,
-                         corrections  = None,
-                         observables  = None,
-                         estimators   = None,
-                         calculations = None):
+def generate_basic_input(id             = 'qmc',
+                         series         = 0,
+                         purpose        = '',
+                         seed           = None,
+                         bconds         = None,
+                         remove_cell    = False,
+                         meshfactor     = 1.0,
+                         precision      = 'double',
+                         twistnum       = None, 
+                         twist          = None,
+                         spin_polarized = False,
+                         orbitals_h5    = 'MISSING.h5',
+                         system         = None,
+                         pseudos        = None,
+                         jastrows       = None,
+                         corrections    = None,
+                         observables    = None,
+                         estimators     = None,
+                         calculations   = None):
+    if spin_polarized:
+        down_spin=1
+    else:
+        down_spin=0
+    #end if
     if bconds is None:
         bconds = array(['p','p','p'])
     else:
@@ -3519,6 +3562,7 @@ def generate_basic_input(id           = 'qmc',
                     determinantset = section(
                         twistnum = twistnum,
                         meshfactor = meshfactor,
+                        precision  = precision,
                         href       = orbitals_h5,
                         slaterdeterminant = section(
                             determinants = collection(
@@ -3528,7 +3572,7 @@ def generate_basic_input(id           = 'qmc',
                                     ),
                                 downdet = determinant(
                                     id='downdet',#ref='downdet',
-                                    occupation=section(mode='ground',spindataset=0)
+                                    occupation=section(mode='ground',spindataset=down_spin)
                                     ),
                                 )
                             )
@@ -3645,8 +3689,10 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                bconds           = None,
                                remove_cell      = False,
                                meshfactor       = 1.0,
+                               precision        = 'double',
                                twistnum         = None, 
                                twist            = None,
+                               spin_polarized   = False,
                                orbitals_h5      = 'MISSING.h5',
                                system           = None,
                                pseudos          = None,
@@ -3699,22 +3745,24 @@ def generate_opt_jastrow_input(id  = 'qmc',
     #end if
 
     input = generate_basic_input(
-        id           = id,
-        series       = series       ,
-        purpose      = purpose      ,
-        seed         = seed         ,
-        bconds       = bconds       ,
-        remove_cell  = remove_cell  ,
-        meshfactor   = meshfactor   ,
-        twistnum     = twistnum     ,
-        twist        = twist        ,
-        orbitals_h5  = orbitals_h5  ,
-        system       = system       ,
-        pseudos      = pseudos      ,
-        jastrows     = jastrows     ,
-        corrections  = corrections  ,
-        observables  = observables  ,
-        calculations = opts
+        id             = id             ,
+        series         = series         ,
+        purpose        = purpose        ,
+        seed           = seed           ,
+        bconds         = bconds         ,
+        remove_cell    = remove_cell    ,
+        meshfactor     = meshfactor     ,
+        precision      = precision      ,
+        twistnum       = twistnum       ,
+        twist          = twist          ,
+        spin_polarized = spin_polarized ,
+        orbitals_h5    = orbitals_h5    ,
+        system         = system         ,
+        pseudos        = pseudos        ,
+        jastrows       = jastrows       ,
+        corrections    = corrections    ,
+        observables    = observables    ,
+        calculations   = opts
         )
 
     return input

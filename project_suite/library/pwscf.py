@@ -81,6 +81,7 @@ class Pwscf(Simulation):
         #end if
         if result_name=='charge_density':
             result.location = os.path.join(self.locdir,outdir,prefix+'.save','charge-density.dat')
+            result.spin_location = os.path.join(self.locdir,outdir,prefix+'.save','spin-polarization.dat')
         elif result_name=='orbitals':
             result.location = os.path.join(self.locdir,outdir,prefix+'.wfc1')
         elif result_name=='structure':
@@ -100,18 +101,22 @@ class Pwscf(Simulation):
         return result
     #end def get_result
 
+
     def incorporate_result(self,result_name,result,sim):
         if result_name=='charge_density':
             c = self.input.control
             link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
             cd_loc = result.location
             cd_rel = os.path.relpath(cd_loc,link_loc)
+            sp_loc = result.spin_location
+            sp_rel = os.path.relpath(sp_loc,link_loc)
             cwd = os.getcwd()
             if not os.path.exists(link_loc):
                 os.makedirs(link_loc)
             #end if
             os.chdir(link_loc)
             os.system('ln -s '+cd_rel+' charge-density.dat')
+            os.system('ln -s '+sp_rel+' spin-polarization.dat')
             os.chdir(cwd)
         elif result_name=='structure':
             structure = self.system.structure

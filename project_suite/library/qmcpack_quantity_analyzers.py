@@ -2,6 +2,7 @@
 import os
 import re
 from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt
+from numpy.linalg import eig,LinAlgError
 from extended_numpy import ndgrid,simstats,simplestats,equilibration_length
 from generic import obj
 from hdfreader import HDFreader
@@ -290,7 +291,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         #end for
         missing = list(set(corrvars)-set(self.data.keys()))
         if len(missing)>0:            
-            self.warn('correction '+corrkey+' cannot be applied because '+str(missing)+' are missing')
+            #self.warn('correction '+corrkey+' cannot be applied because '+str(missing)+' are missing')
             return
         #end if
 
@@ -1085,4 +1086,80 @@ class TracesAnalyzer(QAanalyzer):
 
 
 
+class DensityMatricesAnalyzer(HDFAnalyzer):
+    def __init__(self,name):
+        HDFAnalyzer.__init__(self)
+        self.info.set(
+            name = name,
+            reordered = False
+            )
+    #end def __init__
 
+
+    def load_data_local(self,data=None):
+        if data==None:
+            self.error('attempted load without data')
+        #end if
+        name = self.info.name
+        names = 'number_matrix','energy_matrix'
+        should_remove = True
+        self.data = QAdata()
+        i = complex(0,1)
+        for name in names:
+            if name in data:
+                d = data[name]
+                v = d.value
+                v2 = d.value_squared
+                if len(v.shape)==4 and v.shape[3]==2:
+                    d.value         = v[:,:,:,0]  + i*v[:,:,:,1]
+                    d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
+                #end if
+                self.data[name] = d
+                del data[name]
+                should_remove = False
+            #end if
+        #end for
+        self.info.should_remove = should_remove
+    #end def load_data_local
+
+
+    def analyze_local(self):
+        nbe = QAanalyzer.method_info.nblocks_exclude
+        self.info.nblocks_exclude = nbe
+
+        nmdata = self.data.number_matrix.value[nbe:,...]
+        nm,nmvar,nmerr,nmkap = simstats(nmdata.transpose((1,2,0)))
+            
+        try:
+            n,nv = eig(nm)
+        except LinAlgError,e:
+            self.warn('number matrix diagonalization failed!')
+            n,nv = None,None
+        #end try
+        self.set(
+            number_matrix     = nm,
+            number_matrix_error = nmerr,
+            occupations       = n,
+            natural_orbitals  = nv
+            )
+
+        if 'energy_matrix' in self.data:
+            emdata = self.data.energy_matrix.value[nbe:,...]
+            em,emvar,emerr,emkap = simstats(emdata.transpose((1,2,0)))
+            
+            try:
+                e,ev = eig(em)
+            except LinAlgError,er:
+                self.warn('number matrix diagonalization failed!')
+                e,ev = None,None
+            #end try
+            self.set(
+                energy_matrix     = em,
+                energy_matrix_error = emerr,
+                energies          = e,
+                energy_orbitals   = ev
+                )
+        #end if
+        return
+    #end def analyze_local
+#end class DensityMatricesAnalyzer

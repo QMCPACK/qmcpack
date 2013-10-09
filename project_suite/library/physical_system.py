@@ -227,13 +227,15 @@ class PhysicalSystem(Matter):
 
     def __init__(self,structure=None,net_charge=0,net_spin=0,particles=None,**valency):
 
-        self.structure = structure
-        self.particles = particles
-        if structure==None:
+        if structure is None:
             self.structure = Structure()
+        else:
+            self.structure = structure
         #end if
-        if particles==None:
+        if particles is None:
             self.particles = Particles()
+        else:
+            self.particles = particles.copy()
         #end if
 
         self.folded_system = None
@@ -254,24 +256,39 @@ class PhysicalSystem(Matter):
                 )
         #end if
 
+        self.valency_in = obj(**valency)
+        self.net_charge_in = net_charge
+        self.net_spin_in   = net_spin
+
+        self.update_particles(clear=False)
+
+        self.check_folded_system()
+    #end def __init__
+
+
+    def update_particles(self,clear=True):
         #add ions
         pc = dict()
         elem = list(self.structure.elem)
         for ion in set(elem):
             pc[ion] = elem.count(ion)
         #end for
-        self.add_particles(**pc)
+        missing = set(pc.keys())-set(self.particles.keys())
+        if len(missing)>0:
+            if clear:
+                self.particles.clear()
+            #end if
+            self.add_particles(**pc)
 
-        #pseudize
-        if len(valency)>0:
-            self.pseudize(**valency)
+            #pseudize
+            if len(self.valency_in)>0:
+                self.pseudize(**self.valency_in)
+            #end if
+
+            #add electrons
+            self.generate_electrons(self.net_charge_in,self.net_spin_in)
         #end if
-
-        #add electrons
-        self.generate_electrons(net_charge,net_spin)
-
-        self.check_folded_system()
-    #end def __init__
+    #end def update_particles
 
 
     def update(self):
@@ -424,7 +441,6 @@ class PhysicalSystem(Matter):
 
 
     def remove_folded_system(self):
-        print 'removing folded system',self.folded_system.__class__.__name__
         self.folded_system = None
         self.structure.remove_folded_structure()
     #end def remove_folded_system
@@ -539,7 +555,7 @@ def generate_physical_system(**kwargs):
     #end for
 
     if pretile is None:
-        structure = generate_structure(**kwargs),
+        structure = generate_structure(**kwargs)
     else:
         tiling = kwargs['tiling']
         for d in range(len(pretile)):

@@ -913,6 +913,7 @@ class PwscfInput(SimulationInput):
 
     def incorporate_system(self,system,spin_polarized=False):
         system.check_folded_system()
+        system.update_particles()
         system.change_units('B')
         p  = system.particles
         s  = system.structure
@@ -1067,6 +1068,12 @@ class PwscfInput(SimulationInput):
 
 
 def generate_pwscf_input(selector,**kwargs):
+    if 'system' in kwargs:
+        system = kwargs['system']
+        if isinstance(system,PhysicalSystem):
+            system.update_particles()
+        #end if
+    #end if
     if selector=='scf':
         return generate_scf_input(**kwargs)
     elif selector=='nscf':
@@ -1156,6 +1163,8 @@ def generate_scf_input(prefix       = 'pwscf',
                 smearing    = smearing,
                 degauss     = degauss,
                 )
+        else:
+            pw.system.occupations = occupations
         #end if
     #end if
     pw.electrons.set(
@@ -1176,25 +1185,6 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if ecutfock!=None:
         pw.system.ecutfock = ecutfock
-    #end if
-    if hubbard_u!=None:
-        if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
-        #end if
-        pw.system.hubbard_u = deepcopy(hubbard_u)
-        pw.system.lda_plus_u = True
-    #end if
-    if start_mag!=None:
-        if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
-        #end if
-        pw.system.start_mag = deepcopy(start_mag)
-        if 'tot_magnetization' in pw.system:
-            del pw.system.tot_magnetization
-        #end if
-        if 'multiplicity' in pw.system:
-            del pw.system.multiplicity
-        #end if
     #end if
 
     system.check_folded_system()
@@ -1220,9 +1210,33 @@ def generate_scf_input(prefix       = 'pwscf',
     if use_folded:
         system = system.get_primitive()
     #end if
+        
+    if start_mag!=None:
+        spin_polarized=True
+    #end if
 
     if system!=None:
         pw.incorporate_system(system,spin_polarized=spin_polarized)
+    #end if
+
+    if hubbard_u!=None:
+        if not isinstance(hubbard_u,(dict,obj)):
+            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+        #end if
+        pw.system.hubbard_u = deepcopy(hubbard_u)
+        pw.system.lda_plus_u = True
+    #end if
+    if start_mag!=None:
+        if not isinstance(start_mag,(dict,obj)):
+            PwscfInput.class_error('input start_mag must be of type dict or obj')
+        #end if
+        pw.system.start_mag = deepcopy(start_mag)
+        #if 'tot_magnetization' in pw.system:
+        #    del pw.system.tot_magnetization
+        ##end if
+        if 'multiplicity' in pw.system:
+            del pw.system.multiplicity
+        #end if
     #end if
 
     if kshift==None:

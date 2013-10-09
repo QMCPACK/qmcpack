@@ -30,7 +30,8 @@ from qmcpack_analyzer_base import QAanalyzer,QAanalyzerCollection
 from qmcpack_property_analyzers \
     import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers \
-    import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,EnergyDensityAnalyzer,TracesAnalyzer
+    import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,\
+    EnergyDensityAnalyzer,TracesAnalyzer,DensityMatricesAnalyzer
 from qmcpack_method_analyzers \
     import OptAnalyzer,VmcAnalyzer,DmcAnalyzer
 from qmcpack_result_analyzers \
@@ -55,7 +56,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
         self.methods=set(['opt','vmc','dmc','rmc'])
         self.data_sources = set(['scalar','stat','dmc','storeconfig','opt','traces'])
         self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight'])
-        self.fields=set(['energydensity','density'])
+        self.fields=set(['energydensity','density','density_matrices_1b'])
 
         hdf_data_sources = set(['stat','storeconfig','traces'])
         if h5py_unavailable:
@@ -69,9 +70,9 @@ class QmcpackAnalyzerCapabilities(QAobject):
             scalars_hdf   = ScalarsHDFAnalyzer,
             dmc_dat       = DmcDatAnalyzer,
             traces        = TracesAnalyzer,
-            energydensity = EnergyDensityAnalyzer
+            energydensity = EnergyDensityAnalyzer,
+            density_matrices_1b = DensityMatricesAnalyzer
         )
-        
 
         self.quantities = self.scalars | self.fields
 

@@ -85,40 +85,66 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     
     def analyze(self):
-        path = self.path
-        infile_name = self.infile_name
-        outfile_name = self.outfile_name
-        pw2c_outfile_name = self.pw2c_outfile_name
+        try:
+            path = self.path
+            infile_name = self.infile_name
+            outfile_name = self.outfile_name
+            pw2c_outfile_name = self.pw2c_outfile_name
 
-        lines = open(os.path.join(path,outfile_name),'r').read().splitlines()
+            lines = open(os.path.join(path,outfile_name),'r').read().splitlines()
 
-        energies = []
-        for l in lines:
-            if l.find('!  ')!=-1:
-                energies.append( eval( l.split('=')[1].split()[0] ) )
+            energies = []
+            for l in lines:
+                if l.find('!  ')!=-1:
+                    energies.append( eval( l.split('=')[1].split()[0] ) )
+                #end if
+            #end for
+            if len(energies)==0:
+                self.E = 0.0
+            else:
+                self.E = energies[-1]
             #end if
-        #end for
-        if len(energies)==0:
-            self.E = 0.0
-        else:
-            self.E = energies[-1]
-        #end if
-        self.energies = array(energies)
+            self.energies = array(energies)
 
 
-        # get bands and occupations
-        nfound = 0
-        bands = obj()
-        for i in range(len(lines)):
-            l = lines[i]
-            if 'bands (ev)' in l:
-                nfound+=1
-                i_occ = -1
-                j = i
-                while i_occ==-1:
-                    j+=1
-                    if 'occupation numbers' in lines[j]:
-                        i_occ = j
+            # get bands and occupations
+            nfound = 0
+            bands = obj()
+            for i in range(len(lines)):
+                l = lines[i]
+                if 'bands (ev)' in l:
+                    nfound+=1
+                    i_occ = -1
+                    j = i
+                    while i_occ==-1:
+                        j+=1
+                        if 'occupation numbers' in lines[j]:
+                            i_occ = j
+                        #end if
+                    #end while
+                    seigs = ''
+                    for j in range(i+1,i_occ):
+                        seigs+=lines[j]
+                    #end for
+                    seigs = seigs.strip()
+                    eigs = array(seigs.split(),dtype=float)
+
+                    soccs = ''
+                    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                        soccs+= lines[j]
+                    #end for
+                    occs = array(soccs.split(),dtype=float)
+
+                    if nfound==1:
+                        bands.up = obj(
+                            eigs = eigs,
+                            occs = occs
+                            )
+                    elif nfound==2:
+                        bands.down = obj(
+                            eigs = eigs,
+                            occs = occs
+                            )
                     #end if
                 #end while
                 try:
@@ -153,117 +179,119 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         occs = occs
                         )
                 #end if
+            #end for
+            if nfound>0:
+                self.bands = bands
             #end if
-        #end for
-        if nfound>0:
-            self.bands = bands
-        #end if
 
 
-        structures = obj()
-        i=0
-        found = False
-        while i<len(lines):
-            l = lines[i]
-            if l.find('ATOMIC_POSITIONS')!=-1:
-                found = True
-                conf = obj()
-                atoms = []
-                positions = []
-                i+=1
-                tokens = lines[i].split()
-
-                while len(tokens)>0 and tokens[0] in elements and (len(tokens)==4 or (len(tokens)==7 and tokens[-1] in '01')):
-                    atoms.append(tokens[0])
-                    positions.append(array(tokens[1:4],dtype=float))
+            structures = obj()
+            i=0
+            found = False
+            while i<len(lines):
+                l = lines[i]
+                if l.find('ATOMIC_POSITIONS')!=-1:
+                    found = True
+                    conf = obj()
+                    atoms = []
+                    positions = []
                     i+=1
                     tokens = lines[i].split()
-                #end while
-                conf.atoms = atoms
-                conf.positions = array(positions)
-                nconf = len(structures)
-                structures[nconf]=conf
-            #end if
-            i+=1
-        #end while
-        if found:
-            self.structures = structures
-        #end if
 
-
-        forces = []
-        tot_forces = []
-        i=0
-        found = False
-        nlines = len(lines)
-        while i<nlines:
-            l = lines[i]
-            if l.find('Forces acting on atoms')!=-1:
-                found = True
-                conf = obj()
-                aforces = []
-                found_atom = False
-                for j in range(10):
-                    i+=1
-                    if i<nlines and 'atom' in lines[i]:
-                        found_atom = True
-                        break
-                    #end if
-                #end for
-                if found_atom:
-                    tokens = lines[i].split()
-                    while len(tokens)==9 and tokens[4]=='force':
-                        aforces.append(tokens[6:])
+                    while len(tokens)>0 and tokens[0] in elements and (len(tokens)==4 or (len(tokens)==7 and tokens[-1] in '01')):
+                        atoms.append(tokens[0])
+                        positions.append(array(tokens[1:4],dtype=float))
                         i+=1
                         tokens = lines[i].split()
                     #end while
+                    conf.atoms = atoms
+                    conf.positions = array(positions)
+                    nconf = len(structures)
+                    structures[nconf]=conf
                 #end if
-                forces.append(aforces)
                 i+=1
-                if i<nlines:
-                    tokens = lines[i].split()
-                    if len(tokens)==9 and tokens[1]=='force':
-                        tot_forces.append(float(tokens[3]))
+            #end while
+            if found:
+                self.structures = structures
+            #end if
+
+
+            forces = []
+            tot_forces = []
+            i=0
+            found = False
+            nlines = len(lines)
+            while i<nlines:
+                l = lines[i]
+                if l.find('Forces acting on atoms')!=-1:
+                    found = True
+                    conf = obj()
+                    aforces = []
+                    found_atom = False
+                    for j in range(10):
+                        i+=1
+                        if i<nlines and 'atom' in lines[i]:
+                            found_atom = True
+                            break
+                        #end if
+                    #end for
+                    if found_atom:
+                        tokens = lines[i].split()
+                        while len(tokens)==9 and tokens[4]=='force':
+                            aforces.append(tokens[6:])
+                            i+=1
+                            tokens = lines[i].split()
+                        #end while
+                    #end if
+                    forces.append(aforces)
+                    i+=1
+                    if i<nlines:
+                        tokens = lines[i].split()
+                        if len(tokens)==9 and tokens[1]=='force':
+                            tot_forces.append(float(tokens[3]))
+                        #end if
                     #end if
                 #end if
+                i+=1
+            #end while
+            if found:
+                self.forces = array(forces,dtype=float)
+                self.tot_forces = array(tot_forces)
+                max_forces = []
+                for f in self.forces:
+                    if len(f.shape)==2:
+                        max_forces.append((sqrt((f**2).sum(1))).max())
+                    #end if
+                #end for
+                self.max_forces = array(max_forces)
             #end if
-            i+=1
-        #end while
-        if found:
-            self.forces = array(forces,dtype=float)
-            self.tot_forces = array(tot_forces)
-            max_forces = []
-            for f in self.forces:
-                if len(f.shape)==2:
-                    max_forces.append((sqrt((f**2).sum(1))).max())
-                #end if
-            #end for
-            self.max_forces = array(max_forces)
-        #end if
 
-        tc= 0.
-        tw= 0.
-        for l in lines:
-            if l.find('PWSCF        :')!=-1:
-                t1 = l.split(':')[1].split('CPU')
-                tc = pwscf_time(t1[0])
-                tw = pwscf_time(t1[1].replace('WALL',''))
-                break
-            #end if
-        #end for
-        self.cputime = tc
-        self.walltime= tw
-
-        if pw2c_outfile_name!=None:
-            lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
+            tc= 0.
+            tw= 0.
             for l in lines:
-                if l.find('Kinetic')!=-1:
-                    tokens = l.split()
-                    self.K = eval(tokens[5])
+                if l.find('PWSCF        :')!=-1:
+                    t1 = l.split(':')[1].split('CPU')
+                    tc = pwscf_time(t1[0])
+                    tw = pwscf_time(t1[1].replace('WALL',''))
                     break
                 #end if
             #end for
-        #end if        
+            self.cputime = tc
+            self.walltime= tw
+
+            if pw2c_outfile_name!=None:
+                lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
+                for l in lines:
+                    if l.find('Kinetic')!=-1:
+                        tokens = l.split()
+                        self.K = eval(tokens[5])
+                        break
+                    #end if
+                #end for
+            #end if        
+        except Exception:
+            self.warn('encountered an exception, some quantities will not be available')
+        #end try
     #end def analyze
 
 

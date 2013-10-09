@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
 from numpy.linalg import inv,det,norm
+from types import NoneType
 from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull
 from generic import obj
@@ -105,6 +106,22 @@ def tile_points(points,tilevec,axin):
 #end def tile_points
 
 
+def tile_magnetization(mag,tilevec,mag_order,mag_prim):
+    # jtk mark current
+    #  implement true magnetic tiling based on the magnetic order
+    #  Structure needs a function magnetic_period which takes magnetic order
+    #   and translates it into a magnetic period tuple
+    #  magnetic_period should divide evenly into the tiling vector
+    #  the magnetic unit cell is self.tile(magnetic_period)
+    #  re-representing the folded cell as the magnetic primitive cell
+    #   requires different axes, often with a non-diagonal tiling matrix
+    #  if magnetic primitive is requested, a small tiling vector should first be used
+    #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
+    #  Structure should have a function providing labels to each magnetic species
+    mag = array(tilevec.prod()*list(mag),dtype=object)
+    return mag
+#end def tile_magnetization
+
 
 
 
@@ -115,8 +132,23 @@ class Sobj(DevBase):
 
 
 class Structure(Sobj): 
-    def __init__(self,axes=None,scale=1.,elem=None,pos=None,
-                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),permute=None,units=None,tiling=None,rescale=True,dim=3):
+
+    operations = obj()
+
+    @classmethod
+    def set_operations(cls):
+        cls.operations.set(
+            remove_folded_structure = cls.remove_folded_structure,
+            recenter = cls.recenter,
+            )
+    #end def set_operations
+
+
+    def __init__(self,axes=None,scale=1.,elem=None,pos=None,mag=None,
+                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),
+                 permute=None,units=None,tiling=None,rescale=True,dim=3,
+                 magnetization=None,magnetic_order=None,magnetic_prim=True,
+                 operations=None):
         if center is None:
             if axes !=None:
                 center = array(axes).sum(0)/2
@@ -133,13 +165,17 @@ class Structure(Sobj):
         if pos is None:
             pos = empty((0,dim))
         #end if
+        if mag is None:
+            mag = len(elem)*[None]
+        #end if
         self.scale  = 1.
         self.units  = units
         self.dim    = dim
         self.center = array(center)
         self.axes   = array(axes)
-        self.elem   = array(elem)
+        self.set_elem(elem)
         self.pos    = array(pos)
+        self.mag    = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.folded_structure = None
@@ -149,8 +185,13 @@ class Structure(Sobj):
         else:
             self.kaxes=2*pi*inv(self.axes).T
         #end if
+        self.magnetize(magnetization)
         if tiling!=None:
-            self.tile(tiling,in_place=True)
+            self.tile(tiling,
+                      in_place = True,
+                      magnetic_order = magnetic_order,
+                      magnetic_prim  = magnetic_prim
+                      )
         #end if
         if kpoints!=None:
             self.add_kpoints(kpoints,kweights)
@@ -166,7 +207,26 @@ class Structure(Sobj):
         if permute!=None:
             self.permute(permute)
         #end if
+        if operations!=None:
+            self.operate(operations)
+        #end if
     #end def __init__
+
+
+    def set_elem(self,elem):
+        self.elem = array(elem,dtype=object)
+    #end def set_elem
+
+
+    def operate(self,operations):
+        for op in operations:
+            if not op in self.operations:
+                self.error('{0} is not a known operation\n  valid options are:\n    {1}'.format(op,list(self.operations.keys())))
+            else:
+                self.operations[op](self)
+            #end if
+        #end for
+    #end def operate
 
 
     def remove_folded_structure(self):
@@ -219,6 +279,21 @@ class Structure(Sobj):
         self.skew(dot(inv(self.axes),axes))
     #end def adjust_axes
         
+
+    def reshape_axes(self,reshaping):
+        R = array(reshaping)
+        if abs(abs(det(R))-1)<1e-6:
+            self.axes = dot(self.axes,R)
+        else:
+            R = dot(inv(self.axes),R)
+            if abs(abs(det(R))-1)<1e-6:
+                self.axes = dot(self.axes,R)
+            else:
+                self.error('reshaping matrix must not change the volume\n  reshaping matrix:\n  {0}\n  volume change ratio: {1}'.format(R,abs(det(R))))
+            #end if
+        #end if
+    #end def reshape_axes
+
         
     def bounding_box(self,scale=1.0,box='tight',recenter=False):
         pmin    = self.pos.min(0)
@@ -300,7 +375,7 @@ class Structure(Sobj):
 
     
     def incorporate(self,other):
-        self.elem = array(list(self.elem)+list(other.elem))
+        self.set_elem(list(self.elem)+list(other.elem))
         self.pos  = array(list(self.pos )+list(other.pos ))
     #end def incorporate
 
@@ -612,6 +687,58 @@ class Structure(Sobj):
     #end def freeze
 
 
+    def magnetize(self,identifiers=None,magnetization='',**mags):
+        magsin = None
+        if isinstance(identifiers,obj):
+            magsin = identifiers.copy()
+        elif isinstance(magnetization,obj):
+            magsin = magnetization.copy()
+        #endif
+        if magsin!=None:
+            magsin.transfer_from(mags)
+            mags = magsin
+            identifiers = None
+            magnetization = ''
+        #end if
+        for e,m in mags.iteritems():
+            if not e in self.elem:
+                self.error('cannot magnetize non-existent element {0}'.format(e))
+            elif not isinstance(m,(NoneType,int)):
+                self.error('magnetizations provided must be either None or integer\n  you provided: {0}\n  full magnetization request provided:\n {1}'.format(m,mags))
+            #end if
+            self.mag[self.elem==e] = m
+        #end for
+        if identifiers is None and magnetization=='':
+            return
+        elif magnetization=='':
+            magnetization = identifiers
+            indices = range(len(self.elem))
+        else:
+            indices = self.locate(identifiers)
+        #end if
+        if not isinstance(magnetization,(list,tuple,ndarray)):
+            magnetization = [magnetization]
+        #end if
+        for m in magnetization:
+            if not isinstance(m,(NoneType,int)):
+                self.error('magnetizations provided must be either None or integer\n  you provided: {0}\n  full magnetization list provided: {1}'.format(m,magnetization))
+            #end if
+        #end for
+        if len(magnetization)==1:
+            m = magnetization[0]
+            for i in indices:
+                self.mag[i] = m
+            #end for
+        elif len(magnetization)==len(indices):
+            for i in range(len(indices)):
+                self.mag[indices[i]] = magnetization[i]
+            #end for
+        else:
+            self.error('magnetization list and list selected atoms differ in length\n  length of magnetization list: {0}\n  number of atoms selected: {1}\n  magnetization list: {2}\n  atom indices selected: {3}\n  atoms selected: {4}'.format(len(magnetization),len(indices),magnetization,indices,self.elem[indices]))
+        #end if
+    #end def magnetize
+
+
     def carve(self,identifiers):
         indices = self.locate(identifiers)
         if isinstance(identifiers,Structure):
@@ -650,7 +777,7 @@ class Structure(Sobj):
             elem = self.elem
         #end if
         indices=array(indices)
-        elem=array(elem)
+        elem=array(elem,dtype=object)
         pos =array(pos)
         nrem = len(indices)
         nadd = len(pos)
@@ -666,7 +793,7 @@ class Structure(Sobj):
             self.elem[indices[ar]] = elem[ar]
             self.pos[indices[ar]]  = pos[ar]
             ii = indices[ar[-1]]
-            self.elem = array( list(self.elem[0:ii])+list(elem[er])+list(self.elem[ii:]) )
+            self.set_elem( list(self.elem[0:ii])+list(elem[er])+list(self.elem[ii:]) )
             self.pos = array( list(self.pos[0:ii])+list(pos[er])+list(self.pos[ii:]) )
         else:
             self.elem[indices] = elem[:]
@@ -715,7 +842,7 @@ class Structure(Sobj):
         insert=array(insert)
         ii = last_replaced
         if len(insert)>0:
-            self.elem = array( list(self.elem[0:ii])+list(elem[insert])+list(self.elem[ii:]) )
+            self.set_elem( list(self.elem[0:ii])+list(elem[insert])+list(self.elem[ii:]) )
             self.pos = array( list(self.pos[0:ii])+list(pos[insert])+list(self.pos[ii:]) )
         #end if
         self.remove_folded_structure()
@@ -787,7 +914,7 @@ class Structure(Sobj):
                 plist.append(pos[i])
             #end for
         #end if
-        self.elem = array(elist)
+        self.set_elem(elist)
         self.pos  = array(plist)
         self.remove_folded_structure()
     #end def point_defect
@@ -1111,9 +1238,18 @@ class Structure(Sobj):
 
     def tile(self,*td,**kwargs):
         in_place = False
+        magnetic_order = None
+        magnetic_primitive = True
         if 'in_place' in kwargs:
             in_place = kwargs['in_place']
         #end if
+        if 'magnetic_order' in kwargs:
+            magnetic_order = kwargs['magnetic_order']
+        #end if
+        if 'magnetic_primitive' in kwargs:
+            magnetic_primitive = kwargs['magnetic_primitive']
+        #end if
+
         if self.dim!=3:
             self.error('tile is currently only implemented for 3 dimensions')
         #end if
@@ -1187,12 +1323,14 @@ class Structure(Sobj):
             pos    = array(self.pos)   
             axes   = array(self.axes)  
             center = array(self.center)
+            mag    = array(self.mag)
         else:
             pos,axes = tile_points(self.pos,t,self.axes)
             if matrix_tiling:
                 axes = dot(self.axes,tilematrix)
             #end if
             center = axes.sum(0)/2
+            mag = tile_magnetization(self.mag,t,magnetic_order,magnetic_primitive)
         #end if
         kaxes = dot(inv(tilematrix),self.kaxes)
         #kpoints = self.recenter_k(self.kpoints,kaxes,True)
@@ -1201,9 +1339,10 @@ class Structure(Sobj):
 
         ts = self.copy()
         ts.center  = center
-        ts.elem    = elem
+        ts.set_elem(elem)
         ts.axes    = axes
         ts.pos     = pos
+        ts.mag     = mag
         ts.kaxes   = kaxes
         ts.kpoints = kpoints
         ts.kweights= kweights
@@ -1545,7 +1684,7 @@ class Structure(Sobj):
         #end for
         sn = self.copy()
         nnr = nn[:,1:].ravel()
-        sn.elem = t.elem[nnr]
+        sn.set_elem(t.elem[nnr])
         sn.pos  = t.pos[nnr]
         sn.recenter()
         indices = self.locate(sn.pos)
@@ -1699,7 +1838,7 @@ class Structure(Sobj):
             elist.pop(i)
             plist.pop(i)
         #end for
-        self.elem = array(elist)
+        self.set_elem(elist)
         self.pos  = array(plist)
         self.recenter(center)
         return dmax
@@ -1838,7 +1977,7 @@ class Structure(Sobj):
                 #end if
             #end if
         #end for
-        self.elem  = array(elem)
+        self.set_elem(elem)
         self.pos   = array(pos)
         self.units = 'A'
     #end def read_xyz
@@ -1925,7 +2064,7 @@ class Structure(Sobj):
         os.system(viewer+' '+filepath)
     #end def show
 #end class Structure
-
+Structure.set_operations()
 
 
 class DefectStructure(Structure):
@@ -2225,6 +2364,44 @@ class Crystal(Structure):
                          [  .5,  .5,  .317]],
             basis_vectors = 'conventional'
             ),
+        ('Cl2Ca2CuO2','afm'):obj(
+            lattice   = 'tetragonal',
+            cell      = 'conventional',
+            centering = 'P',
+            axes      = [[.5,-.5,0],[.5,.5,0],[0,0,1]],
+            constants = (2*3.869,15.05),
+            units     = 'A',
+            atoms     = 4*['Cu','O','O','Ca','Ca','Cl','Cl'],
+            basis     = [[   0,   0,    0 ], #Cu
+                         [  .25,  0,    0 ],
+                         [   0,  .25,   0 ],
+                         [  .25, .25, .104],
+                         [   0,   0,  .396],
+                         [   0,   0,  .183],
+                         [  .25, .25, .317],
+                         [  .25, .25, .5  ], #Cu
+                         [  .5,  .25, .5  ],
+                         [  .25, .5,  .5  ],
+                         [  .5,  .5,  .604],
+                         [  .25, .25, .896],
+                         [  .25, .25, .683],
+                         [  .5,  .5,  .817],
+                         [  .5,   0,    0 ], #Cu2
+                         [  .75,  0,    0 ],
+                         [  .5,  .25,   0 ],
+                         [  .75, .25, .104],
+                         [  .5,   0,  .396],
+                         [  .5,   0,  .183],
+                         [  .75, .25, .317],
+                         [  .75, .25, .5  ], #Cu2
+                         [   0,  .25, .5  ],
+                         [  .75, .5,  .5  ],
+                         [   0,  .5,  .604],
+                         [  .75, .25, .896],
+                         [  .75, .25, .683],
+                         [   0,  .5,  .817]],
+            basis_vectors = 'conventional'
+            ),
         ('CuO2_plane','prim'):obj( 
             lattice   = 'tetragonal',
             cell      = 'primitive',
@@ -2288,31 +2465,52 @@ class Crystal(Structure):
     del kc_keys
 
 
-    def __init__(self,lattice=None,cell=None,centering=None,constants=None,
-                 atoms=None,basis=None,basis_vectors=None,tiling=None,cscale=None,
-                 axes=None,units=None,angular_units='degrees',kpoints=None,
-                 kgrid=None,kshift=(0,0,0),permute=None):
+    def __init__(self,
+                 lattice        = None,
+                 cell           = None,
+                 centering      = None,
+                 constants      = None, 
+                 atoms          = None,
+                 basis          = None,
+                 basis_vectors  = None,
+                 tiling         = None,
+                 cscale         = None,
+                 axes           = None,
+                 units          = None,
+                 angular_units  = 'degrees',
+                 kpoints        = None,
+                 kgrid          = None,
+                 magnetization  = None,
+                 magnetic_order = None,
+                 magnetic_prim  = True,
+                 kshift         = (0,0,0),
+                 permute        = None,
+                 operations     = None):
         if lattice is None and cell is None and atoms is None and units is None:
             return
         #end if
 
         gi = obj(
-            lattice       = lattice      ,  
-            cell          = cell         ,
-            centering     = centering    ,
-            constants     = constants    ,   
-            atoms         = atoms        ,
-            basis         = basis        ,
-            basis_vectors = basis_vectors,
-            tiling        = tiling       ,
-            cscale        = cscale       ,
-            axes          = axes         ,
-            units         = units        ,
-            angular_units = angular_units,
-            kpoints       = kpoints      ,
-            kgrid         = kgrid        ,
-            kshift        = kshift       ,
-            permute       = permute
+            lattice        = lattice       ,  
+            cell           = cell          ,
+            centering      = centering     ,
+            constants      = constants     ,   
+            atoms          = atoms         ,
+            basis          = basis         ,
+            basis_vectors  = basis_vectors ,
+            tiling         = tiling        ,
+            cscale         = cscale        ,
+            axes           = axes          ,
+            units          = units         ,
+            angular_units  = angular_units ,
+            magnetization  = magnetization ,
+            magnetic_order = magnetic_order,
+            magnetic_prim  = magnetic_prim ,
+            kpoints        = kpoints       ,
+            kgrid          = kgrid         ,
+            kshift         = kshift        ,
+            permute        = permute       ,
+            operations     = operations
             )
         generation_info = gi.copy()
 
@@ -2387,9 +2585,9 @@ class Crystal(Structure):
         #end if
         if cell=='conventional':
             if centering is None:
-                self.error('centering must be provided for a conventional cell\n  options for a '+lattice+' lattice are: '+str(self.lattice_types[lattice]))
+                self.error('centering must be provided for a conventional cell\n  options for a '+lattice+' lattice are: '+str(self.lattice_centerings[lattice]))
             elif centering not in self.centerings:
-                self.error('centering type '+str(centering)+' is not recognized\n  options for a '+lattice+' lattice are: '+str(self.lattice_types[lattice]))
+                self.error('centering type '+str(centering)+' is not recognized\n  options for a '+lattice+' lattice are: '+str(self.lattice_centerings[lattice]))
             #end if
         #end if
         if isinstance(constants,int) or isinstance(constants,float):
@@ -2473,6 +2671,11 @@ class Crystal(Structure):
         #end if
 
         points = [[0,0,0]]
+        #get the conventional axes
+        a1c = array([a,0,0])
+        a2c = array([b*cos(gamma),b*sin(gamma),0])
+        a3c = array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
+        axes_conv = array([a1c,a2c,a3c]).copy()
         if axes is None:
             if cell not in self.cell_types:
                 self.error('cell must be primitive or conventional\n  You provided: '+str(cell))
@@ -2480,11 +2683,6 @@ class Crystal(Structure):
             if cell=='primitive' and centering=='P':
                 cell='conventional'
             #end if
-            #get the conventional axes
-            a1c = array([a,0,0])
-            a2c = array([b*cos(gamma),b*sin(gamma),0])
-            a3c = array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
-            axes_conv = array([a1c,a2c,a3c]).copy()
             #get the primitive axes
             if centering=='P':
                 a1 = a1c
@@ -2566,18 +2764,22 @@ class Crystal(Structure):
 
         Structure.__init__(
             self,
-            axes    = axes,
-            scale   = a,
-            elem    = elem,
-            pos     = pos,
-            center  = axes.sum(0)/2,
-            units   = units,
-            tiling  = tiling,
-            kpoints = kpoints,
-            kgrid   = kgrid,
-            kshift  = kshift,
-            permute = permute,
-            rescale = False)
+            axes           = axes,
+            scale          = a,
+            elem           = elem,
+            pos            = pos,
+            center         = axes.sum(0)/2,
+            units          = units,
+            magnetization  = magnetization,
+            magnetic_order = magnetic_order,
+            magnetic_prim  = magnetic_prim,
+            tiling         = tiling,
+            kpoints        = kpoints,
+            kgrid          = kgrid,
+            kshift         = kshift,
+            permute        = permute,
+            rescale        = False,
+            operations     = operations)
     #end def __init__
 #end class Crystal
 
@@ -2610,7 +2812,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='atom':
         return generate_atom_structure(*args,**kwargs)
     else:
-        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal or defect')
+        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
     #end if
 #end def generate_structure
 
@@ -2627,8 +2829,10 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                constants=None,atoms=None,basis=None,
                                basis_vectors=None,tiling=None,cscale=None,
                                axes=None,units=None,angular_units='degrees',
+                               magnetization=None,magnetic_order=None,magnetic_prim=True,
                                kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
+                               operations=None,
                                struct_type=Crystal):    
 
     if structure!=None:
@@ -2645,22 +2849,26 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
     #end if
 
     s=Crystal(
-        lattice       = lattice      ,  
-        cell          = cell         ,
-        centering     = centering    ,
-        constants     = constants    ,   
-        atoms         = atoms        ,
-        basis         = basis        ,
-        basis_vectors = basis_vectors,
-        tiling        = tiling       ,
-        cscale        = cscale       ,
-        axes          = axes         ,
-        units         = units        ,
-        angular_units = angular_units,
-        kpoints       = kpoints      ,
-        kgrid         = kgrid        ,
-        kshift        = kshift       ,
-        permute       = permute
+        lattice        = lattice       ,  
+        cell           = cell          ,
+        centering      = centering     ,
+        constants      = constants     ,   
+        atoms          = atoms         ,
+        basis          = basis         ,
+        basis_vectors  = basis_vectors ,
+        tiling         = tiling        ,
+        cscale         = cscale        ,
+        axes           = axes          ,
+        units          = units         ,
+        angular_units  = angular_units ,
+        magnetization  = magnetization ,
+        magnetic_order = magnetic_order,
+        magnetic_prim  = magnetic_prim ,
+        kpoints        = kpoints       ,
+        kgrid          = kgrid         ,
+        kshift         = kshift        ,
+        permute        = permute       ,
+        operations     = operations
         )
 
     if struct_type!=Crystal:
