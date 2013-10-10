@@ -49,6 +49,9 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<string,SPOSetBase*> SPOPool_t;
+  typedef vector<int> states_t;
+  typedef vector<RealType> energies_t;
+  typedef vector<int> degeneracies_t;
 
   ///true if C is an identity matrix
   bool Identity;
@@ -59,9 +62,9 @@ public:
   bool ionDerivs;
   ///total number of orbitals
   IndexType TotalOrbitalSize;
-  ///number of Single-particle orbtials
+  ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
-  ///number of Single-particle orbtials
+  ///number of Single-particle orbitals
   IndexType BasisSetSize;
   ///index of the particle
   IndexType ActivePtcl;
@@ -81,20 +84,136 @@ public:
    */
   string objectName;
 
+  /** indices of all orbitals/states in the set
+   *  ordered from lowest to highest in index
+   *  (if energy exists, i<i' => e<e')
+   */
+  states_t states;
+
+  /** energies of all states in the set (if they exist)
+   */
+  energies_t energies;
+
+  /** energetic degeneracy of all states in the set (if energies exist)
+   */
+  degeneracies_t degeneracies;
+
+
   /** constructor
    */
-  //SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0)
   SPOSetBase()
-    :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1),
-     Optimizable(false),ionDerivs(false)
+    :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
+    ActivePtcl(-1),Optimizable(false),ionDerivs(false)
   {
     className="invalid";
   }
 
-
   /** destructor
    */
   virtual ~SPOSetBase() {}
+
+
+  /** return the size of the orbital set
+   */
+  inline int size() const
+  {
+    return OrbitalSetSize;
+  }
+
+  /** return whether states exist
+   */
+  inline bool has_states() const
+  {
+    return states.size()==size();
+  }
+
+  /** return whether the state indices are ordered properly
+   */
+  inline bool states_ordered() const
+  {
+    bool ordered = true;
+    for(int i=1;i<states.size();++i)
+      ordered &= states[i-1]<states[i];
+    return ordered;
+  }
+
+  /**return the lowest index state in the set
+   */
+  inline int min_state() const
+  {
+    return *states.begin();
+  }
+
+  /**return the highest index state in the set
+   */
+  inline int max_state() const
+  {
+    return *(states.end()-1);
+  }
+
+  /** return whether states has been properly initialized
+   */
+  inline bool states_valid() const
+  {
+    return has_states() && min_state()>=0 && max_state()>=0 && states_ordered();
+  }
+
+  /** return whether the orbital indices are a contiguous set 
+   */
+  inline bool contiguous() const
+  {
+    return (max_state()-min_state()+1)==size();
+  }
+
+  /** return whether energies exist
+   */
+  inline bool has_energies() const
+  {
+    return energies.size()==size();
+  }
+
+  /** return whether the energies are ordered properly
+   */
+  inline bool energies_ordered() const
+  {
+    bool ordered = true;
+    for(int i=1;i<energies.size();++i)
+      ordered &= energies[i-1]<energies[i];
+    return ordered;
+  }
+
+  /** return whether energies has been properly initialized
+   */
+  inline bool energies_valid() const
+  {
+    return has_energies() && energies_ordered();
+  }
+
+  /** return whether degeneracies exist
+   */
+  inline bool has_degeneracies() const
+  {
+    return degeneracies.size()==size();
+  }
+
+  /** return whether the maximal set of properties have been properly initialized
+   */
+  inline bool complete() const
+  {
+    return states_valid() && energies_valid() && has_degeneracies();
+  }
+
+  /** print SPOSet information
+   */
+  virtual void report()
+  {
+    report("");
+  }
+
+  /** print SPOSet information
+   */
+  virtual void report(const string& pad);
+
 
   /** return the size of the orbital set
    */
@@ -107,7 +226,6 @@ public:
   {
     return BasisSetSize;
   }
-
 
 
   bool setIdentity(bool useIdentity)
@@ -249,6 +367,7 @@ public:
   {
     return true;
   }
+
 
 #ifdef QMC_CUDA
 

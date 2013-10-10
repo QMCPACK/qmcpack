@@ -49,7 +49,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
 
   bool put(xmlNodePtr cur);
 
-  SPOSetBase* createSPOSet(xmlNodePtr cur)
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }

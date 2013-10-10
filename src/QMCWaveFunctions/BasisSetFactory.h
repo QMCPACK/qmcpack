@@ -52,6 +52,12 @@ public:
       return 0;
   }
 
+  /// return basis builder map
+  map<string,BasisSetBuilder*>* getBasisBuilders()
+  {
+    return &basisBuilder;
+  }
+
 private:
   ///set of basis set: potential static data
   map<string,BasisSetBuilder*> basisBuilder;

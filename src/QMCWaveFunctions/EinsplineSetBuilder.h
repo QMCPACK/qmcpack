@@ -126,7 +126,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    */
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
   //protected:
   // Type definitions

@@ -32,7 +32,7 @@ AFMSPOBuilder::put (xmlNodePtr cur)
 
 
 SPOSetBase*
-AFMSPOBuilder::createSPOSet(xmlNodePtr cur)
+AFMSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   AFMSPOSet *spo =  new AFMSPOSet();
   return spo;

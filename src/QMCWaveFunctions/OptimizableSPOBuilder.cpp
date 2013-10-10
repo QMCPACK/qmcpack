@@ -32,7 +32,7 @@ OptimizableSPOBuilder::put (xmlNodePtr cur)
 
 
 SPOSetBase*
-OptimizableSPOBuilder::createSPOSet(xmlNodePtr cur)
+OptimizableSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   OptimizableSPOSet *spo =  new OptimizableSPOSet();
   return spo;

@@ -247,7 +247,7 @@ bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
   return true;
 }
   
-SPOSetBase* ElectronGasBasisBuilder::createSPOSet(xmlNodePtr cur)
+SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasBasisBuilder::createSPOSet " << endl;
   int nc=0;

@@ -236,6 +236,7 @@ public:
   RealType ratio(ParticleSet& P, int iat);
   RealType ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios);
   RealType alternateRatio(ParticleSet& P);
+  ValueType full_ratio(ParticleSet& P, int iat);
 
   void update(ParticleSet& P, int iat);
 

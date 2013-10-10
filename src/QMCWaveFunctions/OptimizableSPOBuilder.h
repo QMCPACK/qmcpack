@@ -36,8 +36,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    */
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
-  //    SPOSetBase* createSPOSet(xmlNodePtr cur, SPOPool_t& spo_pool);
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+  //    SPOSetBase* createSPOSetFromXML(xmlNodePtr cur, SPOPool_t& spo_pool);
 
 };
 }

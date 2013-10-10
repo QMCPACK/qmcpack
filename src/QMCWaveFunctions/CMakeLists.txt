@@ -2,12 +2,14 @@ SET(WFBASE_SRCS
   OrbitalBase.cpp
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
+  BasisSetBase.cpp
   ProductOrbital.cpp
   OrbitalConstraintsBase.cpp
   SPOSetBase.cpp
   FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
+  CompositeSPOSet.cpp
   )
 
 ########################

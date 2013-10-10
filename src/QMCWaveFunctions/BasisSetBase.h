@@ -152,14 +152,57 @@ struct BasisSetBase: public OrbitalSetTraits<T>
 struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
 {
   typedef std::map<string,SPOSetBase*> SPOPool_t;
+  typedef vector<int> states_t;
+  typedef vector<RealType> energies_t;
+  typedef vector<int> degeneracies_t;
+
+  /// true when created from xml
+  bool initialized;
+  /// list of all sposets created by this builder
+  vector<SPOSetBase*> sposets;
+  /// list to temporarily store all possible energies
+  energies_t          energy_list;
+  /// list to temporarily store all possible degeneracies
+  degeneracies_t      degeneracy_list;
 
   BasisSetBase<RealType>* myBasisSet;
-  BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0) {}
+  BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0), initialized(false) {}
   virtual ~BasisSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
-  virtual SPOSetBase* createSPOSet(xmlNodePtr cur)=0;
-  // virtual SPOSetBase* createSPOSet(xmlNodePtr cur, SPOPool_t& spo_pool)
-  // { createSPOSet(cur); }
+
+  /// create an sposet from xml
+  virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
+
+  /// create an sposet from a set of state indices
+  virtual SPOSetBase* createSPOSetFromStates(states_t& states);
+
+  /// return all possible energies of this basis set
+  virtual energies_t& get_energies();
+
+  /// return all possible degeneracies of this basis set
+  virtual degeneracies_t& get_degeneracies();
+
+  /// create an sposet from xml
+  SPOSetBase* createSPOSet(xmlNodePtr cur);
+
+  /// create an sposet from a set of state indices
+  SPOSetBase* createSPOSet(states_t& states);
+
+  /// create an sposet in the index range [0,range_max)
+  SPOSetBase* createSPOSet(int range_max);
+
+  /// create an sposet in the index range [range_min,range_max)
+  SPOSetBase* createSPOSet(int range_min,int range_max);
+
+  /// create an sposet in the energy range (-inf,emax)
+  SPOSetBase* createSPOSet(RealType emax,RealType tol=1e-6);
+
+  /// create an sposet in the energy range [emin,emax)
+  SPOSetBase* createSPOSet(RealType emin,RealType emax,RealType tol=1e-6);
+
+  /// create an sposet from a set of energy values
+  SPOSetBase* createSPOSet(energies_t& energies,RealType tol=1e-6);
+
 };
 
 }

@@ -35,7 +35,7 @@ namespace qmcplusplus
 {
 
 SPOSetBase*
-EinsplineSetBuilder::createSPOSet(xmlNodePtr cur)
+EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   BufferLayer=2.0;

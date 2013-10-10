@@ -270,6 +270,48 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   return true;
 }
 
+
+void SPOSetBase::report(const string& pad)
+{
+  app_log()<<pad<<"size              = "<<size()<<endl;
+  app_log()<<pad<<"states_valid      = "<<states_valid()<<endl;
+  app_log()<<pad<<"complete          = "<<complete()<<endl;
+  app_log()<<pad<<"has_states        = "<<has_states()<<endl;
+  app_log()<<pad<<"# of states       = "<<states.size()<<endl;
+  if(states.size()>0)
+  {
+    app_log()<<pad<<"min_state         = "<<min_state()<<endl;
+    app_log()<<pad<<"max_state         = "<<max_state()<<endl;
+    app_log()<<pad<<"contiguous        = "<<contiguous()<<endl;
+    app_log()<<pad<<"states"<<endl;
+    app_log()<<pad<<" ";
+    for(int j=0;j<states.size();++j)
+      app_log()<<" "<<states[j];
+    app_log()<<endl;
+  }
+  app_log()<<pad<<"has_energies      = "<<has_energies()<<endl;
+  app_log()<<pad<<"# of energies     = "<<energies.size()<<endl;
+  if(energies.size()>0)
+  {
+    app_log()<<pad<<"energies"<<endl;
+    app_log()<<pad<<" ";
+    for(int j=0;j<energies.size();++j)
+      app_log()<<" "<<energies[j];
+    app_log()<<endl;
+  }
+  app_log()<<pad<<"has_degeneracies  = "<<has_degeneracies()<<endl;
+  app_log()<<pad<<"# of degeneracies = "<<degeneracies.size()<<endl;
+  if(degeneracies.size()>0)
+  {
+    app_log()<<pad<<"degeneracies"<<endl;
+    app_log()<<pad<<" ";
+    for(int j=0;j<degeneracies.size();++j)
+      app_log()<<" "<<degeneracies[j];
+    app_log()<<endl;
+  }
+}
+
+
 void SPOSetBase::evaluateBasis (const ParticleSet &P, int first, int last,
                                 ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
                                 ValueMatrix_t &basis_lapl)

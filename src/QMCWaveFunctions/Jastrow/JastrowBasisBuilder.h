@@ -43,7 +43,7 @@ public:
   bool put(xmlNodePtr cur);
 
   /** do not create anything. */
-  SPOSetBase* createSPOSet(xmlNodePtr cur)
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }

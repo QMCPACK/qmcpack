@@ -104,7 +104,7 @@ public:
     return true;
   }
 
-  SPOSetBase* createSPOSet(xmlNodePtr cur)
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     string spo_name(""), id, cusp_file("");

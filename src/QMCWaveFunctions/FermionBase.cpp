@@ -72,6 +72,36 @@ SPOSetBasePtr FermionBase::getSPO(const string& aname)
   }
   return (*sit).second;
 }
+
+void FermionBase::add_basis_builders(basis_builder_type& bbs)
+{
+  basis_builder_type::const_iterator bb(bbs.begin());
+  for(;bb!=bbs.end();++bb)
+    basis_builders[bb->first] = bb->second;
+}
+
+void FermionBase::add_basis_builder(const string& name, BasisSetBuilder* bb)
+{
+  basis_builders[name] = bb;
+}
+
+BasisSetBuilder* FermionBase::get_basis_builder(const string& name)
+{
+  if(basis_builders.find(name)!=basis_builders.end())
+    return basis_builders[name];
+  else
+    return 0;
+}
+
+BasisSetBuilder* FermionBase::get_basis_builder()
+{
+  if(basis_builders.begin()!=basis_builders.end())
+    return basis_builders.begin()->second;
+  else
+    return 0;
+}
+
+
 }
 
 

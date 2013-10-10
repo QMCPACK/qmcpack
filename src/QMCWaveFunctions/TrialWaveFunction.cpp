@@ -356,6 +356,14 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 #endif
 }
 
+TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int iat)
+{
+  ValueType r(1.0);
+  for(int i=0;i<Z.size();++i)
+    r *= Z[i]->ratio(P,iat);
+  return r;
+}
+
 TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios)
 {
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);

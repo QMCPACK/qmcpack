@@ -29,10 +29,11 @@ struct EGOSet: public SPOSetBase
 {
 
   int KptMax;
-  vector<PosType> K;
+  vector<PosType>  K;
   vector<RealType> mK2;
 
   EGOSet(const vector<PosType>& k, const vector<RealType>& k2);
+  EGOSet(const vector<PosType>& k, const vector<RealType>& k2, const vector<int>& d);
 
   SPOSetBase* makeClone() const
   {
@@ -42,6 +43,30 @@ struct EGOSet: public SPOSetBase
   void resetParameters(const opt_variables_type& optVariables) {}
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
+
+  /// assign states from SPOSetBase 
+  inline void assign_states(const vector<int>& s)
+  {
+    states.resize(s.size());
+    for(int i=0;i<s.size();++i)
+      states[i] = s[i];
+  }
+
+  /// assign energies from SPOSetBase
+  inline void assign_energies()
+  {
+    energies.resize(mK2.size());
+    for(int i=0;i<mK2.size();++i)
+      energies[i] = -mK2[i];
+  }
+
+  /// assign energies from SPOSetBase
+  inline void assign_degeneracies(const vector<int>& d)
+  {
+    degeneracies.resize(d.size());
+    for(int i=0;i<d.size();++i)
+      degeneracies[i] = d[i];
+  }
 
   inline void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
@@ -130,7 +155,10 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
+  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSetBase* createSPOSetFromStates(states_t& states);
+  energies_t& get_energies();
+  degeneracies_t& get_degeneracies();
 
 };
 }

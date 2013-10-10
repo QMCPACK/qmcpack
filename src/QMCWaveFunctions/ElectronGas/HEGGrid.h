@@ -23,8 +23,25 @@
 namespace qmcplusplus
 {
 
+template<typename T, unsigned D>
+struct kpdata{
+  TinyVector<T,D> k;
+  T k2;
+  int g;
+};
+
+
+template<typename T, unsigned D>
+bool kpdata_comp(const kpdata<T,D>& left, const kpdata<T,D>& right)
+{
+  return left.k2 < right.k2;
+}
+
+
 template<class T, unsigned D>
 struct HEGGrid { };
+
+
 
 //three-d specialization
 template<class T>
@@ -39,11 +56,23 @@ struct HEGGrid<T,3>
   T MaxKsq;
   PL_t& Lattice;
   map<int,vector<PosType>*> rs;
-  vector<PosType> kpt;
-  vector<T>  mk2;
-  vector<int> n_within_shell;
 
-  HEGGrid(PL_t& lat):Lattice(lat)
+
+  vector<PosType> kpt;
+  vector<T>       mk2;
+  vector<int>     deg;
+  vector<int> n_within_shell;
+  PosType twist;
+
+
+  typedef kpdata<T,3> kpdata_t;
+  typedef vector<kpdata_t > kpoints_t;
+
+  kpoints_t* kpoints_grid;
+  int nctmp;
+
+
+  HEGGrid(PL_t& lat):Lattice(lat),twist(0.0), nctmp(-1), kpoints_grid(0)
   {
     n_within_shell.resize(31);
     n_within_shell[0]=1;
@@ -88,12 +117,19 @@ struct HEGGrid<T,3>
       delete (*it).second;
       ++it;
     }
+    clear_kpoints();
   }
 
   /** return the estimated number of grid in each direction */
   inline int getNC(int nup) const
   {
     return static_cast<int>(std::pow(static_cast<T>(nup),1.0/3.0))/2+1;
+  }
+
+  /** return the estimated number of grid in each direction (upper bound) */
+  inline int get_nc(int nstates) const
+  {
+    return static_cast<int>(std::pow(static_cast<T>(nstates),1.0/3.0)*.7)+1;
   }
 
   //return the number of k-points upto nsh-shell
@@ -203,57 +239,121 @@ struct HEGGrid<T,3>
   }
 
 
+  void clear_kpoints()
+  {
+    if(kpoints_grid!=0)
+      delete kpoints_grid;
+  }
+
+
+  void create_kpoints(int nc, const PosType& tw, T tol=1e-6)
+  {
+    nctmp = nc;
+    if(kpoints_grid==0)
+      kpoints_grid = new kpoints_t;
+    else if(nc<=nctmp)
+      return;
+    kpoints_t& kpoints = *kpoints_grid;
+    // make space for the kpoint grid
+    int nkpoints = pow( 2*(nc+1)+1 , 3 );
+    kpoints.resize(nkpoints);
+    typename kpoints_t::iterator kptmp,kp=kpoints.begin(),kp_end=kpoints.end();
+    // make the kpoint grid
+    for(int i0=-nc-1; i0<=nc+1; ++i0)
+      for(int i1=-nc-1; i1<=nc+1; ++i1)
+        for(int i2=-nc-1; i2<=nc+1; ++i2)
+        {
+          PosType k(i0+tw[0],i1+tw[1],i2+tw[2]);
+          kp->k  = Lattice.k_cart(k);
+          kp->k2 = Lattice.ksq(k);
+          ++kp;
+        }
+    // sort kpoints by magnitude
+    sort(kpoints.begin(),kpoints.end(),kpdata_comp<T,3>);
+    // count degeneracies
+    kp = kpoints.begin();
+    while(kp!=kp_end)
+    {
+      T k2 = kp->k2;
+      kptmp=kp;
+      int g=1;
+      ++kptmp;
+      // look ahead to count
+      while(kptmp!=kp_end && abs(kptmp->k2-k2)<tol)
+      {
+        g++;
+        ++kptmp;
+      }
+      kp->g = g;
+      // run over degenerate states to assign
+      for(int n=0;n<g-1;++n)
+        (++kp)->g = g;
+      ++kp;
+    }
+    //app_log()<<"create_kpoints"<<endl;
+    //app_log()<<"  nkpoints = "<<nkpoints<<endl;
+    //app_log()<<"  kpoints"<<endl;
+    //for(kp=kpoints.begin();kp!=kp_end;++kp)
+    //  app_log()<<"    "<<kp->k2<<" "<<kp->g<<" "<<kp->k<<endl;
+    //APP_ABORT("end create_kpoints");
+  }
+
+
   void createGrid(int nc, int nkpts, const PosType& twistAngle)
   {
-    std::map<int,vector<PosType>*> rs_big;
-    for(int ix1=-nc-1; ix1<=nc+1; ++ix1)
-    {
-      for(int ix2=-nc-1; ix2<=nc+1; ++ix2)
-      {
-        for(int ix3=-nc-1; ix3<=nc+1; ++ix3)
-        {
-          PosType k0(ix1+twistAngle[0],ix2+twistAngle[1],ix3+twistAngle[2]);
-          int ih=static_cast<int>(1e4*Lattice.ksq(k0));
-          typename std::map<int,vector<PosType>*>::iterator it = rs_big.find(ih);
-          if(it == rs_big.end())
-          {
-            vector<PosType>* ns = new vector<PosType>;
-            ns->push_back(k0);
-            rs_big[ih] = ns;
-          }
-          else
-          {
-            (*it).second->push_back(k0);
-          }
-        }
-      }
-    }
+    twist = twistAngle;
+    create_kpoints(nc,twistAngle);
+    kpoints_t& kpoints = *kpoints_grid;
+    if(nkpts>kpoints.size())
+      APP_ABORT("HEGGrid::createGrid  requested more kpoints than created");
     kpt.resize(nkpts);
     mk2.resize(nkpts);
-    typename map<int, vector<PosType>*>::iterator rs_it(rs_big.begin()), rs_end(rs_big.end());
-    int ikpt=0;
-    while(ikpt<nkpts && rs_it != rs_end)
+    deg.resize(nkpts);
+    for(int i=0;i<nkpts;++i)
     {
-      typename vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
-      while(ikpt<nkpts && ns_it!=ns_end)
-      {
-        //add twist+k
-        PosType k0(*ns_it);
-        T ksq=Lattice.ksq(k0);
-        kpt[ikpt]=Lattice.k_cart(k0);
-        mk2[ikpt]=-ksq;
-        ++ikpt;
-        ++ns_it;
-      }
-      ++rs_it;
+      const kpdata_t& kp = kpoints[i];
+      kpt[i] =  kp.k;
+      mk2[i] = -kp.k2;
+      deg[i] =  kp.g;
     }
     app_log() << "List of kpoints with twist = " << twistAngle << endl;
     for(int ik=0; ik<kpt.size(); ik++)
-    {
       app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
+  }
+
+
+
+  void createGrid(const vector<int>& states, T tol=1e-6)
+  {
+    createGrid(states,twist,tol);
+  }
+
+
+  void createGrid(const vector<int>& states,const PosType& twistAngle, T tol=1e-6)
+  {
+    int smax=0;
+    for(int i=0;i<states.size();++i)
+      smax = max(smax,states[i]);
+    smax++;
+    create_kpoints(get_nc(smax),twistAngle,tol);
+    kpoints_t& kpoints = *kpoints_grid;
+    if(smax>kpoints.size())
+      APP_ABORT("HEGGrid::createGrid(states)  requested more kpoints than created");
+    int nkpts = states.size(); 
+    kpt.resize(nkpts);
+    mk2.resize(nkpts);
+    deg.resize(nkpts);
+    for(int i=0;i<states.size();++i)
+    {
+      const kpdata_t& kp = kpoints[states[i]];
+      kpt[i] =  kp.k;
+      mk2[i] = -kp.k2;
+      deg[i] =  kp.g;
     }
   }
 };
+
+
 
 //two-d specialization
 template<class T>
@@ -269,10 +369,17 @@ struct HEGGrid<T,2>
   PL_t& Lattice;
   map<int,vector<PosType>*> rs;
   vector<PosType> kpt;
-  vector<T>  mk2;
+  vector<T>       mk2;
+  vector<int>     deg;
   vector<int> n_within_shell;
+  PosType twist;
 
-  HEGGrid(PL_t& lat):Lattice(lat)
+  typedef kpdata<T,2> kpdata_t;
+  typedef vector<kpdata_t > kpoints_t;
+
+  kpoints_t* kpoints_grid;
+
+  HEGGrid(PL_t& lat):Lattice(lat),kpoints_grid(0)
   {
     n_within_shell.resize(220);
     //fill this in
@@ -612,6 +719,7 @@ struct HEGGrid<T,2>
 
   void createGrid(const PosType& twistAngle)
   {
+    twist = twistAngle;
     //unfold and add gamma
     int nkpts = 2*NumKptsHalf+1;
     kpt.resize(nkpts);
@@ -651,6 +759,13 @@ struct HEGGrid<T,2>
       app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
     }
   }
+
+
+  void createGrid(const vector<int>& states, T tol=1e-6)
+  {
+    APP_ABORT("HEGGrid::createGrid(states) has not been implemented");
+  }
+
 };
 }
 
