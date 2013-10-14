@@ -95,12 +95,12 @@ inline void recv(const communicator& comm, T& out,  int source, int tag)
 template<typename T>
 inline request isend(const communicator& comm, T& in,  int dest, int tag)
 {
-  return request;
+  return 0;
 }
 template<typename T>
 inline request irecv(const communicator& comm, T& in,  int source, int tag)
 {
-  return request;
+  return 0;
 }
 template<typename T>
 inline void send(const communicator& comm, T* x,  int n,  int dest, int tag)
@@ -114,13 +114,13 @@ inline void recv(const communicator& comm, T* x,  int n,  int source, int tag)
 template<typename T>
 inline request isend(const communicator& comm, T* x,  int n,  int dest, int tag)
 {
-  return request;
+  return 0;
 }
 
 template<typename T>
 inline request irecv(const communicator& comm, T* x,  int n,  int source, int tag)
 {
-  return request;
+  return 0;
 }
 #endif
 }
