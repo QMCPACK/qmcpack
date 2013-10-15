@@ -15,6 +15,7 @@
  */
 #ifndef QMCPLUSPLUS_BANDINFO_H
 #define QMCPLUSPLUS_BANDINFO_H
+#include <Configuration.h>
 
 namespace qmcplusplus
 {
@@ -57,6 +58,47 @@ struct BandInfo
     else
       return Energy < other.Energy;
   }
+};
+
+/** a group of bands 
+ */
+struct BandInfoGroup
+{
+  ///index of the group
+  int GroupID;
+  ///starting SPO
+  int FirstSPO;
+  ///number of SPOs handled by this object
+  int NumSPOs;
+  ///starting band
+  int FirstBand;
+  ///Bands that belong to this group
+  vector<BandInfo> myBands;
+  ///constructor
+  BandInfoGroup();
+  ///return the size of this band
+  inline int getNumDistinctOrbitals() const { return myBands.size();}
+  ///return the indext of the first SPO set
+  inline int getFirstSPO() const { return FirstSPO;}
+  ///return the indext of the last SPO set
+  inline int getLastSPO() const { return NumSPOs+FirstSPO;}
+  ///return the number of SPOs
+  inline int getNumSPOs() const { return NumSPOs;}
+
+  /** select the bands within an energy range [emin,emax)
+   *
+   * @param bigspace a set of sorted bands
+   * @param emin minimum energy
+   * @param emax maxmimum energy
+   */
+  void selectBands(const vector<BandInfo>& bigspace, double emin, double emax);
+
+  /** get the bands within [first_spo,first_spo+num_spos)
+   * @param bigspace a set of sorted bands
+   * @param first_orb index of the first uniquie orbitals
+   * @param num_orbs number of SPOs to be created
+   */
+  void selectBands(const vector<BandInfo>& bigspace, int first_orb, int last_orb);
 };
 
 }

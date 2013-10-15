@@ -12,7 +12,6 @@
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "Particle/DistanceTable.h"
