@@ -279,38 +279,36 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       //params.add(uc_grid,"uc_grid","int");
       //params.put(cur);
     }
-    else
-      if (cname == attrib_tag)
+    else if (cname == attrib_tag)
+    {
+      getPtclAttrib(cur,nat,nloc);
+    }
+    else if (cname == "group")
+      //found group
+    {
+      string sname;
+      OhmmsAttributeSet gAttrib;
+      gAttrib.add(sname,"name");
+      gAttrib.put(cur);
+      if(sname.size()) //only if name is found
       {
-        getPtclAttrib(cur,nat,nloc);
-      }
-      else
-        if (cname == "group")
-          //found group
+        int sid=tspecies.addSpecies(sname);
+        setSpeciesProperty(tspecies,sid,cur);
+        xmlNodePtr tcur = cur->xmlChildrenNode;
+        while(tcur != NULL)
         {
-          string sname;
-          OhmmsAttributeSet gAttrib;
-          gAttrib.add(sname,"name");
-          gAttrib.put(cur);
-          if(sname.size()) //only if name is found
+          string tcname((const char*)tcur->name);
+          if(nat_group[ng] && tcname == attrib_tag)
           {
-            int sid=tspecies.addSpecies(sname);
-            setSpeciesProperty(tspecies,sid,cur);
-            xmlNodePtr tcur = cur->xmlChildrenNode;
-            while(tcur != NULL)
-            {
-              string tcname((const char*)tcur->name);
-              if(nat_group[ng] && tcname == attrib_tag)
-              {
-                getPtclAttrib(tcur,nat_group[ng],nloc);
-              }
-              tcur = tcur->next;
-            }
-            for(int iat=0; iat<nat_group[ng]; iat++, nloc++)
-              ref_.GroupID[nloc] = sid;
-            ng++;
+            getPtclAttrib(tcur,nat_group[ng],nloc);
           }
+          tcur = tcur->next;
         }
+        for(int iat=0; iat<nat_group[ng]; iat++, nloc++)
+          ref_.GroupID[nloc] = sid;
+        ng++;
+      }
+    }
     cur = cur->next;
   }
   expandSuperCell(ref_,TileMatrix);
@@ -365,6 +363,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   //this sets Mass, Z
   ref_.resetGroups();
   ref_.createSK();
+
   return true;
 }
 
@@ -472,24 +471,21 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
       ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)),utype);
       a.put(cur,nat,nloc);
     }
-    else
-      if(t_id == PA_ScalarType)
-      {
-        ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)),utype);
-        a.put(cur,nat,nloc);
-      }
-      else
-        if(t_id == PA_PositionType)
-        {
-          ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)),utype);
-          a.put(cur,nat,nloc);
-        }
-        else
-          if(t_id == PA_TensorType)
-          {
-            ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)),utype);
-            a.put(cur,nat,nloc);
-          }
+    else if(t_id == PA_ScalarType)
+    {
+      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)),utype);
+      a.put(cur,nat,nloc);
+    }
+    else if(t_id == PA_PositionType)
+    {
+      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)),utype);
+      a.put(cur,nat,nloc);
+    }
+    else if(t_id == PA_TensorType)
+    {
+      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)),utype);
+      a.put(cur,nat,nloc);
+    }
   }
 }
 
@@ -558,40 +554,37 @@ void XMLSaveParticle::get(ostream& fxml, int olevel) const
             fxml << endl;
         }
       }
-      else
-        if(t_id == PA_ScalarType)
+      else if(t_id == PA_ScalarType)
+      {
+        fxml.precision(6);
+        const ParticleScalar_t& stmp =*(ref_.getScalarAttrib(o_id));
+        for(int iat=0; iat<nloc; iat++)
         {
-          fxml.precision(6);
-          const ParticleScalar_t& stmp =*(ref_.getScalarAttrib(o_id));
-          for(int iat=0; iat<nloc; iat++)
-          {
-            fxml << stmp[iat] << " ";
-            if(iat%5 == 4)
-              fxml << endl;
-          }
-          if(nloc%5 != 0)
-            fxml<< endl;
+          fxml << stmp[iat] << " ";
+          if(iat%5 == 4)
+            fxml << endl;
         }
-        else
-          if (t_id == PA_PositionType)
-          {
-            fxml.precision(15);
-            const ParticlePos_t& rtmp =*(ref_.getVectorAttrib(o_id));
-            for(int iat=0; iat<nloc; iat++)
-            {
-              fxml << rtmp[iat] << endl;
-            }
-          }
-          else
-            if (t_id == PA_TensorType)
-            {
-              fxml.precision(15);
-              const ParticleTensor_t& ttmp =*(ref_.getTensorAttrib(o_id));
-              for(int iat=0; iat<nloc; iat++)
-              {
-                fxml << ttmp[iat];
-              }
-            }
+        if(nloc%5 != 0)
+          fxml<< endl;
+      }
+      else if (t_id == PA_PositionType)
+      {
+        fxml.precision(15);
+        const ParticlePos_t& rtmp =*(ref_.getVectorAttrib(o_id));
+        for(int iat=0; iat<nloc; iat++)
+        {
+          fxml << rtmp[iat] << endl;
+        }
+      }
+      else if (t_id == PA_TensorType)
+      {
+        fxml.precision(15);
+        const ParticleTensor_t& ttmp =*(ref_.getTensorAttrib(o_id));
+        for(int iat=0; iat<nloc; iat++)
+        {
+          fxml << ttmp[iat];
+        }
+      }
       ooref->end_node(fxml);
       //      }
       it++;

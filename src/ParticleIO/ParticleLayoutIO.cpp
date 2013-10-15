@@ -54,106 +54,99 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(a0,cur);
       }
-      else
-        if(aname == "lattice")
+      else if(aname == "lattice")
+      {
+        putContent(ref_.R,cur);
+      }
+      else if(aname == "grid")
+      {
+        putContent(grid[finegrid],cur);
+      }
+      else if(aname == "ompgrid")
+      {
+        putContent(ref_.Grid[ompgrid],cur);
+      }
+      else if(aname == "mpigrid")
+      {
+        putContent(ref_.Grid[mpigrid],cur);
+      }
+      else if(aname == "bconds")
+      {
+        putContent(bconds,cur);
+        int boxsum=0;
+        for(int idir=0; idir<DIM; idir++)
         {
-          putContent(ref_.R,cur);
-        }
-        else
-          if(aname == "grid")
+          char b = bconds[idir][0];
+          if(b == 'n' || b == 'N')
           {
-            putContent(grid[finegrid],cur);
+            ref_.BoxBConds[idir] = false;
           }
           else
-            if(aname == "ompgrid")
-            {
-              putContent(ref_.Grid[ompgrid],cur);
-            }
+          {
+            ref_.BoxBConds[idir] = true;
+            boxsum++;
+          }
+        }
+        //if(boxsum>0 && boxsum<DIM)
+        //{
+        //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
+        //}
+      }
+      else if(aname == "LR_dim_cutoff")
+      {
+        putContent(ref_.LR_dim_cutoff,cur);
+      }
+      else if(aname == "rs")
+      {
+        int nptcl=0;
+        int nsh=0;
+        int pol=0;
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(nptcl,"condition");
+        rAttrib.add(pol,"polarized");
+        rAttrib.add(nsh,"shell");
+        rAttrib.put(cur);
+        putContent(rs,cur);
+        HEGGrid<double,OHMMS_DIM> heg(ref_);
+        if(pol==0)
+        {
+          if(nsh>0)
+            nptcl=2*heg.getNumberOfKpoints(nsh);
+          else
+            nsh=heg.getShellIndex(nptcl/2);
+        }
+        else
+        {
+          //             spin polarized
+          if(nsh>0)
+            nptcl=heg.getNumberOfKpoints(nsh);
+          else
+            nsh=heg.getShellIndex(nptcl);
+        }
+        double acubic=heg.getCellLength(nptcl,rs);
+        //double acubic=pow(4.0*M_PI*nptcl/3.0,1.0/3.0)*rs;
+        app_log() << "  " << OHMMS_DIM << "D HEG system"
+          << "\n     rs  = " << rs;
+        if(pol==0)
+        {
+          app_log() << "\n     number of up particles = " << nptcl/2
+            << "\n     number of dn particles = " << nptcl/2 ;
+        }
+        else
+        {
+          app_log() << "\n     number of up particles = " << nptcl;
+        }
+        app_log()<< "\n     filled kshells      = " << nsh
+          << "\n     lattice constant    = " << acubic << " bohr"<< endl;
+        ref_.R=0.0;
+        for(int idim=0; idim<DIM; idim++)
+          for(int jdim=0; jdim<DIM; jdim++)
+            if (idim==jdim)
+              ref_.R(idim,jdim)=acubic;
             else
-              if(aname == "mpigrid")
-              {
-                putContent(ref_.Grid[mpigrid],cur);
-              }
-              else
-                if(aname == "bconds")
-                {
-                  putContent(bconds,cur);
-                  int boxsum=0;
-                  for(int idir=0; idir<DIM; idir++)
-                  {
-                    char b = bconds[idir][0];
-                    if(b == 'n' || b == 'N')
-                    {
-                      ref_.BoxBConds[idir] = false;
-                    }
-                    else
-                    {
-                      ref_.BoxBConds[idir] = true;
-                      boxsum++;
-                    }
-                  }
-                  //if(boxsum>0 && boxsum<DIM)
-                  //{
-                  //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
-                  //}
-                }
-                else
-                  if(aname == "LR_dim_cutoff")
-                  {
-                    putContent(ref_.LR_dim_cutoff,cur);
-                  }
-                  else
-                    if(aname == "rs")
-                    {
-                      int nptcl=0;
-                      int nsh=0;
-                      int pol=0;
-                      OhmmsAttributeSet rAttrib;
-                      rAttrib.add(nptcl,"condition");
-                      rAttrib.add(pol,"polarized");
-                      rAttrib.add(nsh,"shell");
-                      rAttrib.put(cur);
-                      putContent(rs,cur);
-                      HEGGrid<double,OHMMS_DIM> heg(ref_);
-                      if(pol==0)
-                      {
-                        if(nsh>0)
-                          nptcl=2*heg.getNumberOfKpoints(nsh);
-                        else
-                          nsh=heg.getShellIndex(nptcl/2);
-                      }
-                      else
-                      {
-//             spin polarized
-                        if(nsh>0)
-                          nptcl=heg.getNumberOfKpoints(nsh);
-                        else
-                          nsh=heg.getShellIndex(nptcl);
-                      }
-                      double acubic=heg.getCellLength(nptcl,rs);
-                      //double acubic=pow(4.0*M_PI*nptcl/3.0,1.0/3.0)*rs;
-                      app_log() << "  " << OHMMS_DIM << "D HEG system"
-                                << "\n     rs  = " << rs;
-                      if(pol==0)
-                      {
-                        app_log() << "\n     number of up particles = " << nptcl/2
-                                  << "\n     number of dn particles = " << nptcl/2 ;
-                      }
-                      else
-                      {
-                        app_log() << "\n     number of up particles = " << nptcl;
-                      }
-                      app_log()<< "\n     filled kshells      = " << nsh
-                               << "\n     lattice constant    = " << acubic << " bohr"<< endl;
-                      ref_.R=0.0;
-                      for(int idim=0; idim<DIM; idim++)
-                        for(int jdim=0; jdim<DIM; jdim++)
-                          if (idim==jdim)
-                            ref_.R(idim,jdim)=acubic;
-                          else
-                            ref_.R(idim,jdim)=0.0;
-                      a0=1.0;
-                    }
+              ref_.R(idim,jdim)=0.0;
+        a0=1.0;
+      }
     }
     cur = cur->next;
   }
