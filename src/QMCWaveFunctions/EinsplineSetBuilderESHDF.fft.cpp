@@ -357,12 +357,12 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
     app_log() << "Sorting the bands by index now:\n";
     sort (SortBands.begin(), SortBands.end(), sortByIndex);
   }
-  else
-    if (sortBands==1)
-    {
-      app_log() << "Sorting the bands now:\n";
-      sort (SortBands.begin(), SortBands.end());
-    }
+  else if (sortBands==1)
+  {
+    app_log() << "Sorting the bands now:\n";
+    sort (SortBands.begin(), SortBands.end());
+  }
+
   vector<int> gsOcc(maxOrbs);
   int N_gs_orbs=OrbitalSet->getOrbitalSetSize();
   int nocced(0), ntoshift(0);
@@ -376,13 +376,12 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
         ntoshift++;
         gsOcc[ti]=2;
       }
-      else
-        if ( (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced==1)) || !SortBands[ti].MakeTwoCopies )
-        {
-          nocced+=1;
-          ntoshift++;
-          gsOcc[ti]=1;
-        }
+      else if ( (SortBands[ti].MakeTwoCopies && (N_gs_orbs-nocced==1)) || !SortBands[ti].MakeTwoCopies )
+      {
+        nocced+=1;
+        ntoshift++;
+        gsOcc[ti]=1;
+      }
     }
   }
 //    if(qafm!=0)
@@ -456,9 +455,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
     {
       if (Occ[ien]<0)
         Removed.push_back(-Occ[ien]);
-      else
-        if (Occ[ien]>0)
-          Added.push_back(Occ[ien]);
+      else if (Occ[ien]>0)
+        Added.push_back(Occ[ien]);
     }
     if(Added.size()-Removed.size() != 0)
     {
@@ -492,84 +490,79 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
         SortBands[i].MakeTwoCopies=true;
         ReOrderedBands.push_back(SortBands[i]);
       }
+      else if (SumOrb[i]==1)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (SumOrb[i]==0)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        RejectedBands.push_back(SortBands[i]);
+      }
       else
-        if (SumOrb[i]==1)
-        {
-          SortBands[i].MakeTwoCopies=false;
-          ReOrderedBands.push_back(SortBands[i]);
-        }
-        else
-          if (SumOrb[i]==0)
-          {
-            SortBands[i].MakeTwoCopies=false;
-            RejectedBands.push_back(SortBands[i]);
-          }
-          else
-          {
-            app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
-            APP_ABORT("Sorting Excitation");
-          }
+      {
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        APP_ABORT("Sorting Excitation");
+      }
     }
     ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
     SortBands=ReOrderedBands;
   }
-  else
-    if (occ_format=="band")
+  else if (occ_format=="band")
+  {
+    app_log()<<"  Occupying bands based on (bi,ti) data."<<endl;
+    if(Occ.size() != particle_hole_pairs*4)
     {
-      app_log()<<"  Occupying bands based on (bi,ti) data."<<endl;
-      if(Occ.size() != particle_hole_pairs*4)
-      {
-        app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<<endl;
-        app_log()<<Occ.size()<<" "<<particle_hole_pairs<<endl;
-        APP_ABORT("ChangedOccupations");
-      }
-      int cnt(0);
-      for(int ien=0; ien<SortBands.size(); ien++)
-      {
-        if((Occ[cnt] == SortBands[ien].TwistIndex)&&(Occ[cnt+1] == SortBands[ien].BandIndex))
-          if(cnt<particle_hole_pairs*2)
-          {
-            gsOcc[ien]-=1;
-            cnt+=2;
-            app_log()<<"removing orbital "<<ien<<endl;
-          }
-          else
-          {
-            gsOcc[ien]+=1;
-            app_log()<<"adding orbital "<<ien<<endl;
-            cnt+=2;
-          }
-      }
-      vector<BandInfo> ReOrderedBands;
-      vector<BandInfo> RejectedBands;
-      for(int i=0; i<SortBands.size(); i++)
-      {
-        if(gsOcc[i]==2)
+      app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<<endl;
+      app_log()<<Occ.size()<<" "<<particle_hole_pairs<<endl;
+      APP_ABORT("ChangedOccupations");
+    }
+    int cnt(0);
+    for(int ien=0; ien<SortBands.size(); ien++)
+    {
+      if((Occ[cnt] == SortBands[ien].TwistIndex)&&(Occ[cnt+1] == SortBands[ien].BandIndex))
+        if(cnt<particle_hole_pairs*2)
         {
-          SortBands[i].MakeTwoCopies=true;
-          ReOrderedBands.push_back(SortBands[i]);
+          gsOcc[ien]-=1;
+          cnt+=2;
+          app_log()<<"removing orbital "<<ien<<endl;
         }
         else
-          if (gsOcc[i]==1)
-          {
-            SortBands[i].MakeTwoCopies=false;
-            ReOrderedBands.push_back(SortBands[i]);
-          }
-          else
-            if (gsOcc[i]==0)
-            {
-              SortBands[i].MakeTwoCopies=false;
-              RejectedBands.push_back(SortBands[i]);
-            }
-            else
-            {
-              app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
-              APP_ABORT("Sorting Excitation");
-            }
-      }
-      ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
-      SortBands=ReOrderedBands;
+        {
+          gsOcc[ien]+=1;
+          app_log()<<"adding orbital "<<ien<<endl;
+          cnt+=2;
+        }
     }
+    vector<BandInfo> ReOrderedBands;
+    vector<BandInfo> RejectedBands;
+    for(int i=0; i<SortBands.size(); i++)
+    {
+      if(gsOcc[i]==2)
+      {
+        SortBands[i].MakeTwoCopies=true;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==1)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        ReOrderedBands.push_back(SortBands[i]);
+      }
+      else if (gsOcc[i]==0)
+      {
+        SortBands[i].MakeTwoCopies=false;
+        RejectedBands.push_back(SortBands[i]);
+      }
+      else
+      {
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        APP_ABORT("Sorting Excitation");
+      }
+    }
+    ReOrderedBands.insert(ReOrderedBands.end(),RejectedBands.begin(),RejectedBands.end());
+    SortBands=ReOrderedBands;
+  }
   //for(int sw=0;sw<Removed.size();sw++){
   //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
   //  BandInfo tempband(SortBands[Removed[sw]-1]);

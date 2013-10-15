@@ -721,17 +721,16 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
         sPath << eigenstatesGroup << "/twist_"
               << tindex << "/band_" << bi << "/spin";
       }
+      else if (NumBands > 1)
+      {
+        ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
+        sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
+      }
       else
-        if (NumBands > 1)
-        {
-          ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
-          sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
-        }
-        else
-        {
-          ePath << eigenstatesGroup << "/twist/band/eigenvalue";
-          sPath << eigenstatesGroup << "/twist/band/spin";
-        }
+      {
+        ePath << eigenstatesGroup << "/twist/band/eigenvalue";
+        sPath << eigenstatesGroup << "/twist/band/spin";
+      }
       HDFAttribIO<double> h_energy(band.Energy);
       HDFAttribIO<int> h_spin(band.Spin);
       band.Energy = -1.01e100;

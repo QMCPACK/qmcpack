@@ -1,0 +1,40 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2012-  by Jeongnim Kim and Ken Esler           //
+//////////////////////////////////////////////////////////////////
+/** @file BsplineReaderBase.cpp
+ *
+ * Implement super function
+ */
+#include <QMCWaveFunctions/EinsplineSetBuilder.h>
+#include <QMCWaveFunctions/BsplineReaderBase.h>
+#include <QMCWaveFunctions/SPOSetComboNoCopy.h>
+#include "Message/CommOperators.h"
+namespace qmcplusplus
+{
+  void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG)
+  {
+    int ncg=0;
+    if(myComm->rank()==0)
+    {
+      string path=psi_g_path(ti,spin,ib);
+      HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+      h_cG.read (mybuilder->H5FileID, path.c_str());
+      ncg=cG.size();
+    }
+    myComm->bcast(ncg);
+    if(ncg != mybuilder->MaxNumGvecs)
+    {
+      APP_ABORT("Failed : ncg != MaxNumGvecs");
+    }
+    myComm->bcast(cG);
+  }
+
+  SPOSetBase* BsplineReaderBase::create_spline_set(int spin, EinsplineSet* orbitalset)
+  {
+    vector<BandInfo>& SortBands=mybuilder->SortBands;
+    BandInfoGroup vals;
+    vals.selectBands(mybuilder->SortBands,0,mybuilder->NumDistinctOrbitals);
+    return create_spline_set(spin,orbitalset,vals);
+  }
+}
+
