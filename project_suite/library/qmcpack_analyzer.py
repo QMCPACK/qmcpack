@@ -94,16 +94,17 @@ QAanalyzer.capabilities = QmcpackAnalyzerCapabilities()
 
 
 class QmcpackAnalysisRequest(QAobject):
-    def __init__(self,source=None,destination=None,savefile='QmcpackAnalyzer.p',
+    def __init__(self,source=None,destination=None,savefile='',
                  methods=None,calculations=None,data_sources=None,quantities=None,
                  warmup_calculations=None,
                  output=set(['averages','samples']),
-                 ndmc_blocks=1000):
+                 ndmc_blocks=1000,equilibration=None,group_num=None):
         self.source          = source          
         self.destination     = destination     
         self.savefile        = str(savefile)
         self.output          = set(output)
         self.ndmc_blocks     = int(ndmc_blocks)
+        self.group_num       = group_num
 
         cap = QAanalyzer.capabilities
 
@@ -137,6 +138,13 @@ class QmcpackAnalysisRequest(QAobject):
         else:
             self.warmup_calculations = set(warmup_calculations)
         #end if
+        if isinstance(equilibration,(dict,obj)):
+            eq = obj()
+            eq.transfer_from(equilibration)
+        else:
+            eq = equilibration
+        #end if
+        self.equilibration = eq
 
         return
     #end def __init__
@@ -227,12 +235,15 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def change_request
 
 
-    def init_sub_analyzers(self,request=None,group_num=None):        
+    def init_sub_analyzers(self,request=None):        
+        own_request = request==None
         if request==None:
             request = self.info.request
         #end if
+        group_num = request.group_num
         
         #determine if the run was bundled
+        print id(self),own_request,request.source
         if request.source.endswith('.xml'):
             self.info.type = 'single'
         else:
@@ -265,7 +276,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             for filename in ls:
                 if filename.startswith(ifprefix) and filename.endswith('.qmc'):
                     group_tag = filename.split('.')[-2]
-                    file_prefix = 'qmc.'+group_tag
+                    #file_prefix = 'qmc.'+group_tag
+                    file_prefix = project.id+'.'+group_tag
                     break
                 #end if
             #end for
@@ -472,8 +484,9 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             #end for
             req = request.copy()
             req.source = os.path.join(path,infile)
+            req.group_num = gn
             qa = QmcpackAnalyzer(req)
-            qa.init_sub_analyzers(group_num=gn)
+            #qa.init_sub_analyzers(group_num=gn)
             analyzers[gn] = qa
         #end for
         self.bundled_analyzers = analyzers

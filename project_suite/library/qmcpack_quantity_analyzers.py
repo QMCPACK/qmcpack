@@ -58,7 +58,8 @@ class DatAnalyzer(QuantityAnalyzer):
     def __init__(self,filepath=None,equilibration=None):
         QuantityAnalyzer.__init__(self)
         self.info.filepath = filepath
-        if equilibration!=None:
+        nbe = self.method_info.nblocks_exclude
+        if equilibration!=None and nbe==-1:
             self.load_data()
             nbe = equilibration_length(self.data[equilibration])
             self.method_info.nblocks_exclude = nbe

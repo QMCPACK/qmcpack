@@ -49,6 +49,18 @@ class MethodAnalyzer(QAanalyzer):
                 #end if
             #end if
         #end for
+        equil = request.equilibration
+        if isinstance(equil,int):
+            nblocks_exclude = equil
+        elif isinstance(equil,(dict,obj)):
+            if(series in equil):
+                nblocks_exclude = equil[series]
+            else:
+                nblocks_exclude = -1
+            #end if
+        else:
+            self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
+        #end if
         data_sources      = request.data_sources & set(files.keys())
         method_info = obj(
             method       = method,
@@ -57,7 +69,7 @@ class MethodAnalyzer(QAanalyzer):
             files        = files,
             data_sources = data_sources,
             method_input = calc.copy(),
-            nblocks_exclude = 0
+            nblocks_exclude = nblocks_exclude
             )
         self.info.transfer_from(method_info)
 
