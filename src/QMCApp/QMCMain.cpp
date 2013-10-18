@@ -33,10 +33,14 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
+#include <cstring>
 #include "HDFVersion.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "qmc_common.h"
+#ifdef HAVE_ADIOS
+#include "ADIOS/ADIOS_config.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -110,24 +114,21 @@ bool QMCMain::execute()
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
     }
-    else
-      if(cname == "loop")
-      {
-        executeLoop(cur);
-        qmc_common.qmc_counter=0;
-      }
-      else
-        if(cname == "cmc")
-          {
-            executeCMCSection(cur);
-          }
-        else
-          if(cname == "debug")
-            {
-              executeDebugSection(cur);
-              app_log() << "  Debug is done. Skip the rest of the input " << endl;
-               break;
-            }
+    else if(cname == "loop")
+    {
+      executeLoop(cur);
+      qmc_common.qmc_counter=0;
+    }
+    else if(cname == "cmc")
+    {
+      executeCMCSection(cur);
+    }
+    else if(cname == "debug")
+    {
+      executeDebugSection(cur);
+      app_log() << "  Debug is done. Skip the rest of the input " << endl;
+      break;
+    }
   }
   m_qmcaction.clear();
   app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
@@ -235,6 +236,34 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
 bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+#ifdef HAVE_ADIOS
+  OhmmsXPathObject io("//io",m_context);
+  if(io.empty())
+  {
+    app_warning() << "IO is not defined, nothing will be written out." << endl;
+  }
+  else
+  {
+    xmlAttr* curr = io[0]->properties;
+    char* value = NULL;
+    bool UseADIOS = false;
+    bool UseHDF5 = false;
+    for(curr; curr; curr = curr->next)
+    {
+      value = (char *)xmlNodeListGetString(io[0]->doc, curr->children, 1);
+      if(!strncmp((char *)curr->name, "adios", 6) && !strncmp(value, "yes", 4))
+      {
+        UseADIOS = true;
+      }
+      else if(!strncmp((char *)curr->name, "hdf5", 5) && !strncmp(value, "yes", 4))
+      {
+        UseHDF5 = true;
+      }
+      app_log() << "property: " << curr->name << ", value: " << value << endl;
+    }
+    ADIOS::initialize(UseHDF5, UseADIOS);
+  }
+#endif
   OhmmsXPathObject result("//project",m_context);
   myProject.setCommunicator(myComm);
   if(result.empty())
@@ -293,55 +322,48 @@ bool QMCMain::validateXML()
     {
       putCommunicator(cur);
     }
-    else
-      if(cname == "particleset")
+    else if(cname == "particleset")
+    {
+      ptclPool->put(cur);
+    }
+    else if(cname == "wavefunction")
+    {
+      psiPool->put(cur);
+    }
+    else if(cname == "hamiltonian")
+    {
+      hamPool->put(cur);
+    }
+    else if(cname == "include")
+    {
+      //file is provided
+      const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
+      if(a)
       {
-        ptclPool->put(cur);
+        pushDocument((const char*)a);
+        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        popDocument();
       }
-      else
-        if(cname == "wavefunction")
-        {
-          psiPool->put(cur);
-        }
-        else
-          if(cname == "hamiltonian")
-          {
-            hamPool->put(cur);
-          }
-          else
-            if(cname == "include")
-            {
-              //file is provided
-              const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
-              if(a)
-              {
-                pushDocument((const char*)a);
-                inputnode = processPWH(XmlDocStack.top()->getRoot());
-                popDocument();
-              }
-            }
-            else
-              if(cname == "qmcsystem")
-              {
-                processPWH(cur);
-              }
-              else
-                if(cname == "init")
-                {
-                  InitMolecularSystem moinit(ptclPool);
-                  moinit.put(cur);
-                }
-                else
-                  if(cname == "traces")
-                  {
-                    traces_xml = cur;
-                  }
-                  else
-                  {
-                    //everything else goes to m_qmcaction
-                    m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
-                    inputnode=false;
-                  }
+    }
+    else if(cname == "qmcsystem")
+    {
+      processPWH(cur);
+    }
+    else if(cname == "init")
+    {
+      InitMolecularSystem moinit(ptclPool);
+      moinit.put(cur);
+    }
+    else if(cname == "traces")
+    {
+      traces_xml = cur;
+    }
+    else
+    {
+      //everything else goes to m_qmcaction
+      m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
+      inputnode=false;
+    }
     if(inputnode)
       lastInputNode=cur;
     cur=cur->next;
@@ -391,28 +413,25 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     {
       ptclPool->putLattice(cur);
     }
+    else if(cname == "particleset")
+    {
+      ptclPool->putTileMatrix(cur_root);
+      ptclPool->put(cur);
+    }
+    else if(cname == "wavefunction")
+    {
+      psiPool->put(cur);
+    }
+    else if(cname == "hamiltonian")
+    {
+      hamPool->put(cur);
+    }
     else
-      if(cname == "particleset")
-      {
-        ptclPool->putTileMatrix(cur_root);
-        ptclPool->put(cur);
-      }
-      else
-        if(cname == "wavefunction")
-        {
-          psiPool->put(cur);
-        }
-        else
-          if(cname == "hamiltonian")
-          {
-            hamPool->put(cur);
-          }
-          else
-            //add to m_qmcaction
-          {
-            inputnode=false;
-            m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
-          }
+      //add to m_qmcaction
+    {
+      inputnode=false;
+      m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
+    }
     cur=cur->next;
   }
   //flush

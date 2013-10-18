@@ -1,0 +1,51 @@
+#include "ADIOS/ADIOS_config.h"
+
+static bool UseHDF5;
+static bool UseADIOS;
+static std::string adios_xml_filename;
+static bool initialized = false;
+const static std::string empty("");
+
+namespace ADIOS
+{
+  void initialize(bool use_hdf5, bool use_adios){
+    adios_xml_filename = empty;
+    UseHDF5 = use_hdf5;
+    UseADIOS = use_adios;
+    initialized = true;
+  } 
+
+  void initialze(std::string &xml_filename, bool use_hdf5, bool use_adios){
+    adios_xml_filename = xml_filename;
+    UseHDF5 = use_hdf5;
+    UseADIOS = use_adios;
+    initialized = true;
+  }
+
+  bool useADIOS(){
+    if (!initialized){
+      qmcplusplus::app_warning() << "Attempted to retrieve useADIOS before initializing." << std::endl;
+      return false;
+    }
+    else
+      return UseADIOS;
+  }
+
+  bool useHDF5(){
+    if (!initialized){
+      qmcplusplus::app_warning() << "Attempted to retrieve useHDF5 before initializing." << std::endl;
+      return false;
+    }
+    else
+      return UseHDF5;
+  }
+
+  const std::string& get_adios_xml(){
+    if (!initialized){
+      qmcplusplus::app_warning() << "Attempted to retrieve adios xml filename before initializing." << std::endl;
+      return empty;
+    } 
+    else
+      return adios_xml_filename;    
+  }
+};

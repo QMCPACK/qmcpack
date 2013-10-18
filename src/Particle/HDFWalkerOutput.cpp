@@ -27,6 +27,10 @@
 #include <Message/Communicate.h>
 #include <mpi/collectives.h>
 #include <io/hdf_hyperslab.h>
+#if defined(HAVE_ADIOS) && defined(ADIOS_VERIFY)
+#include <adios.h>
+#include "ADIOS/ADIOS_verify.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -74,6 +78,65 @@ HDFWalkerOutput::~HDFWalkerOutput()
   delete_iter(RemoteData.begin(),RemoteData.end());
 }
 
+#ifdef HAVE_ADIOS
+uint64_t HDFWalkerOutput::get_group_size(MCWalkerConfiguration& W)
+{
+  int walker_num =  W.getActiveWalkers();
+  int particle_num = number_of_particles;
+  return sizeof(int) * 4 + sizeof(OHMMS_PRECISION) * walker_num * particle_num * OHMMS_DIM;
+}
+
+bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle)
+{
+  //Need 4 * 3 bytes for storing integers and then storage
+  //for all the walkers
+  if (RemoteData.empty())
+    RemoteData.push_back(new BufferType);
+  else
+    app_error() << "RemoteData is not empty... Aborting.\n";
+  int walker_num =  W.getActiveWalkers();
+  int particle_num = number_of_particles;
+  int walker_dim_num = OHMMS_DIM;
+  //This is just another wrapper for vector
+  RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
+  //Copy over all the walkers into one chunk of contigous memory
+  W.putConfigurations(RemoteData[0]->begin());
+  void* walkers = RemoteData[0]->data();
+  adios_write (adios_handle, "walker_num", &walker_num);
+  adios_write (adios_handle, "particle_num", &particle_num);
+  int walker_size = walker_num * particle_num * walker_dim_num;
+  adios_write (adios_handle, "walker_size", &walker_size);
+  adios_write (adios_handle, "walkers", walkers);
+#ifndef ADIOS_VERIFY
+  RemoteData.pop_back();
+#endif
+  return true;
+}
+
+#ifdef ADIOS_VERIFY
+
+void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE*fp)
+{
+  if (RemoteData.empty())
+    app_error()<<"error empty RemoteData"<<endl;
+  //RemoteData.push_back(new BufferType);
+  int walker_num =  W.getActiveWalkers();
+  int particle_num = number_of_particles;
+  int walker_dim_num = OHMMS_DIM;
+  //RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
+  //W.putConfigurations(RemoteData[0]->begin());
+  void* walkers = RemoteData[0]->data();
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_num", &walker_num);
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "particle_num", &particle_num);
+  int walker_size = walker_num * particle_num * walker_dim_num;
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_size", &walker_size);
+  IO_VERIFY::adios_checkpoint_verify_local_variables(fp, "walkers", (OHMMS_PRECISION *)walkers);
+  RemoteData.pop_back();
+}
+#endif
+#endif
+
+
 /** Write the set of walker configurations to the HDF5 file.
  * @param W set of walker configurations
  *
@@ -103,6 +166,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
     RemoteData.push_back(new BufferType);
     RemoteData.push_back(new BufferType);
   }
+  else
+    app_error() << "RemoteData is not empty... Aborting.\n";
   const int wb=OHMMS_DIM*number_of_particles;
   //populate RemoteData[0] to dump
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
@@ -142,6 +207,10 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #if defined(HAVE_MPI)
   else
   {
+    if(RemoteData[1] == NULL)
+    {
+      cout<<__FILE__<<__LINE__<<endl;
+    }
     RemoteData[1]->resize(wb*W.getActiveWalkers());
     W.putConfigurations(RemoteData[1]->begin());
     vector<int> displ(myComm->size()), counts(myComm->size());
@@ -167,6 +236,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #endif
   //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
   //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
+  RemoteData.pop_back();
+  RemoteData.pop_back();
 }
 /*
 bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)

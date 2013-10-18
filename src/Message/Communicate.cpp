@@ -27,6 +27,12 @@
 #include <Utilities/UtilityFunctions.h>
 #include <fstream>
 
+#ifdef HAVE_ADIOS
+#include <adios.h>
+#include <adios_read.h>
+#endif
+
+
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
 
@@ -141,6 +147,18 @@ void Communicate::initialize(int argc, char **argv)
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   d_groupid=0;
   d_ngroups=1;
+#ifdef HAVE_ADIOS
+  if (!adios_init("qmc_adios.xml", myMPI))
+  {
+    APP_ABORT("Cannot find qmc_adios.xml. Exiting");
+  }
+  else
+  {
+    if (OHMMS::Controller->rank() == 0)
+      cout << "Adios is initialized" << endl;
+  }
+  adios_read_init_method(ADIOS_READ_METHOD_BP, myMPI, "verbose=3");
+#endif
 #ifdef __linux__
   for (int proc=0; proc<OHMMS::Controller->size(); proc++)
   {
@@ -158,6 +176,10 @@ void Communicate::initialize(int argc, char **argv)
 
 void Communicate::finalize()
 {
+#ifdef HAVE_ADIOS
+  adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+  adios_finalize(OHMMS::Controller->rank());
+#endif
   OOMPI_COMM_WORLD.Finalize();
 }
 

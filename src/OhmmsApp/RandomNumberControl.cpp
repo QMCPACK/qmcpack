@@ -25,6 +25,9 @@
 #include <HDFVersion.h>
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
+#if defined(HAVE_ADIOS) && defined(ADIOS_VERIFY)
+#include "ADIOS/ADIOS_verify.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -117,7 +120,7 @@ xmlNodePtr
 RandomNumberControl::initialize(xmlXPathContextPtr acontext)
 {
   xmlXPathObjectPtr rg_request
-  = xmlXPathEvalExpression((const xmlChar*)"//random",acontext);
+    = xmlXPathEvalExpression((const xmlChar*)"//random",acontext);
   if(xmlXPathNodeSetIsEmpty(rg_request->nodesetval))
     put(NULL);
   else
@@ -250,19 +253,16 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
     shape[0]=static_cast<int>(slab.size(0));
     shape[1]=static_cast<int>(slab.size(1));
   }
-
   //bcast of hsize_t is not working
   mpi::bcast(*comm,shape);
-
   if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
   {
     app_log() << "Mismatched random number generators."
-                  << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
-                  << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
-                  << "\n  Using the random streams generated at the initialization." << endl;
+              << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
+              << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
+              << "\n  Using the random streams generated at the initialization." << endl;
     return;
   }
-
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
@@ -284,6 +284,73 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
       Random.load(vt);
   }
 }
+
+#ifdef HAVE_ADIOS
+uint64_t RandomNumberControl::get_group_size()
+{
+  return 4 * omp_get_max_threads() * Random.state_size() + 4 * 4;
+}
+
+void RandomNumberControl::adios_checkpoint(int64_t adios_handle)
+{
+  int nthreads=omp_get_max_threads();
+  vector<uint_type> vt, vt_tot;
+  vt.reserve(nthreads * Random.state_size());
+  if(nthreads>1)
+    for(int ip=0; ip<nthreads; ++ip)
+    {
+      vector<uint_type> c;
+      Children[ip]->save(c);
+      vt.insert(vt.end(),c.begin(),c.end());
+    }
+  else
+    Random.save(vt);
+  //write these values to variables that random.ch is looking for
+  void* random = (void*)vt.data();
+  int thread_size = omp_get_max_threads();
+  int random_size = Random.state_size();
+  int rank = OHMMS::Controller->rank() * omp_get_max_threads();
+  int global_size = OHMMS::Controller->size() * omp_get_max_threads();
+  int local_size = omp_get_max_threads();
+  adios_write (adios_handle, "random_size", &random_size);
+  adios_write (adios_handle, "thread_rank", &rank);
+  adios_write (adios_handle, "global_size", &global_size);
+  adios_write (adios_handle, "local_size", &local_size);
+  adios_write (adios_handle, "random", random);
+}
+
+#ifdef ADIOS_VERIFY
+
+void RandomNumberControl::adios_checkpoint_verify(ADIOS_FILE *fp)
+{
+  int nthreads=omp_get_max_threads();
+  vector<uint_type> vt, vt_tot;
+  vt.reserve(nthreads * Random.state_size());
+  if(nthreads>1)
+    for(int ip=0; ip<nthreads; ++ip)
+    {
+      vector<uint_type> c;
+      Children[ip]->save(c);
+      vt.insert(vt.end(),c.begin(),c.end());
+    }
+  else
+    Random.save(vt);
+  //write these values to variables that random.ch is looking for
+  //void* random = (void*)vt.data();
+  int thread_size = omp_get_max_threads();
+  int random_size = Random.state_size();
+  int rank = OHMMS::Controller->rank() * omp_get_max_threads();
+  int global_size = OHMMS::Controller->size() * omp_get_max_threads();
+  int local_size = omp_get_max_threads();
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "random_size", &random_size);
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "thread_rank", &rank);
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "global_size", &global_size);
+  IO_VERIFY::adios_checkpoint_verify_variables(fp, "local_size", &local_size);
+  IO_VERIFY::adios_checkpoint_verify_random_variables(fp, "random", (uint_type *)vt.data());
+}
+#endif
+#endif
+
 
 void RandomNumberControl::write(const string& fname, Communicate* comm)
 {

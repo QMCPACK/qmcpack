@@ -24,6 +24,10 @@
 //#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
+#ifdef HAVE_ADIOS
+#include <adios.h>
+#endif
+
 
 //#include <boost/archive/text_oarchive.hpp>
 
@@ -95,7 +99,6 @@ void SimpleFixedNodeBranch::registerParameters()
   m_param.add(vParam[B_TAU],"timestep","AU");
   m_param.add(vParam[B_TAU],"timeStep","AU");
   m_param.add(vParam[B_TAU],"TimeStep","AU");
-  
   //filterscale:  sets the filtercutoff to sigma*filterscale
   m_param.add(vParam[B_FILTERSCALE],"filterscale","double");
   //feed back parameter for population control
@@ -211,19 +214,19 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //this is the first time DMC is used
   if(WalkerController == 0)
   {
-  //  if(iParam[B_TARGETWALKERS]==0)
-  //  {
-  //    Communicate* acomm=MyEstimator->getCommunicator();
-  //    int ncontexts=acomm->size();
-  //    vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
-  //    nw[acomm->rank()]=W.getActiveWalkers();
-   //   acomm->allreduce(nw);
-  //    for(int ip=0; ip<ncontexts; ++ip)
-  //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-  //    W.setGlobalNumWalkers(nwoff[ncontexts]);
-  //    W.setWalkerOffsets(nwoff);
-  //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
-  //  }
+    //  if(iParam[B_TARGETWALKERS]==0)
+    //  {
+    //    Communicate* acomm=MyEstimator->getCommunicator();
+    //    int ncontexts=acomm->size();
+    //    vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
+    //    nw[acomm->rank()]=W.getActiveWalkers();
+    //   acomm->allreduce(nw);
+    //    for(int ip=0; ip<ncontexts; ++ip)
+    //      nwoff[ip+1]=nwoff[ip]+nw[ip];
+    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
+    //    W.setWalkerOffsets(nwoff);
+    //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
+    //  }
     if(!BranchMode[B_RESTART])
     {
       fromscratch=true;
@@ -232,15 +235,12 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
       //PopHist.clear();
       //PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
-
   }
   //else
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
   MyEstimator->reset();
-  
-
   this->reset();
   if(fromscratch)
   {
@@ -254,7 +254,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
-
   app_log() << "  QMC counter      = " << iParam[B_COUNTER] << endl;
   app_log() << "  time step        = " << vParam[B_TAU] << endl;
   app_log() << "  effective time step = " << vParam[B_TAUEFF] << endl;
@@ -390,44 +389,40 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, vec
       clones[i]->BranchMode=BranchMode;
 }
 /**
- * 
+ *
  */
-  
+
 void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
 {
-  
-  
-  
-  //Update the current energy and accumulate.  
+  //Update the current energy and accumulate.
   MCWalkerConfiguration::Walker_t& head = W.reptile->getHead();
   MCWalkerConfiguration::Walker_t& tail = W.reptile->getTail();
   vParam[B_ENOW]=0.5*(head.Properties(LOCALENERGY)+tail.Properties(LOCALENERGY));
- // app_log()<<"IN SimpleFixedNodeBranch::collect\n";
- // app_log()<<"\tvParam[B_ENOW]="<<vParam[B_ENOW]<<endl;
-  
+// app_log()<<"IN SimpleFixedNodeBranch::collect\n";
+// app_log()<<"\tvParam[B_ENOW]="<<vParam[B_ENOW]<<endl;
   EnergyHist(vParam[B_ENOW]);
   vParam[B_EREF]=EnergyHist.mean();
- // app_log()<<"\tvParam[B_EREF]="<<vParam[B_EREF]<<endl;
-  
+// app_log()<<"\tvParam[B_EREF]="<<vParam[B_EREF]<<endl;
   //Update the energy variance and R2 for effective timestep and filtering.
   VarianceHist(std::pow(vParam[B_ENOW]-vParam[B_EREF],2));
   R2Accepted(head.Properties(R2ACCEPTED));
   R2Proposed(head.Properties(R2PROPOSED));
- // app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<<endl;
- // app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<<endl;
+// app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<<endl;
+// app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<<endl;
 //  app_log()<<"\tR2Accepted="<<R2Accepted.result()<<endl;
- // app_log()<<"\tR2Proposed="<<R2Proposed.result()<<endl;
+// app_log()<<"\tR2Proposed="<<R2Proposed.result()<<endl;
 //  app_log()<<"\tR2Accept/R2Prop="<<R2Accepted.result()/R2Proposed.result()<<endl;
- // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
- // app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
+// app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
+// app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
 //  app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
- // app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<<endl;
- // app_log()<<"--------------\n";
+// app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<<endl;
+// app_log()<<"--------------\n";
   //current mean
-  if(BranchMode[B_USETAUEFF]){
-	//app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<<endl;  
+  if(BranchMode[B_USETAUEFF])
+  {
+    //app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<<endl;
     vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-  //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<endl;
+    //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<endl;
   }
   /*
   if(BranchMode[B_RMCSTAGE]) // main stage
@@ -450,16 +445,13 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   {
     if(BranchMode[B_USETAUEFF])
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-	
-	
-	 // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
- // app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
- // app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
-  //app_log()<<"\t var = "<<VarianceHist.mean()-std::pow(EnergyHist.mean(),2)<<endl;
- // app_log()<<"\t var = "<<VarianceHist.mean()<<endl;
+    // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
+// app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
+// app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
+    //app_log()<<"\t var = "<<VarianceHist.mean()-std::pow(EnergyHist.mean(),2)<<endl;
+// app_log()<<"\t var = "<<VarianceHist.mean()<<endl;
 //  app_log()<<"----\n";
-	//app_log()<<"ToDoSteps="<<ToDoSteps<<endl;
-	 
+    //app_log()<<"ToDoSteps="<<ToDoSteps<<endl;
     vParam[B_ETRIAL]=vParam[B_EREF];
     --ToDoSteps;
     if(ToDoSteps==0)  //warmup is done
@@ -506,8 +498,8 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W, vector<T
     for(int i=0; i<clones.size(); i++)
       clones[i]->BranchMode=BranchMode;
 }
-/** Calculates and saves various action components, also does necessary updates for running averages. 
- * 
+/** Calculates and saves various action components, also does necessary updates for running averages.
+ *
  */
 
 
@@ -543,16 +535,14 @@ void SimpleFixedNodeBranch::reset()
 //       vParam(abranch.vParam)
     WalkerController->start();
   }
-  
   if(BranchMode[B_RMC])
   {
     //this is to compare the time step errors
-   // BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
+    // BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
     if(BranchMode[B_DMCSTAGE]) //
       ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
     else
       ToDoSteps = iParam[B_WARMUPSTEPS];
-
   }
 }
 
@@ -573,10 +563,8 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   IParamType iparam_old(iParam);
   VParamType vparam_old(vParam);
   myNode=cur;
-  
   //store old target
   int nw_target=iParam[B_TARGETWALKERS];
-  
   m_param.put(cur);
   //everything is the same, do nothing
   if(bmode==BranchMode
@@ -624,7 +612,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   WalkerController->reset();
   if(BackupWalkerController)
     BackupWalkerController->reset();
-    
   return iParam[B_TARGETWALKERS]/nw_target;
 }
 
@@ -685,7 +672,6 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
     o << "\n    cutoff energy                 = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
     o << "\n    QMC Status (BranchMode)       = " << BranchMode;
     o << "\n====================================================";
-  
   }
   else
   {
@@ -748,6 +734,19 @@ void SimpleFixedNodeBranch::write(const string& fname, bool overwrite)
     bool success= hh.write(fname);
   }
 }
+
+#ifdef HAVE_ADIOS
+void SimpleFixedNodeBranch::save_energy()
+{
+  if(MyEstimator->is_manager())
+  {
+    //\since 2008-06-24
+    vParam[B_ACC_ENERGY]=EnergyHist.result();
+    vParam[B_ACC_SAMPLES]=EnergyHist.count();
+  }
+}
+#endif
+
 
 void SimpleFixedNodeBranch::read(const string& fname)
 {

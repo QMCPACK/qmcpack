@@ -386,7 +386,11 @@ protected:
    */
   bool finalize(int block, bool dumpwalkers=true);
 
-
+  int rotation;
+  void adiosCheckpoint(int block);
+  void adiosCheckpointFinal(int block, bool dumpwalkers);
+  string getRotationName(string RootName);
+  string getLastRotationName(string RootName);
 
 };
 /**@}*/

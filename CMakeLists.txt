@@ -73,6 +73,7 @@ SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 
 ######################################################################
 # set debug printout
@@ -183,6 +184,25 @@ set(TAU_HOME $ENV{TAU_HOME})
 # Directory where customize cmake files reside
 ######################################################
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
+
+######################################################
+# set ADIOS flags 
+######################################################
+IF(QMC_ADIOS)
+  IF(NOT HAVE_ADIOS)
+    SET (ADIOS_FOUND 0)
+    INCLUDE(${PROJECT_CMAKE}/FindADIOS.cmake)
+    IF (${ADIOS_FOUND} EQUAL 1)
+      INCLUDE_DIRECTORIES(${ADIOS_INCLUDES})
+      MESSAGE(STATUS "Found ADIOS")
+      LINK_LIBRARIES(${ADIOS_LIBRARIES})
+      ADD_DEFINITIONS(-DHAVE_ADIOS)
+    ELSE()
+      MESSAGE(STATUS "Couldn't find ADIOS")
+      MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
+    ENDIF()
+  endif()
+ENDIF(QMC_ADIOS)
 
 ######################################################
 # Get the current SVN version
@@ -525,5 +545,14 @@ if(HAVE_MPI)
   ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 endif()
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
+
+#########################
+# add definitions for adios profile
+#	add definitions for adios verification
+########################
+IF(QMC_ADIOS)
+#	ADD_DEFINITIONS(-DIO_PROFILE)
+#	ADD_DEFINITIONS(-DADIOS_VERIFY)
+ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)

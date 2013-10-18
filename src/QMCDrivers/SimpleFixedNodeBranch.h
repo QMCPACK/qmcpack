@@ -29,6 +29,10 @@
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
+#ifdef HAVE_ADIOS
+#include <adios.h>
+#endif
+
 namespace qmcplusplus
 {
 
@@ -57,15 +61,15 @@ struct SimpleFixedNodeBranch: public QMCTraits
   enum
   {
     B_DMC=0              /**< 1 for dmc, 0 for anything else */
-    , B_DMCSTAGE=1     /**< 1 for main, 0 for wamrup  */
-    , B_POPCONTROL=2   /**< 1 for the standard dmc, 0 for the comb method */
-    , B_USETAUEFF=3    /**< 1 to use taueff accordning to JCP 93, 0 to use tau */
-    , B_CLEARHISTORY=4 /**< 1 to clear the history */
-    , B_KILLNODES=5    /**< 1 to kill walkers when a node crossing is detected */
-    , B_RESTART=6      /**< 1 if restarting */
-    , B_RMC=7          /**< 1 for rmc, 0 for anything else */
-    , B_RMCSTAGE=8    /**< 1 for main, 0 for warmup */
-    , B_MODE_MAX=10     /**< size of BranchMode */
+          , B_DMCSTAGE=1     /**< 1 for main, 0 for wamrup  */
+                       , B_POPCONTROL=2   /**< 1 for the standard dmc, 0 for the comb method */
+                                      , B_USETAUEFF=3    /**< 1 to use taueff accordning to JCP 93, 0 to use tau */
+                                          , B_CLEARHISTORY=4 /**< 1 to clear the history */
+                                              , B_KILLNODES=5    /**< 1 to kill walkers when a node crossing is detected */
+                                                  , B_RESTART=6      /**< 1 if restarting */
+                                                      , B_RMC=7          /**< 1 for rmc, 0 for anything else */
+                                                          , B_RMCSTAGE=8    /**< 1 for main, 0 for warmup */
+                                                              , B_MODE_MAX=10     /**< size of BranchMode */
   };
 
   /** booleans to set the branch modes
@@ -82,13 +86,13 @@ struct SimpleFixedNodeBranch: public QMCTraits
   enum
   {
     B_WARMUPSTEPS=0              /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
-    , B_ENERGYUPDATEINTERVAL=1 /**< frequency of the trial energy updates, default 1 */
-    , B_COUNTER=2              /**< counter for tracking object state */
-    , B_TARGETWALKERS=3        /**< target total number of walkers per mpi group */
-    , B_MAXWALKERS=4           /**< maximum number of walkers per node */
-    , B_MINWALKERS=5           /**< minimum number of walkers per node */
-    , B_BRANCHINTERVAL=6       /**< interval between branch, see population control */
-    , B_IPARAM_MAX=8           /**< size of iParam */
+                  , B_ENERGYUPDATEINTERVAL=1 /**< frequency of the trial energy updates, default 1 */
+                      , B_COUNTER=2              /**< counter for tracking object state */
+                                  , B_TARGETWALKERS=3        /**< target total number of walkers per mpi group */
+                                      , B_MAXWALKERS=4           /**< maximum number of walkers per node */
+                                          , B_MINWALKERS=5           /**< minimum number of walkers per node */
+                                              , B_BRANCHINTERVAL=6       /**< interval between branch, see population control */
+                                                  , B_IPARAM_MAX=8           /**< size of iParam */
   };
 
   /** input parameters of integer types
@@ -212,10 +216,10 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
   void initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
   //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
-  
+
   /** initialize reptile stats
-   * 
-   * 
+   *
+   *
    */
   void initReptile(MCWalkerConfiguration& w);
 
@@ -250,52 +254,42 @@ struct SimpleFixedNodeBranch: public QMCTraits
     RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
     if(x>vParam[B_BRANCHMAX])
       taueff_=0.0;
-    else
-      if(x>vParam[B_BRANCHCUTOFF])
-        taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
+    else if(x>vParam[B_BRANCHCUTOFF])
+      taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
     return std::exp(taueff_*(vParam[B_ETRIAL]*2.0-enew-eold));
   }
-  
+
   inline RealType symLinkAction(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction = -0.5*(logGf+logGb);
-	//RealType energyaction = 
-	
-	RealType taueff_=vParam[B_TAUEFF]*0.5;
+    //RealType energyaction =
+    RealType taueff_=vParam[B_TAUEFF]*0.5;
     RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
     if(x>vParam[B_BRANCHMAX])
       taueff_=0.0;
-    else
-      if(x>vParam[B_BRANCHCUTOFF])
-        taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
-    
+    else if(x>vParam[B_BRANCHCUTOFF])
+      taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
     RealType energyaction = taueff_*(enew+eold);
-    
-    return driftaction+energyaction;    
+    return driftaction+energyaction;
   }
-  
+
   inline RealType symLinkActionBare(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
-	RealType driftaction = -0.5*(logGf+logGb);
-	
-	RealType taueff_=vParam[B_TAUEFF]*0.5;
-   
+    RealType driftaction = -0.5*(logGf+logGb);
+    RealType taueff_=vParam[B_TAUEFF]*0.5;
     RealType energyaction = taueff_*(enew+eold);
-    
-   // RealType wavefunctionaction= -psinew + psiold;
-    
-    return driftaction+energyaction;      
+    // RealType wavefunctionaction= -psinew + psiold;
+    return driftaction+energyaction;
   }
-  
+
   inline RealType DMCLinkAction(RealType enew, RealType eold) const
   {
-	RealType taueff_=vParam[B_TAUEFF]*0.5;
-	RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
+    RealType taueff_=vParam[B_TAUEFF]*0.5;
+    RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
     if(x>vParam[B_BRANCHMAX])
       taueff_=0.0;
-    else
-      if(x>vParam[B_BRANCHCUTOFF])
-        taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
+    else if(x>vParam[B_BRANCHCUTOFF])
+      taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
     return taueff_*(enew+eold);
   }
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
@@ -378,16 +372,16 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param clones of the branch engine for OpenMP threads
    */
   void branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
-  
+
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
    * @param clones of the branch engine for OpenMP threads
    */
-   
+
   void collect(int iter, MCWalkerConfiguration& w);
   void collect(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
-  
+
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.
    */
@@ -396,9 +390,9 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /** reset the internal parameters */
   void reset();
 
-  /** reset the internal parameters 
+  /** reset the internal parameters
    * @return new target population over old target population
-   */ 
+   */
   int resetRun(xmlNodePtr cur);
 
   bool put(xmlNodePtr cur);
@@ -408,6 +402,11 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param overwrite NOT USED
    */
   void write(const string& fname, bool overwrite=true);
+
+#ifdef HAVE_ADIOS
+  void save_energy();
+#endif
+
   void read(const string& fname);
 
   /** create map between the parameter name and variables */

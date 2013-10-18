@@ -461,12 +461,12 @@ public:
       return 0;
     return (ip)? myClones[ip]:this;
   }
-   
+
   inline int clones_size() const
   {
     return myClones.size();
   }
-   
+
   /** update R of its own and its clones
    * @param rnew new position array of N
    */
@@ -479,7 +479,7 @@ public:
     for(int ip=1; ip<myClones.size(); ++ip)
       myClones[ip]->R=rnew;
   }
-   
+
   /** reset internal data of clones including itself
    */
   void reset_clones();

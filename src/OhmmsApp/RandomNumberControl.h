@@ -22,6 +22,14 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
 
+#ifdef HAVE_ADIOS
+#include "adios.h"
+#ifdef ADIOS_VERIFY
+#include "adios_read.h"
+#include "adios_error.h"
+#endif
+#endif
+
 class Communicate;
 
 namespace qmcplusplus
@@ -68,6 +76,18 @@ public:
    * @param comm communicator so that everyone writes its own data
    */
   static void write(const string& fname, Communicate* comm);
+
+#ifdef HAVE_ADIOS
+  /*
+  *    * Write data with adios.
+  *       */
+  static void adios_checkpoint(int64_t adios_handle);
+  static uint64_t get_group_size();
+
+#ifdef ADIOS_VERIFY
+  static void adios_checkpoint_verify(ADIOS_FILE *fp);
+#endif
+#endif
 
 private:
 

@@ -18,12 +18,23 @@
 #include <set>
 #include <algorithm>
 
+#ifdef HAVE_ADIOS
+#include "adios.h"
+#include "adios_read.h"
+#include "ADIOS/ADIOS_config.h"
+#ifdef IO_PROFILE
+#include "ADIOS/ADIOS_profile.h"
+#endif
+#ifdef ADIOS_VERIFY
+#include "ADIOS/ADIOS_verify.h"
+#endif
+#endif
 
 
 namespace qmcplusplus
 {
 
-  //#define TRACE_CHECK
+//#define TRACE_CHECK
 
 const unsigned int DMAX=4;
 typedef long   TraceInt;
@@ -245,14 +256,12 @@ struct CombinedTraceSample : public TraceSample<T>
       this->particle_trace = component->particle_trace;
       this->sample.resize(component->size);
     }
-    else
-      if(!this->same_shape(component))
-      {
-        APP_ABORT("CombinedTraceSample::add_component  attempted to add a different shape component\n  my domain: "+this->domain+"\n  my name: "+this->name+"\n  component domain: "+component->domain+"\n  component name: "+component->name);
-      }
-      else
-        if(this->domain!=component->domain)
-          APP_ABORT("CombinedTraceSample::add_component  attempted to add a different domain component\n  my domain: "+this->domain+"\n  my name: "+this->name+"\n  component domain: "+component->domain+"\n  component name: "+component->name);
+    else if(!this->same_shape(component))
+    {
+      APP_ABORT("CombinedTraceSample::add_component  attempted to add a different shape component\n  my domain: "+this->domain+"\n  my name: "+this->name+"\n  component domain: "+component->domain+"\n  component name: "+component->name);
+    }
+    else if(this->domain!=component->domain)
+      APP_ABORT("CombinedTraceSample::add_component  attempted to add a different domain component\n  my domain: "+this->domain+"\n  my name: "+this->name+"\n  component domain: "+component->domain+"\n  component name: "+component->name);
     weights.push_back(weight);
     components.push_back(component);
   }
@@ -335,6 +344,7 @@ struct TraceSamples
   {
     if(sample_indices.count(domain)>0 && sample_indices[domain].count(name)>0)
     {
+      //cynthia: remove for output
       APP_ABORT("TraceSamples::checkout "+label+" variable "+name+" already exists in domain "+domain);
     }
     else
@@ -520,6 +530,73 @@ struct TraceSamples
     combined_sample_vectors.resize(0);
     sample_indices.clear();
   }
+
+#ifdef HAVE_ADIOS
+  inline void register_adios_data(const char* write_mode, const char* path)
+  {
+    MPI_Comm comm = OHMMS::Controller->getMPI();
+    int adios_err;
+    uint64_t adios_groupsize, adios_totalsize;
+    int64_t adios_handle;
+    map<string,map<string,int> >::iterator it;
+    map<string,int>::iterator it2;
+    int num_quantities = 0;
+    for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
+    {
+      map<string,int>& indices = it->second;
+      num_quantities += indices.size();
+    }
+    adios_open(&adios_handle, "Structure", "structure.bp", write_mode, comm);
+    adios_set_path(adios_handle, path);
+    if (num_quantities > 0)
+    {
+      int dim_buf[num_quantities];
+      int shape_buf[num_quantities];
+      int size_buf[num_quantities];
+      int unit_buf[num_quantities];
+      int start_buf[num_quantities];
+      int end_buf[num_quantities];
+      int curr_quantity = 0;
+      for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
+      {
+        const string& domain = it->first;
+        map<string,int>& indices = it->second;
+        for(it2=indices.begin(); it2!=indices.end(); ++it2)
+        {
+          const string& quantity = it2->first;
+          const TraceSample<T>& sample = *samples[it2->second];
+          dim_buf[curr_quantity] = sample.dimension;
+          /* shape_buf[curr_quantity] = new int[sample.dimension]; */
+          size_buf[curr_quantity] = sample.size;
+          unit_buf[curr_quantity] = sample.unit_size;
+          start_buf[curr_quantity] = sample.buffer_start;
+          end_buf[curr_quantity] = sample.buffer_end;
+          curr_quantity++;
+        }
+      }
+      adios_groupsize = (5 * num_quantities * 4) + 4;
+      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+      //adios_write(adios_handle, "domain", (void*)(domain.c_str()));
+      //adios_write(adios_handle, "quantity", (void*)(quantity.c_str()));
+      /* adios_write(adios_handle, "mpi_rank", (void*)&mpi_rank); */
+      /* adios_write(adios_handle, "mpi_size", (void*)&mpi_size); */
+      adios_write(adios_handle, "num_quantities", &num_quantities);
+      adios_write(adios_handle, "size", (void*)&size_buf);
+      adios_write(adios_handle, "dimension", (void*)&dim_buf);
+      //adios_write(adios_handle, "shape", (void*)&shape_buf);
+      adios_write(adios_handle, "unit_size", (void*)&unit_buf);
+      adios_write(adios_handle, "row_start", (void*)&start_buf);
+      adios_write(adios_handle, "row_end", (void*)&end_buf);
+    } //if(num_quantities > 0)
+    else
+    {
+      adios_groupsize = 4;
+      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+      adios_write(adios_handle, "num_quantities", &num_quantities);
+    }
+    adios_close(adios_handle);
+  }
+#endif //HAVE_ADIOS
 
 
   inline void register_hdf_data(hdf_archive& f)
@@ -764,6 +841,18 @@ struct TraceBuffer
     app_log()<<pad<<"end TraceBuffer<"<<type<<">"<<endl;
   }
 
+#ifdef HAVE_ADIOS
+  inline void register_adios_data(const char* write_mode)
+  {
+    string path = "/" + type;
+    samples->register_adios_data(write_mode, path.c_str());
+    if(has_complex)
+    {
+      path = "/" + type + "_complex";
+      complex_samples->register_adios_data("a", path.c_str());
+    }
+  }
+#endif
 
   inline void register_hdf_data(hdf_archive& f)
   {
@@ -1090,15 +1179,26 @@ public:
       {
         hdf_format = true;
       }
+#ifdef HAVE_ADIOS
+      else if(format=="adios")
+      {
+        adios_format = true;
+      }
+      else if(format=="both")
+      {
+        adios_format = true;
+        hdf_format = true;
+      }
       else
-        if(format=="adios")
-        {
-          adios_format = true;
-        }
-        else
-        {
-          APP_ABORT("TraceManager::put "+format+" is not a valid file format for traces\n  valid options are: hdf, adios");
-        }
+      {
+        APP_ABORT("TraceManager::put "+format+" is not a valid file format for traces\n  valid options are: hdf, adios, both");
+      }
+#else
+      else
+      {
+        APP_ABORT("TraceManager::put "+format+" is not a valid file format for traces\n  valid options is: hdf");
+      }
+#endif
       //read scalar and particle elements
       //  each requests that certain traces be computed
       xmlNodePtr element = cur->children;
@@ -1116,23 +1216,21 @@ public:
           putContent(scalar_list,element);
           scalar_requests.insert(scalar_list.begin(),scalar_list.end());
         }
-        else
-          if(name=="particle_traces")
-          {
-            string defaults = "yes";
-            OhmmsAttributeSet eattrib;
-            eattrib.add(defaults,"defaults");
-            eattrib.put(element);
-            use_particle_defaults = use_particle_defaults && defaults=="yes";
-            vector<string> particle_list;
-            putContent(particle_list,element);
-            particle_requests.insert(particle_list.begin(),particle_list.end());
-          }
-          else
-            if(name!="text")
-            {
-              APP_ABORT("TraceManager::put "+name+" is not a valid sub-element of <trace/>\n  valid options are: scalar_traces, particle_traces");
-            }
+        else if(name=="particle_traces")
+        {
+          string defaults = "yes";
+          OhmmsAttributeSet eattrib;
+          eattrib.add(defaults,"defaults");
+          eattrib.put(element);
+          use_particle_defaults = use_particle_defaults && defaults=="yes";
+          vector<string> particle_list;
+          putContent(particle_list,element);
+          particle_requests.insert(particle_list.begin(),particle_list.end());
+        }
+        else if(name!="text")
+        {
+          APP_ABORT("TraceManager::put "+name+" is not a valid sub-element of <trace/>\n  valid options are: scalar_traces, particle_traces");
+        }
         element=element->next;
       }
       app_log()<<"  writing traces            : "<< writing_traces            <<endl;
@@ -1490,11 +1588,15 @@ public:
         {
           write_buffers_hdf(clones);
         }
-        else
-          if(adios_format)
-          {
-            app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<<endl;
-          }
+        if(adios_format)
+        {
+#ifdef HAVE_ADIOS
+          write_buffers_adios(clones);
+#else
+          APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
+#endif
+          //app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<<endl;
+        }
       }
     }
     else
@@ -1516,11 +1618,14 @@ public:
         {
           open_hdf_file(clones);
         }
-        else
-          if(adios_format)
-          {
-            APP_ABORT("TraceManager::open_file (adios) has not yet been implemented");
-          }
+        if(adios_format)
+        {
+#ifdef HAVE_ADIOS
+          initialize_adios(clones);
+#else
+          APP_ABORT("TraceManager::open_file (adios) ADIOS is not found");
+#endif
+        }
       }
     }
     else
@@ -1540,11 +1645,14 @@ public:
         {
           close_hdf_file();
         }
-        else
-          if(adios_format)
-          {
-            APP_ABORT("TraceManager::close_file (adios) has not yet been implemented");
-          }
+        if(adios_format)
+        {
+#ifdef HAVE_ADIOS
+          finalize_adios();
+#else
+          APP_ABORT("TraceManager::close_file (adios) ADIOS is not found");
+#endif
+        }
       }
     }
     else
@@ -1655,11 +1763,10 @@ public:
     {
       if(nprocs>10000)
         sprintf(ptoken,".p%05d",rank);
+      else if(nprocs>1000)
+        sprintf(ptoken,".p%04d",rank);
       else
-        if(nprocs>1000)
-          sprintf(ptoken,".p%04d",rank);
-        else
-          sprintf(ptoken,".p%03d",rank);
+        sprintf(ptoken,".p%03d",rank);
       file_name += ptoken;
     }
     file_name += ".traces.h5";
@@ -1696,18 +1803,93 @@ public:
   }
 
 
+#ifdef HAVE_ADIOS
+
+  inline void initialize_adios(vector<TraceManager*>& clones)
+  {
+    //adios_init("qmc_adios.xml", communicator->getMPI());
+    TraceManager& tm = *clones[0];
+    tm.int_buffer.register_adios_data("w");
+    tm.real_buffer.register_adios_data("a");
+  }
+
+
+  inline void print_adios(vector<TraceManager*>& clones)
+  {
+    app_log()<<"TraceManager::write_buffers_adios "<<master_copy<<endl;
+    for(int ip=0; ip<clones.size(); ++ip)
+    {
+      TraceManager& tm = *clones[ip];
+      //tm.int_buffer.write_summary();
+      //tm.real_buffer.write_summary();
+      app_log() << "Type: " << tm.real_buffer.type << endl;
+      app_log() << "Buffer Size: " << tm.real_buffer.buffer.size() << " | " << tm.real_buffer.buffer.size(0) << "|" <<  tm.real_buffer.buffer.size(1) << endl;
+    }
+  }
+
+  inline void write_buffers_adios(vector<TraceManager*>& clones)
+  {
+    //print_adios(clones);
+    MPI_Comm comm = communicator->getMPI();
+    int total_size = 0;
+    for(int ip=0; ip<clones.size(); ++ip)
+    {
+      TraceManager& tm = *clones[ip];
+      total_size += tm.real_buffer.buffer.size();
+    }
+    double adios_buffer[total_size];
+    int curr_pos = 0;
+    for(int ip=0; ip<clones.size(); ++ip)
+    {
+      TraceManager& tm = *clones[ip];
+      for(vector<TraceReal>::iterator  iter= tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end(); iter++)
+      {
+        adios_buffer[curr_pos++] = *iter;
+      }
+    }
+    static bool write_flag = true;
+    int         adios_err;
+    uint64_t    adios_groupsize, adios_totalsize;
+    int64_t     adios_handle;
+    if(write_flag)
+    {
+      adios_open(&adios_handle, "Traces", "traces.bp", "w", comm);
+      //      write_flag = false;
+    }
+    else
+    {
+      adios_open(&adios_handle, "Traces", "traces.bp", "a", comm);
+    }
+    adios_groupsize = 4 + (total_size * 8);
+    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+    adios_write(adios_handle, "total_size", &total_size);
+    adios_write(adios_handle, "buffer_contents", adios_buffer);
+    adios_close(adios_handle);
+#ifdef IO_PROFILE
+    ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
+#endif
+#ifdef ADIOS_VERIFY
+    ADIOS_FILE *fp = adios_read_open_file("traces.bp",
+                                          ADIOS_READ_METHOD_BP,
+                                          OHMMS::Controller->getMPI());
+    IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
+    IO_VERIFY::adios_trace_verify_local_variables(fp, "buffer_contents", adios_buffer);
+    adios_read_close(fp);
+#endif
+  }
+
+
+  inline void finalize_adios()
+  {
+    //adios_finalize(communicator->rank());
+  }
+
+#endif
 
 };
 
 
-
-
 }
-
-
-
-
-
 #endif
 
 

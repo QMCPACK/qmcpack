@@ -23,6 +23,9 @@
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
+#include "QMCDrivers/QMCDriver.h"
+#include <io/hdf_hyperslab.h>
+#include "HDFVersion.h"
 #include <map>
 
 #ifdef QMC_CUDA
@@ -357,12 +360,11 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
 
 void MCWalkerConfiguration::resizeWalkerHistories()
 {
-  //using vector<vector<RealType> > is too costly. 
+  //using vector<vector<RealType> > is too costly.
   int np=PropertyHistory.size();
   if(np)
     for(int iw=0; iw<WalkerList.size(); ++iw)
       WalkerList[iw]->PropertyHistory=PropertyHistory;
-
   np=PHindex.size();
   if(np)
     for(int iw=0; iw<WalkerList.size(); ++iw)
