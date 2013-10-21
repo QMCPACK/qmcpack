@@ -267,7 +267,11 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
   if(comm->size()>1)
-    mpi::scatter(*comm,vt_tot,vt);
+	{
+		//mpi::scatter(*comm,vt_tot,vt);
+		MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
+		MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
+	}
   else
     std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
   {
