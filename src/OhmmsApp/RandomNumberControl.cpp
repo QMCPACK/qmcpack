@@ -266,13 +266,15 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
+#if defined(HAVE_MPI)
   if(comm->size()>1)
-	{
-		//mpi::scatter(*comm,vt_tot,vt);
-		MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
-		MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
-	}
+  {
+    //mpi::scatter(*comm,vt_tot,vt);
+    MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
+    MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
+  }
   else
+#endif
     std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
   {
     if(nthreads>1)
