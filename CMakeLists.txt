@@ -201,6 +201,8 @@ IF(QMC_ADIOS)
       MESSAGE(STATUS "Couldn't find ADIOS")
       MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
     ENDIF()
+	ELSE()
+		ADD_DEFINITIONS(-DHAVE_ADIOS)
   endif()
 ENDIF(QMC_ADIOS)
 
