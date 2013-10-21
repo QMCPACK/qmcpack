@@ -7,21 +7,18 @@ namespace ADIOS_PROFILE
 void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize)
 {
 #ifdef IO_PROFILE
-  for(int i=0; i<myComm->size(); i++)
-  {
-    MPI_Barrier(myComm->getMPI());
-    if(myComm->rank()==i)
-    {
-      if(op==TRACES)
-      {
-        cout<<myComm->rank()<<" profile adios trace write size is "<<adios_groupsize<<" "<<adios_totalsize<<endl;
-      }
-      else if(op == CKPOINT)
-      {
-        cout<<myComm->rank()<<" profile adios checkpoint write size is "<<adios_groupsize<<" "<<adios_totalsize<<endl;
-      }
-    }
-  }
+	if(op == TRACES)
+	{
+		trace_data_grp[trace_index]=adios_groupsize;
+		trace_data_total[trace_index]=adios_totalsize;
+		trace_index++;
+	}
+	else if(op==CKPOINT)
+	{
+		ckp_data_grp[ckp_index]=adios_groupsize;
+		ckp_data_total[ckp_index]=adios_totalsize;
+		ckp_index++;
+	}
 #endif
 }
 
@@ -35,6 +32,17 @@ void profile_adios_init(int nBlock)
   bzero(comp_times, size);
   bzero(trace_times, size);
   bzero(checkpoint_times, size);
+	int data_size = nBlock*sizeof(int);
+	ckp_data_grp = (int *)malloc(data_size);
+	trace_data_grp = (int *)malloc(data_size);
+	ckp_data_total = (int *)malloc(data_size);
+	trace_data_total = (int *)malloc(data_size);
+	bzero(ckp_data_grp, data_size);
+	bzero(trace_data_grp, data_size);
+	bzero(ckp_data_total, data_size);
+	bzero(trace_data_total, data_size);
+	trace_index = 0;
+	ckp_index = 0;
   start = MPI_Wtime();
 #endif
 }
@@ -59,6 +67,10 @@ void profile_adios_finalize(Communicate* myComm, int nBlocks)
         total_comp_time += comp_times[j];
         total_trace_time += trace_times[j];
         total_checkpoint_time += checkpoint_times[j];
+				if(j<trace_index)
+					cout<<myComm->rank()<<" profile adios trace write size is "<<trace_data_grp[j]<<" "<<trace_data_total[j]<<endl;
+				if(j<ckp_index)
+					cout<<myComm->rank()<<" profile adios checkpoint write size is "<<ckp_data_grp[j]<<" "<<ckp_data_total[j]<<endl;
       }
       printf("total time is %f comp time %f trace time %f checkpoint time %f rank %d\n", end_time, total_comp_time, total_trace_time, total_checkpoint_time, myComm->rank());
       //cout<<"total time is "<<end_time<<" comp time "<<total_comp_time<<" trace time "<<total_trace_time<<" checkpoint time "<<total_checkpoint_time<<" rank "<<myComm->rank()<<endl;

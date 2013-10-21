@@ -20,6 +20,12 @@ static double start = 0.0;
 static double *comp_times;
 static double *trace_times;
 static double *checkpoint_times;
+static int *ckp_data_grp;
+static int *trace_data_grp;
+static int *ckp_data_total;
+static int *trace_data_total;
+static int ckp_index;
+static int trace_index;
 
 void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize);
 void profile_adios_init(int nBlock);
