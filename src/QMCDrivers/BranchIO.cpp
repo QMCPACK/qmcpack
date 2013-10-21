@@ -109,7 +109,7 @@ void BranchIO::adios_checkpoint_verify(ADIOS_FILE *fp)
   IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2accepted", (RealType*)ref.R2Accepted.properties);
   IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2proposed", (RealType *)ref.R2Proposed.properties);
   IO_VERIFY::adios_checkpoint_verify_variables(fp, "iparam", (RealType *)ref.iParam.data());
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "vparam", (int *)ref.vParam.data());
+  IO_VERIFY::adios_checkpoint_verify_intarray_variables(fp, "vparam", (int *)ref.vParam.data());
 }
 #endif
 

@@ -44,7 +44,9 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int* or
   }
   size = count*adios_type_size(vi->type, vi->value);
   int * mem= (int * )malloc(size);
-  adios_schedule_read(fp, NULL, name, 0, 1, mem);
+  ADIOS_SELECTION *sel = adios_selection_writeblock(OHMMS::Controller->rank());
+  adios_schedule_read(fp, sel, name, 0, 1, mem);
+  //adios_schedule_read(fp, NULL, name, 0, 1, mem);
   adios_perform_reads(fp, 1);
   if(mem[0] == *origin)
   {
@@ -55,6 +57,7 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int* or
     cout<<name<<" verification not passed, readin: "<<mem[0]<<" writeout: "<<*origin<<endl;
   }
   adios_free_varinfo (vi);
+  adios_selection_delete(sel);
   free(mem);
 }
 
