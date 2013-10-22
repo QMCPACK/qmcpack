@@ -1603,13 +1603,13 @@ eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
   // y-dependent vectors
   _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpy,   b4);
   _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpy,  db4);
-  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpy, d2a4);
-  _MM_MATVEC4_PS (A_s[12], A_s[13], A_s[14], A_s[15], tpy, d3a4);
+  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpy, d2b4);
+  _MM_MATVEC4_PS (A_s[12], A_s[13], A_s[14], A_s[15], tpy, d3b4);
   // z-dependent vectors
   _MM_MATVEC4_PS (A_s[ 0], A_s[ 1], A_s[ 2], A_s[ 3], tpz,   c4);
   _MM_MATVEC4_PS (A_s[ 4], A_s[ 5], A_s[ 6], A_s[ 7], tpz,  dc4);
-  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpz, d2a4);
-  _MM_MATVEC4_PS (A_s[12], A_s[13], A_s[14], A_s[15], tpz, d3a4);
+  _MM_MATVEC4_PS (A_s[ 8], A_s[ 9], A_s[10], A_s[11], tpz, d2c4);
+  _MM_MATVEC4_PS (A_s[12], A_s[13], A_s[14], A_s[15], tpz, d3c4);
   __m128 a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4], d3a[4], d3b[4], d3c[4];
   __m128 tmp;
   // Unpack a values

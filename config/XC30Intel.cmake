@@ -36,8 +36,8 @@
 
 SET(CMAKE_SYSTEM_PROCESSOR "XC30")
 
-set(CMAKE_CXX_COMPILER  /opt/cray/craype/1.01/bin/CC)
-set(CMAKE_C_COMPILER  /opt/cray/craype/1.01/bin/cc)
+set(CMAKE_CXX_COMPILER  /usr/common/usg/darshan/craype/1.06/bin/CC)
+set(CMAKE_C_COMPILER  /usr/common/usg/darshan/craype/1.06/bin/cc)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER -DUSE_REAL_STRUCT_FACTOR")
 set(INTEL_OPTS " -static -g  -restrict -unroll  -O3 -ip  -xAVX -openmp -Wno-deprecated")
 set(XT_FLAGS "-D_CRAYMPI")# -DHAVE_FMA4=1")
