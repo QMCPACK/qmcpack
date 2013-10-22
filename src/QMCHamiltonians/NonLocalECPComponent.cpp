@@ -574,8 +574,7 @@ NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy)
 {
   RealType esum=0.0;
-  RealType pairpot;
-  //int iel=0;
+  vector<PosType> deltaV(nknot);
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
     register RealType r(myTable->r(nn));
@@ -583,12 +582,11 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
       continue;
     register RealType rinv(myTable->rinv(nn));
     register PosType  dr(myTable->dr(nn));
-    int txyCounter=Txy.size();
     // Compute ratio of wave functions
     for (int j=0; j < nknot ; j++)
     {
-      PosType deltar(r*rrotsgrid_m[j]-dr);
-      W.makeMoveOnSphere(iel,deltar);
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      W.makeMoveOnSphere(iel,deltaV[j]);
 #if defined(QMC_COMPLEX)
       psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
@@ -597,14 +595,12 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
       W.rejectMove(iel);
       psi.resetPhaseDiff();
       //psi.rejectMove(iel);
-      //first, add a new NonLocalData with ratio
-      Txy.push_back(NonLocalData(iel,psiratio[j],deltar));
     }
     // Compute radial potential
     for(int ip=0; ip< nchannel; ip++)
-    {
       vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
-    }
+
+    RealType pairpot=0; 
     // Compute spherical harmonics on grid
     for (int j=0, jl=0; j<nknot ; j++)
     {
@@ -621,18 +617,21 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
         lpol[l+1]*=Lfactor2[l];
         lpolprev=lpol[l];
       }
-      //for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ];
+
       RealType lsum=0;
       for(int l=0; l <nchannel; l++)
         lsum += vrad[l]*lpol[ angpp_m[l] ];
-      pairpot = Txy[txyCounter++].Weight *= lsum;
-      if(tracing_particle_quantities)
-      {
-        (*Vi_sample)(iat) += .5*pairpot;
-        (*Ve_sample)(iel) += .5*pairpot;
-      }
-      esum += pairpot;
+      lsum *= psiratio[j];
+      Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
+      pairpot+=lsum;
     }
+
+    if(tracing_particle_quantities)
+    {
+      (*Vi_sample)(iat) += .5*pairpot;
+      (*Ve_sample)(iel) += .5*pairpot;
+    }
+    esum += pairpot;
     //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
     //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
   }   /* end loop over electron */
