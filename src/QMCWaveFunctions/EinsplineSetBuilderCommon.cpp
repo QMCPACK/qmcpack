@@ -420,10 +420,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
   }
   if(TwistNum<0)
   {
-    float eps=1e-4;
-    for (int si=0; si<numSuperTwists; si++)
-      if((abs(givenTwist[0]-superFracs[si][0])<eps) and (abs(givenTwist[1]-superFracs[si][1])<eps) and (abs(givenTwist[2]-superFracs[si][2])<eps))
-        TwistNum=si;
+    PosType gtFrac = FracPart(givenTwist);
+    float eps=1e-6;
+    for (int si=0; si<numSuperTwists; si++) {
+      PosType locDiff = gtFrac - superFracs[si];
+      if (dot(locDiff,locDiff) < eps)
+	TwistNum=si;
+    }
   }
   // Check supertwist for this node
   if (!myComm->rank())
