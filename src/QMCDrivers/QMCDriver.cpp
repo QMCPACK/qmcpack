@@ -237,34 +237,35 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
     W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
   }
-  if (!ADIOS::useHDF5() || ADIOS::useADIOS())
-    return ;
+  else if (!ADIOS::useHDF5() || ADIOS::useADIOS())
 #endif
-  if(wset.empty())
-    return;
-  int nfile=wset.size();
-  HDFWalkerInputManager W_in(W,myComm);
-  for(int i=0; i<wset.size(); i++)
-    if(W_in.put(wset[i]))
-      h5FileRoot = W_in.getFileRoot();
-  //clear the walker set
-  wset.clear();
-  int nwtot=W.getActiveWalkers();
-  myComm->bcast(nwtot);
-  if(nwtot)
-  {
-    int np=myComm->size();
-    vector<int> nw(np,0), nwoff(np+1,0);
-    nw[myComm->rank()]=W.getActiveWalkers();
-    myComm->allreduce(nw);
-    for(int ip=0; ip<np; ++ip)
-      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    W.setGlobalNumWalkers(nwoff[np]);
-    W.setWalkerOffsets(nwoff);
-    qmc_common.is_restart=true;
-  }
-  else
-    qmc_common.is_restart=false;
+	{
+  	if(wset.empty())
+    	return;
+  	int nfile=wset.size();
+  	HDFWalkerInputManager W_in(W,myComm);
+  	for(int i=0; i<wset.size(); i++)
+    	if(W_in.put(wset[i]))
+      	h5FileRoot = W_in.getFileRoot();
+  		//clear the walker set
+  	wset.clear();
+  	int nwtot=W.getActiveWalkers();
+  	myComm->bcast(nwtot);
+  	if(nwtot)
+ 	 	{
+    	int np=myComm->size();
+    	vector<int> nw(np,0), nwoff(np+1,0);
+    	nw[myComm->rank()]=W.getActiveWalkers();
+    	myComm->allreduce(nw);
+    	for(int ip=0; ip<np; ++ip)
+      	nwoff[ip+1]=nwoff[ip]+nw[ip];
+    	W.setGlobalNumWalkers(nwoff[np]);
+    	W.setWalkerOffsets(nwoff);
+    	qmc_common.is_restart=true;
+  	}
+  	else
+    	qmc_common.is_restart=false;
+	}
 }
 
 string QMCDriver::getRotationName(string RootName)
@@ -340,6 +341,8 @@ void QMCDriver::adiosCheckpoint(int block)
     ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
                                           ADIOS_READ_METHOD_BP,
                                           myComm->getMPI());
+		if (fp == NULL)
+			app_error() << "Fail to open adios file "<<(getLastRotationName(RootName) + ".config.bp").c_str()<<" Abort. "<<endl;
     if (myEstimator->is_manager())
     {
       BranchIO hh(*branchEngine,myEstimator->getCommunicator());
