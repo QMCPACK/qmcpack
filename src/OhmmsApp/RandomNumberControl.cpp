@@ -25,8 +25,11 @@
 #include <HDFVersion.h>
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
-#if defined(HAVE_ADIOS) && defined(ADIOS_VERIFY)
+#ifdef HAVE_ADIOS 
+#include "ADIOS/ADIOS_config.h"
+#ifdef ADIOS_VERIFY
 #include "ADIOS/ADIOS_verify.h"
+#endif
 #endif
 
 namespace qmcplusplus
@@ -237,6 +240,18 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   int nthreads=omp_get_max_threads();
   vector<uint_type> vt_tot, vt;
   TinyVector<int,2> shape(0);
+	#ifdef HAVE_ADIOS
+	if(ADIOS::useADIOS()) 
+	{
+		ADIOS::open(fname, comm->getMPI());
+		TinyVector<hsize_t,2> shape_t(0);
+    shape_t[1]=Random.state_size();
+		//shape[0]=static_cast<int>(slab.size(0));
+    //shape[1]=static_cast<int>(slab.size(1));
+		ADIOS::close();
+	} 
+	else if(ADIOS::useHDF5())
+	#endif
   {
     //read it
     string h5name(fname);
