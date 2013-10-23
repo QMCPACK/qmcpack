@@ -5,6 +5,7 @@
 #include <string>
 #include <Configuration.h>
 #include <cstring>
+#ifdef HAVE_ADIOS
 #include <adios_read.h>
 
 namespace ADIOS
@@ -68,8 +69,12 @@ inline void close()
 	int ret = adios_read_close(openfp);
 	if(ret)
 		qmcplusplus::app_error() <<"Fail to close adios file "<<adiosname<<" Abort."<<endl;
+  else
+    qmcplusplus::app_log()<<adiosname<<" is closed "<<endl;
 }
 
 };
+
+#endif
 
 #endif
