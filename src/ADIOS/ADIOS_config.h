@@ -2,10 +2,12 @@
 #ifndef ADIOS_ADIOS_CONFIG_H
 #define ADIOS_ADIOS_CONFIG_H
 
+#ifdef HAVE_ADIOS
+#include <stdint.h>
+#include "Utilities/RandomGenerator.h"
 #include <string>
 #include <Configuration.h>
 #include <cstring>
-#ifdef HAVE_ADIOS
 #include <adios_read.h>
 
 namespace ADIOS
@@ -19,7 +21,7 @@ const std::string& get_adios_xml();
 static string adiosname;
 static ADIOS_FILE * openfp;
 
-//void open(const string &fname, MPI_Comm comm);
+typedef qmcplusplus::RandomGenerator_t::uint_type uint_type;
 
 inline void open(const string &fname, MPI_Comm comm)
 {
@@ -62,6 +64,49 @@ void read(T data, const std::string& aname)
   adios_schedule_read(openfp, NULL, name, 0, 1, data);
   adios_perform_reads(openfp, 1);
   adios_free_varinfo (vi);
+}
+
+template <class T, class S>
+void read_random(T& data, S& shape, const std::string& aname)
+{
+  ADIOS_VARINFO *vi;
+  int size;
+
+  char * name = new char [aname.length()+1];
+  std::strcpy (name, aname.c_str());
+  if ( openfp == NULL)
+  {
+    qmcplusplus::app_error()<<"openfp is null "<<endl;
+  }
+
+	uint64_t DIM = 2;
+  uint64_t * start= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
+  uint64_t * count= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
+	start[0] = 0;
+	start[1] = 0;
+	count[0] = 1;
+
+  vi = adios_inq_var(openfp, name);
+  adios_inq_var_blockinfo (openfp, vi);
+  if (vi->ndim != 2)
+  {
+ 		qmcplusplus::app_error() <<"random number dimension is not 2."<<endl; 
+	}  
+	
+	ADIOS_SELECTION *sel;
+	uint_type * data1 = (uint_type * ) malloc(sizeof(uint_type)*vi->dims[0]*vi->dims[1]);
+
+	shape[0] = vi->dims[0];
+	shape[1] = vi->dims[1];
+	
+	count[1] = vi->dims[1];
+  sel = adios_selection_boundingbox(DIM, start, count);	
+  adios_schedule_read(openfp, sel, name, 0, 1, data1);
+  adios_perform_reads(openfp, 1);
+	data.assign(data1, data1+vi->dims[0]*vi->dims[1]);
+	free(data1);
+  adios_free_varinfo (vi);
+	adios_selection_delete(sel);
 }
 
 inline void close()

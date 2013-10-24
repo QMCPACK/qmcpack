@@ -246,8 +246,7 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
 		ADIOS::open(fname, comm->getMPI());
 		TinyVector<hsize_t,2> shape_t(0);
     shape_t[1]=Random.state_size();
-		//shape[0]=static_cast<int>(slab.size(0));
-    //shape[1]=static_cast<int>(slab.size(1));
+    //ADIOS::read_random(vt_tot, shape, "random");
 		ADIOS::close();
 	} 
 	else if(ADIOS::useHDF5())
