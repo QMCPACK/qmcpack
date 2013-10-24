@@ -45,11 +45,11 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
     Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {
-  //set defaults
   ResetRandom=false;
   AppendRun=false;
   DumpConfig=false;
   ConstPopulation=true; //default is a fixed population method
+  IsQMCDriver=true;
   allow_traces = false;
   MyCounter=0;
   //<parameter name=" "> value </parameter>
@@ -78,7 +78,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(CurrentStep,"current","int");
   nBlocks=1;
   m_param.add(nBlocks,"blocks","int");
-  nSteps=10;
+  nSteps=1;
   m_param.add(nSteps,"steps","int");
   nSubSteps=1;
   m_param.add(nSubSteps,"substeps","int");
@@ -535,13 +535,16 @@ void QMCDriver::setWalkerOffsets()
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
-  //SpeciesSet tspecies(W.getSpeciesSet());
-  //RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
-  //if (mass < 1e-12) {
-  //  mass=1.0;
-  //  tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
-  //}
-  //oneovermass = 1.0/mass;
+  if(!IsQMCDriver)
+  {
+    app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << endl;
+    return true;
+  }
+
+  //store the current nSteps and nStepsBetweenSamples 
+  int oldStepsBetweenSamples=nStepsBetweenSamples;
+  int oldSteps=nSteps;
+
   //set the default walker to the number of threads times 10
   int defaultw = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
@@ -586,12 +589,14 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
       tcur=tcur->next;
     }
   }
-  int oldStepsBetweenSamples=nStepsBetweenSamples;
   //set the minimum blocks
   if (nBlocks<1)
     nBlocks=1;
+
   if(qmc_common.is_restart  || qmc_common.qmc_counter || !ConstPopulation)
   {
+    nSteps=oldSteps;
+    nStepsBetweenSamples=oldStepsBetweenSamples;
     app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
   }
   else

@@ -590,13 +590,13 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     APP_ABORT("SimpleFixedNodeBranch::resetRun cannot initialize WalkerController");
   }
-  //always add a warmup step using default 100 steps
+  //always add a warmup step using default 10 steps
   R2Accepted.clear();
   R2Proposed.clear();
   //R2Accepted(1.0e-12);
   //R2Proposed(1.0e-12);
   BranchMode[B_DMCSTAGE]=0;
-  ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:100;
+  ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
   BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
   if(BranchMode[B_POPCONTROL])
     logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));

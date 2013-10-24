@@ -34,6 +34,7 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
 #include "Numerics/LinearFit.h"
+#include "qmc_common.h"
 #include <iostream>
 #include <fstream>
 
@@ -46,6 +47,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCDriver(w,psi,h,ppool),
   PartID(0), NumParts(1), WarmupBlocks(10),  hamPool(hpool), optTarget(0), vmcEngine(0),  wfNode(NULL), optNode(NULL), param_tol(1e-4)
 {
+  IsQMCDriver=false;
 //     //set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)
@@ -776,7 +778,10 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
     optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
   optTarget->setStream(&app_log());
   optTarget->put(cur);
-  vmcEngine->resetComponents(cur);
+
+  //qmc_counter is reset for each <loop/>
+  if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
+  //vmcEngine->resetComponents(cur);
 }
 bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType> >&
     mappedStabilizers, RealType& XS, RealType& val, RealType tooBig )

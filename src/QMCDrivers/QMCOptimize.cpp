@@ -41,6 +41,7 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
   optTarget(0), optSolver(0), vmcEngine(0),
   wfNode(NULL), optNode(NULL)
 {
+  IsQMCDriver=false;
   //set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)

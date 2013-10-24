@@ -46,6 +46,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
   exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
 {
+  IsQMCDriver=false;
   //set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)

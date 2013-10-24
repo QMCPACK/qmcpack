@@ -59,6 +59,8 @@ namespace qmcplusplus
 
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
+
+
 /** @ingroup QMCDrivers
  * @{
  * @brief abstract base class for QMC engines
@@ -229,6 +231,8 @@ protected:
   bool DumpConfig;
   ///true, if the size of population is fixed.
   bool ConstPopulation;
+  ///true, if it is a real QMC engine
+  bool IsQMCDriver;
   /** the number of times this QMCDriver is executed
    *
    * MyCounter is initialized to zero by the constructor and is incremented
