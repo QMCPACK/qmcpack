@@ -356,68 +356,57 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 {
   TimerManager.print(myComm);
   TimerManager.reset();
-  //if (ADIOS::useADIOS())
-  //{
-    int64_t adios_handle;
-    uint64_t adios_groupsize = 0, adios_totalsize = 0;
-    string group_name;
-    //get the size of walker related data that we are writing to disk
-    adios_groupsize += RandomNumberControl::get_group_size();
-    EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
-    if (sizeof(OHMMS_PRECISION) == sizeof(double))
-    {
-      adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-    }
-    else
-    {
-      adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-    }
-    if (myEstimator->is_manager())
-    {
-      //Since we are in the main process we need to write out some more information
-      BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-      //Get the size of the data we are writing out for qmc_status
-      adios_groupsize += hh.get_Checkpoint_size();
-      //Tell adios how much space we are using for this write out.
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      //Checkpoint qmc status related data
-      branchEngine->save_energy(); //save energy_history
-      hh.adios_checkpoint(adios_handle);
-    }
-    else
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+  int64_t adios_handle;
+  uint64_t adios_groupsize = 0, adios_totalsize = 0;
+  string group_name;
+  //get the size of walker related data that we are writing to disk
+  adios_groupsize += RandomNumberControl::get_group_size();
+  EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
+  if (sizeof(OHMMS_PRECISION) == sizeof(double))
+  {
+    adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+  }
+  else
+  {
+    adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+  }
+  if (myEstimator->is_manager())
+  {
+    //Since we are in the main process we need to write out some more information
+    BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    //Get the size of the data we are writing out for qmc_status
+    adios_groupsize += hh.get_Checkpoint_size();
+    //Tell adios how much space we are using for this write out.
+    adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    //Checkpoint qmc status related data
+    branchEngine->save_energy(); //save energy_history
+    hh.adios_checkpoint(adios_handle);
+  }
+  else
+    adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
     //Checkpoint the data for RandomNumber Control
-		cout<<"zgu "<<__FILE__<<__LINE__<<endl;
-    RandomNumberControl::adios_checkpoint(adios_handle);
-    if(DumpConfig && dumpwalkers)
-      //If we are checkpointing
-      wOut->adios_checkpoint(W, adios_handle);
-    adios_close(adios_handle);
+  RandomNumberControl::adios_checkpoint(adios_handle);
+  if(DumpConfig && dumpwalkers)
+    //If we are checkpointing
+    wOut->adios_checkpoint(W, adios_handle);
+  adios_close(adios_handle);
 #ifdef IO_PROFILE
-    ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
+  ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
 #endif
 #ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
-                                          ADIOS_READ_METHOD_BP,
-                                          myComm->getMPI());
-    if (myEstimator->is_manager())
-    {
-      BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-      hh.adios_checkpoint_verify(fp);
-    }
-    RandomNumberControl::adios_checkpoint_verify(fp);
-    if(DumpConfig && dumpwalkers)
-      wOut->adios_checkpoint_verify(W, fp);
-    adios_read_close(fp);
+  ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
+                                        ADIOS_READ_METHOD_BP,
+                                        myComm->getMPI());
+  if (myEstimator->is_manager())
+  {
+    BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    hh.adios_checkpoint_verify(fp);
+  }
+  RandomNumberControl::adios_checkpoint_verify(fp);
+  if(DumpConfig && dumpwalkers)
+    wOut->adios_checkpoint_verify(W, fp);
+  adios_read_close(fp);
 #endif
-  //}
-  //if (ADIOS::useHDF5())
-  //{
-   // if(DumpConfig && dumpwalkers)      wOut->dump(W);
-   // branchEngine->write(RootName,true);
-	//	cout<<"zgu "<<__FILE__<<__LINE__<<endl;
-  //  RandomNumberControl::write(RootName,myComm);
- // }
   branchEngine->finalize(W);
   delete wOut;
   wOut=0;
