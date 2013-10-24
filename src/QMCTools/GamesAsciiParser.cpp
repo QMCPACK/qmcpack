@@ -447,8 +447,9 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
       basisDataMap[tags[i]]=nUniqAt++;
     }
   }
+
   vector<vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  vector<int> nshll(nUniqAt);
+  vector<int> nshll(nUniqAt,0); //use this to 
   vector<vector<int> > ncoeffpershell(nUniqAt);
   vector<vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
@@ -480,7 +481,90 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
         currentWords[5] == "COEFFICIENT(S)")
       found=true;
   }
+
   getwords(currentWords,is);  // empty line
+
+  int currPos=-1;
+  while(true)
+  {
+    getwords(currentWords,is);
+    if(currentWords.empty()) continue;
+
+    if(currentWords[0] == "TOTAL" && currentWords[1] == "NUMBER" &&
+        currentWords[2] == "OF" && currentWords[3] == "BASIS")
+    {
+      ng=atoi(currentWords.back().c_str());
+      break;
+    }
+    if(currentWords.size() == 1) //found Species
+    {
+      std::map<std::string,int>::iterator it(basisDataMap.find(currentWords[0]));
+      if(it == basisDataMap.end())
+      {
+        cerr<<"Error in parser.\n";
+        abort();
+      }
+      currPos=it->second;
+      bool newgroup=(nshll[currPos]==0);
+      if(newgroup)
+      {
+        ncoeffpershell[currPos].clear();
+        ncoeffpershell[currPos].push_back(0);
+        shID[currPos].clear();
+        shID[currPos].push_back("NONE");
+      }
+
+      getwords(currentWords,is); //empty line after species
+
+      while(true)
+      {
+        streampos pivot= is.tellg();
+        getwords(currentWords,is);
+        if(currentWords.empty()) //empty line after the shell
+        {
+          if(newgroup)
+          {
+            nshll[currPos]++;
+            ncoeffpershell[currPos].push_back(0);
+            shID[currPos].push_back("NONE");
+          }
+          continue;
+        }
+        if(currentWords.size()==1 || currentWords[0]=="TOTAL")
+        {//use the size and TOTAL to skip to the new group
+          is.seekg(pivot);
+          break;
+        }
+        else
+        {
+          if(newgroup)
+          {
+            expo[currPos].push_back(atof(currentWords[3].c_str()));
+            coef[currPos].push_back(atof(currentWords[4].c_str()));
+            ncoeffpershell[currPos][nshll[currPos]]++;
+            shID[currPos][nshll[currPos]] = currentWords[1];
+
+            if(gsMap[currentWords[1]] == 2)
+            {
+              cerr<<"Can't handle SP basis states yet. Fix later.\n";
+              abort();
+            }
+            if(gsMap[currentWords[1]] >= 7)
+            {
+              cerr<<"Can't handle H basis states or higher yet. Fix later.\n";
+              abort();
+            }
+            cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+              << ncoeffpershell[currPos][nshll[currPos]] 
+              << " " << shID[currPos][nshll[currPos]] << endl;
+          }
+        }
+      }
+    }
+  }
+  
+
+  /*
   getwords(currentWords,is);  // tag of first atom
   for(int i=0; i<nUniqAt-1; i++)
   {
@@ -579,6 +663,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
       }
     }
   }
+*/
   gShell.clear();
   gNumber.clear();
   gExp.clear();
