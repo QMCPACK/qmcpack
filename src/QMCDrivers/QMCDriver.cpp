@@ -237,7 +237,7 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
     W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
   }
-  else if (!ADIOS::useHDF5() || ADIOS::useADIOS())
+  else if (ADIOS::useHDF5())
 #endif
 	{
   	if(wset.empty())
@@ -300,8 +300,6 @@ string QMCDriver::getLastRotationName(string RootName)
 #ifdef HAVE_ADIOS
 void QMCDriver::adiosCheckpoint(int block)
 {
-  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useADIOS())
-  {
     int64_t adios_handle;
     uint64_t adios_groupsize, adios_totalsize;
     EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
@@ -352,21 +350,14 @@ void QMCDriver::adiosCheckpoint(int block)
     wOut->adios_checkpoint_verify(W, fp);
     adios_read_close(fp);
 #endif
-  }
-  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useHDF5())
-  {
-    wOut->dump(W);
-    branchEngine->write(getRotationName(RootName),true); //save energy_history
-    RandomNumberControl::write(getRotationName(RootName),myComm);
-  }
 }
 
 void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 {
   TimerManager.print(myComm);
   TimerManager.reset();
-  if (ADIOS::useADIOS())
-  {
+  //if (ADIOS::useADIOS())
+  //{
     int64_t adios_handle;
     uint64_t adios_groupsize = 0, adios_totalsize = 0;
     string group_name;
@@ -396,6 +387,7 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
     else
       adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
     //Checkpoint the data for RandomNumber Control
+		cout<<"zgu "<<__FILE__<<__LINE__<<endl;
     RandomNumberControl::adios_checkpoint(adios_handle);
     if(DumpConfig && dumpwalkers)
       //If we are checkpointing
@@ -418,13 +410,14 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
       wOut->adios_checkpoint_verify(W, fp);
     adios_read_close(fp);
 #endif
-  }
-  if (ADIOS::useHDF5())
-  {
-    if(DumpConfig && dumpwalkers)      wOut->dump(W);
-    branchEngine->write(getRotationName(RootName),true);
-    RandomNumberControl::write(getRotationName(RootName),myComm);
-  }
+  //}
+  //if (ADIOS::useHDF5())
+  //{
+   // if(DumpConfig && dumpwalkers)      wOut->dump(W);
+   // branchEngine->write(RootName,true);
+	//	cout<<"zgu "<<__FILE__<<__LINE__<<endl;
+  //  RandomNumberControl::write(RootName,myComm);
+ // }
   branchEngine->finalize(W);
   delete wOut;
   wOut=0;
@@ -437,8 +430,12 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 void QMCDriver::recordBlock(int block)
 {
 #ifdef HAVE_ADIOS
-  adiosCheckpoint(block);
-#else
+  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useADIOS()){
+  	adiosCheckpoint(block);
+	}
+	if(ADIOS::useHDF5())
+#endif
+  {
   ////first dump the data for restart
   if(DumpConfig &&block%Period4CheckPoint == 0)
   {
@@ -452,14 +449,19 @@ void QMCDriver::recordBlock(int block)
   //if(Period4WalkerDump>0) wOut->append(W);
   //flush the ostream
   //OhmmsInfo::flush();
-#endif
+	}
 }
 
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
 #ifdef HAVE_ADIOS
-  adiosCheckpointFinal(block, dumpwalkers);
-#else
+	if(ADIOS::useADIOS())
+	{
+  	adiosCheckpointFinal(block, dumpwalkers);
+	}
+	if(ADIOS::useHDF5())
+#endif
+	{
   TimerManager.print(myComm);
   TimerManager.reset();
   if(DumpConfig && dumpwalkers)
@@ -475,8 +477,8 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
   MyCounter++;
   //flush the ostream
   OhmmsInfo::flush();
+	}
   return true;
-#endif
 }
 
 /** Add walkers to the end of the ensemble of walkers.
