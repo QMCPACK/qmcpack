@@ -218,7 +218,7 @@ void QMCDriver::setStatus(const string& aname, const string& h5name, bool append
 void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
 {
 #ifdef HAVE_ADIOS
-  if (ADIOS::useADIOS())
+  if (ADIOS::getRdADIOS())
   {
     if(wset.empty())
       return;
@@ -237,7 +237,7 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
     W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
   }
-  else if (ADIOS::useHDF5())
+  else if (ADIOS::getRdHDF5())
 #endif
 	{
   	if(wset.empty())

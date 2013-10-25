@@ -12,6 +12,7 @@ namespace ADIOS
 {
 void initialize(bool use_hdf5, bool use_adios);
 void initialze(std::string &xml_filename, bool use_hdf5, bool use_adios);
+void initialize(const char*value);
 bool useADIOS();
 bool useHDF5();
 const std::string& get_adios_xml();
@@ -19,6 +20,8 @@ const std::string& get_adios_xml();
 static string adiosname;
 static ADIOS_FILE * openfp;
 
+bool getRdADIOS();
+bool getRdHDF5();
 typedef qmcplusplus::RandomGenerator_t::uint_type uint_type;
 
 inline void open(const string &fname, MPI_Comm comm)

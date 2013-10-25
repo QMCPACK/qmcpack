@@ -241,15 +241,15 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   vector<uint_type> vt_tot, vt;
   TinyVector<int,2> shape(0);
 	#ifdef HAVE_ADIOS
-	if(ADIOS::useADIOS()) 
+	if(ADIOS::getRdADIOS()) 
 	{
 		ADIOS::open(fname, comm->getMPI());
 		TinyVector<hsize_t,2> shape_t(0);
     shape_t[1]=Random.state_size();
-    //ADIOS::read_random(vt_tot, shape, "random");
+    ADIOS::read_random(vt_tot, shape, "random");
 		ADIOS::close();
 	} 
-	else if(ADIOS::useHDF5())
+  else if(ADIOS::getRdHDF5())
 	#endif
   {
     //read it
@@ -278,6 +278,7 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
     return;
   }
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
+	app_log() <<" zgu "<<vt_tot.size()<<endl;
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
 #if defined(HAVE_MPI)

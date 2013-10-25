@@ -156,7 +156,7 @@ bool BranchIO::write(const string& fname)
 bool BranchIO::read(const string& fname)
 {
   #ifdef HAVE_ADIOS
-	if(ADIOS::useADIOS() && !ADIOS::useHDF5())
+	if(ADIOS::getRdADIOS())
 	{
 		ADIOS::open(fname, myComm->getMPI());	
 		int n=ref.vParam.size()+ref.iParam.size();
@@ -211,7 +211,7 @@ bool BranchIO::read(const string& fname)
 		ADIOS::close();
 		return true;
 	} 
-	else if(!ADIOS::useADIOS() && ADIOS::useHDF5())
+	else if(ADIOS::getRdHDF5())
 	#endif
 	{
   //append .config.h5 if missing
