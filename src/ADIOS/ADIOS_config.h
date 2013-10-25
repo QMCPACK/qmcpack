@@ -80,33 +80,33 @@ void read_random(T& data, S& shape, const std::string& aname)
   }
 
 	uint64_t DIM = 2;
-  uint64_t * start= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
-  uint64_t * count= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
-	start[0] = 0;
-	start[1] = 0;
-	count[0] = 1;
+  //uint64_t * start= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
+  //uint64_t * count= (uint64_t *)malloc(sizeof(uint64_t)*DIM);
+	//start[0] = 0;
+	//start[1] = 0;
+	//count[0] = 1;
 
   vi = adios_inq_var(openfp, name);
-  adios_inq_var_blockinfo (openfp, vi);
-  if (vi->ndim != 2)
+  //adios_inq_var_blockinfo (openfp, vi);
+  if (vi->ndim != DIM)
   {
  		qmcplusplus::app_error() <<"random number dimension is not 2."<<endl; 
 	}  
 	
-	ADIOS_SELECTION *sel;
-	uint_type * data1 = (uint_type * ) malloc(sizeof(uint_type)*vi->dims[0]*vi->dims[1]);
+	//ADIOS_SELECTION *sel;
+	//uint_type * data1 = (uint_type * ) malloc(sizeof(uint_type)*vi->dims[0]*vi->dims[1]);
 
 	shape[0] = vi->dims[0];
 	shape[1] = vi->dims[1];
 	
-	count[1] = vi->dims[1];
-  sel = adios_selection_boundingbox(DIM, start, count);	
-  adios_schedule_read(openfp, sel, name, 0, 1, data1);
-  adios_perform_reads(openfp, 1);
-	data.assign(data1, data1+vi->dims[0]*vi->dims[1]);
-	free(data1);
+	//count[1] = vi->dims[1];
+  //sel = adios_selection_boundingbox(DIM, start, count);	
+  //adios_schedule_read(openfp, sel, name, 0, 1, data1);
+  //adios_perform_reads(openfp, 1);
+	//data.assign(data1, data1+vi->dims[0]*vi->dims[1]);
+	//free(data1);
   adios_free_varinfo (vi);
-	adios_selection_delete(sel);
+	//adios_selection_delete(sel);
 }
 
 inline void close()
