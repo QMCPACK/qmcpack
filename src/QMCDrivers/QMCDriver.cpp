@@ -594,10 +594,13 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     nBlocks=1;
 
   if(qmc_common.is_restart  || qmc_common.qmc_counter || !ConstPopulation)
-  {
-    nSteps=oldSteps;
-    nStepsBetweenSamples=oldStepsBetweenSamples;
-    app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
+  { //continuing simulations
+    if(MyCounter && ConstPopulation)
+    { // VMC, use the previous
+      nSteps=oldSteps;
+      nStepsBetweenSamples=oldStepsBetweenSamples;
+      app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
+    }
   }
   else
   {
