@@ -1,12 +1,10 @@
-
 #ifndef ADIOS_ADIOS_CONFIG_H
 #define ADIOS_ADIOS_CONFIG_H
 
-#ifdef HAVE_ADIOS
-#include <stdint.h>
-#include "Utilities/RandomGenerator.h"
-#include <string>
 #include <Configuration.h>
+#ifdef HAVE_ADIOS
+#include "Utilities/RandomGenerator.h"
+#include <stdint.h>
 #include <cstring>
 #include <adios_read.h>
 
