@@ -278,7 +278,6 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
     return;
   }
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
-	app_log() <<" zgu "<<vt_tot.size()<<endl;
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
 #if defined(HAVE_MPI)
