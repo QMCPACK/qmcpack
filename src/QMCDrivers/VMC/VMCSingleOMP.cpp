@@ -23,9 +23,7 @@
 #include "tau/profiler.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
-#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
 #include "ADIOS/ADIOS_profile.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -58,14 +56,10 @@ bool VMCSingleOMP::run()
   Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   hpmStart(QMC_VMC_0_EVENT,"vmc::main");
-  #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   ADIOS_PROFILE::profile_adios_init(nBlocks);
-  #endif
   for (int block=0; block<nBlocks; ++block)
   {
-    #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_start_comp(block);
-    #endif
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -97,25 +91,16 @@ bool VMCSingleOMP::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
-    #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
-    #endif
     Traces->write_buffers(traceClones);
-    #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_trace(block);
-    //why was this commented out? Are checkpoints stored some other way?
     ADIOS_PROFILE::profile_adios_start_checkpoint(block);
-    #endif
     if(storeConfigs)
       recordBlock(block);
-    #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_checkpoint(block);
-    #endif
   }//block
-  #if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
-  #endif
   hpmStop(QMC_VMC_0_EVENT);
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)

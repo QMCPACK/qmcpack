@@ -6,7 +6,7 @@ namespace ADIOS_PROFILE
 
 void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
 	if(op == TRACES)
 	{
 		trace_data_grp[trace_index]=adios_groupsize;
@@ -24,7 +24,7 @@ void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsi
 
 void profile_adios_init(int nBlock)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   int size = nBlock*sizeof(double);
   comp_times = (double *)malloc(size);
   trace_times= (double *)malloc(size);
@@ -49,7 +49,7 @@ void profile_adios_init(int nBlock)
 
 void profile_adios_finalize(Communicate* myComm, int nBlocks)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   double end_time = MPI_Wtime() - start;
   for(int i=0; i<myComm->size(); i++)
   {
@@ -85,14 +85,14 @@ void profile_adios_finalize(Communicate* myComm, int nBlocks)
 
 void profile_adios_start_comp(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   comp_times[block]=MPI_Wtime();
 #endif
 }
 
 void profile_adios_end_comp(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   double tmp = comp_times[block];
   comp_times[block]=MPI_Wtime() - tmp;
 #endif
@@ -100,14 +100,14 @@ void profile_adios_end_comp(int block)
 
 void profile_adios_start_trace(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   trace_times[block]=MPI_Wtime();
 #endif
 }
 
 void profile_adios_end_trace(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   double tmp = trace_times[block];
   trace_times[block]=MPI_Wtime() - tmp;
 #endif
@@ -115,17 +115,19 @@ void profile_adios_end_trace(int block)
 
 void profile_adios_start_checkpoint(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   checkpoint_times[block]=MPI_Wtime();
 #endif
 }
 
 void profile_adios_end_checkpoint(int block)
 {
-#ifdef IO_PROFILE
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   double tmp = checkpoint_times[block];
   checkpoint_times[block]=MPI_Wtime() - tmp;
 #endif
 }
 
 };
+
+
