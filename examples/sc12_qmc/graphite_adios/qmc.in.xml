@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="bench" series="0"/>
-  <io hdf5="yes" adios="no" />
+    <checkpoint-wr hdf5="yes" adios="no" />
+    <!-- method can be adios or hdf-->
+    <checkpoint-rd method="adios"/>
+
   <random seed="11"/>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
