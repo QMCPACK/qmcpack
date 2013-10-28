@@ -390,9 +390,6 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
     //If we are checkpointing
     wOut->adios_checkpoint(W, adios_handle);
   adios_close(adios_handle);
-#ifdef IO_PROFILE
-  ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
-#endif
 #ifdef ADIOS_VERIFY
   ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
                                         ADIOS_READ_METHOD_BP,
@@ -407,12 +404,14 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
     wOut->adios_checkpoint_verify(W, fp);
   adios_read_close(fp);
 #endif
-  branchEngine->finalize(W);
-  delete wOut;
-  wOut=0;
-  nTargetWalkers = W.getActiveWalkers();
-  MyCounter++;
-  OhmmsInfo::flush();
+  if(!ADIOS::useHDF5()){
+    branchEngine->finalize(W);
+    delete wOut;
+    wOut=0;
+    nTargetWalkers = W.getActiveWalkers();
+    MyCounter++;
+    OhmmsInfo::flush();
+  }
 }
 #endif
 
@@ -451,21 +450,21 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 	if(ADIOS::useHDF5())
 #endif
 	{
-  TimerManager.print(myComm);
-  TimerManager.reset();
-  if(DumpConfig && dumpwalkers)
-    wOut->dump(W);
-  branchEngine->finalize(W);
-  RandomNumberControl::write(RootName,myComm);
-  delete wOut;
-  wOut=0;
-  //Estimators->finalize();
-  //set the target walkers
-  nTargetWalkers = W.getActiveWalkers();
-  //increment MyCounter
-  MyCounter++;
-  //flush the ostream
-  OhmmsInfo::flush();
+    TimerManager.print(myComm);
+    TimerManager.reset();
+    if(DumpConfig && dumpwalkers)
+     wOut->dump(W);
+     branchEngine->finalize(W);
+    RandomNumberControl::write(RootName,myComm);
+    delete wOut;
+    wOut=0;
+    //Estimators->finalize();
+    //set the target walkers
+    nTargetWalkers = W.getActiveWalkers();
+    //increment MyCounter
+    MyCounter++;
+    //flush the ostream
+    OhmmsInfo::flush();
 	}
   return true;
 }
