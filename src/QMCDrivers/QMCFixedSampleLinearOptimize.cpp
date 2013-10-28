@@ -48,6 +48,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
   StabilizerMethod("best"), GEVSplit("no")
 {
+  IsQMCDriver=false;
   //set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)
@@ -353,8 +354,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
+
   vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
   vmcEngine->process(qsave);
+
   bool success=true;
   if (optTarget == 0)
   {

@@ -566,8 +566,21 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   //store old target
   int nw_target=iParam[B_TARGETWALKERS];
   m_param.put(cur);
+
+  bool same_wc=true;
+  if(BranchMode[B_DMC] && WalkerController)
+  {
+    string reconfig("no");
+    if(WalkerController->MyMethod) reconfig="yes";
+    string reconfig_prev(reconfig);
+    ParameterSet p;
+    p.add(reconfig,"reconfiguration","string");
+    p.put(cur);
+    same_wc=(reconfig==reconfig_prev);
+  }
+
   //everything is the same, do nothing
-  if(bmode==BranchMode
+  if(same_wc && bmode==BranchMode
       && std::equal(iParam.begin(),iParam.end(),iparam_old.begin())
       && std::equal(vParam.begin(),vParam.end(),vparam_old.begin())
     )
@@ -578,18 +591,37 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   }
   app_log() << " SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s " << endl;
   app_log() << " BranchMode : " << bmode << " " << BranchMode << endl;
-  app_log() << " iParam (old): "  <<iparam_old << endl;
-  app_log() << " iParam (new): "  <<iParam << endl;
-  app_log() << " vParam (old): "  <<vparam_old << endl;
-  app_log() << " vParam (new): "  <<vParam << endl;
-  app_log().flush();
+
   //vmc does not need to do anything with WalkerController
   if(!BranchMode[B_DMC])
+  {
+    app_log() << " iParam (old): "  <<iparam_old << endl;
+    app_log() << " iParam (new): "  <<iParam << endl;
+    app_log() << " vParam (old): "  <<vparam_old << endl;
+    app_log() << " vParam (new): "  <<vParam << endl;
+    app_log().flush();
     return 1;
+  }
   if(WalkerController==0)
   {
     APP_ABORT("SimpleFixedNodeBranch::resetRun cannot initialize WalkerController");
   }
+
+  if(!same_wc)
+  {
+    app_log() << "Destroy WalkerController. Existing method " << WalkerController->MyMethod << endl;;
+    delete WalkerController;
+    WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
+    app_log().flush();
+
+    BranchMode[B_POPCONTROL]= (WalkerController->MyMethod == 0);
+    if(BranchMode[B_POPCONTROL])
+    {
+      vParam[B_ETRIAL]=vParam[B_EREF];
+      vParam[B_FEEDBACK]=1.0;
+    }
+  }
+
   //always add a warmup step using default 10 steps
   R2Accepted.clear();
   R2Proposed.clear();
@@ -612,7 +644,16 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   WalkerController->reset();
   if(BackupWalkerController)
     BackupWalkerController->reset();
-  return iParam[B_TARGETWALKERS]/nw_target;
+
+  iParam[B_MAXWALKERS]=WalkerController->Nmax;
+  iParam[B_MINWALKERS]=WalkerController->Nmin;
+
+  app_log() << " iParam (old): "  <<iparam_old << endl;
+  app_log() << " iParam (new): "  <<iParam << endl;
+  app_log() << " vParam (old): "  <<vparam_old << endl;
+  app_log() << " vParam (new): "  <<vParam << endl;
+  app_log().flush();
+  return static_cast<int>(iParam[B_TARGETWALKERS]*1.1/static_cast<double>(nw_target));
 }
 
 void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)

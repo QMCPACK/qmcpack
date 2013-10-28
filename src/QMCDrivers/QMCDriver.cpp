@@ -418,10 +418,11 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 void QMCDriver::recordBlock(int block)
 {
 #ifdef HAVE_ADIOS
-  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useADIOS()){
-  	adiosCheckpoint(block);
-	}
-	if(ADIOS::useHDF5())
+  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useADIOS())
+  {
+    adiosCheckpoint(block);
+  }
+  if(ADIOS::useHDF5())
 #endif
   {
   ////first dump the data for restart
@@ -437,19 +438,19 @@ void QMCDriver::recordBlock(int block)
   //if(Period4WalkerDump>0) wOut->append(W);
   //flush the ostream
   //OhmmsInfo::flush();
-	}
+  }
 }
 
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
 #ifdef HAVE_ADIOS
-	if(ADIOS::useADIOS())
-	{
-  	adiosCheckpointFinal(block, dumpwalkers);
-	}
-	if(ADIOS::useHDF5())
+  if(ADIOS::useADIOS())
+  {
+    adiosCheckpointFinal(block, dumpwalkers);
+  }
+  if(ADIOS::useHDF5())
 #endif
-	{
+  {
     TimerManager.print(myComm);
     TimerManager.reset();
     if(DumpConfig && dumpwalkers)
@@ -465,7 +466,7 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
     MyCounter++;
     //flush the ostream
     OhmmsInfo::flush();
-	}
+  }
   return true;
 }
 
@@ -540,9 +541,9 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     return true;
   }
 
-  //store the current nSteps and nStepsBetweenSamples 
-  int oldStepsBetweenSamples=nStepsBetweenSamples;
-  int oldSteps=nSteps;
+  ////store the current nSteps and nStepsBetweenSamples 
+  //int oldStepsBetweenSamples=nStepsBetweenSamples;
+  //int oldSteps=nSteps;
 
   //set the default walker to the number of threads times 10
   int defaultw = omp_get_max_threads();
@@ -553,6 +554,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   {
     //initialize the parameter set
     m_param.put(cur);
+
     xmlNodePtr tcur=cur->children;
     //determine how often to print walkers to hdf5 file
     while(tcur != NULL)
@@ -589,58 +591,20 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     }
   }
   //set the minimum blocks
-  if (nBlocks<1)
-    nBlocks=1;
+  if (nBlocks<1) nBlocks=1;
 
-  if(qmc_common.is_restart  || qmc_common.qmc_counter || !ConstPopulation)
-  { //continuing simulations
-    if(MyCounter && ConstPopulation)
-    { // VMC, use the previous
-      nSteps=oldSteps;
-      nStepsBetweenSamples=oldStepsBetweenSamples;
-      app_log() << "Using the driver from the previous qmc section. Not resetting any variables concerning samples or walkers" << endl;
-    }
-  }
-  else
-  {
-    //compute samples and overwrite steps for the given samples
-    int Nthreads = omp_get_max_threads();
-    int Nprocs=myComm->size();
-    //nTargetWalkers is a local quantity, always set to multiple of number of threads
-    nTargetWalkers=(std::max(Nthreads,nTargetWalkers)/Nthreads)*Nthreads;
-    //target samples set by samples or samplesperthread/dmcwalkersperthread
-    nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
-    nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
-    if(nBlocks==1)
-      nBlocks=nSamplesPerThread;
-    if(nTargetSamples)
-    {
-      int nwtot=nTargetWalkers*Nprocs;  //total number of walkers used by this qmcsection
-      nTargetSamples=std::max(nwtot,nTargetSamples);
-      nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
-      nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;
-      int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
-      int ns_per_step=Nprocs*nTargetWalkers;  //total samples per step
-      nSteps=std::max(nSteps,(ns_target/ns_per_step+nBlocks-1)/nBlocks);
-      Period4WalkerDump=nStepsBetweenSamples=ns_per_step*nSteps*nBlocks/nTargetSamples;
-    }
-    else
-    {
-      Period4WalkerDump = nStepsBetweenSamples=(nBlocks+1)*nSteps; //some positive number, not used
-      nSamplesPerThread=0;
-      //nTargetPopulation = nTargetWalkers*Nprocs;
-    }
-  }
   DumpConfig=(Period4CheckPoint>=0);
   if(Period4CheckPoint<1)
     Period4CheckPoint=nBlocks;
   //reset CurrentStep to zero if qmc/@continue='no'
-  if(!AppendRun)
-    CurrentStep=0;
+  if(!AppendRun) CurrentStep=0;
+
+  int nths=omp_get_max_threads();
+  nTargetWalkers=(std::max(nths,(nTargetWalkers/nths)*nths));
+
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   if(!(qmc_common.qmc_counter || qmc_common.is_restart))
-  {
-    //always reset the walkers
+  { //always reset the walkers
     int nw  = W.getActiveWalkers();
     int ndiff = 0;
     if(nw)
@@ -654,26 +618,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     }
     addWalkers(ndiff);
   }
-  app_log() << "\n QMCDriver::putQMCInfo " << endl;
-  app_log() << "  timestep       = " << Tau << endl;
-  app_log() << "  blocks         = " << nBlocks << endl;
-  app_log() << "  steps          = " << nSteps << endl;
-  app_log() << "  substeps       = " << nSubSteps << endl;
-  app_log() << "  current        = " << CurrentStep << endl;
-  app_log() << "  target samples = " << nTargetPopulation << endl;
-  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
-  if(nStepsBetweenSamples != oldStepsBetweenSamples)
-    app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << "  (input="<<oldStepsBetweenSamples<<")" << endl;
-  else
-    app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
-  if(DumpConfig)
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
-  else
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
-  if (Period4WalkerDump>0)
-    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
-  app_log().flush();
-  //always true
+
   return (W.getActiveWalkers()>0);
 }
 

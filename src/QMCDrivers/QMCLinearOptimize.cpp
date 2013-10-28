@@ -758,6 +758,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
+
   vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
   vmcEngine->process(optNode);
   return success;
@@ -779,8 +780,7 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
   optTarget->setStream(&app_log());
   optTarget->put(cur);
 
-  //qmc_counter is reset for each <loop/>
-  if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
+  //if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
   //vmcEngine->resetComponents(cur);
 }
 bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType> >&

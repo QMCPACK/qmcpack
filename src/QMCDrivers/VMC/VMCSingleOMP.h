@@ -35,10 +35,13 @@ public:
   bool put(xmlNodePtr cur);
   //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
 private:
-  ///option to enable/disable drift equation or RN for VMC
-  string UseDrift;
+  int prevSteps;
+  int prevStepsBetweenSamples;
+
   ///Ways to set rn constant
   RealType logoffset,logepsilon;
+  ///option to enable/disable drift equation or RN for VMC
+  string UseDrift;
   ///check the run-time environments
   void resetRun();
   ///copy constructor
