@@ -47,6 +47,8 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   bool fixw= (reconfig || reconfigopt == "yes"|| reconfigopt == "pure");
   if(fixw)
   {
+    int nwloc=std::max(omp_get_max_threads(),nwtot/ncontexts);
+    nwtot=nwloc*ncontexts; 
     nmax=nwtot/ncontexts;
     nmin=nwtot/ncontexts;
   }
@@ -96,6 +98,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   }
   wc->Nmin=nmin;
   wc->Nmax=nmax;
+  wc->MyMethod=fixw;
   return wc;
 }
 

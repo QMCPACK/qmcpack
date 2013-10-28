@@ -35,7 +35,7 @@ WalkerReconfiguration::WalkerReconfiguration(Communicate* c) :WalkerControlBase(
 int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers());
-  if(Zeta.empty())
+  if(Zeta.size()!=nw)
   {
     Zeta.resize(nw+1);
     IndexCopy.resize(nw);

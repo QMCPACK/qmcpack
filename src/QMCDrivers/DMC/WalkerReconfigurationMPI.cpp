@@ -62,7 +62,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str(),ios::app);
   int nw=W.getActiveWalkers();
-  if(TotalWalkers ==0)
+  if(TotalWalkers !=nw*NumContexts)
   {
     FirstWalker=nw*MyContext;
     LastWalker=FirstWalker+nw;
@@ -158,12 +158,11 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     {
       plus.insert(plus.end(),m-1,iw);
     }
-    else
-      if(m==0)
-        // add the walker index to be killed/overwritten
-      {
-        minus.push_back(iw);
-      }
+    else if(m==0)
+      // add the walker index to be killed/overwritten
+    {
+      minus.push_back(iw);
+    }
   }
   //save the number of local walkers to be removed. This will be collected later.
   int nw_removed=minus.size();

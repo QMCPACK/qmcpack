@@ -51,7 +51,7 @@ public:
 
   ///@enum enumeration to access curData and accumData for reduction
   enum {ENERGY_INDEX=0
-                     , ENERGY_SQ_INDEX
+        , ENERGY_SQ_INDEX
         , WALKERSIZE_INDEX
         , WEIGHT_INDEX
         , EREF_INDEX
@@ -66,6 +66,8 @@ public:
         , LE_MAX
        };
 
+  ///id for the method
+  IndexType MyMethod;
   ///context id
   IndexType MyContext;
   ///number of contexts
@@ -80,8 +82,6 @@ public:
   IndexType MaxCopy;
   ///current number of walkers per processor
   IndexType NumWalkers;
-  ///a dummy integer
-  IndexType DummyIndex;
   ///Number of walkers created by this node
   IndexType NumWalkersCreated;
   ///Number of walkers sent during the exchange

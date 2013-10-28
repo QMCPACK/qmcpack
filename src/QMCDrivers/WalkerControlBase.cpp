@@ -27,6 +27,7 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   , targetEnergyBound(10), targetVar(2), targetSigma(10)
   , dmcStream(0), WriteRN(rn)
 {
+  MyMethod=-1; //assign invalid method
   NumContexts=myComm->size();
   MyContext=myComm->rank();
   curData.resize(LE_MAX+NumContexts);
@@ -290,12 +291,11 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     {
       if ((*it)->ReleasedNodeAge==1)
         ncr+=1;
-      else
-        if ((*it)->ReleasedNodeAge==0)
-        {
-          nfn+=1;
-          ngoodfn+=nc;
-        }
+      else if ((*it)->ReleasedNodeAge==0)
+      {
+        nfn+=1;
+        ngoodfn+=nc;
+      }
       r2_accepted+=(*it)->Properties(R2ACCEPTED);
       r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
@@ -332,18 +332,17 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       good_w.push_back(*it);
       ncopy_w.push_back(nc-1);
     }
+    else if (nc)
+    {
+      NumWalkers += nc;
+      nrn+=nc;
+      good_rn.push_back(*it);
+      ncopy_rn.push_back(nc-1);
+    }
     else
-      if (nc)
-      {
-        NumWalkers += nc;
-        nrn+=nc;
-        good_rn.push_back(*it);
-        ncopy_rn.push_back(nc-1);
-      }
-      else
-      {
-        bad.push_back(*it);
-      }
+    {
+      bad.push_back(*it);
+    }
     ++it;
   }
   //temp is an array to perform reduction operations
@@ -462,18 +461,25 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
   bool success=params.put(cur);
+
   app_log() << "  WalkerControlBase parameters " << endl;
   //app_log() << "    energyBound = " << targetEnergyBound << endl;
   //app_log() << "    sigmaBound = " << targetSigma << endl;
   app_log() << "    maxCopy = " << MaxCopy << endl;
-
   if(nw_target>0)
   {
     int npernode=nw_target/NumContexts;
-    Nmax=2*npernode+1;
-    Nmin=npernode/5+1;
+    if(MyMethod)
+    {
+      Nmax=npernode;
+      Nmin=npernode;
+    }
+    else
+    {
+      Nmax=2*npernode+1;
+      Nmin=npernode/5+1;
+    }
   }
-
   app_log() << "   Max Walkers per node " << Nmax << endl;
   app_log() << "   Min Walkers per node " << Nmin << endl;
   return true;
