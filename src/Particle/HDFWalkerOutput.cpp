@@ -209,7 +209,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   {
     if(RemoteData[1] == NULL)
     {
-      cout<<__FILE__<<__LINE__<<endl;
+      app_error()<<"RemoteData is null"<<endl;
+      APP_ABORT("HDFWalkerOutput::write_configuration");
     }
     RemoteData[1]->resize(wb*W.getActiveWalkers());
     W.putConfigurations(RemoteData[1]->begin());
