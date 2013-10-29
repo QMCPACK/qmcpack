@@ -429,8 +429,8 @@ void QMCDriver::recordBlock(int block)
   if(DumpConfig &&block%Period4CheckPoint == 0)
   {
     wOut->dump(W);
-    branchEngine->write(getRotationName(RootName),true); //save energy_history
-    RandomNumberControl::write(getRotationName(RootName),myComm);
+    branchEngine->write(RootName,true); //save energy_history
+    RandomNumberControl::write(RootName,myComm);
 //       if (storeConfigs) wOut->dump( ForwardWalkingHistory);
   }
   //save positions for optimization: this is done within VMC
