@@ -18,6 +18,10 @@
 #include <Particle/HDFWalkerInput_0_4.h>
 #include <mpi/collectives.h>
 #include <io/hdf_archive.h>
+#ifdef HAVE_ADIOS
+#include "ADIOS/ADIOS_config.h"
+#endif
+
 namespace qmcplusplus
 {
 
@@ -47,7 +51,17 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
   pAttrib.put(cur);
   if(froot.empty())
     return;
-  int ext=froot.find(hdf::config_ext);
+  int ext;
+#ifdef HAVE_ADIOS
+  if(ADIOS::getRdADIOS())
+  {
+    ext=froot.find(".config.bp");
+  }
+  else if(ADIOS::getRdHDF5())
+#endif
+  {
+    ext=froot.find(hdf::config_ext);
+  }
   if(ext<froot.size())
   {
     //remove extenstion
@@ -106,9 +120,20 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
     FileName=FileStack.top();
     FileStack.pop();
     string h5name(FileName);
-    h5name.append(hdf::config_ext);
+    int success = 0;
     hdf_archive hin(myComm,true);
-    int success=hin.open(h5name,H5F_ACC_RDONLY);
+#ifdef HAVE_ADIOS
+    if(ADIOS::getRdADIOS())
+    {
+      h5name.append(".config.bp");
+      success=ADIOS::open(h5name, myComm->getMPI());
+    }
+    else if(ADIOS::getRdHDF5())
+#endif
+    { 
+      h5name.append(hdf::config_ext);
+      success=hin.open(h5name,H5F_ACC_RDONLY);
+    }
     mpi::bcast(*myComm,success);
     if(!success)
     {
@@ -165,23 +190,37 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
       it += nitems;
     }
 #else
-    hin.read(aversion,hdf::version);
-    mpi::bcast(*myComm,aversion.version);
-    if(aversion < i_info.version)
-    {
-      app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
-      continue;
-    }
-    int found_group=hin.is_group(hdf::main_state);
-    mpi::bcast(*myComm,found_group);
-    if(!found_group)
-      continue;
     typedef vector<QMCTraits::RealType>  Buffer_t;
     Buffer_t posin;
-    hin.push(hdf::main_state);
+#ifdef HAVE_ADIOS
+    if(ADIOS::getRdHDF5())
+#endif
+    {
+      hin.read(aversion,hdf::version);
+      mpi::bcast(*myComm,aversion.version);
+      if(aversion < i_info.version)
+      {
+        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
+        continue;
+      }
+      int found_group=hin.is_group(hdf::main_state);
+      mpi::bcast(*myComm,found_group);
+      if(!found_group)
+        continue;
+      hin.push(hdf::main_state);
+    }
     int nw_in=0;
-    hin.read(nw_in,hdf::num_walkers);
-    mpi::bcast(*myComm,nw_in);
+#ifdef HAVE_ADIOS
+    if(ADIOS::getRdADIOS())
+    {
+      //read walker_num from scalar
+    }
+    else if(ADIOS::getRdHDF5())
+#endif
+    {
+      hin.read(nw_in,hdf::num_walkers);
+      mpi::bcast(*myComm,nw_in);
+    }
     if(nw_in==0)
     {
       app_error() << "  HDFWalkerInput_0_4::put empty walkers " << endl;
@@ -192,7 +231,16 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
     {
       posin.resize(dims[0]*dims[1]*dims[2]);
       hyperslab_proxy<Buffer_t,3> slab(posin,dims);
-      hin.read(slab,hdf::walkers);
+#ifdef HAVE_ADIOS
+      if(ADIOS::getRdADIOS())
+      {
+        //read walkers
+      } 
+      else if(ADIOS::getRdHDF5())
+#endif
+      {
+        hin.read(slab,hdf::walkers);
+      }
     }
     app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << endl;
     int nitems=targetW.getTotalNum()*OHMMS_DIM;

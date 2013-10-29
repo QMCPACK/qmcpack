@@ -24,8 +24,9 @@ bool getRdADIOS();
 bool getRdHDF5();
 typedef qmcplusplus::RandomGenerator_t::uint_type uint_type;
 
-inline void open(const string &fname, MPI_Comm comm)
+inline int open(const string &fname, MPI_Comm comm)
 {
+  int ret = 0;
   adiosname = fname;
   if(fname.find("config.bp")>= fname.size())
     adiosname.append(".config.bp");
@@ -33,9 +34,15 @@ inline void open(const string &fname, MPI_Comm comm)
                                         ADIOS_READ_METHOD_BP,
                                         comm);
   if(openfp == NULL)
+  {
     qmcplusplus::app_error() <<"Fail to open adios file "<<adiosname<<" Abort."<<endl;
+  }
   else
+  {
     qmcplusplus::app_log()<<adiosname<<" is open "<<endl;
+    ret = 1;
+  }
+  return ret;
 }
 
 template <class T>

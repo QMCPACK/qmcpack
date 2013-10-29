@@ -22,6 +22,9 @@
 #endif
 #include "Message/Communicate.h"
 #include "HDFVersion.h"
+#ifdef HAVE_ADIOS
+#include "ADIOS/ADIOS_config.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -35,7 +38,7 @@ HDFWalkerInputManager::~HDFWalkerInputManager()
 {
 }
 
-#if defined(HAVE_LIBHDF5)
+#if defined(HAVE_LIBHDF5) || defined(HAVE_ADIOS)
 bool HDFWalkerInputManager::put(xmlNodePtr cur)
 {
   //reference revision number

@@ -217,29 +217,6 @@ void QMCDriver::setStatus(const string& aname, const string& h5name, bool append
  */
 void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
 {
-#ifdef HAVE_ADIOS
-  if (ADIOS::getRdADIOS())
-  {
-    if(wset.empty())
-      return;
-    int nfile=wset.size();
-    AdiosWalkerInput W_in(W,myComm);
-    if(W_in.put(wset))
-      h5FileRoot = W_in.getFileRoot();
-    //clear the walker set
-    wset.clear();
-    int np=myComm->size();
-    vector<int> nw(np,0), nwoff(np+1,0);
-    nw[myComm->rank()]=W.getActiveWalkers();
-    myComm->allreduce(nw);
-    for(int ip=0; ip<np; ++ip)
-      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    W.setGlobalNumWalkers(nwoff[np]);
-    W.setWalkerOffsets(nwoff);
-  }
-  else if (ADIOS::getRdHDF5())
-#endif
-	{
   	if(wset.empty())
     	return;
   	int nfile=wset.size();
@@ -265,7 +242,6 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
   	}
   	else
     	qmc_common.is_restart=false;
-	}
 }
 
 string QMCDriver::getRotationName(string RootName)
