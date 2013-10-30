@@ -180,7 +180,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             verbose=kwargs['verbose']
             del kwargs['verbose']
         #end if
-        QAanalyzer.verbose = verbose or QAanalyzer.verbose
+        QAanalyzer.verbose_vlog = verbose or QAanalyzer.verbose_vlog
 
         nindent = 0
         if 'nindent' in kwargs:

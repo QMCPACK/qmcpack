@@ -94,7 +94,7 @@ class QAHDFdata(QAdata):
 
 class QAanalyzer(QAobject):
 
-    verbose = False
+    verbose_vlog = False
 
     capabilities = None
     request      = None
@@ -120,7 +120,7 @@ class QAanalyzer(QAobject):
     #end def indent
 
     def vlog(self,msg,n=0):
-        if QAanalyzer.verbose:
+        if QAanalyzer.verbose_vlog:
             self.log(msg,n=self.info.nindent+n)
         #end if
     #end def vlog

@@ -30,8 +30,10 @@ class MethodAnalyzer(QAanalyzer):
         files  = obj()
         outfiles = os.listdir(source_path)
         self.vlog('looking for file prefix: '+file_prefix,n=2)
+        matched = False
         for file in outfiles:
             if file.startswith(file_prefix):
+                local_match = True
                 if file.endswith('scalar.dat'):
                     files.scalar = file
                 elif file.endswith('stat.h5'):
@@ -47,10 +49,17 @@ class MethodAnalyzer(QAanalyzer):
                         files.traces = []
                     #end if
                     files.traces.append(file)
+                else:
+                    local_match = False
                 #end if
+                matched = matched or local_match
                 self.vlog('match found: '+file,n=3)
             #end if
         #end for
+        if not matched:
+            msg = 'no data files found\n  file prefix used for matching: {0}\n  checked all files in directory: {1}'.format(file_prefix,source_path)
+            self.error(msg,trace=False)
+        #end if
         equil = request.equilibration
         if isinstance(equil,int):
             nblocks_exclude = equil
