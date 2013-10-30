@@ -74,6 +74,36 @@ void read(T data, const std::string& aname)
   adios_free_varinfo (vi);
 }
 
+template<class T, class C>
+void read_scalar(T& data, const std::string& aname, C& index)
+{
+  ADIOS_VARINFO *vi;
+  int size;
+
+  char *name = new char[aname.length()+1];
+  std::strcpy(name, aname.c_str());
+  if (openfp == NULL)
+  {
+    qmcplusplus::app_error()<<"openfp is null "<<endl;
+  }
+  vi = adios_inq_var(openfp, name);
+  adios_inq_var_blockinfo(openfp, vi);
+  index = vi->nblocks[0];
+  size = index*adios_type_size(vi->type, vi->value);
+  data = (int *)malloc(size);
+
+  ADIOS_SELECTION *sel;
+
+  for(int i=0; i<index; i++)
+  {
+    sel=adios_selection_writeblock(i);
+    adios_schedule_read(openfp, sel, name, 0, 1, &data[i]);
+  }
+  adios_perform_reads(openfp, 1);
+  adios_free_varinfo(vi);
+  adios_selection_delete(sel);
+}
+
 template <class T, class S>
 void read_random(T& data, S& shape, const std::string& aname)
 {

@@ -213,7 +213,14 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 #ifdef HAVE_ADIOS
     if(ADIOS::getRdADIOS())
     {
-      //read walker_num from scalar
+      int * data;
+      int index;
+      ADIOS::read_scalar(data, "walker_num", index);
+      for(int i=0; i<index; i++)
+      {
+        nw_in += data[i];
+      }
+      free(data);
     }
     else if(ADIOS::getRdHDF5())
 #endif
@@ -234,6 +241,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 #ifdef HAVE_ADIOS
       if(ADIOS::getRdADIOS())
       {
+        cout<<"zgu "<<"read walker"<<endl;
         //read walkers
       } 
       else if(ADIOS::getRdHDF5())
