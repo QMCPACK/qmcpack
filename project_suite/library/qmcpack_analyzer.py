@@ -174,7 +174,20 @@ class QmcpackAnalyzer
 """
 class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def __init__(self,arg0=None,**kwargs):
-        QAanalyzer.__init__(self)
+
+        verbose = False
+        if 'verbose' in kwargs:
+            verbose=kwargs['verbose']
+            del kwargs['verbose']
+        #end if
+        QAanalyzer.verbose = verbose or QAanalyzer.verbose
+
+        nindent = 0
+        if 'nindent' in kwargs:
+            nindent=kwargs['nindent']
+            del kwargs['nindent']
+        #end if
+        QAanalyzer.__init__(self,nindent=nindent)
 
         analyze = False
         if 'analyze' in kwargs:
@@ -235,6 +248,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def change_request
 
 
+
     def init_sub_analyzers(self,request=None):        
         own_request = request==None
         if request==None:
@@ -243,7 +257,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         group_num = request.group_num
         
         #determine if the run was bundled
-        print id(self),own_request,request.source
         if request.source.endswith('.xml'):
             self.info.type = 'single'
         else:
@@ -252,6 +265,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             return
         #end if
 
+        self.vlog('reading input file: '+request.source,n=1)
         input = QmcpackInput(request.source)
         input.pluralize()
         input.unroll_calculations()
@@ -264,11 +278,17 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         project,wavefunction = input.get('project','wavefunction')
         wavefunction = wavefunction.get_single('psi0')
 
-        self.wavefunction = WavefunctionAnalyzer(wavefunction)
+        subindent = self.subindent()
 
+        self.wavefunction = WavefunctionAnalyzer(wavefunction,nindent=subindent)
+
+        self.vlog('project id: '+project.id,n=1)
         file_prefix  = project.id
         if group_num!=None:
-            file_prefix += '.g'+str(group_num).zfill(3)
+            group_ext = '.g'+str(group_num).zfill(3)
+            if not file_prefix.endswith(group_ext):
+                file_prefix += group_ext
+            #end if
         elif self.info.type=='single':
             resdir,infile = os.path.split(request.source)
             ifprefix = infile.replace('.xml','')
@@ -287,6 +307,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         else:
             series_start = 0
         #end if
+
+        self.vlog('data file prefix: '+file_prefix,n=1)
 
         run_info = obj(
             file_prefix  = file_prefix,
@@ -329,13 +351,13 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 series = series_start + index
                 if series in request.calculations:
                     if method in self.opt_methods:
-                        qma = OptAnalyzer(series,calc,input)
+                        qma = OptAnalyzer(series,calc,input,nindent=subindent)
                         self.opt[series] = qma
                     elif method in self.vmc_methods:
-                        qma = VmcAnalyzer(series,calc,input)
+                        qma = VmcAnalyzer(series,calc,input,nindent=subindent)
                         self.vmc[series] = qma
                     elif method in self.dmc_methods:
-                        qma = DmcAnalyzer(series,calc,input)
+                        qma = DmcAnalyzer(series,calc,input,nindent=subindent)
                         self.dmc[series] = qma
                     #end if
                     self.qmc[series] = qma
@@ -352,7 +374,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         # optimization or timestep studies
         results = QAanalyzerCollection()
         if 'opt' in self and len(self.opt)>0:
-            optres = OptimizationAnalyzer(input,self.opt)
+            optres = OptimizationAnalyzer(input,self.opt,nindent=subindent)
             results.optimization = optres
         #end if
         if 'dmc' in self and len(self.dmc)>1:
@@ -370,7 +392,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #end if
             #end for
             if len(dmc)>1:
-                results.timestep_study = TimestepStudyAnalyzer(dmc)
+                results.timestep_study = TimestepStudyAnalyzer(dmc,nindent=subindent)
             #end if
         #end if
 
@@ -412,40 +434,45 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def load_data
 
 
-    def analyze(self,force='irrelevant'):
-        if not self.info.data_loaded:
-            self.load_data()
-        #end if
-        try:
-            self.set_global_info()
-            self.propagate_indicators(analyzed=False)
-            if self.info.type!='bundled':
-                QAanalyzer.analyze(self)
-            else:
-                for analyzer in self.bundled_analyzers:
-                    analyzer.analyze()
-                #end for
-                QAanalyzer.analyze(self)
+    def analyze(self,force=False):
+        if not self.info.analyzed or force:
+            if not self.info.data_loaded:
+                self.load_data()
             #end if
-            self.unset_global_info()
-        except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
-            msg = ''
-            for line in lines:
-                msg+=line
-            #end for
-            self.info.error = exc_type
-            self.warn('runtime exception encountered\n'+msg)
-        #end try
-        if self.info.request.savefile!='':
-            self.save()
+            self.vlog('main analysis of QmcpackAnalyzer data',n=1)
+            try:
+                self.set_global_info()
+                self.propagate_indicators(analyzed=False)
+                if self.info.type!='bundled':
+                    QAanalyzer.analyze(self,force=force)
+                else:
+                    for analyzer in self.bundled_analyzers:
+                        analyzer.analyze()
+                    #end for
+                    QAanalyzer.analyze(self,force=force)
+                #end if
+                self.unset_global_info()
+            except:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+                msg = ''
+                for line in lines:
+                    msg+=line
+                #end for
+                self.info.error = exc_type
+                self.warn('runtime exception encountered\n'+msg)
+            #end try
+            self.vlog('end main analysis of QmcpackAnalyzer data',n=1)
+            if self.info.request.savefile!='':
+                self.save()
+            #end if
         #end if
     #end def analyze
 
 
 
     def bundle(self,source):
+        self.vlog('bundled run detected',n=1)
         if os.path.exists(source):
             fobj = open(source,'r')
             lines = fobj.read().split('\n')
@@ -485,7 +512,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             req = request.copy()
             req.source = os.path.join(path,infile)
             req.group_num = gn
-            qa = QmcpackAnalyzer(req)
+            qa = QmcpackAnalyzer(req,nindent=self.subindent())
             #qa.init_sub_analyzers(group_num=gn)
             analyzers[gn] = qa
         #end for
@@ -516,6 +543,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             input  = input.copy(),
             system = system.copy()
             )
+        self.vlog('average over bundled runs?  {0}'.format(self.info.perform_bundle_average),n=1)
     #end def bundle
 
 
@@ -531,6 +559,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def average_bundle_data(self):
         analyzers = self.bundled_analyzers
         if len(analyzers)>0:
+            self.vlog('performing bundle (e.g. twist) averaging',n=1)
             #create local data structures to match those in the bundle
             example = analyzers.list()[0].copy()
             for method_type in self.capabilities.methods:
@@ -538,6 +567,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                     del self[method_type]
                 #end if
                 if method_type in example:
+                    self.vlog('copying {0} methods from analyzer 0'.format(method_type),n=2)
                     self[method_type] = example[method_type]
                 #end if            
             #end if
@@ -545,23 +575,27 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 del self.qmc
             #end if            
             if 'qmc' in example:
+                self.vlog('copying qmc methods from analyzer 0',n=2)
                 self.qmc = example.qmc
             #end if
             if 'wavefunction' in self:
                 del self.wavefunction
             #end if            
             if 'wavefunction' in example:
+                self.vlog('copying wavefunction from analyzer 0',n=2)
                 self.wavefunction = example.wavefunction
             #end if
             del example
 
             if 'qmc' in self:
                 #zero out the average data
+                self.vlog('zeroing own qmc data',n=2)
                 for qmc in self.qmc:
                     qmc.zero_data()
                 #end for
 
                 #resize the average data
+                self.vlog('finding minimum data size (for incomplete runs)',n=2)
                 for analyzer in analyzers:
                     for series,qmc in self.qmc.iteritems():
                         qmc.minsize_data(analyzer.qmc[series])
@@ -569,6 +603,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #end for
     
                 #accumulate the average data
+                self.vlog('accumulating data from bundled runs',n=2)
                 for analyzer in analyzers:
                     for series,qmc in self.qmc.iteritems():
                         qmc.accumulate_data(analyzer.qmc[series])
@@ -576,8 +611,10 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #end for
     
                 #normalize the average data
+                norm_factor = len(analyzers)
+                self.vlog('normalizing bundle average (factor={0})'.format(norm_factor),n=2)
                 for qmc in self.qmc:
-                    qmc.normalize_data(len(analyzers))
+                    qmc.normalize_data(norm_factor)
                 #end for
             #end if
         #end if
@@ -590,6 +627,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if filepath==None:
             filepath = self.info.savefilepath
         #end if
+        self.vlog('saving QmcpackAnalyzer in file {0}'.format(filepath),n=1)
         if not overwrite and os.path.exists(filepath):
             return
         #end if
@@ -604,6 +642,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if filepath==None:
             filepath = self.info.savefilepath
         #end if
+        self.vlog('loading QmcpackAnalyzer from file {0}'.format(filepath),n=1)
         self._load(filepath)
         QAobject._global = self.saved_global
         del self.saved_global

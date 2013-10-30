@@ -94,6 +94,8 @@ class QAHDFdata(QAdata):
 
 class QAanalyzer(QAobject):
 
+    verbose = False
+
     capabilities = None
     request      = None
     run_info     = None
@@ -103,13 +105,25 @@ class QAanalyzer(QAobject):
     vmc_methods = set(['vmc'])
     dmc_methods = set(['dmc'])
 
-    def __init__(self):
+    def __init__(self,nindent=0):
         self.info = QAinformation(
             initialized = False,
             data_loaded = False,
-            analyzed    = False
+            analyzed    = False,
+            nindent     = nindent
             )
+        self.vlog('building '+self.__class__.__name__)
     #end def __init__
+
+    def subindent(self):
+        return self.info.nindent+1
+    #end def indent
+
+    def vlog(self,msg,n=0):
+        if QAanalyzer.verbose:
+            self.log(msg,n=self.info.nindent+n)
+        #end if
+    #end def vlog
 
     def reset_indicators(self,initialized=None,data_loaded=None,analyzed=None):
         if initialized!=None:
@@ -191,6 +205,7 @@ class QAanalyzer(QAobject):
 
     def load_data(self):
         if not self.info.data_loaded:
+            self.vlog('loading '+self.__class__.__name__+' data',n=1)
             self.load_data_local()
             self.info.data_loaded = True
         #end if
@@ -225,6 +240,7 @@ class QAanalyzer(QAobject):
             #end if
         #end for
         if not self.info.analyzed or force:
+            self.vlog('analyzing {0} data'.format(self.__class__.__name__),n=1)
             self.analyze_local()
             self.info.analyzed = True
         #end if
@@ -233,6 +249,7 @@ class QAanalyzer(QAobject):
 
 
     def remove_data(self):
+        self.vlog('removing '+self.__class__.__name__+' data',n=1)
         names = list(self.keys())
         for name in names:
             if isinstance(self[name],QAdata):
@@ -254,6 +271,7 @@ class QAanalyzer(QAobject):
 
 
     def zero_data(self):
+        self.vlog('zeroing '+self.__class__.__name__+' data',n=1)
         for value in self:
             if isinstance(value,QAdata):
                 value.zero()
@@ -274,6 +292,7 @@ class QAanalyzer(QAobject):
 
 
     def minsize_data(self,other):
+        self.vlog('minsizing '+self.__class__.__name__+' data',n=1)
         for name,value in self.iteritems():
             if isinstance(value,QAdata):
                 if name in other and isinstance(other[name],value.__class__):
@@ -313,6 +332,7 @@ class QAanalyzer(QAobject):
 
 
     def accumulate_data(self,other):
+        self.vlog('accumulating '+self.__class__.__name__+' data',n=1)
         for name,value in self.iteritems():
             if isinstance(value,QAdata):
                 if name in other and isinstance(other[name],value.__class__):
@@ -352,6 +372,7 @@ class QAanalyzer(QAobject):
 
 
     def normalize_data(self,normalization):
+        self.vlog('normalizing '+self.__class__.__name__+' data',n=1)
         for value in self:
             if isinstance(value,QAdata):
                 value.normalize(normalization)

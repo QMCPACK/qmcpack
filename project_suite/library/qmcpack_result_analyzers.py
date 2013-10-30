@@ -14,8 +14,8 @@ class ResultAnalyzer(QAanalyzer):
 
 
 class OptimizationAnalyzer(ResultAnalyzer):
-    def __init__(self,input,opts,energy_weight=None,variance_weight=None):
-        QAanalyzer.__init__(self)
+    def __init__(self,input,opts,energy_weight=None,variance_weight=None,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
 
         self.opts  = opts
         self.energy_weight = energy_weight
@@ -284,8 +284,8 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
 
 class TimestepStudyAnalyzer(ResultAnalyzer):
-    def __init__(self,dmc):
-        QAanalyzer.__init__(self)
+    def __init__(self,dmc,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
         self.set(
             dmc = dmc,
             timesteps = [],

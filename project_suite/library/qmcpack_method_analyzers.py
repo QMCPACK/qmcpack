@@ -11,8 +11,8 @@ from debug import *
 
 
 class MethodAnalyzer(QAanalyzer):
-    def __init__(self,series=None,calc=None,input=None):
-        QAanalyzer.__init__(self)
+    def __init__(self,series=None,calc=None,input=None,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
         if series!=None and calc!=None and input!=None:
             self.init_sub_analyzers(series,calc,input)
         #end if
@@ -29,6 +29,7 @@ class MethodAnalyzer(QAanalyzer):
 
         files  = obj()
         outfiles = os.listdir(source_path)
+        self.vlog('looking for file prefix: '+file_prefix,n=2)
         for file in outfiles:
             if file.startswith(file_prefix):
                 if file.endswith('scalar.dat'):
@@ -47,6 +48,7 @@ class MethodAnalyzer(QAanalyzer):
                     #end if
                     files.traces.append(file)
                 #end if
+                self.vlog('match found: '+file,n=3)
             #end if
         #end for
         equil = request.equilibration
@@ -61,7 +63,7 @@ class MethodAnalyzer(QAanalyzer):
         else:
             self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
         #end if
-        data_sources      = request.data_sources & set(files.keys())
+        data_sources     = request.data_sources & set(files.keys())
         method_info = obj(
             method       = method,
             series       = series,
@@ -73,13 +75,16 @@ class MethodAnalyzer(QAanalyzer):
             )
         self.info.transfer_from(method_info)
 
+        self.vlog('requested sources = '+str(list(request.data_sources)),n=2)
+        self.vlog('files available   = '+str(files.keys()),n=2)
+        self.vlog('available sources = '+str(list(data_sources)),n=2)
 
         self.set_global_info()
 
         analyzers = self.capabilities.analyzers
         if 'scalar' in data_sources:
             filepath = os.path.join(source_path,files.scalar)
-            self.scalars = analyzers.scalars_dat(filepath,equilibration='LocalEnergy')
+            self.scalars = analyzers.scalars_dat(filepath,equilibration='LocalEnergy',nindent=self.subindent())
         #end if
         if 'stat' in data_sources:
             #determine scalars and analyzer quantities
@@ -125,13 +130,13 @@ class MethodAnalyzer(QAanalyzer):
             #end for
             not_scalars = set(analyzer_quants.keys())
 
-            self.scalars_hdf = analyzers.scalars_hdf(not_scalars)
+            self.scalars_hdf = analyzers.scalars_hdf(not_scalars,nindent=self.subindent())
 
             analyzer_quantities = analyzer_quantities & request.quantities
             for name,type in analyzer_quants.iteritems():
                 if type in analyzer_quantities:
                     if type in analyzers:
-                        qqa = analyzers[type](name)
+                        qqa = analyzers[type](name,nindent=self.subindent())
                         qqa.init_sub_analyzers()
                         self[name] = qqa
                     else:
@@ -143,10 +148,10 @@ class MethodAnalyzer(QAanalyzer):
         #end if
         if 'dmc' in data_sources:
             filepath = os.path.join(source_path,files.dmc)
-            self.dmc = analyzers.dmc_dat(filepath)
+            self.dmc = analyzers.dmc_dat(filepath,nindent=self.subindent())
         #end if
         if 'traces' in data_sources and 'traces' in files:
-            self.traces = analyzers.traces(source_path,files.traces)
+            self.traces = analyzers.traces(source_path,files.traces,nindent=self.subindent())
         #end if
         
         self.unset_global_info()

@@ -156,8 +156,8 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
     jastrow_types = ['J1','J2','J3']
 
-    def __init__(self,arg0=None,load_jastrow=False):
-        QAanalyzer.__init__(self)
+    def __init__(self,arg0=None,load_jastrow=False,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
         self.info.load_jastrow = load_jastrow
 
         if isinstance(arg0,str):

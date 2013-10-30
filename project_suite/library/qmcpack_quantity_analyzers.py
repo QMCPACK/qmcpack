@@ -1,7 +1,7 @@
 
 import os
 import re
-from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt
+from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace
 from numpy.linalg import eig,LinAlgError
 from extended_numpy import ndgrid,simstats,simplestats,equilibration_length
 from generic import obj
@@ -12,8 +12,8 @@ from debug import *
 
 
 class QuantityAnalyzer(QAanalyzer):
-    def __init__(self):
-        QAanalyzer.__init__(self)
+    def __init__(self,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
         self.method_info = QAanalyzer.method_info
     #end def __init__
 
@@ -55,8 +55,8 @@ class QuantityAnalyzer(QAanalyzer):
 
 
 class DatAnalyzer(QuantityAnalyzer):
-    def __init__(self,filepath=None,equilibration=None):
-        QuantityAnalyzer.__init__(self)
+    def __init__(self,filepath=None,equilibration=None,nindent=0):
+        QuantityAnalyzer.__init__(self,nindent=nindent)
         self.info.filepath = filepath
         nbe = self.method_info.nblocks_exclude
         if equilibration!=None and nbe==-1:
@@ -201,8 +201,8 @@ class DmcDatAnalyzer(DatAnalyzer):
 
 
 class HDFAnalyzer(QuantityAnalyzer):
-    def __init__(self):
-        QuantityAnalyzer.__init__(self)
+    def __init__(self,nindent=0):
+        QuantityAnalyzer.__init__(self,nindent=nindent)
         self.info.should_remove = False
     #end def __init__
 #end class HDFAnalyzer
@@ -214,8 +214,8 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         kc  = obj(KEcorr=1)
         )
     
-    def __init__(self,exclude):
-        HDFAnalyzer.__init__(self)
+    def __init__(self,exclude,nindent=0):
+        HDFAnalyzer.__init__(self,nindent=nindent)
         self.info.exclude = exclude
     #end def
 
@@ -328,8 +328,8 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
 
 
 class EnergyDensityAnalyzer(HDFAnalyzer):
-    def __init__(self,name):
-        HDFAnalyzer.__init__(self)
+    def __init__(self,name,nindent=0):
+        HDFAnalyzer.__init__(self,nindent=nindent)
         self.info.set(
             name = name,
             reordered = False
@@ -847,8 +847,8 @@ class TracesFileHDF(QAobject):
 
 
 class TracesAnalyzer(QAanalyzer):
-    def __init__(self,path,files):
-        QAanalyzer.__init__(self)
+    def __init__(self,path,files,nindent=0):
+        QAanalyzer.__init__(self,nindent=nindent)
         self.info.path = path
         self.info.files = files
         self.method_info = QAanalyzer.method_info
@@ -1127,10 +1127,19 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
     def analyze_local(self):
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe
-
-        nmdata = self.data.number_matrix.value[nbe:,...]
+        
+        nmd_all = self.data.number_matrix.value
+        nmdata  = nmd_all[nbe:,...] 
         nm,nmvar,nmerr,nmkap = simstats(nmdata.transpose((1,2,0)))
             
+        ntdata = zeros((len(nmd_all),))
+        b = 0
+        for nmat in nmd_all:
+            ntdata[b] = trace(nmat)
+            b+=1
+        #end for
+        nt,ntvar,nterr,ntkap = simstats(ntdata[nbe:])
+
         try:
             n,nv = eig(nm)
         except LinAlgError,e:
@@ -1138,27 +1147,42 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
             n,nv = None,None
         #end try
         self.set(
-            number_matrix     = nm,
+            number_matrix       = nm,
             number_matrix_error = nmerr,
-            occupations       = n,
-            natural_orbitals  = nv
+            occupations         = n,
+            natural_orbitals    = nv,
+            number_trace        = nt,
+            number_trace_error  = nterr,
+            number_trace_data   = ntdata
             )
 
         if 'energy_matrix' in self.data:
-            emdata = self.data.energy_matrix.value[nbe:,...]
+            emd_all = self.data.energy_matrix.value
+            emdata  = emd_all[nbe:,...] 
             em,emvar,emerr,emkap = simstats(emdata.transpose((1,2,0)))
             
+            etdata = zeros((len(emd_all),))
+            b = 0
+            for emat in emd_all:
+                etdata[b] = trace(emat)
+                b+=1
+            #end for
+            et,etvar,eterr,etkap = simstats(etdata[nbe:])
+
             try:
                 e,ev = eig(em)
             except LinAlgError,er:
-                self.warn('number matrix diagonalization failed!')
+                self.warn('energy matrix diagonalization failed!')
                 e,ev = None,None
             #end try
             self.set(
-                energy_matrix     = em,
+                energy_matrix       = em,
                 energy_matrix_error = emerr,
-                energies          = e,
-                energy_orbitals   = ev
+                energies            = e,
+                energy_orbitals     = ev,
+                energy_trace        = et,
+                energy_trace_error  = eterr,
+                energy_trace_data   = etdata
                 )
         #end if
         return

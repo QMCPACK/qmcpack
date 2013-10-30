@@ -2580,7 +2580,7 @@ class QmcpackInput(SimulationInput,Names):
     def return_system(self):
         input = self.copy()
         input.pluralize()
-        axes,ps = input.get('lattice','particlesets')
+        axes,ps,H = input.get('lattice','particlesets','hamiltonian')
 
         if ps is None:
             return None
@@ -2623,6 +2623,8 @@ class QmcpackInput(SimulationInput,Names):
                 #end for
                 a = (4./3*pi*N)**(1./3)*simcell.rs
                 axes = a*identity(3)
+                have_ions = False
+            elif not 'pairpots' in H:
                 have_ions = False
             #end if
         #end if
