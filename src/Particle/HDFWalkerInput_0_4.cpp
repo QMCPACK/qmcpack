@@ -241,8 +241,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 #ifdef HAVE_ADIOS
       if(ADIOS::getRdADIOS())
       {
-        cout<<"zgu "<<"read walker"<<endl;
-        //read walkers
+        ADIOS::read_walkers(posin, "walkers");
       } 
       else if(ADIOS::getRdHDF5())
 #endif
@@ -250,6 +249,12 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
         hin.read(slab,hdf::walkers);
       }
     }
+#ifdef HAVE_ADIOS
+    if(ADIOS::getRdADIOS())
+    {
+      ADIOS::close();
+    }
+#endif
     app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << endl;
     int nitems=targetW.getTotalNum()*OHMMS_DIM;
     int curWalker = targetW.getActiveWalkers();

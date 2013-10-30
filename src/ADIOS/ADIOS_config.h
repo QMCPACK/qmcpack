@@ -104,6 +104,35 @@ void read_scalar(T& data, const std::string& aname, C& index)
   adios_selection_delete(sel);
 }
 
+template<class T>
+void read_walkers(T& data, const std::string& aname)
+{
+  ADIOS_VARINFO *vi;
+  int size;
+
+  char *name = new char[aname.length()+1];
+  std::strcpy(name, aname.c_str());
+  if (openfp == NULL)
+  {
+    qmcplusplus::app_error()<<"openfp is null "<<endl;
+  }
+  vi = adios_inq_var(openfp, name);
+  adios_inq_var_blockinfo(openfp, vi);
+  ADIOS_SELECTION *sel;
+  int index = 0;
+  for(int i = 0; i<vi->nblocks[0];i++)
+  {
+   int start = vi->blockinfo[i].start[0];
+   int count = vi->blockinfo[i].count[0];
+   sel=adios_selection_writeblock(i);
+   adios_schedule_read(openfp, sel, name, 0, 1, &data[index]);
+   index += count;
+  }
+  adios_perform_reads(openfp, 1);
+  adios_free_varinfo(vi);
+  adios_selection_delete(sel);
+}
+
 template <class T, class S>
 void read_random(T& data, S& shape, const std::string& aname)
 {
