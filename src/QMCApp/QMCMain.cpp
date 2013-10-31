@@ -116,6 +116,7 @@ bool QMCMain::execute()
     }
     else if(cname == "loop")
     {
+      qmc_common.qmc_counter=0;
       executeLoop(cur);
       qmc_common.qmc_counter=0;
     }
