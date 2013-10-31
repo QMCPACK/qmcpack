@@ -60,6 +60,9 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
 //       , fw_out(myComm)
 {
   number_of_particles=W.getTotalNum();
+  RemoteData.reserve(4);
+  RemoteData.push_back(new BufferType);
+  RemoteData.push_back(new BufferType);
 //     //FileName=myComm->getName()+hdf::config_ext;
 //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
 //     string ConfigFileName=myComm->getName()+".storeConfig.h5";
@@ -107,9 +110,6 @@ bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_h
   int walker_size = walker_num * particle_num * walker_dim_num;
   adios_write (adios_handle, "walker_size", &walker_size);
   adios_write (adios_handle, "walkers", walkers);
-#ifndef ADIOS_VERIFY
-  RemoteData.pop_back();
-#endif
   return true;
 }
 
@@ -118,7 +118,10 @@ bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_h
 void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE*fp)
 {
   if (RemoteData.empty())
-    app_error()<<"error empty RemoteData"<<endl;
+  {
+    APP_ABORT_TRACE(__FILE__, __LINE__, "empty RemoteData. Not possible");
+  }
+
   //RemoteData.push_back(new BufferType);
   int walker_num =  W.getActiveWalkers();
   int particle_num = number_of_particles;
@@ -131,7 +134,6 @@ void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FI
   int walker_size = walker_num * particle_num * walker_dim_num;
   IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_size", &walker_size);
   IO_VERIFY::adios_checkpoint_verify_local_variables(fp, "walkers", (OHMMS_PRECISION *)walkers);
-  RemoteData.pop_back();
 }
 #endif
 #endif
@@ -160,14 +162,6 @@ bool HDFWalkerOutput::dump(MCWalkerConfiguration& W)
 
 void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive& hout)
 {
-  if (RemoteData.empty())
-  {
-    //add two buffers
-    RemoteData.push_back(new BufferType);
-    RemoteData.push_back(new BufferType);
-  }
-  else
-    app_error() << "RemoteData is not empty... Aborting.\n";
   const int wb=OHMMS_DIM*number_of_particles;
   //populate RemoteData[0] to dump
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
@@ -207,11 +201,6 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #if defined(HAVE_MPI)
   else
   {
-    if(RemoteData[1] == NULL)
-    {
-      app_error()<<"RemoteData is null"<<endl;
-      APP_ABORT("HDFWalkerOutput::write_configuration");
-    }
     RemoteData[1]->resize(wb*W.getActiveWalkers());
     W.putConfigurations(RemoteData[1]->begin());
     vector<int> displ(myComm->size()), counts(myComm->size());
@@ -237,8 +226,6 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #endif
   //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
   //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
-  RemoteData.pop_back();
-  RemoteData.pop_back();
 }
 /*
 bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)

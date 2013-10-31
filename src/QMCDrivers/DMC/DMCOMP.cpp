@@ -120,6 +120,7 @@ void DMCOMP::resetUpdateEngines()
   {
     W.loadEnsemble(wClones);
     branchEngine->initWalkerController(W,fixW,false);
+    setWalkerOffsets();
     //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);

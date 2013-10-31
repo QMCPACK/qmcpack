@@ -34,6 +34,10 @@ struct CommunicatorTraits
 #define APP_ABORT(msg) \
 {std::cerr << "Fatal Error. Aborting at " << msg << endl; OOMPI_COMM_WORLD.Abort();}
 
+#define APP_ABORT_TRACE(f,l,msg) \
+{std::cerr << "Fatal Error. Aborting at " << l \
+  << "::" << f << "\n " <<  msg << endl; OOMPI_COMM_WORLD.Abort();}
+
 #else
 struct CommunicatorTraits
 {
@@ -45,6 +49,10 @@ struct CommunicatorTraits
 
 #define APP_ABORT(msg) \
 {std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); abort();}
+
+#define APP_ABORT_TRACE(f,l,msg) \
+{std::cerr << "Fatal Error. Aborting at " << l \
+  << "::" << f << "\n " <<  msg << endl; abort();}
 
 #endif
 
