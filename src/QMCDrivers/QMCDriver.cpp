@@ -296,7 +296,7 @@ void QMCDriver::adiosCheckpoint(int block)
       adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
       hh.adios_checkpoint(adios_handle);
       branchEngine->save_energy();
-      wOut->adios_checkpoint(W, adios_handle);
+      wOut->adios_checkpoint(W, adios_handle, block);
       RandomNumberControl::adios_checkpoint(adios_handle);
     }
     else
@@ -304,7 +304,7 @@ void QMCDriver::adiosCheckpoint(int block)
       adios_groupsize = RandomNumberControl::get_group_size();
       adios_groupsize += wOut->get_group_size(W);
       adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      wOut->adios_checkpoint(W, adios_handle);
+      wOut->adios_checkpoint(W, adios_handle, block);
       RandomNumberControl::adios_checkpoint(adios_handle);
     }
     adios_close(adios_handle);
@@ -364,7 +364,7 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   RandomNumberControl::adios_checkpoint(adios_handle);
   if(DumpConfig && dumpwalkers)
     //If we are checkpointing
-    wOut->adios_checkpoint(W, adios_handle);
+    wOut->adios_checkpoint(W, adios_handle, block);
   adios_close(adios_handle);
 #ifdef ADIOS_VERIFY
   ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
@@ -404,7 +404,7 @@ void QMCDriver::recordBlock(int block)
   ////first dump the data for restart
   if(DumpConfig &&block%Period4CheckPoint == 0)
   {
-    wOut->dump(W);
+    wOut->dump(W, block);
     branchEngine->write(RootName,true); //save energy_history
     RandomNumberControl::write(RootName,myComm);
 //       if (storeConfigs) wOut->dump( ForwardWalkingHistory);
@@ -430,7 +430,7 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
     TimerManager.print(myComm);
     TimerManager.reset();
     if(DumpConfig && dumpwalkers)
-     wOut->dump(W);
+     wOut->dump(W, block);
      branchEngine->finalize(W);
     RandomNumberControl::write(RootName,myComm);
     delete wOut;

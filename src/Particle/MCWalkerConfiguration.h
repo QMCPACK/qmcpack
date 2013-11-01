@@ -334,7 +334,7 @@ public:
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np);
+  bool dumpEnsemble(vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}

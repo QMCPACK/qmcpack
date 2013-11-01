@@ -113,7 +113,7 @@ bool VMCSingleOMP::run()
   bool wrotesamples=DumpConfig;
   if(DumpConfig)
   {
-    wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size());
+    wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size(),nBlocks);
     if(wrotesamples)
       app_log() << "  samples are written to the config.h5" << endl;
   }

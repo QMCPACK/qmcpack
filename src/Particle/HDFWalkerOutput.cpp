@@ -63,6 +63,7 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
   RemoteData.reserve(4);
   RemoteData.push_back(new BufferType);
   RemoteData.push_back(new BufferType);
+  block = -1;
 //     //FileName=myComm->getName()+hdf::config_ext;
 //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
 //     string ConfigFileName=myComm->getName()+".storeConfig.h5";
@@ -89,7 +90,7 @@ uint64_t HDFWalkerOutput::get_group_size(MCWalkerConfiguration& W)
   return sizeof(int) * 4 + sizeof(OHMMS_PRECISION) * walker_num * particle_num * OHMMS_DIM;
 }
 
-bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle)
+bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle, int nblock)
 {
   //Need 4 * 3 bytes for storing integers and then storage
   //for all the walkers
@@ -98,10 +99,14 @@ bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_h
   int walker_num =  W.getActiveWalkers();
   int particle_num = number_of_particles;
   int walker_dim_num = OHMMS_DIM;
-  //This is just another wrapper for vector
-  RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
-  //Copy over all the walkers into one chunk of contigous memory
-  W.putConfigurations(RemoteData[0]->begin());
+  if(nblock > block)
+  {
+    //This is just another wrapper for vector
+    RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
+    //Copy over all the walkers into one chunk of contigous memory
+    W.putConfigurations(RemoteData[0]->begin());
+    block = nblock;
+  }
   void* walkers = RemoteData[0]->data();
   adios_write (adios_handle, "walker_num", &walker_num);
   adios_write (adios_handle, "particle_num", &particle_num);
@@ -142,7 +147,7 @@ void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FI
  *
  * Dump is for restart and do not preserve the file
  */
-bool HDFWalkerOutput::dump(MCWalkerConfiguration& W)
+bool HDFWalkerOutput::dump(MCWalkerConfiguration& W, int nblock)
 {
   string FileName=myComm->getName()+hdf::config_ext;
   hdf_archive dump_file(myComm,true);
@@ -153,18 +158,22 @@ bool HDFWalkerOutput::dump(MCWalkerConfiguration& W)
   //state
   dump_file.push(hdf::main_state);
   //walkers
-  write_configuration(W,dump_file);
+  write_configuration(W,dump_file, nblock);
   dump_file.close();
   return true;
 }
 
-void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive& hout)
+void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int nblock)
 {
   const int wb=OHMMS_DIM*number_of_particles;
   //populate RemoteData[0] to dump
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
-  RemoteData[0]->resize(wb*W.getActiveWalkers());
-  W.putConfigurations(RemoteData[0]->begin());
+  if(nblock > block)
+  {
+    RemoteData[0]->resize(wb*W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0]->begin());
+    block = nblock;
+  }
   //TinyVector<hsize_t,3> gcounts, counts, offset;
   hsize_t gcounts[3], counts[3], offset[3];
   gcounts[0]=W.WalkerOffsets[myComm->size()];
@@ -192,15 +201,23 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #else
   if(myComm->size()==1)
   {
-    number_of_walkers=W.getActiveWalkers();
-    RemoteData[0]->resize(wb*W.getActiveWalkers());
+    if(nblock > block)
+    {
+      number_of_walkers=W.getActiveWalkers();
+      RemoteData[0]->resize(wb*W.getActiveWalkers());
+      block = nblock;
+    }
     W.putConfigurations(RemoteData[0]->begin());
   }
 #if defined(HAVE_MPI)
   else
   {
-    RemoteData[0]->resize(wb*W.getActiveWalkers());
-    W.putConfigurations(RemoteData[0]->begin());
+    if(nblock > block)
+    {
+      RemoteData[0]->resize(wb*W.getActiveWalkers());
+      W.putConfigurations(RemoteData[0]->begin());
+      block = nblock;
+    }
     vector<int> displ(myComm->size()), counts(myComm->size());
     for (int i=0; i<myComm->size(); ++i)
     {

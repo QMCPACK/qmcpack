@@ -474,7 +474,7 @@ void MCWalkerConfiguration::loadEnsemble()
 
 bool
 MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
-                                    , HDFWalkerOutput* out, int np)
+                                    , HDFWalkerOutput* out, int np, int nBlock)
 {
 #if !(defined(__bgp__)||(__bgq__))
   MCWalkerConfiguration wtemp;
@@ -488,7 +488,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
     nwoff[ip+1]=nwoff[ip]+w;
   wtemp.setGlobalNumWalkers(nwoff[np]);
   wtemp.setWalkerOffsets(nwoff);
-  out->dump(wtemp);
+  out->dump(wtemp, nBlock);
 #endif
   return true;
 }

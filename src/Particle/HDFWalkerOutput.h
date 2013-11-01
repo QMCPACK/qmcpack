@@ -68,7 +68,7 @@ public:
 #ifdef HAVE_ADIOS
   uint64_t get_group_size(MCWalkerConfiguration& W);
 
-  bool adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle);
+  bool adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle, int block);
 #ifdef ADIOS_VERIFY
   void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, OHMMS_PRECISION* origin);
   void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int origin);
@@ -79,7 +79,7 @@ public:
   /** dump configurations
    * @param w walkers
    */
-  bool dump(MCWalkerConfiguration& w);
+  bool dump(MCWalkerConfiguration& w, int block);
 //     bool dump(ForwardWalkingHistoryObject& FWO);
 
 private:
@@ -88,13 +88,14 @@ private:
   typedef PooledData<OHMMS_PRECISION> BufferType;
   vector<Communicate::request> myRequest;
   vector<BufferType*> RemoteData;
+  int block;
 
 //     //define some types for the FW collection
 //     typedef vector<ForwardWalkingData> FWBufferType;
 //     vector<FWBufferType*> FWData;
 //     vector<vector<int> > FWCountData;
 
-  void write_configuration(MCWalkerConfiguration& W, hdf_archive& hout);
+  void write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int block);
 };
 
 }

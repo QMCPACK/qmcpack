@@ -25,7 +25,9 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
+#if defined(HAVE_ADIOS) && defined (IO_PROFILE)
 #include "ADIOS/ADIOS_profile.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -239,10 +241,14 @@ bool DMCOMP::run()
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
   int sample = 0;
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   ADIOS_PROFILE::profile_adios_init(nBlocks);
+#endif
   do // block
   {
+#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_start_comp(block);
+#endif
     Estimators->startBlock(nSteps);
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
@@ -286,22 +292,32 @@ bool DMCOMP::run()
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
+		#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
+		#endif
     Traces->write_buffers(traceClones);
+		#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_trace(block);
+		#endif
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
       for(int ip=0; ip<NumThreads; ip++)
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
     }
+		#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_start_checkpoint(block-1);
+		#endif
     recordBlock(block);
+		#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
     ADIOS_PROFILE::profile_adios_end_checkpoint(block-1);
+		#endif
   }
   while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
+	#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
+	#endif
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -309,7 +325,7 @@ bool DMCOMP::run()
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
   Traces->stopRun();
-  return finalize(block);
+  return finalize(nBlocks);
 }
 
 
