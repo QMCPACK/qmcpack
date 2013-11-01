@@ -95,8 +95,6 @@ bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_h
   //for all the walkers
   if (RemoteData.empty())
     RemoteData.push_back(new BufferType);
-  else
-    app_error() << "RemoteData is not empty... Aborting.\n";
   int walker_num =  W.getActiveWalkers();
   int particle_num = number_of_particles;
   int walker_dim_num = OHMMS_DIM;
@@ -201,8 +199,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 #if defined(HAVE_MPI)
   else
   {
-    RemoteData[1]->resize(wb*W.getActiveWalkers());
-    W.putConfigurations(RemoteData[1]->begin());
+    RemoteData[0]->resize(wb*W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0]->begin());
     vector<int> displ(myComm->size()), counts(myComm->size());
     for (int i=0; i<myComm->size(); ++i)
     {
@@ -210,8 +208,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
       displ[i]=wb*W.WalkerOffsets[i];
     }
     if(!myComm->rank())
-      RemoteData[0]->resize(wb*W.WalkerOffsets.back());
-    mpi::gatherv(*myComm,*RemoteData[1],*RemoteData[0],counts,displ);
+      RemoteData[1]->resize(wb*W.WalkerOffsets.back());
+    mpi::gatherv(*myComm,*RemoteData[0],*RemoteData[1],counts,displ);
     //myComm->gatherv(*RemoteData[0],*RemoteData[1],counts, displ);
     number_of_walkers=W.WalkerOffsets[myComm->size()];
   }
@@ -221,8 +219,18 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   inds[1]=number_of_particles;
   inds[2]=OHMMS_DIM;
   hout.write(number_of_walkers,hdf::num_walkers);
-  hyperslab_proxy<BufferType,3> slab(*RemoteData[0],inds);
-  hout.write(slab,hdf::walkers);
+  if(myComm->size()==1)
+  {
+    hyperslab_proxy<BufferType,3> slab(*RemoteData[0],inds);
+    hout.write(slab,hdf::walkers);
+  }
+#if defined(HAVE_MPI)
+  else
+  {
+    hyperslab_proxy<BufferType,3> slab(*RemoteData[1],inds);
+    hout.write(slab,hdf::walkers);
+  }
+#endif
 #endif
   //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
   //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
