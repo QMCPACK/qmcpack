@@ -26,6 +26,7 @@ struct QMCGaussianParserBase
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
+  bool addJastrow3Body;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -35,7 +36,7 @@ struct QMCGaussianParserBase
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
-  int numMO, readNO, readGuess;
+  int numMO, readNO, readGuess, numMO2print;
   std::string Title;
   std::string basisType;
   std::string basisName;
@@ -83,6 +84,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr createJ3();
   xmlNodePtr createJ2();
   xmlNodePtr createJ1();
 

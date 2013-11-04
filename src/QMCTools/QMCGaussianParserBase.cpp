@@ -21,17 +21,17 @@ QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
-  ,orderByExcitation(false), addJastrow(true)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false)
 {
 }
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
-  Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),
+  Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
-  ,orderByExcitation(false), addJastrow(true)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -824,6 +824,52 @@ QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abasis)
     xmlAddChild(abasis,ag1);
 }
 
+
+xmlNodePtr QMCGaussianParserBase::createJ3()
+{
+  xmlNodePtr j3 = xmlNewNode(NULL,(const xmlChar*)"jastrow");
+  xmlNewProp(j3,(const xmlChar*)"name", (const xmlChar*)"J3");
+  xmlNewProp(j3,(const xmlChar*)"type", (const xmlChar*)"eeI");
+  xmlNewProp(j3,(const xmlChar*)"function", (const xmlChar*)"polynomial");
+  xmlNewProp(j3,(const xmlChar*)"source", (const xmlChar*)"ion0");
+  xmlNewProp(j3,(const xmlChar*)"print", (const xmlChar*)"yes");
+  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+  for(int i=0; i<ionSpecies.getTotalNum(); i++)
+  {
+    xmlNodePtr uuc = xmlNewNode(NULL,(const xmlChar*)"correlation");
+    xmlNewProp(uuc,(const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
+    xmlNewProp(uuc,(const xmlChar*)"especies", (const xmlChar*)"u");
+    xmlNewProp(uuc,(const xmlChar*)"isize", (const xmlChar*)"3");
+    xmlNewProp(uuc,(const xmlChar*)"esize", (const xmlChar*)"3");
+    xmlNewProp(uuc,(const xmlChar*)"rcut", (const xmlChar*)"10");
+
+    xmlNodePtr a= xmlNewTextChild(uuc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
+    ostringstream o1;
+    o1<< "uu"<<ionSpecies.speciesName[i];
+    xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)o1.str().c_str());
+    xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
+    xmlNewProp(a,(const xmlChar*)"optimize", (const xmlChar*)"yes");
+    xmlAddChild(j3,uuc);
+
+    xmlNodePtr udc = xmlNewNode(NULL,(const xmlChar*)"correlation");
+    xmlNewProp(udc,(const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
+    xmlNewProp(udc,(const xmlChar*)"especies", (const xmlChar*)"u");
+    xmlNewProp(udc,(const xmlChar*)"isize", (const xmlChar*)"3");
+    xmlNewProp(udc,(const xmlChar*)"esize", (const xmlChar*)"3");
+    xmlNewProp(udc,(const xmlChar*)"rcut", (const xmlChar*)"10");
+
+    xmlNodePtr b= xmlNewTextChild(udc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
+    ostringstream o2;
+    o2<< "ud"<<ionSpecies.speciesName[i];
+    xmlNewProp(b,(const xmlChar*)"id", (const xmlChar*)o2.str().c_str());
+    xmlNewProp(b,(const xmlChar*)"type", (const xmlChar*)"Array");
+    xmlNewProp(b,(const xmlChar*)"optimize", (const xmlChar*)"yes");
+    xmlAddChild(j3,udc);
+
+  }
+  return j3;
+}
+
 xmlNodePtr QMCGaussianParserBase::createJ2()
 {
   xmlNodePtr j2 = xmlNewNode(NULL,(const xmlChar*)"jastrow");
@@ -978,6 +1024,16 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
             {
               addJastrow=false;
             }
+            else
+              if(a == "-add3BodyJ")
+              {
+                addJastrow3Body=true;
+              }
+              else
+                if(a == "-numMO")
+                {
+                  numMO2print = atoi(argv[++iargc]); 
+                }
     ++iargc;
   }
   xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
@@ -1049,6 +1105,11 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
         cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << endl;
         xmlAddChild(wfPtr,createJ2());
         xmlAddChild(wfPtr,createJ1());
+      }
+      if(addJastrow3Body)
+      {
+        cout << "Adding Three-Body rcut=\"10\". " << endl;
+        xmlAddChild(wfPtr,createJ3());
       }
     }
     xmlAddChild(qm_root,wfPtr);

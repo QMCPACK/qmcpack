@@ -79,6 +79,7 @@ void GamesAsciiParser::parse(const std::string& fname)
       //abort();
     }
   }
+  if(numMO2print <= 0) numMO2print = numMO;
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
   getGeometry(fin);
@@ -171,6 +172,7 @@ void GamesAsciiParser::parse(const std::string& fname)
       {
         MOtype = "Canonical";
         readtype=0;
+        numMO=numMO2print;
         cout<<"Reading RHF Canonical Orbitals from Gamess output. \n";
       }
       else
@@ -182,6 +184,7 @@ void GamesAsciiParser::parse(const std::string& fname)
         {
           MOtype = "Canonical";
           readtype=0;
+          numMO=numMO2print;
           cout<<"Reading Optimized Orbitals from MCSCF run output. \n";
         }
         else
