@@ -853,7 +853,8 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
 
     xmlNodePtr udc = xmlNewNode(NULL,(const xmlChar*)"correlation");
     xmlNewProp(udc,(const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
-    xmlNewProp(udc,(const xmlChar*)"especies", (const xmlChar*)"u");
+    xmlNewProp(udc,(const xmlChar*)"especies1", (const xmlChar*)"u");
+    xmlNewProp(udc,(const xmlChar*)"especies2", (const xmlChar*)"d");
     xmlNewProp(udc,(const xmlChar*)"isize", (const xmlChar*)"3");
     xmlNewProp(udc,(const xmlChar*)"esize", (const xmlChar*)"3");
     xmlNewProp(udc,(const xmlChar*)"rcut", (const xmlChar*)"10");
