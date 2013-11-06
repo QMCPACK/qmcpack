@@ -22,11 +22,12 @@
 #include "Particle/ParticleSet.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "QMCWaveFunctions/SPOSetInfo.h"
+#include "QMCWaveFunctions/SPOSetBase.h"
+
 
 namespace qmcplusplus
 {
-
-class SPOSetBase;
 
 /** base class for a basis set
  *
@@ -152,41 +153,60 @@ struct BasisSetBase: public OrbitalSetTraits<T>
 struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
 {
   typedef std::map<string,SPOSetBase*> SPOPool_t;
-  typedef vector<int> states_t;
+  typedef vector<int> indices_t;
   typedef vector<RealType> energies_t;
-  typedef vector<int> degeneracies_t;
 
-  /// true when created from xml
-  bool initialized;
+  /// state info of all possible states available in the basis
+  SPOSetInfo states;
+
   /// list of all sposets created by this builder
   vector<SPOSetBase*> sposets;
-  /// list to temporarily store all possible energies
-  energies_t          energy_list;
-  /// list to temporarily store all possible degeneracies
-  degeneracies_t      degeneracy_list;
 
   BasisSetBase<RealType>* myBasisSet;
-  BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0), initialized(false) {}
+  BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0) {}
   virtual ~BasisSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
+
+  /** member function to prepare for sposet creation from any set of states
+   *   
+   *  If implemented, this function MUST
+   *  - Initialize the states member (SPOSetInfo type) which contains
+   *    basic information about all available states in the basis.
+   *    A simple way to do this is to use the states.finish() function
+   *    (See SHOSetBuilder.cpp for an example).
+   *  - Allocate and initialize all internal data necessary to create
+   *    an SPOSet comprised of an arbitrary subset of basis states.
+   *    For infinite basis sets (e.g. HEG or SHO), this potentially involves 
+   *    increasing the size of the currently available basis.
+   *    For finite basis sets (e.g. read from an hdf file), only the first
+   *    call to this function should have any effect.
+   *    Basis sets depending on parameters should load them at this point.
+   */
+  virtual void Initialize(xmlNodePtr cur) { }
+
+  /// allow modification of state information
+  inline void modify_states()
+  {
+    states.modify();
+  }
+
+  /// clear state information
+  inline void clear_states()
+  {
+    states.clear();
+  }
 
   /// create an sposet from xml
   virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
 
   /// create an sposet from a set of state indices
-  virtual SPOSetBase* createSPOSetFromStates(states_t& states);
+  virtual SPOSetBase* createSPOSetFromIndices(indices_t& indices);
 
-  /// return all possible energies of this basis set
-  virtual energies_t& get_energies();
-
-  /// return all possible degeneracies of this basis set
-  virtual degeneracies_t& get_degeneracies();
-
-  /// create an sposet from xml
+  /// create an sposet from xml and save the resulting SPOSet
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 
   /// create an sposet from a set of state indices
-  SPOSetBase* createSPOSet(states_t& states);
+  SPOSetBase* createSPOSet(indices_t& indices);
 
   /// create an sposet in the index range [0,range_max)
   SPOSetBase* createSPOSet(int range_max);

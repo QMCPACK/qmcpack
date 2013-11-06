@@ -40,14 +40,6 @@ namespace qmcplusplus
     component_gradients.push_back(gradients);
     component_laplacians.push_back(laplacians);
 
-    states_t&       s = component->states;
-    energies_t&     e = component->energies;
-    degeneracies_t& d = component->degeneracies;
-
-    states.insert(      states.end(),      s.begin(),s.end());
-    energies.insert(    energies.end(),    e.begin(),e.end());
-    degeneracies.insert(degeneracies.end(),d.begin(),d.end());
-
     OrbitalSetSize += norbs;
     BasisSetSize = OrbitalSetSize;
   }
@@ -62,7 +54,7 @@ namespace qmcplusplus
     {
       SPOSetBase& c = *components[i];
       app_log()<<"    "<<i<<endl;
-      components[i]->report("      ");
+      components[i]->basic_report("      ");
     }
   }
 

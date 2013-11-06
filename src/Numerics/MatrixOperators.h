@@ -36,14 +36,14 @@ inline T TESTDOT(const T* restrict f, const T* restrict l, const T* restrict b)
   return s;
 }
 
-struct MatrixOperators
+namespace MatrixOperators
 {
   /** static function to perform C=AB for real matrices
    *
    * Call dgemm
    */
-  inline static void product(const Matrix<double>& A,
-                             const Matrix<double>& B, Matrix<double>& C)
+  inline void product(const Matrix<double>& A,
+                      const Matrix<double>& B, Matrix<double>& C)
   {
     const char transa = 'N';
     const char transb = 'N';
@@ -55,8 +55,8 @@ struct MatrixOperators
   }
 
 
-  inline static void ABt(const Matrix<double>& A,
-                         const Matrix<double >& B, Matrix<double >& C)
+  inline void ABt(const Matrix<double>& A,
+                  const Matrix<double >& B, Matrix<double >& C)
   {
     const char transa = 'T';
     const char transb = 'N';
@@ -72,27 +72,41 @@ struct MatrixOperators
   }
 
 
-  inline static void half_outerProduct(const Matrix<double> &M,
-                                       const Vector<double> &B,
-                                       int iat,
-                                       Matrix<double> &C)
+  inline void product_At(const Matrix<double>& A,
+                         const Matrix<double>& B, Matrix<double>& C)
+  {
+    const char transa = 'N';
+    const char transb = 'T';
+    const double zone(1.0);
+    const double zero(0.0);
+
+    dgemm(transa, transb, C.cols(), C.rows(), A.rows(),
+          zone, B.data(), B.cols(), A.data(), A.cols(),
+          zero, C.data(), C.cols());
+  }
+
+
+  inline void half_outerProduct(const Matrix<double> &M,
+                                const Vector<double> &B,
+                                int iat,
+                                Matrix<double> &C)
   {
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
         C(iat,i)+=M(i,j)*B(j);
   }
 
-  inline static void other_half_outerProduct(const Matrix<double> &M,
-      const Vector<double> &B,
-      int iat,
-      Matrix<double> &C)
+  inline void other_half_outerProduct(const Matrix<double> &M,
+                                      const Vector<double> &B,
+                                      int iat,
+                                      Matrix<double> &C)
   {
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
         C(i,iat)+=M(i,j)*B(j);
   }
-  inline static double  innerProduct(const Vector<double> &A,
-                                     const Vector<double > &B)
+  inline double  innerProduct(const Vector<double> &A,
+                              const Vector<double > &B)
   {
     double tot=0.0;
     for (int i=0; i<A.size(); i++)
@@ -103,7 +117,7 @@ struct MatrixOperators
 
 
   template<typename T>
-  inline static void transpose(Matrix<T>& A)
+    inline void transpose(Matrix<T>& A)
   {
     for (int i=0; i<A.extent(0); i++)
       for (int j=0; j<i; j++)
@@ -116,8 +130,9 @@ struct MatrixOperators
    *
    * Call zgemm
    */
-  inline static void product(const Matrix<std::complex<double> >& A,
-                             const Matrix<std::complex<double> >& B, Matrix<std::complex<double> >& C)
+  inline void product(const Matrix<std::complex<double> >& A,
+                      const Matrix<std::complex<double> >& B, 
+                      Matrix<std::complex<double> >& C)
   {
     const char transa = 'N';
     const char transb = 'N';
@@ -128,19 +143,86 @@ struct MatrixOperators
           zero, C.data(), C.cols());
   }
 
+
+  inline void product_At(const Matrix<std::complex<double> >& A,
+                         const Matrix<std::complex<double> >& B, 
+                         Matrix<std::complex<double> >& C)
+  {
+    const char transa = 'N';
+    const char transb = 'T';
+    const std::complex<double> zone(1.0,0.0);
+    const std::complex<double> zero(0.0,0.0);
+
+    zgemm(transa, transb, C.cols(), C.rows(), A.rows(),
+          zone, B.data(), B.cols(), A.data(), A.cols(),
+          zero, C.data(), C.cols());
+  }
+
+
+  /// C = A*diag(B)
+  template<typename T1,typename T2,typename T3>
+  inline void diag_product(const Matrix<T1>& A,
+                           const Vector<T2>& B,
+                           Matrix<T3>&       C)
+  {
+    for (int i=0; i<C.rows(); ++i)
+      for (int j=0; j<C.cols(); ++j)
+        C(i,j)=A(i,j)*B(j);
+    //works?
+    //const int ccols = C.cols();
+    //const int ijmax = C.size();
+    //for (int ij=0; ij<ijmax; ++ij)
+    //  C(ij)=A(ij)*B(ij%ccols);
+  }
+
+
+  /// C = diag(A)*B
+  template<typename T1,typename T2,typename T3>
+  inline void diag_product(const Vector<T1> &A,
+                           const Matrix<T2> &B,
+                           Matrix<T3> &C)
+  {
+
+    for (int i=0; i<C.rows(); ++i)
+      for (int j=0; j<C.cols(); ++j)
+        C(i,j)=A(i)*B(i,j);
+
+
+    //const int crows = C.rows();
+    //const int ccols = C.cols();
+    //for (int i=0,ijb=0; i<crows; ++i,ijb+=ccols)
+    //{
+    //  const T1 a = A(i);
+    //  for (int j=0; j<ccols; ++j)
+    //  {
+    //    int ij = ijb+j;
+    //    C(ij)=a*B(ij);
+    //  }
+    //}
+    //
+    //const int crows = C.rows();
+    //const int ijmax = C.size();
+    //for (int ij=0; ij<ijmax; ++ij)
+    //  C(ij)=A(ij%crows)*B(ij);
+
+  }
+
+
+
+
   /** static function to perform C=AB for complex matrices
    *
    * Call zgemm
    */
-  inline static void product(const Matrix<double>& A,
-                             const Matrix<std::complex<double> >& B, Matrix<double>& C)
+  inline void product(const Matrix<double>& A,
+                      const Matrix<std::complex<double> >& B, Matrix<double>& C)
   {
     cerr << " Undefined C=AB with real A and complex B " << endl;
   }
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline static void product(const Matrix<double>& A, const Vector<double>& x, double* restrict yptr)
+  inline void product(const Matrix<double>& A, const Vector<double>& x, double* restrict yptr)
   {
     const char transa = 'T';
     const double one=1.0;
@@ -150,7 +232,7 @@ struct MatrixOperators
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline static void product(const Matrix<double>& A, const double* restrict xptr, double* restrict yptr)
+  inline void product(const Matrix<double>& A, const double* restrict xptr, double* restrict yptr)
   {
     const char transa = 'T';
     const double one=1.0;
@@ -161,8 +243,8 @@ struct MatrixOperators
   /** static function to perform y=Ax for generic matrix and vector
    */
   template<unsigned D>
-  inline static void product(const Matrix<double>& A, const TinyVector<double,D>* xvPtr,
-                             TinyVector<double,D>* restrict yptr)
+    inline void product(const Matrix<double>& A, const TinyVector<double,D>* xvPtr,
+                        TinyVector<double,D>* restrict yptr)
   {
     const double one=1.0;
     const double zero=0.0;
@@ -174,8 +256,8 @@ struct MatrixOperators
   }
 
   template<unsigned D>
-  inline static void product(const Matrix<double>& A, const Tensor<double,D>* xvPtr,
-                             Tensor<double,D>* restrict yptr)
+    inline void product(const Matrix<double>& A, const Tensor<double,D>* xvPtr,
+                        Tensor<double,D>* restrict yptr)
   {
     const double one=1.0;
     const double zero=0.0;
@@ -189,8 +271,8 @@ struct MatrixOperators
   /** static function to perform y=Ax for generic matrix and vector
    */
   template<unsigned D>
-  inline static void product(const Matrix<double>& A, const Vector<TinyVector<double,D> >& x,
-                             TinyVector<double,D>* restrict yptr)
+    inline void product(const Matrix<double>& A, const Vector<TinyVector<double,D> >& x,
+                        TinyVector<double,D>* restrict yptr)
   {
     const double one=1.0;
     const double zero=0.0;
@@ -204,9 +286,9 @@ struct MatrixOperators
   /** static function to perform y=Ax for generic matrix and vector
    */
   template<unsigned D>
-  inline static void product(const Matrix<std::complex<double> >& A,
-                             const Vector<TinyVector<std::complex<double>,D> >& x,
-                             TinyVector<std::complex<double>,D>* restrict yptr)
+    inline void product(const Matrix<std::complex<double> >& A,
+                        const Vector<TinyVector<std::complex<double>,D> >& x,
+                        TinyVector<std::complex<double>,D>* restrict yptr)
   {
     const char transa = 'N';
     const char transb = 'N';
@@ -220,9 +302,9 @@ struct MatrixOperators
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline static void product(const Matrix<std::complex<double> >& A,
-                             const Vector<std::complex<double> >& x,
-                             std::complex<double>* restrict yptr)
+  inline void product(const Matrix<std::complex<double> >& A,
+                      const Vector<std::complex<double> >& x,
+                      std::complex<double>* restrict yptr)
   {
     const char transa = 'T';
     const std::complex<double> zone(1.0,0.0);
@@ -232,8 +314,8 @@ struct MatrixOperators
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline static void product(const Matrix<std::complex<double> >& A
-                             , const Vector<double>& x, std::complex<double>* restrict yptr)
+  inline void product(const Matrix<std::complex<double> >& A
+                      , const Vector<double>& x, std::complex<double>* restrict yptr)
   {
     const int n=A.rows();
     const int m=A.cols();
@@ -247,9 +329,9 @@ struct MatrixOperators
     }
   }
 
-  inline static void product(const Matrix<std::complex<double> >& A
-                             , const std::complex<double>* restrict x
-                             , std::complex<double>* restrict yptr)
+  inline void product(const Matrix<std::complex<double> >& A
+                      , const std::complex<double>* restrict x
+                      , std::complex<double>* restrict yptr)
   {
     const char transa = 'T';
     const std::complex<double> zone(1.0,0.0);
@@ -259,14 +341,14 @@ struct MatrixOperators
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline static void product(const Matrix<double>& A,
-                             const Vector<std::complex<double> >& x, double* restrict yptr)
+  inline void product(const Matrix<double>& A,
+                      const Vector<std::complex<double> >& x, double* restrict yptr)
   {
     cerr << " Undefined C=AB with real A and complex x " << endl;
   }
 
   template<typename T>
-  inline static void product(const Matrix<T>& A, const Matrix<T>& B, Matrix<T>& C, std::vector<int>& offset)
+    inline void product(const Matrix<T>& A, const Matrix<T>& B, Matrix<T>& C, std::vector<int>& offset)
   {
     int nr=C.rows();
     int nb=offset.size()-1;

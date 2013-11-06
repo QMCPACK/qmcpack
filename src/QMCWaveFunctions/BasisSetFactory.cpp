@@ -15,6 +15,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
@@ -36,13 +37,64 @@
 namespace qmcplusplus
 {
 
+
+  SPOSetBase* get_sposet(const string& name)
+  {
+    int nfound = 0;
+    SPOSetBase* spo = 0;
+    map<string,BasisSetBuilder*>::iterator it;
+    for(it=basis_builders.begin();it!=basis_builders.end();++it)
+    {
+      vector<SPOSetBase*>& sposets = it->second->sposets;
+      for(int i=0;i<sposets.size();++i)
+      {
+        SPOSetBase* sposet = sposets[i];
+        if(sposet->objectName==name)
+        {
+          spo = sposet;
+          nfound++;
+        }
+      }
+    }
+    if(nfound>1)
+    {
+      write_basis_builders();
+      APP_ABORT("get_sposet: requested sposet "+name+" is not unique");
+    }
+    else if(spo==NULL)
+    {
+      write_basis_builders();
+      APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
+    }
+    return spo;
+  }
+
+
+  void write_basis_builders(const string& pad)
+  {
+    string pad2 = pad+"  ";
+    map<string,BasisSetBuilder*>::iterator it;
+    for(it=basis_builders.begin();it!=basis_builders.end();++it)
+    {
+      const string& type = it->first;
+      vector<SPOSetBase*>& sposets = it->second->sposets;
+      app_log()<<pad<<"sposets for BasisSetBuilder of type "<<type<<endl;
+      for(int i=0;i<sposets.size();++i)
+      {
+        app_log()<<pad2<<"sposet "<<sposets[i]->objectName<<endl;
+      }
+    }
+  }
+
+
+
 /** constructor
  * \param els reference to the electrons
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
 BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
-  OrbitalBuilderBase(els,psi), ptclPool(psets)
+  OrbitalBuilderBase(els,psi), ptclPool(psets), last_builder(0)
 {
   ClassName="BasisSetFactory";
 }
@@ -50,7 +102,6 @@ BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclP
 BasisSetFactory::~BasisSetFactory()
 {
   DEBUG_MEMORY("BasisSetFactory::~BasisSetFactory");
-//     delete_iter(basisBuilder.begin(),basisBuilder.end());
 }
 
 bool BasisSetFactory::put(xmlNodePtr cur)
@@ -58,11 +109,11 @@ bool BasisSetFactory::put(xmlNodePtr cur)
   return true;
 }
 
-void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
+BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
 {
   ReportEngine PRE(ClassName,"createBasisSet");
   string sourceOpt("ion0");
-  string typeOpt("");
+  string type("");
   string name("");
   string keyOpt("NMO"); //gaussian Molecular Orbital
   string transformOpt("yes"); //numerical Molecular Orbital
@@ -71,7 +122,7 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt,"source");
   aAttrib.add(cuspC,"cuspCorrection");
-  aAttrib.add(typeOpt,"type");
+  aAttrib.add(type,"type");
   aAttrib.add(keyOpt,"keyword");
   aAttrib.add(keyOpt,"key");
   aAttrib.add(name,"name");
@@ -79,38 +130,38 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
   aAttrib.add(cuspInfo,"cuspInfo");
   if(rootNode != NULL)
     aAttrib.put(rootNode);
-//     xmlNodePtr tc = cur->children; tc=tc->next;
-//     while(tc != NULL) {
-//     string cname;  getNodeName(cname,tc);
-//     if (cname.find("asis")>1)
-//     {
-//       OhmmsAttributeSet bAttrib;
-//       bAttrib.add(name,"name");
-//       bAttrib.put(tc);
-//       break;
-//     }
-//     tc=tc->next;
-//     }
+
+  app_log()<<"  basis builder: type = "<<type<<endl;
+
+  tolower(type);
+
+  app_log()<<"  basis builder: type = "<<type<<endl;
+
   BasisSetBuilder* bb=0;
-  if (typeOpt == "jellium" || typeOpt == "heg")
+  if (type == "jellium" || type == "heg")
   {
     app_log()<<"Electron gas SPO set"<<endl;
     bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
   }
-  else if (typeOpt == "linearopt")
+  else if (type == "sho")
+  {
+    app_log()<<"Harmonic Oscillator SPO set"<<endl;
+    bb = new SHOSetBuilder(targetPtcl);
+  }
+  else if (type == "linearopt")
   {
     //app_log()<<"Optimizable SPO set"<<endl;
     bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
   }
-  else if (typeOpt == "AFM")
+  else if (type == "afm")
   {
     //       app_log()<<"AFM SPO set"<<endl;
     bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
   }
 #if OHMMS_DIM ==3
-  else if(typeOpt.find("spline")<typeOpt.size())
+  else if(type.find("spline")<type.size())
   {
-    name=typeOpt;
+    name=type;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
     bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
@@ -119,7 +170,7 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
 #endif
   }
 #if !defined(QMC_COMPLEX)
-  else if(typeOpt == "MolecularOrbital" || typeOpt == "MO")
+  else if(type == "molecularorbital" || type == "mo")
   {
     ParticleSet* ions=0;
     //do not use box to check the boundary conditions
@@ -152,6 +203,10 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
         bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
     }
   }
+  else 
+  {
+    APP_ABORT("BasisSetFactory::createBasisSet\n basis builder type="+type+" is unknown");
+  }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3
   PRE.flush();
@@ -160,48 +215,57 @@ void BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
     bb->put(cur);
-    app_log()<<" Built basis "<< name<< endl;
-//       basissets[name]=basisBuilder.size();
-    basisBuilder[name]=(bb);
+    app_log()<<" Built BasisSetBuilder of type "<< type << endl;
+    basis_builders[type] = bb;
   }
-//  else
-//  {
-//    //fatal error
-////       PRE.error("Failed to create a basis set.",true);
-//  }
+  else
+    APP_ABORT("BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
+
+  last_builder = bb;
+
+  return bb;
 }
+
 
 SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
 {
   string bname("");
   string bsname("");
-  int bsize=basisBuilder.size();
   string sname("");
+  string type("");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname,"basisset");
   aAttrib.add(bsname,"basis_sposet");
   aAttrib.add(sname,"name");
+  aAttrib.add(type,"type");
+  //aAttrib.put(rcur);
   aAttrib.put(cur);
-  string cname;
-  xmlNodePtr tcur=cur->children;
-  if (tcur!=NULL)
-    getNodeName(cname,cur);
-  if ( (basisBuilder.count(bname)==0 ) && (cname==basisset_tag))
-    createBasisSet(tcur,cur);
-  else if (basisBuilder.count(bsname))
+  tolower(type);
+
+
+  BasisSetBuilder* bb;
+
+  if(bname=="")
+    bname=type;
+  if(type=="")
+    bb = last_builder;
+  else if(basis_builders.find(type)!=basis_builders.end())
+    bb = basis_builders[type];
+  else
   {
-    createBasisSet(cur,cur);
-    bname=sname;
+    string cname("");
+    xmlNodePtr tcur=cur->children;
+    if(tcur!=NULL)
+      getNodeName(cname,cur);
+    if(cname==basisset_tag)
+      bb = createBasisSet(tcur,cur);
+    else
+      bb = createBasisSet(cur,cur);
   }
-  else if (bname=="")
-  {
-    createBasisSet(cur,cur);
-    bname=basisBuilder.rbegin()->first;
-  }
-  if(basisBuilder.size())
+  if(bb)
   {
     app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<<endl;
-    return basisBuilder[bname]->createSPOSet(cur);
+    return bb->createSPOSet(cur);
   }
   else
   {
@@ -209,6 +273,44 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
     return 0;
   }
 }
+
+
+void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
+{
+  xmlNodePtr parent = cur;
+  string type("");
+  OhmmsAttributeSet attrib;
+  attrib.add(type,"type");
+  attrib.put(cur);
+  tolower(type);
+
+  app_log()<<"building sposet collection of type "<<type<<endl;
+
+  BasisSetBuilder* bb = createBasisSet(cur,cur);
+  xmlNodePtr element = parent->children;
+  int nsposets = 0;
+  while(element!=NULL)
+  {
+    string cname((const char*)(element->name));
+    if(cname=="sposet")
+    {
+      string name("");
+      OhmmsAttributeSet attrib;
+      attrib.add(name,"name");
+      attrib.put(element);
+
+      app_log()<<"  Building SPOSet "<<name<<" with "<<type<<" BasisSetBuilder"<<endl;
+      SPOSetBase* spo = bb->createSPOSet(element);
+      spo->objectName = name;
+      nsposets++;
+    }
+    element = element->next;
+  }
+  if(nsposets==0)
+    APP_ABORT("BasisSetFactory::build_sposet_collection  no <sposet/> elements found");
+}
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

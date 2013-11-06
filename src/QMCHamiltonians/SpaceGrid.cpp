@@ -685,14 +685,12 @@ void SpaceGrid::write_description(ostream& os, string& indent)
 int SpaceGrid::allocate_buffer_space(BufferType& buf)
 {
   buffer_offset = buf.size();
-  int tsize;
   if(!chempot)
   {
     vector<RealType> tmp(nvalues_per_domain*ndomains);
     buf.add(tmp.begin(),tmp.end());
     buffer_start = buffer_offset;
     buffer_end   = buffer_start+nvalues_per_domain*ndomains-1;
-    tsize = tmp.size();
   }
   else
   {
@@ -700,9 +698,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
     buf.add(tmp.begin(),tmp.end());
     buffer_start = buffer_offset;
     buffer_end   = buffer_start+nvalues_per_domain*npvalues*ndomains-1;
-    tsize = tmp.size();
   }
-  app_log()<<"sgm1: "<<tsize<<" "<<chempot<<" "<<npvalues<<" "<<nvalues_per_domain<<" "<<ndomains<<endl;
   return buffer_offset;
 }
 
@@ -722,7 +718,6 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
     ng[0]=nvalues_per_domain*ndomains;
   else
     ng[0]=nvalues_per_domain*npvalues*ndomains;
-  app_log()<<"sgml:   "<<ng[0]<<endl;
   oh->set_dimensions(ng,buffer_offset);
   oh->open(gid);
   int coord = (int) coordinate;

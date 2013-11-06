@@ -25,6 +25,7 @@
 #include <Lattice/CrystalLattice.h>
 #include <spline/einspline_engine.hpp>
 #include <spline/einspline_util.hpp>
+#include <Numerics/VectorViewer.h>
 
 namespace qmcplusplus
 {
@@ -146,33 +147,6 @@ struct SplineAdoptorBase
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
-  }
-};
-
-/** a class to map a memory sequence to a vector
- * @tparam T datatype
- */
-template<typename T>
-struct VectorViewer
-{
-  T* data_ptr;
-  int data_size;
-  inline VectorViewer(T* a, int n):data_ptr(a),data_size(n) {}
-  inline T* data()
-  {
-    return data_ptr;
-  }
-  inline int size() const
-  {
-    return data_size;
-  }
-  inline T& operator[](int i)
-  {
-    return data_ptr[i];
-  }
-  inline T operator[](int i) const
-  {
-    return data_ptr[i];
   }
 };
 

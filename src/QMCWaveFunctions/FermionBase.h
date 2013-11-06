@@ -29,10 +29,8 @@ struct FermionBase
   typedef BasisSetBuilder* BasisSetBuilderPtr;
 
   typedef map<string,SPOSetBasePtr> spo_set_type;
-  typedef map<string,BasisSetBuilder*> basis_builder_type;
   
   spo_set_type mySPOSet;
-  basis_builder_type basis_builders;
   
   /** add a new SPOSet
    * @param aname name of a SPOset
@@ -81,18 +79,6 @@ struct FermionBase
   {
     return (mySPOSet.find(aname) != mySPOSet.end());
   }
-  
-  /// add all BasisSetBuilders from passed in map to the local map
-  void add_basis_builders(basis_builder_type& bbs);
-
-  /// add a BasisSetBuilder to the local map
-  void add_basis_builder(const string& name, BasisSetBuilder* bb);
-
-  /// retrieve a BasisSetBuilder from the local map by name
-  BasisSetBuilder* get_basis_builder(const string& name);
-
-  /// retrieve the first BasisSetBuilder from the local map
-  BasisSetBuilder* get_basis_builder();
 };
 
 }

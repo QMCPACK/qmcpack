@@ -122,6 +122,10 @@ void CrystalLattice<T,D,ORTHO>::reset()
     Length[i]=std::sqrt(dot(Rv[i],Rv[i]));
     OneOverLength[i]=1.0/Length[i];
   }
+  Center = 0.0;
+  for(int i=0;i<D;++i)
+    Center += Rv[i];
+  Center *= .5;
   //analysis of a lattice using LatticeAnalyzer
   LatticeAnalyzer<T,D> ldesc;
   SuperCellEnum = ldesc(BoxBConds);

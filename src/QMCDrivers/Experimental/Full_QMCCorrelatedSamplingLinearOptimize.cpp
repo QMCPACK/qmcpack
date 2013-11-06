@@ -33,6 +33,9 @@
 namespace qmcplusplus
 {
 
+  using MatrixOperators::product;
+
+
 QMCCSLinearOptimize::QMCCSLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
   vmcCSEngine(0), Max_iterations(1), exp0(-16), nstabilizers(10), stabilizerScale(0.5), bigChange(2), w_beta(0.0),
@@ -112,8 +115,7 @@ bool QMCCSLinearOptimize::run()
   {
     Matrix<RealType> Right_tmp(Right);
     invert_matrix(Right,false);
-    MatrixOperators MO;
-    MO.product(Right,LeftT,Left);
+    product(Right,LeftT,Left);
     Right=Right_tmp;
   }
   else

@@ -140,7 +140,6 @@ inline T real(const T& c)
   return c;
 }
 
-
 ///imaginary part of a scalar
 template<typename T>
 inline T imag(const T& c)
@@ -148,8 +147,17 @@ inline T imag(const T& c)
   return static_cast<T>(0);
 }
 
+///complex conjugate of a scalar
+template<typename T>
+inline T conj(const T& c)
+{
+  return c;
+}
+
+
 using std::real;
 using std::imag;
+using std::conj;
 
 ///real part of product of scalars
 template<typename T>

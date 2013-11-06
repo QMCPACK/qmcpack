@@ -44,30 +44,6 @@ struct EGOSet: public SPOSetBase
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
 
-  /// assign states from SPOSetBase 
-  inline void assign_states(const vector<int>& s)
-  {
-    states.resize(s.size());
-    for(int i=0;i<s.size();++i)
-      states[i] = s[i];
-  }
-
-  /// assign energies from SPOSetBase
-  inline void assign_energies()
-  {
-    energies.resize(mK2.size());
-    for(int i=0;i<mK2.size();++i)
-      energies[i] = -mK2[i];
-  }
-
-  /// assign energies from SPOSetBase
-  inline void assign_degeneracies(const vector<int>& d)
-  {
-    degeneracies.resize(d.size());
-    for(int i=0;i<d.size();++i)
-      degeneracies[i] = d[i];
-  }
-
   inline void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
@@ -156,9 +132,7 @@ public:
   *@param cur the current xml node
   */
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSetBase* createSPOSetFromStates(states_t& states);
-  energies_t& get_energies();
-  degeneracies_t& get_degeneracies();
+  SPOSetBase* createSPOSetFromIndices(indices_t& indices);
 
 };
 }

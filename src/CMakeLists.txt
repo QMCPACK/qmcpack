@@ -19,6 +19,7 @@ else()
     Utilities/OhmmsInfo.cpp 
     Utilities/NewTimer.cpp
     Utilities/ProgressReportEngine.cpp
+    Utilities/unit_conversion.cpp
     OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp

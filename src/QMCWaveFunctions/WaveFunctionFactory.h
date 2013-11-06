@@ -21,6 +21,7 @@
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/BasisSetFactory.h"
 #include "Message/MPIObjectBase.h"
 namespace qmcplusplus
 {

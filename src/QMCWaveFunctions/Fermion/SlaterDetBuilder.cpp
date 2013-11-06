@@ -321,26 +321,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     }
   }
   //only single slater determinant
-  //capture the BasisSetBuilders so estimators can reuse or generate orbitals
-  map<string,BasisSetBuilder*>& bbs = *myBasisSetFactory->getBasisBuilders();
   if(multiDet)
-  {
     if(FastMSD)
-    {
-      multislaterdetfast_0->add_basis_builders(bbs);
       targetPsi.addOrbital(multislaterdetfast_0,"MultiSlaterDeterminantFast",true);
-    }
     else
-    {
-      multislaterdet_0->add_basis_builders(bbs);
       targetPsi.addOrbital(multislaterdet_0,"MultiSlaterDeterminant",true);
-    }
-  }
   else
-  {
-    slaterdet_0->add_basis_builders(bbs);
     targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
-  }
   delete myBasisSetFactory;
   myBasisSetFactory=0;
   return success;

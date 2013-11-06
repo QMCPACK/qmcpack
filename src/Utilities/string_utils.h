@@ -38,6 +38,33 @@ inline string strip(const string& s)
   return s.substr(start,end-start+1);
 }
 
+
+inline bool whitespace(char c)
+{
+  return (c==' ' || c=='\n' || c=='\t');
+}
+
+
+inline vector<string> split(const string& s)
+{
+  vector<string> tokens;
+  int i=0;
+  while(i<s.length())
+  {
+    while(i<s.length() && whitespace(s[i]))
+      i++;
+    int start = i;
+    while(i<s.length() && !whitespace(s[i]))
+      i++;
+    int end = i;
+    int len = end-start;
+    if(len>0)
+      tokens.push_back(s.substr(start,len));
+  }
+  return tokens;
+}
+
+
 inline vector<string> split(const string& s, const string& pattern)
 {
   int sloc=0;

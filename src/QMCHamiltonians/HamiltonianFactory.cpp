@@ -31,6 +31,7 @@
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
 #include "QMCHamiltonians/NearestNeighborsEstimator.h"
+#include "QMCHamiltonians/HarmonicExternalPotential.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
@@ -125,6 +126,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     targetH->setName(myName);
     targetH->addOperator(new BareKineticEnergy<double>(*targetPtcl),"Kinetic");
   }
+  OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
+  if(psi_it == psiPool.end())
+    APP_ABORT("Unknown psi \""+psiName+"\" for target Psi");
+  TrialWaveFunction* targetPsi = psi_it->second->targetPsi;
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while(cur != NULL)
@@ -309,6 +314,16 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if(potType == "coulomb")
           addCoulombPotential(cur);
       }
+      else
+        if(cname == "extpot" )
+        {
+          if (potType == "harmonic_ext" || potType=="HarmonicExt")
+          {
+            HarmonicExternalPotential* hs = new HarmonicExternalPotential(*targetPtcl);
+            hs->put(cur);
+            targetH->addOperator(hs,"HarmonicExt",true);
+          }
+        }
       else
         if(cname == "estimator")
         {

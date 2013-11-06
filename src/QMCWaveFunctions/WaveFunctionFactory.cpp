@@ -83,7 +83,12 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   while(cur != NULL)
   {
     string cname((const char*)(cur->name));
-    if (cname == OrbitalBuilderBase::detset_tag)
+    if(cname =="sposet_collection")
+    {
+      BasisSetFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
+      basisFactory.build_sposet_collection(cur);
+    }
+    else if (cname == OrbitalBuilderBase::detset_tag)
     {
       success = addFermionTerm(cur);
       bool foundtwist(false);

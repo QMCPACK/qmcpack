@@ -42,6 +42,9 @@
 namespace qmcplusplus
 {
 
+  using MatrixOperators::product;
+
+
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
   QMCLinearOptimize(w,psi,h,hpool,ppool), Max_iterations(1), exp0(-16), nstabilizers(3),
@@ -142,9 +145,8 @@ bool QMCFixedSampleLinearOptimize::run()
     {
       Matrix<RealType> RightT(Left);
       invert_matrix(RightT,false);
-      MatrixOperators MO;
       Left=0;
-      MO.product(RightT,Right,Left);
+      product(RightT,Right,Left);
 //       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
     }
     //Find largest off-diagonal element compared to diagonal element.

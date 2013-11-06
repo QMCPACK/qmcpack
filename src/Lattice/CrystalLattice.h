@@ -110,6 +110,8 @@ struct CrystalLattice
   SingleParticlePos_t Length;
   ///OneOverLength[idim] 1/length of the idim-th lattice vector
   SingleParticlePos_t OneOverLength;
+  ///Center of the cell sum(Rv[i])/2
+  SingleParticlePos_t Center;
   /**@brief Real-space unit vectors.
    *
    *Introduced to efficiently return one vector at a time.

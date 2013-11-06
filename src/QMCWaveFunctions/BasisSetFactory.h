@@ -22,6 +22,19 @@
 namespace qmcplusplus
 {
 
+  ///set of basis set builders resolved by type
+  static map<string,BasisSetBuilder*> basis_builders;
+
+  ///writes info about contained sposets to stdout
+  void write_basis_builders(const string& pad="");
+
+  /**returns a named sposet from the global pool
+   *  only use in serial portion of execution
+   *  ie during initialization prior to threaded code
+   */
+  SPOSetBase* get_sposet(const string& name);
+
+
 /** derived class from OrbitalBuilderBase
  */
 class BasisSetFactory: public OrbitalBuilderBase
@@ -39,29 +52,17 @@ public:
   ~BasisSetFactory();
   bool put(xmlNodePtr cur);
 
-  void createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
+  BasisSetBuilder* createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
 
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 
-  BasisSetBase<RealType>* getBasisSet()
-  {
-    string bname=basisBuilder.rbegin()->first;
-    if(basisBuilder.size())
-      return basisBuilder[bname]->myBasisSet;
-    else
-      return 0;
-  }
-
-  /// return basis builder map
-  map<string,BasisSetBuilder*>* getBasisBuilders()
-  {
-    return &basisBuilder;
-  }
+  void build_sposet_collection(xmlNodePtr cur);
 
 private:
-  ///set of basis set: potential static data
-  map<string,BasisSetBuilder*> basisBuilder;
-//     map<string,int> basissets;
+
+  ///store the last builder, use if type not provided
+  BasisSetBuilder* last_builder;
+
   ///reference to the particle pool
   PtclPoolType& ptclPool;
 };

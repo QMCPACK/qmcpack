@@ -5,11 +5,16 @@ SET(WFBASE_SRCS
   BasisSetBase.cpp
   ProductOrbital.cpp
   OrbitalConstraintsBase.cpp
+  SPOInfo.cpp
+  SPOSetInfo.cpp
+  SPOSetInputInfo.cpp
   SPOSetBase.cpp
   FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
   CompositeSPOSet.cpp
+  HarmonicOscillator/SHOSet.cpp
+  HarmonicOscillator/SHOSetBuilder.cpp
   )
 
 ########################

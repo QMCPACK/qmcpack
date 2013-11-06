@@ -460,7 +460,7 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       thisWalker.L=W.L;
     }
     myTimers[1]->stop();
-    if (moved)
+    //if (moved)
     {
       myTimers[2]->start();
       RealType logpsi = Psi.evaluateLog(W,w_buffer);
@@ -474,11 +474,13 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());
     }
-    else
-    {
+    if(!moved)
       ++nAllRejected;
-      H.rejectedMove(W,thisWalker);
-    }
+    //else
+    //{
+    //  ++nAllRejected;
+    //  H.rejectedMove(W,thisWalker);
+    //}
   }
   myTimers[0]->stop();
 }

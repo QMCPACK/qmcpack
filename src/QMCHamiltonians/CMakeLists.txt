@@ -16,6 +16,7 @@ SET(HAMSRCS
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
   ../Estimators/TraceManager.cpp
+  HarmonicExternalPotential.cpp
 )
 #  FSAtomPseudoPot.cpp
 

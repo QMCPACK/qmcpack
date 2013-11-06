@@ -35,7 +35,7 @@ EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k), mK2(
   OrbitalSetSize=k.size();
   BasisSetSize=k.size();
   className="EGOSet";
-  assign_energies();
+  //assign_energies();
 }
 
 EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2, const vector<int>& d)
@@ -46,8 +46,8 @@ EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2, const vecto
   OrbitalSetSize=k.size();
   BasisSetSize=k.size();
   className="EGOSet";
-  assign_energies();
-  assign_degeneracies(d);
+  //assign_energies();
+  //assign_degeneracies(d);
 }
 
 ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els,
@@ -129,52 +129,23 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   egGrid.createGrid(nc,ns,twist);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);
-  vector<int> states;
-  states.resize(egGrid.kpt.size());
-  for(int s=0;s<egGrid.kpt.size();++s)
-    states[s] = s;
-  spo->assign_states(states);
+  //vector<int> states;
+  //states.resize(egGrid.kpt.size());
+  //for(int s=0;s<egGrid.kpt.size();++s)
+  //  states[s] = s;
+  //spo->assign_states(states);
   return spo;
 }
 
 
-SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromStates(states_t& states)
+SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromIndices(indices_t& indices)
 {
-  egGrid.createGrid(states);
+  egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);
-  spo->assign_states(states);
+  //spo->assign_states(states);
   return spo;
 }
 
-
-ElectronGasBasisBuilder::energies_t& ElectronGasBasisBuilder::get_energies()
-{
-  if(egGrid.kpoints_grid==0)
-    APP_ABORT("ElectronGasBasisBuilder::get_energies  kpoint grid does not exist");
-
-  HEGGrid<RealType,OHMMS_DIM>::kpoints_t& kpoints = *egGrid.kpoints_grid;
-  energy_list.resize(kpoints.size());
-
-  for(int i=0;i<kpoints.size();++i)
-    energy_list[i] = kpoints[i].k2;
-
-  return energy_list;
-}
-
-
-ElectronGasBasisBuilder::degeneracies_t& ElectronGasBasisBuilder::get_degeneracies()
-{
-  if(egGrid.kpoints_grid==0)
-    APP_ABORT("ElectronGasBasisBuilder::get_degeneracies  kpoint grid does not exist");
-
-  HEGGrid<RealType,OHMMS_DIM>::kpoints_t& kpoints = *egGrid.kpoints_grid;
-  degeneracy_list.resize(kpoints.size());
-
-  for(int i=0;i<kpoints.size();++i)
-    degeneracy_list[i] = kpoints[i].g;
-
-  return degeneracy_list;
-}
 
 
 

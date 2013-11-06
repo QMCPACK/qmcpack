@@ -42,6 +42,9 @@
 namespace qmcplusplus
 {
 
+  using MatrixOperators::product;
+
+
 QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
   exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
@@ -125,14 +128,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   startCost = lastCost = optTarget->Cost(false);
   myTimers[4]->start();
 //    }
-  MatrixOperators MO;
   bool apply_inverse(true);
   if(apply_inverse)
   {
     Matrix<RealType> Right_tmp(Right);
     invert_matrix(Right_tmp,false);
-    MatrixOperators MO;
-    MO.product(Right_tmp,LeftT,Left);
+    product(Right_tmp,LeftT,Left);
   }
   else
     Left=LeftT;
