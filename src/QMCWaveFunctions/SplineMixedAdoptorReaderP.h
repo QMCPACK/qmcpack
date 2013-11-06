@@ -22,7 +22,6 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
   typedef SA adoptor_type;
   typedef typename adoptor_type::SplineType SplineType;
 
-  TinyVector<int,3> MeshSize;
   TinyVector<int,3> coarse_mesh;
   TinyVector<int,3> coarse_stride;
   Array<complex<double>,3> FFTbox;
@@ -92,7 +91,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     }
   }
 
-  SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet)
+  SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineOpenAdoptorReader","create_spline_set(int, EinsplineSet*)");
     //typedef typename adoptor_type::real_type spline_data_type;
@@ -102,9 +101,11 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       app_log() << "  Using complex einspline table" << endl;
     else
       app_log() << "  Using real einspline table" << endl;
-    check_twists(orbitalSet,bspline);
+
+    check_twists(orbitalSet,bspline,bandgroup);
     Ugrid xyz_grid[3];
     typename adoptor_type::BCType xyz_bc[3];
+
     bool havePsig=set_grid(bspline->HalfG,xyz_grid, xyz_bc);
     if(!havePsig)
     {
@@ -112,7 +113,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     }
     TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
     bool use_cartesian= (mybuilder->TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN);
-    MeshSize=mybuilder->MeshSize;
+
     //coarse mesh only along the open direction
     for(int j=0; j<3; ++j)
     {
@@ -259,7 +260,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
         smallD_i.resize(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
       }
       Timer clock;
-      initialize_spline_pio(spin);
+      initialize_spline_pio(spin,bandgroup);
       app_log() << "Time with PIO " << clock.elapsed() <<endl;
       //clock.restart();
       //initialize_spline_pio_bcast(spin);
@@ -286,15 +287,15 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     return bspline;
   }
 
-  void initialize_spline_slow(int spin)
+  void initialize_spline_slow(int spin, const BandInfoGroup& bandgroup)
   {
     Vector<complex<double> > cG(mybuilder->Gvecs[0].size());
     int N = mybuilder->NumDistinctOrbitals;
-    const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
+    const vector<BandInfo>& cur_bands=bandgroup.myBands;
     for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
     {
-      int ti=SortBands[iorb].TwistIndex;
-      get_psi_g(ti,spin,mybuilder->SortBands[iorb].BandIndex,cG);
+      int ti=cur_bands[iorb].TwistIndex;
+      get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);
       fft_spline(cG,ti,0);
       bspline->set_spline(spline_r[1],spline_i[1],ti,ival,0);//level0
       bspline->set_spline(spline_r[0],spline_i[0],ti,ival,1);//level1
@@ -309,12 +310,13 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
    * - bcast the big table
    * Minimize temporary memory use and buffering.
    */
-  void initialize_spline_pio(int spin)
+  void initialize_spline_pio(int spin, const BandInfoGroup& bandgroup)
   {
     int N = mybuilder->NumDistinctOrbitals;
     int np=OrbGroups.size()-1;
     bool root=(myComm->rank()==0);
     bool foundit=true;
+    const vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(myComm->rank()<np)
     {
       int iorb_first=OrbGroups[myComm->rank()];
@@ -322,11 +324,10 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
       Vector<complex<double> > cG(mybuilder->Gvecs[0].size());;
-      const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
-        int ti=SortBands[iorb].TwistIndex;
-        string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
+        int ti=cur_bands[iorb].TwistIndex;
+        string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
         fft_spline(cG,ti,ib);
       }
@@ -334,8 +335,8 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       {
         for(int iorb=OrbGroups[0],ib2=0; iorb<OrbGroups[1]; ++iorb,ib2+=2)
         {
-          bspline->set_spline(spline_r[ib2],  spline_i[ib2],  SortBands[iorb].TwistIndex, iorb,1);
-          bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],SortBands[iorb].TwistIndex, iorb,0);
+          bspline->set_spline(spline_r[ib2],  spline_i[ib2],  cur_bands[iorb].TwistIndex, iorb,1);
+          bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],cur_bands[iorb].TwistIndex, iorb,0);
         }
       }
     }//root put splines to the big table
@@ -376,11 +377,10 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
               mpi::recv(*myComm,spline_i[ib2+1]->coefs,ng_small,ip,iorb+3*N);
             }
           }
-          const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
           for(int iorb=OrbGroups[ip],ib2=0; iorb<OrbGroups[ip+1]; ++iorb,ib2+=2)
           {
-            bspline->set_spline(spline_r[ib2],  spline_i[ib2],  SortBands[iorb].TwistIndex, iorb,1);
-            bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],SortBands[iorb].TwistIndex, iorb,0);
+            bspline->set_spline(spline_r[ib2],  spline_i[ib2],  cur_bands[iorb].TwistIndex, iorb,1);
+            bspline->set_spline(spline_r[ib2+1],spline_i[ib2+1],cur_bands[iorb].TwistIndex, iorb,0);
           }
         }
     }
@@ -389,11 +389,12 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     chunked_bcast(myComm, bspline->smallBox);
   }
 
-  void initialize_spline_pio_bcast(int spin)
+  void initialize_spline_pio_bcast(int spin, const BandInfoGroup& bandgroup)
   {
     bool root=(myComm->rank()==0);
     int np=OrbGroups.size()-1;
     bool foundit=true;
+    const vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(myComm->rank()<np)
     {
       int iorb_first=OrbGroups[myComm->rank()];
@@ -401,11 +402,10 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
       Vector<complex<double> > cG(mybuilder->Gvecs[0].size());;
-      const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
-        int ti=SortBands[iorb].TwistIndex;
-        string s=psi_g_path(ti,spin,SortBands[iorb].BandIndex);
+        int ti=cur_bands[iorb].TwistIndex;
+        string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
         fft_spline(cG,ti,ib);
       }
@@ -422,7 +422,6 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     int iorb_target=(myComm->rank()<np)?(OrbGroups[myComm->rank()+1]-OrbGroups[myComm->rank()])*2:0;
     for(int ip=0; ip<np; ++ip)
     {
-      const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
       for(int iorb=OrbGroups[ip], ib2=0; iorb<OrbGroups[ip+1]; ++iorb, ib2+=2)
       {
         if(ip==myComm->rank())
@@ -455,8 +454,8 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
           mpi::bcast(*myComm,coarse_i->coefs,ng_small,ip);
         }
         myComm->barrier();
-        bspline->set_spline(coarse_r,coarse_i,SortBands[iorb].TwistIndex, iorb,0);
-        bspline->set_spline(dense_r,dense_i,  SortBands[iorb].TwistIndex, iorb,1);
+        bspline->set_spline(coarse_r,coarse_i,cur_bands[iorb].TwistIndex, iorb,0);
+        bspline->set_spline(dense_r,dense_i,  cur_bands[iorb].TwistIndex, iorb,1);
       }
     }
   }

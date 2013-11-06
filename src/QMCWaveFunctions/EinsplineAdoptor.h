@@ -110,22 +110,27 @@ struct SplineAdoptorBase
 {
   typedef TinyVector<ST,D>   PointType;
   typedef UBspline_3d_d      SingleSplineType;
-  TinyVector<int,D>          HalfG;
-  vector<bool>               MakeTwoCopies;
-  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST,D>               GGt;
-  vector<TinyVector<ST,D> >  kPoints;
-  CrystalLattice<ST,D>       SuperLattice;
-  CrystalLattice<ST,D>       PrimLattice;
-
   ///true, if this for complex, each derived class has to set this
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   int MyIndex;
+  ///number of unique orbitals
+  int nunique_orbitals;
   ///first index of the SPOs this Spline handles
   int first_spo;
   ///last index of the SPOs this Spline handles
   int last_spo;
+  ///sign bits at the G/2 boundaries
+  TinyVector<int,D>          HalfG;
+  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
+  Tensor<ST,D>               GGt;
+  CrystalLattice<ST,D>       SuperLattice;
+  CrystalLattice<ST,D>       PrimLattice;
+  /// flags to unpack sin/cos
+  vector<bool>               MakeTwoCopies;
+  /// kpoints for each unique orbitals
+  vector<TinyVector<ST,D> >  kPoints;
+
   ///name of the adoptor
   string AdoptorName;
   ///keyword used to match hdf5
@@ -138,12 +143,14 @@ struct SplineAdoptorBase
   typename OrbitalSetTraits<ST>::HessVector_t      myH;
   typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
 
-  SplineAdoptorBase():is_complex(false),first_spo(0),last_spo(0)
+  SplineAdoptorBase()
+    :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   {
   }
 
   inline void init_base(int n)
   {
+    nunique_orbitals=n;
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
@@ -215,8 +222,8 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   {
     OrbitalSetSize = norbs;
     BasisSetSize=norbs;
-    SplineAdoptor::first_spo=0;
-    SplineAdoptor::last_spo=norbs;
+    //SplineAdoptor::first_spo=0;
+    //SplineAdoptor::last_spo=norbs;
   }
 
   void evaluate_notranspose(const ParticleSet& P, int first, int last

@@ -33,8 +33,31 @@ namespace qmcplusplus
   {
     vector<BandInfo>& SortBands=mybuilder->SortBands;
     BandInfoGroup vals;
+    vals.GroupID=0;
     vals.selectBands(mybuilder->SortBands,0,mybuilder->NumDistinctOrbitals);
     return create_spline_set(spin,orbitalset,vals);
+
+    //Test SPOSetComboNoCopy that can have multiple SPOSets
+    //SPOSetComboNoCopy* bb=new SPOSetComboNoCopy;
+    ////create SPOSet for the semi core states e=(-1000,-3.0)
+    //BandInfoGroup cores0;
+    //cores0.selectBands(mybuilder->SortBands,-1000.0,-3.0);
+    //cores0.GroupID=0;
+    //SPOSetBase* bandone=create_spline_set(spin,orbitalset,cores0);
+    //
+    ////create SPOSet for the rest with a coarse grid
+    //TinyVector<int,3> mesh_saved=MeshSize;
+    //for(int i=0; i<3; ++i) MeshSize[i] -= mesh_saved[i]/4;
+    //BandInfoGroup cores1;
+    //cores1.selectBands(mybuilder->SortBands,cores0.getNumDistinctOrbitals(),mybuilder->NumDistinctOrbitals);
+    //cores1.GroupID=1;
+    //SPOSetBase* bandtwo=create_spline_set(spin,orbitalset,cores1);
+    //
+    ////add them to bb
+    //bb->add(bandone);
+    //bb->add(bandtwo);
+    //bb->setOrbitalSetSize(orbitalset->getOrbitalSetSize());
+    //return bb;
   }
 }
 

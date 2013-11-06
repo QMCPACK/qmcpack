@@ -103,7 +103,7 @@ struct OrbitalBase: public QMCTraits
    * If true, this object is actively modified during optimization
    */
   bool Optimizable;
-  /** true, if FerionWF */
+  /** true, if FermionWF */
   bool IsFermionWF;
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;

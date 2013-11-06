@@ -341,7 +341,7 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
       einspline::evaluate(smallBox,ru,myV);
     else
       einspline::evaluate(MultiSpline,ru,myV);
-    for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+    for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
       psi[psiIndex]=static_cast<TT>(myV[j]);
   }
 

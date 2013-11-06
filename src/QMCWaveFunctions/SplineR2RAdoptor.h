@@ -101,14 +101,18 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.read(bigtable,"spline_0");
+    return h5f.read(bigtable,o.str().c_str()); //"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.write(bigtable,"spline_0");
+    return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
   /** convert postion in PrimLattice unit and return sign */
@@ -116,7 +120,7 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   {
     ru=PrimLattice.toUnit(r);
     int bc_sign=0;
-    for (int i=0; i<D; i++)
+    for(int i=0; i<D; i++)
     {
       ST img = std::floor(ru[i]);
       ru[i] -= img;
@@ -131,10 +135,10 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   inline void assign_v(const PointType& r, int bc_sign, VV& psi)
   {
     if (bc_sign & 1)
-      for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
         psi[psiIndex]=static_cast<TT>(-myV[j]);
     else
-      for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
         psi[psiIndex]=static_cast<TT>(myV[j]);
   }
 

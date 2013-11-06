@@ -103,14 +103,18 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.read(bigtable,"spline_0");
+    return h5f.read(bigtable,o.str().c_str()); //"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.write(bigtable,"spline_0");
+    return h5f.write(bigtable,o.str().c_str()); //"spline_0");
   }
 
   inline int convertPos(const PointType& r, PointType& ru)
@@ -128,13 +132,14 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   inline void assign_v(const PointType& r, int bc_sign, VV& psi)
   {
     register ST s,c;
-    TT* restrict t_ptr=reinterpret_cast<TT*>(psi.data());
+    //TT* restrict t_ptr=reinterpret_cast<TT*>(psi.data())+(first_spo<<1);
     for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
     {
       int jr=j<<1;
       sincos(-dot(r,kPoints[j]),&s,&c);
-      t_ptr[jr  ]=c*myV[jr]-s*myV[jr+1];
-      t_ptr[jr+1]=s*myV[jr]+c*myV[jr+1];
+      psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[jr+1],s*myV[jr]+c*myV[jr+1]);
+      //t_ptr[jr  ]=c*myV[jr]-s*myV[jr+1];
+      //t_ptr[jr+1]=s*myV[jr]+c*myV[jr+1];
     }
   }
 
@@ -165,7 +170,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     ST s,c;
     PointType g_r, g_i;
     //can easily make three independent loops
-    for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+    for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
     {
       int jr=j<<1;
       int ji=jr+1;
@@ -208,7 +213,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     PointType g_r, g_i;
     Tensor<ST,D> kk,h_r,h_i;
     //can easily make three independent loops
-    for (int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+    for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
     {
       int jr=j<<1;
       int ji=jr+1;
@@ -328,14 +333,18 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.read(bigtable,"spline_0");
+    return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
+    ostringstream o;
+    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
-    return h5f.write(bigtable,"spline_0");
+    return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
   inline int convertPos(const PointType& r, PointType& ru)
@@ -354,7 +363,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
       KdotR[j]=-dot(r,kPoints[j]);
     eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
     //for(int j=0; j<N; ++j) sincos(-dot(r,kPoints[j]),&SinV[j],&CosV[j]);
-    int psiIndex = first_spo;
+    int psiIndex=first_spo;
     for (int j=0,jr=0; j<N; j++,jr+=2)
     {
       psi[psiIndex] = static_cast<TT>(myV[jr]*CosV[j]-myV[jr+1]*SinV[j]);

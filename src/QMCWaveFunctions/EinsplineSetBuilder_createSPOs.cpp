@@ -27,8 +27,10 @@
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/SplineC2XAdoptor.h"
 #include "QMCWaveFunctions/SplineR2RAdoptor.h"
-#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/SplineMixedAdoptor.h"
+
+#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/SplineMixedAdoptorReaderP.h"
 
 namespace qmcplusplus
