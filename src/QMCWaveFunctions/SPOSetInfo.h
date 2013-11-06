@@ -164,7 +164,7 @@ namespace qmcplusplus
 
     void index_sort()
     {
-      sort(states.begin(),states.end(),spo_info::index_order);
+      sort(states.begin(),states.end(),spoinfo::index_order);
     }
 
     void energy_sort(RealType tol=1e-6,bool assign_indices=false)
