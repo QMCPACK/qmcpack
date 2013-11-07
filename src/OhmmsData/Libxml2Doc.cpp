@@ -25,7 +25,7 @@ OhmmsXPathObject::OhmmsXPathObject(): NumObjects(0), result(NULL),m_context(NULL
 }
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression,
-                                   xmlXPathContextPtr context) : NumObjects(0), result(NULL)
+                                   xmlXPathContextPtr context) : NumObjects(0), result(NULL), m_context(NULL)
 {
   put(expression, context);
 }
