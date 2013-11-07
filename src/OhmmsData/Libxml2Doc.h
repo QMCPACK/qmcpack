@@ -32,6 +32,14 @@ struct OhmmsXPathObject
    */
   OhmmsXPathObject(const char* expression, xmlXPathContextPtr context);
 
+  /** constructor
+   * @param expression  xpath expression
+   * @param cur xmlNodePtr
+   *
+   * Create m_context 
+   */
+  OhmmsXPathObject(const char* expression, xmlNodePtr cur);
+
   ~OhmmsXPathObject();
 
   /** evaluate the expression and create the object
@@ -64,6 +72,7 @@ struct OhmmsXPathObject
 
   int NumObjects;
   xmlXPathObjectPtr result;
+  xmlXPathContextPtr m_context;
 };
 
 /** class that handles xmlDoc

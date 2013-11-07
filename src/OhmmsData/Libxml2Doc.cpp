@@ -20,7 +20,7 @@
 #include "Utilities/Timer.h"
 #include <fstream>
 
-OhmmsXPathObject::OhmmsXPathObject(): NumObjects(0), result(NULL)
+OhmmsXPathObject::OhmmsXPathObject(): NumObjects(0), result(NULL),m_context(NULL)
 {
 }
 
@@ -30,11 +30,22 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression,
   put(expression, context);
 }
 
+OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur) :NumObjects(0), result(NULL)
+{
+  m_context= xmlXPathNewContext(cur->doc);
+  put(expression, m_context);
+}
+
 OhmmsXPathObject::~OhmmsXPathObject()
 {
   if(result != NULL)
   {
     xmlXPathFreeObject(result);
+  }
+
+  if(m_context != NULL)
+  {
+    xmlXPathFreeContext(m_context);
   }
 }
 
@@ -53,6 +64,7 @@ void OhmmsXPathObject::put(const char* expression, xmlXPathContextPtr context)
     NumObjects=result->nodesetval->nodeNr;
   }
 }
+
 
 Libxml2Document::Libxml2Document(): m_doc(NULL), m_root(NULL),
   m_context(NULL) { }
