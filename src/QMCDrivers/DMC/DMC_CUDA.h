@@ -44,6 +44,8 @@ private:
   string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;
+  ///steps before branching
+  int BranchInterval;
   ///number of warmup steps
   int myWarmupSteps;
   ///period for walker dump

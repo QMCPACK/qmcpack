@@ -575,7 +575,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //reset CurrentStep to zero if qmc/@continue='no'
   if(!AppendRun) CurrentStep=0;
 
-  int nths=omp_get_max_threads();
+  int nths=(qmc_common.compute_device)?1:omp_get_max_threads();
   nTargetWalkers=(std::max(nths,(nTargetWalkers/nths)*nths));
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one

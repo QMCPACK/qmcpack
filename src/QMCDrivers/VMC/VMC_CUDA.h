@@ -40,6 +40,10 @@ public:
   };
 
 private:
+  ///previous steps
+  int prevSteps;
+  ///previous stepsbetweensamples
+  int prevStepsBetweenSamples;
   /// tau/mass
   RealType m_tauovermass;
   /// Whether to use drift or not
