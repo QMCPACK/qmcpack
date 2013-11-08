@@ -63,10 +63,10 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   {
     xmlNodePtr tcur=cur->children;
     while(qp==0 && tcur != NULL)
-    {
+    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       string cname((const char*)tcur->name);
-      if(cname == OrbitalBuilderBase::detset_tag)
-      {
+      if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
+      { 
         qp=ptclPool->createESParticleSet(tcur,target);
       }
       tcur=tcur->next;

@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
+#include "OhmmsData/Libxml2Doc.h"
 #include "QMCApp/InitMolecularSystem.h"
 
 namespace qmcplusplus
@@ -292,36 +293,21 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
   SimulationCell->print(app_log());
   myPool[target]=qp;
   myPool[source]=ions;
+
+  OhmmsXPathObject det("//determinant",cur);
+  if(det.size()>2)
+    APP_ABORT("Only two electron groups are supported.");
+
+  vector<int> num_spin(det.size(),0);
+  for(int i=0; i<det.size(); ++i)
+  {
+    OhmmsAttributeSet a;
+    a.add(num_spin[i],"size");
+    a.put(det[i]);
+  }
   //addParticleSet(qp);
   //addParticleSet(ions);
   {
-    //get the number of electrons per spin
-    vector<int> num_spin;
-    xmlNodePtr cur1=cur->children;
-    while(cur1!=NULL)
-    {
-      string cname1((const char*)cur1->name);
-      if(cname1 == OrbitalBuilderBase::sd_tag)
-      {
-        num_spin.clear();
-        xmlNodePtr cur2=cur1->children;
-        while(cur2!=NULL)
-        {
-          string cname2((const char*)cur2->name);
-          if(cname2 == OrbitalBuilderBase::det_tag)
-          {
-            int n=0;
-            OhmmsAttributeSet a;
-            a.add(n,"size");
-            a.put(cur2);
-            if(num_spin.size()<2)
-              num_spin.push_back(n);
-          }
-          cur2=cur2->next;
-        }
-      }
-      cur1=cur1->next;
-    }
     //create species
     SpeciesSet& species=qp->getSpeciesSet();
     //add up and down

@@ -400,7 +400,9 @@ bool QMCMain::validateXML()
   }
   //randomize any particleset with random="yes" && random_source="ion0"
   ptclPool->randomize();
+
   setMCWalkers(m_context);
+
   return true;
 }
 
@@ -504,9 +506,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
     a.add(fname,"src");
     a.put(result[result.size()-1]);
     if(fname.size())
-		{
       RandomNumberControl::read(fname,myComm);
-		}
   }
   return true;
 }
