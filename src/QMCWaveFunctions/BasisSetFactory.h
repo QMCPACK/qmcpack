@@ -22,9 +22,6 @@
 namespace qmcplusplus
 {
 
-  ///set of basis set builders resolved by type
-  static map<string,BasisSetBuilder*> basis_builders;
-
   ///writes info about contained sposets to stdout
   void write_basis_builders(const string& pad="");
 
@@ -35,12 +32,16 @@ namespace qmcplusplus
   SPOSetBase* get_sposet(const string& name);
 
 
+
 /** derived class from OrbitalBuilderBase
  */
 class BasisSetFactory: public OrbitalBuilderBase
 {
 
 public:
+
+  ///set of basis set builders resolved by type
+  static map<string,BasisSetBuilder*> basis_builders;
 
   /** constructor
    * \param els reference to the electrons
@@ -61,7 +62,7 @@ public:
 private:
 
   ///store the last builder, use if type not provided
-  BasisSetBuilder* last_builder;
+  static BasisSetBuilder* last_builder;
 
   ///reference to the particle pool
   PtclPoolType& ptclPool;

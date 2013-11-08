@@ -73,11 +73,18 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  cur = cur->children;
   int spinSet = -1;
   vector<int> Occ_Old(0,0);
   Occ.resize(0,0);
   bool NewOcc(false);
+
+  {
+    OhmmsAttributeSet oAttrib;
+    oAttrib.add(spinSet,"spindataset");
+    oAttrib.put(cur);
+  }
+
+  cur = cur->children;
   while (cur != NULL)
   {
     string cname((const char*)(cur->name));
@@ -96,13 +103,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       {
         putContent(Occ,cur);
       }
-      else
-        if(occ_mode != "ground")
-        {
-          app_error() << "Only ground state occupation currently supported "
-                      << "in EinsplineSetBuilder.\n";
-          APP_ABORT("EinsplineSetBuilder::createSPOSet");
-        }
+      else if(occ_mode != "ground")
+      {
+        app_error() << "Only ground state occupation currently supported "
+          << "in EinsplineSetBuilder.\n";
+        APP_ABORT("EinsplineSetBuilder::createSPOSet");
+      }
     }
     cur = cur->next;
   }

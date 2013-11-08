@@ -37,13 +37,17 @@
 namespace qmcplusplus
 {
 
+  //initialization of the static data of BasisSetFactory 
+  map<string,BasisSetBuilder*> BasisSetFactory::basis_builders;
+  BasisSetBuilder* BasisSetFactory::last_builder=0;
 
   SPOSetBase* get_sposet(const string& name)
   {
     int nfound = 0;
     SPOSetBase* spo = 0;
     map<string,BasisSetBuilder*>::iterator it;
-    for(it=basis_builders.begin();it!=basis_builders.end();++it)
+    for(it=BasisSetFactory::basis_builders.begin();
+        it!=BasisSetFactory::basis_builders.end();++it)
     {
       vector<SPOSetBase*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
@@ -59,13 +63,13 @@ namespace qmcplusplus
     if(nfound>1)
     {
       write_basis_builders();
-      APP_ABORT("get_sposet: requested sposet "+name+" is not unique");
+      APP_ABORT_TRACE(__FILE__, __LINE__, "get_sposet: requested sposet "+name+" is not unique");
     }
-    else if(spo==NULL)
-    {
-      write_basis_builders();
-      APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
-    }
+    //else if(spo==NULL)
+    //{
+    //  write_basis_builders();
+    //  APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
+    //}
     return spo;
   }
 
@@ -74,7 +78,7 @@ namespace qmcplusplus
   {
     string pad2 = pad+"  ";
     map<string,BasisSetBuilder*>::iterator it;
-    for(it=basis_builders.begin();it!=basis_builders.end();++it)
+    for(it=BasisSetFactory::basis_builders.begin();it!=BasisSetFactory::basis_builders.end();++it)
     {
       const string& type = it->first;
       vector<SPOSetBase*>& sposets = it->second->sposets;
@@ -94,7 +98,7 @@ namespace qmcplusplus
  * \param ions reference to the ions
  */
 BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
-  OrbitalBuilderBase(els,psi), ptclPool(psets), last_builder(0)
+  OrbitalBuilderBase(els,psi), ptclPool(psets)
 {
   ClassName="BasisSetFactory";
 }
@@ -131,13 +135,11 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
-  app_log()<<"  basis builder: type = "<<type<<endl;
-
   tolower(type);
-
   app_log()<<"  basis builder: type = "<<type<<endl;
 
-  BasisSetBuilder* bb=0;
+  //assign last_builder
+  BasisSetBuilder* bb=last_builder;
   if (type == "jellium" || type == "heg")
   {
     app_log()<<"Electron gas SPO set"<<endl;
@@ -203,14 +205,14 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
         bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
     }
   }
-  else 
-  {
-    APP_ABORT("BasisSetFactory::createBasisSet\n basis builder type="+type+" is unknown");
-  }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3
   PRE.flush();
-  if(bb)
+
+  if(bb==0)
+    APP_ABORT_TRACE(__FILE__, __LINE__, "BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
+
+  if(bb != last_builder)
   {
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
@@ -218,8 +220,6 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     app_log()<<" Built BasisSetBuilder of type "<< type << endl;
     basis_builders[type] = bb;
   }
-  else
-    APP_ABORT("BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
 
   last_builder = bb;
 

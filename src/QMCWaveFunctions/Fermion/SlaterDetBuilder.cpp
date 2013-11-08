@@ -346,7 +346,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   string afm("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName,basisset_tag);
-  aAttrib.add(detname,"id");
+  aAttrib.add(detname,"id"); aAttrib.add(detname,"sposet");
   aAttrib.add(refname,"ref");
   aAttrib.add(afm,"type");
   aAttrib.add(s_detSize,"DetSize");
@@ -362,23 +362,26 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   aAttrib.add(spin_group,"group");
   aAttrib.put(cur);
 
-  app_log() << "  Creating a determinant for " << spin_group << " group." << endl;
+  app_log() << "  Creating a determinant " << detname << " for " << spin_group << " group." << endl;
   map<string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
   map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(detname));
-  SPOSetBasePtr psi;
-  if (lit == spo_ref.end())
+  SPOSetBasePtr psi=0;
+  if (lit == spo_ref.end()) 
   {
-    // cerr << "Didn't find sposet named \"" << detname << "\"\n";
+    psi=get_sposet(detname); //check if the named sposet exists 
+    if(psi==0) 
+    {
+      //SPOSet[detname]=psi;
+      app_log() << "  Create a new SPO set " << detname << endl;
 #if defined(ENABLE_SMARTPOINTER)
-    psi.reset(myBasisSetFactory->createSPOSet(cur));
+      psi.reset(myBasisSetFactory->createSPOSet(cur));
 #else
-    psi = myBasisSetFactory->createSPOSet(cur);
+      psi = myBasisSetFactory->createSPOSet(cur);
 #endif
-    psi->put(cur);
+    }
+    psi->put(cur); 
     psi->checkObject();
     slaterdet_0->add(psi,detname);
-    //SPOSet[detname]=psi;
-    app_log() << "  Creating a new SPO set " << detname << endl;
   }
   else
   {
@@ -465,6 +468,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;
+
+  app_log() << endl;
+  app_log().flush();
   return true;
 }
 
