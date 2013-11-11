@@ -157,13 +157,13 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   typedef vector<RealType> energies_t;
 
   /// state info of all possible states available in the basis
-  SPOSetInfo states;
+  vector<SPOSetInfo*> states;
 
   /// list of all sposets created by this builder
   vector<SPOSetBase*> sposets;
 
   BasisSetBase<RealType>* myBasisSet;
-  BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0) {}
+  BasisSetBuilder();
   virtual ~BasisSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
 
@@ -184,16 +184,19 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
    */
   virtual void Initialize(xmlNodePtr cur) { }
 
+  /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
+  void reserve_states(int nsets=1);
+
   /// allow modification of state information
-  inline void modify_states()
+  inline void modify_states(int index=0)
   {
-    states.modify();
+    states[index]->modify();
   }
 
   /// clear state information
-  inline void clear_states()
+  inline void clear_states(int index=0)
   {
-    states.clear();
+    states[index]->clear();
   }
 
   /// create an sposet from xml

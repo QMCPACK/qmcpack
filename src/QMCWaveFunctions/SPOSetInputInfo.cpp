@@ -18,6 +18,7 @@ namespace qmcplusplus
 
   void SPOSetInputInfo::reset()
   {
+    group        = 0;
     size         = inone;
     index_min    = inone;
     index_max    = inone;
@@ -58,6 +59,7 @@ namespace qmcplusplus
     string units_in = snone;
 
     OhmmsAttributeSet attrib;
+    attrib.add(group,     "group"     );
     attrib.add(size,      "size"      );
     attrib.add(index_min, "index_min" );
     attrib.add(index_max, "index_max" );
@@ -75,6 +77,9 @@ namespace qmcplusplus
     has_energy_range = energy_min!=rnone && energy_max!=rnone;
     has_indices      = false;
     has_energies     = false;
+
+    if(group<0)
+      APP_ABORT("SPOSetInputInfo::put  group must be positive");
 
     if(has_ecut || has_energy_range)
     {
@@ -215,6 +220,7 @@ namespace qmcplusplus
     app_log()<<pad<<"  has_energy_range = "<< has_energy_range <<endl;
     app_log()<<pad<<"  has_indices      = "<< has_indices <<endl;
     app_log()<<pad<<"  has_energies     = "<< has_energies <<endl;
+    app_log()<<pad<<"  group            = "<< group <<endl;
     app_log()<<pad<<"  size             = "<< size <<endl;
     app_log()<<pad<<"  index_min        = "<< index_min <<endl;
     app_log()<<pad<<"  index_max        = "<< index_max <<endl;
@@ -243,7 +249,7 @@ namespace qmcplusplus
 
 
 
-  SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const SPOSetInfo& states)
+  SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const vector<SPOSetInfo*>& states_vec)
   {
     if(!all_indices_computed)
     {
@@ -256,6 +262,11 @@ namespace qmcplusplus
 
       if(general_request)
       {
+        if(group>=states_vec.size())
+          APP_ABORT("SPOSetInputInfo::get_indices  orbital group index is out of range");
+
+        const SPOSetInfo& states = *states_vec[group];
+
         // ensure that state info has been properly intialized
         if(states.partial() || !states.has_indices() || !states.index_ordered())
           APP_ABORT("SPOSetInputInfo::get_indices\n  state info for this basis has not been properly initialized\n  this is a developer error");

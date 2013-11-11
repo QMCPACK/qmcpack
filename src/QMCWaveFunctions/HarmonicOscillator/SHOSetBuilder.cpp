@@ -193,8 +193,8 @@ namespace qmcplusplus
     }
 
     //somewhat redundant, but necessary
-    clear_states();
-    states.finish(basis_states.states);
+    clear_states(0);
+    states[0]->finish(basis_states.states);
 
     if(basis_states.size()<=smax)
       APP_ABORT("SHOSetBuilder::update_basis_states  failed to make enough states");

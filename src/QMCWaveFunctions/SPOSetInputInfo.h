@@ -21,6 +21,7 @@ namespace qmcplusplus
     typedef vector<int> indices_t;
     typedef vector<RealType> energies_t;
 
+    int group;
     int size;
     int index_min;
     int index_max;
@@ -90,12 +91,12 @@ namespace qmcplusplus
       return highest_energy;
     }
 
-    indices_t& get_indices(const SPOSetInfo& states);
+    indices_t& get_indices(const vector<SPOSetInfo*>& states_vec);
 
-    inline indices_t& get_indices(xmlNodePtr cur,const SPOSetInfo& states)
+    inline indices_t& get_indices(xmlNodePtr cur,const vector<SPOSetInfo*>& states_vec)
     {
       put(cur);
-      return get_indices(states);
+      return get_indices(states_vec);
     }
 
 
