@@ -69,8 +69,13 @@ struct ParameterSet: public OhmmsElementBase
   }
 
   /** assign parameters to the set
-   *@param cur the xml node to work on
-   *@return true, if any valid parameter is processed.
+   * @param cur the xml node to work on
+   * @return true, if any valid parameter is processed.
+   *
+   * Accept both
+   * - <aname> value </aname>
+   * - <parameter name="aname"> value </parameter>
+   * aname is converted into lower cases.
    */
   inline bool put(xmlNodePtr cur)
   {
@@ -81,6 +86,7 @@ struct ParameterSet: public OhmmsElementBase
     while(cur != NULL)
     {
       std::string cname((const char*)(cur->name));
+      tolower(cname);
       iterator it_tag = m_param.find(cname);
       if(it_tag == m_param.end())
       {
@@ -90,7 +96,9 @@ struct ParameterSet: public OhmmsElementBase
           if(aptr)
           {
             //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
-            iterator it = m_param.find((const char*)aptr);
+            std::string aname((const char*)aptr);
+            tolower(aname);
+            iterator it = m_param.find(aname);
             if(it != m_param.end())
             {
               something =true;
@@ -123,19 +131,23 @@ struct ParameterSet: public OhmmsElementBase
    */
   template<class PDT>
 // INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
-  inline void add(PDT& aparam, const char* aname, const char* uname)
+  inline void add(PDT& aparam, const char* aname_in, const char* uname)
   {
+    std::string aname(aname_in);
+    tolower(aname);
     iterator it = m_param.find(aname);
     if(it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam,aname,uname);
+      m_param[aname] = new OhmmsParameter<PDT>(aparam,aname.c_str(),uname);
     }
   }
 
   template<class PDT>
   //INLINE_ALL void setValue(const std::string& aname, PDT aval){
-  inline void setValue(const std::string& aname, PDT aval)
+  inline void setValue(const std::string& aname_in, PDT aval)
   {
+    std::string aname(aname_in);
+    tolower(aname);
     iterator it = m_param.find(aname);
     if(it != m_param.end())
     {

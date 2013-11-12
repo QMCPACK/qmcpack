@@ -59,7 +59,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(RollBackBlocks,"rewind","int");
   Period4CheckPoint=-1;
   storeConfigs=0;
-  m_param.add(storeConfigs,"storeConfigs","int");
+  //m_param.add(storeConfigs,"storeConfigs","int");
   m_param.add( storeConfigs,"storeconfigs","int");
   m_param.add( storeConfigs,"store_configs","int");
   Period4CheckProperties=100;
@@ -67,11 +67,11 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(Period4CheckProperties,"checkproperties","int");
   m_param.add(Period4CheckProperties,"check_properties","int");
   Period4WalkerDump=0;
-  m_param.add(Period4WalkerDump,"recordWalkers","int");
+  //m_param.add(Period4WalkerDump,"recordWalkers","int");
   m_param.add(Period4WalkerDump,"record_walkers","int");
   m_param.add(Period4WalkerDump,"recordwalkers","int");
   Period4ConfigDump=0;
-  m_param.add(Period4ConfigDump,"recordConfigs","int");
+  //m_param.add(Period4ConfigDump,"recordConfigs","int");
   m_param.add(Period4ConfigDump,"recordconfigs","int");
   m_param.add(Period4ConfigDump,"record_configs","int");
   CurrentStep=0;
@@ -82,11 +82,11 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(nSteps,"steps","int");
   nSubSteps=1;
   m_param.add(nSubSteps,"substeps","int");
-  m_param.add(nSubSteps,"subSteps","int");
+  //m_param.add(nSubSteps,"subSteps","int");
   m_param.add(nSubSteps,"sub_steps","int");
   nWarmupSteps=0;
   m_param.add(nWarmupSteps,"warmupsteps","int");
-  m_param.add(nWarmupSteps,"warmupSteps","int");
+  //m_param.add(nWarmupSteps,"warmupSteps","int");
   m_param.add(nWarmupSteps,"warmup_steps","int");
   nAccept=0;
   nReject=0;
@@ -103,10 +103,10 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   nTargetPopulation=0;
   m_param.add(nTargetPopulation,"samples","real");
   Tau=0.1;
-  m_param.add(Tau,"timeStep","AU");
+  //m_param.add(Tau,"timeStep","AU");
   m_param.add(Tau,"timestep","AU");
   m_param.add(Tau,"time_step","AU");
-  m_param.add(Tau,"Tau","AU");
+  //m_param.add(Tau,"Tau","AU");
   m_param.add(Tau,"tau","AU");
   MaxCPUSecs=360000; //100 hours
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
@@ -522,6 +522,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //int oldSteps=nSteps;
 
   //set the default walker to the number of threads times 10
+  Period4CheckPoint=-1;
   int defaultw = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint,"checkpoint");

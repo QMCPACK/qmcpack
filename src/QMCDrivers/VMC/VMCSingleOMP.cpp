@@ -314,6 +314,13 @@ void VMCSingleOMP::resetRun()
 bool
 VMCSingleOMP::put(xmlNodePtr q)
 {
+  //grep minimumTargetWalker
+  int target_min=-1;
+  ParameterSet p;
+  p.add(target_min,"minimumtargetwalkers","int"); //p.add(target_min,"minimumTargetWalkers","int"); 
+  p.add(target_min,"minimumsamples","int"); //p.add(target_min,"minimumSamples","int");
+  p.put(q);
+
   app_log() << "\n<vmc function=\"put\">"
     << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< endl;
   if(qmc_common.qmc_counter && MyCounter)
@@ -330,10 +337,16 @@ VMCSingleOMP::put(xmlNodePtr q)
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation=std::max(nTargetPopulation,nSamplesPerThread*Nprocs*Nthreads);
     nTargetSamples=static_cast<int>(std::ceil(nTargetPopulation));
+
     if(nTargetSamples)
     {
       int nwtot=nw*Nprocs;  //total number of walkers used by this qmcsection
       nTargetSamples=std::max(nwtot,nTargetSamples);
+      if(target_min>0) 
+      { 
+        nTargetSamples=std::max(nTargetSamples,target_min);
+        nTargetPopulation=std::max(nTargetPopulation,static_cast<double>(target_min));
+      }
       nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
       nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;
       int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
@@ -359,12 +372,21 @@ VMCSingleOMP::put(xmlNodePtr q)
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
 
+  m_param.get(app_log());
+
   if(DumpConfig)
+  {
     app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
+  }
   else
+  {
+    Period4WalkerDump=0; //make sure nothing is written
     app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
+  }
+
   if (Period4WalkerDump>0)
     app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
+
   app_log() << "</vmc>" << endl;
   app_log().flush();
 

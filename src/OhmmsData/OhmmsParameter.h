@@ -69,6 +69,7 @@ public:
   OhmmsParameter(T& a, const char* aname, const char* uname="none"):
     OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
   {
+    tolower(unit_);
   }
 
   ///print to an ostream
@@ -155,6 +156,7 @@ public:
   OhmmsParameter(bool& a, const char* aname, const char* uname="none"):
     OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
   {
+    tolower(unit_);
   }
 
   ///print to an ostream
