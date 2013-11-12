@@ -380,7 +380,6 @@ VMCSingleOMP::put(xmlNodePtr q)
   }
   else
   {
-    Period4WalkerDump=0; //make sure nothing is written
     app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
   }
 
