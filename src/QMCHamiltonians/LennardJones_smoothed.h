@@ -111,7 +111,7 @@ struct LennardJones_smoothed_aux: public QMCHamiltonianBase
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return false;
+    return 0;
   }
 };
 }
