@@ -2,7 +2,7 @@ SET(WFBASE_SRCS
   OrbitalBase.cpp
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
-  BasisSetBase.cpp
+  BasisSetBuilder.cpp
   ProductOrbital.cpp
   OrbitalConstraintsBase.cpp
   SPOInfo.cpp
