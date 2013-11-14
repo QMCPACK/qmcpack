@@ -106,6 +106,7 @@ void SimpleFixedNodeBranch::registerParameters()
   //turn on/off effective tau onl for time-step error comparisons
   m_param.add(sParam[USETAUOPT],"useBareTau","option");
   m_param.add(sParam[MIXDMCOPT],"warmupByReconfiguration","opt");
+
 }
 
 void SimpleFixedNodeBranch::start(const string& froot, bool append)
@@ -567,6 +568,17 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   int nw_target=iParam[B_TARGETWALKERS];
   m_param.put(cur);
 
+  int target_min=-1;
+  ParameterSet p;
+  p.add(target_min,"minimumtargetwalkers","int"); //p.add(target_min,"minimumTargetWalkers","int"); 
+  p.add(target_min,"minimumsamples","int"); //p.add(target_min,"minimumSamples","int");
+  p.put(cur);
+
+  if (iParam[B_TARGETWALKERS] < target_min) {
+    iParam[B_TARGETWALKERS] = target_min;
+  }
+
+
   bool same_wc=true;
   if(BranchMode[B_DMC] && WalkerController)
   {
@@ -653,7 +665,8 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   app_log() << " vParam (old): "  <<vparam_old << endl;
   app_log() << " vParam (new): "  <<vParam << endl;
   app_log().flush();
-  return static_cast<int>(iParam[B_TARGETWALKERS]*1.1/static_cast<double>(nw_target));
+  //  return static_cast<int>(iParam[B_TARGETWALKERS]*1.01/static_cast<double>(nw_target));
+  return static_cast<int>(round(static_cast<double>(iParam[B_TARGETWALKERS]/static_cast<double>(nw_target))));
 }
 
 void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
