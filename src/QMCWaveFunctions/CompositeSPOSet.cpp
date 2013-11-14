@@ -87,7 +87,6 @@ namespace qmcplusplus
       add(master.components[c]->makeClone());
   }
 
-
   void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     int n=0;
@@ -120,66 +119,72 @@ namespace qmcplusplus
     }
   }
 
-
-  //methods to be implemented later
-  void CompositeSPOSet::resetParameters(const opt_variables_type& optVariables)
-  {
-    not_implemented("resetParameters");
-  }
-    
   void CompositeSPOSet::evaluate(
-    const ParticleSet& P, PosType &r, ValueVector_t &psi)
-  {
-    not_implemented("evaluate(P,r,psi)");
-  }
-
-  void CompositeSPOSet::evaluate(
-    const ParticleSet& P, int iat,ValueVector_t& psi, GradVector_t& dpsi, 
-    HessVector_t& grad_grad_psi)
+      const ParticleSet& P, int iat,ValueVector_t& psi, GradVector_t& dpsi, 
+      HessVector_t& grad_grad_psi)
   {
     not_implemented("evaluate(P,iat,psi,dpsi,ddpsi)");
   }
 
-  void CompositeSPOSet::evaluate(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
-    GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+  void CompositeSPOSet::evaluate( const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
-    not_implemented("evaluate(P,first,last,logdet,dlogdet,d2logdet)");
+    not_implemented("evaluate(P,r,psi)");
   }
 
-  void CompositeSPOSet::evaluate(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
-    GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
-  {
-    not_implemented("evaluate(P,first,last,logdet,dlogdet,ddlogdet)");
-  }
 
-  void CompositeSPOSet::evaluate(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
-    GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, 
-    GGGMatrix_t& grad_grad_grad_logdet)
-  {
-    not_implemented("evaluate(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
-  }
 
-  void CompositeSPOSet::evaluateThirdDeriv(
-    const ParticleSet& P,int first,int last,GGGMatrix_t& grad_grad_grad_logdet)
+
+  //methods to be implemented later
+  void CompositeSPOSet::resetParameters(const opt_variables_type& optVariables)
   {
-    not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");
+    for(int c=0;c<components.size();++c)
+      components[c]->resetParameters(optVariables);
   }
 
   void CompositeSPOSet::evaluate_notranspose(
     const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
     GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet)");
+    int nat=last-first;
+    int n=0;
+    for(int c=0;c<components.size();++c)
+    {
+      int norb=components[c]->size();
+      ValueMatrix_t v(nat,norb);
+      GradMatrix_t g(nat,norb);
+      ValueMatrix_t l(nat,norb);
+      components[c]->evaluate_notranspose(P,first,last,v,g,l);
+      for(int iat=0; iat<nat; ++iat)
+        copy(v[iat],v[iat]+norb,logdet[iat]+n);
+      for(int iat=0; iat<nat; ++iat)
+        copy(g[iat],g[iat]+norb,dlogdet[iat]+n);
+      for(int iat=0; iat<nat; ++iat)
+        copy(l[iat],l[iat]+norb,d2logdet[iat]+n);
+      n += norb;
+    }
   }
 
   void CompositeSPOSet::evaluate_notranspose(
     const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
     GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-    not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet)");
+    int nat=last-first;
+    int n=0;
+    for(int c=0;c<components.size();++c)
+    {
+      int norb=components[c]->size();
+      ValueMatrix_t v(nat,norb);
+      GradMatrix_t g(nat,norb);
+      HessMatrix_t h(nat,norb);
+      components[c]->evaluate_notranspose(P,first,last,v,g,h);
+      for(int iat=0; iat<nat; ++iat)
+        copy(v[iat],v[iat]+norb,logdet[iat]+n);
+      for(int iat=0; iat<nat; ++iat)
+        copy(g[iat],g[iat]+norb,dlogdet[iat]+n);
+      for(int iat=0; iat<nat; ++iat)
+        copy(h[iat],h[iat]+norb,grad_grad_logdet[iat]+n);
+      n += norb;
+    }
   }
 
   void CompositeSPOSet::evaluate_notranspose(
@@ -189,42 +194,5 @@ namespace qmcplusplus
   {
     not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
   }
-
-  void CompositeSPOSet::evaluateGradSource(
-    const ParticleSet &P, int first, int last, 
-    const ParticleSet &source, int iat_src, GradMatrix_t &gradphi)
-  {
-    not_implemented("evaluateGradSource(P,first,last,source,iat,dphi)");
-  }
-
-  void CompositeSPOSet::evaluateGradSource(
-    const ParticleSet &P, int first, int last, const ParticleSet &source, 
-    int iat_src, GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, 
-    GradMatrix_t &grad_lapl_phi)
-  {
-    not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
-  }
-
-  void CompositeSPOSet::evaluateBasis(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,  
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateBasis");
-  }
-
-  void CompositeSPOSet::evaluateForDeriv(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,  
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateForDeriv");
-  }
-
-  void CompositeSPOSet::copyParamsFromMatrix(
-    const opt_variables_type& active, const ValueMatrix_t &mat, 
-    vector<RealType> &destVec)
-  {
-    not_implemented("copyParamsFromMatrix");
-  }
-
 
 }

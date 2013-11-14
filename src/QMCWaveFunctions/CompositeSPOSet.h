@@ -61,17 +61,6 @@ namespace qmcplusplus
     void evaluate(const ParticleSet& P, PosType &r, ValueVector_t &psi);
     void evaluate(const ParticleSet& P, int iat,ValueVector_t& psi, 
                   GradVector_t& dpsi, HessVector_t& ddpsi);
-    void evaluate(const ParticleSet& P, int first, int last, 
-                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-                  ValueMatrix_t& d2logdet);
-    void evaluate(const ParticleSet& P, int first, int last, 
-                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-                  HessMatrix_t& ddlogdet);
-    void evaluate(const ParticleSet& P, int first, int last, 
-                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-                  HessMatrix_t& ddlogdet, GGGMatrix_t& dddlogdet);
-    void evaluateThirdDeriv(const ParticleSet& P,int first,int last,
-                            GGGMatrix_t& dddlogdet);
     void evaluate_notranspose(const ParticleSet& P, int first, int last, 
                               ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
                               ValueMatrix_t& d2logdet);
@@ -81,22 +70,6 @@ namespace qmcplusplus
     void evaluate_notranspose(const ParticleSet& P, int first, int last, 
                               ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
                               HessMatrix_t& ddlogdet, GGGMatrix_t& dddlogdet);
-    void evaluateGradSource(const ParticleSet &P, int first, int last, 
-                            const ParticleSet &source, int iat_src, 
-                            GradMatrix_t &gradphi);
-    void evaluateGradSource(const ParticleSet &P, int first, int last, 
-                            const ParticleSet &source, int iat_src, 
-                            GradMatrix_t &dphi, HessMatrix_t &ddphi, 
-                            GradMatrix_t &dlapl_phi);
-    void evaluateBasis(const ParticleSet &P, int first, int last, 
-                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad, 
-                       ValueMatrix_t &basis_lapl);
-    void evaluateForDeriv(const ParticleSet &P, int first, int last, 
-                          ValueMatrix_t &basis_val, GradMatrix_t &basis_grad, 
-                          ValueMatrix_t &basis_lapl);
-    void copyParamsFromMatrix(const opt_variables_type& active, 
-                              const ValueMatrix_t &mat, 
-                              vector<RealType> &destVec);
 
   };
 
