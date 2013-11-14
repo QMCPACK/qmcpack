@@ -3,14 +3,13 @@
 //////////////////////////////////////////////////////////////////
 
 #include <QMCWaveFunctions/BasisSetBase.h>
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
 
 
 namespace qmcplusplus
 {
 
   BasisSetBuilder::BasisSetBuilder()
-  : MPIObjectBase(0), myBasisSet(0) 
+    : MPIObjectBase(0), myBasisSet(0), legacy(true) 
   {
     reserve_states();
   }
@@ -25,30 +24,26 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* BasisSetBuilder::createSPOSetFromIndices(indices_t& indices)
+  SPOSetBase* BasisSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
   { 
-    APP_ABORT("BasisSetBase::createSPOSet(indices) has not been implemented");
+    APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
     return 0;
   }
 
 
   SPOSetBase* BasisSetBuilder::createSPOSet(xmlNodePtr cur)
   {
-    // setup orbital data for maximal basis set
-    Initialize(cur);
-
     // read specialized sposet construction requests
     //   and translate them into a set of orbital indices
     SPOSetInputInfo input_info(cur);
-    indices_t& indices = input_info.get_indices(states);
 
-    // process general sposet construction requests (from indices)
-    //   and preserve legacy interface (from xml, may be removed later)
+    // process general sposet construction requests
+    //   and preserve legacy interface 
     SPOSetBase* sposet = 0;
-    if(indices.size()>0)
-      sposet = createSPOSetFromIndices(indices);
-    else
+    if(legacy && input_info.legacy_request)
       sposet = createSPOSetFromXML(cur);
+    else
+      sposet = createSPOSet(cur,input_info);
 
     // remember created sposets
     if(sposet)
@@ -56,6 +51,8 @@ namespace qmcplusplus
       sposet->builder_index = sposets.size();
       sposets.push_back(sposet);
     }
+    else
+      APP_ABORT("BasisSetBuilder::createSPOSet  sposet creation failed");
 
     return sposet;
   }

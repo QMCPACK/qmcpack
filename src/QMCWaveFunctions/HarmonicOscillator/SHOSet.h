@@ -46,7 +46,7 @@ namespace qmcplusplus
     typedef VectorViewer<value_type> ValueViewer_t;
     typedef VectorViewer<grad_type>  GradViewer_t;
 
-    RealType length;
+    RealType length; 
     PosType  center;
 
     int nmax;
@@ -63,6 +63,8 @@ namespace qmcplusplus
     SHOSet(RealType l, PosType c, const vector<SHOState*>& sho_states);
 
     ~SHOSet();
+
+    void initialize();
 
 
     //SPOSetBase interface methods

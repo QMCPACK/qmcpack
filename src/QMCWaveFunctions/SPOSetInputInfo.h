@@ -44,6 +44,8 @@ namespace qmcplusplus
     bool has_index_info;
     bool has_energy_info;
 
+    bool legacy_request;
+
     int lowest_index;
     int highest_index;
     RealType lowest_energy;
@@ -104,15 +106,15 @@ namespace qmcplusplus
     void find_index_extrema();
     void find_energy_extrema();
 
-    void occupy_size(const SPOSetInfo& states);
-    void occupy_index_range(const SPOSetInfo& states);
-    void occupy_occ(const SPOSetInfo& states);
-    void occupy_indices(const SPOSetInfo& states);
+    void occupy_size();
+    void occupy_index_range();
+    void occupy_occ();
+    void occupy_indices();
     void occupy_ecut(const SPOSetInfo& states);
     void occupy_energy_range(const SPOSetInfo& states);
     void occupy_energies(const SPOSetInfo& states);
 
-    void occupy(const string& loc,const indices_t& ind,const SPOSetInfo& states);
+    void occupy(const string& loc,const indices_t& ind);
 
   };
 

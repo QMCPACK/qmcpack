@@ -58,6 +58,7 @@ namespace qmcplusplus
     }
   }
 
+
   void CompositeSPOSet::resetTargetParticleSet(ParticleSet& P)
   {
     for(int c=0;c<components.size();++c)
@@ -67,17 +68,23 @@ namespace qmcplusplus
 
   SPOSetBase* CompositeSPOSet::makeClone() const
   {
-    CompositeSPOSet* clone = new CompositeSPOSet();
-    for(int c=0;c<components.size();++c)
-      clone->add(components[c]->makeClone());
+    // base class and shallow copy
+    CompositeSPOSet* clone = new CompositeSPOSet(*this);
+    // remove component shallow copies then deep copy
+    clone->clone_from(*this);
     return clone;
   }
 
   
-  void CompositeSPOSet::clone_from(CompositeSPOSet& other)
+  void CompositeSPOSet::clone_from(const CompositeSPOSet& master)
   {
-    for(int c=0;c<other.components.size();++c)
-      add(other.components[c]->makeClone());
+    components.clear();
+    component_values.clear();
+    component_gradients.clear();
+    component_laplacians.clear();
+    OrbitalSetSize = 0;
+    for(int c=0;c<master.components.size();++c)
+      add(master.components[c]->makeClone());
   }
 
 

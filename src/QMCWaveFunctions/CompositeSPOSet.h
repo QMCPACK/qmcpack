@@ -39,8 +39,10 @@ namespace qmcplusplus
 
     SPOSetBase* makeClone() const;
 
-    /// add sposet clones from another Composite SPOSet
-    void clone_from(CompositeSPOSet& other);
+    /** add sposet clones from another Composite SPOSet
+     *   should only be used in makeClone functions following shallow copy
+     */
+    void clone_from(const CompositeSPOSet& master);
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 

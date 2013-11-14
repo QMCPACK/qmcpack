@@ -43,6 +43,8 @@ namespace qmcplusplus
     has_index_info   = false;
     has_energy_info  = false;
 
+    legacy_request   = false;
+
     all_indices_computed = false;
   }
 
@@ -133,6 +135,8 @@ namespace qmcplusplus
 
     has_index_info  = has_size || has_index_range || has_occ || has_indices;
     has_energy_info = has_ecut || has_energy_range || has_energies; 
+
+    legacy_request   = !(has_index_info && !has_size) && !has_energy_info;
 
     find_index_extrema();
 
@@ -255,36 +259,34 @@ namespace qmcplusplus
     {
       all_indices.clear();
 
-      bool index_request   = has_index_range || has_occ || has_indices;
-      //  || has_size   // only when legacy interface is deprecated
-      bool energy_request  = has_ecut || has_energy_range || has_energies; 
-      bool general_request = index_request || energy_request;
+      if(group>=states_vec.size())
+        APP_ABORT("SPOSetInputInfo::get_indices  orbital group index is out of range");
 
-      if(general_request)
-      {
-        if(group>=states_vec.size())
-          APP_ABORT("SPOSetInputInfo::get_indices  orbital group index is out of range");
+      const SPOSetInfo& states = *states_vec[group];
 
-        const SPOSetInfo& states = *states_vec[group];
+      // ensure that state info has been properly intialized
+      bool energy_incomplete = states.partial() || !states.has_indices() || !states.has_energies();
+      if(has_energy_info && energy_incomplete)
+        APP_ABORT("SPOSetInputInfo::get_indices\n  energies requested for sposet\n  but state info is incomplete");
 
-        // ensure that state info has been properly intialized
-        if(states.partial() || !states.has_indices() || !states.index_ordered())
-          APP_ABORT("SPOSetInputInfo::get_indices\n  state info for this basis has not been properly initialized\n  this is a developer error");
-        if(energy_request && !states.has_energies())
-          APP_ABORT("SPOSetInputInfo::get_indices\n  energies requested for sposet\n  but energies have not been assigned to states");
+      occupations.clear();
 
-        occupations.clear();
+      occupy_size();  
+      occupy_index_range();
+      occupy_occ();
+      occupy_indices();
+      occupy_ecut(states);
+      occupy_energy_range(states);
+      occupy_energies(states);
 
-        //occupy_size(states);   // only when legacy interface is deprecated
-        occupy_index_range(states);
-        occupy_occ(states);
-        occupy_indices(states);
-        occupy_ecut(states);
-        occupy_energy_range(states);
-        occupy_energies(states);
+      sort(all_indices.begin(),all_indices.end());
 
-        sort(all_indices.begin(),all_indices.end());
-      }
+      if(all_indices[all_indices.size()-1] >= states.size())
+        APP_ABORT("SPOSetInputInfo::get_indices  requested state indices outside the range of states");
+
+      if(all_indices.size()==0)
+        APP_ABORT("SPOSetInputInfo::get_indices  no states matched request");
+
       all_indices_computed = true;
     }
 
@@ -292,35 +294,35 @@ namespace qmcplusplus
   }
 
   
-  void SPOSetInputInfo::occupy_size(const SPOSetInfo& states)
+  void SPOSetInputInfo::occupy_size()
   {
     if(has_size)
     {
       indices_t ind;
       for(int i=0;i<size;++i)
         ind.push_back(i);
-      occupy("size",ind,states);
+      occupy("size",ind);
     }
   }
 
-  void SPOSetInputInfo::occupy_index_range(const SPOSetInfo& states)
+  void SPOSetInputInfo::occupy_index_range()
   {
     if(has_index_range)
     {
       indices_t ind;
       for(int i=index_min;i<index_max;++i)
         ind.push_back(i);
-      occupy("index_range",ind,states);
+      occupy("index_range",ind);
     }
   }
 
-  void SPOSetInputInfo::occupy_indices(const SPOSetInfo& states)
+  void SPOSetInputInfo::occupy_indices()
   {
     if(has_indices)
-      occupy("indices",indices,states);
+      occupy("indices",indices);
   }
 
-  void SPOSetInputInfo::occupy_occ(const SPOSetInfo& states)
+  void SPOSetInputInfo::occupy_occ()
   {
     if(has_occ)
     {
@@ -328,7 +330,7 @@ namespace qmcplusplus
       for(int i=0;i<occ.size();++i)
         if(occ[i]=='1')
           ind.push_back(i);
-      occupy("occ",ind,states);
+      occupy("occ",ind);
     }
   }
 
@@ -338,9 +340,12 @@ namespace qmcplusplus
     {
       indices_t ind;
       for(int i=0;i<states.size();++i)
-        if(states[i]->energy < ecut)
-          ind.push_back(i);
-      occupy("ecut",ind,states);
+      {
+        const SPOInfo& state = *states[i];
+        if(state.energy < ecut)
+          ind.push_back(state.index);
+      }
+      occupy("ecut",ind);
     }
   }
 
@@ -351,11 +356,11 @@ namespace qmcplusplus
       indices_t ind;
       for(int i=0;i<states.size();++i)
       {
-        const RealType& e = states[i]->energy;
-        if(e<energy_max && e>=energy_min)
-          ind.push_back(i);
+        const SPOInfo& state = *states[i];
+        if(state.energy<energy_max && state.energy>=energy_min)
+          ind.push_back(state.index);
       }
-      occupy("energy_range",ind,states);
+      occupy("energy_range",ind);
     }
   }
 
@@ -373,9 +378,10 @@ namespace qmcplusplus
         bool found = false;
         while(i<states.size())
         {
-          while(abs(e-states[i]->energy)<matching_tol)
+          const SPOInfo& state = *states[i];
+          while(abs(e-state.energy)<matching_tol)
           {
-            ind.push_back(i);
+            ind.push_back(state.index);
             i++;
             found = true;
           }
@@ -387,12 +393,12 @@ namespace qmcplusplus
         if(!found)
           APP_ABORT("SPOSetInputInfo::load_indices(energies)\n  energy eigenvalue not found");
       }
-      occupy("energies",ind,states);
+      occupy("energies",ind);
     }
   }
 
 
-  void SPOSetInputInfo::occupy(const string& loc,const indices_t& ind,const SPOSetInfo& states)
+  void SPOSetInputInfo::occupy(const string& loc,const indices_t& ind)
   {
     int imin = numeric_limits<int>::max();
     int imax = numeric_limits<int>::min();
@@ -402,11 +408,11 @@ namespace qmcplusplus
       imin = min(imin,ival);
       imax = max(imax,ival);
     }
-    if(imin<0 || imax>=states.size())
-      APP_ABORT("SPOSetInputInfo::occupy("+loc+")\n  indices are outside the range of states");
+    if(imin<0)
+      APP_ABORT("SPOSetInputInfo::occupy("+loc+")\n  indices are negative");
     for(int i=0;i<ind.size();++i)
     {
-      int iocc = states[ind[i]]->index;
+      int iocc = ind[i];
       if(iocc >= occupations.size())
       {
         int old_size = occupations.size();

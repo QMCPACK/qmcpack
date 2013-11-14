@@ -12,17 +12,21 @@ namespace qmcplusplus
   SHOSet::SHOSet(RealType l, PosType c, const vector<SHOState*>& sho_states)
     : length(l), center(c)
   {
+    state_info.resize(sho_states.size());
+    for(int s=0;s<sho_states.size();++s)
+      state_info[s] = *sho_states[s];
+    initialize();
+  }
+
+
+  void SHOSet::initialize()
+  {
     using std::sqrt;
 
     className = "SHOSet";
 
-    state_info.resize(sho_states.size());
-    for(int s=0;s<sho_states.size();++s)
-      state_info[s] = *sho_states[s];
-
     OrbitalSetSize = state_info.size();
     BasisSetSize = OrbitalSetSize;
-
 
     qn_max = -1;
     for(int s=0;s<state_info.size();++s)
@@ -48,6 +52,7 @@ namespace qmcplusplus
       for(int n=1;n<nmax;++n)
         prefactors[n] = prefactors[n-1]/sqrt(2.*n);
     }
+
   }
 
 
@@ -105,7 +110,7 @@ namespace qmcplusplus
       GradViewer_t   dp( dlogdet[i],size());
       ValueViewer_t d2p(d2logdet[i],size());
       evaluate_vgl(P.R[iat],p,dp,d2p);
-    }
+    } 
   }
 
 

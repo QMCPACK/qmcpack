@@ -19,7 +19,6 @@ namespace qmcplusplus
 
     ParticleSet& Ps;
 
-    bool initialized;
     RealType length;
     RealType mass;
     RealType energy;
@@ -40,11 +39,9 @@ namespace qmcplusplus
     void reset();
 
     //BasisSetBuilder interface
-    void Initialize(xmlNodePtr cur);
-
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
-    SPOSetBase* createSPOSetFromIndices(indices_t& indices);
+    SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
     //unneeded BasisSetBuilder interface functions
     bool put(xmlNodePtr cur)

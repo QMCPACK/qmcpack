@@ -23,6 +23,7 @@
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/SPOSetInfo.h"
+#include <QMCWaveFunctions/SPOSetInputInfo.h>
 #include "QMCWaveFunctions/SPOSetBase.h"
 
 
@@ -156,6 +157,10 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   typedef vector<int> indices_t;
   typedef vector<RealType> energies_t;
 
+
+  /// whether implementation conforms only to legacy standard
+  bool legacy;
+
   /// state info of all possible states available in the basis
   vector<SPOSetInfo*> states;
 
@@ -166,23 +171,6 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   BasisSetBuilder();
   virtual ~BasisSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
-
-  /** member function to prepare for sposet creation from any set of states
-   *   
-   *  If implemented, this function MUST
-   *  - Initialize the states member (SPOSetInfo type) which contains
-   *    basic information about all available states in the basis.
-   *    A simple way to do this is to use the states.finish() function
-   *    (See SHOSetBuilder.cpp for an example).
-   *  - Allocate and initialize all internal data necessary to create
-   *    an SPOSet comprised of an arbitrary subset of basis states.
-   *    For infinite basis sets (e.g. HEG or SHO), this potentially involves 
-   *    increasing the size of the currently available basis.
-   *    For finite basis sets (e.g. read from an hdf file), only the first
-   *    call to this function should have any effect.
-   *    Basis sets depending on parameters should load them at this point.
-   */
-  virtual void Initialize(xmlNodePtr cur) { }
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
   void reserve_states(int nsets=1);
@@ -199,32 +187,15 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
     states[index]->clear();
   }
 
-  /// create an sposet from xml
+  /// create an sposet from xml (legacy)
   virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
 
-  /// create an sposet from a set of state indices
-  virtual SPOSetBase* createSPOSetFromIndices(indices_t& indices);
+  /// create an sposet from a general xml request
+  virtual SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   /// create an sposet from xml and save the resulting SPOSet
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 
-  /// create an sposet from a set of state indices
-  SPOSetBase* createSPOSet(indices_t& indices);
-
-  /// create an sposet in the index range [0,range_max)
-  SPOSetBase* createSPOSet(int range_max);
-
-  /// create an sposet in the index range [range_min,range_max)
-  SPOSetBase* createSPOSet(int range_min,int range_max);
-
-  /// create an sposet in the energy range (-inf,emax)
-  SPOSetBase* createSPOSet(RealType emax,RealType tol=1e-6);
-
-  /// create an sposet in the energy range [emin,emax)
-  SPOSetBase* createSPOSet(RealType emin,RealType emax,RealType tol=1e-6);
-
-  /// create an sposet from a set of energy values
-  SPOSetBase* createSPOSet(energies_t& energies,RealType tol=1e-6);
 
 };
 

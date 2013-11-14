@@ -17,12 +17,13 @@ namespace qmcplusplus
     RealType energy;
     RealType length;
     PosType  center;   
-    ParticleSet* Ps;
+    const ParticleSet& Ps;
     ///single particle trace sample array
     Array<TraceReal,1>* V_sample;
     
     //construction/destruction
-    HarmonicExternalPotential(ParticleSet& P) : Ps(&P)  { }
+    HarmonicExternalPotential(ParticleSet& P) : Ps(P) { }
+
     ~HarmonicExternalPotential() { }
 
     //unneeded interface functions
@@ -43,7 +44,7 @@ namespace qmcplusplus
     //traces interface
     virtual void checkout_particle_arrays(TraceManager& tm)
     {
-      V_sample = tm.checkout_real<1>(myName,*Ps);
+      V_sample = tm.checkout_real<1>(myName,Ps);
     }
     virtual void delete_particle_arrays()
     {
