@@ -32,6 +32,8 @@ namespace qmcplusplus
 class JastrowBasisBuilder: public BasisSetBuilder
 {
 public:
+  ///keep the current basis set
+  BasisSetBase<RealType>* myBasisSet;
   /** constructor
    * \param els reference to the electrons
    * \param ions reference to the ions

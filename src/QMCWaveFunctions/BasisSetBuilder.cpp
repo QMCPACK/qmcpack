@@ -9,7 +9,7 @@ namespace qmcplusplus
 {
 
   BasisSetBuilder::BasisSetBuilder()
-    : MPIObjectBase(0), myBasisSet(0), legacy(true) 
+    : MPIObjectBase(0), legacy(true) 
   {
     reserve_states();
   }

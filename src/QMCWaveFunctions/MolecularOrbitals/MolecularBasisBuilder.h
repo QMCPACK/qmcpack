@@ -43,7 +43,6 @@ public:
   typedef typename RFB::CenteredOrbitalType COT;
   typedef LocalizedBasisSet<COT>   ThisBasisSetType;
 
-
   /** constructor
    * \param els reference to the electrons
    * \param ions reference to the ions
@@ -56,7 +55,7 @@ public:
 
   bool put(xmlNodePtr cur)
   {
-    if(myBasisSet)
+    if(thisBasisSet)
       return true;
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
     PRE.echo(cur);
@@ -100,7 +99,6 @@ public:
     }
     //resize the basis set
     thisBasisSet->setBasisSetSize(-1);
-    myBasisSet=thisBasisSet;
     return true;
   }
 

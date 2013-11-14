@@ -30,7 +30,7 @@ namespace qmcplusplus
  */
 JastrowBasisBuilder::JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions,
     const string& functype, bool usespline):
-  targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype)
+  targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype), myBasisSet(0)
 {
 }
 
@@ -81,6 +81,8 @@ void JastrowBasisBuilder::createLocalizedBasisSet(xmlNodePtr cur)
   }
   //resize the basis set
   curBasis->setBasisSetSize(-1);
+  //clean up
+  if(myBasisSet) delete myBasisSet;
   myBasisSet=curBasis;
 }
 

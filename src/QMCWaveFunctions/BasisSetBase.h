@@ -167,7 +167,6 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   /// list of all sposets created by this builder
   vector<SPOSetBase*> sposets;
 
-  BasisSetBase<RealType>* myBasisSet;
   BasisSetBuilder();
   virtual ~BasisSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
