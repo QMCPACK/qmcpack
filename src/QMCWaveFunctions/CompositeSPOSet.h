@@ -21,6 +21,8 @@ namespace qmcplusplus
     vector<GradVector_t*>  component_gradients;
     ///temporary storage for laplacians
     vector<ValueVector_t*> component_laplacians;
+    ///store the precomputed offsets
+    vector<int> component_offsets;
 
     CompositeSPOSet();
     ~CompositeSPOSet();

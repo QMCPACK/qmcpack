@@ -9,10 +9,30 @@
 namespace qmcplusplus
 {
 
+  namespace MatrixOperators
+  {
+    /** copy a small matrix (N, M1) to a big matrix (N, M2), M2>M1
+     * @param small input matrix
+     * @param big outout matrix
+     * @param offset_c column offset
+     *
+     * @todo smater and more efficient matrix, move up for others
+     * The columns [0,M1) are inserted into [offset_c,offset_c+M1).
+     */
+    template<typename MAT1, typename MAT2>
+      inline void insert_columns(const MAT1& small, MAT2& big, int offset_c)
+      {
+        const int c=small.cols();
+        for(int i=0; i<small.rows(); ++i) 
+          copy(small[i],small[i]+c,big[i]+offset_c);
+      }
+  }
+
   CompositeSPOSet::CompositeSPOSet()
   {
     className = "CompositeSPOSet";
     OrbitalSetSize = 0;
+    component_offsets.reserve(4);
   }
 
   CompositeSPOSet::~CompositeSPOSet()
@@ -25,8 +45,12 @@ namespace qmcplusplus
 
   void CompositeSPOSet::add(SPOSetBase* component)
   {
-    int norbs = component->size();
+    if(components.empty())
+    {
+      component_offsets.push_back(0); //add 0
+    }
 
+    int norbs = component->size();
     ValueVector_t* values     = new ValueVector_t;
     GradVector_t*  gradients  = new GradVector_t;
     ValueVector_t* laplacians = new ValueVector_t;
@@ -42,6 +66,8 @@ namespace qmcplusplus
 
     OrbitalSetSize += norbs;
     BasisSetSize = OrbitalSetSize;
+
+    component_offsets.push_back(OrbitalSetSize);
   }
 
 
@@ -78,11 +104,18 @@ namespace qmcplusplus
   
   void CompositeSPOSet::clone_from(const CompositeSPOSet& master)
   {
+
+    delete_iter(component_values.begin(),component_values.end());
+    delete_iter(component_gradients.begin(),component_gradients.end());
+    delete_iter(component_laplacians.begin(),component_laplacians.end());
+
     components.clear();
     component_values.clear();
     component_gradients.clear();
     component_laplacians.clear();
-    OrbitalSetSize = 0;
+
+    //This is wrong
+    //OrbitalSetSize = 0;
     for(int c=0;c<master.components.size();++c)
       add(master.components[c]->makeClone());
   }
@@ -131,9 +164,6 @@ namespace qmcplusplus
     not_implemented("evaluate(P,r,psi)");
   }
 
-
-
-
   //methods to be implemented later
   void CompositeSPOSet::resetParameters(const opt_variables_type& optVariables)
   {
@@ -145,8 +175,7 @@ namespace qmcplusplus
     const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
     GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    int nat=last-first;
-    int n=0;
+    const int nat=last-first;
     for(int c=0;c<components.size();++c)
     {
       int norb=components[c]->size();
@@ -154,13 +183,10 @@ namespace qmcplusplus
       GradMatrix_t g(nat,norb);
       ValueMatrix_t l(nat,norb);
       components[c]->evaluate_notranspose(P,first,last,v,g,l);
-      for(int iat=0; iat<nat; ++iat)
-        copy(v[iat],v[iat]+norb,logdet[iat]+n);
-      for(int iat=0; iat<nat; ++iat)
-        copy(g[iat],g[iat]+norb,dlogdet[iat]+n);
-      for(int iat=0; iat<nat; ++iat)
-        copy(l[iat],l[iat]+norb,d2logdet[iat]+n);
-      n += norb;
+      int n=component_offsets[c];
+      MatrixOperators::insert_columns(v,logdet,n);
+      MatrixOperators::insert_columns(g,dlogdet,n);
+      MatrixOperators::insert_columns(l,d2logdet,n);
     }
   }
 
@@ -168,8 +194,7 @@ namespace qmcplusplus
     const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
     GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-    int nat=last-first;
-    int n=0;
+    const int nat=last-first;
     for(int c=0;c<components.size();++c)
     {
       int norb=components[c]->size();
@@ -177,13 +202,10 @@ namespace qmcplusplus
       GradMatrix_t g(nat,norb);
       HessMatrix_t h(nat,norb);
       components[c]->evaluate_notranspose(P,first,last,v,g,h);
-      for(int iat=0; iat<nat; ++iat)
-        copy(v[iat],v[iat]+norb,logdet[iat]+n);
-      for(int iat=0; iat<nat; ++iat)
-        copy(g[iat],g[iat]+norb,dlogdet[iat]+n);
-      for(int iat=0; iat<nat; ++iat)
-        copy(h[iat],h[iat]+norb,grad_grad_logdet[iat]+n);
-      n += norb;
+      int n=component_offsets[c];
+      MatrixOperators::insert_columns(v,logdet,n);
+      MatrixOperators::insert_columns(g,dlogdet,n);
+      MatrixOperators::insert_columns(h,grad_grad_logdet,n);
     }
   }
 
