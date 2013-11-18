@@ -20,6 +20,8 @@
 namespace qmcplusplus
 {
 
+class SPOSetInfo;
+
 struct BandInfo
 {
   ///twist index
@@ -74,6 +76,8 @@ struct BandInfoGroup
   int FirstBand;
   ///Bands that belong to this group
   vector<BandInfo> myBands;
+  ///name of this band
+  string myName;
   ///constructor
   BandInfoGroup();
   ///return the size of this band
@@ -99,6 +103,7 @@ struct BandInfoGroup
    * @param num_orbs number of SPOs to be created
    */
   void selectBands(const vector<BandInfo>& bigspace, int first_orb, int last_orb);
+
 };
 
 }

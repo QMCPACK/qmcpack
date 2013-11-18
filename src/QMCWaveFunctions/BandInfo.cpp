@@ -12,6 +12,7 @@
 /** @file BandInfo.cpp
  */
 #include <QMCWaveFunctions/BandInfo.h>
+#include <QMCWaveFunctions/SPOSetInfo.h>
 namespace qmcplusplus
 {
   BandInfoGroup::BandInfoGroup(): FirstSPO(0), NumSPOs(0), FirstBand(0) {}
