@@ -6,6 +6,7 @@
 #define QMCPLUSPLUS_COMPOSITE_SPOSET_H
 
 #include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/BasisSetBase.h>
 
 namespace qmcplusplus
 {
@@ -75,6 +76,16 @@ namespace qmcplusplus
 
   };
 
+  struct CompositeSPOSetBuilder : public BasisSetBuilder
+  {
+
+    //BasisSetBuilder interface
+    SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+
+    SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
+    
+    bool put(xmlNodePtr cur);
+  };
 }
 
 #endif

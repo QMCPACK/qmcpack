@@ -5,6 +5,8 @@
 #include <QMCWaveFunctions/CompositeSPOSet.h>
 #include <Utilities/IteratorUtility.h>
 #include <algorithm>
+#include <OhmmsData/AttributeSet.h>
+#include <QMCWaveFunctions/BasisSetFactory.h>
 
 namespace qmcplusplus
 {
@@ -104,18 +106,13 @@ namespace qmcplusplus
   
   void CompositeSPOSet::clone_from(const CompositeSPOSet& master)
   {
-
-    delete_iter(component_values.begin(),component_values.end());
-    delete_iter(component_gradients.begin(),component_gradients.end());
-    delete_iter(component_laplacians.begin(),component_laplacians.end());
-
     components.clear();
     component_values.clear();
     component_gradients.clear();
     component_laplacians.clear();
+    component_offsets.clear(); //add 0
 
-    //This is wrong
-    //OrbitalSetSize = 0;
+    OrbitalSetSize = 0;
     for(int c=0;c<master.components.size();++c)
       add(master.components[c]->makeClone());
   }
@@ -217,4 +214,31 @@ namespace qmcplusplus
     not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
   }
 
+
+  SPOSetBase* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  {
+    vector<string> spolist;
+    putContent(spolist,cur);
+    if(spolist.empty())
+    {
+      return 0;
+    }
+    CompositeSPOSet* spo_now=new CompositeSPOSet;
+    for(int i=0; i<spolist.size(); ++i)
+    {
+      SPOSetBase* spo=get_sposet(spolist[i]);
+      if(spo) spo_now->add(spo);
+    }
+    return (spo_now->size())? spo_now:0;
+  }
+
+  SPOSetBase* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
+  {
+    return createSPOSetFromXML(cur);
+  }
+
+  bool CompositeSPOSetBuilder::put(xmlNodePtr cur)
+  {
+    return true;
+  }
 }
