@@ -2672,10 +2672,29 @@ class Crystal(Structure):
 
         points = [[0,0,0]]
         #get the conventional axes
-        a1c = array([a,0,0])
-        a2c = array([b*cos(gamma),b*sin(gamma),0])
-        a3c = array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
+        sa,ca = sin(alpha),cos(alpha)
+        sb,cb = sin(beta) ,cos(beta)
+        sg,cg = sin(gamma),cos(gamma)
+        y     = (ca-cg*cb)/sg
+        a1c = a*array([1,0,0])
+        a2c = b*array([cg,sg,0])
+        a3c = c*array([cb,y,sqrt(sb**2-y**2)])
+        #a1c = array([a,0,0])
+        #a2c = array([b*cos(gamma),b*sin(gamma),0])
+        #a3c = array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
         axes_conv = array([a1c,a2c,a3c]).copy()
+
+
+        #from numpy import dot,arccos
+        #from numpy.linalg import norm
+        #print a,b,c
+        #print alpha,beta,gamma
+        #print alpha,arccos(dot(a2c,a3c)/(norm(a2c)*norm(a3c)))
+        #print beta, arccos(dot(a3c,a1c)/(norm(a3c)*norm(a1c)))
+        #print gamma,arccos(dot(a1c,a2c)/(norm(a1c)*norm(a2c)))
+        #exit()
+
+
         if axes is None:
             if cell not in self.cell_types:
                 self.error('cell must be primitive or conventional\n  You provided: '+str(cell))
