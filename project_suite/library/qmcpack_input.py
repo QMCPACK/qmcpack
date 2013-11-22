@@ -1339,7 +1339,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key']
     elements   = ['basisset','slaterdeterminant']
     h5tags     = ['twistindex','twistangle']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
@@ -1356,14 +1356,19 @@ class grid(QIxml):
 #end class grid
 
 class atomicbasisset(QIxml):
-    attributes = ['type','elementtype','expandylm','href']
+    attributes = ['type','elementtype','expandylm','href','normalized']
     elements   = ['basisgroup']
     write_types= obj(expandylm=yesno)
 #end class atomicbasisset
 
 class basisgroup(QIxml):
-    attributes = ['rid','ds','n','l','m','zeta']
+    attributes = ['rid','ds','n','l','m','zeta','type']
+    elements   = ['radfunc']
 #end class basisgroup
+
+class radfunc(QIxml):
+    attributes = ['exponent','node']
+#end class radfunc
 
 class slaterdeterminant(QIxml):
     elements   = ['determinant']
@@ -1371,7 +1376,7 @@ class slaterdeterminant(QIxml):
 
 class determinant(QIxml):
     attributes = ['id','size','ref','spin']
-    elements   = ['occupation']
+    elements   = ['occupation','coefficient']
     identifier = 'id'
 #end class determinant
 
@@ -1422,6 +1427,11 @@ class coefficients(QIxml):
     text       = 'coeff'
     write_types= obj(optimize=yesno)
 #end class coefficients
+
+class coefficient(QIxml):  # this is bad!! coefficients/coefficient
+    attributes = ['id','type','size']
+    text       = 'coeff'
+#end class coefficient
 
 jastrow = QIxmlFactory(
     name = 'jastrow',
@@ -1535,11 +1545,26 @@ class neighbor_trace(QIxml):
 
 class density_matrices_1b(QIxml):
     tag = 'estimator'
-    attributes = ['type']
+    attributes  = ['type']
     parameters  = ['energy_matrix','basis_size','integrator','points']
     write_types = obj(energy_matrix=yesno)
     identifier  = 'type'
 #end class density_matrices_1b
+
+class spindensity(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','report']
+    parameters  = ['dr']
+    write_types = obj(report=yesno)
+    identifier  = 'name'
+#end class spindensity
+
+class structurefactor(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','report']
+    write_types = obj(report=yesno)
+    identifier  = 'name'
+#end class structurefactor
 
 estimator = QIxmlFactory(
     name  = 'estimator',
@@ -1548,7 +1573,9 @@ estimator = QIxmlFactory(
                  chiesa              = chiesa,
                  density             = density,
                  nearestneighbors    = nearestneighbors,
-                 density_matrices_1b = density_matrices_1b),
+                 density_matrices_1b = density_matrices_1b,
+                 spindensity         = spindensity,
+                 structurefactor     = structurefactor),
     typekey  = 'type',
     typekey2 = 'name'
     )
@@ -1627,7 +1654,7 @@ class cslinear(QIxml):
 
 class vmc(QIxml):
     tag = 'qmc'
-    attributes = ['method','multiple','warp','move','gpu','checkpoint','trace']
+    attributes = ['method','multiple','warp','move','gpu','checkpoint','trace','target']
     elements   = ['estimator']
     parameters = ['walkers','blocks','steps','substeps','timestep','usedrift','warmupsteps','samples','nonlocalpp','stepsbetweensamples','samplesperthread']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno)
@@ -1663,7 +1690,8 @@ classes = [   #standard classes
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
-    reference_points,nearestneighbors,neighbor_trace,density_matrices_1b
+    reference_points,nearestneighbors,neighbor_trace,density_matrices_1b,
+    coefficient,radfunc,spindensity,structurefactor
     ]
 types = dict( #simple types and factories
     host      = param,

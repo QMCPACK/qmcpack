@@ -142,7 +142,7 @@ def simstats(x,dim=None):
         r.pop(ndim-1)
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
-        x.transpose(permutation)
+        x=x.transpose(permutation)
         shape = tuple(array(shape)[array(permutation)])
         dim = ndim-1
     #end if
@@ -223,7 +223,7 @@ def simstats(x,dim=None):
         kappa = kappa.reshape(shape[0:rdim])
     #end if
     if permute:
-        x.transpose(invperm)
+        x=x.transpose(invperm)
     #end if
 
     return (mean,var,error,kappa)

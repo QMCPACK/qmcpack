@@ -31,7 +31,8 @@ from qmcpack_property_analyzers \
     import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers \
     import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,\
-    EnergyDensityAnalyzer,TracesAnalyzer,DensityMatricesAnalyzer
+    EnergyDensityAnalyzer,TracesAnalyzer,DensityMatricesAnalyzer,\
+    SpinDensityAnalyzer,StructureFactorAnalyzer
 from qmcpack_method_analyzers \
     import OptAnalyzer,VmcAnalyzer,DmcAnalyzer
 from qmcpack_result_analyzers \
@@ -56,7 +57,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
         self.methods=set(['opt','vmc','dmc','rmc'])
         self.data_sources = set(['scalar','stat','dmc','storeconfig','opt','traces'])
         self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight'])
-        self.fields=set(['energydensity','density','density_matrices_1b'])
+        self.fields=set(['energydensity','density','density_matrices_1b','spindensity','structurefactor'])
 
         hdf_data_sources = set(['stat','storeconfig','traces'])
         if h5py_unavailable:
@@ -66,12 +67,14 @@ class QmcpackAnalyzerCapabilities(QAobject):
         self.analyzer_quantities = set(self.fields)
 
         self.analyzers = obj(
-            scalars_dat   = ScalarsDatAnalyzer,
-            scalars_hdf   = ScalarsHDFAnalyzer,
-            dmc_dat       = DmcDatAnalyzer,
-            traces        = TracesAnalyzer,
-            energydensity = EnergyDensityAnalyzer,
-            density_matrices_1b = DensityMatricesAnalyzer
+            scalars_dat         = ScalarsDatAnalyzer,
+            scalars_hdf         = ScalarsHDFAnalyzer,
+            dmc_dat             = DmcDatAnalyzer,
+            traces              = TracesAnalyzer,
+            energydensity       = EnergyDensityAnalyzer,
+            density_matrices_1b = DensityMatricesAnalyzer,
+            spindensity         = SpinDensityAnalyzer,
+            structurefactor     = StructureFactorAnalyzer
         )
 
         self.quantities = self.scalars | self.fields

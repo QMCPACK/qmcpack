@@ -1,7 +1,7 @@
 
 import os
 import re
-from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace
+from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate
 from numpy.linalg import eig,LinAlgError
 from extended_numpy import ndgrid,simstats,simplestats,equilibration_length
 from generic import obj
@@ -1088,12 +1088,90 @@ class TracesAnalyzer(QAanalyzer):
 
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
-    def __init__(self,name):
+    def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
-        self.info.set(
-            name = name,
-            reordered = False
-            )
+        self.info.name = name
+    #end def __init__
+
+
+    def load_data_local(self,data=None):
+        if data==None:
+            self.error('attempted load without data')
+        #end if
+        i = complex(0,1)
+        loc_data = QAdata()
+        if 'density_matrices_1b' in data:
+            matrices = data.density_matrices_1b
+            del data.density_matrices_1b
+            matrices._remove_hidden()
+            for name,matrix in matrices.iteritems():
+                mdata = QAdata()
+                loc_data[name] = mdata
+                for species,d in matrix.iteritems():
+                    v = d.value
+                    v2 = d.value_squared
+                    if len(v.shape)==4 and v.shape[3]==2:
+                        d.value         = v[:,:,:,0]  + i*v[:,:,:,1]
+                        d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
+                    #end if
+                    mdata[species] = d
+                #end for
+            #end for
+        #end for
+        self.data = loc_data
+        self.info.should_remove = False
+    #end def load_data_local
+
+
+    def analyze_local(self):
+        nbe = QAanalyzer.method_info.nblocks_exclude
+        self.info.nblocks_exclude = nbe
+        for matrix_name,matrix_data in self.data.iteritems():
+            mres = obj()
+            self[matrix_name] = mres
+            for species_name,species_data in matrix_data.iteritems():
+                md_all = species_data.value
+                mdata  = md_all[nbe:,...] 
+                m,mvar,merr,mkap = simstats(mdata.transpose((1,2,0)))
+            
+                tdata = zeros((len(md_all),))
+                b = 0
+                for mat in md_all:
+                    tdata[b] = trace(mat)
+                    b+=1
+                #end for
+                t,tvar,terr,tkap = simstats(tdata[nbe:])
+
+                try:
+                    val,vec = eig(m)
+                except LinAlgError,e:
+                    self.warn('number matrix diagonalization failed!')
+                    val,vec = None,None
+                #end try
+
+                mres[species_name] = obj(
+                    matrix       = m,
+                    matrix_error = merr,
+                    eigenvalues  = val,
+                    eigenvectors = vec,
+                    trace        = t,
+                    trace_error  = terr,
+                    trace_data   = tdata,
+                    data         = md_all
+                    )
+            #end for
+        #end for
+        del self.data
+    #end def analyze_local
+#end class DensityMatricesAnalyzer
+
+
+
+
+class SpinDensityAnalyzer(HDFAnalyzer):
+    def __init__(self,name,nindent=0):
+        HDFAnalyzer.__init__(self)
+        self.info.name = name
     #end def __init__
 
 
@@ -1102,89 +1180,91 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
             self.error('attempted load without data')
         #end if
         name = self.info.name
-        names = 'number_matrix','energy_matrix'
-        should_remove = True
-        self.data = QAdata()
-        i = complex(0,1)
-        for name in names:
-            if name in data:
-                d = data[name]
-                v = d.value
-                v2 = d.value_squared
-                if len(v.shape)==4 and v.shape[3]==2:
-                    d.value         = v[:,:,:,0]  + i*v[:,:,:,1]
-                    d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
-                #end if
-                self.data[name] = d
-                del data[name]
-                should_remove = False
-            #end if
-        #end for
-        self.info.should_remove = should_remove
+        if name in data:
+            hdata = data[name]
+            hdata._remove_hidden()
+            self.data = QAHDFdata()
+            self.data.transfer_from(hdata)
+            del data[name]
+        else:
+            self.info.should_remove = True
+        #end if
     #end def load_data_local
 
 
     def analyze_local(self):
         nbe = QAanalyzer.method_info.nblocks_exclude
-        self.info.nblocks_exclude = nbe
-        
-        nmd_all = self.data.number_matrix.value
-        nmdata  = nmd_all[nbe:,...] 
-        nm,nmvar,nmerr,nmkap = simstats(nmdata.transpose((1,2,0)))
-            
-        ntdata = zeros((len(nmd_all),))
-        b = 0
-        for nmat in nmd_all:
-            ntdata[b] = trace(nmat)
-            b+=1
+        for group,data in self.data.iteritems():
+            gdata = data.value[nbe:,...]
+            g = obj()
+            g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            self[group] = g
         #end for
-        nt,ntvar,nterr,ntkap = simstats(ntdata[nbe:])
-
-        try:
-            n,nv = eig(nm)
-        except LinAlgError,e:
-            self.warn('number matrix diagonalization failed!')
-            n,nv = None,None
-        #end try
-        self.set(
-            number_matrix       = nm,
-            number_matrix_error = nmerr,
-            occupations         = n,
-            natural_orbitals    = nv,
-            number_trace        = nt,
-            number_trace_error  = nterr,
-            number_trace_data   = ntdata
-            )
-
-        if 'energy_matrix' in self.data:
-            emd_all = self.data.energy_matrix.value
-            emdata  = emd_all[nbe:,...] 
-            em,emvar,emerr,emkap = simstats(emdata.transpose((1,2,0)))
-            
-            etdata = zeros((len(emd_all),))
-            b = 0
-            for emat in emd_all:
-                etdata[b] = trace(emat)
-                b+=1
-            #end for
-            et,etvar,eterr,etkap = simstats(etdata[nbe:])
-
-            try:
-                e,ev = eig(em)
-            except LinAlgError,er:
-                self.warn('energy matrix diagonalization failed!')
-                e,ev = None,None
-            #end try
-            self.set(
-                energy_matrix       = em,
-                energy_matrix_error = emerr,
-                energies            = e,
-                energy_orbitals     = ev,
-                energy_trace        = et,
-                energy_trace_error  = eterr,
-                energy_trace_data   = etdata
-                )
-        #end if
-        return
+        self.info.nblocks_exclude = nbe
+        self.write_files()
     #end def analyze_local
-#end class DensityMatricesAnalyzer
+
+
+    def write_files(self,path='./'):
+        prefix = self.method_info.file_prefix
+        for gname in self.data.keys():
+            filename =  '{0}.spindensity_{1}.dat'.format(prefix,gname)
+            filepath = os.path.join(path,filename)
+            mean  = self[gname].mean.ravel()
+            error = self[gname].error.ravel()
+            savetxt(filepath,concatenate((mean,error)))
+        #end for
+    #end def write_files
+#end class SpinDensityAnalyzer
+
+
+
+
+class StructureFactorAnalyzer(HDFAnalyzer):
+    def __init__(self,name,nindent=0):
+        HDFAnalyzer.__init__(self)
+        self.info.name = name
+    #end def __init__
+
+
+    def load_data_local(self,data=None):
+        if data==None:
+            self.error('attempted load without data')
+        #end if
+        name = self.info.name
+        if name in data:
+            hdata = data[name]
+            hdata._remove_hidden()
+            self.data = QAHDFdata()
+            self.data.transfer_from(hdata)
+            del data[name]
+        else:
+            self.info.should_remove = True
+        #end if
+    #end def load_data_local
+
+
+    def analyze_local(self):
+        nbe = QAanalyzer.method_info.nblocks_exclude
+        for group,data in self.data.iteritems():
+            gdata = data.value[nbe:,...]
+            g = obj()
+            g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            self[group] = g
+        #end for
+        self.info.nblocks_exclude = nbe
+        self.write_files()
+    #end def analyze_local
+
+
+    def write_files(self,path='./'):
+        prefix = self.method_info.file_prefix
+        for gname in self.data.keys():
+            filename =  '{0}.structurefactor_{1}.dat'.format(prefix,gname)
+            filepath = os.path.join(path,filename)
+            mean  = self[gname].mean.ravel()
+            error = self[gname].error.ravel()
+            savetxt(filepath,concatenate((mean,error)))
+        #end for
+    #end def write_files
+#end class StructureFactorAnalyzer

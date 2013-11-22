@@ -61,15 +61,12 @@ class MethodAnalyzer(QAanalyzer):
             self.error(msg,trace=False)
         #end if
         equil = request.equilibration
+        nblocks_exclude = -1
         if isinstance(equil,int):
             nblocks_exclude = equil
-        elif isinstance(equil,(dict,obj)):
-            if(series in equil):
-                nblocks_exclude = equil[series]
-            else:
-                nblocks_exclude = -1
-            #end if
-        else:
+        elif isinstance(equil,(dict,obj)) and series in equil:
+            nblocks_exclude = equil[series]
+        elif equil!=None:
             self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
         #end if
         data_sources     = request.data_sources & set(files.keys())
@@ -112,6 +109,9 @@ class MethodAnalyzer(QAanalyzer):
                 estimators.transfer_from(calc_est)
             #end if
             for estname,est in estimators.iteritems():
+                if est==None:
+                    self.error('estimators have not been read properly by QmcpackInput',trace=False)
+                #end if
                 has_type = 'type' in est
                 has_name = 'name' in est
                 if has_type and has_name:

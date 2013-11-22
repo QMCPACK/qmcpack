@@ -164,6 +164,7 @@ class obj(AllAbilities):
     def transfer_to(self,other,keys=None,copy=False):
         if keys==None:
             keys = self.keys()
+        #end if
         if not copy:
             for k in keys:
                 other[k]=self[k]
@@ -174,4 +175,27 @@ class obj(AllAbilities):
             #end for
         #end if
     #end def transfer_to
+
+    def move_from(self,other,keys=None):
+        if keys==None:
+            keys = other.keys()
+        #end if
+        for k in keys:
+            self[k]=other[k]
+            del other[k]
+        #end for
+    #end def move_from
+
+    def move_to(self,other,keys=None):
+        other.move_from(self,keys)
+    #end def move_to
+
+    def copy_from(self,other,keys=None,deep=False):
+        self.transfer_from(other,keys,copy=deep)
+    #end def copy_from
+
+    def copy_to(self,other,keys=None,deep=False):
+        self.transfer_to(other,keys,copy=deep)
+    #end def copy_to
+
 #end class obj
