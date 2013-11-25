@@ -1,0 +1,341 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2013-  by Jaron T. Krogel                      //
+//////////////////////////////////////////////////////////////////
+
+#include <Utilities/string_utils.h>
+#include <Utilities/unit_conversion.h>
+#include <QMCHamiltonians/QMCHamiltonian.h>
+#include <QMCHamiltonians/SpinDensity.h>
+#include <QMCHamiltonians/StaticStructureFactor.h>
+#include <Estimators/SpinDensityPostProcessor.h>
+
+namespace qmcplusplus
+{
+  SpinDensityPostProcessor::
+  SpinDensityPostProcessor(ParticleSet& pq,ParticleSet& pc,QMCHamiltonian& h)
+    : Pq(pq),Pc(pc),H(h)
+  {
+  }
+
+
+  void SpinDensityPostProcessor::put(xmlNodePtr cur)
+  {
+    using std::sqrt;
+    using std::ceil;
+
+    bool have_dr = false;
+    bool have_grid = false;
+    bool have_center = false;
+    bool have_corner = false;
+    bool have_cell = false;
+
+    TinyVector<int,DIM> gdims;
+    PosType du;
+    PosType dr;
+    PosType center;
+    Tensor<RealType,DIM> axes;
+    format = "";
+
+    xmlNodePtr element = cur->xmlChildrenNode;
+    while(element!=NULL)
+    {
+      string ename((const char*)element->name);
+      if(ename=="parameter")
+      {
+        string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
+        if(name=="sources")
+        {
+          putContent(sources,element);
+        }
+        else if(name=="format")
+        {
+          putContent(format,element);
+        }
+        else if(name=="dr")      
+        {
+          have_dr = true;
+          putContent(dr,element);   
+        }
+        else if(name=="grid") 
+        {
+          have_grid = true;
+          putContent(grid,element);        
+        }
+        else if(name=="corner") 
+        {
+          have_corner = true;
+          putContent(corner,element);        
+        }
+        else if(name=="center") 
+        {
+          have_center = true;
+          putContent(center,element);        
+        }
+        else if(name=="cell") 
+        {
+          have_cell = true;
+          putContent(axes,element);        
+        }
+        else
+          APP_ABORT("SpinDensityPostProcessor::put  "+name+" is not a valid parameter name\n  valid options are: sources, format, dr, grid, corner, center, cell");
+      }
+      element = element->next;
+    }
+
+    if(format=="")
+      APP_ABORT("SpinDensityPostProcessor::put  format must be provided");
+
+    if(have_dr && have_grid)
+    {
+      APP_ABORT("SpinDensityPostProcessor::put  dr and grid are provided, this is ambiguous");
+    }
+    else if(!have_dr && !have_grid)
+      APP_ABORT("SpinDensityPostProcessor::put  must provide dr or grid");
+
+    if(have_corner && have_center)
+      APP_ABORT("SpinDensityPostProcessor::put  corner and center are provided, this is ambiguous");
+    if(have_cell)
+    {
+      cell.set(axes);
+      if(!have_corner && !have_center)
+        APP_ABORT("SpinDensityPostProcessor::put  must provide corner or center");
+    }
+    else
+      cell = Pq.Lattice;
+
+    if(have_center)
+      corner = center-cell.Center;
+
+    if(have_dr)
+      for(int d=0;d<DIM;++d)
+        grid[d] = (int)ceil(sqrt(dot(cell.Rv[d],cell.Rv[d]))/dr[d]);
+
+    int ncells = 1;
+    for(int d=0;d<DIM;++d)
+    {
+      ncells *= grid[d];
+      du[d] = 1.0/grid[d];
+    }
+    dV = cell.Volume/ncells;
+
+    //make it a 'general' xcrysden grid
+    // must have points covering all facets of the cell
+    npoints = 1;
+    for(int d=0;d<DIM;++d)
+    {
+      grid[d] += 1;
+      npoints *= grid[d];
+    }
+
+    gdims[0] = 1;
+    for(int d=1;d<DIM;++d)
+      gdims[d] = gdims[d-1]*grid[d-1];
+
+    gridpoints.resize(npoints);
+    PosType u;
+    for(int p=0;p<npoints;++p)
+    {
+      int nrem = p;
+      for(int d=DIM-1;d>0;--d)
+      {
+        int ind = nrem/gdims[d];
+        u[d] = ind*du[d];
+        nrem-= ind*gdims[d];
+      }
+      u[0] = nrem*du[0];
+      gridpoints[p] = cell.toCart(u) + corner;
+    }
+
+    SpeciesSet& species = Pq.getSpeciesSet();
+    nspecies = species.size();
+    for(int s=0;s<nspecies;++s)
+      species_name.push_back(species.speciesName[s]);
+    int isize  = species.addAttribute("membersize");
+    if(isize==species.numAttributes())
+      APP_ABORT("SpinDensityPostProcessor::put  Species set does not have the required attribute 'membersize'");
+    for(int s=0;s<nspecies;++s)
+      species_size.push_back(species(isize,s));
+
+    app_log()<<"      cell origin = "<<corner<<endl;
+    for(int d=0;d<DIM;++d)
+      app_log()<<"      cell axes "<<d<<" = "<<cell.Rv[d]<<endl;
+    app_log()<<"      grid shape  = "<<grid<<endl;
+    app_log()<<"      grid size   = "<<npoints<<endl;
+    app_log()<<"      sources     = ";
+    for(int i=0;i<sources.size();++i)
+      app_log()<<sources[i]<<" ";
+    app_log()<<endl;
+    app_log()<<"      species     = ";
+    for(int i=0;i<species_name.size();++i)
+      app_log()<<species_name[i]<<" ";
+    app_log()<<endl;
+  }
+
+
+  void SpinDensityPostProcessor::postprocess()
+  {
+    map<string,string> typemap;
+    typemap["spindensity"] = "sd";
+    typemap["structurefactor"] = "sf";
+
+    dens_t density;
+    dens_t density_err;
+    density.resize(npoints);
+    density_err.resize(npoints);
+
+    for(int series=series_start;series<series_end;++series)
+    {
+      char cseries[256];
+      sprintf(cseries,"s%03d.",series);
+      string sprefix(cseries);
+      sprefix = project_id+"."+sprefix;
+
+      for(int isrc=0;isrc<sources.size();++isrc)
+      {
+        string name           = sources[isrc];
+        QMCHamiltonianBase* h = H.getHamiltonian(name);
+        string type           = H.getOperatorType(name);
+        if(h==0)
+          APP_ABORT("SpinDensityPostProcessor::postprocess\n  could not find operator with name "+name);
+
+        for(int ispec=0;ispec<nspecies;++ispec)
+        {
+          const string& species = species_name[ispec];
+          string infile  = sprefix+type+"_"+species+".dat";
+          string outfile = sprefix+"density_"+typemap[type]+"_"+species;
+
+          app_log()<<"      evaluating & writing density for "<<outfile<<endl;
+
+          if(type=="spindensity")
+            get_density<SpinDensity>(infile,species,h,density,density_err);
+          else if(type=="structurefactor")
+            get_density<StaticStructureFactor>(infile,species,h,density,density_err);
+          else
+            APP_ABORT("SpinDensityPostProcessor::postprocess\n  "+name+" of type "+type+" is not a valid density source");
+
+          normalize(species_size[ispec],density,density_err);
+
+          // mean of density field
+          write_density(outfile,density);
+          
+          // mean + error of density field
+          for(int p=0;p<npoints;++p)
+            density[p]+=density_err[p];
+          write_density(outfile+"+err",density);
+          
+          // mean - error of density field
+          for(int p=0;p<npoints;++p)
+            density[p]-=2.0*density_err[p];
+          write_density(outfile+"-err",density);
+        }
+      }
+    }
+  }
+
+  
+  template<typename SDO>
+  void SpinDensityPostProcessor::get_density(
+    const string& infile,const string& species,
+    QMCHamiltonianBase* h,dens_t& density,dens_t& density_err)
+  {
+    SDO* sdo = dynamic_cast<SDO*>(h);
+    if(sdo==0)
+      APP_ABORT("SpinDensityPostProcessor::get_density  dynamic cast failed");
+    sdo->postprocess_density(infile,species,gridpoints,density,density_err);
+  }
+
+
+  void SpinDensityPostProcessor::normalize(int nparticles,dens_t& density,dens_t& density_err)
+  {
+    RealType dsum = 0.0;
+    for(int p=0;p<npoints;++p)
+      dsum += density[p];
+
+    if(dsum>1e-12)
+    {
+      RealType norm = nparticles/(dsum*cell.Volume/npoints);
+
+      for(int p=0;p<npoints;++p)
+        density[p] *= norm;
+      
+      for(int p=0;p<npoints;++p)
+        density_err[p] *= norm;
+    }
+  }
+
+
+  void SpinDensityPostProcessor::write_density(const string& outfile,dens_t& density)
+  {
+    if(format=="xsf")
+      write_density_xsf(outfile,density);
+    else
+      APP_ABORT("SpinDensityPostProcessor::write_density\n  file format "+format+" is unknown");
+  }
+
+
+  void SpinDensityPostProcessor::write_density_xsf(const string& outfile,dens_t& density)
+  {
+    using Units::convert;
+    using Units::B;
+    using Units::A;
+
+    ofstream file;
+    string filename = outfile+".xsf";
+    file.open(filename.c_str(),ios::out | ios::trunc);
+    if(!file.is_open())
+      APP_ABORT("SpinDensityPostProcessor::write_density_xsf\n  failed to open file for output: "+outfile+".xsf");
+
+    file.precision(6);
+    file<<std::scientific;
+    int columns = 5;
+
+    int natoms = Pc.getTotalNum();
+
+    file<<" CRYSTAL"<<endl;
+    file<<" PRIMVEC"<<endl;
+    for(int i=0;i<DIM;++i)
+    {
+      file<<" ";
+      for(int d=0;d<DIM;++d)
+        file<<"  "<<convert(Pq.Lattice.Rv[i][d],B,A);
+      file<<endl;
+    }
+    file<<" PRIMCOORD"<<endl;
+    file<<"   "<<natoms<<"   1"<<endl;
+    for(int i=0;i<natoms;++i)
+    {
+      file<<"   "<<pname(Pc,i);
+      for(int d=0;d<DIM;++d)
+        file<<"  "<<convert(Pc.R[i][d],B,A);
+      file<<endl;
+    }
+    file<<" BEGIN_BLOCK_DATAGRID_3D"<<endl;
+    file<<"   "<<outfile<<endl;
+    file<<"   DATAGRID_3D_SPIN_DENSITY"<<endl;
+    file<<"   ";
+    for(int d=0;d<DIM;++d)
+      file<<"  "<<grid[d];
+    file<<endl;
+    file<<"   ";
+    for(int d=0;d<DIM;++d)
+      file<<"  "<<convert(corner[d],B,A);
+    file<<endl;
+    for(int i=0;i<DIM;++i)
+    {
+      file<<"   ";
+      for(int d=0;d<DIM;++d)
+        file<<"  "<<convert(cell.Rv[i][d],B,A);
+      file<<endl;
+    }
+    file<<"   ";
+    for(int p=0;p<npoints;++p)
+    {
+      file<<"  "<<density[p];
+      if((p+1)%columns==0)
+        file<<endl<<"   ";
+    }
+    file<<endl;
+    file<<"   END_DATAGRID_3D"<<endl;
+    file<<" END_BLOCK_DATAGRID_3D"<<endl;
+  }
+}
