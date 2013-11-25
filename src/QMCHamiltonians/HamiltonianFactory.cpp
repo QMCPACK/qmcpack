@@ -32,6 +32,8 @@
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
 #include "QMCHamiltonians/NearestNeighborsEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
+#include "QMCHamiltonians/SpinDensity.h"
+#include "QMCHamiltonians/StaticStructureFactor.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
@@ -134,9 +136,11 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   cur = cur->children;
   while(cur != NULL)
   {
+    string notype = "0";
+    string noname = "any";
     string cname((const char*)cur->name);
-    string potType("0");
-    string potName("any");
+    string potType(notype);
+    string potName(noname);
     string potUnit("hartree");
     string estType("coulomb");
     string sourceInp(targetPtcl->getName());
@@ -152,6 +156,14 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     attrib.put(cur);
     renameProperty(sourceInp);
     renameProperty(targetInp);
+    if(cname!="text")
+    {
+      if(potType==notype)
+        APP_ABORT("HamiltonianFactory::build\n  a type must be provided for operator "+cname+" in the xml input");
+      if(potName==noname)
+        APP_ABORT("HamiltonianFactory::build\n  a name for operator of type "+cname+" "+potType+" must be provided in the xml input");
+      targetH->addOperatorType(potName,potType);
+    }
     if(cname == "pairpot")
     {
       if(potType == "coulomb")
@@ -393,6 +405,22 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
                           NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
                           apot->put(cur);
                           targetH->addOperator(apot,"nearest_neighbors",false);
+                        }
+                      else
+                        if(potType == "spindensity")
+                        {
+                          app_log()<<"  Adding SpinDensity"<<endl;
+                          SpinDensity* apot=new SpinDensity(*targetPtcl);
+                          apot->put(cur);
+                          targetH->addOperator(apot,potName,false);
+                        }
+                      else
+                        if(potType == "structurefactor")
+                        {
+                          app_log()<<"  Adding StaticStructureFactor"<<endl;
+                          StaticStructureFactor* apot=new StaticStructureFactor(*targetPtcl);
+                          apot->put(cur);
+                          targetH->addOperator(apot,potName,false);
                         }
                     else
                       if(potType == "sk")

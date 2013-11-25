@@ -17,6 +17,10 @@ SET(HAMSRCS
   CoulombPotentialFactory.cpp
   ../Estimators/TraceManager.cpp
   HarmonicExternalPotential.cpp
+  SpinDensity.cpp
+  StaticStructureFactor.cpp
+  ../Estimators/PostProcessor.cpp
+  ../Estimators/SpinDensityPostProcessor.cpp
 )
 #  FSAtomPseudoPot.cpp
 

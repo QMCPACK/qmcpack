@@ -100,6 +100,22 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
   }
 }
 
+
+void QMCHamiltonian::addOperatorType(const string& name, const string& type)
+{
+  operator_types[name] = type;
+}
+
+
+const string& QMCHamiltonian::getOperatorType(const string& name)
+{
+  map<string,string>::iterator type = operator_types.find(name);
+  if(type==operator_types.end())
+    APP_ABORT("QMCHamiltonain::getOperatorType\n  operator type not found for name "+name);
+  return type->second;
+}
+
+
 ///** remove a named Hamiltonian from the list
 // *@param aname the name of the Hamiltonian
 // *@return true, if the request hamiltonian exists and is removed.

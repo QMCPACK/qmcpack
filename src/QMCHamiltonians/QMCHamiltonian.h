@@ -53,6 +53,13 @@ public:
 
   ///add an operator
   void addOperator(QMCHamiltonianBase* h, const string& aname, bool physical=true);
+
+  ///record the name-type pair of an operator
+  void addOperatorType(const string& name,const string& type);
+
+  ///return type of named H element or fail
+  const string& getOperatorType(const string& name);
+
   ///return the number of Hamiltonians
   inline int size() const
   {
@@ -308,6 +315,8 @@ private:
   std::vector<QMCHamiltonianBase*> auxH;
   ///timers
   std::vector<NewTimer*> myTimers;
+  ///types of component operators
+  map<string,string> operator_types;
   ///data
   PropertySetType Observables;
   /** reset Observables and counters
