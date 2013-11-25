@@ -38,7 +38,7 @@ set(CMAKE_FIND_ROOT_PATH
   /opt/cray/hdf5/1.8.9/gnu/47
   /opt/fftw/3.3.0.1/interlagos
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
-  /ccs/home/jnkim/mat034/xk6/gnu45/libxml2
+  /ccs/home/jnkim/titan/gnu47/libxml2
 )
 
 # bypass einspline search
