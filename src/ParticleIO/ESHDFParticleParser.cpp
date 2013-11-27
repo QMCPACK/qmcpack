@@ -159,6 +159,9 @@ void ESHDFIonsParser::readESHDF()
     ref_.R.InUnit=PosUnit::CartesianUnit;
     HDFAttribIO<ParticleSet::ParticlePos_t> b(ref_.R);
     b.read(hfile_id,"atoms/positions");
+
+    ref_.applyBC(ref_.R); //force them [0,1)
+
     HDFAttribIO<ParticleSet::ParticleIndex_t> c(ref_.GroupID);
     c.read(hfile_id,"atoms/species_ids");
   }

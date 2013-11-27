@@ -311,55 +311,20 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
   expandSuperCell(ref_,TileMatrix);
-  //Disable atom
-  ////have read from <attrib/>'s and <group/>'s. Time to add <atom/>'s
-  //nloc += nat;
-  //for(int ia=0; ia<atom_ptr.size(); ia++,nloc++) {
-  //  cur = atom_ptr[ia];
-  //  int inunit=0;
-  //  string sname;
-  //  OhmmsAttributeSet aAttrib;
-  //  aAttrib.add(inunit,condition_tag);
-  //  aAttrib.add(sname,"name");
-  //  aAttrib.put(cur);
-  //  if(sname.empty())
-  //  {
-  //    app_error() << "  Missing atom/@name. Fatal error." << endl;
-  //    return false;
-  //  }
-  //  int sid= tspecies.addSpecies(sname);
-  //  ParticleSet::SingleParticlePos_t pos;
-  //  putContent(pos,cur);
-  //  if(inunit == ref_.R.getUnit())
-  //    ref_.R[nloc]=pos;
-  //  else
-  //  {
-  //    if(inunit)
-  //      ref_.R[nloc]=ref_.Lattice.toCart(pos);
-  //    else
-  //      ref_.R[nloc]=ref_.Lattice.toUnit(pos);
-  //  }
-  //  ref_.ID[nloc] = nloc;
-  //  ref_.GroupID[nloc] = sid;
-  //}
-  //disable uc_grid
-  //int ngtot=uc_grid[0];
-  //for(int idim=1; idim<OHMMS_DIM; idim++) ngtot*=uc_grid[idim];
-  //if(ngtot>1) {
-  //  ExpandSuperCell(ref_,uc_grid);
-  //  //ref_.Lattice.print(cout);
-  //}
-  //ref_.RandomSource=randomsrc;
-  if(randomizeR == "yes")
+  if(ref_.Lattice.SuperCellEnum)
   {
-    if(ref_.Lattice.SuperCellEnum)
+    if(randomizeR == "yes")
     {
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
     }
-  }
+    else  // put them [0,1) in the cell 
+      ref_.applyBC(ref_.R);
+  } 
+
   //this sets Mass, Z
   ref_.resetGroups();
   ref_.createSK();
