@@ -19,6 +19,7 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
+#include <qmc_common.h>
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
@@ -74,6 +75,10 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   app_log() << "  Cloning methods for both Psi and H are used" << endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
+
+  bool io_node=qmc_common.io_node;
+  qmc_common.io_node=false;
+
   char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
@@ -87,6 +92,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   }
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
+  qmc_common.io_node=io_node;
 }
 
 void CloneManager::makeClones_new(MCWalkerConfiguration& w,

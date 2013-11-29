@@ -23,6 +23,7 @@
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"
 #include <cmath>
+#include <qmc_common.h>
 
 namespace qmcplusplus
 {
@@ -160,6 +161,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
 
 void ECPComponentBuilder::printECPTable()
 {
+  if(!qmc_common.io_node || qmc_common.mpi_groups>1) return;
+
   char fname[12];
   sprintf(fname,"%s.pp.dat",Species.c_str());
   ofstream fout(fname);

@@ -23,6 +23,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
+#include <qmc_common.h>
 
 namespace qmcplusplus
 {
@@ -668,7 +669,7 @@ public:
     int nsp = PtclRef->groups();
     //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
     FILE *fout=0;
-    if(TaskID > -1) //taskid=-1
+    if(qmc_common.io_node && TaskID > -1) //taskid=-1
     {
       char fname[16];
       sprintf(fname,"uk.g%03d.dat",TaskID);

@@ -17,6 +17,8 @@ QMCState::QMCState()
   dryrun=false;
   save_wfs=false;
   async_swap=false;
+  io_node=true;
+  mpi_groups=1;
   use_ewald=false;
   qmc_counter=0;
 #if defined(QMC_CUDA)
@@ -30,6 +32,7 @@ QMCState::QMCState()
 
 void QMCState::initialize(int argc, char **argv)
 {
+  io_node= (OHMMS::Controller->rank()==0);
   bool stopit=false;
   //going to use better option library
   int i=1;

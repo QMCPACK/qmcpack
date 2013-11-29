@@ -33,12 +33,16 @@ struct QMCState
   bool save_wfs;
   ///true, if walker swap is done by async
   bool async_swap;
+  ///true, print out file
+  bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
   bool use_ewald;
   ///int for compute_device
   int compute_device;
   ///init for <qmc/> section
   int qmc_counter;
+  ///number of mpi groups
+  int mpi_groups;
   ///vacuum layer for non-periodic dimension
   double vacuum;
   ///store the name of the main eshd file name

@@ -45,7 +45,7 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
     a.add(j1name,"name");
     a.put(cur);
   }
-  int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
+  int taskid=targetPsi.getGroupID();//(targetPsi.is_manager())?targetPsi.getGroupID():-1;
   OBJT* J1 =new OBJT(*sourcePtcl,targetPtcl);
   DOBJT *dJ1 = new DOBJT(*sourcePtcl, targetPtcl);
   xmlNodePtr kids = cur->xmlChildrenNode;
@@ -92,10 +92,10 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
         success = true;
         dJ1->addFunc(ig,functor,jg);
         Opt=(!functor->notOpt or Opt);
-        char fname[128];
-        if(ReportLevel)
+        if(qmc_common.io_node)
         {
-          if(taskid > -1)
+          char fname[128];
+          if(qmc_common.mpi_groups>1)
           {
             if(speciesB.size())
               sprintf(fname,"%s.%s%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
@@ -103,10 +103,15 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
               sprintf(fname,"%s.%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),taskid);
           }
           else
-            ReportLevel=0;
+          {
+            if(speciesB.size())
+              sprintf(fname,"%s.%s%s.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str());
+            else
+              sprintf(fname,"%s.%s.dat",j1name.c_str(),speciesA.c_str());
+          }
+          functor->setReportLevel(ReportLevel,fname);
+          functor->print();
         }
-        functor->setReportLevel(ReportLevel,fname);
-        functor->print();
       }
     }
     kids = kids->next;
@@ -285,16 +290,16 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         J2->addFunc(ia,ib,functor);
         dJ2->addFunc(ia,ib,functor);
         Opt=(!functor->notOpt or Opt);
-        char fname[32];
-        if(ReportLevel)
+        if(qmc_common.io_node)
         {
-          if(taskid > -1)
+          char fname[32];
+          if(qmc_common.mpi_groups>1)
             sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
           else
-            ReportLevel=0;
+            sprintf(fname,"J2.%s.dat",pairType.c_str());
+          functor->setReportLevel(ReportLevel,fname);
+          functor->print();
         }
-        functor->setReportLevel(ReportLevel,fname);
-        functor->print();
       }
       kids = kids->next;
     }
