@@ -38,6 +38,7 @@ hdf_archive::~hdf_archive()
 
 void hdf_archive::close()
 {
+
   while(!group_id.empty())
   {
     hid_t gid=group_id.top();
@@ -54,6 +55,7 @@ void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
   access_id=H5P_DEFAULT;
   if(comm && comm->size()>1) //for parallel communicator
   {
+    bool use_pdf=false;
     if(use_collective)
     {
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
@@ -62,12 +64,12 @@ void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
       H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
       H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
-#else
-      use_collective=false;//cannot use collective
+      use_pdf=true;
+      use_collective=false; // everynode writes something
 #endif
     }
+    Mode.set(IS_PARALLEL,use_pdf);
     //true, if this task does not need to participate in I/O
-    Mode.set(IS_PARALLEL,use_collective);
     if(use_collective)
       Mode.set(NOIO,comm->rank());
     else
@@ -82,9 +84,16 @@ void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
 
 bool hdf_archive::create(const std::string& fname, unsigned flags)
 {
-  if(Mode[NOIO])
-    return true;
-  close();
+
+  //not I/O node, do nothing
+  if(Mode[NOIO]) return true;
+
+  close(); 
+//  if(Mode[IS_PARALLEL])
+//    app_log() << "Creating PHDF5 file " << fname << endl;
+//  else
+//    app_log() << "Creating HDF5 file " << fname << endl;
+//
   file_id = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,access_id);
   return file_id != is_closed;
 }

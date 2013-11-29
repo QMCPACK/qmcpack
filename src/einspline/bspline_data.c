@@ -21,8 +21,8 @@
 #include "config.h"
 
 /*****************
-/*   SSE Data    */
-/*****************/
+ *   SSE Data    *
+*****************/
 
 #ifdef _XOPEN_SOURCE
 #undef _XOPEN_SOURCE

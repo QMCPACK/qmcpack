@@ -26,6 +26,7 @@
 #include <tau/profiler.h>
 #include <Utilities/UtilityFunctions.h>
 #include <fstream>
+#include <qmc_common.h>
 
 #ifdef HAVE_ADIOS
 #include <adios.h>
@@ -68,6 +69,8 @@ Communicate::set_world()
 
 Communicate::Communicate(const Communicate& comm, int nparts)
 {
+  qmcplusplus::qmc_common.mpi_groups=nparts;
+
   //this is a workaround due to the OOMPI bug with split
   if(nparts>1)
   {
