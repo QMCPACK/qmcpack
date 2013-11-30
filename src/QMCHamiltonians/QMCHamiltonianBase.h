@@ -96,6 +96,9 @@ struct QMCHamiltonianBase: public QMCTraits
   bool tracing_scalar_quantities;
   bool tracing_particle_quantities;
   bool have_required_traces;
+
+  vector<RealType> ValueVector;
+
   ///array to store sample value
   Array<RealType,1>* value_sample;
 
@@ -340,18 +343,7 @@ struct QMCHamiltonianBase: public QMCTraits
   virtual void get_required_traces(TraceManager& tm) {};
 
 
-  ////////////////////////////////////
-  // Vectorized evaluation on GPUs  //
-  ////////////////////////////////////
-#ifdef QMC_CUDA
-  vector<RealType> ValueVector;
-
-  virtual void addEnergy(MCWalkerConfiguration &W,
-                         vector<RealType> &LocalEnergy)
-  {
-    app_error() << "Need specialization for " << myName
-                << "::addEnergy(MCWalkerConfiguration &W).\n";
-  }
+  virtual void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
 
   virtual void addEnergy(MCWalkerConfiguration &W,
                          vector<RealType> &LocalEnergy,
@@ -359,8 +351,6 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     addEnergy (W, LocalEnergy);
   }
-#endif
-
 
 };
 }

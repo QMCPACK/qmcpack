@@ -44,6 +44,12 @@ void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
   }
 }
 
+void QMCHamiltonianBase::addEnergy(MCWalkerConfiguration &W,
+    vector<RealType> &LocalEnergy)
+{
+  app_error() << "Need specialization for " << myName
+    << "::addEnergy(MCWalkerConfiguration &W).\n";
+}
 
 }
 /***************************************************************************

@@ -281,13 +281,13 @@ public:
   /** return a clone */
   QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-#ifdef QMC_CUDA
   ////////////////////////////////////////////
   // Vectorized evaluation routines for GPU //
   ////////////////////////////////////////////
   void evaluate (MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
   void evaluate(MCWalkerConfiguration &W, vector<RealType> &energyVector,
                 vector<vector<NonLocalData> > &Txy);
+#ifdef QMC_CUDA
 private:
   /////////////////////
   // Vectorized data //

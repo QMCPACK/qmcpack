@@ -16,12 +16,17 @@ MPC_CUDA::MPC_CUDA(ParticleSet& ptcl, double cutoff) :
   L("MPC::L"), Linv("MPC::Linv")
 {
   initBreakup();
+
+  //create virtual particle
+  myPtcl.resize(omp_get_max_threads());
+  app_log() << "MPC_CUDA::evalLR uses " << myPtcl.size() << " threads." << endl;
+  for(int i=0; i<myPtcl.size(); ++i)
+    myPtcl[i]=new ParticleSet(ptcl);
 }
 
 void
 MPC_CUDA::initBreakup()
 {
-#ifdef QMC_CUDA
   gpu::host_vector<CUDA_PRECISION> LHost(9), LinvHost(9);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -31,10 +36,9 @@ MPC_CUDA::initBreakup()
     }
   L    = LHost;
   Linv = LinvHost;
-  app_log() << "    Starting to copy MPC spline to GPU memory.\n";
-  CudaSpline = create_UBspline_3d_s_cuda_conv (VlongSpline);
-  app_log() << "    Finished copying MPC spline to GPU memory.\n";
-#endif
+//  app_log() << "    Starting to copy MPC spline to GPU memory.\n";
+//  CudaSpline = create_UBspline_3d_s_cuda_conv (VlongSpline);
+//  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
 QMCHamiltonianBase*
@@ -52,31 +56,73 @@ MPC_CUDA::addEnergy(MCWalkerConfiguration &W,
 {
   init_Acuda();
   vector<Walker_t*> &walkers = W.WalkerList;
-  int nw = walkers.size();
-  int N = NParticles;
+  const int nw = walkers.size();
+  const int N = NParticles;
   if (SumGPU.size() < nw)
   {
     SumGPU.resize(nw, 1.25);
     SumHost.resize(nw);
   }
-  for (int iw=0; iw<nw; iw++)
-    SumHost[iw] = 0.0;
-  SumGPU = SumHost;
-  // First, do short-range part
   vector<double> esum(nw, 0.0);
-  MPC_SR_Sum (W.RList_GPU.data(), N,
-              L.data(), Linv.data(), SumGPU.data(), nw);
-  SumHost = SumGPU;
-  for (int iw=0; iw<nw; iw++)  esum[iw] += SumHost[iw];
-  // Now, do long-range part:
-  MPC_LR_Sum (W.RList_GPU.data(), N, CudaSpline,
-              Linv.data(), SumGPU.data(), nw);
-  SumHost = SumGPU;
-  for (int iw=0; iw<nw; iw++)   esum[iw] += SumHost[iw];
+
+  //for (int iw=0; iw<nw; iw++)
+  //  SumHost[iw] = 0.0;
+  //SumGPU = SumHost;
+  // First, do short-range part
+  //MPC_SR_Sum (W.RList_GPU.data(), N,
+  //            L.data(), Linv.data(), SumGPU.data(), nw);
+  //SumHost = SumGPU;
+  //for (int iw=0; iw<nw; iw++)  esum[iw] += SumHost[iw];
+  //// Now, do long-range part:
+  //MPC_LR_Sum (W.RList_GPU.data(), N, CudaSpline,
+  //            Linv.data(), SumGPU.data(), nw);
+  //SumHost = SumGPU;
+  //for (int iw=0; iw<nw; iw++)   esum[iw] += SumHost[iw];
+
+  if(myPtcl.size()==1)
+  {//serial
+    for(int iw=0; iw<nw; ++iw)
+    {
+      ParticleSet& p(*myPtcl[0]);
+      p.R=W[iw]->R;
+      esum[iw]=MPC::evalLR(p);
+    }
+    SumGPU = SumHost;
+    MPC_SR_Sum (W.RList_GPU.data(), N, L.data(), Linv.data(), SumGPU.data(), nw);
+    SumHost = SumGPU;
+  }
+  else
+  {
+#pragma omp parallel
+    {
+      int ip=omp_get_thread_num();
+      if(ip)
+      {
+        int np=omp_get_max_threads()-1;
+        int nw_thread=(nw+np-1)/np;
+        int first=nw_thread*(ip-1);
+        int last=(ip<np)? nw_thread*ip:nw;
+        ParticleSet& p(*myPtcl[ip]);
+        for(int iw=first; iw<last; ++iw)
+        {
+          p.R=W[iw]->R;
+          esum[iw]=MPC::evalLR(p);
+        }
+      }
+      else
+      {
+        SumGPU = SumHost;
+        MPC_SR_Sum (W.RList_GPU.data(), N, L.data(), Linv.data(), SumGPU.data(), nw);
+        SumHost = SumGPU;
+      }
+    }
+  }
+
   for (int iw=0; iw<nw; iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = esum[iw] + Vconst;
-    LocalEnergy[iw] += esum[iw];
+    double e=esum[iw]+SumHost[iw]+Vconst;
+    walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = e;
+    LocalEnergy[iw] += e;
   }
 }
 }

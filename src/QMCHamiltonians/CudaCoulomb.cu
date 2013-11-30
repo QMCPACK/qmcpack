@@ -512,6 +512,7 @@ MPC_SR_kernel(T **R, int N,
     for (int i=0; i<3; i++)
       if ((3*b+i)*BS + tid < 3*N)
         r1[0][i*BS+tid] = myR[(3*b+i)*BS + tid];
+    __syncthreads();
     int ptcl1 = b*BS + tid;
     if (ptcl1 < N)
     {
@@ -537,6 +538,7 @@ MPC_SR_kernel(T **R, int N,
     for (int i=0; i<3; i++)
       if ((3*b1+i)*BS + tid < 3*N)
         r1[0][i*BS+tid] = myR[(3*b1+i)*BS + tid];
+    __syncthreads();
     int ptcl1 = b1*BS + tid;
     if (ptcl1 < N)
     {
@@ -630,6 +632,7 @@ MPC_LR_kernel(T **R, int N, T* coefs, typename Three<T>::type gridInv, uint3 dim
       if (off < 3*N)
         r[0][i*BS+tid] = myR[off];
     }
+  __syncthreads();
     u[tid][0] = (Linv[0][0]*r[tid][0] + Linv[0][1]*r[tid][1] +  Linv[0][2]*r[tid][2]);
     u[tid][1] = (Linv[1][0]*r[tid][0] + Linv[1][1]*r[tid][1] +  Linv[1][2]*r[tid][2]);
     u[tid][2] = (Linv[2][0]*r[tid][0] + Linv[2][1]*r[tid][1] +  Linv[2][2]*r[tid][2]);
@@ -663,6 +666,7 @@ MPC_LR_kernel(T **R, int N, T* coefs, typename Three<T>::type gridInv, uint3 dim
         a[k][j] = (Acuda[4*k+0]*t*t*t + Acuda[4*k+1]*t*t +
                    Acuda[4*k+2]*t     + Acuda[4*k+3]);
       }
+  __syncthreads();
       // There are 64 elements to sum.  With BS=32, we use 2 passes
       // First 32 coefs
       int ix = tid>>4;

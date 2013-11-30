@@ -583,8 +583,9 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
   }
   if (energyVector.size() != nw)
     energyVector.resize(nw);
-  for (int i=0; i<LocalEnergyVector.size(); i++)
-    LocalEnergyVector[i] = 0.0;
+  std::fill(LocalEnergyVector.begin(),LocalEnergyVector.end(),0.0);
+  //for (int i=0; i<LocalEnergyVector.size(); i++)
+  //  LocalEnergyVector[i] = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
@@ -599,8 +600,26 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
       LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
   }
   energyVector = LocalEnergyVector;
-  for(int i=0; i<auxH.size(); ++i)
-    auxH[i]->addEnergy(W, AuxEnergyVector);
+
+  if(auxH.size())
+  {
+    std::fill(AuxEnergyVector.begin(),AuxEnergyVector.end(),0.0);
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->addEnergy(W, AuxEnergyVector);
+  }
+}
+#else
+void
+QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
+                         vector<RealType> &energyVector)
+{
+}
+
+void
+QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
+                         vector<RealType> &energyVector,
+                         vector<vector<NonLocalData> > &Txy)
+{
 }
 #endif
 

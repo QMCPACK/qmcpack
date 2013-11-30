@@ -4,6 +4,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "Utilities/IteratorUtility.h"
 
 #if defined(HAVE_LIBFFTW)
 #include <fftw3.h>
@@ -14,17 +16,13 @@ namespace qmcplusplus
 
 void
 MPC::resetTargetParticleSet(ParticleSet& ptcl)
-{
-  PtclRef = &ptcl;
-  d_aa = DistanceTable::add(ptcl);
-}
+{ }
 
-#if defined(HAVE_EINSPLINE) && defined(HAVE_LIBFFTW)
 MPC::MPC(ParticleSet& ptcl, double cutoff) :
   PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
   VlongSpline(0), DensitySpline(0)
 {
-  d_aa = DistanceTable::add(ptcl);
+  int it=ptcl.addTable(ptcl);
   initBreakup();
 }
 
@@ -339,8 +337,9 @@ MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 }
 
 MPC::Return_t
-MPC::evalSR()
+MPC::evalSR(ParticleSet& P) const
 {
+  const DistanceTableData* d_aa=P.DistTables[0];
   RealType SR=0.0;
   for(int ipart=0; ipart<NParticles; ipart++)
   {
@@ -355,17 +354,17 @@ MPC::evalSR()
 }
 
 MPC::Return_t
-MPC::evalLR()
+MPC::evalLR(ParticleSet& P) const
 {
   RealType LR=0.0;
-  PosType u;
+  double val;
   for(int i=0; i<NParticles; i++)
   {
-    PosType r = PtclRef->R[i];
-    PosType u = PtclRef->Lattice.toUnit(r);
+    //PosType r = P.R[i];
+    //PosType u = P.Lattice.toUnit(r);
+    PosType u = P.Lattice.toUnit(P.R[i]);
     for (int j=0; j<OHMMS_DIM; j++)
       u[j] -= std::floor(u[j]);
-    double val;
     eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &val);
     LR += val;
   }
@@ -375,38 +374,30 @@ MPC::evalLR()
 MPC::Return_t
 MPC::evaluate (ParticleSet& P)
 {
-  if (FirstTime || P.tag() == PtclRef->tag())
-  {
-    Value = evalSR() + evalLR() + Vconst;
-    FirstTime = false;
-  }
+  //if (FirstTime || P.tag() == PtclRef->tag())
+  Value = evalSR(P) + evalLR(P) + Vconst;
   return Value;
 }
 
-#else
-MPC::MPC(ParticleSet& ptcl, double cutoff) :
-  PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
-  VlongSpline(0), DensitySpline(0)
+void MPC::addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
 {
-  APP_ABORT("MPC::MPC cannot be used with einspline/fftw ");
+//only used for debugging
+//  const int nw=W.getActiveWalkers();
+//  const int indx=NUMPROPERTIES+myIndex;
+//#ifdef QMC_CUDA
+//#pragma omp parallel for
+//  for(int iw=0; iw<nw; ++iw)
+//  {
+//    ParticleSet& p(*myPtcl[omp_get_thread_num()]);
+//    p.R=W[iw]->R;
+//    p.update();
+//    RealType e=evalSR(p)+evalLR(p)+Vconst;
+//    W[iw]->getPropertyBase()[indx] = e;
+//    LocalEnergy[iw]+=e;
+//  }
+//#endif
 }
 
-MPC::~MPC()
-{ }
-
-QMCHamiltonianBase*
-MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
-  return 0;
-}
-
-MPC::Return_t
-MPC::evaluate (ParticleSet& P)
-{
-  return 0.0;
-}
-
-#endif
 bool MPC::put(xmlNodePtr cur)
 {
   Ecut = -1.0;

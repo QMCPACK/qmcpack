@@ -46,13 +46,11 @@ protected:
   vector<ComplexType> Rho_G;
   TinyVector<int,OHMMS_DIM> SplineDim;
   int MaxDim;
-  Return_t evalSR();
-  Return_t evalLR();
+  Return_t evalSR(ParticleSet& P) const;
+  Return_t evalLR(ParticleSet& P) const;
 
 public:
   ParticleSet* PtclRef;
-  DistanceTableData* d_aa;
-
   // Store the average electron charge density in reciprocal space
   vector<ComplexType> RhoAvg_G;
   vector<RealType> f_G;
@@ -84,6 +82,9 @@ public:
   {
     return evaluate(P);
   }
+
+  /** implement all-walker stuff */
+  virtual void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
 
   /** Do nothing */
   bool put(xmlNodePtr cur);
