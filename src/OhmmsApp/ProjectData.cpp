@@ -17,6 +17,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
+#include <qmc_common.h>
 
 namespace qmcplusplus
 {
@@ -85,17 +86,14 @@ bool ProjectData::put(istream& is)
     is >> t1;
     if(t1 == "series")
       is >> m_series;
+    else if(t1 == "user")
+      is >> m_user;
+    else if(t1 == "host")
+      is >> m_host;
+    else if(t1 == "date")
+      is >> m_date;
     else
-      if(t1 == "user")
-        is >> m_user;
-      else
-        if(t1 == "host")
-          is >> m_host;
-        else
-          if(t1 == "date")
-            is >> m_date;
-          else
-            m_title = t1;
+      m_title = t1;
   }
 #endif
   reset();
@@ -120,19 +118,22 @@ void ProjectData::rewind()
  */
 void ProjectData::reset()
 {
-  int nproc_g = OHMMS::Controller->size();
+  //int nproc_g = OHMMS::Controller->size();
   int nproc = myComm->size();
   int nodeid = myComm->rank();
   int groupid=myComm->getGroupID();
   char fileroot[256], nextroot[256];
-  if(nproc_g == nproc)
+
+  bool no_gtag= (qmc_common.mpi_groups==1);
+  if(no_gtag) //qnproc_g == nproc)
     sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
   else
     sprintf(fileroot,"%s.g%03d.s%03d",m_title.c_str(),groupid,m_series);
+
   m_projectmain=fileroot;
   //set the communicator name
   myComm->setName(fileroot);
-  if(nproc_g == nproc)
+  if(no_gtag) 
   {
     if(nproc > 1)
     {
@@ -174,11 +175,13 @@ bool ProjectData::PreviousRoot(string& oldroot) const
   if(m_series)
   {
     char fileroot[128];
-    int nproc_g = OHMMS::Controller->size();
+    //int nproc_g = OHMMS::Controller->size();
     int nproc = myComm->size();
     int nodeid = myComm->rank();
     int groupid=myComm->getGroupID();
-    if(nproc_g == nproc)
+    bool no_gtag= (qmc_common.mpi_groups==1);
+
+    if(no_gtag)
     {
       if(nproc > 1)
         sprintf(fileroot,".s%03d.p%03d", m_series-1,nodeid);

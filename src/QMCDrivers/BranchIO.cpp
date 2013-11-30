@@ -155,73 +155,19 @@ bool BranchIO::write(const string& fname)
 
 bool BranchIO::read(const string& fname)
 {
-  #ifdef HAVE_ADIOS
-	if(ADIOS::getRdADIOS())
-	{
-		ADIOS::open(fname, myComm->getMPI());	
-		int n=ref.vParam.size()+ref.iParam.size();
-		/** temporary storage to broadcast restart data */
-  	vector<RealType> pdata(n+3+16,-1);
-		ADIOS::read(ref.vParam.data(),"vparam");
-		ADIOS::read(ref.iParam.data(),"iparam");
-		ADIOS::read(&ref.BranchMode,"branchmode");
-    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
-    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
-		int offset=n;
-		HDFVersion res_version(0,4); //start using major=0 and minor=4
-  	HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
- 		HDFVersion in_version(0,1);
-    pdata[offset++]=ref.BranchMode.to_ulong();
-    pdata[offset++]=in_version[0];
-    pdata[offset++]=in_version[1];
-    accumulator_set<RealType> temp;
-    ADIOS::read(&temp,"energy");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"variance");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"r2accepted");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"r2proposed");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-		myComm->bcast(pdata);
-		if(myComm->rank())
-  	{
-      int ii=0;
-      for(int i=0; i<ref.vParam.size(); ++i,++ii)
-        ref.vParam[i]=pdata[ii];
-      for(int i=0; i<ref.iParam.size(); ++i,++ii)
-        ref.iParam[i]=static_cast<int>(pdata[ii]);
-      ref.BranchMode=static_cast<unsigned long>(pdata[ii]);
-		}
-		{
-			int ii=n+3;
-    	ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-		}	
-		ADIOS::close();
-		return true;
-	} 
-	else if(ADIOS::getRdHDF5())
-	#endif
-	{
   //append .config.h5 if missing
   string h5name(fname);
   if(fname.find("config.h5")>= fname.size())
     h5name.append(".config.h5");
-  //do not use collective
-  hdf_archive prevconfig(myComm,false);
-  if(!prevconfig.open(h5name,H5F_ACC_RDONLY))
-    return false;
+
+  hdf_archive prevconfig(myComm,true);
+  int found_config=prevconfig.open(h5name,H5F_ACC_RDONLY);
+  myComm->bcast(found_config);
+
+  if(found_config==0) return false;
+
+  app_log() << "BranchIO::read from " << fname << endl;
+
   HDFVersion res_version(0,4); //start using major=0 and minor=4
   HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
   HDFVersion in_version(0,1);
@@ -292,9 +238,71 @@ bool BranchIO::read(const string& fname)
     ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
     ii+=4;
   }
+
+  return true;
+}
+
+bool BranchIO::read_adios(const string& fname)
+{//do not use this
+  #ifdef HAVE_ADIOS
+	if(ADIOS::getRdADIOS())
+	{
+		ADIOS::open(fname, myComm->getMPI());	
+		int n=ref.vParam.size()+ref.iParam.size();
+		/** temporary storage to broadcast restart data */
+  	vector<RealType> pdata(n+3+16,-1);
+		ADIOS::read(ref.vParam.data(),"vparam");
+		ADIOS::read(ref.iParam.data(),"iparam");
+		ADIOS::read(&ref.BranchMode,"branchmode");
+    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
+    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
+		int offset=n;
+		HDFVersion res_version(0,4); //start using major=0 and minor=4
+  	HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
+ 		HDFVersion in_version(0,1);
+    pdata[offset++]=ref.BranchMode.to_ulong();
+    pdata[offset++]=in_version[0];
+    pdata[offset++]=in_version[1];
+    accumulator_set<RealType> temp;
+    ADIOS::read(&temp,"energy");
+    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
+    offset+=4;
+    ADIOS::read(&temp,"variance");
+    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
+    offset+=4;
+    ADIOS::read(&temp,"r2accepted");
+    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
+    offset+=4;
+    ADIOS::read(&temp,"r2proposed");
+    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
+    offset+=4;
+		myComm->bcast(pdata);
+		if(myComm->rank())
+  	{
+      int ii=0;
+      for(int i=0; i<ref.vParam.size(); ++i,++ii)
+        ref.vParam[i]=pdata[ii];
+      for(int i=0; i<ref.iParam.size(); ++i,++ii)
+        ref.iParam[i]=static_cast<int>(pdata[ii]);
+      ref.BranchMode=static_cast<unsigned long>(pdata[ii]);
+		}
+		{
+			int ii=n+3;
+    	ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    	ii+=4;
+    	ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    	ii+=4;
+    	ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    	ii+=4;
+    	ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    	ii+=4;
+		}	
+		ADIOS::close();
+		return true;
+	} 
+	#endif
   return true;
 	}
-}
 }
 
 /***************************************************************************

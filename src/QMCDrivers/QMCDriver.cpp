@@ -29,11 +29,10 @@
 #include <qmc_common.h>
 #include <limits>
 
+#include <ADIOS/ADIOS_config.cpp>
 #ifdef HAVE_ADIOS
-#include "QMCDrivers/BranchIO.h"
 #include <adios.h>
 #include "Particle/AdiosWalkerInput.h"
-#include <ADIOS/ADIOS_config.cpp>
 #include <ADIOS/ADIOS_profile.h>
 #endif
 
@@ -217,31 +216,29 @@ void QMCDriver::setStatus(const string& aname, const string& h5name, bool append
  */
 void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
 {
-  	if(wset.empty())
-    	return;
-  	int nfile=wset.size();
-  	HDFWalkerInputManager W_in(W,myComm);
-  	for(int i=0; i<wset.size(); i++)
-    	if(W_in.put(wset[i]))
-      	h5FileRoot = W_in.getFileRoot();
-  		//clear the walker set
-  	wset.clear();
-  	int nwtot=W.getActiveWalkers();
-  	myComm->bcast(nwtot);
-  	if(nwtot)
- 	 	{
-    	int np=myComm->size();
-    	vector<int> nw(np,0), nwoff(np+1,0);
-    	nw[myComm->rank()]=W.getActiveWalkers();
-    	myComm->allreduce(nw);
-    	for(int ip=0; ip<np; ++ip)
-      	nwoff[ip+1]=nwoff[ip]+nw[ip];
-    	W.setGlobalNumWalkers(nwoff[np]);
-    	W.setWalkerOffsets(nwoff);
-    	qmc_common.is_restart=true;
-  	}
-  	else
-    	qmc_common.is_restart=false;
+  if(wset.empty()) return;
+  int nfile=wset.size();
+  HDFWalkerInputManager W_in(W,myComm);
+  for(int i=0; i<wset.size(); i++)
+    if(W_in.put(wset[i])) h5FileRoot = W_in.getFileRoot();
+  //clear the walker set
+  wset.clear();
+  int nwtot=W.getActiveWalkers();
+  myComm->bcast(nwtot);
+  if(nwtot)
+  {
+    int np=myComm->size();
+    vector<int> nw(np,0), nwoff(np+1,0);
+    nw[myComm->rank()]=W.getActiveWalkers();
+    myComm->allreduce(nw);
+    for(int ip=0; ip<np; ++ip)
+      nwoff[ip+1]=nwoff[ip]+nw[ip];
+    W.setGlobalNumWalkers(nwoff[np]);
+    W.setWalkerOffsets(nwoff);
+    qmc_common.is_restart=true;
+  }
+  else
+    qmc_common.is_restart=false;
 }
 
 string QMCDriver::getRotationName(string RootName)
@@ -273,63 +270,65 @@ string QMCDriver::getLastRotationName(string RootName)
   return r_RootName;
 }
 
-#ifdef HAVE_ADIOS
 void QMCDriver::adiosCheckpoint(int block)
 {
-    int64_t adios_handle;
-    uint64_t adios_groupsize, adios_totalsize;
-    EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
-    if (sizeof(OHMMS_PRECISION) == sizeof(double))
-    {
-      adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-    }
-    else
-    {
-      adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-    }
-    if (myEstimator->is_manager())
-    {
-      BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-      adios_groupsize = hh.get_Checkpoint_size();
-      adios_groupsize += RandomNumberControl::get_group_size();
-      adios_groupsize += wOut->get_group_size(W);
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      hh.adios_checkpoint(adios_handle);
-      branchEngine->save_energy();
-      wOut->adios_checkpoint(W, adios_handle, block);
-      RandomNumberControl::adios_checkpoint(adios_handle);
-    }
-    else
-    {
-      adios_groupsize = RandomNumberControl::get_group_size();
-      adios_groupsize += wOut->get_group_size(W);
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      wOut->adios_checkpoint(W, adios_handle, block);
-      RandomNumberControl::adios_checkpoint(adios_handle);
-    }
-    adios_close(adios_handle);
+#ifdef HAVE_ADIOS
+  int64_t adios_handle;
+  uint64_t adios_groupsize, adios_totalsize;
+  EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
+  if (sizeof(OHMMS_PRECISION) == sizeof(double))
+  {
+    adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+  }
+  else
+  {
+    adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+  }
+  if (myEstimator->is_manager())
+  {
+    BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    adios_groupsize = hh.get_Checkpoint_size();
+    adios_groupsize += RandomNumberControl::get_group_size();
+    adios_groupsize += wOut->get_group_size(W);
+    adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    hh.adios_checkpoint(adios_handle);
+    branchEngine->save_energy();
+    wOut->adios_checkpoint(W, adios_handle, block);
+    RandomNumberControl::adios_checkpoint(adios_handle);
+  }
+  else
+  {
+    adios_groupsize = RandomNumberControl::get_group_size();
+    adios_groupsize += wOut->get_group_size(W);
+    adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    wOut->adios_checkpoint(W, adios_handle, block);
+    RandomNumberControl::adios_checkpoint(adios_handle);
+  }
+  adios_close(adios_handle);
 #ifdef IO_PROFILE
-    ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
+  ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
 #endif
 #ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
-                                          ADIOS_READ_METHOD_BP,
-                                          myComm->getMPI());
-		if (fp == NULL)
-			app_error() << "Fail to open adios file "<<(getLastRotationName(RootName) + ".config.bp").c_str()<<" Abort. "<<endl;
-    if (myEstimator->is_manager())
-    {
-      BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-      hh.adios_checkpoint_verify(fp);
-    }
-    RandomNumberControl::adios_checkpoint_verify(fp);
-    wOut->adios_checkpoint_verify(W, fp);
-    adios_read_close(fp);
+  ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
+      ADIOS_READ_METHOD_BP,
+      myComm->getMPI());
+  if (fp == NULL)
+    app_error() << "Fail to open adios file "<<(getLastRotationName(RootName) + ".config.bp").c_str()<<" Abort. "<<endl;
+  if (myEstimator->is_manager())
+  {
+    BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    hh.adios_checkpoint_verify(fp);
+  }
+  RandomNumberControl::adios_checkpoint_verify(fp);
+  wOut->adios_checkpoint_verify(W, fp);
+  adios_read_close(fp);
+#endif
 #endif
 }
 
 void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 {
+#ifdef HAVE_ADIOS
   TimerManager.print(myComm);
   TimerManager.reset();
   int64_t adios_handle;
@@ -360,7 +359,7 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   }
   else
     adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-    //Checkpoint the data for RandomNumber Control
+  //Checkpoint the data for RandomNumber Control
   RandomNumberControl::adios_checkpoint(adios_handle);
   if(DumpConfig && dumpwalkers)
     //If we are checkpointing
@@ -368,8 +367,8 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   adios_close(adios_handle);
 #ifdef ADIOS_VERIFY
   ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
-                                        ADIOS_READ_METHOD_BP,
-                                        myComm->getMPI());
+      ADIOS_READ_METHOD_BP,
+      myComm->getMPI());
   if (myEstimator->is_manager())
   {
     BranchIO hh(*branchEngine,myEstimator->getCommunicator());
@@ -388,59 +387,46 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
     MyCounter++;
     OhmmsInfo::flush();
   }
-}
 #endif
+}
 
 void QMCDriver::recordBlock(int block)
 {
-#ifdef HAVE_ADIOS
-  if(DumpConfig && block % Period4CheckPoint == 0 && ADIOS::useADIOS())
+  if(DumpConfig && block % Period4CheckPoint == 0)
   {
-    adiosCheckpoint(block);
-  }
-  if(ADIOS::useHDF5())
-#endif
-  {
-  ////first dump the data for restart
-  if(DumpConfig &&block%Period4CheckPoint == 0)
-  {
-    wOut->dump(W, block);
-    branchEngine->write(RootName,true); //save energy_history
-    RandomNumberControl::write(RootName,myComm);
-//       if (storeConfigs) wOut->dump( ForwardWalkingHistory);
-  }
-  //save positions for optimization: this is done within VMC
-  //if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
-  //if(Period4WalkerDump>0) wOut->append(W);
-  //flush the ostream
-  //OhmmsInfo::flush();
+    if(ADIOS::useADIOS()) adiosCheckpoint(block);
+    if(ADIOS::useHDF5())
+    {
+      wOut->dump(W, block);
+      branchEngine->write(RootName,true); //save energy_history
+      //RandomNumberControl::write(RootName,myComm);
+      //if (storeConfigs) wOut->dump( ForwardWalkingHistory);
+      //save positions for optimization: this is done within VMC
+      //if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
+      //if(Period4WalkerDump>0) wOut->append(W);
+      //flush the ostream
+      //OhmmsInfo::flush();
+    } 
   }
 }
 
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
-#ifdef HAVE_ADIOS
   if(ADIOS::useADIOS())
-  {
     adiosCheckpointFinal(block, dumpwalkers);
-  }
   if(ADIOS::useHDF5())
-#endif
   {
     TimerManager.print(myComm);
     TimerManager.reset();
-    if(DumpConfig && dumpwalkers)
-     wOut->dump(W, block);
-     branchEngine->finalize(W);
-    RandomNumberControl::write(RootName,myComm);
+    if(DumpConfig && dumpwalkers) wOut->dump(W, block);
+    branchEngine->finalize(W);
+    // RandomNumberControl::write(RootName,myComm);
     delete wOut;
     wOut=0;
     //Estimators->finalize();
-    //set the target walkers
+   
     nTargetWalkers = W.getActiveWalkers();
-    //increment MyCounter
     MyCounter++;
-    //flush the ostream
     OhmmsInfo::flush();
   }
   return true;
@@ -576,12 +562,15 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //reset CurrentStep to zero if qmc/@continue='no'
   if(!AppendRun) CurrentStep=0;
 
-  int nths=(qmc_common.compute_device)?1:omp_get_max_threads();
-  nTargetWalkers=(std::max(nths,(nTargetWalkers/nths)*nths));
-
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if(!(qmc_common.qmc_counter || qmc_common.is_restart))
+  if(qmc_common.qmc_counter || qmc_common.is_restart)
+  {
+    app_log() << "Using existing walkers " << endl;
+  }
+  else
   { //always reset the walkers
+    int nths=(qmc_common.compute_device)?1:omp_get_max_threads();
+    nTargetWalkers=(std::max(nths,(nTargetWalkers/nths)*nths));
     int nw  = W.getActiveWalkers();
     int ndiff = 0;
     if(nw)

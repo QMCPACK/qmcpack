@@ -237,20 +237,78 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 
 void RandomNumberControl::read(const string& fname, Communicate* comm)
 {
+  return;
   int nthreads=omp_get_max_threads();
   vector<uint_type> vt_tot, vt;
   TinyVector<int,2> shape(0);
-	#ifdef HAVE_ADIOS
-	if(ADIOS::getRdADIOS()) 
-	{
-		ADIOS::open(fname, comm->getMPI());
-		TinyVector<hsize_t,2> shape_t(0);
+
+  TinyVector<hsize_t,2> shape_t(0);
+  shape_t[1]=Random.state_size();
+  hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
+
+  if(comm->rank()==0)
+  {
+    string h5name(fname);
+    if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
+    hdf_archive hout(comm);
+    hout.open(h5name,H5F_ACC_RDONLY);
+    hout.push(hdf::main_state);
+    hout.push("random");
+    hout.read(slab,Random.EngineName);
+    shape[0]=static_cast<int>(slab.size(0));
+    shape[1]=static_cast<int>(slab.size(1));
+  }
+
+  //bcast of hsize_t is not working
+  mpi::bcast(*comm,shape);
+
+  if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
+  {
+    app_log() << "Mismatched random number generators."
+      << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
+      << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
+      << "\n  Using the random streams generated at the initialization." << endl;
+    return;
+  }
+  app_log() << "  Restart from the random number streams from the previous configuration." << endl;
+  vt_tot.resize(shape[0]);
+  vt.resize(nthreads*Random.state_size());
+  if(comm->size()>1)
+    mpi::scatter(*comm,vt_tot,vt);
+  else
+    std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
+
+  {
+    if(nthreads>1)
+    {
+      vector<uint_type>::iterator vt_it(vt.begin());
+      for(int ip=0; ip<nthreads; ip++, vt_it += shape[1])
+      {
+        vector<uint_type> c(vt_it,vt_it+shape[1]);
+        Children[ip]->load(c);
+      }
+    }
+    else
+      Random.load(vt);
+  }
+}
+
+#ifdef HAVE_ADIOS
+void RandomNumberControl::read_adios(const string& fname, Communicate* comm)
+{
+  //do not use adios for random number generators
+  int nthreads=omp_get_max_threads();
+  vector<uint_type> vt_tot, vt;
+  TinyVector<int,2> shape(0);
+  if(ADIOS::getRdADIOS()) 
+  {
+    ADIOS::open(fname, comm->getMPI());
+    TinyVector<hsize_t,2> shape_t(0);
     shape_t[1]=Random.state_size();
     ADIOS::read_random(vt_tot, shape, "random");
-		ADIOS::close();
-	} 
+    ADIOS::close();
+  } 
   else if(ADIOS::getRdHDF5())
-	#endif
   {
     //read it
     string h5name(fname);
@@ -272,24 +330,23 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
   {
     app_log() << "Mismatched random number generators."
-              << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
-              << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
-              << "\n  Using the random streams generated at the initialization." << endl;
+      << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
+      << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
+      << "\n  Using the random streams generated at the initialization." << endl;
     return;
   }
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
   vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
-#if defined(HAVE_MPI)
   if(comm->size()>1)
   {
-    //mpi::scatter(*comm,vt_tot,vt);
-    MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
-    MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
+    mpi::scatter(*comm,vt_tot,vt);
+    //MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
+    //MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
   }
   else
-#endif
     std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
+
   {
     if(nthreads>1)
     {
@@ -305,7 +362,6 @@ void RandomNumberControl::read(const string& fname, Communicate* comm)
   }
 }
 
-#ifdef HAVE_ADIOS
 uint64_t RandomNumberControl::get_group_size()
 {
   return 4 * omp_get_max_threads() * Random.state_size() + 4 * 4;
@@ -374,6 +430,7 @@ void RandomNumberControl::adios_checkpoint_verify(ADIOS_FILE *fp)
 
 void RandomNumberControl::write(const string& fname, Communicate* comm)
 {
+  return;
   int nthreads=omp_get_max_threads();
   vector<uint_type> vt, vt_tot;
   vt.reserve(nthreads*1024);

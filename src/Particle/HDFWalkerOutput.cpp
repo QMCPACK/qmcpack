@@ -146,112 +146,88 @@ void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FI
  * @param W set of walker configurations
  *
  * Dump is for restart and do not preserve the file
+ * - version
+ * - state_0
+ *  - block (int)
+ *  - number_of_walkes (int)
+ *  - walker_partition (int array)
+ *  - walkers (nw,np,3)
  */
 bool HDFWalkerOutput::dump(MCWalkerConfiguration& W, int nblock)
 {
   string FileName=myComm->getName()+hdf::config_ext;
+  //rotate files
+  //if(!myComm->rank() && currentConfigNumber)
+  //{
+  //  ostringstream o;
+  //  o<<myComm->getName()<<".b"<<(currentConfigNumber%5) << hdf::config_ext;
+  //  rename(prevFile.c_str(),o.str().c_str());
+  //}
+
+  //try to use collective
   hdf_archive dump_file(myComm,true);
   dump_file.create(FileName);
   HDFVersion cur_version;
-  //version
   dump_file.write(cur_version.version,hdf::version);
-  //state
   dump_file.push(hdf::main_state);
-  //walkers
+  dump_file.write(nblock,"block");
+
   write_configuration(W,dump_file, nblock);
   dump_file.close();
+
+  currentConfigNumber++;
+  prevFile=FileName;
   return true;
 }
 
 void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int nblock)
 {
   const int wb=OHMMS_DIM*number_of_particles;
-  //populate RemoteData[0] to dump
-#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
   if(nblock > block)
   {
     RemoteData[0]->resize(wb*W.getActiveWalkers());
     W.putConfigurations(RemoteData[0]->begin());
     block = nblock;
   }
-  //TinyVector<hsize_t,3> gcounts, counts, offset;
-  hsize_t gcounts[3], counts[3], offset[3];
-  gcounts[0]=W.WalkerOffsets[myComm->size()];
-  gcounts[1]=number_of_particles;
-  gcounts[2]=OHMMS_DIM;
-  counts[0]=W.getActiveWalkers();
-  counts[1]=number_of_particles;
-  counts[2]=OHMMS_DIM;
-  offset[0]=W.WalkerOffsets[myComm->rank()];
-  offset[1]=0;
-  offset[2]=0;
-  BufferType::value_type t;
-  const hid_t etype=get_h5_datatype(t);
+
+  hout.write(W.WalkerOffsets,"walker_partition");
+
   number_of_walkers=W.WalkerOffsets[myComm->size()];
   hout.write(number_of_walkers,hdf::num_walkers);
-  hid_t gid=hout.top();
-  hid_t sid1  = H5Screate_simple(3,gcounts,NULL);
-  hid_t memspace=H5Screate_simple(3,counts,NULL);
-  hid_t dset_id=H5Dcreate(gid,hdf::walkers,etype,sid1,H5P_DEFAULT);
-  hid_t filespace=H5Dget_space(dset_id);
-  herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,counts,NULL);
-  ret = H5Dwrite(dset_id,etype,memspace,filespace,hout.xfer_plist,RemoteData[0]->data());
-  H5Sclose(filespace);
-  H5Dclose(dset_id);
-#else
-  if(myComm->size()==1)
-  {
-    if(nblock > block)
-    {
-      number_of_walkers=W.getActiveWalkers();
-      RemoteData[0]->resize(wb*W.getActiveWalkers());
-      block = nblock;
-    }
-    W.putConfigurations(RemoteData[0]->begin());
-  }
-#if defined(HAVE_MPI)
-  else
-  {
-    if(nblock > block)
-    {
-      RemoteData[0]->resize(wb*W.getActiveWalkers());
-      W.putConfigurations(RemoteData[0]->begin());
-      block = nblock;
-    }
-    vector<int> displ(myComm->size()), counts(myComm->size());
-    for (int i=0; i<myComm->size(); ++i)
-    {
-      counts[i]=wb*(W.WalkerOffsets[i+1]-W.WalkerOffsets[i]);
-      displ[i]=wb*W.WalkerOffsets[i];
-    }
-    if(!myComm->rank())
-      RemoteData[1]->resize(wb*W.WalkerOffsets.back());
-    mpi::gatherv(*myComm,*RemoteData[0],*RemoteData[1],counts,displ);
-    //myComm->gatherv(*RemoteData[0],*RemoteData[1],counts, displ);
-    number_of_walkers=W.WalkerOffsets[myComm->size()];
-  }
-#endif
-  vector<hsize_t> inds(3);
-  inds[0]=number_of_walkers;
-  inds[1]=number_of_particles;
-  inds[2]=OHMMS_DIM;
-  hout.write(number_of_walkers,hdf::num_walkers);
-  if(myComm->size()==1)
-  {
-    hyperslab_proxy<BufferType,3> slab(*RemoteData[0],inds);
+
+  TinyVector<int,3> gcounts(number_of_walkers,number_of_particles,OHMMS_DIM);
+  //vector<int> gcounts(3);
+  //gcounts[0]=number_of_walkers;
+  //gcounts[1]=number_of_particles;
+  //gcounts[2]=OHMMS_DIM;
+
+  if(hout.is_collective())
+  { 
+    TinyVector<int,3> counts(W.getActiveWalkers(),            number_of_particles,OHMMS_DIM);
+    TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],number_of_particles,OHMMS_DIM);
+    hyperslab_proxy<BufferType,3> slab(*RemoteData[0],gcounts,counts,offsets);
     hout.write(slab,hdf::walkers);
   }
-#if defined(HAVE_MPI)
   else
-  {
-    hyperslab_proxy<BufferType,3> slab(*RemoteData[1],inds);
+  { //gaterv to the master and master writes it, could use isend/irecv
+    if(myComm->size()>1)
+    {
+      vector<int> displ(myComm->size()), counts(myComm->size());
+      for (int i=0; i<myComm->size(); ++i)
+      {
+        counts[i]=wb*(W.WalkerOffsets[i+1]-W.WalkerOffsets[i]);
+        displ[i]=wb*W.WalkerOffsets[i];
+      }
+      if(!myComm->rank())
+        RemoteData[1]->resize(wb*W.WalkerOffsets[myComm->size()]);
+      mpi::gatherv(*myComm,*RemoteData[0],*RemoteData[1],counts,displ);
+    }
+    int buffer_id=(myComm->size()>1)?1:0;
+    hyperslab_proxy<BufferType,3> slab(*RemoteData[buffer_id],gcounts);
     hout.write(slab,hdf::walkers);
   }
-#endif
-#endif
-  //HDFAttribIO<BufferType> po(*RemoteData[0],inds);
-  //po.write(hout.top(),hdf::walkers,hout.xfer_plist);
 }
+
 /*
 bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 {

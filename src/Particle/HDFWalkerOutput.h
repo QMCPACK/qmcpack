@@ -57,6 +57,7 @@ class HDFWalkerOutput
   int currentConfigNumber;
   ///rootname
   string RootName;
+  string prevFile;
 //     ///handle for the storeConfig.h5
 //     hdf_archive fw_out;
 public:

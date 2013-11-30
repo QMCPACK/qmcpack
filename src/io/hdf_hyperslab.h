@@ -17,22 +17,48 @@ struct hyperslab_proxy: public container_proxy<CT>
   enum {element_size=container_proxy<CT>::DIM};
   ///rank of hyperslab
   int slab_rank;
-  ///local dimension of the hyperslab
+  ///true, if hyperslab is used
+  bool use_slab;
+  ///global dimension of the hyperslab
   TinyVector<hsize_t,MAXDIM+1> slab_dims;
+  ///local dimension of the hyperslab
+  TinyVector<hsize_t,MAXDIM+1> slab_dims_local;
   ///offset of the hyperslab
   TinyVector<hsize_t,MAXDIM+1> slab_offset;
   ///1D
   hyperslab_proxy(CT& a): container_proxy<CT>(a), slab_rank(a.slab_rank),
     slab_dims(a.slab_dims), slab_offset(a.slab_offset)
-  {
+  { 
+    slab_dims_local=slab_dims;
+    use_slab=false;
   }
 
   template<typename IC>
   inline hyperslab_proxy(CT& a, const IC& dims_in):container_proxy<CT>(a)
   {
+    use_slab=false;
     slab_rank=dims_in.size();
     for(int i=0; i<dims_in.size(); ++i)
       slab_dims[i]=static_cast<hsize_t>(dims_in[i]);
+    slab_dims_local=slab_dims;
+    if(element_size>1)
+    {
+      slab_dims[slab_rank]=element_size;
+      slab_rank+=1;
+    }
+  }
+
+  template<typename IC>
+  inline hyperslab_proxy(CT& a, const IC& dims_in, const IC& dims_loc, const IC& offsets_in)
+  :container_proxy<CT>(a)
+  {
+    slab_rank=dims_in.size();
+    for(int i=0; i<dims_in.size(); ++i)
+      slab_dims[i]=static_cast<hsize_t>(dims_in[i]);
+    for(int i=0; i<dims_loc.size(); ++i)
+      slab_dims_local[i]=static_cast<hsize_t>(dims_loc[i]);
+    for(int i=0; i<dims_in.size(); ++i)
+      slab_offset[i]=static_cast<hsize_t>(offsets_in[i]);
     if(element_size>1)
     {
       slab_dims[slab_rank]=element_size;
@@ -71,6 +97,17 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
+    //if(ref_.use_slab)
+    //{
+    //  cout << "Everyone writes a part " << ref_.slab_dims_local[0] << endl;
+    //  return h5d_write(grp,aname.c_str(),
+    //      ref_.slab_rank,
+    //      ref_.slab_dims.data(), 
+    //      ref_.slab_dims_local.data(),
+    //      ref_.slab_offset.data(),
+    //      ref_.data(),xfer_plist);
+    //}
+    //else
     return h5d_write(grp,aname.c_str(),ref_.slab_rank,ref_.slab_dims.data(),ref_.data(),xfer_plist);
   }
 };

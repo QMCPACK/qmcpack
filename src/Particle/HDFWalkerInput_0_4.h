@@ -82,7 +82,18 @@ struct HDFWalkerInput_0_4
    */
   bool put(xmlNodePtr cur);
 
+  /** check options from xml */
   void checkOptions(xmlNodePtr cur);
+
+  /** read walkers for small number of MPI tasks */
+  bool read_hdf5(string h5name);
+  /** read walkers. Master reads and scatter the walkers */
+  bool read_hdf5_scatter(string h5name);
+  /** read walkers using PHDF5 */
+  bool read_phdf5(string h5name);
+  /**  for adios validation */
+  bool read_adios(xmlNodePtr cur);
+
 };
 
 }

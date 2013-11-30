@@ -28,11 +28,13 @@ hdf_archive::hdf_archive(Communicate* c, bool use_collective)
 
 hdf_archive::~hdf_archive()
 {
+#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
+  if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
+  if(access_id != H5P_DEFAULT) H5Pclose(access_id);
+#endif
   close();
-  if(xfer_plist != H5P_DEFAULT)
-    H5Pclose(xfer_plist);
-  if(access_id!= H5P_DEFAULT)
-    H5Pclose(access_id);
+  if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
+  if(access_id!= H5P_DEFAULT) H5Pclose(access_id);
   H5Eset_auto (err_func, client_data);
 }
 
@@ -59,13 +61,13 @@ void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
     if(use_collective)
     {
 #if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
-      MPI_Info info=MPI_INFO_NULL;
-      access_id = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
-      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
-      use_pdf=true;
-      use_collective=false; // everynode writes something
+//      MPI_Info info=MPI_INFO_NULL;
+//      access_id = H5Pcreate(H5P_FILE_ACCESS);
+//      hid_t ret=H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
+//      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+//      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+//      use_pdf=true;
+//      use_collective=false; // everynode writes something
 #endif
     }
     Mode.set(IS_PARALLEL,use_pdf);
@@ -84,16 +86,9 @@ void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
 
 bool hdf_archive::create(const std::string& fname, unsigned flags)
 {
-
   //not I/O node, do nothing
   if(Mode[NOIO]) return true;
-
   close(); 
-//  if(Mode[IS_PARALLEL])
-//    app_log() << "Creating PHDF5 file " << fname << endl;
-//  else
-//    app_log() << "Creating HDF5 file " << fname << endl;
-//
   file_id = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,access_id);
   return file_id != is_closed;
 }

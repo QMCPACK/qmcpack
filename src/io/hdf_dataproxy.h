@@ -95,6 +95,36 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const 
 }
 
 template<typename T>
+inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, 
+    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
+    const T* first , hid_t xfer_plist)
+{
+  if(grp<0)
+    return true;
+  hid_t h5d_type_id=get_h5_datatype(*first);
+  hid_t h1 = H5Dopen(grp, aname.c_str());
+  herr_t ret=-1;
+  if(h1<0) //missing create one
+  {
+    cout << "phdf write " << endl;
+    hid_t dataspace=H5Screate_simple(ndims,gcounts,NULL);
+    hid_t dataset=H5Dcreate(grp, aname.c_str(),h5d_type_id, dataspace, H5P_DEFAULT);
+
+    hid_t filespace=H5Dget_space(dataspace);
+    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL); 
+
+    hid_t memspace=H5Screate_simple(ndims,counts,NULL);
+    ret=H5Dwrite(dataset,h5d_type_id,memspace,filespace,xfer_plist,first);
+
+    H5Sclose(filespace);
+    H5Dclose(dataset);
+    H5Sclose(dataspace);
+  }
+  H5Dclose(h1);
+  return ret != -1;
+}
+
+template<typename T>
 inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
                        hsize_t ndims, const hsize_t* dims, const T* first,
                        hsize_t chunk_size=1,hid_t xfer_plist=H5P_DEFAULT)

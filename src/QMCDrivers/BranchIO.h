@@ -46,6 +46,7 @@ struct BranchIO
 
   bool write(const string& fname);
   bool read(const string& fname);
+  bool read_adios(const string& fname);
 };
 }
 #endif

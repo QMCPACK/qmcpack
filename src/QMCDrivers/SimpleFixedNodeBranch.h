@@ -213,8 +213,9 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param w Walkers
    * @param tau timestep
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @return number of copies to make in case targetwalkers changed
    */
-  void initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
+  int initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
   //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
 
   /** initialize reptile stats

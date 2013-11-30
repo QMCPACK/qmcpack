@@ -186,6 +186,13 @@ inline void close()
 
 };
 
+#else
+//empty inline functions to avoid compiler macros
+namespace ADIOS
+{
+  inline bool useADIOS() { return false;}
+  inline bool useHDF5() { return true;}
+}
 #endif
 
 #endif

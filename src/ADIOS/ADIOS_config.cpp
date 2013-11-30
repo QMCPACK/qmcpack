@@ -55,6 +55,7 @@ bool getRdHDF5()
   return rdHDF5;
 }
 
+#ifdef HAVE_ADIOS
 bool useADIOS()
 {
   return UseADIOS;
@@ -64,6 +65,7 @@ bool useHDF5()
 {
   return UseHDF5;
 }
+#endif
 
 const std::string& get_adios_xml()
 {

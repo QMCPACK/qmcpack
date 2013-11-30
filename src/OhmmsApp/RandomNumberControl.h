@@ -78,6 +78,7 @@ public:
   static void write(const string& fname, Communicate* comm);
 
 #ifdef HAVE_ADIOS
+  static void read_adios(const string& fname, Communicate* comm);
   /*
   *    * Write data with adios.
   *       */

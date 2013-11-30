@@ -179,11 +179,17 @@ void Communicate::initialize(int argc, char **argv)
 
 void Communicate::finalize()
 {
+  static bool has_finalized=false;
+
+  if(!has_finalized)
+  {
 #ifdef HAVE_ADIOS
-  adios_read_finalize_method(ADIOS_READ_METHOD_BP);
-  adios_finalize(OHMMS::Controller->rank());
+    adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+    adios_finalize(OHMMS::Controller->rank());
 #endif
-  OOMPI_COMM_WORLD.Finalize();
+    OOMPI_COMM_WORLD.Finalize();
+    has_finalized=true;
+  }
 }
 
 void Communicate::cleanupMessage(void*)
