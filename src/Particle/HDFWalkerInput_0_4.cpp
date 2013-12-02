@@ -421,6 +421,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
       } 
       else if(ADIOS::getRdHDF5())
       {
+        hyperslab_proxy<Buffer_t,3> slab(posin,dims);
         hin.read(slab,hdf::walkers);
       }
     }
