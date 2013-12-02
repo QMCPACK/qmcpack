@@ -156,7 +156,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     attrib.put(cur);
     renameProperty(sourceInp);
     renameProperty(targetInp);
-    if(cname!="text")
+    if(cname!="text" && cname !="comment")
     {
       if(potType==notype)
         APP_ABORT("HamiltonianFactory::build\n  a type must be provided for operator "+cname+" in the xml input");
