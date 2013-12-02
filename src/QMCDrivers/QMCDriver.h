@@ -30,6 +30,7 @@
 #include "Estimators/EstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/BranchIO.h"
 #include "Estimators/TraceManager.h"
 
 class Communicate;
