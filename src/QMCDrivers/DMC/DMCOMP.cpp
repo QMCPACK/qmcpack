@@ -119,6 +119,7 @@ void DMCOMP::resetUpdateEngines()
   if(Movers.empty())
   {
     W.loadEnsemble(wClones);
+    setWalkerOffsets();
     int nw_multi=branchEngine->initWalkerController(W,fixW,false);
     if(nw_multi>1)
       W.createWalkers((nw_multi-1)*W.getActiveWalkers());
