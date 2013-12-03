@@ -1,7 +1,7 @@
 
 import os
 import re
-from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate
+from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag
 from numpy.linalg import eig,LinAlgError
 from extended_numpy import ndgrid,simstats,simplestats,equilibration_length
 from generic import obj
@@ -1100,19 +1100,22 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         #end if
         i = complex(0,1)
         loc_data = QAdata()
-        if 'density_matrices_1b' in data:
-            matrices = data.density_matrices_1b
-            del data.density_matrices_1b
+        name = self.info.name
+        self.info.complex = False
+        if name in data:
+            matrices = data[name]
+            del data[name]
             matrices._remove_hidden()
-            for name,matrix in matrices.iteritems():
+            for mname,matrix in matrices.iteritems():
                 mdata = QAdata()
-                loc_data[name] = mdata
+                loc_data[mname] = mdata
                 for species,d in matrix.iteritems():
                     v = d.value
                     v2 = d.value_squared
                     if len(v.shape)==4 and v.shape[3]==2:
                         d.value         = v[:,:,:,0]  + i*v[:,:,:,1]
                         d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
+                        self.info.complex = True
                     #end if
                     mdata[species] = d
                 #end for
@@ -1162,7 +1165,26 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
             #end for
         #end for
         del self.data
+        self.write_files()
     #end def analyze_local
+
+
+    def write_files(self,path='./'):
+        prefix = self.method_info.file_prefix
+        nm = self.number_matrix
+        for gname,g in nm.iteritems():
+            filename =  '{0}.dm1b_{1}.dat'.format(prefix,gname)
+            filepath = os.path.join(path,filename)
+            mean  = g.matrix.ravel()
+            error = g.matrix_error.ravel()
+            if not self.info.complex:
+                savetxt(filepath,concatenate((mean,error)))
+            else:
+                savetxt(filepath,concatenate((real(mean ),imag(mean ),
+                                              real(error),imag(error))))
+            #end if
+        #end for
+    #end def write_files
 #end class DensityMatricesAnalyzer
 
 

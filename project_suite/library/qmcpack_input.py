@@ -1543,13 +1543,13 @@ class neighbor_trace(QIxml):
     identifier = 'neighbors','centers'
 #end class neighbor_trace
 
-class density_matrices_1b(QIxml):
+class dm1b(QIxml):
     tag = 'estimator'
-    attributes  = ['type']
+    attributes  = ['type','name']
     parameters  = ['energy_matrix','basis_size','integrator','points']
     write_types = obj(energy_matrix=yesno)
     identifier  = 'type'
-#end class density_matrices_1b
+#end class dm1b
 
 class spindensity(QIxml):
     tag = 'estimator'
@@ -1573,7 +1573,7 @@ estimator = QIxmlFactory(
                  chiesa              = chiesa,
                  density             = density,
                  nearestneighbors    = nearestneighbors,
-                 density_matrices_1b = density_matrices_1b,
+                 dm1b = dm1b,
                  spindensity         = spindensity,
                  structurefactor     = structurefactor),
     typekey  = 'type',
@@ -1690,7 +1690,7 @@ classes = [   #standard classes
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
-    reference_points,nearestneighbors,neighbor_trace,density_matrices_1b,
+    reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor
     ]
 types = dict( #simple types and factories
@@ -2685,9 +2685,13 @@ class QmcpackInput(SimulationInput,Names):
                 pos  = []
                 for group in ions.groups:
                     if 'position' in group:
-                        nions = len(group.position)
+                        nions = group.size
                         elem.extend(nions*[group.name])
-                        pos.extend(list(group.position))
+                        if group.size==1:
+                            pos.extend([list(group.position)])
+                        else:
+                            pos.extend(list(group.position))
+                        #end if
                     #end if
                 #end for
                 if len(elem)==1:
