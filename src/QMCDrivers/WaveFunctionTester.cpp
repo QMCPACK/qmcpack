@@ -119,6 +119,7 @@ void WaveFunctionTester::runCloneTest()
 {
   for (int iter=0; iter<4; ++iter)
   {
+    app_log() << "Clone" << iter << endl;
     ParticleSet* w_clone = new MCWalkerConfiguration(W);
     TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
     QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);

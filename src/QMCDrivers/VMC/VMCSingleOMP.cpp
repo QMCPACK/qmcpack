@@ -55,7 +55,6 @@ bool VMCSingleOMP::run()
     Movers[ip]->startRun(nBlocks,false);
   Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
-  hpmStart(QMC_VMC_0_EVENT,"vmc::main");
   ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block=0; block<nBlocks; ++block)
   {
@@ -101,7 +100,6 @@ bool VMCSingleOMP::run()
     ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   }//block
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
-  hpmStop(QMC_VMC_0_EVENT);
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();

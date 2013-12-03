@@ -52,7 +52,6 @@ bool RMCSingleOMP::run()
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
   const bool has_collectables=W.Collectables.size();
-  hpmStart(QMC_RMC_0_EVENT,"rmc::main");
   for (int block=0; block<nBlocks; ++block)
     {
       #pragma omp parallel
@@ -109,7 +108,6 @@ bool RMCSingleOMP::run()
       if(storeConfigs)
         recordBlock(block);
     }//block
-  hpmStop(QMC_RMC_0_EVENT);
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)

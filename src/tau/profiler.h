@@ -23,24 +23,72 @@
 #define QMCPLUSPLUS_PROFILER_H
 
 #include <config.h>
-//#define PROFILING_HPCT_ON
+#include <stack>
+#if defined(VTRACE)
+#include <vt_user.h>
+namespace qmcplusplus {
+  struct Profile
+  {
+    std::stack<string> domains;
+    inline Profile(const char* name, const char* tag,  unsigned id)
+    {
+      domains.push(name);
+      VT_USER_START(name);
+    }
+    inline ~Profile()
+    {
+      pop();
+    }
+    inline void push(const char* name)
+    {
+      domains.push(name);
+      VT_USER_START(name);
+    }
 
-//provide minimal TAU interfaces
-#if defined(PROFILING_ON)
+    inline void pop()
+    {
+      string name=domains.top();
+      VT_USER_END(name.c_str());
+      domains.pop();
+    }
+  };
+}
+#elif defined(PROFILEING_ON)
 #include <TAU.h>
+namespace qmcplusplus {
+  struct Profile
+  {
+    unsigned ID;
+    inline Profile(const char* name, const char* tag,  unsigned id)
+      :ID(id)
+    {
+      TAU_PROFILE(name,tag,id);
+    }
+    inline ~Profile()
+    { }
+    inline void push(const char* name)
+    { }
+    inline void pop()
+    { }
+  };
+}
+//#elif defined(PROFILEING_HPCT_ON)
+//#include <libhpc.h>
 #else
-#define TAU_PROFILE(a,b,c)
-#define TAU_INIT(argc,argv)
-#endif
+namespace qmcplusplus {
+  struct Profile
+  {
+    inline Profile(const char* name, const char* tag,  unsigned id)
+    { }
+    inline ~Profile()
+    { }
+    inline void push(const char* name)
+    { }
 
-//provide minimal IBM HPCT interface
-#if defined(PROFILING_HPCT_ON)
-#include <libhpc.h>
-#else
-#define hpmInit(a,b)
-#define hpmStart(a,b)
-#define hpmStop(a)
-#define hpmTerminate(a)
+    inline void pop()
+    { }
+  };
+}
 #endif
 
 //QMC event IDS
@@ -66,15 +114,15 @@
 #define QMC_DMC_7_EVENT 0x0270
 #define QMC_DMC_8_EVENT 0x0280
 
-#define QMC_WFS_0_EVENT 0x1100
-#define QMC_WFS_1_EVENT 0x1110
-#define QMC_WFS_2_EVENT 0x1120
-#define QMC_WFS_3_EVENT 0x1130
-#define QMC_WFS_4_EVENT 0x1140
-#define QMC_WFS_5_EVENT 0x1150
-#define QMC_WFS_6_EVENT 0x1160
-#define QMC_WFS_7_EVENT 0x1170
-#define QMC_WFS_8_EVENT 0x1180
+#define QMC_WFS_0_EVENT 0x0300
+#define QMC_WFS_1_EVENT 0x0310
+#define QMC_WFS_2_EVENT 0x0320
+#define QMC_WFS_3_EVENT 0x0330
+#define QMC_WFS_4_EVENT 0x0340
+#define QMC_WFS_5_EVENT 0x0350
+#define QMC_WFS_6_EVENT 0x0360
+#define QMC_WFS_7_EVENT 0x0370
+#define QMC_WFS_8_EVENT 0x0380
 
 #endif
 /***************************************************************************

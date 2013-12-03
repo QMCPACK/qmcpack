@@ -25,6 +25,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
+#include <tau/profiler.h>
 #include "ADIOS/ADIOS_profile.h"
 
 namespace qmcplusplus
@@ -122,8 +123,10 @@ void DMCOMP::resetUpdateEngines()
     setWalkerOffsets();
     int nw_multi=branchEngine->initWalkerController(W,fixW,false);
     if(nw_multi>1)
+    {
       W.createWalkers((nw_multi-1)*W.getActiveWalkers());
-    setWalkerOffsets();
+      setWalkerOffsets();
+    }
     //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
@@ -230,6 +233,9 @@ void DMCOMP::resetUpdateEngines()
 
 bool DMCOMP::run()
 {
+
+  Profile prof("DMC","run",QMC_DMC_0_EVENT);
+
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
   //estimator does not need to collect data
@@ -243,19 +249,25 @@ bool DMCOMP::run()
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
   int sample = 0;
   ADIOS_PROFILE::profile_adios_init(nBlocks);
+
+  prof.push("dmc_loop");
   do // block
   {
     ADIOS_PROFILE::profile_adios_start_comp(block);
     Estimators->startBlock(nSteps);
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
+
     IndexType step = 0;
     for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
     {
-//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-//           W.resetWalkerParents();
-//         }
+      prof.push("dmc_advance");
+
+      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+      //           W.resetWalkerParents();
+      //         }
+     
       #pragma omp parallel
       {
         int ip=omp_get_thread_num();
@@ -270,7 +282,11 @@ bool DMCOMP::run()
         Movers[ip]->setMultiplicity(wit,wit_end);
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
-      }//#pragma omp parallel
+      }
+
+      prof.pop(); //close dmc_advance
+
+      prof.push("dmc_branch");
       //Collectables are weighted but not yet normalized
       if(W.Collectables.size())
       {
@@ -279,13 +295,14 @@ bool DMCOMP::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W, branchClones);
-//         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-//           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-//           W.resetWalkerParents();
-//         }
+      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+      //           W.resetWalkerParents();
+      //         }
       if(variablePop)
         FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       sample++;
+      prof.pop(); //close dmc_branch
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
@@ -302,8 +319,10 @@ bool DMCOMP::run()
     ADIOS_PROFILE::profile_adios_start_checkpoint(block-1);
     recordBlock(block);
     ADIOS_PROFILE::profile_adios_end_checkpoint(block-1);
-  }
-  while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
+  } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
+
+  prof.pop(); //close loop
+
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
   for(int ip=0; ip<NumThreads; ip++)
