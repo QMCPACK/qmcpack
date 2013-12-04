@@ -341,7 +341,7 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   uint64_t adios_groupsize = 0, adios_totalsize = 0;
   string group_name;
   //get the size of walker related data that we are writing to disk
-  adios_groupsize += RandomNumberControl::get_group_size();
+  //adios_groupsize += RandomNumberControl::get_group_size();
   EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
   if (sizeof(OHMMS_PRECISION) == sizeof(double))
   {
@@ -367,8 +367,8 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
   //Checkpoint the data for RandomNumber Control
   
-  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  RandomNumberControl::adios_checkpoint(adios_handle);
+  //adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+  //RandomNumberControl::adios_checkpoint(adios_handle);
   if(DumpConfig && dumpwalkers)
     //If we are checkpointing
     wOut->adios_checkpoint(W, adios_handle, block);
