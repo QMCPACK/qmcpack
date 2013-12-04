@@ -432,7 +432,7 @@ SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& in
   }
 
   string aname;
-  int spinSet{0};
+  int spinSet(0);
   OhmmsAttributeSet a;
   a.add(aname,"name");
   a.add(spinSet,"spindataset");

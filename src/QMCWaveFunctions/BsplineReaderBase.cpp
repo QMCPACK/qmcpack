@@ -64,7 +64,7 @@ namespace qmcplusplus
 
   SPOSetBase* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   {
-    int ns{0};
+    int ns(0);
     OhmmsAttributeSet a;
     a.add(ns,"size");
     a.put(cur);
