@@ -174,7 +174,6 @@ void Communicate::initialize(int argc, char **argv)
   barrier();
 #endif
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
-  hpmInit(QMC_MAIN_EVENT,when.c_str());
 }
 
 void Communicate::finalize()
