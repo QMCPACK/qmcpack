@@ -1611,8 +1611,12 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
   int N = spline->num_splines;
   int zs = spline->z_stride;
   // First, solve in the X-direction 
+#pragma omp parallel
+  {
+
   for (int iy=0; iy<My; iy++) 
-#pragma omp parallel for
+  {
+#pragma omp for
     for (int iz=0; iz<Mz; iz++) {
       intptr_t doffset = 2*(iy*Mz+iz);
       intptr_t coffset = 2*(iy*Nz+iz)*zs;
@@ -1625,10 +1629,12 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
 		       ((double*)data)+doffset+1,  (intptr_t)2*My*Mz,
 		       ((double*)coefs)+coffset+1, (intptr_t)2*Ny*Nz*zs);
     }
+  }
 
   // Now, solve in the Y-direction
   for (int ix=0; ix<Nx; ix++) 
-#pragma omp parallel for
+  {
+#pragma omp for
     for (int iz=0; iz<Nz; iz++) {
       intptr_t doffset = 2*(ix*Ny*Nz + iz)*zs;
       intptr_t coffset = 2*(ix*Ny*Nz + iz)*zs;
@@ -1641,10 +1647,12 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
 		       ((double*)coefs)+doffset+1, (intptr_t)2*Nz*zs, 
 		       ((double*)coefs)+coffset+1, (intptr_t)2*Nz*zs);
     }
+  }
 
   // Now, solve in the Z-direction
   for (int ix=0; ix<Nx; ix++) 
-#pragma omp parallel for
+  {
+#pragma omp for
     for (int iy=0; iy<Ny; iy++) {
       intptr_t doffset = 2*((ix*Ny+iy)*Nz)*zs;
       intptr_t coffset = 2*((ix*Ny+iy)*Nz)*zs;
@@ -1657,6 +1665,9 @@ set_multi_UBspline_3d_z (multi_UBspline_3d_z* spline, int num, complex_double *d
 		       ((double*)coefs)+doffset+1, (intptr_t)2*zs, 
 		       ((double*)coefs)+coffset+1, (intptr_t)2*zs);
     }
+  }
+  }
+
 }
 
 

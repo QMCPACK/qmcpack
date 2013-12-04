@@ -26,10 +26,38 @@
 #include "ADIOS/ADIOS_verify.h"
 #endif
 #endif
+#if defined(HAVE_LIBBOOST)
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+#include <string>
+#include <set>
+#include <exception>
+#include <iostream>
+#endif
+
 //#include <boost/archive/text_oarchive.hpp>
 //
 namespace qmcplusplus
 {
+#if defined(HAVE_LIBBOOST)
+template<typename T>
+inline void put_histogram(string name, accumulator_set<T> a,  boost::property_tree::ptree &pt)
+{
+  pt.put(name+".value",a.properties[0]);
+  pt.put(name+".value_squared",a.properties[1]);
+  pt.put(name+".weight",a.properties[2]);
+}
+
+template<typename T>
+inline void get_histogram(string name, accumulator_set<T>& a, boost::property_tree::ptree &pt)
+{
+  a.properties[0]=pt.get<T>(name+".value");
+  a.properties[1]=pt.get<T>(name+".value_squared");
+  a.properties[2]=pt.get<T>(name+".weight");
+}
+#endif
+
 template<typename T>
 struct h5data_proxy<accumulator_set<T> >: public h5_space_type<T,1>
 {
@@ -65,8 +93,242 @@ struct h5data_proxy<accumulator_set<T> >: public h5_space_type<T,1>
   }
 };
 
-#ifdef HAVE_ADIOS
+vector<string> BranchIO::vParamName;
+vector<string> BranchIO::iParamName;
 
+void BranchIO::initAttributes()
+{
+  if(vParamName.size()) return;
+  vParamName.resize(10);
+  vParamName[0]="tau";
+  vParamName[1]="taueff";
+  vParamName[2]="etrial";
+  vParamName[3]="eref";
+  vParamName[4]="branchmax";
+  vParamName[5]="branchcutoff";
+  vParamName[6]="branchfilter";
+  vParamName[7]="sigma";
+  vParamName[8]="acc_energy";
+  vParamName[9]="acc_samples";
+
+  iParamName.resize(7);
+  iParamName[0]="warmupsteps";
+  iParamName[1]="energyupdateinterval";
+  iParamName[2]="counter";
+  iParamName[3]="targetwalkers";
+  iParamName[4]="maxwalkers";
+  iParamName[5]="minwalkers";
+  iParamName[6]="brnachinterval";
+}
+
+bool BranchIO::write(const string& fname)
+{
+  if(myComm->rank()) return true;
+
+#if defined(HAVE_LIBBOOST)
+  initAttributes();
+  using boost::property_tree::ptree;
+  ptree pt;
+
+  // Put log filename in property tree
+  pt.put("state.branchmode", ref.BranchMode);
+
+  for(int i=0;i<vParamName.size(); ++i)
+    pt.put("state.vparam."+vParamName[i], ref.vParam[i]);
+  for(int i=0;i<iParamName.size(); ++i)
+    pt.put("state.iparam."+iParamName[i], ref.iParam[i]);
+
+  put_histogram("state.energy",ref.EnergyHist,pt);
+  put_histogram("state.variance",ref.VarianceHist,pt);
+  put_histogram("state.r2accepted",ref.R2Accepted,pt);
+  put_histogram("state.r2proposed",ref.R2Proposed,pt);
+  string xname=fname+".qmc.xml";
+  write_xml(xname, pt);
+#else
+  //append .qmc.h5 if missing
+  string h5name(fname);
+  if(fname.find("qmc.h5")>= fname.size()) h5name.append(".qmc.h5");
+  hdf_archive dump(myComm);
+  hid_t fid = dump.create(h5name);
+  dump.push(hdf::main_state);
+  dump.push(hdf::qmc_status);
+  string v_header("tau:taueff:etrial:eref:branchmax:branchcutoff:branchfilter:sigma:acc_energy:acc_samples");
+  string i_header("warmupsteps:energyupdateinterval:counter:targetwalkers:maxwalkers:minwalkers:branchinterval");
+  dump.write(v_header,"vparam_def");
+  dump.write(i_header,"iparam_def");
+  dump.write(ref.vParam,"vparam");
+  dump.write(ref.iParam,"iparam");
+  dump.write(ref.BranchMode,"branchmode");
+  dump.push("histogram");
+  dump.write(ref.EnergyHist,"energy");
+  dump.write(ref.VarianceHist,"variance");
+  dump.write(ref.R2Accepted,"r2accepted");
+  dump.write(ref.R2Proposed,"r2proposed");
+  //PopHist is not being used in 2010-10-19
+  //if(ref.BranchMode[SimpleFixedNodeBranch::B_DMC])
+  //{
+	//  dump.push("population");
+  //  dump.write(ref.PopHist.myData,"histogram");
+  //}
+#endif
+  return true;
+}
+
+bool BranchIO::read(const string& fname)
+{
+  int found_config=0;
+
+#if defined(HAVE_LIBBOOST)
+  if(myComm->rank()==0)
+  {
+    initAttributes();
+    using boost::property_tree::ptree;
+    ptree pt;
+    string xname=fname+".qmc.xml";
+    read_xml(xname, pt);
+    if(!pt.empty())
+    {
+      ref.BranchMode=pt.get<BranchModeType>("state.branchmode");
+
+      get_histogram("state.energy",ref.EnergyHist,pt);
+      get_histogram("state.variance",ref.VarianceHist,pt);
+      get_histogram("state.r2accepted",ref.R2Accepted,pt);
+      get_histogram("state.r2proposed",ref.R2Proposed,pt);
+
+      int i=0;
+      BOOST_FOREACH(const ptree::value_type& v, pt.get_child("state.iparam"))
+      {
+        ref.iParam[i++]=v.second.get_value<int>();
+      }
+      i=0;
+      BOOST_FOREACH(const ptree::value_type& v, pt.get_child("state.vparam"))
+      {
+        ref.vParam[i++]=v.second.get_value<double>();
+      }
+      found_config=1;
+    }
+  }
+#else
+  if(myComm->rank()==0)
+  {
+    HDFVersion res_version(0,4); //start using major=0 and minor=4
+    HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
+    HDFVersion in_version(0,1);
+
+    //append .config.h5 if missing
+    string h5name(fname);
+    if(fname.find("qmc.h5")>= fname.size()) h5name.append(".qmc.h5");
+
+    hdf_archive prevconfig(myComm,true);
+    found_config=prevconfig.open(h5name,H5F_ACC_RDONLY);
+
+    if(found_config)
+    {
+      int n=ref.vParam.size()+ref.iParam.size();
+      /** temporary storage to broadcast restart data */
+      prevconfig.read(in_version.version,hdf::version);
+      myComm->bcast(in_version.version);
+      prevconfig.push(hdf::main_state,false);
+      if(in_version>= res_20080624)
+      {
+        //need a better version control
+        prevconfig.push(hdf::qmc_status,false);
+        prevconfig.read(ref.vParam,"vparam");
+        prevconfig.read(ref.iParam,"iparam");
+        prevconfig.read(ref.BranchMode,"branchmode");
+
+        prevconfig.push("histogram",false);
+        prevconfig.read(ref.EnergyHist,"energy");
+        prevconfig.read(ref.VarianceHist,"variance");
+        prevconfig.read(ref.R2Accepted,"r2accepted");
+        prevconfig.read(ref.R2Proposed,"r2proposed");
+        prevconfig.pop();
+
+        prevconfig.pop();
+      }
+      else
+        found_config=false;
+      prevconfig.pop();
+    }
+  }
+#endif
+  myComm->bcast(found_config);
+
+  if(!found_config) return false;
+
+  bcast_state();
+
+  return true;
+}
+
+
+bool BranchIO::read_adios(const string& fname)
+{//do not use this
+  #ifdef HAVE_ADIOS
+  if(ADIOS::getRdADIOS())
+  {
+    ADIOS::open(fname, myComm->getMPI());	
+    /** temporary storage to broadcast restart data */
+    ADIOS::read(ref.vParam.data(),"vparam");
+    ADIOS::read(ref.iParam.data(),"iparam");
+    ADIOS::read(&ref.BranchMode,"branchmode");
+    ADIOS::read(&ref.EnergyHist,"energy");
+    ADIOS::read(&ref.VarianceHist,"variance");
+    ADIOS::read(&ref.R2Accepted,"r2accepted");
+    ADIOS::read(&ref.R2Proposed,"r2proposed");
+    ADIOS::close();
+  }
+  bcast_state();
+#endif
+  return true;
+}
+
+void BranchIO::bcast_state()
+{
+  int n=ref.vParam.size()+ref.iParam.size();
+  vector<RealType> pdata(n+1+16,-1);
+
+  if(myComm->rank()==0)
+  {
+    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
+    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
+    int offset=n;
+    pdata[offset++]=ref.BranchMode.to_ulong();
+    std::copy(ref.EnergyHist.properties,ref.EnergyHist.properties+4,pdata.begin()+offset);
+    offset+=4;
+    std::copy(ref.VarianceHist.properties,ref.VarianceHist.properties+4,pdata.begin()+offset);
+    offset+=4;
+    std::copy(ref.R2Accepted.properties,ref.R2Accepted.properties+4,pdata.begin()+offset);
+    offset+=4;
+    std::copy(ref.R2Proposed.properties,ref.R2Proposed.properties+4,pdata.begin()+offset);
+  }
+
+  //broadcast to the nodes : need to add a namespace mpi::
+  myComm->bcast(pdata);
+
+  if(myComm->rank())
+  {
+    int ii=0;
+    for(int i=0; i<ref.vParam.size(); ++i,++ii)
+      ref.vParam[i]=pdata[ii];
+    for(int i=0; i<ref.iParam.size(); ++i,++ii)
+      ref.iParam[i]=static_cast<int>(pdata[ii]);
+    ref.BranchMode=static_cast<unsigned long>(pdata[ii]);
+  }
+  {
+    //update historgram
+    int ii=n+1;
+    ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    ii+=4;
+    ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    ii+=4;
+    ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    ii+=4;
+    ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+  }
+}
+
+#ifdef HAVE_ADIOS
 int64_t BranchIO::get_Checkpoint_size()
 {
   int64_t adios_groupsize = 8     \
@@ -115,194 +377,7 @@ void BranchIO::adios_checkpoint_verify(ADIOS_FILE *fp)
 
 #endif
 
-bool BranchIO::write(const string& fname)
-{
-  //append .config.h5 if missing
-  string h5name(fname);
-  if(fname.find("config.h5")>= fname.size())
-    h5name.append(".config.h5");
-  hdf_archive dump(myComm,false);
-  hid_t fid = dump.open(h5name);
-  //cannot find the file, return false
-  if(fid<0)
-    return false;
-  dump.push(hdf::main_state);
-  bool firsttime=!dump.is_group(hdf::qmc_status);
-  dump.push(hdf::qmc_status);
-  if(firsttime)
-  {
-    string v_header("tau:taueff:etrial:eref:branchmax:branchcutoff:branchfilter:sigma:acc_energy:acc_samples");
-    string i_header("warmupsteps:energyupdateinterval:counter:targetwalkers:maxwalkers:minwalkers:branchinterval");
-    dump.write(v_header,"vparam_def");
-    dump.write(i_header,"iparam_def");
-  }
-  dump.write(ref.vParam,"vparam");
-  dump.write(ref.iParam,"iparam");
-  dump.write(ref.BranchMode,"branchmode");
-  dump.push("histogram");
-  dump.write(ref.EnergyHist,"energy");
-  dump.write(ref.VarianceHist,"variance");
-  dump.write(ref.R2Accepted,"r2accepted");
-  dump.write(ref.R2Proposed,"r2proposed");
-  //PopHist is not being used in 2010-10-19
-  //if(ref.BranchMode[SimpleFixedNodeBranch::B_DMC])
-  //{
-	//  dump.push("population");
-  //  dump.write(ref.PopHist.myData,"histogram");
-  //}
-  return true;
-}
 
-bool BranchIO::read(const string& fname)
-{
-  //append .config.h5 if missing
-  string h5name(fname);
-  if(fname.find("config.h5")>= fname.size())
-    h5name.append(".config.h5");
-
-  hdf_archive prevconfig(myComm,true);
-  int found_config=prevconfig.open(h5name,H5F_ACC_RDONLY);
-  myComm->bcast(found_config);
-
-  if(found_config==0) return false;
-
-  app_log() << "BranchIO::read from " << fname << endl;
-
-  HDFVersion res_version(0,4); //start using major=0 and minor=4
-  HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
-  HDFVersion in_version(0,1);
-  int n=ref.vParam.size()+ref.iParam.size();
-  /** temporary storage to broadcast restart data */
-  vector<RealType> pdata(n+3+16,-1);
-  prevconfig.read(in_version.version,hdf::version);
-  myComm->bcast(in_version.version);
-  prevconfig.push(hdf::main_state,false);
-  if(in_version>= res_20080624)
-  {
-    //need a better version control
-    prevconfig.push(hdf::qmc_status,false);
-    prevconfig.read(ref.vParam,"vparam");
-    prevconfig.read(ref.iParam,"iparam");
-    prevconfig.read(ref.BranchMode,"branchmode");
-    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
-    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
-    int offset=n;
-    pdata[offset++]=ref.BranchMode.to_ulong();
-    pdata[offset++]=in_version[0];
-    pdata[offset++]=in_version[1];
-    {
-      //get histogram
-      prevconfig.push("histogram",false);
-      accumulator_set<RealType> temp;
-      prevconfig.read(temp,"energy");
-      std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-      offset+=4;
-      prevconfig.read(temp,"variance");
-      std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-      offset+=4;
-      prevconfig.read(temp,"r2accepted");
-      std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-      offset+=4;
-      prevconfig.read(temp,"r2proposed");
-      std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-      offset+=4;
-      prevconfig.pop();
-    }
-    prevconfig.pop();
-  }
-  prevconfig.pop();
-  //broadcast to the nodes : need to add a namespace mpi::
-  myComm->bcast(pdata);
-  if(myComm->rank())
-  {
-    //\since 2008-06-24
-    if(in_version>=res_20080624)
-    {
-      int ii=0;
-      for(int i=0; i<ref.vParam.size(); ++i,++ii)
-        ref.vParam[i]=pdata[ii];
-      for(int i=0; i<ref.iParam.size(); ++i,++ii)
-        ref.iParam[i]=static_cast<int>(pdata[ii]);
-      ref.BranchMode=static_cast<unsigned long>(pdata[ii]);
-    }
-  }
-  {
-    //update historgram
-    int ii=n+3;
-    ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-  }
-
-  return true;
-}
-
-bool BranchIO::read_adios(const string& fname)
-{//do not use this
-  #ifdef HAVE_ADIOS
-	if(ADIOS::getRdADIOS())
-	{
-		ADIOS::open(fname, myComm->getMPI());	
-		int n=ref.vParam.size()+ref.iParam.size();
-		/** temporary storage to broadcast restart data */
-  	vector<RealType> pdata(n+3+16,-1);
-		ADIOS::read(ref.vParam.data(),"vparam");
-		ADIOS::read(ref.iParam.data(),"iparam");
-		ADIOS::read(&ref.BranchMode,"branchmode");
-    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
-    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
-		int offset=n;
-		HDFVersion res_version(0,4); //start using major=0 and minor=4
-  	HDFVersion res_20080624(0,5);//major revision on 2008-06-24 0.5
- 		HDFVersion in_version(0,1);
-    pdata[offset++]=ref.BranchMode.to_ulong();
-    pdata[offset++]=in_version[0];
-    pdata[offset++]=in_version[1];
-    accumulator_set<RealType> temp;
-    ADIOS::read(&temp,"energy");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"variance");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"r2accepted");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-    ADIOS::read(&temp,"r2proposed");
-    std::copy(temp.properties,temp.properties+4,pdata.begin()+offset);
-    offset+=4;
-		myComm->bcast(pdata);
-		if(myComm->rank())
-  	{
-      int ii=0;
-      for(int i=0; i<ref.vParam.size(); ++i,++ii)
-        ref.vParam[i]=pdata[ii];
-      for(int i=0; i<ref.iParam.size(); ++i,++ii)
-        ref.iParam[i]=static_cast<int>(pdata[ii]);
-      ref.BranchMode=static_cast<unsigned long>(pdata[ii]);
-		}
-		{
-			int ii=n+3;
-    	ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-    	ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    	ii+=4;
-		}	
-		ADIOS::close();
-		return true;
-	} 
-	#endif
-  return true;
-	}
 }
 
 /***************************************************************************

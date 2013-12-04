@@ -111,7 +111,7 @@ inline void scatterv(const communicator& comm, CT& in, CT& out, IV& counts, IV& 
 {
   container_proxy<CT> t_in(in),t_out(out);
   container_proxy<IV> t_counts(counts), t_displ(displ);
-  MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
+  MPI_Datatype type_id=get_mpi_datatype(*t_out.data());
   int ierr=MPI_Scatterv(t_in.data(),t_counts.data(),t_displ.data(),type_id
                         ,t_out.data(),t_out.size(),type_id,dest,comm);
 }
@@ -124,7 +124,7 @@ template<typename CT>
 inline void scatter(const communicator& comm, CT& in, CT& out, int dest=0)
 {
   container_proxy<CT> t_in(in),t_out(out);
-  MPI_Datatype type_id=get_mpi_datatype(*t_in.data());
+  MPI_Datatype type_id=get_mpi_datatype(*t_out.data());
   int ierr=MPI_Scatter(t_in.data(),t_out.size(),type_id
                        ,t_out.data(),t_out.size(),type_id,dest,comm);
 }

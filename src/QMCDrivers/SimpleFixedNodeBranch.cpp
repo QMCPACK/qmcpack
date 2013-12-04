@@ -828,15 +828,6 @@ void SimpleFixedNodeBranch::read(const string& fname)
               << "\n      r2accepted = " << R2Accepted.mean()
               << "\n      r2proposed = " << R2Proposed.mean()
               <<endl;
-    //char fname2[128];
-    //sprintf(fname2,"%s.p%03d.config",fname.c_str(),OHMMS::Controller->rank());
-    //ofstream fout(fname2);
-    //fout << "    Restarting, cummulative properties:"
-    //          << "\n      energy     = " << EnergyHist.mean()
-    //          << "\n      variance   = " << VarianceHist.mean()
-    //          << "\n      r2accepted = " << R2Accepted.mean()
-    //          << "\n      r2proposed = " << R2Proposed.mean()
-    //          <<endl;
   }
   else
   {
@@ -847,6 +838,16 @@ void SimpleFixedNodeBranch::read(const string& fname)
       BranchMode[B_POPCONTROL]=bmode[B_POPCONTROL];
     }
   }
+
+  //char fname2[128];
+  //sprintf(fname2,"%s.p%03d.config",fname.c_str(),OHMMS::Controller->rank());
+  //ofstream fout(fname2);
+  //fout << "    Restarting, cummulative properties:"
+  //          << "\n      energy     = " << EnergyHist.mean()
+  //          << "\n      variance   = " << VarianceHist.mean()
+  //          << "\n      r2accepted = " << R2Accepted.mean()
+  //          << "\n      r2proposed = " << R2Proposed.mean()
+  //          <<endl;
   app_log().flush();
 }
 

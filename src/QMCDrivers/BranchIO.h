@@ -47,6 +47,12 @@ struct BranchIO
   bool write(const string& fname);
   bool read(const string& fname);
   bool read_adios(const string& fname);
+  void bcast_state();
+
+  static vector<string> vParamName;
+  static vector<string> iParamName;
+
+  static void initAttributes();
 };
 }
 #endif

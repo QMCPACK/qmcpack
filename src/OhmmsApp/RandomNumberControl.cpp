@@ -25,12 +25,16 @@
 #include <HDFVersion.h>
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
-#ifdef HAVE_ADIOS 
-#include "ADIOS/ADIOS_config.h"
-#ifdef ADIOS_VERIFY
-#include "ADIOS/ADIOS_verify.h"
+#if defined(HAVE_LIBBOOST)
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+#include <string>
+#include <set>
+#include <exception>
+#include <iostream>
 #endif
-#endif
+#include <Utilities/SimpleParser.h>
 
 namespace qmcplusplus
 {
@@ -237,97 +241,55 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 
 void RandomNumberControl::read(const string& fname, Communicate* comm)
 {
-  return;
   int nthreads=omp_get_max_threads();
   vector<uint_type> vt_tot, vt;
-  TinyVector<int,2> shape(0);
-
-  TinyVector<hsize_t,2> shape_t(0);
-  shape_t[1]=Random.state_size();
-  hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
+  vector<int> shape(2,0),shape_now(2,0);
+  shape_now[0]=comm->size()*nthreads;
+  shape_now[1]=Random.state_size();
 
   if(comm->rank()==0)
   {
-    string h5name(fname);
-    if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
-    hdf_archive hout(comm);
-    hout.open(h5name,H5F_ACC_RDONLY);
-    hout.push(hdf::main_state);
-    hout.push("random");
-    hout.read(slab,Random.EngineName);
-    shape[0]=static_cast<int>(slab.size(0));
-    shape[1]=static_cast<int>(slab.size(1));
-  }
-
-  //bcast of hsize_t is not working
-  mpi::bcast(*comm,shape);
-
-  if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
-  {
-    app_log() << "Mismatched random number generators."
-      << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
-      << "\n  State size per stream : old=" << shape[1] << " new= " << Random.state_size()
-      << "\n  Using the random streams generated at the initialization." << endl;
-    return;
-  }
-  app_log() << "  Restart from the random number streams from the previous configuration." << endl;
-  vt_tot.resize(shape[0]);
-  vt.resize(nthreads*Random.state_size());
-  if(comm->size()>1)
-    mpi::scatter(*comm,vt_tot,vt);
-  else
-    std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
-
-  {
-    if(nthreads>1)
+#if defined(HAVE_LIBBOOST)
+    using boost::property_tree::ptree;
+    ptree pt;
+    string xname=fname+".random.xml";
+    read_xml(xname, pt);
+    if(!pt.empty())
     {
-      vector<uint_type>::iterator vt_it(vt.begin());
-      for(int ip=0; ip<nthreads; ip++, vt_it += shape[1])
+      string engname=pt.get<string>("random.engine");
+      if(engname==Random.EngineName)
       {
-        vector<uint_type> c(vt_it,vt_it+shape[1]);
-        Children[ip]->load(c);
+        istringstream dims(pt.get<string>("random.dims"));
+        dims >> shape[0] >> shape[1];
+        if(shape[0]==shape_now[0] && shape[1]==shape_now[1])
+        {
+          vt_tot.resize(shape[0]*shape[1]);
+          istringstream v(pt.get<string>("random.states"));
+          for(int i=0; i<vt_tot.size(); ++i) v>>vt_tot[i];
+        }
+        else
+          shape[0]=shape[1]=0;
       }
     }
-    else
-      Random.load(vt);
-  }
-}
-
-#ifdef HAVE_ADIOS
-void RandomNumberControl::read_adios(const string& fname, Communicate* comm)
-{
-  //do not use adios for random number generators
-  int nthreads=omp_get_max_threads();
-  vector<uint_type> vt_tot, vt;
-  TinyVector<int,2> shape(0);
-  if(ADIOS::getRdADIOS()) 
-  {
-    ADIOS::open(fname, comm->getMPI());
-    TinyVector<hsize_t,2> shape_t(0);
-    shape_t[1]=Random.state_size();
-    ADIOS::read_random(vt_tot, shape, "random");
-    ADIOS::close();
-  } 
-  else if(ADIOS::getRdHDF5())
-  {
-    //read it
-    string h5name(fname);
-    if(fname.find("config.h5")>= fname.size())
-      h5name.append(".config.h5");
-    hdf_archive hout(comm);
-    hout.open(h5name,H5F_ACC_RDONLY);
-    hout.push(hdf::main_state);
-    hout.push("random");
+#else
     TinyVector<hsize_t,2> shape_t(0);
     shape_t[1]=Random.state_size();
     hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape_t);
+    string h5name=fname+".random.h5";
+    hdf_archive hout(comm);
+    hout.open(h5name,H5F_ACC_RDONLY);
+    hout.push(hdf::main_state);
+    hout.push("random");
+    string engname;
     hout.read(slab,Random.EngineName);
     shape[0]=static_cast<int>(slab.size(0));
     shape[1]=static_cast<int>(slab.size(1));
+#endif
   }
-  //bcast of hsize_t is not working
+
   mpi::bcast(*comm,shape);
-  if(shape[0]!=comm->size()*nthreads || shape[1] != Random.state_size())
+
+  if(shape[0]!=shape_now[0] || shape[1] != shape_now[1])
   {
     app_log() << "Mismatched random number generators."
       << "\n  Number of streams     : old=" << shape[0] << " new= " << comm->size()*nthreads
@@ -335,17 +297,14 @@ void RandomNumberControl::read_adios(const string& fname, Communicate* comm)
       << "\n  Using the random streams generated at the initialization." << endl;
     return;
   }
+
   app_log() << "  Restart from the random number streams from the previous configuration." << endl;
-  vt_tot.resize(shape[0]);
   vt.resize(nthreads*Random.state_size());
+
   if(comm->size()>1)
-  {
     mpi::scatter(*comm,vt_tot,vt);
-    //MPI_Datatype type_id=mpi::get_mpi_datatype(*vt_tot.data());
-    //MPI_Scatter(vt_tot.data(), shape[0], type_id, vt.data(), nthreads*Random.state_size(), type_id, 0, *comm);
-  }
   else
-    std::copy(vt_tot.begin(),vt_tot.begin()+vt.size(),vt.begin());
+    std::copy(vt_tot.begin(),vt_tot.end(),vt.begin());
 
   {
     if(nthreads>1)
@@ -362,75 +321,8 @@ void RandomNumberControl::read_adios(const string& fname, Communicate* comm)
   }
 }
 
-uint64_t RandomNumberControl::get_group_size()
-{
-  return 4 * omp_get_max_threads() * Random.state_size() + 4 * 4;
-}
-
-void RandomNumberControl::adios_checkpoint(int64_t adios_handle)
-{
-  int nthreads=omp_get_max_threads();
-  vector<uint_type> vt, vt_tot;
-  vt.reserve(nthreads * Random.state_size());
-  if(nthreads>1)
-    for(int ip=0; ip<nthreads; ++ip)
-    {
-      vector<uint_type> c;
-      Children[ip]->save(c);
-      vt.insert(vt.end(),c.begin(),c.end());
-    }
-  else
-    Random.save(vt);
-  //write these values to variables that random.ch is looking for
-  void* random = (void*)vt.data();
-  int thread_size = omp_get_max_threads();
-  int random_size = Random.state_size();
-  int rank = OHMMS::Controller->rank() * omp_get_max_threads();
-  int global_size = OHMMS::Controller->size() * omp_get_max_threads();
-  int local_size = omp_get_max_threads();
-  adios_write (adios_handle, "random_size", &random_size);
-  adios_write (adios_handle, "thread_rank", &rank);
-  adios_write (adios_handle, "global_size", &global_size);
-  adios_write (adios_handle, "local_size", &local_size);
-  adios_write (adios_handle, "random", random);
-}
-
-#ifdef ADIOS_VERIFY
-
-void RandomNumberControl::adios_checkpoint_verify(ADIOS_FILE *fp)
-{
-  int nthreads=omp_get_max_threads();
-  vector<uint_type> vt, vt_tot;
-  vt.reserve(nthreads * Random.state_size());
-  if(nthreads>1)
-    for(int ip=0; ip<nthreads; ++ip)
-    {
-      vector<uint_type> c;
-      Children[ip]->save(c);
-      vt.insert(vt.end(),c.begin(),c.end());
-    }
-  else
-    Random.save(vt);
-  //write these values to variables that random.ch is looking for
-  //void* random = (void*)vt.data();
-  int thread_size = omp_get_max_threads();
-  int random_size = Random.state_size();
-  int rank = OHMMS::Controller->rank() * omp_get_max_threads();
-  int global_size = OHMMS::Controller->size() * omp_get_max_threads();
-  int local_size = omp_get_max_threads();
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "random_size", &random_size);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "thread_rank", &rank);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "global_size", &global_size);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "local_size", &local_size);
-  IO_VERIFY::adios_checkpoint_verify_random_variables(fp, "random", (uint_type *)vt.data());
-}
-#endif
-#endif
-
-
 void RandomNumberControl::write(const string& fname, Communicate* comm)
 {
-  return;
   int nthreads=omp_get_max_threads();
   vector<uint_type> vt, vt_tot;
   vt.reserve(nthreads*1024);
@@ -450,17 +342,38 @@ void RandomNumberControl::write(const string& fname, Communicate* comm)
   }
   else
     vt_tot=vt;
-  string h5name(fname);
-  if(fname.find("config.h5")>= fname.size())
-    h5name.append(".config.h5");
-  hdf_archive hout(comm);
-  hout.open(h5name,H5F_ACC_RDWR);
-  hout.push(hdf::main_state);
-  hout.push("random");
-  TinyVector<hsize_t,2> shape(comm->size()*nthreads,Random.state_size());
-  hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape);
-  hout.write(slab,Random.EngineName);
-  hout.close();
+
+  if(comm->rank()==0)
+  {
+#if defined(HAVE_LIBBOOST)
+    using boost::property_tree::ptree;
+    ptree pt;
+    ostringstream dims,vt_o;
+    dims<<comm->size()*nthreads << " " << Random.state_size();
+    vector<uint_type>::iterator v=vt_tot.begin();
+    for(int i=0; i<comm->size()*nthreads; ++i)
+    {
+      std::copy(v,v+Random.state_size(),std::ostream_iterator<uint_type>(vt_o," "));
+      vt_o<<endl;
+      v+=Random.state_size();
+    }
+    pt.put("random.engine", Random.EngineName);
+    pt.put("random.dims",dims.str());
+    pt.put("random.states",vt_o.str());
+    string xname=fname+".random.xml";
+    write_xml(xname, pt);
+#else
+    string h5name=fname+".random.h5";
+    hdf_archive hout(comm);
+    hout.create(h5name);
+    hout.push(hdf::main_state);
+    hout.push("random");
+    TinyVector<hsize_t,2> shape(comm->size()*nthreads,Random.state_size());
+    hyperslab_proxy<vector<uint_type>,2> slab(vt_tot,shape);
+    hout.write(slab,Random.EngineName);
+    hout.close();
+#endif
+  }
 }
 }
 /***************************************************************************

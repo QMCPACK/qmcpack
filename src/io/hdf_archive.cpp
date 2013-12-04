@@ -33,8 +33,6 @@ hdf_archive::~hdf_archive()
   if(access_id != H5P_DEFAULT) H5Pclose(access_id);
 #endif
   close();
-  if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
-  if(access_id!= H5P_DEFAULT) H5Pclose(access_id);
   H5Eset_auto (err_func, client_data);
 }
 
@@ -138,5 +136,5 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf_file.cpp 894 2006-02-03 16:52:38Z jnkim $
+ * $Id: hdf_archive.cpp 894 2006-02-03 16:52:38Z jnkim $
  ***************************************************************************/
