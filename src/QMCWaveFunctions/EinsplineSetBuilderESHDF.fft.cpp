@@ -44,6 +44,7 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 
 bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
 {
+  update_token(__FILE__,__LINE__,"ReadOrbitalInfo_ESHDF");
   app_log() << "  Reading orbital file in ESHDF format.\n";
   HDFAttribIO<TinyVector<int,3> > h_version(Version);
   h_version.read (H5FileID, "/version");
@@ -304,9 +305,12 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
 
 void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
 {
+  update_token(__FILE__,__LINE__,"OccupyBands_ESHDF");
   if (myComm->rank() != 0)
     return;
-  SortBands.clear();
+
+  vector<BandInfo>& SortBands(*FullBands[spin]);
+  SortBands.clear(); //??? can exit if SortBands is already made?
   int maxOrbs(0);
   for (int ti=0; ti<DistinctTwists.size(); ti++)
   {
@@ -595,6 +599,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:complex");
   bool root = (myComm->rank()==0);
   if (root)
   {
@@ -693,6 +698,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
       ny=mesh[1];
       nz=mesh[2];
       splineData.resize(nx,ny,nz);
+      vector<BandInfo>& SortBands(*FullBands[spin]);
       for (int i=0; i<rotatedOrbitals.size(); i++)
       {
         int iorb = rotatedOrbitals[i];
@@ -769,6 +775,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
 
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:double");
   bool root = (myComm->rank()==0);
   if (root)
   {
@@ -867,6 +874,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       ny=mesh[1];
       nz=mesh[2];
       splineData.resize(nx,ny,nz);
+      vector<BandInfo>& SortBands(*FullBands[spin]);
       for (int i=0; i<rotatedOrbitals.size(); i++)
       {
         int iorb = rotatedOrbitals[i];

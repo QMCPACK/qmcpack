@@ -91,7 +91,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     }
   }
 
-  SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet, const BandInfoGroup& bandgroup)
+  SPOSetBase* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineOpenAdoptorReader","create_spline_set(int, EinsplineSet*)");
     //typedef typename adoptor_type::real_type spline_data_type;
@@ -102,7 +102,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     else
       app_log() << "  Using real einspline table" << endl;
 
-    check_twists(orbitalSet,bspline,bandgroup);
+    check_twists(bspline,bandgroup);
     Ugrid xyz_grid[3];
     typename adoptor_type::BCType xyz_bc[3];
 

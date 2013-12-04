@@ -90,6 +90,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   string cname, tname;
   std::map<string,SPOSetBasePtr> spomap;
   bool multiDet=false;
+
+  if (myBasisSetFactory == 0)
+  {//always create one, using singleton and just to access the member functions
+    myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+    myBasisSetFactory->setReportLevel(ReportLevel);
+  }
+
   //check the basis set
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
@@ -97,11 +104,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     getNodeName(cname,cur);
     if (cname == basisset_tag)
     {
-      if (myBasisSetFactory == 0)
-      {
-        myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
-        myBasisSetFactory->setReportLevel(ReportLevel);
-      }
       myBasisSetFactory->createBasisSet(cur,curRoot);
     }
     else if ( cname == sposet_tag )
@@ -112,14 +114,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       spoAttrib.add (spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << endl;
-      if (myBasisSetFactory == 0)
-      {
-        myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
-        myBasisSetFactory->setReportLevel(ReportLevel);
-      }
-      //     myBasisSetFactory->createBasisSet(cur,cur);
       SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
-      spo->put(cur, spomap);
+      //spo->put(cur, spomap);
       if (spomap.find(spo_name) != spomap.end())
       {
         app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
@@ -150,15 +146,76 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
   //missing basiset, e.g. einspline
 // mmorales: this should not be allowed now, either basisset or sposet must exist
-  if (myBasisSetFactory == 0)
+  //if (myBasisSetFactory == 0)
+  //{
+  //  myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+  //  myBasisSetFactory->setReportLevel(ReportLevel);
+  //  myBasisSetFactory->createBasisSet(curRoot,curRoot);
+  //}
+
+  //sposet_builder is defined outside <determinantset/>
+  if(spomap.empty())
   {
-    myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
-    myBasisSetFactory->setReportLevel(ReportLevel);
-    myBasisSetFactory->createBasisSet(curRoot,curRoot);
+    bool needbb=true;
+    cur = curRoot->children;
+    while (cur != NULL)//check the basis set
+    {
+      getNodeName(cname,cur);
+      if (cname == sd_tag)
+      {
+        xmlNodePtr cur1=cur->children;
+        while(cur1!=NULL)
+        {
+          getNodeName(tname,cur1);
+          if(tname == det_tag)
+          {
+            string aspo,did;
+            OhmmsAttributeSet a;
+            a.add(did,"id");
+            a.add(aspo,"sposet");
+            a.put(cur1);
+            if(aspo.empty()) aspo=did;
+            SPOSetBase* aset=get_sposet(aspo);
+            if(aset) 
+              spomap[aspo]=aset;
+            else
+            {
+              myBasisSetFactory->createBasisSet(cur1,curRoot);
+              aset = myBasisSetFactory->createSPOSet(cur1);
+              if(aset) spomap[aspo]=aset;
+            }
+          }
+          cur1=cur1->next;
+        }
+      }
+      else if(cname == multisd_tag)
+      {
+        string spo_alpha;
+        string spo_beta;
+        OhmmsAttributeSet a;
+        a.add (spo_alpha, "spo_up");
+        a.add (spo_beta, "spo_dn");
+        a.put(cur);
+        SPOSetBase* alpha=get_sposet(spo_alpha);
+        SPOSetBase* beta=get_sposet(spo_beta);
+        if(alpha && beta)
+        { 
+          spomap[spo_alpha]=alpha;
+          spomap[spo_beta]=beta;
+        }
+      }
+      cur=cur->next;
+    }
   }
-  //add sposet
+
+  if(spomap.empty())
+  {
+    APP_ABORT_TRACE(__FILE__,__LINE__," No sposet is found to build slaterdeterminant or multideterminant");
+  }
+
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
   {
@@ -174,6 +231,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         slaterdet_0 = new SlaterDetWithBackflow(targetPtcl,BFTrans);
       else
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
+
       // Copy any entries in sposetmap into slaterdet_0
       std::map<string,SPOSetBasePtr>::iterator iter;
       for (iter=spomap.begin(); iter!=spomap.end(); iter++)
@@ -278,6 +336,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
+
   if (!multiDet && !slaterdet_0)
   {
     //fatal
@@ -379,7 +439,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       psi = myBasisSetFactory->createSPOSet(cur);
 #endif
     }
-    psi->put(cur); 
+    //psi->put(cur); 
     psi->checkObject();
     slaterdet_0->add(psi,detname);
   }
@@ -451,17 +511,15 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
     if(UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
+    else if (afm=="AFM")
+    {
+      app_log()<<"Using the AFM determinant"<<endl;
+      adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
+    }
+    else if (psi->Optimizable)
+      adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
-      if (afm=="AFM")
-      {
-        app_log()<<"Using the AFM determinant"<<endl;
-        adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
-      }
-      else
-        if (psi->Optimizable)
-          adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
-        else
-          adet = new DiracDeterminantBase(psi,firstIndex);
+      adet = new DiracDeterminantBase(psi,firstIndex);
 #endif
   }
   adet->set(firstIndex,lastIndex-firstIndex);

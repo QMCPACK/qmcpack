@@ -21,34 +21,44 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/BsplineReaderBase.h"
 
 namespace qmcplusplus
 {
 
-std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
-std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
-//std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
-//std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
+//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
+////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
+////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p,
-    PtclPoolType& psets, xmlNodePtr cur)
-  : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
-    NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
-    NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
-    ParticleSets(psets), TargetPtcl(p), H5FileID(-1),
-    Format(QMCPACK), makeRotations(false), MeshFactor(1.0),
-    MeshSize(0,0,0)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
+  : TargetPtcl(p),ParticleSets(psets), 
+  OrbitalSet(0),LastOrbitalSet(0), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
+  TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
+  NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
+  NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
+  H5FileID(-1), makeRotations(false), MeshFactor(1.0), MeshSize(0,0,0)
 {
   MatchingTol=1.0e-8;
 //     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       TileMatrix(i,j) = 0;
+  MyToken=0;
+
+  //invalidate states by the basis class
+  delete_iter(states.begin(),states.end());
+  states.clear();
+  states.resize(p.groups(),0);
+
+  //create vectors with nullptr
+  FullBands.resize(p.groups(),0);
 }
 
 EinsplineSetBuilder::~EinsplineSetBuilder()
 {
   DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
+  if(MixedSplineReader) delete MixedSplineReader;
   if(H5FileID>=0)
     H5Fclose(H5FileID);
 }
@@ -66,6 +76,7 @@ EinsplineSetBuilder::put(xmlNodePtr cur)
 bool
 EinsplineSetBuilder::CheckLattice()
 {
+  update_token(__FILE__,__LINE__,"CheckLattice");
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
@@ -242,78 +253,82 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   }
 }
 
-//////////////////////////////////////////////////////////////
-// Create the ion ParticleSet from the data in the HDF file //
-//////////////////////////////////////////////////////////////
-void
-EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
-{
-  //    ParticleSet &pTemp = *(new MCWalkerConfiguration);
-  ParticleSet &pTemp = *(new ParticleSet);
-  pTemp.setName (sourceName);
-  SpeciesSet& tspecies(pTemp.getSpeciesSet());
-  ParticleSets[sourceName] = &pTemp;
-}
-
-////////////////////////////////////////////////////
-// Tile the ion positions according to TileMatrix //
-////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+//// Create the ion ParticleSet from the data in the HDF file //
+////////////////////////////////////////////////////////////////
+//void
+//EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
+//{
+//  //    ParticleSet &pTemp = *(new MCWalkerConfiguration);
+//  ParticleSet &pTemp = *(new ParticleSet);
+//  pTemp.setName (sourceName);
+//  SpeciesSet& tspecies(pTemp.getSpeciesSet());
+//  ParticleSets[sourceName] = &pTemp;
+//}
+//
 void
 EinsplineSetBuilder::TileIons()
 {
-  Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
-  Vector<int>                            primTypes = IonTypes;
-  int numCopies = abs(det(TileMatrix));
-  IonTypes.resize(primPos.size()*numCopies);
-  IonPos.resize  (primPos.size()*numCopies);
-  int maxCopies = 10;
-  typedef TinyVector<double,3> Vec3;
-  int index=0;
-  for (int i0=-maxCopies; i0<=maxCopies; i0++)
-    for (int i1=-maxCopies; i1<=maxCopies; i1++)
-      for (int i2=-maxCopies; i2<=maxCopies; i2++)
-        for (int iat=0; iat < primPos.size(); iat++)
-        {
-          Vec3 r     = primPos[iat];
-          Vec3 uPrim = PrimCell.toUnit(r);
-          for (int i=0; i<3; i++)
-            uPrim[i] -= std::floor(uPrim[i]);
-          r = PrimCell.toCart(uPrim) + (double)i0*PrimCell.a(0) +
-              (double)i1*PrimCell.a(1) + (double)i2*PrimCell.a(2);
-          Vec3 uSuper = SuperCell.toUnit(r);
-          if ((uSuper[0] >= -1.0e-4) && (uSuper[0] < 0.9999) &&
-              (uSuper[1] >= -1.0e-4) && (uSuper[1] < 0.9999) &&
-              (uSuper[2] >= -1.0e-4) && (uSuper[2] < 0.9999))
-          {
-            IonPos[index]= r;
-            IonTypes[index]= primTypes[iat];
-            index++;
-          }
-        }
-  if (index != primPos.size()*numCopies)
-  {
-    app_error() << "The number of tiled ions, " << IonPos.size()
-                << ", does not match the expected number of "
-                << primPos.size()*numCopies << " or the index "<< index <<".  Aborting.\n";
-    APP_ABORT("EinsplineSetBuilder::TileIons()");
-  }
-  if (myComm->rank() == 0)
-  {
-    char buf[1000];
-    snprintf (buf, 1000, "Supercell reduced ion positions = \n");
-    app_log() << buf;
-    app_log().flush();
-    for (int i=0; i<IonPos.size(); i++)
-    {
-      PosType u = SuperCell.toUnit(IonPos[i]);
-      char buf2[1000];
-      snprintf (buf2, 1000, "   %14.10f %14.10f %14.10f\n",
-               u[0], u[1], u[2]);
-      app_log() << buf2;
-      app_log().flush();
-      //		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
-    }
-  }
+  update_token(__FILE__,__LINE__,"TileIons");
+
+  IonTypes.resize(TargetPtcl.getTotalNum());
+  IonPos.resize(TargetPtcl.getTotalNum());
+  std::copy(TargetPtcl.R.begin(),TargetPtcl.R.end(),IonPos.begin());
+  std::copy(TargetPtcl.GroupID.begin(),TargetPtcl.GroupID.end(),IonTypes.begin());
+//Don't need to do this, already one by ParticleSetPool.cpp
+//  Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
+//  Vector<int>                            primTypes = IonTypes;
+//  int numCopies = abs(det(TileMatrix));
+//  IonTypes.resize(primPos.size()*numCopies);
+//  IonPos.resize  (primPos.size()*numCopies);
+//  int maxCopies = 10;
+//  typedef TinyVector<double,3> Vec3;
+//  int index=0;
+//  for (int i0=-maxCopies; i0<=maxCopies; i0++)
+//    for (int i1=-maxCopies; i1<=maxCopies; i1++)
+//      for (int i2=-maxCopies; i2<=maxCopies; i2++)
+//        for (int iat=0; iat < primPos.size(); iat++)
+//        {
+//          Vec3 r     = primPos[iat];
+//          Vec3 uPrim = PrimCell.toUnit(r);
+//          for (int i=0; i<3; i++)
+//            uPrim[i] -= std::floor(uPrim[i]);
+//          r = PrimCell.toCart(uPrim) + (double)i0*PrimCell.a(0) +
+//              (double)i1*PrimCell.a(1) + (double)i2*PrimCell.a(2);
+//          Vec3 uSuper = SuperCell.toUnit(r);
+//          if ((uSuper[0] >= -1.0e-4) && (uSuper[0] < 0.9999) &&
+//              (uSuper[1] >= -1.0e-4) && (uSuper[1] < 0.9999) &&
+//              (uSuper[2] >= -1.0e-4) && (uSuper[2] < 0.9999))
+//          {
+//            IonPos[index]= r;
+//            IonTypes[index]= primTypes[iat];
+//            index++;
+//          }
+//        }
+//  if (index != primPos.size()*numCopies)
+//  {
+//    app_error() << "The number of tiled ions, " << IonPos.size()
+//                << ", does not match the expected number of "
+//                << primPos.size()*numCopies << " or the index "<< index <<".  Aborting.\n";
+//    APP_ABORT("EinsplineSetBuilder::TileIons()");
+//  }
+//  if (myComm->rank() == 0)
+//  {
+//    char buf[1000];
+//    snprintf (buf, 1000, "Supercell reduced ion positions = \n");
+//    app_log() << buf;
+//    app_log().flush();
+//    for (int i=0; i<IonPos.size(); i++)
+//    {
+//      PosType u = SuperCell.toUnit(IonPos[i]);
+//      char buf2[1000];
+//      snprintf (buf2, 1000, "   %14.10f %14.10f %14.10f\n",
+//               u[0], u[1], u[2]);
+//      app_log() << buf2;
+//      app_log().flush();
+//      //		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+//    }
+//  }
 }
 
 
@@ -492,18 +507,19 @@ EinsplineSetBuilder::AnalyzeTwists2()
         {
           app_error() << "Identical k-points detected in super twist set "
                       << si << endl;
-          APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+          APP_ABORT_TRACE(__FILE__,__LINE__, "AnalyzeTwists2");
         }
       }
     }
   }
+  app_log().flush();
   if (TwistNum >= superSets.size())
   {
     app_error() << "Trying to use supercell twist " << TwistNum
                 << " when only " << superSets.size() << " sets exist.\n"
                 << "Please select a twist number between 0 and "
                 << superSets.size()-1 << ".\n";
-    abort();
+    APP_ABORT_TRACE(__FILE__,__LINE__, "Invalid TwistNum");
   }
   // Finally, record which k-points to include on this group of
   // processors, which have been assigned supercell twist TwistNum
@@ -599,6 +615,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
 void
 EinsplineSetBuilder::AnalyzeTwists()
 {
+  update_token(__FILE__,__LINE__,"AnalyzeTwists");
   PosType minTwist(TwistAngles[0]), maxTwist(TwistAngles[0]);
   for (int ti=0; ti<NumTwists; ti++)
     for (int i=0; i<3; i++)
@@ -711,8 +728,8 @@ EinsplineSetBuilder::AnalyzeTwists()
 void
 EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
 {
-  if (myComm->rank() != 0)
-    return;
+  update_token(__FILE__,__LINE__, "OccupyBands");
+  if (myComm->rank() != 0) return;
   if (Format == ESHDF)
   {
     OccupyBands_ESHDF (spin, sortBands);
@@ -724,6 +741,15 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
   else
     if (Version[0]==0 && Version[1]==20)
       eigenstatesGroup = "/eigenstates";
+
+  if(FullBands[spin]->size()) 
+  {
+    app_log() << "  FullBand["<<spin<<"] exists. Reuse it. " << endl;
+    return; 
+  }
+
+  vector<BandInfo>& SortBands(*FullBands[spin]);
+
   SortBands.clear();
   for (int ti=0; ti<DistinctTwists.size(); ti++)
   {

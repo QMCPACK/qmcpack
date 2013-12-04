@@ -31,6 +31,7 @@ namespace qmcplusplus
 bool
 EinsplineSetBuilder::ReadOrbitalInfo()
 {
+  update_token(__FILE__,__LINE__,"ReadOrbitalInfo");
   H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
 //     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
   if (H5FileID < 0)
@@ -290,6 +291,7 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"ReadBands:complex");
   bool root = myComm->rank()==0;
   //bcastwith other stuff
   myComm->bcast(NumDistinctOrbitals);
@@ -309,6 +311,8 @@ EinsplineSetBuilder::ReadBands
   orbitalSet->eikr.resize(N);
   orbitalSet->NumValenceOrbs = NumValenceOrbs;
   orbitalSet->NumCoreOrbs    = NumCoreOrbs;
+
+  vector<BandInfo>& SortBands(*FullBands[spin]);
   if (root)
   {
     int numOrbs = orbitalSet->getOrbitalSetSize();
@@ -473,8 +477,11 @@ EinsplineSetBuilder::ReadBands
         PosType twist, k;
         twist = TwistAngles[ti];
         k = orbitalSet->PrimLattice.k_cart(twist);
-        fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n",
+        char vs[256];
+        sprintf (vs, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n",
                  ti, bi, e, k[0], k[1], k[2], myComm->rank());
+        app_log() << vs << endl;
+
         string vectorName = OrbitalPath (ti, bi) + "eigenvector";
         HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
         h_rawData.read(H5FileID, vectorName.c_str());
@@ -533,9 +540,11 @@ EinsplineSetBuilder::ReadBands
 void
 EinsplineSetBuilder::ReadBands (int spin, EinsplineSetLocal* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"ReadBands:EinspineSetLocal");
 #if defined(__xlC__)
   APP_ABORT("EinsplineSetBuilder::ReadBands EinsplineSetLocal cannot be used with IBM XL compilers");
 #else
+  vector<BandInfo>& SortBands(*FullBands[spin]);
   string eigenstatesGroup;
   if (Version[0]==0 && Version[1]== 11)
     eigenstatesGroup = "/eigenstates_3";
@@ -618,6 +627,8 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"ReadBands:double");
+  vector<BandInfo>& SortBands(*FullBands[spin]);
   bool root = myComm->rank()==0;
   // bcast other stuff
   myComm->bcast (NumDistinctOrbitals);

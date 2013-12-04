@@ -28,6 +28,9 @@ class Communicate;
 namespace qmcplusplus
 {
 
+///forward declaraton of BsplineReaderBase
+class BsplineReaderBase;
+
 // Helper needed for TwistMap
 struct Int3less
 {
@@ -114,6 +117,8 @@ class EinsplineSetBuilder : public BasisSetBuilder
 public:
 
   typedef map<string,ParticleSet*> PtclPoolType;
+  typedef ParticleSet::ParticleLayout_t UnitCellType;
+
   PtclPoolType &ParticleSets;
   ParticleSet &TargetPtcl;
 
@@ -121,42 +126,46 @@ public:
 
   ~EinsplineSetBuilder();
 
+  /** process xml node to initialize the builder */
   bool put (xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
-   *@param cur the current xml node
+   * @param cur the current xml node
    */
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
-  //protected:
-  // Type definitions
-  //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
-  typedef ParticleSet::ParticleLayout_t UnitCellType;
+  /** initialize with the existing SPOSet */
+  SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
-  // Helper vector for sorting bands
-  std::vector<BandInfo> SortBands;
 
-  // The actual orbital set we're building
-  EinsplineSet *OrbitalSet, *LastOrbitalSet;
+  /**  Helper vector for sorting bands
+   */
+  //std::vector<BandInfo> SortBands;
+  vector<std::vector<BandInfo>*> FullBands;
 
-  // This is true if we have the orbital derivatives w.r.t. the ion
-  // positions
+  /// The actual orbital set we're building
+  EinsplineSet *OrbitalSet;
+  /// The last orbitalset 
+  EinsplineSet *LastOrbitalSet;
+  /// reader to use BsplineReaderBase
+  BsplineReaderBase *MixedSplineReader;
+
+  ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;
-  ///root XML node
+  ///root XML node with href, sort, tilematrix, twistnum, source, precision,truncate,version
   xmlNodePtr XMLRoot;
 
-  // The name of the ion particleset
-  void CreateIonParticleSet(string sourceName);
-
+  ///typedef to manage state ordering
   typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
-  // The map key is (spin, twist, band, center)
-  static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
+  /// The map key is (spin, twist, band, center)
+  //static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
+  std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
 
-  //static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
-  //static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
-  //static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
-  static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
-
+  ////static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
+  ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
+  ////static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
+  //static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
+  std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
 
   //////////////////////////////////////
   // HDF5-related data  and functions //
@@ -192,15 +201,15 @@ public:
     oset->Tiling = (TileFactor[0]*TileFactor[1]*TileFactor[2] != 1);
     oset->PrimLattice  = Lattice;
     oset->SuperLattice = SuperLattice;
-    oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
-    app_log() << "GGt = \n" << oset->GGt << endl;
+    //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
+    oset->GGt=GGt;
     oset->setOrbitalSetSize (numOrbs);
     oset->BasisSetSize   = numOrbs;
     TileIons();
   }
 
 
-  Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
+  Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
@@ -299,9 +308,17 @@ public:
    * @param root true if it is the i/o node
    * @return true, if core is found
    */
-  bool bcastSortBands(int N, bool root);
+  bool bcastSortBands(int splin, int N, bool root);
 
+  int MyToken;
+  inline void update_token(const char* f, int l, const char* msg) 
+  {
+    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << endl; MyToken++; 
+  }
+  //inline void update_token(const char* f, int l, const char* msg) 
+  //{}
 };
+
 }
 
 

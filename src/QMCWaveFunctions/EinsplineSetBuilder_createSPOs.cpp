@@ -39,12 +39,14 @@ namespace qmcplusplus
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
+  update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   BufferLayer=2.0;
-  OhmmsAttributeSet attribs;
   int numOrbs = 0;
   qafm=0;
   int sortBands(1);
+  int spinSet = 0;
+
   string sourceName;
   string spo_prec("double");
   string truncate("no");
@@ -53,27 +55,35 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   string useGPU="no";
 #endif
-  attribs.add (H5FileName, "href");
-  attribs.add (TileFactor, "tile");
-  attribs.add (sortBands,  "sort");
-  attribs.add (qafm,  "afmshift");
-  attribs.add (TileMatrix, "tilematrix");
-  attribs.add (TwistNum,   "twistnum");
-  attribs.add (givenTwist,   "twist");
-  attribs.add (sourceName, "source");
-  attribs.add (MeshFactor, "meshfactor");
-  attribs.add (useGPU,     "gpu");
-  attribs.add (spo_prec,   "precision");
-  attribs.add (truncate,   "truncate");
-  attribs.add (BufferLayer, "buffer");
-  attribs.put (XMLRoot);
-  attribs.add (numOrbs,    "size");
-  attribs.add (numOrbs,    "norbs");
-  attribs.put (cur);
+
+  {
+    OhmmsAttributeSet a;
+    a.add (H5FileName, "href");
+    a.add (TileFactor, "tile");
+    a.add (sortBands,  "sort");
+    a.add (qafm,  "afmshift");
+    a.add (TileMatrix, "tilematrix");
+    a.add (TwistNum,   "twistnum");
+    a.add (givenTwist,   "twist");
+    a.add (sourceName, "source");
+    a.add (MeshFactor, "meshfactor");
+    a.add (useGPU,     "gpu");
+    a.add (spo_prec,   "precision");
+    a.add (truncate,   "truncate");
+    a.add (BufferLayer, "buffer");
+    a.add (myName, "tag");
+
+    a.put (XMLRoot);
+    a.add (numOrbs,    "size");
+    a.add (numOrbs,    "norbs");
+    a.add(spinSet,"spindataset"); a.add(spinSet,"group");
+    a.put (cur);
+
+    if(myName.empty()) myName="einspline";
+  }
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  int spinSet = -1;
   vector<int> Occ_Old(0,0);
   Occ.resize(0,0);
   bool NewOcc(false);
@@ -84,6 +94,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     oAttrib.put(cur);
   }
 
+  xmlNodePtr spo_cur=cur;
   cur = cur->children;
   while (cur != NULL)
   {
@@ -133,6 +144,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
               << "cloning EinsplineSet object.\n";
     return iter->second->makeClone();
   }
+
+  if(FullBands[spinSet]==0) FullBands[spinSet]=new vector<BandInfo>;
+
+  Timer mytimer;
+  if(spinSet==0)
+  {
   // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
   // full 3x3 matrix of integers.  If the tilematrix was not set in
   // the input file...
@@ -158,7 +175,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
     app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
-  Timer mytimer;
   mytimer.restart();
   /////////////////////////////////////////////////////////////////
   // Read the basic orbital information, without reading all the //
@@ -174,14 +190,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   myComm->barrier();
   mytimer.restart();
   BroadcastOrbitalInfo();
+
   app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << endl;
   app_log().flush();
-  ///////////////////////////////////////////////////////////////////
-  // Now, analyze the k-point mesh to figure out the what k-points //
-  // are needed                                                    //
-  ///////////////////////////////////////////////////////////////////
+
+  // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
   PrimCell.set(Lattice);
   SuperCell.set(SuperLattice);
+  GGt=dot(transpose(PrimCell.G), PrimCell.G);
+
   for (int iat=0; iat<AtomicOrbitals.size(); iat++)
     AtomicOrbitals[iat].Lattice = Lattice;
   // Copy supercell into the ParticleSets
@@ -190,6 +207,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 //     for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
 //       piter->second->Lattice.copy(SuperCell);
   AnalyzeTwists2();
+
+  } //use spinSet==0 to initialize shared properties of orbitals
+
   //////////////////////////////////
   // Create the OrbitalSet object
   //////////////////////////////////
@@ -212,8 +232,10 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
         OrbitalSet = new EinsplineSetExtended<complex<double> >;
     }
+
   //set the internal parameters
-  setTiling(OrbitalSet,numOrbs);
+  if(spinSet==0) setTiling(OrbitalSet,numOrbs);
+
   if (HaveLocalizedOrbs)
   {
     EinsplineSetLocal *restrict orbitalSet =
@@ -241,42 +263,45 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (UseRealOrbitals)
     {
       OccupyBands(spinSet, sortBands);
-      //check if a matching BsplineReaderBase exists
-      BsplineReaderBase* spline_reader=0;
       //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
-      if(truncate=="yes")
+      if(MixedSplineReader==0)
       {
-        if(use_single)
+        if(truncate=="yes")
         {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
+          if(use_single)
+          {
+            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+              MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
+            else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+              MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
+            else
+              MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
+          }
           else
-            spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
+          {
+            if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+              MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
+            else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
+              MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
+            else
+              MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
+          }
         }
         else
         {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            spline_reader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            spline_reader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
-          else
-            spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
+          if(use_single)
+            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
         }
       }
-      else
+
+      if(MixedSplineReader)
       {
-        if(use_single)
-          spline_reader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
-      }
-      if(spline_reader)
-      {
-        HasCoreOrbs=bcastSortBands(NumDistinctOrbitals,myComm->rank()==0);
-        SPOSetBase* bspline_zd=spline_reader->create_spline_set(spinSet,OrbitalSet);
-        delete spline_reader;
+        HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
+        SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
         if(bspline_zd)
           SPOSetMap[aset] = bspline_zd;
+        else
+          APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
         return bspline_zd;
       }
       else
@@ -293,27 +318,30 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     else
     {
       OccupyBands(spinSet, sortBands);
-      BsplineReaderBase* spline_reader=0;
-      if(truncate == "yes")
+      if(MixedSplineReader==0)
       {
-        app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << endl;
-      }
-      if(use_single)
-      {
+        if(truncate == "yes")
+        {
+          app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << endl;
+        }
+        if(use_single)
+        {
 #if defined(QMC_COMPLEX)
-        spline_reader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,double,3> >(this);
+          MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,double,3> >(this);
 #else
-        spline_reader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,double,3> >(this);
+          MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,double,3> >(this);
 #endif
+        }
       }
-      if(spline_reader)
+      if(MixedSplineReader)
       {
         RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet));
-        HasCoreOrbs=bcastSortBands(NumDistinctOrbitals,myComm->rank()==0);
-        SPOSetBase* bspline_zd=spline_reader->create_spline_set(spinSet,OrbitalSet);
-        delete spline_reader;
+        HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
+        SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
         if(bspline_zd)
           SPOSetMap[aset] = bspline_zd;
+        else
+          APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
         return bspline_zd;
       }
       else
@@ -364,26 +392,26 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
   SPOSetMap[aset] = OrbitalSet;
-  if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
-  {
-    app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << endl;
-    ParticleSet* ions=new ParticleSet;
-    ions->Lattice=TargetPtcl.Lattice;
-    ESHDFIonsParser ap(*ions,H5FileID,myComm);
-    ap.put(XMLRoot);
-    ap.expand(TileMatrix);
-    ions->setName(sourceName);
-    ParticleSets[sourceName]=ions;
-    //overwrite the lattice and assign random
-    if(TargetPtcl.Lattice.SuperCellEnum)
-    {
-      TargetPtcl.Lattice=ions->Lattice;
-      makeUniformRandom(TargetPtcl.R);
-      TargetPtcl.R.setUnit(PosUnit::LatticeUnit);
-      TargetPtcl.convert2Cart(TargetPtcl.R);
-      TargetPtcl.createSK();
-    }
-  }
+  //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
+  //{
+  //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << endl;
+  //  ParticleSet* ions=new ParticleSet;
+  //  ions->Lattice=TargetPtcl.Lattice;
+  //  ESHDFIonsParser ap(*ions,H5FileID,myComm);
+  //  ap.put(XMLRoot);
+  //  ap.expand(TileMatrix);
+  //  ions->setName(sourceName);
+  //  ParticleSets[sourceName]=ions;
+  //  //overwrite the lattice and assign random
+  //  if(TargetPtcl.Lattice.SuperCellEnum)
+  //  {
+  //    TargetPtcl.Lattice=ions->Lattice;
+  //    makeUniformRandom(TargetPtcl.R);
+  //    TargetPtcl.R.setUnit(PosUnit::LatticeUnit);
+  //    TargetPtcl.convert2Cart(TargetPtcl.R);
+  //    TargetPtcl.createSK();
+  //  }
+  //}
 #ifdef QMC_CUDA
   if (useGPU == "yes" || useGPU == "1")
   {
@@ -393,6 +421,40 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #endif
   return OrbitalSet;
 }
+
+SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+{
+  update_token(__FILE__,__LINE__,"createSPOSet(cur,input_info)");
+
+  if(MixedSplineReader==0)
+  {
+    APP_ABORT_TRACE(__FILE__,__LINE__,"EinsplineSetExtended<T> cannot create a SPOSet");
+  }
+
+  string aname;
+  int spinSet{0};
+  OhmmsAttributeSet a;
+  a.add(aname,"name");
+  a.add(spinSet,"spindataset");
+  a.add(spinSet,"group");
+  a.put(cur);
+
+  if(aname.empty()) 
+  {
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Missing sposet@name");
+  }
+
+  //allow only non-overlapping index sets and use the max index as the identifier
+  int norb=input_info.max_index();
+  H5OrbSet aset(H5FileName, spinSet, norb);
+
+  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
+  //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
+  if(bspline_zd)
+    SPOSetMap[aset] = bspline_zd;
+  return bspline_zd;
+}
+
 }
 
 

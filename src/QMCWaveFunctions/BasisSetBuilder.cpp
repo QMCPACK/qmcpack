@@ -48,6 +48,7 @@ namespace qmcplusplus
     // remember created sposets
     if(sposet)
     {
+      sposet->put(cur); //initialize C and other internal containers
       sposet->builder_index = sposets.size();
       sposets.push_back(sposet);
     }

@@ -19,6 +19,7 @@
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsArray.h>
+#include <mpi/collectives.h>
 namespace qmcplusplus
 {
 
@@ -401,48 +402,55 @@ namespace qmcplusplus
     }
 
 
-  inline bool EinsplineSetBuilder::bcastSortBands(int n, bool root)
+  inline bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
   {
-    myComm->bcast(n);
+    update_token(__FILE__,__LINE__,"bcastSortBands");
 
-    ///SortBands+NumValenceOrbs+NumCoreOrbs
-    PooledData<RealType> misc(n*5+2);
+    vector<BandInfo>& SortBands(*FullBands[spin]);
+
+    TinyVector<int,4> nbands(int(SortBands.size()),n,NumValenceOrbs,NumCoreOrbs);
+    mpi::bcast(*myComm,nbands);
+
+    //buffer to serialize BandInfo
+    PooledData<RealType> misc(nbands[0]*5);
     bool isCore=false;
-
-    NumDistinctOrbitals=n;
+    n=NumDistinctOrbitals=nbands[1];
+    NumValenceOrbs=nbands[2];
+    NumCoreOrbs=nbands[3];
 
     if(root)
     {
       misc.rewind();
-      misc.put(NumValenceOrbs);
-      misc.put(NumCoreOrbs);
-
+      //misc.put(NumValenceOrbs);
+      //misc.put(NumCoreOrbs);
       for(int i=0; i<n; ++i)
       {
-        int ti   = SortBands[i].TwistIndex;
-        int bi   = SortBands[i].BandIndex;
-        double e = SortBands[i].Energy;
-        //PosType k= primLattice.k_cart(TwistAngles[ti]);
-        PosType k= PrimCell.k_cart(TwistAngles[ti]);
-        fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
-            ti, bi, e, k[0], k[1], k[2], myComm->rank());
-        misc.put(ti);
-	misc.put(bi);
-	misc.put(e);
+        misc.put(SortBands[i].TwistIndex);
+	misc.put(SortBands[i].BandIndex);
+	misc.put(SortBands[i].Energy);
         misc.put(SortBands[i].MakeTwoCopies);
         misc.put(SortBands[i].IsCoreState);
 
         isCore |= SortBands[i].IsCoreState;
+      }
+
+      for(int i=n; i<SortBands.size(); ++i)
+      {
+        misc.put(SortBands[i].TwistIndex);
+	misc.put(SortBands[i].BandIndex);
+	misc.put(SortBands[i].Energy);
+        misc.put(SortBands[i].MakeTwoCopies);
+        misc.put(SortBands[i].IsCoreState);
       }
     }
     myComm->bcast(misc);
 
     if(!root)
     {
-      SortBands.resize(n);
+      SortBands.resize(nbands[0]);
       misc.rewind();
-      misc.get(NumValenceOrbs);
-      misc.get(NumCoreOrbs);
+      //misc.get(NumValenceOrbs);
+      //misc.get(NumCoreOrbs);
       for(int i=0; i<n; ++i)
       {
         misc.get(SortBands[i].TwistIndex);
@@ -453,6 +461,14 @@ namespace qmcplusplus
 
         isCore |= SortBands[i].IsCoreState;
       }
+      for(int i=n; i<SortBands.size(); ++i)
+      {
+        misc.get(SortBands[i].TwistIndex);
+	misc.get(SortBands[i].BandIndex);
+	misc.get(SortBands[i].Energy);
+        misc.get(SortBands[i].MakeTwoCopies);
+        misc.get(SortBands[i].IsCoreState);
+      }
     }
 
     //char fname[64];
@@ -462,7 +478,6 @@ namespace qmcplusplus
     //fout.precision(12);
     //for(int i=0; i<misc.size();++i)
     //  fout << misc[i] << endl;
-
     return isCore;
   }
 

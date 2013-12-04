@@ -28,7 +28,6 @@
 namespace qmcplusplus
 {
 
-
 /** derived class from BasisSetBuilder
  *
  * Create a basis set of molecular orbital types as defined in MolecularOrbitalBasis
@@ -53,6 +52,11 @@ public:
     ClassName="MolecularBasisBuilder";
   }
 
+  inline bool is_same(const xmlChar* a, const char* b)
+  {
+    return !strcmp((const char*)a,b);
+  }
+
   bool put(xmlNodePtr cur)
   {
     if(thisBasisSet)
@@ -61,6 +65,17 @@ public:
     PRE.echo(cur);
     //create the BasisSetType
     thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
+
+    if(!is_same(cur->name,"basisset"))
+    {//heck to handle things like <sposet_builder>
+      xmlNodePtr cur1= cur->xmlChildrenNode;
+      while(cur1!=NULL)
+      {
+        if(is_same(cur1->name,"basisset")) cur=cur1;
+        cur1=cur1->next;
+      }
+    }
+
     //create the basis set
     //go thru the tree
     cur = cur->xmlChildrenNode;

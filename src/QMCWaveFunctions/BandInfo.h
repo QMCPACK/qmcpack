@@ -74,6 +74,8 @@ struct BandInfoGroup
   int NumSPOs;
   ///starting band
   int FirstBand;
+  ///twist index set by the full band not by the subset
+  int TwistIndex;
   ///Bands that belong to this group
   vector<BandInfo> myBands;
   ///name of this band
@@ -100,10 +102,10 @@ struct BandInfoGroup
   /** get the bands within [first_spo,first_spo+num_spos)
    * @param bigspace a set of sorted bands
    * @param first_orb index of the first uniquie orbitals
-   * @param num_orbs number of SPOs to be created
+   * @param num_spos number of SPOs to be created
+   * @param relative if(relative) FirstSPO is set to any valid state index  \f$[0,\infty)\f$
    */
-  void selectBands(const vector<BandInfo>& bigspace, int first_orb, int last_orb);
-
+  void selectBands(const vector<BandInfo>& bigspace, int first_orb, int num_spos, bool relative);
 };
 
 }

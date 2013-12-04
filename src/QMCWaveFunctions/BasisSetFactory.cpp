@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
 #endif
+#include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "QMCWaveFunctions/AFMSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -135,12 +136,34 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
+  string type_in=type;
   tolower(type);
-  app_log()<<"  basis builder: type = "<<type<<endl;
+
+  //when name is missing, type becomes the input
+  if(name.empty()) name=type_in;
+
+  BasisSetBuilder* bb=0;
+
+  //check if builder can be reused
+  map<string,BasisSetBuilder*>::iterator bbit=basis_builders.find(name);
+  if(bbit!= basis_builders.end())
+  {
+    app_log() << "Reuse BasisSetBuilder \""<<name << "\" type " << type_in <<endl;
+    app_log().flush();
+    bb=(*bbit).second;
+    bb->put(rootNode);
+    return last_builder=bb;
+  }
 
   //assign last_builder
-  BasisSetBuilder* bb=last_builder;
-  if (type == "jellium" || type == "heg")
+  bb=last_builder;
+
+  if (type == "composite")
+  {
+    app_log() << "Composite SPO set with existing SPOSets." << endl;
+    bb= new  CompositeSPOSetBuilder();
+  }
+  else if (type == "jellium" || type == "heg")
   {
     app_log()<<"Electron gas SPO set"<<endl;
     bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
@@ -163,7 +186,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 #if OHMMS_DIM ==3
   else if(type.find("spline")<type.size())
   {
-    name=type;
+    name=type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
     bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
@@ -212,15 +235,16 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   if(bb==0)
     APP_ABORT_TRACE(__FILE__, __LINE__, "BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
 
-  if(bb != last_builder)
+  if(bb == last_builder)
+    app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << endl;
+  else
   {
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
     bb->put(cur);
-    app_log()<<" Built BasisSetBuilder of type "<< type << endl;
-    basis_builders[type] = bb;
+    app_log()<<"Built BasisSetBuilder \""<< name<< "\" of type "<< type << endl;
+    basis_builders[name]=bb; //use name, if missing type is used
   }
-
   last_builder = bb;
 
   return bb;
@@ -240,11 +264,10 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   aAttrib.add(type,"type");
   //aAttrib.put(rcur);
   aAttrib.put(cur);
-  tolower(type);
 
+  //tolower(type);
 
   BasisSetBuilder* bb;
-
   if(bname=="")
     bname=type;
   if(type=="")
@@ -282,7 +305,7 @@ void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
   OhmmsAttributeSet attrib;
   attrib.add(type,"type");
   attrib.put(cur);
-  tolower(type);
+  //tolower(type); 
 
   app_log()<<"building sposet collection of type "<<type<<endl;
 
@@ -299,7 +322,7 @@ void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
       attrib.add(name,"name");
       attrib.put(element);
 
-      app_log()<<"  Building SPOSet "<<name<<" with "<<type<<" BasisSetBuilder"<<endl;
+      app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" BasisSetBuilder"<<endl;
       SPOSetBase* spo = bb->createSPOSet(element);
       spo->objectName = name;
       nsposets++;

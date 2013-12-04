@@ -12,6 +12,8 @@
 namespace qmcplusplus
 {
 
+  class SPOSetInputInfo;
+
 /**
  * Each SplineAdoptor needs a reader derived from BsplineReaderBase.
  * This base class handles common chores
@@ -31,6 +33,8 @@ struct BsplineReaderBase
   int myFirstSPO;
   ///number of orbitals to be created
   int myNumOrbs;
+  ///map from spo index to band index
+  vector<vector<int> > spo2band;
 
   BsplineReaderBase(EinsplineSetBuilder* e)
     : mybuilder(e), MeshSize(0), myFirstSPO(0),myNumOrbs(0)
@@ -38,16 +42,7 @@ struct BsplineReaderBase
     myComm=mybuilder->getCommunicator();
   }
 
-  ///** copy minimal informatino from EinsplineSet to manage SplineAdoptor
-  // */
-  //template<typename SPE>
-  //void init(EinsplineSet* in, SPE* out)
-  //{
-  //  out->PrimLattice=in->PrimLattice;
-  //  out->SuperLattice=in->SuperLattice;
-  //  out->GGt=in->GGt;
-  //  out->setOrbitalSetSize(in->getOrbitalSetSize());
-  //}
+  virtual ~BsplineReaderBase();
 
   /** read gvectors and set the mesh, and prepare for einspline
    */
@@ -91,12 +86,14 @@ struct BsplineReaderBase
   /** initialize twist-related data for N orbitals
    */
   template<typename SPE>
-  inline void check_twists(EinsplineSet* orbitalSet, SPE* bspline, const BandInfoGroup& bandgroup)
+  inline void check_twists(SPE* bspline, const BandInfoGroup& bandgroup)
   {
+
     //init(orbitalSet,bspline);
-    bspline->PrimLattice=orbitalSet->PrimLattice;
-    bspline->SuperLattice=orbitalSet->SuperLattice;
-    bspline->GGt=orbitalSet->GGt;
+    bspline->PrimLattice=mybuilder->PrimCell;
+    bspline->SuperLattice=mybuilder->SuperCell;
+    bspline->GGt=mybuilder->GGt;
+    //bspline->HalfG=mybuilder->HalfG;
 
     int N = bandgroup.getNumDistinctOrbitals();
     int numOrbs=bandgroup.getNumSPOs();
@@ -112,20 +109,20 @@ struct BsplineReaderBase
     for (int iorb=0; iorb<N; iorb++)
     {
       int ti = cur_bands[iorb].TwistIndex;
-      bspline->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(mybuilder->TwistAngles[ti]); //twist);
+      bspline->kPoints[iorb] = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]); //twist);
       bspline->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && cur_bands[iorb].MakeTwoCopies;
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
 
-    app_log() << "NumDistinctOrbitals " << N
-              << " numOrbs = " << numOrbs << endl;
+    app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << endl;
 
     bspline->HalfG=0;
     TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
     if(!bspline->is_complex)
     {
       //no k-point folding, single special k point (G, L ...)
-      TinyVector<double,3> twist0 = mybuilder->TwistAngles[cur_bands[0].TwistIndex];
+      //TinyVector<double,3> twist0 = mybuilder->TwistAngles[cur_bands[0].TwistIndex];
+      TinyVector<double,3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
       for (int i=0; i<3; i++)
         if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
           bspline->HalfG[i] = 1;
@@ -165,14 +162,19 @@ struct BsplineReaderBase
    */
   void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG);
 
-  virtual ~BsplineReaderBase() {}
-
   /** create the actual spline sets
    */
-  virtual SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalset, const BandInfoGroup& bandgroup)=0;
+  virtual SPOSetBase* create_spline_set(int spin, const BandInfoGroup& bandgroup)=0;
+
+  /** create the spline after one of the kind is created */
+  SPOSetBase* create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /** create the spline set */
-  SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalset);
+  SPOSetBase* create_spline_set(int spin, xmlNodePtr cur);
+
+  void initialize_spo2band(int spin, const vector<BandInfo>& bigspace, SPOSetInfo& sposet,
+      vector<int>& band2spo);
+
 };
 
 }

@@ -57,7 +57,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     if(FFTplan!=NULL) fftw_destroy_plan(FFTplan);
     FFTplan=NULL;
   }
-  SPOSetBase* create_spline_set(int spin, EinsplineSet* orbitalSet, const BandInfoGroup& bandgroup)
+  SPOSetBase* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineC2XAdoptorReader","create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
@@ -70,7 +70,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       app_log() << "  Using real einspline table" << endl;
 
     //baseclass handles twists
-    check_twists(orbitalSet,bspline,bandgroup);
+    check_twists(bspline,bandgroup);
 
     Ugrid xyz_grid[3];
 
@@ -82,8 +82,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
     bspline->create_spline(xyz_grid,xyz_bc);
     int TwistNum = mybuilder->TwistNum;
-    string splinefile
-    =make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix,spin,TwistNum,bandgroup.GroupID,MeshSize);
+    ostringstream oo;
+    oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
+    string splinefile= oo.str(); //bandgroup.myName+".h5";
+    //=make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix,spin,TwistNum,bandgroup.GroupID,MeshSize);
     bool root=(myComm->rank() == 0);
     int foundspline=0;
     Timer now;

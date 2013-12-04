@@ -23,11 +23,13 @@ namespace qmcplusplus
 
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");
   ReportEngine PRE("EinsplineSetBuilder","ReadBands_ESHDF(EinsplineSetExtended<complex<double > >*");
   Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
   double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
   c_prep.restart();
   bool root = myComm->rank()==0;
+  vector<BandInfo>& SortBands(*FullBands[spin]);
   // bcast other stuff
   myComm->bcast (NumDistinctOrbitals);
   myComm->bcast (NumValenceOrbs);
@@ -123,7 +125,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex
     APP_ABORT("Expected complex orbitals in ES-HDF file, but found real ones.");
   }
   EinsplineSetBuilder::RotateBands_ESHDF(spin, orbitalSet);
-  bool isCore = bcastSortBands(N,root);
+  bool isCore = bcastSortBands(spin,N,root);
   if(isCore)
   {
     APP_ABORT("Core states not supported by ES-HDF yet.");
@@ -287,6 +289,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex
 
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet)
 {
+  update_token(__FILE__,__LINE__,"ReadBands_ESHDF:double");
   ReportEngine PRE("EinsplineSetBuilder","ReadBands_ESHDF(EinsplineSetExtended<double>*");
   vector<AtomicOrbital<double> > realOrbs(AtomicOrbitals.size());
   for (int iat=0; iat<realOrbs.size(); iat++)
@@ -323,6 +326,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
   // Read in k-points
   int numOrbs = orbitalSet->getOrbitalSetSize();
   int num = 0;
+  vector<BandInfo>& SortBands(*FullBands[spin]);
   if (root)
   {
     for (int iorb=0; iorb<N; iorb++)
@@ -432,7 +436,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
     h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
   }
   myComm->bcast(isComplex);
-  bool isCore = bcastSortBands(N,root);
+  bool isCore = bcastSortBands(spin,N,root);
   if(isCore)
   {
     APP_ABORT("Core states not supported by ES-HDF yet.");
@@ -651,6 +655,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
+  update_token(__FILE__,__LINE__,"ReadGvectors_ESHDF");
   bool root=myComm->rank() ==0;
   //this is always ugly
   MeshSize = 0;

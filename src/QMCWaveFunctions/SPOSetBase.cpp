@@ -113,11 +113,10 @@ bool SPOSetBase::put(xmlNodePtr cur)
     {
       occ_ptr=cur;
     }
-    else
-      if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
-      {
-        coeff_ptr=cur;
-      }
+    else if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
+    {
+      coeff_ptr=cur;
+    }
     cur=cur->next;
   }
   if(coeff_ptr == NULL)

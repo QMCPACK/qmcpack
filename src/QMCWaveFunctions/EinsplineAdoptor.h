@@ -173,8 +173,8 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
 
-  /** default constructor */
-  BsplineSet() { }
+  ///** default constructor */
+  //BsplineSet() { }
 
   SPOSetBase* makeClone() const
   {
