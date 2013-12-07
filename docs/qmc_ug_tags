@@ -96,7 +96,7 @@
   </compound>
   <compound kind="page">
     <name>index</name>
-    <title>User Guide</title>
+    <title>About Documentation</title>
     <filename>index</filename>
     <docanchor file="index" title="About Development">qmcpack_about</docanchor>
     <docanchor file="index" title="Acknowledgements">funding</docanchor>
