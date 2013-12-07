@@ -242,9 +242,9 @@ protected:
   bool UseTMove;
   ///number of particles
   IndexType NumPtcl;
-  ///Time-step factor \f$ 1/(2\Tau)\f$
+  ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
-  ///Time-step factor \f$ \sqrt{\Tau}\f$
+  ///Time-step factor \f$ \sqrt{\tau}\f$
   RealType m_sqrttau;
   ///tau/mass
   RealType m_tauovermass;
