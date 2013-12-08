@@ -1,3 +1,6 @@
 /*!  \mainpage Developers' guides   
 
+- <a href="dev_basic.html">Developing QMCPACK</a>
+- <a href="psidev.html">Design of Einspline Builder</a>
+
 */

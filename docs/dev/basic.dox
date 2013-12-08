@@ -1,5 +1,4 @@
 /** \page dev_basic Developing QMCPACK
-
 QMCPACK is written in C++ and proficiency in C++ is required. Currently, C++03
 standard is adopted and the transition to C++11 will start after the code
 freeze at the end of 2013. MPI, OpenMP and CUDA are used for parallelizations.
@@ -19,6 +18,7 @@ These tools are used in QMCPACK development and familiarity with them will be he
 - subversion : revision system
 - cmake : 2.8 and later, build system
 - doxygen : 1.8, code documentation and the guides (including this.)
+
 
 
 \section dev_code Code style
@@ -85,7 +85,9 @@ Simply add new files to the INPUT list in ug.cfg or dev.cfg and run doxygen, e.g
 \code
 INPUT =  ug/index.dox ug/gettingstarted.dox ug/somethingnew.dox
 \endcode
+See an exmaple <tt>ug/qmc.dox</tt>. 
 
+<!--
 Each page has
 \code
 /** \page pagekey What is this for
@@ -94,7 +96,7 @@ Each page has
 
 */
 \endcode
-See an exmaple <tt>ug/qmc.dox</tt>. 
+-->
 
 <tt>doxygen</tt> can generate latex files and <tt>tex</tt> directory has the generated latex files for
 the user guide.
