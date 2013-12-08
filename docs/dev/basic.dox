@@ -1,0 +1,101 @@
+/** \page dev_basic Developing QMCPACK
+
+QMCPACK is written in C++ and proficiency in C++ is required. Currently, C++03
+standard is adopted and the transition to C++11 will start after the code
+freeze at the end of 2013. MPI, OpenMP and CUDA are used for parallelizations.
+
+The public version is available at https://code.google.com/p/qmcpack/ under
+UIUC/NCSA open-source licence. Those who are interested in QMCPACK development
+are strongly encouraged to contact J. Kim and other developers to establish
+collaborations so that one can access to the developers' version.  Although it
+is not required, the developers will appreciate if the new product can be
+available to others when the research and development is published.  The
+developers and users will comply with the constraints posed by the contributors
+under the terms of the licence.
+
+These tools are used in QMCPACK development and familiarity with them will be helpful in working with QMCPACK.
+- Compilers : GNU, Intel and IBM compilers are tested and supported. There
+  is no plan to support other compilers. 
+- subversion : revision system
+- cmake : 2.8 and later, build system
+- doxygen : 1.8, code documentation and the guides (including this.)
+
+
+\section dev_code Code style
+
+We have not enforced any coding standard. However, we recommend to adopt "best
+practices" for clean, simple, and logical codes.
+
+As the creator of C++ said, there is no coding standard everyone agrees on. Check out Stroustrup's FAQ.
+A few coding standards are emerging. See a sample header file adopted by boost.org
+- indentations: <b>2 space, disable tabs</b> 
+- brackets
+\code
+{
+  //stuff here
+}
+\endcode
+- loops
+\code
+for (int i=0; i < n; ++i)
+{
+  //do the loop
+}
+\endcode
+- class names: choose the name that can mean something to other developers and easy to grep
+ - WhatIsThisClass
+ - what_is_this_class
+
+ But, do not use both at the same time, e.g., What_Is_This_Class is like using bold-faced, itallc and color fonts in a document.
+- Local variable names: hide them as much as you can within the current scope, all lower cases preferred.
+- Use <tt>astyle</tt> to format the codes, if your vim or emacs is not set properly.
+\code
+astyle -A1 -s2 -xe file
+\endcode
+
+\section dev_doxy How to use doxygen to add a document
+
+All the documentation-related materials are in <tt>qmcpack/docs</tt> which has
+- doxygen configuration files
+ - qmcpack.cfg : generate full code documentation
+ - dev.cfg : generate the master and developers' guide
+ - ug.cfg : generate userguides
+- subdirectories
+ - ug : user guide - how to build, input definitions etc
+ - tutorials : tutorials on specific topics
+ - dev : developers' guide
+ - tex : latex files 
+
+To generate documentations in the output directory on the working system,
+replace the directory names in <tt>*.cfg</tt> files
+\code
+OUTPUT_DIRECTORY       = /Users/jnkim/public_html/qmcpack
+
+STRIP_FROM_PATH        = /Users/jnkim/svnwork/qmcpack-trunk/src \
+                         /Users/jnkim/svnwork/qmcpack-trunk/docs
+\endcode
+and execute
+\code
+doxygen ug.cfg
+\endcode
+
+The developers' and user guide are prepared in *.dox files using 
+<a href="http://www.stack.nl/~dimitri/doxygen/manual/markdown.html">Markdown</a>.
+Simply add new files to the INPUT list in ug.cfg or dev.cfg and run doxygen, e.g.
+\code
+INPUT =  ug/index.dox ug/gettingstarted.dox ug/somethingnew.dox
+\endcode
+
+Each page has
+\code
+/** \page pagekey What is this for
+
+\section seckey Something
+
+*/
+\endcode
+See an exmaple <tt>ug/qmc.dox</tt>. 
+
+<tt>doxygen</tt> can generate latex files and <tt>tex</tt> directory has the generated latex files for
+the user guide.
+*/
