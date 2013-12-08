@@ -1,8 +1,5 @@
 /*! \mainpage About Documentation
 
-Content
-- \subpage first_p
-
 These guides are not meant to discuss Quantum Monte Carlo methods and is
 written on the assumption that the users are familiar with various QMC
 algorithms. There are many excellent tutorials and talks on QMC methods and
