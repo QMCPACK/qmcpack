@@ -244,7 +244,7 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
 #ifdef HAVE_ADIOS
-  OhmmsXPathObject io("//checkpoint-wr",m_context);
+  OhmmsXPathObject io("//checkpoint",m_context);
   if(io.empty())
   {
     app_warning() << "IO is not defined, nothing will be written out." << endl;
@@ -270,7 +270,7 @@ bool QMCMain::validateXML()
     }
     ADIOS::initialize(UseHDF5, UseADIOS);
   }
-  OhmmsXPathObject rd("//checkpoint-rd",m_context);
+  OhmmsXPathObject rd("//restart",m_context);
   if(rd.empty())
   {
     app_warning() << "Checkpoint restart read method is not defined. frest start." << endl;
