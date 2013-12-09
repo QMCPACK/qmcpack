@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="bench" series="0"/>
-    <checkpoint-wr hdf5="yes" adios="no" />
+    <checkpoint hdf5="yes" adios="no" />
     <!-- method can be adios or hdf-->
-    <checkpoint-rd method="adios"/>
+    <restart method="adios"/>
 
   <random seed="11"/>
 <qmcsystem>

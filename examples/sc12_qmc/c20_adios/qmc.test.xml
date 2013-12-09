@@ -2,9 +2,9 @@
 <simulation>
   <project id="bench" series="0"/>
   <random seed="11"/>
-  <checkpoint-wr hdf5="yes" adios="yes" />
+  <checkpoint hdf5="yes" adios="yes" />
   <!-- method can be adios or hdf-->
-  <checkpoint-rd method="adios" /> 
+  <restart method="adios" /> 
 <qmcsystem>
   <simulationcell name="global">
     <parameter name="lattice" units="bohr">
