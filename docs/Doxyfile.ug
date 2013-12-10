@@ -670,7 +670,16 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  =  ug/index.doc ug/gettingstarted.doc
+INPUT                  =  ug/index.doc \
+ug/gettingstarted.doc \
+ug/running.doc \
+ug/cmakeintro.doc  \
+ug/inputxml.doc \
+ug/elements.doc \
+ug/qmc.doc \
+ug/psi.doc \
+tutorials/FSU20120111.jbm.doc \
+tutorials/N2MSD.mam.doc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

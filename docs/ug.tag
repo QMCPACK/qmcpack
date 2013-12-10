@@ -24,11 +24,12 @@
     <title>Running QMCPACK</title>
     <filename>a00006</filename>
     <docanchor file="a00006" title="Parallelism using MPI/OpenMP programming model">mpiopenmpS</docanchor>
+    <docanchor file="a00006" title="Running multiple QMC instances">multiruns</docanchor>
     <docanchor file="a00006" title="Restarting from a previous QMC run">restartS</docanchor>
   </compound>
   <compound kind="page">
     <name>inputp</name>
-    <title>How to run QMCPACK</title>
+    <title>Main input file</title>
     <filename>a00008</filename>
     <docanchor file="a00008">inputC</docanchor>
   </compound>
@@ -74,13 +75,14 @@
     <docanchor file="a00012" title="Other approximations: what else is missing?">qmcJ</docanchor>
   </compound>
   <compound kind="page">
-    <name>mo_ae</name>
+    <name>moaeP</name>
     <title>All-Eelectron QMC with GAMESS Orbitals</title>
     <filename>a00014</filename>
   </compound>
   <compound kind="page">
     <name>index</name>
-    <title>About Documentation</title>
+    <title>User guide</title>
     <filename>a00015</filename>
+    <docanchor file="a00015">ug_intro</docanchor>
   </compound>
 </tagfile>

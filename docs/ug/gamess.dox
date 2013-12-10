@@ -1,4 +1,4 @@
-/*! \page mo_ae All-Eelectron QMC with GAMESS Orbitals
+/*! \page moaeP All-Eelectron QMC with GAMESS Orbitals
 \author Miguel Morales
 
 In order to apply cusp corrections to the molecular orbitals

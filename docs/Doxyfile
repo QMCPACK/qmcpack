@@ -52,7 +52,7 @@ PROJECT_LOGO           =
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = /Users/ihk/public_html/qmcpack
+OUTPUT_DIRECTORY       = /Users/jnkim/public_html/qmcpack
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -130,8 +130,8 @@ FULL_PATH_NAMES        = YES
 # relative paths, which will be relative from the directory where doxygen is
 # started.
 
-STRIP_FROM_PATH        = /Users/ihk/svnwork/qmcpack-trunk/src \
-                         /Users/ihk/svnwork/qmcpack-trunk/docs
+STRIP_FROM_PATH        = /Users/jnkim/svnwork/qmcpack-trunk/src \
+                         /Users/jnkim/svnwork/qmcpack-trunk/docs
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
 # the path mentioned in the documentation of a class, which tells
@@ -693,7 +693,7 @@ INPUT                  = config.h \
                          ../src/Estimators \
                          ../src/QMCDrivers \
                          ../src/QMCApp \
-                         index.doc
+                         index.doc 
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

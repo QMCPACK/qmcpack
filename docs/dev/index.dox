@@ -1,6 +1,34 @@
 /*!  \mainpage Developers' guides   
+QMCPACK is written in C++ and proficiency in C++ is required. Currently, C++03
+standard is adopted and the transition to C++11 will start after the code
+freeze at the end of 2013. MPI, OpenMP and CUDA are used for parallelizations.
 
-- <a href="dev_basic.html">Developing QMCPACK</a>
-- <a href="psidev.html">Design of Einspline Builder</a>
+The public version is available at https://code.google.com/p/qmcpack/ under
+UIUC/NCSA open-source licence. Those who are interested in QMCPACK development
+are strongly encouraged to contact J. Kim and other developers to establish
+collaborations so that one can access to the developers' version.  Although it
+is not required, the developers will appreciate if the new product can be
+available to others when the research and development is published.  The
+developers and users will comply with the constraints posed by the contributors
+under the terms of the licence.
+
+These tools are used in QMCPACK development and familiarity with them will be helpful in working with QMCPACK.
+- Compilers : GNU, Intel and IBM compilers are tested and supported. There
+  is no plan to support other compilers. 
+- subversion : revision system
+- cmake : 2.8 and later, build system
+- doxygen : 1.8, code documentation and the guides (including this.)
+
+\subpage dev_update
+
+\subpage validation
+
+\subpage dev_todo
+
+\subpage dev_basic
+
+\subpage dev_design
+
+\subpage dev_psi
 
 */

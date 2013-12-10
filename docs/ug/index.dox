@@ -1,4 +1,6 @@
-/*! \mainpage About Documentation
+/*! \mainpage User guide
+
+\anchor ug_intro
 
 These guides are not meant to discuss Quantum Monte Carlo methods and is
 written on the assumption that the users are familiar with various QMC
@@ -14,4 +16,17 @@ numerous published works. A short list includes
 Quantum Monte Carlo from Minerals and Materials to Molecules,
 2007 Summer School on Computational Materials Science</a>
 
+\subpage firstp
+
+\subpage cmakep
+
+\subpage runningP
+
+\subpage inputp
+
+\subpage xmldocp
+
+\subpage qmcP
+
+\subpage moaeP
 */

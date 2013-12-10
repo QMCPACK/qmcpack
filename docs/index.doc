@@ -37,14 +37,18 @@ their research.  Contact any of the owners of this project.
  
 The development of QMCPACK  has been funded by
 
-- QMC network supported through the Materials Genome initiatives (DOE-BES PTM)
-- Materials Computational Center, supported by the U.S. National Science Foundation  (NSF)
-- QMC Endstation, supported by the U.S. Department of Energy (DOE)
+- Ab initio network (A.K.A. QMC glue) supported through the Predictive Theory and Modeling for
+  Materials and Chemical Science program by the Basic Energy Science, the U.S.
+  Department of Energy (DOE).
+- QMC Endstation, supported by Accelerating Delivery of Petascale Computing
+  Environment At the DOE Leadership Computing Facility at ORNL, DOE.
 - PetaApps, supported by the U. S. National Science Foundation
+- Materials Computational Center, supported by the U.S. National Science Foundation
 
 We also acknowledge the OLCF and ALCF for help and support in accessing their
-resources, as part of a DOE INCITE allocation grant supported by US Department
-of Energy and  NCSA, TACC and NICS for providing resources as a part of NSF
-TeraGrid allocation grant.
+resources, as part of a DOE INCITE, ALCC and Director's Discretionary
+allocation grants supported by US Department of Energy and  NCSA, TACC and NICS
+for providing resources as a part of NSF TeraGrid/XSEDE allocation grants.
 
+\subpage devhistory
 */

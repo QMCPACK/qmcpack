@@ -1,8 +1,30 @@
-/*!  \page Development History
+/** \page devhistory Development History
 
-\section history Major changes
+\section developrs Developers
+- Anouar Benali (ANL)
+- David M. Ceperley (UI)
+- Simone Chiesa (W&M)
+- Bryan Clark (Microsoft, to UI)
+- Kris Delaney  (UCB)
+- Kenneth P. Esler (Stoneridge)
+- Jeongnim Kim (ORNL)
+- Jaron Krogel (ORNL)
+- Jeremy McMinis (LLNL)
+- Miguel A. Morales (LLNL)
+- Luke Shulenburger (SNL)
+
+\section changes Major changes
 
 \htmlonly
+2013-12-07
+<ul>
+<li>Prepare code freeze with the Glue meeting
+<li>Update doxygen documentation materials
+<ul>
+<li>code: doxygen qmcpack.cfg
+<li>userguide: doxygen ug.cfg
+</ul>
+</ul>
 2012-06-01
 <ul>
 <li>Tutorials are added</li>
