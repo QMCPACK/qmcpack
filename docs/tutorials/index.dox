@@ -3,4 +3,6 @@
 \subpage n2msdP "N2 using Multi-Slater-Determinant (MSD) trial wavefunction"
 
 \subpage fsu2012 "3D Electron Gas"
+
+\subpage solid_luke "QMC workflow for solids"
 */
