@@ -24,52 +24,55 @@ convert4qmc -gamessAscii GAMESS_OUTPUT_FILE
 \endcode
 
 This is enough for RHF wfns. For non-RHF runs, the following options are accepted:
-
-  <c> -ci CI_GAMESS_OUTPUT</c>  
+\code
+-ci CI_GAMESS_OUTPUT
+\endcode
 
 This tag requests that a MSD wavefunction is read from CI_GAMESS_OUTPUT.
 CI_GAMESS_OUTPUT is the standard output of a GAMESS run using CITYP={ALDET,
 GUGA, ORMAS} (and also possibly MCSCF but that is not recommended). 
 
 Orbitals can be obtained from 3 options, which are mutually exclusive:
-<ul>
-<li>
-  default: If no special tag is used (see -NaturalOrbitals and
+<dl>
+<dt>default</dt>
+<dd>
+  If no special tag is used (see -NaturalOrbitals and
   -readInitialGuess below), the code attempts to read canonical orbitals from
   the file GAMESS_OUTPUT_FILE. The type of orbitals read by default depend on
   the type of run. For RHF runs, the code reads "EIGENVECTORS", while for MCSCF
   runs the code reads "MCSCF OPTIMIZED ORBITALS" by default.  
-</li>
+</dd>
 <li>
-  <c>-NaturalOrbitals NumToRead</c>:  Looks for natural orbitals in the standard
+<dt> <c>-NaturalOrbitals NumToRead</c> </dt>
+<dd>  Looks for natural orbitals in the standard
   output and reads them. In the case of ALDET or GUGA CI runs, the code looks
   for "NATURAL ORBITALS IN ATOMIC ORBITAL BASIS" in the output, in the case of
   MCSCF runs, the code looks for "MCSCF NATURAL ORBITALS". If these are not
   found in "GAMESS_OUTPUT_FILE", the code aborts. It reads only NumToRead
   states. 
-</li>
-<li>
-  <c>-readInitialGuess NumToRead</c>: This will read the initial guess printed
+</dd>
+<dt> <c>-readInitialGuess NumToRead</c></dt>
+<dd>This will read the initial guess printed
   by GAMESS with the option, "PRTMO=.T." in the $GUESS/$END block of the input
   file. The code aborts if the orbitals are not found.     
-</li>
-</ul>
+</dd>
+</dl>
 
 Other options:
-<ul>
-<li>
-  <c>-threshold cimin</c>   : cutoff used to truncate the MSD expansion. Only terms in
+<dl>
+<dt> <c>-threshold cimin</c> </dt>
+<dd> cutoff used to truncate the MSD expansion. Only terms in
   the expansion with a coefficient larger than cimin are read.
-</li>
-<li>
-  <c>-zeroCI</c>   :  Sets all the MSD expansion coefficients to zero in the QMCPACK xml file. 
-</li>
-<li>
-  <c>-orderByExcitation</c>   :  Orders the determinants or CSFs in the MSD
+</dd>
+<dt> <c>-zeroCI</c></dt>
+<dd>Sets all the MSD expansion coefficients to zero in the QMCPACK xml file. 
+</dd>
+<dt><c>-orderByExcitation</c> </dt>
+<dd> Orders the determinants or CSFs in the MSD
   expansion by number of excitations. By default, they are ordered by the
   magnitude of the expansion coefficient.
-</li>
-</ul>
+</dd>
+</dl>
 
 \section wfnsS Obtaining wavefunctions with various QC methods
 

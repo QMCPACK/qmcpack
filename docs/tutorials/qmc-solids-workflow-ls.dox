@@ -170,7 +170,7 @@ in QMCPACK is as follows
 \f[
 J(r-r') = e^{f(\left|r-r'\right|)} \nonumber
 \f]
-where the function $f(x)$ is represented as a one dimensional spline.
+where the function \f$f(x)\f$ is represented as a one dimensional spline.
 
 It is not possible to optimize this function analytically, so we will optimize its form 
 using variational Monte Carlo.  There are several different formalisms for doing this 
@@ -367,6 +367,7 @@ When the calculation is finished, this will produce plot similar to Fig.\ref Opt
 
 \anchor OptFig
 \image html Opt-conv.png "Total energy vs iteration number for optimization of Jastrow factors in diamond."
+\image latex Opt-conv.png "Total energy vs iteration number for optimization of Jastrow factors in diamond."
 
 It is common for this optimization to proceed over several steps and there is no
 guarantee that the final optimization cycle will produce the best wavefunction (as 
@@ -424,6 +425,7 @@ which we will use in our future calculations.
 
 \anchor SplConvFig
 \image html SplineConv.png "Total, kinetic energy and variance of diamond as a function of b-spline spacing from VMC"
+\image latex SplineConv.png "Total, kinetic energy and variance of diamond as a function of b-spline spacing from VMC"
 
 \section dmc_s Performing DMC Calculations
 Diffusion Monte Carlo (DMC) calculations will consume the vast majority of the CPU
@@ -442,7 +444,7 @@ of first row solids, this may need to be 10's of thousands.
 The second technical parameter that will need to be converged is the size of the
 time step which is used in the DMC propagation.  This controls the accuracy of the 
 Green's function which is used to propagate the walkers.  A rule of thumb is that
-the acceptance ratio upon moving the walkers should be around $99\%$.  However,
+the acceptance ratio upon moving the walkers should be around 99%.  However,
 this should be precisely converged, a task which can again be accomplished by the 
 combination of setup-qmc.pl and QMCPACK.  Here is the input line for setup-qmc.pl
 
@@ -456,8 +458,8 @@ setup-qmc.pl --convdmctstep --wvfcnfile diamond.h5 --splfactor 0.7 \
 The input file this produces will start with a short VMC calculation to produce
 a population of walkers more nearly distributed according to the trial wavefunction.
 After that a series of DMC calculations are done with successively shorter time steps.
-The first calculation (series 002) starts with a time step of $0.04$, followed by
-time steps of $0.03$, $0.02$ and $0.01$.  In order to analyze the results of these
+The first calculation (series 002) starts with a time step of 0.04, followed by
+time steps of 0.03, 0.02 and 0.01.  In order to analyze the results of these
 calculations, it is necessary to understand how DMC calculations are analyzed.
 The PlotDMC.pl script can show both the trace of the local energy as well as the 
 population at each time step.  Look at the first 1000 steps of the first DMC calculation:
@@ -469,6 +471,7 @@ This should produce a plot like the one in figure \ref dmc-transient-figure
 
 \anchor dmc-transient-figure
 \image html DMC-startcalc.png "First 1000 steps of DMC calculation with time step of 0.04"
+\image latex DMC-startcalc.png "First 1000 steps of DMC calculation with time step of 0.04"
 
 At the beginning of the local energy plot, there is a transient as the population of
 walkers equilibrates from sampling \f$\Psi_T^2\f$ to the mixed distribution \f$\Psi_T \Phi\f$.
@@ -481,6 +484,7 @@ PlotDMC.pl diamond-dmcTsteps.s002.dmc.dat 200
 \endcode
 This produces a figure like \anchor dmc-fullfigure
 \image html FullDMCPlot.png "DMC calculation with time step of 0.04, first 200 steps removed to avoid transient"
+\image latex FullDMCPlot.png "DMC calculation with time step of 0.04, first 200 steps removed to avoid transient"
 
 
 The spikes in the population histogram notwithstanding, this calculation appears to
@@ -525,10 +529,11 @@ input file to determine the data to plot.  The output of the tool should be
 similar to figure \anchor dmc-tstep-conv
 
 \image html DMCTstepConv.png "Total DMC energy as a function of time step for diamond"
+\image latex DMCTstepConv.png "Total DMC energy as a function of time step for diamond"
 
 The trend line that is drawn may be wildly inaccurate especially if large time steps
 are included.  In this case, there appears to be a very weak dependence on the 
-time step and a time step of $0.02$ appears to be a good candidate for future DMC
+time step and a time step of 0.02 appears to be a good candidate for future DMC
 calculations.
 
 \subsection prod Production Calculations
@@ -574,7 +579,7 @@ One-body finite size effects will be familiar to practitioners of Density Functi
 Theory.  While Bloch's theorem allows for calculation with only a periodic part of the
 wavefunction, an integral over crystal momenta (over the first Brillouin Zone) is
 necessary to calculate observables of the infinite system.  The calculations which have
-been performed in the preceding sections take place at the gamma point (that is $k = (0, 0, 0)$).
+been performed in the preceding sections take place at the gamma point (that is \f$k = (0, 0, 0)\f$).
 Due to reasons of symmetry, the properties of the system at the gamma point are often
 an extremum of the integral over the first Brillouin Zone, exacerbating the problem
 of incomplete sampling of the integral.
@@ -672,6 +677,7 @@ PlotTwistConv --supercellsize 1 diamond-scf.in
 
 \anchor dmc-ta-conv
 \image html twist-avg-conv.png "Total DMC energy vs number of twists for diamond.  Convergence is achieved around 125 twists in the primitive cell."
+\image latex twist-avg-conv.png "Total DMC energy vs number of twists for diamond.  Convergence is achieved around 125 twists in the primitive cell."
 
 \subsection tb_s Two-Body Finite Size Effects
 The other source of finite size effects comes from the spurious interactions of electrons
@@ -787,6 +793,7 @@ corrections should not be trusted.
 
 \anchor dmc-fs-conv
 \image html finite-size-scaling.png "Total DMC energy vs supercell size.  Convergence is achieved with a supercell that contains 66 copies of the primitive cell."
+\image latex finite-size-scaling.png "Total DMC energy vs supercell size.  Convergence is achieved with a supercell that contains 66 copies of the primitive cell."
 
 \section con_s Conclusion
 This tutorial has covered using pwscf and QMCPACK to perform DMC calculations on
