@@ -1837,7 +1837,10 @@ public:
       TraceManager& tm = *clones[ip];
       total_size += tm.real_buffer.buffer.size();
     }
-    double adios_buffer[total_size];
+    double * adios_buffer = (double *)malloc(total_size*sizeof(double));
+    if(!adios_buffer){
+      APP_ABORT("not enough memory\n");
+    }
     int curr_pos = 0;
     for(int ip=0; ip<clones.size(); ++ip)
     {
@@ -1865,6 +1868,7 @@ public:
     adios_write(adios_handle, "total_size", &total_size);
     adios_write(adios_handle, "buffer_contents", adios_buffer);
     adios_close(adios_handle);
+    free(adios_buffer);
 #ifdef IO_PROFILE
     ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
 #endif
