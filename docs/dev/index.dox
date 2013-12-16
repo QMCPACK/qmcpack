@@ -19,11 +19,15 @@ These tools are used in QMCPACK development and familiarity with them will be he
 - cmake : 2.8 and later, build system
 - doxygen : 1.8, code documentation and the guides (including this.)
 
+\subpage glue201312
+
 \subpage dev_update
 
 \subpage validation
 
 \subpage dev_todo
+
+\subpage incite2013
 
 \subpage dev_basic
 

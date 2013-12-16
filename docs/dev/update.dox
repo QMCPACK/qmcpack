@@ -1,36 +1,4 @@
 /*! \page dev_update Update
-\tableofcontents
-
-Prepared for the QMC glue meeting, Dec/11-Dec/13, 2013 at Argonne NL
-\date 2013-12-09
-
-Participants
-- Jeongnim Kim, Paul Kent, Jaron Krogel and Cynthia Gu, ORNL
-- David Ceperley, .., University of Illinois
-- Jeffrey Greeley, William Parker, Anouar Benali and Nick Romero, ANL
-- Miguel Morales, Jeremy McMinis, ... (remote), LLNL
-- Luke Shulenburger, SNL
-
-\section code Code development
-- Bug fixes and updates
-- Wavefunctions
-- Managing samples and chained qmc sections
-- Force estimator and RQMC
-- I/O: restart and trace
- - HDF5 and ADIOS for check point
- - XML output for the qmc state and random number generators
-- Code freeze
-
-\subsection bugs Known bugs and problems
-
-\section tool Tool development
-- Project suite, Jaron
-- Quantum Espresso interface, Miguel
-
-\section data Database
-- Pseudopotentials
-- Validation database
-- How to manage: collect, store and sharing
 
 \section newinp New/updated input elements
 
@@ -178,11 +146,5 @@ memory access
 Other topics
 - More on SPOset for advanced orbitals, AFM, LDA+U, Jeremy
 - Multideterminant, Miguel
-
-\subsection sd ADIOS checkpointing
-Cynthia
-
-\subsection se Trace
-Jaron
 
 */

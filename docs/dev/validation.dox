@@ -1,6 +1,25 @@
 /*! \page validation Validation DataBase
 
-\section sa Candidate systems
+\section valid_intro Validation types
+- Correctness
+- Input changes
+- Performance
+
+\section valid_method How to manage the tests
+
+Generatl consideration
+- Where to put hdf5 files and how to make them available
+- How to organize the data
+- How to inspect the data
+- Web portal
+
+\subsection valid_jk Validation suite by Jaron
+\code
+svn co https://subversion.assembla.com/svn/qmcdev/validate
+\endcode
+- PP, XML files in the repository
+
+\section valid_sys Candidate systems
 <table>
 <tr>
 <th>Name</th><th>BC</th><th>SPOSet</th><th>Jastrow</th><th>MSD</th><th>opt</th><th>vmc</th><th>dmc</th><th>build</th>
@@ -165,15 +184,4 @@ blocks.  For block 2 it should be ~0.9968, for block 3 it should be
 - VMC/DMC
 - Performance
 
-\section valid_method How to manage the tests
-\code
-svn co https://subversion.assembla.com/svn/qmcdev/validate
-\endcode
-- PP, XML files in the repository
-
-TBD
-- Where to put hdf5 files and how to make them available
-- How to organize the data
-- How to inspect the data
-- Web portal
 */

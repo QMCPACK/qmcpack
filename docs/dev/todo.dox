@@ -12,6 +12,7 @@
 \section todo_ham Hamiltonians
 - new observables
 - forces
+- break up \c HamiltonianFactory
 
 \section todo_qmc Drivers
 - Need to discuss pros and cons of reconfiguration vs the
@@ -21,13 +22,13 @@
 
 \section todo_comp Computer Science Development
 - threading
- - plan to introduce VirtualParticleSet to handle 
+ - plan to introduce \c VirtualParticleSet to handle 
    - moves on the sphere for non-local PP
    - other fine-grained parallelization
  - RQMC and correlated sampling drivers
 - MPI update
  - remove OOMPI
- - boost::mpi, if cmake can do the job
+ - \c boost::mpi, if \c cmake can do the job
  - light-weight mpi 
  - MPI3 and RDMA 
 - SIMD algorithms

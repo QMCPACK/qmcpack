@@ -26,8 +26,8 @@ tables.
 
 Cloning objects  is managed by <c>CloneManager</c> class from which QMC drivers
 are derived. The number of clones is set by the number of OpenMP threads,
-<c>omp_get_max_threads()</c>. The objects such as TrialWaveFunction and
-QMCHamiltonian are expensive to create/copy/clone and they are instantiated
+<c>omp_get_max_threads()</c>. The objects such as \c TrialWaveFunction and
+\c QMCHamiltonian are expensive to create/copy/clone and they are instantiated
 only once when the first <c>qmc</c> section is initialized.
 
 
