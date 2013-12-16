@@ -1401,6 +1401,35 @@ cd $PBS_O_WORKDIR
 
 
 
+class Titan(Supercomputer):
+    
+    name = 'titan'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+
+        c= '#!/bin/bash\n'
+        c+='#PBS -A {0}\n'.format(job.account)
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
+        c+='#PBS -l nodes={0}\n'.format(job.nodes)
+        c+='#PBS -l gres=widow3\n'
+        c+='#PBS -V\n'
+        c+='#PBS -q {0}\n'.format(job.queue)
+        c+='''
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+'''
+        return c
+    #end def write_job_header
+#end class BlueWatersXE
+
+
+
+
 #Known machines
 #  workstations
 Workstation('oahu',12,'mpirun')
@@ -1409,6 +1438,7 @@ Workstation('psi1',16,'mpirun')
 Workstation('psi2',16,'mpirun')
 Workstation('psi3',16,'mpirun')
 for cores in range(1,128+1):
+    Workstation('ws'+str(cores),cores,'mpirun'),
     Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
@@ -1420,6 +1450,7 @@ OIC5(           28,   2,    16,  128,   50, 'mpirun', 'qsub',  'qstat', 'qdel')
 Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
+Titan(        9408,   2,     6,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 
 
 #machine accessor functions

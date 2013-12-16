@@ -294,6 +294,8 @@ class Pw2qmcpack(Simulation):
         outfin = outfin and 'npw=' in output
         outfin = outfin and 'ik=' in output
 
+        outfin = outfin or 'JOB DONE' in output
+
         success = files_exist and outfin
 
         #print
