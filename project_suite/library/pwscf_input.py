@@ -108,8 +108,8 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
             
 
 class PwscfInputBase(Pobj):
-    ints=['nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp','nbnd','tot_charge','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin','multiplicity','tot_magnetization','edir','report','electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep','sw_nstep','modenum','n_charge_compensation','nlev']
-    floats=['dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C','cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss','starting_magnetization','nelup','neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2','fixed_magnetization','lambda','london_s6','london_rcut','conv_thr','mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2','temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude','press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse','mixing_charge_compensation','comp_thr','exx_fraction','ecutfock']
+    ints=['nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp','nbnd','tot_charge','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin','multiplicity','tot_magnetization','edir','report','electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep','sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind']
+    floats=['dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C','cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss','starting_magnetization','nelup','neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J','starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2','fixed_magnetization','lambda','london_s6','london_rcut','conv_thr','mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2','temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude','press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse','mixing_charge_compensation','comp_thr','exx_fraction','ecutfock']
     strs=['calculation','title','verbosity','restart_mode','outdir','wfcdir','prefix','disk_io','pseudo_dir','occupations','smearing','input_dft','U_projection_type','constrained_magnetization','mixing_mode','diagonalization','startingpot','startingwfc','ion_dynamics','ion_positions','phase_space','pot_extrapolation','wfc_extrapolation','ion_temperature','opt_scheme','CI_scheme','cell_dynamics','cell_dofree','which_compensation','assume_isolated']
     bools=['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield','lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic','noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc','tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses','use_freezing']
 
@@ -161,6 +161,12 @@ class Section(Element):
                     var = var.strip()
                     val = val.strip()
                     varname = var.split('(')[0]
+                    if not varname in self.variables:
+                        self.error('pwscf input section {0} does not have a variable named {1}, please check your input\nif correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname),trace=False)
+                    #end if
+                    if not varname in self.var_types:
+                        self.error('a type has not been specified for variable {0}\nplease add it to PwscfInputBase'.format(varname),trace=False)
+                    #end if
                     vtype = self.var_types[varname]
                     val = readval[vtype](val)
                     self[var] = val
@@ -273,11 +279,13 @@ class system(Section):
          'U_projection_type','edir','emaxpos','eopreg','eamp','angle1',
          'angle2','constrained_magnetization','fixed_magnetization','lambda',
          'report','lspinorb','assume_isolated','do_ee','london','london_s6',
-         'london_rcut','exx_fraction','ecutfock'])
+         'london_rcut','exx_fraction','ecutfock',
+         'lda_plus_u_kind','Hubbard_J'])
 
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
-        start_mag = 'starting_magnetization'
+        start_mag = 'starting_magnetization',
+        hubbard_j = 'Hubbard_J'
         )
 
     # specialized read for partial array variables (hubbard U, starting mag, etc)
@@ -1025,14 +1033,14 @@ class PwscfInput(SimulationInput):
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
             pseudo_file = self.atomic_species.pseudopotentials[atom]
-            if pseudo_file in self.pseudopotentials:                
+            if self.pseudopotentials!=None and pseudo_file in self.pseudopotentials:                
                 pseudopot = self.pseudopotentials[pseudo_file]
                 element = pseudopot.element
                 valence = int(pseudopot.Z)
                 ion_charge += atoms.count(atom)*valence
                 valency[element] = valence
             else:
-                self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function')
+                self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function',trace=False)
             #end if
         #end for
 
