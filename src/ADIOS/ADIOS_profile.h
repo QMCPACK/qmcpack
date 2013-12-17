@@ -27,6 +27,7 @@ static int *trace_data_total;
 static int ckp_index;
 static int trace_index;
 
+#if HAVE_AIDIOS
 void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize);
 void profile_adios_init(int nBlock);
 void profile_adios_finalize(Communicate* myComm, int nBlock);
@@ -36,6 +37,17 @@ void profile_adios_start_checkpoint(int block);
 void profile_adios_end_comp(int block);
 void profile_adios_end_trace(int block);
 void profile_adios_end_checkpoint(int block);
-};
+#else
+inline void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize){}
+inline void profile_adios_init(int nBlock){}
+inline void profile_adios_finalize(Communicate* myComm, int nBlock){}
+inline void profile_adios_start_comp(int block){}
+inline void profile_adios_start_trace(int block){}
+inline void profile_adios_start_checkpoint(int block){}
+inline void profile_adios_end_comp(int block){}
+inline void profile_adios_end_trace(int block){}
+inline void profile_adios_end_checkpoint(int block){}
+#endif
+}
 
 #endif

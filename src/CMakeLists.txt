@@ -142,12 +142,15 @@ else()
   # Creating ADIOS
   #############################
 
-  SET(ADIOS
-    ADIOS/ADIOS_config.cpp
+
+  SET(ADIOS ADIOS/ADIOS_config.cpp)
+  if(HAVE_ADIOS)
+    SET(ADIOS ${ADIOS}
     Particle/AdiosWalkerInput.cpp
     ADIOS/ADIOS_profile.cpp
     ADIOS/ADIOS_verify.cpp
     )
+  endif(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
