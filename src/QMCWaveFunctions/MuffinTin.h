@@ -22,7 +22,6 @@
 #include "Optimize/VarList.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
-#include "QMCWaveFunctions/MuffinTin.h"
 #include <einspline/bspline_base.h>
 #include <einspline/nubspline_structs.h>
 #include <einspline/multi_nubspline_structs.h>
