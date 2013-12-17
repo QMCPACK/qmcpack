@@ -13,13 +13,14 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+
 ######################################################################
 # Version 
 ######################################################################
-SET(QMCPLUSPLUS_VERSION_MAJOR 0)
-SET(QMCPLUSPLUS_VERSION_MINOR 6)
-SET(QMCPLUSPLUS_VERSION_PATCH 1)
-SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.$(QMCPLUSPLUS_VERSION_PATH}")
+SET(QMCPLUSPLUS_VERSION_MAJOR 1)
+SET(QMCPLUSPLUS_VERSION_MINOR 0)
+SET(QMCPLUSPLUS_VERSION_PATCH 0)
+SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.${QMCPLUSPLUS_VERSION_PATCH}")
 
 ######################################################################
 # Build level
@@ -105,6 +106,7 @@ ENDIF($ENV{QMC_COMPLEX})
 # Standard test
 ######################################################################
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+
 
 ######################################################################
 # add macros to compile einspline if necessary
@@ -212,11 +214,11 @@ ENDIF(QMC_ADIOS)
 SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
 FIND_PACKAGE(Subversion) 
 IF(Subversion_FOUND) 
-  Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project) 
-  MESSAGE(STATUS "Current revision : ${Project_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
-  SET(QMCPLUSPLUS_BRANCH ${Project_WC_REVISION})
-  SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${Project_WC_LAST_CHANGED_DATE})
-ENDIF(Subversion_FOUND)
+  Subversion_WC_INFO(${PROJECT_SOURCE_DIR} my) 
+  MESSAGE(STATUS "Current revision : ${my_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
+  SET(QMCPLUSPLUS_BRANCH ${my_WC_REVISION})
+  SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${my_WC_LAST_CHANGED_DATE})
+ENDIF()
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
@@ -367,10 +369,14 @@ INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 
+
 IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
   SET(HAVE_LIBXML2 1)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
+
+ELSE()
+  MESSAGE(FATAL "Missing Libxml2")
 ENDIF(LIBXML2_FOUND)
 
 IF(HDF5_FOUND)
@@ -395,7 +401,7 @@ ENDIF(HDF5_FOUND)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR="${Boost_INCLUDE_DIR})
+  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
 ELSE()
   MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
   #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
@@ -405,11 +411,11 @@ ENDIF()
 IF(QMC_CUDA)
   set(CUDA_PROPAGATE_HOST_FLAGS OFF)
   if(CUDA_NVCC_FLAGS MATCHES "arch")
-    MESSAGE(STATUS "Setting CUDA FLAGS="${CUDA_NVCC_FLAGS})
+    MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
   else()
     SET(CUDA_NVCC_FLAGS
       "-arch=sm_13;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
-    MESSAGE(WARNING "Using outdated CUDA FLAGS="${CUDA_NVCC_FLAGS})
+    MESSAGE(WARNING "Using outdated CUDA FLAGS=${CUDA_NVCC_FLAGS}")
   endif()
   FIND_PACKAGE(CUDA REQUIRED)
   set(HAVE_CUDA 1)
@@ -553,13 +559,17 @@ if(HAVE_MPI)
 endif()
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
-#########################
-# add definitions for adios profile
-#	add definitions for adios verification
-########################
-IF(QMC_ADIOS)
-#	ADD_DEFINITIONS(-DIO_PROFILE)
-#	ADD_DEFINITIONS(-DADIOS_VERIFY)
-ENDIF(QMC_ADIOS)
+EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
+CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 
 SUBDIRS(src)
+
+#ADD_CUSTOM_TARGET(print_settings ALL
+#      ${CMAKE_COMMAND} -E echo "Print build settings"
+#          VERBATIM)
+#
+#add_custom_command(TARGET print_settings
+#  POST_BUILD
+#  COMMAND svn info ${qmcpack_SOURCE_DIR})
+#
+#file(APPEND ${qmcpack_BINARY_DIR}/bin/qmcpack.settings ${print_settings})
