@@ -1310,6 +1310,7 @@ class Structure(Sobj):
             if noninteger:
                 self.error('calculated diagonal tiling matrix is non-integer\n  tiled atomic positions cannot be determined')
             #end if
+            t = abs(t)
         else:
             tilematrix = diag(t)
         #end if
@@ -1507,7 +1508,7 @@ class Structure(Sobj):
             if self.folded_structure!=None:
                 small = self.folded_structure
             else:
-                self.error('must provide small cell to compute tiling matrix')
+                return identity(self.dim,dtype=int)
             #end if
         #end if
         tm = dot(self.axes,inv(small.axes))

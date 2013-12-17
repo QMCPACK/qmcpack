@@ -1038,7 +1038,7 @@ class PwscfInput(SimulationInput):
                 element = pseudopot.element
                 valence = int(pseudopot.Z)
                 ion_charge += atoms.count(atom)*valence
-                valency[element] = valence
+                valency[atom] = valence
             else:
                 self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function',trace=False)
             #end if

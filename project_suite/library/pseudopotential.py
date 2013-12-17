@@ -46,12 +46,24 @@ class Pseudopotential(DevBase):
 
 
     def __init__(self,filepath=None,energy_units=None):
-        self.initialize = True
+        self.initialize = False
         if energy_units is None:
             self.energy_units = self.standard_energy_units
         else:
             self.energy_units = energy_units
         #end if
+        self.set(
+            filename         = None,
+            location         = None,
+            element          = None,
+            type             = None,
+            Z                = None,
+            r                = None,
+            potentials       = None,
+            rcut             = None,
+            potential_spread = None,
+            pp               = None
+            )
         if filepath!=None:
             self.read(filepath)
         #end if
@@ -270,6 +282,7 @@ class upfPP(Pseudopotential):
             #x.remove_hidden()
             #pp = x.upf
             pp = obj()
+            pp_contents = open(filepath,'r').read()
         #end if
         if upf_format=='old':
             lines = pp.header.split('\n')
@@ -366,8 +379,32 @@ class upfPP(Pseudopotential):
             self.type = h.type
             self.Z  = h.Z
         else:
+            header_start = pp_contents.find('<PP_HEADER')
+            if header_start==-1:
+                self.error('could not find <PP_HEADER>')
+            #end if
+            header_end   = pp_contents.find('/>')
+            if header_end==-1:
+                self.error('could not find </PP_HEADER>')
+            #end if
+            header = pp_contents[header_start:header_end]
+            tokens = header.split()[1:]
+            for token in tokens:
+                if '=' in token:
+                    name,value = token.split('=',1)
+                    value = value.strip('"')
+                    if name=='element':
+                        self.element = value
+                    elif name=='functional':
+                        self.type = value
+                    elif name=='z_valence':
+                        self.Z = int(round(float(value)))
+                    #end if
+                #end if
+            #end for
+
             #self.error('ability to read new UPF format has not yet been implemented\n  attempted to read '+filepath)
-            self.warn('ability to read new UPF format has not yet been implemented\n  attempted to read '+filepath)
+            #self.warn('ability to read new UPF format has not yet been implemented\n  attempted to read '+filepath)
             self.initialize = False
         #end if
     #end def readfile

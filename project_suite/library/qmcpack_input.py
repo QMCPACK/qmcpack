@@ -3581,6 +3581,11 @@ def generate_basic_input(id             = 'qmc',
         calculations = []
     #end if
 
+    tilematrix = identity(3,dtype=int)
+    if system!=None:
+        tilematrix = system.structure.tilematrix()
+    #end if
+
     metadata = QmcpackInput.default_metadata.copy()
     qi = QmcpackInput(
         metadata,
@@ -3597,6 +3602,7 @@ def generate_basic_input(id             = 'qmc',
                         twistnum = twistnum,
                         meshfactor = meshfactor,
                         precision  = precision,
+                        tilematrix = tilematrix,
                         href       = orbitals_h5,
                         slaterdeterminant = section(
                             determinants = collection(
