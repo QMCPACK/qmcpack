@@ -1,0 +1,16 @@
+digraph hierarch {
+labelloc="top";
+labelfloat=true
+nodesep=1.0
+
+node[shape=record,fontname=Ariel]
+edge[dir=back,arrowtail=odiamond]
+
+pset[label="{hamiltonian|+pairpot\n +estimator| name\n target\n wavefunction}"]
+pairpot[label="{pairpot| | type\n name\n source\n target}"]
+estimator[label="{estimator| | type\n name\n ... }"]
+
+pset -> pairpot
+pset->estimator
+}
+
