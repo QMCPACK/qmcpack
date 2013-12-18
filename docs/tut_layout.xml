@@ -6,9 +6,7 @@
     <tab type="user" url="http://qmcpack.cmscc.org" title="Wiki"/>
     <tab type="user" url="../ug/index.html" title="User guide" intro="userguide,xml"/>
     <tab type="user" url="../dev/index.html" title="Developers" intro="help for developers"/>
-    <tab type="mainpage" url="index.html" title="Tutorials" intro="tutorials">
-      <tab type="pages" visible="yes" title="Tutorials" intro=""/>
-    </tab>
+    <tab type="mainpage" url="index.html" title="Tutorials" intro="tutorials"/>
   </navindex>
 
   <!-- Layout definition for a class page -->

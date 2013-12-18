@@ -15,7 +15,7 @@ wavefunctions)
 
 After the build is completed, the converter for Gaussian-base QC code can be found 
 in the build directory:
-<c>bin/convert4qmc</c> 
+\c bin/convert4qmc
 
 The general usage of the converter and its features are described below:
 

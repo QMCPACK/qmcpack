@@ -111,7 +111,7 @@ div.navtab {
 	margin-right: 15px;
 }
 
-/* @group Link Styling */
+/* @group Link Styling #3D578C; */
 
 a {
 	color: #3D578C;
@@ -119,8 +119,9 @@ a {
 	text-decoration: none;
 }
 
+/* color: #4665A2; */
 .contents a:visited {
-	color: #4665A2;
+	color: #a25546;
 }
 
 a:hover {

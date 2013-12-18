@@ -5,9 +5,7 @@
     <tab type="user" url="../doxy/index.html" title="Main Page"/>
     <tab type="user" url="http://qmcpack.cmscc.org" title="Wiki"/>
     <tab type="user" visiable="yes" url="../ug/index.html" title="User guide" intro="userguide,xml"/>
-    <tab type="mainpage" visiable="yes" url="index.html" title="Developers" intro="help for developers">
-      <tab type="pages" visible="yes" title="" intro=""/>
-    </tab>
+    <tab type="mainpage" visiable="yes" url="index.html" title="Developers" intro="help for developers"/>
     <tab type="user" url="../tutorials/index.html" title="Tutorials" intro="tutorials"/>
   </navindex>
 

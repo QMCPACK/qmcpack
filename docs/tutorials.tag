@@ -39,6 +39,34 @@
     <docanchor file="n2msd_p">qcout</docanchor>
   </compound>
   <compound kind="page">
+    <name>solid_luke</name>
+    <title>QMC workflow for solids</title>
+    <filename>solid_luke</filename>
+    <docanchor file="solid_luke" title="Initial DFT Calculations">initial-dft</docanchor>
+    <docanchor file="solid_luke" title="Pseudopotentials">pp</docanchor>
+    <docanchor file="solid_luke" title="Creating and testing wavefunctions for QMCPACK">spline-wfns</docanchor>
+    <docanchor file="solid_luke" title="Extracting Wavefunctions at Particular k-points">kext</docanchor>
+    <docanchor file="solid_luke" title="Optimizing Jastrow Factors within QMC">opts</docanchor>
+    <docanchor file="solid_luke">OptFig</docanchor>
+    <docanchor file="solid_luke" title="Testing Convergence of the Splines in QMCPACK">spline_cov</docanchor>
+    <docanchor file="solid_luke">SplConvFig</docanchor>
+    <docanchor file="solid_luke" title="Performing DMC Calculations">dmc_s</docanchor>
+    <docanchor file="solid_luke">dmc-transient-figure</docanchor>
+    <docanchor file="solid_luke">dmc-fullfigure</docanchor>
+    <docanchor file="solid_luke">dmc-tstep-conv</docanchor>
+    <docanchor file="solid_luke" title="Production Calculations">prod</docanchor>
+    <docanchor file="solid_luke" title="Controlling Finite Size Effects">fs_s</docanchor>
+    <docanchor file="solid_luke" title="One-Body Finite Size Effects and Twist Averaging">twist_s</docanchor>
+    <docanchor file="solid_luke">dmc-ta-conv</docanchor>
+    <docanchor file="solid_luke" title="Two-Body Finite Size Effects">tb_s</docanchor>
+    <docanchor file="solid_luke" title="Creating and Using Supercells">supercells</docanchor>
+    <docanchor file="solid_luke" title="Two-Body Finite Size Corrections">twfs_s</docanchor>
+    <docanchor file="solid_luke" title="Putting it all Together">all_s</docanchor>
+    <docanchor file="solid_luke">dmc-fs-conv</docanchor>
+    <docanchor file="solid_luke" title="Conclusion">con_s</docanchor>
+    <docanchor file="solid_luke" title="Acknowledgment">ack_s</docanchor>
+  </compound>
+  <compound kind="page">
     <name>index</name>
     <title>Tutorials</title>
     <filename>index</filename>

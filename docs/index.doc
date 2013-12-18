@@ -24,6 +24,8 @@ quantum monte carlo simulations of real materials on gpu clusters,” Computing
 in  Science and Engineering, vol. 14, p. 40, 2012.           
 - QMCPACK, http://qmcpack.cmscc.org/
 
+\subpage qmc_bib  : bibtex 
+
 Different parts of the code are written by different people, whose names are
 usually signed at the top of each file.  If you are interested in participating
 in QMCPACK development, contact Jeongnim Kim jeongnim.kim@gmail.com.  QMCPACK
