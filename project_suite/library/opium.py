@@ -16,8 +16,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #         project suite drives this simulation in isolation of others
 #           i.e., one performs parameter scans to drive several independent opium runs
 #         in this setting, a opium simulation does not provide information to 
-#           other simulations (e.g. orbitals to qmcpack) and does not accept 
-#           information from prior simulations (e.g. structure from pwscf or opium)
+#           other simulations (e.g. pseudopotentials to qmcpack) 
 #      
 #         the input file will be read from a template file
 #           and modified to obtain the desired inputs
@@ -31,11 +30,9 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #     2) generated standalone simulation
 #          as above, but with fully generated input files
 #            generate functions provide a short-hand of minimal vars for input
-#            structure information for the input is extracted from 
-#              a standard PhysicalSystem object
 #
 #          required functions to be implemented:
-#           OpiumInput: read_contents, write_contents, incorporate_system
+#           OpiumInput: read_contents, write_contents
 #           Opium:      app_command, check_sim_status
 #           generate_opium_input
 #           
@@ -126,15 +123,6 @@ class OpiumInput(SimulationInput):
         contents = ''
         return contents
     #end def write_contents
-
-
-    def incorporate_system(self,system):
-        # optional
-        #  only necessary if you want to populate atomic positions, etc
-        #  from a PhysicalSystem object
-        # if you don't want to implement it, no action is required
-        self.not_implemented()
-    #end def incorporate_system
 #end class OpiumInput
 
 
@@ -219,13 +207,13 @@ class Opium(Simulation):
         # optional
         #  only necessary if another simulation depends on this one
         #  e.g.
-        #  other_sim.depends(opium_sim,'orbitals')  or similar
+        #  other_sim.depends(opium_sim,'pseudopotential')  or similar
         # if you don't want to implement it, uncomment the line below
         #return False
         calculating_result = False
         input = self.input # a OpiumInput object
         # check the input to see if result is being calculated
-        #  (e.g. result_name='orbitals')
+        #  (e.g. result_name='pseudopotential')
         return calculating_result
     #end def check_result
 
@@ -234,7 +222,7 @@ class Opium(Simulation):
         # optional
         #  only necessary if another simulation depends on this one
         #  e.g.
-        #  other_sim.depends(opium_sim,'orbitals')  or similar
+        #  other_sim.depends(opium_sim,'pseudopotential')  or similar
         # if you don't want to implement it, uncomment the line below
         #self.not_implemented()
 
@@ -243,9 +231,9 @@ class Opium(Simulation):
         #analyzer = self.load_analyzer_image()
 
         # package information about a result/product in the result object
-        # for example, if orbitals are requested, 
-        # the path to the orbital file might be provided:
-        # result.orbital_file = '/path/to/orbital/file'
+        # for example, if pseudopotentials are requested, 
+        # the path to the pseudopotential file might be provided:
+        # result.pseudopotential_file = '/path/to/pseudopotential/file'
         return result
     #end def get_result
 
