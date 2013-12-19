@@ -19,6 +19,8 @@ from wfconvert  import Wfconvert , WfconvertInput , WfconvertAnalyzer , generate
 from qmcpack    import Qmcpack   , QmcpackInput   , QmcpackAnalyzer   , generate_qmcpack_input, generate_qmcpack
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
+from gamess import Gamess, GamessInput, GamessAnalyzer
+from opium  import Opium,  OpiumInput,  OpiumAnalyzer
 
 
 #set the machine if known, otherwise user will provide
