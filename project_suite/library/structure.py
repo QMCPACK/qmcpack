@@ -106,6 +106,65 @@ def tile_points(points,tilevec,axin):
 #end def tile_points
 
 
+def reduce_tilematrix(tiling):
+    tiling = array(tiling)
+    t = array(tiling,dtype=int)
+    if abs(tiling-t).sum()>1e-6:
+        Structure.class_error('requested tiling is non-integer\n tiling requested: '+str(tiling))
+    #end if
+
+    dim = len(t)
+    matrix_tiling = t.shape == (dim,dim)
+    if matrix_tiling:
+        #find a tiling tuple from the tiling matrix
+        # do this by shearing the tiling matrix (or equivalently the tiled cell)
+        # until it is orthogonal (in the untiled cell axes)
+        # this is just rearranging triangular tiles of space to reshape the cell
+        # so that t1*t2*t3 = det(T) = det(A_tiled)/det(A_untiled)
+        #this way the atoms in the (perhaps oddly shaped) supercell can be 
+        # obtained from simple translations of the untiled cell positions
+        T = t  #tiling matrix
+        tilematrix = T.copy()
+        del t
+        Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
+        tbar = identity(dim) #basis for shearing
+        dr = range(dim)
+        other = [] # other[d] = dimensions other than d
+        for d in dr: 
+            other.append(set(dr)-set([d]))
+        #end for
+        #move each axis to be parallel to barred directions
+        # these are volume preserving shears of the supercell
+        # each shear keeps two cell face planes fixed while moving the others
+        for d in dr:
+            tb = tbar[d] 
+            t  = T[d]
+            d2,d3 = other[d]
+            n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
+            tn = dot(n,t)*1./dot(n,tb)*tb #new axis vector
+            Tnew[d] = tn
+        #end for
+        #the resulting tiling matrix should be diagonal and integer
+        tr = diag(Tnew)
+        t  = array(around(tr),dtype=int)
+        nondiagonal = abs(Tnew-diag(tr)).sum()>1e-6
+        noninteger  = abs(tr-t).sum()>1e-6
+        if nondiagonal:
+            Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
+        #end if
+        if noninteger:
+            Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
+        #end if
+        tilevector = abs(t)
+    else:
+        tilevector = t
+        tilematrix = diag(t)
+    #end if
+
+    return tilematrix,tilevector
+#end def reduce_tilematrix
+
+
 def tile_magnetization(mag,tilevec,mag_order,mag_prim):
     # jtk mark current
     #  implement true magnetic tiling based on the magnetic order
@@ -227,6 +286,11 @@ class Structure(Sobj):
             #end if
         #end for
     #end def operate
+
+
+    def remove_folded(self):
+        self.remove_folded_structure()
+    #end def remove_folded
 
 
     def remove_folded_structure(self):
@@ -1250,9 +1314,6 @@ class Structure(Sobj):
             magnetic_primitive = kwargs['magnetic_primitive']
         #end if
 
-        if self.dim!=3:
-            self.error('tile is currently only implemented for 3 dimensions')
-        #end if
         dim = self.dim
         if len(td)==1:
             if isinstance(td[0],int):
@@ -1264,77 +1325,31 @@ class Structure(Sobj):
             tiling = td
         #end if
         tiling = array(tiling)
-        t = array(tiling,dtype=int)
-        if abs(tiling-t).sum()>1e-6:
-            self.error('requested tiling is non-integer\n tiling requested: '+str(tiling))
-        #end if
 
-        matrix_tiling = t.shape == (dim,dim)
-        if matrix_tiling:
-            #find a tiling tuple from the tiling matrix
-            # do this by shearing the tiling matrix (or equivalently the tiled cell)
-            # until it is orthogonal (in the untiled cell axes)
-            # this is just rearranging triangular tiles of space to reshape the cell
-            # so that t1*t2*t3 = det(T) = det(A_tiled)/det(A_untiled)
-            #this way the atoms in the (perhaps oddly shaped) supercell can be 
-            # obtained from simple translations of the untiled cell positions
-            T = t  #tiling matrix
-            tilematrix = T.copy()
-            del t
-            Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
-            tbar = identity(dim) #basis for shearing
-            dr = range(dim)
-            other = [] # other[d] = dimensions other than d
-            for d in dr: 
-                other.append(set(dr)-set([d]))
-            #end for
-            #move each axis to be parallel to barred directions
-            # these are volume preserving shears of the supercell
-            # each shear keeps two cell face planes fixed while moving the others
-            for d in dr:
-                tb = tbar[d] 
-                t  = T[d]
-                d2,d3 = other[d]
-                n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
-                tn = dot(n,t)*1./dot(n,tb)*tb #new axis vector
-                Tnew[d] = tn
-            #end for
-            #the resulting tiling matrix should be diagonal and integer
-            tr = diag(Tnew)
-            t  = array(around(tr),dtype=int)
-            nondiagonal = abs(Tnew-diag(tr)).sum()>1e-6
-            noninteger  = abs(tr-t).sum()>1e-6
-            if nondiagonal:
-                self.error('could not find a diagonal tiling matrix for generating tiled atomic positions')
-            #end if
-            if noninteger:
-                self.error('calculated diagonal tiling matrix is non-integer\n  tiled atomic positions cannot be determined')
-            #end if
-            t = abs(t)
-        else:
-            tilematrix = diag(t)
-        #end if
+        matrix_tiling = tiling.shape == (dim,dim)
 
-        ncells = t.prod()
+        tilematrix,tilevector = reduce_tilematrix(tiling)
+
+        ncells = tilevector.prod()
+
+        if ncells==1 and abs(tilematrix-identity(self.dim)).sum()<1e-1:
+            if in_place:
+                return self
+            else:
+                return self.copy()
+            #end if
+        #end if
 
         self.recenter()
 
         elem = array(ncells*list(self.elem))
-        if ncells==1:
-            pos    = array(self.pos)   
-            axes   = array(self.axes)  
-            center = array(self.center)
-            mag    = array(self.mag)
-        else:
-            pos,axes = tile_points(self.pos,t,self.axes)
-            if matrix_tiling:
-                axes = dot(self.axes,tilematrix)
-            #end if
-            center = axes.sum(0)/2
-            mag = tile_magnetization(self.mag,t,magnetic_order,magnetic_primitive)
+        pos,axes = tile_points(self.pos,tilevector,self.axes)
+        if matrix_tiling:
+            axes = dot(self.axes,tilematrix)
         #end if
-        kaxes = dot(inv(tilematrix),self.kaxes)
-        #kpoints = self.recenter_k(self.kpoints,kaxes,True)
+        center = axes.sum(0)/2
+        mag = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
+        kaxes    = dot(inv(tilematrix),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
 
@@ -1353,7 +1368,7 @@ class Structure(Sobj):
         if self.folded_structure!=None:
             ts.tmatrix = dot(tilematrix,self.tmatrix)
             ts.folded_structure = self.folded_structure.copy()
-        elif ncells>1:
+        else:
             ts.tmatrix = tilematrix
             ts.folded_structure = self.copy()
         #end if
@@ -1368,33 +1383,18 @@ class Structure(Sobj):
     #end def tile
 
 
-    def kfold(self,tmatrix,kpoints,kweights):
-        if len(kpoints)!=len(kweights):
-            self.error('kpoints and kweights must have the same length in kfold\n  kpoints length: {0}\n  kweights length: {1}'.format(len(kpoints),len(kweights)))
+    def kfold(self,tiling,kpoints,kweights):
+        if isinstance(tiling,int):
+            tiling = self.dim*[tiling]
         #end if
-        if not isinstance(tmatrix,ndarray):
-            tmatrix = array(tmatrix)
+        tiling = array(tiling)
+        if tiling.shape==(self.dim,self.dim):
+            tiling = tiling.T
         #end if
-        dim = self.dim
-        if tmatrix.shape==(dim,dim):
-            tiling = array(around(diag(tmatrix)),dtype=int)
-            tdiag = diag(tiling)
-            if abs(tdiag-tmatrix).sum()>1e-6:
-                self.error('kfold does not currently support tiling matrices with off-diagonal elements\n  tiling must be of the form (tx,ty,tz)\n  you provided: '+str(tmatrix))
-            #end if
-        elif len(tmatrix)==dim:
-            tiling = array(around(tmatrix),dtype=int)
-            if abs(tiling-tmatrix).sum()>1e-6:
-                self.error('tiling must be integer')
-            #end if
-        elif isinstance(tmatrix,int):
-            tiling = (tmatrix,tmatrix,tmatrix)
-        else:
-            self.error('invalid tiling matrix provided to kfold\n  tiling matrix must be integer diagonal matrix, vector, or scalar\n  you provided:'+str(tmatrix))
-        #end if
-        ncells = tiling.prod()
-        kp,kaxnew = tile_points(kpoints,tiling,self.kaxes)
-        kw = array(ncells*list(kweights),dtype=float)/ncells
+        tilematrix,tilevector = reduce_tilematrix(tiling)
+        ncells    = tilevector.prod()
+        kp,kaxnew = tile_points(kpoints,tilevector,self.kaxes)
+        kw        = array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
     #end def kfold
 
@@ -1522,15 +1522,18 @@ class Structure(Sobj):
     #end def tilematrix
             
 
-    def add_kpoints(self,kpoints,kweights=None):
+    def add_kpoints(self,kpoints,kweights=None,unique=False):
         if kweights is None:
             kweights = ones((len(kpoints),))
         #end if
         self.kpoints  = append(self.kpoints,kpoints,axis=0)
         self.kweights = append(self.kweights,kweights)
+        if unique:
+            self.unique_kpoints()
+        #end if
         if self.folded_structure!=None:
             kp,kw = self.kfold(self.tmatrix,kpoints,kweights)
-            self.folded_structure.add_kpoints(kp,kw)
+            self.folded_structure.add_kpoints(kp,kw,unique=unique)
         #end if
     #end def add_kpoints
 
@@ -1544,8 +1547,8 @@ class Structure(Sobj):
     #end def clear_kpoints
 
 
-    def add_kmesh(self,kgrid,kshift=None):
-        self.add_kpoints(kmesh(self.kaxes,kgrid,kshift))
+    def add_kmesh(self,kgrid,kshift=None,unique=False):
+        self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
 
     
@@ -1559,7 +1562,7 @@ class Structure(Sobj):
     #end def kpoints_reduced
 
 
-    def inversion_symmetrize_kpoints(self,tol=1e-10):
+    def inversion_symmetrize_kpoints(self,tol=1e-10,folded=False):
         kp    = self.kpoints
         kaxes = self.kaxes
         ntable,dtable = self.neighbor_table(kp,-kp,kaxes,distances=True)
@@ -1577,12 +1580,15 @@ class Structure(Sobj):
         #end for
         self.kpoints  = self.kpoints[keep]
         self.kweights = self.kweights[keep]
+        if folded and self.folded_structure!=None:
+            self.folded_structure.inversion_symmetrize_kpoints(tol)
+        #end if
     #end def inversion_symmetrize_kpoints
 
         
-    def unique_kpoints(self,tol=1e-10):
+    def unique_kpoints(self,tol=1e-10,folded=False):
         kmap = obj()
-        kp    = self.kpoints
+        kp   = self.kpoints
         if len(kp)>0:
             kaxes = self.kaxes
             ntable,dtable = self.neighbor_table(kp,kp,kaxes,distances=True)
@@ -1615,6 +1621,9 @@ class Structure(Sobj):
                     j+=1
                 #end if
             #end for
+        #end if
+        if folded and self.folded_structure!=None:
+            self.folded_structure.unique_kpoints(tol)
         #end if
         return kmap
     #end def unique_kpoints
