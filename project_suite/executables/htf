@@ -225,8 +225,12 @@ class LocalDirectory(HTFBase):
     def chunk(self,outfile=None):
         open_file = outfile is None
         cstats = LocalDirectory.chunk_stats
-        if open_file:
-            outfile = open(self.chunk_file,'w')
+        if open_file: 
+            transdir = self.transfer_dir
+            if not os.path.exists(transdir):
+                os.makedirs(transdir)
+            #end if
+            outfile = open(os.path.join(transdir,self.chunk_file),'w')
             cstats.nfiles   = 0
             cstats.ndirs    = 0
             cstats.nchunks  = 0
@@ -269,7 +273,7 @@ class LocalDirectory(HTFBase):
                 indices.sort()
                 for n in indices:
                     chunk = self.chunks[n]
-                    outfile.write('  chunk_{0}.tar  {1:>4} files  {2:3.1f} {3}\n'.format(str(n).zfill(3),len(chunk),self.chunk_sizes[n]/self.chunk_unit,self.chunk_unitname))
+                    outfile.write('  chunk_{0}.tar  {1:>4} files  {2:3.1f} {3}\n'.format(str(n).zfill(4),len(chunk),self.chunk_sizes[n]/self.chunk_unit,self.chunk_unitname))
                     #for file in chunk:
                     #    outfile.write('    {0}\n'.format(file))
                     ##end for
@@ -339,9 +343,9 @@ class LocalDirectory(HTFBase):
                 infile.write(enter)
             #end if
             for n in indices:
-                ns = str(n).zfill(3)
+                ns = str(n).zfill(4)
                 chunk_file = os.path.join(self.dest,dpath,'chunk_{0}.tar'.format(ns))
-                command = '\nhtar '+chunk_file
+                command = '\nhtar -cvf '+chunk_file
                 chunk = self.chunks[n]
                 for file in chunk:
                     command += ' '+file
@@ -439,3 +443,4 @@ if __name__=='__main__':
 
     print
 #end if
+
