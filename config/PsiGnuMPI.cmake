@@ -22,7 +22,7 @@ set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 set(CMAKE_FIND_ROOT_PATH
  /opt/apps/gnu44/fftw-3.3.2
  /opt/apps/gnu44/hdf5-1.8.10
- /opt/apps/gnu44/adios-1.5
+ /opt/apps/gnu44/openmpi-1.6.2
  /usr/lib64
 )
 

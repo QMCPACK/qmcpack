@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------
 # setting compilers, compiler options and MKL_HOME
 #--------------------------------------------------------------------------
-set(ADIOS_HOME /opt/apps/gnu44/adios-1.5)
+set(ADIOS_HOME /opt/apps/gnu44/adios-1.6)
 #set(ADIOS_INCLUDES ${ADIOS_HOME}/include)
 #set(ADIOS_LIBRARY ${ADIOS_HOME}/lib/libadios.a)
 set(MXML_LIBRARY /opt/apps/gnu44/mxml-2.7/lib/libmxml.a)
@@ -33,7 +33,7 @@ set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 set(CMAKE_FIND_ROOT_PATH
  /opt/apps/gnu44/fftw-3.3.2
  /opt/apps/gnu44/hdf5-1.8.10
- /opt/apps/gnu44/adios-1.5
+ /opt/apps/gnu44/adios-1.6
  /usr/lib64
 )
 
