@@ -9,7 +9,6 @@
 #module load ompi/1.6.5
 #module load netcdf/4.1.3
 #module load mxml/2.7
-#module load adios/1.5.0
 #module load dataspaces
 #module load acml/5.3.0
 #module load szip/2.1
@@ -21,7 +20,7 @@
 
 SET(CMAKE_SYSTEM_PROCESSOR "XK7")
 
-set(ADIOS_HOME /sw/redhat6/adios/1.5.0/rhel6_gnu4.7.1)
+set(ADIOS_HOME /ccs/home/zgu/adioshub/adios_sith)
 #set(ADIOS_INCLUDES ${ADIOS_HOME}/include)
 #set(ADIOS_LIBRARY ${ADIOS_HOME}/lib/libadios.a)
 set(MXML_LIBRARY /sw/redhat6/mxml/2.6/rhel6_gnu4.7.1/lib/libmxml.a)
@@ -71,7 +70,8 @@ set(CMAKE_SHARED_LINKER_FLAGS "")
 set(CMAKE_FIND_ROOT_PATH
   /sw/redhat6/hdf5-parallel/1.8.11/rhel6.4_gnu4.7.1
   /sw/redhat6/szip/2.1/rhel6_gnu4.7.1
-  /sw/redhat6/adios/1.5.0/rhel6_gnu4.7.1
+  /ccs/home/zgu/adioshub/adios_sith
+  #/sw/redhat6/adios/1.5.0/rhel6_gnu4.7.1
   /sw/redhat6/dataspaces/1.2.0/rhel6_gnu4.7.1
   /sw/sith/netcdf/4.1.3/rhel6_gnu4.7.1
   /ccs/home/zgu/Software_sith
