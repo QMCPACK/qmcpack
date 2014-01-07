@@ -350,7 +350,7 @@ VMCSingleOMP::put(xmlNodePtr q)
       int ns_target=nTargetSamples*nStepsBetweenSamples; //total samples to generate
       int ns_per_step=Nprocs*nw;  //total samples per step
       nSteps=std::max(nSteps,(ns_target/ns_per_step+nBlocks-1)/nBlocks);
-      Period4WalkerDump=nStepsBetweenSamples=ns_per_step*nSteps*nBlocks/nTargetSamples;
+      Period4WalkerDump=nStepsBetweenSamples=(ns_per_step*nSteps*nBlocks)/nTargetSamples;
     }
     else
     {
