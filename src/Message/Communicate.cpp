@@ -31,6 +31,7 @@
 #ifdef HAVE_ADIOS
 #include <adios.h>
 #include <adios_read.h>
+#include <adios_error.h>
 #endif
 
 
@@ -151,9 +152,10 @@ void Communicate::initialize(int argc, char **argv)
   d_groupid=0;
   d_ngroups=1;
 #ifdef HAVE_ADIOS
-  if (!adios_init("qmc_adios.xml", myMPI))
+  if (adios_init("qmc_adios.xml", myMPI))
   {
-    APP_ABORT("Cannot find qmc_adios.xml. Exiting");
+      fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+      APP_ABORT("ADIOS init error. Exiting");
   }
   else
   {
