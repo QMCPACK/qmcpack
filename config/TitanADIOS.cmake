@@ -1,4 +1,3 @@
-
 SET(CMAKE_SYSTEM_PROCESSOR "XK7")
 #2011-12-06
 
@@ -37,7 +36,7 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
 ENDFOREACH(type)
 
 set(CMAKE_FIND_ROOT_PATH
-  /opt/cray/hdf5-parallel/1.8.8/gnu/47
+  /opt/cray/hdf5/1.8.8/gnu/47
   /opt/fftw/3.3.0.1/interlagos
   /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
   /ccs/home/jnkim/titan/gnu47/libxml2
@@ -47,17 +46,13 @@ set(CMAKE_FIND_ROOT_PATH
 include_directories(/ccs/home/jnkim/lib/amdlibm/include)
 link_libraries(/ccs/home/jnkim/lib/amdlibm/lib/static/libamdlibm.a)
 
-include_directories( 
-/sw/xk6/adios/1.5.0/cle4.0_gnu4.7.2/include 
-/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/include 
-/sw/xk6/dataspaces/1.2.0/cle4.0_gnu4.7.2/include 
-/sw/xk6/dataspaces/1.2.0/cle4.0_gnu4.7.2/include 
-/opt/cray/netcdf-hdf5parallel/4.2.0/gnu/47/include 
-/opt/cray/pmi/default/include 
-/opt/cray/gni-headers/default/include
-)
-link_libraries(-L/sw/xk6/adios/1.5.0/cle4.0_gnu4.7.2/lib -ladios 
-  -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml -L/sw/xk6/dataspaces/1.2.0/cle4.0_gnu4.7.2/lib 
-  -L/sw/xk6/dataspaces/1.2.0/cle4.0_gnu4.7.2/lib -L/opt/cray/netcdf-hdf5parallel/4.2.0/gnu/47/lib 
-  -L/opt/cray/pmi/default/lib64 -L/opt/cray/ugni/default/lib64 
-  -lm -lmxml -ldspaces -ldscommon -ldart -ldspaces -ldscommon -ldart -lnetcdf -lhdf5_hl -lhdf5 -lz -lpmi -lugni)
+include_directories(
+  /ccs/home/zgu/adioshub/adios_titan/include
+  /sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/include
+  /opt/cray/pmi/default/include
+  /opt/cray/gni-headers/default/include
+  )
+link_libraries(
+  -L/ccs/home/zgu/adioshub/adios_titan/lib -ladios -lm
+  -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml
+  )
