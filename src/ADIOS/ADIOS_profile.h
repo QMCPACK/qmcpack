@@ -27,7 +27,7 @@ static int *trace_data_total;
 static int ckp_index;
 static int trace_index;
 
-#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
+#if (defined HAVE_ADIOS) && (defined IO_PROFILE)
 void profile_adios_size(Communicate* myComm, OUTPUT_T op, uint64_t adios_groupsize, uint64_t adios_totalsize);
 void profile_adios_init(int nBlock);
 void profile_adios_finalize(Communicate* myComm, int nBlock);
