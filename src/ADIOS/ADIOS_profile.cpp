@@ -1,7 +1,7 @@
 
 #include "ADIOS/ADIOS_profile.h"
 
-#if defined(HAVE_ADIOS) && defined(IO_PROFILE)
+#if (defined HAVE_ADIOS) && (defined IO_PROFILE)
 namespace ADIOS_PROFILE
 {
 
