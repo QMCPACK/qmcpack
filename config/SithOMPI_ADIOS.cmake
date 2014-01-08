@@ -20,9 +20,11 @@
 
 SET(CMAKE_SYSTEM_PROCESSOR "XK7")
 
+#set(HAVE_ADIOS 0)
+
 set(ADIOS_HOME /ccs/home/zgu/adioshub/adios_sith)
-#set(ADIOS_INCLUDES ${ADIOS_HOME}/include)
-#set(ADIOS_LIBRARY ${ADIOS_HOME}/lib/libadios.a)
+set(ADIOS_INCLUDES ${ADIOS_HOME}/include)
+set(ADIOS_LIBRARY ${ADIOS_HOME}/lib/libadios.a)
 set(MXML_LIBRARY /sw/redhat6/mxml/2.6/rhel6_gnu4.7.1/lib/libmxml.a)
 #set(DSPACES_LIBRARY ${DATASPACES_DIR}/lib/libdspaces.a)
 #set(DSCOMMON_LIBRARY ${DATASPACES_DIR}/lib/libdscommon.a)
@@ -79,3 +81,4 @@ set(CMAKE_FIND_ROOT_PATH
 
 link_libraries(/sw/redhat6/acml/5.3.0/gfortran64/lib/libacml.a -lz)
 link_libraries(/ccs/compilers/gcc/rhel6-x86_64/4.7.1/lib64/libgfortran.so)
+link_libraries(/ccs/home/zgu/adioshub/adios_sith/lib/libadios.a)
