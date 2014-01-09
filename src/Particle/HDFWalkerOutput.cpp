@@ -108,6 +108,9 @@ bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_h
     block = nblock;
   }
   void* walkers = RemoteData[0]->data();
+  uint64_t adios_groupsize, adios_totalsize;
+  adios_groupsize = sizeof(int) * 3 + sizeof(*(RemoteData[0]->data()));
+  adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
   adios_write (adios_handle, "walker_num", &walker_num);
   adios_write (adios_handle, "particle_num", &particle_num);
   int walker_size = walker_num * particle_num * walker_dim_num;
