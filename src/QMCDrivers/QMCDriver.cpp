@@ -338,41 +338,40 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   TimerManager.print(myComm);
   TimerManager.reset();
   int64_t adios_handle;
-  uint64_t adios_groupsize = 0, adios_totalsize = 0;
-  string group_name;
+  //string group_name;
   //get the size of walker related data that we are writing to disk
   //adios_groupsize += RandomNumberControl::get_group_size();
-  EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
-  if (sizeof(OHMMS_PRECISION) == sizeof(double))
-  {
-    adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-  }
-  else
-  {
-    adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
-  }
-  //if (myEstimator->is_manager())
-  //{
-  //  //Since we are in the main process we need to write out some more information
-  //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-  //  //Get the size of the data we are writing out for qmc_status
-  //  adios_groupsize += hh.get_Checkpoint_size();
-  //  //Tell adios how much space we are using for this write out.
-  //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  //  //Checkpoint qmc status related data
-  //  branchEngine->save_energy(); //save energy_history
-  //  hh.adios_checkpoint(adios_handle);
-  //}
-  //else
-  //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  //Checkpoint the data for RandomNumber Control
-  
-  //adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  //RandomNumberControl::adios_checkpoint(adios_handle);
-  if(DumpConfig && dumpwalkers)
-    //If we are checkpointing
+  //EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
+  if(DumpConfig && dumpwalkers){
+    if (sizeof(OHMMS_PRECISION) == sizeof(double))
+    {
+      adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+    }
+    else
+    {
+      adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
+    }
+    //if (myEstimator->is_manager())
+    //{
+    //  //Since we are in the main process we need to write out some more information
+    //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    //  //Get the size of the data we are writing out for qmc_status
+    //  adios_groupsize += hh.get_Checkpoint_size();
+    //  //Tell adios how much space we are using for this write out.
+    //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    //  //Checkpoint qmc status related data
+    //  branchEngine->save_energy(); //save energy_history
+    //  hh.adios_checkpoint(adios_handle);
+    //}
+    //else
+    //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    //Checkpoint the data for RandomNumber Control
+    
+    //adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+    //RandomNumberControl::adios_checkpoint(adios_handle);
     wOut->adios_checkpoint(W, adios_handle, block);
-  adios_close(adios_handle);
+    adios_close(adios_handle);
+  }
 #ifdef ADIOS_VERIFY
   ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
       ADIOS_READ_METHOD_BP,
@@ -383,8 +382,9 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
   //  hh.adios_checkpoint_verify(fp);
   //}
   //RandomNumberControl::adios_checkpoint_verify(fp);
-  if(DumpConfig && dumpwalkers)
+  if(DumpConfig && dumpwalkers){
     wOut->adios_checkpoint_verify(W, fp);
+  }
   adios_read_close(fp);
 #endif
   //if(!ADIOS::useHDF5()){
@@ -402,8 +402,14 @@ void QMCDriver::recordBlock(int block)
 {
   if(DumpConfig && block % Period4CheckPoint == 0)
   {
-    if(ADIOS::useADIOS()) adiosCheckpoint(block);
-    if(ADIOS::useHDF5()) wOut->dump(W, block);
+    if(ADIOS::useADIOS())
+    {
+      adiosCheckpoint(block);
+    }
+    if(ADIOS::useHDF5()) 
+    {
+      wOut->dump(W, block);
+    }
     branchEngine->write(RootName,true); //save energy_history
     RandomNumberControl::write(RootName,myComm);
   }
@@ -412,7 +418,9 @@ void QMCDriver::recordBlock(int block)
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if(ADIOS::useADIOS())
+  {
     adiosCheckpointFinal(block, dumpwalkers);
+  }
 
   if(ADIOS::useHDF5())
   {
