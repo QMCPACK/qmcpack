@@ -373,19 +373,19 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
     adios_close(adios_handle);
   }
 #ifdef ADIOS_VERIFY
-  ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
-      ADIOS_READ_METHOD_BP,
-      myComm->getMPI());
-  //if (myEstimator->is_manager())
-  //{
-  //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-  //  hh.adios_checkpoint_verify(fp);
-  //}
-  //RandomNumberControl::adios_checkpoint_verify(fp);
   if(DumpConfig && dumpwalkers){
+    ADIOS_FILE *fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(),
+                                           ADIOS_READ_METHOD_BP,
+                                           myComm->getMPI());
+    //if (myEstimator->is_manager())
+    //{
+    //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
+    //  hh.adios_checkpoint_verify(fp);
+    //}
+    //RandomNumberControl::adios_checkpoint_verify(fp);
     wOut->adios_checkpoint_verify(W, fp);
+    adios_read_close(fp);
   }
-  adios_read_close(fp);
 #endif
   //if(!ADIOS::useHDF5()){
   //  branchEngine->finalize(W);
