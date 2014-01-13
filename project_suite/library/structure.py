@@ -204,10 +204,10 @@ class Structure(Sobj):
 
 
     def __init__(self,axes=None,scale=1.,elem=None,pos=None,mag=None,
-                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),
+                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
                  permute=None,units=None,tiling=None,rescale=True,dim=3,
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None):
+                 operations=None,background_charge=0):
         if center is None:
             if axes !=None:
                 center = array(axes).sum(0)/2
@@ -224,6 +224,9 @@ class Structure(Sobj):
         if pos is None:
             pos = empty((0,dim))
         #end if
+        if kshift is None:
+            kshift = 0,0,0
+        #end if
         if mag is None:
             mag = len(elem)*[None]
         #end if
@@ -237,7 +240,7 @@ class Structure(Sobj):
         self.mag    = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
-        self.folded_structure = None
+        self.background_charge = background_charge
         self.remove_folded_structure()
         if len(axes)==0:
             self.kaxes=array([])
@@ -1345,11 +1348,13 @@ class Structure(Sobj):
         elem = array(ncells*list(self.elem))
         pos,axes = tile_points(self.pos,tilevector,self.axes)
         if matrix_tiling:
-            axes = dot(self.axes,tilematrix)
+            #axes = dot(self.axes,tilematrix)
+            axes = dot(tilematrix,self.axes)
         #end if
-        center = axes.sum(0)/2
-        mag = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
-        kaxes    = dot(inv(tilematrix),self.kaxes)
+        center   = axes.sum(0)/2
+        mag      = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
+        #kaxes    = dot(inv(tilematrix),self.kaxes)
+        kaxes    = dot(inv(tilematrix.T),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
 
@@ -1362,6 +1367,7 @@ class Structure(Sobj):
         ts.kaxes   = kaxes
         ts.kpoints = kpoints
         ts.kweights= kweights
+        ts.background_charge = ncells*self.background_charge
 
         ts.recenter()
         ts.unique_kpoints()
@@ -1987,6 +1993,7 @@ class Structure(Sobj):
                 #end if
             #end if
         #end for
+        self.dim   = 3
         self.set_elem(elem)
         self.pos   = array(pos)
         self.units = 'A'
@@ -2016,6 +2023,41 @@ class Structure(Sobj):
         #end if
     #end def write_xyz
 
+
+    def read_poscar(self,filepath,species=None):
+        if os.path.exists(filepath):
+            lines = open(filepath,'r').read().splitlines()
+        else:
+            lines = filepath.splitlines()
+        #end if
+        nlines = len(lines)
+        min_lines = 8
+        if nlines<min_lines:
+            self.error('POSCAR file must have at least {0} lines\n  only {1} lines found'.format(min_lines,nlines))
+        #end if
+        dim = 3
+        scale = float(lines[1].strip())
+        axes = empty((dim,dim))
+        axes[0] = array(lines[2].split(),dtype=float)
+        axes[1] = array(lines[3].split(),dtype=float)
+        axes[2] = array(lines[4].split(),dtype=float)
+        tokens = lines[5].split()
+        if tokens[0].isdigit():
+            counts = array(tokens,dtype=int)
+            if species is None:
+                self.error('variable species must be provided to read_poscar() to assign atomic species to positions for POSCAR format')
+            elif len(species)!=len(counts):
+                self.error('one species must be given for each species count in the POSCAR file\n  number of species counts: {0}\n  number of species given: {1}'.format(len(counts),len(species)))
+            #end if
+        else:
+            species = tokens
+            counts = array(lines[6].split(),dtype=int)
+        #end if
+        
+        #jtk mark current
+        self.not_implemented()
+
+    #end def read_poscar
 
     def plot2d_ax(self,ix,iy,*args,**kwargs):
         if self.dim!=3:
@@ -2813,6 +2855,62 @@ class Crystal(Structure):
 #end class Crystal
 
 
+class Jellium(Structure):
+    prefactors = obj()
+    prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
+
+    def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
+                 axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None):
+        if rs!=None:
+            if not dim in self.prefactors:
+                self.error('only 1,2, or 3 dimensional jellium is currently supported\n  you requested one with dimension {0}'.format(dim))
+            #end if
+            density = 1.0/(self.prefactors[dim]*rs**dim)
+        #end if
+        if axes!=None:
+            cell = axes
+        #end if
+        if background_charge!=None:
+            charge = background_charge
+        #end if
+        if cell!=None:
+            cell   = array(cell)
+            dim    = len(cell)
+            volume = det(cell)
+        elif volume!=None:
+            volume = float(volume)
+            cell   = volume**(1./dim)*identity(dim)
+        #end if
+        if density!=None:
+            density = float(density)
+            if charge is None and volume!=None:
+                charge = density*volume
+            elif volume is None and charge!=None:
+                volume = charge/density
+                cell   = volume**(1./dim)*identity(dim)
+            #end if
+        #end if
+        if charge is None or cell is None:
+            self.error('not enough information to form jellium structure\n  information provided:\n  charge: {0}\n  cell: {1}\n  volume: {2}\n  density: {3}\n  rs: {4}\n  dim: {5}'.format(charge,cell,volume,density,rs,dim))
+        #end if
+        Structure.__init__(self,background_charge=charge,axes=cell,dim=dim,kpoints=kpoints,kweights=kweights,kgrid=kgrid,kshift=kshift,units=units)
+    #end def __init__
+    
+    def density(self):
+        return self.background_charge/self.volume()
+    #end def density
+
+    def rs(self):
+        return 1.0/(self.density()*self.prefactors[self.dim])**(1./self.dim)
+    #end def rs
+
+    def tile(self):
+        self.not_implemented()
+    #end def tile
+#end class Jellium
+
+
+
 
 def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
     if tiling is None:
@@ -2840,6 +2938,8 @@ def generate_structure(type='crystal',*args,**kwargs):
         return generate_defect_structure(*args,**kwargs)
     elif type=='atom':
         return generate_atom_structure(*args,**kwargs)
+    elif type=='jellium':
+        return generate_jellium_structure(*args,**kwargs)
     else:
         Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
     #end if
@@ -2851,6 +2951,12 @@ def generate_structure(type='crystal',*args,**kwargs):
 def generate_atom_structure(atom=None,units='B',struct_type=Structure):
     return Structure(elem=[atom],pos=[[0,0,0]],units=units)
 #end def generate_atom_structure
+
+
+def generate_jellium_structure(*args,**kwargs):
+    return Jellium(*args,**kwargs)
+#end def generate_jellium_structure
+
 
 
 

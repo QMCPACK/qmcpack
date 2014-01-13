@@ -933,7 +933,7 @@ class PwscfInput(SimulationInput):
 
         self.system.ibrav        = 0
         self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions()
+        nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         #self.system.nelec        = nup+ndn

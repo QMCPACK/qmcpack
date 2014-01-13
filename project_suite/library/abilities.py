@@ -1,5 +1,9 @@
 
 
+class genbase(object):
+    None
+#end class genbase
+
 
 class Callable:                        #helper class to create 'static' methods
     def __init__(self, anycallable):
@@ -93,7 +97,7 @@ class Queryable(Iterable):
         qable  = []
         for k,v in self._iteritems():
             if type(k)!=stype or k[0]!='_':
-                if isinstance(v,Queryable):
+                if isinstance(v,(Queryable,genbase)):
                     qable.append(k)
                 else:
                     normal.append(k)

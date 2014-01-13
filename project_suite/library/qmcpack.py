@@ -9,7 +9,7 @@ from simulation import Simulation
 from qmcpack_input import QmcpackInput,generate_qmcpack_input
 from qmcpack_input import BundledQmcpackInput,TracedQmcpackInput
 from qmcpack_input import QmcpackInputTemplate
-from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot
+from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
@@ -53,8 +53,11 @@ class Qmcpack(Simulation):
         else:
             self.system.group_atoms()
             self.system.change_units('B')
-            ds = self.input.get('determinantset')
-            user_twist_given = ds!=None and ds.twistnum!=None
+            twh = self.input.get_host('twist')
+            tnh = self.input.get_host('twistnum')
+            htypes = bspline_builder,determinantset
+            user_twist_given  = isinstance(twh,htypes) and twh.twist!=None
+            user_twist_given |= isinstance(tnh,htypes) and tnh.twistnum!=None
             many_kpoints = len(self.system.structure.kpoints)>1
             self.should_twist_average = many_kpoints and not user_twist_given
         #end if
@@ -105,34 +108,33 @@ class Qmcpack(Simulation):
 
                 h5file = result.h5file
 
-                dsold,wavefunction = input.get('determinantset','wavefunction')
+                wavefunction = input.get('wavefunction')
                 if isinstance(wavefunction,collection):
-                    if 'psi0' in wavefunction:
-                        wavefunction = wavefunction.psi0
-                    else:
-                        wavefunction = wavefunction.list()[0]
-                    #end if
+                    wavefunction = wavefunction.get_single('psi0')
                 #end if
-                dsnew = dsold
-                dsnew.set(
-                    type = 'einspline',
-                    href = os.path.relpath(h5file,self.locdir)
-                    )
+                wf = wavefunction
+                if 'sposet_builder' in wf and wf.sposet_builder.type=='bspline':
+                    orb_elem = wf.sposet_builder
+                elif 'sposet_builders' in wf and 'bspline' in wf.sposet_builders:
+                    orb_elem = wf.sposet_builders.bspline
+                elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+                    orb_elem = wf.determinantset
+                else:
+                    self.error('could not incorporate pw2qmcpack/wfconvert orbitals\n  bspline sposet_builder and determinantset are both missing')
+                #end if
+                orb_elem.href = os.path.relpath(h5file,self.locdir)
                 if system.structure.folded_structure!=None:
-                    dsnew.tilematrix = array(system.structure.tmatrix)
+                    orb_elem.tilematrix = array(system.structure.tmatrix)
                 #end if
                 defs = obj(
                     twistnum   = 0,
-                    meshfactor = 1.0,
-                    gpu        = False
+                    meshfactor = 1.0
                     )
                 for var,val in defs.iteritems():
-                    if not var in dsnew:
-                        dsnew[var] = val
+                    if not var in orb_elem:
+                        orb_elem[var] = val
                     #end if
                 #end for
-                input.remove('determinantset')
-                wavefunction.determinantset = dsnew
 
                 system = self.system
                 structure = system.structure
@@ -145,14 +147,11 @@ class Qmcpack(Simulation):
                     self.error('wavefunction file not found:  \n'+h5file)
                 #end if
 
-                if 'tilematrix' in system:
-                    dsnew.tilematrix = array(system.tilematrix)
-                #end if
                 twistnums = range(len(structure.kpoints))
                 if self.should_twist_average:
                     self.twist_average(twistnums)
-                elif dsnew.twistnum is None:
-                    dsnew.twistnum = twistnums[0]
+                elif orb_elem.twistnum is None:
+                    orb_elem.twistnum = twistnums[0]
                 #end if
 
             elif isinstance(sim,Sqd):
@@ -356,7 +355,7 @@ class Qmcpack(Simulation):
 
 
     def twist_average(self,twistnums):
-        self.error('twist averaging!')
+        #self.error('twist averaging!')
         br = obj()
         br.quantity = 'twistnum'
         br.values   = list(twistnums)

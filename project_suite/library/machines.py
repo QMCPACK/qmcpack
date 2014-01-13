@@ -87,11 +87,13 @@ class Job(Pobj):
                  account      = None,
                  queue        = None,
                  bundled_jobs = None,
+                 relative     = False,
                  cores        = None,
                  nodes        = None,
                  threads      = 1,
                  ppn          = None,
                  compiler     = None,
+                 override     = None,
                  options      = None,
                  serial       = False,
                  days         = 0,
@@ -101,7 +103,7 @@ class Job(Pobj):
                  subfile      = None,
                  grains       = None,
                  procs        = None,
-                 processes   = None,
+                 processes    = None,
                  processes_per_proc = None,
                  processes_per_node = None):
 
@@ -116,11 +118,13 @@ class Job(Pobj):
         self.name        = name
         self.queue       = queue
         self.bundled_jobs= bundled_jobs
+        self.relative    = relative
         self.cores       = cores
         self.nodes       = nodes
         self.threads     = threads
         self.ppn         = ppn
         self.compiler    = compiler
+        self.override    = override
         self.options     = options
         self.serial      = serial
         self.days        = days
@@ -268,15 +272,16 @@ class Job(Pobj):
 
     def determine_end_status(self,status):
         if not self.generate_only:
-            errfile = os.path.join(self.directory,self.errfile)
-            if os.path.exists(errfile):
-                fobj = open(errfile,'r')
-                errors = fobj.read()
-                fobj.close()
-                if errors.strip()=='':
-                    self.successful=True
-                #end if
-            #end if
+            self.successful = False # not really implemented yet
+            #errfile = os.path.join(self.directory,self.errfile)
+            #if os.path.exists(errfile):
+            #    fobj = open(errfile,'r')
+            #    errors = fobj.read()
+            #    fobj.close()
+            #    if errors.strip()=='':
+            #        self.successful=True
+            #    #end if
+            ##end if
         #end if
     #end def determine_end_status
 
@@ -297,30 +302,48 @@ class Job(Pobj):
     def run_command(self,launcher,redirect=False):
         c = ''
         if self.bundled_jobs is None:
-            if self.app_command is None:
-                self.error('app_command has not been provided')
-            #end if
-            spacer = ' '
-            if self.serial and self.processes==1:
-                spacer = ''
-            elif launcher=='mpirun':
-                c = self.mpirun_command()
-            elif launcher=='aprun':
-                c = self.aprun_command()
+            if isinstance(self.override,str):
+                c = self.override
             else:
-                self.error(launcher+' is not yet implemented as an application launcher')
+                if self.app_command is None:
+                    self.error('app_command has not been provided')
+                #end if
+                spacer = ' '
+                if self.serial and self.processes==1:
+                    spacer = ''
+                elif launcher=='mpirun':
+                    c = self.mpirun_command()
+                elif launcher=='aprun':
+                    machine = self.get_machine()
+                    c = machine.aprun_command(self)
+                else:
+                    self.error(launcher+' is not yet implemented as an application launcher')
+                #end if
+                options = ''
+                if isinstance(self.options,str):
+                    options+=' '+self.options
+                #end if
+                c+=options
+                c+=spacer+self.app_command+self.app_flags
+                if redirect:
+                    c+=' >'+self.outfile+' 2>'+self.errfile+'&'
+                #end if
             #end if
-            c+=spacer+self.app_command+self.app_flags
-            if redirect:
-                c+=' >'+self.outfile+' 2>'+self.errfile+'&'
-            #end if
+        elif self.relative:
+            cdir = self.abs_subdir
+            c+='\n'
+            for job in self.bundled_jobs:
+                c+='\ncd '+os.path.relpath(job.abs_subdir,cdir)+'\n'
+                c+=job.run_command(launcher,redirect=True)+'\n'
+                cdir = job.abs_subdir
+            #end for
+            c+='\nwait\n'
         else:
             c+='\n'
             for job in self.bundled_jobs:
                 c+='\ncd '+job.abs_subdir+'\n'
                 c+=job.run_command(launcher,redirect=True)+'\n'
             #end for
-
             c+='\nwait\n'
         #end if
         return c
@@ -328,33 +351,8 @@ class Job(Pobj):
 
 
     def mpirun_command(self):
-        processes = ' -np '+str(self.processes)
-        options = ''
-        if isinstance(self.options,str):
-            options+=' '+self.options
-        #end if
-        return 'mpirun'+processes+options
+        return 'mpirun -np '+str(self.processes)
     #end def mpirun_command
-
-    
-    def aprun_command(self):
-        processes = ' -n '+str(self.processes)
-        processes_per_node = ''
-        processes_per_proc = ''
-        threads = ''
-        if self.threads>1:
-            threads = ' -d '+str(self.threads)
-            if self.processes_per_node!=None and self.processes_per_proc!=None:
-                processes_per_node = ' -N '+str(self.processes_per_node)
-                processes_per_proc = ' -S '+str(self.processes_per_proc)
-            #end if
-        #end if
-        options = ''
-        if isinstance(self.options,str):
-            options+=' '+self.options
-        #end if
-        return 'aprun'+processes+processes_per_node+processes_per_proc+threads+options
-    #end def aprun_command
 
 
     def pbs_walltime(self):
@@ -818,6 +816,8 @@ class Supercomputer(Machine):
 
     batch_capable = False #only set to true for specific machines
 
+    aprun_options = set(['n','d'])
+
     def __init__(self,nodes=None,procs_per_node=None,
                  cores_per_proc=None,ram_per_node=None,queue_size=0,
                  app_launcher=None,sub_launcher=None,queue_querier=None,
@@ -927,6 +927,24 @@ class Supercomputer(Machine):
         None
     #end def process_job_extra
 
+    
+    def aprun_command(self,job):
+        command = 'aprun'
+        if 'n' in self.aprun_options:
+            command += ' -n '+str(job.processes)
+        #end if
+        if 'd' in self.aprun_options and job.threads>1:
+            command += ' -d '+str(job.threads)
+        #end if
+        if 'N' in self.aprun_options and job.processes_per_node!=None:
+            command += ' -N '+str(job.processes_per_node)
+        #end if
+        if 'S' in self.aprun_options and job.processes_per_proc!=None:
+            command += ' -S '+str(job.processes_per_proc)
+        #end if
+        return command
+    #end def aprun_command
+
 
     def query_queue(self):
 
@@ -1034,6 +1052,8 @@ class Supercomputer(Machine):
             pid = self.read_process_id(output)
             if pid is None:
                 self.error('process id could not be determined from submission output\n  output:\n'+output)
+            else:
+                self.log(pad+'  pid: {0}'.format(pid))
             #end if
             #pid = 'fakepid_'+str(job.internal_id)
             job.system_id = pid
@@ -1274,7 +1294,6 @@ cd $PBS_O_WORKDIR
                 #end if
             #end if
         #end for
-        print '      pid:',pid
         return pid
     #end def read_process_id
 #end class OIC5
@@ -1327,11 +1346,6 @@ cd $PBS_O_WORKDIR
 
 
     def read_process_id(self,output):
-        print
-        print 'in read_process_id'
-        print '  output:'
-        print output
-
         pid = None
         lines = output.splitlines()
         for line in lines:
@@ -1342,8 +1356,6 @@ cd $PBS_O_WORKDIR
                 #end if
             #end if
         #end for
-
-        print '  pid:',pid
         return pid
     #end def read_process_id
 #end class Edison
@@ -1408,24 +1420,26 @@ class Titan(Supercomputer):
     batch_capable    = True
 
     def write_job_header(self,job):
-
+        if job.queue is None:
+            job.queue = 'batch'
+        #end if
         c= '#!/bin/bash\n'
         c+='#PBS -A {0}\n'.format(job.account)
+        c+='#PBS -q {0}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
         c+='#PBS -o {0}\n'.format(job.outfile)
         c+='#PBS -e {0}\n'.format(job.errfile)
-        c+='#PBS -N {0}\n'.format(job.name)
         c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
         c+='#PBS -l nodes={0}\n'.format(job.nodes)
         c+='#PBS -l gres=widow3\n'
         c+='#PBS -V\n'
-        c+='#PBS -q {0}\n'.format(job.queue)
         c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 '''
         return c
     #end def write_job_header
-#end class BlueWatersXE
+#end class Titan
 
 
 
@@ -1450,10 +1464,11 @@ OIC5(           28,   2,    16,  128,   50, 'mpirun', 'qsub',  'qstat', 'qdel')
 Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-Titan(        9408,   2,     6,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
+Titan(       18688,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
 get_machine      = Machine.get
+
 

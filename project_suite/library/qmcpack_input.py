@@ -6,10 +6,10 @@ from numpy import fromstring,empty,array,float64,\
     ceil,mod,dot,abs,identity
 from StringIO import StringIO
 from superstring import string2val
-from generic import obj
+from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
 from project_base import Pobj
-from structure import Structure
+from structure import Structure,Jellium
 from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
@@ -27,6 +27,7 @@ def is_int(var):
         return True
     except ValueError:
         return False
+    #end try
 #end def is_int
 
 def is_float(var):
@@ -35,6 +36,7 @@ def is_float(var):
         return True
     except ValueError:
         return False
+    #end try
 #end def is_float
 
 def is_array(var,type):
@@ -47,6 +49,7 @@ def is_array(var,type):
         return True
     except ValueError:
         return False
+    #end try
 #end def is_float_array
 
 
@@ -118,53 +121,85 @@ class section(QIobj):
 #end class section
 
 
-class collection(QIobj):
-    def __init__(self,*elements,**kwargs):
+class collection(hidden):
+    def __init__(self,*elements):
+        hidden.__init__(self)
         if len(elements)==1 and isinstance(elements[0],list):
             elements = elements[0]
+        elif len(elements)==1 and isinstance(elements[0],collection):
+            elements = elements[0].__dict__.values()
         #end if
+        self.hidden().order = []
         for element in elements:
-            identifier = element.identifier
-            if isinstance(identifier,str):
-                key = element[identifier]
-            else:
-                key = ''
-                for ident in identifier:
-                    if ident in element:
-                        key+=element[ident]
-                    #end if
-                #end for
-            #end if
-            self[key] = element
-        #end for
-        for key,element in kwargs.iteritems():
-            self[key] = element
+            self.add(element)
         #end for
     #end def __init__
 
-    def get_single(self,preference):
+    def __setitem__(self,name,value):
+        self.error('elements can only be set via the add function')
+        #self.add(value)
+    #end def __setitem__
+
+    def add(self,element,strict=True):
+        identifier = element.identifier
+        public = self.public()
+        missing_identifier = False
+        if not element.tag in plurals_inv:
+            self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
+        elif identifier is None:
+            key = len(public)
+        elif isinstance(identifier,str):
+            if identifier in element:
+                key = element[identifier]
+            else:
+                missing_identifier = True
+            #end if
+        else:
+            key = ''
+            for ident in identifier:
+                if ident in element:
+                    key+=element[ident]
+                #end if
+            #end for
+            missing_identifier = key==''
+        #end if
+        if missing_identifier:
+            if strict:
+                self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
+            else:
+                return False
+            #end if
+        #end if
+        public[key] = element
+        self.hidden().order.append(key)
+        return True
+    #end def add
+
+    def get_single(self,preference=None):
         if len(self)>0:
-            if preference in self:
+            if preference!=None and preference in self:
                 return self[preference]
             else:
                 return self.list()[0]
             #end if
         else:
-            return self
+            #return self
+            return None
         #end if
     #end def get_single
-#end class collection
-def make_collection(elements):
-    if len(elements)>0 and 'identifier' in elements[0].__class__.__dict__.keys():
-        return collection(*elements)
-    else:
-        coll = collection()
-        for i in range(len(elements)):
-            coll[i] = elements[i]
+
+    def list(self):
+        lst = []
+        for key in self.hidden().order:
+            lst.append(self[key])
         #end for
-        return coll
-        #return elements
-    #end if
+        return lst
+    #end def list
+#end class collection
+
+
+def make_collection(elements):
+    return collection(*elements)
 #end def make_collection
 
 
@@ -176,6 +211,37 @@ class classcollection(QIobj):
         self.classes = classes
     #end def __init__
 #end class classcollection
+
+
+class QmcpackInputCollections(QIobj):
+    def add(self,element):
+        if element.tag in plurals_inv:
+            cname = plurals_inv[element.tag]
+            if not cname in self:
+                coll = collection()
+                success = coll.add(element,strict=False)
+                if success:
+                    self[cname] = coll
+                #end if
+            else:
+                self[cname].add(element,strict=False)
+            #end if
+        #end if
+    #end def add
+
+    def get(self,cname,label=None):
+        v = None
+        if cname in self:
+            if label is None:
+                v = self[cname]
+            elif label in self[cname]:
+                v = self[cname][label]
+            #end if
+        #end if
+        return v
+    #end def get
+#end class QmcpackInputCollections
+QIcollections = QmcpackInputCollections()
 
 
 class Names(QIobj):
@@ -269,6 +335,7 @@ class QIxml(Names):
     def init_class(cls):
         vars = cls.__dict__.keys()
         init_vars = dict(tag         = cls.__name__,
+                         identifier  = None,
                          attributes  = [],
                          elements    = [],
                          text        = None,
@@ -388,17 +455,12 @@ class QIxml(Names):
                     #end if
                 elif e in plurals_inv and plurals_inv[e] in self:
                     coll = self[plurals_inv[e]]
-                    coll_len = len(coll)
-                    if 0 in coll and coll_len-1 in coll:
-                        for i in range(coll_len):
-                            instance = coll[i]
-                            c += instance.write(indent_level+1)
-                        #end for
-                    else:
-                        for instance in coll:
-                            c += instance.write(indent_level+1)
-                        #end for
+                    if not isinstance(coll,collection):
+                        self.error('write failed\n  element {0} is not a collection\n  contents of element {0}:\n{1}'.format(plurals_inv[e],str(coll)))
                     #end if
+                    for instance in coll.list():
+                        c += instance.write(indent_level+1)
+                    #end for
                 #end if
             #end for
             if self.text!=None:
@@ -429,6 +491,7 @@ class QIxml(Names):
         else:
             self.init_from_inputs(args,kwargs)
         #end if
+        QIcollections.add(self)
     #end def __init__
 
 
@@ -541,25 +604,20 @@ class QIxml(Names):
             self[e] = types[e](kwargs[e])
         #end for
         for p in plur:
-            plist = []
             e = self.plurals[p]
             kwcoll = kwargs[p]
             if isinstance(kwcoll,collection):
-                cobj = collection()
-                for name,instance in kwcoll.iteritems():
-                    iobj = types[e](instance)
-                    if isinstance(iobj.identifier,str):
-                        iobj[iobj.identifier]=name
-                    #end if
-                    cobj[name] = iobj
-                #end for 
-                self[p] = cobj
+                plist = kwcoll.list()
+            elif isinstance(kwcoll,(list,tuple)):
+                plist = kwcoll
             else:
-                for instance in kwargs[p]:
-                    plist.append(types[e](instance))
-                #end for
-                self[p] = make_collection(plist)
+                self.error('init failed\n  encountered non-list collection')
             #end if
+            ilist = []
+            for instance in plist:
+                ilist.append(types[e](instance))
+            #end for
+            self[p] = make_collection(ilist)
         #end for
         for t in text:
             self[t] = kwargs[t]
@@ -656,7 +714,7 @@ class QIxml(Names):
             names = [names]
         #end if
         if root and not host:
-            if 'identifier' in self.__class__.__dict__ and self.identifier in self:
+            if self.identifier!=None and self.identifier in self:
                 identity = self[self.identifier]
             else:
                 identity = None
@@ -909,12 +967,15 @@ class QIxml(Names):
     def pluralize(self):
         make_plural = []
         for name,value in self.iteritems():
-            if name in plurals_inv:
-                make_plural.append(name)
-            #end if
             if isinstance(value,QIxml):
+                if name in plurals_inv:
+                    make_plural.append(name)
+                #end if
                 value.pluralize()
             elif isinstance(value,collection):
+                if name in plurals_inv:
+                    make_plural.append(name)
+                #end if
                 for v in value:
                     if isinstance(v,QIxml):
                         v.pluralize()
@@ -1263,7 +1324,8 @@ class Param(Names):
                 else:
                     val = value
                 #end if
-                c += '    '+str(val)
+                #c += '    '+str(val)
+                c += '    {0:<10}'.format(str(val))
             #end if
             if tag!=None:
                 c+=pad+'</'+tag+'>\n'
@@ -1312,7 +1374,7 @@ class qmcsystem(QIxml):
 
 class simulationcell(QIxml):
     attributes = ['name']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','rs']
+    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','rs','nparticles']
 #end class simulationcell
 
 class particleset(QIxml):
@@ -1332,9 +1394,50 @@ class group(QIxml):
 
 
 
+class sposet(QIxml):
+    attributes = ['type','name','group','size',
+                  'index_min','index_max','energy_min','energy_max',
+                  'spindataset']
+    text       = 'spos'
+    identifier = 'name'
+#end class sposet
+
+class bspline_builder(QIxml):
+    tag         = 'sposet_builder'
+    identifier  = 'type'
+    attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
+                   'version','meshfactor','gpu','transform','precision','truncate',
+                   'lr_dim_cutoff','shell','randomize','key']
+    elements    = ['sposet']
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
+#end class bspline_builder
+
+class heg_builder(QIxml):
+    tag        = 'sposet_builder'
+    identifier = 'type'
+    attributes = ['type','twist']
+    elements   = ['sposet']
+#end class heg_builder
+
+class composite_builder(QIxml):
+    tag = 'sposet_builder'
+    identifier = 'type'
+    elements   = ['sposet']
+#end class composite_builder
+
+sposet_builder = QIxmlFactory(
+    name    = 'sposet_builder',
+    types   = dict(bspline=bspline_builder,
+                   heg=heg_builder,
+                   composite=composite_builder),
+    typekey = 'type'
+    )
+
+
+
 class wavefunction(QIxml):
     attributes = ['name','target']
-    elements   = ['determinantset','jastrow']
+    elements   = ['sposet_builder','determinantset','jastrow']
     identifier = 'name'
 #end class wavefunction
 
@@ -1375,7 +1478,7 @@ class slaterdeterminant(QIxml):
 #end class slaterdeterminant
 
 class determinant(QIxml):
-    attributes = ['id','size','ref','spin']
+    attributes = ['id','group','sposet','size','ref','spin']
     elements   = ['occupation','coefficient']
     identifier = 'id'
 #end class determinant
@@ -1440,7 +1543,6 @@ jastrow = QIxmlFactory(
     )
 
 
-
 class hamiltonian(QIxml):
     attributes = ['name','type','target'] 
     elements   = ['pairpot','constant','estimator']
@@ -1497,7 +1599,7 @@ class energydensity(QIxml):
     tag = 'estimator'
     attributes = ['type','name','dynamic','static']
     elements   = ['reference_points','spacegrid']
-    identifier  = 'name'
+    identifier = 'name'
 #end class energydensity
 
 class reference_points(QIxml):
@@ -1544,17 +1646,17 @@ class neighbor_trace(QIxml):
 #end class neighbor_trace
 
 class dm1b(QIxml):
-    tag = 'estimator'
-    attributes  = ['type','name']
-    parameters  = ['energy_matrix','basis_size','integrator','points']
-    write_types = obj(energy_matrix=yesno)
+    tag         = 'estimator'
     identifier  = 'type'
+    attributes  = ['type','name','reuse']#reuse is a temporary dummy keyword
+    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats']
+    write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno)
 #end class dm1b
 
 class spindensity(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
-    parameters  = ['dr']
+    parameters  = ['dr','grid']
     write_types = obj(report=yesno)
     identifier  = 'name'
 #end class spindensity
@@ -1573,7 +1675,7 @@ estimator = QIxmlFactory(
                  chiesa              = chiesa,
                  density             = density,
                  nearestneighbors    = nearestneighbors,
-                 dm1b = dm1b,
+                 dm1b                = dm1b,
                  spindensity         = spindensity,
                  structurefactor     = structurefactor),
     typekey  = 'type',
@@ -1691,16 +1793,18 @@ classes = [   #standard classes
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
-    coefficient,radfunc,spindensity,structurefactor
+    coefficient,radfunc,spindensity,structurefactor,
+    sposet,bspline_builder,composite_builder,heg_builder
     ]
 types = dict( #simple types and factories
-    host      = param,
-    date      = param,
-    user      = param,
-    pairpot   = pairpot,
-    estimator = estimator,
-    jastrow   = jastrow,
-    qmc       = qmc
+    host           = param,
+    date           = param,
+    user           = param,
+    pairpot        = pairpot,
+    estimator      = estimator,
+    sposet_builder = sposet_builder,
+    jastrow        = jastrow,
+    qmc            = qmc
     )
 plurals = obj(
     particlesets    = 'particleset',
@@ -1719,7 +1823,9 @@ plurals = obj(
     basisgroups     = 'basisgroup',
     calculations    = 'qmc',
     vars            = 'var',
-    neighbor_traces = 'neighbor_trace'
+    neighbor_traces = 'neighbor_trace',
+    sposet_builders = 'sposet_builder',
+    sposets         = 'sposet'
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
@@ -1775,18 +1881,18 @@ project.defaults.set(
 application.defaults.set(
     name='qmcapp',role='molecu',class_='serial',version='1.0'
     )
-simulationcell.defaults.set(
-    bconds = 'p p p',lr_dim_cutoff=15
-    )
-wavefunction.defaults.set(
-    name='psi0',target='e'
-    )
-determinantset.defaults.set(
-    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
-    )
-occupation.defaults.set(
-    mode='ground',spindataset=0
-    )
+#simulationcell.defaults.set(
+#    bconds = 'p p p',lr_dim_cutoff=15
+#    )
+#wavefunction.defaults.set(
+#    name='psi0',target='e'
+#    )
+#determinantset.defaults.set(
+#    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
+#    )
+#occupation.defaults.set(
+#    mode='ground',spindataset=0
+#    )
 jastrow1.defaults.set(
     name='J1',type='one-body',function='bspline',print_=True,source='ion0',
     correlation=correlation
@@ -1805,43 +1911,46 @@ correlation.defaults.set(
 coefficients.defaults.set(
     type='Array'
     )
-hamiltonian.defaults.set(
-    name='h0',type='generic',target='e',
-    constant = constant,
-    pairpots = classcollection(coulomb,pseudopotential,mpc),
-    estimators = classcollection(chiesa),
-    )
-coulomb.defaults.set(
-    name='ElecElec',type='coulomb',source='e',target='e'
-    )
-constant.defaults.set(
-    name='IonIon',type='coulomb',source='ion0',target='ion0'
-    )
-pseudopotential.defaults.set(
-    name='PseudoPot',type='pseudo',source='ion0',wavefunction='psi0',format='xml'
-    )
-mpc.defaults.set(
-    name='MPC',type='MPC',ecut=60.0,source='e',target='e',physical=False
-    )
+#hamiltonian.defaults.set(
+#    name='h0',type='generic',target='e',
+#    constant = constant,
+#    pairpots = classcollection(coulomb,pseudopotential,mpc),
+#    estimators = classcollection(chiesa),
+#    )
+#coulomb.defaults.set(
+#    name='ElecElec',type='coulomb',source='e',target='e'
+#    )
+#constant.defaults.set(
+#    name='IonIon',type='coulomb',source='ion0',target='ion0'
+#    )
+#pseudopotential.defaults.set(
+#    name='PseudoPot',type='pseudo',source='ion0',wavefunction='psi0',format='xml'
+#    )
+#mpc.defaults.set(
+#    name='MPC',type='MPC',ecut=60.0,source='e',target='e',physical=False
+#    )
 localenergy.defaults.set(
     name='LocalEnergy',hdf5=True
     )
-chiesa.defaults.set(
-    name='KEcorr',type='chiesa',source='e',psi='psi0'
-    )
-energydensity.defaults.set(
-    type='EnergyDensity',name='EDvoronoi',dynamic='e',static='ion0',
-    spacegrid = spacegrid
-    )
-spacegrid.defaults.set(
-    coord='voronoi'
+#chiesa.defaults.set(
+#    name='KEcorr',type='chiesa',source='e',psi='psi0'
+#    )
+#energydensity.defaults.set(
+#    type='EnergyDensity',name='EDvoronoi',dynamic='e',static='ion0',
+#    spacegrid = spacegrid
+#    )
+#spacegrid.defaults.set(
+#    coord='voronoi'
+#    )
+dm1b.defaults.set(
+    type = 'dm1b',name='DensityMatrices'
     )
 
 
 
 
 linear.defaults.set(
-     method = 'linear',move='pbyp',checkpoint=-1,gpu=False,
+     method = 'linear',move='pbyp',checkpoint=-1,
      estimators = classcollection(localenergy)
 #  #jtk
 #    method='linear',move='pbyp',checkpoint=-1,gpu=True,
@@ -1864,7 +1973,7 @@ linear.defaults.set(
 #    usebuffer         = True,
     )
 cslinear.defaults.set(
-    method='cslinear', move='pbyp', checkpoint=-1, gpu=False,
+    method='cslinear', move='pbyp', checkpoint=-1,
     estimators = classcollection(localenergy)
   #jtk
     #method='cslinear',move='pbyp',checkpoint=-1,gpu=True,
@@ -1919,19 +2028,19 @@ cslinear.defaults.set(
     #estimators = classcollection(localenergy)
     )
 vmc.defaults.set(
-    method='vmc',move='pbyp',gpu=False,
-    walkers     = 1,
-    warmupsteps = 50,
-    substeps    = 3,
-    usedrift    = True,
-    timestep    = .5,
+    method='vmc',move='pbyp',
+    #walkers     = 1,
+    #warmupsteps = 50,
+    #substeps    = 3,
+    #usedrift    = True,
+    #timestep    = .5,
     estimators = classcollection(localenergy)
     )
 dmc.defaults.set(
-    method='dmc',move='pbyp',gpu=False,
-    warmupsteps   = 20,
-    timestep      = .01,
-    nonlocalmoves = True,
+    method='dmc',move='pbyp',
+    #warmupsteps   = 20,
+    #timestep      = .01,
+    #nonlocalmoves = True,
     estimators = classcollection(localenergy)
     )
 
@@ -1997,7 +2106,7 @@ class QmcpackInput(SimulationInput,Names):
             #simulation = arg0
             #self.simulation = self.simulation_type(simulation)
             elem_class = element.__class__
-            if 'identifier' in elem_class.__dict__:
+            if elem_class.identifier!=None:
                 name = elem_class.identifier
             else:
                 name = elem_class.__name__
@@ -2005,6 +2114,7 @@ class QmcpackInput(SimulationInput,Names):
             self[name] = elem_class(element)
         #end if
         Param.metadata = None
+        QIcollections.clear()
     #end def __init__
 
     def get_base(self):
@@ -2061,7 +2171,7 @@ class QmcpackInput(SimulationInput,Names):
                     elem = elements[i]
                     key  = keys[i]
                     if isinstance(elem,QIxml):
-                        if 'identifier' in elem.__class__.__dict__:
+                        if elem.identifier!=None:
                             name = elem.identifier
                         else:
                             name = elem.tag
@@ -2455,6 +2565,7 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def incorporate_system(self,system):
+        self.error('incorporate_system needs a developers attention\n  this function should not be used')
         system.check_folded_system()
         system.change_units('B')
         system.structure.group_atoms()
@@ -2614,7 +2725,9 @@ class QmcpackInput(SimulationInput,Names):
             return None
         #end if
 
+        # find electrons and ions
         have_ions = True
+        have_jellium = False
         ions = None
         elns = None
         ion_list = []
@@ -2645,19 +2758,12 @@ class QmcpackInput(SimulationInput,Names):
         if ions is None and elns!=None and 'groups' in elns:
             simcell = input.get('simulationcell')
             if simcell!=None and 'rs' in simcell:
-                N = 0
-                for g in elns.groups:
-                    N+=g.size
-                #end for
-                a = (4./3*pi*N)**(1./3)*simcell.rs
-                axes = a*identity(3)
                 have_ions = False
+                have_jellium = True
             elif not 'pairpots' in H:
                 have_ions = False
             #end if
         #end if
-
-
         if elns==None:
             self.error('could not find electron particleset')
         #end if
@@ -2665,10 +2771,23 @@ class QmcpackInput(SimulationInput,Names):
             self.error('could not find ion particleset')
         #end if
 
-        if not have_ions:
-            elem = []
-            pos  = []
-        else:
+        #compute spin and electron charge
+        net_spin   = 0
+        eln_charge = 0
+        for spin,eln in elns.groups.iteritems():
+            if spin[0]=='u':
+                net_spin+=eln.size
+            elif spin[0]=='d':
+                net_spin-=eln.size
+            #end if
+            eln_charge += eln.charge*eln.size
+        #end if
+
+        #get structure and ion charge
+        structure  = None
+        ion_charge = 0
+        valency    = dict()
+        if have_ions:
             elem = None
             if 'ionid' in ions:
                 if isinstance(ions.ionid,str):
@@ -2698,33 +2817,28 @@ class QmcpackInput(SimulationInput,Names):
                     elem = None
                     pos  = None
                 else:
-                    elem = array(elem)
-                    pos  = array(pos)
+                    elem  = array(elem)
+                    pos   = array(pos)
                     order = elem.argsort()
-                    elem = elem[order]
-                    pos  = pos[order]
+                    elem  = elem[order]
+                    pos   = pos[order]
                 #end if
             #end if
             if elem is None:
                 self.error('could not read ions from ion particleset')
             #end if
-        #end if
-
-        if axes==None:
-            center = (0,0,0)
-        else:
-            md = input._metadata
-            if 'position' in md and 'condition' in md['position'] and md['position']['condition']==1:
-                pos = dot(pos,axes)
+            if axes==None:
+                center = (0,0,0)
+            else:
+                md = input._metadata
+                if 'position' in md and 'condition' in md['position'] and md['position']['condition']==1:
+                    pos = dot(pos,axes)
+                #end if
+                center = axes.sum(0)/2
             #end if
-            center = axes.sum(0)/2
-        #end if
-        
-        structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
-        
-        ion_charge = 0
-        valency = dict()
-        if have_ions:
+
+            structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
+
             for name,element in ions.groups.iteritems():
                 if 'charge' in element:
                     valence = element.charge
@@ -2739,17 +2853,9 @@ class QmcpackInput(SimulationInput,Names):
                 count = list(elem).count(name)
                 ion_charge += valence*count
             #end for
-        #end if
-
-        net_spin = 0
-        eln_charge = 0
-        for spin,eln in elns.groups.iteritems():
-            if spin[0]=='u':
-                net_spin+=eln.size
-            elif spin[0]=='d':
-                net_spin-=eln.size
-            #end if
-            eln_charge += eln.charge*eln.size
+        elif have_jellium:
+            structure  = Jellium(rs=simcell.rs,background_charge=-eln_charge)
+            ion_charge = structure.background_charge
         #end if
 
         net_charge = ion_charge + eln_charge
@@ -3015,69 +3121,555 @@ class QmcpackInputTemplate(SimulationInputTemplate):
 
 
 
-#def generate_jastrows(descriptors,system=None):
-#    js = []
-#    for d in descriptors:
-#        js.append(generate_jastrow(d,system))
-#    #end for
-#    jastrows = make_collection(js)
-#    return jastrows
-##end def generate_jastrows
-
-
-def generate_jastrow(descriptor,*args,**kwargs):
-    keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud'])
-    if not 'system' in kwargs:
-        kwargs['system'] = None
-    #end if
-    system = kwargs['system']
-    del kwargs['system']
-    if isinstance(descriptor,str):
-        descriptor = [descriptor]
-    #end if
-    ikw=0
-    for i in range(len(descriptor)):
-        if descriptor[i] in keywords:
-            break
+def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
+    bconds = tuple(bconds)
+    sc = simulationcell(bconds=bconds)
+    periodic = 'p' in bconds
+    axes_valid = system!=None and len(system.structure.axes)>0
+    if periodic:
+        sc.lr_dim_cutoff = lr_dim_cutoff
+        if not axes_valid:
+            QmcpackInput.class_error('invalid axes in generate_simulationcell\n  argument system must be provided\n  axes of the structure must have non-zero dimension')
         #end if
-        ikw += 1
-    #end for
-    dargs = descriptor[1:ikw]
-    if len(dargs)>0:
-        args = dargs
     #end if
-    for i in range(ikw,len(descriptor)):
-        d = descriptor[i]
-        if isinstance(d,str):
-            if d in keywords:
-                kwargs[d] = descriptor[i+1]
+    if axes_valid:
+        system.check_folded_system()
+        system.change_units('B')
+        structure = system.structure
+        if isinstance(structure,Jellium):
+            sc.rs         = structure.rs()
+            sc.nparticles = system.particles.count_electrons()
+        else:
+            #setting the 'lattice' (cell axes) requires some delicate care
+            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  the wavefunction hdf5 file from pwscf
+            if structure.folded_structure!=None:
+                fs = structure.folded_structure
+                axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
+                axes.shape = fs.axes.shape
+                axes = dot(structure.tmatrix,axes)
+                if abs(axes-structure.axes).sum()>1e-5:
+                    QmcpackInput.class_error('in generate_simulationcell\n  supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
+                #end if
             else:
-                QmcpackInput.class_warn('keyword {0} is unrecognized and ignored\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+                axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
+                axes.shape = structure.axes.shape
+            #end if
+            structure.adjust_axes(axes)
+
+            sc.lattice = axes
+        #end if
+    #end if    
+    return sc
+#end def generate_simulationcell
+
+
+def generate_particlesets(electrons = 'e',
+                          ions      = 'ion0',
+                          up        = 'u',
+                          down      = 'd',
+                          system    = None
+                          ):
+    if system is None:
+        QmcpackInput.class_error('generate_particlesets argument system must not be None')
+    #end if
+
+    ename = electrons
+    iname = ions
+    uname = up
+    dname = down
+
+    del electrons
+    del ions
+    del up
+    del down
+
+    system.check_folded_system()
+    system.change_units('B')
+
+    particles  = system.particles
+    structure  = system.structure
+    net_charge = system.net_charge
+    net_spin   = system.net_spin
+
+    structure.group_atoms()
+    elem = structure.elem
+    pos  = structure.pos
+
+    elns = particles.get_electrons()
+    ions = particles.get_ions()
+    eup  = elns.up_electron
+    edn  = elns.down_electron
+
+    particlesets = []
+    eps = particleset(
+        name   = ename,
+        random = True,
+        groups = [
+            group(name=uname,charge=-1,mass=eup.mass,size=eup.count),
+            group(name=dname,charge=-1,mass=edn.mass,size=edn.count)
+            ]
+        )
+    particlesets.append(eps)
+    if len(ions)>0:
+        eps.randomsrc = iname
+        ips = particleset(name=iname)
+        groups = []
+        for ion in ions:
+            gpos = pos[elem==ion.name]
+            g = group(
+                name         = ion.name,
+                charge       = ion.charge,
+                valence      = ion.charge,
+                atomicnumber = ion.protons,
+                mass         = ion.mass,
+                position     = gpos,
+                size         = len(gpos)
+                )
+            groups.append(g)
+        #end for
+        ips.groups = make_collection(groups)
+        particlesets.append(ips)
+    #end if
+    particlesets = make_collection(particlesets)
+    return particlesets
+#end def generate_particlesets
+
+
+def generate_sposets(type=None,occupation=None,spin_polarized=False,nup=None,ndown=None,system=None,sposets=None,spindatasets=False):
+    ndn = ndown
+    if type is None:
+        QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
+    #end if
+    if sposets!=None:
+        for spo in spo:
+            spo.type = type
+        #end for
+    elif occupation=='slater_ground':
+        have_counts = not (nup is None or ndown is None)
+        if system is None and not have_counts:
+            QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  arguments nup & ndown or system must be given to generate_sposets'.format(occupation))
+        elif not have_counts:
+            elns = system.particles.get_electrons()
+            nup  = elns.up_electron.count
+            ndn  = elns.down_electron.count
+        #end if
+        if not spin_polarized:
+            if nup==ndn:
+                sposets = [sposet(type=type,name='spo_ud',spindataset=0,size=nup)]
+            else:
+                sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
+                           sposet(type=type,name=spo_down,spindataset=0,size=ndn)]
+            #end if
+        else:
+            sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
+                       sposet(type=type,name=spo_down,spindataset=1,size=ndn)]
+        #end if
+        if not spindatasets:
+            for spo in sposets:
+                del spo.spindataset
+            #end for
+        #end if
+    else:
+        QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  generate_sposets currently supports the following occupation modes:\n  slater_ground'.format(occupation))
+    #end if
+    return make_collection(sposets)
+#end def generate_sposets
+
+
+def generate_sposet_builder(type,*args,**kwargs):
+    if type=='bspline' or type=='einspline':
+        return generate_bspline_builder(type,*args,**kwargs)
+    elif type=='heg':
+        return generate_heg_builder(*args,**kwargs)
+    else:
+        QmcpackInput.class_error('cannot generate sposet_builder\n  sposet_builder of type {0} is unrecognized'.format(type))
+    #end if
+#end def generate_sposet_builder
+
+
+def generate_bspline_builder(type           = 'bspline',
+                             meshfactor     = 1.0,
+                             precision      = 'float',
+                             twistnum       = None, 
+                             twist          = None,
+                             sort           = False,
+                             version        = '0.10',
+                             truncate       = False,
+                             spin_polarized = False,
+                             href           = 'MISSING.h5',
+                             ions           = 'ion0',
+                             spo_up         = 'spo_u',
+                             spo_down       = 'spo_d',
+                             sposets        = None,
+                             system         = None
+                             ):
+    tilematrix = identity(3,dtype=int)
+    if system!=None:
+        tilematrix = system.structure.tilematrix()
+    #end if
+    bsb = bspline_builder(
+        type       = type,
+        meshfactor = meshfactor,
+        precision  = precision,
+        tilematrix = tilematrix,
+        href       = href,
+        sort       = sort,
+        version    = version,
+        truncate   = truncate,
+        source     = ions,
+        sposets    = generate_sposets(
+            type           = type,
+            occupation     = 'slater_ground',
+            spin_polarized = spin_polarized,
+            system         = system,
+            sposets        = sposets,
+            spindatasets   = True
+            )
+        )
+    if twist!=None:
+        bsb.twist = tuple(twist)
+    elif twistnum!=None:
+        bsb.twistnum = twistnum
+    elif len(system.structure.kpoints)==1:
+        bsb.twistnum = 0
+    else:
+        bsb.twistnum = None
+    #end if
+    return bsb
+#end def generate_bspline_builder
+
+
+def generate_heg_builder(twist          = None,
+                         spin_polarized = False,
+                         spo_up         = 'spo_u',
+                         spo_down       = 'spo_d',
+                         sposets        = None,
+                         system         = None
+                         ):
+    type = 'heg'
+    hb = heg_builder(
+        type    = type,
+        sposets = generate_sposets(
+            type           = type,
+            occupation     = 'slater_ground',
+            spin_polarized = spin_polarized,
+            system         = system,
+            sposets        = sposets
+            )
+        )
+    if twist!=None:
+        hb.twist = tuple(twist)
+    #end if
+    return hb
+#end def generate_heg_builder
+
+
+def generate_determinantset(up             = 'u',
+                            down           = 'd',
+                            spo_up         = 'spo_u',
+                            spo_down       = 'spo_d',
+                            spin_polarized = False,
+                            system         = None
+                            ):
+    if system is None:
+        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+    #end if
+    if not spin_polarized:
+        spo_u = 'spo_ud'
+        spo_d = 'spo_ud'
+    else:
+        spo_u = spo_up
+        spo_d = spo_down
+    #end if
+    elns = system.particles.get_electrons()
+    dset = determinantset(
+        slaterdeterminant = slaterdeterminant(
+            determinants = collection(
+                determinant(
+                    id     = 'updet',
+                    group  = up,
+                    sposet = spo_u,
+                    size   = elns.up_electron.count
+                    ),
+                determinant(
+                    id     = 'downdet',
+                    group  = down,
+                    sposet = spo_d,
+                    size   = elns.down_electron.count
+                    )
+                )
+            )
+        )
+    return dset
+#end def generate_determinantset
+
+
+def generate_determinantset_old(type           = 'bspline',
+                                meshfactor     = 1.0,
+                                precision      = 'float',
+                                twistnum       = None, 
+                                twist          = None,
+                                spin_polarized = False,
+                                href           = 'MISSING.h5',
+                                system         = None
+                                ):
+    if system is None:
+        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+    #end if
+    elns = system.particles.get_electrons()
+    down_spin = 0
+    if spin_polarized:
+        down_spin=1
+    #end if
+    tilematrix = identity(3,dtype=int)
+    if system!=None:
+        tilematrix = system.structure.tilematrix()
+    #end if
+    dset = determinantset(
+        type       = type,
+        meshfactor = meshfactor,
+        precision  = precision,
+        tilematrix = tilematrix,
+        href       = href,
+        slaterdeterminant = slaterdeterminant(
+            determinants = collection(
+                updet   = determinant(
+                    id   = 'updet',
+                    size = elns.up_electron.count,
+                    occupation=section(mode='ground',spindataset=0)
+                    ),
+                downdet = determinant(
+                    id   = 'downdet',
+                    size = elns.down_electron.count,
+                    occupation=section(mode='ground',spindataset=down_spin)
+                    )
+                )
+            )
+        )
+    if twist!=None:
+        dset.twist = tuple(twist)
+    elif twistnum!=None:
+        dset.twistnum = twistnum
+    else:
+        dset.twistnum = 0
+    #end if
+    return dset
+#end def generate_determinantset_old
+
+
+def generate_hamiltonian(name         = 'h0',
+                         type         = 'generic',
+                         electrons    = 'e',
+                         ions         = 'ion0',
+                         wavefunction = 'psi0',
+                         pseudos      = None,
+                         format       = 'xml',
+                         estimators   = None,
+                         system       = None,
+                         interactions = 'default'
+                         ):
+    if system is None:
+        QmcpackInput.class_error('generate_hamiltonian argument system must not be None')
+    #end if
+
+    ename   = electrons
+    iname   = ions
+    wfname  = wavefunction
+    ppfiles = pseudos
+    del electrons
+    del ions
+    del pseudos
+    del wavefunction
+
+    particles = system.particles
+    if particles.count_electrons()==0:
+        QmcpackInput.class_error('cannot generate hamiltonian, no electrons present')
+    #end if
+
+    pairpots = []
+    if interactions!=None:
+        pairpots.append(coulomb(name='ElecElec',type='coulomb',source=ename,target=ename))
+        if particles.count_ions()>0:
+            pairpots.append(coulomb(name='IonIon',type='coulomb',source=iname,target=iname))
+            ions = particles.get_ions()
+            if not system.pseudized:
+                pairpots.append(coulomb(name='ElecIon',type='coulomb',source=iname,target=ename))
+            else:
+                if ppfiles is None or len(ppfiles)==0:
+                    QmcpackInput.class_error('cannot generate hamiltonian\n  system is pseudized, but no pseudopotentials have been provided\n  please provide pseudopotential files via the pseudos keyword')
+                #end if
+                if isinstance(ppfiles,list):
+                    pplist = ppfiles
+                    ppfiles = obj()
+                    for pppath in pplist:
+                        if '/' in pppath:
+                            ppfile = pppath.split('/')[-1]
+                        else:
+                            ppfile = pppath
+                        #end if
+                        element = ppfile.split('.')[0]
+                        if len(element)>2:
+                            element = element[0:2]
+                        #end if
+                        ppfiles[element] = pppath
+                    #end for
+                #end if
+                pseudos = collection()
+                for ion in ions:
+                    if not ion.name in ppfiles:
+                        QmcpackInput.class_error('pseudos provided to generate_hamilonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
+                    #end if
+                    pseudos.add(pseudo(elementtype=ion.name,href=ppfiles[ion.name]))
+                #end for
+                pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
+                pairpots.append(pp)
             #end if
         #end if
-    #end for
-    kwargs['system'] = system
-    jtype = descriptor[0]
-    if jtype=='J1':
-        jastrow = generate_jastrow1(*args,**kwargs)
-    elif jtype=='J2':
-        jastrow = generate_jastrow2(*args,**kwargs)
-    elif jtype=='J3':
-        jastrow = generate_jastrow3(*args,**kwargs)
-    else:
-        QmcpackInput.class_error('jastrow type unrecognized: '+jtype)
     #end if
-    return jastrow
-#end def generate_jastrow
+
+    ests = []
+    if estimators!=None:
+        for estimator in estimators:
+            est=estimator
+            if isinstance(estimator,str):
+                estname = estimator.lower().replace(' ','_').replace('-','_').replace('__','_')
+                if estname=='mpc':
+                    pairpots.append(mpc(name='MPC',type='MPC',ecut=60.0,source=ename,target=ename,physical=False))
+                elif estname=='chiesa':
+                    est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
+                elif estname=='localenergy':
+                    est = localenergy(name='LocalEnergy')
+                elif estname=='energydensity':
+                    est = energydensity(
+                        type='EnergyDensity',name='EDvoronoi',dynamic=ename,static=iname,
+                        spacegrid = spacegrid(coord='voronoi')
+                        )
+                else:
+                    QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
+                #end if
+            elif not isinstance(estimator,QIxml):
+                QmcpackInput.class_error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+            elif isinstance(estimator,dm1b):
+                dm = estimator
+                reuse = False
+                if 'reuse' in dm:
+                    reuse = bool(dm.reuse)
+                    del dm.reuse
+                #end if
+                basis = []
+                builder = None
+                maxed = False
+                if reuse and 'basis' in dm and isinstance(dm.basis,sposet):
+                    spo = dm.basis
+                    # get sposet size
+                    if 'size' in dm.basis:
+                        size = spo.size
+                        del spo.size
+                    elif 'index_max' in dm.basis:
+                        size = spo.index_max
+                        del spo.index_max
+                    else:
+                        QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "size" attribute')
+                    #end if
+                    try:
+                        # get sposet from wavefunction
+                        wf = QIcollections.get('wavefunctions',wfname)
+                        dets = wf.get('determinant')
+                        det  = dets.get_single()
+                        if 'sposet' in det:
+                            rsponame = det.sposet
+                        else:
+                            rsponame = det.id
+                        #end if
+                        builders = QIcollections.get('sposet_builders')
+                        rspo = None
+                        for bld in builders:
+                            if rsponame in bld.sposets:
+                                builder = bld
+                                rspo    = bld.sposets[rsponame]
+                                break
+                            #end if
+                        #end for
+                        basis.append(rsponame)
+                        # adjust current sposet
+                        spo.index_min = rspo.size
+                        spo.index_max = size
+                        maxed = rspo.size>=size
+                    except Exception,e:
+                        msg = 'cannot generate estimator dm1b\n  '
+                        if wf is None:
+                            QmcpackInput.class_error(msg+'wavefunction {0} not found'.format(wfname))
+                        elif dets is None or det is None:
+                            QmcpackInput.class_error(msg+'determinant not found')
+                        elif builders is None:
+                            QmcpackInput.class_error(msg+'sposet_builders not found')
+                        elif rspo is None:
+                            QmcpackInput.class_error(msg+'sposet {0} not found'.format(rsponame))
+                        else:
+                            QmcpackInput.class_error(msg+'cause of failure could not be determined\n  see the following error message:\n{0}'.format(e))
+
+                        #end if
+                    #end if
+                #end if
+                # put the basis sposet in the appropriate builder
+                if isinstance(dm.basis,sposet) and not maxed:
+                    spo = dm.basis
+                    del dm.basis
+                    if not 'type' in spo:
+                        QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "type" attribute')
+                    #end if
+                    if not 'name' in spo:
+                        spo.name = 'spo_dm'
+                    #end if
+                    builders = QIcollections.get('sposet_builders')
+                    if not spo.type in builders:
+                        bld = generate_sposet_builder(spo.type,sposets=[spo])
+                        builders.add(bld)
+                    else:
+                        bld = builders[spo.type]
+                        bld.sposets.add(spo)
+                    #end if
+                    basis.append(spo.name)
+                #end if
+                dm.basis = basis
+                dm.incorporate_defaults(elements=False,overwrite=False,propagate=False)
+            #end if
+            if est!=None:
+                ests.append(est)
+            #end if
+        #end for
+    #end if
+    estimators = ests
+
+    hmltn = hamiltonian(
+        name   = name,
+        type   = type,
+        target = ename
+        )
+
+    if len(pairpots)>0:
+        hmltn.pairpots = make_collection(pairpots)
+    #end if
+
+    if len(estimators)>0:
+        hmltn.estimators = make_collection(estimators)
+    #end if
+
+    return hmltn
+#end def generate_hamiltonian
 
 
 
-def generate_jastrows(jastrows,system=None,return_list=False):
+def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
     jin = []
+    have_ions = True
+    if check_ions and system!=None:
+        have_ions = system.particles.count_ions()>0
+    #end if
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
-        if '1' in jorders:
+        if '1' in jorders and have_ions:
             jin.append(
                 generate_jastrow('J1','bspline',8,system=system)
                 )
@@ -3087,7 +3679,7 @@ def generate_jastrows(jastrows,system=None,return_list=False):
                 generate_jastrow('J2','bspline',8,system=system)
                 )
         #end if
-        if '3' in jorders:
+        if '3' in jorders and have_ions:
             jin.append(
                 generate_jastrow('J3','polynomial',4,4,5.0,system=system)
                 )
@@ -3135,6 +3727,53 @@ def generate_jastrows(jastrows,system=None,return_list=False):
     #end if
 #end def generate_jastrows
 
+
+
+def generate_jastrow(descriptor,*args,**kwargs):
+    keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
+                    'iname','spins','density','Buu','Bud'])
+    if not 'system' in kwargs:
+        kwargs['system'] = None
+    #end if
+    system = kwargs['system']
+    del kwargs['system']
+    if isinstance(descriptor,str):
+        descriptor = [descriptor]
+    #end if
+    ikw=0
+    for i in range(len(descriptor)):
+        if descriptor[i] in keywords:
+            break
+        #end if
+        ikw += 1
+    #end for
+    dargs = descriptor[1:ikw]
+    if len(dargs)>0:
+        args = dargs
+    #end if
+    for i in range(ikw,len(descriptor)):
+        d = descriptor[i]
+        if isinstance(d,str):
+            if d in keywords:
+                kwargs[d] = descriptor[i+1]
+            else:
+                QmcpackInput.class_warn('keyword {0} is unrecognized and ignored\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+            #end if
+        #end if
+    #end for
+    kwargs['system'] = system
+    jtype = descriptor[0]
+    if jtype=='J1':
+        jastrow = generate_jastrow1(*args,**kwargs)
+    elif jtype=='J2':
+        jastrow = generate_jastrow2(*args,**kwargs)
+    elif jtype=='J3':
+        jastrow = generate_jastrow3(*args,**kwargs)
+    else:
+        QmcpackInput.class_error('jastrow type unrecognized: '+jtype)
+    #end if
+    return jastrow
+#end def generate_jastrow
 
 
 
@@ -3409,6 +4048,8 @@ def count_jastrow_params(jastrows):
 #end def count_jastrow_params
 
 
+
+
 opt_map = dict(linear=linear,cslinear=cslinear)
 def generate_opt(method,
                  repeat           = 1,
@@ -3509,6 +4150,7 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 def generate_qmcpack_input(selector,*args,**kwargs):
+    QIcollections.clear()
     if 'system' in kwargs:
         system = kwargs['system']
         if isinstance(system,PhysicalSystem):
@@ -3531,41 +4173,29 @@ def generate_basic_input(id             = 'qmc',
                          series         = 0,
                          purpose        = '',
                          seed           = None,
-                         bconds         = None,
+                         bconds         = 'ppp',
+                         lr_dim_cutoff  = 15,
                          remove_cell    = False,
                          meshfactor     = 1.0,
-                         precision      = 'double',
+                         precision      = 'float',
                          twistnum       = None, 
                          twist          = None,
                          spin_polarized = False,
                          orbitals_h5    = 'MISSING.h5',
-                         system         = None,
+                         system         = 'missing',
                          pseudos        = None,
-                         jastrows       = None,
-                         corrections    = None,
+                         jastrows       = 'generateJ12',
+                         interactions   = 'all',
+                         corrections    = 'default',
                          observables    = None,
                          estimators     = None,
-                         calculations   = None):
-    if spin_polarized:
-        down_spin=1
-    else:
-        down_spin=0
+                         calculations   = None,
+                         det_format     = 'new'
+                         ):
+    if system=='missing':
+        QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
     #end if
-    if bconds is None:
-        bconds = array(['p','p','p'])
-    else:
-        bconds = array(tuple(bconds))
-    #end if
-    if pseudos is None:
-        pseudopotentials = []
-    else:
-        pseudopotentials = pseudos
-    #end if
-    if jastrows is None:
-        jastrows = [('J1','bspline','size',8),
-                    ('J2','bspline','size',8)]
-    #end if
-    if corrections is None and tuple(bconds)==tuple('ppp'):
+    if corrections=='default' and tuple(bconds)==tuple('ppp'):
         corrections = ['mpc','chiesa']
     else:
         corrections = []
@@ -3577,112 +4207,113 @@ def generate_basic_input(id             = 'qmc',
     if estimators is None:
         estimators = []
     #end if
+    estimators = estimators + observables + corrections
     if calculations is None:
         calculations = []
     #end if
 
-    tilematrix = identity(3,dtype=int)
+    metadata = QmcpackInput.default_metadata.copy()
+
+    proj = project(
+        id          = id,
+        series      = series,
+        application = application()
+        )
+
+    simcell = generate_simulationcell(
+        bconds        = bconds,
+        lr_dim_cutoff = lr_dim_cutoff,
+        system        = system
+        )
+
     if system!=None:
-        tilematrix = system.structure.tilematrix()
+        particlesets = generate_particlesets(
+            system = system
+            )
     #end if
 
-    metadata = QmcpackInput.default_metadata.copy()
-    qi = QmcpackInput(
-        metadata,
-        simulation(
-            project = section(
-                id=id,
-                series = series,
-                application = application()
-                ),
-            qmcsystem = section(
-                simulationcell = section(bconds=array(bconds)),
-                wavefunction   = section(
-                    determinantset = section(
-                        twistnum = twistnum,
-                        meshfactor = meshfactor,
-                        precision  = precision,
-                        tilematrix = tilematrix,
-                        href       = orbitals_h5,
-                        slaterdeterminant = section(
-                            determinants = collection(
-                                updet   = determinant(
-                                    id='updet'  ,#ref='updet',
-                                    occupation=section(mode='ground',spindataset=0)
-                                    ),
-                                downdet = determinant(
-                                    id='downdet',#ref='downdet',
-                                    occupation=section(mode='ground',spindataset=down_spin)
-                                    ),
-                                )
-                            )
-                        )
-                    ),
-                hamiltonian = section(
-                    constant = section(),
-                    pairpots = collection(
-                        coulomb(name='ElecElec'),
-                        pseudopotential(name='PseudoPot')
-                        )
-                    )
+    if det_format=='new':
+        if system!=None and isinstance(system.structure,Jellium):
+            ssb = generate_sposet_builder(
+                type           = 'heg',
+                twist          = twist,
+                spin_polarized = spin_polarized,
+                system         = system
                 )
+        else:
+            ssb = generate_sposet_builder(
+                type           = 'bspline',
+                twist          = twist,
+                twistnum       = twistnum,
+                meshfactor     = meshfactor,
+                precision      = precision,
+                href           = orbitals_h5,
+                spin_polarized = spin_polarized,
+                system         = system
+                )
+        #end if
+        spobuilders = [ssb]
+
+        dset = generate_determinantset(
+            spin_polarized = spin_polarized,
+            system         = system
             )
+    elif det_format=='old':
+        spobuilders = None
+
+        dset = generate_determinantset_old(
+            type           = 'bspline',
+            twistnum       = twistnum,
+            meshfactor     = meshfactor,
+            precision      = precision,
+            href           = orbitals_h5,
+            spin_polarized = spin_polarized,
+            system         = system
+            )
+    else:
+        QmcpackInput.class_error('generate_basic_input argument det_format is invalid\n  received: {0}\n  valid options are: new,old'.format(det_format))
+    #end if
+
+
+    wfn = wavefunction(        
+        name           = 'psi0',
+        target         = 'e',
+        determinantset = dset
         )
 
 
-    if seed!=None:
-        qi.simulation.random = random(seed=seed)
+    if jastrows!=None:
+        wfn.jastrows = generate_jastrows(jastrows,system,check_ions=True)
     #end if
+
+    hmltn = generate_hamiltonian(
+        system       = system,
+        pseudos      = pseudos,
+        interactions = interactions,
+        estimators   = estimators
+        )
+
+    if spobuilders!=None:
+        wfn.sposet_builders = make_collection(spobuilders)
+    #end if
+
+    qmcsys = qmcsystem(
+        simulationcell  = simcell,
+        wavefunction    = wfn,
+        hamiltonian     = hmltn
+        )
+
     if system!=None:
-        qi.incorporate_system(system)
+        qmcsys.particlesets = particlesets
     #end if
-    ham = qi.simulation.qmcsystem.hamiltonian
-    estimators = estimators + corrections + observables
-    ests=[]
-    for estimator in estimators:
-        estname = estimator.lower().replace(' ','_').replace('-','_').replace('__','_')
-        est=None
-        if estname=='mpc':
-            ham.pairpots.mpc = mpc()
-        elif estname=='chiesa':
-            est = chiesa(name='KEcorr')
-        elif estname=='localenergy':
-            est = localenergy(name='LocalEnergy')
-        elif estname=='energydensity':
-            est = energydensity(
-                type='EnergyDensity',name='EDvoronoi',dynamic='e',static='ion0',
-                spacegrid = spacegrid(coord='voronoi')
-                )
-        else:
-            QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
-        #end if
-        if est!=None:
-            ests.append(est)
-        #end if
-    #end for
-    if len(ests)>0:
-        ham.estimators = make_collection(ests)
-    #end if
-    ham.pluralize()
-    pseudos = ham.get('pseudo')
-    for ppfile in pseudopotentials:
-        #element = ppfile[0:2]
-        element = ppfile.split('.')[0]
-        if len(element)>2:
-            element = element[0:2]
-        #end if
-        if element in pseudos:
-            pseudos[element].href = ppfile
-        else:
-            QmcpackInput.class_error('hamiltonian is malformed\n  '+element+' is not in pseudopotential list')
-        #end if
-    #end for
 
-    wf = qi.get('wavefunction')
-    wf.jastrows = generate_jastrows(jastrows,system)
+    sim = simulation(
+        project   = proj,
+        qmcsystem = qmcsys
+        )
 
-    if twist!=None:
-        wf.determinantset.twist = tuple(twist)
+    if seed!=None:
+        sim.random = random(seed=seed)
     #end if
 
     for calculation in calculations:
@@ -3707,8 +4338,9 @@ def generate_basic_input(id             = 'qmc',
             calc.estimators = estimators
         #end if
     #end for
-    calc_coll = make_collection(calculations)
-    qi.simulation.calculations = calc_coll.copy()
+    sim.calculations = make_collection(calculations).copy()
+
+    qi = QmcpackInput(metadata,sim)
 
     qi.incorporate_defaults(elements=False,overwrite=False,propagate=True)
 
@@ -3729,7 +4361,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                bconds           = None,
                                remove_cell      = False,
                                meshfactor       = 1.0,
-                               precision        = 'double',
+                               precision        = 'float',
                                twistnum         = None, 
                                twist            = None,
                                spin_polarized   = False,

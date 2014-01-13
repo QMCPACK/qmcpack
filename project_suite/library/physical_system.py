@@ -157,7 +157,7 @@ class Particles(Matter):
         return ions
     #end def get_ions
         
-    def count_ions(self):
+    def count_ions(self,species=False):
         nions = 0
         nspecies = 0
         for name,particle in self.iteritems():
@@ -166,7 +166,11 @@ class Particles(Matter):
                 nions += particle.count
             #end if
         #end for
-        return nions,nspecies
+        if species:
+            return nions,nspecies
+        else:
+            return nions
+        #end if
     #end def count_ions
 
     def get_electrons(self):
@@ -227,6 +231,8 @@ class PhysicalSystem(Matter):
 
     def __init__(self,structure=None,net_charge=0,net_spin=0,particles=None,**valency):
 
+        self.pseudized = False
+
         if structure is None:
             self.structure = Structure()
         else:
@@ -274,7 +280,7 @@ class PhysicalSystem(Matter):
             pc[ion] = elem.count(ion)
         #end for
         missing = set(pc.keys())-set(self.particles.keys())
-        if len(missing)>0:
+        if len(missing)>0 or len(elem)==0:
             if clear:
                 self.particles.clear()
             #end if
@@ -292,14 +298,14 @@ class PhysicalSystem(Matter):
 
 
     def update(self):
-        self.net_charge = 0
+        self.net_charge = self.structure.background_charge
         self.net_spin   = 0
         for p in self.particles:
             self.net_charge += p.count*p.charge
             self.net_spin   += p.count*p.spin
         #end for
         self.net_charge = int(round(float(self.net_charge)))
-        self.net_spin = int(round(float(self.net_spin)))
+        self.net_spin   = int(round(float(self.net_spin)))
     #end def update
 
 
@@ -344,6 +350,7 @@ class PhysicalSystem(Matter):
                 ionp = self.particles[ion]
                 if isinstance(ionp,Ion):
                     self.particles[ion] = ionp.pseudize(valence_charge)
+                    self.pseudized = True
                 else:
                     self.error(ion+' cannot be pseudized',exit=False)
                 #end if
