@@ -22,6 +22,7 @@
 #include "adios.h"
 #include "adios_read.h"
 #include "ADIOS/ADIOS_config.h"
+#include <boost/lexical_cast.hpp>
 #ifdef IO_PROFILE
 #include "ADIOS/ADIOS_profile.h"
 #endif
@@ -1854,16 +1855,17 @@ public:
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
-    char filename[256];
-    sprintf(filename, "traces_%d.bp", block);
+    string file_name = file_root;
+    string s = boost::lexical_cast<std::string>(block);
+    file_name = file_name + ".b"+s+".trace.bp";
     if(write_flag)
     {
-      adios_open(&adios_handle, "Traces", filename, "w", comm);
+      adios_open(&adios_handle, "Traces", file_name.c_str(), "w", comm);
       //      write_flag = false;
     }
     else
     {
-      adios_open(&adios_handle, "Traces", filename, "a", comm);
+      adios_open(&adios_handle, "Traces", file_name.c_str(), "a", comm);
     }
     adios_groupsize = 4 + (total_size * 8);
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
@@ -1875,7 +1877,7 @@ public:
     ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
 #endif
 #ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file(filename,
+    ADIOS_FILE *fp = adios_read_open_file(file_name,
                                           ADIOS_READ_METHOD_BP,
                                           OHMMS::Controller->getMPI());
     IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
