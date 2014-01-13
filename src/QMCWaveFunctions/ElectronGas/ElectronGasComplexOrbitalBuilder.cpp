@@ -98,12 +98,20 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
 }
 
 ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice)
+  :egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
 {
 }
 
 bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
 {
+  OhmmsAttributeSet aAttrib;
+  aAttrib.add(unique_twist,"twist");
+  aAttrib.put(cur);
+
+  has_twist = true;
+  for(int d=0;d<OHMMS_DIM;++d)
+    has_twist &= (unique_twist[d]+1.0)>1e-6;
+
   return true;
 }
 
@@ -120,6 +128,8 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
   aAttrib.add(spo_name,"name");
   aAttrib.add(spo_name,"id");
   aAttrib.put(cur);
+  if(has_twist)
+    twist = unique_twist;
   if(ns>0)
     nc = egGrid.getShellIndex(ns);
   if (nc<0)
@@ -129,11 +139,6 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   egGrid.createGrid(nc,ns,twist);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);
-  //vector<int> states;
-  //states.resize(egGrid.kpt.size());
-  //for(int s=0;s<egGrid.kpt.size();++s)
-  //  states[s] = s;
-  //spo->assign_states(states);
   return spo;
 }
 
@@ -142,7 +147,6 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);
-  //spo->assign_states(states);
   return spo;
 }
 
