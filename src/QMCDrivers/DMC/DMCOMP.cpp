@@ -308,7 +308,7 @@ bool DMCOMP::run()
     Estimators->stopBlock(acceptRatio());
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
-    Traces->write_buffers(traceClones);
+    Traces->write_buffers(traceClones, block);
     ADIOS_PROFILE::profile_adios_end_trace(block);
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
