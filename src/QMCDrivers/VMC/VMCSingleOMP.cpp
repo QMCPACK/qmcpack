@@ -92,7 +92,7 @@ bool VMCSingleOMP::run()
     Estimators->stopBlock(estimatorClones);
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
-    Traces->write_buffers(traceClones);
+    Traces->write_buffers(traceClones, block);
     ADIOS_PROFILE::profile_adios_end_trace(block);
     ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if(storeConfigs)
