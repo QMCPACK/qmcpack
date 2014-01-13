@@ -1576,7 +1576,7 @@ public:
 
 
   //write buffered trace data to file
-  inline void write_buffers(vector<TraceManager*>& clones)
+  inline void write_buffers(vector<TraceManager*>& clones, int block)
   {
     if(master_copy)
     {
@@ -1591,7 +1591,7 @@ public:
         if(adios_format)
         {
 #ifdef HAVE_ADIOS
-          write_buffers_adios(clones);
+          write_buffers_adios(clones, block);
 #else
           APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
 #endif
@@ -1827,7 +1827,7 @@ public:
     }
   }
 
-  inline void write_buffers_adios(vector<TraceManager*>& clones)
+  inline void write_buffers_adios(vector<TraceManager*>& clones, int block)
   {
     //print_adios(clones);
     MPI_Comm comm = communicator->getMPI();
@@ -1854,14 +1854,16 @@ public:
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
+    char filename[256];
+    sprintf(filename, "traces_%d.bp", block);
     if(write_flag)
     {
-      adios_open(&adios_handle, "Traces", "traces.bp", "w", comm);
+      adios_open(&adios_handle, "Traces", filename, "w", comm);
       //      write_flag = false;
     }
     else
     {
-      adios_open(&adios_handle, "Traces", "traces.bp", "a", comm);
+      adios_open(&adios_handle, "Traces", filename, "a", comm);
     }
     adios_groupsize = 4 + (total_size * 8);
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
@@ -1873,7 +1875,7 @@ public:
     ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
 #endif
 #ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file("traces.bp",
+    ADIOS_FILE *fp = adios_read_open_file(filename,
                                           ADIOS_READ_METHOD_BP,
                                           OHMMS::Controller->getMPI());
     IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
