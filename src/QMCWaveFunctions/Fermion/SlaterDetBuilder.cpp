@@ -395,18 +395,31 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 
 
 /** process determiment element
+ *
+ * determinant has
+ * - id unique name
+ * - sposet reference to the pre-defined sposet; when missing, use id
+ * - group electron species name, u or d
+ * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
+ * Extra attributes to handled the original released-node case
  */
 bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 {
-  int spin_in=spin_group;
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
+
+  SpeciesSet& myspecies=targetPtcl.mySpecies;
+
+  string spin_name=myspecies.speciesName[spin_group];
+  string sposet; 
   string basisName("invalid");
   string detname("0"), refname("0");
   string s_detSize("0");
   string afm("no");
+
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName,basisset_tag);
-  aAttrib.add(detname,"id"); aAttrib.add(detname,"sposet");
+  aAttrib.add(detname,"id"); 
+  aAttrib.add(sposet,"sposet");
   aAttrib.add(refname,"ref");
   aAttrib.add(afm,"type");
   aAttrib.add(s_detSize,"DetSize");
@@ -419,20 +432,37 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   aAttrib.add(s_smallnumber,"smallnumber");
   aAttrib.add(s_smallnumber,"eps");
   aAttrib.add(rntype,"primary");
-  aAttrib.add(spin_group,"group");
+  aAttrib.add(spin_name,"group");
   aAttrib.put(cur);
 
-  app_log() << "  Creating a determinant " << detname << " for " << spin_group << " group." << endl;
+  { //check determinant@group
+    int spin_group_in=spin_group;
+    if(isdigit(spin_name[0])) 
+      spin_group_in=atoi(spin_name.c_str());
+    else
+      spin_group_in=myspecies.findSpecies(spin_name);
+    if(spin_group_in<myspecies.size() && spin_group_in != spin_group)
+    {
+      spin_group=spin_group_in;
+      app_log() << "  Overwrite group = " << spin_group << endl;
+    }
+  }
+
+  //old input does not have sposet
+  if(sposet.empty()) sposet=detname;
+
+  app_log() << "  Creating a determinant " << detname << " group=" << spin_group << " sposet=" << sposet << endl;
+
   map<string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
-  map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(detname));
+  map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(sposet));
   SPOSetBasePtr psi=0;
   if (lit == spo_ref.end()) 
   {
-    psi=get_sposet(detname); //check if the named sposet exists 
+    psi=get_sposet(sposet); //check if the named sposet exists 
     if(psi==0) 
     {
       //SPOSet[detname]=psi;
-      app_log() << "  Create a new SPO set " << detname << endl;
+      app_log() << "  Create a new SPO set " << sposet << endl;
 #if defined(ENABLE_SMARTPOINTER)
       psi.reset(myBasisSetFactory->createSPOSet(cur));
 #else
@@ -445,9 +475,10 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
   else
   {
-    app_log() << "  Reusing a SPO set " << detname << endl;
+    app_log() << "  Reusing a SPO set " << sposet << endl;
     psi = (*lit).second;
   }
+
   int firstIndex=targetPtcl.first(spin_group);
   int lastIndex=targetPtcl.last(spin_group);
   if(firstIndex==lastIndex)
