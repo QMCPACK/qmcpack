@@ -2,6 +2,7 @@
 <simulation>
   <project id="bench" series="0"/>
   <random seed="11"/>
+  <<adiosinit href="./qmc_adios.xml"/>
   <checkpoint hdf5="yes" adios="yes" />
   <!-- method can be adios or hdf-->
   <restart method="adios" /> 
