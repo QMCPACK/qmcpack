@@ -244,6 +244,30 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
 #ifdef HAVE_ADIOS
+  OhmmsXPathObject ai("//adiosinit",m_context);
+  if(ai.empty())
+  {
+    APP_ABORT("adiosinit is not defined in the xml file. Exiting");
+  }
+  else
+  {
+    xmlAttr* curr = ai[0]->properties;
+    const char *value = (char *)xmlNodeListGetString(ai[0]->doc, curr->children, 1);
+    if(!strncmp((char *)curr->name, "href", 4))
+    {
+      if (adios_init(value, myComm->getMPI()))
+      {
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        APP_ABORT("ADIOS init error. Exiting");
+      }
+      else
+      {
+        if (OHMMS::Controller->rank() == 0)
+          cout << "Adios is initialized" << endl;
+      }
+      adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
+    }
+  }
   OhmmsXPathObject io("//checkpoint",m_context);
   if(io.empty())
   {
