@@ -80,6 +80,9 @@ QMCOptimize::run()
   //branchEngine->finalize();
   //generate samples
   generateSamples();
+
+  NumOfVMCWalkers=W.getActiveWalkers();
+
   //cleanup walkers
   //W.destroyWalkers(W.begin(), W.end());
   app_log() << "<opt stage=\"setup\">" << endl;
@@ -107,6 +110,14 @@ QMCOptimize::run()
   app_log() << "  Execution time = " << t1.elapsed() << endl;;
   app_log() << "  </log>" << endl;
   optTarget->reportParameters();
+
+  int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
+  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." <<endl;
+  if(nw_removed>0)
+    W.destroyWalkers(nw_removed);
+  else
+    W.createWalkers(-nw_removed);
+
   app_log() << "</opt>" << endl;
   app_log() << "</optimization-report>" << endl;
   MyCounter++;
@@ -117,38 +128,26 @@ void QMCOptimize::generateSamples()
 {
   Timer t1;
   app_log() << "<optimization-report>" << endl;
-  //if(WarmupBlocks)
-  //{
-  //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << endl;
-  //  //turn off QMC_OPTIMIZE
-  //  vmcEngine->setValue("blocks",WarmupBlocks);
-  //  vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
-  //  vmcEngine->run();
-  //  vmcEngine->setValue("blocks",nBlocks);
-  //  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  //  app_log() << "</vmc>" << endl;
-  //}
-  if(W.getActiveWalkers()>NumOfVMCWalkers)
-  {
-    W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-    app_log() << "  QMCOptimize::generateSamples removed walkers." << endl;
-    app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
-  }
+
+  vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
   vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
   vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
+
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current",0);//reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
   t1.restart();
-//     W.reset();
-//     branchEngine->flush(0);
-//     branchEngine->reset();
+  //     W.reset();
+  branchEngine->flush(0);
+  branchEngine->reset();
   vmcEngine->run();
   app_log() << "  Execution time = " << t1.elapsed() << endl;
   app_log() << "</vmc>" << endl;
-  //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
-  branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
-  //set the h5File to the current RootName
+  //write parameter history and energies to the parameter file in the trial wave function through opttarget
+  RealType e,w,var;
+  vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
+  optTarget->recordParametersToPsi(e,var);
+
   h5FileRoot=RootName;
 }
 
@@ -175,25 +174,15 @@ QMCOptimize::put(xmlNodePtr q)
     {
       mcwalkerNodePtr.push_back(cur);
     }
-    else
-      if(cname == "optimizer")
+    else if(cname.find("optimize")<cname.size())
+    {
+      xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
+      if(att)
       {
-        xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-        if(att)
-        {
-          optmethod = (const char*)att;
-        }
-        optNode=cur;
+        optmethod = (const char*)att;
       }
-      else
-        if(cname == "optimize")
-        {
-          xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-          if(att)
-          {
-            optmethod = (const char*)att;
-          }
-        }
+      optNode=cur;
+    }
     cur=cur->next;
   }
   //no walkers exist, add 10
@@ -221,30 +210,27 @@ QMCOptimize::put(xmlNodePtr q)
       app_log() << " Annealing optimization using DampedDynamics"<<endl;
       optSolver = new DampedDynamics<RealType>;
     }
-    else
-      if((optmethod == "flexOpt")  |(optmethod == "flexopt")  | (optmethod == "macopt") )
-      {
-        app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
-        app_log() << " This method has been removed. "<< endl;
-        abort();
-      }
-      else
-        if (optmethod == "BFGS")
-        {
-          app_log() << " This method is not implemented correctly yet. "<< endl;
-          abort();
-        }
-        else
-          if (optmethod == "test")
-          {
-            app_log() << "Conjugate-gradient optimization using tester Optimization: "<<endl;
-            optSolver = new testDerivOptimization<RealType>;
-          }
-          else
-          {
-            app_log() << " Conjugate-gradient optimization using CGOptimization"<<endl;
-            optSolver = new CGOptimization<RealType>;
-          }      //set the stream
+    else if((optmethod == "flexOpt")  |(optmethod == "flexopt")  | (optmethod == "macopt") )
+    {
+      app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
+      app_log() << " This method has been removed. "<< endl;
+      APP_ABORT("QMCOptimize::put");
+    }
+    else if (optmethod == "BFGS")
+    {
+      app_log() << " This method is not implemented correctly yet. "<< endl;
+      APP_ABORT("QMCOptimize::put");
+    }
+    else if (optmethod == "test")
+    {
+      app_log() << "Conjugate-gradient optimization using tester Optimization: "<<endl;
+      optSolver = new testDerivOptimization<RealType>;
+    }
+    else 
+    {
+      app_log() << " Conjugate-gradient optimization using CGOptimization"<<endl;
+      optSolver = new CGOptimization<RealType>;
+    }      //set the stream
     optSolver->setOstream(&app_log());
   }
   if(optNode == NULL)
