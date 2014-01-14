@@ -151,19 +151,6 @@ void Communicate::initialize(int argc, char **argv)
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   d_groupid=0;
   d_ngroups=1;
-#ifdef HAVE_ADIOS
-  if (adios_init("qmc_adios.xml", myMPI))
-  {
-      fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
-      APP_ABORT("ADIOS init error. Exiting");
-  }
-  else
-  {
-    if (OHMMS::Controller->rank() == 0)
-      cout << "Adios is initialized" << endl;
-  }
-  adios_read_init_method(ADIOS_READ_METHOD_BP, myMPI, "verbose=3");
-#endif
 #ifdef __linux__
   for (int proc=0; proc<OHMMS::Controller->size(); proc++)
   {
