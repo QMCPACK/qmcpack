@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="bench" series="0"/>
+    <adiosinit href="./qmc_adios.xml"/>
     <checkpoint hdf5="yes" adios="no" />
     <!-- method can be adios or hdf-->
     <restart method="adios"/>
