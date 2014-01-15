@@ -48,8 +48,6 @@ protected:
   int NumGroups;
   ///task id
   int TaskID;
-  ///pointer to the distable table
-  const DistanceTableData* d_table;
   RealType DiffVal, DiffValSum;
   ParticleAttrib<RealType> U,d2U,curLap,curVal;
   ParticleAttrib<PosType> dU,curGrad;
@@ -73,7 +71,6 @@ public:
     : TaskID(tid), KEcorr(0.0)
   {
     PtclRef = &p;
-    d_table=DistanceTable::add(p);
     init(p);
     FirstTime = true;
   }
@@ -137,7 +134,6 @@ public:
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(P);
     PtclRef = &P;
     if(dPsi)
       dPsi->resetTargetParticleSet(P);
@@ -239,6 +235,7 @@ public:
       ChiesaKEcorrection();
     }
     LogValue=0.0;
+    const DistanceTableData* d_table=P.DistTables[0];
     RealType dudr, d2udr2;
     PosType gr;
     for(int i=0; i<d_table->size(SourceIndex); i++)
@@ -275,6 +272,7 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
+    const DistanceTableData* d_table=P.DistTables[0];
     DiffVal=0.0;
     const int* pairid(PairID[iat]);
     for(int jat=0, ij=iat*N; jat<N; jat++,ij++)
@@ -297,6 +295,7 @@ public:
   */
   inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
+    const DistanceTableData* d_table=P.DistTables[0];
     for (int i=0,ij=0; i<N; ++i)
     {
       RealType res=0.0;
@@ -313,6 +312,7 @@ public:
                   ParticleSet::ParticleGradient_t& dG,
                   ParticleSet::ParticleLaplacian_t& dL)
   {
+    const DistanceTableData* d_table=P.DistTables[0];
     register RealType dudr, d2udr2,u;
     register PosType gr;
     DiffVal = 0.0;
@@ -361,6 +361,7 @@ public:
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+    const DistanceTableData* d_table=P.DistTables[0];
     RealType dudr, d2udr2,u;
     PosType gr;
     const int* pairid = PairID[iat];
@@ -490,6 +491,7 @@ public:
       FirstTime = false;
       ChiesaKEcorrection();
     }
+    const DistanceTableData* d_table=P.DistTables[0];
     RealType dudr, d2udr2,u;
     LogValue=0.0;
     GradType gr;

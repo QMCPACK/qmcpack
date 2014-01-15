@@ -39,10 +39,10 @@ class DiffOneBodySpinJastrowOrbital: public DiffOrbitalBase
   int NumPtcls;
   ///starting index
   int VarOffset;
+  ///index of the table
+  int myTableIndex;
   ///reference to the ions
   const ParticleSet& CenterRef;
-  ///read-only distance table
-  const DistanceTableData* d_table;
   ///variables handled by this orbital
   opt_variables_type myVars;
   ///container for the Jastrow functions  for all the pairs
@@ -61,8 +61,8 @@ public:
   DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
     :Spin(false),CenterRef(centers),NumVars(0),VarOffset(0)
   {
+    myTableIndex=els.addTable(CenterRef);
     NumPtcls=els.getTotalNum();
-    d_table=DistanceTable::add(centers,els);
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)
       F(i)=0;
@@ -164,7 +164,6 @@ public:
   ///reset the distance table
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(CenterRef,P);
   }
 
   void evaluateDerivatives(ParticleSet& P,
@@ -180,6 +179,7 @@ public:
     for (int p=0; p<NumVars; ++p)
       (*lapLogPsi[p])=0.0;
     vector<TinyVector<RealType,3> > derivs(NumVars);
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int varoffset=myVars.Index[0];
     for(int ig=0; ig<F.rows(); ++ig)//species
     {

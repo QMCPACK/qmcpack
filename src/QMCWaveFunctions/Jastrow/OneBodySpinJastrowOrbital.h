@@ -33,8 +33,8 @@ template<class FT>
 class OneBodySpinJastrowOrbital: public OrbitalBase
 {
   bool Spin;
+  int myTableIndex;
   const ParticleSet& CenterRef;
-  const DistanceTableData* d_table;
   RealType curVal;
   RealType curLap;
   PosType curGrad;
@@ -71,10 +71,10 @@ public:
 
   ///constructor
   OneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-    : Spin(false), CenterRef(centers), d_table(0),FirstAddressOfdU(0), LastAddressOfdU(0)
+    : Spin(false), CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
     U.resize(els.getTotalNum());
-    d_table = DistanceTable::add(CenterRef,els);
+    myTableIndex=els.addTable(CenterRef);
     //allocate vector of proper size  and set them to 0
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)
@@ -106,7 +106,6 @@ public:
   //evaluate the distance table with P
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(CenterRef,P);
     if (dPsi)
       dPsi->resetTargetParticleSet(P);
   }
@@ -205,6 +204,7 @@ public:
   {
     LogValue=0.0;
     U=0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     RealType dudr, d2udr2;
     for(int sg=0; sg<F.rows(); ++sg)
     {
@@ -245,6 +245,7 @@ public:
   inline ValueType ratio(ParticleSet& P, int iat)
   {
     curVal=0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int tg=P.GroupID[iat];
     for(int sg=0; sg<F.rows(); ++sg)
     {
@@ -262,6 +263,7 @@ public:
   inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
     std::fill(ratios.begin(),ratios.end(),0.0);
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     for(int sg=0; sg<F.rows(); ++sg)
     {
       for(int iat=s_offset[sg]; iat< s_offset[sg+1]; ++iat)
@@ -302,6 +304,7 @@ public:
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     int tg=P.GroupID[iat];
     curGrad = 0.0;
@@ -341,6 +344,7 @@ public:
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int tg=P.GroupID[iat];//pick the target group
     curVal=0.0;
     curGrad = 0.0;
@@ -364,10 +368,11 @@ public:
                             ParticleSet::ParticleGradient_t& dG,
                             ParticleSet::ParticleLaplacian_t& dL)
   {
-    int tg=P.GroupID[iat];//pick the target group
     curVal=0.0;
     curLap=0.0;
     curGrad = 0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
+    int tg=P.GroupID[iat];//pick the target group
     RealType dudr, d2udr2;
     for(int sg=0; sg<F.rows(); ++sg)
     {
@@ -416,6 +421,7 @@ public:
     U=0.0;
     dU=0.0;
     d2U=0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     RealType uij, dudr, d2udr2;
     for(int ig=0; ig<F.rows(); ++ig)
     {
@@ -447,6 +453,7 @@ public:
   /** equivalent to evalaute with additional data management */
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     d2U.resize(d_table->size(VisitorIndex));
     dU.resize(d_table->size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);

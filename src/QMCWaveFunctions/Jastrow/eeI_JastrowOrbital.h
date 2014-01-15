@@ -49,11 +49,10 @@ template<class FT>
 class eeI_JastrowOrbital: public OrbitalBase
 {
 
-  const DistanceTableData* ee_table;
-  const DistanceTableData* eI_table;
-
   //flag to prevent parallel output
   bool Write_Chiesa_Correction;
+  ///table index for i-el, el-el is always zero
+  int myTableIndex;
   //nuber of particles
   int Nelec, Nion;
   //N*N
@@ -108,8 +107,7 @@ public:
   {
     eRef = &elecs;
     IRef = &ions;
-    ee_table=DistanceTable::add(elecs);
-    eI_table=DistanceTable::add(ions, elecs);
+    myTableIndex=elecs.addTable(ions);
     init(elecs);
     FirstTime = true;
     NumVars=0;
@@ -274,8 +272,6 @@ public:
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P)
   {
-    ee_table = DistanceTable::add(P);
-    eI_table = DistanceTable::add(*IRef, P);
     eRef = &P;
     //      if(dPsi) dPsi->resetTargetParticleSet(P);
   }
@@ -411,6 +407,8 @@ public:
     LogValue=0.0;
     for (int jk=0; jk<Nelec*Nelec; jk++)
       U[jk] = 0.0;
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     // First, create lists of electrons within the sphere of each ion
     for (int i=0; i<Nion; i++)
     {
@@ -546,6 +544,8 @@ public:
   inline GradType evalGradSource(ParticleSet& P,
                                  ParticleSet& source, int isrc)
   {
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     IonData &ion = IonDataList[isrc];
     ion.elecs_inside.clear();
     int iel=0;
@@ -646,6 +646,8 @@ public:
     // 	for (int nn=eI_table->M[isrc]; nn<eI_table->M[isrc+1]; nn++, iel++)
     // 	  if (eI_table->r(nn) < ion.cutoff_radius)
     // 	    ion.elecs_inside.push_back(iel);
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     GradType G;
     int nn0 = eI_table->M[isrc];
     RealType u;
@@ -717,6 +719,8 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     curVal=0.0;
     RealType newval = 0.0;
     RealType oldval = 0.0;
@@ -768,6 +772,8 @@ public:
                   ParticleSet::ParticleGradient_t& dG,
                   ParticleSet::ParticleLaplacian_t& dL)
   {
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     //      cerr << "ratio(P,iat,dG,dL) called.\n";
     curVal  = 0.0;
     curGrad_i = PosType();
@@ -881,6 +887,8 @@ public:
     curLap_i  = 0.0;
     curGrad_j = PosType();
     curLap_j = 0.0;
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     int ee0 = ee_table->M[iat] - (iat+1);
     DiffVal = 0.0;
     for (int i=0; i<Nion; i++)
@@ -975,6 +983,7 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     //      cerr << "acceptMove called.\n";
     DiffValSum += DiffVal;
     for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec)
@@ -1036,6 +1045,8 @@ public:
   {
     //      cerr << "evaluateLogAndStore called.\n";
     LogValue=0.0;
+    const DistanceTableData* ee_table=P.DistTables[0];
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     // First, create lists of electrons within the sphere of each ion
     for (int i=0; i<Nion; i++)
     {
@@ -1245,6 +1256,7 @@ public:
     buf.get(d2U.begin(), d2U.end());
     buf.get(FirstAddressOfdU,LastAddressOfdU);
     // First, create lists of electrons within the sphere of each ion
+    const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     for (int i=0; i<Nion; i++)
     {
       IonData &ion = IonDataList[i];
@@ -1354,6 +1366,8 @@ public:
     }
     if (recalculate)
     {
+      const DistanceTableData* ee_table=P.DistTables[0];
+      const DistanceTableData* eI_table=P.DistTables[myTableIndex];
       // First, create lists of electrons within the sphere of each ion
       for (int i=0; i<Nion; i++)
       {
@@ -1365,12 +1379,12 @@ public:
             if (eI_table->r(nn) < ion.cutoff_radius)
               ion.elecs_inside.push_back(iel);
       }
-      RealType u;
-      PosType gradF;
-      Tensor<RealType,3> hessF;
       dLogPsi=0.0;
       gradLogPsi = PosType();
       lapLogPsi = 0.0;
+      RealType u;
+      PosType gradF;
+      Tensor<RealType,3> hessF;
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++)
       {

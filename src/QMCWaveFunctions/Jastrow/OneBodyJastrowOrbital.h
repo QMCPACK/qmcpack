@@ -75,9 +75,8 @@ template<class FT>
 class OneBodyJastrowOrbital: public OrbitalBase
 {
 protected:
+  int myTableIndex;
   const ParticleSet& CenterRef;
-  const DistanceTableData* d_table;
-
   RealType curVal, curLap;
   PosType curGrad;
   ParticleAttrib<RealType> U,d2U;
@@ -92,10 +91,10 @@ public:
 
   ///constructor
   OneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-    : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0)
+    : CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
     U.resize(els.getTotalNum());
-    d_table = DistanceTable::add(CenterRef,els);
+    myTableIndex=els.addTable(CenterRef);
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
     Fs.resize(CenterRef.getTotalNum(),0);
@@ -106,7 +105,6 @@ public:
   //evaluate the distance table with P
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(CenterRef,P);
     if (dPsi)
       dPsi->resetTargetParticleSet(P);
   }
@@ -197,6 +195,7 @@ public:
   {
     LogValue=0.0;
     U=0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     RealType dudr, d2udr2;
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
@@ -231,6 +230,7 @@ public:
    */
   inline ValueType ratio(ParticleSet& P, int iat)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     curVal=0.0;
     for (int i=0; i<d_table->size(SourceIndex); ++i)
       if (Fs[i])
@@ -243,6 +243,7 @@ public:
    */
   inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     std::fill(ratios.begin(),ratios.end(),0.0);
     for (int i=0; i<d_table->size(SourceIndex); ++i)
     {
@@ -295,6 +296,7 @@ public:
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curGrad = 0.0;
     RealType ur,dudr, d2udr2;
@@ -320,6 +322,7 @@ public:
       return GradType();
     GradType G(0.0);
     RealType dudr, d2udr2;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     for (int nn=d_table->M[isrc]; nn<d_table->M[isrc+1]; nn++)
     {
       RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
@@ -342,6 +345,7 @@ public:
       return GradType();
     GradType G(0.0);
     RealType dudr, d2udr2, d3udr3;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     for (int nn=d_table->M[isrc],iel=0; nn<d_table->M[isrc+1]; nn++,iel++)
     {
       RealType rinv = d_table->rinv(nn);
@@ -363,6 +367,7 @@ public:
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curVal=0.0;
     curGrad = 0.0;
@@ -384,6 +389,7 @@ public:
                             ParticleSet::ParticleGradient_t& dG,
                             ParticleSet::ParticleLaplacian_t& dL)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curVal=0.0;
     curLap=0.0;
@@ -435,6 +441,7 @@ public:
     dU=0.0;
     d2U=0.0;
     RealType uij, dudr, d2udr2;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
       FT* func=Fs[i];
@@ -460,6 +467,7 @@ public:
   /** equivalent to evalaute with additional data management */
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
     // cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
     // cerr<<d_table->size(VisitorIndex)<<endl;
     //U.resize(d_table->size(VisitorIndex));

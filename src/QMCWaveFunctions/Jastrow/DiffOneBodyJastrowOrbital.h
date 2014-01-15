@@ -36,10 +36,10 @@ class DiffOneBodyJastrowOrbital: public DiffOrbitalBase
   int NumVars;
   ///number of target particles
   int NumPtcls;
+  ///index of the table
+  int myTableIndex;
   ///reference to the ions
   const ParticleSet& CenterRef;
-  ///read-only distance table
-  const DistanceTableData* d_table;
   ///variables handled by this orbital
   opt_variables_type myVars;
   ///container for the Jastrow functions  for all the pairs
@@ -58,7 +58,7 @@ public:
     :CenterRef(centers),NumVars(0)
   {
     NumPtcls=els.getTotalNum();
-    d_table=DistanceTable::add(centers,els);
+    myTableIndex=els.addTable(CenterRef);
   }
 
   ~DiffOneBodyJastrowOrbital()
@@ -132,7 +132,6 @@ public:
   ///reset the distance table
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(CenterRef,P);
   }
 
   void evaluateDerivatives(ParticleSet& P,
@@ -153,6 +152,7 @@ public:
     }
     if (recalculate)
     {
+      const DistanceTableData* d_table=P.DistTables[myTableIndex];
       dLogPsi=0.0;
       for (int p=0; p<NumVars; ++p)
         (*gradLogPsi[p])=0.0;

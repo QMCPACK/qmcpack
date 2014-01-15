@@ -37,8 +37,6 @@ class DiffTwoBodyJastrowOrbital: public DiffOrbitalBase
   int NumPtcls;
   ///number of groups, e.g., for the up/down electrons
   int NumGroups;
-  ///read-only distance table
-  const DistanceTableData* d_table;
   ///variables handled by this orbital
   opt_variables_type myVars;
   ///container for the Jastrow functions  for all the pairs
@@ -57,7 +55,6 @@ public:
   {
     NumPtcls=p.getTotalNum();
     NumGroups=p.groups();
-    d_table=DistanceTable::add(p);
     F.resize(NumGroups*NumGroups,0);
   }
 
@@ -104,7 +101,6 @@ public:
   ///reset the distance table
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(P);
   }
 
   void checkOutVariables(const opt_variables_type& active)
@@ -174,6 +170,7 @@ public:
       for (int p=0; p<NumVars; ++p)
         (*lapLogPsi[p])=0.0;
       vector<TinyVector<RealType,3> > derivs(NumVars);
+      const DistanceTableData* d_table=P.DistTables[0];
       for (int i=0; i<d_table->size(SourceIndex); ++i)
       {
         for (int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn)
