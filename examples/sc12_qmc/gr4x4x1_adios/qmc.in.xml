@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="bench" series="0"/>
+  <random seed="-1"/>
+  <adiosinit href="./qmc_adios.xml"/>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="bspline" href="../../wavefunctions/lda.pwscf.h5" sort="1" tilematrix="4 0 0 0 4 0 0 0 1" 
+      twistnum="0" source="ion0" version="0.10" gpu="no" LR_dim_cutoff="15">
+      <slaterdeterminant>
+        <determinant id="updet" size="128">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="128">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+      <correlation elementType="C" cusp="0.0" rcut="6.4" size="10">
+        <coefficients id="ce" type="Array"> -0.8269243054 -0.6979354501 -0.5859097154 -0.4357887352 -0.3021893751 -0.2006991622 -0.1254697295 -0.06755847334 -0.02921669005 -0.008280690139</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10" rcut="6.4">
+        <coefficients id="uu" type="Array"> 0.4711034598 0.3477682534 0.2444507503 0.167705049 0.1117919405 0.0732871982 0.04620784578 0.02729812651 0.01452638626 0.006319218188</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10" rcut="6.4">
+        <coefficients id="ud" type="Array"> 0.6714508243 0.443347866 0.2901393541 0.1889089821 0.1227261701 0.07930574137 0.04958333177 0.02924651889 0.01515786303 0.006069726798</coefficients>
+      </correlation>
+    </jastrow> 
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="../../pseudopotentials/C.BFD.xml" format="xml"/>
+    </pairpot>
+  </hamiltonian>
+  <init source="ion0"/>
+  <traces write="yes" particle="yes" verbose="no" format="adios"/>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="-1" move="pbyp" gpu="no">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">2</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samplesperthread">5</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="-1"  move="pbyp" gpu="no">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">50</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+</simulation>
