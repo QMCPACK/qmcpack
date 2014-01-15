@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+
+  <adios-group name="Traces" coordination-communicator="comm">
+    <var name="total_size" type="integer"/>
+    <var name="buffer_contents" type="double" dimensions="total_size" />
+  </adios-group>
+
+  <adios-group name="Structure" coordination-communicator="comm">
+    <var name="num_quantities" type="integer" />
+    <!-- <var name="domain" type="byte" dimensions="num_quantities" /> -->
+    <!-- <var name="quantity" type="byte" dimensions="num_quantities" /> -->
+    <var name="dimension" type="integer" dimensions="num_quantities" />
+    <var name="shape" type="integer" dimensions="num_quantities" />
+    <var name="size" type="integer" dimensions="num_quantities" />
+    <var name="unit_size" type="integer" dimensions="num_quantities" />
+    <var name="row_start" type="integer" dimensions="num_quantities" />
+    <var name="row_end" type="integer" dimensions="num_quantities" />
+  </adios-group>
+
+  <adios-group name="checkpoint_float" coordination-communicator="comm">
+    <var name="branchmode" type="long" />
+    <var name="energy" type="double" dimensions="4" />
+    <var name="r2accepted" type="double" dimensions="4" />
+    <var name="r2proposed" type="double" dimensions="4" />
+    <var name="variance" type="double" dimensions="4"/>
+    <var name="iparam" type="double" dimensions="8" />
+    <var name="vparam" type="integer" dimensions="16" />
+
+    <var name="random_size" type="integer"/>
+    <var name="thread_rank" type="integer"/>
+    <var name="global_size" type="integer"/>
+    <var name="local_size" type="integer"/>
+    <global-bounds dimensions="global_size, random_size" offsets="thread_rank,0">
+     <var name="random" type="integer" dimensions="local_size,random_size"/>
+    </global-bounds>
+
+
+    <var name="walker_num" type="integer"/>
+    <var name="particle_num" type="integer"/>
+
+    <!--var name="nprocs" type="integer"/-->
+    <!--var name="rank" type="integer"/-->
+    <!--global-bounds dimensions="nprocs" offsets="rank"-->
+        <!--var name="walker_size" type="integer" dimensions="1"/-->
+    <!--/global-bounds-->
+    <var name="walker_size" type="integer"/>
+    <var name="walkers" type="float"  dimensions="walker_size"/>
+  </adios-group>
+
+  <adios-group name="checkpoint_double" coordination-communicator="comm">
+    <var name="branchmode" type="long" />
+    <var name="energy" type="double" dimensions="4" />
+    <var name="r2accepted" type="double" dimensions="4" />
+    <var name="r2proposed" type="double" dimensions="4" />
+    <var name="variance" type="double" dimensions="4"/>
+    <var name="iparam" type="double" dimensions="8" />
+    <var name="vparam" type="integer" dimensions="16" />
+
+    <var name="random_size" type="integer"/>
+    <var name="thread_rank" type="integer"/>
+    <var name="global_size" type="integer"/>
+    <var name="local_size" type="integer"/>
+    <global-bounds dimensions="global_size, random_size" offsets="thread_rank,0">
+     <var name="random" type="integer" dimensions="local_size,random_size"/>
+    </global-bounds>
+
+
+    <var name="walker_num" type="integer"/>
+    <var name="particle_num" type="integer"/>
+    <var name="walker_size" type="integer"/>
+    <var name="walkers" type="double"  dimensions="walker_size"/>
+  </adios-group>
+
+
+  
+  <method group="Traces" method="MPI_AGGREGATE" >
+          num_aggregators=4;num_ost=4;have_metadata_file=0
+  </method>
+  <method group="Structure" method="MPI_AGGREGATE">
+          num_aggregators=4;num_ost=4;have_metadata_file=0
+  </method>
+  <method group="checkpoint_double" method="MPI_AGGREGATE">
+          num_aggregators=4;num_ost=4;have_metadata_file=0
+  </method>
+  <method group="checkpoint_float" method="MPI_AGGREGATE">
+          num_aggregators=4;num_ost=4;have_metadata_file=0
+  </method>
+
+  <buffer size-MB="30" allocate-time="now" />
+  
+</adios-config>
+
