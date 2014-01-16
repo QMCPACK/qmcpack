@@ -280,6 +280,11 @@ class Structure(Sobj):
     #end def set_elem
 
 
+    def size(self):
+        return len(self.elem)
+    #end def size
+
+
     def operate(self,operations):
         for op in operations:
             if not op in self.operations:
@@ -334,11 +339,11 @@ class Structure(Sobj):
             axes = self.axes
         else:
             axes = array(axes)
+            self.remove_folded_structure()
         #end if
         self.axes  = axes
         self.kaxes = 2*pi*inv(axes).T
         self.center = axes.sum(0)/2
-        self.remove_folded_structure()
     #end def reset_axes
 
 
@@ -728,27 +733,28 @@ class Structure(Sobj):
             self.error('failed to select any atoms to freeze')
         #end if
         if isinstance(directions,str):
-            directions = len(indices)*[directions]
+            d = empty((3,),dtype=bool)
+            d[0] = 'x' in directions
+            d[1] = 'y' in directions
+            d[2] = 'z' in directions
+            directions = len(indices)*[d]
+        else:
+            directions = array(directions,dtype=bool)
         #end if
         if not 'frozen' in self:
-            self.frozen = obj()
+            self.frozen = zeros(self.pos.shape,dtype=bool)
         #end if
         frozen = self.frozen
-        i=-1
+        i=0
         if not negate:
             for index in indices:
+                frozen[index] = directions[i]
                 i+=1
-                d = str(directions[i])
-                if index in frozen:
-                    d += frozen[index]
-                #end if
-                frozen[index] = d
             #end for
         else:
             for index in indices:
-                if index in frozen:
-                    del frozen[index]
-                #end if
+                frozen[index] = directions[i]==False
+                i+=1
             #end for
         #end if
     #end def freeze
@@ -2024,7 +2030,7 @@ class Structure(Sobj):
     #end def write_xyz
 
 
-    def read_poscar(self,filepath,species=None):
+    def read_poscar(self,filepath,elem=None):
         if os.path.exists(filepath):
             lines = open(filepath,'r').read().splitlines()
         else:
@@ -2041,23 +2047,72 @@ class Structure(Sobj):
         axes[0] = array(lines[2].split(),dtype=float)
         axes[1] = array(lines[3].split(),dtype=float)
         axes[2] = array(lines[4].split(),dtype=float)
+        if scale<0.0:
+            scale = abs(scale)/det(axes)
+        #end if
+        axes = scale*axes
         tokens = lines[5].split()
         if tokens[0].isdigit():
             counts = array(tokens,dtype=int)
-            if species is None:
-                self.error('variable species must be provided to read_poscar() to assign atomic species to positions for POSCAR format')
-            elif len(species)!=len(counts):
-                self.error('one species must be given for each species count in the POSCAR file\n  number of species counts: {0}\n  number of species given: {1}'.format(len(counts),len(species)))
+            if elem is None:
+                self.error('variable elem must be provided to read_poscar() to assign atomic species to positions for POSCAR format')
+            elif len(elem)!=len(counts):
+                self.error('one elem must be given for each element count in the POSCAR file\n  number of elem counts: {0}\n  number of elem given: {1}'.format(len(counts),len(elem)))
             #end if
+            lcur = 6
         else:
-            species = tokens
+            elem   = tokens
             counts = array(lines[6].split(),dtype=int)
+            lcur = 7
         #end if
-        
-        #jtk mark current
-        self.not_implemented()
+        species = elem
+        elem = []
+        for i in range(len(counts)):
+            elem.extend(counts[i]*[species[i]])
+        #end for
+        self.dim = dim
+        self.units = 'A'
+        self.reset_axes(axes)
 
+        if lcur<len(lines) and len(lines[lcur])>0:
+            c = lines[lcur].lower()[0]
+            lcur+=1
+        else:
+            return
+        #end if
+        selective_dynamics = c=='s'
+        if selective_dynamics: # Selective dynamics
+            if lcur<len(lines) and len(lines[lcur])>0:
+                c = lines[lcur].lower()[0]
+                lcur+=1
+            else:
+                return
+            #end if
+        #end if
+        cartesian = c=='c' or c=='k'
+        npos = counts.sum()
+        if lcur+npos>len(lines):
+            return
+        #end if
+        spos = []
+        for i in range(npos):
+            spos.append(lines[lcur+i].split())
+        #end for
+        spos = array(spos)
+        pos  = array(spos[:,0:3],dtype=float)
+        if cartesian:
+            pos = scale*pos
+        else:
+            pos = dot(pos,axes)
+        #end if
+        self.set_elem(elem)
+        self.pos = pos
+        if selective_dynamics:
+            move = array(spos[:,3:6],dtype=str)
+            self.freeze(range(self.size()),directions=move=='F')
+        #end if
     #end def read_poscar
+
 
     def plot2d_ax(self,ix,iy,*args,**kwargs):
         if self.dim!=3:

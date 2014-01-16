@@ -576,6 +576,7 @@ class PeriodicTable(DevBase):
 	e[43].atomic_weight = 98.00
 	e[44].atomic_weight = 101.07
 	e[45].atomic_weight = 102.91
+	e[46].atomic_weight = 106.42
 	e[47].atomic_weight = 107.87
 	e[48].atomic_weight = 112.41
 	e[49].atomic_weight = 114.82

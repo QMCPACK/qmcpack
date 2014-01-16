@@ -144,7 +144,7 @@ class collection(hidden):
         identifier = element.identifier
         public = self.public()
         missing_identifier = False
-        if not element.tag in plurals_inv:
+        if not element.tag in plurals_inv and element.collection_id is None:
             self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
         elif identifier is None:
             key = len(public)
@@ -345,7 +345,8 @@ class QIxml(Names):
                          h5tags      = [],
                          types       = obj(),
                          write_types = obj(),
-                         defaults    = obj()
+                         defaults    = obj(),
+                         collection_id = None
                          )
         for var,val in init_vars.iteritems():
             if not var in vars:
@@ -1710,6 +1711,7 @@ class traces(QIxml):
 
 
 class loop(QIxml):
+    collection_id = 'qmc'
     attributes = ['max']
     elements = ['qmc']
     def unroll(self):
@@ -1730,6 +1732,7 @@ class loop(QIxml):
 #end class loop
 
 class linear(QIxml):
+    collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
@@ -1743,6 +1746,7 @@ class linear(QIxml):
 #end class linear
 
 class cslinear(QIxml):
+    collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
@@ -1755,6 +1759,7 @@ class cslinear(QIxml):
 #end class cslinear
 
 class vmc(QIxml):
+    collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','multiple','warp','move','gpu','checkpoint','trace','target']
     elements   = ['estimator']
@@ -1763,6 +1768,7 @@ class vmc(QIxml):
 #end class vmc
 
 class dmc(QIxml):
+    collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']

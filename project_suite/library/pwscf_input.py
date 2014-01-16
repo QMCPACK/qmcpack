@@ -962,7 +962,7 @@ class PwscfInput(SimulationInput):
         atoms = p.get_ions()
         masses = obj()
         for name,a in atoms.iteritems():
-            masses[name] = a.mass
+            masses[name] = convert(a.mass,'me','amu')
         #end for
         self.atomic_species.atoms  = list(atoms.keys())
         self.atomic_species.masses = masses
@@ -987,10 +987,10 @@ class PwscfInput(SimulationInput):
             else:
                 relax_directions = ones(s.pos.shape,dtype=int)
             #end if
-            for index,frozen_dirs in frozen.iteritems():
-                relax_directions[index,0] = int(not 'x' in frozen_dirs)
-                relax_directions[index,1] = int(not 'y' in frozen_dirs)
-                relax_directions[index,2] = int(not 'z' in frozen_dirs)
+            for i in xrange(len(s.pos)):
+                relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
+                relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
+                relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
             #end for
             self.atomic_positions.relax_directions = relax_directions
         #end if                    
