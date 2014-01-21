@@ -9,10 +9,7 @@ SET(HAVE_MPI 1)
 SET(HAVE_LIBESSL 1)
 SET(HAVE_EINSPLINE 1)
 SET(HAVE_EINSPLINE_EXT 0)
-
-SET(HDF5_HOME /soft/libraries/hdf5/1.8.10/cnk-xl/current/)
-SET(HDF5_INCLUDE_DIR /soft/libraries/hdf5/1.8.10/cnk-xl/current/include)
-SET(HDF5_LIBRARIES /soft/libraries/hdf5/1.8.10/cnk-xl/current/lib/libhdf5.a)
+set(HAVE_ADIOS 0)
 
 # set the compiler
 set(CMAKE_C_COMPILER mpixlc_r)
@@ -33,8 +30,9 @@ set(Boost_INCLUDE_DIR /home/projects/qmcpack/boost_1_45_0)
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/boost_1_45_0
      /home/projects/qmcpack/LIBXML2-2.9
-     /soft/libraries/unsupported/hdf5-1.8.8
+     /soft/libraries/hdf5/current/cnk-xl/current
      /soft/libraries/alcf/current/xl/FFTW3
+     /soft/libraries/alcf/current/xl/ZLIB
 )
 
 SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -51,13 +49,12 @@ ENDFOREACH(type)
 set(LAPACK_LIBRARY /soft/libraries/alcf/current/xl/LAPACK/lib/liblapack.a)
 set(BLAS_LIBRARY /soft/libraries/essl/5.1.1-0/essl/5.1/lib64/libesslsmpbg.a)
 SET(FORTRAN_LIBRARIES
-/soft/compilers/ibmcmp-feb2013/xlf/bg/14.1/bglib64/libxlf90_r.a
-/soft/compilers/ibmcmp-feb2013/xlf/bg/14.1/bglib64/libxlopt.a
+/soft/compilers/ibmcmp-nov2013/xlf/bg/14.1/bglib64/libxlf90_r.a
+/soft/compilers/ibmcmp-nov2013/xlf/bg/14.1/bglib64/libxlopt.a
 )
 link_libraries(
-/soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmass.a 
-/soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmassv.a 
-/soft/libraries/alcf/current/xl/ZLIB/lib/libz.a
+/soft/compilers/ibmcmp-nov2013/xlmass/bg/7.3/bglib64/libmass.a 
+/soft/compilers/ibmcmp-nov2013/xlmass/bg/7.3/bglib64/libmassv.a 
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
