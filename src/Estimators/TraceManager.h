@@ -1877,7 +1877,7 @@ public:
     ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
 #endif
 #ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file(file_name,
+    ADIOS_FILE *fp = adios_read_open_file(file_name.c_str(),
                                           ADIOS_READ_METHOD_BP,
                                           OHMMS::Controller->getMPI());
     IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
