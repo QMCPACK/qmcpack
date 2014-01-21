@@ -10,6 +10,10 @@ SET(HAVE_LIBESSL 1)
 SET(HAVE_EINSPLINE 1)
 SET(HAVE_EINSPLINE_EXT 0)
 
+SET(HDF5_HOME /soft/libraries/hdf5/1.8.10/cnk-xl/current/)
+SET(HDF5_INCLUDE_DIR /soft/libraries/hdf5/1.8.10/cnk-xl/current/include)
+SET(HDF5_LIBRARIES /soft/libraries/hdf5/1.8.10/cnk-xl/current/lib/libhdf5.a)
+
 # set the compiler
 set(CMAKE_C_COMPILER mpixlc_r)
 set(CMAKE_CXX_COMPILER mpixlcxx_r)
@@ -53,6 +57,7 @@ SET(FORTRAN_LIBRARIES
 link_libraries(
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmass.a 
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmassv.a 
+/soft/libraries/alcf/current/xl/ZLIB/lib/libz.a
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
