@@ -1,12 +1,12 @@
 #!/bin/env bash
 
 # shared input files for gr3x3x1 and gr4x4x1
-wget http://cms.mcc.uiuc.edu/~jnkim/graphite-benchmark.tgz
+wget http://users.nccs.gov/~jnkim/qmcpack-coral/graphite-benchmark.tgz
 tar zxvf graphite-benchmark.tgz
 
 # get hdf5 file for water
 cd water
-wget http://cms.mcc.uiuc.edu/~jnkim/qmcdb/h2o.pwscf.h5
+wget http://users.nccs.gov/~jnkim/data/h2o.pwscf.h5
 cd -
 
 cd gr3x3x1
