@@ -562,6 +562,15 @@ endif()
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 
+#########################
+# add definitions for adios profile
+# add definitions for adios verification
+########################
+IF(QMC_ADIOS)
+  #ADD_DEFINITIONS(-DIO_PROFILE)
+  #ADD_DEFINITIONS(-DADIOS_VERIFY)
+ENDIF(QMC_ADIOS)
+
 SUBDIRS(src)
 
 #ADD_CUSTOM_TARGET(print_settings ALL
