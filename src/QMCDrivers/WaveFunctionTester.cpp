@@ -57,6 +57,9 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
   fout=new ofstream(fname);
   fout->precision(15);
+
+  deltaR.resize(w.getTotalNum());
+  makeGaussRandom(deltaR);
 }
 
 WaveFunctionTester::~WaveFunctionTester()
@@ -101,7 +104,12 @@ WaveFunctionTester::run()
     runZeroVarianceTest();
   }
   else if (checkRatio =="deriv")
+  {
+    makeGaussRandom(deltaR);
+    deltaR *=0.2;
     runDerivTest();
+    runDerivNLPPTest();
+  }
   else if (checkRatio =="derivclone")
     runDerivCloneTest();
   else if (wftricks =="rotate")
@@ -110,8 +118,8 @@ WaveFunctionTester::run()
     runNodePlot();
   else
     runBasicTest();
-  RealType ene = H.evaluate(W);
-  *fout << " Energy " << ene << endl;
+  //RealType ene = H.evaluate(W);
+  //app_log() << " Energy " << ene << endl;
   return true;
 }
 
@@ -131,7 +139,6 @@ void WaveFunctionTester::runCloneTest()
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
     int nat = W.getTotalNum();
-    ParticleSet::ParticlePos_t deltaR(nat);
     MCWalkerConfiguration::PropertyContainer_t Properties;
     //pick the first walker
     MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
@@ -266,14 +273,12 @@ void WaveFunctionTester::runBasicTest()
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
   int nat = W.getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  //makeGaussRandom(deltaR);
   W.R = awalker->R;
   //W.R += deltaR;
   W.update();
@@ -896,15 +901,16 @@ void WaveFunctionTester::runDerivTest()
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
   int nat = W.getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  //makeGaussRandom(deltaR);
-  W.R = awalker->R;
+  W.R = awalker->R+deltaR;
+
+  *fout << "Position " << endl << W.R << endl;
+
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
@@ -946,6 +952,10 @@ void WaveFunctionTester::runDerivTest()
   vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
   logpsi = Psi.evaluateLog(W);
+
+  //reuse the sphere
+  H.setPrimary(false);
+
   eloc=H.evaluate(W);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
   RealType FiniteDiff = 1e-6;
@@ -977,6 +987,7 @@ void WaveFunctionTester::runDerivTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
+  Psi.resetParameters(wfVars);
   *fout<<endl<<"Deriv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
     *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
@@ -985,6 +996,124 @@ void WaveFunctionTester::runDerivTest()
     *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
 }
 
+
+void WaveFunctionTester::runDerivNLPPTest()
+{
+  char fname[16];
+  sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
+  ofstream nlout(fname);
+  nlout.precision(15);
+
+  app_log()<<" Testing derivatives"<<endl;
+  IndexType nskipped = 0;
+  RealType sig2Enloc=0, sig2Drift=0;
+  RealType delta = 1e-6;
+  RealType delta2 = 2*delta;
+  ValueType c1 = 1.0/delta/2.0;
+  ValueType c2 = 1.0/delta/delta;
+  int nat = W.getTotalNum();
+  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //pick the first walker
+  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  //copy the properties of the working walker
+  Properties = awalker->Properties;
+  //sample a new walker configuration and copy to ParticleSet::R
+  W.R = awalker->R+deltaR;
+
+  //W.R += deltaR;
+  W.update();
+  //ValueType psi = Psi.evaluate(W);
+  ValueType logpsi = Psi.evaluateLog(W);
+  RealType eloc=H.evaluate(W);
+
+  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  for (int i=0; i<H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+
+  //RealType psi = Psi.evaluateLog(W);
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  G = W.G;
+  L = W.L;
+  nlout<<"Gradients"<<endl;
+  for (int iat=0; iat<W.R.size(); iat++)
+  {
+    for (int i=0; i<3 ; i++)
+      nlout<<W.G[iat][i]<<"  ";
+    nlout<<endl;
+  }
+  nlout<<"Laplaians"<<endl;
+  for (int iat=0; iat<W.R.size(); iat++)
+  {
+    nlout<<W.L[iat]<<"  ";
+    nlout<<endl;
+  }
+  opt_variables_type wfVars,wfvar_prime;
+//build optimizables from the wavefunction
+  wfVars.clear();
+  Psi.checkInVariables(wfVars);
+  wfVars.resetIndex();
+  Psi.checkOutVariables(wfVars);
+  wfvar_prime= wfVars;
+  wfVars.print(nlout);
+  int Nvars= wfVars.size();
+  vector<RealType> Dsaved(Nvars);
+  vector<RealType> HDsaved(Nvars);
+  vector<RealType> PGradient(Nvars);
+  vector<RealType> HGradient(Nvars);
+  Psi.resetParameters(wfVars);
+
+  logpsi = Psi.evaluateLog(W);
+
+  //reuse the sphere for non-local pp
+  H.setPrimary(false);
+
+  vector<RealType> ene(4), ene_p(4), ene_m(4);
+  Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
+  ene[0]=H.evaluateValueAndDerivatives(W,wfVars,Dsaved,HDsaved);
+  app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << endl;
+
+  RealType FiniteDiff = 1e-6;
+  QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+  for (int i=0; i<Nvars ; i++)
+  {
+    for (int j=0; j<Nvars; j++)
+      wfvar_prime[j]=wfVars[j];
+    wfvar_prime[i] = wfVars[i]+ FiniteDiff;
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+    W.update();
+    W.G=0;
+    W.L=0;
+    RealType logpsiPlus = Psi.evaluateLog(W);
+    RealType elocPlus=H.evaluateVariableEnergy(W);
+
+    //H.evaluate(W);
+    //RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
+
+    wfvar_prime[i] = wfVars[i]- FiniteDiff;
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+    W.update();
+    W.G=0;
+    W.L=0;
+    RealType logpsiMinus = Psi.evaluateLog(W);
+    RealType elocMinus=H.evaluateVariableEnergy(W);
+
+    //H.evaluate(W);
+    //RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+    
+    PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
+    HGradient[i]= (elocPlus-elocMinus)*dh;
+  }
+
+  nlout<<endl<<"Deriv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++)
+    nlout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
+  nlout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+  for (int i=0; i<Nvars ; i++)
+    nlout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+}
 
 
 void WaveFunctionTester::runDerivCloneTest()

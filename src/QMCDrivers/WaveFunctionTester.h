@@ -45,6 +45,7 @@ public:
 
 private:
   ParticleSetPool &PtclPool;
+  ParticleSet::ParticlePos_t deltaR;
   string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
   xmlNodePtr myNode;
   /// Copy Constructor (disabled)
@@ -60,6 +61,7 @@ private:
   void runBasicTest();
   void runCloneTest();
   void runDerivTest();
+  void runDerivNLPPTest();
   void runDerivCloneTest();
   void runGradSourceTest();
   void runZeroVarianceTest();
