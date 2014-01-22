@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include <Estimators/TraceManager.h>
-
+#include <QMCWaveFunctions/OrbitalSetTraits.h>
 namespace qmcplusplus
 {
 
@@ -231,13 +231,26 @@ public:
    */
   Return_t evaluate(ParticleSet& P);
 
-
   /** evaluate Local and NonLocal energies
    * @param P ParticleSEt
    * @param Txy transition matrix of nonlocal Hamiltonians
    * @return Local energy
    */
   Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
+
+  /** evaluate energy and derivatives wrt to the variables
+   * @return the variable energy, KE+NLPP
+   */
+  RealType evaluateValueAndDerivatives(ParticleSet& P,
+      const opt_variables_type& optvars,
+      vector<RealType>& dlogpsi,
+      vector<RealType>& dhpsioverpsi);
+
+  /** evaluate energy 
+   * @param P quantum particleset
+   * @return KE + NonLocal potential
+   */
+  RealType evaluateVariableEnergy(ParticleSet& P);
 
   /*@{*/
   /** @brief functions to handle particle-by-particle move
@@ -287,6 +300,7 @@ public:
   void evaluate (MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
   void evaluate(MCWalkerConfiguration &W, vector<RealType> &energyVector,
                 vector<vector<NonLocalData> > &Txy);
+
 #ifdef QMC_CUDA
 private:
   /////////////////////

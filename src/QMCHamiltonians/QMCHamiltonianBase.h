@@ -24,6 +24,7 @@
 #include <Utilities/RandomGenerator.h>
 #include <QMCHamiltonians/observable_helper.h>
 #include <Estimators/TraceManager.h>
+#include <QMCWaveFunctions/OrbitalSetTraits.h>
 #include <bitset>
 
 namespace qmcplusplus
@@ -69,7 +70,14 @@ struct QMCHamiltonianBase: public QMCTraits
   typedef ParticleSet::Walker_t  Walker_t;
 
   ///enum for UpdateMode
-  enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL, COLLECTABLE};
+  enum {PRIMARY=0, 
+    OPTIMIZABLE=1, 
+    RATIOUPDATE=2, 
+    PHYSICAL=3, 
+    COLLECTABLE=4, 
+    NONLOCAL=5 
+  };
+
   ///set the current update mode
   bitset<8> UpdateMode;
   ///starting index of this object
@@ -103,15 +111,7 @@ struct QMCHamiltonianBase: public QMCTraits
   Array<RealType,1>* value_sample;
 
   ///constructor
-  QMCHamiltonianBase()
-    :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
-  {
-    tracing = false;
-    tracing_scalar_quantities = false;
-    tracing_particle_quantities = false;
-    have_required_traces = false;
-    UpdateMode.set(PRIMARY,1);
-  }
+  QMCHamiltonianBase();
 
   ///virtual destructor
   virtual ~QMCHamiltonianBase() { }
@@ -122,6 +122,11 @@ struct QMCHamiltonianBase: public QMCTraits
   inline bool getMode(int i)
   {
     return UpdateMode[i];
+  }
+
+  inline bool isNonLocal() const 
+  {
+    return UpdateMode[NONLOCAL];
   }
 
   /** named values to  the property list
@@ -204,6 +209,18 @@ struct QMCHamiltonianBase: public QMCTraits
     return 0;
   }
   virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0;
+
+  /** evaluate value and derivatives wrt the optimizables
+   *
+   * Default uses evaluate
+   */
+  virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
+      const opt_variables_type& optvars,
+      const vector<RealType>& dlogpsi,
+      vector<RealType>& dhpsioverpsi)
+  {
+    return evaluate(P);
+  }
 
   /** update data associated with a particleset
    * @param s source particle set

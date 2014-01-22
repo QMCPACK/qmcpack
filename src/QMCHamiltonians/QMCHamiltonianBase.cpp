@@ -21,6 +21,16 @@
 
 namespace qmcplusplus
 {
+  QMCHamiltonianBase::QMCHamiltonianBase()
+    :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
+  {
+    tracing = false;
+    tracing_scalar_quantities = false;
+    tracing_particle_quantities = false;
+    have_required_traces = false;
+    UpdateMode.set(PRIMARY,1);
+  }
+
 void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
     ,QMCHamiltonian& targetH)
 {

@@ -325,6 +325,38 @@ QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
+QMCHamiltonian::RealType 
+QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
+    const opt_variables_type& optvars,
+    vector<RealType>& dlogpsi,
+    vector<RealType>& dhpsioverpsi)
+{
+  LocalEnergy = 0.0;
+  RealType nlpp=0.0;
+  for(int i=0; i<H.size(); ++i)
+  {
+    LocalEnergy += H[i]->evaluateValueAndDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+    if(H[i]->isNonLocal()) nlpp+=H[i]->Value;
+  }
+  KineticEnergy=H[0]->Value;
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  return H[0]->Value+nlpp; 
+}
+
+QMCHamiltonian::RealType 
+QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P)
+{
+  LocalEnergy = 0.0;
+  RealType nlpp=0.0;
+  for(int i=0; i<H.size(); ++i)
+  {
+    LocalEnergy += H[i]->evaluate(P);
+    if(H[i]->isNonLocal()) nlpp+=H[i]->Value;
+  }
+  return H[0]->Value+nlpp; 
+}
+
 void QMCHamiltonian::auxHevaluate(ParticleSet& P )
 {
   for(int i=0; i<auxH.size(); ++i)
@@ -622,7 +654,6 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 {
 }
 #endif
-
 }
 
 

@@ -103,6 +103,8 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
   RealType esum=0.0;
   RealType pairpot;
   vector<PosType> deltarV(nknot);
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
+
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
     register RealType r(myTable->r(nn));
@@ -193,6 +195,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
   RealType esum=0.0;
   RealType pairpot;
   force_iat = PosType();
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
     register RealType r(myTable->r(nn));
@@ -307,6 +310,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
   force_iat = PosType();
   pulay_iat = PosType();
   PosType psi_alpha = psi.evalGradSource(W, ions, iat);
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
     register RealType r(myTable->r(nn));
@@ -573,6 +577,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy)
 {
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
   RealType esum=0.0;
   vector<PosType> deltaV(nknot);
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
@@ -648,6 +653,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
   RealType esum=0.0;
   RealType pairpot;
   force_iat = PosType();
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
   //int iel=0;
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {

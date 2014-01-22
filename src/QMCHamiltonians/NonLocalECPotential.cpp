@@ -23,7 +23,6 @@ namespace qmcplusplus
 
 void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(IonConfig,P);
 }
 
 /** constructor
@@ -32,18 +31,19 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
  *\param psi trial wavefunction
  */
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-    TrialWaveFunction& psi,
-    bool computeForces):
-  IonConfig(ions), d_table(0), Psi(psi),
+    TrialWaveFunction& psi, bool computeForces):
+  IonConfig(ions), Psi(psi),
   ComputeForces(computeForces), ForceBase(ions,els),Peln(els),Pion(ions)
 {
-  d_table = DistanceTable::add(ions,els);
+  myTableIndex=els.addTable(ions);
   NumIons=ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons,0);
   prefix="FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
   PulayTerm.resize(NumIons);
+
+  UpdateMode.set(NONLOCAL,1);
 }
 
 ///destructor
@@ -97,6 +97,8 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
   }
+
+
   //loop over all the ions
   if (ComputeForces)
   {
@@ -111,12 +113,18 @@ NonLocalECPotential::evaluate(ParticleSet& P)
   }
   else
   {
+  vector<RealType> pp_e(NumIons,0.0);
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
       {
         PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        Value += PP[iat]->evaluate(P,iat,Psi);
+        //Value += PP[iat]->evaluate(P,iat,Psi);
+        Value += pp_e[iat]=PP[iat]->evaluate(P,iat,Psi);
       }
+
+  //  cout << "Original NLPP energy " << endl;
+  //  for(int iat=0; iat<NumIons; iat++)
+  //    cout << iat << " " << pp_e[iat] << endl;
   }
 #if defined(TRACE_CHECK)
   if(tracing_particle_quantities)
@@ -211,7 +219,7 @@ NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
   //  }
   //  PPset[groupID]=ppot;
   //}
-  ppot->myTable=d_table;
+  ppot->myTableIndex=myTableIndex;
   for(int iat=0; iat<PP.size(); iat++)
     if(IonConfig.GroupID[iat]==groupID)
       PP[iat]=ppot;

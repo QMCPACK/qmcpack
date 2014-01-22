@@ -37,6 +37,8 @@ struct NonLocalECPComponent: public QMCTraits
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
+  ///index of the distance table
+  int myTableIndex;
   ///Non Local part: angular momentum, potential and grid
   int lmax;
   ///the number of non-local channels
@@ -84,7 +86,7 @@ struct NonLocalECPComponent: public QMCTraits
   }
 
 
-  DistanceTableData* myTable;
+  //DistanceTableData* myTable;
 
   ///pointers to trace data of containing NonLocalECPotential object
   Array<TraceReal,1>* Ve_sample;
@@ -130,6 +132,12 @@ struct NonLocalECPComponent: public QMCTraits
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy,
            PosType &force_iat);
 
+  RealType
+  evaluateValueAndDerivatives(ParticleSet& P,
+      int iat, TrialWaveFunction& psi,
+      const opt_variables_type& optvars,
+      const vector<RealType>& dlogpsi,
+      vector<RealType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 

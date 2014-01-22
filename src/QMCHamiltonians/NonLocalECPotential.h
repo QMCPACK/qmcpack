@@ -26,12 +26,13 @@ namespace qmcplusplus
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
-struct NonLocalECPotential: public QMCHamiltonianBase,
-  public ForceBase
+class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 {
+  public:
+  ///number of ions
   int NumIons;
-  ///the distance table containing electron-nuclei distances
-  DistanceTableData* d_table;
+  ///index of distance table for the ion-el pair
+  int myTableIndex;
   ///the set of local-potentials (one for each ion)
   vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
@@ -62,6 +63,11 @@ struct NonLocalECPotential: public QMCHamiltonianBase,
   Return_t evaluate(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
+
+  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+      const opt_variables_type& optvars,
+      const vector<RealType>& dlogpsi,
+      vector<RealType>& dhpsioverpsi);
 
   /** Do nothing */
   bool put(xmlNodePtr cur)
