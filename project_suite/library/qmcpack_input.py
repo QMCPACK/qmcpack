@@ -3242,7 +3242,16 @@ def generate_particlesets(electrons = 'e',
 #end def generate_particlesets
 
 
-def generate_sposets(type=None,occupation=None,spin_polarized=False,nup=None,ndown=None,system=None,sposets=None,spindatasets=False):
+def generate_sposets(type           = None,
+                     occupation     = None,
+                     spin_polarized = False,
+                     nup            = None,
+                     ndown          = None,
+                     spo_up         = 'spo_u',
+                     spo_down       = 'spo_d',
+                     system         = None,
+                     sposets        = None,
+                     spindatasets   = False):
     ndn = ndown
     if type is None:
         QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
@@ -3381,14 +3390,16 @@ def generate_determinantset(up             = 'u',
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
     #end if
-    if not spin_polarized:
+    elns = system.particles.get_electrons()
+    nup  = elns.up_electron.count
+    ndn  = elns.down_electron.count
+    if not spin_polarized and nup==ndn:
         spo_u = 'spo_ud'
         spo_d = 'spo_ud'
     else:
         spo_u = spo_up
         spo_d = spo_down
     #end if
-    elns = system.particles.get_electrons()
     dset = determinantset(
         slaterdeterminant = slaterdeterminant(
             determinants = collection(
@@ -3396,13 +3407,13 @@ def generate_determinantset(up             = 'u',
                     id     = 'updet',
                     group  = up,
                     sposet = spo_u,
-                    size   = elns.up_electron.count
+                    size   = nup
                     ),
                 determinant(
                     id     = 'downdet',
                     group  = down,
                     sposet = spo_d,
-                    size   = elns.down_electron.count
+                    size   = ndn
                     )
                 )
             )
@@ -3440,12 +3451,12 @@ def generate_determinantset_old(type           = 'bspline',
         href       = href,
         slaterdeterminant = slaterdeterminant(
             determinants = collection(
-                updet   = determinant(
+                determinant(
                     id   = 'updet',
                     size = elns.up_electron.count,
                     occupation=section(mode='ground',spindataset=0)
                     ),
-                downdet = determinant(
+                determinant(
                     id   = 'downdet',
                     size = elns.down_electron.count,
                     occupation=section(mode='ground',spindataset=down_spin)
@@ -3542,6 +3553,7 @@ def generate_hamiltonian(name         = 'h0',
                 estname = estimator.lower().replace(' ','_').replace('-','_').replace('__','_')
                 if estname=='mpc':
                     pairpots.append(mpc(name='MPC',type='MPC',ecut=60.0,source=ename,target=ename,physical=False))
+                    est = None
                 elif estname=='chiesa':
                     est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
                 elif estname=='localenergy':

@@ -1230,6 +1230,9 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                 insig_stat = abs(m)/merr < stat_tol
                 # remove insignificant elements
                 insig_coup_stat = insig_coup | insig_stat
+                for i in range(nsig):
+                    insig_coup_stat[i,i] = False
+                #end for
                 moi = m.copy()
                 m[insig_coup_stat] = 0.0
 
@@ -1276,8 +1279,8 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     eigerr          = eigerr,
                     trace           = t,
                     trace_error     = terr,
-                    trace_data      = tdata,
-                    data            = md_all
+                    #trace_data      = tdata,
+                    #data            = md_all
                     )
 
                 # perform generalized eigenvalue analysis for energy matrix
@@ -1433,6 +1436,7 @@ class SpinDensityAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
+        print '  sd load data'
         if data==None:
             self.error('attempted load without data')
         #end if
@@ -1450,19 +1454,22 @@ class SpinDensityAnalyzer(HDFAnalyzer):
 
 
     def analyze_local(self):
+        print '  sd analyze data'
         nbe = QAanalyzer.method_info.nblocks_exclude
         for group,data in self.data.iteritems():
             gdata = data.value[nbe:,...]
             g = obj()
-            g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            #g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            g.mean,g.error = simplestats(gdata,dim=0)
             self[group] = g
         #end for
         self.info.nblocks_exclude = nbe
-        self.write_files()
+        #self.write_files()
     #end def analyze_local
 
 
     def write_files(self,path='./'):
+        print '  sd write files'
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
             filename =  '{0}.spindensity_{1}.dat'.format(prefix,gname)
@@ -1488,6 +1495,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
         if data==None:
             self.error('attempted load without data')
         #end if
+        print '  sf load data'
         name = self.info.name
         if name in data:
             hdata = data[name]
@@ -1503,18 +1511,21 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 
     def analyze_local(self):
         nbe = QAanalyzer.method_info.nblocks_exclude
+        print '  sf analyze data'
         for group,data in self.data.iteritems():
             gdata = data.value[nbe:,...]
             g = obj()
-            g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            #g.mean,g.variance,g.error,g.kappa = simstats(gdata,dim=0)
+            g.mean,g.error = simplestats(gdata,dim=0)
             self[group] = g
         #end for
         self.info.nblocks_exclude = nbe
-        self.write_files()
+        #self.write_files()
     #end def analyze_local
 
 
     def write_files(self,path='./'):
+        print '  sf write files'
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
             filename =  '{0}.structurefactor_{1}.dat'.format(prefix,gname)
