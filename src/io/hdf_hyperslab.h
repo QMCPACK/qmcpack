@@ -64,6 +64,7 @@ struct hyperslab_proxy: public container_proxy<CT>
       slab_dims[slab_rank]=element_size;
       slab_rank+=1;
     }
+    use_slab=true;
   }
 
   /** return the size of the i-th dimension
@@ -88,12 +89,24 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
   h5data_proxy(hyperslab_proxy<CT,MAXDIM>& a): ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
-    int rank=ref_.slab_rank;
-    if(!get_space(grp,aname,rank,ref_.slab_dims.data(),true))
+    if(ref_.use_slab)
     {
-      ref_.change_shape();
+      return h5d_read(grp,aname.c_str(),
+          ref_.slab_rank,
+          ref_.slab_dims.data(), 
+          ref_.slab_dims_local.data(),
+          ref_.slab_offset.data(),
+          ref_.data(),xfer_plist);
     }
-    return h5d_read(grp,aname,ref_.data(),xfer_plist);
+    else
+    {
+      int rank=ref_.slab_rank;
+      if(!get_space(grp,aname,rank,ref_.slab_dims.data(),true))
+      {
+        ref_.change_shape();
+      }
+      return h5d_read(grp,aname,ref_.data(),xfer_plist);
+    }
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {

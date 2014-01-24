@@ -94,6 +94,33 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const 
   return ret != -1;
 }
 
+/** return true, if successful */
+template<typename T>
+bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims, 
+    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
+    T* first , hid_t xfer_plist)
+{
+  if(grp<0)
+    return true;
+  hid_t h1 = H5Dopen(grp, aname.c_str());
+  if(h1<0)
+    return false;
+  //herr_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
+  
+  hid_t dataspace = H5Dget_space(h1);
+  hid_t memspace = H5Screate_simple(ndims, counts, NULL);
+  herr_t ret = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offsets,NULL,counts,NULL);
+
+  hid_t h5d_type_id=get_h5_datatype(*first);
+  ret = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
+
+  H5Sclose(dataspace);
+  H5Sclose(memspace);
+
+  H5Dclose(h1);
+  return ret != -1;
+}
+
 template<typename T>
 inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, 
     const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
@@ -106,7 +133,6 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims,
   herr_t ret=-1;
   if(h1<0) //missing create one
   {
-    cout << "phdf write " << endl;
     hid_t dataspace=H5Screate_simple(ndims,gcounts,NULL);
     hid_t dataset=H5Dcreate(grp, aname.c_str(),h5d_type_id, dataspace, H5P_DEFAULT);
 
