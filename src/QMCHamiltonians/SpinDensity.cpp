@@ -200,16 +200,16 @@ namespace qmcplusplus
       for(int ps=0;ps<species_size[s];++ps,++p)
       {
         PosType u = cell.toUnit(P.R[p]-corner);
-        bool inside = true;
-        for(int d=0;d<DIM;++d)
-          inside &= u[d]>0.0 && u[d]<1.0;
-        if(inside)
-        {
+        //bool inside = true;
+        //for(int d=0;d<DIM;++d)
+        //  inside &= u[d]>0.0 && u[d]<1.0;
+        //if(inside)
+        //{
           int point=offset;
           for(int d=0;d<DIM;++d)
-            point += gdims[d]*((int)(u[d]*grid[d]));
+            point += gdims[d]*((int)(grid[d]*(u[d]-std::floor(u[d])))); //periodic only
           P.Collectables[point] += w;
-        }
+        //}
       }
     return 0.0;
   }
