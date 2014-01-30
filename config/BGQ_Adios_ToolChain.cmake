@@ -1,4 +1,4 @@
-# the name of the target operating system
+#the name of the target operating system
 #SET(CMAKE_SYSTEM_NAME BlueGeneP)
 SET(BGP 1 CACHE BOOL "On BlueGeneQ")
 SET(Linux 0)
@@ -35,6 +35,7 @@ SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/LIBXML2-2.9
      /soft/libraries/unsupported/hdf5-1.8.8
      /soft/libraries/alcf/current/xl/FFTW3
+     /home/zhenggu/software/adios-1.6
 )
 
 SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -58,6 +59,7 @@ link_libraries(
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmass.a 
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmassv.a 
 /soft/libraries/alcf/current/xl/ZLIB/lib/libz.a
+/home/zhenggu/software/adios-1.6/lib/libadios.a
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
