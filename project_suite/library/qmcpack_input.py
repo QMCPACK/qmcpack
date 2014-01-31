@@ -1408,7 +1408,7 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key']
+                   'lr_dim_cutoff','shell','randomize','key','buffer']
     elements    = ['sposet']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
 #end class bspline_builder
@@ -3311,6 +3311,7 @@ def generate_bspline_builder(type           = 'bspline',
                              sort           = False,
                              version        = '0.10',
                              truncate       = False,
+                             buffer         = None,
                              spin_polarized = False,
                              href           = 'MISSING.h5',
                              ions           = 'ion0',
@@ -3342,6 +3343,9 @@ def generate_bspline_builder(type           = 'bspline',
             spindatasets   = True
             )
         )
+    if truncate and buffer!=None:
+        bsb.buffer = buffer
+    #end if
     if twist!=None:
         bsb.twist = tuple(twist)
     elif twistnum!=None:
@@ -4193,6 +4197,7 @@ def generate_basic_input(id             = 'qmc',
                          seed           = None,
                          bconds         = 'ppp',
                          truncate       = False,
+                         buffer         = None,
                          lr_dim_cutoff  = 15,
                          remove_cell    = False,
                          meshfactor     = 1.0,
@@ -4267,6 +4272,7 @@ def generate_basic_input(id             = 'qmc',
                 meshfactor     = meshfactor,
                 precision      = precision,
                 truncate       = truncate,
+                buffer         = buffer,
                 href           = orbitals_h5,
                 spin_polarized = spin_polarized,
                 system         = system
