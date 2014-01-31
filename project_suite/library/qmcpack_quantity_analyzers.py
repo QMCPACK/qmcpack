@@ -1,7 +1,7 @@
 
 import os
 import re
-from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones
+from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity
 try:
     from scipy.linalg import eig,LinAlgError
 except Exception:
@@ -863,7 +863,7 @@ class TracesAnalyzer(QAanalyzer):
         path = self.info.path
         files = self.info.files
         if len(files)>1:
-            self.error('ability to read multiple trace files has not yet been implemented')
+            self.error('ability to read multiple trace files has not yet been implemented\n  files requested: {0}'.format(files))
         #end if
         filepath = os.path.join(path,files[0])
         self.data = TracesFileHDF(filepath)
@@ -1131,6 +1131,11 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
 
     def analyze_local(self):
+
+        save_data = False
+        jackknife = False
+        diagonal  = True
+
         # 1) exclude states that do not contribute to the number trace
         # 2) exclude elements that are not statistically significant (1 sigma?)
         # 3) use remaining states to form filtered number and energy matrices
@@ -1171,7 +1176,6 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
                 md_all = species_data.value
                 mdata  = md_all[nbe:,...] 
-                m,mvar,merr,mkap = simstats(mdata.transpose((1,2,0)))
             
                 tdata = zeros((len(md_all),))
                 b = 0
@@ -1180,151 +1184,176 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     b+=1
                 #end for
                 t,tvar,terr,tkap = simstats(tdata[nbe:])
+                msres.trace        = t
+                msres.trace_error  = terr
 
-                if matrix_name=='number_matrix':
-                    # remove states that do not have significant occupation
-                    nspec = species_sizes[species_name]
-                    occ = diag(m)/t*nspec
-                    nstates = len(occ)
-                    abs_occ = abs(occ)
-                    abs_occ.sort()
-                    nsum = 0
-                    i = -1
-                    min_occ = 0
-                    for o in abs_occ:
-                        if nsum+o<occ_tol:
-                            nsum+=o
-                            i+=1
+                if save_data:
+                    msres.trace_data = tdata
+                    msres.data       = md_all
+                #end if
+
+                if diagonal:
+                    ddata = empty(mdata.shape[0:2],dtype=mdata.dtype)
+                    b = 0
+                    for mat in mdata:
+                        ddata[b] = diag(mat)
+                        b+=1
+                    #end for
+                    d,dvar,derr,dkap = simstats(ddata.transpose())
+                    msres.set(
+                        eigval  = d,
+                        eigvec  = identity(len(d)),
+                        eigmean = d,
+                        eigerr  = derr
+                        )
+                else:
+                    m,mvar,merr,mkap = simstats(mdata.transpose((1,2,0)))
+
+                    if matrix_name=='number_matrix':
+                        # remove states that do not have significant occupation
+                        nspec = species_sizes[species_name]
+                        occ = diag(m)/t*nspec
+                        nstates = len(occ)
+                        abs_occ = abs(occ)
+                        abs_occ.sort()
+                        nsum = 0
+                        i = -1
+                        min_occ = 0
+                        for o in abs_occ:
+                            if nsum+o<occ_tol:
+                                nsum+=o
+                                i+=1
+                            #end if
+                        #end if
+                        if i!=-1:
+                            min_occ = abs_occ[i]+1e-12
+                        #end if
+                        sig_states = arange(nstates)[abs(occ)>min_occ]
+                        nsig = len(sig_states)
+                        if nsig<nspec:
+                            self.warn('number matrix fewer occupied states than particles')
+                            sig_states = arange(nstates)
+                        #end if
+                        sig_occ = empty((nstates,nstates),dtype=bool)
+                        sig_occ[:,:] = False
+                        for s in sig_states:
+                            sig_occ[s,sig_states] = True
+                        #end for
+                    #end if
+                    # remove states with insignificant occupation
+                    mos = m
+                    m = m[sig_occ]
+                    m.shape = nsig,nsig
+                    merr = merr[sig_occ]
+                    merr.shape = nsig,nsig
+                    # remove off-diagonal elements with insignificant coupling
+                    insig_coup = ones(m.shape,dtype=bool)
+                    for i in range(nsig):
+                        for j in range(nsig):
+                            mdiag = min(abs(m[i,i]),abs(m[j,j]))
+                            insig_coup[i,j] = abs(m[i,j])/mdiag < coup_tol
+                        #end for
+                    #end for
+                    # remove elements with insignificant statistical deviation from zero
+                    insig_stat = abs(m)/merr < stat_tol
+                    # remove insignificant elements
+                    insig_coup_stat = insig_coup | insig_stat
+                    for i in range(nsig):
+                        insig_coup_stat[i,i] = False
+                    #end for
+                    moi = m.copy()
+                    m[insig_coup_stat] = 0.0
+
+                    # obtain standard eigenvalue estimates
+                    eigval,eigvec = eig(m)
+
+                    # save common results
+                    msres.set(
+                        matrix          = m,
+                        matrix_error    = merr,
+                        sig_states      = sig_states,
+                        sig_occ         = sig_occ,
+                        insig_coup      = insig_coup,
+                        insig_stat      = insig_stat,
+                        insig_coup_stat = insig_coup_stat,
+                        eigval          = eigval,
+                        eigvec          = eigvec
+                        )
+
+                    if jackknife:
+                        # obtain jackknife eigenvalue estimates
+                        nblocks  = len(mdata)
+                        mjdata   = zeros((nblocks,nsig,nsig),dtype=mdata.dtype)
+                        eigsum   = zeros((nsig,),dtype=mdata.dtype)
+                        eigsum2r = zeros((nsig,),dtype=mdata.dtype)
+                        eigsum2i = zeros((nsig,),dtype=mdata.dtype)
+                        i = complex(0,1)
+                        nb = float(nblocks)
+                        for b in xrange(nblocks):
+                            mb = mdata[b,...][sig_occ]
+                            mb.shape = nsig,nsig
+                            mb[insig_coup_stat] = 0.0
+                            mj = (nb*m-mb)/(nb-1)
+                            mjdata[b,...] = mj
+                            d,v = eig(mj)
+                            eigsum   += d
+                            eigsum2r += real(d)**2
+                            eigsum2i += imag(d)**2
+                        #end for
+                        eigmean = eigsum/nb
+                        esr = real(eigsum)
+                        esi = imag(eigsum)
+                        eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
+                        eigerr  = sqrt(real(eigvar))+i*sqrt(imag(eigvar))
+                        msres.set(
+                            eigmean         = eigmean,
+                            eigerr          = eigerr
+                            )
+
+                        # perform generalized eigenvalue analysis for energy matrix
+                        if matrix_name=='number_matrix':
+                            nmjdata = mjdata
+                            nm      = m
+                        elif matrix_name=='energy_matrix':
+                            # obtain general eigenvalue estimates
+                            em = m
+                            geigval,geigvec = eig(em,nm)
+                            # get occupations of  eigenvectors
+                            eigocc  = zeros((nsig,),dtype=mdata.dtype)
+                            geigocc = zeros((nsig,),dtype=mdata.dtype)
+                            for k in xrange(nsig):
+                                v = eigvec[:,k]
+                                eigocc[k] = dot(v.conj(),dot(nm,v))
+                                v = geigvec[:,k]
+                                geigocc[k] = dot(v.conj(),dot(nm,v))
+                            #end for
+                            # obtain jackknife estimates of generalized eigenvalues
+                            emjdata = mjdata
+                            eigsum[:]   = 0.0
+                            eigsum2r[:] = 0.0
+                            eigsum2i[:] = 0.0
+                            for b in xrange(nblocks):
+                                d,v = eig(emjdata[b,...],nmjdata[b,...])
+                                eigsum   += d
+                                eigsum2r += real(d)**2
+                                eigsum2i += imag(d)**2
+                            #end for
+                            geigmean = eigsum/nb
+                            esr = real(eigsum)
+                            esi = imag(eigsum)
+                            eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
+                            geigerr  = sqrt(real(eigvar))+i*sqrt(imag(eigvar))
+                            # save the results
+                            msres.set(
+                                eigocc   = eigocc,
+                                geigocc  = geigocc,
+                                geigval  = geigval,
+                                geigvec  = geigvec,
+                                geigmean = geigmean,
+                                geigerr  = geigerr
+                                )
                         #end if
                     #end if
-                    if i!=-1:
-                        min_occ = abs_occ[i]+1e-12
-                    #end if
-                    sig_states = arange(nstates)[abs(occ)>min_occ]
-                    nsig = len(sig_states)
-                    if nsig<nspec:
-                        self.warn('number matrix fewer occupied states than particles')
-                        sig_states = arange(nstates)
-                    #end if
-                    sig_occ = empty((nstates,nstates),dtype=bool)
-                    sig_occ[:,:] = False
-                    for s in sig_states:
-                        sig_occ[s,sig_states] = True
-                    #end for
-                #end if
-                # remove states with insignificant occupation
-                mos = m
-                m = m[sig_occ]
-                m.shape = nsig,nsig
-                merr = merr[sig_occ]
-                merr.shape = nsig,nsig
-                # remove off-diagonal elements with insignificant coupling
-                insig_coup = ones(m.shape,dtype=bool)
-                for i in range(nsig):
-                    for j in range(nsig):
-                        mdiag = min(abs(m[i,i]),abs(m[j,j]))
-                        insig_coup[i,j] = abs(m[i,j])/mdiag < coup_tol
-                    #end for
-                #end for
-                # remove elements with insignificant statistical deviation from zero
-                insig_stat = abs(m)/merr < stat_tol
-                # remove insignificant elements
-                insig_coup_stat = insig_coup | insig_stat
-                for i in range(nsig):
-                    insig_coup_stat[i,i] = False
-                #end for
-                moi = m.copy()
-                m[insig_coup_stat] = 0.0
-
-                # obtain jackknife eigenvalue estimates
-                nblocks  = len(mdata)
-                mjdata   = zeros((nblocks,nsig,nsig),dtype=mdata.dtype)
-                eigsum   = zeros((nsig,),dtype=mdata.dtype)
-                eigsum2r = zeros((nsig,),dtype=mdata.dtype)
-                eigsum2i = zeros((nsig,),dtype=mdata.dtype)
-                i = complex(0,1)
-                nb = float(nblocks)
-                for b in xrange(nblocks):
-                    mb = mdata[b,...][sig_occ]
-                    mb.shape = nsig,nsig
-                    mb[insig_coup_stat] = 0.0
-                    mj = (nb*m-mb)/(nb-1)
-                    mjdata[b,...] = mj
-                    d,v = eig(mj)
-                    eigsum   += d
-                    eigsum2r += real(d)**2
-                    eigsum2i += imag(d)**2
-                #end for
-                eigmean = eigsum/nb
-                esr = real(eigsum)
-                esi = imag(eigsum)
-                eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
-                eigerr  = sqrt(real(eigvar))+i*sqrt(imag(eigvar))
-
-                # obtain standard eigenvalue estimates
-                eigval,eigvec = eig(m)
-
-                # save common results
-                msres.set(
-                    matrix          = m,
-                    matrix_error    = merr,
-                    sig_states      = sig_states,
-                    sig_occ         = sig_occ,
-                    insig_coup      = insig_coup,
-                    insig_stat      = insig_stat,
-                    insig_coup_stat = insig_coup_stat,
-                    eigval          = eigval,
-                    eigvec          = eigvec,
-                    eigmean         = eigmean,
-                    eigerr          = eigerr,
-                    trace           = t,
-                    trace_error     = terr,
-                    #trace_data      = tdata,
-                    #data            = md_all
-                    )
-
-                # perform generalized eigenvalue analysis for energy matrix
-                if matrix_name=='number_matrix':
-                    nmjdata = mjdata
-                    nm      = m
-                elif matrix_name=='energy_matrix':
-                    # obtain general eigenvalue estimates
-                    em = m
-                    geigval,geigvec = eig(em,nm)
-                    # get occupations of  eigenvectors
-                    eigocc  = zeros((nsig,),dtype=mdata.dtype)
-                    geigocc = zeros((nsig,),dtype=mdata.dtype)
-                    for k in xrange(nsig):
-                        v = eigvec[:,k]
-                        eigocc[k] = dot(v.conj(),dot(nm,v))
-                        v = geigvec[:,k]
-                        geigocc[k] = dot(v.conj(),dot(nm,v))
-                    #end for
-                    # obtain jackknife estimates of generalized eigenvalues
-                    emjdata = mjdata
-                    eigsum[:]   = 0.0
-                    eigsum2r[:] = 0.0
-                    eigsum2i[:] = 0.0
-                    for b in xrange(nblocks):
-                        d,v = eig(emjdata[b,...],nmjdata[b,...])
-                        eigsum   += d
-                        eigsum2r += real(d)**2
-                        eigsum2i += imag(d)**2
-                    #end for
-                    geigmean = eigsum/nb
-                    esr = real(eigsum)
-                    esi = imag(eigsum)
-                    eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
-                    geigerr  = sqrt(real(eigvar))+i*sqrt(imag(eigvar))
-                    # save the results
-                    msres.set(
-                        eigocc   = eigocc,
-                        geigocc  = geigocc,
-                        geigval  = geigval,
-                        geigvec  = geigvec,
-                        geigmean = geigmean,
-                        geigerr  = geigerr
-                        )
                 #end if
             #end for
         #end for

@@ -397,6 +397,11 @@ class Structure(Sobj):
     #end def bounding_box
 
 
+    def center_molecule(self):
+        self.slide(self.center-self.pos.mean(0),recenter=False)
+    #end def center_molecule
+
+
     def permute(self,permutation):
         dim = self.dim
         P = empty((dim,dim),dtype=int)

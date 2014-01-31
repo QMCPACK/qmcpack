@@ -105,6 +105,20 @@ class QAanalyzer(QAobject):
     vmc_methods = set(['vmc'])
     dmc_methods = set(['dmc'])
 
+
+    allowed_settings = []
+    @classmethod
+    def settings(cls,**kwargs):
+        invalid = list(set(kwargs.keys())-set(allowed_settings))
+        if len(invalid)>0:
+            cls.class_error('invalid variable names encountered in settings\n  invalid names: {0}\n  valid options are: {1}'.format(invalid,allowed_settings))
+        #end if
+        for name,value in kwargs.iteritems():
+            cls.__dict__[name] = value
+        #end for
+    #end def settings
+
+
     def __init__(self,nindent=0):
         self.info = QAinformation(
             initialized = False,

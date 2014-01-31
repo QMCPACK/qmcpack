@@ -1431,7 +1431,8 @@ class Titan(Supercomputer):
         c+='#PBS -e {0}\n'.format(job.errfile)
         c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
         c+='#PBS -l nodes={0}\n'.format(job.nodes)
-        c+='#PBS -l gres=widow3\n'
+        #c+='#PBS -l gres=widow3\n'
+        c+='#PBS -l gres=atlas1\n'
         c+='#PBS -V\n'
         c+='''
 echo $PBS_O_WORKDIR

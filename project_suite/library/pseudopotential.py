@@ -189,37 +189,38 @@ class Pseudopotential(DevBase):
 class fsatomPP(Pseudopotential):
     format = 'fsatom'
     def readfile(self,filepath):
-        x = readxml(filepath,contract_names=True)
-        x.convert_numeric()
-        x.condense()
-        x.remove_hidden()
-        pp = x.pseudo
-        self.pp = pp
-
-        h = pp.header
-        self.element = h.symbol
-        self.type = h.flavor        
-        self.Z    = h.zval
-        vps = self.pp.semilocal.vps
-        if not isinstance(vps,list):
-            vps = [vps]
-        #end if
-        g = vps[0].radfunc.grid
-        if g.type=='linear':
-            r = linspace(g.ri,g.rf,g.npts)
-            self.r = r[1:]
-        else:
-            self.error('functionality for '+g.type+' grids has not yet been implemented')
-        #end if
-        p = obj()
-        r = self.r
-        ldict = dict(s=0,p=1,d=2,f=3)
-        for vp in vps:
-            l = vp.l
-            v = 1./r*vp.radfunc.data[1:]
-            p[ldict[l]]= convert(v,'Ha',self.energy_units)
-        #end for
-        self.potentials = p
+        None
+        #x = readxml(filepath,contract_names=True)
+        #x.convert_numeric()
+        #x.condense()
+        #x.remove_hidden()
+        #pp = x.pseudo
+        #self.pp = pp
+        #
+        #h = pp.header
+        #self.element = h.symbol
+        #self.type = h.flavor        
+        #self.Z    = h.zval
+        #vps = self.pp.semilocal.vps
+        #if not isinstance(vps,list):
+        #    vps = [vps]
+        ##end if
+        #g = vps[0].radfunc.grid
+        #if g.type=='linear':
+        #    r = linspace(g.ri,g.rf,g.npts)
+        #    self.r = r[1:]
+        #else:
+        #    self.error('functionality for '+g.type+' grids has not yet been implemented')
+        ##end if
+        #p = obj()
+        #r = self.r
+        #ldict = dict(s=0,p=1,d=2,f=3)
+        #for vp in vps:
+        #    l = vp.l
+        #    v = 1./r*vp.radfunc.data[1:]
+        #    p[ldict[l]]= convert(v,'Ha',self.energy_units)
+        ##end for
+        #self.potentials = p
     #end def readfile
 #end class fsatomPP
 
