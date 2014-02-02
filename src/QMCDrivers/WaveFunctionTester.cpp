@@ -1070,7 +1070,7 @@ void WaveFunctionTester::runDerivNLPPTest()
 
   vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
-  ene[0]=H.evaluateValueAndDerivatives(W,wfVars,Dsaved,HDsaved);
+  ene[0]=H.evaluateValueAndDerivatives(W,wfVars,Dsaved,HDsaved,true);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << endl;
 
   RealType FiniteDiff = 1e-6;
@@ -1086,7 +1086,7 @@ void WaveFunctionTester::runDerivNLPPTest()
     W.G=0;
     W.L=0;
     RealType logpsiPlus = Psi.evaluateLog(W);
-    RealType elocPlus=H.evaluateVariableEnergy(W);
+    RealType elocPlus=H.evaluateVariableEnergy(W,true);
 
     //H.evaluate(W);
     //RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
@@ -1098,7 +1098,7 @@ void WaveFunctionTester::runDerivNLPPTest()
     W.G=0;
     W.L=0;
     RealType logpsiMinus = Psi.evaluateLog(W);
-    RealType elocMinus=H.evaluateVariableEnergy(W);
+    RealType elocMinus=H.evaluateVariableEnergy(W,true);
 
     //H.evaluate(W);
     //RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();

@@ -26,86 +26,58 @@ namespace qmcplusplus
         }
       return Value;
 
-      /*
-      vector<RealType> pp_e(NumIons,0.0);
-      vector<RealType> pp_de(NumIons,0.0);
-      for(int v=0; v<dhpsioverpsi.size(); ++v)
-        dhpsioverpsi[v] += dh_ana[v];
-      app_log() << "<<<< NonLocalECPotential::evaluateValueAndDerivatives >>>> " << endl;
-      for(int iat=0; iat<NumIons; iat++)
-        if(PP[iat])
-        {
-          //PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-          PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-          Value += pp_e[iat]=PP[iat]->evaluate(P,iat,Psi);
-        }
+      //int Nvars=optvars.size();
+      //vector<RealType> dh_ana(Nvars,0.0);
+      //Return_t e=0.0;
+      //for(int iat=0; iat<NumIons; iat++)
+      //  if(PP[iat])
+      //  {
+      //    PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
+      //    e += PP[iat]->evaluate(P,iat,Psi);
+      //  }
 
-      Timer myclock;
-      for(int iat=0; iat<NumIons; iat++)
-        if(PP[iat])
-        {
-          PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-          pp_de[iat]= PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dh_ana);//dhpsioverpsi);
-        }
-      myclock.restart();
-      cout << "Analytic Time " << myclock.elapsed() << endl;
-      for(int v=0; v<dhpsioverpsi.size(); ++v)
-        dhpsioverpsi[v] += dh_ana[v];
+      //vector<RealType> dh_diff(Nvars,0.0);
+      //opt_variables_type wfVars(optvars),wfvar_prime(optvars);
+      //RealType FiniteDiff = 1e-6;
+      //QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+      //for (int i=0; i<Nvars ; i++)
+      //{
+      //  wfvar_prime[i] = wfVars[i]+ FiniteDiff;
+      //  //     Psi.checkOutVariables(wfvar_prime);
+      //  Psi.resetParameters(wfvar_prime);
+      //  Psi.reset();
+      //  RealType logpsiPlus = Psi.evaluateLog(P);
+      //  RealType elocPlus=0.0;
+      //  for(int iat=0; iat<NumIons; iat++) 
+      //    if(PP[iat])                       
+      //    {
+      //      PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
+      //      elocPlus += PP[iat]->evaluate(P,iat,Psi);
+      //    }
 
-      opt_variables_type wfVars(optvars),wfvar_prime(optvars);
-      vector<RealType> dh_diff(Nvars);
-      RealType FiniteDiff = 1e-6;
-      QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
-      myclock.restart();
-      for (int i=0; i<Nvars ; i++)
-      {
-        for (int j=0; j<Nvars; j++)
-          wfvar_prime[j]=wfVars[j];
-        wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-        //     Psi.checkOutVariables(wfvar_prime);
-        Psi.resetParameters(wfvar_prime);
-        Psi.reset();
-        P.update();
-        P.G=0;
-        P.L=0;
-        RealType logpsiPlus = Psi.evaluateLog(P);
+      //  wfvar_prime[i] = wfVars[i]- FiniteDiff;
+      //  //     Psi.checkOutVariables(wfvar_prime);
+      //  Psi.resetParameters(wfvar_prime);
+      //  Psi.reset();
+      //  RealType logpsiMinus = Psi.evaluateLog(P);
+      //  RealType elocMinus=0.0;
+      //  for(int iat=0; iat<NumIons; iat++) 
+      //    if(PP[iat])                       
+      //    {
+      //      PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
+      //      elocMinus += PP[iat]->evaluate(P,iat,Psi);
+      //    }
+      //  dh_diff[i]= (elocPlus-elocMinus)*dh;
+      //}
+      //Psi.resetParameters(optvars);
+      //Psi.reset();
 
-        RealType elocPlus=0.0;
-        for(int iat=0; iat<NumIons; iat++) 
-          if(PP[iat])                       
-          {
-            PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-            elocPlus += pp_e[iat]=PP[iat]->evaluate(P,iat,Psi);
-          }
+      //app_log() << "DERIV " << endl;
+      //for(int v=0;v<Nvars; ++v)
+      //  app_log() << v << " " << dh_ana[v] << " " << dh_diff[v] << endl;
 
-        wfvar_prime[i] = wfVars[i]- FiniteDiff;
-        //     Psi.checkOutVariables(wfvar_prime);
-        Psi.resetParameters(wfvar_prime);
-        Psi.reset();
-        P.update();
-        P.G=0;
-        P.L=0;
-        RealType logpsiMinus = Psi.evaluateLog(P);
-        RealType elocMinus=0.0;
-        for(int iat=0; iat<NumIons; iat++) 
-          if(PP[iat])                       
-          {
-            PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-            elocMinus += pp_e[iat]=PP[iat]->evaluate(P,iat,Psi);
-          }
-
-        dh_diff[i]= (elocPlus-elocMinus)*dh;
-      }
-      cout << "Numerical Time " << myclock.elapsed() << endl;
-
-      for(int iat=0; iat<NumIons; iat++)
-        cout << iat << " " << pp_e[iat] << " " << pp_de[iat] << endl;
-
-      for(int v=0; v<dhpsioverpsi.size(); ++v)
-        cout << "Hdpsi " << dh_ana[v] << " " << dh_diff[v] << " " << dh_ana[v]-dh_diff[v] << endl;
       //APP_ABORT("DONE");
       return Value;
-      */
     }
 
   /** evaluate the non-local potential of the iat-th ionic center
@@ -164,6 +136,7 @@ namespace qmcplusplus
           std::fill(dlogpsi_t.begin(),dlogpsi_t.end(),0.0);
           psi.evaluateDerivatives(W, optvars, dlogpsi_t,dhlogpsi_t);
           for(int v=0; v<dlogpsi_t.size(); ++v) dratio(v,j)=dlogpsi_t[v];
+
           PosType md=-1.0*deltarV[j];
           W.makeMoveAndCheck(iel,md);
           W.acceptMove(iel);

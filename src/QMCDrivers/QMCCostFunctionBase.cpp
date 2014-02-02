@@ -43,6 +43,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE,0.0);
   IsValid=true;
+  useNLPPDeriv=false;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
@@ -471,6 +472,7 @@ bool
 QMCCostFunctionBase::put(xmlNodePtr q)
 {
   string writeXmlPerStep("no");
+  string computeNLPPderiv("no");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep,"dumpXML","string");
   m_param.add(MinNumWalkers,"minwalkers","scalar");
@@ -478,11 +480,18 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(usebuffer,"useBuffer","string");
   m_param.add(usebuffer,"usebuffer","string");
   m_param.add(includeNonlocalH,"nonlocalpp","string");
+  m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");
   m_param.add(GEVType,"GEVMethod","string");
   m_param.put(q);
   if (includeNonlocalH=="yes")
     includeNonlocalH="NonLocalECP";
+
+  if(computeNLPPderiv != "no" && includeNonlocalH != "no")
+  {
+    app_log() << "   Going to include the derivatives of " << includeNonlocalH << endl;
+    useNLPPDeriv=true;
+  }
   // app_log() << "  QMCCostFunctionBase::put " << endl;
   // m_param.get(app_log());
   Write2OneXml = (writeXmlPerStep == "no");
@@ -504,43 +513,40 @@ QMCCostFunctionBase::put(xmlNodePtr q)
       putContent(tmpid,cur);
       idtag.insert(idtag.end(),tmpid.begin(),tmpid.end());
     }
-    else
-      if (cname == "exclude")
+    else if (cname == "exclude")
+    {
+      vector<string> tmpid;
+      putContent(tmpid,cur);
+      excluded.insert(excluded.end(),tmpid.begin(),tmpid.end());
+    }
+    else if (cname == "cost")
+    {
+      cset.push_back(cur);
+    }
+    else if (cname == "set")
+    {
+      string ctype("equal");
+      string s("0");
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(ctype,"type");
+      pAttrib.add(s,"name");
+      pAttrib.put(cur);
+      if (ctype == "equal" || ctype == "=")
       {
-        vector<string> tmpid;
-        putContent(tmpid,cur);
-        excluded.insert(excluded.end(),tmpid.begin(),tmpid.end());
-      }
-      else
-        if (cname == "cost")
+        map<string,vector<string>*>::iterator eit(equalConstraints.find(s));
+        vector<string>* eqSet=0;
+        if (eit == equalConstraints.end())
         {
-          cset.push_back(cur);
+          eqSet = new vector<string>;
+          equalConstraints[s]=eqSet;
         }
         else
-          if (cname == "set")
-          {
-            string ctype("equal");
-            string s("0");
-            OhmmsAttributeSet pAttrib;
-            pAttrib.add(ctype,"type");
-            pAttrib.add(s,"name");
-            pAttrib.put(cur);
-            if (ctype == "equal" || ctype == "=")
-            {
-              map<string,vector<string>*>::iterator eit(equalConstraints.find(s));
-              vector<string>* eqSet=0;
-              if (eit == equalConstraints.end())
-              {
-                eqSet = new vector<string>;
-                equalConstraints[s]=eqSet;
-              }
-              else
-                eqSet = (*eit).second;
-              vector<string> econt;
-              putContent(econt,cur);
-              eqSet->insert(eqSet->end(),econt.begin(),econt.end());
-            }
-          }
+          eqSet = (*eit).second;
+        vector<string> econt;
+        putContent(econt,cur);
+        eqSet->insert(eqSet->end(),econt.begin(),econt.end());
+      }
+    }
     cur=cur->next;
   }
   //build optimizables from the wavefunction

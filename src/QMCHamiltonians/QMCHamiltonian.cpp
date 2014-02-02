@@ -329,32 +329,30 @@ QMCHamiltonian::RealType
 QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
     vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    vector<RealType>& dhpsioverpsi,
+    bool compute_deriv)
 {
-  LocalEnergy = 0.0;
-  RealType nlpp=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy += H[i]->evaluateValueAndDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
-    if(H[i]->isNonLocal()) nlpp+=H[i]->Value;
-  }
-  KineticEnergy=H[0]->Value;
-  P.PropertyList[LOCALENERGY]=LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-  return H[0]->Value+nlpp; 
+  LocalEnergy=KineticEnergy=H[0]->evaluate(P);
+  if(compute_deriv)
+    for(int i=1; i<H.size(); ++i)
+      LocalEnergy += H[i]->evaluateValueAndDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+  else
+    for(int i=1; i<H.size(); ++i)
+      LocalEnergy += H[i]->evaluate(P);
+  return LocalEnergy;
 }
 
 QMCHamiltonian::RealType 
-QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P)
+QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
-  LocalEnergy = 0.0;
   RealType nlpp=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy += H[i]->evaluate(P);
-    if(H[i]->isNonLocal()) nlpp+=H[i]->Value;
-  }
-  return H[0]->Value+nlpp; 
+  RealType ke=H[0]->evaluate(P);
+  if(free_nlpp)
+    for(int i=1; i<H.size(); ++i)
+    {
+      if(H[i]->isNonLocal()) nlpp+=H[i]->evaluate(P);
+    }
+  return ke+nlpp;
 }
 
 void QMCHamiltonian::auxHevaluate(ParticleSet& P )

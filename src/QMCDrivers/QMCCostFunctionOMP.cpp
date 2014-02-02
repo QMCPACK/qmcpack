@@ -60,21 +60,21 @@ void QMCCostFunctionOMP::resetWalkers()
 
 void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
 {
-  if (FiniteDiff > 0)
-  {
-    QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
-    for (int i=0; i<NumOptimizables ; i++)
-    {
-      for (int j=0; j<NumOptimizables; j++)
-        OptVariables[j]=PM[j];
-      OptVariables[i] = PM[i]+ FiniteDiff;
-      QMCTraits::RealType CostPlus = this->Cost();
-      OptVariables[i] = PM[i]- FiniteDiff;
-      QMCTraits::RealType CostMinus = this->Cost();
-      PGradient[i]= (CostPlus-CostMinus)*dh;
-    }
-  }
-  else
+  //if (FiniteDiff > 0)
+  //{
+  //  QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+  //  for (int i=0; i<NumOptimizables ; i++)
+  //  {
+  //    for (int j=0; j<NumOptimizables; j++)
+  //      OptVariables[j]=PM[j];
+  //    OptVariables[i] = PM[i]+ FiniteDiff;
+  //    QMCTraits::RealType CostPlus = this->Cost();
+  //    OptVariables[i] = PM[i]- FiniteDiff;
+  //    QMCTraits::RealType CostMinus = this->Cost();
+  //    PGradient[i]= (CostPlus-CostMinus)*dh;
+  //  }
+  //}
+  //else
   {
     for (int j=0; j<NumOptimizables; j++)
       OptVariables[j]=PM[j];
@@ -198,6 +198,7 @@ void QMCCostFunctionOMP::getConfigurations(const string& aroot)
     DerivRecords.resize(NumThreads,0);
     HDerivRecords.resize(NumThreads,0);
   }
+  
   app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
   app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
   app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<<endl;
@@ -365,6 +366,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       }
     }
     QMCHamiltonianBase* nlpp = (includeNonlocalH =="no")?  0: hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    bool compute_nlpp=useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
@@ -398,12 +400,6 @@ void QMCCostFunctionOMP::checkConfigurations()
         //            logpsi = psiClones[ip]->evaluateLog(wRef);
       }
       //          if(includeNonlocalH!="no") logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
-      Return_t x= hClones[ip]->evaluate(wRef);
-      e0 += saved[ENERGY_TOT] = x;
-      e2 += x*x;
-      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-      if(nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
       //if (includeNonlocalH!="no")
       //  saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential() - (*(hClones[ip]->getHamiltonian(includeNonlocalH.c_str()))).Value;
       //else
@@ -411,15 +407,26 @@ void QMCCostFunctionOMP::checkConfigurations()
       //           ef += saved[ENERGY_FIXED];
       saved[REWEIGHT]=thisWalker.Weight=1.0;
       //          thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
+      Return_t etmp;
       if (needGrads)
       {
         //allocate vector
         vector<Return_t> Dsaved(NumOptimizables,0.0);
         vector<Return_t> HDsaved(NumOptimizables,0.0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp =hClones[ip]->evaluateValueAndDerivatives(wRef,OptVariablesForPsi,Dsaved,HDsaved,compute_nlpp);
         std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
         std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+        //etmp= hClones[ip]->evaluate(wRef);
       }
+      else
+        etmp= hClones[ip]->evaluate(wRef);
+
+      e0 += saved[ENERGY_TOT] = etmp;
+      e2 += etmp*etmp;
+      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+      if(nlpp)
+        saved[ENERGY_FIXED] -= nlpp->Value;
     }
     //add them all using reduction
     et_tot+=e0;
@@ -499,6 +506,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
 #pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
   {
     int ip = omp_get_thread_num();
+    bool compute_nlpp=useNLPPDeriv && (includeNonlocalH != "no");
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_t wgt_node=0.0, wgt_node2=0.0;
     //int totalElements=W.getTotalNum()*OHMMS_DIM;
@@ -532,19 +540,24 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
       //          Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE]));
       Return_t weight = saved[REWEIGHT] = vmc_or_dmc*(logpsi-saved[LOGPSI_FREE])+std::log(thisWalker.Weight);
       //          if(std::isnan(weight)||std::isinf(weight)) weight=0;
-      saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
       if (needGrad)
       {
         vector<Return_t> Dsaved(NumOptimizables,0);
         vector<Return_t> HDsaved(NumOptimizables,0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        saved[ENERGY_NEW] =
+          H_KE_Node[ip]->evaluateValueAndDerivatives(wRef,OptVariablesForPsi,Dsaved,HDsaved,compute_nlpp)
+          +saved[ENERGY_FIXED];;
         for( int i=0; i<NumOptimizables; i++)
           if(OptVariablesForPsi.recompute(i))
           {
             (*DerivRecords[ip])(iw,i) = Dsaved[i];
             (*HDerivRecords[ip])(iw,i) = HDsaved[i];
           }
+        //saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
       }
+      else
+        saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
       wgt_node+=inv_n_samples*weight;
       wgt_node2+=inv_n_samples*weight*weight;
     }

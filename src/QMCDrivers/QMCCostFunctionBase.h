@@ -192,6 +192,8 @@ protected:
   bool hamiltonianNeedRatio;
   ///if true, do not write the *.opt.#.xml
   bool Write2OneXml;
+  ///if true, use analytic derivatives for the non-local potential component
+  bool useNLPPDeriv;
   /** |E-E_T|^PowerE is used for the cost function
    *
    * default PowerE=1

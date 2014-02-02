@@ -239,18 +239,24 @@ public:
   Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
 
   /** evaluate energy and derivatives wrt to the variables
-   * @return the variable energy, KE+NLPP
+   * @param P ParticleSet
+   * @param optvars current optimiable variables
+   * @param dlogpsi \f$\partial \ln \Psi({\bf R})/\partial \alpha \f$
+   * @param dhpsioverpsi \f$\partial(\hat{h}\Psi({\bf R})/\Psi({\bf R})) /\partial \alpha \f$
+   * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
   RealType evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
       vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi);
+      vector<RealType>& dhpsioverpsi,
+      bool compute_deriv);
 
   /** evaluate energy 
    * @param P quantum particleset
+   * @param free_nlpp if true, non-local PP is a variable
    * @return KE + NonLocal potential
    */
-  RealType evaluateVariableEnergy(ParticleSet& P);
+  RealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
 
   /*@{*/
   /** @brief functions to handle particle-by-particle move
