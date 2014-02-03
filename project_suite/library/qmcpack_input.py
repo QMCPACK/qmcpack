@@ -2819,7 +2819,7 @@ class QmcpackInput(SimulationInput,Names):
                         #end if
                     #end if
                 #end for
-                if len(elem)==1:
+                if len(elem)==0:
                     elem = None
                     pos  = None
                 else:
