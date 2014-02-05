@@ -1,6 +1,22 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
 
+  <adios-group name="Traces-global" coordination-communicator="comm">
+    <var name="nwalkers_total" type="integer"/>
+    <var name="offset_walkers" type="integer"/>
+    <var name="nwalkers" type="integer"/>
+    <var name="undef" type="double"/>
+    <attribute name="nwalkers_total/description" type="string"
+               value="Number of total walkers in the communicator"/>
+    <attribute name="offse_walkers/description" type="string"
+               value="Number of maximum walkers in one MPI task"/>
+    <attribute name="nwalkers_total/description" type="string"
+               value="Number of maximum walkers in one MPI task" />
+    <global-bounds dimensions="nwalkers_total, buffer" offsets="offset_walkers,0">
+              <var name="walkers" type="double" dimensions="nwalkers,buffer" />
+    </global-bounds>
+  </adios-group>
+  
   <adios-group name="Traces" coordination-communicator="comm">
     <var name="total_size" type="integer"/>
     <var name="buffer_contents" type="double" dimensions="total_size" />
@@ -75,16 +91,18 @@
 
   
   <method group="Traces" method="MPI_AGGREGATE" >
-          num_aggregators=512;num_ost=512;have_metadata_file=0
+          num_aggregators=64;
+  </method>
+  <method group="Traces-global" method="POSIX" >
   </method>
   <method group="Structure" method="MPI_AGGREGATE">
-          num_aggregators=512;num_ost=512;have_metadata_file=0
+          num_aggregators=64;
   </method>
   <method group="checkpoint_double" method="MPI_AGGREGATE">
-          num_aggregators=512;num_ost=512;have_metadata_file=0
+          num_aggregators=16;num_ost=8
   </method>
   <method group="checkpoint_float" method="MPI_AGGREGATE">
-          num_aggregators=512;num_ost=512;have_metadata_file=0
+          num_aggregators=16;num_ost=8
   </method>
 
   <buffer size-MB="30" allocate-time="now" />
