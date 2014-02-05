@@ -1830,8 +1830,25 @@ public:
 
   inline void write_buffers_adios(vector<TraceManager*>& clones, int block)
   {
-    //print_adios(clones);
     MPI_Comm comm = communicator->getMPI();
+
+    static bool write_global; 
+    #if (defined WRITE_GLOBAL)
+    write_global = true;
+    #else
+    write_global = false;
+    #endif
+    if(write_global){
+      cout<<"write global"<<endl;
+    } else {
+      cout<<"write local"<<endl;
+    }
+    //write in local arrays
+    
+
+    //write in global arrays
+
+
     int total_size = 0;
     for(int ip=0; ip<clones.size(); ++ip)
     {
