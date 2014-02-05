@@ -532,72 +532,72 @@ struct TraceSamples
     sample_indices.clear();
   }
 
-#ifdef HAVE_ADIOS
-  inline void register_adios_data(const char* write_mode, const char* path)
-  {
-    MPI_Comm comm = OHMMS::Controller->getMPI();
-    int adios_err;
-    uint64_t adios_groupsize, adios_totalsize;
-    int64_t adios_handle;
-    map<string,map<string,int> >::iterator it;
-    map<string,int>::iterator it2;
-    int num_quantities = 0;
-    for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
-    {
-      map<string,int>& indices = it->second;
-      num_quantities += indices.size();
-    }
-    adios_open(&adios_handle, "Structure", "structure.bp", write_mode, comm);
-    adios_set_path(adios_handle, path);
-    if (num_quantities > 0)
-    {
-      int dim_buf[num_quantities];
-      int shape_buf[num_quantities];
-      int size_buf[num_quantities];
-      int unit_buf[num_quantities];
-      int start_buf[num_quantities];
-      int end_buf[num_quantities];
-      int curr_quantity = 0;
-      for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
-      {
-        const string& domain = it->first;
-        map<string,int>& indices = it->second;
-        for(it2=indices.begin(); it2!=indices.end(); ++it2)
-        {
-          const string& quantity = it2->first;
-          const TraceSample<T>& sample = *samples[it2->second];
-          dim_buf[curr_quantity] = sample.dimension;
-          /* shape_buf[curr_quantity] = new int[sample.dimension]; */
-          size_buf[curr_quantity] = sample.size;
-          unit_buf[curr_quantity] = sample.unit_size;
-          start_buf[curr_quantity] = sample.buffer_start;
-          end_buf[curr_quantity] = sample.buffer_end;
-          curr_quantity++;
-        }
-      }
-      adios_groupsize = (5 * num_quantities * 4) + 4;
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+//#ifdef HAVE_ADIOS
+  //inline void register_adios_data(const char* write_mode, const char* path)
+  //{
+  //  MPI_Comm comm = OHMMS::Controller->getMPI();
+  //  int adios_err;
+  //  uint64_t adios_groupsize, adios_totalsize;
+  //  int64_t adios_handle;
+  //  map<string,map<string,int> >::iterator it;
+  //  map<string,int>::iterator it2;
+  //  int num_quantities = 0;
+  //  for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
+  //  {
+  //    map<string,int>& indices = it->second;
+  //    num_quantities += indices.size();
+  //  }
+  //  adios_open(&adios_handle, "Structure", "structure.bp", write_mode, comm);
+  //  adios_set_path(adios_handle, path);
+  //  if (num_quantities > 0)
+  //  {
+  //    int dim_buf[num_quantities];
+  //    int shape_buf[num_quantities];
+  //    int size_buf[num_quantities];
+  //    int unit_buf[num_quantities];
+  //    int start_buf[num_quantities];
+  //    int end_buf[num_quantities];
+  //    int curr_quantity = 0;
+  //    for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
+  //    {
+  //      const string& domain = it->first;
+  //      map<string,int>& indices = it->second;
+  //      for(it2=indices.begin(); it2!=indices.end(); ++it2)
+  //      {
+  //        const string& quantity = it2->first;
+  //        const TraceSample<T>& sample = *samples[it2->second];
+  //        dim_buf[curr_quantity] = sample.dimension;
+  //        /* shape_buf[curr_quantity] = new int[sample.dimension]; */
+  //        size_buf[curr_quantity] = sample.size;
+  //        unit_buf[curr_quantity] = sample.unit_size;
+  //        start_buf[curr_quantity] = sample.buffer_start;
+  //        end_buf[curr_quantity] = sample.buffer_end;
+  //        curr_quantity++;
+  //      }
+  //    }
+ //     adios_groupsize = (5 * num_quantities * 4) + 4;
+ //     adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
       //adios_write(adios_handle, "domain", (void*)(domain.c_str()));
       //adios_write(adios_handle, "quantity", (void*)(quantity.c_str()));
       /* adios_write(adios_handle, "mpi_rank", (void*)&mpi_rank); */
       /* adios_write(adios_handle, "mpi_size", (void*)&mpi_size); */
-      adios_write(adios_handle, "num_quantities", &num_quantities);
-      adios_write(adios_handle, "size", (void*)&size_buf);
-      adios_write(adios_handle, "dimension", (void*)&dim_buf);
+ //     adios_write(adios_handle, "num_quantities", &num_quantities);
+ //     adios_write(adios_handle, "size", (void*)&size_buf);
+ //     adios_write(adios_handle, "dimension", (void*)&dim_buf);
       //adios_write(adios_handle, "shape", (void*)&shape_buf);
-      adios_write(adios_handle, "unit_size", (void*)&unit_buf);
-      adios_write(adios_handle, "row_start", (void*)&start_buf);
-      adios_write(adios_handle, "row_end", (void*)&end_buf);
-    } //if(num_quantities > 0)
-    else
-    {
-      adios_groupsize = 4;
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      adios_write(adios_handle, "num_quantities", &num_quantities);
-    }
-    adios_close(adios_handle);
-  }
-#endif //HAVE_ADIOS
+ //     adios_write(adios_handle, "unit_size", (void*)&unit_buf);
+ //     adios_write(adios_handle, "row_start", (void*)&start_buf);
+ //     adios_write(adios_handle, "row_end", (void*)&end_buf);
+ //   } //if(num_quantities > 0)
+ //   else
+ //   {
+ //     adios_groupsize = 4;
+ //     adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
+ //     adios_write(adios_handle, "num_quantities", &num_quantities);
+ //   }
+ //   adios_close(adios_handle);
+ // }
+//#endif //HAVE_ADIOS
 
 
   inline void register_hdf_data(hdf_archive& f)
@@ -842,18 +842,18 @@ struct TraceBuffer
     app_log()<<pad<<"end TraceBuffer<"<<type<<">"<<endl;
   }
 
-#ifdef HAVE_ADIOS
-  inline void register_adios_data(const char* write_mode)
-  {
-    string path = "/" + type;
-    samples->register_adios_data(write_mode, path.c_str());
-    if(has_complex)
-    {
-      path = "/" + type + "_complex";
-      complex_samples->register_adios_data("a", path.c_str());
-    }
-  }
-#endif
+//#ifdef HAVE_ADIOS
+//  inline void register_adios_data(const char* write_mode)
+//  {
+//    string path = "/" + type;
+//    samples->register_adios_data(write_mode, path.c_str());
+//    if(has_complex)
+//    {
+//      path = "/" + type + "_complex";
+//      complex_samples->register_adios_data("a", path.c_str());
+//    }
+//  }
+//#endif
 
   inline void register_hdf_data(hdf_archive& f)
   {
@@ -1810,8 +1810,8 @@ public:
   {
     //adios_init("qmc_adios.xml", communicator->getMPI());
     TraceManager& tm = *clones[0];
-    tm.int_buffer.register_adios_data("w");
-    tm.real_buffer.register_adios_data("a");
+    //tm.int_buffer.register_adios_data("w");
+    //tm.real_buffer.register_adios_data("a");
   }
 
 
