@@ -1841,66 +1841,51 @@ public:
     if(write_global){
       cout<<"write global"<<endl;
     } else {
-      cout<<"write local"<<endl;
-    }
-    //write in local arrays
-    
-
-    //write in global arrays
-
-
-    int total_size = 0;
-    for(int ip=0; ip<clones.size(); ++ip)
-    {
-      TraceManager& tm = *clones[ip];
-      total_size += tm.real_buffer.buffer.size();
-    }
-    double * adios_buffer = (double *)malloc(total_size*sizeof(double));
-    if(!adios_buffer){
-      APP_ABORT("not enough memory\n");
-    }
-    int curr_pos = 0;
-    for(int ip=0; ip<clones.size(); ++ip)
-    {
-      TraceManager& tm = *clones[ip];
-      for(vector<TraceReal>::iterator  iter= tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end(); iter++)
+      //write in local arrays. Can use the aggregate method
+      int total_size = 0;
+      for(int ip=0; ip<clones.size(); ++ip)
       {
-        adios_buffer[curr_pos++] = *iter;
+        TraceManager& tm = *clones[ip];
+        total_size += tm.real_buffer.buffer.size();
       }
-    }
-    static bool write_flag = true;
-    int         adios_err;
-    uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle;
-    string file_name = file_root;
-    string s = boost::lexical_cast<std::string>(block);
-    file_name = file_name + ".b"+s+".trace.bp";
-    if(write_flag)
-    {
+      double * adios_buffer = (double *)malloc(total_size*sizeof(double));
+      if(!adios_buffer){
+        APP_ABORT("not enough memory\n");
+      }
+      int curr_pos = 0;
+      for(int ip=0; ip<clones.size(); ++ip)
+      {
+        TraceManager& tm = *clones[ip];
+        for(vector<TraceReal>::iterator  iter= tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end(); iter++)
+        {
+          adios_buffer[curr_pos++] = *iter;
+        }
+      }
+      int         adios_err;
+      uint64_t    adios_groupsize, adios_totalsize;
+      int64_t     adios_handle;
+      string file_name = file_root;
+      string s = boost::lexical_cast<std::string>(block);
+      file_name = file_name + ".b"+s+".trace.bp";
       adios_open(&adios_handle, "Traces", file_name.c_str(), "w", comm);
-      //      write_flag = false;
-    }
-    else
-    {
-      adios_open(&adios_handle, "Traces", file_name.c_str(), "a", comm);
-    }
-    adios_groupsize = 4 + (total_size * 8);
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-    adios_write(adios_handle, "total_size", &total_size);
-    adios_write(adios_handle, "buffer_contents", adios_buffer);
-    adios_close(adios_handle);
-    free(adios_buffer);
-#ifdef IO_PROFILE
-    ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
-#endif
-#ifdef ADIOS_VERIFY
-    ADIOS_FILE *fp = adios_read_open_file(file_name.c_str(),
+      adios_groupsize = 4 + (total_size * 8);
+      adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+      adios_write(adios_handle, "total_size", &total_size);
+      adios_write(adios_handle, "buffer_contents", adios_buffer);
+      adios_close(adios_handle);
+      free(adios_buffer);
+      #ifdef IO_PROFILE
+      ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
+      #endif
+      #ifdef ADIOS_VERIFY
+      ADIOS_FILE *fp = adios_read_open_file(file_name.c_str(),
                                           ADIOS_READ_METHOD_BP,
                                           OHMMS::Controller->getMPI());
-    IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
-    IO_VERIFY::adios_trace_verify_local_variables(fp, "buffer_contents", adios_buffer);
-    adios_read_close(fp);
-#endif
+      IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
+      IO_VERIFY::adios_trace_verify_local_variables(fp, "buffer_contents", adios_buffer);
+      adios_read_close(fp);
+      #endif
+    }
   }
 
 
