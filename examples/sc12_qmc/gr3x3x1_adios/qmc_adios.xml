@@ -34,7 +34,6 @@
               <var name="real_buffer" type="double" dimensions="real_max_rows,real_cols" />
     </global-bounds>
   </adios-group>
-  </adios-group>
   
   <adios-group name="Traces" coordination-communicator="comm">
     <var name="total_size" type="integer"/>
