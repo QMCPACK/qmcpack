@@ -2,19 +2,38 @@
 <adios-config host-language="C">
 
   <adios-group name="Traces-global" coordination-communicator="comm">
-    <var name="nwalkers_total" type="integer"/>
-    <var name="offset_walkers" type="integer"/>
-    <var name="nwalkers" type="integer"/>
-    <var name="undef" type="double"/>
-    <attribute name="nwalkers_total/description" type="string"
-               value="Number of total walkers in the communicator"/>
-    <attribute name="offse_walkers/description" type="string"
-               value="Number of maximum walkers in one MPI task"/>
-    <attribute name="nwalkers_total/description" type="string"
-               value="Number of maximum walkers in one MPI task" />
-    <global-bounds dimensions="nwalkers_total, buffer" offsets="offset_walkers,0">
-              <var name="walkers" type="double" dimensions="nwalkers,buffer" />
+    <var name="int_rows_total" type="integer"/>
+    <var name="int_max_rows" type="integer"/>
+    <var name="int_offset_rows" type="integer"/>
+    <var name="int_cols" type="integer"/>
+    <attribute name="int_rows_total/description" type="string"
+               value="Number of total rows of trace samples on the communicator"/>
+    <attribute name="int_max_rows/description" type="string"
+               value="Number of maximum rows of trace smaples in one MPI task"/>
+    <attribute name="int_offset_rows/description" type="string"
+               value="Number of offset of rows for each process in one communicator" />
+    <attribute name="int_cols/description" type="string"
+               value="Number cols of doubles in one trace sample in one MPI task" />
+    <global-bounds dimensions="int_rows_total, int_cols" offsets="int_offset_rows,0">
+              <var name="int_buffer" type="double" dimensions="int_max_rows,int_cols" />
     </global-bounds>
+
+    <var name="real_rows_total" type="integer"/>
+    <var name="real_max_rows" type="integer"/>
+    <var name="real_offset_rows" type="integer"/>
+    <var name="real_cols" type="integer"/>
+    <attribute name="real_rows_total/description" type="string"
+               value="Number of total rows of trace samples on the communicator"/>
+    <attribute name="real_max_rows/description" type="string"
+               value="Number of maximum rows of trace smaples in one MPI task"/>
+    <attribute name="real_offset_rows/description" type="string"
+               value="Number of offset of rows for each process in one communicator" />
+    <attribute name="real_cols/description" type="string"
+               value="Number cols of doubles in one trace sample in one MPI task" />
+    <global-bounds dimensions="real_rows_total, real_cols" offsets="real_offset_rows,0">
+              <var name="real_buffer" type="double" dimensions="real_max_rows,real_cols" />
+    </global-bounds>
+  </adios-group>
   </adios-group>
   
   <adios-group name="Traces" coordination-communicator="comm">
