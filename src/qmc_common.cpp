@@ -63,6 +63,10 @@ void QMCState::initialize(int argc, char **argv)
     {
       vacuum=atof(argv[++i]);
     }
+    else if(c.find("--noprint")<c.size())
+    {//do not print Jastrow or PP
+      io_node=false;
+    }
     //else if(c.find("--use_ewald")<c.size())
     //{
     //  use_ewald=true;
