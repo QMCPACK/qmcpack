@@ -1839,7 +1839,18 @@ public:
     write_global = false;
     #endif
     if(write_global){
-      cout<<"write global"<<endl;
+      int rows[]={0,0};
+      for(int ip=0; ip<clones.size(); ip++){
+          TraceManager& tm = *clones[ip];
+          rows[0] += tm.int_buffer.buffer.size(0);
+          rows[1] += tm.real_buffer.buffer.size(0);
+      }
+      int allreduced_rows[2];
+      MPI_Allreduce(rows, allreduced_rows, 2, MPI_INT, MPI_MAX, comm);
+
+      //cout<<"write global"<<rows[0]<<" "<<rows[1]<<endl;
+      //cout<<"allreduced"<<allreduced_rows[0]<<" "<<allreduced_rows[1]<<endl;
+      //cout<<"###############################"<<block<<endl;
     } else {
       //write in local arrays. Can use the aggregate method
       int total_size = 0;
