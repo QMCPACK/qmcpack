@@ -14,8 +14,8 @@
                value="Number of offset of rows for each process in one communicator" />
     <attribute name="int_cols/description" type="string"
                value="Number cols of doubles in one trace sample in one MPI task" />
-    <global-bounds dimensions="int_rows_total, int_cols" offsets="int_offset_rows,0">
-              <var name="int_buffer" type="double" dimensions="int_max_rows,int_cols" />
+    <global-bounds dimensions="int_rows_total,int_cols" offsets="int_offset_rows,0">
+              <var name="int_buffer" type="integer" dimensions="int_max_rows,int_cols" />
     </global-bounds>
 
     <var name="real_rows_total" type="integer"/>
@@ -30,7 +30,7 @@
                value="Number of offset of rows for each process in one communicator" />
     <attribute name="real_cols/description" type="string"
                value="Number cols of doubles in one trace sample in one MPI task" />
-    <global-bounds dimensions="real_rows_total, real_cols" offsets="real_offset_rows,0">
+    <global-bounds dimensions="real_rows_total,real_cols" offsets="real_offset_rows,0">
               <var name="real_buffer" type="double" dimensions="real_max_rows,real_cols" />
     </global-bounds>
   </adios-group>
@@ -65,7 +65,7 @@
     <var name="thread_rank" type="integer"/>
     <var name="global_size" type="integer"/>
     <var name="local_size" type="integer"/>
-    <global-bounds dimensions="global_size, random_size" offsets="thread_rank,0">
+    <global-bounds dimensions="global_size,random_size" offsets="thread_rank,0">
      <var name="random" type="integer" dimensions="local_size,random_size"/>
     </global-bounds>
 
@@ -95,7 +95,7 @@
     <var name="thread_rank" type="integer"/>
     <var name="global_size" type="integer"/>
     <var name="local_size" type="integer"/>
-    <global-bounds dimensions="global_size, random_size" offsets="thread_rank,0">
+    <global-bounds dimensions="global_size,random_size" offsets="thread_rank,0">
      <var name="random" type="integer" dimensions="local_size,random_size"/>
     </global-bounds>
 
