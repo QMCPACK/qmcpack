@@ -1833,23 +1833,100 @@ public:
     MPI_Comm comm = communicator->getMPI();
 
     static bool write_global; 
-    #if (defined WRITE_GLOBAL)
+    #if (defined WRITE_GLOBAL) //passed from CMakeList file to switch between local array and global array
     write_global = true;
     #else
     write_global = false;
     #endif
+
     if(write_global){
+      //preparing data to be written out
       int rows[]={0,0};
+      int cols[]={0,0};
       for(int ip=0; ip<clones.size(); ip++){
           TraceManager& tm = *clones[ip];
           rows[0] += tm.int_buffer.buffer.size(0);
           rows[1] += tm.real_buffer.buffer.size(0);
+          cols[0] = tm.int_buffer.buffer.size(1);
+          cols[1] = tm.real_buffer.buffer.size(1);
       }
       int allreduced_rows[2];
+      int total_rows[2];
       MPI_Allreduce(rows, allreduced_rows, 2, MPI_INT, MPI_MAX, comm);
 
+      int int_max_rows = allreduced_rows[0];
+      int int_rows_total = int_max_rows*communicator->size();
+      int int_offset_rows = communicator->rank()*int_max_rows;
+      int int_cols = cols[0];
+
+      int real_max_rows = allreduced_rows[1];
+      int real_rows_total = real_max_rows*communicator->size();
+      int real_offset_rows = communicator->rank()*real_max_rows;
+      int real_cols = cols[1];
+
+      int* int_buffer = (int *)malloc(int_max_rows*int_cols*sizeof(int));
+      TraceReal* real_buffer = (TraceReal *)malloc(real_max_rows*real_cols*sizeof(double));
+      if(!int_buffer || !real_buffer){
+        APP_ABORT("not enough memory\n");
+      }
+      bzero(int_buffer, int_max_rows*int_cols*sizeof(int));
+      bzero(real_buffer, real_max_rows*real_cols*sizeof(double));
+
+      int row_count = 0;
+      for(int i=0; i<clones.size(); i++)
+      {
+        TraceManager& tm = *clones[i];
+        int rows = tm.int_buffer.buffer.size(0);
+        for(int j=0; j<rows; j++){
+          for(int k=0; k<int_cols; k++){
+            int_buffer[rows*int_cols+k] = tm.int_buffer.buffer(j*int_cols+k);
+          }
+          row_count++;
+        }
+      }
+
+      row_count = 0;
+      for(int i=0; i<clones.size(); ++i)
+      {
+        TraceManager& tm = *clones[i];
+        int rows = tm.real_buffer.buffer.size(0);
+        for(int j=0; j<rows; j++){
+          for(int k=0; k<real_cols; k++){
+            real_buffer[rows*real_cols+k] = tm.real_buffer.buffer(j*real_cols+k);
+          }
+          row_count++;
+        }
+      }
+
+      //open adios file, create adios group, write out variable, close adios file
+      int         err;
+      uint64_t    group_size, total_size;
+      int64_t     handle;
+      string file_name = file_root + ".trace.bp";
+      adios_open(&handle, "Traces-global", file_name.c_str(), "a", comm);
+      group_size = 8*sizeof(int) + int_max_rows*int_cols*sizeof(int), real_max_rows*real_cols*sizeof(double);
+      adios_group_size (handle, group_size, &total_size);
+      adios_write(handle, "int_rows_total", &int_rows_total);
+      adios_write(handle, "int_max_rows", &int_max_rows);
+      adios_write(handle, "int_offset_rows", &int_offset_rows);
+      adios_write(handle, "int_cols", &int_cols);
+      adios_write(handle, "real_rows_total", &real_rows_total);
+      adios_write(handle, "real_max_rows", &real_max_rows);
+      adios_write(handle, "real_offset_rows", &real_offset_rows);
+      adios_write(handle, "real_cols", &real_cols);
+      adios_write(handle, "int_buffer", int_buffer);
+      adios_write(handle, "real_buffer", real_buffer);
+      adios_close(handle);
+
+      free(int_buffer);
+      free(real_buffer);
+      #ifdef IO_PROFILE
+      ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, group_size, total_size);
+      #endif
+      #ifdef ADIOS_VERIFY
+      #endif
       //cout<<"write global"<<rows[0]<<" "<<rows[1]<<endl;
-      //cout<<"allreduced"<<allreduced_rows[0]<<" "<<allreduced_rows[1]<<endl;
+      //cout<<"allreduced"<<int_max_rows<<" "<<real_max_rows<<" "<<int_rows_total<<" "<<real_rows_total<<" "<<int_offset_rows<<" "<<real_offset_rows<<" "<<int_cols<<" "<<real_cols<<endl;
       //cout<<"###############################"<<block<<endl;
     } else {
       //write in local arrays. Can use the aggregate method
@@ -1867,6 +1944,7 @@ public:
       for(int ip=0; ip<clones.size(); ++ip)
       {
         TraceManager& tm = *clones[ip];
+        //fix me. the types don't match --Cynthia
         for(vector<TraceReal>::iterator  iter= tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end(); iter++)
         {
           adios_buffer[curr_pos++] = *iter;
