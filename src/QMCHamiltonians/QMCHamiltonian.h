@@ -25,8 +25,9 @@ namespace qmcplusplus
 {
 
 class MCWalkerConfiguration;
-
 class NewTimer;
+class HamiltonianFactory;
+
 /**  Collection of Local Energy Operators
  *
  * Note that QMCHamiltonian is not derived from QMCHmailtonianBase.
@@ -34,6 +35,7 @@ class NewTimer;
 class QMCHamiltonian
 {
 
+  friend class HamiltonianFactory;
 public:
 
   typedef QMCHamiltonianBase::RealType  RealType;
@@ -321,6 +323,8 @@ private:
   int myIndex;
   ///starting index
   int numCollectables;
+  ///enable virtual moves 
+  bool EnableVirtualMoves;
   ///Current Local Energy
   Return_t LocalEnergy;
   ///Current Kinetic Energy

@@ -75,7 +75,8 @@ struct QMCHamiltonianBase: public QMCTraits
     RATIOUPDATE=2, 
     PHYSICAL=3, 
     COLLECTABLE=4, 
-    NONLOCAL=5 
+    NONLOCAL=5,
+    VIRTUALMOVES=6
   };
 
   ///set the current update mode

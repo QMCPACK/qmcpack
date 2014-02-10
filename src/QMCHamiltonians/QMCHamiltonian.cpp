@@ -29,8 +29,9 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectables(0),tracing(false),tracing_positions(false),
-   id_sample(0),weight_sample(0),position_sample(0)
+  :myIndex(0),numCollectables(0),EnableVirtualMoves(false),
+  tracing(false),tracing_positions(false),
+  id_sample(0),weight_sample(0),position_sample(0)
 { }
 
 ///// copy constructor is distable by declaring it as private
@@ -98,6 +99,8 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
     h->myName=aname;
     auxH.push_back(h);
   }
+
+  EnableVirtualMoves|= h->getMode(QMCHamiltonianBase::VIRTUALMOVES);
 }
 
 
@@ -114,7 +117,6 @@ const string& QMCHamiltonian::getOperatorType(const string& name)
     APP_ABORT("QMCHamiltonain::getOperatorType\n  operator type not found for name "+name);
   return type->second;
 }
-
 
 ///** remove a named Hamiltonian from the list
 // *@param aname the name of the Hamiltonian
@@ -308,6 +310,9 @@ void QMCHamiltonian::finalize_traces()
 QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P)
 {
+
+  if(EnableVirtualMoves) P.initVirtualMoves();
+
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
@@ -332,6 +337,8 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     vector<RealType>& dhpsioverpsi,
     bool compute_deriv)
 {
+  if(EnableVirtualMoves) P.initVirtualMoves();
+
   LocalEnergy=KineticEnergy=H[0]->evaluate(P);
   if(compute_deriv)
     for(int i=1; i<H.size(); ++i)
@@ -345,6 +352,7 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
+  if(EnableVirtualMoves) P.initVirtualMoves();
   RealType nlpp=0.0;
   RealType ke=H[0]->evaluate(P);
   if(free_nlpp)
@@ -398,6 +406,7 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 {
+  if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {

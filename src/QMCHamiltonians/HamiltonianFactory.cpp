@@ -515,22 +515,21 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         //         FW->put(cur,*targetH,*targetPtcl);
         //         targetH->addOperator(FW,"ZeroVarObs",false);
       }
-//         else if(potType == "DMCCorrection")
-//         {
-//           TrialDMCCorrection* TE = new TrialDMCCorrection();
-//           TE->putSpecial(cur,*targetH,*targetPtcl);
-//           targetH->addOperator(TE,"DMC_CORR",false);
-//           dmc_correction=true;
-//         }
-      else
-        if(potType == "ForwardWalking")
-        {
-          app_log()<<"  Adding Forward Walking Operator"<<endl;
-          ForwardWalking* FW=new ForwardWalking();
-          FW->putSpecial(cur,*targetH,*targetPtcl);
-          targetH->addOperator(FW,"ForwardWalking",false);
-          dmc_correction=true;
-        }
+      //         else if(potType == "DMCCorrection")
+      //         {
+      //           TrialDMCCorrection* TE = new TrialDMCCorrection();
+      //           TE->putSpecial(cur,*targetH,*targetPtcl);
+      //           targetH->addOperator(TE,"DMC_CORR",false);
+      //           dmc_correction=true;
+      //         }
+      else if(potType == "ForwardWalking")
+      {
+        app_log()<<"  Adding Forward Walking Operator"<<endl;
+        ForwardWalking* FW=new ForwardWalking();
+        FW->putSpecial(cur,*targetH,*targetPtcl);
+        targetH->addOperator(FW,"ForwardWalking",false);
+        dmc_correction=true;
+      }
     }
     cur = cur->next;
   }
@@ -703,7 +702,17 @@ HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi,
 
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
-  return build(cur,true);
+  bool success=build(cur,false);
+
+  if(targetH->EnableVirtualMoves)
+  {
+    app_log() << "  Hamiltonian enables VirtualMoves" << endl;
+    targetPtcl->enableVirtualMoves();
+  }
+  else
+    app_log() << "  Hamiltonian disables VirtualMoves" << endl;
+
+  return success;
 }
 
 void HamiltonianFactory::reset() { }

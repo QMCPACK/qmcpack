@@ -27,8 +27,9 @@ namespace qmcplusplus
 
 /** Factory class to build a many-body wavefunction
  */
-struct HamiltonianFactory: public MPIObjectBase
+class HamiltonianFactory: public MPIObjectBase
 {
+  public:
   typedef map<string,ParticleSet*> PtclPoolType;
   typedef map<string,WaveFunctionFactory*> OrbitalPoolType;
 
@@ -64,18 +65,6 @@ struct HamiltonianFactory: public MPIObjectBase
   ///reset member data
   void reset();
 
-  /** process xmlNode to populate targetPsi
-   */
-  bool build(xmlNodePtr cur, bool buildtree=true);
-
-  void addCoulombPotential(xmlNodePtr cur);
-  void addForceHam(xmlNodePtr cur);
-  void addPseudoPotential(xmlNodePtr cur);
-  void addCorePolPotential(xmlNodePtr cur);
-  void addModInsKE(xmlNodePtr cur);
-  void addMPCPotential(xmlNodePtr cur, bool physical=false);
-  void addVHXCPotential(xmlNodePtr cur);
-
   /** add a property whose name will be renamed by b
    * @param a target property whose name should be replaced by b
    * @param b new property name
@@ -95,6 +84,20 @@ struct HamiltonianFactory: public MPIObjectBase
                             int ip, const string& aname);
 
   vector<HamiltonianFactory*> myClones;
+
+  private:
+  /** process xmlNode to populate targetPsi
+   */
+  bool build(xmlNodePtr cur, bool buildtree);
+
+  void addCoulombPotential(xmlNodePtr cur);
+  void addForceHam(xmlNodePtr cur);
+  void addPseudoPotential(xmlNodePtr cur);
+  void addCorePolPotential(xmlNodePtr cur);
+  void addModInsKE(xmlNodePtr cur);
+  void addMPCPotential(xmlNodePtr cur, bool physical=false);
+  void addVHXCPotential(xmlNodePtr cur);
+
 };
 }
 #endif
