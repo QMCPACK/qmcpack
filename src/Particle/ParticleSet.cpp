@@ -442,6 +442,20 @@ void ParticleSet::update(const ParticlePos_t& pos)
     SK->UpdateAllPart(*this);
 }
 
+/** will use transpose */
+void ParticleSet::enableVirtualMoves()
+{
+  for (int i=0; i< DistTables.size(); i++)
+    DistTables[i]->resizeTranspose();
+}
+
+/** update trans_r and trans_dr for virtual moves */
+void ParticleSet::initVirtualMoves()
+{
+  for (int i=0; i< DistTables.size(); i++)
+    DistTables[i]->setTranspose();
+}
+
 
 /** move a particle iat
  * @param iat the index of the particle to be moved

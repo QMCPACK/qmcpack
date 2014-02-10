@@ -79,11 +79,6 @@ struct SymmetricDTD
       }
       npairs_m = ij;
     }
-    //resize dr_full
-    dr_full.resize(m,m);
-    dr_full=0.0;
-    r_full.resize(m,m);
-    r_full=0.0;
   }
 
 
@@ -109,18 +104,12 @@ struct SymmetricDTD
 
 
   /** unsymmetrize dr */
-  inline void fill()
+  inline void setTranspose()
   {
     const int n = N[SourceIndex];
     for(int i=0,ij=0; i<n; i++)
-    {
       for(int j=i+1; j<n; j++, ij++)
-      {
-        r_full(i,j)=r_full(j,i)=r_m[ij];
-        dr_full(i,j)=dr_m[ij];
-        dr_full(j,i)=-1.0*dr_m[ij];
-      }
-    }
+        trans_r(i,j)=trans_r(j,i)=r_m[ij];
   }
 
   ///evaluate the Distance Table using a set of Particle Positions

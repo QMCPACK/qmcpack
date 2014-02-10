@@ -124,6 +124,8 @@ public:
   IndexType activePtcl;
   ///size of indicies
   TinyVector<IndexType,4> N;
+  ///true, if ratio computations need displacement, e.g. LCAO type
+  bool NeedDisplacement;
   ///** Maximum radius */
   //RealType Rmax;
   ///** Maximum square */
@@ -152,11 +154,11 @@ public:
   /** Locator of the pair  */
   std::vector<IndexType> IJ;
 
-  /** full distance for symmetrized table */
-  Matrix<RealType> r_full;
+  /** full distance matrix with the transposed form */
+  Matrix<RealType> trans_r;
 
-  /** full dr_m for symmetrized table */
-  Matrix<PosType> dr_full;
+  /** full displacement matrix with the transposed form */
+  Matrix<PosType> trans_dr;
 
   /** @brief A NN relation of all the source particles with respect to an activePtcl
    *
@@ -173,7 +175,7 @@ public:
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0)//, Rmax(1e6), Rmax2(1e12)
+    : Origin(&source), N(0), NeedDisplacement(false)//, Rmax(1e6), Rmax2(1e12)
   {  }
 
   ///virutal destructor
@@ -249,6 +251,12 @@ public:
     return Origin->getTotalNum();
   }
 
+  ///returns the number of centers
+  inline IndexType targets() const
+  {
+    return N[VisitorIndex];
+  }
+
   ///returns the size of each dimension using enum
   inline IndexType size(int i) const
   {
@@ -279,11 +287,18 @@ public:
     return M[i] + j;
   }
 
-  /** unfold dr_m  & r_m
-   *
-   * Default behavior : do nothing
+  /** resiste trans_r and trans_dr
    */
-  virtual void fill() {}
+  void resizeTranspose()
+  {
+    trans_r.resize(N[VisitorIndex],N[SourceIndex]);
+    if(NeedDisplacement)
+      trans_dr.resize(N[VisitorIndex],N[SourceIndex]);
+  }
+
+  /** set trans_r, trans_dr
+   */
+  virtual void setTranspose()=0;
 
   ///evaluate the Distance Table using ActiveWalkers
   //virtual void evaluate(const WalkerSetRef& W) = 0;

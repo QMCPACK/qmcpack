@@ -82,6 +82,20 @@ struct AsymmetricDTD
     }
   }
 
+  inline void setTranspose()
+  {
+    const int ns = N[SourceIndex];
+    const int nv = N[VisitorIndex];
+    for(int i=0; i<nv; i++)
+      for(int j=0; j<ns; j++)
+        trans_r(i,j)=r_m[j*nv+i];
+
+    if(NeedDisplacement)
+      for(int i=0; i<nv; i++)
+        for(int j=0; j<ns; j++)
+          trans_dr(i,j)=dr_m[j*nv+i];
+  }
+
 
   inline virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
   {
@@ -178,6 +192,17 @@ struct AsymmetricDTD
       //Temp[iat].rinv0=rinv_m[loc];
       //Temp[iat].dr0=dr_m[loc];
     }
+  }
+
+  inline void fill()
+  {
+    int n=r_full.rows();
+    for(int i=0, ii=0; i<r_full.rows(); ++i)
+      for(int j=0; j<r_full.cols(); ++j,++ii)
+        r_full(ii)=r_m[i+j*n];
+    for(int i=0, ii=0; i<r_full.rows(); ++i,++ii)
+      for(int j=0; j<r_full.cols(); ++j)
+        dr_full(ii)=dr_m[i+j*n];
   }
 
   ///evaluate the temporary pair relations

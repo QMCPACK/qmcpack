@@ -115,8 +115,10 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
-  ///the indexp of the active particle for particle-by-particle moves
+  ///the index of the active particle for particle-by-particle moves
   Index_t activePtcl;
+  ///the group of the active particle for particle-by-particle moves
+  Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
@@ -244,6 +246,13 @@ public:
    *@param pos position vector assigned to R
    */
   void update(const ParticlePos_t& pos);
+
+  /** prepare internal data to be able to handle virutal moves*/
+  void enableVirtualMoves();
+
+  /** prepare distance tables to perform virtual moves, e.g., nlpp evals
+   */ 
+  void initVirtualMoves();
 
   /** create Structure Factor with PBCs
    */
