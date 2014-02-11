@@ -19,6 +19,7 @@
  * Inline dot and gemv functions. 
  * On modern processors with good compilers, there is no need to use blas1, e.g., ddot, but 
  * strange things can happen on some machines.
+ * SIMD specialization can be implemented here.
  */
 #ifndef QMCPLUSPLUS_INNER_PRODUCT_HPP
 #define QMCPLUSPLUS_INNER_PRODUCT_HPP
@@ -197,6 +198,21 @@ namespace qmcplusplus {
           iN += ti*ti;
           riN += tr*ti;
         }//
+      }
+
+    /** transpose 2D data
+     * @param in starting address of n*m
+     * @param out starting address of the transposed data
+     * @param n rows of in
+     * @param m cols of in
+     *
+     * in(n,m) -> out(m,n)
+     */
+    template<typename T>
+      inline void transpose(const T* restrict in, T* restrict out, int n, int m)
+      {
+        for(int i=0; i<m; ++i)
+          for(int j=0,jj=i; j<n; ++j,jj+=m) *out++ = in[jj];
       }
 
   } //simd namepsace

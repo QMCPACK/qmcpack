@@ -24,6 +24,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Numerics/OhmmsBlas.h"
+#include "simd/simd.hpp"
 namespace qmcplusplus
 {
 
@@ -55,34 +56,28 @@ namespace MatrixOperators
   }
 
 
-  inline void ABt(const Matrix<double>& A,
-                  const Matrix<double >& B, Matrix<double >& C)
+  inline void product_ABt(const Matrix<double>& A,
+      const Matrix<double >& B, Matrix<double >& C)
   {
-    const char transa = 'T';
-    const char transb = 'N';
+    const char transa = 't';
+    const char transb = 'n';
     const double zone(1.0);
     const double zero(0.0);
-    int acols=A.cols();
-    int bcols=B.cols();
-    int arows=A.rows();
-    int brows=B.rows();
-    dgemm(transa, transb, bcols, arows, brows,
-          zone, B.data(), bcols, A.data(), acols,
-          zero, C.data(), C.cols());
+    dgemm(transa, transb, B.rows(), A.rows(), B.cols(),
+        zone, B.data(), B.cols(), A.data(), A.cols(),
+        zero, C.data(), C.cols());
   }
 
-
-  inline void product_At(const Matrix<double>& A,
-                         const Matrix<double>& B, Matrix<double>& C)
+  inline void product_AtB(const Matrix<double>& A,
+      const Matrix<double >& B, Matrix<double >& C)
   {
-    const char transa = 'N';
-    const char transb = 'T';
+    const char transa = 'n';
+    const char transb = 't';
     const double zone(1.0);
     const double zero(0.0);
-
-    dgemm(transa, transb, C.cols(), C.rows(), A.rows(),
-          zone, B.data(), B.cols(), A.data(), A.cols(),
-          zero, C.data(), C.cols());
+    dgemm(transa, transb, B.cols(), A.cols(), B.rows(),
+        zone, B.data(), B.cols(), A.data(), A.cols(),
+        zero, C.data(), C.cols());
   }
 
 
@@ -94,6 +89,8 @@ namespace MatrixOperators
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
         C(iat,i)+=M(i,j)*B(j);
+    //for (int i=0; i<C.rows(); i++)
+    //  C(iat,i)+=simd::dot(M[i],B.data(),C.cols());
   }
 
   inline void other_half_outerProduct(const Matrix<double> &M,
@@ -104,7 +101,10 @@ namespace MatrixOperators
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
         C(i,iat)+=M(i,j)*B(j);
+    //for (int i=0; i<C.rows(); i++)
+    //  C(i,iat)+=simd::dot(M[i],B.data(),C.cols());
   }
+
   inline double  innerProduct(const Vector<double> &A,
                               const Vector<double > &B)
   {
@@ -112,6 +112,7 @@ namespace MatrixOperators
     for (int i=0; i<A.size(); i++)
       tot+=A(i)*B(i);
     return tot;
+    //return simd::dot(A.data(),B.data(),A.size());
   }
 
 
@@ -124,7 +125,11 @@ namespace MatrixOperators
         std::swap(A(i,j),A(j,i));
   }
 
-
+  template<typename T>
+    inline void transpose(const Matrix<T>& A, Matrix<T>& B)
+  {
+    simd::transpose(A.data(),B.data(),A.rows(),A.cols());
+  }
 
   /** static function to perform C=AB for complex matrices
    *
