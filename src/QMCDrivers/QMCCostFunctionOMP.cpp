@@ -60,21 +60,21 @@ void QMCCostFunctionOMP::resetWalkers()
 
 void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
 {
-  //if (FiniteDiff > 0)
-  //{
-  //  QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
-  //  for (int i=0; i<NumOptimizables ; i++)
-  //  {
-  //    for (int j=0; j<NumOptimizables; j++)
-  //      OptVariables[j]=PM[j];
-  //    OptVariables[i] = PM[i]+ FiniteDiff;
-  //    QMCTraits::RealType CostPlus = this->Cost();
-  //    OptVariables[i] = PM[i]- FiniteDiff;
-  //    QMCTraits::RealType CostMinus = this->Cost();
-  //    PGradient[i]= (CostPlus-CostMinus)*dh;
-  //  }
-  //}
-  //else
+  if (FiniteDiff > 0)
+  {
+    QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+    for (int i=0; i<NumOptimizables ; i++)
+    {
+      for (int j=0; j<NumOptimizables; j++)
+        OptVariables[j]=PM[j];
+      OptVariables[i] = PM[i]+ FiniteDiff;
+      QMCTraits::RealType CostPlus = this->Cost();
+      OptVariables[i] = PM[i]- FiniteDiff;
+      QMCTraits::RealType CostMinus = this->Cost();
+      PGradient[i]= (CostPlus-CostMinus)*dh;
+    }
+  }
+  else
   {
     for (int j=0; j<NumOptimizables; j++)
       OptVariables[j]=PM[j];
