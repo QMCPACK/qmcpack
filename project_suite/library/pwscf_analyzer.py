@@ -106,7 +106,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             self.energies = array(energies)
 
-
             # get bands and occupations
             nfound = 0
             bands = obj()
@@ -122,18 +121,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             i_occ = j
                         #end if
                     #end while
-                    seigs = ''
-                    for j in range(i+1,i_occ):
-                        seigs+=lines[j]
-                    #end for
-                    seigs = seigs.strip()
-                    eigs = array(seigs.split(),dtype=float)
+                    try:
+                        seigs = ''
+                        for j in range(i+1,i_occ):
+                            seigs+=lines[j]
+                        #end for
+                        seigs = seigs.strip()
+                        eigs = array(seigs.split(),dtype=float)
 
-                    soccs = ''
-                    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
-                        soccs+= lines[j]
-                    #end for
-                    occs = array(soccs.split(),dtype=float)
+                        soccs = ''
+                        for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                            soccs+= lines[j]
+                        #end for
+                        occs = array(soccs.split(),dtype=float)
+                    except Exception:
+                        eigs = array([])
+                        occs = array([])
+                    #end try
+                    
 
                     if nfound==1:
                         bands.up = obj(
@@ -154,17 +159,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end for
                     seigs = seigs.strip()
                     eigs = array(seigs.split(),dtype=float)
-                except Exception:
-                    eigs = array([])
-                #end try
 
-                try:
                     soccs = ''
                     for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
                         soccs+= lines[j]
                     #end for
                     occs = array(soccs.split(),dtype=float)
                 except Exception:
+                    eigs = array([])
                     occs = array([])
                 #end try
 
@@ -214,7 +216,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if found:
                 self.structures = structures
             #end if
-
 
             forces = []
             tot_forces = []
