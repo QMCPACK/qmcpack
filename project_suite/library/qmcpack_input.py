@@ -164,11 +164,12 @@ class collection(hidden):
             missing_identifier = key==''
         #end if
         if missing_identifier:
-            if strict:
-                self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
-            else:
-                return False
-            #end if
+            key = len(public)
+            #if strict:
+            #    self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
+            #else:
+            #    return False
+            ##end if
         #end if
         public[key] = element
         self.hidden().order.append(key)
@@ -1890,9 +1891,9 @@ application.defaults.set(
 #simulationcell.defaults.set(
 #    bconds = 'p p p',lr_dim_cutoff=15
 #    )
-#wavefunction.defaults.set(
-#    name='psi0',target='e'
-#    )
+wavefunction.defaults.set(
+    name='psi0'
+    )
 #determinantset.defaults.set(
 #    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
 #    )
@@ -2571,7 +2572,7 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def incorporate_system(self,system):
-        self.error('incorporate_system needs a developers attention\n  this function should not be used')
+        self.warn('incorporate_system may or may not work\n  please check the qmcpack input produced\n  if it is wrong, please contact the developer')
         system.check_folded_system()
         system.change_units('B')
         system.structure.group_atoms()
@@ -4003,7 +4004,7 @@ def generate_jastrow3(function='polynomial',esize=4,isize=4,rcut=5.,coeff=None,i
     if elements is None and system is None:
         QmcpackInput.class_error('must specify elements or sytem to generate jastrow3')
     elif elements is None:
-        elements = list(system.structure.elem)
+        elements = list(set(system.structure.elem))
     #end if
     if coeff!=None:
         QmcpackInput.class_error('handling coeff is not yet implemented for generate jastrow3')
@@ -4204,7 +4205,7 @@ def generate_basic_input(id             = 'qmc',
                          precision      = 'float',
                          twistnum       = None, 
                          twist          = None,
-                         spin_polarized = False,
+                         spin_polarized = None,
                          orbitals_h5    = 'MISSING.h5',
                          system         = 'missing',
                          pseudos        = None,
@@ -4234,6 +4235,9 @@ def generate_basic_input(id             = 'qmc',
     estimators = estimators + observables + corrections
     if calculations is None:
         calculations = []
+    #end if
+    if spin_polarized is None:
+        spin_polarized = system.net_spin>0
     #end if
 
     metadata = QmcpackInput.default_metadata.copy()
