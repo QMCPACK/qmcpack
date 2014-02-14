@@ -24,7 +24,8 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Numerics/OhmmsBlas.h"
-#include "simd/simd.hpp"
+#include <simd/simd.hpp>
+
 namespace qmcplusplus
 {
 
@@ -378,7 +379,31 @@ namespace MatrixOperators
 //      {
 //        GEMV<T,0>::apply(A.data(),x,y,A.rows(),A.cols());
 //      }
-};
+}
+
+/** API to handle gemv */
+namespace simd
+{
+  template<typename T>
+    inline void gemv(const Matrix<T>& a, const T* restrict v, T* restrict b)
+    {
+      MatrixOperators::product(a,v,b);
+    }
+
+  template<typename T,unsigned D>
+    inline void gemv(const Matrix<T>& a, const TinyVector<T,D>* restrict v, TinyVector<T,D>* restrict b)
+    {
+      MatrixOperators::product(a,v,b);
+    }
+
+  template<typename T,unsigned D>
+    inline void gemv(const Matrix<T>& a, const Tensor<T,D>* restrict v, Tensor<T,D>* restrict b)
+    {
+      MatrixOperators::product(a,v,b);
+    }
+
+}
+
 }
 #endif
 /***************************************************************************

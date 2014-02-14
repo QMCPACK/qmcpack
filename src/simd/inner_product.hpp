@@ -26,7 +26,6 @@
 
 #include <Numerics/OhmmsBlas.h>
 #include <OhmmsPETE/TinyVector.h>
-#include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus {
 
@@ -166,23 +165,23 @@ namespace qmcplusplus {
         return res;
       }
 
-    template<typename T>
-      inline void gemv(const Matrix<T>& a, const T* restrict v, T* restrict b)
-      {
-        MatrixOperators::product(a,v,b);
-      }
+    //template<typename T>
+    //  inline void gemv(const Matrix<T>& a, const T* restrict v, T* restrict b)
+    //  {
+    //    MatrixOperators::product(a,v,b);
+    //  }
 
-    template<typename T,unsigned D>
-      inline void gemv(const Matrix<T>& a, const TinyVector<T,D>* restrict v, TinyVector<T,D>* restrict b)
-      {
-        MatrixOperators::product(a,v,b);
-      }
+    //template<typename T,unsigned D>
+    //  inline void gemv(const Matrix<T>& a, const TinyVector<T,D>* restrict v, TinyVector<T,D>* restrict b)
+    //  {
+    //    MatrixOperators::product(a,v,b);
+    //  }
 
-    template<typename T,unsigned D>
-      inline void gemv(const Matrix<T>& a, const Tensor<T,D>* restrict v, Tensor<T,D>* restrict b)
-      {
-        MatrixOperators::product(a,v,b);
-      }
+    //template<typename T,unsigned D>
+    //  inline void gemv(const Matrix<T>& a, const Tensor<T,D>* restrict v, Tensor<T,D>* restrict b)
+    //  {
+    //    MatrixOperators::product(a,v,b);
+    //  }
 
 
     template<typename T>

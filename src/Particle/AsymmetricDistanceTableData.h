@@ -194,17 +194,6 @@ struct AsymmetricDTD
     }
   }
 
-  inline void fill()
-  {
-    int n=r_full.rows();
-    for(int i=0, ii=0; i<r_full.rows(); ++i)
-      for(int j=0; j<r_full.cols(); ++j,++ii)
-        r_full(ii)=r_m[i+j*n];
-    for(int i=0, ii=0; i<r_full.rows(); ++i,++ii)
-      for(int j=0; j<r_full.cols(); ++j)
-        dr_full(ii)=dr_m[i+j*n];
-  }
-
   ///evaluate the temporary pair relations
   inline void moveby(const ParticleSet& P, const PosType& displ, IndexType jat)
   {

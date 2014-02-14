@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include <simd/simd.hpp>
+#include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus
 {
