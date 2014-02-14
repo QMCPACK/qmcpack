@@ -1865,7 +1865,7 @@ public:
       int real_cols = cols[1];
 
       int* int_buffer = (int *)malloc(int_max_rows*int_cols*sizeof(int));
-      TraceReal* real_buffer = (TraceReal *)malloc(real_max_rows*real_cols*sizeof(double));
+      double* real_buffer = (double*)malloc(real_max_rows*real_cols*sizeof(double));
       if(!int_buffer || !real_buffer){
         APP_ABORT("not enough memory\n");
       }
@@ -1902,8 +1902,10 @@ public:
       int         err;
       uint64_t    group_size, total_size;
       int64_t     handle;
-      string file_name = file_root + ".trace.bp";
-      adios_open(&handle, "Traces-global", file_name.c_str(), "a", comm);
+      string file_name = file_root;
+      string s = boost::lexical_cast<std::string>(block);
+      file_name = file_name + ".b"+s+".trace.bp";
+      adios_open(&handle, "Traces-global", file_name.c_str(), "w", comm);
       group_size = 8*sizeof(int) + int_max_rows*int_cols*sizeof(int), real_max_rows*real_cols*sizeof(double);
       adios_group_size (handle, group_size, &total_size);
       adios_write(handle, "int_rows_total", &int_rows_total);
@@ -1944,7 +1946,6 @@ public:
       for(int ip=0; ip<clones.size(); ++ip)
       {
         TraceManager& tm = *clones[ip];
-        //fix me. the types don't match --Cynthia
         for(vector<TraceReal>::iterator  iter= tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end(); iter++)
         {
           adios_buffer[curr_pos++] = *iter;
