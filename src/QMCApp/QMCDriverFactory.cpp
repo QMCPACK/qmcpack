@@ -120,39 +120,38 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
     else
       newRunType=LINEAR_OPTIMIZE_RUN;
   }
+  else if(qmc_mode.find("opt") < nchars)
+  {
+    newRunType=OPTIMIZE_RUN;
+  }
   else
-    if(qmc_mode.find("opt") < nchars)
+  {
+    if(qmc_mode.find("ptcl")<nchars)
+      WhatToDo[UPDATE_MODE]=1;
+    if(qmc_mode.find("mul")<nchars)
+      WhatToDo[MULTIPLE_MODE]=1;
+    if(qmc_mode.find("warp")<nchars)
+      WhatToDo[SPACEWARP_MODE]=1;
+    //       if (qmc_mode.find("rmcPbyP")<nchars)
+    //       {
+    //         newRunType=RMC_PBYP_RUN;
+    //       }
+    //       else
+    if(qmc_mode.find("rmc")<nchars)
     {
-      newRunType=OPTIMIZE_RUN;
+      newRunType=RMC_RUN;
     }
     else
-    {
-      if(qmc_mode.find("ptcl")<nchars)
-        WhatToDo[UPDATE_MODE]=1;
-      if(qmc_mode.find("mul")<nchars)
-        WhatToDo[MULTIPLE_MODE]=1;
-      if(qmc_mode.find("warp")<nchars)
-        WhatToDo[SPACEWARP_MODE]=1;
-//       if (qmc_mode.find("rmcPbyP")<nchars)
-//       {
-//         newRunType=RMC_PBYP_RUN;
-//       }
-//       else
-      if(qmc_mode.find("rmc")<nchars)
+      if(qmc_mode.find("vmc")<nchars)
       {
-        newRunType=RMC_RUN;
+        newRunType=VMC_RUN;
       }
       else
-        if(qmc_mode.find("vmc")<nchars)
+        if(qmc_mode.find("dmc")<nchars)
         {
-          newRunType=VMC_RUN;
+          newRunType=DMC_RUN;
         }
-        else
-          if(qmc_mode.find("dmc")<nchars)
-          {
-            newRunType=DMC_RUN;
-          }
-    }
+  }
   unsigned long newQmcMode=WhatToDo.to_ulong();
   //initialize to 0
   QMCDriver::BranchEngineType* branchEngine=0;
@@ -318,40 +317,37 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
 //#endif
 //    }
 //#endif
-      else
-        if(curRunType == OPTIMIZE_RUN)
-        {
-          QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-          //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-          opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
-          qmcDriver=opt;
-        }
-        else
-          if(curRunType == LINEAR_OPTIMIZE_RUN)
-          {
-            QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
-            //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
-            opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
-            qmcDriver=opt;
-          }
-          else
-            if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
-            {
+      else if(curRunType == OPTIMIZE_RUN)
+      {
+        QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+        //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
+        opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
+        qmcDriver=opt;
+      }
+      else if(curRunType == LINEAR_OPTIMIZE_RUN)
+      {
+        QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+        //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
+        opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
+        qmcDriver=opt;
+      }
+      else if(curRunType == CS_LINEAR_OPTIMIZE_RUN)
+      {
 #if defined(QMC_CUDA)
-              app_log() << "cslinear is not supported. Switch to linear method. " << endl;
-              QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+        app_log() << "cslinear is not supported. Switch to linear method. " << endl;
+        QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
 #else
-              QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+        QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
 #endif
-              opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
-              qmcDriver=opt;
-            }
-            else
-            {
-              WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing");
-              qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
-                                                 *ptclPool,*psiPool);
-            }
+        opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
+        qmcDriver=opt;
+      }
+      else
+      {
+        WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing");
+        qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
+            *ptclPool,*psiPool);
+      }
   if(curQmcModeBits[MULTIPLE_MODE])
   {
     while(targetH.size())
