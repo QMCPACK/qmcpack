@@ -36,10 +36,16 @@ struct LRHandlerBase: public QMCTraits
   RealType  LR_rc;
   ///Fourier component for all the k-point
   Vector<RealType> Fk;
+  ///Fourier component of the LR part, fit to optimize the gradients.
+  Vector<RealType> Fkg;
   ///Fourier component for each k-shell
   Vector<RealType> Fk_symm;
+  ///Fourier component for each k-shell
+  Vector<RealType> Fk_symmg;
   ///Coefficient
   Vector<RealType> coefs;
+  ///Coefficient for gradient fit. 
+  Vector<RealType> gcoefs;
 
   //constructor
   LRHandlerBase(RealType kc):LR_kc(kc) {}
@@ -159,8 +165,24 @@ struct LRHandlerBase: public QMCTraits
       TinyVector<RealType,DIM> k = kpts[ki];
       for (int iat=0; iat<Zat.size(); iat++)
       {
-        grad1[iat] -= Zat[iat]*k*Fk[ki]*
+        grad1[iat] -= Zat[iat]*k*Fkg[ki]*
                       (e2ikrA(iat,ki).real()*rhokB[ki].imag() - e2ikrA(iat,ki).imag()*rhokB[ki].real());
+      }
+    }
+#else
+    
+    const Matrix<RealType> &e2ikrA_r = A.SK->eikr_r;
+    const Matrix<RealType> &e2ikrA_i = A.SK->eikr_i;
+    const RealType *rhokB_r = B.SK->rhok_r[specB];
+    const RealType *rhokB_i = B.SK->rhok_i[specB];
+    const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
+    for (int ki=0; ki<Fk.size(); ki++)
+    {
+      TinyVector<RealType,DIM> k = kpts[ki];
+      for (int iat=0; iat<Zat.size(); iat++)
+      {
+        grad1[iat] -= Zat[iat]*k*Fkg[ki]*
+                      (e2ikrA_r(iat,ki)*rhokB_i[ki] - e2ikrA_i(iat,ki)*rhokB_r[ki]);
       }
     }
 #endif

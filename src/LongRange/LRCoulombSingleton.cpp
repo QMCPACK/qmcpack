@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 //initialization of the static data
 LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::CoulombHandler=0;
-
+LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::CoulombDerivHandler=0;
 /** CoulombFunctor
  *
  * An example for a Func for LRHandlerTemp. Four member functions have to be provided
@@ -59,6 +59,14 @@ struct CoulombFunctor
   inline T df(T r)
   {
     return -1.0/(r*r);
+  }
+//  inline T df2(T r)
+//  {
+//    return 2.0/(r*r*r);
+//  }
+  inline T Vk(T k)
+  {
+    return NormFactor/(k*k);
   }
   inline T Fk(T k, T rc)
   {
@@ -95,6 +103,10 @@ struct CoulombFunctor
   inline T df(T r)
   {
     return -1.0/(r*r);
+  }
+  inline T df2(T r)
+  {
+    return 2/(r*r*r);
   }
   inline T Fk(T k, T rc)
   {
@@ -184,6 +196,23 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
     return CoulombHandler->makeClone(ref);
   }
 }
+LRCoulombSingleton::LRHandlerType*
+LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
+{
+  if(CoulombDerivHandler ==0)
+  {
+    app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << endl;
+    CoulombDerivHandler= new LRHandlerSRCoulomb<CoulombFunctor<RealType>,LPQHISRCoulombBasis>(ref);
+    CoulombDerivHandler->initBreakup(ref);
+    return CoulombDerivHandler;
+  }
+  else
+  {
+    app_log() << "  Clone CoulombHandler. " << endl;
+    return CoulombDerivHandler->makeClone(ref);
+  }
+}
+
 
 LRCoulombSingleton::RadFunctorType*
 LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR, RealType rcut,

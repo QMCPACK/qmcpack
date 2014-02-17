@@ -92,6 +92,7 @@ else()
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
+    LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandler.cpp
     LongRange/LRCoulombSingleton.cpp
     )

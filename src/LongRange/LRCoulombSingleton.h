@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include "LongRange/LRHandlerTemp.h"
+#include "LongRange/LRHandlerSRCoulomb.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
@@ -39,9 +40,9 @@ struct LRCoulombSingleton
   typedef OneDimCubicSpline<RealType>                       RadFunctorType;
 
   static LRHandlerType* CoulombHandler;
-
+  static LRHandlerType* CoulombDerivHandler;
   static LRHandlerType* getHandler(ParticleSet& ref);
-
+  static LRHandlerType* getDerivHandler(ParticleSet& ref);
   /** create a linear spline function
    * @param aLR LRHandler
    * @param rcut cutoff radius

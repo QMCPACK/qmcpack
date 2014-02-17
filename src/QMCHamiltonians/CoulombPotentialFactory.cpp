@@ -21,11 +21,13 @@
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
+
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
 #if defined(HAVE_LIBFFTW)
@@ -210,6 +212,8 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
   app_log() << "HamFac forceBase mode " << mode << endl;
+  bool applyPBC= (PBCType && pbc=="yes");
+  
   renameProperty(a);
   PtclPoolType::iterator pit(ptclPool.find(a));
   if(pit == ptclPool.end())
@@ -234,9 +238,18 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
   }
   else if(mode=="cep")
   {
-    ForceCeperley* force_cep = new ForceCeperley(*source, *target);
-    force_cep->put(cur);
-    targetH->addOperator(force_cep, title, false);
+    if (applyPBC==true)
+    { 
+      ForceChiesaPBCAA* force_chi= new ForceChiesaPBCAA(*source,*target);
+      force_chi->put(cur);
+      targetH->addOperator(force_chi,title,false);
+    }
+    else
+    {
+      ForceCeperley* force_cep = new ForceCeperley(*source, *target);
+      force_cep->put(cur);
+      targetH->addOperator(force_cep, title, false);
+    }
   }
   else if(mode=="pulay")
   {

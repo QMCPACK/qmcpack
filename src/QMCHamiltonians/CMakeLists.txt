@@ -30,6 +30,7 @@ IF(OHMMS_DIM MATCHES 3)
     PulayForce.cpp
     ZeroVarianceForce.cpp
     ForceCeperley.cpp
+    ForceChiesaPBCAA.cpp
     LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
