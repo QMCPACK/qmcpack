@@ -222,12 +222,12 @@ private:
     coefs.resize(Basis.NumBasisElem()); //This must be after SetupKVecs.
     chisqr=breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
     
-    app_log()<< "CHI^2 = "<<chisqr<<endl;
-    app_log()<< "#  coeff\n";
-    for(int i=0; i<coefs.size(); i++)
-    {
-       app_log()<<i<<"  "<<coefs[i]<<endl;
-    }
+    app_log()<< "LRBreakup chi^2 = "<<chisqr<<endl;
+    //app_log()<< "#  coeff\n";
+    //for(int i=0; i<coefs.size(); i++)
+    //{
+    //   app_log()<<i<<"  "<<coefs[i]<<endl;
+   // }
  
      
   }
