@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_CS_VMCMULTIPLE_H
 #define QMCPLUSPLUS_CS_VMCMULTIPLE_H
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
 
@@ -32,11 +33,12 @@ class CSUpdateBase;
  * Energy difference method with multiple H/Psi.
  * Consult S. Chiesa's note.
  */
-class CSVMC: public QMCDriver
+class CSVMC: public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
+  CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+            HamiltonianPool& hpool, WaveFunctionPool& ppool);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -45,7 +47,7 @@ private:
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
-  CSVMC(const CSVMC& a): QMCDriver(a) { }
+  CSVMC(const CSVMC& a): QMCDriver(a), CloneManager(a) { }
   /// Copy operator (disabled).
   CSVMC& operator=(const CSVMC&)
   {

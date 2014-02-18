@@ -16,13 +16,14 @@
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #if defined(QMC_BUILD_COMPLETE)
 //REMOVE Broken warping
 //#if !defined(QMC_COMPLEX)
 //#include "QMCDrivers/VMC/VMCMultipleWarp.h"
 //#include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
 //#endif
-#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+//#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #endif
 #include "Message/OpenMP.h"
 
@@ -48,7 +49,6 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
     {
       qmc = new VMCSingleOMP(w,psi,h,hpool,ppool);
     }
-#if defined(QMC_BUILD_COMPLETE)
   //else if(VMCMode == 2) //(0,1,0)
   //{
   //  qmc = new VMCMultiple(w,psi,h);
@@ -57,10 +57,10 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   //{
   //  qmc = new VMCPbyPMultiple(w,psi,h);
   //}
-//    else if(VMCMode ==2 || VMCMode ==3)
-//    {
-//      qmc = new CSVMC(w,psi,h);
-//    }
+    else if(VMCMode ==2 || VMCMode ==3)
+    {
+      qmc = new CSVMC(w,psi,h,hpool,ppool);
+    }
 //#if !defined(QMC_COMPLEX)
 //    else if(VMCMode == 6) //(1,1,0)
 //    {
@@ -75,7 +75,6 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
 //     {
 //       qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
 //     }
-#endif
   qmc->setUpdateMode(VMCMode&1);
   return qmc;
 }

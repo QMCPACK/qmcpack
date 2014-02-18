@@ -39,7 +39,7 @@ CSVMCUpdatePbyP::~CSVMCUpdatePbyP() { }
 
 void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
-  int iwalker=0;
+ /* int iwalker=0;
   //only used locally
   vector<RealType> ratio(nPsi), uw(nPsi);
   while(it != it_end)
@@ -50,7 +50,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
     W.R = thisWalker.R;
     w_buffer.rewind();
     // Copy walker info in W
-    //W.copyFromBuffer(w_buffer);
+    W.copyFromBuffer(w_buffer);
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       // Copy wave function info in W and Psi1
@@ -113,7 +113,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
            -ratio (Psi[i]/Psi[j])^2 for this walker
            -Gradient and laplacian for each Psi1[i]
            -Drift
-           -buffered info for each Psi1[i]*/
+           -buffered info for each Psi1[i]
         moved = true;
         ++nAccept;
         W.acceptMove(iat);
@@ -151,10 +151,10 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
          -Drift
          -buffered info for each Psi1[i]
          Physical properties are updated */
-      (*it)->Age=0;
+  /*    (*it)->Age=0;
       (*it)->R = W.R;
       w_buffer.rewind();
-     // W.copyToBuffer(w_buffer);
+      W.copyToBuffer(w_buffer);
       for(int ipsi=0; ipsi< nPsi; ipsi++)
       {
         W.G=Psi1[ipsi]->G;
@@ -175,7 +175,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
     }
     ++it;
     ++iwalker;
-  }
+  }*/
 }
 }
 

@@ -24,8 +24,9 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), multiEstimator(0), Mover(0)
+CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+                           HamiltonianPool& hpool, WaveFunctionPool& ppool):
+  QMCDriver(w,psi,h,ppool), CloneManager(hpool), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
   QMCType ="CSVMC";
@@ -47,10 +48,8 @@ bool CSVMC::put(xmlNodePtr q)
   //for(int ipsi=0; ipsi<nPsi; ipsi++)
   //  H1[ipsi]->add2WalkerProperty(W);
   Estimators = branchEngine->getEstimatorManager();
-  app_log()<<"nPsi ="<<H1.size();
   if(Estimators == 0)
   {
-    app_log()<<"PUT CSVMC.  REGISTERING ESTIMATOR.\n";
     Estimators = new EstimatorManager(myComm);
     multiEstimator = new CSEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
@@ -70,6 +69,11 @@ bool CSVMC::run()
 {
   if(Mover==0)
   {
+    branchClones.resize(1,0);
+    estimatorClones.resize(1,0);
+    traceClones.resize(1,0);
+    
+    
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
       app_log() << "  Using particle-by-particle update " << endl;
@@ -80,11 +84,15 @@ bool CSVMC::run()
       app_log() << "  Using walker-by-walker update " << endl;
       Mover=new CSVMCUpdateAll(W,Psi,H,Random);
     }
+    traceClones[0] = Traces->makeClone();
+    traceClones[0]->transfer_state_from(*Traces);
+
     Mover->put(qmcNode);
     Mover->Psi1=Psi1;
     Mover->H1=H1;
     Mover->multiEstimator=multiEstimator;
-    Mover->resetRun(branchEngine,Estimators);
+    Mover->resetRun(branchEngine,Estimators,traceClones[0]);
+
   }
   if(QMCDriverMode[QMC_UPDATE_MODE])
     Mover->initCSWalkersForPbyP(W.begin(),W.end(),equilBlocks>0);

@@ -41,20 +41,50 @@ CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
  */
 void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
-/*  int iwlk(0);
+  int iwlk(0);
   int nPsi_minus_one(nPsi-1);
   while(it != it_end)
   {
     MCWalkerConfiguration::Walker_t &thisWalker(**it);
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    if(useDrift)
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-    else
-      W.R = m_sqrttau*deltaR + thisWalker.R;
+   
+    RealType tau_over_mass = std::sqrt(Tau*MassInvS[0]);
+   // app_log()<<"tau_over_mass= "<<tau_over_mass<<endl;
+    //app_log()<<"deltaR = "<<deltaR<<endl;
+    //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
+    
+    if (!W.makeMove(thisWalker,deltaR,tau_over_mass))
+    {
+      //H.rejectedMove(W,thisWalker);
+      continue;
+    }
+    
+   // if(useDrift)
+  //  {
+  ///    //forward green function
+  ///    RealType logGf = -0.5*Dot(deltaR,deltaR);
+  ///    PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
+  ///    for(int ipsi=1; ipsi< nPsi ; ipsi++)
+  ///    {
+  ///      PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+  ///    }
+  ///    setScaledDrift(Tau,drift);
+  ///    //backward green function
+  ///   deltaR = thisWalker.R - W.R - drift;
+  ///    RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+  ///    g *= std::exp(logGb-logGf);
+  ///  }
+    
+  ///  if(useDrift)
+   ///   W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
+  ///  else
+  ///    W.R = m_sqrttau*deltaR + thisWalker.R;
+  
+  
     //update the distance table associated with W
     //DistanceTable::update(W);
-    W.update();
+  ////  W.update();
     //Evaluate Psi and graidients and laplacians
     //\f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
     for(int ipsi=0; ipsi< nPsi; ipsi++)
@@ -78,21 +108,21 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
       invsumratio[ipsi]=1.0/sumratio[ipsi];
     RealType g = sumratio[0]/thisWalker.Multiplicity*
                  std::exp(2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));
-    if(useDrift)
-    {
-      //forward green function
-      RealType logGf = -0.5*Dot(deltaR,deltaR);
-      PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
-      for(int ipsi=1; ipsi< nPsi ; ipsi++)
-      {
-        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
-      }
-      setScaledDrift(Tau,drift);
-      //backward green function
-      deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-      g *= std::exp(logGb-logGf);
-    }
+ ///   if(useDrift)
+ ///   {
+  ///    //forward green function
+  ///    RealType logGf = -0.5*Dot(deltaR,deltaR);
+  ///    PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
+  ///    for(int ipsi=1; ipsi< nPsi ; ipsi++)
+  ///    {
+  ///      PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+  ///    }
+  ///    setScaledDrift(Tau,drift);
+  ///    //backward green function
+  ///   deltaR = thisWalker.R - W.R - drift;
+  ///    RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+  ///    g *= std::exp(logGb-logGf);
+  ///  }
     //Original
     //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*
     //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));
@@ -110,7 +140,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
       thisWalker.Age=0;
       thisWalker.Multiplicity=sumratio[0];
       thisWalker.R = W.R;
-      thisWalker.Drift = drift;
+     // thisWalker.Drift = drift;
       for(int ipsi=0; ipsi<nPsi; ipsi++)
       {
         W.L=Psi1[ipsi]->L;
@@ -127,7 +157,8 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     }
     ++it;
     ++iwlk;
-  }*/
+ // }
+ }
 }
 }
 
