@@ -293,8 +293,11 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
   SimulationCell->print(app_log());
   myPool[target]=qp;
   myPool[source]=ions;
+  
 
-  OhmmsXPathObject det("//determinant",cur);
+  // The ".//determinant" string means to grab child nodes only beneath "cur"
+  OhmmsXPathObject det(".//determinant",cur);
+
   if(det.size()>2)
     APP_ABORT("Only two electron groups are supported.");
 
@@ -305,8 +308,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
     a.add(num_spin[i],"size");
     a.put(det[i]);
   }
-  //addParticleSet(qp);
-  //addParticleSet(ions);
+ 
   {
     //create species
     SpeciesSet& species=qp->getSpeciesSet();
