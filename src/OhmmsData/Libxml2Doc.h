@@ -19,7 +19,7 @@
 #include "OhmmsData/libxmldefs.h"
 #include <string>
 /** class to handle xmlXPathObject
- */
+ */ 
 struct OhmmsXPathObject
 {
 
