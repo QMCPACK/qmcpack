@@ -49,8 +49,10 @@ bool RMCSingleOMP::run()
   resetRun();
   //start the main estimator
   Estimators->start(nBlocks);
+   
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
+  Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
     {
@@ -148,6 +150,7 @@ void RMCSingleOMP::resetRun()
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
       estimatorClones.resize(NumThreads,0);
+      traceClones.resize(NumThreads,0);
       Rng.resize(NumThreads,0);
       //   W.loadEnsemble(wClones);
       branchEngine->initReptile(W);
@@ -161,6 +164,7 @@ void RMCSingleOMP::resetRun()
           estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
           estimatorClones[ip]->setCollectionMode(false);
           Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+          traceClones[ip] = Traces->makeClone();
           hClones[ip]->setRandomGenerator(Rng[ip]);
           branchClones[ip] = new BranchEngineType(*branchEngine);
             // branchClones[ip]->initReptile(W);
@@ -180,6 +184,16 @@ void RMCSingleOMP::resetRun()
             app_log() << os.str() << endl;
         }
     }
+    else
+    {
+#if !defined(BGP_BUG)
+#pragma omp parallel for
+#endif
+      for(int ip=0; ip<NumThreads; ++ip)
+      {
+        traceClones[ip]->transfer_state_from(*Traces);
+      }
+    }
   app_log().flush();
 #if !defined(BGP_BUG)
   #pragma omp parallel for
@@ -187,7 +201,7 @@ void RMCSingleOMP::resetRun()
   for(int ip=0; ip<NumThreads; ++ip)
     { 
       Movers[ip]->put(qmcNode);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip], traceClones[ip]);
       wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       //app_log()<<"Thread # "<<ip<<endl;
      // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
