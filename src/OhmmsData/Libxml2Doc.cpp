@@ -33,7 +33,7 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression,
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur) :NumObjects(0), result(NULL), m_context(NULL)
 {
-#if (LIBXML_VERSION < 20900)
+#if (LIBXML_VERSION < 20901)
   m_context= xmlXPathNewContext(cur->doc);
   put(expression, m_context);
 #else
