@@ -295,8 +295,8 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
   myPool[source]=ions;
   
 
-  // The ".//determinant" string means to grab child nodes only beneath "cur"
-  OhmmsXPathObject det(".//determinant",cur);
+  // Goback to the // and OhmmsXPathObject handles it internally
+  OhmmsXPathObject det("//determinant",cur);
 
   if(det.size()>2)
     APP_ABORT("Only two electron groups are supported.");

@@ -33,11 +33,17 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression,
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur) :NumObjects(0), result(NULL), m_context(NULL)
 {
+#if (LIBXML_VERSION < 20900)
   m_context= xmlXPathNewContext(cur->doc);
+  put(expression, m_context);
+#else
   //sets up "cur" as the context, and will return matches within this node
   // if not overridden in "expression".
   xmlXPathSetContextNode(cur, m_context);
-  put(expression, m_context);
+  char local[128];
+  sprintf(local,".%s",expression);
+  put(local, m_context);
+#endif
 }
 
 OhmmsXPathObject::~OhmmsXPathObject()
