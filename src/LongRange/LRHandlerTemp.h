@@ -136,7 +136,7 @@ public:
   {
     RealType v=0.0;
     for(int n=0; n<coefs.size(); n++)
-      v += coefs[n]*Basis.h(n,r);
+      v -= coefs[n]*Basis.h(n,r);
     return v;
   }
 
@@ -184,7 +184,6 @@ private:
   void InitBreakup(ParticleLayout_t& ref,int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
-    RealType chisqr=0.0;
     Basis.set_Lattice(ref);
     //Compute RC from box-size - in constructor?
     //No here...need update if box changes
@@ -220,16 +219,7 @@ private:
     fillXk(breakuphandler.KList);
     //Allocate the space for the coefficients.
     coefs.resize(Basis.NumBasisElem()); //This must be after SetupKVecs.
-    chisqr=breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
-    
-    app_log()<< "LRBreakup chi^2 = "<<chisqr<<endl;
-    //app_log()<< "#  coeff\n";
-    //for(int i=0; i<coefs.size(); i++)
-    //{
-    //   app_log()<<i<<"  "<<coefs[i]<<endl;
-   // }
- 
-     
+    breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
   }
 
   void fillXk(vector<TinyVector<RealType,2> >& KList)
