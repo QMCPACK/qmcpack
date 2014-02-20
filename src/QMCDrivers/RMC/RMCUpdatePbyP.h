@@ -19,9 +19,13 @@ public:
 
   enum {SYM_ACTION, DMC_ACTION};
 
+  void advanceWalkersVMC();
+  void advanceWalkersRMC();
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
   void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void accumulate(WalkerIter_t it, WalkerIter_t it_end);
+  
   bool put(xmlNodePtr cur);
 private:
   /// Copy Constructor (disabled)
@@ -34,6 +38,11 @@ private:
   std::vector<int> Action, TransProb;
   bool scaleDrift;
   IndexType actionType;
+  
+  IndexType vmcSteps;
+  IndexType equilSteps;
+  IndexType vmcToDoSteps;
+  IndexType equilToDoSteps;
 };
 
 

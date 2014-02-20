@@ -73,6 +73,8 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
   string action="SLA";
   m_param.add(usedrift,"useDrift", "bool");
   m_param.add(action,"Action","string");
+  m_param.add(equilSteps,"equilsteps","int");
+  m_param.add(equilSteps,"equilSteps","int");
   m_param.put(cur);
 
   if( usedrift==true)
@@ -97,163 +99,169 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
 	return true;
 }
 
+void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
+{
+	IndexType direction = W.reptile->direction;
+	IndexType forward =(1-direction)/2;
+	IndexType backward=(1+direction)/2;
+	Walker_t& curhead=W.reptile->getHead();
+	Walker_t::Buffer_t& w_buffer(curhead.DataSet);
+	W.loadWalker(curhead, true);
+	W.R=curhead.R;
+	W.update();
+	//W.loadWalker(awalker,UpdatePbyP);
+	if (curhead.DataSet.size())
+	  curhead.DataSet.clear();
+	curhead.DataSet.rewind();
+	RealType logpsi=Psi.registerData(W,curhead.DataSet);
+	RealType logpsi2=Psi.updateBuffer(W,curhead.DataSet,false);
+	// curhead.G=W.G;
+	//  curhead.L=W.L;
+	// Walker_t& thisWalker(**it);
+	Psi.copyFromBuffer(W,w_buffer);
+	
+	RealType logpsiold = curhead.Properties(LOGPSI);
+	makeGaussRandomWithEngine(deltaR,RandomGen);
+	int nAcceptTemp(0);
+	int nRejectTemp(0);
+	//copy the old energy and scale factor of drift
+	RealType eold(curhead.Properties(LOCALENERGY));
+	RealType vqold(curhead.Properties(DRIFTSCALE));
+	RealType enew(eold);
+	RealType rr_proposed=0.0;
+	RealType rr_accepted=0.0;
+	RealType gf_acc=1.0;
+	RealType logGf=0;
+	RealType logGb=0;
+	RealType ratio_acc=1;
+	//   myTimers[1]->start();
+	for(int iat=0; iat<NumPtcl; ++iat)
+	{
+	PosType dr;
+	//get the displacement
+	//RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
+	//PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+	getScaledDrift(m_tauovermass,W.G[iat],dr);
+	dr += m_sqrttau*deltaR[iat];
+	//RealType rr=dot(dr,dr);
+	RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
+	rr_proposed+=rr;
+	// if (W.reptile->r2
+	if(rr>m_r2max)
+	{
+	  ++nRejectTemp;
+	  // W.reptile->flip();
+	  // return;
+	}
+	//PosType newpos(W.makeMove(iat,dr));
+	if(!W.makeMoveAndCheck(iat,dr))
+	{
+	  ++nRejectTemp;
+	  // W.reptile->flip();
+	  // return;
+	}
+	PosType newpos(W.R[iat]);
+	RealType ratio=Psi.ratio(W,iat,dG,dL);
+	bool valid_move=false;
+	//node is crossed reject the move
+	//if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+	if(branchEngine->phaseChanged(Psi.getPhaseDiff()))
+	{
+	  ++nRejectTemp;
+	  ++nNodeCrossing;
+	  W.rejectMove(iat);
+	  Psi.rejectMove(iat);
+	}
+	else
+	{
+	  G = W.G+dG;
+	  RealType logGf_pbyp = -0.5*dot(deltaR[iat],deltaR[iat]);
+	  logGf+=logGf_pbyp;
+	  //Use the force of the particle iat
+	  //RealType scale=getDriftScale(m_tauovermass,G[iat]);
+	  //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
+	  getScaledDrift(m_tauovermass, G[iat], dr);
+	  dr = curhead.R[iat] - newpos - dr;
+	  RealType logGb_pbyp = -m_oneover2tau*dot(dr,dr);
+	  logGb+=logGb_pbyp;
+	  RealType prob = ratio*ratio*std::exp(logGb_pbyp-logGf_pbyp);
+      //this is useless
+      //RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
+	  if(RandomGen() < prob)
+	  {
+		valid_move=true;
+		++nAcceptTemp;
+		W.acceptMove(iat);
+		Psi.acceptMove(W,iat);
+		W.G = G;
+		W.L += dL;
+		rr_accepted+=rr;
+		gf_acc *=prob;//accumulate the ratio
+		ratio_acc*=ratio;
+	  }
+	  else
+	  {
+		++nRejectTemp;
+		W.rejectMove(iat);
+		Psi.rejectMove(iat);
+		// W.reptile->flip();
+		// return;
+	  }
+	 }
+   }
+	// In the rare case that all proposed moves fail, we bounce.
+	if(nAcceptTemp==0)
+	{
+	
+	  ++nReject;
+	  H.rejectedMove(W,curhead);
+	  //  curhead.Age+=1;
+	  //   W.reptile->flip();
+	}
+	else
+	{
+	  logpsi = std::log(ratio_acc)+logpsiold;
+	
+	  Walker_t& lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
+	
+	  RealType eloc=H.evaluate(W);
+	
+	
+	
+	  RealType acceptProb=1.0;
+	
+	  MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
+	
+   	  Walker_t::Buffer_t& o_buffer(overwriteWalker.DataSet);
+	  overwriteWalker.R = W.R;
+	  logpsi = Psi.updateBuffer(W,o_buffer,false);
+	  W.saveWalker(overwriteWalker);
+	  overwriteWalker.Properties(LOCALENERGY)=eloc;
+	  overwriteWalker.Properties(0,W.reptile->Action[forward])=0;
+	  overwriteWalker.Properties(0,W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
+	  overwriteWalker.Properties(0,W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
+	  overwriteWalker.Properties(0,W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
+	  overwriteWalker.Properties(0,W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
+	  overwriteWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+	  //H.auxHevaluate(W,overwriteWalker);
+	  H.saveProperty(overwriteWalker.getPropertyBase());
+	  overwriteWalker.Age=0;
+	  //W.reptile->accumulateE(eloc);
+	  ++nAccept;
+	}
+	
+}
+
 void RMCUpdatePbyPWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
   IndexType initsteps = W.reptile->nbeads * 2;
 
-  for (int step=0; step<initsteps; step++)
-    {
-
-      IndexType direction = W.reptile->direction;
-      IndexType forward =(1-direction)/2;
-      IndexType backward=(1+direction)/2;
-      Walker_t& curhead=W.reptile->getHead();
-      Walker_t::Buffer_t& w_buffer(curhead.DataSet);
-      W.loadWalker(curhead, true);
-      W.R=curhead.R;
-      W.update();
-      //W.loadWalker(awalker,UpdatePbyP);
-      if (curhead.DataSet.size())
-        curhead.DataSet.clear();
-      curhead.DataSet.rewind();
-      RealType logpsi=Psi.registerData(W,curhead.DataSet);
-      RealType logpsi2=Psi.updateBuffer(W,curhead.DataSet,false);
-      // curhead.G=W.G;
-      //  curhead.L=W.L;
-      // Walker_t& thisWalker(**it);
-      Psi.copyFromBuffer(W,w_buffer);
-
-      RealType logpsiold = curhead.Properties(LOGPSI);
-      makeGaussRandomWithEngine(deltaR,RandomGen);
-      int nAcceptTemp(0);
-      int nRejectTemp(0);
-      //copy the old energy and scale factor of drift
-      RealType eold(curhead.Properties(LOCALENERGY));
-      RealType vqold(curhead.Properties(DRIFTSCALE));
-      RealType enew(eold);
-      RealType rr_proposed=0.0;
-      RealType rr_accepted=0.0;
-      RealType gf_acc=1.0;
-      RealType logGf=0;
-      RealType logGb=0;
-      RealType ratio_acc=1;
-      //   myTimers[1]->start();
-      for(int iat=0; iat<NumPtcl; ++iat)
-        {
-          PosType dr;
-          //get the displacement
-          //RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
-          //PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
-          getScaledDrift(m_tauovermass,W.G[iat],dr);
-          dr += m_sqrttau*deltaR[iat];
-          //RealType rr=dot(dr,dr);
-          RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
-          rr_proposed+=rr;
-          // if (W.reptile->r2
-          if(rr>m_r2max)
-            {
-              ++nRejectTemp;
-              // W.reptile->flip();
-              // return;
-            }
-          //PosType newpos(W.makeMove(iat,dr));
-          if(!W.makeMoveAndCheck(iat,dr))
-            {
-              ++nRejectTemp;
-              // W.reptile->flip();
-              // return;
-            }
-          PosType newpos(W.R[iat]);
-          RealType ratio=Psi.ratio(W,iat,dG,dL);
-          bool valid_move=false;
-          //node is crossed reject the move
-          //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
-          if(branchEngine->phaseChanged(Psi.getPhaseDiff()))
-            {
-              ++nRejectTemp;
-              ++nNodeCrossing;
-              W.rejectMove(iat);
-              Psi.rejectMove(iat);
-            }
-          else
-            {
-              G = W.G+dG;
-              RealType logGf_pbyp = -0.5*dot(deltaR[iat],deltaR[iat]);
-              logGf+=logGf_pbyp;
-              //Use the force of the particle iat
-              //RealType scale=getDriftScale(m_tauovermass,G[iat]);
-              //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
-              getScaledDrift(m_tauovermass, G[iat], dr);
-              dr = curhead.R[iat] - newpos - dr;
-              RealType logGb_pbyp = -m_oneover2tau*dot(dr,dr);
-              logGb+=logGb_pbyp;
-              RealType prob = ratio*ratio*std::exp(logGb_pbyp-logGf_pbyp);
-              //this is useless
-              //RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
-              if(RandomGen() < prob)
-                {
-                  valid_move=true;
-                  ++nAcceptTemp;
-                  W.acceptMove(iat);
-                  Psi.acceptMove(W,iat);
-                  W.G = G;
-                  W.L += dL;
-                  rr_accepted+=rr;
-                  gf_acc *=prob;//accumulate the ratio
-                  ratio_acc*=ratio;
-                }
-              else
-                {
-                  ++nRejectTemp;
-                  W.rejectMove(iat);
-                  Psi.rejectMove(iat);
-                  // W.reptile->flip();
-                  // return;
-                }
-            }
-        }
-// In the rare case that all proposed moves fail, we bounce.
-      if(nAcceptTemp==0)
-        {
-
-          ++nReject;
-          H.rejectedMove(W,curhead);
-          //  curhead.Age+=1;
-//   W.reptile->flip();
-        }
-
-      logpsi = std::log(ratio_acc)+logpsiold;
-
-      Walker_t& lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
-
-      RealType eloc=H.evaluate(W);
-
-
-
-      RealType acceptProb=1.0;
-
-      MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
-
-      Walker_t::Buffer_t& o_buffer(overwriteWalker.DataSet);
-      overwriteWalker.R = W.R;
-      logpsi = Psi.updateBuffer(W,o_buffer,false);
-      W.saveWalker(overwriteWalker);
-      overwriteWalker.Properties(LOCALENERGY)=eloc;
-      overwriteWalker.Properties(0,W.reptile->Action[forward])=0;
-      overwriteWalker.Properties(0,W.reptile->Action[backward])=W.Properties(W.reptile->Action[backward]);
-      overwriteWalker.Properties(0,W.reptile->Action[2])=W.Properties(W.reptile->Action[2]);
-      overwriteWalker.Properties(0,W.reptile->TransProb[forward])=W.Properties(W.reptile->TransProb[forward]);
-      overwriteWalker.Properties(0,W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
-      overwriteWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
-      //H.auxHevaluate(W,overwriteWalker);
-      H.saveProperty(overwriteWalker.getPropertyBase());
-      overwriteWalker.Age=0;
-      //W.reptile->accumulateE(eloc);
-      ++nAccept;
-    }
+  vmcSteps=W.reptile->nbeads+1;
+  
+  for (int n=0; n < initsteps; n++) advanceWalkersVMC();
 }
 
-void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
 {
   IndexType direction = W.reptile->direction;
   IndexType forward =(1-direction)/2;
@@ -604,6 +612,29 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
     }
 }
 
+void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+{
+	if (vmcToDoSteps>0)
+	{
+      advanceWalkersVMC();
+      vmcToDoSteps--;
+    }
+    else if (vmcToDoSteps==0 && equilToDoSteps>0)
+    {
+	  advanceWalkersRMC();
+	  equilToDoSteps--;	
+	}
+	else
+	{
+      advanceWalkersRMC();
+    }
+	
+}
 
+void RMCUpdatePbyPWithDrift::accumulate(WalkerIter_t it, WalkerIter_t it_end)
+{
+  if (vmcToDoSteps==0 && equilToDoSteps==0) Estimators->accumulate(W,it,it_end);
+  else;	
+}
 
 }

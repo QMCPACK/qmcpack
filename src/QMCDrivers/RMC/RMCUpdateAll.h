@@ -19,8 +19,13 @@ public:
                         QMCHamiltonian& h, RandomGenerator_t& rg,std::vector<int> act, std::vector<int> tp);
   ~RMCUpdateAllWithDrift();
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalkersVMC();
+  void advanceWalkersRMC();
   void checkReptile(WalkerIter_t it, WalkerIter_t it_end);
   void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  
+  void accumulate(WalkerIter_t it, WalkerIter_t it_end);
+  
   bool put(xmlNodePtr cur);
 
 private:
@@ -35,6 +40,11 @@ private:
 
   bool scaleDrift;
   IndexType actionType;
+  
+  IndexType vmcSteps;
+  IndexType equilSteps;
+  IndexType vmcToDoSteps;
+  IndexType equilToDoSteps;
 
 };
 
