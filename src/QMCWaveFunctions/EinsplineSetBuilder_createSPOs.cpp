@@ -133,6 +133,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if defined(QMC_CUDA)
   app_log() << "\t  QMC_CUDA=1 Overwriting the precision of the einspline storage on the host.\n";
   spo_prec="double"; //overwrite
+  truncate="no"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
   std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
