@@ -92,7 +92,7 @@ public:
    *
    * Introduced to avoid conflicting definitions of the particlesets
    */
-  ParticleSet* createESParticleSet(xmlNodePtr cur, const string& target);
+  ParticleSet* createESParticleSet(xmlNodePtr cur, const string& target, ParticleSet* qp);
 
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */

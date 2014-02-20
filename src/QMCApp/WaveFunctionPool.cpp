@@ -50,28 +50,24 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  string id("psi0"), target("e"), role("extra"), source("i0");
+  string id("psi0"), target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id,"id");
   pAttrib.add(id,"name");
   pAttrib.add(target,"target");
-  pAttrib.add(source,"source");
   pAttrib.add(target,"ref");
   pAttrib.add(role,"role");
   pAttrib.put(cur);
   ParticleSet *qp = ptclPool->getParticleSet(target);
-  ParticleSet *ionset = ptclPool->getParticleSet(source);
-  
-  if(qp == 0 || ionset == 0) //hdf5
-  {
+ 
+  {//check ESHDF should be used to initialize both target and associated ionic system
     xmlNodePtr tcur=cur->children;
-    string cname1((const char*)tcur->name);
-    while((qp==0||ionset==0) && tcur != NULL)
+    while(tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       string cname((const char*)tcur->name);
       if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
       { 
-        qp=ptclPool->createESParticleSet(tcur,target);
+        qp=ptclPool->createESParticleSet(tcur,target,qp);
       }
       tcur=tcur->next;
     }

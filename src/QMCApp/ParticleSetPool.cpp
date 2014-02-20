@@ -229,9 +229,9 @@ void ParticleSetPool::reset()
 
 /** Create particlesets from ES-HDF file
  */
-ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& target)
+ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, 
+    const string& target, ParticleSet* qp)
 {
-#if OHMMS_DIM==3
   //TinyVector<int,OHMMS_DIM> tilefactor;
   Tensor<int,OHMMS_DIM> eshdf_tilematrix(0);
   eshdf_tilematrix.diagonal(1);
@@ -239,126 +239,135 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const string& 
   string h5name;
   string source("i");
   string bc("p p p");
+  string spotype("0");
   OhmmsAttributeSet attribs;
   attribs.add(h5name, "href");
   attribs.add(eshdf_tilematrix, "tilematrix");
   attribs.add(source, "source");
   attribs.add(bc, "bconds");
   attribs.add(lr_cut, "LR_dim_cutoff");
+  attribs.add(spotype, "type");
   attribs.put(cur);
+
+  if(spotype.find("spline")>=spotype.size()) return qp;
+
+#if OHMMS_DIM==3
   ParticleSet* ions=getParticleSet(source);
   if(ions==0)
   {
     ions=new MCWalkerConfiguration;
     ions->setName(source);
+    //set the boundary condition
+    ions->Lattice.LR_dim_cutoff=lr_cut;
+    std::istringstream  is(bc);
+    char c;
+    int idim=0;
+    while(!is.eof() && idim<OHMMS_DIM)
+    {
+      if(is>>c)
+        ions->Lattice.BoxBConds[idim++]=(c=='p');
+    }
+    //initialize ions from hdf5
+    hid_t h5=-1;
+    if(myComm->rank()==0)
+      h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+    ESHDFIonsParser ap(*ions,h5,myComm);
+    ap.put(cur);
+    ap.expand(eshdf_tilematrix);
+    if(h5>-1)
+      H5Fclose(h5);
+    //failed to initialize the ions
+    if(ions->getTotalNum() == 0)
+      return 0;
+    typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
+    vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
+    ions->Lattice.reset();
+    ions->Lattice.makeGrid(grid);
   }
-  //set the boundary condition
-  ions->Lattice.LR_dim_cutoff=lr_cut;
-  std::istringstream  is(bc);
-  char c;
-  int idim=0;
-  while(!is.eof() && idim<OHMMS_DIM)
-  {
-    if(is>>c)
-      ions->Lattice.BoxBConds[idim++]=(c=='p');
-  }
-  //initialize ions from hdf5
-  hid_t h5=-1;
-  if(myComm->rank()==0)
-    h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
-  ESHDFIonsParser ap(*ions,h5,myComm);
-  ap.put(cur);
-  ap.expand(eshdf_tilematrix);
-  if(h5>-1)
-    H5Fclose(h5);
-  //failed to initialize the ions
-  if(ions->getTotalNum() == 0)
-    return 0;
-  typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
-  vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
-  ions->Lattice.reset();
-  ions->Lattice.makeGrid(grid);
+
   if(SimulationCell==0)
   {
     SimulationCell = new ParticleSet::ParticleLayout_t(ions->Lattice);
   }
-  //create the electrons
-  MCWalkerConfiguration* qp = new MCWalkerConfiguration;
-  qp->setName(target);
-  qp->Lattice.copy(ions->Lattice);
-  //qp->Lattice.reset();
-  //qp->Lattice.makeGrid(grid);
-  app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << endl;
-  app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << endl;
-  SimulationCell->print(app_log());
+
+  if(qp==0)
+  {
+    //create the electrons
+    qp = new MCWalkerConfiguration;
+    qp->setName(target);
+    qp->Lattice.copy(ions->Lattice);
+
+    app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << endl;
+    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << endl;
+    SimulationCell->print(app_log());
+
+    // Goback to the // and OhmmsXPathObject handles it internally
+    OhmmsXPathObject det("//determinant",cur);
+
+    if(det.size()>2)
+      APP_ABORT("Only two electron groups are supported.");
+
+    vector<int> num_spin(det.size(),0);
+    for(int i=0; i<det.size(); ++i)
+    {
+      OhmmsAttributeSet a;
+      a.add(num_spin[i],"size");
+      a.put(det[i]);
+    }
+
+    {
+      //create species
+      SpeciesSet& species=qp->getSpeciesSet();
+      //add up and down
+      species.addSpecies("u");
+      if(num_spin.size()>1)
+        species.addSpecies("d");
+      int chid=species.addAttribute("charge");
+      for(int i=0; i<num_spin.size(); ++i)
+        species(chid,i)=-1.0;
+      int mid=species.addAttribute("membersize");
+      for(int i=0; i<num_spin.size(); ++i)
+        species(mid,i)=num_spin[i];
+      mid=species.addAttribute("mass");
+      for(int i=0; i<num_spin.size(); ++i)
+        species(mid,i)=1.0;
+      qp->create(num_spin);
+    }
+    //name it with the target
+    qp->setName(target);
+
+    //if(qp->getTotalNum() == 0 || ions->getTotalNum() == 0)
+    //{
+    //  delete qp;
+    //  delete ions;
+    //  APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
+    //  return 0;
+    //}
+    //for PPP, use uniform random
+    if(qp->Lattice.SuperCellEnum == SUPERCELL_BULK)
+    {
+      makeUniformRandom(qp->R);
+      qp->R.setUnit(PosUnit::LatticeUnit);
+      qp->convert2Cart(qp->R);
+    }
+    else
+    {
+      //assign non-trivial positions for the quanmtum particles
+      InitMolecularSystem mole(this);
+      mole.initMolecule(ions,qp);
+      qp->R.setUnit(PosUnit::CartesianUnit);
+    }
+    //for(int i=0; i<qp->getTotalNum(); ++i)
+    //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
+    if(qp->Lattice.SuperCellEnum)
+      qp->createSK();
+    qp->resetGroups();
+  }
+
   myPool[target]=qp;
   myPool[source]=ions;
-  
-
-  // Goback to the // and OhmmsXPathObject handles it internally
-  OhmmsXPathObject det("//determinant",cur);
-
-  if(det.size()>2)
-    APP_ABORT("Only two electron groups are supported.");
-
-  vector<int> num_spin(det.size(),0);
-  for(int i=0; i<det.size(); ++i)
-  {
-    OhmmsAttributeSet a;
-    a.add(num_spin[i],"size");
-    a.put(det[i]);
-  }
- 
-  {
-    //create species
-    SpeciesSet& species=qp->getSpeciesSet();
-    //add up and down
-    species.addSpecies("u");
-    if(num_spin.size()>1)
-      species.addSpecies("d");
-    int chid=species.addAttribute("charge");
-    for(int i=0; i<num_spin.size(); ++i)
-      species(chid,i)=-1.0;
-    int mid=species.addAttribute("membersize");
-    for(int i=0; i<num_spin.size(); ++i)
-      species(mid,i)=num_spin[i];
-    mid=species.addAttribute("mass");
-    for(int i=0; i<num_spin.size(); ++i)
-      species(mid,i)=1.0;
-    qp->create(num_spin);
-  }
-  //name it with the target
-  qp->setName(target);
-  if(qp->getTotalNum() == 0 || ions->getTotalNum() == 0)
-  {
-    delete qp;
-    delete ions;
-    APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
-    return 0;
-  }
-  //for PPP, use uniform random
-  if(qp->Lattice.SuperCellEnum == SUPERCELL_BULK)
-  {
-    makeUniformRandom(qp->R);
-    qp->R.setUnit(PosUnit::LatticeUnit);
-    qp->convert2Cart(qp->R);
-  }
-  else
-  {
-    //assign non-trivial positions for the quanmtum particles
-    InitMolecularSystem mole(this);
-    mole.initMolecule(ions,qp);
-    qp->R.setUnit(PosUnit::CartesianUnit);
-  }
-  //for(int i=0; i<qp->getTotalNum(); ++i)
-  //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
-  if(qp->Lattice.SuperCellEnum)
-    qp->createSK();
-  qp->resetGroups();
-  return qp;
-#else
-  APP_ABORT("ESHDF is not valid for OHMMS_DIM != 3");
 #endif
+  return qp;
 }
 }
 /***************************************************************************
