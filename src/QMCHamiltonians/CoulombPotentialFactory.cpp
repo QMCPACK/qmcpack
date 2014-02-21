@@ -121,7 +121,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     PtclPoolType::iterator pit(ptclPool.find(sourceInp));
     if(pit == ptclPool.end())
     {
-      ERRORMSG("Missing source ParticleSet" << sourceInp);
+      ERRORMSG("Missing source ParticleSet " << sourceInp);
       APP_ABORT("HamiltonianFactory::addCoulombPotential");
       return;
     }

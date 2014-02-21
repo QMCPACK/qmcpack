@@ -259,6 +259,8 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
     ++iw;
   }
 }
+
+
 }
 
 /***************************************************************************

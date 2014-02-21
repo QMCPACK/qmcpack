@@ -44,6 +44,7 @@ public:
   bool put(xmlNodePtr cur);
 
 private:
+  string UseDrift;
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)

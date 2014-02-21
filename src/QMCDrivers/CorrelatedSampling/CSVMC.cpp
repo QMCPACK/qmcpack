@@ -26,10 +26,13 @@ namespace qmcplusplus
 /// Constructor.
 CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
                            HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), CloneManager(hpool), multiEstimator(0), Mover(0)
+  QMCDriver(w,psi,h,ppool), CloneManager(hpool), multiEstimator(0), Mover(0), UseDrift("yes")
 {
   RootName = "csvmc";
   QMCType ="CSVMC";
+  m_param.add(UseDrift,"useDrift","string");
+  m_param.add(UseDrift,"usedrift","string");
+  m_param.add(UseDrift,"use_drift","string");
   equilBlocks=-1;
   m_param.add(equilBlocks,"equilBlocks","int");
   QMCDriverMode.set(QMC_MULTIPLE,1);
@@ -78,6 +81,11 @@ bool CSVMC::run()
     {
       app_log() << "  Using particle-by-particle update " << endl;
       Mover=new CSVMCUpdatePbyP(W,Psi,H,Random);
+    }
+    if (UseDrift == "yes")
+    {
+      app_log() << "  Using walker-by-walker update with Drift " << endl;
+      Mover=new CSVMCUpdateAllWithDrift(W,Psi,H,Random);
     }
     else
     {

@@ -30,7 +30,10 @@ public:
 
   std::vector<IndexType> Action;
   std::vector<IndexType> TransProb;
-
+  
+  IndexType vmcsteps;
+  IndexType warmupsteps;
+  
   RealType forwardprob;
   RealType backwardprob;
   RealType forwardaction;
@@ -83,6 +86,9 @@ public:
     //forwardprob=0.0;
     //backwardprob=0.0;
     nbeads=repend-repstart;
+    
+    warmupsteps=0;
+    vmcsteps=0;
   }
 
   ~Reptile() {}

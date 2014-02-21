@@ -43,6 +43,20 @@ public:
 
 private:
 };
+
+
+class CSVMCUpdateAllWithDrift: public CSUpdateBase
+{
+
+public:
+  /// Constructor.
+  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+                 RandomGenerator_t& rg);
+
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+private:
+};
 }
 
 #endif

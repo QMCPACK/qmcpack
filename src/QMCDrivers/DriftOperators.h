@@ -270,6 +270,18 @@ inline void assignDrift(T s,
   PAOps<T,D>::scale(s,ga,da);
 }
 
+template<class T, class T1, unsigned D>
+inline void assignDrift(T tau_au, const vector<T>& massinv,
+                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
+                                       ParticleAttrib<TinyVector<T,D> >& drift)
+{
+  for(int iat=0; iat<massinv.size(); ++iat)
+  {
+    T tau=tau_au*massinv[iat];
+    drift[iat]=tau*qf[iat];
+  }
+}
+
 }
 #endif
 /***************************************************************************

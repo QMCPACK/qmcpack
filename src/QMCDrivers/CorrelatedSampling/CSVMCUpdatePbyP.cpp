@@ -39,24 +39,25 @@ CSVMCUpdatePbyP::~CSVMCUpdatePbyP() { }
 
 void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
- /* int iwalker=0;
+  int iwalker=0;
   //only used locally
   vector<RealType> ratio(nPsi), uw(nPsi);
-  while(it != it_end)
+  for(; it != it_end; ++it)
   {
     //Walkers loop
     Walker_t& thisWalker(**it);
+    W.loadWalker(thisWalker,true);
     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
     W.R = thisWalker.R;
     w_buffer.rewind();
     // Copy walker info in W
-    W.copyFromBuffer(w_buffer);
+    //W.copyFromBuffer(w_buffer);
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       // Copy wave function info in W and Psi1
       Psi1[ipsi]->copyFromBuffer(W,w_buffer);
-      Psi1[ipsi]->G=W.G;
-      Psi1[ipsi]->L=W.L;
+    //  Psi1[ipsi]->G=W.G;
+    //  Psi1[ipsi]->L=W.L;
     }
     makeGaussRandomWithEngine(deltaR,RandomGen);
     for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -109,11 +110,11 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
       //if(Random() < prob)
       if(accept_move)
       {
-        /* Electron move is accepted. Update:
-           -ratio (Psi[i]/Psi[j])^2 for this walker
-           -Gradient and laplacian for each Psi1[i]
-           -Drift
-           -buffered info for each Psi1[i]
+        // Electron move is accepted. Update:
+        //   -ratio (Psi[i]/Psi[j])^2 for this walker
+        //   -Gradient and laplacian for each Psi1[i]
+        //   -Drift
+        //   -buffered info for each Psi1[i]
         moved = true;
         ++nAccept;
         W.acceptMove(iat);
@@ -130,8 +131,8 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
           Psi1[ipsi]->acceptMove(W,iat);
           //Update G and L in Psi1[i]
           //Psi1[ipsi]->G = *G1[ipsi];
-          Psi1[ipsi]->G += *G1[ipsi];
-          Psi1[ipsi]->L += *L1[ipsi];
+         // Psi1[ipsi]->G += *G1[ipsi];
+          //Psi1[ipsi]->L += *L1[ipsi];
           thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
         }
       }
@@ -143,24 +144,26 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
           Psi1[ipsi]->rejectMove(iat);
       }
     }
-    if(moved)
+   if(moved)
     {
-      /* The walker moved: Info are copied back to buffers:
-         -copy (Psi[i]/Psi[j])^2 to ratioijBuffer
-         -Gradient and laplacian for each Psi1[i]
-         -Drift
-         -buffered info for each Psi1[i]
-         Physical properties are updated */
-  /*    (*it)->Age=0;
+     //  The walker moved: Info are copied back to buffers:
+   //      -copy (Psi[i]/Psi[j])^2 to ratioijBuffer
+    //     -Gradient and laplacian for each Psi1[i]
+    //     -Drift
+   //      -buffered info for each Psi1[i]
+    //     Physical properties are updated */
+      (*it)->Age=0;
       (*it)->R = W.R;
-      w_buffer.rewind();
-      W.copyToBuffer(w_buffer);
+   //   w_buffer.rewind();
+    //  W.copyToBuffer(w_buffer);
       for(int ipsi=0; ipsi< nPsi; ipsi++)
       {
         W.G=Psi1[ipsi]->G;
         W.L=Psi1[ipsi]->L;
         //ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
-        ValueType logpsi = Psi1[ipsi]->evaluateLog(W,w_buffer);
+       // ValueType logpsi = Psi1[ipsi]->evaluateLog(W,w_buffer);
+        RealType logpsi=Psi1[ipsi]->updateBuffer(W,w_buffer,false);
+        W.saveWalker(thisWalker);
         RealType et = H1[ipsi]->evaluate(W);
         //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
         //Properties is used for UmbrellaWeight and UmbrellaEnergy
@@ -175,7 +178,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
     }
     ++it;
     ++iwalker;
-  }*/
+  }
 }
 }
 
