@@ -373,12 +373,10 @@ bool QMCMain::validateXML()
     }
     else if(cname == "wavefunction")
     {
-      app_log()<<"INITIALIZING WAVEFUNCTION\n";
       psiPool->put(cur);
     }
     else if(cname == "hamiltonian")
     {
-      app_log()<<"INITIALIZING HAMILTONIAN\n";
       hamPool->put(cur);
     }
     else if(cname == "include")
@@ -394,7 +392,6 @@ bool QMCMain::validateXML()
     }
     else if(cname == "qmcsystem")
     {
-      app_log()<<"INLITIALIING processPWH for QMCSYSTEM\n";
       processPWH(cur);
     }
     else if(cname == "init")
