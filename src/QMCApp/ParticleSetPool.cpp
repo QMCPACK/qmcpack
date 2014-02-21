@@ -249,7 +249,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
   attribs.add(spotype, "type");
   attribs.put(cur);
 
-  if(spotype.find("spline")>=spotype.size()) return qp;
+  if(h5name.empty()) return qp;
 
 #if OHMMS_DIM==3
   ParticleSet* ions=getParticleSet(source);
@@ -283,6 +283,8 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
     ions->Lattice.reset();
     ions->Lattice.makeGrid(grid);
+
+    myPool[source]=ions;
   }
 
   if(SimulationCell==0)
@@ -362,10 +364,9 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     if(qp->Lattice.SuperCellEnum)
       qp->createSK();
     qp->resetGroups();
+    myPool[target]=qp;
   }
 
-  myPool[target]=qp;
-  myPool[source]=ions;
 #endif
   return qp;
 }
