@@ -36,7 +36,7 @@ class CSVMCUpdateAll: public CSUpdateBase
 
 public:
   /// Constructor.
-  CSVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  CSVMCUpdateAll(MCWalkerConfiguration& w,  vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
@@ -50,7 +50,7 @@ class CSVMCUpdateAllWithDrift: public CSUpdateBase
 
 public:
   /// Constructor.
-  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);

@@ -33,7 +33,7 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
+                                vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 { }
 
@@ -163,7 +163,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
 
 
 CSVMCUpdateAllWithDrift::CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
+                                vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 { }
 

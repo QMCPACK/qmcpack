@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                                 TrialWaveFunction& psi,
-                                 QMCHamiltonian& h,
+                                 vector<TrialWaveFunction*>& psi,
+                                 vector<QMCHamiltonian*>& h,
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 {

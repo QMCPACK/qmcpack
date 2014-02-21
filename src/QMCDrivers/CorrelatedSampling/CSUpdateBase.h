@@ -30,7 +30,7 @@ class CSUpdateBase: public QMCUpdateBase
 {
 public:
 
-  CSUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  CSUpdateBase(MCWalkerConfiguration& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h,
                RandomGenerator_t& rg);
 
   virtual ~CSUpdateBase();

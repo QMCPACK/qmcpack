@@ -29,8 +29,8 @@ class CSVMCUpdatePbyP: public CSUpdateBase
 public:
   /// Constructor.
   CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                  TrialWaveFunction& psi,
-                  QMCHamiltonian& h,
+                   vector<TrialWaveFunction*>& psi,
+                   vector<QMCHamiltonian*>& h,
                   RandomGenerator_t& rg);
 
   ~CSVMCUpdatePbyP();

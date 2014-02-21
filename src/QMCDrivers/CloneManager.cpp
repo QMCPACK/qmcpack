@@ -38,6 +38,10 @@ vector<MCWalkerConfiguration*> CloneManager::wgClones;
 //initialization of the static hClones
 vector<QMCHamiltonian*> CloneManager::hClones;
 
+vector<vector<MCWalkerConfiguration*> > CloneManager::WPoolClones; 
+vector<vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
+vector<vector<QMCHamiltonian*> > CloneManager::HPoolClones;
+
 /// Constructor.
 CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
 {
@@ -63,9 +67,9 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
     return;
   }
-  wClones.resize(NumThreads,0);
-  psiClones.resize(NumThreads,0);
-  hClones.resize(NumThreads,0);
+  wClones.resize(NumThreads);
+  psiClones.resize(NumThreads);
+  hClones.resize(NumThreads);
   wClones[0]=&w;
   psiClones[0]=&psi;
   hClones[0]=&ham;
@@ -94,6 +98,105 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   OhmmsInfo::Warn->reset();
   qmc_common.io_node=io_node;
 }
+
+void CloneManager::makeClones(vector<MCWalkerConfiguration*>& wpool,
+                              vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hampool)
+{
+ /* if(WPoolClones.size())
+  {
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    return;
+  }
+  WPoolClones.resize(NumThreads);
+  PsiPoolClones.resize(NumThreads);
+  HPoolClones.resize(NumThreads);
+  WPoolClones[0]=wpool;
+  PsiPoolClones[0]=psipool;
+  HPoolClones[0]=hampool;
+  if(NumThreads==1)
+    return;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." <<endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  OhmmsInfo::Log->turnoff();
+  OhmmsInfo::Warn->turnoff();
+
+  bool io_node=qmc_common.io_node;
+  qmc_common.io_node=false;
+
+  char pname[16];
+  
+  for(int ip=1; ip<NumThreads; ++ip)
+  {
+	IndexType nPsi=psipool.size();
+    WPoolClones[ip].resize(nPsi,0);
+    PsiPoolClones[ip].resize(nPsi,0);
+    HPoolClones[ip].resize(nPsi,0);
+    for(int ipsi=0; ipsi<psipool.size(); ipsi++)
+    {
+
+//#if defined(USE_PARTCILESET_CLONE)
+//      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+//#else
+      WPoolClones[ip][ipsi]=new MCWalkerConfiguration(*wpool[ipsi]);
+//#endif
+      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(*WPoolClones[ip][ipsi]);
+      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(*WPoolClones[ip][ipsi],*psiClones[ip]);
+    }
+  }
+  OhmmsInfo::Log->reset();
+  OhmmsInfo::Warn->reset();
+  qmc_common.io_node=io_node;*/
+}
+
+void CloneManager::makeClones(MCWalkerConfiguration& w,
+                              vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hampool)
+{
+  if(WPoolClones.size())
+  {
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    return;
+  }
+  wClones.resize(NumThreads);
+  PsiPoolClones.resize(NumThreads);
+  HPoolClones.resize(NumThreads);
+  wClones[0]=&w;
+  PsiPoolClones[0]=psipool;
+  HPoolClones[0]=hampool;
+  if(NumThreads==1)
+    return;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." <<endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  OhmmsInfo::Log->turnoff();
+  OhmmsInfo::Warn->turnoff();
+
+  bool io_node=qmc_common.io_node;
+  qmc_common.io_node=false;
+
+  char pname[16];
+ 
+  for(int ip=1; ip<NumThreads; ++ip)
+  {
+	IndexType nPsi=psipool.size();
+   // WPoolClones[ip].resize(nPsi,0);
+    PsiPoolClones[ip].resize(nPsi);
+    HPoolClones[ip].resize(nPsi);
+    for(int ipsi=0; ipsi<psipool.size(); ipsi++)
+    {
+
+//#if defined(USE_PARTCILESET_CLONE)
+//      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+//#else
+      wClones[ip]=new MCWalkerConfiguration(w);
+//#endif
+      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(*wClones[ip]);
+      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(*wClones[ip],*PsiPoolClones[ip][ipsi]);
+    }
+  }
+  OhmmsInfo::Log->reset();
+  OhmmsInfo::Warn->reset();
+  qmc_common.io_node=io_node;
+}
+
 
 void CloneManager::makeClones_new(MCWalkerConfiguration& w,
                                   TrialWaveFunction& psi, QMCHamiltonian& ham)

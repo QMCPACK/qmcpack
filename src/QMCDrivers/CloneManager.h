@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_CLONEMANAGER_H
 #define QMCPLUSPLUS_CLONEMANAGER_H
 #include "QMCDrivers/QMCUpdateBase.h"
+#include "CorrelatedSampling/CSUpdateBase.h"
 // #include "QMCDrivers/EE/QMCRenyiUpdateBase.h"
 
 namespace qmcplusplus
@@ -42,6 +43,8 @@ public:
   virtual ~CloneManager();
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
+  void makeClones(MCWalkerConfiguration& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& ham);
+  void makeClones(vector<MCWalkerConfiguration*>& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& ham);
   void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
   void makeClones(TrialWaveFunction& guide);
@@ -82,6 +85,15 @@ protected:
   vector<TraceManager*> traceClones;
   ///Branch engines
   vector<SimpleFixedNodeBranch*> branchClones;
+  
+  //for correlated sampling.
+  static vector<vector<MCWalkerConfiguration*> > WPoolClones; 
+  static vector<vector<TrialWaveFunction*> > PsiPoolClones;
+  static vector<vector<QMCHamiltonian*> > HPoolClones;
+  vector<CSUpdateBase*> CSMovers;
+
+  
+  
   ///Walkers per node
   vector<int> wPerNode;
 };

@@ -45,6 +45,8 @@ public:
 
 private:
   string UseDrift;
+  int prevSteps;
+  int prevStepsBetweenSamples;
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
@@ -54,6 +56,9 @@ private:
   {
     return *this;
   }
+  
+  void resetRun();
+  
 
   CSEnergyEstimator *multiEstimator;
   CSUpdateBase* Mover;

@@ -23,10 +23,11 @@
 namespace qmcplusplus
 {
 CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w,
-                           TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
-  QMCUpdateBase(w,psi,h,rg), nPsi(0), useDriftOption("no")
+                           vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hpool, RandomGenerator_t& rg):
+  QMCUpdateBase(w,*psipool[0],*hpool[0],rg), nPsi(0), useDriftOption("no"), H1(hpool), Psi1(psipool)
 {
   myParams.add(useDriftOption,"useDrift","string");
+  
 }
 
 CSUpdateBase::~CSUpdateBase()
@@ -59,15 +60,15 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
 
 void CSUpdateBase::updateNorms()
 {
-  for(int ipsi=0; ipsi< nPsi; ipsi++)
-    cumNorm[ipsi]+=multiEstimator->getUmbrellaWeight(ipsi);
-  //if(block==(equilBlocks-1) || block==(nBlocks-1)){
-  RealType winv=1.0/std::accumulate(cumNorm.begin(), cumNorm.end(),0.0);
-  for(int ipsi=0; ipsi< nPsi; ipsi++)
-  {
-    avgNorm[ipsi]=cumNorm[ipsi]*winv;
-    logNorm[ipsi]=std::log(avgNorm[ipsi]);
-  }
+ // for(int ipsi=0; ipsi< nPsi; ipsi++)
+ //   cumNorm[ipsi]+=multiEstimator->getUmbrellaWeight(ipsi);
+//  //if(block==(equilBlocks-1) || block==(nBlocks-1)){
+ //// RealType winv=1.0/std::accumulate(cumNorm.begin(), cumNorm.end(),0.0);
+ // for(int ipsi=0; ipsi< nPsi; ipsi++)
+//  {
+//    avgNorm[ipsi]=cumNorm[ipsi]*winv;
+//    logNorm[ipsi]=std::log(avgNorm[ipsi]);
+//  }
   //}
 }
 
