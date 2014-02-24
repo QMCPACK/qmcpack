@@ -153,7 +153,6 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	}
 	RealType eloc=H.evaluate(W);
 	new_headProp[Action[2]]= 0.5*Tau*eloc;
-  vmcSteps=W.reptile->nbeads+1;
 
 	////////////////////////////////////////////////////////////////////////
 	///  Like DMC, this filters the local energy to ignore divergences near pathological points in phase space.
@@ -512,7 +511,6 @@ void RMCUpdateAllWithDrift::accumulate(WalkerIter_t it, WalkerIter_t it_end)
 {
   if (vmcToDoSteps==0 && equilToDoSteps==0) Estimators->accumulate(W,it,it_end);
   else;
-
 
 }
 

@@ -47,6 +47,7 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
     //W.R = m_sqrttau*deltaR + thisWalker.R;
     //W.update();
     RealType logpsi(Psi.evaluateLog(W));
+   // app_log()<<logpsi<<endl;
     RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
     if (RandomGen() > g)
     {
@@ -189,7 +190,8 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
   {
     MCWalkerConfiguration::Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
-    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+  //  RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+    assignDrift(Tau,MassInvP,W.G,drift);
     //RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
     //if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
@@ -201,7 +203,8 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     RealType logpsi(Psi.evaluateLog(W));
     RealType logGf = -0.5*Dot(deltaR,deltaR);
     //nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-    nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+  //  nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+    assignDrift(Tau,MassInvP,W.G,drift);
 
     deltaR = thisWalker.R - W.R - drift;
 

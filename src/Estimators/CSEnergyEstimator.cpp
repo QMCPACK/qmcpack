@@ -106,7 +106,7 @@ namespace qmcplusplus {
   void 
   CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) 
   {
-
+	std::vector<double> weightaverage(NumCopies);
     //first copy data to tmp_dat to calculate differences
     for(int i=0; i<NumCopies; i++) 
     {
@@ -128,7 +128,13 @@ namespace qmcplusplus {
 
     for(int i=0; i<NumCopies; i++) 
     {
+      
       scalars[ii++](uweights[i],1.0);
+      //scalars.average()
+      RealType ui_avg=scalars_saved[ii-1].mean();
+      if (ui_avg > 0) weightaverage[i]=ui_avg;
+      else weightaverage[i]=1;
+     // app_log()<<"i="<<i<<" ii="<<ii<<" uweight[i]="<<uweights[i]<<" scalars[ii]="<<scalars_saved[ii-1].result()<<" wa="<<weightaverage[i]<<endl; 
     }
 
     for(int i=0; i<NumCopies; i++) 
@@ -142,8 +148,11 @@ namespace qmcplusplus {
 	// cerr << "LOCALENERGY = " << uj*awalker.getPropertyBase(j)[LOCALENERGY] 
 	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << endl;
 
-        for(int k=0; k<tmp_data.cols(); ++k) 
-          scalars[ii++](2.0*(ui*tmp_data(i,k)-uj*tmp_data(j,k)),1.0);
+        for(int k=0; k<tmp_data.cols(); ++k){
+			 
+          scalars[ii++]((ui*tmp_data(i,k)/weightaverage[i]-uj*tmp_data(j,k)/weightaverage[j]),1.0);
+         // app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<<endl;
+	  }
 	  // scalars[ii++](awalker.getPropertyBase(j)[LOCALENERGY] -
 	  // 		awalker.getPropertyBase(i)[LOCALENERGY],1.0);
       }

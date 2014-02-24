@@ -30,6 +30,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Estimators/CSEnergyEstimator.h"
 //#define QMC_ASYNC_COLLECT
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -514,7 +515,16 @@ bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodeP
           max4ascii=nobs*H.sizeOfObservables()+3;
           add(new RMCLocalEnergyEstimator(H,nobs),MainEstimatorName);
         }
-        else
+        else if ( est_name=="CSLocalEnergy" )
+        {
+          OhmmsAttributeSet hAttrib;
+          IndexType nPsi=1;
+          hAttrib.add(nPsi, "nPsi");
+          hAttrib.put(cur);	      
+	      add(new CSEnergyEstimator(H,nPsi), MainEstimatorName);
+	       app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << endl;
+	    }
+        else  
           extra.push_back(est_name);
     }
     cur = cur->next;

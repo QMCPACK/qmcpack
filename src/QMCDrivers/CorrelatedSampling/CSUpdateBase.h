@@ -41,6 +41,7 @@ public:
   vector<RealType> sumratio;
   vector<RealType> invsumratio;
   vector<RealType> avgNorm;
+  vector<RealType> avgWeight;
   vector<RealType> logNorm;
   vector<RealType> cumNorm;
   vector<RealType> instRij;
@@ -60,6 +61,7 @@ public:
 
   void resizeWorkSpace(int nw, int nptcls);
   void updateNorms();
+  void updateAvgWeights();
   void initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool resetNorms);
   void initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bool resetNorms);
   void updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end);

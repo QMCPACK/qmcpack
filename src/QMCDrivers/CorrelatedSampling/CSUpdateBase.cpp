@@ -46,6 +46,7 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
   avgNorm.resize(nPsi,1.0);
   logNorm.resize(nPsi,0.0);
   cumNorm.resize(nPsi,0.0);
+  avgWeight.resize(nPsi,1.0);
   instRij.resize(nPsi*(nPsi-1)/2);
   ratioIJ.resize(nw,nPsi*(nPsi-1)/2);
   dG.resize(nptcls);
@@ -60,16 +61,32 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
 
 void CSUpdateBase::updateNorms()
 {
- // for(int ipsi=0; ipsi< nPsi; ipsi++)
+ //for(int ipsi=0; ipsi< nPsi; ipsi++)
  //   cumNorm[ipsi]+=multiEstimator->getUmbrellaWeight(ipsi);
-//  //if(block==(equilBlocks-1) || block==(nBlocks-1)){
- //// RealType winv=1.0/std::accumulate(cumNorm.begin(), cumNorm.end(),0.0);
- // for(int ipsi=0; ipsi< nPsi; ipsi++)
-//  {
-//    avgNorm[ipsi]=cumNorm[ipsi]*winv;
-//    logNorm[ipsi]=std::log(avgNorm[ipsi]);
-//  }
+  //if(block==(equilBlocks-1) || block==(nBlocks-1)){
+//	  app_log()<<"Inside UpdateNorm\n";
+  RealType winv=1.0/double(std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
+  for(int ipsi=0; ipsi< nPsi; ipsi++)
+  {
+    avgNorm[ipsi]=cumNorm[ipsi]*winv;
+   // avgNorm[ipsi]=0.5;
+    logNorm[ipsi]=std::log(avgNorm[ipsi]);
+   // app_log()<<ipsi<<" "<<avgNorm[ipsi]<<" "<<logNorm[ipsi]<<" "<<winv<<endl;
+    cumNorm[ipsi]=0;
+  }
+  
   //}
+}
+void CSUpdateBase::updateAvgWeights()
+{
+	  RealType winv=1.0/double(std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
+  for(int ipsi=0; ipsi< nPsi; ipsi++)
+  {
+    avgWeight[ipsi]=cumNorm[ipsi]*winv;
+   //  app_log()<<ipsi<<" "<<avgWeight[ipsi]<<endl;
+   // avgNorm[ipsi]=0.5;
+    cumNorm[ipsi]=0;
+  }
 }
 
 void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
@@ -125,6 +142,7 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
     {
       thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
+      cumNorm[ipsi]+=1.0/sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
  ///   thisWalker.Drift=0.0;

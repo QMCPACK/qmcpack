@@ -104,7 +104,7 @@ struct Walker
   /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
   ParticleLaplacian_t L;
   /////drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
- // ParticlePos_t CSDrift;
+  //ParticlePos_t Drift;
 
   ///scalar properties of a walker
   PropertyContainer_t  Properties;

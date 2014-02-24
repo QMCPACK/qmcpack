@@ -48,7 +48,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   string froot("0"), cfile("0");
   //string  target("e"), collect("no");
   int anode=-1, nblocks=1, nprocs=1;
-  HDFVersion in_version(0,4); //set to version="0 4"
+  HDFVersion in_version(0,1); //set to be old version
   OhmmsAttributeSet pAttrib;
   pAttrib.add(cfile,"href");
   pAttrib.add(cfile,"file");

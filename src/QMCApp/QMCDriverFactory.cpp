@@ -252,9 +252,9 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   else
   {
     primaryPsi=targetPsi.front();
-    targetPsi.pop();
+   // targetPsi.pop();
     primaryH=targetH.front();
-    targetH.pop();
+  //  targetH.pop();
   }
   //set primaryH->Primary
   primaryH->setPrimary(true);

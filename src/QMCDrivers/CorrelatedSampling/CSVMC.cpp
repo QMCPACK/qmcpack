@@ -44,7 +44,10 @@ CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h
   m_param.add(equilBlocks,"equilBlocks","int");
   QMCDriverMode.set(QMC_MULTIPLE,1);
   //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
-  add_H_and_Psi(&h,&psi);
+  //for(int ipsi=0; ipsi<ppool.size(); ipsi++)
+ // {
+	//  add_H_and_Psi(&h,&psi);
+ // }
 }
 
 /** allocate internal data here before run() is called
@@ -226,6 +229,9 @@ bool CSVMC::run()
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
       CSMovers[ip]->stopBlock(false);
+     // app_log()<<"THREAD "<<ip<<endl;
+      CSMovers[ip]->updateAvgWeights();
+      
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
@@ -266,9 +272,7 @@ void CSVMC::resetRun()
   for(int ipsi=1; ipsi<nPsi; ipsi++)
     H1[ipsi]->setPrimary(false);
     
-  CSEnergyEstimator * multiEstimator = new CSEnergyEstimator(H,nPsi);
-  Estimators->add(multiEstimator,Estimators->MainEstimatorName);
-    
+
   makeClones(W,Psi1,H1);
   FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
   app_log() << "  Initial partition of walkers ";
@@ -288,29 +292,37 @@ void CSVMC::resetRun()
 #endif    
     for(int ip=0; ip<NumThreads; ++ip)
     {
+	  ostringstream os;
 	  estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 	  traceClones[ip] = Traces->makeClone();
 	  Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+	  
+	  //HPoolClones[0]->setPrimary(true);
+	//  for(int ipsi=1; ipsi<nPsi; ipsi++)
+   //     HPoolClones[ipsi]->setPrimary(false);
      
       branchClones[ip] = new BranchEngineType(*branchEngine);
 	 //  hClones[ip]->setRandomGenerator(Rng[ip]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        app_log() << "  Using particle-by-particle update " << endl;
+        os << "  Using particle-by-particle update " << endl;
        // CSMovers[ip]=new CSVMCUpdatePbyP(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],Rng[ip]);
       }
       if (UseDrift == "yes")
       {
-        app_log() << "  Using walker-by-walker update with Drift " << endl;
+        os << "  Using walker-by-walker update with Drift " << endl;
         CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
       }
       else
       {
-        app_log() << "  Using walker-by-walker update " << endl;
+        os << "  Using walker-by-walker update " << endl;
         CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+
       }
+      if(ip==0)
+        app_log() << os.str() << endl;
 
       //traceClones[ip]->transfer_state_from(*Traces);
 
@@ -318,6 +330,7 @@ void CSVMC::resetRun()
       //CSMovers[ip]->Psi1=PsiPoolClones[ip];
      // CSMovers[ip]->H1=HPoolClones[ip];
    //   CSMovers[ip]->multiEstimator= Estimators->getEstimator(Estimators->MainEstimatorName);
+   
       //estimatorClones[ip]->add(CSMovers[ip]->multiEstimator,Estimators->MainEstimatorName);;
       CSMovers[ip]->resetRun( branchClones[ip], estimatorClones[ip],traceClones[ip]);
     }
@@ -360,11 +373,16 @@ void CSVMC::resetRun()
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
     {
       CSMovers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-      CSMovers[ip]->updateNorms();
+    //  CSMovers[ip]->updateNorms();
+    //  app_log()<<cumnorm<<endl;
+      if (prestep==nWarmupSteps-1) CSMovers[ip]->updateNorms();
     }
+    
+ //   app_log()<<"Norms updated\n";
     if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
       CSMovers[ip]->updateCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
+    
     
   }
   
