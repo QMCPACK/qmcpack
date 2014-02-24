@@ -293,8 +293,9 @@ bool DMCcuda::run()
         W[iw]->getPropertyBase()[DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];
-        if (tauRatio < 0.5)
-          cerr << "  tauRatio = " << tauRatio << endl;
+        //allow large time steps during warmup
+        //if (tauRatio < 0.5)
+        //  cerr << "  tauRatio = " << tauRatio << endl;
         RealType taueff = m_tauovermass * tauRatio;
         if (scaleweight)
           W[iw]->Weight *= branchEngine->branchWeightTau
