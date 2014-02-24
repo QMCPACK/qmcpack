@@ -230,7 +230,7 @@ bool CSVMC::run()
       }
       CSMovers[ip]->stopBlock(false);
      // app_log()<<"THREAD "<<ip<<endl;
-      CSMovers[ip]->updateAvgWeights();
+     // CSMovers[ip]->updateAvgWeights();
       
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
