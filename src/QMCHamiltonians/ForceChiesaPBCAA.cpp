@@ -45,11 +45,11 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns):
   kcdifferent=false;
   myTableIndex=elns.addTable(ions);
   initBreakup(elns);
-  app_log()<< "IonIon Force" <<endl;
-  app_log()<<forces_IonIon<<endl; 
+ // app_log()<< "IonIon Force" <<endl;
+//  app_log()<<forces_IonIon<<endl; 
   evaluateLR_AA();
-  app_log()<< "IonIon Force" <<endl;
-  app_log()<<forces_IonIon<<endl; 
+//  app_log()<< "IonIon Force" <<endl;
+//  app_log()<<forces_IonIon<<endl; 
   evaluateSR_AA();
   app_log()<< "IonIon Force" <<endl;
   app_log()<<forces_IonIon<<endl; 
