@@ -33,6 +33,12 @@ DiffOrbitalBasePtr DiffOrbitalBase::makeClone(ParticleSet& tpq) const
   return 0;
 }
 
+void DiffOrbitalBase::evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars,
+    Matrix<ValueType>& dratios)
+{
+  APP_ABORT("Implement DiffOrbitalBase::evaluateDerivRatios for this orbital");
+}
+
 void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)
 {
   int nptcls=P.getTotalNum();

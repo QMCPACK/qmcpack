@@ -238,6 +238,35 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
+  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  {
+    //vector<RealType> myr(ratios.size(),0.0);
+    //const DistanceTableData* d_table=VP.DistTables[myTableIndex];
+    //for (int i=0; i<d_table->size(SourceIndex); ++i)
+    //  if (Fs[i])
+    //    for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
+    //      myr[j]+=Fs[i]->evaluate(d_table->r(nn));
+    //RealType x=U[VP.activePtcl];
+    //for(int k=0; k<ratios.size(); ++k)
+    //  ratios[k]=std::exp(x-myr[k]);
+    vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    const DistanceTableData* d_table=VP.DistTables[myTableIndex];
+    for (int i=0; i<d_table->size(SourceIndex); ++i)
+      if (Fs[i])
+        for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
+          myr[j]-=Fs[i]->evaluate(d_table->r(nn));
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(myr[k]);
+  }
+
+  inline void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+      vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+  {
+    evaluateRatios(VP,ratios);
+    if(dPsi)
+      dPsi->evaluateDerivRatios(VP,optvars,dratios);
+  }
+
 
   /** evaluate the ratio
    */

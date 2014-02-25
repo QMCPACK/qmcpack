@@ -154,6 +154,23 @@ struct PadeFunctor:public OptimizableFunctorBase
     return true;
   }
 
+  /// compute derivatives with respect to A and B
+  inline bool evaluateDerivatives (real_type r, std::vector<real_type>& derivs)
+  {
+    int i=0;
+    real_type u = 1.0/(1.0+B*r);
+    if(Opt_A)
+    {
+      derivs[i]= r*u-1/B; //du/da
+      ++i;
+    }
+    if(Opt_B)
+    {
+      derivs[i]= -A*r*r*u*u+AoverB/B; //du/db
+    }
+    return true;
+  }
+
   bool put(xmlNodePtr cur)
   {
     real_type Atemp(A),Btemp(B0);
@@ -348,6 +365,28 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
   }
 
 
+
+  inline bool evaluateDerivatives (real_type r, std::vector<real_type>& derivs)
+  {
+    real_type u = 1.0/(1.0+B*r);
+    int i=0;
+    if(Opt_A)
+    {
+      derivs[i]= r*u;
+      i++;
+    }
+    if(Opt_B)
+    {
+      derivs[i]= -r*r*(A+C*r)*u*u;
+      i++;
+    }
+    if(Opt_C)
+    {
+      derivs[i]= r*r*u;
+      i++;
+    }
+    return true;
+  }
 
 
   /** process input xml node
@@ -574,6 +613,44 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
       derivs[i][0]= -2.0*dr2*tp*bttm2;
       derivs[i][1]= -2.0*dr2*(2.0*br*(2.0 + c2r) + A*(3.0 + c2r - d2r2))*bttm3;
       derivs[i][2]= -4.0*dr*(br*(6.0 + 4.0* c2r + c2*c2r2 - 6.0*d2r2 - 2.0*c2r*d2r2) + A*(3.0 + d4r4 - 2.0 *d2r2 *(4.0 + c2r))) *bttm4;
+      i++;
+    }
+    return true;
+  }
+
+
+  inline bool evaluateDerivatives (real_type r, std::vector<real_type>& derivs)
+  {
+    real_type ar(A*r);
+    real_type br(B*r);
+    real_type cr(C*r);
+    real_type dr(D*r);
+    real_type r2(r*r);
+    real_type dr2(D*r2);
+    real_type d2r2(dr*dr);
+    real_type c2(C*C);
+    real_type c2r(c2*r);
+    real_type bttm(1.0/(1.0+c2r+d2r2));
+    real_type tp( A*r+br*r );
+    real_type c2r2(cr*cr);
+    real_type d4r4(d2r2*d2r2);
+    real_type bttm2(bttm*bttm);
+    int i=0;
+    if(Opt_A)
+    {
+      derivs[i]= r2*bttm;
+      i++;
+    }
+
+    if(Opt_B)
+    {
+      derivs[i]= -2.0*cr*tp*bttm2;
+      i++;
+    }
+
+    if(Opt_C)
+    {
+      derivs[i]= -2.0*dr2*tp*bttm2;
       i++;
     }
     return true;

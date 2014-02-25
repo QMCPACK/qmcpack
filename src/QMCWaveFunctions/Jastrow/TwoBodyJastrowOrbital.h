@@ -54,6 +54,8 @@ protected:
   ParticleAttrib<PosType> curGrad0;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   Matrix<int> PairID;
+  ///sum over the columns of U for virtual moves
+  vector<RealType> Uptcl;
 
   std::map<std::string,FT*> J2Unique;
   ParticleSet *PtclRef;
@@ -82,6 +84,7 @@ public:
     N=p.getTotalNum();
     NN=N*N;
     U.resize(NN+1);
+    Uptcl.resize(NN);
     U=0.0;
     d2U.resize(NN);
     d2U=0.0;
@@ -260,6 +263,10 @@ public:
         L[j] -= lap;
       }
     }
+
+    //for(int i=0,nat=0; i<N; ++i,nat+=N)
+    //  Uptcl[i]=accumulate(&(U[nat]),&(U[nat+N]),0.0);
+
     return LogValue;
   }
 
@@ -289,6 +296,31 @@ public:
       }
     }
     return std::exp(DiffVal);
+  }
+
+  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  {
+    const int iat=VP.activePtcl;
+
+    int nat=iat*N;
+    RealType x=accumulate(&(U[nat]),&(U[nat+N]),0.0);
+    vector<RealType> myr(ratios.size(),x);
+    //vector<RealType> myr(ratios.size(),Uptcl[iat]);
+
+    const DistanceTableData* d_table=VP.DistTables[0];
+    const int* pairid(PairID[iat]);
+    for (int i=0; i<d_table->size(SourceIndex); ++i)
+    {
+      if(i!=iat)
+      {
+        FuncType* func=F[pairid[i]];
+        for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
+          myr[j]-=func->evaluate(d_table->r(nn));
+      }
+    }
+
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(myr[k]);
   }
 
   /** evaluate the ratio
@@ -521,6 +553,9 @@ public:
         dL[j] -= lap;
       }
     }
+
+    //for(int i=0,nat=0; i<N; ++i,nat+=N)
+    //  Uptcl[i]=accumulate(&(U[nat]),&(U[nat+N]),0.0);
   }
 
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)

@@ -89,6 +89,8 @@ struct DiffOrbitalBase
                                    vector<RealType>& dlogpsi,
                                    vector<RealType>& dhpsioverpsi)=0;
 
+  virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
+
   virtual void multiplyDerivsByOrbR(vector<RealType>& dlogpsi)
   {
     for (int i=0; i<refOrbital.size(); ++i)

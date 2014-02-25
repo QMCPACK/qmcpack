@@ -356,13 +356,13 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int iat)
-{
-  ValueType r(1.0);
-  for(int i=0;i<Z.size();++i)
-    r *= Z[i]->ratio(P,iat);
-  return r;
-}
+//TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int iat)
+//{
+//  ValueType r(1.0);
+//  for(int i=0;i<Z.size();++i)
+//    r *= Z[i]->ratio(P,iat);
+//  return r;
+//}
 
 TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios)
 {
@@ -763,6 +763,52 @@ TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
   //buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
   //buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
   return LogValue;
+}
+
+void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, vector<RealType>& ratios)
+{
+#if defined(QMC_COMPLEX)
+  vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
+  for (int i=0; i<Z.size(); ++i)
+  {
+    Z[i]->evaluateRatios(VP,t);
+    for (int j=0; j<ratios.size(); ++j)
+      r[j]*=t[j];
+  }
+  RealType pdiff;
+  for(int j=0; j<ratios.size(); ++j)
+  {
+    RealType logr=evaluateLogAndPhase(r[j],pdiff);
+    ratios[j]=std::exp(logr)*std::cos(pdiff);
+    //ratios[j]=std::abs(r)*std::cos(std::arg(r[j]));
+  }
+#else
+  std::fill(ratios.begin(),ratios.end(),1.0);
+  vector<ValueType> t(ratios.size());
+  for (int i=0; i<Z.size(); ++i)
+  {
+    Z[i]->evaluateRatios(VP,t);
+    for (int j=0; j<ratios.size(); ++j)
+      ratios[j]*=t[j];
+  }
+#endif
+}
+
+void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+    vector<RealType>& ratios, Matrix<RealType>& dratio)
+{
+#if defined(QMC_COMPLEX)
+  APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
+#else
+  std::fill(ratios.begin(),ratios.end(),1.0);
+  vector<ValueType> t(ratios.size());
+  for (int i=0; i<Z.size(); ++i)
+  {
+    Z[i]->evaluateDerivRatios(VP,optvars,t,dratio);
+    for (int j=0; j<ratios.size(); ++j)
+      ratios[j]*=t[j];
+  }
+#endif
 }
 
 //TrialWaveFunction::RealType

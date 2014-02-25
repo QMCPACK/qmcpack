@@ -252,6 +252,13 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   return curRatio;
 }
 
+void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+{
+  Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
+  Phi->evaluateValues(VP,psiT);
+  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
+}
+
 void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
 {
   SPOVTimer.start();

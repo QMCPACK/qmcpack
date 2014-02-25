@@ -67,6 +67,8 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   int NumCenters;
   ///number of quantum particles
   int NumTargets;
+  ///number of quantum particles
+  int myTableIndex;
 
   /** container to store the offsets of the basis functions
    *
@@ -101,6 +103,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   LocalizedBasisSet(ParticleSet& ions, ParticleSet& els): CenterSys(ions), myTable(0)
   {
     myTable = DistanceTable::add(ions,els);
+    myTableIndex=myTable->ID;
     NumCenters=CenterSys.getTotalNum();
     NumTargets=els.getTotalNum();
     LOBasis.resize(NumCenters,0);
@@ -231,6 +234,14 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
       LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
     Counter++;
     ActivePtcl=iat;
+  }
+
+  inline void
+  evaluateValues(const ParticleSet& P,ValueMatrix_t& phiM)
+  {
+    const DistanceTableData* dt=P.DistTables[myTableIndex];
+    for(int c=0; c<NumCenters; c++)
+      LOBasis[c]->evaluateValues(dt,c,BasisOffset[c],phiM);
   }
 
   /** add a new set of Centered Atomic Orbitals

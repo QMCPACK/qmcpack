@@ -61,6 +61,8 @@ struct SphericalBasisSet
   IndexType CurrentOffset;
   ///reference to a DistanceTableData (ion-electron)
   const DistanceTableData* myTable;
+  ///bool to chosse Spehrical/Cartesian should be templated
+  bool useCartesian;
   ///spherical tensor unique to this set of SphericalOrbitals
   //AngularFunction_t* Ylm;
   SphericalHarmonics_t Ylm;
@@ -68,7 +70,6 @@ struct SphericalBasisSet
 //  to avoid having to template this function, which will change
 //  all the builders
 // remember to add laplacian of angular piece with cartesian gaussian
-  bool useCartesian;
   CartesianHarmonics_t XYZ;
   ///index of the corresponding real Spherical Harmonic with quantum
   ///numbers \f$ (l,m) \f$
@@ -501,6 +502,28 @@ struct SphericalBasisSet
       ++nlit;
       ++lmit;
       ++offset;
+    }
+  }
+
+  void evaluateValues(const DistanceTableData* dt, int c, int offset, ValueMatrix_t& phiM)
+  {
+    int nn = dt->M[c];
+    for(int iat=0; iat<dt->targets(); iat++, nn++)
+    {
+      RealType r(dt->r(nn));
+      RealType rinv(dt->rinv(nn));
+      for(int ri=0;ri<Rnl.size(); ++ri) Rnl[ri]->evaluate(r,rinv);
+      ValueType* restrict y = phiM[iat]+offset;
+      if(useCartesian)
+      {
+        XYZ.evaluate(dt->dr(nn));
+        for(int nl=0; nl<NL.size(); ++nl) (*y++)=XYZ.XYZ[LM[nl]]*Rnl[NL[nl]]->Y;
+      }
+      else
+      {
+        Ylm.evaluate(dt->dr(nn));
+        for(int nl=0; nl<NL.size(); ++nl) (*y++)=Ylm.Ylm[LM[nl]]*Rnl[NL[nl]]->Y;
+      }
     }
   }
 

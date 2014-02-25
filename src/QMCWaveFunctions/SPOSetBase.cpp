@@ -59,6 +59,11 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
   //MatrixOperators::transpose(logdet);
 }
 
+void SPOSetBase::evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+{
+  APP_ABORT("SPOSetBase::evaluate(P,psiM) not implemented.");
+}
+
 void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
                                     GGGMatrix_t& grad_grad_grad_logdet)
 {

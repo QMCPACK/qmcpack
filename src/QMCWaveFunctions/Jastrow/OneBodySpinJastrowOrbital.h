@@ -258,6 +258,27 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
+  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  {
+    vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    const DistanceTableData* d_table=VP.DistTables[myTableIndex];
+    int tg=VP.GroupID[VP.activePtcl];
+    for(int sg=0; sg<F.rows(); ++sg)
+    {
+      FT* func=F(sg,tg);
+      if(func)
+      {
+        for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
+          for (int nn=d_table->M[s],j=0; nn<d_table->M[s+1]; ++nn,++j)
+            myr[j]-=func->evaluate(d_table->r(nn));
+      }
+    }
+    for(int k=0; k<ratios.size(); ++k) ratios[k]=std::exp(myr[k]);
+    //RealType x=U[VP.activePtcl];
+    //for(int k=0; k<ratios.size(); ++k)
+    //  ratios[k]=std::exp(x-myr[k]);
+  }
+
   /** evaluate the ratio
    */
   inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)

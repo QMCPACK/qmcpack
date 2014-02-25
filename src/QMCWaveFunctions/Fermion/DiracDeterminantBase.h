@@ -191,6 +191,9 @@ public:
    */
   virtual ValueType ratio(ParticleSet& P, int iat);
 
+  /** compute multiple ratios for a particle move
+   */
+  virtual void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios);
 
   virtual ValueType alternateRatio(ParticleSet& P)
   {
@@ -208,6 +211,7 @@ public:
   virtual ValueType ratio(ParticleSet& P, int iat,
                           ParticleSet::ParticleGradient_t& dG,
                           ParticleSet::ParticleLaplacian_t& dL);
+
 
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual GradType evalGrad(ParticleSet& P, int iat);

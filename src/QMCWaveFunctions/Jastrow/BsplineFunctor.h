@@ -256,6 +256,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     tp[1] = t*t;
     tp[2] = t;
     tp[3] = 1.0;
+
     SplineDerivs[0] = TinyVector<real_type,3>(0.0);
     // d/dp_i u(r)
     SplineDerivs[i+0][0] = A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3];
@@ -272,11 +273,65 @@ struct BsplineFunctor: public OptimizableFunctorBase
     SplineDerivs[i+1][2] = DeltaRInv * DeltaRInv * (d2A[ 6]*tp[2] + d2A[ 7]*tp[3]);
     SplineDerivs[i+2][2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
     SplineDerivs[i+3][2] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
+
     int imin=std::max(i,1);
     int imax=std::min(i+4,NumParams+1);
     for (int n=imin; n<imax; ++n)
       derivs[n-1] = SplineDerivs[n];
     derivs[1]+=SplineDerivs[0];
+
+    //real_type v[4],dv[4],d2v[4];
+    //v[0] = A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3];
+    //v[1] = A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3];
+    //v[2] = A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3];
+    //v[3] = A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3];
+    //// d/dp_i du/dr
+    //dv[0] = DeltaRInv * (dA[ 1]*tp[1] + dA[ 2]*tp[2] + dA[ 3]*tp[3]);
+    //dv[1] = DeltaRInv * (dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3]);
+    //dv[2] = DeltaRInv * (dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3]);
+    //dv[3] = DeltaRInv * (dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]);
+    //// d/dp_i d2u/dr2
+    //d2v[0] = DeltaRInv * DeltaRInv * (d2A[ 2]*tp[2] + d2A[ 3]*tp[3]);
+    //d2v[1] = DeltaRInv * DeltaRInv * (d2A[ 6]*tp[2] + d2A[ 7]*tp[3]);
+    //d2v[2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
+    //d2v[3] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
+
+    //int imin=std::max(i,1);
+    //int imax=std::min(i+4,NumParams+1)-1;
+    //int n=imin-1, j=imin-i;
+    //while(n<imax && j<4)
+    //{
+    //  derivs[n] = TinyVector<real_type,3>(v[j],dv[j],d2v[j]);
+    //  n++; j++;
+    //}
+    //if(i==0) derivs[1]+= TinyVector<real_type,3>(v[0],dv[0],d2v[0]);
+
+    return true;
+  }
+
+  inline bool evaluateDerivatives(real_type r, vector<real_type>& derivs)
+  {
+    if (r >= cutoff_radius) return false;
+    real_type tp[4],v[4],ipart,t;
+    t = modf(r*DeltaRInv, &ipart);
+    tp[0] = t*t*t;
+    tp[1] = t*t;
+    tp[2] = t;
+    tp[3] = 1.0;
+    v[0] = A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3];
+    v[1] = A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3];
+    v[2] = A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3];
+    v[3] = A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3];
+    int i = (int) ipart;
+    int imin=std::max(i,1);
+    int imax=std::min(i+4,NumParams+1)-1;
+    int n=imin-1, j=imin-i;
+    while(n<imax && j<4)
+    {
+      derivs[n] = v[j];
+      n++; j++;
+    }
+    if(i==0) derivs[1]+= v[0];
     return true;
   }
 

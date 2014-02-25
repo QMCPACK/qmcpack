@@ -52,12 +52,10 @@ public:
 
   ///index in the builder list of sposets
   int builder_index;
-
   ///true if C is an identity matrix
   bool Identity;
   ///true if C is an identity matrix
   bool Optimizable;
-
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///total number of orbitals
@@ -183,6 +181,13 @@ public:
    */
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
+
+  /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
+   * @param VP virtual particle set
+   * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   */
+  virtual void
+  evaluateValues(const ParticleSet& VP, ValueMatrix_t& psiM);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet

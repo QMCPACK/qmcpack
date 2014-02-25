@@ -50,6 +50,11 @@ namespace qmcplusplus
       return DistTables[i];
     }
 
+    inline const DistanceTableData* getRealTable(int i) const
+    {
+      return myPtcl->DistTables[i];
+    }
+
     void reset(const ParticleSet* p);
   };
 }

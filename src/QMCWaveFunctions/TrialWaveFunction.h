@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_TRIALWAVEFUNCTION_H
 
 #include "Message/MPIObjectBase.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/FermionBase.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
@@ -234,9 +235,18 @@ public:
 
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
+  /** evaluate ratios for EE */
   RealType ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios);
+  /** evaluate ratio for RMC */
   RealType alternateRatio(ParticleSet& P);
-  ValueType full_ratio(ParticleSet& P, int iat);
+  //ValueType full_ratio(ParticleSet& P, int iat);
+
+  /** compulte multiple ratios to handle non-local moves and other virtual moves
+   */
+  void evaluateRatios(VirtualParticleSet& P, vector<RealType>& ratios);
+  /** compute both ratios and deriatives of ratio with respect to the optimizables*/
+  void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
+      vector<RealType>& ratios, Matrix<RealType>& dratio);
 
   void update(ParticleSet& P, int iat);
 

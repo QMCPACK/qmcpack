@@ -201,6 +201,16 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::evaluate_v(P.R[iat],psi);
   }
 
+  inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+  {
+    ValueVector_t psi(psiM.cols());
+    for(int iat=0; iat<P.getTotalNum(); ++iat)
+    {
+      SplineAdoptor::evaluate_v(P.R[iat],psi);
+      std::copy(psi.begin(),psi.end(),psiM[iat]);
+    }
+  }
+
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {

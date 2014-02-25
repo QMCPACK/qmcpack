@@ -144,6 +144,12 @@ public:
   }
 
   virtual
+  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  {
+    return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
+  }
+
+  virtual
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);

@@ -374,6 +374,21 @@ public:
     }
   }
 
+  /** evaluate psiM for virtual moves
+   *
+   * For the i-th virtual move and the j-th orbital,
+   * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
+   */
+  void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+  {
+    ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
+    myBasisSet->evaluateValues(P,phiM);
+    MatrixOperators::product_ABt(phiM,C,psiM);
+    //for(int i=0; i<psiM.rows(); ++i)
+    //  for(int j=0; j<psiM.cols(); ++j)
+    //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
+  }
+
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)
   {

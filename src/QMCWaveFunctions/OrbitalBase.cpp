@@ -25,7 +25,9 @@ OrbitalBase::OrbitalBase():
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)
 #endif
-{ }
+{ 
+  HaveRatiosForVP=false;
+}
 
 // OrbitalBase::OrbitalBase(const OrbitalBase& old):
 //   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
@@ -112,6 +114,20 @@ void OrbitalBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
   ostringstream o;
   o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
   APP_ABORT(o);
+}
+
+void OrbitalBase::evaluateRatios(VirtualParticleSet& P, vector<ValueType>& ratios)
+{
+  ostringstream o;
+  o << "OrbitalBase::evaluateRatios is not implemented by " << OrbitalName;
+  APP_ABORT(o);
+}
+
+void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+    vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+{
+  //default is only ratios and zero derivatives
+  evaluateRatios(VP,ratios);
 }
 }
 /***************************************************************************

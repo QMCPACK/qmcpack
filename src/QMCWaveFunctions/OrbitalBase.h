@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_ORBITALBASE_H
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/VirtualParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
@@ -105,9 +106,12 @@ struct OrbitalBase: public QMCTraits
   bool Optimizable;
   /** true, if FermionWF */
   bool IsFermionWF;
+  /** true, if it is done with derivatives */
+  bool derivsDone;
+  /** true, if evaluateRatios using virtual particle is implemented */
+  bool HaveRatiosForVP;
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;
-  bool derivsDone;
 
   /** flag to calculate and return ionic derivatives */
   bool ionDerivs;
@@ -446,6 +450,20 @@ struct OrbitalBase: public QMCTraits
    * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
    */
   virtual void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+
+  /** evaluate ratios to evaluate the non-local PP
+   * @param VP VirtualParticleSet
+   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   */
+  virtual void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios);
+
+  /** evaluate ratios to evaluate the non-local PP
+   * @param VP VirtualParticleSet
+   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
+   */
+  virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+      vector<ValueType>& ratios, Matrix<ValueType>& dratios);
 
   ///** copy data members from old
   // * @param old existing OrbitalBase from which all the data members are copied.
