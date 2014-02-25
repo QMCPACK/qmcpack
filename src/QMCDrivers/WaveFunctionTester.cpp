@@ -118,6 +118,9 @@ WaveFunctionTester::run()
     runNodePlot();
   else
     runBasicTest();
+
+    runRatioV();
+
   //RealType ene = H.evaluate(W);
   //app_log() << " Energy " << ene << endl;
   return true;
@@ -684,6 +687,74 @@ void WaveFunctionTester::runRatioTest2()
   //}
 }
 
+template<typename T, unsigned D>
+inline void randomize(ParticleAttrib<TinyVector<T,D> >& displ, T fac)
+{
+  T* rv=&(displ[0][0]);
+  assignUniformRand(rv, displ.size()*D, Random);
+  for(int i=0; i<displ.size()*D; ++i) rv[i] =fac*(rv[i]-0.5);
+}
+
+void WaveFunctionTester::runRatioV()
+{
+  app_log() << "WaveFunctionTester::runRatioV " << endl;
+  int nat = W.getTotalNum();
+  Tau=0.025;
+
+  //create a VP with 8 virtual moves
+  VirtualParticleSet vp(&W,8);
+  W.enableVirtualMoves();
+
+  //cheating
+  const ParticleSet& ions=W.DistTables[1]->origin();
+  DistanceTableData* dt_ie=W.DistTables[1];
+  double Rmax=2.0;
+
+  ParticleSet::ParticlePos_t sphere(8);
+  vector<RealType> ratio_1(8), ratio_v(8);
+  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  while (it != it_end)
+  {
+    makeGaussRandom(deltaR);
+    Walker_t::Buffer_t tbuffer;
+    W.R = (**it).R+Tau*deltaR;
+    (**it).R=W.R;
+    W.update();
+    RealType logpsi=Psi.registerData(W,tbuffer);
+
+    W.initVirtualMoves();
+
+    for(int iat=0; iat<ions.getTotalNum(); ++iat)
+    {
+      for(int nn=dt_ie->M[iat],iel=0; nn<dt_ie->M[iat+1]; nn++,iel++)
+      {
+        register RealType r(dt_ie->r(nn));
+        if(r>Rmax) continue;
+        randomize(sphere,0.5);
+        
+        for(int k=0; k<sphere.size(); ++k)
+        {
+          W.makeMoveOnSphere(iel,sphere[k]);
+          ratio_1[k]=Psi.ratio(W,iel);
+          W.rejectMove(iel);
+          Psi.resetPhaseDiff();
+        }
+
+        vp.makeMoves(iel,sphere);
+
+        Psi.evaluateRatios(vp,ratio_v);
+
+        app_log() << "IAT = " << iat << " " << iel << endl;
+        for(int k=0; k<sphere.size(); ++k)
+        {
+          app_log() << ratio_1[k]/ratio_v[k] << " " << ratio_1[k] << endl;
+        }
+        app_log() << endl;
+      }
+    }
+    ++it;
+  }
+}
 
 void WaveFunctionTester::runGradSourceTest()
 {

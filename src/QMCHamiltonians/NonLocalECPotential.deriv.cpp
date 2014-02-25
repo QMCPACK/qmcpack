@@ -182,10 +182,6 @@ namespace qmcplusplus
               dratio(v,j)=psiratio[j]*(dratio(v,j)-dlogpsi[v]);
             BLAS::gemv(nknot, nchannel, &Amat[0], dratio[v], &wvec[0]);
             dhpsioverpsi[v]+=BLAS::dot(nchannel, &vrad[0], &wvec[0]);
-            //RealType t=0.0;
-            //for(int ip=0; ip<nchannel; ++ip)
-            //  t=vrad[ip]*BLAS::dot(nknot,&Amat[ip*nknot],dratio[v]);
-            //dhpsioverpsi[v]+=t;
           }
         }
 

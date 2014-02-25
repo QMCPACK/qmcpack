@@ -74,17 +74,13 @@ struct NonLocalECPComponent: public QMCTraits
   vector<RealType> WarpNorm;
   ParticleSet::ParticleGradient_t dG;
   ParticleSet::ParticleLaplacian_t dL;
-  // First index is knot, second is electron
+  /// First index is knot, second is electron
   Matrix<PosType> Gnew;
-  // The gradient of the wave function w.r.t. the ion position
-  // at each quadrature point.
+  ///The gradient of the wave function w.r.t. the ion position
   ParticleSet::ParticleGradient_t Gion;
-  // For space-warp transformation used in Pulay correction
-  inline RealType WarpFunction (RealType r)
-  {
-    return 1.0/(r*r*r*r);
-  }
 
+  ///virtual particle set: delay initialization
+  VirtualParticleSet* VP;
 
   //DistanceTableData* myTable;
 
@@ -132,6 +128,10 @@ struct NonLocalECPComponent: public QMCTraits
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy,
            PosType &force_iat);
 
+  /** compute with virtual moves */
+  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
+  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,vector<NonLocalData>& Txy);
+
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
@@ -141,10 +141,19 @@ struct NonLocalECPComponent: public QMCTraits
 
   void print(std::ostream& os);
 
+  void initVirtualParticle(ParticleSet* qp);
+
   void setRandomGenerator(RandomGenerator_t* rng)
   {
     myRNG=rng;
   }
+
+  // For space-warp transformation used in Pulay correction
+  inline RealType WarpFunction (RealType r)
+  {
+    return 1.0/(r*r*r*r);
+  }
+
 
 }; //end of RadialPotentialSet
 

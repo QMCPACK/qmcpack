@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 NonLocalECPComponent::NonLocalECPComponent():
-  lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random)
+  lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random), VP(0)
 {
   tracing_particle_quantities = false;
 }
@@ -30,6 +30,7 @@ NonLocalECPComponent::~NonLocalECPComponent()
 {
   for(int ip=0; ip<nlpp_m.size(); ip++)
     delete nlpp_m[ip];
+  if(VP) delete VP;
 }
 
 NonLocalECPComponent* NonLocalECPComponent::makeClone()
@@ -37,7 +38,16 @@ NonLocalECPComponent* NonLocalECPComponent::makeClone()
   NonLocalECPComponent* myclone=new NonLocalECPComponent(*this);
   for(int i=0; i<nlpp_m.size(); ++i)
     myclone->nlpp_m[i]=nlpp_m[i]->makeClone();
+  myclone->VP=0; 
   return myclone;
+}
+
+void NonLocalECPComponent::initVirtualParticle(ParticleSet* qp)
+{
+  //if(VP) 
+  //  VP->reset(qp);
+  //else
+  //  VP=new VirtualParticleSet(qp,nknot);
 }
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)

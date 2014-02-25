@@ -44,6 +44,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
   PulayTerm.resize(NumIons);
 
   UpdateMode.set(NONLOCAL,1);
+
+  //UpdateMode.set(VIRTUALMOVES,1);
 }
 
 ///destructor
@@ -98,7 +100,6 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     (*Vi_sample) = 0.0;
   }
 
-
   //loop over all the ions
   if (ComputeForces)
   {
@@ -113,14 +114,14 @@ NonLocalECPotential::evaluate(ParticleSet& P)
   }
   else
   {
-  vector<RealType> pp_e(NumIons,0.0);
     for(int iat=0; iat<NumIons; iat++)
+    {
       if(PP[iat])
       {
         PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        //Value += PP[iat]->evaluate(P,iat,Psi);
-        Value += pp_e[iat]=PP[iat]->evaluate(P,iat,Psi);
+        Value += PP[iat]->evaluate(P,iat,Psi);
       }
+    }
 
   //  cout << "Original NLPP energy " << endl;
   //  for(int iat=0; iat<NumIons; iat++)
@@ -233,7 +234,10 @@ QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFun
   for(int ig=0; ig<PPset.size(); ++ig)
   {
     if(PPset[ig])
-      myclone->add(ig,PPset[ig]->makeClone());
+    {
+      NonLocalECPComponent* ppot=PPset[ig]->makeClone();
+      myclone->add(ig,ppot);
+    }
   }
   //resize sphere
   qp.resizeSphere(IonConfig.getTotalNum());

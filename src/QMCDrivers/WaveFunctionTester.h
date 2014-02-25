@@ -56,9 +56,14 @@ private:
   {
     return *this;
   }
+  /** basic tests for G and L */
+  void runBasicTest();
+  /** the basic ratios check */
   void runRatioTest();
   void runRatioTest2();
-  void runBasicTest();
+  /** test ratios with virutal moves */
+  void runRatioV();
+  /** test clone implementations of new wavefunctions and operators */
   void runCloneTest();
   void runDerivTest();
   void runDerivNLPPTest();
@@ -68,7 +73,8 @@ private:
   void runwftricks();
   void runNodePlot();
   void printEloc();
-  vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
+
+  //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 
   ofstream *fout;
 };
