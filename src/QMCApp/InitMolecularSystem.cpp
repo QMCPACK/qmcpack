@@ -134,10 +134,13 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     }
     for(int k=0; k<v2; k++)
     {
-      els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
-      els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
+      if(nup_tot<numUp)
+        els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
+      if(ndown_tot<numDown)
+        els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
     }
   }
+
   vector<LoneElectron>::iterator it(loneQ.begin());
   vector<LoneElectron>::iterator it_end(loneQ.end());
   while(nup_tot<numUp && it != it_end)
