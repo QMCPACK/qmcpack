@@ -156,12 +156,16 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
     return;
   }
+  IndexType nPsi=psipool.size();
+  
   wClones.resize(NumThreads);
   PsiPoolClones.resize(NumThreads);
   HPoolClones.resize(NumThreads);
   wClones[0]=&w;
   PsiPoolClones[0]=psipool;
   HPoolClones[0]=hampool;
+  
+
   if(NumThreads==1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." <<endl;
@@ -176,7 +180,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
  
   for(int ip=1; ip<NumThreads; ++ip)
   {
-	IndexType nPsi=psipool.size();
+	
    // WPoolClones[ip].resize(nPsi,0);
     PsiPoolClones[ip].resize(nPsi);
     HPoolClones[ip].resize(nPsi);
@@ -188,8 +192,8 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 //#else
       wClones[ip]=new MCWalkerConfiguration(w);
 //#endif
-      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(*wClones[ip]);
-      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(*wClones[ip],*PsiPoolClones[ip][ipsi]);
+      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(w);
+      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(w,*psipool[ipsi]);
     }
   }
   OhmmsInfo::Log->reset();
