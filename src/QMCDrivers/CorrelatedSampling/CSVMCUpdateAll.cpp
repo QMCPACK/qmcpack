@@ -57,7 +57,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     
     if (!W.makeMove(thisWalker,deltaR,tau_over_mass))
     {
-      for (int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi].rejectedMove(W,thisWalker);
+      for (int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->rejectedMove(W,thisWalker);
       continue;
     }
     
@@ -159,7 +159,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     {
       thisWalker.Age++;
       ++nReject;
-      for (int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi].rejectedMove(W,thisWalker);
+      for (int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->rejectedMove(W,thisWalker);
     }
     else
     {
