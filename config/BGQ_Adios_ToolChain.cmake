@@ -3,6 +3,7 @@
 SET(BGP 1 CACHE BOOL "On BlueGeneQ")
 SET(Linux 0)
 
+set(HAVE_ADIOS 1)
 SET(QMC_BUILD_STATIC 1)
 SET(ENABLE_OPENMP 1)
 SET(HAVE_MPI 1)
@@ -55,11 +56,17 @@ SET(FORTRAN_LIBRARIES
 /soft/compilers/ibmcmp-feb2013/xlf/bg/14.1/bglib64/libxlf90_r.a
 /soft/compilers/ibmcmp-feb2013/xlf/bg/14.1/bglib64/libxlopt.a
 )
+
+include_directories(
+  /home/zhenggu/software/adios-1.6-xl/include
+  )
+
 link_libraries(
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmass.a 
 /soft/compilers/ibmcmp-feb2013/xlmass/bg/7.3/bglib64/libmassv.a 
 /soft/libraries/alcf/current/xl/ZLIB/lib/libz.a
-/home/zhenggu/software/adios-1.6/lib/libadios.a
+/home/zhenggu/software/adios-1.6-xl/lib/libadios.a
+/home/zhenggu/software/mxml-2.8-xl/lib/libmxml.a
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
