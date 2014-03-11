@@ -106,6 +106,7 @@ template<class T, unsigned D,bool ORTHO>
 void CrystalLattice<T,D,ORTHO>::reset()
 {
   G = inverse(R); //G = transpose(Inverse(R));
+  Gt= transpose(G);
   Volume = std::abs(det(R));
   //M = dot(transpose(R),R);
   M = dot(R,transpose(R));

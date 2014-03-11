@@ -102,6 +102,8 @@ struct CrystalLattice
   Tensor_t R;
   ///Reciprocal unit vectors. G(j,i) i=vector and j=x,y,z
   Tensor_t G;
+  ///Transpose of reciprocal unit vectors:
+  Tensor_t Gt;
   ///Metric tensor
   Tensor_t M;
   ///Metric tensor for G vectors

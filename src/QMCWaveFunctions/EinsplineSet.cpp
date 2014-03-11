@@ -859,9 +859,9 @@ EinsplineSetExtended<StorageType>::evaluate
     u = StorageValueVector[j];
     gradu = dot(PrimLattice.G, StorageGradVector[j]);
     ////laplu = trace(StorageHessVector[j], GGt);
-    //tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+    tmphs = dot(PrimLattice.G,StorageHessVector[j]);
     //hs = dot(tmphs,PrimLattice.G);
-    hs=dot(StorageHessVector[j],GGt);
+    hs=dot(tmphs,PrimLattice.Gt);
     PosType k = kPoints[j];
     TinyVector<complex<double>,OHMMS_DIM> ck;
     for (int n=0; n<OHMMS_DIM; n++)
@@ -1213,8 +1213,10 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
         {
           gradVec[j] = dot (PrimLattice.G, gradVec[j]);
 // FIX FIX FIX: store transpose(PrimLattice.G)
-          tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-          hessVec[j] = dot(tmphs,PrimLattice.G);
+        //  tmphs = dot(PrimLattice.G,StorageHessVector[j]);
+         // hessVec[j] = dot(tmphs,PrimLattice.G);
+          tmphs = dot(PrimLattice.G,StorageHessVector[j]);
+          hessVec[j] = dot(tmphs,PrimLattice.Gt);
         }
         // Add e^-ikr phase to B-spline orbitals
         for (int j=0; j<NumValenceOrbs; j++)
@@ -1629,8 +1631,9 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
       Tensor<complex<double>,OHMMS_DIM> hs,tmphs;
       u = StorageValueVector[j];
       gradu = dot(PrimLattice.G, StorageGradVector[j]);
-      tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-      hs = dot(tmphs,PrimLattice.G);
+     // tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+      tmphs = dot(PrimLattice.G,StorageHessVector[j]);
+      hs = dot(tmphs,PrimLattice.Gt);
       //laplu = trace(StorageHessVector[j], GGt);
       PosType k = kPoints[j];
       TinyVector<complex<double>,OHMMS_DIM> ck;
@@ -1714,6 +1717,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
     , int first, int last, RealValueMatrix_t& psi
     , RealGradMatrix_t& dpsi, RealHessMatrix_t& grad_grad_psi)
 {
+	//APP_ABORT("evaluate_notranspose:  Check Hessian, then remove this error message.\n")
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
@@ -1761,11 +1765,11 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
       {
         psi(i,j)   = StorageValueVector[j];
         dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
-        grad_grad_psi(i,j) = StorageHessVector[j];
+        grad_grad_psi(i,j) = dot(PrimLattice.G,dot(StorageHessVector[j], PrimLattice.Gt));
       }
     }
   }
-  VGLMatTimer.stop();
+  VGLMatTimer.stop(); 
 }
 
 template<typename StorageType> void
