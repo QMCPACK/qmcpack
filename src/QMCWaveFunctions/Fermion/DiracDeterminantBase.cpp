@@ -395,6 +395,53 @@ DiracDeterminantBase::evalGradSourcep
   return Psi_alpha_over_psi;
 }
 
+void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+{
+	//IM A HACK.  Assumes evaluateLog has already been executed.
+	Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_source_psiM);
+	phi_alpha_Minv = 0.0;
+    grad_phi_Minv = 0.0;
+    lapl_phi_Minv = 0.0;
+    grad_phi_alpha_Minv = 0.0;
+    grad_grad_psi=0;
+
+	InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
+   // InverseTimer.stop();
+ //   RatioTimer.start();
+ //   for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
+ //   {
+ //     GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+ //     ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
+  //    G(iat) += rv;
+  //    L(iat) += lap - dot(rv,rv);
+ //   }
+ //   RatioTimer.stop();
+
+ 
+
+    for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
+    {
+      GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+      
+    //  HessType hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
+      HessType hess_tmp;
+      hess_tmp=0.0;
+      hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
+      
+   //   for (int orb=0; orb<NumOrbitals; orb++)
+  //    {
+//		hess_tmp+=psiM(i,orb)*grad_grad_source_psiM(i,orb);
+ //     }
+     // G(iat) += rv;
+     // L(iat) += lap - dot(rv,rv);
+      app_log()<<"rv = "<<rv<<endl;
+      app_log()<<"outer = "<<outerProduct(rv,rv)<<endl;
+      app_log()<<"hess_tmp = "<<hess_tmp<<endl;
+      grad_grad_psi[iat]=hess_tmp-outerProduct(rv,rv);
+    }
+	 psiM_temp = psiM;
+	
+}
 
 DiracDeterminantBase::GradType
 DiracDeterminantBase::evalGradSource

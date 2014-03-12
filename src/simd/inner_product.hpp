@@ -135,6 +135,19 @@ namespace qmcplusplus {
      * @return \f$ {\bf v} = \sum_i a[i] {\bf b}[i]\f$
      */
     template<class T, unsigned D>
+      inline Tensor<T,D>
+      dot(const T* a, const Tensor<T,D>* b, int n)
+      {
+        Tensor<T,D> res;
+//#if defined(USE_GEMV_FOR_G_DOT_V)
+//        BLAS::gemv(n,3,b->data(),a,res.data());
+//#else
+        for(int i=0; i<n; i++) res += a[i]*b[i];
+//#endif
+        return res;
+      }
+      
+     template<class T, unsigned D>
       inline TinyVector<T,D>
       dot(const T* a, const TinyVector<T,D>* b, int n)
       {

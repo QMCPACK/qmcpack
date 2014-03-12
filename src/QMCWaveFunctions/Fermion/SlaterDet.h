@@ -90,6 +90,9 @@ public:
                        ParticleSet::ParticleLaplacian_t& L,
                        PooledData<RealType>& buf,
                        bool fillBuffer);
+                       
+  virtual
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
 

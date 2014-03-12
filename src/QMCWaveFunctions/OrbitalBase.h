@@ -96,6 +96,8 @@ struct OrbitalBase: public QMCTraits
   typedef ParticleSet::Walker_t     Walker_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::HessType           HessType;
+  typedef OrbitalSetTraits<ValueType>::HessVector_t       HessVector_t;
 
   /** flag to set the optimization mode */
   bool IsOptimizing;
@@ -235,6 +237,16 @@ struct OrbitalBase: public QMCTraits
               bool fillBuffer )
   {
     return evaluateLog(P,G,L);
+  }
+  
+ // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
+ // {
+ //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
+ // }
+  
+  virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
+  {
+    APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
   }
 
   /** return the current gradient for the iat-th particle

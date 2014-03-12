@@ -314,6 +314,41 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
   //logpsi_opt_r = real(logpsi_opt);
 }
 
+/*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
+{
+  vector<OrbitalBase*>::iterator it(Z.begin());
+  vector<OrbitalBase*>::iterator it_end(Z.end());
+  
+  grad_grad_psi=0.0;
+  
+  for (; it!=it_end; ++it)
+  {	
+	  HessType tmp_hess;
+	  (*it)->evaluateHessian(P, iat, tmp_hess);
+	  grad_grad_psi+=tmp_hess;
+  }
+}*/
+
+void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
+{
+  vector<OrbitalBase*>::iterator it(Z.begin());
+  vector<OrbitalBase*>::iterator it_end(Z.end());
+  
+  grad_grad_psi=0.0;
+  
+  for (int i=0; i<Z.size(); i++)
+  {	
+	  HessVector_t tmp_hess(grad_grad_psi);
+	  tmp_hess=0.0;
+	  Z[i]->evaluateHessian(P, tmp_hess);
+	  grad_grad_psi+=tmp_hess;
+	  app_log()<<"TrialWavefunction::tmp_hess = "<<tmp_hess<<endl;
+	  app_log()<<endl<<endl;
+  }
+  app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<<endl;
+}
+
+
 /** evaluate the value of a many-body wave function
 *@param P input configuration containing N particles
 *@return the value of many-body wave function

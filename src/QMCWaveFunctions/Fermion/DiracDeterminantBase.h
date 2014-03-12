@@ -45,6 +45,7 @@ public:
   typedef SPOSetBase::GradVector_t  GradVector_t;
   typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
   typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
+  typedef SPOSetBase::HessVector_t  HessVector_t;
   typedef SPOSetBase::HessType      HessType;
 
   /** constructor
@@ -259,6 +260,8 @@ public:
   evaluate(ParticleSet& P,
            ParticleSet::ParticleGradient_t& G,
            ParticleSet::ParticleLaplacian_t& L);
+           
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -305,6 +308,7 @@ public:
   /// Used for force computations
   GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
   HessMatrix_t  grad_grad_source_psiM;
+  
   GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
   ValueMatrix_t lapl_phi_Minv;
   HessMatrix_t grad_phi_alpha_Minv;

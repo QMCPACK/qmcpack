@@ -188,6 +188,20 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
+void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
+{
+	grad_grad_psi=0;
+	HessVector_t tmp(grad_grad_psi);
+	for (int i = 0; i < Dets.size(); ++i)
+    {
+	  tmp=0;
+      Dets[i]->evaluateHessian(P, tmp);
+      grad_grad_psi += tmp;
+
+    }
+	
+}
+
 SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
     PooledData<RealType>& buf)
 {

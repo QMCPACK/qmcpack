@@ -104,6 +104,8 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::HessType           HessType;
+  typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
   typedef OrbitalBase::CudaValueType   CudaValueType;
   typedef OrbitalBase::CudaGradType    CudaGradType;
@@ -215,6 +217,8 @@ public:
 
   /** evalaute the log of the trial wave function */
   RealType evaluateLog(ParticleSet& P);
+  
+
 
   RealType evaluateDeltaLog(ParticleSet& P);
 
@@ -300,7 +304,11 @@ public:
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
-
+  /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
+ // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
+  /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
+  void evaluateHessian(ParticleSet & P, HessVector_t& all_grad_grad_psi);
+  
   void reverse();
 
   inline void resizeTempP(ParticleSet& P)
