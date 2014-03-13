@@ -89,6 +89,7 @@ public:
 
   typedef FT FuncType;
 
+
   ///constructor
   OneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
     : CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
@@ -223,6 +224,34 @@ public:
   {
     return std::exp(evaluateLog(P,G,L));
   }
+  
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+  {
+    LogValue=0.0;
+    U=0.0;
+    const DistanceTableData* d_table=P.DistTables[myTableIndex];
+    RealType dudr, d2udr2;
+
+    Tensor<RealType,OHMMS_DIM> ident;
+    grad_grad_psi=0.0;
+    ident.diagonal(1.0);
+
+    for (int i=0; i<d_table->size(SourceIndex); i++)
+    {
+      FT* func=Fs[i];
+      if (func == 0)
+        continue;
+      for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
+      {
+        int j = d_table->J[nn];
+        RealType rinv=d_table->rinv(nn);
+        RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
+        grad_grad_psi[j]-= rinv*rinv*outerProduct(d_table->dr(nn),d_table->dr(nn))*(d2udr2-dudr*rinv) + ident*dudr*rinv;
+      }
+    }
+  } 
+  
+//  ValueType evaluate(ParticleSet& P, ParticleSet::
 
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set

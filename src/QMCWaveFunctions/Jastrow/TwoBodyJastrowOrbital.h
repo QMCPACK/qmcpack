@@ -276,7 +276,43 @@ public:
   {
     return std::exp(evaluateLog(P,G,L));
   }
-
+  
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+  {
+	LogValue=0.0;
+    const DistanceTableData* d_table=P.DistTables[0];
+    RealType dudr, d2udr2;
+    PosType gr;
+	
+	Tensor<RealType,OHMMS_DIM> ident;
+    grad_grad_psi=0.0;
+    ident.diagonal(1.0);
+    
+    for(int i=0; i<d_table->size(SourceIndex); i++)
+    {
+      for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
+      {
+        int j = d_table->J[nn];
+        //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+        RealType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+        LogValue -= uij;
+  //      U[i*N+j]=uij;
+   //     U[j*N+i]=uij; //save for the ratio
+        //multiply 1/r
+       // dudr *= d_table->rinv(nn);
+      //  gr = dudr*d_table->dr(nn);
+        //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
+        RealType rinv = d_table->rinv(nn);
+        Tensor<RealType, OHMMS_DIM> hess = rinv*rinv*outerProduct(d_table->dr(nn),d_table->dr(nn))*(d2udr2-dudr*rinv) + ident*dudr*rinv;
+      
+        grad_grad_psi[i] -= hess;
+        grad_grad_psi[j] -= hess;
+      }
+    }
+    
+    
+	  
+  }
   ValueType ratio(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
