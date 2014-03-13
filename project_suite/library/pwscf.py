@@ -23,14 +23,15 @@ class Pwscf(Simulation):
 
     def __init__(self,**sim_args):
         has_group_atoms = 'group_atoms' in sim_args
-        group_atoms = True
+        group_atoms = False
         if has_group_atoms:
             group_atoms = sim_args['group_atoms']
             del sim_args['group_atoms']
         #end if
         Simulation.__init__(self,**sim_args)
         if group_atoms and isinstance(self.system,PhysicalSystem):
-            self.system.structure.group_atoms()
+            self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            #self.system.structure.group_atoms()
         #end if
     #end def post_init
 

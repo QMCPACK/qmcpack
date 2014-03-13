@@ -310,8 +310,10 @@ class Structure(Sobj):
     def group_atoms(self,folded=True):
         if len(self.elem)>0:
             order = self.elem.argsort()
-            self.elem = self.elem[order]
-            self.pos  = self.pos[order]
+            if (self.elem!=self.elem[order]).any():
+                self.elem = self.elem[order]
+                self.pos  = self.pos[order]
+            #end if
         #end if
         if self.folded_structure!=None and folded:
             self.folded_structure.group_atoms(folded)
@@ -2366,6 +2368,16 @@ class Crystal(Structure):
             atoms     = ('Zn','O','Zn','O')
             ),
         ('NaCl','prim'):obj(
+            lattice   = 'cubic',
+            cell      = 'primitive',
+            centering = 'F',
+            constants = 5.64,
+            units     = 'A',
+            atoms     = ('Na','Cl'),
+            basis     = [[0,0,0],[.5,0,0]],
+            basis_vectors = 'conventional'
+            ),
+        ('rocksalt','prim'):obj(
             lattice   = 'cubic',
             cell      = 'primitive',
             centering = 'F',

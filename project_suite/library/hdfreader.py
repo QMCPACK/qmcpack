@@ -12,6 +12,8 @@ try:
 except ImportError:
     h5py = unavailable('h5py')
 #end try
+from debug import *
+
 
 
 class HDFgroup(DevBase):
@@ -84,15 +86,17 @@ class HDFgroup(DevBase):
     #end def __init__
 
 
-    def _remove_hidden(self):
+    def _remove_hidden(self,deep=True):
         if '_parent' in self:
             del self._parent
         #end if
-        for name,value in self.iteritems():
-            if isinstance(value,HDFgroup):
-                value._remove_hidden()
-            #end if
-        #end for
+        if deep:
+            for name,value in self.iteritems():
+                if isinstance(value,HDFgroup):
+                    value._remove_hidden()
+                #end if
+            #end for
+        #end if
         for name in list(self.keys()):
             if name[0]=='_':
                 del self[name]
@@ -109,9 +113,13 @@ class HDFgroup(DevBase):
                 self[name][:] = 0
             #end if
         #end for
-        for value in self._groups:
+        for name,value in self._groups.iteritems():
+            if isinstance(value,str):
+                ci(ls(),gs())
+            #end if
             value.zero(*names)
         #end for
+        #self.sum(*names)
     #end def zero
 
 
@@ -142,6 +150,7 @@ class HDFgroup(DevBase):
                 self.error(name+' not found in minsize partner')
             #end if
         #end for
+        #self.sum(*names)
     #end def minsize
 
 
@@ -180,6 +189,7 @@ class HDFgroup(DevBase):
                 self.error(name+' not found in accumulate partner')
             #end if
         #end for
+        #self.sum(*names)
     #end def accumulate
 
     
@@ -189,11 +199,21 @@ class HDFgroup(DevBase):
                 self[name] /= normalization
             #end if
         #end for
-        for value in self._groups:
+        for name,value in self._groups.iteritems():
             value.normalize(normalization,*names)
         #end for
+        #self.sum(*names)
     #end def normalize
 
+        
+    def sum(self,*names):
+        for name in names:
+            if name in self and isinstance(self[name],ndarray) and name=='value':
+                s = self[name].mean(0).sum()
+                print '                sum = {0}'.format(s)
+            #end if
+        #end for
+    #end def sum
 
 #end class HDFgroup
 

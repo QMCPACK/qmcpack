@@ -346,9 +346,11 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             self.error('attempted load without data')
         #end if
         name = self.info.name
-        self.data = QAdata()
+        self.data = QAHDFdata()
         if name in data:
-            self.data = data[name]
+            hdfg = data[name]
+            hdfg._remove_hidden(deep=False)
+            self.data.transfer_from(hdfg)
             del data[name]
         else:
             self.info.should_remove = True
@@ -364,7 +366,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         data = self.data
 
         #why is this called 3 times?
-        print nbe
+        #print nbe
 
         #transfer hdf data
         sg_pattern = re.compile(r'spacegrid\d*')
@@ -449,7 +451,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         input = self.run_info.input
         xml   = self.run_info.ordered_input
         ps = input.get('particlesets')
-        if 'ion0' in ps and len(ps.ion0.groups)>1:
+        if 'ion0' in ps and len(ps.ion0.groups)>1 and 'size' in ps.ion0:
             qsx = xml.simulation.qmcsystem
             if len(ps)==1:
                 psx = qsx.particleset
@@ -488,11 +490,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
             #reorder the atomic data
             for sg in self.spacegrids:
-
-                #print 'qqa'
-                #import code
-                #code.interact(local=locals())
-
                 sg.reorder_atomic_data(imap)
             #end for
         #end if
@@ -1095,6 +1092,9 @@ class TracesAnalyzer(QAanalyzer):
 
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
+
+    allowed_settings = ['save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol']
+
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
         self.info.name = name
@@ -1134,19 +1134,18 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
 
     def analyze_local(self):
-
-        save_data = False
-        jackknife = False
-        diagonal  = True
-
         # 1) exclude states that do not contribute to the number trace
         # 2) exclude elements that are not statistically significant (1 sigma?)
         # 3) use remaining states to form filtered number and energy matrices
         # 4) perform jackknife sampling to get eigenvalue error bars
         # 5) consider using cross-correlations w/ excluded elements to reduce variance
-        occ_tol  = 1e-3
-        coup_tol = 1e-4
-        stat_tol = 2.0
+        save_data = False
+        jackknife = False
+        diagonal  = True
+        occ_tol   = 1e-3
+        coup_tol  = 1e-4
+        stat_tol  = 2.0
+
 
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe

@@ -9,3 +9,5 @@ except (ImportError,RuntimeError):
    figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy','text')
 #end try
 
+
+# savefig(savefile,format='png',bbox_inches ='tight',pad_inches=.3)

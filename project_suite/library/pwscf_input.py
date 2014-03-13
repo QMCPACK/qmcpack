@@ -957,8 +957,8 @@ class PwscfInput(SimulationInput):
             self.k_points.nkpoints  = nkpoints
             self.k_points.kpoints   = kpoints
             self.k_points.weights   = s.kweights.copy()
+            self.k_points.change_specifier('crystal',self) #added to make debugging easier
         #end if
-        self.k_points.change_specifier('crystal',self) #added to make debugging easier
 
         atoms = p.get_ions()
         masses = obj()
@@ -1126,7 +1126,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        pseudos      = None,
                        system       = None,
                        use_folded   = True,
-                       group_atoms  = True):
+                       group_atoms  = False):
     if pseudos is None:
         pseudos = []
     #end if
@@ -1255,8 +1255,11 @@ def generate_scf_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            structure.group_atoms()
+            self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
+        #if group_atoms:  # disabled, hopefully not needed for qmcpack
+        #    structure.group_atoms()
+        ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
             pw.k_points.set(
@@ -1331,7 +1334,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          pseudos      = None,
                          system       = None,
                          use_folded   = False,
-                         group_atoms  = True):
+                         group_atoms  = False):
     if pseudos is None:
         pseudos = []
     #end if
@@ -1419,8 +1422,11 @@ def generate_relax_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            structure.group_atoms()
+            self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
+        #if group_atoms: #don't group atoms for pwscf, any downstream consequences?
+        #    structure.group_atoms()
+        ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
             pw.k_points.set(

@@ -2573,6 +2573,7 @@ class QmcpackInput(SimulationInput,Names):
 
     def incorporate_system(self,system):
         self.warn('incorporate_system may or may not work\n  please check the qmcpack input produced\n  if it is wrong, please contact the developer')
+        system = system.copy()
         system.check_folded_system()
         system.change_units('B')
         system.structure.group_atoms()
@@ -2664,7 +2665,7 @@ class QmcpackInput(SimulationInput,Names):
             )
         particlesets.append(eps)
         if len(ions)>0:
-            eps.randomsrc = 'ion0'
+            #eps.randomsrc = 'ion0'  # don't do randomsrc by default
             ips = particleset(
                 name='ion0',
                 )
@@ -2717,7 +2718,12 @@ class QmcpackInput(SimulationInput,Names):
 
         if abs(net_spin) > 1e-1:
             if ddet!=None:
-                ddet.occupation.spindataset = 1 #jtk mark check
+                if 'occupation' in ddet:
+                    ddet.occupation.spindataset = 1
+                else:
+                    ss = self.get('sposets')
+                    ss[ddet.sposet].spindataset = 1
+                #end if
             #end if
         #end if
     #end def incorporate_system
@@ -3175,7 +3181,8 @@ def generate_particlesets(electrons = 'e',
                           ions      = 'ion0',
                           up        = 'u',
                           down      = 'd',
-                          system    = None
+                          system    = None,
+                          randomsrc = False
                           ):
     if system is None:
         QmcpackInput.class_error('generate_particlesets argument system must not be None')
@@ -3219,7 +3226,9 @@ def generate_particlesets(electrons = 'e',
         )
     particlesets.append(eps)
     if len(ions)>0:
-        eps.randomsrc = iname
+        if randomsrc:
+            eps.randomsrc = iname
+        #end if
         ips = particleset(name=iname)
         groups = []
         for ion in ions:
@@ -4203,6 +4212,7 @@ def generate_basic_input(id             = 'qmc',
                          buffer         = None,
                          lr_dim_cutoff  = 15,
                          remove_cell    = False,
+                         randomsrc      = False,
                          meshfactor     = 1.0,
                          precision      = 'float',
                          twistnum       = None, 
@@ -4258,7 +4268,8 @@ def generate_basic_input(id             = 'qmc',
 
     if system!=None:
         particlesets = generate_particlesets(
-            system = system
+            system    = system,
+            randomsrc = randomsrc or tuple(bconds)!=('p','p','p')
             )
     #end if
 

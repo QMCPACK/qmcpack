@@ -3,6 +3,7 @@ from numpy import minimum,resize
 from generic import obj
 from hdfreader import HDFgroup
 from qaobject import QAobject
+from debug import *
 
 
 class QAinformation(obj):
@@ -16,6 +17,7 @@ class QAdata(QAobject):
         for value in self:
             value[:] = 0
         #end for
+        #self.sum()
     #end def zero
 
     def minsize(self,other):
@@ -26,6 +28,7 @@ class QAdata(QAobject):
                 self.error(name+' not found in minsize partner')
             #end if
         #end for
+        #self.sum()
     #end def minsize
 
     def accumulate(self,other):
@@ -36,20 +39,31 @@ class QAdata(QAobject):
                 self.error(name+' not found in accumulate partner')
             #end if
         #end for
+        #self.sum()
     #end def accumulate
 
     def normalize(self,normalization):
         for value in self:
             value/=normalization
         #end for
+        #self.sum()
     #end def normalize
+
+
+    def sum(self):
+        s = 0
+        for value in self:
+            s+=value.sum()
+        #end for
+        print '                sum = {0}'.format(s)
+    #end def sum
 #end class QAdata
 
 
 
 class QAHDFdata(QAdata):
     def zero(self):
-        for value in self:
+        for name,value in self.iteritems():
             if isinstance(value,HDFgroup):
                 value.zero('value','value_squared')
             #end if
