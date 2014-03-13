@@ -958,6 +958,7 @@ class PwscfInput(SimulationInput):
             self.k_points.kpoints   = kpoints
             self.k_points.weights   = s.kweights.copy()
         #end if
+        self.k_points.change_specifier('crystal',self) #added to make debugging easier
 
         atoms = p.get_ions()
         masses = obj()

@@ -1223,7 +1223,10 @@ class Structure(Sobj):
             #end if
             for i in range(len(kpoints)):
                 u = dot(kpoints[i]-c,axinv)
-                kpoints[i] = dot(u-floor(u+.5),axes)+c
+                u -= floor(u+.5)
+                u[abs(u-.5)<1e-12] -= 1.0
+                u[abs(u   )<1e-12]  = 0.0
+                kpoints[i] = dot(u,axes)+c
             #end for
             if remove_duplicates:
                 inside = self.inside(kpoints,axes,c)
@@ -1548,6 +1551,7 @@ class Structure(Sobj):
         if unique:
             self.unique_kpoints()
         #end if
+        self.recenter_k() #added because qmcpack cannot handle kpoints outside the box
         if self.folded_structure!=None:
             kp,kw = self.kfold(self.tmatrix,kpoints,kweights)
             self.folded_structure.add_kpoints(kp,kw,unique=unique)

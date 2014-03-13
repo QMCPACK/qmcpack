@@ -3309,7 +3309,7 @@ def generate_bspline_builder(type           = 'bspline',
                              precision      = 'float',
                              twistnum       = None, 
                              twist          = None,
-                             sort           = False,
+                             sort           = None,
                              version        = '0.10',
                              truncate       = False,
                              buffer         = None,
@@ -3331,7 +3331,6 @@ def generate_bspline_builder(type           = 'bspline',
         precision  = precision,
         tilematrix = tilematrix,
         href       = href,
-        sort       = sort,
         version    = version,
         truncate   = truncate,
         source     = ions,
@@ -3344,6 +3343,9 @@ def generate_bspline_builder(type           = 'bspline',
             spindatasets   = True
             )
         )
+    if sort!=None:
+        bsb.sort = sort
+    #end if
     if truncate and buffer!=None:
         bsb.buffer = buffer
     #end if
@@ -4292,7 +4294,7 @@ def generate_basic_input(id             = 'qmc',
         spobuilders = None
 
         dset = generate_determinantset_old(
-            type           = 'bspline',
+            type           = 'einspline',
             twistnum       = twistnum,
             meshfactor     = meshfactor,
             precision      = precision,
