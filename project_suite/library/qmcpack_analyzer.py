@@ -10,7 +10,7 @@
 #    -generalized data averaging algorithm must not be finding all the data
 #   see /oahu/home/projects/project6_germanium/ed_paper_wrapup/final_analysis/data/pure/tile611_kg133/qmc/*
 #
-#
+# 
 
 from time import time
 
@@ -19,7 +19,7 @@ import os
 import re
 import sys
 import traceback
-from numpy import arange
+from numpy import arange,array
 #custom library imports
 from generic import obj
 from developer import unavailable
@@ -39,6 +39,7 @@ from qmcpack_result_analyzers \
     import OptimizationAnalyzer,TimestepStudyAnalyzer
 from simulation import SimulationAnalyzer,Simulation
 from qmcpack_input import QmcpackInput
+from debug import *
 
 try:
     import h5py
@@ -101,13 +102,15 @@ class QmcpackAnalysisRequest(QAobject):
                  methods=None,calculations=None,data_sources=None,quantities=None,
                  warmup_calculations=None,
                  output=set(['averages','samples']),
-                 ndmc_blocks=1000,equilibration=None,group_num=None):
+                 ndmc_blocks=1000,equilibration=None,group_num=None,
+                 traces=False):
         self.source          = source          
         self.destination     = destination     
         self.savefile        = str(savefile)
         self.output          = set(output)
         self.ndmc_blocks     = int(ndmc_blocks)
         self.group_num       = group_num
+        self.traces          = traces
 
         cap = QAanalyzer.capabilities
 
@@ -678,6 +681,69 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             return None
         #end if
     #end def check_traces
+
+
+    def plot_trace(self,quantity,style='b-',offset=0,source='scalar',mlabels=True,
+                   mlines=True,show=True,alloff=False):
+        mlabels &= not alloff
+        mlines  &= not alloff
+        show    &= not alloff
+        shw = show
+        from plotting import *
+        offset = int(offset)
+        id = self.info.input.get('project').id
+        sdata = obj()
+        series = sorted(self.qmc.keys())
+        q = []
+        soffset = offset
+        for s in series:
+            qmc = self.qmc[s]
+            method = qmc.info.method
+            if source=='scalar' or method=='vmc':
+                src = qmc.scalars.data
+            elif source=='dmc':
+                src = qmc.dmc.data
+            else:
+                self.error('invalid source: '+source)
+            #end if
+            if quantity in src:
+                qn = list(src[quantity])
+            else:
+                qn = len(src.LocalEnergy)*[0]
+            #end if
+            q.extend(qn)
+            sdata[s] = obj(
+                mlab = method+' '+str(s),
+                mloc = soffset + len(qn)/2,
+                line_loc = soffset + len(qn)-1
+                )
+            soffset += len(qn)
+        #end for
+        q = array(q)
+        qmin = q.min()
+        qmax = q.max()
+        mlabel_height = qmin + .8*(qmax-qmin)
+        if shw:
+            figure()
+        #end if
+        plot(offset+arange(len(q)),q,style,label=id)
+        for s in series:
+            sd = sdata[s]
+            if mlabels:
+                text(sd.mloc,mlabel_height,sd.mlab)
+            #end if
+            if mlines:
+                plot([sd.line_loc,sd.line_loc],[qmin,qmax],'k-')
+            #end if
+        #end for
+        if shw:
+            title('{0} vs series for {1}'.format(quantity,id))
+            xlabel('blocks')
+            ylabel(quantity)
+            legend()
+            show()
+        #end if
+    #end def plot_trace
           
 #end class QmcpackAnalyzer
 

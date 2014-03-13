@@ -856,17 +856,20 @@ class TracesAnalyzer(QAanalyzer):
         self.info.path = path
         self.info.files = files
         self.method_info = QAanalyzer.method_info
+        self.data = None
     #end def __init__
 
 
     def load_data_local(self):
-        path = self.info.path
-        files = self.info.files
-        if len(files)>1:
-            self.error('ability to read multiple trace files has not yet been implemented\n  files requested: {0}'.format(files))
+        if self.run_info.request.traces:
+            path = self.info.path
+            files = self.info.files
+            if len(files)>1:
+                self.error('ability to read multiple trace files has not yet been implemented\n  files requested: {0}'.format(files))
+            #end if
+            filepath = os.path.join(path,files[0])
+            self.data = TracesFileHDF(filepath)
         #end if
-        filepath = os.path.join(path,files[0])
-        self.data = TracesFileHDF(filepath)
     #end def load_data_local
 
 

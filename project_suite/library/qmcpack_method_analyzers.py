@@ -42,7 +42,7 @@ class MethodAnalyzer(QAanalyzer):
                     files.storeconfig = file
                 elif file.endswith('opt.xml'):
                     files.opt    = file
-                elif file.endswith('dmc.dat'):
+                elif file.endswith('dmc.dat') and method=='dmc':
                     files.dmc    = file
                 elif '.traces.' in file:
                     if not 'traces' in files:
