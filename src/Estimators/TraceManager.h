@@ -1034,6 +1034,7 @@ private:
   // number of rows adjusts to accomodate walker samples
   TraceBuffer<TraceInt>  int_buffer;
   TraceBuffer<TraceReal> real_buffer;
+  int adios_first_open;
 
 public:
   static double trace_tol;
@@ -1074,6 +1075,7 @@ public:
     int_buffer.set_samples( int_samples);
     real_buffer.set_samples(real_samples);
     real_buffer.set_samples(comp_samples);
+    adios_first_open=1;
   }
 
 
@@ -1902,11 +1904,19 @@ public:
       int         err;
       uint64_t    group_size, total_size;
       int64_t     handle;
-      string file_name = file_root;
-      string s = boost::lexical_cast<std::string>(block);
-      file_name = file_name + ".b"+s+".trace.bp";
-      adios_open(&handle, "Traces-global", file_name.c_str(), "w", comm);
-      group_size = 8*sizeof(int) + int_max_rows*int_cols*sizeof(int), real_max_rows*real_cols*sizeof(double);
+      string file_name = file_root+".trace.bp";
+      //string s = boost::lexical_cast<std::string>(block);
+      //file_name = file_name + ".b"+s+".trace.bp";
+      if(adios_first_open)
+      {
+        adios_open(&handle, "Traces-global", file_name.c_str(), "w", comm);
+        adios_first_open = 0;
+      } 
+      else 
+      {
+        adios_open(&handle, "Traces-global", file_name.c_str(), "a", comm);
+      }
+      group_size = 8*sizeof(int) + int_max_rows*int_cols*sizeof(int)+real_max_rows*real_cols*sizeof(double);
       adios_group_size (handle, group_size, &total_size);
       adios_write(handle, "int_rows_total", &int_rows_total);
       adios_write(handle, "int_max_rows", &int_max_rows);
