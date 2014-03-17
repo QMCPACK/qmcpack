@@ -22,6 +22,9 @@ static ADIOS_FILE * openfp;
 
 bool getRdADIOS();
 bool getRdHDF5();
+bool getFirstOpen();
+void setFirstOpen(bool a);
+string getTraceFileName();
 typedef qmcplusplus::RandomGenerator_t::uint_type uint_type;
 
 inline int open(const string &fname, MPI_Comm comm)

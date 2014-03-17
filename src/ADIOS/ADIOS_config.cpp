@@ -6,6 +6,8 @@ static std::string adios_xml_filename;
 const static std::string empty("");
 static bool rdADIOS = false;
 static bool rdHDF5 = false;
+static bool adios_first_open = true;
+static string trace_file = "trace.bp";
 
 namespace ADIOS
 {
@@ -43,6 +45,18 @@ void initialize(const char *value)
       rdHDF5=false;
       qmcplusplus::app_warning() << "Checkpoint restart method "<<value<<" is not supported."<< std::endl;
     }
+}
+
+bool getFirstOpen(){
+  return adios_first_open;
+}
+
+void setFirstOpen(bool a){
+  adios_first_open = a;
+}
+
+string getTraceFileName(){
+  return trace_file;
 }
 
 bool getRdADIOS()
