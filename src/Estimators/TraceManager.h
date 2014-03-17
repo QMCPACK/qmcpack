@@ -1911,12 +1911,10 @@ public:
       {
         adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "w", comm);
         ADIOS::setFirstOpen(false);
-        app_log()<<"first open adios"<<endl;
       } 
       else 
       {
         adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "a", comm);
-        app_log()<<"append adios"<<endl;
       }
 
       group_size = strlen(fileName) + 8*sizeof(int) + int_max_rows*int_cols*sizeof(int)+real_max_rows*real_cols*sizeof(double);
