@@ -2,10 +2,13 @@
 <adios-config host-language="C">
 
   <adios-group name="Traces-global" coordination-communicator="comm">
+    <var name="filename" type="string"/>
     <var name="int_rows_total" type="integer"/>
     <var name="int_max_rows" type="integer"/>
     <var name="int_offset_rows" type="integer"/>
     <var name="int_cols" type="integer"/>
+    <attribute name="filename/description" type="string"
+               value="file name for staging"/>
     <attribute name="int_rows_total/description" type="string"
                value="Number of total rows of trace samples on the communicator"/>
     <attribute name="int_max_rows/description" type="string"
@@ -111,8 +114,13 @@
   <method group="Traces" method="MPI_AGGREGATE" >
           num_aggregators=64;
   </method>
-  <method group="Traces-global" method="POSIX" >
+  <method group="Traces-global" method="MPI" >
   </method>
+  <!--method group="Traces-global" method="POSIX" >
+  </method-->
+  <!--method group="Traces-global" method="MPI_AGGREGATE" >
+          num_aggregators=64;num_ost=64
+  </method-->
   <method group="Structure" method="MPI_AGGREGATE">
           num_aggregators=64;
   </method>
