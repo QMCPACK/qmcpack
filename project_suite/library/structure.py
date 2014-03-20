@@ -965,17 +965,29 @@ class Structure(Sobj):
         elem = array(elem)
         pos = zeros((len(elem),len(r)))
         if dr is None:
+            rc = r
             for i in range(len(elem)):
                 pos[i] = r
             #end for
         else:
+            nrc = 0
+            rc  = 0*r
             dr = array(dr)
             for i in range(len(elem)):
                 pos[i] = r + dr[i]
+                if norm(dr[i])>1e-5:
+                    rc+=dr[i]
+                    nrc+=1
+                #end if
             #end for
+            if nrc==0:
+                rc = r
+            else:
+                rc = r + rc/nrc
+            #end if
         #end if
         point_defect = obj(
-            center = r,
+            center = rc,
             elem_replaced = e,
             elem = elem,
             pos  = pos
@@ -1019,12 +1031,13 @@ class Structure(Sobj):
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
         #end if
+        bulk_ind = array(bulk_ind)
         dtable = self.distance_table(bulk,core)
-        dist = dtable.min(1)
-        ind  = arange(len(bulk))
-        order = dist.argsort()
-        dist = dist[order]
-        ind  = ind[order]
+        dist   = dtable.min(1)
+        ind    = arange(len(bulk))
+        order  = dist.argsort()
+        dist   = dist[order]
+        ind    = bulk_ind[ind[order]]
         ns = 0
         ds = -1
         shells = obj()
@@ -1047,7 +1060,7 @@ class Structure(Sobj):
             cumshells = obj()
             cumshells[0] = list(shells[0])
             for ns in xrange(1,len(shells)):
-                cumshells[ns] = shells[ns-1]+shells[ns]
+                cumshells[ns] = cumshells[ns-1]+shells[ns]
             #end for
             results.append(cumshells)
         #end if
