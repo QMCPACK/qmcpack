@@ -19,6 +19,7 @@ template<typename SA>
 struct MultiGridBsplineSetReader: public BsplineReaderBase
 {
   typedef MultiGridBsplineSet<SA> ThisSPOSetType;
+  typedef typename SA::SingleSplineType SingleSplineType;
 
   static const int EXTENDED=1;
   static const int LOCALIZED=0;
@@ -26,9 +27,6 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
   /** if true, need to spline both real and imaginary
    */
   bool use_complex;
-  /** dilation factor dense/corase only use one for all the directions
-   */
-  int GridFactor;
   /** actual SPOSet to be created and returned */
   ThisSPOSetType* thisSPOSet;
 
@@ -37,15 +35,15 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
   /** raw data on the original grid */
   Array<double,3> dense_r, dense_i;
   Array<double,3> coarse_r, coarse_i;
-  vector<UBspline_3d_d*> spline_r;
-  vector<UBspline_3d_d*> spline_i;
+  vector<SingleSplineType*> spline_r;
+  vector<SingleSplineType*> spline_i;
   Array<complex<double>,3> FFTbox;
   fftw_plan FFTplan;
   vector<int> OrbGroups;
 
   MultiGridBsplineSetReader(EinsplineSetBuilder* e)
-    : BsplineReaderBase(e),use_complex(false),GridFactor(2),thisSPOSet(0),FFTplan(NULL)
-  {}
+    : BsplineReaderBase(e),use_complex(false),thisSPOSet(0),FFTplan(NULL)
+  { }
 
   ~MultiGridBsplineSetReader()
   {
@@ -61,8 +59,11 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
     }
     for(int i=0; i<spline_i.size(); ++i)
     {
-      free(spline_i[i]->coefs);
-      free(spline_i[i]);
+      if(spline_i[i]!=0)
+      {
+        free(spline_i[i]->coefs);
+        free(spline_i[i]);
+      }
     }
     spline_r.clear();
     spline_i.clear();
@@ -116,46 +117,51 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
       app_log() << "  Using real einspline table" << endl;
 
     check_twists(thisSPOSet->Extended,bandgroup);
-    check_twists(thisSPOSet->Localized,bandgroup);
 
-    typename ThisSPOSetType::bspline_type* extended=thisSPOSet->Extended;
-    typename ThisSPOSetType::bspline_type* localized=thisSPOSet->Localized;
-
+    //create the coarse grid
     Ugrid xyz_grid[3];
     typename SA::BCType xyz_bc[3];
 
-    bool havePsig=set_grid(localized->HalfG,xyz_grid, xyz_bc);
+    typename ThisSPOSetType::bspline_type* extended=thisSPOSet->Extended;
+
+    //setting grid based on the FFT grid & meshfactor
+    bool havePsig=set_grid(extended->HalfG, xyz_grid, xyz_bc); 
 
     if(!havePsig)
     {
       APP_ABORT("Need psi_g. Must be old HDF5. Regenerate it with pwscf/pw2qmcpack\n");
     }
+
+    int vol_factor=1;
     for(int j=0; j<3; ++j)
     {
+      vol_factor *=GridFactor;
       coarse_mesh[j]=MeshSize[j]/GridFactor;
       coarse_stride[j]=GridFactor;
     }
 
-    localized->create_spline(xyz_grid,xyz_bc);
-
     for(int j=0; j<3; ++j) xyz_grid[j].num=coarse_mesh[j];
     extended->create_spline(xyz_grid,xyz_bc);
 
-    {//create temporary single-value spline objects
+    //create temporary single-value spline objects: dense/coarse pairs
+    {
+      int norbs_n=1; //using serial version for now to do the block allocation
+
       TinyVector<double,3> start(0.0);
       TinyVector<double,3> end(1.0);
-      int norbs_n=1; //using serial version for now
-      UBspline_3d_d* dummy=0; //dummy argument to handle c++-c template calls
+
+      SingleSplineType* dummy=0; //dummy argument to handle c++-c template calls
       spline_r.resize(norbs_n*2,0);
-      for(int i=0; i<spline_r.size()/2; ++i)
+      spline_i.resize(norbs_n*2,0);
+
+      for(int i=0; i<norbs_n; ++i)
       {
         spline_r[2*i+LOCALIZED]=einspline::create(dummy,start,end,MeshSize,extended->HalfG);
         spline_r[2*i+EXTENDED]=einspline::create(dummy,start,end,coarse_mesh,extended->HalfG);
       }
       if(use_complex)
       {
-        spline_i.resize(norbs_n*2,0);
-        for(int i=0; i<spline_i.size()/2; ++i)
+        for(int i=0; i<norbs_n; ++i)
         {
           spline_i[2*i+LOCALIZED]=einspline::create(dummy,start,end,MeshSize,extended->HalfG);
           spline_i[2*i+EXTENDED]=einspline::create(dummy,start,end,coarse_mesh,extended->HalfG);
@@ -163,10 +169,53 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
       }
     }
 
-    app_log() << "  Original Mesh " << MeshSize << endl;
-    app_log() << "  Coarse Mesh " << coarse_mesh << endl;
     app_log().flush();
 
+    //time to do the dense part
+    for(int j=0; j<3; ++j) xyz_grid[j].num=MeshSize[j];
+    int tableindex=thisSPOSet->myTableIndex=mybuilder->myTableIndex;
+    const ParticleSet& ions=mybuilder->TargetPtcl.DistTables[tableindex]->origin();
+    int ncenters=ions.getTotalNum()/(static_cast<int>(round(ions.Lattice.Volume/ions.PrimitiveLattice.Volume)));
+
+    //compute the table size
+    size_t loc_data_size=0;
+    {
+      typedef QMCTraits::PosType pos_type;
+      pos_type delta(Rcut,Rcut,Rcut);
+      TinyVector<double,3> lower(0.0);
+      TinyVector<double,3> upper(1.0);
+      thisSPOSet->resizeSubDomains(ncenters);
+      vector<int> boxes(ncenters,-1); 
+      int i=0,npc=0;
+      while(npc<ncenters)
+      {
+        int pcid=ions.PCID[i];
+        if(boxes[pcid]<0)
+        {
+          check_twists(thisSPOSet->Localized[pcid],bandgroup);
+          lower=ions.PrimitiveLattice.toUnit(ions.R[i]-delta);
+          upper=ions.PrimitiveLattice.toUnit(ions.R[i]+delta);
+          if(einspline::outOfBound(lower) || einspline::outOfBound(upper))
+          {
+            app_error() << "Out of bound of the subdomain centered at " << pcid << " atom  " << ions.R[i] << endl;
+            APP_ABORT("  Place the atoms so that the subdomain is within [0,1)^3 of the supercell ");
+          }
+          loc_data_size+=thisSPOSet->setSubDomain(pcid,spline_r[LOCALIZED],lower,upper);
+          boxes[i]=pcid;
+          npc++;
+        } 
+        i++;
+      }
+    }
+
+    {
+      size_t org_data_size=thisSPOSet->sizeOfExtended()*vol_factor;
+      app_log() << "Bspline Memory Use in MB: Original " << (org_data_size>>20)
+        << " Global " << (thisSPOSet->sizeOfExtended()>>20)
+        << " Local  " << (loc_data_size>>20) 
+        << "\n  Saving factor= " << static_cast<double>(org_data_size)/static_cast<double>(thisSPOSet->sizeOfExtended()+loc_data_size)
+        << endl;
+    }
 
     /** every MPI node does this: to be parallelized */
     {
@@ -190,13 +239,16 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
         int ti=cur_bands[iorb].TwistIndex;
-        cout << "Getting PW coefficients for " << iorb << " at twist=" << ti << endl;
+
         get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);
         fft_spline(cG,ti,0); 
-        thisSPOSet->set_spline(spline_r[EXTENDED],spline_i[EXTENDED],ti,ival,EXTENDED);//localized/dense
-        thisSPOSet->set_spline(spline_r[LOCALIZED],spline_i[LOCALIZED],ti,ival,LOCALIZED);//extended/coarse
-      }
 
+        //assign the extended orbital
+        thisSPOSet->set_spline(spline_r[EXTENDED],spline_i[EXTENDED],ti,ival,-1);
+
+        for(int ic=0; ic<ncenters; ++ic)
+          thisSPOSet->set_spline(spline_r[LOCALIZED],spline_i[LOCALIZED],ti,ival,ic);
+      }
     }
 
     clear();

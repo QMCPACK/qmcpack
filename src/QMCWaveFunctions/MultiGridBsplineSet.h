@@ -10,11 +10,16 @@
 namespace qmcplusplus
 {
 
-  /** Class to test the multi-grid method without any truncation
-  */
+  /** BsplineSet using a multigrid method
+   *
+   * Inspired by PRL 82, 5016 (1999) and generalization of the truncated orbitals for vacuum.
+   */
   template<typename SplineAdoptor>
     struct MultiGridBsplineSet: public SPOSetBase
   {
+    ///typedef of the spline data
+    typedef typename SplineAdoptor::DataType DataType;
+    typedef typename SplineAdoptor::SingleSplineType SingleSplineType;
     ///type of BsplineSet
     typedef BsplineSet<SplineAdoptor> bspline_type;
     ///true with tiling
@@ -25,14 +30,19 @@ namespace qmcplusplus
     int myTableIndex;
     ///cutoff radius: use one box for all
     RealType Rcut;
+    ///SPOSet on the global grid of the primitive cell
     bspline_type* Extended;
-    bspline_type* Localized;
+    ///SPOSet on the localized grid centered at the ions
+    vector<bspline_type*> Localized;
+    ///grid converter for each subdomain
+    vector<GridConvert<DataType> > gTransform;
+    ///copy of PCID of the source particleset
+    vector<int> PCID;
 
     MultiGridBsplineSet()
-      :myTableIndex(1), Rcut(0.5), Extended(0), Localized(0)
+      :myTableIndex(1), Rcut(0.5), Extended(0)
     {
       Extended=new bspline_type;
-      Localized=new bspline_type;
       is_complex=Extended->is_complex;
     }
 
@@ -40,24 +50,65 @@ namespace qmcplusplus
     {
       MultiGridBsplineSet* clone=new MultiGridBsplineSet<SplineAdoptor>(*this);
       clone->Extended=new bspline_type(*Extended);
-      clone->Localized=new bspline_type(*Localized);
+      for(int i=0; i<Localized.size(); ++i)
+      {
+        clone->Localized[i]=new bspline_type(*Localized[i]);
+      }
       return clone;
+    }
+
+    /** create subdomains
+     *
+     * Localized orbitals and corresponding GridConvert object
+     * PCID is initialized as PCID[i]=i, to be overwritten with the tiling
+     */
+    void resizeSubDomains(int n)
+    {
+      Localized.resize(n);
+      for(int i=0; i< n; ++i) Localized[i]=new bspline_type;
+      gTransform.resize(n);
+      PCID.resize(n);
+      for(int i=0; i<n; ++i) PCID[i]=i;
+    }
+
+    /** allocate a subdomain and its GridConver
+     * @param ic index of the subdomain
+     * @param dense single spline which defines the origintal grid
+     * @param lower Carteisan coordiate at the origin
+     * @param upper Cartesian ccordiate at (1,1,1)  of the subdomain
+     * @return size of the table
+     */
+    template <typename PT>
+      size_t setSubDomain(int ic, typename SplineAdoptor::SingleSplineType* dense, PT& lower, PT& upper)
+      {
+        gTransform[ic].create(Localized[ic]->MultiSpline,dense,lower,upper
+            ,Extended->MultiSpline->num_splines);
+        return sizeof(DataType)*(Localized[ic]->MultiSpline->coefs_size);
+      }
+
+    size_t sizeOfExtended() const
+    {
+      return sizeof(DataType)*(Extended->MultiSpline->coefs_size);
     }
 
     /** set spline table
      * @param spline_r real part
      * @param spline_i imaginary part
      * @param ispline index of the spline function
-     * @param level 1 for extended/corase orbitals and 0 for localized/dense orbitals 
+     * @param center -1 for extended/corase orbitals and other positive index for localized/dense orbitals 
      */
-    template<typename CT>
-      void set_spline(CT* spline_r, CT* spline_i, int twist, int ispline, int level)
+    void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int center)
+    {
+      const int dummy=0;
+      if(center<0)
       {
-        if(level)
-          Extended->set_spline(spline_r,spline_i,twist,ispline,level);
-        else
-          Localized->set_spline(spline_r,spline_i,twist,ispline,level);
+        Extended->set_spline(spline_r,spline_i,twist,ispline,dummy);
       }
+      else 
+      {
+        Localized[center]->set_spline_domain(spline_r,spline_i,twist,ispline, gTransform[center].Offset,gTransform[center].N);
+      }
+    }
 
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     {
@@ -66,7 +117,7 @@ namespace qmcplusplus
       if(ic<0)
         Extended->evaluate_v(P.R[iat],psi);
       else
-        Localized->evaluate_v(P.R[iat],psi);
+        Localized[PCID[ic]]->evaluate_v(P.R[iat],psi);
     }
 
     inline void evaluate(const ParticleSet& P, int iat,
@@ -75,15 +126,9 @@ namespace qmcplusplus
       const DistanceTableData* dt=P.DistTables[myTableIndex];
       int ic=dt->find_closest_source(Rcut);
       if(ic<0)
-      {
-        //cout << iat << " Interstitial " << endl;
         Extended->evaluate_vgl(P.R[iat],psi,dpsi,d2psi);
-      }
       else
-      {
-        //cout << iat << " close to " << ic << " " << P.R[iat]-dt->origin().R[ic] << endl;
-        Localized->evaluate_vgl(P.R[iat],psi,dpsi,d2psi);
-      }
+        Localized[PCID[ic]]->evaluate_vgl(P.R[iat],psi,dpsi,d2psi);
     }
 
     inline void evaluate(const ParticleSet& P, int iat,
@@ -92,15 +137,9 @@ namespace qmcplusplus
       const DistanceTableData* dt=P.DistTables[myTableIndex];
       int ic=dt->find_closest_source(Rcut);
       if(ic<0)
-      {
-        //cout << iat << " Interstitial " << endl;
         Extended->evaluate_vgh(P.R[iat],psi,dpsi,grad_grad_psi);
-      }
       else
-      {
-        //cout << iat << " close to " << ic << " " << P.R[iat] << " " << dt->origin().R[ic] << endl;
-        Localized->evaluate_vgh(P.R[iat],psi,dpsi,grad_grad_psi);
-      }
+        Localized[PCID[ic]]->evaluate_vgh(P.R[iat],psi,dpsi,grad_grad_psi);
     }
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last
@@ -116,15 +155,9 @@ namespace qmcplusplus
         VectorViewer<value_type> l(d2logdet[i],OrbitalSetSize);
         int ic=dt->find_closest_source(iat,Rcut);
         if(ic<0)
-        { 
-          //cout << iat << " Interstitial " << endl;
           Extended->evaluate_vgl(P.R[iat],v,g,l);
-        }
         else
-        {
-          //cout << iat << " close to " << ic << " " << P.R[iat]-dt->origin().R[ic] << endl;
-          Localized->evaluate_vgl(P.R[iat],v,g,l);
-        }
+          Localized[PCID[ic]]->evaluate_vgl(P.R[iat],v,g,l);
       }
     }
 
@@ -140,11 +173,11 @@ namespace qmcplusplus
         VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
         VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
         VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
-        int core=dt->find_closest_source(iat,Rcut);
-        if(core<0)
+        int ic=dt->find_closest_source(iat,Rcut);
+        if(ic<0)
           Extended->evaluate_vgh(P.R[iat],v,g,h);
         else
-          Localized->evaluate_vgh(P.R[iat],v,g,h);
+          Localized[PCID[ic]]->evaluate_vgh(P.R[iat],v,g,h);
       }
     }
 
