@@ -228,7 +228,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             nonLocalPot[speciesIndex]=ecp.pp_nonloc;
             rmax=std::max(rmax,ecp.pp_nonloc->Rmax);
           }
-          int rcutIndex=ion_species.addAttribute("rmax_ecp");
+          int rcutIndex=ion_species.addAttribute("rmax_core");
           ion_species(rcutIndex,speciesIndex)=rmax;
         }
       }

@@ -129,8 +129,11 @@ void VMCSingleOMP::resetRun()
   app_log() << "  Initial partition of walkers ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
   app_log() << endl;
+
+  bool movers_created=false;
   if (Movers.empty())
   {
+    movers_created=true;
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
@@ -249,7 +252,15 @@ void VMCSingleOMP::resetRun()
       Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
   }
-//     //JNKIM: THIS IS BAD AND WRONG
+
+  if(movers_created)
+  {
+    size_t before=qmc_common.memory_allocated;
+    app_log() << "  Anonymous Buffer size per walker " << W[0]->DataSet.size() << endl;
+    qmc_common.memory_allocated+=W.getActiveWalkers()*W[0]->DataSet.size()*sizeof(OHMMS_PRECISION);
+    qmc_common.print_memory_change("VMCSingleOMP::resetRun",before);
+  }
+  //     //JNKIM: THIS IS BAD AND WRONG
 //     if (UseDrift == "rn")
 //     {
 //       RealType avg_w(0);

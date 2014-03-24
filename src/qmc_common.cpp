@@ -21,6 +21,7 @@ QMCState::QMCState()
   mpi_groups=1;
   use_ewald=false;
   qmc_counter=0;
+  memory_allocated=0;
 #if defined(QMC_CUDA)
   compute_device=1;
 #else
@@ -93,6 +94,12 @@ void QMCState::print_options(ostream& os)
     os << "  async_swap=1 : using async isend/irecv for walker swaps " << endl;
   else
     os << "  async_swap=0 : using blocking send/recv for walker swaps " << endl;
+}
+
+void QMCState::print_memory_change(const string& who, size_t before)
+{
+  before=memory_allocated-before;
+  app_log() << "MEMORY increase " << (before>>20) << " MB " << who << endl;
 }
 
 QMCState qmc_common;

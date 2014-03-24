@@ -213,6 +213,15 @@ namespace qmcplusplus
       }
   };
 
+  namespace einspline
+  {
+    template<typename IV>
+      bool outOfBound(const IV& a)
+      {
+        for(int i=0; i<a.size(); ++i) if(a[i]<0.0 || a[i] >=1.0) return true;
+        return false;
+      }
+  }
 
 }
 #endif

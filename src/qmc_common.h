@@ -43,6 +43,9 @@ struct QMCState
   int qmc_counter;
   ///number of mpi groups
   int mpi_groups;
+  /** size of memory allocated in byte per MPI
+   */
+  size_t memory_allocated;
   ///vacuum layer for non-periodic dimension
   double vacuum;
   ///store the name of the main eshd file name
@@ -54,6 +57,11 @@ struct QMCState
   void initialize(int argc, char **argv);
   ///print command-line options
   void print_options(ostream& os);
+  /** print memory increase
+   * @param who the name of the class/function calling this
+   * @param before memory_allocated before calling print
+   */
+  void print_memory_change(const string& who, size_t before);
 };
 
 ///a unique QMCState during a run

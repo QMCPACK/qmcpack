@@ -132,6 +132,22 @@ public:
     }
     return i;
   }
+
+  inline int findAttribute(const std::string& name) const
+  {
+    return findIndex(name,attribName);
+  }
+
+  inline int findIndex(const std::string& name, const std::vector<std::string>& alist) const
+  {
+    int i = 0;
+    while(i< alist.size())
+    {
+      if(alist[i] == name) return i;
+      i++;
+    }
+    return -1;
+  }
 };
 #endif
 
