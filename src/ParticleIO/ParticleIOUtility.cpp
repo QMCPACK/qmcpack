@@ -83,6 +83,8 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int,3>& tmat)
               app_log() << buff;
               ref_.R[index]= r;
               ref_.GroupID[index]= ns;//primTypes[iat];
+              ref_.ID[index]=index;
+              ref_.PCID[index]=iat;
               index++;
             }
           }

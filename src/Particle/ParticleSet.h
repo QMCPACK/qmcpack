@@ -91,8 +91,10 @@ public:
   ParticleLaplacian_t dL;
 
   ///current position after applying PBC in the Lattice Unit
-  ParticlePos_t redR;
+  ParticlePos_t Runit;
 
+  ///index to the primitice cell with tiling
+  ParticleIndex_t PCID;
   /** ID map that reflects species group
    *
    * IsGrouped=true, if ID==IndirectID

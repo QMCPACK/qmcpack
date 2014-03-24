@@ -125,6 +125,8 @@ void ParticleSet::initParticleSet()
   addAttribute(L);
   addAttribute(dG);
   addAttribute(dL);
+
+  //more particle attributes
   Mass.setTypeName(ParticleTags::scalartype_tag);
   Mass.setObjName("mass");
   SameMass=true; //default is SameMass
@@ -132,7 +134,10 @@ void ParticleSet::initParticleSet()
   Z.setTypeName(ParticleTags::scalartype_tag);
   Z.setObjName("charge");
   addAttribute(Z);
-  IndirectID.setTypeName(ParticleTags::indextype_tag); //add ID tags
+  IndirectID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
+  IndirectID.setObjName("pcid");
+  addAttribute(PCID);
+  IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
   IndirectID.setObjName("id1");
   addAttribute(IndirectID);
   //orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
@@ -144,9 +149,9 @@ void ParticleSet::initParticleSet()
   //addAttribute(orgGroupID);
   myTwist=0.0;
   ////this has to be in unit
-  //redR.setObjName("redpos");
-  //redR.InUnit=PosUnit::LatticeUnit;
-  //addAttribute(redR);
+  Runit.setObjName("posunit");
+  Runit.InUnit=PosUnit::LatticeUnit;
+  addAttribute(Runit);
 }
 
 void ParticleSet::resetGroups()
@@ -531,6 +536,7 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
 bool ParticleSet::makeMove(const Walker_t& awalker
                            , const ParticlePos_t& deltaR, RealType dt)
 {
+  activePtcl=-1;
   if (UseBoundBox)
   {
     for (int iat=0; iat<deltaR.size(); ++iat)
@@ -560,6 +566,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 bool ParticleSet::makeMove(const Walker_t& awalker
                            , const ParticlePos_t& deltaR, const vector<RealType>& dt)
 {
+  activePtcl=-1;
   if (UseBoundBox)
   {
     for (int iat=0; iat<deltaR.size(); ++iat)
@@ -597,6 +604,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , RealType dt)
 {
+  activePtcl=-1;
   if (UseBoundBox)
   {
     for (int iat=0; iat<deltaR.size(); ++iat)
@@ -627,6 +635,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , const vector<RealType>& dt)
 {
+  activePtcl=-1;
   if (UseBoundBox)
   {
     for (int iat=0; iat<deltaR.size(); ++iat)

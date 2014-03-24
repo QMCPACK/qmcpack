@@ -287,6 +287,43 @@ public:
     return M[i] + j;
   }
 
+  /** search the closest source particle within rcut
+   * @param rcut cutoff radius
+   * @return the index of the closest particle
+   *
+   * Return -1 if none is within rcut
+   * @note It searches the temporary list after a particle move is made
+   */
+  inline IndexType find_closest_source(RealType rcut) const
+  {
+    int i=0;
+    while(i<N[SourceIndex])
+    {
+      if(Temp[i].r1<rcut) return i;
+      i++;
+    }
+    return -1;
+  }
+
+  /** search the closest source particle of the iel-th particle within rcut 
+   * @param rcut cutoff radius
+   * @return the index of the first particle
+   *
+   * Return -1 if none is within rcut
+   * @note Check the real distance table and only works for the AsymmetricDistanceTable
+   */
+  inline IndexType find_closest_source(int iel, RealType rcut) const
+  {
+    int i=0,nn=iel;
+    while(nn<r_m.size())
+    {
+      if(r_m[nn]<rcut) return i;
+      nn+=N[VisitorIndex];
+      i++;
+    }
+    return -1;
+  }
+
   /** resiste trans_r and trans_dr
    */
   void resizeTranspose()

@@ -312,6 +312,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     cur = cur->next;
   }
 
+    //copy ID -> PCID
+    ref_.PCID=ref_.ID;
+
   expandSuperCell(ref_,TileMatrix);
   if(ref_.Lattice.SuperCellEnum)
   {

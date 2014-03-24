@@ -165,6 +165,11 @@ void ESHDFIonsParser::readESHDF()
     HDFAttribIO<ParticleSet::ParticleIndex_t> c(ref_.GroupID);
     c.read(hfile_id,"atoms/species_ids");
   }
+
+  ref_.PrimitiveLattice=ref_.Lattice;
+  for(int i=0; i<ref_.getTotalNum(); ++i) ref_.ID[i]=i;
+  ref_.PCID=ref_.ID;
+
   ref_.resetGroups();
 }
 
