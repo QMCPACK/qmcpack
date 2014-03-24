@@ -33,14 +33,20 @@ struct BsplineReaderBase
   int myFirstSPO;
   ///number of orbitals to be created
   int myNumOrbs;
+  /**@addtogroup multigrid
+   * @{
+   * Currently only one level of coarsening is implemented but easy to generalize to multi levels.
+   */
+  /** dilation factor dense/corase only use one for all the directions
+   */
+  int GridFactor;
+  ///cutoff radius for multigrid or other things
+  double Rcut;
+  /** @}*/
   ///map from spo index to band index
   vector<vector<int> > spo2band;
 
-  BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), myFirstSPO(0),myNumOrbs(0)
-  {
-    myComm=mybuilder->getCommunicator();
-  }
+  BsplineReaderBase(EinsplineSetBuilder* e);
 
   virtual ~BsplineReaderBase();
 
@@ -165,6 +171,10 @@ struct BsplineReaderBase
   /** create the actual spline sets
    */
   virtual SPOSetBase* create_spline_set(int spin, const BandInfoGroup& bandgroup)=0;
+
+  /** setting common parameters
+   */
+  void setCommon(xmlNodePtr cur);
 
   /** create the spline after one of the kind is created */
   SPOSetBase* create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);

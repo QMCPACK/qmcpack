@@ -10,8 +10,15 @@
 #include <QMCWaveFunctions/SPOSetComboNoCopy.h>
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "qmc_common.h"
 namespace qmcplusplus
 {
+  BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
+    : mybuilder(e), MeshSize(0), myFirstSPO(0),myNumOrbs(0),GridFactor(1),Rcut(0)
+  {
+    myComm=mybuilder->getCommunicator();
+  }
+
   void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG)
   {
     int ncg=0;
@@ -62,6 +69,14 @@ namespace qmcplusplus
     return oo.str();
   }
 
+  void BsplineReaderBase::setCommon(xmlNodePtr cur)
+  {
+    OhmmsAttributeSet a;
+    a.add(Rcut,"rmax_core");
+    a.add(GridFactor,"dilation");
+    a.put(cur);
+  }
+
   SPOSetBase* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   {
     int ns(0);
@@ -90,7 +105,11 @@ namespace qmcplusplus
     vals.GroupID=0;
     vals.myName=make_bandgroup_name(mybuilder->getName(),spin,mybuilder->TwistNum,mybuilder->TileMatrix,0,ns);
     vals.selectBands(fullband,0, ns, false);
-    return create_spline_set(spin,vals);
+
+    size_t mem_now=qmc_common.memory_allocated;
+    SPOSetBase* newspo=create_spline_set(spin,vals);       
+    qmc_common.print_memory_change("BsplineSetReder", mem_now);
+    return newspo;
 
     //Test SPOSetComboNoCopy that can have multiple SPOSets
     //SPOSetComboNoCopy* bb=new SPOSetComboNoCopy;
@@ -140,8 +159,10 @@ namespace qmcplusplus
         input_info.max_index()-input_info.min_index(),false);
     //vals.FirstSPO=0;
     //vals.NumSPOs=input_info.max_index()-input_info.min_index();
-
-    return create_spline_set(spin,vals);
+    size_t mem_now=qmc_common.memory_allocated;
+    SPOSetBase* newspo=create_spline_set(spin,vals);       
+    qmc_common.print_memory_change("BsplineSetReder", mem_now);
+    return newspo;
   }
 
   /** build index tables to map a state to band with k-point folidng

@@ -87,6 +87,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
       BaseOffset[i]=0;
       BaseN[i]=xyz_g[i].num+3;
     }
+    qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
 
   inline void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
@@ -99,6 +100,13 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   {
     einspline::set(MultiSpline, 2*ispline,  spline_r, BaseOffset, BaseN);
     einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
+  }
+
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+      int twist, int ispline, const int* offset_l, const int* mesh_l)
+  {
+    einspline::set(MultiSpline, 2*ispline,  spline_r, offset_l, mesh_l);
+    einspline::set(MultiSpline, 2*ispline+1,spline_i, offset_l, mesh_l);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -317,6 +325,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
       BaseOffset[i]=0;
       BaseN[i]=xyz_g[i].num+3;
     }
+    qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
@@ -329,6 +338,13 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   {
     einspline::set(MultiSpline, 2*ispline,spline_r, BaseOffset, BaseN);
     einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
+  }
+
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+      int twist, int ispline, const int* offset_l, const int* mesh_l)
+  {
+    einspline::set(MultiSpline, 2*ispline,  spline_r, offset_l, mesh_l);
+    einspline::set(MultiSpline, 2*ispline+1,spline_i, offset_l, mesh_l);
   }
 
   bool read_splines(hdf_archive& h5f)

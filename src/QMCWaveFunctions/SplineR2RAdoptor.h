@@ -60,6 +60,9 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   {
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
+
+    qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
+
     for(int i=0; i<D; ++i)
     {
       BaseOffset[i]=0;
@@ -82,6 +85,8 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
     }
     SplineType* dummy=0;
     MultiSpline=einspline::create(dummy,xyz_grid,xyz_bc,n);
+
+    qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
 
   inline bool isready()
@@ -97,6 +102,12 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
     einspline::set(MultiSpline, ispline,spline_r, BaseOffset,BaseN);
+  }
+
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+      int twist, int ispline, const int* offset_l, const int* mesh_l)
+  {
+    einspline::set(MultiSpline, ispline,  spline_r, offset_l, mesh_l);
   }
 
   bool read_splines(hdf_archive& h5f)

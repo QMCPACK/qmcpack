@@ -49,8 +49,11 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
     for(int i=0; i<spline_i.size(); ++i)
     {
-      free(spline_i[i]->coefs);
-      free(spline_i[i]);
+      if(spline_i[i]!=0)
+      {
+        free(spline_i[i]->coefs);
+        free(spline_i[i]);
+      }
     }
     spline_r.clear();
     spline_i.clear();

@@ -22,6 +22,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -39,6 +40,9 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
   H5FileID(-1), makeRotations(false), MeshFactor(1.0), MeshSize(0,0,0)
 {
+  //assume one, not safe!! 
+  myTableIndex=1;
+
   MatchingTol=1.0e-8;
 //     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
@@ -271,10 +275,12 @@ EinsplineSetBuilder::TileIons()
 {
   update_token(__FILE__,__LINE__,"TileIons");
 
-  IonTypes.resize(TargetPtcl.getTotalNum());
-  IonPos.resize(TargetPtcl.getTotalNum());
-  std::copy(TargetPtcl.R.begin(),TargetPtcl.R.end(),IonPos.begin());
-  std::copy(TargetPtcl.GroupID.begin(),TargetPtcl.GroupID.end(),IonTypes.begin());
+  const ParticleSet &ions=TargetPtcl.DistTables[myTableIndex]->origin();
+
+  IonTypes.resize(ions.getTotalNum());
+  IonPos.resize(ions.getTotalNum());
+  std::copy(ions.R.begin(),ions.R.end(),IonPos.begin());
+  std::copy(ions.GroupID.begin(),ions.GroupID.end(),IonTypes.begin());
 //Don't need to do this, already one by ParticleSetPool.cpp
 //  Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
 //  Vector<int>                            primTypes = IonTypes;
