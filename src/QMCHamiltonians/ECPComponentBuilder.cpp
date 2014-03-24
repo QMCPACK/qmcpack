@@ -113,22 +113,19 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     {
       Zeff = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"zval"));
     }
-    else
-      if(cname == "grid")
-      {
-        //capture the global grid
-        grid_global = createGrid(cur);
-      }
-      else
-        if(cname == "semilocal")
-        {
-          semiPtr.push_back(cur);//save the pointer
-        }
-        else
-          if(cname == "local")
-          {
-            buildLocal(cur);
-          }
+    else if(cname == "grid")
+    {
+      //capture the global grid
+      grid_global = createGrid(cur);
+    }
+    else if(cname == "semilocal")
+    {
+      semiPtr.push_back(cur);//save the pointer
+    }
+    else if(cname == "local")
+    {
+      buildLocal(cur);
+    }
     // else if(cname == "sphericalGrid")
     // {
     //  nk=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"size"));

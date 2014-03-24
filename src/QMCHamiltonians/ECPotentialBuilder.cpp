@@ -188,10 +188,13 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.add(format,"format");
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
-      int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
-      if(speciesIndex < IonConfig.getSpeciesSet().getTotalNum())
+      SpeciesSet& ion_species(IonConfig.getSpeciesSet());
+      int speciesIndex=ion_species.findSpecies(ionName);
+      if(speciesIndex < ion_species.getTotalNum())
       {
         app_log() << endl << "  Adding pseudopotential for " << ionName << endl;
+        double rmax=0.0;
+
         ECPComponentBuilder ecp(ionName,myComm);
         bool success=false;
         if(format == "xml")
@@ -205,16 +208,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             success=ecp.parse(href,cur);
           }
         }
-        else
-          if(format == "casino")
-          {
-            //success=ecp.parseCasino(href,rc);
-            success=ecp.parseCasino(href,cur);
-          }
+        else if(format == "casino")
+        {
+          //success=ecp.parseCasino(href,rc);
+          success=ecp.parseCasino(href,cur);
+        }
         if(success)
         {
-          if(OHMMS::Controller->rank()==0)
-            ecp.printECPTable();
+          if(OHMMS::Controller->rank()==0) ecp.printECPTable();
           if(ecp.pp_loc)
           {
             localPot[speciesIndex]=ecp.pp_loc;
@@ -223,9 +224,12 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if(ecp.pp_nonloc)
           {
-            nonLocalPot[speciesIndex]=ecp.pp_nonloc;
             hasNonLocalPot=true;
+            nonLocalPot[speciesIndex]=ecp.pp_nonloc;
+            rmax=std::max(rmax,ecp.pp_nonloc->Rmax);
           }
+          int rcutIndex=ion_species.addAttribute("rmax_ecp");
+          ion_species(rcutIndex,speciesIndex)=rmax;
         }
       }
       else

@@ -33,28 +33,27 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
       grid_semilocal=createGrid(cur);
       rmax=grid_semilocal->rmax();
     }
-    else
-      if(cname == "vps")
+    else if(cname == "vps")
+    {
+      //should be able to overwrite rmax
+      int l=angMon[(const char*)xmlGetProp(cur,(const xmlChar*)"l")];
+      Lmax = std::max(l,Lmax);
+      xmlNodePtr cur1=cur->children;
+      while(cur1 != NULL)
       {
-        //should be able to overwrite rmax
-        int l=angMon[(const char*)xmlGetProp(cur,(const xmlChar*)"l")];
-        Lmax = std::max(l,Lmax);
-        xmlNodePtr cur1=cur->children;
-        while(cur1 != NULL)
+        string cname1((const char*)cur1->name);
+        if(cname1 == "basisGroup")
         {
-          string cname1((const char*)cur1->name);
-          if(cname1 == "basisGroup")
-          {
-            pp_nonloc->add(l,createVrWithBasisGroup(cur1,grid_semilocal));
-          }
-          //else if(cname1 == "data")
-          //{
-          //  pp_nonloc->add(l,createVrWithData(cur1,grid_semilocal));
-          //}
-          cur1=cur1->next;
+          pp_nonloc->add(l,createVrWithBasisGroup(cur1,grid_semilocal));
         }
-        NumNonLocal++;
+        //else if(cname1 == "data")
+        //{
+        //  pp_nonloc->add(l,createVrWithData(cur1,grid_semilocal));
+        //}
+        cur1=cur1->next;
       }
+      NumNonLocal++;
+    }
     cur=cur->next;
   }
   pp_nonloc->lmax=Lmax;
