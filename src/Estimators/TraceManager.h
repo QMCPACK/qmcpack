@@ -889,6 +889,7 @@ struct TraceBuffer
                  buffer.dim(), dims, buffer.data());
       f.pop();
     }
+    f.flush();
   }
 
 

@@ -123,6 +123,8 @@ public:
   PtclPoolType &ParticleSets;
   ///quantum particle set
   ParticleSet &TargetPtcl;
+  ///ionic system
+  ParticleSet *SourcePtcl;
   ///index for the ion-el distance table
   int myTableIndex;
 

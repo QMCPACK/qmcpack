@@ -59,6 +59,23 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   FullBands.resize(p.groups(),0);
 }
 
+template<typename T>
+inline TinyVector<T,3>
+IntPart (const TinyVector<T,3>& twist)
+{
+  return TinyVector<T,3> (round(twist[0]-1.0e-6),
+                          round(twist[1]-1.0e-6),
+                          round(twist[2]-1.0e-6));
+}
+
+template<typename T>
+inline TinyVector<T,3>
+FracPart (const TinyVector<T,3>& twist)
+{
+  return twist - IntPart (twist);
+}
+
+
 EinsplineSetBuilder::~EinsplineSetBuilder()
 {
   DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
@@ -81,6 +98,7 @@ bool
 EinsplineSetBuilder::CheckLattice()
 {
   update_token(__FILE__,__LINE__,"CheckLattice");
+
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
@@ -270,17 +288,41 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
 //  ParticleSets[sourceName] = &pTemp;
 //}
 //
+
 void
 EinsplineSetBuilder::TileIons()
 {
   update_token(__FILE__,__LINE__,"TileIons");
 
-  const ParticleSet &ions=TargetPtcl.DistTables[myTableIndex]->origin();
+  //set the primitive lattice
+  SourcePtcl->PrimitiveLattice.set(Lattice);
 
-  IonTypes.resize(ions.getTotalNum());
-  IonPos.resize(ions.getTotalNum());
-  std::copy(ions.R.begin(),ions.R.end(),IonPos.begin());
-  std::copy(ions.GroupID.begin(),ions.GroupID.end(),IonTypes.begin());
+  for(int j=0; j<IonPos.size(); ++j)
+    IonPos[j]=FracPart(SourcePtcl->PrimitiveLattice.toUnit(IonPos[j]));
+
+  for(int i=0; i<SourcePtcl->R.size(); ++i)
+  {
+    PosType u=FracPart(SourcePtcl->PrimitiveLattice.toUnit(SourcePtcl->R[i]));
+    int j=0;
+    bool foundit=false;
+    while(!foundit &&j<IonPos.size())
+    {
+      PosType d=u-IonPos[j++];
+      foundit=(dot(d,d)<MatchingTol);
+    }
+    SourcePtcl->PCID[i]=j-1;
+  }
+
+  IonPos.resize(SourcePtcl->getTotalNum());
+  IonTypes.resize(SourcePtcl->getTotalNum());
+  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+
+  //app_log() << "  Primitive Cell\n";
+  //SourcePtcl->PrimitiveLattice.print(app_log());
+  //app_log() << "  Super Cell\n";
+  //SourcePtcl->Lattice.print(app_log());
+
 //Don't need to do this, already one by ParticleSetPool.cpp
 //  Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
 //  Vector<int>                            primTypes = IonTypes;
@@ -337,22 +379,6 @@ EinsplineSetBuilder::TileIons()
 //  }
 }
 
-
-template<typename T>
-inline TinyVector<T,3>
-IntPart (const TinyVector<T,3>& twist)
-{
-  return TinyVector<T,3> (round(twist[0]-1.0e-6),
-                          round(twist[1]-1.0e-6),
-                          round(twist[2]-1.0e-6));
-}
-
-template<typename T>
-inline TinyVector<T,3>
-FracPart (const TinyVector<T,3>& twist)
-{
-  return twist - IntPart (twist);
-}
 
 bool EinsplineSetBuilder::TwistPair (PosType a, PosType b)
 {

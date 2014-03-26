@@ -75,6 +75,10 @@ namespace qmcplusplus
     a.add(Rcut,"rmax_core");
     a.add(GridFactor,"dilation");
     a.put(cur);
+
+    app_log() << "Rcut = " << Rcut << endl;
+    app_log() << "dilation = " << GridFactor << endl;
+
   }
 
   SPOSetBase* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)

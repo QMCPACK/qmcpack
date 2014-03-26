@@ -144,9 +144,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
         spline_r.resize(norbs_n+1);
         for(int i=0; i<spline_r.size(); ++i)
           spline_r[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
+
+        spline_i.resize(norbs_n+1,0);
         if(bspline->is_complex)
         {
-          spline_i.resize(norbs_n+1);
           for(int i=0; i<spline_i.size(); ++i)
             spline_i[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
         }

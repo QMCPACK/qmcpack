@@ -80,7 +80,19 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.put (cur);
 
     if(myName.empty()) myName="einspline";
+
   }
+
+  SourcePtcl=ParticleSets[sourceName];
+  if(SourcePtcl==0)
+  {
+    APP_ABORT("Einspline needs the source particleset");
+  }
+  else
+  { //keep the one-body distance table index 
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl);
+  }
+
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
@@ -297,12 +309,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
       if(MixedSplineReader)
       {
+
+        MixedSplineReader->setCommon(XMLRoot);
         HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
         SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
         if(bspline_zd)
           SPOSetMap[aset] = bspline_zd;
         else
           APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
+
         return bspline_zd;
       }
       else
@@ -336,6 +351,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       }
       if(MixedSplineReader)
       {
+
+        MixedSplineReader->setCommon(XMLRoot);
+        size_t delta_mem=qmc_common.memory_allocated;
         RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet));
         HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
         SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
@@ -343,6 +361,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
           SPOSetMap[aset] = bspline_zd;
         else
           APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
+
+        delta_mem=qmc_common.memory_allocated-delta_mem;
+        app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << endl;
         return bspline_zd;
       }
       else
