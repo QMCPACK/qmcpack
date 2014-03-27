@@ -1903,13 +1903,16 @@ public:
       int         err;
       uint64_t    group_size, total_size;
       int64_t     handle;
-      string file_name = file_root+".trace.bp";
+      string file_name = file_root;
       char *fileName = (char*)file_name.c_str();
 
       //string s = boost::lexical_cast<std::string>(block);
       //file_name = file_name + ".b"+s+".trace.bp";
       if(ADIOS::getFirstOpen())
       {
+        if(!ADIOS::get_adios_init()){
+          APP_ABORT("adios is not properly initialized, check adiosinit in XML");
+        }
         adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "w", comm);
         ADIOS::setFirstOpen(false);
       } 
