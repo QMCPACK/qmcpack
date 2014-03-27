@@ -7,6 +7,7 @@ from unit_converter import convert
 from structure import Structure
 from debug import *
 
+
 class Matter(DevBase):
     particle_collection = None
 
@@ -505,6 +506,17 @@ class PhysicalSystem(Matter):
             )
         return folded_system
     #end def folded_representation
+
+
+    def large_Zeff_elem(self,Zmin):
+        elem = []
+        for atom,Zeff in self.valency.iteritems():
+            if Zeff>Zmin:
+                elem.append(atom)
+            #end if
+        #end for
+        return elem
+    #end def large_Zeff_elem
 #end class PhysicalSystem
 
 

@@ -404,6 +404,13 @@ class Structure(Sobj):
     #end def center_molecule
 
 
+    def center_solid(self):
+        u = self.pos_unit()
+        du = (1-u.min(0)-u.max(0))/2
+        self.slide(dot(du,self.axes),recenter=False)
+    #end def center_solid
+
+
     def permute(self,permutation):
         dim = self.dim
         P = empty((dim,dim),dtype=int)

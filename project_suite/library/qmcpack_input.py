@@ -1409,7 +1409,7 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation']
     elements    = ['sposet']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
 #end class bspline_builder
@@ -1444,7 +1444,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation']
     elements   = ['basisset','slaterdeterminant']
     h5tags     = ['twistindex','twistangle']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
