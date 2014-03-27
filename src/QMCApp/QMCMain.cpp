@@ -278,7 +278,7 @@ bool QMCMain::validateXML()
   {
     app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << endl;
   }
-  else
+  else{
   
     xmlAttr* curr = io[0]->properties;
     char* value = NULL;
