@@ -176,36 +176,48 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
     int tableindex=thisSPOSet->myTableIndex=mybuilder->myTableIndex;
     const ParticleSet& ions=mybuilder->TargetPtcl.DistTables[tableindex]->origin();
     int ncenters=ions.getTotalNum()/(static_cast<int>(round(ions.Lattice.Volume/ions.PrimitiveLattice.Volume)));
-
-    //compute the table size
     size_t loc_data_size=0;
     {
+      const double onethird=1.0/3.0;
+      double rc=ions.PrimitiveLattice.SimulationCellRadius;
+      double pixels=static_cast<double>(MeshSize[0])*static_cast<double>(MeshSize[1])*static_cast<double>(MeshSize[2]);
+      double rc_pixel=rc/std::pow(pixels,onethird);
+      double n2=Rcut*0.5/rc_pixel;
+
       typedef QMCTraits::PosType pos_type;
-      pos_type delta(Rcut,Rcut,Rcut);
+      pos_type delta(n2/static_cast<double>(MeshSize[0]),n2/static_cast<double>(MeshSize[1]),n2/static_cast<double>(MeshSize[2]));
+
+      app_log() << "  Estimated SubDomain " << 2.0*delta << endl;
       TinyVector<double,3> lower(0.0);
       TinyVector<double,3> upper(1.0);
-      thisSPOSet->resizeSubDomains(ncenters);
+
+      //prepare to add sub domains
+      thisSPOSet->resizeSubDomains(ions.getTotalNum(),ncenters);
+      std::copy(ions.PCID.begin(),ions.PCID.end(),thisSPOSet->PCID.begin());
+
       vector<int> boxes(ncenters,-1); 
-      int i=0,npc=0;
-      while(npc<ncenters)
+      char s[1024];
+      for(int i=0; i<ions.getTotalNum(); ++i)
       {
         int pcid=ions.PCID[i];
         if(boxes[pcid]<0)
         {
-          check_twists(thisSPOSet->Localized[pcid],bandgroup);
-          lower=ions.PrimitiveLattice.toUnit(ions.R[i]-delta);
-          upper=ions.PrimitiveLattice.toUnit(ions.R[i]+delta);
-          if(einspline::outOfBound(lower) || einspline::outOfBound(upper))
+          pos_type u=ions.PrimitiveLattice.toUnit(ions.R[i]);
+          lower=u-delta;
+          upper=u+delta;
+          sprintf(s,"SubDomain %4d at %10.5e %10.5e %10.5e\n  Bounds = [%10.5e,%10.5e) x [%10.5e,%10.5e) x [%10.5e,%10.5e) \n",
+              pcid,u[0],u[1],u[2],lower[0],upper[0],lower[1],upper[1],lower[2],upper[2]);
+          if(einspline::outOfBound(lower) || einspline::outOfBound(upper) || !einspline::validRange(lower,upper))
           {
-            app_error() << "Out of bound of the subdomain centered at " << pcid << " atom  " << ions.R[i] << endl;
-            APP_ABORT("  Place the atoms so that the subdomain is within [0,1)^3 of the supercell ");
+            APP_ABORT("  Choose right-handed cell and place the atoms so that the subdomain is within [0,1)^3 of the supercell ");
           }
+          app_log()<< s;
           loc_data_size+=thisSPOSet->setSubDomain(pcid,spline_r[LOCALIZED],lower,upper);
-          boxes[i]=pcid;
-          npc++;
-        } 
-        i++;
+          check_twists(thisSPOSet->Localized[pcid],bandgroup);
+          boxes[pcid]=pcid;
+        }
       }
+      app_log().flush();
     }
 
     {
@@ -216,6 +228,8 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
         << "\n  Saving factor= " << static_cast<double>(org_data_size)/static_cast<double>(thisSPOSet->sizeOfExtended()+loc_data_size)
         << endl;
     }
+
+    //APP_ABORT("DONE");
 
     /** every MPI node does this: to be parallelized */
     {

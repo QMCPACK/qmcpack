@@ -52,23 +52,22 @@ namespace qmcplusplus
       clone->Extended=new bspline_type(*Extended);
       for(int i=0; i<Localized.size(); ++i)
       {
-        clone->Localized[i]=new bspline_type(*Localized[i]);
+        if(Localized[i])
+          clone->Localized[i]=new bspline_type(*Localized[i]);
       }
       return clone;
     }
 
     /** create subdomains
-     *
-     * Localized orbitals and corresponding GridConvert object
-     * PCID is initialized as PCID[i]=i, to be overwritten with the tiling
+     * @param ntot number of ions
+     * @param n number of ions in a primitive cell
      */
-    void resizeSubDomains(int n)
+    void resizeSubDomains(int ntot, int n)
     {
-      Localized.resize(n);
+      Localized.resize(std::max(4,n),0);
       for(int i=0; i< n; ++i) Localized[i]=new bspline_type;
       gTransform.resize(n);
-      PCID.resize(n);
-      for(int i=0; i<n; ++i) PCID[i]=i;
+      PCID.resize(ntot);
     }
 
     /** allocate a subdomain and its GridConver
@@ -83,6 +82,12 @@ namespace qmcplusplus
       {
         gTransform[ic].create(Localized[ic]->MultiSpline,dense,lower,upper
             ,Extended->MultiSpline->num_splines);
+
+        char s[1024];
+        sprintf(s," Offset = %d %d %d Ngrid = %d %d %d",
+            gTransform[ic].Offset[0],gTransform[ic].Offset[1],gTransform[ic].Offset[2],
+            gTransform[ic].N[0],     gTransform[ic].N[1],     gTransform[ic].N[2]);
+        app_log() << "setSubDomain " << s << endl;
         return sizeof(DataType)*(Localized[ic]->MultiSpline->coefs_size);
       }
 
