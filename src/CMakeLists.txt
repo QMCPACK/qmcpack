@@ -32,11 +32,13 @@ else()
     io/hdf_archive.cpp
     )
 
-  IF(HAVE_ADIOS)
+  IF(QMC_ADIOS)
     SET(UTILITIES ${UTILITIES}
       ADIOS/ADIOS_verify.cpp
+      ADIOS/ADIOS_config.h
+      ADIOS/ADIOS_config.cpp
       )
-  ENDIF(HAVE_ADIOS)
+  ENDIF(QMC_ADIOS)
 
   IF(QMC_CUDA)
     SET(UTILITIES ${UTILITIES} 
