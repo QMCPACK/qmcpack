@@ -207,11 +207,11 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
           upper=u+delta;
           sprintf(s,"SubDomain %4d at %10.5e %10.5e %10.5e\n  Bounds = [%10.5e,%10.5e) x [%10.5e,%10.5e) x [%10.5e,%10.5e) \n",
               pcid,u[0],u[1],u[2],lower[0],upper[0],lower[1],upper[1],lower[2],upper[2]);
+          app_log()<< s;
           if(einspline::outOfBound(lower) || einspline::outOfBound(upper) || !einspline::validRange(lower,upper))
           {
             APP_ABORT("  Choose right-handed cell and place the atoms so that the subdomain is within [0,1)^3 of the supercell ");
           }
-          app_log()<< s;
           loc_data_size+=thisSPOSet->setSubDomain(pcid,spline_r[LOCALIZED],lower,upper);
           check_twists(thisSPOSet->Localized[pcid],bandgroup);
           boxes[pcid]=pcid;
