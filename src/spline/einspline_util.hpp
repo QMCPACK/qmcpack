@@ -221,6 +221,14 @@ namespace qmcplusplus
         for(int i=0; i<a.size(); ++i) if(a[i]<0.0 || a[i] >=1.0) return true;
         return false;
       }
+
+    template<typename IV>
+      bool validRange(const IV& low, const IV& up)
+      {
+        bool ok=low[0]<up[0];
+        for(int i=1; i<low.size(); ++i) ok &= (low[i]<up[i]);
+        return ok;
+      }
   }
 
 }
