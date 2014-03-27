@@ -41,6 +41,10 @@ using namespace std;
 #include "qmc_common.h"
 #ifdef HAVE_ADIOS
 #include "ADIOS/ADIOS_config.h"
+#include <adios_read.h>
+extern "C" {
+#include <adios_error.h>
+}
 #endif
 
 namespace qmcplusplus
@@ -247,7 +251,7 @@ bool QMCMain::validateXML()
   OhmmsXPathObject ai("//adiosinit",m_context);
   if(ai.empty())
   {
-    APP_ABORT("adiosinit is not defined in the xml file. Exiting");
+    app_warning()<<"adiosinit is not defined"<<endl;
   }
   else
   {
@@ -257,13 +261,14 @@ bool QMCMain::validateXML()
     {
       if (adios_init(value, myComm->getMPI()))
       {
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        //fprintf(stderr, "Error: %s %s\n", value, adios_get_last_errmsg());
         APP_ABORT("ADIOS init error. Exiting");
       }
       else
       {
         if (OHMMS::Controller->rank() == 0)
           cout << "Adios is initialized" << endl;
+        ADIOS::set_adios_init(true);
       }
       adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
     }
@@ -271,7 +276,7 @@ bool QMCMain::validateXML()
   OhmmsXPathObject io("//checkpoint",m_context);
   if(io.empty())
   {
-    app_warning() << "IO is not defined, nothing will be written out." << endl;
+    app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << endl;
   }
   else
   
