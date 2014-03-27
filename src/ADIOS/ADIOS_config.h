@@ -7,6 +7,9 @@
 #ifdef HAVE_ADIOS
 #include "Utilities/RandomGenerator.h"
 #include <adios_read.h>
+extern "C" {
+#include <adios_error.h>
+}
 
 namespace ADIOS
 {
@@ -19,6 +22,9 @@ const std::string& get_adios_xml();
 
 static string adiosname;
 static ADIOS_FILE * openfp;
+
+void set_adios_init(bool b);
+bool get_adios_init();
 
 bool getRdADIOS();
 bool getRdHDF5();
