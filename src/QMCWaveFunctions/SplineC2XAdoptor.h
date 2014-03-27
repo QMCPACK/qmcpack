@@ -313,12 +313,6 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
-    mKK.resize(kPoints.size());
-    for(int i=0; i<kPoints.size(); ++i)
-      mKK[i]=-dot(kPoints[i],kPoints[i]);
-    KK.resize(kPoints.size());
-    for(int i=0; i<kPoints.size(); ++i)
-      KK[i]=outerProduct(kPoints[i],kPoints[i]);
     MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
     for(int i=0; i<D; ++i)
     {
@@ -328,14 +322,26 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
     qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
 
+  inline void resize_kk()
+  {
+    mKK.resize(kPoints.size());
+    for(int i=0; i<kPoints.size(); ++i)
+      mKK[i]=-dot(kPoints[i],kPoints[i]);
+    KK.resize(kPoints.size());
+    for(int i=0; i<kPoints.size(); ++i)
+      KK[i]=outerProduct(kPoints[i],kPoints[i]);
+  }
+
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
+    if(mKK.empty()) resize_kk();
     einspline::set(MultiSpline, 2*ispline, psi_r);
     einspline::set(MultiSpline, 2*ispline+1, psi_i);
   }
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
+    if(mKK.empty()) resize_kk();
     einspline::set(MultiSpline, 2*ispline,spline_r, BaseOffset, BaseN);
     einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
   }
@@ -343,6 +349,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
       int twist, int ispline, const int* offset_l, const int* mesh_l)
   {
+    if(mKK.empty()) resize_kk();
     einspline::set(MultiSpline, 2*ispline,  spline_r, offset_l, mesh_l);
     einspline::set(MultiSpline, 2*ispline+1,spline_i, offset_l, mesh_l);
   }
