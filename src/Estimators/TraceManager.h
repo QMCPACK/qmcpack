@@ -1880,7 +1880,7 @@ public:
         int rows = tm.int_buffer.buffer.size(0);
         for(int j=0; j<rows; j++){
           for(int k=0; k<int_cols; k++){
-            int_buffer[rows*int_cols+k] = tm.int_buffer.buffer(j*int_cols+k);
+            int_buffer[row_count*int_cols+k] = tm.int_buffer.buffer(j*int_cols+k);
           }
           row_count++;
         }
@@ -1893,7 +1893,7 @@ public:
         int rows = tm.real_buffer.buffer.size(0);
         for(int j=0; j<rows; j++){
           for(int k=0; k<real_cols; k++){
-            real_buffer[rows*real_cols+k] = tm.real_buffer.buffer(j*real_cols+k);
+            real_buffer[row_count*real_cols+k] = tm.real_buffer.buffer(j*real_cols+k);
           }
           row_count++;
         }
