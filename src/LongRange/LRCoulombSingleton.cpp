@@ -219,7 +219,7 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
 LRCoulombSingleton::LRHandlerType*
 LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
-  APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
+  //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if(CoulombDerivHandler==0)
   {
     app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << endl;

@@ -28,8 +28,8 @@
 namespace qmcplusplus
 {
 
-StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0):
-  ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0)
+StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0, bool firsttime):
+  ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0), first_time(firsttime)
 {
   ReportEngine PRE("StressPBC","StressPBC");
   myName = "StressPBC";
@@ -38,12 +38,13 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   Rcut = 0.4;
   m_exp = 2;
   N_basis = 4;
-  forces = 0.0;
-  forces_ShortRange.resize(Nnuc);
-  forces_ShortRange = 0.0;
-  forces_IonIon=0.0;
+ // forces = 0.0;
+ // forces_ShortRange.resize(Nnuc);
+ // forces_ShortRange = 0.0;
+ // forces_IonIon=0.0;
   
   //This sets up the long range breakups. 
+  
   kcdifferent=false;
   myTableIndex=elns.addTable(PtclA);
   initBreakup(PtclTarg);
@@ -51,6 +52,12 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   targetconsts=0.0;
   stress_eI_const=0.0;
   stress_ee_const=0.0;
+  
+  if (firsttime==true)
+  { 
+	  CalculateIonIonStress();
+      firsttime=false;
+  }
 
  // app_log()<<"Ion sr = "<<evaluateSR_AA(PtclA)<<endl;
  // app_log()<<"\nIon lr = "<<evaluateLR_AA(PtclA)<<endl;
@@ -58,14 +65,13 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
  // app_log()<<"\n e-e const = "<<evalConsts_AA(PtclTarg)<<endl;
 //  app_log()<<"\n e-I const = "<<evalConsts_AB()<<endl<<endl;
 //  evaluateSR_AA();
-  stress_IonIon=evaluateSR_AA(PtclA)+evaluateLR_AA(PtclA)+evalConsts_AA(PtclA); //+ evaluateLR_AA(PtclA);
-  stress_eI_const+=evalConsts_AB();
-  stress_ee_const+=evalConsts_AA(PtclTarg);
-	//	evalConsts_AB();
-  //app_log()<<"\n e-e+I total constant = "<<targetconsts<<endl<<endl;
   
-  app_log()<<"\nion-ion stress = "<<stress_IonIon;
-  app_log()<<"\n eI_const = "<<stress_eI_const<<endl;
+//  stress_IonIon=evaluateSR_AA(PtclA)+evaluateLR_AA(PtclA)+evalConsts_AA(PtclA); //+ evaluateLR_AA(PtclA);
+//  stress_eI_const+=evalConsts_AB();
+ // stress_ee_const+=evalConsts_AA(PtclTarg);
+  
+ // app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<<endl;
+ // app_log()<<"\n eI_const = "<<stress_eI_const<<endl;
   //app_log()<< "IonIon Force" <<endl;
  // app_log()<<forces_IonIon<<endl; 
  // app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
@@ -342,7 +348,7 @@ StressPBC::evalConsts_AA(ParticleSet& P)
 //  V_const = 0.0;
   //v_l(r=0) including correction due to the non-periodic direction
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();
-  app_log()<<"   PBCAA vl_r0 = "<<vl_r0<<endl;
+  //app_log()<<"   PBCAA vl_r0 = "<<vl_r0<<endl;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
   //  v1 =  -.5*Zat[ipart]*Zat[ipart]*vl_r0;
@@ -350,7 +356,7 @@ StressPBC::evalConsts_AA(ParticleSet& P)
     tmpconsts += -.5*P.Z[ipart]*P.Z[ipart]*vl_r0;
   }
  // if(report)
-    app_log() << "   PBCAA self-interaction term " << tmpconsts << endl;
+    app_log() << "   PBCAA self-interaction term \n" << tmpconsts << endl;
   //Compute Madelung constant: this is not correct for general cases
   SymTensor<RealType, OHMMS_DIM> MC0 = 0;
   for(int ks=0; ks<AA->Fk.size(); ks++)
@@ -368,7 +374,7 @@ StressPBC::evalConsts_AA(ParticleSet& P)
     tmpconsts += v1*vs_k0;
   }
  // if(report)
-    app_log() << "   PBCAA total constant " << tmpconsts << endl;
+    app_log() << "   PBCAA total constant \n" << tmpconsts << endl;
   //app_log() << "   MC0 of PBCAA " << MC0 << endl;
   return tmpconsts;
 }
@@ -463,7 +469,13 @@ bool StressPBC::put(xmlNodePtr cur)
 
 QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new StressPBC(*this);
+  StressPBC* tmp = new StressPBC(PtclA, qp, psi, false);
+  tmp->targetconsts=targetconsts;
+  tmp->stress_IonIon=stress_IonIon;
+  tmp->stress_ee_const=stress_ee_const;
+  tmp->stress_eI_const=stress_eI_const;
+  
+  return tmp;
 }
 }
 

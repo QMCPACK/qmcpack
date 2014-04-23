@@ -103,6 +103,13 @@ public:
     fillYk(ref.SK->KLists);
     fillYkg(ref.SK->KLists);
     filldFk_dk(ref.SK->KLists);
+    aGrid = new GridType(*(aLR.aGrid));
+    rV_energy = new RadFunctorType(*(aLR.rV_energy));
+    rV_force = new RadFunctorType(*(aLR.rV_force));
+    drV_force = new RadFunctorType(*(aLR.drV_force));
+    rV_stress = new RadFunctorType(*(aLR.rV_stress));
+    drV_stress = new RadFunctorType(*(aLR.drV_stress));  
+    
 
   }
 

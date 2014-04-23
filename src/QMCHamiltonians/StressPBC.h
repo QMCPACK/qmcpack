@@ -95,10 +95,21 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
   vector<RadFunctorType*> Vspec;
+  
+  ///On initialization, signals computation of constant stress from ion.  
+  ///For cloning, forces copying of existing stress tensors.  
+  bool first_time;
 
   ParticleSet::ParticlePos_t forces_ShortRange;
+  //Constructor
+  StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi, bool firsttime=true);
+  //"Copy" constructor
+ // StressPBC(const StressPBC& aST, ParticleSet& p, TrialWaveFunction& Psi):
+//	StressPBC(aST), ForceBase(aST.PtclA, p), PtclTarg(p), Psi(Psi0)
+ // {
+ // }
 
-  StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi);
+
 
   Return_t evaluate(ParticleSet& P);
 
@@ -146,14 +157,23 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   {
     setParticleSetStress(plist, offset);
   }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi){ return makeStressClone(qp, psi)};
-  StressPBC* makeStressClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+//  StressPBC* makeStressClone(ParticleSet& qp, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur) ;
 
   bool get(std::ostream& os) const
   {
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;
+  }
+  
+  void CalculateIonIonStress()
+  {
+     stress_IonIon=evaluateSR_AA(PtclA)+evaluateLR_AA(PtclA)+evalConsts_AA(PtclA); //+ evaluateLR_AA(PtclA);
+     stress_eI_const+=evalConsts_AB();
+     stress_ee_const+=evalConsts_AA(PtclTarg);
+  
+     app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<<endl;  
   }
 
 };
