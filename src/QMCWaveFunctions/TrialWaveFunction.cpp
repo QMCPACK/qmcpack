@@ -334,7 +334,7 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
   vector<OrbitalBase*>::iterator it(Z.begin());
   vector<OrbitalBase*>::iterator it_end(Z.end());
   
-  grad_grad_psi=0.0;
+  grad_grad_psi.resize(P.getTotalNum());
   
   for (int i=0; i<Z.size(); i++)
   {	
@@ -342,10 +342,10 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
 	  tmp_hess=0.0;
 	  Z[i]->evaluateHessian(P, tmp_hess);
 	  grad_grad_psi+=tmp_hess;
-	  app_log()<<"TrialWavefunction::tmp_hess = "<<tmp_hess<<endl;
-	  app_log()<<endl<<endl;
+	//  app_log()<<"TrialWavefunction::tmp_hess = "<<tmp_hess<<endl;
+	//  app_log()<<endl<<endl;
   }
-  app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<<endl;
+ // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<<endl;
 }
 
 

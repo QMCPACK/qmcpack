@@ -403,7 +403,7 @@ void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_gr
     grad_phi_Minv = 0.0;
     lapl_phi_Minv = 0.0;
     grad_phi_alpha_Minv = 0.0;
-    grad_grad_psi=0;
+    //grad_grad_psi.resize(NumPtcls);
 
 	InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
    // InverseTimer.stop();
@@ -434,9 +434,9 @@ void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_gr
  //     }
      // G(iat) += rv;
      // L(iat) += lap - dot(rv,rv);
-      app_log()<<"rv = "<<rv<<endl;
-      app_log()<<"outer = "<<outerProduct(rv,rv)<<endl;
-      app_log()<<"hess_tmp = "<<hess_tmp<<endl;
+  //    app_log()<<"rv = "<<rv<<endl;
+   //   app_log()<<"outer = "<<outerProduct(rv,rv)<<endl;
+   //   app_log()<<"hess_tmp = "<<hess_tmp<<endl;
       grad_grad_psi[iat]=hess_tmp-outerProduct(rv,rv);
     }
 	 psiM_temp = psiM;

@@ -138,10 +138,10 @@ void StressPBC::initBreakup(ParticleSet& P)
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
   //AB = LRCoulombSingleton::getHandler(*PtclB);
-  AB = LRCoulombSingleton::getDerivHandler(P);
+ // AB = LRCoulombSingleton::getDerivHandler(P);
   AA = LRCoulombSingleton::getDerivHandler(P);
   //myConst=evalConsts();
-  myRcut=AB->get_rc();//Basis.get_rc();
+  myRcut=AA->get_rc();//Basis.get_rc();
 }
 
 
@@ -163,10 +163,10 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& P
       for(int j=0; j<NumSpeciesB; j++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
-        esum += Qspec[j]*AB->evaluateStress(RhoKA.KLists.kshell
+        esum += Qspec[j]*AA->evaluateStress(RhoKA.KLists.kshell
                                       , RhoKA.rhok_r[i],RhoKA.rhok_i[i] , RhoKB.rhok_r[j],RhoKB.rhok_i[j]);
 #else
-        esum += Qspec[j]*AB->evaluateStress(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
+        esum += Qspec[j]*AA->evaluateStress(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
 
 #endif
       } //speceln
@@ -191,7 +191,7 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& P
     for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
     {
       // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
-      esum += Qat[jat]*AB->evaluateSR_dstrain(d_ab.dr(nn), d_ab.r(nn));
+      esum += Qat[jat]*AA->evaluateSR_dstrain(d_ab.dr(nn), d_ab.r(nn));
     }
     //Accumulate pair sums...species charge for atom i.
     res += Zat[iat]*esum;
@@ -291,7 +291,7 @@ StressPBC::evalConsts_AB()
   int nions = PtclA.getTotalNum();
 
   SymTensor<RealType, OHMMS_DIM> Consts=0.0;
-  SymTensor<RealType, OHMMS_DIM> vs_k0 = AB->evaluateSR_k0_dstrain();
+  SymTensor<RealType, OHMMS_DIM> vs_k0 = AA->evaluateSR_k0_dstrain();
   RealType v1; //single particle energy
   for(int i=0; i<nelns; ++i)
   {

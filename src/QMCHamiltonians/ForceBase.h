@@ -37,6 +37,10 @@ struct ForceBase
   ParticleSet& Ions;
   ParticleSet::ParticlePos_t forces;
   ParticleSet::ParticlePos_t forces_IonIon;
+  SymTensor<real_type,OHMMS_DIM> stress_IonIon;
+  SymTensor<real_type,OHMMS_DIM> stress_ee;
+  SymTensor<real_type,OHMMS_DIM> stress;
+  
   string prefix;
   string pairName;
 
@@ -69,9 +73,13 @@ struct ForceBase
   virtual ~ForceBase() {}
 
   void registerObservablesF(vector<observable_helper*>& h5list, hid_t gid) const;
+
   void addObservablesF(QMCTraits::PropertySetType& plist);
+  void addObservablesStress(QMCTraits::PropertySetType& plist);
   void setObservablesF(QMCTraits::PropertySetType& plist);
+  void setObservablesStress(QMCTraits::PropertySetType& plist);
   void setParticleSetF(QMCTraits::PropertySetType& plist, int offset);
+  void setParticleSetStress(QMCTraits::PropertySetType& plist, int offset);
 };
 
 struct BareForce: public QMCHamiltonianBase, public ForceBase

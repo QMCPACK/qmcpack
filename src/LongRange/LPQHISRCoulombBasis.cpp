@@ -72,59 +72,16 @@ LPQHISRCoulombBasis::hintr2(int n)
 {
   int j=n/3;
   int alpha = n-3*j;
-  RealType deltap3 = delta*delta*delta;
-  RealType min1toalpha=1.0;
-  bool alphaeven=true;
-  //Constants above correct for alpha==0
-  if(alpha == 1)
+  RealType deltaa2 = std::pow(delta, alpha+2.0);
+  int mysign=1-2*(alpha%2);
+  RealType sum=0.0; 
+  
+  for (int i=0; i<=5; i++)
   {
-    min1toalpha = -1.0;
-    alphaeven = false;
+     if ( j<NumKnots-1 ) sum+=S(alpha,i)*deltaa2*(1.0/RealType(i+2)+RealType(j)/RealType(i+1));
+     if ( j>0 ) sum+=mysign*S(alpha,i)*deltaa2*(-1.0/RealType(i+2)+RealType(j)/RealType(i+1));
   }
-  RealType sum=0.0;
-  if(j==0)
-  {
-    for(int i=0; i<=5; i++)
-      sum += S(alpha,i)/(i+3);
-    sum *= deltap3;
-  }
-  else
-    if(j==(NumKnots-1))
-    {
-      RealType prod1 = 1.0/3.0;
-      RealType prod2 = -j;
-      RealType prod3 = j*j;
-      for(int i=0; i<=5; i++)
-      {
-        sum += S(alpha,i)*(prod1+prod2+prod3);
-        prod1 *= (i+3.0)/(i+4.0);
-        prod2 *= (i+2.0)/(i+3.0);
-        prod3 *= (i+1.0)/(i+2.0);
-      }
-      sum *= deltap3*min1toalpha;
-    }
-    else
-      // expression for 0<j<M
-    {
-      if(alphaeven)
-      {
-        RealType prod1 = 1.0/3.0;
-        RealType prod2 = j*j;
-        for(int i=0; i<=5; i++)
-        {
-          sum += S(alpha,i)*(prod1+prod2);
-          prod1 *= (i+3.0)/(i+4.0); //Prepare for next cycle.
-          prod2 *= (i+1.0)/(i+2.0); //Prepare for next cycle.
-        }
-        sum *= 2.*deltap3;
-      }
-      else
-      {
-        for(int i=0; i<=5; i++)
-          sum += S(alpha,i)/(i+2.0);
-        sum *= deltap3*4.*j;
-      }
-    }
+
   return(sum);
 }
 
@@ -223,5 +180,105 @@ LPQHISRCoulombBasis::Dminus(int i, RealType k, int n)
   complex<RealType> Z1 = Eminus(i,k,n);
   return -4.0*M_PI/(k*Lattice.Volume)*(Z1.imag());
 }
+
+LPQHISRCoulombBasis::RealType
+LPQHISRCoulombBasis::dc_dk(int m, RealType k)
+{
+  int i=m/3;
+  int alpha = m-3*i;
+  RealType sum = 0.0;
+  if (i == 0)
+  {
+    for (int n=0; n<=5; n++)
+    {
+      RealType sign = ((alpha+n)&1) ? -1.0 : 1.0;
+      sum += S(alpha, n) * (Dplus_dG(i,k,n));
+
+    }
+  }
+  else
+    if (i == (NumKnots-1))
+    {
+      for (int n=0; n<=5; n++)
+      {
+        RealType sign = ((alpha+n)&1) ? -1.0 : 1.0;
+        sum += S(alpha, n) * (Dminus_dG(i,k,n)*sign);
+       
+      }
+    }
+    else
+    {
+      for (int n=0; n<=5; n++)
+      {
+        RealType sign = ((alpha+n)&1) ? -1.0 : 1.0;
+        sum += S(alpha, n) * (Dplus_dG(i,k,n) + Dminus_dG(i,k,n)*sign);
+
+      }
+    }
+  return std::pow(delta, alpha)*(sum);
+}
+
+inline complex<LPQHISRCoulombBasis::RealType>
+LPQHISRCoulombBasis::Eplus_dG(int i, RealType k, int n)
+{
+  complex<RealType> eye(0.0, 1.0);
+  RealType ri = i*delta;
+  RealType kinv=1/RealType(k);
+  complex<RealType> eigd(cos(k*delta), sin(k*delta));
+  complex<RealType> eigr(cos(k*ri),    sin(k*ri));
+  
+  if (n == 0)
+  {
+
+    return Eplus(i,k,n)*(eye*ri - kinv) + delta*kinv*eigr*eigd;
+  }
+  else
+  {
+    return -kinv*Eplus(i,k,n) - eye*kinv*(eye*(ri+delta)*eigd*eigr - (n/RealType(delta))*Eplus_dG(i,k,n-1));
+  }
+}
+
+inline complex<LPQHISRCoulombBasis::RealType>
+LPQHISRCoulombBasis::Eminus_dG(int i, RealType k, int n)
+{
+  complex<RealType> eye(0.0, 1.0);
+  RealType ri = i*delta;
+  RealType kinv=1.0/RealType(k);
+  complex<RealType> eigd(cos(k*delta), -sin(k*delta));
+  complex<RealType> eigr(cos(k*ri),    sin(k*ri));
+
+  if (n == 0)
+  {
+    complex<RealType> eigd(cos(k*delta), -sin(k*delta));
+    complex<RealType> eigr(cos(k*ri),    sin(k*ri));
+    return Eminus(i,k,n)*(eye*ri - kinv) - delta*kinv*eigr*eigd;
+  }
+  else
+  {
+    return -kinv*Eminus(i,k,n) - eye*kinv*(RealType(pow(-1.0,n))*eye*(ri-delta)*eigd*eigr - (n/RealType(delta))*Eminus_dG(i,k,n-1));
+  }
+}
+
+
+inline LPQHISRCoulombBasis::RealType
+LPQHISRCoulombBasis::Dplus_dG(int i, RealType k, int n)
+{
+  complex<RealType> eye(0.0, 1.0);
+  RealType kinv=1.0/RealType(k);
+  complex<RealType> Z1 = Eplus_dG(i,k,n);
+
+  return 4.0*M_PI/(k*Lattice.Volume)*Z1.imag()- kinv*Dplus(i,k,n);
+}
+
+
+inline LPQHISRCoulombBasis::RealType
+LPQHISRCoulombBasis::Dminus_dG(int i, RealType k, int n)
+{
+  RealType kinv=1.0/RealType(k);
+  complex<RealType> eye(0.0, 1.0);
+  complex<RealType> Z1 = Eminus_dG(i,k,n);
+  return -4.0*M_PI/(k*Lattice.Volume)*Z1.imag()- kinv*Dminus(i,k,n);
+}
+
 }
 

@@ -190,12 +190,16 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
 
 void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
-	grad_grad_psi=0;
-	HessVector_t tmp(grad_grad_psi);
+	grad_grad_psi.resize(P.getTotalNum());
+	HessVector_t tmp;
+	tmp.resize(P.getTotalNum());
 	for (int i = 0; i < Dets.size(); ++i)
     {
 	  tmp=0;
       Dets[i]->evaluateHessian(P, tmp);
+    //  app_log()<<"squee ----- "<<i<<endl;
+    //  app_log()<<"grad_grad_psi = "<<grad_grad_psi<<endl;
+    //  app_log()<<"tmp = "<<tmp<<endl<<endl;
       grad_grad_psi += tmp;
 
     }

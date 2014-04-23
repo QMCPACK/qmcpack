@@ -91,6 +91,13 @@ public:
   int addAttribute(const std::string& aname);
 
   /**
+   * @param aname Unique name of the species to be looked up.
+   * @return the index of the species
+   * @brief When a name species does not exist, return attribute.size()
+   */
+  int getAttribute(const std::string& aname);
+
+  /**
    * @param i attribute index
    * @param j species index
    * @return the value of i-th attribute for the j-th species

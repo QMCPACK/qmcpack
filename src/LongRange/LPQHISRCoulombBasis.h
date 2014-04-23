@@ -28,8 +28,13 @@ private:
   //Helper functions for computing FT of basis functions (used in c(n,k))
   inline complex<RealType> Eplus(int i, RealType k, int n);
   inline complex<RealType> Eminus(int i, RealType k, int n);
+  inline complex<RealType> Eplus_dG(int i, RealType k, int n);
+  inline complex<RealType> Eminus_dG(int i, RealType k, int n);
   inline RealType Dplus(int i, RealType k, int n);
   inline RealType Dminus(int i, RealType k, int n);
+  inline RealType Dplus_dG(int i, RealType k, int n);
+  inline RealType Dminus_dG(int i, RealType k, int n);
+  
 
 public:
 
@@ -98,7 +103,8 @@ public:
       return std::pow(delta,alpha)*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
     }
   }
-  inline RealType df(int n, RealType r) const
+  
+  inline RealType dh_dr(int n, RealType r) const
   {
     int i=n/3;
     int alpha = n-3*i;
@@ -127,6 +133,16 @@ public:
 
     return rinv*(polyderiv-hval);
   }
+  
+  inline RealType dh_ddelta(int n, RealType r) const
+  {
+    int i=n/3;
+    int alpha = n-3*i;
+
+	return h(n,r)*alpha/double(delta) - dh_dr(n,r)*r/double(delta);
+  }
+  
+  
 //    inline TinyVector<RealType,3> getTriplet(int n, RealType r) const {
 //      typedef TinyVector<RealType,3> Return_t;
 //      int i=n/3;
@@ -156,6 +172,7 @@ public:
 
   RealType hintr2(int n);
   RealType c(int n, RealType k);
+  RealType dc_dk(int n, RealType k);
   //Constructor...fill S matrix...call correct base-class constructor
   LPQHISRCoulombBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {

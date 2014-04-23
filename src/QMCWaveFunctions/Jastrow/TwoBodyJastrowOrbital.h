@@ -279,12 +279,12 @@ public:
   
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
-	LogValue=0.0;
+    LogValue=0.0;
     const DistanceTableData* d_table=P.DistTables[0];
     RealType dudr, d2udr2;
     PosType gr;
 	
-	Tensor<RealType,OHMMS_DIM> ident;
+    Tensor<RealType,OHMMS_DIM> ident;
     grad_grad_psi=0.0;
     ident.diagonal(1.0);
     

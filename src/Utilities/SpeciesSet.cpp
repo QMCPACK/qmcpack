@@ -76,6 +76,16 @@ int SpeciesSet::addAttribute(const string& aname)
   return n;
 }
 
+int SpeciesSet::getAttribute(const string& aname)
+{
+  for (int i=0; i<attribName.size(); i++)
+  {
+	if (attribName[i]== aname)
+	  return i;  
+  }
+  return attribName.size();
+}
+
 SpeciesSet::SpeciesSet(const SpeciesSet& species):
   TotalNum(species.TotalNum),
   speciesName(species.speciesName),

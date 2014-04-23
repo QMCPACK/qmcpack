@@ -22,6 +22,10 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
+#include "QMCHamiltonians/StressPBC.h"
+//#include "QMCHamiltonians/StressPBCAA.h"
+//#include "QMCHamiltonians/StressPBCAB.h"
+//#include "QMCHamiltonians/StressKinetic.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
@@ -30,6 +34,7 @@
 
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
+
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
 #include "QMCHamiltonians/VHXC.h"
@@ -214,6 +219,8 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
   app_log() << "HamFac forceBase mode " << mode << endl;
   bool applyPBC= (PBCType && pbc=="yes");
   
+  bool quantum = (a==targetPtcl->getName());
+  
   renameProperty(a);
   PtclPoolType::iterator pit(ptclPool.find(a));
   if(pit == ptclPool.end())
@@ -274,6 +281,46 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
     targetH->addOperator
     (new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
   }
+  
+  else if(mode=="stress")
+  {
+	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+      if(psi_it == psiPool.end())
+      {
+       APP_ABORT("Unknown psi \""+PsiName+"\" for Stress tensor.");
+      }
+      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+      
+      StressPBC* stress_ham = new StressPBC(*source,*target, psi);
+      stress_ham->put(cur);
+      targetH->addOperator(stress_ham, title, false);
+ 	//  if(source==target)
+	//  {
+	//    StressPBCAA* stress_ham = new StressPBCAA(*source, quantum);
+    //    stress_ham->put(cur);
+    //    targetH->addOperator(stress_ham, title, false);
+    //  }
+    //  else
+    //  {
+	//	StressPBCAB* stress_ham = new StressPBCAB(*source, *target, quantum);
+    //    stress_ham->put(cur);
+    //    targetH->addOperator(stress_ham, title, false);       
+	//  } 
+  }
+  /*
+  else if(mode=="stresskin")
+  {
+	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+      if(psi_it == psiPool.end())
+      {
+       APP_ABORT("Unknown psi \""+PsiName+"\" for Stress tensor.");
+      }
+      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+	  
+		StressKinetic* stress_ham = new StressKinetic(*target, psi);
+        stress_ham->put(cur);
+        targetH->addOperator(stress_ham, title, false);
+  }*/
   else
   {
     ERRORMSG("Failed to recognize Force mode " << mode);

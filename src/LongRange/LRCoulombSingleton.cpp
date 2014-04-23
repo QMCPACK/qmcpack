@@ -219,21 +219,23 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
 LRCoulombSingleton::LRHandlerType*
 LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
-  if(CoulombDerivHandler ==0)
+  APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
+  if(CoulombDerivHandler==0)
   {
     app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << endl;
     CoulombDerivHandler= new LRHandlerSRCoulomb<CoulombFunctor<RealType>,LPQHISRCoulombBasis>(ref);
    // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<RealType>, LPQHIBasis> (ref);
     //CoulombDerivHandler= new EwaldHandler(ref);
-   // CoulombDerivHandler->initBreakup(ref);
+    CoulombDerivHandler->initBreakup(ref);
     //return CoulombDerivHandler;
-    
-    return CoulombHandler;
+
+    return CoulombDerivHandler;
   }
   else
   {
-    app_log() << "  Clone CoulombHandler. " << endl;
+    app_log() << "  Clone CoulombDerivHandler. " << endl;
     return CoulombDerivHandler->makeClone(ref);
+   // return CoulombDerivHandler;
   }
 }
 

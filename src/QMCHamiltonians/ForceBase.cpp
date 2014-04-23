@@ -59,6 +59,20 @@ void ForceBase::addObservablesF(QMCTraits::PropertySetType& plist)
   }
 }
 
+void ForceBase::addObservablesStress(QMCTraits::PropertySetType& plist)
+{
+  if(FirstForceIndex<0)
+	FirstForceIndex=plist.size();
+	
+	for(int i=0; i<OHMMS_DIM; i++)
+		for(int j=i; j<OHMMS_DIM; j++)
+		{
+		  ostringstream obsName;
+		  obsName <<prefix <<"_"<<i<<"_"<<j;
+		  plist.add(obsName.str());	
+		}
+}
+
 void ForceBase::registerObservablesF(vector<observable_helper*>& h5list
                                      , hid_t gid) const
 {
@@ -106,6 +120,22 @@ void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)
   }
 }
 
+void ForceBase::setObservablesStress(QMCTraits::PropertySetType& plist)
+{
+
+  int index = FirstForceIndex;
+  for(int iat=0; iat<OHMMS_DIM; iat++)
+  {
+    for(int jat=iat; jat<OHMMS_DIM; jat++)
+    {
+      plist[index] = stress(iat,jat);
+      index++;
+    }
+  }
+}
+
+
+
 void ForceBase::setParticleSetF(QMCTraits::PropertySetType& plist, int offset)
 {
   int index = FirstForceIndex + offset;
@@ -114,6 +144,19 @@ void ForceBase::setParticleSetF(QMCTraits::PropertySetType& plist, int offset)
     for(int x=0; x<OHMMS_DIM; x++)
     {
       plist[index] = forces[iat][x];
+      index++;
+    }
+  }
+}
+
+void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offset)
+{
+  int index = FirstForceIndex + offset;
+  for(int iat=0; iat<OHMMS_DIM; iat++)
+  {
+    for(int jat=iat; jat<OHMMS_DIM; jat++)
+    {
+      plist[index] = stress(iat,jat);
       index++;
     }
   }

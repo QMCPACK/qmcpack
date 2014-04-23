@@ -57,7 +57,7 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   ParticleSet& PtclTarg;
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* AB;
+//  LRHandlerType* AB;
   LRHandlerType* AA;
   ///locator of the distance table
   int myTableIndex;
@@ -146,8 +146,8 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   {
     setParticleSetStress(plist, offset);
   }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi){ return makeStressClone(qp, psi)};
+  StressPBC* makeStressClone(ParticleSet& qp, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur) ;
 
   bool get(std::ostream& os) const
