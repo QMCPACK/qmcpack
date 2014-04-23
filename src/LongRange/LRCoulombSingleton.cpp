@@ -60,14 +60,16 @@ struct CoulombFunctor
   {
     return -1.0/(r*r);
   }
-//  inline T df2(T r)
-//  {
-//    return 2.0/(r*r*r);
-//  }
+  inline T df2(T r)
+  {
+    return 2.0/(r*r*r);
+  }
   inline T Vk(T k)
   {
     return NormFactor/(k*k);
   }
+  
+  inline T Xk_dk(T k){ return 0.0;}
   inline T Fk(T k, T rc)
   {
     return NormFactor/(k*k)* std::cos(k*rc);
@@ -75,6 +77,20 @@ struct CoulombFunctor
   inline T Xk(T k, T rc)
   {
     return -NormFactor/(k*k)* std::cos(k*rc);
+  }
+  
+  inline T dVk_dk(T k)
+  {
+	  return -2*NormFactor/k/k/k;
+  }
+  inline T dFk_dk(T k, T rc)
+  {
+    return -NormFactor/k/k*(2.0/k*std::cos(k*rc)+rc*std::sin(k*rc));
+  }
+  
+  inline T dXk_dk(T k, T rc)
+  {
+    return NormFactor/k/k*(2.0/k*std::cos(k*rc)+rc*std::sin(k*rc));
   }
 
   inline T integrate_r2(T r) const
@@ -116,7 +132,9 @@ struct CoulombFunctor
   {
     return -NormFactor/k* std::cos(k*rc);
   }
-
+  
+  
+ 
   inline T integrate_r2(T r) const
   {
     return 0.5*r*r;
@@ -177,6 +195,8 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
     {
       app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
       CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
+    //  CoulombHandler = new LRHandlerSRCoulomb<CoulombFunctor<RealType>, LPQHISRCoulombBasis>(ref);
+      
     }
 //        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
 //        {
@@ -203,8 +223,12 @@ LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
   {
     app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << endl;
     CoulombDerivHandler= new LRHandlerSRCoulomb<CoulombFunctor<RealType>,LPQHISRCoulombBasis>(ref);
-    CoulombDerivHandler->initBreakup(ref);
-    return CoulombDerivHandler;
+   // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<RealType>, LPQHIBasis> (ref);
+    //CoulombDerivHandler= new EwaldHandler(ref);
+   // CoulombDerivHandler->initBreakup(ref);
+    //return CoulombDerivHandler;
+    
+    return CoulombHandler;
   }
   else
   {

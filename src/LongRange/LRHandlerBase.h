@@ -38,15 +38,22 @@ struct LRHandlerBase: public QMCTraits
   Vector<RealType> Fk;
   ///Fourier component of the LR part, fit to optimize the gradients.
   Vector<RealType> Fkg;
+  ///Fourier component of the LR part of strain tensor, by optimized breakup.  
+  vector< SymTensor<RealType, OHMMS_DIM> > dFk_dstrain;
+  ///Vector of df_k/dk, fit as to optimize strains.  
+  Vector<RealType> Fkgstrain;
   ///Fourier component for each k-shell
   Vector<RealType> Fk_symm;
-  ///Fourier component for each k-shell
-  Vector<RealType> Fk_symmg;
-  ///Coefficient
-  Vector<RealType> coefs;
-  ///Coefficient for gradient fit. 
-  Vector<RealType> gcoefs;
 
+  ///Fourier component for each k-shell
+  ///Coefficient
+  vector<RealType> coefs;
+  ///Coefficient for gradient fit. 
+  vector<RealType> gcoefs;
+  ///Coefficient for strain fit.
+  vector<RealType> gstraincoefs;
+
+  
   //constructor
   LRHandlerBase(RealType kc):LR_kc(kc) {}
   //return r cutoff
@@ -78,10 +85,6 @@ struct LRHandlerBase: public QMCTraits
         u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
       vk += Fk_symm[ks]*u;
     }
-    //for(int ki=0; ki<Fk.size(); ki++) {
-    //  //vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
-    //  vk += (rk1[ki].real()*rk2[ki].real()+rk1[ki].imag()*rk2[ki].imag())*Fk[ki];
-    //} //ki
     return vk;
   }
 
@@ -187,6 +190,27 @@ struct LRHandlerBase: public QMCTraits
     }
 #endif
   }
+  
+  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const vector<int>& kshell, const RealType *rhokA_r, const RealType *rhokA_i, const RealType *rhokB_r, const RealType *rhokB_i)
+  { 
+    SymTensor<RealType, OHMMS_DIM> stress;
+    for (int ki=0; ki<dFk_dstrain.size(); ki++)
+	{ 
+		stress += (rhokA_r[ki]*rhokB_r[ki] + rhokA_i[ki]*rhokB_i[ki]) * dFk_dstrain[ki];
+	}
+
+	return stress;
+  }  
+  
+  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const vector<int>& kshell, const ComplexType * rhokA, const ComplexType * rhokB)
+  { 
+    SymTensor<RealType, OHMMS_DIM> stress;
+    for (int ki=0; ki<dFk_dstrain.size(); ki++)
+    {
+      stress += (rhokA[ki].real()*rhokB[ki].real() + rhokA[ki].imag()*rhokB[ki].imag()) * dFk_dstrain[ki];
+    }
+    return stress;
+  }  
 
   /** evaluate \f$ v_{s}(k=0) = \frac{4\pi}{V}\int_0^{r_c} r^2 v_s(r) dr \f$
    */
@@ -200,6 +224,15 @@ struct LRHandlerBase: public QMCTraits
   {
     return 0.0;
   }
+  
+  ///These functions return the strain derivatives of all corresponding quantities
+  /// in total energy.  See documentation (forthcoming).  
+  virtual SymTensor<RealType, OHMMS_DIM> evaluateLR_r0_dstrain(){return 0;};
+  virtual SymTensor<RealType, OHMMS_DIM> evaluateSR_k0_dstrain(){return 0;};
+  virtual SymTensor<RealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<RealType, OHMMS_DIM> k, RealType kmag){return 0;};
+  virtual SymTensor<RealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<RealType, OHMMS_DIM> r, RealType rmag){return 0;};
+
+
 
   virtual void initBreakup(ParticleSet& ref)=0;
   virtual void Breakup(ParticleSet& ref, RealType rs_in)=0;
