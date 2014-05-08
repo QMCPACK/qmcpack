@@ -1498,8 +1498,9 @@ def simplestats(x,dim=None):
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
     mean   = x.mean(dim)
-    error  = x.var(dim)*osqrtN
-    return (mean,error)
+    var    = x.var(dim)
+    error  = var*osqrtN
+    return (mean,var,error,1.0)
 #end def simplestats
 
 
@@ -1642,6 +1643,8 @@ color_wheel = ColorWheel()
 class QBase(DevBase):
     options = obj()
 
+    autocorr = True
+
     quantity_abbreviations = obj(
         e   = 'LocalEnergy',    v  = 'Variance',       k    = 'Kinetic',
         p   = 'LocalPotential', ee = 'ElecElec',       ii   = 'IonIon',      
@@ -1765,7 +1768,11 @@ class DatAnalyzer(QBase):
 
 
     def stat_value(self,v):
-        (mean,var,error,kappa)=simstats(v)
+        if self.autocorr:
+            (mean,var,error,kappa)=simstats(v)
+        else:
+            (mean,var,error,kappa)=simplestats(v)
+        #end if
         sv = obj(
             mean            = mean,
             sample_variance = var,
@@ -1826,7 +1833,9 @@ class DatAnalyzer(QBase):
     def accumulate(self,other,weight):
         self.info.weight += weight
         for q,v in other.data.iteritems():
-            self.data[q] += weight*v
+            d = self.data[q]
+            minlen = min(len(d),len(v))
+            self.data[q] = d[0:minlen] + weight*v[0:minlen]
         #end for
         for q,v in other.stats.iteritems():
             s = self.stats[q]
@@ -2147,6 +2156,14 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Overlay plots (default=%default).'
                           )
+        parser.add_option('--legend',dest='legend',
+                          default='upper right',
+                          help='Placement of legend.  None for no legend, outside for outside legend (default=%default).'
+                          )
+        parser.add_option('--noautocorr',dest='noautocorr',
+                          action='store_true',default=False,
+                          help='Do not calculate autocorrelation. Warning: error bars are no longer valid! (default=%default).'
+                          )
         parser.add_option('-i','--image',dest='image',
                           action='store_true',default=False,
                           help='(pending) Save image files (default=%default).'
@@ -2189,6 +2206,9 @@ QMCA examples:
                 opt[optname]=False
             #end if
         #end for
+        if opt.noautocorr:
+            QBase.autocorr = False
+        #end if
         u = opt.units.lower()
         if not u in units:
             self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(sorted(units.keys())))
@@ -2204,7 +2224,9 @@ QMCA examples:
                 try:
                     ei = eval(opt.equilibration)
                     e = obj()
-                    if isinstance(ei,(list,tuple)):
+                    if isinstance(ei,int):
+                        e = ei
+                    elif isinstance(ei,(list,tuple)):
                         ei = array(ei,dtype=int)
                         for s in range(len(ei)):
                             e[s] = ei[s]
@@ -2220,7 +2242,7 @@ QMCA examples:
                 #end try
             #end try
             if equil_failed:
-                self.error('cannot process equilibration option\nvalue must be an integer, list, or dict\nyou provided: '+opt.equilibration)
+                self.error('cannot process equilibration option\nvalue must be an integer, list, or dict\nyou provided: '+str(opt.equilibration))
             #end if
         #end if
         if opt.average:
@@ -2426,7 +2448,8 @@ QMCA examples:
                             last_prefix  = np==len(self.data)-1
                             np+=1
                             if first_prefix or not opt.overlay:
-                                figure()                                
+                                fig = figure()
+                                ax = fig.add_subplot(111)
                                 xminp =  1e99
                                 xmaxp = -1e99
                                 yminp =  1e99
@@ -2509,7 +2532,13 @@ QMCA examples:
                                     ylabel('counts')
                                     title('Histogram of '+quantity)
                                 #end if
-                                legend()
+                                if opt.legend.lower()!='none':
+                                    if opt.legend=='upper right':
+                                        ax.legend(loc='upper right')
+                                    elif opt.legend=='outside':
+                                        ax.legend(loc=2,bbox_to_anchor=(1.0,1.0),borderaxespad=0.)
+                                    #end if
+                                #end if
                             #end if
                         #end for
                     #end if
