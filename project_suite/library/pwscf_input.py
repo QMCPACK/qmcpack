@@ -1255,7 +1255,7 @@ def generate_scf_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            PwscfInput.class_warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
         #if group_atoms:  # disabled, hopefully not needed for qmcpack
         #    structure.group_atoms()

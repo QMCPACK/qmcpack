@@ -366,6 +366,16 @@ class Job(Pobj):
         return walltime
     #end def pbs_walltime
 
+
+    def add_option(self,opt):
+        if self.options is None:
+            self.options = opt
+        elif isinstance(self.options,list):
+            self.options.append(opt)
+        else:
+            self.options += ' '+opt
+        #end if
+    #end def add_option
 #end class Job
 
 
@@ -1105,7 +1115,11 @@ class Supercomputer(Machine):
         pid = None
         lines = output.splitlines()
         for line in lines:
-            if '.' in line:
+            ls = line.strip()
+            if ls.isdigit():
+                pid = int(ls)
+                break
+            elif '.' in line:
                 spid = line.split('.')[0]
                 if spid.isdigit():
                     pid = int(spid)
@@ -1444,6 +1458,45 @@ cd $PBS_O_WORKDIR
 
 
 
+class EOS(Supercomputer):
+    
+    name = 'eos'
+    requires_account = True
+    batch_capable    = True
+
+    def process_job_extra(self,job):
+        if job.threads>1 and job.options is None:
+            if job.threads<=8: 
+                job.add_option('-ss')
+            #end if
+            job.add_option('-cc numa_node')
+        #end if
+    #end def process_job_extra
+
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'batch'
+        #end if
+        c= '#!/bin/bash\n'
+        c+='#PBS -A {0}\n'.format(job.account)
+        c+='#PBS -q {0}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
+        c+='#PBS -l nodes={0}\n'.format(job.nodes)
+        c+='#PBS -l gres=atlas1\n'
+        c+='#PBS -V\n'
+        c+='''
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+'''
+        return c
+    #end def write_job_header
+#end class EOS
+
+
 
 #Known machines
 #  workstations
@@ -1461,11 +1514,12 @@ for cores in range(1,128+1):
 Jaguar(      18688,   2,     8,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 Taub(          400,   2,     6,   24,   50, 'mpirun', 'qsub',  'qstat', 'qdel')
-OIC5(           28,   2,    16,  128,   50, 'mpirun', 'qsub',  'qstat', 'qdel')
+OIC5(           28,   2,    16,  128, 1000, 'mpirun', 'qsub',  'qstat', 'qdel')
 Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
 Titan(       18688,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
+EOS(           744,   2,     8,   64, 1000,  'aprun', 'qsub',  'qstat', 'qdel')
 
 
 #machine accessor functions

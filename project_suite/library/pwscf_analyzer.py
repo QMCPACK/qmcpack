@@ -5,6 +5,7 @@ from unit_converter import convert
 from periodic_table import PeriodicTable
 from simulation import SimulationAnalyzer,Simulation
 from pwscf_input import PwscfInput
+from pwscf_data_reader import read_qexml
 from debug import *
 import code
 
@@ -59,7 +60,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -75,6 +76,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.path = path
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
+
+        self.info = obj(xml=xml)
 
         self.input = PwscfInput(os.path.join(self.path,self.infile_name))
 
@@ -293,6 +296,51 @@ class PwscfAnalyzer(SimulationAnalyzer):
         except Exception:
             self.warn('encountered an exception, some quantities will not be available')
         #end try
+
+        if self.info.xml:
+            try:
+
+                cont = self.input.control
+                datadir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
+                data = read_qexml(os.path.join(datadir,'data-file.xml'))
+                kpdata = data.root.eigenvalues.k_point
+                kpoints = obj()
+                for ki,kpd in kpdata.iteritems():
+                    kp = obj(
+                        kpoint = kpd.k_point_coords,
+                        weight = kpd.weight
+                        )
+                    kpoints[ki]=kp
+                    for si,dfile in kpd.datafile.iteritems():
+                        edata = read_qexml(os.path.join(datadir,dfile.iotk_link))
+                        eunits = edata.root.units_for_energies.units.lower()
+                        if eunits.startswith('ha'):
+                            units = 'Ha'
+                        elif eunits.startswith('ry'):
+                            units = 'Ry'
+                        elif eunits.startswith('ev'):
+                            units = 'eV'
+                        else:
+                            units = 'Ha'
+                        #end if
+                        spin = obj(
+                            units       = units,
+                            eigenvalues = edata.root.eigenvalues,
+                            occupations = edata.root.occupations
+                            )
+                        if si==1:
+                            kp.up = spin
+                        elif si==2:
+                            kp.down = spin
+                        #end if
+                    #end for
+                #end for
+                self.xmldata=obj(kpoints=kpoints)
+
+            except:
+                self.warn('encountered an exception during xml read, this data will not be available')
+            #end try
+        #end if
     #end def analyze
 
 
@@ -306,9 +354,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             movie = ''
             structures = self.structures
-
-            print structures
-
 
             aA = convert(self.input.system['celldm(1)'],'B','A')
             cell = self.input.cell_parameters.vectors
