@@ -103,7 +103,7 @@ class QmcpackAnalysisRequest(QAobject):
                  warmup_calculations=None,
                  output=set(['averages','samples']),
                  ndmc_blocks=1000,equilibration=None,group_num=None,
-                 traces=False):
+                 traces=False,dm_settings=None):
         self.source          = source          
         self.destination     = destination     
         self.savefile        = str(savefile)
@@ -111,6 +111,7 @@ class QmcpackAnalysisRequest(QAobject):
         self.ndmc_blocks     = int(ndmc_blocks)
         self.group_num       = group_num
         self.traces          = traces
+        self.dm_settings     = dm_settings
 
         cap = QAanalyzer.capabilities
 

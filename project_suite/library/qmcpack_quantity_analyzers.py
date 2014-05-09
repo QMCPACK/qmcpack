@@ -1089,6 +1089,25 @@ class TracesAnalyzer(QAanalyzer):
 #end class TracesAnalyzer
 
 
+class DMSettings(QAobject):
+    def __init__(self,ds):
+        self.jackknife = True
+        self.diagonal  = False
+        self.save_data = True
+        self.occ_tol   = 1e-3
+        self.coup_tol  = 1e-4
+        self.stat_tol  = 2.0
+        if ds!=None:
+            for name,value in ds.iteritems():
+                if not name in self:
+                    self.error('{0} is an invalid setting for DensityMatricesAnalyzer\n  valid options are: {1}'.format(name,sorted(self.keys())))
+                else:
+                    self[name] = value
+                #end if
+            #end for
+        #end if
+    #end def __init__
+#end class DMSettings
 
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
@@ -1139,13 +1158,14 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         # 3) use remaining states to form filtered number and energy matrices
         # 4) perform jackknife sampling to get eigenvalue error bars
         # 5) consider using cross-correlations w/ excluded elements to reduce variance
-        save_data = False
-        jackknife = False
-        diagonal  = True
-        occ_tol   = 1e-3
-        coup_tol  = 1e-4
-        stat_tol  = 2.0
 
+        ds = DMSettings(self.run_info.request.dm_settings)
+        diagonal  = ds.diagonal 
+        jackknife = ds.jackknife and not diagonal
+        save_data = ds.save_data
+        occ_tol   = ds.occ_tol  
+        coup_tol  = ds.coup_tol 
+        stat_tol  = ds.stat_tol 
 
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe
