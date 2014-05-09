@@ -61,37 +61,53 @@ class OptimizationAnalyzer(ResultAnalyzer):
         opts  = self.opts
         ew    = self.energy_weight
         vw    = self.variance_weight
+
+        Efail        = 1e6
+        EVratio_fail = 0.10
         
         #save the energies and variances of opt iterations
         nopt = len(opts)
-        en    = zeros((nopt,))
-        enerr = zeros((nopt,))
-        va    = zeros((nopt,))
-        vaerr = zeros((nopt,))
+        en    = zeros((nopt,))+1e99
+        enerr = zeros((nopt,))+1e99
+        va    = zeros((nopt,))+1e99
+        vaerr = zeros((nopt,))+1e99
+        variance_present = False
+        any_complete = False
+        all_complete = True
+        unstable = False
         for i in range(nopt):
             o = opts[i]
-            le = o.scalars.LocalEnergy
-            en[i]     = le.mean
-            enerr[i]  = le.error
-            if 'LocalEnergyVariance' in o.scalars:
-                lev = o.scalars.LocalEnergyVariance
-                va[i]     = lev.mean
-                vaerr[i]  = lev.error
-            else:
-                va[i]=0
-                vaerr[i]=0
+            complete = o.info.complete
+            any_complete |= complete
+            all_complete &= complete
+            if complete:
+                le = o.scalars.LocalEnergy
+                en[i]     = le.mean
+                enerr[i]  = le.error
+                if 'LocalEnergyVariance' in o.scalars:
+                    variance_present = True
+                    lev = o.scalars.LocalEnergyVariance
+                    va[i]     = lev.mean
+                    vaerr[i]  = lev.error
+                #end if
+                unstable |= abs(le.mean)>Efail
             #end if
         #end for
+        unstable |= not any_complete
+
+
         self.set(
+            any_complete   = any_complete,
+            all_complete   = all_complete,
+            unstable       = unstable,
             energy         = en,
             energy_error   = enerr,
             variance       = va,
-            variance_error = vaerr
+            variance_error = vaerr,
             )
 
 
         #find the optimal coefficients
-        variance_present = 'LocalEnergyVariance' in opts.list()[0].scalars
         optimize = self.optimize
         if variance_present and optimize=='variance':
             ew = 0.0
@@ -105,32 +121,39 @@ class OptimizationAnalyzer(ResultAnalyzer):
             self.error('selection for optimization is invalid\n  optimize setting: {0}\n  valid options are: energy, variance, or a length 2 tuple containing the cost of each, e.g. (.5,.5)'.format(optimize))
         #end if
 
-        mincost = 1e99
-        index   = -1
+        self.failed = True
+        self.optimal_series = None
+        self.optimal_file   = None
+        self.optimal_wavefunction = None
+        if any_complete:
+            mincost = 1e99
+            index   = -1
+            for i,opt in opts.iteritems():
+                if opt.info.complete:
+                    s = opt.scalars
+                    e = s.LocalEnergy.mean
+                    if 'LocalEnergyVariance' in s:
+                        v = s.LocalEnergyVariance.mean
+                    else:
+                        v = 0
+                    #end if
+                    cost = ew*e+vw*v
+                    if cost<mincost:
+                        mincost = cost
+                        index   = i
+                    #end if
+                #end if
+            #end for
 
-        for i,opt in opts.iteritems():
-            s = opt.scalars
-            e = s.LocalEnergy.mean
-            if 'LocalEnergyVariance' in s:
-                v = s.LocalEnergyVariance.mean
-            else:
-                v = 0
+            if index!=-1:
+                failed = abs(en[index])>Efail or (va[index]<1e98 and abs(va[index]/en[index])>EVratio_fail) 
+                
+                self.failed = failed
+                self.optimal_series = index
+                self.optimal_file = opts[index].info.files.opt
+                self.optimal_wavefunction = opts[index].wavefunction.info.wfn_xml.copy()
             #end if
-            cost = ew*e+vw*v
-            if cost<mincost:
-                mincost = cost
-                index   = i
-            #end if
-        #end for
-        
-        if index==-1:
-            self.error('could not identify optimal wavefunction\n  There may be problems with the data in scalars.dat')
         #end if
-
-        self.optimal_series = index
-        self.optimal_file = opts[index].info.files.opt
-        self.optimal_wavefunction = opts[index].wavefunction.info.wfn_xml.copy()
-
     #end def analyze_local
 
 

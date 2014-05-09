@@ -317,7 +317,7 @@ class Qmcpack(Simulation):
 
         self.succeeded = ran_to_end
         self.failed    = aborted
-        self.finished  = files_exist and self.job.finished and not aborted 
+        self.finished  = files_exist and (self.job.finished or ran_to_end) and not aborted 
 
 
 

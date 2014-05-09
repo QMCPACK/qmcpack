@@ -56,10 +56,6 @@ class MethodAnalyzer(QAanalyzer):
                 self.vlog('match found: '+file,n=3)
             #end if
         #end for
-        if not matched:
-            msg = 'no data files found\n  file prefix used for matching: {0}\n  checked all files in directory: {1}'.format(file_prefix,source_path)
-            self.error(msg,trace=False)
-        #end if
         equil = request.equilibration
         nblocks_exclude = -1
         if isinstance(equil,int):
@@ -77,13 +73,21 @@ class MethodAnalyzer(QAanalyzer):
             files        = files,
             data_sources = data_sources,
             method_input = calc.copy(),
-            nblocks_exclude = nblocks_exclude
+            nblocks_exclude = nblocks_exclude,
+            complete     = matched
             )
         self.info.transfer_from(method_info)
 
         self.vlog('requested sources = '+str(list(request.data_sources)),n=2)
         self.vlog('files available   = '+str(files.keys()),n=2)
         self.vlog('available sources = '+str(list(data_sources)),n=2)
+
+        if not matched:
+            msg = 'no data files found\n  file prefix used for matching: {0}\n  checked all files in directory: {1}'.format(file_prefix,source_path)
+            #self.error(msg,trace=False)
+            #self.warn(msg)
+            return
+        #end if
 
         self.set_global_info()
 

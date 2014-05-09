@@ -615,13 +615,18 @@ class Simulation(Pobj):
             should_check = True
             if self.outfile!=None:
                 outfile = os.path.join(self.locdir,self.outfile)
-                should_check = os.path.exists(outfile)
+                should_check &= os.path.exists(outfile)
+            #end if
+            if self.errfile!=None:
+                errfile = os.path.join(self.locdir,self.errfile)
+                should_check &= os.path.exists(errfile)
             #end if
             if not self.finished and should_check:
                 self.check_sim_status()
             #end if
-            if self.job.finished and self.failed:
-                self.failed = True
+            if self.failed:
+                self.finished = True
+                self.job.finished = True
                 self.block_dependents()
             #end if
         #end if
