@@ -55,10 +55,8 @@ bool VMCSingleOMP::run()
     Movers[ip]->startRun(nBlocks,false);
   Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
-  ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block=0; block<nBlocks; ++block)
   {
-    ADIOS_PROFILE::profile_adios_start_comp(block);
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -90,16 +88,10 @@ bool VMCSingleOMP::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
-    ADIOS_PROFILE::profile_adios_end_comp(block);
-    ADIOS_PROFILE::profile_adios_start_trace(block);
     Traces->write_buffers(traceClones, block);
-    ADIOS_PROFILE::profile_adios_end_trace(block);
-    ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if(storeConfigs)
       recordBlock(block);
-    ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   }//block
-  ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
