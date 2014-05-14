@@ -248,12 +248,10 @@ bool DMCOMP::run()
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
   int sample = 0;
-  ADIOS_PROFILE::profile_adios_init(nBlocks);
 
   prof.push("dmc_loop");
   do // block
   {
-    ADIOS_PROFILE::profile_adios_start_comp(block);
     Estimators->startBlock(nSteps);
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
@@ -306,24 +304,18 @@ bool DMCOMP::run()
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
-    ADIOS_PROFILE::profile_adios_end_comp(block);
-    ADIOS_PROFILE::profile_adios_start_trace(block);
     Traces->write_buffers(traceClones, block);
-    ADIOS_PROFILE::profile_adios_end_trace(block);
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
       for(int ip=0; ip<NumThreads; ip++)
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
     }
-    ADIOS_PROFILE::profile_adios_start_checkpoint(block-1);
     recordBlock(block);
-    ADIOS_PROFILE::profile_adios_end_checkpoint(block-1);
   } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
 
   prof.pop(); //close loop
 
-  ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
