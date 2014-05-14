@@ -110,6 +110,76 @@ void profile_adios_end_checkpoint(int block)
   double tmp = checkpoint_times[block];
   checkpoint_times[block]=MPI_Wtime() - tmp;
 }
+
+void profile_init(int rank){
+  myrank = rank;
+  comp_start = 0.0;
+  comp_end = 0.0;
+  comm_start = 0.0;
+  comm_end = 0.0;
+  io_start = 0.0;
+  io_end = 0.0;
+  comp_total = 0.0;
+  comm_total = 0.0;
+  io_total = 0.0;
+  times.clear();
+}
+
+void profile_final(){
+  char buf[20];
+  sprintf(buf, "output%d", myrank);
+  ofstream myfile;
+  myfile.open(buf);
+  for(int i=0; i<times.size(); i++){
+    myfile <<times[i].time<<"\t"<<times[i].t_attr<<"\t"<<times[i].block<<"\t"<<times[i].step<<endl;
+  }
+  myfile.close();
+}
+
+void comp_s(){
+  comp_start = MPI_Wtime();
+}
+
+void comp_e(){
+  comp_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = comp_end - comp_start;
+  t.t_attr = COMP;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+  comp_total += t.time;
+}
+
+void comm_s(){
+  comm_start = MPI_Wtime();
+}
+
+void comm_e(){
+  comm_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = comm_end - comm_start;
+  t.t_attr = COMM;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+  comm_total += t.time;
+}
+
+void io_s(){
+  io_start = MPI_Wtime();
+}
+
+void io_e(){
+  io_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = io_end - io_start;
+  t.t_attr = IO;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+  io_total += t.time;
+}
 };
 #endif
 
