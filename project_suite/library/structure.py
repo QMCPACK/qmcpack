@@ -7,6 +7,7 @@ from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull
+from periodic_table import pt
 from generic import obj
 from developer import DevBase,unavailable
 from debug import ci,ls,gs
@@ -2037,6 +2038,28 @@ class Structure(Sobj):
     #end def read_xyz
 
 
+    def write(self,filepath=None,format=None):
+        if filepath is None and format is None:
+            self.error('please specify either the filepath or format arguments to write()')
+        elif format is None:
+            if '.' in filepath:
+                format = filepath.split('.')[-1]
+            else:
+                self.error('file format could not be determined\neither request the format directly with the format keyword or add a file format extension to the file name')
+            #end if
+        #end if
+        format = format.lower()
+        if format=='xyz':
+            c = self.write_xyz(filepath)
+        elif format=='xsf':
+            c = self.write_xsf(filepath)
+        else:
+            self.error('file format {0} is unrecognized'.format(format))
+        #end if
+        return c
+    #end def write
+
+
     def write_xyz(self,filepath=None,header=True,units='A'):
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
@@ -2050,15 +2073,51 @@ class Structure(Sobj):
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
-            #c+='{0:2}  {1:12.6e} {2:12.6e} {3:12.6e}\n'.format(e,p[0],p[1],p[2])
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
         if filepath!=None:
             open(filepath,'w').write(c)
-        else:
-            return c
         #end if
+        return c
     #end def write_xyz
+
+
+    def write_xsf(self,filepath=None):
+        if self.dim!=3:
+            self.error('write_xsf is currently only implemented for 3 dimensions')
+        #end if
+        s = self.copy()
+        s.change_units('A')
+        c  = ' CRYSTAL\n'
+        c += ' PRIMVEC\n'
+        for a in s.axes:
+            c += '   {0:12.8f}  {1:12.8f}  {2:12.8f}\n'.format(*a)
+        #end for
+        c += ' PRIMCOORD\n'
+        c += '   {0} 1\n'.format(len(s.elem))
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            identified = e in pt.elements
+            if not identified:
+                if len(e)>2:
+                    e = e[0:2]
+                elif len(e)==2:
+                    e = e[0:1]
+                #end if
+                identified = e in pt.elements
+            #end if
+            if not identified:
+                self.error('{0} is not an element\nxsf file cannot be written'.format(e))
+            #end if
+            enum = pt.elements[e].atomic_number
+            r = s.pos[i]
+            c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_xsf
 
 
     def read_poscar(self,filepath,elem=None):
