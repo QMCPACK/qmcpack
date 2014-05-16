@@ -1774,10 +1774,10 @@ class DatAnalyzer(QBase):
             (mean,var,error,kappa)=simplestats(v)
         #end if
         sv = obj(
-            mean            = mean,
-            sample_variance = var,
-            error           = error,
-            kappa           = kappa
+            mean  = mean,
+            var   = var,
+            error = error,
+            kappa = kappa
             )
         return sv
     #end def stat_value
@@ -1809,7 +1809,7 @@ class DatAnalyzer(QBase):
             w  = stats.BlockWeight.mean
             t  = stats.BlockCPU.mean
             data.Efficiency  = 0*data.LocalEnergy
-            stats.Efficiency = obj(mean=e**2/(w*t),sample_variance=0.0,error=0.0,kappa=1.0)
+            stats.Efficiency = obj(mean=e**2/(w*t),var=0.0,error=0.0,kappa=1.0)
         #end if
     #end def analyze
 
@@ -1824,7 +1824,7 @@ class DatAnalyzer(QBase):
                 mean  = 0.0,
                 error = 0.0,
                 kappa = 0.0,
-                sample_variance = 0.0
+                var   = 0.0
                 )
         #end for
     #end def zero
@@ -1842,7 +1842,7 @@ class DatAnalyzer(QBase):
             s.mean  += weight*v.mean
             s.error += weight*v.error**2
             s.kappa += weight*v.kappa
-            s.sample_variance += weight*v.sample_variance
+            s.var   += weight*v.var
         #end for
     #end def accumulate
 
@@ -1856,12 +1856,13 @@ class DatAnalyzer(QBase):
             s.mean  /= w
             s.error  = sqrt(s.error)/w
             s.kappa /= w
-            s.sample_variance /= w*w
+            s.var   /= w*w
         #end for
     #end def normalize
 
     
     def write_stats(self,quantities,first_prefix=False,first_series=False,only_series=False):
+        opt   = self.options
         stats = self.stats
         prefix = self.info.prefix
         series = self.info.series
@@ -1871,7 +1872,7 @@ class DatAnalyzer(QBase):
         if first_series and not only_series:
             self.log('')
         #end if
-        if len(quantities)==1 and quantities[0]!='all':
+        if len(quantities)==1 and not opt.all_quantities:
             line = self.stat_line(quantities[0],prec='8.6f')
             self.log('{0}  series {1}  {2}'.format(prefix,series,line))
         elif qset==evset:
@@ -1887,7 +1888,7 @@ class DatAnalyzer(QBase):
             line = self.EV_line(['CorrectedEnergy','Variance'])
             self.log('{0}  series {1}  {2}'.format(prefix,series,line))
         else:
-            if len(quantities)==1 and quantities[0]=='all':
+            if opt.all_quantities:
                 squants = set(stats.keys())
             else:
                 squants = set(quantities)
@@ -1934,7 +1935,17 @@ class DatAnalyzer(QBase):
         else:
             line = '{0} = {1:'+prec+'} +/- {2:'+prec+'}'
         #end if
-        line = line.format(qname,q.mean,q.error)
+        vals = [qname,q.mean,q.error]
+        opt = self.options
+        if opt.show_variance:
+            line += '   {'+str(len(vals))+':4.3e}'
+            vals.append(q.var)
+        #end if
+        if opt.show_autocorr:
+            line += '   {'+str(len(vals))+':>4.1f}'
+            vals.append(q.kappa)
+        #end if
+        line = line.format(*vals)
         if compress:
             tokens = line.split()
             line=''
@@ -1981,7 +1992,7 @@ class DatAnalyzer(QBase):
         qmax = q[middle:].max()
         qmin = q[middle:].min()
         ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
-        smean,svar = self.stats[quantity].tuple('mean','sample_variance')
+        smean,svar = self.stats[quantity].tuple('mean','var')
         sstd = sqrt(svar)
         s = arange(len(q))+shift
         xlims = min(s),max(s)
@@ -2164,6 +2175,18 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Do not calculate autocorrelation. Warning: error bars are no longer valid! (default=%default).'
                           )
+        parser.add_option('--noac',dest='noautocorr',
+                          action='store_true',default=False,
+                          help='Alias for --noautocorr (default=%default).'
+                          )
+        parser.add_option('--sac',dest='show_autocorr',
+                          action='store_true',default=False,
+                          help='Show autocorrelation of sample data (default=%default).'
+                          )
+        parser.add_option('--sv',dest='show_variance',
+                          action='store_true',default=False,
+                          help='Show variance of sample data (default=%default).'
+                          )
         parser.add_option('-i','--image',dest='image',
                           action='store_true',default=False,
                           help='(pending) Save image files (default=%default).'
@@ -2267,6 +2290,7 @@ QMCA examples:
         if opt.image=='None':
             opt.image=None
         #end if
+        opt.all_quantities = False
         qabbr = self.quantity_abbreviations
         if ' ' in opt.quantities:
             quants = opt.quantities.split()
@@ -2278,6 +2302,7 @@ QMCA examples:
             qo = quants[i]
             q = qo.lower()
             if q=='all':
+                opt.all_quantities=True
                 quants.extend(qabbr.values())
                 remove.append(qo)
             elif not qo in qabbr.values():
@@ -2439,7 +2464,19 @@ QMCA examples:
             histstyle   = color+line
             iplot,itrace,ihist = range(3)
             modes = [opt.plot,opt.trace,opt.histogram]
-            for quantity in opt.quantities:
+            quantities = []
+            for q in opt.quantities:
+                all_present = True
+                for pdata in self.data:
+                    for d in pdata:
+                        all_present &= q in d.data
+                    #end for
+                #end for
+                if all_present:
+                    quantities.append(q)
+                #end if
+            #end for
+            for quantity in quantities:
                 for mode in range(len(modes)):
                     if modes[mode]:
                         np = 0
