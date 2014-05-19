@@ -166,6 +166,62 @@ void comm_e(){
   comm_total += t.time;
 }
 
+void io_open_s(){
+  io_open_start = MPI_Wtime();
+}
+
+void io_open_e(){
+  io_open_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = io_end - io_start;
+  t.t_attr = IO_OPEN;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+}
+
+void io_group_s(){
+  io_group_start = MPI_Wtime();
+}
+
+void io_group_e(){
+  io_group_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = io_end - io_start;
+  t.t_attr = IO_GROUP;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+}
+
+void io_write_s(){
+  io_write_start = MPI_Wtime();
+}
+
+void io_write_e(){
+  io_write_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = io_end - io_start;
+  t.t_attr = IO_WRITE;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+}
+
+void io_close_s(){
+  io_close_start = MPI_Wtime();
+}
+
+void io_close_e(){
+  io_close_end = MPI_Wtime();
+  TIME_INFO t;
+  t.time = io_end - io_start;
+  t.t_attr = IO_CLOSE;
+  t.block = block;
+  t.step = step;
+  times.push_back(t);
+}
+
 void io_s(){
   io_start = MPI_Wtime();
 }

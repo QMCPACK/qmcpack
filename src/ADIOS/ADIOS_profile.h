@@ -35,7 +35,11 @@ static int trace_index;
 typedef enum TIME_ATTR{
   COMP,
   COMM,
-  IO
+  IO,
+  IO_OPEN,
+  IO_GROUP,
+  IO_WRITE,
+  IO_CLOSE
 }TIME_ATTR;
 
 typedef struct info{
@@ -49,6 +53,14 @@ static double comp_start;
 static double comp_end;
 static double comm_start;
 static double comm_end;
+static double io_open_start;
+static double io_open_end;
+static double io_group_start;
+static double io_group_end;
+static double io_write_start;
+static double io_write_end;
+static double io_close_start;
+static double io_close_end;
 static double io_start;
 static double io_end;
 static double comp_total;
@@ -68,6 +80,14 @@ void comp_s();
 void comp_e();
 void comm_s();
 void comm_e();
+void io_open_s();
+void io_open_e();
+void io_group_s();
+void io_group_e();
+void io_write_s();
+void io_write_e();
+void io_close_s();
+void io_close_e();
 void io_s();
 void io_e();
 
@@ -89,6 +109,14 @@ inline void comp_s(){}
 inline void comp_e(){}
 inline void comm_s(){}
 inline void comm_e(){}
+inline void io_open_s(){}
+inline void io_open_e(){}
+inline void io_group_s(){}
+inline void io_group_e(){}
+inline void io_write_s(){}
+inline void io_write_e(){}
+inline void io_close_s(){}
+inline void io_close_e(){}
 inline void io_s(){}
 inline void io_e(){}
 
