@@ -165,8 +165,9 @@ class HTFBase:
 
 class LocalDirectory(HTFBase):
     pbs_template='''
-#PBS -l partition=dtn
+#PBS -q dtn
 #PBS -A {0}
+#PBS -l nodes=1
 #PBS -l walltime={1}
 
 {2}
