@@ -60,7 +60,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -77,7 +77,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
 
-        self.info = obj(xml=xml)
+        self.info = obj(xml=xml,warn=warn)
 
         self.input = PwscfInput(os.path.join(self.path,self.infile_name))
 
@@ -140,6 +140,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     except Exception:
                         eigs = array([])
                         occs = array([])
+                        if self.info.warn:
+                            self.warn('band read failed, line: '+l)
+                        #end if
                     #end try
                     
 
@@ -154,24 +157,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             occs = occs
                             )
                     #end if
-                #end while
-                try:
-                    seigs = ''
-                    for j in range(i+1,i_occ):
-                        seigs+=lines[j]
-                    #end for
-                    seigs = seigs.strip()
-                    eigs = array(seigs.split(),dtype=float)
-
-                    soccs = ''
-                    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
-                        soccs+= lines[j]
-                    #end for
-                    occs = array(soccs.split(),dtype=float)
-                except Exception:
-                    eigs = array([])
-                    occs = array([])
-                #end try
+                #end if
+                #try:
+                #    seigs = ''
+                #    for j in range(i+1,i_occ):
+                #        seigs+=lines[j]
+                #    #end for
+                #    seigs = seigs.strip()
+                #    eigs = array(seigs.split(),dtype=float)
+                #
+                #    soccs = ''
+                #    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                #        soccs+= lines[j]
+                #    #end for
+                #    occs = array(soccs.split(),dtype=float)
+                #except Exception:
+                #    eigs = array([])
+                #    occs = array([])
+                ##end try
 
                 if nfound==1:
                     bands.up = obj(
