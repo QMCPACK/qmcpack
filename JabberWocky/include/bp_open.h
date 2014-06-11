@@ -72,6 +72,81 @@ struct bp_minifooter {
     uint64_t file_size;
 } __attribute__((__packed__));
 
+struct bp_index_pg_struct_v1
+{
+    char * group_name;
+    enum ADIOS_FLAG adios_host_language_fortran;
+    uint32_t process_id;
+    char * time_index_name;
+    uint32_t time_index;
+    uint64_t offset_in_file;
+
+    struct bp_index_pg_struct_v1 * next;
+};
+
+struct adios_index_var_struct_v1
+{
+    uint32_t id;
+    char * group_name;
+    char * var_name;
+    char * var_path;
+    enum ADIOS_DATATYPES type;
+
+    uint64_t characteristics_count;
+    uint64_t characteristics_allocated;
+
+    struct adios_index_characteristic_struct_v1 * characteristics;
+
+    struct adios_index_var_struct_v1 * next;
+};
+
+struct adios_index_attribute_struct_v1
+{
+    uint32_t id;
+    char * group_name;
+    char * attr_name;
+    char * attr_path;
+    enum ADIOS_DATATYPES type;
+
+    uint64_t characteristics_count;
+    uint64_t characteristics_allocated;
+
+    struct adios_index_characteristic_struct_v1 * characteristics;
+
+    struct adios_index_attribute_struct_v1 * next;
+};
+
+struct BP_GROUP_VAR {
+    uint16_t group_count;
+    uint16_t group_id;
+    char ** namelist;
+    uint32_t *** time_index;
+    uint64_t * pg_offsets;
+    char ** var_namelist;
+    uint32_t * var_counts_per_group;
+    uint64_t ** var_offsets;
+};
+
+struct BP_GROUP_ATTR {
+    uint16_t group_count;
+    uint16_t group_id;
+    char ** namelist;
+    char ** attr_namelist;
+    uint32_t * attr_counts_per_group;
+    uint64_t ** attr_offsets;
+};
+
+struct BP_GROUP {
+    uint16_t group_id;
+    uint16_t vars_offset; // start of variables belonging to this group in the list of variables from all groups; old read API used this
+    uint32_t vars_count;
+    uint16_t attrs_offset; // old read API, this group's attributes in the list of all groups' attrs 
+    uint32_t attrs_count;
+    struct BP_FILE * fh;
+    struct adios_index_var_struct_v1 * vars_root;  /* pointer into the list of BP_FILE.vars_root */
+    struct adios_index_attribute_struct_v1 * attrs_root;
+};
+
 typedef struct BP_FILE {
     MPI_File mpi_fh;
     char * fname; // Main file name is needed to calculate subfile names

@@ -18,34 +18,30 @@ int bp_open (const char * fname,
         return -1;
     }
 
-    /* Only rank 0 reads the footer and it broadcasts to all other processes */
-    if (rank == 0)
+    if (bp_read_minifooter (fh))
     {
-        if (bp_read_minifooter (fh))
-        {
-            return -1;
-        }
+        return -1;
     }
 
-    /* Broadcast to all other processors */
-    MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
+    //MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
 
     header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
+    printf("header %lld\n", header_size);
 
-    if (rank != 0)
-    {
-        if (!fh->b->buff)
-        {
-            bp_alloc_aligned (fh->b, header_size);
-            assert (fh->b->buff);
+    //if (rank != 0)
+    //{
+      //  if (!fh->b->buff)
+        //{
+          //  bp_alloc_aligned (fh->b, header_size);
+            //assert (fh->b->buff);
 
-            memset (fh->b->buff, 0, header_size);
-            fh->b->offset = 0;
-        }
-    }
+           // memset (fh->b->buff, 0, header_size);
+           // fh->b->offset = 0;
+       // }
+    //}
 
-    MPI_Barrier (comm);
-    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
+    //MPI_Barrier (comm);
+    //MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
 
     /* Everyone parses the index on its own */
     //bp_parse_pgs (fh);
@@ -100,6 +96,7 @@ int bp_read_open (const char * filename,
     }
 
     MPI_File_get_size (fh->mpi_fh, &file_size);
+    printf("file size %lld\n", file_size);
     fh->b->file_size = file_size;
     fh->mfooter.file_size = file_size;
 
@@ -127,8 +124,9 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     MPI_File_seek (bp_struct->mpi_fh, (MPI_Offset) attrs_end, MPI_SEEK_SET);
     MPI_File_read (bp_struct->mpi_fh, b->buff, MINIFOOTER_SIZE, MPI_BYTE, &status);
 
-    /*memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
-    memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);*/
+    memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
+    memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);
+    printf("pg_index_offset %lld\n", mh->pgs_index_offset);
 
     /* get version id. Needs the bp->offset be pointing to the last 4 bytes of the buffer,
        It also sets b->change_endianness */
@@ -150,6 +148,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 
     BUFREAD64(b, b->pg_index_offset)
     mh->pgs_index_offset = b->pg_index_offset;
+    printf("pg_index_offset %lld\n", mh->pgs_index_offset);
     // validity check  
     if (b->pg_index_offset > b->file_size) {
         adios_error (err_file_open_error,
@@ -160,6 +159,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 
     BUFREAD64(b, b->vars_index_offset)
     mh->vars_index_offset = b->vars_index_offset;
+    printf("vars_index_offset %lld\n", mh->vars_index_offset);
     // validity check  
     if (b->vars_index_offset > b->file_size) {
         adios_error (err_file_open_error,
@@ -177,7 +177,8 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 
     BUFREAD64(b, b->attrs_index_offset)
     mh->attrs_index_offset = b->attrs_index_offset;
-    // validity check  
+    printf("attrs_index_offset %lld\n", mh->attrs_index_offset);
+    // validity check s 
     if (b->attrs_index_offset > b->file_size) {
         adios_error (err_file_open_error,
                 "Invalid BP file detected. Attribute index offset (%lld) > file size (%lld)\n",
@@ -195,6 +196,10 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = b->attrs_index_offset - b->vars_index_offset;
     b->attrs_size = attrs_end - b->attrs_index_offset;
+    printf("end_of_pgs %lld\n", b->end_of_pgs); 
+    printf("pg_size %lld\n", b->pg_size); 
+    printf("vars_size %lld\n", b->vars_size); 
+    printf("attrs_size %lld\n", b->attrs_size); 
 
     /* Read the whole footer */
     /* FIXME: including the last 28 bytes read already above and it seems that is not processed anymore */
