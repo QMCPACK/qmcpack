@@ -111,12 +111,25 @@ void profile_adios_end_checkpoint(int block)
   checkpoint_times[block]=MPI_Wtime() - tmp;
 }
 
+void updateBlock(int block){
+  ADIOS_PROFILE::block = block;
+}
+
+
 void profile_init(int rank){
   myrank = rank;
   comp_start = 0.0;
   comp_end = 0.0;
   comm_start = 0.0;
   comm_end = 0.0;
+  io_open_start = 0.0;
+  io_open_end = 0.0;
+  io_group_start = 0.0;
+  io_group_end = 0.0;
+  io_write_start = 0.0;
+  io_write_end = 0.0;
+  io_close_start = 0.0;
+  io_close_end = 0.0;
   io_start = 0.0;
   io_end = 0.0;
   comp_total = 0.0;
@@ -126,14 +139,27 @@ void profile_init(int rank){
 }
 
 void profile_final(){
-  char buf[20];
-  sprintf(buf, "output%d", myrank);
-  ofstream myfile;
-  myfile.open(buf);
-  for(int i=0; i<times.size(); i++){
-    myfile <<times[i].time<<"\t"<<times[i].t_attr<<"\t"<<times[i].block<<"\t"<<times[i].step<<endl;
-  }
-  myfile.close();
+  //char buf1[20];
+  //sprintf(buf1, "output%d", myrank);
+
+  //FILE * fp;
+  //fp = fopen (buf1, "a");
+  //for(int i=0; i<times.size(); i++){
+    //char buf[200];
+    //bzero(buf, 200);
+    //sprintf(buf, "%f %d  %d\n", times[i].time, times[i].t_attr, times[i].block);
+    //fputs(buf, fp);
+  //}
+  //fflush(fp);
+  //fclose(fp);
+                 
+
+  //ofstream myfile;
+  //myfile.open(buf);
+  //for(int i=0; i<times.size(); i++){
+    //myfile <<times[i].time<<"\t"<<times[i].t_attr<<"\t"<<times[i].block<<"\t"<<times[i].step<<endl;
+  //}
+  //myfile.close();
 }
 
 void comp_s(){
@@ -142,13 +168,13 @@ void comp_s(){
 
 void comp_e(){
   comp_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = comp_end - comp_start;
-  t.t_attr = COMP;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
-  comp_total += t.time;
+  qmcplusplus::app_log()<<block<<" comp "<<comp_end-comp_start<<endl;
+  //TIME_INFO t;
+  //t.time = comp_end - comp_start;
+  //t.t_attr = COMP;
+  //t.block = block;
+  //times.push_back(t);
+  //comp_total += t.time;
 }
 
 void comm_s(){
@@ -157,13 +183,13 @@ void comm_s(){
 
 void comm_e(){
   comm_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = comm_end - comm_start;
-  t.t_attr = COMM;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
-  comm_total += t.time;
+  qmcplusplus::app_log()<<block<<" comm "<<comm_end-comm_start<<endl;
+  //TIME_INFO t;
+  //t.time = comm_end - comm_start;
+  //t.t_attr = COMM;
+  //t.block = block;
+  //times.push_back(t);
+  //comm_total += t.time;
 }
 
 void io_open_s(){
@@ -172,12 +198,12 @@ void io_open_s(){
 
 void io_open_e(){
   io_open_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = io_end - io_start;
-  t.t_attr = IO_OPEN;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
+  qmcplusplus::app_log()<<block<<" open "<<io_open_end-io_open_start<<endl;
+  //TIME_INFO t;
+  //t.time = io_open_end - io_open_start;
+  //t.t_attr = IO_OPEN;
+  //t.block = block;
+  //times.push_back(t);
 }
 
 void io_group_s(){
@@ -186,12 +212,12 @@ void io_group_s(){
 
 void io_group_e(){
   io_group_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = io_end - io_start;
-  t.t_attr = IO_GROUP;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
+  qmcplusplus::app_log()<<block<<" group "<<io_group_end-io_group_start<<endl;
+  //TIME_INFO t;
+  //t.time = io_group_end - io_group_start;
+  //t.t_attr = IO_GROUP;
+  //t.block = block;
+  //times.push_back(t);
 }
 
 void io_write_s(){
@@ -200,12 +226,12 @@ void io_write_s(){
 
 void io_write_e(){
   io_write_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = io_end - io_start;
-  t.t_attr = IO_WRITE;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
+  qmcplusplus::app_log()<<block<<" write "<<io_write_end-io_write_start<<endl;
+  //TIME_INFO t;
+  //t.time = io_write_end - io_write_start;
+  //t.t_attr = IO_WRITE;
+  //t.block = block;
+  //times.push_back(t);
 }
 
 void io_close_s(){
@@ -214,12 +240,12 @@ void io_close_s(){
 
 void io_close_e(){
   io_close_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = io_end - io_start;
-  t.t_attr = IO_CLOSE;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
+  qmcplusplus::app_log()<<block<<" close "<<io_close_end-io_close_start<<endl;
+  //TIME_INFO t;
+  //t.time = io_close_end - io_close_start;
+  //t.t_attr = IO_CLOSE;
+  //t.block = block;
+  //times.push_back(t);
 }
 
 void io_s(){
@@ -228,13 +254,12 @@ void io_s(){
 
 void io_e(){
   io_end = MPI_Wtime();
-  TIME_INFO t;
-  t.time = io_end - io_start;
-  t.t_attr = IO;
-  t.block = block;
-  t.step = step;
-  times.push_back(t);
-  io_total += t.time;
+  //TIME_INFO t;
+  //t.time = io_end - io_start;
+  //t.t_attr = IO;
+  //t.block = block;
+  //times.push_back(t);
+  //io_total += t.time;
 }
 };
 #endif

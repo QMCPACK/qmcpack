@@ -32,6 +32,7 @@
 #include <adios.h>
 #include <adios_read.h>
 #include <adios_error.h>
+#include "ADIOS/ADIOS_config.h"
 #endif
 
 
@@ -172,8 +173,10 @@ void Communicate::finalize()
   if(!has_finalized)
   {
 #ifdef HAVE_ADIOS
-    adios_read_finalize_method(ADIOS_READ_METHOD_BP);
-    adios_finalize(OHMMS::Controller->rank());
+    if(ADIOS::get_adios_init()){
+      adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+      adios_finalize(OHMMS::Controller->rank());
+    }
 #endif
     OOMPI_COMM_WORLD.Finalize();
     has_finalized=true;

@@ -373,7 +373,7 @@ void EstimatorManager::collectBlockAverages(int num_threads)
     else //not a master, pack and send the data
       myRequest[0]=myComm->isend(0,myComm->rank(),*RemoteData[0]);
 #else
-    myComm->reduce(*RemoteData[0]);
+    //myComm->reduce(*RemoteData[0]);
 #endif
     if(Options[MANAGE])
     {

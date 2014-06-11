@@ -23,9 +23,9 @@
 #include "adios_read.h"
 #include "ADIOS/ADIOS_config.h"
 #include <boost/lexical_cast.hpp>
-#ifdef IO_PROFILE
+//#ifdef IO_PROFILE
 #include "ADIOS/ADIOS_profile.h"
-#endif
+//#endif
 #ifdef ADIOS_VERIFY
 #include "ADIOS/ADIOS_verify.h"
 #endif
@@ -1853,7 +1853,9 @@ public:
       }
       int allreduced_rows[2];
       int total_rows[2];
+      double comm_start = MPI_Wtime();
       MPI_Allreduce(rows, allreduced_rows, 2, MPI_INT, MPI_MAX, comm);
+      app_log()<<" comm time "<<MPI_Wtime()-comm_start<<endl;
 
       int int_max_rows = allreduced_rows[0];
       int int_rows_total = int_max_rows*communicator->size();
@@ -1908,6 +1910,7 @@ public:
 
       //string s = boost::lexical_cast<std::string>(block);
       //file_name = file_name + ".b"+s+".trace.bp";
+      double io_open_start = MPI_Wtime();
       if(ADIOS::getFirstOpen())
       {
         if(!ADIOS::get_adios_init()){
@@ -1920,9 +1923,14 @@ public:
       {
         adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "a", comm);
       }
+      app_log()<<" io open time "<<MPI_Wtime()-io_open_start<<endl;
 
+      double io_group_start = MPI_Wtime();
       group_size = strlen(fileName) + 8*sizeof(int) + int_max_rows*int_cols*sizeof(int)+real_max_rows*real_cols*sizeof(double);
       adios_group_size (handle, group_size, &total_size);
+      app_log()<<" io group time "<<MPI_Wtime()-io_group_start<<endl;
+
+      double io_write_start = MPI_Wtime();
       adios_write(handle, "filename", fileName);
       adios_write(handle, "int_rows_total", &int_rows_total);
       adios_write(handle, "int_max_rows", &int_max_rows);
@@ -1934,7 +1942,11 @@ public:
       adios_write(handle, "real_cols", &real_cols);
       adios_write(handle, "int_buffer", int_buffer);
       adios_write(handle, "real_buffer", real_buffer);
+      app_log()<<" io write time "<<MPI_Wtime()-io_write_start<<endl;
+      double io_close_start = MPI_Wtime();
       adios_close(handle);
+      app_log()<<" io close time "<<MPI_Wtime()-io_close_start<<endl;
+      
 
       free(int_buffer);
       free(real_buffer);

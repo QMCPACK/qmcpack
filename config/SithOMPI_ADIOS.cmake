@@ -73,12 +73,13 @@ set(CMAKE_FIND_ROOT_PATH
   /sw/redhat6/hdf5-parallel/1.8.11/rhel6.4_gnu4.7.1
   /sw/redhat6/szip/2.1/rhel6_gnu4.7.1
   /ccs/home/zgu/adioshub/adios_sith
-  #/sw/redhat6/adios/1.5.0/rhel6_gnu4.7.1
   /sw/redhat6/dataspaces/1.2.0/rhel6_gnu4.7.1
   /sw/sith/netcdf/4.1.3/rhel6_gnu4.7.1
+  #/sw/redhat6/adios/1.6.0/rhel6_gnu4.7.1
   /ccs/home/zgu/Software_sith
 )
 
 link_libraries(/sw/redhat6/acml/5.3.0/gfortran64/lib/libacml.a -lz)
 link_libraries(/ccs/compilers/gcc/rhel6-x86_64/4.7.1/lib64/libgfortran.so)
+#link_libraries(-L/sw/redhat6/adios/1.6.0/rhel6_gnu4.7.1/lib -ladios -L/sw/sith/mxml/2.6/rhel6_gnu4.7.1/lib -lmxml -L/sw/redhat6/dataspaces/1.3.0/rhel6_gnu4.7.1/lib -L/usr/lib64/lib -L/lib64/lib -L/lib64/lib64 -L/lib -L/sw/redhat6/adios/1.6.0/rhel6_gnu4.7.1/lib -lm -lmxml -lpthread -ldspaces -ldscommon -ldart -lrdmacm -libverbs -llustreapi -lz -lbz2 -lisobar -lz)
 link_libraries(/ccs/home/zgu/adioshub/adios_sith/lib/libadios.a)

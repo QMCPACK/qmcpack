@@ -46,7 +46,6 @@ typedef struct info{
   double time;
   TIME_ATTR t_attr;
   int block;
-  int step;
 }TIME_INFO;
 
 static double comp_start;
@@ -67,13 +66,11 @@ static double comp_total;
 static double comm_total;
 static double io_total;
 static int block;
-static int step;
 static vector<TIME_INFO> times;
 static int myrank;
 
 #if (defined HAVE_ADIOS) && (defined IO_PROFILE)
 void updateBlock(int block);
-void updateStep(int step);
 void profile_init(int rank);
 void profile_final();
 void comp_s();
@@ -102,7 +99,6 @@ void profile_adios_end_trace(int block);
 void profile_adios_end_checkpoint(int block);
 #else
 inline void updateBlock(int block){}
-inline void updateStep(int step){}
 inline void profile_init(int rank){}
 inline void profile_final(){}
 inline void comp_s(){}
