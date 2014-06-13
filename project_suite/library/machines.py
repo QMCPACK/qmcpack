@@ -196,6 +196,7 @@ class Job(Pobj):
         self.internal_id = None
         self.system_id   = None
         self.tot_cores   = None
+        self.identifier  = None
         self.submitted   = False
         self.status      = self.states.none
         self.crashed     = False
@@ -260,7 +261,12 @@ class Job(Pobj):
 
     def initialize(self,sim):
         self.set_id()
+        self.identifier = sim.identifier
         machine = self.get_machine()
+        if machine.prefixed_output:
+            sim.outfile = sim.identifier + machine.outfile_extension
+            sim.errfile = sim.identifier + machine.errfile_extension
+        #end if
         if self.directory is None:
             self.directory = sim.locdir
             self.abs_dir    = os.path.abspath(sim.locdir)
@@ -490,6 +496,9 @@ class Machine(Pobj):
     requires_account   = False
     executable_subfile = False
 
+    prefixed_output    = False
+    outfile_extension  = None
+    errfile_extension  = None
 
     @staticmethod
     def get_hostname():
@@ -971,6 +980,9 @@ class Supercomputer(Machine):
                                  W = 'waiting',
                                  C = 'complete'
                                  )
+        elif self.queue_querier=='qstata':
+            #already gives status as queued, running, etc.
+            None
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
         #end if
@@ -1049,7 +1061,7 @@ class Supercomputer(Machine):
             job.run_options.add(
                 np      = '--np '+str(job.processes),
                 p       = '-p '+str(job.processes_per_node),
-                block   = '--block $COBALT_PARTNAME',
+                locargs = '$LOCARGS',
                 verbose = '--verbose=INFO'
                 )
         else:
@@ -1091,6 +1103,24 @@ class Supercomputer(Machine):
                         else:
                             self.error('job state '+status+' is unrecognized')
                         #end if
+                    #end if
+                #end if
+            #end for
+        elif self.queue_querier=='qstata':
+            out,err = Popen('qstat',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
+            lines = out.splitlines()
+            for line in lines:
+                tokens=line.split()
+                if len(tokens)>0:
+                    if '.' in tokens[0]:
+                        spid = tokens[0].split('.')[0]
+                    else:
+                        spid = tokens[0]
+                    #endif
+                    if spid.isdigit() and len(tokens)==6:
+                        pid = int(spid)
+                        jid,uname,wtime,nodes,status,loc = tokens
+                        self.system_queue[pid] = status
                     #end if
                 #end if
             #end for
@@ -1613,11 +1643,15 @@ class ALCF_Machine(Supercomputer):
     batch_capable      = True
     executable_subfile = True
 
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
     base_partition = None
 
     def process_job_extra(self,job):
         job.sub_options.add(
-            env  = '--env OMP_NUM_THREADS='+str(job.threads),
+            env  = '--env BG_SHAREDMEMSIZE=32:OMP_NUM_THREADS='+str(job.threads),
             mode = '--mode script'
             )
         if job.nodes<self.base_partition:
@@ -1639,7 +1673,9 @@ class ALCF_Machine(Supercomputer):
         c+='#COBALT -A {0}\n'.format(job.account)
         c+='#COBALT -n {0}\n'.format(job.nodes)
         c+='#COBALT -t {0}\n'.format(job.total_minutes())
-        c+='#COBALT -O {0}\n'.format(job.outfile)
+        c+='#COBALT -O {0}\n'.format(job.identifier)
+        c+='\nLOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"\n'
+        c+='echo "Cobalt location args: $LOCARGS" >&2\n\n'
         return c
     #end def write_job_header
 #end class ALCF_Machine
@@ -1676,19 +1712,19 @@ for cores in range(1,128+1):
     Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
-#            nodes sockets cores ram qslots  qlaunch  qsubmit  qstatus  qdelete
-Jaguar(      18688,   2,     8,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-Kraken(       9408,   2,     6,   16,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-Taub(          400,   2,     6,   24,   50, 'mpirun', 'qsub',  'qstat', 'qdel')
-OIC5(           28,   2,    16,  128, 1000, 'mpirun', 'qsub',  'qstat', 'qdel')
-Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-Titan(       18688,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat', 'qdel')
-EOS(           744,   2,     8,   64, 1000,  'aprun', 'qsub',  'qstat', 'qdel')
-Vesta(        2048,   1,    16,   16,   10, 'runjob', 'qsub',  'qstat', 'qdel')
-Cetus(        1024,   1,    16,   16,   10, 'runjob', 'qsub',  'qstat', 'qdel')
-Mira(        49152,   1,    16,   16,   10, 'runjob', 'qsub',  'qstat', 'qdel')
+#            nodes sockets cores ram qslots  qlaunch  qsubmit  qstatus   qdelete
+Jaguar(      18688,   2,     8,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+Kraken(       9408,   2,     6,   16,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+Taub(          400,   2,     6,   24,   50, 'mpirun', 'qsub',  'qstat' , 'qdel')
+OIC5(           28,   2,    16,  128, 1000, 'mpirun', 'qsub',  'qstat' , 'qdel')
+Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+Titan(       18688,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
+EOS(           744,   2,     8,   64, 1000,  'aprun', 'qsub',  'qstat' , 'qdel')
+Vesta(        2048,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
+Cetus(        1024,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
+Mira(        49152,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
