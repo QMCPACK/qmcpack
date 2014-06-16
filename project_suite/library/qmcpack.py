@@ -537,7 +537,9 @@ def generate_qmcpack(**kwargs):
         inp_args['system'] = inp_args['system'].copy()
     #end if
 
-    sim_args['input'] = generate_qmcpack_input(input_type,**inp_args)
+    if has_input:
+        sim_args['input'] = generate_qmcpack_input(input_type,**inp_args)
+    #end if
     qmcpack = Qmcpack(**sim_args)
 
     return qmcpack

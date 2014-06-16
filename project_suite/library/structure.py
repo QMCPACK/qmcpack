@@ -2692,7 +2692,31 @@ class Crystal(Structure):
                  magnetic_prim  = True,
                  kshift         = (0,0,0),
                  permute        = None,
-                 operations     = None):
+                 operations     = None,
+                 elem           = None, 
+                 pos            = None):
+
+        if elem!=None and pos!=None:  #interface for total manual specification
+            Structure.__init__(
+                self,
+                axes           = axes,
+                elem           = elem,
+                pos            = pos,
+                units          = units,
+                magnetization  = magnetization,
+                magnetic_order = magnetic_order,
+                magnetic_prim  = magnetic_prim,
+                tiling         = tiling,
+                kpoints        = kpoints,
+                kgrid          = kgrid,
+                kshift         = kshift,
+                permute        = permute,
+                rescale        = False,
+                operations     = operations)
+            return
+        #end if
+
+
         if lattice is None and cell is None and atoms is None and units is None:
             return
         #end if
@@ -3093,6 +3117,8 @@ def generate_structure(type='crystal',*args,**kwargs):
         return generate_defect_structure(*args,**kwargs)
     elif type=='atom':
         return generate_atom_structure(*args,**kwargs)
+    elif type=='dimer':
+        return generate_dimer_structure(*args,**kwargs)
     elif type=='jellium':
         return generate_jellium_structure(*args,**kwargs)
     else:
@@ -3103,9 +3129,31 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='B',struct_type=Structure):
-    return Structure(elem=[atom],pos=[[0,0,0]],units=units)
+def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,struct_type=Structure):
+    if Lbox!=None:
+        axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
+    #end if
+    s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,units=units)
+    if axes!=None:
+        s.center_molecule()
+    #end if
+    return s
 #end def generate_atom_structure
+
+
+def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,struct_type=Structure):
+    if separation is None:
+        Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
+    #end if
+    if Lbox!=None:
+        axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
+    #end if
+    s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],axes=axes,units=units)
+    if axes!=None:
+        s.center_molecule()
+    #end if
+    return s
+#end def generate_dimer_structure
 
 
 def generate_jellium_structure(*args,**kwargs):
@@ -3123,7 +3171,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
                                operations=None,
-                               struct_type=Crystal):    
+                               struct_type=Crystal,elem=None,pos=None):    
 
     if structure!=None:
         lattice = structure
@@ -3158,7 +3206,9 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
         kgrid          = kgrid         ,
         kshift         = kshift        ,
         permute        = permute       ,
-        operations     = operations
+        operations     = operations    ,
+        elem           = elem          ,
+        pos            = pos
         )
 
     if struct_type!=Crystal:

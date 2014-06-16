@@ -1,6 +1,7 @@
 
 import os
 from generic import obj
+from developer import DevBase
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -52,106 +53,453 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #           OpiumAnalyzer: analyze
 
 
+def readval(s):
+    try:
+        val = int(s)
+    except:
+        try:
+            val = float(s)
+        except:
+            val = s
+        #end try
+    #end try
+    return val
+#end def readval
+
+
+class Section(DevBase):
+    types = {int:'int',float:'float',str:'str',list:'list',obj:'obj'}
+    variables = None
+    def __init__(self,list_rep=None,**kwargs):
+        if isinstance(list_rep,list):
+            self.from_list_rep(list_rep)
+        else:
+            self.set(**kwargs)
+        #end if
+        #self.validate()
+        #for name,type in self.variables.iteritems():
+        #    if type in ('str','int','float'):
+        #        val = None
+        #    elif type=='list':
+        #        val = []
+        #    elif type=='obj':
+        #        val = obj()
+        #    #end if
+        #    self[name] = val
+        ##end for
+    #end def __init__
+
+    def validate(self):
+        allowed = set(self.variables.keys())
+        if len(allowed)>0: # some have numeric rather than named entries
+            present = set(self.keys())
+            missing = allowed-present
+            invalid = present-allowed
+            if len(missing)>0:
+                self.error('the following variables are missing: '+str(sorted(missing)))
+            #end if
+            if len(invalid)>0:
+                self.error('invalid variable names encountered\ninvalid variables: {0}\nallowed variables: {1}'.format(sorted(invalid),sorted(allowed)))
+            #end if
+            for name in sorted(present):
+                type = self.variables[name]
+                if not isinstance(self[name],type):
+                    self.error('type of variable {0} is incorrect\ntype required: {1}\ncontents: {2}'.format(name,self.types[type]),str(self[name]))
+                #end if
+            #end for
+        #end if
+    #end def validate
+
+    def read(self,text):
+        list_rep = []
+        lines = text.splitlines()
+        for line in lines:
+            tokens = line.split()
+            vals = []
+            for token in tokens:
+                vals.append(readval(token))
+            #end for
+            list_rep.append(vals)
+        #end for
+        self.from_list_rep(list_rep)
+    #end def read
+
+    def write(self):
+        s = '['+self.__class__.__name__+']\n'
+        for line_list in self.list_rep():
+            for val in line_list:
+                s+=' '+str(val)
+            #end for
+            s+='\n'
+        #end for
+        s+='\n'
+        return s
+    #end def write
+
+    def list_rep(self):
+        self.not_implemented()
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.not_implemented()
+    #end def from_list_rep
+#end class Section
+
+
+
+
+class Atom(Section):
+    variables = obj(symbol=str,rorbs=int,ref=obj)
+
+    def list_rep(self):
+        list_rep = [[self.symbol],[self.rorbs]]
+        for index in sorted(self.ref.keys()):
+            v = self.ref[index]
+            list_rep.append([v.nlm,v.occ,v.eig])
+        #end for
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.symbol = list_rep[0][0]
+        self.rorbs  = list_rep[1][0]
+        ref = obj()
+        n = 0
+        for nlm,occ,eig in list_rep[2:]:
+            ref[n] = obj(nlm=nlm,occ=occ,eig=eig)
+            n+=1
+        #end for
+        self.ref = ref
+    #end def from_list_rep
+#end class Atom
+
+
+class Pseudo(Section):
+    variables = obj(porbs=int,rcuts=list,method=str)
+
+    def list_rep(self):
+        list_rep = [[self.porbs]+list(self.rcuts),[self.method]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.porbs = list_rep[0][0]
+        self.rcuts = list_rep[0][1:]
+        self.method = list_rep[1][0]
+    #end def from_list_rep
+#end class Pseudo
+
+
+class Optinfo(Section):
+    variables = obj(qcuts=list,bessels=list)
+
+    def list_rep(self):
+        list_rep = zip(self.qcuts,self.bessels)
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        qc = []
+        bs = []
+        for q,b in list_rep:
+            qc.append(q)
+            bs.append(b)
+        #end for
+        self.qcuts   = qc
+        self.bessels = bs
+    #end def from_list_rep
+#end class Optinfo
+
+
+class XC(Section):
+    variables = obj(functional=str)
+
+    def list_rep(self):
+        list_rep = [[self.functional]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.functional = list_rep[0][0]
+    #end def from_list_rep
+#end class XC
+
+
+class Pcc(Section):
+    variables = obj(radius=float,method=str)
+
+    def list_rep(self):
+        list_rep = [[self.radius],[self.method]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.radius = list_rep[0][0]
+        self.method = list_rep[1][0]
+    #end def from_list_rep
+#end class Pcc
+
+
+class Relativity(Section):
+    variables = obj(rl=str)
+
+    def list_rep(self):
+        list_rep = [[self.rl]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.rl = list_rep[0][0]
+    #end def from_list_rep
+#end class Relativity
+
+
+class Grid(Section):
+    variables = obj(np=int,a=float,b=float)
+
+    def list_rep(self):
+        list_rep = [[self.np,self.a,self.b]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        np,a,b = list_rep[0]
+        self.np = np
+        self.a  = a
+        self.b  = b
+    #end def from_list_rep
+#end class Grid
+
+
+class Tol(Section):
+    variables = obj(aetol=float,nltol=float)
+
+    def list_rep(self):
+        list_rep = [[self.aetol,self.nltol]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        ae,nl = list_rep[0]
+        self.aetol = ae
+        self.nltol = nl
+    #end def from_list_rep
+#end class Tol
+
+
+class Configs(Section):
+    variables = obj()
+
+    def list_rep(self):
+        list_rep = [[len(self)]]
+        for index in sorted(self.keys()):
+            v = self[index]
+            list_rep.append([v.nlm,v.occ,v.eig])
+        #end for
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        nconfigs = list_rep[0][0]
+        orbs = list_rep[1:]
+        orbs_per_config = len(orbs)/nconfigs
+        n=1
+        for nlm,occ,eig in orbs:
+            if n%orbs_per_config==0:
+                self.append(obj(nlm=nlm,occ=occ,eig=eig))
+            #end if
+            n+=1
+        #end for
+    #end def from_list_rep
+#end class Configs
+
+
+class KBdesign(Section):
+    variables = obj(local=str,boxes=obj)
+
+    def list_rep(self):
+        list_rep = [[self.local]]
+        if 'boxes' in self:
+            list_rep.append([len(self.boxes)])
+            for index in sorted(self.boxes.keys()):
+                v = self.boxes[index]
+                list_rep.append([v.units,v.rmin,v.rmax,v.depth])
+            #end for
+        #end if
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.local  = list_rep[0][0]
+        if len(list_rep)>1:
+            boxes = obj()
+            for units,rmin,rmax,depth in list_rep[2:]:
+                boxes.append(obj(units=units,rmin=rmin,rmax=rmax,depth=depth))
+            #end for
+            self.boxes = boxes
+        #end if
+    #end def from_list_rep
+#end class KBdesign
+
+
+class Loginfo(Section):
+    variables = obj(config=int,radius=float,Emin=float,Emax=float)
+
+    def list_rep(self):
+        list_rep = [[self.config],[self.radius,self.Emin,self.Emax]]
+        return list_rep
+    #end def list_rep
+
+    def from_list_rep(self,list_rep):
+        self.config = list_rep[0][0]
+        radius,Emin,Emax = list_rep[1]
+        self.radius = radius
+        self.Emin   = Emin
+        self.Emax   = Emax
+    #end def from_list_rep
+#end class Loginfo
+
+
 
 class OpiumInput(SimulationInput):
-    def __init__(self,filepath=None):
-        # optional
-        #  below is a convenient default
-        #  but it can be changed to anything desired
+
+    method_map = obj(o='optimized',k='kerker',t='tm')
+    section_map = obj(atom=Atom,pseudo=Pseudo,optinfo=Optinfo,xc=XC,pcc=Pcc,relativity=Relativity,grid=Grid,tol=Tol,configs=Configs,kbdesign=KBdesign,loginfo=Loginfo)
+
+    section_order = 'Atom Pseudo Optinfo XC Pcc Relativity Grid Tol Configs KBdesign Loginfo'.split()
+
+    def __init__(self,filepath=None,
+                 atom       = None,
+                 pseudo     = None,
+                 optinfo    = None,
+                 xc         = None,
+                 pcc        = None,
+                 relativity = None,
+                 grid       = None,
+                 tol        = None,
+                 configs    = None,
+                 kbdesign   = None,
+                 loginfo    = None
+                 ):        
         if filepath!=None:
             self.read(filepath)
+        else:
+            inputs = obj(atom=atom,pseudo=pseudo,optinfo=optinfo,xc=xc,pcc=pcc,relativity=relativity,grid=grid,tol=tol,configs=configs,kbdesign=kbdesign,loginfo=loginfo)
+            for secname,input in inputs.iteritems():
+                section_type = self.section_map[secname]
+                if isinstance(input,section_type):
+                    self[secname]=input
+                elif isinstance(input,(dict,obj)):
+                    self[secname] = section_type(**input)
+                elif isinstance(input,(list,tuple)):
+                    self[secname] = section_type(list(input))
+                elif input!=None:
+                    self.error('invalid type encountered for {0} input\nexpected types are dict, obj, list, or tuple\nvalue provided: {1}'.format(secname,input))
+                #end if
+            #end for
         #end if
     #end def __init__
 
 
     def read_contents(self,contents):
-        # required
-        #  the string 'contents' contains the text of an input file
-        #  translate contents into an internal representation of the input
-        # for example, an input file looking like:
-        #   section_a
-        #     var_a  1
-        #     var_b  word
-        #   section_b
-        #     var_c  1e4
-        #     var_d  T
-        # might be translated into:
-        #   sec = obj()
-        #   sec['var_a'] = 1
-        #   sec['var_b'] = 'word'
-        #   self['section_a'] = sec
-        #   sec = obj()
-        #   sec['var_c'] = 1e4
-        #   sec['var_d'] = True
-        #   self['section_b'] = sec
-        # with some line parsing:
-        #   for line in contents.splitlines():
-        #      # parse lines here
-        #   #end for
-        # the resulting input object can then be worked with in a simple way:
-        #    >>> input = DemoInput()
-        #    >>> input
-        #      section_a             obj
-        #      section_b             obj
-        #    
-        #    >>> print input
-        #      section_a
-        #        var_a           = 1
-        #        var_b           = word
-        #      end section_a
-        #      section_b
-        #        var_c           = 10000.0
-        #        var_d           = True
-        #      end section_b
-        #    
-        #    >>> input.section_b.var_c = 25.0
-        None
+        lines = contents.splitlines()
+        sections = obj()
+        sec=None
+        secname=None
+        for line in lines:
+            ls = line.strip()
+            if len(ls)>0 and not ls.startswith('#'):
+                if ls.startswith('[') and ls.endswith(']'):
+                    prevsecname = secname
+                    secname = ls.strip('[]').lower()
+                    if not secname in self.section_map:
+                        self.error('cannot read file\n{0} is not a valid section name\nvalid options are: {1}'.format(secname,self.section_order))
+                    #end if
+                    if sec!=None:
+                        sections[prevsecname]=sec
+                    #end if
+                    sec=''
+                elif sec is None:
+                    self.error('invalid text encountered: '+line)
+                else:
+                    sec+=ls+'\n'
+                #end if
+            #end if
+        #end for
+        if sec!=None and secname!=None and not secname in sections:
+            sections[secname]=sec
+        #end if
+        for secname,sectext in sections.iteritems():
+            section = self.section_map[secname]()
+            section.read(sectext)
+            self[secname] = section
+        #end for
     #end def read_contents
 
 
     def write_contents(self):
-        # required
-        #  translate the internal representation of input into a string
-        # for the above example, this might look like:
-        #   contents = ''
-        #   for secname,sec in self.iteritems():
-        #       contents += secname+'\n'
-        #       for val,val in sec.iteritems():
-        #          contents += '  '+var+' = '+val2str(val)
-        #       #end for
-        #   #end for
         contents = ''
+        for secname in self.section_order:
+            secname = secname.lower()
+            if secname in self:
+                contents += self[secname].write()
+            #end if
+        #end for
         return contents
     #end def write_contents
 #end class OpiumInput
 
 
 
-def generate_opium_input(
-    # probably lots of keyword arguments
-    # kw1    = default_val1,
-    # kw2    = default_val2,
-    # system = None,
-    # ...
-    ):
-    # optional
-    #  only necessary if you want to make opium input files
-    #  with the fewest relevant variables
-    # if you don't want to implement it, uncomment the following line
-    #exit()
+def generate_opium_input(selector,**kwargs):
 
-    gi = OpiumInput()
-
-    # use keyword inputs to complete opium input
-
-    # a common feature is to read information from a PhysicalSystem object
-    #  (#electrons, atom positions, etc)
-    # if system!=None
-    #     gi.incorporate_system(system)
-    # #end if
-
-    return gi
+    if selector=='basic':
+        return generate_basic_opium_input(**kwargs)
+    elif selector=='full':
+        return generate_full_opium_input(**kwargs)
+    else:
+        OpiumInput.class_error('selection '+str(selector)+' has not been implemented for opium input generation')
+    #end if
 #end def generate_opium_input
+
+
+def generate_basic_opium_input(
+    ):
+    oi = None
+    return oi
+#end def generate_basic_opium_input
+
+
+def generate_full_opium_input(
+    atom       = None,
+    pseudo     = None,
+    optinfo    = None,
+    xc         = None,
+    pcc        = None,
+    relativity = None,
+    grid       = None,
+    tol        = None,
+    configs    = None,
+    kbdesign   = None,
+    loginfo    = None
+    ):
+    
+    oi = OpiumInput(
+        atom       = atom      ,
+        pseudo     = pseudo    ,
+        optinfo    = optinfo   ,
+        xc         = xc        ,
+        pcc        = pcc       ,
+        relativity = relativity,
+        grid       = grid      ,
+        tol        = tol       ,
+        configs    = configs   ,
+        kbdesign   = kbdesign  ,
+        loginfo    = loginfo   
+        )
+
+    return oi
+#end def generate_full_opium_input
 
 
 
@@ -275,9 +623,13 @@ class Opium(Simulation):
 
 
 def generate_opium(**kwargs):
-    # optional
-    #  the following code should work provided
-    #  generate_opium_input is suitably defined
+    has_input = 'input_type' in kwargs
+    if has_input:
+        input_type = kwargs['input_type']
+        del kwargs['input_type']
+    else:
+        input_type = 'basic'
+    #end if    
     kw = set(kwargs.keys())
     sim_kw = kw & Simulation.allowed_inputs
     inp_kw = (kw - sim_kw)
@@ -289,8 +641,9 @@ def generate_opium(**kwargs):
     for kw in inp_kw:
         inp_args[kw] = kwargs[kw]
     #end for    
-
-    sim_args['input'] = generate_opium_input(**inp_args)
+    if len(inp_args)>0:
+        sim_args['input'] = generate_opium_input(input_type,**inp_args)
+    #end if
     opium = Opium(**sim_args)
 
     return opium
