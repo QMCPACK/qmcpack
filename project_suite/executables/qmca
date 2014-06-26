@@ -1680,6 +1680,8 @@ class DatAnalyzer(QBase):
 
     nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
 
+    energy_sq = set(['Variance','LocalEnergy_sq'])
+
     def __init__(self,filepath,index,type='unknown',units='Ha'):
         self.info  = obj(
             index    = index,
@@ -1756,12 +1758,16 @@ class DatAnalyzer(QBase):
         fobj = open(filepath,'r')
         variables = fobj.readline().split()[2:]
         fobj.close()
+        Econv  = convert(1.0,'Ha',self.info.units)
+        Econv2 = Econv**2
         for i in range(len(variables)):
             var = variables[i]
             if var in self.nonenergy:
                 self.data[var]=data[i,:]
+            elif var in self.energy_sq:
+                self.data[var]=Econv2*data[i,:]
             else:
-                self.data[var]=convert(data[i,:],'Ha',self.info.units)
+                self.data[var]=Econv*data[i,:]
             #end if
         #end for
     #end def load_data
@@ -2372,28 +2378,28 @@ QMCA examples:
                 #end if
             #end for
             if not isdat:
-                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,allowed_extentions.list()))
+                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,allowed_extensions.list()))
             #end if
             ifile+=1
         #end for
-        for prefix,pdata in data.iteritems():
-            pset = set(pdata.keys())
-            missing = seriesset-pset
-            if len(missing)>1:
-                self.error('files with prefix {0} are missing series provided for other prefixes\nseries provided for prefix {0}: {1}\nseries missing: {2}'.format(prefix,sorted(list(pset)),sorted(list(missing))))
-            #end if
-        #end for
-        serieslist = sorted(list(seriesset))
-        for series in serieslist:
-            filetypes = set()
-            for prefix,pdata in data.iteritems():
-                filetypes.add(pdata[series].info.type)
-            #end for
-            if len(filetypes)>1:
-                self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
-            #end if
-        #end for
         if opt.average:
+            for prefix,pdata in data.iteritems():
+                pset = set(pdata.keys())
+                missing = seriesset-pset
+                if len(missing)>1:
+                    self.error('files with prefix {0} are missing series provided for other prefixes\nseries provided for prefix {0}: {1}\nseries missing: {2}'.format(prefix,sorted(list(pset)),sorted(list(missing))))
+                #end if
+            #end for
+            serieslist = sorted(list(seriesset))
+            for series in serieslist:
+                filetypes = set()
+                for prefix,pdata in data.iteritems():
+                    filetypes.add(pdata[series].info.type)
+                #end for
+                if len(filetypes)>1:
+                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
+                #end if
+            #end for
             weights = opt.weights
             prefixes = sorted(list(data.keys()))
             if weights is None:

@@ -117,6 +117,8 @@ class Qmcpack(Simulation):
                     orb_elem = wf.sposet_builder
                 elif 'sposet_builders' in wf and 'bspline' in wf.sposet_builders:
                     orb_elem = wf.sposet_builders.bspline
+                elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
+                    orb_elem = wf.sposet_builders.einspline
                 elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
                     orb_elem = wf.determinantset
                 else:

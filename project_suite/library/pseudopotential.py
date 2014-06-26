@@ -302,28 +302,30 @@ class upfPP(Pseudopotential):
             h.npts = string2val(lines[i].split()[0]); i+=1
             h.nwfc = string2val(lines[i].split()[0]); i+=1
             pp.header = h
-            if 'beta' in pp.nonlocal:
-                beta = pp.nonlocal.beta
-                if isinstance(beta,str):
-                    beta = [beta]
+            if 'nonlocal' in pp:
+                if 'beta' in pp.nonlocal:
+                    beta = pp.nonlocal.beta
+                    if isinstance(beta,str):
+                        beta = [beta]
+                    #end if
+                    b = obj()
+                    for i in range(len(beta)):
+                        sections = beta[i].split('\n',2)
+                        p = string2val(sections[0].split()[0])
+                        v = string2val(sections[2])
+                        b[p]=v
+                    #end for
+                    pp.nonlocal.beta = b
                 #end if
-                b = obj()
-                for i in range(len(beta)):
-                    sections = beta[i].split('\n',2)
-                    p = string2val(sections[0].split()[0])
-                    v = string2val(sections[2])
-                    b[p]=v
+                dij = pp.nonlocal.dij
+                d = obj()
+                lines = dij.split('\n')[1:]
+                for l in lines:
+                    t = l.split()
+                    d[int(t[0]),int(t[1])] = string2val(t[2])
                 #end for
-                pp.nonlocal.beta = b
+                pp.nonlocal.dij = d
             #end if
-            dij = pp.nonlocal.dij
-            d = obj()
-            lines = dij.split('\n')[1:]
-            for l in lines:
-                t = l.split()
-                d[int(t[0]),int(t[1])] = string2val(t[2])
-            #end for
-            pp.nonlocal.dij = d
             pswfc = pp.pswfc
             tokens = pswfc.split()
             nwfc= pp.header.nwfc
@@ -348,34 +350,38 @@ class upfPP(Pseudopotential):
             #fill in standard fields
             self.pp = pp
             self.r = pp.mesh.r[1:]
-            self.local = convert(pp.local,'Ry',self.energy_units)[1:]
-            nl = obj()
-            vnl = zeros(self.local.shape)
-            if 'beta' in pp.nonlocal:
-                beta = pp.nonlocal.beta
-                for t,d in pp.nonlocal.dij.iteritems():
-                    bi = beta[t[0]]
-                    bj = beta[t[1]]
-                    if not isinstance(bi,str) and not isinstance(bj,str):
-                        bb = d*bi*bj
-                    else: # the file is being misread, fix later
-                        bb  = 0*pp.mesh.r
+            if 'local' in pp:
+                self.local = convert(pp.local,'Ry',self.energy_units)[1:]
+                if 'nonlocal' in pp:
+                    nl = obj()
+                    vnl = zeros(self.local.shape)
+                    if 'beta' in pp.nonlocal:
+                        beta = pp.nonlocal.beta
+                        for t,d in pp.nonlocal.dij.iteritems():
+                            bi = beta[t[0]]
+                            bj = beta[t[1]]
+                            if not isinstance(bi,str) and not isinstance(bj,str):
+                                bb = d*bi*bj
+                            else: # the file is being misread, fix later
+                                bb  = 0*pp.mesh.r
+                            #end if
+                            naftcut = len(pp.mesh.r)-len(bb)
+                            if naftcut>0:
+                                bb=append(bb,zeros((naftcut,)))
+                            #end if
+                            vnl += bb[1:]/self.r**2
+                        #end for
                     #end if
-                    naftcut = len(pp.mesh.r)-len(bb)
-                    if naftcut>0:
-                        bb=append(bb,zeros((naftcut,)))
-                    #end if
-                    vnl += bb[1:]/self.r**2
-                #end for
+                    vnl = convert(vnl,'Ry',self.energy_units)
+                    nl[0] = vnl
+                    self.nonlocal = nl
+                    h = pp.header
+                    p = obj()
+                    p[0] = self.local
+                    p[1] = self.local+self.nonlocal[0]
+                    self.potentials = p
+                #end if
             #end if
-            vnl = convert(vnl,'Ry',self.energy_units)
-            nl[0] = vnl
-            self.nonlocal = nl
-            h = pp.header
-            p = obj()
-            p[0] = self.local
-            p[1] = self.local+self.nonlocal[0]
-            self.potentials = p
             self.element = h.element
             self.type = h.type
             self.Z  = h.Z
@@ -438,11 +444,8 @@ class gamessPP(Pseudopotential):
         r = mgrid[1.e-10:150.00001:.005]
         p = obj()
         vlocal = None
-        print
-        print lmax
         for index in range(lmax+1):
             l = (index+lmax)%(lmax+1)
-            print l
             ngpot = int(lines[i].strip()); i+=1
             coeffs    = empty((ngpot,),dtype=float)
             powers    = empty((ngpot,),dtype=int)
@@ -450,7 +453,7 @@ class gamessPP(Pseudopotential):
             for ig in range(ngpot):
                 coef,power,exponent = lines[i].split(); i+=1
                 coeffs[ig]    = float(coef)
-                powers[ig]    = int(power)
+                powers[ig]    = int(power) 
                 exponents[ig] = float(exponent)
             #end for
             pp[index] = obj(coeffs=coeffs,powers=powers,exponents=exponents)
@@ -476,10 +479,6 @@ class gamessPP(Pseudopotential):
             r          = r,
             potentials = p
             )
-
-        print repr(p)
-        import code
-        code.interact(local=locals())
     #end def readfile
 #end class gamessPP
 

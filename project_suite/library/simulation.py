@@ -209,7 +209,7 @@ class Simulation(Pobj):
 
     def set(self,**kw):
         if 'dependencies' in kw:
-            self.depends(kw['dependencies'])
+            self.depends(*kw['dependencies'])
             del kw['dependencies']
         #end if
         allowed = set(kw.keys()) & self.allowed_inputs
@@ -611,7 +611,7 @@ class Simulation(Pobj):
         self.tlog('check status',self.simid,n=5)
         if self.generate_only: 
             self.finished = self.job.finished
-        else:
+        elif self.job.finished:
             should_check = True
             if self.outfile!=None:
                 outfile = os.path.join(self.locdir,self.outfile)

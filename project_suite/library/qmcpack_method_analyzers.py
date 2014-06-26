@@ -60,8 +60,10 @@ class MethodAnalyzer(QAanalyzer):
         nblocks_exclude = -1
         if isinstance(equil,int):
             nblocks_exclude = equil
-        elif isinstance(equil,(dict,obj)) and series in equil:
-            nblocks_exclude = equil[series]
+        elif isinstance(equil,(dict,obj)):
+            if series in equil:
+                nblocks_exclude = equil[series]
+            #end if
         elif equil!=None:
             self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
         #end if

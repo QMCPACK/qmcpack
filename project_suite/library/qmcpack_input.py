@@ -3444,6 +3444,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 twistnum       = None, 
                                 twist          = None,
                                 spin_polarized = False,
+                                source         = 'ion0',
                                 href           = 'MISSING.h5',
                                 system         = None
                                 ):
@@ -3465,6 +3466,7 @@ def generate_determinantset_old(type           = 'bspline',
         precision  = precision,
         tilematrix = tilematrix,
         href       = href,
+        source     = source,
         slaterdeterminant = slaterdeterminant(
             determinants = collection(
                 determinant(
@@ -3765,7 +3767,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud'])
+                    'iname','spins','density','Buu','Bud','system'])
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -4214,6 +4216,7 @@ def generate_basic_input(id             = 'qmc',
                          remove_cell    = False,
                          randomsrc      = False,
                          meshfactor     = 1.0,
+                         orbspline      = None,
                          precision      = 'float',
                          twistnum       = None, 
                          twist          = None,
@@ -4282,8 +4285,11 @@ def generate_basic_input(id             = 'qmc',
                 system         = system
                 )
         else:
+            if orbspline is None:
+                orbspline = 'bspline'
+            #end if
             ssb = generate_sposet_builder(
-                type           = 'bspline',
+                type           = orbspline,
                 twist          = twist,
                 twistnum       = twistnum,
                 meshfactor     = meshfactor,
@@ -4303,9 +4309,11 @@ def generate_basic_input(id             = 'qmc',
             )
     elif det_format=='old':
         spobuilders = None
-
+        if orbspline is None:
+            orbspline = 'einspline'
+        #end if
         dset = generate_determinantset_old(
-            type           = 'einspline',
+            type           = orbspline,
             twistnum       = twistnum,
             meshfactor     = meshfactor,
             precision      = precision,

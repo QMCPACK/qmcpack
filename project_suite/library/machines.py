@@ -130,6 +130,7 @@ class Job(Pobj):
                  app_flags    = None,
                  app_command  = None,
                  app_props    = None,
+                 app          = None,
                  outfile      = None,
                  errfile      = None,
                  mode         = None,
@@ -204,6 +205,9 @@ class Job(Pobj):
         self.successful  = False
         self.finished    = False
 
+        if app != None:
+            self.app_name = app
+        #end if
         if app_options != None:
             self.app_options.read(app_options)
         #end if
@@ -692,7 +696,7 @@ class Workstation(Machine):
         job.grains = grains
         job.cores = grains*self.process_granularity
 
-        job.run_options.add(np='-np '+str(self.processes))
+        job.run_options.add(np='-np '+str(job.processes))
     #end def process_job
 
 

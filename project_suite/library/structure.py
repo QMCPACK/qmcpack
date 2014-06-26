@@ -1182,6 +1182,17 @@ class Structure(Sobj):
     #end def min_image_norms
 
 
+    def rcore_max(self,units=None):
+        nt,dt = self.neighbor_table(self.pos,distances=True)
+        d = dt[:,1]
+        rcm = d.min()/2
+        if units!=None:
+            rcm = convert(rcm,self.units,units)
+        #end if
+        return rcm
+    #end def rcore_max
+
+
     def cell_image(self,p):
         if self.dim!=3:
             self.error('cell_image is currently only implemented for 3 dimensions')
@@ -2696,25 +2707,6 @@ class Crystal(Structure):
                  elem           = None, 
                  pos            = None):
 
-        if elem!=None and pos!=None:  #interface for total manual specification
-            Structure.__init__(
-                self,
-                axes           = axes,
-                elem           = elem,
-                pos            = pos,
-                units          = units,
-                magnetization  = magnetization,
-                magnetic_order = magnetic_order,
-                magnetic_prim  = magnetic_prim,
-                tiling         = tiling,
-                kpoints        = kpoints,
-                kgrid          = kgrid,
-                kshift         = kshift,
-                permute        = permute,
-                rescale        = False,
-                operations     = operations)
-            return
-        #end if
 
 
         if lattice is None and cell is None and atoms is None and units is None:
@@ -3129,27 +3121,31 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,struct_type=Structure):
+def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
     if Lbox!=None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
-    s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,units=units)
-    if axes!=None:
+    if axes is None:
+        s = Structure(elem=[atom],pos=[[0,0,0]],units=units)
+    else:
+        s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
     #end if
     return s
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,struct_type=Structure):
+def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
     if Lbox!=None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
-    s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],axes=axes,units=units)
-    if axes!=None:
+    if axes is None:
+        s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],units=units)
+    else:
+        s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
     #end if
     return s
@@ -3185,6 +3181,29 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
     if scale!=None:
         constants = scale
     #end if
+
+    #interface for total manual specification
+    # this is only here because 'crystal' is default and must handle other cases
+    if elem!=None and pos!=None:  
+        return Structure(
+            axes           = axes,
+            elem           = elem,
+            pos            = pos,
+            units          = units,
+            magnetization  = magnetization,
+            magnetic_order = magnetic_order,
+            magnetic_prim  = magnetic_prim,
+            tiling         = tiling,
+            kpoints        = kpoints,
+            kgrid          = kgrid,
+            kshift         = kshift,
+            permute        = permute,
+            rescale        = False,
+            operations     = operations)
+    elif isinstance(structure,Structure):
+        return structure
+    #end if
+
 
     s=Crystal(
         lattice        = lattice       ,  

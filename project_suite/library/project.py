@@ -5,7 +5,7 @@ from generic import obj
 from project_base import Pobj,modes
 
 from project_manager import ProjectManager
-from machines import Job,Machine,Supercomputer
+from machines import Job,Machine,Supercomputer,get_machine
 
 from structure import Structure,generate_structure,generate_cell
 from physical_system import PhysicalSystem,generate_physical_system
@@ -187,3 +187,9 @@ class Settings(Pobj):
 
 settings = Settings()
 
+
+def run_project(*args,**kwargs):
+    pm = ProjectManager()
+    pm.add_simulations(*args,**kwargs)
+    pm.run_project()
+#end def run_project
