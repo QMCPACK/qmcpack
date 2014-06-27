@@ -50,8 +50,7 @@ include_directories(
   /ccs/proj/e2e/pnorbert/ADIOS/xk6.gnu/include
   #/sw/xk6/adios/1.6.0/cle4.0_gnu4.7.2/include 
   /sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/include 
-  /sw/xk6/dataspaces/1.3.0/cle4.0_gnu4.7.2/include 
-  /sw/xk6/dataspaces/1.3.0/cle4.0_gnu4.7.2/include 
+  /sw/xk6/dataspaces/1.4.0/cle4.0_gnu4.7.2/include 
   /opt/cray/pmi/default/include 
   /opt/cray/gni-headers/default/include
   #/ccs/home/zgu/adioshub/adios_titan/include
@@ -60,8 +59,8 @@ include_directories(
   /opt/cray/gni-headers/default/include
   )
 link_libraries(
-  -L/ccs/proj/e2e/pnorbert/ADIOS/xk6.gnu/lib -ladios -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml -L/ccs/proj/e2e/dataspaces/titan/gnu/lib -L/ccs/proj/e2e/dataspaces/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/opt/cray/pmi/default/lib64 -L/opt/cray/ugni/default/lib -L/ccs/proj/e2e/qliu/tap/lib -L/ccs/proj/e2e/qliu/glib/lib -lm -lmxml -ldspaces -ldscommon -ldart -ldspaces -ldscommon -ldart -levpath -lffs -latl -ldill -lcercs_env -lpmi -lugni -lfgr -lglib-2.0
+  -L/ccs/proj/e2e/pnorbert/ADIOS/xk6.gnu/lib -ladios -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml -L/sw/xk6/dataspaces/1.4.0/cle4.2_gnu4.8.2/lib -L/sw/xk6/dataspaces/1.4.0/cle4.2_gnu4.8.2/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/ccs/proj/e2e/chaos/titan/gnu/lib -L/opt/cray/pmi/default/lib64 -L/opt/cray/ugni/default/lib -lm -lmxml -ldspaces -ldscommon -ldart -ldspaces -ldscommon -ldart -levpath -lffs -latl -ldill -lcercs_env -lpmi -lugni
   #-L/sw/xk6/adios/1.6.0/cle4.0_gnu4.7.2/lib -ladios -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml -L/sw/xk6/dataspaces/1.3.0/cle4.0_gnu4.7.2/lib -L/sw/xk6/dataspaces/1.3.0/cle4.0_gnu4.7.2/lib -L/opt/cray/pmi/default/lib64 -L/opt/cray/ugni/default/lib64 -lm -lmxml -ldspaces -ldscommon -ldart -ldspaces -ldscommon -ldart -lpmi -lugni
   #-L/ccs/home/zgu/adioshub/adios_titan/lib -ladios -lm
-  -L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml
+  #-L/sw/xk6/mxml/2.6/cle4.0_gnu4.5.3/lib -lmxml
   )

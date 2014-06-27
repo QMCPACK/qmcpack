@@ -6,6 +6,7 @@
 #include "utils.h"
 
 #define MINIFOOTER_SIZE 28
+#define GAP 28
 #define ADIOS_VERSION_NUM_MASK                       0x000000FF
 #define ADIOS_VERSION_BP_FORMAT                      2
 #define BYTE_ALIGN 8
