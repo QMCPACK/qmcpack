@@ -141,6 +141,9 @@ class Settings(Pobj):
         else:
             pseudo_dir = kwargs['pseudo_dir']
             Pobj.file_locations.append(pseudo_dir)
+            if not os.path.exists(pseudo_dir):
+                Pobj.class_error('pseudo_dir "{0}" does not exist'.format(pseudo_dir),'settings',trace=False)
+            #end if
             files = os.listdir(pseudo_dir)
             ppfiles = []
             for f in files:

@@ -1814,8 +1814,16 @@ class DatAnalyzer(QBase):
             e  = stats.LocalEnergy.error
             w  = stats.BlockWeight.mean
             t  = stats.BlockCPU.mean
+            wt = (data.BlockCPU*data.BlockWeight).sum()/3600
+            #tt = data.BlockCPU.sum()/3600
+
+            # def. of efficiency in energy.pl 
+            #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
+
+            # efficiency based on total work and error bar
+            stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+
             data.Efficiency  = 0*data.LocalEnergy
-            stats.Efficiency = obj(mean=e**2/(w*t),var=0.0,error=0.0,kappa=1.0)
         #end if
     #end def analyze
 
@@ -2014,6 +2022,27 @@ class DatAnalyzer(QBase):
 
     def plot_histogram(self,quantity,style,prefix):
         self.not_implemented()
+        #if not quantity in self.data:
+        #    self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+        ##end if
+        #nbe = self.get_equilibration()
+        #q = self.data[quantity]
+        #middle = int(len(q)/2)
+        #qmean = q[middle:].mean()
+        #qmax = q[middle:].max()
+        #qmin = q[middle:].min()
+        #ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
+        #smean,svar = self.stats[quantity].tuple('mean','var')
+        #sstd = sqrt(svar)
+        #s = arange(len(q))+shift
+        #xlims = min(s),max(s)
+        ##plot(s,q,style,label=prefix)
+        #plot([nbe+shift,nbe+shift],ylims,'k-.',lw=2)
+        #plot(xlims,[smean,smean],'r-')
+        #plot(xlims,[smean+sstd,smean+sstd],'r-.')
+        #plot(xlims,[smean-sstd,smean-sstd],'r-.')
+        #ylims = qmin,qmax
+        #return xlims,ylims,s,q
     #end def plot_histogram
 #end class DatAnalyzer
 
