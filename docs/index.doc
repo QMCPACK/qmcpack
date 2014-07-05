@@ -13,7 +13,7 @@ input and output in XML and HDF5 to facilitate data exchange.
 \section qmcpack_about About Development
 
 Main contributing authors are Jeongnim Kim and the past and current members of
-the electron structure group of Profs. Ceperley and Martin at University of
+the electronic structure group of Profs. Ceperley and Martin at University of
 Illinois. To cite QMCPACK, use these references:
 
 - J. Kim, K. P. Esler, J. McMinis, M. A. Morales, B. K. Clark, L. Shulenburger,
@@ -22,13 +22,13 @@ Physics: Conference Series, vol. 402, no. 1, p. 012008, 2012.
 - K. P. Esler, J. Kim, L. Shulenburger, and D. M. Ceperley, “Fully accelerating
 quantum monte carlo simulations of real materials on gpu clusters,” Computing
 in  Science and Engineering, vol. 14, p. 40, 2012.           
-- QMCPACK, http://qmcpack.cmscc.org/
+- QMCPACK, http://www.qmcpack.org/
 
 \subpage qmc_bib  : bibtex 
 
 Different parts of the code are written by different people, whose names are
 usually signed at the top of each file.  If you are interested in participating
-in QMCPACK development, contact Jeongnim Kim jeongnim.kim@gmail.com.  QMCPACK
+in QMCPACK development, contact the developers via the qmcpack google groups site.  QMCPACK
 is available under University of Illinois/NCSA Open Source License (OSI
 approved) http://www.opensource.org/licenses/UoI-NCSA.php.
 

@@ -23,7 +23,9 @@
       <tab type="globals" visible="yes" title="" intro=""/>
     </tab>
     <tab type="examples" visible="yes" title="" intro=""/>  
+    <!--
     <tab type="user" url="http://qmcpack.cmscc.org" title="Wiki"/>
+    -->
     <tab type="user" url="../ug/index.html" title="User guide" intro="userguide,xml">
       <tab type="pages" visible="no" title="" intro=""/>
     </tab>

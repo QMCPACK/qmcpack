@@ -1,27 +1,6 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <tagfile>
   <compound kind="page">
-    <name>glue201312</name>
-    <title>QMC Glue Meeting</title>
-    <filename>glue201312</filename>
-    <docanchor file="glue201312" title="Planning">plan</docanchor>
-    <docanchor file="glue201312" title="INCITE allocations">incite2014</docanchor>
-    <docanchor file="glue201312" title="QMC school in 2014">school14</docanchor>
-    <docanchor file="glue201312" title="Science Discussion">app</docanchor>
-    <docanchor file="glue201312" title="Code development">code</docanchor>
-    <docanchor file="glue201312" title="Known bugs and problems">bugs</docanchor>
-    <docanchor file="glue201312" title="Tool development">tool</docanchor>
-    <docanchor file="glue201312" title="Database">data</docanchor>
-  </compound>
-  <compound kind="page">
-    <name>incite2013</name>
-    <title>QMC Glue Incite Project</title>
-    <filename>incite2013</filename>
-    <docanchor file="incite2013" title="At OLCF">olcf</docanchor>
-    <docanchor file="incite2013" title="How to apply the user acoount">olcf_user</docanchor>
-    <docanchor file="incite2013" title="at ALCF">alcf</docanchor>
-  </compound>
-  <compound kind="page">
     <name>dev_update</name>
     <title>Update</title>
     <filename>dev_update</filename>

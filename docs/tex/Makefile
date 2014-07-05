@@ -28,6 +28,8 @@ refman.dvi: clean refman.tex doxygen.sty
 	      latex refman.tex ;\
 	      latex_count=`expr $$latex_count - 1` ;\
 	    done
+	makeindex refman.idx
+	latex refman.tex
 
 refman_2on1.ps: refman.ps
 	psnup -2 refman.ps >refman_2on1.ps

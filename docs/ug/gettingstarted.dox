@@ -1,5 +1,8 @@
 /*! \page firstp Getting started
 
+\section download Download latest source tarball
+See download section of http://www.qmcpack.org  
+<!--
 \section download Download source via svn
 
 - Developers' version: 
@@ -10,6 +13,7 @@ svn co https://subversion.assembla.com/svn/qmcdev/trunk qmcpack
 \code
 svn co http://qmcpack.googlecode.com/svn/trunk/ qmcpack
 \endcode
+-->
 
 \section quicky Quick build with make
 

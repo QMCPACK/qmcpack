@@ -2,19 +2,20 @@
 
 \anchor ug_intro
 
-These guides are not meant to discuss Quantum Monte Carlo methods and is
+These guides are not meant to be full introduction to Quantum Monte Carlo methods and are
 written on the assumption that the users are familiar with various QMC
 algorithms. There are many excellent tutorials and talks on QMC methods and
 numerous published works. A short list includes 
 
-- <a href="http://www.physics.uiuc.edu/people/Ceperley/">Home page of Prof. David M Ceperley</a>
-- <a href="http://www.tcm.phy.cam.ac.uk/~mdt26/casino2.html">Home page of CASINO QMC Package</a>
+- <a href="http://events.alcf.anl.gov/qmc-2014/schedule/">Quantum Monte Carlo training program 2014 at Argonne Leadership Computing Facility"</a>
 - <a href="http://www.mcc.illinois.edu/summerschool/2012/">2012 Summer School on
   Computational Materials Science: Quantum Monte Carlo: Theory and
   Fundamentals</a>
 - <a href="http://cms.mcc.uiuc.edu/wiki/display/ss2007qmc/Home">
 Quantum Monte Carlo from Minerals and Materials to Molecules,
 2007 Summer School on Computational Materials Science</a>
+- <a href="http://www.physics.uiuc.edu/people/Ceperley/">Home page of Prof. David M Ceperley</a>
+- <a href="http://vallico.net/casinoqmc/">Home page of CASINO QMC Package</a>
 
 \subpage firstp
 

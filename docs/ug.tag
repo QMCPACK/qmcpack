@@ -4,7 +4,7 @@
     <name>firstp</name>
     <title>Getting started</title>
     <filename>a00002</filename>
-    <docanchor file="a00002" title="Download source via svn">download</docanchor>
+    <docanchor file="a00002" title="Download latest source tarball">download</docanchor>
     <docanchor file="a00002" title="Quick build with make">quicky</docanchor>
     <docanchor file="a00002" title="Required tools and libraries">pre_sec</docanchor>
     <docanchor file="a00002" title="External libraries">extlib_sec</docanchor>
