@@ -1066,7 +1066,8 @@ class Supercomputer(Machine):
                 np      = '--np '+str(job.processes),
                 p       = '-p '+str(job.processes_per_node),
                 locargs = '$LOCARGS',
-                verbose = '--verbose=INFO'
+                verbose = '--verbose=INFO',
+                envs    = '--envs OMP_NUM_THREADS='+str(job.threads)
                 )
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
@@ -1655,11 +1656,11 @@ class ALCF_Machine(Supercomputer):
 
     def process_job_extra(self,job):
         job.sub_options.add(
-            env  = '--env BG_SHAREDMEMSIZE=32:OMP_NUM_THREADS='+str(job.threads),
+            env  = '--env BG_SHAREDMEMSIZE=32',
             mode = '--mode script'
             )
         if job.nodes<self.base_partition:
-            self.warn('!!! ATTENTION !!!\n  number of nodes on {0} cannot be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
+            self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
         else:
             partition = log(float(job.nodes)/self.base_partition)/log(2.)
             if abs(partition-int(partition))>1e-6:
@@ -1706,11 +1707,6 @@ class Mira(ALCF_Machine):
 
 #Known machines
 #  workstations
-Workstation('oahu',12,'mpirun')
-Workstation('psi0',16,'mpirun')
-Workstation('psi1',16,'mpirun')
-Workstation('psi2',16,'mpirun')
-Workstation('psi3',16,'mpirun')
 for cores in range(1,128+1):
     Workstation('ws'+str(cores),cores,'mpirun'),
     Workstation('node'+str(cores),cores,'mpirun'),
