@@ -298,15 +298,11 @@ class Pw2qmcpack(Simulation):
 
         success = files_exist and outfin
 
-        #print
-        #print 'files exist',files_exist
-        #print 'output done',outfin
-        #print 'success    ',success
-        #print 'job done   ',self.job.finished
-        #print 'mach name  ',self.machine.name.lower()
-        #print
+        #self.finished = success and self.job.finished
 
-        self.finished = success and self.job.finished
+        # pw2qmcpack has too many variants to assess completion based on log output
+        #   assume (optimistically) that job completion indicates success
+        self.finished = files_exist and self.job.finished
     #end def check_sim_status
 
     def get_output_files(self):
