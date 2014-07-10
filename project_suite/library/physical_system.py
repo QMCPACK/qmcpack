@@ -247,12 +247,16 @@ class PhysicalSystem(Matter):
 
         self.folded_system = None
         if self.structure.folded_structure!=None:
-            ncells = structure.volume()/structure.folded_structure.volume()
+            vratio = structure.volume()/structure.folded_structure.volume()
+            ncells = int(round(vratio))
+            if abs(vratio-ncells)>1e-4:
+                self.error('volume of system does not divide evenly into folded system')
+            #end if
             if net_charge%ncells!=0:
-                self.error('net charge of system does not divide evenly into folded systems')
+                self.error('net charge of system does not divide evenly into folded system')
             #end if
             if net_spin%ncells!=0:
-                self.error('net_spin of system does not divide evenly into folded systems')
+                self.error('net_spin of system does not divide evenly into folded system')
             #end if
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
@@ -426,24 +430,36 @@ class PhysicalSystem(Matter):
 
     def tile(self,*td,**kwargs):
         extensive = True
+        net_spin  = None
         if 'extensive' in kwargs:
             extensive = kwargs['extensive']
         #end if
+        if 'net_spin' in kwargs:
+            net_spin = kwargs['net_spin']
+        #end if
         supercell = self.structure.tile(*td)
+        supercell.remove_folded()
         if extensive:
             ncells = int(round(supercell.volume()/self.structure.volume()))
             net_charge = ncells*self.net_charge
-            net_spin   = ncells*self.net_spin
+            if net_spin is None:
+                net_spin   = ncells*self.net_spin
+            #end if
         else:
             net_charge = self.net_charge
-            net_spin   = self.net_spin
+            if net_spin is None:
+                net_spin   = self.net_spin
+            #end if
         #end if
+        system = self.copy()
         supersystem = PhysicalSystem(
             structure  = supercell,
             net_charge = net_charge,
             net_spin   = net_spin,
             **self.valency
             )
+        supersystem.folded_system = system
+        supersystem.structure.set_folded(system.structure)
         return supersystem
     #end def tile
 
@@ -528,7 +544,10 @@ ps_defaults = dict(
     kshift = (0,0,0),
     net_charge=0,
     net_spin=0,
-    pretile=None
+    pretile=None,
+    tiling=None,
+    tiled_spin=None,
+    extensive=True
     )
 def generate_physical_system(**kwargs):
 
@@ -537,7 +556,8 @@ def generate_physical_system(**kwargs):
             kwargs[var] = val
         #end if
     #end for
-    if 'type' in kwargs and kwargs['type']=='atom':
+    type = kwargs['type']
+    if type=='atom' or type=='dimer':
         del kwargs['kshift']
         if not 'units' in kwargs:
             kwargs['units'] = 'B'
@@ -547,11 +567,14 @@ def generate_physical_system(**kwargs):
     generation_info = obj()
     generation_info.transfer_from(deepcopy(kwargs))
 
-
     net_charge = kwargs['net_charge']
-    net_spin = kwargs['net_spin']
+    net_spin   = kwargs['net_spin']
+    tiled_spin = kwargs['tiled_spin']
+    extensive  = kwargs['extensive']
     del kwargs['net_spin']
     del kwargs['net_charge']
+    del kwargs['tiled_spin']
+    del kwargs['extensive']
     if 'particles' in kwargs:
         particles = kwargs['particles']
         del kwargs['particles']
@@ -573,10 +596,10 @@ def generate_physical_system(**kwargs):
         del kwargs[var]
     #end for
 
+    tiling     = kwargs['tiling']
     if pretile is None:
         structure = generate_structure(**kwargs)
     else:
-        tiling = kwargs['tiling']
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
                 PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile))
@@ -588,13 +611,39 @@ def generate_physical_system(**kwargs):
         pre.remove_folded_structure()
         structure = pre.tile(tiling)
     #end if
-
-    ps = PhysicalSystem(
-        structure  = structure,
-        net_charge = net_charge,
-        net_spin   = net_spin,
-        **valency
-        )
+    if tiling!=None:
+        fps = PhysicalSystem(
+            structure  = structure.folded_structure,
+            net_charge = net_charge,
+            net_spin   = net_spin,
+            **valency
+            )
+        structure.remove_folded()
+        folded_structure = fps.structure
+        if extensive:
+            ncells = int(round(structure.volume()/folded_structure.volume()))
+            net_charge = ncells*net_charge
+            net_spin   = ncells*net_spin
+        #end if
+        if tiled_spin!=None:
+            net_spin = tiled_spin
+        #end if
+        ps = PhysicalSystem(
+            structure  = structure,
+            net_charge = net_charge,
+            net_spin   = net_spin,
+            **valency
+            )
+        structure.set_folded(folded_structure)
+        ps.folded_system = fps
+    else:
+        ps = PhysicalSystem(
+            structure  = structure,
+            net_charge = net_charge,
+            net_spin   = net_spin,
+            **valency
+            )
+    #end if
     
     ps.generation_info = generation_info
 

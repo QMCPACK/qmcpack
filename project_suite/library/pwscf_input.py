@@ -923,7 +923,7 @@ class PwscfInput(SimulationInput):
     #end def get_common_vars
 
 
-    def incorporate_system(self,system,spin_polarized=False):
+    def incorporate_system(self,system,spin_polarized=None):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
@@ -943,7 +943,7 @@ class PwscfInput(SimulationInput):
         #self.system.nelec        = nup+ndn
         self.system.tot_charge   = nc
         mag = nup-ndn
-        if mag!=0 or spin_polarized:
+        if (mag!=0 and spin_polarized!=False) or spin_polarized==True:
             self.system.nspin = 2
             self.system.tot_magnetization = mag
         #end if
@@ -1113,7 +1113,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        smearing     = 'fermi-dirac',
                        degauss      = 0.0001,
                        nosym        = False,
-                       spin_polarized = False,
+                       spin_polarized = None,
                        hubbard_u    = None,
                        start_mag    = None,
                        assume_isolated = None,
@@ -1328,7 +1328,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
                          nosym        = True,
-                         spin_polarized = False,
+                         spin_polarized = None,
                          assume_isolated = None,
                          upscale      = 100,
                          pot_extrapolation = 'second_order',

@@ -297,9 +297,20 @@ class Structure(Sobj):
     #end def operate
 
 
+    def set_folded(self,folded):
+        self.set_folded_structure(folded)
+    #end def set_folded
+
+
     def remove_folded(self):
         self.remove_folded_structure()
     #end def remove_folded
+
+
+    def set_folded_structure(self,folded):
+        self.folded_structure = folded
+        self.tmatrix = self.tilematrix(folded)
+    #end def set_folded_structure
 
 
     def remove_folded_structure(self):
