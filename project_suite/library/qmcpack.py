@@ -362,7 +362,7 @@ class Qmcpack(Simulation):
         br.quantity = 'twistnum'
         br.values   = list(twistnums)
         self.bundle_request = br
-        self.app_name = 'qmcapp_complex'
+        #self.app_name = 'qmcapp_complex'
         #print 'twist_average'
         #print '  setting bundle request:'
         #print self.bundle_request

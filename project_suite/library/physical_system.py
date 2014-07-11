@@ -559,9 +559,13 @@ def generate_physical_system(**kwargs):
     type = kwargs['type']
     if type=='atom' or type=='dimer':
         del kwargs['kshift']
+        del kwargs['tiling']
         if not 'units' in kwargs:
             kwargs['units'] = 'B'
         #end if
+        tiling = None
+    else:
+        tiling = kwargs['tiling']
     #end if
 
     generation_info = obj()
@@ -596,7 +600,6 @@ def generate_physical_system(**kwargs):
         del kwargs[var]
     #end for
 
-    tiling     = kwargs['tiling']
     if pretile is None:
         structure = generate_structure(**kwargs)
     else:
