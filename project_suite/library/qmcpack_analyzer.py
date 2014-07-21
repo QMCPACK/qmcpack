@@ -32,7 +32,7 @@ from qmcpack_property_analyzers \
 from qmcpack_quantity_analyzers \
     import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,\
     EnergyDensityAnalyzer,TracesAnalyzer,DensityMatricesAnalyzer,\
-    SpinDensityAnalyzer,StructureFactorAnalyzer
+    SpinDensityAnalyzer,StructureFactorAnalyzer,DensityAnalyzer
 from qmcpack_method_analyzers \
     import OptAnalyzer,VmcAnalyzer,DmcAnalyzer
 from qmcpack_result_analyzers \
@@ -75,7 +75,8 @@ class QmcpackAnalyzerCapabilities(QAobject):
             energydensity   = EnergyDensityAnalyzer,
             dm1b            = DensityMatricesAnalyzer,
             spindensity     = SpinDensityAnalyzer,
-            structurefactor = StructureFactorAnalyzer
+            structurefactor = StructureFactorAnalyzer,
+            density         = DensityAnalyzer
         )
 
         self.quantities = self.scalars | self.fields

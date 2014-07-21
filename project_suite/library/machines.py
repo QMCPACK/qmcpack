@@ -1069,6 +1069,11 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = '--envs OMP_NUM_THREADS='+str(job.threads)
                 )
+        elif launcher=='ibrun': # Lonestar contribution from Paul Young
+	    job.run_options.add(
+	    	np	= '-n '+str(job.processes),
+	    	p	= '-o '+str(0),
+	    	)
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
         #end if
@@ -1703,6 +1708,47 @@ class Mira(ALCF_Machine):
 
 
 
+class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
+
+    name = 'lonestar' # will be converted to lowercase anyway
+    requires_account = False
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'batch'
+        #end if
+        c= '#!/bin/bash\n'
+        #c+='#$ -A {0}\n'.format(job.account)
+        c+='#$ -q {0}\n'.format(job.queue)
+        c+='#$ -N {0}\n'.format(job.name)
+        c+='#$ -o {0}\n'.format(job.outfile)
+        c+='#$ -e {0}\n'.format(job.errfile)
+        c+='#$ -l h_rt={0}\n'.format(job.pbs_walltime())
+        c+='#$ -pe 12way {0}\n'.format(job.nodes*12)
+	c+='#$ -cwd\n'
+        c+='#$ -V\n'
+        return c
+    #end def write_job_header
+
+
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        
+        for line in lines:
+            if 'Your job' in line:
+                spid = line.split(' ')[2]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    #end def read_process_id
+#end class Lonestar
+
+
 
 
 #Known machines
@@ -1725,6 +1771,7 @@ EOS(           744,   2,     8,   64, 1000,  'aprun', 'qsub',  'qstat' , 'qdel')
 Vesta(        2048,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
 Cetus(        1024,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
 Mira(        49152,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
+Lonestar(    22656,   2,     6,   12,  128,  'ibrun', 'qsub',  'qstat' , 'qdel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname

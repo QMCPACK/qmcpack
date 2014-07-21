@@ -1487,7 +1487,6 @@ class SpinDensityAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
-        print '  sd load data'
         if data==None:
             self.error('attempted load without data')
         #end if
@@ -1505,7 +1504,6 @@ class SpinDensityAnalyzer(HDFAnalyzer):
 
 
     def analyze_local(self):
-        print '  sd analyze data'
         nbe = QAanalyzer.method_info.nblocks_exclude
         for group,data in self.data.iteritems():
             gdata = data.value[nbe:,...]
@@ -1520,7 +1518,6 @@ class SpinDensityAnalyzer(HDFAnalyzer):
 
 
     def write_files(self,path='./'):
-        print '  sd write files'
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
             filename =  '{0}.spindensity_{1}.dat'.format(prefix,gname)
@@ -1546,7 +1543,6 @@ class StructureFactorAnalyzer(HDFAnalyzer):
         if data==None:
             self.error('attempted load without data')
         #end if
-        print '  sf load data'
         name = self.info.name
         if name in data:
             hdata = data[name]
@@ -1562,7 +1558,6 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 
     def analyze_local(self):
         nbe = QAanalyzer.method_info.nblocks_exclude
-        print '  sf analyze data'
         for group,data in self.data.iteritems():
             gdata = data.value[nbe:,...]
             g = obj()
@@ -1587,3 +1582,40 @@ class StructureFactorAnalyzer(HDFAnalyzer):
         #end for
     #end def write_files
 #end class StructureFactorAnalyzer
+
+
+
+
+
+
+class DensityAnalyzer(HDFAnalyzer):
+    def __init__(self,name,nindent=0):
+        HDFAnalyzer.__init__(self)
+        self.info.name = name
+    #end def __init__
+
+
+    def load_data_local(self,data=None):
+        if data==None:
+            self.error('attempted load without data')
+        #end if
+        name = self.info.name
+        if name in data:
+            hdata = data[name]
+            hdata._remove_hidden()
+            self.data = QAHDFdata()
+            self.data.transfer_from(hdata)
+            del data[name]
+        else:
+            self.info.should_remove = True
+        #end if
+    #end def load_data_local
+
+
+    def analyze_local(self):
+        nbe = QAanalyzer.method_info.nblocks_exclude
+        self.mean,self.error = simplestats(self.data.value[nbe:,...],dim=0)
+        self.info.nblocks_exclude = nbe
+    #end def analyze_local
+#end class DensityAnalyzer
+ 
