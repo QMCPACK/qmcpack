@@ -4,10 +4,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 #####################################################
 SET(CMAKE_FALLBACK FALSE)
-if(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+if(${CMAKE_MAJOR_VERSION} VERSION_LESS "3") 
+if(${CMAKE_MINOR_VERSION} VERSION_LESS "8") 
   MESSAGE(WARNING ">>>> Recommend using cmake version 2.8.0 and higher. Using old cmake scripts. <<<< ")
   SET(CMAKE_FALLBACK TRUE)
 endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
+endif(${CMAKE_MAJOR_VERSION} VERSION_LESS "3") 
 
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
@@ -212,16 +214,15 @@ ENDIF(QMC_ADIOS)
 # Get the current SVN version
 ######################################################
 SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
+SET(QMCPLUSPLUS_BRANCH "00000") # Will be edited on export, do not edit. Exact match required.
+SET(QMCPLUSPLUS_LAST_CHANGED_DATE "2001-01-01") # Will be edited on export, do not edit. Exact match required.
 FIND_PACKAGE(Subversion) 
 IF(Subversion_FOUND) 
-  IF (EXISTS "${PROJECT_SOURCE_DIR}/.svn")
+  IF (EXISTS "${PROJECT_SOURCE_DIR}/.svn") # Avoid using svn with exported files
     Subversion_WC_INFO(${PROJECT_SOURCE_DIR} my) 
     MESSAGE(STATUS "Current revision : ${my_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
     SET(QMCPLUSPLUS_BRANCH ${my_WC_REVISION}) 
     SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${my_WC_LAST_CHANGED_DATE}) 
-  ELSE ()
-    SET(QMCPLUSPLUS_BRANCH "Exported") 
-    SET(QMCPLUSPLUS_LAST_CHANGED_DATE "2014-07-04")
   ENDIF()
 ENDIF()
 
