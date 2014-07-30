@@ -5,9 +5,12 @@
     <title>Getting started</title>
     <filename>a00002</filename>
     <docanchor file="a00002" title="Download latest source tarball">download</docanchor>
-    <docanchor file="a00002" title="Quick build with make">quicky</docanchor>
     <docanchor file="a00002" title="Required tools and libraries">pre_sec</docanchor>
     <docanchor file="a00002" title="External libraries">extlib_sec</docanchor>
+    <docanchor file="a00002" title="Installing on generic UNIX, &quot;quick install&quot;, and build variants">quickly</docanchor>
+    <docanchor file="a00002" title="Installing QMCPACK on Ubuntu Linux 14">ubuntubuild</docanchor>
+    <docanchor file="a00002" title="Installing QMCPACK on CentOS Linux 7">centosbuild</docanchor>
+    <docanchor file="a00002" title="Installing QMCPACK on Mac OS X 10.9 Mavericks using Macports">macbuild</docanchor>
   </compound>
   <compound kind="page">
     <name>cmakep</name>
@@ -82,7 +85,7 @@
   <compound kind="page">
     <name>index</name>
     <title>User guide</title>
-    <filename>a00015</filename>
-    <docanchor file="a00015">ug_intro</docanchor>
+    <filename>index</filename>
+    <docanchor file="index">ug_intro</docanchor>
   </compound>
 </tagfile>

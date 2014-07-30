@@ -21,7 +21,7 @@ refman.dvi: clean refman.tex doxygen.sty
 	makeindex refman.idx
 	echo "Rerunning latex...."
 	latex refman.tex
-	latex_count=5 ; \
+	latex_count=8 ; \
 	while egrep -s 'Rerun (LaTeX|to get cross-references right)' refman.log && [ $$latex_count -gt 0 ] ;\
 	    do \
 	      echo "Rerunning latex...." ;\
