@@ -301,8 +301,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         if self.info.xml:
+            self.xmldata = obj(
+                data    = None,
+                kpoints = None,
+                failed  = False
+                )
             try:
-
                 cont = self.input.control
                 datadir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
                 data = read_qexml(os.path.join(datadir,'data-file.xml'))
@@ -315,33 +319,41 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         )
                     kpoints[ki]=kp
                     for si,dfile in kpd.datafile.iteritems():
-                        edata = read_qexml(os.path.join(datadir,dfile.iotk_link))
-                        eunits = edata.root.units_for_energies.units.lower()
-                        if eunits.startswith('ha'):
-                            units = 'Ha'
-                        elif eunits.startswith('ry'):
-                            units = 'Ry'
-                        elif eunits.startswith('ev'):
-                            units = 'eV'
+                        efilepath = os.path.join(datadir,dfile.iotk_link)
+                        if os.path.exists(efilepath):
+                            edata = read_qexml(efilepath)
+                            eunits = edata.root.units_for_energies.units.lower()
+                            if eunits.startswith('ha'):
+                                units = 'Ha'
+                            elif eunits.startswith('ry'):
+                                units = 'Ry'
+                            elif eunits.startswith('ev'):
+                                units = 'eV'
+                            else:
+                                units = 'Ha'
+                            #end if
+                            spin = obj(
+                                units       = units,
+                                eigenvalues = edata.root.eigenvalues,
+                                occupations = edata.root.occupations
+                                )
+                            if si==1:
+                                kp.up = spin
+                            elif si==2:
+                                kp.down = spin
+                            #end if
                         else:
-                            units = 'Ha'
-                        #end if
-                        spin = obj(
-                            units       = units,
-                            eigenvalues = edata.root.eigenvalues,
-                            occupations = edata.root.occupations
-                            )
-                        if si==1:
-                            kp.up = spin
-                        elif si==2:
-                            kp.down = spin
+                            self.xmldata.failed = True
                         #end if
                     #end for
                 #end for
-                self.xmldata=obj(kpoints=kpoints)
-
-            except:
-                self.warn('encountered an exception during xml read, this data will not be available')
+                self.xmldata.set(
+                    data    = data,
+                    kpoints = kpoints
+                    )
+            except Exception,e:
+                self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
+                self.xmldata.failed = True
             #end try
         #end if
     #end def analyze

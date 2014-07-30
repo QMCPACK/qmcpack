@@ -1988,7 +1988,7 @@ class Structure(Sobj):
             a = axes.T
         #end if
         volume = abs(det(a))
-        b = 2*pi*inv(a)
+        b = 2*pi*inv(a).T
         rconv = 8*(3.*volume/(4*pi))**(1./3)
         kconv = 2*pi/rconv
         gconst = -1./(4*kconv**2)

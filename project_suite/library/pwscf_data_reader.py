@@ -32,7 +32,7 @@ class QEXML(DevBase):
                     a = array(v._value)
                     if len(a)==1:
                         a = a[0]
-                    elif 'columns' in v and v.size>v.columns:
+                    elif 'columns' in v and v.size%v.columns==0:
                         a.shape = v.size/v.columns,v.columns
                     #end if
                     self[k] = a
@@ -103,12 +103,14 @@ def readval(s):
 
 
 def read_qexml(inp):
-    if isinstance(inp,str) and os.path.exists(inp):
-        rawlines = open(inp,'r').read().splitlines()
-    elif isinstance(inp,list):
+    if isinstance(inp,list):
         rawlines = inp
+    elif isinstance(inp,str):# and os.path.exists(inp):
+        rawlines = open(inp,'r').read().splitlines()
     else:
         print 'read_qexml error: input can only be filename or list of lines'
+        print '  input received: ',inp
+        return None
     #end if
 
     lines = []
