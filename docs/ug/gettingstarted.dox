@@ -33,8 +33,10 @@ See below for details of
 - boost, peer-reviewed portable C++ source libraries, http://www.boost.org
 - fftw, FFT library, http://www.fftw.org/  
 
-Einspline is distributed within QMCPACK and does not need to be separately installed. The official
+Einspline is distributed within QMCPACK and does not need to be separately installed. For reference, the official
 URL for the standalone einspline library is http://einspline.sourceforge.net/
+
+\warning Presence of the standalone einspline library in e.g. /usr/local can result in build errors in einspline related parts of QMCPACK due to conflicts between internal and external header files. If this happens, remove the standalone einspline library include files and library archive.
 
 \section extlib_sec External libraries
 QMCPACK uses several third-party tools and libraries. The selected packages are
@@ -185,11 +187,9 @@ To build the documentation you will also need to install graphviz and doxygen.
 
 \section macbuild Installing QMCPACK on Mac OS X 10.9 Mavericks using Macports
 @note We assume that you are working in the qmcpack directory.
-@note Despite working on a 2013 Mac Pro, this recipe fails on
-some other Macs. This indicates that there are minor additional subtleties still to be
-worked out. However, this recipe should be a very good starting point. 
+@warning This build will fail if the standalone einspline library is in /usr/local. Remove the einspline include files, archive libraries, and rerun cmake if this occurs.
 
-(Tested on a 2013 Mac Pro in July 2014). 
+(Tested on a 2013 Mac Pro and mid-2011 Mac Book Air in July 2014). 
 
 These instructions assume a fresh installation of macports
 and for consistency with current Linux distributions, use the gcc 4.8.2

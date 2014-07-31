@@ -21,7 +21,12 @@ See below for details of
 \item fftw, F\+F\+T library, {\tt http\+://www.\+fftw.\+org/}
 \end{DoxyItemize}
 
-Einspline is distributed within Q\+M\+C\+P\+A\+C\+K and does not need to be separately installed. The official U\+R\+L for the standalone einspline library is {\tt http\+://einspline.\+sourceforge.\+net/}\section{External libraries}\label{a00002_extlib_sec}
+Einspline is distributed within Q\+M\+C\+P\+A\+C\+K and does not need to be separately installed. For reference, the official U\+R\+L for the standalone einspline library is {\tt http\+://einspline.\+sourceforge.\+net/}
+
+\begin{DoxyWarning}{Warning}
+Presence of the standalone einspline library in e.\+g. /usr/local can result in build errors in einspline related parts of Q\+M\+C\+P\+A\+C\+K due to conflicts between internal and external header files. If this happens, remove the standalone einspline library include files and library archive.
+\end{DoxyWarning}
+\section{External libraries}\label{a00002_extlib_sec}
 Q\+M\+C\+P\+A\+C\+K uses several third-\/party tools and libraries. The selected packages are widely adopted by open-\/source communities and are generally available on H\+P\+C systems via module. They are included in standard Linux/cygwin distributions or can be installed by standard tools like yum. Installing these libraries with the source codes is straightforward. Because the header files are included by Q\+M\+C\+P\+A\+C\+K, it is important to install developers’ version of each library. If these libraries are installed in standard directories, /usr /usr/local and /sw (Mac), no action is necessary.
 
 Alternatively, environment variables X\+Y\+Z\+\_\+\+H\+O\+M\+E should be set. Here, X\+Y\+Z stands for the name of package; the build utility can locate the libraries and use them. With few exceptions, the build utility cmake will look for {\ttfamily X\+Y\+Z\+\_\+\+H\+O\+M\+E/include} for the header files and {\ttfamily X\+Y\+Z\+\_\+\+H\+O\+M\+E/lib} for the library files. When multiple environment variables apply to a library, e.\+g., blas/lapack, the library is searched according to the listed order.
@@ -131,10 +136,11 @@ ls -l bin/qmcapp
 To build the documentation you will also need to install graphviz and doxygen.\section{Installing Q\+M\+C\+P\+A\+C\+K on Mac O\+S X 10.\+9 Mavericks using Macports}\label{a00002_macbuild}
 \begin{DoxyNote}{Note}
 We assume that you are working in the qmcpack directory. 
-
-Despite working on a 2013 Mac Pro, this recipe fails on some other Macs. This indicates that there are minor additional subtleties still to be worked out. However, this recipe should be a very good starting point.
 \end{DoxyNote}
-(Tested on a 2013 Mac Pro in July 2014).
+\begin{DoxyWarning}{Warning}
+This build will fail if the standalone einspline library is in /usr/local. Remove the einspline include files, archive libraries, and rerun cmake if this occurs.
+\end{DoxyWarning}
+(Tested on a 2013 Mac Pro and mid-\/2011 Mac Book Air in July 2014).
 
 These instructions assume a fresh installation of macports and for consistency with current Linux distributions, use the gcc 4.\+8.\+2 compiler. It is vital to ensure matching compilers/options for all packages and to force use of what is installed in /opt/local
 

@@ -2,7 +2,7 @@
 
 \anchor ug_intro
 
-@note If you are building QMCPACK for the first time, we recommendthe [Getting Started pages](@ref firstp)
+@note If you are building QMCPACK for the first time, we recommend the [Getting Started pages](@ref firstp)
 
 Currently, the QMCPACK user guide is not meant to be a full
 introduction to Quantum Monte Carlo methods and are written on the
