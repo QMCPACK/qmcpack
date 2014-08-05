@@ -141,17 +141,32 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     }
   }
 
+  // mmorales: changed order of spin assignment to help with spin
+  // imbalances in molecules at large distances. 
+  // Not guaranteed to work, but should help in most cases  
+  // as long as atoms in molecules are defined sequencially 
   vector<LoneElectron>::iterator it(loneQ.begin());
   vector<LoneElectron>::iterator it_end(loneQ.end());
-  while(nup_tot<numUp && it != it_end)
-  {
-    els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
-    ++it;
-  }
+  //while(nup_tot<numUp && it != it_end)
+  //{
+  //  els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+  //  ++it;
+  //}
+  //while(it != it_end)
+  //{
+  //  els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+  //  ++it;
+  //}
   while(it != it_end)
   {
-    els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
-    ++it;
+    if(nup_tot<numUp) {
+      els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+      ++it;
+    }
+    if(ndown_tot<numDown && it != it_end) {
+      els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+      ++it;
+    }
   }
   //extra electrons around the geometric center
   double cnorm=1.0/static_cast<double>(Centers);
