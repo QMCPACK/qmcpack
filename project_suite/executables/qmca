@@ -1063,7 +1063,7 @@ def unavailable(module,*items):
 try:
     from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign
 except (ImportError,RuntimeError):
-    array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,sign = unavailable('numpy','array','zeros','dot','loadtxt','floor','empty','sqrt','trace','savetxt','concatenate','real','imag','diag','arange','ones','identity','exp','log','sign')
+    array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign = unavailable('numpy','array','zeros','dot','loadtxt','floor','empty','sqrt','trace','savetxt','concatenate','real','imag','diag','arange','ones','identity','exp','log','log10','sign')
 #end try
 try:
     import numpy.random as random
@@ -1387,7 +1387,8 @@ def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(floor(log10(abs(some_float))))-1) 
     else:
-        print "Number of significant figures must be a whole number"
+        QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
+    #end if
 #end sigfig_round
 
 
@@ -1913,6 +1914,7 @@ class DatAnalyzer(QBase):
             self.log("{:<50} {}".format(phrase2, required_samples))
             self.log("{:<50} {}\n".format(phrase3, factor))
             exit()
+        #end if
         if len(quantities)==1 and not opt.all_quantities:
             line = self.stat_line(quantities[0],prec='8.6f')
             self.log('{0}  series {1}  {2}'.format(prefix,series,line))
