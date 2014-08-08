@@ -14,7 +14,6 @@ class Callable:                        #helper class to create 'static' methods
     #end def init
 #end class Callable
 
-
 import copy
 class Copyable:
     def _copy(self):
@@ -1062,7 +1061,7 @@ def unavailable(module,*items):
 #end def unavailable
 
 try:
-    from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,sign
+    from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign
 except (ImportError,RuntimeError):
     array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,sign = unavailable('numpy','array','zeros','dot','loadtxt','floor','empty','sqrt','trace','savetxt','concatenate','real','imag','diag','arange','ones','identity','exp','log','sign')
 #end try
@@ -1383,6 +1382,13 @@ except (ImportError,RuntimeError):
    figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy','text')
 #end try
 
+
+def sigfig_round(some_float, nsigfig):
+    if nsigfig >= 1 and nsigfig == int(nsigfig):
+        return round(some_float, nsigfig - int(floor(log10(abs(some_float))))-1) 
+    else:
+        print "Number of significant figures must be a whole number"
+#end sigfig_round
 
 
 def simstats(x,dim=None):
@@ -1817,6 +1823,7 @@ class DatAnalyzer(QBase):
             wt = (data.BlockCPU*data.BlockWeight).sum()/3600
             #tt = data.BlockCPU.sum()/3600
             tt = data.BlockCPU.sum()
+            ts = data.BlockWeight.sum() ###
 
             # def. of efficiency in energy.pl 
             #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
@@ -1829,6 +1836,8 @@ class DatAnalyzer(QBase):
             # total time
             stats.TotalTime = obj(mean=tt,var=0.0,error=0.0,kappa=1.0)
             data.TotalTime = 0*data.LocalEnergy
+            # TotalSamples 
+            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0) ###
         #end if
     #end def analyze
 
@@ -1891,6 +1900,19 @@ class DatAnalyzer(QBase):
         if first_series and not only_series:
             self.log('')
         #end if
+        if opt.desired_error is not None:
+            required_samples = int(((stats.LocalEnergy.error / opt.desired_error) ** 2) * stats.TotalSamples.mean)
+            factor = required_samples / stats.TotalSamples.mean
+            required_samples = int(sigfig_round(required_samples, 3))
+            factor = sigfig_round(factor, 3)
+            current_error = sigfig_round(stats.LocalEnergy.error, 1) 
+            phrase1 = "To change the current error of {} {} to".format(current_error, opt.units)
+            phrase2 = "change sample number to"
+            phrase3 = "multiplying current sample number by a factor of"
+            self.log("\n{:<50} {} {}".format(phrase1, opt.desired_error, opt.units))
+            self.log("{:<50} {}".format(phrase2, required_samples))
+            self.log("{:<50} {}\n".format(phrase3, factor))
+            exit()
         if len(quantities)==1 and not opt.all_quantities:
             line = self.stat_line(quantities[0],prec='8.6f')
             self.log('{0}  series {1}  {2}'.format(prefix,series,line))
@@ -2163,6 +2185,7 @@ QMCA examples:
         usage = '''usage: %prog [options] [file(s)]'''
         parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
         self.parser = parser
+        # available option letters: c, d, f, g, k, l, m, n, y, z
         parser.add_option('-v','--verbose',dest='verbose',
                           action='store_true',default=False,
                           help='Print detailed information (default=%default).'
@@ -2246,6 +2269,10 @@ QMCA examples:
         parser.add_option('--help',dest='help',
                           action='store_true',default=False,
                           help='Print help information and exit (default=%default).'
+                          )
+        parser.add_option('-d', '--desired_error', dest='desired_error',
+                          type="float", default=None,
+                          help='Show number of samples needed for desired error bar (default=%default).'
                           )
 
         unsupported = set('histogram image reblock report examples'.split())
