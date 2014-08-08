@@ -1660,6 +1660,7 @@ class QBase(DevBase):
         bc  = 'BlockCPU',       ar = 'AcceptRatio',    eff  = 'Efficiency',
         te  = 'TrialEnergy',    de = 'DiffEff',        w    = 'Weight',
         nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime', 
+        ts  = 'TotalSamples',
         )
 
     def log(self,*texts,**kwargs):
@@ -1683,9 +1684,9 @@ class QBase(DevBase):
 
 class DatAnalyzer(QBase):
     first = 'LocalEnergy Variance Kinetic LocalPotential ElecElec LocalECP NonLocalECP IonIon'.split()
-    last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
+    last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
 
-    nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
+    nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
 
     energy_sq = set(['Variance','LocalEnergy_sq'])
 
@@ -1824,7 +1825,7 @@ class DatAnalyzer(QBase):
             wt = (data.BlockCPU*data.BlockWeight).sum()/3600
             #tt = data.BlockCPU.sum()/3600
             tt = data.BlockCPU.sum()
-            ts = data.BlockWeight.sum() ###
+            ts = data.BlockWeight.sum()
 
             # def. of efficiency in energy.pl 
             #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
