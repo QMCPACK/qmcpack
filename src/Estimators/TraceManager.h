@@ -558,6 +558,7 @@ struct TraceSamples
     }
   }
 
+#ifdef HAVE_ADIOS
   // determine what adios type to use for output (of one variable)
   inline string get_adios_type (string type, string domain, string name, bool complex=0)
   {
@@ -589,7 +590,6 @@ struct TraceSamples
         }
         return vartype;
   }
-
 
   inline void register_adios_data(ADIOS::Trace& at, string type, bool complex=0)
   {
@@ -623,6 +623,7 @@ struct TraceSamples
         at.define_var (varpath, s.dimension, dims, vartype);
     }
   }
+#endif
 
   inline void write_summary(string type,string pad="  ")
   {
