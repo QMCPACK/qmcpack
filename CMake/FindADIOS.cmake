@@ -5,6 +5,7 @@
 
 SET(ADIOS_HOME $ENV{ADIOS_HOME})
 SET(ADIOS_CONFIG adios_config)
+MESSAGE(STATUS "Try ADIOS_HOME="${ADIOS_HOME})
 
 #Try to find adios config
 IF (ADIOS_HOME)
