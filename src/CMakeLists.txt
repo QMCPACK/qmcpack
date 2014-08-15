@@ -123,7 +123,7 @@ else()
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
-			ADIOS/ADIOS_verify.cpp
+      ADIOS/ADIOS_verify.cpp
       )
 
     IF(OHMMS_DIM  MATCHES 3)
@@ -153,6 +153,7 @@ else()
     Particle/AdiosWalkerInput.cpp
     ADIOS/ADIOS_profile.cpp
     ADIOS/ADIOS_verify.cpp
+    ADIOS/ADIOSTrace.cpp
     )
   #endif(HAVE_ADIOS)
 
