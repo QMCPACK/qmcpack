@@ -495,6 +495,13 @@ public:
    */
   void reset_clones();
 
+  /** get species name of particle i
+   */
+  inline const string& species_from_index(int i)
+  {
+    return mySpecies.speciesName[GroupID[i]];
+  }
+
 protected:
   ///the number of particle objects
   static Index_t PtclObjectCounter;

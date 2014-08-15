@@ -34,6 +34,7 @@
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
+#include "QMCHamiltonians/OrbitalImages.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
@@ -383,6 +384,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log()<<"  Adding StaticStructureFactor"<<endl;
         StaticStructureFactor* apot=new StaticStructureFactor(*targetPtcl);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType == "orbitalimages")
+      {
+        app_log()<<"  Adding OrbitalImages"<<endl;
+        OrbitalImages* apot=new OrbitalImages(*targetPtcl,ptclPool,myComm);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }

@@ -21,6 +21,7 @@ SET(HAMSRCS
   StaticStructureFactor.cpp
   ../Estimators/PostProcessor.cpp
   ../Estimators/SpinDensityPostProcessor.cpp
+  OrbitalImages.cpp
 )
 #  FSAtomPseudoPot.cpp
 
