@@ -148,16 +148,7 @@ class Wfconvert(Simulation):
 
         success = file_exists and outfin
 
-        self.finished = success and self.job.finished
-
-        #print
-        #print 'file_exists',file_exists
-        #print 'output done',outfin
-        #print 'success    ',success
-        #print 'job done   ',self.job.finished
-        #print 'finished   ',self.finished
-        #print
-        
+        self.finished = success
     #end def check_sim_status
 
     def get_output_files(self):
@@ -180,19 +171,11 @@ class Wfconvert(Simulation):
 
 
 def generate_wfconvert(**kwargs):
-    kw = set(kwargs.keys())
-    sim_kw = kw & Simulation.allowed_inputs
-    inp_kw = (kw - sim_kw)
-    sim_args = dict()
-    inp_args  = dict()
-    for kw in sim_kw:
-        sim_args[kw] = kwargs[kw]
-    #end for
-    for kw in inp_kw:
-        inp_args[kw] = kwargs[kw]
-    #end for    
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    sim_args['input'] = generate_wfconvert_input(**inp_args)
+    if not 'input' in sim_args:
+        sim_args.input = generate_wfconvert_input(**inp_args)
+    #end if
     wfconvert = Wfconvert(**sim_args)
 
     return wfconvert

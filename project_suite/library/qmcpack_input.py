@@ -325,6 +325,7 @@ class QIxml(Names):
 
     def init_from_args(self,args):
         print
+        print 'in init from args (not implemented), args:'
         print args
         print
         self.not_implemented()
@@ -1229,13 +1230,23 @@ class Param(Names):
         #end if
         if 'text' in xml:
             token = xml.text.split('\n',1)[0].split(None,1)[0]
-            if is_int(token):
-                val = loadtxt(StringIO(xml.text),int)
-            elif is_float(token):
-                val = loadtxt(StringIO(xml.text),float)
-            else:
-                val = array(xml.text.split())
-            #end if
+            try:
+                if is_int(token):
+                    val = loadtxt(StringIO(xml.text),int)
+                elif is_float(token):
+                    val = loadtxt(StringIO(xml.text),float)
+                else:
+                    val = array(xml.text.split())
+                #end if
+            except:
+                if is_int(token):
+                    val = array(xml.text.split(),dtype=int)
+                elif is_float(token):
+                    val = array(xml.text.split(),dtype=float)
+                else:
+                    val = array(xml.text.split())
+                #end if
+            #end try
             if val.size==1:
                 val = val.ravel()[0]
             #end if
@@ -1306,7 +1317,8 @@ class Param(Names):
                     nrows,ncols = value.shape
                     fmt=pp
                     if value.dtype == dtype(float):
-                        vfmt = ':16.8f'
+                        #vfmt = ':16.8f'
+                        vfmt = ':16.8e'
                     else:
                         vfmt = ''
                     #end if
@@ -1438,32 +1450,32 @@ sposet_builder = QIxmlFactory(
 
 
 class wavefunction(QIxml):
-    attributes = ['name','target']
+    attributes = ['name','target','id']
     elements   = ['sposet_builder','determinantset','jastrow']
-    identifier = 'name'
+    identifier = 'name','id'
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name']
     elements   = ['basisset','slaterdeterminant']
     h5tags     = ['twistindex','twistangle']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
 #end class determinantset
 
 class basisset(QIxml):
-    attributes = ['ecut']
+    attributes = ['ecut','name']
     elements   = ['grid','atomicbasisset']
 #end class basisset
 
 class grid(QIxml):
-    attributes = ['dir','npts','closed']
-    identifier = 'dir'
+    attributes = ['dir','npts','closed','type','ri','rf']
+    #identifier = 'dir'
 #end class grid
 
 class atomicbasisset(QIxml):
-    attributes = ['type','elementtype','expandylm','href','normalized']
-    elements   = ['basisgroup']
-    write_types= obj(expandylm=yesno)
+    attributes = ['type','elementtype','expandylm','href','normalized','name','angular']
+    elements   = ['grid','basisgroup']
+    write_types= obj(expandylm=yesno,normalized=yesno)
 #end class atomicbasisset
 
 class basisgroup(QIxml):
@@ -1472,7 +1484,7 @@ class basisgroup(QIxml):
 #end class basisgroup
 
 class radfunc(QIxml):
-    attributes = ['exponent','node']
+    attributes = ['exponent','node','contraction']
 #end class radfunc
 
 class slaterdeterminant(QIxml):
@@ -1832,7 +1844,8 @@ plurals = obj(
     vars            = 'var',
     neighbor_traces = 'neighbor_trace',
     sposet_builders = 'sposet_builder',
-    sposets         = 'sposet'
+    sposets         = 'sposet',
+    radfuncs        = 'radfunc'
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())

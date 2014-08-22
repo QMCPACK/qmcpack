@@ -14,6 +14,7 @@ from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,g
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
 from converters import Pw2qmcpack,Wfconvert
+from convert4qmc import Convert4qmc
 from sqd import Sqd
 from debug import ci,ls,gs
 from developer import unavailable
@@ -202,6 +203,21 @@ class Qmcpack(Simulation):
                 abset = input.get('atomicbasisset')
                 abset.href = h5file
 
+            elif isinstance(sim,Convert4qmc):
+
+                res = QmcpackInput(result.location)
+                wfn = res.qmcsystem.wavefunction
+                qs = input.simulation.qmcsystem
+                oldwfn = qs.wavefunction
+                newwfn = wfn.copy()
+                if 'jastrows' in newwfn:
+                    del newwfn.jastrows
+                #end if
+                if 'jastrows' in oldwfn:
+                    newwfn.jastrows = oldwfn.jastrows
+                #end if
+                qs.wavefunction = newwfn
+
             else:
                 self.error('incorporating orbitals from '+sim.__class__.__name__+' has not been implemented')
             #end if
@@ -357,7 +373,6 @@ class Qmcpack(Simulation):
 
 
     def twist_average(self,twistnums):
-        #self.error('twist averaging!')
         br = obj()
         br.quantity = 'twistnum'
         br.values   = list(twistnums)
@@ -489,18 +504,18 @@ class BundledQmcpack(Qmcpack):
         self.failed   = aborted
         self.finished = files_exist and self.job.finished and not aborted 
 
-        print
-        print self.__class__.__name__
-        print 'identifier ',self.identifier
-        print 'ran_to_end ',ran_to_end
-        print 'files_exist',files_exist
-        print 'aborted    ',aborted
-        print 'job done   ',self.job.finished
-        print 'finished   ',self.finished
-        print
-
-        import code
-        code.interact(local=dict(locals(),**globals()))
+        #print
+        #print self.__class__.__name__
+        #print 'identifier ',self.identifier
+        #print 'ran_to_end ',ran_to_end
+        #print 'files_exist',files_exist
+        #print 'aborted    ',aborted
+        #print 'job done   ',self.job.finished
+        #print 'finished   ',self.finished
+        #print
+        #
+        #import code
+        #code.interact(local=dict(locals(),**globals()))
 
     #end def check_sim_status
 
@@ -510,37 +525,12 @@ class BundledQmcpack(Qmcpack):
 
 
 def generate_qmcpack(**kwargs):
-    has_input = 'input_type' in kwargs
-    if has_input:
-        input_type = kwargs['input_type']
-        del kwargs['input_type']
-    #end if
-    overlapping_kw = set(['system'])
-    kw = set(kwargs.keys())
-    sim_kw = kw & Simulation.allowed_inputs
-    inp_kw = (kw - sim_kw) | (kw & overlapping_kw)    
-    sim_args = dict()
-    inp_args  = dict()
-    for kw in sim_kw:
-        sim_args[kw] = kwargs[kw]
-    #end for
-    for kw in inp_kw:
-        inp_args[kw] = kwargs[kw]
-    #end for    
-    if 'pseudos' in inp_args and inp_args['pseudos']!=None:
-        if 'files' in sim_args:
-            sim_args['files'] = list(sim_args['files'])
-        else:
-            sim_args['files'] = list()
-        #end if
-        sim_args['files'].extend(list(inp_args['pseudos']))
-    #end if
-    if 'system' in inp_args and isinstance(inp_args['system'],PhysicalSystem):
-        inp_args['system'] = inp_args['system'].copy()
-    #end if
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    if has_input:
-        sim_args['input'] = generate_qmcpack_input(input_type,**inp_args)
+    if not 'input' in sim_args:
+        input_type = inp_args.input_type
+        del inp_args.input_type
+        sim_args.input = generate_qmcpack_input(input_type,**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)
 

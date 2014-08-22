@@ -131,6 +131,7 @@ class Job(Pobj):
                  app_command  = None,
                  app_props    = None,
                  app          = None,
+                 env          = None,
                  outfile      = None,
                  errfile      = None,
                  mode         = None,
@@ -222,6 +223,11 @@ class Job(Pobj):
         #end if
         if options != None:
             self.run_options.read(options)
+        #end if
+        if env is None:
+            self.env = None
+        else:
+            self.set_environment(**env)
         #end if
 
         if app_props==None:
@@ -329,6 +335,26 @@ class Job(Pobj):
             self.processes = int(ceil(float(self.cores)/self.threads))
         #end if
     #end def set_processes
+
+            
+    def set_environment(self,limited_env=False,clear_env=False,**env):
+        machine = self.get_machine()
+        if isinstance(machine,Supercomputer):
+            limited_env = True
+        #end if
+        if self.env is None:
+            self.env = os.environ.copy()
+            if limited_env:
+                self.env.clear()
+            #end if
+        #end if
+        if clear_env:
+            self.env.clear()
+        #end if
+        for n,v in env.iteritems():
+            self.env[n]=str(v)
+        #end for
+    #end def set_environment
 
 
     def get_time(self):
@@ -838,7 +864,7 @@ class Workstation(Machine):
                 self.log(pad+'Executing:  '+command)
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
-                p = Popen(command,stdout=job.out,stderr=job.err,shell=True)
+                p = Popen(command,env=job.env,stdout=job.out,stderr=job.err,shell=True)
                 process.popen = p
                 job.system_id = p.pid
             else:
@@ -1044,6 +1070,7 @@ class Supercomputer(Machine):
 
         self.process_job_extra(job)
 
+        job.set_environment(OMP_NUM_THREADS=job.threads)
 
         launcher = self.app_launcher
         if launcher=='mpirun':
@@ -1062,12 +1089,18 @@ class Supercomputer(Machine):
                 job.run_options.add(S='-S '+str(job.processes_per_proc))
             #end if
         elif launcher=='runjob':
+            #bypass setup_environment
+            envs='--envs'
+            for name,value in job.env.iteritems():
+                envs+=' {0}={1}'.format(name,value)
+            #end for
+            job.env = None
             job.run_options.add(
                 np      = '--np '+str(job.processes),
                 p       = '-p '+str(job.processes_per_node),
                 locargs = '$LOCARGS',
                 verbose = '--verbose=INFO',
-                envs    = '--envs OMP_NUM_THREADS='+str(job.threads)
+                envs    = envs
                 )
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
 	    job.run_options.add(
@@ -1231,18 +1264,31 @@ class Supercomputer(Machine):
 
         
     def set_submission_commands(self,job):
-        self.pre_submission_commands = 'date\nexport OMP_NUM_THREADS='+str(job.threads)+'\n'
+        self.pre_submission_commands = 'date\n'
         self.post_submission_commands= ''
     #end def set_submission_commands
 
 
+    def setup_environment(self,job):
+        env = ''
+        if job.env!=None:
+            for name,val in job.env.iteritems():
+                env +='export {0}={1}\n'.format(name,val)
+            #end for
+        #end if
+        return env
+    #end def setup_environment
+
+
     def write_job(self,job):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
+        env = self.setup_environment(job)
         command = job.run_command(self.app_launcher)
         self.set_submission_commands(job)
         
         c = self.write_job_header(job)+'\n'
         c+=self.pre_submission_commands+'\n'
+        c+=env
         c+=command+'\n'
         c+=self.post_submission_commands+'\n'
 

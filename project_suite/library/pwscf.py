@@ -52,14 +52,10 @@ class Pwscf(Simulation):
             calculating_result = True
         elif result_name=='orbitals':
             calculating_result = 'wf_collect' in control and control.wf_collect
-            #if isinstance(sim,Pw2qmcpack):
-            #    sim.input.inputpp.prefix = self.identifier
-            ##end if
         elif result_name=='structure':
             calculating_result = control.calculation.lower() == 'relax'
         else:
             calculating_result = False
-            self.error('ability to check for result '+result_name+' has not been implemented')
         #end if
         return calculating_result
     #end def check_result
@@ -162,36 +158,13 @@ class Pwscf(Simulation):
 
 
 def generate_pwscf(**kwargs):
-    has_input = 'input_type' in kwargs
-    if has_input:
-        input_type = kwargs['input_type']
-        del kwargs['input_type']
-    #end if
-    overlapping_kw = set(['system'])
-    kw = set(kwargs.keys())
-    sim_kw = kw & Simulation.allowed_inputs
-    inp_kw = (kw - sim_kw) | (kw & overlapping_kw)    
-    sim_args = dict()
-    inp_args  = dict()
-    for kw in sim_kw:
-        sim_args[kw] = kwargs[kw]
-    #end for
-    for kw in inp_kw:
-        inp_args[kw] = kwargs[kw]
-    #end for    
-    if 'pseudos' in inp_args:
-        if 'files' in sim_args:
-            sim_args['files'] = list(sim_args['files'])
-        else:
-            sim_args['files'] = list()
-        #end if
-        sim_args['files'].extend(list(inp_args['pseudos']))
-    #end if
-    if 'system' in inp_args and isinstance(inp_args['system'],PhysicalSystem):
-        inp_args['system'] = inp_args['system'].copy()
-    #end if
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    sim_args['input'] = generate_pwscf_input(input_type,**inp_args)
+    if not 'input' in sim_args:
+        input_type = inp_args.input_type
+        del inp_args.input_type
+        sim_args.input = generate_pwscf_input(input_type,**inp_args)
+    #end if
     pwscf = Pwscf(**sim_args)
 
     return pwscf

@@ -52,10 +52,6 @@ class Pobj(DevBase):
 
     wrote_something = False # for pretty printing
 
-    #def set(self,**kw):
-    #    self.add_attributes(**kw)
-    ##end def set
-
     @staticmethod
     def set_mode(mode):
         if mode in Pobj.modes:
@@ -64,11 +60,6 @@ class Pobj(DevBase):
             print 'settings Error: invalid mode specified: '+mode+'\n  valid modes are '+str(Pobj.modes.keys())
         #end if
     #end def set_mode
-
-    @classmethod
-    def type(cls):
-        return cls()
-    #end def type
 
     def mem_usage(self):
         return int(resident()/1e6)
@@ -92,30 +83,30 @@ class Pobj(DevBase):
         Pobj.wrote_something = True
     #end def log
 
-    @classmethod
-    def class_error(cls,msg,source=None,n=0,trace=True):
-        if source==None:
-            source = cls.__name__
-        #end if
-        pad = n*cls.indent
-        text=pad+source+' Error: '+msg
-        text = '\n'+text.replace('\n','\n'+pad)+'\n\n'
-        cls.logfile.write(text)
-        if trace:
-            traceback.print_stack()
-        #end if
-        exit()
-    #end def class_error
-
-    @classmethod
-    def class_warn(cls,msg,source=None,n=0):
-        if source==None:
-            source = cls.__name__
-        #end if
-        pad = n*cls.indent
-        text=pad+source+' Warning: '+msg
-        cls.logfile.write(text.replace('\n','\n'+pad)+'\n')
-    #end def class_warn
+    #@classmethod
+    #def class_error(cls,msg,source=None,n=0,trace=True):
+    #    if source==None:
+    #        source = cls.__name__
+    #    #end if
+    #    pad = n*cls.indent
+    #    text=pad+source+' Error: '+msg
+    #    text = '\n'+text.replace('\n','\n'+pad)+'\n\n'
+    #    cls.logfile.write(text)
+    #    if trace:
+    #        traceback.print_stack()
+    #    #end if
+    #    exit()
+    ##end def class_error
+    #
+    #@classmethod
+    #def class_warn(cls,msg,source=None,n=0):
+    #    if source==None:
+    #        source = cls.__name__
+    #    #end if
+    #    pad = n*cls.indent
+    #    text=pad+source+' Warning: '+msg
+    #    cls.logfile.write(text.replace('\n','\n'+pad)+'\n')
+    ##end def class_warn
 
     def dlog(self,*texts,**kwargs):
         if self.debug:

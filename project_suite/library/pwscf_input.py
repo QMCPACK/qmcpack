@@ -1002,7 +1002,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system
 
         
-    def return_system(self):
+    def return_system(self,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -1034,20 +1034,29 @@ class PwscfInput(SimulationInput):
         structure.recenter()
   
         ion_charge = 0
-        valency = dict()
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
-            pseudo_file = self.atomic_species.pseudopotentials[atom]
-            if self.pseudopotentials!=None and pseudo_file in self.pseudopotentials:                
-                pseudopot = self.pseudopotentials[pseudo_file]
-                element = pseudopot.element
-                valence = int(pseudopot.Z)
-                ion_charge += atoms.count(atom)*valence
-                valency[atom] = valence
-            else:
-                self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function',trace=False)
+            if not atom in valency:
+                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()')
             #end if
+            ion_charge += atoms.count(atom)*valency[atom]
         #end for
+
+        #ion_charge = 0
+        #valency = dict()
+        #atoms   = list(self.atomic_positions.atoms)
+        #for atom in self.atomic_species.atoms:
+        #    pseudo_file = self.atomic_species.pseudopotentials[atom]
+        #    if self.pseudopotentials!=None and pseudo_file in self.pseudopotentials:                
+        #        pseudopot = self.pseudopotentials[pseudo_file]
+        #        element = pseudopot.element
+        #        valence = int(pseudopot.Z)
+        #        ion_charge += atoms.count(atom)*valence
+        #        valency[atom] = valence
+        #    else:
+        #        self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function',trace=False)
+        #    #end if
+        ##end for
 
         if 'nelup' in self.system:
             nup = self.system.nelup

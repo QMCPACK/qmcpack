@@ -133,7 +133,56 @@ class Simulation(Pobj):
 
 
     sim_directories = dict()
-    
+
+
+    @staticmethod
+    def separate_inputs(kwargs,overlapping_kw=-1,copy_pseudos=True):
+        if overlapping_kw==-1:
+            overlapping_kw = set(['system'])
+        elif overlapping_kw is None:
+            overlapping_kw = set()
+        #end if
+        kw       = set(kwargs.keys())
+        sim_kw   = kw & Simulation.allowed_inputs
+        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
+        sim_args = obj()
+        inp_args = obj()
+        sim_args.transfer_from(kwargs,sim_kw)
+        inp_args.transfer_from(kwargs,inp_kw)
+        if 'pseudos' in inp_args:
+            pseudos = inp_args.pseudos
+            if copy_pseudos:
+                if 'files' in sim_args:
+                    sim_args.files = list(sim_args.files)
+                else:
+                    sim_args.files = list()
+                #end if
+                sim_args.files.extend(list(pseudos))
+            #end if
+            if 'system' in inp_args:
+                system = inp_args.system
+                if not isinstance(system,PhysicalSystem):
+                    Simulation.class_error('system object must be of type PhysicalSystem')
+                #end if
+                pseudopotentials = Simulation.pseudopotentials
+                for ppfile in pseudos:
+                    if not ppfile in pseudopotentials:
+                        Simulation.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
+                    #end if
+                    pp = pseudopotentials[ppfile]
+                    if not pp.element in system.structure.elem:
+                        Simulation.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
+                    #end if
+                #end for
+            #end if
+        #end if
+        # this is already done in Simulation.__init__()
+        #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
+        #    inp_args.system = inp_args.system.copy()
+        ##end if
+        return sim_args,inp_args
+    #end def separate_inputs
+
 
     def __init__(self,**kwargs):
         #user specified variables
@@ -232,6 +281,9 @@ class Simulation(Pobj):
         #end if
         if 'files' in allowed:
             self.files = set(self.files)
+        #end if
+        if not isinstance(self.input,self.input_type):
+            self.error('input must be of type {0}\nreceived {1}\nplease provide input appropriate to {2}'.format(self.input_type.__name__,self.input.__class__.__name__,self.__class__.__name__))
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
@@ -626,7 +678,6 @@ class Simulation(Pobj):
             #end if
             if self.failed:
                 self.finished = True
-                self.job.finished = True
                 self.block_dependents()
             #end if
         #end if
@@ -1213,4 +1264,22 @@ class SimulationInputTemplate(SimulationInput):
     #end if
 #end class SimulationInputTemplate
 
+
+
+
+class SimulationInputMultiTemplate(SimulationInput):
+    None
+#end class SimulationInputMultiTemplate
+
+
+
+
+def input_template(*args,**kwargs):
+    return SimulationInputTemplate(*args,**kwargs)
+#end def input_template
+
+
+def multi_input_template(*args,**kwargs):
+    return SimulationInputMultiTemplate(*args,**kwargs)
+#end def input_template
 

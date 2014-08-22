@@ -319,19 +319,11 @@ class Pw2qmcpack(Simulation):
 
 
 def generate_pw2qmcpack(**kwargs):
-    kw = set(kwargs.keys())
-    sim_kw = kw & Simulation.allowed_inputs
-    inp_kw = (kw - sim_kw)
-    sim_args = dict()
-    inp_args  = dict()
-    for kw in sim_kw:
-        sim_args[kw] = kwargs[kw]
-    #end for
-    for kw in inp_kw:
-        inp_args[kw] = kwargs[kw]
-    #end for    
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    sim_args['input'] = generate_pw2qmcpack_input(**inp_args)
+    if not 'input' in sim_args:
+        sim_args.input = generate_pw2qmcpack_input(**inp_args)
+    #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
 
     return pw2qmcpack

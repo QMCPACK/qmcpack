@@ -135,8 +135,8 @@ class obj(AllAbilities):
         if header==None:
             header = cls.__name__
         #end if
-        cls.logfile.write(header+post_header)
-        cls.logfile.write(pad+message.replace('\n','\n'+pad)+'\n')
+        cls.logfile.write(header+post_header+'\n')
+        cls.logfile.write(('\n'+message).replace('\n','\n'+pad)+'\n')
         if exit:
             cls.logfile.write('  exiting.\n\n')
             if trace:
@@ -145,6 +145,16 @@ class obj(AllAbilities):
             exit_call()
         #end if
     #end def class_error
+
+    @classmethod
+    def class_warn(cls,message,header=None,post_header=' Warning:'):
+        pad = 4*' '
+        if header==None:
+            header=cls.__name__
+        #end if
+        cls.logfile.write(header+post_header+'\n')
+        cls.logfile.write(('\n'+message).replace('\n','\n'+pad)+'\n')
+    #end def error
 
     def transfer_from(self,other,keys=None,copy=False):
         if keys==None:

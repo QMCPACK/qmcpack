@@ -1,80 +1,4 @@
 
-################################################################################
-#
-# Design of project manager
-#
-#  Input file template classes
-#    for qmcpack, pwscf, abinit, ...
-#    simple type,name interface
-#      qi = QmcpackInput()
-#      qi.Juu = J2()
-#      opt = qi.add('opt',CSLinear())
-#      vmc = qi.add('vmc',VMC())
-#      dmc = qi.add('dmc',DMC())
-#      qi.complete() 
-#        checks for type completeness 
-#        creates minimal path representations  
-#          eg qi.opt.cg_steps -> qi.cg_steps
-#          if name is unique among children, parent links to unique name
-#      qi.validate()
-#        checks that all input is filled in and valid
-#
-#   Need an input file collection class
-#     is fed a list of structures containing unique calculation information aliased to variables within input files
-#     structure list defines the calculation tree of the project
-#
-#
-#
-#
-#  
-# 30/01/12  
-#  Simulation object to manage all aspects of a simulation job
-#    has a submitter that executes the job and knows when it is finished
-#    has an analyzer object to collect results
-#    aware of required file inputs and outputs
-#      forms a consumer/producer chain of objects
-#    capable of moving these objects to new locations
-#    capable of initiating conversions for file inputs
-#    child classes for pwscf, qmcpack, etc
-#  
-#  SimulationCascade
-#    a cascade (tree structure) of simulations, presumably executed on the same system
-#    the cascade is executed in sequence and outputs from prior simulations can be inputs to following ones
-#    cascade nodes should be capable of being linked to any other nodes for inputs (in or out of the same cascade)
-#    the cascade handles its own submission and analysis traversals
-#  
-#  ProjectManager
-#    takes a generator object describing various system configurations
-#    each generator subobject/system configuration has a SimulationCascade 
-#      describing the simulation steps to perform on the system
-#    is a persistent process, checking every x minutes on the progress of various cascades on the system
-#    may send an email when all cascades are finished, or if problems are encountered along the way
-#    capable of accumulating estimates of total runtime
-#
-#
-#  this module (project) should hold base classes for
-#    SimulationInput
-#      can read and write in several standard formats (xml, etc)
-#      extended to read and write specific input file formats
-#    SimulationSubmitter
-#    SimulationAnalyzer
-#    Simulation
-#  and the stand alone classes
-#    SimulationCascade
-#    ProjectManager
-#
-#  should have a machines module containing
-#    Machine class
-#    Machines class (a collection of all known machines)
-#  the Machine class should
-#    know machine anatomy
-#    know submission system
-#    have JobSubmitter objects
-#      Qsub, Msub, others derive from JobSubmitter
-#
-#
-################################################################################
-
 import os
 import time
 import memory
@@ -331,17 +255,6 @@ class ProjectManager(Pobj):
         collpath = ''
         for path,simlist in entry_order.iteritems():
             if len(simlist)>1:
-                #this is handled by Simulation now
-                ##resolve image directory collisions
-                #for i in range(len(simlist)):
-                #    sim = simlist[i]
-                #    imagedir = sim.image_dir+str(i+1)
-                #    if os.path.basename(sim.imlocdir)!=imagedir:
-                #        sim.imlocdir = os.path.join(sim.imlocdir,imagedir)
-                #        sim.imremdir = os.path.join(sim.imremdir,imagedir)
-                #        sim.imresdir = os.path.join(sim.imresdir,imagedir)
-                #    #end if
-                ##end for
                 #raise an error if any in/out/err files will collide
                 filespace = dict()
                 for sim in simlist:
