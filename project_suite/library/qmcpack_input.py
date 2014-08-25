@@ -3499,8 +3499,8 @@ def generate_determinantset_old(type           = 'bspline',
         dset.twist = tuple(twist)
     elif twistnum!=None:
         dset.twistnum = twistnum
-    else:
-        dset.twistnum = 0
+    #else:
+    #    dset.twistnum = 0
     #end if
     return dset
 #end def generate_determinantset_old
@@ -4443,7 +4443,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                timestep         = 0.5,
                                nonlocalpp       = False,
                                sample_factor    = 1.0,
-                               opt_calcs        = None):
+                               opt_calcs        = None,
+                               det_format       = 'new'):
     jastrows = generate_jastrows(jastrows,system)
 
     if opt_calcs is None:
@@ -4498,7 +4499,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
         jastrows       = jastrows       ,
         corrections    = corrections    ,
         observables    = observables    ,
-        calculations   = opts
+        calculations   = opts,
+        det_format     = det_format
         )
 
     return input
