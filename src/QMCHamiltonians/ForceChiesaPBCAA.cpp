@@ -26,8 +26,8 @@
 namespace qmcplusplus
 {
 
-ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns):
-  ForceBase(ions, elns), PtclA(ions)
+ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime):
+  ForceBase(ions, elns), PtclA(ions), first_time(firsttime)
 {
   ReportEngine PRE("ForceChiesaPBCAA","ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -46,15 +46,29 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns):
   myTableIndex=elns.addTable(ions);
   initBreakup(elns);
  // app_log()<< "IonIon Force" <<endl;
-//  app_log()<<forces_IonIon<<endl; 
-  evaluateLR_AA();
-//  app_log()<< "IonIon Force" <<endl;
-//  app_log()<<forces_IonIon<<endl; 
-  evaluateSR_AA();
-  app_log()<< "IonIon Force" <<endl;
-  app_log()<<forces_IonIon<<endl; 
-  app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
+ // app_log()<<forces_IonIon<<endl; 
+  if (first_time==true)
+  { 
+   evaluateLR_AA();
+ // app_log()<< "IonIon Force" <<endl;
+ // app_log()<<forces_IonIon<<endl; 
+   evaluateSR_AA();
+   app_log()<< "IonIon Force" <<endl;
+   app_log()<<forces_IonIon<<endl;
+   first_time=false;
+  }
+ // forces=0.0;
+ // evaluateLR(elns);
+ // app_log()<<"LR eI FORCE\n";
+ // app_log()<<forces<<endl;
+
+ // evaluateSR(elns);
+ // app_log()<<"LR+SR eI FORCE\n";
+ // app_log()<<forces<<endl;
+  
+ 
+ // app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
+ // app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
   
   ///////////////////////////////////////////////////////////////
 }
@@ -178,6 +192,11 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
       RealType g_f=g_filter(d_ab.r(nn));
       //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
       V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
+     // std::stringstream wee;
+    //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<<endl;
+      
+    //  cout<<wee.str();
+      
       PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
       //esum += Qat[jat]*d_ab.rinv(nn)*rV;
     //  app_log()<<"iat="<<iat<<" elec="<<jat<<endl;
@@ -195,7 +214,6 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   const DistanceTableData &d_aa(*PtclA.DistTables[0]);
   //RealType res=0.0;
   //Loop over distinct eln-ion pairs
- //app_log()<<"NumSpeciesA = "<<NumSpeciesA<<endl;
  for(int ipart=0; ipart<NptclA; ipart++)
   {
     RealType esum = 0.0;
@@ -205,10 +223,9 @@ void ForceChiesaPBCAA::evaluateSR_AA()
       PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
       forces_IonIon[ipart] += grad;
       forces_IonIon[jpart] -= grad;
-      app_log()<<"ShortRange Ion Ion component"<<endl;
-      app_log() <<"grad[" <<ipart<< "] = "<<grad<<endl;
-      app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<<endl;
-      app_log() <<"nn = "<<nn<<"  jpart= "<<jpart<<endl;
+   //   app_log()<<"ShortRange Ion Ion component"<<endl;
+   //   app_log() <<"grad[" <<ipart<< "] = "<<grad<<endl;
+   //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<<endl;
     }
   }
 }
@@ -243,9 +260,12 @@ ForceChiesaPBCAA::evaluate(ParticleSet& P)
   //forces = forces_IonIon;
   forces=0.0;
   evaluateLR(P);
+//  app_log()<<"LR eI FORCE\n";
+//  app_log()<<forces<<endl;
+
   evaluateSR(P);
- // app_log()<<"TOTAL eI FORCE\n";
- // app_log()<<forces<<endl;
+//  app_log()<<"LR+SR eI FORCE\n";
+//  app_log()<<forces<<endl;
   
   return 0.0;
 }
@@ -292,9 +312,39 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   return true;
 }
 
+void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
+{
+  int tid=P.addTable(PtclA);
+  if(tid != myTableIndex)
+  {
+    APP_ABORT("ForceChiesaPBCAA::resetTargetParticleSet found inconsistent table index");
+  }
+  AB->resetTargetParticleSet(P);
+}
+
+void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
+{
+  myIndex=plist.add(myName.c_str());
+//  if (ComputeForces)
+    addObservablesF(plist);
+}
+
 QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new ForceChiesaPBCAA(*this);
+//  ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(*this);
+  ForceChiesaPBCAA* tmp= new ForceChiesaPBCAA(PtclA,qp,false);
+  tmp->Rcut=Rcut; // parameter: radial distance within which estimator is used
+  tmp->m_exp=m_exp; // parameter: exponent in polynomial fit
+  tmp->N_basis=N_basis; // parameter: size of polynomial basis set
+  tmp->Sinv.resize(N_basis,N_basis);
+  tmp->Sinv=Sinv; // terms in fitting polynomial
+  tmp->h.resize(N_basis);
+  tmp->h=h; // terms in fitting polynomial
+  tmp->c.resize(N_basis);
+  tmp->c=c; // polynomial coefficients
+  tmp->initBreakup(qp);
+
+  return tmp;
 }
 }
 

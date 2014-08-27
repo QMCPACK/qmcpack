@@ -85,9 +85,11 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   ///Short-range potential for each species
   vector<RadFunctorType*> Vspec;
 
+  bool first_time;  
+
   ParticleSet::ParticlePos_t forces_ShortRange;
 
-  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns);
+  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime=true);
 
   Return_t evaluate(ParticleSet& P);
 
@@ -111,24 +113,26 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
     registerObservablesF(h5list,gid);
   }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables)
-  {
-    addObservablesF(plist);
-  }
+  void addObservables(PropertySetType& plist, BufferType& collectables);
+
 
   void setObservables(PropertySetType& plist)
   {
-    setObservablesF(plist);
-  }
-
-  void resetTargetParticleSet(ParticleSet& P)
-  {
+    QMCHamiltonianBase::setObservables(plist);
+      setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    setParticleSetF(plist, offset);
+    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+      setParticleSetF(plist, offset);
   }
+
+
+  void resetTargetParticleSet(ParticleSet& P);
+  
+  
+
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   bool put(xmlNodePtr cur) ;

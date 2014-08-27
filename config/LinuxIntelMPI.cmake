@@ -17,8 +17,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${INTEL_OPTS} -std=c99")
 # boost,hdf,szip,libxml2,fftw,essl
 #--------------------------------------------------------------------------
 set(CMAKE_FIND_ROOT_PATH
-  /opt/apps/icc13
-  /opt/share/boost
+  /usr/gapps/qmc/libs/INTEL/hdf5-1.8.8
+  /usr/gapps/qmc/libs/INTEL/libxml2-2.7.4
+  /usr/gapps/qmc/libs/INTEL/boost_1_40_0 
 )
 
 #--------------------------------------------------------------------------

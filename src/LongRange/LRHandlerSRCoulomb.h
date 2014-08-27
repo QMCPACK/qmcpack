@@ -28,6 +28,9 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimLinearSpline.h"
 
+#include <sstream>
+#include <string>
+
 namespace qmcplusplus
 {
 
@@ -77,12 +80,12 @@ public:
    
   ~LRHandlerSRCoulomb()
   {
-	 delete aGrid;
-	 delete rV_energy;
-     delete rV_force;
-     delete drV_force;
-     delete rV_stress;
-     delete drV_stress;  
+//	 delete aGrid;
+//	 delete rV_energy;
+//     delete rV_force;
+//     delete drV_force;
+//     delete rV_stress;
+//     delete drV_stress;  
   }
   //LRHandlerSRCoulomb(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
   //{
@@ -99,16 +102,22 @@ public:
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref):
     LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {
-    myFunc.reset(ref);
-    fillYk(ref.SK->KLists);
-    fillYkg(ref.SK->KLists);
-    filldFk_dk(ref.SK->KLists);
+//    myFunc.reset(ref);
+//    fillYk(ref.SK->KLists);
+//    fillYkg(ref.SK->KLists);
+//    filldFk_dk(ref.SK->KLists);
+   // app_log()<<"copy constructor called.  thread #"<<omp_get_num_threads()<<endl;
     aGrid = new GridType(*(aLR.aGrid));
-    rV_energy = new RadFunctorType(*(aLR.rV_energy));
-    rV_force = new RadFunctorType(*(aLR.rV_force));
-    drV_force = new RadFunctorType(*(aLR.drV_force));
-    rV_stress = new RadFunctorType(*(aLR.rV_stress));
-    drV_stress = new RadFunctorType(*(aLR.drV_stress));  
+   // new GridType(aLR.aGrid)
+    rV_energy = aLR.rV_energy->makeClone();
+    rV_force= aLR.rV_force->makeClone();
+    drV_force= aLR.drV_force->makeClone();
+    rV_stress= aLR.rV_stress->makeClone();
+    drV_stress= aLR.drV_stress->makeClone();
+//    rV_force = new RadFunctorType(*(aLR.rV_force));
+//    drV_force = new RadFunctorType(*(aLR.drV_force));
+//    rV_stress = new RadFunctorType(*(aLR.rV_stress));
+//    drV_stress = new RadFunctorType(*(aLR.drV_stress));  
     
 
   }
@@ -116,7 +125,7 @@ public:
   LRHandlerBase* makeClone(ParticleSet& ref)
   {
     LRHandlerSRCoulomb* tmp= new LRHandlerSRCoulomb<Func,BreakupBasis>(*this,ref);
-    tmp->makeSplines(1001);
+//    tmp->makeSplines(1001);
     return tmp;
   }
 
@@ -162,6 +171,51 @@ public:
 		
 		vE[i]=r*Basis.f(r,coefs);
 		vF[i]=r*Basis.f(r,gcoefs);
+		dvF[i]= r*r*Basis.df_dr(r,gcoefs);
+		vS[i]=r*Basis.f(r,gstraincoefs);
+		dvS[i]= r*r*Basis.df_dr(r,gstraincoefs);
+	 }
+	 
+	 vE[0]=1.0;
+	 vF[0]=1.0;
+	 dvF[0]=1.0;
+	 vS[0]=1.0;
+	 dvS[0]=1.0;
+	 
+
+     rV_energy=new RadFunctorType(aGrid,vE);
+     rV_force=new RadFunctorType(aGrid,vF);
+     drV_force=new RadFunctorType(aGrid,dvF);
+     rV_stress=new RadFunctorType(aGrid,vS);
+     drV_stress=new RadFunctorType(aGrid,dvS);
+     
+     rV_energy->spline(0,vE[0],ngrid-1,0);
+     rV_force->spline(0,vF[0],ngrid-1,0);
+     drV_force->spline(0,dvF[0],ngrid-1,0);
+     rV_stress->spline(0,vS[0],ngrid-1,0);
+     drV_stress->spline(0,dvS[0],ngrid-1,0);	  
+	  
+  }
+ /* void makeSplines(int ngrid)
+  {
+     if(aGrid == 0)
+     {
+       aGrid = new GridType;
+       aGrid->set(0.0,Basis.get_rc(),ngrid);
+     }
+     
+     vector<RealType> vE(ngrid);
+     vector<RealType> vF(ngrid);
+     vector<RealType> dvF(ngrid);
+     vector<RealType> vS(ngrid);
+     vector<RealType> dvS(ngrid);
+     
+     for( int i=1; i<ngrid; i++)
+     {
+		RealType r=(*aGrid)[i];
+		
+		vE[i]=r*Basis.f(r,coefs);
+		vF[i]=r*Basis.f(r,gcoefs);
 		dvF[i]=r*Basis.df_dr(r,gcoefs)+Basis.f(r,gcoefs);
 		vS[i]=r*Basis.f(r,gstraincoefs);
 		dvS[i]= r*Basis.df_dr(r,gstraincoefs)+Basis.f(r,gstraincoefs);
@@ -186,7 +240,7 @@ public:
      rV_stress->spline(0,vS[0],ngrid-1,vS[ngrid-1]);
      drV_stress->spline(0,dvS[0],ngrid-1,dvS[ngrid-1]);	  
 	  
-  }
+  }*/
 
   void resetTargetParticleSet(ParticleSet& ref)
   {
@@ -201,6 +255,7 @@ public:
   inline RealType evaluate(RealType r, RealType rinv)
   {
     RealType v = Basis.f(r, coefs);
+    //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<<endl;
    
   //  return df;
     return v;
@@ -214,23 +269,21 @@ public:
   inline RealType srDf(RealType r, RealType rinv)
   {
    // RealType df = Basis.df_dr(r, gcoefs);
-   
-  //  return df;
-    RealType u, du;
-    u=rV_force->splint(r);
-    du=drV_force->splint(r);
-    
-    return rinv*(du-rinv*u);
+     //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<<endl;
+ //    return df; 
+//    std::stringstream wee;
+//    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<<endl;
+//   app_log()<<wee.str();  
+    return drV_force->splint(r)/RealType(r*r) ; 
   }
 
   inline RealType srDf_strain(RealType r, RealType rinv)
   {
-   // RealType df = Basis.df_dr(r, gstraincoefs);
-    RealType u, du;
-    u=rV_stress->splint(r);
-    du=drV_stress->splint(r);
+  //  RealType df = Basis.df_dr(r, gstraincoefs);
+  //  return df;
     
-    return rinv*(du-rinv*u);
+    RealType du=drV_stress->splint(r);
+    return rinv*rinv*du; 
   }
 
   /** evaluate the contribution from the long-range part for for spline
@@ -485,9 +538,13 @@ private:
     app_log()<<"    LR grad function chi^2 = "<<chisqr[1]<<endl;
     app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<<endl;
    // app_log()<<"  n  tn   gtn h(n)\n";
+     
+  //  myFunc.reset(ref);
+  //  fillYk(ref.SK->KLists);
+  //  fillYkg(ref.SK->KLists);
+  //  filldFk_dk(ref.SK->KLists);
 
-
-    makeSplines(1001);
+    makeSplines(10001);
   }
 
 
