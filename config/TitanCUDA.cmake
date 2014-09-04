@@ -8,8 +8,8 @@ SET(CMAKE_SYSTEM_PROCESSOR "XK6")
 #  module load subversion
 #  module load cmake
 #  module load cudatoolkit
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/default/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/default/bin/CC)
+set(CMAKE_C_COMPILER  cc)
+set(CMAKE_CXX_COMPILER  CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline")
 set(GNU_FLAGS " -fomit-frame-pointer -malign-double -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops ")
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
