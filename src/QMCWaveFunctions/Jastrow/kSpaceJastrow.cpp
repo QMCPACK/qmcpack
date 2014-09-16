@@ -881,15 +881,15 @@ kSpaceJastrow::resetParameters(const opt_variables_type& active)
     int loc_r=myVars.where(ii++);
     int loc_i=myVars.where(ii++);
     if(loc_r>=0)
-      OneBodySymmCoefs[i].cG.real()=active[loc_r];
+      OneBodySymmCoefs[i].cG.real()=myVars[ii-2]=active[loc_r];
     if(loc_i>=0)
-      OneBodySymmCoefs[i].cG.imag()=active[loc_i];
+      OneBodySymmCoefs[i].cG.imag()=myVars[ii-1]=active[loc_i];
   }
   for (int i=0; i<TwoBodySymmCoefs.size(); i++)
   {
     int loc=myVars.where(ii++);
     if(loc>=0)
-      TwoBodySymmCoefs[i].cG=active[loc];
+      TwoBodySymmCoefs[i].cG=myVars[ii-1]=active[loc];
   }
   for (int i=0; i<OneBodySymmCoefs.size(); i++)
     OneBodySymmCoefs[i].set(OneBodyCoefs);
