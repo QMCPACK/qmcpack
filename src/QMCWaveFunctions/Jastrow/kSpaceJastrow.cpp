@@ -876,21 +876,42 @@ void
 kSpaceJastrow::resetParameters(const opt_variables_type& active)
 {
   int ii=0;
+  
+  //Update the one body coefficients.
   for (int i=0; i<OneBodySymmCoefs.size(); i++)
   {
-    int loc_r=myVars.where(ii++);
-    int loc_i=myVars.where(ii++);
+    //Reset and update the real part of one body term.
+
+    int loc_r=myVars.where(ii);
     if(loc_r>=0)
-      OneBodySymmCoefs[i].cG.real()=myVars[ii-2]=active[loc_r];
+    {
+      myVars[ii]=active[loc_r];    //update the optimization parameter
+      OneBodySymmCoefs[i].cG.real()=myVars[ii];  //update the coefficient from local opt parametr
+      ii++;  
+    }
+    //The imaginary part...
+    int loc_i=myVars.where(ii);
     if(loc_i>=0)
-      OneBodySymmCoefs[i].cG.imag()=myVars[ii-1]=active[loc_i];
+    {
+      myVars[ii]=active[loc_i];
+      OneBodySymmCoefs[i].cG.imag()=myVars[ii];
+      ii++;
+    }
   }
+
+  //Update the two-body coefficients
   for (int i=0; i<TwoBodySymmCoefs.size(); i++)
   {
-    int loc=myVars.where(ii++);
+    int loc=myVars.where(ii);
     if(loc>=0)
-      TwoBodySymmCoefs[i].cG=myVars[ii-1]=active[loc];
+    {
+      myVars[ii]=active[loc];
+      TwoBodySymmCoefs[i].cG=myVars[ii];
+    }
+    ii++;
   }
+
+
   for (int i=0; i<OneBodySymmCoefs.size(); i++)
     OneBodySymmCoefs[i].set(OneBodyCoefs);
   for (int i=0; i<TwoBodySymmCoefs.size(); i++)
