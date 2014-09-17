@@ -1317,8 +1317,8 @@ class Param(Names):
                     nrows,ncols = value.shape
                     fmt=pp
                     if value.dtype == dtype(float):
-                        #vfmt = ':16.8f'
-                        vfmt = ':16.8e'
+                        vfmt = ':16.8f' # must have 8 digits of post decimal accuracy to meet qmcpack tolerance standards
+                        #vfmt = ':16.8e'
                     else:
                         vfmt = ''
                     #end if

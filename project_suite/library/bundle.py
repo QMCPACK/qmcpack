@@ -84,6 +84,7 @@ class SimulationBundle(Simulation):
         jobs = []
         job0 = self.sims[0].job
         time    = Job.zero_time()
+        nodes   = 0
         cores   = 0
         threads = job0.threads
         queue   = job0.queue
@@ -92,7 +93,8 @@ class SimulationBundle(Simulation):
         machine_names = set()
         for sim in self.sims:
             job = sim.job
-            cores  += job.cores
+            nodes += job.nodes
+            cores += job.cores
             same_threads = same_threads and threads==job.threads
             same_queue   = same_queue   and queue==job.queue
             time    = job.max_time(time)
@@ -114,6 +116,7 @@ class SimulationBundle(Simulation):
             bundled_jobs = jobs,
             relative     = relative,
             queue        = queue,
+            nodes        = nodes,
             cores        = cores,
             threads      = threads,
             machine      = machine_names[0],

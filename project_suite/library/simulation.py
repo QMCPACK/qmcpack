@@ -114,6 +114,7 @@ class Simulation(Pobj):
     application   = 'simapp'
     application_properties = set(['serial'])
     application_results    = set()
+    allow_overlapping_files = False
     allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
                           'input','job','files','dependencies','analysis_request',
                           'block','block_subcascade','app_name','app_props','system',
@@ -622,7 +623,7 @@ class Simulation(Pobj):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file '+file+' not found\n  locations checked: '+str(file_locations))
+                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True
@@ -1268,7 +1269,72 @@ class SimulationInputTemplate(SimulationInput):
 
 
 class SimulationInputMultiTemplate(SimulationInput):
-    None
+    def __init__(self,delimiter='|',conditionals=None,defaults=None,**file_templates):
+        self.filenames = obj()
+        if len(file_templates)>0:
+            self.set_templates(delimiter,conditionals,defaults,**file_templates)
+        #end if
+    #end def __init_
+
+
+    def set_filenames(self,**filenames):
+        self.filenames.set(**filenames)
+    #end def set_filenames
+        
+
+    def set_templates(self,delimiter='|',conditionals=None,defaults=None,**file_templates):
+        for name,val in file_templates.iteritems():
+            if isinstance(val,str):
+                if ' ' in val:
+                    self.error('filename cannot have any spaces\nbad filename provided with keyword '+name)
+                #end if
+                self.filenames[name] = val
+            else:
+                filename,template_path = val
+                self[name] = SimulationInputTemplate(
+                    filepath     = template_path,
+                    delimiter    = delimiter,
+                    conditionals = conditionals,
+                    defaults     = defaults
+                    )
+                self.filenames[name] = filename
+            #end if
+        #end for
+        if len(self)>1 and len(self.filenames)!=len(self)-1:
+            self.error('keyword inputs must either be all filenames or all filename/filepath pairs')
+        #end if
+    #end def set_templates
+
+
+    def read(self,filepath):
+        if len(self.filenames)==0:
+            self.error('cannot perform read, filenames are not set')
+        #end if
+        base,filename = os.path.split(filepath)
+        filenames = self.filenames
+        self.clear()
+        templates = obj()
+        for name,filename in filenames.iteritems():
+            templates[name] = filename, os.path.join(base,filename)
+        #end for
+        self.set_templates(**templates)
+    #end def read
+
+
+    def write(self,filepath=None):
+        if filepath is None:
+            contents = obj()
+            for name in self.filenames.keys():
+                contents[name] = self[name].write()
+            #end for
+            return contents
+        else:
+            base,filename = os.path.split(filepath)
+            for name,filename in self.filenames.iteritems():
+                self[name].write(os.path.join(base,filename))
+            #end for
+        #end if
+    #end def write
 #end class SimulationInputMultiTemplate
 
 

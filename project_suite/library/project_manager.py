@@ -258,14 +258,16 @@ class ProjectManager(Pobj):
                 #raise an error if any in/out/err files will collide
                 filespace = dict()
                 for sim in simlist:
-                    files = sim.list('infile','outfile','errfile')
-                    for f in files:
-                        if f not in filespace:
-                            filespace[f] = [sim]
-                        else:
-                            filespace[f].append(sim)
-                        #end if
-                    #end for
+                    if not sim.allow_overlapping_files:
+                        files = sim.list('infile','outfile','errfile')
+                        for f in files:
+                            if f not in filespace:
+                                filespace[f] = [sim]
+                            else:
+                                filespace[f].append(sim)
+                            #end if
+                        #end for
+                    #end if
                 #end for
                 for f,sims in filespace.iteritems():
                     if len(sims)>1 and f!=None:
