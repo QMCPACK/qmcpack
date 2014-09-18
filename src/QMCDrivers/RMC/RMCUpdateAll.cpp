@@ -303,17 +303,18 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   Walker_t& curhead=W.reptile->getHead();
   Walker_t& centerbead=W.reptile->getCenter();
   
-  if(centerbead.Age>=MaxAge)
-  {
-     vmcToDoSteps=vmcSteps;
-     equilToDoSteps=equilSteps;
-     app_log()<<"MaxAge for center bead exceeded.  Reequilibrating. "<<vmcSteps<<" "<<equilSteps<<endl;
-  }
+//  if(centerbead.Age>=MaxAge)
+//  {
+//     vmcToDoSteps=vmcSteps;
+//     equilToDoSteps=equilSteps;
+//     app_log()<<"MaxAge for center bead exceeded.  Reequilibrating. "<<vmcSteps<<" "<<equilSteps<<endl;
+//  }
   
   //We are going to monitor the center bead's age to determine whether we force
   //moves.  This is because the ends are less likely to get pinned.
   
-  centerbead.Age+=1;
+//  centerbead.Age+=1;
+
   W.loadWalker(curhead, false);
   //RealType nodecorr=1;
   if (scaleDrift==true)
@@ -331,7 +332,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     {
       ++nReject;
       H.rejectedMove(W,curhead);
-  //    curhead.Age+=1;
+      curhead.Age+=1;
       W.reptile->flip();
       return;
     }
@@ -371,7 +372,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     {
       ++nReject;
       H.rejectedMove(W,curhead);
-    //  curhead.Age+=1;
+      curhead.Age+=1;
       W.reptile->flip();
       //app_log()<<"hit a node.  Bouncing...\n";
       return;
@@ -421,8 +422,10 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
         //  RealType tail_backward=nextlastbead.Properties(W.reptile->TransProb[backward]);
      
           
-          RealType dS_head=branchEngine->symLinkActionBare(head_forward, head_backward, newhead_e, oldhead_e);
-          RealType dS_tail=branchEngine->symLinkActionBare(tail_forward, tail_backward, newtail_e, oldtail_e);
+         // RealType dS_head=branchEngine->symLinkActionBare(head_forward, head_backward, newhead_e, oldhead_e);
+         // RealType dS_tail=branchEngine->symLinkActionBare(tail_forward, tail_backward, newtail_e, oldtail_e);
+          RealType dS_head=branchEngine->symLinkAction(head_forward, head_backward, newhead_e, oldhead_e);
+          RealType dS_tail=branchEngine->symLinkAction(tail_forward, tail_backward, newtail_e, oldtail_e);
           
           
           
@@ -462,14 +465,17 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
 
 	//app_log()<<acceptProb<<endl;
 //	 app_log()<<"r2proposed.... = "<<r2proposed<<endl;
-  if ((RandomGen() < acceptProb ))
+  if ((RandomGen() < acceptProb ) || curhead.Age>=MaxAge )
     {
       
       r2accept=r2proposed;
       W.reptile->r2accept+=r2accept;
       MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
-     // if (curhead.Age>=MaxAge)
-    //    app_log()<<"\tForce Acceptance...\n";
+      if (curhead.Age>=MaxAge)
+      {
+        app_log()<<"\tForce Acceptance...\n";
+        equilToDoSteps=equilSteps;
+      }  
       W.saveWalker(overwriteWalker);
       overwriteWalker.Properties(LOCALENERGY)=eloc;
       overwriteWalker.Properties(W.reptile->Action[forward])=0;
@@ -500,7 +506,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
       //curhead.Properties(R2
       ++nReject;
       H.rejectedMove(W,curhead);
-     // curhead.Age+=1;
+      curhead.Age+=1;
       W.reptile->flip();
      // app_log()<<"Reject\n";
       return;
