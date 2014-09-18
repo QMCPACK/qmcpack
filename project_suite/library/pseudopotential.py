@@ -188,6 +188,7 @@ class Pseudopotentials(DevBase):
 # real pseudopotentials
 from plotting import *
 show_plots = show
+set_title  = title
 
 class Pseudopotential(DevBase):
 
@@ -278,6 +279,18 @@ class SemilocalPP(Pseudopotential):
         self.local = list(set(lc[0:len(c)])-set(c.keys()))[0]
     #end def read
 
+
+    def get_channel(self,l):
+        if l==self.local:
+            l = 'loc'
+        #end if
+        if not l in self.channels:
+            self.error('cannot get invalid channel: {0}\n  valid options are: {1}'.format(l,self.channels.keys()))
+        #end if
+        return self.channels[l]
+    #end def get_channel
+
+        
     def evaluate(self,r=None,l='loc'):
         self.not_implemented()
     #end def evaluate
@@ -297,11 +310,11 @@ class SemilocalPP(Pseudopotential):
     #end def rcut
 
 
-    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False):
+    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None):
         if channels is None:
             channels = self.all_channels
         #end if
-        if show and fig:
+        if fig:
             figure()
         #end if
         for c in channels:
@@ -328,17 +341,22 @@ class SemilocalPP(Pseudopotential):
                 #end if
             #end for
         #end for
-        if show:
-            title('Semilocal {0} PP ({1} core)'.format(self.element,self.core))
+        if fig:
+            if title is None:
+                title = 'Semilocal {0} PP ({1} core)'.format(self.element,self.core)
+            #end if
+            set_title(title)
             ylabel('channels')
             xlabel('r')
             legend()
-            show_plots()
+            if show:
+                show_plots()
+            #end if
         #end if
     #end def plot
 #end class SemilocalPP
 
-
+ 
 
 class GaussianPP(SemilocalPP):
     requires_format = True
@@ -565,18 +583,23 @@ class QmcpackPP(SemilocalPP):
 
 
     def evaluate(self,r=None,l='loc'):
-        if not l in self.channels:
-            self.error('channel {0} is not present\nvalid options are: {1}'.format(self.channels.keys()))
-        #end if
         if r!=None:
             self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate() without specifying r will return the potential on a default grid')
         else:
             r = self.r
         #end if
-        #ci(ls(),gs())
-        v = self.channels[l]/r
+        c = self.get_channel(l)
+        v = c/r
         return v
     #end def evaluate
+
+
+    def v_at_zero(self,l):
+        r = self.r
+        v = self.get_channel(l)/r
+        vz = (v[1]*r[2]**2-v[2]*r[1]**2)/(r[2]**2-r[1]**2)
+        return vz
+    #end def v_at_zero
 #end class QmcpackPP
 
 

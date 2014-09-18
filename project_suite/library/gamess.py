@@ -5,7 +5,7 @@ from generic import obj
 from developer import DevBase
 from debug import *
 from simulation import Simulation
-from gamess_input import GamessInput,generate_gamess_input,FormattedGroup
+from gamess_input import GamessInput,generate_gamess_input,FormattedGroup,KeywordGroup,GuessGroup
 from gamess_analyzer import GamessAnalyzer
 
 
@@ -60,8 +60,15 @@ class Gamess(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
+        analyzer = self.load_analyzer_image()
         if result_name=='orbitals':
             result.location = os.path.join(self.locdir,self.outfile)
+            result.vec = None
+            result.norbitals = 0
+            if 'punch' in analyzer and 'vec' in analyzer.punch:
+                result.norbitals = analyzer.punch.norbitals
+                result.vec = analyzer.punch.vec
+            #end if
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if
@@ -70,7 +77,22 @@ class Gamess(Simulation):
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.error('ability to incorporate result '+result_name+' has not been implemented')
+        input = self.input
+        if result_name=='orbitals':
+            if result.vec is None or result.norbitals<1:
+                self.error('could not obtain orbitals from previous GAMESS run')
+            #end if
+            if not 'guess' in input:
+                input.guess = GuessGroup()
+            #end if
+            input.guess.set(
+                guess = 'moread',
+                norb  = result.norbitals
+                )
+            input.vec = FormattedGroup(result.vec)
+        else:
+            self.error('ability to incorporate result '+result_name+' has not been implemented')
+        #end if
     #end def incorporate_result
 
 

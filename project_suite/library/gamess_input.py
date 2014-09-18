@@ -307,7 +307,8 @@ class FormattedGroup(Group):
     #end def read
 
     def write(self,name):
-        return ' ${0}\n{1} $END\n'.format(name.upper(),self.text.lstrip())
+        #return ' ${0}\n{1} $END\n'.format(name.upper(),self.text.lstrip())
+        return ' ${0}\n{1} $END\n'.format(name.upper(),self.text)
     #end def write
 #end class FormattedGroup
 
