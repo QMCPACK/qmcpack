@@ -24,8 +24,9 @@ RMCLocalEnergyEstimator::RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs)
 {
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
-  scalars.resize(2*SizeOfHamiltonians+4);
-  scalars_saved.resize(2*SizeOfHamiltonians+4);
+  RMCSpecificTerms=8;
+  scalars.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
+  scalars_saved.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
 }
 
 ScalarEstimatorBase* RMCLocalEnergyEstimator::clone()
@@ -41,7 +42,12 @@ void RMCLocalEnergyEstimator::add2Record(RecordListType& record)
   FirstIndex = record.size();
   record.add("LocalEnergy");
   record.add("LocalEnergy_sq");
+  record.add("LocalEnergy_p");
+  record.add("LocalEnergy_sq_p");
+  record.add("LocalEnergy_sq_cross");
   record.add("LocalPotential");
+  record.add("LocalPotential_pure");
+  
   record.add("OldestBead");
   //for(int j=0; j <= NObs; j++)
   for(int i=0; i < SizeOfHamiltonians; i++)

@@ -34,6 +34,7 @@ class RMCLocalEnergyEstimator: public ScalarEstimatorBase
   int FirstHamiltonian;
   int SizeOfHamiltonians;
   int NObs;
+  int RMCSpecificTerms;
   const QMCHamiltonian& refH;
 
 public:
@@ -65,32 +66,31 @@ public:
     //  tail+=last-first;
     Walker_t& head = W.reptile->getHead();
     Walker_t& tail = W.reptile->getTail();
+    Walker_t& center = W.reptile->getCenter();
 //       mixed estimator stuff
     const RealType* restrict ePtr = head.getPropertyBase();
+    const RealType* restrict lPtr = tail.getPropertyBase();
+    const RealType* restrict cPtr = center.getPropertyBase();
     //   RealType wwght=  head.Weight;
     RealType wwght=0.5;
     //app_log()<<"~~~~~For head:  Energy:"<<ePtr[LOCALENERGY]<<endl;
-    scalars[0](ePtr[LOCALENERGY],wwght);
-    scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght);
-    scalars[2](ePtr[LOCALPOTENTIAL],wwght);
-    //for(int target=4, source=FirstHamiltonian; source<FirstHamiltonian+SizeOfHamiltonians;
-    //   ++target, ++source)
-    //scalars[target](ePtr[source],wwght);
-    const RealType* restrict lPtr = tail.getPropertyBase();
-    //  wwght=  tail.Weight;
-    scalars[0](lPtr[LOCALENERGY],wwght);
-    scalars[1](lPtr[LOCALENERGY]*lPtr[LOCALENERGY],wwght);
-    scalars[2](lPtr[LOCALPOTENTIAL],wwght);
-    for(int target=4, source=FirstHamiltonian; source<FirstHamiltonian+SizeOfHamiltonians; ++target, ++source)
+    scalars[0](0.5*(ePtr[LOCALENERGY]+lPtr[LOCALENERGY]),wwght);
+    scalars[1](0.5*(ePtr[LOCALENERGY]*ePtr[LOCALENERGY]+lPtr[LOCALENERGY]*lPtr[LOCALENERGY]),wwght);
+    scalars[2](cPtr[LOCALENERGY],wwght);
+    scalars[3](cPtr[LOCALENERGY]*cPtr[LOCALENERGY],wwght);
+    scalars[4](ePtr[LOCALENERGY]*lPtr[LOCALENERGY],wwght);
+    scalars[5](0.5*(ePtr[LOCALPOTENTIAL]+lPtr[LOCALPOTENTIAL]),wwght);
+    scalars[6](cPtr[LOCALPOTENTIAL],wwght);
+
+    for(int target=RMCSpecificTerms, source=FirstHamiltonian; source<FirstHamiltonian+SizeOfHamiltonians; ++target, ++source)
     {
       wwght=0.5;
       scalars[target](lPtr[source],wwght);
       scalars[target](ePtr[source],wwght);
     }
-    for(int target=4+SizeOfHamiltonians, source=FirstHamiltonian; source<FirstHamiltonian+SizeOfHamiltonians; ++target, ++source)
+    for(int target=RMCSpecificTerms+SizeOfHamiltonians, source=FirstHamiltonian; source<FirstHamiltonian+SizeOfHamiltonians; ++target, ++source)
     {
       wwght=1;
-      const RealType* restrict cPtr = (W.reptile->getCenter()).getPropertyBase();
       scalars[target](cPtr[source],wwght);
     }
     //     scalars[target](lPtr[source],wwght);
