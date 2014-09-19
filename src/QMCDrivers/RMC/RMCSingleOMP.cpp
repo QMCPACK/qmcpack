@@ -213,7 +213,7 @@ void RMCSingleOMP::resetRun()
       if (QMCDriverMode[QMC_UPDATE_MODE])
         {
           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       else
         {
@@ -228,8 +228,8 @@ void RMCSingleOMP::resetRun()
 
 
 /// thermalization Norm
-//         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
+           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
 //
 //         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
 //           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
