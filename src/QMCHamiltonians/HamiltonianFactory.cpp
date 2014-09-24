@@ -35,6 +35,7 @@
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/OrbitalImages.h"
+#include "QMCHamiltonians/DensityMatrices1B.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
@@ -78,6 +79,7 @@ HamiltonianFactory::HamiltonianFactory(ParticleSet* qp,
   PBCType=targetPtcl->Lattice.SuperCellEnum;
   ClassName="HamiltonianFactory";
   myName="psi0";
+  targetPtcl->set_quantum();
 }
 
 /** main hamiltonian build function
@@ -158,7 +160,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     renameProperty(sourceInp);
     renameProperty(targetInp);
 
-    int nham=targetH->size();
+    int nham=targetH->total_size();
     if(cname == "pairpot")
     {
       if(potType == "coulomb")
@@ -359,14 +361,14 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           targetH->addOperator(apot,potName,false);
         }
       }
-      else if(potType == "EnergyDensity")
+      else if(potType == "energydensity" || potType == "EnergyDensity")
       {
         app_log()<<"  Adding EnergyDensityEstimator"<<endl;
         EnergyDensityEstimator* apot=new EnergyDensityEstimator(ptclPool,defaultKE);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
-      else if(potType == "NearestNeighbors")
+      else if(potType == "nearestneighbors" || potType == "NearestNeighbors")
       {
         app_log()<<"  Adding NearestNeighborsEstimator"<<endl;
         NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
@@ -376,7 +378,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if(potType == "spindensity")
       {
         app_log()<<"  Adding SpinDensity"<<endl;
-        SpinDensity* apot=new SpinDensity(*targetPtcl);
+        SpinDensity* apot=new SpinDensity(*targetPtcl,ptclPool);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
@@ -391,6 +393,27 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log()<<"  Adding OrbitalImages"<<endl;
         OrbitalImages* apot=new OrbitalImages(*targetPtcl,ptclPool,myComm);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType == "dm1b")
+      {
+        app_log()<<"  Adding DensityMatrices1B"<<endl;
+        string source = "";
+        OhmmsAttributeSet attrib;
+        attrib.add(source,"source");
+        attrib.put(cur);
+        PtclPoolType::iterator pit(ptclPool.find(source));
+        ParticleSet* Pc;
+        if(source=="")
+          Pc = NULL;
+        else if(pit!=ptclPool.end())
+          Pc = pit->second;
+        else
+        {
+          APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
+        }
+        DensityMatrices1B* apot=new DensityMatrices1B(*targetPtcl,*targetPsi,Pc);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
@@ -487,7 +510,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       hAttrib.put(cur);
     }
 
-    if(nham<targetH->size()) //if(cname!="text" && cname !="comment")
+    if(nham<targetH->total_size()) //if(cname!="text" && cname !="comment")
     {
       if(potName==noname) 
       {
@@ -711,7 +734,7 @@ HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi,
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
   bool success=build(cur,false);
-
+  
   if(targetH->EnableVirtualMoves)
   {
     app_log() << "  Hamiltonian enables VirtualMoves" << endl;
@@ -719,7 +742,7 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
   }
   else
     app_log() << "  Hamiltonian disables VirtualMoves" << endl;
-
+  
   return success;
 }
 

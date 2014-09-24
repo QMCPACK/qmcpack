@@ -7,6 +7,7 @@
 #include <QMCHamiltonians/QMCHamiltonian.h>
 #include <QMCHamiltonians/SpinDensity.h>
 #include <QMCHamiltonians/StaticStructureFactor.h>
+#include <QMCHamiltonians/DensityMatrices1B.h>
 #include <Estimators/SpinDensityPostProcessor.h>
 
 namespace qmcplusplus
@@ -28,6 +29,7 @@ namespace qmcplusplus
     bool have_center = false;
     bool have_corner = false;
     bool have_cell = false;
+    bool have_norm = false;
 
     TinyVector<int,DIM> gdims;
     PosType du;
@@ -35,6 +37,7 @@ namespace qmcplusplus
     PosType center;
     Tensor<RealType,DIM> axes;
     format = "";
+    normalization = "sum";
 
     xmlNodePtr element = cur->xmlChildrenNode;
     while(element!=NULL)
@@ -76,6 +79,11 @@ namespace qmcplusplus
           have_cell = true;
           putContent(axes,element);        
         }
+        else if(name=="norm") 
+        {
+          have_norm = true;
+          putContent(normalization,element);        
+        }
         else
           APP_ABORT("SpinDensityPostProcessor::put  "+name+" is not a valid parameter name\n  valid options are: sources, format, dr, grid, corner, center, cell");
       }
@@ -85,6 +93,9 @@ namespace qmcplusplus
     if(format=="")
       APP_ABORT("SpinDensityPostProcessor::put  format must be provided");
 
+    if(normalization!="sum" && normalization!="max")
+      APP_ABORT("SpinDensityPostProcessor::put  norm ("+normalization+") is invalid\n  valid options are: sum,max");
+    
     if(have_dr && have_grid)
     {
       APP_ABORT("SpinDensityPostProcessor::put  dr and grid are provided, this is ambiguous");
@@ -152,7 +163,7 @@ namespace qmcplusplus
       species_name.push_back(species.speciesName[s]);
     int isize  = species.addAttribute("membersize");
     if(isize==species.numAttributes())
-      APP_ABORT("SpinDensityPostProcessor::put  Species set does not have the required attribute 'membersize'");
+      APP_ABORT("DensityMatrices1B::set_state  Species set does not have the required attribute 'membersize'");
     for(int s=0;s<nspecies;++s)
       species_size.push_back(species(isize,s));
 
@@ -175,8 +186,9 @@ namespace qmcplusplus
   void SpinDensityPostProcessor::postprocess()
   {
     map<string,string> typemap;
-    typemap["spindensity"] = "sd";
+    typemap["spindensity"]     = "sd";
     typemap["structurefactor"] = "sf";
+    typemap["dm1b"]            = "dm";
 
     dens_t density;
     dens_t density_err;
@@ -210,6 +222,8 @@ namespace qmcplusplus
             get_density<SpinDensity>(infile,species,h,density,density_err);
           else if(type=="structurefactor")
             get_density<StaticStructureFactor>(infile,species,h,density,density_err);
+          else if(type=="dm1b")
+            get_density<DensityMatrices1B>(infile,species,h,density,density_err);            
           else
             APP_ABORT("SpinDensityPostProcessor::postprocess\n  "+name+" of type "+type+" is not a valid density source");
 
@@ -247,20 +261,26 @@ namespace qmcplusplus
 
   void SpinDensityPostProcessor::normalize(int nparticles,dens_t& density,dens_t& density_err)
   {
-    RealType dsum = 0.0;
-    for(int p=0;p<npoints;++p)
-      dsum += density[p];
-
-    if(dsum>1e-12)
+    RealType norm = 1.0;
+    if(normalization=="sum")
     {
-      RealType norm = nparticles/(dsum*cell.Volume/npoints);
-
+      RealType dsum = 0.0;
       for(int p=0;p<npoints;++p)
-        density[p] *= norm;
-      
-      for(int p=0;p<npoints;++p)
-        density_err[p] *= norm;
+        dsum += density[p];
+      if(dsum>1e-12)
+        norm = nparticles/(dsum*cell.Volume/npoints);
     }
+    else if(normalization=="max")
+    {
+      RealType dmax = -1e99;
+      for(int p=0;p<npoints;++p)
+        dmax = max(dmax,abs(density[p]));
+      norm = 1.0/dmax;
+    }
+    for(int p=0;p<npoints;++p)
+      density[p] *= norm;
+    for(int p=0;p<npoints;++p)
+      density_err[p] *= norm;
   }
 
 

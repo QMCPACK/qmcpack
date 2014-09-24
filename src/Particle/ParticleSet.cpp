@@ -28,6 +28,8 @@
 namespace qmcplusplus
 {
 
+//using namespace particle_info;
+
 #ifdef QMC_CUDA
 template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
@@ -46,6 +48,7 @@ void add_p_timer(vector<NewTimer*>& timers)
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
   , ThreadID(0), SK(0), ParentTag(-1), ParentName("0")
+  , quantum_domain(classical)
 {
   initParticleSet();
   initPropertyList();
@@ -56,9 +59,10 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
   , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag()), ParentName(p.parentName())
 {
+  set_quantum_domain(p.quantum_domain);
   initBase();
   initParticleSet();
-  assign(p); //obly the base is copied, assumes that other properties are not assignable
+  assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass=p.Mass;
   Z=p.Z;
@@ -99,6 +103,14 @@ ParticleSet::~ParticleSet()
   if (SK)
     delete SK;
   delete_iter(Sphere.begin(), Sphere.end());
+}
+
+void ParticleSet::set_quantum_domain(quantum_domains qdomain)
+{
+  if(quantum_domain_valid(qdomain))
+    quantum_domain = qdomain;
+  else
+    APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
 }
 
 void ParticleSet::initParticleSet()

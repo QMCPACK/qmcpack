@@ -250,13 +250,13 @@ public:
   {
     return Origin->getTotalNum();
   }
-
+      
   ///returns the number of centers
   inline IndexType targets() const
   {
     return N[VisitorIndex];
   }
-
+  
   ///returns the size of each dimension using enum
   inline IndexType size(int i) const
   {
@@ -358,13 +358,25 @@ public:
   ///create storage for nwalkers
   virtual void create(int walkers) = 0;
 
+  /// find index and distance of each nearest neighbor particle
+  virtual void nearest_neighbor(vector<ripair>& ri,bool transposed=false) const
+  {
+    APP_ABORT("DistanceTableData::nearest_neighbor is not implemented in calling base class");
+  }
+
   /// find indices and distances of nearest neighbors particles to particle n
   virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
   {
     APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
   }
 
-  inline void check_neighbor_size(vector<ripair>& ri,bool transposed=false)
+  /// find species resolved indices and distances of nearest particles to particle n
+  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,vector<ripair>& ri,bool transposed=false)
+  {
+    APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
+  }
+
+  inline void check_neighbor_size(vector<ripair>& ri,bool transposed=false) const
   {
     int m;
     if(transposed)

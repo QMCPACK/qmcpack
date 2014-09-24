@@ -23,6 +23,7 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
 
+
 namespace qmcplusplus
 {
 
@@ -54,6 +55,9 @@ struct MCDataType
   T LivingFraction;
 };
 
+
+
+
 /** Specialized paritlce class for atomistic simulations
  *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -71,8 +75,13 @@ public:
   typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
   ///@typedef container type to store the property
   typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
-  ///@typedef buufer type for a serialized buffer
+  ///@typedef buffer type for a serialized buffer
   typedef Walker_t::Buffer_t             Buffer_t;
+
+  enum quantum_domains {no_quantum_domain=0,classical,quantum};
+
+  ///quantum_domain of the particles, default = classical
+  quantum_domains quantum_domain;
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
@@ -212,6 +221,36 @@ public:
   ///initialize ParticleSet from xmlNode
   bool put(xmlNodePtr cur);
 
+  ///specify quantum_domain of particles
+  void set_quantum_domain(quantum_domains qdomain);
+
+  void set_quantum()
+  {
+    quantum_domain=quantum;
+  }
+
+  inline bool is_classical() const
+  {
+    return quantum_domain==classical;
+  }
+
+  inline bool is_quantum() const
+  {
+    return quantum_domain==quantum;
+  }
+
+  ///check whether quantum domain is valid for particles
+  inline bool quantum_domain_valid(quantum_domains qdomain) const
+  {
+    return qdomain!=no_quantum_domain;
+  }
+
+  ///check whether quantum domain is valid for particles
+  inline bool quantum_domain_valid() const
+  {
+    return quantum_domain_valid(quantum_domain);
+  }
+
   ///set UseBoundBox
   void setBoundBox(bool yes);
 
@@ -248,10 +287,10 @@ public:
    *@param pos position vector assigned to R
    */
   void update(const ParticlePos_t& pos);
-
+  
   /** prepare internal data to be able to handle virutal moves*/
   void enableVirtualMoves();
-
+  
   /** prepare distance tables to perform virtual moves, e.g., nlpp evals
    */ 
   void initVirtualMoves();
@@ -494,7 +533,7 @@ public:
   /** reset internal data of clones including itself
    */
   void reset_clones();
-
+      
   /** get species name of particle i
    */
   inline const string& species_from_index(int i)

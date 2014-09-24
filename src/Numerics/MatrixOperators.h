@@ -150,9 +150,9 @@ namespace MatrixOperators
   }
 
 
-  inline void product_At(const Matrix<std::complex<double> >& A,
-                         const Matrix<std::complex<double> >& B, 
-                         Matrix<std::complex<double> >& C)
+  inline void product_AtB(const Matrix<std::complex<double> >& A,
+                          const Matrix<std::complex<double> >& B, 
+                          Matrix<std::complex<double> >& C)
   {
     const char transa = 'N';
     const char transb = 'T';

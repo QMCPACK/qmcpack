@@ -8,7 +8,8 @@
 namespace qmcplusplus
 {
 
-  SpinDensity::SpinDensity(ParticleSet& P)
+  SpinDensity::SpinDensity(ParticleSet& P,PSPool& psp)
+    : psetpool(psp)
   {
     // get particle information
     SpeciesSet& species = P.getSpeciesSet();
@@ -31,6 +32,7 @@ namespace qmcplusplus
     myName = "SpinDensity";
     UpdateMode.set(COLLECTABLE,1);
     corner = 0.0;
+    voronoi_grid = false;
   }
 
   
@@ -60,6 +62,7 @@ namespace qmcplusplus
     PosType dr;
     PosType center;
     Tensor<RealType,DIM> axes;
+    string voronoi="";
 
     int test_moves = 0;
 
@@ -95,48 +98,73 @@ namespace qmcplusplus
           have_cell = true;
           putContent(axes,element);        
         }
+        else if(name=="voronoi") 
+        {
+          putContent(voronoi,element);        
+        }
         else if(name=="test_moves") 
           putContent(test_moves,element);        
       }
       element = element->next;
     }
 
-    if(have_dr && have_grid)
+    voronoi_grid = voronoi!="";
+    if(voronoi_grid)
     {
-      APP_ABORT("SpinDensity::put  dr and grid are provided, this is ambiguous");
-    }
-    else if(!have_dr && !have_grid)
-      APP_ABORT("SpinDensity::put  must provide dr or grid");
-
-    if(have_corner && have_center)
-      APP_ABORT("SpinDensity::put  corner and center are provided, this is ambiguous");
-    if(have_cell)
-    {
-      cell.set(axes);
-      if(!have_corner && !have_center)
-        APP_ABORT("SpinDensity::put  must provide corner or center");
+        if(psetpool.find(voronoi)==psetpool.end())
+          APP_ABORT("SpinDensity::put  voronoi grid ParticleSet "+voronoi+" does not exist");
+        ParticleSet* Pvor = psetpool[voronoi];
+        dtable_index = Ptmp->getTable(*Pvor);
+        npoints = Pvor->getTotalNum();
+        nearest.resize(npoints);
+        const DistanceTableData& dtable(*Ptmp->DistTables[dtable_index]);
+        dtable.check_neighbor_size(nearest,true);
     }
     else
-      cell = Ptmp->Lattice;
+    {
+      if(Ptmp->Lattice.SuperCellEnum==SUPERCELL_OPEN && !have_cell)
+        APP_ABORT("SpinDensity::put  must provide cell for open boundary conditions");
 
-    if(have_center)
-      corner = center-cell.Center;
+      if(have_dr && have_grid)
+      {
+        APP_ABORT("SpinDensity::put  dr and grid are provided, this is ambiguous");
+      }
+      else if(!have_dr && !have_grid)
+        APP_ABORT("SpinDensity::put  must provide dr or grid");
 
-    if(have_dr)
+      if(have_corner && have_center)
+        APP_ABORT("SpinDensity::put  corner and center are provided, this is ambiguous");
+      if(have_cell)
+      {
+        cell.set(axes);
+        if(!have_corner && !have_center)
+          APP_ABORT("SpinDensity::put  must provide corner or center");
+      }
+      else
+        cell = Ptmp->Lattice;
+
+      if(have_center)
+        corner = center-cell.Center;
+
+      if(have_dr)
+        for(int d=0;d<DIM;++d)
+          grid[d] = (int)ceil(sqrt(dot(cell.Rv[d],cell.Rv[d]))/dr[d]);
+
+      npoints = 1;
       for(int d=0;d<DIM;++d)
-        grid[d] = (int)ceil(sqrt(dot(cell.Rv[d],cell.Rv[d]))/dr[d]);
-
-    npoints = 1;
-    for(int d=0;d<DIM;++d)
-      npoints *= grid[d];
-    gdims[0] = npoints/grid[0];
-    for(int d=1;d<DIM;++d)
-      gdims[d] = gdims[d-1]/grid[d];
+        npoints *= grid[d];
+      gdims[0] = npoints/grid[0];
+      for(int d=1;d<DIM;++d)
+        gdims[d] = gdims[d-1]/grid[d];
+    }
 
     if(write_report=="yes")
       report("  ");
     if(test_moves>0)
       test(test_moves,*Ptmp);
+
+    //size the observable positions
+    Robs.resize(Ptmp->R.size());
 
     return true;
   }
@@ -145,17 +173,24 @@ namespace qmcplusplus
   void SpinDensity::report(const string& pad)
   {
     app_log()<<pad<<"SpinDensity report"<<endl;
-    app_log()<<pad<<"  dim     = "<< DIM <<endl;
-    app_log()<<pad<<"  npoints = "<< npoints <<endl;
-    app_log()<<pad<<"  grid    = "<< grid <<endl;
-    app_log()<<pad<<"  gdims   = "<< gdims <<endl;
-    app_log()<<pad<<"  corner  = "<< corner <<endl;
-    app_log()<<pad<<"  center  = "<< corner+cell.Center <<endl;
-    app_log()<<pad<<"  cell " <<endl;
-    for(int d=0;d<DIM;++d)
-      app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] <<endl;
-    app_log()<<pad<<"  end cell " <<endl;
-    app_log()<<pad<<"  nspecies = "<< nspecies <<endl;
+    if(voronoi_grid)
+      app_log()<<pad<<"  grid type = voronoi"<<endl;
+    else
+      app_log()<<pad<<"  grid type = cartesian"<<endl;
+    app_log()<<pad<<"  dim       = "<< DIM <<endl;
+    app_log()<<pad<<"  npoints   = "<< npoints <<endl;
+    if(!voronoi_grid)
+    {
+      app_log()<<pad<<"  grid      = "<< grid <<endl;
+      app_log()<<pad<<"  gdims     = "<< gdims <<endl;
+      app_log()<<pad<<"  corner    = "<< corner <<endl;
+      app_log()<<pad<<"  center    = "<< corner+cell.Center <<endl;
+      app_log()<<pad<<"  cell " <<endl;
+      for(int d=0;d<DIM;++d)
+        app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] <<endl;
+      app_log()<<pad<<"  end cell " <<endl;
+    }
+    app_log()<<pad<<"  nspecies   = "<< nspecies <<endl;
     for(int s=0;s<nspecies;++s)
       app_log()<<pad<<"    species["<<s<<"]"<<" = "<<species_name[s]<<" "<<species_size[s]<<endl;
     app_log()<<pad<<"end SpinDensity report"<<endl;
@@ -193,6 +228,35 @@ namespace qmcplusplus
 
   SpinDensity::Return_t SpinDensity::evaluate(ParticleSet& P)
   {
+    APP_ABORT("SpinDensity::evaluate  implementation is incomplete\nplease contact the developers if you need this feature immediately");
+    if(voronoi_grid)
+      evaluate_voronoi(P);
+    else
+      evaluate_cartesian(P);
+    return 0.0;
+  }
+
+
+  void SpinDensity::evaluate_voronoi(ParticleSet& P)
+  {
+    RealType w=tWalker->Weight;
+    const DistanceTableData& dtable(*P.DistTables[dtable_index]);
+    dtable.nearest_neighbor(nearest,true);
+    int p=0;
+    int offset = myIndex;
+    for(int s=0;s<nspecies;++s,offset+=npoints)
+      for(int ps=0;ps<species_size[s];++ps,++p)
+        P.Collectables[offset+nearest[p].second] += w;
+  }
+
+
+  void SpinDensity::evaluate_cartesian(ParticleSet& P)
+  {
+    //put the particles in the simulation cell for observation
+    //  (this should probably be moved up to Hamiltonian at some point prior to all observations to avoid duplication)
+    Robs = P.R;
+    P.applyMinimumImage(Robs);  // this does the right thing for open or periodic bc's
+    //only measure particles that are also within the observation cell
     RealType w=tWalker->Weight;
     int p=0;
     int offset = myIndex;
@@ -200,18 +264,17 @@ namespace qmcplusplus
       for(int ps=0;ps<species_size[s];++ps,++p)
       {
         PosType u = cell.toUnit(P.R[p]-corner);
-        //bool inside = true;
-        //for(int d=0;d<DIM;++d)
-        //  inside &= u[d]>0.0 && u[d]<1.0;
-        //if(inside)
-        //{
+        bool inside = true;
+        for(int d=0;d<DIM;++d)
+          inside &= u[d]>0.0 && u[d]<1.0;
+        if(inside)
+        {
           int point=offset;
           for(int d=0;d<DIM;++d)
-            point += gdims[d]*((int)(grid[d]*(u[d]-std::floor(u[d])))); //periodic only
+            point += gdims[d]*((int)(grid[d]*u[d]));
           P.Collectables[point] += w;
-        //}
+        }
       }
-    return 0.0;
   }
 
 

@@ -16,6 +16,9 @@ namespace qmcplusplus
 #ifndef USE_REAL_STRUCT_FACTOR
     APP_ABORT("StaticStructureFactor: please recompile with USE_REAL_STRUCT_FACTOR=1");
 #endif
+    if(P.Lattice.SuperCellEnum==SUPERCELL_OPEN)
+      APP_ABORT("StaticStructureFactor is incompatible with open boundary conditions");
+
     // get particle information
     SpeciesSet& species = P.getSpeciesSet();
     nspecies = species.size();
@@ -149,8 +152,8 @@ namespace qmcplusplus
     int n=0;
     vector<RealType> skr;
     vector<RealType> ski;
-    vector<RealType> skr_err;
-    vector<RealType> ski_err;
+    vector<RealType> skrv;
+    vector<RealType> skiv;
     RealType value;    
     while(datafile>>value)
     {
@@ -159,12 +162,12 @@ namespace qmcplusplus
       else if(n<2*nk)
         ski.push_back(value);
       else if(n<3*nk)
-        skr_err.push_back(value);
+        skrv.push_back(value*value);
       else if(n<4*nk)
-        ski_err.push_back(value);
+        skiv.push_back(value*value);
       n++;
     }
-    if(ski_err.size()!=nkpoints)
+    if(skiv.size()!=nkpoints)
     {
       app_log()<<"StaticStructureFactor::postprocess_density\n  file "<<infile<<"\n  contains "<< n <<" values\n  expected "<<4*nkpoints<<" values"<<endl;
       APP_ABORT("StaticStructureFactor::postprocess_density");
@@ -184,10 +187,10 @@ namespace qmcplusplus
       for(int k=0;k<nkpoints;++k)
       {
         RealType kr = dot(kpoints[k],r);
-        RealType cr = cos(kr)*skr[k];
-        RealType sr = sin(kr)*ski[k];
-        d  +=    cr + sr;
-        de += cr*cr + sr*sr;
+        RealType cr = cos(kr);
+        RealType sr = sin(kr);
+        d  +=    cr*skr[k]  +    sr*ski[k];
+        de += cr*cr*skrv[k] + sr*sr*skiv[k];
       }
       de = sqrt(de);
       density[p]     = d;

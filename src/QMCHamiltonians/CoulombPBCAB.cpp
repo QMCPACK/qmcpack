@@ -30,6 +30,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   // if (ComputeForces)
   // 	InitVarReduction (0.5, 0, 3);
   ReportEngine PRE("CoulombPBCAB","CoulombPBCAB");
+  set_energy_domain(potential);
+  two_body_quantum_domain(ions,elns);
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions);

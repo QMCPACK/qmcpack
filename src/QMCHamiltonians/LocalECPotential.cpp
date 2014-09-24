@@ -25,6 +25,8 @@ namespace qmcplusplus
 LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
   IonConfig(ions),Peln(els),Pion(ions)
 {
+  set_energy_domain(potential);
+  two_body_quantum_domain(ions,els);
   NumIons=ions.getTotalNum();
   myTableIndex=els.addTable(ions);
   //allocate null

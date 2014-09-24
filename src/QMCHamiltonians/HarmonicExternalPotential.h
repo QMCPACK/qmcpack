@@ -22,7 +22,11 @@ namespace qmcplusplus
     Array<TraceReal,1>* V_sample;
     
     //construction/destruction
-    HarmonicExternalPotential(ParticleSet& P) : Ps(P) { }
+    HarmonicExternalPotential(ParticleSet& P) : Ps(P)  
+    {
+      set_energy_domain(potential);
+      one_body_quantum_domain(P);
+    }
 
     ~HarmonicExternalPotential() { }
 

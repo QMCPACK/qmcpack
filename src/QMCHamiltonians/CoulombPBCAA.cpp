@@ -28,6 +28,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   ComputeForces(computeForces), ForceBase(ref,ref), Ps(ref)
 {
   ReportEngine PRE("CoulombPBCAA","CoulombPBCAA");
+  set_energy_domain(potential);
+  two_body_quantum_domain(ref);
   //save source tag
   SourceID=ref.tag();
   //create a distance table: just to get the table name

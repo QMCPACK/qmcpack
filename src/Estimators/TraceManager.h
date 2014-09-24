@@ -44,6 +44,7 @@ typedef long   TraceInt;
 typedef double TraceReal;
 typedef complex<TraceReal> TraceComp;
 
+
 struct TraceRequest
 {
   bool any;
@@ -215,6 +216,8 @@ struct TraceSample
   }
 
 };
+
+
 
 
 template<typename T>
@@ -415,8 +418,9 @@ struct TraceSamples
   }
 
 
-  inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights)
+  inline bool make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights)
   {
+    bool created = false;
     if(names.size()!=weights.size())
       APP_ABORT("TraceSamples::make_combined_trace  names and weights must be the same size");
     map<string,map<string,int> >::iterator it;
@@ -444,8 +448,10 @@ struct TraceSamples
         samples.push_back(combined);
         combined_samples.push_back(combined);
         combined_sample_vectors.push_back(sample);
+        created = true;
       }
     }
+    return created;
   }
 
 
@@ -558,6 +564,7 @@ struct TraceSamples
     }
   }
 
+
 #ifdef HAVE_ADIOS
   // determine what adios type to use for output (of one variable)
   inline string get_adios_type (string type, string domain, string name, bool complex=0)
@@ -625,6 +632,7 @@ struct TraceSamples
   }
 #endif
 
+
   inline void write_summary(string type,string pad="  ")
   {
     string pad2 = pad +"  ";
@@ -658,6 +666,31 @@ struct TraceSamples
       ordered_samples[i]->write_summary(i,pad3);
     app_log()<<pad2<<"end samples"<<endl;
     app_log()<<pad<<"end TraceSamples<"<<type<<">"<<endl;
+  }
+
+
+  inline void user_report(const string& type,const string& pad="  ")
+  {
+    string pad2 = pad+"  ";
+    app_log()<<pad<<type<<" traces provided by estimators"<<endl;
+    map<string,map<string,int> >::iterator it;
+    map<string,int>::iterator it2;
+    for(it=sample_indices.begin(); it!=sample_indices.end(); it++)
+    {
+      const string& domain = it->first;
+      map<string,int>& indices = it->second;
+      app_log()<<pad2<<"domain "<<domain<<":  ";
+      int n=0;
+      for(it2=indices.begin(); it2!=indices.end(); ++it2)
+      {
+        n++;
+        if(n%4==0)
+          app_log()<<endl<<pad2<<"    ";
+        const string& quantity = it2->first;
+        app_log()<<quantity<<" ";
+      }
+      app_log()<<endl;
+    }
   }
 };
 
@@ -723,9 +756,13 @@ struct TraceBuffer
 
   inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights)
   {
-    samples->make_combined_trace(name,names,weights);
+    bool created_real = samples->make_combined_trace(name,names,weights);
     if(has_complex)
-      complex_samples->make_combined_trace(name,names,weights);
+    {
+      bool created_complex = complex_samples->make_combined_trace(name,names,weights);
+      if(created_real && created_complex)
+        APP_ABORT("TraceBuffer<"+type+">::make_combined_trace\n  cannot create real and complex combined traces for the same quantity\n  attempted for quantity "+name);
+    }
   }
 
 
@@ -841,6 +878,13 @@ struct TraceBuffer
   }
 
 
+  inline void user_report(const string& pad="  ")
+  {
+    samples->user_report(type,pad);
+    if(has_complex)
+      complex_samples->user_report("complex "+type,pad);
+  }
+
   inline void register_hdf_data(hdf_archive& f)
   {
     f.push(top);
@@ -855,6 +899,7 @@ struct TraceBuffer
     hdf_file_pointer = 0;
   }
 
+
 #ifdef HAVE_ADIOS
   inline void register_adios_data(ADIOS::Trace& at)
   {
@@ -865,6 +910,7 @@ struct TraceBuffer
     }
   }
 #endif
+
 
   inline void write_hdf(hdf_archive& f)
   {
@@ -1060,8 +1106,6 @@ public:
   ADIOS::Trace* adios_trace;
 #endif
   xmlNodePtr adios_options;
-
-
 
   TraceManager(Communicate* comm=0)
     : hdf_file(0),verbose(false)
@@ -1527,10 +1571,20 @@ public:
 
 
   //create combined trace out of existing traces
-  inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights)
+  inline void make_combined_trace(const string& name,vector<string>& names,bool force=false)
   {
-    if(traces_available && requests.find(name)!=requests.end())
+    vector<TraceReal> weights;
+    weights.resize(names.size());
+    fill(weights.begin(),weights.end(),1.0);
+    make_combined_trace(name,names,weights,force);
+  }
+
+  inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights,bool force=false)
+  {
+    if(traces_available && (force || requests.find(name)!=requests.end()))
     {
+      if(force)
+        requests.insert(name);
       if(verbose)
         app_log()<<"TraceManager::make_combined_trace "<<master_copy<<"  "<<name<<endl;
       real_buffer.make_combined_trace(name,names,weights);
@@ -1612,8 +1666,8 @@ public:
           APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
 #endif
           //app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<<endl;
+          app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<<endl;
         }
-        app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<<endl;
       }
     }
     else
@@ -1766,6 +1820,21 @@ public:
     app_log()<<pad<<"end TraceManager"<<endl;
   }
 
+
+  inline void user_report(string pad="  ")
+  {
+    string pad2 = pad+"  ";
+    app_log()<<pad<<"Traces report"<<endl;
+    app_log()<<pad2<<"writing_traces = "<<writing_traces<<endl;
+    app_log()<<pad2<<"traces requested by estimators or user:"<<endl;
+    app_log()<<pad2<<"  ";
+    set<string>::iterator req;
+    for(req=requests.begin();req!=requests.end();++req)
+      app_log()<<*req<<" ";
+    app_log()<<endl;
+    int_buffer.user_report(pad2);
+    real_buffer.user_report(pad2);
+  }
 
   //hdf file operations
   inline void open_hdf_file(vector<TraceManager*>& clones)
@@ -2256,6 +2325,7 @@ public:
 
 #  endif /* HAVE_ADIOS_OLD */
 #endif   /* HAVE_ADIOS */
+
 
 };
 

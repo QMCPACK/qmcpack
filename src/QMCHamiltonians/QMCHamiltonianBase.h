@@ -69,6 +69,16 @@ struct QMCHamiltonianBase: public QMCTraits
   ///typedef for the walker
   typedef ParticleSet::Walker_t  Walker_t;
 
+  ///enum to denote energy domain of operators
+  enum energy_domains {kinetic=0,potential,no_energy_domain};
+
+  enum quantum_domains {no_quantum_domain=0,classical,quantum,
+                        classical_classical,quantum_classical,quantum_quantum};
+
+  ///quantum_domain of the (particle) operator, default = no_quantum_domain
+  quantum_domains quantum_domain;
+  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
+  energy_domains energy_domain;
   ///enum for UpdateMode
   enum {PRIMARY=0, 
     OPTIMIZABLE=1, 
@@ -78,7 +88,7 @@ struct QMCHamiltonianBase: public QMCTraits
     NONLOCAL=5,
     VIRTUALMOVES=6
   };
-
+  
   ///set the current update mode
   bitset<8> UpdateMode;
   ///starting index of this object
@@ -116,6 +126,63 @@ struct QMCHamiltonianBase: public QMCTraits
 
   ///virtual destructor
   virtual ~QMCHamiltonianBase() { }
+
+  ///set energy domain
+  void set_energy_domain(energy_domains edomain);
+
+  ///return whether the energy domain is valid
+  inline bool energy_domain_valid(energy_domains edomain) const
+  {
+    return edomain!=no_energy_domain;
+  }
+
+  ///return whether the energy domain is valid
+  inline bool energy_domain_valid() const
+  {
+    return energy_domain_valid(energy_domain);
+  }
+
+  ///set quantum domain
+  void set_quantum_domain(quantum_domains qdomain);
+
+  ///set quantum domain for one-body operator
+  void one_body_quantum_domain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void two_body_quantum_domain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void two_body_quantum_domain(const ParticleSet& P1,const ParticleSet& P2);
+
+  ///return whether the quantum domain is valid
+  bool quantum_domain_valid(quantum_domains qdomain);
+
+  ///return whether the quantum domain is valid
+  inline bool quantum_domain_valid()
+  {
+    return quantum_domain_valid(quantum_domain);
+  }
+
+  inline bool is_classical()
+  {
+    return quantum_domain==classical;
+  }
+  inline bool is_quantum()
+  {
+    return quantum_domain==quantum;
+  }
+  inline bool is_classical_classical()
+  {
+    return quantum_domain==classical_classical;
+  }
+  inline bool is_quantum_classical()
+  {
+    return quantum_domain==quantum_classical;
+  }
+  inline bool is_quantum_quantum()
+  {
+    return quantum_domain==quantum_quantum;
+  }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
@@ -210,7 +277,7 @@ struct QMCHamiltonianBase: public QMCTraits
     return 0;
   }
   virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0;
-
+  
   /** evaluate value and derivatives wrt the optimizables
    *
    * Default uses evaluate

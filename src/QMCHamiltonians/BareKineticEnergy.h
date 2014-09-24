@@ -89,6 +89,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
   ///single particle trace samples
   Array<TraceReal,1>* T_sample;
+  Array<TraceComp,1>* T_sample_comp;
   Array<TraceComp,2>* p_sample;
   ParticleSet& Ps;
 
@@ -98,6 +99,8 @@ struct BareKineticEnergy: public QMCHamiltonianBase
    */
   BareKineticEnergy(RealType m=1.0): SameMass(true),M(m),OneOver2M(0.5/m)
   {
+    set_energy_domain(kinetic);
+    set_quantum_domain(quantum);
     UpdateMode.set(OPTIMIZABLE,1);
   }
 
@@ -109,6 +112,8 @@ struct BareKineticEnergy: public QMCHamiltonianBase
    */
   BareKineticEnergy(ParticleSet& p) : Ps(p)
   {
+    set_energy_domain(kinetic);
+    one_body_quantum_domain(p);
     UpdateMode.set(OPTIMIZABLE,1);
     SpeciesSet& tspecies(p.getSpeciesSet());
     MinusOver2M.resize(tspecies.size());
@@ -130,13 +135,15 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
   virtual void checkout_particle_arrays(TraceManager& tm)
   {
-    T_sample = tm.checkout_real<1>(myName,Ps);
-    p_sample = tm.checkout_complex<2>("momentum",Ps,DIM);
+    T_sample      = tm.checkout_real<1>(myName,Ps);
+    T_sample_comp = tm.checkout_complex<1>(myName+"_complex",Ps);
+    p_sample      = tm.checkout_complex<2>("momentum",Ps,DIM);
   }
 
   virtual void delete_particle_arrays()
   {
     delete T_sample;
+    delete T_sample_comp;
     delete p_sample;
   }
 
@@ -178,19 +185,21 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
   inline Return_t spevaluate(ParticleSet& P)
   {
-    Array<RealType,1>&          T_samp = *T_sample;
+    Array<RealType,1>& T_samp = *T_sample;
+    Array<complex<RealType>,1>& T_samp_comp = *T_sample_comp;
     Array<complex<RealType>,2>& p_samp = *p_sample;
-    T t1=0.0;
+    complex<RealType> t1=0.0;
     Value = 0.0;
     if(SameMass)
     {
       for(int i=0; i<P.getTotalNum(); i++)
       {
-        t1 = -OneOver2M*( real(P.L[i]) + dot_real(P.G[i],P.G[i]) );
-        T_samp(i) = (RealType)t1;
+        t1 = -OneOver2M*( P.L[i] + dot(P.G[i],P.G[i]) );
+        T_samp(i) = real(t1);
+        T_samp_comp(i) = t1;
         for(int d=0; d<DIM; ++d)
           p_samp(i,d) = P.G[i][d];
-        Value += t1;
+        Value += real(t1);
       }
     }
     else
@@ -200,11 +209,12 @@ struct BareKineticEnergy: public QMCHamiltonianBase
         T mlambda = MinusOver2M[s];
         for(int i=P.first(s); i<P.last(s); ++i)
         {
-          t1 = mlambda*( real(P.L[i]) + dot_real(P.G[i],P.G[i]) );
-          T_samp(i) = t1;
+          t1 = mlambda*( P.L[i] + dot(P.G[i],P.G[i]) );
+          T_samp(i) = real(t1);
+          T_samp_comp(i) = t1;
           for(int d=0; d<DIM; ++d)
             p_samp(i,d) = P.G[i][d];
-          Value += t1;
+          Value += real(t1);
         }
       }
     }

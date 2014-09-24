@@ -67,6 +67,13 @@ public:
   {
     return H.size();
   }
+
+  ///return the total number of Hamiltonians (physical + aux)
+  inline int total_size() const
+  {
+    return H.size()+auxH.size();
+  }
+
   /** return QMCHamiltonianBase with the name aname
    * @param aname name of a QMCHamiltonianBase
    * @return 0 if aname is not found.
@@ -239,7 +246,7 @@ public:
    * @return Local energy
    */
   Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
-
+  
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
    * @param optvars current optimiable variables
@@ -252,7 +259,7 @@ public:
       vector<RealType>& dlogpsi,
       vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
-
+  
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

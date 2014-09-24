@@ -30,8 +30,8 @@ namespace qmcplusplus
 */
 QMCHamiltonian::QMCHamiltonian()
   :myIndex(0),numCollectables(0),EnableVirtualMoves(false),
-  tracing(false),tracing_positions(false),
-  id_sample(0),weight_sample(0),position_sample(0)
+   tracing(false),tracing_positions(false),
+   id_sample(0),weight_sample(0),position_sample(0)
 { }
 
 ///// copy constructor is distable by declaring it as private
@@ -99,13 +99,14 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
     h->myName=aname;
     auxH.push_back(h);
   }
-
+  
   EnableVirtualMoves|= h->getMode(QMCHamiltonianBase::VIRTUALMOVES);
 }
 
 
 void QMCHamiltonian::addOperatorType(const string& name, const string& type)
 {
+  app_log()<<"QMCHamiltonian::addOperatorType added type "<<type<<" named "<<name<<endl;
   operator_types[name] = type;
 }
 
@@ -114,7 +115,7 @@ const string& QMCHamiltonian::getOperatorType(const string& name)
 {
   map<string,string>::iterator type = operator_types.find(name);
   if(type==operator_types.end())
-    APP_ABORT("QMCHamiltonain::getOperatorType\n  operator type not found for name "+name);
+    APP_ABORT("QMCHamiltonian::getOperatorType\n  operator type not found for name "+name);
   return type->second;
 }
 
@@ -231,6 +232,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
   // setup traces, if requested
   if(tracing)
   {
+    app_log()<<"\n  Hamiltonian is initializing traces"<<endl;
     //checkout walker trace samples
     id_sample     = tm.checkout_int<1>("id");
     step_sample   = tm.checkout_int<1>("step");
@@ -246,25 +248,76 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     //  LocalEnergy, LocalPotential
     tm.set_requests();
     vector<string>   names;
-    vector<RealType> weights;
     if(H.size()>1)
     {
       for(int i=1; i<H.size(); ++i)
-      {
         names.push_back(H[i]->myName);
-        weights.push_back(1.0);
-      }
-      tm.make_combined_trace("LocalPotential",names,weights);
+      tm.make_combined_trace("LocalPotential",names);
     }
     if(H.size()>0)
     {
       names.push_back(H[0]->myName);
-      weights.push_back(1.0);
-      tm.make_combined_trace("LocalEnergy",names,weights);
+      tm.make_combined_trace("LocalEnergy",names);
+    }
+    //  quantum/classical partitioning of potential energy
+    if(H.size()>1)
+    {
+      vector<string> Vq,Vc,Vqq,Vqc,Vcc;
+      for(int i=1; i<H.size(); ++i)
+      {
+        QMCHamiltonianBase& h = *H[i];
+        if(h.is_quantum())
+          Vq.push_back(h.myName);
+        else if(h.is_classical())
+          Vc.push_back(h.myName);
+        else if(h.is_quantum_quantum())
+          Vqq.push_back(h.myName);
+        else if(h.is_quantum_classical())
+          Vqc.push_back(h.myName);
+        else if(h.is_classical_classical())
+          Vcc.push_back(h.myName);
+        else
+          app_log()<<"  warning: potential named "<<h.myName<<" has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending on this classification may not function properly"<<endl;    
+      }
+      app_log()<<"  Breakdown of potential energy into quantum/classical components:"<<endl;
+      app_log()<<"    Vq  = ";
+      for(int i=0;i<Vq.size();++i)
+        app_log()<<Vq[i]<<" ";
+      app_log()<<endl;
+      app_log()<<"    Vc  = ";
+      for(int i=0;i<Vc.size();++i)
+        app_log()<<Vc[i]<<" ";
+      app_log()<<endl;
+      app_log()<<"    Vqq = ";
+      for(int i=0;i<Vqq.size();++i)
+        app_log()<<Vqq[i]<<" ";
+      app_log()<<endl;
+      app_log()<<"    Vqc = ";
+      for(int i=0;i<Vqc.size();++i)
+        app_log()<<Vqc[i]<<" ";
+      app_log()<<endl;
+      app_log()<<"    Vcc = ";
+      for(int i=0;i<Vcc.size();++i)
+        app_log()<<Vcc[i]<<" ";
+      app_log()<<endl;
+
+      if(Vq.size()>0)
+        tm.make_combined_trace("Vq",Vq,true);
+      if(Vc.size()>0)
+        tm.make_combined_trace("Vc",Vc,true);
+      if(Vqq.size()>0)
+        tm.make_combined_trace("Vqq",Vqq,true);
+      if(Vqc.size()>0)
+        tm.make_combined_trace("Vqc",Vqc,true);
+      if(Vcc.size()>0)
+        tm.make_combined_trace("Vcc",Vcc,true);
     }
     //observables that depend on traces check them out
     for(int i=0; i<auxH.size(); ++i)
       auxH[i]->get_required_traces(tm);
+    //report
+    tm.user_report();
+
   }
 }
 
@@ -327,7 +380,7 @@ QMCHamiltonian::evaluate(ParticleSet& P)
   // auxHevaluate(P);
   return LocalEnergy;
 }
-
+    
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,

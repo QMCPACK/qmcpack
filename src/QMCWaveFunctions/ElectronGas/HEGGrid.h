@@ -248,17 +248,21 @@ struct HEGGrid<T,3>
 
   void create_kpoints(int nc, const PosType& tw, T tol=1e-6)
   {
-    nctmp = nc;
     if(kpoints_grid==0)
       kpoints_grid = new kpoints_t;
     else if(nc<=nctmp)
       return;
+    nctmp = nc;
     kpoints_t& kpoints = *kpoints_grid;
+    app_log()<<"  resizing kpoint grid"<<endl;
+    app_log()<<"  current size = "<<kpoints.size()<<endl;
     // make space for the kpoint grid
     int nkpoints = pow( 2*(nc+1)+1 , 3 );
     kpoints.resize(nkpoints);
+    app_log()<<"  cubic size = "<<kpoints.size()<<endl;
     typename kpoints_t::iterator kptmp,kp=kpoints.begin(),kp_end=kpoints.end();
     // make the kpoint grid
+    T k2max = 1e99;
     for(int i0=-nc-1; i0<=nc+1; ++i0)
       for(int i1=-nc-1; i1<=nc+1; ++i1)
         for(int i2=-nc-1; i2<=nc+1; ++i2)
@@ -266,10 +270,23 @@ struct HEGGrid<T,3>
           PosType k(i0+tw[0],i1+tw[1],i2+tw[2]);
           kp->k  = Lattice.k_cart(k);
           kp->k2 = Lattice.ksq(k);
+          if(abs(i0)==(nc+1) || abs(i1)==(nc+1) || abs(i2)==(nc+1))
+            k2max = min(k2max,kp->k2);
           ++kp;
         }
     // sort kpoints by magnitude
     sort(kpoints.begin(),kpoints.end(),kpdata_comp<T,3>);
+    // eliminate kpoints outside of inscribing sphere
+    int nkp = 0;
+    kp = kpoints.begin();
+    while(kp!=kp_end && kp->k2<k2max+1e-3)
+    {
+      nkp++;
+      ++kp;
+    }
+    kpoints.resize(nkp);
+    app_log()<<"  new spherical size = "<<kpoints.size()<<endl;
+    kp_end = kpoints.end();
     // count degeneracies
     kp = kpoints.begin();
     while(kp!=kp_end)

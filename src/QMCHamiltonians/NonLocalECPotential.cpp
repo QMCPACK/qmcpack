@@ -35,6 +35,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
   IonConfig(ions), Psi(psi),
   ComputeForces(computeForces), ForceBase(ions,els),Peln(els),Pion(ions)
 {
+  set_energy_domain(potential);
+  two_body_quantum_domain(ions,els);
   myTableIndex=els.addTable(ions);
   NumIons=ions.getTotalNum();
   //els.resizeSphere(NumIons);
@@ -42,9 +44,9 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
   prefix="FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
   PulayTerm.resize(NumIons);
-
+  
   UpdateMode.set(NONLOCAL,1);
-
+  
   //UpdateMode.set(VIRTUALMOVES,1);
 }
 
@@ -122,7 +124,7 @@ NonLocalECPotential::evaluate(ParticleSet& P)
         Value += PP[iat]->evaluate(P,iat,Psi);
       }
     }
-
+  
   //  cout << "Original NLPP energy " << endl;
   //  for(int iat=0; iat<NumIons; iat++)
   //    cout << iat << " " << pp_e[iat] << endl;

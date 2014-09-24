@@ -38,13 +38,18 @@ struct CoulombPotential: public QMCHamiltonianBase
   /** constructor
    * @param s source particleset
    * @param t target particleset
-   * @param quantum if true, new Value is computed whenver evaluate is used.
+   * @param active if true, new Value is computed whenver evaluate is used.
    *
    * if t==0, t=s and AA interaction is used.
    */
-  inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool quantum)
-    : Pa(s),Pb(t),is_active(quantum)
+  inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool active)
+    : Pa(s),Pb(t),is_active(active)
   {
+    set_energy_domain(potential);
+    if(t)
+      two_body_quantum_domain(*s,*t);
+    else
+      two_body_quantum_domain(*s,*s);
     nCenters=s->getTotalNum();
     if(t) // add source particle to target distance table
       myTableIndex=t->addTable(*s);//add source to the target distance table list

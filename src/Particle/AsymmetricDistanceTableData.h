@@ -81,7 +81,7 @@ struct AsymmetricDTD
       }
     }
   }
-
+       
   inline void setTranspose()
   {
     const int ns = N[SourceIndex];
@@ -89,31 +89,72 @@ struct AsymmetricDTD
     for(int i=0; i<nv; i++)
       for(int j=0; j<ns; j++)
         trans_r(i,j)=r_m[j*nv+i];
-
+  
     if(NeedDisplacement)
       for(int i=0; i<nv; i++)
         for(int j=0; j<ns; j++)
           trans_dr(i,j)=dr_m[j*nv+i];
   }
 
+  inline virtual void nearest_neighbor(vector<ripair>& ri,bool transposed=false) const
+  {
+    if(transposed)
+    {
+      for(int n=0; n<ri.size(); ++n)
+        ri[n].first = 1e99;
+      const int m = N[SourceIndex];
+      const int nv = N[VisitorIndex];
+      int shift = 0;
+      for(int i=0; i<m; ++i,shift+=nv)
+        for(int n=0; n<ri.size(); ++n)
+        {
+          ripair& rin = ri[n];
+          RealType rp = r_m[shift+n];
+          if(rp<rin.first)
+          {
+            rin.first  = rp;
+            rin.second = i;
+          }
+        }
+    }
+    else
+    {
+      const int m = N[VisitorIndex];
+      for(int n=0; n<ri.size(); ++n)
+      {
+        const int shift = M[n];
+        ripair& rin = ri[n];
+        rin.first = 1e99;
+        for(int i=0; i<m; ++i)
+        {
+          RealType rp = r_m[shift+i];
+          if(rp<rin.first)
+          {
+            rin.first  = rp;
+            rin.second = i;
+          }
+        }
+      }
+    }
+  }
 
   inline virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
   {
     if(transposed)
     {
-      int m = N[SourceIndex];
+      const int m = N[SourceIndex];
+      const int nv = N[VisitorIndex];
       int shift = 0;
-      for(int i=0; i<m; ++i)
+      for(int i=0; i<m; ++i,shift+=nv)
       {
         ri[i].first  = r_m[shift+n];
         ri[i].second = i;
-        shift+=N[VisitorIndex];
       }
     }
     else
     {
-      int m = N[VisitorIndex];
-      int shift = M[n];
+      const int m = N[VisitorIndex];
+      const int shift = M[n];
       for(int i=0; i<m; ++i)
       {
         ri[i].first  = r_m[shift+i];
@@ -123,6 +164,29 @@ struct AsymmetricDTD
     partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
   }
 
+  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,vector<ripair>& ri,bool transposed=false)
+  {
+    if(transposed)
+    {
+      const int nv = N[VisitorIndex];
+      int shift = spec_start*nv;
+      for(int i=0; i<ri.size(); ++i,shift+=nv)
+      {
+        ri[i].first  = r_m[shift+n];
+        ri[i].second = i;
+      }
+    }
+    else
+    {
+      const int shift = M[n]+spec_start;
+      for(int i=0; i<ri.size(); ++i)
+      {
+        ri[i].first  = r_m[shift+i];
+        ri[i].second = i;
+      }
+    }
+    partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
+  }
 
   ///evaluate the Distance Table using a set of Particle Positions
   //inline void evaluate(const WalkerSetRef& W) {

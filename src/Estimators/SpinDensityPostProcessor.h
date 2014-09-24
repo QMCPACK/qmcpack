@@ -34,6 +34,7 @@ struct SpinDensityPostProcessor : public PostProcessorBase
   TinyVector<int,DIM> grid;
   pts_t gridpoints;
   int npoints;
+  string normalization;
 
   SpinDensityPostProcessor(ParticleSet& pq,ParticleSet& pc,QMCHamiltonian& h);
 

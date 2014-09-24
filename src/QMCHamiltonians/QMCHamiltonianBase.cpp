@@ -21,15 +21,75 @@
 
 namespace qmcplusplus
 {
-  QMCHamiltonianBase::QMCHamiltonianBase()
-    :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
-  {
-    tracing = false;
-    tracing_scalar_quantities = false;
-    tracing_particle_quantities = false;
-    have_required_traces = false;
-    UpdateMode.set(PRIMARY,1);
-  }
+
+QMCHamiltonianBase::QMCHamiltonianBase()
+  :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
+{
+  quantum_domain = no_quantum_domain;
+  energy_domain  = no_energy_domain;
+  tracing = false;
+  tracing_scalar_quantities = false;
+  tracing_particle_quantities = false;
+  have_required_traces = false;
+  UpdateMode.set(PRIMARY,1);
+}
+
+void QMCHamiltonianBase::set_energy_domain(energy_domains edomain)
+{
+  if(energy_domain_valid(edomain))
+    energy_domain = edomain;
+  else
+    APP_ABORT("QMCHamiltonainBase::set_energy_domain\n  input energy domain is invalid");
+}
+
+void QMCHamiltonianBase::set_quantum_domain(quantum_domains qdomain)
+{
+  if(quantum_domain_valid(qdomain))
+    quantum_domain = qdomain;
+  else
+    APP_ABORT("QMCHamiltonainBase::set_quantum_domain\n  input quantum domain is invalid");
+}
+
+void QMCHamiltonianBase::one_body_quantum_domain(const ParticleSet& P)
+{
+  if(P.is_classical())
+    quantum_domain = classical;
+  else if(P.is_quantum())
+    quantum_domain = quantum;
+  else
+    APP_ABORT("QMCHamiltonianBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
+}
+
+void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P)
+{
+  if(P.is_classical())
+    quantum_domain = classical_classical;
+  else if(P.is_quantum())
+    quantum_domain = quantum_quantum;
+  else
+    APP_ABORT("QMCHamiltonianBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
+}
+
+void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P1,const ParticleSet& P2)
+{
+  bool c1 = P1.is_classical();
+  bool c2 = P2.is_classical();
+  bool q1 = P1.is_quantum();
+  bool q2 = P2.is_quantum();
+  if(c1 && c2)
+    quantum_domain = classical_classical;
+  else if(q1 && c2 || c1 && q2)
+    quantum_domain = quantum_classical;
+  else if(q1 && q2)
+    quantum_domain = quantum_quantum;
+  else
+    APP_ABORT("QMCHamiltonianBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
+}
+
+bool QMCHamiltonianBase::quantum_domain_valid(quantum_domains qdomain)
+{
+  return qdomain!=no_quantum_domain;
+}
 
 void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
     ,QMCHamiltonian& targetH)

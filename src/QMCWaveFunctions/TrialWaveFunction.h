@@ -243,7 +243,7 @@ public:
   RealType ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios);
   /** evaluate ratio for RMC */
   RealType alternateRatio(ParticleSet& P);
-  //ValueType full_ratio(ParticleSet& P, int iat);
+  ValueType full_ratio(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
