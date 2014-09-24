@@ -1116,8 +1116,6 @@ def generate_scf_input(prefix       = 'pwscf',
                        ecut         = 200.,
                        ecutrho      = None,
                        ecutfock     = None,
-                       conv_thr     = 1e-10,
-                       mixing_beta  = .7,
                        occupations  = 'smearing',
                        smearing     = 'fermi-dirac',
                        degauss      = 0.0001,
@@ -1133,7 +1131,11 @@ def generate_scf_input(prefix       = 'pwscf',
                        disk_io      = 'low',
                        verbosity    = 'high',
                        ibrav        = 0,
+                       conv_thr     = 1e-10,
                        electron_maxstep = 1000,
+                       mixing_mode  = 'plain',
+                       mixing_beta  = .7,
+                       diagonalization = 'david',
                        kgrid        = None,
                        kshift       = None,
                        pseudos      = None,
@@ -1190,9 +1192,11 @@ def generate_scf_input(prefix       = 'pwscf',
         #end if
     #end if
     pw.electrons.set(
+        electron_maxstep = electron_maxstep,
         conv_thr    = conv_thr,
+        mixing_mode = mixing_mode,
         mixing_beta = mixing_beta,
-        electron_maxstep = electron_maxstep
+        diagonalization = diagonalization,
         )
     pw.atomic_species.set(
         atoms            = atoms,
@@ -1332,7 +1336,9 @@ def generate_relax_input(prefix       = 'pwscf',
                          ecutrho      = None,
                          ecutfock     = None,
                          conv_thr     = 1e-6,
+                         mixing_mode  = 'plain',
                          mixing_beta  = .7,
+			 diagonalization = 'david',
                          occupations  = 'smearing',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
@@ -1396,9 +1402,11 @@ def generate_relax_input(prefix       = 'pwscf',
         #end if
     #end if
     pw.electrons.set(
+        electron_maxstep = 1000,
         conv_thr         = conv_thr,
         mixing_beta      = mixing_beta,
-        electron_maxstep = 1000
+        mixing_mode      = mixing_mode,
+        diagonalization  = diagonalization
         )
     pw.atomic_species.set(
         atoms            = atoms,
