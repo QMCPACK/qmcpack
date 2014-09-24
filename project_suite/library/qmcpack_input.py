@@ -1785,7 +1785,7 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control']
+    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration']
     write_types = obj(gpu=yesno,nonlocalmoves=yesno)
 #end class dmc
 
