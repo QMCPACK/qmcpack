@@ -1,0 +1,13 @@
+The files in this directory support making a modified version of
+quantum espresso that includes the pw2qmcpack converter.
+
+If you have already downloaded quantum espresso you can, e.g.,
+
+patch -p1 -i ../add_pw2qmcpack_to_espresso-5.1.diff
+
+from within the top level quantum espresso directory.
+
+Alternatively, the download_and_patch_qe5.1.sh script will
+automatically download and patch quantum espresso. After patching you
+can move the espresso-5.1 directory anywhere convenient. There is no
+need to keep it within the QMCPACK source tree.
