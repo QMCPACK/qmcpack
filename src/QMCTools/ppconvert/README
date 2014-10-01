@@ -1,0 +1,5 @@
+ppconvert supports conversion of pseudopotentials between different formats
+
+ppconvert is currently not built automatically, but only requires a C++ compiler and BLAS/LAPACK
+
+Edit the Makefile to include an appropriate compiler and BLAS source. Examples using MKL are included.
