@@ -53,7 +53,7 @@ bool VMCSingleOMP::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
-  Traces->startRun(nBlocks,traceClones);
+  Traces->startRun(traceClones);
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
   {
@@ -82,20 +82,20 @@ bool VMCSingleOMP::run()
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
+        traceClones[ip]->monitor_writes(now_loc,Traces);
       }
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
-    Traces->write_buffers(traceClones, block);
     if(storeConfigs)
       recordBlock(block);
   }//block
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
-  Traces->stopRun();
+  Traces->stopRun(traceClones);
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);

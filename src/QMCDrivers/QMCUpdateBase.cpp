@@ -154,7 +154,6 @@ void QMCUpdateBase::stopRun2()
 void QMCUpdateBase::startBlock(int steps)
 {
   Estimators->startBlock(steps);
-  Traces->startBlock(steps);
   nAccept = 0;
   nReject=0;
   nAllRejected=0;
@@ -165,7 +164,6 @@ void QMCUpdateBase::startBlock(int steps)
 void QMCUpdateBase::stopBlock(bool collectall)
 {
   Estimators->stopBlock(acceptRatio(),collectall);
-  Traces->stopBlock();
 }
 
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
