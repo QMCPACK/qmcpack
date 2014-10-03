@@ -62,22 +62,33 @@ struct CoulombPotential: public QMCHamiltonianBase
     }
   }
 
-
-  virtual void checkout_particle_arrays(TraceManager& tm)
+  virtual void contribute_particle_quantities()
   {
-    Va_sample = tm.checkout_real<1>(myName,*Pa);
-    if(Pb)
-      Vb_sample = tm.checkout_real<1>(myName,*Pb);
-    else
-      if(!is_active)
-        spevaluateAA(Pa->DistTables[0],Pa->Z.first_address());
+    request.contribute_array(myName);
   }
 
-  virtual void delete_particle_arrays()
+  virtual void checkout_particle_quantities(TraceManager& tm)
   {
-    delete Va_sample;
-    if(Pb)
-      delete Vb_sample;
+    streaming_particles = request.streaming_array(myName);
+    if(streaming_particles)
+    {
+      Va_sample = tm.checkout_real<1>(myName,*Pa);
+      if(Pb)
+        Vb_sample = tm.checkout_real<1>(myName,*Pb);
+      else
+        if(!is_active)
+          evaluate_spAA(Pa->DistTables[0],Pa->Z.first_address());
+    }
+  }
+
+  virtual void delete_particle_quantities()
+  {
+    if(streaming_particles)
+    {
+      delete Va_sample;
+      if(Pb)
+        delete Vb_sample;
+    }
   }
 
 
@@ -85,8 +96,8 @@ struct CoulombPotential: public QMCHamiltonianBase
   inline T evaluateAA(const DistanceTableData* d, const T* restrict Z)
   {
     T res=0.0;
-    if(tracing_particle_quantities)
-      res = spevaluateAA(d,Z);
+    if(streaming_particles)
+      res = evaluate_spAA(d,Z);
     else
     {
       const int* restrict M=d->M.data();
@@ -105,8 +116,8 @@ struct CoulombPotential: public QMCHamiltonianBase
   inline T evaluateAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
   {
     T res=0.0;
-    if(tracing_particle_quantities)
-      res = spevaluateAB(d,Za,Zb);
+    if(streaming_particles)
+      res = evaluate_spAB(d,Za,Zb);
     else
     {
       const int* restrict M=d->M.data();
@@ -123,7 +134,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 
 
   /** evaluate AA-type interactions */
-  inline T spevaluateAA(const DistanceTableData* d, const T* restrict Z)
+  inline T evaluate_spAA(const DistanceTableData* d, const T* restrict Z)
   {
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();
@@ -165,7 +176,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   }
 
 
-  inline T spevaluateAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
+  inline T evaluate_spAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
   {
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();

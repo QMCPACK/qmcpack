@@ -137,9 +137,10 @@ class DensityMatrices1B : public QMCHamiltonianBase
   void resetTargetParticleSet(ParticleSet& P)                      { }
   void setObservables(PropertySetType& plist)                      { }
   void setParticlePropertyList(PropertySetType& plist, int offset) { }
-  void checkout_scalar_arrays(TraceManager& tm)                    { }
-  void collect_scalar_samples()                                    { }
-  void delete_scalar_arrays()                                      { }
+  void contribute_scalar_quantities()                              { }
+  void checkout_scalar_quantities(TraceManager& tm)                { }
+  void collect_scalar_quantities()                                 { }
+  void delete_scalar_quantities()                                  { }
 
   //obsolete?
   bool get(std::ostream& os) const { return false; }

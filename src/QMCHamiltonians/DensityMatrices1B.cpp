@@ -91,8 +91,13 @@ namespace qmcplusplus
     check_overlap = false;
     check_derivatives = false;
     // trace data is required
-    trace_request.scalars   = true;
-    trace_request.particles = true;
+    request.request_scalar("weight");
+    request.request_array("Kinetic_complex");
+    request.request_array("Vq");
+    request.request_array("Vc");
+    request.request_array("Vqq");
+    request.request_array("Vqc");
+    request.request_array("Vcc");
     // has not been initialized
     initialized = false;
   }
@@ -461,13 +466,9 @@ namespace qmcplusplus
     if(&Pq==NULL)
       APP_ABORT("DensityMatrices1B::get_required_traces  quantum particleset reference is NULL");
     w_trace = tm.get_real_trace("weight");
-    if(w_trace==NULL)
-      APP_ABORT("DensityMatrices1B::get_required_traces  weight is missing");
     if(energy_mat)
     {
-      T_trace = tm.get_complex_trace(Pq,"Kinetic_complex");
-      if(T_trace==NULL)
-        APP_ABORT("DensityMatrices1B::get_required_traces  kinetic energy is missing");
+      T_trace   = tm.get_complex_trace(Pq,"Kinetic_complex");
       Vq_trace  = tm.get_real_combined_trace(Pq,"Vq");
       Vqq_trace = tm.get_real_combined_trace(Pq,"Vqq");
       Vqc_trace = tm.get_real_combined_trace(Pq,"Vqc");
@@ -479,7 +480,6 @@ namespace qmcplusplus
 
       E_samp.resize(nparticles);
 
-      //E_trace = tm.get_real_combined_trace("LocalEnergy");
     } 
     have_required_traces = true;
     app_log()<<"dm1b end get_required_traces"<<endl;

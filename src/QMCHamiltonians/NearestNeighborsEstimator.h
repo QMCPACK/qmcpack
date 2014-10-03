@@ -26,12 +26,14 @@ struct NeighborsTrace
   bool transposed;
   vector<ripair> ri;
 
+  bool streaming_particles;
+  TraceRequest& request;
   Array<TraceInt,2>*  index_sample;
   Array<TraceReal,2>* distance_sample;
 
 
-  NeighborsTrace(int cnt, ParticleSet* p, ParticleSet* n)
-    : neighbors(p), centers(n), index_sample(0), distance_sample(0)
+  NeighborsTrace(int cnt, ParticleSet* p, ParticleSet* n,TraceRequest& req)
+    : neighbors(p), centers(n), index_sample(0), distance_sample(0),request(req)
   {
     count=cnt;
     if(count>neighbors->getTotalNum())
@@ -78,33 +80,49 @@ struct NeighborsTrace
   }
 
 
+  inline void contribute_arrays()
+  {
+    request.contribute_array(ind_name);
+    request.contribute_array(dist_name);
+  }
+
   inline void checkout_arrays(TraceManager& tm)
   {
-    index_sample    = tm.checkout_int<2>( ind_name, *centers,count);
-    distance_sample = tm.checkout_real<2>(dist_name,*centers,count);
+    streaming_particles = request.streaming_array(ind_name) || request.streaming_array(dist_name);
+    if(streaming_particles)
+    {
+      index_sample    = tm.checkout_int<2>( ind_name, *centers,count);
+      distance_sample = tm.checkout_real<2>(dist_name,*centers,count);
+    }
   }
 
 
   inline void delete_arrays()
   {
-    delete index_sample;
-    delete distance_sample;
-    index_sample = 0;
-    distance_sample = 0;
+    if(streaming_particles)
+    {
+      delete index_sample;
+      delete distance_sample;
+      index_sample = 0;
+      distance_sample = 0;
+    }
   }
 
 
   inline void sample()
   {
-    DistanceTableData& dtable = *dtable_owner->DistTables[dtable_id];
-    dtable.check_neighbor_size(ri,transposed);
-    for(int i=0; i<centers->getTotalNum(); ++i)
+    if(streaming_particles)
     {
-      dtable.nearest_neighbors(i,count,ri,transposed);
-      for(int n=0; n<count; ++n)
-        (*distance_sample)(i,n) = ri[n].first;
-      for(int n=0; n<count; ++n)
-        (*index_sample)(i,n)    = ri[n].second;
+      DistanceTableData& dtable = *dtable_owner->DistTables[dtable_id];
+      dtable.check_neighbor_size(ri,transposed);
+      for(int i=0; i<centers->getTotalNum(); ++i)
+      {
+        dtable.nearest_neighbors(i,count,ri,transposed);
+        for(int n=0; n<count; ++n)
+          (*distance_sample)(i,n) = ri[n].first;
+        for(int n=0; n<count; ++n)
+          (*index_sample)(i,n)    = ri[n].second;
+      }
     }
   }
 };
@@ -155,7 +173,7 @@ public:
         ParticleSet* neighbors = get_particleset(neighbors_name);
         ParticleSet* centers   = get_particleset(centers_name);
         check_attribute_values(count,neighbors,centers,neighbors_name,centers_name);
-        ntraces.push_back(new NeighborsTrace(count,neighbors,centers));
+        ntraces.push_back(new NeighborsTrace(count,neighbors,centers,request));
       }
       else if(name=="text")
       {
@@ -216,7 +234,7 @@ public:
     for(int n=0; n<ntraces.size(); ++n)
     {
       const NeighborsTrace& nt = *ntraces[n];
-      NeighborsTrace* ntrace = new NeighborsTrace(nt.count,nt.neighbors,nt.centers);
+      NeighborsTrace* ntrace = new NeighborsTrace(nt.count,nt.neighbors,nt.centers,clone->request);
       ntrace->set_dynamic(qp);
       clone->ntraces.push_back(ntrace);
     }
@@ -224,14 +242,24 @@ public:
   }
 
 
-  virtual void checkout_particle_arrays(TraceManager& tm)
+  virtual void contribute_particle_quantities()
   {
     for(int n=0; n<ntraces.size(); ++n)
-      ntraces[n]->checkout_arrays(tm);
+      ntraces[n]->contribute_arrays();
   }
 
 
-  virtual void delete_particle_arrays()
+  virtual void checkout_particle_quantities(TraceManager& tm)
+  {
+    for(int n=0; n<ntraces.size(); ++n)
+      ntraces[n]->checkout_arrays(tm);
+    streaming_particles = false;
+    for(int n=0; n<ntraces.size(); ++n)
+      streaming_particles |= ntraces[n]->streaming_particles;
+  }
+
+
+  virtual void delete_particle_quantities()
   {
     for(int n=0; n<ntraces.size(); ++n)
       ntraces[n]->delete_arrays();
@@ -240,7 +268,7 @@ public:
 
   virtual Return_t evaluate(ParticleSet& P)
   {
-    if(tracing_particle_quantities){
+    if(streaming_particles){
       for(int n=0; n<ntraces.size(); ++n)
         ntraces[n]->sample();
     }
@@ -253,9 +281,10 @@ public:
   }
 
   // does not produce a scalar value
-  virtual void checkout_scalar_arrays(TraceManager& tm) {}
-  virtual void collect_scalar_samples() {}
-  virtual void delete_scalar_arrays() {}
+  virtual void contribute_scalar_quantities()               { }
+  virtual void checkout_scalar_quantities(TraceManager& tm) { }
+  virtual void collect_scalar_quantities()                  { }
+  virtual void delete_scalar_quantities()                   { }
 
   // is not a scalar observable or collectable (produces no value, only a trace stream)
   virtual bool get(std::ostream& os) const

@@ -57,8 +57,9 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  virtual void checkout_particle_arrays(TraceManager& tm);
-  virtual void delete_particle_arrays();
+  virtual void contribute_particle_quantities();
+  virtual void checkout_particle_quantities(TraceManager& tm);
+  virtual void delete_particle_quantities();
 
   Return_t evaluate(ParticleSet& P);
 

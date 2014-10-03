@@ -106,16 +106,26 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 }
 
 
-void CoulombPBCAA::checkout_particle_arrays(TraceManager& tm)
+void CoulombPBCAA::contribute_particle_quantities()
 {
-  V_sample = tm.checkout_real<1>(myName,Ps);
-  if(!is_active)
-    spevaluate(Ps);
+  request.contribute_array(myName);
 }
 
-void CoulombPBCAA::delete_particle_arrays()
+void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
 {
-  delete V_sample;
+  streaming_particles = request.streaming_array(myName);
+  if(streaming_particles)
+  {
+    V_sample = tm.checkout_real<1>(myName,Ps);
+    if(!is_active)
+      evaluate_sp(Ps);
+  }
+}
+
+void CoulombPBCAA::delete_particle_quantities()
+{
+  if(streaming_particles)
+    delete V_sample;
 }
 
 
@@ -124,8 +134,8 @@ CoulombPBCAA::evaluate(ParticleSet& P)
 {
   if(is_active)
   {
-    if(tracing_particle_quantities)
-      Value = spevaluate(P);
+    if(streaming_particles)
+      Value = evaluate_sp(P);
     else
       Value = evalLR(P)+evalSR(P)+myConst;
   }
@@ -134,7 +144,7 @@ CoulombPBCAA::evaluate(ParticleSet& P)
 
 
 CoulombPBCAA::Return_t
-CoulombPBCAA::spevaluate(ParticleSet& P)
+CoulombPBCAA::evaluate_sp(ParticleSet& P)
 {
   RealType  Vsr = 0.0;
   RealType  Vlr = 0.0;
@@ -164,7 +174,7 @@ CoulombPBCAA::spevaluate(ParticleSet& P)
     const StructFact& PtclRhoK(*(P.SK));
     if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
     {
-      APP_ABORT("CoulombPBCAA::spevaluate single particle traces have not been implemented for slab geometry");
+      APP_ABORT("CoulombPBCAA::evaluate_sp single particle traces have not been implemented for slab geometry");
     }
     else
     {

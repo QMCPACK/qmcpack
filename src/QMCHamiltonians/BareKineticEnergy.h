@@ -88,6 +88,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   ParticleSet::ParticleLaplacian_t Ltmp;
 
   ///single particle trace samples
+  bool streaming_kinetic;
+  bool streaming_kinetic_comp;
+  bool streaming_momentum;
   Array<TraceReal,1>* T_sample;
   Array<TraceComp,1>* T_sample_comp;
   Array<TraceComp,2>* p_sample;
@@ -101,6 +104,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   {
     set_energy_domain(kinetic);
     set_quantum_domain(quantum);
+    streaming_kinetic      = false;
+    streaming_kinetic_comp = false;
+    streaming_momentum     = false;
     UpdateMode.set(OPTIMIZABLE,1);
   }
 
@@ -114,6 +120,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   {
     set_energy_domain(kinetic);
     one_body_quantum_domain(p);
+    streaming_kinetic      = false;
+    streaming_kinetic_comp = false;
+    streaming_momentum     = false;
     UpdateMode.set(OPTIMIZABLE,1);
     SpeciesSet& tspecies(p.getSpeciesSet());
     MinusOver2M.resize(tspecies.size());
@@ -133,27 +142,43 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   void resetTargetParticleSet(ParticleSet& P) { }
 
 
-  virtual void checkout_particle_arrays(TraceManager& tm)
+  virtual void contribute_particle_quantities() 
   {
-    T_sample      = tm.checkout_real<1>(myName,Ps);
-    T_sample_comp = tm.checkout_complex<1>(myName+"_complex",Ps);
-    p_sample      = tm.checkout_complex<2>("momentum",Ps,DIM);
+    request.contribute_array(myName);
+    request.contribute_array(myName+"_complex");
+    request.contribute_array("momentum");
   }
 
-  virtual void delete_particle_arrays()
+  virtual void checkout_particle_quantities(TraceManager& tm)
   {
-    delete T_sample;
-    delete T_sample_comp;
-    delete p_sample;
+    streaming_particles =  request.streaming_array(myName) 
+                        || request.streaming_array(myName+"_complex")
+                        || request.streaming_array("momentum");
+    if(streaming_particles)
+    {
+      T_sample      = tm.checkout_real<1>(myName,Ps);
+      T_sample_comp = tm.checkout_complex<1>(myName+"_complex",Ps);
+      p_sample      = tm.checkout_complex<2>("momentum",Ps,DIM);
+    }
+  }
+
+  virtual void delete_particle_quantities()
+  {
+    if(streaming_particles)
+    {
+      delete T_sample;
+      delete T_sample_comp;
+      delete p_sample;
+    }
   }
 
 
 
   inline Return_t evaluate(ParticleSet& P)
   {
-    if(tracing_particle_quantities)
+    if(streaming_particles)
     {
-      Value = spevaluate(P);
+      Value = evaluate_sp(P);
     }
     else
       if(SameMass)
@@ -183,7 +208,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   }
 
 
-  inline Return_t spevaluate(ParticleSet& P)
+  inline Return_t evaluate_sp(ParticleSet& P)
   {
     Array<RealType,1>& T_samp = *T_sample;
     Array<complex<RealType>,1>& T_samp_comp = *T_sample_comp;

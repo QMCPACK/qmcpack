@@ -357,8 +357,8 @@ private:
   void resetObservables(int start, int ncollects);
 
   ///traces variables
-  bool tracing;
-  bool tracing_positions;
+  TraceRequest request;
+  bool streaming_position;
   Array<TraceInt,1>*  id_sample;
   Array<TraceInt,1>*  step_sample;
   Array<TraceReal,1>* weight_sample;

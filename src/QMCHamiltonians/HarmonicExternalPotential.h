@@ -46,16 +46,26 @@ namespace qmcplusplus
     }
 
     //traces interface
-    virtual void checkout_particle_arrays(TraceManager& tm)
+    virtual void contribute_particle_quantities()
     {
-      V_sample = tm.checkout_real<1>(myName,Ps);
+      request.contribute_array(myName);
     }
-    virtual void delete_particle_arrays()
+
+    virtual void checkout_particle_quantities(TraceManager& tm)
     {
-      delete V_sample;
+      streaming_particles = request.streaming_array(myName);
+      if(streaming_particles)
+        V_sample = tm.checkout_real<1>(myName,Ps);
     }
-    //  not really for interface, just implements traces
-    inline Return_t spevaluate(ParticleSet& P);
+
+    virtual void delete_particle_quantities()
+    {
+      if(streaming_particles)
+        delete V_sample;
+    }
+
+    //  not really for interface, just collects traces
+    inline Return_t evaluate_sp(ParticleSet& P);
   };
 }
 #endif

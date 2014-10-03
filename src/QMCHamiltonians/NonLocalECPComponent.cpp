@@ -23,7 +23,7 @@ namespace qmcplusplus
 NonLocalECPComponent::NonLocalECPComponent():
   lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random), VP(0)
 {
-  tracing_particle_quantities = false;
+  streaming_particles = false;
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()
@@ -173,7 +173,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
-    if(tracing_particle_quantities)
+    if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -286,7 +286,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
-    if(tracing_particle_quantities)
+    if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -412,7 +412,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
-    if(tracing_particle_quantities)
+    if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -641,7 +641,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
       pairpot+=lsum;
     }
 
-    if(tracing_particle_quantities)
+    if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -720,7 +720,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
       for(int l=0; l <nchannel; l++)
         lsum += vrad[l]*lpol[ angpp_m[l] ];
       pairpot = Txy[txyCounter++].Weight *= lsum;
-      if(tracing_particle_quantities)
+      if(streaming_particles)
       {
         (*Vi_sample)(iat) += .5*pairpot;
         (*Ve_sample)(iel) += .5*pairpot;

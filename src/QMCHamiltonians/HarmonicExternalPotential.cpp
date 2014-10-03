@@ -56,8 +56,8 @@ namespace qmcplusplus
   HarmonicExternalPotential::Return_t 
   HarmonicExternalPotential::evaluate(ParticleSet& P)
   {
-    if(tracing_particle_quantities)
-      Value = spevaluate(P);
+    if(streaming_particles)
+      Value = evaluate_sp(P);
     else
     {
       Value = 0.0;
@@ -73,7 +73,7 @@ namespace qmcplusplus
 
 
   HarmonicExternalPotential::Return_t 
-  HarmonicExternalPotential::spevaluate(ParticleSet& P)
+  HarmonicExternalPotential::evaluate_sp(ParticleSet& P)
   {
     Array<TraceReal,1>& V_samp = *V_sample;
     Value = 0.0;

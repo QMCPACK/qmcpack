@@ -65,8 +65,10 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  virtual void checkout_particle_arrays(TraceManager& tm);
-  virtual void delete_particle_arrays();
+  virtual void contribute_particle_quantities();
+  virtual void checkout_particle_quantities(TraceManager& tm);
+  Return_t evaluate_sp(ParticleSet& P); //collect
+  virtual void delete_particle_quantities();
 
   Return_t evaluate(ParticleSet& P);
 
@@ -75,7 +77,6 @@ struct LocalECPotential: public QMCHamiltonianBase
     return evaluate(P);
   }
 
-  Return_t spevaluate(ParticleSet& P);
   Return_t evaluate_orig(ParticleSet& P);
 
   Return_t registerData(ParticleSet& P, BufferType& buffer);

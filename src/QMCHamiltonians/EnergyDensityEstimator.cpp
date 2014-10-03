@@ -38,8 +38,9 @@ EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const string& defaul
   UpdateMode.set(COLLECTABLE,1);
   defKE = defaultKE;
   nsamples=0;
-  trace_request.scalars   = true;
-  trace_request.particles = true;
+  request.request_scalar("weight");
+  request.request_array("Kinetic");
+  request.request_array("LocalPotential");
   if(write)
     app_log() <<"end EnergyDensityEstimator::EnergyDensityEstimator"<< endl;
 }
@@ -206,18 +207,8 @@ void EnergyDensityEstimator::get_required_traces(TraceManager&tm)
   w_trace = tm.get_real_trace("weight");
   Td_trace = tm.get_real_trace(*Pdynamic,"Kinetic");
   Vd_trace = tm.get_real_combined_trace(*Pdynamic,"LocalPotential");
-  if(w_trace==NULL)
-    APP_ABORT("EnergyDensityEstimator::checkout_particle_arrays  energy density cannot be computed, weight is missing");
-  if(Td_trace==NULL)
-    APP_ABORT("EnergyDensityEstimator::checkout_particle_arrays  energy density cannot be computed, Kinetic is missing");
-  if(Vd_trace==NULL)
-    APP_ABORT("EnergyDensityEstimator::checkout_particle_arrays  energy density cannot be computed, LocalPotential is missing");
   if(Pstatic)
-  {
     Vs_trace = tm.get_real_combined_trace(*Pstatic,"LocalPotential");
-    if(Vs_trace==NULL)
-      APP_ABORT("EnergyDensityEstimator::checkout_particle_arrays  energy density cannot be computed, static LocalPotential is missing");
-  }
   have_required_traces = true;
 }
 

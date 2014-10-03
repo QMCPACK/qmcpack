@@ -114,8 +114,12 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  virtual void checkout_particle_arrays(TraceManager& tm);
-  virtual void delete_particle_arrays();
+
+  virtual void contribute_particle_quantities();
+  virtual void checkout_particle_quantities(TraceManager& tm);
+  Return_t evaluate_sp(ParticleSet& P); //collect
+  virtual void delete_particle_quantities();
+
 
   Return_t evaluate(ParticleSet& P);
 
@@ -123,8 +127,6 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   {
     return evaluate(P);
   }
-
-  Return_t spevaluate(ParticleSet& P);
 
   Return_t registerData(ParticleSet& P, BufferType& buffer);
   Return_t updateBuffer(ParticleSet& P, BufferType& buffer);

@@ -69,17 +69,28 @@ void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z)
   }
 }
 
-
-void LocalECPotential::checkout_particle_arrays(TraceManager& tm)
+void LocalECPotential::contribute_particle_quantities()
 {
-  Ve_sample = tm.checkout_real<1>(myName,Peln);
-  Vi_sample = tm.checkout_real<1>(myName,Pion);
+  request.contribute_array(myName);
 }
 
-void LocalECPotential::delete_particle_arrays()
+void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
 {
-  delete Ve_sample;
-  delete Vi_sample;
+  streaming_particles = request.streaming_array(myName);
+  if(streaming_particles)
+  {
+    Ve_sample = tm.checkout_real<1>(myName,Peln);
+    Vi_sample = tm.checkout_real<1>(myName,Pion);
+  }
+}
+
+void LocalECPotential::delete_particle_quantities()
+{
+  if(streaming_particles)
+  {
+    delete Ve_sample;
+    delete Vi_sample;
+  }
 }
 
 
@@ -87,8 +98,8 @@ void LocalECPotential::delete_particle_arrays()
 LocalECPotential::Return_t
 LocalECPotential::evaluate(ParticleSet& P)
 {
-  if(tracing_particle_quantities)
-    Value = spevaluate(P);
+  if(streaming_particles)
+    Value = evaluate_sp(P);
   else
   {
     const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
@@ -112,7 +123,7 @@ LocalECPotential::evaluate(ParticleSet& P)
 
 
 LocalECPotential::Return_t
-LocalECPotential::spevaluate(ParticleSet& P)
+LocalECPotential::evaluate_sp(ParticleSet& P)
 {
   const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
   Value=0.0;

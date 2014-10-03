@@ -87,7 +87,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///pointers to trace data of containing NonLocalECPotential object
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
-  bool tracing_particle_quantities;
+  bool streaming_particles;
 
 
   NonLocalECPComponent();

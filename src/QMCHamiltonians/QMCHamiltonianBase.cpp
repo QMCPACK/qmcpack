@@ -25,11 +25,10 @@ namespace qmcplusplus
 QMCHamiltonianBase::QMCHamiltonianBase()
   :myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
 {
-  quantum_domain = no_quantum_domain;
-  energy_domain  = no_energy_domain;
-  tracing = false;
-  tracing_scalar_quantities = false;
-  tracing_particle_quantities = false;
+  quantum_domain       = no_quantum_domain;
+  energy_domain        = no_energy_domain;
+  streaming_scalars    = false;
+  streaming_particles  = false;
   have_required_traces = false;
   UpdateMode.set(PRIMARY,1);
 }

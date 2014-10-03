@@ -88,9 +88,10 @@ private:
 
   virtual void get_required_traces(TraceManager& tm);
 
-  virtual void checkout_scalar_arrays(TraceManager& tm) {}
-  virtual void collect_scalar_samples() {}
-  virtual void delete_scalar_arrays() {}
+  virtual void contribute_scalar_quantities()               { }
+  virtual void checkout_scalar_quantities(TraceManager& tm) { }
+  virtual void collect_scalar_quantities()                  { }
+  virtual void delete_scalar_quantities()                   { }
 };
 
 

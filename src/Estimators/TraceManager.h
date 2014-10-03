@@ -45,45 +45,483 @@ typedef double TraceReal;
 typedef complex<TraceReal> TraceComp;
 
 
-struct TraceRequest
+struct TraceQuantity
 {
-  bool any;
-  bool scalars;
-  bool particles;
+  string name;
+  bool default_quantity       ;
+  bool combined_quantity      ;
+  bool scalar_available       ;
+  bool array_available        ;
+  bool scalar_stream_requested;
+  bool array_stream_requested ;
+  bool scalar_write_requested ;
+  bool array_write_requested  ;
+  bool stream_scalar          ;
+  bool stream_array           ;
+  bool write_scalar           ;
+  bool write_array            ;
 
-  inline TraceRequest(bool a=false,bool s=false, bool p=false)
+  inline TraceQuantity()
   {
-    any = a;
-    scalars = s;
-    particles = p;
+    default_quantity        = false;
+    combined_quantity       = false;
+    scalar_available        = false;
+    array_available         = false;
+    scalar_stream_requested = false;
+    array_stream_requested  = false;
+    scalar_write_requested  = false;
+    array_write_requested   = false;
+    stream_scalar           = false;
+    stream_array            = false;
+    write_scalar            = false;
+    write_array             = false;
   }
 
-  inline void clear()
+  inline void incorporate(const TraceQuantity& other)
   {
-    any = false;
-    scalars = false;
-    particles = false;
-  }
-
-  inline void update()
-  {
-    any = scalars || particles;
-  }
-
-
-  inline bool operator!=(TraceRequest& other)
-  {
-    this->update();
-    other.update();
-    return any!=other.any || scalars!=other.scalars || particles!=other.particles;
-  }
-
-  inline bool operator==(TraceRequest& other)
-  {
-    return !(*this!=other);
+    if(name!=other.name)
+    {
+      APP_ABORT("TraceQuantity::incorporate\n  cannot merge quantities with differing names\n  names: "+name+" "+other.name);
+    }
+    default_quantity        |= other.default_quantity       ;
+    combined_quantity       |= other.combined_quantity      ;
+    scalar_available        |= other.scalar_available       ;
+    array_available         |= other.array_available        ;
+    scalar_stream_requested |= other.scalar_stream_requested;
+    array_stream_requested  |= other.array_stream_requested ;
   }
 };
 
+
+//means of control of traces
+//  which quantities are available, streaming, writing, etc
+//  handles global (user + all observable) trace request 
+//medium of exchange of trace information between trace manager and observables
+//  handles individual trace requests from observables
+struct TraceRequest
+{
+  //switch to allow or disallow streams/writes of requested quantities
+  bool allow_streams;
+  bool allow_writes;
+
+  //switch to allow or disallow scalar/array streaming/writing
+  bool scalars_on;
+  bool arrays_on;
+
+  //all scalar/array quantities should be provided for streaming
+  bool stream_all_scalars;
+  bool stream_all_arrays;
+
+  //all scalar/array quantities should be provided for writing
+  bool write_all_scalars;
+  bool write_all_arrays;
+
+  //records whether default scalars/arrays should stream/write
+  bool streaming_default_scalars;
+  bool streaming_default_arrays ;
+  bool writing_default_scalars  ;
+  bool writing_default_arrays   ;
+
+
+  //quantities made available or requested for streaming or writing
+  map<string,TraceQuantity> quantities;
+
+  //dependency lists for combined quantities
+  map<string,set<string> > combined_dependencies;
+
+  //used to screen checked out quantities for writing
+  string scalar_domain;
+
+  inline TraceRequest()
+  {
+    reset();
+  }
+
+  inline void reset()
+  {
+    allow_streams             = false;
+    allow_writes              = false;
+    scalars_on                = false;
+    arrays_on                 = false;
+    stream_all_scalars        = false;
+    stream_all_arrays         = false;
+    write_all_scalars         = false;
+    write_all_arrays          = false;
+    streaming_default_scalars = false;
+    streaming_default_arrays  = false;
+    writing_default_scalars   = false;
+    writing_default_arrays    = false;
+
+    quantities.clear();
+    combined_dependencies.clear();
+  }
+
+  inline void set_scalar_domain(const string& domain)
+  {
+    scalar_domain = domain;
+  }
+
+  inline bool screen_sample(const string& domain,const string& name,bool& write)
+  {
+    bool scalar  = domain == scalar_domain;
+    bool present = quantities.find(name)!=quantities.end();
+    bool stream  = false;
+    write   = false;
+    if(present)
+    {
+      TraceQuantity& q = quantities[name];
+      if(scalar)
+      {
+        stream = q.stream_scalar;
+        write  = q.write_scalar;
+      }
+      else
+      {
+        stream = q.stream_array;
+        write  = q.write_array;
+      }
+    }
+    return stream;
+  }
+
+//Contributor API (QMCHamiltonianBase and others)
+  //declare that scalars are available for a quantity
+  inline void contribute_scalar(const string& name,bool default_quantity=false)
+  {
+    guarantee_presence(name);
+    quantities[name].scalar_available = true;
+    if(default_quantity)
+      quantities[name].default_quantity = true;
+  }
+
+  //declare that arrays are available for a quantity
+  inline void contribute_array(const string& name,bool default_quantity=false)
+  {
+    guarantee_presence(name);
+    quantities[name].array_available = true;
+    if(default_quantity)
+      quantities[name].default_quantity = true;
+  }
+
+  //declare that a combined quantity could be made available
+  inline void contribute_combined(const string& name,vector<string>&deps,bool scalar=false,bool array=false,bool default_quantity=false)
+  {
+    guarantee_presence(name,true);
+    TraceQuantity& q = quantities[name];
+    q.combined_quantity = true;
+    q.scalar_available  = scalar;
+    q.array_available   = array;
+    if(default_quantity)
+      q.default_quantity = true;
+    //combined_dependencies[name] = deps;
+  }
+
+  //declare that a scalar quantity is desired for streaming
+  inline void request_scalar(const string& name,bool write=false)
+  {
+    guarantee_presence(name);
+    quantities[name].scalar_stream_requested = true;
+    if(write)
+      quantities[name].scalar_write_requested = true;
+  }
+
+  //declare that a array quantity is desired for streaming
+  inline void request_array(const string& name,bool write=false)
+  {
+    guarantee_presence(name);
+    quantities[name].array_stream_requested = true;
+    if(write)
+      quantities[name].array_write_requested = true;
+  }
+
+  //query whether a scalar quantity should/will be streaming
+  inline bool streaming_scalar(const string& name)
+  {
+    check_presence(name);
+    return quantities[name].stream_scalar;
+  }
+
+  //query whether a array quantity should/will be streaming
+  inline bool streaming_array(const string& name)
+  {
+    check_presence(name);
+    return quantities[name].stream_array;
+  }
+
+  //query whether a quantity will be streaming in any fashion
+  inline bool streaming(const string& name)
+  {
+    check_presence(name);
+    TraceQuantity& q = quantities[name];
+    return q.stream_scalar || q.stream_array;
+  }
+
+
+//TraceManager API
+  //declare that scalar quantities are desired for streaming
+  inline void request_scalar(const set<string>& names,bool write=false)
+  {
+    set<string>::iterator name;
+    for(name=names.begin();name!=names.end();++name)
+      request_scalar(*name,write);
+  }
+
+  //declare that array quantities are desired for streaming
+  inline void request_array(const set<string>& names,bool write=false)
+  {
+    set<string>::iterator name;
+    for(name=names.begin();name!=names.end();++name)
+      request_array(*name,write);
+  }
+
+  //merge in all quantities from a contributor request
+  inline void incorporate(TraceRequest& other)
+  {
+    map<string,TraceQuantity>::iterator it;
+    for(it=other.quantities.begin();it!=other.quantities.end();++it)
+    {
+      const TraceQuantity& q = it->second;
+      if(quantity_present(q.name))
+        quantities[q.name].incorporate(q);
+      else
+        quantities[q.name] = q;
+    }
+    map<string,set<string> >::iterator d;
+    for(d=other.combined_dependencies.begin();d!=other.combined_dependencies.end();++d)
+    {
+      const string& name = d->first;
+      set<string>& deps  = d->second;
+      if(combined_dependencies.find(name)!=combined_dependencies.end())
+        combined_dependencies[name].insert(deps.begin(),deps.end());
+      else
+        combined_dependencies[name] = deps;
+    }
+  }
+
+  //balance requests with availability and turn streaming/writing on/off
+  inline void determine_stream_write()
+  {
+    map<string,TraceQuantity>::iterator it;
+    for(it=quantities.begin();it!=quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+
+      q.stream_scalar = allow_streams && scalars_on && q.scalar_available 
+                        && (q.scalar_stream_requested || stream_all_scalars);
+
+      q.write_scalar  = q.stream_scalar
+                        && (q.scalar_write_requested || write_all_scalars);
+
+      q.stream_array  = allow_streams && arrays_on  && q.array_available 
+                        && (q.array_stream_requested || stream_all_arrays);
+
+      q.write_array   = q.stream_array
+                        && (q.array_write_requested  || write_all_arrays);
+    }
+    // default quantities stream and write if any others do
+    streaming_default_scalars = false;
+    writing_default_scalars   = false;
+    streaming_default_arrays  = false;
+    writing_default_arrays    = false;
+    for(it=quantities.begin();it!=quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+      streaming_default_scalars |= q.stream_scalar;
+      writing_default_scalars   |= q.write_scalar;
+      streaming_default_arrays  |= q.stream_array;
+      writing_default_arrays    |= q.write_array;
+    }
+    for(it=quantities.begin();it!=quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+      if(q.default_quantity)
+      {
+        q.stream_scalar = streaming_default_scalars;
+        q.write_scalar  = writing_default_scalars  ;
+        q.stream_array  = streaming_default_arrays ;
+        q.write_array   = writing_default_arrays   ;
+      }
+    }
+    // if any combined quantities are streaming, their dependencies must also
+    for(it=quantities.begin();it!=quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+      if(q.combined_quantity)
+      {
+        set<string>& deps = combined_dependencies[q.name];
+        set<string>::iterator name;
+        if(q.stream_scalar || q.stream_array)
+        {
+          for(name=deps.begin();name!=deps.end();++name)
+          {
+            check_presence(*name);
+            TraceQuantity& qd = quantities[*name];
+            qd.stream_scalar |= (qd.scalar_available && q.stream_scalar);
+            qd.stream_array  |= (qd.array_available  && q.stream_array );
+          }
+        }
+      }
+    }
+    combined_dependencies.clear();
+  }
+
+  //relay updated streaming information to contributor
+  inline void relay_stream_info(TraceRequest& other)
+  {
+    other.allow_streams             = allow_streams     ;
+    other.allow_writes              = allow_writes      ;
+    other.scalars_on                = scalars_on        ;
+    other.arrays_on                 = arrays_on         ;
+    other.stream_all_scalars        = stream_all_scalars;
+    other.stream_all_arrays         = stream_all_arrays ;
+    other.write_all_scalars         = write_all_scalars ;
+    other.write_all_arrays          = write_all_arrays  ;
+    other.streaming_default_scalars = streaming_default_scalars;
+    other.streaming_default_arrays  = streaming_default_arrays ;
+    other.writing_default_scalars   = writing_default_scalars  ;
+    other.writing_default_arrays    = writing_default_arrays   ;
+    map<string,TraceQuantity>::iterator it;
+    for(it=other.quantities.begin();it!=other.quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+      check_presence(q.name);
+      q = quantities[q.name];
+    }
+    other.combined_dependencies.clear();
+  }
+
+  inline void report()
+  {
+    //app_log()<<"\n  TraceRequest"<<endl;
+    app_log()<<"    allow_streams             = "<< allow_streams             <<endl;
+    app_log()<<"    allow_writes              = "<< allow_writes              <<endl;
+    app_log()<<"    scalars_on                = "<< scalars_on                <<endl;
+    app_log()<<"    arrays_on                 = "<< arrays_on                 <<endl;
+    app_log()<<"    stream_all_scalars        = "<< stream_all_scalars        <<endl;
+    app_log()<<"    stream_all_arrays         = "<< stream_all_arrays         <<endl;
+    app_log()<<"    write_all_scalars         = "<< write_all_scalars         <<endl;
+    app_log()<<"    write_all_arrays          = "<< write_all_arrays          <<endl;
+    app_log()<<"    streaming_default_scalars = "<< streaming_default_scalars <<endl;
+    app_log()<<"    streaming_default_arrays  = "<< streaming_default_arrays  <<endl;
+    app_log()<<"    writing_default_scalars   = "<< writing_default_scalars   <<endl;
+    app_log()<<"    writing_default_arrays    = "<< writing_default_arrays    <<endl;
+
+    write_selected("scalars available","scalar_available");
+    write_selected("arrays available","array_available");
+
+    write_selected("scalar streams requested","scalar_stream_requested");
+    write_selected("array streams requested","array_stream_requested");
+
+    write_selected("scalar writes requested","scalar_write_requested");
+    write_selected("array writes requested","array_write_requested");
+
+    write_selected("scalar streams occurring","stream_scalar");
+    write_selected("array streams occurring","stream_array");
+
+    write_selected("scalar writes occurring","write_scalar");
+    write_selected("array writes occurring","write_array");
+  }
+
+  inline void write_selected(const string& header,const string& selector)
+  {
+    app_log()<<"    "<<header<<":";
+    int n=0;
+    map<string,TraceQuantity>::iterator it;
+    for(it=quantities.begin();it!=quantities.end();++it)
+    {
+      TraceQuantity& q = it->second;
+      bool selected;
+      if(selector=="scalar_available")
+        selected = q.scalar_available;
+      else if(selector=="array_available")
+        selected = q.array_available;
+      else if(selector=="scalar_stream_requested")
+        selected = q.scalar_stream_requested;
+      else if(selector=="array_stream_requested")
+        selected = q.array_stream_requested;
+      else if(selector=="scalar_write_requested")
+        selected = q.scalar_write_requested;
+      else if(selector=="array_write_requested")
+        selected = q.array_write_requested;
+      else if(selector=="stream_scalar")
+        selected = q.stream_scalar;
+      else if(selector=="stream_array")
+        selected = q.stream_array;
+      else if(selector=="write_scalar")
+        selected = q.write_scalar;
+      else if(selector=="write_array")
+        selected = q.write_array;
+      else
+        APP_ABORT("TraceRequest::write_selected  unrecognized selector: "+selector);
+      if(selected)
+      {
+        if(n%5==0)
+          app_log()<<endl<<"      ";
+        n++;
+        app_log()<<" "<<q.name;
+      }
+    }
+    app_log()<<endl;
+  }
+
+
+//private (internal) API
+  //query whether a quantity is present
+  inline bool quantity_present(const string& name)
+  {
+    return quantities.find(name)!=quantities.end();
+  }
+
+  //create a quantity if it is not present
+  inline void guarantee_presence(const string& name,bool combined=false)
+  {
+    if(!quantity_present(name))
+    {
+      TraceQuantity q;
+      q.name = name;
+      quantities[name] = q;
+    }
+    if(combined)
+      if(combined_dependencies.find(name)==combined_dependencies.end())
+      {
+        set<string> stmp;
+        combined_dependencies[name] = stmp;
+      }
+  }
+
+  //abort if a quantity is not present
+  inline void check_presence(const string& name)
+  {
+    if(!quantity_present(name))
+    {
+      APP_ABORT("TraceRequest::check_presence  quantity "+name+" is not present");
+    }
+  }
+
+  //query whether any quantities are streaming
+  inline bool streaming()
+  {
+    return streaming_default_scalars || streaming_default_arrays;
+  }
+
+  //query whether any quantities are writing
+  inline bool writing()
+  {
+    return writing_default_scalars || writing_default_arrays;
+  }
+
+  //query whether any scalar quantities are streaming
+  inline bool streaming_scalars()
+  {
+    return streaming_default_scalars;
+  }
+
+  //query whether any array quantities are streaming
+  inline bool streaming_arrays()
+  {
+    return streaming_default_arrays;
+  }
+};
 
 
 
@@ -93,13 +531,14 @@ struct TraceSample
   string domain;
   string name;
   int index;
-  bool particle_trace;
+  bool array_trace;
   int dimension;
   int size;
   int unit_size;
   int data_size;
   TinyVector<int,DMAX> shape;
   vector<T>&  sample;
+  bool write;
   int buffer_start,buffer_end;
   map<string,TraceInt>  meta_int;
   map<string,TraceReal> meta_real;
@@ -125,11 +564,12 @@ struct TraceSample
 
   inline void initialize(const string& sdomain,const string& sname,int sindex,int sdim)
   {
-    domain    = sdomain,
-    name      = sname;
-    dimension = sdim;
-    index     = sindex;
-    particle_trace = false;
+    domain       = sdomain,
+    name         = sname;
+    dimension    = sdim;
+    index        = sindex;
+    array_trace  = false;
+    write        = false;
     buffer_start = -1;
     buffer_end   = -1;
   }
@@ -177,13 +617,20 @@ struct TraceSample
     return same;
   }
 
+  virtual bool is_combined()
+  {
+    return false;
+  }
 
   inline void set_buffer_range(int& bstart)
   {
     set_data_size();
-    buffer_start = bstart;
-    buffer_end   = bstart + data_size;
-    bstart = buffer_end;
+    if(write)
+    {
+      buffer_start = bstart;
+      buffer_end   = bstart + data_size;
+      bstart = buffer_end;
+    }
   }
 
 
@@ -198,21 +645,21 @@ struct TraceSample
   inline void write_summary(int ind=-1,string pad="  ")
   {
     string pad2 = pad+"  ";
-    string pad3 = pad+"  ";
     if(ind==-1)
       app_log()<<pad<<" TraceSample "<<name<<endl;
     else
       app_log()<<pad<<ind<<" TraceSample "<<name<<endl;
-    app_log()<<pad2<<"domain         = "<< domain        <<endl;
-    app_log()<<pad2<<"name           = "<< name          <<endl;
-    app_log()<<pad2<<"index          = "<< index         <<endl;
-    app_log()<<pad2<<"particle_trace = "<< particle_trace<<endl;
-    app_log()<<pad2<<"dimension      = "<< dimension     <<endl;
-    app_log()<<pad2<<"size           = "<< size          <<endl;
-    app_log()<<pad2<<"unit_size      = "<< unit_size     <<endl;
-    app_log()<<pad2<<"data_size      = "<< data_size     <<endl;
-    app_log()<<pad2<<"shape          = "<< shape         <<endl;
-    app_log()<<pad2<<"buffer range   = ["<<buffer_start<<","<<buffer_end<<")"<<endl;
+    app_log()<<pad2<<"domain       = "<< domain        <<endl;
+    app_log()<<pad2<<"name         = "<< name          <<endl;
+    app_log()<<pad2<<"index        = "<< index         <<endl;
+    app_log()<<pad2<<"array_trace  = "<< array_trace<<endl;
+    app_log()<<pad2<<"dimension    = "<< dimension     <<endl;
+    app_log()<<pad2<<"size         = "<< size          <<endl;
+    app_log()<<pad2<<"unit_size    = "<< unit_size     <<endl;
+    app_log()<<pad2<<"data_size    = "<< data_size     <<endl;
+    app_log()<<pad2<<"shape        = "<< shape         <<endl;
+    app_log()<<pad2<<"write        = "<< write         <<endl;
+    app_log()<<pad2<<"buffer range = ["<<buffer_start<<","<<buffer_end<<")"<<endl;
   }
 
 };
@@ -241,6 +688,10 @@ struct CombinedTraceSample : public TraceSample<T>
     reset();
   }
 
+  virtual bool is_combined()
+  {
+    return true;
+  }
 
   inline void reset()
   {
@@ -252,11 +703,11 @@ struct CombinedTraceSample : public TraceSample<T>
   {
     if(components.size()==0)
     {
-      this->dimension      = component->dimension;
-      this->size           = component->size;
-      this->shape          = component->shape;
-      this->data_size      = component->data_size;
-      this->particle_trace = component->particle_trace;
+      this->dimension   = component->dimension;
+      this->size        = component->size;
+      this->shape       = component->shape;
+      this->data_size   = component->data_size;
+      this->array_trace = component->array_trace;
       this->sample.resize(component->size);
     }
     else if(!this->same_shape(component))
@@ -313,6 +764,8 @@ bool TraceSample_comp(TraceSample<T>* left,TraceSample<T>* right)
 
 
 
+
+
 template<typename T>
 struct TraceSamples
 {
@@ -347,7 +800,6 @@ struct TraceSamples
   {
     if(sample_indices.count(domain)>0 && sample_indices[domain].count(name)>0)
     {
-      //cynthia: remove for output
       APP_ABORT("TraceSamples::checkout "+label+" variable "+name+" already exists in domain "+domain);
     }
     else
@@ -375,11 +827,11 @@ struct TraceSamples
   {
     const string& domain = P.parentName();
     int index = samples.size();
-    assign_sample_index(domain,name,index,"particle");
+    assign_sample_index(domain,name,index,"array");
     Array<T,D>* a = new Array<T,D>(shape.data());
     TraceSample<T>* s = new TraceSample<T>(domain,name,index,D,shape,a->storage());
     samples.push_back(s);
-    s->particle_trace = true;
+    s->array_trace = true;
     if(verbose)
       app_log()<<"TraceSamples::checkout_array  "<<domain<<" "<<name<<" "<<index<<endl;
     return a;
@@ -398,6 +850,8 @@ struct TraceSamples
         break;
       }
     }
+    if(ts==NULL)
+      APP_ABORT("TraceSamples::get_trace  failed to get trace for quantity "+name+" in domain "+domain);
     return ts;
   }
 
@@ -414,6 +868,8 @@ struct TraceSamples
         break;
       }
     }
+    if(ts==NULL)
+      APP_ABORT("TraceSamples::get_combined_trace  failed to get trace for quantity "+name+" in domain "+domain);
     return ts;
   }
 
@@ -461,6 +917,19 @@ struct TraceSamples
       samples[i]->set_unit_size(usize);
   }
 
+
+  inline void screen_writes(TraceRequest& request)
+  {
+    for(int i=0; i<samples.size(); i++)
+    {
+      TraceSample<T>& s = *samples[i];
+      bool stream = request.screen_sample(s.domain,s.name,s.write);
+      if(verbose)
+        app_log()<<"TraceRequest screening "<<s.name<<" in domain "<<s.domain<<". stream: "<<stream<<" write: "<<s.write<<endl;
+      if(!stream && !s.is_combined())
+        app_log()<<"warning: quantity "+s.name+" in domain "+s.domain+" was not requested but is streaming anyway"<<endl;
+    }
+  }
 
 
   inline void order_by_size()
@@ -551,14 +1020,17 @@ struct TraceSamples
       {
         const string& quantity = it2->first;
         TraceSample<T>& sample = *samples[it2->second];
-        f.push(quantity);
-        f.write(sample.dimension,   "dimension");
-        f.write(sample.shape,       "shape"    );
-        f.write(sample.size,        "size"     );
-        f.write(sample.unit_size,   "unit_size");
-        f.write(sample.buffer_start,"row_start");
-        f.write(sample.buffer_end,  "row_end"  );
-        f.pop();
+        if(sample.write)
+        {
+          f.push(quantity);
+          f.write(sample.dimension,   "dimension");
+          f.write(sample.shape,       "shape"    );
+          f.write(sample.size,        "size"     );
+          f.write(sample.unit_size,   "unit_size");
+          f.write(sample.buffer_start,"row_start");
+          f.write(sample.buffer_end,  "row_end"  );
+          f.pop();
+        }
       }
       f.pop();
     }
@@ -611,7 +1083,7 @@ struct TraceSamples
         app_log()<<"domain         = "<< s.domain        <<endl;
         app_log()<<"name           = "<< s.name          <<endl;
         app_log()<<"index          = "<< s.index         <<endl;
-        app_log()<<"particle_trace = "<< s.particle_trace<<endl;
+        app_log()<<"array_trace    = "<< s.array_trace<<endl;
         app_log()<<"dimension      = "<< s.dimension     <<endl;
         app_log()<<"size           = "<< s.size          <<endl;
         app_log()<<"unit_size      = "<< s.unit_size     <<endl;
@@ -620,14 +1092,18 @@ struct TraceSamples
         app_log()<<"buffer range   = ["<<s.buffer_start<<","<<s.buffer_end<<")"<<endl;
         */
 
-        varpath = "/"+s.domain+"/"+s.name;
-        for (int j=0; j < s.dimension; j++)
+        //jtk: attempt to restrict adios writes in the correct way, please check!
+        if(s.write)
         {
+          varpath = "/"+s.domain+"/"+s.name;
+          for (int j=0; j < s.dimension; j++)
+          {
             dims[j] = s.shape[j]; // * s.unit_size;
-        }
+          }
 
-        vartype = get_adios_type (type, s.domain, s.name, complex);
-        at.define_var (varpath, s.dimension, dims, vartype);
+          vartype = get_adios_type (type, s.domain, s.name, complex);
+          at.define_var (varpath, s.dimension, dims, vartype);
+        }
     }
   }
 #endif
@@ -664,6 +1140,8 @@ struct TraceSamples
     app_log()<<pad2<<"samples"<<endl;
     for(int i=0; i<ordered_samples.size(); ++i)
       ordered_samples[i]->write_summary(i,pad3);
+    //for(int i=0; i<samples.size(); ++i)
+    //  samples[i]->write_summary(i,pad3);
     app_log()<<pad2<<"end samples"<<endl;
     app_log()<<pad<<"end TraceSamples<"<<type<<">"<<endl;
   }
@@ -683,9 +1161,9 @@ struct TraceSamples
       int n=0;
       for(it2=indices.begin(); it2!=indices.end(); ++it2)
       {
+        if(n%5==0)
+          app_log()<<endl<<pad2<<"  ";
         n++;
-        if(n%4==0)
-          app_log()<<endl<<pad2<<"    ";
         const string& quantity = it2->first;
         app_log()<<quantity<<" ";
       }
@@ -823,11 +1301,14 @@ struct TraceBuffer
         for(int s=0; s<ordered_samples.size(); s++)
         {
           TraceSample<T>& tsample = *ordered_samples[s];
-          vector<T>& sample = tsample.sample;
-          boffset = offset + tsample.buffer_start;
-          for(int i=0; i<sample.size(); ++i)
+          if(tsample.write)
           {
-            buffer(boffset+i) = sample[i];
+            vector<T>& sample = tsample.sample;
+            boffset = offset + tsample.buffer_start;
+            for(int i=0; i<sample.size(); ++i)
+            {
+              buffer(boffset+i) = sample[i];
+            }
           }
         }
       }
@@ -838,12 +1319,15 @@ struct TraceBuffer
         for(int s=0; s<ordered_samples.size(); s++)
         {
           TraceSample<complex<T> >& tsample = *ordered_samples[s];
-          vector<complex<T> >& sample = tsample.sample;
-          boffset = offset + tsample.buffer_start;
-          for(int i=0,ib=0; i<sample.size(); ++i,ib+=2)
+          if(tsample.write)
           {
-            buffer(boffset+ib)   = sample[i].real();
-            buffer(boffset+ib+1) = sample[i].imag();
+            vector<complex<T> >& sample = tsample.sample;
+            boffset = offset + tsample.buffer_start;
+            for(int i=0,ib=0; i<sample.size(); ++i,ib+=2)
+            {
+              buffer(boffset+ib)   = sample[i].real();
+              buffer(boffset+ib+1) = sample[i].imag();
+            }
           }
         }
       }
@@ -1049,9 +1533,6 @@ struct TraceBuffer
       }
       if(any_present)
       {
-        //jtk mark: replace this with a tolerance check and report
-        //jtk mark: IonIon is zero
-        //jtk mark LocalEnergy and LocalPotential are missing (likely from sample_indices)
         if(verbose)
           app_log()<<"  "<<name<<" "<<value<<" "<<svalue<<endl;
       }
@@ -1081,24 +1562,17 @@ private:
 public:
   static double trace_tol;
 
+  TraceRequest request;
+
   bool master_copy;
   string default_domain;
-  bool traces_requested;
   bool method_allows_traces;
-  bool traces_available;
-  bool scalar_traces_requested;
-  bool particle_traces_requested;
+  bool streaming_traces;
   bool writing_traces;
   bool verbose;
   string format;
   bool hdf_format;
   bool adios_format;
-  bool scalar_defaults_set;
-  bool particle_defaults_set;
-  set<string> scalar_requests;
-  set<string> particle_requests;
-  set<string> requests;
-  TraceRequest request;
   string file_root;
   Communicate* communicator;
   hdf_archive* hdf_file;
@@ -1115,6 +1589,7 @@ public:
     communicator   = comm;
     format         = "hdf";
     default_domain = "scalars";
+    request.set_scalar_domain(default_domain);
     int_buffer.set_type("int");
     real_buffer.set_type("real");
     int_buffer.set_samples( int_samples);
@@ -1134,11 +1609,8 @@ public:
     if(!master_copy)
       APP_ABORT("TraceManager::makeClone  only the master copy should call this function");
     TraceManager* tm = new TraceManager();
-    tm->master_copy               = false;
+    tm->master_copy  = false;
     tm->transfer_state_from(*this);
-    tm->scalar_requests.insert(scalar_requests.begin(),scalar_requests.end());
-    tm->particle_requests.insert(particle_requests.begin(),particle_requests.end());
-    tm->requests.insert(requests.begin(),requests.end());
     tm->distribute();
     return tm;
   }
@@ -1146,19 +1618,15 @@ public:
 
   inline void transfer_state_from(const TraceManager& tm)
   {
-    traces_requested          = tm.traces_requested;
-    scalar_traces_requested   = tm.scalar_traces_requested;
-    particle_traces_requested = tm.particle_traces_requested;
-    method_allows_traces      = tm.method_allows_traces;
-    traces_available          = tm.traces_available;
-    writing_traces            = tm.writing_traces;
-    verbose                   = tm.verbose;
-    format                    = tm.format;
-    hdf_format                = tm.hdf_format;
-    adios_format              = tm.adios_format;
-    default_domain            = tm.default_domain;
-    scalar_defaults_set       = tm.scalar_defaults_set;
-    particle_defaults_set     = tm.particle_defaults_set;
+    method_allows_traces = tm.method_allows_traces;
+    request              = tm.request;
+    streaming_traces     = tm.streaming_traces;
+    writing_traces       = tm.writing_traces;
+    verbose              = tm.verbose;
+    format               = tm.format;
+    hdf_format           = tm.hdf_format;
+    adios_format         = tm.adios_format;
+    default_domain       = tm.default_domain;
 #ifdef HAVE_ADIOS
     adios_trace = tm.adios_trace;
 #endif
@@ -1178,17 +1646,13 @@ public:
 
   inline void reset_permissions()
   {
-    method_allows_traces      = false;
-    traces_requested          = false;
-    scalar_traces_requested   = false;
-    particle_traces_requested = false;
-    traces_available          = false;
-    writing_traces            = false;
-    verbose                   = false;
-    hdf_format                = false;
-    adios_format              = false;
-    scalar_defaults_set       = false;
-    particle_defaults_set     = false;
+    method_allows_traces = false;
+    streaming_traces     = false;
+    writing_traces       = false;
+    verbose              = false;
+    hdf_format           = false;
+    adios_format         = false;
+    request.reset();
   }
 
 
@@ -1197,38 +1661,39 @@ public:
     reset_permissions();
     method_allows_traces = allow_traces;
     file_root            = series_root;
-    traces_requested     = cur!=NULL;
-    traces_available     = traces_requested && method_allows_traces;
-    app_log()<<"\n TraceManager::put() "<<master_copy<<endl;
-    app_log()<<"  traces requested          : "<<traces_requested<<endl;
-    app_log()<<"  method allows traces      : "<<method_allows_traces<<endl;
-    app_log()<<"  traces available          : "<<traces_available<<endl;
-    bool use_scalar_defaults = false;
-    bool use_particle_defaults = false;
-    if(traces_available)
+    bool traces_requested = cur!=NULL;
+    streaming_traces = traces_requested && method_allows_traces;
+    app_log()<<"\n  TraceManager::put() "<<master_copy<<endl;
+    app_log()<<"    traces requested          : "<<traces_requested<<endl;
+    app_log()<<"    method allows traces      : "<<method_allows_traces<<endl;
+    app_log()<<"    streaming traces          : "<<streaming_traces<<endl;
+    app_log()<<endl;
+    if(streaming_traces)
     {
       //read trace attributes
       string writing           = "yes";
       string scalar            = "yes";
-      string particle          = "yes";
+      string array             = "yes";
       string scalar_defaults   = "yes";
-      string particle_defaults = "yes";
+      string array_defaults    = "yes";
       string verbose_write     = "no";
       OhmmsAttributeSet attrib;
-      attrib.add(writing,          "write"            );
-      attrib.add(scalar,           "scalar"           );
-      attrib.add(particle,         "particle"         );
-      attrib.add(scalar_defaults,  "scalar_defaults"  );
-      attrib.add(particle_defaults,"particle_defaults");
-      attrib.add(format,           "format"           );
-      attrib.add(verbose_write,    "verbose"          );
+      attrib.add(writing,        "write"          );
+      attrib.add(scalar,         "scalar"         );
+      attrib.add(array,          "array"          );
+      attrib.add(scalar_defaults,"scalar_defaults");
+      attrib.add(array_defaults, "array_defaults" );
+      attrib.add(format,         "format"         );
+      attrib.add(verbose_write,  "verbose"        );
+      attrib.add(array,          "particle"          );//legacy
+      attrib.add(array_defaults, "particle_defaults" );//legacy
       attrib.put(cur);
-      writing_traces            = writing           == "yes";
-      scalar_traces_requested   = scalar            == "yes";
-      particle_traces_requested = particle          == "yes";
-      use_scalar_defaults       = scalar_defaults   == "yes";
-      use_particle_defaults     = particle_defaults == "yes";
-      verbose                   = verbose_write     == "yes";
+      writing_traces           = writing         == "yes";
+      bool scalars_on          = scalar          == "yes";
+      bool arrays_on           = array           == "yes";
+      bool use_scalar_defaults = scalar_defaults == "yes";
+      bool use_array_defaults  = array_defaults  == "yes";
+      verbose                  = verbose_write   == "yes";
       tolower(format);
       if(format=="hdf")
       {
@@ -1254,33 +1719,43 @@ public:
         APP_ABORT("TraceManager::put "+format+" is not a valid file format for traces\n  valid options is: hdf");
       }
 #endif
-      //read scalar and particle elements
+
+
+      //read scalar and array elements
       //  each requests that certain traces be computed
+      set<string> scalar_requests;
+      set<string> array_requests;
       xmlNodePtr element = cur->children;
       while(element!=NULL)
       {
         string name((const char*)element->name);
         if(name=="scalar_traces")
         {
-          string defaults = "yes";
+          string defaults = "no";
           OhmmsAttributeSet eattrib;
           eattrib.add(defaults,"defaults");
           eattrib.put(element);
           use_scalar_defaults = use_scalar_defaults && defaults=="yes";
-          vector<string> scalar_list;
-          putContent(scalar_list,element);
-          scalar_requests.insert(scalar_list.begin(),scalar_list.end());
+          if(!use_scalar_defaults)
+          {
+            vector<string> scalar_list;
+            putContent(scalar_list,element);
+            scalar_requests.insert(scalar_list.begin(),scalar_list.end());
+          }
         }
-        else if(name=="particle_traces")
+        else if(name=="array_traces" || name=="particle_traces")
         {
-          string defaults = "yes";
+          string defaults = "no";
           OhmmsAttributeSet eattrib;
           eattrib.add(defaults,"defaults");
           eattrib.put(element);
-          use_particle_defaults = use_particle_defaults && defaults=="yes";
-          vector<string> particle_list;
-          putContent(particle_list,element);
-          particle_requests.insert(particle_list.begin(),particle_list.end());
+          use_array_defaults = use_array_defaults && defaults=="yes";
+          if(!use_array_defaults)
+          {
+            vector<string> array_list;
+            putContent(array_list,element);
+            array_requests.insert(array_list.begin(),array_list.end());
+          }
         }
         else if(name=="adios_options")
         {
@@ -1288,120 +1763,54 @@ public:
         }
         else if(name!="text")
         {
-          APP_ABORT("TraceManager::put "+name+" is not a valid sub-element of <trace/>\n  valid options are: scalar_traces, particle_traces");
+          APP_ABORT("TraceManager::put "+name+" is not a valid sub-element of <trace/>\n  valid options are: scalar_traces, array_traces");
         }
         element=element->next;
       }
-      app_log()<<"  writing traces            : "<< writing_traces            <<endl;
-      app_log()<<"  trace output file format  : "<< format                    <<endl;
-      app_log()<<"  hdf format                : "<< hdf_format                <<endl;
-      app_log()<<"  adios format              : "<< adios_format              <<endl;
-      app_log()<<"  scalar traces requested   : "<< scalar_traces_requested   <<endl;
-      app_log()<<"  particle traces requested : "<< particle_traces_requested <<endl;
-      app_log()<<"  using scalar defaults     : "<< use_scalar_defaults       <<endl;
-      app_log()<<"  using particle defaults   : "<< use_particle_defaults     <<endl;
-      set_default_requests(use_scalar_defaults,use_particle_defaults);
-      set<string>::iterator it;
-      app_log()<<"  scalar requests:"<<endl;
-      if(!scalar_requests.empty())
-      {
-        app_log()<<"    ";
-        for(it=scalar_requests.begin(); it!=scalar_requests.end(); ++it)
-          app_log()<<*it<<" ";
-        app_log()<<endl;
-      }
-      app_log()<<"  particle requests:"<<endl;
-      if(!particle_requests.empty())
-      {
-        app_log()<<"    ";
-        for(it=particle_requests.begin(); it!=particle_requests.end(); ++it)
-          app_log()<<*it<<" ";
-        app_log()<<endl;
-      }
+
+      writing_traces &= method_allows_traces;
+
+      //input user quantity requests into the traces request
+      request.allow_streams      = method_allows_traces;
+      request.allow_writes       = writing_traces;
+      request.scalars_on         = scalars_on;
+      request.arrays_on          = arrays_on;
+      request.stream_all_scalars = use_scalar_defaults;
+      request.stream_all_arrays  = use_array_defaults;        
+      request.write_all_scalars  = request.stream_all_scalars && writing_traces;
+      request.write_all_arrays   = request.stream_all_arrays && writing_traces;
+      request.request_scalar(scalar_requests,writing_traces);
+      request.request_array(array_requests,writing_traces);
+
+      //distribute verbosity level to buffer and sample objects
+      distribute();
     }
-    app_log()<<endl;
-    distribute();
+
+    //streaming_traces = false;
+    //writing_traces   = false;
   }
 
 
-  inline void set_default_requests(bool set_scalar, bool set_particle)
+  inline void update_status()
   {
-    if(!scalar_defaults_set && set_scalar)
-    {
-      vector<string> scalar_defaults;
-      scalar_defaults.push_back("LocalEnergy");
-      scalar_defaults.push_back("Kinetic");
-      scalar_defaults.push_back("LocalPotential");
-      scalar_requests.insert(scalar_defaults.begin(),scalar_defaults.end());
-      scalar_defaults_set = true;
-    }
-    if(!particle_defaults_set && set_particle)
-    {
-      vector<string> particle_defaults;
-      particle_defaults.push_back("LocalEnergy");
-      particle_defaults.push_back("Kinetic");
-      particle_defaults.push_back("LocalPotential");
-      particle_requests.insert(particle_defaults.begin(),particle_defaults.end());
-      particle_defaults_set = true;
-    }
+    streaming_traces = request.streaming();
+    writing_traces   = request.writing();
   }
 
 
-  inline void set_requests()
+  inline void screen_writes()
   {
-    if(verbose)
-      app_log()<<"TraceManager::set_requests "<<master_copy<<endl;
-    requests.insert(scalar_requests.begin(),scalar_requests.end());
-    requests.insert(particle_requests.begin(),particle_requests.end());
+    int_samples.screen_writes(request);
+    real_samples.screen_writes(request);
+    comp_samples.screen_writes(request);
   }
-
-
-  inline void add_trace_request(TraceRequest& req)
-  {
-    get_trace_request();
-    if(req!=request)
-    {
-      traces_requested          = traces_requested || req.any;
-      traces_available          = traces_requested && method_allows_traces;
-      scalar_traces_requested   = scalar_traces_requested   || req.scalars;
-      particle_traces_requested = particle_traces_requested || req.particles;
-      if(traces_available)
-      {
-        set_default_requests(req.scalars,req.particles);
-      }
-    }
-  }
-
-
-  inline TraceRequest& get_trace_request()
-  {
-    if(verbose)
-      app_log()<<"TraceManager::get_trace_request "<<master_copy<<endl;
-    request.any       = traces_available;
-    request.scalars   = scalar_traces_requested   && traces_available;
-    request.particles = particle_traces_requested && traces_available;
-    return request;
-  }
-
-
-  inline TraceRequest& get_trace_request(const string& name)
-  {
-    //may explicitly check if quantity has been requested later
-    //  for now, just allow or disallow all based on scalars/particles from xml
-    return get_trace_request();
-  }
-
 
   inline void initialize_traces()
   {
-    if(traces_available)
+    if(streaming_traces)
     {
       if(verbose)
         app_log()<<"TraceManager::initialize_traces "<<master_copy<<endl;
-      //initialize combined traces
-      //  need to add code for user-defined combinations (specified in input file)
-      //check that trace dependencies of estimators are met (e.g. Energy Density)
-      //  (this will be implemented later)
       //organize trace samples and initialize buffers
       if(writing_traces)
       {
@@ -1571,20 +1980,18 @@ public:
 
 
   //create combined trace out of existing traces
-  inline void make_combined_trace(const string& name,vector<string>& names,bool force=false)
+  inline void make_combined_trace(const string& name,vector<string>& names)
   {
     vector<TraceReal> weights;
     weights.resize(names.size());
     fill(weights.begin(),weights.end(),1.0);
-    make_combined_trace(name,names,weights,force);
+    make_combined_trace(name,names,weights);
   }
 
-  inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights,bool force=false)
+  inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights)
   {
-    if(traces_available && (force || requests.find(name)!=requests.end()))
+    if(streaming_traces)
     {
-      if(force)
-        requests.insert(name);
       if(verbose)
         app_log()<<"TraceManager::make_combined_trace "<<master_copy<<"  "<<name<<endl;
       real_buffer.make_combined_trace(name,names,weights);
@@ -1613,7 +2020,7 @@ public:
       {
         for(int i=0; i<clones.size(); ++i)
           clones[i]->write_summary();
-        APP_ABORT("TraceManager::check_clones  trace buffer widths of clones do not match\n  contiguous write is impossible\n  this was first caused by clones contributing particle traces from identical, but differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the TraceManager summaries printed above");
+        APP_ABORT("TraceManager::check_clones  trace buffer widths of clones do not match\n  contiguous write is impossible\n  this was first caused by clones contributing array traces from identical, but differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the TraceManager summaries printed above");
       }
     }
   }
@@ -1683,8 +2090,8 @@ public:
       {
         if(verbose)
           app_log()<<"TraceManager::open_file "<<master_copy<<endl;
-        //if(verbose)
-        //  clones[0]->write_summary();
+        if(verbose)
+          clones[0]->write_summary();
         if(hdf_format)
         {
           open_hdf_file(clones);
@@ -1779,42 +2186,16 @@ public:
   inline void write_summary(string pad="  ")
   {
     string pad2 = pad+"  ";
-    app_log()<<pad<<"TraceManager"<<endl;
-    app_log()<<pad2<<"master_copy               = "<<master_copy              <<endl;
-    app_log()<<pad2<<"traces_requested          = "<<traces_requested         <<endl;
-    app_log()<<pad2<<"method_allows_traces      = "<<method_allows_traces     <<endl;
-    app_log()<<pad2<<"traces_available          = "<<traces_available         <<endl;
-    app_log()<<pad2<<"scalar_traces_requested   = "<<scalar_traces_requested  <<endl;
-    app_log()<<pad2<<"particle_traces_requested = "<<particle_traces_requested<<endl;
-    app_log()<<pad2<<"writing_traces            = "<<writing_traces           <<endl;
-    app_log()<<pad2<<"format                    = "<<format                   <<endl;
-    app_log()<<pad2<<"hdf format                = "<<hdf_format               <<endl;
-    app_log()<<pad2<<"adios format              = "<<adios_format             <<endl;
-    app_log()<<pad2<<"default_domain            = "<<default_domain           <<endl;
-    app_log()<<pad2<<"use_scalar_defaults       = "<<scalar_defaults_set      <<endl;
-    app_log()<<pad2<<"use_particle_defaults     = "<<particle_defaults_set    <<endl;
-    set<string>::iterator it;
-    app_log()<<pad2<<"scalar_requests           = ";
-    if(!scalar_requests.empty())
-    {
-      for(it=scalar_requests.begin(); it!=scalar_requests.end(); ++it)
-        app_log()<<*it<<" ";
-    }
     app_log()<<endl;
-    app_log()<<pad2<<"particle_requests         = ";
-    if(!particle_requests.empty())
-    {
-      for(it=particle_requests.begin(); it!=particle_requests.end(); ++it)
-        app_log()<<*it<<" ";
-    }
-    app_log()<<endl;
-    app_log()<<pad2<<"requests                  = ";
-    if(!requests.empty())
-    {
-      for(it=requests.begin(); it!=requests.end(); ++it)
-        app_log()<<*it<<" ";
-    }
-    app_log()<<endl;
+    app_log()<<pad<<"TraceManager (detailed summary)"<<endl;
+    app_log()<<pad2<<"master_copy             = "<<master_copy              <<endl;
+    app_log()<<pad2<<"method_allows_traces    = "<<method_allows_traces     <<endl;
+    app_log()<<pad2<<"streaming_traces        = "<<streaming_traces         <<endl;
+    app_log()<<pad2<<"writing_traces          = "<<writing_traces           <<endl;
+    app_log()<<pad2<<"format                  = "<<format                   <<endl;
+    app_log()<<pad2<<"hdf format              = "<<hdf_format               <<endl;
+    app_log()<<pad2<<"adios format            = "<<adios_format             <<endl;
+    app_log()<<pad2<<"default_domain          = "<<default_domain           <<endl;
     int_buffer.write_summary(pad2);
     real_buffer.write_summary(pad2);
     app_log()<<pad<<"end TraceManager"<<endl;
@@ -1824,16 +2205,17 @@ public:
   inline void user_report(string pad="  ")
   {
     string pad2 = pad+"  ";
-    app_log()<<pad<<"Traces report"<<endl;
-    app_log()<<pad2<<"writing_traces = "<<writing_traces<<endl;
-    app_log()<<pad2<<"traces requested by estimators or user:"<<endl;
-    app_log()<<pad2<<"  ";
-    set<string>::iterator req;
-    for(req=requests.begin();req!=requests.end();++req)
-      app_log()<<*req<<" ";
+    string pad3 = pad2+"  ";
     app_log()<<endl;
-    int_buffer.user_report(pad2);
-    real_buffer.user_report(pad2);
+    app_log()<<pad<<"Traces report"<<endl;
+    request.report();
+    app_log()<<pad2<<"Type and domain breakdown of streaming quantities:"<<endl;
+    set<string>::iterator req;
+    int_buffer.user_report(pad3);
+    real_buffer.user_report(pad3);
+    app_log()<<endl;
+    //if(verbose)
+    //  write_summary(pad);
   }
 
   //hdf file operations
@@ -1864,7 +2246,7 @@ public:
       APP_ABORT("TraceManager::open_hdf_file  failed to open hdf file "+file_name);
     // only clones have active buffers and associated data
     TraceManager& tm = *clones[0];
-    tm.write_summary();
+    //tm.write_summary();
     tm.int_buffer.register_hdf_data(*hdf_file);
     tm.real_buffer.register_hdf_data(*hdf_file);
   }
@@ -2050,8 +2432,12 @@ public:
         for(int i=0; i<int_samples.ordered_samples.size(); ++i) 
         {
             const struct TraceSample<TraceInt>& s = *int_samples.ordered_samples[i];
-            convert_and_write_adios<TraceInt,int> (
-                    *adios_trace, clones, s, "int", max_nrows, int_cols);
+            //jtk: attempt to restrict adios writes in the correct way, please check!
+            if(s.write)
+            {
+              convert_and_write_adios<TraceInt,int> (
+                      *adios_trace, clones, s, "int", max_nrows, int_cols);
+            }
         }
 
         /* 
@@ -2064,14 +2450,18 @@ public:
         for(int i=0; i<real_samples.ordered_samples.size(); ++i) 
         {
             const struct TraceSample<TraceReal>& s = *real_samples.ordered_samples[i];
-            string vartype = real_samples.get_adios_type ("real", s.domain, s.name, false);
-            // we may write some variables as doubles (/scalars/*)
-            if (vartype == "double") {
+            //jtk: attempt to restrict adios writes in the correct way, please check!
+            if(s.write)
+            {
+              string vartype = real_samples.get_adios_type ("real", s.domain, s.name, false);
+              // we may write some variables as doubles (/scalars/*)
+              if (vartype == "double") {
                 convert_and_write_adios<TraceReal,double> (
                         *adios_trace, clones, s, "real", max_nrows, real_cols);
-            } else {
+              } else {
                 convert_and_write_adios<TraceReal,ADIOSTraceReal> (
                         *adios_trace, clones, s, "real", max_nrows, real_cols);
+              }
             }
         }
 
@@ -2084,8 +2474,12 @@ public:
         for(int i=0; i<complex_samples.ordered_samples.size(); ++i) 
         {
             const struct TraceSample<TraceComp>& s = *complex_samples.ordered_samples[i];
-            convert_and_write_adios<TraceComp,ADIOSTraceReal> (
-                    *adios_trace, clones, s, "complex", max_nrows, real_cols);
+            //jtk: attempt to restrict adios writes in the correct way, please check!
+            if(s.write)
+            {
+              convert_and_write_adios<TraceComp,ADIOSTraceReal> (
+                      *adios_trace, clones, s, "complex", max_nrows, real_cols);
+            }
         }
 
 

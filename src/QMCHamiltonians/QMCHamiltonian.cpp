@@ -30,9 +30,10 @@ namespace qmcplusplus
 */
 QMCHamiltonian::QMCHamiltonian()
   :myIndex(0),numCollectables(0),EnableVirtualMoves(false),
-   tracing(false),tracing_positions(false),
    id_sample(0),weight_sample(0),position_sample(0)
-{ }
+{
+  streaming_position = false;
+}
 
 ///// copy constructor is distable by declaring it as private
 //QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
@@ -222,137 +223,199 @@ QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
 
 void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
 {
-  // some observables require trace data
-  for(int i=0; i<auxH.size(); ++i)
-    auxH[i]->request_traces(tm);
-  // see if traces are requested explicitly by user or implicitly by other observables
-  TraceRequest& traces_requested = tm.get_trace_request("position");
-  tracing = traces_requested.any;
-  tracing_positions = traces_requested.particles;
-  // setup traces, if requested
-  if(tracing)
-  {
+  static bool first_init = true;
+  if(first_init)
     app_log()<<"\n  Hamiltonian is initializing traces"<<endl;
-    //checkout walker trace samples
-    id_sample     = tm.checkout_int<1>("id");
-    step_sample   = tm.checkout_int<1>("step");
-    weight_sample = tm.checkout_real<1>("weight");
-    if(tracing_positions)
+
+  //fill string vectors for combined trace quantities
+  vector<string> Eloc;
+  vector<string> Vloc;
+  vector<string> Vq,Vc,Vqq,Vqc,Vcc;
+  for(int i=0; i<H.size(); ++i)
+    Eloc.push_back(H[i]->myName);
+  for(int i=1; i<H.size(); ++i)
+    Vloc.push_back(H[i]->myName);
+  for(int i=1; i<H.size(); ++i)
+  {
+    QMCHamiltonianBase& h = *H[i];
+    if(h.is_quantum())
+      Vq.push_back(h.myName);
+    else if(h.is_classical())
+      Vc.push_back(h.myName);
+    else if(h.is_quantum_quantum())
+      Vqq.push_back(h.myName);
+    else if(h.is_quantum_classical())
+      Vqc.push_back(h.myName);
+    else if(h.is_classical_classical())
+      Vcc.push_back(h.myName);
+    else
+      app_log()<<"  warning: potential named "<<h.myName<<" has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending on this classification may not function properly"<<endl;    
+  }
+
+
+  //make trace quantities available
+  request.contribute_scalar("id",true);      //default trace quantity
+  request.contribute_scalar("step",true);    //default trace quantity
+  request.contribute_scalar("weight",true);  //default trace quantity
+  request.contribute_array("position");
+  for(int i=0; i<H.size(); ++i)
+    H[i]->contribute_trace_quantities();
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->contribute_trace_quantities();
+  
+
+  //note availability of combined quantities
+  request.contribute_combined("LocalEnergy",Eloc,true);
+  request.contribute_combined("LocalPotential",Vloc,true,true);
+  if(Vq.size()>0)
+    request.contribute_combined("Vq",Vq,true,true);
+  if(Vc.size()>0)
+    request.contribute_combined("Vc",Vc,true,true);
+  if(Vqq.size()>0)
+    request.contribute_combined("Vqq",Vqq,true,true);
+  if(Vqc.size()>0)
+    request.contribute_combined("Vqc",Vqc,true,true);
+  if(Vcc.size()>0)
+    request.contribute_combined("Vcc",Vcc,true,true);
+
+
+  //collect trace requests
+  vector<TraceRequest*> requests;
+  //  Hamiltonian request (id, step, weight, positions)
+  requests.push_back(&request);
+  //  requests from Hamiltonian components
+  for(int i=0; i<H.size(); ++i)
+    requests.push_back(&H[i]->request);
+  //  requests from other observables
+  for(int i=0; i<auxH.size(); ++i)
+    requests.push_back(&auxH[i]->request);
+
+  //collect trace quantity availability/requests from contributors/requestors
+  for(int i=0;i<requests.size();++i)
+    tm.request.incorporate(*requests[i]);
+
+  //balance requests with availability, mark quantities as streaming/writing
+  tm.request.determine_stream_write();
+
+  //relay updated streaming information to all contributors/requestors
+  for(int i=0;i<requests.size();++i)
+    tm.request.relay_stream_info(*requests[i]);
+
+  //set streaming/writing traces in general
+  tm.update_status();
+
+  // setup traces, if any quantities should be streaming
+  bool tracing = request.streaming();
+  if(tracing!=tm.streaming_traces)
+    APP_ABORT("QMCHamiltonian::initialize_traces  trace request failed to initialize properly");
+  if(!tracing)
+  {
+    if(first_init)
+      app_log()<<"    no traces streaming"<<endl;
+  }
+  else
+  {
+    if(first_init)
+      app_log()<<"    traces streaming"<<endl;
+    //checkout trace quantities 
+    //(requested sources checkout arrays to place samples in for streaming)
+    //  checkout walker trace quantities
+    streaming_position = request.streaming_array("position");
+    if(request.streaming_default_scalars)
+    {
+      id_sample     = tm.checkout_int<1>("id");
+      step_sample   = tm.checkout_int<1>("step");
+      weight_sample = tm.checkout_real<1>("weight");
+    }
+    if(streaming_position)
       position_sample = tm.checkout_real<2>("position",P,DIM);
-    //initialize traces
+    //  checkout observable trace quantities
     for(int i=0; i<H.size(); ++i)
-      H[i]->initialize_traces(tm);
+    {
+      if(first_init)
+        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<H[i]->myName<<endl;
+      H[i]->checkout_trace_quantities(tm);
+    }
     for(int i=0; i<auxH.size(); ++i)
-      auxH[i]->initialize_traces(tm);
+    {
+      if(first_init)
+        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<auxH[i]->myName<<endl;
+      auxH[i]->checkout_trace_quantities(tm);
+    }
     //setup combined traces that depend on H information
-    //  LocalEnergy, LocalPotential
-    tm.set_requests();
-    vector<string>   names;
-    if(H.size()>1)
-    {
-      for(int i=1; i<H.size(); ++i)
-        names.push_back(H[i]->myName);
-      tm.make_combined_trace("LocalPotential",names);
-    }
-    if(H.size()>0)
-    {
-      names.push_back(H[0]->myName);
-      tm.make_combined_trace("LocalEnergy",names);
-    }
-    //  quantum/classical partitioning of potential energy
-    if(H.size()>1)
-    {
-      vector<string> Vq,Vc,Vqq,Vqc,Vcc;
-      for(int i=1; i<H.size(); ++i)
-      {
-        QMCHamiltonianBase& h = *H[i];
-        if(h.is_quantum())
-          Vq.push_back(h.myName);
-        else if(h.is_classical())
-          Vc.push_back(h.myName);
-        else if(h.is_quantum_quantum())
-          Vqq.push_back(h.myName);
-        else if(h.is_quantum_classical())
-          Vqc.push_back(h.myName);
-        else if(h.is_classical_classical())
-          Vcc.push_back(h.myName);
-        else
-          app_log()<<"  warning: potential named "<<h.myName<<" has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending on this classification may not function properly"<<endl;    
-      }
-      app_log()<<"  Breakdown of potential energy into quantum/classical components:"<<endl;
-      app_log()<<"    Vq  = ";
-      for(int i=0;i<Vq.size();++i)
-        app_log()<<Vq[i]<<" ";
-      app_log()<<endl;
-      app_log()<<"    Vc  = ";
-      for(int i=0;i<Vc.size();++i)
-        app_log()<<Vc[i]<<" ";
-      app_log()<<endl;
-      app_log()<<"    Vqq = ";
-      for(int i=0;i<Vqq.size();++i)
-        app_log()<<Vqq[i]<<" ";
-      app_log()<<endl;
-      app_log()<<"    Vqc = ";
-      for(int i=0;i<Vqc.size();++i)
-        app_log()<<Vqc[i]<<" ";
-      app_log()<<endl;
-      app_log()<<"    Vcc = ";
-      for(int i=0;i<Vcc.size();++i)
-        app_log()<<Vcc[i]<<" ";
-      app_log()<<endl;
+    //  LocalEnergy, LocalPotential, Vq, Vc, Vqq, Vqc, Vcc
+    if(Vloc.size()>0 && request.streaming("LocalPotential"))
+      tm.make_combined_trace("LocalPotential",Vloc);
+    if(Eloc.size()>0 && request.streaming("LocalEnergy"))
+      tm.make_combined_trace("LocalEnergy",Eloc);
+    if(Vq.size()>0 && request.streaming("Vq"))
+      tm.make_combined_trace("Vq",Eloc);
+    if(Vc.size()>0 && request.streaming("Vc"))
+      tm.make_combined_trace("Vc",Eloc);
+    if(Vqq.size()>0 && request.streaming("Vqq"))
+      tm.make_combined_trace("Vqq",Eloc);
+    if(Vqc.size()>0 && request.streaming("Vqc"))
+      tm.make_combined_trace("Vqc",Eloc);
+    if(Vcc.size()>0 && request.streaming("Vcc"))
+      tm.make_combined_trace("Vcc",Eloc);
 
-      if(Vq.size()>0)
-        tm.make_combined_trace("Vq",Vq,true);
-      if(Vc.size()>0)
-        tm.make_combined_trace("Vc",Vc,true);
-      if(Vqq.size()>0)
-        tm.make_combined_trace("Vqq",Vqq,true);
-      if(Vqc.size()>0)
-        tm.make_combined_trace("Vqc",Vqc,true);
-      if(Vcc.size()>0)
-        tm.make_combined_trace("Vcc",Vcc,true);
-    }
+    //all trace samples have been created (streaming instances)
+    //  mark the ones that will be writing also
+    tm.screen_writes();
+
     //observables that depend on traces check them out
+    if(first_init)
+      app_log()<<"\n  Hamiltonian is fulfilling trace requests from observables"<<endl;
     for(int i=0; i<auxH.size(); ++i)
+    {
+      if(first_init)
+        app_log()<<"    QMCHamiltonianBase::get_required_traces  "<<auxH[i]->myName<<endl;
       auxH[i]->get_required_traces(tm);
+    }
     //report
-    tm.user_report();
+  
+    //write traces status to the log
+    if(first_init)
+      tm.user_report();
 
+    first_init=false;
   }
 }
 
 
 void QMCHamiltonian::collect_walker_traces(Walker_t& walker,int step)
 {
-  if(tracing)
+  if(request.streaming_default_scalars)
   {
     (*id_sample)(0)     = walker.ID;
     (*step_sample)(0)   = step;
     (*weight_sample)(0) = walker.Weight;
-    if(tracing_positions)
-      for(int i=0; i<walker.R.size(); ++i)
-        for(int d=0; d<DIM; ++d)
-          (*position_sample)(i,d) = walker.R[i][d];
   }
+  if(streaming_position)
+    for(int i=0; i<walker.R.size(); ++i)
+      for(int d=0; d<DIM; ++d)
+        (*position_sample)(i,d) = walker.R[i][d];
 }
 
 
 void QMCHamiltonian::finalize_traces()
 {
-  if(tracing)
+  if(request.streaming_default_scalars)
   {
     delete id_sample;
     delete step_sample;
     delete weight_sample;
-    if(tracing_positions)
-      delete position_sample;
-    for(int i=0; i<H.size(); ++i)
-      H[i]->finalize_traces();
-    for(int i=0; i<auxH.size(); ++i)
-      auxH[i]->finalize_traces();
   }
-  tracing = false;
-  tracing_positions = false;
+  if(streaming_position)
+    delete position_sample;
+  if(request.streaming())
+  {
+    for(int i=0; i<H.size(); ++i)
+      H[i]->delete_trace_quantities();
+    for(int i=0; i<auxH.size(); ++i)
+      auxH[i]->delete_trace_quantities();
+  }
+  streaming_position = false;
 }
 
 

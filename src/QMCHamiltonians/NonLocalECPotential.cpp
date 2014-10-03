@@ -61,34 +61,46 @@ NonLocalECPotential::~NonLocalECPotential()
 }
 
 
-void NonLocalECPotential::checkout_particle_arrays(TraceManager& tm)
+void NonLocalECPotential::contribute_particle_quantities()
 {
-  Ve_sample = tm.checkout_real<1>(myName,Peln);
-  Vi_sample = tm.checkout_real<1>(myName,Pion);
-  for(int iat=0; iat<NumIons; iat++)
+  request.contribute_array(myName);
+}
+
+void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
+{
+  streaming_particles = request.streaming_array(myName);
+  if(streaming_particles)
   {
-    if(PP[iat])
+    Ve_sample = tm.checkout_real<1>(myName,Peln);
+    Vi_sample = tm.checkout_real<1>(myName,Pion);
+    for(int iat=0; iat<NumIons; iat++)
     {
-      PP[iat]->tracing_particle_quantities = tracing_particle_quantities;
+      if(PP[iat])
+      {
+      PP[iat]->streaming_particles = streaming_particles;
       PP[iat]->Ve_sample = Ve_sample;
       PP[iat]->Vi_sample = Vi_sample;
+      }
     }
   }
 }
 
-void NonLocalECPotential::delete_particle_arrays()
+void NonLocalECPotential::delete_particle_quantities()
 {
-  for(int iat=0; iat<NumIons; iat++)
+  if(streaming_particles)
   {
-    if(PP[iat])
+    for(int iat=0; iat<NumIons; iat++)
     {
-      PP[iat]->tracing_particle_quantities = false;
-      PP[iat]->Ve_sample = NULL;
-      PP[iat]->Vi_sample = NULL;
+      if(PP[iat])
+      {
+        PP[iat]->streaming_particles = false;
+        PP[iat]->Ve_sample = NULL;
+        PP[iat]->Vi_sample = NULL;
+      }
     }
+    delete Ve_sample;
+    delete Vi_sample;
   }
-  delete Ve_sample;
-  delete Vi_sample;
 }
 
 
@@ -96,7 +108,7 @@ NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P)
 {
   Value=0.0;
-  if(tracing_particle_quantities)
+  if(streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
@@ -130,7 +142,7 @@ NonLocalECPotential::evaluate(ParticleSet& P)
   //    cout << iat << " " << pp_e[iat] << endl;
   }
 #if defined(TRACE_CHECK)
-  if(tracing_particle_quantities)
+  if(streaming_particles)
   {
     Return_t Vnow = Value;
     RealType Visum = Vi_sample->sum();
@@ -159,7 +171,7 @@ NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 {
   Value=0.0;
-  if(tracing_particle_quantities)
+  if(streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
@@ -186,7 +198,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     }
   }
 #if defined(TRACE_CHECK)
-  if(tracing_particle_quantities)
+  if(streaming_particles)
   {
     Return_t Vnow = Value;
     RealType Visum = Vi_sample->sum();

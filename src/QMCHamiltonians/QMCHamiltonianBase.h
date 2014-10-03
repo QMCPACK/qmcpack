@@ -110,10 +110,9 @@ struct QMCHamiltonianBase: public QMCTraits
   ///name of dependent object: to be removed
   string depName;
   ///whether traces are being collected
-  TraceRequest trace_request;
-  bool tracing;
-  bool tracing_scalar_quantities;
-  bool tracing_particle_quantities;
+  TraceRequest request;
+  bool streaming_scalars;
+  bool streaming_particles;
   bool have_required_traces;
 
   vector<RealType> ValueVector;
@@ -366,65 +365,63 @@ struct QMCHamiltonianBase: public QMCTraits
     // empty
   }
 
-
-
-  ///request that traces be made available
-  inline void request_traces(TraceManager& tm)
+  ///make trace quantities available
+  inline void contribute_trace_quantities()
   {
-    tm.add_trace_request(trace_request);
+    contribute_scalar_quantities();
+    contribute_particle_quantities();
   }
 
-
   ///checkout trace arrays
-  inline void initialize_traces(TraceManager& tm)
+  inline void checkout_trace_quantities(TraceManager& tm)
   {
-    TraceRequest& traces_requested = tm.get_trace_request(myName);
-    tracing_scalar_quantities   = traces_requested.scalars;
-    tracing_particle_quantities = traces_requested.particles;
-    tracing = tracing_scalar_quantities || tracing_particle_quantities;
-    if(tracing_scalar_quantities)
-      checkout_scalar_arrays(tm);
-    if(tracing_particle_quantities)
-      checkout_particle_arrays(tm);
+    //derived classes must guard individual checkouts using request info
+    checkout_scalar_quantities(tm);
+    checkout_particle_quantities(tm);
   }
 
   ///collect scalar trace data
   inline void collect_scalar_traces()
   {
     //app_log()<<"QMCHamiltonianBase::collect_scalar_traces"<<endl;
-    if(tracing_scalar_quantities)
-      collect_scalar_samples();
+    collect_scalar_quantities();
   }
 
   ///delete trace arrays
-  inline void finalize_traces()
+  inline void delete_trace_quantities()
   {
-    if(tracing_scalar_quantities)
-      delete_scalar_arrays();
-    if(tracing_particle_quantities)
-      delete_particle_arrays();
-    tracing_scalar_quantities = false;
-    tracing_particle_quantities = false;
+    delete_scalar_quantities();
+    delete_particle_quantities();
     have_required_traces = false;
   }
 
-  virtual void checkout_scalar_arrays(TraceManager& tm)
+  virtual void contribute_scalar_quantities()
   {
-    value_sample = tm.checkout_real<1>(myName);
+    request.contribute_scalar(myName);
   }
 
-  virtual void collect_scalar_samples()
+  virtual void checkout_scalar_quantities(TraceManager& tm)
   {
-    (*value_sample)(0) = Value;
+    streaming_scalars = request.streaming_scalar(myName);
+    if(streaming_scalars)
+      value_sample = tm.checkout_real<1>(myName);
   }
 
-  virtual void delete_scalar_arrays()
+  virtual void collect_scalar_quantities()
   {
-    delete value_sample;
+    if(streaming_scalars)
+      (*value_sample)(0) = Value;
   }
 
-  virtual void checkout_particle_arrays(TraceManager& tm) {};
-  virtual void delete_particle_arrays() {};
+  virtual void delete_scalar_quantities()
+  {
+    if(streaming_scalars)
+      delete value_sample;
+  }
+
+  virtual void contribute_particle_quantities() {};
+  virtual void checkout_particle_quantities(TraceManager& tm) {};
+  virtual void delete_particle_quantities() {};
   virtual void get_required_traces(TraceManager& tm) {};
 
 

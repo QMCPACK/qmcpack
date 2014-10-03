@@ -86,17 +86,28 @@ void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectabl
 }
 
 
-
-void CoulombPBCAB::checkout_particle_arrays(TraceManager& tm)
+void CoulombPBCAB::contribute_particle_quantities()
 {
-  Ve_sample = tm.checkout_real<1>(myName,Peln);
-  Vi_sample = tm.checkout_real<1>(myName,Pion);
+  request.contribute_array(myName);
 }
 
-void CoulombPBCAB::delete_particle_arrays()
+void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
 {
-  delete Ve_sample;
-  delete Vi_sample;
+  streaming_particles = request.streaming_array(myName);
+  if(streaming_particles)
+  {
+    Ve_sample = tm.checkout_real<1>(myName,Peln);
+    Vi_sample = tm.checkout_real<1>(myName,Pion);
+  }
+}
+
+void CoulombPBCAB::delete_particle_quantities()
+{
+  if(streaming_particles)
+  {
+    delete Ve_sample;
+    delete Vi_sample;
+  }
 }
 
 
@@ -110,8 +121,8 @@ CoulombPBCAB::evaluate(ParticleSet& P)
     Value = evalLRwithForces(P) + evalSRwithForces(P) +myConst;
   }
   else
-    if(tracing_particle_quantities)
-      Value = spevaluate(P);
+    if(streaming_particles)
+      Value = evaluate_sp(P);
     else
       Value = evalLR(P) + evalSR(P) +myConst;
   return Value;
@@ -120,7 +131,7 @@ CoulombPBCAB::evaluate(ParticleSet& P)
 
 
 CoulombPBCAB::Return_t
-CoulombPBCAB::spevaluate(ParticleSet& P)
+CoulombPBCAB::evaluate_sp(ParticleSet& P)
 {
   RealType  Vsr = 0.0;
   RealType  Vlr = 0.0;
@@ -155,7 +166,7 @@ CoulombPBCAB::spevaluate(ParticleSet& P)
     const StructFact& RhoKB(*(P.SK));
     if(RhoKA.SuperCellEnum==SUPERCELL_SLAB)
     {
-      APP_ABORT("CoulombPBCAB::spevaluate single particle traces have not been implemented for slab geometry");
+      APP_ABORT("CoulombPBCAB::evaluate_sp single particle traces have not been implemented for slab geometry");
     }
     else
     {
