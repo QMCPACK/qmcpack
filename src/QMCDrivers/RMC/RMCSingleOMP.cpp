@@ -87,9 +87,13 @@ bool RMCSingleOMP::run()
             if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0)
               wClones[ip]->saveEnsemble(wit,wit_end);
               
-             if (ip==0) branchEngine->collect(CurrentStep, W, branchClones);  //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
+             branchEngine->collect(CurrentStep, W, branchClones);  //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
           }
-       // wClones[ip]->reptile->calcTauScaling();
+	stringstream ss1;
+	app_log()<<ip<<" Eref="<<branchEngine->getEref()<<" Etrial="<<branchEngine->getEtrial()<<" TauEff="<<branchEngine->getTauEff()<<endl;
+	//app_log()<<ss1.str();
+        app_log().flush();
+	// wClones[ip]->reptile->calcTauScaling();
        // wClones[ip]->reptile->calcERun();
 		//branchEngine->collect(CurrentStep, W, branchClones);
        // wClones[ip]->reptile->resetR2Avg();
@@ -228,13 +232,30 @@ void RMCSingleOMP::resetRun()
 
 
 /// thermalization Norm
-         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//
+   //      for (int prestep=0; prestep<nWarmupSteps; ++prestep)
+//	 {
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+//	   branchEngine->collect(CurrentStep, W, branchClones);
+//	 }
 //         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+ //          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
+
   branchEngine->checkParameters(W);
+
+#if !defined(BGP_BUG)
+  #pragma omp parallel for
+#endif
+  for(int ip=0; ip<NumThreads; ++ip)
+  {
+
+         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
+	 {
+           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+	   branchEngine->collect(CurrentStep, W, branchClones);
+	 }
+
+  }
 }
 
 bool

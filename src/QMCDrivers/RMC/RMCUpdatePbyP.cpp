@@ -242,8 +242,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
 //	  overwriteWalker.Properties(R2PROPOSED)=rr_proposed;
       
       prophead.Properties(LOCALENERGY)=eloc;
-     // prophead.Properties(R2ACCEPTED)=rr_accepted;
-//	  prophead.Properties(R2PROPOSED)=rr_proposed;
+      prophead.Properties(R2ACCEPTED)=rr_accepted;
+      prophead.Properties(R2PROPOSED)=rr_proposed;
      // H.auxHevaluate(W,overwriteWalker);
   //    H.auxHevaluate(W,prophead);
       //H.saveProperty(overwriteWalker.getPropertyBase());
@@ -620,7 +620,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
 
 void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
-	if (vmcToDoSteps>0)
+/*	if (vmcToDoSteps>0)
 	{
       advanceWalkersVMC();
       vmcToDoSteps--;
@@ -633,15 +633,16 @@ void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
 	else
 	{
       advanceWalkersRMC();
-    }
-//    advanceWalkersRMC();
+    } */
+    advanceWalkersRMC();
 	
 }
 
 void RMCUpdatePbyPWithDrift::accumulate(WalkerIter_t it, WalkerIter_t it_end)
 {
-  if (vmcToDoSteps==0 && equilToDoSteps==0) Estimators->accumulate(W,it,it_end);
-  else;	
+ // if (vmcToDoSteps==0 && equilToDoSteps==0) Estimators->accumulate(W,it,it_end);
+//  else;	
+  Estimators->accumulate(W,it,it_end);
 }
 
 }

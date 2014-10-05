@@ -209,7 +209,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
 
 void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
 {
-  RealType allowedFlux=10.0;
+  RealType allowedFlux=50.0;
   BranchMode.set(B_RMC,1);//set RMC
   BranchMode.set(B_RMCSTAGE,iParam[B_WARMUPSTEPS]==0);//use warmup
   //this is not necessary
@@ -428,7 +428,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   {
     //app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<<endl;
     vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-    //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<endl;
+    //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<" "<<vParam[B_TAUEFF]<<endl;
   }
   /*
   if(BranchMode[B_RMCSTAGE]) // main stage
@@ -546,7 +546,7 @@ void SimpleFixedNodeBranch::reset()
   {
     //this is to compare the time step errors
     // BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
-    if(BranchMode[B_DMCSTAGE]) //
+    if(BranchMode[B_RMCSTAGE]) //
       ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
     else
       ToDoSteps = iParam[B_WARMUPSTEPS];
