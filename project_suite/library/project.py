@@ -20,8 +20,10 @@ from wfconvert   import Wfconvert  , WfconvertInput  , WfconvertAnalyzer  , gene
 from gamess      import Gamess     , GamessInput     , GamessAnalyzer     , generate_gamess_input     , generate_gamess, FormattedGroup
 from convert4qmc import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
 from qmcpack     import Qmcpack    , QmcpackInput    , QmcpackAnalyzer    , generate_qmcpack_input    , generate_qmcpack
+from vasp        import Vasp       , VaspInput       , VaspAnalyzer       , generate_vasp_input       , generate_vasp
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
+from auxiliary import *
 
 
 #set the machine if known, otherwise user will provide
