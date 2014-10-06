@@ -713,7 +713,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
-    Traces->buffer_sample();
+    Traces->buffer_sample(W.current_step);
     if(!moved)
       ++nAllRejected;
   }

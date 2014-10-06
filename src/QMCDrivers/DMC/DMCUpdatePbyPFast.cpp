@@ -188,7 +188,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
       gf_acc=1.0;
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     }
-    Traces->buffer_sample();
+    Traces->buffer_sample(W.current_step);
     if(UseTMove)
     {
       int ibar = nonLocalOps.selectMove(RandomGen());

@@ -53,10 +53,11 @@ bool VMCSingleOMP::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
-  Traces->startRun(traceClones);
+  Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
   {
+    double comp_start = MPI_Wtime(); 
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -82,20 +83,21 @@ bool VMCSingleOMP::run()
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
-        traceClones[ip]->monitor_writes(now_loc,Traces);
       }
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
+    app_log()<<block<<" comp time "<<MPI_Wtime() - comp_start<<endl; 
+    Traces->write_buffers(traceClones, block);
     if(storeConfigs)
       recordBlock(block);
   }//block
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
-  Traces->stopRun(traceClones);
+  Traces->stopRun();
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);

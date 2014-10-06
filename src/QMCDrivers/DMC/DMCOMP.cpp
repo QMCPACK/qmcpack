@@ -243,7 +243,7 @@ bool DMCOMP::run()
   Estimators->start(nBlocks);
   for(int ip=0; ip<NumThreads; ip++)
     Movers[ip]->startRun(nBlocks,false);
-  Traces->startRun(traceClones);
+  Traces->startRun(nBlocks,traceClones);
   Timer myclock;
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
@@ -280,7 +280,6 @@ bool DMCOMP::run()
         Movers[ip]->setMultiplicity(wit,wit_end);
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
-        traceClones[ip]->monitor_writes(now,Traces);
       }
 
       prof.pop(); //close dmc_advance
@@ -305,6 +304,7 @@ bool DMCOMP::run()
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
+    Traces->write_buffers(traceClones, block);
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
@@ -322,7 +322,7 @@ bool DMCOMP::run()
   Estimators->stop();
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
-  Traces->stopRun(traceClones);
+  Traces->stopRun();
   return finalize(nBlocks);
 }
 

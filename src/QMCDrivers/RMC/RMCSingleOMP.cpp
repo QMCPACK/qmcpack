@@ -52,7 +52,7 @@ bool RMCSingleOMP::run()
    
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
-  Traces->startRun(traceClones);
+  Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
     {

@@ -1218,12 +1218,6 @@ struct TraceBuffer
     buffer.resize(0,buffer.size(1));
   }
 
-  
-  inline bool empty()
-  {
-    return buffer.size(0)==0;
-  }
-
 
   inline void set_samples(TraceSamples<T>& s)
   {
@@ -1575,7 +1569,7 @@ public:
   bool method_allows_traces;
   bool streaming_traces;
   bool writing_traces;
-  int buffer_steps; //number of steps to buffer data between writes
+  int  throttle;
   bool verbose;
   string format;
   bool hdf_format;
@@ -1594,7 +1588,7 @@ public:
     reset_permissions();
     master_copy    = true;
     communicator   = comm;
-    buffer_steps   = 10;
+    throttle       = 1;
     format         = "hdf";
     default_domain = "scalars";
     request.set_scalar_domain(default_domain);
@@ -1630,7 +1624,7 @@ public:
     request              = tm.request;
     streaming_traces     = tm.streaming_traces;
     writing_traces       = tm.writing_traces;
-    buffer_steps         = tm.buffer_steps;
+    throttle             = tm.throttle;
     verbose              = tm.verbose;
     format               = tm.format;
     hdf_format           = tm.hdf_format;
@@ -1693,10 +1687,10 @@ public:
       attrib.add(scalar_defaults,"scalar_defaults");
       attrib.add(array_defaults, "array_defaults" );
       attrib.add(format,         "format"         );
+      attrib.add(throttle,       "throttle"       );
       attrib.add(verbose_write,  "verbose"        );
       attrib.add(array,          "particle"          );//legacy
       attrib.add(array_defaults, "particle_defaults" );//legacy
-      attrib.add(buffer_steps,   "buffer"         );//legacy
       attrib.put(cur);
       writing_traces           = writing         == "yes";
       bool scalars_on          = scalar          == "yes";
@@ -1704,8 +1698,6 @@ public:
       bool use_scalar_defaults = scalar_defaults == "yes";
       bool use_array_defaults  = array_defaults  == "yes";
       verbose                  = verbose_write   == "yes";
-      if(buffer_steps<1)
-        APP_ABORT("TraceManager::put  buffer steps cannot be less than 1");
       tolower(format);
       if(format=="hdf")
       {
@@ -2051,9 +2043,9 @@ public:
 
 
   //store the full sample from a single walker step in buffers
-  inline void buffer_sample()
+  inline void buffer_sample(int current_step)
   {
-    if(writing_traces)
+    if(writing_traces && current_step%throttle==0)
     {
       if(verbose)
         app_log()<<" TraceManager::buffer_sample() "<<master_copy<<endl;
@@ -2063,43 +2055,34 @@ public:
   }
 
 
-  //monitor what step the run is on, and write when it is time
-  //(throttled write, threaded, critical)
-  inline void monitor_writes(int step,TraceManager* master)
+  //write buffered trace data to file
+  inline void write_buffers(vector<TraceManager*>& clones, int block)
   {
-    if(step%buffer_steps)
+    if(master_copy)
     {
-#pragma omp critical(TRACE_BUFFER_WRITE)
+      if(writing_traces)
       {
-        write_buffers(*master);
-      }
-    }
-  }
-
-
-  //write buffered trace data to file 
-  inline void write_buffers(TraceManager& master)
-  {
-    if(writing_traces && !buffers_empty())
-    {
-      if(hdf_format)
-        write_buffers_hdf(master);
-      if(adios_format)
-      {
+        double tstart = MPI_Wtime();
+        if(verbose)
+          app_log()<<"TraceManager::write_buffers "<<master_copy<<endl;
+        if(hdf_format)
+        {
+          write_buffers_hdf(clones);
+        }
+        if(adios_format)
+        {
 #ifdef HAVE_ADIOS
-        write_buffers_adios(master);
+          write_buffers_adios(clones, block);
 #else
-        APP_ABORT("TraceManager::write_buffer (adios) ADIOS is not found");
+          APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
 #endif
+          //app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<<endl;
+          app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<<endl;
+        }
       }
-      reset_buffers();
     }
-  }
-
-
-  inline bool buffers_empty()
-  {
-    return int_buffer.empty() && real_buffer.empty();
+    else
+      APP_ABORT("TraceManager::write_buffers should not be called from non-master copy");
   }
 
 
@@ -2160,7 +2143,7 @@ public:
 
 
 
-  inline void startRun(vector<TraceManager*>& clones)
+  inline void startRun(int blocks,vector<TraceManager*>& clones)
   {
     if(verbose)
       app_log()<<"TraceManager::startRun "<<master_copy<<endl;
@@ -2169,28 +2152,38 @@ public:
       initialize_traces();
       check_clones(clones);
       open_file(clones);
-      for(int ip=0; ip<clones.size(); ++ip)
-        clones[ip]->reset_buffers();     
     }
     else
       APP_ABORT("TraceManager::startRun should not be called from non-master copy");
   }
 
 
-  inline void stopRun(vector<TraceManager*>& clones)
+  inline void stopRun()
   {
     if(verbose)
       app_log()<<"TraceManager::stopRun "<<master_copy<<endl;
     if(master_copy)
     {
-      if(writing_traces)// flush any additional data from the buffers
-        for(int ip=0; ip<clones.size(); ++ip)
-          clones[ip]->write_buffers(*this);    
       close_file();
       finalize_traces();
     }
     else
       APP_ABORT("TraceManager::stopRun should not be called from non-master copy");
+  }
+
+
+  inline void startBlock(int nsteps)
+  {
+    if(verbose)
+      app_log()<<"TraceManager::startBlock "<<master_copy<<endl;
+    reset_buffers();
+  }
+
+
+  inline void stopBlock()
+  {
+    if(verbose)
+      app_log()<<"TraceManager::stopBlock "<<master_copy<<endl;
   }
 
 
@@ -2263,10 +2256,16 @@ public:
   }
 
 
-  inline void write_buffers_hdf(TraceManager& master)
+  inline void write_buffers_hdf(vector<TraceManager*>& clones)
   {
-    int_buffer.write_hdf(*master.hdf_file,master.int_buffer.hdf_file_pointer);
-    real_buffer.write_hdf(*master.hdf_file,master.real_buffer.hdf_file_pointer);
+    if(verbose)
+      app_log()<<"TraceManager::write_buffers_hdf "<<master_copy<<endl;
+    for(int ip=0; ip<clones.size(); ++ip)
+    {
+      TraceManager& tm = *clones[ip];
+      tm.int_buffer.write_hdf(*hdf_file,int_buffer.hdf_file_pointer);
+      tm.real_buffer.write_hdf(*hdf_file,real_buffer.hdf_file_pointer);
+    }
   }
 
 

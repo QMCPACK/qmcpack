@@ -196,7 +196,7 @@ bool CSVMC::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->startRun(nBlocks,false);
-  Traces->startRun(traceClones);
+  Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
   ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block=0; block<nBlocks; ++block)
@@ -227,7 +227,6 @@ bool CSVMC::run()
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
-        traceClones[ip]->monitor_writes(now_loc,Traces);
       }
       CSMovers[ip]->stopBlock(false);
      // app_log()<<"THREAD "<<ip<<endl;
@@ -237,6 +236,11 @@ bool CSVMC::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
+    ADIOS_PROFILE::profile_adios_end_comp(block);
+    ADIOS_PROFILE::profile_adios_start_trace(block);
+    Traces->write_buffers(traceClones, block);
+    ADIOS_PROFILE::profile_adios_end_trace(block);
+    ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if(storeConfigs)
       recordBlock(block);
     ADIOS_PROFILE::profile_adios_end_checkpoint(block);
@@ -245,7 +249,7 @@ bool CSVMC::run()
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->stopRun2();
-  Traces->stopRun(traceClones);
+  Traces->stopRun();
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
