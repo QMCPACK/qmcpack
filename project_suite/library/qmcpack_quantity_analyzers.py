@@ -800,18 +800,65 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
 
 class TracesFileHDF(QAobject):
-    def __init__(self,filepath):
-        hr = HDFreader(filepath)
-        if not hr._success:
-            self.warn('  hdf file seems to be corrupted, skipping contents:\n    '+filepath)
-        #end if
-        hdf = hr.obj
-        hdf._remove_hidden()
-        for name,buffer in hdf.iteritems():
-            self.init_trace(name,buffer)
-        #end for
+    def __init__(self,filepath=None,blocks=None):
+        self.info = obj(
+            filepath    = filepath,
+            loaded      = False,
+            accumulated = False,
+            particle_sums_valid = None,
+            blocks      = blocks
+            )
     #end def __init__
 
+    def loaded(self):
+        return self.info.loaded
+    #end def loaded
+
+    def accumulated_scalars(self):
+        return self.info.accumulated
+    #end def accumulated_scalars
+
+    def checked_particle_sums(self):
+        return self.info.particle_sums_valid!=None
+    #end def checked_particle_sums
+
+    def formed_diagnostic_data(self):
+        return self.accumulated_scalars() and self.checked_particle_sums()
+    #end def formed_diagnostic_data
+
+    def load(self,filepath=None,force=False):
+        if not self.loaded() or force:
+            if filepath is None:
+                if self.info.filepath is None:
+                    self.error('cannot load traces data, filepath has not been defined')
+                else:
+                    filepath = self.info.filepath
+                #end if
+            #end if
+            hr = HDFreader(filepath)
+            if not hr._success:
+                self.warn('  hdf file seems to be corrupted, skipping contents:\n    '+filepath)
+            #end if
+            hdf = hr.obj
+            hdf._remove_hidden()
+            for name,buffer in hdf.iteritems():
+                self.init_trace(name,buffer)
+            #end for
+            self.info.loaded = True
+        #end if
+    #end def load
+
+    def unload(self):
+        if self.loaded():
+            if 'int_traces' in self:
+                del self.int_traces
+            #end if
+            if 'real_traces' in self:
+                del self.real_traces
+            #end if
+            self.info.loaded = False
+        #end if
+    #end def unload
 
     def init_trace(self,name,fbuffer):
         trace = obj()
@@ -843,6 +890,125 @@ class TracesFileHDF(QAobject):
         self[name.replace('data','traces')] = trace
     #end def init_trace
 
+
+    def check_particle_sums(self,tol=1e-8,force=False):
+        if not self.checked_particle_sums() or force:
+            self.load()
+            t = self.real_traces
+            scalar_names = set(t.scalars.keys())
+            other_names = []
+            for dname,domain in t.iteritems():
+                if dname!='scalars':
+                    other_names.extend(domain.keys())
+                #end if
+            #end for
+            other_names = set(other_names)
+            sum_names = scalar_names & other_names
+            same = True
+            for qname in sum_names:
+                q = t.scalars[qname]
+                qs = 0*q
+                for dname,domain in t.iteritems():
+                    if dname!='scalars' and qname in domain:
+                        tqs = domain[qname].sum(1)
+                        if len(tqs.shape)==1:
+                            qs[:,0] += tqs
+                        else:
+                            qs[:,0] += tqs[:,0]
+                        #end if
+                    #end if
+                #end for
+                same = same and (abs(q-qs)<tol).all()
+            #end for
+            self.info.particle_sums_valid = same
+        #end if
+        return self.info.particle_sums_valid
+    #end def check_particle_sums
+
+    
+    def accumulate_scalars(self,force=False):
+        if not self.accumulated_scalars() or force:
+            # get block and step information for the qmc method
+            blocks = self.info.blocks
+            if blocks is None:
+                self.scalars_by_step  = None
+                self.scalars_by_block = None
+                return
+            #end if
+            # load in traces data if it isn't already
+            self.load()
+            # real and int traces
+            tr = self.real_traces
+            ti = self.int_traces
+            # names shared by traces and scalar files
+            scalar_names = set(tr.scalars.keys())
+            # step and weight traces
+            st = ti.scalars.step
+            wt = tr.scalars.weight
+            if len(st)!=len(wt):
+                self.error('weight and steps traces have different lengths')
+            #end if
+            #recompute steps (can vary for vmc w/ samples/samples_per_thread)
+            steps = st.max()+1
+            steps_per_block = steps/blocks
+            # accumulate weights into steps and blocks
+            ws   = zeros((steps,))
+            wb   = zeros((blocks,))
+            for t in xrange(len(wt)):
+                ws[st[t]] += wt[t]
+            #end for
+            s = 0
+            for b in xrange(blocks):
+                wb[b] = ws[s:s+steps_per_block].sum()
+                s+=steps_per_block
+            #end for            
+            # accumulate walker population into steps
+            ps  = zeros((steps,))
+            for t in xrange(len(wt)):
+                ps[st[t]] += 1
+            #end for
+            # accumulate quantities into steps and blocks
+            scalars_by_step  = obj(Weight=ws,NumOfWalkers=ps)
+            scalars_by_block = obj(Weight=wb)
+            qs   = zeros((steps,))
+            qb   = zeros((blocks,))
+            quantities = set(tr.scalars.keys())
+            quantities.remove('weight')
+            for qname in quantities:
+                qt = tr.scalars[qname]
+                if len(qt)!=len(wt):
+                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                #end if
+                qs[:] = 0
+                for t in xrange(len(wt)):
+                    qs[st[t]] += wt[t]*qt[t]
+                #end for
+                qb[:] = 0
+                s=0
+                for b in xrange(blocks):
+                    qb[b] = qs[s:s+steps_per_block].sum()
+                    s+=steps_per_block
+                #end for
+                qb = qb/wb
+                qs = qs/ws
+                scalars_by_step[qname]  = qs.copy()
+                scalars_by_block[qname] = qb.copy()
+            #end for
+            self.scalars_by_step  = scalars_by_step
+            self.scalars_by_block = scalars_by_block
+            self.info.accumulated = True
+        #end if
+    #end def accumulate_scalars
+
+
+    def form_diagnostic_data(self,tol=1e-8):
+        if not self.formed_diagnostic_data():
+            self.load()
+            self.accumulate_scalars()
+            self.check_particle_sums(tol=tol)
+            self.unload()
+        #end if
+    #end def form_diagnostic_data
 #end class TracesFileHDF
 
 
@@ -853,22 +1019,42 @@ class TracesAnalyzer(QAanalyzer):
         self.info.path = path
         self.info.files = files
         self.method_info = QAanalyzer.method_info
-        self.data = None
+        self.data = obj()
     #end def __init__
 
 
     def load_data_local(self):
-        if self.run_info.request.traces:
-            path = self.info.path
-            files = self.info.files
-            if len(files)>1:
-                self.error('ability to read multiple trace files has not yet been implemented\n  files requested: {0}'.format(files))
-            #end if
-            filepath = os.path.join(path,files[0])
-            self.data = TracesFileHDF(filepath)
+        if 'blocks' in self.method_info.method_input:
+            blocks = self.method_info.method_input.blocks
+        else:
+            blocks = None
         #end if
+        path  = self.info.path
+        files = self.info.files
+        self.data.clear()
+        for file in sorted(files):
+            filepath = os.path.join(path,file)
+            trace_file = TracesFileHDF(filepath,blocks)
+            self.data.append(trace_file)
+        #end for
+        #if self.run_info.request.traces:
+        #    path = self.info.path
+        #    files = self.info.files
+        #    if len(files)>1:
+        #        self.error('ability to read multiple trace files has not yet been implemented\n  files requested: {0}'.format(files))
+        #    #end if
+        #    filepath = os.path.join(path,files[0])
+        #    self.data = TracesFileHDF(filepath)
+        #    ci(ls(),gs())
+        ##end if
     #end def load_data_local
 
+
+    def form_diagnostic_data(self):
+        for trace_file in self.data:
+            trace_file.form_diagnostic_data()
+        #end for
+    #end def form_diagnostic_data
 
     def analyze_local(self):
         None
@@ -876,32 +1062,115 @@ class TracesAnalyzer(QAanalyzer):
 
 
     def check_particle_sums(self,tol=1e-8):
-        t = self.data.real_traces
-        scalar_names = set(t.scalars.keys())
-        other_names = []
-        for dname,domain in t.iteritems():
-            if dname!='scalars':
-                other_names.extend(domain.keys())
-            #end if
-        #end for
-        other_names = set(other_names)
-        sum_names = scalar_names & other_names
         same = True
-        for qname in sum_names:
-            q = t.scalars[qname]
-            qs = 0*q
-            for dname,domain in t.iteritems():
-                if dname!='scalars' and qname in domain:
-                    qs[:,0] += domain[qname].sum(1)
-                #end if
-            #end for
-            same = same and (abs(q-qs)<tol).all()
+        for trace_file in self.data:
+            same &= trace_file.check_particle_sums(tol=tol)
         #end for
         return same
     #end def check_particle_sums
 
 
     def check_scalars(self,scalars=None,scalars_hdf=None,tol=1e-8):
+        scalars_valid     = True
+        scalars_hdf_valid = True
+        if scalars is None:
+            scalars_valid = None
+        #end if
+        if scalars_hdf is None:
+            scalars_hdf_valid = None
+        #end if
+        if len(self.data)>0:
+            scalar_names = set(self.data[0].scalars_by_block.keys())
+            summed_scalars = obj()
+            if scalars!=None:
+                qnames = set(scalars.keys()) & scalar_names
+                summed_scalars.clear()
+                for qname in qnames:
+                    summed_scalars[qname] = zeros(scalars[qname].shape)
+                #end for
+                wtot = zeros(summed_scalars.first().shape)
+                for trace_file in self.data:
+                    w = trace_file.scalars_by_block.Weight
+                    wtot += w
+                    for qname in qnames:
+                        q = trace_file.scalars_by_block[qname]
+                        summed_scalars[qname] += w*q
+                    #end for
+                #end for
+                for qname in qnames:
+                    qscalar = scalars[qname]
+                    qb = summed_scalars[qname]/wtot
+                    scalars_valid &= (abs(qb-qscalar)<tol).all()
+                #end for
+            #end if
+            if scalars_hdf!=None:
+                qnames = set(scalars_hdf.keys()) & scalar_names
+                summed_scalars.clear()
+                for qname in qnames:
+                    summed_scalars[qname] = zeros((len(scalars_hdf[qname].value),))
+                #end for
+                wtot = zeros(summed_scalars.first().shape)
+                for trace_file in self.data:
+                    w = trace_file.scalars_by_block.Weight
+                    wtot += w
+                    for qname in qnames:
+                        q = trace_file.scalars_by_block[qname]
+                        summed_scalars[qname] += w*q
+                    #end for
+                #end for
+                for qname in qnames:
+                    qscalar = scalars_hdf[qname].value.ravel()
+                    qb = summed_scalars[qname]/wtot
+                    scalars_hdf_valid &= (abs(qb-qscalar)<tol).all()
+                #end for
+            #end if
+        #end if
+        return scalars_valid,scalars_hdf_valid
+    #end def check_scalars
+
+
+    def check_dmc(self,dmc,tol=1e-8):
+        if dmc is None:
+            dmc_valid = None
+        else:
+            dmc_valid = True
+            if len(self.data)>0:
+                scalar_names = set(self.data[0].scalars_by_step.keys())
+                qnames = set(['LocalEnergy','Weight','NumOfWalkers']) & scalar_names
+                weighted = set(['LocalEnergy'])
+                summed_scalars = obj()
+                for qname in qnames:
+                    summed_scalars[qname] = zeros(dmc[qname].shape)
+                #end for
+                wtot = zeros(summed_scalars.first().shape)
+                for trace_file in self.data:
+                    w = trace_file.scalars_by_step.Weight
+                    wtot += w
+                    for qname in qnames:
+                        q = trace_file.scalars_by_step[qname]
+                        if qname in weighted:
+                            summed_scalars[qname] += w*q
+                        else:
+                            summed_scalars[qname] += q
+                        #end if
+                    #end for
+                #end for
+                for qname in qnames:
+                    qdmc = dmc[qname]
+                    if qname in weighted:
+                        qb = summed_scalars[qname]/wtot
+                    else:
+                        qb = summed_scalars[qname]
+                    #end if
+                    dmc_valid &= (abs(qb-qdmc)<tol).all()
+                #end for
+            #end if
+        #end if
+        return dmc_valid
+    #end def check_dmc
+
+
+    def check_scalars_old(self,scalars=None,scalars_hdf=None,tol=1e-8):
         blocks = None
         steps_per_block = None
         steps = None
@@ -987,7 +1256,7 @@ class TracesAnalyzer(QAanalyzer):
         else:
             hdf_names = set(scalars_hdf.keys()) & scalar_names
             same = True
-            for qname in dat_names:
+            for qname in hdf_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
                     self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
@@ -1027,10 +1296,10 @@ class TracesAnalyzer(QAanalyzer):
             scalars_hdf_valid = same
         #end if
         return scalars_valid,scalars_hdf_valid
-    #end def check_scalars
+    #end def check_scalars_old
 
 
-    def check_dmc(self,dmc,tol=1e-8):
+    def check_dmc_old(self,dmc,tol=1e-8):
         if dmc is None:
             dmc_valid = None
         else:
@@ -1072,7 +1341,7 @@ class TracesAnalyzer(QAanalyzer):
             dmc_valid = psame and wsame and esame
         #end if
         return dmc_valid
-    #end def check_dmc
+    #end def check_dmc_old
     
 
     #methods that do not apply

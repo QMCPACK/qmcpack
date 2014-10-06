@@ -242,6 +242,7 @@ class MethodAnalyzer(QAanalyzer):
             checks = Checks('traces')
             checks.exclude(None)
             traces = self.traces
+            traces.form_diagnostic_data()
             checks.psums   = traces.check_particle_sums()
             if method=='dmc':
                 checks.dmc = traces.check_dmc(dmc)

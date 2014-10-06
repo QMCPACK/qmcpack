@@ -14,7 +14,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #
 #   use cases
 #     1) standalone simulation
-#         project suite drives this simulation in isolation of others
+#         nexus drives this simulation in isolation of others
 #           i.e., one performs parameter scans to drive several independent opium runs
 #         in this setting, a opium simulation does not provide information to 
 #           other simulations (e.g. pseudopotentials to qmcpack) 

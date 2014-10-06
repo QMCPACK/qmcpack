@@ -13,7 +13,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #
 #   use cases
 #     1) standalone simulation
-#         project suite drives this simulation in isolation of others
+#         nexus drives this simulation in isolation of others
 #           i.e., one performs parameter scans to drive several independent template_simulation runs
 #         in this setting, a template_simulation simulation does not provide information to 
 #           other simulations (e.g. orbitals to qmcpack) and does not accept 
@@ -315,31 +315,10 @@ def generate_template_simulation(**kwargs):
     # optional
     #  the following code should work provided
     #  generate_template_simulation_input is suitably defined
-    overlapping_kw = set(['system'])
-    kw       = set(kwargs.keys())
-    sim_kw   = kw & Simulation.allowed_inputs
-    inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
-    sim_args = dict()
-    inp_args = dict()
-    for kw in sim_kw:
-        sim_args[kw] = kwargs[kw]
-    #end for
-    for kw in inp_kw:
-        inp_args[kw] = kwargs[kw]
-    #end for    
-    if 'pseudos' in inp_args:
-        if 'files' in sim_args:
-            sim_args['files'] = list(sim_args['files'])
-        else:
-            sim_args['files'] = list()
-        #end if
-        sim_args['files'].extend(list(inp_args['pseudos']))
-    #end if
-    if 'system' in inp_args and isinstance(inp_args['system'],PhysicalSystem):
-        inp_args['system'] = inp_args['system'].copy()
-    #end if
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    sim_args['input'] = generate_template_simulation_input(**inp_args)
+    sim_args.input = generate_template_simulation_input(**inp_args)
+
     template_simulation = TemplateSimulation(**sim_args)
 
     return template_simulation

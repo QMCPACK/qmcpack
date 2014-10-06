@@ -3,7 +3,7 @@
 import os
 from subprocess import Popen
 from execute import execute
-from numpy import linspace,array,zeros,append,mgrid,empty,exp
+from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt
 from xmlreader import readxml
 from superstring import string2val,split_delims
 from periodic_table import pt
@@ -20,9 +20,16 @@ try:
 except (ImportError,RuntimeError):
    figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy')
 #end try
+try:
+    from scipy.optimize import curve_fit
+except:
+    curve_fit = unavailable('curve_fit')
+#end try
 
 
-# basic interface for project suite, only gamess really needs this for now
+
+
+# basic interface for nexus, only gamess really needs this for now
 class PseudoFile(DevBase):
     def __init__(self,filepath=None):
         self.element  = None
@@ -198,12 +205,20 @@ class Pseudopotential(DevBase):
     def __init__(self,filepath=None,format=None):
         self.element = None
         self.core    = None
-        self.Zeff    = None
+        self.Zval    = None
         self.Zcore   = None
         if filepath!=None:
             self.read(filepath,format)
         #end if
     #end def __init__
+
+    
+    def transfer_core_from(self,other):
+        self.element = other.element
+        self.core    = other.core   
+        self.Zval    = other.Zval   
+        self.Zcore   = other.Zcore  
+    #end def transfer_core_from
 
 
     def read(self,filepath,format=None):
@@ -261,28 +276,50 @@ class Pseudopotential(DevBase):
 class SemilocalPP(Pseudopotential):
     l_channels   = tuple('spdfg')
     all_channels = ['loc']+list(l_channels)
-    channel_colors = obj(loc='k',s='g',p='r',d='b',f='m',g='c')
+    channel_colors = obj(s='g',p='r',d='b',f='m',g='c')
 
-    def __init__(self,filepath=None,format=None,name=None):
+    numeric        = False
+    interpolatable = True
+
+    def __init__(self,filepath=None,format=None,name=None,src=None):
         self.name = name
+        self.rcut = None
         self.lmax = None
         self.local = None
+        if self.numeric:
+            self.r = None
+        #end if
         self.channels = obj()
         Pseudopotential.__init__(self,filepath,format)
+        if src!=None:
+            self.transfer_core_from(src)
+        #end if
     #end def __init__
+
+    
+    def transfer_core_from(self,other):
+        self.name  = other.name
+        self.rcut  = other.rcut
+        self.lmax  = other.lmax
+        self.local = other.local
+        if self.numeric and other.numeric:
+            self.r = other.r
+        #end if
+        Pseudopotential.transfer_core_from(self,other)
+    #end def transfer_core_from
 
 
     def read(self,filepath,format=None):
         Pseudopotential.read(self,filepath,format)
-        lc = self.l_channels
-        c = self.channels
-        self.local = list(set(lc[0:len(c)])-set(c.keys()))[0]
+        if self.rcut is None:
+            self.update_rcut()
+        #end if
     #end def read
 
 
-    def get_channel(self,l):
-        if l==self.local:
-            l = 'loc'
+    def get_channel(self,l=None):
+        if l is None:
+            l = self.local
         #end if
         if not l in self.channels:
             self.error('cannot get invalid channel: {0}\n  valid options are: {1}'.format(l,self.channels.keys()))
@@ -291,35 +328,103 @@ class SemilocalPP(Pseudopotential):
     #end def get_channel
 
         
-    def evaluate(self,r=None,l='loc'):
-        self.not_implemented()
+    def evaluate(self,r=None,l=None,rpow=0,with_local=False):
+        if self.numeric and not self.interpolatable:
+            r = None
+        elif r is None and self.interpolatable:
+            r = linspace(0.01,4.0,400)            
+        #end if
+        if not with_local:
+            v = self.evaluate_rV(r,l)
+        elif l==None or l==self.local:
+            v = self.evaluate_rV(r,l)
+        else:
+            v = self.evaluate_rV(r,l)+self.evaluate_rV(r,self.local)
+        #end if
+        if self.numeric and not self.interpolatable:
+            r = self.r
+        #end if
+        if rpow!=1:
+            v = r**(rpow-1)*v
+        #end if
+        return v
     #end def evaluate
 
 
-    def evaluate_with_local(self,r=None,l='loc'):
-        if l=='loc':
-            return self.evaluate(r,l)
-        else:
-            return self.evaluate(r,l)+self.evaluate(r,'loc')
-        #end if
-    #end def evaluate_with_local
-
-
-    def rcut(self,tol=1e-5):
+    def evaluate_rV(self,r=None,l=None): # returns r*V
         self.not_implemented()
-    #end def rcut
+    #end def evaluate_rV
 
 
-    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None):
+    def numeric_channel(self,l=None,rmin=0.,rmax=10.,npts=10001,rpow=0,with_local=False):
+        if self.numeric and not self.interpolatable:
+            v = self.evaluate(None,l,rpow,with_local)
+            r = self.r
+        else:
+            r = linspace(rmin,rmax,npts)
+            v = self.evaluate(r,l,rpow,with_local)
+        #end if
+        return r,v
+    #end def numeric_channel
+
+
+    def update_rcut(self,tol=1e-5):
+        self.rcut = self.find_rcut(tol=tol)
+        return self.rcut
+    #end def update_rcut
+
+
+    def find_rcut(self,tol=1e-5):
+        r    = None
+        vmin = None
+        vmax = None
+        for l in self.channels.keys():
+            rc,vc = self.numeric_channel(l,with_local=True)
+            if r is None:
+                r = rc
+                vmin = array(vc)
+                vmax = array(vc)
+            elif len(rc)!=len(r):
+                self.error('numeric representation of channels do not match in length')
+            else:
+                vmin = minimum(vmin,vc)
+                vmax = maximum(vmax,vc)
+            #end if
+        #end for
+        vspread = vmax-vmin
+        rcut = r[-1]
+        nr = len(r)
+        for i in xrange(nr):
+            n = nr-1-i
+            if vspread[n]>tol:
+                rcut = r[n]
+                break
+            #end if
+        #end for
+
+        #figure()
+        #plot(r,vspread,'k-')
+        #plot([rcut,rcut],[0,vspread[1:].max()],'k--')
+        #title('rcut = {0}'.format(rcut))
+        #show()
+
+        return rcut
+    #end def find_rcut
+
+
+    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None):
         if channels is None:
             channels = self.all_channels
         #end if
         if fig:
             figure()
         #end if
+        if r is None and self.numeric:
+            r = self.r
+        #end if
         for c in channels:
-            if c in self.channels:
-                if c=='loc':
+            if c in self.channels: 
+                if c==self.local:
                     lab = self.local+' loc'
                     color = self.channel_colors[self.local]
                 else:
@@ -329,16 +434,16 @@ class SemilocalPP(Pseudopotential):
                 if self.name!=None:
                     lab = self.name+' '+lab
                 #end if
-                if with_local:                    
-                    v = self.evaluate_with_local(r,c)
-                else:
-                    v = self.evaluate(r,c)
+                v = self.evaluate(r,c,with_local)
+                if metric=='r2':
+                    v = r**2*v
+                    if c==self.local:
+                        v += self.Zval*r
+                    #end if
+                elif metric!=None:
+                    self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
-                if r is None and 'r' in self:
-                    plot(self.r,v,color+linestyle,label=lab)
-                else:
-                    plot(r,v,color+linestyle,label=lab)
-                #end if
+                plot(r,v,color+linestyle,label=lab)
             #end for
         #end for
         if fig:
@@ -354,8 +459,228 @@ class SemilocalPP(Pseudopotential):
             #end if
         #end if
     #end def plot
+
+
+    def gaussian_fit(self,r=None,pmax=3,maxfev=100000,verbose=False,filepath=None,format=None,offset=0):
+        if verbose:
+            self.log('\nfitting {0} pseudopotential to gaussians'.format(self.element))
+        #end if
+        gf.Z = self.Zval
+        if r is None:
+            r = self.r
+        #end if
+        #r2 = r**2
+        channels = obj()
+        for l in self.channels.keys():
+            #channels[l] = self.evaluate(r,l)[offset:]*r2[offset:]
+            channels[l] = self.evaluate(r,l,rpow=2)
+        #end for
+        #r = r[offset:]
+        #del r2
+        p0nl  = 10.0,0.3
+        p0loc = 0.2,0.3,10.,0.3
+        padd  = [0.0,0.3,.27]
+        channel_params = obj()
+        for l in self.channels.keys():
+            if l==self.local:
+                channel_params[l] = tuple(p0loc)
+            else:
+                channel_params[l] = tuple(p0nl)
+            #end if
+        #end for
+        pmt = (1,pmax)
+        if not pmt in gf.functions or not pmt in gf.loc_functions:
+            self.error('cannot include {0} paired functions\nplease choose a smaller number for pmax'.format(pmax))
+        #end if
+        gfits = GFit()
+        gfits.proto = GaussianPP()
+        gfits.proto.transfer_core_from(self)
+        channel_fits = obj()
+        for l in self.channels.keys():
+            if verbose:
+                self.log('  fitting channel {0}'.format(l))
+            #end if
+            lfits = obj()
+            fail = False
+            for p in range(pmax+1):
+                if verbose:
+                    self.log('    performing fit of order {0}'.format(p))
+                #end if
+                try:
+
+                    if l==self.local:
+                        gf_fit = gf.loc_functions[1,p]
+                        Zval   = self.Zval
+                    else:
+                        gf_fit = gf.functions[1,p]
+                        Zval   = None
+                    #end if
+                    v  = channels[l]
+                    p0 = channel_params[l]
+                    vp,vc = curve_fit(gf_fit,r,v,p0,maxfev=maxfev)
+                    gc = get_gf_channel(1,p,vp,Zval)
+                    vf = gf_fit(r,*vp)
+                    rms_dev = gf.rms_deviation(v,vf)
+                    energy_dev = gf.energy_deviation(v,vf,r)
+                    cfit = obj(
+                        channel    = gc,
+                        rms_dev    = rms_dev,
+                        energy_dev = energy_dev
+                        )
+                    if verbose:
+                        self.log('      rms    deviation: {0}'.format(rms_dev))
+                        self.log('      energy deviation: {0}'.format(energy_dev))
+                    #end if
+                    lfits.append(cfit)
+
+                except StandardError,e:
+                    #print e
+                    fail = True
+                #end try
+                if fail:
+                    if verbose:
+                        self.log('    order {0} fit failed, skipping higher orders'.format(p))
+                    #end if
+                    break
+                #end if
+                channel_params[l] = tuple(list(channel_params[l])+padd)
+            #end for
+            channel_fits[l] = lfits
+        #end for
+        gfits.channels = channel_fits
+        if filepath!=None:
+            for p,gpp in gfits.iteritems():
+                fpath = filepath.format(p)
+                if verbose:
+                    self.log('  writing '+fpath)
+                #end if
+                gpp.write(fpath,format)
+            #end for
+        #end if
+        if verbose:
+            self.log('  fitting complete')
+        #end if
+        return gfits
+    #end def gaussian_fit
+
+
+    def write_qmcpack(self,filepath=None):
+        if self.rcut is None:
+            self.update_rcut(tol=1e-5)
+        #end if
+
+        symbol        = self.element
+        atomic_number = self.Zcore+self.Zval
+        zval          = self.Zval
+        creator       = 'nexus'
+        npots_down    = len(self.channels)
+        l_local       = 'spdfg'.find(self.local)
+
+        rmin = 1e99
+        rmax = -1e99
+        npts = 0
+        vps = obj()
+        for l in self.channels.keys():
+            r,v = self.numeric_channel(l,rpow=1,with_local=True)
+            rmin   = min(rmin,r.min())
+            rmax   = max(rmax,r.max())
+            npts   = len(r)
+            vps[l] = v
+        #end for
+
+        header = '''<?xml version="1.0" encoding="UTF-8"?>
+<pseudo version="0.5">
+  <header symbol="{0}" atomic-number="{1}" zval="{2}" relativistic="unknown" 
+   polarized="unknown" creator="{3}" flavor="unknown" 
+   core-corrections="unknown" xc-functional-type="unknown" 
+   xc-functional-parametrization="unknown"/>
+'''.format(symbol,atomic_number,zval,creator)
+
+        grid = '  <grid type="linear" units="bohr" ri="{0}" rf="{1}" npts="{2}"/>\n'.format(rmin,rmax,npts)
+        semilocal =   '  <semilocal units="hartree" format="r*V" npots-down="{0}" npots-up="0" l-local="{1}">\n'.format(npots_down,l_local)
+        dpad = '\n        '
+        for l in self.l_channels:
+            if l in vps:
+                semilocal+='    <vps principal-n="0" l="{0}" spin="-1" cutoff="{1}" occupation="unknown">\n'.format(l,self.rcut)
+                semilocal+='      <radfunc>\n'
+                semilocal+='      '+grid
+                semilocal+='        <data>'
+                v = vps[l]
+                n=0
+                for d in v:
+                    if n%3==0:
+                        semilocal+=dpad
+                    #end if
+                    semilocal+='{0:22.14e}'.format(d)
+                    n+=1
+                #end for
+                semilocal+='        </data>\n'
+                semilocal+='      </radfunc>\n'
+                semilocal+='    </vps>\n'
+            #end if
+        #end for
+        semilocal+='  </semilocal>\n'
+        footer = '</pseudo>\n'
+
+        text = header+grid+semilocal+footer
+
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        return text
+    #end def write_qmcpack
 #end class SemilocalPP
 
+
+
+class GFit(DevBase):
+    def __init__(self):
+        self.proto    = None # SemilocalPP
+        self.channels = None
+    #end def __init__
+
+
+    def best_channels(self):
+        cfits = obj()
+        for l,pfits in self.channels.iteritems():
+            emin = 1e99
+            cmin = None
+            for p,cfit in pfits.iteritems():
+                if abs(cfit.energy_dev)<emin:
+                    emin = abs(cfit.energy_dev)
+                    cmin = cfit
+                #end if
+            #end for
+            cfits[l] = cfit
+        #end for
+        return cfits
+    #end def best_channels
+
+    def best(self):
+        pp = self.proto.copy()
+        for l,cfit in self.best_channels().iteritems():
+            pp.channels[l] = cfit.channel
+        #end for
+        return pp
+    #end def best
+
+
+    def report(self,fits='best'):
+        print
+        print 'Gaussian fits for '+self.proto.element
+        if fits=='best':
+            cfits = self.best_channels()
+            for l in self.proto.l_channels:
+                if l in cfits:
+                    cfit = cfits[l]
+                    print '  {0}  {1}  {2}'.format(l,cfit.energy_dev,cfit.rms_dev)
+                #end if
+            #end for
+        else:
+            self.error('fits option {0} is not supported'.format(fits))
+        #end if
+    #end def report
+#end class GFit
  
 
 class GaussianPP(SemilocalPP):
@@ -417,17 +742,18 @@ class GaussianPP(SemilocalPP):
             self.element = element
         #end if
         Zatom = pt[element].atomic_number
-        Zeff = Zatom-Zcore
+        Zval = Zatom-Zcore
         core = pt.simple_elements[Zcore].symbol
         self.set(
             core    = core,
-            Zeff    = Zeff,
+            Zval    = Zval,
             Zcore   = Zcore,
             lmax    = lmax
             )
         for c in range(len(channels)):
             if c==0:
                 cname = 'loc'
+                self.local = cname
             else:
                 cname = self.l_channels[c-1]
             #end if
@@ -483,23 +809,17 @@ class GaussianPP(SemilocalPP):
     #end def write_text
 
 
-    def evaluate(self,r=None,l='loc'):
-        if not l in self.channels:
-            self.error('channel {0} is not present\nvalid options are: {1}'.format(self.channels.keys()))
-        #end if
-        if r is None:
-            r = linspace(0.01,4.0,400)
-        #end if
+    def evaluate_rV(self,r,l=None):
         r = array(r)
         v = zeros(r.shape)
-        if l=='loc':
-            v += -self.Zeff/r
+        if l==self.local or l==None:
+            v += -self.Zval
         #end if
-        for g in self.channels[l]:
-            v += g.coeff * r**(g.rpow-2) * exp(-g.expon*r**2)
+        for g in self.get_channel(l):
+            v += g.coeff * r**(g.rpow-1) * exp(-g.expon*r**2)
         #end for
         return v
-    #end def evaluate
+    #end def evaluate_rV
 
 
     def ppconvert(self,outfile,ref):
@@ -523,12 +843,8 @@ class GaussianPP(SemilocalPP):
 
 class QmcpackPP(SemilocalPP):
     requires_format = False
-
-    def __init__(self,filepath=None,format=None,name=None):
-        self.r = None
-        SemilocalPP.__init__(self,filepath,format,name)
-    #end def __init__
-
+    numeric         = True
+    interpolatable  = False
 
     def read(self,filepath,format=None):
         if not os.path.exists(filepath):
@@ -543,7 +859,7 @@ class QmcpackPP(SemilocalPP):
         
         h = pp.header
         self.element = h.symbol
-        self.Zeff    = h.zval
+        self.Zval    = h.zval
         self.Zcore   = h.atomic_number-h.zval
         self.core    = pt.simple_elements[self.Zcore].symbol
 
@@ -560,38 +876,35 @@ class QmcpackPP(SemilocalPP):
             self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(sl.format))
         #end if
         lloc = self.l_channels[sl.l_local]
+        self.local = lloc
         vps = sl.vps
         if not isinstance(vps,list):
             vps = [vps]
         #end if
         for vp in vps:
-            l = vp.l
-            if l==lloc:
-                l='loc'
-            #end if
-            self.channels[l] = vp.radfunc.data.copy()
+            self.channels[vp.l] = vp.radfunc.data.copy()
         #end for
         for l in self.channels.keys():
-            if l!='loc':
-                self.channels[l] -= self.channels.loc
+            if l!=self.local:
+                self.channels[l] -= self.channels[self.local]
             #end if
         #end for
-        lc = self.l_channels
-        c = self.channels
-        self.local = list(set(lc[0:len(c)])-set(c.keys()))[0]
     #end def read
 
 
-    def evaluate(self,r=None,l='loc'):
+    def evaluate_rV(self,r=None,l=None):
         if r!=None:
-            self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate() without specifying r will return the potential on a default grid')
+            if len(r)==len(self.r) and abs( (r[1:]-self.r[1:])/self.r[1:] ).max()<1e-6:
+                r = self.r
+            else:
+                self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate() without specifying r will return the potential on a default grid')
+            #end if
         else:
             r = self.r
         #end if
-        c = self.get_channel(l)
-        v = c/r
+        v = self.get_channel(l)
         return v
-    #end def evaluate
+    #end def evaluate_rV
 
 
     def v_at_zero(self,l):
@@ -607,10 +920,147 @@ class QmcpackPP(SemilocalPP):
 
 
 
+# functions for gaussing fitting
+def get_gf_channel(ns,np,params,Zval=None):
+    loc = Zval!=None
+    g = obj(
+        coeff = [],
+        rpow  = [],
+        expon = []
+        )
+    nparam = 2*ns+3*np
+    if loc:
+        nparam += 2
+    #end if
+    if nparam!=len(params):
+        raise RuntimeError('wrong number of parameters given to get_gf_coeff_rpow_expon\nparameters expected: {0}\nparameters given: {1}'.format(nparams,len(params)))
+    #end if
+    pcur = 0
+    if loc:
+        a,b = params[pcur:pcur+2]
+        g.coeff += [ -Zval*0, Zval    , .5*Zval/a**2 ]
+        g.rpow  += [ -1   , -1      ,  1          ]
+        g.expon += [  0   , .5/a**2 , .5/b**2     ]
+        pcur+=2
+    #end if
+    for s in range(ns):
+        b,bs = params[pcur:pcur+2]
+        g.coeff.append(b/bs)
+        g.rpow.append( 0)
+        g.expon.append(.5/bs**2) 
+        pcur+=2
+    #end for
+    for p in range(np):
+        b,bs,bt = params[pcur:pcur+3]
+        pf = 2*b/(bs+bt)
+        g.coeff += [ pf/bs    , -pf/bt   ]
+        g.rpow  += [  1       ,  1       ]
+        g.expon += [ .5/bs**2 , .5/bt**2 ]
+        pcur+=3
+    #end for
+    g.coeff = array(g.coeff)
+    g.rpow  = array(g.rpow, dtype=int)
+    g.expon = array(g.expon)
+    g.rpow += 2
+    channel = obj()
+    for t in range(len(g.coeff)):
+        channel[t] = obj(
+            coeff = g.coeff[t],
+            rpow  = g.rpow[t],
+            expon = g.expon[t]
+            )
+    return channel
+#end def get_gf_channel
+
+def gf_s1_p0(r,b1,bs1):
+    r2 = r**2/2 
+    return 2*r2*(b1/bs1*exp(-r2/bs1**2))
+#end def gf_s1_p0
+
+def gf_s1_p1(r,b1,bs1,b2,bs2,bt2):
+    r2 = r**2/2
+    return 2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                 + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) )
+#end def gf_s1_p1
+
+def gf_s1_p2(r,b1,bs1,b2,bs2,bt2,b3,bs3,bt3):
+    r2 = r**2/2
+    return 2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                 + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) \
+                 + b3*(2*r/(bs3+bt3))*(exp(-r2/bs3**2)/bs3-exp(-r2/bt3**2)/bt3) )
+#end def gf_s1_p2
+
+def gf_s1_p3(r,b1,bs1,b2,bs2,bt2,b3,bs3,bt3,b4,bs4,bt4):
+    r2 = r**2/2
+    return 2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                 + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) \
+                 + b3*(2*r/(bs3+bt3))*(exp(-r2/bs3**2)/bs3-exp(-r2/bt3**2)/bt3) \
+                 + b4*(2*r/(bs4+bt4))*(exp(-r2/bs4**2)/bs4-exp(-r2/bt4**2)/bt4) )
+#end def gf_s1_p3
 
 
 
+def gf_loc_s0_p0(r,a,b):
+    r2 = r**2/2
+    return -gf.Z*r*( 1.0 -exp(-r2/a**2) -r2/a**2*exp(-r2/b**2) )
+#end def gf_loc_s0_p0
 
+def gf_loc_s1_p0(r,a,b,b1,bs1):
+    r2 = r**2/2
+    return -gf.Z*r*( 1.0 -exp(-r2/a**2) -r2/a**2*exp(-r2/b**2) ) +2*r2*(b1/bs1*exp(-r2/bs1**2))
+#end def gf_loc_s1_p0
+
+def gf_loc_s1_p1(r,a,b,b1,bs1,b2,bs2,bt2):
+    r2 = r**2/2
+    return -gf.Z*r*( 1.0 -exp(-r2/a**2) -r2/a**2*exp(-r2/b**2) ) \
+           +2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                  + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) )
+#end def gf_loc_s1_p1
+
+def gf_loc_s1_p2(r,a,b,b1,bs1,b2,bs2,bt2,b3,bs3,bt3):
+    r2 = r**2/2
+    return -gf.Z*r*( 1.0 -exp(-r2/a**2) -r2/a**2*exp(-r2/b**2) ) \
+           +2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                  + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) \
+                  + b3*(2*r/(bs3+bt3))*(exp(-r2/bs3**2)/bs3-exp(-r2/bt3**2)/bt3) )
+#end def gf_loc_s1_p2
+
+def gf_loc_s1_p3(r,a,b,b1,bs1,b2,bs2,bt2,b3,bs3,bt3,b4,bs4,bt4):
+    r2 = r**2/2
+    return -gf.Z*r*( 1.0 -exp(-r2/a**2) -r2/a**2*exp(-r2/b**2) ) \
+           +2*r2*(  b1/bs1*exp(-r2/bs1**2) \
+                  + b2*(2*r/(bs2+bt2))*(exp(-r2/bs2**2)/bs2-exp(-r2/bt2**2)/bt2) \
+                  + b3*(2*r/(bs3+bt3))*(exp(-r2/bs3**2)/bs3-exp(-r2/bt3**2)/bt3) \
+                  + b4*(2*r/(bs4+bt4))*(exp(-r2/bs4**2)/bs4-exp(-r2/bt4**2)/bt4) )
+#end def gf_loc_s1_p3
+
+def gf_rms_deviation(v1,v2):
+    return sqrt(((v1-v2)**2).mean())
+#end def gf_rms_deviation
+
+def gf_energy_deviation(v1,v2,r):
+    return (v1-v2).sum()*(r[1]-r[0])
+#end def gf_energy_deviation
+
+
+gf = obj(
+    Z = None,
+    functions = {
+        (1,0):gf_s1_p0,
+        (1,1):gf_s1_p1,
+        (1,2):gf_s1_p2,
+        (1,3):gf_s1_p3
+        },
+    loc_functions = {
+        (0,0):gf_loc_s0_p0,
+        (1,0):gf_loc_s1_p0,
+        (1,1):gf_loc_s1_p1,
+        (1,2):gf_loc_s1_p2,
+        (1,3):gf_loc_s1_p3
+        },
+    rms_deviation = gf_rms_deviation,
+    energy_deviation = gf_energy_deviation
+    )
 
 
 
@@ -838,12 +1288,12 @@ class QmcpackPP(SemilocalPP):
 #        functional = lines[0].split()[0].strip("'")
 #        es,zs = lines[1].split(',')[0:2]
 #        element = es.strip("'")
-#        Zeff  = int(float(zs)+.5)
+#        Zval  = int(float(zs)+.5)
 #        
 #        self.set(
 #            element = element,
 #            type    = functional,
-#            Z       = Zeff,
+#            Z       = Zval,
 #            r          = [],
 #            potentials = obj(),
 #            pp         = obj(),

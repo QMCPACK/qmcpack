@@ -249,7 +249,7 @@ class Names(QIobj):
     condensed_names = obj()
     expanded_names = None
 
-    escape_names = set(keyword.kwlist)
+    escape_names = set(keyword.kwlist+['write'])
     escaped_names = list(escape_names)
     for i in range(len(escaped_names)):
         escaped_names[i]+='_'
@@ -1670,7 +1670,7 @@ class dm1b(QIxml):
 class spindensity(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
-    parameters  = ['dr','grid']
+    parameters  = ['dr','grid','cell','center','corner','voronoi','test_moves']
     write_types = obj(report=yesno)
     identifier  = 'name'
 #end class spindensity
@@ -1708,18 +1708,26 @@ class scalar_traces(QIxml):
     write_types = obj(defaults=yesno)
 #end class scalar_traces
 
-class particle_traces(QIxml):
+class array_traces(QIxml):
+    attributes  = ['defaults']
+    text        = 'quantities'
+    write_types = obj(defaults=yesno)
+#end class array_traces
+
+class particle_traces(QIxml): # legacy
     attributes  = ['defaults']
     text        = 'quantities'
     write_types = obj(defaults=yesno)
 #end class particle_traces
 
 class traces(QIxml):
-    attributes = ['write','format','verbose','scalar','particle',
-                  'scalar_defaults','particle_defaults']
-    elements = ['scalar_traces','particle_traces']
-    write_types = obj(write=yesno,verbose=yesno,scalar=yesno,particle=yesno,
-                      scalar_defaults=yesno,particle_defaults=yesno)
+    attributes = ['write','throttle','format','verbose','scalar','array',
+                  'scalar_defaults','array_defaults',
+                  'particle','particle_defaults']
+    elements = ['scalar_traces','array_traces','particle_traces']
+    write_types = obj(write_=yesno,verbose=yesno,scalar=yesno,array=yesno,
+                      scalar_defaults=yesno,array_defaults=yesno,
+                      particle=yesno,particle_defaults=yesno)
 #end class
 
 
@@ -1785,7 +1793,7 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration']
+    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control']
     write_types = obj(gpu=yesno,nonlocalmoves=yesno)
 #end class dmc
 
@@ -1810,7 +1818,7 @@ classes = [   #standard classes
     determinantset,slaterdeterminant,basisset,grid,determinant,occupation,
     jastrow1,jastrow2,jastrow3,
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,
-    atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,
+    atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
     sposet,bspline_builder,composite_builder,heg_builder
@@ -4242,6 +4250,7 @@ def generate_basic_input(id             = 'qmc',
                          corrections    = 'default',
                          observables    = None,
                          estimators     = None,
+                         traces         = None,
                          calculations   = None,
                          det_format     = 'new'
                          ):
@@ -4378,6 +4387,10 @@ def generate_basic_input(id             = 'qmc',
 
     if seed!=None:
         sim.random = random(seed=seed)
+    #end if
+
+    if traces!=None:
+        sim.traces = traces
     #end if
 
     for calculation in calculations:
