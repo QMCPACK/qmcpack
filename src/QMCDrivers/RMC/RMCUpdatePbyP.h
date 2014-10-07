@@ -38,7 +38,9 @@ private:
   std::vector<int> Action, TransProb;
   bool scaleDrift;
   IndexType actionType;
-  
+
+  vector<NewTimer*> myTimers;
+   
   IndexType vmcSteps;
   IndexType equilSteps;
   IndexType vmcToDoSteps;

@@ -48,14 +48,17 @@ bool RMCSingleOMP::run()
 {
   resetRun();
   //start the main estimator
+//  app_log()<<"Starting Estimators\n";
   Estimators->start(nBlocks);
-   
+//  app_log()<<"Starting Movers\n";
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
   Traces->startRun(nBlocks,traceClones);
   const bool has_collectables=W.Collectables.size();
+  
   for (int block=0; block<nBlocks; ++block)
     {
+  //    app_log()<<"Block "<<block<<endl;
       #pragma omp parallel
       {
         int ip=omp_get_thread_num();
@@ -89,10 +92,6 @@ bool RMCSingleOMP::run()
               
              branchEngine->collect(CurrentStep, W, branchClones);  //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
           }
-	stringstream ss1;
-	app_log()<<ip<<" Eref="<<branchEngine->getEref()<<" Etrial="<<branchEngine->getEtrial()<<" TauEff="<<branchEngine->getTauEff()<<endl;
-	//app_log()<<ss1.str();
-        app_log().flush();
 	// wClones[ip]->reptile->calcTauScaling();
        // wClones[ip]->reptile->calcERun();
 		//branchEngine->collect(CurrentStep, W, branchClones);
@@ -149,7 +148,8 @@ void RMCSingleOMP::resetRun()
     }
   makeClones(W,Psi,H);
   myPeriod4WalkerDump=(Period4WalkerDump>0)?Period4WalkerDump:(nBlocks+1)*nSteps;
-  if (Movers.empty())
+  
+   if (Movers.empty())
     {
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
@@ -216,6 +216,7 @@ void RMCSingleOMP::resetRun()
 
       if (QMCDriverMode[QMC_UPDATE_MODE])
         {
+	 app_log()<<ip<<" initWalkers for pbyp...\n";
           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
@@ -240,7 +241,7 @@ void RMCSingleOMP::resetRun()
 //         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
  //          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
-
+  //app_log()<<"Check\n";
   branchEngine->checkParameters(W);
 
 #if !defined(BGP_BUG)
@@ -250,10 +251,13 @@ void RMCSingleOMP::resetRun()
   {
 
          for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-	 {
+	 { 
+	//	app_log()<<"Advance Walkers\n";
            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-	   branchEngine->collect(CurrentStep, W, branchClones);
+	  //  app_log()<<"Collect\n";
+             branchEngine->collect(CurrentStep, W, branchClones);
 	 }
+           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 
   }
 }
