@@ -4,17 +4,20 @@
 
 namespace qmcplusplus
 {
-class ParticleSetPool;
-class HamiltonianPool;
+  class ParticleSetPool;
+  class HamiltonianPool;
 
-struct RMCFactory
-{
-  int RMCMode;
-  xmlNodePtr myNode;
-  RMCFactory(int vmode, xmlNodePtr cur):RMCMode(vmode), myNode(cur) {}
-  QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool);
-};
+  struct RMCFactory
+  {
+    int RMCMode;
+    xmlNodePtr myNode;
+      RMCFactory (int vmode, xmlNodePtr cur):RMCMode (vmode), myNode (cur)
+    {
+    }
+    QMCDriver *create (MCWalkerConfiguration & w, TrialWaveFunction & psi,
+		       QMCHamiltonian & h, ParticleSetPool & ptclpool,
+		       HamiltonianPool & hpool, WaveFunctionPool & ppool);
+  };
 }
 
 #endif

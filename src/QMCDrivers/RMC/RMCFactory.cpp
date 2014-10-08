@@ -6,16 +6,19 @@ namespace qmcplusplus
 {
 
 
-QMCDriver* RMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                              QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool)
-{
-  int np=omp_get_max_threads();
-  //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  QMCDriver* qmc=0;
-  if(RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
-    {
-      qmc = new RMCSingleOMP(w,psi,h,hpool,ppool);
-    }
+  QMCDriver *RMCFactory::create (MCWalkerConfiguration & w,
+				 TrialWaveFunction & psi, QMCHamiltonian & h,
+				 ParticleSetPool & ptclpool,
+				 HamiltonianPool & hpool,
+				 WaveFunctionPool & ppool)
+  {
+    int np = omp_get_max_threads ();
+    //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
+    QMCDriver *qmc = 0;
+    if (RMCMode == 0 || RMCMode == 1)	//(0,0,0) (0,0,1) pbyp and all electron
+      {
+	qmc = new RMCSingleOMP (w, psi, h, hpool, ppool);
+      }
 #if defined(QMC_BUILD_COMPLETE)
 //else if(RMCMode == 2) //(0,1,0)
 //{
@@ -40,7 +43,7 @@ QMCDriver* RMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
 // }
 // #endif
 #endif
-  qmc->setUpdateMode(RMCMode&1);
-  return qmc;
-}
+    qmc->setUpdateMode (RMCMode & 1);
+    return qmc;
+  }
 }

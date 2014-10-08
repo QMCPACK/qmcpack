@@ -126,8 +126,8 @@ namespace qmcplusplus
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
     //return nbeads and stuff to its orginal unset state;
     resetVars ();
-    app_log () << "Reptile State of Thread #0\n";
-    W.ReptileList[0]->printState ();
+   // app_log () << "Reptile State of Thread #0\n";
+    //W.ReptileList[0]->printState ();
     //finalize a qmc section
     return finalize (nBlocks);
   }
@@ -307,7 +307,7 @@ namespace qmcplusplus
 
 	if (QMCDriverMode[QMC_UPDATE_MODE])
 	  {
-	    app_log () << ip << " initWalkers for pbyp...\n";
+	   // app_log () << ip << " initWalkers for pbyp...\n";
 	    Movers[ip]->initWalkersForPbyP (W.ReptileList[ip]->repstart,
 					    W.ReptileList[ip]->repend);
 	  }
@@ -318,15 +318,16 @@ namespace qmcplusplus
 	    //  wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 	  }
 
-	app_log () <<
-	  "ResetRun()::Reptile state after resizing and init for thread #0\n";
-	W.ReptileList[0]->printState ();
+//	app_log () <<
+//	  "ResetRun()::Reptile state after resizing and init for thread #0\n";
+//	W.ReptileList[0]->printState ();
 	//this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
 	for (IndexType prestep = 0; prestep < prestepsVMC; prestep++)
 	  {
-	    app_log () << "prestep# " << prestep << endl;
+//	    app_log () << "prestep# " << prestep << endl;
 	    Movers[ip]->advanceWalkers (W.begin (), W.begin (), true);
 	  }
+     
 
 	//set up initial action and transprob.
 	MCWalkerConfiguration::iterator wit (W.begin () + wPerNode[ip]),
@@ -344,7 +345,7 @@ namespace qmcplusplus
 //         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
 	//          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
-    //app_log()<<"Check\n";
+    app_log()<<"Finished "<<prestepsVMC<<" VMC presteps\n";
     branchEngine->checkParameters (W);
 
 #if !defined(BGP_BUG)
