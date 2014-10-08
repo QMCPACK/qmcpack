@@ -56,9 +56,9 @@ void RMCUpdatePbyPWithDrift::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it
 {
   UpdatePbyP=true;
   
- // for (; it != it_end; ++it)
- //   {
-      Walker_t& awalker=W.reptile->getHead();
+  for (; it != it_end; ++it)
+    {
+      Walker_t& awalker=**it; //W.reptile->getHead();
       W.R=awalker.R;
       W.update();
       //W.loadWalker(awalker,UpdatePbyP);
@@ -69,12 +69,18 @@ void RMCUpdatePbyPWithDrift::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it
       RealType logpsi2=Psi.updateBuffer(W,awalker.DataSet,false);
       awalker.G=W.G;
       awalker.L=W.L;
-	randomize(awalker);
-//    }
+    //  268   W.saveWalker(awalker);
+      RealType eloc=H.evaluate(W);
+   //   BadState |= isnan(eloc);
+   //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+      awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+//	randomize(awalker);
+    }
+    
 
-    IndexType initsteps = W.reptile->nbeads + 10;
+  //  IndexType initsteps = W.reptile->nbeads + 10;
 	
-  for (int n=0; n < initsteps; n++) advanceWalkersVMC();
+//  for (int n=0; n < initsteps; n++) advanceWalkersVMC();
 }
 
 bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
@@ -265,7 +271,7 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
       gf_acc=1.0;
       nReject++;
     }
-    Traces->buffer_sample();
+   // Traces->buffer_sample();
   }
 
 
@@ -475,11 +481,11 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   RealType eloc=H.evaluate(W);
   RealType dS = branchEngine->DMCLinkAction(eloc,curhead.Properties(LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY),nextlastbead.Properties(LOCALENERGY));          
   RealType acceptProb=std::min(1.0,std::exp(-dS ));
-  if ((RandomGen() <= acceptProb ) || (prophead.Age>=MaxAge))
+  if ((RandomGen() <= acceptProb ) || (prophead.Age>=MaxAge || lastbead.Age>=MaxAge))
     {
    
       MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
-      if (curhead.Age>=MaxAge)
+      if (curhead.Age>=MaxAge || lastbead.Age>=MaxAge)
         app_log()<<"\tForce Acceptance...\n";
      // RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
       //W.saveWalker(prophead);
@@ -508,24 +514,10 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     }
 }
 
-void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void RMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool init)
 {
-/*	if (vmcToDoSteps>0)
-	{
-      advanceWalkersVMC();
-      vmcToDoSteps--;
-    }
-    else if (vmcToDoSteps==0 && equilToDoSteps>0)
-    {
-	  advanceWalkersRMC();
-	  equilToDoSteps--;	
-	}
-	else
-	{
-      advanceWalkersRMC();
-    } */
-    advanceWalkersRMC();
-	
+    if (init==true) advanceWalkersVMC();
+    else advanceWalkersRMC();
 }
 
 void RMCUpdatePbyPWithDrift::accumulate(WalkerIter_t it, WalkerIter_t it_end)

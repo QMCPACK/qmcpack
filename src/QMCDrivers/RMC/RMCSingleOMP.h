@@ -14,6 +14,8 @@ class RMCSingleOMP: public QMCDriver, public CloneManager
 public:
   /// Constructor.
   typedef PtclAttribTraits::ParticlePos_t ParticlePos_t;
+  typedef Reptile::ReptileConfig_t        ReptileConfig_t;
+  
   RMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                HamiltonianPool& hpool, WaveFunctionPool& ppool);
   bool run();
@@ -26,17 +28,29 @@ private:
   string rescaleDrift;
   ///number of beads on the reptile, beta/tau
   int beads;
+  //number of reptiles.  
+  int nReptiles;
   ///rescale for time step studies. some int>2 and new beads are inserted in between the old ones.
   int resizeReptile;
-
+  
+  //Calculating the reptiles from scratch or from a previous VMC/DMC/RMC run.
+  bool fromScratch;
   ///projection time of reptile
   RealType beta;
 //       vector of indices for the action and transprob
   std::vector<int> Action;
   std::vector<int> TransProb;
 
+  int prestepsVMC;
   ///check the run-time environments
+  inline void resetVars(){prestepsVMC=-1; beads=-1; beta=-1; nReptiles=-1; };
   void resetRun();
+  //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.  
+  void resetReptiles(int nReptiles, int nbeads, RealType tau);
+  //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
+  void resetReptiles(vector<ReptileConfig_t>& reptile_samps, RealType tau);
+  //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
+  void resetReptiles(vector<ParticlePos_t>& walker_samps, int nbeads, RealType tau); 
   ///copy constructor
   RMCSingleOMP(const RMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
   /// Copy operator (disabled).
@@ -44,6 +58,7 @@ private:
   {
     return *this;
   }
+
 
 };
 }

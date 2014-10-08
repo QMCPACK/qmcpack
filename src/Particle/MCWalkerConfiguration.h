@@ -68,7 +68,9 @@ public:
   typedef WalkerList_t::iterator         iterator;
   ///const_iterator of Walker container
   typedef WalkerList_t::const_iterator   const_iterator;
-  /** starting index of the walkers in a processor group
+ 
+  typedef std::vector<Reptile*>          ReptileList_t;
+   /** starting index of the walkers in a processor group
    *
    * WalkerOffsets[0]=0 and WalkerOffsets[WalkerOffsets.size()-1]=total number of walkers in a group
    * WalkerOffsets[processorid+1]-WalkerOffsets[processorid] is equal to the number of walkers on a processor,
@@ -379,7 +381,8 @@ public:
   ///a collection of walkers
   WalkerList_t WalkerList;
   ///a collection of reptiles contained in MCWalkerConfiguration.
-  Reptile *reptile;
+  ReptileList_t ReptileList;
+  Reptile* reptile;
 
 private:
 
@@ -402,4 +405,4 @@ private:
  * $RCSfile$   $Author$
  * $Revision$   $Date$
  * $Id$
- ***************************************************************************/
+ st***************************************************************************/

@@ -13,6 +13,7 @@
 
 #include "QMCDrivers/DriftOperators.h"
 #include "Configuration.h"
+#include "Walker.h"
 
 namespace qmcplusplus
 {
@@ -27,6 +28,7 @@ public:
   //typedef Walker_t::Buffer_t              Buffer_t;
   //	typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
+  typedef vector<Walker_t::ParticlePos_t> ReptileConfig_t;
 
   std::vector<IndexType> Action;
   std::vector<IndexType> TransProb;
@@ -36,18 +38,7 @@ public:
   RealType forwardaction;
   RealType backwardaction;
 
-  RealType r2prop;
-  RealType r2accept;
-  IndexType r2samp;
-  IndexType maxSamp;
- RealType tauscale;
   RealType tau;
-
-  RealType erun;
-  RealType erun2;
-  RealType eest;
-  RealType evar;
-  IndexType esamp;
 
   IndexType direction, headindex, nbeads;
   MCWalkerConfiguration& w;
@@ -58,19 +49,6 @@ public:
     w(W),repstart(start),repend(end),direction(1),headindex(0),prophead(0) //, r2prop(0.0), r2accept(0.0),tau(0.0)
   {
     w=W;
-   // repstart(start);
-   // repend(end);
-   // direction(1);
-   // headindex(0);
-    maxSamp=10000;
-    erun=0.0;
-    erun2=0.0;
-    eest=0.0;
-    evar=100000;
-    esamp=0;
-    r2samp=0;
-    r2accept=1;
-    r2prop=1;
     Action.resize(3);
     Action[0]=w.addProperty("ActionBackward");
     Action[1]=w.addProperty("ActionForward");
@@ -78,15 +56,13 @@ public:
     TransProb.resize(2);
     TransProb[0]=w.addProperty("TransProbBackward");
     TransProb[1]=w.addProperty("TransProbForward");
-    //forwardaction=0.0;
-    //backwardaction=0.0;
-    //forwardprob=0.0;
-    //backwardprob=0.0;
+    
     nbeads=repend-repstart;
   }
 
   ~Reptile() {}
 	
+  inline IndexType size(){return nbeads;}
 	
   inline Walker_t& operator[](IndexType i)
   {
@@ -157,7 +133,7 @@ public:
     Walker_t& newhead(getBead(0));
     newhead=overwrite;
   }
-
+  //This function does two things:  1.)  Moves the reptile forward 1 step.  2.) Returns the new head.  
   inline Walker_t&  getNewHead()
   {
     //overwrite last element.
@@ -223,82 +199,75 @@ public:
     app_log()<<"POSITIONS===============:\n";
     for( int i=0; i<nbeads; i++)
     {
-      app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).R[0]<<"\n";
-      app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).R[1]<<"\n";
+    //  app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).R[0]<<"\n";
+    //  app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).R[1]<<"\n";
+	app_log()<<"BEAD #"<<i<<" tau = "<<tau*i<<endl;
+	app_log()<<getBead(i).R<<endl;
     }
     app_log()<<"GVECS===============:\n";
     for( int i=0; i<nbeads; i++)
     {
-      app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).G[0]<<"\n";
-      app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).G[1]<<"\n";
+//      app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).G[0]<<"\n";
+//      app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).G[1]<<"\n";
+	app_log()<<"BEAD #"<<i<<" tau = "<<tau*i<<endl;
+	app_log()<<getBead(i).G<<endl;
     }
     app_log()<<"************************************\n";
   }
-  //from i to j
-  inline void resetR2Avg()
-  {
-    r2samp=0.0;
-    r2prop=0.0;
-    r2accept=0.0;
-    //app_log()<<"Dumping running averages...\n";
-  }
+  inline RealType getTau(){return tau;}
+  inline void setTau(RealType t){tau=t;}
 
-  inline void resetEAvg()
+ 
+  //This takes a value of imaginary time "t" and returns a 3N particle position vector, corresponding to a time slice extrapolated
+  // from the current reptile.  If t>length of reptile, then return the last bead.  if t<0; return the first bead. 
+  inline Walker_t::ParticlePos_t linearInterp(RealType t)
   {
-    erun=0.0;
-    erun2=0.0;
-    esamp=0;
-  }
+	IndexType nbead=IndexType(t/tau);    //Calculate the lower bound on the timeslice.  t is between binnum*Tau and (binnum+1)Tau
+	RealType beadfrac=t/tau - nbead;  //the fractional coordinate between n and n+1 bead
+	if(nbead<=0)
+	{ 
+	   ParticleSet::ParticlePos_t result=getHead().R;
+	   return result;
+	}
+	else if(nbead>=nbeads-1)
+ 	{
+	  ParticleSet::ParticlePos_t result=getTail().R;
+	  return result;
+	}
 
-  inline void calcTauScaling()
+	else
+	{
+		Walker_t::ParticlePos_t dR(getBead(nbead+1).R), interpR(getBead(nbead).R);
+		dR=dR-getBead(nbead).R;
+
+		interpR = getBead(nbead).R + beadfrac*dR;
+		return interpR;
+	}
+		
+  }
+  inline ReptileConfig_t  getReptileSlicePositions(RealType tau, RealType beta)
   {
-    if (r2prop != 0.0 && r2samp > maxSamp)
+     IndexType nbeads_new=IndexType(beta/tau);
+      ReptileConfig_t new_reptile_coords(0);
+     
+     for (IndexType i=0; i<nbeads_new; i++) new_reptile_coords.push_back(linearInterp(tau*i));
+
+     return new_reptile_coords;
+  }
+  
+  inline void setReptileSlicePositions(ReptileConfig_t& rept)
+  {
+    if (rept.size() == nbeads)
     {
-      tauscale=r2accept/r2prop;
-      resetR2Avg();
-    }
+	for (int i=0; i<nbeads; i++) getBead(i).R=rept[i];
+    } 
+    else;
   }
 
-  inline void accumulateE(RealType eloc)
+  inline void setReptileSlicePositions(Walker_t::ParticlePos_t R)
   {
-    erun+=eloc;
-    erun2+=eloc*eloc;
-    esamp++;
+    for (int i=0; i<nbeads; i++) getBead(i).R=R;
   }
-
-  inline void calcERun()
-  {
-    if (esamp > maxSamp)
-    {
-      eest=erun/RealType(esamp);
-      evar = erun2/RealType(esamp) - eest*eest;
-      //app_log()<<"eest="<<eest<<"  evar="<<evar<<endl;
-      //app_log()<<"tauscale = "<<tauscale<<endl;
-      resetEAvg();
-    }
-  }
-
-
-  //	inline RealType calcActionDiff()
-  //	{
-  //			Walker_t& head = getHead();
-  //			Walker_t& newhead=*prophead;
-  //			Walker_t& tail=getTail();
-  ///		Walker_t& nexttail=getNext();
-
-  //	ParticlePos_t delRfromhead;
-  ///		newhead.R - head.R -
-
-  //		return 0.0;
-
-  //0	}
-
-
-
-
-
-
-
 
 };
 

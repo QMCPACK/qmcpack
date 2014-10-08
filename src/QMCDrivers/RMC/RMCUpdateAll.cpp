@@ -98,8 +98,8 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	makeGaussRandomWithEngine(deltaR,RandomGen);
 	RealType r2proposed=Dot(deltaR,deltaR);
 	RealType r2accept=0.0;
-	W.reptile->r2prop += r2proposed;
-	W.reptile->r2samp++;
+//	W.reptile->r2prop += r2proposed;
+//	W.reptile->r2samp++;
 	if (!W.makeMoveWithDrift(curhead,drift ,deltaR, m_sqrttau))
 	{
 	  ++nReject;
@@ -157,19 +157,20 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	////////////////////////////////////////////////////////////////////////
 	///  Like DMC, this filters the local energy to ignore divergences near pathological points in phase space.
 	////////////////////////////////////////////////////////////////////////
-	RealType eest = W.reptile->eest;
-	RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
+//	RealType eest = W.reptile->eest;
+
+//	RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
 	//   app_log()<<"eval = "<<eest<<" estdev="<<stddev<<endl;
-	RealType rawcutoff=100*std::sqrt(W.reptile->evar);
-	RealType cutoffmax = 1.5*rawcutoff;
-	RealType cutoff=1;
-	if (fbet > rawcutoff)
-	  cutoff = 1-(fbet - rawcutoff)/(rawcutoff*0.5);
-	if( fbet > cutoffmax )
-	  cutoff=0;
+//	RealType rawcutoff=100*std::sqrt(W.reptile->evar);
+//	RealType cutoffmax = 1.5*rawcutoff;
+//	RealType cutoff=1;
+//	if (fbet > rawcutoff)
+//	  cutoff = 1-(fbet - rawcutoff)/(rawcutoff*0.5);
+//	if( fbet > cutoffmax )
+//	  cutoff=0;
 	//////////////////////////////////////////////////////////////////////////
-	RealType tauscale = W.reptile->tauscale;
-	W.Properties(W.reptile->Action[2])= 0.5*Tau*eloc*cutoff*tauscale;
+//	RealType tauscale = W.reptile->tauscale;
+//	W.Properties(W.reptile->Action[2])= 0.5*Tau*eloc*cutoff*tauscale;
 	RealType dS = 0;
 	RealType acceptProb=1;
 	if (actionType==SYM_ACTION)
@@ -224,7 +225,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	
 	  //Assuming the VMC step is fine, we are forcing the move.
 	  r2accept=r2proposed;
-	  W.reptile->r2accept+=r2accept;
+//	  W.reptile->r2accept+=r2accept;
 	  MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 	
 	  W.saveWalker(overwriteWalker);
@@ -326,8 +327,8 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   makeGaussRandomWithEngine(deltaR,RandomGen);
   RealType r2proposed=Dot(deltaR,deltaR);
   RealType r2accept=0.0;
-  W.reptile->r2prop += r2proposed;
-  W.reptile->r2samp++;
+//  W.reptile->r2prop += r2proposed;
+//  W.reptile->r2samp++;
   if (!W.makeMoveWithDrift(curhead,drift ,deltaR, m_sqrttau))
     {
       ++nReject;
@@ -469,7 +470,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     {
       
       r2accept=r2proposed;
-      W.reptile->r2accept+=r2accept;
+  //    W.reptile->r2accept+=r2accept;
       MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
       if (curhead.Age>=MaxAge)
       {
