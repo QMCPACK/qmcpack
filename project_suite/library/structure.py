@@ -1031,6 +1031,42 @@ class Structure(Sobj):
     #end def point_defect
 
 
+    def order_by_species(self):
+        species        = []
+        species_counts = []
+        elem_indices   = []
+
+        spec_set = set()
+        for i in xrange(len(self.elem)):
+            e = self.elem[i]
+            if not e in spec_set:
+                spec_set.add(e)
+                species.append(e)
+                species_counts.append(0)
+                elem_indices.append([])
+            #end if
+            sindex = species.index(e)
+            species_counts[sindex] += 1
+            elem_indices[sindex].append(i)
+        #end for
+
+        elem_order = []
+        for elem_inds in elem_indices:
+            elem_order.extend(elem_inds)
+        #end for
+        self.reorder(elem_order)
+
+        return species,species_counts
+    #end def order_by_species
+
+
+    def reorder(self,order):
+        order = array(order)
+        self.elem = self.elem[order]
+        self.pos  = self.pos[order]
+    #end def reorder
+
+
     def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
         if identifiers=='point_defects':
             if not 'point_defects' in self:

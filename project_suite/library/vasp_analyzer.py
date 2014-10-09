@@ -2,7 +2,7 @@
 import os
 from numpy import array,zeros
 from generic import obj
-from simulation import SimulationAnalyzer
+from simulation import Simulation,SimulationAnalyzer
 from vasp_input import VaspInput
 from developer import DevBase
 from debug import *

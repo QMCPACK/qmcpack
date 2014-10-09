@@ -223,6 +223,7 @@ class Simulation(Pobj):
         self.force_write    = False
         self.loaded         = False
         self.ordered_dependencies = []
+        self.process_id     = None
 
         #variables determined by derived classes
         self.outputs = None  #object representing output data 
@@ -543,6 +544,10 @@ class Simulation(Pobj):
             #end for
             del pres
         #end if
+        # update process id for backwards compatibility
+        if not 'process_id' in self:
+            self.process_id = self.job.system_id
+        #end if
         self.tlog('end load image',self.simid,n=5)
         return
     #end def load_image
@@ -657,6 +662,14 @@ class Simulation(Pobj):
         self.post_submit()
         self.tlog('end submit',self.simid,n=4)
     #end def submit
+
+
+    def update_process_id(self):
+        if self.process_id is None and self.job.system_id!=None:
+            self.process_id = self.job.system_id
+            self.save_image()
+        #end if
+    #end def update_process_id
 
 
     def check_status(self):
@@ -908,6 +921,11 @@ class Simulation(Pobj):
         self.dlog(os.path.exists(imagefile),self.loaded,n=3)
         if os.path.exists(imagefile) and not self.loaded:
             self.load_image()
+            # continue from interruption
+            if self.submitted and not self.finished and self.process_id!=None:
+                self.job.system_id = self.process_id # load process id of job
+                self.job.reenter_queue()
+            #end if
             self.loaded = True
         #end if
         self.dlog(self.simid,'reconstructed, dids',self.dependency_ids,n=3)

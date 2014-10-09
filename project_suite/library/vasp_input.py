@@ -462,7 +462,7 @@ class Incar(VKeywordFile):
     keywords = set('''
       addgrid aexx aggac aggax aldac algo amin amix amix_mag andersen_prob apaco 
       bmix bmix_mag 
-      clnt cln cll clz cshift
+      clnt cln cll clz cmbj cshift
       deper dimer_dist dipol dq
       ebreak eint ediff ediffg efield efield_pead elmin emax emin enaug encut 
       encutfock encutgw encutgwsoft enmax enmin epsilon evenonly evenonlygw
@@ -481,10 +481,11 @@ class Incar(VKeywordFile):
       lpead lplane lreal lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy 
       lsepb lsepk lspectral lsorbit lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
       lvhar lvtot lwave 
-      magmom maxmem maxmix m_constr mdalgo metagga minrot mixpre 
+      magmom maxmem maxmix mbja mbjb m_constr mdalgo metagga minrot mixpre 
       nbands nbandsgw nblk nblock nbmod ncore nedos nelect nelm nelmdl nelmin 
       nfree ngx ngxf ngy ngyf ngz ngzf nkred nkredx nkredy nkredz nlspline 
-      nmaxfockae nsim nsw nomega nomegar npaco npar nppstr nsubsys nupdown nwrite
+      nmaxfockae nomega nomegar npaco npar nppstr nsim nsw nsubsys nupdown 
+      nwrite
       oddonly oddonlygw ofield_a ofield_kappa ofield_q6_far ofield_q6_near 
       omegamax omegamin omegatl
       param1 param2 pmass pomass potim prec precfock pstress psubsys
@@ -530,7 +531,7 @@ class Incar(VKeywordFile):
       hfscreen hills_h hills_w
       kspacing 
       lambda langevin_gamma_l
-      minrot
+      mbja mbjb minrot
       nelect 
       ofield_a ofield_kappa ofield_q6_far ofield_q6_near omegamax omegamin omegatl
       param1 param2 pmass pomass potim pstress 
@@ -548,7 +549,7 @@ class Incar(VKeywordFile):
       lasph lasync lberry lblueout lcalceps lcalcpol lcharg lchimag lcorr 
       ldau ldiag ldipol lefg lelf lepsilon lhfcalc lhyperfine lkproj lmaxtau 
       lmixtau lmono lnabla lnmr_sym_red lnoncollinear loptics lpard lpead 
-      lplane lreal lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy lsepb 
+      lplane lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy lsepb 
       lsepk lsorbit lspectral lthomas luse_vdw lvdw lvdw_ewald lvdwscs lvhar 
       lvtot lwave 
       kgamma 
@@ -560,6 +561,7 @@ class Incar(VKeywordFile):
     strings = set('''
       algo 
       gga 
+      lreal
       metagga 
       prec precfock
       system
@@ -574,6 +576,7 @@ class Incar(VKeywordFile):
       '''.split())
 
     real_arrays = set('''
+      cmbj
       dipol 
       efield_pead eint
       ferdo ferwe 
@@ -1158,11 +1161,11 @@ class VaspInput(SimulationInput):
     #end def write
 
 
-    def incorporate_system(self,system):
+    def incorporate_system(self,system,incorp_kpoints=True):
         structure = system.structure
 
         # assign kpoints
-        if len(structure.kpoints)>0:
+        if len(structure.kpoints)>0 and incorp_kpoints:
             kpoints = Kpoints()
             kpoints.mode     = 'explicit'
             kpoints.coord    = 'cartesian'
@@ -1173,22 +1176,17 @@ class VaspInput(SimulationInput):
 
         # assign poscar
         if len(structure.elem)>0:
-            elem_order = structure.elem.argsort()
-            elem = array(sorted(set(structure.elem)),dtype=str)
-            elem_count = []
-            lelem = list(structure.elem)
-            for e in elem:
-                elem_count.append(lelem.count(e))
-            #end for
+            s = structure.copy()
+            species,species_count = s.order_by_species()
             poscar = Poscar()
             poscar.scale      = 1.0
-            poscar.axes       = structure.axes.copy()
-            poscar.elem       = elem
-            poscar.elem_count = elem_count
+            poscar.axes       = s.axes
+            poscar.elem       = species
+            poscar.elem_count = species_count
             poscar.coord      = 'cartesian'
-            poscar.pos        = structure.pos[elem_order].copy()
+            poscar.pos        = structure.pos
             if 'frozen' in structure:
-                poscar.dynamic = structure.frozen==False
+                poscar.dynamic = s.frozen==False
             #end if
             self.poscar = poscar
         #end if
@@ -1220,12 +1218,15 @@ def generate_vasp_input(**kwargs):
 
 
 generate_any_defaults = obj(
-    kpoints = None,
-    kbasis  = None,
-    kgrid   = None,
-    kshift  = (0,0,0),
-    kcoord  = 'cartesian',
-    system  = None
+    kcenter  = None,
+    kpoints  = None,
+    kweights = None,
+    kbasis   = None,
+    kgrid    = None,
+    kshift   = (0,0,0),
+    kcoord   = 'cartesian',
+    system   = None,
+    pseudos  = None
     )
 
 def generate_any_vasp_input(**kwargs):
@@ -1260,19 +1261,43 @@ def generate_any_vasp_input(**kwargs):
     if len(kwargs)>0:
         VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
 
+    # set potcar
+    if vf.pseudos!=None:
+        vi.potcar = Potcar(VaspInput.pseudo_dir,vf.pseudos)
+    #end if
+
+    gen_kpoints = not 'kspacing' in vf
+
     # incorporate system information
     if vf.system!=None:
-        vi.incorporate_system(vf.system)
+        vi.incorporate_system(vf.system,gen_kpoints)
     #end if
 
     # add kpoints information (override anything provided by system)
-    if vf.kpoints!=None or vf.kbasis!=None or vf.kgrid!=None:
+    if gen_kpoints and (vf.kpoints!=None or vf.kweights!=None or vf.kbasis!=None or vf.kgrid!=None or vf.kcenter!=None):
         if 'kpoints' in vi:
             kp = vi.kpoints
             kp.clear()
         else:
             kp = Kpoints()
             vi.kpoints = kp
+        #end if
+        if vf.kpoints!=None:
+            kp.mode     = 'explicit'
+            kp.kpoints  = vf.kpoints
+            kp.kweights = vf.kweights
+            kp.coord    = vf.kcoord
+        elif vf.kgrid!=None:
+            kp.mode      = 'auto'
+            kp.centering = vf.kcenter
+            if vf.kgrid!=None:
+                kp.kgrid = vf.kgrid
+            #end if
+            if vf.kshift!=None:
+                kp.kshift = vf.kshift
+            #end if
+        else:
+            VaspInput.class_error('could not set kpoints from user inputs','generate_vasp_input')
         #end if
     #end if
 

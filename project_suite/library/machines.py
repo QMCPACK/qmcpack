@@ -415,6 +415,12 @@ class Job(Pobj):
     #end def submit
 
 
+    def reenter_queue(self):
+        machine = self.get_machine()
+        machine.requeue_job(self)
+    #end def reenter_queue
+
+
     def run_command(self,launcher,redirect=False):
         c = ''
         if self.bundled_jobs is None:
@@ -662,6 +668,11 @@ class Machine(Pobj):
             self.error('add_job received non-Job instance '+job.__class__.__name__)
         #end if
     #end def add_job
+
+
+    def requeue_job(self):
+        None
+    #end def requeue_job
 
 
     allowed_user_info = set(['account','local_directory','app_directory','app_directories'])
@@ -1023,6 +1034,25 @@ class Supercomputer(Machine):
     def interactive_representation(self,cores):
         return InteractiveCluster(self,cores)
     #end def interactive_representation
+
+
+    def requeue_job(self,job):
+        if isinstance(job,Job):
+            jid = job.internal_id
+            pid = job.system_id
+            if pid is None:
+                self.error('job {0} does not have a process id issued by the scheduler'.format(jid))
+            #end if
+            self.process_job(job)
+            self.jobs[jid] = job
+            job.status = job.states.running
+            self.running.add(jid)
+            process = obj(job=job)
+            self.processes[pid] = process
+        else:
+            self.error('requeue_job received non-Job instance '+job.__class__.__name__)
+        #end if
+    #end def requeue_job
 
 
     def process_job(self,job):

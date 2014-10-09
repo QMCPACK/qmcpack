@@ -84,6 +84,7 @@ class ProjectManager(Pobj):
                     self.machine.query_queue()
                     self.progress_cascades()
                     self.machine.submit_jobs()
+                    self.update_process_ids()
                     self.dlog('sleeping',self.sleep,n=2)
                     time.sleep(self.sleep)
                     self.dlog('awake',n=2)
@@ -95,6 +96,7 @@ class ProjectManager(Pobj):
                 self.machine.query_queue()
                 self.progress_cascades()
                 self.machine.submit_jobs()
+                self.update_process_ids()
             #end if
         else:
             self.progress_cascades()
@@ -326,6 +328,13 @@ class ProjectManager(Pobj):
         #end for
         self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end progress cascades',n=1)
     #end def progress_cascades
+
+
+    def update_process_ids(self):
+        for sim in self.simulations:
+            sim.update_process_id()
+        #end for
+    #end def update_process_ids
 #end class ProjectManager
 
 
