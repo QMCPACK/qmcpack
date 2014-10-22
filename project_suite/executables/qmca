@@ -284,7 +284,7 @@ class Savable:
         fobj = open(fpath,'w')
         binary = cPickle.HIGHEST_PROTOCOL
         cPickle.dump(self,fobj,binary)
-        fobj.close()
+        # fobj.close()
         del fobj
         del binary
         return
@@ -296,7 +296,7 @@ class Savable:
         #end if
         fobj = open(fpath,'r')
         tmp = cPickle.load(fobj)
-        fobj.close()
+        # fobj.close()
         self.__dict__.clear()
         #self.__dict__=tmp.__dict__
         for k,v in tmp.__dict__.iteritems():
@@ -1687,6 +1687,7 @@ class DatAnalyzer(QBase):
     last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
 
     nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
+    whole_numbers = ['TotalSamples', 'NumOfWalkers']
 
     energy_sq = set(['Variance','LocalEnergy_sq'])
 
@@ -1765,7 +1766,7 @@ class DatAnalyzer(QBase):
         self.info.nsamples = data.shape[1]
         fobj = open(filepath,'r')
         variables = fobj.readline().split()[2:]
-        fobj.close()
+        # fobj.close()
         Econv  = convert(1.0,'Ha',self.info.units)
         Econv2 = Econv**2
         for i in range(len(variables)):
@@ -1838,9 +1839,18 @@ class DatAnalyzer(QBase):
             # total time
             stats.TotalTime = obj(mean=tt,var=0.0,error=0.0,kappa=1.0)
             data.TotalTime = 0*data.LocalEnergy
-            # TotalSamples 
+
+            # total samples
             stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0) ###
+            data.TotalSamples = 0*data.LocalEnergy
+
         #end if
+        if 'LocalEnergy' in data and 'NumOfWalkers' in data:
+            ts = data.NumOfWalkers.sum()
+
+            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0) ###
+            data.TotalSamples = 0*data.LocalEnergy
+
     #end def analyze
 
 
@@ -1902,20 +1912,59 @@ class DatAnalyzer(QBase):
         if first_series and not only_series:
             self.log('')
         #end if
-        if opt.desired_error is not None:
-            required_samples = int(((stats.LocalEnergy.error / opt.desired_error) ** 2) * stats.TotalSamples.mean)
-            factor = required_samples / stats.TotalSamples.mean
-            required_samples = int(sigfig_round(required_samples, 3))
-            factor = sigfig_round(factor, 3)
+
+        if opt.desired_error or opt.particle_number:
+            ratio = 1.0
             current_error = sigfig_round(stats.LocalEnergy.error, 1) 
-            phrase1 = "To change the current error of {} {} to".format(current_error, opt.units)
-            phrase2 = "change sample number to"
-            phrase3 = "multiplying current sample number by a factor of"
-            self.log("\n{:<50} {} {}".format(phrase1, opt.desired_error, opt.units))
-            self.log("{:<50} {}".format(phrase2, required_samples))
-            self.log("{:<50} {}\n".format(phrase3, factor))
+            if opt.desired_error:
+                ratio = stats.LocalEnergy.error / opt.desired_error
+                phrase = "{:<50} {} {}".format(
+                             "To change the current error of {} {} to ".format(
+                                 current_error, 
+                                 opt.units
+                             ),
+                         opt.desired_error,
+                         opt.units
+                         )
+                self.log("\n{:<50}".format(phrase)) 
+            #end if
+            if opt.particle_number:
+                ratio *= opt.particle_number[0]/opt.particle_number[1]
+                phrase = "{:<50} {}".format(
+                            "To increase current particle number of {} to".format(
+                                opt.particle_number[1]
+                            ),
+                         opt.particle_number[0]
+                         )
+                if opt.desired_error:
+                    self.log("{:<50}".format(phrase)) 
+                else:
+                    self.log("\n{:<50}".format(phrase)) 
+                    phrase = "{:<50} {} {}".format(
+                                "Maintaining current error bar of ",
+                                    current_error, 
+                                    opt.units
+                             )
+                    self.log("{:<50}".format(phrase)) 
+                #end if
+            #end if
+            required_samples = int((ratio ** 2) * stats.TotalSamples.mean)
+            required_samples = int(sigfig_round(required_samples, 3))
+            factor = required_samples / stats.TotalSamples.mean
+            factor = sigfig_round(factor, 3)
+            self.log("{:<50} {:,}".format(
+                        "Change sample number to",
+                        required_samples
+                        )
+                    )
+            self.log("{:<50} {}\n".format(
+                        "Multiplying current sample number by a factor of",
+                        factor
+                        )
+                    )
             exit()
         #end if
+
         if len(quantities)==1 and not opt.all_quantities:
             line = self.stat_line(quantities[0],prec='8.6f')
             self.log('{0}  series {1}  {2}'.format(prefix,series,line))
@@ -1954,7 +2003,10 @@ class DatAnalyzer(QBase):
             self.log('\n{0}  series {1}'.format(prefix,series))
             for qname in order:
                 if qname in stats:
-                    line = self.stat_line(qname)
+                    if qname in self.whole_numbers:
+                        line = self.stat_line(qname,prec='16.0f')
+                    else:
+                        line = self.stat_line(qname)
                     if qname=='CorrectedEnergy':
                         self.log(len(line)*'-',n=1)
                     #end if
@@ -1969,15 +2021,15 @@ class DatAnalyzer(QBase):
     def stat_line(self,qname,compress=False,prec='auto'):
         q = self.stats[qname]
         if prec=='auto':
-            if abs(q.error/q.mean) > 1e-8:
+            if (q.mean !=0.0 and abs(q.error/q.mean) > 1e-8):
                 d = int(max(2,1-floor(log(q.error)/log(10.))))
             else:
-                d = 8
+                d = 2
             #end if
             d = str(d)
             line = '{0:<22}=  {1:16.'+d+'f} +/- {2:16.'+d+'f}'
         else:
-            line = '{0} = {1:'+prec+'} +/- {2:'+prec+'}'
+            line = '{0:<22}=  {1:'+prec+'} +/- {2:'+prec+'}'
         #end if
         vals = [qname,q.mean,q.error]
         opt = self.options
@@ -2188,7 +2240,7 @@ QMCA examples:
         usage = '''usage: %prog [options] [file(s)]'''
         parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
         self.parser = parser
-        # available option letters: c, d, f, g, k, l, m, n, y, z
+        # available option letters: c, f, g, k, l, m, y, z
         parser.add_option('-v','--verbose',dest='verbose',
                           action='store_true',default=False,
                           help='Print detailed information (default=%default).'
@@ -2277,6 +2329,13 @@ QMCA examples:
                           type="float", default=None,
                           help='Show number of samples needed for desired error bar (default=%default).'
                           )
+        parser.add_option('-n', '--enlarge_system',dest='particle_number',
+                          type="int", nargs=2, default=None,
+                          help=('Show number of samples needed to maintain '
+                                'error bar on larger system: desired particle number ' 
+                                'first, current particle number second (default=%default)'
+                               )
+                         )
 
         unsupported = set('histogram image reblock report examples'.split())
 
