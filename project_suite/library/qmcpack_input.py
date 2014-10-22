@@ -1442,6 +1442,7 @@ class composite_builder(QIxml):
 sposet_builder = QIxmlFactory(
     name    = 'sposet_builder',
     types   = dict(bspline=bspline_builder,
+                   einspline=bspline_builder,
                    heg=heg_builder,
                    composite=composite_builder),
     typekey = 'type'
@@ -1643,7 +1644,7 @@ class chiesa(QIxml):
 
 class density(QIxml):
     tag = 'estimator'
-    attributes = ['name','type','delta']
+    attributes = ['name','type','delta','x_min','x_max','y_min','y_max','z_min','z_max']
     identifier = 'type'
 #end class density
 
@@ -2686,7 +2687,9 @@ class QmcpackInput(SimulationInput,Names):
             )
         particlesets.append(eps)
         if len(ions)>0:
-            #eps.randomsrc = 'ion0'  # don't do randomsrc by default
+            if sc!=None and 'bconds' in sc and tuple(sc.bconds)!=('p','p','p'):
+                eps.randomsrc = 'ion0'  
+            #end if
             ips = particleset(
                 name='ion0',
                 )

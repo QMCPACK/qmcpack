@@ -1024,6 +1024,43 @@ class Supercomputer(Machine):
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
             None
+        elif  self.queue_querier=='squeue':
+            self.job_states=dict(CG = 'exiting',
+                                 TO = 'timeout',
+                                 CA = 'failed',
+                                 F = 'failed',
+                                 NF = 'node_fail',
+                                 PD = 'waiting',
+                                 R = 'running',
+                                 S = 'suspended',
+                                 CD = 'complete'
+                                 )
+        elif  self.queue_querier=='sacct':
+            self.job_states=dict(CANCELLED = 'failed',  #long form
+                                 COMPLETED = 'complete',
+                                 COMPLETING = 'exiting',
+                                 CONFIGURING = 'waiting',
+                                 FAILED = 'failed',
+                                 PREMEEMPTED = 'failed',
+                                 PENDING = 'waiting',
+                                 NODE_FAIL = 'failed',
+                                 RESIZING = 'resizing',
+                                 RUNNING = 'running',
+                                 SUSPENDED = 'suspended',
+                                 TIMEOUT = 'failed',
+                                 CA = 'failed',        #short form
+                                 CD = 'complete',
+                                 CG = 'exiting',
+                                 CF = 'waiting',
+                                 F = 'failed',
+                                 PR = 'failed',
+                                 PD = 'waiting',
+                                 NF = 'failed',
+                                 RS = 'resizing',
+                                 R = 'running',
+                                 S = 'suspended',
+                                 TO = 'failed'
+                                 )
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
         #end if
@@ -1132,6 +1169,8 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = envs
                 )
+        elif launcher=='srun':  # Amos contribution from Ryan McAvoy
+            None # anything needed here?
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
 	    job.run_options.add(
 	    	np	= '-n '+str(job.processes),
@@ -1194,6 +1233,63 @@ class Supercomputer(Machine):
                         pid = int(spid)
                         jid,uname,wtime,nodes,status,loc = tokens
                         self.system_queue[pid] = status
+                    #end if
+                #end if
+            #end for
+        elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
+            out,err = Popen('squeue',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            lines = out.splitlines()
+            for line in lines:
+                tokens=line.split()
+                if len(tokens)>0:
+                    if '.' in tokens[0]:
+                        spid = tokens[0].split('.')[0]
+                    else:
+                        spid = tokens[0]
+                    #endif
+                    if spid.isdigit() and len(tokens)==8:
+                        pid = int(spid)
+                        jid,loc,name,uname,status,wtime,nodes,reason = tokens
+                        if status in self.job_states:
+                            self.system_queue[pid] = self.job_states[status]
+                        else:
+                            self.error('job state '+status+' is unrecognized')
+                        #end if
+                    #end if
+                #end if
+            #end for
+        elif self.queue_querier=='sacct': # contributed by Ryan McAvoy
+            out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            lines = out.splitlines()
+            for line in lines:
+                tokens=line.split()
+                if len(tokens)>0:
+                    if '.' in tokens[0]:
+                        spid = tokens[0].split('.')[0]
+                    else:
+                        spid = tokens[0]
+                    #endif
+                    #print tokens
+                    #print '----------'
+                    if spid.isdigit() and len(tokens)==6:  #if account is empty, only 6 tokens.
+
+                        pid = int(spid)
+                        jid,name,loc,cores,status,exit_code = tokens
+                        status = status.split('+')[0]  ## get rid of '+' in the end
+                        if status in self.job_states:
+                            self.system_queue[pid] = self.job_states[status]
+                        else:
+                            self.error('job state '+status+' is unrecognized')
+                    elif spid.isdigit() and len(tokens)==7:
+
+                        pid = int(spid)
+                        jid,name,loc,uname,cores,status,exit_code = tokens
+                        status = status.split('+')[0]  ## get rid of '+' in the end
+                        if status in self.job_states:
+                            self.system_queue[pid] = self.job_states[status]
+                        else:
+                            self.error('job state '+status+' is unrecognized')
+                        #end if
                     #end if
                 #end if
             #end for
@@ -1286,6 +1382,8 @@ class Supercomputer(Machine):
     def remove_job(self,job):
         if self.job_remover=='qdel':
             command = 'qdel '+str(job.system_id)
+        elif self.job_remover=='scancel':
+            command = 'scancel '+str(job.system_id)
         else:
             self.error('ability to remove job using '+self.job_remover+' has not yet been implemented')
         #endif
@@ -1351,6 +1449,12 @@ class Supercomputer(Machine):
                     pid = int(spid)
                     break
                 #end if
+            elif ' ' in line: # specialized for Amos?
+                spid = line.split(' ')[-1]
+                if spid.isdigit():
+                    pid = int(spid)
+                    break
+                #end if    
             #end if
         #end for
         return pid
@@ -1825,6 +1929,106 @@ class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 #end class Lonestar
 
 
+class ICMP_Machine(Supercomputer): # ICMP and Amos contributions from Ryan McAvoy
+    batch_capable      = True
+    executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'defq'
+        #end if
+        c= '#!/bin/bash -x\n'
+        c+='#SBATCH --export=ALL\n'
+        c+='#SBATCH -J {0}\n'.format(job.identifier)
+        c+='#SBATCH -p {0}\n'.format(job.queue)
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH --nodes {0}\n'.format(job.nodes)
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        return c
+    #end def write_job_header
+#end class ICMP_Machine
+
+
+class Komodo(ICMP_Machine):
+    name = 'komodo'
+#end class Komodo
+
+class Matisse(ICMP_Machine):
+    name = 'matisse'
+#end class Matisse
+
+
+class Amos(Supercomputer):
+    name = 'amos'
+
+    #requires_account   = True
+    batch_capable      = True
+    executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'debug'
+        #end if
+        if job.queue == 'debug':
+            base_partition = 1
+            max_time =1
+        elif job.queue == 'small':
+            base_partition = 1
+            max_time =24
+        elif job.queue == 'medium':
+            base_partition = 128
+            max_time =12
+        elif job.queue == 'large':
+            base_partition = 1024
+            max_time =6
+        elif job.queue == 'verylarge':
+            base_partition = 3072
+            max_time =6
+        #end if
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+        if job.nodes<base_partition:
+            self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be less than {1}\n  you requested: {2}'.format(job.queue,self.base_partition,job.nodes))
+        else:
+            partition = log(float(job.nodes)/base_partition)/log(2.)
+            if abs(partition-int(partition))>1e-6:
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+        #end if
+
+        c= '#!/bin/bash -x\n'
+        c+='#SBATCH --export=ALL\n'
+        #c+=#SBATCH -D /gpfs/sb/data/<project>/<user>/
+        c+='#SBATCH -J {0}\n'.format(job.identifier)
+        c+='#SBATCH -p {0}\n'.format(job.queue)
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH --nodes {0}\n'.format(job.nodes)
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        # c+='#SBATCH --mail-type=ALL'
+        # c+='#SBATCH --mail-user=<{0}>'
+
+        return c
+    #end def write_job_header
+#end class Amos
+
 
 
 #Known machines
@@ -1834,20 +2038,23 @@ for cores in range(1,128+1):
     Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
-#            nodes sockets cores ram qslots  qlaunch  qsubmit  qstatus   qdelete
-Jaguar(      18688,   2,     8,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-Kraken(       9408,   2,     6,   16,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-Taub(          400,   2,     6,   24,   50, 'mpirun', 'qsub',  'qstat' , 'qdel')
-OIC5(           28,   2,    16,  128, 1000, 'mpirun', 'qsub',  'qstat' , 'qdel')
-Edison(        664,   2,     8,   64,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-BlueWatersXE(22640,   2,    16,   64,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-Titan(       18688,   1,    16,   32,  100,  'aprun', 'qsub',  'qstat' , 'qdel')
-EOS(           744,   2,     8,   64, 1000,  'aprun', 'qsub',  'qstat' , 'qdel')
-Vesta(        2048,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
-Cetus(        1024,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
-Mira(        49152,   1,    16,   16,   10, 'runjob', 'qsub',  'qstata', 'qdel')
-Lonestar(    22656,   2,     6,   12,  128,  'ibrun', 'qsub',  'qstat' , 'qdel')
+#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
+Jaguar(      18688,   2,     8,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
+OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
+Edison(        664,   2,     8,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Titan(       18688,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+EOS(           744,   2,     8,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
+Vesta(        2048,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
+Cetus(        1024,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
+Mira(        49152,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
+Lonestar(    22656,   2,     6,   12,  128,  'ibrun',   'qsub',   'qstat',    'qdel')
+Matisse(        20,   2,     8,   64,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
+Komodo(         24,   2,     6,   48,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
+Amos(         5120,   1,    16,   16,  128,   'srun', 'sbatch',   'sacct', 'scancel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
