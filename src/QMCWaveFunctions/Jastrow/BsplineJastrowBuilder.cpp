@@ -72,6 +72,7 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
       BsplineFunctor<RealType> *functor = new BsplineFunctor<RealType>(cusp);
       functor->elementType = speciesA;
       int ig = sSet.findSpecies (speciesA);
+      functor->periodic = sourcePtcl->Lattice.SuperCellEnum == SUPERCELL_BULK;
       functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
       int jg=-1;
       if(speciesB.size())
@@ -82,11 +83,18 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
         functor->put (kids);
         if (functor->cutoff_radius < 1.0e-6)
         {
-          app_log()  << "  BsplineFunction rcut is currently zero.\n"
-                     << "  Setting to Wigner-Seitz radius = "
-                     << sourcePtcl->Lattice.WignerSeitzRadius << endl;
-          functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
-          functor->reset();
+          if(sourcePtcl->Lattice.SuperCellEnum == SUPERCELL_BULK)
+          {
+            app_log()  << "  BsplineFunction rcut is currently zero.\n"
+                       << "  Setting to Wigner-Seitz radius = "
+                       << sourcePtcl->Lattice.WignerSeitzRadius << endl;
+            functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
+            functor->reset();
+          }
+          else
+          {
+            APP_ABORT("BsplineJastrowBuilder::put  rcut must be provided for one body jastrow since boundary conditions are not periodic");
+          }
         }
         J1->addFunc (ig,functor,jg);
         success = true;
@@ -270,16 +278,24 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         }
         app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << endl;
         RadFuncType *functor = new RadFuncType(cusp);
+        functor->periodic      = targetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK;
         functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bool initialized_p=functor->put(kids);
         functor->elementType=pairType;
         if (functor->cutoff_radius < 1.0e-6)
         {
-          app_log()  << "  BsplineFunction rcut is currently zero.\n"
-                     << "  Setting to Wigner-Seitz radius = "
-                     << targetPtcl.Lattice.WignerSeitzRadius << endl;
-          functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-          functor->reset();
+          if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+          {
+            app_log()  << "  BsplineFunction rcut is currently zero.\n"
+                       << "  Setting to Wigner-Seitz radius = "
+                       << targetPtcl.Lattice.WignerSeitzRadius << endl;
+            functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+            functor->reset();
+          }
+          else
+          {
+            APP_ABORT("BsplineJastrowBuilder::put  rcut must be provided for two body jastrow since boundary conditions are not periodic");
+          }
         }
         //RPA INIT
         if(!initialized_p && init_mode =="rpa")

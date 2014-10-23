@@ -48,6 +48,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
   int ResetCount;
   int ReportLevel;
   bool notOpt;
+  bool periodic;
 
   ///constructor
   BsplineFunctor(real_type cusp=0.0) :
@@ -68,7 +69,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
         0.0, 0.0,  0.0,  1.0),
-    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false)
+    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -364,8 +365,15 @@ struct BsplineFunctor: public OptimizableFunctorBase
     rAttrib.add(radius,      "cutoff");
     rAttrib.put(cur);
     if (radius < 0.0)
-      app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
-                << cutoff_radius << ".\n";
+      if(periodic)
+      {
+        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
+                  << cutoff_radius << ".\n";
+      }
+      else
+      {
+        APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when not using periodic boundary conditions");
+      }
     else
       cutoff_radius = radius;
     if (NumParams == 0)
