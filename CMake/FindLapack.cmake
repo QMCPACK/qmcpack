@@ -83,7 +83,7 @@ if(${CMAKE_C_COMPILER} MATCHES "icc")
 else()
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -framework vecLib")
+    SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -framework Accelerate")
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
     SET(MAC_VECLIB 1 CACHE BOOL "use Mac Framework")
     MESSAGE(STATUS "Using Framework on Darwin.")
