@@ -1,4 +1,0 @@
-set -x
-autoheader
-/usr/bin/automake-1.6 --foreign --add-missing --copy
-autoconf
