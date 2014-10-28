@@ -2,7 +2,7 @@
 echo 
 echo '  You are not running autoconf/automake tools!'
 echo '  To build qmcpack, cmake, lapack/blas, hdf5 and boost are required.'
-echo '  Check http://code.google.com/p/qmcpack/wiki/BuildingPackage'
+echo '  Check http://www.qmcpack.org'
 echo
 
 tcmake=`which cmake`
