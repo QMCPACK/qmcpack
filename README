@@ -16,6 +16,8 @@ This method works with GNU, Intel, and IBM XLC compilers. When the libraries
 are installed in standard locations, e.g., /usr, /usr/local, there is no need
 to set the XYZ_HOME for XYZ package.
 
+See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
+
 * Set the environments (the examples below assume bash, Intel compilers and MKL library)
 
   export CXX=icpc
@@ -49,4 +51,4 @@ Once a sutiable toolchain file is found, follow these step (example on abe.ncsa.
 * cmake -DCMAKE_TOOLCHAIN_FILE=../config/AbeMvapich2.cmake -DCMAKE_VERBOSE_MAKEFILE=TRUE ..
 * make
 
-For more informaton, consult QMCPACK wiki at http://www.mcc.uiuc.edu/qmcpack
+For more informaton, consult QMCPACK pages at http://www.qmcpack.org and http://docs.qmcpack.org
