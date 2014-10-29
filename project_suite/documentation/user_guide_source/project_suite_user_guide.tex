@@ -21,7 +21,7 @@
 %     http://mirror.unl.edu/ctan/macros/latex/contrib/minted/minted.pdf
 %     also see minted.pdf in practical documentation
 %   running pdflatex:
-%     pdflatex -shell-escape project_suite_user_guide.tex
+%     pdflatex -shell-escape nexus_user_guide.tex
 \usepackage{minted}
 
 
@@ -120,10 +120,10 @@
     \hspace{1cm}\\
     \HRule\\
     \vspace{4mm}
-    \textbf{\fontsize{40}{45}\selectfont The Project Suite} \\ 
+    \textbf{\fontsize{40}{45}\selectfont The Nexus User Guide} \\ 
     \HRule\\
     \vspace{1cm}
-    \textbf{\fontsize{35}{40}\selectfont User Guide}\\
+    %\textbf{\fontsize{35}{40}\selectfont User Guide}\\
     \vspace{6cm}
     By Jaron T. Krogel \\
     \hspace{1cm}\\
@@ -141,7 +141,7 @@
 \pagebreak
 \chapter{Using this document} \label{usedoc}
 
-The Project Suite User Guide provides an overview of the Project Suite 
+The Nexus User Guide provides an overview of Nexus 
 (\ref{overview}), instructions on how to install it (\ref{installation}), 
 complete examples of electronic structure calculations using it 
 (\ref{examples}), a complete reference section (\ref{reference}), 
@@ -153,21 +153,21 @@ review articles and online resources listed under
  ``Quantum Monte Carlo: Theory and Practice'' (\ref{learn_qmc}) 
 before proceeding to the overview (\ref{overview}) and the examples 
 (\ref{examples}).  For those more experienced in QMC, or the impatient, 
-quickly visit ``Project Suite Installation'' (\ref{installation}) and see the 
+quickly visit ``Nexus Installation'' (\ref{installation}) and see the 
 examples section (\ref{examples}) for template calculations to begin 
-using the Project Suite immediately.  For fine-grained information 
-about the Project Suite's many features, consult 
-the ``Project Suite User Reference'' (\ref{reference}).
+using Nexus immediately.  For fine-grained information 
+about Nexus's many features, consult 
+the ``Nexus User Reference'' (\ref{reference}).
 If you cannot find what you need in this document, contact the main 
-developer of the Project Suite (Jaron Krogel), at krogeljt@ornl.gov 
+developer of Nexus (Jaron Krogel), at krogeljt@ornl.gov 
 (but please make a thorough search first!).
 
 
 
 \pagebreak
-\chapter{Overview of the \\Project Suite} \label{overview}
-\section{What the Project Suite is}
-The Project Suite is a collection of tools, written in Python, to perform 
+\chapter{Overview of Nexus} \label{overview}
+\section{What Nexus is}
+Nexus is a collection of tools, written in Python, to perform 
 complex electronic structure calculations and analyze the results.  The main 
 focus is currently on performing arbitrary Quantum Monte Carlo (QMC) 
 calculations with QMCPACK.  A single QMC calculation typically requires several 
@@ -175,12 +175,12 @@ previous calculations with other codes to produce a starting guess for the
 many-body wavefunction and convert it into a form that QMCPACK understands.  
 Managing the resulting array of calculations, and the flow of information 
 between them, quickly becomes unweildy to the researcher, demands a great 
-deal of human time, and increases the potential for human error.  The Project 
-Suite reduces both the human time required and potential for error by 
+deal of human time, and increases the potential for human error.  Nexus 
+reduces both the human time required and potential for error by 
 automating the total simulation process.  
 
-\section{What the Project Suite can do}
-The capabilities of the Project Suite currently include crystal structure 
+\section{What Nexus can do}
+The capabilities of Nexus currently include crystal structure 
 generation, standalone Density Functional Theory (DFT) calculations with PWSCF, 
 Hartree-Fock (HF) calculations of atoms with the SQD code (packaged with 
 QMCPACK), complete QMC calculations with QMCPACK (including wavefunction 
@@ -194,29 +194,29 @@ permits the user to focus on the high-level tasks of problem formulation and
 interpretation of the results without (in principle) becoming too involved 
 in the time-consuming, lower level details.
 
-\section{How the Project Suite is used}
-Use of the Project Suite currently involves writing a short Python script 
+\section{How Nexus is used}
+Use of Nexus currently involves writing a short Python script 
 describing the calculations to be performed.  This small script formed by the 
 user closely resembles an input file for electronic structure codes.  A key 
 difference is that this ``input file'' represents executable code, and so 
 variables are easily defined for use in expressions and more complicated 
 simulation workflows (\emph{e.g.} an equation of state) can be constructed 
 with if/else logic and for loops.  Knowledge of the Python programming language 
-is helpful to perform complex calculations, but not essential for use of the 
-Project Suite.  Starting from working ``input files'' such as those covered 
+is helpful to perform complex calculations, but not essential for use of  
+Nexus.  Starting from working ``input files'' such as those covered 
 in the ``Complete Examples'' section (\ref{examples}) is a good way to proceed. 
 
 
 \pagebreak
-\chapter{Project Suite Installation} \label{installation}
-Installation of the Project Suite can be accomplished by a single download 
+\chapter{Nexus Installation} \label{installation}
+Installation of Nexus can be accomplished by a single download 
 with Subversion (SVN) and setting a single environment variable provided a 
-working python environment exists. Follow the example below to download the 
-Project Suite:
+working python environment exists. Follow the example below to download  
+Nexus:
 \begin{shaded}
 \begin{verbatim}
 cd /your_download_path
-svn co https://subversion.assembla.com/svn/qmcdev/trunk/project_suite
+svn co https://subversion.assembla.com/svn/qmcdev/trunk/nexus
 \end{verbatim}
 \end{shaded}
 If you do not have access to the Assembla SVN repository, please make an 
@@ -224,24 +224,24 @@ account on assembla.com and email the lead developer of QMCPACK (Jeongnim Kim)
 at jnkim@ornl.gov to obtain access.
 
 To make your Python installation (must be Python 2.x as 3.x is not supported) 
-aware of the Project Suite, simply set the 
+aware of Nexus, simply set the 
 PYTHONPATH environment variable.  For example, in bash this would look like:
 \begin{shaded}
 \begin{verbatim}
-export PYTHONPATH=/your_download_path/project_suite/library
+export PYTHONPATH=/your_download_path/nexus/library
 \end{verbatim}
 \end{shaded}
 If you want to use the command line tools, add them to your path:
 \begin{shaded}
 \begin{verbatim}
-export PATH=/your_download_path/project_suite/executables:$PATH
+export PATH=/your_download_path/nexus/executables:$PATH
 \end{verbatim}
 \end{shaded}
-Add these to \emph{e.g.} your .bashrc file to make the Project Suite available 
+Add these to \emph{e.g.} your .bashrc file to make Nexus available 
 to future sessions.
 
 In addition to the standard Python installation, the \texttt{numpy} module must 
-be installed for the Project Suite to function at a basic level.  To realize 
+be installed for Nexus to function at a basic level.  To realize 
 the full range of functionality available, it is recommended that the 
 \texttt{scipy}, \texttt{matplotlib}, and \texttt{h5py} modules be installed as 
 well.  Many of these packages are already available in various supercomputing 
@@ -275,20 +275,20 @@ calculations because the supercell size, optimization process, DMC timestep and
 other key parameters may not be converged.  Pseudopotentials are provided 
 ``as is'' and should not be trusted without explicit validation.
 
-Complete examples of calculations performed with the Project Suite are provided 
+Complete examples of calculations performed with Nexus are provided 
 in the following sections.  These examples are intended to highlight basic 
-features of the Project Suite and act as templates for future calculations.  
-A complete description of the available features can be found in ``Project 
-Suite User Reference'' (section \ref{reference}).  If there is an example you 
+features of Nexus and act as templates for future calculations.  
+A complete description of the available features can be found in ``Nexus 
+User Reference'' (section \ref{reference}).  If there is an example you 
 would like to contribute, or if you feel an example on a particular topic is 
 needed, please contact the developer at krogeljt@ornl.gov to discuss the 
 possibilities.  
 
 To perform the example calculations yourself, consult the \texttt{examples} 
-directory in your Project Suite installation:
+directory in your Nexus installation:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/project_suite/examples
+/your_download_path/nexus/examples
 \end{verbatim}
 \end{shaded}
 The examples assume that you have working versions of \texttt{pw.x}, 
@@ -449,13 +449,13 @@ A brief description of each example is given below.
 
 \pagebreak
 \section{Simple QMC Calculations} \label{simple_qmc}
-The simplest QMC calculations that can be performed with the Project Suite 
+The simplest QMC calculations that can be performed with Nexus 
 involve five main stages:
 \begin{description}
-  \item[Configure Project Suite settings] \hfill \\
+  \item[Configure Nexus settings] \hfill \\
     The \texttt{settings} function allows you to specify where pseudopotentials 
     are located, whether to generate input files without running jobs, details 
-    of the machine you are on, and how often to have the Project Suite check 
+    of the machine you are on, and how often to have Nexus check 
     on the status of running jobs.  \index{settings}
 
   \item[Describe the physical system] \hfill \\
@@ -491,7 +491,7 @@ involve five main stages:
 
 
 For more information about the functions/objects mentioned above, consider 
-the examples in the following sections or consult ``Project Suite User 
+the examples in the following sections or consult ``Nexus User 
 Reference'' (section \ref{reference}).
 
 
@@ -500,7 +500,7 @@ Reference'' (section \ref{reference}).
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/project_suite/examples/simple_qmc/graphene_example
+/your_download_path/nexus/examples/simple_qmc/graphene_example
 \end{verbatim}
 \end{shaded}
 
@@ -514,13 +514,13 @@ be apparent.
 \begin{minted}{python}
 #! /usr/bin/env python
 
-from project import settings,ProjectManager,Job
-from project import generate_physical_system
-from project import loop,linear,vmc,dmc
+from nexus import settings,ProjectManager,Job
+from nexus import generate_physical_system
+from nexus import loop,linear,vmc,dmc
 from qmcpack_calculations import standard_qmc
 
 
-#general settings for the project suite
+#general settings for Nexus
 settings(
     pseudo_dir    = './pseudopotentials',# directory with all pseudopotentials
     sleep         = 3,                   # check on runs every 'sleep' seconds
@@ -801,7 +801,7 @@ The total energy quoted above probably will not match the one you produce
 due to different compilation environments and the probabilistic nature of 
 QMC.  They should not, however differ by three sigma.
 
-Take some time to inspect the input files generated by the Project Suite and 
+Take some time to inspect the input files generated by Nexus and 
 the output files from PWSCF and QMCPACK.  The runs were performed in 
 sub-directories of the \texttt{runs} directory.  The order of execution of 
 the simulations is roughly \texttt{scf}, \texttt{nscf}, \texttt{nscfopt}, 
@@ -868,7 +868,7 @@ or similar.
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/project_suite/examples/simple_qmc/c20_example
+/your_download_path/nexus/examples/simple_qmc/c20_example
 \end{verbatim}
 \end{shaded}
 
@@ -886,13 +886,13 @@ non-self-consistent DFT calculations).
 \begin{minted}{python}
 #! /usr/bin/env python
 
-from project import settings,ProjectManager,Job
-from project import Structure,PhysicalSystem
-from project import loop,linear,vmc,dmc
+from nexus import settings,ProjectManager,Job
+from nexus import Structure,PhysicalSystem
+from nexus import loop,linear,vmc,dmc
 from qmcpack_calculations import basic_qmc
 
 
-#general settings for the project suite
+#general settings for Nexus
 settings(
     pseudo_dir    = './pseudopotentials',# directory with all pseudopotentials
     sleep         = 3,                   # check on runs every 'sleep' seconds
@@ -1156,7 +1156,7 @@ Again, the total energy quoted above probably will not match the one you produce
 due to different compilation environments and the probabilistic nature of 
 QMC.  The results should still be statistically comparable.
 
-The directory trees generated by the Project Suite for C 20 have a similar structure 
+The directory trees generated by Nexus for C 20 have a similar structure 
 to the graphene example.  Note the absence of the \texttt{nscf} runs.  The order 
 of execution of the simulations is \texttt{scf}, \texttt{opt}, then \texttt{qmc}.
 
@@ -1191,22 +1191,22 @@ results
 
 
 \pagebreak
-\chapter{Project Suite \\User Reference} \label{reference}
+\chapter{Nexus User Reference} \label{reference}
 Pending.
 
 \section{Reading what you wrote}
 
-\section{Project Suite settings: global state and user-specific information}
+\section{Nexus settings: global state and user-specific information}
 The first section of a project script is often dedicated to providing 
 information regarding the local machine, the location of various files, and 
 the desired behavior of the \texttt{ProjectManager}.  This information is 
-communicated to the Project Suite through the \texttt{settings} function. 
+communicated to Nexus through the \texttt{settings} function. 
 The settings function is available in the \texttt{project} module.  To make 
 \texttt{settings} available in your project script, use the following import 
-statement:
+statement:\newline
 \HRule
 \begin{minted}{python}
-from project import settings
+from nexus import settings
 \end{minted}
 \HRule
 
@@ -1281,9 +1281,9 @@ settings(
 %\end{shaded}
 %it should be clear what is happening.
 %
-%\subsection{\bu{Interacting with Project Suite objects}}
-%All objects in the Project Suite behave and can be interacted with in a 
-%similar way.  Each object you encounter that is made by the Project Suite 
+%\subsection{\bu{Interacting with Nexus objects}}
+%All objects in Nexus behave and can be interacted with in a 
+%similar way.  Each object you encounter that is made by Nexus 
 %can be used in the same way as \texttt{obj} objects from the \texttt{generic} 
 %module
 %
@@ -1444,7 +1444,7 @@ is accurate to the energy scale you care about in your production QMC
 calcuation.  For systems with a small number of valence electrons, a cutoff of 
 around 200 Ry is often sufficient.  To obtain the kinetic energy from a PWSCF 
 calculation the \texttt{pw2casino.x} post-processing tool can be used.  In 
-the Project Suite one has the option to compute the kinetic energy by setting 
+Nexus one has the option to compute the kinetic energy by setting 
 the \texttt{kinetic\_E} flag in the \texttt{standard\_qmc} or 
 \texttt{basic\_qmc} convenience functions. 
 
@@ -1462,7 +1462,7 @@ of interest.
 In QMCPACK, the B-spline mesh is controlled with the \texttt{meshfactor} 
 keyword.  Larger values correspond to finer meshes.  A value of $1.0$ usually 
 gives a similar quality representation as the original planewave calculation. 
-Control of this parameter is made available in the Project Suite through the 
+Control of this parameter is made available in Nexus through the 
 \texttt{meshfactor} keyword in the \texttt{standard\_qmc} or 
 \texttt{basic\_qmc} convenience functions. 
 
@@ -1504,12 +1504,12 @@ something close to $100,000\times (\#~of~free~parameters)^2$.  For B-spline
 functions, the number of free parameters is the number of control points, or knots.
 
 The number of samples is controlled with the \texttt{samples} keyword in 
-QMCPACK.  Control of this parameter is made available in the Project Suite 
+QMCPACK.  Control of this parameter is made available in Nexus 
 through the \texttt{samples} keyword in the \texttt{linear} or 
 \texttt{cslinear} convenience functions (Which are often used in conjunction 
 with \texttt{standard\_qmc} or \texttt{basic\_qmc}).  For a B-spline 
 correlation factor, the number of free parameters/knots is indicated by the 
-\texttt{size} keyword in either QMCPACK or the Project Suite.
+\texttt{size} keyword in either QMCPACK or Nexus.
 
 
 \section{Finite size effects: k-points, supercells, and corrections}
@@ -1538,7 +1538,7 @@ the number of k-points).  Finally, corrections for correlation-related
 finite size effects are computed during the QMC run and added to the result 
 by hand in post-processing the data.
 
-In the Project Suite, the supercell size is controlled through the 
+In Nexus, the supercell size is controlled through the 
 \texttt{tiling} parameter in the \texttt{generate\_physical\_system}, 
 \texttt{generate\_structure}, \texttt{Structure}, or \texttt{Crystal} 
 convenience functions.  Supercells can also be constructed by tiling exising 
@@ -1579,7 +1579,7 @@ is chosen that produces a bias smaller than the energy scale of interest.
 For very high accuracy, one uses the total energy as a function of timestep to 
 extrapolate to the zero time limit.
 
-The DMC timestep is made available in the Project Suite through the 
+The DMC timestep is made available in Nexus through the 
 \texttt{timestep} parameter of the \texttt{dmc} convenience function 
 (which is often used in conjuction with the \texttt{standard\_qmc},  
 \texttt{basic\_qmc}, \texttt{generate\_qmcpack}, or \texttt{Qmcpack} 
@@ -1620,11 +1620,11 @@ occasionally explicitly check the magnitude of the population control bias for
 the system under study since predictions have been made that it will 
 eventually diverge exponentially with the number of particles in the system.
 
-The DMC walker population can be directly controlled in QMCPACK or the Project 
-Suite through the \texttt{samples} (total walker population) or 
+The DMC walker population can be directly controlled in QMCPACK or Nexus 
+through the \texttt{samples} (total walker population) or 
 \texttt{samplesperthread} (walkers per OpenMP thread) keywords in the VMC 
-block directly proceeding DMC (\texttt{vmc} convenience function in the 
-Project Suite).  If you opt to use the \texttt{samples} keyword, check that 
+block directly proceeding DMC (\texttt{vmc} convenience function in  
+Nexus).  If you opt to use the \texttt{samples} keyword, check that 
 each thread in the calculation will have at least a few walkers.
 
 
@@ -1652,7 +1652,7 @@ wavefunction; it is not covered in any detail here) to get a lower bound on
 how large the fixed node error is in standard Slater-Jastrow calculations.
 
 To perform a calculation of this type (scanning over orbitals from different 
-functionals) with the Project Suite, the DFT functional can be selected 
+functionals) with Nexus, the DFT functional can be selected 
 with the \texttt{functional} keyword in the  \texttt{standard\_qmc} or 
 \texttt{basic\_qmc} convenience functions.  If you are using pseudopotentials 
 generated for use in DFT, you should maintain consistency between the 
@@ -1713,7 +1713,7 @@ locality approximation as the system becomes larger than several atoms, the
 second version fixes this oversight).
 
 One can select whether to use the locality approximation or T-moves 
-(version 1!) in QMCPACK from within the Project Suite by setting the 
+(version 1!) in QMCPACK from within Nexus by setting the 
 parameter \texttt{nonlocalmoves} to True or False in the \texttt{dmc} 
 convenience function.
 
@@ -1732,7 +1732,7 @@ available within QMCPACK.
 \pagebreak
 \chapter{Recommended Reading} \label{reading}
 The sections below contain information, or at least links to information, 
-that should be helpful for anyone who wants to use the Project Suite, but who 
+that should be helpful for anyone who wants to use Nexus, but who 
 is not an expert in one of the following areas: installing python and related 
 modules, installing PWSCF and QMCPACK, the Python programming language, and 
 the theory and practice of Quantum Monte Carlo.  
@@ -1760,7 +1760,7 @@ the theory and practice of Quantum Monte Carlo.
   See also: \url{http://qmcpack.cmscc.org/}\\
   \subsubsection{Developer's version:} 
   Download: svn co https://subversion.assembla.com/svn/qmcdev/qe4.3.2 \\
-  (QE 5.0 is not currently supported in the Project Suite)\\
+  (QE 5.0 is not currently supported in Nexus)\\
   Installation instructions: See section 2 of the User Guide (user\_guide.pdf) 
   found in the Doc directory of the distribution.
 
@@ -1790,7 +1790,7 @@ intrinsic data types and standard libraries look at Library Reference.
 \end{center}
 
 \subsection{NumPy}
-Other than the Python Standard Library, the main library/module the Project Suite 
+Other than the Python Standard Library, the main library/module Nexus 
 makes heavy use of is NumPy.  NumPy provides a convenient and fairly 
 fast implementation of multi-dimensional arrays and related functions, much like 
 MATLAB.  If you want to learn about NumPy arrays, the NumPy 
@@ -1808,7 +1808,7 @@ NumPy for MATLAB Users.
 \end{center}
 
 \subsection{Matplotlib}
-Plotting in the Project Suite is currently handled by Matplotlib.  If you want 
+Plotting in Nexus is currently handled by Matplotlib.  If you want 
 to learn more about plotting with Matplotlib, the Pyplot Tutorial is a good place 
 to start.  More detailed information is in the User's Guide.  Sometimes Examples 
 provide the fastest way to learn.
@@ -1822,8 +1822,8 @@ provide the fastest way to learn.
 \end{center}
 
 \subsection{Scipy and H5Py}
-The Project Suite also occasionally uses functionality from SciPy and H5Py.  
-Learning more about them is unlikely to help you interact with the Project Suite.  
+Nexus also occasionally uses functionality from SciPy and H5Py.  
+Learning more about them is unlikely to help you interact with Nexus.  
 However, they are quite valuable on their own.  SciPy provides access to 
 special functions, numerical integration, optimization, interpolation, fourier 
 transforms, eigenvalue solvers, and statistical analysis.  To get an overview, 

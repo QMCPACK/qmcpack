@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from project import settings
+from nexus import settings
 
 
 settings(

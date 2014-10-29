@@ -1,17 +1,17 @@
 \contentsline {chapter}{Contents}{ii}{section*.1}
 \contentsline {chapter}{\chapternumberline {1}Using this document}{1}{chapter.1}
-\contentsline {chapter}{\chapternumberline {2}Overview of the \\Project Suite}{2}{chapter.2}
-\contentsline {section}{\numberline {2.1}What the Project Suite is}{2}{section.2.1}
-\contentsline {section}{\numberline {2.2}What the Project Suite can do}{2}{section.2.2}
-\contentsline {section}{\numberline {2.3}How the Project Suite is used}{2}{section.2.3}
-\contentsline {chapter}{\chapternumberline {3}Project Suite Installation}{4}{chapter.3}
+\contentsline {chapter}{\chapternumberline {2}Overview of Nexus}{2}{chapter.2}
+\contentsline {section}{\numberline {2.1}What Nexus is}{2}{section.2.1}
+\contentsline {section}{\numberline {2.2}What Nexus can do}{2}{section.2.2}
+\contentsline {section}{\numberline {2.3}How Nexus is used}{2}{section.2.3}
+\contentsline {chapter}{\chapternumberline {3}Nexus Installation}{4}{chapter.3}
 \contentsline {chapter}{\chapternumberline {4}Complete Examples}{6}{chapter.4}
 \contentsline {section}{\numberline {4.1}Simple QMC Calculations}{7}{section.4.1}
 \contentsline {subsection}{Example: Graphene Sheet DMC}{8}{section*.2}
 \contentsline {subsection}{Example: C 20 Molecule DMC}{16}{section*.3}
-\contentsline {chapter}{\chapternumberline {5}Project Suite \\User Reference}{23}{chapter.5}
+\contentsline {chapter}{\chapternumberline {5}Nexus User Reference}{23}{chapter.5}
 \contentsline {section}{\numberline {5.1}Reading what you wrote}{23}{section.5.1}
-\contentsline {section}{\numberline {5.2}Project Suite settings: global state and user-specific information}{23}{section.5.2}
+\contentsline {section}{\numberline {5.2}Nexus settings: global state and user-specific information}{23}{section.5.2}
 \contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {How to use the \texttt {settings} function}}\mathsurround \z@ $\relax }}{23}{section*.4}
 \contentsline {subsection}{\textbf {\relax $\@@underline {\hbox {Accessing settings data}}\mathsurround \z@ $\relax }}{24}{section*.5}
 \contentsline {chapter}{\chapternumberline {6}QMC Practice \\in a Nutshell}{25}{chapter.6}
