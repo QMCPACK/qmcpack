@@ -51,6 +51,27 @@ class SimTool(obj):
         #end for
     #end def write_state
 
+
+    def write_state_all(self,fields=[]):
+        if len(fields)==0:
+            fields = self.indicators
+        #end if
+        forbidden = set(fields)-set(self.fields)
+        if len(forbidden)>0:
+            print 'unrecognized fields encountered:'
+            for f in forbidden:
+                print '  ',f
+            #end for
+            exit()
+        #end if
+        for i in range(len(self.paths)):
+            path = self.paths[i]
+            sim  = self.sims[i]
+            print path
+            print sim
+        #end for
+    #end def write_state_all
+
                 
     def backup(self):
         for path in self.paths:
@@ -89,6 +110,9 @@ class SimTool(obj):
             sim  = self.sims[i]
             for ind in inds:
                 sim[ind] = val
+                if ind=='submitted' and val==0:
+                    sim.process_id = None
+                #end if
             #end for
             sim.save(path)
         #end for
@@ -101,7 +125,7 @@ if __name__=='__main__':
     parser = OptionParser()
     (opts,inargs) = parser.parse_args()
 
-    allowed_commands = ['show','complete','reset','set','unset','backup','restore']
+    allowed_commands = ['show','showall','complete','reset','set','unset','backup','restore']
     if len(inargs)==0:
         print 'simtool usage:'
         print '  allowed commands are'
@@ -146,6 +170,8 @@ if __name__=='__main__':
 
     if command=='show':
         st.write_state(args)
+    elif command=='showall':
+        st.write_state_all(args)
     elif command=='complete':
         inds = ['setup','sent_files','submitted','finished','got_output','analyzed']
         st.set_indicators(inds)
