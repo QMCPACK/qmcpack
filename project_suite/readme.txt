@@ -1,7 +1,7 @@
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-||    The Project Suite    ||
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%
+||    Nexus    ||
+%%%%%%%%%%%%%%%%%
 
 
 Author:    Jaron T. Krogel
@@ -13,36 +13,21 @@ Author:    Jaron T. Krogel
 | Contents |
 ~~~~~~~~~~~~
   - License Agreement
-  - For Project Suite Users
-  - For Project Suite Developers
+  - For Nexus Users
 
 
 ~~~~~~~~~~~~~~~~~~~~~
 | License Agreement |
 ~~~~~~~~~~~~~~~~~~~~~
-  - put one here
+  - since Nexus is currently distributed with QMCPACK it shares the same license
+  - see ../LICENSE
 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-| For Project Suite Users |
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  - For installation and use, see the Project Suite User Guide
+~~~~~~~~~~~~~~~~~~~
+| For Nexus Users |
+~~~~~~~~~~~~~~~~~~~
+  - For installation and use, see the Nexus User Guide
     |
-    - ./documentation/project_suite_user_guide.pdf
-
-  - Only the contents of the documentation, examples, executables, 
-     and library directories are relevant.  Ignore the source directory.
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-| For Project Suite Developers | 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  - Development files are in the source directory
-
-  - Make updates to source, test, then update executables 
-     and library from there.
-
-  - The executables and library directories should contain the most 
-     stable version of the code.
+    - ./documentation/nexus_user_guide.pdf
 
 
