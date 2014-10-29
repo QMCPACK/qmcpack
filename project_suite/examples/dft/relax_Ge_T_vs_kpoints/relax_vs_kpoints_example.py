@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
-from project import settings
-from project import Structure,PhysicalSystem
-from project import generate_pwscf,Job
-from project import ProjectManager
+from nexus import settings
+from nexus import Structure,PhysicalSystem
+from nexus import generate_pwscf,Job
+from nexus import ProjectManager
 
 
 

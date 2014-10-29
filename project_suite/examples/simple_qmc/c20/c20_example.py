@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-from project import settings,ProjectManager,Job
-from project import Structure,PhysicalSystem
-from project import loop,linear,vmc,dmc
+from nexus import settings,ProjectManager,Job
+from nexus import Structure,PhysicalSystem
+from nexus import loop,linear,vmc,dmc
 from qmcpack_calculations import basic_qmc
 
 

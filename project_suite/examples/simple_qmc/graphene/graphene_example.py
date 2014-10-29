@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-from project import settings,ProjectManager,Job
-from project import generate_physical_system
-from project import loop,linear,vmc,dmc
+from nexus import settings,ProjectManager,Job
+from nexus import generate_physical_system
+from nexus import loop,linear,vmc,dmc
 from qmcpack_calculations import standard_qmc
 
 
