@@ -7,7 +7,7 @@ from nexus import ProjectManager
 
 
 
-# set global parameters of project suite
+# set global parameters of nexus
 settings(
     pseudo_dir    = './pseudopotentials', # directory with pseudopotentials
     generate_only = 0,                    # only generate input files, T/F

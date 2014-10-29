@@ -6,7 +6,7 @@ from nexus import loop,linear,vmc,dmc
 from qmcpack_calculations import standard_qmc
 
 
-#general settings for the project suite
+#general settings for nexus
 settings(
     pseudo_dir    = './pseudopotentials',# directory with all pseudopotentials
     sleep         = 3,                   # check on runs every 'sleep' seconds
