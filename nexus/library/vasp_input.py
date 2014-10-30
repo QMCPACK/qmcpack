@@ -1260,6 +1260,7 @@ def generate_any_vasp_input(**kwargs):
     # check for leftover keywords
     if len(kwargs)>0:
         VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
+    #end if
 
     # set potcar
     if vf.pseudos!=None:

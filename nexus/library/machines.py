@@ -2017,10 +2017,9 @@ class Amos(Supercomputer):
                 partition = log(float(job.nodes)/base_partition)/log(2.)
                 if abs(partition-int(partition))>1e-6:
                     self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
-            elif job.nodes != 3072 and job.nodes != 4096
+            elif job.nodes != 3072 and job.nodes != 4096:
                 self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be 3072 or 4096 you requested {1}'.format(self.name,job.nodes))
-
-
+            #end if
         #end if
 
         c= '#!/bin/bash -x\n'
