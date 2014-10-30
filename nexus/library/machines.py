@@ -1982,18 +1982,23 @@ class Amos(Supercomputer):
         #end if
         if job.queue == 'debug':
             base_partition = 1
+            max_partition = 32
             max_time =1
         elif job.queue == 'small':
             base_partition = 1
+            max_partition = 64
             max_time =24
         elif job.queue == 'medium':
             base_partition = 128
+            max_partition = 512
             max_time =12
         elif job.queue == 'large':
             base_partition = 1024
+            max_partition = 2048
             max_time =6
         elif job.queue == 'verylarge':
             base_partition = 3072
+            max_partition = 4096
             max_time =6
         #end if
         job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
@@ -2005,10 +2010,17 @@ class Amos(Supercomputer):
         #end if
         if job.nodes<base_partition:
             self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be less than {1}\n  you requested: {2}'.format(job.queue,self.base_partition,job.nodes))
+        elif job.nodes>max_partition:
+            self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
         else:
-            partition = log(float(job.nodes)/base_partition)/log(2.)
-            if abs(partition-int(partition))>1e-6:
-                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+            if job.queue != 'verylarge':
+                partition = log(float(job.nodes)/base_partition)/log(2.)
+                if abs(partition-int(partition))>1e-6:
+                    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+            elif job.nodes != 3072 and job.nodes != 4096
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be 3072 or 4096 you requested {1}'.format(self.name,job.nodes))
+
+
         #end if
 
         c= '#!/bin/bash -x\n'

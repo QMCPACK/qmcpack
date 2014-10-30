@@ -24,6 +24,7 @@ from numpy import arange,array
 from generic import obj
 from developer import unavailable
 from xmlreader import XMLreader
+from plotting import *
 #QmcpackAnalyzer classes imports
 from qaobject  import QAobject
 from qmcpack_analyzer_base import QAanalyzer,QAanalyzerCollection
@@ -691,7 +692,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         mlines  &= not alloff
         show    &= not alloff
         shw = show
-        from plotting import *
         offset = int(offset)
         id = self.info.input.get('project').id
         sdata = obj()
