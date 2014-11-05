@@ -37,6 +37,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, string& sources)
     Dmax=elns.Lattice.SimulationCellRadius;
     Volume=elns.Lattice.Volume;
   }
+  else
+    Volume=1.0; //open bcs
   NumBins=static_cast<int>(Dmax/Delta);
   Delta=Dmax/static_cast<RealType>(NumBins);
   DeltaInv=1.0/Delta;
@@ -236,7 +238,24 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
   ////resize(nbins);
   //if(debug == "yes")
   //  gof_r.resize(gof_r_prefix.size(),NumBins);
+
+  report();
+
   return true;
+}
+
+  
+void PairCorrEstimator::report()
+{
+  app_log()<<"PairCorrEstimator report"<<endl;
+  app_log()<<"  num_species = "<< num_species <<endl;
+  app_log()<<"  Volume      = "<< Volume <<endl;
+  app_log()<<"  Dmax        = "<< Dmax <<endl;
+  app_log()<<"  NumBins     = "<< NumBins <<endl;
+  app_log()<<"  Delta       = "<< Delta <<endl;
+  app_log()<<"  DeltaInv    = "<< DeltaInv <<endl;
+  //app_log()<<"  x = "<< x <<endl;
+  app_log()<<"end PairCorrEstimator report"<<endl;
 }
 
 bool PairCorrEstimator::get(std::ostream& os) const

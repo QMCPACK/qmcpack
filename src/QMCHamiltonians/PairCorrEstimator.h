@@ -56,6 +56,8 @@ public:
   bool get(std::ostream& os) const;
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+  void report();
+
 private:
   ///number of bins
   int NumBins;
