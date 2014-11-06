@@ -21,7 +21,7 @@ See below for details of
 - [How to do a quick install and build variants](@ref quickly)
 - [Installing QMCPACK on Ubuntu 14 Linux](@ref ubuntubuild)
 - [Installing QMCPACK on CentOS 7 Linux](@ref centosbuild)
-- [Installing QMCPACK on Mac OS X 10.9 Mavericks using Macports](@ref macbuild)
+- [Installing QMCPACK on Mac OS X 10.9 Mavericks and 10.10 Yosemite using Macports](@ref macbuild)
 
 \section pre_sec Required tools and libraries
 
@@ -185,7 +185,7 @@ ls -l bin/qmcapp
 
 To build the documentation you will also need to install graphviz and doxygen.
 
-\section macbuild Installing QMCPACK on Mac OS X 10.9 Mavericks using Macports
+\section macbuild Installing QMCPACK on Mac OS X 10.9 Mavericks or 10.10 Yosemite using Macports
 @note We assume that you are working in the qmcpack directory.
 @warning This build will fail if the standalone einspline library is in /usr/local. Remove the einspline include files, archive libraries, and rerun cmake if this occurs.
 
@@ -195,6 +195,8 @@ These instructions assume a fresh installation of macports
 and for consistency with current Linux distributions, use the gcc 4.8.2
 compiler. It is vital to ensure matching compilers/options for all
 packages and to force use of what is installed in /opt/local
+
+For compatibility with Yosemite we switched to using the Accelerate framework instead of Veclib in October 2014.
 
 Follow the Macports install instructions https://www.macports.org/install.php
 
