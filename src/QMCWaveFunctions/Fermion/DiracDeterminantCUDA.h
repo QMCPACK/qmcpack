@@ -45,14 +45,18 @@ protected:
   /////////////////////////////////////////////////////
   int RowStride;
   size_t AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
-         AinvColkOffset, gradLaplOffset, newGradLaplOffset, workOffset;
+         AinvColkOffset, gradLaplOffset, newGradLaplOffset, 
+         AWorkOffset, AinvWorkOffset;
   gpu::host_vector<CudaRealType*> UpdateList;
   gpu::device_vector<CudaRealType*> UpdateList_d;
   gpu::host_vector<updateJob> UpdateJobList;
   gpu::device_vector<updateJob> UpdateJobList_d;
-  vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList, AinvDeltaList,
-         AinvColkList, gradLaplList, newGradLaplList, workList, GLList;
-  gpu::device_vector<CudaRealType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, AinvDeltaList_d, AinvColkList_d, gradLaplList_d, newGradLaplList_d, workList_d, GLList_d;
+  vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList,
+                        AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
+                        AWorkList, AinvWorkList, GLList;
+  gpu::device_vector<CudaRealType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
+                                    AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
+                                    newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
   gpu::device_vector<CudaRealType> ratio_d;
   gpu::host_vector<CudaRealType> ratio_host;
   gpu::device_vector<CudaRealType> gradLapl_d;
@@ -102,8 +106,10 @@ protected:
     GLList_d.resize(numWalkers);
     newGradLaplList.resize(numWalkers);
     newGradLaplList_d.resize(numWalkers);
-    workList.resize(numWalkers);
-    workList_d.resize(numWalkers);
+    AWorkList.resize(numWalkers);
+    AinvWorkList.resize(numWalkers);
+    AWorkList_d.resize(numWalkers);
+    AinvWorkList_d.resize(numWalkers);
     iatList.resize(numWalkers);
     iatList_d.resize(numWalkers);
     // HACK HACK HACK
@@ -162,7 +168,8 @@ public:
     AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
     AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
     newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
-    workOffset        = pool.reserve(cuda_inverse_many_double_worksize(RowStride));
+    AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
+    AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
     Phi->reserve(pool);
   }
 

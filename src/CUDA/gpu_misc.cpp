@@ -14,6 +14,7 @@ cudaEvent_t gradientSyncTwoBodyEvent;
 cudaEvent_t ratioSyncDiracEvent;
 cudaEvent_t ratioSyncOneBodyEvent;
 cudaEvent_t ratioSyncTwoBodyEvent;
+cublasHandle_t cublasHandle;
 
 
 void
@@ -33,6 +34,37 @@ initCUDAEvents()
   cudaEventCreateWithFlags(&ratioSyncDiracEvent, cudaEventDisableTiming);
   cudaEventCreateWithFlags(&ratioSyncOneBodyEvent, cudaEventDisableTiming);
   cudaEventCreateWithFlags(&ratioSyncTwoBodyEvent, cudaEventDisableTiming);
+}
+
+void
+initCublas()
+{
+  cublasCreate(&cublasHandle);
+}
+
+void
+finalizeCUDAStreams()
+{
+  cudaStreamDestroy(kernelStream);
+  cudaStreamDestroy(memoryStream);
+}
+
+void
+finalizeCUDAEvents()
+{
+  cudaEventDestroy(syncEvent);
+  cudaEventDestroy(gradientSyncDiracEvent);
+  cudaEventDestroy(gradientSyncOneBodyEvent);
+  cudaEventDestroy(gradientSyncTwoBodyEvent);
+  cudaEventDestroy(ratioSyncDiracEvent);
+  cudaEventDestroy(ratioSyncOneBodyEvent);
+  cudaEventDestroy(ratioSyncTwoBodyEvent);
+}
+
+void
+finalizeCublas()
+{
+  cublasDestroy(cublasHandle);
 }
 
 void

@@ -38,7 +38,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first)
   AinvColkList_d("DiracDeterminantBase::AinvColkList_d"),
   gradLaplList_d("DiracDeterminantBase::gradLaplList_d"),
   newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
-  workList_d("DiracDeterminantBase::workList_d"),
+  AWorkList_d("DiracDeterminantBase::AWorkList_d"),
+  AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
   GLList_d("DiracDeterminantBase::GLList_d"),
   ratio_d("DiracDeterminantBase::ratio_d"),
   gradLapl_d("DiracDeterminantBase::gradLapl_d"),
@@ -68,7 +69,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
   AinvColkList_d("DiracDeterminantBase::AinvColkList_d"),
   gradLaplList_d("DiracDeterminantBase::gradLaplList_d"),
   newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
-  workList_d("DiracDeterminantBase::workList_d"),
+  AWorkList_d("DiracDeterminantBase::AWorkList_d"),
+  AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
   GLList_d("DiracDeterminantBase::GLList_d"),
   ratio_d("DiracDeterminantBase::ratio_d"),
   gradLapl_d("DiracDeterminantBase::gradLapl_d"),
@@ -387,19 +389,26 @@ DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
   for (int iw=0; iw<walkers.size(); iw++)
   {
     Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-    AList[iw]    = &(data.data()[AOffset]);
-    AinvList[iw] = &(data.data()[AinvOffset]);
-    workList[iw] = &(data.data()[workOffset]);
+    AList[iw]        = &(data.data()[AOffset]);
+    AinvList[iw]     = &(data.data()[AinvOffset]);
+    AWorkList[iw]    = &(data.data()[AWorkOffset]);
+    AinvWorkList[iw] = &(data.data()[AinvWorkOffset]);
   }
-  AList_d = AList;
-  AinvList_d = AinvList;
-  workList_d = workList;
+  AList_d        = AList;
+  AinvList_d     = AinvList;
+  AWorkList_d    = AWorkList;
+  AinvWorkList_d = AinvWorkList;
+
   // Copy A into Ainv
-  multi_copy (AinvList_d.data(), AList_d.data(),
-              NumPtcls*RowStride, walkers.size());
+  //multi_copy (AinvList_d.data(), AList_d.data(),
+  //            NumPtcls*RowStride, walkers.size());
+
   // Invert
-  cuda_inverse_many_double (AinvList_d.data(), workList_d.data(),
-                            NumPtcls, RowStride, walkers.size());
+  bool useDoublePrecision = true;
+  cublas_inverse (gpu::cublasHandle, AList_d.data(), AinvList_d.data(),
+                  AWorkList_d.data(), AinvWorkList_d.data(), 
+                  NumPtcls, RowStride, walkers.size(), useDoublePrecision);
+
   // HACK HACK HACK
 //     app_log() << "After recompute:\n";
 //     double A[NumPtcls*NumPtcls], work[NumPtcls*NumPtcls];

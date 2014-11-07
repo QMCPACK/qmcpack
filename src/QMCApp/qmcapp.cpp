@@ -139,6 +139,8 @@ int main(int argc, char **argv)
     qmc->execute();
   if(qmc)
     delete qmc;
+  if(useGPU)
+    Finalize_CUDA();
   OHMMS::Controller->finalize();
   return 0;
 }

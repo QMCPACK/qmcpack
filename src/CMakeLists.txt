@@ -50,6 +50,7 @@ else()
 
   IF(QMC_CUDA)
     CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
+    CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
   ELSE(QMC_CUDA)
     ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
   ENDIF(QMC_CUDA)

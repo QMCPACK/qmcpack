@@ -1,6 +1,6 @@
-SET(CMAKE_SYSTEM_PROCESSOR "XK6")
-#2014-08-12
-#NEED THESES + defaults
+SET(CMAKE_SYSTEM_PROCESSOR "XK7")
+# Last updated: Nov 7, 2014
+# NEED THESES + defaults
 #  module swap PrgEnv-pgi PrgEnv-gnu
 #  module load cray-hdf5
 #  module load fftw
@@ -15,7 +15,7 @@ set(GNU_FLAGS " -fomit-frame-pointer -malign-double -fopenmp -O3 -Drestrict=__re
 #set(XT_FLAGS "-march=amdfam10 -msse3 -D_CRAYMPI")
 #set(XT_FLAGS "-march=bdver1 -msse3 -D_CRAYMPI")
 set(XT_FLAGS " -msse -msse2 -msse3 -msse4.1 -D_CRAYMPI")
-set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS} -Wno-deprecated ")
+set(CMAKE_CXX_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -ftemplate-depth-60 ${GNU_OPTS} -Wno-deprecated")
 set(CMAKE_C_FLAGS "${XT_FLAGS} ${GNU_FLAGS} -std=c99")
 
 # need for both c++ and c
@@ -54,6 +54,7 @@ set(CMAKE_FIND_ROOT_PATH
 set(CUDA_NVCC_FLAGS "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
 set(CUDA_CUDART_LIBRARY /opt/cray/nvidia/default/lib64/libcuda.so)
 set(CUDA_CUDA_LIBRARY /opt/cray/nvidia/default/lib64/libcuda.so)
+set(CUDA_cublas_LIBRARY $ENV{CRAY_CUDATOOLKIT_DIR}/lib64/libcublas.so)
 set(CUDA_TOOLKIT_ROOT_DIR $ENV{CRAY_CUDATOOLKIT_DIR})
 set(CUDA_TOOLKIT_INCLUDE $ENV{CRAY_CUDATOOLKIT_DIR}/include)
 set(CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY})
@@ -61,6 +62,7 @@ set(CUDA_make2cmake ${CMAKE_ROOT}/Modules/FindCUDA/make2cmake.cmake)
 set(CUDA_parse_cubin ${CMAKE_ROOT}/Modules/FindCUDA/parse_cubin.cmake)
 set(CUDA_run_nvcc ${CMAKE_ROOT}/Modules/FindCUDA/run_nvcc.cmake)
 set(CUDA_PROPAGATE_HOST_FLAGS OFF) #do not propagate the host flags
+
 
 message(STATUS "CUDA_LIBRARY" $ENV{CUDA_CUDART_LIBRARY})
 

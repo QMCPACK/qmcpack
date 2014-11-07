@@ -1,36 +1,26 @@
 #ifndef CUDA_INVERSE_H
 #define CUDA_INVERSE_H
 
-//////////////////////
-// Single precision //
-//////////////////////
-size_t
-cuda_inverse_many_worksize(int N);
+#include <cublas_v2.h>
 
-void
-cuda_inverse_many (float *Alist_d[], float *worklist_d[],
-                   int N, int num_mats);
-
-
+//////////////////////////////
+// Single / mixed precision //
+//////////////////////////////
+void 
+cublas_inverse (cublasHandle_t handle,
+                float *Alist_d[], float *Ainvlist_d[],
+                float *AWorkList_d[], float *AinvWorkList_d[],
+                int N, int rowStride, int numMats,
+                bool useHigherPrecision = true);
 
 //////////////////////
 // Double precision //
 //////////////////////
-size_t
-cuda_inverse_many_double_worksize(int N);
-
 void
-cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
-                          int N, int num_mats);
-void
-cuda_inverse_many_double (float *Alist_d[], float *worklist_d[],
-                          int N, int row_stride, int num_mats);
-
-void
-cuda_inverse_many_double (double *Alist_d[], double *worklist_d[],
-                          int N, int num_mats);
-
-
-
+cublas_inverse (cublasHandle_t handle,
+                double *Alist_d[], double *Ainvlist_d[],
+                double *AWorklist_d[], double *AinvWorklist_d[],
+                int N, int rowStride, int numMats, 
+                bool useHigherPrecision = true);
 
 #endif

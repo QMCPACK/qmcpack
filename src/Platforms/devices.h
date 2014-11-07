@@ -70,6 +70,13 @@ inline void set_appropriate_device_num(int num)
   }
 }
 
+inline void Finalize_CUDA()
+{
+  gpu::finalizeCublas();
+  gpu::finalizeCUDAEvents();
+  gpu::finalizeCUDAStreams();
+  cudaDeviceReset();
+}
 
 inline void Init_CUDA(int rank, int size)
 {
@@ -87,6 +94,7 @@ inline void Init_CUDA(int rank, int size)
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
   gpu::initCUDAStreams();
   gpu::initCUDAEvents();
+  gpu::initCublas();
   return;
   int numGPUs;
   cudaGetDeviceCount(&numGPUs);
