@@ -1,8 +1,8 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XK7")
-#2011-12-06
+# Last updated: Nov 7, 2014
 
-set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/default/bin/cc)
-set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/default/bin/CC)
+set(CMAKE_C_COMPILER  cc)
+set(CMAKE_CXX_COMPILER  CC)
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR") 
 #set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DUSE_REAL_STRUCT_FACTOR -DDISABLE_TIMER=1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1")
 set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
@@ -35,13 +35,13 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
 ENDFOREACH(type)
 
 set(CMAKE_FIND_ROOT_PATH
-  /opt/cray/hdf5/1.8.8/gnu/47
-  /opt/fftw/3.3.0.1/interlagos
-  /sw/xk6/boost/1.44.0/cle4.0_gnu4.5.3
-  /ccs/home/jnkim/titan/gnu47/libxml2
+  $ENV{HDF5_DIR}
+  $ENV{CRAY_FFTW_DIR}/interlagos
+  $ENV{BOOST_DIR}
+  /sw/xk7/libxml2
 )
 
 #AMD math lib
-include_directories(/ccs/home/jnkim/lib/amdlibm/include)
-link_libraries(/ccs/home/jnkim/lib/amdlibm/lib/static/libamdlibm.a)
+include_directories(/sw/xk7/amdlibm/include)
+link_libraries(/sw/xk7/amdlibm/lib/static/libamdlibm.a)
 
