@@ -41,3 +41,9 @@ FOREACH(p ${QMCSRCS})
   ENDIF(MPI_LIBRARY)
 
 ENDFOREACH(p ${QMCSRCS})
+
+####################################
+# Add test subdirectory
+####################################
+ADD_SUBDIRECTORY(test)
+

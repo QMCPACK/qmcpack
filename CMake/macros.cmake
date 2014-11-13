@@ -1,0 +1,190 @@
+# Function to copy a directory
+FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
+    EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
+ENDFUNCTION()
+
+
+# Macro to add the dependencies and libraries to an executable
+MACRO( ADD_QMC_EXE_DEP EXE )
+    # Add the package dependencies
+    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+    FOREACH(l ${QMC_UTIL_LIBS})
+        TARGET_LINK_LIBRARIES(${EXE} ${l})
+    ENDFOREACH(l ${QMC_UTIL_LIBS})
+    TARGET_LINK_LIBRARIES(${EXE} ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBRARIES})
+    IF(ENABLE_TAU_PROFILE)
+        TARGET_LINK_LIBRARIES(${EXE} tau)
+    ENDIF(ENABLE_TAU_PROFILE)
+    IF(MPI_LIBRARY)
+        TARGET_LINK_LIBRARIES(${EXE} ${MPI_LIBRARY})
+    ENDIF(MPI_LIBRARY)
+ENDMACRO()
+
+
+# Add a provisional test
+FUNCTION( ADD_QMC_PROVISIONAL_TEST EXEFILE )
+    # Change the output directory so we do not install in bin
+    SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" )
+    # Check if we actually want to add the test
+    # SET( EXCLUDE_TESTS_FROM_ALL 1 )
+    # Check if test has already been added
+    GET_TARGET_PROPERTY(tmp ${EXEFILE} LOCATION)
+    IF ( tmp )
+        STRING(REGEX REPLACE "//" "/" tmp "${tmp}" )        
+    ENDIF()
+    IF ( NOT tmp )
+        # The target has not been added
+        SET( CXXFILE ${EXEFILE}.cpp )
+        SET( TESTS_SO_FAR ${TESTS_SO_FAR} ${EXEFILE} )
+        IF ( NOT EXCLUDE_TESTS_FROM_ALL )
+            ADD_EXECUTABLE( ${EXEFILE} ${CXXFILE} )
+        ELSE()
+            ADD_EXECUTABLE( ${EXEFILE} EXCLUDE_FROM_ALL ${CXXFILE} )
+        ENDIF()
+        ADD_QMC_EXE_DEP( ${EXEFILE} )
+    ELSEIF( ${tmp} STREQUAL "${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE}" )
+        # The correct target has already been added
+    ELSEIF( ${tmp} STREQUAL "${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE}.exe" )
+        # The correct target has already been added
+    ELSEIF( ${tmp} STREQUAL "${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)/${EXEFILE}.exe" )
+        # The correct target has already been added
+    ELSEIF( ${tmp} STREQUAL "${CMAKE_CURRENT_BINARY_DIR}/$(OutDir)/${EXEFILE}.exe" )
+        # The correct target has already been added
+    ELSE()
+        # We are trying to add 2 different tests with the same name
+        MESSAGE ( "Existing test: ${tmp}" )
+        MESSAGE ( "New test:      ${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE}" )
+        MESSAGE ( FATAL_ERROR "Trying to add 2 different tests with the same name" )
+    ENDIF()
+ENDFUNCTION()
+
+
+# Macro to create the test name
+MACRO( CREATE_TEST_NAME TEST ${ARGN} )
+    SET( TESTNAME "${TEST}" )
+    FOREACH( tmp ${ARGN} )
+        SET( TESTNAME "${TESTNAME}--${tmp}")
+    endforeach()
+    # STRING(REGEX REPLACE "--" "-" TESTNAME ${TESTNAME} )
+ENDMACRO()
+
+
+# Add a executable as a test
+FUNCTION( ADD_QMC_TEST EXEFILE ${ARGN} )
+    ADD_QMC_PROVISIONAL_TEST ( ${EXEFILE} )
+    CREATE_TEST_NAME( ${EXEFILE} ${ARGN} )
+    GET_TARGET_PROPERTY(EXE ${EXEFILE} LOCATION)
+    STRING(REGEX REPLACE "\\$\\(Configuration\\)" "${CONFIGURATION}" EXE "${EXE}" )
+    IF ( USE_MPI_FOR_SERIAL_TESTS )
+        ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${EXE} ${ARGN} )
+    ELSE()
+        ADD_TEST( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE} ${ARGN} )
+    ENDIF()
+    SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS 1 )
+ENDFUNCTION()
+
+
+# Add a executable as a weekly test
+FUNCTION( ADD_QMC_WEEKLY_TEST EXEFILE PROCS ${ARGN} )
+    ADD_QMC_PROVISIONAL_TEST ( ${EXEFILE} )
+    GET_TARGET_PROPERTY(EXE ${EXEFILE} LOCATION)
+    STRING(REGEX REPLACE "\\$\\(Configuration\\)" "${CONFIGURATION}" EXE "${EXE}" )
+    IF( ${PROCS} STREQUAL "1" )
+        CREATE_TEST_NAME( "${EXEFILE}_WEEKLY" ${ARGN} )
+    ELSEIF( USE_MPI AND NOT (${PROCS} GREATER ${TEST_MAX_PROCS}) )
+        CREATE_TEST_NAME( "${EXEFILE}_${PROCS}procs_WEEKLY" ${ARGN} )
+    ENDIF()
+    IF ( ${PROCS} GREATER ${TEST_MAX_PROCS} )
+        MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+    ELSEIF( ${PROCS} STREQUAL "1" )
+        CREATE_TEST_NAME( "${EXEFILE}_WEEKLY" ${ARGN} )
+        IF ( USE_MPI_FOR_SERIAL_TESTS )
+            ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${EXE} ${ARGN} )
+        ELSE()
+            ADD_TEST( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE} ${ARGN} )
+        ENDIF()
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS 1 )
+    ELSEIF( USE_MPI AND NOT (${PROCS} GREATER ${TEST_MAX_PROCS}) )
+        CREATE_TEST_NAME( "${EXEFILE}_${PROCS}procs_WEEKLY" ${ARGN} )
+        ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${EXE} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS ${PROCS} )
+    ENDIF()
+ENDFUNCTION()
+
+
+# Add a executable as a parallel test
+FUNCTION( ADD_QMC_TEST_PARALLEL EXEFILE PROCS ${ARGN} )
+    ADD_QMC_PROVISIONAL_TEST ( ${EXEFILE} )
+    GET_TARGET_PROPERTY(EXE ${EXEFILE} LOCATION)
+    STRING(REGEX REPLACE "\\$\\(Configuration\\)" "${CONFIGURATION}" EXE "${EXE}" )
+    CREATE_TEST_NAME( "${EXEFILE}_${PROCS}procs" ${ARGN} )
+    IF ( NOT USE_MPI )
+        MESSAGE("Disabling test ${TESTNAME} (configured without MPI)")
+    ELSEIF ( ${PROCS} GREATER ${TEST_MAX_PROCS} )
+        MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+    ELSE()
+        ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${EXE} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS ${PROCS} )
+    ENDIF()
+ENDFUNCTION()
+
+
+# Add a executable as a parallel 1, 2, 4 processor test
+MACRO( ADD_QMC_TEST_1_2_4 EXENAME ${ARGN} )
+    ADD_QMC_TEST ( ${EXENAME} ${ARGN} )
+    ADD_QMC_TEST_PARALLEL( ${EXENAME} 2 ${ARGN} )
+    ADD_QMC_TEST_PARALLEL( ${EXENAME} 4 ${ARGN} )
+ENDMACRO()
+
+
+# Add a executable as a parallel 8, 12, 16 processor test
+MACRO( ADD_QMC_TEST_8_12_16 EXENAME ${ARGN} )
+    ADD_QMC_TEST_PARALLEL( ${EXENAME} 8 ${ARGN} )
+    ADD_QMC_TEST_PARALLEL( ${EXENAME} 12 ${ARGN} )
+    ADD_QMC_TEST_PARALLEL( ${EXENAME} 16 ${ARGN} )
+ENDMACRO()
+
+
+# Add a parallel test that may use both MPI and threads
+# This allows us to correctly compute the number of processors used by the test
+MACRO( ADD_QMC_TEST_THREAD_MPI EXEFILE PROCS THREADS ${ARGN} )
+    ADD_QMC_PROVISIONAL_TEST( ${EXEFILE} )
+    GET_TARGET_PROPERTY(EXE ${EXEFILE} LOCATION)
+    STRING(REGEX REPLACE "\\$\\(Configuration\\)" "${CONFIGURATION}" EXE "${EXE}" )
+    CREATE_TEST_NAME( "${EXEFILE}_${PROCS}procs_${THREADS}threads" ${ARGN} )
+    MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
+    IF ( ${PROCS} GREATER ${TEST_MAX_PROCS} )
+        MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+    ELSEIF ( ( ${PROCS} STREQUAL "1" ) AND NOT USE_EXT_MPI_FOR_SERIAL_TESTS )
+        ADD_TEST( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${EXEFILE} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS ${TOT_PROCS} )
+    ELSEIF ( USE_MPI )
+        ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${EXE} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" PROCESSORS ${TOT_PROCS} )
+    ENDIF()
+ENDMACRO()
+
+
+# Runs qmcapp
+FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
+    COPY_DIRECTORY( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    SET( THREADS 1 )
+    MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
+    SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcapp" )
+    IF ( ${PROCS} GREATER ${TEST_MAX_PROCS} )
+        MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+    ELSEIF ( ( ${PROCS} STREQUAL "1" ) AND NOT USE_EXT_MPI_FOR_SERIAL_TESTS )
+        ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
+            PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" 
+            ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
+    ELSEIF ( USE_MPI )
+        ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
+        SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
+            PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" 
+            ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
+    ENDIF()
+ENDFUNCTION()
+
+

@@ -257,9 +257,9 @@ find_coefs_1d_s (Ugrid grid, BCtype_s bc,
       solve_periodic_interp_1d_s (bands, coefs, M, cstride);
     else
       solve_antiperiodic_interp_1d_s (bands, coefs, M, cstride);
-//#ifndef HAVE_C_VARARRAYS
+#ifndef HAVE_C_VARARRAYS
     free (bands);
-//#endif
+#endif
   }
   else {
     // Setup boundary conditions

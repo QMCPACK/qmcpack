@@ -25,6 +25,17 @@ SET(QMCPLUSPLUS_VERSION_PATCH 0)
 SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.${QMCPLUSPLUS_VERSION_PATCH}")
 
 ######################################################################
+# CTest 
+######################################################################
+SET( DROP_METHOD "http" )
+SET( DROP_SITE "cdash.qmcpack.org" )
+SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
+SET( TRIGGER_SITE "" )
+SET( DROP_SITE_CDASH TRUE )
+ENABLE_TESTING()
+INCLUDE( CTest )
+
+######################################################################
 # Build level
 ######################################################################
 SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
@@ -344,6 +355,18 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         ENDIF(MPI_WORKS)
       ENDIF(MPI_FOUND)
     endif($ENV{CXX} MATCHES "mp")
+    IF ( HAVE_MPI )
+      SET( USE_MPI 1 )
+      IF ( NOT MPIEXEC )
+        SET( MPIEXEC "mpirun" )
+      ENDIF()
+      IF ( NOT MPIEXEC_NUMPROC_FLAG )
+        SET( MPIEXEC_NUMPROC_FLAG "-np" )
+      ENDIF()
+      IF ( NOT TEST_MAX_PROCS )
+        SET( TEST_MAX_PROCS 100 )
+      ENDIF()
+    ENDIF(HAVE_MPI)
   ENDIF(QMC_MPI)
 
   #-------------------------------------------------------------------
@@ -380,9 +403,8 @@ IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
   SET(HAVE_LIBXML2 1)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
-
 ELSE()
-  MESSAGE(FATAL "Missing Libxml2")
+  MESSAGE(FATAL_ERROR "Missing Libxml2")
 ENDIF(LIBXML2_FOUND)
 
 IF(HDF5_FOUND)
@@ -541,6 +563,14 @@ endif()
 #   LINK_LIBRARIES(${GTKMM_LIBRARIES})
 #  ENDIF(GTKMM_FOUND)
 #ENDIF(ENABLE_GTK_GUI)
+
+
+###################################################
+# Add user extra flags
+###################################################
+string(REPLACE " " ";" QMC_EXTRA_LIBS ${QMC_EXTRA_LIBS})
+SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${QMC_EXTRA_LIBS})
+MESSAGE("QMC_UTIL_LIBS=${QMC_UTIL_LIBS}")
 
 ###################################################
 # Done searching libraries. Start building qmcpack
