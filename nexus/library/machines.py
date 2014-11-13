@@ -132,6 +132,9 @@ class Job(Pobj):
                  app_props    = None,
                  app          = None,
                  env          = None,
+                 user_env     = True,
+                 presub       = '',
+                 postsub      = '',
                  outfile      = None,
                  errfile      = None,
                  mode         = None,
@@ -170,6 +173,9 @@ class Job(Pobj):
         self.app_props   = app_props
         self.outfile     = outfile
         self.errfile     = errfile
+        self.user_env    = user_env
+        self.presub      = presub
+        self.postsub     = postsub
         self.name        = name
         self.queue       = queue
         self.bundled_jobs= bundled_jobs
@@ -862,7 +868,13 @@ class Workstation(Machine):
     def submit_job(self,job):
         pad = self.enter(job.directory,msg=job.simid)
         command = 'export OMP_NUM_THREADS='+str(job.threads)+'\n'
+        if len(job.presub)>0:
+            command += job.presub+'\n'
+        #end if
         command += job.run_command(self.app_launcher)
+        if len(job.postsub)>0:
+            command += job.postsub+'\n'
+        #end if
         command = ('\n'+command).replace('\n','\n  '+pad)
         job.status = job.states.running
         process = obj()
@@ -1390,12 +1402,6 @@ class Supercomputer(Machine):
         os.system(command)
     #end def remove_job
 
-        
-    def set_submission_commands(self,job):
-        self.pre_submission_commands = 'date\n'
-        self.post_submission_commands= ''
-    #end def set_submission_commands
-
 
     def setup_environment(self,job):
         env = ''
@@ -1412,13 +1418,16 @@ class Supercomputer(Machine):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         env = self.setup_environment(job)
         command = job.run_command(self.app_launcher)
-        self.set_submission_commands(job)
         
         c = self.write_job_header(job)+'\n'
-        c+=self.pre_submission_commands+'\n'
+        if len(job.presub)>0:
+            c+=job.presub+'\n'
+        #end if
         c+=env
         c+=command+'\n'
-        c+=self.post_submission_commands+'\n'
+        if len(job.postsub)>0:
+            c+=job.postsub+'\n'
+        #end if
 
         filepath = os.path.join(job.directory,job.subfile)
         fobj = open(filepath,'w')
@@ -1479,8 +1488,10 @@ class Kraken(Supercomputer):
         c+='#PBS -l size='+str(job.tot_cores)+'\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 cd $PBS_O_WORKDIR
 export MPICH_PTL_SEND_CREDITS=-1
 export MPICH_MAX_SHORT_MSG_SIZE=1024
@@ -1518,7 +1529,9 @@ class Jaguar(Supercomputer):
         c+='#PBS -l gres=widow2%widow3\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        #c+='#PBS -V\n'
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
         c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
@@ -1555,8 +1568,10 @@ class Taub(Supercomputer):
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
         c+='#PBS -e '+job.errfile+'\n'
         c+='#PBS -o '+job.outfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 cd ${PBS_O_WORKDIR}
 
 export MPICH_PTL_SEND_CREDITS=-1
@@ -1618,8 +1633,10 @@ class OIC5(Supercomputer):
         c+='#PBS -W x=\"NACCESSPOLICY:SINGLEJOB\"\n'
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 '''
@@ -1645,9 +1662,7 @@ cd $PBS_O_WORKDIR
 
 
 
-class Edison(Supercomputer):
-
-    name = 'edison'
+class NerscMachine(Supercomputer):
     batch_capable = True
 
     def process_job_extra(self,job):
@@ -1667,7 +1682,6 @@ class Edison(Supercomputer):
         #end if
     #end def process_job_extra
 
-
     def write_job_header(self,job):
         if job.queue is None:
             job.queue = 'regular'
@@ -1680,30 +1694,25 @@ class Edison(Supercomputer):
         c+='#PBS -l mppwidth={0}\n'.format(job.tot_cores)
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 '''
         return c
     #end def write_job_header
+#end class NerscMachine
 
 
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'edison' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    #end def read_process_id
+class Edison(NerscMachine):
+    name = 'edison'
 #end class Edison
 
+class Hopper(NerscMachine):
+    name = 'hopper'
+#end class Hopper
 
 
 
@@ -1720,8 +1729,10 @@ class BlueWatersXK(Supercomputer):
         c+='#PBS -l nodes={0}:ppn={1}:xk\n'.format(job.nodes,job.ppn)
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 '''
@@ -1745,8 +1756,10 @@ class BlueWatersXE(Supercomputer):
         c+='#PBS -l nodes={0}:ppn={1}:xe\n'.format(job.nodes,job.ppn)
         c+='#PBS -o '+job.outfile+'\n'
         c+='#PBS -e '+job.errfile+'\n'
-        c+='''#PBS -V
-
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
+        c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 '''
@@ -1777,7 +1790,9 @@ class Titan(Supercomputer):
         c+='#PBS -l nodes={0}\n'.format(job.nodes)
         #c+='#PBS -l gres=widow3\n'
         c+='#PBS -l gres=atlas1\n'
-        c+='#PBS -V\n'
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
         c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
@@ -1817,7 +1832,9 @@ class EOS(Supercomputer):
         c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
         c+='#PBS -l nodes={0}\n'.format(job.nodes)
         c+='#PBS -l gres=atlas1\n'
-        c+='#PBS -V\n'
+        if job.user_env:
+            c+='#PBS -V\n'
+        #end if
         c+='''
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
@@ -1907,7 +1924,9 @@ class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
         c+='#$ -l h_rt={0}\n'.format(job.pbs_walltime())
         c+='#$ -pe 12way {0}\n'.format(job.nodes*12)
 	c+='#$ -cwd\n'
-        c+='#$ -V\n'
+        if job.user_env:
+            c+='#$ -V\n'
+        #end if
         return c
     #end def write_job_header
 
@@ -2054,6 +2073,7 @@ Jaguar(      18688,   2,     8,   32,  100,  'aprun',   'qsub',   'qstat',    'q
 Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
+Hopper(       6384,   2,    12,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
 Edison(        664,   2,     8,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')

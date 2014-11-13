@@ -281,6 +281,8 @@ class SemilocalPP(Pseudopotential):
     numeric        = False
     interpolatable = True
 
+    formats = ['qmcpack']
+
     def __init__(self,filepath=None,format=None,name=None,src=None):
         self.name = name
         self.rcut = None
@@ -327,7 +329,31 @@ class SemilocalPP(Pseudopotential):
         return self.channels[l]
     #end def get_channel
 
+
+    def remove_channel(self,l):
+        if l in self.channels:
+            del self.channels[l]
+            if self.local==l:
+                lmax = -1
+                for lt in self.channels.keys():
+                    li = self.l_int_from_text(lt)
+                    if li>lmax:
+                        lmax = li
+                        self.local = lt
+                    #end if
+                #end for
+                self.lmax = lmax
+            #end if
+        #end if
+    #end def remove_channel
+
+
+    def l_int_from_text(self,ltext):
+        lint = 'spdfgh'.find(ltext)
+        return lint
+    #end def l_int_from_text
         
+
     def evaluate(self,r=None,l=None,rpow=0,with_local=False):
         if self.numeric and not self.interpolatable:
             r = None
@@ -685,21 +711,48 @@ class GFit(DevBase):
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = 'gaussian gamess'.split()
+    formats = SemilocalPP.formats + 'gaussian gamess'.split()
+
+    @staticmethod
+    def process_float(s):
+        return float(s.replace('D','e').replace('d','e'))
+    #end def process_float
+
+    def __init__(self,filepath=None,format=None,name=None,src=None):
+        self.basis = None
+        SemilocalPP.__init__(self,filepath,format,name,src)
+    #end def __init__
 
 
     def read_text(self,text,format=None):
         rawlines = text.splitlines()
-        lines = []
+        sections = []
+        last_empty = True
         for rline in rawlines:
             line = rline.strip()
             if (not line.startswith('!')) and (not line.startswith('#')) and len(line)>0:
+                if last_empty:
+                    lines = []
+                    sections.append(lines)
+                #end if
                 lines.append(line)
+                last_empty = False
+            else:
+                last_empty = True
             #end if
         #end for
+        del lines
+        if len(sections)==2:
+            basis_lines = sections[0]
+            lines       = sections[1]
+        else:
+            basis_lines = None
+            lines       = sections[0]
+        #end if
 
         format=format.lower()
         channels = []
+        basis    = None
         if format=='gamess':
             i=0
             name,type,Zcore,lmax = lines[i].split(); i+=1
@@ -715,6 +768,24 @@ class GaussianPP(SemilocalPP):
                 #end for
                 channels.append(terms)
             #end while
+            if basis_lines!=None:
+                i=1
+                basis = obj()
+                while i<len(basis_lines):
+                    tokens = basis_lines[i].split(); i+=1
+                    ltext = tokens[0].lower()
+                    ngauss = int(tokens[1])
+                    scale  = array(tokens[2:],dtype=float)
+                    bterms = obj()
+                    for j in xrange(ngauss):
+                        index,expon,coeff = basis_lines[i].split(); i+=1
+                        expon = GaussianPP.process_float(expon)
+                        coeff = GaussianPP.process_float(coeff)
+                        bterms.append(obj(expon=expon,coeff=coeff))
+                    #end for
+                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                #end while
+            #end if
         elif format=='gaussian':
             i=0
             element,token = lines[i].split(); i+=1
@@ -731,6 +802,24 @@ class GaussianPP(SemilocalPP):
                 #end for
                 channels.append(terms)
             #end while
+            if basis_lines!=None:
+                i=1
+                basis = obj()
+                while i<len(basis_lines):
+                    tokens = basis_lines[i].split(); i+=1
+                    ltext = tokens[0].lower()
+                    ngauss = int(tokens[1])
+                    scale  = array(tokens[2:],dtype=float)
+                    bterms = obj()
+                    for j in xrange(ngauss):
+                        expon,coeff = basis_lines[i].split(); i+=1
+                        expon = GaussianPP.process_float(expon)
+                        coeff = GaussianPP.process_float(coeff)
+                        bterms.append(obj(expon=expon,coeff=coeff))
+                    #end for
+                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                #end while
+            #end if
         else:
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if
@@ -752,7 +841,8 @@ class GaussianPP(SemilocalPP):
             )
         for c in range(len(channels)):
             if c==0:
-                cname = 'loc'
+                #cname = 'loc'
+                cname = self.l_channels[lmax]
                 self.local = cname
             else:
                 cname = self.l_channels[c-1]
@@ -765,6 +855,7 @@ class GaussianPP(SemilocalPP):
             #end for
             self.channels[cname] = channel
         #end for
+        self.basis = basis
         if len(self.channels)!=self.lmax+1:
             self.error('number of channels is not lmax+1!')
         #end if
@@ -774,32 +865,69 @@ class GaussianPP(SemilocalPP):
     def write_text(self,format=None):
         text = ''
         format = format.lower()
+        if format=='qmcpack':
+            return self.write_qmcpack()
+        #end if
+        channel_order = [self.local]
+        for c in self.all_channels:
+            if c in self.channels and c!=self.local:
+                channel_order.append(c)
+            #end if
+        #end for
         if format=='gamess':
-            text += '{0}-PP GEN {1} {2}\n'.format(self.element,self.Zcore,self.lmax)
-            for c in self.all_channels:
-                if c in self.channels:
-                    channel = self.channels[c]
-                    text += '{0}\n'.format(len(channel)) 
-                    for i in sorted(channel.keys()):
-                        g = channel[i]
-                        text += '{0:12.8f} {1} {2:12.8f}\n'.format(g.coeff,g.rpow,g.expon)
+            if self.basis!=None:
+                text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
+                for ib in xrange(len(self.basis)):
+                    b = self.basis[ib]
+                    line = '{0} {1}'.format(b.l,len(b.terms))
+                    for s in b.scale:
+                        line += ' {0}'.format(s)
                     #end for
-                #end if
+                    text += line + '\n'
+                    for it in xrange(len(b.terms)):
+                        t = b.terms[it]
+                        text += '{0} {1:12.8e} {2:12.8e}\n'.format(it+1,t.expon,t.coeff)
+                    #end for
+                #end for
+                text += '\n'
+            #end if
+            text += '{0}-PP GEN {1} {2}\n'.format(self.element,self.Zcore,self.lmax)
+            for c in channel_order:
+                channel = self.channels[c]
+                text += '{0}\n'.format(len(channel)) 
+                for i in sorted(channel.keys()):
+                    g = channel[i]
+                    text += '{0:12.8f} {1} {2:12.8f}\n'.format(g.coeff,g.rpow,g.expon)
+                #end for
             #end for
             text += '\n'
         elif format=='gaussian':
             text += '{0} 0\n'.format(self.element)
-            text += '{0}_PP {1} {2}\n'.format(self.element,self.lmax,self.Zcore)
-            for c in self.all_channels:
-                if c in self.channels:
-                    channel = self.channels[c]
-                    text += '{0} channel\n'.format(c)
-                    text += '{0}\n'.format(len(channel)) 
-                    for i in sorted(channel.keys()):
-                        g = channel[i]
-                        text += '{0} {1:12.8f} {2:12.8f}\n'.format(g.rpow,g.expon,g.coeff)
+            if self.basis!=None:
+                for ib in xrange(len(self.basis)):
+                    b = self.basis[ib]
+                    line = '{0} {1}'.format(b.l,len(b.terms))
+                    for s in b.scale:
+                        line += ' {0}'.format(s)
                     #end for
-                #end if
+                    text += line + '\n'
+                    for it in xrange(len(b.terms)):
+                        t = b.terms[it]
+                        text += '{0:12.8e} {1:12.8e}\n'.format(t.expon,t.coeff)
+                    #end for
+                #end for
+                text += '\n'
+            #end if
+            text += '{0} 0\n'.format(self.element)
+            text += '{0}_PP {1} {2}\n'.format(self.element,self.lmax,self.Zcore)
+            for c in channel_order:
+                channel = self.channels[c]
+                text += '{0} channel\n'.format(c)
+                text += '{0}\n'.format(len(channel)) 
+                for i in sorted(channel.keys()):
+                    g = channel[i]
+                    text += '{0} {1:12.8f} {2:12.8f}\n'.format(g.rpow,g.expon,g.coeff)
+                #end for
             #end for
             text += '\n'
         else:

@@ -8,6 +8,7 @@ from developer import DevBase
 from debug import *
 
 
+# vasp xml reader classes/functions
 
 class VXML(DevBase):
     basic_types = set('i v dimension field set time'.split())
@@ -407,51 +408,433 @@ def read_vxml(filepath):
 
 
 
+# vasp outcar functions
+
+class VaspLines(DevBase):
+    def __init__(self,lines):
+        self.pointer = 0
+        self.lines   = lines
+    #end def __init__
+
+    def advance_line(self,amount):
+        self.pointer += amount
+        return self.lines[self.pointer]
+    #end def advance_line
+
+    def advance_token(self,token):
+        psave = self.pointer
+        for line in self.lines[self.pointer:]:
+            if token in line:
+                return line
+            #end if
+            self.pointer += 1
+        #end while
+        self.pointer = psave
+        return None
+    #end def advance
+
+    def advance(self,amount):
+        self.pointer += amount
+    #end def advance
+
+    def remainder(self):
+        return self.lines[self.pointer:]
+    #end def remainder
+
+    def rewind(self,point=0):
+        self.pointer = point
+    #end def rewind
+
+    def get_line(self,point=None):
+        if point is None:
+            point = self.pointer
+        #end if
+        return self.lines[point]
+    #end def get_line
+
+    def get_line_ahead(self,nahead):
+        return self.lines[self.pointer+nahead]
+    #end def get_line_ahead
+#end class VaspLines
+
+
+def read_outcar_header_values(vlines,odata):
+    line = vlines.advance_token('TOTEN')
+    odata.total_energy = float(line.split()[4])
+    vlines.advance_token('energy without entropy')
+#end def read_outcar_header_values
+
+
+def read_outcar_core_potentials(vlines,odata):
+    line = vlines.advance_token('the test charge radii are')
+    odata.core_potential_radii = array(line.split()[5:],dtype=float)
+    vlines.advance(2)
+    n = 0
+    cpots = []
+    for line in vlines.remainder():
+        ls = line.strip()
+        n+=1
+        if len(ls)==0:
+            break
+        #end if
+        tokens = line.replace('-',' -').split()
+        cpots.extend(tokens[1::2])
+    #end for
+    odata.core_potentials = array(cpots,dtype=float)
+    vlines.advance(n)
+#end def read_outcar_core_potentials
+
+
+def read_outcar_fermi_energy(vlines,odata):
+    line = vlines.advance_token('E-fermi')
+    odata.Efermi = float(line.split()[2])
+#end def read_outcar_fermi_energy
+
+
+def read_outcar_bands(vlines,odata):
+    bands = obj()
+    line = vlines.advance_token('spin component')
+    if line!=None:
+        last_empty = True
+        n  = 0
+        for line in vlines.remainder():
+            if len(line)>2:
+                if line[1]=='s':
+                    ns = int(line.split()[2])
+                    spin = obj()
+                    bands[ns] = spin
+                elif line[1]=='k':
+                    tokens = line.split()
+                    nk = int(tokens[1])
+                    kp = array(tokens[3:],dtype=float)
+                    kpoint = obj(kpoint=kp,energies=[],occupations=[])
+                    spin[nk]=kpoint
+                elif line[2]=='b':
+                    None
+                else:
+                    bnum,energy,occ = line.split()
+                    kpoint.energies.append(float(energy))
+                    kpoint.occupations.append(float(occ))
+                #end if
+                last_empty = False
+            else:
+                if last_empty:
+                    break
+                #end if
+                last_empty = True
+            #end if
+            n+=1
+        #end for
+        vlines.advance(n)
+    #end if
+    for ns,spin in bands.iteritems():
+        for nk,kpoint in spin.iteritems():
+            kpoint.energies    = array(kpoint.energies,dtype=float)
+            kpoint.occupations = array(kpoint.occupations,dtype=float)
+        #end for
+    #end for
+    odata.bands = bands
+#end def read_outcar_bands
+
+
+def read_outcar_charge_mag(vlines,odata,token):
+    ion   = obj(s=[],p=[],d=[],tot=[])
+    total = obj()
+    vlines.advance_token(token)
+    vlines.advance(4)
+    prev_end = False
+    n=0
+    for line in vlines.remainder():
+        n+=1
+        if prev_end:
+            break
+        #end if
+        if line[0]=='-':
+            prev_end = True
+        else:
+            vals = array(line.split()[1:],dtype=float)
+            ion.s.append(vals[0])
+            ion.p.append(vals[1])
+            ion.d.append(vals[2])
+            ion.tot.append(vals[3])
+        #end if
+    #end for
+    for channel,vals in ion.iteritems():
+        ion[channel] = array(vals,dtype=float)
+    #end for
+    vlines.advance(n)
+    vals = array(line.split()[1:],dtype=float)
+    total.s   = vals[0]
+    total.p   = vals[1]
+    total.d   = vals[2]
+    total.tot = vals[3]
+    return ion,total
+#end def read_outcar_charge_mag
+
+
+def read_outcar_total_charge(vlines,odata):
+    ion,total = read_outcar_charge_mag(vlines,odata,'total charge ') # trailing space is important
+    odata.ion_charge   = ion
+    odata.total_charge = total
+#end def read_outcar_total_charge
+
+
+def read_outcar_magnetization(vlines,odata):
+    ion,total = read_outcar_charge_mag(vlines,odata,'magnetization')
+    odata.ion_magnetization   = ion
+    odata.total_magnetization = total
+#end def read_outcar_magnetization
+
+
+def read_outcar_stress(vlines,odata):
+    vlines.advance_token('FORCE on cell')
+    line = vlines.advance_line(1)
+    dirs = line.split()[1:]
+    st       = array(vlines.advance_token('Total').split()[1:],dtype=float)
+    st_kb    = array(vlines.advance_line(1).split()[2:],dtype=float)
+    pressure = float(vlines.advance_line(1).split()[3])
+    stress = obj()
+    stress_kb = obj()
+    for i in range(len(dirs)):
+        d = dirs[i].lower()
+        stress[d]    = st[i]
+        stress_kb[d] = st_kb[i]
+    #end for
+    odata.stress    = stress
+    odata.stress_kb = stress_kb
+    odata.pressure  = pressure
+#end def read_outcar_stress
+
+
+def read_outcar_cell(vlines,odata):
+    vlines.advance_token('VOLUME and BASIS')
+    volume = float(vlines.advance_line(3).split()[-1])
+    a1 = vlines.advance_line(2).split()[0:3]
+    a2 = vlines.advance_line(1).split()[0:3]
+    a3 = vlines.advance_line(1).split()[0:3]
+    lattice_vectors = array([a1,a2,a3],dtype=float)
+    odata.volume = volume
+    odata.lattice_vectors = lattice_vectors
+#end def read_outcar_cell
+
+
+def read_outcar_position_force(vlines,odata):
+    position    = []
+    force       = []
+    vlines.advance_token('POSITION')
+    vlines.advance(2)
+    prev_end = False
+    for line in vlines.remainder():
+        if prev_end:
+            break
+        #end if
+        if line[1]=='-':
+            prev_end = True
+        else:
+            tokens = line.split()
+            position.append(tokens[0:3])
+            force.append(tokens[3:6])
+        #end if
+    #end for
+    total_drift = line.split()[2:5]
+    odata.position = array(position,dtype=float)
+    odata.force    = array(force,dtype=float)
+    odata.total_drift = array(total_drift,dtype=float)
+#end def read_outcar_position_force
+
+
+def read_outcar_accounting(vlines,odata):
+    time = obj()
+    memory = obj()
+    vlines.advance_token('General timing and accounting')
+    vlines.advance(2)
+    time.cpu     = float(vlines.advance_line(1).split()[-1])
+    time.user    = float(vlines.advance_line(1).split()[-1])
+    time.system  = float(vlines.advance_line(1).split()[-1])
+    time.elapsed = float(vlines.advance_line(1).split()[-1])
+    vlines.advance(1)
+    memory.maximum = float(vlines.advance_line(1).split()[-1])
+    memory.average = float(vlines.advance_line(1).split()[-1])
+    odata.time   = time
+    odata.memory = memory
+#end def read_outcar_accounting
+
+
+
+
+class OutcarData(DevBase):
+    any_functions = [
+        ('header_values'   , read_outcar_header_values  ),
+        ]
+    elast_functions = [
+        ('core_potentials' , read_outcar_core_potentials),
+        ('fermi_energy'    , read_outcar_fermi_energy   ),
+        ('bands'           , read_outcar_bands          ),
+        ('total_charge'    , read_outcar_total_charge   ),
+        ('magnetization'   , read_outcar_magnetization  ),
+        ('stress'          , read_outcar_stress         ),
+        ('cell'            , read_outcar_cell           ),
+        ('position_force'  , read_outcar_position_force ),
+        ]
+    ilast_functions = [
+        ('accounting'      , read_outcar_accounting     ),
+        ]
+
+    read_outcar_functions = any_functions + elast_functions + ilast_functions
+
+    def __init__(self,filepath=None,lines=None):
+        if filepath!=None:
+            if not os.path.exists(filepath):
+                self.error('file {0} does not exist'.format(filepath))
+            #end if
+            f = open(filepath,'r')
+            lines = f.read().splitlines()
+            f.close()
+        #end if
+        self.vlines   = VaspLines(lines)
+    #end def __init__
+
+
+    def read(self,ilast=False,elast=False,all=True):
+        ilast |= all
+        elast |= all
+        vlines = self.vlines
+        del self.vlines
+        read_functions = []
+        read_functions.extend(self.any_functions)
+        if elast:
+            read_functions.extend(self.elast_functions)
+            if ilast:
+                read_functions.extend(self.ilast_functions)
+            #end if
+        #end if
+        for quantity,read_function in read_functions:
+            try:
+                read_function(vlines,self)
+            except:
+                None
+            #end try
+        #end for
+    #end def read
+#end class OutcarData
+
+
+
+
+# main analyzer class
+
 class VaspAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0=None,xml=False,analyze=False):
-        self.info = obj(xml=xml)
-        prefix = None
+        path    = None
+        prefix  = None
+        incar   = None
+        outcar  = None
+        xmlfile = None
         if isinstance(arg0,Simulation):
             sim = arg0
-            infile = sim.infile
+            file = sim.infile
             path   = sim.locdir
         elif arg0!=None:
-            path,infile = os.path.split(arg0)
-            if infile=='':
-                infile = None
-            #end if
-            if infile!=None:
-                if not infile.endswith('INCAR'):
-                    self.error('please provide the path to an INCAR file')
-                #end if
-                prefix = infile.replace('INCAR','').strip()
-                if prefix=='':
-                    prefix=None
-                #end if
-            #end if
+            path,file = os.path.split(arg0)
         else:
-            self.info.xml = False
-            return
+            file = ''
+            xml  = False
         #end if
-        self.info.set(
-            path   = path,
-            infile = infile,
-            prefix = prefix
+        if len(file)>0:
+            if file.endswith('INCAR'):
+                incar  = file
+                prefix = file.replace('INCAR','').strip()
+            elif file.endswith('OUTCAR'):
+                prefix = file.replace('OUTCAR','').strip()
+            else:
+                self.error('please provide the path to an INCAR or OUTCAR file')
+            #end if
+            outcar  = prefix+'OUTCAR'
+            xmlfile = prefix+'vasprun.xml'
+            if prefix=='':
+                prefix=None
+            #end if
+        #end if
+        self.info = obj(
+            path    = path,
+            prefix  = prefix,
+            incar   = incar,
+            outcar  = outcar,
+            xmlfile = xmlfile,
+            xml     = xml
             )
         if analyze:
             self.analyze()
         #end if
     #end def __init__
 
-    def analyze(self):
+    def analyze(self,outcar=None):
+        if outcar is None and self.info.outcar!=None:
+            outcar = os.path.join(self.info.path,self.info.outcar)
+        #ned if
         if self.info.xml:
-            xmlfile = 'vasprun.xml'
-            if self.info.prefix!=None:
-                xmlfile = self.info.prefix+xmlfile
-            #end if
-            self.xmldata = read_vxml(os.path.join(self.info.path,xmlfile))
+            self.xmldata = read_vxml(os.path.join(self.info.path,self.info.xmlfile))
+        #end if
+        if outcar!=None:
+            self.analyze_outcar(outcar)
         #end if
     #end def analyze
+
+
+    def analyze_outcar(self,outcar):
+        if not os.path.exists(outcar):
+            self.error('outcar file {0} does not exist'.format(outcar))
+        #end if
+        oc = open(outcar,'r')
+        lines = oc.read().splitlines()
+        oc.close()
+        del oc
+        # gather initialization lines
+        init = []
+        n = 0
+        for line in lines:
+            if len(line)>0 and line[0]=='-' and 'Iteration' in line:
+                break
+            #end if
+            init.append(line)
+            n+=1
+        #end for
+        # gather lines for each iteration
+        ion_steps = obj()
+        for line in lines[n:]:
+            if len(line)>0 and line[0]=='-' and 'Iteration' in line:
+                iteration = []
+                inum,enum = line.strip(' -Iteration)').split('(')
+                inum = int(inum)
+                enum = int(enum)
+                if not inum in ion_steps:
+                    ion_steps[inum] = obj()
+                #end if
+                ion_steps[inum][enum] = OutcarData(lines=iteration)
+            #end if
+            iteration.append(line)
+        #end for
+        del lines
+        del n
+        # read data from each iteration
+        if len(ion_steps)>0:
+            imax = array(ion_steps.keys(),dtype=int).max()
+            for inum,ion_step in ion_steps.iteritems():
+                ilast = inum==imax
+                if len(ion_step)>0:
+                    emax = array(ion_step.keys(),dtype=int).max()
+                    for enum,elec_step in ion_step.iteritems():
+                        elast = enum==emax
+                        elec_step.read(ilast,elast,all=False)
+                        if ilast and elast:
+                            self.transfer_from(elec_step)
+                        #end if
+                    #end for
+                #end if
+            #end for
+        #end if
+        self.ion_steps = ion_steps
+    #end def analyze_outcar
 #end class VaspAnalyzer
 
 
