@@ -21,21 +21,33 @@
 # Useful macros to run an existing executable:
 #   RUN_QMC_APP( TESTNAME SRC_DIR PROCS THREADS ARGS )
 #############################################################
-INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
-IF ( NOT QMC_DATA ) 
-    MESSAGE( WARNING "QMC_DATA is not set, some tests will fail")
-ENDIF()
 
-# Add a simple hello world test
-ADD_QMC_TEST_1_2_4( HelloWorld )
+message("Attempting to add tests for QMCAPP")
 
-# Run the deterministic tests (sucess is running without errors)
-COPY_DIRECTORY( "${QMC_DATA}/dft" "${CMAKE_CURRENT_BINARY_DIR}/dft" )
-RUN_QMC_APP( deterministic-1-1 "${QMC_DATA}/deterministic" 1 1 qmc.in.xml )
-RUN_QMC_APP( deterministic-4-1 "${QMC_DATA}/deterministic" 4 1 qmc.in.xml )
-RUN_QMC_APP( deterministic-1-4 "${QMC_DATA}/deterministic" 1 4 qmc.in.xml )
+set(QMCAPP_ERR "")
+if((NOT ${TEST_MAX_PROCS}) OR (${TEST_MAX_PROCS} STREQUAL ""))
+  set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
+endif()
 
-# Run the statistical tests
-RUN_QMC_APP( statistical_vmc-1-4 "${QMC_DATA}/statistical_vmc" 4 1 qmc.in.xml )
-RUN_QMC_APP( statistical_vmc-4-4 "${QMC_DATA}/statistical_vmc" 1 4 qmc.in.xml )
 
+if(NOT ${QMCAPP_ERR} STREQUAL "")
+  message("${QMCAPP_ERR}  skipping tests")
+else()
+  INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
+  IF ( NOT QMC_DATA ) 
+      MESSAGE( WARNING "QMC_DATA is not set, some tests will fail")
+  ENDIF()
+  
+  # Add a simple hello world test
+  ADD_QMC_TEST_1_2_4( HelloWorld )
+  
+  # Run the deterministic tests (sucess is running without errors)
+  COPY_DIRECTORY( "${QMC_DATA}/dft" "${CMAKE_CURRENT_BINARY_DIR}/dft" )
+  RUN_QMC_APP( deterministic-1-1 "${QMC_DATA}/deterministic" 1 1 qmc.in.xml )
+  RUN_QMC_APP( deterministic-4-1 "${QMC_DATA}/deterministic" 4 1 qmc.in.xml )
+  RUN_QMC_APP( deterministic-1-4 "${QMC_DATA}/deterministic" 1 4 qmc.in.xml )
+  
+  # Run the statistical tests
+  RUN_QMC_APP( statistical_vmc-1-4 "${QMC_DATA}/statistical_vmc" 4 1 qmc.in.xml )
+  RUN_QMC_APP( statistical_vmc-4-4 "${QMC_DATA}/statistical_vmc" 1 4 qmc.in.xml )
+endif()

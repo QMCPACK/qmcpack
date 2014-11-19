@@ -113,5 +113,12 @@ inline void Init_CUDA(int rank, int size)
        << "GPU code.\nPlease use cmake -DQMC_CUDA=1.\n";
   APP_ABORT("GPU disabled");
 }
+
+inline void Finalize_CUDA()
+{
+  cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
+       << "GPU code.\nPlease use cmake -DQMC_CUDA=1.\n";
+  APP_ABORT("GPU disabled");
+}
 #endif
 #endif

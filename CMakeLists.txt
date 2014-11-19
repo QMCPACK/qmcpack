@@ -355,18 +355,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         ENDIF(MPI_WORKS)
       ENDIF(MPI_FOUND)
     endif($ENV{CXX} MATCHES "mp")
-    IF ( HAVE_MPI )
-      SET( USE_MPI 1 )
-      IF ( NOT MPIEXEC )
-        SET( MPIEXEC "mpirun" )
-      ENDIF()
-      IF ( NOT MPIEXEC_NUMPROC_FLAG )
-        SET( MPIEXEC_NUMPROC_FLAG "-np" )
-      ENDIF()
-      IF ( NOT TEST_MAX_PROCS )
-        SET( TEST_MAX_PROCS 100 )
-      ENDIF()
-    ENDIF(HAVE_MPI)
   ENDIF(QMC_MPI)
 
   #-------------------------------------------------------------------
@@ -376,6 +364,22 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+
+# setup ctest variables
+IF ( HAVE_MPI )
+  SET( USE_MPI 1 )
+  IF ( NOT MPIEXEC )
+    SET( MPIEXEC "mpirun" )
+  ENDIF()
+  IF ( NOT MPIEXEC_NUMPROC_FLAG )
+    SET( MPIEXEC_NUMPROC_FLAG "-np" )
+  ENDIF()
+  IF ( NOT TEST_MAX_PROCS )
+    SET( TEST_MAX_PROCS 100 )
+  ENDIF()
+ENDIF(HAVE_MPI)
+
 
 MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
@@ -568,9 +572,11 @@ endif()
 ###################################################
 # Add user extra flags
 ###################################################
-string(REPLACE " " ";" QMC_EXTRA_LIBS ${QMC_EXTRA_LIBS})
-SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${QMC_EXTRA_LIBS})
-MESSAGE("QMC_UTIL_LIBS=${QMC_UTIL_LIBS}")
+IF(QMC_EXTRA_LIBS)
+  string(REPLACE " " ";" QMC_EXTRA_LIBS ${QMC_EXTRA_LIBS})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${QMC_EXTRA_LIBS})
+  MESSAGE("QMC_UTIL_LIBS=${QMC_UTIL_LIBS}")
+ENDIF()
 
 ###################################################
 # Done searching libraries. Start building qmcpack
