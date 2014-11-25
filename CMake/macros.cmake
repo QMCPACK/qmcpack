@@ -1,3 +1,8 @@
+IF ( ${CMAKE_MAJOR_VERSION} EQUAL 3 )
+    CMAKE_POLICY(SET CMP0026 OLD)
+ENDIF()
+
+
 # Function to copy a directory
 FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
@@ -28,8 +33,9 @@ FUNCTION( ADD_QMC_PROVISIONAL_TEST EXEFILE )
     # Check if we actually want to add the test
     # SET( EXCLUDE_TESTS_FROM_ALL 1 )
     # Check if test has already been added
-    GET_TARGET_PROPERTY(tmp ${EXEFILE} LOCATION)
-    IF ( tmp )
+    SET( tmp )
+    IF ( TARGET ${EXEFILE} )
+        GET_TARGET_PROPERTY(tmp ${EXEFILE} LOCATION)
         STRING(REGEX REPLACE "//" "/" tmp "${tmp}" )        
     ENDIF()
     IF ( NOT tmp )
